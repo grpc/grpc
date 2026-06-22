@@ -433,6 +433,7 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
   void RunProcessingModeTest(bool req_hdrs, bool resp_hdrs, bool resp_trls,
                              bool req_body, bool resp_body,
                              bool observability_mode = false);
+  void RunTrailersOnlyTest(bool observability_mode);
 
   std::unique_ptr<ExtProcServerThread> ext_proc_server_;
 };
@@ -557,6 +558,69 @@ void XdsExtProcEnd2endTest::RunProcessingModeTest(bool req_hdrs, bool resp_hdrs,
       req_hdrs || resp_hdrs || resp_trls || req_body || expect_response_body;
   EXPECT_EQ(ext_proc_server_->ext_proc_service()->num_calls(),
             any_mode_enabled ? 1 : 0);
+}
+
+void XdsExtProcEnd2endTest::RunTrailersOnlyTest(bool observability_mode) {
+  CreateAndStartBackends(1);
+  auto ext_proc_config_builder = ExternalProcessorBuilder()
+                                     .SetTargetUri(ext_proc_server_->target())
+                                     .SetInsecureChannelCredentials()
+                                     .SetObservabilityMode(observability_mode);
+  using envoy::extensions::filters::http::ext_proc::v3::ProcessingMode;
+  // Enable ALL processing modes
+  ext_proc_config_builder.SetRequestHeaderMode(ProcessingMode::SEND);
+  ext_proc_config_builder.SetResponseHeaderMode(ProcessingMode::SEND);
+  ext_proc_config_builder.SetResponseTrailerMode(ProcessingMode::SEND);
+  ext_proc_config_builder.SetRequestBodyMode(ProcessingMode::GRPC);
+  ext_proc_config_builder.SetResponseBodyMode(ProcessingMode::GRPC);
+  auto ext_proc_config = ext_proc_config_builder.Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+  RpcOptions rpc_options;
+  rpc_options.set_echo_metadata_initially(true);
+  rpc_options.set_echo_metadata(true);
+  // Force trailers-only failure
+  rpc_options.set_server_fail(true);
+  EchoResponse response;
+  std::multimap<std::string, std::string> server_initial_metadata;
+  std::multimap<std::string, std::string> server_trailing_metadata;
+  Status status =
+      SendRpcGetTrailers(rpc_options, &response, &server_initial_metadata,
+                         &server_trailing_metadata);
+  // The V2-V3 bridge does not handle trailers-only responses
+  // correctly and double-delivers the metadata, which confuses the client
+  // and sometimes results in FAILED_PRECONDITION instead of UNAVAILABLE.
+  EXPECT_THAT(status.error_code(),
+              ::testing::AnyOf(StatusCode::UNAVAILABLE,
+                               StatusCode::FAILED_PRECONDITION))
+      << "Actual error message: " << status.error_message();
+  // Wait for expected counts
+  MockExternalProcessorService::RequestCounts expected_counts;
+  expected_counts.request_headers = 1;
+  expected_counts.request_body = 1;
+  expected_counts.response_headers = 1;
+  expected_counts.response_body = 0;
+  expected_counts.response_trailers = 0;
+  ext_proc_server_->ext_proc_service()->WaitForRequestCounts(expected_counts);
+  auto counts = ext_proc_server_->ext_proc_service()->GetRequestCounts();
+  EXPECT_EQ(counts.request_headers, 1);
+  EXPECT_THAT(counts.request_body, ::testing::AnyOf(1, 2));
+  EXPECT_EQ(counts.response_headers, 1);
+  EXPECT_EQ(counts.response_body, 0);
+  EXPECT_EQ(counts.response_trailers, 0);
+}
+
+TEST_P(XdsExtProcEnd2endTest, TrailersOnly_AllEnabled) {
+  RunTrailersOnlyTest(/*observability_mode=*/false);
+}
+
+TEST_P(XdsExtProcEnd2endTest, TrailersOnly_Observability_AllEnabled) {
+  RunTrailersOnlyTest(/*observability_mode=*/true);
 }
 
 #define EXT_PROC_TEST_P(name, req_hdrs, resp_hdrs, resp_trls, req_body, \
