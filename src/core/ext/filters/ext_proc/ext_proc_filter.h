@@ -52,6 +52,7 @@ namespace grpc_core {
 class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
  public:
   class ExtProcChannel;
+  class ExtProcCall;
 
   struct ProcessingMode {
     // By default, request and response headers are sent (true), while trailers
@@ -164,8 +165,17 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
   };
 
  private:
-  class ExtProcCall;
   void Orphaned() override {}
+
+  absl::AnyInvocable<Poll<absl::Status>()> ProcessCallObservabilityMode(
+      CallHandler handler, RefCountedPtr<ExtProcCall> ext_proc_call);
+
+  absl::AnyInvocable<Poll<absl::Status>()> ProcessCallNormalMode(
+      CallHandler handler, RefCountedPtr<ExtProcCall> ext_proc_call);
+
+  absl::AnyInvocable<Poll<absl::Status>()> ProcessServerToClient(
+      CallHandler handler, CallInitiator initiator,
+      RefCountedPtr<ExtProcCall> ext_proc_call);
 
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override;
 
