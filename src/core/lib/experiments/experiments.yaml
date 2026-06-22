@@ -400,6 +400,12 @@
       "event_engine_client",
       "event_engine_listener",
     ]
+- name: server_backlog_management
+  description:
+    Reject requests when server backlog exceeds limit.
+  expiry: 2026/08/01
+  owner: vigneshbabu@google.com
+  test_tags: []
 - name: skip_clear_peer_on_cancellation
   description: If set, skips clearing of peer string on call cancellation.
   expiry: 2026/09/01
