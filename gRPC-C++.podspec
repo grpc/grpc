@@ -226,7 +226,6 @@ Pod::Spec.new do |s|
                       'include/grpcpp/support/time.h',
                       'include/grpcpp/support/validate_service_config.h',
                       'include/grpcpp/version_info.h',
-                      'include/grpcpp/virtual_channel.h',
                       'include/grpcpp/xds_server_builder.h'
   end
 
