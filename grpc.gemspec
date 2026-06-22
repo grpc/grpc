@@ -2294,6 +2294,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/xds/grpc/xds_transport_grpc.h )
   s.files += %w( src/core/xds/xds_client/lrs_client.cc )
   s.files += %w( src/core/xds/xds_client/lrs_client.h )
+  s.files += %w( src/core/xds/xds_client/serialized_streaming_call.cc )
+  s.files += %w( src/core/xds/xds_client/serialized_streaming_call.h )
   s.files += %w( src/core/xds/xds_client/xds_api.cc )
   s.files += %w( src/core/xds/xds_client/xds_api.h )
   s.files += %w( src/core/xds/xds_client/xds_backend_metric_propagation.cc )

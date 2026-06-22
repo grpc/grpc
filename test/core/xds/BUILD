@@ -865,3 +865,30 @@ grpc_cc_test(
         "//src/core:blackboard",
     ],
 )
+
+grpc_cc_test(
+    name = "serialized_streaming_call_test",
+    srcs = ["serialized_streaming_call_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/status",
+        "absl/strings",
+    ],
+    tags = ["xds_test"],
+    uses_event_engine = True,
+    uses_polling = False,
+    deps = [
+        ":xds_transport_fake",
+        "//:gpr",
+        "//:grpc",
+        "//:xds_client",
+        "//src/core:1999",
+        "//src/core:activity",
+        "//src/core:arena",
+        "//src/core:poll",
+        "//src/core:sync",
+        "//src/core:wait_for_single_owner",
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)

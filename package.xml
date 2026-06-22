@@ -2275,6 +2275,8 @@
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_transport_grpc.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/xds_client/lrs_client.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/xds_client/lrs_client.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/xds_client/serialized_streaming_call.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/xds_client/serialized_streaming_call.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/xds_client/xds_api.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/xds_client/xds_api.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/xds_client/xds_backend_metric_propagation.cc" role="src" />
