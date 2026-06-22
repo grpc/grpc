@@ -131,6 +131,21 @@ TEST_F(InterceptorListTest, CanRunManyWithCapturesThatDelay) {
   EXPECT_EQ(promise().value().value(), expected);
 }
 
+TEST_F(InterceptorListTest, TriggerUaF) {
+  // When running this test, use the following arguments: --config=asan
+  InterceptorList<std::string> list;
+  list.AppendMap([](std::string s) { return s; }, DEBUG_LOCATION);
+  auto promise = list.Run("hello");
+
+  struct LargeCapture {
+    char data[256000];
+  };
+  list.AppendMap([](std::string s) { return s; }, DEBUG_LOCATION);
+
+  // This should trigger a buffer overflow.
+  promise();
+}
+
 }  // namespace
 }  // namespace grpc_core
 
