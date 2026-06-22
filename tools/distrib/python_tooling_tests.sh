@@ -25,3 +25,5 @@ TEST_MODULE="tests.unit.test_all_modules_installed"
 pushd src/python/grpcio_tests;
   python3 -m unittest "$TEST_MODULE"
 popd;
+
+chmod -R 755 src/
