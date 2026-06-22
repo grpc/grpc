@@ -1336,6 +1336,7 @@ def _begin_shutdown_once(state: _ServerState) -> None:
 def _stop(state: _ServerState, grace: Optional[float]) -> threading.Event:
     with state.lock:
         if state.stage is _ServerStage.STOPPED:
+            state.server.destroy()
             shutdown_event = threading.Event()
             shutdown_event.set()
             return shutdown_event
@@ -1492,6 +1493,8 @@ class _Server(grpc.Server):
             # We can not grab a lock in __del__(), so set a flag to signal the
             # serving daemon thread (if it exists) to initiate shutdown.
             self._state.server_deallocated = True
+            if self._state.stage is _ServerStage.STOPPED:
+                self._state.server.destroy()
 
 
 def create_server(
