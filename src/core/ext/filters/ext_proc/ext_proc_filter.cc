@@ -218,6 +218,14 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
         channel_->transport(), method,
         std::make_unique<StreamEventHandler>(WeakRef()));
     streaming_call_->StartRecvMessage();
+    // Start connectivity failure watch!
+    RefCountedPtr<ConnectivityWatcher> watcher;
+    {
+      MutexLock lock(&mu_);
+      connectivity_watcher_ = MakeRefCounted<ConnectivityWatcher>(WeakRef());
+      watcher = connectivity_watcher_;
+    }
+    channel_->transport()->StartConnectivityFailureWatch(watcher);
   }
 
   ~ExtProcCall() override { streaming_call_.reset(); }
@@ -355,6 +363,80 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
     WeakRefCountedPtr<ExtProcCall> call_;
   };
 
+  class ConnectivityWatcher final
+      : public XdsTransportFactory::XdsTransport::ConnectivityFailureWatcher {
+   public:
+    explicit ConnectivityWatcher(WeakRefCountedPtr<ExtProcCall> call)
+        : call_(std::move(call)) {}
+
+    void OnConnectivityFailure(absl::Status status) override {
+      if (call_ != nullptr) {
+        auto call = call_->RefIfNonZero();
+        if (call != nullptr) {
+          call->OnStatusReceived(std::move(status));
+        }
+      }
+    }
+
+   private:
+    WeakRefCountedPtr<ExtProcCall> call_;
+  };
+
+  void CompleteAllLatchesAndPipes(
+      absl::StatusOr<ExtProcResponse> status_or_response) {
+    if (processing_mode_.send_request_headers &&
+        !request_headers_latch_.IsSet()) {
+      request_headers_latch_.Set(status_or_response);
+    }
+    if (processing_mode_.send_response_headers &&
+        !response_headers_latch_.IsSet()) {
+      response_headers_latch_.Set(status_or_response);
+    }
+    if (processing_mode_.send_response_trailers &&
+        !response_trailers_latch_.IsSet()) {
+      response_trailers_latch_.Set(status_or_response);
+    }
+    if (processing_mode_.send_request_body &&
+        !request_body_pipe_.sender.IsClosed()) {
+      request_body_pipe_.sender.MarkClosed();
+    }
+    if (processing_mode_.send_response_body &&
+        !response_body_pipe_.sender.IsClosed()) {
+      response_body_pipe_.sender.MarkClosed();
+    }
+  }
+
+  void CloseStream() {
+    OrphanablePtr<SerializedStreamingCall> call_to_reset;
+    RefCountedPtr<ConnectivityWatcher> watcher_to_stop;
+    {
+      MutexLock lock(&mu_);
+      stream_closed_ = true;
+      call_to_reset = std::move(streaming_call_);
+      watcher_to_stop = std::move(connectivity_watcher_);
+    }
+    call_to_reset.reset();
+    if (watcher_to_stop != nullptr) {
+      channel_->transport()->StopConnectivityFailureWatch(watcher_to_stop);
+    }
+  }
+
+  void SetStreamErrorStatus(absl::Status status) {
+    MutexLock lock(&mu_);
+    stream_status_ = status;
+    stream_closed_ = true;
+  }
+
+  bool IsTrailersOnly() {
+    MutexLock lock(&mu_);
+    return is_trailers_only_;
+  }
+
+  void SetProcessorSentHalfClose() {
+    MutexLock lock(&mu_);
+    processor_sent_half_close_ = true;
+  }
+
   void OnRequestSent(bool ok) {
     GRPC_TRACE_LOG(ext_proc_filter, INFO)
         << "ExtProcCall " << this << " request sent ok=" << ok;
@@ -364,25 +446,249 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
     GRPC_TRACE_LOG(ext_proc_filter, INFO)
         << "ExtProcCall " << this
         << " message received, size=" << payload.size();
+    upb::Arena arena;
+    auto* response = envoy_service_ext_proc_v3_ProcessingResponse_parse(
+        payload.data(), payload.size(), arena.ptr());
+    if (response == nullptr) {
+      LOG(ERROR) << "Failed to parse ProcessingResponse";
+      auto error = absl::InternalError("Failed to parse ProcessingResponse");
+      if (!failure_mode_allow_) {
+        CompleteAllLatchesAndPipes(error);
+      } else {
+        CompleteAllLatchesAndPipes(ExtProcResponse{});
+      }
+      CloseStream();
+      return;
+    } else {
+      auto parsed_response_or =
+          ParseExtProcResponse(response, observability_mode_);
+      if (!parsed_response_or.ok()) {
+        LOG(ERROR) << "Failed to validate ProcessingResponse: "
+                   << parsed_response_or.status();
+        if (!failure_mode_allow_) {
+          CompleteAllLatchesAndPipes(parsed_response_or.status());
+        } else {
+          CompleteAllLatchesAndPipes(ExtProcResponse{});
+        }
+        CloseStream();
+        return;
+      } else {
+        auto parsed_response = std::move(*parsed_response_or);
+        if (parsed_response.immediate_response.has_value()) {
+          if (processing_mode_.send_request_headers &&
+              !request_headers_latch_.IsSet()) {
+            request_headers_latch_.Set(std::move(parsed_response));
+          } else if (processing_mode_.send_response_headers &&
+                     !response_headers_latch_.IsSet()) {
+            response_headers_latch_.Set(std::move(parsed_response));
+          } else if (processing_mode_.send_response_trailers &&
+                     !response_trailers_latch_.IsSet()) {
+            response_trailers_latch_.Set(std::move(parsed_response));
+          }
+        } else if (parsed_response.request_headers.has_value()) {
+          if (!processing_mode_.send_request_headers) {
+            LOG(ERROR)
+                << "Received request headers response but request headers "
+                   "are disabled";
+            SetStreamErrorStatus(
+                absl::InternalError("Received request headers response but "
+                                    "request headers are disabled"));
+            return;
+          }
+          if (processing_mode_.send_request_headers &&
+              !request_headers_latch_.IsSet()) {
+            request_headers_latch_.Set(std::move(parsed_response));
+          }
+        } else if (parsed_response.response_headers.has_value()) {
+          if (!processing_mode_.send_response_headers) {
+            LOG(ERROR) << "Received response headers response but response "
+                          "headers are disabled";
+            SetStreamErrorStatus(
+                absl::InternalError("Received response headers response but "
+                                    "response headers are disabled"));
+            return;
+          }
+          if (processing_mode_.send_response_headers &&
+              !response_headers_latch_.IsSet()) {
+            response_headers_latch_.Set(std::move(parsed_response));
+          }
+        } else if (parsed_response.response_trailers.has_value()) {
+          if (!processing_mode_.send_response_trailers) {
+            LOG(ERROR) << "Received response trailers response but response "
+                          "trailers are disabled";
+            SetStreamErrorStatus(
+                absl::InternalError("Received response trailers response but "
+                                    "response trailers are disabled"));
+            if (!response_trailers_latch_.IsSet()) {
+              response_trailers_latch_.Set(
+                  absl::InternalError("Received response trailers response but "
+                                      "response trailers are disabled"));
+            }
+            return;
+          }
+          if (IsTrailersOnly()) {
+            LOG(ERROR) << "Received response trailers response in a "
+                          "Trailers-Only call";
+            SetStreamErrorStatus(absl::InternalError(
+                "Received response trailers response in a Trailers-Only call"));
+            if (!response_trailers_latch_.IsSet()) {
+              response_trailers_latch_.Set(
+                  absl::InternalError("Received response trailers response in "
+                                      "a Trailers-Only call"));
+            }
+            return;
+          }
+          if (processing_mode_.send_response_headers &&
+              !response_headers_latch_.IsSet()) {
+            LOG(ERROR) << "Received response trailers response before response "
+                          "headers response";
+            SetStreamErrorStatus(absl::InternalError(
+                "Received response trailers response before "
+                "response headers response"));
+            if (!response_trailers_latch_.IsSet()) {
+              response_trailers_latch_.Set(
+                  absl::InternalError("Received response trailers response "
+                                      "before response headers response"));
+            }
+            return;
+          }
+          if (processing_mode_.send_response_trailers &&
+              !response_trailers_latch_.IsSet()) {
+            response_trailers_latch_.Set(std::move(parsed_response));
+          }
+        } else if (parsed_response.request_body.has_value()) {
+          if (!processing_mode_.send_request_body) {
+            LOG(ERROR) << "Received request body response but request body is "
+                          "disabled";
+            SetStreamErrorStatus(absl::InternalError(
+                "Received request body response but request body is disabled"));
+            if (!request_body_pipe_.sender.IsClosed()) {
+              request_body_pipe_.sender.MarkClosed();
+            }
+            return;
+          }
+          if (processing_mode_.send_request_headers &&
+              !request_headers_latch_.IsSet()) {
+            LOG(ERROR)
+                << "Received request body response before request headers "
+                   "response";
+            SetStreamErrorStatus(
+                absl::InternalError("Received request body response before "
+                                    "request headers response"));
+            if (!request_body_pipe_.sender.IsClosed()) {
+              request_body_pipe_.sender.MarkClosed();
+            }
+            return;
+          }
+          auto& request_body = *parsed_response.request_body;
+          bool eos = false;
+          if (request_body.ok()) {
+            GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                << "ExtProc: Parsed request body response, eos: "
+                << request_body->end_of_stream << ", eos_without_msg: "
+                << request_body->end_of_stream_without_message;
+            if (request_body->end_of_stream_without_message) {
+              // TODO(rishesh): Once PH2 work is done, we should make this
+              // pass (half-close without sending message). Currently we fail
+              // the RPC to avoid hangs on legacy transport adapters.
+              SetStreamErrorStatus(absl::InternalError(
+                  "end_of_stream_without_message not supported"));
+              if (!request_body_pipe_.sender.IsClosed()) {
+                request_body_pipe_.sender.MarkClosed();
+              }
+              return;
+            }
+            eos = request_body->end_of_stream;
+          }
+          request_body_pipe_.sender.Push(std::move(parsed_response))();
+          if (eos) {
+            SetProcessorSentHalfClose();
+            if (!request_body_pipe_.sender.IsClosed()) {
+              request_body_pipe_.sender.MarkClosed();
+            }
+          }
+        } else if (parsed_response.response_body.has_value()) {
+          if (!processing_mode_.send_response_body) {
+            LOG(ERROR)
+                << "Received response body response but response body is "
+                   "disabled";
+            SetStreamErrorStatus(
+                absl::InternalError("Received response body response but "
+                                    "response body is disabled"));
+            if (!response_body_pipe_.sender.IsClosed()) {
+              response_body_pipe_.sender.MarkClosed();
+            }
+            return;
+          }
+          if (IsTrailersOnly()) {
+            LOG(ERROR)
+                << "Received response body response in a Trailers-Only call";
+            SetStreamErrorStatus(absl::InternalError(
+                "Received response body response in a Trailers-Only call"));
+            if (!response_body_pipe_.sender.IsClosed()) {
+              response_body_pipe_.sender.MarkClosed();
+            }
+            return;
+          }
+          if (processing_mode_.send_response_headers &&
+              !response_headers_latch_.IsSet()) {
+            LOG(ERROR) << "Received response body response before response "
+                          "headers response";
+            SetStreamErrorStatus(
+                absl::InternalError("Received response body response before "
+                                    "response headers response"));
+            if (!response_body_pipe_.sender.IsClosed()) {
+              response_body_pipe_.sender.MarkClosed();
+            }
+            return;
+          }
+          auto& response_body = *parsed_response.response_body;
+          bool eos = false;
+          if (response_body.ok()) {
+            eos = response_body->end_of_stream ||
+                  response_body->end_of_stream_without_message;
+          }
+          response_body_pipe_.sender.Push(std::move(parsed_response))();
+          if (eos) {
+            SetProcessorSentHalfClose();
+            if (!response_body_pipe_.sender.IsClosed()) {
+              response_body_pipe_.sender.MarkClosed();
+            }
+          }
+        }
+      }
+    }
+    MutexLock lock(&mu_);
+    if (streaming_call_ != nullptr) {
+      streaming_call_->StartRecvMessage();
+    }
   }
 
   void OnStatusReceived(absl::Status status) {
     GRPC_TRACE_LOG(ext_proc_filter, INFO)
         << "ExtProcCall " << this << " status received: " << status;
-    MutexLock lock(&mu_);
-    stream_closed_ = true;
-    stream_status_ = std::move(status);
-  }
-
-  void Orphaned() override {
-    OrphanablePtr<SerializedStreamingCall> call_to_reset;
+    bool is_first_body_message_sent = false;
+    bool is_first_message_on_stream = false;
     {
       MutexLock lock(&mu_);
       stream_closed_ = true;
-      call_to_reset = std::move(streaming_call_);
+      is_first_body_message_sent = first_body_message_sent_;
+      is_first_message_on_stream = is_first_message_on_ext_proc_stream_;
     }
-    call_to_reset.reset();
+    if (!status.ok() && !is_first_message_on_stream &&
+        (!failure_mode_allow_ || is_first_body_message_sent)) {
+      {
+        MutexLock lock(&mu_);
+        stream_status_ = status;
+      }
+      CompleteAllLatchesAndPipes(status);
+    } else {
+      CompleteAllLatchesAndPipes(ExtProcResponse{});
+    }
+    CloseStream();
   }
+
+  void Orphaned() override { CloseStream(); }
 
   InterActivityLatch<absl::StatusOr<ExtProcResponse>> request_headers_latch_;
   InterActivityLatch<absl::StatusOr<ExtProcResponse>> response_headers_latch_;
@@ -407,6 +713,8 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
   size_t outstanding_c2s_messages_ ABSL_GUARDED_BY(&mu_) = 0;
   bool c2s_writes_done_ ABSL_GUARDED_BY(&mu_) = false;
   InterActivityLatch<void> all_server_to_client_responses_received_latch_;
+  RefCountedPtr<ConnectivityWatcher> connectivity_watcher_
+      ABSL_GUARDED_BY(&mu_);
   absl::Status stream_status_ ABSL_GUARDED_BY(&mu_);
 };
 
@@ -1469,15 +1777,13 @@ absl::AnyInvocable<Poll<absl::Status>()> ClientToServerMessages(
       [handler, initiator, ext_proc_call, config, attributes]() mutable {
         return If(
             config->observability_mode,
-            [handler, initiator, ext_proc_call,
-             config, attributes]() mutable {
+            [handler, initiator, ext_proc_call, config, attributes]() mutable {
               return ClientToServerMessagesMaybeObservabilityMode(
                   handler, initiator, std::move(ext_proc_call),
                   std::move(config), /*send_to_ext_proc_stream=*/true,
                   attributes);
             },
-            [handler, initiator, ext_proc_call, config,
-             attributes]() mutable {
+            [handler, initiator, ext_proc_call, config, attributes]() mutable {
               return ClientToServerMessagesNormalMode(
                   handler, initiator, std::move(ext_proc_call),
                   std::move(config), attributes);
@@ -1485,9 +1791,8 @@ absl::AnyInvocable<Poll<absl::Status>()> ClientToServerMessages(
       },
       [handler, initiator, ext_proc_call, config, attributes]() mutable {
         return ClientToServerMessagesMaybeObservabilityMode(
-            handler, initiator, std::move(ext_proc_call),
-            std::move(config), /*send_to_ext_proc_stream=*/false,
-            attributes);
+            handler, initiator, std::move(ext_proc_call), std::move(config),
+            /*send_to_ext_proc_stream=*/false, attributes);
       });
 }
 
@@ -1526,7 +1831,8 @@ ExtProcFilter::ExtProcFilter(const ChannelArgs& args,
                           args.GetString(GRPC_ARG_SERVER_URI).value_or(""))))) {
 }
 
-absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ProcessCallObservabilityMode(
+absl::AnyInvocable<Poll<absl::Status>()>
+ExtProcFilter::ProcessCallObservabilityMode(
     CallHandler handler, RefCountedPtr<ExtProcCall> ext_proc_call) {
   auto promise = TrySeq(
       handler.PullClientInitialMetadata(),
@@ -1545,23 +1851,21 @@ absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ProcessCallObservability
         upb::Arena* attributes_arena = nullptr;
         if (send_headers) {
           serialization_arena = std::make_shared<upb::Arena>();
-          upb_headers = envoy_config_core_v3_HeaderMap_new(
-              serialization_arena->ptr());
+          upb_headers =
+              envoy_config_core_v3_HeaderMap_new(serialization_arena->ptr());
           PopulateMetadataBatchToHeaderMap(
               *metadata, self->config_->forwarding_allowed_headers,
               self->config_->forwarding_disallowed_headers,
               serialization_arena->ptr(), upb_headers);
           header_attributes = ParseAttributes(
-              serialization_arena->ptr(),
-              self->config_->request_attributes, *metadata,
-              self->default_authority_.as_string_view());
+              serialization_arena->ptr(), self->config_->request_attributes,
+              *metadata, self->default_authority_.as_string_view());
         } else if (self->config_->processing_mode.send_request_body &&
                    !self->config_->request_attributes.empty()) {
           attributes_arena = handler.arena()->New<upb::Arena>();
           attributes = ParseAttributes(
-              attributes_arena->ptr(),
-              self->config_->request_attributes, *metadata,
-              self->default_authority_.as_string_view());
+              attributes_arena->ptr(), self->config_->request_attributes,
+              *metadata, self->default_authority_.as_string_view());
         }
         absl::AnyInvocable<Poll<absl::Status>()> client_headers_write_promise;
         {
@@ -1577,19 +1881,17 @@ absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ProcessCallObservability
                 upb::Arena arena;
                 return CreateExtProcRequest(
                     arena.ptr(), ExtProcRequestType::kClientHeaders,
-                    upb_headers,
-                    self->config()->forwarding_allowed_headers,
+                    upb_headers, self->config()->forwarding_allowed_headers,
                     self->config()->forwarding_disallowed_headers,
-                    header_attributes,
-                    self->config()->observability_mode,
+                    header_attributes, self->config()->observability_mode,
                     is_first_message,
                     self->config()->processing_mode.send_request_body,
                     self->config()->processing_mode.send_response_body);
               });
         }
         // Push headers upstream immediately to start the child call
-        CallInitiator initiator = self->MakeChildCall(
-            std::move(metadata), handler.arena()->Ref());
+        CallInitiator initiator =
+            self->MakeChildCall(std::move(metadata), handler.arena()->Ref());
         handler.AddChildCall(initiator);
         // Spawn server_to_client task immediately
         initiator.SpawnInfallible(
@@ -1601,13 +1903,14 @@ absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ProcessCallObservability
                   handler, initiator, ext_proc_call));
             });
         // Run client headers write and client-to-server messages
-        // concurrently, mapping the Empty result of CancelIfFails to absl::Status
+        // concurrently, mapping the Empty result of CancelIfFails to
+        // absl::Status
         return Map(
             initiator.CancelIfFails(Map(
                 TryJoin<absl::StatusOr>(
                     std::move(client_headers_write_promise),
-                    ClientToServerMessages(
-                        handler, initiator, ext_proc_call, self->config(), attributes)),
+                    ClientToServerMessages(handler, initiator, ext_proc_call,
+                                           self->config(), attributes)),
                 [](auto result) -> absl::Status { return result.status(); })),
             [](Empty) -> absl::Status { return absl::OkStatus(); });
       });
@@ -1632,41 +1935,37 @@ absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ProcessCallNormalMode(
           MutexLock lock(ext_proc_call->mu());
           const bool is_first_message = ext_proc_call->IsFirstMessageOnStream();
           send_promise = ext_proc_call->SendMessageLocked(
-              send_headers,
-              [self, ext_proc_call = ext_proc_call->Ref(), shared_metadata,
-               is_first_message]() {
+              send_headers, [self, ext_proc_call = ext_proc_call->Ref(),
+                             shared_metadata, is_first_message]() {
                 GRPC_TRACE_LOG(ext_proc_filter, INFO)
                     << "ExtProc: Sending client initial metadata";
                 upb::Arena serialization_arena;
                 return CreateExtProcRequest(
                     serialization_arena.ptr(),
-                    ExtProcRequestType::kClientHeaders,
-                    shared_metadata->get(),
+                    ExtProcRequestType::kClientHeaders, shared_metadata->get(),
                     self->config()->forwarding_allowed_headers,
                     self->config()->forwarding_disallowed_headers,
-                    ParseAttributes(
-                        serialization_arena.ptr(),
-                        self->config()->request_attributes,
-                        **shared_metadata,
-                        self->default_authority_.as_string_view()),
-                    self->config()->observability_mode,
-                    is_first_message,
+                    ParseAttributes(serialization_arena.ptr(),
+                                    self->config()->request_attributes,
+                                    **shared_metadata,
+                                    self->default_authority_.as_string_view()),
+                    self->config()->observability_mode, is_first_message,
                     self->config()->processing_mode.send_request_body,
                     self->config()->processing_mode.send_response_body);
               });
         }
-        return Seq(
-            std::move(send_promise),
-            [shared_metadata](absl::Status) mutable
-                -> absl::StatusOr<ClientMetadataHandle> {
-              return std::move(*shared_metadata);
-            });
+        return Seq(std::move(send_promise),
+                   [shared_metadata](absl::Status) mutable
+                       -> absl::StatusOr<ClientMetadataHandle> {
+                     return std::move(*shared_metadata);
+                   });
       },
       [self = RefAsSubclass<ExtProcFilter>(), handler,
        ext_proc_call](ClientMetadataHandle metadata) mutable {
         // Type-erase the conditional headers wait using standard C++ if-else
         // to completely prevent any complex template type mismatches.
-        absl::AnyInvocable<Poll<absl::StatusOr<ExtProcResponse>>()> headers_promise;
+        absl::AnyInvocable<Poll<absl::StatusOr<ExtProcResponse>>()>
+            headers_promise;
         if (self->config()->processing_mode.send_request_headers &&
             !self->config()->observability_mode) {
           headers_promise = ext_proc_call->request_headers_latch().Wait();
@@ -1677,8 +1976,8 @@ absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ProcessCallNormalMode(
         }
         return TrySeq(
             std::move(headers_promise),
-            [self, metadata = std::move(metadata)](
-                ExtProcResponse response) mutable
+            [self,
+             metadata = std::move(metadata)](ExtProcResponse response) mutable
                 -> absl::StatusOr<ClientMetadataHandle> {
               if (response.request_headers.has_value()) {
                 const auto& request_headers = *response.request_headers;
@@ -1689,24 +1988,22 @@ absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ProcessCallNormalMode(
                     self->config()->mutation_rules.has_value()
                         ? &self->config()->mutation_rules.value()
                         : nullptr;
-                auto status = ApplyHeaderMutations(*request_headers,
-                                                   rules, *metadata);
+                auto status =
+                    ApplyHeaderMutations(*request_headers, rules, *metadata);
                 if (!status.ok()) return status;
               }
               return std::move(metadata);
             },
-            [self, handler, ext_proc_call](ClientMetadataHandle metadata) mutable {
+            [self, handler,
+             ext_proc_call](ClientMetadataHandle metadata) mutable {
               ::google_protobuf_Struct* attributes = nullptr;
-              if (!self->config()
-                       ->processing_mode.send_request_headers &&
+              if (!self->config()->processing_mode.send_request_headers &&
                   self->config()->processing_mode.send_request_body &&
                   !self->config()->request_attributes.empty()) {
-                auto* attributes_arena =
-                    handler.arena()->New<upb::Arena>();
+                auto* attributes_arena = handler.arena()->New<upb::Arena>();
                 attributes = ParseAttributes(
-                    attributes_arena->ptr(),
-                    self->config()->request_attributes, *metadata,
-                    self->default_authority_.as_string_view());
+                    attributes_arena->ptr(), self->config()->request_attributes,
+                    *metadata, self->default_authority_.as_string_view());
               }
               CallInitiator initiator = self->MakeChildCall(
                   std::move(metadata), handler.arena()->Ref());
@@ -1720,8 +2017,7 @@ absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ProcessCallNormalMode(
                         handler, initiator, ext_proc_call));
                   });
               return ClientToServerMessages(
-                  handler, initiator, std::move(ext_proc_call),
-                  self->config(),
+                  handler, initiator, std::move(ext_proc_call), self->config(),
                   !self->config()->processing_mode.send_request_headers
                       ? attributes
                       : nullptr);
@@ -1738,8 +2034,8 @@ absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ProcessServerToClient(
       initiator.CancelIfFails(TrySeq(
           // Step A: Pull Server Initial Metadata.
           initiator.PullServerInitialMetadata(),
-          [handler, initiator, ext_proc_call, config = config_](
-              std::optional<ServerMetadataHandle> md) mutable {
+          [handler, initiator, ext_proc_call,
+           config = config_](std::optional<ServerMetadataHandle> md) mutable {
             const bool has_md = md.has_value();
             return If(
                 has_md,
@@ -1766,10 +2062,9 @@ absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ProcessServerToClient(
       initiator.PullServerTrailingMetadata(),
       [handler, initiator, ext_proc_call,
        config = config_](ServerMetadataHandle md) mutable {
-        auto shared_md =
-            std::make_shared<ServerMetadataHandle>(std::move(md));
-        return ServerTrailingMetadata(handler, initiator, ext_proc_call,
-                                      config, shared_md);
+        auto shared_md = std::make_shared<ServerMetadataHandle>(std::move(md));
+        return ServerTrailingMetadata(handler, initiator, ext_proc_call, config,
+                                      shared_md);
       });
   return [response_pipeline = std::move(response_pipeline)]() mutable {
     return response_pipeline();
@@ -1806,7 +2101,8 @@ void ExtProcFilter::InterceptCall(UnstartedCallHandler unstarted_call_handler) {
     return If(
         self->config()->observability_mode,
         [self, handler, ext_proc_call]() mutable {
-          return self->ProcessCallObservabilityMode(handler, std::move(ext_proc_call));
+          return self->ProcessCallObservabilityMode(handler,
+                                                    std::move(ext_proc_call));
         },
         [self, handler, ext_proc_call]() mutable {
           return self->ProcessCallNormalMode(handler, std::move(ext_proc_call));
