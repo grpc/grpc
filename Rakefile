@@ -262,7 +262,9 @@ end
 
 desc 'Publish native debug rubygems to GCS'
 task 'publish:native_debug', [:gem_dir] do |_t, args|
+  require 'digest'
   require 'rubygems/package'
+  require 'open3'
 
   gem_dir = File.expand_path(args[:gem_dir] || 'build/ruby/nativedebug')
   force_upload = ENV['FORCE'].to_s.downcase == 'true'
@@ -281,13 +283,13 @@ task 'publish:native_debug', [:gem_dir] do |_t, args|
   end
 
   Dir.chdir(gem_dir) do
-    gems_by_version.each_key do |base_version|
+    gems_by_version.each do |base_version, version_gem_files|
       gcs_version_path = "#{gcs_base}/v#{base_version}"
 
       # Check only for existence of gems
-      gems_exist = system("gsutil ls #{gcs_version_path}/*.gem > /dev/null 2>&1")
+      _stdout, _stderr, status = Open3.capture3("gsutil ls #{gcs_version_path}/*.gem")
 
-      if gems_exist && !force_upload
+      if status.success? && !force_upload
         puts "Skipping v#{base_version}.Gems already exist in #{gcs_version_path}. Use 'FORCE=true' to overwrite"
         next
       end
@@ -301,11 +303,17 @@ task 'publish:native_debug', [:gem_dir] do |_t, args|
 
       begin
         # Generate checksums only for the gems belonging to this version
-        
-        fail 'Checksum generation failed' unless system("sha256sum *#{base_version}*.gem > checksums.txt")
+        File.open('checksums.txt', 'w') do |f|
+          version_gem_files.each do |gem_path|
+            gem_name = File.basename(gem_path)
+            checksum = Digest::SHA256.file(gem_name).hexdigest
+            f.puts "#{checksum}  #{gem_name}"
+          end
+        end
+        files_to_upload = version_gem_files.map { |f| File.basename(f) } + ['checksums.txt']
 
         # Upload all gems and the checksums file
-        upload_cmd = "gsutil -m cp *#{base_version}*.gem checksums.txt #{gcs_version_path}/"
+        upload_cmd = "gsutil -m cp #{files_to_upload.join(' ')} #{gcs_version_path}/"
         fail 'Upload failed' unless system(upload_cmd)
       ensure
         FileUtils.rm_f('checksums.txt')
