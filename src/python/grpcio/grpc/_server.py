@@ -588,7 +588,7 @@ def _unary_request(
 def _call_behavior(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
-    behavior: Optional[ArityAgnosticMethodHandler[Any, Any]],
+    behavior: ArityAgnosticMethodHandler[Any, Any],
     argument: Any,
     request_deserializer: Optional[DeserializingFunction],
     send_response_callback: Optional[Callable[[ResponseType], None]] = None,
@@ -774,7 +774,7 @@ def _status(
 def _unary_response_in_pool(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
-    behavior: Optional[ArityAgnosticMethodHandler[Any, Any]],
+    behavior: ArityAgnosticMethodHandler[Any, Any],
     argument_thunk: Callable[[], Any],
     request_deserializer: Optional[SerializingFunction],
     response_serializer: Optional[SerializingFunction],
@@ -802,7 +802,7 @@ def _unary_response_in_pool(
 def _stream_response_in_pool(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
-    behavior: Optional[ArityAgnosticMethodHandler[Any, Any]],
+    behavior: ArityAgnosticMethodHandler[Any, Any],
     argument_thunk: Callable[[], Any],
     request_deserializer: Optional[DeserializingFunction],
     response_serializer: Optional[SerializingFunction],
@@ -868,7 +868,7 @@ def _send_message_callback_to_blocking_iterator_adapter(
 
 
 def _select_thread_pool_for_behavior(
-    behavior: Optional[ArityAgnosticMethodHandler[Any, Any]],
+    behavior: ArityAgnosticMethodHandler[Any, Any],
     default_thread_pool: futures.ThreadPoolExecutor,
 ) -> futures.ThreadPoolExecutor:
     pool = getattr(behavior, "experimental_thread_pool", None)
@@ -883,6 +883,8 @@ def _handle_unary_unary(
     method_handler: grpc.RpcMethodHandler,
     default_thread_pool: futures.ThreadPoolExecutor,
 ) -> futures.Future[Any]:
+    if method_handler.unary_unary is None:
+        raise ValueError("Method handler is unexpectedly None")
     unary_request = _unary_request(
         rpc_event, state, method_handler.request_deserializer
     )
@@ -907,6 +909,8 @@ def _handle_unary_stream(
     method_handler: grpc.RpcMethodHandler,
     default_thread_pool: futures.ThreadPoolExecutor,
 ) -> futures.Future[Any]:
+    if method_handler.unary_stream is None:
+        raise ValueError("Method handler is unexpectedly None")
     unary_request = _unary_request(
         rpc_event, state, method_handler.request_deserializer
     )
@@ -931,6 +935,8 @@ def _handle_stream_unary(
     method_handler: grpc.RpcMethodHandler,
     default_thread_pool: futures.ThreadPoolExecutor,
 ) -> futures.Future[Any]:
+    if method_handler.stream_unary is None:
+        raise ValueError("Method handler is unexpectedly None")
     request_iterator = _RequestIterator(
         state, rpc_event.call, method_handler.request_deserializer
     )
@@ -955,6 +961,8 @@ def _handle_stream_stream(
     method_handler: grpc.RpcMethodHandler,
     default_thread_pool: futures.ThreadPoolExecutor,
 ) -> futures.Future[Any]:
+    if method_handler.stream_stream is None:
+        raise ValueError("Method handler is unexpectedly None")
     request_iterator = _RequestIterator(
         state, rpc_event.call, method_handler.request_deserializer
     )
