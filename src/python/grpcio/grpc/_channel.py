@@ -247,7 +247,9 @@ def _event_handler(
                 # NOTE(rbellevi): We suppress but log errors here so as not to
                 # kill the channel spin thread.
                 _LOGGER.error(
-                    "Exception in callback %s: %s", repr(getattr(callback, "func", callback)), repr(e)
+                    "Exception in callback %s: %s",
+                    repr(getattr(callback, "func", callback)),
+                    repr(e),
                 )
         return done and state.fork_epoch >= cygrpc.get_fork_epoch()
 
@@ -410,10 +412,18 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
         return self._state.code
 
     def details(self) -> Optional[str]:
-        return _common.decode(self._state.details) if self._state.details is not None else None
+        return (
+            _common.decode(self._state.details)
+            if self._state.details is not None
+            else None
+        )
 
     def debug_error_string(self) -> Optional[str]:
-        return _common.decode(self._state.debug_error_string) if self._state.debug_error_string is not None else None
+        return (
+            _common.decode(self._state.debug_error_string)
+            if self._state.debug_error_string is not None
+            else None
+        )
 
     def _repr(self) -> str:
         return _rpc_state_string(self.__class__.__name__, self._state)
@@ -851,7 +861,11 @@ class _MultiThreadedRendezvous(
                 return self._state.details is not None
 
             _common.wait(self._state.condition.wait, _done)
-            return _common.decode(self._state.details) if self._state.details is not None else None
+            return (
+                _common.decode(self._state.details)
+                if self._state.details is not None
+                else None
+            )
 
     def debug_error_string(self) -> Optional[str]:
         with self._state.condition:
@@ -860,7 +874,11 @@ class _MultiThreadedRendezvous(
                 return self._state.debug_error_string is not None
 
             _common.wait(self._state.condition.wait, _done)
-            return _common.decode(self._state.debug_error_string) if self._state.debug_error_string is not None else None
+            return (
+                _common.decode(self._state.debug_error_string)
+                if self._state.debug_error_string is not None
+                else None
+            )
 
     def cancelled(self) -> bool:
         with self._state.condition:
@@ -1923,7 +1941,8 @@ def _poll_connectivity(
             ]
         )
         callbacks = tuple(
-            subscription.callback for subscription in state.callbacks_and_connectivities
+            subscription.callback
+            for subscription in state.callbacks_and_connectivities
         )
         for subscription in state.callbacks_and_connectivities:
             subscription.connectivity = state.connectivity
@@ -1982,7 +2001,9 @@ def _subscribe(
     with state.lock:
         if not state.callbacks_and_connectivities and not state.polling:
             _spawn_poll_connectivity(state, try_to_connect)
-            state.callbacks_and_connectivities.append(_Subscription(callback, None))
+            state.callbacks_and_connectivities.append(
+                _Subscription(callback, None)
+            )
         elif not state.delivering and state.connectivity is not None:
             _spawn_delivery(state, (callback,))
             state.try_to_connect |= bool(try_to_connect)
@@ -1991,7 +2012,9 @@ def _subscribe(
             )
         else:
             state.try_to_connect |= bool(try_to_connect)
-            state.callbacks_and_connectivities.append(_Subscription(callback, None))
+            state.callbacks_and_connectivities.append(
+                _Subscription(callback, None)
+            )
 
 
 def _unsubscribe(
