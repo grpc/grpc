@@ -169,7 +169,14 @@ class ClientCall final
     kStarted = 1,
     kCancelled = 2,
   };
+  enum ScheduledOp {
+    kScheduledSendInitialMetadata = 1 << 0,
+    kScheduledSendClose = 1 << 1,
+    kScheduledRecvInitialMetadata = 1 << 2,
+    kScheduledRecvStatus = 1 << 3,
+  };
   std::atomic<uintptr_t> call_state_{kUnstarted};
+  std::atomic<uint32_t> scheduled_ops_{0};
   ClientMetadataHandle send_initial_metadata_{
       Arena::MakePooledForOverwrite<ClientMetadata>()};
   CallInitiator started_call_initiator_;
