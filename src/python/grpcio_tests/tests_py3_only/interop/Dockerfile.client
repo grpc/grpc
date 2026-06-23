@@ -1,6 +1,9 @@
 FROM python:3.10-slim-bookworm
 
-RUN apt-get update -y && apt-get upgrade -y && apt-get install -y build-essential clang curl
+RUN apt-get update -y && apt-get upgrade -y
+ADD --chmod=0755 tools/internal_ci/helper_scripts/apt_get_install_with_retry.sh /usr/local/bin/apt-get-install-with-retry
+
+RUN apt-get-install-with-retry build-essential clang curl
 
 WORKDIR /workdir
 
@@ -22,7 +25,7 @@ RUN tools/bazel build \
   //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client
 RUN cp -rL /workdir/bazel-bin/src/python/grpcio_tests/tests_py3_only/interop/xds_interop_client* /artifacts/
 
-ENV TINI_VERSION v0.19.0
+ENV TINI_VERSION=v0.19.0
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
 RUN chmod +x /tini
 
@@ -31,8 +34,9 @@ FROM python:3.10-slim-bookworm
 ENV GRPC_VERBOSITY="DEBUG"
 ENV GRPC_TRACE="xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,xds_cluster_resolver_lb,priority_lb,xds_cluster_impl_lb,weighted_target_lb,ring_hash_lb,outlier_detection_lb"
 
+ADD --chmod=0755 tools/internal_ci/helper_scripts/apt_get_install_with_retry.sh /usr/local/bin/apt-get-install-with-retry
 RUN apt-get update -y \
-  && apt-get install -y python3 \
+  && apt-get-install-with-retry python3 \
   && apt-get -y autoremove \
   && rm -rf /var/lib/apt/lists/*
 
