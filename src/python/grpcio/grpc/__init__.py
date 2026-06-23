@@ -307,6 +307,7 @@ class Status(abc.ABC):
         termination of the RPC.
       trailing_metadata: The trailing :term:`metadata` in the RPC.
     """
+
     @property
     @abc.abstractmethod
     def code(self) -> StatusCode:
