@@ -128,7 +128,7 @@ class _RPCState:
     details: Optional[str]
     debug_error_string: Optional[str]
     cancelled: bool
-    callbacks: Optional[List[NullaryCallbackType]]
+    callbacks: List[NullaryCallbackType]
     fork_epoch: Optional[int]
     rpc_start_time: Optional[float]  # In relative seconds
     rpc_end_time: Optional[float]  # In relative seconds
@@ -228,7 +228,7 @@ def _handle_event(
             state.rpc_end_time = time.perf_counter()
             _observability.maybe_record_rpc_latency(state)
             callbacks.extend(state.callbacks)
-            state.callbacks = None
+            state.callbacks = []
     return callbacks
 
 
@@ -1867,7 +1867,12 @@ def _deliver(
     while True:
         for callback in callbacks:
             try:
-                callback(connectivity)
+                if connectivity is not None:
+                    callback(connectivity)
+                else:
+                    _LOGGER.warning(
+                        "Received a None connectivity state, skipping callback"
+                    )
             except Exception:  # pylint: disable=broad-except
                 _LOGGER.exception(
                     _CHANNEL_SUBSCRIPTION_CALLBACK_ERROR_LOG_MESSAGE
