@@ -27,13 +27,13 @@ from typing import (
     Generic,
     List,
     MutableSequence,
-    NamedTuple,
     Optional,
     Protocol,
     Sequence,
     TypeAlias,
     Union,
 )
+import collections
 
 import grpc
 from grpc._cython import cygrpc
@@ -106,16 +106,11 @@ class ServerInterceptor(metaclass=ABCMeta):
         """
 
 
-class _ClientCallDetailsTuple(NamedTuple):
-    method: bytes
-    timeout: Optional[float]
-    metadata: Optional[Metadata]
-    credentials: Optional[grpc.CallCredentials]
-    wait_for_ready: Optional[bool]
-
-
 class ClientCallDetails(
-    _ClientCallDetailsTuple,
+    collections.namedtuple(
+        "ClientCallDetails",
+        ("method", "timeout", "metadata", "credentials", "wait_for_ready"),
+    ),
     grpc.ClientCallDetails,
 ):
     """Describes an RPC to be invoked.
