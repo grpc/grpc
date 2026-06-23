@@ -58,6 +58,8 @@ from typing_extensions import override
 
 _LOGGER = logging.getLogger(__name__)
 
+_UNEXPECTED_NONE_METHOD_HANDLER_MSG = "Method handler is unexpectedly None"
+
 _SHUTDOWN_TAG = "shutdown"
 _REQUEST_CALL_TAG = "request_call"
 
@@ -182,7 +184,7 @@ class _GenericMethod(_Method):
 class _RPCState:
     context: contextvars.Context
     condition: threading.Condition
-    due = Set[str]
+    due: Set[str]
     request: Any
     client: str
     initial_metadata_allowed: bool
@@ -468,14 +470,14 @@ class _Context(grpc.ServicerContext):
         with self._state.condition:
             self._state.code = code
 
-    def code(self) -> grpc.StatusCode:
+    def code(self) -> Optional[grpc.StatusCode]:
         return self._state.code
 
     def set_details(self, details: str) -> None:
         with self._state.condition:
             self._state.details = _common.encode(details)
 
-    def details(self) -> bytes:
+    def details(self) -> Optional[bytes]:
         return self._state.details
 
     def _finalize_state(self) -> None:
@@ -588,11 +590,11 @@ def _unary_request(
 def _call_behavior(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
-    behavior: ArityAgnosticMethodHandler,
+    behavior: ArityAgnosticMethodHandler[Any, Any],
     argument: Any,
     request_deserializer: Optional[DeserializingFunction],
     send_response_callback: Optional[Callable[[ResponseType], None]] = None,
-) -> Tuple[Union[ResponseType, Iterator[ResponseType]], bool]:
+) -> Tuple[Union[ResponseType, Iterator[ResponseType], None], bool]:
     from grpc import _create_servicer_context
 
     with _create_servicer_context(
@@ -600,12 +602,11 @@ def _call_behavior(
     ) as context:
         try:
             response_or_iterator = None
-            if send_response_callback is not None:
-                response_or_iterator = behavior(
-                    argument, context, send_response_callback
-                )
-            else:
-                response_or_iterator = behavior(argument, context)
+            if behavior is not None:
+                args = [argument, context]
+                if send_response_callback is not None:
+                    args.append(send_response_callback)
+                response_or_iterator = behavior(*args)
             return response_or_iterator, True
         except Exception as exception:  # pylint: disable=broad-except
             with state.condition:
@@ -647,7 +648,7 @@ def _take_response_from_response_iterator(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
     response_iterator: Iterator[ResponseType],
-) -> Tuple[ResponseType, bool]:
+) -> Tuple[Optional[ResponseType], bool]:
     try:
         return next(response_iterator), True
     except StopIteration:
@@ -775,7 +776,7 @@ def _status(
 def _unary_response_in_pool(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
-    behavior: ArityAgnosticMethodHandler,
+    behavior: ArityAgnosticMethodHandler[Any, Any],
     argument_thunk: Callable[[], Any],
     request_deserializer: Optional[SerializingFunction],
     response_serializer: Optional[SerializingFunction],
@@ -803,7 +804,7 @@ def _unary_response_in_pool(
 def _stream_response_in_pool(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
-    behavior: ArityAgnosticMethodHandler,
+    behavior: ArityAgnosticMethodHandler[Any, Any],
     argument_thunk: Callable[[], Any],
     request_deserializer: Optional[DeserializingFunction],
     response_serializer: Optional[SerializingFunction],
@@ -823,10 +824,7 @@ def _stream_response_in_pool(
     try:
         argument = argument_thunk()
         if argument is not None:
-            if (
-                hasattr(behavior, "experimental_non_blocking")
-                and behavior.experimental_non_blocking
-            ):
+            if getattr(behavior, "experimental_non_blocking", False):
                 _call_behavior(
                     rpc_event,
                     state,
@@ -839,7 +837,7 @@ def _stream_response_in_pool(
                 response_iterator, proceed = _call_behavior(
                     rpc_event, state, behavior, argument, request_deserializer
                 )
-                if proceed:
+                if proceed and response_iterator is not None:
                     _send_message_callback_to_blocking_iterator_adapter(
                         rpc_event, state, send_response, response_iterator
                     )
@@ -856,7 +854,7 @@ def _is_rpc_state_active(state: _RPCState) -> bool:
 def _send_message_callback_to_blocking_iterator_adapter(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
-    send_response_callback: Callable[[ResponseType], None],
+    send_response_callback: Callable[[Optional[ResponseType]], None],
     response_iterator: Iterator[ResponseType],
 ) -> None:
     while True:
@@ -872,13 +870,12 @@ def _send_message_callback_to_blocking_iterator_adapter(
 
 
 def _select_thread_pool_for_behavior(
-    behavior: ArityAgnosticMethodHandler,
+    behavior: ArityAgnosticMethodHandler[Any, Any],
     default_thread_pool: futures.ThreadPoolExecutor,
 ) -> futures.ThreadPoolExecutor:
-    if hasattr(behavior, "experimental_thread_pool") and isinstance(
-        behavior.experimental_thread_pool, futures.ThreadPoolExecutor
-    ):
-        return behavior.experimental_thread_pool
+    pool = getattr(behavior, "experimental_thread_pool", None)
+    if isinstance(pool, futures.ThreadPoolExecutor):
+        return pool
     return default_thread_pool
 
 
@@ -887,7 +884,9 @@ def _handle_unary_unary(
     state: _RPCState,
     method_handler: grpc.RpcMethodHandler,
     default_thread_pool: futures.ThreadPoolExecutor,
-) -> futures.Future:
+) -> futures.Future[Any]:
+    if method_handler.unary_unary is None:
+        raise ValueError(_UNEXPECTED_NONE_METHOD_HANDLER_MSG)
     unary_request = _unary_request(
         rpc_event, state, method_handler.request_deserializer
     )
@@ -911,7 +910,9 @@ def _handle_unary_stream(
     state: _RPCState,
     method_handler: grpc.RpcMethodHandler,
     default_thread_pool: futures.ThreadPoolExecutor,
-) -> futures.Future:
+) -> futures.Future[Any]:
+    if method_handler.unary_stream is None:
+        raise ValueError(_UNEXPECTED_NONE_METHOD_HANDLER_MSG)
     unary_request = _unary_request(
         rpc_event, state, method_handler.request_deserializer
     )
@@ -935,7 +936,9 @@ def _handle_stream_unary(
     state: _RPCState,
     method_handler: grpc.RpcMethodHandler,
     default_thread_pool: futures.ThreadPoolExecutor,
-) -> futures.Future:
+) -> futures.Future[Any]:
+    if method_handler.stream_unary is None:
+        raise ValueError(_UNEXPECTED_NONE_METHOD_HANDLER_MSG)
     request_iterator = _RequestIterator(
         state, rpc_event.call, method_handler.request_deserializer
     )
@@ -959,7 +962,9 @@ def _handle_stream_stream(
     state: _RPCState,
     method_handler: grpc.RpcMethodHandler,
     default_thread_pool: futures.ThreadPoolExecutor,
-) -> futures.Future:
+) -> futures.Future[Any]:
+    if method_handler.stream_stream is None:
+        raise ValueError(_UNEXPECTED_NONE_METHOD_HANDLER_MSG)
     request_iterator = _RequestIterator(
         state, rpc_event.call, method_handler.request_deserializer
     )
@@ -1032,7 +1037,7 @@ def _handle_with_method_handler(
     state: _RPCState,
     method_handler: grpc.RpcMethodHandler,
     thread_pool: futures.ThreadPoolExecutor,
-) -> futures.Future:
+) -> futures.Future[Any]:
     with state.condition:
         rpc_event.call.start_server_batch(
             (cygrpc.ReceiveCloseOnServerOperation(_EMPTY_FLAGS),),
@@ -1062,7 +1067,7 @@ def _handle_call(
     interceptor_pipeline: Optional[_interceptor._ServicePipeline],
     thread_pool: futures.ThreadPoolExecutor,
     concurrency_exceeded: bool,
-) -> Tuple[Optional[_RPCState], Optional[futures.Future]]:
+) -> Tuple[Optional[_RPCState], Optional[futures.Future[Any]]]:
     """Handles RPC based on provided handlers.
 
       When receiving a call event from Core, registered method will have its
