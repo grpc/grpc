@@ -17,6 +17,7 @@ from __future__ import annotations
 from abc import ABCMeta
 from abc import abstractmethod
 import asyncio
+import collections
 import functools
 from typing import (
     Any,
@@ -33,7 +34,6 @@ from typing import (
     TypeAlias,
     Union,
 )
-import collections
 
 import grpc
 from grpc._cython import cygrpc
@@ -125,7 +125,7 @@ class ClientCallDetails(
         credentials: An optional CallCredentials for the RPC.
         wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
     """
-    pass
+
 
 
 class ClientInterceptor(metaclass=ABCMeta):
