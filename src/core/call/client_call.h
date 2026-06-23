@@ -186,6 +186,10 @@ class ClientCall final
   ServerMetadataHandle received_trailing_metadata_;
   bool is_trailers_only_;
   std::atomic<bool> saw_trailing_metadata_{false};
+  std::atomic<bool> sent_initial_metadata_{false};
+  std::atomic<bool> sent_final_op_{false};
+  std::atomic<bool> received_initial_metadata_batch_{false};
+  std::atomic<bool> requested_final_op_{false};
 };
 
 grpc_call* MakeClientCall(grpc_call* parent_call, uint32_t propagation_mask,
