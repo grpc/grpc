@@ -56,7 +56,7 @@ _USER_AGENT = "grpc-python-asyncio/{}".format(_grpcio_metadata.__version__)
 
 def _augment_channel_arguments(
     base_options: ChannelArgumentType, compression: Optional[grpc.Compression]
-):
+) -> ChannelArgumentType:
     compression_channel_argument = _compression.create_channel_option(
         compression
     )
@@ -351,7 +351,7 @@ class Channel(_base_channel.Channel):
         credentials: Optional[cygrpc.ChannelCredentials],
         compression: Optional[grpc.Compression],
         interceptors: Optional[Sequence[ClientInterceptor]],
-    ):
+    ) -> None:
         """Constructor.
 
         Args:
@@ -407,7 +407,7 @@ class Channel(_base_channel.Channel):
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self._close(None)
 
-    async def _close(self, grace):  # pylint: disable=too-many-branches
+    async def _close(self, grace: Optional[float]) -> None:  # pylint: disable=too-many-branches
         if self._channel.closed():
             return
 
@@ -418,7 +418,7 @@ class Channel(_base_channel.Channel):
         # No new calls will be accepted by the Cython channel.
         self._channel.closing()
 
-        async def _wait_for_call_to_complete(call):
+        async def _wait_for_call_to_complete(call: _base_call.Call) -> None:
             try:
                 await call.code()
             except Exception:  # pylint: disable=broad-except
@@ -448,10 +448,10 @@ class Channel(_base_channel.Channel):
         # Destroy the channel
         self._channel.close()
 
-    async def close(self, grace: Optional[float] = None):
+    async def close(self, grace: Optional[float] = None) -> None:
         await self._close(grace)
 
-    def __del__(self):
+    def __del__(self) -> None:
         if hasattr(self, "_channel") and not self._channel.closed():
             self._channel.close()
 
@@ -582,7 +582,7 @@ def insecure_channel(
     options: Optional[ChannelArgumentType] = None,
     compression: Optional[grpc.Compression] = None,
     interceptors: Optional[Sequence[ClientInterceptor]] = None,
-):
+) -> Channel:
     """Creates an insecure asynchronous Channel to a server.
 
     Args:
@@ -612,7 +612,7 @@ def secure_channel(
     options: Optional[ChannelArgumentType] = None,
     compression: Optional[grpc.Compression] = None,
     interceptors: Optional[Sequence[ClientInterceptor]] = None,
-):
+) -> Channel:
     """Creates a secure asynchronous Channel to a server.
 
     Args:
