@@ -112,6 +112,60 @@ grpc_call_error ServerCall::StartBatch(const grpc_op* ops, size_t nops,
   if (validation_result != GRPC_CALL_OK) {
     return validation_result;
   }
+  bool has_send_status = false;
+  bool has_send_message = false;
+  for (size_t i = 0; i < nops; i++) {
+    if (ops[i].op == GRPC_OP_SEND_STATUS_FROM_SERVER) has_send_status = true;
+    if (ops[i].op == GRPC_OP_SEND_MESSAGE) has_send_message = true;
+  }
+  for (size_t op_idx = 0; op_idx < nops; op_idx++) {
+    const grpc_op& op = ops[op_idx];
+    switch (op.op) {
+      case GRPC_OP_SEND_INITIAL_METADATA: {
+        bool trailers_only = has_send_status && !has_send_message &&
+                             op.data.send_initial_metadata.count == 0;
+        if (!trailers_only && sent_server_initial_metadata_batch_.load(
+                                  std::memory_order_relaxed)) {
+          return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+        }
+        break;
+      }
+      case GRPC_OP_SEND_STATUS_FROM_SERVER:
+        if (sent_status_from_server_) {
+          return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+        }
+        break;
+      case GRPC_OP_RECV_CLOSE_ON_SERVER:
+        if (recv_close_on_server_) {
+          return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+        }
+        break;
+      default:
+        break;
+    }
+  }
+  for (size_t op_idx = 0; op_idx < nops; op_idx++) {
+    const grpc_op& op = ops[op_idx];
+    switch (op.op) {
+      case GRPC_OP_SEND_INITIAL_METADATA: {
+        bool trailers_only = has_send_status && !has_send_message &&
+                             op.data.send_initial_metadata.count == 0;
+        if (!trailers_only) {
+          sent_server_initial_metadata_batch_.store(true,
+                                                    std::memory_order_relaxed);
+        }
+        break;
+      }
+      case GRPC_OP_SEND_STATUS_FROM_SERVER:
+        sent_status_from_server_ = true;
+        break;
+      case GRPC_OP_RECV_CLOSE_ON_SERVER:
+        recv_close_on_server_ = true;
+        break;
+      default:
+        break;
+    }
+  }
   CommitBatch(ops, nops, notify_tag, is_notify_tag_closure);
   return GRPC_CALL_OK;
 }
