@@ -182,7 +182,7 @@ class _GenericMethod(_Method):
 class _RPCState:
     context: contextvars.Context
     condition: threading.Condition
-    due = Set[str]
+    due: Set[str]
     request: Any
     client: str
     initial_metadata_allowed: bool
@@ -468,14 +468,14 @@ class _Context(grpc.ServicerContext):
         with self._state.condition:
             self._state.code = code
 
-    def code(self) -> grpc.StatusCode:
+    def code(self) -> Optional[grpc.StatusCode]:
         return self._state.code
 
     def set_details(self, details: str) -> None:
         with self._state.condition:
             self._state.details = _common.encode(details)
 
-    def details(self) -> bytes:
+    def details(self) -> Optional[bytes]:
         return self._state.details
 
     def _finalize_state(self) -> None:
@@ -592,7 +592,7 @@ def _call_behavior(
     argument: Any,
     request_deserializer: Optional[DeserializingFunction],
     send_response_callback: Optional[Callable[[ResponseType], None]] = None,
-) -> Tuple[Union[ResponseType, Iterator[ResponseType]], bool]:
+) -> Tuple[Union[ResponseType, Iterator[ResponseType], None], bool]:
     from grpc import _create_servicer_context
 
     with _create_servicer_context(
@@ -600,12 +600,11 @@ def _call_behavior(
     ) as context:
         try:
             response_or_iterator = None
-            if send_response_callback is not None:
-                response_or_iterator = behavior(
-                    argument, context, send_response_callback
-                )
-            else:
-                response_or_iterator = behavior(argument, context)
+            if behavior is not None:
+                args = [argument, context]
+                if send_response_callback is not None:
+                    args.append(send_response_callback)
+                response_or_iterator = behavior(*args)
             return response_or_iterator, True
         except Exception as exception:  # pylint: disable=broad-except
             with state.condition:
