@@ -561,7 +561,7 @@ class RubyLanguage:
         return "ruby"
 
 
-_PYTHON_BINARY = "py310/bin/python"
+_PYTHON_BINARY = "py39/bin/python"
 
 
 class PythonLanguage:
@@ -1068,6 +1068,11 @@ def cloud_to_cloud_jobspec(
     if test_case in _ORCA_TEST_CASES:
         interop_only_options += [
             '--service_config_json=\'{"loadBalancingConfig":[{"test_backend_metrics_load_balancer":{}}]}\''
+        ]
+
+    if test_case == "max_concurrent_streams_connection_scaling":
+        interop_only_options += [
+            '--service_config_json=\'{"connectionScaling":{"maxConnectionsPerSubchannel": 2}}\''
         ]
 
     common_options = [
