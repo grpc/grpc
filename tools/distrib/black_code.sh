@@ -22,6 +22,7 @@ ACTION="${1:-}"
 cd "$(dirname "${0}")/../.."
 
 DIRS=(
+    'bazel/update_mirror_helper.py'
     'examples'
     'src'
     'test'
