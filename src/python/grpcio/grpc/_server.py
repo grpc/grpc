@@ -58,6 +58,8 @@ from typing_extensions import override
 
 _LOGGER = logging.getLogger(__name__)
 
+_UNEXPECTED_NONE_METHOD_HANDLER_MSG = "Method handler is unexpectedly None"
+
 _SHUTDOWN_TAG = "shutdown"
 _REQUEST_CALL_TAG = "request_call"
 
@@ -884,7 +886,7 @@ def _handle_unary_unary(
     default_thread_pool: futures.ThreadPoolExecutor,
 ) -> futures.Future[Any]:
     if method_handler.unary_unary is None:
-        raise ValueError("Method handler is unexpectedly None")
+        raise ValueError(_UNEXPECTED_NONE_METHOD_HANDLER_MSG)
     unary_request = _unary_request(
         rpc_event, state, method_handler.request_deserializer
     )
@@ -910,7 +912,7 @@ def _handle_unary_stream(
     default_thread_pool: futures.ThreadPoolExecutor,
 ) -> futures.Future[Any]:
     if method_handler.unary_stream is None:
-        raise ValueError("Method handler is unexpectedly None")
+        raise ValueError(_UNEXPECTED_NONE_METHOD_HANDLER_MSG)
     unary_request = _unary_request(
         rpc_event, state, method_handler.request_deserializer
     )
@@ -936,7 +938,7 @@ def _handle_stream_unary(
     default_thread_pool: futures.ThreadPoolExecutor,
 ) -> futures.Future[Any]:
     if method_handler.stream_unary is None:
-        raise ValueError("Method handler is unexpectedly None")
+        raise ValueError(_UNEXPECTED_NONE_METHOD_HANDLER_MSG)
     request_iterator = _RequestIterator(
         state, rpc_event.call, method_handler.request_deserializer
     )
@@ -962,7 +964,7 @@ def _handle_stream_stream(
     default_thread_pool: futures.ThreadPoolExecutor,
 ) -> futures.Future[Any]:
     if method_handler.stream_stream is None:
-        raise ValueError("Method handler is unexpectedly None")
+        raise ValueError(_UNEXPECTED_NONE_METHOD_HANDLER_MSG)
     request_iterator = _RequestIterator(
         state, rpc_event.call, method_handler.request_deserializer
     )
