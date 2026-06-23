@@ -237,9 +237,9 @@ TEST(BufferListTest, TestLongPendingAckForSomeTracedBuffers) {
           ASSERT_EQ(ts->acked_time.time.tv_sec, 123);
           ASSERT_EQ(ts->acked_time.time.tv_nsec, 456);
           ASSERT_GT(ts->info.length, 0);
-          *(reinterpret_cast<int*>(arg)) = 1;
+          gpr_atm_rel_store(reinterpret_cast<gpr_atm*>(arg), static_cast<gpr_atm>(1));
         } else if (error == absl::DeadlineExceededError("Ack timed out")) {
-          *(reinterpret_cast<int*>(arg)) = 2;
+          gpr_atm_rel_store(reinterpret_cast<gpr_atm*>(arg), static_cast<gpr_atm>(2));
         } else {
           ASSERT_TRUE(false);
         }
