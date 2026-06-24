@@ -705,12 +705,30 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
         << "ExtProcCall " << this << " status received: " << status;
     bool is_first_body_message_sent = false;
     bool is_first_message_on_stream = false;
+    bool should_unref = false;
+    bool already_closed = false;
     {
       MutexLock lock(&mu_);
+      already_closed = stream_closed_.load(std::memory_order_acquire);
       stream_closed_.store(true, std::memory_order_release);
       is_first_body_message_sent = first_body_message_sent_;
       is_first_message_on_stream = is_first_message_on_ext_proc_stream_;
+      // We manually acquired a strong reference ("active_stream") in the
+      // constructor to keep the ExtProcCall alive during the fire-and-forget
+      // phase of observability mode.
+      // Because both the ConnectivityWatcher (detecting channel failure) and
+      // the StreamEventHandler (detecting stream failure) can trigger this
+      // callback concurrently or in any order, we must guarantee that we
+      // release this manual reference exactly once. Double-unreffing would
+      // drop the ref count to 0 prematurely, causing a crash when active
+      // promises subsequently try to copy their RefCountedPtr.
+      if (!unreffed_active_stream_) {
+        unreffed_active_stream_ = true;
+        should_unref = true;
+      }
     }
+    // ALWAYS complete latches on status received to avoid hangs,
+    // even if CloseStream() was already called (e.g. due to immediate response).
     if (!status.ok() && !is_first_message_on_stream &&
         (!failure_mode_allow_ || is_first_body_message_sent)) {
       {
@@ -721,9 +739,13 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
     } else {
       CompleteAllLatchesAndPipes(ExtProcResponse{});
     }
-    CloseStream();
-    // Release the active stream ref!
-    Unref(DEBUG_LOCATION, "active_stream");
+    if (!already_closed) {
+      CloseStream();
+    }
+    if (should_unref) {
+      // Release the active stream ref!
+      Unref(DEBUG_LOCATION, "active_stream");
+    }
   }
 
   void Orphaned() override { CloseStream(); }
@@ -755,6 +777,7 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
   RefCountedPtr<ConnectivityWatcher> connectivity_watcher_
       ABSL_GUARDED_BY(&mu_);
   absl::Status stream_status_ ABSL_GUARDED_BY(&mu_);
+  bool unreffed_active_stream_ ABSL_GUARDED_BY(&mu_) = false;
 };
 
 namespace {
