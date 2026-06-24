@@ -1558,6 +1558,8 @@ std::optional<std::map<std::string, std::string>> GetDeltaLabels(
   return std::nullopt;
 }
 
+// This function asserts that the labels input are incremented exactly once from
+// sink_before to sink_after
 void SslTransportSecurityTest::ExpectHandshakeWithLabels(
     const TestMetricsSink& sink_before, const TestMetricsSink& sink_after,
     std::optional<std::map<std::string, std::string>> expected_client_labels,
@@ -1639,14 +1641,16 @@ TEST_P(SslTransportSecurityTest, TestBadServerCertMetricsIncremented) {
       .OnlyMetrics({"grpc.client.tls.handshakes", "grpc.server.tls.handshakes"})
       .Run(root_scope, sink_after);
 
+  // In an end2end flow, the server should see a metric recorded here. However,
+  // in the unit test flow, when the client fails due to the bad server cert,
+  // the handshaker exits immediately and the server handshaker is never called
+  // again and is simply destroyed.
   ExpectHandshakeWithLabels(
       sink_before, sink_after,
       /*expected_client_labels=*/
       std::map<std::string, std::string>{
           {"grpc.security.handshaker.status", "CERTIFICATE_AUTHORITY_INVALID"}},
-      /*expected_server_labels=*/
-      std::map<std::string, std::string>{{"grpc.security.handshaker.status",
-                                          "CERTIFICATE_AUTHORITY_INVALID"}});
+      /*expected_server_labels=*/std::nullopt);
 }
 
 TEST_P(SslTransportSecurityTest, TestBadClientCertMetricsIncremented) {
@@ -1671,11 +1675,19 @@ TEST_P(SslTransportSecurityTest, TestBadClientCertMetricsIncremented) {
       .OnlyMetrics({"grpc.client.tls.handshakes", "grpc.server.tls.handshakes"})
       .Run(root_scope, sink_after);
 
+  // When the server rejects the client cert, the client will see handshake
+  // success with TLS 1.3 but not with TLS 1.2
+  bool is_tls_13 = (std::get<0>(GetParam()) == tsi_tls_version::TSI_TLS1_3);
+  std::optional<std::map<std::string, std::string>> expected_client_labels =
+      std::nullopt;
+  if (is_tls_13) {
+    expected_client_labels = std::map<std::string, std::string>{
+        {"grpc.security.handshaker.status", "OK"},
+        {"grpc.security.handshaker.resumed", "false"}};
+  }
+
   ExpectHandshakeWithLabels(
-      sink_before, sink_after,
-      /*expected_client_labels=*/
-      std::map<std::string, std::string>{
-          {"grpc.security.handshaker.status", "CERTIFICATE_AUTHORITY_INVALID"}},
+      sink_before, sink_after, expected_client_labels,
       /*expected_server_labels=*/
       std::map<std::string, std::string>{{"grpc.security.handshaker.status",
                                           "CERTIFICATE_AUTHORITY_INVALID"}});
