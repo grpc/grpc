@@ -53,7 +53,6 @@ bazel_dep(name = "opentelemetry-cpp", version = "1.19.0", repo_name = "io_opente
 
 # --- Protobuf related packages.
 bazel_dep(name = "protobuf", version = "35.1", repo_name = "com_google_protobuf")
-
 bazel_dep(name = "protoc-gen-validate", version = "1.2.1.bcr.1", repo_name = "com_envoyproxy_protoc_gen_validate")  # Not needed directly
 bazel_dep(name = "rules_apple", version = "3.16.0", repo_name = "build_bazel_rules_apple")
 bazel_dep(name = "rules_proto", version = "7.0.2")
