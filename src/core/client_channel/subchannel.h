@@ -28,6 +28,7 @@
 
 #include "src/core/call/metadata_batch.h"
 #include "src/core/client_channel/connector.h"
+#include "src/core/client_channel/subchannel_metrics.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -447,6 +448,7 @@ class OldSubchannel final : public Subchannel {
   absl::string_view target_;
   absl::string_view backend_service_;
   absl::string_view locality_;
+  InstrumentStorageRefPtr<SubchannelMetricsDomainAttempts> attempts_storage_;
 };
 
 class NewSubchannel final : public Subchannel {
@@ -696,6 +698,7 @@ class NewSubchannel final : public Subchannel {
   absl::string_view target_;
   absl::string_view backend_service_;
   absl::string_view locality_;
+  InstrumentStorageRefPtr<SubchannelMetricsDomainAttempts> attempts_storage_;
 };
 
 void TestOnlySetSubchannelAlwaysSendCallsToTransport(bool enabled);

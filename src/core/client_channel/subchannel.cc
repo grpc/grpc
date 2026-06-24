@@ -709,6 +709,11 @@ OldSubchannel::OldSubchannel(SubchannelKey key,
       target_(args_.GetString(GRPC_ARG_DEFAULT_AUTHORITY).value_or("")),
       backend_service_(args_.GetString(GRPC_ARG_BACKEND_SERVICE).value_or("")),
       locality_(args_.GetString(GRPC_ARG_LB_LOCALITY).value_or("")) {
+  if (stats_plugin_group_ != nullptr) {
+    attempts_storage_ = SubchannelMetricsDomainAttempts::GetStorage(
+        stats_plugin_group_->GetCollectionScope(), target_, backend_service_,
+        locality_);
+  }
   // A grpc_init is added here to ensure that grpc_shutdown does not happen
   // until the subchannel is destroyed. Subchannels can persist longer than
   // channels because they maybe reused/shared among multiple channels. As a
@@ -983,12 +988,9 @@ void OldSubchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
     SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                grpc_error_to_absl_status(error));
     // Record failed connection attempt
-    if (stats_plugin_group_ != nullptr) {
-      SubchannelMetricsDomainAttempts::GetStorage(
-          stats_plugin_group_->GetCollectionScope(), target_, backend_service_,
-          locality_)
-          ->Increment(
-              SubchannelMetricsDomainAttempts::kConnectionAttemptsFailed);
+    if (attempts_storage_ != nullptr) {
+      attempts_storage_->Increment(
+          SubchannelMetricsDomainAttempts::kConnectionAttemptsFailed);
     }
     if (created_from_endpoint_) return;
     retry_timer_handle_ = event_engine_->RunAfter(
@@ -1087,12 +1089,12 @@ bool OldSubchannel::PublishTransportLocked() {
                         WeakRef(DEBUG_LOCATION, "state_watcher")
                             .TakeAsSubclass<OldSubchannel>()));
   // Record successful connection attempt
+  if (attempts_storage_ != nullptr) {
+    attempts_storage_->Increment(
+        SubchannelMetricsDomainAttempts::kConnectionAttemptsSucceeded);
+  }
   if (stats_plugin_group_ != nullptr) {
     auto scope = stats_plugin_group_->GetCollectionScope();
-    SubchannelMetricsDomainAttempts::GetStorage(scope, target_,
-                                                backend_service_, locality_)
-        ->Increment(
-            SubchannelMetricsDomainAttempts::kConnectionAttemptsSucceeded);
     SubchannelConnectionsDomainOpenConnections::GetStorage(
         scope, target_, connected_subchannel_->security_level(),
         backend_service_, locality_)
@@ -1966,6 +1968,11 @@ NewSubchannel::NewSubchannel(SubchannelKey key,
       target_(args_.GetString(GRPC_ARG_DEFAULT_AUTHORITY).value_or("")),
       backend_service_(args_.GetString(GRPC_ARG_BACKEND_SERVICE).value_or("")),
       locality_(args_.GetString(GRPC_ARG_LB_LOCALITY).value_or("")) {
+  if (stats_plugin_group_ != nullptr) {
+    attempts_storage_ = SubchannelMetricsDomainAttempts::GetStorage(
+        stats_plugin_group_->GetCollectionScope(), target_, backend_service_,
+        locality_);
+  }
   GRPC_TRACE_LOG(subchannel, INFO)
       << "subchannel " << this << " " << key_.ToString() << ": created";
   // A grpc_init is added here to ensure that grpc_shutdown does not happen
@@ -2304,12 +2311,9 @@ void NewSubchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
                 : ", backing off for " +
                       std::to_string(time_until_next_attempt.millis()) + " ms");
     // Record failed connection attempt
-    if (stats_plugin_group_ != nullptr) {
-      SubchannelMetricsDomainAttempts::GetStorage(
-          stats_plugin_group_->GetCollectionScope(), target_, backend_service_,
-          locality_)
-          ->Increment(
-              SubchannelMetricsDomainAttempts::kConnectionAttemptsFailed);
+    if (attempts_storage_ != nullptr) {
+      attempts_storage_->Increment(
+          SubchannelMetricsDomainAttempts::kConnectionAttemptsFailed);
     }
     if (!created_from_endpoint_) {
       retry_timer_handle_ = event_engine_->RunAfter(
@@ -2416,12 +2420,12 @@ bool NewSubchannel::PublishTransportLocked() {
     }
   }
   // Record successful connection attempt
+  if (attempts_storage_ != nullptr) {
+    attempts_storage_->Increment(
+        SubchannelMetricsDomainAttempts::kConnectionAttemptsSucceeded);
+  }
   if (stats_plugin_group_ != nullptr) {
     auto scope = stats_plugin_group_->GetCollectionScope();
-    SubchannelMetricsDomainAttempts::GetStorage(scope, target_,
-                                                backend_service_, locality_)
-        ->Increment(
-            SubchannelMetricsDomainAttempts::kConnectionAttemptsSucceeded);
     SubchannelConnectionsDomainOpenConnections::GetStorage(
         scope, target_, connected_subchannel->security_level(),
         backend_service_, locality_)
