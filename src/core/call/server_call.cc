@@ -14,27 +14,17 @@
 
 #include "src/core/call/server_call.h"
 
-#include <grpc/byte_buffer.h>
-#include <grpc/compression.h>
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/call.h>
-#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/atm.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
 #include <inttypes.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include <atomic>
+#include <cstdint>
 #include <memory>
-#include <string>
 #include <utility>
 
 #include "src/core/call/metadata.h"
@@ -46,12 +36,12 @@
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/surface/call_utils.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/server/server_interface.h"
 #include "src/core/util/bitset.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/latent_see.h"
-#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -111,6 +101,35 @@ grpc_call_error ServerCall::StartBatch(const grpc_op* ops, size_t nops,
   const grpc_call_error validation_result = ValidateServerBatch(ops, nops);
   if (validation_result != GRPC_CALL_OK) {
     return validation_result;
+  }
+  uint32_t ops_to_schedule = 0;
+  for (size_t i = 0; i < nops; i++) {
+    switch (ops[i].op) {
+      case GRPC_OP_SEND_INITIAL_METADATA:
+        ops_to_schedule |= kScheduledSendInitialMetadata;
+        break;
+      case GRPC_OP_SEND_STATUS_FROM_SERVER:
+        ops_to_schedule |= kScheduledSendStatus;
+        break;
+      case GRPC_OP_RECV_CLOSE_ON_SERVER:
+        ops_to_schedule |= kScheduledRecvClose;
+        break;
+      default:
+        break;
+    }
+  }
+  if (ops_to_schedule != 0) {
+    uint32_t current_scheduled = scheduled_ops_.load(std::memory_order_relaxed);
+    while (true) {
+      if ((current_scheduled & ops_to_schedule) != 0) {
+        return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+      }
+      if (scheduled_ops_.compare_exchange_weak(
+              current_scheduled, current_scheduled | ops_to_schedule,
+              std::memory_order_acq_rel, std::memory_order_acquire)) {
+        break;
+      }
+    }
   }
   CommitBatch(ops, nops, notify_tag, is_notify_tag_closure);
   return GRPC_CALL_OK;
