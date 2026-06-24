@@ -15,7 +15,9 @@
 FROM debian:11
 
 # gRPC C++ dependencies based on https://github.com/grpc/grpc/blob/master/BUILDING.md
-RUN apt-get update && apt-get install -y build-essential autoconf cmake libtool pkg-config && apt-get clean
+# Install cmake from kitware binary release to get a newer version (3.22+)
+RUN apt-get update && apt-get install -y build-essential autoconf libtool pkg-config wget && apt-get clean
+RUN wget -qO- https://github.com/Kitware/CMake/releases/download/v3.28.1/cmake-3.28.1-linux-x86_64.tar.gz | tar --strip-components=1 -xz -C /usr/local
 
 # C++ distribtests are setup in a way that requires git
 RUN apt-get update && apt-get install -y git && apt-get clean
