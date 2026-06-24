@@ -118,12 +118,19 @@ FuzzingEventEngine::FuzzingEventEngine(
   }
 
   // Whilst a fuzzing EventEngine is active we override grpc's now function.
-  g_orig_epoch =
-      grpc_core::Timestamp::ProcessEpoch().as_timespec(GPR_CLOCK_MONOTONIC);
-  g_orig_gpr_now_impl = gpr_now_impl;
-  gpr_now_impl = GlobalNowImpl;
-  GRPC_CHECK_EQ(g_fuzzing_event_engine, nullptr);
-  g_fuzzing_event_engine = this;
+  static double g_once_init = []() {
+    g_orig_epoch =
+        grpc_core::Timestamp::ProcessEpoch().as_timespec(GPR_CLOCK_MONOTONIC);
+    g_orig_gpr_now_impl = gpr_now_impl;
+    gpr_now_impl = GlobalNowImpl;
+    return 0.0;
+  }();
+  (void)g_once_init;
+  {
+    grpc_core::MutexLock lock(&*now_mu_);
+    GRPC_CHECK_EQ(g_fuzzing_event_engine, nullptr);
+    g_fuzzing_event_engine = this;
+  }
   grpc_core::TestOnlySetProcessEpoch(NowAsTimespec(GPR_CLOCK_MONOTONIC));
 
   for (const auto& delay_ns : actions.run_delay()) {
@@ -911,20 +918,18 @@ bool FuzzingEventEngine::Cancel(TaskHandle handle) {
 }
 
 gpr_timespec FuzzingEventEngine::GlobalNowImpl(gpr_clock_type clock_type) {
-  if (g_fuzzing_event_engine == nullptr) {
-    return gpr_inf_future(clock_type);
-  }
-  GRPC_CHECK_NE(g_fuzzing_event_engine, nullptr);
   grpc_core::MutexLock lock(&*now_mu_);
+  if (g_fuzzing_event_engine == nullptr) {
+    return g_orig_gpr_now_impl(clock_type);
+  }
   return g_fuzzing_event_engine->NowAsTimespec(clock_type);
 }
 
 void FuzzingEventEngine::UnsetGlobalHooks() {
+  grpc_core::MutexLock lock(&*now_mu_);
   if (g_fuzzing_event_engine != this) return;
   g_fuzzing_event_engine = nullptr;
-  gpr_now_impl = g_orig_gpr_now_impl;
   grpc_core::TestOnlySetProcessEpoch(g_orig_epoch);
-  g_orig_gpr_now_impl = nullptr;
   grpc_set_pick_port_functions(previous_pick_port_functions_);
 }
 
