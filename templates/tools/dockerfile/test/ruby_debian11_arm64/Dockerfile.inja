@@ -16,7 +16,7 @@ FROM --platform=linux/arm64/v8 arm64v8/ruby:3.2-bullseye
 
 {% include "../../apt_get_basic.include" %}
 {% include "../../run_tests_python_deps.include" %}
-{% include "../../cmake.include" %}
+{% include "../../cmake_bullseye_backports" %}
 {% include "../../ccache.include" %}
 {% include "../../run_tests_addons.include" %}
 {% include "../../xds_interop_deps.include" %}
