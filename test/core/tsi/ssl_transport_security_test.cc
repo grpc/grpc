@@ -159,6 +159,8 @@ std::string GenerateTrustBundle() {
   return trust_bundle;
 }
 
+class TestMetricsSink;
+
 class SslTransportSecurityTest
     : public ::testing::TestWithParam<std::tuple<tsi_tls_version, bool>> {
  protected:
@@ -769,6 +771,11 @@ class SslTransportSecurityTest
     tsi_test_fixture_destroy(ssl_tsi_test_fixture_);
     fixture_destroyed = true;
   }
+
+  void ExpectHandshakeWithLabels(
+      const TestMetricsSink& sink_before, const TestMetricsSink& sink_after,
+      std::optional<std::map<std::string, std::string>> expected_client_labels,
+      std::optional<std::map<std::string, std::string>> expected_server_labels);
 
   tsi_test_fixture* ssl_tsi_test_fixture_;
   std::shared_ptr<SslTsiTestFixture> ssl_fixture_;
@@ -1551,6 +1558,35 @@ std::optional<std::map<std::string, std::string>> GetDeltaLabels(
   return std::nullopt;
 }
 
+void SslTransportSecurityTest::ExpectHandshakeWithLabels(
+    const TestMetricsSink& sink_before, const TestMetricsSink& sink_after,
+    std::optional<std::map<std::string, std::string>> expected_client_labels,
+    std::optional<std::map<std::string, std::string>> expected_server_labels) {
+  if (expected_client_labels.has_value()) {
+    EXPECT_EQ(sink_after.client_handshakes, sink_before.client_handshakes + 1);
+    auto client_labels =
+        GetDeltaLabels(sink_before, sink_after, "grpc.client.tls.handshakes");
+    ASSERT_TRUE(client_labels.has_value());
+    for (const auto& kv : *expected_client_labels) {
+      EXPECT_EQ(client_labels->at(kv.first), kv.second);
+    }
+  } else {
+    EXPECT_EQ(sink_after.client_handshakes, sink_before.client_handshakes);
+  }
+
+  if (expected_server_labels.has_value()) {
+    EXPECT_EQ(sink_after.server_handshakes, sink_before.server_handshakes + 1);
+    auto server_labels =
+        GetDeltaLabels(sink_before, sink_after, "grpc.server.tls.handshakes");
+    ASSERT_TRUE(server_labels.has_value());
+    for (const auto& kv : *expected_server_labels) {
+      EXPECT_EQ(server_labels->at(kv.first), kv.second);
+    }
+  } else {
+    EXPECT_EQ(sink_after.server_handshakes, sink_before.server_handshakes);
+  }
+}
+
 TEST_P(SslTransportSecurityTest, TestHandshakeMetricsIncremented) {
   TestOnlyResetInstruments();
   auto root_scope = CreateRootCollectionScope(
@@ -1571,20 +1607,14 @@ TEST_P(SslTransportSecurityTest, TestHandshakeMetricsIncremented) {
       .OnlyMetrics({"grpc.client.tls.handshakes", "grpc.server.tls.handshakes"})
       .Run(root_scope, sink_after);
 
-  EXPECT_EQ(sink_after.client_handshakes, sink_before.client_handshakes + 1);
-  EXPECT_EQ(sink_after.server_handshakes, sink_before.server_handshakes + 1);
-
-  auto client_labels =
-      GetDeltaLabels(sink_before, sink_after, "grpc.client.tls.handshakes");
-  ASSERT_TRUE(client_labels.has_value());
-  EXPECT_EQ(client_labels->at("grpc.security.handshaker.status"), "OK");
-  EXPECT_EQ(client_labels->at("grpc.security.handshaker.resumed"), "false");
-
-  auto server_labels =
-      GetDeltaLabels(sink_before, sink_after, "grpc.server.tls.handshakes");
-  ASSERT_TRUE(server_labels.has_value());
-  EXPECT_EQ(server_labels->at("grpc.security.handshaker.status"), "OK");
-  EXPECT_EQ(server_labels->at("grpc.security.handshaker.resumed"), "false");
+  ExpectHandshakeWithLabels(
+      sink_before, sink_after,
+      /*expected_client_labels=*/std::map<std::string, std::string>{
+          {"grpc.security.handshaker.status", "OK"},
+          {"grpc.security.handshaker.resumed", "false"}},
+      /*expected_server_labels=*/std::map<std::string, std::string>{
+          {"grpc.security.handshaker.status", "OK"},
+          {"grpc.security.handshaker.resumed", "false"}});
 }
 
 TEST_P(SslTransportSecurityTest, TestFailedClientHandshakeMetricsIncremented) {
@@ -1608,13 +1638,11 @@ TEST_P(SslTransportSecurityTest, TestFailedClientHandshakeMetricsIncremented) {
       .OnlyMetrics({"grpc.client.tls.handshakes"})
       .Run(root_scope, sink_after);
 
-  EXPECT_EQ(sink_after.client_handshakes, sink_before.client_handshakes + 1);
-
-  auto client_labels =
-      GetDeltaLabels(sink_before, sink_after, "grpc.client.tls.handshakes");
-  ASSERT_TRUE(client_labels.has_value());
-  EXPECT_EQ(client_labels->at("grpc.security.handshaker.status"),
-            "CERTIFICATE_AUTHORITY_INVALID");
+  ExpectHandshakeWithLabels(
+      sink_before, sink_after,
+      /*expected_client_labels=*/std::map<std::string, std::string>{
+          {"grpc.security.handshaker.status", "CERTIFICATE_AUTHORITY_INVALID"}},
+      /*expected_server_labels=*/std::nullopt);
 }
 
 TEST_P(SslTransportSecurityTest, TestFailedServerHandshakeMetricsIncremented) {
@@ -1639,13 +1667,11 @@ TEST_P(SslTransportSecurityTest, TestFailedServerHandshakeMetricsIncremented) {
       .OnlyMetrics({"grpc.server.tls.handshakes"})
       .Run(root_scope, sink_after);
 
-  EXPECT_EQ(sink_after.server_handshakes, sink_before.server_handshakes + 1);
-
-  auto server_labels =
-      GetDeltaLabels(sink_before, sink_after, "grpc.server.tls.handshakes");
-  ASSERT_TRUE(server_labels.has_value());
-  EXPECT_EQ(server_labels->at("grpc.security.handshaker.status"),
-            "CERTIFICATE_AUTHORITY_INVALID");
+  ExpectHandshakeWithLabels(
+      sink_before, sink_after,
+      /*expected_client_labels=*/std::nullopt,
+      /*expected_server_labels=*/std::map<std::string, std::string>{
+          {"grpc.security.handshaker.status", "CERTIFICATE_AUTHORITY_INVALID"}});
 }
 
 // Configuring key exchange groups requires SSL_CTX_set1_groups_list(),
