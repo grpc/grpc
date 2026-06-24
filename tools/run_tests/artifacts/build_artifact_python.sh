@@ -302,6 +302,7 @@ then
   # TODO(ssreenithi): find pyproject.toml/nox equivalent
   ${SETARCH_CMD} "${PYTHON}" -m nox -s preprocess build_package_protos -f \
     "src/python/grpcio_reflection/noxfile.py"
+    
   ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation \
     "src/python/grpcio_reflection"
 
@@ -312,6 +313,9 @@ then
   # TODO(ssreenithi): find pyproject.toml/nox equivalent
   ${SETARCH_CMD} "${PYTHON}" -m nox -s preprocess -f \
     "src/python/grpcio_status/noxfile.py"
+
+  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation \
+    "src/python/grpcio_status"
 
   ${SETARCH_CMD} "${PYTHON}" -m build "src/python/grpcio_status"
   cp -r src/python/grpcio_status/dist/* "$ARTIFACT_DIR"
