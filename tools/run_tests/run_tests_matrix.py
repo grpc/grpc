@@ -14,8 +14,6 @@
 # limitations under the License.
 """Run test matrix."""
 
-from __future__ import print_function
-
 import argparse
 import datetime
 import multiprocessing
@@ -370,7 +368,7 @@ def _create_portability_test_jobs(
 
     # portability C and C++ on x64
     for compiler in [
-        "gcc8",
+        "gcc10",
         # TODO(b/283304471): Tests using OpenSSL's engine APIs were broken and removed
         "gcc10.2_openssl102",
         "gcc10.2_openssl111",
@@ -378,6 +376,7 @@ def _create_portability_test_jobs(
         "gcc14",
         "gcc_musl",
         "clang11",
+        "clang14",
         "clang19",
     ]:
         test_jobs += _generate_jobs(
@@ -473,7 +472,7 @@ if __name__ == "__main__":
     argp.add_argument(
         "-j",
         "--jobs",
-        default=multiprocessing.cpu_count() / _DEFAULT_INNER_JOBS,
+        default=None,
         type=int,
         help="Number of concurrent run_tests.py instances.",
     )
@@ -486,6 +485,7 @@ if __name__ == "__main__":
         help="Filter targets to run by label with AND semantics.",
     )
     argp.add_argument(
+        "-e",
         "--exclude",
         choices=_allowed_labels(),
         nargs="+",
@@ -555,6 +555,12 @@ if __name__ == "__main__":
         help="Upload test results to a specified BQ table.",
     )
     argp.add_argument(
+        "--inner_jobs_extra_args",
+        default=[],
+        action="append",
+        help="Extra args passed down to the underlying scripts by run_tests.py",
+    )
+    argp.add_argument(
         "--extra_args",
         default="",
         type=str,
@@ -562,6 +568,11 @@ if __name__ == "__main__":
         help="Extra test args passed to each sub-script.",
     )
     args = argp.parse_args()
+
+    if args.jobs is None:
+        args.jobs = int(multiprocessing.cpu_count() / args.inner_jobs)
+        if args.jobs < 1:
+            args.jobs = 1
 
     extra_args = []
     if args.build_only:
@@ -578,6 +589,9 @@ if __name__ == "__main__":
         extra_args.append("--bq_result_table")
         extra_args.append("%s" % args.bq_result_table)
         extra_args.append("--measure_cpu_costs")
+    extra_args.extend(
+        f"--script_args={inner_arg}" for inner_arg in args.inner_jobs_extra_args
+    )
     if args.extra_args:
         extra_args.extend(args.extra_args)
 

@@ -44,7 +44,7 @@ class GrpcAuthorizationEngine : public AuthorizationEngine {
   explicit GrpcAuthorizationEngine(Rbac::Action action)
       : action_(action), audit_condition_(Rbac::AuditCondition::kNone) {}
   // Builds GrpcAuthorizationEngine with allow/deny RBAC policy.
-  explicit GrpcAuthorizationEngine(Rbac policy);
+  explicit GrpcAuthorizationEngine(const Rbac& rbac);
 
   GrpcAuthorizationEngine(GrpcAuthorizationEngine&& other) noexcept;
   GrpcAuthorizationEngine& operator=(GrpcAuthorizationEngine&& other) noexcept;

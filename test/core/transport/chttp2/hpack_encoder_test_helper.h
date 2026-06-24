@@ -63,6 +63,7 @@ class HpackEncoderTestHelper {
     for (i = 0; i < output.count;) {
       first_frame = i == 0;
       grpc_slice* slice = &output.slices[i++];
+      if (GRPC_SLICE_LENGTH(*slice) == 0) continue;
 
       // Read gRPC frame header
       uint8_t* p = GRPC_SLICE_START_PTR(*slice);
@@ -175,7 +176,7 @@ class HpackEncoderTestHelper {
     parser.BeginFrame(batch, /*metadata_size_soft_limit=*/1024u * 1024u,
                       /*metadata_size_hard_limit=*/1024u * 1024u,
                       HPackParser::Boundary::EndOfStream,
-                      HPackParser::Priority::None, log_info);
+                      HPackParser::Priority::None, log_info, nullptr);
 
     grpc_slice_buffer header_trash;
     grpc_slice_buffer_init(&header_trash);
