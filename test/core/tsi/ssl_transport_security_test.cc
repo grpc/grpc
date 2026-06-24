@@ -1607,14 +1607,15 @@ TEST_P(SslTransportSecurityTest, TestHandshakeMetricsIncremented) {
       .OnlyMetrics({"grpc.client.tls.handshakes", "grpc.server.tls.handshakes"})
       .Run(root_scope, sink_after);
 
-  ExpectHandshakeWithLabels(
-      sink_before, sink_after,
-      /*expected_client_labels=*/std::map<std::string, std::string>{
-          {"grpc.security.handshaker.status", "OK"},
-          {"grpc.security.handshaker.resumed", "false"}},
-      /*expected_server_labels=*/std::map<std::string, std::string>{
-          {"grpc.security.handshaker.status", "OK"},
-          {"grpc.security.handshaker.resumed", "false"}});
+  ExpectHandshakeWithLabels(sink_before, sink_after,
+                            /*expected_client_labels=*/
+                            std::map<std::string, std::string>{
+                                {"grpc.security.handshaker.status", "OK"},
+                                {"grpc.security.handshaker.resumed", "false"}},
+                            /*expected_server_labels=*/
+                            std::map<std::string, std::string>{
+                                {"grpc.security.handshaker.status", "OK"},
+                                {"grpc.security.handshaker.resumed", "false"}});
 }
 
 TEST_P(SslTransportSecurityTest, TestBadServerCertMetricsIncremented) {
