@@ -102,7 +102,7 @@ RUN python3.10 -m pip install --upgrade google-auth==1.23.0 google-api-python-cl
 RUN echo "deb http://archive.debian.org/debian bullseye-backports main" >> /etc/apt/sources.list
 
 # Use -t for higher priority
-RUN apt-get update && apt-get install -t bullseye-backports -y cmake && apt-get clean
+RUN apt-get update && apt-get install -t bullseye-backports -y cmake
 
 #=================
 # Install ccache

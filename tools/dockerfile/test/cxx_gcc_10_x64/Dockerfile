@@ -58,7 +58,7 @@ RUN python3 -m pip install twisted
 RUN echo "deb http://archive.debian.org/debian bullseye-backports main" >> /etc/apt/sources.list
 
 # Use -t for higher priority
-RUN apt-get update && apt-get install -t bullseye-backports -y cmake && apt-get clean
+RUN apt-get update && apt-get install -t bullseye-backports -y cmake
 
 
 # Install ccache 4.2 from official repo.
