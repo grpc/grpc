@@ -97,10 +97,13 @@ RUN curl -sS https://getcomposer.org/installer | php
 RUN mv composer.phar /usr/local/bin/composer
 
 #=================
-# Install cmake
-# Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
+# Use cmake 3.25 from archived debian 11 (bullseye) backports.
+# Note that this should only be used for images based on debian 11.
 
-RUN apt-get update && apt-get install -y cmake && apt-get clean
+RUN echo "deb http://archive.debian.org/debian bullseye-backports main" >> /etc/apt/sources.list
+
+# Use -t for higher priority
+RUN apt-get update && apt-get install -t bullseye-backports -y cmake && apt-get clean
 
 #=================
 # Install ccache
