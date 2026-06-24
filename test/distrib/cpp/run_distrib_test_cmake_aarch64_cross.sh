@@ -18,8 +18,12 @@ set -ex
 
 cd "$(dirname "$0")/../../.."
 
-# Install openssl (to use instead of boringssl)
-apt-get update && apt-get install -y libssl-dev
+# Install openssl (to use instead of boringssl) and wget
+apt-get update && apt-get install -y libssl-dev wget
+
+# Install a newer CMake version at runtime to satisfy BoringSSL's 3.22+ requirement
+# (The pinned Docker image might only have an older CMake version, e.g. 3.18 on Debian 11)
+wget -qO- https://github.com/Kitware/CMake/releases/download/v3.28.1/cmake-3.28.1-linux-x86_64.tar.gz | tar --strip-components=1 -xz -C /usr/local
 
 # Use externally provided env to determine build parallelism, otherwise use default.
 GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS=${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS:-4}
