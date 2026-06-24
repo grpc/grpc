@@ -29,12 +29,8 @@ class SubchannelMetricsDomainAttempts final
   GRPC_INSTRUMENT_DOMAIN_LABELS("grpc.target", "grpc.lb.backend_service",
                                 "grpc.lb.locality");
 
-  static inline const auto kConnectionAttemptsSucceeded =
-      RegisterCounter("grpc.subchannel.connection_attempts_succeeded",
-                      "Number of successful connection attempts.", "attempt");
-  static inline const auto kConnectionAttemptsFailed =
-      RegisterCounter("grpc.subchannel.connection_attempts_failed",
-                      "Number of failed connection attempts.", "attempt");
+  static CounterHandle kConnectionAttemptsSucceeded;
+  static CounterHandle kConnectionAttemptsFailed;
 };
 
 class SubchannelMetricsDomainDisconnections final
@@ -45,10 +41,7 @@ class SubchannelMetricsDomainDisconnections final
   GRPC_INSTRUMENT_DOMAIN_LABELS("grpc.target", "grpc.lb.backend_service",
                                 "grpc.lb.locality", "grpc.disconnect_error");
 
-  static inline const auto kDisconnections = RegisterCounter(
-      "grpc.subchannel.disconnections",
-      "Number of times the selected subchannel becomes disconnected.",
-      "disconnection");
+  static CounterHandle kDisconnections;
 };
 
 class SubchannelConnectionsDomainOpenConnections final
@@ -59,9 +52,7 @@ class SubchannelConnectionsDomainOpenConnections final
   GRPC_INSTRUMENT_DOMAIN_LABELS("grpc.target", "grpc.security_level",
                                 "grpc.lb.backend_service", "grpc.lb.locality");
 
-  static inline const auto kOpenConnections = RegisterUpDownCounter(
-      "grpc.subchannel.open_connections",
-      "Number of open subchannel connections.", "connection");
+  static UpDownCounterHandle kOpenConnections;
 };
 
 }  // namespace grpc_core
