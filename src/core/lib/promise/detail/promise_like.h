@@ -130,7 +130,7 @@ class PromisePropertyValue final : public OtherPropertyValue {
 
   void FillAny(google_protobuf_Any* any, upb_Arena* arena) override {
     size_t length;
-    upb_Arena_Fuse(arena_, arena);
+    (void)upb_Arena_Fuse(arena_, arena);
     auto* bytes =
         grpc_channelz_v2_Promise_serialize(promise_proto_, arena, &length);
     google_protobuf_Any_set_value(
