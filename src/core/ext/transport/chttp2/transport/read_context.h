@@ -52,19 +52,14 @@ class ReadLoopPauseRestart {
   ReadLoopPauseRestart(ReadLoopPauseRestart&&) = delete;
   ReadLoopPauseRestart& operator=(ReadLoopPauseRestart&&) = delete;
 
-  // Signals that the read loop should pause. If it's already paused, this is a
+  // Signals that the ReadLoop should pause. If it's already paused, this is a
   // no-op.
-  void SetPauseReadLoop() {
-    // TODO(tjagtap) [PH2][P2][Settings] Plumb with when we receive urgent
-    // settings. Example - initial window size 0 is urgent because it indicates
-    // extreme memory pressure on the server.
-    should_pause_read_loop_ = true;
-  }
+  void SetPauseReadLoop() { should_pause_read_loop_ = true; }
 
   // If SetPauseReadLoop() was called, this returns Pending and
   // registers a waker that will be woken by WakeReadLoop().
-  // If the read loop does not need to be paused, this returns OkStatus.
-  // This should be polled by the read loop to yield control when requested.
+  // If the ReadLoop does not need to be paused, this returns OkStatus.
+  // This should be polled by the ReadLoop to yield control when requested.
   Poll<absl::Status> MaybePauseReadLoop() {
     if (should_pause_read_loop_) {
       read_loop_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
@@ -352,6 +347,17 @@ class ReadContext {
   //////////////////////////////////////////////////////////////////////////////
   // ReadLoopPauseRestart wrapper functions.
 
+  // A note on stalling the ReadLoop:
+  // We have intentionally decided against stalling the ReadLoop when receiving
+  // one SETTINGS frame or one PING frame because we have anyway capped the
+  // number of iterations of the ReadLoop. And so as long as the endpoint Read
+  // in the ReadLoop is resolving immediately, we are ok to delay sending
+  // SETTINGS ACK, PING ACK and applying the settings. We will only stall the
+  // ReadLoop if certain per cycle limits are exceeded.
+  // We are also not going to stall the ReadLoop on any urgent setting being
+  // received because we have our ReadLoop capped at a max number of iterations,
+  // and applying those new settings a little later is ok.
+
   void SetPauseReadLoop() { read_loop_manager_.SetPauseReadLoop(); }
 
   Poll<absl::Status> MaybePauseReadLoop() {
@@ -418,13 +424,13 @@ class ReadContext {
   }
 
   // Counters to track total bytes and frames read per cycle.
-  // Checked against limits to pause the read loop when maxed out.
+  // Checked against limits to pause the ReadLoop when maxed out.
   // This yields execution to prevent starvation of other transport tasks.
   // As per RFC 9113, HTTP/2 frame sizes can vary significantly.
   // Some frames are very large, while others are extremely small.
-  // We stall the read loop based only on current_cycle_read_count_.
+  // We stall the ReadLoop based only on current_cycle_read_count_.
   // We measure current_cycle_bytes_read_ just for telemetry. We are not
-  // stalling the read loop based on the number of bytes read right now because
+  // stalling the ReadLoop based on the number of bytes read right now because
   // we think that current_cycle_read_count_ would be sufficient for now.
   uint64_t current_cycle_bytes_read_ = 0u;
   uint16_t current_cycle_read_count_ = 0u;

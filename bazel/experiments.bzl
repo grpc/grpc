@@ -175,7 +175,6 @@ EXPERIMENTS = {
             ],
             "core_end2end_test": [
                 "buffer_list_deletion_prep",
-                "chaotic_good_send_supported_features",
                 "local_connector_secure",
                 "otel_export_telemetry_domains",
                 "ph2_client",
