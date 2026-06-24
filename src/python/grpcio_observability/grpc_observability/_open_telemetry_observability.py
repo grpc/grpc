@@ -105,10 +105,10 @@ class _OpenTelemetryPlugin:
         # Only deserialize labels if we need add exchanged labels.
         if stats_data.include_exchange_labels:
             deserialized_labels = self._deserialize_labels(
-                stats_data.labels, enabled_plugin_options
+                dict(stats_data.labels), enabled_plugin_options
             )
         else:
-            deserialized_labels = stats_data.labels
+            deserialized_labels = dict(stats_data.labels)
         labels = self._maybe_add_labels(
             stats_data.include_exchange_labels,
             deserialized_labels,
@@ -280,12 +280,12 @@ class _OpenTelemetryPlugin:
 
     @staticmethod
     def decode_labels(labels: Dict[str, AnyStr]) -> Dict[str, str]:
-        decoded_labels = {}
-        for key, value in labels.items():
-            if isinstance(value, bytes):
-                value = value.decode()
-            decoded_labels[key] = value
-        return decoded_labels
+        def _to_str(item: Union[str, AnyStr]) -> str:
+            if isinstance(item, bytes):
+                return item.decode("utf-8", errors="replace")
+            return str(item)
+
+        return {_to_str(key): _to_str(value) for key, value in labels.items()}
 
 
 def start_open_telemetry_observability(

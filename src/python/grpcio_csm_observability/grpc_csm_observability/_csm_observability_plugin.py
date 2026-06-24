@@ -33,6 +33,7 @@ UNKNOWN_VALUE = "unknown"
 TYPE_GCE = "gcp_compute_engine"
 TYPE_GKE = "gcp_kubernetes_engine"
 MESH_ID_PREFIX = "mesh:"
+METADATA_EXCHANGE_KEY = "XEnvoyPeerMetadata"
 
 METADATA_EXCHANGE_KEY_FIXED_MAP = {
     "type": "csm.remote_workload_type",
@@ -51,6 +52,11 @@ METADATA_EXCHANGE_KEY_GCE_MAP = {
     "workload_name": "csm.remote_workload_name",
     "location": "csm.remote_workload_location",
     "project_id": "csm.remote_workload_project_id",
+}
+
+_METADATA_EXCHANGE_MAP_BY_TYPE = {
+    TYPE_GKE: METADATA_EXCHANGE_KEY_GKE_MAP,
+    TYPE_GCE: METADATA_EXCHANGE_KEY_GCE_MAP,
 }
 
 
@@ -127,7 +133,7 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
         serialized_struct = struct_pb2.Struct(fields=fields)
         serialized_str = serialized_struct.SerializeToString()
 
-        self._exchange_labels = {"XEnvoyPeerMetadata": serialized_str}
+        self._exchange_labels = {METADATA_EXCHANGE_KEY: serialized_str}
         self._additional_exchange_labels["csm.workload_canonical_service"] = (
             canonical_service_value
         )
@@ -145,45 +151,16 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
 
     @staticmethod
     def deserialize_labels(labels: Dict[str, AnyStr]) -> Dict[str, AnyStr]:
-        deserialized_labels = {}
-        for key, value in labels.items():
-            if key == "XEnvoyPeerMetadata":
-                pb_struct = struct_pb2.Struct()
-                pb_struct.ParseFromString(value)
+        remote_labels = _deserialize_remote_labels(
+            labels.get(METADATA_EXCHANGE_KEY)
+        )
+        passthrough_labels = {
+            key: value
+            for key, value in labels.items()
+            if key != METADATA_EXCHANGE_KEY
+        }
 
-                remote_type = get_value_from_struct("type", pb_struct)
-
-                for (
-                    local_key,
-                    remote_key,
-                ) in METADATA_EXCHANGE_KEY_FIXED_MAP.items():
-                    deserialized_labels[remote_key] = get_value_from_struct(
-                        local_key, pb_struct
-                    )
-                if remote_type == TYPE_GKE:
-                    for (
-                        local_key,
-                        remote_key,
-                    ) in METADATA_EXCHANGE_KEY_GKE_MAP.items():
-                        deserialized_labels[remote_key] = get_value_from_struct(
-                            local_key, pb_struct
-                        )
-                elif remote_type == TYPE_GCE:
-                    for (
-                        local_key,
-                        remote_key,
-                    ) in METADATA_EXCHANGE_KEY_GCE_MAP.items():
-                        deserialized_labels[remote_key] = get_value_from_struct(
-                            local_key, pb_struct
-                        )
-            # If CSM label injector is enabled on server side but client didn't send
-            # XEnvoyPeerMetadata, we'll record remote label as unknown.
-            else:
-                for remote_key in METADATA_EXCHANGE_KEY_FIXED_MAP.values():
-                    deserialized_labels[remote_key] = UNKNOWN_VALUE
-                deserialized_labels[key] = value
-
-        return deserialized_labels
+        return {**remote_labels, **passthrough_labels}
 
 
 class CsmOpenTelemetryPluginOption(OpenTelemetryPluginOption):
@@ -276,6 +253,39 @@ def get_value_from_struct(key: str, struct: struct_pb2.Struct) -> str:
     if not value:
         return UNKNOWN_VALUE
     return value.string_value
+
+
+def _deserialize_remote_labels(
+    serialized_data: Optional[AnyStr],
+) -> Dict[str, str]:
+    remote_keys_unknown = dict.fromkeys(
+        METADATA_EXCHANGE_KEY_FIXED_MAP.values(), UNKNOWN_VALUE
+    )
+
+    # If CSM label injector is enabled on server side but client didn't send
+    # XEnvoyPeerMetadata, we'll record remote label as unknown.
+    if serialized_data is None:
+        return remote_keys_unknown
+
+    pb_struct = struct_pb2.Struct()
+    try:
+        pb_struct.ParseFromString(serialized_data)
+    except Exception:
+        return remote_keys_unknown
+
+    remote_labels = {
+        remote_key: get_value_from_struct(local_key, pb_struct)
+        for local_key, remote_key in METADATA_EXCHANGE_KEY_FIXED_MAP.items()
+    }
+
+    remote_type = get_value_from_struct("type", pb_struct)
+    remote_type_map = _METADATA_EXCHANGE_MAP_BY_TYPE.get(remote_type)
+    if remote_type_map:
+        remote_labels.update(
+            (remote_key, get_value_from_struct(local_key, pb_struct))
+            for local_key, remote_key in remote_type_map.items()
+        )
+    return remote_labels
 
 
 def get_str_value_from_resource(
