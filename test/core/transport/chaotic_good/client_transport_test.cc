@@ -19,6 +19,7 @@
 #include <grpc/event_engine/slice.h>
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include <algorithm>
@@ -251,6 +252,51 @@ TEST_F(TransportTest, CheckFailure) {
               on_done.Call();
             });
       });
+  // Wait until ClientTransport's internal activities to finish.
+  event_engine()->TickUntilIdle();
+  transport.reset();
+  event_engine()->TickUntilIdle();
+  event_engine()->UnsetGlobalHooks();
+}
+
+TEST_F(TransportTest, MessageTooLarge) {
+  auto owned_frame_transport =
+      MakeOrphanable<MockFrameTransport>(event_engine());
+  auto* frame_transport = owned_frame_transport.get();
+  auto channel_args = MakeChannelArgs(event_engine())
+                          .Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, 5);
+  auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
+      channel_args, std::move(owned_frame_transport), MessageChunker(0, 1));
+  auto call = MakeCall(TestInitialMetadata());
+  StrictMock<MockFunction<void()>> on_done;
+  EXPECT_CALL(on_done, Call());
+  frame_transport->ExpectWrite(MakeProtoFrame<ClientInitialMetadataFrame>(
+      1, "path: '/demo.Service/Step'"));
+  frame_transport->ExpectWrite(CancelFrame(1));
+  frame_transport->ExpectWrite(CancelFrame(1));
+  transport->StartCall(call.handler.StartCall());
+  call.initiator.SpawnInfallible(
+      "test-read", [&on_done, initiator = call.initiator]() mutable {
+        return Seq(
+            initiator.PullServerInitialMetadata(),
+            [](ValueOrFailure<std::optional<ServerMetadataHandle>> md) {
+              EXPECT_TRUE(md.ok());
+              EXPECT_TRUE(md.value().has_value());
+            },
+            [initiator]() mutable { return initiator.PullMessage(); },
+            [](ServerToClientNextMessage msg) { EXPECT_FALSE(msg.ok()); },
+            [initiator]() mutable {
+              return initiator.PullServerTrailingMetadata();
+            },
+            [&on_done](ServerMetadataHandle md) {
+              EXPECT_EQ(md->get(GrpcStatusMetadata()).value(),
+                        GRPC_STATUS_RESOURCE_EXHAUSTED);
+              on_done.Call();
+            });
+      });
+  frame_transport->Read(
+      MakeProtoFrame<ServerInitialMetadataFrame>(1, "message: 'hello'"));
+  frame_transport->Read(MakeProtoFrame<BeginMessageFrame>(1, "length: 10"));
   // Wait until ClientTransport's internal activities to finish.
   event_engine()->TickUntilIdle();
   transport.reset();

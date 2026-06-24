@@ -177,6 +177,7 @@ grpc_cc_test(
     deps = [
         "mock_frame_transport",
         "transport_test_helper",
+        "//:channel_arg_names",
         "//:config",
         "//:grpc",
         "//:grpc_public_hdrs",
@@ -209,11 +210,13 @@ grpc_cc_test(
     deps = [
         "mock_frame_transport",
         "transport_test_helper",
+        "//:channel_arg_names",
         "//:grpc",
         "//:grpc_public_hdrs",
         "//:iomgr_timer",
         "//:ref_counted_ptr",
         "//src/core:arena",
+        "//src/core:chaotic_good_frame",
         "//src/core:chaotic_good_frame_cc_proto",
         "//src/core:chaotic_good_server_transport",
         "//src/core:memory_quota",

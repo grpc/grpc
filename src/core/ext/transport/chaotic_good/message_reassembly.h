@@ -15,9 +15,14 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_MESSAGE_REASSEMBLY_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_MESSAGE_REASSEMBLY_H
 
+#include <cstdint>
+
 #include "src/core/call/call_spine.h"
+#include "src/core/call/metadata.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -26,14 +31,22 @@ namespace chaotic_good {
 // never having two messages in flight on the same stream.
 class MessageReassembly {
  public:
+  explicit MessageReassembly(uint32_t max_receive_message_length)
+      : max_receive_message_length_(max_receive_message_length) {}
+
   void FailCall(CallInitiator& call, absl::string_view msg) {
-    LOG_EVERY_N_SEC(INFO, 10) << "Call failed during reassembly: " << msg;
-    call.Cancel();
+    FailCall(call, absl::InternalError(msg));
   }
   void FailCall(CallHandler& call, absl::string_view msg) {
-    LOG_EVERY_N_SEC(INFO, 10) << "Call failed during reassembly: " << msg;
-    call.PushServerTrailingMetadata(
-        CancelledServerMetadataFromStatus(GRPC_STATUS_INTERNAL, msg));
+    FailCall(call, absl::InternalError(msg));
+  }
+  void FailCall(CallInitiator& call, const absl::Status& status) {
+    LOG_EVERY_N_SEC(INFO, 10) << "Call failed during reassembly: " << status;
+    call.Cancel(status);
+  }
+  void FailCall(CallHandler& call, const absl::Status& status) {
+    LOG_EVERY_N_SEC(INFO, 10) << "Call failed during reassembly: " << status;
+    call.PushServerTrailingMetadata(CancelledServerMetadataFromStatus(status));
   }
 
   template <typename Sink>
@@ -61,6 +74,10 @@ class MessageReassembly {
                "Received begin message for an empty message (not allowed)");
     } else if (frame.body.length() > std::numeric_limits<size_t>::max() / 2) {
       FailCall(sink, "Received too large begin message");
+    } else if (frame.body.length() > max_receive_message_length_) {
+      FailCall(sink, absl::ResourceExhaustedError(absl::StrFormat(
+                         "Received message larger than max (%u vs. %u)",
+                         frame.body.length(), max_receive_message_length_)));
     } else {
       GRPC_TRACE_LOG(chaotic_good, INFO)
           << this << " begin message " << frame.body.ShortDebugString();
@@ -110,6 +127,7 @@ class MessageReassembly {
     SliceBuffer incoming;
   };
   std::unique_ptr<ChunkReceiver> chunk_receiver_;
+  uint32_t max_receive_message_length_;
 };
 
 }  // namespace chaotic_good

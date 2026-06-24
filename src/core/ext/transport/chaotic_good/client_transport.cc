@@ -16,11 +16,13 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
 
 #include <cstdint>
 #include <cstdlib>
+#include <limits>
 #include <memory>
 #include <string>
 #include <tuple>
@@ -56,9 +58,11 @@ using grpc_event_engine::experimental::EventEngine;
 
 ChaoticGoodClientTransport::StreamDispatch::StreamDispatch(
     MpscSender<OutgoingFrame> outgoing_frames,
-    std::shared_ptr<EventEngine> event_engine)
+    std::shared_ptr<EventEngine> event_engine,
+    uint32_t max_receive_message_length)
     : outgoing_frames_(std::move(outgoing_frames)),
-      event_engine_(std::move(event_engine)) {}
+      event_engine_(std::move(event_engine)),
+      max_receive_message_length_(max_receive_message_length) {}
 
 RefCountedPtr<ChaoticGoodClientTransport::Stream>
 ChaoticGoodClientTransport::StreamDispatch::LookupStream(uint32_t stream_id) {
@@ -220,7 +224,8 @@ uint32_t ChaoticGoodClientTransport::StreamDispatch::MakeStream(
       });
   if (!on_done_added) return 0;
   stream_map_.emplace(stream_id,
-                      MakeRefCounted<Stream>(std::move(call_handler)));
+                      MakeRefCounted<Stream>(std::move(call_handler),
+                                             max_receive_message_length_));
   return stream_id;
 }
 
@@ -268,8 +273,14 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
   party_ = Party::Make(std::move(party_arena));
   MpscReceiver<OutgoingFrame> outgoing_frames{256 * 1024 * 1024};
   outgoing_frames_ = outgoing_frames.MakeSender();
+  int max_recv_size = args.GetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH)
+                          .value_or(GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH);
+  uint32_t max_receive_message_length =
+      max_recv_size < 0 ? std::numeric_limits<uint32_t>::max()
+                        : static_cast<uint32_t>(max_recv_size);
   stream_dispatch_ = MakeRefCounted<StreamDispatch>(
-      outgoing_frames.MakeSender(), ctx_->event_engine);
+      outgoing_frames.MakeSender(), ctx_->event_engine,
+      max_receive_message_length);
   frame_transport_->Start(party_.get(), std::move(outgoing_frames),
                           stream_dispatch_);
   SourceConstructed();

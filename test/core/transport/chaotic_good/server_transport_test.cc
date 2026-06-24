@@ -19,6 +19,7 @@
 #include <grpc/event_engine/slice.h>
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include <algorithm>
@@ -29,6 +30,7 @@
 
 #include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h"
+#include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -173,6 +175,48 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
       1, "path: '/demo.Service/Step'"));
   frame_transport->Read(MakeMessageFrame(1, "12345678"));
   frame_transport->Read(ClientEndOfStream(1));
+  // Wait until ClientTransport's internal activities to finish.
+  event_engine()->TickUntilIdle();
+  transport.reset();
+  event_engine()->TickUntilIdle();
+  event_engine()->UnsetGlobalHooks();
+}
+
+TEST_F(TransportTest, MessageTooLarge) {
+  auto owned_frame_transport =
+      MakeOrphanable<MockFrameTransport>(event_engine());
+  auto* frame_transport = owned_frame_transport.get();
+  auto call_destination = MakeRefCounted<StrictMock<MockCallDestination>>();
+  EXPECT_CALL(*call_destination, Orphaned()).Times(1);
+  auto channel_args = MakeChannelArgs(event_engine())
+                          .Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, 5);
+  auto transport = MakeOrphanable<ChaoticGoodServerTransport>(
+      channel_args, std::move(owned_frame_transport), MessageChunker(0, 1));
+  StrictMock<MockFunction<void()>> on_done;
+  EXPECT_CALL(*call_destination, StartCall(_))
+      .WillOnce(
+          WithArgs<0>([&on_done](UnstartedCallHandler unstarted_call_handler) {
+            auto handler = unstarted_call_handler.StartCall();
+            handler.SpawnInfallible("test-io", [&on_done, handler]() mutable {
+              return Seq(
+                  handler.PullClientInitialMetadata(),
+                  [](ValueOrFailure<ClientMetadataHandle> md) {
+                    EXPECT_TRUE(md.ok());
+                  },
+                  [handler]() mutable { return handler.PullMessage(); },
+                  [](ClientToServerNextMessage msg) { EXPECT_FALSE(msg.ok()); },
+                  [&on_done]() mutable { on_done.Call(); });
+            });
+          }));
+  transport->SetCallDestination(std::move(call_destination));
+  // Status 8 is RESOURCE_EXHAUSTED
+  frame_transport->ExpectWrite(MakeProtoFrame<ServerTrailingMetadataFrame>(
+      1,
+      "status: 8\nmessage: \"Received message larger than max (10 vs. 5)\""));
+  EXPECT_CALL(on_done, Call());
+  frame_transport->Read(MakeProtoFrame<ClientInitialMetadataFrame>(
+      1, "path: '/demo.Service/Step'"));
+  frame_transport->Read(MakeProtoFrame<BeginMessageFrame>(1, "length: 10"));
   // Wait until ClientTransport's internal activities to finish.
   event_engine()->TickUntilIdle();
   transport.reset();

@@ -16,9 +16,11 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
 
+#include <limits>
 #include <memory>
 #include <string>
 #include <tuple>
@@ -279,6 +281,11 @@ ChaoticGoodServerTransport::StreamDispatch::StreamDispatch(
           1024)),
       call_destination_(std::move(call_destination)),
       message_chunker_(message_chunker) {
+  int max_recv_size = args.GetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH)
+                          .value_or(GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH);
+  max_receive_message_length_ = max_recv_size < 0
+                                    ? std::numeric_limits<uint32_t>::max()
+                                    : static_cast<uint32_t>(max_recv_size);
   GRPC_CHECK(ctx_ != nullptr);
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
@@ -409,7 +416,8 @@ absl::Status ChaoticGoodServerTransport::StreamDispatch::AddStream(
     return absl::CancelledError();
   }
   stream_map_.emplace(stream_id,
-                      MakeRefCounted<Stream>(std::move(call_initiator)));
+                      MakeRefCounted<Stream>(std::move(call_initiator),
+                                             max_receive_message_length_));
   return absl::OkStatus();
 }
 
