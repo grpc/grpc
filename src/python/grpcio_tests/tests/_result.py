@@ -252,9 +252,10 @@ class CoverageResult(AugmentedResult):
         Additionally initializes and begins code coverage tracking."""
         super(CoverageResult, self).startTest(test)
         self.coverage_context = coverage.Coverage(data_suffix=True)
-        # In Python 3.15+, the default coverage tracer can encounter issues or incompatibilities.
-        # We switch to the 'sysmon' core (which uses PEP 669 sys.monitoring) for better reliability.
-        # Since 'sysmon' does not currently support plugins, we must explicitly disable them.
+        # In Python 3.15+, the default coverage tracer can encounter issues or
+        # incompatibilities. We switch to the 'sysmon' core (which uses PEP 669
+        # sys.monitoring) for better reliability. Since 'sysmon' does not
+        # currently support plugins, we must explicitly disable them.
         if sys.version_info >= (3, 15):
             self.coverage_context.set_option("run:plugins", [])
             self.coverage_context.set_option("run:core", "sysmon")
