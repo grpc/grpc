@@ -82,7 +82,6 @@ class GlobalInstrumentsRegistry {
     kCounter,
     kHistogram,
     kCallbackGauge,
-    kUpDownCounter,
   };
   using InstrumentID = uint32_t;
   struct GlobalInstrumentDescriptor {

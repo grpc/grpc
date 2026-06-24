@@ -809,7 +809,6 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
                                       descriptor.value_type));
               }
               break;
-
             case grpc_core::GlobalInstrumentsRegistry::InstrumentType::
                 kHistogram:
               switch (descriptor.value_type) {
