@@ -1617,7 +1617,7 @@ TEST_P(SslTransportSecurityTest, TestHandshakeMetricsIncremented) {
           {"grpc.security.handshaker.resumed", "false"}});
 }
 
-TEST_P(SslTransportSecurityTest, TestFailedClientHandshakeMetricsIncremented) {
+TEST_P(SslTransportSecurityTest, TestBadServerCertMetricsIncremented) {
   TestOnlyResetInstruments();
   auto root_scope = CreateRootCollectionScope(
       {"grpc.security.handshaker.status", "grpc.security.handshaker.resumed"},
@@ -1625,7 +1625,7 @@ TEST_P(SslTransportSecurityTest, TestFailedClientHandshakeMetricsIncremented) {
 
   TestMetricsSink sink_before;
   MetricsQuery()
-      .OnlyMetrics({"grpc.client.tls.handshakes"})
+      .OnlyMetrics({"grpc.client.tls.handshakes", "grpc.server.tls.handshakes"})
       .Run(root_scope, sink_before);
 
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
@@ -1635,17 +1635,20 @@ TEST_P(SslTransportSecurityTest, TestFailedClientHandshakeMetricsIncremented) {
 
   TestMetricsSink sink_after;
   MetricsQuery()
-      .OnlyMetrics({"grpc.client.tls.handshakes"})
+      .OnlyMetrics({"grpc.client.tls.handshakes", "grpc.server.tls.handshakes"})
       .Run(root_scope, sink_after);
 
   ExpectHandshakeWithLabels(
       sink_before, sink_after,
-      /*expected_client_labels=*/std::map<std::string, std::string>{
+      /*expected_client_labels=*/
+      std::map<std::string, std::string>{
           {"grpc.security.handshaker.status", "CERTIFICATE_AUTHORITY_INVALID"}},
-      /*expected_server_labels=*/std::nullopt);
+      /*expected_server_labels=*/
+      std::map<std::string, std::string>{{"grpc.security.handshaker.status",
+                                          "CERTIFICATE_AUTHORITY_INVALID"}});
 }
 
-TEST_P(SslTransportSecurityTest, TestFailedServerHandshakeMetricsIncremented) {
+TEST_P(SslTransportSecurityTest, TestBadClientCertMetricsIncremented) {
   TestOnlyResetInstruments();
   auto root_scope = CreateRootCollectionScope(
       {"grpc.security.handshaker.status", "grpc.security.handshaker.resumed"},
@@ -1653,7 +1656,7 @@ TEST_P(SslTransportSecurityTest, TestFailedServerHandshakeMetricsIncremented) {
 
   TestMetricsSink sink_before;
   MetricsQuery()
-      .OnlyMetrics({"grpc.server.tls.handshakes"})
+      .OnlyMetrics({"grpc.client.tls.handshakes", "grpc.server.tls.handshakes"})
       .Run(root_scope, sink_before);
 
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
@@ -1664,14 +1667,17 @@ TEST_P(SslTransportSecurityTest, TestFailedServerHandshakeMetricsIncremented) {
 
   TestMetricsSink sink_after;
   MetricsQuery()
-      .OnlyMetrics({"grpc.server.tls.handshakes"})
+      .OnlyMetrics({"grpc.client.tls.handshakes", "grpc.server.tls.handshakes"})
       .Run(root_scope, sink_after);
 
   ExpectHandshakeWithLabels(
       sink_before, sink_after,
-      /*expected_client_labels=*/std::nullopt,
-      /*expected_server_labels=*/std::map<std::string, std::string>{
-          {"grpc.security.handshaker.status", "CERTIFICATE_AUTHORITY_INVALID"}});
+      /*expected_client_labels=*/
+      std::map<std::string, std::string>{
+          {"grpc.security.handshaker.status", "CERTIFICATE_AUTHORITY_INVALID"}},
+      /*expected_server_labels=*/
+      std::map<std::string, std::string>{{"grpc.security.handshaker.status",
+                                          "CERTIFICATE_AUTHORITY_INVALID"}});
 }
 
 // Configuring key exchange groups requires SSL_CTX_set1_groups_list(),
