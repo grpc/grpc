@@ -23,6 +23,7 @@ load(
     "grpc_upb_proto_library",
     "grpc_upb_proto_reflection_library",
 )
+load("//third_party/bazel_rules/rules_cc/cc:cc_library.bzl", "cc_library")
 
 licenses(["reciprocal"])
 
@@ -12140,3 +12141,14 @@ grpc_cc_library(
 )
 
 grpc_generate_one_off_internal_targets()
+
+cc_library(
+    name = "call/client_call",
+    srcs = ["call/client_call.cc"],
+    hdrs = ["call/client_call.h"],
+    deps = [
+        "//third_party/absl/status",
+        "//third_party/absl/strings:str_format",
+        "//third_party/absl/strings:string_view",
+    ],
+)

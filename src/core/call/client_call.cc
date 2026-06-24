@@ -165,6 +165,68 @@ grpc_call_error ClientCall::StartBatch(const grpc_op* ops, size_t nops,
   if (validation_result != GRPC_CALL_OK) {
     return validation_result;
   }
+
+  bool has_send_initial_metadata = false;
+  bool has_send_message = false;
+  bool has_send_close_from_client = false;
+  bool has_recv_initial_metadata = false;
+  bool has_recv_status_on_client = false;
+
+  for (size_t i = 0; i < nops; ++i) {
+    switch (ops[i].op) {
+      case GRPC_OP_SEND_INITIAL_METADATA:
+        has_send_initial_metadata = true;
+        break;
+      case GRPC_OP_SEND_MESSAGE:
+        has_send_message = true;
+        break;
+      case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
+        has_send_close_from_client = true;
+        break;
+      case GRPC_OP_RECV_INITIAL_METADATA:
+        has_recv_initial_metadata = true;
+        break;
+      case GRPC_OP_RECV_STATUS_ON_CLIENT:
+        has_recv_status_on_client = true;
+        break;
+      default:
+        break;
+    }
+  }
+
+  if (has_send_initial_metadata &&
+      sent_initial_metadata_.load(std::memory_order_relaxed)) {
+    return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+  }
+  if (has_send_message && sent_final_op_.load(std::memory_order_relaxed)) {
+    return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+  }
+  if (has_send_close_from_client &&
+      sent_final_op_.load(std::memory_order_relaxed)) {
+    return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+  }
+  if (has_recv_initial_metadata &&
+      received_initial_metadata_batch_.load(std::memory_order_relaxed)) {
+    return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+  }
+  if (has_recv_status_on_client &&
+      requested_final_op_.load(std::memory_order_relaxed)) {
+    return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+  }
+
+  if (has_send_initial_metadata) {
+    sent_initial_metadata_.store(true, std::memory_order_relaxed);
+  }
+  if (has_send_close_from_client) {
+    sent_final_op_.store(true, std::memory_order_relaxed);
+  }
+  if (has_recv_initial_metadata) {
+    received_initial_metadata_batch_.store(true, std::memory_order_relaxed);
+  }
+  if (has_recv_status_on_client) {
+    requested_final_op_.store(true, std::memory_order_relaxed);
+  }
+
   CommitBatch(ops, nops, notify_tag, is_notify_tag_closure);
   return GRPC_CALL_OK;
 }
