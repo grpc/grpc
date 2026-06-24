@@ -270,6 +270,11 @@
   expiry: 2027/01/16
   owner: alishananda@google.com
   test_tags: []
+- name: optimization_06
+  description: Optimization 
+  expiry: 2027/01/30
+  owner: tjagtap@google.com
+  test_tags: []
 - name: otel_export_telemetry_domains
   description: Export telemetry domains in OpenTelemetry metrics.
   expiry: 2026/07/01

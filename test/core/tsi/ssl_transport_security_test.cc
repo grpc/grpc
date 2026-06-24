@@ -501,9 +501,13 @@ class SslTransportSecurityTest
       if (ssl_fixture->expected_negotiated_group_.has_value()) {
         const tsi_peer_property* property = tsi_peer_get_property_by_name(
             peer, TSI_SSL_NEGOTIATED_KEY_EXCHANGE_GROUP);
+#if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30000000L
         ASSERT_NE(property, nullptr);
         ASSERT_EQ(std::string(property->value.data, property->value.length),
                   ssl_fixture->expected_negotiated_group_.value());
+#else
+        ASSERT_EQ(property, nullptr);
+#endif
       }
     }
 
