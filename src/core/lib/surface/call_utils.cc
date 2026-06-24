@@ -267,4 +267,40 @@ void PreFillReceiveOpsForInvalidMetadata(const grpc_op* ops, size_t nops) {
   }
 }
 
+grpc_call_error CallOpInvariantsValidator::ValidateAndCommit(const grpc_op* ops,
+                                                             size_t nops) {
+  if (!IsCallv3BatchValidationEnabled()) {
+    return GRPC_CALL_OK;
+  }
+
+  uint8_t batch_ops = 0;
+  for (size_t i = 0; i < nops; i++) {
+    uint8_t op_bit = OpBit(ops[i].op);
+    // Detect intra-batch duplicate operations!
+    if ((batch_ops & op_bit) != 0) {
+      return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+    }
+    batch_ops |= op_bit;
+  }
+
+  uint8_t current_state = ops_state_.load(std::memory_order_acquire);
+  while (true) {
+    if ((current_state & batch_ops) != 0) {
+      return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+    }
+    if (ops_state_.compare_exchange_weak(
+            current_state, current_state | batch_ops, std::memory_order_acq_rel,
+            std::memory_order_acquire)) {
+      return GRPC_CALL_OK;
+    }
+  }
+}
+
+void CallOpInvariantsValidator::ResetConcurrentOp(const grpc_op_type op) {
+  if (!IsCallv3BatchValidationEnabled()) {
+    return;
+  }
+  ops_state_.fetch_and(~OpBit(op), std::memory_order_release);
+}
+
 }  // namespace grpc_core
