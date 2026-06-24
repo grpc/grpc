@@ -459,7 +459,7 @@ static void on_handshaker_service_resp_recv_dedicated(
 static tsi_result alts_tsi_handshaker_continue_handshaker_next(
     alts_tsi_handshaker* handshaker, const unsigned char* received_bytes,
     size_t received_bytes_size, tsi_handshaker_on_next_done_cb cb,
-    void* user_data, std::string* error) {
+    void* user_data, TsiErrorDetails* error) {
   if (!handshaker->has_created_handshaker_client) {
     if (handshaker->channel == nullptr) {
       grpc_alts_shared_resource_dedicated_start(
@@ -475,16 +475,19 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
         handshaker->channel == nullptr
             ? grpc_alts_get_shared_resource_dedicated()->channel
             : handshaker->channel;
+    std::string* error_ptr = error != nullptr ? &error->error : nullptr;
     alts_handshaker_client* client = alts_grpc_handshaker_client_create(
         handshaker, channel, handshaker->handshaker_service_url,
         handshaker->interested_parties, handshaker->options,
         handshaker->target_name, grpc_cb, cb, user_data,
         handshaker->client_vtable_for_testing, handshaker->is_client,
         handshaker->max_frame_size, handshaker->preferred_transport_protocols,
-        error);
+        error_ptr);
     if (client == nullptr) {
       LOG(ERROR) << "Failed to create ALTS handshaker client";
-      if (error != nullptr) *error = "Failed to create ALTS handshaker client";
+      if (error != nullptr) {
+        error->error = "Failed to create ALTS handshaker client";
+      }
       return TSI_FAILED_PRECONDITION;
     }
     {
@@ -493,7 +496,7 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
       handshaker->client = client;
       if (handshaker->shutdown) {
         VLOG(2) << "TSI handshake shutdown";
-        if (error != nullptr) *error = "TSI handshaker shutdown";
+        if (error != nullptr) error->error = "TSI handshaker shutdown";
         return TSI_HANDSHAKE_SHUTDOWN;
       }
     }
@@ -536,7 +539,7 @@ struct alts_tsi_handshaker_continue_handshaker_next_args {
   tsi_handshaker_on_next_done_cb cb;
   void* user_data;
   grpc_closure closure;
-  std::string* error = nullptr;
+  TsiErrorDetails* error = nullptr;
 };
 
 static void alts_tsi_handshaker_create_channel(
@@ -579,14 +582,17 @@ static void alts_tsi_handshaker_create_channel(
   delete next_args;
 }
 
-static tsi_result handshaker_next(
-    tsi_handshaker* self, const unsigned char* received_bytes,
-    size_t received_bytes_size, const unsigned char** /*bytes_to_send*/,
-    size_t* /*bytes_to_send_size*/, tsi_handshaker_result** /*result*/,
-    tsi_handshaker_on_next_done_cb cb, void* user_data, std::string* error) {
+static tsi_result handshaker_next(tsi_handshaker* self,
+                                  const unsigned char* received_bytes,
+                                  size_t received_bytes_size,
+                                  const unsigned char** /*bytes_to_send*/,
+                                  size_t* /*bytes_to_send_size*/,
+                                  tsi_handshaker_result** /*result*/,
+                                  tsi_handshaker_on_next_done_cb cb,
+                                  void* user_data, TsiErrorDetails* error) {
   if (self == nullptr || cb == nullptr) {
     LOG(ERROR) << "Invalid arguments to handshaker_next()";
-    if (error != nullptr) *error = "invalid argument";
+    if (error != nullptr) error->error = "invalid argument";
     return TSI_INVALID_ARGUMENT;
   }
   alts_tsi_handshaker* handshaker =
@@ -595,7 +601,7 @@ static tsi_result handshaker_next(
     grpc_core::MutexLock lock(&handshaker->mu);
     if (handshaker->shutdown) {
       LOG(INFO) << "TSI handshake shutdown";
-      if (error != nullptr) *error = "handshake shutdown";
+      if (error != nullptr) error->error = "handshake shutdown";
       return TSI_HANDSHAKE_SHUTDOWN;
     }
   }
@@ -645,7 +651,8 @@ static tsi_result handshaker_next_dedicated(
     tsi_handshaker* self, const unsigned char* received_bytes,
     size_t received_bytes_size, const unsigned char** bytes_to_send,
     size_t* bytes_to_send_size, tsi_handshaker_result** result,
-    tsi_handshaker_on_next_done_cb cb, void* user_data, std::string* error) {
+    tsi_handshaker_on_next_done_cb cb, void* user_data,
+    TsiErrorDetails* error) {
   grpc_core::ExecCtx exec_ctx;
   return handshaker_next(self, received_bytes, received_bytes_size,
                          bytes_to_send, bytes_to_send_size, result, cb,

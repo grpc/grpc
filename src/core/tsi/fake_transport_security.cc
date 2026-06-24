@@ -747,14 +747,15 @@ static tsi_result fake_handshaker_next(
     size_t received_bytes_size, const unsigned char** bytes_to_send,
     size_t* bytes_to_send_size, tsi_handshaker_result** handshaker_result,
     tsi_handshaker_on_next_done_cb /*cb*/, void* /*user_data*/,
-    std::string* error) {
+    TsiErrorDetails* error) {
   // Sanity check the arguments.
   if ((received_bytes_size > 0 && received_bytes == nullptr) ||
       bytes_to_send == nullptr || bytes_to_send_size == nullptr ||
       handshaker_result == nullptr) {
-    if (error != nullptr) *error = "invalid argument";
+    if (error != nullptr) error->error = "invalid argument";
     return TSI_INVALID_ARGUMENT;
   }
+  std::string* error_ptr = error != nullptr ? &error->error : nullptr;
   tsi_fake_handshaker* handshaker =
       reinterpret_cast<tsi_fake_handshaker*>(self);
   tsi_result result = TSI_OK;
@@ -763,7 +764,7 @@ static tsi_result fake_handshaker_next(
   size_t consumed_bytes_size = received_bytes_size;
   if (received_bytes_size > 0) {
     result = fake_handshaker_process_bytes_from_peer(
-        self, received_bytes, &consumed_bytes_size, error);
+        self, received_bytes, &consumed_bytes_size, error_ptr);
     if (result != TSI_OK) return result;
   }
 
@@ -774,7 +775,7 @@ static tsi_result fake_handshaker_next(
     size_t sent_bytes_size = handshaker->outgoing_bytes_buffer_size - offset;
     result = fake_handshaker_get_bytes_to_send_to_peer(
         self, handshaker->outgoing_bytes_buffer + offset, &sent_bytes_size,
-        error);
+        error_ptr);
     offset += sent_bytes_size;
     if (result == TSI_INCOMPLETE_DATA) {
       handshaker->outgoing_bytes_buffer_size *= 2;
@@ -800,7 +801,7 @@ static tsi_result fake_handshaker_next(
 
     // Create a handshaker_result containing the unused bytes.
     result = fake_handshaker_result_create(unused_bytes, unused_bytes_size,
-                                           handshaker_result, error);
+                                           handshaker_result, error_ptr);
     if (result == TSI_OK) {
       // Indicate that the handshake has completed and that a handshaker_result
       // has been created.
