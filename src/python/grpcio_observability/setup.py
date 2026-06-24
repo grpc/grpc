@@ -311,6 +311,7 @@ def extension_modules():
 if __name__ == "__main__":
     setuptools.setup(
         ext_modules=extension_modules(),
+        platforms=["Linux"],
         python_requires=f">={python_version.MIN_PYTHON_VERSION}",
         install_requires=[
             "grpcio=={version}".format(version=grpc_version.VERSION),

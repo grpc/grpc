@@ -280,11 +280,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "graphic"  # @unused
+g_stands_for = "garden"  # @unused
 
-core_version = "53.0.0"  # @unused
+core_version = "55.0.0"  # @unused
 
-version = "1.81.0-dev"  # @unused
+version = "1.83.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -911,6 +911,21 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "virtual_channel",
+    hdrs = ["include/grpcpp/virtual_channel.h"],
+    external_deps = [
+        "absl/functional:any_invocable",
+    ],
+    visibility = [
+        "//:__subpackages__",
+        "//bazel:virtual_rpcs",
+    ],
+    deps = [
+        "grpc++_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_common",
     defines = select({
         "grpc_no_rls": ["GRPC_NO_RLS"],
@@ -1369,6 +1384,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "generic_stub_session_hdrs",
+    hdrs = ["include/grpcpp/impl/generic_stub_session.h"],
+    tags = [
+        "nofixdeps",
+    ],
+    visibility = [
+        "//bazel:virtual_rpcs",
+        "//test/core/transport/chttp2:__pkg__",
+    ],
+    deps = [
+        "grpc++_public_hdrs",
+        "//:grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
     name = "channelz",
     srcs = [
         "//src/core:channelz/channel_trace.cc",
@@ -1814,7 +1845,6 @@ grpc_cc_library(
         "ref_counted_ptr",
         "stats",
         "//src/core:arena",
-        "//src/core:blackboard",
         "//src/core:call_arena_allocator",
         "//src/core:channel_args",
         "//src/core:channel_args_endpoint_config",
@@ -1924,8 +1954,9 @@ grpc_cc_library(
         "stats",
         "transport_auth_context",
         "//src/core:activity",
+        "//src/core:arena",
         "//src/core:arena_promise",
-        "//src/core:blackboard",
+        "//src/core:call_spine",
         "//src/core:cancel_callback",
         "//src/core:channel_args",
         "//src/core:channel_args_preconditioning",
@@ -1944,9 +1975,9 @@ grpc_cc_library(
         "//src/core:interception_chain",
         "//src/core:iomgr_fwd",
         "//src/core:map",
+        "//src/core:message",
         "//src/core:metadata_batch",
         "//src/core:metrics",
-        "//src/core:per_cpu",
         "//src/core:pipe",
         "//src/core:poll",
         "//src/core:pollset_set",
@@ -1954,6 +1985,7 @@ grpc_cc_library(
         "//src/core:resolved_address",
         "//src/core:seq",
         "//src/core:server_interface",
+        "//src/core:session_endpoint",
         "//src/core:shared_bit_gen",
         "//src/core:slice",
         "//src/core:slice_buffer",
@@ -2087,7 +2119,6 @@ grpc_cc_library(
         "//src/core:arena_promise",
         "//src/core:atomic_utils",
         "//src/core:bitset",
-        "//src/core:blackboard",
         "//src/core:call_destination",
         "//src/core:call_filters",
         "//src/core:call_final_info",
@@ -2409,7 +2440,9 @@ grpc_cc_library(
         "//src/core:connection_context",
         "//src/core:context",
         "//src/core:error",
+        "//src/core:event_engine_extensions",
         "//src/core:event_engine_memory_allocator",
+        "//src/core:event_engine_query_extensions",
         "//src/core:experiments",
         "//src/core:gpr_atm",
         "//src/core:grpc_check",
@@ -2627,6 +2660,7 @@ grpc_cc_library(
         "src/cpp/server/secure_server_credentials.h",
     ],
     external_deps = [
+        "absl/base",
         "absl/base:core_headers",
         "absl/functional:any_invocable",
         "absl/log:log",
@@ -2677,6 +2711,8 @@ grpc_cc_library(
         "resource_quota_api",
         "server",
         "transport_auth_context",
+        ":grpc_transport_chttp2",
+        ":virtual_channel",
         "//src/core:arena",
         "//src/core:channel_args",
         "//src/core:channel_fwd",
@@ -2684,6 +2720,7 @@ grpc_cc_library(
         "//src/core:channel_stack_type",
         "//src/core:closure",
         "//src/core:default_event_engine",
+        "//src/core:down_cast",
         "//src/core:env",
         "//src/core:error",
         "//src/core:experiments",
@@ -2704,6 +2741,7 @@ grpc_cc_library(
         "//src/core:no_destruct",
         "//src/core:ref_counted",
         "//src/core:resource_quota",
+        "//src/core:session_endpoint",
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//src/core:slice_refcount",
@@ -2714,6 +2752,7 @@ grpc_cc_library(
         "//src/core:thread_quota",
         "//src/core:time",
         "//src/core:useful",
+        "//src/core:virtual_channel",
         "@com_google_protobuf//:any_cc_proto",
     ],
 )
@@ -2776,11 +2815,14 @@ grpc_cc_library(
         "resource_quota_api",
         "server",
         "transport_auth_context",
+        ":virtual_channel",
         "//src/core:arena",
         "//src/core:channel_args",
         "//src/core:channel_init",
+        "//src/core:channel_stack_type",
         "//src/core:closure",
         "//src/core:default_event_engine",
+        "//src/core:down_cast",
         "//src/core:error",
         "//src/core:experiments",
         "//src/core:gpr_atm",
@@ -2794,6 +2836,7 @@ grpc_cc_library(
         "//src/core:no_destruct",
         "//src/core:ref_counted",
         "//src/core:resource_quota",
+        "//src/core:session_endpoint",
         "//src/core:slice",
         "//src/core:socket_mutator",
         "//src/core:sync",
@@ -2801,6 +2844,7 @@ grpc_cc_library(
         "//src/core:thread_quota",
         "//src/core:time",
         "//src/core:useful",
+        "//src/core:virtual_channel",
         "@com_google_protobuf//:any_cc_proto",
     ],
 )
@@ -4081,7 +4125,6 @@ grpc_cc_library(
         "//src/core:arena",
         "//src/core:arena_promise",
         "//src/core:backend_metric_parser",
-        "//src/core:blackboard",
         "//src/core:call_destination",
         "//src/core:call_spine",
         "//src/core:cancel_callback",
@@ -4099,6 +4142,7 @@ grpc_cc_library(
         "//src/core:connectivity_state",
         "//src/core:construct_destruct",
         "//src/core:context",
+        "//src/core:direct_channel",
         "//src/core:dual_ref_counted",
         "//src/core:error",
         "//src/core:error_utils",
@@ -4109,7 +4153,9 @@ grpc_cc_library(
         "//src/core:grpc_backend_metric_data",
         "//src/core:grpc_channel_idle_filter",
         "//src/core:grpc_check",
+        "//src/core:grpc_promise_endpoint",
         "//src/core:grpc_service_config",
+        "//src/core:http2_client_transport",
         "//src/core:idle_filter_state",
         "//src/core:init_internally",
         "//src/core:interception_chain",
@@ -4122,6 +4168,7 @@ grpc_cc_library(
         "//src/core:loop",
         "//src/core:map",
         "//src/core:memory_quota",
+        "//src/core:message",
         "//src/core:metadata",
         "//src/core:metadata_batch",
         "//src/core:metrics",
@@ -4389,10 +4436,10 @@ grpc_cc_library(
         "orphanable",
         "promise",
         "ref_counted_ptr",
-        "transport_auth_context",
         "uri",
         "//src/core:arena_promise",
         "//src/core:closure",
+        "//src/core:default_event_engine",
         "//src/core:error",
         "//src/core:gpr_manual_constructor",
         "//src/core:grpc_check",
@@ -4402,8 +4449,8 @@ grpc_cc_library(
         "//src/core:json_reader",
         "//src/core:json_writer",
         "//src/core:metadata_batch",
+        "//src/core:regional_access_boundary_fetcher",
         "//src/core:slice",
-        "//src/core:slice_refcount",
         "//src/core:time",
         "//src/core:tsi_ssl_types",
         "//src/core:unique_type_name",
@@ -4568,6 +4615,28 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "ssl_telemetry_utils",
+    srcs = [
+        "//src/core:tsi/ssl_telemetry_utils.cc",
+    ],
+    hdrs = [
+        "//src/core:tsi/ssl_telemetry_utils.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/log:log",
+        "absl/strings",
+        "libcrypto",
+        "libssl",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "gpr",
+        "//src/core:tsi_ssl_types",
+    ],
+)
+
+grpc_cc_library(
     name = "tsi_ssl_credentials",
     srcs = [
         "//src/core:credentials/transport/tls/ssl_utils.cc",
@@ -4599,18 +4668,19 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_security_base",
         "ref_counted_ptr",
+        "ssl_telemetry_utils",
         "transport_auth_context",
         "tsi_base",
         "tsi_ssl_session_cache",
         "//src/core:channel_args",
         "//src/core:default_event_engine",
-        "//src/core:env",
         "//src/core:error",
         "//src/core:grpc_check",
         "//src/core:grpc_crl_provider",
         "//src/core:grpc_transport_chttp2_alpn",
         "//src/core:load_file",
         "//src/core:match",
+        "//src/core:metrics",
         "//src/core:ref_counted",
         "//src/core:slice",
         "//src/core:spiffe_utils",
@@ -4667,6 +4737,7 @@ grpc_cc_library(
         "//src/core:latch",
         "//src/core:latent_see",
         "//src/core:map",
+        "//src/core:message_size_service_config",
         "//src/core:metadata_batch",
         "//src/core:percent_encoding",
         "//src/core:pipe",
@@ -4919,6 +4990,7 @@ grpc_cc_library(
         "//src/core:grpc_check",
         "//src/core:hpack_constants",
         "//src/core:metadata_batch",
+        "//src/core:mitigation_engine",
         "//src/core:ref_counted",
         "//src/core:slice",
         "//src/core:status_helper",
@@ -4959,6 +5031,7 @@ grpc_cc_library(
         "//src/core:match",
         "//src/core:metadata_batch",
         "//src/core:metadata_info",
+        "//src/core:mitigation_engine",
         "//src/core:parsed_metadata",
         "//src/core:random_early_detection",
         "//src/core:slice",
@@ -5139,9 +5212,11 @@ grpc_cc_library(
         "//src/core:json",
         "//src/core:match",
         "//src/core:memory_quota",
+        "//src/core:message_size_service_config",
         "//src/core:metadata",
         "//src/core:metadata_batch",
         "//src/core:metadata_info",
+        "//src/core:mitigation_engine",
         "//src/core:notification",
         "//src/core:ping_abuse_policy",
         "//src/core:ping_callbacks",

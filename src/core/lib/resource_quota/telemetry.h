@@ -25,29 +25,11 @@ class ResourceQuotaDomain final : public InstrumentDomain<ResourceQuotaDomain> {
   using Backend = HighContentionBackend;
   static constexpr absl::string_view kName = "resource_quota";
 
-  static inline const auto kCallsDropped = RegisterCounter(
-      "grpc.resource_quota.calls_dropped",
-      "EXPERIMENTAL.  Number of calls dropped due to resource quota "
-      "exceeded",
-      "calls");
-  static inline const auto kCallsRejected = RegisterCounter(
-      "grpc.resource_quota.calls_rejected",
-      "EXPERIMENTAL.  Number of calls rejected due to resource quota "
-      "exceeded",
-      "calls");
-  static inline const auto kConnectionsDropped = RegisterCounter(
-      "grpc.resource_quota.connections_dropped",
-      "EXPERIMENTAL.  Number of connections dropped due to resource quota "
-      "exceeded",
-      "connections");
-  static inline const auto kInstantaneousMemoryPressure = RegisterDoubleGauge(
-      "grpc.resource_quota.instantaneous_memory_pressure",
-      "The current instantaneously measured memory pressure.", "ratio");
-  static inline const auto kMemoryPressureControlValue = RegisterDoubleGauge(
-      "grpc.resource_quota.memory_pressure_control_value",
-      "A control value that can be used to scale buffer sizes up or down to "
-      "adjust memory pressure to our target set point.",
-      "ratio");
+  static CounterHandle kCallsDropped;
+  static CounterHandle kCallsRejected;
+  static CounterHandle kConnectionsDropped;
+  static DoubleGaugeHandle kInstantaneousMemoryPressure;
+  static DoubleGaugeHandle kMemoryPressureControlValue;
 };
 
 }  // namespace grpc_core

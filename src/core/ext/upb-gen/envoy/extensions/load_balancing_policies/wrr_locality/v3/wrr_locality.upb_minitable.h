@@ -19,7 +19,6 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__extensions__load_0balancing_0policies__wrr_0locality__v3__WrrLocality_msg_init;
-extern const upb_MiniTable* envoy__extensions__load_0balancing_0policies__wrr_0locality__v3__WrrLocality_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_extensions_load_balancing_policies_wrr_locality_v3_wrr_locality_proto_upb_file_layout;
 

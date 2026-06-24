@@ -5,19 +5,20 @@
 # license that can be found in the LICENSE file or at
 # https://developers.google.com/open-source/licenses/bsd
 
-load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("//bazel:proto_library.bzl", "proto_library")
+load("//upb/bazel:copts.bzl", "UPB_DEFAULT_COPTS", "UPB_DEFAULT_CPPOPTS", "UPB_DEFAULT_FEATURES")
 load(
-    "//bazel:upb_minitable_proto_library.bzl",
+    "//upb/bazel:upb_minitable_proto_library.bzl",
     "upb_minitable_proto_library",
 )
 load(
-    "//bazel:upb_proto_library.bzl",
+    "//upb/bazel:upb_proto_library.bzl",
     "upb_c_proto_library",
     "upb_proto_reflection_library",
 )
-load("//upb/bazel:build_defs.bzl", "UPB_DEFAULT_COPTS", "UPB_DEFAULT_CPPOPTS")
 
 package(default_applicable_licenses = ["//:license"])
 
@@ -38,10 +39,10 @@ cc_library(
         "map.h",
         "map_gencode_util.h",
         "message.h",
-        "tagged_ptr.h",
         "value.h",
     ],
     copts = UPB_DEFAULT_COPTS,
+    features = UPB_DEFAULT_FEATURES,
     visibility = ["//visibility:public"],
     deps = [
         ":internal",
@@ -62,6 +63,7 @@ cc_library(
         "accessors.hpp",
     ],
     copts = UPB_DEFAULT_CPPOPTS,
+    features = UPB_DEFAULT_FEATURES,
     visibility = ["//upb:__subpackages__"],
     deps = [
         ":message",
@@ -84,9 +86,9 @@ cc_library(
         "internal/map.h",
         "internal/map_sorter.h",
         "internal/message.h",
-        "internal/tagged_ptr.h",
     ],
     copts = UPB_DEFAULT_COPTS,
+    features = UPB_DEFAULT_FEATURES,
     visibility = ["//visibility:public"],
     deps = [
         ":types",
@@ -109,6 +111,7 @@ cc_library(
         "internal/iterator.h",
     ],
     copts = UPB_DEFAULT_COPTS,
+    features = UPB_DEFAULT_FEATURES,
     visibility = ["//visibility:public"],
     deps = [
         ":internal",
@@ -129,6 +132,7 @@ cc_library(
         "internal/compare_unknown.h",
     ],
     copts = UPB_DEFAULT_COPTS,
+    features = UPB_DEFAULT_FEATURES,
     visibility = ["//visibility:public"],
     deps = [
         ":internal",
@@ -155,6 +159,7 @@ cc_library(
         "merge.h",
     ],
     copts = UPB_DEFAULT_COPTS,
+    features = UPB_DEFAULT_FEATURES,
     visibility = ["//visibility:public"],
     deps = [
         ":internal",
@@ -178,6 +183,7 @@ cc_library(
         "promote.h",
     ],
     copts = UPB_DEFAULT_COPTS,
+    features = UPB_DEFAULT_FEATURES,
     visibility = ["//visibility:public"],
     deps = [
         ":internal",
@@ -218,6 +224,7 @@ cc_library(
         "accessors_split64.h",
     ],
     copts = UPB_DEFAULT_COPTS,
+    features = UPB_DEFAULT_FEATURES,
     visibility = ["//visibility:public"],
     deps = [
         ":message",
@@ -232,6 +239,7 @@ cc_library(
         "internal/types.h",
     ],
     copts = UPB_DEFAULT_COPTS,
+    features = UPB_DEFAULT_FEATURES,
     visibility = ["//visibility:public"],
     deps = [
         "//upb/base",
@@ -250,6 +258,7 @@ proto_library(
 upb_minitable_proto_library(
     name = "message_test_upb_minitable_proto",
     testonly = 1,
+    visibility = ["//upb:__subpackages__"],
     deps = [":message_test_proto"],
 )
 
@@ -381,13 +390,27 @@ cc_test(
     ],
 )
 
+bool_flag(
+    name = "fuzz_dump_minitable",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "fuzz_dump_minitable_enabled",
+    flag_values = {":fuzz_dump_minitable": "True"},
+)
+
 # This test doesn't directly include any files from this subdir so it probably
 # should live elsewhere.
 cc_test(
     name = "test",
     srcs = ["test.cc"],
     args = ["--fuzztest_stack_limit_kb=256"],
-    copts = UPB_DEFAULT_CPPOPTS,
+    copts = UPB_DEFAULT_CPPOPTS + select({
+        ":fuzz_dump_minitable_enabled": ["-DUPB_FUZZ_DUMP_MINITABLE"],
+        "//conditions:default": [],
+    }),
+    features = UPB_DEFAULT_FEATURES,
     deps = [
         ":compare",
         ":internal",
@@ -400,6 +423,7 @@ cc_test(
         "//upb/mem",
         "//upb/mini_descriptor",
         "//upb/mini_table",
+        "//upb/mini_table:debug_string",
         "//upb/mini_table:internal",
         "//upb/port",
         "//upb/reflection",

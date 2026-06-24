@@ -37,10 +37,15 @@ ServerMetadataHandle ServerMetadataFromStatus(const absl::Status& status) {
 absl::Status ServerMetadataToStatus(ServerMetadata& md) {
   const auto grpc_status =
       md.get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
+  if (grpc_status == GRPC_STATUS_OK) {
+    return absl::OkStatus();
+  }
   const auto* error_slice = md.get_pointer(GrpcMessageMetadata());
+  absl::string_view message = error_slice != nullptr
+                                  ? error_slice->as_string_view()
+                                  : absl::string_view();
   return grpc_error_set_int(
-      absl::Status(static_cast<absl::StatusCode>(grpc_status),
-                   error_slice->as_string_view()),
+      absl::Status(static_cast<absl::StatusCode>(grpc_status), message),
       StatusIntProperty::kRpcStatus, grpc_status);
 }
 

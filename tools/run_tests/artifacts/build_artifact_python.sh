@@ -328,3 +328,8 @@ then
   cp -r src/python/grpcio_admin/dist/* "$ARTIFACT_DIR"
 
 fi
+
+if [ -x "$(command -v ccache)" ]
+then
+  ccache --show-stats || true
+fi

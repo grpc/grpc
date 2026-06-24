@@ -1422,11 +1422,8 @@ namespace {
 // Filter chain builder impl to inject into ConfigSelector.
 class LegacyFilterChainBuilder final : public FilterChainBuilder {
  public:
-  LegacyFilterChainBuilder(bool enable_retries, const ChannelArgs& channel_args,
-                           const Blackboard* blackboard)
-      : enable_retries_(enable_retries),
-        channel_args_(channel_args),
-        blackboard_(blackboard) {}
+  LegacyFilterChainBuilder(bool enable_retries, const ChannelArgs& channel_args)
+      : enable_retries_(enable_retries), channel_args_(channel_args) {}
 
   absl::StatusOr<RefCountedPtr<FilterChain>> Build() override {
     if (enable_retries_) {
@@ -1435,7 +1432,7 @@ class LegacyFilterChainBuilder final : public FilterChainBuilder {
       filters_.push_back({&DynamicTerminationFilter::kFilterVtable, nullptr});
     }
     RefCountedPtr<DynamicFilters> dynamic_filters =
-        DynamicFilters::Create(channel_args_, std::move(filters_), blackboard_);
+        DynamicFilters::Create(channel_args_, std::move(filters_));
     if (dynamic_filters == nullptr) {
       return absl::InternalError("error constructing dynamic filter stack");
     }
@@ -1451,7 +1448,6 @@ class LegacyFilterChainBuilder final : public FilterChainBuilder {
 
   const bool enable_retries_;
   const ChannelArgs channel_args_;
-  const Blackboard* blackboard_;
   std::vector<FilterAndConfig> filters_;
 };
 
@@ -1475,17 +1471,12 @@ void ClientChannelFilter::UpdateServiceConfigInDataPlaneLocked(
   bool enable_retries =
       !new_args.WantMinimalStack() &&
       new_args.GetBool(GRPC_ARG_ENABLE_RETRIES).value_or(true);
-  // Construct dynamic filter stack.
-  auto new_blackboard = MakeRefCounted<Blackboard>();
   if (enable_retries) {
-    RetryFilter::UpdateBlackboard(*service_config, blackboard_.get(),
-                                  new_blackboard.get());
+    retry_throttler_updater_.Update(*service_config, new_args);
   }
-  LegacyFilterChainBuilder filter_chain_builder(enable_retries, new_args,
-                                                new_blackboard.get());
-  config_selector->BuildFilterChains(filter_chain_builder, blackboard_.get(),
-                                     new_blackboard.get());
-  blackboard_ = std::move(new_blackboard);
+  // Construct dynamic filter stack.
+  LegacyFilterChainBuilder filter_chain_builder(enable_retries, new_args);
+  config_selector->BuildFilterChains(filter_chain_builder);
   // Grab data plane lock to update service config.
   //
   // We defer unreffing the old values (and deallocating memory) until
