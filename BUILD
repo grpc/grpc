@@ -4061,6 +4061,7 @@ grpc_cc_library(
         "//src/core:client_channel/retry_filter.cc",
         "//src/core:client_channel/retry_filter_legacy_call_data.cc",
         "//src/core:client_channel/subchannel.cc",
+        "//src/core:client_channel/subchannel_metrics.cc",
         "//src/core:client_channel/subchannel_stream_client.cc",
         "//src/core:client_channel/subchannel_stream_limiter.cc",
     ],

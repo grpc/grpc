@@ -342,6 +342,7 @@ Pod::Spec.new do |s|
                       'src/core/client_channel/subchannel.cc',
                       'src/core/client_channel/subchannel.h',
                       'src/core/client_channel/subchannel_interface_internal.h',
+                      'src/core/client_channel/subchannel_metrics.cc',
                       'src/core/client_channel/subchannel_metrics.h',
                       'src/core/client_channel/subchannel_pool_interface.cc',
                       'src/core/client_channel/subchannel_pool_interface.h',
