@@ -11,7 +11,7 @@ gRPC PHP installation instructions for Google Cloud Platform is in
 
 ### Prerequisites
 
-* `php`: version 7.1 or above (PHP 5.x support is deprecated from Sep 2020).
+* `php`: version 8.1 or above.
 * `pie`
 * `composer`
 * `phpunit` (optional)
@@ -26,13 +26,13 @@ There are two ways to install the `grpc` extension.
 ### Install from `pie`
 
 ```sh
-$ [sudo] pie install grpc/grpc-extension
+$ [sudo] pie install grpc/grpc_ext
 ```
 
 or specific version
 
 ```sh
-$ [sudo] pie install grpc/grpc-extension:1.80.0
+$ [sudo] pie install grpc/grpc_ext:1.80.0
 ```
 
 Please make sure your `gcc` version satisfies the minimum requirement as
@@ -41,11 +41,13 @@ specified [here](https://grpc.io/docs/languages/#official-support).
 
 ### Install on Windows
 
-PIE automatically downloads and installs precompiled `grpc.dll` binaries for your PHP version and architecture:
+PIE can be used to build the extension from source on Windows. Please ensure you have the appropriate Windows build tools (Visual Studio/MSVC compiler and the PHP SDK) installed:
 
 ```cmd
-> pie install grpc/grpc-extension
+> pie install grpc/grpc_ext
 ```
+
+Alternatively, you can download precompiled `grpc.dll` binaries directly from [PECL](https://pecl.php.net/package/grpc).
 
 ### Build from source
 
@@ -98,7 +100,7 @@ composer package as well. Add this to your project's `composer.json` file.
 
 ```json
     "require": {
-        "grpc/grpc-extension": "1.80.0"
+        "grpc/grpc_ext": "^1.80.0"
     }
 ```
 

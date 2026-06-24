@@ -1,5 +1,5 @@
 {
-  "name": "grpc/grpc-extension",
+  "name": "grpc/grpc_ext",
   "type": "php-ext",
   "description": "gRPC C extension for PHP managed via PIE",
   "keywords": [
@@ -17,18 +17,5 @@
   },
   "require": {
     "php": ">=8.1"
-  },
-  "suggest": {
-    "ext-protobuf": "For better performance, install the protobuf C extension.",
-    "google/protobuf": "To get started using grpc quickly, install the native protobuf library."
-  },
-  "extra": {
-    "pie": {
-      "support-zts": true,
-      "support-nts": true,
-      "download-url-method": [
-        "composer-default"
-      ]
-    }
   }
 }

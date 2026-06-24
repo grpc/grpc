@@ -2,6 +2,14 @@ PHP_ARG_ENABLE(grpc, whether to enable grpc support,
 [  --enable-grpc           Enable grpc support])
 
 if test "$PHP_GRPC" != "no"; then
+  dnl Check and download C/C++ dependencies (submodules) if missing
+  if test ! -f "$srcdir/third_party/abseil-cpp/absl/base/internal/cycleclock.cc"; then
+    AC_MSG_NOTICE([C/C++ dependencies (submodules) are missing. Downloading them...])
+    if ! bash "$srcdir/tools/download_submodules.sh"; then
+      AC_MSG_ERROR([Failed to download C/C++ dependencies. Please ensure you have git, curl, and internet access.])
+    fi
+  fi
+  
   dnl Write more examples of tests here...
 
   dnl # --with-grpc -> add include path

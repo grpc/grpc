@@ -1,0 +1,3 @@
+third_party/abseil-cpp https://github.com/abseil/abseil-cpp.git 76bb24329e8bf5f39704eb10d21b9a80befa7c81
+third_party/boringssl-with-bazel https://github.com/google/boringssl.git 2b44a3701a4788e1ef866ddc7f143060a3d196c9
+third_party/re2 https://github.com/google/re2.git 0c5616df9c0aaa44c9440d87422012423d91c7d1
