@@ -169,6 +169,8 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
   grpc_completion_queue* const cq_;
   ServerInterface* const server_;
   std::atomic<bool> saw_was_cancelled_{false};
+  bool sent_status_from_server_ = false;
+  bool recv_close_on_server_ = false;
 };
 
 grpc_call* MakeServerCall(CallHandler call_handler,

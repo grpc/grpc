@@ -165,6 +165,52 @@ grpc_call_error ClientCall::StartBatch(const grpc_op* ops, size_t nops,
   if (validation_result != GRPC_CALL_OK) {
     return validation_result;
   }
+  for (size_t op_idx = 0; op_idx < nops; op_idx++) {
+    const grpc_op& op = ops[op_idx];
+    switch (op.op) {
+      case GRPC_OP_SEND_INITIAL_METADATA:
+        if (sent_initial_metadata_) {
+          return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+        }
+        break;
+      case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
+        if (sent_close_from_client_) {
+          return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+        }
+        break;
+      case GRPC_OP_RECV_INITIAL_METADATA:
+        if (recv_initial_metadata_) {
+          return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+        }
+        break;
+      case GRPC_OP_RECV_STATUS_ON_CLIENT:
+        if (recv_status_on_client_) {
+          return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+        }
+        break;
+      default:
+        break;
+    }
+  }
+  for (size_t op_idx = 0; op_idx < nops; op_idx++) {
+    const grpc_op& op = ops[op_idx];
+    switch (op.op) {
+      case GRPC_OP_SEND_INITIAL_METADATA:
+        sent_initial_metadata_ = true;
+        break;
+      case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
+        sent_close_from_client_ = true;
+        break;
+      case GRPC_OP_RECV_INITIAL_METADATA:
+        recv_initial_metadata_ = true;
+        break;
+      case GRPC_OP_RECV_STATUS_ON_CLIENT:
+        recv_status_on_client_ = true;
+        break;
+      default:
+        break;
+    }
+  }
   CommitBatch(ops, nops, notify_tag, is_notify_tag_closure);
   return GRPC_CALL_OK;
 }
