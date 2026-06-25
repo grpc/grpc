@@ -2150,6 +2150,7 @@ Pod::Spec.new do |s|
                       'src/core/tsi/ssl_transport_security_utils.cc',
                       'src/core/tsi/ssl_transport_security_utils.h',
                       'src/core/tsi/ssl_types.h',
+                      'src/core/tsi/tls_telemetry.cc',
                       'src/core/tsi/tls_telemetry.h',
                       'src/core/tsi/transport_security.cc',
                       'src/core/tsi/transport_security.h',

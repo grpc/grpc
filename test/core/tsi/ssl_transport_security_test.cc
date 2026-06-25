@@ -342,8 +342,7 @@ class SslTransportSecurityTest
       client_expects_handshake_failure_ = client_expects_handshake_failure;
     }
 
-    void SetCollectionScope(
-        grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope) {
+    void SetCollectionScope(RefCountedPtr<CollectionScope> collection_scope) {
       collection_scope_ = std::move(collection_scope);
     }
 
@@ -465,13 +464,13 @@ class SslTransportSecurityTest
               ssl_fixture->collection_scope_, /*locality=*/"",
               /*backend_service=*/"", &ssl_fixture->base_.client_handshaker),
           TSI_OK);
-      ASSERT_EQ(tsi_ssl_server_handshaker_factory_create_handshaker(
-                    ssl_fixture->server_handshaker_factory_,
-                    ssl_fixture->network_bio_buf_size_,
-                    ssl_fixture->ssl_bio_buf_size_,
-                    ssl_fixture->collection_scope_,
-                    &ssl_fixture->base_.server_handshaker),
-                TSI_OK);
+      ASSERT_EQ(
+          tsi_ssl_server_handshaker_factory_create_handshaker(
+              ssl_fixture->server_handshaker_factory_,
+              ssl_fixture->network_bio_buf_size_,
+              ssl_fixture->ssl_bio_buf_size_, ssl_fixture->collection_scope_,
+              &ssl_fixture->base_.server_handshaker),
+          TSI_OK);
     }
 
     static void CheckAlpn(SslTsiTestFixture* ssl_fixture,
@@ -753,8 +752,7 @@ class SslTransportSecurityTest
     // intent.
     bool server_expects_handshake_failure_ = false;
     bool client_expects_handshake_failure_ = false;
-    grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope_ =
-        nullptr;
+    RefCountedPtr<CollectionScope> collection_scope_ = nullptr;
   };
 
   SslTransportSecurityTest() { grpc_init(); }
@@ -1573,8 +1571,7 @@ class TestMetricsSink : public MetricsSink {
 TEST_P(SslTransportSecurityTest, TestHandshakeMetricsIncremented) {
   TestOnlyResetInstruments();
   auto root_scope = CreateRootCollectionScope(
-      {"grpc.tls.handshake.result", "grpc.tls.handshake.resumed"},
-      32, 32);
+      {"grpc.tls.handshake.result", "grpc.tls.handshake.resumed"}, 32, 32);
 
   TestMetricsSink sink_before;
   MetricsQuery()
@@ -1612,8 +1609,7 @@ TEST_P(SslTransportSecurityTest, TestHandshakeMetricsIncremented) {
 TEST_P(SslTransportSecurityTest, TestBadServerCertMetricsIncremented) {
   TestOnlyResetInstruments();
   auto root_scope = CreateRootCollectionScope(
-      {"grpc.tls.handshake.result", "grpc.tls.handshake.resumed"},
-      32, 32);
+      {"grpc.tls.handshake.result", "grpc.tls.handshake.resumed"}, 32, 32);
 
   TestMetricsSink sink_before;
   MetricsQuery()
@@ -1650,8 +1646,7 @@ TEST_P(SslTransportSecurityTest, TestBadServerCertMetricsIncremented) {
 TEST_P(SslTransportSecurityTest, TestBadClientCertMetricsIncremented) {
   TestOnlyResetInstruments();
   auto root_scope = CreateRootCollectionScope(
-      {"grpc.tls.handshake.result", "grpc.tls.handshake.resumed"},
-      32, 32);
+      {"grpc.tls.handshake.result", "grpc.tls.handshake.resumed"}, 32, 32);
 
   TestMetricsSink sink_before;
   MetricsQuery()

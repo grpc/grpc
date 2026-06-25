@@ -789,7 +789,6 @@ doc/interop-test-descriptions.md \
 doc/keepalive.md \
 doc/load-balancing.md \
 doc/naming.md \
-doc/pqc_handshake_buffer_flow_fix.md \
 doc/qos-dscp.md \
 doc/security_audit.md \
 doc/server-reflection.md \
@@ -800,7 +799,6 @@ doc/ssl-performance.md \
 doc/status_ordering.md \
 doc/statuscodes.md \
 doc/trace_flags.md \
-doc/tsi_handshake_driving_investigation.md \
 doc/unit_testing.md \
 doc/versioning.md \
 doc/wait-for-ready.md \
