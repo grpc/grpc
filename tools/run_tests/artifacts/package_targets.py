@@ -183,9 +183,11 @@ class PythonPackage:
             "EXCLUDE_PATTERNS": "python_musllinux_1_2_aarch64_* python_manylinux2014_aarch64_*",
         }
 
-        job_name = os.getenv("KOKORO_JOB_NAME", "")
-        if job_name == "grpc/core/master/linux/release/grpc_collect_all_packages":
-          environ["EXCLUDE_PATTERNS"] += " python_*_cp315"
+        # TODO(asheshvidyut): remove the below check when we want to release
+        # 3.15 wheels, created from Python-3.15 release candidate
+        # job_name = os.getenv("KOKORO_JOB_NAME", "")
+        # if job_name == "grpc/core/master/linux/release/grpc_collect_all_packages":
+        environ["EXCLUDE_PATTERNS"] += " python_*_cp315"
 
         if self.platform == "any":
             # all the artifact builder configurations generate an equivalent
