@@ -95,4 +95,3 @@ RUN chmod a+rx /clang_tidy_all_the_things.sh
 
 CMD ["echo 'Run with tools/distrib/clang_tidy_code.sh'"]
 
-
