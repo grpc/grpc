@@ -42,6 +42,22 @@ struct upb_Arena;
 
 namespace grpc_core {
 
+/// Adds prefix to the message of status.
+absl::Status AddMessagePrefix(absl::string_view prefix,
+                              const absl::Status& status);
+
+/// Adds detail to the message of status in parens.
+absl::Status AddMessageDetail(absl::string_view detail,
+                              const absl::Status& status);
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//                  ALL APIs BELOW ARE DEPRECATED!
+//
+//         Callers should instead use absl::Status APIs directly.
+//
+///////////////////////////////////////////////////////////////////////////////
+
 /// This enum should have the same value of grpc_error_ints
 enum class StatusIntProperty {
   /// stream identifier: for errors that are associated with an individual
@@ -89,14 +105,6 @@ GRPC_MUST_USE_RESULT std::vector<absl::Status> StatusGetChildren(
 /// e.g.
 ///   CANCELLATION:SampleMessage {errno:'2021', line:'54', children:[ABORTED]}
 GRPC_MUST_USE_RESULT std::string StatusToString(const absl::Status& status);
-
-/// Adds prefix to the message of status.
-absl::Status AddMessagePrefix(absl::string_view prefix,
-                              const absl::Status& status);
-
-/// Adds detail to the message of status in parens.
-absl::Status AddMessageDetail(absl::string_view detail,
-                              const absl::Status& status);
 
 namespace internal {
 

@@ -19,6 +19,14 @@
 #ifndef GRPC_SRC_CORE_LIB_IOMGR_ERROR_H
 #define GRPC_SRC_CORE_LIB_IOMGR_ERROR_H
 
+///////////////////////////////////////////////////////////////////////////////
+//
+//                ALL APIs IN THIS FILE ARE DEPRECATED!
+//
+//         Callers should instead use absl::Status APIs directly.
+//
+///////////////////////////////////////////////////////////////////////////////
+
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/port_platform.h>
