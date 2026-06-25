@@ -1370,7 +1370,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ClientHandshakes) {
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
   EXPECT_EQ(attributes.size(), 5);
   const auto* status_value = std::get_if<std::string>(
-      &attributes.at("grpc.security.handshaker.status"));
+      &attributes.at("grpc.tls.handshake.result"));
   ASSERT_NE(status_value, nullptr);
   EXPECT_EQ(*status_value, "OK");
   const auto* target_value =
@@ -1378,7 +1378,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ClientHandshakes) {
   ASSERT_NE(target_value, nullptr);
   EXPECT_EQ(*target_value, "foo.test.google.fr");
   const auto* resumed_value = std::get_if<std::string>(
-      &attributes.at("grpc.security.handshaker.resumed"));
+      &attributes.at("grpc.tls.handshake.resumed"));
   ASSERT_NE(resumed_value, nullptr);
   EXPECT_EQ(*resumed_value, "false");
   const auto* locality_value =
@@ -1414,11 +1414,11 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ServerHandshakes) {
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
   EXPECT_EQ(attributes.size(), 2);
   const auto* status_value = std::get_if<std::string>(
-      &attributes.at("grpc.security.handshaker.status"));
+      &attributes.at("grpc.tls.handshake.result"));
   ASSERT_NE(status_value, nullptr);
   EXPECT_EQ(*status_value, "OK");
   const auto* resumed_value = std::get_if<std::string>(
-      &attributes.at("grpc.security.handshaker.resumed"));
+      &attributes.at("grpc.tls.handshake.resumed"));
   ASSERT_NE(resumed_value, nullptr);
   EXPECT_EQ(*resumed_value, "false");
 }
@@ -1443,10 +1443,10 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ClientHandshakesFailed) {
         if (!data.contains(kMetricName)) return true;
         for (const auto& point : data.at(kMetricName)) {
           const auto& attributes = point.attributes.GetAttributes();
-          if (attributes.find("grpc.security.handshaker.status") !=
+          if (attributes.find("grpc.tls.handshake.result") !=
               attributes.end()) {
             const auto* status = std::get_if<std::string>(
-                &attributes.at("grpc.security.handshaker.status"));
+                &attributes.at("grpc.tls.handshake.result"));
             if (status != nullptr && *status != "OK") {
               return false;
             }
@@ -1458,10 +1458,10 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ClientHandshakesFailed) {
       nullptr;
   for (const auto& point : data.at(kMetricName)) {
     const auto& attributes = point.attributes.GetAttributes();
-    if (attributes.find("grpc.security.handshaker.status") !=
+    if (attributes.find("grpc.tls.handshake.result") !=
         attributes.end()) {
       const auto* status = std::get_if<std::string>(
-          &attributes.at("grpc.security.handshaker.status"));
+          &attributes.at("grpc.tls.handshake.result"));
       if (status != nullptr && *status != "OK") {
         failure_point = &point;
         break;
@@ -1478,7 +1478,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ClientHandshakesFailed) {
   const auto& attributes = failure_point->attributes.GetAttributes();
   EXPECT_EQ(attributes.size(), 5);
   const auto* status_value = std::get_if<std::string>(
-      &attributes.at("grpc.security.handshaker.status"));
+      &attributes.at("grpc.tls.handshake.result"));
   ASSERT_NE(status_value, nullptr);
   EXPECT_NE(*status_value, "OK");
   const auto* target_value =
@@ -1486,7 +1486,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ClientHandshakesFailed) {
   ASSERT_NE(target_value, nullptr);
   EXPECT_EQ(*target_value, "foo.test.google.fr");
   const auto* resumed_value = std::get_if<std::string>(
-      &attributes.at("grpc.security.handshaker.resumed"));
+      &attributes.at("grpc.tls.handshake.resumed"));
   ASSERT_NE(resumed_value, nullptr);
   EXPECT_EQ(*resumed_value, "false");
   const auto* locality_value =
@@ -1515,10 +1515,10 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ServerHandshakesFailed) {
         if (!data.contains(kMetricName)) return true;
         for (const auto& point : data.at(kMetricName)) {
           const auto& attributes = point.attributes.GetAttributes();
-          if (attributes.find("grpc.security.handshaker.status") !=
+          if (attributes.find("grpc.tls.handshake.result") !=
               attributes.end()) {
             const auto* status = std::get_if<std::string>(
-                &attributes.at("grpc.security.handshaker.status"));
+                &attributes.at("grpc.tls.handshake.result"));
             if (status != nullptr && *status != "OK") {
               return false;
             }
@@ -1530,10 +1530,10 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ServerHandshakesFailed) {
       nullptr;
   for (const auto& point : data.at(kMetricName)) {
     const auto& attributes = point.attributes.GetAttributes();
-    if (attributes.find("grpc.security.handshaker.status") !=
+    if (attributes.find("grpc.tls.handshake.result") !=
         attributes.end()) {
       const auto* status = std::get_if<std::string>(
-          &attributes.at("grpc.security.handshaker.status"));
+          &attributes.at("grpc.tls.handshake.result"));
       if (status != nullptr && *status != "OK") {
         failure_point = &point;
         break;
@@ -1550,11 +1550,11 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ServerHandshakesFailed) {
   const auto& attributes = failure_point->attributes.GetAttributes();
   EXPECT_EQ(attributes.size(), 2);
   const auto* status_value = std::get_if<std::string>(
-      &attributes.at("grpc.security.handshaker.status"));
+      &attributes.at("grpc.tls.handshake.result"));
   ASSERT_NE(status_value, nullptr);
   EXPECT_NE(*status_value, "OK");
   const auto* resumed_value = std::get_if<std::string>(
-      &attributes.at("grpc.security.handshaker.resumed"));
+      &attributes.at("grpc.tls.handshake.resumed"));
   ASSERT_NE(resumed_value, nullptr);
   EXPECT_EQ(*resumed_value, "false");
 }

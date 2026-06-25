@@ -1596,7 +1596,7 @@ void SslTransportSecurityTest::ExpectHandshakeWithLabels(
 TEST_P(SslTransportSecurityTest, TestHandshakeMetricsIncremented) {
   TestOnlyResetInstruments();
   auto root_scope = CreateRootCollectionScope(
-      {"grpc.security.handshaker.status", "grpc.security.handshaker.resumed"},
+      {"grpc.tls.handshake.result", "grpc.tls.handshake.resumed"},
       32, 32);
 
   TestMetricsSink sink_before;
@@ -1616,18 +1616,18 @@ TEST_P(SslTransportSecurityTest, TestHandshakeMetricsIncremented) {
   ExpectHandshakeWithLabels(sink_before, sink_after,
                             /*expected_client_labels=*/
                             std::map<std::string, std::string>{
-                                {"grpc.security.handshaker.status", "OK"},
-                                {"grpc.security.handshaker.resumed", "false"}},
+                                {"grpc.tls.handshake.result", "OK"},
+                                {"grpc.tls.handshake.resumed", "false"}},
                             /*expected_server_labels=*/
                             std::map<std::string, std::string>{
-                                {"grpc.security.handshaker.status", "OK"},
-                                {"grpc.security.handshaker.resumed", "false"}});
+                                {"grpc.tls.handshake.result", "OK"},
+                                {"grpc.tls.handshake.resumed", "false"}});
 }
 
 TEST_P(SslTransportSecurityTest, TestBadServerCertMetricsIncremented) {
   TestOnlyResetInstruments();
   auto root_scope = CreateRootCollectionScope(
-      {"grpc.security.handshaker.status", "grpc.security.handshaker.resumed"},
+      {"grpc.tls.handshake.result", "grpc.tls.handshake.resumed"},
       32, 32);
 
   TestMetricsSink sink_before;
@@ -1653,14 +1653,14 @@ TEST_P(SslTransportSecurityTest, TestBadServerCertMetricsIncremented) {
       sink_before, sink_after,
       /*expected_client_labels=*/
       std::map<std::string, std::string>{
-          {"grpc.security.handshaker.status", "CERTIFICATE_AUTHORITY_INVALID"}},
+          {"grpc.tls.handshake.result", "CERTIFICATE_AUTHORITY_INVALID"}},
       /*expected_server_labels=*/std::nullopt);
 }
 
 TEST_P(SslTransportSecurityTest, TestBadClientCertMetricsIncremented) {
   TestOnlyResetInstruments();
   auto root_scope = CreateRootCollectionScope(
-      {"grpc.security.handshaker.status", "grpc.security.handshaker.resumed"},
+      {"grpc.tls.handshake.result", "grpc.tls.handshake.resumed"},
       32, 32);
 
   TestMetricsSink sink_before;
@@ -1686,14 +1686,14 @@ TEST_P(SslTransportSecurityTest, TestBadClientCertMetricsIncremented) {
       std::nullopt;
   if (is_tls_13) {
     expected_client_labels = std::map<std::string, std::string>{
-        {"grpc.security.handshaker.status", "OK"},
-        {"grpc.security.handshaker.resumed", "false"}};
+        {"grpc.tls.handshake.result", "OK"},
+        {"grpc.tls.handshake.resumed", "false"}};
   }
 
   ExpectHandshakeWithLabels(
       sink_before, sink_after, expected_client_labels,
       /*expected_server_labels=*/
-      std::map<std::string, std::string>{{"grpc.security.handshaker.status",
+      std::map<std::string, std::string>{{"grpc.tls.handshake.result",
                                           "CERTIFICATE_AUTHORITY_INVALID"}});
 }
 

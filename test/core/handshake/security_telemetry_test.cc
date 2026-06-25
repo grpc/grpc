@@ -58,10 +58,10 @@ class MockMetricsSink : public MetricsSink {
 
 TEST(ClientSecurityTelemetryTest, RecordAndQuery) {
   auto scope = CreateCollectionScope(
-      {}, {"grpc.security.handshaker.status", "grpc.target",
-           "grpc.security.handshaker.resumed", "grpc.lb.locality",
+      {}, {"grpc.tls.handshake.result", "grpc.target",
+           "grpc.tls.handshake.resumed", "grpc.lb.locality",
            "grpc.lb.backend_service"});
-  auto storage = ClientHandshakeTelemetryDomain::GetStorage(
+  auto storage = TlsClientHandshakeTelemetryDomain::GetStorage(
       scope, "OK", "dns:///localhost:50051", "false", "", "");
 
   std::vector<std::string> label_values = {"OK", "dns:///localhost:50051",
@@ -77,7 +77,7 @@ TEST(ClientSecurityTelemetryTest, RecordAndQuery) {
   MetricsQuery().OnlyMetrics({"grpc.client.tls.handshakes"}).Run(scope, sink);
   ::testing::Mock::VerifyAndClearExpectations(&sink);
 
-  storage->Increment(ClientHandshakeTelemetryDomain::kHandshakes);
+  storage->Increment(TlsClientHandshakeTelemetryDomain::kHandshakes);
 
   EXPECT_CALL(sink,
               Counter(::testing::_, ::testing::ElementsAreArray(label_values),
@@ -88,10 +88,10 @@ TEST(ClientSecurityTelemetryTest, RecordAndQuery) {
 }
 
 TEST(ServerSecurityTelemetryTest, RecordAndQuery) {
-  auto scope = CreateCollectionScope({}, {"grpc.security.handshaker.status",
-                                          "grpc.security.handshaker.resumed"});
+  auto scope = CreateCollectionScope({}, {"grpc.tls.handshake.result",
+                                          "grpc.tls.handshake.resumed"});
   auto storage =
-      ServerHandshakeTelemetryDomain::GetStorage(scope, "OK", "false");
+      TlsServerHandshakeTelemetryDomain::GetStorage(scope, "OK", "false");
 
   std::vector<std::string> label_values = {"OK", "false"};
 
@@ -105,7 +105,7 @@ TEST(ServerSecurityTelemetryTest, RecordAndQuery) {
   MetricsQuery().OnlyMetrics({"grpc.server.tls.handshakes"}).Run(scope, sink);
   ::testing::Mock::VerifyAndClearExpectations(&sink);
 
-  storage->Increment(ServerHandshakeTelemetryDomain::kHandshakes);
+  storage->Increment(TlsServerHandshakeTelemetryDomain::kHandshakes);
 
   EXPECT_CALL(sink,
               Counter(::testing::_, ::testing::ElementsAreArray(label_values),

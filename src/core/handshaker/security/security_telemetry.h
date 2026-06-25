@@ -19,14 +19,13 @@
 
 namespace grpc_core {
 
-class ClientHandshakeTelemetryDomain final
-    : public InstrumentDomain<ClientHandshakeTelemetryDomain> {
+class TlsClientHandshakeTelemetryDomain final
+    : public InstrumentDomain<TlsClientHandshakeTelemetryDomain> {
  public:
   using Backend = LowContentionBackend;
-  static constexpr absl::string_view kName = "client_security_handshaker";
-  GRPC_INSTRUMENT_DOMAIN_LABELS("grpc.security.handshaker.status",
-                                "grpc.target",
-                                "grpc.security.handshaker.resumed",
+  static constexpr absl::string_view kName = "tls_client_security_handshaker";
+  GRPC_INSTRUMENT_DOMAIN_LABELS("grpc.tls.handshake.result", "grpc.target",
+                                "grpc.tls.handshake.resumed",
                                 "grpc.lb.locality", "grpc.lb.backend_service");
 
   static inline const auto kHandshakes = RegisterCounter(
@@ -34,13 +33,13 @@ class ClientHandshakeTelemetryDomain final
       "Total number of client-side TLS handshakes", "{handshake}");
 };
 
-class ServerHandshakeTelemetryDomain final
-    : public InstrumentDomain<ServerHandshakeTelemetryDomain> {
+class TlsServerHandshakeTelemetryDomain final
+    : public InstrumentDomain<TlsServerHandshakeTelemetryDomain> {
  public:
   using Backend = LowContentionBackend;
-  static constexpr absl::string_view kName = "server_security_handshaker";
-  GRPC_INSTRUMENT_DOMAIN_LABELS("grpc.security.handshaker.status",
-                                "grpc.security.handshaker.resumed");
+  static constexpr absl::string_view kName = "tls_server_security_handshaker";
+  GRPC_INSTRUMENT_DOMAIN_LABELS("grpc.tls.handshake.result",
+                                "grpc.tls.handshake.resumed");
 
   static inline const auto kHandshakes = RegisterCounter(
       "grpc.server.tls.handshakes",

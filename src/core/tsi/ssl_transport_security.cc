@@ -315,14 +315,14 @@ void tsi_ssl_handshaker::RecordTelemetry(tsi_result status, int ssl_error,
                                            : grpc_core::GlobalCollectionScope();
 
   if (is_client) {
-    auto storage = grpc_core::ClientHandshakeTelemetryDomain::GetStorage(
+    auto storage = grpc_core::TlsClientHandshakeTelemetryDomain::GetStorage(
         std::move(scope), status_str, target, resumed, locality,
         backend_service);
-    storage->Increment(grpc_core::ClientHandshakeTelemetryDomain::kHandshakes);
+    storage->Increment(grpc_core::TlsClientHandshakeTelemetryDomain::kHandshakes);
   } else {
-    auto storage = grpc_core::ServerHandshakeTelemetryDomain::GetStorage(
+    auto storage = grpc_core::TlsServerHandshakeTelemetryDomain::GetStorage(
         std::move(scope), status_str, resumed);
-    storage->Increment(grpc_core::ServerHandshakeTelemetryDomain::kHandshakes);
+    storage->Increment(grpc_core::TlsServerHandshakeTelemetryDomain::kHandshakes);
   }
 }
 
