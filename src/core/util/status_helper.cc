@@ -1,17 +1,3 @@
-
-namespace {
-
-absl::Status ReplaceStatusMessage(const absl::Status& status,
-                                  absl::string_view message) {
-  absl::Status new_status(status.code(), message);
-  status.ForEachPayload(
-      [&](absl::string_view type_url, const absl::Cord& payload) {
-        new_status.SetPayload(type_url, payload);
-      });
-  return new_status;
-}
-
-}  // namespace
 //
 //
 // Copyright 2021 the gRPC authors.
