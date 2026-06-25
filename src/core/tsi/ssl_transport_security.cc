@@ -245,7 +245,7 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
   std::optional<absl::Status> cert_selection_status ABSL_GUARDED_BY(mu);
   // This may be from the factory, or from the certificate selection result when
   // the certificate selector is used.
-  std::shared_ptr<grpc_core::PrivateKeySigner> key_signer;
+  std::shared_ptr<grpc_core::PrivateKeySigner> key_signer ABSL_GUARDED_BY(mu);
   // The signed_bytes are populated when the signature process is completed if
   // the Private Key offload was successful. If there was an error during the
   // signature, the status will be returned.
@@ -556,19 +556,20 @@ absl::Status ProcessSelectCertificateResult(tsi_ssl_handshaker* handshaker,
         }
         return absl::OkStatus();
       },
-      [&](std::shared_ptr<grpc_core::PrivateKeySigner>* signer) {
-        VLOG(2) << "Select cert result returned a private key signer.";
-        handshaker->key_signer = std::move(*signer);
-        if (!SSL_set_chain_and_key(
-                handshaker->ssl, cert_chain.data(), cert_chain.size(),
-                /*privkey=*/nullptr, &TlsOffloadPrivateKeyMethod)) {
-          return absl::InternalError(
-              absl::StrFormat("Failed to set chain and key: %s",
-                              tsi::SslErrorString(SSL_get_error(
-                                  handshaker->ssl, /*ret_code=*/0))));
-        }
-        return absl::OkStatus();
-      });
+      [&](std::shared_ptr<grpc_core::PrivateKeySigner>* signer)
+          ABSL_NO_THREAD_SAFETY_ANALYSIS {
+            VLOG(2) << "Select cert result returned a private key signer.";
+            handshaker->key_signer = std::move(*signer);
+            if (!SSL_set_chain_and_key(
+                    handshaker->ssl, cert_chain.data(), cert_chain.size(),
+                    /*privkey=*/nullptr, &TlsOffloadPrivateKeyMethod)) {
+              return absl::InternalError(
+                  absl::StrFormat("Failed to set chain and key: %s",
+                                  tsi::SslErrorString(SSL_get_error(
+                                      handshaker->ssl, /*ret_code=*/0))));
+            }
+            return absl::OkStatus();
+          });
 }
 
 // Invoked by the cert selector when it runs asynchronously.
@@ -2627,6 +2628,7 @@ static tsi_result ssl_handshaker_next(
 static void ssl_handshaker_shutdown(tsi_handshaker* self) {
 #if defined(OPENSSL_IS_BORINGSSL)
   tsi_ssl_handshaker* impl = static_cast<tsi_ssl_handshaker*>(self);
+  std::shared_ptr<grpc_core::PrivateKeySigner> key_signer;
   std::shared_ptr<grpc_core::PrivateKeySigner::AsyncSigningHandle>
       signing_handle;
   std::shared_ptr<AsyncCertificateSelectionHandle> cert_selection_handle;
@@ -2635,7 +2637,8 @@ static void ssl_handshaker_shutdown(tsi_handshaker* self) {
     grpc_core::MutexLock lock(&impl->mu);
     if (impl->ssl == nullptr) return;
     impl->is_shutdown = true;
-    if (impl->signing_handle != nullptr && impl->key_signer != nullptr) {
+    if (impl->key_signer != nullptr && impl->signing_handle != nullptr) {
+      key_signer = std::move(impl->key_signer);
       signing_handle = std::move(impl->signing_handle);
     }
     if (GetCertificateSelector(impl) != nullptr &&
@@ -2654,8 +2657,8 @@ static void ssl_handshaker_shutdown(tsi_handshaker* self) {
   // callback, which will then acquire the mutex here.  So we can't also be
   // holding the mutex here while calling the plugin's Cancel method, which may
   // need to acquire its own mutex.
-  if (signing_handle != nullptr) {
-    impl->key_signer->Cancel(signing_handle);
+  if (key_signer != nullptr) {
+    key_signer->Cancel(signing_handle);
   }
   if (cert_selection_handle != nullptr) {
     reinterpret_cast<tsi_ssl_server_handshaker_factory*>(impl->factory_ref)
@@ -2816,7 +2819,10 @@ static tsi_result create_tsi_ssl_handshaker(
   impl->is_client = is_client;
   impl->collection_scope = std::move(collection_scope);
 #if defined(OPENSSL_IS_BORINGSSL)
-  impl->key_signer = std::move(key_signer);
+  {
+    absl::MutexLock lock(&impl->mu);
+    impl->key_signer = std::move(key_signer);
+  }
 #endif
 
   *handshaker = impl;
@@ -2991,7 +2997,8 @@ static int does_entry_match_name(absl::string_view entry,
 
 static int ssl_server_handshaker_factory_servername_callback(SSL* ssl,
                                                              int* /*ap*/,
-                                                             void* arg) {
+                                                             void* arg)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(&tsi_ssl_handshaker::mu) {
   tsi_ssl_server_handshaker_factory* impl =
       static_cast<tsi_ssl_server_handshaker_factory*>(arg);
   const char* servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
