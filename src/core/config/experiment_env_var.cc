@@ -28,5 +28,3 @@ bool IsExperimentEnvVarEnabled(const char* name, bool default_value) {
 }
 
 }  // namespace grpc_core
-
-#endif  // GRPC_SRC_CORE_CONFIG_EXPERIMENT_ENV_VAR_H
