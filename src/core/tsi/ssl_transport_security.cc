@@ -236,9 +236,6 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
   std::string backend_service;
   bool metric_recorded ABSL_GUARDED_BY(mu) = false;
 
-  void RecordTelemetry(tsi_result status, int ssl_error = SSL_ERROR_NONE,
-                       unsigned long err_code = 0)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu);
   void MaybeRecordTelemetry(const SslHandshakeResult& handshake_result)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu);
 
@@ -256,30 +253,11 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
 
 void tsi_ssl_handshaker::MaybeRecordTelemetry(
     const SslHandshakeResult& handshake_result) {
-  if (handshake_result.tsi_handshake_result == TSI_ASYNC ||
-      handshake_result.tsi_handshake_result == TSI_INCOMPLETE_DATA ||
+  if (handshake_result.tsi_handshake_result == TSI_INCOMPLETE_DATA ||
       handshake_result.tsi_handshake_result == TSI_DRAIN_BUFFER) {
     return;
   }
-  if (handshake_result.tsi_handshake_result == TSI_OK) {
-    if (handshaker_result_created) {
-      RecordTelemetry(TSI_OK);
-    }
-  } else {
-    RecordTelemetry(handshake_result.tsi_handshake_result,
-                    handshake_result.ssl_error, handshake_result.err_code);
-  }
-}
-
-void tsi_ssl_handshaker::RecordTelemetry(tsi_result status, int ssl_error,
-                                         unsigned long err_code) {
-  if (status == TSI_ASYNC || status == TSI_INCOMPLETE_DATA ||
-      status == TSI_DRAIN_BUFFER) {
-    return;
-  }
   if (metric_recorded) return;
-  metric_recorded = true;
-
   SSL* active_ssl = ssl;
   if (active_ssl == nullptr && handshaker_next_args.has_value() &&
       handshaker_next_args->handshaker_result != nullptr) {
@@ -287,21 +265,19 @@ void tsi_ssl_handshaker::RecordTelemetry(tsi_result status, int ssl_error,
         handshaker_next_args->handshaker_result);
     active_ssl = res->ssl;
   }
-
-  std::string resumed = active_ssl == nullptr            ? "unknown"
-                        : SSL_session_reused(active_ssl) ? "true"
-                                                         : "false";
-
+  absl::string_view resumed = active_ssl == nullptr            ? "unknown"
+                              : SSL_session_reused(active_ssl) ? "true"
+                                                               : "false";
   grpc_core::TlsTelemetryHandshakeResult result;
-  if (status == TSI_OK) {
+  if (handshake_result.tsi_handshake_result == TSI_OK) {
     result = grpc_core::TlsTelemetryHandshakeResult::kSuccess;
-  } else if (status == TSI_HANDSHAKE_SHUTDOWN) {
+  } else if (handshake_result.tsi_handshake_result == TSI_HANDSHAKE_SHUTDOWN) {
     result = grpc_core::TlsTelemetryHandshakeResult::kPeerConnectionClosed;
   } else {
     long verify_res =
         active_ssl != nullptr ? SSL_get_verify_result(active_ssl) : X509_V_OK;
     result = grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(
-        ssl_error, err_code, verify_res);
+        handshake_result.ssl_error, handshake_result.err_code, verify_res);
     if (result == grpc_core::TlsTelemetryHandshakeResult::kSuccess) {
       // If OpenSSL didn't report a granular certificate/SSL error, map the TSI
       // error status.
@@ -313,17 +289,27 @@ void tsi_ssl_handshaker::RecordTelemetry(tsi_result status, int ssl_error,
 
   auto scope = collection_scope != nullptr ? collection_scope
                                            : grpc_core::GlobalCollectionScope();
-
   if (is_client) {
     auto storage = grpc_core::TlsClientHandshakeTelemetryDomain::GetStorage(
         std::move(scope), status_str, target, resumed, locality,
         backend_service);
-    storage->Increment(grpc_core::TlsClientHandshakeTelemetryDomain::kHandshakes);
+    storage->Increment(
+        grpc_core::TlsClientHandshakeTelemetryDomain::kHandshakes);
   } else {
     auto storage = grpc_core::TlsServerHandshakeTelemetryDomain::GetStorage(
         std::move(scope), status_str, resumed);
-    storage->Increment(grpc_core::TlsServerHandshakeTelemetryDomain::kHandshakes);
+    storage->Increment(
+        grpc_core::TlsServerHandshakeTelemetryDomain::kHandshakes);
   }
+  metric_recorded = true;
+  // if (handshake_result.tsi_handshake_result == TSI_OK) {
+  //   if (handshaker_result_created) {
+  //     RecordTelemetry(TSI_OK);
+  //   }
+  // } else {
+  //   RecordTelemetry(handshake_result.tsi_handshake_result,
+  //                   handshake_result.ssl_error, handshake_result.err_code);
+  // }
 }
 
 static std::pair<tsi_result, std::optional<HandshakerNextArgs>>
@@ -2503,8 +2489,8 @@ ssl_handshaker_next_async(tsi_ssl_handshaker* self)
     return {TSI_HANDSHAKE_SHUTDOWN, std::nullopt};
   }
   SslHandshakeResult handshake_result = ssl_handshaker_next_impl(self);
-  self->MaybeRecordTelemetry(handshake_result);
   if (handshake_result.tsi_handshake_result != TSI_ASYNC) {
+    self->MaybeRecordTelemetry(handshake_result);
     // We now have a result to return to the caller via the callback.
     std::optional<HandshakerNextArgs> args =
         std::move(self->handshaker_next_args);
@@ -2552,8 +2538,8 @@ static tsi_result ssl_handshaker_next(
     *bytes_to_send_size = impl->handshaker_next_args->bytes_to_send_size;
     *handshaker_result = impl->handshaker_next_args->handshaker_result;
   }
-  impl->MaybeRecordTelemetry(handshake_result);
   if (handshake_result.tsi_handshake_result != TSI_ASYNC) {
+    impl->MaybeRecordTelemetry(handshake_result);
     impl->handshaker_next_args.reset();
   }
   return handshake_result.tsi_handshake_result;
@@ -2569,7 +2555,11 @@ static void ssl_handshaker_shutdown(tsi_handshaker* self) {
     grpc_core::MutexLock lock(&impl->mu);
     if (impl->ssl == nullptr) return;
     impl->is_shutdown = true;
-    impl->RecordTelemetry(TSI_HANDSHAKE_SHUTDOWN);
+    impl->MaybeRecordTelemetry({
+        /*tsi_result=*/TSI_HANDSHAKE_SHUTDOWN,
+        /*ssl_error=*/SSL_ERROR_NONE,
+        /*err_code=*/0,
+    });
     if (impl->key_signer != nullptr && impl->signing_handle != nullptr) {
       signing_handle = std::move(impl->signing_handle);
     }
