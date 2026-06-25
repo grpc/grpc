@@ -109,15 +109,12 @@ class grpc_ssl_channel_security_connector final
     grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope =
         stats_plugin_group != nullptr ? stats_plugin_group->GetCollectionScope()
                                       : nullptr;
-    constexpr absl::string_view kLocalityLabel = "grpc.lb.locality";
-    constexpr absl::string_view kBackendServiceLabel =
-        "grpc.lb.backend_service";
-    constexpr absl::string_view kInternalBackendServiceLabel =
-        "grpc.internal.backend_service";
-    std::string locality(args.GetString(kLocalityLabel).value_or(""));
     std::string backend_service(
-        args.GetString(kInternalBackendServiceLabel)
-            .value_or(args.GetString(kBackendServiceLabel).value_or("")));
+        args.GetString(GRPC_ARG_BACKEND_SERVICE).value_or(""));
+    // TODO(gtcooke94) - the channel arg is being added in #41073, once it is
+    // done uncomment this
+    // std::string locality = args.GetString(GRPC_ARG_LB_LOCALITY).value_or("");
+    std::string locality = "TODO";
     tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
         client_handshaker_factory_,
         overridden_target_name_.empty() ? target_name_.c_str()
