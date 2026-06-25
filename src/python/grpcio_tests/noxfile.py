@@ -48,7 +48,37 @@ def build_py(session: nox.Session):
 
     session.log("Running build_py for grpcio-tools")
 
-    session.run("python", "setup.py", "build_package_protos", "build_py")
+    from grpc_tools import command
+    try:
+        # Compiles all protos found inside PYTHON_STEM
+        command.build_package_protos(PYTHON_STEM, False)
+    except Exception as error:
+        session.log(f"Warning: failed to generate package protos: {error}")
+
+    packages = [
+        name
+        for name in os.listdir(PYTHON_STEM)
+        # if is a directory
+        if os.path.isdir(os.path.join(PYTHON_STEM, name))
+        # if is a package, i.e. has __init__.py file
+        and os.path.exists(os.path.join(PYTHON_STEM, name, "__init__.py"))
+    ]
+
+    build_lib_root = os.path.join(PYTHON_STEM, "build", "lib")
+
+    for package in packages:
+        src_dir = os.path.join(PYTHON_STEM, package)
+        build_dir = os.path.join(build_lib_root, package)
+
+        if os.path.exists(build_dir):
+            shutil.rmtree(build_dir)
+
+        def ignore_patterns(path, names):
+            return [name for name in names if name =="__pycache__" or name.endswith(".pyc")]
+        
+        shutil.copytree(src_dir, build_dir, ignore=ignore_patterns)
+
+    session.log(f"Successfully copied test packages to {build_lib_root}")
 
 @nox.session(venv_params=["--system-site-packages"])
 def build_package_protos(session: nox.Session):
@@ -242,6 +272,16 @@ def run_fork(session: nox.Session):
         env={"GRPC_ENABLE_FORK_SUPPORT": "true"},
     )
 
+@nox.session
+def clean(session: nox.Session):
+    """Session to clean build artifacts."""
+    import shutil
 
+    # Define directories to clean
+    build_dir = os.path.join(PYTHON_STEM, "build")
+    egg_info_dir = os.path.join(PYTHON_STEM, "grpcio_tests.egg-info")
 
-
+    for directory in (build_dir, egg_info_dir):
+        if os.path.exists(directory):
+            session.log(f"Removing {directory}")
+            shutil.rmtree(directory)
