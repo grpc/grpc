@@ -907,10 +907,10 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
               Slice(grpc_slice_copy(
                   *op->data.send_status_from_server.status_details)));
           if (!status_error.ok()) {
-            status_error = grpc_error_set_str(
-                status_error, StatusStrProperty::kGrpcMessage,
+            status_error = AddMessageDetail(
                 StringViewFromSlice(
-                    *op->data.send_status_from_server.status_details));
+                    *op->data.send_status_from_server.status_details),
+                status_error);
           }
         }
 

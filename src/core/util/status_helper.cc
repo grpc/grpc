@@ -1,3 +1,17 @@
+
+namespace {
+
+absl::Status ReplaceStatusMessage(const absl::Status& status,
+                                  absl::string_view message) {
+  absl::Status new_status(status.code(), message);
+  status.ForEachPayload(
+      [&](absl::string_view type_url, const absl::Cord& payload) {
+        new_status.SetPayload(type_url, payload);
+      });
+  return new_status;
+}
+
+}  // namespace
 //
 //
 // Copyright 2021 the gRPC authors.
@@ -46,11 +60,9 @@ namespace {
 
 #define TYPE_URL_PREFIX "type.googleapis.com/grpc.status."
 #define TYPE_INT_TAG "int."
-#define TYPE_STR_TAG "str."
 #define TYPE_URL(name) (TYPE_URL_PREFIX name)
 const absl::string_view kTypeUrlPrefix = TYPE_URL_PREFIX;
 const absl::string_view kTypeIntTag = TYPE_INT_TAG;
-const absl::string_view kTypeStrTag = TYPE_STR_TAG;
 
 const char* GetStatusIntPropertyUrl(StatusIntProperty key) {
   switch (key) {
@@ -64,14 +76,6 @@ const char* GetStatusIntPropertyUrl(StatusIntProperty key) {
       return TYPE_URL(TYPE_INT_TAG "channel_connectivity_state");
     case StatusIntProperty::kLbPolicyDrop:
       return TYPE_URL(TYPE_INT_TAG "lb_policy_drop");
-  }
-  GPR_UNREACHABLE_CODE(return "unknown");
-}
-
-const char* GetStatusStrPropertyUrl(StatusStrProperty key) {
-  switch (key) {
-    case StatusStrProperty::kGrpcMessage:
-      return TYPE_URL(TYPE_STR_TAG "grpc_message");
   }
   GPR_UNREACHABLE_CODE(return "unknown");
 }
@@ -132,46 +136,6 @@ std::optional<intptr_t> StatusGetInt(const absl::Status& status,
         return value;
       }
     }
-  }
-  return {};
-}
-
-namespace {
-
-absl::Status ReplaceStatusMessage(const absl::Status& status,
-                                  absl::string_view message) {
-  absl::Status new_status(status.code(), message);
-  status.ForEachPayload(
-      [&](absl::string_view type_url, const absl::Cord& payload) {
-        new_status.SetPayload(type_url, payload);
-      });
-  return new_status;
-}
-
-}  // namespace
-
-void StatusSetStr(absl::Status* status, StatusStrProperty key,
-                  absl::string_view value) {
-  if (key == StatusStrProperty::kGrpcMessage) {
-    if (!status->ok()) {
-      *status = ReplaceStatusMessage(
-          *status, status->message().empty()
-                       ? value
-                       : absl::StrCat(value, " (", status->message(), ")"));
-    }
-    return;
-  }
-  status->SetPayload(GetStatusStrPropertyUrl(key), absl::Cord(value));
-}
-
-std::optional<std::string> StatusGetStr(const absl::Status& status,
-                                        StatusStrProperty key) {
-  if (key == StatusStrProperty::kGrpcMessage) {
-    return std::string(status.message());
-  }
-  auto p = status.GetPayload(GetStatusStrPropertyUrl(key));
-  if (p.has_value()) {
-    return std::string(*p);
   }
   return {};
 }
@@ -252,10 +216,30 @@ std::string StatusToString(const absl::Status& status) {
                      : absl::StrCat(head, " {", absl::StrJoin(kvs, ", "), "}");
 }
 
+namespace {
+
+absl::Status ReplaceStatusMessage(const absl::Status& status,
+                                  absl::string_view message) {
+  absl::Status new_status(status.code(), message);
+  status.ForEachPayload(
+      [&](absl::string_view type_url, const absl::Cord& payload) {
+        new_status.SetPayload(type_url, payload);
+      });
+  return new_status;
+}
+
+}  // namespace
+
 absl::Status AddMessagePrefix(absl::string_view prefix,
                               const absl::Status& status) {
   return ReplaceStatusMessage(status,
                               absl::StrCat(prefix, ": ", status.message()));
+}
+
+absl::Status AddMessageDetail(absl::string_view detail,
+                              const absl::Status& status) {
+  return ReplaceStatusMessage(
+      status, absl::StrCat(status.message(), " (", detail, ")"));
 }
 
 namespace internal {

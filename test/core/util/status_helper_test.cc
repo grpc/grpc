@@ -52,12 +52,6 @@ TEST(StatusUtilTest, GetIntNotExistent) {
             StatusGetInt(s, StatusIntProperty::kStreamId));
 }
 
-TEST(StatusUtilTest, SetAndGetStr) {
-  absl::Status s = absl::CancelledError();
-  StatusSetStr(&s, StatusStrProperty::kGrpcMessage, "value");
-  EXPECT_EQ("value", StatusGetStr(s, StatusStrProperty::kGrpcMessage));
-}
-
 TEST(StatusUtilTest, AddAndGetChildren) {
   absl::Status s = absl::UnknownError("Message1");
   absl::Status child1 = absl::AbortedError("Message2");
@@ -114,24 +108,16 @@ TEST(StatusUtilTest, ErrorWithIntPropertyToString) {
   EXPECT_EQ("CANCELLED:Message {stream_id:2021}", t);
 }
 
-TEST(StatusUtilTest, ErrorWithStrPropertyToString) {
-  absl::Status s = absl::CancelledError("Message");
-  StatusSetStr(&s, StatusStrProperty::kGrpcMessage, "Hey");
-  std::string t = StatusToString(s);
-  EXPECT_EQ(t, "CANCELLED:Hey (Message)");
-}
-
 TEST(StatusUtilTest, ComplexErrorWithChildrenToString) {
   absl::Status s = absl::CancelledError("Message");
   StatusSetInt(&s, StatusIntProperty::kStreamId, 2021);
   absl::Status s1 = absl::AbortedError("Message1");
   StatusAddChild(&s, s1);
   absl::Status s2 = absl::AlreadyExistsError("Message2");
-  StatusSetStr(&s2, StatusStrProperty::kGrpcMessage, "value");
   StatusAddChild(&s, s2);
   std::string t = StatusToString(s);
   EXPECT_EQ(t,
-            "CANCELLED:Message (Message1) (value (Message2)) {stream_id:2021}");
+            "CANCELLED:Message (Message1) (Message2) {stream_id:2021}");
 }
 
 TEST(StatusUtilTest, AllocHeapPtr) {

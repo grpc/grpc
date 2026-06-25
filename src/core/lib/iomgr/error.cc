@@ -124,23 +124,6 @@ bool grpc_error_get_int(grpc_error_handle error,
   return false;
 }
 
-grpc_error_handle grpc_error_set_str(grpc_error_handle src,
-                                     grpc_core::StatusStrProperty which,
-                                     absl::string_view str) {
-  grpc_core::StatusSetStr(&src, which, str);
-  return src;
-}
-
-bool grpc_error_get_str(grpc_error_handle error,
-                        grpc_core::StatusStrProperty which, std::string* s) {
-  std::optional<std::string> value = grpc_core::StatusGetStr(error, which);
-  if (value.has_value()) {
-    *s = std::move(*value);
-    return true;
-  }
-  return false;
-}
-
 grpc_error_handle grpc_error_add_child(grpc_error_handle src,
                                        grpc_error_handle child) {
   grpc_core::StatusAddChild(&src, child);
