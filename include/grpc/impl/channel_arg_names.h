@@ -441,6 +441,8 @@
 /** \} */
 /** If non-zero, enable TCP tracing and stats collection. */
 #define GRPC_ARG_TCP_TRACING_ENABLED "grpc.tcp_tracing_enabled"
+/* Enable tracing full buffer payloads for TCP telemetry. */
+#define GRPC_ARG_TCP_TRACE_FULL_BUFFER "grpc.experimental.tcp_trace_full_buffer"
 /** Server config fetcher. */
 #define GRPC_ARG_SERVER_CONFIG_FETCHER "grpc.server_config_fetcher"
 /** Set the maximum size of a security frame that can be received on a HTTP2
