@@ -1498,29 +1498,17 @@ TEST_P(SslTransportSecurityTest, TestServerHandshakerOverrideALPN) {
 
 class TestMetricsSink : public MetricsSink {
  public:
-  struct EmittedPoint {
-    std::string name;
-    std::map<std::string, std::string> labels;
-    uint64_t value;
-  };
+  using Labels = std::map<std::string, std::string>;
 
   void Counter(InstrumentLabelList label_keys,
                absl::Span<const std::string> label, absl::string_view name,
                uint64_t value) override {
-    if (name == "grpc.client.tls.handshakes") {
-      client_handshakes += value;
-    } else if (name == "grpc.server.tls.handshakes") {
-      server_handshakes += value;
-    }
-    EmittedPoint pt;
-    pt.name = std::string(name);
-    pt.value = value;
+    EXPECT_EQ(label_keys.size(), label.size());
+    Labels labels;
     for (size_t i = 0; i < label_keys.size(); ++i) {
-      if (i < label.size()) {
-        pt.labels[std::string(label_keys[i].label())] = label[i];
-      }
+      labels[std::string(label_keys[i].label())] = label[i];
     }
-    emitted_points.push_back(std::move(pt));
+    data_[std::string(name)][labels] += value;
   }
   void UpDownCounter(InstrumentLabelList /*label_keys*/,
                      absl::Span<const std::string> /*label*/,
@@ -1539,59 +1527,41 @@ class TestMetricsSink : public MetricsSink {
                  absl::Span<const std::string> /*labels*/,
                  absl::string_view /*name*/, uint64_t /*value*/) override {}
 
-  uint64_t client_handshakes = 0;
-  uint64_t server_handshakes = 0;
-  std::vector<EmittedPoint> emitted_points;
-};
-
-std::optional<std::map<std::string, std::string>> GetDeltaLabels(
-    const TestMetricsSink& before, const TestMetricsSink& after,
-    const std::string& instrument_name) {
-  std::map<std::map<std::string, std::string>, uint64_t> before_map;
-  for (const auto& pt : before.emitted_points) {
-    if (pt.name == instrument_name) before_map[pt.labels] = pt.value;
-  }
-  for (const auto& pt : after.emitted_points) {
-    if (pt.name == instrument_name) {
-      uint64_t before_val = before_map[pt.labels];
-      if (pt.value > before_val) {
-        return pt.labels;
+  // Returns the accumulated sum of values recorded for the given instrument
+  // name that match the specified subset of labels.
+  //
+  // NOTE: We perform a linear scan over the recorded label maps to support
+  // subset matching. Direct lookup (e.g. data_.find(subset)) would require
+  // an exact key match, forcing test cases to specify all 5 client labels
+  // (including dynamic target and empty locality/backend strings) which
+  // would make tests verbose and fragile.
+  uint64_t GetCount(const std::string& instrument_name,
+                    const Labels& subset) const {
+    auto it = data_.find(instrument_name);
+    if (it == data_.end()) return 0;
+    uint64_t sum = 0;
+    for (const auto& kv : it->second) {
+      const auto& labels = kv.first;
+      bool match = true;
+      for (const auto& sub_kv : subset) {
+        auto val_it = labels.find(sub_kv.first);
+        if (val_it == labels.end() || val_it->second != sub_kv.second) {
+          match = false;
+          break;
+        }
+      }
+      if (match) {
+        sum += kv.second;
       }
     }
-  }
-  return std::nullopt;
-}
-
-// This function asserts that the labels input are incremented exactly once from
-// sink_before to sink_after
-void SslTransportSecurityTest::ExpectHandshakeWithLabels(
-    const TestMetricsSink& sink_before, const TestMetricsSink& sink_after,
-    std::optional<std::map<std::string, std::string>> expected_client_labels,
-    std::optional<std::map<std::string, std::string>> expected_server_labels) {
-  if (expected_client_labels.has_value()) {
-    EXPECT_EQ(sink_after.client_handshakes, sink_before.client_handshakes + 1);
-    auto client_labels =
-        GetDeltaLabels(sink_before, sink_after, "grpc.client.tls.handshakes");
-    ASSERT_TRUE(client_labels.has_value());
-    for (const auto& kv : *expected_client_labels) {
-      EXPECT_EQ(client_labels->at(kv.first), kv.second);
-    }
-  } else {
-    EXPECT_EQ(sink_after.client_handshakes, sink_before.client_handshakes);
+    return sum;
   }
 
-  if (expected_server_labels.has_value()) {
-    EXPECT_EQ(sink_after.server_handshakes, sink_before.server_handshakes + 1);
-    auto server_labels =
-        GetDeltaLabels(sink_before, sink_after, "grpc.server.tls.handshakes");
-    ASSERT_TRUE(server_labels.has_value());
-    for (const auto& kv : *expected_server_labels) {
-      EXPECT_EQ(server_labels->at(kv.first), kv.second);
-    }
-  } else {
-    EXPECT_EQ(sink_after.server_handshakes, sink_before.server_handshakes);
-  }
-}
+ private:
+  std::map<std::string /*instrument_name*/,
+           std::map<Labels, uint64_t /*accumulated_value*/>>
+      data_;
+};
 
 TEST_P(SslTransportSecurityTest, TestHandshakeMetricsIncremented) {
   TestOnlyResetInstruments();
@@ -1613,15 +1583,22 @@ TEST_P(SslTransportSecurityTest, TestHandshakeMetricsIncremented) {
       .OnlyMetrics({"grpc.client.tls.handshakes", "grpc.server.tls.handshakes"})
       .Run(root_scope, sink_after);
 
-  ExpectHandshakeWithLabels(sink_before, sink_after,
-                            /*expected_client_labels=*/
-                            std::map<std::string, std::string>{
-                                {"grpc.tls.handshake.result", "OK"},
-                                {"grpc.tls.handshake.resumed", "false"}},
-                            /*expected_server_labels=*/
-                            std::map<std::string, std::string>{
-                                {"grpc.tls.handshake.result", "OK"},
-                                {"grpc.tls.handshake.resumed", "false"}});
+  // Assert client handshake succeeded.
+  EXPECT_EQ(sink_after.GetCount("grpc.client.tls.handshakes",
+                                {{"grpc.tls.handshake.result", "OK"},
+                                 {"grpc.tls.handshake.resumed", "false"}}),
+            sink_before.GetCount("grpc.client.tls.handshakes",
+                                 {{"grpc.tls.handshake.result", "OK"},
+                                  {"grpc.tls.handshake.resumed", "false"}}) +
+                1);
+  // Assert server handshake succeeded.
+  EXPECT_EQ(sink_after.GetCount("grpc.server.tls.handshakes",
+                                {{"grpc.tls.handshake.result", "OK"},
+                                 {"grpc.tls.handshake.resumed", "false"}}),
+            sink_before.GetCount("grpc.server.tls.handshakes",
+                                 {{"grpc.tls.handshake.result", "OK"},
+                                  {"grpc.tls.handshake.resumed", "false"}}) +
+                1);
 }
 
 TEST_P(SslTransportSecurityTest, TestBadServerCertMetricsIncremented) {
@@ -1649,12 +1626,16 @@ TEST_P(SslTransportSecurityTest, TestBadServerCertMetricsIncremented) {
   // in the unit test flow, when the client fails due to the bad server cert,
   // the handshaker exits immediately and the server handshaker is never called
   // again and is simply destroyed.
-  ExpectHandshakeWithLabels(
-      sink_before, sink_after,
-      /*expected_client_labels=*/
-      std::map<std::string, std::string>{
-          {"grpc.tls.handshake.result", "CERTIFICATE_AUTHORITY_INVALID"}},
-      /*expected_server_labels=*/std::nullopt);
+  EXPECT_EQ(
+      sink_after.GetCount(
+          "grpc.client.tls.handshakes",
+          {{"grpc.tls.handshake.result", "CERTIFICATE_AUTHORITY_INVALID"}}),
+      sink_before.GetCount(
+          "grpc.client.tls.handshakes",
+          {{"grpc.tls.handshake.result", "CERTIFICATE_AUTHORITY_INVALID"}}) +
+          1);
+  EXPECT_EQ(sink_after.GetCount("grpc.server.tls.handshakes", {}),
+            sink_before.GetCount("grpc.server.tls.handshakes", {}));
 }
 
 TEST_P(SslTransportSecurityTest, TestBadClientCertMetricsIncremented) {
@@ -1682,19 +1663,27 @@ TEST_P(SslTransportSecurityTest, TestBadClientCertMetricsIncremented) {
   // When the server rejects the client cert, the client will see handshake
   // success with TLS 1.3 but not with TLS 1.2
   bool is_tls_13 = (std::get<0>(GetParam()) == tsi_tls_version::TSI_TLS1_3);
-  std::optional<std::map<std::string, std::string>> expected_client_labels =
-      std::nullopt;
   if (is_tls_13) {
-    expected_client_labels = std::map<std::string, std::string>{
-        {"grpc.tls.handshake.result", "OK"},
-        {"grpc.tls.handshake.resumed", "false"}};
+    EXPECT_EQ(sink_after.GetCount("grpc.client.tls.handshakes",
+                                  {{"grpc.tls.handshake.result", "OK"},
+                                   {"grpc.tls.handshake.resumed", "false"}}),
+              sink_before.GetCount("grpc.client.tls.handshakes",
+                                   {{"grpc.tls.handshake.result", "OK"},
+                                    {"grpc.tls.handshake.resumed", "false"}}) +
+                  1);
+  } else {
+    EXPECT_EQ(sink_after.GetCount("grpc.client.tls.handshakes", {}),
+              sink_before.GetCount("grpc.client.tls.handshakes", {}));
   }
-
-  ExpectHandshakeWithLabels(
-      sink_before, sink_after, expected_client_labels,
-      /*expected_server_labels=*/
-      std::map<std::string, std::string>{{"grpc.tls.handshake.result",
-                                          "CERTIFICATE_AUTHORITY_INVALID"}});
+  EXPECT_EQ(sink_after.GetCount(
+                "grpc.server.tls.handshakes",
+                {{"grpc.tls.handshake.result", "CERTIFICATE_AUTHORITY_INVALID"},
+                 {"grpc.tls.handshake.resumed", "false"}}),
+            sink_before.GetCount(
+                "grpc.server.tls.handshakes",
+                {{"grpc.tls.handshake.result", "CERTIFICATE_AUTHORITY_INVALID"},
+                 {"grpc.tls.handshake.resumed", "false"}}) +
+                1);
 }
 
 // Configuring key exchange groups requires SSL_CTX_set1_groups_list(),
