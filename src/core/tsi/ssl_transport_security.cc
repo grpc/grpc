@@ -2726,6 +2726,7 @@ static tsi_result create_tsi_ssl_handshaker(
   impl->vtable = &handshaker_vtable;
   impl->factory_ref = tsi_ssl_handshaker_factory_ref(factory);
   impl->collection_scope = std::move(collection_scope);
+  impl->is_client = (is_client != 0);
   impl->target =
       server_name_indication != nullptr ? server_name_indication : "unknown";
   impl->locality = std::move(locality);
