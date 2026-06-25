@@ -77,3 +77,73 @@ def clean(session: nox.Session):
                 os.remove(str(path))
             else:
                 shutil.rmtree(str(path))
+
+@nox.session
+def build_project_metadata(session: nox.Session):
+    """Session to generate project metadata in a module."""
+    
+    session.log("Running build_project_metadata for grpcio")
+
+    import sys
+    sys.path.insert(0, PYTHON_STEM)
+    import grpc_version
+
+    metadata_dir = os.path.join(PYTHON_STEM, "grpc")
+    module_file_path = os.path.join(metadata_dir, "_grpcio_metadata.py")
+
+    version = grpc_version.VERSION
+    # TODO(sergiitk): sometime in Nov 2025 - consider removing the env var
+    # and making this the default behavior.
+    skip_metadata_update_on_match = os.environ.get(
+        "GRPC_PYTHON_BUILD_SKIP_METADATA_ON_VERSION_MATCH", "0"
+    )
+
+    if skip_metadata_update_on_match == "1" and os.path.exists(module_file_path):
+        import ast
+        try:
+            with open(module_file_path, "r") as module_file:
+                tree = ast.parse(module_file.read())
+            current_version = "-1"
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Assign):
+                    for target in node.targets:
+                        if isinstance(target, ast.Name) and target.id == "__version__":
+                            if isinstance(node.value, ast.Constant):
+                                current_version = node.value.value
+            if current_version == version:
+                session.log(f"Version match in _grpcio_metadata.py: {version}, skipping the update")
+                return
+        except Exception as e:
+            session.log(f"Error checking existing metadata file: {e}")
+
+    os.makedirs(metadata_dir, exist_ok=True)
+    with open(module_file_path, "w") as module_file:
+        module_file.write(f'__version__ = """{version}"""\n')
+
+
+@nox.session(venv_params=["--system-site-packages"])
+def build_py(session: nox.Session):
+    """Session for custom project build command"""
+
+    session.log("Running build_py for grpcio")
+
+    # 1. Generate project metadata first
+    build_project_metadata(session)
+
+    # 2. Replicate standard build_py by copying Python files to the build directory
+    src_dir = os.path.join(PYTHON_STEM, "grpc")
+    build_dir = os.path.join(GRPC_STEM, "build", "lib", "grpc")
+
+    if os.path.exists(build_dir):
+        shutil.rmtree(build_dir)
+
+    def ignore_patterns(path, names):
+        return [
+            name
+            for name in names
+            if name == "__pycache__"
+            or name.endswith((".c", ".cpp", ".pyx", ".so", ".pyd"))
+        ]
+
+    shutil.copytree(src_dir, build_dir, ignore=ignore_patterns)
+    session.log(f"Successfully copied pure Python packages to {build_dir}")
