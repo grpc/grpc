@@ -987,7 +987,8 @@ Endpoint::Endpoint(uint32_t id, uint32_t encode_alignment,
                   epte->EnableTcpTelemetry(
                       ep_ctx->transport_ctx->stats_plugin_group
                           ->GetCollectionScope(),
-                      /*is_control_endpoint=*/false);
+                      /*is_control_endpoint=*/false,
+                      ep_ctx->transport_ctx->trace_full_buffer);
                   epte->SetTcpTracer(std::make_shared<DefaultTcpTracer>(
                       ep_ctx->transport_ctx->stats_plugin_group));
                 }
