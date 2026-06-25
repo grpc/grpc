@@ -229,7 +229,7 @@ process_dockerfile() {
     --build-context repo_root=. \
     -t ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} \
     -t ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:infrastructure-public-image-${DOCKER_IMAGE_TAG} \
-    -f ${DOCKERFILE_DIR}/Dockerfile . || docker_exit_code=$?
+    ${DOCKERFILE_DIR} || docker_exit_code=$?
   if [ "${docker_exit_code}" -ne 0 ]; then
     if [ -z "${KEEP_GOING}" ]; then
       touch "${FAILED_DIR}/STOP"
