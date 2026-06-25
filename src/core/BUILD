@@ -6555,6 +6555,7 @@ grpc_cc_library(
         "connectivity_state",
         "default_event_engine",
         "down_cast",
+        "env",
         "envoy_admin_upb",
         "envoy_config_cluster_upb",
         "envoy_config_cluster_upbdefs",
