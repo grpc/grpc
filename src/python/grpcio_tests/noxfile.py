@@ -216,3 +216,25 @@ def run_interop(session: nox.Session):
                 "server.serve(server.parse_interop_server_arguments(sys.argv))",
                 *unknown,
             )
+
+@nox.session(venv_params=["--system-site-packages"])
+def run_fork(session: nox.Session):
+    """Command to run fork test client."""
+
+    session.log("Running run_fork for grpcio-tests...")
+    session.install("--index-url", "https://pypi.org/simple", "coverage")
+    session.install("--no-build-isolation", "--no-deps", ".")
+
+    session.run(
+        "python",
+        "-c",
+        "import sys; "
+        "from tests.fork import client; "
+        "client.test_fork()",
+        *session.posargs,
+        env={"GRPC_ENABLE_FORK_SUPPORT": "true"},
+    )
+
+
+
+
