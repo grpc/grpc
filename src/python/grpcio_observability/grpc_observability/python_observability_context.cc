@@ -258,10 +258,8 @@ void Span::AddEvent(
   for (const auto& [key, value] : attributes) {
     event.attributes.emplace_back(std::string(key), std::string(value));
   }
-  // Need a string format which can be converted to Python datetime.datetime
-  // class directly.
-  event.time_stamp =
-      absl::FormatTime("%Y-%m-%d %H:%M:%E3S", absl::Now(), absl::UTCTimeZone());
+  // Unix epoch nanoseconds in decimal string form
+  event.time_stamp = std::to_string(absl::ToUnixNanos(absl::Now()));
   grpc_core::MutexLock lock(mu_.get());
   span_events_.emplace_back(event);
 }
@@ -274,15 +272,10 @@ void Span::SetReceivedHeaders(std::vector<Label> received_headers) {
 SpanCensusData Span::ToCensusData() const {
   grpc_core::MutexLock lock(mu_.get());
   SpanCensusData census_data;
-  absl::TimeZone utc = absl::UTCTimeZone();
   census_data.name = name_;
-  // Need a string format which can be exported to StackDriver directly.
-  // See format details:
-  // https://cloud.google.com/trace/docs/reference/v2/rest/v2/projects.traces/batchWrite
-  census_data.start_time =
-      absl::FormatTime("%Y-%m-%dT%H:%M:%E6SZ", start_time_, utc);
-  census_data.end_time =
-      absl::FormatTime("%Y-%m-%dT%H:%M:%E6SZ", end_time_, utc);
+  // Unix epoch nanoseconds in decimal string form
+  census_data.start_time = std::to_string(absl::ToUnixNanos(start_time_));
+  census_data.end_time = std::to_string(absl::ToUnixNanos(end_time_));
   census_data.trace_id = Context().TraceId();
   census_data.span_id = Context().SpanId();
   census_data.should_sample = Context().IsSampled();

@@ -314,17 +314,17 @@ class _OpenTelemetryPlugin:
                     tracing_data.span_labels
                 ),
                 links=None,
-                start_time=tracing_data.start_time,
+                start_time=int(tracing_data.start_time),
             )
 
         for event in tracing_data.span_events:
             span.add_event(
                 name=event["name"],
                 attributes=_convert_tracing_attributes(event["attributes"]),
-                timestamp=event["time_stamp"],
+                timestamp=int(event["time_stamp"]),
             )
         span.set_status(self._status_to_otel_status(tracing_data.status))
-        span.end(end_time=tracing_data.end_time)
+        span.end(end_time=int(tracing_data.end_time))
 
     def maybe_record_tracing_data(self, tracing_data: TracingData) -> None:
         """Records tracing data to SpanExporter configured for given TracerProvider."""
