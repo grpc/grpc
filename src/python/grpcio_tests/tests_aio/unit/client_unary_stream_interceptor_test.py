@@ -456,28 +456,74 @@ class TestUnaryStreamClientInterceptor(AioTestBase):
         self.assertEqual(await call.code(), grpc.StatusCode.CANCELLED)
         await channel.close()
 
-    async def test_exception_raised_by_interceptor(self):
-        class InterceptorException(Exception):
-            pass
 
-        class Interceptor(aio.UnaryStreamClientInterceptor):
-            async def intercept_unary_stream(
-                self, continuation, client_call_details, request
-            ):
-                raise InterceptorException
+class _InterceptorException(Exception):
+    pass
 
-        channel = aio.insecure_channel(
-            UNREACHABLE_TARGET, interceptors=[Interceptor()]
+
+class _UnaryStreamExceptionRaisingInterceptor(aio.UnaryStreamClientInterceptor):
+    async def intercept_unary_stream(
+        self, continuation, client_call_details, request
+    ):
+        raise _InterceptorException()
+
+
+class TestUnaryStreamClientInterceptorCustomException(AioTestBase):
+
+    async def setUp(self):
+        self._channel = aio.insecure_channel(
+            UNREACHABLE_TARGET,
+            interceptors=[_UnaryStreamExceptionRaisingInterceptor()],
         )
-        request = messages_pb2.StreamingOutputCallRequest()
-        stub = test_pb2_grpc.TestServiceStub(channel)
-        call = stub.StreamingOutputCall(request)
+        self._stub = test_pb2_grpc.TestServiceStub(self._channel)
+        self._request = messages_pb2.StreamingOutputCallRequest()
 
-        with self.assertRaises(InterceptorException):
-            async for response in call:
+    async def tearDown(self):
+        await self._channel.close()
+
+    async def test_exception_raised_correctly(self):
+        call = self._stub.StreamingOutputCall(self._request)
+
+        with self.assertRaises(_InterceptorException):
+            async for _ in call:
                 pass
 
-        await channel.close()
+    async def test_done_callbacks_triggered_when_registered_early(self):
+        call = self._stub.StreamingOutputCall(self._request)
+        validation = inject_callbacks(call)
+
+        with self.assertRaises(_InterceptorException):
+            async for _ in call:
+                pass
+
+        await validation
+
+    async def test_done_callbacks_triggered_when_registered_late(self):
+        call = self._stub.StreamingOutputCall(self._request)
+
+        with self.assertRaises(_InterceptorException):
+            async for _ in call:
+                pass
+
+        validation = inject_callbacks(call)
+
+        await validation
+
+    async def test_call_states_on_interceptor_exception(self):
+        call = self._stub.StreamingOutputCall(self._request)
+
+        # Before exception (task scheduled but not run)
+        self.assertFalse(call.done())
+        self.assertFalse(call.cancelled())
+
+        with self.assertRaises(_InterceptorException):
+            async for _ in call:
+                pass
+
+        # After exception
+        self.assertTrue(call.done())
+        self.assertFalse(call.cancelled())
+        self.assertFalse(call.cancel())
 
 
 if __name__ == "__main__":

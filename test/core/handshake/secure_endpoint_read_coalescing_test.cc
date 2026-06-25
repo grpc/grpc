@@ -29,6 +29,8 @@
 
 #include "src/core/handshaker/security/secure_endpoint.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/event_engine/extensions/receive_coalescing_extension.h"
+#include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
@@ -102,6 +104,11 @@ class SecureEndpointReadCoalescingTest : public ::testing::Test {
 
     secure_ep_ = grpc_event_engine::experimental::
         grpc_take_wrapped_event_engine_endpoint(secure_ep_grpc.release());
+    auto* ext = grpc_event_engine::experimental::QueryExtension<
+        grpc_event_engine::experimental::ReceiveCoalescingExtension>(
+        secure_ep_.get());
+    ASSERT_NE(ext, nullptr);
+    ext->EnableRpcReceiveCoalescing();
   }
 
   void TearDown() override {
@@ -141,6 +148,12 @@ TEST_F(SecureEndpointReadCoalescingTest, UsesMemoryAllocatorFactoryIfProvided) {
   auto secure_ep =
       grpc_event_engine::experimental::grpc_take_wrapped_event_engine_endpoint(
           secure_ep_grpc.release());
+
+  auto* ext = grpc_event_engine::experimental::QueryExtension<
+      grpc_event_engine::experimental::ReceiveCoalescingExtension>(
+      secure_ep.get());
+  ASSERT_NE(ext, nullptr);
+  ext->EnableRpcReceiveCoalescing();
 
   EXPECT_TRUE(test_factory.create_called());
   EXPECT_TRUE(

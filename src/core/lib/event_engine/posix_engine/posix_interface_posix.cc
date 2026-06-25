@@ -393,7 +393,7 @@ absl::StatusOr<int> InternalCreateDualStackSocket(
       errno = EAFNOSUPPORT;
     }
     // Check if we've got a valid dualstack socket.
-    if (newfd > 0 && SetSocketDualStack(newfd)) {
+    if (newfd >= 0 && SetSocketDualStack(newfd)) {
       dsmode = EventEnginePosixInterface::DSMode::DSMODE_DUALSTACK;
       return newfd;
     }
@@ -473,7 +473,7 @@ void EventEnginePosixInterface::AdvanceGeneration() {
         "Fork support is disabled but AdvanceGeneration was called");
   }
   for (int fd : descriptors_.ClearAndReturnRawDescriptors()) {
-    if (fd > 0) {
+    if (fd >= 0) {
       close(fd);
     }
   }
@@ -995,7 +995,7 @@ absl::Status EventEnginePosixInterface::PrepareTcpClientSocket(
     const PosixTcpOptions& options) {
   bool close_fd = true;
   auto sock_cleanup = absl::MakeCleanup([&close_fd, &fd]() -> void {
-    if (close_fd && fd > 0) {
+    if (close_fd && fd >= 0) {
       close(fd);
     }
   });

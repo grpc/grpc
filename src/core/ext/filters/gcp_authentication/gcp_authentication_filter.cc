@@ -31,6 +31,7 @@
 #include "src/core/service_config/service_config_call_data.h"
 #include "src/core/util/grpc_check.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc_core {
 
@@ -40,12 +41,13 @@ namespace grpc_core {
 
 bool GcpAuthenticationFilter::Config::Equals(const FilterConfig& other) const {
   const auto& o = DownCast<const Config&>(other);
-  return instance_name == o.instance_name && cache_size == o.cache_size;
+  return instance_name == o.instance_name && cache_size == o.cache_size &&
+         cache == o.cache;
 }
 
 std::string GcpAuthenticationFilter::Config::ToString() const {
-  return absl::StrCat("{instance_name=\"", instance_name,
-                      "\", cache_size=", cache_size, "}");
+  return absl::StrFormat("{instance_name=\"%s\", cache_size=%u, cache=%p}",
+                         instance_name, cache_size, cache.get());
 }
 
 //
@@ -106,7 +108,7 @@ absl::Status GcpAuthenticationFilter::Call::OnClientInitialMetadata(
         cluster_name));
   }
   // Get the call creds instance.
-  auto creds = filter->cache_->Get(
+  auto creds = filter->filter_config_->cache->Get(
       DownCast<const XdsGcpAuthnAudienceMetadataValue*>(metadata_value)->url());
   // Add the call creds instance to the call.
   auto* arena = GetContext<Arena>();
@@ -166,31 +168,26 @@ GcpAuthenticationFilter::Create(const ChannelArgs& args,
                      filter_args.config()->type().name()));
   }
   auto config = filter_args.config().TakeAsSubclass<const Config>();
+  // Make sure cache is present in config.
+  if (config->cache == nullptr) {
+    return absl::InternalError(
+        "gcp_auth: cache object not found in filter config");
+  }
   // Get XdsConfig so that we can look up CDS resources.
   auto xds_config = args.GetObjectRef<XdsConfig>();
   if (xds_config == nullptr) {
     return absl::InternalError(
         "gcp_auth: xds config not found in channel args");
   }
-  // Get cache from blackboard.  This must have been populated
-  // previously by the XdsConfigSelector.
-  auto cache =
-      filter_args.GetState<CallCredentialsCache>(config->instance_name);
-  if (cache == nullptr) {
-    return absl::InternalError(
-        "gcp_auth: cache object not found in filter state");
-  }
   // Instantiate filter.
-  return std::unique_ptr<GcpAuthenticationFilter>(new GcpAuthenticationFilter(
-      std::move(config), std::move(xds_config), std::move(cache)));
+  return std::unique_ptr<GcpAuthenticationFilter>(
+      new GcpAuthenticationFilter(std::move(config), std::move(xds_config)));
 }
 
 GcpAuthenticationFilter::GcpAuthenticationFilter(
     RefCountedPtr<const Config> filter_config,
-    RefCountedPtr<const XdsConfig> xds_config,
-    RefCountedPtr<CallCredentialsCache> cache)
+    RefCountedPtr<const XdsConfig> xds_config)
     : filter_config_(std::move(filter_config)),
-      xds_config_(std::move(xds_config)),
-      cache_(std::move(cache)) {}
+      xds_config_(std::move(xds_config)) {}
 
 }  // namespace grpc_core

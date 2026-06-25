@@ -634,6 +634,7 @@ class MetricsCollector
     return EventEngine::Endpoint::WriteEventSink(
         requested_metrics(),
         {EventEngine::Endpoint::WriteEvent::kSendMsg,
+         EventEngine::Endpoint::WriteEvent::kScheduled,
          EventEngine::Endpoint::WriteEvent::kSent,
          EventEngine::Endpoint::WriteEvent::kAcked},
         [reader, ztrace_collector, write_size, self = Ref()](
@@ -843,6 +844,13 @@ auto Endpoint::ReadLoop(RefCountedPtr<EndpointContext> ctx) {
             return absl::ResourceExhaustedError(absl::StrCat(
                 "Received message larger than max (", hdr->payload_length,
                 " vs. ", ctx->max_receive_message_length, ")"));
+          }
+          uint32_t padding =
+              DataConnectionPadding(hdr->payload_length, ctx->decode_alignment);
+          if (hdr->payload_length >
+              std::numeric_limits<uint32_t>::max() - padding) {
+            return absl::InvalidArgumentError(
+                "Integer overflow in payload length plus padding");
           }
           GRPC_TRACE_LOG(chaotic_good, INFO)
               << "CHAOTIC_GOOD: Read " << *hdr << " on data connection #" << id;

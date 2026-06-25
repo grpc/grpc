@@ -39,6 +39,8 @@
 #include <vector>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/extensions/receive_coalescing_extension.h"
+#include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -575,6 +577,17 @@ class FrameProtector : public RefCounted<FrameProtector> {
     }
   }
 
+  // Resets the read staging buffer.
+  // Per the contract of EnableRpcReceiveCoalescing(), this is only
+  // called when there are no outstanding Read() operations on the endpoint.
+  // Therefore, any valid plaintext has already been fully delivered, and
+  // read_staging_buffer_ contains only unused, leftover memory capacity.
+  void ResetReadStagingBuffer() {
+    MutexLock lock(&read_mu_);
+    CSliceUnref(read_staging_buffer_);
+    read_staging_buffer_ = grpc_empty_slice();
+  }
+
  private:
   struct tsi_frame_protector* const protector_;
   struct tsi_zero_copy_grpc_protector* const zero_copy_protector_;
@@ -821,7 +834,8 @@ static const grpc_endpoint_vtable vtable = {endpoint_read,
 namespace grpc_event_engine::experimental {
 namespace {
 
-class SecureEndpoint final : public EventEngine::Endpoint {
+class SecureEndpoint final : public EventEngine::Endpoint,
+                             public ReceiveCoalescingExtension {
  public:
   SecureEndpoint(
       std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
@@ -855,7 +869,22 @@ class SecureEndpoint final : public EventEngine::Endpoint {
   }
 
   void* QueryExtension(absl::string_view id) override {
+    if (id == ReceiveCoalescingExtension::EndpointExtensionName()) {
+      return static_cast<ReceiveCoalescingExtension*>(this);
+    }
     return impl_->QueryExtension(id);
+  }
+
+  void EnableRpcReceiveCoalescing() override {
+    impl_->EnableRpcReceiveCoalescing();
+  }
+
+  void DisableRpcReceiveCoalescing() override {
+    impl_->DisableRpcReceiveCoalescing();
+  }
+
+  void EnforceRxMemoryAlignment() override {
+    impl_->EnforceRxMemoryAlignment();
   }
 
   std::shared_ptr<TelemetryInfo> GetTelemetryInfo() const override {
@@ -940,11 +969,20 @@ class SecureEndpoint final : public EventEngine::Endpoint {
       // TODO(aananthv): Evaluate if we need to add a channel_arg to enable this
       // selectively.
       if (grpc_core::IsSecureEndpointReadCoalescingEnabled()) {
+        {
+          // This mutex should not have any contention since we can only have
+          // one outstanding Read() at a time.
+          grpc_core::MutexLock lock(&read_settings_mu_);
+          if (rpc_receive_coalescing_enabled_) {
+            // TODO(aananthv): Make required_read_bytes_ a separate field in
+            // ReadArgs to avoid confusion between min_progress_size and
+            // read_hint_bytes, especially if we enable coalescing by default.
+            required_read_bytes_ = std::max<int64_t>(0, args.read_hint_bytes());
+          } else {
+            required_read_bytes_ = 0;
+          }
+        }
         read_buffer_ = buffer;
-        // TODO(aananthv): Make required_read_bytes_ a separate field in
-        // ReadArgs to avoid confusion between min_progress_size and
-        // read_hint_bytes, especially if we enable coalescing by default.
-        required_read_bytes_ = std::max<int64_t>(0, args.read_hint_bytes());
         read_args_ = args;
         frame_protector_.BeginRead(buffer->c_slice_buffer(),
                                    required_read_bytes_);
@@ -1050,6 +1088,33 @@ class SecureEndpoint final : public EventEngine::Endpoint {
 
     const EventEngine::ResolvedAddress& GetLocalAddress() const {
       return wrapped_ep_->GetLocalAddress();
+    }
+
+    void EnableRpcReceiveCoalescing() {
+      {
+        grpc_core::MutexLock lock(&read_settings_mu_);
+        rpc_receive_coalescing_enabled_ = true;
+      }
+      frame_protector_.ResetReadStagingBuffer();
+      // We do not need to enable this in the underlying endpoint since we only
+      // benefit from coalescing the user-facing buffer.
+      // TODO(aananthv): Should we disable it explicitly?
+    }
+
+    void DisableRpcReceiveCoalescing() {
+      {
+        grpc_core::MutexLock lock(&read_settings_mu_);
+        rpc_receive_coalescing_enabled_ = false;
+      }
+    }
+
+    void EnforceRxMemoryAlignment() {
+      auto* ext = grpc_event_engine::experimental::QueryExtension<
+          grpc_event_engine::experimental::ReceiveCoalescingExtension>(
+          wrapped_ep_.get());
+      if (ext != nullptr) {
+        ext->EnforceRxMemoryAlignment();
+      }
     }
 
     void* QueryExtension(absl::string_view id) {
@@ -1306,6 +1371,9 @@ class SecureEndpoint final : public EventEngine::Endpoint {
     const size_t large_read_threshold_;
     const size_t large_write_threshold_;
     const size_t max_buffered_writes_;
+    grpc_core::Mutex read_settings_mu_;
+    bool rpc_receive_coalescing_enabled_ ABSL_GUARDED_BY(read_settings_mu_) =
+        false;
   };
 
   grpc_core::RefCountedPtr<Impl> impl_;

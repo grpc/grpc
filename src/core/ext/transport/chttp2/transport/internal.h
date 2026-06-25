@@ -95,6 +95,9 @@
 //   bits being used for flags defined above)
 #define CLOSURE_BARRIER_FIRST_REF_BIT (1 << 16)
 
+constexpr uint32_t kMaxSecurityFrameSize = 16u * 1024u;
+constexpr int kMinMaxSecurityFrameSize = 0;
+
 // streams are kept in various linked lists depending on what things need to
 // happen to them... this enum labels each list
 typedef enum {
@@ -462,6 +465,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   /// parser for goaway frames
   grpc_chttp2_goaway_parser goaway_parser;
   // parser for secure frames
+  uint32_t max_security_frame_size;
   grpc_chttp2_security_frame_parser security_frame_parser;
 
   grpc_core::chttp2::TransportFlowControl flow_control;
