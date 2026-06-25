@@ -223,6 +223,7 @@ class _ObservabilityMixin:
         expected_attempt_events: Sequence[
             Tuple[str, dict[str, Union[str, int]]]
         ],
+        is_text_map_propagator_configured: bool = True,
     ) -> None:
         self.assertTrue(
             expr=(len(spans) == expected_span_size),
@@ -264,13 +265,21 @@ class _ObservabilityMixin:
         self.assertEqual(
             attempt_span.parent.span_id, client_span.get_span_context().span_id
         )
-        self.assertEqual(
-            attempt_span.get_span_context().trace_id,
-            server_span.get_span_context().trace_id,
-        )
-        self.assertEqual(
-            server_span.parent.span_id, attempt_span.get_span_context().span_id
-        )
+        if is_text_map_propagator_configured:
+            self.assertEqual(
+                attempt_span.get_span_context().trace_id,
+                server_span.get_span_context().trace_id,
+            )
+            self.assertEqual(
+                server_span.parent.span_id,
+                attempt_span.get_span_context().span_id
+            )
+        else:
+            self.assertNotEqual(
+                attempt_span.get_span_context().trace_id,
+                server_span.get_span_context().trace_id,
+            )
+            self.assertIsNone(server_span.parent)
 
         # validate server span traced events
         server_span_events_packed = [
@@ -339,6 +348,7 @@ class OpenTelemetryObservabilityWithoutPropagatorTest(
                     {"sequence-number": 0, "message-size": 3},
                 ),
             ],
+            is_text_map_propagator_configured=False,
         )
 
     async def test_metrics_unary_stream(self):
@@ -406,6 +416,7 @@ class OpenTelemetryObservabilityWithoutPropagatorTest(
                     {"sequence-number": 4, "message-size": 3},
                 ),
             ],
+            is_text_map_propagator_configured=False,
         )
 
     async def test_metrics_stream_unary(self):
@@ -473,6 +484,7 @@ class OpenTelemetryObservabilityWithoutPropagatorTest(
                     {"sequence-number": 4, "message-size": 3},
                 ),
             ],
+            is_text_map_propagator_configured=False,
         )
 
     async def test_metrics_stream_stream(self):
@@ -572,6 +584,7 @@ class OpenTelemetryObservabilityWithoutPropagatorTest(
                     {"sequence-number": 4, "message-size": 3},
                 ),
             ],
+            is_text_map_propagator_configured=False,
         )
 
 

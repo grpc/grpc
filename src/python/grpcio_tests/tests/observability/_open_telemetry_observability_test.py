@@ -244,6 +244,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
                     {"sequence-number": 0, "message-size": 3},
                 ),
             ],
+            is_text_map_propagator_configured=False,
         )
 
     def testTracesForTwoUnaryUnaryCallsWithContextManager(self):
@@ -1176,6 +1177,86 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         )
         self.assertIsNotNone(server_span, "Server span not found")
 
+    def testTracesForServiceToServiceWithoutPropagator(self):
+        with grpc_observability.OpenTelemetryPlugin(
+            tracer_provider=self._tracer_provider,
+        ):
+            server, port = _test_server.start_server()
+            self._server = server
+            # Trigger nested RPC to a new server
+            _test_server.unary_unary_call(
+                port=port,
+                metadata=[
+                    _test_server.TRIGGER_RPC_METADATA,
+                    _test_server.TRIGGER_RPC_TO_NEW_SERVER_METADATA,
+                ],
+            )
+
+        self._validate_spans_exist(self._span_exporter, expected_count=6)
+        spans = self._span_exporter.get_finished_spans()
+
+        # Expect 6 spans: Sent/Attempt/Recv for original RPC +
+        # Sent/Attempt/Recv for the nested RPC to the second server
+        self.assertEqual(
+            len(spans), 6, msg=f"Expected 6 spans, got: {len(spans)}"
+        )
+
+        # Three independent traces, since context does not propagate
+        trace_ids = {span.get_span_context().trace_id for span in spans}
+        self.assertEqual(len(trace_ids), 3)
+
+        server_spans = [s for s in spans if s.name.startswith("Recv.")]
+        self.assertEqual(len(server_spans), 2)
+
+        # Both server spans are brand new roots
+        for server_span in server_spans:
+            self.assertIsNone(server_span.parent)
+
+        client_spans = [s for s in spans if s.name.startswith("Sent.")]
+        self.assertEqual(len(client_spans), 2)
+
+        root_client_span = next(s for s in client_spans if s.parent is None)
+        client_trace_id = root_client_span.get_span_context().trace_id
+        self.assertFalse(
+            any(
+                s.get_span_context().trace_id == client_trace_id
+                for s in server_spans
+            )
+        )
+
+        propagating_client_span = next(
+            s for s in client_spans if s.parent is not None
+        )
+        self.assertIsNotNone(
+            propagating_client_span, "Propagating client span not found"
+        )
+
+        # propagating client span is a child of the propagating server span
+        propagating_server_span = next(
+            s
+            for s in server_spans
+            if s.get_span_context().span_id
+            == propagating_client_span.parent.span_id
+        )
+        self.assertIsNotNone(
+            propagating_server_span, "Propagating server span not found"
+        )
+        self.assertEqual(
+            propagating_client_span.get_span_context().trace_id,
+            propagating_server_span.get_span_context().trace_id
+        )
+
+        nested_server_span = next(
+            s for s in server_spans if s is not propagating_server_span
+        )
+        self.assertNotEqual(
+            nested_server_span.get_span_context().trace_id,
+            propagating_server_span.get_span_context().trace_id
+        )
+        self.assertNotEqual(
+            nested_server_span.get_span_context().trace_id, client_trace_id
+        )
+
     def testTracesForApplicationContext(self):
         tracer = self._tracer_provider.get_tracer("TestApp")
         with grpc_observability.OpenTelemetryPlugin(
@@ -1349,6 +1430,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         expected_attempt_events: Sequence[
             Tuple[str, Dict[str, Union[str, int]]]
         ],
+        is_text_map_propagator_configured: bool = True,
     ) -> None:
         self.assertTrue(
             expr=(len(spans) == expected_span_size),
@@ -1390,13 +1472,21 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         self.assertEqual(
             attempt_span.parent.span_id, client_span.get_span_context().span_id
         )
-        self.assertEqual(
-            attempt_span.get_span_context().trace_id,
-            server_span.get_span_context().trace_id,
-        )
-        self.assertEqual(
-            server_span.parent.span_id, attempt_span.get_span_context().span_id
-        )
+        if is_text_map_propagator_configured:
+            self.assertEqual(
+                attempt_span.get_span_context().trace_id,
+                server_span.get_span_context().trace_id,
+            )
+            self.assertEqual(
+                server_span.parent.span_id,
+                attempt_span.get_span_context().span_id
+            )
+        else:
+            self.assertNotEqual(
+                attempt_span.get_span_context().trace_id,
+                server_span.get_span_context().trace_id,
+            )
+            self.assertIsNone(server_span.parent)
 
         # validate server span traced events
         server_span_events_packed = [
