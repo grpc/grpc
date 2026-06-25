@@ -270,7 +270,7 @@ def _deserialize_remote_labels(
     pb_struct = struct_pb2.Struct()
     try:
         pb_struct.ParseFromString(serialized_data)
-    except Exception:
+    except Exception:  # pylint: disable=broad-exception-caught
         return remote_keys_unknown
 
     remote_labels = {
