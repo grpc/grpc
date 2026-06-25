@@ -53945,6 +53945,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/typed_struct.pb.h
     ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/typed_struct.grpc.pb.h
     test/core/test_util/audit_logging_utils.cc
+    test/core/test_util/fake_stats_plugin.cc
     test/cpp/end2end/test_service_impl.cc
     test/cpp/end2end/xds/xds_end2end_test_lib.cc
     test/cpp/end2end/xds/xds_security_end2end_test.cc
