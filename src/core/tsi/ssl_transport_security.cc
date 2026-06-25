@@ -257,6 +257,12 @@ void tsi_ssl_handshaker::MaybeRecordTelemetry(
       handshake_result.tsi_handshake_result == TSI_DRAIN_BUFFER) {
     return;
   }
+  // The handshaker can return TSI_OK as an intermediate state, only keep going
+  // if a result has been created
+  if (handshake_result.tsi_handshake_result == TSI_OK &&
+      !handshaker_result_created) {
+    return;
+  }
   if (metric_recorded) return;
   SSL* active_ssl = ssl;
   if (active_ssl == nullptr && handshaker_next_args.has_value() &&
