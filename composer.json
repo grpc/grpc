@@ -5,6 +5,7 @@
   "keywords": [
     "rpc"
   ],
+  "homepage": "https://grpc.io",
   "license": "Apache-2.0",
   "provide": {
     "ext-grpc": "self.version"
