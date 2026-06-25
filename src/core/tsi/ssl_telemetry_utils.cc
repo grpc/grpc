@@ -395,6 +395,8 @@ absl::string_view TlsTelemetryHandshakeResultToString(
       return "INTERNAL_SYSTEM_ERROR";
     case TlsTelemetryHandshakeResult::kUnknownFailure:
       return "UNKNOWN_FAILURE";
+    case TlsTelemetryHandshakeResult::kCancelled:
+      return "CANCELLED";
   }
   return "UNKNOWN_FAILURE";
 }

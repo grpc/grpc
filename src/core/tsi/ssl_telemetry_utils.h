@@ -54,6 +54,7 @@ enum class TlsTelemetryHandshakeResult {
   kUnexpectedMessage,
   kHandshakeTimeout,
   kPeerConnectionClosed,
+  kCancelled,
   kInternalSystemError
 };
 

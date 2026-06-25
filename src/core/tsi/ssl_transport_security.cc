@@ -272,7 +272,7 @@ void tsi_ssl_handshaker::MaybeRecordTelemetry(
   if (handshake_result.tsi_handshake_result == TSI_OK) {
     result = grpc_core::TlsTelemetryHandshakeResult::kSuccess;
   } else if (handshake_result.tsi_handshake_result == TSI_HANDSHAKE_SHUTDOWN) {
-    result = grpc_core::TlsTelemetryHandshakeResult::kPeerConnectionClosed;
+    result = grpc_core::TlsTelemetryHandshakeResult::kCancelled;
   } else {
     long verify_res =
         active_ssl != nullptr ? SSL_get_verify_result(active_ssl) : X509_V_OK;
