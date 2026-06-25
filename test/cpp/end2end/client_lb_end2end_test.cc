@@ -700,7 +700,6 @@ TEST_F(ClientLbSubchannelMetricsTest, SubchannelMetricsBasic) {
   ChannelArguments args;
   auto channel = grpc::CreateCustomChannel(
       "ipv4:" + target, grpc::InsecureChannelCredentials(), args);
-  auto stub = grpc::testing::EchoTestService::NewStub(channel);
   channel->GetState(true);
   EXPECT_TRUE(
       WaitForChannelState(channel.get(), [](grpc_connectivity_state state) {
@@ -716,8 +715,7 @@ TEST_F(ClientLbSubchannelMetricsTest, SubchannelMetricsBasic) {
   servers_[0]->Shutdown();
   EXPECT_TRUE(
       WaitForChannelState(channel.get(), [](grpc_connectivity_state state) {
-        return state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
-               state == GRPC_CHANNEL_SHUTDOWN || state == GRPC_CHANNEL_IDLE;
+        return state == GRPC_CHANNEL_IDLE;
       }));
   auto get_disconnections = [&](const std::string& reason) {
     return stats_plugin_
@@ -786,13 +784,14 @@ TEST_F(ClientLbSubchannelMetricsTest, ConnectionAttemptIgnoredOnShutdown) {
   absl::SleepFor(absl::Seconds(1));
   hold->Resume();
   reset_thread.join();
-  EXPECT_EQ(
+  EXPECT_THAT(
       stats_plugin_->GetUInt64MetricValueByName(
           "grpc.subchannel.connection_attempts_succeeded", {target, "", ""}),
-      std::nullopt);
-  EXPECT_EQ(stats_plugin_->GetUInt64MetricValueByName(
-                "grpc.subchannel.connection_attempts_failed", {target, "", ""}),
-            std::nullopt);
+      ::testing::Optional(0));
+  EXPECT_THAT(
+      stats_plugin_->GetUInt64MetricValueByName(
+          "grpc.subchannel.connection_attempts_failed", {target, "", ""}),
+      ::testing::Optional(0));
 }
 
 TEST_F(ClientLbSubchannelMetricsTest, OldSubchannelDisconnectionYieldsUnknown) {
@@ -801,17 +800,12 @@ TEST_F(ClientLbSubchannelMetricsTest, OldSubchannelDisconnectionYieldsUnknown) {
   std::string target = absl::StrCat("127.0.0.1:", port);
   auto channel =
       grpc::CreateChannel("ipv4:" + target, grpc::InsecureChannelCredentials());
-  auto stub = grpc::testing::EchoTestService::NewStub(channel);
-  grpc::ClientContext context;
-  grpc::testing::EchoRequest request;
-  grpc::testing::EchoResponse response;
-  request.set_message("test");
-  ASSERT_TRUE(stub->Echo(&context, request, &response).ok());
+  channel->GetState(true);
+  EXPECT_TRUE(WaitForChannelReady(channel.get()));
   servers_[0]->Shutdown();
   EXPECT_TRUE(
       WaitForChannelState(channel.get(), [](grpc_connectivity_state state) {
-        return state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
-               state == GRPC_CHANNEL_SHUTDOWN || state == GRPC_CHANNEL_IDLE;
+        return state == GRPC_CHANNEL_IDLE;
       }));
   auto get_disconnections = [&](const std::string& reason) {
     return stats_plugin_
@@ -849,12 +843,8 @@ TEST_F(ClientLbSubchannelMetricsTest, SecurityLevelsPrivacyAndIntegrity) {
   channel_args.SetSslTargetNameOverride("foo.test.google.fr");
   auto channel =
       grpc::CreateCustomChannel("ipv4:" + target, channel_creds, channel_args);
-  auto stub = grpc::testing::EchoTestService::NewStub(channel);
-  grpc::ClientContext context;
-  grpc::testing::EchoRequest request;
-  grpc::testing::EchoResponse response;
-  request.set_message("test");
-  ASSERT_TRUE(stub->Echo(&context, request, &response).ok());
+  channel->GetState(true);
+  EXPECT_TRUE(WaitForChannelReady(channel.get()));
   EXPECT_THAT(stats_plugin_->GetInt64MetricValueByName(
                   "grpc.subchannel.open_connections",
                   {"foo.test.google.fr", "privacy_and_integrity", "", ""}),
@@ -862,8 +852,7 @@ TEST_F(ClientLbSubchannelMetricsTest, SecurityLevelsPrivacyAndIntegrity) {
   servers_[0]->Shutdown();
   EXPECT_TRUE(
       WaitForChannelState(channel.get(), [](grpc_connectivity_state state) {
-        return state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
-               state == GRPC_CHANNEL_SHUTDOWN || state == GRPC_CHANNEL_IDLE;
+        return state == GRPC_CHANNEL_IDLE;
       }));
   EXPECT_THAT(stats_plugin_->GetInt64MetricValueByName(
                   "grpc.subchannel.open_connections",
@@ -883,22 +872,38 @@ TEST_F(ClientLbSubchannelMetricsTest,
   std::string target = absl::StrCat("127.0.0.1:", port);
   auto channel =
       grpc::CreateChannel("ipv4:" + target, grpc::InsecureChannelCredentials());
-  auto stub = grpc::testing::EchoTestService::NewStub(channel);
-  grpc::ClientContext context;
-  grpc::testing::EchoRequest request;
-  grpc::testing::EchoResponse response;
-  request.set_message("test");
-  ASSERT_TRUE(stub->Echo(&context, request, &response).ok());
+  channel->GetState(true);
+  EXPECT_TRUE(WaitForChannelReady(channel.get()));
   servers_[0]->Shutdown();
   EXPECT_TRUE(
       WaitForChannelState(channel.get(), [](grpc_connectivity_state state) {
-        return state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
-               state == GRPC_CHANNEL_SHUTDOWN || state == GRPC_CHANNEL_IDLE;
+        return state == GRPC_CHANNEL_IDLE;
       }));
   EXPECT_THAT(stats_plugin_->GetUInt64MetricValueByName(
                   "grpc.subchannel.disconnections",
                   {target, "", "", "GOAWAY NO_ERROR"}),
               ::testing::Optional(1));
+}
+
+TEST_F(ClientLbSubchannelMetricsTest, DisconnectionOnSubchannelShutdown) {
+  StartServers(1, {}, grpc::InsecureServerCredentials());
+  const int port = servers_[0]->port_;
+  std::string target = absl::StrCat("127.0.0.1:", port);
+  auto channel =
+      grpc::CreateChannel("ipv4:" + target, grpc::InsecureChannelCredentials());
+  channel->GetState(true);
+  EXPECT_TRUE(WaitForChannelReady(channel.get()));
+  channel.reset();
+  auto get_disconnections = [&]() {
+    return stats_plugin_->GetUInt64MetricValueByName(
+        "grpc.subchannel.disconnections",
+        {target, "", "", "subchannel shutdown"});
+  };
+  int retry_count = 0;
+  while (!get_disconnections().has_value() && retry_count++ < 1000) {
+    absl::SleepFor(absl::Milliseconds(10) * grpc_test_slowdown_factor());
+  }
+  EXPECT_THAT(get_disconnections(), ::testing::Optional(1));
 }
 
 TEST_F(ClientLbEnd2endTest, ChannelStateConnectingWhenResolving) {
