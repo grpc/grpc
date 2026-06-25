@@ -246,11 +246,6 @@ const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
 const char* const description_subchannel_connection_scaling =
     "Subchannel connection scaling support.";
 const char* const additional_constraints_subchannel_connection_scaling = "{}";
-const char* const description_subchannel_wrapper_cleanup_on_orphan =
-    "Fixes the subchannel wrapper to drop any non-cancelled watchers when it "
-    "gets orphaned.";
-const char* const additional_constraints_subchannel_wrapper_cleanup_on_orphan =
-    "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -457,10 +452,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"subchannel_connection_scaling", description_subchannel_connection_scaling,
      additional_constraints_subchannel_connection_scaling, nullptr, 0, false,
      true},
-    {"subchannel_wrapper_cleanup_on_orphan",
-     description_subchannel_wrapper_cleanup_on_orphan,
-     additional_constraints_subchannel_wrapper_cleanup_on_orphan, nullptr, 0,
-     true, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
@@ -722,11 +713,6 @@ const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
 const char* const description_subchannel_connection_scaling =
     "Subchannel connection scaling support.";
 const char* const additional_constraints_subchannel_connection_scaling = "{}";
-const char* const description_subchannel_wrapper_cleanup_on_orphan =
-    "Fixes the subchannel wrapper to drop any non-cancelled watchers when it "
-    "gets orphaned.";
-const char* const additional_constraints_subchannel_wrapper_cleanup_on_orphan =
-    "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -933,10 +919,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"subchannel_connection_scaling", description_subchannel_connection_scaling,
      additional_constraints_subchannel_connection_scaling, nullptr, 0, false,
      true},
-    {"subchannel_wrapper_cleanup_on_orphan",
-     description_subchannel_wrapper_cleanup_on_orphan,
-     additional_constraints_subchannel_wrapper_cleanup_on_orphan, nullptr, 0,
-     true, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
@@ -1198,11 +1180,6 @@ const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
 const char* const description_subchannel_connection_scaling =
     "Subchannel connection scaling support.";
 const char* const additional_constraints_subchannel_connection_scaling = "{}";
-const char* const description_subchannel_wrapper_cleanup_on_orphan =
-    "Fixes the subchannel wrapper to drop any non-cancelled watchers when it "
-    "gets orphaned.";
-const char* const additional_constraints_subchannel_wrapper_cleanup_on_orphan =
-    "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -1409,10 +1386,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"subchannel_connection_scaling", description_subchannel_connection_scaling,
      additional_constraints_subchannel_connection_scaling, nullptr, 0, false,
      true},
-    {"subchannel_wrapper_cleanup_on_orphan",
-     description_subchannel_wrapper_cleanup_on_orphan,
-     additional_constraints_subchannel_wrapper_cleanup_on_orphan, nullptr, 0,
-     true, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,

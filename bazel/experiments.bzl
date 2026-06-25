@@ -75,7 +75,6 @@ EXPERIMENT_ENABLES = {
     "secure_endpoint_read_coalescing": "event_engine_client,event_engine_listener,secure_endpoint_read_coalescing",
     "skip_clear_peer_on_cancellation": "skip_clear_peer_on_cancellation",
     "subchannel_connection_scaling": "subchannel_connection_scaling",
-    "subchannel_wrapper_cleanup_on_orphan": "subchannel_wrapper_cleanup_on_orphan",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
     "tsi_frame_protector_without_locks": "tsi_frame_protector_without_locks",
@@ -240,7 +239,6 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "error_flatten",
-                "subchannel_wrapper_cleanup_on_orphan",
             ],
             "error_tests": [
                 "error_flatten",
@@ -259,7 +257,6 @@ EXPERIMENTS = {
             ],
             "xds_end2end_test": [
                 "error_flatten",
-                "subchannel_wrapper_cleanup_on_orphan",
             ],
         },
     },
