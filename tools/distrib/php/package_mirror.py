@@ -16,26 +16,27 @@ import os
 import shutil
 import xml.etree.ElementTree as ET
 
+
 def main():
     # Parse package.xml to find all files to include in the mirror
-    tree = ET.parse('package.xml')
+    tree = ET.parse("package.xml")
     root = tree.getroot()
-    
+
     # PEAR package.xml namespace
-    ns = {'ns': 'http://pear.php.net/dtd/package-2.0'}
-    files = root.findall('.//ns:file', ns)
-    
-    dest_dir = 'mirror'
+    ns = {"ns": "http://pear.php.net/dtd/package-2.0"}
+    files = root.findall(".//ns:file", ns)
+
+    dest_dir = "mirror"
     os.makedirs(dest_dir, exist_ok=True)
-    
+
     for f in files:
-        file_path = f.attrib.get('name')
+        file_path = f.attrib.get("name")
         if not file_path:
             continue
-            
+
         src = file_path
         dst = os.path.join(dest_dir, file_path)
-        
+
         if os.path.exists(src):
             os.makedirs(os.path.dirname(dst), exist_ok=True)
             shutil.copy2(src, dst)
@@ -44,8 +45,9 @@ def main():
             print(f"Warning: Source file not found: {src}")
 
     # Copy package.xml itself into the mirror for compatibility/reference
-    shutil.copy2('package.xml', os.path.join(dest_dir, 'package.xml'))
+    shutil.copy2("package.xml", os.path.join(dest_dir, "package.xml"))
     print("Copied package.xml to mirror")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
