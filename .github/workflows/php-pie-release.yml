@@ -1,0 +1,27 @@
+name: Source code with Submodules
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code with submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Create Tarball with Submodules
+        run: |
+          tar --exclude-vcs --exclude="grpc-${{ github.ref_name }}.tgz" -czf "grpc-${{ github.ref_name }}.tgz" *
+
+      - name: Release Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: grpc-${{ github.ref_name }}.tgz

@@ -1,7 +1,7 @@
 {
-  "name": "grpc/grpc_ext",
+  "name": "farazahmadk/grpc_ext",
   "type": "php-ext",
-  "description": "gRPC C extension for PHP managed via PIE",
+  "description": "gRPC C extension for PHP, packaged for PIE support",
   "keywords": [
     "rpc"
   ],
@@ -13,7 +13,10 @@
     "google/auth": "^v1.3.0"
   },
   "php-ext": {
-    "extension-name": "grpc"
+    "extension-name": "grpc",
+    "download-url-method": [
+      "pre-packaged-source"
+    ]
   },
   "require": {
     "php": ">=8.1"
