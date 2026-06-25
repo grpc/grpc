@@ -4642,6 +4642,9 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "tls_telemetry",
+    srcs = [
+        "//src/core:tsi/tls_telemetry.cc",
+    ],
     hdrs = [
         "//src/core:tsi/tls_telemetry.h",
     ],
@@ -4650,6 +4653,7 @@ grpc_cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
+        "//:gpr_platform",
         "//src/core:instrument",
     ],
 )

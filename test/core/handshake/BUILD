@@ -237,8 +237,8 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "security_telemetry_test",
-    srcs = ["security_telemetry_test.cc"],
+    name = "tls_telemetry_test",
+    srcs = ["tls_telemetry_test.cc"],
     external_deps = [
         "gtest",
         "absl/strings",
