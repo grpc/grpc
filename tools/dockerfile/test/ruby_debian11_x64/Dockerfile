@@ -109,13 +109,12 @@ RUN /bin/bash -l -c "gem install bundler --no-document"
 RUN ln -s /bin/mkdir /usr/bin/mkdir
 
 #=================
-# Use cmake 3.25 from archived debian 11 (bullseye) backports.
-# Note that this should only be used for images based on debian 11.
+# Install cmake
+# Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
 
-RUN echo "deb http://archive.debian.org/debian bullseye-backports main" >> /etc/apt/sources.list
+COPY --from=repo_root tools/dockerfile/helper_scripts/install-cmake.sh /root/install-cmake.sh
 
-# Use -t for higher priority
-RUN apt-get update && apt-get install -t bullseye-backports -y cmake
+RUN /root/install-cmake.sh
 
 #=================
 # Install ccache

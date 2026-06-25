@@ -22,5 +22,5 @@ RUN ln -s $(which python3) /usr/bin/python
 
 {% include "../../gcp_api_libraries.include" %}
 
-{% include "../../cmake_bullseye_backports.include" %}
+{% include "../../cmake.include" %}
 {% include "../../ccache.include" %}

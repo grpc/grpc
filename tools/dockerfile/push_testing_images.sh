@@ -223,11 +223,13 @@ process_dockerfile() {
   # - one for image identification based on Dockerfile hash
   # - one to exclude it from the GCP Vulnerability Scanner
   local docker_exit_code=0
+
   docker build \
     ${ALWAYS_BUILD:+--no-cache --pull} \
+    --build-context repo_root=. \
     -t ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} \
     -t ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:infrastructure-public-image-${DOCKER_IMAGE_TAG} \
-    ${DOCKERFILE_DIR} || docker_exit_code=$?
+    -f ${DOCKERFILE_DIR}/Dockerfile . || docker_exit_code=$?
   if [ "${docker_exit_code}" -ne 0 ]; then
     if [ -z "${KEEP_GOING}" ]; then
       touch "${FAILED_DIR}/STOP"
