@@ -423,12 +423,14 @@ void XdsResolver::RouteConfigData::BuildFilterChains(
     FilterChainBuilder& builder, Blackboard& blackboard) {
   const auto& hcm = std::get<XdsListenerResource::HttpConnectionManager>(
       xds_config.listener->listener);
-  XdsRouting::PerRouteFilterChainBuilder per_route_builder(
-      hcm.http_filters, http_filter_registry, *xds_config.virtual_host, builder,
+  XdsRouting::RouteConfigFilterChainBuilder route_config_builder(
+      hcm.http_filters, http_filter_registry, builder,
       [](FilterChainBuilder& builder) {
         builder.AddFilter<ClusterSelectionFilter>(nullptr);
       },
       blackboard);
+  auto vhost_builder = route_config_builder.MakeVirtualHostFilterChainBuilder(
+      *xds_config.virtual_host);
   // Set the filter chain for each route.
   for (auto& route_entry : routes_) {
     const auto* route_action =
@@ -441,20 +443,21 @@ void XdsResolver::RouteConfigData::BuildFilterChains(
             XdsRouteConfigResource::Route::RouteAction::ClusterWeight>>(
             &route_action->action);
         weighted_clusters != nullptr) {
-      per_route_builder.BuildFilterChainForRouteWithWeightedClusters(
-          route_entry.route,
-          [&](size_t index,
-              absl::StatusOr<RefCountedPtr<const FilterChain>> filter_chain) {
-            GRPC_CHECK_LT(index, route_entry.weighted_cluster_state.size());
-            route_entry.weighted_cluster_state[index].filter_chain =
-                std::move(filter_chain);
-          });
+      auto weighted_cluster_builder =
+          vhost_builder.MakeWeightedClusterRouteFilterChainBuilder(
+              route_entry.route);
+      for (size_t i = 0; i < weighted_clusters->size(); ++i) {
+        GRPC_CHECK_LT(i, route_entry.weighted_cluster_state.size());
+        route_entry.weighted_cluster_state[i].filter_chain =
+            weighted_cluster_builder.BuildFilterChainForClusterWeight(
+                (*weighted_clusters)[i]);
+      }
     }
     // If the route does not use WeightedClusters, then we generate a
     // filter chain for the route.
     else {
       route_entry.filter_chain =
-          per_route_builder.BuildFilterChainForRoute(route_entry.route);
+          vhost_builder.BuildFilterChainForRoute(route_entry.route);
     }
   }
 }

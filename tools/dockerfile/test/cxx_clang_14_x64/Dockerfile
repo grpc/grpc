@@ -1,4 +1,4 @@
-# Copyright 2021 gRPC authors.
+# Copyright 2026 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,9 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM gcc:7
+FROM silkeh/clang:14-bullseye
 
-RUN apt-get update && apt-get install -y curl git time wget zip && apt-get clean
+RUN apt update && apt -y upgrade && apt install -y \
+  build-essential \
+  ccache \
+  curl \
+  git \
+  time \
+  zip \
+  && apt clean
 #=================
 # Setup git to access working directory across docker boundary.
 # This avoids the "fatal: detected dubious ownership in repository XYZ"
@@ -50,26 +57,6 @@ RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-clien
 
 # Some cxx tests depend on the twisted package
 RUN python3 -m pip install twisted
-
-#=================
-# Install cmake using the install script.
-RUN curl -sSL -o cmake-linux.sh https://github.com/Kitware/CMake/releases/download/v3.16.1/cmake-3.16.1-Linux-x86_64.sh \
-    && sh cmake-linux.sh -- --skip-license --prefix=/usr \
-    && rm cmake-linux.sh
-
-#=================
-# Install ccache (use slightly older release of ccache that works older compilers and cmake)
-
-# Install ccache from source since ccache 3.x packaged with most linux distributions
-# does not support Redis backend for caching.
-RUN curl -sSL --fail --retry 5 -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.5.1/ccache-4.5.1.tar.gz \
-    && tar -zxf ccache.tar.gz \
-    && cd ccache-4.5.1 \
-    && mkdir build && cd build \
-    && cmake -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON -DHIREDIS_FROM_INTERNET=ON .. \
-    && make -j4 && make install \
-    && cd ../.. \
-    && rm -rf ccache-4.5.1 ccache.tar.gz
 
 
 RUN mkdir /var/local/jenkins

@@ -70,7 +70,6 @@
 #include "src/core/tsi/ssl_types.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
-#include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/match.h"
 #include "src/core/util/ref_counted.h"
@@ -81,15 +80,9 @@
 #include "absl/functional/bind_front.h"
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
-#include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-
-// Name of the environment variable controlling OpenSSL cleanup timeout.
-// This variable allows users to specify the timeout (in seconds) for OpenSSL
-// resource cleanup during gRPC shutdown. If not set, a default timeout is used.
-#define GRPC_ARG_OPENSSL_CLEANUP_TIMEOUT_ENV "grpc.openssl_cleanup_timeout"
 
 // --- Constants. ---
 
@@ -660,7 +653,7 @@ const SSL_PRIVATE_KEY_METHOD TlsOffloadPrivateKeyMethod = {
 static const char kSslEnginePrefix[] = "engine:";
 #endif
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000
+#if OPENSSL_VERSION_NUMBER < 0x10101000L
 static gpr_mu* g_openssl_mutexes = nullptr;
 static void openssl_locking_cb(int mode, int type, const char* file,
                                int line) GRPC_UNUSED;
@@ -686,39 +679,14 @@ static void verified_root_cert_free(void* /*parent*/, void* ptr,
 }
 
 static void init_openssl(void) {
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
-  OPENSSL_init_ssl(0, nullptr);
-  // Ensure OPENSSL global clean up happens after gRPC shutdown completes.
-  // OPENSSL registers an exit handler to clean up global objects, which
-  // otherwise may happen before gRPC removes all references to OPENSSL. Below
-  // exit handler is guaranteed to run after OPENSSL's.
-  std::atexit([]() {
-    // Retrieve the OpenSSL cleanup timeout from the environment variable.
-    // This allows users to override the default cleanup timeout for OpenSSL
-    // resource deallocation during gRPC shutdown.
-    std::optional<std::string> env =
-        grpc_core::GetEnv(GRPC_ARG_OPENSSL_CLEANUP_TIMEOUT_ENV);
-    int timeout_sec = 2;
-    if (env.has_value()) {
-      int parsed_timeout_sec = 0;
-      if (absl::SimpleAtoi(*env, &parsed_timeout_sec)) {
-        timeout_sec = parsed_timeout_sec;
-      } else {
-        GRPC_TRACE_LOG(tsi, ERROR)
-            << "Invalid value [" << (*env) << "] for "
-            << GRPC_ARG_OPENSSL_CLEANUP_TIMEOUT_ENV
-            << " environment variable. Using default value of 2 seconds.";
-      }
-    }
-
-    grpc_wait_for_shutdown_with_timeout(absl::Seconds(timeout_sec));
-  });
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+  OPENSSL_init_ssl(OPENSSL_INIT_NO_ATEXIT, nullptr);
 #else
   SSL_library_init();
   SSL_load_error_strings();
   OpenSSL_add_all_algorithms();
 #endif
-#if OPENSSL_VERSION_NUMBER < 0x10100000
+#if OPENSSL_VERSION_NUMBER < 0x10101000L
   if (!CRYPTO_get_locking_callback()) {
     int num_locks = CRYPTO_num_locks();
     GRPC_CHECK_GT(num_locks, 0);
