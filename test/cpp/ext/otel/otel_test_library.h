@@ -242,10 +242,8 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
       const std::string& client_key_path = "",
       const std::string& client_cert_path = "");
   grpc::experimental::TlsServerCredentialsOptions MakeServerTlsOptions(
-      const std::string& root_cert_path,
-      const std::string& server_key_path,
-      const std::string& server_cert_path,
-      bool require_client_cert = false);
+      const std::string& root_cert_path, const std::string& server_key_path,
+      const std::string& server_cert_path, bool require_client_cert = false);
 
   void TearDown() override;
 

@@ -2791,11 +2791,11 @@ tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
       &factory->base, std::move(collection_scope), std::move(locality),
       std::move(backend_service), handshaker);
 #else
-  return create_tsi_ssl_handshaker(
-      factory->ssl_context, 1, server_name_indication, network_bio_buf_size,
-      ssl_bio_buf_size, alpn_preferred_protocol_list, /*key_signer=*/nullptr,
-      &factory->base, std::move(collection_scope), std::move(locality),
-      std::move(backend_service), handshaker);
+    return create_tsi_ssl_handshaker(
+        factory->ssl_context, 1, server_name_indication, network_bio_buf_size,
+        ssl_bio_buf_size, alpn_preferred_protocol_list, /*key_signer=*/nullptr,
+        &factory->base, std::move(collection_scope), std::move(locality),
+        std::move(backend_service), handshaker);
 #endif
 }
 
@@ -2851,11 +2851,11 @@ tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
       &factory->base, std::move(collection_scope),
       /*locality=*/"", /*backend_service=*/"", handshaker);
 #else
-  return create_tsi_ssl_handshaker(
-      factory->ssl_contexts[0].ssl_ctx, 0, nullptr, network_bio_buf_size,
-      ssl_bio_buf_size, std::nullopt, /*key_signer=*/nullptr, &factory->base,
-      std::move(collection_scope), /*locality=*/"", /*backend_service=*/"",
-      handshaker);
+    return create_tsi_ssl_handshaker(
+        factory->ssl_contexts[0].ssl_ctx, 0, nullptr, network_bio_buf_size,
+        ssl_bio_buf_size, std::nullopt, /*key_signer=*/nullptr, &factory->base,
+        std::move(collection_scope), /*locality=*/"", /*backend_service=*/"",
+        handshaker);
 #endif
 }
 
@@ -3027,7 +3027,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
   ssl_context = SSL_CTX_new(TLS_method());
 #else
-  ssl_context = SSL_CTX_new(TLSv1_2_method());
+    ssl_context = SSL_CTX_new(TLSv1_2_method());
 #endif
 #if OPENSSL_VERSION_NUMBER >= 0x10101000 && !defined(LIBRESSL_VERSION_NUMBER)
   SSL_CTX_set_options(ssl_context, SSL_OP_NO_RENEGOTIATION);
@@ -3124,7 +3124,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
       X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
 
 #else
-      X509_VERIFY_PARAM* param = cert_store->param;
+        X509_VERIFY_PARAM* param = cert_store->param;
 #endif
 
       X509_VERIFY_PARAM_set_depth(param, kMaxChainLength);
@@ -3270,7 +3270,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
       ssl_context.ssl_ctx = SSL_CTX_new(TLS_method());
 #else
-      ssl_context.ssl_ctx = SSL_CTX_new(TLSv1_2_method());
+        ssl_context.ssl_ctx = SSL_CTX_new(TLSv1_2_method());
 #endif
 #if OPENSSL_VERSION_NUMBER >= 0x10101000 && !defined(LIBRESSL_VERSION_NUMBER)
       SSL_CTX_set_options(ssl_context.ssl_ctx, SSL_OP_NO_RENEGOTIATION);
