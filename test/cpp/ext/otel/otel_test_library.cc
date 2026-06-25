@@ -274,13 +274,6 @@ void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
   for (auto& per_channel_stats_plugin : config.per_channel_stats_plugins) {
     per_channel_stats_plugin->AddToChannelArguments(&channel_args);
   }
-  reader_ = BuildAndRegisterOpenTelemetryPlugin(std::move(config));
-  server_ = builder.BuildAndStart();
-  ASSERT_NE(nullptr, server_);
-  ASSERT_NE(0, port);
-  server_address_ = grpc_core::LocalIpAndPort(port);
-  canonical_server_address_ = absl::StrCat("dns:///", server_address_);
-
   std::shared_ptr<ChannelCredentials> channel_creds;
   if (config.client_credentials_options.has_value()) {
     channel_creds =
@@ -288,7 +281,12 @@ void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
   } else {
     channel_creds = grpc::InsecureChannelCredentials();
   }
-
+  reader_ = BuildAndRegisterOpenTelemetryPlugin(std::move(config));
+  server_ = builder.BuildAndStart();
+  ASSERT_NE(nullptr, server_);
+  ASSERT_NE(0, port);
+  server_address_ = grpc_core::LocalIpAndPort(port);
+  canonical_server_address_ = absl::StrCat("dns:///", server_address_);
   auto channel = grpc::CreateCustomChannel(
       server_address_, std::move(channel_creds), channel_args);
   stub_ = EchoTestService::NewStub(channel);
