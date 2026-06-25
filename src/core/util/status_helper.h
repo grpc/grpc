@@ -19,7 +19,6 @@
 #ifndef GRPC_SRC_CORE_UTIL_STATUS_HELPER_H
 #define GRPC_SRC_CORE_UTIL_STATUS_HELPER_H
 
-#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <optional>
@@ -29,7 +28,6 @@
 #include "src/core/util/debug_location.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "absl/time/time.h"
 
 extern "C" {
 struct google_rpc_Status;

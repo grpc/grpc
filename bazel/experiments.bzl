@@ -25,7 +25,6 @@ EXPERIMENT_ENABLES = {
     "chaotic_good_framing_layer": "chaotic_good_framing_layer",
     "chaotic_good_send_supported_features": "chaotic_good_send_supported_features",
     "custom_frame_check": "custom_frame_check",
-    "error_flatten": "error_flatten",
     "event_engine_client": "event_engine_client",
     "event_engine_dns": "event_engine_dns",
     "event_engine_dns_non_client_channel": "event_engine_dns_non_client_channel",
@@ -231,7 +230,6 @@ EXPERIMENTS = {
             ],
             "core_end2end_test": [
                 "callv3_batch_validation",
-                "error_flatten",
                 "event_engine_client",
                 "event_engine_dns_non_client_channel",
                 "event_engine_for_all_other_endpoints",
@@ -239,11 +237,7 @@ EXPERIMENTS = {
                 "event_engine_listener",
             ],
             "cpp_end2end_test": [
-                "error_flatten",
                 "subchannel_wrapper_cleanup_on_orphan",
-            ],
-            "error_tests": [
-                "error_flatten",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
@@ -258,7 +252,6 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "xds_end2end_test": [
-                "error_flatten",
                 "subchannel_wrapper_cleanup_on_orphan",
             ],
         },

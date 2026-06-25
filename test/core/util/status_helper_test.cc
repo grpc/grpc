@@ -35,13 +35,6 @@ TEST(StatusUtilTest, CreateStatus) {
   absl::Status s =
       StatusCreate(absl::StatusCode::kUnknown, "Test", DEBUG_LOCATION,
                    {absl::OkStatus(), absl::CancelledError()});
-  if (!IsErrorFlattenEnabled()) {
-    EXPECT_EQ(absl::StatusCode::kUnknown, s.code());
-    EXPECT_EQ("Test", s.message());
-    EXPECT_THAT(StatusGetChildren(s),
-                ::testing::ElementsAre(absl::CancelledError()));
-    return;
-  }
   EXPECT_EQ(absl::StatusCode::kCancelled, s.code());
   EXPECT_EQ("Test ()", s.message());
   EXPECT_THAT(StatusGetChildren(s), ::testing::ElementsAre());
@@ -65,15 +58,6 @@ TEST(StatusUtilTest, SetAndGetStr) {
   EXPECT_EQ("value", StatusGetStr(s, StatusStrProperty::kGrpcMessage));
 }
 
-TEST(StatusUtilTest, GetStrNotExistent) {
-  if (IsErrorFlattenEnabled()) {
-    GTEST_SKIP() << "This case not possible with this experiment";
-  }
-  absl::Status s = absl::CancelledError();
-  EXPECT_EQ(std::optional<std::string>(),
-            StatusGetStr(s, StatusStrProperty::kGrpcMessage));
-}
-
 TEST(StatusUtilTest, AddAndGetChildren) {
   absl::Status s = absl::UnknownError("Message1");
   absl::Status child1 = absl::AbortedError("Message2");
@@ -82,11 +66,6 @@ TEST(StatusUtilTest, AddAndGetChildren) {
   StatusAddChild(&s, child1);
   StatusAddChild(&s, child2);
   StatusAddChild(&s, child3);
-  if (!IsErrorFlattenEnabled()) {
-    EXPECT_THAT(StatusGetChildren(s),
-                ::testing::ElementsAre(child1, child2, child3));
-    return;
-  }
   EXPECT_EQ(s.code(), absl::StatusCode::kAborted);
   EXPECT_EQ(s.message(), "Message1 (Message2) (Message3) ()");
   EXPECT_THAT(StatusGetChildren(s), ::testing::ElementsAre());
@@ -139,9 +118,7 @@ TEST(StatusUtilTest, ErrorWithStrPropertyToString) {
   absl::Status s = absl::CancelledError("Message");
   StatusSetStr(&s, StatusStrProperty::kGrpcMessage, "Hey");
   std::string t = StatusToString(s);
-  EXPECT_EQ(t, IsErrorFlattenEnabled()
-                   ? "CANCELLED:Hey (Message)"
-                   : "CANCELLED:Message {grpc_message:\"Hey\"}");
+  EXPECT_EQ(t, "CANCELLED:Hey (Message)");
 }
 
 TEST(StatusUtilTest, ComplexErrorWithChildrenToString) {
@@ -153,13 +130,8 @@ TEST(StatusUtilTest, ComplexErrorWithChildrenToString) {
   StatusSetStr(&s2, StatusStrProperty::kGrpcMessage, "value");
   StatusAddChild(&s, s2);
   std::string t = StatusToString(s);
-  EXPECT_EQ(
-      t,
-      IsErrorFlattenEnabled()
-          ? "CANCELLED:Message (Message1) (value (Message2)) {stream_id:2021}"
-          : "CANCELLED:Message {stream_id:2021, children:["
-            "ABORTED:Message1, "
-            "ALREADY_EXISTS:Message2 {grpc_message:\"value\"}]}");
+  EXPECT_EQ(t,
+            "CANCELLED:Message (Message1) (value (Message2)) {stream_id:2021}");
 }
 
 TEST(StatusUtilTest, AllocHeapPtr) {

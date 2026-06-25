@@ -29,7 +29,6 @@
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/status_conversion.h"
-#include "src/core/util/time.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.hpp"
 #include "absl/log/check.h"
@@ -48,15 +47,10 @@ namespace {
 #define TYPE_URL_PREFIX "type.googleapis.com/grpc.status."
 #define TYPE_INT_TAG "int."
 #define TYPE_STR_TAG "str."
-#define TYPE_TIME_TAG "time."
-#define TYPE_CHILDREN_TAG "children"
 #define TYPE_URL(name) (TYPE_URL_PREFIX name)
 const absl::string_view kTypeUrlPrefix = TYPE_URL_PREFIX;
 const absl::string_view kTypeIntTag = TYPE_INT_TAG;
 const absl::string_view kTypeStrTag = TYPE_STR_TAG;
-const absl::string_view kTypeTimeTag = TYPE_TIME_TAG;
-const absl::string_view kTypeChildrenTag = TYPE_CHILDREN_TAG;
-const absl::string_view kChildrenPropertyUrl = TYPE_URL(TYPE_CHILDREN_TAG);
 
 const char* GetStatusIntPropertyUrl(StatusIntProperty key) {
   switch (key) {
@@ -80,39 +74,6 @@ const char* GetStatusStrPropertyUrl(StatusStrProperty key) {
       return TYPE_URL(TYPE_STR_TAG "grpc_message");
   }
   GPR_UNREACHABLE_CODE(return "unknown");
-}
-
-void EncodeUInt32ToBytes(uint32_t v, char* buf) {
-  buf[0] = v & 0xFF;
-  buf[1] = (v >> 8) & 0xFF;
-  buf[2] = (v >> 16) & 0xFF;
-  buf[3] = (v >> 24) & 0xFF;
-}
-
-uint32_t DecodeUInt32FromBytes(const char* buf) {
-  const unsigned char* ubuf = reinterpret_cast<const unsigned char*>(buf);
-  return ubuf[0] | (static_cast<uint32_t>(ubuf[1]) << 8) |
-         (static_cast<uint32_t>(ubuf[2]) << 16) |
-         (static_cast<uint32_t>(ubuf[3]) << 24);
-}
-
-std::vector<absl::Status> ParseChildren(absl::Cord children) {
-  std::vector<absl::Status> result;
-  upb::Arena arena;
-  // Cord is flattened to iterate the buffer easily at the cost of memory copy.
-  // TODO(veblush): Optimize this once CordReader is introduced.
-  absl::string_view buf = children.Flatten();
-  size_t cur = 0;
-  while (buf.size() - cur >= sizeof(uint32_t)) {
-    size_t msg_size = DecodeUInt32FromBytes(buf.data() + cur);
-    cur += sizeof(uint32_t);
-    CHECK(buf.size() - cur >= msg_size);
-    google_rpc_Status* msg =
-        google_rpc_Status_parse(buf.data() + cur, msg_size, arena.ptr());
-    cur += msg_size;
-    result.push_back(internal::StatusFromProto(msg));
-  }
-  return result;
 }
 
 }  // namespace
@@ -144,7 +105,7 @@ absl::Status ReplaceStatusCode(const absl::Status& status,
 }  // namespace
 
 void StatusSetInt(absl::Status* status, StatusIntProperty key, intptr_t value) {
-  if (IsErrorFlattenEnabled() && key == StatusIntProperty::kRpcStatus) {
+  if (key == StatusIntProperty::kRpcStatus) {
     // When setting the RPC status, just replace the top-level status code.
     *status = ReplaceStatusCode(*status, static_cast<absl::StatusCode>(value));
     return;
@@ -155,7 +116,7 @@ void StatusSetInt(absl::Status* status, StatusIntProperty key, intptr_t value) {
 
 std::optional<intptr_t> StatusGetInt(const absl::Status& status,
                                      StatusIntProperty key) {
-  if (IsErrorFlattenEnabled() && key == StatusIntProperty::kRpcStatus) {
+  if (key == StatusIntProperty::kRpcStatus) {
     return static_cast<intptr_t>(status.code());
   }
   auto p = status.GetPayload(GetStatusIntPropertyUrl(key));
@@ -191,7 +152,7 @@ absl::Status ReplaceStatusMessage(const absl::Status& status,
 
 void StatusSetStr(absl::Status* status, StatusStrProperty key,
                   absl::string_view value) {
-  if (IsErrorFlattenEnabled() && key == StatusStrProperty::kGrpcMessage) {
+  if (key == StatusStrProperty::kGrpcMessage) {
     if (!status->ok()) {
       *status = ReplaceStatusMessage(
           *status, status->message().empty()
@@ -205,7 +166,7 @@ void StatusSetStr(absl::Status* status, StatusStrProperty key,
 
 std::optional<std::string> StatusGetStr(const absl::Status& status,
                                         StatusStrProperty key) {
-  if (IsErrorFlattenEnabled() && key == StatusStrProperty::kGrpcMessage) {
+  if (key == StatusStrProperty::kGrpcMessage) {
     return std::string(status.message());
   }
   auto p = status.GetPayload(GetStatusStrPropertyUrl(key));
@@ -216,59 +177,36 @@ std::optional<std::string> StatusGetStr(const absl::Status& status,
 }
 
 void StatusAddChild(absl::Status* status, absl::Status child) {
-  if (IsErrorFlattenEnabled()) {
-    // If the child is OK, there's nothing to do.
-    if (child.ok()) return;
-    // If the parent is OK, replace it with the child.
-    if (status->ok()) {
-      *status = std::move(child);
-      return;
-    }
-    // Parent and child are both non-OK, so we need to merge.
-    absl::Status new_status(
-        // Prefer any other code over UNKNOWN.
-        status->code() == absl::StatusCode::kUnknown ? child.code()
-                                                     : status->code(),
-        absl::StrCat(status->message(), " (", child.message(), ")"));
-    // TODO(roth): Remove this once we eliminate all status attributes.
-    status->ForEachPayload(
-        [&](absl::string_view type_url, const absl::Cord& payload) {
-          new_status.SetPayload(type_url, payload);
-        });
-    child.ForEachPayload(
-        [&](absl::string_view type_url, const absl::Cord& payload) {
-          // If the original error already has the attribute, don't overwrite
-          // it.
-          if (!new_status.GetPayload(type_url).has_value()) {
-            new_status.SetPayload(type_url, payload);
-          }
-        });
-    *status = std::move(new_status);
+  // If the child is OK, there's nothing to do.
+  if (child.ok()) return;
+  // If the parent is OK, replace it with the child.
+  if (status->ok()) {
+    *status = std::move(child);
     return;
   }
-  upb::Arena arena;
-  // Serialize msg to buf
-  google_rpc_Status* msg = internal::StatusToProto(child, arena.ptr());
-  size_t buf_len = 0;
-  char* buf = google_rpc_Status_serialize(msg, arena.ptr(), &buf_len);
-  // Append (msg-length and msg) to children payload
-  auto old_children = status->GetPayload(kChildrenPropertyUrl);
-  absl::Cord children;
-  if (old_children.has_value()) {
-    children = *old_children;
-  }
-  char head_buf[sizeof(uint32_t)];
-  EncodeUInt32ToBytes(buf_len, head_buf);
-  children.Append(absl::string_view(head_buf, sizeof(uint32_t)));
-  children.Append(absl::string_view(buf, buf_len));
-  status->SetPayload(kChildrenPropertyUrl, std::move(children));
+  // Parent and child are both non-OK, so we need to merge.
+  absl::Status new_status(
+      // Prefer any other code over UNKNOWN.
+      status->code() == absl::StatusCode::kUnknown ? child.code()
+                                                   : status->code(),
+      absl::StrCat(status->message(), " (", child.message(), ")"));
+  // TODO(roth): Remove this once we eliminate all status attributes.
+  status->ForEachPayload(
+      [&](absl::string_view type_url, const absl::Cord& payload) {
+        new_status.SetPayload(type_url, payload);
+      });
+  child.ForEachPayload(
+      [&](absl::string_view type_url, const absl::Cord& payload) {
+        // If the original error already has the attribute, don't overwrite
+        // it.
+        if (!new_status.GetPayload(type_url).has_value()) {
+          new_status.SetPayload(type_url, payload);
+        }
+      });
+  *status = std::move(new_status);
 }
 
-std::vector<absl::Status> StatusGetChildren(absl::Status status) {
-  auto children = status.GetPayload(kChildrenPropertyUrl);
-  return children.has_value() ? ParseChildren(*children)
-                              : std::vector<absl::Status>();
-}
+std::vector<absl::Status> StatusGetChildren(absl::Status status) { return {}; }
 
 std::string StatusToString(const absl::Status& status) {
   if (status.ok()) {
@@ -280,61 +218,36 @@ std::string StatusToString(const absl::Status& status) {
     absl::StrAppend(&head, ":", status.message());
   }
   std::vector<std::string> kvs;
-  std::optional<absl::Cord> children;
-  status.ForEachPayload([&](absl::string_view type_url,
-                            const absl::Cord& payload) {
-    if (absl::StartsWith(type_url, kTypeUrlPrefix)) {
-      type_url.remove_prefix(kTypeUrlPrefix.size());
-      if (type_url == kTypeChildrenTag) {
-        children = payload;
-        return;
-      }
-      absl::string_view payload_view;
-      std::string payload_storage;
-      if (payload.TryFlat().has_value()) {
-        payload_view = payload.TryFlat().value();
-      } else {
-        payload_storage = std::string(payload);
-        payload_view = payload_storage;
-      }
-      if (absl::StartsWith(type_url, kTypeIntTag)) {
-        type_url.remove_prefix(kTypeIntTag.size());
-        kvs.push_back(absl::StrCat(type_url, ":", payload_view));
-      } else if (absl::StartsWith(type_url, kTypeStrTag)) {
-        type_url.remove_prefix(kTypeStrTag.size());
-        kvs.push_back(absl::StrCat(type_url, ":\"",
-                                   absl::CHexEscape(payload_view), "\""));
-      } else if (absl::StartsWith(type_url, kTypeTimeTag)) {
-        type_url.remove_prefix(kTypeTimeTag.size());
-        absl::Time t;
-        if (absl::ParseTime(absl::RFC3339_full, payload_view, &t, nullptr)) {
-          kvs.push_back(
-              absl::StrCat(type_url, ":\"", absl::FormatTime(t), "\""));
+  status.ForEachPayload(
+      [&](absl::string_view type_url, const absl::Cord& payload) {
+        if (absl::StartsWith(type_url, kTypeUrlPrefix)) {
+          type_url.remove_prefix(kTypeUrlPrefix.size());
+          absl::string_view payload_view;
+          std::string payload_storage;
+          if (payload.TryFlat().has_value()) {
+            payload_view = payload.TryFlat().value();
+          } else {
+            payload_storage = std::string(payload);
+            payload_view = payload_storage;
+          }
+          if (absl::StartsWith(type_url, kTypeIntTag)) {
+            type_url.remove_prefix(kTypeIntTag.size());
+            kvs.push_back(absl::StrCat(type_url, ":", payload_view));
+          } else if (absl::StartsWith(type_url, kTypeStrTag)) {
+            type_url.remove_prefix(kTypeStrTag.size());
+            kvs.push_back(absl::StrCat(type_url, ":\"",
+                                       absl::CHexEscape(payload_view), "\""));
+          } else {
+            kvs.push_back(absl::StrCat(type_url, ":\"",
+                                       absl::CHexEscape(payload_view), "\""));
+          }
         } else {
-          kvs.push_back(absl::StrCat(type_url, ":\"",
-                                     absl::CHexEscape(payload_view), "\""));
+          auto payload_view = payload.TryFlat();
+          std::string payload_str = absl::CHexEscape(
+              payload_view.has_value() ? *payload_view : std::string(payload));
+          kvs.push_back(absl::StrCat(type_url, ":\"", payload_str, "\""));
         }
-      } else {
-        kvs.push_back(absl::StrCat(type_url, ":\"",
-                                   absl::CHexEscape(payload_view), "\""));
-      }
-    } else {
-      auto payload_view = payload.TryFlat();
-      std::string payload_str = absl::CHexEscape(
-          payload_view.has_value() ? *payload_view : std::string(payload));
-      kvs.push_back(absl::StrCat(type_url, ":\"", payload_str, "\""));
-    }
-  });
-  if (children.has_value()) {
-    std::vector<absl::Status> children_status = ParseChildren(*children);
-    std::vector<std::string> children_text;
-    children_text.reserve(children_status.size());
-    for (const absl::Status& child_status : children_status) {
-      children_text.push_back(StatusToString(child_status));
-    }
-    kvs.push_back(
-        absl::StrCat("children:[", absl::StrJoin(children_text, ", "), "]"));
-  }
+      });
   return kvs.empty() ? head
                      : absl::StrCat(head, " {", absl::StrJoin(kvs, ", "), "}");
 }
