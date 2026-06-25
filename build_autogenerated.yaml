@@ -2212,6 +2212,7 @@ libs:
   - src/core/tsi/ssl_telemetry_utils.cc
   - src/core/tsi/ssl_transport_security.cc
   - src/core/tsi/ssl_transport_security_utils.cc
+  - src/core/tsi/tls_telemetry.cc
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
   - src/core/util/backoff.cc
@@ -23018,16 +23019,6 @@ targets:
   headers: []
   src:
   - test/core/credentials/transport/security_connector_test.cc
-  deps:
-  - gtest
-  - grpc_test_util
-- name: security_telemetry_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/handshake/security_telemetry_test.cc
   deps:
   - gtest
   - grpc_test_util

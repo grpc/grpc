@@ -2034,6 +2034,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/tsi/ssl_transport_security_utils.cc )
   s.files += %w( src/core/tsi/ssl_transport_security_utils.h )
   s.files += %w( src/core/tsi/ssl_types.h )
+  s.files += %w( src/core/tsi/tls_telemetry.cc )
   s.files += %w( src/core/tsi/tls_telemetry.h )
   s.files += %w( src/core/tsi/transport_security.cc )
   s.files += %w( src/core/tsi/transport_security.h )
