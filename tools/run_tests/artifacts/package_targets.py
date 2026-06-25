@@ -185,9 +185,9 @@ class PythonPackage:
 
         # TODO(asheshvidyut): remove the below check when we want to release
         # 3.15 wheels, created from Python-3.15 release candidate
-        # job_name = os.getenv("KOKORO_JOB_NAME", "")
-        # if job_name == "grpc/core/master/linux/release/grpc_collect_all_packages":
-        environ["EXCLUDE_PATTERNS"] += " python_*_cp315"
+        job_name = os.getenv("KOKORO_JOB_NAME", "")
+        if job_name == "grpc/core/master/linux/release/grpc_collect_all_packages":
+            environ["EXCLUDE_PATTERNS"] += " python_*_cp315"
 
         if self.platform == "any":
             # all the artifact builder configurations generate an equivalent
