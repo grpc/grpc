@@ -19,6 +19,8 @@ FROM silkeh/clang:19-bookworm
 # Install prerequisites for the clang-tidy script
 RUN /usr/local/bin/apt-get-install-retry  python3 jq git
 
+{% include "../git_avoid_dubious_ownership_error.include %}
+
 # otherwise clang-tidy will report missing <gtest/gtest.h> header
 RUN /usr/local/bin/apt-get-install-retry  libgtest-dev
 
