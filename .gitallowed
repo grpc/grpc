@@ -1,2 +1,3 @@
 # Security tests will contain fake secrets
 test/core/security/**
+test/core/credentials/call/**
