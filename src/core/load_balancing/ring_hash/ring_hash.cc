@@ -51,7 +51,7 @@
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
-#include "src/core/util/env.h"
+#include "src/core/util/experiment_env_var.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/orphanable.h"
@@ -81,19 +81,12 @@ namespace {
 
 constexpr absl::string_view kRingHash = "ring_hash_experimental";
 
-bool XdsRingHashSetRequestHashKeyEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_RING_HASH_SET_REQUEST_HASH_KEY");
-  if (!value.has_value()) return false;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
-}
-
 class RingHashJsonArgs final : public JsonArgs {
  public:
   bool IsEnabled(absl::string_view key) const override {
     if (key == "request_hash_header") {
-      return XdsRingHashSetRequestHashKeyEnabled();
+      return IsExperimentEnvVarEnabled(
+          "GRPC_EXPERIMENTAL_RING_HASH_SET_REQUEST_HASH_KEY");
     }
     return true;
   }

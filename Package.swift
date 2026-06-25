@@ -230,6 +230,8 @@ let package = Package(
         "src/core/config/config_vars_non_generated.cc",
         "src/core/config/core_configuration.cc",
         "src/core/config/core_configuration.h",
+        "src/core/config/experiment_env_var.cc",
+        "src/core/config/experiment_env_var.h",
         "src/core/config/load_config.cc",
         "src/core/config/load_config.h",
         "src/core/credentials/call/call_credentials.h",
