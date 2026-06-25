@@ -42,6 +42,13 @@ def preprocess(session: nox.Session):
         path = os.path.join(root, "__init__.py")
         open(path, "a").close()
 
+@nox.session(venv_params=["--system-site-packages"])
+def build_py(session: nox.Session):
+    "Session to for project custom build command"
+
+    session.log("Running build_py for grpcio-tools")
+
+    session.run("python", "setup.py", "build_package_protos", "build_py")
 
 @nox.session(venv_params=["--system-site-packages"])
 def build_package_protos(session: nox.Session):
