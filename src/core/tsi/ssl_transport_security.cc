@@ -2820,7 +2820,7 @@ static tsi_result create_tsi_ssl_handshaker(
   impl->collection_scope = std::move(collection_scope);
 #if defined(OPENSSL_IS_BORINGSSL)
   {
-    absl::MutexLock lock(&impl->mu);
+    grpc_core::MutexLock lock(&impl->mu);
     impl->key_signer = std::move(key_signer);
   }
 #endif
