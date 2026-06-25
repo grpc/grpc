@@ -75,6 +75,15 @@ EOF
 # Install prerequisites for the clang-tidy script
 RUN /usr/local/bin/apt-get-install-retry  python3 jq git
 
+#=================
+# Setup git to access working directory across docker boundary.
+# This avoids the "fatal: detected dubious ownership in repository XYZ"
+# git error.
+
+RUN git config --global --add safe.directory '*'
+RUN git config --global protocol.file.allow always
+
+
 # otherwise clang-tidy will report missing <gtest/gtest.h> header
 RUN /usr/local/bin/apt-get-install-retry  libgtest-dev
 

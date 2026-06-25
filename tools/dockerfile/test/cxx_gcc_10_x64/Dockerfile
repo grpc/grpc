@@ -73,7 +73,8 @@ done
 EOF
 
 
-RUN /usr/local/bin/apt-get-install-retry  curl git time wget zip
+RUN /usr/local/bin/apt-get-install-retry curl git time zip
+
 #=================
 # Setup git to access working directory across docker boundary.
 # This avoids the "fatal: detected dubious ownership in repository XYZ"
