@@ -253,6 +253,8 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
 
 void tsi_ssl_handshaker::MaybeRecordTelemetry(
     const SslHandshakeResult& handshake_result) {
+  // If there's no collection scope, don't do anything regarding telemetry
+  if (collection_scope == nullptr) return;
   if (handshake_result.tsi_handshake_result == TSI_INCOMPLETE_DATA ||
       handshake_result.tsi_handshake_result == TSI_DRAIN_BUFFER) {
     return;
@@ -274,48 +276,39 @@ void tsi_ssl_handshaker::MaybeRecordTelemetry(
   absl::string_view resumed = active_ssl == nullptr            ? "unknown"
                               : SSL_session_reused(active_ssl) ? "true"
                                                                : "false";
-  grpc_core::TlsTelemetryHandshakeResult result;
-  if (handshake_result.tsi_handshake_result == TSI_OK) {
-    result = grpc_core::TlsTelemetryHandshakeResult::kSuccess;
-  } else if (handshake_result.tsi_handshake_result == TSI_HANDSHAKE_SHUTDOWN) {
-    result = grpc_core::TlsTelemetryHandshakeResult::kCancelled;
-  } else {
+  // Get the generalized error from TSI
+  grpc_core::TlsTelemetryHandshakeResult result =
+      grpc_core::MapTsiResultToTlsTelemetryHandshakeResult(
+          handshake_result.tsi_handshake_result);
+  if (handshake_result.tsi_handshake_result != TSI_OK) {
+    // If TSI reports non-ok, get more details from the SSL stack
     long verify_res =
         active_ssl != nullptr ? SSL_get_verify_result(active_ssl) : X509_V_OK;
-    result = grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(
-        handshake_result.ssl_error, handshake_result.err_code, verify_res);
-    if (result == grpc_core::TlsTelemetryHandshakeResult::kSuccess) {
-      // If OpenSSL didn't report a granular certificate/SSL error, map the TSI
-      // error status.
-      result = grpc_core::TlsTelemetryHandshakeResult::kInternalSystemError;
+    grpc_core::TlsTelemetryHandshakeResult ssl_telemetry_result =
+        grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(
+            handshake_result.ssl_error, handshake_result.err_code, verify_res);
+    // If the SSL stack reports a more detailed error, use it.
+    if (ssl_telemetry_result !=
+        grpc_core::TlsTelemetryHandshakeResult::kSuccess) {
+      result = ssl_telemetry_result;
     }
   }
   std::string status_str =
       std::string(grpc_core::TlsTelemetryHandshakeResultToString(result));
 
-  auto scope = collection_scope != nullptr ? collection_scope
-                                           : grpc_core::GlobalCollectionScope();
   if (is_client) {
     auto storage = grpc_core::TlsClientHandshakeTelemetryDomain::GetStorage(
-        std::move(scope), status_str, target, resumed, locality,
+        collection_scope, status_str, target, resumed, locality,
         backend_service);
     storage->Increment(
         grpc_core::TlsClientHandshakeTelemetryDomain::kHandshakes);
   } else {
     auto storage = grpc_core::TlsServerHandshakeTelemetryDomain::GetStorage(
-        std::move(scope), status_str, resumed);
+        collection_scope, status_str, resumed);
     storage->Increment(
         grpc_core::TlsServerHandshakeTelemetryDomain::kHandshakes);
   }
   metric_recorded = true;
-  // if (handshake_result.tsi_handshake_result == TSI_OK) {
-  //   if (handshaker_result_created) {
-  //     RecordTelemetry(TSI_OK);
-  //   }
-  // } else {
-  //   RecordTelemetry(handshake_result.tsi_handshake_result,
-  //                   handshake_result.ssl_error, handshake_result.err_code);
-  // }
 }
 
 static std::pair<tsi_result, std::optional<HandshakerNextArgs>>
@@ -2552,10 +2545,11 @@ static tsi_result ssl_handshaker_next(
 }
 
 static void ssl_handshaker_shutdown(tsi_handshaker* self) {
-#if defined(OPENSSL_IS_BORINGSSL)
   tsi_ssl_handshaker* impl = static_cast<tsi_ssl_handshaker*>(self);
+#if defined(OPENSSL_IS_BORINGSSL)
   std::shared_ptr<grpc_core::PrivateKeySigner::AsyncSigningHandle>
       signing_handle;
+#endif
   std::optional<HandshakerNextArgs> next_args;
   {
     grpc_core::MutexLock lock(&impl->mu);
@@ -2566,6 +2560,7 @@ static void ssl_handshaker_shutdown(tsi_handshaker* self) {
         /*ssl_error=*/SSL_ERROR_NONE,
         /*err_code=*/0,
     });
+#if defined(OPENSSL_IS_BORINGSSL)
     if (impl->key_signer != nullptr && impl->signing_handle != nullptr) {
       signing_handle = std::move(impl->signing_handle);
     }
@@ -2731,7 +2726,6 @@ static tsi_result create_tsi_ssl_handshaker(
   impl->vtable = &handshaker_vtable;
   impl->factory_ref = tsi_ssl_handshaker_factory_ref(factory);
   impl->collection_scope = std::move(collection_scope);
-  impl->is_client = (is_client != 0);
   impl->target =
       server_name_indication != nullptr ? server_name_indication : "unknown";
   impl->locality = std::move(locality);

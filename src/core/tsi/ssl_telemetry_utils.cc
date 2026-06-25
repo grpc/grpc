@@ -400,4 +400,23 @@ absl::string_view TlsTelemetryHandshakeResultToString(
   }
   return "UNKNOWN_FAILURE";
 }
+
+// Most of the TSI error states are relateively generic and don't allow us to
+// report more granular failure details.
+TlsTelemetryHandshakeResult MapTsiResultToTlsTelemetryHandshakeResult(
+    tsi_result status) {
+  switch (status) {
+    case TSI_OK:
+      return TlsTelemetryHandshakeResult::kSuccess;
+    case TSI_HANDSHAKE_SHUTDOWN:
+      return TlsTelemetryHandshakeResult::kCancelled;
+    case TSI_CLOSE_NOTIFY:
+      return TlsTelemetryHandshakeResult::kPeerConnectionClosed;
+    case TSI_OUT_OF_RESOURCES:
+      return TlsTelemetryHandshakeResult::kInternalSystemError;
+    default:
+      return TlsTelemetryHandshakeResult::kInternalSystemError;
+  }
+}
+
 }  // namespace grpc_core

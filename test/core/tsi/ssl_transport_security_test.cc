@@ -342,6 +342,11 @@ class SslTransportSecurityTest
       client_expects_handshake_failure_ = client_expects_handshake_failure;
     }
 
+    void SetCollectionScope(
+        grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope) {
+      collection_scope_ = std::move(collection_scope);
+    }
+
    private:
     static void SetupHandshakers(tsi_test_fixture* fixture) {
       SslTsiTestFixture* ssl_fixture =
@@ -457,14 +462,14 @@ class SslTransportSecurityTest
               ssl_fixture->network_bio_buf_size_,
               ssl_fixture->ssl_bio_buf_size_,
               ssl_fixture->alpn_client_overriden_protocols_,
-              /*collection_scope=*/nullptr, /*locality=*/"",
+              ssl_fixture->collection_scope_, /*locality=*/"",
               /*backend_service=*/"", &ssl_fixture->base_.client_handshaker),
           TSI_OK);
       ASSERT_EQ(tsi_ssl_server_handshaker_factory_create_handshaker(
                     ssl_fixture->server_handshaker_factory_,
                     ssl_fixture->network_bio_buf_size_,
                     ssl_fixture->ssl_bio_buf_size_,
-                    /*collection_scope=*/nullptr,
+                    ssl_fixture->collection_scope_,
                     &ssl_fixture->base_.server_handshaker),
                 TSI_OK);
     }
@@ -748,6 +753,8 @@ class SslTransportSecurityTest
     // intent.
     bool server_expects_handshake_failure_ = false;
     bool client_expects_handshake_failure_ = false;
+    grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope_ =
+        nullptr;
   };
 
   SslTransportSecurityTest() { grpc_init(); }
@@ -1576,6 +1583,7 @@ TEST_P(SslTransportSecurityTest, TestHandshakeMetricsIncremented) {
 
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_fixture_->SetCollectionScope(root_scope);
   DoHandshake();
 
   TestMetricsSink sink_after;
@@ -1615,6 +1623,7 @@ TEST_P(SslTransportSecurityTest, TestBadServerCertMetricsIncremented) {
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
   ssl_fixture_->MutableKeyCertLib()->use_bad_server_cert = true;
+  ssl_fixture_->SetCollectionScope(root_scope);
   DoHandshake();
 
   TestMetricsSink sink_after;
@@ -1653,6 +1662,7 @@ TEST_P(SslTransportSecurityTest, TestBadClientCertMetricsIncremented) {
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
   ssl_fixture_->MutableKeyCertLib()->use_bad_client_cert = true;
   ssl_fixture_->SetForceClientAuth(true);
+  ssl_fixture_->SetCollectionScope(root_scope);
   DoHandshake();
 
   TestMetricsSink sink_after;

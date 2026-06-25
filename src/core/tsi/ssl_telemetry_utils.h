@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/strings/string_view.h"
+#include "src/core/tsi/transport_security_interface.h"
 
 namespace grpc_core {
 
@@ -71,6 +72,10 @@ enum class TlsTelemetryHandshakeResult {
 // failures.
 TlsTelemetryHandshakeResult MapSslErrorToTlsTelemetryHandshakeResult(
     int ssl_error, unsigned long err_code, long verify_result);
+
+// Maps a tsi_result to the corresponding TlsTelemetryHandshakeResult.
+TlsTelemetryHandshakeResult MapTsiResultToTlsTelemetryHandshakeResult(
+    tsi_result status);
 
 // Converts the C-Core enum into a cross-language-consistent string
 // representation for monitoring.
