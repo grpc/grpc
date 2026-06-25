@@ -183,10 +183,6 @@ std::string StatusToString(const absl::Status& status) {
           if (absl::StartsWith(type_url, kTypeIntTag)) {
             type_url.remove_prefix(kTypeIntTag.size());
             kvs.push_back(absl::StrCat(type_url, ":", payload_view));
-          } else if (absl::StartsWith(type_url, kTypeStrTag)) {
-            type_url.remove_prefix(kTypeStrTag.size());
-            kvs.push_back(absl::StrCat(type_url, ":\"",
-                                       absl::CHexEscape(payload_view), "\""));
           } else {
             kvs.push_back(absl::StrCat(type_url, ":\"",
                                        absl::CHexEscape(payload_view), "\""));
