@@ -246,6 +246,7 @@ grpc_cc_test(
     deps = [
         "//:grpc",
         "//:grpc_security_base",
+        "//:tls_telemetry",
         "//src/core:instrument",
         "//test/core/test_util:grpc_test_util",
     ],

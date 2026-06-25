@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_HANDSHAKER_SECURITY_SECURITY_TELEMETRY_H
-#define GRPC_SRC_CORE_HANDSHAKER_SECURITY_SECURITY_TELEMETRY_H
+#ifndef GRPC_SRC_CORE_TSI_TLS_TELEMETRY_H
+#define GRPC_SRC_CORE_TSI_TLS_TELEMETRY_H
 
 #include "src/core/telemetry/instrument.h"
 
@@ -48,4 +48,4 @@ class TlsServerHandshakeTelemetryDomain final
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_HANDSHAKER_SECURITY_SECURITY_TELEMETRY_H
+#endif  // GRPC_SRC_CORE_TSI_TLS_TELEMETRY_H

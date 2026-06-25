@@ -1371,7 +1371,6 @@
     <file baseinstalldir="/" name="src/core/handshaker/security/secure_endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/security/security_handshaker.cc" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/security/security_handshaker.h" role="src" />
-    <file baseinstalldir="/" name="src/core/handshaker/security/security_telemetry.h" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/tcp_connect/tcp_connect_handshaker.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/address_utils/parse_address.cc" role="src" />
@@ -2016,6 +2015,7 @@
     <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security_utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_types.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/tls_telemetry.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security_grpc.cc" role="src" />

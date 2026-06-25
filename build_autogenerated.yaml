@@ -920,7 +920,6 @@ libs:
   - src/core/handshaker/security/pipelining_heuristic_selector.h
   - src/core/handshaker/security/secure_endpoint.h
   - src/core/handshaker/security/security_handshaker.h
-  - src/core/handshaker/security/security_telemetry.h
   - src/core/handshaker/tcp_connect/tcp_connect_handshaker.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
@@ -1265,6 +1264,7 @@ libs:
   - src/core/tsi/ssl_transport_security.h
   - src/core/tsi/ssl_transport_security_utils.h
   - src/core/tsi/ssl_types.h
+  - src/core/tsi/tls_telemetry.h
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_grpc.h
   - src/core/tsi/transport_security_interface.h
@@ -2676,7 +2676,6 @@ libs:
   - src/core/handshaker/security/pipelining_heuristic_selector.h
   - src/core/handshaker/security/secure_endpoint.h
   - src/core/handshaker/security/security_handshaker.h
-  - src/core/handshaker/security/security_telemetry.h
   - src/core/handshaker/tcp_connect/tcp_connect_handshaker.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
@@ -4816,7 +4815,6 @@ libs:
   - src/core/handshaker/security/pipelining_heuristic_selector.h
   - src/core/handshaker/security/secure_endpoint.h
   - src/core/handshaker/security/security_handshaker.h
-  - src/core/handshaker/security/security_telemetry.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/channel/channel_args.h

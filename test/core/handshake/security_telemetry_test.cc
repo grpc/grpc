@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/handshaker/security/security_telemetry.h"
-
 #include "src/core/telemetry/instrument.h"
+#include "src/core/tsi/tls_telemetry.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 

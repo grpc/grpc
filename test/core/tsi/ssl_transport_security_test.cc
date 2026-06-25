@@ -37,8 +37,8 @@
 #include <tuple>
 #include <vector>
 
-#include "src/core/handshaker/security/security_telemetry.h"
 #include "src/core/telemetry/instrument.h"
+#include "src/core/tsi/tls_telemetry.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/memory.h"

@@ -59,7 +59,6 @@
 
 #include "src/core/credentials/transport/tls/grpc_tls_crl_provider.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
-#include "src/core/handshaker/security/security_telemetry.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/init.h"
@@ -68,6 +67,7 @@
 #include "src/core/tsi/ssl_telemetry_utils.h"
 #include "src/core/tsi/ssl_transport_security_utils.h"
 #include "src/core/tsi/ssl_types.h"
+#include "src/core/tsi/tls_telemetry.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/grpc_check.h"

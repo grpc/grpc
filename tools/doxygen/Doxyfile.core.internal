@@ -797,6 +797,7 @@ doc/interop-test-descriptions.md \
 doc/keepalive.md \
 doc/load-balancing.md \
 doc/naming.md \
+doc/pqc_handshake_buffer_flow_fix.md \
 doc/qos-dscp.md \
 doc/security_audit.md \
 doc/server-reflection.md \
@@ -807,6 +808,7 @@ doc/ssl-performance.md \
 doc/status_ordering.md \
 doc/statuscodes.md \
 doc/trace_flags.md \
+doc/tsi_handshake_driving_investigation.md \
 doc/unit_testing.md \
 doc/versioning.md \
 doc/wait-for-ready.md \
@@ -2191,7 +2193,6 @@ src/core/handshaker/security/secure_endpoint.cc \
 src/core/handshaker/security/secure_endpoint.h \
 src/core/handshaker/security/security_handshaker.cc \
 src/core/handshaker/security/security_handshaker.h \
-src/core/handshaker/security/security_telemetry.h \
 src/core/handshaker/tcp_connect/AGENTS.md \
 src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc \
 src/core/handshaker/tcp_connect/tcp_connect_handshaker.h \
@@ -2873,6 +2874,7 @@ src/core/tsi/ssl_transport_security.h \
 src/core/tsi/ssl_transport_security_utils.cc \
 src/core/tsi/ssl_transport_security_utils.h \
 src/core/tsi/ssl_types.h \
+src/core/tsi/tls_telemetry.h \
 src/core/tsi/transport_security.cc \
 src/core/tsi/transport_security.h \
 src/core/tsi/transport_security_grpc.cc \
