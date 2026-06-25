@@ -55,6 +55,7 @@ grpc_cc_library(
         "//src/cpp/ext/otel:otel_plugin",
         "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
         "//test/cpp/end2end:test_service_impl",
         "//test/cpp/util:test_util",
     ],

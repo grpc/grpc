@@ -1347,12 +1347,17 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ClientHandshakes) {
   if (!grpc_core::IsOtelExportTelemetryDomainsEnabled()) {
     GTEST_SKIP() << "Test requires otel_export_telemetry_domains to be enabled";
   }
-  InitSecure(
-      std::move(Options()
-                    .set_metric_names({grpc::OpenTelemetryPluginBuilder::
-                                           kClientHandshakesInstrumentName})
-                    .add_optional_label("grpc.lb.locality")
-                    .add_optional_label("grpc.lb.backend_service")));
+  Init(std::move(Options()
+                     .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                            kClientHandshakesInstrumentName})
+                     .set_client_credentials_options(
+                         MakeClientTlsOptions("src/core/tsi/test_creds/ca.pem"))
+                     .set_server_credentials_options(MakeServerTlsOptions(
+                         "src/core/tsi/test_creds/ca.pem",
+                         "src/core/tsi/test_creds/server1.key",
+                         "src/core/tsi/test_creds/server1.pem"))
+                     .add_optional_label("grpc.lb.locality")
+                     .add_optional_label("grpc.lb.backend_service")));
   SendRPC();
   const char* kMetricName = "grpc.client.tls.handshakes";
   auto data = ReadCurrentMetricsData(
@@ -1366,7 +1371,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ClientHandshakes) {
   ASSERT_NE(point_data, nullptr);
   auto client_handshakes_value = std::get_if<int64_t>(&point_data->value_);
   ASSERT_NE(client_handshakes_value, nullptr);
-  EXPECT_GE(*client_handshakes_value, 1);
+  EXPECT_EQ(*client_handshakes_value, 1);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
   EXPECT_EQ(attributes.size(), 5);
   const auto* status_value = std::get_if<std::string>(
@@ -1395,8 +1400,15 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ServerHandshakes) {
   if (!grpc_core::IsOtelExportTelemetryDomainsEnabled()) {
     GTEST_SKIP() << "Test requires otel_export_telemetry_domains to be enabled";
   }
-  InitSecure(std::move(Options().set_metric_names(
-      {grpc::OpenTelemetryPluginBuilder::kServerHandshakesInstrumentName})));
+  Init(std::move(Options()
+                     .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                            kServerHandshakesInstrumentName})
+                     .set_client_credentials_options(
+                         MakeClientTlsOptions("src/core/tsi/test_creds/ca.pem"))
+                     .set_server_credentials_options(MakeServerTlsOptions(
+                         "src/core/tsi/test_creds/ca.pem",
+                         "src/core/tsi/test_creds/server1.key",
+                         "src/core/tsi/test_creds/server1.pem"))));
   SendRPC();
   const char* kMetricName = "grpc.server.tls.handshakes";
   auto data = ReadCurrentMetricsData(
@@ -1410,7 +1422,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ServerHandshakes) {
   ASSERT_NE(point_data, nullptr);
   auto server_handshakes_value = std::get_if<int64_t>(&point_data->value_);
   ASSERT_NE(server_handshakes_value, nullptr);
-  EXPECT_GE(*server_handshakes_value, 1);
+  EXPECT_EQ(*server_handshakes_value, 1);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
   EXPECT_EQ(attributes.size(), 2);
   const auto* status_value = std::get_if<std::string>(
@@ -1423,16 +1435,21 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ServerHandshakes) {
   EXPECT_EQ(*resumed_value, "false");
 }
 
-TEST_F(OpenTelemetryPluginEnd2EndTest, ClientHandshakesFailed) {
+TEST_F(OpenTelemetryPluginEnd2EndTest, HandshakesWithBadServerCert) {
   if (!grpc_core::IsOtelExportTelemetryDomainsEnabled()) {
     GTEST_SKIP() << "Test requires otel_export_telemetry_domains to be enabled";
   }
-  InitSecureBadServer(
-      std::move(Options()
-                    .set_metric_names({grpc::OpenTelemetryPluginBuilder::
-                                           kClientHandshakesInstrumentName})
-                    .add_optional_label("grpc.lb.locality")
-                    .add_optional_label("grpc.lb.backend_service")));
+  Init(std::move(Options()
+                     .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                            kClientHandshakesInstrumentName})
+                     .set_client_credentials_options(
+                         MakeClientTlsOptions("src/core/tsi/test_creds/ca.pem"))
+                     .set_server_credentials_options(MakeServerTlsOptions(
+                         "src/core/tsi/test_creds/ca.pem",
+                         "src/core/tsi/test_creds/badserver.key",
+                         "src/core/tsi/test_creds/badserver.pem"))
+                     .add_optional_label("grpc.lb.locality")
+                     .add_optional_label("grpc.lb.backend_service")));
   SendRPC();
   const char* kMetricName = "grpc.client.tls.handshakes";
   auto data = ReadCurrentMetricsData(
@@ -1474,7 +1491,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ClientHandshakesFailed) {
   ASSERT_NE(point_data, nullptr);
   auto client_handshakes_value = std::get_if<int64_t>(&point_data->value_);
   ASSERT_NE(client_handshakes_value, nullptr);
-  EXPECT_GE(*client_handshakes_value, 1);
+  EXPECT_EQ(*client_handshakes_value, 1);
   const auto& attributes = failure_point->attributes.GetAttributes();
   EXPECT_EQ(attributes.size(), 5);
   const auto* status_value = std::get_if<std::string>(
@@ -1499,12 +1516,22 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ClientHandshakesFailed) {
   EXPECT_EQ(*backend_value, "backend_1");
 }
 
-TEST_F(OpenTelemetryPluginEnd2EndTest, ServerHandshakesFailed) {
+TEST_F(OpenTelemetryPluginEnd2EndTest, HandshakesWithBadClientCert) {
   if (!grpc_core::IsOtelExportTelemetryDomainsEnabled()) {
     GTEST_SKIP() << "Test requires otel_export_telemetry_domains to be enabled";
   }
-  InitSecureBadClient(std::move(Options().set_metric_names(
-      {grpc::OpenTelemetryPluginBuilder::kServerHandshakesInstrumentName})));
+  Init(std::move(Options()
+                     .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                            kServerHandshakesInstrumentName})
+                     .set_client_credentials_options(MakeClientTlsOptions(
+                         "src/core/tsi/test_creds/ca.pem",
+                         "src/core/tsi/test_creds/badclient.key",
+                         "src/core/tsi/test_creds/badclient.pem"))
+                     .set_server_credentials_options(MakeServerTlsOptions(
+                         "src/core/tsi/test_creds/ca.pem",
+                         "src/core/tsi/test_creds/server1.key",
+                         "src/core/tsi/test_creds/server1.pem",
+                         /*require_client_cert=*/true))));
   SendRPC();
   const char* kMetricName = "grpc.server.tls.handshakes";
   auto data = ReadCurrentMetricsData(
@@ -1546,7 +1573,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ServerHandshakesFailed) {
   ASSERT_NE(point_data, nullptr);
   auto server_handshakes_value = std::get_if<int64_t>(&point_data->value_);
   ASSERT_NE(server_handshakes_value, nullptr);
-  EXPECT_GE(*server_handshakes_value, 1);
+  EXPECT_EQ(*server_handshakes_value, 1);
   const auto& attributes = failure_point->attributes.GetAttributes();
   EXPECT_EQ(attributes.size(), 2);
   const auto* status_value = std::get_if<std::string>(
