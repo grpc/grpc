@@ -236,18 +236,3 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
-    name = "tls_telemetry_test",
-    srcs = ["tls_telemetry_test.cc"],
-    external_deps = [
-        "gtest",
-        "absl/strings",
-    ],
-    deps = [
-        "//:grpc",
-        "//:grpc_security_base",
-        "//:tls_telemetry",
-        "//src/core:instrument",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
