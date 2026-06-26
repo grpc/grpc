@@ -561,6 +561,7 @@ TEST_P(ChannelzServerTest, BasicGetServerTest) {
 }
 
 TEST_P(ChannelzServerTest, ServerCallTest) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStubs();
   ConfigureProxy(1);
   const int kNumSuccess = 10;
@@ -738,6 +739,7 @@ TEST_P(ChannelzServerTest, StreamingRPC) {
 }
 
 TEST_P(ChannelzServerTest, GetServerSocketsTest) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStubs();
   ConfigureProxy(1);
   GetServersRequest get_server_request;

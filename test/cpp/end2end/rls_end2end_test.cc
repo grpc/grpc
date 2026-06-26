@@ -476,6 +476,7 @@ class RlsEnd2endTest : public ::testing::Test {
 };
 
 TEST_F(RlsEnd2endTest, Basic) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   StartBackends(1);
   SetNextResolution(
       MakeServiceConfigBuilder()

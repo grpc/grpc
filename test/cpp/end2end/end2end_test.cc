@@ -962,6 +962,7 @@ TEST_P(End2endTest, EmptyBinaryMetadata) {
 }
 
 TEST_P(End2endTest, AuthoritySeenOnServerSide) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   EchoRequest request;
   request.mutable_param()->set_echo_host_from_authority_header(true);

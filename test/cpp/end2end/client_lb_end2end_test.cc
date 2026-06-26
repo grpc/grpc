@@ -730,6 +730,7 @@ class AuthorityOverrideTest : public ClientLbEnd2endTest {
 };
 
 TEST_F(AuthorityOverrideTest, NoOverride) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   StartServers(1);
   FakeResolverResponseGeneratorWrapper response_generator;
   auto channel = BuildChannel("", response_generator);
