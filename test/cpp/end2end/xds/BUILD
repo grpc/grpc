@@ -682,6 +682,31 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "xds_random_subsetting_end2end_test",
+    size = "large",
+    srcs = ["xds_random_subsetting_end2end_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/strings",
+    ],
+    linkstatic = True,
+    tags = [
+        "no_test_ios",
+        "no_windows",
+        "xds_end2end_test",
+    ],
+    deps = [
+        ":xds_end2end_test_lib",
+        "//:config_vars",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "@com_github_cncf_xds//xds/type/v3:pkg_cc_proto",
+        "@envoy_api//envoy/config/cluster/v3:pkg_cc_proto",
+    ],
+)
+
+grpc_cc_test(
     name = "xds_rls_end2end_test",
     size = "large",
     srcs = ["xds_rls_end2end_test.cc"],

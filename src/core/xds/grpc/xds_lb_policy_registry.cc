@@ -29,6 +29,10 @@
 #include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.h"
 #include "envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.upb.h"
+/* Uncomment this when the proto file is available in the submodule
+#include
+"envoy/extensions/load_balancing_policies/random_subsetting/v3/random_subsetting.upb.h"
+*/
 #include "envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.h"
 #include "envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.h"
 #include "google/protobuf/wrappers.upb.h"
@@ -299,6 +303,51 @@ class PickFirstLbPolicyConfigFactory final
   }
 };
 
+/* Uncomment this when the random_subsetting.proto file is available in the
+submodule class RandomSubsettingLbPolicyConfigFactory final : public
+XdsLbPolicyRegistry::ConfigFactory { public: Json::Object
+ConvertXdsLbPolicyConfig( const XdsLbPolicyRegistry* registry, const
+XdsResourceType::DecodeContext& context, absl::string_view configuration,
+ValidationErrors* errors, int recursion_depth) override { const auto* resource =
+        envoy_extensions_load_balancing_policies_random_subsetting_v3_RandomSubsetting_parse(
+            configuration.data(), configuration.size(), context.arena);
+    if (resource == nullptr) {
+      errors->AddError("can't decode RandomSubsetting LB policy config");
+      return {};
+    }
+
+    Json::Object config;
+
+    const auto* subset_size_proto =
+        envoy_extensions_load_balancing_policies_random_subsetting_v3_RandomSubsetting_subset_size(resource);
+    if (subset_size_proto != nullptr) {
+      uint32_t subset_size =
+google_protobuf_UInt32Value_value(subset_size_proto); config["subset_size"] =
+Json::FromNumber(subset_size);
+    }
+
+    const auto* child_policy_proto =
+        envoy_extensions_load_balancing_policies_random_subsetting_v3_RandomSubsetting_child_policy(resource);
+    if (child_policy_proto != nullptr) {
+      ValidationErrors::ScopedField field(errors, ".child_policy");
+      auto child_policy = registry->ConvertXdsLbPolicyConfig(
+          context, child_policy_proto, errors, recursion_depth + 1);
+      config["childPolicy"] = Json::FromArray(std::move(child_policy));
+    }
+
+    return Json::Object{
+        {"random_subsetting", Json::FromObject(std::move(config))}};
+  }
+
+  absl::string_view type() override { return Type(); }
+
+  static absl::string_view Type() {
+    return
+"envoy.extensions.load_balancing_policies.random_subsetting.v3.RandomSubsetting";
+  }
+};
+*/
+
 }  // namespace
 
 //
@@ -321,6 +370,11 @@ XdsLbPolicyRegistry::XdsLbPolicyRegistry() {
   policy_config_factories_.emplace(
       PickFirstLbPolicyConfigFactory::Type(),
       std::make_unique<PickFirstLbPolicyConfigFactory>());
+  /* Uncomment this when the factory RandomSubsettingLbPolicyConfigFactory is
+  uncommented policy_config_factories_.emplace(
+      RandomSubsettingLbPolicyConfigFactory::Type(),
+      std::make_unique<RandomSubsettingLbPolicyConfigFactory>());
+  */
 }
 
 Json::Array XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
