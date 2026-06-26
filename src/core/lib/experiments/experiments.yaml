@@ -81,7 +81,7 @@
   description: Send supported features in chaotic good settings frames.
   expiry: 2026/09/01
   owner: aananthv@google.com
-  test_tags: [core_end2end_test]
+  test_tags: []
 - name: custom_frame_check
   description: Adding checks to custom HTTP2 frame.
   expiry: 2027/01/20
@@ -270,6 +270,11 @@
   expiry: 2027/01/16
   owner: alishananda@google.com
   test_tags: []
+- name: optimization_06
+  description: Optimization 
+  expiry: 2027/01/30
+  owner: tjagtap@google.com
+  test_tags: []
 - name: otel_export_telemetry_domains
   description: Export telemetry domains in OpenTelemetry metrics.
   expiry: 2026/07/01
@@ -361,7 +366,7 @@
   test_tags: [core_end2end_test]
 - name: return_preexisting_errors
   description: Return errors that exist before the start of the call in RunHandler.
-  expiry: 2026/06/30
+  expiry: 2027/01/16
   owner: aananthv@google.com
   test_tags: []
 - name: schedule_cancellation_over_write

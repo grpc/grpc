@@ -250,6 +250,7 @@ libs:
   - src/core/client_channel/subchannel_stream_client.h
   - src/core/client_channel/subchannel_stream_limiter.h
   - src/core/config/core_configuration.h
+  - src/core/config/experiment_env_var.h
   - src/core/credentials/call/call_credentials.h
   - src/core/credentials/call/call_creds_registry.h
   - src/core/credentials/call/call_creds_util.h
@@ -1432,6 +1433,7 @@ libs:
   - src/core/client_channel/subchannel_stream_client.cc
   - src/core/client_channel/subchannel_stream_limiter.cc
   - src/core/config/core_configuration.cc
+  - src/core/config/experiment_env_var.cc
   - src/core/credentials/call/call_creds_registry_init.cc
   - src/core/credentials/call/call_creds_util.cc
   - src/core/credentials/call/composite/composite_call_credentials.cc
@@ -2522,6 +2524,7 @@ libs:
   - src/core/client_channel/subchannel_stream_client.h
   - src/core/client_channel/subchannel_stream_limiter.h
   - src/core/config/core_configuration.h
+  - src/core/config/experiment_env_var.h
   - src/core/credentials/call/call_credentials.h
   - src/core/credentials/call/call_creds_registry.h
   - src/core/credentials/call/call_creds_util.h
@@ -3090,6 +3093,7 @@ libs:
   - src/core/client_channel/subchannel_stream_client.cc
   - src/core/client_channel/subchannel_stream_limiter.cc
   - src/core/config/core_configuration.cc
+  - src/core/config/experiment_env_var.cc
   - src/core/credentials/call/call_creds_util.cc
   - src/core/credentials/call/composite/composite_call_credentials.cc
   - src/core/credentials/call/json_util.cc

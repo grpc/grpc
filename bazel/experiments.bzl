@@ -54,6 +54,7 @@ EXPERIMENT_ENABLES = {
     "optimization_03": "optimization_03",
     "optimization_04": "optimization_04",
     "optimization_05": "optimization_05",
+    "optimization_06": "optimization_06",
     "otel_export_telemetry_domains": "otel_export_telemetry_domains",
     "ph2_client": "ph2_client",
     "ph2_client_server": "ph2_client_server",
@@ -175,7 +176,6 @@ EXPERIMENTS = {
             ],
             "core_end2end_test": [
                 "buffer_list_deletion_prep",
-                "chaotic_good_send_supported_features",
                 "local_connector_secure",
                 "otel_export_telemetry_domains",
                 "ph2_client",

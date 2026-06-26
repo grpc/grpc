@@ -40,10 +40,10 @@
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "src/core/config/core_configuration.h"
+#include "src/core/config/experiment_env_var.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/util/down_cast.h"
-#include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/time.h"
@@ -68,23 +68,10 @@ namespace grpc_core {
 
 // TODO(roth): Remove this once the feature passes interop tests.
 bool XdsHttpConnectEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_HTTP_CONNECT");
-  if (!value.has_value()) return false;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
+  return IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_HTTP_CONNECT");
 }
 
 namespace {
-
-// TODO(mlumish): Remove this after the 1.81 release.
-bool XdsSniEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_SNI");
-  if (!value.has_value()) return true;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
-}
 
 constexpr absl::string_view kUpstreamTlsContextType =
     "envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext";
@@ -111,7 +98,9 @@ XdsClusterResource::UpstreamTlsContext UpstreamTlsContextParse(
     errors->AddError("can't decode UpstreamTlsContext");
     return {};
   }
-  if (XdsSniEnabled()) {
+  // TODO(mlumish): Remove this conditional after the 1.81 release.
+  if (IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_SNI",
+                                /*default_value=*/true)) {
     upstream_tls_context.sni = UpbStringToStdString(
         envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_sni(
             upstream_tls_context_proto));
