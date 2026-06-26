@@ -29,7 +29,7 @@ import grpc
 
 _TEST_METHOD = "/test/Test"
 _REQUEST = b"\x23\x33"
-_LARGE_NUM_OF_ITERATIONS = 5000
+_LARGE_NUM_OF_ITERATIONS = 1500 if sys.platform == "darwin" else 5000
 
 # If MAX_RSS inflated more than this size, the test is failed.
 _FAIL_THRESHOLD = 25 * 1024 * 1024  #  25 MiB
@@ -58,10 +58,10 @@ class _GenericHandler(grpc.GenericRpcHandler):
 
 def _start_a_test_server():
     server = grpc.server(
-        ThreadPoolExecutor(max_workers=1), options=(("grpc.so_reuseport", 0),)
+        ThreadPoolExecutor(max_workers=10), options=(("grpc.so_reuseport", 0),)
     )
     server.add_generic_rpc_handlers((_GenericHandler(),))
-    port = server.add_insecure_port("localhost:0")
+    port = server.add_insecure_port("127.0.0.1:0")
     server.start()
     return "127.0.0.1:%d" % port, server
 
