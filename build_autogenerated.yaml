@@ -32453,6 +32453,7 @@ targets:
   language: c++
   headers:
   - test/core/test_util/audit_logging_utils.h
+  - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
@@ -32593,6 +32594,7 @@ targets:
   - third_party/xds/xds/type/v3/range.proto
   - third_party/xds/xds/type/v3/typed_struct.proto
   - test/core/test_util/audit_logging_utils.cc
+  - test/core/test_util/fake_stats_plugin.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
   - test/cpp/end2end/xds/xds_security_end2end_test.cc
