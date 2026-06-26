@@ -209,7 +209,27 @@ struct HandshakerNextArgs {
 
 struct tsi_ssl_handshaker : public tsi_handshaker,
                             public grpc_core::RefCounted<tsi_ssl_handshaker> {
-  tsi_ssl_handshaker() = default;
+  tsi_ssl_handshaker(
+      const tsi_handshaker_vtable* vtable, SSL* ssl, BIO* network_io,
+      tsi_ssl_handshaker_factory* factory_ref,
+      grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope,
+      bool is_client, std::shared_ptr<grpc_core::PrivateKeySigner> signer)
+      : tsi_handshaker(vtable),
+        ssl(ssl),
+        network_io(network_io),
+        result(TSI_HANDSHAKE_IN_PROGRESS),
+        outgoing_bytes_buffer_size(
+            TSI_SSL_HANDSHAKER_OUTGOING_BUFFER_INITIAL_SIZE),
+        outgoing_bytes_buffer(static_cast<unsigned char*>(
+            gpr_zalloc(outgoing_bytes_buffer_size))),
+        factory_ref(factory_ref),
+        collection_scope(std::move(collection_scope)),
+        is_client(is_client) {
+#if defined(OPENSSL_IS_BORINGSSL)
+    key_signer = std::move(signer);
+#endif
+  }
+
   ~tsi_ssl_handshaker() override {
     SSL_free(ssl);
     BIO_free(network_io);
@@ -220,8 +240,8 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
   SSL* ssl;
   BIO* network_io;
   tsi_result result;
-  unsigned char* outgoing_bytes_buffer;
   size_t outgoing_bytes_buffer_size;
+  unsigned char* outgoing_bytes_buffer;
   tsi_ssl_handshaker_factory* factory_ref;
   grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope;
   grpc_core::Mutex mu;
@@ -2716,7 +2736,6 @@ static tsi_result create_tsi_ssl_handshaker(
   SSL* ssl = SSL_new(ctx);
   BIO* network_io = nullptr;
   BIO* ssl_io = nullptr;
-  tsi_ssl_handshaker* impl = nullptr;
   *handshaker = nullptr;
   if (ctx == nullptr) {
     LOG(ERROR) << "SSL Context is null. Should never happen.";
@@ -2806,25 +2825,10 @@ static tsi_result create_tsi_ssl_handshaker(
     SSL_set_accept_state(ssl);
   }
 
-  impl = new tsi_ssl_handshaker();
-  impl->ssl = ssl;
-  impl->network_io = network_io;
-  impl->result = TSI_HANDSHAKE_IN_PROGRESS;
-  impl->outgoing_bytes_buffer_size =
-      TSI_SSL_HANDSHAKER_OUTGOING_BUFFER_INITIAL_SIZE;
-  impl->outgoing_bytes_buffer =
-      static_cast<unsigned char*>(gpr_zalloc(impl->outgoing_bytes_buffer_size));
-  impl->vtable = &handshaker_vtable;
-  impl->factory_ref = tsi_ssl_handshaker_factory_ref(factory);
-  impl->is_client = is_client;
-  impl->collection_scope = std::move(collection_scope);
-#if defined(OPENSSL_IS_BORINGSSL)
-  {
-    grpc_core::MutexLock lock(&impl->mu);
-    impl->key_signer = std::move(key_signer);
-  }
-#endif
-
+  tsi_ssl_handshaker* impl = new tsi_ssl_handshaker(
+      &handshaker_vtable, ssl, network_io,
+      tsi_ssl_handshaker_factory_ref(factory), std::move(collection_scope),
+      is_client, key_signer);
   *handshaker = impl;
 
   if (!SSL_set_ex_data(ssl, g_ssl_ex_handshaker_index, impl)) {
