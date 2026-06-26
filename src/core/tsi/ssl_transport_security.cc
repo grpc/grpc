@@ -2828,7 +2828,7 @@ static tsi_result create_tsi_ssl_handshaker(
   tsi_ssl_handshaker* impl = new tsi_ssl_handshaker(
       &handshaker_vtable, ssl, network_io,
       tsi_ssl_handshaker_factory_ref(factory), std::move(collection_scope),
-      is_client, key_signer);
+      is_client, std::move(key_signer));
   *handshaker = impl;
 
   if (!SSL_set_ex_data(ssl, g_ssl_ex_handshaker_index, impl)) {
