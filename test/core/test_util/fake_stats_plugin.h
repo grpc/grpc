@@ -234,8 +234,7 @@ class FakeStatsPlugin : public StatsPlugin {
       InstrumentLabelSet labels_of_interest = {})
       : channel_filter_(std::move(channel_filter)),
         use_disabled_by_default_metrics_(use_disabled_by_default_metrics),
-        collection_scope_(
-            CreateCollectionScope({}, std::move(labels_of_interest))) {
+        collection_scope_(CreateCollectionScope({}, labels_of_interest)) {
     GlobalInstrumentsRegistry::ForEach(
         [&](const GlobalInstrumentsRegistry::GlobalInstrumentDescriptor&
                 descriptor) {
@@ -671,7 +670,7 @@ class FakeStatsPluginBuilder {
   }
 
   FakeStatsPluginBuilder& SetLabelsOfInterest(InstrumentLabelSet labels) {
-    labels_of_interest_ = std::move(labels);
+    labels_of_interest_ = labels;
     return *this;
   }
 
@@ -681,9 +680,9 @@ class FakeStatsPluginBuilder {
   }
 
   std::shared_ptr<FakeStatsPlugin> BuildAndRegister() {
-    auto f = std::make_shared<FakeStatsPlugin>(
-        std::move(channel_filter_), use_disabled_by_default_metrics_,
-        std::move(labels_of_interest_));
+    auto f = std::make_shared<FakeStatsPlugin>(std::move(channel_filter_),
+                                               use_disabled_by_default_metrics_,
+                                               labels_of_interest_);
     GlobalStatsPluginRegistry::RegisterStatsPlugin(f);
     return f;
   }

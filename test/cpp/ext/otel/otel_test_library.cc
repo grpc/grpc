@@ -287,8 +287,8 @@ void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
   ASSERT_NE(0, port);
   server_address_ = grpc_core::LocalIpAndPort(port);
   canonical_server_address_ = absl::StrCat("dns:///", server_address_);
-  auto channel = grpc::CreateCustomChannel(
-      server_address_, std::move(channel_creds), channel_args);
+  auto channel =
+      grpc::CreateCustomChannel(server_address_, channel_creds, channel_args);
   stub_ = EchoTestService::NewStub(channel);
   generic_stub_ = std::make_unique<GenericStub>(std::move(channel));
 }
