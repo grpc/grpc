@@ -795,8 +795,6 @@ class GlobalInstrumentsRegistryTestPeer {
   static std::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
   FindDoubleCounterHandleByName(absl::string_view name);
   static std::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
-  FindInt64UpDownCounterHandleByName(absl::string_view name);
-  static std::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
   FindUInt64HistogramHandleByName(absl::string_view name);
   static std::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
   FindDoubleHistogramHandleByName(absl::string_view name);
