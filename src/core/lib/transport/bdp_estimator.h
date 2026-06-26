@@ -33,6 +33,10 @@
 
 namespace grpc_core {
 
+constexpr int64_t kInitialBdpDefault = 65536;
+constexpr uint8_t kDefaultInterPingDelayMillis = 100;
+constexpr uint8_t kMaxInterPingDelaySeconds = 10;
+
 class BdpEstimator {
  public:
   explicit BdpEstimator(absl::string_view name);
@@ -56,8 +60,7 @@ class BdpEstimator {
   }
 
   // Start a ping: call after calling grpc_bdp_estimator_schedule_ping and
-  // once
-  // the ping is on the wire
+  // once the ping is on the wire.
   void StartPing() {
     GRPC_TRACE_LOG(bdp_estimator, INFO)
         << "bdp[" << name_ << "]:start acc=" << accumulator_

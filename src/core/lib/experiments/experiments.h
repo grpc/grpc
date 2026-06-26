@@ -141,7 +141,8 @@ inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsSecureEndpointReadCoalescingEnabled() { return false; }
 inline bool IsSkipClearPeerOnCancellationEnabled() { return false; }
-inline bool IsSubchannelConnectionScalingEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SUBCHANNEL_CONNECTION_SCALING
+inline bool IsSubchannelConnectionScalingEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SUBCHANNEL_WRAPPER_CLEANUP_ON_ORPHAN
 inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() { return true; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -239,7 +240,8 @@ inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsSecureEndpointReadCoalescingEnabled() { return false; }
 inline bool IsSkipClearPeerOnCancellationEnabled() { return false; }
-inline bool IsSubchannelConnectionScalingEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SUBCHANNEL_CONNECTION_SCALING
+inline bool IsSubchannelConnectionScalingEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SUBCHANNEL_WRAPPER_CLEANUP_ON_ORPHAN
 inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() { return true; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -337,7 +339,8 @@ inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsSecureEndpointReadCoalescingEnabled() { return false; }
 inline bool IsSkipClearPeerOnCancellationEnabled() { return false; }
-inline bool IsSubchannelConnectionScalingEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SUBCHANNEL_CONNECTION_SCALING
+inline bool IsSubchannelConnectionScalingEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SUBCHANNEL_WRAPPER_CLEANUP_ON_ORPHAN
 inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() { return true; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }

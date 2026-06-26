@@ -359,7 +359,7 @@
   test_tags: [core_end2end_test]
 - name: return_preexisting_errors
   description: Return errors that exist before the start of the call in RunHandler.
-  expiry: 2026/06/30
+  expiry: 2027/01/16
   owner: aananthv@google.com
   test_tags: []
 - name: schedule_cancellation_over_write
@@ -405,7 +405,7 @@
   test_tags: []
 - name: subchannel_connection_scaling
   description: Subchannel connection scaling support.
-  expiry: 2026/07/01
+  expiry: 2026/10/01
   owner: roth@google.com
   test_tags: ["core_end2end_test", "cpp_lb_end2end_test", "chttp2_keepalive_tests"]
 - name: subchannel_wrapper_cleanup_on_orphan
