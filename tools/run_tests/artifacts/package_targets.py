@@ -190,7 +190,9 @@ class PythonPackage:
             job_name
             == "grpc/core/master/linux/release/grpc_collect_all_packages"
         ):
-            environ["EXCLUDE_PATTERNS"] += " python_*_cp315"
+            environ["EXCLUDE_PATTERNS"] += (
+              " python_*cp315* python_*python3.15* python_*Python315*"
+            )
 
         if self.platform == "any":
             # all the artifact builder configurations generate an equivalent
