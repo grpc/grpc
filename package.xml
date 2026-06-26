@@ -2732,8 +2732,6 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_libc.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_libc.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_lookup.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_name_win.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_name_win.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_posix.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_posix.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/internal/cctz/src/tzfile.h" role="src" />

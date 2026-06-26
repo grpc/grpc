@@ -2535,9 +2535,10 @@
   - third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_impl.h
   - third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_info.h
   - third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_libc.h
-  - third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_name_win.h
   - third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_posix.h
   - third_party/abseil-cpp/absl/time/internal/cctz/src/tzfile.h
+  headers_windows:
+  - third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_name_win.h
   name: absl/time/internal/cctz:time_zone
   src:
   - third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_fixed.cc
@@ -2547,9 +2548,10 @@
   - third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_info.cc
   - third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_libc.cc
   - third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_lookup.cc
-  - third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_name_win.cc
   - third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_posix.cc
   - third_party/abseil-cpp/absl/time/internal/cctz/src/zone_info_source.cc
+  src_windows:
+  - third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_name_win.cc
 - cmake_target: absl::clock_interface
   deps:
   - absl/base:config

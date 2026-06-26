@@ -31,10 +31,10 @@ bazel_dep(name = "rules_swift", version = "2.5.0")
 
 # -- Abseil library.
 # Pinning version to be consistent with third_party/abseil-cpp
-bazel_dep(name = "abseil-cpp", version = "20260526.0", repo_name = "com_google_absl")
+bazel_dep(name = "abseil-cpp", version = "20250512.1", repo_name = "com_google_absl")
 single_version_override(
     module_name = "abseil-cpp",
-    version = "20260526.0",
+    version = "20250512.1",
 )
 
 bazel_dep(name = "platforms", version = "1.0.0")
