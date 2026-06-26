@@ -116,8 +116,7 @@ TEST(StatusUtilTest, ComplexErrorWithChildrenToString) {
   absl::Status s2 = absl::AlreadyExistsError("Message2");
   StatusAddChild(&s, s2);
   std::string t = StatusToString(s);
-  EXPECT_EQ(t,
-            "CANCELLED:Message (Message1) (Message2) {stream_id:2021}");
+  EXPECT_EQ(t, "CANCELLED:Message (Message1) (Message2) {stream_id:2021}");
 }
 
 TEST(StatusUtilTest, AllocHeapPtr) {

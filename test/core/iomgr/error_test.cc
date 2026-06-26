@@ -69,8 +69,7 @@ TEST(ErrorTest, CopyAndUnRef) {
 }
 
 TEST(ErrorTest, CreateReferencing) {
-  grpc_error_handle child =
-      GRPC_ERROR_CREATE("Child");
+  grpc_error_handle child = GRPC_ERROR_CREATE("Child");
   grpc_error_handle parent = GRPC_ERROR_CREATE_REFERENCING("Parent", &child, 1);
   EXPECT_NE(parent, absl::OkStatus());
 }
@@ -99,14 +98,12 @@ TEST(ErrorTest, PrintErrorString) {
 
 TEST(ErrorTest, PrintErrorStringReference) {
   grpc_error_handle children[2];
-  children[0] =
-      grpc_error_set_int(GRPC_ERROR_CREATE("1"),
-                         grpc_core::StatusIntProperty::kRpcStatus,
-                         GRPC_STATUS_UNIMPLEMENTED);
-  children[1] =
-      grpc_error_set_int(GRPC_ERROR_CREATE("2sd"),
-                         grpc_core::StatusIntProperty::kRpcStatus,
-                         GRPC_STATUS_INTERNAL);
+  children[0] = grpc_error_set_int(GRPC_ERROR_CREATE("1"),
+                                   grpc_core::StatusIntProperty::kRpcStatus,
+                                   GRPC_STATUS_UNIMPLEMENTED);
+  children[1] = grpc_error_set_int(GRPC_ERROR_CREATE("2sd"),
+                                   grpc_core::StatusIntProperty::kRpcStatus,
+                                   GRPC_STATUS_INTERNAL);
 
   grpc_error_handle parent =
       GRPC_ERROR_CREATE_REFERENCING("Parent", children, 2);
