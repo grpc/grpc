@@ -18,6 +18,10 @@ set -ex
 # avoid slow finalization after the script has exited.
 source $(dirname $0)/../../../tools/internal_ci/helper_scripts/move_src_tree_and_respawn_itself_rc
 
+# Increase macOS TCP connection queue and file descriptor limits to prevent test flakiness
+sudo sysctl -w kern.ipc.somaxconn=4096 || true
+ulimit -n 10000 || true
+
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
