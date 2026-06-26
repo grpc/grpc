@@ -90,5 +90,6 @@ grpc_cc_library(
         "//src/core:slice_buffer",
         "//src/core:sync",
         "//src/core:tcp_tracer",
+        "//src/core:telemetry_label",
     ],
 )

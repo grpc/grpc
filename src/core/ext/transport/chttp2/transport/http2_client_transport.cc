@@ -486,17 +486,6 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
   }
   SetMaxAllowedStreamId(last_stream_id);
 
-  bool close_transport = false;
-  {
-    MutexLock lock(&transport_mutex_);
-    if (CanCloseTransportLocked()) {
-      close_transport = true;
-      GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::ProcessIncomingFrame("
-                                "GoawayFrame) "
-                                "stream_list_ is empty";
-    }
-  }
-
   StateWatcher::DisconnectInfo disconnect_info;
   disconnect_info.reason = Transport::StateWatcher::kGoaway;
   disconnect_info.http2_error_code =
@@ -524,21 +513,6 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
     }
     disconnect_info.keepalive_time =
         Duration::Milliseconds(throttled_keepalive_time);
-  }
-
-  if (close_transport) {
-    // TODO(akshitpatel) : [PH2][P3] : Ideally the error here should be
-    // kNoError. However, Http2Status does not support kNoError. We should
-    // revisit this and update the error code.
-    MaybeSpawnCloseTransport(Http2Status::Http2ConnectionError(
-        FrameErrorCodeToHttp2ErrorCode((
-            frame.error_code ==
-                    Http2ErrorCodeToFrameErrorCode(Http2ErrorCode::kNoError)
-                ? Http2ErrorCodeToFrameErrorCode(Http2ErrorCode::kInternalError)
-                : frame.error_code)),
-        frame.debug_data.empty()
-            ? std::string("GOAWAY received")
-            : std::string(frame.debug_data.as_string_view())));
   }
 
   // lie: use transient failure from the transport to indicate goaway has been
@@ -1374,7 +1348,6 @@ absl::Status Http2ClientTransport::HandleError(RefCountedPtr<Stream> stream,
 
 void Http2ClientTransport::HandleStreamStateChange(Stream& stream,
                                                    StreamStateChange change) {
-  std::optional<Http2Status> close_transport_error;
   if (change.reads_became_closed) {
     // If a stream is closing for reads and was actively waiting for a
     // continuation frame, parse the buffered HEADER/CONTINUATION frames
@@ -1384,38 +1357,28 @@ void Http2ClientTransport::HandleStreamStateChange(Stream& stream,
           SliceBuffer(), /*is_end_headers=*/false,
           /*original_status=*/Http2Status::Ok(),
           settings_->acked().max_header_list_size());
-      if (result.GetType() == Http2Status::Http2ErrorType::kConnectionError) {
+      if (GPR_UNLIKELY(result.GetType() ==
+                       Http2Status::Http2ErrorType::kConnectionError)) {
         GRPC_HTTP2_CLIENT_DLOG
             << "Http2ClientTransport::HandleStreamStateChange (DiscardHeaders) "
                "for "
                "stream id: "
             << stream.GetStreamId()
             << " failed to partially process header: " << result.DebugString();
-        close_transport_error.emplace(std::move(result));
+        GRPC_UNUSED absl::Status unused =
+            HandleError(/*stream=*/nullptr, std::move(result));
+        return;
       }
     }
   }
   if (change.stream_became_closed) {
-    CleanupStream(stream, std::move(close_transport_error));
-  } else if (close_transport_error.has_value()) {
-    MaybeSpawnCloseTransport(std::move(*close_transport_error));
+    CleanupStream(stream);
   }
 }
 
-void Http2ClientTransport::CleanupStream(
-    Stream& stream, std::optional<Http2Status> close_transport_error) {
-  {
-    MutexLock lock(&transport_mutex_);
-    stream_list_.erase(stream.GetStreamId());
-    if (!close_transport_error.has_value() && CanCloseTransportLocked()) {
-      close_transport_error.emplace(Http2Status::Http2ConnectionError(
-          Http2ErrorCode::kInternalError,
-          std::string(RFC9113::kLastStreamClosed)));
-    }
-  }
-  if (close_transport_error.has_value()) {
-    MaybeSpawnCloseTransport(std::move(*close_transport_error));
-  }
+void Http2ClientTransport::CleanupStream(Stream& stream) {
+  MutexLock lock(&transport_mutex_);
+  stream_list_.erase(stream.GetStreamId());
 }
 
 void Http2ClientTransport::BeginCloseStream(
@@ -1534,20 +1497,6 @@ void Http2ClientTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
             });
         ;
       });
-}
-
-bool Http2ClientTransport::CanCloseTransportLocked() const {
-  // If there are no more streams and next stream id is greater than the
-  // max allowed stream id, then no more streams can be created and it is
-  // safe to close the transport.
-  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::CanCloseTransportLocked "
-                            "GetActiveStreamCountLocked="
-                         << GetActiveStreamCountLocked()
-                         << " PeekNextStreamId=" << PeekNextStreamId()
-                         << " GetMaxAllowedStreamId="
-                         << GetMaxAllowedStreamId();
-  return GetActiveStreamCountLocked() == 0 &&
-         PeekNextStreamId() > GetMaxAllowedStreamId();
 }
 
 Http2ClientTransport::~Http2ClientTransport() {

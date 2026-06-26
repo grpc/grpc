@@ -366,7 +366,7 @@
   test_tags: [core_end2end_test]
 - name: return_preexisting_errors
   description: Return errors that exist before the start of the call in RunHandler.
-  expiry: 2026/06/30
+  expiry: 2027/01/16
   owner: aananthv@google.com
   test_tags: []
 - name: schedule_cancellation_over_write

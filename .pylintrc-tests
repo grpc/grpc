@@ -1,5 +1,5 @@
 [MAIN]
-py-version = 3.9
+py-version = 3.10
 load-plugins=
 	pylint.extensions.no_self_use,
 	pylint.extensions.comparison_placement,
