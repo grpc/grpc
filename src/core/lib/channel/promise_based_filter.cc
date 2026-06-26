@@ -849,9 +849,15 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
       state_ = State::kCancelledWhilstForwardingNoPipe;
       break;
     case State::kCompletedWhileBatchCompleted:
-    case State::kBatchCompleted:
-      state_ = State::kCompletedWhileBatchCompleted;
-      break;
+    case State::kBatchCompleted: {
+      // Distinguish between clean completion from cancellation.
+      // A clean completion must still push through filter's message interceptor
+      auto status_code =
+          metadata.get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
+      state_ = status_code == GRPC_STATUS_OK
+                   ? State::kCompletedWhileBatchCompleted
+                   : State::kBatchCompletedButCancelled;
+    } break;
     case State::kCompletedWhilePulledFromPipe:
     case State::kCompletedWhilePushedToPipe:
     case State::kPulledFromPipe:
@@ -910,7 +916,6 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
       state_ = State::kCancelled;
       break;
     case State::kBatchCompletedButCancelled:
-    case State::kCompletedWhileBatchCompleted:
       interceptor()->Push()->Close();
       state_ = State::kCancelled;
       flusher->AddClosure(std::exchange(intercepted_on_complete_, nullptr),
@@ -921,6 +926,7 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
       flusher->AddClosure(std::exchange(intercepted_on_complete_, nullptr),
                           completed_status_, "recv_message");
       break;
+    case State::kCompletedWhileBatchCompleted:
     case State::kBatchCompleted:
       if (completed_status_.ok() && intercepted_slice_buffer_->has_value()) {
         if (!allow_push_to_pipe) break;
