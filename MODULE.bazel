@@ -186,7 +186,16 @@ archive_override(
 )
 
 # --- Provide repo @com_google_fuzztest.
-bazel_dep(name = "fuzztest", version = "20250805.0", dev_dependency = True, repo_name = "com_google_fuzztest")  # mismatched 2023-05-16
+bazel_dep(name = "fuzztest", version = "20260219.0", dev_dependency = True, repo_name = "com_google_fuzztest")  # mismatched 2023-05-16
+
+# TODO(weizheyuan): remove this before submit
+archive_override(
+    module_name = "fuzztest",
+    strip_prefix = "fuzztest-5fcf844190b0a1d9fc0d4ada09e797763616737a",
+    urls = [
+        "https://github.com/google/fuzztest/archive/5fcf844190b0a1d9fc0d4ada09e797763616737a.tar.gz",
+    ],
+)
 
 # This package is not directly used by grpc, but requested by fuzztest.
 #
