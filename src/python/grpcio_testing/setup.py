@@ -26,43 +26,13 @@ sys.path.insert(0, os.path.abspath("."))
 import grpc_version
 import python_version
 
-
-class _NoOpCommand(setuptools.Command):
-    """No-op command."""
-
-    description = ""
-    user_options = []
-
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        pass
-
-
 INSTALL_REQUIRES = (
     "protobuf>=6.33.5,<8.0.0",
     "grpcio>={version}".format(version=grpc_version.VERSION),
 )
 
-try:
-    import testing_commands as _testing_commands
-
-    # we are in the build environment, otherwise the above import fails
-    COMMAND_CLASS = {
-        # Run preprocess from the repository *before* doing any packaging!
-        "preprocess": _testing_commands.Preprocess,
-    }
-except ImportError:
-    COMMAND_CLASS = {
-        # wire up commands to no-op not to break the external dependencies
-        "preprocess": _NoOpCommand,
-    }
-
 CLASSIFIERS = [
+    "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
 ]
@@ -71,6 +41,5 @@ if __name__ == "__main__":
     setuptools.setup(
         python_requires=f">={python_version.MIN_PYTHON_VERSION}",
         install_requires=INSTALL_REQUIRES,
-        cmdclass=COMMAND_CLASS,
         classifiers=CLASSIFIERS,
     )

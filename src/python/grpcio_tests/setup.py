@@ -24,7 +24,7 @@ sys.path.insert(0, os.path.abspath("."))
 import grpc_tools.command
 import setuptools
 
-import commands
+# Break import-style to ensure we can actually find our in-repo dependencies.
 import grpc_version
 import python_version
 
@@ -44,24 +44,13 @@ INSTALL_REQUIRES = (
     "absl-py>=1.4.0",
 )
 
-COMMAND_CLASS = {
-    # Run `preprocess` *before* doing any packaging!
-    "preprocess": commands.GatherProto,
-    "build_package_protos": commands.BuildPackageProtos,
-    "build_py": commands.BuildPy,
-    "run_fork": commands.RunFork,
-    "run_interop": commands.RunInterop,
-    "test_lite": commands.TestLite,
-    "test_aio": commands.TestAio,
-    "test_py3_only": commands.TestPy3Only,
-}
-
 TEST_SUITE = "tests"
 TEST_LOADER = "tests:Loader"
 TEST_RUNNER = "tests:Runner"
 TESTS_REQUIRE = INSTALL_REQUIRES
 
 CLASSIFIERS = [
+    "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
 ]
@@ -70,7 +59,6 @@ if __name__ == "__main__":
     multiprocessing.freeze_support()
     setuptools.setup(
         install_requires=INSTALL_REQUIRES,
-        cmdclass=COMMAND_CLASS,
         classifiers=CLASSIFIERS,
         python_requires=f">={python_version.MIN_PYTHON_VERSION}",
         tests_require=TESTS_REQUIRE,
