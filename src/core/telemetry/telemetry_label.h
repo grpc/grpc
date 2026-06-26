@@ -15,15 +15,37 @@
 #ifndef GRPC_SRC_CORE_TELEMETRY_TELEMETRY_LABEL_H
 #define GRPC_SRC_CORE_TELEMETRY_TELEMETRY_LABEL_H
 
+#include <string_view>
+
 #include <grpc/context_types.h>
 
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/service_config/service_config_call_data.h"
+#include "src/core/util/unique_type_name.h"
 
 namespace grpc_core {
 
 template <>
 struct ArenaContextType<TelemetryLabel> {
   static void Destroy(TelemetryLabel*) {}
+};
+
+class TelemetryLabelAttribute
+    : public ServiceConfigCallData::CallAttributeInterface {
+ public:
+  explicit TelemetryLabelAttribute(std::string_view value) : value_(value) {}
+
+  std::string_view value() const { return value_; }
+
+  static UniqueTypeName TypeName() {
+    static const UniqueTypeName::Factory factory("telemetry_label");
+    return factory.Create();
+  }
+
+ private:
+  UniqueTypeName type() const override { return TypeName(); }
+
+  std::string_view value_;
 };
 
 }  // namespace grpc_core

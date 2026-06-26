@@ -53,6 +53,7 @@
 
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_filter.h"
+#include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -76,6 +77,7 @@
 #include "src/core/resolver/resolver_registry.h"
 #include "src/core/service_config/service_config_impl.h"
 #include "src/core/telemetry/metrics.h"
+#include "src/core/telemetry/telemetry_label.h"
 #include "src/core/util/backoff.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/dual_ref_counted.h"
@@ -123,6 +125,18 @@ constexpr absl::string_view kMetricRlsDataPlaneTarget =
     "grpc.lb.rls.data_plane_target";
 constexpr absl::string_view kMetricLabelPickResult = "grpc.lb.pick_result";
 
+constexpr absl::string_view kMetricLabelTelemetry = "grpc.client.call.custom";
+
+absl::string_view GetTelemetryLabel(const LoadBalancingPolicy::PickArgs& args) {
+  if (args.call_state == nullptr) return "";
+  auto* lb_call_state =
+      static_cast<ClientChannelLbCallState*>(args.call_state);
+  auto* telemetry_label_attribute =
+      lb_call_state->GetCallAttribute<TelemetryLabelAttribute>();
+  if (telemetry_label_attribute == nullptr) return "";
+  return telemetry_label_attribute->value();
+}
+
 const auto kMetricCacheSize =
     GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
         "grpc.lb.rls.cache_size", "EXPERIMENTAL.  Size of the RLS cache.", "By",
@@ -146,6 +160,7 @@ const auto kMetricDefaultTargetPicks =
         "{pick}", false)
         .Labels(kMetricLabelTarget, kMetricLabelRlsServerTarget,
                 kMetricRlsDataPlaneTarget, kMetricLabelPickResult)
+        .OptionalLabels(kMetricLabelTelemetry)
         .Build();
 
 const auto kMetricTargetPicks =
@@ -158,6 +173,7 @@ const auto kMetricTargetPicks =
         "{pick}", false)
         .Labels(kMetricLabelTarget, kMetricLabelRlsServerTarget,
                 kMetricRlsDataPlaneTarget, kMetricLabelPickResult)
+        .OptionalLabels(kMetricLabelTelemetry)
         .Build();
 
 const auto kMetricFailedPicks =
@@ -167,6 +183,7 @@ const auto kMetricFailedPicks =
         "request or the RLS channel being throttled.",
         "{pick}", false)
         .Labels(kMetricLabelTarget, kMetricLabelRlsServerTarget)
+        .OptionalLabels(kMetricLabelTelemetry)
         .Build();
 
 const char kGrpc[] = "grpc";
@@ -696,7 +713,8 @@ class RlsLb final : public LoadBalancingPolicy {
   template <typename HandleType>
   void MaybeExportPickCount(HandleType handle, absl::string_view target,
                             absl::string_view lookup_service,
-                            const PickResult& pick_result);
+                            const PickResult& pick_result,
+                            absl::string_view telemetry_label);
 
   const std::string instance_uuid_;
 
@@ -1023,6 +1041,7 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
 
 LoadBalancingPolicy::PickResult RlsLb::Picker::PickFromDefaultTargetOrFail(
     const char* reason, PickArgs args, absl::Status status) {
+  auto telemetry_label = GetTelemetryLabel(args);
   if (default_child_policy_ != nullptr) {
     GRPC_TRACE_LOG(rls_lb, INFO)
         << "[rlslb " << lb_policy_.get() << "] picker=" << this << ": "
@@ -1030,7 +1049,8 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::PickFromDefaultTargetOrFail(
     auto pick_result = default_child_policy_->Pick(args);
     lb_policy_->MaybeExportPickCount(kMetricDefaultTargetPicks,
                                      config_->default_target(),
-                                     config_->lookup_service(), pick_result);
+                                     config_->lookup_service(), pick_result,
+                                     telemetry_label);
     return pick_result;
   }
   GRPC_TRACE_LOG(rls_lb, INFO)
@@ -1041,7 +1061,7 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::PickFromDefaultTargetOrFail(
   stats_plugins.AddCounter(kMetricFailedPicks, 1,
                            {lb_policy_->channel_control_helper()->GetTarget(),
                             config_->lookup_service()},
-                           {});
+                           {telemetry_label});
   return PickResult::Fail(std::move(status));
 }
 
@@ -1170,10 +1190,11 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(
       << child_policy_wrappers_.size() << ") in state "
       << ConnectivityStateName(child_policy_wrapper->connectivity_state())
       << "; delegating";
+  auto telemetry_label = GetTelemetryLabel(args);
   auto pick_result = child_policy_wrapper->Pick(args);
   lb_policy_->MaybeExportPickCount(kMetricTargetPicks,
                                    child_policy_wrapper->target(),
-                                   lookup_service, pick_result);
+                                   lookup_service, pick_result, telemetry_label);
   // Add header data.
   if (!header_data_.empty()) {
     auto* complete_pick =
@@ -2122,7 +2143,8 @@ void RlsLb::UpdatePickerLocked() {
 template <typename HandleType>
 void RlsLb::MaybeExportPickCount(HandleType handle, absl::string_view target,
                                  absl::string_view lookup_service,
-                                 const PickResult& pick_result) {
+                                 const PickResult& pick_result,
+                                 absl::string_view telemetry_label) {
   absl::string_view pick_result_string = Match(
       pick_result.result,
       [](const LoadBalancingPolicy::PickResult::Complete&) {
@@ -2136,7 +2158,7 @@ void RlsLb::MaybeExportPickCount(HandleType handle, absl::string_view target,
   stats_plugins.AddCounter(handle, 1,
                            {channel_control_helper()->GetTarget(),
                             lookup_service, target, pick_result_string},
-                           {});
+                           {telemetry_label});
 }
 
 //

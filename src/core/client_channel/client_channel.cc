@@ -14,6 +14,7 @@
 
 #include "src/core/client_channel/client_channel.h"
 
+#include <grpc/context_types.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
@@ -79,6 +80,7 @@
 #include "src/core/resolver/resolver_registry.h"
 #include "src/core/service_config/service_config_impl.h"
 #include "src/core/telemetry/metrics.h"
+#include "src/core/telemetry/telemetry_label.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/json/json.h"
@@ -1496,6 +1498,12 @@ ClientChannel::ApplyServiceConfigToCall(
   auto* service_config_call_data =
       GetContext<Arena>()->New<ClientChannelServiceConfigCallData>(
           GetContext<Arena>());
+  auto* telemetry_label = GetContext<Arena>()->GetContext<TelemetryLabel>();
+  if (telemetry_label != nullptr) {
+    service_config_call_data->SetCallAttribute(
+        GetContext<Arena>()->New<TelemetryLabelAttribute>(
+            telemetry_label->value));
+  }
   // Use the ConfigSelector to determine the config for the call.
   auto filter_chain = config_selector.GetCallConfig({&client_initial_metadata,
                                                      GetContext<Arena>(),

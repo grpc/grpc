@@ -4195,6 +4195,7 @@ grpc_cc_library(
         "//src/core:subchannel_interface",
         "//src/core:subchannel_pool_interface",
         "//src/core:sync",
+        "//src/core:telemetry_label",
         "//src/core:time",
         "//src/core:time_precise",
         "//src/core:try_seq",
