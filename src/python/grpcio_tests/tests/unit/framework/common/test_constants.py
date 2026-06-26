@@ -13,12 +13,14 @@
 # limitations under the License.
 """Constants shared among tests throughout RPC Framework."""
 
+import sys
+
 # Value for maximum duration in seconds that a test is allowed for its actual
 # behavioral logic, excluding all time spent deliberately waiting in the test.
 TIME_ALLOWANCE = 10
 # Value for maximum duration in seconds of RPCs that may time out as part of a
 # test.
-SHORT_TIMEOUT = 4
+SHORT_TIMEOUT = 10 if sys.platform == "darwin" else 4
 # Absurdly large value for maximum duration in seconds for should-not-time-out
 # RPCs made during tests.
 LONG_TIMEOUT = 3000
