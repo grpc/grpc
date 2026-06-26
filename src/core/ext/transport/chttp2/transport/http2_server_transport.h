@@ -571,8 +571,8 @@ class Http2ServerTransport final : public ServerTransport,
   //////////////////////////////////////////////////////////////////////////////
   // Error Path and Close Path
 
-  // void MaybeSpawnCloseTransport(Http2Status http2_status,
-  //                               DebugLocation whence = {});
+  void MaybeSpawnCloseTransport(Http2Status http2_status,
+                                DebugLocation whence = {});
 
   // bool CanCloseTransportLocked() const
   //     ABSL_EXCLUSIVE_LOCKS_REQUIRED(transport_mutex_);
