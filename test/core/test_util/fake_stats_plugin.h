@@ -681,9 +681,9 @@ class FakeStatsPluginBuilder {
   }
 
   std::shared_ptr<FakeStatsPlugin> BuildAndRegister() {
-    auto f = std::make_shared<FakeStatsPlugin>(
-        std::move(channel_filter_), use_disabled_by_default_metrics_,
-        std::move(labels_of_interest_));
+    auto f = std::make_shared<FakeStatsPlugin>(std::move(channel_filter_),
+                                               use_disabled_by_default_metrics_,
+                                               std::move(labels_of_interest_));
     GlobalStatsPluginRegistry::RegisterStatsPlugin(f);
     return f;
   }
