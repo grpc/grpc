@@ -214,10 +214,13 @@ class PythonPackage:
         # TODO(asheshvidyut): remove the below check when we want to release
         # 3.15 wheels i.e. when wheels are created from Python-3.15 release candidate
         job_name = os.getenv("KOKORO_JOB_NAME", "")
-        if job_name == "grpc/core/master/linux/release/grpc_collect_all_packages":
-            environ["EXCLUDE_PATTERNS"] += (
-              " python_*cp315* python_*python3.15* python_*Python315*"
-            )
+        if (
+            job_name
+            == "grpc/core/master/linux/release/grpc_collect_all_packages"
+        ):
+            environ[
+                "EXCLUDE_PATTERNS"
+            ] += " python_*cp315* python_*python3.15* python_*Python315*"
 
         return create_docker_jobspec(
             self.name,
