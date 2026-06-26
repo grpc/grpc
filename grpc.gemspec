@@ -237,6 +237,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/config/config_vars_non_generated.cc )
   s.files += %w( src/core/config/core_configuration.cc )
   s.files += %w( src/core/config/core_configuration.h )
+  s.files += %w( src/core/config/experiment_env_var.cc )
+  s.files += %w( src/core/config/experiment_env_var.h )
   s.files += %w( src/core/config/load_config.cc )
   s.files += %w( src/core/config/load_config.h )
   s.files += %w( src/core/credentials/call/call_credentials.h )

@@ -4857,7 +4857,7 @@ grpc_cc_library(
         "work_serializer",
         "//src/core:down_cast",
         "//src/core:dual_ref_counted",
-        "//src/core:env",
+        "//src/core:experiment_env_var",
         "//src/core:grpc_backend_metric_data",
         "//src/core:grpc_check",
         "//src/core:json",

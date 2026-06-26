@@ -2284,6 +2284,7 @@ add_library(grpc
   src/core/client_channel/subchannel_stream_client.cc
   src/core/client_channel/subchannel_stream_limiter.cc
   src/core/config/core_configuration.cc
+  src/core/config/experiment_env_var.cc
   src/core/credentials/call/call_creds_registry_init.cc
   src/core/credentials/call/call_creds_util.cc
   src/core/credentials/call/composite/composite_call_credentials.cc
@@ -3478,6 +3479,7 @@ add_library(grpc_unsecure
   src/core/client_channel/subchannel_stream_client.cc
   src/core/client_channel/subchannel_stream_limiter.cc
   src/core/config/core_configuration.cc
+  src/core/config/experiment_env_var.cc
   src/core/credentials/call/call_creds_util.cc
   src/core/credentials/call/composite/composite_call_credentials.cc
   src/core/credentials/call/json_util.cc

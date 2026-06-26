@@ -714,6 +714,7 @@ LIBGRPC_SRC = \
     src/core/config/config_vars.cc \
     src/core/config/config_vars_non_generated.cc \
     src/core/config/core_configuration.cc \
+    src/core/config/experiment_env_var.cc \
     src/core/config/load_config.cc \
     src/core/credentials/call/call_creds_registry_init.cc \
     src/core/credentials/call/call_creds_util.cc \
