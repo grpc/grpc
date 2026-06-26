@@ -40,16 +40,6 @@ INSTALL_REQUIRES = (
     "grpcio>={version}".format(version=grpc_version.VERSION),
 )
 
-try:
-    import health_commands as _health_commands
-
-    # we are in the build environment, otherwise the above import fails
-    SETUP_REQUIRES = (
-        "grpcio-tools=={version}".format(version=grpc_version.VERSION),
-    )
-except ImportError:
-    SETUP_REQUIRES = ()
-
 if __name__ == "__main__":
     setuptools.setup(
         classifiers=CLASSIFIERS,
