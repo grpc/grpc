@@ -29,7 +29,6 @@
 #include <optional>
 #include <type_traits>
 #include <utility>
-#include <vector>
 
 #include "src/core/call/call_destination.h"
 #include "src/core/call/call_spine.h"
@@ -39,9 +38,6 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/goaway.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
-#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
-#include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
@@ -59,7 +55,6 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/map.h"
-#include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
@@ -70,7 +65,6 @@
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/debug_location.h"
-#include "src/core/util/grpc_check.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -80,7 +74,6 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
-#include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -313,6 +306,27 @@ class Http2ServerTransport final : public ServerTransport,
 
   auto HandleMetadataAndMessages(RefCountedPtr<Stream> stream);
 
+  // Handles failure of a promise by closing the associated stream.
+  template <typename Promise>
+  auto HandleStreamErrorOnFailure(Promise&& promise,
+                                  RefCountedPtr<Stream> stream) {
+    return Map(std::forward<Promise>(promise),
+               [this, stream = std::move(stream)](auto&& result) mutable {
+                 absl::Status status = StatusCast<absl::Status>(result);
+                 GRPC_HTTP2_SERVER_DLOG
+                     << "Http2ServerTransport::HandleStreamErrorOnFailure "
+                        "Received status: "
+                     << status;
+                 if (GPR_UNLIKELY(!status.ok())) {
+                   GRPC_UNUSED absl::Status unused_status = HandleError(
+                       std::move(stream),
+                       Http2Status::AbslStreamError(
+                           status.code(), std::string(status.message())));
+                 }
+                 return std::forward<decltype(result)>(result);
+               });
+  }
+
   // Force triggers a transport write cycle
   absl::Status TriggerWriteCycle(DebugLocation whence = {}) {
     GRPC_HTTP2_SERVER_DLOG
@@ -331,7 +345,7 @@ class Http2ServerTransport final : public ServerTransport,
            "status: "
         << status << " at " << whence.file() << ":" << whence.line();
     GRPC_UNUSED absl::Status unused_status = HandleError(
-        /*stream_id=*/std::nullopt, ToHttpOkOrConnError(status), whence);
+        /*stream=*/nullptr, ToHttpOkOrConnError(status), whence);
     return false;
   }
 
@@ -388,7 +402,7 @@ class Http2ServerTransport final : public ServerTransport,
         [self = RefAsSubclass<Http2ServerTransport>()](absl::Status status) {
           if (!status.ok()) {
             GRPC_UNUSED absl::Status error = self->HandleError(
-                /*stream_id=*/std::nullopt, ToHttpOkOrConnError(status));
+                /*stream=*/nullptr, ToHttpOkOrConnError(status));
           }
         });
   }
@@ -499,23 +513,33 @@ class Http2ServerTransport final : public ServerTransport,
   Http2Status IncomingStream(ClientMetadataHandle&& metadata,
                              uint32_t stream_id);
 
-  // void BeginCloseStream(RefCountedPtr<Stream> stream,
-  //                       std::optional<uint32_t> reset_stream_error_code,
-  //                       ServerMetadataHandle&& metadata,
-  //                       DebugLocation whence = {});
+  // Call this when a stream needs to be closed and we must notify the client by
+  // sending a RST_STREAM frame (e.g., due to local stream error, cancellation).
+  // This enqueues the RST_STREAM frame and immediately closes the stream for
+  // reads. Writes will be closed by the write loop after the RST_STREAM frame
+  // is written to the wire.
+  // Prefer calling HandleError over this API.
+  // Parameters:
+  //   stream: The stream to close.
+  //   reset_stream_error_code: The error code to use for the RST_STREAM frame.
+  //   trailing_metadata_status: The failure status to propagate to the
+  //                             application.
+  //   whence: The location of the caller.
+  void BeginCloseStream(RefCountedPtr<Stream> stream,
+                        uint32_t reset_stream_error_code,
+                        absl::Status trailing_metadata_status,
+                        DebugLocation whence = {});
 
-  // This function MUST be idempotent.
-  void CloseStream(uint32_t stream_id, absl::Status status,
-                   DebugLocation whence = {}) {
-    LOG(INFO) << "Http2ServerTransport::CloseStream for stream id=" << stream_id
-              << " status=" << status << " location=" << whence.file() << ":"
-              << whence.line();
-    // TODO(akshitpatel) : [PH2][P2] : Implement this.
-  }
+  // Handles stream state changes by discarding pending header parsing if reads
+  // became closed, and triggering cleanup if the stream became closed.
+  // This function does not hold the transport mutex and is safe to call from
+  // the read loop.
+  void HandleStreamStateChange(Stream& stream, StreamStateChange change);
 
-  // This function MUST be idempotent.
-  // void CloseStream(Stream& stream, CloseStreamArgs args,
-  //                  DebugLocation whence = {});
+  // Erases the stream from the active stream list. The caller MUST ensure the
+  // stream is closed.
+  // This function acquires the transport mutex internally.
+  void CleanupStream(Stream& stream);
 
   //////////////////////////////////////////////////////////////////////////////
   // Ping Keepalive and Goaway
@@ -559,22 +583,13 @@ class Http2ServerTransport final : public ServerTransport,
   // Handles the error status and returns the corresponding absl status. Absl
   // Status is returned so that the error can be gracefully handled
   // by promise primitives.
-  // If the error is a stream error, it closes the stream and returns an ok
+  // If the error is a stream error, it initiates stream close and returns an ok
   // status. Ok status is returned because the calling transport promise loops
   // should not be cancelled in case of stream errors.
   // If the error is a connection error, it closes the transport and returns the
   // corresponding (failed) absl status.
-  absl::Status HandleError(const std::optional<uint32_t> stream_id,
-                           Http2Status status, DebugLocation whence = {}) {
-    // TODO(akshitpatel) : [PH2][P0] : Implement this. And remove the log.
-    GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::HandleError for stream id="
-                           << (stream_id.has_value() ? absl::StrCat(*stream_id)
-                                                     : "nullopt")
-                           << " status=" << status.DebugString()
-                           << " location=" << whence.file() << ":"
-                           << whence.line();
-    return absl::OkStatus();
-  }
+  absl::Status HandleError(RefCountedPtr<Stream> stream, Http2Status status,
+                           DebugLocation whence = {});
 
   //////////////////////////////////////////////////////////////////////////////
   // Misc Transport Stuff

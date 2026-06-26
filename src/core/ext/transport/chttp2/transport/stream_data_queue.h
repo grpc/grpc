@@ -456,7 +456,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
 
     GRPC_STREAM_DATA_QUEUE_DEBUG
         << "Immediate enqueueing reset stream with error code: " << error_code;
-    reset_stream_state_ = RstStreamState::kQueued;
+    reset_stream_state_ = ResetStreamState::kQueued;
     reset_stream_error_code_ = error_code;
 
     // became_non_empty is set to true if the queue is empty because we are not
@@ -854,7 +854,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
       const bool can_send_reset_stream, FrameSender& frame_sender)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     switch (reset_stream_state_) {
-      case RstStreamState::kDequeued:
+      case ResetStreamState::kDequeued:
         GRPC_STREAM_DATA_QUEUE_DEBUG
             << "Reset stream is already dequeued. Returning empty frames.";
         GRPC_DCHECK(queue_.IsEmpty());
@@ -862,7 +862,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
         return DequeueResult{is_writable_, priority_,
                              /*flow_control_tokens_consumed=*/0u,
                              /*flags=*/DequeueFlags{}};
-      case RstStreamState::kQueued: {
+      case ResetStreamState::kQueued: {
         GRPC_STREAM_DATA_QUEUE_DEBUG
             << "Reset stream is queued. Skipping all frames (if any) for "
                "dequeuing.";
@@ -874,11 +874,11 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
           flags.set_reset_stream_dequeued();
         }
         queue_.Clear();
-        reset_stream_state_ = RstStreamState::kDequeued;
+        reset_stream_state_ = ResetStreamState::kDequeued;
         return DequeueResult{is_writable_, priority_,
                              /*flow_control_tokens_consumed=*/0u, flags};
       }
-      case RstStreamState::kNotQueued:
+      case ResetStreamState::kNotQueued:
         return std::nullopt;
       default:
         GRPC_CHECK(false) << "Invalid reset stream state: "
@@ -889,10 +889,10 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
 
   bool IsEnqueueClosed() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     switch (reset_stream_state_) {
-      case RstStreamState::kNotQueued:
+      case ResetStreamState::kNotQueued:
         return false;
-      case RstStreamState::kQueued:
-      case RstStreamState::kDequeued:
+      case ResetStreamState::kQueued:
+      case ResetStreamState::kDequeued:
         // This can happen when the transport tries to close the stream and the
         // stream is cancelled from the call stack.
         GRPC_STREAM_DATA_QUEUE_DEBUG << "Reset stream already queued.";
@@ -910,7 +910,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // This is only used for DCHECKs. Not actually used for any business logic.
   const bool is_client_;
 
-  enum class RstStreamState : uint8_t {
+  enum class ResetStreamState : uint8_t {
     kNotQueued = 0,
     kQueued,
     kDequeued,
@@ -927,8 +927,8 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // (if needed) to send them. This variable also has 1-1 correspondence with
   // whether the stream is in the list of writable streams in the transport.
   bool is_writable_ ABSL_GUARDED_BY(mu_) = false;
-  RstStreamState reset_stream_state_ ABSL_GUARDED_BY(mu_) =
-      RstStreamState::kNotQueued;
+  ResetStreamState reset_stream_state_ ABSL_GUARDED_BY(mu_) =
+      ResetStreamState::kNotQueued;
   SimpleQueue<QueueEntry> queue_;
   WritableStreamPriority priority_ ABSL_GUARDED_BY(mu_) =
       WritableStreamPriority::kDefault;
