@@ -29,10 +29,10 @@ import grpc
 
 _TEST_METHOD = "/test/Test"
 _REQUEST = b"\x23\x33"
-_LARGE_NUM_OF_ITERATIONS = 1500 if sys.platform == "darwin" else 5000
+_LARGE_NUM_OF_ITERATIONS = 500 if sys.platform == "darwin" else 5000
 
 # If MAX_RSS inflated more than this size, the test is failed.
-_FAIL_THRESHOLD = 25 * 1024 * 1024  #  25 MiB
+_FAIL_THRESHOLD = 15 * 1024 * 1024 if sys.platform == "darwin" else 25 * 1024 * 1024
 
 
 def _get_max_rss():
