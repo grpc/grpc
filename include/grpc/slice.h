@@ -70,16 +70,13 @@ GPRAPI grpc_slice grpc_slice_malloc_large(size_t length);
 
 /** Create a slice by copying a string.
    Does not preserve null terminators.
-   Equivalent to:
-     size_t len = strlen(source);
-     grpc_slice slice = grpc_slice_malloc(len);
-     memcpy(slice->data, source, len); */
+   Allocates a new slice of strlen(source) bytes and copies source into it.
+   The destination buffer is sized exactly to hold the source data. */
 GPRAPI grpc_slice grpc_slice_from_copied_string(const char* source);
 
 /** Create a slice by copying a buffer.
-   Equivalent to:
-     grpc_slice slice = grpc_slice_malloc(len);
-     memcpy(slice->data, source, len); */
+   Allocates a new slice of len bytes and copies len bytes from source into it.
+   The destination buffer is sized exactly to hold len bytes of source data. */
 GPRAPI grpc_slice grpc_slice_from_copied_buffer(const char* source, size_t len);
 
 /** Create a slice pointing to constant memory */
