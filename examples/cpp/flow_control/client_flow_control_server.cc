@@ -53,7 +53,7 @@ class SlowReadingBidiReactor final
 
   void OnReadDone(bool ok) override {
     std::cout << "Received request with " << req_.name().length()
-              << " bytes name\n";
+              << " bytes name" << std::endl;
     if (!ok) {
       Finish(grpc::Status::OK);
       return;
@@ -63,7 +63,7 @@ class SlowReadingBidiReactor final
   }
 
   void OnDone() override {
-    std::cout << "Done\n";
+    std::cout << "Done" << std::endl;
     delete this;
   }
 
@@ -96,6 +96,7 @@ void RunServer(uint16_t port) {
   builder.RegisterService(&service);
   grpc::ResourceQuota quota;
   quota.Resize(absl::GetFlag(FLAGS_quota) * 1024 * 1024);
+  builder.SetResourceQuota(quota);
   // Finally assemble the server.
   auto server = builder.BuildAndStart();
   std::cout << "Server listening on " << server_address << std::endl;
