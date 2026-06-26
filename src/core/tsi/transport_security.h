@@ -83,6 +83,13 @@ struct tsi_handshaker_vtable {
   void (*shutdown)(tsi_handshaker* self);
 };
 struct tsi_handshaker {
+  tsi_handshaker() = default;
+  explicit tsi_handshaker(const tsi_handshaker_vtable* vtable)
+      : vtable(vtable),
+        frame_protector_created(false),
+        handshaker_result_created(false),
+        handshake_shutdown(false) {}
+
   const tsi_handshaker_vtable* vtable;
   bool frame_protector_created;
   bool handshaker_result_created;
