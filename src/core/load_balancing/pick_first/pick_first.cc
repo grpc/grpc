@@ -23,6 +23,7 @@
 #include <inttypes.h>
 #include <string.h>
 
+#include <cmath>
 #include <memory>
 #include <optional>
 #include <set>
@@ -48,6 +49,7 @@
 #include "src/core/telemetry/metrics.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
@@ -538,8 +540,38 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
       // Shuffle the list if needed.
       auto config = static_cast<PickFirstConfig*>(args.config.get());
       if (config->shuffle_addresses()) {
-        SharedBitGen g;
-        absl::c_shuffle(endpoints, g);
+        auto value = GetEnv("GRPC_EXPERIMENTAL_PF_WEIGHTED_SHUFFLING");
+        bool weighted_enabled = false;
+        if (value.has_value()) {
+          gpr_parse_bool_value(value->c_str(), &weighted_enabled);
+        }
+        if (weighted_enabled) {
+          struct WeightedEndpoint {
+            EndpointAddresses endpoint;
+            double key;
+          };
+          std::vector<WeightedEndpoint> weighted_endpoints;
+          weighted_endpoints.reserve(endpoints.size());
+          SharedBitGen g;
+          for (const auto& endpoint : endpoints) {
+            double u = absl::Uniform<double>(g, 0.0, 1.0);
+            double weight =
+                endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
+            double key = std::pow(u, 1.0 / weight);
+            weighted_endpoints.push_back({endpoint, key});
+          }
+          std::sort(weighted_endpoints.begin(), weighted_endpoints.end(),
+                    [](const WeightedEndpoint& a, const WeightedEndpoint& b) {
+                      return a.key > b.key;
+                    });
+          endpoints.clear();
+          for (auto& we : weighted_endpoints) {
+            endpoints.push_back(std::move(we.endpoint));
+          }
+        } else {
+          SharedBitGen g;
+          absl::c_shuffle(endpoints, g);
+        }
       }
       // Flatten the list so that we have one address per endpoint.
       // While we're iterating, also determine the desired address family
