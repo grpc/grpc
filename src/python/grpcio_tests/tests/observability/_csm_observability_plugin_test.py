@@ -569,7 +569,7 @@ class DeserializeLabelsTest(unittest.TestCase):
         )
         return struct.SerializeToString()
 
-    def testMalformedMetadata_FallsBackToUnknown(self):
+    def testMalformedMetadataFallsBackToUnknown(self):
         labels = {"XEnvoyPeerMetadata": b"\xff\xff not a valid struct \x08"}
 
         result = CSMOpenTelemetryLabelInjector.deserialize_labels(labels)
@@ -671,7 +671,7 @@ class DeserializeLabelsTest(unittest.TestCase):
         self.assertEqual(result["grpc.method"], grpc_method)
         self.assertNotIn("XEnvoyPeerMetadata", result)
 
-    def testInvalidMetadataTypeDecodesRemoteLabelsAsUnknown(self):
+    def testInvalidMetadataTypeDecodesRemoteLabelsPartially(self):
         metadata_type = "my_type"
         metadata_canonical_service = "my_canonical_service"
         metadata_workload = "my_workload"
