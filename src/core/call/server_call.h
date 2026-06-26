@@ -97,7 +97,11 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
     Crash("is_trailers_only not implemented for server calls");
   }
   absl::string_view GetServerAuthority() const override {
-    Crash("unimplemented");
+    if (client_initial_metadata_stored_ == nullptr) return "";
+    const Slice* authority_metadata =
+        client_initial_metadata_stored_->get_pointer(HttpAuthorityMetadata());
+    if (authority_metadata == nullptr) return "";
+    return authority_metadata->as_string_view();
   }
   grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                              bool is_notify_tag_closure) override;
