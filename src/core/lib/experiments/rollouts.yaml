@@ -107,11 +107,11 @@
 - name: ph2_client
   default: false
 - name: ph2_client_server
-  default: true
+  default: false
 - name: ph2_perf_01
   default: false
 - name: ph2_server
-  default: true
+  default: false
 - name: pollset_alternative
   default: false
 - name: prioritize_finished_requests

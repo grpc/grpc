@@ -192,6 +192,8 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "ph2_client",
+                "ph2_client_server",
+                "ph2_server",
             ],
             "cpp_lb_end2end_test": [
                 "subchannel_connection_scaling",
@@ -240,8 +242,6 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "error_flatten",
-                "ph2_client_server",
-                "ph2_server",
                 "subchannel_wrapper_cleanup_on_orphan",
             ],
             "error_tests": [
