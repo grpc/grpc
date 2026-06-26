@@ -1,5 +1,4 @@
-//
-// Copyright 2019 gRPC authors.
+// Copyright 2026 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,24 +11,16 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
 
-#include "src/core/xds/xds_client/xds_bootstrap.h"
-
-#include "src/core/config/experiment_env_var.h"
+#ifndef GRPC_SRC_CORE_CONFIG_EXPERIMENT_ENV_VAR_H
+#define GRPC_SRC_CORE_CONFIG_EXPERIMENT_ENV_VAR_H
 
 namespace grpc_core {
 
-// TODO(roth,apolcyn): remove this federation env var after the 1.55
-// release.
-bool XdsFederationEnabled() {
-  return IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_FEDERATION",
-                                   /*default_value=*/true);
-}
-
-// TODO(roth): Remove this once the feature passes interop tests.
-bool XdsDataErrorHandlingEnabled() {
-  return IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_DATA_ERROR_HANDLING");
-}
+// Returns true if the specified experiment env var is enabled.
+// If the env var is not set, returns default_value.
+bool IsExperimentEnvVarEnabled(const char* name, bool default_value = false);
 
 }  // namespace grpc_core
+
+#endif  // GRPC_SRC_CORE_CONFIG_EXPERIMENT_ENV_VAR_H
