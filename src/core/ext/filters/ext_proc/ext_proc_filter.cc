@@ -2318,7 +2318,7 @@ absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ProcessServerToClient(
     RefCountedPtr<ExtProcCall> ext_proc_call) {
   auto response_pipeline = Seq(
       // Phase 1: Headers and Messages (short-circuiting!)
-      initiator.CancelIfFails(TrySeq(
+      TrySeq(
           // Step A: Pull Server Initial Metadata.
           initiator.PullServerInitialMetadata(),
           [handler, initiator, ext_proc_call,
@@ -2344,22 +2344,46 @@ absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ProcessServerToClient(
                   // Trailers-Only: Bypasses both headers and messages!
                   return absl::OkStatus();
                 });
-          })),
-      // Phase 2: Pull, intercept, and push Server Trailing Metadata.
-      initiator.PullServerTrailingMetadata(),
+          }),
+      // Handle Phase 1 result and conditionally run Phase 2
       [handler, initiator, ext_proc_call,
-       config = config_](ServerMetadataHandle md) mutable
-          -> absl::AnyInvocable<Poll<absl::Status>()> {
-        if (ext_proc_call->IsStreamClosed() &&
-            !ext_proc_call->GetStreamErrorStatus().ok()) {
-          auto error = ext_proc_call->GetStreamErrorStatus();
-          auto error_md = CancelledServerMetadataFromStatus(error);
+       config = config_](absl::Status phase1_result) mutable {
+        if (!phase1_result.ok()) {
+          GRPC_TRACE_LOG(ext_proc_filter, INFO)
+              << "ExtProc: ProcessServerToClient Phase 1 failed: "
+              << phase1_result;
+          // Push the Phase 1 error to the parent call as trailing metadata first
+          auto error_md = CancelledServerMetadataFromStatus(phase1_result);
           handler.SpawnPushServerTrailingMetadata(std::move(error_md));
-          return [error]() -> Poll<absl::Status> { return error; };
+          // Then cancel the child call to prevent leaks/hangs
+          initiator.Cancel();
+          // Close the ext_proc stream
+          ext_proc_call->CloseStream();
+          // Return the error to complete the pipeline
+          return absl::AnyInvocable<Poll<absl::Status>()>(
+              [phase1_result]() -> Poll<absl::Status> {
+                return phase1_result;
+              });
         }
-        auto shared_md = std::make_shared<ServerMetadataHandle>(std::move(md));
-        return ServerTrailingMetadata(handler, initiator, ext_proc_call, config,
-                                      shared_md);
+        // Phase 1 succeeded! Proceed to Phase 2: Pull, intercept, and push
+        // Server Trailing Metadata.
+        return absl::AnyInvocable<Poll<absl::Status>()>(Seq(
+            initiator.PullServerTrailingMetadata(),
+            [handler, initiator, ext_proc_call,
+             config](ServerMetadataHandle md) mutable
+                -> absl::AnyInvocable<Poll<absl::Status>()> {
+              if (ext_proc_call->IsStreamClosed() &&
+                  !ext_proc_call->GetStreamErrorStatus().ok()) {
+                auto error = ext_proc_call->GetStreamErrorStatus();
+                auto error_md = CancelledServerMetadataFromStatus(error);
+                handler.SpawnPushServerTrailingMetadata(std::move(error_md));
+                return [error]() -> Poll<absl::Status> { return error; };
+              }
+              auto shared_md =
+                  std::make_shared<ServerMetadataHandle>(std::move(md));
+              return ServerTrailingMetadata(handler, initiator, ext_proc_call,
+                                            config, shared_md);
+            }));
       });
   return [response_pipeline = std::move(response_pipeline)]() mutable {
     return response_pipeline();
