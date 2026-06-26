@@ -210,11 +210,11 @@ struct HandshakerNextArgs {
 struct tsi_ssl_handshaker : public tsi_handshaker,
                             public grpc_core::RefCounted<tsi_ssl_handshaker> {
   tsi_ssl_handshaker(
-      const tsi_handshaker_vtable* vtable, SSL* ssl, BIO* network_io,
+      const tsi_handshaker_vtable* handshaker_vtable, SSL* ssl, BIO* network_io,
       tsi_ssl_handshaker_factory* factory_ref,
       grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope,
       bool is_client, std::shared_ptr<grpc_core::PrivateKeySigner> signer)
-      : tsi_handshaker(vtable),
+      : tsi_handshaker(handshaker_vtable),
         ssl(ssl),
         network_io(network_io),
         result(TSI_HANDSHAKE_IN_PROGRESS),
