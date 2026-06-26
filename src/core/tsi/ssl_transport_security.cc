@@ -2568,7 +2568,9 @@ static void ssl_handshaker_shutdown(tsi_handshaker* self) {
       next_args = std::move(*impl->handshaker_next_args);
       impl->handshaker_next_args.reset();
     }
+#endif  // defined(OPENSSL_IS_BORINGSSL)
   }
+#if defined(OPENSSL_IS_BORINGSSL)
   if (signing_handle != nullptr) {
     impl->key_signer->Cancel(signing_handle);
   }
