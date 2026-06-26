@@ -92,12 +92,12 @@ class ChannelConnectivityTest(unittest.TestCase):
         server = grpc.server(
             recording_thread_pool, options=(("grpc.so_reuseport", 0),)
         )
-        port = server.add_insecure_port("[::]:0")
+        port = server.add_insecure_port("127.0.0.1:0")
         server.start()
         first_callback = _Callback()
         second_callback = _Callback()
 
-        channel = grpc.insecure_channel("localhost:{}".format(port))
+        channel = grpc.insecure_channel("127.0.0.1:{}".format(port))
         channel.subscribe(first_callback.update, try_to_connect=False)
         first_connectivities = (
             first_callback.block_until_connectivities_satisfy(bool)
@@ -152,11 +152,11 @@ class ChannelConnectivityTest(unittest.TestCase):
         server = grpc.server(
             recording_thread_pool, options=(("grpc.so_reuseport", 0),)
         )
-        port = server.add_insecure_port("[::]:0")
+        port = server.add_insecure_port("127.0.0.1:0")
         server.start()
         callback = _Callback()
 
-        channel = grpc.insecure_channel("localhost:{}".format(port))
+        channel = grpc.insecure_channel("127.0.0.1:{}".format(port))
         channel.subscribe(callback.update, try_to_connect=True)
         callback.block_until_connectivities_satisfy(_ready_in_connectivities)
         # Now take down the server and confirm that channel readiness is repudiated.

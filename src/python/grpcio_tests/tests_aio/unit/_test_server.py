@@ -185,4 +185,4 @@ async def start_test_server(
     await server.start()
 
     # NOTE(lidizheng) returning the server to prevent it from deallocation
-    return "localhost:%d" % port, server
+    return "127.0.0.1:%d" % port, server

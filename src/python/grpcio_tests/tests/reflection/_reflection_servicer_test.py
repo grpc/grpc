@@ -58,10 +58,10 @@ class ReflectionServicerTest(unittest.TestCase):
     def setUp(self):
         self._server = test_common.test_server()
         reflection.enable_server_reflection(_SERVICE_NAMES, self._server)
-        port = self._server.add_insecure_port("[::]:0")
+        port = self._server.add_insecure_port("127.0.0.1:0")
         self._server.start()
 
-        self._channel = grpc.insecure_channel("localhost:%d" % port)
+        self._channel = grpc.insecure_channel("127.0.0.1:%d" % port)
         self._stub = reflection_pb2_grpc.ServerReflectionStub(self._channel)
 
     def tearDown(self):

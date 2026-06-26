@@ -60,8 +60,8 @@ class TestCompatibility(AioTestBase):
         self._adhoc_handlers = _common.AdhocGenericHandler()
         self._async_server.add_generic_rpc_handlers((self._adhoc_handlers,))
 
-        port = self._async_server.add_insecure_port("[::]:0")
-        address = "localhost:%d" % port
+        port = self._async_server.add_insecure_port("127.0.0.1:0")
+        address = "127.0.0.1:%d" % port
         await self._async_server.start()
 
         # Create async stub
@@ -201,7 +201,7 @@ class TestCompatibility(AioTestBase):
 
         def sync_work() -> None:
             for _ in range(100):
-                with grpc.insecure_channel("localhost:%d" % port) as channel:
+                with grpc.insecure_channel("127.0.0.1:%d" % port) as channel:
                     response = channel.unary_unary("/test/test")(b"\x07\x08")
                     self.assertEqual(response, b"\x07\x08")
 

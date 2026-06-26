@@ -91,13 +91,13 @@ RPC_METHOD_HANDLERS = {
 class AbortTest(unittest.TestCase):
     def setUp(self):
         self._server = test_common.test_server()
-        port = self._server.add_insecure_port("[::]:0")
+        port = self._server.add_insecure_port("127.0.0.1:0")
         self._server.add_registered_method_handlers(
             _SERVICE_NAME, RPC_METHOD_HANDLERS
         )
         self._server.start()
 
-        self._channel = grpc.insecure_channel("localhost:%d" % port)
+        self._channel = grpc.insecure_channel("127.0.0.1:%d" % port)
 
     def tearDown(self):
         self._channel.close()

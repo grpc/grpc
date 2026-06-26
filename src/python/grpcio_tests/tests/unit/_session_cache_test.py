@@ -66,7 +66,7 @@ def start_secure_server():
     server = test_common.test_server()
     server.add_registered_method_handlers(_SERVICE_NAME, _METHOD_HANDLERS)
     server_cred = grpc.ssl_server_credentials(_SERVER_CERTS)
-    port = server.add_secure_port("[::]:0", server_cred)
+    port = server.add_secure_port("127.0.0.1:0", server_cred)
     server.start()
 
     return server, port
@@ -77,7 +77,7 @@ class SSLSessionCacheTest(unittest.TestCase):
         self, channel_creds, channel_options, port, expect_ssl_session_reused
     ):
         channel = grpc.secure_channel(
-            "localhost:{}".format(port), channel_creds, options=channel_options
+            "127.0.0.1:{}".format(port), channel_creds, options=channel_options
         )
         response = channel.unary_unary(
             grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),

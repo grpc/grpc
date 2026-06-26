@@ -41,7 +41,7 @@ def handle_unary_unary(request, servicer_context):
                     futures.ThreadPoolExecutor(max_workers=10)
                 )
                 second_server.add_generic_rpc_handlers((_GenericHandler(),))
-                second_server_port = second_server.add_insecure_port("[::]:0")
+                second_server_port = second_server.add_insecure_port("127.0.0.1:0")
                 second_server.start()
                 unary_unary_call(port=second_server_port)
                 second_server.stop(0)
@@ -133,13 +133,13 @@ def start_server(
         server.add_registered_method_handlers(
             _SERVICE_NAME, REGISTERED_RPC_METHOD_HANDLERS
         )
-    port = server.add_insecure_port("[::]:0")
+    port = server.add_insecure_port("127.0.0.1:0")
     server.start()
     return server, port
 
 
 def unary_unary_call(port, metadata=None, registered_method=False):
-    with grpc.insecure_channel(f"localhost:{port}") as channel:
+    with grpc.insecure_channel(f"127.0.0.1:{port}") as channel:
         multi_callable = channel.unary_unary(
             grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),
             _registered_method=registered_method,
@@ -153,7 +153,7 @@ def unary_unary_call(port, metadata=None, registered_method=False):
 
 
 def intercepted_unary_unary_call(port, interceptors, metadata=None):
-    with grpc.insecure_channel(f"localhost:{port}") as channel:
+    with grpc.insecure_channel(f"127.0.0.1:{port}") as channel:
         intercept_channel = grpc.intercept_channel(channel, interceptors)
         multi_callable = intercept_channel.unary_unary(
             grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY)
@@ -167,7 +167,7 @@ def intercepted_unary_unary_call(port, interceptors, metadata=None):
 
 
 def unary_unary_filtered_call(port, metadata=None):
-    with grpc.insecure_channel(f"localhost:{port}") as channel:
+    with grpc.insecure_channel(f"127.0.0.1:{port}") as channel:
         multi_callable = channel.unary_unary(
             grpc._common.fully_qualified_method(
                 _SERVICE_NAME, _UNARY_UNARY_FILTERED
@@ -182,7 +182,7 @@ def unary_unary_filtered_call(port, metadata=None):
 
 
 def unary_stream_call(port):
-    with grpc.insecure_channel(f"localhost:{port}") as channel:
+    with grpc.insecure_channel(f"127.0.0.1:{port}") as channel:
         multi_callable = channel.unary_stream(
             grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_STREAM)
         )
@@ -192,7 +192,7 @@ def unary_stream_call(port):
 
 
 def stream_unary_call(port):
-    with grpc.insecure_channel(f"localhost:{port}") as channel:
+    with grpc.insecure_channel(f"127.0.0.1:{port}") as channel:
         multi_callable = channel.stream_unary(
             grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_UNARY)
         )
@@ -202,7 +202,7 @@ def stream_unary_call(port):
 
 
 def stream_stream_call(port):
-    with grpc.insecure_channel(f"localhost:{port}") as channel:
+    with grpc.insecure_channel(f"127.0.0.1:{port}") as channel:
         multi_callable = channel.stream_stream(
             grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_STREAM)
         )

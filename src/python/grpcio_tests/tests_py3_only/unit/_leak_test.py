@@ -63,7 +63,7 @@ def _start_a_test_server():
     server.add_generic_rpc_handlers((_GenericHandler(),))
     port = server.add_insecure_port("localhost:0")
     server.start()
-    return "localhost:%d" % port, server
+    return "127.0.0.1:%d" % port, server
 
 
 def _perform_an_rpc(address):

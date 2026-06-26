@@ -72,10 +72,10 @@ class AuthContextTest(unittest.TestCase):
     def testInsecure(self):
         server = test_common.test_server()
         server.add_registered_method_handlers(_SERVICE_NAME, _METHOD_HANDLERS)
-        port = server.add_insecure_port("[::]:0")
+        port = server.add_insecure_port("127.0.0.1:0")
         server.start()
 
-        with grpc.insecure_channel("localhost:%d" % port) as channel:
+        with grpc.insecure_channel("127.0.0.1:%d" % port) as channel:
             response = channel.unary_unary(
                 grpc._common.fully_qualified_method(
                     _SERVICE_NAME, _UNARY_UNARY
@@ -99,14 +99,14 @@ class AuthContextTest(unittest.TestCase):
         server = test_common.test_server()
         server.add_registered_method_handlers(_SERVICE_NAME, _METHOD_HANDLERS)
         server_cred = grpc.ssl_server_credentials(_SERVER_CERTS)
-        port = server.add_secure_port("[::]:0", server_cred)
+        port = server.add_secure_port("127.0.0.1:0", server_cred)
         server.start()
 
         channel_creds = grpc.ssl_channel_credentials(
             root_certificates=_TEST_ROOT_CERTIFICATES
         )
         channel = grpc.secure_channel(
-            "localhost:{}".format(port),
+            "127.0.0.1:{}".format(port),
             channel_creds,
             options=_PROPERTY_OPTIONS,
         )
@@ -137,7 +137,7 @@ class AuthContextTest(unittest.TestCase):
             root_certificates=_TEST_ROOT_CERTIFICATES,
             require_client_auth=True,
         )
-        port = server.add_secure_port("[::]:0", server_cred)
+        port = server.add_secure_port("127.0.0.1:0", server_cred)
         server.start()
 
         channel_creds = grpc.ssl_channel_credentials(
@@ -146,7 +146,7 @@ class AuthContextTest(unittest.TestCase):
             certificate_chain=_CERTIFICATE_CHAIN,
         )
         channel = grpc.secure_channel(
-            "localhost:{}".format(port),
+            "127.0.0.1:{}".format(port),
             channel_creds,
             options=_PROPERTY_OPTIONS,
         )
@@ -171,7 +171,7 @@ class AuthContextTest(unittest.TestCase):
         self, channel_creds, channel_options, port, expect_ssl_session_reused
     ):
         channel = grpc.secure_channel(
-            "localhost:{}".format(port), channel_creds, options=channel_options
+            "127.0.0.1:{}".format(port), channel_creds, options=channel_options
         )
         response = channel.unary_unary(
             grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),
@@ -189,7 +189,7 @@ class AuthContextTest(unittest.TestCase):
         server = test_common.test_server()
         server.add_registered_method_handlers(_SERVICE_NAME, _METHOD_HANDLERS)
         server_cred = grpc.ssl_server_credentials(_SERVER_CERTS)
-        port = server.add_secure_port("[::]:0", server_cred)
+        port = server.add_secure_port("127.0.0.1:0", server_cred)
         server.start()
 
         # Create a cache for TLS session tickets

@@ -40,7 +40,7 @@ class DNSResolverTest(unittest.TestCase):
         self._server.add_registered_method_handlers(
             _SERVICE_NAME, _METHOD_HANDLERS
         )
-        self._port = self._server.add_insecure_port("[::]:0")
+        self._port = self._server.add_insecure_port("127.0.0.1:0")
         self._server.start()
 
     def tearDown(self):

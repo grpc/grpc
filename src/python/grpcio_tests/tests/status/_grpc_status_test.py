@@ -124,10 +124,10 @@ class StatusTest(unittest.TestCase):
     def setUp(self):
         self._server = test_common.test_server()
         self._server.add_generic_rpc_handlers((_GenericHandler(),))
-        port = self._server.add_insecure_port("[::]:0")
+        port = self._server.add_insecure_port("127.0.0.1:0")
         self._server.start()
 
-        self._channel = grpc.insecure_channel("localhost:%d" % port)
+        self._channel = grpc.insecure_channel("127.0.0.1:%d" % port)
 
     def tearDown(self):
         self._server.stop(None)

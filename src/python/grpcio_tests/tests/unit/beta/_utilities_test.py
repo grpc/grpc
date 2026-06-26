@@ -44,7 +44,7 @@ class _Callback:
 @unittest.skip("https://github.com/grpc/grpc/issues/16134")
 class ChannelConnectivityTest(unittest.TestCase):
     def test_lonely_channel_connectivity(self):
-        channel = implementations.insecure_channel("localhost", 12345)
+        channel = implementations.insecure_channel("127.0.0.1", 12345)
         callback = _Callback()
 
         ready_future = utilities.channel_ready_future(channel)
@@ -63,9 +63,9 @@ class ChannelConnectivityTest(unittest.TestCase):
 
     def test_immediately_connectable_channel_connectivity(self):
         server = implementations.server({})
-        port = server.add_insecure_port("[::]:0")
+        port = server.add_insecure_port("127.0.0.1:0")
         server.start()
-        channel = implementations.insecure_channel("localhost", port)
+        channel = implementations.insecure_channel("127.0.0.1", port)
         callback = _Callback()
 
         try:

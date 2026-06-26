@@ -125,7 +125,7 @@ def _time_invocation(to_time: Callable[[], None]) -> datetime.timedelta:
 def _server(credentials: Optional[grpc.ServerCredentials]):
     try:
         server = test_common.test_server()
-        target = "[::]:0"
+        target = "127.0.0.1:0"
         if credentials is None:
             port = server.add_insecure_port(target)
         else:
@@ -186,7 +186,7 @@ class SimpleStubsTest(unittest.TestCase):
 
     def test_unary_unary_insecure(self):
         with _server(None) as port:
-            target = f"localhost:{port}"
+            target = f"127.0.0.1:{port}"
             response = grpc.experimental.unary_unary(
                 _REQUEST,
                 target,
@@ -199,7 +199,7 @@ class SimpleStubsTest(unittest.TestCase):
 
     def test_unary_unary_secure(self):
         with _server(grpc.local_server_credentials()) as port:
-            target = f"localhost:{port}"
+            target = f"127.0.0.1:{port}"
             response = grpc.experimental.unary_unary(
                 _REQUEST,
                 target,
@@ -212,7 +212,7 @@ class SimpleStubsTest(unittest.TestCase):
 
     def test_channels_cached(self):
         with _server(grpc.local_server_credentials()) as port:
-            target = f"localhost:{port}"
+            target = f"127.0.0.1:{port}"
             test_name = inspect.stack()[0][3]
             args = (_REQUEST, target, _UNARY_UNARY)
             kwargs = {
@@ -229,7 +229,7 @@ class SimpleStubsTest(unittest.TestCase):
 
     def test_channels_evicted(self):
         with _server(grpc.local_server_credentials()) as port:
-            target = f"localhost:{port}"
+            target = f"127.0.0.1:{port}"
             response = grpc.experimental.unary_unary(
                 _REQUEST,
                 target,
@@ -245,7 +245,7 @@ class SimpleStubsTest(unittest.TestCase):
 
     def test_total_channels_enforced(self):
         with _server(grpc.local_server_credentials()) as port:
-            target = f"localhost:{port}"
+            target = f"127.0.0.1:{port}"
             for i in range(_STRESS_EPOCHS):
                 # Ensure we get a new channel each time.
                 options = (("foo", str(i)),)
@@ -266,7 +266,7 @@ class SimpleStubsTest(unittest.TestCase):
 
     def test_unary_stream(self):
         with _server(grpc.local_server_credentials()) as port:
-            target = f"localhost:{port}"
+            target = f"127.0.0.1:{port}"
             for response in grpc.experimental.unary_stream(
                 _REQUEST,
                 target,
@@ -282,7 +282,7 @@ class SimpleStubsTest(unittest.TestCase):
                 yield _REQUEST
 
         with _server(grpc.local_server_credentials()) as port:
-            target = f"localhost:{port}"
+            target = f"127.0.0.1:{port}"
             response = grpc.experimental.stream_unary(
                 request_iter(),
                 target,
@@ -298,7 +298,7 @@ class SimpleStubsTest(unittest.TestCase):
                 yield _REQUEST
 
         with _server(grpc.local_server_credentials()) as port:
-            target = f"localhost:{port}"
+            target = f"127.0.0.1:{port}"
             for response in grpc.experimental.stream_stream(
                 request_iter(),
                 target,
@@ -327,7 +327,7 @@ class SimpleStubsTest(unittest.TestCase):
         with _env("GRPC_DEFAULT_SSL_ROOTS_FILE_PATH", cert_file):
             server_creds = grpc.ssl_server_credentials(_server_certs)
             with _server(server_creds) as port:
-                target = f"localhost:{port}"
+                target = f"127.0.0.1:{port}"
                 response = grpc.experimental.unary_unary(
                     _REQUEST,
                     target,
@@ -338,7 +338,7 @@ class SimpleStubsTest(unittest.TestCase):
 
     def test_insecure_sugar(self):
         with _server(None) as port:
-            target = f"localhost:{port}"
+            target = f"127.0.0.1:{port}"
             response = grpc.experimental.unary_unary(
                 _REQUEST,
                 target,
@@ -350,7 +350,7 @@ class SimpleStubsTest(unittest.TestCase):
 
     def test_insecure_sugar_mutually_exclusive(self):
         with _server(None) as port:
-            target = f"localhost:{port}"
+            target = f"127.0.0.1:{port}"
             with self.assertRaises(ValueError):
                 response = grpc.experimental.unary_unary(
                     _REQUEST,
@@ -425,7 +425,7 @@ class SimpleStubsTest(unittest.TestCase):
 
     def assert_times_out(self, invocation_args):
         with _server(None) as port:
-            target = f"localhost:{port}"
+            target = f"127.0.0.1:{port}"
             with self.assertRaises(grpc.RpcError) as cm:
                 response = grpc.experimental.unary_unary(
                     _REQUEST,

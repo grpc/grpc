@@ -185,7 +185,7 @@ if __name__ == "__main__":
             time.sleep(WAIT_TIME)
     elif args.scenario == RUNNING_SERVER:
         server = grpc.server(DaemonPool(), options=(("grpc.so_reuseport", 0),))
-        port = server.add_insecure_port("[::]:0")
+        port = server.add_insecure_port("127.0.0.1:0")
         server.start()
         if args.wait_for_interrupt:
             time.sleep(WAIT_TIME)
@@ -200,9 +200,9 @@ if __name__ == "__main__":
             time.sleep(WAIT_TIME)
     elif args.scenario == POLL_CONNECTIVITY:
         server = grpc.server(DaemonPool(), options=(("grpc.so_reuseport", 0),))
-        port = server.add_insecure_port("[::]:0")
+        port = server.add_insecure_port("127.0.0.1:0")
         server.start()
-        channel = grpc.insecure_channel("localhost:%d" % port)
+        channel = grpc.insecure_channel("127.0.0.1:%d" % port)
 
         def connectivity_callback(connectivity):
             pass
@@ -213,10 +213,10 @@ if __name__ == "__main__":
 
     else:
         server = grpc.server(DaemonPool(), options=(("grpc.so_reuseport", 0),))
-        port = server.add_insecure_port("[::]:0")
+        port = server.add_insecure_port("127.0.0.1:0")
         server.add_registered_method_handlers(_SERVICE_NAME, _METHOD_HANDLERS)
         server.start()
-        channel = grpc.insecure_channel("localhost:%d" % port)
+        channel = grpc.insecure_channel("127.0.0.1:%d" % port)
 
         method = (
             grpc._common.fully_qualified_method(
