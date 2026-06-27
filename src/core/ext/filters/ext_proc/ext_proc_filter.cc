@@ -659,11 +659,15 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
                 << request_body->end_of_stream << ", eos_without_msg: "
                 << request_body->end_of_stream_without_message;
             if (request_body->end_of_stream_without_message) {
-              // TODO(rishesh): Once PH2 work is done, we should make this
-              // pass (half-close without sending message). Currently we fail
-              // the RPC to avoid hangs on legacy transport adapters.
-              SetStreamErrorStatus(absl::InternalError(
-                  "end_of_stream_without_message not supported"));
+              if (!IsClientSendsDone()) {
+                auto error = absl::InternalError(
+                    "Client sends closed by external processor");
+                SetStreamErrorStatus(error);
+                CompleteAllLatchesAndPipes(error);
+                CloseStream();
+                return;
+              }
+              SetProcessorSentHalfClose();
               if (!request_body_pipe_.sender.IsClosed()) {
                 request_body_pipe_.sender.MarkClosed();
               }

@@ -2818,6 +2818,251 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamMultipleMessagesPingPongSuccess) {
   ext_proc_server_->ext_proc_service()->WaitForRequestCounts(expected_counts);
 }
 
+class EarlyHalfCloseWithMessageMockService : public MockExternalProcessorBase {
+ public:
+  grpc::Status Process(
+      grpc::ServerContext* /*context*/,
+      grpc::ServerReaderWriter<
+          ::envoy::service::ext_proc::v3::ProcessingResponse,
+          ::envoy::service::ext_proc::v3::ProcessingRequest>* stream) override {
+    ::envoy::service::ext_proc::v3::ProcessingRequest request;
+    int request_body_count = 0;
+    while (stream->Read(&request)) {
+      ::envoy::service::ext_proc::v3::ProcessingResponse response;
+      SetDefaultEmptyResponse(request, &response);
+      if (request.has_request_body()) {
+        request_body_count++;
+        const auto& body_req = request.request_body();
+        EXPECT_FALSE(body_req.end_of_stream());
+        EXPECT_FALSE(body_req.end_of_stream_without_message());
+        auto* body_mutation = response.mutable_request_body()
+                                  ->mutable_response()
+                                  ->mutable_body_mutation();
+        if (request_body_count == 1) {
+          grpc::testing::EchoRequest echo_request;
+          if (echo_request.ParseFromString(request.request_body().body())) {
+            echo_request.set_message(
+                absl::StrCat(echo_request.message(), "-mutated"));
+            std::string mutated_body;
+            GRPC_CHECK(echo_request.SerializeToString(&mutated_body));
+            body_mutation->mutable_streamed_response()->set_body(mutated_body);
+          } else {
+            body_mutation->mutable_streamed_response()->set_body(
+                request.request_body().body());
+          }
+          body_mutation->mutable_streamed_response()->set_end_of_stream(true);
+        } else {
+          ADD_FAILURE() << "Processor received message after half-close";
+        }
+      }
+      stream->Write(response);
+    }
+    return grpc::Status::OK;
+  }
+};
+
+class EarlyHalfCloseWithoutMessageMockService
+    : public MockExternalProcessorBase {
+ public:
+  grpc::Status Process(
+      grpc::ServerContext* /*context*/,
+      grpc::ServerReaderWriter<
+          ::envoy::service::ext_proc::v3::ProcessingResponse,
+          ::envoy::service::ext_proc::v3::ProcessingRequest>* stream) override {
+    ::envoy::service::ext_proc::v3::ProcessingRequest request;
+    int request_body_count = 0;
+    while (stream->Read(&request)) {
+      ::envoy::service::ext_proc::v3::ProcessingResponse response;
+      SetDefaultEmptyResponse(request, &response);
+      if (request.has_request_body()) {
+        request_body_count++;
+        const auto& body_req = request.request_body();
+        EXPECT_FALSE(body_req.end_of_stream());
+        EXPECT_FALSE(body_req.end_of_stream_without_message());
+        auto* body_mutation = response.mutable_request_body()
+                                  ->mutable_response()
+                                  ->mutable_body_mutation();
+        if (request_body_count == 1) {
+          body_mutation->mutable_streamed_response()->set_end_of_stream(true);
+          body_mutation->mutable_streamed_response()
+              ->set_end_of_stream_without_message(true);
+        } else {
+          ADD_FAILURE() << "Processor received message after half-close";
+        }
+      }
+      stream->Write(response);
+    }
+    return grpc::Status::OK;
+  }
+};
+
+TEST_P(XdsExtProcEnd2endTest, BidiStreamEarlyHalfCloseWithMessageFailure) {
+  CreateAndStartBackends(1);
+  auto ext_proc_service =
+      std::make_shared<EarlyHalfCloseWithMessageMockService>();
+  StartAlternativeServer(ext_proc_service);
+  using envoy::extensions::filters::http::ext_proc::v3::ProcessingMode;
+  auto ext_proc_config =
+      ExternalProcessorBuilder()
+          .SetTargetUri(alternative_ext_proc_server_->target())
+          .SetInsecureChannelCredentials()
+          .SetRequestHeaderMode(ProcessingMode::SEND)
+          .SetRequestBodyMode(ProcessingMode::GRPC)
+          .SetResponseHeaderMode(ProcessingMode::SKIP)
+          .SetResponseBodyMode(ProcessingMode::NONE)
+          .SetResponseTrailerMode(ProcessingMode::SKIP)
+          .Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+  ClientContext context;
+  auto stream = stub_->BidiStream(&context);
+  EchoRequest request;
+  EchoResponse response;
+  // Message 1 - should succeed and be mutated
+  request.set_message("message1");
+  EXPECT_TRUE(stream->Write(request));
+  EXPECT_TRUE(stream->Read(&response));
+  EXPECT_EQ(response.message(), "message1-mutated");
+  // Message 2 - should fail because processor half-closed
+  request.set_message("message2");
+  stream->Write(request);
+  EXPECT_FALSE(stream->Read(&response));
+  Status status = stream->Finish();
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
+  EXPECT_THAT(
+      status.error_message(),
+      ::testing::HasSubstr("Client sends closed by external processor"));
+}
+
+TEST_P(XdsExtProcEnd2endTest, BidiStreamEarlyHalfCloseWithoutMessageFailure) {
+  CreateAndStartBackends(1);
+  auto ext_proc_service =
+      std::make_shared<EarlyHalfCloseWithoutMessageMockService>();
+  StartAlternativeServer(ext_proc_service);
+  using envoy::extensions::filters::http::ext_proc::v3::ProcessingMode;
+  auto ext_proc_config =
+      ExternalProcessorBuilder()
+          .SetTargetUri(alternative_ext_proc_server_->target())
+          .SetInsecureChannelCredentials()
+          .SetRequestHeaderMode(ProcessingMode::SEND)
+          .SetRequestBodyMode(ProcessingMode::GRPC)
+          .SetResponseHeaderMode(ProcessingMode::SKIP)
+          .SetResponseBodyMode(ProcessingMode::NONE)
+          .SetResponseTrailerMode(ProcessingMode::SKIP)
+          .Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+  ClientContext context;
+  auto stream = stub_->BidiStream(&context);
+  EchoRequest request;
+  EchoResponse response;
+  // Message 1 - sent. Processor will drop it and half-close.
+  request.set_message("message1");
+  EXPECT_FALSE(stream->Write(request));
+  // Message 2 - should fail because processor half-closed
+  request.set_message("message2");
+  stream->Write(request);
+  EXPECT_FALSE(stream->Read(&response));
+  Status status = stream->Finish();
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
+  EXPECT_THAT(
+      status.error_message(),
+      ::testing::HasSubstr("Client sends closed by external processor"));
+}
+
+TEST_P(XdsExtProcEnd2endTest, BidiStreamNormalHalfCloseSuccess) {
+  CreateAndStartBackends(1);
+  struct ExtProcClaims {
+    absl::Mutex mu;
+    int body_chunks ABSL_GUARDED_BY(mu) = 0;
+    bool saw_eos_without_msg ABSL_GUARDED_BY(mu) = false;
+  };
+  auto claims = std::make_shared<ExtProcClaims>();
+  auto ext_proc_service = std::make_shared<GenericMockService>(
+      [claims](const ::envoy::service::ext_proc::v3::ProcessingRequest& request,
+               ::envoy::service::ext_proc::v3::ProcessingResponse* response) {
+        SetDefaultEmptyResponse(request, response);
+        if (request.has_request_body()) {
+          absl::MutexLock lock(&claims->mu);
+          claims->body_chunks++;
+          const auto& body_req = request.request_body();
+          if (claims->body_chunks <= 3) {
+            EXPECT_FALSE(body_req.end_of_stream());
+            EXPECT_FALSE(body_req.end_of_stream_without_message());
+          }
+          auto* body_mutation = response->mutable_request_body()
+                                    ->mutable_response()
+                                    ->mutable_body_mutation();
+          if (body_req.end_of_stream_without_message()) {
+            claims->saw_eos_without_msg = true;
+            EXPECT_TRUE(body_req.end_of_stream());
+            body_mutation->mutable_streamed_response()
+                ->set_end_of_stream_without_message(true);
+          } else {
+            body_mutation->mutable_streamed_response()->set_body(
+                body_req.body());
+          }
+        }
+      });
+  StartAlternativeServer(ext_proc_service);
+  using envoy::extensions::filters::http::ext_proc::v3::ProcessingMode;
+  auto ext_proc_config =
+      ExternalProcessorBuilder()
+          .SetTargetUri(alternative_ext_proc_server_->target())
+          .SetInsecureChannelCredentials()
+          .SetRequestHeaderMode(ProcessingMode::SEND)
+          .SetRequestBodyMode(ProcessingMode::GRPC)
+          .SetResponseHeaderMode(ProcessingMode::SKIP)
+          .SetResponseBodyMode(ProcessingMode::NONE)
+          .SetResponseTrailerMode(ProcessingMode::SKIP)
+          .Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+  ClientContext context;
+  auto stream = stub_->BidiStream(&context);
+  EchoRequest request;
+  EchoResponse response;
+  // Send 3 messages
+  for (int i = 1; i <= 3; ++i) {
+    request.set_message(absl::StrCat("message", i));
+    EXPECT_TRUE(stream->Write(request));
+    EXPECT_TRUE(stream->Read(&response));
+    EXPECT_EQ(response.message(), absl::StrCat("message", i));
+  }
+  EXPECT_TRUE(stream->WritesDone());
+  EXPECT_FALSE(stream->Read(&response));
+  Status status = stream->Finish();
+  EXPECT_TRUE(status.ok()) << status.error_message();
+  // Wait for the ExtProc server to finish processing the 4th chunk (EOS)
+  {
+    absl::MutexLock lock(&claims->mu);
+    auto condition = [&claims]() ABSL_SHARED_LOCKS_REQUIRED(claims->mu) {
+      return claims->body_chunks == 4;
+    };
+    claims->mu.AwaitWithTimeout(absl::Condition(&condition), absl::Seconds(5));
+  }
+  absl::MutexLock lock(&claims->mu);
+  EXPECT_EQ(claims->body_chunks, 4);  // 3 messages + 1 EOS
+  EXPECT_TRUE(claims->saw_eos_without_msg);
+}
+
 TEST_P(XdsExtProcEnd2endTest, BidiStreamAsymmetricWriteReadSuccess) {
   CreateAndStartBackends(1);
   using envoy::extensions::filters::http::ext_proc::v3::ProcessingMode;
