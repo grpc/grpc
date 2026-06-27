@@ -573,6 +573,19 @@ bool IsPrivateKeyEmpty(const PrivateKey& private_key) {
       });
 }
 
+std::vector<tsi_ssl_pem_key_cert_pair> ConvertToTsiPemKeyCertPair(
+    const PemKeyCertPairList& cert_pair_list) {
+  std::vector<tsi_ssl_pem_key_cert_pair> tsi_pairs;
+  tsi_pairs.reserve(cert_pair_list.size());
+  for (size_t i = 0; i < cert_pair_list.size(); i++) {
+    GRPC_CHECK(!IsPrivateKeyEmpty(cert_pair_list[i].private_key()));
+    GRPC_CHECK(!cert_pair_list[i].cert_chain().empty());
+    tsi_pairs.emplace_back(cert_pair_list[i].private_key(),
+                           cert_pair_list[i].cert_chain());
+  }
+  return tsi_pairs;
+}
+
 tsi_ssl_root_certs_store* DefaultSslRootStore::default_root_store_;
 grpc_slice DefaultSslRootStore::default_pem_root_certs_;
 
