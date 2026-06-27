@@ -4153,6 +4153,107 @@ TEST_P(XdsExtProcEnd2endTest,
   EXPECT_TRUE(status.ok());
 }
 
+class ServerToClientResponseBodyHalfCloseMockService : public MockExternalProcessorBase {
+ public:
+  grpc::Status Process(
+      grpc::ServerContext* /*context*/,
+      grpc::ServerReaderWriter<
+          ::envoy::service::ext_proc::v3::ProcessingResponse,
+          ::envoy::service::ext_proc::v3::ProcessingRequest>* stream) override {
+    ::envoy::service::ext_proc::v3::ProcessingRequest request;
+    while (stream->Read(&request)) {
+      ::envoy::service::ext_proc::v3::ProcessingResponse response;
+      SetDefaultEmptyResponse(request, &response);
+      if (request.has_response_body()) {
+        auto* response_body = response.mutable_response_body();
+        auto* mutation = response_body->mutable_response();
+        auto* body_mutation = mutation->mutable_body_mutation();
+        body_mutation->mutable_streamed_response()->set_end_of_stream(true);
+      }
+      stream->Write(response);
+    }
+    return grpc::Status::OK;
+  }
+};
+
+TEST_P(XdsExtProcEnd2endTest,
+       ServerToClientResponseBodyHalfCloseFailClosedFailsCall) {
+  auto mock_service = std::make_shared<ServerToClientResponseBodyHalfCloseMockService>();
+  StartAlternativeServer(mock_service);
+  CreateAndStartBackends(1);
+  using envoy::extensions::filters::http::ext_proc::v3::ProcessingMode;
+  auto ext_proc_config =
+      ExternalProcessorBuilder()
+          .SetTargetUri(alternative_ext_proc_server_->target())
+          .SetInsecureChannelCredentials()
+          .SetFailureModeAllow(false)  // Fail-closed!
+          .SetRequestHeaderMode(ProcessingMode::SKIP)
+          .SetResponseHeaderMode(ProcessingMode::SEND)
+          .SetResponseTrailerMode(ProcessingMode::SEND)
+          .SetRequestBodyMode(ProcessingMode::NONE)
+          .SetResponseBodyMode(ProcessingMode::GRPC)
+          .Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+
+  ClientContext context;
+  auto stream = stub_->BidiStream(&context);
+  EchoRequest request;
+  request.set_message("hello");
+  EXPECT_TRUE(stream->Write(request));
+  EchoResponse response;
+  EXPECT_FALSE(stream->Read(&response));
+  Status status = stream->Finish();
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
+  EXPECT_THAT(status.error_message(),
+              ::testing::HasSubstr("Processor sent end_of_stream in response_body"));
+}
+
+TEST_P(XdsExtProcEnd2endTest,
+       ServerToClientResponseBodyHalfCloseFailOpenFailsCall) {
+  auto mock_service = std::make_shared<ServerToClientResponseBodyHalfCloseMockService>();
+  StartAlternativeServer(mock_service);
+  CreateAndStartBackends(1);
+  using envoy::extensions::filters::http::ext_proc::v3::ProcessingMode;
+  auto ext_proc_config =
+      ExternalProcessorBuilder()
+          .SetTargetUri(alternative_ext_proc_server_->target())
+          .SetInsecureChannelCredentials()
+          .SetFailureModeAllow(true)  // Fail-open!
+          .SetRequestHeaderMode(ProcessingMode::SKIP)
+          .SetResponseHeaderMode(ProcessingMode::SEND)
+          .SetResponseTrailerMode(ProcessingMode::SEND)
+          .SetRequestBodyMode(ProcessingMode::NONE)
+          .SetResponseBodyMode(ProcessingMode::GRPC)
+          .Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+
+  ClientContext context;
+  auto stream = stub_->BidiStream(&context);
+  EchoRequest request;
+  request.set_message("hello");
+  EXPECT_TRUE(stream->Write(request));
+  EchoResponse response;
+  EXPECT_FALSE(stream->Read(&response));
+  Status status = stream->Finish();
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
+  EXPECT_THAT(status.error_message(),
+              ::testing::HasSubstr("Processor sent end_of_stream in response_body"));
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc

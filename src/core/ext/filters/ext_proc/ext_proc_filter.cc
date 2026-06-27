@@ -368,6 +368,12 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
     return streaming_call_->Send(payload_generator());
   }
 
+  void SetStreamError(absl::Status status) {
+    SetStreamErrorStatus(status);
+    CompleteAllLatchesAndPipes(status);
+    CloseStream();
+  }
+
   void CloseStream() {
     OrphanablePtr<SerializedStreamingCall> call_to_reset;
     RefCountedPtr<ConnectivityWatcher> watcher_to_stop;
@@ -723,13 +729,13 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
             eos = response_body->end_of_stream ||
                   response_body->end_of_stream_without_message;
           }
-          response_body_pipe_.sender.Push(std::move(parsed_response))();
           if (eos) {
-            SetProcessorSentHalfClose();
-            if (!response_body_pipe_.sender.IsClosed()) {
-              response_body_pipe_.sender.MarkClosed();
-            }
+            auto error = absl::InternalError(
+                "Processor sent end_of_stream in response_body");
+            SetStreamError(error);
+            return;
           }
+          response_body_pipe_.sender.Push(std::move(parsed_response))();
         }
       }
     }
