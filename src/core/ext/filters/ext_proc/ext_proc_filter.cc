@@ -567,7 +567,7 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
             LOG(ERROR)
                 << "Received request headers response but request headers "
                    "are disabled";
-            SetStreamErrorStatus(
+            SetStreamError(
                 absl::InternalError("Received request headers response but "
                                     "request headers are disabled"));
             return;
@@ -580,7 +580,7 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
           if (!processing_mode_.send_response_headers) {
             LOG(ERROR) << "Received response headers response but response "
                           "headers are disabled";
-            SetStreamErrorStatus(
+            SetStreamError(
                 absl::InternalError("Received response headers response but "
                                     "response headers are disabled"));
             return;
@@ -593,40 +593,25 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
           if (!processing_mode_.send_response_trailers) {
             LOG(ERROR) << "Received response trailers response but response "
                           "trailers are disabled";
-            SetStreamErrorStatus(
+            SetStreamError(
                 absl::InternalError("Received response trailers response but "
                                     "response trailers are disabled"));
-            if (!response_trailers_latch_.IsSet()) {
-              response_trailers_latch_.Set(
-                  absl::InternalError("Received response trailers response but "
-                                      "response trailers are disabled"));
-            }
             return;
           }
           if (IsTrailersOnly()) {
             LOG(ERROR) << "Received response trailers response in a "
                           "Trailers-Only call";
-            SetStreamErrorStatus(absl::InternalError(
+            SetStreamError(absl::InternalError(
                 "Received response trailers response in a Trailers-Only call"));
-            if (!response_trailers_latch_.IsSet()) {
-              response_trailers_latch_.Set(
-                  absl::InternalError("Received response trailers response in "
-                                      "a Trailers-Only call"));
-            }
             return;
           }
           if (processing_mode_.send_response_headers &&
               !response_headers_latch_.IsSet()) {
             LOG(ERROR) << "Received response trailers response before response "
                           "headers response";
-            SetStreamErrorStatus(absl::InternalError(
+            SetStreamError(absl::InternalError(
                 "Received response trailers response before "
                 "response headers response"));
-            if (!response_trailers_latch_.IsSet()) {
-              response_trailers_latch_.Set(
-                  absl::InternalError("Received response trailers response "
-                                      "before response headers response"));
-            }
             return;
           }
           if (processing_mode_.send_response_trailers &&
@@ -637,11 +622,8 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
           if (!processing_mode_.send_request_body) {
             LOG(ERROR) << "Received request body response but request body is "
                           "disabled";
-            SetStreamErrorStatus(absl::InternalError(
+            SetStreamError(absl::InternalError(
                 "Received request body response but request body is disabled"));
-            if (!request_body_pipe_.sender.IsClosed()) {
-              request_body_pipe_.sender.MarkClosed();
-            }
             return;
           }
           if (processing_mode_.send_request_headers &&
@@ -649,12 +631,9 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
             LOG(ERROR)
                 << "Received request body response before request headers "
                    "response";
-            SetStreamErrorStatus(
+            SetStreamError(
                 absl::InternalError("Received request body response before "
                                     "request headers response"));
-            if (!request_body_pipe_.sender.IsClosed()) {
-              request_body_pipe_.sender.MarkClosed();
-            }
             return;
           }
           auto& request_body = *parsed_response.request_body;
@@ -666,11 +645,8 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
                 << request_body->end_of_stream_without_message;
             if (request_body->end_of_stream_without_message) {
               if (!IsClientSendsDone()) {
-                auto error = absl::InternalError(
-                    "Client sends closed by external processor");
-                SetStreamErrorStatus(error);
-                CompleteAllLatchesAndPipes(error);
-                CloseStream();
+                SetStreamError(absl::InternalError(
+                    "Client sends closed by external processor"));
                 return;
               }
               SetProcessorSentHalfClose();
@@ -693,34 +669,25 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
             LOG(ERROR)
                 << "Received response body response but response body is "
                    "disabled";
-            SetStreamErrorStatus(
+            SetStreamError(
                 absl::InternalError("Received response body response but "
                                     "response body is disabled"));
-            if (!response_body_pipe_.sender.IsClosed()) {
-              response_body_pipe_.sender.MarkClosed();
-            }
             return;
           }
           if (IsTrailersOnly()) {
             LOG(ERROR)
                 << "Received response body response in a Trailers-Only call";
-            SetStreamErrorStatus(absl::InternalError(
+            SetStreamError(absl::InternalError(
                 "Received response body response in a Trailers-Only call"));
-            if (!response_body_pipe_.sender.IsClosed()) {
-              response_body_pipe_.sender.MarkClosed();
-            }
             return;
           }
           if (processing_mode_.send_response_headers &&
               !response_headers_latch_.IsSet()) {
             LOG(ERROR) << "Received response body response before response "
                           "headers response";
-            SetStreamErrorStatus(
+            SetStreamError(
                 absl::InternalError("Received response body response before "
                                     "response headers response"));
-            if (!response_body_pipe_.sender.IsClosed()) {
-              response_body_pipe_.sender.MarkClosed();
-            }
             return;
           }
           auto& response_body = *parsed_response.response_body;

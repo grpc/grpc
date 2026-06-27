@@ -4258,6 +4258,102 @@ TEST_P(XdsExtProcEnd2endTest,
       ::testing::HasSubstr("Processor sent end_of_stream in response_body"));
 }
 
+TEST_P(XdsExtProcEnd2endTest,
+       ClientToServerOrderingResponseBodyBeforeHeadersFailsCall) {
+  auto mock_service = std::make_shared<GenericMockService>(
+      [](const ::envoy::service::ext_proc::v3::ProcessingRequest& request,
+         ::envoy::service::ext_proc::v3::ProcessingResponse* response) {
+        if (request.has_request_headers()) {
+          // Respond with request_body instead of request_headers!
+          response->mutable_request_body();
+        } else {
+          SetDefaultEmptyResponse(request, response);
+        }
+      });
+  StartAlternativeServer(mock_service);
+  CreateAndStartBackends(1);
+  using envoy::extensions::filters::http::ext_proc::v3::ProcessingMode;
+  auto ext_proc_config =
+      ExternalProcessorBuilder()
+          .SetTargetUri(alternative_ext_proc_server_->target())
+          .SetInsecureChannelCredentials()
+          .SetFailureModeAllow(false)  // Fail closed
+          .SetRequestHeaderMode(ProcessingMode::SEND)
+          .SetResponseHeaderMode(ProcessingMode::SKIP)
+          .SetResponseTrailerMode(ProcessingMode::SKIP)
+          .SetRequestBodyMode(ProcessingMode::GRPC)
+          .SetResponseBodyMode(ProcessingMode::NONE)
+          .Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+  ClientContext context;
+  auto stream = stub_->BidiStream(&context);
+  EchoRequest request;
+  request.set_message("hello");
+  stream->Write(request);
+  EchoResponse response;
+  EXPECT_FALSE(stream->Read(&response));
+  Status status = stream->Finish();
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
+  EXPECT_THAT(status.error_message(),
+              ::testing::HasSubstr("Received request body response before "
+                                   "request headers response"));
+}
+
+TEST_P(XdsExtProcEnd2endTest,
+       ClientToServerOrderingHeadersResponseWhenDisabledFailsCall) {
+  auto mock_service = std::make_shared<GenericMockService>(
+      [](const ::envoy::service::ext_proc::v3::ProcessingRequest& request,
+         ::envoy::service::ext_proc::v3::ProcessingResponse* response) {
+        if (request.has_request_body()) {
+          // Respond with request_headers instead of request_body!
+          response->mutable_request_headers();
+        } else {
+          SetDefaultEmptyResponse(request, response);
+        }
+      });
+  StartAlternativeServer(mock_service);
+  CreateAndStartBackends(1);
+  using envoy::extensions::filters::http::ext_proc::v3::ProcessingMode;
+  auto ext_proc_config =
+      ExternalProcessorBuilder()
+          .SetTargetUri(alternative_ext_proc_server_->target())
+          .SetInsecureChannelCredentials()
+          .SetFailureModeAllow(false)                  // Fail closed
+          .SetRequestHeaderMode(ProcessingMode::SKIP)  // Skip headers!
+          .SetResponseHeaderMode(ProcessingMode::SKIP)
+          .SetResponseTrailerMode(ProcessingMode::SKIP)
+          .SetRequestBodyMode(ProcessingMode::GRPC)
+          .SetResponseBodyMode(ProcessingMode::NONE)
+          .Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+  ClientContext context;
+  auto stream = stub_->BidiStream(&context);
+  EchoRequest request;
+  request.set_message("hello");
+  stream->Write(request);
+  EchoResponse response;
+  EXPECT_FALSE(stream->Read(&response));
+  Status status = stream->Finish();
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
+  EXPECT_THAT(status.error_message(),
+              ::testing::HasSubstr("Received request headers response but "
+                                   "request headers are disabled"));
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
