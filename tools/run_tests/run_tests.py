@@ -591,14 +591,6 @@ class CLanguage:
             return ("gcc_14", ["-DCMAKE_CXX_STANDARD=20"])
         elif compiler == "gcc_musl":
             return ("alpine", ["-DCMAKE_CXX_STANDARD=17"])
-        elif compiler == "clang11":
-            return (
-                "clang_11",
-                self._clang_cmake_configure_extra_args()
-                + [
-                    "-DCMAKE_CXX_STANDARD=17",
-                ],
-            )
         elif compiler == "clang14":
             return (
                 "clang_14",
@@ -1735,7 +1727,6 @@ argp.add_argument(
         "gcc12_openssl309",
         "gcc14",
         "gcc_musl",
-        "clang11",
         "clang14",
         "clang19",
         # TODO: Automatically populate from supported version
