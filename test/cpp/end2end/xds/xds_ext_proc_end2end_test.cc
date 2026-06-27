@@ -4725,19 +4725,21 @@ TEST_P(XdsExtProcEnd2endTest,
   ClientContext context;
   auto stream = stub_->BidiStream(&context);
 
-  // Wait for ext_proc to process headers and asynchronously close the stream.
-  // This sleep ensures the stream is closed before we attempt the next write,
-  // allowing us to verify the fail-open behavior.
-  absl::SleepFor(absl::Seconds(1));
-
   EchoRequest request;
-  request.set_message("hello");
+  EchoResponse response;
+
+  request.set_message("hello1");
   EXPECT_TRUE(stream->Write(request));
+  EXPECT_TRUE(stream->Read(&response));
+  EXPECT_EQ(response.message(), "hello1");
+
+  request.set_message("hello2");
+  EXPECT_TRUE(stream->Write(request));
+  EXPECT_TRUE(stream->Read(&response));
+  EXPECT_EQ(response.message(), "hello2");
 
   stream->WritesDone();
-  EchoResponse response;
-  EXPECT_TRUE(stream->Read(&response));
-  EXPECT_EQ(response.message(), "hello");
+  EXPECT_FALSE(stream->Read(&response));  // Expect EOF
 
   Status status = stream->Finish();
   EXPECT_TRUE(status.ok()) << status.error_message();
@@ -4770,11 +4772,6 @@ TEST_P(XdsExtProcEnd2endTest,
 
   ClientContext context;
   auto stream = stub_->BidiStream(&context);
-
-  // Wait for ext_proc to process headers and asynchronously close the stream.
-  // This sleep ensures the stream is closed before we attempt the next write,
-  // allowing us to verify the fail-closed behavior.
-  absl::SleepFor(absl::Seconds(1));
 
   EchoRequest request;
   request.set_message("hello");
@@ -4823,6 +4820,7 @@ TEST_P(
   EchoResponse response;
   Status status = SendRpcGetTrailers(rpc_options, &response, nullptr, nullptr);
   EXPECT_TRUE(status.ok()) << status.error_message();
+  EXPECT_EQ(response.message(), kRequestMessage);
 }
 
 TEST_P(
@@ -4946,7 +4944,7 @@ TEST_P(XdsExtProcEnd2endTest,
           .SetRequestBodyMode(ProcessingMode::NONE)
           .SetResponseHeaderMode(ProcessingMode::SKIP)
           .SetResponseBodyMode(ProcessingMode::NONE)
-          .SetResponseTrailerMode(ProcessingMode::SEND) // Enable S2C trailers
+          .SetResponseTrailerMode(ProcessingMode::SEND)  // Enable S2C trailers
           .Build();
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
@@ -4955,7 +4953,7 @@ TEST_P(XdsExtProcEnd2endTest,
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   })));
-  
+
   RpcOptions rpc_options;
   EchoResponse response;
   Status status = SendRpcGetTrailers(rpc_options, &response, nullptr, nullptr);
@@ -4978,7 +4976,7 @@ TEST_P(XdsExtProcEnd2endTest,
           .SetRequestBodyMode(ProcessingMode::NONE)
           .SetResponseHeaderMode(ProcessingMode::SKIP)
           .SetResponseBodyMode(ProcessingMode::NONE)
-          .SetResponseTrailerMode(ProcessingMode::SEND) // Enable S2C trailers
+          .SetResponseTrailerMode(ProcessingMode::SEND)  // Enable S2C trailers
           .Build();
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
@@ -4987,7 +4985,7 @@ TEST_P(XdsExtProcEnd2endTest,
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   })));
-  
+
   RpcOptions rpc_options;
   EchoResponse response;
   Status status = SendRpcGetTrailers(rpc_options, &response, nullptr, nullptr);
