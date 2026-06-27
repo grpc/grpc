@@ -4677,6 +4677,326 @@ TEST_P(XdsExtProcEnd2endTest,
                                    "response trailers are disabled"));
 }
 
+class CloseStreamAfterHeadersMockService : public MockExternalProcessorBase {
+ public:
+  grpc::Status Process(
+      grpc::ServerContext* /*context*/,
+      grpc::ServerReaderWriter<
+          ::envoy::service::ext_proc::v3::ProcessingResponse,
+          ::envoy::service::ext_proc::v3::ProcessingRequest>* stream) override {
+    ::envoy::service::ext_proc::v3::ProcessingRequest request;
+    if (stream->Read(&request)) {
+      if (request.has_request_headers()) {
+        ::envoy::service::ext_proc::v3::ProcessingResponse response;
+        SetDefaultEmptyResponse(request, &response);
+        stream->Write(response);
+      }
+    }
+    // Returning an error ensures the filter detects the failure.
+    return grpc::Status(grpc::StatusCode::ABORTED, "Closed after headers");
+  }
+};
+
+TEST_P(XdsExtProcEnd2endTest,
+       RequestHeadersExtProcCloseStreamAfterHeadersAllowCall) {
+  auto mock_service = std::make_shared<CloseStreamAfterHeadersMockService>();
+  StartAlternativeServer(mock_service);
+  CreateAndStartBackends(1);
+  using envoy::extensions::filters::http::ext_proc::v3::ProcessingMode;
+  auto ext_proc_config =
+      ExternalProcessorBuilder()
+          .SetTargetUri(alternative_ext_proc_server_->target())
+          .SetInsecureChannelCredentials()
+          .SetFailureModeAllow(true)  // Fail-open!
+          .SetRequestHeaderMode(ProcessingMode::SEND)
+          .SetRequestBodyMode(ProcessingMode::GRPC)
+          .SetResponseHeaderMode(ProcessingMode::SEND)   // Enable S2C headers
+          .SetResponseBodyMode(ProcessingMode::GRPC)     // Enable S2C body
+          .SetResponseTrailerMode(ProcessingMode::SEND)  // Enable S2C trailers
+          .Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+
+  ClientContext context;
+  auto stream = stub_->BidiStream(&context);
+
+  // Wait for ext_proc to process headers and asynchronously close the stream.
+  // This sleep ensures the stream is closed before we attempt the next write,
+  // allowing us to verify the fail-open behavior.
+  absl::SleepFor(absl::Seconds(1));
+
+  EchoRequest request;
+  request.set_message("hello");
+  EXPECT_TRUE(stream->Write(request));
+
+  stream->WritesDone();
+  EchoResponse response;
+  EXPECT_TRUE(stream->Read(&response));
+  EXPECT_EQ(response.message(), "hello");
+
+  Status status = stream->Finish();
+  EXPECT_TRUE(status.ok()) << status.error_message();
+}
+
+TEST_P(XdsExtProcEnd2endTest,
+       RequestHeadersExtProcCloseStreamAfterHeadersFailCall) {
+  auto mock_service = std::make_shared<CloseStreamAfterHeadersMockService>();
+  StartAlternativeServer(mock_service);
+  CreateAndStartBackends(1);
+  using envoy::extensions::filters::http::ext_proc::v3::ProcessingMode;
+  auto ext_proc_config =
+      ExternalProcessorBuilder()
+          .SetTargetUri(alternative_ext_proc_server_->target())
+          .SetInsecureChannelCredentials()
+          .SetFailureModeAllow(false)  // Fail-closed!
+          .SetRequestHeaderMode(ProcessingMode::SEND)
+          .SetRequestBodyMode(ProcessingMode::GRPC)
+          .SetResponseHeaderMode(ProcessingMode::SEND)   // Enable S2C headers
+          .SetResponseBodyMode(ProcessingMode::GRPC)     // Enable S2C body
+          .SetResponseTrailerMode(ProcessingMode::SEND)  // Enable S2C trailers
+          .Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+
+  ClientContext context;
+  auto stream = stub_->BidiStream(&context);
+
+  // Wait for ext_proc to process headers and asynchronously close the stream.
+  // This sleep ensures the stream is closed before we attempt the next write,
+  // allowing us to verify the fail-closed behavior.
+  absl::SleepFor(absl::Seconds(1));
+
+  EchoRequest request;
+  request.set_message("hello");
+  // Write might succeed or fail depending on when the error is propagated.
+  // But the stream should eventually fail.
+  stream->Write(request);
+  stream->WritesDone();
+
+  EchoResponse response;
+  EXPECT_FALSE(stream->Read(&response));
+
+  Status status = stream->Finish();
+  EXPECT_FALSE(status.ok());
+  EXPECT_THAT(status.error_code(),
+              ::testing::AnyOf(StatusCode::UNAVAILABLE, StatusCode::CANCELLED,
+                               StatusCode::ABORTED));
+}
+
+TEST_P(
+    XdsExtProcEnd2endTest,
+    StreamErrorAfterRequestHeaderResponseBeforeResponseHeaderCallWhenFailureModeAllowIsTrue) {
+  auto mock_service = std::make_shared<CloseStreamAfterHeadersMockService>();
+  StartAlternativeServer(mock_service);
+  CreateAndStartBackends(1);
+  using envoy::extensions::filters::http::ext_proc::v3::ProcessingMode;
+  auto ext_proc_config =
+      ExternalProcessorBuilder()
+          .SetTargetUri(alternative_ext_proc_server_->target())
+          .SetInsecureChannelCredentials()
+          .SetFailureModeAllow(true)  // Fail-open!
+          .SetRequestHeaderMode(ProcessingMode::SEND)
+          .SetRequestBodyMode(ProcessingMode::NONE)     // Skip body
+          .SetResponseHeaderMode(ProcessingMode::SEND)  // Enable S2C headers
+          .SetResponseBodyMode(ProcessingMode::NONE)    // Skip S2C body
+          .SetResponseTrailerMode(ProcessingMode::SKIP)
+          .Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+
+  RpcOptions rpc_options;
+  EchoResponse response;
+  Status status = SendRpcGetTrailers(rpc_options, &response, nullptr, nullptr);
+  EXPECT_TRUE(status.ok()) << status.error_message();
+}
+
+TEST_P(
+    XdsExtProcEnd2endTest,
+    StreamErrorAfterRequestHeaderResponseBeforeResponseHeaderCallWhenFailureModeAllowIsFalse) {
+  auto mock_service = std::make_shared<CloseStreamAfterHeadersMockService>();
+  StartAlternativeServer(mock_service);
+  CreateAndStartBackends(1);
+  using envoy::extensions::filters::http::ext_proc::v3::ProcessingMode;
+  auto ext_proc_config =
+      ExternalProcessorBuilder()
+          .SetTargetUri(alternative_ext_proc_server_->target())
+          .SetInsecureChannelCredentials()
+          .SetFailureModeAllow(false)  // Fail-closed!
+          .SetRequestHeaderMode(ProcessingMode::SEND)
+          .SetRequestBodyMode(ProcessingMode::NONE)     // Skip body
+          .SetResponseHeaderMode(ProcessingMode::SEND)  // Enable S2C headers
+          .SetResponseBodyMode(ProcessingMode::NONE)    // Skip S2C body
+          .SetResponseTrailerMode(ProcessingMode::SKIP)
+          .Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+
+  RpcOptions rpc_options;
+  EchoResponse response;
+  Status status = SendRpcGetTrailers(rpc_options, &response, nullptr, nullptr);
+  EXPECT_FALSE(status.ok());
+  EXPECT_THAT(status.error_code(),
+              ::testing::AnyOf(StatusCode::UNAVAILABLE, StatusCode::CANCELLED,
+                               StatusCode::ABORTED));
+}
+
+TEST_P(XdsExtProcEnd2endTest,
+       StreamErrorBeforeResponseBodyCallWhenFailureModeAllowIsTrue) {
+  auto mock_service = std::make_shared<CloseStreamAfterHeadersMockService>();
+  StartAlternativeServer(mock_service);
+  CreateAndStartBackends(1);
+  using envoy::extensions::filters::http::ext_proc::v3::ProcessingMode;
+  auto ext_proc_config =
+      ExternalProcessorBuilder()
+          .SetTargetUri(alternative_ext_proc_server_->target())
+          .SetInsecureChannelCredentials()
+          .SetFailureModeAllow(true)  // Fail-open!
+          .SetRequestHeaderMode(ProcessingMode::SEND)
+          .SetRequestBodyMode(ProcessingMode::NONE)
+          .SetResponseHeaderMode(
+              ProcessingMode::SKIP)  // Skip S2C headers to avoid coalescing bug
+          .SetResponseBodyMode(ProcessingMode::GRPC)  // Enable S2C body
+          .SetResponseTrailerMode(
+              ProcessingMode::SEND)  // Must be SEND if body is GRPC
+          .Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+
+  RpcOptions rpc_options;
+  EchoResponse response;
+  Status status = SendRpcGetTrailers(rpc_options, &response, nullptr, nullptr);
+  EXPECT_TRUE(status.ok()) << status.error_message();
+  // Verify we actually received the body.
+  EXPECT_EQ(response.message(), kRequestMessage);
+}
+
+TEST_P(XdsExtProcEnd2endTest,
+       StreamErrorBeforeResponseBodyCallWhenFailureModeAllowIsFalse) {
+  auto mock_service = std::make_shared<CloseStreamAfterHeadersMockService>();
+  StartAlternativeServer(mock_service);
+  CreateAndStartBackends(1);
+  using envoy::extensions::filters::http::ext_proc::v3::ProcessingMode;
+  auto ext_proc_config =
+      ExternalProcessorBuilder()
+          .SetTargetUri(alternative_ext_proc_server_->target())
+          .SetInsecureChannelCredentials()
+          .SetFailureModeAllow(false)  // Fail-closed!
+          .SetRequestHeaderMode(ProcessingMode::SEND)
+          .SetRequestBodyMode(ProcessingMode::NONE)
+          .SetResponseHeaderMode(
+              ProcessingMode::SKIP)  // Skip S2C headers to avoid coalescing bug
+          .SetResponseBodyMode(ProcessingMode::GRPC)  // Enable S2C body
+          .SetResponseTrailerMode(
+              ProcessingMode::SEND)  // Must be SEND if body is GRPC
+          .Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+
+  RpcOptions rpc_options;
+  EchoResponse response;
+  Status status = SendRpcGetTrailers(rpc_options, &response, nullptr, nullptr);
+  EXPECT_FALSE(status.ok());
+  EXPECT_THAT(status.error_code(),
+              ::testing::AnyOf(StatusCode::UNAVAILABLE, StatusCode::CANCELLED,
+                               StatusCode::ABORTED));
+}
+
+TEST_P(XdsExtProcEnd2endTest,
+       StreamErrorBeforeResponseTrailerCallWhenFailureModeAllowIsTrue) {
+  auto mock_service = std::make_shared<CloseStreamAfterHeadersMockService>();
+  StartAlternativeServer(mock_service);
+  CreateAndStartBackends(1);
+  using envoy::extensions::filters::http::ext_proc::v3::ProcessingMode;
+  auto ext_proc_config =
+      ExternalProcessorBuilder()
+          .SetTargetUri(alternative_ext_proc_server_->target())
+          .SetInsecureChannelCredentials()
+          .SetFailureModeAllow(true)  // Fail-open!
+          .SetRequestHeaderMode(ProcessingMode::SEND)
+          .SetRequestBodyMode(ProcessingMode::NONE)
+          .SetResponseHeaderMode(ProcessingMode::SKIP)
+          .SetResponseBodyMode(ProcessingMode::NONE)
+          .SetResponseTrailerMode(ProcessingMode::SEND) // Enable S2C trailers
+          .Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+  
+  RpcOptions rpc_options;
+  EchoResponse response;
+  Status status = SendRpcGetTrailers(rpc_options, &response, nullptr, nullptr);
+  EXPECT_TRUE(status.ok()) << status.error_message();
+  EXPECT_EQ(response.message(), kRequestMessage);
+}
+
+TEST_P(XdsExtProcEnd2endTest,
+       StreamErrorBeforeResponseTrailerCallWhenFailureModeAllowIsFalse) {
+  auto mock_service = std::make_shared<CloseStreamAfterHeadersMockService>();
+  StartAlternativeServer(mock_service);
+  CreateAndStartBackends(1);
+  using envoy::extensions::filters::http::ext_proc::v3::ProcessingMode;
+  auto ext_proc_config =
+      ExternalProcessorBuilder()
+          .SetTargetUri(alternative_ext_proc_server_->target())
+          .SetInsecureChannelCredentials()
+          .SetFailureModeAllow(false)  // Fail-closed!
+          .SetRequestHeaderMode(ProcessingMode::SEND)
+          .SetRequestBodyMode(ProcessingMode::NONE)
+          .SetResponseHeaderMode(ProcessingMode::SKIP)
+          .SetResponseBodyMode(ProcessingMode::NONE)
+          .SetResponseTrailerMode(ProcessingMode::SEND) // Enable S2C trailers
+          .Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+  
+  RpcOptions rpc_options;
+  EchoResponse response;
+  Status status = SendRpcGetTrailers(rpc_options, &response, nullptr, nullptr);
+  EXPECT_FALSE(status.ok());
+  EXPECT_THAT(status.error_code(),
+              ::testing::AnyOf(StatusCode::UNAVAILABLE, StatusCode::CANCELLED,
+                               StatusCode::ABORTED));
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
