@@ -54,7 +54,7 @@ opentelemetry-resourcedetector-gcp
 opentelemetry-sdk
 
 # Use the same version as third_party/protobuf v35.0
-protobuf~=7.35.0
+protobuf~=7.35.1
 
 pyyaml  # for DNS test
 requests
