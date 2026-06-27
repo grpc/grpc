@@ -14,7 +14,6 @@
 // limitations under the License.
 //
 
-#include <gmock/gmock.h>
 #include <google/protobuf/wrappers.pb.h>
 #include <grpc/support/string_util.h>
 
@@ -4153,7 +4152,8 @@ TEST_P(XdsExtProcEnd2endTest,
   EXPECT_TRUE(status.ok());
 }
 
-class ServerToClientResponseBodyHalfCloseMockService : public MockExternalProcessorBase {
+class ServerToClientResponseBodyHalfCloseMockService
+    : public MockExternalProcessorBase {
  public:
   grpc::Status Process(
       grpc::ServerContext* /*context*/,
@@ -4178,7 +4178,8 @@ class ServerToClientResponseBodyHalfCloseMockService : public MockExternalProces
 
 TEST_P(XdsExtProcEnd2endTest,
        ServerToClientResponseBodyHalfCloseFailClosedFailsCall) {
-  auto mock_service = std::make_shared<ServerToClientResponseBodyHalfCloseMockService>();
+  auto mock_service =
+      std::make_shared<ServerToClientResponseBodyHalfCloseMockService>();
   StartAlternativeServer(mock_service);
   CreateAndStartBackends(1);
   using envoy::extensions::filters::http::ext_proc::v3::ProcessingMode;
@@ -4211,13 +4212,15 @@ TEST_P(XdsExtProcEnd2endTest,
   Status status = stream->Finish();
   EXPECT_FALSE(status.ok());
   EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
-  EXPECT_THAT(status.error_message(),
-              ::testing::HasSubstr("Processor sent end_of_stream in response_body"));
+  EXPECT_THAT(
+      status.error_message(),
+      ::testing::HasSubstr("Processor sent end_of_stream in response_body"));
 }
 
 TEST_P(XdsExtProcEnd2endTest,
        ServerToClientResponseBodyHalfCloseFailOpenFailsCall) {
-  auto mock_service = std::make_shared<ServerToClientResponseBodyHalfCloseMockService>();
+  auto mock_service =
+      std::make_shared<ServerToClientResponseBodyHalfCloseMockService>();
   StartAlternativeServer(mock_service);
   CreateAndStartBackends(1);
   using envoy::extensions::filters::http::ext_proc::v3::ProcessingMode;
@@ -4250,8 +4253,9 @@ TEST_P(XdsExtProcEnd2endTest,
   Status status = stream->Finish();
   EXPECT_FALSE(status.ok());
   EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
-  EXPECT_THAT(status.error_message(),
-              ::testing::HasSubstr("Processor sent end_of_stream in response_body"));
+  EXPECT_THAT(
+      status.error_message(),
+      ::testing::HasSubstr("Processor sent end_of_stream in response_body"));
 }
 
 }  // namespace
