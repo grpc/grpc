@@ -33,6 +33,7 @@ dynamic = [
 
 [project.urls]
 Homepage = "https://grpc.io"
+"Source Code" = "https://github.com/grpc/grpc/tree/master/src/python/grpcio_tests"
 
 [tool.setuptools.packages]
 find = {}
