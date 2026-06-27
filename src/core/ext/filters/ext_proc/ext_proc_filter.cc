@@ -506,7 +506,6 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
     auto* response = envoy_service_ext_proc_v3_ProcessingResponse_parse(
         payload.data(), payload.size(), arena.ptr());
     if (response == nullptr) {
-      LOG(ERROR) << "Failed to parse ProcessingResponse";
       auto error = absl::InternalError("Failed to parse ProcessingResponse");
       if (!fail_open) {
         CompleteAllLatchesAndPipes(error);
@@ -519,8 +518,6 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
       auto parsed_response_or =
           ParseExtProcResponse(response, observability_mode_);
       if (!parsed_response_or.ok()) {
-        LOG(ERROR) << "Failed to validate ProcessingResponse: "
-                   << parsed_response_or.status();
         if (!fail_open) {
           CompleteAllLatchesAndPipes(parsed_response_or.status());
         } else {
@@ -564,9 +561,6 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
           }
         } else if (parsed_response.request_headers.has_value()) {
           if (!processing_mode_.send_request_headers) {
-            LOG(ERROR)
-                << "Received request headers response but request headers "
-                   "are disabled";
             SetStreamError(
                 absl::InternalError("Received request headers response but "
                                     "request headers are disabled"));
@@ -578,8 +572,6 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
           }
         } else if (parsed_response.response_headers.has_value()) {
           if (!processing_mode_.send_response_headers) {
-            LOG(ERROR) << "Received response headers response but response "
-                          "headers are disabled";
             SetStreamError(
                 absl::InternalError("Received response headers response but "
                                     "response headers are disabled"));
@@ -591,27 +583,35 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
           }
         } else if (parsed_response.response_trailers.has_value()) {
           if (!processing_mode_.send_response_trailers) {
-            LOG(ERROR) << "Received response trailers response but response "
-                          "trailers are disabled";
             SetStreamError(
                 absl::InternalError("Received response trailers response but "
                                     "response trailers are disabled"));
             return;
           }
           if (IsTrailersOnly()) {
-            LOG(ERROR) << "Received response trailers response in a "
-                          "Trailers-Only call";
             SetStreamError(absl::InternalError(
                 "Received response trailers response in a Trailers-Only call"));
             return;
           }
           if (processing_mode_.send_response_headers &&
               !response_headers_latch_.IsSet()) {
-            LOG(ERROR) << "Received response trailers response before response "
-                          "headers response";
             SetStreamError(absl::InternalError(
                 "Received response trailers response before "
                 "response headers response"));
+            return;
+          }
+          bool s2c_body_outstanding = false;
+          {
+            MutexLock lock(&mu_);
+            if (processing_mode_.send_response_body &&
+                outstanding_s2c_messages_ > 0) {
+              s2c_body_outstanding = true;
+            }
+          }
+          if (s2c_body_outstanding) {
+            SetStreamError(absl::InternalError(
+                "Received response trailers response before all "
+                "outstanding response body responses were received"));
             return;
           }
           if (processing_mode_.send_response_trailers &&
@@ -620,17 +620,12 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
           }
         } else if (parsed_response.request_body.has_value()) {
           if (!processing_mode_.send_request_body) {
-            LOG(ERROR) << "Received request body response but request body is "
-                          "disabled";
             SetStreamError(absl::InternalError(
                 "Received request body response but request body is disabled"));
             return;
           }
           if (processing_mode_.send_request_headers &&
               !request_headers_latch_.IsSet()) {
-            LOG(ERROR)
-                << "Received request body response before request headers "
-                   "response";
             SetStreamError(
                 absl::InternalError("Received request body response before "
                                     "request headers response"));
@@ -666,28 +661,28 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
           }
         } else if (parsed_response.response_body.has_value()) {
           if (!processing_mode_.send_response_body) {
-            LOG(ERROR)
-                << "Received response body response but response body is "
-                   "disabled";
             SetStreamError(
                 absl::InternalError("Received response body response but "
                                     "response body is disabled"));
             return;
           }
           if (IsTrailersOnly()) {
-            LOG(ERROR)
-                << "Received response body response in a Trailers-Only call";
             SetStreamError(absl::InternalError(
                 "Received response body response in a Trailers-Only call"));
             return;
           }
           if (processing_mode_.send_response_headers &&
               !response_headers_latch_.IsSet()) {
-            LOG(ERROR) << "Received response body response before response "
-                          "headers response";
             SetStreamError(
                 absl::InternalError("Received response body response before "
                                     "response headers response"));
+            return;
+          }
+          if (processing_mode_.send_response_trailers &&
+              response_trailers_latch_.IsSet()) {
+            SetStreamError(absl::InternalError(
+                "Received response body response after response "
+                "trailers response"));
             return;
           }
           auto& response_body = *parsed_response.response_body;

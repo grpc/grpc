@@ -4354,6 +4354,329 @@ TEST_P(XdsExtProcEnd2endTest,
                                    "request headers are disabled"));
 }
 
+TEST_P(XdsExtProcEnd2endTest,
+       ServerToClientOrderingResponseBodyBeforeHeadersFailsCall) {
+  auto mock_service = std::make_shared<GenericMockService>(
+      [](const ::envoy::service::ext_proc::v3::ProcessingRequest& request,
+         ::envoy::service::ext_proc::v3::ProcessingResponse* response) {
+        if (request.has_response_headers()) {
+          // Respond with response_body instead of response_headers!
+          response->mutable_response_body();
+        } else {
+          SetDefaultEmptyResponse(request, response);
+        }
+      });
+  StartAlternativeServer(mock_service);
+  CreateAndStartBackends(1);
+  using envoy::extensions::filters::http::ext_proc::v3::ProcessingMode;
+  auto ext_proc_config =
+      ExternalProcessorBuilder()
+          .SetTargetUri(alternative_ext_proc_server_->target())
+          .SetInsecureChannelCredentials()
+          .SetFailureModeAllow(false)  // Fail closed
+          .SetRequestHeaderMode(ProcessingMode::SEND)
+          .SetRequestBodyMode(ProcessingMode::GRPC)
+          .SetResponseHeaderMode(ProcessingMode::SEND)
+          .SetResponseBodyMode(ProcessingMode::GRPC)
+          .SetResponseTrailerMode(
+              ProcessingMode::SEND)  // Must be SEND if body is GRPC
+          .Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+  ClientContext context;
+  auto stream = stub_->BidiStream(&context);
+  // Use WritesDone() to trigger S2C headers without sending body messages,
+  // avoiding race conditions.
+  stream->WritesDone();
+  EchoResponse response;
+  EXPECT_FALSE(stream->Read(&response));
+  Status status = stream->Finish();
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
+  EXPECT_THAT(status.error_message(),
+              ::testing::HasSubstr("Received response body response before "
+                                   "response headers response"));
+}
+
+TEST_P(XdsExtProcEnd2endTest,
+       ServerToClientOrderingTrailersBeforeHeadersFailsCall) {
+  auto mock_service = std::make_shared<GenericMockService>(
+      [](const ::envoy::service::ext_proc::v3::ProcessingRequest& request,
+         ::envoy::service::ext_proc::v3::ProcessingResponse* response) {
+        if (request.has_response_headers()) {
+          // Respond with response_trailers instead of response_headers!
+          response->mutable_response_trailers();
+        } else {
+          SetDefaultEmptyResponse(request, response);
+        }
+      });
+  StartAlternativeServer(mock_service);
+  CreateAndStartBackends(1);
+  using envoy::extensions::filters::http::ext_proc::v3::ProcessingMode;
+  auto ext_proc_config =
+      ExternalProcessorBuilder()
+          .SetTargetUri(alternative_ext_proc_server_->target())
+          .SetInsecureChannelCredentials()
+          .SetFailureModeAllow(false)  // Fail closed
+          .SetRequestHeaderMode(ProcessingMode::SEND)
+          .SetRequestBodyMode(ProcessingMode::GRPC)
+          .SetResponseHeaderMode(ProcessingMode::SEND)
+          .SetResponseBodyMode(ProcessingMode::NONE)
+          .SetResponseTrailerMode(ProcessingMode::SEND)
+          .Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+  ClientContext context;
+  auto stream = stub_->BidiStream(&context);
+  // Use WritesDone() to trigger S2C headers without sending body messages,
+  // avoiding race conditions.
+  stream->WritesDone();
+  EchoResponse response;
+  EXPECT_FALSE(stream->Read(&response));
+  Status status = stream->Finish();
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
+  EXPECT_THAT(status.error_message(),
+              ::testing::HasSubstr("Received response trailers response before "
+                                   "response headers response"));
+}
+
+TEST_P(XdsExtProcEnd2endTest,
+       ServerToClientOrderingTrailersBeforeResponseBodyFailsCall) {
+  // We disable S2C headers to work around the transport-level coalescing
+  // limitation. This allows us to test the interaction between S2C body and
+  // trailers.
+  auto mock_service = std::make_shared<GenericMockService>(
+      [](const ::envoy::service::ext_proc::v3::ProcessingRequest& request,
+         ::envoy::service::ext_proc::v3::ProcessingResponse* response) {
+        if (request.has_response_body()) {
+          // Respond with response_trailers instead of response_body!
+          response->mutable_response_trailers();
+        } else {
+          SetDefaultEmptyResponse(request, response);
+        }
+      });
+  StartAlternativeServer(mock_service);
+  CreateAndStartBackends(1);
+  using envoy::extensions::filters::http::ext_proc::v3::ProcessingMode;
+  auto ext_proc_config =
+      ExternalProcessorBuilder()
+          .SetTargetUri(alternative_ext_proc_server_->target())
+          .SetInsecureChannelCredentials()
+          .SetFailureModeAllow(false)  // Fail closed
+          .SetRequestHeaderMode(ProcessingMode::SEND)
+          .SetRequestBodyMode(ProcessingMode::GRPC)
+          .SetResponseHeaderMode(ProcessingMode::SKIP)  // Skip S2C headers
+          .SetResponseBodyMode(ProcessingMode::GRPC)    // Enable S2C body
+          .SetResponseTrailerMode(
+              ProcessingMode::SEND)  // Enable S2C trailers (must be SEND if
+                                     // body is GRPC)
+          .Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+  ClientContext context;
+  auto stream = stub_->BidiStream(&context);
+  EchoRequest request;
+  request.set_message("hello");
+  stream->Write(request);
+  EchoResponse response;
+  EXPECT_FALSE(stream->Read(&response));
+  Status status = stream->Finish();
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
+  EXPECT_THAT(status.error_message(),
+              ::testing::HasSubstr("Received response trailers response before "
+                                   "all outstanding response body responses "
+                                   "were received"));
+}
+
+class ResponseBodyAfterTrailersMockService : public MockExternalProcessorBase {
+ public:
+  grpc::Status Process(
+      grpc::ServerContext* /*context*/,
+      grpc::ServerReaderWriter<
+          ::envoy::service::ext_proc::v3::ProcessingResponse,
+          ::envoy::service::ext_proc::v3::ProcessingRequest>* stream) override {
+    ::envoy::service::ext_proc::v3::ProcessingRequest request;
+    while (stream->Read(&request)) {
+      ::envoy::service::ext_proc::v3::ProcessingResponse response;
+      if (request.has_response_trailers()) {
+        // 1. Send response_trailers
+        response.mutable_response_trailers();
+        stream->Write(response);
+        // 2. Send response_body (out of order!)
+        response.Clear();
+        response.mutable_response_body();
+        stream->Write(response);
+      } else {
+        SetDefaultEmptyResponse(request, &response);
+        stream->Write(response);
+      }
+    }
+    return grpc::Status::OK;
+  }
+};
+
+TEST_P(XdsExtProcEnd2endTest,
+       ServerToClientOrderingResponseBodyAfterTrailersFailsCall) {
+  // We disable S2C headers to work around the transport-level coalescing
+  // limitation. This allows us to test the interaction between S2C body and
+  // trailers.
+  auto mock_service = std::make_shared<ResponseBodyAfterTrailersMockService>();
+  StartAlternativeServer(mock_service);
+  CreateAndStartBackends(1);
+  using envoy::extensions::filters::http::ext_proc::v3::ProcessingMode;
+  auto ext_proc_config =
+      ExternalProcessorBuilder()
+          .SetTargetUri(alternative_ext_proc_server_->target())
+          .SetInsecureChannelCredentials()
+          .SetFailureModeAllow(false)  // Fail closed
+          .SetRequestHeaderMode(ProcessingMode::SEND)
+          .SetRequestBodyMode(ProcessingMode::GRPC)
+          .SetResponseHeaderMode(ProcessingMode::SKIP)   // Skip S2C headers
+          .SetResponseBodyMode(ProcessingMode::GRPC)     // Enable S2C body
+          .SetResponseTrailerMode(ProcessingMode::SEND)  // Enable S2C trailers
+          .Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+  ClientContext context;
+  auto stream = stub_->BidiStream(&context);
+  EchoRequest request;
+  request.set_message("hello");
+  stream->Write(request);
+  EchoResponse response;
+  // Read the echo response first to ensure the normal body flow works.
+  EXPECT_TRUE(stream->Read(&response));
+  // Half-close to trigger trailers from the backend.
+  stream->WritesDone();
+  // The backend will send trailers, triggering S2C trailers.
+  // Ext-proc will respond with trailers, then body (error).
+  EXPECT_FALSE(stream->Read(&response));
+  Status status = stream->Finish();
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
+  EXPECT_THAT(status.error_message(),
+              ::testing::HasSubstr("Received response body response after "
+                                   "response trailers response"));
+}
+
+TEST_P(XdsExtProcEnd2endTest,
+       ServerToClientOrderingHeadersResponseWhenDisabledFailsCall) {
+  auto mock_service = std::make_shared<GenericMockService>(
+      [](const ::envoy::service::ext_proc::v3::ProcessingRequest& request,
+         ::envoy::service::ext_proc::v3::ProcessingResponse* response) {
+        if (request.has_response_body()) {
+          // Respond with response_headers instead of response_body!
+          response->mutable_response_headers();
+        } else {
+          SetDefaultEmptyResponse(request, response);
+        }
+      });
+  StartAlternativeServer(mock_service);
+  CreateAndStartBackends(1);
+  using envoy::extensions::filters::http::ext_proc::v3::ProcessingMode;
+  auto ext_proc_config =
+      ExternalProcessorBuilder()
+          .SetTargetUri(alternative_ext_proc_server_->target())
+          .SetInsecureChannelCredentials()
+          .SetFailureModeAllow(false)  // Fail closed
+          .SetRequestHeaderMode(ProcessingMode::SEND)
+          .SetRequestBodyMode(ProcessingMode::GRPC)
+          .SetResponseHeaderMode(ProcessingMode::SKIP)  // Skip S2C headers
+          .SetResponseBodyMode(ProcessingMode::GRPC)    // Enable S2C body
+          .SetResponseTrailerMode(
+              ProcessingMode::SEND)  // Must be SEND if body is GRPC
+          .Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+  ClientContext context;
+  auto stream = stub_->BidiStream(&context);
+  EchoRequest request;
+  request.set_message("hello");
+  stream->Write(request);
+  EchoResponse response;
+  EXPECT_FALSE(stream->Read(&response));
+  Status status = stream->Finish();
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
+  EXPECT_THAT(status.error_message(),
+              ::testing::HasSubstr("Received response headers response but "
+                                   "response headers are disabled"));
+}
+
+TEST_P(XdsExtProcEnd2endTest,
+       ServerToClientOrderingTrailersResponseWhenDisabledFailsCall) {
+  auto mock_service = std::make_shared<GenericMockService>(
+      [](const ::envoy::service::ext_proc::v3::ProcessingRequest& request,
+         ::envoy::service::ext_proc::v3::ProcessingResponse* response) {
+        if (request.has_response_headers()) {
+          // Respond with response_trailers instead of response_headers!
+          response->mutable_response_trailers();
+        } else {
+          SetDefaultEmptyResponse(request, response);
+        }
+      });
+  StartAlternativeServer(mock_service);
+  CreateAndStartBackends(1);
+  using envoy::extensions::filters::http::ext_proc::v3::ProcessingMode;
+  auto ext_proc_config =
+      ExternalProcessorBuilder()
+          .SetTargetUri(alternative_ext_proc_server_->target())
+          .SetInsecureChannelCredentials()
+          .SetFailureModeAllow(false)  // Fail closed
+          .SetRequestHeaderMode(ProcessingMode::SEND)
+          .SetRequestBodyMode(ProcessingMode::GRPC)
+          .SetResponseHeaderMode(ProcessingMode::SEND)  // Enable S2C headers
+          .SetResponseBodyMode(ProcessingMode::NONE)
+          .SetResponseTrailerMode(ProcessingMode::SKIP)  // Skip S2C trailers
+          .Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+  ClientContext context;
+  auto stream = stub_->BidiStream(&context);
+  // Use WritesDone() to trigger S2C headers without sending body messages,
+  // avoiding race conditions.
+  stream->WritesDone();
+  EchoResponse response;
+  EXPECT_FALSE(stream->Read(&response));
+  Status status = stream->Finish();
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
+  EXPECT_THAT(status.error_message(),
+              ::testing::HasSubstr("Received response trailers response but "
+                                   "response trailers are disabled"));
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
