@@ -208,7 +208,9 @@ void SerializedStreamingCall::DrainQueueAndFail(absl::Status status) {
           waker_to_wakeup = std::move(state->waker);
         }
       }
-      waker_to_wakeup.Wakeup();
+      if (!waker_to_wakeup.is_unwakeable()) {
+        waker_to_wakeup.Wakeup();
+      }
     }
     delete curr;  // Free the node
     curr = next;
@@ -269,7 +271,9 @@ void SerializedStreamingCall::Orphan() {
       active_write->done = true;
       waker_to_wakeup = std::move(active_write->waker);
     }
-    waker_to_wakeup.Wakeup();
+    if (!waker_to_wakeup.is_unwakeable()) {
+      waker_to_wakeup.Wakeup();
+    }
   }
   // Cancel the party and destroy the underlying call
   party_.reset();
@@ -285,7 +289,9 @@ void SerializedStreamingCall::OnRequestSent(bool ok) {
     write_ok_ = ok;
     waker_to_wakeup = std::move(write_waker_);
   }
-  waker_to_wakeup.Wakeup();
+  if (!waker_to_wakeup.is_unwakeable()) {
+    waker_to_wakeup.Wakeup();
+  }
   user_event_handler_->OnRequestSent(ok);
 }
 
@@ -304,7 +310,9 @@ void SerializedStreamingCall::OnStatusReceived(absl::Status status) {
       waker_to_wakeup = std::move(write_waker_);
     }
   }
-  waker_to_wakeup.Wakeup();
+  if (!waker_to_wakeup.is_unwakeable()) {
+    waker_to_wakeup.Wakeup();
+  }
   user_event_handler_->OnStatusReceived(std::move(status));
 }
 

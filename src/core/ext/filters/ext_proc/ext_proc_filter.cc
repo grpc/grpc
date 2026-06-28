@@ -2437,7 +2437,7 @@ absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ProcessServerToClient(
         GRPC_TRACE_LOG(ext_proc_filter, INFO)
             << "ExtProc: ProcessServerToClient failed: " << *status;
         // Push error trailers to parent call
-        auto error_md = ServerMetadataFromStatus(*status);
+        auto error_md = CancelledServerMetadataFromStatus(*status);
         handler.SpawnPushServerTrailingMetadata(std::move(error_md));
         // Cancel child call
         initiator.Cancel();
