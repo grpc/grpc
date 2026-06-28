@@ -206,9 +206,7 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
     return response_body_pipe_;
   }
 
-  InterActivityLatch<absl::Status>& stream_status() {
-    return stream_status_;
-  }
+  InterActivityLatch<absl::Status>& stream_status() { return stream_status_; }
 
   ExtProcCall(RefCountedPtr<ExtProcChannel> channel, bool observability_mode,
               bool failure_mode_allow, bool disable_immediate_response,
@@ -287,6 +285,10 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
     return stream_closed_.load(std::memory_order_acquire);
   }
 
+  bool IsStreamClosedCleanly() const {
+    return IsStreamClosed() && GetStreamErrorStatus().ok();
+  }
+
   void IncrementOutstandingServerToClientMessages() {
     MutexLock lock(&mu_);
     outstanding_s2c_messages_++;
@@ -350,7 +352,7 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
     return c2s_writes_done_;
   }
 
-  absl::Status GetStreamErrorStatus() {
+  absl::Status GetStreamErrorStatus() const {
     auto status = stream_status_.Get();
     return status.has_value() ? *status : absl::OkStatus();
   }
@@ -513,22 +515,22 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
     if (response == nullptr) {
       auto error = absl::InternalError("Failed to parse ProcessingResponse");
       if (!fail_open) {
-        CompleteAllLatchesAndPipes(error);
+        SetStreamError(error);
       } else {
         CompleteAllLatchesAndPipes(ExtProcResponse{});
+        CloseStream();
       }
-      CloseStream();
       return;
     } else {
       auto parsed_response_or =
           ParseExtProcResponse(response, observability_mode_);
       if (!parsed_response_or.ok()) {
         if (!fail_open) {
-          CompleteAllLatchesAndPipes(parsed_response_or.status());
+          SetStreamError(parsed_response_or.status());
         } else {
           CompleteAllLatchesAndPipes(ExtProcResponse{});
+          CloseStream();
         }
-        CloseStream();
         return;
       } else {
         auto parsed_response = std::move(*parsed_response_or);
@@ -745,6 +747,14 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
     //    there are outstanding body messages currently in-flight (which
     //    could result in partial mutations) and we are not in observability
     //    mode.
+    const bool has_outstanding_messages = [this]() {
+      MutexLock lock(&mu_);
+      return outstanding_c2s_messages_ > 0 || outstanding_s2c_messages_ > 0;
+    }();
+    if (status.ok() && has_outstanding_messages) {
+      status = absl::InternalError(
+          "Stream closed cleanly with outstanding messages");
+    }
     const bool fail_open_allowed = IsStreamFailOpenAllowed();
     const bool should_propagate_error = !status.ok() && !fail_open_allowed;
     if (should_propagate_error) {
@@ -1173,7 +1183,8 @@ absl::AnyInvocable<Poll<absl::Status>()> SendServerToClientMessagesRequest(
                    message = std::move(message)]() mutable {
                     if (config->processing_mode.send_response_body &&
                         ext_proc_call->IsStreamClosed()) {
-                      if (!ext_proc_call->IsServerFailOpenAllowed()) {
+                      if (!ext_proc_call->IsStreamClosedCleanly() &&
+                          !ext_proc_call->IsServerFailOpenAllowed()) {
                         return ext_proc_call->GetStreamErrorStatus();
                       }
                     }
@@ -1898,8 +1909,11 @@ absl::AnyInvocable<Poll<absl::Status>()> ClientToServerMessagesNormalMode(
                        message = std::move(message)](
                           absl::Status status) mutable -> absl::Status {
                         if (!status.ok() || ext_proc_call->IsStreamClosed()) {
-                          if (ext_proc_call->IsClientFailOpenAllowed()) {
-                            initiator.SpawnPushMessage(std::move(message));
+                          if (ext_proc_call->IsStreamClosedCleanly() ||
+                              ext_proc_call->IsClientFailOpenAllowed()) {
+                            if (message != nullptr) {
+                              initiator.SpawnPushMessage(std::move(message));
+                            }
                             return absl::OkStatus();
                           } else {
                             return ext_proc_call->IsStreamClosed()
@@ -1939,7 +1953,8 @@ absl::AnyInvocable<Poll<absl::Status>()> ClientToServerMessagesNormalMode(
                   [ext_proc_call, initiator,
                    config](absl::Status status) mutable -> absl::Status {
                     if (!status.ok() || ext_proc_call->IsStreamClosed()) {
-                      if (ext_proc_call->IsClientFailOpenAllowed()) {
+                      if (ext_proc_call->IsStreamClosedCleanly() ||
+                          ext_proc_call->IsClientFailOpenAllowed()) {
                         initiator.SpawnFinishSends();
                         ext_proc_call->MarkClientSendsDone();
                         return absl::OkStatus();
@@ -2164,26 +2179,26 @@ ExtProcFilter::ProcessCallObservabilityMode(
                     self->config()->processing_mode.send_response_body);
               });
         }
-        auto write_promise =
-            Map(std::move(client_headers_write_promise),
-                [failure_mode_allow = self->config()->failure_mode_allow,
-                 ext_proc_call](absl::Status status) -> absl::Status {
-                  if (!status.ok()) {
-                    if (failure_mode_allow) {
-                      GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                          << "ExtProc: Initial metadata write failed, but "
-                             "failure_mode_allow=true. Proceeding with fail-open "
-                             "behavior. Error: "
-                          << status;
-                      return absl::OkStatus();
-                    }
-                    if (ext_proc_call->IsStreamClosed() &&
-                        !ext_proc_call->GetStreamErrorStatus().ok()) {
-                      return ext_proc_call->GetStreamErrorStatus();
-                    }
-                  }
-                  return status;
-                });
+        auto write_promise = Map(
+            std::move(client_headers_write_promise),
+            [failure_mode_allow = self->config()->failure_mode_allow,
+             ext_proc_call](absl::Status status) -> absl::Status {
+              if (!status.ok()) {
+                if (failure_mode_allow) {
+                  GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                      << "ExtProc: Initial metadata write failed, but "
+                         "failure_mode_allow=true. Proceeding with fail-open "
+                         "behavior. Error: "
+                      << status;
+                  return absl::OkStatus();
+                }
+                if (ext_proc_call->IsStreamClosed() &&
+                    !ext_proc_call->GetStreamErrorStatus().ok()) {
+                  return ext_proc_call->GetStreamErrorStatus();
+                }
+              }
+              return status;
+            });
         return TrySeq(
             std::move(write_promise),
             [self, handler, metadata = std::move(metadata),
@@ -2382,7 +2397,7 @@ absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ProcessServerToClient(
                         return ServerToClientMessages(handler, initiator,
                                                       ext_proc_call, config);
                       });
-                 },
+                },
                 []() {
                   // Trailers-Only: Bypasses both headers and messages!
                   return absl::OkStatus();
@@ -2400,34 +2415,34 @@ absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ProcessServerToClient(
         }
         // Phase 1 succeeded! Proceed to Phase 2: Pull, intercept, and push
         // Server Trailing Metadata.
-        return absl::AnyInvocable<Poll<absl::Status>()>(Seq(
-            initiator.PullServerTrailingMetadata(),
-            [handler, initiator, ext_proc_call,
-             config](ServerMetadataHandle md) mutable
-                -> absl::AnyInvocable<Poll<absl::Status>()> {
-              if (ext_proc_call->IsStreamClosed() &&
-                  !ext_proc_call->GetStreamErrorStatus().ok()) {
-                return [error = ext_proc_call->GetStreamErrorStatus()]() -> Poll<absl::Status> {
-                  return error;
-                };
-              }
-              auto shared_md =
-                  std::make_shared<ServerMetadataHandle>(std::move(md));
-              return ServerTrailingMetadata(handler, initiator, ext_proc_call,
-                                            config, shared_md);
-            }));
+        return absl::AnyInvocable<Poll<absl::Status>()>(
+            Seq(initiator.PullServerTrailingMetadata(),
+                [handler, initiator, ext_proc_call,
+                 config](ServerMetadataHandle md) mutable
+                    -> absl::AnyInvocable<Poll<absl::Status>()> {
+                  if (ext_proc_call->IsStreamClosed() &&
+                      !ext_proc_call->GetStreamErrorStatus().ok()) {
+                    return [error = ext_proc_call->GetStreamErrorStatus()]()
+                               -> Poll<absl::Status> { return error; };
+                  }
+                  auto shared_md =
+                      std::make_shared<ServerMetadataHandle>(std::move(md));
+                  return ServerTrailingMetadata(
+                      handler, initiator, ext_proc_call, config, shared_md);
+                }));
       });
 
-  auto watch_error = Seq(
-      ext_proc_call->stream_status().Wait(),
-      [config = config_](absl::Status status) -> Poll<absl::Status> {
-        if (!status.ok() && !config->failure_mode_allow) {
-          return status;
-        }
-        return Pending{};
-      });
+  auto watch_error =
+      Seq(ext_proc_call->stream_status().Wait(),
+          [config = config_](absl::Status status) -> Poll<absl::Status> {
+            if (!status.ok() && !config->failure_mode_allow) {
+              return status;
+            }
+            return Pending{};
+          });
 
-  auto run_pipeline = Race(std::move(response_pipeline), std::move(watch_error));
+  auto run_pipeline =
+      Race(std::move(response_pipeline), std::move(watch_error));
 
   return [handler, initiator, ext_proc_call,
           promise = std::move(run_pipeline)]() mutable -> Poll<absl::Status> {
