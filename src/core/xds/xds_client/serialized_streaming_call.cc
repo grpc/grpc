@@ -126,11 +126,15 @@ SerializedStreamingCall::SerializedStreamingCall(
                   if (!write_ok) {
                     {
                       MutexLock lock(&state->mu);
-                      state->status = absl::InternalError("Write failed");
-                      state->done = true;
-                      waker_to_wakeup = std::move(state->waker);
+                      if (!state->done) {
+                        state->status = absl::InternalError("Write failed");
+                        state->done = true;
+                        waker_to_wakeup = std::move(state->waker);
+                      }
                     }
-                    waker_to_wakeup.Wakeup();
+                    if (!waker_to_wakeup.is_unwakeable()) {
+                      waker_to_wakeup.Wakeup();
+                    }
                     // Fail all pending writes in the queue as well
                     DrainQueueAndFail(absl::InternalError(
                         "Write failed due to previous stream error"));
@@ -142,11 +146,15 @@ SerializedStreamingCall::SerializedStreamingCall(
                   }
                   {
                     MutexLock lock(&state->mu);
-                    state->status = absl::OkStatus();
-                    state->done = true;
-                    waker_to_wakeup = std::move(state->waker);
+                    if (!state->done) {
+                      state->status = absl::OkStatus();
+                      state->done = true;
+                      waker_to_wakeup = std::move(state->waker);
+                    }
                   }
-                  waker_to_wakeup.Wakeup();
+                  if (!waker_to_wakeup.is_unwakeable()) {
+                    waker_to_wakeup.Wakeup();
+                  }
                   {
                     MutexLock lock(&mu_);
                     active_write_ = nullptr;
@@ -286,6 +294,17 @@ void SerializedStreamingCall::OnRecvMessage(absl::string_view payload) {
 }
 
 void SerializedStreamingCall::OnStatusReceived(absl::Status status) {
+  DrainQueueAndFail(status);
+  Waker waker_to_wakeup;
+  {
+    MutexLock lock(&mu_);
+    if (!write_completed_) {
+      write_completed_ = true;
+      write_ok_ = false;
+      waker_to_wakeup = std::move(write_waker_);
+    }
+  }
+  waker_to_wakeup.Wakeup();
   user_event_handler_->OnStatusReceived(std::move(status));
 }
 

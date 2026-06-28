@@ -144,7 +144,7 @@ XdsHeaderValueOption ParseXdsHeaderValueOption(
 absl::StatusOr<ExtProcResponse::HeaderMutation> ParseHeaderMutation(
     const envoy_service_ext_proc_v3_HeaderMutation* header_mutation) {
   if (header_mutation == nullptr) {
-    return absl::InternalError("header_mutation is not available");
+    return ExtProcResponse::HeaderMutation{};
   }
   ExtProcResponse::HeaderMutation header_mutation_response;
   size_t set_headers_size = 0;

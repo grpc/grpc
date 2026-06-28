@@ -3265,6 +3265,102 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamExtProcConnectionErrorFailOpen) {
 }
 
 TEST_P(XdsExtProcEnd2endTest,
+       BidiStreamObservabilityExtProcConnectionErrorFailClosed) {
+  auto mock_service = std::make_shared<FailOnSecondRequestBodyMockService>();
+  StartAlternativeServer(mock_service);
+  CreateAndStartBackends(1);
+  using envoy::extensions::filters::http::ext_proc::v3::ProcessingMode;
+  auto ext_proc_config =
+      ExternalProcessorBuilder()
+          .SetTargetUri(alternative_ext_proc_server_->target())
+          .SetInsecureChannelCredentials()
+          .SetObservabilityMode(true)
+          .SetFailureModeAllow(false)  // Fail-closed
+          .SetRequestHeaderMode(ProcessingMode::SEND)
+          .SetRequestBodyMode(ProcessingMode::GRPC)
+          .SetResponseHeaderMode(ProcessingMode::SKIP)
+          .SetResponseBodyMode(ProcessingMode::NONE)
+          .SetResponseTrailerMode(ProcessingMode::SKIP)
+          .Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+
+  ClientContext context;
+  auto stream = stub_->BidiStream(&context);
+
+  EchoRequest request;
+  EchoResponse response;
+
+  request.set_message("message1");
+  EXPECT_TRUE(stream->Write(request));
+  EXPECT_TRUE(stream->Read(&response));
+  EXPECT_EQ(response.message(), "message1");
+
+  request.set_message("message2");
+  stream->Write(request);
+
+  Status status = stream->Finish();
+  EXPECT_FALSE(status.ok());
+  EXPECT_THAT(
+      status.error_code(),
+      ::testing::AnyOf(StatusCode::RESOURCE_EXHAUSTED, StatusCode::CANCELLED));
+}
+
+TEST_P(XdsExtProcEnd2endTest,
+       BidiStreamObservabilityExtProcConnectionErrorFailOpen) {
+  auto mock_service = std::make_shared<FailOnSecondRequestBodyMockService>();
+  StartAlternativeServer(mock_service);
+  CreateAndStartBackends(1);
+  using envoy::extensions::filters::http::ext_proc::v3::ProcessingMode;
+  auto ext_proc_config =
+      ExternalProcessorBuilder()
+          .SetTargetUri(alternative_ext_proc_server_->target())
+          .SetInsecureChannelCredentials()
+          .SetObservabilityMode(true)
+          .SetFailureModeAllow(true)  // Fail-open
+          .SetRequestHeaderMode(ProcessingMode::SEND)
+          .SetRequestBodyMode(ProcessingMode::GRPC)
+          .SetResponseHeaderMode(ProcessingMode::SKIP)
+          .SetResponseBodyMode(ProcessingMode::NONE)
+          .SetResponseTrailerMode(ProcessingMode::SKIP)
+          .Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+
+  ClientContext context;
+  auto stream = stub_->BidiStream(&context);
+
+  EchoRequest request;
+  EchoResponse response;
+
+  request.set_message("message1");
+  EXPECT_TRUE(stream->Write(request));
+  EXPECT_TRUE(stream->Read(&response));
+  EXPECT_EQ(response.message(), "message1");
+
+  request.set_message("message2");
+  EXPECT_TRUE(stream->Write(request));
+  // In observability mode, even if the ext_proc stream fails, the data plane
+  // stream should continue.
+  EXPECT_TRUE(stream->Read(&response));
+  EXPECT_EQ(response.message(), "message2");
+
+  stream->WritesDone();
+  Status status = stream->Finish();
+  EXPECT_TRUE(status.ok()) << status.error_message();
+}
+
+TEST_P(XdsExtProcEnd2endTest,
        RequestAttributesSentInRequestBodyWhenRequestHeaderIsSkip) {
   std::string path_received;
   std::string method_received;
@@ -4103,6 +4199,279 @@ TEST_P(XdsExtProcEnd2endTest,
   EXPECT_EQ(status.error_code(), StatusCode::RESOURCE_EXHAUSTED);
   EXPECT_THAT(status.error_message(),
               ::testing::HasSubstr("Closed on response body"));
+}
+
+TEST_P(XdsExtProcEnd2endTest,
+       ServerToClientResponseBodyObservabilityExtProcConnectionErrorFailCall) {
+  auto mock_service =
+      std::make_shared<CloseExtProcStreamOnResponseBodyMockService>();
+  StartAlternativeServer(mock_service);
+  CreateAndStartBackends(1);
+  using envoy::extensions::filters::http::ext_proc::v3::ProcessingMode;
+  auto ext_proc_config =
+      ExternalProcessorBuilder()
+          .SetTargetUri(alternative_ext_proc_server_->target())
+          .SetInsecureChannelCredentials()
+          .SetObservabilityMode(true)
+          .SetFailureModeAllow(false)  // Fail-closed
+          .SetRequestHeaderMode(ProcessingMode::SKIP)
+          .SetResponseHeaderMode(ProcessingMode::SEND)
+          .SetResponseTrailerMode(ProcessingMode::SEND)
+          .SetRequestBodyMode(ProcessingMode::NONE)
+          .SetResponseBodyMode(ProcessingMode::GRPC)
+          .Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+
+  ClientContext context;
+  auto stream = stub_->BidiStream(&context);
+
+  EchoRequest request;
+  EchoResponse response;
+
+  request.set_message("message1");
+  EXPECT_TRUE(stream->Write(request));
+  // In observability mode, the filter does not block the response body, so the
+  // read might succeed before the asynchronous ext_proc error propagates to
+  // fail the stream.
+  stream->Read(&response);
+
+  Status status = stream->Finish();
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), StatusCode::RESOURCE_EXHAUSTED);
+  EXPECT_THAT(status.error_message(),
+              ::testing::HasSubstr("Closed on response body"));
+}
+
+TEST_P(XdsExtProcEnd2endTest,
+       ServerToClientResponseBodyObservabilityExtProcConnectionErrorAllowCall) {
+  auto mock_service =
+      std::make_shared<CloseExtProcStreamOnResponseBodyMockService>();
+  StartAlternativeServer(mock_service);
+  CreateAndStartBackends(1);
+  using envoy::extensions::filters::http::ext_proc::v3::ProcessingMode;
+  auto ext_proc_config =
+      ExternalProcessorBuilder()
+          .SetTargetUri(alternative_ext_proc_server_->target())
+          .SetInsecureChannelCredentials()
+          .SetObservabilityMode(true)
+          .SetFailureModeAllow(true)  // Fail-open
+          .SetRequestHeaderMode(ProcessingMode::SKIP)
+          .SetResponseHeaderMode(ProcessingMode::SEND)
+          .SetResponseTrailerMode(ProcessingMode::SEND)
+          .SetRequestBodyMode(ProcessingMode::NONE)
+          .SetResponseBodyMode(ProcessingMode::GRPC)
+          .Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+
+  ClientContext context;
+  auto stream = stub_->BidiStream(&context);
+
+  EchoRequest request;
+  EchoResponse response;
+
+  request.set_message("message1");
+  EXPECT_TRUE(stream->Write(request));
+  // Read should succeed because observability mode + fail-open allows it.
+  EXPECT_TRUE(stream->Read(&response));
+  EXPECT_EQ(response.message(), "message1");
+
+  stream->WritesDone();
+  Status status = stream->Finish();
+  EXPECT_TRUE(status.ok()) << status.error_message();
+}
+
+class FailImmediatelyMockService : public MockExternalProcessorBase {
+ public:
+  grpc::Status Process(
+      grpc::ServerContext* /*context*/,
+      grpc::ServerReaderWriter<
+          ::envoy::service::ext_proc::v3::ProcessingResponse,
+          ::envoy::service::ext_proc::v3::ProcessingRequest>* /*stream*/) override {
+    return grpc::Status(grpc::StatusCode::RESOURCE_EXHAUSTED,
+                        "Failed immediately");
+  }
+};
+
+TEST_P(XdsExtProcEnd2endTest,
+       StreamFailBeforeRequestHeadersObservabilityFailCall) {
+  auto mock_service = std::make_shared<FailImmediatelyMockService>();
+  StartAlternativeServer(mock_service);
+  CreateAndStartBackends(1);
+  using envoy::extensions::filters::http::ext_proc::v3::ProcessingMode;
+  auto ext_proc_config =
+      ExternalProcessorBuilder()
+          .SetTargetUri(alternative_ext_proc_server_->target())
+          .SetInsecureChannelCredentials()
+          .SetObservabilityMode(true)
+          .SetFailureModeAllow(false)  // Fail-closed
+          .SetRequestHeaderMode(ProcessingMode::SEND)
+          .SetResponseHeaderMode(ProcessingMode::SEND)
+          .SetResponseTrailerMode(ProcessingMode::SEND)
+          .SetRequestBodyMode(ProcessingMode::NONE)
+          .SetResponseBodyMode(ProcessingMode::NONE)
+          .Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+
+  RpcOptions rpc_options;
+  EchoResponse response;
+  Status status = SendRpcGetTrailers(rpc_options, &response, nullptr, nullptr);
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), StatusCode::RESOURCE_EXHAUSTED);
+  EXPECT_THAT(status.error_message(),
+              ::testing::HasSubstr("Failed immediately"));
+}
+
+TEST_P(XdsExtProcEnd2endTest,
+       StreamFailBeforeRequestHeadersObservabilityAllowCall) {
+  auto mock_service = std::make_shared<FailImmediatelyMockService>();
+  StartAlternativeServer(mock_service);
+  CreateAndStartBackends(1);
+  using envoy::extensions::filters::http::ext_proc::v3::ProcessingMode;
+  auto ext_proc_config =
+      ExternalProcessorBuilder()
+          .SetTargetUri(alternative_ext_proc_server_->target())
+          .SetInsecureChannelCredentials()
+          .SetObservabilityMode(true)
+          .SetFailureModeAllow(true)  // Fail-open
+          .SetRequestHeaderMode(ProcessingMode::SEND)
+          .SetResponseHeaderMode(ProcessingMode::SEND)
+          .SetResponseTrailerMode(ProcessingMode::SEND)
+          .SetRequestBodyMode(ProcessingMode::NONE)
+          .SetResponseBodyMode(ProcessingMode::NONE)
+          .Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+
+  RpcOptions rpc_options;
+  EchoResponse response;
+  Status status = SendRpcGetTrailers(rpc_options, &response, nullptr, nullptr);
+  EXPECT_TRUE(status.ok()) << status.error_message();
+}
+
+class FailAfterRequestHeadersMockService : public MockExternalProcessorBase {
+ public:
+  grpc::Status Process(
+      grpc::ServerContext* /*context*/,
+      grpc::ServerReaderWriter<
+          ::envoy::service::ext_proc::v3::ProcessingResponse,
+          ::envoy::service::ext_proc::v3::ProcessingRequest>* stream) override {
+    ::envoy::service::ext_proc::v3::ProcessingRequest request;
+    if (stream->Read(&request)) {
+      if (request.has_request_headers()) {
+        return grpc::Status(grpc::StatusCode::RESOURCE_EXHAUSTED,
+                            "Failed after request headers");
+      }
+    }
+    return grpc::Status::OK;
+  }
+};
+
+TEST_P(XdsExtProcEnd2endTest,
+       StreamFailBeforeRequestBodyObservabilityFailCall) {
+  auto mock_service = std::make_shared<FailAfterRequestHeadersMockService>();
+  StartAlternativeServer(mock_service);
+  CreateAndStartBackends(1);
+  using envoy::extensions::filters::http::ext_proc::v3::ProcessingMode;
+  auto ext_proc_config =
+      ExternalProcessorBuilder()
+          .SetTargetUri(alternative_ext_proc_server_->target())
+          .SetInsecureChannelCredentials()
+          .SetObservabilityMode(true)
+          .SetFailureModeAllow(false)  // Fail-closed
+          .SetRequestHeaderMode(ProcessingMode::SEND)
+          .SetResponseHeaderMode(ProcessingMode::SEND)
+          .SetResponseTrailerMode(ProcessingMode::SEND)
+          .SetRequestBodyMode(ProcessingMode::GRPC)
+          .SetResponseBodyMode(ProcessingMode::NONE)
+          .Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+
+  ClientContext context;
+  auto stream = stub_->BidiStream(&context);
+
+  EchoRequest request;
+  EchoResponse response;
+
+  request.set_message("message1");
+  EXPECT_TRUE(stream->Write(request));
+  stream->Read(&response);
+  stream->WritesDone();
+  Status status = stream->Finish();
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), StatusCode::RESOURCE_EXHAUSTED);
+  EXPECT_THAT(status.error_message(),
+              ::testing::HasSubstr("Failed after request headers"));
+}
+
+TEST_P(XdsExtProcEnd2endTest,
+       StreamFailBeforeRequestBodyObservabilityAllowCall) {
+  auto mock_service = std::make_shared<FailAfterRequestHeadersMockService>();
+  StartAlternativeServer(mock_service);
+  CreateAndStartBackends(1);
+  using envoy::extensions::filters::http::ext_proc::v3::ProcessingMode;
+  auto ext_proc_config =
+      ExternalProcessorBuilder()
+          .SetTargetUri(alternative_ext_proc_server_->target())
+          .SetInsecureChannelCredentials()
+          .SetObservabilityMode(true)
+          .SetFailureModeAllow(true)  // Fail-open
+          .SetRequestHeaderMode(ProcessingMode::SEND)
+          .SetResponseHeaderMode(ProcessingMode::SEND)
+          .SetResponseTrailerMode(ProcessingMode::SEND)
+          .SetRequestBodyMode(ProcessingMode::GRPC)
+          .SetResponseBodyMode(ProcessingMode::NONE)
+          .Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+
+  ClientContext context;
+  auto stream = stub_->BidiStream(&context);
+
+  EchoRequest request;
+  EchoResponse response;
+
+  request.set_message("message1");
+  EXPECT_TRUE(stream->Write(request));
+  EXPECT_TRUE(stream->Read(&response));
+  EXPECT_EQ(response.message(), "message1");
+
+  stream->WritesDone();
+  Status status = stream->Finish();
+  EXPECT_TRUE(status.ok()) << status.error_message();
 }
 
 TEST_P(XdsExtProcEnd2endTest,

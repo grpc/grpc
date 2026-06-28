@@ -68,6 +68,11 @@ class InterActivityLatch {
     return value_.has_value();
   }
 
+  std::optional<T> Get() const ABSL_LOCKS_EXCLUDED(mu_) {
+    MutexLock lock(&mu_);
+    return value_;
+  }
+
  private:
   std::string DebugTag() {
     return absl::StrCat(

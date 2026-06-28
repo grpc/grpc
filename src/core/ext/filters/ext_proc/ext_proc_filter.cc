@@ -206,6 +206,10 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
     return response_body_pipe_;
   }
 
+  InterActivityLatch<absl::Status>& stream_status() {
+    return stream_status_;
+  }
+
   ExtProcCall(RefCountedPtr<ExtProcChannel> channel, bool observability_mode,
               bool failure_mode_allow, bool disable_immediate_response,
               const ProcessingMode& processing_mode,
@@ -347,8 +351,8 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
   }
 
   absl::Status GetStreamErrorStatus() {
-    MutexLock lock(&mu_);
-    return stream_status_;
+    auto status = stream_status_.Get();
+    return status.has_value() ? *status : absl::OkStatus();
   }
 
   Mutex* mu() ABSL_LOCK_RETURNED(mu_) { return &mu_; }
@@ -477,8 +481,9 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
   }
 
   void SetStreamErrorStatus(absl::Status status) {
-    MutexLock lock(&mu_);
-    stream_status_ = status;
+    if (!stream_status_.IsSet()) {
+      stream_status_.Set(status);
+    }
     stream_closed_.store(true, std::memory_order_release);
   }
 
@@ -743,9 +748,8 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
     const bool fail_open_allowed = IsStreamFailOpenAllowed();
     const bool should_propagate_error = !status.ok() && !fail_open_allowed;
     if (should_propagate_error) {
-      {
-        MutexLock lock(&mu_);
-        stream_status_ = status;
+      if (!stream_status_.IsSet()) {
+        stream_status_.Set(status);
       }
       CompleteAllLatchesAndPipes(status);
     } else {
@@ -790,7 +794,7 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
   InterActivityLatch<void> all_server_to_client_responses_received_latch_;
   RefCountedPtr<ConnectivityWatcher> connectivity_watcher_
       ABSL_GUARDED_BY(&mu_);
-  absl::Status stream_status_ ABSL_GUARDED_BY(&mu_);
+  InterActivityLatch<absl::Status> stream_status_;
   bool unreffed_active_stream_ ABSL_GUARDED_BY(&mu_) = false;
 };
 
@@ -966,6 +970,10 @@ auto ServerInitialMetadataObservabilityMode(
                  absl::Status result) mutable -> absl::Status {
                const bool failure_mode_allow = config->failure_mode_allow;
                if (!result.ok() && !failure_mode_allow) {
+                 if (ext_proc_call->IsStreamClosed() &&
+                     !ext_proc_call->GetStreamErrorStatus().ok()) {
+                   return ext_proc_call->GetStreamErrorStatus();
+                 }
                  return result;  // Fail-closed!
                }
                handler.SpawnPushServerInitialMetadata(std::move(*metadata));
@@ -1485,8 +1493,13 @@ ServerTrailingMetadataObservabilityMode(
             !ext_proc_call->response_body_pipe().sender.IsClosed()) {
           ext_proc_call->response_body_pipe().sender.MarkClosed();
         }
-        if (!result.ok()) {
-          *metadata = CancelledServerMetadataFromStatus(result);
+        if (!result.ok() && !config->failure_mode_allow) {
+          absl::Status error_status = result;
+          if (ext_proc_call->IsStreamClosed() &&
+              !ext_proc_call->GetStreamErrorStatus().ok()) {
+            error_status = ext_proc_call->GetStreamErrorStatus();
+          }
+          *metadata = CancelledServerMetadataFromStatus(error_status);
         }
         GRPC_TRACE_LOG(ext_proc_filter, INFO)
             << "ExtProc: ServerTrailingMetadata pushing metadata immediately";
@@ -2153,15 +2166,21 @@ ExtProcFilter::ProcessCallObservabilityMode(
         }
         auto write_promise =
             Map(std::move(client_headers_write_promise),
-                [failure_mode_allow = self->config()->failure_mode_allow](
-                    absl::Status status) -> absl::Status {
-                  if (!status.ok() && failure_mode_allow) {
-                    GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                        << "ExtProc: Initial metadata write failed, but "
-                           "failure_mode_allow=true. Proceeding with fail-open "
-                           "behavior. Error: "
-                        << status;
-                    return absl::OkStatus();
+                [failure_mode_allow = self->config()->failure_mode_allow,
+                 ext_proc_call](absl::Status status) -> absl::Status {
+                  if (!status.ok()) {
+                    if (failure_mode_allow) {
+                      GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                          << "ExtProc: Initial metadata write failed, but "
+                             "failure_mode_allow=true. Proceeding with fail-open "
+                             "behavior. Error: "
+                          << status;
+                      return absl::OkStatus();
+                    }
+                    if (ext_proc_call->IsStreamClosed() &&
+                        !ext_proc_call->GetStreamErrorStatus().ok()) {
+                      return ext_proc_call->GetStreamErrorStatus();
+                    }
                   }
                   return status;
                 });
@@ -2363,7 +2382,7 @@ absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ProcessServerToClient(
                         return ServerToClientMessages(handler, initiator,
                                                       ext_proc_call, config);
                       });
-                },
+                 },
                 []() {
                   // Trailers-Only: Bypasses both headers and messages!
                   return absl::OkStatus();
@@ -2373,18 +2392,7 @@ absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ProcessServerToClient(
       [handler, initiator, ext_proc_call,
        config = config_](absl::Status phase1_result) mutable {
         if (!phase1_result.ok()) {
-          GRPC_TRACE_LOG(ext_proc_filter, INFO)
-              << "ExtProc: ProcessServerToClient Phase 1 failed: "
-              << phase1_result;
-          // Push the Phase 1 error to the parent call as trailing metadata
-          // first
-          auto error_md = CancelledServerMetadataFromStatus(phase1_result);
-          handler.SpawnPushServerTrailingMetadata(std::move(error_md));
-          // Then cancel the child call to prevent leaks/hangs
-          initiator.Cancel();
-          // Close the ext_proc stream
-          ext_proc_call->CloseStream();
-          // Return the error to complete the pipeline
+          // Just return the error, outer wrapper will handle cleanup
           return absl::AnyInvocable<Poll<absl::Status>()>(
               [phase1_result]() -> Poll<absl::Status> {
                 return phase1_result;
@@ -2399,10 +2407,9 @@ absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ProcessServerToClient(
                 -> absl::AnyInvocable<Poll<absl::Status>()> {
               if (ext_proc_call->IsStreamClosed() &&
                   !ext_proc_call->GetStreamErrorStatus().ok()) {
-                auto error = ext_proc_call->GetStreamErrorStatus();
-                auto error_md = CancelledServerMetadataFromStatus(error);
-                handler.SpawnPushServerTrailingMetadata(std::move(error_md));
-                return [error]() -> Poll<absl::Status> { return error; };
+                return [error = ext_proc_call->GetStreamErrorStatus()]() -> Poll<absl::Status> {
+                  return error;
+                };
               }
               auto shared_md =
                   std::make_shared<ServerMetadataHandle>(std::move(md));
@@ -2410,8 +2417,36 @@ absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ProcessServerToClient(
                                             config, shared_md);
             }));
       });
-  return [response_pipeline = std::move(response_pipeline)]() mutable {
-    return response_pipeline();
+
+  auto watch_error = Seq(
+      ext_proc_call->stream_status().Wait(),
+      [config = config_](absl::Status status) -> Poll<absl::Status> {
+        if (!status.ok() && !config->failure_mode_allow) {
+          return status;
+        }
+        return Pending{};
+      });
+
+  auto run_pipeline = Race(std::move(response_pipeline), std::move(watch_error));
+
+  return [handler, initiator, ext_proc_call,
+          promise = std::move(run_pipeline)]() mutable -> Poll<absl::Status> {
+    auto p = promise();
+    if (auto* status = p.value_if_ready()) {
+      if (!status->ok()) {
+        GRPC_TRACE_LOG(ext_proc_filter, INFO)
+            << "ExtProc: ProcessServerToClient failed: " << *status;
+        // Push error trailers to parent call
+        auto error_md = ServerMetadataFromStatus(*status);
+        handler.SpawnPushServerTrailingMetadata(std::move(error_md));
+        // Cancel child call
+        initiator.Cancel();
+        // Close ext_proc stream
+        ext_proc_call->CloseStream();
+      }
+      return *status;
+    }
+    return Pending{};
   };
 }
 
