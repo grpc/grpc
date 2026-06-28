@@ -111,6 +111,7 @@ class SerializedStreamingCall
 
   void DrainQueueAndFail(absl::Status status);
   void CleanupExpiredNodes();
+  void OnUnderlyingCallDestroyed();
 
   const std::unique_ptr<
       XdsTransportFactory::XdsTransport::StreamingCall::EventHandler>

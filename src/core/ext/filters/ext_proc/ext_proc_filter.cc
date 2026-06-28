@@ -1023,7 +1023,8 @@ auto ServerInitialMetadataNonProcessingMode(
       << (*metadata)->DebugString();
   // If we are not sending headers, we must unblock the concurrent message
   // loop which might be waiting for this latch.
-  if (!ext_proc_call->response_headers_latch().IsSet()) {
+  if (ext_proc_call != nullptr &&
+      !ext_proc_call->response_headers_latch().IsSet()) {
     ext_proc_call->response_headers_latch().Set(ExtProcResponse{});
   }
   // Push metadata to client immediately
@@ -1037,6 +1038,7 @@ absl::AnyInvocable<Poll<absl::Status>()> ServerInitialMetadata(
     RefCountedPtr<const ExtProcFilter::Config> config,
     std::shared_ptr<ServerMetadataHandle> metadata) {
   const bool send_headers = config->processing_mode.send_response_headers &&
+                            ext_proc_call != nullptr &&
                             !ext_proc_call->IsStreamClosed();
   absl::AnyInvocable<Poll<absl::Status>()> promise;
   if (send_headers) {
@@ -1055,6 +1057,11 @@ absl::AnyInvocable<Poll<absl::Status>()> ServerInitialMetadata(
   } else {
     promise = [handler, ext_proc_call = std::move(ext_proc_call),
                metadata]() mutable {
+      if (ext_proc_call != nullptr && ext_proc_call->IsStreamClosed() &&
+          !ext_proc_call->IsStreamClosedCleanly() &&
+          !ext_proc_call->IsStreamFailOpenAllowed()) {
+        return ext_proc_call->GetStreamErrorStatus();
+      }
       return ServerInitialMetadataNonProcessingMode(
           handler, ext_proc_call.get(), metadata);
     };

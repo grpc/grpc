@@ -47,6 +47,10 @@ class SerializedStreamingCall::InternalEventHandler
   explicit InternalEventHandler(RefCountedPtr<SerializedStreamingCall> parent)
       : parent_(std::move(parent)) {}
 
+  ~InternalEventHandler() override {
+    parent_->OnUnderlyingCallDestroyed();
+  }
+
   void OnRequestSent(bool ok) override {
     RefCountedPtr<SerializedStreamingCall> parent = parent_;
     parent->OnRequestSent(ok);
@@ -90,18 +94,22 @@ SerializedStreamingCall::SerializedStreamingCall(
           return Seq(receiver_.Next(), [this](auto state_or_failure) {
             bool ok = state_or_failure.ok();
             std::shared_ptr<WriteState> state;
+            bool has_call = false;
             if (ok) {
               auto queued = std::move(*state_or_failure);
               state = *queued;
               {
                 MutexLock lock(&mu_);
                 active_write_ = state;
+                if (underlying_call_ != nullptr) {
+                  underlying_call_->SendMessage(state->payload);
+                  has_call = true;
+                }
               }
-              underlying_call_->SendMessage(state->payload);
             }
             return Seq(
-                [this, ok]() -> Poll<bool> {
-                  if (!ok) return false;
+                [this, ok, has_call]() -> Poll<bool> {
+                  if (!ok || !has_call) return false;
                   MutexLock lock(&mu_);
                   // Double-check pattern to prevent a "lost wakeup" race
                   // condition: If OnRequestSent completes after the first check
@@ -118,16 +126,17 @@ SerializedStreamingCall::SerializedStreamingCall(
                   }
                   return Pending{};
                 },
-                [this, ok, state](bool write_ok) -> LoopCtl<absl::Status> {
+                [this, ok, state, has_call](bool write_ok) -> LoopCtl<absl::Status> {
                   if (!ok) {
                     return absl::CancelledError("Receiver closed");
                   }
                   Waker waker_to_wakeup;
-                  if (!write_ok) {
+                  if (!write_ok || !has_call) {
                     {
                       MutexLock lock(&state->mu);
                       if (!state->done) {
-                        state->status = absl::InternalError("Write failed");
+                        state->status = absl::InternalError(
+                            has_call ? "Write failed" : "Stream closed");
                         state->done = true;
                         waker_to_wakeup = std::move(state->waker);
                       }
@@ -135,14 +144,17 @@ SerializedStreamingCall::SerializedStreamingCall(
                     if (!waker_to_wakeup.is_unwakeable()) {
                       waker_to_wakeup.Wakeup();
                     }
-                    // Fail all pending writes in the queue as well
-                    DrainQueueAndFail(absl::InternalError(
-                        "Write failed due to previous stream error"));
+                    if (has_call) {
+                      // Fail all pending writes in the queue as well
+                      DrainQueueAndFail(absl::InternalError(
+                          "Write failed due to previous stream error"));
+                    }
                     {
                       MutexLock lock(&mu_);
                       active_write_ = nullptr;
                     }
-                    return absl::InternalError("Write failed");
+                    return absl::InternalError(
+                        has_call ? "Write failed" : "Stream closed");
                   }
                   {
                     MutexLock lock(&state->mu);
@@ -277,8 +289,18 @@ void SerializedStreamingCall::Orphan() {
   }
   // Cancel the party and destroy the underlying call
   party_.reset();
-  underlying_call_.reset();
+  OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall> call_to_destroy;
+  {
+    MutexLock lock(&mu_);
+    call_to_destroy = std::move(underlying_call_);
+  }
+  call_to_destroy.reset();
   Unref();
+}
+
+void SerializedStreamingCall::OnUnderlyingCallDestroyed() {
+  MutexLock lock(&mu_);
+  underlying_call_.release();
 }
 
 void SerializedStreamingCall::OnRequestSent(bool ok) {
