@@ -488,6 +488,7 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
   }
 
   void SetStreamErrorStatus(absl::Status status) {
+    MutexLock lock(&mu_);
     if (!stream_status_.IsSet()) {
       stream_status_.Set(status);
     }
@@ -724,34 +725,8 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
         << "ExtProcCall " << this << " status received: " << status;
     bool should_unref = false;
     bool already_closed = false;
-    {
-      MutexLock lock(&mu_);
-      already_closed = stream_closed_.load(std::memory_order_acquire);
-      stream_closed_.store(true, std::memory_order_release);
-      // We manually acquired a strong reference ("active_stream") in the
-      // constructor to keep the ExtProcCall alive during the fire-and-forget
-      // phase of observability mode.
-      // Because both the ConnectivityWatcher (detecting channel failure) and
-      // the StreamEventHandler (detecting stream failure) can trigger this
-      // callback concurrently or in any order, we must guarantee that we
-      // release this manual reference exactly once. Double-unreffing would
-      // drop the ref count to 0 prematurely, causing a crash when active
-      // promises subsequently try to copy their RefCountedPtr.
-      if (!unreffed_active_stream_) {
-        unreffed_active_stream_ = true;
-        should_unref = true;
-      }
-    }
-    // ALWAYS complete latches on status received to avoid hangs,
-    // even if CloseStream() was already called (e.g. due to immediate
-    // response).
+    
     // Determine if we should propagate the stream error and fail the call.
-    // We fail the call if the stream failed, and EITHER:
-    // 1. We are in fail-closed mode (failure_mode_allow_ is false).
-    // 2. We are in fail-open mode, BUT we are not allowed to fail-open because
-    //    there are outstanding body messages currently in-flight (which
-    //    could result in partial mutations) and we are not in observability
-    //    mode.
     const bool has_outstanding_messages = [this]() {
       MutexLock lock(&mu_);
       return outstanding_c2s_messages_ > 0 || outstanding_s2c_messages_ > 0;
@@ -773,10 +748,26 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
     }
     const bool fail_open_allowed = IsStreamFailOpenAllowed();
     const bool should_propagate_error = !status.ok() && !fail_open_allowed;
-    if (should_propagate_error) {
-      if (!stream_status_.IsSet()) {
-        stream_status_.Set(status);
+
+    {
+      MutexLock lock(&mu_);
+      already_closed = stream_closed_.load(std::memory_order_relaxed);
+      if (!already_closed) {
+        if (should_propagate_error) {
+          if (!stream_status_.IsSet()) {
+            stream_status_.Set(status);
+          }
+        }
+        stream_closed_.store(true, std::memory_order_release);
       }
+      if (!unreffed_active_stream_) {
+        unreffed_active_stream_ = true;
+        should_unref = true;
+      }
+    }
+
+    // ALWAYS complete latches on status received to avoid hangs.
+    if (should_propagate_error) {
       CompleteAllLatchesAndPipes(status);
     } else {
       CompleteAllLatchesAndPipes(ExtProcResponse{});
@@ -1465,8 +1456,8 @@ absl::AnyInvocable<Poll<absl::Status>()> ReadServerTrailingMetadataResponse(
             }
             return absl::OkStatus();
           }),
-      [handler, metadata, ext_proc_call](absl::Status result) mutable {
-        if (!result.ok()) {
+      [handler, metadata, ext_proc_call, config = std::move(config)](absl::Status result) mutable {
+        if (!result.ok() && !config->failure_mode_allow) {
           *metadata = CancelledServerMetadataFromStatus(result);
         }
         GRPC_TRACE_LOG(ext_proc_filter, INFO)
@@ -1690,14 +1681,35 @@ ServerTrailingMetadataTrailersOnlyNormalMode(
   return [promise = std::move(promise)]() mutable { return promise(); };
 }
 
+absl::optional<absl::AnyInvocable<Poll<absl::Status>()>>
+MaybeHandleClosedStream(CallHandler handler,
+                        ExtProcFilter::ExtProcCall* ext_proc_call,
+                        RefCountedPtr<const ExtProcFilter::Config> config,
+                        std::shared_ptr<ServerMetadataHandle> metadata) {
+  if (ext_proc_call->IsStreamClosed()) {
+    absl::Status error = ext_proc_call->GetStreamErrorStatus();
+    if (!error.ok()) {
+      return [error]() -> Poll<absl::Status> {
+        return error;
+      };
+    }
+    return ServerTrailingMetadataNonProcessingMode(
+        handler, ext_proc_call, std::move(config), std::move(metadata));
+  }
+  return std::nullopt;
+}
+
 absl::AnyInvocable<Poll<absl::Status>()> ServerTrailingMetadataTrailersOnly(
     CallHandler handler, CallInitiator initiator,
     ExtProcFilter::ExtProcCall* ext_proc_call,
     RefCountedPtr<const ExtProcFilter::Config> config,
     std::shared_ptr<ServerMetadataHandle> metadata)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(ext_proc_call->mu()) {
-  const bool send_headers = config->processing_mode.send_response_headers &&
-                            !ext_proc_call->IsStreamClosed();
+  if (auto promise = MaybeHandleClosedStream(handler, ext_proc_call, config,
+                                             metadata)) {
+    return std::move(*promise);
+  }
+  const bool send_headers = config->processing_mode.send_response_headers;
   if (config->observability_mode) {
     return ServerTrailingMetadataTrailersOnlyObservabilityMode(
         handler, ext_proc_call, std::move(config), std::move(metadata),
@@ -1718,9 +1730,12 @@ absl::AnyInvocable<Poll<absl::Status>()> ServerTrailingMetadataNormal(
     RefCountedPtr<const ExtProcFilter::Config> config,
     std::shared_ptr<ServerMetadataHandle> metadata)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(ext_proc_call->mu()) {
+  if (auto promise = MaybeHandleClosedStream(handler, ext_proc_call, config,
+                                             metadata)) {
+    return std::move(*promise);
+  }
   const bool send_trailers_to_ext_proc_stream =
-      config->processing_mode.send_response_trailers && IsStatusOk(*metadata) &&
-      !ext_proc_call->IsStreamClosed();
+      config->processing_mode.send_response_trailers && IsStatusOk(*metadata);
   if (send_trailers_to_ext_proc_stream) {
     if (config->observability_mode) {
       return ServerTrailingMetadataObservabilityMode(

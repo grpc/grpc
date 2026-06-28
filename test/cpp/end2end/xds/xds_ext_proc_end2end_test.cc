@@ -507,6 +507,41 @@ class GenericMockService : public MockExternalProcessorBase {
   Callback callback_;
 };
 
+class TrailersCloseMockService : public MockExternalProcessorBase {
+ public:
+  enum class CloseStage {
+    kBeforeTrailers,
+    kDuringTrailers,
+  };
+
+  TrailersCloseMockService(CloseStage stage, grpc::Status status)
+      : stage_(stage), status_(status) {}
+
+  grpc::Status Process(
+      grpc::ServerContext* /*context*/,
+      grpc::ServerReaderWriter<
+          ::envoy::service::ext_proc::v3::ProcessingResponse,
+          ::envoy::service::ext_proc::v3::ProcessingRequest>* stream) override {
+    if (stage_ == CloseStage::kBeforeTrailers) {
+      return status_;
+    }
+    ::envoy::service::ext_proc::v3::ProcessingRequest request;
+    while (stream->Read(&request)) {
+      if (request.has_response_trailers()) {
+        return status_;
+      }
+      ::envoy::service::ext_proc::v3::ProcessingResponse response;
+      SetDefaultEmptyResponse(request, &response);
+      stream->Write(response);
+    }
+    return status_;
+  }
+
+ private:
+  CloseStage stage_;
+  grpc::Status status_;
+};
+
 class XdsExtProcEnd2endTest : public XdsEnd2endTest {
  public:
   template <typename ServiceType>
@@ -651,6 +686,11 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
                              bool req_body, bool resp_body,
                              bool observability_mode = false);
   void RunTrailersOnlyTest(bool observability_mode);
+  void RunCloseTrailersTest(
+      TrailersCloseMockService::CloseStage stage, grpc::Status close_status,
+      bool failure_mode_allow, bool observability_mode,
+      grpc::StatusCode expected_status_code,
+      std::string expected_error_message = "");
 
   std::unique_ptr<ExtProcServerThread<MockExternalProcessorService>>
       ext_proc_server_;
@@ -6430,6 +6470,127 @@ TEST_P(XdsExtProcEnd2endTest,
   stream->WritesDone();
   Status status = stream->Finish();
   EXPECT_TRUE(status.ok()) << status.error_message();
+}
+
+void XdsExtProcEnd2endTest::RunCloseTrailersTest(
+    TrailersCloseMockService::CloseStage stage, grpc::Status close_status,
+    bool failure_mode_allow, bool observability_mode,
+    grpc::StatusCode expected_status_code,
+    std::string expected_error_message) {
+  auto mock_service = std::make_shared<TrailersCloseMockService>(stage, close_status);
+  StartAlternativeServer(mock_service);
+  CreateAndStartBackends(1);
+  ResetStubWithUniqueArg();
+  using envoy::extensions::filters::http::ext_proc::v3::ProcessingMode;
+  auto ext_proc_config = ExternalProcessorBuilder()
+                             .SetTargetUri(alternative_ext_proc_server_->target())
+                             .SetInsecureChannelCredentials()
+                             .SetFailureModeAllow(failure_mode_allow)
+                             .SetObservabilityMode(observability_mode)
+                             .SetResponseTrailerMode(ProcessingMode::SEND)
+                             .Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+  RpcOptions rpc_options;
+  EchoResponse response;
+  Status status = SendRpcGetTrailers(rpc_options, &response, nullptr, nullptr);
+  EXPECT_EQ(status.error_code(), expected_status_code);
+  if (expected_status_code != StatusCode::OK && !expected_error_message.empty()) {
+    EXPECT_THAT(status.error_message(), ::testing::HasSubstr(expected_error_message));
+  }
+}
+
+// S1: Clean Close Before Trailers, Fail Closed -> Succeeds
+TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseBeforeResponseTrailersFailClosed) {
+  RunCloseTrailersTest(TrailersCloseMockService::CloseStage::kBeforeTrailers,
+                       grpc::Status::OK, /*failure_mode_allow=*/false,
+                       /*observability_mode=*/false, StatusCode::OK);
+}
+
+// S2: Clean Close Before Trailers, Fail Open -> Succeeds
+TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseBeforeResponseTrailersFailOpen) {
+  RunCloseTrailersTest(TrailersCloseMockService::CloseStage::kBeforeTrailers,
+                       grpc::Status::OK, /*failure_mode_allow=*/true,
+                       /*observability_mode=*/false, StatusCode::OK);
+}
+
+// S3: Clean Close Before Trailers, Observability, Fail Closed -> Succeeds
+TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseBeforeResponseTrailersObservabilityFailClosed) {
+  RunCloseTrailersTest(TrailersCloseMockService::CloseStage::kBeforeTrailers,
+                       grpc::Status::OK, /*failure_mode_allow=*/false,
+                       /*observability_mode=*/true, StatusCode::OK);
+}
+
+// S4: Clean Close Before Trailers, Observability, Fail Open -> Succeeds
+TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseBeforeResponseTrailersObservabilityFailOpen) {
+  RunCloseTrailersTest(TrailersCloseMockService::CloseStage::kBeforeTrailers,
+                       grpc::Status::OK, /*failure_mode_allow=*/true,
+                       /*observability_mode=*/true, StatusCode::OK);
+}
+
+// S5: Clean Close During Trailers, Fail Closed -> Succeeds
+TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseDuringResponseTrailersFailClosed) {
+  RunCloseTrailersTest(TrailersCloseMockService::CloseStage::kDuringTrailers,
+                       grpc::Status::OK, /*failure_mode_allow=*/false,
+                       /*observability_mode=*/false, StatusCode::OK);
+}
+
+// S6: Clean Close During Trailers, Fail Open -> Succeeds
+TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseDuringResponseTrailersFailOpen) {
+  RunCloseTrailersTest(TrailersCloseMockService::CloseStage::kDuringTrailers,
+                       grpc::Status::OK, /*failure_mode_allow=*/true,
+                       /*observability_mode=*/false, StatusCode::OK);
+}
+
+// S7: Clean Close During Trailers, Observability, Fail Closed -> Succeeds
+TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseDuringResponseTrailersObservabilityFailClosed) {
+  RunCloseTrailersTest(TrailersCloseMockService::CloseStage::kDuringTrailers,
+                       grpc::Status::OK, /*failure_mode_allow=*/false,
+                       /*observability_mode=*/true, StatusCode::OK);
+}
+
+// S8: Clean Close During Trailers, Observability, Fail Open -> Succeeds
+TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseDuringResponseTrailersObservabilityFailOpen) {
+  RunCloseTrailersTest(TrailersCloseMockService::CloseStage::kDuringTrailers,
+                       grpc::Status::OK, /*failure_mode_allow=*/true,
+                       /*observability_mode=*/true, StatusCode::OK);
+}
+
+// S9: Error Close Before Trailers, Fail Closed -> Fails
+TEST_P(XdsExtProcEnd2endTest, StreamErrorCloseBeforeResponseTrailersFailClosed) {
+  RunCloseTrailersTest(TrailersCloseMockService::CloseStage::kBeforeTrailers,
+                       grpc::Status(grpc::StatusCode::ABORTED, "Aborted before trailers"),
+                       /*failure_mode_allow=*/false, /*observability_mode=*/false,
+                       StatusCode::ABORTED, "Aborted before trailers");
+}
+
+// S10: Error Close Before Trailers, Fail Open -> Succeeds
+TEST_P(XdsExtProcEnd2endTest, StreamErrorCloseBeforeResponseTrailersFailOpen) {
+  RunCloseTrailersTest(TrailersCloseMockService::CloseStage::kBeforeTrailers,
+                       grpc::Status(grpc::StatusCode::ABORTED, "Aborted before trailers"),
+                       /*failure_mode_allow=*/true, /*observability_mode=*/false,
+                       StatusCode::OK);
+}
+
+// S11: Error Close During Trailers, Fail Closed -> Fails
+TEST_P(XdsExtProcEnd2endTest, StreamErrorCloseDuringResponseTrailersFailClosed) {
+  RunCloseTrailersTest(TrailersCloseMockService::CloseStage::kDuringTrailers,
+                       grpc::Status(grpc::StatusCode::ABORTED, "Aborted during trailers"),
+                       /*failure_mode_allow=*/false, /*observability_mode=*/false,
+                       StatusCode::ABORTED, "Aborted during trailers");
+}
+
+// S12: Error Close During Trailers, Fail Open -> Succeeds
+TEST_P(XdsExtProcEnd2endTest, StreamErrorCloseDuringResponseTrailersFailOpen) {
+  RunCloseTrailersTest(TrailersCloseMockService::CloseStage::kDuringTrailers,
+                       grpc::Status(grpc::StatusCode::ABORTED, "Aborted during trailers"),
+                       /*failure_mode_allow=*/true, /*observability_mode=*/false,
+                       StatusCode::OK);
 }
 
 }  // namespace

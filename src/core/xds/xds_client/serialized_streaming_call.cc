@@ -195,7 +195,7 @@ SerializedStreamingCall::~SerializedStreamingCall() {
 void SerializedStreamingCall::SendMessage(std::string payload) {
   auto state = std::make_shared<WriteState>();
   state->payload = std::move(payload);
-  mpsc_sender_.UnbufferedImmediateSend(std::shared_ptr<WriteState>(state), 1);
+  mpsc_sender_.UnbufferedImmediateSend(std::move(state), 1);
 }
 
 void SerializedStreamingCall::StartRecvMessage() {
