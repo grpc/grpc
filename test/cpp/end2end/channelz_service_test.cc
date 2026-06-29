@@ -408,7 +408,6 @@ TEST_P(ChannelzServerTest, HighStartId) {
 
 TEST_P(ChannelzServerTest, SuccessfulRequestTest) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   ResetStubs();
   ConfigureProxy(1);
   SendSuccessfulEcho(0);
@@ -425,7 +424,6 @@ TEST_P(ChannelzServerTest, SuccessfulRequestTest) {
 
 TEST_P(ChannelzServerTest, FailedRequestTest) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   ResetStubs();
   ConfigureProxy(1);
   SendFailedEcho(0);
@@ -442,7 +440,6 @@ TEST_P(ChannelzServerTest, FailedRequestTest) {
 
 TEST_P(ChannelzServerTest, ManyRequestsTest) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   ResetStubs();
   ConfigureProxy(1);
   // send some RPCs
@@ -481,7 +478,6 @@ TEST_P(ChannelzServerTest, ManyChannels) {
 
 TEST_P(ChannelzServerTest, ManySubchannels) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   ResetStubs();
   const int kNumChannels = 4;
   ConfigureProxy(kNumChannels);
@@ -565,7 +561,6 @@ TEST_P(ChannelzServerTest, BasicGetServerTest) {
 }
 
 TEST_P(ChannelzServerTest, ServerCallTest) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStubs();
   ConfigureProxy(1);
   const int kNumSuccess = 10;
@@ -594,7 +589,6 @@ TEST_P(ChannelzServerTest, ServerCallTest) {
 
 TEST_P(ChannelzServerTest, ManySubchannelsAndSockets) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   ResetStubs();
   const int kNumChannels = 4;
   ConfigureProxy(kNumChannels);
@@ -679,7 +673,6 @@ TEST_P(ChannelzServerTest, ManySubchannelsAndSockets) {
 
 TEST_P(ChannelzServerTest, StreamingRPC) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   ResetStubs();
   ConfigureProxy(1);
   const int kNumMessages = 5;
@@ -745,7 +738,6 @@ TEST_P(ChannelzServerTest, StreamingRPC) {
 }
 
 TEST_P(ChannelzServerTest, GetServerSocketsTest) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStubs();
   ConfigureProxy(1);
   GetServersRequest get_server_request;
@@ -806,7 +798,6 @@ TEST_P(ChannelzServerTest, GetServerSocketsTest) {
 
 TEST_P(ChannelzServerTest, GetServerSocketsPaginationTest) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   ResetStubs();
   ConfigureProxy(1);
   std::vector<std::unique_ptr<grpc::testing::EchoTestService::Stub>> stubs;
@@ -868,7 +859,6 @@ TEST_P(ChannelzServerTest, GetServerSocketsPaginationTest) {
 }
 
 TEST_P(ChannelzServerTest, GetServerListenSocketsTest) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   ResetStubs();
   ConfigureProxy(1);
   GetServersRequest get_server_request;
@@ -909,7 +899,6 @@ TEST_P(ChannelzServerTest, GetServerListenSocketsTest) {
 }
 
 TEST_P(ChannelzServerTest, GetListenSocketTest) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   ResetStubs();
   ConfigureProxy(1);
   GetServersRequest get_server_request;
