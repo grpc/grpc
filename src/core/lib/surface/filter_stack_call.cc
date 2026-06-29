@@ -461,32 +461,10 @@ void FilterStackCall::RecvTrailingFilter(grpc_metadata_batch* b,
   } else {
     std::optional<grpc_status_code> grpc_status = b->Take(GrpcStatusMetadata());
     if (grpc_status.has_value()) {
-      grpc_error_handle error;
-      if (IsErrorFlattenEnabled()) {
-        auto grpc_message = b->Take(GrpcMessageMetadata());
-        absl::string_view message;
-        if (grpc_message.has_value()) message = grpc_message->as_string_view();
-        error =
-            absl::Status(static_cast<absl::StatusCode>(*grpc_status), message);
-      } else {
-        grpc_status_code status_code = *grpc_status;
-        if (status_code != GRPC_STATUS_OK) {
-          Slice peer = GetPeerString();
-          error = grpc_error_set_int(
-              GRPC_ERROR_CREATE(absl::StrCat("Error received from peer ",
-                                             peer.as_string_view())),
-              StatusIntProperty::kRpcStatus,
-              static_cast<intptr_t>(status_code));
-        }
-        auto grpc_message = b->Take(GrpcMessageMetadata());
-        if (grpc_message.has_value()) {
-          error = grpc_error_set_str(error, StatusStrProperty::kGrpcMessage,
-                                     grpc_message->as_string_view());
-        } else if (!error.ok()) {
-          error =
-              grpc_error_set_str(error, StatusStrProperty::kGrpcMessage, "");
-        }
-      }
+      auto grpc_message = b->Take(GrpcMessageMetadata());
+      absl::string_view message;
+      if (grpc_message.has_value()) message = grpc_message->as_string_view();
+      absl::Status error(static_cast<absl::StatusCode>(*grpc_status), message);
       SetFinalStatus(error);
     } else if (!is_client()) {
       SetFinalStatus(absl::OkStatus());
@@ -932,10 +910,10 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
               Slice(grpc_slice_copy(
                   *op->data.send_status_from_server.status_details)));
           if (!status_error.ok()) {
-            status_error = grpc_error_set_str(
-                status_error, StatusStrProperty::kGrpcMessage,
+            status_error = AddMessageDetail(
                 StringViewFromSlice(
-                    *op->data.send_status_from_server.status_details));
+                    *op->data.send_status_from_server.status_details),
+                status_error);
           }
         }
 
