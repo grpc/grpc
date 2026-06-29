@@ -249,7 +249,6 @@ void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
     channel_args.SetString(GRPC_ARG_SERVICE_CONFIG, config.service_config);
   }
   grpc_init();
-
   std::shared_ptr<ServerCredentials> server_creds;
   if (config.server_credentials_options.has_value()) {
     server_creds = grpc::experimental::TlsServerCredentials(
@@ -257,7 +256,6 @@ void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
   } else {
     server_creds = grpc::InsecureServerCredentials();
   }
-
   grpc::ServerBuilder builder;
   int port;
   builder.AddListeningPort("0.0.0.0:0", std::move(server_creds), &port);

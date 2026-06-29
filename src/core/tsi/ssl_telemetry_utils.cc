@@ -93,7 +93,6 @@ TlsTelemetryHandshakeResult MapSslErrorToTlsTelemetryHandshakeResult(
     long verify_result) {
   TlsTelemetryHandshakeResult result =
       MapTsiResultToTlsTelemetryHandshakeResult(status);
-
   switch (ssl_error) {
     case SSL_ERROR_NONE: {
       TlsTelemetryHandshakeResult verify_res =
@@ -126,7 +125,6 @@ TlsTelemetryHandshakeResult MapSslErrorToTlsTelemetryHandshakeResult(
 #endif
           result = TlsTelemetryHandshakeResult::kCipherSuiteMismatch;
           break;
-
         // Protocol version unsupported failures
         case SSL_R_UNKNOWN_PROTOCOL:
         case SSL_R_UNKNOWN_SSL_VERSION:
@@ -141,12 +139,10 @@ TlsTelemetryHandshakeResult MapSslErrorToTlsTelemetryHandshakeResult(
 #endif
           result = TlsTelemetryHandshakeResult::kProtocolVersionUnsupported;
           break;
-
         // Inappropriate fallback
         case SSL_R_INAPPROPRIATE_FALLBACK:
           result = TlsTelemetryHandshakeResult::kInappropriateFallback;
           break;
-
         // No application protocol
 #if defined(OPENSSL_IS_BORINGSSL) || defined(SSL_R_NO_APPLICATION_PROTOCOL)
         case SSL_R_NO_APPLICATION_PROTOCOL:
@@ -161,26 +157,22 @@ TlsTelemetryHandshakeResult MapSslErrorToTlsTelemetryHandshakeResult(
           result = TlsTelemetryHandshakeResult::kNoApplicationProtocol;
           break;
 #endif
-
         // Cryptographic failures: Signature verification failed
         case SSL_R_BAD_SIGNATURE:
         case SSL_R_WRONG_SIGNATURE_TYPE:
           result = TlsTelemetryHandshakeResult::kSignatureVerificationFailed;
           break;
-
         // Cryptographic failures: Decryption failed
         case SSL_R_DECRYPTION_FAILED:
         case SSL_R_DECRYPTION_FAILED_OR_BAD_RECORD_MAC:
         case SSL_R_BLOCK_CIPHER_PAD_IS_WRONG:
           result = TlsTelemetryHandshakeResult::kDecryptionFailed;
           break;
-
         // Cryptographic failures: Key exchange failure
         case SSL_R_WRONG_CURVE:
         case SSL_R_BAD_ECPOINT:
           result = TlsTelemetryHandshakeResult::kKeyExchangeFailure;
           break;
-
         // Unexpected message
         case SSL_R_UNEXPECTED_MESSAGE:
         case SSL_R_UNEXPECTED_RECORD:
@@ -190,12 +182,10 @@ TlsTelemetryHandshakeResult MapSslErrorToTlsTelemetryHandshakeResult(
 #endif
           result = TlsTelemetryHandshakeResult::kUnexpectedMessage;
           break;
-
         // Handshake timeout
         case SSL_R_READ_TIMEOUT_EXPIRED:
           result = TlsTelemetryHandshakeResult::kHandshakeTimeout;
           break;
-
         // Certificate verification failures
         case SSL_R_CERTIFICATE_VERIFY_FAILED: {
           TlsTelemetryHandshakeResult verify_res =
@@ -210,14 +200,12 @@ TlsTelemetryHandshakeResult MapSslErrorToTlsTelemetryHandshakeResult(
           }
           break;
         }
-
         // Certificate malformed
 #if defined(OPENSSL_IS_BORINGSSL)
         case SSL_R_DECODE_ERROR:
           result = TlsTelemetryHandshakeResult::kCertificateMalformed;
           break;
 #endif
-
         // Peer Certificate required but missing
         case SSL_R_PEER_DID_NOT_RETURN_A_CERTIFICATE:
         case SSL_R_NO_CERTIFICATES_RETURNED:
@@ -230,7 +218,6 @@ TlsTelemetryHandshakeResult MapSslErrorToTlsTelemetryHandshakeResult(
           result =
               TlsTelemetryHandshakeResult::kPeerCertificateRequiredButMissing;
           break;
-
         // Internal / Resource failures
         case ERR_R_MALLOC_FAILURE:
         case ERR_R_INTERNAL_ERROR:
@@ -239,7 +226,6 @@ TlsTelemetryHandshakeResult MapSslErrorToTlsTelemetryHandshakeResult(
 #endif
           result = TlsTelemetryHandshakeResult::kInternalSystemError;
           break;
-
         default:
           // This branch should not be reached in practice. This is kept as a
           // safety - to reach this default, the error is NOT SSL_ERROR_NONE, so
@@ -254,7 +240,6 @@ TlsTelemetryHandshakeResult MapSslErrorToTlsTelemetryHandshakeResult(
     default:
       break;
   }
-
   return result;
 }
 

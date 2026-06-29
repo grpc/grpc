@@ -325,7 +325,6 @@ void tsi_ssl_handshaker::MaybeRecordTelemetry(
   absl::string_view resumed = active_ssl == nullptr            ? "unknown"
                               : SSL_session_reused(active_ssl) ? "true"
                                                                : "false";
-
   grpc_core::TlsTelemetryHandshakeResult result =
       grpc_core::TlsTelemetryHandshakeResult::kSuccess;
   if (handshake_result.tsi_handshake_result != TSI_OK) {
@@ -338,7 +337,6 @@ void tsi_ssl_handshaker::MaybeRecordTelemetry(
   }
   absl::string_view status_str =
       grpc_core::TlsTelemetryHandshakeResultToString(result);
-
   if (is_client) {
     auto storage = grpc_core::TlsClientHandshakeTelemetryDomain::GetStorage(
         collection_scope, status_str, target, resumed, locality,
@@ -347,7 +345,6 @@ void tsi_ssl_handshaker::MaybeRecordTelemetry(
         grpc_core::TlsClientHandshakeTelemetryDomain::kHandshakes);
   } else {
     metric_recorded = true;
-
     auto storage = grpc_core::TlsServerHandshakeTelemetryDomain::GetStorage(
         collection_scope, status_str, resumed);
     storage->Increment(

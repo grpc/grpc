@@ -1581,22 +1581,18 @@ TEST_P(SslTransportSecurityTest, TestHandshakeMetricsIncremented) {
   TestOnlyResetInstruments();
   auto root_scope = CreateRootCollectionScope(
       {"grpc.tls.handshake.result", "grpc.tls.handshake.resumed"}, 32, 32);
-
   TestMetricsSink sink_before;
   MetricsQuery()
       .OnlyMetrics({"grpc.client.tls.handshakes", "grpc.server.tls.handshakes"})
       .Run(root_scope, sink_before);
-
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
   ssl_fixture_->SetCollectionScope(root_scope);
   DoHandshake();
-
   TestMetricsSink sink_after;
   MetricsQuery()
       .OnlyMetrics({"grpc.client.tls.handshakes", "grpc.server.tls.handshakes"})
       .Run(root_scope, sink_after);
-
   const TestMetricsSink::Labels client_labels = {
       {"grpc.tls.handshake.result", "OK"},
       {"grpc.tls.handshake.resumed", "false"},
@@ -1617,28 +1613,23 @@ TEST_P(SslTransportSecurityTest, TestHandshakeMetricsIncremented) {
             sink_before.GetCount("grpc.server.tls.handshakes", server_labels) +
                 1);
 }
-
 TEST_P(SslTransportSecurityTest, TestBadServerCertMetricsIncremented) {
   TestOnlyResetInstruments();
   auto root_scope = CreateRootCollectionScope(
       {"grpc.tls.handshake.result", "grpc.tls.handshake.resumed"}, 32, 32);
-
   TestMetricsSink sink_before;
   MetricsQuery()
       .OnlyMetrics({"grpc.client.tls.handshakes", "grpc.server.tls.handshakes"})
       .Run(root_scope, sink_before);
-
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
   ssl_fixture_->MutableKeyCertLib()->use_bad_server_cert = true;
   ssl_fixture_->SetCollectionScope(root_scope);
   DoHandshake();
-
   TestMetricsSink sink_after;
   MetricsQuery()
       .OnlyMetrics({"grpc.client.tls.handshakes", "grpc.server.tls.handshakes"})
       .Run(root_scope, sink_after);
-
   // In an end2end flow, the server should see a metric recorded here. However,
   // in the unit test flow, when the client fails due to the bad server cert,
   // the handshaker exits immediately and the server handshaker is never called
@@ -1656,29 +1647,24 @@ TEST_P(SslTransportSecurityTest, TestBadServerCertMetricsIncremented) {
   EXPECT_EQ(sink_after.GetTotalCount("grpc.server.tls.handshakes"),
             sink_before.GetTotalCount("grpc.server.tls.handshakes"));
 }
-
 TEST_P(SslTransportSecurityTest, TestBadClientCertMetricsIncremented) {
   TestOnlyResetInstruments();
   auto root_scope = CreateRootCollectionScope(
       {"grpc.tls.handshake.result", "grpc.tls.handshake.resumed"}, 32, 32);
-
   TestMetricsSink sink_before;
   MetricsQuery()
       .OnlyMetrics({"grpc.client.tls.handshakes", "grpc.server.tls.handshakes"})
       .Run(root_scope, sink_before);
-
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
   ssl_fixture_->MutableKeyCertLib()->use_bad_client_cert = true;
   ssl_fixture_->SetForceClientAuth(true);
   ssl_fixture_->SetCollectionScope(root_scope);
   DoHandshake();
-
   TestMetricsSink sink_after;
   MetricsQuery()
       .OnlyMetrics({"grpc.client.tls.handshakes", "grpc.server.tls.handshakes"})
       .Run(root_scope, sink_after);
-
   // When the server rejects the client cert, the client will see handshake
   // success with TLS 1.3 but not with TLS 1.2
   bool is_tls_13 = (std::get<0>(GetParam()) == tsi_tls_version::TSI_TLS1_3);

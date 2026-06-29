@@ -462,13 +462,11 @@ TEST(SslTelemetryUtilsTest, TsiResultMappingAndFallbackTest) {
   EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(
                 TSI_OUT_OF_RESOURCES, SSL_ERROR_NONE, 0, X509_V_OK),
             TlsTelemetryHandshakeResult::kInternalSystemError);
-
   // Test that a specific SSL error overrides the tsi_result
   EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(
                 TSI_INTERNAL_ERROR, SSL_ERROR_SSL,
                 TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_NO_CIPHER_MATCH), X509_V_OK),
             TlsTelemetryHandshakeResult::kCipherSuiteMismatch);
-
   // Test that if SSL error is unknown, we fall back to the tsi_result mapping
   EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(
                 TSI_HANDSHAKE_SHUTDOWN, SSL_ERROR_SSL,

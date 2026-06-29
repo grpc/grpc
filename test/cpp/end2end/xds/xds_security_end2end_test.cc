@@ -552,7 +552,6 @@ TEST_P(XdsSecurityTest, TestTlsHandshakeTelemetry) {
   grpc_core::MetricsQuery()
       .OnlyMetrics({"grpc.client.tls.handshakes", "grpc.server.tls.handshakes"})
       .Run(stats_plugin_->GetCollectionScope(), sink_before);
-
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
                                           "", {}, authenticated_identity_);
