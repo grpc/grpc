@@ -22442,6 +22442,17 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
+- name: recv_message_filter_bypass_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/filters/recv_message_filter_bypass_test.cc
+  deps:
+  - gtest
+  - grpc_unsecure
+  - grpc_test_util
 - name: ref_counted_ptr_test
   gtest: true
   build: test
