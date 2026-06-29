@@ -1193,7 +1193,7 @@ absl::AnyInvocable<Poll<absl::Status>()> SendServerToClientMessagesRequest(
                   !ext_proc_call->IsStreamClosed();
               return If(
                   send_to_ext_proc_stream,
-                  [ext_proc_call, config,
+                  [handler, ext_proc_call, config,
                    message = std::move(message)]() mutable {
                     ext_proc_call->IncrementOutstandingServerToClientMessages();
                     absl::AnyInvocable<Poll<absl::Status>()> send_promise;
@@ -1205,8 +1205,24 @@ absl::AnyInvocable<Poll<absl::Status>()> SendServerToClientMessagesRequest(
                     }
                     return Map(
                         std::move(send_promise),
-                        [message = std::move(message)](
-                            absl::Status status) mutable { return status; });
+                        [handler, ext_proc_call,
+                         message = std::move(message)](
+                            absl::Status status) mutable -> absl::Status {
+                          if (!status.ok() || ext_proc_call->IsStreamClosed()) {
+                            if (ext_proc_call->IsStreamClosedCleanly() ||
+                                ext_proc_call->IsServerFailOpenAllowed()) {
+                              if (message != nullptr) {
+                                handler.SpawnPushMessage(std::move(message));
+                              }
+                              return absl::OkStatus();
+                            } else {
+                              return ext_proc_call->IsStreamClosed()
+                                         ? ext_proc_call->GetStreamErrorStatus()
+                                         : status;
+                            }
+                          }
+                          return absl::OkStatus();
+                        });
                   },
                   [handler, ext_proc_call, config,
                    message = std::move(message)]() mutable {
