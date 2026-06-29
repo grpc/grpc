@@ -32,12 +32,10 @@
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/status.h>
 
-#include <functional>
 #include <memory>
 #include <string>
 #include <thread>
 #include <utility>
-#include <vector>
 
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 #include "src/proto/grpc/testing/echo_messages.pb.h"
