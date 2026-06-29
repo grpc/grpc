@@ -130,6 +130,7 @@ BAZEL_DEPS = os.path.join(
     GRPC_ROOT, "tools", "distrib", "python", "bazel_deps.sh"
 )
 
+
 def _get_absl_windows_only_files():
     """Extract windows-only absl files from preprocessed_builds.yaml."""
     path = os.path.join("src", "abseil-cpp", "preprocessed_builds.yaml")
@@ -142,6 +143,7 @@ def _get_absl_windows_only_files():
             for src in spec["src_windows"]:
                 windows_only_files.add(src)
     return windows_only_files
+
 
 ABSL_WINDOWS_ONLY_FILES = _get_absl_windows_only_files()
 
@@ -245,7 +247,9 @@ def _generate_deps_file_content():
 
     deps_file_content = DEPS_FILE_CONTENT.format(
         cc_files=_pretty_print_list(sorted(list(cc_files))),
-        cc_files_windows_only=_pretty_print_list(sorted(list(cc_files_windows_only))),
+        cc_files_windows_only=_pretty_print_list(
+            sorted(list(cc_files_windows_only))
+        ),
         cc_includes=_pretty_print_list(CC_INCLUDES),
     )
     return deps_file_content

@@ -254,6 +254,7 @@ def _get_cc_files():
         cc_files += protoc_lib_deps.CC_FILES_WINDOWS_ONLY
     return [os.path.normpath(cc_file) for cc_file in cc_files]
 
+
 CC_FILES = _get_cc_files()
 
 

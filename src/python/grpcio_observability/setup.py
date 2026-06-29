@@ -218,11 +218,13 @@ EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
 if BUILD_WITH_STATIC_LIBSTDCXX:
     EXTRA_LINK_ARGS.append("-static-libstdc++")
 
+
 def _get_cc_files():
     cc_files = observability_lib_deps.CC_FILES
     if "win32" in sys.platform:
         cc_files += observability_lib_deps.CC_FILES_WINDOWS_ONLY
     return [os.path.normpath(cc_file) for cc_file in cc_files]
+
 
 CC_FILES = _get_cc_files()
 
