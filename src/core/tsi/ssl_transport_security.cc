@@ -335,8 +335,8 @@ void tsi_ssl_handshaker::MaybeRecordTelemetry(
         handshake_result.tsi_handshake_result, handshake_result.ssl_error,
         handshake_result.err_code, verify_res);
   }
-  std::string status_str =
-      std::string(grpc_core::TlsTelemetryHandshakeResultToString(result));
+  absl::string_view status_str =
+      grpc_core::TlsTelemetryHandshakeResultToString(result);
 
   if (is_client) {
     auto storage = grpc_core::TlsClientHandshakeTelemetryDomain::GetStorage(
