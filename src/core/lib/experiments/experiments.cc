@@ -54,6 +54,9 @@ const char* const additional_constraints_chaotic_good_send_supported_features =
 const char* const description_custom_frame_check =
     "Adding checks to custom HTTP2 frame.";
 const char* const additional_constraints_custom_frame_check = "{}";
+const char* const description_error_flatten =
+    "Flatten errors to ordinary absl::Status form.";
+const char* const additional_constraints_error_flatten = "{}";
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -313,6 +316,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true, true},
     {"custom_frame_check", description_custom_frame_check,
      additional_constraints_custom_frame_check, nullptr, 0, true, false},
+    {"error_flatten", description_error_flatten,
+     additional_constraints_error_flatten, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
     {"event_engine_dns", description_event_engine_dns,
@@ -525,6 +530,9 @@ const char* const additional_constraints_chaotic_good_send_supported_features =
 const char* const description_custom_frame_check =
     "Adding checks to custom HTTP2 frame.";
 const char* const additional_constraints_custom_frame_check = "{}";
+const char* const description_error_flatten =
+    "Flatten errors to ordinary absl::Status form.";
+const char* const additional_constraints_error_flatten = "{}";
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -784,6 +792,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true, true},
     {"custom_frame_check", description_custom_frame_check,
      additional_constraints_custom_frame_check, nullptr, 0, true, false},
+    {"error_flatten", description_error_flatten,
+     additional_constraints_error_flatten, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
     {"event_engine_dns", description_event_engine_dns,
@@ -996,6 +1006,9 @@ const char* const additional_constraints_chaotic_good_send_supported_features =
 const char* const description_custom_frame_check =
     "Adding checks to custom HTTP2 frame.";
 const char* const additional_constraints_custom_frame_check = "{}";
+const char* const description_error_flatten =
+    "Flatten errors to ordinary absl::Status form.";
+const char* const additional_constraints_error_flatten = "{}";
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -1255,6 +1268,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true, true},
     {"custom_frame_check", description_custom_frame_check,
      additional_constraints_custom_frame_check, nullptr, 0, true, false},
+    {"error_flatten", description_error_flatten,
+     additional_constraints_error_flatten, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
     {"event_engine_dns", description_event_engine_dns,
