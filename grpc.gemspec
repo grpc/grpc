@@ -1971,6 +1971,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/telemetry/stats_data.h )
   s.files += %w( src/core/telemetry/tcp_tracer.cc )
   s.files += %w( src/core/telemetry/tcp_tracer.h )
+  s.files += %w( src/core/telemetry/telemetry_label.h )
   s.files += %w( src/core/transport/auth_context.cc )
   s.files += %w( src/core/transport/auth_context.h )
   s.files += %w( src/core/transport/auth_context_comparator_registry.h )
