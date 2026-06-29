@@ -48,7 +48,7 @@ class SyncTestPrivateKeySigner final
   enum class Mode { kSuccess, kError };
 
   explicit SyncTestPrivateKeySigner(absl::string_view private_key,
-                           Mode mode = Mode::kSuccess);
+                                    Mode mode = Mode::kSuccess);
 
   std::variant<absl::StatusOr<std::string>,
                std::shared_ptr<grpc_core::PrivateKeySigner::AsyncSigningHandle>>
@@ -74,9 +74,9 @@ class AsyncTestPrivateKeySigner final
     grpc_event_engine::experimental::EventEngine::TaskHandle task_handle;
   };
 
-  explicit AsyncTestPrivateKeySigner(absl::string_view private_key,
-                            Mode mode = Mode::kSuccess,
-                            absl::Duration delay = absl::ZeroDuration());
+  explicit AsyncTestPrivateKeySigner(
+      absl::string_view private_key, Mode mode = Mode::kSuccess,
+      absl::Duration delay = absl::ZeroDuration());
 
   std::variant<absl::StatusOr<std::string>,
                std::shared_ptr<grpc_core::PrivateKeySigner::AsyncSigningHandle>>
