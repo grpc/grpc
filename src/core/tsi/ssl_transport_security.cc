@@ -2806,8 +2806,8 @@ static void ssl_handshaker_shutdown(tsi_handshaker* self) {
                     args.handshaker_result);
           }
         });
-  }
 #endif  // defined(OPENSSL_IS_BORINGSSL)
+  }
 }
 
 static const tsi_handshaker_vtable handshaker_vtable = {
