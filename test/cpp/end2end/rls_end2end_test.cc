@@ -1690,7 +1690,7 @@ TEST_F(RlsMetricsEnd2endTest, MetricValuesDefaultTargetRpcs) {
       ::testing::Optional(1));
 }
 
-TEST_F(RlsMetricsEnd2endTest, TelemetryLabelPropagated) {
+TEST_F(RlsMetricsEnd2endTest, TelemetryLabelPropagatedTargetPicks) {
   auto kMetricTargetPicks =
       grpc_core::GlobalInstrumentsRegistryTestPeer::
           FindUInt64CounterHandleByName("grpc.lb.rls.target_picks")
@@ -1715,30 +1715,130 @@ TEST_F(RlsMetricsEnd2endTest, TelemetryLabelPropagated) {
                                          kServiceValue, kMethodValue, kTestKey))
           .Build());
 
-  rls_server_->service_.SetResponse(
-      BuildRlsRequest({{kTestKey, rls_target0}}),
-      BuildRlsResponse({rls_target0}));
-  
+  rls_server_->service_.SetResponse(BuildRlsRequest({{kTestKey, rls_target0}}),
+                                    BuildRlsResponse({rls_target0}));
+
   ClientContext context;
   RpcOptions().set_metadata({{"key1", rls_target0}}).SetupRpc(&context);
-  context.SetContext(grpc::TelemetryLabel{"my_test_telemetry_label"});
-  
+  context.SetContext(grpc::TelemetryLabel{"custom_label"});
+
   EchoRequest request;
   request.set_message(kRequestMessage);
   EchoResponse response;
   auto status = stub_->Echo(&context, request, &response);
   EXPECT_TRUE(status.ok()) << status.error_message();
-  
+
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
-  
+
   // Check exported metrics has the telemetry label
-  EXPECT_THAT(
-      stats_plugin_->GetUInt64CounterValue(
-          kMetricTargetPicks,
-          {target_uri_, rls_server_target_, rls_target0, "complete"},
-          {"my_test_telemetry_label"}),
-      ::testing::Optional(1));
+  EXPECT_THAT(stats_plugin_->GetUInt64CounterValue(
+                  kMetricTargetPicks,
+                  {target_uri_, rls_server_target_, rls_target0, "complete"},
+                  {"custom_label"}),
+              ::testing::Optional(1));
+}
+
+TEST_F(RlsMetricsEnd2endTest, TelemetryLabelPropagatedFailedPick) {
+  auto kMetricFailedPicks =
+      grpc_core::GlobalInstrumentsRegistryTestPeer::
+          FindUInt64CounterHandleByName("grpc.lb.rls.failed_picks")
+              .value();
+  StartBackends(1);
+
+  SetNextResolution(
+      MakeServiceConfigBuilder()
+          .AddKeyBuilder(absl::StrFormat("\"names\":[{"
+                                         "  \"service\":\"%s\","
+                                         "  \"method\":\"%s\""
+                                         "}],"
+                                         "\"headers\":["
+                                         "  {"
+                                         "    \"key\":\"%s\","
+                                         "    \"names\":["
+                                         "      \"key1\""
+                                         "    ]"
+                                         "  }"
+                                         "]",
+                                         kServiceValue, kMethodValue, kTestKey))
+          .Build());
+
+  ClientContext context;
+  RpcOptions().set_metadata({{"key1", kTestValue}}).SetupRpc(&context);
+  context.SetContext(grpc::TelemetryLabel{"custom_label"});
+
+  EchoRequest request;
+  request.set_message(kRequestMessage);
+  EchoResponse response;
+  auto status = stub_->Echo(&context, request, &response);
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
+  EXPECT_EQ("RLS request failed: INTERNAL: no response entry",
+            status.error_message());
+
+  EXPECT_THAT(rls_server_->service_.GetUnmatchedRequests(),
+              ::testing::ElementsAre(::testing::Property(
+                  &RouteLookupRequest::DebugString,
+                  BuildRlsRequest({{kTestKey, kTestValue}}).DebugString())));
+  EXPECT_EQ(rls_server_->service_.request_count(), 1);
+  EXPECT_EQ(rls_server_->service_.response_count(), 0);
+  EXPECT_EQ(backends_[0]->service_.request_count(), 0);
+
+  EXPECT_THAT(stats_plugin_->GetUInt64CounterValue(
+                  kMetricFailedPicks, {target_uri_, rls_server_target_},
+                  {"custom_label"}),
+              ::testing::Optional(1));
+}
+
+TEST_F(RlsMetricsEnd2endTest, TelemetryLabelPropagatedDefaultTargetPick) {
+  auto kMetricDefaultTargetPicks =
+      grpc_core::GlobalInstrumentsRegistryTestPeer::
+          FindUInt64CounterHandleByName("grpc.lb.rls.default_target_picks")
+              .value();
+  StartBackends(1);
+  const std::string default_target = grpc_core::LocalIpUri(backends_[0]->port_);
+
+  SetNextResolution(
+      MakeServiceConfigBuilder()
+          .AddKeyBuilder(absl::StrFormat("\"names\":[{"
+                                         "  \"service\":\"%s\","
+                                         "  \"method\":\"%s\""
+                                         "}],"
+                                         "\"headers\":["
+                                         "  {"
+                                         "    \"key\":\"%s\","
+                                         "    \"names\":["
+                                         "      \"key1\""
+                                         "    ]"
+                                         "  }"
+                                         "]",
+                                         kServiceValue, kMethodValue, kTestKey))
+          .set_default_target(default_target)
+          .Build());
+
+  ClientContext context;
+  RpcOptions().set_metadata({{"key1", kTestValue}}).SetupRpc(&context);
+  context.SetContext(grpc::TelemetryLabel{"custom_label"});
+
+  EchoRequest request;
+  request.set_message(kRequestMessage);
+  EchoResponse response;
+  auto status = stub_->Echo(&context, request, &response);
+  EXPECT_TRUE(status.ok()) << status.error_message();
+
+  EXPECT_THAT(rls_server_->service_.GetUnmatchedRequests(),
+              ::testing::ElementsAre(::testing::Property(
+                  &RouteLookupRequest::DebugString,
+                  BuildRlsRequest({{kTestKey, kTestValue}}).DebugString())));
+  EXPECT_EQ(rls_server_->service_.request_count(), 1);
+  EXPECT_EQ(rls_server_->service_.response_count(), 0);
+  EXPECT_EQ(backends_[0]->service_.request_count(), 1);
+
+  EXPECT_THAT(stats_plugin_->GetUInt64CounterValue(
+                  kMetricDefaultTargetPicks,
+                  {target_uri_, rls_server_target_, default_target, "complete"},
+                  {"custom_label"}),
+              ::testing::Optional(1));
 }
 
 }  // namespace

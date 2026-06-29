@@ -124,13 +124,11 @@ constexpr absl::string_view kMetricLabelRlsInstanceUuid =
 constexpr absl::string_view kMetricRlsDataPlaneTarget =
     "grpc.lb.rls.data_plane_target";
 constexpr absl::string_view kMetricLabelPickResult = "grpc.lb.pick_result";
-
 constexpr absl::string_view kMetricLabelTelemetry = "grpc.client.call.custom";
 
 absl::string_view GetTelemetryLabel(const LoadBalancingPolicy::PickArgs& args) {
   if (args.call_state == nullptr) return "";
-  auto* lb_call_state =
-      static_cast<ClientChannelLbCallState*>(args.call_state);
+  auto* lb_call_state = static_cast<ClientChannelLbCallState*>(args.call_state);
   auto* telemetry_label_attribute =
       lb_call_state->GetCallAttribute<TelemetryLabelAttribute>();
   if (telemetry_label_attribute == nullptr) return "";
@@ -1047,10 +1045,9 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::PickFromDefaultTargetOrFail(
         << "[rlslb " << lb_policy_.get() << "] picker=" << this << ": "
         << reason << "; using default target";
     auto pick_result = default_child_policy_->Pick(args);
-    lb_policy_->MaybeExportPickCount(kMetricDefaultTargetPicks,
-                                     config_->default_target(),
-                                     config_->lookup_service(), pick_result,
-                                     telemetry_label);
+    lb_policy_->MaybeExportPickCount(
+        kMetricDefaultTargetPicks, config_->default_target(),
+        config_->lookup_service(), pick_result, telemetry_label);
     return pick_result;
   }
   GRPC_TRACE_LOG(rls_lb, INFO)
@@ -1192,9 +1189,9 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(
       << "; delegating";
   auto telemetry_label = GetTelemetryLabel(args);
   auto pick_result = child_policy_wrapper->Pick(args);
-  lb_policy_->MaybeExportPickCount(kMetricTargetPicks,
-                                   child_policy_wrapper->target(),
-                                   lookup_service, pick_result, telemetry_label);
+  lb_policy_->MaybeExportPickCount(
+      kMetricTargetPicks, child_policy_wrapper->target(), lookup_service,
+      pick_result, telemetry_label);
   // Add header data.
   if (!header_data_.empty()) {
     auto* complete_pick =

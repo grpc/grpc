@@ -15,9 +15,9 @@
 #ifndef GRPC_SRC_CORE_TELEMETRY_TELEMETRY_LABEL_H
 #define GRPC_SRC_CORE_TELEMETRY_TELEMETRY_LABEL_H
 
-#include <string_view>
-
 #include <grpc/context_types.h>
+
+#include <string_view>
 
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/service_config/service_config_call_data.h"
