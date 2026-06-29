@@ -67,6 +67,7 @@ class CallbackServerContext;
 namespace internal {
 template <class InputMessage, class OutputMessage>
 class CallbackUnaryCallImpl;
+
 template <class Request, class Response>
 class ClientCallbackReaderWriterImpl;
 template <class Response>
@@ -77,6 +78,12 @@ class ClientCallbackUnaryImpl;
 class ClientContextAccessor;
 class ClientAsyncResponseReaderHelper;
 }  // namespace internal
+
+namespace experimental {
+namespace internal {
+class ClientCallbackSessionImpl;
+}  // namespace internal
+}  // namespace experimental
 
 template <class R>
 class ClientReader;
@@ -450,6 +457,7 @@ class ClientContext {
   friend class grpc::internal::BlockingUnaryCallImpl;
   template <class InputMessage, class OutputMessage>
   friend class grpc::internal::CallbackUnaryCallImpl;
+  friend class experimental::internal::ClientCallbackSessionImpl;
   template <class Request, class Response>
   friend class grpc::internal::ClientCallbackReaderWriterImpl;
   template <class Response>

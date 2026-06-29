@@ -37,7 +37,6 @@ namespace grpc_core {
 // The implementation must be thread-safe, as `SelectCertificate` may be called
 // for multiple TLS handshakes at the same time.
 class CertificateSelector {
-// This will be an empty class without BoringSSL indicating it's not supported.
 #if defined(OPENSSL_IS_BORINGSSL)
  public:
   struct SelectCertificateInfo {

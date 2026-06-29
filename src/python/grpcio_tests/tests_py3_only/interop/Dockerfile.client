@@ -1,4 +1,4 @@
-FROM python:3.9-slim-bookworm
+FROM python:3.10-slim-bookworm
 
 RUN apt-get update -y && apt-get upgrade -y && apt-get install -y build-essential clang curl
 
@@ -8,14 +8,25 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 RUN mkdir /artifacts
 
 COPY . .
-RUN tools/bazel build -c dbg --config=python //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client
+# TODO(asheshvidyut): Remove `--@rules_python//python/config_settings:venvs_use_declare_symlink=no`
+# once rules_python is updated past 2.0.2 and the issue is resolved.
+# To reproduce the issue without this flag:
+# 1. Build this Docker image.
+# 2. Run the container: `docker run -it --entrypoint bash <image>`
+# 3. Execute the client using an absolute path: `/xds_interop_client`
+# It will fail with `ModuleNotFoundError: No module named 'encodings'`.
+RUN tools/bazel build \
+  -c dbg \
+  --config=python \
+  --@rules_python//python/config_settings:venvs_use_declare_symlink=no \
+  //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client
 RUN cp -rL /workdir/bazel-bin/src/python/grpcio_tests/tests_py3_only/interop/xds_interop_client* /artifacts/
 
 ENV TINI_VERSION v0.19.0
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
 RUN chmod +x /tini
 
-FROM python:3.9-slim-bookworm
+FROM python:3.10-slim-bookworm
 
 ENV GRPC_VERBOSITY="DEBUG"
 ENV GRPC_TRACE="xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,xds_cluster_resolver_lb,priority_lb,xds_cluster_impl_lb,weighted_target_lb,ring_hash_lb,outlier_detection_lb"

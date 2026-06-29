@@ -838,7 +838,8 @@ void ClientChannel::AddConnectivityWatcher(
 
 void ClientChannel::RemoveConnectivityWatcher(
     AsyncConnectivityStateWatcherInterface* watcher) {
-  auto self = RefAsSubclass<ClientChannel>();  // Held by callback.
+  WeakRefCountedPtr<ClientChannel> self =
+      WeakRefAsSubclass<ClientChannel>();  // Held by callback.
   work_serializer_->Run(
       [self, watcher]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->work_serializer_) {
         self->state_tracker_.RemoveWatcher(watcher);
@@ -897,10 +898,15 @@ void ClientChannel::Ping(grpc_completion_queue*, void*) {
 grpc_call* ClientChannel::CreateCall(
     grpc_call* parent_call, uint32_t propagation_mask,
     grpc_completion_queue* cq, grpc_pollset_set* /*pollset_set_alternative*/,
-    Slice path, std::optional<Slice> authority, Timestamp deadline, bool) {
+    Slice path, std::optional<Slice> authority, Timestamp deadline,
+    bool /*registered_method*/,
+    std::optional<absl::FunctionRef<void(Arena*)>> arena_init_function) {
   auto arena = call_arena_allocator()->MakeArena();
   arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine());
+  if (arena_init_function.has_value()) {
+    (*arena_init_function)(arena.get());
+  }
   return MakeClientCall(parent_call, propagation_mask, cq, std::move(path),
                         std::move(authority), false, deadline,
                         compression_options(), std::move(arena), Ref());
@@ -923,12 +929,10 @@ class FilterChainBuilderImpl final : public FilterChainBuilder {
  public:
   FilterChainBuilderImpl(
       bool enable_retries, const ChannelArgs& channel_args,
-      Blackboard* blackboard,
       std::function<void(ServerMetadata&)> on_server_trailing_metadata,
       RefCountedPtr<UnstartedCallDestination> destination)
       : enable_retries_(enable_retries),
         channel_args_(channel_args),
-        blackboard_(blackboard),
         on_server_trailing_metadata_(std::move(on_server_trailing_metadata)),
         destination_(std::move(destination)) {}
 
@@ -953,8 +957,7 @@ class FilterChainBuilderImpl final : public FilterChainBuilder {
   }
 
   void InitBuilder() {
-    builder_ =
-        std::make_unique<InterceptionChainBuilder>(channel_args_, blackboard_);
+    builder_ = std::make_unique<InterceptionChainBuilder>(channel_args_);
     if (on_server_trailing_metadata_ != nullptr) {
       builder_->AddOnServerTrailingMetadata(on_server_trailing_metadata_);
     }
@@ -964,7 +967,6 @@ class FilterChainBuilderImpl final : public FilterChainBuilder {
 
   const bool enable_retries_;
   const ChannelArgs channel_args_;
-  const Blackboard* blackboard_;
   const std::function<void(ServerMetadata&)> on_server_trailing_metadata_;
   const RefCountedPtr<UnstartedCallDestination> destination_;
   std::unique_ptr<InterceptionChainBuilder> builder_;
@@ -1391,15 +1393,13 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked(
   }
   // Modify channel args.
   ChannelArgs new_args = args.SetObject(this).SetObject(saved_service_config_);
-  // Construct filter stack.
-  auto new_blackboard = MakeRefCounted<Blackboard>();
   const bool enable_retries =
       !channel_args_.WantMinimalStack() &&
       channel_args_.GetBool(GRPC_ARG_ENABLE_RETRIES).value_or(true);
   if (enable_retries) {
-    RetryInterceptor::UpdateBlackboard(*saved_service_config_,
-                                       blackboard_.get(), new_blackboard.get());
+    retry_throttler_updater_.Update(*saved_service_config_, new_args);
   }
+  // Construct filter stack.
   std::function<void(ServerMetadata&)> on_server_trailing_metadata;
   if (idle_timeout_ != Duration::Zero()) {
     on_server_trailing_metadata = [this](ServerMetadata&) {
@@ -1407,11 +1407,9 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked(
     };
   }
   FilterChainBuilderImpl filter_chain_builder(
-      enable_retries, new_args, new_blackboard.get(),
-      std::move(on_server_trailing_metadata), call_destination_);
-  config_selector->BuildFilterChains(filter_chain_builder, blackboard_.get(),
-                                     new_blackboard.get());
-  blackboard_ = std::move(new_blackboard);
+      enable_retries, new_args, std::move(on_server_trailing_metadata),
+      call_destination_);
+  config_selector->BuildFilterChains(filter_chain_builder);
   resolver_data_for_calls_.Set(std::move(config_selector));
 }
 

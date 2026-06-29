@@ -70,7 +70,7 @@ ChannelStackBuilderImpl::Build() {
         grpc_channel_stack_destroy(stk);
         gpr_free(stk);
       },
-      channel_stack, stack, channel_args(), name(), channel_stack, blackboard_);
+      channel_stack, stack, channel_args(), name(), channel_stack);
 
   if (!error.ok()) {
     grpc_channel_stack_destroy(channel_stack);

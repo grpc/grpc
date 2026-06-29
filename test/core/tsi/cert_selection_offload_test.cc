@@ -20,7 +20,6 @@
 #include <openssl/bio.h>
 #include <openssl/pem.h>
 
-#include <atomic>
 #include <memory>
 #include <string>
 #include <utility>
@@ -52,6 +51,8 @@
 namespace grpc_core {
 namespace testing {
 namespace {
+
+using TaskHandle = grpc_event_engine::experimental::EventEngine::TaskHandle;
 
 constexpr absl::string_view kTestCredsRelativePath = "src/core/tsi/test_creds/";
 const char kServerName[] = "foo.test.google.fr";
@@ -109,17 +110,21 @@ class AsyncTestCertificateSelector : public CertificateSelector {
         event_engine_(std::move(event_engine)),
         expect_success_(expect_success) {}
 
+  class TestCertSelectionHandle : public AsyncCertificateSelectionHandle {
+   public:
+    explicit TestCertSelectionHandle(TaskHandle task_handle)
+        : task_handle_(task_handle) {}
+
+    TaskHandle task_handle_;
+  };
+
   std::variant<absl::StatusOr<SelectCertificateResult>,
                std::shared_ptr<AsyncCertificateSelectionHandle>>
   SelectCertificate(const SelectCertificateInfo& info,
                     OnSelectCertificateComplete on_complete) override {
-    event_engine_->RunAfter(
+    TaskHandle task_handle = event_engine_->RunAfter(
         Duration::Seconds(2),
         [this, info, on_complete = std::move(on_complete)]() mutable {
-          {
-            MutexLock lock(&mu_);
-            if (was_cancelled_) return;
-          }
           was_done_ = true;
           if (!expect_success_) {
             on_complete(
@@ -135,23 +140,17 @@ class AsyncTestCertificateSelector : public CertificateSelector {
           on_complete(
               CreateSelectCertificateResult(pem_cert_chain_, pem_private_key_));
         });
-    return std::make_shared<AsyncCertificateSelectionHandle>();
+    return std::make_shared<TestCertSelectionHandle>(task_handle);
   }
 
   void Cancel(
-      std::shared_ptr<AsyncCertificateSelectionHandle> /*handle*/) override {
-    MutexLock lock(&mu_);
-    if (was_cancelled_) {
-      return;
-    } else {
-      was_cancelled_ = true;
-    }
+      std::shared_ptr<AsyncCertificateSelectionHandle> handle) override {
+    event_engine_->Cancel(
+        DownCast<TestCertSelectionHandle*>(handle.get())->task_handle_);
+    was_cancelled_ = true;
   }
 
-  bool WasCancelled() {
-    MutexLock lock(&mu_);
-    return was_cancelled_;
-  }
+  bool WasCancelled() { return was_cancelled_; }
 
   bool WasDone() { return was_done_; }
 
@@ -162,7 +161,6 @@ class AsyncTestCertificateSelector : public CertificateSelector {
   std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
       event_engine_;
   bool expect_success_;
-  Mutex mu_;
   bool was_cancelled_ = false;
   bool was_done_ = false;
 };
@@ -285,10 +283,11 @@ class SslCertSelectorTsiTestFixture {
     tsi_handshaker* server_hs;
     ASSERT_EQ(tsi_ssl_client_handshaker_factory_create_handshaker(
                   client_handshaker_factory_, kServerName, 0, 0, std::nullopt,
-                  &client_hs),
+                  /*collection_scope=*/nullptr, &client_hs),
               TSI_OK);
     ASSERT_EQ(tsi_ssl_server_handshaker_factory_create_handshaker(
-                  server_handshaker_factory_, 0, 0, &server_hs),
+                  server_handshaker_factory_, 0, 0,
+                  /*collection_scope=*/nullptr, &server_hs),
               TSI_OK);
     base_.client_handshaker = client_hs;
     base_.server_handshaker = server_hs;
@@ -457,7 +456,8 @@ TEST_P(CertSelectionOffloadTest, AsyncCertSelectionCancelledAfterFinished) {
   event_engine_->RunAfter(Duration::Seconds(3),
                           [&fixture] { fixture->Shutdown(); });
   fixture->Run(/*expect_success=*/false, event_engine_.get());
-  EXPECT_TRUE(fixture->CertSelectionCancelled());
+  // The handle should have been reset by the handshaker so no cancellation.
+  EXPECT_FALSE(fixture->CertSelectionCancelled());
   EXPECT_TRUE(fixture->CertSelectionDone());
 }
 

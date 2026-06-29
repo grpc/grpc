@@ -36,14 +36,13 @@
 #include "envoy/type/matcher/v3/string.upb.h"
 #include "envoy/type/v3/range.upb.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "src/core/config/experiment_env_var.h"
 #include "src/core/ext/filters/rbac/rbac_filter.h"
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/down_cast.h"
-#include "src/core/util/env.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
-#include "src/core/util/string.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/xds/grpc/xds_audit_logger_registry.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
@@ -59,15 +58,6 @@
 namespace grpc_core {
 
 namespace {
-
-// TODO(lwge): Remove once the feature is stable.
-bool XdsRbacAuditLoggingEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
-  if (!value.has_value()) return false;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
-}
 
 Json ParseRegexMatcherToJson(
     const envoy_type_matcher_v3_RegexMatcher* regex_matcher) {
@@ -216,12 +206,16 @@ Json ParseMetadataMatcherToJson(
 }
 
 Json ParsePermissionToJson(const envoy_config_rbac_v3_Permission* permission,
-                           ValidationErrors* errors) {
+                           size_t depth, ValidationErrors* errors) {
+  if (depth > 16) {
+    errors->AddError("exceeded max recursion depth");
+    return Json();
+  }
   Json::Object permission_json;
   // Helper function to parse Permission::Set to JSON. Used by `and_rules` and
   // `or_rules`.
   auto parse_permission_set_to_json =
-      [errors](const envoy_config_rbac_v3_Permission_Set* set) -> Json {
+      [&](const envoy_config_rbac_v3_Permission_Set* set) -> Json {
     Json::Array rules_json;
     size_t size;
     const envoy_config_rbac_v3_Permission* const* rules =
@@ -229,7 +223,7 @@ Json ParsePermissionToJson(const envoy_config_rbac_v3_Permission* permission,
     for (size_t i = 0; i < size; ++i) {
       ValidationErrors::ScopedField field(errors,
                                           absl::StrCat(".rules[", i, "]"));
-      Json permission_json = ParsePermissionToJson(rules[i], errors);
+      Json permission_json = ParsePermissionToJson(rules[i], depth + 1, errors);
       rules_json.emplace_back(std::move(permission_json));
     }
     return Json::FromObject(
@@ -276,7 +270,8 @@ Json ParsePermissionToJson(const envoy_config_rbac_v3_Permission* permission,
   } else if (envoy_config_rbac_v3_Permission_has_not_rule(permission)) {
     ValidationErrors::ScopedField field(errors, ".not_rule");
     Json not_rule_json = ParsePermissionToJson(
-        envoy_config_rbac_v3_Permission_not_rule(permission), errors);
+        envoy_config_rbac_v3_Permission_not_rule(permission), depth + 1,
+        errors);
     permission_json.emplace("notRule", std::move(not_rule_json));
   } else if (envoy_config_rbac_v3_Permission_has_requested_server_name(
                  permission)) {
@@ -293,12 +288,16 @@ Json ParsePermissionToJson(const envoy_config_rbac_v3_Permission* permission,
 }
 
 Json ParsePrincipalToJson(const envoy_config_rbac_v3_Principal* principal,
-                          ValidationErrors* errors) {
+                          size_t depth, ValidationErrors* errors) {
+  if (depth > 16) {
+    errors->AddError("exceeded max recursion depth");
+    return Json();
+  }
   Json::Object principal_json;
   // Helper function to parse Principal::Set to JSON. Used by `and_ids` and
   // `or_ids`.
   auto parse_principal_set_to_json =
-      [errors](const envoy_config_rbac_v3_Principal_Set* set) -> Json {
+      [&](const envoy_config_rbac_v3_Principal_Set* set) -> Json {
     Json::Array ids_json;
     size_t size;
     const envoy_config_rbac_v3_Principal* const* ids =
@@ -306,7 +305,7 @@ Json ParsePrincipalToJson(const envoy_config_rbac_v3_Principal* principal,
     for (size_t i = 0; i < size; ++i) {
       ValidationErrors::ScopedField field(errors,
                                           absl::StrCat(".ids[", i, "]"));
-      Json principal_json = ParsePrincipalToJson(ids[i], errors);
+      Json principal_json = ParsePrincipalToJson(ids[i], depth + 1, errors);
       ids_json.emplace_back(std::move(principal_json));
     }
     return Json::FromObject({{"ids", Json::FromArray(std::move(ids_json))}});
@@ -368,7 +367,7 @@ Json ParsePrincipalToJson(const envoy_config_rbac_v3_Principal* principal,
   } else if (envoy_config_rbac_v3_Principal_has_not_id(principal)) {
     ValidationErrors::ScopedField field(errors, ".not_id");
     Json not_id_json = ParsePrincipalToJson(
-        envoy_config_rbac_v3_Principal_not_id(principal), errors);
+        envoy_config_rbac_v3_Principal_not_id(principal), depth + 1, errors);
     principal_json.emplace("notId", std::move(not_id_json));
   } else {
     errors->AddError("invalid rule");
@@ -386,7 +385,8 @@ Json ParsePolicyToJson(const envoy_config_rbac_v3_Policy* policy,
   for (size_t i = 0; i < size; ++i) {
     ValidationErrors::ScopedField field(errors,
                                         absl::StrCat(".permissions[", i, "]"));
-    Json permission_json = ParsePermissionToJson(permissions[i], errors);
+    Json permission_json =
+        ParsePermissionToJson(permissions[i], /*depth=*/0, errors);
     permissions_json.emplace_back(std::move(permission_json));
   }
   policy_json.emplace("permissions",
@@ -397,7 +397,8 @@ Json ParsePolicyToJson(const envoy_config_rbac_v3_Policy* policy,
   for (size_t i = 0; i < size; ++i) {
     ValidationErrors::ScopedField field(errors,
                                         absl::StrCat(".principals[", i, "]"));
-    Json principal_json = ParsePrincipalToJson(principals[i], errors);
+    Json principal_json =
+        ParsePrincipalToJson(principals[i], /*depth=*/0, errors);
     principals_json.emplace_back(std::move(principal_json));
   }
   policy_json.emplace("principals",
@@ -468,7 +469,8 @@ Json ParseHttpRbacToJson(const XdsResourceType::DecodeContext& context,
                               Json::FromObject(std::move(policies_object)));
     }
     // Flatten the nested messages defined in rbac.proto
-    if (XdsRbacAuditLoggingEnabled() &&
+    // TODO(lwge): Remove env var guard once the feature is stable.
+    if (IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING") &&
         envoy_config_rbac_v3_RBAC_has_audit_logging_options(rules)) {
       ValidationErrors::ScopedField field(errors, ".audit_logging_options");
       const auto* audit_logging_options =

@@ -244,15 +244,15 @@ void ServerCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
 grpc_call* MakeServerCall(CallHandler call_handler,
                           ClientMetadataHandle client_initial_metadata,
                           ServerInterface* server, grpc_completion_queue* cq,
-                          grpc_metadata_array* publish_initial_metadata) {
-  PublishMetadataArray(client_initial_metadata.get(), publish_initial_metadata,
-                       false);
+                          grpc_metadata_array* publish_initial_metadata,
+                          RefCountedPtr<Arena> parent_arena) {
   // TODO(ctiller): ideally we'd put this in the arena with the CallHandler,
   // but there's an ownership problem: CallHandler owns the arena, and so would
   // get destroyed before the base class Call destructor runs, leading to
   // UB/crash. Investigate another path.
   return (new ServerCall(std::move(client_initial_metadata),
-                         std::move(call_handler), server, cq))
+                         std::move(call_handler), server, cq,
+                         publish_initial_metadata, std::move(parent_arena)))
       ->c_ptr();
 }
 
