@@ -2760,16 +2760,10 @@ static tsi_result ssl_handshaker_next(
 
 static void ssl_handshaker_shutdown(tsi_handshaker* self) {
   tsi_ssl_handshaker* impl = static_cast<tsi_ssl_handshaker*>(self);
-<<<<<<< HEAD
-#if defined(OPENSSL_IS_BORINGSSL)
-  std::shared_ptr<grpc_core::PrivateKeySigner::AsyncSigningHandle>
-      signing_handle;
-#endif
-  == == == = std::shared_ptr<grpc_core::PrivateKeySigner> key_signer;
+  std::shared_ptr<grpc_core::PrivateKeySigner> key_signer;
   std::shared_ptr<grpc_core::PrivateKeySigner::AsyncSigningHandle>
       signing_handle;
   std::shared_ptr<AsyncCertificateSelectionHandle> cert_selection_handle;
->>>>>>> master
   std::optional<HandshakerNextArgs> next_args;
   {
     grpc_core::MutexLock lock(&impl->mu);
@@ -2951,32 +2945,14 @@ static tsi_result create_tsi_ssl_handshaker(
     SSL_set_accept_state(ssl);
   }
 
-<<<<<<< HEAD
-  impl = new tsi_ssl_handshaker();
-  impl->ssl = ssl;
-  impl->network_io = network_io;
-  impl->result = TSI_HANDSHAKE_IN_PROGRESS;
-  impl->outgoing_bytes_buffer_size =
-      TSI_SSL_HANDSHAKER_OUTGOING_BUFFER_INITIAL_SIZE;
-  impl->outgoing_bytes_buffer =
-      static_cast<unsigned char*>(gpr_zalloc(impl->outgoing_bytes_buffer_size));
-  impl->vtable = &handshaker_vtable;
-  impl->factory_ref = tsi_ssl_handshaker_factory_ref(factory);
-  impl->collection_scope = std::move(collection_scope);
-  impl->is_client = (is_client != 0);
+  tsi_ssl_handshaker* impl = new tsi_ssl_handshaker(
+      &handshaker_vtable, ssl, network_io,
+      tsi_ssl_handshaker_factory_ref(factory), std::move(collection_scope),
+      is_client, std::move(key_signer));
   impl->target =
       server_name_indication != nullptr ? server_name_indication : "unknown";
   impl->locality = std::move(locality);
   impl->backend_service = std::move(backend_service);
-#if defined(OPENSSL_IS_BORINGSSL)
-  impl->key_signer = std::move(key_signer);
-#endif
-
-  == == == = tsi_ssl_handshaker* impl = new tsi_ssl_handshaker(
-               &handshaker_vtable, ssl, network_io,
-               tsi_ssl_handshaker_factory_ref(factory),
-               std::move(collection_scope), is_client, std::move(key_signer));
->>>>>>> master
   *handshaker = impl;
 
   if (!SSL_set_ex_data(ssl, g_ssl_ex_handshaker_index, impl)) {
@@ -3096,29 +3072,15 @@ tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
   // because of SNI in ssl_server_handshaker_factory_servername_callback.
   // Likewise, we pass the private key signer corresponding to the first
   // context.
-<<<<<<< HEAD
-  return create_tsi_ssl_handshaker(
-      factory->ssl_contexts[0].ssl_ctx, 0, nullptr, network_bio_buf_size,
-      ssl_bio_buf_size, std::nullopt, factory->ssl_contexts[0].key_signer,
-      &factory->base, std::move(collection_scope),
-      /*locality=*/"", /*backend_service=*/"", handshaker);
-#else
-  return create_tsi_ssl_handshaker(
-      factory->ssl_contexts[0].ssl_ctx, 0, nullptr, network_bio_buf_size,
-      ssl_bio_buf_size, std::nullopt, /*key_signer=*/nullptr, &factory->base,
-      std::move(collection_scope), /*locality=*/"", /*backend_service=*/"",
-      handshaker);
-=======
   std::shared_ptr<grpc_core::PrivateKeySigner> key_signer;
 #if defined(OPENSSL_IS_BORINGSSL)
   key_signer = factory->ssl_contexts[0].key_signer;
->>>>>>> master
 #endif
   return create_tsi_ssl_handshaker(
-      factory->ssl_contexts[0].ssl_ctx, /*is_client=*/false, nullptr,
-      network_bio_buf_size, ssl_bio_buf_size, std::nullopt,
-      std::move(key_signer), &factory->base, std::move(collection_scope),
-      handshaker);
+      factory->ssl_contexts[0].ssl_ctx, 0, nullptr, network_bio_buf_size,
+      ssl_bio_buf_size, std::nullopt, std::move(key_signer), &factory->base,
+      std::move(collection_scope),
+      /*locality=*/"", /*backend_service=*/"", handshaker);
 }
 
 void tsi_ssl_server_handshaker_factory_unref(
