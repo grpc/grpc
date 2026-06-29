@@ -332,9 +332,13 @@ _PRIVATE_KEY_SIGNING_FILES = (
 
 GRPCIO_CC_SRCS += _PRIVATE_KEY_SIGNING_FILES
 
-CORE_C_FILES = tuple(grpc_core_dependencies.CORE_SOURCE_FILES)
+CORE_C_FILES = list(grpc_core_dependencies.CORE_SOURCE_FILES)
 if "win32" in sys.platform:
     CORE_C_FILES = filter(lambda x: "third_party/cares" not in x, CORE_C_FILES)
+    CORE_C_FILES = list(CORE_C_FILES) + list(
+        grpc_core_dependencies.WINDOWS_SOURCE_FILES
+    )
+CORE_C_FILES = tuple(CORE_C_FILES)
 
 if BUILD_WITH_SYSTEM_OPENSSL:
     CORE_C_FILES = filter(
