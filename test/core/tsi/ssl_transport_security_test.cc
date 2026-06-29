@@ -346,6 +346,10 @@ class SslTransportSecurityTest
       collection_scope_ = std::move(collection_scope);
     }
 
+    const std::string& server_name_indication() const {
+      return server_name_indication_;
+    }
+
    private:
     static void SetupHandshakers(tsi_test_fixture* fixture) {
       SslTsiTestFixture* ssl_fixture =
@@ -768,6 +772,12 @@ class SslTransportSecurityTest
         std::make_shared<SslTsiTestFixture>(tls_version, send_client_ca_list);
     ssl_tsi_test_fixture_ = ssl_fixture_->GetBaseFixture();
     fixture_destroyed = false;
+  }
+
+  std::string ExpectedTargetLabel() const {
+    return ssl_fixture_->server_name_indication().empty()
+               ? "<omitted>"
+               : ssl_fixture_->server_name_indication();
   }
 
   void DoHandshake() { tsi_test_do_handshake(ssl_tsi_test_fixture_); }
@@ -1543,23 +1553,20 @@ class TestMetricsSink : public MetricsSink {
   // (including dynamic target and empty locality/backend strings) which
   // would make tests verbose and fragile.
   uint64_t GetCount(const std::string& instrument_name,
-                    const Labels& subset) const {
+                    const Labels& labels) const {
+    auto it = data_.find(instrument_name);
+    if (it == data_.end()) return 0;
+    auto val_it = it->second.find(labels);
+    if (val_it == it->second.end()) return 0;
+    return val_it->second;
+  }
+
+  uint64_t GetTotalCount(const std::string& instrument_name) const {
     auto it = data_.find(instrument_name);
     if (it == data_.end()) return 0;
     uint64_t sum = 0;
     for (const auto& kv : it->second) {
-      const auto& labels = kv.first;
-      bool match = true;
-      for (const auto& sub_kv : subset) {
-        auto val_it = labels.find(sub_kv.first);
-        if (val_it == labels.end() || val_it->second != sub_kv.second) {
-          match = false;
-          break;
-        }
-      }
-      if (match) {
-        sum += kv.second;
-      }
+      sum += kv.second;
     }
     return sum;
   }
@@ -1590,21 +1597,24 @@ TEST_P(SslTransportSecurityTest, TestHandshakeMetricsIncremented) {
       .OnlyMetrics({"grpc.client.tls.handshakes", "grpc.server.tls.handshakes"})
       .Run(root_scope, sink_after);
 
+  const TestMetricsSink::Labels client_labels = {
+      {"grpc.tls.handshake.result", "OK"},
+      {"grpc.tls.handshake.resumed", "false"},
+      {"grpc.target", ExpectedTargetLabel()},
+      {"grpc.lb.locality", "<omitted>"},
+      {"grpc.lb.backend_service", "<omitted>"},
+  };
+  const TestMetricsSink::Labels server_labels = {
+      {"grpc.tls.handshake.result", "OK"},
+      {"grpc.tls.handshake.resumed", "false"},
+  };
   // Assert client handshake succeeded.
-  EXPECT_EQ(sink_after.GetCount("grpc.client.tls.handshakes",
-                                {{"grpc.tls.handshake.result", "OK"},
-                                 {"grpc.tls.handshake.resumed", "false"}}),
-            sink_before.GetCount("grpc.client.tls.handshakes",
-                                 {{"grpc.tls.handshake.result", "OK"},
-                                  {"grpc.tls.handshake.resumed", "false"}}) +
+  EXPECT_EQ(sink_after.GetCount("grpc.client.tls.handshakes", client_labels),
+            sink_before.GetCount("grpc.client.tls.handshakes", client_labels) +
                 1);
   // Assert server handshake succeeded.
-  EXPECT_EQ(sink_after.GetCount("grpc.server.tls.handshakes",
-                                {{"grpc.tls.handshake.result", "OK"},
-                                 {"grpc.tls.handshake.resumed", "false"}}),
-            sink_before.GetCount("grpc.server.tls.handshakes",
-                                 {{"grpc.tls.handshake.result", "OK"},
-                                  {"grpc.tls.handshake.resumed", "false"}}) +
+  EXPECT_EQ(sink_after.GetCount("grpc.server.tls.handshakes", server_labels),
+            sink_before.GetCount("grpc.server.tls.handshakes", server_labels) +
                 1);
 }
 
@@ -1633,16 +1643,18 @@ TEST_P(SslTransportSecurityTest, TestBadServerCertMetricsIncremented) {
   // in the unit test flow, when the client fails due to the bad server cert,
   // the handshaker exits immediately and the server handshaker is never called
   // again and is simply destroyed.
-  EXPECT_EQ(
-      sink_after.GetCount(
-          "grpc.client.tls.handshakes",
-          {{"grpc.tls.handshake.result", "CERTIFICATE_AUTHORITY_INVALID"}}),
-      sink_before.GetCount(
-          "grpc.client.tls.handshakes",
-          {{"grpc.tls.handshake.result", "CERTIFICATE_AUTHORITY_INVALID"}}) +
-          1);
-  EXPECT_EQ(sink_after.GetCount("grpc.server.tls.handshakes", {}),
-            sink_before.GetCount("grpc.server.tls.handshakes", {}));
+  const TestMetricsSink::Labels client_labels = {
+      {"grpc.tls.handshake.result", "CERTIFICATE_AUTHORITY_INVALID"},
+      {"grpc.tls.handshake.resumed", "false"},
+      {"grpc.target", ExpectedTargetLabel()},
+      {"grpc.lb.locality", "<omitted>"},
+      {"grpc.lb.backend_service", "<omitted>"},
+  };
+  EXPECT_EQ(sink_after.GetCount("grpc.client.tls.handshakes", client_labels),
+            sink_before.GetCount("grpc.client.tls.handshakes", client_labels) +
+                1);
+  EXPECT_EQ(sink_after.GetTotalCount("grpc.server.tls.handshakes"),
+            sink_before.GetTotalCount("grpc.server.tls.handshakes"));
 }
 
 TEST_P(SslTransportSecurityTest, TestBadClientCertMetricsIncremented) {
@@ -1670,27 +1682,28 @@ TEST_P(SslTransportSecurityTest, TestBadClientCertMetricsIncremented) {
   // When the server rejects the client cert, the client will see handshake
   // success with TLS 1.3 but not with TLS 1.2
   bool is_tls_13 = (std::get<0>(GetParam()) == tsi_tls_version::TSI_TLS1_3);
+  const TestMetricsSink::Labels client_labels = {
+      {"grpc.tls.handshake.result", "OK"},
+      {"grpc.tls.handshake.resumed", "false"},
+      {"grpc.target", ExpectedTargetLabel()},
+      {"grpc.lb.locality", "<omitted>"},
+      {"grpc.lb.backend_service", "<omitted>"},
+  };
+  const TestMetricsSink::Labels server_labels = {
+      {"grpc.tls.handshake.result", "CERTIFICATE_AUTHORITY_INVALID"},
+      {"grpc.tls.handshake.resumed", "false"},
+  };
   if (is_tls_13) {
-    EXPECT_EQ(sink_after.GetCount("grpc.client.tls.handshakes",
-                                  {{"grpc.tls.handshake.result", "OK"},
-                                   {"grpc.tls.handshake.resumed", "false"}}),
-              sink_before.GetCount("grpc.client.tls.handshakes",
-                                   {{"grpc.tls.handshake.result", "OK"},
-                                    {"grpc.tls.handshake.resumed", "false"}}) +
-                  1);
+    EXPECT_EQ(
+        sink_after.GetCount("grpc.client.tls.handshakes", client_labels),
+        sink_before.GetCount("grpc.client.tls.handshakes", client_labels) + 1);
   } else {
-    EXPECT_EQ(sink_after.GetCount("grpc.client.tls.handshakes", {}),
-              sink_before.GetCount("grpc.client.tls.handshakes", {}));
+    EXPECT_EQ(sink_after.GetTotalCount("grpc.client.tls.handshakes"),
+              sink_before.GetTotalCount("grpc.client.tls.handshakes"));
   }
-  EXPECT_EQ(sink_after.GetCount(
-                "grpc.server.tls.handshakes",
-                {{"grpc.tls.handshake.result", "CERTIFICATE_AUTHORITY_INVALID"},
-                 {"grpc.tls.handshake.resumed", "false"}}),
-            sink_before.GetCount(
-                "grpc.server.tls.handshakes",
-                {{"grpc.tls.handshake.result", "CERTIFICATE_AUTHORITY_INVALID"},
-                 {"grpc.tls.handshake.resumed", "false"}}) +
-                1);
+  EXPECT_EQ(
+      sink_after.GetCount("grpc.server.tls.handshakes", server_labels),
+      sink_before.GetCount("grpc.server.tls.handshakes", server_labels) + 1);
 }
 
 // Configuring key exchange groups requires SSL_CTX_set1_groups_list(),
