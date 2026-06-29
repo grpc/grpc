@@ -11,9 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from cpython.bytes cimport PyBytes_FromStringAndSize
+from cpython.bytes cimport PyBytes_FromStringAndSize, PyBytes_AsStringAndSize
 from libcpp.utility cimport move
-from cpython cimport PyObject, PyBytes_AsString, PyBytes_GET_SIZE
+from cpython cimport PyObject, PyBytes_AsString
 
 import threading
 
@@ -31,16 +31,22 @@ cdef class OnCompleteWrapper:
   def __call__(self, result):
     cdef StatusOr[string] cpp_result
     cdef string cpp_string
-    cdef shared_ptr[PrivateKeySignerPyWrapper.CompletionContext] locked_completion_context 
+    cdef shared_ptr[PrivateKeySignerPyWrapper.CompletionContext] locked_completion_context
     cdef PrivateKeySignerPyWrapper.CompletionContext* local_completion_context
+    cdef char* c_buffer
+    cdef Py_ssize_t c_size
+
     if isinstance(result, bytes):
-      # We got a signature
-      cpp_string = MakeStringForCython(PyBytes_AsString(result), PyBytes_GET_SIZE(result))
+      # We got a signature, safely extract both the pointer and the size
+      PyBytes_AsStringAndSize(result, &c_buffer, &c_size)
+      cpp_string = MakeStringForCython(c_buffer, c_size)
       cpp_result = MakeStringResult(cpp_string)
+
     elif isinstance(result, Exception):
       # If python returns an exception, convert to absl::Status
       cpp_string = MakeStringForCython(PyBytes_AsString(str(result).encode('utf-8')))
       cpp_result = MakeInternalError(cpp_string)
+
     else:
       # Any other return type is not valid
       cpp_string = MakeStringForCython(PyBytes_AsString(f"Invalid result type: {type(result)}".encode('utf-8')))
@@ -56,6 +62,9 @@ cdef PrivateKeySignerPyWrapper.PrivateKeySignerPyWrapperResult async_sign_wrappe
   cdef const char* data
   cdef size_t size
   cdef PrivateKeySignerPyWrapper.PrivateKeySignerPyWrapperResult cpp_result
+  cdef char* c_buffer
+  cdef Py_ssize_t c_size
+
   with gil:
     # Cast the PyObject* pointer holding the user's python sign impl
     py_user_func = <object>py_user_sign_fn
@@ -72,16 +81,22 @@ cdef PrivateKeySignerPyWrapper.PrivateKeySignerPyWrapperResult async_sign_wrappe
       size = inp.length()
       py_bytes = PyBytes_FromStringAndSize(data, size)
       py_result = py_user_func(py_bytes, algorithm, py_on_complete_wrapper)
+
       if isinstance(py_result, bytes):
-        # We got a signature
-        cpp_string = MakeStringForCython(PyBytes_AsString(py_result), PyBytes_GET_SIZE(py_result))
+        # We got a signature, process it
+
+        # This safely extracts both the pointer and the size via the Limited API
+        PyBytes_AsStringAndSize(py_result, &c_buffer, &c_size)
+        cpp_string = MakeStringForCython(c_buffer, c_size)
         cpp_result.sync_result = MakeStringResult(cpp_string)
+
       elif callable(py_result):
         # Cancellation func
         cpp_result.is_sync = False
         Py_INCREF(py_result)
         cpp_result.async_result.py_user_cancel_fn = <PyObject*> py_result
         cpp_result.async_result.cancel_wrapper = cancel_wrapper
+
       else:
         # Any other return type is not valid
         cpp_string = MakeStringForCython(PyBytes_AsString(f"Invalid result type: {type(py_result)}".encode('utf-8')))
