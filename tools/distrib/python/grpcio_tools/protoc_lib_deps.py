@@ -134,7 +134,6 @@ CC_FILES=[
     'third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_info.cc',
     'third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_libc.cc',
     'third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_lookup.cc',
-    'third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_name_win.cc',
     'third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_posix.cc',
     'third_party/abseil-cpp/absl/time/internal/cctz/src/zone_info_source.cc',
     'third_party/abseil-cpp/absl/time/time.cc',
@@ -386,6 +385,9 @@ CC_FILES=[
     'third_party/protobuf/upb_generator/minitable/names.cc',
     'third_party/protobuf/upb_generator/minitable/names_internal.cc',
     'third_party/protobuf/upb_generator/plugin.cc'
+]
+CC_FILES_WINDOWS_ONLY=[
+ 'third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_name_win.cc'
 ]
 
 PROTO_FILES=[
