@@ -41,8 +41,8 @@ using ::grpc_core::MapSslErrorToTlsTelemetryHandshakeResult;
 // Assumes TSI_OK as the baseline status.
 TlsTelemetryHandshakeResult MapSslErrorToTlsTelemetryHandshakeResult(
     int ssl_error, unsigned long err_code, long verify_result) {
-  return MapSslErrorToTlsTelemetryHandshakeResult(
-      TSI_OK, ssl_error, err_code, verify_result);
+  return MapSslErrorToTlsTelemetryHandshakeResult(TSI_OK, ssl_error, err_code,
+                                                  verify_result);
 }
 
 // Test cases that are common to both BoringSSL and OpenSSL builds
