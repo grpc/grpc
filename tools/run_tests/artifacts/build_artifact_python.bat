@@ -19,7 +19,7 @@ set PATH=C:\%1;C:\%1\scripts;%PATH%
 set PATH=C:\msys64\mingw%2\bin;C:\tools\msys64\mingw%2\bin;%PATH%
 :end_mingw64_installation
 
-python -m pip install --upgrade pip==25.2 six
+python -m pip install --upgrade pip six
 @rem Ping to a single version to make sure we're building the same artifacts
 python -m pip install setuptools==77.0.1 wheel==0.43.0
 python -m pip install --upgrade "cython==3.1.1"
@@ -59,7 +59,10 @@ python -m build --no-isolation --wheel || goto :error
 popd
 
 @rem Ensure the generate artifacts are valid.
-python -m pip install packaging==21.3 twine==5.0.0
+@rem Use --user so the install also works on Kokoro VMs whose system
+@rem site-packages dir has restricted permissions (see e.g. Permission denied
+@rem on zipp-*-dist-info/INSTALLER when installing twine without --user).
+python -m pip install --user packaging==21.3 twine==5.0.0
 python -m twine check dist\* tools\distrib\python\grpcio_tools\dist\* || goto :error
 
 xcopy /Y /I /S dist\* %ARTIFACT_DIR% || goto :error
