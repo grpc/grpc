@@ -2846,7 +2846,7 @@ static tsi_result create_tsi_ssl_handshaker(
     std::shared_ptr<grpc_core::PrivateKeySigner> key_signer,
     tsi_ssl_handshaker_factory* factory,
     grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope,
-    std::string locality, std::string backend_service,
+    std::string target, std::string locality, std::string backend_service,
     tsi_handshaker** handshaker) {
   SSL* ssl = SSL_new(ctx);
   BIO* network_io = nullptr;
@@ -2944,8 +2944,7 @@ static tsi_result create_tsi_ssl_handshaker(
       &handshaker_vtable, ssl, network_io,
       tsi_ssl_handshaker_factory_ref(factory), std::move(collection_scope),
       is_client, std::move(key_signer));
-  impl->target =
-      server_name_indication != nullptr ? server_name_indication : "unknown";
+  impl->target = std::move(target);
   impl->locality = std::move(locality);
   impl->backend_service = std::move(backend_service);
   *handshaker = impl;
@@ -2993,7 +2992,7 @@ tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
     size_t ssl_bio_buf_size,
     std::optional<std::string> alpn_preferred_protocol_list,
     grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope,
-    std::string locality, std::string backend_service,
+    std::string target, std::string locality, std::string backend_service,
     tsi_handshaker** handshaker) {
   GRPC_TRACE_LOG(tsi, INFO)
       << "Creating SSL handshaker with SNI " << server_name_indication;
@@ -3005,7 +3004,8 @@ tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
       factory->ssl_context, /*is_client=*/true, server_name_indication,
       network_bio_buf_size, ssl_bio_buf_size, alpn_preferred_protocol_list,
       std::move(key_signer), &factory->base, std::move(collection_scope),
-      std::move(locality), std::move(backend_service), handshaker);
+      std::move(target), std::move(locality), std::move(backend_service),
+      handshaker);
 }
 
 void tsi_ssl_client_handshaker_factory_unref(
@@ -3061,7 +3061,7 @@ tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
       factory->ssl_contexts[0].ssl_ctx, /*is_client=*/false,
       /*server_name_indication=*/nullptr, network_bio_buf_size,
       ssl_bio_buf_size, std::nullopt, std::move(key_signer), &factory->base,
-      std::move(collection_scope),
+      std::move(collection_scope), /*target=*/"",
       /*locality=*/"", /*backend_service=*/"", handshaker);
 }
 

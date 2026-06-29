@@ -372,12 +372,13 @@ void TlsChannelSecurityConnector::add_handshakers(
     std::string backend_service(
         args.GetString(GRPC_ARG_BACKEND_SERVICE).value_or(""));
     std::string locality(args.GetString(GRPC_ARG_LB_LOCALITY).value_or(""));
+    std::string target(args.GetString("grpc.server_uri").value_or(""));
     tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
         client_handshaker_factory_, server_name_indication,
         /*network_bio_buf_size=*/0,
         /*ssl_bio_buf_size=*/0,
         args.GetOwnedString(GRPC_ARG_TRANSPORT_PROTOCOLS),
-        std::move(collection_scope), std::move(locality),
+        std::move(collection_scope), std::move(target), std::move(locality),
         std::move(backend_service), &tsi_hs);
     if (result != TSI_OK) {
       LOG(ERROR) << "Handshaker creation failed with error "

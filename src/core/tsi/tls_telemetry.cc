@@ -14,8 +14,6 @@
 
 #include "src/core/tsi/tls_telemetry.h"
 
-#include <grpc/support/port_platform.h>  // IWYU pragma: keep
-
 #include "src/core/telemetry/instrument.h"
 
 namespace grpc_core {

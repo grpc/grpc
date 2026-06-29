@@ -452,18 +452,19 @@ class SslTransportSecurityTest
         gpr_free(server_options.alpn_protocols);
       }
       // Create server and client handshakers.
-      ASSERT_EQ(
-          tsi_ssl_client_handshaker_factory_create_handshaker(
-              ssl_fixture->client_handshaker_factory_,
-              ssl_fixture->server_name_indication_.empty()
-                  ? nullptr
-                  : ssl_fixture->server_name_indication_.c_str(),
-              ssl_fixture->network_bio_buf_size_,
-              ssl_fixture->ssl_bio_buf_size_,
-              ssl_fixture->alpn_client_overriden_protocols_,
-              ssl_fixture->collection_scope_, /*locality=*/"",
-              /*backend_service=*/"", &ssl_fixture->base_.client_handshaker),
-          TSI_OK);
+      ASSERT_EQ(tsi_ssl_client_handshaker_factory_create_handshaker(
+                    ssl_fixture->client_handshaker_factory_,
+                    ssl_fixture->server_name_indication_.empty()
+                        ? nullptr
+                        : ssl_fixture->server_name_indication_.c_str(),
+                    ssl_fixture->network_bio_buf_size_,
+                    ssl_fixture->ssl_bio_buf_size_,
+                    ssl_fixture->alpn_client_overriden_protocols_,
+                    ssl_fixture->collection_scope_,
+                    /*target=*/ssl_fixture->server_name_indication_,
+                    /*locality=*/"", /*backend_service=*/"",
+                    &ssl_fixture->base_.client_handshaker),
+                TSI_OK);
       ASSERT_EQ(
           tsi_ssl_server_handshaker_factory_create_handshaker(
               ssl_fixture->server_handshaker_factory_,
@@ -752,7 +753,7 @@ class SslTransportSecurityTest
     // intent.
     bool server_expects_handshake_failure_ = false;
     bool client_expects_handshake_failure_ = false;
-    RefCountedPtr<CollectionScope> collection_scope_ = nullptr;
+    RefCountedPtr<CollectionScope> collection_scope_;
   };
 
   SslTransportSecurityTest() { grpc_init(); }
@@ -1221,8 +1222,8 @@ TEST(SslTransportSecurityTest, TestClientHandshakerFactoryRefcounting) {
     ASSERT_EQ(tsi_ssl_client_handshaker_factory_create_handshaker(
                   client_handshaker_factory, "google.com", 0, 0,
                   /*alpn_preferred_protocol_list=*/std::nullopt,
-                  /*collection_scope=*/nullptr, /*locality=*/"",
-                  /*backend_service=*/"", &handshaker[i]),
+                  /*collection_scope=*/nullptr, /*target=*/"google.com",
+                  /*locality=*/"", /*backend_service=*/"", &handshaker[i]),
               TSI_OK);
   }
 

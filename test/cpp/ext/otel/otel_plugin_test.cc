@@ -1513,7 +1513,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ClientHandshakes) {
   const auto* target_value =
       std::get_if<std::string>(&attributes.at("grpc.target"));
   ASSERT_NE(target_value, nullptr);
-  EXPECT_EQ(*target_value, "foo.test.google.fr");
+  EXPECT_EQ(*target_value, canonical_server_address_);
   const auto* resumed_value =
       std::get_if<std::string>(&attributes.at("grpc.tls.handshake.resumed"));
   ASSERT_NE(resumed_value, nullptr);
@@ -1630,7 +1630,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, HandshakesWithBadServerCert) {
   const auto* target_value =
       std::get_if<std::string>(&attributes.at("grpc.target"));
   ASSERT_NE(target_value, nullptr);
-  EXPECT_EQ(*target_value, "foo.test.google.fr");
+  EXPECT_EQ(*target_value, canonical_server_address_);
   const auto* resumed_value =
       std::get_if<std::string>(&attributes.at("grpc.tls.handshake.resumed"));
   ASSERT_NE(resumed_value, nullptr);
