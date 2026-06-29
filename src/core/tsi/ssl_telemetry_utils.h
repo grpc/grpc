@@ -62,6 +62,7 @@ enum class TlsTelemetryHandshakeResult {
 // Maps different kinds of handshake/SSL/TLS errors to a unified
 // TlsTelemetryHandshakeResult.
 //
+// - status: the tsi_result status of the overall TSI implementation.
 // - ssl_error: the return code from SSL_get_error().
 // - err_code: the packed error code from the OpenSSL error queue
 // (ERR_get_error()).
@@ -71,16 +72,14 @@ enum class TlsTelemetryHandshakeResult {
 // - Returns the corresponding TlsTelemetryHandshakeResult mapping for the
 // failures.
 TlsTelemetryHandshakeResult MapSslErrorToTlsTelemetryHandshakeResult(
-    int ssl_error, unsigned long err_code, long verify_result);
-
-// Maps a tsi_result to the corresponding TlsTelemetryHandshakeResult.
-TlsTelemetryHandshakeResult MapTsiResultToTlsTelemetryHandshakeResult(
-    tsi_result status);
+    tsi_result status, int ssl_error, unsigned long err_code,
+    long verify_result);
 
 // Converts the C-Core enum into a cross-language-consistent string
 // representation for monitoring.
 absl::string_view TlsTelemetryHandshakeResultToString(
     TlsTelemetryHandshakeResult result);
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_TSI_SSL_TELEMETRY_UTILS_H

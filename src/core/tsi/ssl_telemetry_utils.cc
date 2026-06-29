@@ -26,6 +26,25 @@
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
+namespace {
+// Most of the TSI error states are relateively generic and don't allow us to
+// report more granular failure details.
+TlsTelemetryHandshakeResult MapTsiResultToTlsTelemetryHandshakeResult(
+    tsi_result status) {
+  switch (status) {
+    case TSI_OK:
+      return TlsTelemetryHandshakeResult::kSuccess;
+    case TSI_HANDSHAKE_SHUTDOWN:
+      return TlsTelemetryHandshakeResult::kCancelled;
+    case TSI_CLOSE_NOTIFY:
+      return TlsTelemetryHandshakeResult::kPeerConnectionClosed;
+    case TSI_OUT_OF_RESOURCES:
+      return TlsTelemetryHandshakeResult::kInternalSystemError;
+    default:
+      return TlsTelemetryHandshakeResult::kInternalSystemError;
+  }
+}
+}  // namespace
 
 #if defined(OPENSSL_IS_BORINGSSL)
 
@@ -74,122 +93,142 @@ TlsTelemetryHandshakeResult MapVerifyResultToTlsTelemetryHandshakeResult(
 }  // namespace
 
 TlsTelemetryHandshakeResult MapSslErrorToTlsTelemetryHandshakeResult(
-    int ssl_error, unsigned long err_code, long verify_result) {
-  if (ssl_error == SSL_ERROR_NONE) {
-    return MapVerifyResultToTlsTelemetryHandshakeResult(verify_result);
-  }
+    tsi_result status, int ssl_error, unsigned long err_code,
+    long verify_result) {
+  TlsTelemetryHandshakeResult result =
+      MapTsiResultToTlsTelemetryHandshakeResult(status);
 
-  if (ssl_error == SSL_ERROR_ZERO_RETURN) {
-    return TlsTelemetryHandshakeResult::kPeerConnectionClosed;
-  }
+  switch (ssl_error) {
+    case SSL_ERROR_NONE:
+      result = MapVerifyResultToTlsTelemetryHandshakeResult(verify_result);
+      break;
+    case SSL_ERROR_ZERO_RETURN:
+      result = TlsTelemetryHandshakeResult::kPeerConnectionClosed;
+      break;
+    case SSL_ERROR_SYSCALL:
+      result = TlsTelemetryHandshakeResult::kPeerConnectionClosed;
+      break;
+    case SSL_ERROR_SSL: {
+      int reason = ERR_GET_REASON(err_code);
+      switch (reason) {
+        // Cipher suite mismatch failures
+        case SSL_R_NO_CIPHERS_AVAILABLE:
+        case SSL_R_NO_CIPHERS_PASSED:
+        case SSL_R_NO_CIPHER_MATCH:
+        case SSL_R_NO_SHARED_CIPHER:
+        case SSL_R_REQUIRED_CIPHER_MISSING:
+        case SSL_R_UNSUPPORTED_CIPHER:
+        case SSL_R_WRONG_CIPHER_RETURNED:
+        case SSL_R_CIPHER_MISMATCH_ON_EARLY_DATA:
+        case SSL_R_CIPHER_OR_HASH_UNAVAILABLE:
+          result = TlsTelemetryHandshakeResult::kCipherSuiteMismatch;
+          break;
 
-  if (ssl_error == SSL_ERROR_SYSCALL) {
-    return TlsTelemetryHandshakeResult::kPeerConnectionClosed;
-  }
+        // Protocol version unsupported failures
+        case SSL_R_UNKNOWN_PROTOCOL:
+        case SSL_R_UNKNOWN_SSL_VERSION:
+        case SSL_R_UNSUPPORTED_PROTOCOL:
+        case SSL_R_WRONG_SSL_VERSION:
+        case SSL_R_WRONG_VERSION_NUMBER:
+        case SSL_R_UNSUPPORTED_PROTOCOL_FOR_CUSTOM_KEY:
+        case SSL_R_WRONG_VERSION_ON_EARLY_DATA:
+        case SSL_R_NO_SUPPORTED_VERSIONS_ENABLED:
+        case SSL_R_SECOND_SERVERHELLO_VERSION_MISMATCH:
+          result = TlsTelemetryHandshakeResult::kProtocolVersionUnsupported;
+          break;
 
-  if (ssl_error == SSL_ERROR_SSL) {
-    int reason = ERR_GET_REASON(err_code);
-    switch (reason) {
-      // Cipher suite mismatch failures
-      case SSL_R_NO_CIPHERS_AVAILABLE:
-      case SSL_R_NO_CIPHERS_PASSED:
-      case SSL_R_NO_CIPHER_MATCH:
-      case SSL_R_NO_SHARED_CIPHER:
-      case SSL_R_REQUIRED_CIPHER_MISSING:
-      case SSL_R_UNSUPPORTED_CIPHER:
-      case SSL_R_WRONG_CIPHER_RETURNED:
-      case SSL_R_CIPHER_MISMATCH_ON_EARLY_DATA:
-      case SSL_R_CIPHER_OR_HASH_UNAVAILABLE:
-        return TlsTelemetryHandshakeResult::kCipherSuiteMismatch;
+        // Inappropriate fallback
+        case SSL_R_INAPPROPRIATE_FALLBACK:
+          result = TlsTelemetryHandshakeResult::kInappropriateFallback;
+          break;
 
-      // Protocol version unsupported failures
-      case SSL_R_UNKNOWN_PROTOCOL:
-      case SSL_R_UNKNOWN_SSL_VERSION:
-      case SSL_R_UNSUPPORTED_PROTOCOL:
-      case SSL_R_WRONG_SSL_VERSION:
-      case SSL_R_WRONG_VERSION_NUMBER:
-      case SSL_R_UNSUPPORTED_PROTOCOL_FOR_CUSTOM_KEY:
-      case SSL_R_WRONG_VERSION_ON_EARLY_DATA:
-      case SSL_R_NO_SUPPORTED_VERSIONS_ENABLED:
-      case SSL_R_SECOND_SERVERHELLO_VERSION_MISMATCH:
-        return TlsTelemetryHandshakeResult::kProtocolVersionUnsupported;
+        // No application protocol
+        case SSL_R_NO_APPLICATION_PROTOCOL:
+        case SSL_R_INVALID_ALPN_PROTOCOL:
+        case SSL_R_INVALID_ALPN_PROTOCOL_LIST:
+        case SSL_R_NEGOTIATED_BOTH_NPN_AND_ALPN:
+        case SSL_R_ALPN_MISMATCH_ON_EARLY_DATA:
+          result = TlsTelemetryHandshakeResult::kNoApplicationProtocol;
+          break;
 
-      // Inappropriate fallback
-      case SSL_R_INAPPROPRIATE_FALLBACK:
-        return TlsTelemetryHandshakeResult::kInappropriateFallback;
+        // Cryptographic failures: Signature verification failed
+        case SSL_R_BAD_SIGNATURE:
+        case SSL_R_WRONG_SIGNATURE_TYPE:
+          result = TlsTelemetryHandshakeResult::kSignatureVerificationFailed;
+          break;
 
-      // No application protocol
-      case SSL_R_NO_APPLICATION_PROTOCOL:
-      case SSL_R_INVALID_ALPN_PROTOCOL:
-      case SSL_R_INVALID_ALPN_PROTOCOL_LIST:
-      case SSL_R_NEGOTIATED_BOTH_NPN_AND_ALPN:
-      case SSL_R_ALPN_MISMATCH_ON_EARLY_DATA:
-        return TlsTelemetryHandshakeResult::kNoApplicationProtocol;
+        // Cryptographic failures: Decryption failed
+        case SSL_R_DECRYPTION_FAILED:
+        case SSL_R_DECRYPTION_FAILED_OR_BAD_RECORD_MAC:
+        case SSL_R_BLOCK_CIPHER_PAD_IS_WRONG:
+          result = TlsTelemetryHandshakeResult::kDecryptionFailed;
+          break;
 
-      // Cryptographic failures: Signature verification failed
-      case SSL_R_BAD_SIGNATURE:
-      case SSL_R_WRONG_SIGNATURE_TYPE:
-        return TlsTelemetryHandshakeResult::kSignatureVerificationFailed;
+        // Cryptographic failures: Key exchange failure
+        case SSL_R_WRONG_CURVE:
+        case SSL_R_BAD_ECPOINT:
+          result = TlsTelemetryHandshakeResult::kKeyExchangeFailure;
+          break;
 
-      // Cryptographic failures: Decryption failed
-      case SSL_R_DECRYPTION_FAILED:
-      case SSL_R_DECRYPTION_FAILED_OR_BAD_RECORD_MAC:
-      case SSL_R_BLOCK_CIPHER_PAD_IS_WRONG:
-        return TlsTelemetryHandshakeResult::kDecryptionFailed;
+        // Unexpected message
+        case SSL_R_UNEXPECTED_MESSAGE:
+        case SSL_R_UNEXPECTED_RECORD:
+        case SSL_R_APP_DATA_IN_HANDSHAKE:
+        case SSL_R_EXCESS_HANDSHAKE_DATA:
+          result = TlsTelemetryHandshakeResult::kUnexpectedMessage;
+          break;
 
-      // Cryptographic failures: Key exchange failure
-      case SSL_R_WRONG_CURVE:
-      case SSL_R_BAD_ECPOINT:
-        return TlsTelemetryHandshakeResult::kKeyExchangeFailure;
+        // Handshake timeout
+        case SSL_R_READ_TIMEOUT_EXPIRED:
+          result = TlsTelemetryHandshakeResult::kHandshakeTimeout;
+          break;
 
-      // Unexpected message
-      case SSL_R_UNEXPECTED_MESSAGE:
-      case SSL_R_UNEXPECTED_RECORD:
-      case SSL_R_APP_DATA_IN_HANDSHAKE:
-      case SSL_R_EXCESS_HANDSHAKE_DATA:
-        return TlsTelemetryHandshakeResult::kUnexpectedMessage;
-
-      // Handshake timeout
-      case SSL_R_READ_TIMEOUT_EXPIRED:
-        return TlsTelemetryHandshakeResult::kHandshakeTimeout;
-
-      // Certificate verification failures
-      case SSL_R_CERTIFICATE_VERIFY_FAILED: {
-        TlsTelemetryHandshakeResult result =
-            MapVerifyResultToTlsTelemetryHandshakeResult(verify_result);
-        if (result == TlsTelemetryHandshakeResult::kSuccess) {
-          // There's no more detail on certificate failure, this is as granular
-          // as we can get.
-          return TlsTelemetryHandshakeResult::kCertificateVerificationFailed;
+        // Certificate verification failures
+        case SSL_R_CERTIFICATE_VERIFY_FAILED: {
+          TlsTelemetryHandshakeResult verify_res =
+              MapVerifyResultToTlsTelemetryHandshakeResult(verify_result);
+          if (verify_res == TlsTelemetryHandshakeResult::kSuccess) {
+            result =
+                TlsTelemetryHandshakeResult::kCertificateVerificationFailed;
+          } else {
+            result = verify_res;
+          }
+          break;
         }
-        return result;
+
+        // Certificate malformed
+        case SSL_R_DECODE_ERROR:
+          result = TlsTelemetryHandshakeResult::kCertificateMalformed;
+          break;
+
+        // Peer Certificate required but missing
+        case SSL_R_PEER_DID_NOT_RETURN_A_CERTIFICATE:
+        case SSL_R_NO_CERTIFICATES_RETURNED:
+        case SSL_R_NO_CERTIFICATE_SET:
+        case SSL_R_NO_CERTIFICATE_ASSIGNED:
+        case SSL_R_SSLV3_ALERT_NO_CERTIFICATE:
+        case SSL_R_TLSV1_ALERT_CERTIFICATE_REQUIRED:
+          result =
+              TlsTelemetryHandshakeResult::kPeerCertificateRequiredButMissing;
+          break;
+
+        // Internal / Resource failures
+        case ERR_R_MALLOC_FAILURE:
+        case ERR_R_INTERNAL_ERROR:
+        case ERR_R_OVERFLOW:
+          result = TlsTelemetryHandshakeResult::kInternalSystemError;
+          break;
+
+        default:
+          break;
       }
-
-      // Certificate malformed
-      case SSL_R_DECODE_ERROR:
-        return TlsTelemetryHandshakeResult::kCertificateMalformed;
-
-      // Peer Certificate required but missing
-      case SSL_R_PEER_DID_NOT_RETURN_A_CERTIFICATE:
-      case SSL_R_NO_CERTIFICATES_RETURNED:
-      case SSL_R_NO_CERTIFICATE_SET:
-      case SSL_R_NO_CERTIFICATE_ASSIGNED:
-      case SSL_R_SSLV3_ALERT_NO_CERTIFICATE:
-      case SSL_R_TLSV1_ALERT_CERTIFICATE_REQUIRED:
-        return TlsTelemetryHandshakeResult::kPeerCertificateRequiredButMissing;
-
-      // Internal / Resource failures
-      case ERR_R_MALLOC_FAILURE:
-      case ERR_R_INTERNAL_ERROR:
-      case ERR_R_OVERFLOW:
-        return TlsTelemetryHandshakeResult::kInternalSystemError;
-
-      default:
-        break;
+      break;
     }
+    default:
+      break;
   }
 
-  return TlsTelemetryHandshakeResult::kUnknownFailure;
+  return result;
 }
 
 #else  // !defined(OPENSSL_IS_BORINGSSL)
@@ -239,105 +278,124 @@ TlsTelemetryHandshakeResult MapVerifyResultToTlsTelemetryHandshakeResult(
 }  // namespace
 
 TlsTelemetryHandshakeResult MapSslErrorToTlsTelemetryHandshakeResult(
-    int ssl_error, unsigned long err_code, long verify_result) {
-  if (ssl_error == SSL_ERROR_NONE) {
-    return MapVerifyResultToTlsTelemetryHandshakeResult(verify_result);
-  }
+    tsi_result status, int ssl_error, unsigned long err_code,
+    long verify_result) {
+  TlsTelemetryHandshakeResult result =
+      MapTsiResultToTlsTelemetryHandshakeResult(status);
 
-  if (ssl_error == SSL_ERROR_ZERO_RETURN) {
-    return TlsTelemetryHandshakeResult::kPeerConnectionClosed;
-  }
+  switch (ssl_error) {
+    case SSL_ERROR_NONE:
+      result = MapVerifyResultToTlsTelemetryHandshakeResult(verify_result);
+      break;
+    case SSL_ERROR_ZERO_RETURN:
+      result = TlsTelemetryHandshakeResult::kPeerConnectionClosed;
+      break;
+    case SSL_ERROR_SYSCALL:
+      result = TlsTelemetryHandshakeResult::kPeerConnectionClosed;
+      break;
+    case SSL_ERROR_SSL: {
+      int reason = ERR_GET_REASON(err_code);
+      switch (reason) {
+        // Cipher suite mismatch failures
+        case SSL_R_NO_CIPHERS_AVAILABLE:
+        case SSL_R_NO_CIPHER_MATCH:
+        case SSL_R_NO_SHARED_CIPHER:
+        case SSL_R_REQUIRED_CIPHER_MISSING:
+        case SSL_R_WRONG_CIPHER_RETURNED:
+          result = TlsTelemetryHandshakeResult::kCipherSuiteMismatch;
+          break;
 
-  if (ssl_error == SSL_ERROR_SYSCALL) {
-    return TlsTelemetryHandshakeResult::kPeerConnectionClosed;
-  }
+        // Protocol version unsupported failures
+        case SSL_R_UNKNOWN_PROTOCOL:
+        case SSL_R_UNKNOWN_SSL_VERSION:
+        case SSL_R_UNSUPPORTED_PROTOCOL:
+        case SSL_R_WRONG_SSL_VERSION:
+        case SSL_R_WRONG_VERSION_NUMBER:
+          result = TlsTelemetryHandshakeResult::kProtocolVersionUnsupported;
+          break;
 
-  if (ssl_error == SSL_ERROR_SSL) {
-    int reason = ERR_GET_REASON(err_code);
-    switch (reason) {
-      // Cipher suite mismatch failures
-      case SSL_R_NO_CIPHERS_AVAILABLE:
-      case SSL_R_NO_CIPHER_MATCH:
-      case SSL_R_NO_SHARED_CIPHER:
-      case SSL_R_REQUIRED_CIPHER_MISSING:
-      case SSL_R_WRONG_CIPHER_RETURNED:
-        return TlsTelemetryHandshakeResult::kCipherSuiteMismatch;
+        // Inappropriate fallback
+        case SSL_R_INAPPROPRIATE_FALLBACK:
+          result = TlsTelemetryHandshakeResult::kInappropriateFallback;
+          break;
 
-      // Protocol version unsupported failures
-      case SSL_R_UNKNOWN_PROTOCOL:
-      case SSL_R_UNKNOWN_SSL_VERSION:
-      case SSL_R_UNSUPPORTED_PROTOCOL:
-      case SSL_R_WRONG_SSL_VERSION:
-      case SSL_R_WRONG_VERSION_NUMBER:
-        return TlsTelemetryHandshakeResult::kProtocolVersionUnsupported;
-
-      // Inappropriate fallback
-      case SSL_R_INAPPROPRIATE_FALLBACK:
-        return TlsTelemetryHandshakeResult::kInappropriateFallback;
-
-        // No application protocol
+          // No application protocol
 #ifdef SSL_R_NO_APPLICATION_PROTOCOL
-      case SSL_R_NO_APPLICATION_PROTOCOL:
-        return TlsTelemetryHandshakeResult::kNoApplicationProtocol;
+        case SSL_R_NO_APPLICATION_PROTOCOL:
+          result = TlsTelemetryHandshakeResult::kNoApplicationProtocol;
+          break;
 #endif
 
-      // Cryptographic failures: Signature verification failed
-      case SSL_R_BAD_SIGNATURE:
-      case SSL_R_WRONG_SIGNATURE_TYPE:
-        return TlsTelemetryHandshakeResult::kSignatureVerificationFailed;
+        // Cryptographic failures: Signature verification failed
+        case SSL_R_BAD_SIGNATURE:
+        case SSL_R_WRONG_SIGNATURE_TYPE:
+          result = TlsTelemetryHandshakeResult::kSignatureVerificationFailed;
+          break;
 
-      // Cryptographic failures: Decryption failed
-      case SSL_R_DECRYPTION_FAILED:
-      case SSL_R_DECRYPTION_FAILED_OR_BAD_RECORD_MAC:
-      case SSL_R_BLOCK_CIPHER_PAD_IS_WRONG:
-        return TlsTelemetryHandshakeResult::kDecryptionFailed;
+        // Cryptographic failures: Decryption failed
+        case SSL_R_DECRYPTION_FAILED:
+        case SSL_R_DECRYPTION_FAILED_OR_BAD_RECORD_MAC:
+        case SSL_R_BLOCK_CIPHER_PAD_IS_WRONG:
+          result = TlsTelemetryHandshakeResult::kDecryptionFailed;
+          break;
 
-      // Cryptographic failures: Key exchange failure
-      case SSL_R_WRONG_CURVE:
-      case SSL_R_BAD_ECPOINT:
-        return TlsTelemetryHandshakeResult::kKeyExchangeFailure;
+        // Cryptographic failures: Key exchange failure
+        case SSL_R_WRONG_CURVE:
+        case SSL_R_BAD_ECPOINT:
+          result = TlsTelemetryHandshakeResult::kKeyExchangeFailure;
+          break;
 
-      // Unexpected message
-      case SSL_R_UNEXPECTED_MESSAGE:
-      case SSL_R_UNEXPECTED_RECORD:
-      case SSL_R_APP_DATA_IN_HANDSHAKE:
-        return TlsTelemetryHandshakeResult::kUnexpectedMessage;
+        // Unexpected message
+        case SSL_R_UNEXPECTED_MESSAGE:
+        case SSL_R_UNEXPECTED_RECORD:
+        case SSL_R_APP_DATA_IN_HANDSHAKE:
+          result = TlsTelemetryHandshakeResult::kUnexpectedMessage;
+          break;
 
-      // Handshake timeout
-      case SSL_R_READ_TIMEOUT_EXPIRED:
-        return TlsTelemetryHandshakeResult::kHandshakeTimeout;
+        // Handshake timeout
+        case SSL_R_READ_TIMEOUT_EXPIRED:
+          result = TlsTelemetryHandshakeResult::kHandshakeTimeout;
+          break;
 
-      // Certificate verification failures
-      case SSL_R_CERTIFICATE_VERIFY_FAILED: {
-        TlsTelemetryHandshakeResult result =
-            MapVerifyResultToTlsTelemetryHandshakeResult(verify_result);
-        if (result == TlsTelemetryHandshakeResult::kSuccess) {
-          // There's no more detail on certificate failure, this is as granular
-          // as we can get.
-          return TlsTelemetryHandshakeResult::kCertificateVerificationFailed;
+        // Certificate verification failures
+        case SSL_R_CERTIFICATE_VERIFY_FAILED: {
+          TlsTelemetryHandshakeResult verify_res =
+              MapVerifyResultToTlsTelemetryHandshakeResult(verify_result);
+          if (verify_res != TlsTelemetryHandshakeResult::kSuccess) {
+            result = verify_res;
+          } else {
+            result =
+                TlsTelemetryHandshakeResult::kCertificateVerificationFailed;
+          }
+          break;
         }
-        return result;
+
+        // Peer Certificate required but missing
+        case SSL_R_PEER_DID_NOT_RETURN_A_CERTIFICATE:
+        case SSL_R_NO_CERTIFICATES_RETURNED:
+        case SSL_R_NO_CERTIFICATE_SET:
+        case SSL_R_NO_CERTIFICATE_ASSIGNED:
+        case SSL_R_SSLV3_ALERT_NO_CERTIFICATE:
+          result =
+              TlsTelemetryHandshakeResult::kPeerCertificateRequiredButMissing;
+          break;
+
+        // Internal / Resource failures
+        case ERR_R_MALLOC_FAILURE:
+        case ERR_R_INTERNAL_ERROR:
+          result = TlsTelemetryHandshakeResult::kInternalSystemError;
+          break;
+
+        default:
+          break;
       }
-
-      // Peer Certificate required but missing
-      case SSL_R_PEER_DID_NOT_RETURN_A_CERTIFICATE:
-      case SSL_R_NO_CERTIFICATES_RETURNED:
-      case SSL_R_NO_CERTIFICATE_SET:
-      case SSL_R_NO_CERTIFICATE_ASSIGNED:
-      case SSL_R_SSLV3_ALERT_NO_CERTIFICATE:
-        return TlsTelemetryHandshakeResult::kPeerCertificateRequiredButMissing;
-
-      // Internal / Resource failures
-      case ERR_R_MALLOC_FAILURE:
-      case ERR_R_INTERNAL_ERROR:
-        return TlsTelemetryHandshakeResult::kInternalSystemError;
-
-      default:
-        break;
+      break;
     }
+    default:
+      break;
   }
 
-  return TlsTelemetryHandshakeResult::kUnknownFailure;
+  return result;
 }
 
 #endif  // OPENSSL_IS_BORINGSSL
@@ -399,24 +457,6 @@ absl::string_view TlsTelemetryHandshakeResultToString(
       return "CANCELLED";
   }
   return "UNKNOWN_FAILURE";
-}
-
-// Most of the TSI error states are relateively generic and don't allow us to
-// report more granular failure details.
-TlsTelemetryHandshakeResult MapTsiResultToTlsTelemetryHandshakeResult(
-    tsi_result status) {
-  switch (status) {
-    case TSI_OK:
-      return TlsTelemetryHandshakeResult::kSuccess;
-    case TSI_HANDSHAKE_SHUTDOWN:
-      return TlsTelemetryHandshakeResult::kCancelled;
-    case TSI_CLOSE_NOTIFY:
-      return TlsTelemetryHandshakeResult::kPeerConnectionClosed;
-    case TSI_OUT_OF_RESOURCES:
-      return TlsTelemetryHandshakeResult::kInternalSystemError;
-    default:
-      return TlsTelemetryHandshakeResult::kInternalSystemError;
-  }
 }
 
 }  // namespace grpc_core

@@ -276,22 +276,16 @@ void tsi_ssl_handshaker::MaybeRecordTelemetry(
   absl::string_view resumed = active_ssl == nullptr            ? "unknown"
                               : SSL_session_reused(active_ssl) ? "true"
                                                                : "false";
-  // Get the generalized error from TSI
+
   grpc_core::TlsTelemetryHandshakeResult result =
-      grpc_core::MapTsiResultToTlsTelemetryHandshakeResult(
-          handshake_result.tsi_handshake_result);
+      grpc_core::TlsTelemetryHandshakeResult::kSuccess;
   if (handshake_result.tsi_handshake_result != TSI_OK) {
     // If TSI reports non-ok, get more details from the SSL stack
     long verify_res =
         active_ssl != nullptr ? SSL_get_verify_result(active_ssl) : X509_V_OK;
-    grpc_core::TlsTelemetryHandshakeResult ssl_telemetry_result =
-        grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(
-            handshake_result.ssl_error, handshake_result.err_code, verify_res);
-    // If the SSL stack reports a more detailed error, use it.
-    if (ssl_telemetry_result !=
-        grpc_core::TlsTelemetryHandshakeResult::kSuccess) {
-      result = ssl_telemetry_result;
-    }
+    result = grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(
+        handshake_result.tsi_handshake_result, handshake_result.ssl_error,
+        handshake_result.err_code, verify_res);
   }
   std::string status_str =
       std::string(grpc_core::TlsTelemetryHandshakeResultToString(result));
@@ -3113,6 +3107,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
                 nullptr);
           },
           [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {
+
             X509_STORE* cert_store = SSL_CTX_get_cert_store(ssl_context);
             X509_STORE_set_flags(cert_store, X509_V_FLAG_PARTIAL_CHAIN |
                                                  X509_V_FLAG_TRUSTED_FIRST);
