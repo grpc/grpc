@@ -2752,11 +2752,13 @@ static tsi_result ssl_handshaker_next(
 
 static void ssl_handshaker_shutdown(tsi_handshaker* self) {
   tsi_ssl_handshaker* impl = static_cast<tsi_ssl_handshaker*>(self);
+#if defined(OPENSSL_IS_BORINGSSL)
   std::shared_ptr<grpc_core::PrivateKeySigner> key_signer;
   std::shared_ptr<grpc_core::PrivateKeySigner::AsyncSigningHandle>
       signing_handle;
   std::shared_ptr<AsyncCertificateSelectionHandle> cert_selection_handle;
   std::optional<HandshakerNextArgs> next_args;
+#endif  // defined(OPENSSL_IS_BORINGSSL)
   {
     grpc_core::MutexLock lock(&impl->mu);
     if (impl->ssl == nullptr) return;
