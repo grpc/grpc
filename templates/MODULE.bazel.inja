@@ -119,6 +119,7 @@ PYTHON_VERSIONS = [
     "3.12",
     "3.13",
     "3.14",
+    "3.15",
 ]
 
 # TODO(weizheyuan): figure out how it interacts with protobuf 31

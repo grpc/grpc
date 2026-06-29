@@ -25,7 +25,6 @@ EXPERIMENT_ENABLES = {
     "chaotic_good_framing_layer": "chaotic_good_framing_layer",
     "chaotic_good_send_supported_features": "chaotic_good_send_supported_features",
     "custom_frame_check": "custom_frame_check",
-    "error_flatten": "error_flatten",
     "event_engine_client": "event_engine_client",
     "event_engine_dns": "event_engine_dns",
     "event_engine_dns_non_client_channel": "event_engine_dns_non_client_channel",
@@ -171,30 +170,27 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "chttp2_keepalive_tests": [
-                "subchannel_connection_scaling",
-            ],
             "core_end2end_test": [
                 "buffer_list_deletion_prep",
                 "local_connector_secure",
                 "otel_export_telemetry_domains",
                 "ph2_client",
+                "ph2_client_server",
+                "ph2_server",
                 "pipelined_read_secure_endpoint",
                 "pollset_alternative",
                 "retry_in_callv3",
                 "secure_endpoint_offload_large_reads",
                 "secure_endpoint_offload_large_writes",
                 "secure_endpoint_read_coalescing",
-                "subchannel_connection_scaling",
                 "use_call_event_engine_in_completion_queue",
                 "v2_non_owning_waker_implementation",
                 "wildcard_ip_expansion_restriction",
             ],
             "cpp_end2end_test": [
                 "ph2_client",
-            ],
-            "cpp_lb_end2end_test": [
-                "subchannel_connection_scaling",
+                "ph2_client_server",
+                "ph2_server",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -229,21 +225,23 @@ EXPERIMENTS = {
             "cancel_ares_query_test": [
                 "event_engine_dns",
             ],
+            "chttp2_keepalive_tests": [
+                "subchannel_connection_scaling",
+            ],
             "core_end2end_test": [
                 "callv3_batch_validation",
-                "error_flatten",
                 "event_engine_client",
                 "event_engine_dns_non_client_channel",
                 "event_engine_for_all_other_endpoints",
                 "event_engine_fork",
                 "event_engine_listener",
+                "subchannel_connection_scaling",
             ],
             "cpp_end2end_test": [
-                "error_flatten",
                 "subchannel_wrapper_cleanup_on_orphan",
             ],
-            "error_tests": [
-                "error_flatten",
+            "cpp_lb_end2end_test": [
+                "subchannel_connection_scaling",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
@@ -258,7 +256,6 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "xds_end2end_test": [
-                "error_flatten",
                 "subchannel_wrapper_cleanup_on_orphan",
             ],
         },

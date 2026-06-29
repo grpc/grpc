@@ -713,6 +713,9 @@ Http2Status Http2ServerTransport::ProcessMetadata() {
                                settings_->acked().max_header_list_size());
     if (read_result.IsOk()) {
       ServerMetadataHandle metadata = TakeValue(std::move(read_result));
+      // TODO(tjagtap): [PH2][P0] : Might be worth differentiating between
+      // initial and trailing metadata based on the number of header frames
+      // received.
       if (read_context_.HeaderHasEndStream()) {
         // TODO(akshitpatel) [PH2][P1] : Implement receiving trailing metadata.
         // Details:
