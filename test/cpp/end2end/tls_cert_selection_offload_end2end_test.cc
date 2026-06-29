@@ -74,7 +74,6 @@ using ::grpc::experimental::TlsChannelCredentialsOptions;
 using ::grpc::experimental::TlsServerCredentials;
 using ::grpc::experimental::TlsServerCredentialsOptions;
 using ::grpc_core::CertificateSelector;
-using ::grpc_core::InMemoryCertificateProvider;
 using ::testing::HasSubstr;
 
 constexpr absl::string_view kMessage = "Hello";
