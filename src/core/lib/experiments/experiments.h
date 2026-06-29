@@ -126,7 +126,8 @@ inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
 inline bool IsPh2ClientEnabled() { return false; }
 inline bool IsPh2ClientServerEnabled() { return false; }
 inline bool IsPh2Perf01Enabled() { return false; }
-inline bool IsPh2ServerEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_PH2_SERVER
+inline bool IsPh2ServerEnabled() { return true; }
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }
 inline bool IsPipelinedReadSecureEndpointEnabled() { return false; }
 inline bool IsPollsetAlternativeEnabled() { return false; }
@@ -227,7 +228,8 @@ inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
 inline bool IsPh2ClientEnabled() { return false; }
 inline bool IsPh2ClientServerEnabled() { return false; }
 inline bool IsPh2Perf01Enabled() { return false; }
-inline bool IsPh2ServerEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_PH2_SERVER
+inline bool IsPh2ServerEnabled() { return true; }
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }
 inline bool IsPipelinedReadSecureEndpointEnabled() { return false; }
 inline bool IsPollsetAlternativeEnabled() { return false; }
@@ -328,7 +330,8 @@ inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
 inline bool IsPh2ClientEnabled() { return false; }
 inline bool IsPh2ClientServerEnabled() { return false; }
 inline bool IsPh2Perf01Enabled() { return false; }
-inline bool IsPh2ServerEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_PH2_SERVER
+inline bool IsPh2ServerEnabled() { return true; }
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }
 inline bool IsPipelinedReadSecureEndpointEnabled() { return false; }
 inline bool IsPollsetAlternativeEnabled() { return false; }
