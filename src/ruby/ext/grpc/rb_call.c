@@ -401,7 +401,6 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
   long i;
   grpc_slice key_slice;
   grpc_slice value_slice;
-  char* tmp_str = NULL;
 
   if (TYPE(key) == T_SYMBOL) {
     key_slice = grpc_slice_from_static_string(rb_id2name(SYM2ID(key)));
@@ -415,9 +414,9 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
   }
 
   if (!grpc_header_key_is_legal(key_slice)) {
-    tmp_str = grpc_slice_to_c_string(key_slice);
+    grpc_slice_unref(key_slice);
     rb_raise(rb_eArgError,
-             "'%s' is an invalid header key, must match [a-z0-9-_.]+", tmp_str);
+             "'%"PRIsVALUE"' is an invalid header key, must match [a-z0-9-_.]+", key);
     return ST_STOP;
   }
 
@@ -433,14 +432,15 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
           RSTRING_PTR(rb_ary_entry(val, i)), RSTRING_LEN(rb_ary_entry(val, i)));
       if (!grpc_is_binary_header(key_slice) &&
           !grpc_header_nonbin_value_is_legal(value_slice)) {
-        // The value has invalid characters
-        tmp_str = grpc_slice_to_c_string(value_slice);
-        rb_raise(rb_eArgError, "Header value '%s' has invalid characters",
-                 tmp_str);
+        VALUE val_entry = rb_ary_entry(val, i);
+        grpc_slice_unref(value_slice);
+        grpc_slice_unref(key_slice);
+        rb_raise(rb_eArgError, "Header value '%"PRIsVALUE"' has invalid characters",
+                 val_entry);
         return ST_STOP;
       }
       GRPC_RUBY_ASSERT(md_ary->count < md_ary->capacity);
-      md_ary->metadata[md_ary->count].key = key_slice;
+      md_ary->metadata[md_ary->count].key = grpc_slice_ref(key_slice);
       md_ary->metadata[md_ary->count].value = value_slice;
       md_ary->count += 1;
     }
@@ -449,20 +449,23 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
         grpc_slice_from_copied_buffer(RSTRING_PTR(val), RSTRING_LEN(val));
     if (!grpc_is_binary_header(key_slice) &&
         !grpc_header_nonbin_value_is_legal(value_slice)) {
-      // The value has invalid characters
-      tmp_str = grpc_slice_to_c_string(value_slice);
-      rb_raise(rb_eArgError, "Header value '%s' has invalid characters",
-               tmp_str);
+      grpc_slice_unref(value_slice);
+      grpc_slice_unref(key_slice);
+      rb_raise(rb_eArgError, "Header value '%"PRIsVALUE"' has invalid characters",
+               val);
       return ST_STOP;
     }
     GRPC_RUBY_ASSERT(md_ary->count < md_ary->capacity);
-    md_ary->metadata[md_ary->count].key = key_slice;
+    md_ary->metadata[md_ary->count].key = grpc_slice_ref(key_slice);
     md_ary->metadata[md_ary->count].value = value_slice;
     md_ary->count += 1;
   } else {
+    grpc_slice_unref(key_slice);
     rb_raise(rb_eArgError, "Header values must be of type string or array");
     return ST_STOP;
   }
+  /* Release the local reference; each entry now owns its own ref. */
+  grpc_slice_unref(key_slice);
   return ST_CONTINUE;
 }
 

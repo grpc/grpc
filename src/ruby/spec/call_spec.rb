@@ -181,6 +181,20 @@ describe GRPC::Core::Call do
     end
   end
 
+  describe '#run_batch with array-valued metadata' do
+    it 'does not crash with long key and array value (DFVULN-864)' do
+      make_test_call do |call|
+        long_key = 'x-grpc-test-echo-initial' # 24 bytes (> 23)
+        metadata = { long_key => %w[value-a value-b value-c] }
+        ops = {
+          GRPC::Core::CallOps::SEND_INITIAL_METADATA => metadata,
+          GRPC::Core::CallOps::SEND_CLOSE_FROM_CLIENT => nil
+        }
+        expect { call.run_batch(ops) }.to raise_error(GRPC::Core::CallError)
+      end
+    end
+  end
+
   def make_test_call
     call = @ch.create_call(nil, nil, 'phony_method', nil, deadline)
     yield call
