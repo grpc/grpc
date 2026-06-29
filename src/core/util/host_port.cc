@@ -36,6 +36,15 @@ std::string JoinHostPort(absl::string_view host, int port) {
   return absl::StrFormat("%s:%d", host, port);
 }
 
+std::string JoinHostPort(absl::string_view host, absl::string_view port) {
+  if (!host.empty() && host[0] != '[' && host.rfind(':') != host.npos) {
+    // IPv6 literals must be enclosed in brackets.
+    return absl::StrFormat("[%s]:%s", host, port);
+  }
+  // Ordinary non-bracketed host:port.
+  return absl::StrFormat("%s:%s", host, port);
+}
+
 namespace {
 bool DoSplitHostPort(absl::string_view name, absl::string_view* host,
                      absl::string_view* port, bool* has_port) {

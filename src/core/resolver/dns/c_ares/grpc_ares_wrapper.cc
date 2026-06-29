@@ -65,8 +65,6 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/strings/ascii.h"
-#include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
@@ -946,21 +944,11 @@ static bool inner_resolve_as_ip_literal_locked(
     *port = default_port;
   }
   grpc_resolved_address addr;
-  for (char c : *port) {
-    if (!absl::ascii_isdigit(c)) {
-      LOG(ERROR) << "Port is not a valid decimal number in " << name
-                 << " while attempting to resolve as ip literal.";
-      return false;
-    }
-  }
-  int parsed_port = 0;
-  if (!absl::SimpleAtoi(*port, &parsed_port) || parsed_port < 0 ||
-      parsed_port > 65535) {
-    LOG(ERROR) << "Port is out of range in " << name
-               << " while attempting to resolve as ip literal.";
-    return false;
-  }
-  *hostport = grpc_core::JoinHostPort(*host, parsed_port);
+  // Keep the port as a string and let grpc_parse_ipv4_hostport /
+  // grpc_parse_ipv6_hostport validate it, rather than re-implementing the
+  // numeric checks here. Using atoi() previously accepted malformed ports such
+  // as "1234x" by silently truncating them.
+  *hostport = grpc_core::JoinHostPort(*host, *port);
   if (grpc_parse_ipv4_hostport(*hostport, &addr, false /* log errors */) ||
       grpc_parse_ipv6_hostport(*hostport, &addr, false /* log errors */)) {
     GRPC_CHECK(*addrs == nullptr);
