@@ -302,6 +302,28 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_test(
+    name = "xds_transport_grpc_test",
+    srcs = ["xds_transport_grpc_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/status",
+    ],
+    tags = ["xds_test"],
+    uses_event_engine = True,
+    uses_polling = True,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_base",
+        "//:xds_client",
+        "//src/core:xds_server_grpc",
+        "//src/core:xds_server_grpc_interface",
+        "//src/core:xds_transport_grpc",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
 grpc_internal_proto_library(
     name = "xds_client_fuzzer_proto",
     srcs = [

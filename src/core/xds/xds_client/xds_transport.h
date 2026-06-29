@@ -19,8 +19,6 @@
 
 #include <memory>
 #include <string>
-#include <utility>
-#include <vector>
 
 #include "src/core/util/dual_ref_counted.h"
 #include "src/core/util/orphanable.h"
@@ -89,9 +87,7 @@ class XdsTransportFactory : public DualRefCounted<XdsTransportFactory> {
     // Events on the stream will be reported to event_handler.
     virtual OrphanablePtr<StreamingCall> CreateStreamingCall(
         const char* method,
-        std::unique_ptr<StreamingCall::EventHandler> event_handler,
-        std::vector<std::pair<std::string, std::string>> initial_metadata,
-        Duration timeout) = 0;
+        std::unique_ptr<StreamingCall::EventHandler> event_handler) = 0;
 
     // Resets connection backoff for the transport.
     virtual void ResetBackoff() = 0;

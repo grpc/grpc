@@ -63,6 +63,8 @@ class GrpcXdsTransportFactory final : public XdsTransportFactory {
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
 
  private:
+  class SharedChannel;
+
   ChannelArgs args_;
   RefCountedPtr<CertificateProviderStoreInterface> certificate_provider_store_;
   grpc_pollset_set* interested_parties_;
@@ -70,6 +72,8 @@ class GrpcXdsTransportFactory final : public XdsTransportFactory {
   Mutex mu_;
   absl::flat_hash_map<std::string /*XdsServerTarget key*/, GrpcXdsTransport*>
       transports_ ABSL_GUARDED_BY(&mu_);
+  absl::flat_hash_map<std::string /*Channel key*/, SharedChannel*> channels_
+      ABSL_GUARDED_BY(&mu_);
 };
 
 class GrpcXdsTransportFactory::GrpcXdsTransport final
@@ -78,6 +82,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport final
   class GrpcStreamingCall;
 
   GrpcXdsTransport(WeakRefCountedPtr<GrpcXdsTransportFactory> factory,
+                   RefCountedPtr<SharedChannel> channel,
                    const XdsBootstrap::XdsServerTarget& server,
                    absl::Status* status);
   ~GrpcXdsTransport() override;
@@ -91,18 +96,20 @@ class GrpcXdsTransportFactory::GrpcXdsTransport final
 
   OrphanablePtr<StreamingCall> CreateStreamingCall(
       const char* method,
-      std::unique_ptr<StreamingCall::EventHandler> event_handler,
-      std::vector<std::pair<std::string, std::string>> initial_metadata,
-      Duration timeout) override;
+      std::unique_ptr<StreamingCall::EventHandler> event_handler) override;
 
   void ResetBackoff() override;
+
+  Channel* channel() const;
 
  private:
   class StateWatcher;
 
   WeakRefCountedPtr<GrpcXdsTransportFactory> factory_;
   std::string key_;
-  RefCountedPtr<Channel> channel_;
+  RefCountedPtr<SharedChannel> channel_;
+  std::vector<std::pair<std::string, std::string>> initial_metadata_;
+  Duration timeout_;
 
   Mutex mu_;
   absl::flat_hash_map<RefCountedPtr<ConnectivityFailureWatcher>, StateWatcher*>

@@ -6322,6 +6322,7 @@ grpc_cc_library(
     deps = [
         "call_creds_registry",
         "channel_creds_registry",
+        "time",
         "//:ref_counted_ptr",
         "//:xds_client",
     ],
@@ -6349,6 +6350,7 @@ grpc_cc_library(
         "json_object_loader",
         "json_reader",
         "json_writer",
+        "time",
         "validation_errors",
         "xds_server_grpc_interface",
         "//:config",

@@ -137,8 +137,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     const char* method_;
     std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
         event_engine_;
-    std::vector<std::pair<std::string, std::string>> initial_metadata_;
-    Duration timeout_;
+    const std::vector<std::pair<std::string, std::string>> initial_metadata_;
+    const Duration timeout_;
 
     mutable Mutex mu_;
     RefCountedPtr<RefCountedEventHandler> event_handler_ ABSL_GUARDED_BY(&mu_);
@@ -230,9 +230,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     OrphanablePtr<StreamingCall> CreateStreamingCall(
         const char* method,
-        std::unique_ptr<StreamingCall::EventHandler> event_handler,
-        std::vector<std::pair<std::string, std::string>> initial_metadata,
-        Duration timeout) override;
+        std::unique_ptr<StreamingCall::EventHandler> event_handler) override;
 
     void ResetBackoff() override {}
 

@@ -27,9 +27,11 @@
 #include <utility>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/xds/grpc/xds_server_grpc_interface.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "test/core/test_util/test_config.h"
 #include "absl/log/log.h"
@@ -278,12 +280,11 @@ void FakeXdsTransportFactory::FakeXdsTransport::StopConnectivityFailureWatch(
 OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall>
 FakeXdsTransportFactory::FakeXdsTransport::CreateStreamingCall(
     const char* method,
-    std::unique_ptr<StreamingCall::EventHandler> event_handler,
-    std::vector<std::pair<std::string, std::string>> initial_metadata,
-    Duration timeout) {
+    std::unique_ptr<StreamingCall::EventHandler> event_handler) {
+  const auto& grpc_server = DownCast<const GrpcXdsServerInterface&>(server_);
   auto call = MakeOrphanable<FakeStreamingCall>(
       WeakRefAsSubclass<FakeXdsTransport>(), method, std::move(event_handler),
-      std::move(initial_metadata), timeout);
+      grpc_server.initial_metadata(), grpc_server.timeout());
   MutexLock lock(&mu_);
   active_calls_[method] = call->Ref().TakeAsSubclass<FakeStreamingCall>();
   return call;
