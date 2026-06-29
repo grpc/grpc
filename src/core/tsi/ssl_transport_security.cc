@@ -314,6 +314,7 @@ void tsi_ssl_handshaker::MaybeRecordTelemetry(
     return;
   }
   if (metric_recorded) return;
+  metric_recorded = true;
   SSL* active_ssl = ssl;
   if (active_ssl == nullptr && handshaker_next_args.has_value() &&
       handshaker_next_args->handshaker_result != nullptr) {
@@ -345,12 +346,13 @@ void tsi_ssl_handshaker::MaybeRecordTelemetry(
     storage->Increment(
         grpc_core::TlsClientHandshakeTelemetryDomain::kHandshakes);
   } else {
+    metric_recorded = true;
+
     auto storage = grpc_core::TlsServerHandshakeTelemetryDomain::GetStorage(
         collection_scope, status_str, resumed);
     storage->Increment(
         grpc_core::TlsServerHandshakeTelemetryDomain::kHandshakes);
   }
-  metric_recorded = true;
 }
 
 static std::pair<tsi_result, std::optional<HandshakerNextArgs>>
