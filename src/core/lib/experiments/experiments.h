@@ -75,6 +75,8 @@ inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChaoticGoodSendSupportedFeaturesEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CUSTOM_FRAME_CHECK
 inline bool IsCustomFrameCheckEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_ERROR_FLATTEN
+inline bool IsErrorFlattenEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
@@ -174,6 +176,8 @@ inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChaoticGoodSendSupportedFeaturesEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CUSTOM_FRAME_CHECK
 inline bool IsCustomFrameCheckEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_ERROR_FLATTEN
+inline bool IsErrorFlattenEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
@@ -273,6 +277,8 @@ inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChaoticGoodSendSupportedFeaturesEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CUSTOM_FRAME_CHECK
 inline bool IsCustomFrameCheckEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_ERROR_FLATTEN
+inline bool IsErrorFlattenEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
@@ -364,6 +370,7 @@ enum ExperimentIds {
   kExperimentIdChaoticGoodFramingLayer,
   kExperimentIdChaoticGoodSendSupportedFeatures,
   kExperimentIdCustomFrameCheck,
+  kExperimentIdErrorFlatten,
   kExperimentIdEventEngineClient,
   kExperimentIdEventEngineDns,
   kExperimentIdEventEngineDnsNonClientChannel,
@@ -458,6 +465,10 @@ inline bool IsChaoticGoodSendSupportedFeaturesEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CUSTOM_FRAME_CHECK
 inline bool IsCustomFrameCheckEnabled() {
   return IsExperimentEnabled<kExperimentIdCustomFrameCheck>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_ERROR_FLATTEN
+inline bool IsErrorFlattenEnabled() {
+  return IsExperimentEnabled<kExperimentIdErrorFlatten>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() {

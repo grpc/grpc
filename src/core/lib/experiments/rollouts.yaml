@@ -52,6 +52,8 @@
   default: true
 - name: custom_frame_check
   default: true
+- name: error_flatten
+  default: true
 - name: event_engine_callback_cq
   default: true
 - name: event_engine_client
