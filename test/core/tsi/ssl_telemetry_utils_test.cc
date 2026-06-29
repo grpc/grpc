@@ -35,11 +35,13 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
+using ::grpc_core::MapSslErrorToTlsTelemetryHandshakeResult;
+
 // Helper wrapper to avoid updating 70+ existing 3-argument test cases.
 // Assumes TSI_OK as the baseline status.
 TlsTelemetryHandshakeResult MapSslErrorToTlsTelemetryHandshakeResult(
     int ssl_error, unsigned long err_code, long verify_result) {
-  return grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(
+  return MapSslErrorToTlsTelemetryHandshakeResult(
       TSI_OK, ssl_error, err_code, verify_result);
 }
 
@@ -453,22 +455,22 @@ TEST(SslTelemetryUtilsTest,
 
 TEST(SslTelemetryUtilsTest, TsiResultMappingAndFallbackTest) {
   // Test that tsi_result is mapped correctly when there is no SSL error
-  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(
+  EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
                 TSI_HANDSHAKE_SHUTDOWN, SSL_ERROR_NONE, 0, X509_V_OK),
             TlsTelemetryHandshakeResult::kCancelled);
-  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(
+  EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
                 TSI_CLOSE_NOTIFY, SSL_ERROR_NONE, 0, X509_V_OK),
             TlsTelemetryHandshakeResult::kPeerConnectionClosed);
-  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(
+  EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
                 TSI_OUT_OF_RESOURCES, SSL_ERROR_NONE, 0, X509_V_OK),
             TlsTelemetryHandshakeResult::kInternalSystemError);
   // Test that a specific SSL error overrides the tsi_result
-  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(
+  EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
                 TSI_INTERNAL_ERROR, SSL_ERROR_SSL,
                 TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_NO_CIPHER_MATCH), X509_V_OK),
             TlsTelemetryHandshakeResult::kCipherSuiteMismatch);
   // Test that if SSL error is unknown, we fall back to the tsi_result mapping
-  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(
+  EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
                 TSI_HANDSHAKE_SHUTDOWN, SSL_ERROR_SSL,
                 TEST_ERR_PACK(ERR_LIB_SSL, 9999), X509_V_OK),
             TlsTelemetryHandshakeResult::kCancelled);
