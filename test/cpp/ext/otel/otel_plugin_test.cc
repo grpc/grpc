@@ -1489,9 +1489,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ClientHandshakes) {
                      .set_server_credentials_options(MakeServerTlsOptions(
                          "src/core/tsi/test_creds/ca.pem",
                          "src/core/tsi/test_creds/server1.key",
-                         "src/core/tsi/test_creds/server1.pem"))
-                     .add_optional_label("grpc.lb.locality")
-                     .add_optional_label("grpc.lb.backend_service")));
+                         "src/core/tsi/test_creds/server1.pem"))));
   SendRPC();
   const char* kMetricName = "grpc.client.tls.handshakes";
   auto data = ReadCurrentMetricsData(
@@ -1523,11 +1521,11 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ClientHandshakes) {
   const auto* locality_value =
       std::get_if<std::string>(&attributes.at("grpc.lb.locality"));
   ASSERT_NE(locality_value, nullptr);
-  EXPECT_EQ(*locality_value, "locality_1");
+  EXPECT_EQ(*locality_value, "<omitted>");
   const auto* backend_value =
       std::get_if<std::string>(&attributes.at("grpc.lb.backend_service"));
   ASSERT_NE(backend_value, nullptr);
-  EXPECT_EQ(*backend_value, "backend_1");
+  EXPECT_EQ(*backend_value, "<omitted>");
 }
 
 TEST_F(OpenTelemetryPluginEnd2EndTest, ServerHandshakes) {
@@ -1581,9 +1579,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, HandshakesWithBadServerCert) {
                      .set_server_credentials_options(MakeServerTlsOptions(
                          "src/core/tsi/test_creds/ca.pem",
                          "src/core/tsi/test_creds/badserver.key",
-                         "src/core/tsi/test_creds/badserver.pem"))
-                     .add_optional_label("grpc.lb.locality")
-                     .add_optional_label("grpc.lb.backend_service")));
+                         "src/core/tsi/test_creds/badserver.pem"))));
   SendRPC();
   const char* kMetricName = "grpc.client.tls.handshakes";
   auto data = ReadCurrentMetricsData(
@@ -1642,11 +1638,11 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, HandshakesWithBadServerCert) {
   const auto* locality_value =
       std::get_if<std::string>(&attributes.at("grpc.lb.locality"));
   ASSERT_NE(locality_value, nullptr);
-  EXPECT_EQ(*locality_value, "locality_1");
+  EXPECT_EQ(*locality_value, "<omitted>");
   const auto* backend_value =
       std::get_if<std::string>(&attributes.at("grpc.lb.backend_service"));
   ASSERT_NE(backend_value, nullptr);
-  EXPECT_EQ(*backend_value, "backend_1");
+  EXPECT_EQ(*backend_value, "<omitted>");
 }
 
 TEST_F(OpenTelemetryPluginEnd2EndTest, HandshakesWithBadClientCert) {

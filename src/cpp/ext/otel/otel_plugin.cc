@@ -63,6 +63,10 @@ bool IsMetricEnabledByDefault(absl::string_view) { return false; }
 bool IsOpenTelemetryLabelOptional(absl::string_view label_key) {
   // TODO(ctiller): register other optional labels here with
   // `if (label_key =="xyz") return true;` checks.
+  if (label_key == "grpc.lb.locality" ||
+      label_key == "grpc.lb.backend_service") {
+    return true;
+  }
   return absl::StartsWith(label_key, "test_optional.");
 }
 

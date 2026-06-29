@@ -371,10 +371,7 @@ void TlsChannelSecurityConnector::add_handshakers(
                                       : nullptr;
     std::string backend_service(
         args.GetString(GRPC_ARG_BACKEND_SERVICE).value_or(""));
-    // TODO(gtcooke94) - the channel arg is being added in #41073, once it is
-    // done uncomment this
-    // std::string locality = args.GetString(GRPC_ARG_LB_LOCALITY).value_or("");
-    std::string locality = "TODO";
+    std::string locality(args.GetString(GRPC_ARG_LB_LOCALITY).value_or(""));
     tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
         client_handshaker_factory_, server_name_indication,
         /*network_bio_buf_size=*/0,

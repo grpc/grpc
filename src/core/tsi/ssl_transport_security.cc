@@ -2621,20 +2621,12 @@ static SslHandshakeResult ssl_handshaker_next_impl(tsi_ssl_handshaker* self)
       self->handshaker_next_args->received_bytes.clear();
     }
 #if defined(OPENSSL_IS_BORINGSSL)
-    < < < < < < < HEAD
-  } else if (self->key_signer != nullptr) {
-    // During the PrivateKeyOffload signature, an empty call to
-    // ssl_handshaker_do_handshake needs to be forced  after the async offload
-    // has completed.
-    handshake_result = ssl_handshaker_do_handshake(self);
-=======
   } else if (self->key_signer != nullptr ||
              GetCertificateSelector(self) != nullptr) {
     // After an asynchronous certificate selection offload or private key
     // offload, another call to ssl_handshaker_do_handshake needs to be
     // triggered to continue the SSL handshake.
-    status = ssl_handshaker_do_handshake(self);
->>>>>>> master
+    handshake_result = ssl_handshaker_do_handshake(self);
 #endif
   }
 
@@ -2815,7 +2807,6 @@ static void ssl_handshaker_shutdown(tsi_handshaker* self) {
           }
         });
   }
-#endif  // defined(OPENSSL_IS_BORINGSSL)
 }
 
 static const tsi_handshaker_vtable handshaker_vtable = {
@@ -2998,33 +2989,32 @@ tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
     size_t ssl_bio_buf_size,
     std::optional<std::string> alpn_preferred_protocol_list,
     grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope,
+    tsi_handshaker** handshaker) {
+  return tsi_ssl_client_handshaker_factory_create_handshaker(
+      factory, server_name_indication, network_bio_buf_size, ssl_bio_buf_size,
+      std::move(alpn_preferred_protocol_list), std::move(collection_scope),
+      /*locality=*/"", /*backend_service=*/"", handshaker);
+}
+
+tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
+    tsi_ssl_client_handshaker_factory* factory,
+    const char* server_name_indication, size_t network_bio_buf_size,
+    size_t ssl_bio_buf_size,
+    std::optional<std::string> alpn_preferred_protocol_list,
+    grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope,
     std::string locality, std::string backend_service,
     tsi_handshaker** handshaker) {
   GRPC_TRACE_LOG(tsi, INFO)
       << "Creating SSL handshaker with SNI " << server_name_indication;
   std::shared_ptr<grpc_core::PrivateKeySigner> key_signer;
 #if defined(OPENSSL_IS_BORINGSSL)
-  < < < < < < <
-      HEAD return create_tsi_ssl_handshaker(
-          factory->ssl_context, 1, server_name_indication, network_bio_buf_size,
-          ssl_bio_buf_size, alpn_preferred_protocol_list, factory->key_signer,
-          &factory->base, std::move(collection_scope), std::move(locality),
-          std::move(backend_service), handshaker);
-#else
-  return create_tsi_ssl_handshaker(
-      factory->ssl_context, 1, server_name_indication, network_bio_buf_size,
-      ssl_bio_buf_size, alpn_preferred_protocol_list, /*key_signer=*/nullptr,
-      &factory->base, std::move(collection_scope), std::move(locality),
-      std::move(backend_service), handshaker);
-=======
   key_signer = factory->key_signer;
->>>>>>> master
 #endif
   return create_tsi_ssl_handshaker(
       factory->ssl_context, /*is_client=*/true, server_name_indication,
       network_bio_buf_size, ssl_bio_buf_size, alpn_preferred_protocol_list,
       std::move(key_signer), &factory->base, std::move(collection_scope),
-      handshaker);
+      std::move(locality), std::move(backend_service), handshaker);
 }
 
 void tsi_ssl_client_handshaker_factory_unref(

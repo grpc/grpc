@@ -95,9 +95,14 @@ TlsTelemetryHandshakeResult MapSslErrorToTlsTelemetryHandshakeResult(
       MapTsiResultToTlsTelemetryHandshakeResult(status);
 
   switch (ssl_error) {
-    case SSL_ERROR_NONE:
-      result = MapVerifyResultToTlsTelemetryHandshakeResult(verify_result);
+    case SSL_ERROR_NONE: {
+      TlsTelemetryHandshakeResult verify_res =
+          MapVerifyResultToTlsTelemetryHandshakeResult(verify_result);
+      if (verify_res != TlsTelemetryHandshakeResult::kSuccess) {
+        result = verify_res;
+      }
       break;
+    }
     case SSL_ERROR_ZERO_RETURN:
       result = TlsTelemetryHandshakeResult::kPeerConnectionClosed;
       break;
@@ -236,6 +241,12 @@ TlsTelemetryHandshakeResult MapSslErrorToTlsTelemetryHandshakeResult(
           break;
 
         default:
+          // This branch should not be reached in practice. This is kept as a
+          // safety - to reach this default, the error is NOT SSL_ERROR_NONE, so
+          // there is some error.
+          if (result == TlsTelemetryHandshakeResult::kSuccess) {
+            result = TlsTelemetryHandshakeResult::kUnknownFailure;
+          }
           break;
       }
       break;

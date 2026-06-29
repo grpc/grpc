@@ -248,12 +248,6 @@ void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
   if (!config.service_config.empty()) {
     channel_args.SetString(GRPC_ARG_SERVICE_CONFIG, config.service_config);
   }
-  if (config.optional_label_keys.contains("grpc.lb.locality")) {
-    channel_args.SetString("grpc.lb.locality", "locality_1");
-  }
-  if (config.optional_label_keys.contains("grpc.lb.backend_service")) {
-    channel_args.SetString("grpc.internal.backend_service", "backend_1");
-  }
   grpc_init();
 
   std::shared_ptr<ServerCredentials> server_creds;
