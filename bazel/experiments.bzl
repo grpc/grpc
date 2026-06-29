@@ -190,6 +190,8 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "ph2_client",
+                "ph2_client_server",
+                "ph2_server",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
