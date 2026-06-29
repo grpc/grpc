@@ -1498,11 +1498,11 @@ ClientChannel::ApplyServiceConfigToCall(
   auto* service_config_call_data =
       GetContext<Arena>()->New<ClientChannelServiceConfigCallData>(
           GetContext<Arena>());
-  auto* telemetry_label = GetContext<Arena>()->GetContext<TelemetryLabel>();
+  auto* arena = GetContext<Arena>();
+  auto* telemetry_label = arena->GetContext<TelemetryLabel>();
   if (telemetry_label != nullptr) {
     service_config_call_data->SetCallAttribute(
-        GetContext<Arena>()->New<TelemetryLabelAttribute>(
-            telemetry_label->value));
+        arena->New<TelemetryLabelAttribute>(telemetry_label->value));
   }
   // Use the ConfigSelector to determine the config for the call.
   auto filter_chain = config_selector.GetCallConfig({&client_initial_metadata,
