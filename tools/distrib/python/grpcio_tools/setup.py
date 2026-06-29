@@ -77,7 +77,7 @@ def check_linker_need_libatomic():
     )
     cxx = os.environ.get("CXX", "c++")
     cpp_test = subprocess.Popen(
-        [cxx, "-x", "c++", "-std=c++17", "-"],
+        shlex.split(cxx) + ["-x", "c++", "-std=c++17", "-"],
         stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE,
@@ -88,7 +88,7 @@ def check_linker_need_libatomic():
     # Double-check to see if -latomic actually can solve the problem.
     # https://github.com/grpc/grpc/issues/22491
     cpp_test = subprocess.Popen(
-        [cxx, "-x", "c++", "-std=c++17", "-", "-latomic"],
+        shlex.split(cxx) + ["-x", "c++", "-std=c++17", "-", "-latomic"],
         stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE,

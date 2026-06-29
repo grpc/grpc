@@ -52,8 +52,6 @@
   default: true
 - name: custom_frame_check
   default: true
-- name: error_flatten
-  default: true
 - name: event_engine_callback_cq
   default: true
 - name: event_engine_client
@@ -126,6 +124,8 @@
   default: false
 - name: skip_clear_peer_on_cancellation
   default: false
+- name: subchannel_connection_scaling
+  default: true
 - name: tcp_frame_size_tuning
   default: false
 - name: tcp_rcv_lowat

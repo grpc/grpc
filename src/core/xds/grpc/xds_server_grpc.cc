@@ -24,11 +24,10 @@
 #include <vector>
 
 #include "src/core/config/core_configuration.h"
+#include "src/core/config/experiment_env_var.h"
 #include "src/core/util/down_cast.h"
-#include "src/core/util/env.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
-#include "src/core/util/string.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
@@ -98,16 +97,6 @@ struct ChannelOrCallCreds {
   }
 };
 
-// TODO(roth): Remove this guard once we have reports from OSS Istio
-// users that this works properly.
-bool XdsBootstrapCallCredsEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_BOOTSTRAP_CALL_CREDS");
-  if (!value.has_value()) return false;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
-}
-
 }  // namespace
 
 RefCountedPtr<const ChannelCredsConfig> ParseXdsBootstrapChannelCreds(
@@ -170,7 +159,9 @@ void GrpcXdsServer::JsonPostLoad(const Json& json, const JsonArgs& args,
       ParseXdsBootstrapChannelCreds(json, args, errors);
   // Parse "call_creds".
   std::vector<RefCountedPtr<const CallCredsConfig>> call_creds_configs;
-  if (XdsBootstrapCallCredsEnabled()) {
+  // TODO(roth): Remove this guard once we have reports from OSS Istio
+  // users that this works properly.
+  if (IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_BOOTSTRAP_CALL_CREDS")) {
     call_creds_configs = ParseXdsBootstrapCallCreds(json, args, errors);
   }
   // Parse "server_features".
