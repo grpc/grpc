@@ -22954,6 +22954,7 @@ targets:
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/rls_server.h
   - test/cpp/end2end/test_service_impl.h
   src:
