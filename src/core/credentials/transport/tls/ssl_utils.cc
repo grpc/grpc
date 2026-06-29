@@ -655,7 +655,6 @@ void DefaultSslRootStore::InitRootStoreOnce() {
 }
 
 bool IsPemKeyCertPairListEmpty(const PemKeyCertPairList& key_cert_pairs) {
-#if defined(OPENSSL_IS_BORINGSSL)
   return Match(
       key_cert_pairs,
       [](const std::vector<PemKeyCertPair>& pem_key_cert_pairs) {
@@ -664,9 +663,6 @@ bool IsPemKeyCertPairListEmpty(const PemKeyCertPairList& key_cert_pairs) {
       [](const std::shared_ptr<CertificateSelector>& selector) {
         return selector == nullptr;
       });
-#else
-  return key_cert_pairs.empty();
-#endif
 }
 
 }  // namespace grpc_core
