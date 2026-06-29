@@ -66,8 +66,6 @@
   default: true
 - name: event_engine_listener
   default: true
-- name: event_engine_poller_for_python
-  default: true
 - name: fail_recv_metadata_on_deadline_exceeded
   default: false
 - name: free_large_allocator

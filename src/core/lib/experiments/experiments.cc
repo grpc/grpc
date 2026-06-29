@@ -89,9 +89,6 @@ const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
     static_cast<uint8_t>(
         grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
-const char* const description_event_engine_poller_for_python =
-    "Enable event engine poller in gRPC Python";
-const char* const additional_constraints_event_engine_poller_for_python = "{}";
 const char* const description_fail_recv_metadata_on_deadline_exceeded =
     "Fail recv initial metadata when the deadline is exceeded.";
 const char* const
@@ -332,10 +329,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
      required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
-    {"event_engine_poller_for_python",
-     description_event_engine_poller_for_python,
-     additional_constraints_event_engine_poller_for_python, nullptr, 0, true,
-     true},
     {"fail_recv_metadata_on_deadline_exceeded",
      description_fail_recv_metadata_on_deadline_exceeded,
      additional_constraints_fail_recv_metadata_on_deadline_exceeded, nullptr, 0,
@@ -560,9 +553,6 @@ const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
     static_cast<uint8_t>(
         grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
-const char* const description_event_engine_poller_for_python =
-    "Enable event engine poller in gRPC Python";
-const char* const additional_constraints_event_engine_poller_for_python = "{}";
 const char* const description_fail_recv_metadata_on_deadline_exceeded =
     "Fail recv initial metadata when the deadline is exceeded.";
 const char* const
@@ -803,10 +793,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
      required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
-    {"event_engine_poller_for_python",
-     description_event_engine_poller_for_python,
-     additional_constraints_event_engine_poller_for_python, nullptr, 0, true,
-     true},
     {"fail_recv_metadata_on_deadline_exceeded",
      description_fail_recv_metadata_on_deadline_exceeded,
      additional_constraints_fail_recv_metadata_on_deadline_exceeded, nullptr, 0,
@@ -1031,9 +1017,6 @@ const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
     static_cast<uint8_t>(
         grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
-const char* const description_event_engine_poller_for_python =
-    "Enable event engine poller in gRPC Python";
-const char* const additional_constraints_event_engine_poller_for_python = "{}";
 const char* const description_fail_recv_metadata_on_deadline_exceeded =
     "Fail recv initial metadata when the deadline is exceeded.";
 const char* const
@@ -1274,10 +1257,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
      required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
-    {"event_engine_poller_for_python",
-     description_event_engine_poller_for_python,
-     additional_constraints_event_engine_poller_for_python, nullptr, 0, true,
-     true},
     {"fail_recv_metadata_on_deadline_exceeded",
      description_fail_recv_metadata_on_deadline_exceeded,
      additional_constraints_fail_recv_metadata_on_deadline_exceeded, nullptr, 0,
