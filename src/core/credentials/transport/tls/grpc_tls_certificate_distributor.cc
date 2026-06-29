@@ -20,9 +20,9 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
 
+#include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/util/grpc_check.h"
-#include "ssl_utils.h"
 #include "absl/status/status.h"
 
 bool grpc_tls_certificate_distributor::CertificateInfo::AreRootsEmpty() {

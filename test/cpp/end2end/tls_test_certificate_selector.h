@@ -22,6 +22,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpcpp/security/tls_private_key_signer.h>
 #include <grpcpp/support/status.h>
+#include <openssl/pem.h>
 
 #include <memory>
 #include <variant>
@@ -29,9 +30,8 @@
 #include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include <openssl/pem.h>
 
-#if defined(OPENSSL_IS_BORINGSSL)
+#if defined(GRPC_TEST_CPP_END2END_TLS_TEST_CERTIFICATE_SELECTOR_H)
 
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_selector.h"
 
@@ -78,8 +78,7 @@ class AsyncTestCertificateSelector : public grpc_core::CertificateSelector {
       std::variant<absl::string_view,
                    std::shared_ptr<grpc::experimental::PrivateKeySigner>>
           pem_private_key,
-      absl::string_view sni,
-      absl::Duration delay = absl::ZeroDuration())
+      absl::string_view sni, absl::Duration delay = absl::ZeroDuration())
       : pem_cert_chain_(pem_cert_chain),
         pem_private_key_(std::move(pem_private_key)),
         sni_(sni),
@@ -107,5 +106,5 @@ class AsyncTestCertificateSelector : public grpc_core::CertificateSelector {
 }  // namespace testing
 }  // namespace grpc
 
-#endif  // OPENSSL_IS_BORINGSSL
+#endif  // GRPC_TEST_CPP_END2END_TLS_TEST_CERTIFICATE_SELECTOR_H
 #endif  //

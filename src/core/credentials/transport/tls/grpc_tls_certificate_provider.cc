@@ -29,7 +29,7 @@
 #include <variant>
 #include <vector>
 
-#include "grpc_tls_certificate_selector.h"
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_selector.h"
 #include "src/core/credentials/transport/tls/spiffe_utils.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/lib/debug/trace.h"
@@ -234,19 +234,22 @@ absl::Status FileWatcherCertificateProvider::ValidateCredentials() const {
   if (!status.ok()) {
     return status;
   }
-  return Match(pem_key_cert_pairs_, [](const std::vector<PemKeyCertPair>& pem_pairs) {
-    for (const PemKeyCertPair& pair : pem_pairs) {
-      absl::Status status =
-          ValidatePemKeyCertPair(pair.cert_chain(), pair.private_key());
-      if (!status.ok()) {
-        return status;
-      }
-    }
-    return absl::OkStatus();
-  }, [](const std::shared_ptr<CertificateSelector>& cert_selector){
-    // We should never be able to get this from files.
-    return absl::InternalError("Invalid pem key cert pairs");
-  });
+  return Match(
+      pem_key_cert_pairs_,
+      [](const std::vector<PemKeyCertPair>& pem_pairs) {
+        for (const PemKeyCertPair& pair : pem_pairs) {
+          absl::Status status =
+              ValidatePemKeyCertPair(pair.cert_chain(), pair.private_key());
+          if (!status.ok()) {
+            return status;
+          }
+        }
+        return absl::OkStatus();
+      },
+      [](const std::shared_ptr<CertificateSelector>& cert_selector) {
+        // We should never be able to get this from files.
+        return absl::InternalError("Invalid pem key cert pairs");
+      });
 }
 
 void FileWatcherCertificateProvider::ForceUpdate() {
@@ -532,21 +535,24 @@ absl::Status InMemoryCertificateProvider::ValidateCredentials() const {
   if (!status.ok()) {
     return status;
   }
-  return Match(pem_key_cert_pairs_, [](const std::vector<PemKeyCertPair>& pem_pairs) {
-    for (const PemKeyCertPair& pair : pem_pairs) {
-      absl::Status status =
-          ValidatePemKeyCertPair(pair.cert_chain(), pair.private_key());
-      if (!status.ok()) {
-        return status;
-      }
-    }
-    return absl::OkStatus();
-  }, [](const std::shared_ptr<CertificateSelector>& cert_selector){
-    if (cert_selector == nullptr) {
-      return absl::InvalidArgumentError("Certificiate selector is nullptr");
-    }
-    return absl::OkStatus();
-  });
+  return Match(
+      pem_key_cert_pairs_,
+      [](const std::vector<PemKeyCertPair>& pem_pairs) {
+        for (const PemKeyCertPair& pair : pem_pairs) {
+          absl::Status status =
+              ValidatePemKeyCertPair(pair.cert_chain(), pair.private_key());
+          if (!status.ok()) {
+            return status;
+          }
+        }
+        return absl::OkStatus();
+      },
+      [](const std::shared_ptr<CertificateSelector>& cert_selector) {
+        if (cert_selector == nullptr) {
+          return absl::InvalidArgumentError("Certificiate selector is nullptr");
+        }
+        return absl::OkStatus();
+      });
 }
 
 absl::Status InMemoryCertificateProvider::UpdateRoot(

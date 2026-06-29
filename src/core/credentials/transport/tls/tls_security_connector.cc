@@ -31,7 +31,7 @@
 #include <utility>
 #include <vector>
 
-#include "grpc_tls_certificate_selector.h"
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_selector.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_verifier.h"
 #include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
@@ -580,8 +580,7 @@ TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
       [](std::shared_ptr<CertificateSelector>*) {});
   bool use_default_roots = options_->root_certificate_distributor() == nullptr;
   return grpc_ssl_tsi_client_handshaker_factory_init(
-      pem_key_cert_pair,
-      use_default_roots ? nullptr : root_cert_info_,
+      pem_key_cert_pair, use_default_roots ? nullptr : root_cert_info_,
       skip_server_certificate_verification,
       grpc_get_tsi_tls_version(options_->min_tls_version()),
       grpc_get_tsi_tls_version(options_->max_tls_version()), ssl_session_cache_,

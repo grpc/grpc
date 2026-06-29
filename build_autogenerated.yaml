@@ -15131,6 +15131,16 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: grpc_tls_certificate_selector_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/credentials/transport/tls/grpc_tls_certificate_selector_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: grpc_tls_certificate_verifier_test
   gtest: true
   build: test
@@ -24681,16 +24691,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-- name: test_core_credentials_transport_tls_grpc_tls_certificate_selector_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/credentials/transport/tls/grpc_tls_certificate_selector_test.cc
-  deps:
-  - gtest
-  - grpc_test_util
 - name: test_core_credentials_transport_tls_tls_credentials_test
   gtest: true
   build: test
@@ -25101,16 +25101,6 @@ targets:
   headers: []
   src:
   - test/core/iomgr/timer_heap_test.cc
-  deps:
-  - gtest
-  - grpc_test_util
-- name: test_core_security_grpc_tls_certificate_selector_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/security/grpc_tls_certificate_selector_test.cc
   deps:
   - gtest
   - grpc_test_util
