@@ -2781,7 +2781,6 @@ static void ssl_handshaker_shutdown(tsi_handshaker* self) {
       next_args = std::move(*impl->handshaker_next_args);
       impl->handshaker_next_args.reset();
     }
-#endif  // defined(OPENSSL_IS_BORINGSSL)
   }
   // We must not invoke these Cancel functions while holding the mutex because
   // this could lead to a deadlock due to mutexes being acquired in reverse
@@ -2809,6 +2808,7 @@ static void ssl_handshaker_shutdown(tsi_handshaker* self) {
           }
         });
   }
+#endif  // defined(OPENSSL_IS_BORINGSSL)
 }
 
 static const tsi_handshaker_vtable handshaker_vtable = {
@@ -3056,7 +3056,8 @@ tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
   key_signer = factory->ssl_contexts[0].key_signer;
 #endif
   return create_tsi_ssl_handshaker(
-      factory->ssl_contexts[0].ssl_ctx, 0, nullptr, network_bio_buf_size,
+      factory->ssl_contexts[0].ssl_ctx, /*is_client=*/false,
+      /*server_name_indication=*/nullptr, network_bio_buf_size,
       ssl_bio_buf_size, std::nullopt, std::move(key_signer), &factory->base,
       std::move(collection_scope),
       /*locality=*/"", /*backend_service=*/"", handshaker);
@@ -3231,7 +3232,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
   ssl_context = SSL_CTX_new(TLS_method());
 #else
-  ssl_context = SSL_CTX_new(TLSv1_2_method());
+    ssl_context = SSL_CTX_new(TLSv1_2_method());
 #endif
 #if OPENSSL_VERSION_NUMBER >= 0x10101000 && !defined(LIBRESSL_VERSION_NUMBER)
   SSL_CTX_set_options(ssl_context, SSL_OP_NO_RENEGOTIATION);
@@ -3328,7 +3329,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
       X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
 
 #else
-      X509_VERIFY_PARAM* param = cert_store->param;
+        X509_VERIFY_PARAM* param = cert_store->param;
 #endif
 
       X509_VERIFY_PARAM_set_depth(param, kMaxChainLength);
@@ -3437,7 +3438,7 @@ tsi_result tsi_configure_server_ssl_context(
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
   ssl_context.ssl_ctx = SSL_CTX_new(TLS_method());
 #else
-  ssl_context.ssl_ctx = SSL_CTX_new(TLSv1_2_method());
+    ssl_context.ssl_ctx = SSL_CTX_new(TLSv1_2_method());
 #endif
 #if OPENSSL_VERSION_NUMBER >= 0x10101000 && !defined(LIBRESSL_VERSION_NUMBER)
   SSL_CTX_set_options(ssl_context.ssl_ctx, SSL_OP_NO_RENEGOTIATION);
@@ -3642,9 +3643,9 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
                                           SelectCertificateCallback);
         return TSI_OK;
 #else
-        VLOG(2) << "CertificateSelector is not supported with this SSL "
-                   "implementation.";
-        return TSI_UNIMPLEMENTED;
+          VLOG(2) << "CertificateSelector is not supported with this SSL "
+                     "implementation.";
+          return TSI_UNIMPLEMENTED;
 #endif
       });
   if (result != TSI_OK) {
