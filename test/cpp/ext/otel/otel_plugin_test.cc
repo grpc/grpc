@@ -1499,23 +1499,24 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ClientHandshakes) {
               data) { return !data.contains(kMetricName); });
   ASSERT_EQ(data[kMetricName].size(), 1);
   const auto& point = data[kMetricName][0];
-  EXPECT_THAT(point.point_data,
-              ::testing::VariantWith<opentelemetry::sdk::metrics::SumPointData>(
-                  ::testing::Field(&opentelemetry::sdk::metrics::SumPointData::value_,
-                                 ::testing::VariantWith<int64_t>(1))));
-  EXPECT_THAT(point.attributes.GetAttributes(),
-              ::testing::UnorderedElementsAre(
-                  ::testing::Pair("grpc.tls.handshake.result",
-                                ::testing::VariantWith<std::string>("OK")),
-                  ::testing::Pair("grpc.target",
-                                ::testing::VariantWith<std::string>(
-                                    canonical_server_address_)),
-                  ::testing::Pair("grpc.tls.handshake.resumed",
-                                ::testing::VariantWith<std::string>("false")),
-                  ::testing::Pair("grpc.lb.locality",
-                                ::testing::VariantWith<std::string>("<omitted>")),
-                  ::testing::Pair("grpc.lb.backend_service",
-                                ::testing::VariantWith<std::string>("<omitted>"))));
+  EXPECT_THAT(
+      point.point_data,
+      ::testing::VariantWith<opentelemetry::sdk::metrics::SumPointData>(
+          ::testing::Field(&opentelemetry::sdk::metrics::SumPointData::value_,
+                           ::testing::VariantWith<int64_t>(1))));
+  EXPECT_THAT(
+      point.attributes.GetAttributes(),
+      ::testing::UnorderedElementsAre(
+          ::testing::Pair("grpc.tls.handshake.result",
+                          ::testing::VariantWith<std::string>("OK")),
+          ::testing::Pair("grpc.target", ::testing::VariantWith<std::string>(
+                                             canonical_server_address_)),
+          ::testing::Pair("grpc.tls.handshake.resumed",
+                          ::testing::VariantWith<std::string>("false")),
+          ::testing::Pair("grpc.lb.locality",
+                          ::testing::VariantWith<std::string>("<omitted>")),
+          ::testing::Pair("grpc.lb.backend_service",
+                          ::testing::VariantWith<std::string>("<omitted>"))));
 }
 
 TEST_F(OpenTelemetryPluginEnd2EndTest, ServerHandshakes) {
@@ -1540,16 +1541,18 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ServerHandshakes) {
               data) { return !data.contains(kMetricName); });
   ASSERT_EQ(data[kMetricName].size(), 1);
   const auto& point = data[kMetricName][0];
-  EXPECT_THAT(point.point_data,
-              ::testing::VariantWith<opentelemetry::sdk::metrics::SumPointData>(
-                  ::testing::Field(&opentelemetry::sdk::metrics::SumPointData::value_,
-                                 ::testing::VariantWith<int64_t>(1))));
-  EXPECT_THAT(point.attributes.GetAttributes(),
-              ::testing::UnorderedElementsAre(
-                  ::testing::Pair("grpc.tls.handshake.result",
-                                ::testing::VariantWith<std::string>("OK")),
-                  ::testing::Pair("grpc.tls.handshake.resumed",
-                                ::testing::VariantWith<std::string>("false"))));
+  EXPECT_THAT(
+      point.point_data,
+      ::testing::VariantWith<opentelemetry::sdk::metrics::SumPointData>(
+          ::testing::Field(&opentelemetry::sdk::metrics::SumPointData::value_,
+                           ::testing::VariantWith<int64_t>(1))));
+  EXPECT_THAT(
+      point.attributes.GetAttributes(),
+      ::testing::UnorderedElementsAre(
+          ::testing::Pair("grpc.tls.handshake.result",
+                          ::testing::VariantWith<std::string>("OK")),
+          ::testing::Pair("grpc.tls.handshake.resumed",
+                          ::testing::VariantWith<std::string>("false"))));
 }
 
 TEST_F(OpenTelemetryPluginEnd2EndTest, HandshakesWithBadServerCert) {
@@ -1600,24 +1603,25 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, HandshakesWithBadServerCert) {
     }
   }
   ASSERT_NE(failure_point, nullptr);
-  EXPECT_THAT(failure_point->point_data,
-              ::testing::VariantWith<opentelemetry::sdk::metrics::SumPointData>(
-                  ::testing::Field(&opentelemetry::sdk::metrics::SumPointData::value_,
-                                 ::testing::VariantWith<int64_t>(1))));
-  EXPECT_THAT(failure_point->attributes.GetAttributes(),
-              ::testing::UnorderedElementsAre(
-                  ::testing::Pair("grpc.tls.handshake.result",
-                                ::testing::VariantWith<std::string>(
-                                    ::testing::Ne("OK"))),
-                  ::testing::Pair("grpc.target",
-                                ::testing::VariantWith<std::string>(
-                                    canonical_server_address_)),
-                  ::testing::Pair("grpc.tls.handshake.resumed",
-                                ::testing::VariantWith<std::string>("false")),
-                  ::testing::Pair("grpc.lb.locality",
-                                ::testing::VariantWith<std::string>("<omitted>")),
-                  ::testing::Pair("grpc.lb.backend_service",
-                                ::testing::VariantWith<std::string>("<omitted>"))));
+  EXPECT_THAT(
+      failure_point->point_data,
+      ::testing::VariantWith<opentelemetry::sdk::metrics::SumPointData>(
+          ::testing::Field(&opentelemetry::sdk::metrics::SumPointData::value_,
+                           ::testing::VariantWith<int64_t>(1))));
+  EXPECT_THAT(
+      failure_point->attributes.GetAttributes(),
+      ::testing::UnorderedElementsAre(
+          ::testing::Pair(
+              "grpc.tls.handshake.result",
+              ::testing::VariantWith<std::string>(::testing::Ne("OK"))),
+          ::testing::Pair("grpc.target", ::testing::VariantWith<std::string>(
+                                             canonical_server_address_)),
+          ::testing::Pair("grpc.tls.handshake.resumed",
+                          ::testing::VariantWith<std::string>("false")),
+          ::testing::Pair("grpc.lb.locality",
+                          ::testing::VariantWith<std::string>("<omitted>")),
+          ::testing::Pair("grpc.lb.backend_service",
+                          ::testing::VariantWith<std::string>("<omitted>"))));
 }
 
 TEST_F(OpenTelemetryPluginEnd2EndTest, HandshakesWithBadClientCert) {
@@ -1671,17 +1675,19 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, HandshakesWithBadClientCert) {
     }
   }
   ASSERT_NE(failure_point, nullptr);
-  EXPECT_THAT(failure_point->point_data,
-              ::testing::VariantWith<opentelemetry::sdk::metrics::SumPointData>(
-                  ::testing::Field(&opentelemetry::sdk::metrics::SumPointData::value_,
-                                 ::testing::VariantWith<int64_t>(1))));
-  EXPECT_THAT(failure_point->attributes.GetAttributes(),
-              ::testing::UnorderedElementsAre(
-                  ::testing::Pair("grpc.tls.handshake.result",
-                                ::testing::VariantWith<std::string>(
-                                    ::testing::Ne("OK"))),
-                  ::testing::Pair("grpc.tls.handshake.resumed",
-                                ::testing::VariantWith<std::string>("false"))));
+  EXPECT_THAT(
+      failure_point->point_data,
+      ::testing::VariantWith<opentelemetry::sdk::metrics::SumPointData>(
+          ::testing::Field(&opentelemetry::sdk::metrics::SumPointData::value_,
+                           ::testing::VariantWith<int64_t>(1))));
+  EXPECT_THAT(
+      failure_point->attributes.GetAttributes(),
+      ::testing::UnorderedElementsAre(
+          ::testing::Pair(
+              "grpc.tls.handshake.result",
+              ::testing::VariantWith<std::string>(::testing::Ne("OK"))),
+          ::testing::Pair("grpc.tls.handshake.resumed",
+                          ::testing::VariantWith<std::string>("false"))));
 }
 
 TEST_F(OpenTelemetryPluginEnd2EndTest, TelemetryLabelPropagation) {

@@ -560,27 +560,26 @@ TEST_P(XdsSecurityTest, TestTlsHandshakeTelemetry) {
       .OnlyMetrics({"grpc.client.tls.handshakes", "grpc.server.tls.handshakes"})
       .Run(stats_plugin_->GetCollectionScope(), sink_after);
   // Assert client handshake succeeded.
-  EXPECT_EQ(sink_after.GetCount(
-                "grpc.client.tls.handshakes",
-                {{"grpc.tls.handshake.result", "OK"},
-                 {"grpc.tls.handshake.resumed", "false"},
-                 {"grpc.target", "xds:server.example.com"},
-                 {"grpc.lb.locality",
-                  "{region=\"xds_default_locality_region\", "
-                  "zone=\"xds_default_locality_zone\", "
-                  "sub_zone=\"locality0\"}"},
-                 {"grpc.lb.backend_service", "cluster_name"}}),
-            sink_before.GetCount(
-                "grpc.client.tls.handshakes",
-                {{"grpc.tls.handshake.result", "OK"},
-                 {"grpc.tls.handshake.resumed", "false"},
-                 {"grpc.target", "xds:server.example.com"},
-                 {"grpc.lb.locality",
-                  "{region=\"xds_default_locality_region\", "
-                  "zone=\"xds_default_locality_zone\", "
-                  "sub_zone=\"locality0\"}"},
-                 {"grpc.lb.backend_service", "cluster_name"}}) +
-                1);
+  EXPECT_EQ(
+      sink_after.GetCount("grpc.client.tls.handshakes",
+                          {{"grpc.tls.handshake.result", "OK"},
+                           {"grpc.tls.handshake.resumed", "false"},
+                           {"grpc.target", "xds:server.example.com"},
+                           {"grpc.lb.locality",
+                            "{region=\"xds_default_locality_region\", "
+                            "zone=\"xds_default_locality_zone\", "
+                            "sub_zone=\"locality0\"}"},
+                           {"grpc.lb.backend_service", "cluster_name"}}),
+      sink_before.GetCount("grpc.client.tls.handshakes",
+                           {{"grpc.tls.handshake.result", "OK"},
+                            {"grpc.tls.handshake.resumed", "false"},
+                            {"grpc.target", "xds:server.example.com"},
+                            {"grpc.lb.locality",
+                             "{region=\"xds_default_locality_region\", "
+                             "zone=\"xds_default_locality_zone\", "
+                             "sub_zone=\"locality0\"}"},
+                            {"grpc.lb.backend_service", "cluster_name"}}) +
+          1);
   // Assert server handshake succeeded.
   EXPECT_EQ(sink_after.GetCount("grpc.server.tls.handshakes",
                                 {{"grpc.tls.handshake.result", "OK"},

@@ -1605,13 +1605,13 @@ TEST_P(SslTransportSecurityTest, TestHandshakeMetricsIncremented) {
       {"grpc.tls.handshake.resumed", "false"},
   };
   // Assert client handshake succeeded.
-  EXPECT_EQ(sink_after.GetCount("grpc.client.tls.handshakes", client_labels),
-            sink_before.GetCount("grpc.client.tls.handshakes", client_labels) +
-                1);
+  EXPECT_EQ(
+      sink_after.GetCount("grpc.client.tls.handshakes", client_labels),
+      sink_before.GetCount("grpc.client.tls.handshakes", client_labels) + 1);
   // Assert server handshake succeeded.
-  EXPECT_EQ(sink_after.GetCount("grpc.server.tls.handshakes", server_labels),
-            sink_before.GetCount("grpc.server.tls.handshakes", server_labels) +
-                1);
+  EXPECT_EQ(
+      sink_after.GetCount("grpc.server.tls.handshakes", server_labels),
+      sink_before.GetCount("grpc.server.tls.handshakes", server_labels) + 1);
 }
 TEST_P(SslTransportSecurityTest, TestBadServerCertMetricsIncremented) {
   TestOnlyResetInstruments();
@@ -1641,9 +1641,9 @@ TEST_P(SslTransportSecurityTest, TestBadServerCertMetricsIncremented) {
       {"grpc.lb.locality", "<omitted>"},
       {"grpc.lb.backend_service", "<omitted>"},
   };
-  EXPECT_EQ(sink_after.GetCount("grpc.client.tls.handshakes", client_labels),
-            sink_before.GetCount("grpc.client.tls.handshakes", client_labels) +
-                1);
+  EXPECT_EQ(
+      sink_after.GetCount("grpc.client.tls.handshakes", client_labels),
+      sink_before.GetCount("grpc.client.tls.handshakes", client_labels) + 1);
   EXPECT_EQ(sink_after.GetTotalCount("grpc.server.tls.handshakes"),
             sink_before.GetTotalCount("grpc.server.tls.handshakes"));
 }
