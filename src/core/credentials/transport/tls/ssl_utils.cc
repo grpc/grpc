@@ -33,8 +33,8 @@
 #include <utility>
 #include <vector>
 
-#include "grpc_tls_certificate_selector.h"
 #include "src/core/config/config_vars.h"
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_selector.h"
 #include "src/core/credentials/transport/tls/load_system_roots.h"
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 #include "src/core/lib/channel/channel_args.h"
