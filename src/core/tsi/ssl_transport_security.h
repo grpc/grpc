@@ -263,14 +263,6 @@ tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
     size_t ssl_bio_buf_size,
     std::optional<std::string> alpn_preferred_protocol_list,
     grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope,
-    tsi_handshaker** handshaker);
-
-tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
-    tsi_ssl_client_handshaker_factory* factory,
-    const char* server_name_indication, size_t network_bio_buf_size,
-    size_t ssl_bio_buf_size,
-    std::optional<std::string> alpn_preferred_protocol_list,
-    grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope,
     std::string locality, std::string backend_service,
     tsi_handshaker** handshaker);
 
