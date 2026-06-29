@@ -725,7 +725,6 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
         << "ExtProcCall " << this << " status received: " << status;
     bool should_unref = false;
     bool already_closed = false;
-    
     // Determine if we should propagate the stream error and fail the call.
     const bool has_outstanding_messages = [this]() {
       MutexLock lock(&mu_);
@@ -1205,8 +1204,7 @@ absl::AnyInvocable<Poll<absl::Status>()> SendServerToClientMessagesRequest(
                     }
                     return Map(
                         std::move(send_promise),
-                        [handler, ext_proc_call,
-                         message = std::move(message)](
+                        [handler, ext_proc_call, message = std::move(message)](
                             absl::Status status) mutable -> absl::Status {
                           if (!status.ok() || ext_proc_call->IsStreamClosed()) {
                             if (ext_proc_call->IsStreamClosedCleanly() ||
@@ -1472,7 +1470,8 @@ absl::AnyInvocable<Poll<absl::Status>()> ReadServerTrailingMetadataResponse(
             }
             return absl::OkStatus();
           }),
-      [handler, metadata, ext_proc_call, config = std::move(config)](absl::Status result) mutable {
+      [handler, metadata, ext_proc_call,
+       config = std::move(config)](absl::Status result) mutable {
         if (!result.ok() && !config->failure_mode_allow) {
           *metadata = CancelledServerMetadataFromStatus(result);
         }
@@ -1705,9 +1704,7 @@ MaybeHandleClosedStream(CallHandler handler,
   if (ext_proc_call->IsStreamClosed()) {
     absl::Status error = ext_proc_call->GetStreamErrorStatus();
     if (!error.ok()) {
-      return [error]() -> Poll<absl::Status> {
-        return error;
-      };
+      return [error]() -> Poll<absl::Status> { return error; };
     }
     return ServerTrailingMetadataNonProcessingMode(
         handler, ext_proc_call, std::move(config), std::move(metadata));
@@ -1721,8 +1718,8 @@ absl::AnyInvocable<Poll<absl::Status>()> ServerTrailingMetadataTrailersOnly(
     RefCountedPtr<const ExtProcFilter::Config> config,
     std::shared_ptr<ServerMetadataHandle> metadata)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(ext_proc_call->mu()) {
-  if (auto promise = MaybeHandleClosedStream(handler, ext_proc_call, config,
-                                             metadata)) {
+  if (auto promise =
+          MaybeHandleClosedStream(handler, ext_proc_call, config, metadata)) {
     return std::move(*promise);
   }
   const bool send_headers = config->processing_mode.send_response_headers;
@@ -1746,8 +1743,8 @@ absl::AnyInvocable<Poll<absl::Status>()> ServerTrailingMetadataNormal(
     RefCountedPtr<const ExtProcFilter::Config> config,
     std::shared_ptr<ServerMetadataHandle> metadata)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(ext_proc_call->mu()) {
-  if (auto promise = MaybeHandleClosedStream(handler, ext_proc_call, config,
-                                             metadata)) {
+  if (auto promise =
+          MaybeHandleClosedStream(handler, ext_proc_call, config, metadata)) {
     return std::move(*promise);
   }
   const bool send_trailers_to_ext_proc_stream =
