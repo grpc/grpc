@@ -11715,6 +11715,22 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "tls_telemetry",
+    srcs = [
+        "tsi/tls_telemetry.cc",
+    ],
+    hdrs = [
+        "tsi/tls_telemetry.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    deps = [
+        "instrument",
+    ],
+)
+
 ### UPB Targets
 
 grpc_upb_proto_library(

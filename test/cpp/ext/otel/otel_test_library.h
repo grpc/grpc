@@ -234,9 +234,6 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
       OpenTelemetryPluginEnd2EndTest::Options options,
       grpc::internal::OpenTelemetryPluginBuilderImpl* ot_builder);
 
-  // Note that we can't use SetUp() here since we want to send in parameters.
-  void Init(Options config);
-
   static grpc::experimental::TlsChannelCredentialsOptions MakeClientTlsOptions(
       const std::string& root_cert_path,
       const std::string& client_key_path = "",
@@ -244,6 +241,9 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
   static grpc::experimental::TlsServerCredentialsOptions MakeServerTlsOptions(
       const std::string& root_cert_path, const std::string& server_key_path,
       const std::string& server_cert_path, bool require_client_cert = false);
+
+  // Note that we can't use SetUp() here since we want to send in parameters.
+  void Init(Options config);
 
   void TearDown() override;
 
