@@ -207,8 +207,8 @@ TEST_F(TlsCertSelectionOffloadTest,
   grpc::testing::EchoResponse response;
   grpc::Status result =
       DoRpc(server_addr_, channel_options_, std::string(kServerName), response);
-  EXPECT_TRUE(result.ok()) << result.error_message().c_str() << ", "
-                           << result.error_details().c_str();
+  EXPECT_TRUE(result.ok()) << result.error_message() << ", "
+                           << result.error_details();
   EXPECT_EQ(response.message(), kMessage);
 }
 
@@ -226,8 +226,8 @@ TEST_F(TlsCertSelectionOffloadTest,
   grpc::testing::EchoResponse response;
   grpc::Status result =
       DoRpc(server_addr_, channel_options_, std::string(kServerName), response);
-  EXPECT_TRUE(result.ok()) << result.error_message().c_str() << ", "
-                           << result.error_details().c_str();
+  EXPECT_TRUE(result.ok()) << result.error_message() << ", "
+                           << result.error_details();
   EXPECT_EQ(response.message(), kMessage);
 }
 
@@ -260,8 +260,8 @@ TEST_F(TlsCertSelectionOffloadTest,
   grpc::testing::EchoResponse response;
   grpc::Status result =
       DoRpc(server_addr_, channel_options_, std::string(kServerName), response);
-  EXPECT_TRUE(result.ok()) << result.error_message().c_str() << ", "
-                           << result.error_details().c_str();
+  EXPECT_TRUE(result.ok()) << result.error_message() << ", "
+                           << result.error_details();
   EXPECT_EQ(response.message(), kMessage);
 }
 
@@ -279,8 +279,8 @@ TEST_F(TlsCertSelectionOffloadTest,
   grpc::testing::EchoResponse response;
   grpc::Status result =
       DoRpc(server_addr_, channel_options_, std::string(kServerName), response);
-  EXPECT_TRUE(result.ok()) << result.error_message().c_str() << ", "
-                           << result.error_details().c_str();
+  EXPECT_TRUE(result.ok()) << result.error_message() << ", "
+                           << result.error_details();
   EXPECT_EQ(response.message(), kMessage);
 }
 

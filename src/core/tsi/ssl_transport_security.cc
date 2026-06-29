@@ -2710,10 +2710,6 @@ static void ssl_handshaker_shutdown(tsi_handshaker* self) {
     reinterpret_cast<tsi_ssl_server_handshaker_factory*>(impl->factory_ref)
         ->certificate_selector->Cancel(cert_selection_handle);
   }
-  if (cert_selection_handle != nullptr) {
-    reinterpret_cast<tsi_ssl_server_handshaker_factory*>(impl->factory_ref)
-        ->certificate_selector->Cancel(cert_selection_handle);
-  }
   if (next_args.has_value()) {
     grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
         [args = std::move(*next_args)]() mutable {
