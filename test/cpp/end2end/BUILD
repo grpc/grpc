@@ -927,6 +927,7 @@ grpc_cc_test(
     ],
     deps = [
         ":counted_service",
+        ":end2end_test_utils",
         ":rls_server",
         ":test_service_impl",
         "//:config_vars",

@@ -1,0 +1,20 @@
+#=================
+# Compile CPython 3.15.0b2 from source
+
+RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev libsqlite3-dev && apt-get clean
+RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
+
+RUN cd /tmp && \
+    wget -q https://www.python.org/ftp/python/3.15.0/Python-3.15.0b2.tgz && \
+    tar xzvf Python-3.15.0b2.tgz && \
+    cd Python-3.15.0b2 && \
+    ./configure && \
+    make -j4 && \
+    make install
+
+RUN cd /tmp && \
+    echo "69d75754b49b261165faf1faac9e670e  Python-3.15.0b2.tgz" > checksum.md5 && \
+    md5sum -c checksum.md5
+
+RUN python3.15 -m ensurepip && \
+    python3.15 -m pip install coverage
