@@ -189,7 +189,6 @@ EXPERIMENTS = {
             "cpp_end2end_test": [
                 "ph2_client",
                 "ph2_client_server",
-                "ph2_server",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -239,6 +238,7 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "error_flatten",
+                "ph2_server",
                 "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
