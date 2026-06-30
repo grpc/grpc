@@ -24,10 +24,12 @@
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/util/grpc_check.h"
+#include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc {
 namespace testing {
@@ -1165,6 +1167,73 @@ TEST_P(OutlierDetectionTest, EjectionRetainedAcrossPriorities) {
   EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(50, backends_[1]->backend_service()->request_count());
   EXPECT_EQ(50, backends_[2]->backend_service()->request_count());
+}
+
+// Verifies that the optional grpc.lb.locality and grpc.lb.backend_service
+// labels are populated on outlier detection metrics in the xDS case
+// (see gRFC A91).  Uses its own fixture so that the FakeStatsPlugin can be
+// registered before the client channel is created.
+class OutlierDetectionMetricsTest : public XdsEnd2endTest {
+ protected:
+  void SetUp() override {
+    // No-op -- tests must explicitly call InitClient().
+  }
+};
+
+INSTANTIATE_TEST_SUITE_P(XdsTest, OutlierDetectionMetricsTest,
+                         ::testing::Values(XdsTestType()), &XdsTestType::Name);
+
+TEST_P(OutlierDetectionMetricsTest,
+       MetricsHaveLocalityAndBackendServiceLabels) {
+  const auto kEjectionsEnforced =
+      grpc_core::GlobalInstrumentsRegistryTestPeer::
+          FindUInt64CounterHandleByName(
+              "grpc.lb.outlier_detection.ejections_enforced")
+              .value();
+  const std::string target = absl::StrCat("xds:", kServerName);
+  const absl::string_view kLabelValues[] = {target, "failure_percentage"};
+  const std::string locality_name = LocalityNameString("locality0");
+  const absl::string_view kOptionalLabelValues[] = {locality_name,
+                                                    kDefaultClusterName};
+  // Register stats plugin before initializing client.
+  auto stats_plugin = grpc_core::FakeStatsPluginBuilder()
+                          .UseDisabledByDefaultMetrics(true)
+                          .BuildAndRegister();
+  InitClient();
+  CreateAndStartBackends(2);
+  auto cluster = default_cluster_;
+  // Configure outlier detection: any failure causes ejection at 100%
+  // enforcement, so the test is deterministic.
+  auto* outlier_detection = cluster.mutable_outlier_detection();
+  SetProtoDuration(grpc_core::Duration::Seconds(1),
+                   outlier_detection->mutable_interval());
+  SetProtoDuration(grpc_core::Duration::Minutes(10),
+                   outlier_detection->mutable_base_ejection_time());
+  outlier_detection->mutable_failure_percentage_threshold()->set_value(0);
+  outlier_detection->mutable_enforcing_failure_percentage()->set_value(100);
+  outlier_detection->mutable_failure_percentage_minimum_hosts()->set_value(1);
+  outlier_detection->mutable_failure_percentage_request_volume()->set_value(1);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForAllBackends(DEBUG_LOCATION);
+  // Trigger an error.  100% enforcement guarantees ejection on the next
+  // outlier detection interval.
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::CANCELLED, "",
+      RpcOptions().set_server_expected_error(StatusCode::CANCELLED));
+  // Wait for traffic that would have hit the ejected backend to shift to
+  // the remaining backend, which tells us the ejection has happened (and
+  // hence the metric was emitted).
+  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
+                 WaitForBackendOptions().set_timeout_ms(
+                     3000 * grpc_test_slowdown_factor()));
+  // The optional labels should be populated from the xDS context: the
+  // locality name set by the weighted_target policy, and the cluster name
+  // set by cds.
+  EXPECT_THAT(stats_plugin->GetUInt64CounterValue(
+                  kEjectionsEnforced, kLabelValues, kOptionalLabelValues),
+              ::testing::Optional(::testing::Ge(1)));
 }
 
 }  // namespace

@@ -23,6 +23,7 @@
 #include <stddef.h>
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <cmath>
 #include <map>
@@ -52,7 +53,9 @@
 #include "src/core/load_balancing/lb_policy_factory.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/load_balancing/subchannel_interface.h"
+#include "src/core/load_balancing/weighted_target/weighted_target.h"
 #include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
@@ -80,6 +83,42 @@ using ::grpc_event_engine::experimental::EventEngine;
 
 constexpr absl::string_view kOutlierDetection =
     "outlier_detection_experimental";
+
+// Metric label keys and values (per gRFC A91).
+constexpr absl::string_view kMetricLabelDetectionMethod =
+    "grpc.lb.outlier_detection.detection_method";
+constexpr absl::string_view kMetricLabelUnenforcedReason =
+    "grpc.lb.outlier_detection.unenforced_reason";
+constexpr absl::string_view kMetricLabelLocality = "grpc.lb.locality";
+constexpr absl::string_view kMetricLabelBackendService =
+    "grpc.lb.backend_service";
+constexpr absl::string_view kDetectionMethodSuccessRate = "success_rate";
+constexpr absl::string_view kDetectionMethodFailurePercentage =
+    "failure_percentage";
+constexpr absl::string_view kUnenforcedReasonEnforcementPercentage =
+    "enforcement_percentage";
+constexpr absl::string_view kUnenforcedReasonMaxEjectionOverflow =
+    "max_ejection_overflow";
+
+const auto kMetricEjectionsEnforced =
+    GlobalInstrumentsRegistry::RegisterUInt64Counter(
+        "grpc.lb.outlier_detection.ejections_enforced",
+        "EXPERIMENTAL.  Enforced outlier ejections by ejection reason.",
+        "{ejection}", false)
+        .Labels(kMetricLabelTarget, kMetricLabelDetectionMethod)
+        .OptionalLabels(kMetricLabelLocality, kMetricLabelBackendService)
+        .Build();
+
+const auto kMetricEjectionsUnenforced =
+    GlobalInstrumentsRegistry::RegisterUInt64Counter(
+        "grpc.lb.outlier_detection.ejections_unenforced",
+        "EXPERIMENTAL.  Unenforced outlier ejections, by detection method "
+        "and the reason the ejection was not enforced.",
+        "{ejection}", false)
+        .Labels(kMetricLabelTarget, kMetricLabelDetectionMethod,
+                kMetricLabelUnenforcedReason)
+        .OptionalLabels(kMetricLabelLocality, kMetricLabelBackendService)
+        .Build();
 
 // Config for xDS Cluster Impl LB policy.
 class OutlierDetectionLbConfig final : public LoadBalancingPolicy::Config {
@@ -437,6 +476,12 @@ class OutlierDetectionLb final : public LoadBalancingPolicy {
            ResolvedAddressLessThan>
       subchannel_state_map_;
   OrphanablePtr<EjectionTimer> ejection_timer_;
+
+  // Names used as optional metric labels.  These come from channel args
+  // populated by upstream LB policies (weighted_target sets the locality
+  // name; cds sets the backend service name).
+  const absl::string_view locality_name_;
+  const absl::string_view backend_service_name_;
 };
 
 //
@@ -561,9 +606,16 @@ LoadBalancingPolicy::PickResult OutlierDetectionLb::Picker::Pick(
 //
 
 OutlierDetectionLb::OutlierDetectionLb(Args args)
-    : LoadBalancingPolicy(std::move(args)) {
+    : LoadBalancingPolicy(std::move(args)),
+      locality_name_(channel_args()
+                         .GetString(GRPC_ARG_LB_WEIGHTED_TARGET_CHILD)
+                         .value_or("")),
+      backend_service_name_(
+          channel_args().GetString(GRPC_ARG_BACKEND_SERVICE).value_or("")) {
   GRPC_TRACE_LOG(outlier_detection_lb, INFO)
-      << "[outlier_detection_lb " << this << "] created";
+      << "[outlier_detection_lb " << this << "] created -- locality_name=\""
+      << locality_name_ << "\", backend_service_name=\""
+      << backend_service_name_ << "\"";
 }
 
 OutlierDetectionLb::~OutlierDetectionLb() {
@@ -845,6 +897,13 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
   GRPC_TRACE_LOG(outlier_detection_lb, INFO)
       << "[outlier_detection_lb " << parent_.get()
       << "] ejection timer running";
+  // Look up things we need for metric reporting once
+  auto& stats_plugins =
+      parent_->channel_control_helper()->GetStatsPluginGroup();
+  const absl::string_view target =
+      parent_->channel_control_helper()->GetTarget();
+  const std::array<absl::string_view, 2> optional_label_values = {
+      parent_->locality_name_, parent_->backend_service_name_};
   std::map<EndpointState*, double> success_rate_ejection_candidates;
   std::map<EndpointState*, double> failure_percentage_ejection_candidates;
   size_t ejected_host_count = 0;
@@ -925,9 +984,12 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
             << "] random_key=" << random_key
             << " ejected_host_count=" << ejected_host_count
             << " current_percent=" << absl::StrFormat("%.3f", current_percent);
-        if (random_key < config.success_rate_ejection->enforcement_percentage &&
-            (ejected_host_count == 0 ||
-             (current_percent < config.max_ejection_percent))) {
+        const bool below_enforcement =
+            random_key < config.success_rate_ejection->enforcement_percentage;
+        const bool below_max_ejection =
+            ejected_host_count == 0 ||
+            current_percent < config.max_ejection_percent;
+        if (below_enforcement && below_max_ejection) {
           // Eject and record the timestamp for use when ejecting addresses in
           // this iteration.
           GRPC_TRACE_LOG(outlier_detection_lb, INFO)
@@ -935,6 +997,19 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
               << "] ejecting candidate";
           endpoint_state->Eject(time_now);
           ++ejected_host_count;
+          stats_plugins.AddCounter(kMetricEjectionsEnforced, 1,
+                                   std::array<absl::string_view, 2>{
+                                       target, kDetectionMethodSuccessRate},
+                                   optional_label_values);
+        } else {
+          const absl::string_view unenforced_reason =
+              below_enforcement ? kUnenforcedReasonMaxEjectionOverflow
+                                : kUnenforcedReasonEnforcementPercentage;
+          stats_plugins.AddCounter(
+              kMetricEjectionsUnenforced, 1,
+              std::array<absl::string_view, 3>{
+                  target, kDetectionMethodSuccessRate, unenforced_reason},
+              optional_label_values);
         }
       }
     }
@@ -968,10 +1043,13 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
             << "] random_key=" << random_key
             << " ejected_host_count=" << ejected_host_count
             << " current_percent=" << current_percent;
-        if (random_key <
-                config.failure_percentage_ejection->enforcement_percentage &&
-            (ejected_host_count == 0 ||
-             (current_percent < config.max_ejection_percent))) {
+        const bool below_enforcement =
+            random_key <
+            config.failure_percentage_ejection->enforcement_percentage;
+        const bool below_max_ejection =
+            ejected_host_count == 0 ||
+            current_percent < config.max_ejection_percent;
+        if (below_enforcement && below_max_ejection) {
           // Eject and record the timestamp for use when ejecting addresses in
           // this iteration.
           GRPC_TRACE_LOG(outlier_detection_lb, INFO)
@@ -979,6 +1057,20 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
               << "] ejecting candidate";
           endpoint_state->Eject(time_now);
           ++ejected_host_count;
+          stats_plugins.AddCounter(
+              kMetricEjectionsEnforced, 1,
+              std::array<absl::string_view, 2>{
+                  target, kDetectionMethodFailurePercentage},
+              optional_label_values);
+        } else {
+          const absl::string_view unenforced_reason =
+              below_enforcement ? kUnenforcedReasonMaxEjectionOverflow
+                                : kUnenforcedReasonEnforcementPercentage;
+          stats_plugins.AddCounter(
+              kMetricEjectionsUnenforced, 1,
+              std::array<absl::string_view, 3>{
+                  target, kDetectionMethodFailurePercentage, unenforced_reason},
+              optional_label_values);
         }
       }
     }
