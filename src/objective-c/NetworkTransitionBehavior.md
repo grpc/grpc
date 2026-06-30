@@ -1,6 +1,6 @@
 
 # gRPC iOS Network Transition Behaviors
-Network connectivity on an iOS device may transition between cellular, WIFI, or
+Network connectivity on an iOS device may transition between cellular, WiFi, or
 no network connectivity. This document describes how these network changes
 should be handled by gRPC and current known issues.
 
