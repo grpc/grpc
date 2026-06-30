@@ -145,7 +145,6 @@ class GrpcXdsServerTargetTest : public ::testing::Test {
     insecure_creds_ = ParseXdsBootstrapChannelCreds(*json, JsonArgs(), &errors);
     ASSERT_TRUE(errors.ok());
     ASSERT_NE(insecure_creds_, nullptr);
-
     auto json_gd =
         JsonParse("{\"channel_creds\": [{\"type\": \"google_default\"}]}");
     ASSERT_TRUE(json_gd.ok()) << json_gd.status().ToString();
@@ -153,7 +152,6 @@ class GrpcXdsServerTargetTest : public ::testing::Test {
         ParseXdsBootstrapChannelCreds(*json_gd, JsonArgs(), &errors);
     ASSERT_TRUE(errors.ok());
     ASSERT_NE(google_default_creds_, nullptr);
-
     auto json_call = JsonParse(
         "{\"call_creds\": [{\"type\": \"jwt_token_file\", \"config\": "
         "{\"jwt_token_file\": \"/foo\"}}]}");
