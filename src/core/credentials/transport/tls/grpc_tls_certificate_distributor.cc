@@ -50,13 +50,12 @@ void grpc_tls_certificate_distributor::SetKeyMaterials(
       } else if (watcher_it->second.identity_cert_name.has_value()) {
         auto& identity_cert_info =
             certificate_info_map_[*watcher_it->second.identity_cert_name];
-        if (!grpc_core::IsTlsIdentitiesEmpty(
-                identity_cert_info.identities)) {
+        if (!grpc_core::IsTlsIdentitiesEmpty(identity_cert_info.identities)) {
           tls_identities_to_report = identity_cert_info.identities;
         }
       }
-      watcher_ptr->OnCertificatesChanged(
-          roots, std::move(tls_identities_to_report));
+      watcher_ptr->OnCertificatesChanged(roots,
+                                         std::move(tls_identities_to_report));
     }
     cert_info.roots = roots;
   }
