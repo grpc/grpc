@@ -654,10 +654,10 @@ void DefaultSslRootStore::InitRootStoreOnce() {
   }
 }
 
-bool IsPemKeyCertPairListEmpty(const PemKeyCertPairList& key_cert_pairs) {
+bool IsTlsIdentitiesEmpty(const TlsIdentities& tls_identities) {
   return Match(
-      key_cert_pairs,
-      [](const std::vector<PemKeyCertPair>& pem_key_cert_pairs) {
+      tls_identities,
+      [](const PemKeyCertPairList& pem_key_cert_pairs) {
         return pem_key_cert_pairs.empty();
       },
       [](const std::shared_ptr<CertificateSelector>& selector) {

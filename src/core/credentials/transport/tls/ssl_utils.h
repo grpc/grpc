@@ -194,12 +194,13 @@ class PemKeyCertPair {
   std::string cert_chain_;
 };
 
-using PemKeyCertPairList = std::variant<std::vector<PemKeyCertPair>,
-                                        std::shared_ptr<CertificateSelector>>;
+using PemKeyCertPairList = std::vector<PemKeyCertPair>;
+using TlsIdentities =
+    std::variant<PemKeyCertPairList, std::shared_ptr<CertificateSelector>>;
 
 // Checks whether `std::vector<PemKeyCertPair>` in the variant is empty, or the
 // `CertficateSelector` is nullptr.
-bool IsPemKeyCertPairListEmpty(const PemKeyCertPairList& key_cert_pairs);
+bool IsTlsIdentitiesEmpty(const TlsIdentities& tls_identities);
 
 }  // namespace grpc_core
 

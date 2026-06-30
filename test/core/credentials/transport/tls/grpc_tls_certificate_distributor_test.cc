@@ -94,7 +94,7 @@ MATCHER_P2(MatchesCredentialInfo, root_matcher, identity_matcher, "") {
   bool ok = true;
   ok &= ::testing::ExplainMatchResult(root_matcher, arg.root_cert_info,
                                       result_listener);
-  ok &= ::testing::ExplainMatchResult(identity_matcher, arg.key_cert_pairs,
+  ok &= ::testing::ExplainMatchResult(identity_matcher, arg.tls_identities,
                                       result_listener);
   return ok;
 }
@@ -121,16 +121,16 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
   // CredentialInfo to the cert_update_queue of state_, and check in each test
   // if the status updates are correct.
   struct CredentialInfo {
-    PemKeyCertPairList key_cert_pairs;
+    TlsIdentities tls_identities;
     std::shared_ptr<tsi::RootCertInfo> root_cert_info;
     CredentialInfo(std::shared_ptr<tsi::RootCertInfo> roots,
-                   PemKeyCertPairList key_cert)
-        : key_cert_pairs(std::move(key_cert)),
+                   TlsIdentities identities)
+        : tls_identities(std::move(identities)),
           root_cert_info(std::move(roots)) {}
 
     bool operator==(const CredentialInfo& other) const {
       return root_cert_info == other.root_cert_info &&
-             key_cert_pairs == other.key_cert_pairs;
+             tls_identities == other.tls_identities;
     }
   };
 
@@ -179,14 +179,14 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
 
     void OnCertificatesChanged(
         std::shared_ptr<tsi::RootCertInfo> roots,
-        std::optional<PemKeyCertPairList> key_cert_pairs) override {
+        std::optional<TlsIdentities> tls_identities) override {
       std::shared_ptr<tsi::RootCertInfo> updated_root;
       if (roots != nullptr) {
         updated_root = std::move(roots);
       }
-      PemKeyCertPairList updated_identity;
-      if (key_cert_pairs.has_value()) {
-        updated_identity = std::move(*key_cert_pairs);
+      TlsIdentities updated_identity;
+      if (tls_identities.has_value()) {
+        updated_identity = std::move(*tls_identities);
       }
       state_->cert_update_queue.emplace_back(updated_root,
                                              std::move(updated_identity));

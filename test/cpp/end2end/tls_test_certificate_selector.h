@@ -31,8 +31,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
-#if defined(GRPC_TEST_CPP_END2END_TLS_TEST_CERTIFICATE_SELECTOR_H)
-
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_selector.h"
 
 namespace grpc {
@@ -107,4 +105,3 @@ class AsyncTestCertificateSelector : public grpc_core::CertificateSelector {
 }  // namespace grpc
 
 #endif  // GRPC_TEST_CPP_END2END_TLS_TEST_CERTIFICATE_SELECTOR_H
-#endif  //
