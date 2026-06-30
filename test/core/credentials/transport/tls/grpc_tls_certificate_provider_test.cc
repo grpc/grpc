@@ -25,6 +25,7 @@
 #include <utility>
 
 #include "src/core/util/grpc_check.h"
+#include "src/core/util/match.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "gmock/gmock.h"
@@ -83,7 +84,7 @@ MATCHER_P2(MatchesCredentialInfo, root_matcher, identity_matcher, "") {
   bool ok = true;
   ok &= ::testing::ExplainMatchResult(root_matcher, arg.root_cert_info,
                                       result_listener);
-  ok &= ::testing::ExplainMatchResult(identity_matcher, arg.tls_identities,
+  ok &= ::testing::ExplainMatchResult(identity_matcher, arg.key_cert_pairs,
                                       result_listener);
   return ok;
 }
@@ -117,13 +118,13 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
   // CredentialInfo to the cert_update_queue of state_, and check in each test
   // if the status updates are correct.
   struct CredentialInfo {
-    TlsIdentities tls_identities;
+    PemKeyCertPairList key_cert_pairs;
     std::shared_ptr<tsi::RootCertInfo> root_cert_info;
-    CredentialInfo(const tsi::RootCertInfo& roots, TlsIdentities identities)
-        : tls_identities(std::move(identities)),
+    CredentialInfo(const tsi::RootCertInfo& roots, PemKeyCertPairList key_cert)
+        : key_cert_pairs(std::move(key_cert)),
           root_cert_info(std::make_shared<tsi::RootCertInfo>(roots)) {}
     bool operator==(const CredentialInfo& other) const {
-      return tls_identities == other.tls_identities &&
+      return key_cert_pairs == other.key_cert_pairs &&
              root_cert_info == other.root_cert_info;
     }
   };
@@ -177,17 +178,24 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
     void OnCertificatesChanged(
         std::shared_ptr<tsi::RootCertInfo> roots,
         std::optional<TlsIdentities> tls_identities) override {
-      MutexLock lock(&state_->mu);
       tsi::RootCertInfo updated_root;
       if (roots != nullptr) {
         updated_root = *roots;
       }
-      TlsIdentities updated_identity;
+      PemKeyCertPairList key_cert_pairs;
       if (tls_identities.has_value()) {
-        updated_identity = std::move(*tls_identities);
+        MatchMutable(
+            &(*tls_identities),
+            [&](PemKeyCertPairList* pem_key_cert_pairs) {
+              key_cert_pairs = std::move(*pem_key_cert_pairs);
+            },
+            [](std::shared_ptr<CertificateSelector>*) {
+              // Not supposed to happen in this test.
+            });
       }
+      MutexLock lock(&state_->mu);
       state_->cert_update_queue.emplace_back(updated_root,
-                                             std::move(updated_identity));
+                                             std::move(key_cert_pairs));
     }
 
     void OnError(grpc_error_handle root_cert_error,

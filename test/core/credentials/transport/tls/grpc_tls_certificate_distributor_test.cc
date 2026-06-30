@@ -21,6 +21,7 @@
 
 #include <deque>
 #include <list>
+#include <memory>
 #include <string>
 #include <thread>
 
@@ -94,7 +95,7 @@ MATCHER_P2(MatchesCredentialInfo, root_matcher, identity_matcher, "") {
   bool ok = true;
   ok &= ::testing::ExplainMatchResult(root_matcher, arg.root_cert_info,
                                       result_listener);
-  ok &= ::testing::ExplainMatchResult(identity_matcher, arg.tls_identities,
+  ok &= ::testing::ExplainMatchResult(identity_matcher, arg.key_cert_pairs,
                                       result_listener);
   return ok;
 }
@@ -121,16 +122,16 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
   // CredentialInfo to the cert_update_queue of state_, and check in each test
   // if the status updates are correct.
   struct CredentialInfo {
-    TlsIdentities tls_identities;
+    PemKeyCertPairList key_cert_pairs;
     std::shared_ptr<tsi::RootCertInfo> root_cert_info;
     CredentialInfo(std::shared_ptr<tsi::RootCertInfo> roots,
-                   TlsIdentities identities)
-        : tls_identities(std::move(identities)),
+                   PemKeyCertPairList key_cert)
+        : key_cert_pairs(std::move(key_cert)),
           root_cert_info(std::move(roots)) {}
 
     bool operator==(const CredentialInfo& other) const {
       return root_cert_info == other.root_cert_info &&
-             tls_identities == other.tls_identities;
+             key_cert_pairs == other.key_cert_pairs;
     }
   };
 
@@ -184,12 +185,19 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
       if (roots != nullptr) {
         updated_root = std::move(roots);
       }
-      TlsIdentities updated_identity;
+      PemKeyCertPairList key_cert_pairs;
       if (tls_identities.has_value()) {
-        updated_identity = std::move(*tls_identities);
+        MatchMutable(
+            &(*tls_identities),
+            [&](PemKeyCertPairList* pem_key_cert_pairs) {
+              key_cert_pairs = std::move(*pem_key_cert_pairs);
+            },
+            [](std::shared_ptr<CertificateSelector>*) {
+              // Not supposed to happen in this test.
+            });
       }
       state_->cert_update_queue.emplace_back(updated_root,
-                                             std::move(updated_identity));
+                                             std::move(key_cert_pairs));
     }
 
     void OnError(grpc_error_handle root_cert_error,

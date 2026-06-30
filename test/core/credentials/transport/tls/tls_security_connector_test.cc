@@ -777,7 +777,7 @@ TEST_F(TlsSecurityConnectorTest,
       static_cast<TlsServerSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
   EXPECT_EQ(tls_connector->RootCertInfoForTesting(), root_cert_0_);
-    EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
+  EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
   distributor->SetKeyMaterials(kRootCertName, root_cert_1_, std::nullopt);
   distributor->SetKeyMaterials(kIdentityCertName, nullptr, identity_pairs_1_);
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
@@ -811,11 +811,13 @@ TEST_F(TlsSecurityConnectorTest,
       static_cast<TlsServerSecurityConnector*>(identity_connector.get());
   EXPECT_NE(tls_identity_connector->ServerHandshakerFactoryForTesting(),
             nullptr);
-  EXPECT_EQ(tls_identity_connector->KeyCertPairListForTesting(), identity_pairs_0_);
+  EXPECT_EQ(tls_identity_connector->KeyCertPairListForTesting(),
+            identity_pairs_0_);
   distributor->SetKeyMaterials(kIdentityCertName, nullptr, identity_pairs_1_);
   EXPECT_NE(tls_identity_connector->ServerHandshakerFactoryForTesting(),
             nullptr);
-  EXPECT_EQ(tls_identity_connector->KeyCertPairListForTesting(), identity_pairs_1_);
+  EXPECT_EQ(tls_identity_connector->KeyCertPairListForTesting(),
+            identity_pairs_1_);
 }
 
 TEST_F(TlsSecurityConnectorTest,
@@ -873,7 +875,8 @@ TEST_F(TlsSecurityConnectorTest,
   TlsServerSecurityConnector* tls_connector =
       static_cast<TlsServerSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
-  EXPECT_EQ(tls_connector->RootCertInfoForTesting(), root_cert_0_);  EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
+  EXPECT_EQ(tls_connector->RootCertInfoForTesting(), root_cert_0_);
+  EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
   // Calling SetErrorForCert on distributor shouldn't invalidate the previous
   // valid credentials.
   distributor->SetErrorForCert(kRootCertName, GRPC_ERROR_CREATE(kErrorMessage),
