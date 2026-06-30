@@ -313,7 +313,8 @@ Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
                 if (epte != nullptr && stats_plugin_group != nullptr) {
                   epte->EnableTcpTelemetry(
                       stats_plugin_group->GetCollectionScope(),
-                      /*is_control_endpoint=*/false);
+                      /*is_control_endpoint=*/false,
+                      /*trace_full_buffer=*/false);
                   epte->SetTcpTracer(std::make_shared<DefaultTcpTracer>(
                       std::move(stats_plugin_group)));
                 }
