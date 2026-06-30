@@ -163,7 +163,11 @@ def get_method_handlers(pre_response_callback):
 def _instrumented_client_server_pair(
     channel_kwargs, server_kwargs, server_handler
 ):
-    server = grpc.server(futures.ThreadPoolExecutor(), **server_kwargs)
+    server_options = list(server_kwargs.get("options", []))
+    server_options.append(("grpc.so_reuseport", 0))
+    server_kwargs_copy = dict(server_kwargs)
+    server_kwargs_copy["options"] = server_options
+    server = grpc.server(futures.ThreadPoolExecutor(), **server_kwargs_copy)
     server.add_registered_method_handlers(_SERVICE_NAME, server_handler)
     server_port = server.add_insecure_port("{}:0".format(_HOST))
     server.start()
@@ -186,12 +190,21 @@ def _get_byte_counts(
     server_handler,
     message,
 ):
-    with _instrumented_client_server_pair(
-        channel_kwargs, server_kwargs, server_handler
-    ) as pipeline:
-        client_channel, proxy, server = pipeline
-        client_function(client_channel, multicallable_kwargs, message)
-        return proxy.get_byte_count()
+    for attempt in range(5):
+        try:
+            with _instrumented_client_server_pair(
+                channel_kwargs, server_kwargs, server_handler
+            ) as pipeline:
+                client_channel, proxy, server = pipeline
+                client_function(client_channel, multicallable_kwargs, message)
+                return proxy.get_byte_count()
+        except grpc.RpcError as e:
+            if e.code() == grpc.StatusCode.UNAVAILABLE and attempt < 4:
+                logging.warning("Retrying compression test due to UNAVAILABLE: %s", e)
+                import time
+                time.sleep(1)
+            else:
+                raise
 
 
 def _get_compression_ratios(

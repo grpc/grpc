@@ -57,7 +57,7 @@ def _file_descriptor_to_proto(descriptor):
 
 class ReflectionServicerTest(AioTestBase):
     async def setUp(self):
-        self._server = aio.server()
+        self._server = aio.server(options=(("grpc.so_reuseport", 0),))
         reflection.enable_server_reflection(_SERVICE_NAMES, self._server)
         port = self._server.add_insecure_port("127.0.0.1:0")
         await self._server.start()

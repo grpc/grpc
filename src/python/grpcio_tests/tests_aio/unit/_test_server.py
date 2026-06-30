@@ -165,6 +165,35 @@ async def start_test_server(
     interceptors=None,
     record: Optional[list] = None,
 ):
+    if not hasattr(grpc, "_uds_port_map"):
+        grpc._uds_port_map = {}
+        original_aio_insecure_channel = getattr(grpc.aio, "insecure_channel", None)
+        original_aio_secure_channel = getattr(grpc.aio, "secure_channel", None)
+        if original_aio_insecure_channel:
+            def custom_aio_insecure_channel(target, options=None, compression=None, interceptors=None):
+                try:
+                    port = int(target.split(":")[-1])
+                    if port in grpc._uds_port_map:
+                        target = grpc._uds_port_map[port]
+                except Exception:
+                    pass
+                return original_aio_insecure_channel(target, options, compression, interceptors)
+            grpc.aio.insecure_channel = custom_aio_insecure_channel
+            if getattr(grpc, "experimental", None) and getattr(grpc.experimental, "aio", None):
+                grpc.experimental.aio.insecure_channel = custom_aio_insecure_channel
+        if original_aio_secure_channel:
+            def custom_aio_secure_channel(target, credentials, options=None, compression=None, interceptors=None):
+                try:
+                    port = int(target.split(":")[-1])
+                    if port in grpc._uds_port_map:
+                        target = grpc._uds_port_map[port]
+                except Exception:
+                    pass
+                return original_aio_secure_channel(target, credentials, options, compression, interceptors)
+            grpc.aio.secure_channel = custom_aio_secure_channel
+            if getattr(grpc, "experimental", None) and getattr(grpc.experimental, "aio", None):
+                grpc.experimental.aio.secure_channel = custom_aio_secure_channel
+
     server = aio.server(
         options=(("grpc.so_reuseport", 0),), interceptors=interceptors
     )
@@ -178,9 +207,31 @@ async def start_test_server(
             server_credentials = grpc.ssl_server_credentials(
                 [(resources.private_key(), resources.certificate_chain())]
             )
-        port = server.add_secure_port("127.0.0.1:%d" % port, server_credentials)
+        if port != 0:
+            server.add_secure_port(f"127.0.0.1:{port}", server_credentials)
+        else:
+            import tempfile, os, uuid
+            sock_name = f"grpc_test_{uuid.uuid4().hex}.sock"
+            uds_path = os.path.join(tempfile.gettempdir(), sock_name)
+            fake_port = hash(sock_name) % 10000 + 50000
+            while fake_port in grpc._uds_port_map:
+                fake_port += 1
+            grpc._uds_port_map[fake_port] = f"unix:{uds_path}"
+            server.add_secure_port(f"unix:{uds_path}", server_credentials)
+            port = fake_port
     else:
-        port = server.add_insecure_port("127.0.0.1:%d" % port)
+        if port != 0:
+            server.add_insecure_port(f"127.0.0.1:{port}")
+        else:
+            import tempfile, os, uuid
+            sock_name = f"grpc_test_{uuid.uuid4().hex}.sock"
+            uds_path = os.path.join(tempfile.gettempdir(), sock_name)
+            fake_port = hash(sock_name) % 10000 + 40000
+            while fake_port in grpc._uds_port_map:
+                fake_port += 1
+            grpc._uds_port_map[fake_port] = f"unix:{uds_path}"
+            server.add_insecure_port(f"unix:{uds_path}")
+            port = fake_port
 
     await server.start()
 

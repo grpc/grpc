@@ -148,7 +148,7 @@ class ServerTest(unittest.TestCase):
 
     def test_failed_port_binding_exception(self):
         server = grpc.server(None, options=(("grpc.so_reuseport", 0),))
-        port = server.add_insecure_port("localhost:0")
+        port = server.add_insecure_port("127.0.0.1:0")
         bind_address = "127.0.0.1:%d" % port
 
         with self.assertRaises(RuntimeError):

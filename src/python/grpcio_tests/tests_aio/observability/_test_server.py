@@ -68,7 +68,7 @@ class _GenericHandler(grpc.GenericRpcHandler):
 
 
 async def start_server() -> Tuple[grpc.aio.Server, int]:
-    server = grpc.aio.server()
+    server = grpc.aio.server(options=(("grpc.so_reuseport", 0),))
     port = server.add_insecure_port("127.0.0.1:0")
     generic_handler = _GenericHandler()
     server.add_generic_rpc_handlers((generic_handler,))

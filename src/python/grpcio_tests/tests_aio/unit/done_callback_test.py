@@ -129,7 +129,7 @@ class TestClientSideDoneCallback(AioTestBase):
 
 class TestServerSideDoneCallback(AioTestBase):
     async def setUp(self):
-        self._server = aio.server()
+        self._server = aio.server(options=(("grpc.so_reuseport", 0),))
         port = self._server.add_insecure_port("127.0.0.1:0")
         self._channel = aio.insecure_channel("127.0.0.1:%d" % port)
 

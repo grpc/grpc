@@ -358,7 +358,9 @@ class InvocationDefectsTest(unittest.TestCase):
 
         with self.assertRaises(grpc.RpcError) as exception_context:
             multi_callable(
-                request, metadata=(("test", "DefectiveGenericRpcHandlerUnary"),)
+                request,
+                wait_for_ready=True,
+                metadata=(("test", "DefectiveGenericRpcHandlerUnary"),),
             )
 
         self.assertIs(
@@ -373,7 +375,9 @@ class InvocationDefectsTest(unittest.TestCase):
 
         with self.assertRaises(grpc.RpcError) as exception_context:
             multi_callable(
-                request, metadata=(("test", "DefectiveGenericRpcHandlerUnary"),)
+                request,
+                wait_for_ready=True,
+                metadata=(("test", "DefectiveGenericRpcHandlerUnary"),),
             )
 
         self.assertIs(

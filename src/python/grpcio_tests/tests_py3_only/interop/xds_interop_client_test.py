@@ -154,7 +154,7 @@ class XdsInteropClientTest(unittest.TestCase):
                         self.assertEqual(delta[method_str][status], 0, delta)
 
     def test_configure_consistency(self):
-        _, server_port, socket = framework_common.get_socket()
+        _, server_port, socket = framework_common.get_socket(listen=False)
 
         with _start_python_with_args(
             _SERVER_PATH,
@@ -162,6 +162,7 @@ class XdsInteropClientTest(unittest.TestCase):
         ) as (server, server_stdout, server_stderr):
             # Send RPC to server to make sure it's running.
             logging.info("Sending RPC to server.")
+            socket.close()
             test_pb2_grpc.TestService.EmptyCall(
                 empty_pb2.Empty(),
                 f"127.0.0.1:{server_port}",
@@ -169,8 +170,7 @@ class XdsInteropClientTest(unittest.TestCase):
                 wait_for_ready=True,
             )
             logging.info("Server successfully started.")
-            socket.close()
-            _, stats_port, stats_socket = framework_common.get_socket()
+            _, stats_port, stats_socket = framework_common.get_socket(listen=False)
             with _start_python_with_args(
                 _CLIENT_PATH,
                 [

@@ -192,12 +192,17 @@ absl::Status SetSocketRcvBuf(int fd, int buffer_size_bytes) {
 // get max listen queue size on linux
 int InitMaxAcceptQueueSize() {
   int n = SOMAXCONN;
+  char* env = getenv("GRPC_SOMAXCONN_OVERRIDE");
+  if (env != nullptr) {
+    int override_val = atoi(env);
+    if (override_val > 0) n = override_val;
+  }
   char buf[64];
   FILE* fp = fopen("/proc/sys/net/core/somaxconn", "r");
   int max_accept_queue_size;
   if (fp == nullptr) {
     // 2.4 kernel.
-    return SOMAXCONN;
+    return n;
   }
   if (fgets(buf, sizeof buf, fp)) {
     char* end;

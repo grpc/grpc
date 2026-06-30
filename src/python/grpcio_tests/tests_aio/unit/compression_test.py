@@ -186,7 +186,7 @@ class TestCompression(AioTestBase):
         self.assertEqual(grpc.StatusCode.OK, await call.code())
 
     async def test_server_default_compression_algorithm(self):
-        server = aio.server(compression=grpc.Compression.Deflate)
+        server = aio.server(compression=grpc.Compression.Deflate, options=(("grpc.so_reuseport", 0),))
         port = server.add_insecure_port("127.0.0.1:0")
         server.add_generic_rpc_handlers((_GenericHandler(),))
         await server.start()

@@ -74,7 +74,7 @@ class TestAuthContext(AioTestBase):
                 )
             },
         )
-        server = aio.server()
+        server = aio.server(options=(("grpc.so_reuseport", 0),))
         server.add_generic_rpc_handlers((handler,))
         port = server.add_insecure_port("127.0.0.1:0")
         await server.start()
@@ -103,7 +103,7 @@ class TestAuthContext(AioTestBase):
                 )
             },
         )
-        server = aio.server()
+        server = aio.server(options=(("grpc.so_reuseport", 0),))
         server.add_generic_rpc_handlers((handler,))
         server_cred = grpc.ssl_server_credentials(_SERVER_CERTS)
         port = server.add_secure_port("127.0.0.1:0", server_cred)
@@ -142,7 +142,7 @@ class TestAuthContext(AioTestBase):
                 )
             },
         )
-        server = aio.server()
+        server = aio.server(options=(("grpc.so_reuseport", 0),))
         server.add_generic_rpc_handlers((handler,))
         server_cred = grpc.ssl_server_credentials(
             _SERVER_CERTS,
@@ -200,7 +200,7 @@ class TestAuthContext(AioTestBase):
                 )
             },
         )
-        server = aio.server()
+        server = aio.server(options=(("grpc.so_reuseport", 0),))
         server.add_generic_rpc_handlers((handler,))
         server_cred = grpc.ssl_server_credentials(_SERVER_CERTS)
         port = server.add_secure_port("127.0.0.1:0", server_cred)

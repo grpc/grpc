@@ -46,7 +46,7 @@ class TestContextPeer(AioTestBase):
             return request
 
         # Creates a server
-        server = aio.server()
+        server = aio.server(options=(("grpc.so_reuseport", 0),))
         handlers = grpc.method_handlers_generic_handler(
             "test", {"UnaryUnary": check_peer_unary_unary}
         )

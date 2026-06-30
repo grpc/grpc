@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from concurrent import futures
+import sys
 import threading
 
 
@@ -32,3 +33,10 @@ class RecordingThreadPool(futures.ThreadPoolExecutor):
     def was_used(self):
         with self._lock:
             return self._was_used
+
+    def shutdown(self, wait=True, *, cancel_futures=False):
+        if hasattr(self._tp_executor, 'shutdown'):
+            if sys.version_info >= (3, 9):
+                self._tp_executor.shutdown(wait=wait, cancel_futures=cancel_futures)
+            else:
+                self._tp_executor.shutdown(wait=wait)

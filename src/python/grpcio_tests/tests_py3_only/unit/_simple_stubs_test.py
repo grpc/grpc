@@ -244,25 +244,31 @@ class SimpleStubsTest(unittest.TestCase):
             )
 
     def test_total_channels_enforced(self):
-        with _server(grpc.local_server_credentials()) as port:
-            target = f"127.0.0.1:{port}"
-            for i in range(_STRESS_EPOCHS):
-                # Ensure we get a new channel each time.
-                options = (("foo", str(i)),)
-                # Send messages at full blast.
-                grpc.experimental.unary_unary(
-                    _REQUEST,
-                    target,
-                    _UNARY_UNARY,
-                    options=options,
-                    channel_credentials=grpc.local_channel_credentials(),
-                    _registered_method=0,
-                )
-                self.assert_eventually(
-                    lambda: grpc._simple_stubs.ChannelCache.get()._test_only_channel_count()
-                    <= _MAXIMUM_CHANNELS + 1,
-                    message=lambda: f"{grpc._simple_stubs.ChannelCache.get()._test_only_channel_count()} channels remain",
-                )
+        original_eviction_period = grpc._simple_stubs._EVICTION_PERIOD
+        grpc._simple_stubs._EVICTION_PERIOD = datetime.timedelta(seconds=60)
+        try:
+            with _server(grpc.local_server_credentials()) as port:
+                target = f"127.0.0.1:{port}"
+                for i in range(_STRESS_EPOCHS):
+                    # Ensure we get a new channel each time.
+                    options = (("foo", str(i)),)
+                    # Send messages at full blast.
+                    grpc.experimental.unary_unary(
+                        _REQUEST,
+                        target,
+                        _UNARY_UNARY,
+                        options=options,
+                        channel_credentials=grpc.local_channel_credentials(),
+                        _registered_method=0,
+                        timeout=10.0,
+                    )
+                    self.assert_eventually(
+                        lambda: grpc._simple_stubs.ChannelCache.get()._test_only_channel_count()
+                        <= _MAXIMUM_CHANNELS + 1,
+                        message=lambda: f"{grpc._simple_stubs.ChannelCache.get()._test_only_channel_count()} channels remain",
+                    )
+        finally:
+            grpc._simple_stubs._EVICTION_PERIOD = original_eviction_period
 
     def test_unary_stream(self):
         with _server(grpc.local_server_credentials()) as port:

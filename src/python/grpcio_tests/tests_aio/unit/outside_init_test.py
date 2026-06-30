@@ -47,7 +47,7 @@ class TestOutsideInit(unittest.TestCase):
         # across cases need to be created outside of AsyncIO coroutines.
         aio.insecure_channel("")
         aio.secure_channel("", channel_creds)
-        aio.server()
+        aio.server(options=(("grpc.so_reuseport", 0),))
         aio.init_grpc_aio()
         aio.shutdown_grpc_aio()
 

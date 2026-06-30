@@ -59,7 +59,7 @@ def get_socket(
                 sock.setsockopt(socket.SOL_SOCKET, sock_option, 1)
             sock.bind((bind_address, port))
             if listen:
-                sock.listen(1)
+                sock.listen(4096)
             return bind_address, sock.getsockname()[1], sock
         except OSError as os_error:
             sock.close()

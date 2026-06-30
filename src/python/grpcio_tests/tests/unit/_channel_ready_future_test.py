@@ -91,7 +91,8 @@ class ChannelReadyFutureTest(unittest.TestCase):
         self.assertFalse(recording_thread_pool.was_used())
 
         channel.close()
-        server.stop(None)
+        server.stop(None).wait()
+        recording_thread_pool.shutdown()
 
 
 if __name__ == "__main__":

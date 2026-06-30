@@ -72,7 +72,7 @@ def _perform_an_rpc(address):
         _TEST_METHOD,
         _registered_method=True,
     )
-    response = multicallable(_REQUEST)
+    response = multicallable(_REQUEST, wait_for_ready=True)
     assert _REQUEST == response
 
 

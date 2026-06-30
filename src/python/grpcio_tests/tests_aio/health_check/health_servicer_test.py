@@ -53,7 +53,7 @@ class HealthServicerTest(AioTestBase):
         await self._servicer.set(
             _NOT_SERVING_SERVICE, health_pb2.HealthCheckResponse.NOT_SERVING
         )
-        self._server = aio.server()
+        self._server = aio.server(options=(("grpc.so_reuseport", 0),))
         port = self._server.add_insecure_port("127.0.0.1:0")
         health_pb2_grpc.add_HealthServicer_to_server(
             self._servicer, self._server

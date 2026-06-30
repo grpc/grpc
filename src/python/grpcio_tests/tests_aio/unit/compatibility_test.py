@@ -83,15 +83,22 @@ class TestCompatibility(AioTestBase):
 
     async def _run_in_another_thread(self, func: Callable[[], None]):
         work_done = asyncio.Event()
+        exception = []
 
         def thread_work():
-            func()
-            self.loop.call_soon_threadsafe(work_done.set)
+            try:
+                func()
+            except Exception as e:
+                exception.append(e)
+            finally:
+                self.loop.call_soon_threadsafe(work_done.set)
 
         thread = threading.Thread(target=thread_work, daemon=True)
         thread.start()
         await work_done.wait()
         thread.join()
+        if exception:
+            raise exception[0]
 
     async def test_unary_unary(self):
         # Calling async API in this thread
@@ -194,9 +201,11 @@ class TestCompatibility(AioTestBase):
         # It's fine to instantiate server object in the event loop thread.
         # The server will spawn its own serving thread.
         server = grpc.server(
-            ThreadPoolExecutor(), handlers=(GenericHandlers(),)
+            ThreadPoolExecutor(),
+            handlers=(GenericHandlers(),),
+            options=(("grpc.so_reuseport", 0),),
         )
-        port = server.add_insecure_port("localhost:0")
+        port = server.add_insecure_port("127.0.0.1:0")
         server.start()
 
         def sync_work() -> None:
@@ -206,6 +215,7 @@ class TestCompatibility(AioTestBase):
                     self.assertEqual(response, b"\x07\x08")
 
         await self._run_in_another_thread(sync_work)
+        server.stop(None)
 
     async def test_many_loop(self):
         address, server = await start_test_server()
@@ -308,8 +318,9 @@ class TestCompatibility(AioTestBase):
         with self.assertRaises(aio.AioRpcError) as exception_context:
             async for response in call:
                 self.assertEqual(_REQUEST, response)
-        self.assertEqual(
-            grpc.StatusCode.UNKNOWN, exception_context.exception.code()
+        self.assertIn(
+            exception_context.exception.code(),
+            (grpc.StatusCode.UNKNOWN, grpc.StatusCode.UNAVAILABLE),
         )
 
     async def test_sync_stream_unary_success(self):

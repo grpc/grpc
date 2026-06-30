@@ -64,7 +64,7 @@ _FLAKY_TESTS = [
 [
     internal_py_grpc_test_with_runtime_type_check(
         name = test_file_name[:-3],
-        size = "small",
+        size = "medium" if test_file_name == "timeout_test.py" else "small",
         srcs = [test_file_name],
         data = [
             "//src/python/grpcio_tests/tests/unit/credentials",

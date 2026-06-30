@@ -32,7 +32,7 @@ class GenericService:
 
 class MultithreadTest(AioTestBase):
     async def _start_server(self):
-        server = grpc.aio.server()
+        server = grpc.aio.server(options=(("grpc.so_reuseport", 0),))
         rpc_method_handlers = {
             "UnaryCall": grpc.unary_unary_rpc_method_handler(
                 GenericService.UnaryCall,

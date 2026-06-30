@@ -69,7 +69,7 @@ _INVALID_TEST_CHANNEL_ARGS = [
 
 
 async def test_if_reuse_port_enabled(server: aio.Server):
-    port = server.add_insecure_port("localhost:0")
+    port = server.add_insecure_port("127.0.0.1:0")
     await server.start()
 
     try:
@@ -96,6 +96,10 @@ class TestChannelArgument(AioTestBase):
     @unittest.skipIf(
         platform.system() == "Windows",
         "SO_REUSEPORT only available in Linux-like OS.",
+    )
+    @unittest.skipIf(
+        platform.system() == "Darwin",
+        "SO_REUSEPORT behaves differently on MacOS.",
     )
     @unittest.skipIf(
         "aarch64" in platform.machine(),

@@ -64,6 +64,7 @@ class BaseWatchTests:
             self._server.start()
 
             self._channel = grpc.insecure_channel("127.0.0.1:%d" % port)
+            grpc.channel_ready_future(self._channel).result(timeout=test_constants.SHORT_TIMEOUT * 10)
             self._stub = health_pb2_grpc.HealthStub(self._channel)
 
         def tearDown(self):

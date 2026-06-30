@@ -64,7 +64,7 @@ python3 -m pip install -r requirements.bazel.lock
 
 # Test targets mirrored from tools/internal_ci/linux/grpc_python_bazel_test_in_docker.sh
 TEST_TARGETS="//src/python/..."
-BAZEL_FLAGS="--test_output=errors --config=python --flaky_test_attempts=3"
+BAZEL_FLAGS="--test_output=errors --config=python --test_env=GRPC_SOMAXCONN_OVERRIDE=4096 --local_test_jobs=4"
 
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests
 # Run standard Python Bazel tests

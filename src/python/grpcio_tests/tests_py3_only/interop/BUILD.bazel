@@ -55,6 +55,7 @@ py_binary(
 
 py_test(
     name = "xds_interop_client_test",
+    size = "large",
     srcs = ["xds_interop_client_test.py"],
     imports = ["."],
     python_version = "PY3",

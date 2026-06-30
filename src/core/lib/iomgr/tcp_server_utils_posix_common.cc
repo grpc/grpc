@@ -52,11 +52,16 @@ static int s_max_accept_queue_size;
 // get max listen queue size on linux
 static void init_max_accept_queue_size(void) {
   int n = SOMAXCONN;
+  char* env = getenv("GRPC_SOMAXCONN_OVERRIDE");
+  if (env != nullptr) {
+    int override_val = atoi(env);
+    if (override_val > 0) n = override_val;
+  }
   char buf[64];
   FILE* fp = fopen("/proc/sys/net/core/somaxconn", "r");
   if (fp == nullptr) {
     // 2.4 kernel.
-    s_max_accept_queue_size = SOMAXCONN;
+    s_max_accept_queue_size = n;
     return;
   }
   if (fgets(buf, sizeof buf, fp)) {
