@@ -7412,18 +7412,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-- name: call_tracer_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/test_util/fake_stats_plugin.h
-  src:
-  - test/core/telemetry/call_tracer_test.cc
-  - test/core/test_util/fake_stats_plugin.cc
-  deps:
-  - gtest
-  - grpc_test_util
 - name: call_utils_test
   gtest: true
   build: test

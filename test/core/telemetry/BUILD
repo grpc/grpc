@@ -26,12 +26,14 @@ grpc_package(
 
 licenses(["notice"])
 
-grpc_cc_test(
+grpc_fuzz_test(
     name = "call_tracer_test",
     srcs = ["call_tracer_test.cc"],
-    external_deps = ["gtest"],
-    uses_event_engine = False,
-    uses_polling = False,
+    external_deps = [
+        "gtest",
+        "fuzztest",
+        "fuzztest_main",
+    ],
     deps = [
         "//:call_tracer",
         "//:event_engine_base_hdrs",
@@ -40,6 +42,7 @@ grpc_cc_test(
         "//src/core:context",
         "//src/core:memory_quota",
         "//src/core:resource_quota",
+        "//src/core:tcp_tracer",
         "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",
     ],
