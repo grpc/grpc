@@ -39,6 +39,7 @@
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/transport_framing_endpoint_extension.h"
 #include "src/core/telemetry/default_tcp_tracer.h"
+#include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/util/dump_args.h"
 #include "src/core/util/latent_see.h"
 #include "src/core/util/ref_counted.h"
@@ -732,6 +733,8 @@ auto Endpoint::PullDataPayload(RefCountedPtr<EndpointContext> ctx) {
         for (size_t i = 0; i < queued_frames->size(); ++i) {
           auto& queued_frame = (*queued_frames)[i];
           if (queued_frame.frame->call_tracer != nullptr) {
+            queued_frame.frame->call_tracer->RecordConnectionTuple(
+                ctx->local_addr, ctx->peer_addr);
             tcp_tracer_enabled = true;
           }
           auto& frame = absl::ConvertVariantTo<FrameInterface&>(
@@ -951,6 +954,11 @@ Endpoint::Endpoint(uint32_t id, uint32_t encode_alignment,
         return TrySeq(
             pending_connection.Await(),
             [ep_ctx = std::move(ep_ctx)](PromiseEndpoint ep) mutable {
+              ep_ctx->local_addr =
+                  TcpCallTracer::ExtractResolvedAddress(ep.GetLocalAddress());
+              ep_ctx->peer_addr =
+                  TcpCallTracer::ExtractResolvedAddress(ep.GetPeerAddress());
+
               GRPC_TRACE_LOG(chaotic_good, INFO)
                   << "CHAOTIC_GOOD: data endpoint " << ep_ctx->id << " to "
                   << grpc_event_engine::experimental::ResolvedAddressToString(
