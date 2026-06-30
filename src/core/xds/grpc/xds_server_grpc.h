@@ -48,7 +48,7 @@ class GrpcXdsServerTarget final : public GrpcXdsServerInterface {
       RefCountedPtr<const ChannelCredsConfig> channel_creds_config,
       std::vector<RefCountedPtr<const CallCredsConfig>> call_creds_configs,
       std::vector<std::pair<std::string, std::string>> initial_metadata = {},
-      Duration timeout = Duration::Zero())
+      Duration timeout = Duration::Infinity())
       : server_uri_(std::move(server_uri)),
         channel_creds_config_(std::move(channel_creds_config)),
         call_creds_configs_(std::move(call_creds_configs)),

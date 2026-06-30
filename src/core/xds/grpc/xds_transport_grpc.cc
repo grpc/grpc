@@ -76,10 +76,9 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
     const std::vector<std::pair<std::string, std::string>>& initial_metadata,
     Duration timeout)
     : factory_(std::move(factory)), event_handler_(std::move(event_handler)) {
-  Timestamp deadline =
-      (timeout == Duration::Infinity() || timeout == Duration::Zero())
-          ? Timestamp::InfFuture()
-          : Timestamp::Now() + timeout;
+  Timestamp deadline = (timeout == Duration::Infinity())
+                           ? Timestamp::InfFuture()
+                           : Timestamp::Now() + timeout;
   // Create call.
   call_ = channel->CreateCall(
       /*parent_call=*/nullptr, GRPC_PROPAGATE_DEFAULTS, /*cq=*/nullptr,
