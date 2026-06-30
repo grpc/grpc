@@ -73,7 +73,7 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
     WeakRefCountedPtr<GrpcXdsTransportFactory> factory, Channel* channel,
     const char* method,
     std::unique_ptr<StreamingCall::EventHandler> event_handler,
-    std::vector<std::pair<std::string, std::string>> initial_metadata,
+    const std::vector<std::pair<std::string, std::string>>& initial_metadata,
     Duration timeout)
     : factory_(std::move(factory)), event_handler_(std::move(event_handler)) {
   Timestamp deadline =
@@ -101,9 +101,9 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
   send_initial_metadata_.resize(initial_metadata.size());
   for (size_t i = 0; i < initial_metadata.size(); ++i) {
     send_initial_metadata_[i].key =
-        grpc_slice_from_cpp_string(std::move(initial_metadata[i].first));
+        grpc_slice_from_cpp_string(initial_metadata[i].first);
     send_initial_metadata_[i].value =
-        grpc_slice_from_cpp_string(std::move(initial_metadata[i].second));
+        grpc_slice_from_cpp_string(initial_metadata[i].second);
   }
   grpc_op* op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -336,7 +336,7 @@ std::string GetChannelKey(const GrpcXdsServerInterface& server) {
 
 }  // namespace
 
-class GrpcXdsTransportFactory::SharedChannel
+class GrpcXdsTransportFactory::SharedChannel final
     : public RefCounted<SharedChannel> {
  public:
   SharedChannel(std::string key, RefCountedPtr<Channel> channel,

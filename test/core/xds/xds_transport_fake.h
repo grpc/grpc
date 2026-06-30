@@ -58,14 +58,10 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
    public:
     FakeStreamingCall(
         WeakRefCountedPtr<FakeXdsTransport> transport, const char* method,
-        std::unique_ptr<StreamingCall::EventHandler> event_handler,
-        std::vector<std::pair<std::string, std::string>> initial_metadata,
-        Duration timeout)
+        std::unique_ptr<StreamingCall::EventHandler> event_handler)
         : transport_(std::move(transport)),
           method_(method),
           event_engine_(transport_->factory()->event_engine_),
-          initial_metadata_(std::move(initial_metadata)),
-          timeout_(timeout),
           event_handler_(MakeRefCounted<RefCountedEventHandler>(
               std::move(event_handler))) {}
 
@@ -95,13 +91,6 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     void MaybeSendStatusToClient(absl::Status status);
 
     bool WaitForReadsStarted(size_t expected);
-
-    const std::vector<std::pair<std::string, std::string>>& initial_metadata()
-        const {
-      return initial_metadata_;
-    }
-
-    Duration timeout() const { return timeout_; }
 
     bool half_closed() const {
       MutexLock lock(&mu_);
@@ -137,8 +126,6 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     const char* method_;
     std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
         event_engine_;
-    const std::vector<std::pair<std::string, std::string>> initial_metadata_;
-    const Duration timeout_;
 
     mutable Mutex mu_;
     RefCountedPtr<RefCountedEventHandler> event_handler_ ABSL_GUARDED_BY(&mu_);

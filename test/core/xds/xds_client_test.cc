@@ -49,7 +49,6 @@
 #include "src/core/util/match.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/wait_for_single_owner.h"
-#include "src/core/xds/grpc/xds_server_grpc_interface.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_resource_type_impl.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
@@ -136,50 +135,19 @@ class XdsClientTest : public ::testing::Test {
       Json::Object metadata_;
     };
 
-    class FakeXdsServerTarget : public GrpcXdsServerInterface {
+    class FakeXdsServerTarget : public XdsServerTarget {
      public:
-      explicit FakeXdsServerTarget(
-          std::string server_uri,
-          RefCountedPtr<const ChannelCredsConfig> channel_creds_config =
-              nullptr,
-          std::vector<RefCountedPtr<const CallCredsConfig>> call_creds_configs =
-              {},
-          std::vector<std::pair<std::string, std::string>> initial_metadata =
-              {},
-          Duration timeout = Duration::Zero())
-          : server_uri_(std::move(server_uri)),
-            channel_creds_config_(std::move(channel_creds_config)),
-            call_creds_configs_(std::move(call_creds_configs)),
-            initial_metadata_(std::move(initial_metadata)),
-            timeout_(timeout) {}
+      explicit FakeXdsServerTarget(std::string server_uri)
+          : server_uri_(std::move(server_uri)) {}
       const std::string& server_uri() const override { return server_uri_; }
       std::string Key() const override { return server_uri_; }
       bool Equals(const XdsServerTarget& other) const override {
         const auto& o = DownCast<const FakeXdsServerTarget&>(other);
-        return server_uri_ == o.server_uri_ &&
-               initial_metadata_ == o.initial_metadata_ &&
-               timeout_ == o.timeout_;
+        return server_uri_ == o.server_uri_;
       }
-      RefCountedPtr<const ChannelCredsConfig> channel_creds_config()
-          const override {
-        return channel_creds_config_;
-      }
-      const std::vector<RefCountedPtr<const CallCredsConfig>>&
-      call_creds_configs() const override {
-        return call_creds_configs_;
-      }
-      const std::vector<std::pair<std::string, std::string>>& initial_metadata()
-          const override {
-        return initial_metadata_;
-      }
-      Duration timeout() const override { return timeout_; }
 
      private:
       std::string server_uri_;
-      RefCountedPtr<const ChannelCredsConfig> channel_creds_config_;
-      std::vector<RefCountedPtr<const CallCredsConfig>> call_creds_configs_;
-      std::vector<std::pair<std::string, std::string>> initial_metadata_;
-      Duration timeout_;
     };
 
     class FakeXdsServer : public XdsServer {

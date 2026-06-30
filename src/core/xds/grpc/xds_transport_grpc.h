@@ -123,7 +123,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final
       WeakRefCountedPtr<GrpcXdsTransportFactory> factory, Channel* channel,
       const char* method,
       std::unique_ptr<StreamingCall::EventHandler> event_handler,
-      std::vector<std::pair<std::string, std::string>> initial_metadata,
+      const std::vector<std::pair<std::string, std::string>>& initial_metadata,
       Duration timeout);
   ~GrpcStreamingCall() override;
 

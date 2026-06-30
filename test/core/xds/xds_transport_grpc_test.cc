@@ -48,38 +48,35 @@ class GrpcXdsTransportTest : public ::testing::Test {
 
 TEST_F(GrpcXdsTransportTest, IdenticalTargetsShareTransport) {
   ExecCtx exec_ctx;
-  auto target = std::make_shared<GrpcXdsServerTarget>(
-      "localhost:1234", channel_creds_config_,
-      std::vector<RefCountedPtr<const CallCredsConfig>>{},
-      std::vector<std::pair<std::string, std::string>>{{"key1", "val1"}},
-      Duration::Seconds(10));
+  GrpcXdsServerTarget target("localhost:1234", channel_creds_config_,
+                             /*call_creds_configs=*/{},
+                             /*initial_metadata=*/{{"key1", "val1"}},
+                             Duration::Seconds(10));
   absl::Status status1;
-  auto transport1 = factory_->GetTransport(*target, &status1);
+  auto transport1 = factory_->GetTransport(target, &status1);
   ASSERT_TRUE(status1.ok()) << status1.ToString();
   absl::Status status2;
-  auto transport2 = factory_->GetTransport(*target, &status2);
+  auto transport2 = factory_->GetTransport(target, &status2);
   ASSERT_TRUE(status2.ok()) << status2.ToString();
   EXPECT_EQ(transport1, transport2);
 }
 
 TEST_F(GrpcXdsTransportTest, DifferingMetadataSharesChannel) {
   ExecCtx exec_ctx;
-  auto target1 = std::make_shared<GrpcXdsServerTarget>(
-      "localhost:1234", channel_creds_config_,
-      std::vector<RefCountedPtr<const CallCredsConfig>>{},
-      std::vector<std::pair<std::string, std::string>>{{"key1", "val1"}},
-      Duration::Seconds(10));
-  auto target2 = std::make_shared<GrpcXdsServerTarget>(
-      "localhost:1234", channel_creds_config_,
-      std::vector<RefCountedPtr<const CallCredsConfig>>{},
-      std::vector<std::pair<std::string, std::string>>{{"key2", "val2"}},
-      Duration::Seconds(10));
-  EXPECT_NE(target1->Key(), target2->Key());
+  GrpcXdsServerTarget target1("localhost:1234", channel_creds_config_,
+                              /*call_creds_configs=*/{},
+                              /*initial_metadata=*/{{"key1", "val1"}},
+                              Duration::Seconds(10));
+  GrpcXdsServerTarget target2("localhost:1234", channel_creds_config_,
+                              /*call_creds_configs=*/{},
+                              /*initial_metadata=*/{{"key2", "val2"}},
+                              Duration::Seconds(10));
+  EXPECT_NE(target1.Key(), target2.Key());
   absl::Status status1;
-  auto transport1 = factory_->GetTransport(*target1, &status1);
+  auto transport1 = factory_->GetTransport(target1, &status1);
   ASSERT_TRUE(status1.ok()) << status1.ToString();
   absl::Status status2;
-  auto transport2 = factory_->GetTransport(*target2, &status2);
+  auto transport2 = factory_->GetTransport(target2, &status2);
   ASSERT_TRUE(status2.ok()) << status2.ToString();
   EXPECT_NE(transport1, transport2);
   auto* grpc_transport1 =
@@ -91,22 +88,20 @@ TEST_F(GrpcXdsTransportTest, DifferingMetadataSharesChannel) {
 
 TEST_F(GrpcXdsTransportTest, DifferingTimeoutSharesChannel) {
   ExecCtx exec_ctx;
-  auto target1 = std::make_shared<GrpcXdsServerTarget>(
-      "localhost:1234", channel_creds_config_,
-      std::vector<RefCountedPtr<const CallCredsConfig>>{},
-      std::vector<std::pair<std::string, std::string>>{{"key1", "val1"}},
-      Duration::Seconds(10));
-  auto target2 = std::make_shared<GrpcXdsServerTarget>(
-      "localhost:1234", channel_creds_config_,
-      std::vector<RefCountedPtr<const CallCredsConfig>>{},
-      std::vector<std::pair<std::string, std::string>>{{"key1", "val1"}},
-      Duration::Seconds(20));
-  EXPECT_NE(target1->Key(), target2->Key());
+  GrpcXdsServerTarget target1("localhost:1234", channel_creds_config_,
+                              /*call_creds_configs=*/{},
+                              /*initial_metadata=*/{{"key1", "val1"}},
+                              Duration::Seconds(10));
+  GrpcXdsServerTarget target2("localhost:1234", channel_creds_config_,
+                              /*call_creds_configs=*/{},
+                              /*initial_metadata=*/{{"key1", "val1"}},
+                              Duration::Seconds(20));
+  EXPECT_NE(target1.Key(), target2.Key());
   absl::Status status1;
-  auto transport1 = factory_->GetTransport(*target1, &status1);
+  auto transport1 = factory_->GetTransport(target1, &status1);
   ASSERT_TRUE(status1.ok()) << status1.ToString();
   absl::Status status2;
-  auto transport2 = factory_->GetTransport(*target2, &status2);
+  auto transport2 = factory_->GetTransport(target2, &status2);
   ASSERT_TRUE(status2.ok()) << status2.ToString();
   EXPECT_NE(transport1, transport2);
   auto* grpc_transport1 =
@@ -118,22 +113,20 @@ TEST_F(GrpcXdsTransportTest, DifferingTimeoutSharesChannel) {
 
 TEST_F(GrpcXdsTransportTest, DifferingServerUriDoesNotShareChannel) {
   ExecCtx exec_ctx;
-  auto target1 = std::make_shared<GrpcXdsServerTarget>(
-      "localhost:1234", channel_creds_config_,
-      std::vector<RefCountedPtr<const CallCredsConfig>>{},
-      std::vector<std::pair<std::string, std::string>>{{"key1", "val1"}},
-      Duration::Seconds(10));
-  auto target2 = std::make_shared<GrpcXdsServerTarget>(
-      "localhost:5678", channel_creds_config_,
-      std::vector<RefCountedPtr<const CallCredsConfig>>{},
-      std::vector<std::pair<std::string, std::string>>{{"key1", "val1"}},
-      Duration::Seconds(10));
-  EXPECT_NE(target1->Key(), target2->Key());
+  GrpcXdsServerTarget target1("localhost:1234", channel_creds_config_,
+                              /*call_creds_configs=*/{},
+                              /*initial_metadata=*/{{"key1", "val1"}},
+                              Duration::Seconds(10));
+  GrpcXdsServerTarget target2("localhost:5678", channel_creds_config_,
+                              /*call_creds_configs=*/{},
+                              /*initial_metadata=*/{{"key1", "val1"}},
+                              Duration::Seconds(10));
+  EXPECT_NE(target1.Key(), target2.Key());
   absl::Status status1;
-  auto transport1 = factory_->GetTransport(*target1, &status1);
+  auto transport1 = factory_->GetTransport(target1, &status1);
   ASSERT_TRUE(status1.ok()) << status1.ToString();
   absl::Status status2;
-  auto transport2 = factory_->GetTransport(*target2, &status2);
+  auto transport2 = factory_->GetTransport(target2, &status2);
   ASSERT_TRUE(status2.ok()) << status2.ToString();
   EXPECT_NE(transport1, transport2);
   auto* grpc_transport1 =
@@ -145,13 +138,12 @@ TEST_F(GrpcXdsTransportTest, DifferingServerUriDoesNotShareChannel) {
 
 TEST_F(GrpcXdsTransportTest, ChannelGarbageCollectedWhenNoTransportsRemain) {
   ExecCtx exec_ctx;
-  auto target = std::make_shared<GrpcXdsServerTarget>(
-      "localhost:1234", channel_creds_config_,
-      std::vector<RefCountedPtr<const CallCredsConfig>>{},
-      std::vector<std::pair<std::string, std::string>>{{"key1", "val1"}},
-      Duration::Seconds(10));
+  GrpcXdsServerTarget target("localhost:1234", channel_creds_config_,
+                             /*call_creds_configs=*/{},
+                             /*initial_metadata=*/{{"key1", "val1"}},
+                             Duration::Seconds(10));
   absl::Status status1;
-  auto transport1 = factory_->GetTransport(*target, &status1);
+  auto transport1 = factory_->GetTransport(target, &status1);
   ASSERT_TRUE(status1.ok()) << status1.ToString();
   auto* grpc_transport1 =
       DownCast<GrpcXdsTransportFactory::GrpcXdsTransport*>(transport1.get());
@@ -162,7 +154,7 @@ TEST_F(GrpcXdsTransportTest, ChannelGarbageCollectedWhenNoTransportsRemain) {
       [&notification]() { notification.Notify(); });
   notification.WaitForNotification();
   absl::Status status2;
-  auto transport2 = factory_->GetTransport(*target, &status2);
+  auto transport2 = factory_->GetTransport(target, &status2);
   ASSERT_TRUE(status2.ok()) << status2.ToString();
   auto* grpc_transport2 =
       DownCast<GrpcXdsTransportFactory::GrpcXdsTransport*>(transport2.get());
@@ -170,38 +162,91 @@ TEST_F(GrpcXdsTransportTest, ChannelGarbageCollectedWhenNoTransportsRemain) {
   EXPECT_NE(channel1, channel2);
 }
 
-TEST(GrpcXdsServerTargetTest, KeyAndEquals) {
-  auto json = JsonParse("{\"channel_creds\": [{\"type\": \"insecure\"}]}");
-  ASSERT_TRUE(json.ok()) << json.status().ToString();
-  ValidationErrors errors;
-  auto creds = ParseXdsBootstrapChannelCreds(*json, JsonArgs(), &errors);
-  ASSERT_TRUE(errors.ok());
-  GrpcXdsServerTarget target("localhost:1234", creds, {}, {{"k1", "v1"}},
-                             Duration::Seconds(10));
-  EXPECT_EQ(target, GrpcXdsServerTarget("localhost:1234", creds, {},
-                                        {{"k1", "v1"}}, Duration::Seconds(10)));
-  EXPECT_EQ(target.Key(),
-            GrpcXdsServerTarget("localhost:1234", creds, {}, {{"k1", "v1"}},
-                                Duration::Seconds(10))
-                .Key());
-  EXPECT_NE(target, GrpcXdsServerTarget("localhost:5678", creds, {},
-                                        {{"k1", "v1"}}, Duration::Seconds(10)));
-  EXPECT_NE(target.Key(),
-            GrpcXdsServerTarget("localhost:5678", creds, {}, {{"k1", "v1"}},
-                                Duration::Seconds(10))
-                .Key());
-  EXPECT_NE(target, GrpcXdsServerTarget("localhost:1234", creds, {},
-                                        {{"k2", "v2"}}, Duration::Seconds(10)));
-  EXPECT_NE(target.Key(),
-            GrpcXdsServerTarget("localhost:1234", creds, {}, {{"k2", "v2"}},
-                                Duration::Seconds(10))
-                .Key());
-  EXPECT_NE(target, GrpcXdsServerTarget("localhost:1234", creds, {},
-                                        {{"k1", "v1"}}, Duration::Seconds(20)));
-  EXPECT_NE(target.Key(),
-            GrpcXdsServerTarget("localhost:1234", creds, {}, {{"k1", "v1"}},
-                                Duration::Seconds(20))
-                .Key());
+class GrpcXdsServerTargetTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    auto json = JsonParse("{\"channel_creds\": [{\"type\": \"insecure\"}]}");
+    ASSERT_TRUE(json.ok()) << json.status().ToString();
+    ValidationErrors errors;
+    insecure_creds_ = ParseXdsBootstrapChannelCreds(*json, JsonArgs(), &errors);
+    ASSERT_TRUE(errors.ok());
+    ASSERT_NE(insecure_creds_, nullptr);
+
+    auto json_gd =
+        JsonParse("{\"channel_creds\": [{\"type\": \"google_default\"}]}");
+    ASSERT_TRUE(json_gd.ok()) << json_gd.status().ToString();
+    google_default_creds_ =
+        ParseXdsBootstrapChannelCreds(*json_gd, JsonArgs(), &errors);
+    ASSERT_TRUE(errors.ok());
+    ASSERT_NE(google_default_creds_, nullptr);
+
+    auto json_call = JsonParse(
+        "{\"call_creds\": [{\"type\": \"jwt_token_file\", \"config\": "
+        "{\"jwt_token_file\": \"/foo\"}}]}");
+    ASSERT_TRUE(json_call.ok()) << json_call.status().ToString();
+    call_creds_ = ParseXdsBootstrapCallCreds(*json_call, JsonArgs(), &errors);
+    ASSERT_TRUE(errors.ok());
+    ASSERT_FALSE(call_creds_.empty());
+  }
+
+  RefCountedPtr<const ChannelCredsConfig> insecure_creds_;
+  RefCountedPtr<const ChannelCredsConfig> google_default_creds_;
+  std::vector<RefCountedPtr<const CallCredsConfig>> call_creds_;
+};
+
+TEST_F(GrpcXdsServerTargetTest, IdenticalTargetsAreEqual) {
+  GrpcXdsServerTarget target1("localhost:1234", insecure_creds_, call_creds_,
+                              {{"k1", "v1"}}, Duration::Seconds(10));
+  GrpcXdsServerTarget target2("localhost:1234", insecure_creds_, call_creds_,
+                              {{"k1", "v1"}}, Duration::Seconds(10));
+  EXPECT_EQ(target1, target2);
+  EXPECT_EQ(target1.Key(), target2.Key());
+}
+
+TEST_F(GrpcXdsServerTargetTest, DifferentUriAreNotEqual) {
+  GrpcXdsServerTarget target1("localhost:1234", insecure_creds_, call_creds_,
+                              {{"k1", "v1"}}, Duration::Seconds(10));
+  GrpcXdsServerTarget target2("localhost:5678", insecure_creds_, call_creds_,
+                              {{"k1", "v1"}}, Duration::Seconds(10));
+  EXPECT_NE(target1, target2);
+  EXPECT_NE(target1.Key(), target2.Key());
+}
+
+TEST_F(GrpcXdsServerTargetTest, DifferentChannelCredsAreNotEqual) {
+  GrpcXdsServerTarget target1("localhost:1234", insecure_creds_, call_creds_,
+                              {{"k1", "v1"}}, Duration::Seconds(10));
+  GrpcXdsServerTarget target2("localhost:1234", google_default_creds_,
+                              call_creds_, {{"k1", "v1"}},
+                              Duration::Seconds(10));
+  EXPECT_NE(target1, target2);
+  EXPECT_NE(target1.Key(), target2.Key());
+}
+
+TEST_F(GrpcXdsServerTargetTest, DifferentCallCredsAreNotEqual) {
+  GrpcXdsServerTarget target1("localhost:1234", insecure_creds_, call_creds_,
+                              {{"k1", "v1"}}, Duration::Seconds(10));
+  GrpcXdsServerTarget target2("localhost:1234", insecure_creds_, {},
+                              {{"k1", "v1"}}, Duration::Seconds(10));
+  EXPECT_NE(target1, target2);
+  EXPECT_NE(target1.Key(), target2.Key());
+}
+
+TEST_F(GrpcXdsServerTargetTest, DifferentInitialMetadataAreNotEqual) {
+  GrpcXdsServerTarget target1("localhost:1234", insecure_creds_, call_creds_,
+                              {{"k1", "v1"}}, Duration::Seconds(10));
+  GrpcXdsServerTarget target2("localhost:1234", insecure_creds_, call_creds_,
+                              {{"k2", "v2"}}, Duration::Seconds(10));
+  EXPECT_NE(target1, target2);
+  EXPECT_NE(target1.Key(), target2.Key());
+}
+
+TEST_F(GrpcXdsServerTargetTest, DifferentTimeoutAreNotEqual) {
+  GrpcXdsServerTarget target1("localhost:1234", insecure_creds_, call_creds_,
+                              {{"k1", "v1"}}, Duration::Seconds(10));
+  GrpcXdsServerTarget target2("localhost:1234", insecure_creds_, call_creds_,
+                              {{"k1", "v1"}}, Duration::Seconds(20));
+  EXPECT_NE(target1, target2);
+  EXPECT_NE(target1.Key(), target2.Key());
 }
 
 }  // namespace
