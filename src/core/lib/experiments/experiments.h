@@ -71,7 +71,8 @@ inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
 inline bool IsCallv3BatchValidationEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
-inline bool IsChaoticGoodSendSupportedFeaturesEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_SEND_SUPPORTED_FEATURES
+inline bool IsChaoticGoodSendSupportedFeaturesEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CUSTOM_FRAME_CHECK
 inline bool IsCustomFrameCheckEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ERROR_FLATTEN
@@ -102,8 +103,7 @@ inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
 inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_MEMORY_OPTIMIZATION_01
-inline bool IsMemoryOptimization01Enabled() { return true; }
+inline bool IsMemoryOptimization01Enabled() { return false; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
 inline bool IsMessageSizeRefactoringEnabled() { return false; }
 inline bool IsMetadataOutstandingTokenRefactorEnabled() { return false; }
@@ -121,6 +121,7 @@ inline bool IsOptimization03Enabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_04
 inline bool IsOptimization04Enabled() { return true; }
 inline bool IsOptimization05Enabled() { return false; }
+inline bool IsOptimization06Enabled() { return false; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
 inline bool IsPh2ClientEnabled() { return false; }
 inline bool IsPh2ClientServerEnabled() { return false; }
@@ -142,7 +143,8 @@ inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsSecureEndpointReadCoalescingEnabled() { return false; }
 inline bool IsSkipClearPeerOnCancellationEnabled() { return false; }
-inline bool IsSubchannelConnectionScalingEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SUBCHANNEL_CONNECTION_SCALING
+inline bool IsSubchannelConnectionScalingEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SUBCHANNEL_WRAPPER_CLEANUP_ON_ORPHAN
 inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() { return true; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -170,7 +172,8 @@ inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
 inline bool IsCallv3BatchValidationEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
-inline bool IsChaoticGoodSendSupportedFeaturesEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_SEND_SUPPORTED_FEATURES
+inline bool IsChaoticGoodSendSupportedFeaturesEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CUSTOM_FRAME_CHECK
 inline bool IsCustomFrameCheckEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ERROR_FLATTEN
@@ -201,8 +204,7 @@ inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
 inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_MEMORY_OPTIMIZATION_01
-inline bool IsMemoryOptimization01Enabled() { return true; }
+inline bool IsMemoryOptimization01Enabled() { return false; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
 inline bool IsMessageSizeRefactoringEnabled() { return false; }
 inline bool IsMetadataOutstandingTokenRefactorEnabled() { return false; }
@@ -220,6 +222,7 @@ inline bool IsOptimization03Enabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_04
 inline bool IsOptimization04Enabled() { return true; }
 inline bool IsOptimization05Enabled() { return false; }
+inline bool IsOptimization06Enabled() { return false; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
 inline bool IsPh2ClientEnabled() { return false; }
 inline bool IsPh2ClientServerEnabled() { return false; }
@@ -241,7 +244,8 @@ inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsSecureEndpointReadCoalescingEnabled() { return false; }
 inline bool IsSkipClearPeerOnCancellationEnabled() { return false; }
-inline bool IsSubchannelConnectionScalingEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SUBCHANNEL_CONNECTION_SCALING
+inline bool IsSubchannelConnectionScalingEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SUBCHANNEL_WRAPPER_CLEANUP_ON_ORPHAN
 inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() { return true; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -269,7 +273,8 @@ inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
 inline bool IsCallv3BatchValidationEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
-inline bool IsChaoticGoodSendSupportedFeaturesEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_SEND_SUPPORTED_FEATURES
+inline bool IsChaoticGoodSendSupportedFeaturesEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CUSTOM_FRAME_CHECK
 inline bool IsCustomFrameCheckEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ERROR_FLATTEN
@@ -300,8 +305,7 @@ inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
 inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_MEMORY_OPTIMIZATION_01
-inline bool IsMemoryOptimization01Enabled() { return true; }
+inline bool IsMemoryOptimization01Enabled() { return false; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
 inline bool IsMessageSizeRefactoringEnabled() { return false; }
 inline bool IsMetadataOutstandingTokenRefactorEnabled() { return false; }
@@ -319,6 +323,7 @@ inline bool IsOptimization03Enabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_04
 inline bool IsOptimization04Enabled() { return true; }
 inline bool IsOptimization05Enabled() { return false; }
+inline bool IsOptimization06Enabled() { return false; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
 inline bool IsPh2ClientEnabled() { return false; }
 inline bool IsPh2ClientServerEnabled() { return false; }
@@ -340,7 +345,8 @@ inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsSecureEndpointReadCoalescingEnabled() { return false; }
 inline bool IsSkipClearPeerOnCancellationEnabled() { return false; }
-inline bool IsSubchannelConnectionScalingEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SUBCHANNEL_CONNECTION_SCALING
+inline bool IsSubchannelConnectionScalingEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SUBCHANNEL_WRAPPER_CLEANUP_ON_ORPHAN
 inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() { return true; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -393,6 +399,7 @@ enum ExperimentIds {
   kExperimentIdOptimization03,
   kExperimentIdOptimization04,
   kExperimentIdOptimization05,
+  kExperimentIdOptimization06,
   kExperimentIdOtelExportTelemetryDomains,
   kExperimentIdPh2Client,
   kExperimentIdPh2ClientServer,
@@ -574,6 +581,10 @@ inline bool IsOptimization04Enabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_05
 inline bool IsOptimization05Enabled() {
   return IsExperimentEnabled<kExperimentIdOptimization05>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_06
+inline bool IsOptimization06Enabled() {
+  return IsExperimentEnabled<kExperimentIdOptimization06>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_OTEL_EXPORT_TELEMETRY_DOMAINS
 inline bool IsOtelExportTelemetryDomainsEnabled() {

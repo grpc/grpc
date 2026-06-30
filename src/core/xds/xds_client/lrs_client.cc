@@ -29,15 +29,14 @@
 #include "envoy/service/load_stats/v3/lrs.upb.h"
 #include "envoy/service/load_stats/v3/lrs.upbdefs.h"
 #include "google/protobuf/duration.upb.h"
+#include "src/core/config/experiment_env_var.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/backoff.h"
 #include "src/core/util/debug_location.h"
-#include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/string.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/uri.h"
@@ -64,11 +63,8 @@ using ::grpc_event_engine::experimental::EventEngine;
 
 // TODO(roth): Remove this after the 1.83 release.
 bool XdsOrcaLrsPropagationChangesEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_ORCA_LRS_PROPAGATION");
-  if (!value.has_value()) return true;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
+  return IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_ORCA_LRS_PROPAGATION",
+                                   /*default_value=*/true);
 }
 
 namespace {

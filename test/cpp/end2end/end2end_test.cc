@@ -962,6 +962,7 @@ TEST_P(End2endTest, EmptyBinaryMetadata) {
 }
 
 TEST_P(End2endTest, AuthoritySeenOnServerSide) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   EchoRequest request;
   request.mutable_param()->set_echo_host_from_authority_header(true);
@@ -984,6 +985,7 @@ TEST_P(End2endTest, AuthoritySeenOnServerSide) {
 }
 
 TEST_P(End2endTest, ReconnectChannel) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   if (GetParam().inproc() || GetParam().use_virtual_rpcs()) {
     return;
   }
@@ -1276,6 +1278,7 @@ TEST_P(End2endTest, CancelRpcBeforeStart) {
 }
 
 TEST_P(End2endTest, CancelRpcAfterStart) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   for (int i = 0; i < 10; i++) {
     ResetStub();
     EchoRequest request;
@@ -1322,6 +1325,7 @@ TEST_P(End2endTest, CancelRpcAfterStart) {
 
 // Client cancels request stream after sending two messages
 TEST_P(End2endTest, ClientCancelsRequestStream) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1380,6 +1384,7 @@ TEST_P(End2endTest, ClientCancelsResponseStream) {
 
 // Client cancels bidi stream after sending some messages
 TEST_P(End2endTest, ClientCancelsBidi) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1622,11 +1627,13 @@ class ProxyEnd2endTest : public End2endTest {
 };
 
 TEST_P(ProxyEnd2endTest, SimpleRpc) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   SendRpc(stub_.get(), 1, false);
 }
 
 TEST_P(ProxyEnd2endTest, SimpleRpcWithEmptyMessages) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1637,6 +1644,7 @@ TEST_P(ProxyEnd2endTest, SimpleRpcWithEmptyMessages) {
 }
 
 TEST_P(ProxyEnd2endTest, MultipleRpcs) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   std::vector<std::thread> threads;
   threads.reserve(10);
@@ -1651,6 +1659,7 @@ TEST_P(ProxyEnd2endTest, MultipleRpcs) {
 // Set a 10us deadline and make sure proper error is returned.
 TEST_P(ProxyEnd2endTest, RpcDeadlineExpires) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix flake");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1676,6 +1685,7 @@ TEST_P(ProxyEnd2endTest, RpcDeadlineExpires) {
 
 // Set a long but finite deadline.
 TEST_P(ProxyEnd2endTest, RpcLongDeadline) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1693,6 +1703,7 @@ TEST_P(ProxyEnd2endTest, RpcLongDeadline) {
 // Ask server to echo back the deadline it sees.
 TEST_P(ProxyEnd2endTest, EchoDeadline) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1723,6 +1734,7 @@ TEST_P(ProxyEnd2endTest, EchoDeadline) {
 
 // Ask server to echo back the deadline it sees. The rpc has no deadline.
 TEST_P(ProxyEnd2endTest, EchoDeadlineForNoDeadlineRpc) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1738,6 +1750,7 @@ TEST_P(ProxyEnd2endTest, EchoDeadlineForNoDeadlineRpc) {
 }
 
 TEST_P(ProxyEnd2endTest, UnimplementedRpc) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1753,6 +1766,7 @@ TEST_P(ProxyEnd2endTest, UnimplementedRpc) {
 
 // Client cancels rpc after 10ms
 TEST_P(ProxyEnd2endTest, ClientCancelsRpc) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1789,6 +1803,7 @@ TEST_P(ProxyEnd2endTest, ClientCancelsRpc) {
 
 // Server cancels rpc after 1ms
 TEST_P(ProxyEnd2endTest, ServerCancelsRpc) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1803,6 +1818,7 @@ TEST_P(ProxyEnd2endTest, ServerCancelsRpc) {
 
 // Make the response larger than the flow control window.
 TEST_P(ProxyEnd2endTest, HugeResponse) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1820,6 +1836,7 @@ TEST_P(ProxyEnd2endTest, HugeResponse) {
 }
 
 TEST_P(ProxyEnd2endTest, Peer) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   // Peer is not meaningful for inproc
   if (GetParam().inproc()) {
     return;

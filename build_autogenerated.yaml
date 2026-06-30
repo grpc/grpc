@@ -250,6 +250,7 @@ libs:
   - src/core/client_channel/subchannel_stream_client.h
   - src/core/client_channel/subchannel_stream_limiter.h
   - src/core/config/core_configuration.h
+  - src/core/config/experiment_env_var.h
   - src/core/credentials/call/call_credentials.h
   - src/core/credentials/call/call_creds_registry.h
   - src/core/credentials/call/call_creds_util.h
@@ -291,6 +292,7 @@ libs:
   - src/core/credentials/transport/tls/certificate_provider_registry.h
   - src/core/credentials/transport/tls/grpc_tls_certificate_distributor.h
   - src/core/credentials/transport/tls/grpc_tls_certificate_provider.h
+  - src/core/credentials/transport/tls/grpc_tls_certificate_selector.h
   - src/core/credentials/transport/tls/grpc_tls_certificate_verifier.h
   - src/core/credentials/transport/tls/grpc_tls_credentials_options.h
   - src/core/credentials/transport/tls/grpc_tls_crl_provider.h
@@ -1432,6 +1434,7 @@ libs:
   - src/core/client_channel/subchannel_stream_client.cc
   - src/core/client_channel/subchannel_stream_limiter.cc
   - src/core/config/core_configuration.cc
+  - src/core/config/experiment_env_var.cc
   - src/core/credentials/call/call_creds_registry_init.cc
   - src/core/credentials/call/call_creds_util.cc
   - src/core/credentials/call/composite/composite_call_credentials.cc
@@ -1478,6 +1481,7 @@ libs:
   - src/core/credentials/transport/tls/grpc_tls_certificate_distributor.cc
   - src/core/credentials/transport/tls/grpc_tls_certificate_match.cc
   - src/core/credentials/transport/tls/grpc_tls_certificate_provider.cc
+  - src/core/credentials/transport/tls/grpc_tls_certificate_selector.cc
   - src/core/credentials/transport/tls/grpc_tls_certificate_verifier.cc
   - src/core/credentials/transport/tls/grpc_tls_credentials_options.cc
   - src/core/credentials/transport/tls/grpc_tls_crl_provider.cc
@@ -2522,6 +2526,7 @@ libs:
   - src/core/client_channel/subchannel_stream_client.h
   - src/core/client_channel/subchannel_stream_limiter.h
   - src/core/config/core_configuration.h
+  - src/core/config/experiment_env_var.h
   - src/core/credentials/call/call_credentials.h
   - src/core/credentials/call/call_creds_registry.h
   - src/core/credentials/call/call_creds_util.h
@@ -3090,6 +3095,7 @@ libs:
   - src/core/client_channel/subchannel_stream_client.cc
   - src/core/client_channel/subchannel_stream_limiter.cc
   - src/core/config/core_configuration.cc
+  - src/core/config/experiment_env_var.cc
   - src/core/credentials/call/call_creds_util.cc
   - src/core/credentials/call/composite/composite_call_credentials.cc
   - src/core/credentials/call/json_util.cc
@@ -8620,6 +8626,26 @@ targets:
   - test/core/security/cel_authorization_engine_test.cc
   deps:
   - gtest
+  - grpc_test_util
+- name: cert_selection_offload_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/tsi/private_key_signer_test_util.h
+  - test/core/tsi/transport_security_test_lib.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/tsi/cert_selection_offload_test.cc
+  - test/core/tsi/private_key_signer_test_util.cc
+  - test/core/tsi/transport_security_test_lib.cc
+  deps:
+  - gtest
+  - protobuf
   - grpc_test_util
 - name: certificate_provider_registry_test
   gtest: true
@@ -15416,6 +15442,16 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: grpc_tls_certificate_selector_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/credentials/transport/tls/grpc_tls_certificate_selector_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: grpc_tls_certificate_verifier_test
   gtest: true
   build: test
@@ -21176,12 +21212,14 @@ targets:
   headers:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/tsi/private_key_signer_test_util.h
   - test/core/tsi/transport_security_test_lib.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/tsi/private_key_offload_test.cc
+  - test/core/tsi/private_key_signer_test_util.cc
   - test/core/tsi/transport_security_test_lib.cc
   deps:
   - gtest
@@ -23227,6 +23265,7 @@ targets:
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/rls_server.h
   - test/cpp/end2end/test_service_impl.h
   src:

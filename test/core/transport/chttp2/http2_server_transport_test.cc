@@ -77,6 +77,12 @@ class Http2ServerTransportTest : public Http2TransportTest {
   Http2ServerTransportTest(Http2ServerTransportTest&&) = delete;
   Http2ServerTransportTest& operator=(Http2ServerTransportTest&&) = delete;
 
+  void TearDown() override {
+    ExecCtx ctx;
+    server_transport_.reset();
+    Http2TransportTest::TearDown();
+  }
+
  protected:
   // Initializes the transport with the given channel args.
   void InitTransport(ChannelArgs channel_args,
@@ -177,7 +183,6 @@ class Http2ServerTransportTest : public Http2TransportTest {
 };
 
 TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportObjectCreation) {
-  ExecCtx ctx;
   // 1. Initialize the transport and exchange settings.
   InitTransport(GetChannelArgs());
   SpawnTransportLoopsAndExchangeSettings();
@@ -190,7 +195,6 @@ TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportObjectCreation) {
 }
 
 TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportWriteFromCall) {
-  ExecCtx ctx;
   const std::string data_payload(kString1);
 
   // 1. Initialize the transport and exchange settings.
@@ -239,7 +243,10 @@ TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportWriteFromCall) {
        helper_.SerializedHeaderFrame(std::string(kGrpcStatusCancelled.begin(),
                                                  kGrpcStatusCancelled.end()),
                                      /*stream_id=*/1, /*end_headers=*/true,
-                                     /*end_stream=*/true)});
+                                     /*end_stream=*/true),
+       helper_.SerializedResetStreamFrame(
+           /*stream_id=*/1,
+           /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kNoError))});
   step->Wait();
 }
 

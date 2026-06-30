@@ -93,6 +93,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "experiment_env_var",
+    srcs = [
+        "config/experiment_env_var.cc",
+    ],
+    hdrs = [
+        "config/experiment_env_var.h",
+    ],
+    deps = [
+        "env",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "dump_args",
     srcs = [
         "util/dump_args.cc",
@@ -4022,7 +4036,7 @@ grpc_cc_library(
     ],
     deps = [
         "channel_args",
-        "env",
+        "experiment_env_var",
         "json",
         "json_args",
         "json_object_loader",
@@ -4636,6 +4650,30 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_tls_certificate_selector",
+    srcs = [
+        "credentials/transport/tls/grpc_tls_certificate_selector.cc",
+    ],
+    hdrs = [
+        "credentials/transport/tls/grpc_tls_certificate_selector.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/functional:any_invocable",
+        "absl/strings",
+        "libcrypto",
+        "libssl",
+    ],
+    deps = [
+        "grpc_check",
+        "match",
+        "status_helper",
+        "//:grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_fake_credentials",
     srcs = [
         "credentials/transport/fake/fake_credentials.cc",
@@ -4928,6 +4966,7 @@ grpc_cc_library(
         "absl/functional:bind_front",
         "absl/log",
         "absl/status",
+        "absl/functional:any_invocable",
         "absl/status:statusor",
         "absl/strings",
         "libcrypto",
@@ -6128,7 +6167,7 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     deps = [
         "channel_args",
-        "env",
+        "experiment_env_var",
         "grpc_check",
         "grpc_lb_xds_channel_args",
         "grpc_matchers",
@@ -6164,7 +6203,7 @@ grpc_cc_library(
     deps = [
         "certificate_provider_factory",
         "down_cast",
-        "env",
+        "experiment_env_var",
         "grpc_tls_credentials",
         "json",
         "json_args",
@@ -6332,7 +6371,7 @@ grpc_cc_library(
         "call_creds_registry",
         "channel_creds_registry",
         "down_cast",
-        "env",
+        "experiment_env_var",
         "json",
         "json_args",
         "json_object_loader",
@@ -6341,7 +6380,6 @@ grpc_cc_library(
         "validation_errors",
         "xds_server_grpc_interface",
         "//:config",
-        "//:gpr",
         "//:ref_counted_ptr",
         "//:xds_client",
     ],
@@ -6628,6 +6666,7 @@ grpc_cc_library(
         "envoy_type_upb",
         "error",
         "error_utils",
+        "experiment_env_var",
         "gcp_authentication_filter",
         "google_rpc_status_upb",
         "grpc_audit_logging",
@@ -6952,7 +6991,7 @@ grpc_cc_library(
         "channel_args",
         "client_channel_internal_header",
         "delegating_helper",
-        "env",
+        "experiment_env_var",
         "grpc_check",
         "grpc_lb_address_filtering",
         "grpc_lb_xds_channel_args",
@@ -7419,8 +7458,8 @@ grpc_cc_library(
         "closure",
         "connectivity_state",
         "delegating_helper",
-        "env",
         "error",
+        "experiment_env_var",
         "grpc_check",
         "grpc_lb_policy_pick_first",
         "grpc_service_config",
@@ -7525,7 +7564,7 @@ grpc_cc_library(
         "channel_args",
         "client_channel_service_config",
         "connectivity_state",
-        "env",
+        "experiment_env_var",
         "experiments",
         "grpc_backend_metric_data",
         "grpc_check",
@@ -10749,6 +10788,7 @@ grpc_cc_library(
         "pipe",
         "prioritized_race",
         "promise_status",
+        "race",
         "status_flag",
         "try_seq",
         "//:channelz",

@@ -202,6 +202,14 @@ then
     shasum -c /tmp/python_installer_checksum.sha256
     time sudo installer -pkg ./python-3.14.0rc1-macos11.pkg -target /
   fi
+
+  # Install Python 3.15 if it doesn't exist
+  if [ ! -f "/usr/local/bin/python3.15" ]; then
+    time curl -O https://www.python.org/ftp/python/3.15.0/python-3.15.0b2-macos11.pkg
+    echo "29b5c95f255f846f77e1c119146836445f929de1392a3ae9ef24f559e1345418  python-3.15.0b2-macos11.pkg" > /tmp/python_installer_checksum.sha256
+    shasum -a 256 -c /tmp/python_installer_checksum.sha256
+    time sudo installer -pkg ./python-3.15.0b2-macos11.pkg -target /
+  fi
 fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_CSHARP}" == "true" ]
