@@ -21,6 +21,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/down_cast.h"
 #include "src/core/util/json/json_reader.h"
+#include "src/core/xds/grpc/certificate_provider_store.h"
 #include "src/core/xds/grpc/xds_server_grpc.h"
 #include "test/core/test_util/test_config.h"
 #include "gtest/gtest.h"
@@ -40,7 +41,10 @@ class GrpcXdsTransportTest : public ::testing::Test {
         ParseXdsBootstrapChannelCreds(*json, JsonArgs(), &errors);
     ASSERT_TRUE(errors.ok());
     ASSERT_NE(channel_creds_config_, nullptr);
-    factory_ = MakeRefCounted<GrpcXdsTransportFactory>(ChannelArgs(), nullptr);
+    auto store = MakeRefCounted<CertificateProviderStore>(
+        CertificateProviderStore::PluginDefinitionMap{});
+    factory_ = MakeRefCounted<GrpcXdsTransportFactory>(ChannelArgs(),
+                                                       std::move(store));
   }
   RefCountedPtr<const ChannelCredsConfig> channel_creds_config_;
   RefCountedPtr<GrpcXdsTransportFactory> factory_;
