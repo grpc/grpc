@@ -18,25 +18,14 @@ echo "System Python interpreter: $(python3 -VV)"
 
 export TEST=${TEST:-false}
 
-function install_yaml() {
-  local py_binary=$1
-  shift
-  local has_yaml=0
-  if "${py_binary}" -c "import yaml"; then
-      has_yaml=1
-  fi
-  if [[ ${has_yaml} != 1 ]]; then
-      # PyYAML is required for generating projects and building auxilary packages.
-      # We use --upgrade and --ignore-installed to ensure a modern version is
-      # available even if an older version exists in the environment.
-      "${py_binary}" -m pip install --upgrade --ignore-installed "$@" "PyYAML>=6.0"
-  fi
-}
-
-# Ensure PyYAML is available for the system python (used by generate_projects.py)
 # TODO(sergiitk): we should be using a virtual environment for this instead.
-install_yaml python3 --user
+YAML_OK=$(python3 -c "import yaml; print(yaml.__version__.split('.') >= ['5', '4', '1'])")
 
+if [[ "${YAML_OK}" != "True" ]]; then
+  # PyYAML dropped 3.5 support at 5.4.1, which makes 5.3.1 the latest version we
+  # can use.
+  python3 -m pip install --upgrade --ignore-installed PyYAML==5.3.1 --user
+fi
 
 cd `dirname $0`/../..
 
@@ -86,9 +75,6 @@ fi
 
 echo -n "Using ${VENV_DIR} venv with Python interpreter: "
 "${VENV_PYTHON}" -VV
-# Ensure PyYAML is available in the venv (used by auxilary packages)
-install_yaml ${VENV_PYTHON}
-
 
 # TODO(sergiitk): remove GRPC_GENERATE_PROJECTS_SKIP_XDS_PROTOS when all CIs are
 #                 are upgraded to use Python 3.9+.
