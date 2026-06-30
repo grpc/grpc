@@ -265,15 +265,26 @@ task 'publish:native_debug', [:gem_dir] do |_t, args|
   require 'digest'
   require 'rubygems/package'
   require 'open3'
+  require 'shellwords'
+
+  #Helper to log and execute commands
+  def run_cmd(*cmd_parts)
+    puts "Executing: #{Shellwords.join(cmd_parts)}"
+    success = system(*cmd_parts)
+    fail "Command failed: #{Shellwords.join(cmd_parts)}" unless success
+  end
 
   gem_dir = File.expand_path(args[:gem_dir] || 'build/ruby/nativedebug')
-  force_upload = ENV['FORCE'].to_s.downcase == 'true'
+  force_upload = ENV['REUPLOAD'].to_s.downcase == 'true'
   gcs_base = 'gs://packages.grpc.io/grpc-ruby-native-debug-symbols'
 
   fail "Directory '#{gem_dir}' not found" unless Dir.exist?(gem_dir)
 
   gem_files = Dir["#{gem_dir}/*native-debug*.gem"]
   fail "No native-debug gems found in '#{gem_dir}'" if gem_files.empty?
+
+  puts 'Checking gsutil availability and bucket access.'
+  run_cmd('gsutil', 'ls', '-b', gcs_base)
 
   gems_by_version = gem_files.group_by do |path|
     full_version = Gem::Package.new(path).spec.version.to_s
@@ -284,22 +295,23 @@ task 'publish:native_debug', [:gem_dir] do |_t, args|
 
   Dir.chdir(gem_dir) do
     gems_by_version.each do |base_version, version_gem_files|
+      puts "Processing base version #{base_version}."
+
       gcs_version_path = "#{gcs_base}/v#{base_version}"
 
       # Check only for existence of gems
-      _stdout, _stderr, status = Open3.capture3("gsutil ls #{gcs_version_path}/*.gem")
+      stdout, _stderr, status = Open3.capture3('gsutil', 'ls', "#{gcs_version_path}/*.gem")
+      has_gems = status.success? && !stdout.strip.empty?
 
-      if status.success? && !force_upload
-        puts "Skipping v#{base_version}.Gems already exist in #{gcs_version_path}. Use 'FORCE=true' to overwrite"
+      if has_gems && !force_upload
+        puts "Skipping v#{base_version}.Gems already exist in #{gcs_version_path}. Use 'REUPLOAD=true' to overwrite"
         next
       end
 
-      if force_upload
+      if force_upload && has_gems
         puts "Force upload enabled. Clearing existing files in #{gcs_version_path}."
-        system("gsutil -m rm #{gcs_version_path}/* > /dev/null 2>&1")
+        run_cmd('gsutil', '-m', 'rm', "#{gcs_version_path}/*.gem")
       end
-
-      puts "Processing base version #{base_version}."
 
       begin
         # Generate checksums only for the gems belonging to this version
@@ -310,11 +322,13 @@ task 'publish:native_debug', [:gem_dir] do |_t, args|
             f.puts "#{checksum}  #{gem_name}"
           end
         end
-        files_to_upload = version_gem_files.map { |f| File.basename(f) } + ['checksums.txt']
+        
+        puts 'Verifying checksums.'
+        run_cmd('sha256sum', '-c', 'checksums.txt')
 
         # Upload all gems and the checksums file
-        upload_cmd = "gsutil -m cp #{files_to_upload.join(' ')} #{gcs_version_path}/"
-        fail 'Upload failed' unless system(upload_cmd)
+        files_to_upload = version_gem_files.map { |f| File.basename(f) } + ['checksums.txt']
+        run_cmd('gsutil', '-m', 'cp', *files_to_upload, "#{gcs_version_path}/")
       ensure
         FileUtils.rm_f('checksums.txt')
       end
