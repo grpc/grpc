@@ -96,9 +96,7 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
   bool is_trailers_only() const override {
     Crash("is_trailers_only not implemented for server calls");
   }
-  absl::string_view GetServerAuthority() const override {
-    Crash("unimplemented");
-  }
+  absl::string_view GetServerAuthority() const override;
   grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                              bool is_notify_tag_closure) override;
   void FailBatchImmediately(void* notify_tag, bool is_notify_tag_closure,

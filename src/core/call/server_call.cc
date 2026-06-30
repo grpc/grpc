@@ -101,6 +101,18 @@ grpc_call_error ValidateServerBatch(const grpc_op* ops, size_t nops) {
 
 }  // namespace
 
+absl::string_view ServerCall::GetServerAuthority() const {
+  GRPC_DCHECK(client_initial_metadata_stored_ != nullptr);
+  if (client_initial_metadata_stored_ != nullptr) {
+    const Slice* authority_metadata =
+        client_initial_metadata_stored_->get_pointer(HttpAuthorityMetadata());
+    if (authority_metadata != nullptr) {
+      return authority_metadata->as_string_view();
+    }
+  }
+  return "";
+}
+
 grpc_call_error ServerCall::StartBatch(const grpc_op* ops, size_t nops,
                                        void* notify_tag,
                                        bool is_notify_tag_closure) {
