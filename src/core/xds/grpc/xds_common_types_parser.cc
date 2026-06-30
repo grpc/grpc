@@ -810,7 +810,7 @@ XdsGrpcService ParseXdsGrpcService(
         call_creds_configs = it->second.call_creds_configs;
       }
     }
-    xds_grpc_service.server_target = std::make_unique<GrpcXdsServerTarget>(
+    xds_grpc_service.server_target = std::make_shared<GrpcXdsServerTarget>(
         target_uri, std::move(channel_creds_config),
         std::move(call_creds_configs));
   }

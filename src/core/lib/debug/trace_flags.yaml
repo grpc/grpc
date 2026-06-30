@@ -144,6 +144,9 @@ event_engine_endpoint_data:
 event_engine_poller:
   default: false
   description: EventEngine Poller events.
+ext_proc_filter:
+  default: false
+  description: External processing filter.
 fault_injection_filter:
   default: false
   description: Fault injection.

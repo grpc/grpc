@@ -33,6 +33,8 @@
 #include "src/core/xds/grpc/xds_http_rbac_filter.h"
 #include "src/core/xds/grpc/xds_http_stateful_session_filter.h"
 #include "src/core/xds/grpc/xds_metadata_parser.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/grpc/xds_http_ext_proc_filter.h"
 
 namespace grpc_core {
 
@@ -131,6 +133,9 @@ XdsHttpFilterRegistry::XdsHttpFilterRegistry(bool register_builtins) {
     RegisterFilter(std::make_unique<XdsHttpRbacFilter>());
     RegisterFilter(std::make_unique<XdsHttpStatefulSessionFilter>());
     RegisterFilter(std::make_unique<XdsHttpGcpAuthnFilter>());
+    if (XdsExtProcOnClientEnabled()) {
+      RegisterFilter(std::make_unique<XdsHttpExtProcFilter>());
+    }
     if (IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_COMPOSITE_FILTER")) {
       RegisterFilter(std::make_unique<XdsHttpCompositeFilter>());
     }

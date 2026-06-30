@@ -309,6 +309,7 @@ libs:
   - src/core/ext/filters/backend_metrics/backend_metric_provider.h
   - src/core/ext/filters/channel_idle/idle_filter_state.h
   - src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h
+  - src/core/ext/filters/ext_proc/ext_proc_filter.h
   - src/core/ext/filters/fault_injection/fault_injection_filter.h
   - src/core/ext/filters/gcp_authentication/gcp_authentication_filter.h
   - src/core/ext/filters/http/client/http_client_filter.h
@@ -524,6 +525,10 @@ libs:
   - src/core/ext/upb-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upb_minitable.h
   - src/core/ext/upb-gen/envoy/extensions/filters/http/composite/v3/composite.upb.h
   - src/core/ext/upb-gen/envoy/extensions/filters/http/composite/v3/composite.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/extensions/filters/http/ext_proc/v3/ext_proc.upb.h
+  - src/core/ext/upb-gen/envoy/extensions/filters/http/ext_proc/v3/ext_proc.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/extensions/filters/http/ext_proc/v3/processing_mode.upb.h
+  - src/core/ext/upb-gen/envoy/extensions/filters/http/ext_proc/v3/processing_mode.upb_minitable.h
   - src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb.h
   - src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb_minitable.h
   - src/core/ext/upb-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb.h
@@ -814,6 +819,8 @@ libs:
   - src/core/ext/upbdefs-gen/envoy/extensions/filters/common/fault/v3/fault.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/extensions/filters/http/composite/v3/composite.upbdefs.h
+  - src/core/ext/upbdefs-gen/envoy/extensions/filters/http/ext_proc/v3/ext_proc.upbdefs.h
+  - src/core/ext/upbdefs-gen/envoy/extensions/filters/http/ext_proc/v3/processing_mode.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/extensions/filters/http/fault/v3/fault.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.h
@@ -1352,6 +1359,7 @@ libs:
   - src/core/xds/grpc/xds_endpoint_parser.h
   - src/core/xds/grpc/xds_health_status.h
   - src/core/xds/grpc/xds_http_composite_filter.h
+  - src/core/xds/grpc/xds_http_ext_proc_filter.h
   - src/core/xds/grpc/xds_http_fault_filter.h
   - src/core/xds/grpc/xds_http_filter.h
   - src/core/xds/grpc/xds_http_filter_registry.h
@@ -1499,6 +1507,7 @@ libs:
   - src/core/ext/filters/census/grpc_context.cc
   - src/core/ext/filters/channel_idle/idle_filter_state.cc
   - src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc
+  - src/core/ext/filters/ext_proc/ext_proc_filter.cc
   - src/core/ext/filters/fault_injection/fault_injection_filter.cc
   - src/core/ext/filters/gcp_authentication/gcp_authentication_filter.cc
   - src/core/ext/filters/http/client/http_client_filter.cc
@@ -1629,6 +1638,8 @@ libs:
   - src/core/ext/upb-gen/envoy/extensions/filters/common/fault/v3/fault.upb_minitable.c
   - src/core/ext/upb-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upb_minitable.c
   - src/core/ext/upb-gen/envoy/extensions/filters/http/composite/v3/composite.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/extensions/filters/http/ext_proc/v3/ext_proc.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/extensions/filters/http/ext_proc/v3/processing_mode.upb_minitable.c
   - src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb_minitable.c
   - src/core/ext/upb-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb_minitable.c
   - src/core/ext/upb-gen/envoy/extensions/filters/http/rbac/v3/rbac.upb_minitable.c
@@ -1811,6 +1822,8 @@ libs:
   - src/core/ext/upbdefs-gen/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/extensions/filters/http/composite/v3/composite.upbdefs.c
+  - src/core/ext/upbdefs-gen/envoy/extensions/filters/http/ext_proc/v3/ext_proc.upbdefs.c
+  - src/core/ext/upbdefs-gen/envoy/extensions/filters/http/ext_proc/v3/processing_mode.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.c
@@ -2270,6 +2283,7 @@ libs:
   - src/core/xds/grpc/xds_endpoint_parser.cc
   - src/core/xds/grpc/xds_health_status.cc
   - src/core/xds/grpc/xds_http_composite_filter.cc
+  - src/core/xds/grpc/xds_http_ext_proc_filter.cc
   - src/core/xds/grpc/xds_http_fault_filter.cc
   - src/core/xds/grpc/xds_http_filter.cc
   - src/core/xds/grpc/xds_http_filter_registry.cc
@@ -13019,6 +13033,24 @@ targets:
   deps:
   - gtest
   - gpr
+- name: ext_proc_filter_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/filters/filter_test.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/filters/ext_proc_filter_test.cc
+  - test/core/filters/filter_test.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
 - name: ext_proc_message_test
   gtest: true
   build: test
@@ -31005,7 +31037,10 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/scoped_env_var.h
+  - test/core/xds/xds_transport_fake.h
   - test/cpp/util/cli_call.h
   - test/cpp/util/cli_credentials.h
   - test/cpp/util/config_grpc_cli.h
@@ -31016,6 +31051,7 @@ targets:
   - third_party/utf8_range/utf8_validity.h
   src:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - third_party/cel-spec/proto/cel/expr/checked.proto
   - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
@@ -31061,6 +31097,8 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/common/fault/v3/fault.proto
   - third_party/envoy-api/envoy/extensions/filters/common/matcher/action/v3/skip_action.proto
   - third_party/envoy-api/envoy/extensions/filters/http/composite/v3/composite.proto
+  - third_party/envoy-api/envoy/extensions/filters/http/ext_proc/v3/ext_proc.proto
+  - third_party/envoy-api/envoy/extensions/filters/http/ext_proc/v3/processing_mode.proto
   - third_party/envoy-api/envoy/extensions/filters/http/fault/v3/fault.proto
   - third_party/envoy-api/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.proto
   - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
@@ -31129,7 +31167,10 @@ targets:
   - third_party/xds/xds/type/v3/cel.proto
   - third_party/xds/xds/type/v3/range.proto
   - third_party/xds/xds/type/v3/typed_struct.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/xds/xds_http_filters_test.cc
+  - test/core/xds/xds_transport_fake.cc
   - test/cpp/util/cli_call.cc
   - test/cpp/util/cli_credentials.cc
   - test/cpp/util/proto_file_parser.cc

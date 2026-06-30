@@ -5730,6 +5730,41 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_ext_proc_filter",
+    srcs = [
+        "ext/filters/ext_proc/ext_proc_filter.cc",
+    ],
+    hdrs = [
+        "ext/filters/ext_proc/ext_proc_filter.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "blackboard",
+        "call_spine",
+        "channel_args",
+        "channel_fwd",
+        "client_channel_args",
+        "filter_args",
+        "grpc_check",
+        "grpc_matchers",
+        "try_seq",
+        "unique_type_name",
+        "xds_common_types",
+        "//:channel_arg_names",
+        "//:config",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_trace",
+        "//:ref_counted_ptr",
+        "//:xds_client",
+    ],
+)
+
+grpc_cc_library(
     name = "ext_proc_messages",
     srcs = [
         "ext/filters/ext_proc/ext_proc_messages.cc",
@@ -6532,6 +6567,7 @@ grpc_cc_library(
         "xds/grpc/xds_common_types_parser.cc",
         "xds/grpc/xds_endpoint_parser.cc",
         "xds/grpc/xds_http_composite_filter.cc",
+        "xds/grpc/xds_http_ext_proc_filter.cc",
         "xds/grpc/xds_http_fault_filter.cc",
         "xds/grpc/xds_http_filter_registry.cc",
         "xds/grpc/xds_http_gcp_authn_filter.cc",
@@ -6555,6 +6591,7 @@ grpc_cc_library(
         "xds/grpc/xds_common_types_parser.h",
         "xds/grpc/xds_endpoint_parser.h",
         "xds/grpc/xds_http_composite_filter.h",
+        "xds/grpc/xds_http_ext_proc_filter.h",
         "xds/grpc/xds_http_fault_filter.h",
         "xds/grpc/xds_http_filter_registry.h",
         "xds/grpc/xds_http_gcp_authn_filter.h",
@@ -6667,10 +6704,12 @@ grpc_cc_library(
         "error",
         "error_utils",
         "experiment_env_var",
+        "filter_args",
         "gcp_authentication_filter",
         "google_rpc_status_upb",
         "grpc_audit_logging",
         "grpc_check",
+        "grpc_ext_proc_filter",
         "grpc_fake_credentials",
         "grpc_fault_injection_filter",
         "grpc_lb_policy_pick_first",
@@ -6747,6 +6786,8 @@ grpc_cc_library(
         "//:config",
         "//:debug_location",
         "//:endpoint_addresses",
+        "//:envoy_extensions_filters_http_ext_proc_upb",
+        "//:envoy_extensions_filters_http_ext_proc_upbdefs",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc_base",

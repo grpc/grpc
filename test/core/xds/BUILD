@@ -596,6 +596,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        ":xds_transport_fake",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
@@ -630,6 +631,7 @@ grpc_cc_test(
         "@envoy_api//envoy/extensions/filters/common/fault/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/common/matcher/action/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/composite/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/filters/http/ext_proc/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/fault/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/gcp_authn/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/rbac/v3:pkg_cc_proto",

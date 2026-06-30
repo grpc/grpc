@@ -79,6 +79,7 @@ TraceFlag event_engine_dns_trace(false, "event_engine_dns");
 TraceFlag event_engine_endpoint_trace(false, "event_engine_endpoint");
 TraceFlag event_engine_endpoint_data_trace(false, "event_engine_endpoint_data");
 TraceFlag event_engine_poller_trace(false, "event_engine_poller");
+TraceFlag ext_proc_filter_trace(false, "ext_proc_filter");
 TraceFlag fault_injection_filter_trace(false, "fault_injection_filter");
 TraceFlag flowctl_trace(false, "flowctl");
 TraceFlag fork_trace(false, "fork");
@@ -162,6 +163,7 @@ const absl::flat_hash_map<std::string, TraceFlag*>& GetAllTraceFlags() {
           {"event_engine_endpoint", &event_engine_endpoint_trace},
           {"event_engine_endpoint_data", &event_engine_endpoint_data_trace},
           {"event_engine_poller", &event_engine_poller_trace},
+          {"ext_proc_filter", &ext_proc_filter_trace},
           {"fault_injection_filter", &fault_injection_filter_trace},
           {"flowctl", &flowctl_trace},
           {"fork", &fork_trace},
