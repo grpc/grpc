@@ -1755,10 +1755,12 @@ grpc_cc_library(
         "absl/functional:function_ref",
         "absl/status",
         "absl/strings",
+        "absl/time",
         "absl/types:span",
     ],
     visibility = ["//bazel:alt_grpc_base_legacy"],
     deps = [
+        "event_engine_base_hdrs",
         "gpr",
         "//src/core:arena",
         "//src/core:call_final_info",
