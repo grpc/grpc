@@ -113,14 +113,19 @@ class OpenTelemetryPluginImpl::ClientCallTracerInterface
     class TcpCallTracer;
 
     void PopulateLabelInjectors(grpc_metadata_batch* metadata);
+    void SetOptionalLabelImpl(
+        OptionalLabelKey key,
+        std::variant<grpc_core::RefCountedStringValue, absl::string_view>
+            value);
 
     ClientCallTracerInterface* const parent_;
     // Start time (for measuring latency).
     absl::Time start_time_;
     std::unique_ptr<LabelsIterable> injected_labels_;
     // Avoid std::map to avoid per-call allocations.
-    std::array<grpc_core::RefCountedStringValue,
-               static_cast<size_t>(OptionalLabelKey::kSize)>
+    std::array<
+        std::variant<grpc_core::RefCountedStringValue, absl::string_view>,
+        static_cast<size_t>(OptionalLabelKey::kSize)>
         optional_labels_;
     std::vector<std::unique_ptr<LabelsIterable>>
         injected_labels_from_plugin_options_;

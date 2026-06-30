@@ -52,19 +52,7 @@ bazel_dep(name = "openssl", version = "3.3.1.bcr.1")
 bazel_dep(name = "opentelemetry-cpp", version = "1.19.0", repo_name = "io_opentelemetry_cpp")
 
 # --- Protobuf related packages.
-# TODO(weizheyuan): Remove this single_version_override block once protobuf 35
-# offical release includes a MSVC related bugfix that we need.
-# See also https://github.com/protocolbuffers/protobuf/pull/27609
-bazel_dep(name = "protobuf", version = "35.0", repo_name = "com_google_protobuf")
-single_version_override(
-    module_name = "protobuf",
-    patch_strip = 1,
-    patches = [
-        "//bazel:protobuf/fix_msvc_crash.patch",
-    ],
-    version = "35.0",
-)
-
+bazel_dep(name = "protobuf", version = "35.1", repo_name = "com_google_protobuf")
 bazel_dep(name = "protoc-gen-validate", version = "1.2.1.bcr.1", repo_name = "com_envoyproxy_protoc_gen_validate")  # Not needed directly
 bazel_dep(name = "rules_apple", version = "3.16.0", repo_name = "build_bazel_rules_apple")
 bazel_dep(name = "rules_proto", version = "7.0.2")
@@ -131,6 +119,7 @@ PYTHON_VERSIONS = [
     "3.12",
     "3.13",
     "3.14",
+    "3.15",
 ]
 
 # TODO(weizheyuan): figure out how it interacts with protobuf 31

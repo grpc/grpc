@@ -81,19 +81,12 @@
   description: Send supported features in chaotic good settings frames.
   expiry: 2026/09/01
   owner: aananthv@google.com
-  test_tags: [core_end2end_test]
+  test_tags: []
 - name: custom_frame_check
   description: Adding checks to custom HTTP2 frame.
   expiry: 2027/01/20
   owner: tjagtap@google.com
   test_tags: []
-  allow_in_fuzzing_config: false
-- name: error_flatten
-  description: Flatten errors to ordinary absl::Status form.
-  expiry: 2026/07/01
-  owner: roth@google.com
-  test_tags:
-    ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "error_tests"]
   allow_in_fuzzing_config: false
 - name: event_engine_callback_cq
   description: Use EventEngine instead of the CallbackAlternativeCQ.
@@ -270,6 +263,11 @@
   expiry: 2027/01/16
   owner: alishananda@google.com
   test_tags: []
+- name: optimization_06
+  description: Optimization 
+  expiry: 2027/01/30
+  owner: tjagtap@google.com
+  test_tags: []
 - name: otel_export_telemetry_domains
   description: Export telemetry domains in OpenTelemetry metrics.
   expiry: 2026/07/01
@@ -288,11 +286,11 @@
   description:
     This is a combination of ph2_server and ph2_client experiments.
     When this flag is enabled for the test suites, it would test PH2 Client with PH2 Server.
-    We will NEVER be rolling out this experiment, because the roll out would be done using ph2_server and ph2_client. 
-    This experiment MUST be deleted when either ph2_server or ph2_client experiments are deleted. 
+    We will NEVER be rolling out this experiment, because the roll out would be done using ph2_server and ph2_client.
+    This experiment MUST be deleted when either ph2_server or ph2_client experiments are deleted.
   expiry: 2027/03/16
   owner: tjagtap@google.com
-  test_tags: []
+  test_tags: ["core_end2end_test", "cpp_end2end_test"]
   allow_in_fuzzing_config: true
 - name: ph2_perf_01
   description: Different performance experiments for PH2 Transport
@@ -306,7 +304,7 @@
     When this flag is enabled for the test suites, it would test CHTTP2 Client with PH2 Server.
   expiry: 2027/03/16
   owner: tjagtap@google.com
-  test_tags: []
+  test_tags: ["core_end2end_test", "cpp_end2end_test"]
   allow_in_fuzzing_config: true
 - name: pick_first_ignore_empty_updates
   description: Ignore empty resolutions in pick_first (delete)
@@ -361,7 +359,7 @@
   test_tags: [core_end2end_test]
 - name: return_preexisting_errors
   description: Return errors that exist before the start of the call in RunHandler.
-  expiry: 2026/06/30
+  expiry: 2027/01/16
   owner: aananthv@google.com
   test_tags: []
 - name: schedule_cancellation_over_write
@@ -407,16 +405,9 @@
   test_tags: []
 - name: subchannel_connection_scaling
   description: Subchannel connection scaling support.
-  expiry: 2026/07/01
+  expiry: 2026/10/01
   owner: roth@google.com
   test_tags: ["core_end2end_test", "cpp_lb_end2end_test", "chttp2_keepalive_tests"]
-- name: subchannel_wrapper_cleanup_on_orphan
-  description:
-    Fixes the subchannel wrapper to drop any non-cancelled watchers when
-    it gets orphaned.
-  expiry: 2026/07/01
-  owner: roth@google.com
-  test_tags: ["cpp_end2end_test", "xds_end2end_test"]
 - name: tcp_frame_size_tuning
   description:
     If set, enables TCP to use RPC size estimation made by higher layers.

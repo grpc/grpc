@@ -763,7 +763,8 @@ grpc_chttp2_transport::grpc_chttp2_transport(
         grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>();
     if (epte != nullptr && stats_plugin_group != nullptr) {
       epte->EnableTcpTelemetry(stats_plugin_group->GetCollectionScope(),
-                               /*is_control_endpoint=*/false);
+                               /*is_control_endpoint=*/false,
+                               /*trace_full_buffer=*/false);
       epte->SetTcpTracer(std::make_shared<grpc_core::DefaultTcpTracer>(
           std::move(stats_plugin_group)));
     }
@@ -1376,14 +1377,11 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
                                      uint32_t last_stream_id,
                                      absl::string_view goaway_text) {
   t->goaway_error = grpc_error_set_int(
-      grpc_error_set_int(
-          grpc_core::StatusCreate(
-              absl::StatusCode::kUnavailable,
-              absl::StrFormat("GOAWAY received; Error code: %u; Debug Text: %s",
-                              goaway_error, goaway_text),
-              DEBUG_LOCATION, {}),
-          grpc_core::StatusIntProperty::kHttp2Error,
-          static_cast<intptr_t>(goaway_error)),
+      grpc_error_set_int(absl::UnavailableError(absl::StrFormat(
+                             "GOAWAY received; Error code: %u; Debug Text: %s",
+                             goaway_error, goaway_text)),
+                         grpc_core::StatusIntProperty::kHttp2Error,
+                         static_cast<intptr_t>(goaway_error)),
       grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
 
   GRPC_TRACE_LOG(http, INFO)
