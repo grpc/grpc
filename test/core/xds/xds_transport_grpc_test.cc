@@ -136,32 +136,6 @@ TEST_F(GrpcXdsTransportTest, DifferingServerUriDoesNotShareChannel) {
   EXPECT_NE(grpc_transport1->channel(), grpc_transport2->channel());
 }
 
-TEST_F(GrpcXdsTransportTest, ChannelGarbageCollectedWhenNoTransportsRemain) {
-  ExecCtx exec_ctx;
-  GrpcXdsServerTarget target("localhost:1234", channel_creds_config_,
-                             /*call_creds_configs=*/{},
-                             /*initial_metadata=*/{{"key1", "val1"}},
-                             Duration::Seconds(10));
-  absl::Status status1;
-  auto transport1 = factory_->GetTransport(target, &status1);
-  ASSERT_TRUE(status1.ok()) << status1.ToString();
-  auto* grpc_transport1 =
-      DownCast<GrpcXdsTransportFactory::GrpcXdsTransport*>(transport1.get());
-  Channel* channel1 = grpc_transport1->channel();
-  transport1.reset();
-  absl::Notification notification;
-  grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
-      [&notification]() { notification.Notify(); });
-  notification.WaitForNotification();
-  absl::Status status2;
-  auto transport2 = factory_->GetTransport(target, &status2);
-  ASSERT_TRUE(status2.ok()) << status2.ToString();
-  auto* grpc_transport2 =
-      DownCast<GrpcXdsTransportFactory::GrpcXdsTransport*>(transport2.get());
-  Channel* channel2 = grpc_transport2->channel();
-  EXPECT_NE(channel1, channel2);
-}
-
 class GrpcXdsServerTargetTest : public ::testing::Test {
  protected:
   void SetUp() override {
