@@ -27,11 +27,10 @@
 #include <memory>
 #include <variant>
 
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_selector.h"
 #include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-
-#include "src/core/credentials/transport/tls/grpc_tls_certificate_selector.h"
 
 namespace grpc {
 namespace testing {
