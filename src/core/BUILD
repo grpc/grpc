@@ -6860,6 +6860,35 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "xds_routing",
+    srcs = [
+        "xds/grpc/xds_routing.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_routing.h",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/functional:function_ref",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    tags = ["nofixdeps"],
+    visibility = ["//bazel:xds_client_grpc"],
+    deps = [
+        "channel_args",
+        "grpc_check",
+        "grpc_matchers",
+        "metadata_batch",
+        "xds_http_filter",
+        "xds_http_filter_registry",
+        "xds_listener",
+        "xds_route_config",
+    ],
+)
+
 # TODO(roth): Split this up into individual targets.
 grpc_cc_library(
     name = "grpc_xds_client",
@@ -6875,7 +6904,6 @@ grpc_cc_library(
         "xds/grpc/xds_http_stateful_session_filter.cc",
         "xds/grpc/xds_listener_parser.cc",
         "xds/grpc/xds_route_config_parser.cc",
-        "xds/grpc/xds_routing.cc",
     ],
     hdrs = [
         "xds/grpc/xds_bootstrap_grpc_builder.h",
@@ -6889,7 +6917,6 @@ grpc_cc_library(
         "xds/grpc/xds_http_stateful_session_filter.h",
         "xds/grpc/xds_listener_parser.h",
         "xds/grpc/xds_route_config_parser.h",
-        "xds/grpc/xds_routing.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -7069,6 +7096,7 @@ grpc_cc_library(
         "xds_metadata",
         "xds_metadata_parser",
         "xds_route_config",
+        "xds_routing",
         "xds_server_grpc",
         "xds_tls_context",
         "xds_tls_context_parser",
@@ -7230,6 +7258,7 @@ grpc_cc_library(
         "xds_http_filter_registry",
         "xds_listener",
         "xds_route_config",
+        "xds_routing",
         "//:config",
         "//:debug_location",
         "//:exec_ctx",
@@ -8544,6 +8573,7 @@ grpc_cc_library(
         "xds_endpoint",
         "xds_listener",
         "xds_route_config",
+        "xds_routing",
         "//:config",
         "//:grpc_resolver",
         "//:grpc_resolver_fake",
@@ -8594,6 +8624,7 @@ grpc_cc_library(
         "xds_http_filter",
         "xds_listener",
         "xds_route_config",
+        "xds_routing",
         "xxhash_inline",
         "//:channel_arg_names",
         "//:config",
