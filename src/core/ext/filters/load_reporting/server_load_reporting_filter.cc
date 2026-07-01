@@ -42,7 +42,9 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/telemetry/call_tracer.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/promise/context.h"
@@ -227,12 +229,27 @@ void ServerLoadReportingFilter::Call::OnFinalize(
   if (final_info == nullptr) return;
   // After the last bytes have been placed on the wire we record
   // final measurements
+  uint64_t outgoing_bytes;
+  uint64_t incoming_bytes;
+  if (IsCallTracerInTransportEnabled()) {
+    auto* call_tracer = GetContext<ServerCallTracer>();
+    if (call_tracer != nullptr) {
+      outgoing_bytes = call_tracer->outgoing_bytes();
+      incoming_bytes = call_tracer->incoming_bytes();
+    } else {
+      outgoing_bytes = 0;
+      incoming_bytes = 0;
+    }
+  } else {
+    outgoing_bytes =
+        final_info->stats.transport_stream_stats.outgoing.data_bytes;
+    incoming_bytes =
+        final_info->stats.transport_stream_stats.incoming.data_bytes;
+  }
   opencensus::stats::Record(
       {{::grpc::load_reporter::MeasureEndCount(), 1},
-       {::grpc::load_reporter::MeasureEndBytesSent(),
-        final_info->stats.transport_stream_stats.outgoing.data_bytes},
-       {::grpc::load_reporter::MeasureEndBytesReceived(),
-        final_info->stats.transport_stream_stats.incoming.data_bytes},
+       {::grpc::load_reporter::MeasureEndBytesSent(), outgoing_bytes},
+       {::grpc::load_reporter::MeasureEndBytesReceived(), incoming_bytes},
        {::grpc::load_reporter::MeasureEndLatencyMs(),
         gpr_time_to_millis(final_info->stats.latency)}},
       {{::grpc::load_reporter::TagKeyToken(),
