@@ -944,11 +944,13 @@ static bool inner_resolve_as_ip_literal_locked(
     *port = default_port;
   }
   grpc_resolved_address addr;
-  *hostport = grpc_core::JoinHostPort(*host, atoi(port->c_str()));
-  if (grpc_parse_ipv4_hostport(hostport->c_str(), &addr,
-                               false /* log errors */) ||
-      grpc_parse_ipv6_hostport(hostport->c_str(), &addr,
-                               false /* log errors */)) {
+  // Keep the port as a string and let grpc_parse_ipv4_hostport /
+  // grpc_parse_ipv6_hostport validate it, rather than re-implementing the
+  // numeric checks here. Using atoi() previously accepted malformed ports such
+  // as "1234x" by silently truncating them.
+  *hostport = grpc_core::JoinHostPort(*host, *port);
+  if (grpc_parse_ipv4_hostport(*hostport, &addr, false /* log errors */) ||
+      grpc_parse_ipv6_hostport(*hostport, &addr, false /* log errors */)) {
     GRPC_CHECK(*addrs == nullptr);
     *addrs = std::make_unique<EndpointAddressesList>();
     (*addrs)->emplace_back(addr, grpc_core::ChannelArgs());
