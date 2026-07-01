@@ -228,7 +228,8 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
       const tsi_handshaker_vtable* handshaker_vtable, SSL* ssl, BIO* network_io,
       tsi_ssl_handshaker_factory* factory_ref,
       grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope,
-      bool is_client, std::shared_ptr<grpc_core::PrivateKeySigner> signer)
+      bool is_client, std::shared_ptr<grpc_core::PrivateKeySigner> signer,
+      std::string target, std::string locality, std::string backend_service)
       : tsi_handshaker(handshaker_vtable),
         ssl(ssl),
         network_io(network_io),
@@ -239,7 +240,10 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
             gpr_zalloc(outgoing_bytes_buffer_size))),
         factory_ref(factory_ref),
         collection_scope(std::move(collection_scope)),
-        is_client(is_client) {
+        is_client(is_client),
+        target(std::move(target)),
+        locality(std::move(locality)),
+        backend_service(std::move(backend_service)) {
 #if defined(OPENSSL_IS_BORINGSSL)
     key_signer = std::move(signer);
 #endif
@@ -344,7 +348,6 @@ void tsi_ssl_handshaker::MaybeRecordTelemetry(
     storage->Increment(
         grpc_core::TlsClientHandshakeTelemetryDomain::kHandshakes);
   } else {
-    metric_recorded = true;
     auto storage = grpc_core::TlsServerHandshakeTelemetryDomain::GetStorage(
         collection_scope, status_str, resumed);
     storage->Increment(
@@ -2741,8 +2744,6 @@ static tsi_result ssl_handshaker_next(
     *bytes_to_send = impl->handshaker_next_args->bytes_to_send;
     *bytes_to_send_size = impl->handshaker_next_args->bytes_to_send_size;
     *handshaker_result = impl->handshaker_next_args->handshaker_result;
-  }
-  if (handshake_result.tsi_handshake_result != TSI_ASYNC) {
     impl->MaybeRecordTelemetry(handshake_result);
     impl->handshaker_next_args.reset();
   }
@@ -2760,6 +2761,7 @@ static void ssl_handshaker_shutdown(tsi_handshaker* self) {
 #endif  // defined(OPENSSL_IS_BORINGSSL)
   {
     grpc_core::MutexLock lock(&impl->mu);
+    // Should never happen, if so something is very wrong
     if (impl->ssl == nullptr) return;
     impl->is_shutdown = true;
     impl->MaybeRecordTelemetry({
@@ -2940,10 +2942,8 @@ static tsi_result create_tsi_ssl_handshaker(
   tsi_ssl_handshaker* impl = new tsi_ssl_handshaker(
       &handshaker_vtable, ssl, network_io,
       tsi_ssl_handshaker_factory_ref(factory), std::move(collection_scope),
-      is_client, std::move(key_signer));
-  impl->target = std::move(target);
-  impl->locality = std::move(locality);
-  impl->backend_service = std::move(backend_service);
+      is_client, std::move(key_signer), std::move(target), std::move(locality),
+      std::move(backend_service));
   *handshaker = impl;
 
   if (!SSL_set_ex_data(ssl, g_ssl_ex_handshaker_index, impl)) {
