@@ -4759,7 +4759,6 @@ libs:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
-  - src/core/client_channel/client_channel_args.h
   - src/core/config/core_configuration.h
   - src/core/credentials/call/call_credentials.h
   - src/core/credentials/call/call_creds_registry.h
