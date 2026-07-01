@@ -42,7 +42,6 @@
 #include <variant>
 #include <vector>
 
-#include "fuzztest/fuzztest.h"
 #include "src/core/call/message.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
@@ -68,6 +67,7 @@
 #include "test/core/transport/util/mock_promise_endpoint.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "fuzztest/fuzztest.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
 #include "absl/status/status.h"
