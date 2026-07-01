@@ -13,7 +13,6 @@
 # limitations under the License.
 """Common types for gRPC Async API"""
 
-import enum
 from typing import (
     Any,
     AsyncIterable,
