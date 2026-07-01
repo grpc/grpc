@@ -6502,6 +6502,39 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_http_stateful_session_filter",
+    srcs = [
+        "xds/grpc/xds_http_stateful_session_filter.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_http_stateful_session_filter.h",
+    ],
+    external_deps = [
+        "absl/status:statusor",
+        "absl/strings",
+        "@com_google_protobuf//upb/reflection",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "channel_fwd",
+        "envoy_config_core_upb",
+        "envoy_extensions_filters_http_stateful_session_upb",
+        "envoy_extensions_filters_http_stateful_session_upbdefs",
+        "envoy_extensions_http_stateful_session_cookie_upb",
+        "envoy_extensions_http_stateful_session_cookie_upbdefs",
+        "envoy_type_http_upb",
+        "grpc_stateful_session_filter",
+        "time",
+        "upb_utils",
+        "validation_errors",
+        "xds_common_types",
+        "xds_common_types_parser",
+        "xds_http_filter",
+        "//:xds_client",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_route_config",
     srcs = [
         "xds/grpc/xds_route_config.cc",
@@ -7038,7 +7071,6 @@ grpc_cc_library(
         "xds/grpc/xds_client_grpc.cc",
         "xds/grpc/xds_cluster_parser.cc",
         "xds/grpc/xds_endpoint_parser.cc",
-        "xds/grpc/xds_http_stateful_session_filter.cc",
         "xds/grpc/xds_listener_parser.cc",
         "xds/grpc/xds_route_config_parser.cc",
     ],
@@ -7047,7 +7079,6 @@ grpc_cc_library(
         "xds/grpc/xds_client_grpc.h",
         "xds/grpc/xds_cluster_parser.h",
         "xds/grpc/xds_endpoint_parser.h",
-        "xds/grpc/xds_http_stateful_session_filter.h",
         "xds/grpc/xds_listener_parser.h",
         "xds/grpc/xds_route_config_parser.h",
     ],
@@ -7222,6 +7253,7 @@ grpc_cc_library(
         "xds_http_filter_registry",
         "xds_http_gcp_authn_filter",
         "xds_http_rbac_filter",
+        "xds_http_stateful_session_filter",
         "xds_lb_policy_registry",
         "xds_listener",
         "xds_matcher",
