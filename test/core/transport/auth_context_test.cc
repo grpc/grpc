@@ -205,6 +205,39 @@ TEST(AuthContextTest, CompareAuthContextUnsetReturnsOptional) {
   ctx2.reset(DEBUG_LOCATION, "test");
 }
 
+TEST(AuthContextTest, AddPropertyWithNullValueAndLength) {
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
+  ASSERT_NE(ctx, nullptr);
+  grpc_auth_context_add_property(ctx.get(), "key", nullptr, 10);
+
+  grpc_auth_property_iterator it =
+      grpc_auth_context_find_properties_by_name(ctx.get(), "key");
+  const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
+  // We expect the property NOT to be added if value is nullptr and length > 0.
+  EXPECT_EQ(prop, nullptr);
+
+  ctx.reset(DEBUG_LOCATION, "test");
+}
+
+TEST(AuthContextTest, AddPropertyWithNullValueAndZeroLength) {
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
+  ASSERT_NE(ctx, nullptr);
+  grpc_auth_context_add_property(ctx.get(), "key", nullptr, 0);
+
+  grpc_auth_property_iterator it =
+      grpc_auth_context_find_properties_by_name(ctx.get(), "key");
+  const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
+  // We expect the property TO be added if value is nullptr and length is 0.
+  ASSERT_NE(prop, nullptr);
+  EXPECT_STREQ(prop->name, "key");
+  EXPECT_STREQ(prop->value, "");
+  EXPECT_EQ(prop->value_length, 0);
+
+  ctx.reset(DEBUG_LOCATION, "test");
+}
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
