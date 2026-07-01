@@ -6459,6 +6459,49 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_http_rbac_filter",
+    srcs = [
+        "xds/grpc/xds_http_rbac_filter.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_http_rbac_filter.h",
+    ],
+    external_deps = [
+        "absl/status:statusor",
+        "absl/strings",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/reflection",
+        "@com_google_protobuf//upb/message",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "channel_args",
+        "channel_fwd",
+        "down_cast",
+        "envoy_config_core_upb",
+        "envoy_config_rbac_upb",
+        "envoy_config_route_upb",
+        "envoy_extensions_filters_http_rbac_upb",
+        "envoy_extensions_filters_http_rbac_upbdefs",
+        "envoy_type_matcher_upb",
+        "envoy_type_upb",
+        "experiment_env_var",
+        "json",
+        "json_writer",
+        "grpc_rbac_filter",
+        "protobuf_wrappers_upb",
+        "upb_utils",
+        "validation_errors",
+        "xds_audit_logger_registry",
+        "xds_bootstrap_grpc",
+        "xds_common_types",
+        "xds_common_types_parser",
+        "xds_http_filter",
+        "//:xds_client",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_route_config",
     srcs = [
         "xds/grpc/xds_route_config.cc",
@@ -6995,7 +7038,6 @@ grpc_cc_library(
         "xds/grpc/xds_client_grpc.cc",
         "xds/grpc/xds_cluster_parser.cc",
         "xds/grpc/xds_endpoint_parser.cc",
-        "xds/grpc/xds_http_rbac_filter.cc",
         "xds/grpc/xds_http_stateful_session_filter.cc",
         "xds/grpc/xds_listener_parser.cc",
         "xds/grpc/xds_route_config_parser.cc",
@@ -7005,7 +7047,6 @@ grpc_cc_library(
         "xds/grpc/xds_client_grpc.h",
         "xds/grpc/xds_cluster_parser.h",
         "xds/grpc/xds_endpoint_parser.h",
-        "xds/grpc/xds_http_rbac_filter.h",
         "xds/grpc/xds_http_stateful_session_filter.h",
         "xds/grpc/xds_listener_parser.h",
         "xds/grpc/xds_route_config_parser.h",
@@ -7180,6 +7221,7 @@ grpc_cc_library(
         "xds_http_filter",
         "xds_http_filter_registry",
         "xds_http_gcp_authn_filter",
+        "xds_http_rbac_filter",
         "xds_lb_policy_registry",
         "xds_listener",
         "xds_matcher",
