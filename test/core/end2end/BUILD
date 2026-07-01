@@ -382,7 +382,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc_public_hdrs",
-        "//:grpc_resolver_dns_ares",
         "//src/core:channel_args",
         "//src/core:closure",
         "//src/core:default_event_engine",

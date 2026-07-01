@@ -7993,47 +7993,10 @@ grpc_cc_library(
     deps = [
         "experiments",
         "grpc_resolver_dns_event_engine",
-        "grpc_resolver_dns_native",
         "//:config",
         "//:config_vars",
         "//:gpr",
         "//:grpc_resolver",
-        "//:grpc_resolver_dns_ares",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_resolver_dns_native",
-    srcs = [
-        "resolver/dns/native/dns_resolver.cc",
-    ],
-    hdrs = [
-        "resolver/dns/native/dns_resolver.h",
-    ],
-    external_deps = [
-        "absl/functional:bind_front",
-        "absl/log",
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-    ],
-    deps = [
-        "channel_args",
-        "polling_resolver",
-        "resolved_address",
-        "time",
-        "//:backoff",
-        "//:channel_arg_names",
-        "//:config",
-        "//:debug_location",
-        "//:endpoint_addresses",
-        "//:gpr",
-        "//:grpc_resolver",
-        "//:grpc_trace",
-        "//:iomgr",
-        "//:orphanable",
-        "//:ref_counted_ptr",
-        "//:uri",
     ],
 )
 

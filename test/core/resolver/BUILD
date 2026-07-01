@@ -66,25 +66,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "dns_resolver_cooldown_test",
-    srcs = ["dns_resolver_cooldown_test.cc"],
-    external_deps = [
-        "absl/log:log",
-        "gtest",
-    ],
-    tags = [
-        "grpc:broken-internally",
-    ],
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//src/core:channel_args",
-        "//src/core:closure",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "sockaddr_resolver_test",
     srcs = ["sockaddr_resolver_test.cc"],
     external_deps = [

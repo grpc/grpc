@@ -242,20 +242,11 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
     GRPC_CHECK_GE(gpr_time_cmp(time_left, gpr_time_0(GPR_TIMESPAN)), 0);
     grpc_pollset_worker* worker = nullptr;
     grpc_core::ExecCtx exec_ctx;
-    if (grpc_core::IsEventEngineDnsEnabled()) {
-      // This essentially becomes a condition variable.
-      GRPC_LOG_IF_ERROR(
-          "pollset_work",
-          grpc_pollset_work(
-              args->pollset, &worker,
-              grpc_core::Timestamp::FromTimespecRoundUp(deadline)));
-    } else {
-      GRPC_LOG_IF_ERROR(
-          "pollset_work",
-          grpc_pollset_work(
-              args->pollset, &worker,
-              grpc_core::Timestamp::FromTimespecRoundUp(NSecondDeadline(1))));
-    }
+    // This essentially becomes a condition variable.
+    GRPC_LOG_IF_ERROR(
+        "pollset_work",
+        grpc_pollset_work(args->pollset, &worker,
+                          grpc_core::Timestamp::FromTimespecRoundUp(deadline)));
   }
   gpr_event_set(&args->ev, reinterpret_cast<void*>(1));
 }
@@ -457,12 +448,7 @@ void RunResolvesRelevantRecordsTest(
         grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
     g_fake_non_responsive_dns_server_port =
         fake_non_responsive_dns_server->port();
-    if (grpc_core::IsEventEngineDnsEnabled()) {
-      event_engine_grpc_ares_test_only_inject_config =
-          InjectBrokenNameServerList;
-    } else {
-      grpc_ares_test_only_inject_config = InjectBrokenNameServerList;
-    }
+    event_engine_grpc_ares_test_only_inject_config = InjectBrokenNameServerList;
     whole_uri = absl::StrCat("dns:///", absl::GetFlag(FLAGS_target_name));
   } else if (absl::GetFlag(FLAGS_inject_broken_nameserver_list) == "False") {
     LOG(INFO) << "Specifying authority in uris to: "

@@ -387,13 +387,8 @@ TEST_F(
       grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
   grpc_status_code expected_status_code = GRPC_STATUS_UNAVAILABLE;
   std::string expected_error_message_substring;
-  if (grpc_core::IsEventEngineDnsEnabled()) {
-    expected_error_message_substring =
-        absl::StrCat("errors resolving ", kFakeName);
-  } else {
-    expected_error_message_substring =
-        absl::StrCat("DNS resolution failed for ", kFakeName);
-  }
+  expected_error_message_substring =
+      absl::StrCat("errors resolving ", kFakeName);
   // The DNS resolution timeout should fire well before the
   // RPC's deadline expires.
   gpr_timespec rpc_deadline = grpc_timeout_seconds_to_deadline(10);
@@ -435,20 +430,11 @@ TEST_F(CancelDuringAresQuery, TestQueryFailsBecauseTcpServerClosesSocket) {
           kWaitForClientToSendFirstBytes,
       grpc_core::testing::FakeUdpAndTcpServer::
           CloseSocketUponReceivingBytesFromPeer);
-  if (grpc_core::IsEventEngineDnsEnabled()) {
-    g_event_engine_grpc_ares_test_only_force_tcp = true;
-  } else {
-    g_grpc_ares_test_only_force_tcp = true;
-  }
+  g_event_engine_grpc_ares_test_only_force_tcp = true;
   grpc_status_code expected_status_code = GRPC_STATUS_UNAVAILABLE;
   std::string expected_error_message_substring;
-  if (grpc_core::IsEventEngineDnsEnabled()) {
-    expected_error_message_substring =
-        absl::StrCat("errors resolving ", kFakeName);
-  } else {
-    expected_error_message_substring =
-        absl::StrCat("DNS resolution failed for ", kFakeName);
-  }
+  expected_error_message_substring =
+      absl::StrCat("errors resolving ", kFakeName);
   // Don't really care about the deadline - we should quickly hit a DNS
   // resolution failure.
   gpr_timespec rpc_deadline = grpc_timeout_seconds_to_deadline(100);
@@ -456,11 +442,7 @@ TEST_F(CancelDuringAresQuery, TestQueryFailsBecauseTcpServerClosesSocket) {
   TestCancelDuringActiveQuery(expected_status_code,
                               expected_error_message_substring, rpc_deadline,
                               dns_query_timeout_ms, fake_dns_server.port());
-  if (grpc_core::IsEventEngineDnsEnabled()) {
-    g_event_engine_grpc_ares_test_only_force_tcp = false;
-  } else {
-    g_grpc_ares_test_only_force_tcp = false;
-  }
+  g_event_engine_grpc_ares_test_only_force_tcp = false;
 }
 
 // This test is meant to repro a bug noticed in internal issue b/297538255.
@@ -498,11 +480,7 @@ TEST_F(CancelDuringAresQuery, TestQueryFailsBecauseTcpServerClosesSocket) {
 //      But c-ares will never try to read from that socket again, so we have an
 //      infinite busy loop.
 TEST_F(CancelDuringAresQuery, TestQueryFailsWithDataRemainingInReadBuffer) {
-  if (grpc_core::IsEventEngineDnsEnabled()) {
-    g_event_engine_grpc_ares_test_only_force_tcp = true;
-  } else {
-    g_grpc_ares_test_only_force_tcp = true;
-  }
+  g_event_engine_grpc_ares_test_only_force_tcp = true;
   grpc_core::testing::SocketUseAfterCloseDetector
       socket_use_after_close_detector;
   grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
@@ -517,11 +495,7 @@ TEST_F(CancelDuringAresQuery, TestQueryFailsWithDataRemainingInReadBuffer) {
   TestCancelDuringActiveQuery(
       expected_status_code, "" /* expected error message substring */,
       rpc_deadline, dns_query_timeout_ms, fake_dns_server.port());
-  if (grpc_core::IsEventEngineDnsEnabled()) {
-    g_event_engine_grpc_ares_test_only_force_tcp = false;
-  } else {
-    g_grpc_ares_test_only_force_tcp = false;
-  }
+  g_event_engine_grpc_ares_test_only_force_tcp = false;
 }
 
 }  // namespace

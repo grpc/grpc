@@ -1877,23 +1877,12 @@
     <file baseinstalldir="/" name="src/core/net/socket_mutator.h" role="src" />
     <file baseinstalldir="/" name="src/core/plugin_registry/grpc_plugin_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/plugin_registry/grpc_plugin_registry_extra.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/resolver/dns/c_ares/dns_resolver_ares.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/resolver/dns/c_ares/dns_resolver_ares.h" role="src" />
-    <file baseinstalldir="/" name="src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h" role="src" />
-    <file baseinstalldir="/" name="src/core/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/resolver/dns/c_ares/grpc_ares_wrapper.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/resolver/dns/c_ares/grpc_ares_wrapper.h" role="src" />
-    <file baseinstalldir="/" name="src/core/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/dns/dns_resolver_plugin.cc" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/dns/dns_resolver_plugin.h" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/dns/event_engine/service_config_helper.cc" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/dns/event_engine/service_config_helper.h" role="src" />
-    <file baseinstalldir="/" name="src/core/resolver/dns/native/dns_resolver.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/resolver/dns/native/dns_resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/endpoint_addresses.cc" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/endpoint_addresses.h" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/fake/fake_resolver.cc" role="src" />

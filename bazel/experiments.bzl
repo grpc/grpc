@@ -26,12 +26,11 @@ EXPERIMENT_ENABLES = {
     "chaotic_good_send_supported_features": "chaotic_good_send_supported_features",
     "custom_frame_check": "custom_frame_check",
     "event_engine_client": "event_engine_client",
-    "event_engine_dns": "event_engine_dns",
     "event_engine_dns_non_client_channel": "event_engine_dns_non_client_channel",
     "event_engine_fork": "event_engine_fork",
     "event_engine_listener": "event_engine_listener",
     "event_engine_callback_cq": "event_engine_callback_cq,event_engine_client,event_engine_listener",
-    "event_engine_for_all_other_endpoints": "event_engine_client,event_engine_dns,event_engine_dns_non_client_channel,event_engine_for_all_other_endpoints,event_engine_listener",
+    "event_engine_for_all_other_endpoints": "event_engine_client,event_engine_dns_non_client_channel,event_engine_for_all_other_endpoints,event_engine_listener",
     "fail_recv_metadata_on_deadline_exceeded": "fail_recv_metadata_on_deadline_exceeded",
     "free_large_allocator": "free_large_allocator",
     "fuse_filters": "fuse_filters",
@@ -86,7 +85,6 @@ EXPERIMENT_ENABLES = {
 
 EXPERIMENT_POLLERS = [
     "event_engine_client",
-    "event_engine_dns",
     "event_engine_dns_non_client_channel",
     "event_engine_fork",
     "event_engine_listener",
@@ -105,9 +103,6 @@ EXPERIMENTS = {
             ],
         },
         "on": {
-            "cancel_ares_query_test": [
-                "event_engine_dns",
-            ],
             "core_end2end_test": [
                 "event_engine_client",
                 "event_engine_dns_non_client_channel",
@@ -123,9 +118,6 @@ EXPERIMENTS = {
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
-            ],
-            "resolver_component_tests_runner_invoker": [
-                "event_engine_dns",
             ],
         },
     },
@@ -139,9 +131,6 @@ EXPERIMENTS = {
             ],
         },
         "on": {
-            "cancel_ares_query_test": [
-                "event_engine_dns",
-            ],
             "core_end2end_test": [
                 "event_engine_client",
                 "event_engine_dns_non_client_channel",
@@ -157,9 +146,6 @@ EXPERIMENTS = {
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
-            ],
-            "resolver_component_tests_runner_invoker": [
-                "event_engine_dns",
             ],
         },
     },
@@ -219,9 +205,6 @@ EXPERIMENTS = {
             ],
         },
         "on": {
-            "cancel_ares_query_test": [
-                "event_engine_dns",
-            ],
             "chttp2_keepalive_tests": [
                 "subchannel_connection_scaling",
             ],
@@ -245,9 +228,6 @@ EXPERIMENTS = {
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
-            ],
-            "resolver_component_tests_runner_invoker": [
-                "event_engine_dns",
             ],
         },
     },

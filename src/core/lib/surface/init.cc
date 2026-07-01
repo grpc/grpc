@@ -49,11 +49,6 @@
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 
-// Remnants of the old plugin system
-void grpc_resolver_dns_ares_init(void);
-void grpc_resolver_dns_ares_shutdown(void);
-void grpc_resolver_dns_ares_reset_dns_resolver(void);
-
 extern absl::Status AresInit();
 extern void AresShutdown();
 
@@ -114,17 +109,10 @@ void grpc_init(void) {
       g_shutting_down_cv->SignalAll();
     }
     grpc_iomgr_init();
-    if (grpc_core::IsEventEngineDnsEnabled()) {
-      address_sorting_init();
-      auto status = AresInit();
-      if (!status.ok()) {
-        VLOG(2) << "AresInit failed: " << status.message();
-      } else {
-        // TODO(yijiem): remove this once we remove the iomgr dns system.
-        grpc_resolver_dns_ares_reset_dns_resolver();
-      }
-    } else {
-      grpc_resolver_dns_ares_init();
+    address_sorting_init();
+    auto status = AresInit();
+    if (!status.ok()) {
+      VLOG(2) << "AresInit failed: " << status.message();
     }
     grpc_iomgr_start();
   }
@@ -138,12 +126,8 @@ void grpc_shutdown_internal_locked(void)
     grpc_core::ExecCtx exec_ctx(0);
     grpc_iomgr_shutdown_background_closure();
     grpc_timer_manager_set_threading(false);  // shutdown timer_manager thread
-    if (grpc_core::IsEventEngineDnsEnabled()) {
-      address_sorting_shutdown();
-      AresShutdown();
-    } else {
-      grpc_resolver_dns_ares_shutdown();
-    }
+    address_sorting_shutdown();
+    AresShutdown();
     grpc_iomgr_shutdown();
   }
   g_shutting_down = false;

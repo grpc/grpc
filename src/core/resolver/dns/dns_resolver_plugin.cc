@@ -19,9 +19,7 @@
 
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/resolver/dns/c_ares/dns_resolver_ares.h"
 #include "src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.h"
-#include "src/core/resolver/dns/native/dns_resolver.h"
 #include "src/core/resolver/resolver_factory.h"
 #include "src/core/util/crash.h"
 #include "absl/log/log.h"
@@ -36,29 +34,10 @@ void RegisterDnsResolver(CoreConfiguration::Builder* builder) {
       std::make_unique<EventEngineClientChannelDNSResolverFactory>());
   return;
 #endif
-  if (IsEventEngineDnsEnabled()) {
-    VLOG(2) << "Using EventEngine dns resolver";
-    builder->resolver_registry()->RegisterResolverFactory(
-        std::make_unique<EventEngineClientChannelDNSResolverFactory>());
-    return;
-  }
-  auto resolver = ConfigVars::Get().DnsResolver();
-  // ---- Ares resolver ----
-  if (ShouldUseAresDnsResolver(resolver)) {
-    VLOG(2) << "Using ares dns resolver";
-    RegisterAresDnsResolver(builder);
-    return;
-  }
-  // ---- Native resolver ----
-  if (absl::EqualsIgnoreCase(resolver, "native") ||
-      !builder->resolver_registry()->HasResolverFactory("dns")) {
-    VLOG(2) << "Using native dns resolver";
-    RegisterNativeDnsResolver(builder);
-    return;
-  }
-  Crash(
-      "Unable to set DNS resolver! Likely a logic error in gRPC-core, "
-      "please file a bug.");
+  VLOG(2) << "Using EventEngine dns resolver";
+  builder->resolver_registry()->RegisterResolverFactory(
+      std::make_unique<EventEngineClientChannelDNSResolverFactory>());
+  return;
 }
 
 }  // namespace grpc_core
