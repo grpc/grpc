@@ -62,7 +62,14 @@ class GreeterClientReactor final
   void Start() {
     absl::MutexLock lock(&mu_);
     StartCall();
+    StartRead(&reply_);
     Write();
+  }
+
+  void OnReadDone(bool ok) override {
+    if (ok) {
+      StartRead(&reply_);
+    }
   }
 
   ~GreeterClientReactor() override {
@@ -105,6 +112,7 @@ class GreeterClientReactor final
   bool done_ ABSL_GUARDED_BY(&mu_) = false;
   HelloRequest req_;
   size_t reqs_;
+  helloworld::HelloReply reply_;
   std::optional<absl::Time> time_ ABSL_GUARDED_BY(mu_);
 };
 
