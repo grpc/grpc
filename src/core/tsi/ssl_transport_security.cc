@@ -3091,10 +3091,12 @@ static int ssl_server_handshaker_factory_servername_callback(SSL* ssl,
   if (servername == nullptr || strlen(servername) == 0) {
     return SSL_TLSEXT_ERR_NOACK;
   }
+#if defined(OPENSSL_IS_BORINGSSL)
   // The cert selector will handle SNI.
   if (impl->certificate_selector != nullptr) {
     return SSL_TLSEXT_ERR_OK;
   }
+#endif
 
   for (const auto& ssl_context : impl->ssl_contexts) {
     if (tsi_ssl_peer_matches_name(&ssl_context.x509_subject_name, servername)) {
