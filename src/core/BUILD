@@ -6289,6 +6289,31 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_audit_logger_registry",
+    srcs = [
+        "xds/grpc/xds_audit_logger_registry.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_audit_logger_registry.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "envoy_config_core_upb",
+        "envoy_config_rbac_upb",
+        "grpc_audit_logging",
+        "json",
+        "match",
+        "validation_errors",
+        "xds_common_types",
+        "xds_common_types_parser",
+        "//:xds_client",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_http_filter",
     srcs = [
         "xds/grpc/xds_http_filter.cc",
@@ -6674,7 +6699,6 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_xds_client",
     srcs = [
-        "xds/grpc/xds_audit_logger_registry.cc",
         "xds/grpc/xds_bootstrap_grpc.cc",
         "xds/grpc/xds_bootstrap_grpc_builder.cc",
         "xds/grpc/xds_client_grpc.cc",
@@ -6695,7 +6719,6 @@ grpc_cc_library(
         "xds/grpc/xds_tls_context_parser.cc",
     ],
     hdrs = [
-        "xds/grpc/xds_audit_logger_registry.h",
         "xds/grpc/xds_bootstrap_grpc.h",
         "xds/grpc/xds_bootstrap_grpc_builder.h",
         "xds/grpc/xds_client_grpc.h",
@@ -6865,6 +6888,7 @@ grpc_cc_library(
         "upb_utils",
         "useful",
         "validation_errors",
+        "xds_audit_logger_registry",
         "xds_backend_metric_propagation",
         "xds_certificate_provider",
         "xds_certificate_provider_store",

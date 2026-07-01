@@ -19,6 +19,7 @@
 
 #include <map>
 #include <memory>
+#include <utility>
 
 #include "envoy/config/rbac/v3/rbac.upb.h"
 #include "src/core/util/json/json.h"

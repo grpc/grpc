@@ -16,11 +16,9 @@
 
 #include "src/core/xds/grpc/xds_audit_logger_registry.h"
 
-#include <optional>
 #include <string>
 #include <utility>
 
-// FIXME: audit
 #include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/config/rbac/v3/rbac.upb.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
@@ -28,8 +26,6 @@
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
