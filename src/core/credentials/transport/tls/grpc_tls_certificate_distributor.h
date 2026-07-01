@@ -88,9 +88,9 @@ struct grpc_tls_certificate_distributor
   // @param roots The content of the roots, either the pem root certificates or
   // the SpiffeBundleMap.
   // @param pem_key_cert_pairs The content of identity key-cert pairs.
-  void SetKeyMaterials(const std::string& cert_name,
-                       std::shared_ptr<tsi::RootCertInfo> roots,
-                       std::optional<grpc_core::IdentityCredentials> identity_creds);
+  void SetKeyMaterials(
+      const std::string& cert_name, std::shared_ptr<tsi::RootCertInfo> roots,
+      std::optional<grpc_core::IdentityCredentials> identity_creds);
 
   bool HasRootCerts(const std::string& root_cert_name);
 
