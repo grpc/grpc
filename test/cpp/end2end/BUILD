@@ -1753,6 +1753,33 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_library(
+    name = "tls_test_private_key_signer",
+    srcs = ["tls_test_private_key_signer.cc"],
+    hdrs = ["tls_test_private_key_signer.h"],
+    external_deps = [
+        "absl/log",
+        "absl/log:check",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/synchronization",
+        "absl/time:time",
+        "gtest",
+        "libcrypto",
+        "libssl",
+    ],
+    deps = [
+        "//:channel_arg_names",
+        "//:gpr",
+        "//:grpc++_base",
+        "//:grpc_base",
+        "//:tsi_ssl_credentials",
+        "//src/core:default_event_engine",
+        "//src/core:grpc_tls_credentials",
+        "//src/core:ssl_transport_security_utils",
+    ],
+)
+
 grpc_cc_test(
     name = "tls_private_key_signer_end2end_test",
     srcs = ["tls_private_key_signer_end2end_test.cc"],
@@ -1779,6 +1806,73 @@ grpc_cc_test(
     tags = ["tls_private_key_signer_test"],
     deps = [
         ":test_service_impl",
+        ":tls_test_private_key_signer",
+        "//:channel_arg_names",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc++_base",
+        "//:grpc_base",
+        "//:tsi_ssl_credentials",
+        "//src/core:default_event_engine",
+        "//src/core:grpc_tls_credentials",
+        "//src/core:ssl_transport_security_utils",
+        "//src/proto/grpc/testing:echo_cc_grpc",
+        "//src/proto/grpc/testing:echo_messages_cc_proto",
+        "//test/core/test_util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_library(
+    name = "tls_test_certificate_selector",
+    srcs = ["tls_test_certificate_selector.cc"],
+    hdrs = ["tls_test_certificate_selector.h"],
+    external_deps = [
+        "absl/log",
+        "absl/log:check",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/synchronization",
+        "absl/time:time",
+        "gtest",
+        "libcrypto",
+        "libssl",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc++_base",
+        "//:grpc_base",
+        "//:tsi_ssl_credentials",
+        "//src/core:default_event_engine",
+        "//src/core:grpc_tls_certificate_selector",
+    ],
+)
+
+grpc_cc_test(
+    name = "tls_cert_selection_offload_end2end_test",
+    srcs = ["tls_cert_selection_offload_end2end_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/log:check",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/synchronization",
+        "absl/time:time",
+        "gtest",
+        "libcrypto",
+        "libssl",
+    ],
+    tags = ["tls_cert_selection_offload_end2end_test"],
+    deps = [
+        ":test_service_impl",
+        ":tls_test_certificate_selector",
+        ":tls_test_private_key_signer",
         "//:channel_arg_names",
         "//:gpr",
         "//:grpc",

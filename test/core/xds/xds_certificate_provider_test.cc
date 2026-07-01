@@ -20,6 +20,7 @@
 
 #include <grpc/grpc.h>
 
+#include <memory>
 #include <optional>
 
 #include "src/core/credentials/transport/tls/ssl_utils.h"
@@ -115,18 +116,26 @@ class TestCertificatesWatcher
 
   void OnCertificatesChanged(
       std::shared_ptr<tsi::RootCertInfo> roots,
-      std::optional<PemKeyCertPairList> key_cert_pairs) override {
+      std::optional<IdentityCredentials> identity_creds) override {
     if (roots != nullptr) {
       if (roots != root_cert_info_) {
         root_cert_error_ = absl::OkStatus();
-        root_cert_info_ = roots;
+        root_cert_info_ = std::move(roots);
       }
     }
-    if (key_cert_pairs.has_value()) {
-      if (key_cert_pairs != key_cert_pairs_) {
-        identity_cert_error_ = absl::OkStatus();
-        key_cert_pairs_ = key_cert_pairs;
-      }
+    if (identity_creds.has_value()) {
+      MatchMutable(
+          &(*identity_creds),
+          [this](PemKeyCertPairList* pem_key_cert_pairs) {
+            if (*pem_key_cert_pairs != key_cert_pairs_) {
+              identity_cert_error_ = absl::OkStatus();
+              key_cert_pairs_ = std::move(*pem_key_cert_pairs);
+            }
+          },
+          [this](std::shared_ptr<CertificateSelector>*) {
+            identity_cert_error_ =
+                absl::InternalError("certificate selector is not supported");
+          });
     }
   }
 

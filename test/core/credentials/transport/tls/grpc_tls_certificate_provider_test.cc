@@ -25,6 +25,7 @@
 #include <utility>
 
 #include "src/core/util/grpc_check.h"
+#include "src/core/util/match.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "gmock/gmock.h"
@@ -176,18 +177,25 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
 
     void OnCertificatesChanged(
         std::shared_ptr<tsi::RootCertInfo> roots,
-        std::optional<PemKeyCertPairList> key_cert_pairs) override {
-      MutexLock lock(&state_->mu);
+        std::optional<IdentityCredentials> identity_creds) override {
       tsi::RootCertInfo updated_root;
       if (roots != nullptr) {
         updated_root = *roots;
       }
-      PemKeyCertPairList updated_identity;
-      if (key_cert_pairs.has_value()) {
-        updated_identity = std::move(*key_cert_pairs);
+      PemKeyCertPairList key_cert_pairs;
+      if (identity_creds.has_value()) {
+        MatchMutable(
+            &(*identity_creds),
+            [&](PemKeyCertPairList* pem_key_cert_pairs) {
+              key_cert_pairs = std::move(*pem_key_cert_pairs);
+            },
+            [](std::shared_ptr<CertificateSelector>*) {
+              // Not supposed to happen in this test.
+            });
       }
+      MutexLock lock(&state_->mu);
       state_->cert_update_queue.emplace_back(updated_root,
-                                             std::move(updated_identity));
+                                             std::move(key_cert_pairs));
     }
 
     void OnError(grpc_error_handle root_cert_error,

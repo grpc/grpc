@@ -910,9 +910,8 @@ std::string XdsEnd2endTest::MakeTlsHandshakeFailureRegex(
 
 grpc_core::PemKeyCertPairList XdsEnd2endTest::ReadTlsIdentityPair(
     const char* key_path, const char* cert_path) {
-  return grpc_core::PemKeyCertPairList{grpc_core::PemKeyCertPair(
-      grpc_core::testing::GetFileContents(key_path),
-      grpc_core::testing::GetFileContents(cert_path))};
+  return {{grpc_core::testing::GetFileContents(key_path),
+           grpc_core::testing::GetFileContents(cert_path)}};
 }
 
 std::vector<experimental::IdentityKeyCertPair>

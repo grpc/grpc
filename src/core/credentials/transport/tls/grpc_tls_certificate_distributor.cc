@@ -20,6 +20,7 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
 
+#include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/util/grpc_check.h"
 #include "absl/status/status.h"
@@ -30,8 +31,8 @@ bool grpc_tls_certificate_distributor::CertificateInfo::AreRootsEmpty() {
 
 void grpc_tls_certificate_distributor::SetKeyMaterials(
     const std::string& cert_name, std::shared_ptr<tsi::RootCertInfo> roots,
-    std::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs) {
-  GRPC_CHECK(roots != nullptr || pem_key_cert_pairs.has_value());
+    std::optional<grpc_core::IdentityCredentials> identity_creds) {
+  GRPC_CHECK(roots != nullptr || identity_creds.has_value());
   grpc_core::MutexLock lock(&mu_);
   auto& cert_info = certificate_info_map_[cert_name];
   if (roots != nullptr) {
@@ -42,23 +43,24 @@ void grpc_tls_certificate_distributor::SetKeyMaterials(
       const auto watcher_it = watchers_.find(watcher_ptr);
       GRPC_CHECK(watcher_it != watchers_.end());
       GRPC_CHECK(watcher_it->second.root_cert_name.has_value());
-      std::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs_to_report;
-      if (pem_key_cert_pairs.has_value() &&
+      std::optional<grpc_core::IdentityCredentials> identity_creds_to_report;
+      if (identity_creds.has_value() &&
           watcher_it->second.identity_cert_name == cert_name) {
-        pem_key_cert_pairs_to_report = pem_key_cert_pairs;
+        identity_creds_to_report = identity_creds;
       } else if (watcher_it->second.identity_cert_name.has_value()) {
         auto& identity_cert_info =
             certificate_info_map_[*watcher_it->second.identity_cert_name];
-        if (!identity_cert_info.pem_key_cert_pairs.empty()) {
-          pem_key_cert_pairs_to_report = identity_cert_info.pem_key_cert_pairs;
+        if (!grpc_core::IsIdentityCredentialsEmpty(
+                identity_cert_info.identity_creds)) {
+          identity_creds_to_report = identity_cert_info.identity_creds;
         }
       }
-      watcher_ptr->OnCertificatesChanged(
-          roots, std::move(pem_key_cert_pairs_to_report));
+      watcher_ptr->OnCertificatesChanged(roots,
+                                         std::move(identity_creds_to_report));
     }
     cert_info.roots = roots;
   }
-  if (pem_key_cert_pairs.has_value()) {
+  if (identity_creds.has_value()) {
     // Successful credential updates will clear any pre-existing error.
     cert_info.SetIdentityError(absl::OkStatus());
     for (const auto watcher_ptr : cert_info.identity_cert_watchers) {
@@ -79,9 +81,9 @@ void grpc_tls_certificate_distributor::SetKeyMaterials(
         }
       }
       watcher_ptr->OnCertificatesChanged(std::move(roots_to_report),
-                                         pem_key_cert_pairs);
+                                         identity_creds);
     }
-    cert_info.pem_key_cert_pairs = std::move(*pem_key_cert_pairs);
+    cert_info.identity_creds = std::move(*identity_creds);
   }
 }
 
@@ -97,7 +99,7 @@ bool grpc_tls_certificate_distributor::HasKeyCertPairs(
   grpc_core::MutexLock lock(&mu_);
   const auto it = certificate_info_map_.find(identity_cert_name);
   return it != certificate_info_map_.end() &&
-         !it->second.pem_key_cert_pairs.empty();
+         !grpc_core::IsIdentityCredentialsEmpty(it->second.identity_creds);
 };
 
 void grpc_tls_certificate_distributor::SetErrorForCert(
@@ -190,7 +192,7 @@ void grpc_tls_certificate_distributor::WatchTlsCertificates(
     watchers_[watcher_ptr] = {std::move(watcher), root_cert_name,
                               identity_cert_name};
     std::shared_ptr<tsi::RootCertInfo> updated_roots;
-    std::optional<grpc_core::PemKeyCertPairList> updated_identity_pairs;
+    std::optional<grpc_core::IdentityCredentials> updated_identity_creds;
     grpc_error_handle root_error;
     grpc_error_handle identity_error;
     if (root_cert_name.has_value()) {
@@ -213,8 +215,8 @@ void grpc_tls_certificate_distributor::WatchTlsCertificates(
       cert_info.identity_cert_watchers.insert(watcher_ptr);
       identity_error = cert_info.identity_cert_error;
       // Empty credentials will be treated as no updates.
-      if (!cert_info.pem_key_cert_pairs.empty()) {
-        updated_identity_pairs = cert_info.pem_key_cert_pairs;
+      if (!grpc_core::IsIdentityCredentialsEmpty(cert_info.identity_creds)) {
+        updated_identity_creds = cert_info.identity_creds;
       }
     }
     // Notify this watcher if the certs it is watching already had some
@@ -222,9 +224,9 @@ void grpc_tls_certificate_distributor::WatchTlsCertificates(
     // occurred while trying to fetch the latest cert, but the updated_*_certs
     // should always be valid. So we will send the updates regardless of
     // *_cert_error.
-    if (updated_roots != nullptr || updated_identity_pairs.has_value()) {
+    if (updated_roots != nullptr || updated_identity_creds.has_value()) {
       watcher_ptr->OnCertificatesChanged(updated_roots,
-                                         std::move(updated_identity_pairs));
+                                         std::move(updated_identity_creds));
     }
     // Notify this watcher if the certs it is watching already had some
     // errors.

@@ -62,7 +62,7 @@ struct grpc_tls_certificate_distributor
     // pairs.
     virtual void OnCertificatesChanged(
         std::shared_ptr<tsi::RootCertInfo> roots,
-        std::optional<grpc_core::PemKeyCertPairList> key_cert_pairs) = 0;
+        std::optional<grpc_core::IdentityCredentials> identity_creds) = 0;
 
     // Handles an error that occurs while attempting to fetch certificate data.
     // Note that if a watcher sees an error, it simply means the Provider is
@@ -90,7 +90,7 @@ struct grpc_tls_certificate_distributor
   // @param pem_key_cert_pairs The content of identity key-cert pairs.
   void SetKeyMaterials(
       const std::string& cert_name, std::shared_ptr<tsi::RootCertInfo> roots,
-      std::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs);
+      std::optional<grpc_core::IdentityCredentials> identity_creds);
 
   bool HasRootCerts(const std::string& root_cert_name);
 
@@ -177,8 +177,9 @@ struct grpc_tls_certificate_distributor
   struct CertificateInfo {
     // The contents of the root certificates.
     std::shared_ptr<tsi::RootCertInfo> roots;
-    // The contents of the identity key-certificate pairs.
-    grpc_core::PemKeyCertPairList pem_key_cert_pairs;
+    // The contents of the identity key-certificate pairs or a certificate
+    // selector.
+    grpc_core::IdentityCredentials identity_creds;
     // TODO(gtcooke94) Swap to using absl::StatusOr<>
     // https://github.com/grpc/grpc/pull/39708/files#r2144014200 The root cert
     // reloading error propagated by the caller.
