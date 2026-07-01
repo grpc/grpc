@@ -326,7 +326,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         """
         raise NotImplementedError()
 
-    def trailing_metadata(self):
+    def trailing_metadata(self) -> MetadataType:
         """Access value to be used as trailing metadata upon RPC completion.
 
         This is an EXPERIMENTAL API.
@@ -336,7 +336,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         """
         raise NotImplementedError()
 
-    def code(self):
+    def code(self) -> grpc.StatusCode:
         """Accesses the value to be used as status code upon RPC completion.
 
         This is an EXPERIMENTAL API.
