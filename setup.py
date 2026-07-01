@@ -500,6 +500,7 @@ if "linux" in sys.platform or "darwin" in sys.platform:
     DEFINE_MACROS += (("PyMODINIT_FUNC", pymodinit),)
     DEFINE_MACROS += (("GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK", 1),)
 
+DEFINE_MACROS += (("Py_LIMITED_API", "0x030A0000"),)
 
 def cython_extensions_and_necessity():
     cython_module_files = [
@@ -535,6 +536,7 @@ def cython_extensions_and_necessity():
             extra_objects=extra_objects,
             extra_compile_args=list(CFLAGS),
             extra_link_args=list(LDFLAGS),
+            py_limited_api=True,
         )
         for (module_name, module_file) in zip(
             list(CYTHON_EXTENSION_MODULE_NAMES), cython_module_files

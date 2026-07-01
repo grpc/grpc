@@ -14,7 +14,7 @@
 """Exceptions for the aio version of the RPC calls."""
 
 
-cdef class AioRpcStatus(Exception):
+cdef class AioRpcStatus:
 
     # The final status of gRPC is represented by three trailing metadata:
     # `grpc-status`, `grpc-status-message`, and `grpc-status-details`.

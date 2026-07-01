@@ -69,6 +69,9 @@ where = ["src/python/grpcio"]
     "*.pxi",
 ]
 
+[tool.distutils.bdist_wheel]
+py_limited_api = "cp310"
+
 [tool.pyright]
 include = [
     "src/python/grpcio/grpc/aio/_call.py",
