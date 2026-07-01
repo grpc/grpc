@@ -41,8 +41,7 @@ RUN curl -sSL --fail --retry 5 -o ccache.tar.gz https://github.com/ccache/ccache
 
 #===================================
 # Install Python build requirements
-RUN /opt/python/cp39-cp39/bin/pip install --upgrade 'cython==3.1.1' && \
-  /opt/python/cp310-cp310/bin/pip install --upgrade 'cython==3.1.1' && \
+RUN /opt/python/cp310-cp310/bin/pip install --upgrade 'cython==3.1.1' && \
   /opt/python/cp311-cp311/bin/pip install --upgrade 'cython==3.1.1' && \
   /opt/python/cp312-cp312/bin/pip install --upgrade 'cython==3.1.1' && \
   /opt/python/cp313-cp313/bin/pip install --upgrade 'cython==3.1.1' && \
