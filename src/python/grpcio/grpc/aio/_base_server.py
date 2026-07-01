@@ -139,7 +139,9 @@ class Server(abc.ABC):
         """
 
     def add_registered_method_handlers(  # noqa: B027
-        self, service_name: str, method_handlers: Mapping[str, grpc.RpcMethodHandler]
+        self,
+        service_name: str,
+        method_handlers: Mapping[str, grpc.RpcMethodHandler],
     ):
         """Registers GenericRpcHandlers with this Server.
 

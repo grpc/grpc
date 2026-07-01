@@ -46,6 +46,7 @@ class Metadata(Collection):  # noqa: PLW1641
         * Supports an immutable view of the data
         * Allows partial mutation on the data without recreating the new object from scratch.
     """
+
     _metadata: OrderedDict[MetadataKey, List[MetadataValue]]
 
     def __init__(self, *args: MetadatumType) -> None:

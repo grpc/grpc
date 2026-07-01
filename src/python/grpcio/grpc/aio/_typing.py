@@ -43,7 +43,9 @@ SerializingFunction = Callable[[Any], bytes]
 DeserializingFunction = Callable[[bytes], Any]
 ChannelArgumentType = Sequence[Tuple[str, Any]]
 if TYPE_CHECKING:
+
     class EOFType: ...
+
 else:
     EOFType: TypeAlias = type(EOF)
 DoneCallbackType = Callable[[Any], None]

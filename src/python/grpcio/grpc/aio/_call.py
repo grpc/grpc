@@ -182,8 +182,12 @@ def _create_rpc_error(
 ) -> AioRpcError:
     return AioRpcError(
         _common.CYGRPC_STATUS_CODE_TO_STATUS_CODE[status.code()],
-        Metadata._create(initial_metadata),  # pyright: ignore[reportPrivateUsage]
-        Metadata.from_tuple(status.trailing_metadata()),  # pyright: ignore[reportUnknownMemberType]
+        Metadata._create(
+            initial_metadata
+        ),  # pyright: ignore[reportPrivateUsage]
+        Metadata.from_tuple(
+            status.trailing_metadata()
+        ),  # pyright: ignore[reportUnknownMemberType]
         details=status.details(),
         debug_error_string=status.debug_error_string(),
     )
@@ -246,7 +250,9 @@ class Call:
 
     async def initial_metadata(self) -> Metadata:
         raw_metadata_tuple = await self._cython_call.initial_metadata()
-        return Metadata.from_tuple(raw_metadata_tuple)  # pyright: ignore[reportUnknownMemberType]
+        return Metadata.from_tuple(
+            raw_metadata_tuple
+        )  # pyright: ignore[reportUnknownMemberType]
 
     async def trailing_metadata(self) -> Metadata:
         raw_metadata_tuple = (
@@ -254,7 +260,9 @@ class Call:
         ).trailing_metadata()
         if not raw_metadata_tuple:
             return Metadata()
-        return Metadata.from_tuple(raw_metadata_tuple)  # pyright: ignore[reportUnknownMemberType]
+        return Metadata.from_tuple(
+            raw_metadata_tuple
+        )  # pyright: ignore[reportUnknownMemberType]
 
     async def code(self) -> grpc.StatusCode:
         cygrpc_code = (await self._cython_call.status()).code()
