@@ -95,9 +95,11 @@ TEST(SslTelemetryUtilsTest,
   EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_ZERO_RETURN, 0,
                                                      X509_V_OK),
             TlsTelemetryHandshakeResult::kPeerConnectionClosed);
+
+  // Test SSL_ERROR_SYSCALL
   EXPECT_EQ(
       MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SYSCALL, 0, X509_V_OK),
-      TlsTelemetryHandshakeResult::kPeerConnectionClosed);
+      TlsTelemetryHandshakeResult::kInternalSystemError);
 
   // Test SSL_ERROR_SSL reason code mappings
   // Cipher suite mismatch

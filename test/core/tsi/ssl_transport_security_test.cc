@@ -1546,12 +1546,6 @@ class TestMetricsSink : public MetricsSink {
 
   // Returns the accumulated sum of values recorded for the given instrument
   // name that match the specified subset of labels.
-  //
-  // NOTE: We perform a linear scan over the recorded label maps to support
-  // subset matching. Direct lookup (e.g. data_.find(subset)) would require
-  // an exact key match, forcing test cases to specify all 5 client labels
-  // (including dynamic target and empty locality/backend strings) which
-  // would make tests verbose and fragile.
   uint64_t GetCount(const std::string& instrument_name,
                     const Labels& labels) const {
     auto it = data_.find(instrument_name);

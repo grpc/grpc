@@ -106,7 +106,7 @@ TlsTelemetryHandshakeResult MapSslErrorToTlsTelemetryHandshakeResult(
       result = TlsTelemetryHandshakeResult::kPeerConnectionClosed;
       break;
     case SSL_ERROR_SYSCALL:
-      result = TlsTelemetryHandshakeResult::kPeerConnectionClosed;
+      result = TlsTelemetryHandshakeResult::kInternalSystemError;
       break;
     case SSL_ERROR_SSL: {
       int reason = ERR_GET_REASON(err_code);
