@@ -27,7 +27,7 @@ from typing import (
     Union,
 )
 
-from grpc._cython.cygrpc import EOF
+from grpc._cython.cygrpc import EOF as cygrpc_EOF
 
 # pylint: disable=unused-import
 from ._metadata import Metadata
@@ -48,8 +48,8 @@ if TYPE_CHECKING:
         EOF = "EOF"
     EOF = EOFType.EOF
 else:
-    EOFType: TypeAlias = type(cygrpc.EOF)
-    EOF = cygrpc.EOF
+    EOFType: TypeAlias = type(cygrpc_EOF)
+    EOF = cygrpc_EOF
 DoneCallbackType = Callable[[Any], None]
 RequestIterableType = Union[Iterable[Any], AsyncIterable[Any]]
 ResponseIterableType = AsyncIterable[Any]
