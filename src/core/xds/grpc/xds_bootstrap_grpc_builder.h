@@ -32,6 +32,7 @@
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_http_filter.h"
 #include "src/core/xds/grpc/xds_http_filter_registry.h"
+#include "src/core/xds/grpc/xds_lb_policy_registry.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "upb/reflection/def.h"
 #include "absl/functional/any_invocable.h"
@@ -50,6 +51,8 @@ class GrpcXdsBootstrapBuilder final {
 
   static XdsHttpFilterRegistry CreateXdsHttpFilterRegistry(
       bool register_builtins = true);
+
+  static XdsLbPolicyRegistry CreateXdsLbPolicyRegistry();
 };
 
 // Exposed for testing purposes only.
