@@ -13,6 +13,7 @@
 # limitations under the License.
 """Common types for gRPC Async API"""
 
+import enum
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -43,9 +44,12 @@ SerializingFunction = Callable[[Any], bytes]
 DeserializingFunction = Callable[[bytes], Any]
 ChannelArgumentType = Sequence[Tuple[str, Any]]
 if TYPE_CHECKING:
-    class EOFType: ...
+    class EOFType(enum.Enum):
+        EOF = "EOF"
+    EOF = EOFType.EOF
 else:
-    EOFType: TypeAlias = type(EOF)
+    EOFType: TypeAlias = type(cygrpc.EOF)
+    EOF = cygrpc.EOF
 DoneCallbackType = Callable[[Any], None]
 RequestIterableType = Union[Iterable[Any], AsyncIterable[Any]]
 ResponseIterableType = AsyncIterable[Any]

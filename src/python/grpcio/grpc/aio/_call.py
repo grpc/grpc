@@ -38,6 +38,7 @@ from ._metadata import Metadata
 from ._typing import DeserializingFunction
 from ._typing import DoneCallbackType
 from ._typing import EOFType
+from ._typing import EOF
 from ._typing import MetadataType
 from ._typing import MetadatumType
 from ._typing import RequestIterableType
@@ -306,7 +307,7 @@ class _UnaryResponseMixin(Call, Generic[ResponseType]):
             return True
         return False
 
-    def __await__(self) -> Generator[Any, None, ResponseType]:
+    def __await__(self) -> Generator[Any, None, ResponseType | EOFType]:
         """Wait till the ongoing RPC request finishes."""
         try:
             response = yield from self._call_response
@@ -324,7 +325,7 @@ class _UnaryResponseMixin(Call, Generic[ResponseType]):
         # Instead, if we move the exception raising here, the spam stops.
         # Unfortunately, there can only be one 'yield from' in '__await__'. So,
         # we need to access the private instance variable.
-        if response is cygrpc.EOF:
+        if response is EOF:
             if self._cython_call.is_locally_cancelled():
                 raise asyncio.CancelledError()
             else:
@@ -360,7 +361,7 @@ class _StreamResponseMixin(Call, Generic[ResponseType]):
 
     async def _fetch_stream_responses(self) -> AsyncIterator[ResponseType]:
         message = await self._read()
-        while message is not cygrpc.EOF:
+        while message is not EOF:
             yield message
             message = await self._read()
 
@@ -406,7 +407,7 @@ class _StreamResponseMixin(Call, Generic[ResponseType]):
 class _StreamRequestMixin(Call, Generic[RequestType]):
     _metadata_sent: asyncio.Event
     _done_writing_flag: bool
-    _async_request_poller: Optional[asyncio.Task]
+    _async_request_poller: Optional[asyncio.Task[None]]
     _request_style: _APIStyle
 
     def _init_stream_request_mixin(
@@ -456,7 +457,7 @@ class _StreamRequestMixin(Call, Generic[RequestType]):
                             rpc_error,
                         )
                         return
-            elif isinstance(request_iterator, Iterable):
+            elif isinstance(request_iterator, Iterable):  # pyright: ignore[reportUnnecessaryIsInstance]
                 for request in request_iterator:
                     try:
                         await self._write(request)
@@ -553,7 +554,7 @@ class UnaryUnaryCall(
     """
 
     _request: RequestType
-    _invocation_task: asyncio.Task
+    _invocation_task: asyncio.Task[Union[ResponseType, EOFType]]
 
     # pylint: disable=too-many-arguments
     def __init__(
