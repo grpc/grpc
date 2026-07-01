@@ -6951,6 +6951,50 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_endpoint_parser",
+    srcs = [
+        "xds/grpc/xds_endpoint_parser.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_endpoint_parser.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "@com_google_protobuf//upb/reflection",
+        "@com_google_protobuf//upb/text",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "channel_args",
+        "down_cast",
+        "envoy_config_core_upb",
+        "envoy_config_endpoint_upb",
+        "envoy_config_endpoint_upbdefs",
+        "envoy_type_upb",
+        "experiment_env_var",
+        "grpc_check",
+        "grpc_lb_policy_ring_hash",
+        "json_args",
+        "json_object_loader",
+        "protobuf_wrappers_upb",
+        "resolved_address",
+        "upb_utils",
+        "validation_errors",
+        "xds_common_types_parser",
+        "xds_endpoint",
+        "xds_health_status",
+        "xds_metadata_parser",
+        "//:grpc_trace",
+        "//:parse_address",
+        "//:sockaddr_utils",
+        "//:xds_client",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_backend_metric_propagation",
     srcs = [
         "xds/xds_client/xds_backend_metric_propagation.cc",
@@ -7230,12 +7274,10 @@ grpc_cc_library(
     srcs = [
         "xds/grpc/xds_bootstrap_grpc_builder.cc",
         "xds/grpc/xds_client_grpc.cc",
-        "xds/grpc/xds_endpoint_parser.cc",
     ],
     hdrs = [
         "xds/grpc/xds_bootstrap_grpc_builder.h",
         "xds/grpc/xds_client_grpc.h",
-        "xds/grpc/xds_endpoint_parser.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -7399,6 +7441,7 @@ grpc_cc_library(
         "xds_common_types_parser",
         "xds_credentials",
         "xds_endpoint",
+        "xds_endpoint_parser",
         "xds_extension_upb",
         "xds_file_watcher_certificate_provider_factory",
         "xds_grpc_service",
@@ -8901,6 +8944,7 @@ grpc_cc_library(
         "xds_cluster_parser",
         "xds_config",
         "xds_endpoint",
+        "xds_endpoint_parser",
         "xds_listener",
         "xds_listener_parser",
         "xds_route_config",
