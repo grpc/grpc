@@ -6871,6 +6871,63 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_cluster_parser",
+    srcs = [
+        "xds/grpc/xds_cluster_parser.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_cluster_parser.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/reflection",
+        "@com_google_protobuf//upb/text",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "down_cast",
+        "envoy_config_core_upb",
+        "envoy_config_cluster_upb",
+        "envoy_config_cluster_upbdefs",
+        "envoy_config_endpoint_upb",
+        "envoy_extensions_clusters_aggregate_upb",
+        "envoy_extensions_clusters_aggregate_upbdefs",
+        "envoy_extensions_transport_sockets_tls_upb",
+        "envoy_extensions_transport_sockets_tls_upbdefs",
+        "envoy_extensions_transport_sockets_http_11_proxy_upb",
+        "envoy_extensions_transport_sockets_http_11_proxy_upbdefs",
+        "envoy_extensions_upstreams_http_upb",
+        "envoy_extensions_upstreams_http_upbdefs",
+        "experiment_env_var",
+        "grpc_check",
+        "lb_policy_registry",
+        "protobuf_any_upb",
+        "protobuf_duration_upb",
+        "protobuf_struct_upb",
+        "protobuf_wrappers_upb",
+        "time",
+        "upb_utils",
+        "validation_errors",
+        "xds_backend_metric_propagation",
+        "xds_bootstrap_grpc",
+        "xds_cluster",
+        "xds_common_types",
+        "xds_common_types_parser",
+        "xds_lb_policy_registry",
+        "xds_metadata_parser",
+        "xds_tls_context_parser",
+        "//:config",
+        "//:gpr",
+        "//:grpc_trace",
+        "//:xds_client",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_endpoint",
     srcs = [
         "xds/grpc/xds_endpoint.cc",
@@ -7173,13 +7230,11 @@ grpc_cc_library(
     srcs = [
         "xds/grpc/xds_bootstrap_grpc_builder.cc",
         "xds/grpc/xds_client_grpc.cc",
-        "xds/grpc/xds_cluster_parser.cc",
         "xds/grpc/xds_endpoint_parser.cc",
     ],
     hdrs = [
         "xds/grpc/xds_bootstrap_grpc_builder.h",
         "xds/grpc/xds_client_grpc.h",
-        "xds/grpc/xds_cluster_parser.h",
         "xds/grpc/xds_endpoint_parser.h",
     ],
     external_deps = [
@@ -7338,6 +7393,7 @@ grpc_cc_library(
         "xds_certificate_provider",
         "xds_certificate_provider_store",
         "xds_cluster",
+        "xds_cluster_parser",
         "xds_cluster_specifier_plugin",
         "xds_common_types",
         "xds_common_types_parser",
@@ -8842,6 +8898,7 @@ grpc_cc_library(
         "match",
         "ref_counted",
         "xds_cluster",
+        "xds_cluster_parser",
         "xds_config",
         "xds_endpoint",
         "xds_listener",
