@@ -15,7 +15,6 @@
 
 import enum
 from typing import (
-    TYPE_CHECKING,
     Any,
     AsyncIterable,
     Callable,
