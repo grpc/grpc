@@ -996,7 +996,6 @@ if test "$PHP_GRPC" != "no"; then
     src/php/ext/grpc/channel_credentials.c \
     src/php/ext/grpc/completion_queue.c \
     src/php/ext/grpc/php_grpc.c \
-    src/php/ext/grpc/php_grpc_pin_self.c \
     src/php/ext/grpc/server.c \
     src/php/ext/grpc/server_credentials.c \
     src/php/ext/grpc/timeval.c \
