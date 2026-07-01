@@ -18,6 +18,7 @@ from typing import Generic, Optional
 
 import grpc
 from typing_extensions import Self
+from types import TracebackType
 
 from . import _base_call  # pyright: ignore[reportPrivateUsage]
 from ._typing import DeserializingFunction
@@ -197,7 +198,12 @@ class Channel(abc.ABC):
         """
 
     @abc.abstractmethod
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> bool | None:
         """Finishes the asynchronous context manager by closing the channel.
 
         Still active RPCs will be cancelled.
