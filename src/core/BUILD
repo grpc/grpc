@@ -6200,6 +6200,7 @@ grpc_cc_library(
     external_deps = [
         "absl/status",
         "absl/strings",
+        "re2",
     ],
     tags = ["nofixdeps"],
     deps = [
@@ -6466,6 +6467,23 @@ grpc_cc_library(
     deps = [
         "grpc_matchers",
         "match",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "xds_grpc_service",
+    srcs = [
+        "xds/grpc/xds_grpc_service.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_grpc_service.h",
+    ],
+    tags = ["nofixdeps"],
+    visibility = ["//bazel:xds_client_grpc"],
+    deps = [
+        "time",
+        "xds_server_grpc",
         "//:gpr",
     ],
 )
@@ -6789,6 +6807,7 @@ grpc_cc_library(
         "xds_endpoint",
         "xds_extension_upb",
         "xds_file_watcher_certificate_provider_factory",
+        "xds_grpc_service",
         "xds_health_status",
         "xds_http_filter",
         "xds_listener",

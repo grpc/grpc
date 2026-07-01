@@ -31,43 +31,6 @@
 namespace grpc_core {
 
 //
-// XdsGrpcService
-//
-
-std::string XdsGrpcService::ToString() const {
-  std::string result = "{";
-  bool is_first = true;
-  if (server_target != nullptr) {
-    StrAppend(result, "server_target=");
-    StrAppend(result, server_target->Key());
-    is_first = false;
-  }
-  if (timeout != Duration::Zero()) {
-    if (!is_first) StrAppend(result, ", ");
-    StrAppend(result, "timeout=");
-    StrAppend(result, timeout.ToString());
-    is_first = false;
-  }
-  if (!initial_metadata.empty()) {
-    if (!is_first) StrAppend(result, ", ");
-    StrAppend(result, "initial_metadata=[");
-    bool is_first_metadata = true;
-    for (const auto& [key, value] : initial_metadata) {
-      if (!is_first_metadata) StrAppend(result, ", ");
-      StrAppend(result, "{key=");
-      StrAppend(result, key);
-      StrAppend(result, ", value=");
-      StrAppend(result, value);
-      StrAppend(result, "}");
-      is_first_metadata = false;
-    }
-    StrAppend(result, "]");
-  }
-  StrAppend(result, "}");
-  return result;
-}
-
-//
 // HeaderMutationRules
 //
 

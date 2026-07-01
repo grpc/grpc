@@ -19,7 +19,7 @@
 
 #include "envoy/config/core/v3/grpc_service.upb.h"
 #include "src/core/util/validation_errors.h"
-#include "src/core/xds/grpc/xds_common_types.h"
+#include "src/core/xds/grpc/xds_grpc_service.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 
 namespace grpc_core {
