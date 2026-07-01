@@ -18,7 +18,9 @@ from typing import Generic, Iterable, Mapping, NoReturn, Optional, Sequence
 
 import grpc
 
-from ._metadata import Metadata  # pyright: ignore[reportUnusedImport] # pylint: disable=unused-import
+from ._metadata import (
+    Metadata,  # pyright: ignore[reportUnusedImport] # pylint: disable=unused-import
+)
 from ._typing import DoneCallbackType
 from ._typing import MetadataType
 from ._typing import RequestType
@@ -137,7 +139,9 @@ class Server(abc.ABC):
         """
 
     def add_registered_method_handlers(  # noqa: B027
-        self, service_name: str, method_handlers: Mapping[str, grpc.RpcMethodHandler]
+        self,
+        service_name: str,
+        method_handlers: Mapping[str, grpc.RpcMethodHandler],
     ):
         """Registers GenericRpcHandlers with this Server.
 
