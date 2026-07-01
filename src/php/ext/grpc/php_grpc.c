@@ -17,6 +17,7 @@
  */
 
 #include "php_grpc.h"
+extern void grpc_php_pin_self_with_nodelete(void);
 
 #include "call.h"
 #include "channel.h"
@@ -249,7 +250,7 @@ void apply_ini_settings(TSRMLS_D) {
 
 /* {{{ PHP_MINIT_FUNCTION
  */
-PHP_MINIT_FUNCTION(grpc) {
+PHP_MINIT_FUNCTION(grpc) { grpc_php_pin_self_with_nodelete();
   REGISTER_INI_ENTRIES();
 
   /* Register call error constants */
