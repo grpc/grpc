@@ -737,7 +737,7 @@ class StreamStreamCall(
     Returned when an instance of `StreamStreamMultiCallable` object is called.
     """
 
-    _initializer: asyncio.Task
+    _initializer: asyncio.Task[None]
 
     # pylint: disable=too-many-arguments
     def __init__(
