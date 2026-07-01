@@ -33,7 +33,7 @@ import grpc
 from grpc import _common
 from grpc._cython import cygrpc
 
-from . import _base_call
+from . import _base_call  # pyright: ignore[reportPrivateUsage]
 from ._metadata import Metadata
 from ._typing import DeserializingFunction
 from ._typing import DoneCallbackType
@@ -182,7 +182,7 @@ def _create_rpc_error(
 ) -> AioRpcError:
     return AioRpcError(
         _common.CYGRPC_STATUS_CODE_TO_STATUS_CODE[status.code()],
-        Metadata._create(initial_metadata),
+        Metadata._create(initial_metadata),  # pyright: ignore[reportPrivateUsage]
         Metadata.from_tuple(status.trailing_metadata()),  # pyright: ignore[reportUnknownMemberType]
         details=status.details(),
         debug_error_string=status.debug_error_string(),
