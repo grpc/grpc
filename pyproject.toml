@@ -79,6 +79,7 @@ reportUnusedFunction = "none"
 reportUnusedVariable = "none"
 reportIncompleteStub = "none"
 reportUnusedClass = "none"
+reportPrivateUsage = "none"
 
 include = [
     "src/python/grpcio/grpc/aio/_call.py",
