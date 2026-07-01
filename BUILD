@@ -4810,6 +4810,7 @@ grpc_cc_library(
         "@com_google_protobuf//upb/text",
         "@com_google_protobuf//upb/json",
         "@com_google_protobuf//upb/reflection",
+        "@com_google_protobuf//upb/reflection:reflection_cc",
     ],
     tags = ["nofixdeps"],
     visibility = ["//bazel:xds_client_core"],
