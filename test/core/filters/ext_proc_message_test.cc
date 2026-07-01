@@ -13,21 +13,13 @@
 // limitations under the License.
 //
 
-#include <map>
-#include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "envoy/config/core/v3/base.pb.h"
-#include "envoy/config/core/v3/base.upb.h"
 #include "envoy/extensions/filters/http/ext_proc/v3/processing_mode.pb.h"
 #include "envoy/service/ext_proc/v3/external_processor.pb.h"
-#include "envoy/service/ext_proc/v3/external_processor.upb.h"
-#include "src/core/ext/filters/ext_proc/ext_proc_filter.h"
 #include "src/core/ext/filters/ext_proc/ext_proc_messages.h"
-#include "src/core/util/upb_utils.h"
-#include "upb/mem/arena.hpp"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -40,12 +32,10 @@ constexpr absl::string_view kKey2 = "key2";
 constexpr absl::string_view kVal2 = "val2";
 constexpr absl::string_view kKey3 = "key3";
 constexpr absl::string_view kVal3 = "val3";
-
 constexpr absl::string_view kMutatedKey = "x-mutated-key";
 constexpr absl::string_view kMutatedVal = "mutated-val";
 constexpr absl::string_view kRemovedKey = "x-removed-key";
 constexpr absl::string_view kInvalidHeaderKey = ":path";
-
 constexpr absl::string_view kBearer = "Bearer";
 
 MATCHER_P3(IsHeaderValueOption, key, value, append_action, "") {
@@ -53,6 +43,11 @@ MATCHER_P3(IsHeaderValueOption, key, value, append_action, "") {
                                        result_listener) &&
          ::testing::ExplainMatchResult(append_action, arg.append_action,
                                        result_listener);
+}
+
+MATCHER_P2(IsHeader, key, value, "") {
+  return ::testing::ExplainMatchResult(key, arg.key(), result_listener) &&
+         ::testing::ExplainMatchResult(value, arg.raw_value(), result_listener);
 }
 
 //
@@ -68,7 +63,7 @@ class CreateExtProcRequestTest : public ::testing::Test {
     return parsed;
   }
 
-  ExtProcFilter::ProcessingMode processing_mode_;
+  ExtProcProcessingMode processing_mode_;
 };
 
 TEST_F(CreateExtProcRequestTest, RequestHeadersNeitherAllowedNorDisallowedSet) {
@@ -87,13 +82,10 @@ TEST_F(CreateExtProcRequestTest, RequestHeadersNeitherAllowedNorDisallowedSet) {
           .value();
   auto parsed = ParseRequest(serialized);
   ASSERT_TRUE(parsed.has_request_headers());
-  ASSERT_EQ(parsed.request_headers().headers().headers_size(), 3);
-  EXPECT_EQ(parsed.request_headers().headers().headers(0).key(), kKey1);
-  EXPECT_EQ(parsed.request_headers().headers().headers(0).raw_value(), kVal1);
-  EXPECT_EQ(parsed.request_headers().headers().headers(1).key(), kKey2);
-  EXPECT_EQ(parsed.request_headers().headers().headers(1).raw_value(), kVal2);
-  EXPECT_EQ(parsed.request_headers().headers().headers(2).key(), kKey3);
-  EXPECT_EQ(parsed.request_headers().headers().headers(2).raw_value(), kVal3);
+  EXPECT_THAT(
+      parsed.request_headers().headers().headers(),
+      ::testing::ElementsAre(IsHeader(kKey1, kVal1), IsHeader(kKey2, kVal2),
+                             IsHeader(kKey3, kVal3)));
   EXPECT_FALSE(parsed.request_headers().end_of_stream());
 }
 
@@ -120,9 +112,8 @@ TEST_F(CreateExtProcRequestTest, RequestHeadersBothAllowedAndDisallowedSet) {
           .value();
   auto parsed = ParseRequest(serialized);
   ASSERT_TRUE(parsed.has_request_headers());
-  ASSERT_EQ(parsed.request_headers().headers().headers_size(), 1);
-  EXPECT_EQ(parsed.request_headers().headers().headers(0).key(), kKey1);
-  EXPECT_EQ(parsed.request_headers().headers().headers(0).raw_value(), kVal1);
+  EXPECT_THAT(parsed.request_headers().headers().headers(),
+              ::testing::ElementsAre(IsHeader(kKey1, kVal1)));
   EXPECT_FALSE(parsed.request_headers().end_of_stream());
 }
 
@@ -146,11 +137,9 @@ TEST_F(CreateExtProcRequestTest, RequestHeadersOnlyAllowedSet) {
           .value();
   auto parsed = ParseRequest(serialized);
   ASSERT_TRUE(parsed.has_request_headers());
-  ASSERT_EQ(parsed.request_headers().headers().headers_size(), 2);
-  EXPECT_EQ(parsed.request_headers().headers().headers(0).key(), kKey1);
-  EXPECT_EQ(parsed.request_headers().headers().headers(0).raw_value(), kVal1);
-  EXPECT_EQ(parsed.request_headers().headers().headers(1).key(), kKey3);
-  EXPECT_EQ(parsed.request_headers().headers().headers(1).raw_value(), kVal3);
+  EXPECT_THAT(
+      parsed.request_headers().headers().headers(),
+      ::testing::ElementsAre(IsHeader(kKey1, kVal1), IsHeader(kKey3, kVal3)));
   EXPECT_FALSE(parsed.request_headers().end_of_stream());
 }
 
@@ -173,11 +162,9 @@ TEST_F(CreateExtProcRequestTest, RequestHeadersOnlyDisallowedSet) {
           .value();
   auto parsed = ParseRequest(serialized);
   ASSERT_TRUE(parsed.has_request_headers());
-  ASSERT_EQ(parsed.request_headers().headers().headers_size(), 2);
-  EXPECT_EQ(parsed.request_headers().headers().headers(0).key(), kKey1);
-  EXPECT_EQ(parsed.request_headers().headers().headers(0).raw_value(), kVal1);
-  EXPECT_EQ(parsed.request_headers().headers().headers(1).key(), kKey3);
-  EXPECT_EQ(parsed.request_headers().headers().headers(1).raw_value(), kVal3);
+  EXPECT_THAT(
+      parsed.request_headers().headers().headers(),
+      ::testing::ElementsAre(IsHeader(kKey1, kVal1), IsHeader(kKey3, kVal3)));
   EXPECT_FALSE(parsed.request_headers().end_of_stream());
 }
 
@@ -231,13 +218,10 @@ TEST_F(CreateExtProcRequestTest,
           .value();
   auto parsed = ParseRequest(serialized);
   ASSERT_TRUE(parsed.has_response_headers());
-  ASSERT_EQ(parsed.response_headers().headers().headers_size(), 3);
-  EXPECT_EQ(parsed.response_headers().headers().headers(0).key(), kKey1);
-  EXPECT_EQ(parsed.response_headers().headers().headers(0).raw_value(), kVal1);
-  EXPECT_EQ(parsed.response_headers().headers().headers(1).key(), kKey2);
-  EXPECT_EQ(parsed.response_headers().headers().headers(1).raw_value(), kVal2);
-  EXPECT_EQ(parsed.response_headers().headers().headers(2).key(), kKey3);
-  EXPECT_EQ(parsed.response_headers().headers().headers(2).raw_value(), kVal3);
+  EXPECT_THAT(
+      parsed.response_headers().headers().headers(),
+      ::testing::ElementsAre(IsHeader(kKey1, kVal1), IsHeader(kKey2, kVal2),
+                             IsHeader(kKey3, kVal3)));
   EXPECT_TRUE(parsed.response_headers().end_of_stream());
 }
 
@@ -265,9 +249,8 @@ TEST_F(CreateExtProcRequestTest, ResponseHeadersBothAllowedAndDisallowedSet) {
           .value();
   auto parsed = ParseRequest(serialized);
   ASSERT_TRUE(parsed.has_response_headers());
-  ASSERT_EQ(parsed.response_headers().headers().headers_size(), 1);
-  EXPECT_EQ(parsed.response_headers().headers().headers(0).key(), kKey1);
-  EXPECT_EQ(parsed.response_headers().headers().headers(0).raw_value(), kVal1);
+  EXPECT_THAT(parsed.response_headers().headers().headers(),
+              ::testing::ElementsAre(IsHeader(kKey1, kVal1)));
   EXPECT_TRUE(parsed.response_headers().end_of_stream());
 }
 
@@ -292,11 +275,9 @@ TEST_F(CreateExtProcRequestTest, ResponseHeadersOnlyAllowedSet) {
           .value();
   auto parsed = ParseRequest(serialized);
   ASSERT_TRUE(parsed.has_response_headers());
-  ASSERT_EQ(parsed.response_headers().headers().headers_size(), 2);
-  EXPECT_EQ(parsed.response_headers().headers().headers(0).key(), kKey1);
-  EXPECT_EQ(parsed.response_headers().headers().headers(0).raw_value(), kVal1);
-  EXPECT_EQ(parsed.response_headers().headers().headers(1).key(), kKey3);
-  EXPECT_EQ(parsed.response_headers().headers().headers(1).raw_value(), kVal3);
+  EXPECT_THAT(
+      parsed.response_headers().headers().headers(),
+      ::testing::ElementsAre(IsHeader(kKey1, kVal1), IsHeader(kKey3, kVal3)));
   EXPECT_FALSE(parsed.response_headers().end_of_stream());
 }
 
@@ -319,11 +300,9 @@ TEST_F(CreateExtProcRequestTest, ResponseHeadersOnlyDisallowedSet) {
           .value();
   auto parsed = ParseRequest(serialized);
   ASSERT_TRUE(parsed.has_response_headers());
-  ASSERT_EQ(parsed.response_headers().headers().headers_size(), 2);
-  EXPECT_EQ(parsed.response_headers().headers().headers(0).key(), kKey1);
-  EXPECT_EQ(parsed.response_headers().headers().headers(0).raw_value(), kVal1);
-  EXPECT_EQ(parsed.response_headers().headers().headers(1).key(), kKey3);
-  EXPECT_EQ(parsed.response_headers().headers().headers(1).raw_value(), kVal3);
+  EXPECT_THAT(
+      parsed.response_headers().headers().headers(),
+      ::testing::ElementsAre(IsHeader(kKey1, kVal1), IsHeader(kKey3, kVal3)));
   EXPECT_TRUE(parsed.response_headers().end_of_stream());
 }
 
@@ -378,16 +357,10 @@ TEST_F(CreateExtProcRequestTest,
           .value();
   auto parsed = ParseRequest(serialized);
   ASSERT_TRUE(parsed.has_response_trailers());
-  ASSERT_EQ(parsed.response_trailers().trailers().headers_size(), 3);
-  EXPECT_EQ(parsed.response_trailers().trailers().headers(0).key(), kKey1);
-  EXPECT_EQ(parsed.response_trailers().trailers().headers(0).raw_value(),
-            kVal1);
-  EXPECT_EQ(parsed.response_trailers().trailers().headers(1).key(), kKey2);
-  EXPECT_EQ(parsed.response_trailers().trailers().headers(1).raw_value(),
-            kVal2);
-  EXPECT_EQ(parsed.response_trailers().trailers().headers(2).key(), kKey3);
-  EXPECT_EQ(parsed.response_trailers().trailers().headers(2).raw_value(),
-            kVal3);
+  EXPECT_THAT(
+      parsed.response_trailers().trailers().headers(),
+      ::testing::ElementsAre(IsHeader(kKey1, kVal1), IsHeader(kKey2, kVal2),
+                             IsHeader(kKey3, kVal3)));
 }
 
 TEST_F(CreateExtProcRequestTest, ResponseTrailersBothAllowedAndDisallowedSet) {
@@ -413,10 +386,8 @@ TEST_F(CreateExtProcRequestTest, ResponseTrailersBothAllowedAndDisallowedSet) {
           .value();
   auto parsed = ParseRequest(serialized);
   ASSERT_TRUE(parsed.has_response_trailers());
-  ASSERT_EQ(parsed.response_trailers().trailers().headers_size(), 1);
-  EXPECT_EQ(parsed.response_trailers().trailers().headers(0).key(), kKey1);
-  EXPECT_EQ(parsed.response_trailers().trailers().headers(0).raw_value(),
-            kVal1);
+  EXPECT_THAT(parsed.response_trailers().trailers().headers(),
+              ::testing::ElementsAre(IsHeader(kKey1, kVal1)));
 }
 
 TEST_F(CreateExtProcRequestTest, ResponseTrailersOnlyAllowedSet) {
@@ -439,13 +410,9 @@ TEST_F(CreateExtProcRequestTest, ResponseTrailersOnlyAllowedSet) {
           .value();
   auto parsed = ParseRequest(serialized);
   ASSERT_TRUE(parsed.has_response_trailers());
-  ASSERT_EQ(parsed.response_trailers().trailers().headers_size(), 2);
-  EXPECT_EQ(parsed.response_trailers().trailers().headers(0).key(), kKey1);
-  EXPECT_EQ(parsed.response_trailers().trailers().headers(0).raw_value(),
-            kVal1);
-  EXPECT_EQ(parsed.response_trailers().trailers().headers(1).key(), kKey3);
-  EXPECT_EQ(parsed.response_trailers().trailers().headers(1).raw_value(),
-            kVal3);
+  EXPECT_THAT(
+      parsed.response_trailers().trailers().headers(),
+      ::testing::ElementsAre(IsHeader(kKey1, kVal1), IsHeader(kKey3, kVal3)));
 }
 
 TEST_F(CreateExtProcRequestTest, ResponseTrailersOnlyDisallowedSet) {
@@ -467,13 +434,9 @@ TEST_F(CreateExtProcRequestTest, ResponseTrailersOnlyDisallowedSet) {
           .value();
   auto parsed = ParseRequest(serialized);
   ASSERT_TRUE(parsed.has_response_trailers());
-  ASSERT_EQ(parsed.response_trailers().trailers().headers_size(), 2);
-  EXPECT_EQ(parsed.response_trailers().trailers().headers(0).key(), kKey1);
-  EXPECT_EQ(parsed.response_trailers().trailers().headers(0).raw_value(),
-            kVal1);
-  EXPECT_EQ(parsed.response_trailers().trailers().headers(1).key(), kKey3);
-  EXPECT_EQ(parsed.response_trailers().trailers().headers(1).raw_value(),
-            kVal3);
+  EXPECT_THAT(
+      parsed.response_trailers().trailers().headers(),
+      ::testing::ElementsAre(IsHeader(kKey1, kVal1), IsHeader(kKey3, kVal3)));
 }
 
 TEST_F(CreateExtProcRequestTest, ResponseTrailersObservability) {

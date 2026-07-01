@@ -137,15 +137,7 @@ ExtProcFilter::ExtProcFilter(const ChannelArgs& args,
                              ChannelFilter::Args /*filter_args*/)
     : transport_factory_(config->transport_factory),
       config_(std::move(config)),
-      channel_(config_->channel),
-      default_authority_(Slice::FromCopiedString(
-          args.GetString(GRPC_ARG_DEFAULT_AUTHORITY)
-              .value_or(
-                  CoreConfiguration::Get()
-                      .resolver_registry()
-                      .GetDefaultAuthority(
-                          args.GetString(GRPC_ARG_SERVER_URI).value_or(""))))) {
-}
+      channel_(config_->channel) {}
 
 void ExtProcFilter::InterceptCall(UnstartedCallHandler unstarted_call_handler) {
   CallHandler handler = Consume(std::move(unstarted_call_handler));

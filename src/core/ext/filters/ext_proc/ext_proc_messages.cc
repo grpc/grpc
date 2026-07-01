@@ -31,7 +31,6 @@
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -213,7 +212,6 @@ absl::StatusOr<ExtProcResponse::HeaderMutation> ParseHeaders(
   // otherwise parse HeaderMutation header_mutation and return header mutation
   const envoy_service_ext_proc_v3_HeaderMutation* header_mutation =
       envoy_service_ext_proc_v3_CommonResponse_header_mutation(common_response);
-
   return ParseHeaderMutation(header_mutation);
 }
 
@@ -623,7 +621,6 @@ class UpbStructHeadersEncoder {
         struct_msg, upb_StringView_FromDataAndSize(name.data(), name.size()),
         val_msg, arena);
   };
-
   for (const auto& attr : attributes) {
     if (attr == "request.path" || attr == "request.url_path") {
       if (const Slice* path = metadata.get_pointer(HttpPathMetadata())) {

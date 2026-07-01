@@ -19,15 +19,10 @@
 
 #include <grpc/status.h>
 
-#include <memory>
-#include <optional>
 #include <string>
-#include <utility>
 #include <variant>
 #include <vector>
 
-#include "envoy/config/core/v3/base.upb.h"
-#include "envoy/service/ext_proc/v3/external_processor.upb.h"
 #include "google/protobuf/struct.upb.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/util/matchers.h"

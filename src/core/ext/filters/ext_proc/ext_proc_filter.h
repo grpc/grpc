@@ -130,7 +130,6 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
   RefCountedPtr<XdsTransportFactory> transport_factory_;
   RefCountedPtr<const Config> config_;
   RefCountedPtr<ExtProcChannel> channel_;
-  Slice default_authority_;
 };
 
 }  // namespace grpc_core
