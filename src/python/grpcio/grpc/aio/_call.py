@@ -37,7 +37,7 @@ from . import _base_call
 from ._metadata import Metadata
 from ._typing import DeserializingFunction
 from ._typing import DoneCallbackType
-from ._typing import EOFType # pyright: ignore[reportUnknownVariableType]
+from ._typing import EOFType  # pyright: ignore[reportUnknownVariableType]
 from ._typing import MetadataType
 from ._typing import MetadatumType
 from ._typing import RequestIterableType
