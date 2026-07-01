@@ -184,7 +184,7 @@ class HandshakeHintsCertificateSelector : public SyncTestCertificateSelector {
                     OnSelectCertificateComplete on_complete) override {
     auto select_cert_result = SyncTestCertificateSelector::SelectCertificate(
         info, std::move(on_complete));
-    absl::Status process_status = MatchMutable(
+    GRPC_RETURN_IF_ERROR(MatchMutable(
         &select_cert_result,
         [&](absl::StatusOr<SelectCertificateResult>*
                 select_cert_result) mutable {
@@ -283,8 +283,7 @@ class HandshakeHintsCertificateSelector : public SyncTestCertificateSelector {
         },
         [](std::shared_ptr<AsyncCertificateSelectionHandle>*) {
           return absl::InternalError("Expected syncrhonous cert selection.");
-        });
-    GRPC_RETURN_IF_ERROR(process_status);
+        }));
     return select_cert_result;
   }
 
