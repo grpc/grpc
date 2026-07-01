@@ -6534,6 +6534,37 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_metadata_parser",
+    srcs = [
+        "xds/grpc/xds_metadata_parser.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_metadata_parser.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/message",
+        "@com_google_protobuf//upb/text",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "envoy_config_core_upb",
+        "envoy_config_core_upbdefs",
+        "envoy_extensions_filters_http_gcp_authn_upb",
+        "envoy_extensions_filters_http_gcp_authn_upbdefs",
+        "experiment_env_var",
+        "upb_utils",
+        "validation_errors",
+        "xds_common_types",
+        "xds_common_types_parser",
+        "xds_metadata",
+        "//:sockaddr_utils",
+        "//:xds_client",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_cluster",
     srcs = [
         "xds/grpc/xds_cluster.cc",
@@ -6843,7 +6874,6 @@ grpc_cc_library(
         "xds/grpc/xds_http_rbac_filter.cc",
         "xds/grpc/xds_http_stateful_session_filter.cc",
         "xds/grpc/xds_listener_parser.cc",
-        "xds/grpc/xds_metadata_parser.cc",
         "xds/grpc/xds_route_config_parser.cc",
         "xds/grpc/xds_routing.cc",
     ],
@@ -6858,7 +6888,6 @@ grpc_cc_library(
         "xds/grpc/xds_http_rbac_filter.h",
         "xds/grpc/xds_http_stateful_session_filter.h",
         "xds/grpc/xds_listener_parser.h",
-        "xds/grpc/xds_metadata_parser.h",
         "xds/grpc/xds_route_config_parser.h",
         "xds/grpc/xds_routing.h",
     ],
@@ -7038,6 +7067,7 @@ grpc_cc_library(
         "xds_matcher_parse",
         "xds_matcher_upb",
         "xds_metadata",
+        "xds_metadata_parser",
         "xds_route_config",
         "xds_server_grpc",
         "xds_tls_context",

@@ -67,11 +67,6 @@
 
 namespace grpc_core {
 
-// TODO(roth): Remove this once the feature passes interop tests.
-bool XdsHttpConnectEnabled() {
-  return IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_HTTP_CONNECT");
-}
-
 namespace {
 
 constexpr absl::string_view kUpstreamTlsContextType =
