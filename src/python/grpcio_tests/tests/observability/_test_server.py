@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 from concurrent import futures
 from typing import Tuple
 
@@ -29,9 +30,21 @@ _STREAM_STREAM = "StreamStream"
 STREAM_LENGTH = 5
 TRIGGER_RPC_METADATA = ("control", "trigger_rpc")
 TRIGGER_RPC_TO_NEW_SERVER_METADATA = ("to_new_server", "")
+ABORT_RPC_METADATA = ("control", "abort")
+COMPRESS_RPC_METADATA = ("control", "compress")
 
+LARGE_MESSAGE_SIZE = 1000
+_LARGE_REQUEST = b"\x00" * LARGE_MESSAGE_SIZE
+_LARGE_RESPONSE = b"\x01" * LARGE_MESSAGE_SIZE
 
 def handle_unary_unary(request, servicer_context):
+    if ABORT_RPC_METADATA in servicer_context.invocation_metadata():
+        servicer_context.abort(
+            grpc.StatusCode.ABORTED, "Aborting RPC for testing purpose"
+        )
+    if COMPRESS_RPC_METADATA in servicer_context.invocation_metadata():
+        servicer_context.set_compression(grpc.Compression.Gzip)
+        return _LARGE_RESPONSE
     if TRIGGER_RPC_METADATA in servicer_context.invocation_metadata():
         for k, v in servicer_context.invocation_metadata():
             if "port" in k:
@@ -40,7 +53,10 @@ def handle_unary_unary(request, servicer_context):
                 second_server = grpc.server(
                     futures.ThreadPoolExecutor(max_workers=10)
                 )
-                second_server.add_generic_rpc_handlers((_GenericHandler(),))
+                generic_handler = grpc.method_handlers_generic_handler(
+                    _SERVICE_NAME, RPC_METHOD_HANDLERS
+                )
+                second_server.add_generic_rpc_handlers((generic_handler,))
                 second_server_port = second_server.add_insecure_port("[::]:0")
                 second_server.start()
                 unary_unary_call(port=second_server_port)
@@ -54,6 +70,9 @@ def handle_unary_stream(request, servicer_context):
 
 
 def handle_stream_unary(request_iterator, servicer_context):
+    # we need to read requests to produce otel traces
+    for request in request_iterator:
+        pass
     return _RESPONSE
 
 
@@ -80,22 +99,6 @@ class _MethodHandler(grpc.RpcMethodHandler):
             self.unary_stream = handle_unary_stream
         else:
             self.unary_unary = handle_unary_unary
-
-
-class _GenericHandler(grpc.GenericRpcHandler):
-    def service(self, handler_call_details):
-        if handler_call_details.method == _UNARY_UNARY:
-            return _MethodHandler(False, False)
-        if handler_call_details.method == _UNARY_UNARY_FILTERED:
-            return _MethodHandler(False, False)
-        elif handler_call_details.method == _UNARY_STREAM:
-            return _MethodHandler(False, True)
-        elif handler_call_details.method == _STREAM_UNARY:
-            return _MethodHandler(True, False)
-        elif handler_call_details.method == _STREAM_STREAM:
-            return _MethodHandler(True, True)
-        else:
-            return None
 
 
 RPC_METHOD_HANDLERS = {
@@ -150,6 +153,58 @@ def unary_unary_call(port, metadata=None, registered_method=False):
             )
         else:
             unused_response, call = multi_callable.with_call(_REQUEST)
+
+
+def unary_unary_compressed_call(port):
+    with grpc.insecure_channel(f"localhost:{port}") as channel:
+        multi_callable = channel.unary_unary(
+            grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),
+        )
+        multi_callable(
+            _LARGE_REQUEST,
+            metadata=(COMPRESS_RPC_METADATA,),
+            compression=grpc.Compression.Gzip,
+        )
+
+
+def unary_unary_retry_call(port, max_attempts=3):
+    retry_service_config = json.dumps(
+        {
+            "methodConfig": [
+                {
+                    "name": [
+                        {
+                            "service": _SERVICE_NAME,
+                            "method": _UNARY_UNARY
+                        }
+                    ],
+                    "retryPolicy": {
+                        "maxAttempts": max_attempts,
+                        "initialBackoff": "0.1s",
+                        "maxBackoff": "120s",
+                        "backoffMultiplier": 1,
+                        "retryableStatusCodes": ["ABORTED"]
+                    }
+                }
+            ]
+        }
+    )
+    options = (
+        ("grpc.enable_retries", 1),
+        ("grpc.service_config", retry_service_config),
+    )
+
+    with grpc.insecure_channel(f"localhost:{port}", options=options) as channel:
+        multi_callable = channel.unary_unary(
+            grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),
+        )
+        try:
+            unused_response, call = multi_callable.with_call(
+                _REQUEST, metadata=(ABORT_RPC_METADATA,)
+            )
+        except grpc.RpcError:
+            # expected: the RPC fails with ABORTED after exhausting retries
+            pass
 
 
 def intercepted_unary_unary_call(port, interceptors, metadata=None):

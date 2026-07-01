@@ -26,6 +26,7 @@
 #include <utility>
 #include <vector>
 
+#include "Python.h"
 #include "constants.h"
 #include "python_observability_context.h"
 #include "absl/strings/string_view.h"
@@ -54,15 +55,25 @@ extern std::queue<CensusData>* g_census_data_buffer;
 extern std::mutex g_census_data_buffer_mutex;
 extern std::condition_variable g_census_data_buffer_cv;
 
+// A C-style callback that inject propagation headers (trace ID and span ID)
+// from the C++ context to the Python API
+typedef std::vector<Label> (*GetPropagationHeadersCb)(const char* trace_id,
+                                                      const char* span_id,
+                                                      int is_sampled,
+                                                      PyObject* py_callable);
+
 void* CreateClientCallTracer(const char* method, const char* target,
                              const char* trace_id, const char* parent_span_id,
                              const char* identifier,
                              const std::vector<Label> exchange_labels,
+                             GetPropagationHeadersCb get_propagation_headers_cb,
+                             PyObject* py_callable,
                              bool add_csm_optional_labels,
                              bool registered_method);
 
-void* CreateServerCallTracerFactory(const std::vector<Label> exchange_labels,
-                                    const char* identifier);
+void* CreateServerCallTracerFactory(
+    const std::vector<Label> exchange_labels,
+    const std::vector<std::string> propagation_fields, const char* identifier);
 
 void NativeObservabilityInit();
 
