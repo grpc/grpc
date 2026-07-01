@@ -6623,6 +6623,32 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_tls_context_parser",
+    srcs = [
+        "xds/grpc/xds_tls_context_parser.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_tls_context_parser.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    tags = ["nofixdeps"],
+    visibility = ["//bazel:xds_client_grpc"],
+    deps = [
+        "down_cast",
+        "envoy_extensions_transport_sockets_tls_upb",
+        "upb_utils",
+        "validation_errors",
+        "xds_bootstrap_grpc",
+        "xds_common_types",
+        "xds_common_types_parser",
+        "xds_tls_context",
+        "//:xds_client",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_grpc_service",
     srcs = [
         "xds/grpc/xds_grpc_service.cc",
@@ -6793,7 +6819,6 @@ grpc_cc_library(
         "xds/grpc/xds_metadata_parser.cc",
         "xds/grpc/xds_route_config_parser.cc",
         "xds/grpc/xds_routing.cc",
-        "xds/grpc/xds_tls_context_parser.cc",
     ],
     hdrs = [
         "xds/grpc/xds_bootstrap_grpc_builder.h",
@@ -6810,7 +6835,6 @@ grpc_cc_library(
         "xds/grpc/xds_metadata_parser.h",
         "xds/grpc/xds_route_config_parser.h",
         "xds/grpc/xds_routing.h",
-        "xds/grpc/xds_tls_context_parser.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -6990,6 +7014,7 @@ grpc_cc_library(
         "xds_route_config",
         "xds_server_grpc",
         "xds_tls_context",
+        "xds_tls_context_parser",
         "xds_transport_grpc",
         "xds_type_matcher_upb",
         "xds_type_upb",
