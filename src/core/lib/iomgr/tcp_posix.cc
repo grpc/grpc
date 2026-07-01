@@ -1926,9 +1926,7 @@ static const grpc_endpoint_vtable vtable = {tcp_read,
 grpc_endpoint* grpc_tcp_create(
     grpc_fd* fd, const grpc_event_engine::experimental::EndpointConfig& config,
     absl::string_view peer_string) {
-  if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled() &&
-      !grpc_event_engine::experimental::
-          EventEngineExperimentDisabledForPython()) {
+  if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled()) {
     // Create an EventEngine endpoint when creating the transport.
     auto* engine =
         reinterpret_cast<grpc_event_engine::experimental::EventEngine*>(
@@ -1956,9 +1954,7 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   GRPC_CHECK(!grpc_event_engine::experimental::UsePollsetAlternative())
       << "This function must not be called when the pollset_alternative "
          "experiment is enabled. This is a bug.";
-  GRPC_CHECK(
-      !grpc_core::IsEventEngineForAllOtherEndpointsEnabled() ||
-      grpc_event_engine::experimental::EventEngineExperimentDisabledForPython())
+  GRPC_CHECK(!grpc_core::IsEventEngineForAllOtherEndpointsEnabled())
       << "The event_engine_for_all_other_endpoints experiment should prevent "
          "this method from being called. This is a bug.";
   grpc_tcp* tcp = new grpc_tcp(options);

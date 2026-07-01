@@ -150,13 +150,6 @@
   uses_polling: true
   allow_in_fuzzing_config: false
   platforms: ["all"]
-- name: event_engine_poller_for_python
-  description: "Enable event engine poller in gRPC Python"
-  expiry: 2026/06/30
-  owner: mlumish@google.com
-  test_tags: []
-  uses_polling: true
-  platforms: ["all"]
 - name: fail_recv_metadata_on_deadline_exceeded
   description: Fail recv initial metadata when the deadline is exceeded.
   expiry: 2026/09/01
@@ -239,12 +232,12 @@
   owner: akshitpatel@google.com
   test_tags: [flow_control_test]
 - name: optimization_01
-  description: Optimization 
+  description: Optimization
   expiry: 2026/09/07
   owner: tjagtap@google.com
   test_tags: []
 - name: optimization_02
-  description: Optimization 
+  description: Optimization
   expiry: 2026/09/07
   owner: tjagtap@google.com
   test_tags: []
@@ -264,7 +257,7 @@
   owner: alishananda@google.com
   test_tags: []
 - name: optimization_06
-  description: Optimization 
+  description: Optimization
   expiry: 2027/01/30
   owner: tjagtap@google.com
   test_tags: []
@@ -276,7 +269,7 @@
 - name: ph2_client
   description:
     Use promises for the http2 client transport. We have kept client and
-    server transport experiments separate to help with smoother roll outs. 
+    server transport experiments separate to help with smoother roll outs.
     When this flag is enabled for the test suites, it would test PH2 Client with CHTTP2 Server.
   expiry: 2027/03/16
   owner: tjagtap@google.com

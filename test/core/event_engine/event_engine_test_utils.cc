@@ -254,9 +254,7 @@ bool IsSaneTimerEnvironment() {
   return grpc_core::IsEventEngineClientEnabled() &&
          grpc_core::IsEventEngineListenerEnabled() &&
          grpc_core::IsEventEngineDnsEnabled() &&
-         grpc_core::IsEventEngineDnsNonClientChannelEnabled() &&
-         !grpc_event_engine::experimental::
-             EventEngineExperimentDisabledForPython();
+         grpc_core::IsEventEngineDnsNonClientChannelEnabled();
 }
 
 }  // namespace experimental
