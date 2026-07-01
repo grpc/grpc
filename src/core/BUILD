@@ -6477,6 +6477,40 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_bootstrap_grpc",
+    srcs = [
+        "xds/grpc/xds_bootstrap_grpc.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_bootstrap_grpc.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "experiment_env_var",
+        "json",
+        "json_args",
+        "json_object_loader",
+        "json_reader",
+        "json_writer",
+        "validation_errors",
+        "xds_audit_logger_registry",
+        "xds_certificate_provider_store",
+        "xds_cluster_specifier_plugin",
+        "xds_http_filter_registry",
+        "xds_lb_policy_registry",
+        "xds_matcher_input",
+        "xds_server_grpc",
+        "//:ref_counted_ptr",
+        "//:xds_client",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_metadata",
     srcs = [
         "xds/grpc/xds_metadata.cc",
@@ -6719,7 +6753,6 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_xds_client",
     srcs = [
-        "xds/grpc/xds_bootstrap_grpc.cc",
         "xds/grpc/xds_bootstrap_grpc_builder.cc",
         "xds/grpc/xds_client_grpc.cc",
         "xds/grpc/xds_cluster_parser.cc",
@@ -6738,7 +6771,6 @@ grpc_cc_library(
         "xds/grpc/xds_tls_context_parser.cc",
     ],
     hdrs = [
-        "xds/grpc/xds_bootstrap_grpc.h",
         "xds/grpc/xds_bootstrap_grpc_builder.h",
         "xds/grpc/xds_client_grpc.h",
         "xds/grpc/xds_cluster_parser.h",
@@ -6908,6 +6940,7 @@ grpc_cc_library(
         "validation_errors",
         "xds_audit_logger_registry",
         "xds_backend_metric_propagation",
+        "xds_bootstrap_grpc",
         "xds_certificate_provider",
         "xds_certificate_provider_store",
         "xds_cluster",
@@ -7082,6 +7115,7 @@ grpc_cc_library(
         "slice_refcount",
         "sync",
         "unique_type_name",
+        "xds_bootstrap_grpc",
         "xds_certificate_provider",
         "xds_certificate_provider_store",
         "xds_common_types",
@@ -8449,6 +8483,7 @@ grpc_cc_library(
         "shared_bit_gen",
         "slice",
         "time",
+        "xds_bootstrap_grpc",
         "xds_dependency_manager",
         "xds_http_filter",
         "xds_listener",

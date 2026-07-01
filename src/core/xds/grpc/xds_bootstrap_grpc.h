@@ -17,8 +17,6 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_BOOTSTRAP_GRPC_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_BOOTSTRAP_GRPC_H
 
-#include <grpc/support/port_platform.h>
-
 #include <map>
 #include <memory>
 #include <optional>
