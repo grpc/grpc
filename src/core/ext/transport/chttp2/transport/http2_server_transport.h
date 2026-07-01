@@ -544,8 +544,8 @@ class Http2ServerTransport final : public ServerTransport,
   //////////////////////////////////////////////////////////////////////////////
   // Ping Keepalive and Goaway
 
-  // void MaybeSpawnPingTimeout(std::optional<uint64_t> opaque_data);
-  // void MaybeSpawnDelayedPing(std::optional<Duration> delayed_ping_wait);
+  void MaybeSpawnPingTimeout(std::optional<uint64_t> opaque_data);
+  void MaybeSpawnDelayedPing(std::optional<Duration> delayed_ping_wait);
 
   auto SendPing(absl::AnyInvocable<void()> on_initiate, bool important) {
     return ping_manager_->RequestPing(std::move(on_initiate), important);
@@ -553,13 +553,10 @@ class Http2ServerTransport final : public ServerTransport,
 
   auto WaitForPingAck() { return ping_manager_->WaitForPingAck(); }
 
-  // Duration NextAllowedPingInterval() {
-  //   MutexLock lock(&transport_mutex_);
-  //   return (!keepalive_permit_without_calls_ &&
-  //           GetActiveStreamCountLocked() == 0)
-  //              ? Duration::Hours(2)
-  //              : Duration::Seconds(1);
-  // }
+  Duration NextAllowedPingInterval() {
+    // TODO(akshitpatel) : [PH2][P1] : Add server logic.
+    return Duration::Zero();
+  }
 
   absl::Status AckPing(uint64_t opaque_data);
 

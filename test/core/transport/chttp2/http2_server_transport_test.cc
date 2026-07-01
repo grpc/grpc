@@ -43,6 +43,7 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
 #include "test/core/transport/chttp2/http2_common_test_inputs.h"
@@ -174,7 +175,6 @@ class Http2ServerTransportTest : public Http2TransportTest {
         std::forward<PromiseFactoryFactory>(promise_factory_factory));
   }
 
- private:
   void AddTransportCloseExpectations(EventSequenceEndpoint::Step* step) {
     step->ThenFailRead(absl::UnavailableError(kConnectionClosed));
     step->ThenExpectWrite({
@@ -185,6 +185,7 @@ class Http2ServerTransportTest : public Http2TransportTest {
     });
   }
 
+ private:
   OrphanablePtr<Http2ServerTransport> server_transport_;
   RefCountedPtr<StreamDataBase> stream_data_;
 };
@@ -418,6 +419,111 @@ TEST_F(Http2ServerTransportTest,
        helper_.SerializedResetStreamFrame(
            /*stream_id=*/1,
            /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kNoError))});
+
+  step->Wait();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Ping tests
+
+TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportPingRead) {
+  // Simple test to validate a proper ping ack is sent out on receiving a ping
+  // request.
+  ExecCtx ctx;
+  // 1. Initialize the transport and exchange settings.
+  InitTransport(GetChannelArgs());
+  SpawnTransportLoopsAndExchangeSettings();
+
+  // 2. Client sends a ping request.
+  // 3. Server sends a ping ack.
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
+
+  step->ThenPerformRead({
+      helper_.SerializedPingFrame(/*ack=*/false,
+                                  /*opaque=*/1234),
+  });
+
+  step->ThenExpectWrite({
+      helper_.SerializedPingFrame(/*ack=*/true,
+                                  /*opaque=*/1234),
+  });
+
+  step->Wait();
+}
+
+TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportPingWrite) {
+  // Test to validate end-to-end ping request and response.
+  // This test asserts the following:
+  // 1. A ping request is written to the endpoint. The opaque id is not verified
+  // while endpoint write as it is an internally generated random number.
+  // 2. The ping request promise is resolved once ping ack is received.
+  // 3. Redundant acks are ignored.
+  ExecCtx ctx;
+  // 1. Initialize the transport and exchange settings.
+  InitTransport(GetChannelArgs());
+  SpawnTransportLoopsAndExchangeSettings();
+
+  // 2. Client sends a ping ack for an unknown opaque ID.
+  // 3. Server sends a ping request.
+  // 4. Client sends a ping ack for the ping request.
+  StrictMock<MockFunction<void()>> ping_ack_received;
+  EXPECT_CALL(ping_ack_received, Call());
+
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
+
+  // Redundant ack.
+  step->ThenPerformRead({helper_.SerializedPingFrame(/*ack=*/true,
+                                                     /*opaque=*/1234)});
+
+  step->ThenExpectWrite([&, step](SliceBuffer& buffer) {
+    uint64_t opaque_id =
+        VerifyPingFrameAndReturnOpaqueId(buffer, /*is_ack=*/false);
+    // Now that we know the opaque ID, we expect the Client (Mock) to send back:
+    // 1. Ping Ack with the same opaque ID.
+    step->InsertReadAtHead({helper_.SerializedPingFrame(/*ack=*/true,
+                                                        /*opaque=*/opaque_id)});
+  });
+
+  server_transport()->TestOnlySpawnPromise("PingRequest", [this,
+                                                           &ping_ack_received] {
+    return Map(
+        TrySeq([&] { return server_transport()->TestOnlyTriggerWriteCycle(); },
+               [this] { return server_transport()->TestOnlySendPing([] {}); }),
+        [&ping_ack_received](auto) {
+          ping_ack_received.Call();
+          LOG(INFO) << "PingAck Received. Ping Test done.";
+        });
+  });
+  step->Wait();
+  // Tick the event engine to process the Ping Ack.
+  event_engine()->Tick();
+}
+
+TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportPingTimeout) {
+  // Test to validate that the transport is closed when ping times out.
+  // This test asserts the following:
+  // 1. The ping request promise is never resolved as there is no ping ack.
+  // 2. Transport is closed when ping times out.
+
+  ExecCtx ctx;
+  // 1. Initialize the transport and exchange settings.
+  InitTransport(GetChannelArgs().Set("grpc.http2.ping_timeout_ms", 1000));
+  SpawnTransportLoopsAndExchangeSettings();
+
+  // 2. Server sends a ping request.
+  // 3. Ping timeout occurs and server transport is closed.
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
+  step->ThenExpectWrite([&](SliceBuffer& buffer) {
+    GRPC_UNUSED uint64_t opaque_id =
+        VerifyPingFrameAndReturnOpaqueId(buffer, /*is_ack=*/false);
+  });
+
+  server_transport()->TestOnlySpawnPromise("PingRequest", [&] {
+    return Map(
+        TrySeq([&] { return server_transport()->TestOnlyTriggerWriteCycle(); },
+               [&] { return server_transport()->TestOnlySendPing([] {}); }),
+        [](auto) { Crash("Unreachable"); });
+  });
 
   step->Wait();
 }
