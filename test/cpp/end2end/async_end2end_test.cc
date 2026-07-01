@@ -1962,7 +1962,6 @@ TEST_P(AsyncEnd2endServerTryCancelTest, ClientStreamingServerTryCancelDuring) {
 }
 
 TEST_P(AsyncEnd2endServerTryCancelTest, ClientStreamingServerTryCancelAfter) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   TestClientStreamingServerCancel(CANCEL_AFTER_PROCESSING);
 }
 
