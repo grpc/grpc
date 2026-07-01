@@ -54,6 +54,16 @@
     with c-ares support. Otherwise, the value of this environment variable is
     ignored.
   fuzz: true
+- name: dns_ares_query_use_getaddrinfo
+  type: bool
+  default: false
+  description:
+    EXPERIMENTAL. If true, the c-ares based DNS resolver issues a single
+    combined A and AAAA query via ares_getaddrinfo() with AF_UNSPEC instead of
+    two separate ares_gethostbyname() queries. This returns as soon as one
+    address family is satisfied, avoiding long delays when a resolver silently
+    drops AAAA queries. See https://github.com/grpc/grpc/issues/35638.
+  fuzz: true
 - name: trace
   type: comma_separated_string
   default:

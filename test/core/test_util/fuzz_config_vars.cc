@@ -34,6 +34,10 @@ ConfigVars::Overrides OverridesFromFuzzConfigVars(
     overrides.experimental_memory_pressure_threshold =
         vars.experimental_memory_pressure_threshold();
   }
+  if (vars.has_dns_ares_query_use_getaddrinfo()) {
+    overrides.dns_ares_query_use_getaddrinfo =
+        vars.dns_ares_query_use_getaddrinfo();
+  }
   if (vars.has_enable_fork_support()) {
     overrides.enable_fork_support = vars.enable_fork_support();
   }
