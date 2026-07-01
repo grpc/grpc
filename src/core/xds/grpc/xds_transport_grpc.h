@@ -25,6 +25,8 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -34,6 +36,7 @@
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 #include "src/core/xds/grpc/certificate_provider_store_interface.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_transport.h"
@@ -60,6 +63,8 @@ class GrpcXdsTransportFactory final : public XdsTransportFactory {
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
 
  private:
+  class SharedChannel;
+
   ChannelArgs args_;
   RefCountedPtr<CertificateProviderStoreInterface> certificate_provider_store_;
   grpc_pollset_set* interested_parties_;
@@ -67,6 +72,8 @@ class GrpcXdsTransportFactory final : public XdsTransportFactory {
   Mutex mu_;
   absl::flat_hash_map<std::string /*XdsServerTarget key*/, GrpcXdsTransport*>
       transports_ ABSL_GUARDED_BY(&mu_);
+  absl::flat_hash_map<std::string /*Channel key*/, SharedChannel*> channels_
+      ABSL_GUARDED_BY(&mu_);
 };
 
 class GrpcXdsTransportFactory::GrpcXdsTransport final
@@ -75,6 +82,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport final
   class GrpcStreamingCall;
 
   GrpcXdsTransport(WeakRefCountedPtr<GrpcXdsTransportFactory> factory,
+                   RefCountedPtr<SharedChannel> channel,
                    const XdsBootstrap::XdsServerTarget& server,
                    absl::Status* status);
   ~GrpcXdsTransport() override;
@@ -92,12 +100,16 @@ class GrpcXdsTransportFactory::GrpcXdsTransport final
 
   void ResetBackoff() override;
 
+  Channel* channel() const;
+
  private:
   class StateWatcher;
 
   WeakRefCountedPtr<GrpcXdsTransportFactory> factory_;
   std::string key_;
-  RefCountedPtr<Channel> channel_;
+  RefCountedPtr<SharedChannel> channel_;
+  std::vector<std::pair<std::string, std::string>> initial_metadata_;
+  Duration timeout_;
 
   Mutex mu_;
   absl::flat_hash_map<RefCountedPtr<ConnectivityFailureWatcher>, StateWatcher*>
@@ -107,9 +119,12 @@ class GrpcXdsTransportFactory::GrpcXdsTransport final
 class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final
     : public XdsTransportFactory::XdsTransport::StreamingCall {
  public:
-  GrpcStreamingCall(WeakRefCountedPtr<GrpcXdsTransportFactory> factory,
-                    Channel* channel, const char* method,
-                    std::unique_ptr<StreamingCall::EventHandler> event_handler);
+  GrpcStreamingCall(
+      WeakRefCountedPtr<GrpcXdsTransportFactory> factory, Channel* channel,
+      const char* method,
+      std::unique_ptr<StreamingCall::EventHandler> event_handler,
+      const std::vector<std::pair<std::string, std::string>>& initial_metadata,
+      Duration timeout);
   ~GrpcStreamingCall() override;
 
   void Orphan() override;
@@ -118,9 +133,12 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final
 
   void StartRecvMessage() override;
 
+  void SendHalfClose() override;
+
  private:
   static void OnRecvInitialMetadata(void* arg, grpc_error_handle /*error*/);
   static void OnRequestSent(void* arg, grpc_error_handle error);
+  static void OnHalfClosed(void* arg, grpc_error_handle error);
   static void OnResponseReceived(void* arg, grpc_error_handle /*error*/);
   static void OnStatusReceived(void* arg, grpc_error_handle /*error*/);
 
@@ -135,9 +153,15 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final
   grpc_metadata_array initial_metadata_recv_;
   grpc_closure on_recv_initial_metadata_;
 
+  // send_initial_metadata
+  std::vector<grpc_metadata> send_initial_metadata_;
+
   // send_message
   grpc_byte_buffer* send_message_payload_ = nullptr;
   grpc_closure on_request_sent_;
+
+  // half_close
+  grpc_closure on_half_closed_;
 
   // recv_message
   grpc_byte_buffer* recv_message_payload_ = nullptr;

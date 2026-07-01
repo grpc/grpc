@@ -58,6 +58,9 @@ class XdsTransportFactory : public DualRefCounted<XdsTransportFactory> {
 
       // Starts a recv_message operation on the stream.
       virtual void StartRecvMessage() = 0;
+
+      // Half-closes the stream from the client side.
+      virtual void SendHalfClose() = 0;
     };
 
     // A watcher for connectivity failures.
