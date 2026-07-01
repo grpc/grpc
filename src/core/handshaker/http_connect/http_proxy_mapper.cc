@@ -76,8 +76,34 @@ bool ServerInCIDRRange(const grpc_resolved_address& server_address,
 }
 
 bool ExactMatchOrSubdomain(absl::string_view host_name,
-                           absl::string_view host_name_or_domain) {
-  return absl::EndsWithIgnoreCase(host_name, host_name_or_domain);
+                           absl::string_view no_proxy_entry) {
+  // Remove surrounding whitespace.
+  no_proxy_entry = absl::StripAsciiWhitespace(no_proxy_entry);
+
+  // Strip a leading dot if present (e.g. ".example.com" -> "example.com").
+  // A leading dot is optional notation; both "example.com" and
+  // ".example.com" match the domain itself and all of its subdomains.
+  if (!no_proxy_entry.empty() && no_proxy_entry[0] == '.') {
+    no_proxy_entry = no_proxy_entry.substr(1);
+  }
+
+  if (no_proxy_entry.empty()) return false;
+
+  // Exact match (case-insensitive).
+  if (absl::EqualsIgnoreCase(host_name, no_proxy_entry)) {
+    return true;
+  }
+
+  // Boundary-aware subdomain match: host_name must end with
+  // ".<no_proxy_entry>". Prevents "notexample.com" from matching
+  // "example.com", while "test.example.com" still matches.
+  if (host_name.size() > no_proxy_entry.size() &&
+      absl::EndsWithIgnoreCase(host_name, no_proxy_entry) &&
+      host_name[host_name.size() - no_proxy_entry.size() - 1] == '.') {
+    return true;
+  }
+
+  return false;
 }
 
 // Parses the list of host names, addresses or subnet masks and returns true if
