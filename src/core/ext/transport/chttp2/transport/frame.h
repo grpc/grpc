@@ -294,6 +294,7 @@ struct Http2FrameCountTracker {
 http2::Http2Status ValidateSettingsValues(
     std::vector<Http2SettingsFrame::Setting>& list);
 
+// The checks in this function MUST be done before the frame payload is read.
 http2::Http2Status ValidateFrameHeader(
     const uint32_t max_frame_size_setting,
     const bool incoming_header_in_progress,
@@ -301,6 +302,12 @@ http2::Http2Status ValidateFrameHeader(
     const Http2FrameHeader& current_frame_header, const uint32_t last_stream_id,
     const bool is_client, const bool is_first_settings_processed,
     Http2FrameCountTracker& tracker, const uint32_t max_security_frame_size);
+
+// Returns the number of frames that are induced by the incoming frames.
+// Induced frames are frames that are created in response to the current frame.
+// For example, a SETTINGS frame induces a SETTINGS ACK frame, a PING frame
+// induces a PING ACK frame, etc.
+uint8_t GetNumInducedFrames(const Http2FrameHeader& current_frame_header);
 
 ///////////////////////////////////////////////////////////////////////////////
 // RFC9113 Related Strings and Consts
@@ -443,12 +450,15 @@ inline constexpr absl::string_view kFailedToEnqueueStream =
 inline constexpr absl::string_view kStreamCreationFailed =
     "gRPC Transport Error : Stream creation failed";
 
+inline constexpr uint32_t kDefaultMaxPendingInducedFrames = 10000u;
+
 // Security frame related limits and errors
 inline constexpr uint32_t kMaxSecurityFrameSize = 16u * 1024u;
 inline constexpr int kMinMaxSecurityFrameSize = 0;
 inline constexpr absl::string_view kSecurityFrameTooLarge =
     "gRPC Transport Error : Security frame is larger than the maximum allowed "
     "size : ";
+
 }  // namespace GrpcErrors
 
 }  // namespace grpc_core

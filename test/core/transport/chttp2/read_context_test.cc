@@ -41,7 +41,8 @@ class ReadContextTest : public ::testing::TestWithParam<bool> {
     mock_endpoint.emplace(1234);
     tracker.emplace(
         /*max_new_streams_per_read_cycle=*/32u, mock_endpoint->promise_endpoint,
-        /*is_client=*/GetParam(), GrpcErrors::kMaxSecurityFrameSize);
+        /*is_client=*/GetParam(), GrpcErrors::kMaxSecurityFrameSize,
+        /*ping_on_rst_stream_percent=*/1u);
   }
 
   std::optional<util::testing::MockPromiseEndpoint> mock_endpoint;
@@ -204,7 +205,8 @@ TEST(GetPeerStringTest, GetPeerString) {
   util::testing::MockPromiseEndpoint mock_endpoint(1234);
   ReadContext tracker(/*max_new_streams_per_read_cycle=*/32u,
                       mock_endpoint.promise_endpoint,
-                      /*is_client=*/true, GrpcErrors::kMaxSecurityFrameSize);
+                      /*is_client=*/true, GrpcErrors::kMaxSecurityFrameSize,
+                      /*ping_on_rst_stream_percent=*/1u);
   EXPECT_EQ(tracker.peer_string(),
             Slice::FromCopiedString("ipv4:127.0.0.1:1234"));
 }

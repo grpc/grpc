@@ -153,6 +153,9 @@ uint32_t MaxNewStreamsPerRead(const ChannelArgs& channel_args);
 
 uint32_t GetMaxSecurityFrameSize(const ChannelArgs& channel_args);
 
+uint8_t GetPingOnRstStreamPercent(const ChannelArgs& channel_args,
+                                  bool is_client);
+
 ///////////////////////////////////////////////////////////////////////////////
 // ChannelZ helpers
 
