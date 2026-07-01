@@ -39,9 +39,9 @@ namespace {
 TEST(SslTelemetryUtilsTest,
      GeneralMapSslErrorToTlsTelemetryHandshakeResultTest) {
   // Test SUCCESS
-  EXPECT_EQ(
-      MapSslErrorToTlsTelemetryHandshakeResult(TSI_OK, SSL_ERROR_NONE, 0, X509_V_OK),
-      TlsTelemetryHandshakeResult::kSuccess);
+  EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(TSI_OK, SSL_ERROR_NONE, 0,
+                                                     X509_V_OK),
+            TlsTelemetryHandshakeResult::kSuccess);
 
   // Test Peer certificate verification failures
   EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(TSI_OK, SSL_ERROR_NONE, 0,
@@ -53,9 +53,10 @@ TEST(SslTelemetryUtilsTest,
   EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
                 TSI_OK, SSL_ERROR_NONE, 0, X509_V_ERR_CERT_NOT_YET_VALID),
             TlsTelemetryHandshakeResult::kCertificateNotYetValid);
-  EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
-                TSI_OK, SSL_ERROR_NONE, 0, X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT),
-            TlsTelemetryHandshakeResult::kCertificateAuthorityInvalid);
+  EXPECT_EQ(
+      MapSslErrorToTlsTelemetryHandshakeResult(
+          TSI_OK, SSL_ERROR_NONE, 0, X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT),
+      TlsTelemetryHandshakeResult::kCertificateAuthorityInvalid);
   EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(TSI_OK, SSL_ERROR_NONE, 0,
                                                      X509_V_ERR_CERT_REJECTED),
             TlsTelemetryHandshakeResult::kCertificateVerificationFailed);
@@ -82,14 +83,14 @@ TEST(SslTelemetryUtilsTest,
             TlsTelemetryHandshakeResult::kSignatureVerificationFailed);
 
   // Test PEER_CONNECTION_CLOSED
-  EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(TSI_OK, SSL_ERROR_ZERO_RETURN, 0,
-                                                     X509_V_OK),
+  EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
+                TSI_OK, SSL_ERROR_ZERO_RETURN, 0, X509_V_OK),
             TlsTelemetryHandshakeResult::kPeerConnectionClosed);
 
   // Test SSL_ERROR_SYSCALL
-  EXPECT_EQ(
-      MapSslErrorToTlsTelemetryHandshakeResult(TSI_OK, SSL_ERROR_SYSCALL, 0, X509_V_OK),
-      TlsTelemetryHandshakeResult::kInternalSystemError);
+  EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(TSI_OK, SSL_ERROR_SYSCALL,
+                                                     0, X509_V_OK),
+            TlsTelemetryHandshakeResult::kInternalSystemError);
 
   // Test SSL_ERROR_SSL reason code mappings
   // Cipher suite mismatch
@@ -100,8 +101,8 @@ TEST(SslTelemetryUtilsTest,
   // Protocol version unsupported
   EXPECT_EQ(
       MapSslErrorToTlsTelemetryHandshakeResult(
-          TSI_OK, SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_UNSUPPORTED_PROTOCOL),
-          X509_V_OK),
+          TSI_OK, SSL_ERROR_SSL,
+          TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_UNSUPPORTED_PROTOCOL), X509_V_OK),
       TlsTelemetryHandshakeResult::kProtocolVersionUnsupported);
   // Inappropriate fallback
   EXPECT_EQ(
@@ -119,8 +120,8 @@ TEST(SslTelemetryUtilsTest,
 #endif
   // Signature verification failed
   EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
-                TSI_OK, SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_BAD_SIGNATURE),
-                X509_V_OK),
+                TSI_OK, SSL_ERROR_SSL,
+                TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_BAD_SIGNATURE), X509_V_OK),
             TlsTelemetryHandshakeResult::kSignatureVerificationFailed);
   // Decryption failed
   EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
@@ -129,20 +130,20 @@ TEST(SslTelemetryUtilsTest,
             TlsTelemetryHandshakeResult::kDecryptionFailed);
   // Key exchange failure
   EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
-                TSI_OK, SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_WRONG_CURVE),
-                X509_V_OK),
+                TSI_OK, SSL_ERROR_SSL,
+                TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_WRONG_CURVE), X509_V_OK),
             TlsTelemetryHandshakeResult::kKeyExchangeFailure);
   // Unexpected message
   EXPECT_EQ(
       MapSslErrorToTlsTelemetryHandshakeResult(
-          TSI_OK, SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_UNEXPECTED_MESSAGE),
-          X509_V_OK),
+          TSI_OK, SSL_ERROR_SSL,
+          TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_UNEXPECTED_MESSAGE), X509_V_OK),
       TlsTelemetryHandshakeResult::kUnexpectedMessage);
   // Handshake timeout
   EXPECT_EQ(
       MapSslErrorToTlsTelemetryHandshakeResult(
-          TSI_OK, SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_READ_TIMEOUT_EXPIRED),
-          X509_V_OK),
+          TSI_OK, SSL_ERROR_SSL,
+          TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_READ_TIMEOUT_EXPIRED), X509_V_OK),
       TlsTelemetryHandshakeResult::kHandshakeTimeout);
   // Certificate verification failures delegation
   EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
@@ -164,17 +165,18 @@ TEST(SslTelemetryUtilsTest,
       TlsTelemetryHandshakeResult::kPeerCertificateRequiredButMissing);
   // Internal system errors
   EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
-                TSI_OK, SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE),
-                X509_V_OK),
+                TSI_OK, SSL_ERROR_SSL,
+                TEST_ERR_PACK(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE), X509_V_OK),
             TlsTelemetryHandshakeResult::kInternalSystemError);
   EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
-                TSI_OK, SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, ERR_R_INTERNAL_ERROR),
-                X509_V_OK),
+                TSI_OK, SSL_ERROR_SSL,
+                TEST_ERR_PACK(ERR_LIB_SSL, ERR_R_INTERNAL_ERROR), X509_V_OK),
             TlsTelemetryHandshakeResult::kInternalSystemError);
   // Unknown / generic SSL error
-  EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
-                TSI_OK, SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, 9999), X509_V_OK),
-            TlsTelemetryHandshakeResult::kUnknownFailure);
+  EXPECT_EQ(
+      MapSslErrorToTlsTelemetryHandshakeResult(
+          TSI_OK, SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, 9999), X509_V_OK),
+      TlsTelemetryHandshakeResult::kUnknownFailure);
 }
 
 #if defined(OPENSSL_IS_BORINGSSL)
@@ -185,8 +187,8 @@ TEST(SslTelemetryUtilsTest,
   // Extra Cipher suite mismatch cases
   EXPECT_EQ(
       MapSslErrorToTlsTelemetryHandshakeResult(
-          TSI_OK, SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_NO_CIPHERS_AVAILABLE),
-          X509_V_OK),
+          TSI_OK, SSL_ERROR_SSL,
+          TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_NO_CIPHERS_AVAILABLE), X509_V_OK),
       TlsTelemetryHandshakeResult::kCipherSuiteMismatch);
   EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
                 TSI_OK, SSL_ERROR_SSL,
@@ -203,8 +205,8 @@ TEST(SslTelemetryUtilsTest,
       TlsTelemetryHandshakeResult::kCipherSuiteMismatch);
   EXPECT_EQ(
       MapSslErrorToTlsTelemetryHandshakeResult(
-          TSI_OK, SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_UNSUPPORTED_CIPHER),
-          X509_V_OK),
+          TSI_OK, SSL_ERROR_SSL,
+          TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_UNSUPPORTED_CIPHER), X509_V_OK),
       TlsTelemetryHandshakeResult::kCipherSuiteMismatch);
   EXPECT_EQ(
       MapSslErrorToTlsTelemetryHandshakeResult(
@@ -229,8 +231,8 @@ TEST(SslTelemetryUtilsTest,
             TlsTelemetryHandshakeResult::kProtocolVersionUnsupported);
   EXPECT_EQ(
       MapSslErrorToTlsTelemetryHandshakeResult(
-          TSI_OK, SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_UNKNOWN_SSL_VERSION),
-          X509_V_OK),
+          TSI_OK, SSL_ERROR_SSL,
+          TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_UNKNOWN_SSL_VERSION), X509_V_OK),
       TlsTelemetryHandshakeResult::kProtocolVersionUnsupported);
   EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
                 TSI_OK, SSL_ERROR_SSL,
@@ -238,8 +240,8 @@ TEST(SslTelemetryUtilsTest,
             TlsTelemetryHandshakeResult::kProtocolVersionUnsupported);
   EXPECT_EQ(
       MapSslErrorToTlsTelemetryHandshakeResult(
-          TSI_OK, SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_WRONG_VERSION_NUMBER),
-          X509_V_OK),
+          TSI_OK, SSL_ERROR_SSL,
+          TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_WRONG_VERSION_NUMBER), X509_V_OK),
       TlsTelemetryHandshakeResult::kProtocolVersionUnsupported);
   EXPECT_EQ(
       MapSslErrorToTlsTelemetryHandshakeResult(
@@ -289,8 +291,8 @@ TEST(SslTelemetryUtilsTest,
   // Extra Cryptographic signature and decryption cases
   EXPECT_EQ(
       MapSslErrorToTlsTelemetryHandshakeResult(
-          TSI_OK, SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_WRONG_SIGNATURE_TYPE),
-          X509_V_OK),
+          TSI_OK, SSL_ERROR_SSL,
+          TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_WRONG_SIGNATURE_TYPE), X509_V_OK),
       TlsTelemetryHandshakeResult::kSignatureVerificationFailed);
   EXPECT_EQ(
       MapSslErrorToTlsTelemetryHandshakeResult(
@@ -304,8 +306,8 @@ TEST(SslTelemetryUtilsTest,
                 X509_V_OK),
             TlsTelemetryHandshakeResult::kDecryptionFailed);
   EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
-                TSI_OK, SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_BAD_ECPOINT),
-                X509_V_OK),
+                TSI_OK, SSL_ERROR_SSL,
+                TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_BAD_ECPOINT), X509_V_OK),
             TlsTelemetryHandshakeResult::kKeyExchangeFailure);
 
   // Extra Unexpected message cases
@@ -332,8 +334,8 @@ TEST(SslTelemetryUtilsTest,
             TlsTelemetryHandshakeResult::kPeerCertificateRequiredButMissing);
   EXPECT_EQ(
       MapSslErrorToTlsTelemetryHandshakeResult(
-          TSI_OK, SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_NO_CERTIFICATE_SET),
-          X509_V_OK),
+          TSI_OK, SSL_ERROR_SSL,
+          TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_NO_CERTIFICATE_SET), X509_V_OK),
       TlsTelemetryHandshakeResult::kPeerCertificateRequiredButMissing);
   EXPECT_EQ(
       MapSslErrorToTlsTelemetryHandshakeResult(
@@ -352,15 +354,15 @@ TEST(SslTelemetryUtilsTest,
           X509_V_OK),
       TlsTelemetryHandshakeResult::kPeerCertificateRequiredButMissing);
   EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
-                TSI_OK, SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_DECODE_ERROR),
-                X509_V_OK),
+                TSI_OK, SSL_ERROR_SSL,
+                TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_DECODE_ERROR), X509_V_OK),
             TlsTelemetryHandshakeResult::kCertificateMalformed);
 
   // Extra Internal errors
-  EXPECT_EQ(
-      MapSslErrorToTlsTelemetryHandshakeResult(
-          TSI_OK, SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, ERR_R_OVERFLOW), X509_V_OK),
-      TlsTelemetryHandshakeResult::kInternalSystemError);
+  EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
+                TSI_OK, SSL_ERROR_SSL,
+                TEST_ERR_PACK(ERR_LIB_SSL, ERR_R_OVERFLOW), X509_V_OK),
+            TlsTelemetryHandshakeResult::kInternalSystemError);
 }
 
 #else  // !defined(OPENSSL_IS_BORINGSSL)
@@ -371,8 +373,8 @@ TEST(SslTelemetryUtilsTest,
   // Extra OpenSSL-only cipher suite mismatch cases
   EXPECT_EQ(
       MapSslErrorToTlsTelemetryHandshakeResult(
-          TSI_OK, SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_NO_CIPHERS_AVAILABLE),
-          X509_V_OK),
+          TSI_OK, SSL_ERROR_SSL,
+          TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_NO_CIPHERS_AVAILABLE), X509_V_OK),
       TlsTelemetryHandshakeResult::kCipherSuiteMismatch);
   EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
                 TSI_OK, SSL_ERROR_SSL,
@@ -396,8 +398,8 @@ TEST(SslTelemetryUtilsTest,
             TlsTelemetryHandshakeResult::kProtocolVersionUnsupported);
   EXPECT_EQ(
       MapSslErrorToTlsTelemetryHandshakeResult(
-          TSI_OK, SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_UNKNOWN_SSL_VERSION),
-          X509_V_OK),
+          TSI_OK, SSL_ERROR_SSL,
+          TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_UNKNOWN_SSL_VERSION), X509_V_OK),
       TlsTelemetryHandshakeResult::kProtocolVersionUnsupported);
   EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
                 TSI_OK, SSL_ERROR_SSL,
@@ -405,8 +407,8 @@ TEST(SslTelemetryUtilsTest,
             TlsTelemetryHandshakeResult::kProtocolVersionUnsupported);
   EXPECT_EQ(
       MapSslErrorToTlsTelemetryHandshakeResult(
-          TSI_OK, SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_WRONG_VERSION_NUMBER),
-          X509_V_OK),
+          TSI_OK, SSL_ERROR_SSL,
+          TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_WRONG_VERSION_NUMBER), X509_V_OK),
       TlsTelemetryHandshakeResult::kProtocolVersionUnsupported);
 
   // Extra OpenSSL-only unexpected message cases
@@ -428,8 +430,8 @@ TEST(SslTelemetryUtilsTest,
             TlsTelemetryHandshakeResult::kPeerCertificateRequiredButMissing);
   EXPECT_EQ(
       MapSslErrorToTlsTelemetryHandshakeResult(
-          TSI_OK, SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_NO_CERTIFICATE_SET),
-          X509_V_OK),
+          TSI_OK, SSL_ERROR_SSL,
+          TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_NO_CERTIFICATE_SET), X509_V_OK),
       TlsTelemetryHandshakeResult::kPeerCertificateRequiredButMissing);
   EXPECT_EQ(
       MapSslErrorToTlsTelemetryHandshakeResult(

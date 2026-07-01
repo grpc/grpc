@@ -3231,7 +3231,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
   ssl_context = SSL_CTX_new(TLS_method());
 #else
-    ssl_context = SSL_CTX_new(TLSv1_2_method());
+  ssl_context = SSL_CTX_new(TLSv1_2_method());
 #endif
 #if OPENSSL_VERSION_NUMBER >= 0x10101000 && !defined(LIBRESSL_VERSION_NUMBER)
   SSL_CTX_set_options(ssl_context, SSL_OP_NO_RENEGOTIATION);
@@ -3328,7 +3328,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
       X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
 
 #else
-        X509_VERIFY_PARAM* param = cert_store->param;
+      X509_VERIFY_PARAM* param = cert_store->param;
 #endif
 
       X509_VERIFY_PARAM_set_depth(param, kMaxChainLength);
@@ -3437,7 +3437,7 @@ tsi_result tsi_configure_server_ssl_context(
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
   ssl_context.ssl_ctx = SSL_CTX_new(TLS_method());
 #else
-    ssl_context.ssl_ctx = SSL_CTX_new(TLSv1_2_method());
+  ssl_context.ssl_ctx = SSL_CTX_new(TLSv1_2_method());
 #endif
 #if OPENSSL_VERSION_NUMBER >= 0x10101000 && !defined(LIBRESSL_VERSION_NUMBER)
   SSL_CTX_set_options(ssl_context.ssl_ctx, SSL_OP_NO_RENEGOTIATION);
@@ -3642,9 +3642,9 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
                                           SelectCertificateCallback);
         return TSI_OK;
 #else
-          VLOG(2) << "CertificateSelector is not supported with this SSL "
-                     "implementation.";
-          return TSI_UNIMPLEMENTED;
+        VLOG(2) << "CertificateSelector is not supported with this SSL "
+                   "implementation.";
+        return TSI_UNIMPLEMENTED;
 #endif
       });
   if (result != TSI_OK) {
