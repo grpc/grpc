@@ -1949,7 +1949,6 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
 TEST_P(AsyncEnd2endServerTryCancelTest, ClientStreamingServerTryCancelBefore) {
   // TODO(akshitpatel) [PH2][P3][Client] Fix bug.
   SKIP_TEST_FOR_PH2_CLIENT("WIP `Check failed` for PH2");
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   TestClientStreamingServerCancel(CANCEL_BEFORE_PROCESSING);
 }
 
