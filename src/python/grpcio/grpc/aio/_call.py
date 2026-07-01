@@ -622,7 +622,7 @@ class UnaryStreamCall(
     """
 
     _request: RequestType
-    _send_unary_request_task: asyncio.Task
+    _send_unary_request_task: asyncio.Task[None]
 
     # pylint: disable=too-many-arguments
     def __init__(
