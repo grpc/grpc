@@ -31,6 +31,7 @@
 #include <utility>
 #include <vector>
 
+#include "src/core/client_channel/client_channel_args.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_verifier.h"
 #include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
@@ -372,7 +373,7 @@ void TlsChannelSecurityConnector::add_handshakers(
     std::string backend_service(
         args.GetString(GRPC_ARG_BACKEND_SERVICE).value_or(""));
     std::string locality(args.GetString(GRPC_ARG_LB_LOCALITY).value_or(""));
-    std::string target(args.GetString("grpc.server_uri").value_or(""));
+    std::string target(args.GetString(GRPC_ARG_SERVER_URI).value_or(""));
     tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
         client_handshaker_factory_, server_name_indication,
         /*network_bio_buf_size=*/0,

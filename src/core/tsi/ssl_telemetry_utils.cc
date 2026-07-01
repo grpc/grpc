@@ -188,15 +188,12 @@ TlsTelemetryHandshakeResult MapSslErrorToTlsTelemetryHandshakeResult(
           break;
         // Certificate verification failures
         case SSL_R_CERTIFICATE_VERIFY_FAILED: {
-          TlsTelemetryHandshakeResult verify_res =
-              MapVerifyResultToTlsTelemetryHandshakeResult(verify_result);
-          // See if there is a more graunlar verify failure, if not use the
-          // certification verification failed result.
-          if (verify_res == TlsTelemetryHandshakeResult::kSuccess) {
+          result = MapVerifyResultToTlsTelemetryHandshakeResult(verify_result);
+          // If there is not a more granular failure, use the generic
+          // certificate verification failed result.
+          if (result == TlsTelemetryHandshakeResult::kSuccess) {
             result =
                 TlsTelemetryHandshakeResult::kCertificateVerificationFailed;
-          } else {
-            result = verify_res;
           }
           break;
         }

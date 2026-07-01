@@ -4841,6 +4841,7 @@ grpc_cc_library(
     deps = [
         "arena_promise",
         "channel_args",
+        "client_channel_args",
         "closure",
         "error",
         "grpc_check",
@@ -4975,6 +4976,7 @@ grpc_cc_library(
     deps = [
         "arena_promise",
         "channel_args",
+        "client_channel_args",
         "closure",
         "down_cast",
         "error",
