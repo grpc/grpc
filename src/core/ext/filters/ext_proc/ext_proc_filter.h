@@ -18,17 +18,17 @@
 #define GRPC_SRC_CORE_EXT_FILTERS_EXT_PROC_EXT_PROC_FILTER_H
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
-#include <optional>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/util/matchers.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/unique_type_name.h"
-#include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/blackboard.h"
-#include "src/core/util/matchers.h"
+#include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/xds_client/xds_transport.h"
 
 namespace grpc_core {
@@ -88,8 +88,7 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
              observability_mode == o.observability_mode &&
              deferred_close_timeout == o.deferred_close_timeout &&
              transport_factory == o.transport_factory &&
-             instance_name == o.instance_name &&
-             channel == o.channel;
+             instance_name == o.instance_name && channel == o.channel;
     }
 
     std::string ToString() const override;

@@ -292,6 +292,58 @@ TEST_P(HttpConnectionManagerTest, MinimumValidConfig) {
             Duration::Zero());
 }
 
+TEST_P(HttpConnectionManagerTest, LdsDisabledTrue) {
+  HttpConnectionManager hcm;
+  auto* filter = hcm.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(Router());
+  filter->set_disabled(true);
+  auto* rds = hcm.mutable_rds();
+  rds->set_route_config_name("rds_name");
+  rds->mutable_config_source()->mutable_self();
+  Listener listener = MakeListener(hcm);
+  std::string serialized_resource;
+  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsListenerResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  auto& resource =
+      static_cast<const XdsListenerResource&>(**decode_result.resource);
+  auto http_connection_manager = GetHCMConfig(resource);
+  ASSERT_TRUE(http_connection_manager.has_value());
+  ASSERT_EQ(http_connection_manager->http_filters.size(), 1UL);
+  auto& router = http_connection_manager->http_filters[0];
+  EXPECT_EQ(router.name, "router");
+  EXPECT_TRUE(router.disabled);
+}
+
+TEST_P(HttpConnectionManagerTest, LdsDisabledFalse) {
+  HttpConnectionManager hcm;
+  auto* filter = hcm.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(Router());
+  filter->set_disabled(false);
+  auto* rds = hcm.mutable_rds();
+  rds->set_route_config_name("rds_name");
+  rds->mutable_config_source()->mutable_self();
+  Listener listener = MakeListener(hcm);
+  std::string serialized_resource;
+  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsListenerResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  auto& resource =
+      static_cast<const XdsListenerResource&>(**decode_result.resource);
+  auto http_connection_manager = GetHCMConfig(resource);
+  ASSERT_TRUE(http_connection_manager.has_value());
+  ASSERT_EQ(http_connection_manager->http_filters.size(), 1UL);
+  auto& router = http_connection_manager->http_filters[0];
+  EXPECT_EQ(router.name, "router");
+  EXPECT_FALSE(router.disabled);
+}
+
 TEST_P(HttpConnectionManagerTest, RdsConfigSourceUsesAds) {
   HttpConnectionManager hcm;
   auto* filter = hcm.add_http_filters();

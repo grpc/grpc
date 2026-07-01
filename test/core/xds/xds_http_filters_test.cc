@@ -2396,6 +2396,36 @@ TEST_F(XdsExtProcFilterTest, ParseOverrideConfigEmpty) {
   EXPECT_EQ(config, nullptr);
 }
 
+TEST_F(XdsExtProcFilterTest, ParseOverrideConfigWithUnsupportedFields) {
+  ExtProcPerRoute proto;
+  proto.set_disabled(true);
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      filter_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  EXPECT_EQ(config, nullptr);
+}
+
+TEST_F(XdsExtProcFilterTest, ParseOverrideConfigInvalid) {
+  ExtProcPerRoute proto;
+  auto* overrides = proto.mutable_overrides();
+  auto* grpc_service = overrides->mutable_grpc_service();
+  grpc_service->mutable_envoy_grpc()->set_cluster_name("some_cluster");
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      filter_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value[envoy.extensions.filters.http.ext_proc.v3"
+            ".ExtProcPerRoute].overrides.grpc_service.google_grpc "
+            "error:field not set]")
+      << status;
+}
+
 TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigInvalidTimeout) {
   ExternalProcessor proto;
   auto* grpc_service = proto.mutable_grpc_service();

@@ -506,10 +506,11 @@ TEST_P(TypedPerFilterConfigTest, FilterConfigInvalid) {
       << decode_result.resource.status();
 }
 
-TEST_P(TypedPerFilterConfigTest, FilterConfigWrapper) {
+TEST_P(TypedPerFilterConfigTest, RdsDisabledFalseWithConfig) {
   envoy::extensions::filters::http::fault::v3::HTTPFault fault_config;
   fault_config.mutable_abort()->set_grpc_status(GRPC_STATUS_PERMISSION_DENIED);
   envoy::config::route::v3::FilterConfig filter_config_wrapper;
+  filter_config_wrapper.set_disabled(false);
   filter_config_wrapper.mutable_config()->PackFrom(fault_config);
   auto* typed_per_filter_config_proto =
       GetTypedPerFilterConfigProto(&route_config_);
@@ -532,6 +533,61 @@ TEST_P(TypedPerFilterConfigTest, FilterConfigWrapper) {
   const auto& filter_config = it->second;
   EXPECT_EQ(filter_config.config_proto_type,
             "envoy.extensions.filters.http.fault.v3.HTTPFault");
+  ASSERT_NE(filter_config.filter_config, nullptr);
+  EXPECT_EQ(filter_config.filter_config->ToString(),
+            "{abort_code=PERMISSION_DENIED, abort_message=\"Fault injected\", "
+            "max_faults=4294967295}");
+  EXPECT_FALSE(filter_config.disabled);
+}
+
+TEST_P(TypedPerFilterConfigTest, RdsDisabledTrueWithoutConfig) {
+  envoy::config::route::v3::FilterConfig filter_config_wrapper;
+  filter_config_wrapper.set_disabled(true);
+  auto* typed_per_filter_config_proto =
+      GetTypedPerFilterConfigProto(&route_config_);
+  (*typed_per_filter_config_proto)["fault"].PackFrom(filter_config_wrapper);
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config_.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  auto& resource =
+      static_cast<const XdsRouteConfigResource&>(**decode_result.resource);
+  auto& typed_per_filter_config = GetTypedPerFilterConfig(resource);
+  ASSERT_EQ(typed_per_filter_config.size(), 1UL);
+  auto it = typed_per_filter_config.begin();
+  ASSERT_NE(it, typed_per_filter_config.end());
+  EXPECT_EQ("fault", it->first);
+  const auto& filter_config = it->second;
+  EXPECT_TRUE(filter_config.disabled);
+  EXPECT_EQ(filter_config.filter_config, nullptr);
+}
+
+TEST_P(TypedPerFilterConfigTest, RdsDisabledTrueWithConfig) {
+  envoy::extensions::filters::http::fault::v3::HTTPFault fault_config;
+  fault_config.mutable_abort()->set_grpc_status(GRPC_STATUS_PERMISSION_DENIED);
+  envoy::config::route::v3::FilterConfig filter_config_wrapper;
+  filter_config_wrapper.set_disabled(true);
+  filter_config_wrapper.mutable_config()->PackFrom(fault_config);
+  auto* typed_per_filter_config_proto =
+      GetTypedPerFilterConfigProto(&route_config_);
+  (*typed_per_filter_config_proto)["fault"].PackFrom(filter_config_wrapper);
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config_.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  auto& resource =
+      static_cast<const XdsRouteConfigResource&>(**decode_result.resource);
+  auto& typed_per_filter_config = GetTypedPerFilterConfig(resource);
+  ASSERT_EQ(typed_per_filter_config.size(), 1UL);
+  auto it = typed_per_filter_config.begin();
+  ASSERT_NE(it, typed_per_filter_config.end());
+  EXPECT_EQ("fault", it->first);
+  const auto& filter_config = it->second;
+  EXPECT_TRUE(filter_config.disabled);
   ASSERT_NE(filter_config.filter_config, nullptr);
   EXPECT_EQ(filter_config.filter_config->ToString(),
             "{abort_code=PERMISSION_DENIED, abort_message=\"Fault injected\", "
@@ -584,11 +640,12 @@ TEST_P(TypedPerFilterConfigTest, FilterConfigWrapperUnparsable) {
       << decode_result.resource.status();
 }
 
-TEST_P(TypedPerFilterConfigTest, FilterConfigWrapperEmptyConfig) {
+TEST_P(TypedPerFilterConfigTest, RdsDisabledFalseWithoutConfig) {
+  envoy::config::route::v3::FilterConfig filter_config_wrapper;
+  filter_config_wrapper.set_disabled(false);
   auto* typed_per_filter_config_proto =
       GetTypedPerFilterConfigProto(&route_config_);
-  (*typed_per_filter_config_proto)["fault"].PackFrom(
-      envoy::config::route::v3::FilterConfig());
+  (*typed_per_filter_config_proto)["fault"].PackFrom(filter_config_wrapper);
   std::string serialized_resource;
   ASSERT_TRUE(route_config_.SerializeToString(&serialized_resource));
   auto* resource_type = XdsRouteConfigResourceType::Get();

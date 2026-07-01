@@ -16,9 +16,10 @@
 
 #include "src/core/ext/filters/ext_proc/ext_proc_filter.h"
 
+#include <grpc/impl/channel_arg_names.h>
+
 #include <string>
 
-#include "grpc/impl/channel_arg_names.h"
 #include "src/core/call/call_spine.h"
 #include "src/core/client_channel/client_channel_args.h"
 #include "src/core/config/core_configuration.h"
@@ -34,17 +35,17 @@ namespace grpc_core {
 
 std::string ExtProcFilter::ProcessingMode::ToString() const {
   std::string result = "{";
-  grpc_core::StrAppend(result, "send_request_headers=");
-  grpc_core::StrAppend(result, send_request_headers ? "true" : "false");
-  grpc_core::StrAppend(result, ", send_response_headers=");
-  grpc_core::StrAppend(result, send_response_headers ? "true" : "false");
-  grpc_core::StrAppend(result, ", send_response_trailers=");
-  grpc_core::StrAppend(result, send_response_trailers ? "true" : "false");
-  grpc_core::StrAppend(result, ", send_request_body=");
-  grpc_core::StrAppend(result, send_request_body ? "true" : "false");
-  grpc_core::StrAppend(result, ", send_response_body=");
-  grpc_core::StrAppend(result, send_response_body ? "true" : "false");
-  grpc_core::StrAppend(result, "}");
+  StrAppend(result, "send_request_headers=");
+  StrAppend(result, send_request_headers ? "true" : "false");
+  StrAppend(result, ", send_response_headers=");
+  StrAppend(result, send_response_headers ? "true" : "false");
+  StrAppend(result, ", send_response_trailers=");
+  StrAppend(result, send_response_trailers ? "true" : "false");
+  StrAppend(result, ", send_request_body=");
+  StrAppend(result, send_request_body ? "true" : "false");
+  StrAppend(result, ", send_response_body=");
+  StrAppend(result, send_response_body ? "true" : "false");
+  StrAppend(result, "}");
   return result;
 }
 
@@ -56,79 +57,79 @@ std::string ExtProcFilter::Config::ToString() const {
   std::string result = "{";
   bool is_first = true;
   if (grpc_service != nullptr) {
-    grpc_core::StrAppend(result, "grpc_service=");
-    grpc_core::StrAppend(result, grpc_service->ToString());
+    StrAppend(result, "grpc_service=");
+    StrAppend(result, grpc_service->ToString());
     is_first = false;
   }
   if (failure_mode_allow) {
-    if (!is_first) grpc_core::StrAppend(result, ", ");
-    grpc_core::StrAppend(result, "failure_mode_allow=true");
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "failure_mode_allow=true");
     is_first = false;
   }
-  if (!is_first) grpc_core::StrAppend(result, ", ");
-  grpc_core::StrAppend(result, "processing_mode=");
-  grpc_core::StrAppend(result, processing_mode.ToString());
+  if (!is_first) StrAppend(result, ", ");
+  StrAppend(result, "processing_mode=");
+  StrAppend(result, processing_mode.ToString());
   is_first = false;
   if (!request_attributes.empty()) {
-    if (!is_first) grpc_core::StrAppend(result, ", ");
-    grpc_core::StrAppend(result, "request_attributes=[");
-    grpc_core::StrAppend(result, absl::StrJoin(request_attributes, ", "));
-    grpc_core::StrAppend(result, "]");
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "request_attributes=[");
+    StrAppend(result, absl::StrJoin(request_attributes, ", "));
+    StrAppend(result, "]");
     is_first = false;
   }
   if (!response_attributes.empty()) {
-    if (!is_first) grpc_core::StrAppend(result, ", ");
-    grpc_core::StrAppend(result, "response_attributes=[");
-    grpc_core::StrAppend(result, absl::StrJoin(response_attributes, ", "));
-    grpc_core::StrAppend(result, "]");
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "response_attributes=[");
+    StrAppend(result, absl::StrJoin(response_attributes, ", "));
+    StrAppend(result, "]");
     is_first = false;
   }
   if (mutation_rules.has_value()) {
-    if (!is_first) grpc_core::StrAppend(result, ", ");
-    grpc_core::StrAppend(result, "mutation_rules=");
-    grpc_core::StrAppend(result, mutation_rules->ToString());
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "mutation_rules=");
+    StrAppend(result, mutation_rules->ToString());
     is_first = false;
   }
   if (!forwarding_allowed_headers.empty()) {
-    if (!is_first) grpc_core::StrAppend(result, ", ");
-    grpc_core::StrAppend(result, "forwarding_allowed_headers=[");
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "forwarding_allowed_headers=[");
     bool first_matcher = true;
     for (const auto& matcher : forwarding_allowed_headers) {
-      if (!first_matcher) grpc_core::StrAppend(result, ", ");
-      grpc_core::StrAppend(result, matcher.ToString());
+      if (!first_matcher) StrAppend(result, ", ");
+      StrAppend(result, matcher.ToString());
       first_matcher = false;
     }
-    grpc_core::StrAppend(result, "]");
+    StrAppend(result, "]");
     is_first = false;
   }
   if (!forwarding_disallowed_headers.empty()) {
-    if (!is_first) grpc_core::StrAppend(result, ", ");
-    grpc_core::StrAppend(result, "forwarding_disallowed_headers=[");
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "forwarding_disallowed_headers=[");
     bool first_matcher = true;
     for (const auto& matcher : forwarding_disallowed_headers) {
-      if (!first_matcher) grpc_core::StrAppend(result, ", ");
-      grpc_core::StrAppend(result, matcher.ToString());
+      if (!first_matcher) StrAppend(result, ", ");
+      StrAppend(result, matcher.ToString());
       first_matcher = false;
     }
-    grpc_core::StrAppend(result, "]");
+    StrAppend(result, "]");
     is_first = false;
   }
   if (disable_immediate_response) {
-    if (!is_first) grpc_core::StrAppend(result, ", ");
-    grpc_core::StrAppend(result, "disable_immediate_response=true");
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "disable_immediate_response=true");
     is_first = false;
   }
   if (observability_mode) {
-    if (!is_first) grpc_core::StrAppend(result, ", ");
-    grpc_core::StrAppend(result, "observability_mode=true");
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "observability_mode=true");
     is_first = false;
   }
   if (deferred_close_timeout != Duration::Zero()) {
-    if (!is_first) grpc_core::StrAppend(result, ", ");
-    grpc_core::StrAppend(result, "deferred_close_timeout=");
-    grpc_core::StrAppend(result, deferred_close_timeout.ToString());
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "deferred_close_timeout=");
+    StrAppend(result, deferred_close_timeout.ToString());
   }
-  grpc_core::StrAppend(result, "}");
+  StrAppend(result, "}");
   return result;
 }
 

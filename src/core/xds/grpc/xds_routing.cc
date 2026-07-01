@@ -154,6 +154,39 @@ bool UnderFraction(const uint32_t fraction_per_million) {
   return random_number < fraction_per_million;
 }
 
+bool IsFilterDisabled(
+    const XdsHttpFilterImpl* filter_impl,
+    const XdsListenerResource::HttpConnectionManager::HttpFilter&
+        hcm_filter_config,
+    const XdsRouteConfigResource::TypedPerFilterConfig*
+        vhost_typed_per_filter_config,
+    const XdsRouteConfigResource::TypedPerFilterConfig*
+        route_typed_per_filter_config,
+    const XdsRouteConfigResource::TypedPerFilterConfig*
+        cluster_weight_typed_per_filter_config) {
+  if (!filter_impl->IsSupportedDisablingOnLdsRds()) return false;
+  if (cluster_weight_typed_per_filter_config != nullptr) {
+    auto it =
+        cluster_weight_typed_per_filter_config->find(hcm_filter_config.name);
+    if (it != cluster_weight_typed_per_filter_config->end()) {
+      return it->second.disabled;
+    }
+  }
+  if (route_typed_per_filter_config != nullptr) {
+    auto it = route_typed_per_filter_config->find(hcm_filter_config.name);
+    if (it != route_typed_per_filter_config->end()) {
+      return it->second.disabled;
+    }
+  }
+  if (vhost_typed_per_filter_config != nullptr) {
+    auto it = vhost_typed_per_filter_config->find(hcm_filter_config.name);
+    if (it != vhost_typed_per_filter_config->end()) {
+      return it->second.disabled;
+    }
+  }
+  return hcm_filter_config.disabled;
+}
+
 }  // namespace
 
 std::optional<size_t> XdsRouting::GetRouteForRequest(
@@ -221,6 +254,10 @@ XdsRouting::RouteConfigFilterChainBuilder::GetDefaultFilterChain() {
     for (size_t i = 0; i < filter_impls_.size(); ++i) {
       auto* filter_impl = filter_impls_[i];
       const auto& filter_config = hcm_filter_configs_[i];
+      if (filter_config.disabled &&
+          filter_impl->IsSupportedDisablingOnLdsRds()) {
+        continue;
+      }
       RefCountedPtr<const FilterConfig> config;
       if (filter_config.filter_config != nullptr) {
         config = filter_impl->MergeConfigs(filter_config.filter_config, nullptr,
@@ -267,6 +304,10 @@ XdsRouting::RouteConfigFilterChainBuilder::VirtualHostFilterChainBuilder::
     for (size_t i = 0; i < route_config_builder_.filter_impls_.size(); ++i) {
       auto* filter_impl = route_config_builder_.filter_impls_[i];
       const auto& filter_config = route_config_builder_.hcm_filter_configs_[i];
+      if (IsFilterDisabled(filter_impl, filter_config,
+                           &vhost_.typed_per_filter_config, nullptr, nullptr)) {
+        continue;
+      }
       RefCountedPtr<const FilterConfig> config;
       if (filter_config.filter_config != nullptr) {
         auto vhost_override_config = GetOverrideConfig(
@@ -301,6 +342,11 @@ XdsRouting::RouteConfigFilterChainBuilder::VirtualHostFilterChainBuilder::
   for (size_t i = 0; i < route_config_builder_.filter_impls_.size(); ++i) {
     auto* filter_impl = route_config_builder_.filter_impls_[i];
     const auto& filter_config = route_config_builder_.hcm_filter_configs_[i];
+    if (IsFilterDisabled(filter_impl, filter_config,
+                         &vhost_.typed_per_filter_config,
+                         &route.typed_per_filter_config, nullptr)) {
+      continue;
+    }
     RefCountedPtr<const FilterConfig> config;
     if (filter_config.filter_config != nullptr) {
       auto vhost_override_config = GetOverrideConfig(
@@ -353,6 +399,12 @@ XdsRouting::RouteConfigFilterChainBuilder::VirtualHostFilterChainBuilder::
   for (size_t i = 0; i < route_config_builder.filter_impls_.size(); ++i) {
     auto* filter_impl = route_config_builder.filter_impls_[i];
     const auto& filter_config = route_config_builder.hcm_filter_configs_[i];
+    if (IsFilterDisabled(filter_impl, filter_config,
+                         &vhost_builder_.vhost_.typed_per_filter_config,
+                         &route_.typed_per_filter_config,
+                         &cluster_weight.typed_per_filter_config)) {
+      continue;
+    }
     RefCountedPtr<const FilterConfig> config;
     if (filter_config.filter_config != nullptr) {
       auto vhost_override_config = GetOverrideConfig(
@@ -462,7 +514,16 @@ XdsRouting::GeneratePerHTTPFilterConfigsForMethodConfig(
       http_filter_registry, http_filters, args,
       [&](const XdsHttpFilterImpl& filter_impl,
           const XdsListenerResource::HttpConnectionManager::HttpFilter&
-              http_filter) {
+              http_filter)
+          -> absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry> {
+        if (IsFilterDisabled(&filter_impl, http_filter,
+                             &vhost.typed_per_filter_config,
+                             &route.typed_per_filter_config,
+                             cluster_weight != nullptr
+                                 ? &cluster_weight->typed_per_filter_config
+                                 : nullptr)) {
+          return XdsHttpFilterImpl::ServiceConfigJsonEntry{};
+        }
         // Find override config, if any.
         const XdsRouteConfigResource::FilterConfigOverride*
             filter_config_override = FindFilterConfigOverride(
@@ -489,7 +550,12 @@ XdsRouting::GeneratePerHTTPFilterConfigsForServiceConfig(
       http_filter_registry, http_filters, args,
       [&](const XdsHttpFilterImpl& filter_impl,
           const XdsListenerResource::HttpConnectionManager::HttpFilter&
-              http_filter) {
+              http_filter)
+          -> absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry> {
+        if (http_filter.disabled &&
+            filter_impl.IsSupportedDisablingOnLdsRds()) {
+          return XdsHttpFilterImpl::ServiceConfigJsonEntry{};
+        }
         return filter_impl.GenerateServiceConfig(http_filter.config);
       });
 }

@@ -27,14 +27,14 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/sync.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_http_composite_filter.h"
+#include "src/core/xds/grpc/xds_http_ext_proc_filter.h"
 #include "src/core/xds/grpc/xds_http_fault_filter.h"
 #include "src/core/xds/grpc/xds_http_gcp_authn_filter.h"
 #include "src/core/xds/grpc/xds_http_rbac_filter.h"
 #include "src/core/xds/grpc/xds_http_stateful_session_filter.h"
 #include "src/core/xds/grpc/xds_metadata_parser.h"
-#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
-#include "src/core/xds/grpc/xds_http_ext_proc_filter.h"
 
 namespace grpc_core {
 

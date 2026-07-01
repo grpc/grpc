@@ -80,6 +80,7 @@ class XdsHttpExtProcFilter final : public XdsHttpFilterImpl {
       Blackboard& blackboard) const override;
   bool IsSupportedOnClients() const override { return true; }
   bool IsSupportedOnServers() const override { return false; }
+  bool IsSupportedDisablingOnLdsRds() const override { return true; }
 };
 
 }  // namespace grpc_core
