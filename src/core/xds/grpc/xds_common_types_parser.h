@@ -29,6 +29,7 @@
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/util/json/json.h"
 #include "src/core/util/matchers.h"
 #include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"

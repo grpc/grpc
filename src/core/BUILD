@@ -6217,6 +6217,52 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_common_types_parser",
+    srcs = [
+        "xds/grpc/xds_common_types_parser.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_common_types_parser.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "re2",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
+        "@com_google_protobuf//upb/json",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "down_cast",
+        "envoy_config_common_mutation_rules_upb",
+        "envoy_config_core_upb",
+        "envoy_type_matcher_upb",
+        "envoy_type_upb",
+        "grpc_matchers",
+        "json",
+        "json_reader",
+        "protobuf_any_upb",
+        "protobuf_duration_upb",
+        "protobuf_struct_upb",
+        "protobuf_struct_upbdefs",
+        "protobuf_wrappers_upb",
+        "resolved_address",
+        "time",
+        "upb_utils",
+        "validation_errors",
+        "xds_common_types",
+        "xds_type_matcher_upb",
+        "xds_type_upb",
+        "//:config",
+        "//:grpc_base",
+        "//:parse_address",
+        "//:xds_client",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_http_filter",
     srcs = [
         "xds/grpc/xds_http_filter.cc",
@@ -6607,7 +6653,6 @@ grpc_cc_library(
         "xds/grpc/xds_bootstrap_grpc_builder.cc",
         "xds/grpc/xds_client_grpc.cc",
         "xds/grpc/xds_cluster_parser.cc",
-        "xds/grpc/xds_common_types_parser.cc",
         "xds/grpc/xds_endpoint_parser.cc",
         "xds/grpc/xds_grpc_service_parser.cc",
         "xds/grpc/xds_http_composite_filter.cc",
@@ -6630,7 +6675,6 @@ grpc_cc_library(
         "xds/grpc/xds_bootstrap_grpc_builder.h",
         "xds/grpc/xds_client_grpc.h",
         "xds/grpc/xds_cluster_parser.h",
-        "xds/grpc/xds_common_types_parser.h",
         "xds/grpc/xds_endpoint_parser.h",
         "xds/grpc/xds_grpc_service_parser.h",
         "xds/grpc/xds_http_composite_filter.h",
@@ -6803,6 +6847,7 @@ grpc_cc_library(
         "xds_cluster",
         "xds_cluster_specifier_plugin",
         "xds_common_types",
+        "xds_common_types_parser",
         "xds_credentials",
         "xds_endpoint",
         "xds_extension_upb",

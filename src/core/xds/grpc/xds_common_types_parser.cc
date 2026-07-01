@@ -16,12 +16,8 @@
 
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 
-#include <grpc/support/json.h>
-#include <stddef.h>
-#include <stdint.h>
-
 #include <algorithm>
-#include <map>
+#include <memory>
 #include <optional>
 #include <string>
 #include <utility>
@@ -53,8 +49,6 @@
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
