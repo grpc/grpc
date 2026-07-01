@@ -29,6 +29,7 @@ from tests_aio.unit._test_base import AioTestBase
 from tests_aio.unit._test_server import TEST_CONTEXT_VAR
 from tests_aio.unit._test_server import start_test_server
 
+_NUM_STREAM_REQUESTS = 5
 _NUM_STREAM_RESPONSES = 5
 _REQUEST_PAYLOAD_SIZE = 7
 _RESPONSE_PAYLOAD_SIZE = 42
@@ -157,6 +158,27 @@ class _CacheInterceptor(aio.ServerInterceptor):
             return wrapper
 
         return wrap_server_method_handler(wrapper, handler)
+
+
+class _RecordingInterceptor(aio.ServerInterceptor):
+    """Records method name and invocation order."""
+
+    def __init__(self, tag: str, record: list) -> None:
+        self.tag = tag
+        self.record = record
+
+    async def intercept_service(
+        self,
+        continuation: Callable[
+            [grpc.HandlerCallDetails], Awaitable[grpc.RpcMethodHandler]
+        ],
+        handler_call_details: grpc.HandlerCallDetails,
+    ) -> grpc.RpcMethodHandler:
+        method = handler_call_details.method
+        if isinstance(method, bytes):
+            method = method.decode()
+        self.record.append((self.tag, method))
+        return await continuation(handler_call_details)
 
 
 async def _create_server_stub_pair(
@@ -460,6 +482,186 @@ class TestServerInterceptor(AioTestBase):
             ],
             record,
         )
+
+
+class TestServerInterceptorWithRegisteredMethods(AioTestBase):
+    _SERVICE_NAME = "test"
+    _UNARY_UNARY = "UnaryUnary"
+    _UNARY_STREAM = "UnaryStream"
+    _STREAM_UNARY = "StreamUnary"
+    _STREAM_STREAM = "StreamStream"
+    _REQUEST = b"\x00\x00\x00"
+    _RESPONSE = b"\x00\x00\x00"
+
+    async def setUp(self):
+        self._method_handlers = {
+            self._UNARY_UNARY: grpc.unary_unary_rpc_method_handler(
+                self._unary_unary_handler
+            ),
+            self._UNARY_STREAM: grpc.unary_stream_rpc_method_handler(
+                self._unary_stream_handler
+            ),
+            self._STREAM_UNARY: grpc.stream_unary_rpc_method_handler(
+                self._stream_unary_handler
+            ),
+            self._STREAM_STREAM: grpc.stream_stream_rpc_method_handler(
+                self._stream_stream_handler
+            ),
+        }
+
+    async def _unary_unary_handler(self, unused_request_iter, unused_context):
+        return self._RESPONSE
+
+    async def _unary_stream_handler(self, unused_request, unused_context):
+        for _ in range(_NUM_STREAM_RESPONSES):
+            yield self._RESPONSE
+
+    async def _stream_unary_handler(self, request_iter, unused_context):
+        for _ in range(_NUM_STREAM_REQUESTS):
+            pass
+        return self._RESPONSE
+
+    async def _stream_stream_handler(self, unused_request_iter, unused_context):
+        for _ in range(_NUM_STREAM_RESPONSES):
+            yield self._RESPONSE
+
+    async def _start_server_with_registered_methods(
+        self, *interceptors: aio.ServerInterceptor
+    ) -> Tuple[aio.Server, int]:
+        server = aio.server(interceptors=interceptors)
+        port = server.add_insecure_port("[::]:0")
+        server.add_registered_method_handlers(
+            self._SERVICE_NAME, self._method_handlers
+        )
+        await server.start()
+        return server, port
+
+    async def test_interceptor_receives_correct_method_unary_unary(self):
+        tag = "i1"
+        record = []
+        fully_qualified_method = f"/{self._SERVICE_NAME}/{self._UNARY_UNARY}"
+
+        server, port = await self._start_server_with_registered_methods(
+            _RecordingInterceptor(tag, record)
+        )
+
+        try:
+            async with grpc.aio.insecure_channel(
+                f"localhost:{port}"
+            ) as channel:
+                multi_callable = channel.unary_unary(
+                    fully_qualified_method, _registered_method=True
+                )
+                await multi_callable(self._REQUEST)
+
+            self.assertEqual(len(record), 1)
+            self.assertEqual(record[0], (tag, fully_qualified_method))
+        finally:
+            await server.stop(0)
+
+    async def test_interceptor_receives_correct_method_unary_stream(self):
+        tag = "i1"
+        record = []
+        fully_qualified_method = f"/{self._SERVICE_NAME}/{self._UNARY_STREAM}"
+
+        server, port = await self._start_server_with_registered_methods(
+            _RecordingInterceptor(tag, record)
+        )
+
+        try:
+            async with grpc.aio.insecure_channel(
+                f"localhost:{port}"
+            ) as channel:
+                multi_callable = channel.unary_stream(
+                    fully_qualified_method, _registered_method=True
+                )
+                async for _ in multi_callable(self._REQUEST):
+                    pass
+
+            self.assertEqual(len(record), 1)
+            self.assertEqual(record[0], (tag, fully_qualified_method))
+        finally:
+            await server.stop(0)
+
+    async def test_interceptor_receives_correct_method_stream_unary(self):
+        tag = "i1"
+        record = []
+        fully_qualified_method = f"/{self._SERVICE_NAME}/{self._STREAM_UNARY}"
+
+        server, port = await self._start_server_with_registered_methods(
+            _RecordingInterceptor(tag, record)
+        )
+
+        try:
+            async with grpc.aio.insecure_channel(
+                f"localhost:{port}"
+            ) as channel:
+                multi_callable = channel.stream_unary(
+                    fully_qualified_method, _registered_method=True
+                )
+                await multi_callable(
+                    iter([self._REQUEST] * _NUM_STREAM_REQUESTS)
+                )
+
+            self.assertEqual(len(record), 1)
+            self.assertEqual(record[0], (tag, fully_qualified_method))
+        finally:
+            await server.stop(0)
+
+    async def test_interceptor_receives_correct_method_stream_stream(self):
+        tag = "i1"
+        record = []
+        fully_qualified_method = f"/{self._SERVICE_NAME}/{self._STREAM_STREAM}"
+
+        server, port = await self._start_server_with_registered_methods(
+            _RecordingInterceptor(tag, record)
+        )
+
+        try:
+            async with grpc.aio.insecure_channel(
+                f"localhost:{port}"
+            ) as channel:
+                multi_callable = channel.stream_stream(
+                    fully_qualified_method, _registered_method=True
+                )
+                async for _ in multi_callable(
+                    iter([self._REQUEST] * _NUM_STREAM_REQUESTS)
+                ):
+                    pass
+
+            self.assertEqual(len(record), 1)
+            self.assertEqual(record[0], (tag, fully_qualified_method))
+        finally:
+            await server.stop(0)
+
+    async def test_multiple_interceptors_execution_order(self):
+        tag_1 = "i1"
+        tag_2 = "i2"
+        tag_3 = "i3"
+        record = []
+        fully_qualified_method = f"/{self._SERVICE_NAME}/{self._UNARY_UNARY}"
+
+        server, port = await self._start_server_with_registered_methods(
+            _RecordingInterceptor(tag_1, record),
+            _RecordingInterceptor(tag_2, record),
+            _RecordingInterceptor(tag_3, record),
+        )
+
+        try:
+            async with grpc.aio.insecure_channel(
+                f"localhost:{port}"
+            ) as channel:
+                multi_callable = channel.unary_unary(
+                    fully_qualified_method, _registered_method=True
+                )
+                await multi_callable(self._REQUEST)
+
+            self.assertEqual(len(record), 3)
+            self.assertEqual(record[0], (tag_1, fully_qualified_method))
+            self.assertEqual(record[1], (tag_2, fully_qualified_method))
+            self.assertEqual(record[2], (tag_3, fully_qualified_method))
+        finally:
+            await server.stop(0)
 
 
 if __name__ == "__main__":
