@@ -101,6 +101,18 @@ grpc_call_error ValidateServerBatch(const grpc_op* ops, size_t nops) {
 
 }  // namespace
 
+absl::string_view ServerCall::GetServerAuthority() const {
+  GRPC_DCHECK(client_initial_metadata_stored_ != nullptr);
+  if (client_initial_metadata_stored_ != nullptr) {
+    const Slice* authority_metadata =
+        client_initial_metadata_stored_->get_pointer(HttpAuthorityMetadata());
+    if (authority_metadata != nullptr) {
+      return authority_metadata->as_string_view();
+    }
+  }
+  return "";
+}
+
 grpc_call_error ServerCall::StartBatch(const grpc_op* ops, size_t nops,
                                        void* notify_tag,
                                        bool is_notify_tag_closure) {
@@ -246,15 +258,13 @@ grpc_call* MakeServerCall(CallHandler call_handler,
                           ServerInterface* server, grpc_completion_queue* cq,
                           grpc_metadata_array* publish_initial_metadata,
                           RefCountedPtr<Arena> parent_arena) {
-  PublishMetadataArray(client_initial_metadata.get(), publish_initial_metadata,
-                       false);
   // TODO(ctiller): ideally we'd put this in the arena with the CallHandler,
   // but there's an ownership problem: CallHandler owns the arena, and so would
   // get destroyed before the base class Call destructor runs, leading to
   // UB/crash. Investigate another path.
   return (new ServerCall(std::move(client_initial_metadata),
                          std::move(call_handler), server, cq,
-                         std::move(parent_arena)))
+                         publish_initial_metadata, std::move(parent_arena)))
       ->c_ptr();
 }
 

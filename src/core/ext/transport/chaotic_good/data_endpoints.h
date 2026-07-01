@@ -450,6 +450,8 @@ class Endpoint final {
     Clock* clock;
     RefCountedPtr<OutputBuffers::Reader> reader;
     Timestamp last_metrics_update = Timestamp::ProcessEpoch();
+    TcpCallTracer::IpAddress local_addr;
+    TcpCallTracer::IpAddress peer_addr;
   };
 
   static auto PullDataPayload(RefCountedPtr<EndpointContext> ctx);

@@ -443,7 +443,7 @@ void ClientCall::OnReceivedStatus(ServerMetadataHandle server_trailing_metadata,
                           .value_or(GRPC_STATUS_UNKNOWN);
   *out_status = status;
   Slice message_slice;
-  if (!IsErrorFlattenEnabled() || status != GRPC_STATUS_OK) {
+  if (status != GRPC_STATUS_OK) {
     if (Slice* message =
             server_trailing_metadata->get_pointer(GrpcMessageMetadata())) {
       message_slice = message->Ref();
