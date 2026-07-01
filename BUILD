@@ -2436,7 +2436,6 @@ grpc_cc_library(
         "//src/core:arena_promise",
         "//src/core:channel_args",
         "//src/core:channel_fwd",
-        "//src/core:client_channel_args",
         "//src/core:closure",
         "//src/core:connection_context",
         "//src/core:context",

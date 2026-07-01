@@ -564,21 +564,17 @@ TEST_P(XdsSecurityTest, TestTlsHandshakeTelemetry) {
       sink_after.GetCount("grpc.client.tls.handshakes",
                           {{"grpc.tls.handshake.result", "OK"},
                            {"grpc.tls.handshake.resumed", "false"},
-                           {"grpc.target", "xds:server.example.com"},
+                           {"grpc.target", absl::StrCat("xds:", kServerName)},
                            {"grpc.lb.locality",
-                            "{region=\"xds_default_locality_region\", "
-                            "zone=\"xds_default_locality_zone\", "
-                            "sub_zone=\"locality0\"}"},
-                           {"grpc.lb.backend_service", "cluster_name"}}),
+                            LocalityNameString("locality0")},
+                           {"grpc.lb.backend_service", kDefaultClusterName}}),
       sink_before.GetCount("grpc.client.tls.handshakes",
                            {{"grpc.tls.handshake.result", "OK"},
                             {"grpc.tls.handshake.resumed", "false"},
-                            {"grpc.target", "xds:server.example.com"},
+                            {"grpc.target", absl::StrCat("xds:", kServerName)},
                             {"grpc.lb.locality",
-                             "{region=\"xds_default_locality_region\", "
-                             "zone=\"xds_default_locality_zone\", "
-                             "sub_zone=\"locality0\"}"},
-                            {"grpc.lb.backend_service", "cluster_name"}}) +
+                             LocalityNameString("locality0")},
+                            {"grpc.lb.backend_service", kDefaultClusterName}}) +
           1);
   // Assert server handshake succeeded.
   EXPECT_EQ(sink_after.GetCount("grpc.server.tls.handshakes",

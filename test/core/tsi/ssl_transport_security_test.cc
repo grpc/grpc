@@ -1545,7 +1545,7 @@ class TestMetricsSink : public MetricsSink {
                  absl::string_view /*name*/, uint64_t /*value*/) override {}
 
   // Returns the accumulated sum of values recorded for the given instrument
-  // name that match the specified subset of labels.
+  // name that match the specified labels.
   uint64_t GetCount(const std::string& instrument_name,
                     const Labels& labels) const {
     auto it = data_.find(instrument_name);
