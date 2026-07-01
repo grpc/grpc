@@ -379,6 +379,7 @@ grpc_cc_test(
         "//:tsi_base",
         "//:tsi_ssl_credentials",
         "//src/core:grpc_tls_certificate_selector",
+        "//src/core:match",
         "//src/core:time",
         "//src/core:wait_for_single_owner",
         "//test/core/event_engine/fuzzing_event_engine",
