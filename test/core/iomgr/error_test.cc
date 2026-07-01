@@ -88,9 +88,7 @@ TEST(ErrorTest, CreateReferencingMany) {
 }
 
 TEST(ErrorTest, PrintErrorString) {
-  grpc_error_handle error = grpc_error_set_int(
-      GRPC_ERROR_CREATE("Error"), grpc_core::StatusIntProperty::kRpcStatus,
-      GRPC_STATUS_UNIMPLEMENTED);
+  grpc_error_handle error = absl::UnimplementedError("Error");
   error =
       grpc_error_set_int(error, grpc_core::StatusIntProperty::kHttp2Error, 666);
   //  VLOG(2) << grpc_core::StatusToString(error);
@@ -98,12 +96,8 @@ TEST(ErrorTest, PrintErrorString) {
 
 TEST(ErrorTest, PrintErrorStringReference) {
   grpc_error_handle children[2];
-  children[0] = grpc_error_set_int(GRPC_ERROR_CREATE("1"),
-                                   grpc_core::StatusIntProperty::kRpcStatus,
-                                   GRPC_STATUS_UNIMPLEMENTED);
-  children[1] = grpc_error_set_int(GRPC_ERROR_CREATE("2sd"),
-                                   grpc_core::StatusIntProperty::kRpcStatus,
-                                   GRPC_STATUS_INTERNAL);
+  children[0] = absl::UnimplementedError("1");
+  children[1] = absl::InternalError("2sd");
 
   grpc_error_handle parent =
       GRPC_ERROR_CREATE_REFERENCING("Parent", children, 2);

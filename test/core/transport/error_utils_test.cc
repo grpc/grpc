@@ -40,9 +40,7 @@ TEST(ErrorUtilsTest, GetErrorGetStatusNone) {
 }
 
 TEST(ErrorUtilsTest, GetErrorGetStatusFlat) {
-  grpc_error_handle error = grpc_error_set_int(
-      GRPC_ERROR_CREATE("Msg"), grpc_core::StatusIntProperty::kRpcStatus,
-      GRPC_STATUS_CANCELLED);
+  grpc_error_handle error = absl::CancelledError("Msg");
   grpc_status_code code;
   std::string message;
   grpc_error_get_status(error, grpc_core::Timestamp(), &code, &message, nullptr,
@@ -53,10 +51,8 @@ TEST(ErrorUtilsTest, GetErrorGetStatusFlat) {
 
 TEST(ErrorUtilsTest, GetErrorGetStatusChild) {
   std::vector<grpc_error_handle> children = {
-      GRPC_ERROR_CREATE("Child1"),
-      grpc_error_set_int(GRPC_ERROR_CREATE("Child2"),
-                         grpc_core::StatusIntProperty::kRpcStatus,
-                         GRPC_STATUS_RESOURCE_EXHAUSTED),
+      absl::UnknownError("Child1"),
+      absl::ResourcesExhaustedError("Child2"),
   };
   grpc_error_handle error = GRPC_ERROR_CREATE_FROM_VECTOR("Parent", &children);
   grpc_status_code code;
@@ -91,19 +87,15 @@ TEST(ErrorUtilsTest, AbslUnavailableToGrpcError) {
   grpc_error_handle error =
       absl_status_to_grpc_error(absl::UnavailableError("Making tea"));
   // Status code checks
-  intptr_t code;
-  ASSERT_TRUE(grpc_error_get_int(
-      error, grpc_core::StatusIntProperty::kRpcStatus, &code));
-  ASSERT_EQ(static_cast<grpc_status_code>(code), GRPC_STATUS_UNAVAILABLE);
+  ASSERT_EQ(static_cast<grpc_status_code>(error.code()),
+            GRPC_STATUS_UNAVAILABLE);
   // Status message checks
   ASSERT_EQ(error.message(), "Making tea");
 }
 
 TEST(ErrorUtilsTest, GrpcErrorUnavailableToAbslStatus) {
-  grpc_error_handle error = grpc_error_set_int(
-      GRPC_ERROR_CREATE(
-          "weighted_target: all children report state TRANSIENT_FAILURE"),
-      grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
+  grpc_error_handle error = absl::UnavailableError(
+      "weighted_target: all children report state TRANSIENT_FAILURE");
   absl::Status status = grpc_error_to_absl_status(error);
   ASSERT_TRUE(absl::IsUnavailable(status));
   ASSERT_EQ(status.message(),
