@@ -654,9 +654,9 @@ void DefaultSslRootStore::InitRootStoreOnce() {
   }
 }
 
-bool IsTlsIdentitiesEmpty(const TlsIdentities& tls_identities) {
+bool IsIdentityCredentialsEmpty(const IdentityCredentials& identity_creds) {
   return Match(
-      tls_identities,
+      identity_creds,
       [](const PemKeyCertPairList& pem_key_cert_pairs) {
         return pem_key_cert_pairs.empty();
       },

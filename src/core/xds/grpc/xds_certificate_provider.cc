@@ -48,8 +48,8 @@ class RootCertificatesWatcher final
       : parent_(std::move(parent)) {}
 
   void OnCertificatesChanged(std::shared_ptr<RootCertInfo> roots,
-                             std::optional<TlsIdentities>
-                             /* tls_identities */) override {
+                             std::optional<IdentityCredentials>
+                             /* identity_creds */) override {
     if (roots != nullptr) {
       parent_->SetKeyMaterials("", roots, std::nullopt);
     }
@@ -81,9 +81,9 @@ class IdentityCertificatesWatcher final
 
   void OnCertificatesChanged(
       std::shared_ptr<RootCertInfo> /* root_certs */,
-      std::optional<TlsIdentities> tls_identities) override {
-    if (tls_identities.has_value()) {
-      parent_->SetKeyMaterials("", nullptr, tls_identities);
+      std::optional<IdentityCredentials> identity_creds) override {
+    if (identity_creds.has_value()) {
+      parent_->SetKeyMaterials("", nullptr, identity_creds);
     }
   }
 

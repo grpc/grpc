@@ -180,15 +180,15 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
 
     void OnCertificatesChanged(
         std::shared_ptr<tsi::RootCertInfo> roots,
-        std::optional<TlsIdentities> tls_identities) override {
+        std::optional<IdentityCredentials> identity_creds) override {
       std::shared_ptr<tsi::RootCertInfo> updated_root;
       if (roots != nullptr) {
         updated_root = std::move(roots);
       }
       PemKeyCertPairList key_cert_pairs;
-      if (tls_identities.has_value()) {
+      if (identity_creds.has_value()) {
         MatchMutable(
-            &(*tls_identities),
+            &(*identity_creds),
             [&](PemKeyCertPairList* pem_key_cert_pairs) {
               key_cert_pairs = std::move(*pem_key_cert_pairs);
             },

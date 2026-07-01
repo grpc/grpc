@@ -116,16 +116,16 @@ class TestCertificatesWatcher
 
   void OnCertificatesChanged(
       std::shared_ptr<tsi::RootCertInfo> roots,
-      std::optional<TlsIdentities> tls_identities) override {
+      std::optional<IdentityCredentials> identity_creds) override {
     if (roots != nullptr) {
       if (roots != root_cert_info_) {
         root_cert_error_ = absl::OkStatus();
         root_cert_info_ = std::move(roots);
       }
     }
-    if (tls_identities.has_value()) {
+    if (identity_creds.has_value()) {
       MatchMutable(
-          &(*tls_identities),
+          &(*identity_creds),
           [this](PemKeyCertPairList* pem_key_cert_pairs) {
             if (*pem_key_cert_pairs != key_cert_pairs_) {
               identity_cert_error_ = absl::OkStatus();
