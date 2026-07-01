@@ -6493,6 +6493,29 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_matcher_input",
+    srcs = [
+        "xds/grpc/xds_matcher_input.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_matcher_input.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    tags = ["nofixdeps"],
+    visibility = ["//bazel:xds_client_grpc"],
+    deps = [
+        "envoy_type_matcher_upb",
+        "upb_utils",
+        "xds_common_types",
+        "xds_matcher",
+        "xds_matcher_context",
+        "//:xds_client",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_cluster_specifier_plugin",
     srcs = [
         "xds/grpc/xds_cluster_specifier_plugin.cc",
@@ -6540,7 +6563,6 @@ grpc_cc_library(
         "xds/grpc/xds_lb_policy_registry.cc",
         "xds/grpc/xds_listener_parser.cc",
         "xds/grpc/xds_matcher_action.cc",
-        "xds/grpc/xds_matcher_input.cc",
         "xds/grpc/xds_matcher_parse.cc",
         "xds/grpc/xds_metadata_parser.cc",
         "xds/grpc/xds_route_config_parser.cc",
@@ -6562,7 +6584,6 @@ grpc_cc_library(
         "xds/grpc/xds_lb_policy_registry.h",
         "xds/grpc/xds_listener_parser.h",
         "xds/grpc/xds_matcher_action.h",
-        "xds/grpc/xds_matcher_input.h",
         "xds/grpc/xds_matcher_parse.h",
         "xds/grpc/xds_metadata_parser.h",
         "xds/grpc/xds_route_config_parser.h",
@@ -6733,6 +6754,7 @@ grpc_cc_library(
         "xds_listener",
         "xds_matcher",
         "xds_matcher_context",
+        "xds_matcher_input",
         "xds_matcher_upb",
         "xds_metadata",
         "xds_route_config",
