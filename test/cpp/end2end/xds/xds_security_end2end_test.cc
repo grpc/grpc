@@ -52,6 +52,7 @@
 #include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/fake/fake_resolver.h"
+#include "src/core/tsi/tls_telemetry.h"
 #include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -62,6 +63,7 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/echo_messages.pb.h"
 #include "test/core/test_util/audit_logging_utils.h"
+#include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/scoped_env_var.h"
@@ -252,6 +254,13 @@ FakeCertificateProvider::CertDataMapWrapper* g_fake2_cert_data_map = nullptr;
 class XdsSecurityTest : public XdsEnd2endTest {
  protected:
   void SetUp() override {
+    stats_plugin_ =
+        grpc_core::FakeStatsPluginBuilder()
+            .UseDisabledByDefaultMetrics(true)
+            .SetLabelsOfInterest(
+                {"grpc.tls.handshake.result", "grpc.tls.handshake.resumed",
+                 "grpc.target", "grpc.lb.locality", "grpc.lb.backend_service"})
+            .BuildAndRegister();
     XdsBootstrapBuilder builder = MakeBootstrapBuilder();
     builder.AddCertificateProviderPlugin("fake_plugin1", "fake1");
     builder.AddCertificateProviderPlugin("fake_plugin2", "fake2");
@@ -296,6 +305,12 @@ class XdsSecurityTest : public XdsEnd2endTest {
         {"locality0", CreateEndpointsForBackends(0, 1)},
     });
     balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  }
+
+  void TearDown() override {
+    grpc_core::GlobalStatsPluginRegistryTestPeer::
+        ResetGlobalStatsPluginRegistry();
+    XdsEnd2endTest::TearDown();
   }
 
   void MaybeSetUpstreamTlsContextOnCluster(
@@ -419,6 +434,7 @@ class XdsSecurityTest : public XdsEnd2endTest {
   std::vector<std::string> authenticated_identity_;
   std::vector<std::string> fallback_authenticated_identity_;
   int backend_index_ = 0;
+  std::shared_ptr<grpc_core::FakeStatsPlugin> stats_plugin_;
 };
 
 INSTANTIATE_TEST_SUITE_P(XdsTest, XdsSecurityTest,
@@ -471,6 +487,102 @@ TEST_P(XdsSecurityTest, UseSystemRootCerts) {
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
   CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_timeout_ms(5000));
+}
+
+class TestMetricsSink : public grpc_core::MetricsSink {
+ public:
+  using Labels = std::map<std::string, std::string>;
+
+  void Counter(grpc_core::InstrumentLabelList label_keys,
+               absl::Span<const std::string> label, absl::string_view name,
+               uint64_t value) override {
+    EXPECT_EQ(label_keys.size(), label.size());
+    Labels labels;
+    for (size_t i = 0; i < label_keys.size(); ++i) {
+      labels[std::string(label_keys[i].label())] = label[i];
+    }
+    data_[std::string(name)][labels] += value;
+  }
+  void UpDownCounter(grpc_core::InstrumentLabelList /*label_keys*/,
+                     absl::Span<const std::string> /*label*/,
+                     absl::string_view /*name*/, uint64_t /*value*/) override {}
+  void Histogram(grpc_core::InstrumentLabelList /*label_keys*/,
+                 absl::Span<const std::string> /*label*/,
+                 absl::string_view /*name*/,
+                 grpc_core::HistogramBuckets /*bounds*/,
+                 absl::Span<const uint64_t> /*counts*/) override {}
+  void DoubleGauge(grpc_core::InstrumentLabelList /*label_keys*/,
+                   absl::Span<const std::string> /*labels*/,
+                   absl::string_view /*name*/, double /*value*/) override {}
+  void IntGauge(grpc_core::InstrumentLabelList /*label_keys*/,
+                absl::Span<const std::string> /*labels*/,
+                absl::string_view /*name*/, int64_t /*value*/) override {}
+  void UintGauge(grpc_core::InstrumentLabelList /*label_keys*/,
+                 absl::Span<const std::string> /*labels*/,
+                 absl::string_view /*name*/, uint64_t /*value*/) override {}
+
+  uint64_t GetCount(const std::string& instrument_name,
+                    const Labels& subset) const {
+    auto it = data_.find(instrument_name);
+    if (it == data_.end()) return 0;
+    uint64_t sum = 0;
+    for (const auto& kv : it->second) {
+      const auto& labels = kv.first;
+      bool match = true;
+      for (const auto& sub_kv : subset) {
+        auto val_it = labels.find(sub_kv.first);
+        if (val_it == labels.end() || val_it->second != sub_kv.second) {
+          match = false;
+          break;
+        }
+      }
+      if (match) {
+        sum += kv.second;
+      }
+    }
+    return sum;
+  }
+
+ private:
+  std::map<std::string, std::map<Labels, uint64_t>> data_;
+};
+
+TEST_P(XdsSecurityTest, TestTlsHandshakeTelemetry) {
+  TestMetricsSink sink_before;
+  grpc_core::MetricsQuery()
+      .OnlyMetrics({"grpc.client.tls.handshakes", "grpc.server.tls.handshakes"})
+      .Run(stats_plugin_->GetCollectionScope(), sink_before);
+  g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
+  UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
+                                          "", {}, authenticated_identity_);
+  TestMetricsSink sink_after;
+  grpc_core::MetricsQuery()
+      .OnlyMetrics({"grpc.client.tls.handshakes", "grpc.server.tls.handshakes"})
+      .Run(stats_plugin_->GetCollectionScope(), sink_after);
+  // Assert client handshake succeeded.
+  EXPECT_EQ(sink_after.GetCount(
+                "grpc.client.tls.handshakes",
+                {{"grpc.tls.handshake.result", "OK"},
+                 {"grpc.tls.handshake.resumed", "false"},
+                 {"grpc.target", absl::StrCat("xds:", kServerName)},
+                 {"grpc.lb.locality", LocalityNameString("locality0")},
+                 {"grpc.lb.backend_service", kDefaultClusterName}}),
+            sink_before.GetCount(
+                "grpc.client.tls.handshakes",
+                {{"grpc.tls.handshake.result", "OK"},
+                 {"grpc.tls.handshake.resumed", "false"},
+                 {"grpc.target", absl::StrCat("xds:", kServerName)},
+                 {"grpc.lb.locality", LocalityNameString("locality0")},
+                 {"grpc.lb.backend_service", kDefaultClusterName}}) +
+                1);
+  // Assert server handshake succeeded.
+  EXPECT_EQ(sink_after.GetCount("grpc.server.tls.handshakes",
+                                {{"grpc.tls.handshake.result", "OK"},
+                                 {"grpc.tls.handshake.resumed", "false"}}),
+            sink_before.GetCount("grpc.server.tls.handshakes",
+                                 {{"grpc.tls.handshake.result", "OK"},
+                                  {"grpc.tls.handshake.resumed", "false"}}) +
+                1);
 }
 
 TEST_P(XdsSecurityTest, TestMtlsConfigurationWithNoSanMatchers) {

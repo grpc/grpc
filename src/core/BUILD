@@ -4844,6 +4844,7 @@ grpc_cc_library(
     deps = [
         "arena_promise",
         "channel_args",
+        "client_channel_args",
         "closure",
         "error",
         "grpc_check",
@@ -4978,6 +4979,7 @@ grpc_cc_library(
     deps = [
         "arena_promise",
         "channel_args",
+        "client_channel_args",
         "closure",
         "down_cast",
         "error",
@@ -11721,6 +11723,22 @@ grpc_cc_library(
         "//:transport_auth_context",
         "//:uri",
         "//src/core:default_event_engine",
+    ],
+)
+
+grpc_cc_library(
+    name = "tls_telemetry",
+    srcs = [
+        "tsi/tls_telemetry.cc",
+    ],
+    hdrs = [
+        "tsi/tls_telemetry.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    deps = [
+        "instrument",
     ],
 )
 

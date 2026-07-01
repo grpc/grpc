@@ -191,7 +191,9 @@ class SpiffeSslTransportSecurityTest
       EXPECT_EQ(tsi_ssl_client_handshaker_factory_create_handshaker(
                     client_handshaker_factory_, nullptr, 0, 0,
                     /*alpn_preferred_protocol_list=*/std::nullopt,
-                    /*collection_scope=*/nullptr, &base_.client_handshaker),
+                    /*collection_scope=*/nullptr, /*target=*/"",
+                    /*locality=*/"", /*backend_service=*/"",
+                    &base_.client_handshaker),
                 TSI_OK);
       EXPECT_EQ(tsi_ssl_server_handshaker_factory_create_handshaker(
                     server_handshaker_factory_, 0, 0,

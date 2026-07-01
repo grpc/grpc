@@ -263,6 +263,7 @@ tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
     size_t ssl_bio_buf_size,
     std::optional<std::string> alpn_preferred_protocol_list,
     grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope,
+    std::string target, std::string locality, std::string backend_service,
     tsi_handshaker** handshaker);
 
 // Increments reference count of the client handshaker factory.
