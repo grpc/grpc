@@ -37,7 +37,7 @@ from . import _base_call  # pyright: ignore[reportPrivateUsage]
 from ._metadata import Metadata
 from ._typing import DeserializingFunction
 from ._typing import DoneCallbackType
-from ._typing import EOFType # pyright: ignore[reportUnknownVariableType]
+from ._typing import EOFType
 from ._typing import MetadataType
 from ._typing import MetadatumType
 from ._typing import RequestIterableType
@@ -293,9 +293,11 @@ class _APIStyle(enum.IntEnum):
 
 
 class _UnaryResponseMixin(Call, Generic[ResponseType]):
-    _call_response: asyncio.Task[ResponseType]
+    _call_response: asyncio.Task[Union[ResponseType, EOFType]]
 
-    def _init_unary_response_mixin(self, response_task: asyncio.Task[ResponseType]):
+    def _init_unary_response_mixin(
+        self, response_task: asyncio.Task[Union[ResponseType, EOFType]]
+    ):
         self._call_response = response_task
 
     def cancel(self) -> bool:

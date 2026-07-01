@@ -14,6 +14,7 @@
 """Common types for gRPC Async API"""
 
 from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncIterable,
     Callable,
@@ -41,7 +42,10 @@ ResponseType = TypeVar("ResponseType")
 SerializingFunction = Callable[[Any], bytes]
 DeserializingFunction = Callable[[bytes], Any]
 ChannelArgumentType = Sequence[Tuple[str, Any]]
-EOFType: TypeAlias = type(EOF)
+if TYPE_CHECKING:
+    class EOFType: ...
+else:
+    EOFType: TypeAlias = type(EOF)
 DoneCallbackType = Callable[[Any], None]
 RequestIterableType = Union[Iterable[Any], AsyncIterable[Any]]
 ResponseIterableType = AsyncIterable[Any]
