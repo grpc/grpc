@@ -33,4 +33,8 @@ void grpc_rb_completion_queue_destroy(grpc_completion_queue* cq);
 grpc_event rb_completion_queue_pluck(grpc_completion_queue* queue, void* tag,
                                      gpr_timespec deadline, const char* reason);
 
+grpc_event rb_completion_queue_pluck_track(grpc_completion_queue* queue, void* tag,
+                                     gpr_timespec deadline, const char* reason,
+                                     int* plucked_flag);
+
 #endif /* GRPC_RB_COMPLETION_QUEUE_H_ */
