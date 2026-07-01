@@ -487,8 +487,6 @@ class FakeStatsPlugin : public StatsPlugin {
   std::optional<std::vector<uint64_t>> GetHistogramValueByName(
       absl::string_view name, absl::Span<const absl::string_view> labels = {});
 
-
-
  private:
   template <typename T>
   std::optional<T> GetMetricValueByNameImpl(
