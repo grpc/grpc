@@ -73,9 +73,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
-#define GRPC_ARG_SERVER_MAX_PENDING_REQUESTS "grpc.server.max_pending_requests"
-#define GRPC_ARG_SERVER_MAX_PENDING_REQUESTS_HARD_LIMIT \
-  "grpc.server.max_pending_requests_hard_limit"
 #define GRPC_ARG_SERVER_INTERNAL_PARENT_CALL_ARENA \
   "grpc.internal.parent_call_arena"
 
