@@ -19,7 +19,7 @@ from typing import Generic, Optional
 import grpc
 from typing_extensions import Self
 
-from . import _base_call
+from . import _base_call # pyright: ignore[reportPrivateUsage]
 from ._typing import DeserializingFunction
 from ._typing import MetadataType
 from ._typing import RequestIterableType
