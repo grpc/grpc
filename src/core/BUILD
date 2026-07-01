@@ -6584,6 +6584,7 @@ grpc_cc_library(
         "xds/grpc/xds_metadata_parser.cc",
         "xds/grpc/xds_route_config_parser.cc",
         "xds/grpc/xds_routing.cc",
+        "xds/grpc/xds_tls_context_parser.cc",
     ],
     hdrs = [
         "xds/grpc/xds_audit_logger_registry.h",
@@ -6605,6 +6606,7 @@ grpc_cc_library(
         "xds/grpc/xds_metadata_parser.h",
         "xds/grpc/xds_route_config_parser.h",
         "xds/grpc/xds_routing.h",
+        "xds/grpc/xds_tls_context_parser.h",
     ],
     external_deps = [
         "absl/base:core_headers",
