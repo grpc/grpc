@@ -148,9 +148,9 @@ class Metadata(Collection):  # noqa: PLW1641
         self._metadata[key] = values
 
     def __contains__(self, key: object) -> bool:
-        if isinstance(key, MetadataKey):
-            return key in self._metadata
-        return False
+        if not isinstance(key, MetadataKey):
+            return False
+        return key in self._metadata
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
