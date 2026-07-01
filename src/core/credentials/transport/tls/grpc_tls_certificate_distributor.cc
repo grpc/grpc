@@ -50,7 +50,8 @@ void grpc_tls_certificate_distributor::SetKeyMaterials(
       } else if (watcher_it->second.identity_cert_name.has_value()) {
         auto& identity_cert_info =
             certificate_info_map_[*watcher_it->second.identity_cert_name];
-        if (!grpc_core::IsIdentityCredentialsEmpty(identity_cert_info.identity_creds)) {
+        if (!grpc_core::IsIdentityCredentialsEmpty(
+                identity_cert_info.identity_creds)) {
           identity_creds_to_report = identity_cert_info.identity_creds;
         }
       }
