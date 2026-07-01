@@ -292,20 +292,11 @@ if EXTRA_ENV_LINK_ARGS is None:
             EXTRA_ENV_LINK_ARGS += " -latomic"
     if "linux" in sys.platform:
         EXTRA_ENV_LINK_ARGS += " -static-libgcc"
-        _version_script = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            "src",
-            "python",
-            "grpcio",
-            "cygrpc_exports.lds",
-        )
-        EXTRA_ENV_LINK_ARGS += f' -Wl,--version-script="{_version_script}"'
 
 # Explicitly link Core Foundation framework for MacOS to ensure no symbol is
 # missing when compiled using package managers like Conda.
 if "darwin" in sys.platform:
     EXTRA_ENV_LINK_ARGS += " -framework CoreFoundation"
-    EXTRA_ENV_LINK_ARGS += " -Wl,-exported_symbol,_PyInit_cygrpc"
 
 EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
@@ -340,7 +331,6 @@ if BUILD_WITH_SYSTEM_OPENSSL:
     CORE_C_FILES = filter(
         lambda x: "third_party/boringssl" not in x, CORE_C_FILES
     )
-    CORE_C_FILES = filter(lambda x: "src/boringssl" not in x, CORE_C_FILES)
     SSL_INCLUDE = (os.path.join("/usr", "include", "openssl"),)
 
 if BUILD_WITH_SYSTEM_ZLIB:
