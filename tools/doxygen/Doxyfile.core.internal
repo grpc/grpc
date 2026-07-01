@@ -1143,6 +1143,8 @@ src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc \
 src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h \
 src/core/ext/filters/ext_proc/ext_proc_filter.cc \
 src/core/ext/filters/ext_proc/ext_proc_filter.h \
+src/core/ext/filters/ext_proc/ext_proc_messages.cc \
+src/core/ext/filters/ext_proc/ext_proc_messages.h \
 src/core/ext/filters/fault_injection/AGENTS.md \
 src/core/ext/filters/fault_injection/fault_injection_filter.cc \
 src/core/ext/filters/fault_injection/fault_injection_filter.h \
@@ -1584,6 +1586,9 @@ src/core/ext/upb-gen/envoy/service/discovery/v3/ads.upb_minitable.h \
 src/core/ext/upb-gen/envoy/service/discovery/v3/discovery.upb.h \
 src/core/ext/upb-gen/envoy/service/discovery/v3/discovery.upb_minitable.c \
 src/core/ext/upb-gen/envoy/service/discovery/v3/discovery.upb_minitable.h \
+src/core/ext/upb-gen/envoy/service/ext_proc/v3/external_processor.upb.h \
+src/core/ext/upb-gen/envoy/service/ext_proc/v3/external_processor.upb_minitable.c \
+src/core/ext/upb-gen/envoy/service/ext_proc/v3/external_processor.upb_minitable.h \
 src/core/ext/upb-gen/envoy/service/load_stats/v3/lrs.upb.h \
 src/core/ext/upb-gen/envoy/service/load_stats/v3/lrs.upb_minitable.c \
 src/core/ext/upb-gen/envoy/service/load_stats/v3/lrs.upb_minitable.h \

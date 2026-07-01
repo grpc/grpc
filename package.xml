@@ -346,6 +346,8 @@
     <file baseinstalldir="/" name="src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/ext_proc/ext_proc_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/ext_proc/ext_proc_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/ext_proc/ext_proc_messages.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/ext_proc/ext_proc_messages.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/fault_injection_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/fault_injection_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/gcp_authentication/gcp_authentication_filter.cc" role="src" />
@@ -769,6 +771,9 @@
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/service/discovery/v3/discovery.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/service/discovery/v3/discovery.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/service/discovery/v3/discovery.upb_minitable.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/service/ext_proc/v3/external_processor.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/service/ext_proc/v3/external_processor.upb_minitable.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/service/ext_proc/v3/external_processor.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/service/load_stats/v3/lrs.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/service/load_stats/v3/lrs.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/service/load_stats/v3/lrs.upb_minitable.h" role="src" />

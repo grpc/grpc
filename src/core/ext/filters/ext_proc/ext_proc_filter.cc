@@ -30,26 +30,6 @@
 namespace grpc_core {
 
 //
-// ExtProcFilter::ProcessingMode
-//
-
-std::string ExtProcFilter::ProcessingMode::ToString() const {
-  std::string result = "{";
-  StrAppend(result, "send_request_headers=");
-  StrAppend(result, send_request_headers ? "true" : "false");
-  StrAppend(result, ", send_response_headers=");
-  StrAppend(result, send_response_headers ? "true" : "false");
-  StrAppend(result, ", send_response_trailers=");
-  StrAppend(result, send_response_trailers ? "true" : "false");
-  StrAppend(result, ", send_request_body=");
-  StrAppend(result, send_request_body ? "true" : "false");
-  StrAppend(result, ", send_response_body=");
-  StrAppend(result, send_response_body ? "true" : "false");
-  StrAppend(result, "}");
-  return result;
-}
-
-//
 // ExtProcFilter::Config
 //
 

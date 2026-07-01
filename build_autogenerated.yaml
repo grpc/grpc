@@ -310,6 +310,7 @@ libs:
   - src/core/ext/filters/channel_idle/idle_filter_state.h
   - src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h
   - src/core/ext/filters/ext_proc/ext_proc_filter.h
+  - src/core/ext/filters/ext_proc/ext_proc_messages.h
   - src/core/ext/filters/fault_injection/fault_injection_filter.h
   - src/core/ext/filters/gcp_authentication/gcp_authentication_filter.h
   - src/core/ext/filters/http/client/http_client_filter.h
@@ -577,6 +578,8 @@ libs:
   - src/core/ext/upb-gen/envoy/service/discovery/v3/ads.upb_minitable.h
   - src/core/ext/upb-gen/envoy/service/discovery/v3/discovery.upb.h
   - src/core/ext/upb-gen/envoy/service/discovery/v3/discovery.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/service/ext_proc/v3/external_processor.upb.h
+  - src/core/ext/upb-gen/envoy/service/ext_proc/v3/external_processor.upb_minitable.h
   - src/core/ext/upb-gen/envoy/service/load_stats/v3/lrs.upb.h
   - src/core/ext/upb-gen/envoy/service/load_stats/v3/lrs.upb_minitable.h
   - src/core/ext/upb-gen/envoy/service/status/v3/csds.upb.h
@@ -1508,6 +1511,7 @@ libs:
   - src/core/ext/filters/channel_idle/idle_filter_state.cc
   - src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc
   - src/core/ext/filters/ext_proc/ext_proc_filter.cc
+  - src/core/ext/filters/ext_proc/ext_proc_messages.cc
   - src/core/ext/filters/fault_injection/fault_injection_filter.cc
   - src/core/ext/filters/gcp_authentication/gcp_authentication_filter.cc
   - src/core/ext/filters/http/client/http_client_filter.cc
@@ -1664,6 +1668,7 @@ libs:
   - src/core/ext/upb-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upb_minitable.c
   - src/core/ext/upb-gen/envoy/service/discovery/v3/ads.upb_minitable.c
   - src/core/ext/upb-gen/envoy/service/discovery/v3/discovery.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/service/ext_proc/v3/external_processor.upb_minitable.c
   - src/core/ext/upb-gen/envoy/service/load_stats/v3/lrs.upb_minitable.c
   - src/core/ext/upb-gen/envoy/service/status/v3/csds.upb_minitable.c
   - src/core/ext/upb-gen/envoy/type/http/v3/cookie.upb_minitable.c
@@ -13038,7 +13043,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/filters/ext_proc/ext_proc_messages.h
   - src/core/ext/upb-gen/envoy/annotations/deprecation.upb.h
   - src/core/ext/upb-gen/envoy/annotations/deprecation.upb_minitable.h
   - src/core/ext/upb-gen/envoy/annotations/resource.upb.h
@@ -13262,7 +13266,6 @@ targets:
   - third_party/xds/xds/core/v3/resource.proto
   - third_party/xds/xds/core/v3/resource_locator.proto
   - third_party/xds/xds/core/v3/resource_name.proto
-  - src/core/ext/filters/ext_proc/ext_proc_messages.cc
   - src/core/ext/upb-gen/envoy/annotations/deprecation.upb_minitable.c
   - src/core/ext/upb-gen/envoy/annotations/resource.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb_minitable.c

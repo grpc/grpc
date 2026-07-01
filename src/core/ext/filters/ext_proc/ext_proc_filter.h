@@ -22,6 +22,7 @@
 #include <string>
 #include <vector>
 
+#include "src/core/ext/filters/ext_proc/ext_proc_messages.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/util/matchers.h"
@@ -37,30 +38,7 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
  public:
   class ExtProcChannel;
 
-  struct ProcessingMode {
-    bool send_request_headers;
-    bool send_response_headers;
-    bool send_response_trailers;
-    bool send_request_body;
-    bool send_response_body;
-
-    ProcessingMode()
-        : send_request_headers(false),
-          send_response_headers(false),
-          send_response_trailers(false),
-          send_request_body(false),
-          send_response_body(false) {}
-
-    bool operator==(const ProcessingMode& other) const {
-      return send_request_headers == other.send_request_headers &&
-             send_response_headers == other.send_response_headers &&
-             send_response_trailers == other.send_response_trailers &&
-             send_request_body == other.send_request_body &&
-             send_response_body == other.send_response_body;
-    }
-
-    std::string ToString() const;
-  };
+  using ProcessingMode = ExtProcProcessingMode;
 
   struct Config final : public FilterConfig {
     static UniqueTypeName Type() {

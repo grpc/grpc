@@ -2362,6 +2362,7 @@ add_library(grpc
   src/core/ext/filters/channel_idle/idle_filter_state.cc
   src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc
   src/core/ext/filters/ext_proc/ext_proc_filter.cc
+  src/core/ext/filters/ext_proc/ext_proc_messages.cc
   src/core/ext/filters/fault_injection/fault_injection_filter.cc
   src/core/ext/filters/gcp_authentication/gcp_authentication_filter.cc
   src/core/ext/filters/http/client/http_client_filter.cc
@@ -2518,6 +2519,7 @@ add_library(grpc
   src/core/ext/upb-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upb_minitable.c
   src/core/ext/upb-gen/envoy/service/discovery/v3/ads.upb_minitable.c
   src/core/ext/upb-gen/envoy/service/discovery/v3/discovery.upb_minitable.c
+  src/core/ext/upb-gen/envoy/service/ext_proc/v3/external_processor.upb_minitable.c
   src/core/ext/upb-gen/envoy/service/load_stats/v3/lrs.upb_minitable.c
   src/core/ext/upb-gen/envoy/service/status/v3/csds.upb_minitable.c
   src/core/ext/upb-gen/envoy/type/http/v3/cookie.upb_minitable.c
@@ -17923,7 +17925,6 @@ add_executable(ext_proc_message_test
   ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/resource_name.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/resource_name.pb.h
   ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/resource_name.grpc.pb.h
-  src/core/ext/filters/ext_proc/ext_proc_messages.cc
   src/core/ext/upb-gen/envoy/annotations/deprecation.upb_minitable.c
   src/core/ext/upb-gen/envoy/annotations/resource.upb_minitable.c
   src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb_minitable.c
