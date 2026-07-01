@@ -56,8 +56,57 @@
 
 namespace grpc_core {
 
+absl::StatusOr<std::unique_ptr<GrpcXdsBootstrap>>
+GrpcXdsBootstrapBuilder::Build(absl::string_view json_string) {
+  auto bootstrap = GrpcXdsBootstrap::Create(json_string);
+  if (bootstrap.ok()) {
+    (*bootstrap)->http_filter_registry_ = CreateXdsHttpFilterRegistry();
+    (*bootstrap)->lb_policy_registry_ = CreateXdsLbPolicyRegistry();
+    (*bootstrap)->audit_logger_registry_ = CreateXdsAuditLoggerRegistry();
+  }
+  return bootstrap;
+}
+
 //
-// GrpcXdsBootstrapBuilder
+// HTTP filter registry
+//
+
+namespace {
+
+Mutex* g_mu = new Mutex;
+NoDestruct<absl::AnyInvocable<std::unique_ptr<XdsHttpFilterImpl>()>>
+    g_http_filter_factory_factory ABSL_GUARDED_BY(*g_mu);
+
+}  // namespace
+
+void GrpcXdsBootstrapBuilder::SetXdsHttpFilterFactoryForTest(
+    absl::AnyInvocable<std::unique_ptr<XdsHttpFilterImpl>()> factory) {
+  MutexLock lock(g_mu);
+  *g_http_filter_factory_factory = std::move(factory);
+}
+
+XdsHttpFilterRegistry GrpcXdsBootstrapBuilder::CreateXdsHttpFilterRegistry(
+    bool register_builtins) {
+  XdsHttpFilterRegistry registry;
+  if (register_builtins) {
+    registry.RegisterFilter(std::make_unique<XdsHttpRouterFilter>());
+    registry.RegisterFilter(std::make_unique<XdsHttpFaultFilter>());
+    registry.RegisterFilter(std::make_unique<XdsHttpRbacFilter>());
+    registry.RegisterFilter(std::make_unique<XdsHttpStatefulSessionFilter>());
+    registry.RegisterFilter(std::make_unique<XdsHttpGcpAuthnFilter>());
+    if (IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_COMPOSITE_FILTER")) {
+      registry.RegisterFilter(std::make_unique<XdsHttpCompositeFilter>());
+    }
+    MutexLock lock(g_mu);
+    if (*g_http_filter_factory_factory != nullptr) {
+      registry.RegisterFilter((*g_http_filter_factory_factory)());
+    }
+  }
+  return registry;
+}
+
+//
+// LB policy registry
 //
 
 namespace {
@@ -317,50 +366,6 @@ class PickFirstLbPolicyConfigFactory final
 
 }  // namespace
 
-absl::StatusOr<std::unique_ptr<GrpcXdsBootstrap>>
-GrpcXdsBootstrapBuilder::Build(absl::string_view json_string) {
-  auto bootstrap = GrpcXdsBootstrap::Create(json_string);
-  if (bootstrap.ok()) {
-    (*bootstrap)->http_filter_registry_ = CreateXdsHttpFilterRegistry();
-    (*bootstrap)->lb_policy_registry_ = CreateXdsLbPolicyRegistry();
-  }
-  return bootstrap;
-}
-
-namespace {
-
-Mutex* g_mu = new Mutex;
-NoDestruct<absl::AnyInvocable<std::unique_ptr<XdsHttpFilterImpl>()>>
-    g_http_filter_factory_factory ABSL_GUARDED_BY(*g_mu);
-
-}  // namespace
-
-void GrpcXdsBootstrapBuilder::SetXdsHttpFilterFactoryForTest(
-    absl::AnyInvocable<std::unique_ptr<XdsHttpFilterImpl>()> factory) {
-  MutexLock lock(g_mu);
-  *g_http_filter_factory_factory = std::move(factory);
-}
-
-XdsHttpFilterRegistry GrpcXdsBootstrapBuilder::CreateXdsHttpFilterRegistry(
-    bool register_builtins) {
-  XdsHttpFilterRegistry registry;
-  if (register_builtins) {
-    registry.RegisterFilter(std::make_unique<XdsHttpRouterFilter>());
-    registry.RegisterFilter(std::make_unique<XdsHttpFaultFilter>());
-    registry.RegisterFilter(std::make_unique<XdsHttpRbacFilter>());
-    registry.RegisterFilter(std::make_unique<XdsHttpStatefulSessionFilter>());
-    registry.RegisterFilter(std::make_unique<XdsHttpGcpAuthnFilter>());
-    if (IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_COMPOSITE_FILTER")) {
-      registry.RegisterFilter(std::make_unique<XdsHttpCompositeFilter>());
-    }
-    MutexLock lock(g_mu);
-    if (*g_http_filter_factory_factory != nullptr) {
-      registry.RegisterFilter((*g_http_filter_factory_factory)());
-    }
-  }
-  return registry;
-}
-
 XdsLbPolicyRegistry GrpcXdsBootstrapBuilder::CreateXdsLbPolicyRegistry() {
   XdsLbPolicyRegistry registry;
   registry.RegisterFactory(std::make_unique<RingHashLbPolicyConfigFactory>());
@@ -370,6 +375,40 @@ XdsLbPolicyRegistry GrpcXdsBootstrapBuilder::CreateXdsLbPolicyRegistry() {
   registry.RegisterFactory(
       std::make_unique<WrrLocalityLbPolicyConfigFactory>());
   registry.RegisterFactory(std::make_unique<PickFirstLbPolicyConfigFactory>());
+  return registry;
+}
+
+//
+// Audit logger registry
+//
+
+namespace {
+
+class StdoutLoggerConfigFactory final
+    : public XdsAuditLoggerRegistry::ConfigFactory {
+ public:
+  Json::Object ConvertXdsAuditLoggerConfig(
+      const XdsResourceType::DecodeContext& /*context*/,
+      absl::string_view /*configuration*/,
+      ValidationErrors* /*errors*/) override {
+    // Stdout logger has no configuration right now. So we don't process the
+    // config protobuf.
+    return {};
+  }
+
+  absl::string_view type() override { return Type(); }
+  absl::string_view name() override { return "stdout_logger"; }
+
+  static absl::string_view Type() {
+    return "envoy.extensions.rbac.audit_loggers.stream.v3.StdoutAuditLog";
+  }
+};
+
+}  // namespace
+
+XdsAuditLoggerRegistry GrpcXdsBootstrapBuilder::CreateXdsAuditLoggerRegistry() {
+  XdsAuditLoggerRegistry registry;
+  registry.RegisterFactory(std::make_unique<StdoutLoggerConfigFactory>());
   return registry;
 }
 

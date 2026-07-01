@@ -28,6 +28,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/util/validation_errors.h"
+#include "src/core/xds/grpc/xds_audit_logger_registry.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_http_filter.h"
@@ -53,6 +54,8 @@ class GrpcXdsBootstrapBuilder final {
       bool register_builtins = true);
 
   static XdsLbPolicyRegistry CreateXdsLbPolicyRegistry();
+
+  static XdsAuditLoggerRegistry CreateXdsAuditLoggerRegistry();
 };
 
 // Exposed for testing purposes only.
