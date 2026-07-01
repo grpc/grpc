@@ -18,8 +18,8 @@ from typing import Generic, Iterable, Mapping, NoReturn, Optional, Sequence
 
 import grpc
 
-from ._metadata import (  # pylint: disable=unused-import
-    Metadata,  # pyright: ignore[reportUnusedImport]
+from ._metadata import (
+    Metadata,  # pyright: ignore[reportUnusedImport]; pylint: disable=unused-import
 )
 from ._typing import DoneCallbackType
 from ._typing import MetadataType
