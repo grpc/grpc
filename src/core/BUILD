@@ -6492,6 +6492,35 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "xds_cluster_specifier_plugin",
+    srcs = [
+        "xds/grpc/xds_cluster_specifier_plugin.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_cluster_specifier_plugin.h",
+    ],
+    external_deps = [
+        "absl/status:statusor",
+        "absl/strings",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
+        "@com_google_protobuf//upb/json",
+        "@com_google_protobuf//upb/reflection",
+    ],
+    tags = ["nofixdeps"],
+    visibility = ["//bazel:xds_client_grpc"],
+    deps = [
+        "grpc_check",
+        "json",
+        "json_reader",
+        "rls_config_upb",
+        "rls_config_upbdefs",
+        "validation_errors",
+        "xds_common_types",
+    ],
+)
+
 # TODO(roth): Split this up into individual targets.
 grpc_cc_library(
     name = "grpc_xds_client",
@@ -6500,7 +6529,6 @@ grpc_cc_library(
         "xds/grpc/xds_bootstrap_grpc.cc",
         "xds/grpc/xds_client_grpc.cc",
         "xds/grpc/xds_cluster_parser.cc",
-        "xds/grpc/xds_cluster_specifier_plugin.cc",
         "xds/grpc/xds_common_types_parser.cc",
         "xds/grpc/xds_endpoint_parser.cc",
         "xds/grpc/xds_http_composite_filter.cc",
@@ -6523,7 +6551,6 @@ grpc_cc_library(
         "xds/grpc/xds_bootstrap_grpc.h",
         "xds/grpc/xds_client_grpc.h",
         "xds/grpc/xds_cluster_parser.h",
-        "xds/grpc/xds_cluster_specifier_plugin.h",
         "xds/grpc/xds_common_types_parser.h",
         "xds/grpc/xds_endpoint_parser.h",
         "xds/grpc/xds_http_composite_filter.h",
@@ -6695,6 +6722,7 @@ grpc_cc_library(
         "xds_certificate_provider",
         "xds_certificate_provider_store",
         "xds_cluster",
+        "xds_cluster_specifier_plugin",
         "xds_common_types",
         "xds_credentials",
         "xds_endpoint",
