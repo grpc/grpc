@@ -19,6 +19,7 @@
 
 #include <map>
 #include <memory>
+#include <utility>
 
 #include "envoy/config/cluster/v3/cluster.upb.h"
 #include "src/core/util/json/json.h"

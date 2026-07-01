@@ -16,11 +16,6 @@
 
 #include "src/core/xds/grpc/xds_lb_policy_registry.h"
 
-#include <grpc/support/json.h>
-#include <stddef.h>
-#include <stdint.h>
-
-#include <optional>
 #include <string>
 #include <utility>
 #include <variant>

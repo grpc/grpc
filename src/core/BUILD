@@ -6263,6 +6263,32 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_lb_policy_registry",
+    srcs = [
+        "xds/grpc/xds_lb_policy_registry.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_lb_policy_registry.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "envoy_config_cluster_upb",
+        "envoy_config_core_upb",
+        "json",
+        "lb_policy_registry",
+        "time",
+        "validation_errors",
+        "xds_common_types",
+        "xds_common_types_parser",
+        "//:config",
+        "//:xds_client",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_http_filter",
     srcs = [
         "xds/grpc/xds_http_filter.cc",
@@ -6661,7 +6687,6 @@ grpc_cc_library(
         "xds/grpc/xds_http_gcp_authn_filter.cc",
         "xds/grpc/xds_http_rbac_filter.cc",
         "xds/grpc/xds_http_stateful_session_filter.cc",
-        "xds/grpc/xds_lb_policy_registry.cc",
         "xds/grpc/xds_listener_parser.cc",
         "xds/grpc/xds_matcher_parse.cc",
         "xds/grpc/xds_metadata_parser.cc",
@@ -6683,7 +6708,6 @@ grpc_cc_library(
         "xds/grpc/xds_http_gcp_authn_filter.h",
         "xds/grpc/xds_http_rbac_filter.h",
         "xds/grpc/xds_http_stateful_session_filter.h",
-        "xds/grpc/xds_lb_policy_registry.h",
         "xds/grpc/xds_listener_parser.h",
         "xds/grpc/xds_matcher_parse.h",
         "xds/grpc/xds_metadata_parser.h",
@@ -6855,6 +6879,7 @@ grpc_cc_library(
         "xds_grpc_service",
         "xds_health_status",
         "xds_http_filter",
+        "xds_lb_policy_registry",
         "xds_listener",
         "xds_matcher",
         "xds_matcher_action",
