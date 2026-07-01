@@ -18,7 +18,9 @@
 
 #include <grpc/grpc.h>
 
+#include <list>
 #include <thread>
+#include <utility>
 
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/insecure/insecure_credentials.h"
@@ -35,6 +37,7 @@
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "gtest/gtest.h"
+#include "absl/status/status.h"
 #include "absl/synchronization/notification.h"
 
 using grpc_event_engine::experimental::EventEngine;
@@ -161,7 +164,7 @@ class ListenerStateTestPeer {
 
   // Returns the number of connections currently being actively tracked
   size_t ConnectionsSize() {
-    MutexLock lock(&listener_state_->mu_);
+    MutexLock lock( listener_state_->mu_ );
     return listener_state_->connections_.size();
   }
 
@@ -181,13 +184,14 @@ class TestMitigationEngine : public MitigationEngine {
     return std::nullopt;
   }
 
-  std::optional<Action> EvaluateIncomingMetadata(absl::string_view,
-                                                 absl::string_view) override {
+  std::optional<Action> EvaluateIncomingMetadata(
+      absl::string_view, absl::string_view,
+      absl::string_view /*peer_address*/) override {
     return std::nullopt;
   }
 
   std::optional<Action> EvaluateAllIncomingMetadata(
-      const grpc_metadata_batch&) override {
+      const grpc_metadata_batch&, absl::string_view /*peer_address*/) override {
     return std::nullopt;
   }
 };
