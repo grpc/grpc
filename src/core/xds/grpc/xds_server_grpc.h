@@ -19,8 +19,6 @@
 
 #include <set>
 #include <string>
-#include <utility>
-#include <vector>
 
 #include "src/core/credentials/call/call_creds_registry.h"
 #include "src/core/credentials/transport/channel_creds_registry.h"
@@ -28,7 +26,6 @@
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_server_grpc_interface.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
@@ -46,14 +43,10 @@ class GrpcXdsServerTarget final : public GrpcXdsServerInterface {
   explicit GrpcXdsServerTarget(
       std::string server_uri,
       RefCountedPtr<const ChannelCredsConfig> channel_creds_config,
-      std::vector<RefCountedPtr<const CallCredsConfig>> call_creds_configs,
-      std::vector<std::pair<std::string, std::string>> initial_metadata = {},
-      Duration timeout = Duration::Infinity())
+      std::vector<RefCountedPtr<const CallCredsConfig>> call_creds_configs)
       : server_uri_(std::move(server_uri)),
         channel_creds_config_(std::move(channel_creds_config)),
-        call_creds_configs_(std::move(call_creds_configs)),
-        initial_metadata_(std::move(initial_metadata)),
-        timeout_(timeout) {}
+        call_creds_configs_(std::move(call_creds_configs)) {}
 
   bool Equals(const XdsServerTarget& other) const override;
   std::string Key() const override;
@@ -66,18 +59,11 @@ class GrpcXdsServerTarget final : public GrpcXdsServerInterface {
       const override {
     return call_creds_configs_;
   }
-  const std::vector<std::pair<std::string, std::string>>& initial_metadata()
-      const override {
-    return initial_metadata_;
-  }
-  Duration timeout() const override { return timeout_; }
 
  private:
   std::string server_uri_;
   RefCountedPtr<const ChannelCredsConfig> channel_creds_config_;
   std::vector<RefCountedPtr<const CallCredsConfig>> call_creds_configs_;
-  std::vector<std::pair<std::string, std::string>> initial_metadata_;
-  Duration timeout_;
 };
 
 class GrpcXdsServer final : public XdsBootstrap::XdsServer {

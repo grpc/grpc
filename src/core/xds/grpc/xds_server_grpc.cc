@@ -229,22 +229,6 @@ std::string GrpcXdsServerTarget::Key() const {
     StrAppend(result, call_creds_config->ToString());
     StrAppend(result, "}");
   }
-  if (!initial_metadata_.empty()) {
-    StrAppend(result, ", initial_metadata=[");
-    bool is_first = true;
-    for (const auto& metadata : initial_metadata_) {
-      if (!is_first) StrAppend(result, ", ");
-      StrAppend(result, metadata.first);
-      StrAppend(result, "=");
-      StrAppend(result, metadata.second);
-      is_first = false;
-    }
-    StrAppend(result, "]");
-  }
-  if (timeout_ != Duration::Zero()) {
-    StrAppend(result, ", timeout=");
-    StrAppend(result, timeout_.ToString());
-  }
   StrAppend(result, "}");
   return result;
 }
@@ -265,8 +249,6 @@ bool GrpcXdsServerTarget::Equals(const XdsServerTarget& other) const {
       return false;
     }
   }
-  if (initial_metadata_ != o.initial_metadata_) return false;
-  if (timeout_ != o.timeout_) return false;
   return true;
 }
 
