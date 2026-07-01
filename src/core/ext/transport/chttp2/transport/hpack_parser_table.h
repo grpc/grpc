@@ -142,7 +142,7 @@ class HPackTable {
    private:
     // The index of the first entry in the buffer. May be greater than
     // max_entries_, in which case a wraparound has occurred.
-    uint32_t first_entry_ = 0;
+    uint64_t first_entry_ = 0;
     // How many entries are in the table.
     uint32_t num_entries_ = 0;
     // Maximum number of entries we could possibly fit in the table, given
