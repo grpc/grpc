@@ -560,7 +560,7 @@ class Http2ServerTransport final : public ServerTransport,
 
   absl::Status AckPing(uint64_t opaque_data);
 
-  // void MaybeSpawnKeepaliveLoop();
+  void MaybeSpawnKeepaliveLoop();
 
   // uint32_t GetMaxAllowedStreamId() const;
   // void SetMaxAllowedStreamId(uint32_t max_allowed_stream_id);

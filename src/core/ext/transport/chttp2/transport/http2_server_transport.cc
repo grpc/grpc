@@ -1607,14 +1607,14 @@ absl::Status Http2ServerTransport::AckPing(uint64_t opaque_data) {
   return absl::OkStatus();
 }
 
-// void Http2ServerTransport::MaybeSpawnKeepaliveLoop() {
-//   if (keepalive_manager_->IsKeepAliveLoopNeeded()) {
-//     SpawnGuardedTransportParty(
-//         "KeepaliveLoop", [self = RefAsSubclass<Http2ServerTransport>()]() {
-//           return self->keepalive_manager_->KeepaliveLoop();
-//         });
-//   }
-// }
+void Http2ServerTransport::MaybeSpawnKeepaliveLoop() {
+  if (keepalive_manager_->IsKeepAliveLoopNeeded()) {
+    SpawnGuardedTransportParty(
+        "KeepaliveLoop", [self = RefAsSubclass<Http2ServerTransport>()]() {
+          return self->keepalive_manager_->KeepaliveLoop();
+        });
+  }
+}
 
 //////////////////////////////////////////////////////////////////////////////
 // Error Path and Close Path
@@ -2028,7 +2028,7 @@ void Http2ServerTransport::Orphan() {
 
 void Http2ServerTransport::SpawnTransportLoops() {
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::SpawnTransportLoops Begin";
-  // MaybeSpawnKeepaliveLoop();
+  MaybeSpawnKeepaliveLoop();
 
   // SpawnGuardedTransportParty(
   //     "FlowControlPeriodicUpdateLoop",
