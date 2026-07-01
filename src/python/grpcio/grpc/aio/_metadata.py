@@ -46,6 +46,7 @@ class Metadata(Collection[MetadatumType]):  # noqa: PLW1641
         * Supports an immutable view of the data
         * Allows partial mutation on the data without recreating the new object from scratch.
     """
+
     _metadata: OrderedDict[MetadataKey, List[MetadataValue]]
 
     def __init__(self, *args: MetadatumType) -> None:
@@ -54,7 +55,9 @@ class Metadata(Collection[MetadatumType]):  # noqa: PLW1641
             self.add(md_key, md_value)
 
     @classmethod
-    def from_tuple(cls, raw_metadata: Union[Self, Iterable[MetadatumType]]):
+    def from_tuple(
+        cls, raw_metadata: Union[Self, Iterable[MetadatumType]]
+    ) -> Self:
         # Note: We unintentionally support non-tuple arguments here. We plan
         # to emit a DeprecationWarning when a non-tuple type is used.
         if raw_metadata:

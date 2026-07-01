@@ -139,7 +139,9 @@ class Server(abc.ABC):
         """
 
     def add_registered_method_handlers(  # noqa: B027
-        self, service_name: str, method_handlers: Mapping[str, grpc.RpcMethodHandler]
+        self,
+        service_name: str,
+        method_handlers: Mapping[str, grpc.RpcMethodHandler],
     ):
         """Registers GenericRpcHandlers with this Server.
 
@@ -348,7 +350,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         """
         raise NotImplementedError()
 
-    def details(self): # pyright: ignore[reportUnknownParameterType]
+    def details(self):  # pyright: ignore[reportUnknownParameterType]
         """Accesses the value to be used as detail string upon RPC completion.
 
         This is an EXPERIMENTAL API.

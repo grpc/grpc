@@ -182,7 +182,9 @@ def _create_rpc_error(
 ) -> AioRpcError:
     return AioRpcError(
         _common.CYGRPC_STATUS_CODE_TO_STATUS_CODE[status.code()],
-        Metadata._create(initial_metadata),  # pyright: ignore[reportPrivateUsage]
+        Metadata._create(  # pyright: ignore[reportPrivateUsage]
+            initial_metadata
+        ),
         Metadata.from_tuple(status.trailing_metadata()),
         details=status.details(),
         debug_error_string=status.debug_error_string(),
@@ -456,7 +458,9 @@ class _StreamRequestMixin(Call, Generic[RequestType]):
                             rpc_error,
                         )
                         return
-            elif isinstance(request_iterator, Iterable):  # pyright: ignore[reportUnnecessaryIsInstance]
+            elif isinstance(  # pyright: ignore[reportUnnecessaryIsInstance]
+                request_iterator, Iterable
+            ):
                 for request in request_iterator:
                     try:
                         await self._write(request)
