@@ -6286,6 +6286,7 @@ grpc_cc_library(
         "xds_common_types",
         "xds_http_filter",
         "xds_route_config",
+        "xds_tls_context",
         "//:gpr",
         "//:sockaddr_utils",
         "//:xds_client",
@@ -6402,6 +6403,7 @@ grpc_cc_library(
         "xds_health_status",
         "xds_metadata",
         "xds_server_grpc",
+        "xds_tls_context",
         "//:gpr",
         "//:xds_client",
     ],
@@ -6448,6 +6450,23 @@ grpc_cc_library(
         "ref_counted",
         "useful",
         "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "xds_tls_context",
+    srcs = [
+        "xds/grpc/xds_tls_context.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_tls_context.h",
+    ],
+    tags = ["nofixdeps"],
+    visibility = ["//bazel:xds_client_grpc"],
+    deps = [
+        "grpc_matchers",
+        "match",
+        "//:gpr",
     ],
 )
 
@@ -6781,6 +6800,7 @@ grpc_cc_library(
         "xds_metadata",
         "xds_route_config",
         "xds_server_grpc",
+        "xds_tls_context",
         "xds_transport_grpc",
         "xds_type_matcher_upb",
         "xds_type_upb",

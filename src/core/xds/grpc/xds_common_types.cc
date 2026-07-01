@@ -21,7 +21,6 @@
 
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/util/match.h"
 #include "src/core/util/string.h"
 #include "src/core/util/time.h"
 #include "absl/status/status.h"
@@ -30,96 +29,6 @@
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
-
-//
-// CommonTlsContext::CertificateProviderPluginInstance
-//
-
-std::string CommonTlsContext::CertificateProviderPluginInstance::ToString()
-    const {
-  std::string result = "{";
-  bool is_first = true;
-  if (!instance_name.empty()) {
-    StrAppend(result, "instance_name=");
-    StrAppend(result, instance_name);
-    is_first = false;
-  }
-  if (!certificate_name.empty()) {
-    if (!is_first) StrAppend(result, ", ");
-    StrAppend(result, "certificate_name=");
-    StrAppend(result, certificate_name);
-  }
-  StrAppend(result, "}");
-  return result;
-}
-
-bool CommonTlsContext::CertificateProviderPluginInstance::Empty() const {
-  return instance_name.empty() && certificate_name.empty();
-}
-
-//
-// CommonTlsContext::CertificateValidationContext
-//
-
-std::string CommonTlsContext::CertificateValidationContext::ToString() const {
-  std::string result = "{";
-  bool is_first = true;
-  Match(
-      ca_certs, [](const std::monostate&) {},
-      [&](const CertificateProviderPluginInstance& cert_provider) {
-        StrAppend(result, "ca_certs=cert_provider");
-        StrAppend(result, cert_provider.ToString());
-        is_first = false;
-      },
-      [&](const SystemRootCerts&) {
-        StrAppend(result, "ca_certs=system_root_certs{}");
-        is_first = false;
-      });
-  if (!match_subject_alt_names.empty()) {
-    if (!is_first) StrAppend(result, ", ");
-    StrAppend(result, "match_subject_alt_names=[");
-    bool is_first_san = true;
-    for (const auto& match : match_subject_alt_names) {
-      if (!is_first_san) StrAppend(result, ", ");
-      StrAppend(result, match.ToString());
-      is_first_san = false;
-    }
-    StrAppend(result, "]");
-  }
-  StrAppend(result, "}");
-  return result;
-}
-
-bool CommonTlsContext::CertificateValidationContext::Empty() const {
-  return std::holds_alternative<std::monostate>(ca_certs) &&
-         match_subject_alt_names.empty();
-}
-
-//
-// CommonTlsContext
-//
-
-std::string CommonTlsContext::ToString() const {
-  std::string result = "{";
-  bool is_first = true;
-  if (!tls_certificate_provider_instance.Empty()) {
-    StrAppend(result, "tls_certificate_provider_instance=");
-    StrAppend(result, tls_certificate_provider_instance.ToString());
-    is_first = false;
-  }
-  if (!certificate_validation_context.Empty()) {
-    if (!is_first) StrAppend(result, ", ");
-    StrAppend(result, "certificate_validation_context=");
-    StrAppend(result, certificate_validation_context.ToString());
-  }
-  StrAppend(result, "}");
-  return result;
-}
-
-bool CommonTlsContext::Empty() const {
-  return tls_certificate_provider_instance.Empty() &&
-         certificate_validation_context.Empty();
-}
 
 //
 // XdsGrpcService
@@ -143,12 +52,12 @@ std::string XdsGrpcService::ToString() const {
     if (!is_first) StrAppend(result, ", ");
     StrAppend(result, "initial_metadata=[");
     bool is_first_metadata = true;
-    for (const auto& metadata : initial_metadata) {
+    for (const auto& [key, value] : initial_metadata) {
       if (!is_first_metadata) StrAppend(result, ", ");
       StrAppend(result, "{key=");
-      StrAppend(result, metadata.first);
+      StrAppend(result, key);
       StrAppend(result, ", value=");
-      StrAppend(result, metadata.second);
+      StrAppend(result, value);
       StrAppend(result, "}");
       is_first_metadata = false;
     }

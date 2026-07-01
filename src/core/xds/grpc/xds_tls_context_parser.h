@@ -19,7 +19,7 @@
 
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "src/core/util/validation_errors.h"
-#include "src/core/xds/grpc/xds_common_types.h"
+#include "src/core/xds/grpc/xds_tls_context.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 
 namespace grpc_core {
