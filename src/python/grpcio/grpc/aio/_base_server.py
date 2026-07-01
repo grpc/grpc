@@ -346,7 +346,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         """
         raise NotImplementedError()
 
-    def details(self):
+    def details(self) -> Optional[bytes]:
         """Accesses the value to be used as detail string upon RPC completion.
 
         This is an EXPERIMENTAL API.
