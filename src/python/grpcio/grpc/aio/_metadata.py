@@ -54,11 +54,11 @@ class Metadata(Collection[MetadatumType]):  # noqa: PLW1641
             self.add(md_key, md_value)
 
     @classmethod
-    def from_tuple(cls, raw_metadata: tuple): # pyright: ignore
+    def from_tuple(cls, raw_metadata: Union[Self, Iterable[MetadatumType]]):
         # Note: We unintentionally support non-tuple arguments here. We plan
         # to emit a DeprecationWarning when a non-tuple type is used.
         if raw_metadata:
-            return cls(*raw_metadata) # pyright: ignore[reportUnknownArgumentType]
+            return cls(*raw_metadata)
         return cls()
 
     @classmethod
