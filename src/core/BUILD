@@ -6640,6 +6640,32 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_grpc_service_parser",
+    srcs = [
+        "xds/grpc/xds_grpc_service_parser.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_grpc_service_parser.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    tags = ["nofixdeps"],
+    visibility = ["//bazel:xds_client_grpc"],
+    deps = [
+        "down_cast",
+        "envoy_config_core_upb",
+        "upb_utils",
+        "validation_errors",
+        "xds_bootstrap_grpc",
+        "xds_common_types",
+        "xds_common_types_parser",
+        "xds_grpc_service",
+        "//:xds_client",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_matcher",
     srcs = [
         "xds/grpc/xds_matcher.cc",
@@ -6757,7 +6783,6 @@ grpc_cc_library(
         "xds/grpc/xds_client_grpc.cc",
         "xds/grpc/xds_cluster_parser.cc",
         "xds/grpc/xds_endpoint_parser.cc",
-        "xds/grpc/xds_grpc_service_parser.cc",
         "xds/grpc/xds_http_composite_filter.cc",
         "xds/grpc/xds_http_fault_filter.cc",
         "xds/grpc/xds_http_gcp_authn_filter.cc",
@@ -6775,7 +6800,6 @@ grpc_cc_library(
         "xds/grpc/xds_client_grpc.h",
         "xds/grpc/xds_cluster_parser.h",
         "xds/grpc/xds_endpoint_parser.h",
-        "xds/grpc/xds_grpc_service_parser.h",
         "xds/grpc/xds_http_composite_filter.h",
         "xds/grpc/xds_http_fault_filter.h",
         "xds/grpc/xds_http_gcp_authn_filter.h",
