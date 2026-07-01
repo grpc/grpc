@@ -6361,6 +6361,44 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_http_composite_filter",
+    srcs = [
+        "xds/grpc/xds_http_composite_filter.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_http_composite_filter.h",
+    ],
+    external_deps = [
+        "absl/status:statusor",
+        "absl/strings",
+        "@com_google_protobuf//upb/reflection",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "channel_fwd",
+        "composite_filter",
+        "envoy_config_core_upb",
+        "envoy_extensions_common_matching_upb",
+        "envoy_extensions_common_matching_upbdefs",
+        "envoy_extensions_filters_common_matcher_action_upb",
+        "envoy_extensions_filters_common_matcher_action_upbdefs",
+        "envoy_extensions_filters_http_composite_upb",
+        "envoy_extensions_filters_http_composite_upbdefs",
+        "validation_errors",
+        "xds_bootstrap_grpc",
+        "xds_common_types",
+        "xds_common_types_parser",
+        "xds_http_filter",
+        "xds_http_filter_registry",
+        "xds_matcher",
+        "xds_matcher_action",
+        "xds_matcher_context",
+        "xds_matcher_parse",
+        "//:xds_client",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_route_config",
     srcs = [
         "xds/grpc/xds_route_config.cc",
@@ -6897,7 +6935,6 @@ grpc_cc_library(
         "xds/grpc/xds_client_grpc.cc",
         "xds/grpc/xds_cluster_parser.cc",
         "xds/grpc/xds_endpoint_parser.cc",
-        "xds/grpc/xds_http_composite_filter.cc",
         "xds/grpc/xds_http_fault_filter.cc",
         "xds/grpc/xds_http_gcp_authn_filter.cc",
         "xds/grpc/xds_http_rbac_filter.cc",
@@ -6910,7 +6947,6 @@ grpc_cc_library(
         "xds/grpc/xds_client_grpc.h",
         "xds/grpc/xds_cluster_parser.h",
         "xds/grpc/xds_endpoint_parser.h",
-        "xds/grpc/xds_http_composite_filter.h",
         "xds/grpc/xds_http_fault_filter.h",
         "xds/grpc/xds_http_gcp_authn_filter.h",
         "xds/grpc/xds_http_rbac_filter.h",
@@ -7083,6 +7119,7 @@ grpc_cc_library(
         "xds_file_watcher_certificate_provider_factory",
         "xds_grpc_service",
         "xds_health_status",
+        "xds_http_composite_filter",
         "xds_http_filter",
         "xds_http_filter_registry",
         "xds_lb_policy_registry",
