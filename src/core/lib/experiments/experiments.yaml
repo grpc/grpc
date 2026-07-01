@@ -451,7 +451,7 @@
 - name: wildcard_ip_expansion_restriction
   description:
     If set, adds optional restriction on when to expand wildcard IPs.
-  expiry: 2026/07/01
+  expiry: 2026/10/01
   owner: alishananda@google.com
   test_tags: ["core_end2end_test"]
 - name: xds_server_filter_chain_per_route
