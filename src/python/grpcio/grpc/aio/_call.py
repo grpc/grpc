@@ -594,6 +594,7 @@ class UnaryUnaryCall(
         except asyncio.CancelledError:
             if not self.cancelled():
                 self.cancel()
+            return cygrpc.EOF
 
         if self._cython_call.is_ok():
             return _common.deserialize(
