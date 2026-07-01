@@ -38,7 +38,6 @@ from ._metadata import Metadata
 from ._typing import DeserializingFunction
 from ._typing import DoneCallbackType
 from ._typing import EOFType
-from ._typing import EOF
 from ._typing import MetadataType
 from ._typing import MetadatumType
 from ._typing import RequestIterableType
@@ -325,7 +324,7 @@ class _UnaryResponseMixin(Call, Generic[ResponseType]):
         # Instead, if we move the exception raising here, the spam stops.
         # Unfortunately, there can only be one 'yield from' in '__await__'. So,
         # we need to access the private instance variable.
-        if response is EOF:
+        if response is cygrpc.EOF:
             if self._cython_call.is_locally_cancelled():
                 raise asyncio.CancelledError()
             else:
@@ -361,7 +360,7 @@ class _StreamResponseMixin(Call, Generic[ResponseType]):
 
     async def _fetch_stream_responses(self) -> AsyncIterator[ResponseType]:
         message = await self._read()
-        while message is not EOF:
+        while message is not cygrpc.EOF:
             yield message
             message = await self._read()
 

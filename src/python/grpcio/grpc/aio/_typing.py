@@ -27,7 +27,7 @@ from typing import (
     Union,
 )
 
-from grpc._cython.cygrpc import EOF as cygrpc_EOF
+from grpc._cython.cygrpc import _EOF
 
 # pylint: disable=unused-import
 from ._metadata import Metadata
@@ -43,13 +43,7 @@ ResponseType = TypeVar("ResponseType")
 SerializingFunction = Callable[[Any], bytes]
 DeserializingFunction = Callable[[bytes], Any]
 ChannelArgumentType = Sequence[Tuple[str, Any]]
-if TYPE_CHECKING:
-    class EOFType(enum.Enum):
-        EOF = "EOF"
-    EOF = EOFType.EOF
-else:
-    EOFType: TypeAlias = type(cygrpc_EOF)
-    EOF = cygrpc_EOF
+EOFType = _EOF
 DoneCallbackType = Callable[[Any], None]
 RequestIterableType = Union[Iterable[Any], AsyncIterable[Any]]
 ResponseIterableType = AsyncIterable[Any]
