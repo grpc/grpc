@@ -17,17 +17,28 @@
   # AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio/grpc_core_dependencies.py.template`!!!
   <%
     srcs = []
+    win_srcs = []
     asm_srcs = {}
     for lib in libs:
       if lib.name in python_dependencies.transitive_deps:
         for src in lib.src:
           srcs.append(src)
+        if hasattr(lib, 'src_windows'):
+          for src in lib.src_windows:
+            win_srcs.append(src)
       if hasattr(lib, 'asm_src'):
         asm_srcs = lib.asm_src
     srcs = sorted(set(srcs))
+    win_srcs = sorted(set(win_srcs))
   %>
   CORE_SOURCE_FILES = [
   % for src in srcs:
+      '${src}',
+  % endfor
+  ]
+
+  WINDOWS_SOURCE_FILES = [
+  % for src in win_srcs:
       '${src}',
   % endfor
   ]
