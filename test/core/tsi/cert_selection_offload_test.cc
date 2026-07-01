@@ -210,16 +210,17 @@ class HandshakeHintsCertificateSelector : public SyncTestCertificateSelector {
               cert_chain.push_back(cert.get());
             }
             bssl::UniquePtr<EVP_PKEY> private_key;
-            grpc_core::MatchMutable(
+            GRPC_RETURN_IF_ERROR(grpc_core::MatchMutable(
                 &result->private_key,
-                [&](bssl::UniquePtr<EVP_PKEY>* key) {
+                [&private_key](bssl::UniquePtr<EVP_PKEY>* key) {
                   private_key = std::move(*key);
+                  return absl::OkStatus();
                 },
                 [](std::shared_ptr<grpc_core::PrivateKeySigner>*) {
-                  LOG(FATAL) << "PrivateKeySigner not expected";
-                });
-            // This signer is not expected to be invoked when handshake hints
-            // work well.
+                  return absl::InternalError("PrivateKeySigner not expected");
+                }));
+            // This signer ensures test will fail if handshake hints don't work
+            // properly.
             result->private_key = std::make_shared<SyncTestPrivateKeySigner>(
                 "", SyncTestPrivateKeySigner::Mode::kError);
             // Use AssignCertificate to configure hints generation.
