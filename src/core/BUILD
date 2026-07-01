@@ -6399,6 +6399,39 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_http_fault_filter",
+    srcs = [
+        "xds/grpc/xds_http_fault_filter.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_http_fault_filter.h",
+    ],
+    external_deps = [
+        "absl/status:statusor",
+        "absl/strings",
+        "@com_google_protobuf//upb/reflection",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "channel_fwd",
+        "envoy_extensions_filters_common_fault_upb",
+        "envoy_extensions_filters_http_fault_upb",
+        "envoy_extensions_filters_http_fault_upbdefs",
+        "envoy_type_upb",
+        "grpc_fault_injection_filter",
+        "protobuf_wrappers_upb",
+        "status_conversion",
+        "time",
+        "validation_errors",
+        "xds_common_types",
+        "xds_common_types_parser",
+        "xds_http_filter",
+        "//:grpc_base",
+        "//:xds_client",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_route_config",
     srcs = [
         "xds/grpc/xds_route_config.cc",
@@ -6935,7 +6968,6 @@ grpc_cc_library(
         "xds/grpc/xds_client_grpc.cc",
         "xds/grpc/xds_cluster_parser.cc",
         "xds/grpc/xds_endpoint_parser.cc",
-        "xds/grpc/xds_http_fault_filter.cc",
         "xds/grpc/xds_http_gcp_authn_filter.cc",
         "xds/grpc/xds_http_rbac_filter.cc",
         "xds/grpc/xds_http_stateful_session_filter.cc",
@@ -6947,7 +6979,6 @@ grpc_cc_library(
         "xds/grpc/xds_client_grpc.h",
         "xds/grpc/xds_cluster_parser.h",
         "xds/grpc/xds_endpoint_parser.h",
-        "xds/grpc/xds_http_fault_filter.h",
         "xds/grpc/xds_http_gcp_authn_filter.h",
         "xds/grpc/xds_http_rbac_filter.h",
         "xds/grpc/xds_http_stateful_session_filter.h",
@@ -7120,6 +7151,7 @@ grpc_cc_library(
         "xds_grpc_service",
         "xds_health_status",
         "xds_http_composite_filter",
+        "xds_http_fault_filter",
         "xds_http_filter",
         "xds_http_filter_registry",
         "xds_lb_policy_registry",
