@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM arm64v8/debian:11
+FROM --platform=linux/arm64/v8 arm64v8/debian:11
 
 #=================
 # Basic C core dependencies
@@ -99,7 +99,9 @@ RUN python3.10 -m pip install --upgrade google-auth==1.23.0 google-api-python-cl
 # Install cmake
 # Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
 
-RUN apt-get update && apt-get install -y cmake && apt-get clean
+COPY --from=repo_root tools/dockerfile/helper_scripts/install-cmake.sh /root/install-cmake.sh
+
+RUN /root/install-cmake.sh
 
 #=================
 # Install ccache
