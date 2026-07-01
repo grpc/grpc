@@ -44,6 +44,8 @@ namespace grpc_core {
 
 bool XdsExtProcOnClientEnabled();
 
+class GrpcXdsBootstrapBuilder;
+
 class GrpcXdsBootstrap final : public XdsBootstrap {
  public:
   class GrpcNode final : public Node {
@@ -187,6 +189,8 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
   }
 
  private:
+  friend class GrpcXdsBootstrapBuilder;
+
   std::vector<GrpcXdsServer> servers_;
   std::optional<GrpcNode> node_;
   std::string client_default_listener_resource_name_template_;

@@ -6567,6 +6567,7 @@ grpc_cc_library(
     srcs = [
         "xds/grpc/xds_audit_logger_registry.cc",
         "xds/grpc/xds_bootstrap_grpc.cc",
+        "xds/grpc/xds_bootstrap_grpc_builder.cc",
         "xds/grpc/xds_client_grpc.cc",
         "xds/grpc/xds_cluster_parser.cc",
         "xds/grpc/xds_common_types_parser.cc",
@@ -6587,6 +6588,7 @@ grpc_cc_library(
     hdrs = [
         "xds/grpc/xds_audit_logger_registry.h",
         "xds/grpc/xds_bootstrap_grpc.h",
+        "xds/grpc/xds_bootstrap_grpc_builder.h",
         "xds/grpc/xds_client_grpc.h",
         "xds/grpc/xds_cluster_parser.h",
         "xds/grpc/xds_common_types_parser.h",

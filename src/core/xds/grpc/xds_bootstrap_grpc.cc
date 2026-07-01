@@ -227,9 +227,7 @@ absl::StatusOr<std::unique_ptr<GrpcXdsBootstrap>> GrpcXdsBootstrap::Create(
       return true;
     }
   };
-  auto bootstrap = LoadFromJson<GrpcXdsBootstrap>(*json, XdsJsonArgs());
-  if (!bootstrap.ok()) return bootstrap.status();
-  return std::make_unique<GrpcXdsBootstrap>(std::move(*bootstrap));
+  return LoadFromJson<std::unique_ptr<GrpcXdsBootstrap>>(*json, XdsJsonArgs());
 }
 
 const JsonLoaderInterface* GrpcXdsBootstrap::JsonLoader(const JsonArgs&) {

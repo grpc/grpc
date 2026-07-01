@@ -51,6 +51,7 @@
 #include "src/core/util/time.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
 #include "src/core/xds/grpc/xds_transport_grpc.h"
 #include "src/core/xds/xds_client/xds_api.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
@@ -238,7 +239,7 @@ absl::StatusOr<std::shared_ptr<GrpcXdsBootstrap>> GetOrCreateGlobalBootstrap()
     GRPC_TRACE_LOG(xds_client, INFO)
         << "xDS bootstrap contents: " << *bootstrap_contents;
     // Parse bootstrap.
-    auto bootstrap = GrpcXdsBootstrap::Create(*bootstrap_contents);
+    auto bootstrap = GrpcXdsBootstrapBuilder::Build(*bootstrap_contents);
     if (!bootstrap.ok()) return bootstrap.status();
     *g_parsed_bootstrap = std::move(*bootstrap);
   }
@@ -274,7 +275,7 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
   if (bootstrap_config.has_value()) {
     GRPC_TRACE_LOG(xds_client, INFO)
         << "xDS bootstrap contents: " << *bootstrap_config;
-    auto bootstrap = GrpcXdsBootstrap::Create(*bootstrap_config);
+    auto bootstrap = GrpcXdsBootstrapBuilder::Build(*bootstrap_config);
     if (!bootstrap.ok()) return bootstrap.status();
     grpc_channel_args* xds_channel_args = args.GetPointer<grpc_channel_args>(
         GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_CLIENT_CHANNEL_ARGS);
