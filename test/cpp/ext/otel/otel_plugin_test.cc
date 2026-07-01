@@ -1484,6 +1484,8 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ClientHandshakes) {
   Init(std::move(Options()
                      .set_metric_names({grpc::OpenTelemetryPluginBuilder::
                                             kClientHandshakesInstrumentName})
+                     .add_optional_label("grpc.lb.locality")
+                     .add_optional_label("grpc.lb.backend_service")
                      .set_client_credentials_options(
                          MakeClientTlsOptions("src/core/tsi/test_creds/ca.pem"))
                      .set_server_credentials_options(MakeServerTlsOptions(
@@ -1514,9 +1516,9 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ClientHandshakes) {
           ::testing::Pair("grpc.tls.handshake.resumed",
                           ::testing::VariantWith<std::string>("false")),
           ::testing::Pair("grpc.lb.locality",
-                          ::testing::VariantWith<std::string>("<omitted>")),
+                          ::testing::VariantWith<std::string>("")),
           ::testing::Pair("grpc.lb.backend_service",
-                          ::testing::VariantWith<std::string>("<omitted>"))));
+                          ::testing::VariantWith<std::string>(""))));
 }
 
 TEST_F(OpenTelemetryPluginEnd2EndTest, ServerHandshakes) {
@@ -1562,6 +1564,8 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, HandshakesWithBadServerCert) {
   Init(std::move(Options()
                      .set_metric_names({grpc::OpenTelemetryPluginBuilder::
                                             kClientHandshakesInstrumentName})
+                     .add_optional_label("grpc.lb.locality")
+                     .add_optional_label("grpc.lb.backend_service")
                      .set_client_credentials_options(
                          MakeClientTlsOptions("src/core/tsi/test_creds/ca.pem"))
                      .set_server_credentials_options(MakeServerTlsOptions(
@@ -1619,9 +1623,9 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, HandshakesWithBadServerCert) {
           ::testing::Pair("grpc.tls.handshake.resumed",
                           ::testing::VariantWith<std::string>("false")),
           ::testing::Pair("grpc.lb.locality",
-                          ::testing::VariantWith<std::string>("<omitted>")),
+                          ::testing::VariantWith<std::string>("")),
           ::testing::Pair("grpc.lb.backend_service",
-                          ::testing::VariantWith<std::string>("<omitted>"))));
+                          ::testing::VariantWith<std::string>(""))));
 }
 
 TEST_F(OpenTelemetryPluginEnd2EndTest, HandshakesWithBadClientCert) {
