@@ -97,7 +97,7 @@ class ServerConfigFetcher
     virtual void UpdateConnectionManager(
         RefCountedPtr<ConnectionManager> manager) = 0;
     // Implementations should stop serving when this is called. Serving should
-    // only resume when UpdateConfig() is invoked.
+    // only resume when UpdateConnectionManager() is invoked.
     virtual void StopServing() = 0;
   };
 

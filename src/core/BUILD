@@ -4473,6 +4473,7 @@ grpc_cc_library(
         "grpc_service_config",
         "latent_see",
         "metadata_batch",
+        "observable",
         "status_helper",
         "sync",
         "//:gpr",
