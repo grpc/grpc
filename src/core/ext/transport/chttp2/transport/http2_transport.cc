@@ -469,5 +469,14 @@ void MaybeAddStreamWindowUpdateFrame(Stream& stream,
   }
 }
 
+void WritableStreamWrapper::MaybeCancel() {
+  // Here we may call CancelCall on a stream that is already initialized.
+  // This is fine as CancelCall is idempotent and it would already be
+  // cancelled by the CloseTransport promise.
+  if (stream != nullptr) {
+    stream->CancelCall(absl::UnavailableError("Transport closed"));
+  }
+}
+
 }  // namespace http2
 }  // namespace grpc_core

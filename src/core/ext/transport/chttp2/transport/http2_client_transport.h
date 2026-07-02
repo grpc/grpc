@@ -722,7 +722,7 @@ class Http2ClientTransport final : public ClientTransport,
 
   MemoryOwner memory_owner_;
   chttp2::TransportFlowControl flow_control_;
-  WritableStreams<RefCountedPtr<Stream>> writable_stream_list_;
+  WritableStreams<WritableStreamWrapper> writable_stream_list_;
 
   RefCountedPtr<SecurityFrameHandler> security_frame_handler_;
   std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;
