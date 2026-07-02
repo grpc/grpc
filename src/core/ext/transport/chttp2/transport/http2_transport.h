@@ -26,17 +26,15 @@
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/write_cycle.h"
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/latch.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
 #include "absl/log/log.h"
-#include "absl/status/status.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -182,6 +180,64 @@ void MaybeAddTransportWindowUpdateFrame(
     chttp2::TransportFlowControl& flow_control, FrameSender& frame_sender);
 
 void MaybeAddStreamWindowUpdateFrame(Stream& stream, FrameSender& frame_sender);
+
+// ===========================================================================
+// 3-Stage Transport Shutdown State Machine
+// ===========================================================================
+// Transport shutdown progresses through three distinct stages to ensure
+// thread-safe, lock-free (where possible), and protocol-compliant cleanup.
+//
+// Stage 1: Shutdown Initiated
+//   Triggered by MaybeSpawnCloseTransport(). Rejects new external watches
+//   and immediately clears stream_list_ (Snapshot 1) to stop read/write
+//   processing for active streams.
+//   Note: MaybeSpawnCloseTransport is invoked from both transport party and
+//   other threads (Orphan flow).
+//
+// Stage 2: Party Shutdown Initiated (Party Lockdown)
+//   Triggered when the CloseTransport promise starts running on the transport
+//   party. Thread-confined to the party (no locks/atomics needed).
+//   Clears stream_list_ again (Snapshot 2) to capture raced streams, and
+//   causes the transport to immediately reject any new or queued streams
+//   (via InitializeStream() on client, or IncomingStream() on server).
+//
+// Stage 3: Shutdown Completed (Final Termination)
+//   Triggered when CloseTransport() finishes (GOAWAY sent or timed out on
+//   client). Wakes up and cancels all remaining promises on the transport
+//   party.
+// ===========================================================================
+class TransportShutdownTracker {
+ public:
+  TransportShutdownTracker() = default;
+
+  // Transport shutdown is not copyable or movable.
+  TransportShutdownTracker(const TransportShutdownTracker&) = delete;
+  TransportShutdownTracker& operator=(const TransportShutdownTracker&) = delete;
+  TransportShutdownTracker(TransportShutdownTracker&&) = delete;
+  TransportShutdownTracker& operator=(TransportShutdownTracker&&) = delete;
+
+  // Stage 1: Shutdown Initiated
+  void InitiateShutdown(const Mutex& mu) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu) {
+    shutdown_initiated_ = true;
+  }
+  bool IsShutdownInitiated(const Mutex& mu) const
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu) {
+    return shutdown_initiated_;
+  }
+
+  // Stage 2: Party Shutdown Initiated (Party Lockdown)
+  void InitiatePartyShutdown() { party_shutdown_initiated_ = true; }
+  bool IsPartyShutdownInitiated() const { return party_shutdown_initiated_; }
+
+  // Stage 3: Shutdown Completed (Final Termination)
+  void MarkShutdownComplete() { shutdown_completed_latch_.Set(); }
+  auto WaitShutdownComplete() { return shutdown_completed_latch_.Wait(); }
+
+ private:
+  bool shutdown_initiated_ = false;
+  bool party_shutdown_initiated_ = false;
+  Latch<void> shutdown_completed_latch_;
+};
 
 //
 }  // namespace http2
