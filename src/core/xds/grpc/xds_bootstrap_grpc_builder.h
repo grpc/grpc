@@ -17,16 +17,9 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_BOOTSTRAP_GRPC_BUILDER_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_BOOTSTRAP_GRPC_BUILDER_H
 
-#include <map>
 #include <memory>
 #include <optional>
-#include <string>
-#include <utility>
-#include <vector>
 
-// FIXME: audit
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_audit_logger_registry.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"

@@ -6789,6 +6789,54 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_bootstrap_grpc_builder",
+    srcs = [
+        "xds/grpc/xds_bootstrap_grpc_builder.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_bootstrap_grpc_builder.h",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "@com_google_protobuf//upb/reflection",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "envoy_config_core_upb",
+        "envoy_extensions_filters_http_router_upb",
+        "envoy_extensions_filters_http_router_upbdefs",
+        "envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_upb",
+        "envoy_extensions_load_balancing_policies_pick_first_upb",
+        "envoy_extensions_load_balancing_policies_ring_hash_upb",
+        "envoy_extensions_load_balancing_policies_wrr_locality_upb",
+        "experiment_env_var",
+        "grpc_check",
+        "grpc_lb_policy_weighted_round_robin",
+        "json",
+        "protobuf_wrappers_upb",
+        "sync",
+        "time",
+        "validation_errors",
+        "xds_audit_logger_registry",
+        "xds_bootstrap_grpc",
+        "xds_common_types",
+        "xds_common_types_parser",
+        "xds_http_composite_filter",
+        "xds_http_fault_filter",
+        "xds_http_gcp_authn_filter",
+        "xds_http_rbac_filter",
+        "xds_http_stateful_session_filter",
+        "xds_http_filter",
+        "xds_http_filter_registry",
+        "xds_lb_policy_registry",
+        "//:xds_client",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_metadata",
     srcs = [
         "xds/grpc/xds_metadata.cc",
@@ -7272,11 +7320,9 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_xds_client",
     srcs = [
-        "xds/grpc/xds_bootstrap_grpc_builder.cc",
         "xds/grpc/xds_client_grpc.cc",
     ],
     hdrs = [
-        "xds/grpc/xds_bootstrap_grpc_builder.h",
         "xds/grpc/xds_client_grpc.h",
     ],
     external_deps = [
@@ -7432,6 +7478,7 @@ grpc_cc_library(
         "xds_audit_logger_registry",
         "xds_backend_metric_propagation",
         "xds_bootstrap_grpc",
+        "xds_bootstrap_grpc_builder",
         "xds_certificate_provider",
         "xds_certificate_provider_store",
         "xds_cluster",
