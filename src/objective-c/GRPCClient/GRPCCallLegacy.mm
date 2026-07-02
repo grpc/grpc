@@ -509,8 +509,9 @@ static NSString *const kBearerPrefix = @"Bearer ";
           strongSelf.responseTrailers = trailers;
 
           if (error != nil && error.code == 2) {
-            NSString *httpStatus = trailers[@":status"];
-            if (httpStatus == nil || [httpStatus isEqualToString:@"200"]) {
+            NSDictionary *userInfo = error.userInfo;
+            NSString *debugDescription = userInfo[NSDebugDescriptionErrorKey];
+            if (debugDescription != nil && [debugDescription containsString:@"grpc_status:0"]) {
               error = nil;
             }
           }
