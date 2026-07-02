@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Invocation-side implementation of gRPC Asyncio Python."""
+# pyright: reportPrivateUsage = false
 
 import asyncio
-from typing import Any, Callable, Generic, List, Optional, Sequence, TypeVar
+from typing import Any, Generic, List, Optional, Sequence, TypeVar
 import weakref
 
 import grpc
@@ -24,8 +25,8 @@ from grpc import _grpcio_metadata
 from grpc._cython import cygrpc
 from typing_extensions import Self
 
-from . import _base_call  # pyright: ignore[reportPrivateUsage]
-from . import _base_channel  # pyright: ignore[reportPrivateUsage]
+from . import _base_call
+from . import _base_channel
 from ._call import StreamStreamCall
 from ._call import StreamUnaryCall
 from ._call import UnaryStreamCall
@@ -47,7 +48,7 @@ from ._typing import RequestIterableType
 from ._typing import RequestType
 from ._typing import ResponseType
 from ._typing import SerializingFunction
-from ._utils import _timeout_to_deadline  # pyright: ignore[reportPrivateUsage]
+from ._utils import _timeout_to_deadline
 
 ClientInterceptorT = TypeVar("ClientInterceptorT", bound=ClientInterceptor)
 
@@ -130,7 +131,7 @@ class _BaseMultiCallable(Generic[RequestType, ResponseType, ClientInterceptorT])
         metadata, as it should be used for the current call.
         """
         metadata = metadata or Metadata()
-        if not isinstance(metadata, Metadata) and isinstance(
+        if not isinstance(metadata, Metadata) and isinstance( # pyright: ignore[reportUnnecessaryIsInstance]
             metadata, Sequence
         ):
             metadata = Metadata.from_tuple(tuple(metadata))
