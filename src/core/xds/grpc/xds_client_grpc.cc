@@ -16,7 +16,6 @@
 
 #include "src/core/xds/grpc/xds_client_grpc.h"
 
-#include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
@@ -35,17 +34,13 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/transport/error_utils.h"
 #include "src/core/telemetry/metrics.h"
 #include "src/core/util/debug_location.h"
-#include "src/core/util/down_cast.h"
 #include "src/core/util/env.h"
 #include "src/core/util/load_file.h"
-#include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
