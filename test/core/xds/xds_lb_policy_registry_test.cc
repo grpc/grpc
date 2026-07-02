@@ -82,8 +82,7 @@ absl::StatusOr<std::string> ConvertXdsPolicy(
   ValidationErrors errors;
   ValidationErrors::ScopedField field(&errors, ".load_balancing_policy");
   auto registry = GrpcXdsBootstrapBuilder::CreateXdsLbPolicyRegistry();
-  auto config = registry.ConvertXdsLbPolicyConfig(
-      context, upb_policy, &errors);
+  auto config = registry.ConvertXdsLbPolicyConfig(context, upb_policy, &errors);
   if (!errors.ok()) {
     return errors.status(absl::StatusCode::kInvalidArgument,
                          "validation errors");

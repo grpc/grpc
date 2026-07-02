@@ -23,10 +23,10 @@
 #include <variant>
 #include <vector>
 
+#include "re2/re2.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/validation_errors.h"
-#include "re2/re2.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 

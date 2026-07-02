@@ -18,9 +18,9 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <variant>
 #include <vector>
-#include <utility>
 
 #include "src/core/config/core_configuration.h"
 #include "src/core/util/down_cast.h"
@@ -112,9 +112,9 @@ XdsGrpcService ParseXdsGrpcService(
               errors->AddError("can't decode config");
               continue;
             }
-            channel_creds_config = registry.ParseProto(
-                extension->type, *serialized_config, certificate_providers,
-                errors);
+            channel_creds_config =
+                registry.ParseProto(extension->type, *serialized_config,
+                                    certificate_providers, errors);
             break;
           }
           if (channel_creds_config == nullptr) {

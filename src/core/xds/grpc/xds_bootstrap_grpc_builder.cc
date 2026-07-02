@@ -26,7 +26,6 @@
 #include <variant>
 #include <vector>
 
-#include "absl/strings/str_cat.h"
 #include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/extensions/filters/http/router/v3/router.upb.h"
 #include "envoy/extensions/filters/http/router/v3/router.upbdefs.h"
@@ -50,6 +49,7 @@
 #include "src/core/xds/grpc/xds_http_rbac_filter.h"
 #include "src/core/xds/grpc/xds_http_stateful_session_filter.h"
 #include "src/core/xds/grpc/xds_lb_policy_registry.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 
