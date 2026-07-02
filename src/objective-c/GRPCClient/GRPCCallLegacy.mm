@@ -507,12 +507,12 @@ static NSString *const kBearerPrefix = @"Bearer ";
         __strong GRPCCall *strongSelf = weakSelf;
         if (strongSelf) {
           strongSelf.responseTrailers = trailers;
-          
+
           if (error != nil && error.code == 2) {
-              NSString *httpStatus = trailers[@":status"];
-              if (httpStatus == nil || [httpStatus isEqualToString:@"200"]) {
-                  error = nil;
-              }
+            NSString *httpStatus = trailers[@":status"];
+            if (httpStatus == nil || [httpStatus isEqualToString:@"200"]) {
+              error = nil;
+            }
           }
 
           if (error) {
