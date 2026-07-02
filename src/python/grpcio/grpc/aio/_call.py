@@ -33,7 +33,7 @@ import grpc
 from grpc import _common
 from grpc._cython import cygrpc
 
-from . import _base_call
+from . import _base_call  # pyright: ignore[reportPrivateUsage]
 from ._metadata import Metadata
 from ._typing import DeserializingFunction
 from ._typing import DoneCallbackType
@@ -182,7 +182,9 @@ def _create_rpc_error(
 ) -> AioRpcError:
     return AioRpcError(
         _common.CYGRPC_STATUS_CODE_TO_STATUS_CODE[status.code()],
-        Metadata._create(initial_metadata),
+        Metadata._create(  # pyright: ignore[reportPrivateUsage]
+            initial_metadata
+        ),
         Metadata.from_tuple(status.trailing_metadata()),
         details=status.details(),
         debug_error_string=status.debug_error_string(),
@@ -293,9 +295,11 @@ class _APIStyle(enum.IntEnum):
 
 
 class _UnaryResponseMixin(Call, Generic[ResponseType]):
-    _call_response: asyncio.Task
+    _call_response: asyncio.Task[Union[ResponseType, EOFType]]
 
-    def _init_unary_response_mixin(self, response_task: asyncio.Task):
+    def _init_unary_response_mixin(
+        self, response_task: asyncio.Task[Union[ResponseType, EOFType]]
+    ):
         self._call_response = response_task
 
     def cancel(self) -> bool:
@@ -336,10 +340,10 @@ class _UnaryResponseMixin(Call, Generic[ResponseType]):
 
 class _StreamResponseMixin(Call, Generic[ResponseType]):
     _message_aiter: Optional[AsyncIterator[ResponseType]]
-    _preparation: asyncio.Task
+    _preparation: asyncio.Task[None]
     _response_style: _APIStyle
 
-    def _init_stream_response_mixin(self, preparation: asyncio.Task):
+    def _init_stream_response_mixin(self, preparation: asyncio.Task[None]):
         self._message_aiter = None
         self._preparation = preparation
         self._response_style = _APIStyle.UNKNOWN
@@ -404,7 +408,7 @@ class _StreamResponseMixin(Call, Generic[ResponseType]):
 class _StreamRequestMixin(Call, Generic[RequestType]):
     _metadata_sent: asyncio.Event
     _done_writing_flag: bool
-    _async_request_poller: Optional[asyncio.Task]
+    _async_request_poller: Optional[asyncio.Task[None]]
     _request_style: _APIStyle
 
     def _init_stream_request_mixin(
@@ -454,7 +458,9 @@ class _StreamRequestMixin(Call, Generic[RequestType]):
                             rpc_error,
                         )
                         return
-            elif isinstance(request_iterator, Iterable):
+            elif isinstance(  # pyright: ignore[reportUnnecessaryIsInstance]
+                request_iterator, Iterable
+            ):
                 for request in request_iterator:
                     try:
                         await self._write(request)
@@ -551,7 +557,7 @@ class UnaryUnaryCall(
     """
 
     _request: RequestType
-    _invocation_task: asyncio.Task
+    _invocation_task: asyncio.Task[Union[ResponseType, EOFType]]
 
     # pylint: disable=too-many-arguments
     def __init__(
@@ -619,7 +625,7 @@ class UnaryStreamCall(
     """
 
     _request: RequestType
-    _send_unary_request_task: asyncio.Task
+    _send_unary_request_task: asyncio.Task[None]
 
     # pylint: disable=too-many-arguments
     def __init__(
@@ -734,7 +740,7 @@ class StreamStreamCall(
     Returned when an instance of `StreamStreamMultiCallable` object is called.
     """
 
-    _initializer: asyncio.Task
+    _initializer: asyncio.Task[None]
 
     # pylint: disable=too-many-arguments
     def __init__(
@@ -762,7 +768,7 @@ class StreamStreamCall(
         self._init_stream_request_mixin(request_iterator)
         self._init_stream_response_mixin(self._initializer)
 
-    async def _prepare_rpc(self):
+    async def _prepare_rpc(self) -> None:
         """Prepares the RPC for receiving/sending messages.
 
         All other operations around the stream should only happen after the

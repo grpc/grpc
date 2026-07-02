@@ -18,7 +18,10 @@ from typing import Generic, Iterable, Mapping, NoReturn, Optional, Sequence
 
 import grpc
 
-from ._metadata import Metadata  # pylint: disable=unused-import
+# pylint: disable=unused-import
+from ._metadata import Metadata  # pyright: ignore[reportUnusedImport]
+
+# pylint: enable=unused-import
 from ._typing import DoneCallbackType
 from ._typing import MetadataType
 from ._typing import RequestType
@@ -137,8 +140,10 @@ class Server(abc.ABC):
         """
 
     def add_registered_method_handlers(  # noqa: B027
-        self, service_name, method_handlers
-    ):
+        self,
+        service_name: str,
+        method_handlers: Mapping[str, grpc.RpcMethodHandler],
+    ) -> None:
         """Registers GenericRpcHandlers with this Server.
 
         This method is only safe to call before the server is started.
@@ -326,7 +331,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         """
         raise NotImplementedError()
 
-    def trailing_metadata(self):
+    def trailing_metadata(self) -> MetadataType:
         """Access value to be used as trailing metadata upon RPC completion.
 
         This is an EXPERIMENTAL API.
@@ -336,7 +341,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         """
         raise NotImplementedError()
 
-    def code(self):
+    def code(self) -> grpc.StatusCode:
         """Accesses the value to be used as status code upon RPC completion.
 
         This is an EXPERIMENTAL API.
@@ -346,7 +351,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         """
         raise NotImplementedError()
 
-    def details(self):
+    def details(self):  # pyright: ignore[reportUnknownParameterType]
         """Accesses the value to be used as detail string upon RPC completion.
 
         This is an EXPERIMENTAL API.
