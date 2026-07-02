@@ -143,7 +143,7 @@ class Server(abc.ABC):
         self,
         service_name: str,
         method_handlers: Mapping[str, grpc.RpcMethodHandler],
-    ):
+    ) -> None:
         """Registers GenericRpcHandlers with this Server.
 
         This method is only safe to call before the server is started.
