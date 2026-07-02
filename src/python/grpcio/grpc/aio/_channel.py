@@ -58,7 +58,7 @@ _USER_AGENT = "grpc-python-asyncio/{}".format(_grpcio_metadata.__version__)
 
 def _augment_channel_arguments(
     base_options: ChannelArgumentType, compression: Optional[grpc.Compression]
-) -> ChannelArgumentType:
+) -> Any:
     compression_channel_argument = _compression.create_channel_option(
         compression
     )
