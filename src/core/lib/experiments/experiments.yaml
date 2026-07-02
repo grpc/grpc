@@ -189,11 +189,6 @@
   expiry: 2026/07/15
   owner: mattstev@google.com
   test_tags: ["core_end2end_test"]
-- name: max_inflight_pings_strict_limit
-  description: If set, the max inflight pings limit is strictly enforced.
-  expiry: 2026/07/01
-  owner: akshitpatel@google.com
-  test_tags: []
 - name: memory_optimization_01
   description: Memory Optimization
   expiry: 2027/01/16
