@@ -16,7 +16,6 @@
 
 #include "src/core/xds/grpc/xds_client_grpc.h"
 
-#include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
@@ -35,22 +34,19 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/transport/error_utils.h"
 #include "src/core/telemetry/metrics.h"
 #include "src/core/util/debug_location.h"
-#include "src/core/util/down_cast.h"
 #include "src/core/util/env.h"
 #include "src/core/util/load_file.h"
-#include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
 #include "src/core/xds/grpc/xds_transport_grpc.h"
 #include "src/core/xds/xds_client/xds_api.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
@@ -238,7 +234,7 @@ absl::StatusOr<std::shared_ptr<GrpcXdsBootstrap>> GetOrCreateGlobalBootstrap()
     GRPC_TRACE_LOG(xds_client, INFO)
         << "xDS bootstrap contents: " << *bootstrap_contents;
     // Parse bootstrap.
-    auto bootstrap = GrpcXdsBootstrap::Create(*bootstrap_contents);
+    auto bootstrap = GrpcXdsBootstrapBuilder::Build(*bootstrap_contents);
     if (!bootstrap.ok()) return bootstrap.status();
     *g_parsed_bootstrap = std::move(*bootstrap);
   }
@@ -274,7 +270,7 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
   if (bootstrap_config.has_value()) {
     GRPC_TRACE_LOG(xds_client, INFO)
         << "xDS bootstrap contents: " << *bootstrap_config;
-    auto bootstrap = GrpcXdsBootstrap::Create(*bootstrap_config);
+    auto bootstrap = GrpcXdsBootstrapBuilder::Build(*bootstrap_config);
     if (!bootstrap.ok()) return bootstrap.status();
     grpc_channel_args* xds_channel_args = args.GetPointer<grpc_channel_args>(
         GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_CLIENT_CHANNEL_ARGS);

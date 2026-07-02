@@ -16,8 +16,6 @@
 
 #include "src/core/xds/grpc/xds_cluster_specifier_plugin.h"
 
-#include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <map>

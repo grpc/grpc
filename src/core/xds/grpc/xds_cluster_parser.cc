@@ -54,6 +54,7 @@
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/grpc/xds_lb_policy_registry.h"
 #include "src/core/xds/grpc/xds_metadata_parser.h"
+#include "src/core/xds/grpc/xds_tls_context_parser.h"
 #include "src/core/xds/xds_client/lrs_client.h"
 #include "src/core/xds/xds_client/xds_backend_metric_propagation.h"
 #include "upb/base/string_view.h"
@@ -65,11 +66,6 @@
 #include "absl/strings/strip.h"
 
 namespace grpc_core {
-
-// TODO(roth): Remove this once the feature passes interop tests.
-bool XdsHttpConnectEnabled() {
-  return IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_HTTP_CONNECT");
-}
 
 namespace {
 

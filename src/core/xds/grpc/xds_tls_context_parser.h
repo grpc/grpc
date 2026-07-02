@@ -1,5 +1,5 @@
 //
-// Copyright 2024 gRPC authors.
+// Copyright 2018 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,22 +14,22 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_METADATA_PARSER_H
-#define GRPC_SRC_CORE_XDS_GRPC_XDS_METADATA_PARSER_H
+#ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_TLS_CONTEXT_PARSER_H
+#define GRPC_SRC_CORE_XDS_GRPC_XDS_TLS_CONTEXT_PARSER_H
 
-#include "envoy/config/core/v3/base.upb.h"
+#include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "src/core/util/validation_errors.h"
-#include "src/core/xds/grpc/xds_metadata.h"
+#include "src/core/xds/grpc/xds_tls_context.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 
 namespace grpc_core {
 
-bool XdsHttpConnectEnabled();
-
-XdsMetadataMap ParseXdsMetadataMap(
+CommonTlsContext CommonTlsContextParse(
     const XdsResourceType::DecodeContext& context,
-    const envoy_config_core_v3_Metadata* metadata, ValidationErrors* errors);
+    const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext*
+        common_tls_context_proto,
+    ValidationErrors* errors);
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_XDS_GRPC_XDS_METADATA_PARSER_H
+#endif  // GRPC_SRC_CORE_XDS_GRPC_XDS_TLS_CONTEXT_PARSER_H
