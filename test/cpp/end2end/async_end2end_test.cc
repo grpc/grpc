@@ -1957,7 +1957,6 @@ TEST_P(AsyncEnd2endServerTryCancelTest, ClientStreamingServerTryCancelDuring) {
   // TODO(akshitpatel) [PH2][P3][Client] Fix bug. Likley same bug as
   // ClientStreamingServerTryCancelBefore.
   SKIP_TEST_FOR_PH2_CLIENT("WIP `Check failed` for PH2");
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   TestClientStreamingServerCancel(CANCEL_DURING_PROCESSING);
 }
 
