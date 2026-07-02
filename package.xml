@@ -2290,8 +2290,8 @@
     <file baseinstalldir="/" name="src/php/ext/grpc/completion_queue.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/php7_wrapper.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/php_grpc.c" role="src" />
-    <file baseinstalldir="/" name="src/php/ext/grpc/php_grpc_pin_self.c" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/php_grpc.h" role="src" />
+    <file baseinstalldir="/" name="src/php/ext/grpc/php_grpc_pin_self.c" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/server.c" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/server.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/server_credentials.c" role="src" />
