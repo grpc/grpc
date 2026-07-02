@@ -263,10 +263,10 @@ class Call:
         return _common.CYGRPC_STATUS_CODE_TO_STATUS_CODE[cygrpc_code]
 
     async def details(self) -> str:
-        return (await self._cython_call.status()).details()
+        return (await self._cython_call.status()).details() or ""
 
     async def debug_error_string(self) -> str:
-        return (await self._cython_call.status()).debug_error_string()
+        return (await self._cython_call.status()).debug_error_string() or ""
 
     async def _raise_for_status(self) -> None:
         if self._cython_call.is_locally_cancelled():

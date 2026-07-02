@@ -326,8 +326,8 @@ class TestUnaryUnaryClientInterceptor(AioTestBase):
             self.assertFalse(call.cancelled())
             self.assertEqual(await call.code(), grpc.StatusCode.OK)
             self.assertEqual(await call.details(), "")
-            self.assertEqual(await call.initial_metadata(), None)
-            self.assertEqual(await call.trailing_metadata(), None)
+            self.assertEqual(await call.initial_metadata(), aio.Metadata())
+            self.assertEqual(await call.trailing_metadata(), aio.Metadata())
             self.assertEqual(await call.debug_error_string(), None)
 
 
@@ -498,8 +498,8 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
             self.assertEqual(
                 await call.details(), _LOCAL_CANCEL_DETAILS_EXPECTATION
             )
-            self.assertEqual(await call.initial_metadata(), None)
-            self.assertEqual(await call.trailing_metadata(), None)
+            self.assertEqual(await call.initial_metadata(), aio.Metadata())
+            self.assertEqual(await call.trailing_metadata(), aio.Metadata())
 
     async def test_cancel_after_rpc(self):
         interceptor_reached = asyncio.Event()
@@ -539,8 +539,8 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
             self.assertEqual(
                 await call.details(), _LOCAL_CANCEL_DETAILS_EXPECTATION
             )
-            self.assertEqual(await call.initial_metadata(), None)
-            self.assertEqual(await call.trailing_metadata(), None)
+            self.assertEqual(await call.initial_metadata(), aio.Metadata())
+            self.assertEqual(await call.trailing_metadata(), aio.Metadata())
 
     async def test_cancel_inside_interceptor_after_rpc_awaiting(self):
         class Interceptor(aio.UnaryUnaryClientInterceptor):
@@ -571,8 +571,8 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
             self.assertEqual(
                 await call.details(), _LOCAL_CANCEL_DETAILS_EXPECTATION
             )
-            self.assertEqual(await call.initial_metadata(), None)
-            self.assertEqual(await call.trailing_metadata(), None)
+            self.assertEqual(await call.initial_metadata(), aio.Metadata())
+            self.assertEqual(await call.trailing_metadata(), aio.Metadata())
 
     async def test_cancel_inside_interceptor_after_rpc_not_awaiting(self):
         class Interceptor(aio.UnaryUnaryClientInterceptor):
