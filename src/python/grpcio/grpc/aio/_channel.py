@@ -24,8 +24,8 @@ from grpc import _grpcio_metadata
 from grpc._cython import cygrpc
 from typing_extensions import Self
 
-from . import _base_call
-from . import _base_channel
+from . import _base_call  # pyright: ignore[reportPrivateUsage]
+from . import _base_channel  # pyright: ignore[reportPrivateUsage]
 from ._call import StreamStreamCall
 from ._call import StreamUnaryCall
 from ._call import UnaryStreamCall
@@ -47,7 +47,7 @@ from ._typing import RequestIterableType
 from ._typing import RequestType
 from ._typing import ResponseType
 from ._typing import SerializingFunction
-from ._utils import _timeout_to_deadline
+from ._utils import _timeout_to_deadline  # pyright: ignore[reportPrivateUsage]
 
 ClientInterceptorT = TypeVar("ClientInterceptorT", bound=ClientInterceptor)
 
