@@ -44,6 +44,8 @@ RUN /usr/local/bin/apt-get-install-retry \
     shellcheck \
     && apt clean
 
+{% include "../../git_avoid_dubious_ownership_error.include" %}
+
 {% include "../../bazel.include" %}
 {% include "../../buildifier.include" %}
 
