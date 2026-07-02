@@ -585,6 +585,7 @@ class ChannelCredentials:
     example, ssl_channel_credentials returns an instance of this class and
     secure_channel requires an instance of this class.
     """
+    _credentials: _cygrpc.ChannelCredentials
 
     def __init__(self, credentials):
         self._credentials = credentials
