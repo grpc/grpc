@@ -125,55 +125,61 @@ auto ChaoticGoodServerTransport::StreamDispatch::SendCallBody(
 
 auto ChaoticGoodServerTransport::StreamDispatch::SendCallInitialMetadataAndBody(
     uint32_t stream_id, CallInitiator call_initiator,
-    std::shared_ptr<TcpCallTracer> call_tracer) {
+    std::shared_ptr<TcpCallTracer> call_tracer,
+    std::optional<ServerMetadataHandle> md) {
+  GRPC_TRACE_LOG(chaotic_good, INFO)
+      << "CHAOTIC_GOOD: SendCallInitialMetadataAndBody: md="
+      << (md.has_value() ? (*md)->DebugString() : "null");
+  const bool has_metadata = md.has_value();
+  ServerMetadataHandle metadata = has_metadata ? std::move(*md) : nullptr;
   return TrySeq(
-      // Wait for initial metadata then send it out.
-      call_initiator.PullServerInitialMetadata(),
-      [stream_id, call_initiator, call_tracer = std::move(call_tracer),
-       this](std::optional<ServerMetadataHandle> md) mutable {
-        GRPC_TRACE_LOG(chaotic_good, INFO)
-            << "CHAOTIC_GOOD: SendCallInitialMetadataAndBody: md="
-            << (md.has_value() ? (*md)->DebugString() : "null");
-        return If(
-            md.has_value(),
-            [&md, stream_id, &call_initiator, &call_tracer, this]() {
-              ServerInitialMetadataFrame frame;
-              frame.body = ServerMetadataProtoFromGrpc(**md);
-              frame.stream_id = stream_id;
-              return TrySeq(
-                  outgoing_frames_.Send(
-                      OutgoingFrame{std::move(frame), call_tracer}, 1),
-                  SendCallBody(stream_id, call_initiator, call_tracer));
-            },
-            []() { return StatusFlag(true); });
-      });
+      If(
+          has_metadata,
+          [this, metadata = std::move(metadata), stream_id,
+           call_tracer]() mutable {
+            ServerInitialMetadataFrame frame;
+            frame.body = ServerMetadataProtoFromGrpc(*metadata);
+            frame.stream_id = stream_id;
+            return outgoing_frames_.Send(
+                OutgoingFrame{std::move(frame), call_tracer}, 1u);
+          },
+          []() { return StatusFlag(true); }),
+      SendCallBody(stream_id, call_initiator, std::move(call_tracer)));
 }
 
 auto ChaoticGoodServerTransport::StreamDispatch::CallOutboundLoop(
     uint32_t stream_id, CallInitiator call_initiator) {
-  std::shared_ptr<TcpCallTracer> call_tracer;
-  auto tracer = call_initiator.arena()->GetContext<CallTracer>();
-  if (tracer != nullptr && tracer->IsSampled()) {
-    call_tracer = tracer->StartNewTcpTrace();
-  }
   return GRPC_LATENT_SEE_PROMISE(
       "CallOutboundLoop",
-      Seq(Map(SendCallInitialMetadataAndBody(stream_id, call_initiator,
-                                             call_tracer),
-              [stream_id](StatusFlag main_body_result) {
-                GRPC_TRACE_VLOG(chaotic_good, 2)
-                    << "CHAOTIC_GOOD: CallOutboundLoop: stream_id=" << stream_id
-                    << " main_body_result=" << main_body_result;
-                return Empty{};
-              }),
-          call_initiator.PullServerTrailingMetadata(),
-          [outgoing_frames = outgoing_frames_, stream_id,
-           call_tracer](ServerMetadataHandle md) mutable {
-            ServerTrailingMetadataFrame frame;
-            frame.body = ServerMetadataProtoFromGrpc(*md);
-            frame.stream_id = stream_id;
-            return outgoing_frames.Send(
-                OutgoingFrame{std::move(frame), call_tracer}, 1);
+      Seq(call_initiator.PullServerInitialMetadata(),
+          [this, stream_id,
+           call_initiator](std::optional<ServerMetadataHandle> md) mutable {
+            CallTracer* const tracer =
+                call_initiator.arena()->GetContext<CallTracer>();
+            std::shared_ptr<TcpCallTracer> call_tracer =
+                (tracer != nullptr && tracer->IsSampled())
+                    ? tracer->StartNewTcpTrace()
+                    : nullptr;
+            return Seq(
+                Map(SendCallInitialMetadataAndBody(stream_id, call_initiator,
+                                                   call_tracer, std::move(md)),
+                    [stream_id](StatusFlag main_body_result) {
+                      GRPC_TRACE_VLOG(chaotic_good, 2)
+                          << "CHAOTIC_GOOD: CallOutboundLoop: stream_id="
+                          << stream_id
+                          << " main_body_result=" << main_body_result;
+                      return Empty{};
+                    }),
+                call_initiator.PullServerTrailingMetadata(),
+                [this, stream_id, call_tracer = std::move(call_tracer)](
+                    ServerMetadataHandle md) mutable {
+                  ServerTrailingMetadataFrame frame;
+                  frame.body = ServerMetadataProtoFromGrpc(*md);
+                  frame.stream_id = stream_id;
+                  return outgoing_frames_.Send(
+                      OutgoingFrame{std::move(frame), std::move(call_tracer)},
+                      1);
+                });
           }));
 }
 

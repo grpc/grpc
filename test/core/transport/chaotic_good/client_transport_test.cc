@@ -22,6 +22,7 @@
 #include <grpc/status.h>
 
 #include <algorithm>
+#include <atomic>
 #include <cstddef>
 #include <cstdlib>
 #include <initializer_list>
@@ -40,6 +41,8 @@
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/tcp_tracer.h"
 #include "test/core/transport/chaotic_good/mock_frame_transport.h"
 #include "test/core/transport/chaotic_good/transport_test_helper.h"
 #include "test/core/transport/util/mock_promise_endpoint.h"
@@ -254,6 +257,136 @@ TEST_F(TransportTest, CheckFailure) {
   // Wait until ClientTransport's internal activities to finish.
   event_engine()->TickUntilIdle();
   transport.reset();
+  event_engine()->TickUntilIdle();
+  event_engine()->UnsetGlobalHooks();
+}
+
+class MockTcpCallTracer : public TcpCallTracer {
+ public:
+  MOCK_METHOD(void, RecordEvent,
+              (grpc_event_engine::experimental::internal::WriteEvent,
+               absl::Time, size_t, const std::vector<TcpEventMetric>&),
+              (override));
+};
+
+class MockCallTracerInterface : public CallTracerInterface {
+ public:
+  MOCK_METHOD(void, RecordSendInitialMetadata, (grpc_metadata_batch*),
+              (override));
+  MOCK_METHOD(void, MutateSendInitialMetadata, (grpc_metadata_batch*),
+              (override));
+  MOCK_METHOD(void, RecordSendTrailingMetadata, (grpc_metadata_batch*),
+              (override));
+  MOCK_METHOD(void, MutateSendTrailingMetadata, (grpc_metadata_batch*),
+              (override));
+  MOCK_METHOD(void, RecordSendMessage, (const Message&), (override));
+  MOCK_METHOD(void, RecordSendCompressedMessage, (const Message&), (override));
+  MOCK_METHOD(void, RecordReceivedInitialMetadata, (grpc_metadata_batch*),
+              (override));
+  MOCK_METHOD(void, RecordReceivedMessage, (const Message&), (override));
+  MOCK_METHOD(void, RecordReceivedDecompressedMessage, (const Message&),
+              (override));
+  MOCK_METHOD(void, RecordCancel, (grpc_error_handle), (override));
+  MOCK_METHOD(void, RecordIncomingBytes, (const TransportByteSize&),
+              (override));
+  MOCK_METHOD(void, RecordOutgoingBytes, (const TransportByteSize&),
+              (override));
+  MOCK_METHOD(std::shared_ptr<TcpCallTracer>, StartNewTcpTrace, (), (override));
+  MOCK_METHOD(void, RecordAnnotation, (absl::string_view), (override));
+  MOCK_METHOD(void, RecordAnnotation, (const Annotation&), (override));
+  MOCK_METHOD(std::string, TraceId, (), (override));
+  MOCK_METHOD(std::string, SpanId, (), (override));
+  MOCK_METHOD(bool, IsSampled, (), (override));
+};
+
+TEST_F(TransportTest, DeferTcpTracerInitialization) {
+  auto owned_frame_transport =
+      MakeOrphanable<MockFrameTransport>(event_engine());
+  auto* frame_transport = owned_frame_transport.get();
+  auto channel_args = MakeChannelArgs(event_engine());
+  auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
+      channel_args, std::move(owned_frame_transport), MessageChunker(0, 1));
+
+  auto arena = MakeArena();
+  auto spine = CallSpine::Create(TestInitialMetadata(), arena);
+  CallInitiator initiator(spine);
+  UnstartedCallHandler unstarted_handler(spine);
+
+  auto mock_tracer_impl =
+      std::make_unique<StrictMock<MockCallTracerInterface>>();
+  auto mock_tcp_tracer = std::make_shared<StrictMock<MockTcpCallTracer>>();
+  EXPECT_CALL(*mock_tracer_impl, IsSampled()).WillOnce(::testing::Return(true));
+  EXPECT_CALL(*mock_tracer_impl, StartNewTcpTrace())
+      .WillOnce(::testing::Return(mock_tcp_tracer));
+  auto* call_tracer = arena->New<CallTracer>(mock_tracer_impl.get());
+
+  // Use a shared atomic bool to delay the client initial metadata propagation.
+  // This ensures PullClientInitialMetadata() blocks asynchronously.
+  auto release_metadata = std::make_shared<std::atomic<bool>>(false);
+  auto waker_shared = std::make_shared<std::optional<Waker>>();
+  auto* arena_ptr = arena.get();
+  CallFilters::StackBuilder builder;
+  builder.AddOnClientInitialMetadata([release_metadata, waker_shared, arena_ptr,
+                                      call_tracer](ClientMetadata&) {
+    return [release_metadata, waker_shared, arena_ptr,
+            call_tracer]() -> Poll<absl::Status> {
+      if (release_metadata->load()) {
+        arena_ptr->SetContext<CallTracer>(call_tracer);
+        return absl::OkStatus();
+      } else {
+        *waker_shared = GetContext<Activity>()->MakeNonOwningWaker();
+        return Pending{};
+      }
+    };
+  });
+  spine->call_filters().AddStack(builder.Build());
+
+  frame_transport->ExpectWrite(MakeProtoFrame<ClientInitialMetadataFrame>(
+      1, "path: '/demo.Service/Step'"));
+  frame_transport->ExpectWrite(ClientEndOfStream(1));
+
+  // Start the call. This will spawn CallOutboundLoop.
+  // In the old code, it will immediately look up the tracer (and miss it).
+  // In the new code, it will block on PullClientInitialMetadata and defer the
+  // lookup.
+  CallHandler call_handler = unstarted_handler.StartCall();
+  transport->StartCall(call_handler);
+
+  // Release the metadata and wake up the spine to trigger the lookup.
+  release_metadata->store(true);
+  if (waker_shared->has_value()) {
+    waker_shared->value().Wakeup();
+  }
+
+  // Finish sends.
+  initiator.SpawnInfallible("finish_sends", [initiator]() mutable {
+    initiator.FinishSends();
+    return Empty{};
+  });
+
+  StrictMock<MockFunction<void()>> on_done;
+  EXPECT_CALL(on_done, Call());
+  initiator.SpawnInfallible("test-read", [initiator, &on_done]() mutable {
+    return Seq(
+        initiator.PullServerInitialMetadata(),
+        [](ValueOrFailure<std::optional<ServerMetadataHandle>> md) {
+          EXPECT_TRUE(md.ok());
+          EXPECT_TRUE(md.value().has_value());
+        },
+        [initiator]() mutable {
+          return initiator.PullServerTrailingMetadata();
+        },
+        [&on_done](ServerMetadataHandle md) {
+          EXPECT_EQ(md->get(GrpcStatusMetadata()).value(), GRPC_STATUS_OK);
+          on_done.Call();
+        });
+  });
+
+  frame_transport->Read(
+      MakeProtoFrame<ServerInitialMetadataFrame>(1, "message: 'hello'"));
+  frame_transport->Read(
+      MakeProtoFrame<ServerTrailingMetadataFrame>(1, "status: 0"));
+
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
 }
