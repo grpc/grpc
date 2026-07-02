@@ -621,7 +621,9 @@ class _InterceptedStreamRequestMixin(Generic[RequestType]):
 
 
 class InterceptedUnaryUnaryCall(
-    _InterceptedUnaryResponseMixin[ResponseType], InterceptedCall, _base_call.UnaryUnaryCall[RequestType, ResponseType]
+    _InterceptedUnaryResponseMixin[ResponseType],
+    InterceptedCall,
+    _base_call.UnaryUnaryCall[RequestType, ResponseType],
 ):
     """Used for running a `UnaryUnaryCall` wrapped by interceptors.
 
@@ -721,7 +723,9 @@ class InterceptedUnaryUnaryCall(
 
 
 class InterceptedUnaryStreamCall(
-    _InterceptedStreamResponseMixin[ResponseType], InterceptedCall, _base_call.UnaryStreamCall[RequestType, ResponseType]
+    _InterceptedStreamResponseMixin[ResponseType],
+    InterceptedCall,
+    _base_call.UnaryStreamCall[RequestType, ResponseType],
 ):
     """Used for running a `UnaryStreamCall` wrapped by interceptors."""
 
@@ -1103,12 +1107,18 @@ class UnaryUnaryCallResponse(_base_call.UnaryUnaryCall):
 
 
 class _StreamCallResponseIterator(Generic[RequestType, ResponseType]):
-    _call: Union[_base_call.UnaryStreamCall[RequestType, ResponseType], _base_call.StreamStreamCall[RequestType, ResponseType]]
+    _call: Union[
+        _base_call.UnaryStreamCall[RequestType, ResponseType],
+        _base_call.StreamStreamCall[RequestType, ResponseType],
+    ]
     _response_iterator: AsyncIterable[ResponseType]
 
     def __init__(
         self,
-        call: Union[_base_call.UnaryStreamCall[RequestType, ResponseType], _base_call.StreamStreamCall[RequestType, ResponseType]],
+        call: Union[
+            _base_call.UnaryStreamCall[RequestType, ResponseType],
+            _base_call.StreamStreamCall[RequestType, ResponseType],
+        ],
         response_iterator: AsyncIterable[ResponseType],
     ) -> None:
         self._response_iterator = response_iterator
@@ -1152,7 +1162,8 @@ class _StreamCallResponseIterator(Generic[RequestType, ResponseType]):
 
 
 class UnaryStreamCallResponseIterator(
-    _StreamCallResponseIterator[RequestType, ResponseType], _base_call.UnaryStreamCall[RequestType, ResponseType]
+    _StreamCallResponseIterator[RequestType, ResponseType],
+    _base_call.UnaryStreamCall[RequestType, ResponseType],
 ):
     """UnaryStreamCall class which uses an alternative response iterator."""
 
@@ -1163,7 +1174,8 @@ class UnaryStreamCallResponseIterator(
 
 
 class StreamStreamCallResponseIterator(
-    _StreamCallResponseIterator[RequestType, ResponseType], _base_call.StreamStreamCall[RequestType, ResponseType]
+    _StreamCallResponseIterator[RequestType, ResponseType],
+    _base_call.StreamStreamCall[RequestType, ResponseType],
 ):
     """StreamStreamCall class which uses an alternative response iterator."""
 

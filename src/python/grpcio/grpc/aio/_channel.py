@@ -75,7 +75,9 @@ def _augment_channel_arguments(
     )
 
 
-class _BaseMultiCallable(Generic[RequestType, ResponseType, ClientInterceptorT]):
+class _BaseMultiCallable(
+    Generic[RequestType, ResponseType, ClientInterceptorT]
+):
     """Base class of all multi callable objects.
 
     Handles the initialization logic and stores common attributes.
@@ -132,7 +134,9 @@ class _BaseMultiCallable(Generic[RequestType, ResponseType, ClientInterceptorT])
         metadata, as it should be used for the current call.
         """
         metadata = metadata or Metadata()
-        if not isinstance(metadata, Metadata) and isinstance( # pyright: ignore[reportUnnecessaryIsInstance]
+        if not isinstance(
+            metadata, Metadata
+        ) and isinstance(  # pyright: ignore[reportUnnecessaryIsInstance]
             metadata, Sequence
         ):
             metadata = Metadata.from_tuple(tuple(metadata))
@@ -291,7 +295,9 @@ class StreamUnaryMultiCallable(
 
 
 class StreamStreamMultiCallable(
-    _BaseMultiCallable[RequestType, ResponseType, StreamStreamClientInterceptor],
+    _BaseMultiCallable[
+        RequestType, ResponseType, StreamStreamClientInterceptor
+    ],
     _base_channel.StreamStreamMultiCallable[RequestType, ResponseType],
 ):
     def __call__(
@@ -513,7 +519,9 @@ class Channel(_base_channel.Channel):
         self,
         method: str,
         request_serializer: Optional[SerializingFunction[RequestType]] = None,
-        response_deserializer: Optional[DeserializingFunction[ResponseType]] = None,
+        response_deserializer: Optional[
+            DeserializingFunction[ResponseType]
+        ] = None,
         _registered_method: Optional[bool] = False,
     ) -> UnaryUnaryMultiCallable[RequestType, ResponseType]:
         return UnaryUnaryMultiCallable(
@@ -533,7 +541,9 @@ class Channel(_base_channel.Channel):
         self,
         method: str,
         request_serializer: Optional[SerializingFunction[RequestType]] = None,
-        response_deserializer: Optional[DeserializingFunction[ResponseType]] = None,
+        response_deserializer: Optional[
+            DeserializingFunction[ResponseType]
+        ] = None,
         _registered_method: Optional[bool] = False,
     ) -> UnaryStreamMultiCallable[RequestType, ResponseType]:
         return UnaryStreamMultiCallable(
@@ -553,7 +563,9 @@ class Channel(_base_channel.Channel):
         self,
         method: str,
         request_serializer: Optional[SerializingFunction[RequestType]] = None,
-        response_deserializer: Optional[DeserializingFunction[ResponseType]] = None,
+        response_deserializer: Optional[
+            DeserializingFunction[ResponseType]
+        ] = None,
         _registered_method: Optional[bool] = False,
     ) -> StreamUnaryMultiCallable[RequestType, ResponseType]:
         return StreamUnaryMultiCallable(
@@ -573,7 +585,9 @@ class Channel(_base_channel.Channel):
         self,
         method: str,
         request_serializer: Optional[SerializingFunction[RequestType]] = None,
-        response_deserializer: Optional[DeserializingFunction[ResponseType]] = None,
+        response_deserializer: Optional[
+            DeserializingFunction[ResponseType]
+        ] = None,
         _registered_method: Optional[bool] = False,
     ) -> StreamStreamMultiCallable[RequestType, ResponseType]:
         return StreamStreamMultiCallable(

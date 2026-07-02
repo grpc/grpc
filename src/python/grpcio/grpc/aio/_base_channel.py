@@ -279,7 +279,9 @@ class Channel(abc.ABC):
         self,
         method: str,
         request_serializer: Optional[SerializingFunction[RequestType]] = None,
-        response_deserializer: Optional[DeserializingFunction[ResponseType]] = None,
+        response_deserializer: Optional[
+            DeserializingFunction[ResponseType]
+        ] = None,
         _registered_method: Optional[bool] = False,
     ) -> UnaryUnaryMultiCallable[RequestType, ResponseType]:
         """Creates a UnaryUnaryMultiCallable for a unary-unary method.
@@ -303,7 +305,9 @@ class Channel(abc.ABC):
         self,
         method: str,
         request_serializer: Optional[SerializingFunction[RequestType]] = None,
-        response_deserializer: Optional[DeserializingFunction[ResponseType]] = None,
+        response_deserializer: Optional[
+            DeserializingFunction[ResponseType]
+        ] = None,
         _registered_method: Optional[bool] = False,
     ) -> UnaryStreamMultiCallable[RequestType, ResponseType]:
         """Creates a UnaryStreamMultiCallable for a unary-stream method.
@@ -327,7 +331,9 @@ class Channel(abc.ABC):
         self,
         method: str,
         request_serializer: Optional[SerializingFunction[RequestType]] = None,
-        response_deserializer: Optional[DeserializingFunction[ResponseType]] = None,
+        response_deserializer: Optional[
+            DeserializingFunction[ResponseType]
+        ] = None,
         _registered_method: Optional[bool] = False,
     ) -> StreamUnaryMultiCallable[RequestType, ResponseType]:
         """Creates a StreamUnaryMultiCallable for a stream-unary method.
@@ -351,7 +357,9 @@ class Channel(abc.ABC):
         self,
         method: str,
         request_serializer: Optional[SerializingFunction[RequestType]] = None,
-        response_deserializer: Optional[DeserializingFunction[ResponseType]] = None,
+        response_deserializer: Optional[
+            DeserializingFunction[ResponseType]
+        ] = None,
         _registered_method: Optional[bool] = False,
     ) -> StreamStreamMultiCallable[RequestType, ResponseType]:
         """Creates a StreamStreamMultiCallable for a stream-stream method.
