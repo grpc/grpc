@@ -58,13 +58,13 @@ _USER_AGENT = "grpc-python-asyncio/{}".format(_grpcio_metadata.__version__)
 
 def _augment_channel_arguments(
     base_options: ChannelArgumentType, compression: Optional[grpc.Compression]
-) -> Any:
+) -> ChannelArgumentType:
     compression_channel_argument = _compression.create_channel_option(
         compression
     )
     user_agent_channel_argument = (
         (
-            cygrpc.ChannelArgKey.primary_user_agent_string,
+            cygrpc.ChannelArgKey.primary_user_agent_string.decode(),
             _USER_AGENT,
         ),
     )
