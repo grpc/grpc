@@ -278,8 +278,8 @@ class Channel(abc.ABC):
     def unary_unary(
         self,
         method: str,
-        request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None,
+        request_serializer: Optional[SerializingFunction[RequestType]] = None,
+        response_deserializer: Optional[DeserializingFunction[ResponseType]] = None,
         _registered_method: Optional[bool] = False,
     ) -> UnaryUnaryMultiCallable[RequestType, ResponseType]:
         """Creates a UnaryUnaryMultiCallable for a unary-unary method.
@@ -302,8 +302,8 @@ class Channel(abc.ABC):
     def unary_stream(
         self,
         method: str,
-        request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None,
+        request_serializer: Optional[SerializingFunction[RequestType]] = None,
+        response_deserializer: Optional[DeserializingFunction[ResponseType]] = None,
         _registered_method: Optional[bool] = False,
     ) -> UnaryStreamMultiCallable[RequestType, ResponseType]:
         """Creates a UnaryStreamMultiCallable for a unary-stream method.
@@ -326,8 +326,8 @@ class Channel(abc.ABC):
     def stream_unary(
         self,
         method: str,
-        request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None,
+        request_serializer: Optional[SerializingFunction[RequestType]] = None,
+        response_deserializer: Optional[DeserializingFunction[ResponseType]] = None,
         _registered_method: Optional[bool] = False,
     ) -> StreamUnaryMultiCallable[RequestType, ResponseType]:
         """Creates a StreamUnaryMultiCallable for a stream-unary method.
@@ -350,8 +350,8 @@ class Channel(abc.ABC):
     def stream_stream(
         self,
         method: str,
-        request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None,
+        request_serializer: Optional[SerializingFunction[RequestType]] = None,
+        response_deserializer: Optional[DeserializingFunction[ResponseType]] = None,
         _registered_method: Optional[bool] = False,
     ) -> StreamStreamMultiCallable[RequestType, ResponseType]:
         """Creates a StreamStreamMultiCallable for a stream-stream method.
