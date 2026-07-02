@@ -125,7 +125,13 @@ static grpc_error_handle handle_request_line(grpc_http_parser* parser) {
   if (cur == end || *cur++ != '/') {
     return GRPC_ERROR_CREATE("Expected '/'");
   }
+  if (cur == end) {
+    return GRPC_ERROR_CREATE("End of line in HTTP version string");
+  }
   vers_major = static_cast<uint8_t>(*cur++ - '1' + 1);
+  if (cur == end) {
+    return GRPC_ERROR_CREATE("End of line in HTTP version string");
+  }
   ++cur;
   if (cur == end) {
     return GRPC_ERROR_CREATE("End of line in HTTP version string");
