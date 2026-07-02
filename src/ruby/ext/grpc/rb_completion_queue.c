@@ -21,9 +21,9 @@
 #include "rb_completion_queue.h"
 
 #include <grpc/grpc.h>
+#include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include <grpc/support/atm.h>
 #include <ruby/thread.h>
 #include <stdbool.h>
 
