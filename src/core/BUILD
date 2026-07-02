@@ -9771,7 +9771,6 @@ grpc_cc_library(
         "resource_quota",
         "seq",
         "slice",
-        "slice_buffer",
         "switch",
         "sync",
         "try_join",
@@ -9779,6 +9778,7 @@ grpc_cc_library(
         "//:exec_ctx",
         "//:gpr_platform",
         "//:grpc_base",
+        "//:promise",
         "//:ref_counted_ptr",
     ],
 )
