@@ -1738,63 +1738,59 @@ void Http2ServerTransport::ReportDisconnectionLocked(
 }
 
 bool Http2ServerTransport::SetOnDone(RefCountedPtr<Stream> stream) {
-  // TODO(akshitpatel) : [PH2][P0] : Implement this.
   return stream->GetCallInitiator().OnDone(
       [self = RefAsSubclass<Http2ServerTransport>(),
-       stream = std::move(stream)](GRPC_UNUSED bool cancelled) mutable {});
+       stream = std::move(stream)](bool cancelled) mutable {
+        GRPC_HTTP2_SERVER_DLOG << "PH2: Client call " << self.get()
+                               << " id=" << stream->GetStreamId()
+                               << " done: cancelled=" << cancelled;
+        absl::StatusOr<
+            StreamDataQueue<ServerMetadataHandle>::StreamWritabilityUpdate>
+            enqueue_result;
+        GRPC_HTTP2_SERVER_DLOG << "PH2: Client call " << self.get()
+                               << " id=" << stream->GetStreamId()
+                               << " done: stream=" << stream.get()
+                               << " cancelled=" << cancelled;
+
+        // If the stream is already closed for writes, then we don't need to
+        // enqueue the reset stream or the half closed frame.
+        if (stream->IsClosedForWrites()) {
+          GRPC_HTTP2_SERVER_DLOG << "PH2: Client call " << self.get()
+                                 << " id=" << stream->GetStreamId()
+                                 << " done: stream already closed for writes";
+          return;
+        }
+
+        if (cancelled) {
+          // In most of the cases, EnqueueResetStream would be a no-op as
+          // BeginCloseStream would have already enqueued the reset stream.
+          // Currently only Aborts from application will actually enqueue
+          // the reset stream here.
+          enqueue_result = stream->EnqueueResetStream(
+              static_cast<uint32_t>(Http2ErrorCode::kCancel));
+          GRPC_HTTP2_SERVER_DLOG
+              << "Enqueued ResetStream with error code="
+              << static_cast<uint32_t>(Http2ErrorCode::kCancel)
+              << " status=" << enqueue_result.status();
+        } else {
+          enqueue_result = stream->EnqueueHalfClosed();
+          GRPC_HTTP2_SERVER_DLOG << "Enqueued HalfClosed with result="
+                                 << enqueue_result.status();
+        }
+
+        if (GPR_LIKELY(enqueue_result.ok())) {
+          GRPC_HTTP2_SERVER_DLOG
+              << "Http2ServerTransport::SetOnDone "
+                 "MaybeAddStreamToWritableStreamList for stream= "
+              << stream->GetStreamId() << " enqueue_result={became_writable="
+              << enqueue_result.value().became_writable << ", priority="
+              << static_cast<uint8_t>(enqueue_result.value().priority) << "}";
+          GRPC_UNUSED absl::Status status =
+              self->MaybeAddStreamToWritableStreamList(std::move(stream),
+                                                       enqueue_result.value());
+        }
+      });
 }
-//   return call_handler.OnDone([self = RefAsSubclass<Http2ServerTransport>(),
-//                               stream =
-//                                   std::move(stream)](bool cancelled) mutable
-//                                   {
-//     GRPC_HTTP2_SERVER_DLOG << "PH2: Client call " << self.get()
-//                            << " id=" << stream->GetStreamId()
-//                            << " done: cancelled=" << cancelled;
-//     absl::StatusOr<StreamWritabilityUpdate> enqueue_result;
-//     GRPC_HTTP2_SERVER_DLOG << "PH2: Client call " << self.get()
-//                            << " id=" << stream->GetStreamId()
-//                            << " done: stream=" << stream.get()
-//                            << " cancelled=" << cancelled;
-
-//     // If the stream is already closed for writes, then we don't need to
-//     // enqueue the reset stream or the half closed frame.
-//     if (stream->IsClosedForWrites()) {
-//       GRPC_HTTP2_SERVER_DLOG << "PH2: Client call " << self.get()
-//                              << " id=" << stream->GetStreamId()
-//                              << " done: stream already closed for writes";
-//       return;
-//     }
-
-//     if (cancelled) {
-//       // In most of the cases, EnqueueResetStream would be a no-op as
-//       // BeginCloseStream would have already enqueued the reset stream.
-//       // Currently only Aborts from application will actually enqueue
-//       // the reset stream here.
-//       enqueue_result = stream->EnqueueResetStream(
-//           static_cast<uint32_t>(Http2ErrorCode::kCancel));
-//       GRPC_HTTP2_SERVER_DLOG << "Enqueued ResetStream with error code="
-//                              <<
-//                              static_cast<uint32_t>(Http2ErrorCode::kCancel)
-//                              << " status=" << enqueue_result.status();
-//     } else {
-//       enqueue_result = stream->EnqueueHalfClosed();
-//       GRPC_HTTP2_SERVER_DLOG << "Enqueued HalfClosed with result="
-//                              << enqueue_result.status();
-//     }
-
-//     if (GPR_LIKELY(enqueue_result.ok())) {
-//       GRPC_HTTP2_SERVER_DLOG
-//           << "Http2ServerTransport::SetOnDone "
-//              "MaybeAddStreamToWritableStreamList for stream= "
-//           << stream->GetStreamId() << " enqueue_result={became_writable="
-//           << enqueue_result.value().became_writable << ", priority="
-//           << static_cast<uint8_t>(enqueue_result.value().priority) << "}";
-//       GRPC_UNUSED absl::Status status =
-//           self->MaybeAddStreamToWritableStreamList(std::move(stream),
-//                                                    enqueue_result.value());
-//     }
-//   });
-// }
 
 void Http2ServerTransport::ReadChannelArgs(const ChannelArgs& channel_args,
                                            TransportChannelArgs& args) {
