@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM arm64v8/debian:11
+FROM --platform=linux/arm64/v8 arm64v8/debian:11
 
 {% include "../../apt_get_basic.include" %}
 {% include "../../run_tests_addons.include" %}
 
 # Python test coverage requires libsqlite3, and it have
 # to be installed before Python.
-RUN apt-get update && apt-get install -y libsqlite3-dev
+RUN /usr/local/bin/apt-get-install-retry libsqlite3-dev
 
 {% include "../../compile_python_310.include" %}
 

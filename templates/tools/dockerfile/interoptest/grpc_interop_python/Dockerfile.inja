@@ -17,7 +17,7 @@ FROM python:3.10-bullseye
 {% include "../../apt_get_basic.include" %}
 {% include "../../run_tests_addons.include" %}
 
-RUN apt-get update && apt-get install -y python3 python3-all-dev python3-pip
+RUN /usr/local/bin/apt-get-install-retry python3 python3-all-dev python3-pip
 RUN ln -s $(which python3) /usr/bin/python
 
 {% include "../../gcp_api_libraries.include" %}

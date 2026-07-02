@@ -35,7 +35,7 @@ For Visual Studio integration - these files provide the properties pages:
 
 DLLs containing the custom tasks are in:
 
-* `build\_protobuf\netstandard2.0`
+* `build\_protobuf\netstandard1.3`
 * `build\_protobuf\net45`
 
 ## Protobuf compiler and C# gRPC plugin binaries

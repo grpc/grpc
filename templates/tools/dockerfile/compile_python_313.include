@@ -1,8 +1,8 @@
 #=================
 # Compile CPython 3.13.0rc2 from source
 
-RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev libsqlite3-dev && apt-get clean
-RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
+RUN /usr/local/bin/apt-get-install-retry zlib1g-dev libssl-dev libsqlite3-dev
+RUN /usr/local/bin/apt-get-install-retry jq build-essential libffi-dev
 
 RUN cd /tmp && \
     wget -q https://www.python.org/ftp/python/3.13.0/Python-3.13.0rc2.tgz && \

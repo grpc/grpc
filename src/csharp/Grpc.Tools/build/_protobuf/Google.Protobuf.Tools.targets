@@ -7,7 +7,7 @@
     <!-- Configuration is passing the smoke test. -->
     <Protobuf_ProjectSupported Condition=" '$(Protobuf_Generator)' != '' ">true</Protobuf_ProjectSupported>
     <!-- Allow assembly file to be specified externally for testing by setting property _Protobuf_MsBuildAssembly -->
-    <_Protobuf_MsBuildAssembly Condition=" '$(_Protobuf_MsBuildAssembly)' == '' and '$(MSBuildRuntimeType)' == 'Core' ">netstandard2.0\Protobuf.MSBuild.dll</_Protobuf_MsBuildAssembly>
+    <_Protobuf_MsBuildAssembly Condition=" '$(_Protobuf_MsBuildAssembly)' == '' and '$(MSBuildRuntimeType)' == 'Core' ">netstandard1.3\Protobuf.MSBuild.dll</_Protobuf_MsBuildAssembly>
     <_Protobuf_MsBuildAssembly Condition=" '$(_Protobuf_MsBuildAssembly)' == '' and '$(MSBuildRuntimeType)' != 'Core' ">net45\Protobuf.MSBuild.dll</_Protobuf_MsBuildAssembly>
   </PropertyGroup>
 
