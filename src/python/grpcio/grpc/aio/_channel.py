@@ -17,6 +17,7 @@
 import asyncio
 from typing import Any, Generic, List, Optional, Sequence, TypeVar
 import weakref
+import types
 
 import grpc
 from grpc import _common
@@ -344,6 +345,7 @@ class Channel(_base_channel.Channel):
     _unary_stream_interceptors: List[UnaryStreamClientInterceptor]
     _stream_unary_interceptors: List[StreamUnaryClientInterceptor]
     _stream_stream_interceptors: List[StreamStreamClientInterceptor]
+    _active_calls: weakref.WeakSet[_base_call.Call]
 
     def __init__(
         self,
@@ -405,7 +407,12 @@ class Channel(_base_channel.Channel):
     async def __aenter__(self) -> Self:
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+    async def __aexit__(
+        self,
+        type_: type[BaseException] | None,
+        value: BaseException | None,
+        traceback: types.TracebackType | None,
+    ) -> None:
         await self._close(None)
 
     async def _close(
