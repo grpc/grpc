@@ -97,8 +97,6 @@ inline bool IsH2MaxDeallocatingStreamsHeadroomEnabled() { return false; }
 inline bool IsInprocCancelStreamEnabled() { return true; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
-inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
 inline bool IsMemoryOptimization01Enabled() { return false; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
 inline bool IsMessageSizeRefactoringEnabled() { return false; }
@@ -192,8 +190,6 @@ inline bool IsH2MaxDeallocatingStreamsHeadroomEnabled() { return false; }
 inline bool IsInprocCancelStreamEnabled() { return true; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
-inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
 inline bool IsMemoryOptimization01Enabled() { return false; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
 inline bool IsMessageSizeRefactoringEnabled() { return false; }
@@ -287,8 +283,6 @@ inline bool IsH2MaxDeallocatingStreamsHeadroomEnabled() { return false; }
 inline bool IsInprocCancelStreamEnabled() { return true; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
-inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
 inline bool IsMemoryOptimization01Enabled() { return false; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
 inline bool IsMessageSizeRefactoringEnabled() { return false; }
@@ -366,7 +360,6 @@ enum ExperimentIds {
   kExperimentIdInprocCancelStream,
   kExperimentIdKeepAlivePingTimerBatch,
   kExperimentIdLocalConnectorSecure,
-  kExperimentIdMaxInflightPingsStrictLimit,
   kExperimentIdMemoryOptimization01,
   kExperimentIdMemoryOptimization02,
   kExperimentIdMessageSizeRefactoring,
@@ -500,10 +493,6 @@ inline bool IsKeepAlivePingTimerBatchEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_LOCAL_CONNECTOR_SECURE
 inline bool IsLocalConnectorSecureEnabled() {
   return IsExperimentEnabled<kExperimentIdLocalConnectorSecure>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
-inline bool IsMaxInflightPingsStrictLimitEnabled() {
-  return IsExperimentEnabled<kExperimentIdMaxInflightPingsStrictLimit>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MEMORY_OPTIMIZATION_01
 inline bool IsMemoryOptimization01Enabled() {

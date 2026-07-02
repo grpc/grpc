@@ -39,7 +39,6 @@ EXPERIMENT_ENABLES = {
     "inproc_cancel_stream": "inproc_cancel_stream",
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
     "local_connector_secure": "local_connector_secure",
-    "max_inflight_pings_strict_limit": "max_inflight_pings_strict_limit",
     "memory_optimization_01": "memory_optimization_01",
     "memory_optimization_02": "memory_optimization_02",
     "message_size_refactoring": "message_size_refactoring",
