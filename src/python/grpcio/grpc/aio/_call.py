@@ -308,7 +308,7 @@ class _UnaryResponseMixin(Call, Generic[ResponseType]):
             return True
         return False
 
-    def __await__(self) -> Generator[Any, None, ResponseType | EOFType]:
+    def __await__(self) -> Generator[Any, None, ResponseType]:
         """Wait till the ongoing RPC request finishes."""
         try:
             response = yield from self._call_response
