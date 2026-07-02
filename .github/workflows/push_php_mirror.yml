@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout grpc/grpc
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           submodules: recursive
 
@@ -20,7 +20,7 @@ jobs:
           echo "RELEASE_VERSION=${VERSION}" >> $GITHUB_ENV
 
       - name: Clone Mirror Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: grpc/grpc-php-ext
           path: mirror
