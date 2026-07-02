@@ -7146,6 +7146,7 @@ grpc_cc_library(
         "xds_common_types",
         "xds_common_types_parser",
         "xds_grpc_service",
+        "//:config",
         "//:xds_client",
     ],
 )
