@@ -32,6 +32,7 @@ GoawayManager::GoawayManager(std::unique_ptr<GoawayInterface> goaway_interface)
 std::optional<Http2Frame> GoawayManager::MaybeGetGoawayFrame() {
   switch (context_->goaway_state) {
     case GoawayState::kIdle:
+    case GoawayState::kInitialGracefulGoawaySent:
     case GoawayState::kDone:
       break;
     case GoawayState::kInitialGracefulGoawayScheduled: {
@@ -85,9 +86,16 @@ void GoawayManager::Context::SentGoawayTransition() {
                         << GoawayStateToString(goaway_state);
   switch (goaway_state) {
     case GoawayState::kIdle:
-    case GoawayState::kInitialGracefulGoawayScheduled:
+    case GoawayState::kInitialGracefulGoawaySent:
     case GoawayState::kDone:
       break;
+    case GoawayState::kInitialGracefulGoawayScheduled: {
+      GRPC_HTTP2_GOAWAY_LOG
+          << "Transitioning to kInitialGracefulGoawaySent from "
+          << GoawayStateToString(goaway_state);
+      goaway_state = GoawayState::kInitialGracefulGoawaySent;
+      break;
+    }
     case GoawayState::kFinalGracefulGoawayScheduled:
     case GoawayState::kImmediateGoawayRequested: {
       GRPC_HTTP2_GOAWAY_LOG << "Transitioning to kDone from "
@@ -109,6 +117,8 @@ std::string GoawayManager::Context::GoawayStateToString(
       return "kIdle";
     case GoawayState::kInitialGracefulGoawayScheduled:
       return "kInitialGracefulGoawayScheduled";
+    case GoawayState::kInitialGracefulGoawaySent:
+      return "kInitialGracefulGoawaySent";
     case GoawayState::kFinalGracefulGoawayScheduled:
       return "kFinalGracefulGoawayScheduled";
     case GoawayState::kImmediateGoawayRequested:

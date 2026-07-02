@@ -174,6 +174,14 @@ class Http2ServerTransport final : public ServerTransport,
   int64_t TestOnlyTransportFlowControlWindow();
   int64_t TestOnlyGetStreamFlowControlWindow(const uint32_t stream_id);
 
+  uint32_t TestOnlyLastIncomingStreamId() const {
+    return last_incoming_stream_id_;
+  }
+
+  Duration TestOnlyNextAllowedPingInterval() {
+    return NextAllowedPingInterval();
+  }
+
  private:
   //////////////////////////////////////////////////////////////////////////////
   // Endpoint Helpers
@@ -457,21 +465,6 @@ class Http2ServerTransport final : public ServerTransport,
       RefCountedPtr<Stream> stream,
       StreamDataQueue<ServerMetadataHandle>::StreamWritabilityUpdate result);
 
-  // Returns the next stream id. If the next stream id is not available, it
-  // returns std::nullopt. MUST be called from the transport party.
-  // absl::StatusOr<uint32_t> NextStreamId();
-
-  // Returns the next stream id without incrementing it. MUST be called from the
-  // transport party.
-  // uint32_t PeekNextStreamId() const { return next_stream_id_; }
-
-  // Returns the last stream id sent by the transport. If no streams were sent,
-  // returns 0. MUST be called from the transport party.
-  // uint32_t GetLastStreamId() const {
-  //   const uint32_t next_stream_id = PeekNextStreamId();
-  //   return (next_stream_id > 1) ? (next_stream_id - 2) : 0;
-  // }
-
   // Returns the number of active streams. A stream is removed from the `active`
   // list once both client and server agree to close the stream. The count of
   // stream_list_(even though stream list represents streams open for reads)
@@ -554,8 +547,14 @@ class Http2ServerTransport final : public ServerTransport,
   auto WaitForPingAck() { return ping_manager_->WaitForPingAck(); }
 
   Duration NextAllowedPingInterval() {
-    // TODO(akshitpatel) : [PH2][P1] : Add server logic.
-    return Duration::Zero();
+    if (goaway_manager_.IsGracefulGoawayInProgress()) {
+      return Duration::Zero();
+    }
+    if (IsMultipingEnabled()) {
+      return Duration::Seconds(1);
+    }
+    return keepalive_time_ == Duration::Infinity() ? Duration::Seconds(20)
+                                                   : keepalive_time_ / 2;
   }
 
   absl::Status AckPing(uint64_t opaque_data);
@@ -624,6 +623,8 @@ class Http2ServerTransport final : public ServerTransport,
                  });
     }));
   }
+
+  auto SpawnGracefulGoawayLoop(Slice&& debug_data);
 
   //////////////////////////////////////////////////////////////////////////////
   // Inner Classes and Structs
@@ -700,7 +701,6 @@ class Http2ServerTransport final : public ServerTransport,
   absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list_
       ABSL_GUARDED_BY(transport_mutex_);
 
-  GRPC_UNUSED uint32_t next_stream_id_;
   HPackCompressor encoder_;
   bool is_transport_closed_ ABSL_GUARDED_BY(transport_mutex_) = false;
   Latch<void> transport_closed_latch_;
@@ -721,6 +721,8 @@ class Http2ServerTransport final : public ServerTransport,
   // Tracks the max allowed stream id. Currently this is only set on receiving a
   // graceful GOAWAY frame.
   GRPC_UNUSED uint32_t max_allowed_stream_id_ = RFC9113::kMaxStreamId31Bit;
+  // Tracks last stream id received by the transport.
+  uint32_t last_incoming_stream_id_ = 0;
 
   // Duration between two consecutive keepalive pings.
   Duration keepalive_time_;
