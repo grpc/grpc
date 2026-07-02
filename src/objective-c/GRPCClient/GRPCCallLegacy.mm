@@ -508,6 +508,14 @@ static NSString *const kBearerPrefix = @"Bearer ";
         if (strongSelf) {
           strongSelf.responseTrailers = trailers;
 
+          if (error != nil && error.code == 2) {
+            NSDictionary *userInfo = error.userInfo;
+            NSString *debugDescription = userInfo[NSDebugDescriptionErrorKey];
+            if (debugDescription != nil && [debugDescription containsString:@"grpc_status:0"]) {
+              error = nil;
+            }
+          }
+
           if (error) {
             NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
             if (error.userInfo) {
