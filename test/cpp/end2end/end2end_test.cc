@@ -962,7 +962,6 @@ TEST_P(End2endTest, EmptyBinaryMetadata) {
 }
 
 TEST_P(End2endTest, AuthoritySeenOnServerSide) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   EchoRequest request;
   request.mutable_param()->set_echo_host_from_authority_header(true);
@@ -985,7 +984,6 @@ TEST_P(End2endTest, AuthoritySeenOnServerSide) {
 }
 
 TEST_P(End2endTest, ReconnectChannel) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   if (GetParam().inproc() || GetParam().use_virtual_rpcs()) {
     return;
   }
@@ -1653,7 +1651,6 @@ TEST_P(ProxyEnd2endTest, MultipleRpcs) {
 // Set a 10us deadline and make sure proper error is returned.
 TEST_P(ProxyEnd2endTest, RpcDeadlineExpires) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix flake");
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1744,7 +1741,6 @@ TEST_P(ProxyEnd2endTest, EchoDeadlineForNoDeadlineRpc) {
 }
 
 TEST_P(ProxyEnd2endTest, UnimplementedRpc) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
