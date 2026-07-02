@@ -80,7 +80,8 @@ void UnaryRunHandlerHelper(const MethodHandler::HandlerParameter& param,
 
 template <class RequestType>
 void* UnaryDeserializeHelper(grpc_byte_buffer* req, grpc::Status* status,
-                             RequestType* request) {
+                             RequestType* request,
+                             void (*request_destructor)(RequestType*)) {
   grpc::ByteBuffer buf;
   buf.set_buffer(req);
   *status = grpc::Deserialize(&buf, static_cast<RequestType*>(request));
@@ -88,7 +89,7 @@ void* UnaryDeserializeHelper(grpc_byte_buffer* req, grpc::Status* status,
   if (status->ok()) {
     return request;
   }
-  request->~RequestType();
+  request_destructor(request);
   return nullptr;
 }
 
@@ -123,8 +124,11 @@ class RpcMethodHandler : public grpc::internal::MethodHandler {
                     grpc::Status* status, void** /*handler_data*/) final {
     auto* request =
         new (grpc_call_arena_alloc(call, sizeof(RequestType))) RequestType;
-    return UnaryDeserializeHelper(req, status,
-                                  static_cast<BaseRequestType*>(request));
+    return UnaryDeserializeHelper(
+        req, status, static_cast<BaseRequestType*>(request),
+        +[](BaseRequestType* message) {
+          static_cast<RequestType*>(message)->~RequestType();
+        });
   }
 
  private:
