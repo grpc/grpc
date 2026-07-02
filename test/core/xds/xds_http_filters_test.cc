@@ -36,6 +36,7 @@
 #include "envoy/extensions/filters/common/fault/v3/fault.pb.h"
 #include "envoy/extensions/filters/common/matcher/action/v3/skip_action.pb.h"
 #include "envoy/extensions/filters/http/composite/v3/composite.pb.h"
+#include "envoy/extensions/filters/http/ext_proc/v3/ext_proc.pb.h"
 #include "envoy/extensions/filters/http/fault/v3/fault.pb.h"
 #include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.pb.h"
 #include "envoy/extensions/filters/http/rbac/v3/rbac.pb.h"
@@ -49,6 +50,7 @@
 #include "envoy/type/matcher/v3/string.pb.h"
 #include "envoy/type/v3/percent.pb.h"
 #include "envoy/type/v3/range.pb.h"
+#include "src/core/ext/filters/ext_proc/ext_proc_filter.h"
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
 #include "src/core/ext/filters/gcp_authentication/gcp_authentication_filter.h"
 #include "src/core/ext/filters/rbac/rbac_filter.h"
@@ -66,6 +68,7 @@
 #include "src/core/xds/xds_client/xds_client.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
+#include "test/core/xds/xds_transport_fake.h"
 #include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
 #include "xds/type/v3/typed_struct.pb.h"
@@ -86,6 +89,8 @@ using ::envoy::extensions::common::matching::v3::ExtensionWithMatcherPerRoute;
 using ::envoy::extensions::filters::common::matcher::action::v3::SkipFilter;
 using ::envoy::extensions::filters::http::composite::v3::Composite;
 using ::envoy::extensions::filters::http::composite::v3::ExecuteFilterAction;
+using ::envoy::extensions::filters::http::ext_proc::v3::ExternalProcessor;
+using ::envoy::extensions::filters::http::ext_proc::v3::ExtProcPerRoute;
 using ::envoy::extensions::filters::http::fault::v3::HTTPFault;
 using ::envoy::extensions::filters::http::gcp_authn::v3::GcpAuthnFilterConfig;
 using ::envoy::extensions::filters::http::rbac::v3::RBAC;
@@ -120,17 +125,34 @@ class XdsHttpFilterTest : public ::testing::Test {
         "        {\"type\": \"google_default\"}\n"
         "      ]\n"
         "    }\n"
-        "  ]\n"
+        "  ],\n"
+        "  \"allowed_grpc_services\": {\n"
+        "    \"localhost:1234\": {\n"
+        "      \"channel_creds\": [\n"
+        "        {\"type\": \"google_default\"}\n"
+        "      ]\n"
+        "    },\n"
+        "    \"localhost:5678\": {\n"
+        "      \"channel_creds\": [\n"
+        "        {\"type\": \"google_default\"}\n"
+        "      ]\n"
+        "    }\n"
+        "  }\n"
         "}");
     if (!bootstrap.ok()) {
       Crash(absl::StrFormat("Error parsing bootstrap: %s",
                             bootstrap.status().ToString().c_str()));
     }
-    return MakeRefCounted<XdsClient>(std::move(*bootstrap),
-                                     /*transport_factory=*/nullptr,
-                                     /*event_engine=*/nullptr,
-                                     /*metrics_reporter=*/nullptr, "foo agent",
-                                     "foo version");
+    auto event_engine =
+        std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
+            grpc_event_engine::experimental::FuzzingEventEngine::Options(),
+            fuzzing_event_engine::Actions());
+    auto transport_factory = MakeRefCounted<FakeXdsTransportFactory>(
+        []() { FAIL() << "Multiple concurrent reads"; }, event_engine);
+    return MakeRefCounted<XdsClient>(
+        std::move(*bootstrap), std::move(transport_factory),
+        std::move(event_engine),
+        /*metrics_reporter=*/nullptr, "foo agent", "foo version");
   }
 
   XdsExtension MakeXdsExtension(const grpc::protobuf::Message& message) {
@@ -2243,6 +2265,842 @@ TEST_F(XdsCompositeFilterTest, MergeConfigsHandlesBlackboardForNestedFilters) {
   auto& gcp_auth_merged_config =
       DownCast<const GcpAuthenticationFilter::Config&>(*it->second[0]);
   EXPECT_EQ(gcp_auth_merged_config.cache, blackboard_entry);
+}
+
+//
+// ExtProc filter tests
+//
+
+class XdsExtProcFilterTest : public ScopedExperimentalEnvVar,
+                             public XdsHttpFilterTest {
+ protected:
+  XdsExtProcFilterTest()
+      : ScopedExperimentalEnvVar("GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT") {
+    XdsExtension extension = MakeXdsExtension(ExternalProcessor());
+    filter_ = GetFilter(extension.type);
+    GRPC_CHECK_NE(filter_, nullptr);
+  }
+
+  const XdsHttpFilterImpl* filter_;
+};
+
+TEST_F(XdsExtProcFilterTest, Accessors) {
+  EXPECT_EQ(filter_->ConfigProtoName(),
+            "envoy.extensions.filters.http.ext_proc.v3.ExternalProcessor");
+  EXPECT_EQ(filter_->OverrideConfigProtoName(),
+            "envoy.extensions.filters.http.ext_proc.v3.ExtProcPerRoute");
+  EXPECT_EQ(filter_->channel_filter(), &ExtProcFilter::kFilterVtable);
+  EXPECT_TRUE(filter_->IsSupportedOnClients());
+  EXPECT_FALSE(filter_->IsSupportedOnServers());
+  EXPECT_FALSE(filter_->IsTerminalFilter());
+}
+
+TEST_F(XdsExtProcFilterTest, ParseMinimumConfig) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  proto.mutable_processing_mode();
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  ASSERT_EQ(config->type(), ExtProcFilter::Config::Type());
+  EXPECT_EQ(config->ToString(),
+            "{grpc_service={server_target={server_uri=localhost:1234, "
+            "channel_creds={type=google_default, config={}}}}, "
+            "processing_mode={send_request_headers=true, "
+            "send_response_headers=true, send_response_trailers=false, "
+            "send_request_body=false, send_response_body=false}, "
+            "deferred_close_timeout=5000ms}");
+}
+
+TEST_F(XdsExtProcFilterTest, ParseFullConfig) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  proto.set_failure_mode_allow(true);
+  auto* mode = proto.mutable_processing_mode();
+  mode->set_request_header_mode(mode->SKIP);
+  mode->set_response_header_mode(mode->SEND);
+  mode->set_request_body_mode(mode->GRPC);
+  mode->set_response_body_mode(mode->NONE);
+  mode->set_response_trailer_mode(mode->SEND);
+  proto.add_request_attributes("req_attr");
+  proto.add_response_attributes("resp_attr");
+  // mutation_rules
+  auto* mutation_rules = proto.mutable_mutation_rules();
+  mutation_rules->mutable_disallow_all()->set_value(true);
+  // forwarding_allowed_headers
+  proto.mutable_forward_rules()
+      ->mutable_allowed_headers()
+      ->add_patterns()
+      ->set_exact("allowed");
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  ASSERT_EQ(config->type(), ExtProcFilter::Config::Type());
+  EXPECT_EQ(config->ToString(),
+            "{grpc_service={server_target={server_uri=localhost:1234, "
+            "channel_creds={type=google_default, config={}}}}, "
+            "failure_mode_allow=true, "
+            "processing_mode={send_request_headers=false, "
+            "send_response_headers=true, send_response_trailers=true, "
+            "send_request_body=true, send_response_body=false}, "
+            "request_attributes=[req_attr], "
+            "response_attributes=[resp_attr], "
+            "mutation_rules={disallow_all=true}, "
+            "forwarding_allowed_headers=[StringMatcher{exact=allowed}], "
+            "deferred_close_timeout=5000ms}");
+}
+
+TEST_F(XdsExtProcFilterTest, ParseOverrideConfig) {
+  ExtProcPerRoute proto;
+  auto* overrides = proto.mutable_overrides();
+  auto* grpc_service = overrides->mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:5678");
+  overrides->mutable_failure_mode_allow()->set_value(true);
+  auto* mode = overrides->mutable_processing_mode();
+  mode->set_request_header_mode(mode->SKIP);
+  overrides->add_request_attributes("override_req_attr");
+  overrides->add_response_attributes("override_resp_attr");
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      filter_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  ASSERT_EQ(config->type().name(), "ext_proc_override_config");
+  EXPECT_EQ(config->ToString(),
+            "{processing_mode={send_request_headers=false, "
+            "send_response_headers=true, send_response_trailers=false, "
+            "send_request_body=false, send_response_body=false}, "
+            "grpc_service={server_target={server_uri=localhost:5678, "
+            "channel_creds={type=google_default, config={}}}}, "
+            "request_attributes=[override_req_attr], "
+            "response_attributes=[override_resp_attr], "
+            "failure_mode_allow=true}");
+}
+
+TEST_F(XdsExtProcFilterTest, ParseOverrideConfigEmpty) {
+  ExtProcPerRoute proto;
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      filter_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  EXPECT_EQ(config, nullptr);
+}
+
+TEST_F(XdsExtProcFilterTest, ParseOverrideConfigWithUnsupportedFields) {
+  ExtProcPerRoute proto;
+  proto.set_disabled(true);
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      filter_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  EXPECT_EQ(config, nullptr);
+}
+
+TEST_F(XdsExtProcFilterTest, ParseOverrideConfigInvalid) {
+  ExtProcPerRoute proto;
+  auto* overrides = proto.mutable_overrides();
+  auto* grpc_service = overrides->mutable_grpc_service();
+  grpc_service->mutable_envoy_grpc()->set_cluster_name("some_cluster");
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      filter_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value[envoy.extensions.filters.http.ext_proc.v3"
+            ".ExtProcPerRoute].overrides.grpc_service.google_grpc "
+            "error:field not set]")
+      << status;
+}
+
+TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigInvalidTimeout) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  proto.mutable_processing_mode();
+  proto.mutable_deferred_close_timeout()->set_seconds(0);
+  proto.mutable_deferred_close_timeout()->set_nanos(0);
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value[envoy.extensions.filters.http.ext_proc.v3"
+            ".ExternalProcessor].deferred_close_timeout "
+            "error:duration must be positive]")
+      << status;
+}
+
+TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigInvalidGrpcService) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_envoy_grpc()->set_cluster_name("some_cluster");
+  proto.mutable_processing_mode();
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value[envoy.extensions.filters.http.ext_proc.v3"
+            ".ExternalProcessor].grpc_service.google_grpc "
+            "error:field not set]")
+      << status;
+}
+
+TEST_F(XdsExtProcFilterTest,
+       ParseTopLevelConfigInvalidRequestHeaderProcessingMode) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  auto* mode = proto.mutable_processing_mode();
+  mode->set_request_header_mode(
+      static_cast<envoy::extensions::filters::http::ext_proc::v3::
+                      ProcessingMode::HeaderSendMode>(99));
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value[envoy.extensions.filters.http.ext_proc.v3"
+            ".ExternalProcessor].processing_mode.request_header_mode "
+            "error:unsupported header processing mode value: 99]")
+      << status;
+}
+
+TEST_F(XdsExtProcFilterTest,
+       ParseTopLevelConfigInvalidResponseHeaderProcessingMode) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  auto* mode = proto.mutable_processing_mode();
+  mode->set_response_header_mode(
+      static_cast<envoy::extensions::filters::http::ext_proc::v3::
+                      ProcessingMode::HeaderSendMode>(99));
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value[envoy.extensions.filters.http.ext_proc.v3"
+            ".ExternalProcessor].processing_mode.response_header_mode "
+            "error:unsupported header processing mode value: 99]")
+      << status;
+}
+
+TEST_F(XdsExtProcFilterTest,
+       ParseTopLevelConfigInvalidResponseTrailerProcessingMode) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  auto* mode = proto.mutable_processing_mode();
+  mode->set_response_trailer_mode(
+      static_cast<envoy::extensions::filters::http::ext_proc::v3::
+                      ProcessingMode::HeaderSendMode>(99));
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value[envoy.extensions.filters.http.ext_proc.v3"
+            ".ExternalProcessor].processing_mode.response_trailer_mode "
+            "error:unsupported header processing mode value: 99]")
+      << status;
+}
+
+TEST_F(XdsExtProcFilterTest,
+       ParseTopLevelConfigInvalidRequestBodyProcessingMode) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  auto* mode = proto.mutable_processing_mode();
+  mode->set_request_body_mode(
+      static_cast<envoy::extensions::filters::http::ext_proc::v3::
+                      ProcessingMode::BodySendMode>(99));
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value[envoy.extensions.filters.http.ext_proc.v3"
+            ".ExternalProcessor].processing_mode.request_body_mode "
+            "error:unsupported body processing mode value: 99]")
+      << status;
+}
+
+TEST_F(XdsExtProcFilterTest,
+       ParseTopLevelConfigInvalidResponseBodyProcessingMode) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  auto* mode = proto.mutable_processing_mode();
+  mode->set_response_body_mode(
+      static_cast<envoy::extensions::filters::http::ext_proc::v3::
+                      ProcessingMode::BodySendMode>(99));
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value[envoy.extensions.filters.http.ext_proc.v3"
+            ".ExternalProcessor].processing_mode.response_body_mode "
+            "error:unsupported body processing mode value: 99]")
+      << status;
+}
+
+TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigRequestHeaderModeDefault) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  proto.mutable_processing_mode()->set_request_header_mode(
+      envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::DEFAULT);
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(DownCast<const ExtProcFilter::Config&>(*config)
+                .processing_mode.send_request_headers,
+            true);
+}
+
+TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigRequestHeaderModeSend) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  proto.mutable_processing_mode()->set_request_header_mode(
+      envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SEND);
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(DownCast<const ExtProcFilter::Config&>(*config)
+                .processing_mode.send_request_headers,
+            true);
+}
+
+TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigRequestHeaderModeSkip) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  proto.mutable_processing_mode()->set_request_header_mode(
+      envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SKIP);
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(DownCast<const ExtProcFilter::Config&>(*config)
+                .processing_mode.send_request_headers,
+            false);
+}
+
+TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigResponseHeaderModeDefault) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  proto.mutable_processing_mode()->set_response_header_mode(
+      envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::DEFAULT);
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(DownCast<const ExtProcFilter::Config&>(*config)
+                .processing_mode.send_response_headers,
+            true);
+}
+
+TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigResponseHeaderModeSend) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  proto.mutable_processing_mode()->set_response_header_mode(
+      envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SEND);
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(DownCast<const ExtProcFilter::Config&>(*config)
+                .processing_mode.send_response_headers,
+            true);
+}
+
+TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigResponseHeaderModeSkip) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  proto.mutable_processing_mode()->set_response_header_mode(
+      envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SKIP);
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(DownCast<const ExtProcFilter::Config&>(*config)
+                .processing_mode.send_response_headers,
+            false);
+}
+
+TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigResponseTrailerModeDefault) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  proto.mutable_processing_mode()->set_response_trailer_mode(
+      envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::DEFAULT);
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(DownCast<const ExtProcFilter::Config&>(*config)
+                .processing_mode.send_response_trailers,
+            false);
+}
+
+TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigResponseTrailerModeSend) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  proto.mutable_processing_mode()->set_response_trailer_mode(
+      envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SEND);
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(DownCast<const ExtProcFilter::Config&>(*config)
+                .processing_mode.send_response_trailers,
+            true);
+}
+
+TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigResponseTrailerModeSkip) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  proto.mutable_processing_mode()->set_response_trailer_mode(
+      envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SKIP);
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  EXPECT_EQ(DownCast<const ExtProcFilter::Config&>(*config)
+                .processing_mode.send_response_trailers,
+            false);
+}
+
+TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigRequestBodyModeNone) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  proto.mutable_processing_mode()->set_request_body_mode(
+      envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::NONE);
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(DownCast<const ExtProcFilter::Config&>(*config)
+                .processing_mode.send_request_body,
+            false);
+}
+
+TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigRequestBodyModeGrpc) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  proto.mutable_processing_mode()->set_request_body_mode(
+      envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::GRPC);
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(DownCast<const ExtProcFilter::Config&>(*config)
+                .processing_mode.send_request_body,
+            true);
+}
+
+TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigResponseBodyModeNone) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  proto.mutable_processing_mode()->set_response_body_mode(
+      envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::NONE);
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(DownCast<const ExtProcFilter::Config&>(*config)
+                .processing_mode.send_response_body,
+            false);
+}
+
+TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigResponseBodyModeGrpc) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  auto* mode = proto.mutable_processing_mode();
+  mode->set_response_body_mode(mode->GRPC);
+  mode->set_response_trailer_mode(mode->SEND);
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(DownCast<const ExtProcFilter::Config&>(*config)
+                .processing_mode.send_response_body,
+            true);
+}
+
+TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigForwardRules) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  proto.mutable_processing_mode();
+  auto* forward_rules = proto.mutable_forward_rules();
+  forward_rules->mutable_allowed_headers()->add_patterns()->set_exact(
+      "allowed");
+  forward_rules->mutable_disallowed_headers()->add_patterns()->set_exact(
+      "disallowed");
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  auto& ext_proc_config = DownCast<const ExtProcFilter::Config&>(*config);
+  ASSERT_EQ(ext_proc_config.forwarding_allowed_headers.size(), 1);
+  EXPECT_EQ(ext_proc_config.forwarding_allowed_headers[0].ToString(),
+            "StringMatcher{exact=allowed}");
+  ASSERT_EQ(ext_proc_config.forwarding_disallowed_headers.size(), 1);
+  EXPECT_EQ(ext_proc_config.forwarding_disallowed_headers[0].ToString(),
+            "StringMatcher{exact=disallowed}");
+}
+
+TEST_F(XdsExtProcFilterTest,
+       ParseTopLevelConfigInvalidForwardRulesAllowedHeaders) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  proto.mutable_processing_mode();
+  proto.mutable_forward_rules()->mutable_allowed_headers()->add_patterns();
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value[envoy.extensions.filters.http.ext_proc.v3"
+            ".ExternalProcessor].forwarding_rules.allowed_headers.patterns[0] "
+            "error:invalid string matcher]")
+      << status;
+}
+
+TEST_F(XdsExtProcFilterTest,
+       ParseTopLevelConfigInvalidForwardRulesDisallowedHeaders) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  proto.mutable_processing_mode();
+  proto.mutable_forward_rules()->mutable_disallowed_headers()->add_patterns();
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(
+      status.message(),
+      "errors validating filter config: ["
+      "field:http_filter.value[envoy.extensions.filters.http.ext_proc.v3"
+      ".ExternalProcessor].forwarding_rules.disallowed_headers.patterns[0] "
+      "error:invalid string matcher]")
+      << status;
+}
+
+TEST_F(XdsExtProcFilterTest,
+       ParseTopLevelConfigInvalidResponseBodyModeGrpcWithoutTrailerSend) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  auto* mode = proto.mutable_processing_mode();
+  mode->set_response_body_mode(mode->GRPC);
+  mode->set_response_trailer_mode(mode->SKIP);
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value[envoy.extensions.filters.http.ext_proc.v3"
+            ".ExternalProcessor].processing_mode.response_trailer_mode "
+            "error:must be set to SEND if response_body_mode is set to GRPC]")
+      << status;
+}
+
+TEST_F(XdsExtProcFilterTest, MergeConfigsBasic) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  proto.mutable_processing_mode();
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto top_level_config = filter_->ParseTopLevelConfig(
+      "instance_name", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(top_level_config, nullptr);
+  auto blackboard = MakeRefCounted<Blackboard>();
+  auto merged_config = filter_->MergeConfigs(top_level_config, nullptr, nullptr,
+                                             nullptr, *blackboard);
+  ASSERT_NE(merged_config, nullptr);
+  ASSERT_EQ(merged_config->type(), ExtProcFilter::Config::Type());
+  EXPECT_EQ(merged_config->ToString(), top_level_config->ToString());
+}
+
+TEST_F(XdsExtProcFilterTest, MergeConfigsWithVirtualHostOverride) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  auto* mode = proto.mutable_processing_mode();
+  mode->set_request_header_mode(mode->SEND);
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto top_level_config = filter_->ParseTopLevelConfig(
+      "instance_name", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ExtProcPerRoute vhost_proto;
+  vhost_proto.mutable_overrides()
+      ->mutable_processing_mode()
+      ->set_request_header_mode(mode->SKIP);
+  XdsExtension vhost_extension = MakeXdsExtension(vhost_proto);
+  auto vhost_config = filter_->ParseOverrideConfig("", decode_context_,
+                                                   vhost_extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  auto blackboard = MakeRefCounted<Blackboard>();
+  auto merged = filter_->MergeConfigs(top_level_config, vhost_config, nullptr,
+                                      nullptr, *blackboard);
+  ASSERT_NE(merged, nullptr);
+  EXPECT_EQ(merged->ToString(),
+            "{grpc_service={server_target={server_uri=localhost:1234, "
+            "channel_creds={type=google_default, config={}}}}, "
+            "processing_mode={send_request_headers=false, "
+            "send_response_headers=true, send_response_trailers=false, "
+            "send_request_body=false, send_response_body=false}, "
+            "deferred_close_timeout=5000ms}");
+}
+
+TEST_F(XdsExtProcFilterTest, MergeConfigsWithRouteOverride) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  auto* mode = proto.mutable_processing_mode();
+  mode->set_request_header_mode(mode->SEND);
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto top_level_config = filter_->ParseTopLevelConfig(
+      "instance_name", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ExtProcPerRoute vhost_proto;
+  vhost_proto.mutable_overrides()
+      ->mutable_processing_mode()
+      ->set_request_header_mode(mode->SKIP);
+  XdsExtension vhost_extension = MakeXdsExtension(vhost_proto);
+  auto vhost_config = filter_->ParseOverrideConfig("", decode_context_,
+                                                   vhost_extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ExtProcPerRoute route_proto;
+  route_proto.mutable_overrides()
+      ->mutable_grpc_service()
+      ->mutable_google_grpc()
+      ->set_target_uri("localhost:5678");
+  route_proto.mutable_overrides()
+      ->mutable_processing_mode()
+      ->set_request_header_mode(mode->SEND);
+  XdsExtension route_extension = MakeXdsExtension(route_proto);
+  auto route_config = filter_->ParseOverrideConfig("", decode_context_,
+                                                   route_extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  auto blackboard = MakeRefCounted<Blackboard>();
+  auto merged = filter_->MergeConfigs(top_level_config, vhost_config,
+                                      route_config, nullptr, *blackboard);
+  ASSERT_NE(merged, nullptr);
+  EXPECT_EQ(merged->ToString(),
+            "{grpc_service={server_target={server_uri=localhost:5678, "
+            "channel_creds={type=google_default, config={}}}}, "
+            "processing_mode={send_request_headers=true, "
+            "send_response_headers=true, send_response_trailers=false, "
+            "send_request_body=false, send_response_body=false}, "
+            "deferred_close_timeout=5000ms}");
+}
+
+TEST_F(XdsExtProcFilterTest, MergeConfigsSharesChannelOnSameBlackboard) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  proto.mutable_processing_mode();
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto top_level_config = filter_->ParseTopLevelConfig(
+      "instance_name", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  auto blackboard = MakeRefCounted<Blackboard>();
+  auto merged_config1 = filter_->MergeConfigs(top_level_config, nullptr,
+                                              nullptr, nullptr, *blackboard);
+  ASSERT_NE(merged_config1, nullptr);
+  auto& config1 = DownCast<const ExtProcFilter::Config&>(*merged_config1);
+  ASSERT_NE(config1.channel, nullptr);
+  auto merged_config2 = filter_->MergeConfigs(top_level_config, nullptr,
+                                              nullptr, nullptr, *blackboard);
+  ASSERT_NE(merged_config2, nullptr);
+  auto& config2 = DownCast<const ExtProcFilter::Config&>(*merged_config2);
+  ASSERT_NE(config2.channel, nullptr);
+  EXPECT_EQ(config1.channel, config2.channel);
+}
+
+TEST_F(XdsExtProcFilterTest,
+       MergeConfigsSharesChannelForDifferentInstancesWithSameTarget) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  proto.mutable_processing_mode();
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto top_level_config1 = filter_->ParseTopLevelConfig(
+      "instance_name1", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  auto top_level_config2 = filter_->ParseTopLevelConfig(
+      "instance_name2", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  auto blackboard = MakeRefCounted<Blackboard>();
+  auto merged_config1 = filter_->MergeConfigs(top_level_config1, nullptr,
+                                              nullptr, nullptr, *blackboard);
+  ASSERT_NE(merged_config1, nullptr);
+  auto& config1 = DownCast<const ExtProcFilter::Config&>(*merged_config1);
+  ASSERT_NE(config1.channel, nullptr);
+  auto merged_config2 = filter_->MergeConfigs(top_level_config2, nullptr,
+                                              nullptr, nullptr, *blackboard);
+  ASSERT_NE(merged_config2, nullptr);
+  auto& config2 = DownCast<const ExtProcFilter::Config&>(*merged_config2);
+  ASSERT_NE(config2.channel, nullptr);
+  EXPECT_EQ(config1.channel, config2.channel);
+}
+
+TEST_F(XdsExtProcFilterTest,
+       MergeConfigsDoesNotShareChannelOnDifferentBlackboards) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  proto.mutable_processing_mode();
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto top_level_config = filter_->ParseTopLevelConfig(
+      "instance_name", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  auto blackboard1 = MakeRefCounted<Blackboard>();
+  auto merged_config1 = filter_->MergeConfigs(top_level_config, nullptr,
+                                              nullptr, nullptr, *blackboard1);
+  ASSERT_NE(merged_config1, nullptr);
+  auto& config1 = DownCast<const ExtProcFilter::Config&>(*merged_config1);
+  ASSERT_NE(config1.channel, nullptr);
+  auto blackboard2 = MakeRefCounted<Blackboard>();
+  auto merged_config2 = filter_->MergeConfigs(top_level_config, nullptr,
+                                              nullptr, nullptr, *blackboard2);
+  ASSERT_NE(merged_config2, nullptr);
+  auto& config2 = DownCast<const ExtProcFilter::Config&>(*merged_config2);
+  ASSERT_NE(config2.channel, nullptr);
+  EXPECT_NE(config1.channel, config2.channel);
+}
+
+TEST_F(XdsExtProcFilterTest,
+       MergeConfigsDoesNotShareChannelForDifferentTargetsOnSameBlackboard) {
+  ExternalProcessor proto1;
+  proto1.mutable_grpc_service()->mutable_google_grpc()->set_target_uri(
+      "localhost:1234");
+  proto1.mutable_processing_mode();
+  XdsExtension extension1 = MakeXdsExtension(proto1);
+  auto top_level_config1 = filter_->ParseTopLevelConfig(
+      "instance_name1", decode_context_, extension1, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ExternalProcessor proto2;
+  proto2.mutable_grpc_service()->mutable_google_grpc()->set_target_uri(
+      "localhost:5678");
+  proto2.mutable_processing_mode();
+  XdsExtension extension2 = MakeXdsExtension(proto2);
+  auto top_level_config2 = filter_->ParseTopLevelConfig(
+      "instance_name2", decode_context_, extension2, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  auto blackboard = MakeRefCounted<Blackboard>();
+  auto merged_config1 = filter_->MergeConfigs(top_level_config1, nullptr,
+                                              nullptr, nullptr, *blackboard);
+  ASSERT_NE(merged_config1, nullptr);
+  auto& config1 = DownCast<const ExtProcFilter::Config&>(*merged_config1);
+  ASSERT_NE(config1.channel, nullptr);
+  auto merged_config2 = filter_->MergeConfigs(top_level_config2, nullptr,
+                                              nullptr, nullptr, *blackboard);
+  ASSERT_NE(merged_config2, nullptr);
+  auto& config2 = DownCast<const ExtProcFilter::Config&>(*merged_config2);
+  ASSERT_NE(config2.channel, nullptr);
+  EXPECT_NE(config1.channel, config2.channel);
 }
 
 }  // namespace

@@ -27,7 +27,9 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/sync.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_http_composite_filter.h"
+#include "src/core/xds/grpc/xds_http_ext_proc_filter.h"
 #include "src/core/xds/grpc/xds_http_fault_filter.h"
 #include "src/core/xds/grpc/xds_http_gcp_authn_filter.h"
 #include "src/core/xds/grpc/xds_http_rbac_filter.h"
@@ -131,6 +133,9 @@ XdsHttpFilterRegistry::XdsHttpFilterRegistry(bool register_builtins) {
     RegisterFilter(std::make_unique<XdsHttpRbacFilter>());
     RegisterFilter(std::make_unique<XdsHttpStatefulSessionFilter>());
     RegisterFilter(std::make_unique<XdsHttpGcpAuthnFilter>());
+    if (XdsExtProcOnClientEnabled()) {
+      RegisterFilter(std::make_unique<XdsHttpExtProcFilter>());
+    }
     if (IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_COMPOSITE_FILTER")) {
       RegisterFilter(std::make_unique<XdsHttpCompositeFilter>());
     }

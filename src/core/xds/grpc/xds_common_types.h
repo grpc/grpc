@@ -92,7 +92,7 @@ struct XdsExtension {
 };
 
 struct XdsGrpcService {
-  std::unique_ptr<GrpcXdsServerTarget> server_target;
+  std::shared_ptr<GrpcXdsServerTarget> server_target;
   Duration timeout;
   std::vector<std::pair<std::string, std::string>> initial_metadata;
 

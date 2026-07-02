@@ -86,6 +86,9 @@ class XdsHttpFilterImpl {
   // Returns true if the filter must be the last filter in the chain.
   virtual bool IsTerminalFilter() const { return false; }
 
+  // Returns true if the filter supports being disabled via LDS/RDS.
+  virtual bool IsSupportedDisablingOnLdsRds() const { return false; }
+
   /////////////////////////////////////////////////////////////////////////////
   //
   // ALL INTERFACES BELOW ARE DEPRECATED
