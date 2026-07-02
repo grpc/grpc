@@ -768,7 +768,7 @@ class StreamStreamCall(
         self._init_stream_request_mixin(request_iterator)
         self._init_stream_response_mixin(self._initializer)
 
-    async def _prepare_rpc(self):
+    async def _prepare_rpc(self) -> None:
         """Prepares the RPC for receiving/sending messages.
 
         All other operations around the stream should only happen after the
