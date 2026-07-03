@@ -415,9 +415,9 @@ class Channel(_base_channel.Channel):
 
     async def __aexit__(
         self,
-        type_: type[BaseException] | None,
-        value: BaseException | None,
-        traceback: types.TracebackType | None,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: types.TracebackType | None,
     ) -> None:
         await self._close(None)
 
