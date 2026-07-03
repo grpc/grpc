@@ -15,9 +15,9 @@
 # pyright: reportPrivateUsage = false
 
 import asyncio
+import types
 from typing import Any, Generic, List, Optional, Sequence, TypeVar
 import weakref
-import types
 
 import grpc
 from grpc import _common

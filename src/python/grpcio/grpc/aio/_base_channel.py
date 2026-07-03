@@ -14,11 +14,11 @@
 """Abstract base classes for Channel objects and Multicallable objects."""
 
 import abc
+from types import TracebackType
 from typing import Generic, Optional
 
 import grpc
 from typing_extensions import Self
-from types import TracebackType
 
 from . import _base_call  # pyright: ignore[reportPrivateUsage]
 from ._typing import DeserializingFunction
