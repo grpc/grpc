@@ -14,7 +14,7 @@
 """Invocation-side implementation of gRPC Asyncio Python."""
 
 import asyncio
-from collections.abc import AsyncIterable, Iterable
+from collections.abc import AsyncIterable
 import enum
 from functools import partial
 import logging
@@ -458,9 +458,7 @@ class _StreamRequestMixin(Call, Generic[RequestType]):
                             rpc_error,
                         )
                         return
-            elif isinstance(  # pyright: ignore[reportUnnecessaryIsInstance]
-                request_iterator, Iterable
-            ):
+            else:
                 for request in request_iterator:
                     try:
                         await self._write(request)
@@ -473,12 +471,6 @@ class _StreamRequestMixin(Call, Generic[RequestType]):
                             rpc_error,
                         )
                         return
-            else:
-                err_msg = (
-                    f"request_iterator must be an {RequestIterableType},"
-                    f" got {type(request_iterator).__name__!r} instead"
-                )
-                raise TypeError(err_msg)
 
             await self._done_writing()
         except:  # pylint: disable=bare-except # noqa: E722
