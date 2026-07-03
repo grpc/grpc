@@ -1297,7 +1297,23 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
           });
     }
     // Now return a promise that does all the things.
-    return Race(
+    //
+    // The returned promise is wrapped in OnCancel so that, if the v2 stack
+    // destroys it before it completes (e.g. the forced-cancellation path in
+    // ServerCallData::Completed, which resets promise_ to an empty
+    // ArenaPromise), we actively propagate a cancellation into the v3 call
+    // pair. Without this, the v3 CallSpine's spawned helper promises (notably
+    // pull_server_trailing_metadata) stay parked forever, so the spine -- and
+    // the v3 interceptor -- leaks and never learns about the cancellation.
+    //
+    // We use SpawnCancel (not Cancel) because this callback runs at promise
+    // destruction time on the v2 activity, not the v3 spine's activity; the
+    // push must be scheduled onto the spine's own party. The push is then
+    // drained by the always-present pull_server_trailing_metadata promise on
+    // the initiator's activity, which fires CallOnDone with the real
+    // cancelled flag and cleanly notifies the v3 CallHandler/interceptor.
+    return OnCancel(
+        Race(
         // Get server trailing metadata from the v3 promise via the
         // inter-activity latch.
         If(
@@ -1485,7 +1501,14 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                                  return Pending{};
                                });
                   });
-            }));
+            })),
+        [initiator = initiator]() mutable {
+          // The v2 promise was destroyed before completing: propagate the
+          // cancellation into the v3 call pair so its CallSpine is torn down
+          // and the v3 interceptor is notified.
+          initiator.SpawnCancel(
+              absl::CancelledError("call cancelled by v2 filter stack"));
+        });
   }
 
  protected:
