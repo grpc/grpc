@@ -28,7 +28,6 @@ from typing import (
     Optional,
     Sequence,
     Union,
-    Generic,
 )
 
 import grpc
@@ -480,14 +479,14 @@ class InterceptedCall:
         return await call.wait_for_connection()
 
 
-class _InterceptedUnaryResponseMixin(Generic[ResponseType]):
+class _InterceptedUnaryResponseMixin:
     def __await__(self):
         call = yield from self._interceptors_task.__await__()
         response = yield from call.__await__()
         return response
 
 
-class _InterceptedStreamResponseMixin(Generic[ResponseType]):
+class _InterceptedStreamResponseMixin:
     _response_aiter: Optional[AsyncIterable[ResponseType]]
 
     def _init_stream_response_mixin(self) -> None:
@@ -520,7 +519,7 @@ class _InterceptedStreamResponseMixin(Generic[ResponseType]):
             return cygrpc.EOF
 
 
-class _InterceptedStreamRequestMixin(Generic[RequestType]):
+class _InterceptedStreamRequestMixin:
     _write_to_iterator_async_gen: Optional[AsyncIterable[RequestType]]
     _write_to_iterator_queue: Optional[asyncio.Queue]
     _status_code_task: Optional[asyncio.Task]
@@ -621,9 +620,7 @@ class _InterceptedStreamRequestMixin(Generic[RequestType]):
 
 
 class InterceptedUnaryUnaryCall(
-    _InterceptedUnaryResponseMixin[ResponseType],
-    InterceptedCall,
-    _base_call.UnaryUnaryCall[RequestType, ResponseType],
+    _InterceptedUnaryResponseMixin, InterceptedCall, _base_call.UnaryUnaryCall
 ):
     """Used for running a `UnaryUnaryCall` wrapped by interceptors.
 
@@ -645,8 +642,8 @@ class InterceptedUnaryUnaryCall(
         wait_for_ready: Optional[bool],
         channel: cygrpc.AioChannel,
         method: bytes,
-        request_serializer: Optional[SerializingFunction[RequestType]],
-        response_deserializer: Optional[DeserializingFunction[ResponseType]],
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
     ) -> None:
         self._loop = loop
@@ -676,8 +673,8 @@ class InterceptedUnaryUnaryCall(
         credentials: Optional[grpc.CallCredentials],
         wait_for_ready: Optional[bool],
         request: RequestType,
-        request_serializer: Optional[SerializingFunction[RequestType]],
-        response_deserializer: Optional[DeserializingFunction[ResponseType]],
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
     ) -> Union[UnaryUnaryCall, UnaryUnaryCallResponse]:
         """Run the RPC call wrapped in interceptors"""
 
@@ -723,9 +720,7 @@ class InterceptedUnaryUnaryCall(
 
 
 class InterceptedUnaryStreamCall(
-    _InterceptedStreamResponseMixin[ResponseType],
-    InterceptedCall,
-    _base_call.UnaryStreamCall[RequestType, ResponseType],
+    _InterceptedStreamResponseMixin, InterceptedCall, _base_call.UnaryStreamCall
 ):
     """Used for running a `UnaryStreamCall` wrapped by interceptors."""
 
@@ -744,8 +739,8 @@ class InterceptedUnaryStreamCall(
         wait_for_ready: Optional[bool],
         channel: cygrpc.AioChannel,
         method: bytes,
-        request_serializer: Optional[SerializingFunction[RequestType]],
-        response_deserializer: Optional[DeserializingFunction[ResponseType]],
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
     ) -> None:
         self._loop = loop
@@ -777,8 +772,8 @@ class InterceptedUnaryStreamCall(
         credentials: Optional[grpc.CallCredentials],
         wait_for_ready: Optional[bool],
         request: RequestType,
-        request_serializer: Optional[SerializingFunction[RequestType]],
-        response_deserializer: Optional[DeserializingFunction[ResponseType]],
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
     ) -> Union[UnaryStreamCall, UnaryStreamCallResponseIterator]:
         """Run the RPC call wrapped in interceptors"""
 
@@ -839,10 +834,10 @@ class InterceptedUnaryStreamCall(
 
 
 class InterceptedStreamUnaryCall(
-    _InterceptedUnaryResponseMixin[ResponseType],
-    _InterceptedStreamRequestMixin[RequestType],
+    _InterceptedUnaryResponseMixin,
+    _InterceptedStreamRequestMixin,
     InterceptedCall,
-    _base_call.StreamUnaryCall[RequestType, ResponseType],
+    _base_call.StreamUnaryCall,
 ):
     """Used for running a `StreamUnaryCall` wrapped by interceptors.
 
@@ -864,8 +859,8 @@ class InterceptedStreamUnaryCall(
         wait_for_ready: Optional[bool],
         channel: cygrpc.AioChannel,
         method: bytes,
-        request_serializer: Optional[SerializingFunction[RequestType]],
-        response_deserializer: Optional[DeserializingFunction[ResponseType]],
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
     ) -> None:
         self._loop = loop
@@ -896,8 +891,8 @@ class InterceptedStreamUnaryCall(
         credentials: Optional[grpc.CallCredentials],
         wait_for_ready: Optional[bool],
         request_iterator: RequestIterableType,
-        request_serializer: Optional[SerializingFunction[RequestType]],
-        response_deserializer: Optional[DeserializingFunction[ResponseType]],
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
     ) -> StreamUnaryCall:
         """Run the RPC call wrapped in interceptors"""
 
@@ -939,10 +934,10 @@ class InterceptedStreamUnaryCall(
 
 
 class InterceptedStreamStreamCall(
-    _InterceptedStreamResponseMixin[ResponseType],
-    _InterceptedStreamRequestMixin[RequestType],
+    _InterceptedStreamResponseMixin,
+    _InterceptedStreamRequestMixin,
     InterceptedCall,
-    _base_call.StreamStreamCall[RequestType, ResponseType],
+    _base_call.StreamStreamCall,
 ):
     """Used for running a `StreamStreamCall` wrapped by interceptors."""
 
@@ -963,8 +958,8 @@ class InterceptedStreamStreamCall(
         wait_for_ready: Optional[bool],
         channel: cygrpc.AioChannel,
         method: bytes,
-        request_serializer: Optional[SerializingFunction[RequestType]],
-        response_deserializer: Optional[DeserializingFunction[ResponseType]],
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
     ) -> None:
         self._loop = loop
@@ -997,8 +992,8 @@ class InterceptedStreamStreamCall(
         credentials: Optional[grpc.CallCredentials],
         wait_for_ready: Optional[bool],
         request_iterator: RequestIterableType,
-        request_serializer: Optional[SerializingFunction[RequestType]],
-        response_deserializer: Optional[DeserializingFunction[ResponseType]],
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
     ) -> Union[StreamStreamCall, StreamStreamCallResponseIterator]:
         """Run the RPC call wrapped in interceptors"""
 
@@ -1106,19 +1101,13 @@ class UnaryUnaryCallResponse(_base_call.UnaryUnaryCall):
         pass
 
 
-class _StreamCallResponseIterator(Generic[RequestType, ResponseType]):
-    _call: Union[
-        _base_call.UnaryStreamCall[RequestType, ResponseType],
-        _base_call.StreamStreamCall[RequestType, ResponseType],
-    ]
+class _StreamCallResponseIterator:
+    _call: Union[_base_call.UnaryStreamCall, _base_call.StreamStreamCall]
     _response_iterator: AsyncIterable[ResponseType]
 
     def __init__(
         self,
-        call: Union[
-            _base_call.UnaryStreamCall[RequestType, ResponseType],
-            _base_call.StreamStreamCall[RequestType, ResponseType],
-        ],
+        call: Union[_base_call.UnaryStreamCall, _base_call.StreamStreamCall],
         response_iterator: AsyncIterable[ResponseType],
     ) -> None:
         self._response_iterator = response_iterator
@@ -1162,8 +1151,7 @@ class _StreamCallResponseIterator(Generic[RequestType, ResponseType]):
 
 
 class UnaryStreamCallResponseIterator(
-    _StreamCallResponseIterator[RequestType, ResponseType],
-    _base_call.UnaryStreamCall[RequestType, ResponseType],
+    _StreamCallResponseIterator, _base_call.UnaryStreamCall
 ):
     """UnaryStreamCall class which uses an alternative response iterator."""
 
@@ -1174,8 +1162,7 @@ class UnaryStreamCallResponseIterator(
 
 
 class StreamStreamCallResponseIterator(
-    _StreamCallResponseIterator[RequestType, ResponseType],
-    _base_call.StreamStreamCall[RequestType, ResponseType],
+    _StreamCallResponseIterator, _base_call.StreamStreamCall
 ):
     """StreamStreamCall class which uses an alternative response iterator."""
 
