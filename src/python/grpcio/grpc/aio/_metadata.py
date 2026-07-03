@@ -55,9 +55,7 @@ class Metadata(Collection[MetadatumType]):  # noqa: PLW1641
             self.add(md_key, md_value)
 
     @classmethod
-    def from_tuple(
-        cls, raw_metadata: Iterable[MetadatumType]
-    ) -> Self:
+    def from_tuple(cls, raw_metadata: Iterable[MetadatumType]) -> Self:
         # Note: We unintentionally support non-tuple arguments here. We plan
         # to emit a DeprecationWarning when a non-tuple type is used.
         if raw_metadata:
