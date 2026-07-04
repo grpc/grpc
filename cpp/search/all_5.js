@@ -42,5 +42,7 @@ var searchData=
   ['externalcertificateverifier_480',['ExternalCertificateVerifier',['../classgrpc_1_1experimental_1_1_external_certificate_verifier.html',1,'grpc::experimental::ExternalCertificateVerifier'],['../classgrpc_1_1experimental_1_1_external_certificate_verifier.html#a3742120a627609e1a300e13bcb4e5d3a',1,'grpc::experimental::ExternalCertificateVerifier::ExternalCertificateVerifier()']]],
   ['externalconnectionacceptor_481',['ExternalConnectionAcceptor',['../classgrpc_1_1experimental_1_1_external_connection_acceptor.html',1,'grpc::experimental']]],
   ['externalconnectiontype_482',['ExternalConnectionType',['../classgrpc_1_1_server_builder_1_1experimental__type.html#aa540de9e554cad2244c22302c58c6006',1,'grpc::ServerBuilder::experimental_type']]],
-  ['setvirtualservice_483',['SetVirtualService',['../classgrpc_1_1_service.html#a692dd62aecc2e86f1f3a78b318bdaf5a',1,'grpc::Service']]]
+  ['getsessioncontext_483',['GetSessionContext',['../classgrpc_1_1_server_context_base.html#a1e4b6d0b8b916fedc59b0d9e1527b2ff',1,'grpc::ServerContextBase']]],
+  ['setsessioncontext_484',['SetSessionContext',['../classgrpc_1_1_server_context_base.html#abe274b240a44f9ea96c2c8b7657f84a9',1,'grpc::ServerContextBase']]],
+  ['setvirtualservice_485',['SetVirtualService',['../classgrpc_1_1_service.html#a692dd62aecc2e86f1f3a78b318bdaf5a',1,'grpc::Service']]]
 ];

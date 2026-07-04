@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.81.0</span>
+   &#160;<span id="projectnumber">1.82.0</span>
    </div>
   </td>
  </tr>
@@ -68,11 +68,11 @@ $(function() {
 <li>obfuscated
 : <a class="el" href="structgrpc__metadata.html#a737f2161d2ccc9da44f340d923c97658">grpc_metadata</a>
 </li>
-<li>object()
-: <a class="el" href="classgrpc__core_1_1experimental_1_1_json.html#a6eae0802f8d5e601265c62233c789379">grpc_core::experimental::Json</a>
-</li>
 <li>Object
 : <a class="el" href="classgrpc__core_1_1experimental_1_1_json.html#a9efd54db778719812dcab3a5768d7a36">grpc_core::experimental::Json</a>
+</li>
+<li>object()
+: <a class="el" href="classgrpc__core_1_1experimental_1_1_json.html#a6eae0802f8d5e601265c62233c789379">grpc_core::experimental::Json</a>
 </li>
 <li>ok()
 : <a class="el" href="classgrpc_1_1_status.html#ab80672b5665c32dc0937a0d58a3ce192">grpc::Status</a>
@@ -108,6 +108,9 @@ $(function() {
 , <a class="el" href="classgrpc_1_1_server_read_reactor.html#a7ada848e5dacf093b879a1e5d853f68d">grpc::ServerReadReactor&lt; Request &gt;</a>
 , <a class="el" href="classgrpc_1_1_server_unary_reactor.html#a028c1e364c9abf5fcbb7c577172edfb3">grpc::ServerUnaryReactor</a>
 , <a class="el" href="classgrpc_1_1_server_write_reactor.html#a60d5fd19ad8681f52c8c9161fb427f2b">grpc::ServerWriteReactor&lt; Response &gt;</a>
+</li>
+<li>OnGracefulShutdown()
+: <a class="el" href="classgrpc_1_1experimental_1_1_client_session_reactor.html#ab5b30a4a6c9378b2e2df29c0bac5211d">grpc::experimental::ClientSessionReactor</a>
 </li>
 <li>OnReadDone()
 : <a class="el" href="classgrpc_1_1_client_bidi_reactor.html#ad77148d32093f38daeb755e820b70c61">grpc::ClientBidiReactor&lt; Request, Response &gt;</a>
@@ -163,7 +166,7 @@ $(function() {
 , <a class="el" href="classgrpc_1_1_client_async_writer.html#a32b7fa49be4fec698a9672d4a69b011f">grpc::ClientAsyncWriter&lt; W &gt;</a>
 , <a class="el" href="classgrpc_1_1experimental_1_1internal_1_1_client_callback_session_impl.html#a4e58b46822394bc2a1d51d9a365a1a2c">grpc::experimental::internal::ClientCallbackSessionImpl</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_callback_with_status_tag.html#a1f9bdf075175df0ca310e9ac4a2580f9">grpc::internal::CallbackWithStatusTag</a>
-, <a class="el" href="classgrpc_1_1internal_1_1_callback_with_success_tag.html#a4d697b405747dd5f9458949180f78c46">grpc::internal::CallbackWithSuccessTag</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_callback_with_success_tag.html#a6f0a022dfc8dcffc31c5e64bef207633">grpc::internal::CallbackWithSuccessTag</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_client_callback_reader_impl.html#a626d8cbffd300bea7244c502e192d261">grpc::internal::ClientCallbackReaderImpl&lt; Response &gt;</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_client_callback_reader_writer_impl.html#a563fb42e0b9d14af22e9166a46be62a7">grpc::internal::ClientCallbackReaderWriterImpl&lt; Request, Response &gt;</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_client_callback_unary_impl.html#a1a845d65b2939806151aaf3ea54afab8">grpc::internal::ClientCallbackUnaryImpl</a>
@@ -200,14 +203,14 @@ $(function() {
 , <a class="el" href="classgrpc_1_1string__ref.html#a4363e737a77a7b2784ee1e3b915315e3">grpc::string_ref</a>
 , <a class="el" href="classgrpc__core_1_1experimental_1_1_json.html#add6a06432d09d97bba7f3be0422f0bb7">grpc_core::experimental::Json</a>
 , <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_closure.html#a65bc744a1b6368b335ee06a18c045da0">grpc_event_engine::experimental::EventEngine::Closure</a>
-, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_read_args.html#a5d77b2f06f69b9d52c614eec85e6fd44">grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs</a>
-, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_args.html#a2804ba22b83ef1f2d85651f077d2c251">grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs</a>
+, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_read_args.html#a07eff104aa185eaf58e59d8a5294e44f">grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs</a>
+, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_args.html#a47a16b7ab540dab753c1d83a171b2316">grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs</a>
 , <a class="el" href="classgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl.html#a89a118fa4c2c8863f7339841a3d5bbf1">grpc_event_engine::experimental::internal::MemoryAllocatorImpl</a>
-, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#a0f4739d241b0a83d36c4c3f649d13305">grpc_event_engine::experimental::MemoryAllocator</a>
+, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#aab258d5b2457dabe345b0aa302a7a731">grpc_event_engine::experimental::MemoryAllocator</a>
 , <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator_1_1_reservation.html#af7ffb35a42dddb03f8f8dc49317af61a">grpc_event_engine::experimental::MemoryAllocator::Reservation</a>
-, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_mutable_slice.html#aaa058a73b64fcb0a02d006e8f622433a">grpc_event_engine::experimental::MutableSlice</a>
+, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_mutable_slice.html#ae8d13f1c0012913c0ba20495ef59c6dd">grpc_event_engine::experimental::MutableSlice</a>
 , <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice.html#ab8c2ade1d8992f41a24a44d7574b0ebf">grpc_event_engine::experimental::Slice</a>
-, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1slice__detail_1_1_base_slice.html#ab516745b1a7e5e499dfb003620b1453c">grpc_event_engine::experimental::slice_detail::BaseSlice</a>
+, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1slice__detail_1_1_base_slice.html#acb81f419621acc44518311dbc66e2ed2">grpc_event_engine::experimental::slice_detail::BaseSlice</a>
 , <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#abf41faf44ae5b4f04c3383f25f9087a9">grpc_event_engine::experimental::SliceBuffer</a>
 </li>
 <li>operator==()
@@ -236,7 +239,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 29 2026 17:40:42 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Jul 4 2026 20:59:28 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

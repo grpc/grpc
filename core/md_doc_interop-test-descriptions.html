@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">54.0.0</span>
+   &#160;<span id="projectnumber">55.0.0</span>
    </div>
   </td>
  </tr>
@@ -153,7 +153,7 @@ cacheable_unary</h2>
 <li><a href="#cacheableunarycall">CacheableUnaryCall</a></li>
 </ul>
 <p>Procedure:</p><ol type="1">
-<li>Client calls CacheableUnaryCall with <code>SimpleRequest</code> request with payload set to current timestamp. Timestamp format is irrelevant, and resolution is in nanoseconds. Client adds a <code>x-user-ip</code> header with value <code>1.2.3.4</code> to the request. This is done since some proxys such as GFE will not cache requests from localhost. Client marks the request as cacheable by setting the cacheable flag in the request context. Longer term this should be driven by the method option specified in the proto file itself.</li>
+<li>Client calls CacheableUnaryCall with <code>SimpleRequest</code> request with payload set to current timestamp. Timestamp format is irrelevant, and resolution is in nanoseconds. Client adds a <code>x-user-ip</code> header with value <code>1.2.3.4</code> to the request. This is done since some proxies such as GFE will not cache requests from localhost. Client marks the request as cacheable by setting the cacheable flag in the request context. Longer term this should be driven by the method option specified in the proto file itself.</li>
 <li>Client calls CacheableUnaryCall again immediately with the same request and configuration as the previous call.</li>
 </ol>
 <p>Client asserts:</p><ul>
@@ -724,7 +724,7 @@ Lower priority:</h3>
 <p>Failed TLS hostname verification (ejona?)</p>
 <p>Large amount of headers to cause CONTINUATIONs; 63K of 'X's, all in one header.</p>
 <h3><a class="anchor" id="autotoc_md214"></a>
-To priorize:</h3>
+To prioritize:</h3>
 <p>Start streaming RPC but don't send any requests, server responds</p>
 <h2><a class="anchor" id="autotoc_md215"></a>
 Postponed Tests</h2>
@@ -812,7 +812,7 @@ Backend metrics report</h2>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 29 2026 17:40:39 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Jul 4 2026 20:59:26 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

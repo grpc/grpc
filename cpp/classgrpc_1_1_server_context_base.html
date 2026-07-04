@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.81.0</span>
+   &#160;<span id="projectnumber">1.82.0</span>
    </div>
   </td>
  </tr>
@@ -156,6 +156,8 @@ Protected Member Functions</h2></td></tr>
 <tr class="memitem:ada4e7a3e04ba1b9d385077f670bee3ca"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_server_unary_reactor.html">grpc::ServerUnaryReactor</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context_base.html#ada4e7a3e04ba1b9d385077f670bee3ca">DefaultReactor</a> ()</td></tr>
 <tr class="memdesc:ada4e7a3e04ba1b9d385077f670bee3ca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a library-owned default unary reactor for use in minimal reaction cases.  <a href="classgrpc_1_1_server_context_base.html#ada4e7a3e04ba1b9d385077f670bee3ca">More...</a><br /></td></tr>
 <tr class="separator:ada4e7a3e04ba1b9d385077f670bee3ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a224d9c9b7c1496fb38a99e7e28f7dd7f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context_base.html#a224d9c9b7c1496fb38a99e7e28f7dd7f">MarkInitialMetadataSent</a> ()</td></tr>
+<tr class="separator:a224d9c9b7c1496fb38a99e7e28f7dd7f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8e50f2206f90bdcb221232310078d33a"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context_base.html#a8e50f2206f90bdcb221232310078d33a">ServerContextBase</a> ()</td></tr>
 <tr class="memdesc:a8e50f2206f90bdcb221232310078d33a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructors for use by derived classes.  <a href="classgrpc_1_1_server_context_base.html#a8e50f2206f90bdcb221232310078d33a">More...</a><br /></td></tr>
 <tr class="separator:a8e50f2206f90bdcb221232310078d33a"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -241,6 +243,12 @@ Friends</h2></td></tr>
 <tr class="memitem:aebf9b4066cc456ab528f265ab95f7941"><td class="memTemplParams" colspan="2">template&lt;class ResponseType &gt; </td></tr>
 <tr class="memitem:aebf9b4066cc456ab528f265ab95f7941"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context_base.html#aebf9b4066cc456ab528f265ab95f7941">grpc::internal::UnaryRunHandlerHelper</a> (const <a class="el" href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html">internal::MethodHandler::HandlerParameter</a> &amp;param, ResponseType *rsp, <a class="el" href="classgrpc_1_1_status.html">Status</a> &amp;status)</td></tr>
 <tr class="separator:aebf9b4066cc456ab528f265ab95f7941"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abe274b240a44f9ea96c2c8b7657f84a9"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:abe274b240a44f9ea96c2c8b7657f84a9"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context_base.html#abe274b240a44f9ea96c2c8b7657f84a9">experimental::SetSessionContext</a> (<a class="el" href="classgrpc_1_1_server_context_base.html">ServerContextBase</a> *context, std::shared_ptr&lt; T &gt; session_context)</td></tr>
+<tr class="separator:abe274b240a44f9ea96c2c8b7657f84a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1e4b6d0b8b916fedc59b0d9e1527b2ff"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:a1e4b6d0b8b916fedc59b0d9e1527b2ff"><td class="memTemplItemLeft" align="right" valign="top">std::shared_ptr&lt; T &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context_base.html#a1e4b6d0b8b916fedc59b0d9e1527b2ff">experimental::GetSessionContext</a> (const <a class="el" href="classgrpc_1_1_server_context_base.html">ServerContextBase</a> *context)</td></tr>
+<tr class="separator:a1e4b6d0b8b916fedc59b0d9e1527b2ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Base class of <a class="el" href="classgrpc_1_1_server_context.html" title="A ServerContext or CallbackServerContext allows the code implementing a service handler to:">ServerContext</a>. </p>
@@ -817,6 +825,31 @@ Friends</h2></td></tr>
 
 </div>
 </div>
+<a id="a224d9c9b7c1496fb38a99e7e28f7dd7f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a224d9c9b7c1496fb38a99e7e28f7dd7f">&#9670;&nbsp;</a></span>MarkInitialMetadataSent()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc::ServerContextBase::MarkInitialMetadataSent </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="ac18edf4a0901884667b09f810cd0e8f3"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ac18edf4a0901884667b09f810cd0e8f3">&#9670;&nbsp;</a></span>memory_allocator()</h2>
 
@@ -1019,6 +1052,72 @@ Friends</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Friends And Related Function Documentation</h2>
+<a id="a1e4b6d0b8b916fedc59b0d9e1527b2ff"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1e4b6d0b8b916fedc59b0d9e1527b2ff">&#9670;&nbsp;</a></span>experimental::GetSessionContext</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt;T&gt; <a class="el" href="namespacegrpc_1_1experimental.html#a5fe9d0037e255d5f3df296245ab5aeca">experimental::GetSessionContext</a> </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classgrpc_1_1_server_context_base.html">ServerContextBase</a> *&#160;</td>
+          <td class="paramname"><em>context</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="abe274b240a44f9ea96c2c8b7657f84a9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abe274b240a44f9ea96c2c8b7657f84a9">&#9670;&nbsp;</a></span>experimental::SetSessionContext</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="namespacegrpc_1_1experimental.html#a4f2459dbfc9db3a8a53129d1aba1d8d3">experimental::SetSessionContext</a> </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_server_context_base.html">ServerContextBase</a> *&#160;</td>
+          <td class="paramname"><em>context</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::shared_ptr&lt; T &gt;&#160;</td>
+          <td class="paramname"><em>session_context</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a4448f28a609bbb75bd1e539a4bd04e41"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a4448f28a609bbb75bd1e539a4bd04e41">&#9670;&nbsp;</a></span>grpc::ClientContext</h2>
 
@@ -1677,7 +1776,7 @@ template&lt;class W &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 29 2026 17:40:41 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Jul 4 2026 20:59:28 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

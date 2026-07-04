@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>gRPC &#8212; gRPC Python Docs v1.81.0</title>
+    <title>gRPC &#8212; gRPC Python Docs v1.82.0</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="_static/documentation_options.js?v=e806274a"></script>
+    <script src="_static/documentation_options.js?v=7a79f9a1"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script async="async" src="https://www.googletagmanager.com/gtag/js?id=UA-60127042-1"></script>
@@ -62,7 +62,7 @@
     <link rel="prev" title="Welcome to gRPC Python’s documentation!" href="index.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="1.81.0" />
+  <meta name="docsearch:version" content="1.82.0" />
   </head>
   
   
@@ -124,7 +124,7 @@
   
   
   
-    <p class="title logo__title">gRPC Python Docs v1.81.0</p>
+    <p class="title logo__title">gRPC Python Docs v1.82.0</p>
   
 </a></div>
     
@@ -1977,18 +1977,28 @@ True.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="grpc.HandlerCallDetails">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc.</span></span><span class="sig-name descname"><span class="pre">HandlerCallDetails</span></span><a class="reference internal" href="_modules/grpc.html#HandlerCallDetails"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.HandlerCallDetails" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc.</span></span><span class="sig-name descname"><span class="pre">HandlerCallDetails</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#HandlerCallDetails"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.HandlerCallDetails" title="Link to this definition">#</a></dt>
 <dd><p>Describes an RPC that has just arrived for service.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="grpc.HandlerCallDetails.method">
 <span class="sig-name descname"><span class="pre">method</span></span><a class="headerlink" href="#grpc.HandlerCallDetails.method" title="Link to this definition">#</a></dt>
 <dd><p>The method name of the RPC.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="grpc.HandlerCallDetails.invocation_metadata">
 <span class="sig-name descname"><span class="pre">invocation_metadata</span></span><a class="headerlink" href="#grpc.HandlerCallDetails.invocation_metadata" title="Link to this definition">#</a></dt>
 <dd><p>The <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> sent by the client.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Any</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>

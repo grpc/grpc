@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc.aio._call &#8212; gRPC Python Docs v1.81.0</title>
+    <title>grpc.aio._call &#8212; gRPC Python Docs v1.82.0</title>
   
   
   
@@ -38,7 +38,7 @@
   <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../_static/documentation_options.js?v=e806274a"></script>
+    <script src="../../../_static/documentation_options.js?v=7a79f9a1"></script>
     <script src="../../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script async="async" src="https://www.googletagmanager.com/gtag/js?id=UA-60127042-1"></script>
@@ -59,7 +59,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="1.81.0" />
+  <meta name="docsearch:version" content="1.82.0" />
   </head>
   
   
@@ -121,7 +121,7 @@
   
   
   
-    <p class="title logo__title">gRPC Python Docs v1.81.0</p>
+    <p class="title logo__title">gRPC Python Docs v1.82.0</p>
   
 </a></div>
     
@@ -278,9 +278,9 @@
 <span class="sd">&quot;&quot;&quot;Invocation-side implementation of gRPC Asyncio Python.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">AsyncIterable</span><span class="p">,</span> <span class="n">Iterable</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">enum</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">partial</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">traceback</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
@@ -345,15 +345,15 @@
 
     <span class="n">_code</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span>
     <span class="n">_details</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
-    <span class="n">_initial_metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Metadata</span><span class="p">]</span>
-    <span class="n">_trailing_metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Metadata</span><span class="p">]</span>
+    <span class="n">_initial_metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Metadata</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_trailing_metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Metadata</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">_debug_error_string</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">code</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="p">,</span>
-        <span class="n">initial_metadata</span><span class="p">:</span> <span class="n">Metadata</span><span class="p">,</span>
-        <span class="n">trailing_metadata</span><span class="p">:</span> <span class="n">Metadata</span><span class="p">,</span>
+        <span class="n">initial_metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Metadata</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">trailing_metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Metadata</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">details</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">debug_error_string</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -398,7 +398,7 @@
 
 <div class="viewcode-block" id="AioRpcError.initial_metadata">
 <a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.AioRpcError.initial_metadata">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">initial_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Metadata</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">initial_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Metadata</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Accesses the initial metadata sent by the server.</span>
 
 <span class="sd">        Returns:</span>
@@ -409,7 +409,7 @@
 
 <div class="viewcode-block" id="AioRpcError.trailing_metadata">
 <a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.AioRpcError.trailing_metadata">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">trailing_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Metadata</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">trailing_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Metadata</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Accesses the trailing metadata sent by the server.</span>
 
 <span class="sd">        Returns:</span>
@@ -420,7 +420,7 @@
 
 <div class="viewcode-block" id="AioRpcError.debug_error_string">
 <a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.AioRpcError.debug_error_string">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">debug_error_string</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">debug_error_string</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Accesses the debug error string sent by the server.</span>
 
 <span class="sd">        Returns:</span>
@@ -616,8 +616,8 @@
             <span class="k">return</span> <span class="n">response</span>
 
 
-<span class="k">class</span><span class="w"> </span><span class="nc">_StreamResponseMixin</span><span class="p">(</span><span class="n">Call</span><span class="p">):</span>
-    <span class="n">_message_aiter</span><span class="p">:</span> <span class="n">AsyncIterator</span><span class="p">[</span><span class="n">ResponseType</span><span class="p">]</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">_StreamResponseMixin</span><span class="p">(</span><span class="n">Call</span><span class="p">,</span> <span class="n">Generic</span><span class="p">[</span><span class="n">ResponseType</span><span class="p">]):</span>
+    <span class="n">_message_aiter</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AsyncIterator</span><span class="p">[</span><span class="n">ResponseType</span><span class="p">]]</span>
     <span class="n">_preparation</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Task</span>
     <span class="n">_response_style</span><span class="p">:</span> <span class="n">_APIStyle</span>
 
@@ -638,7 +638,7 @@
             <span class="k">return</span> <span class="kc">True</span>
         <span class="k">return</span> <span class="kc">False</span>
 
-    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_fetch_stream_responses</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ResponseType</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_fetch_stream_responses</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AsyncIterator</span><span class="p">[</span><span class="n">ResponseType</span><span class="p">]:</span>
         <span class="n">message</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read</span><span class="p">()</span>
         <span class="k">while</span> <span class="n">message</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">EOF</span><span class="p">:</span>
             <span class="k">yield</span> <span class="n">message</span>
@@ -653,7 +653,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_message_aiter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fetch_stream_responses</span><span class="p">()</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_message_aiter</span>
 
-    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_read</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ResponseType</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_read</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">ResponseType</span><span class="p">,</span> <span class="n">EOFType</span><span class="p">]:</span>
         <span class="c1"># Wait for the request being sent</span>
         <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_preparation</span>
 
@@ -669,7 +669,7 @@
             <span class="k">return</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">EOF</span>
         <span class="k">return</span> <span class="n">_common</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="n">raw_response</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span><span class="p">)</span>
 
-    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">EOFType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">]:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">ResponseType</span><span class="p">,</span> <span class="n">EOFType</span><span class="p">]:</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">done</span><span class="p">():</span>
             <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raise_for_status</span><span class="p">()</span>
             <span class="k">return</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">EOF</span>
@@ -683,7 +683,7 @@
         <span class="k">return</span> <span class="n">response_message</span>
 
 
-<span class="k">class</span><span class="w"> </span><span class="nc">_StreamRequestMixin</span><span class="p">(</span><span class="n">Call</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">_StreamRequestMixin</span><span class="p">(</span><span class="n">Call</span><span class="p">,</span> <span class="n">Generic</span><span class="p">[</span><span class="n">RequestType</span><span class="p">]):</span>
     <span class="n">_metadata_sent</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Event</span>
     <span class="n">_done_writing_flag</span><span class="p">:</span> <span class="nb">bool</span>
     <span class="n">_async_request_poller</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">asyncio</span><span class="o">.</span><span class="n">Task</span><span class="p">]</span>
@@ -723,9 +723,7 @@
         <span class="bp">self</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">:</span> <span class="n">RequestIterableType</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isasyncgen</span><span class="p">(</span><span class="n">request_iterator</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">hasattr</span><span class="p">(</span>
-                <span class="n">request_iterator</span><span class="p">,</span> <span class="s2">&quot;__aiter__&quot;</span>
-            <span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">request_iterator</span><span class="p">,</span> <span class="n">AsyncIterable</span><span class="p">):</span>
                 <span class="k">async</span> <span class="k">for</span> <span class="n">request</span> <span class="ow">in</span> <span class="n">request_iterator</span><span class="p">:</span>
                     <span class="k">try</span><span class="p">:</span>
                         <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_write</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
@@ -738,7 +736,7 @@
                             <span class="n">rpc_error</span><span class="p">,</span>
                         <span class="p">)</span>
                         <span class="k">return</span>
-            <span class="k">else</span><span class="p">:</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">request_iterator</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">):</span>
                 <span class="k">for</span> <span class="n">request</span> <span class="ow">in</span> <span class="n">request_iterator</span><span class="p">:</span>
                     <span class="k">try</span><span class="p">:</span>
                         <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_write</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
@@ -751,6 +749,12 @@
                             <span class="n">rpc_error</span><span class="p">,</span>
                         <span class="p">)</span>
                         <span class="k">return</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">err_msg</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;request_iterator must be an </span><span class="si">{</span><span class="n">RequestIterableType</span><span class="si">}</span><span class="s2">,&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot; got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">request_iterator</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">!r}</span><span class="s2"> instead&quot;</span>
+                <span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
 
             <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_done_writing</span><span class="p">()</span>
         <span class="k">except</span><span class="p">:</span>  <span class="c1"># pylint: disable=bare-except # noqa: E722</span>
@@ -818,7 +822,11 @@
             <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raise_for_status</span><span class="p">()</span>
 
 
-<span class="k">class</span><span class="w"> </span><span class="nc">UnaryUnaryCall</span><span class="p">(</span><span class="n">_UnaryResponseMixin</span><span class="p">,</span> <span class="n">Call</span><span class="p">,</span> <span class="n">_base_call</span><span class="o">.</span><span class="n">UnaryUnaryCall</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">UnaryUnaryCall</span><span class="p">(</span>
+    <span class="n">_UnaryResponseMixin</span><span class="p">[</span><span class="n">ResponseType</span><span class="p">],</span>
+    <span class="n">Call</span><span class="p">,</span>
+    <span class="n">_base_call</span><span class="o">.</span><span class="n">UnaryUnaryCall</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">],</span>
+<span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Object for managing unary-unary RPC calls.</span>
 
 <span class="sd">    Returned when an instance of `UnaryUnaryMultiCallable` object is called.</span>
@@ -853,7 +861,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_invocation_task</span> <span class="o">=</span> <span class="n">loop</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_invoke</span><span class="p">())</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_init_unary_response_mixin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_invocation_task</span><span class="p">)</span>
 
-    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_invoke</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ResponseType</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_invoke</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">ResponseType</span><span class="p">,</span> <span class="n">EOFType</span><span class="p">]:</span>
         <span class="n">serialized_request</span> <span class="o">=</span> <span class="n">_common</span><span class="o">.</span><span class="n">serialize</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_request</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_serializer</span>
         <span class="p">)</span>
@@ -881,7 +889,11 @@
             <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raise_for_status</span><span class="p">()</span>
 
 
-<span class="k">class</span><span class="w"> </span><span class="nc">UnaryStreamCall</span><span class="p">(</span><span class="n">_StreamResponseMixin</span><span class="p">,</span> <span class="n">Call</span><span class="p">,</span> <span class="n">_base_call</span><span class="o">.</span><span class="n">UnaryStreamCall</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">UnaryStreamCall</span><span class="p">(</span>
+    <span class="n">_StreamResponseMixin</span><span class="p">[</span><span class="n">ResponseType</span><span class="p">],</span>
+    <span class="n">Call</span><span class="p">,</span>
+    <span class="n">_base_call</span><span class="o">.</span><span class="n">UnaryStreamCall</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">],</span>
+<span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Object for managing unary-stream RPC calls.</span>
 
 <span class="sd">    Returned when an instance of `UnaryStreamMultiCallable` object is called.</span>
@@ -918,7 +930,7 @@
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_init_stream_response_mixin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_send_unary_request_task</span><span class="p">)</span>
 
-    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_send_unary_request</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ResponseType</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_send_unary_request</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">serialized_request</span> <span class="o">=</span> <span class="n">_common</span><span class="o">.</span><span class="n">serialize</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_request</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_serializer</span>
         <span class="p">)</span>
@@ -939,7 +951,10 @@
 
 <span class="c1"># pylint: disable=too-many-ancestors</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">StreamUnaryCall</span><span class="p">(</span>
-    <span class="n">_StreamRequestMixin</span><span class="p">,</span> <span class="n">_UnaryResponseMixin</span><span class="p">,</span> <span class="n">Call</span><span class="p">,</span> <span class="n">_base_call</span><span class="o">.</span><span class="n">StreamUnaryCall</span>
+    <span class="n">_StreamRequestMixin</span><span class="p">[</span><span class="n">RequestType</span><span class="p">],</span>
+    <span class="n">_UnaryResponseMixin</span><span class="p">[</span><span class="n">ResponseType</span><span class="p">],</span>
+    <span class="n">Call</span><span class="p">,</span>
+    <span class="n">_base_call</span><span class="o">.</span><span class="n">StreamUnaryCall</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">],</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Object for managing stream-unary RPC calls.</span>
 
@@ -972,7 +987,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_init_stream_request_mixin</span><span class="p">(</span><span class="n">request_iterator</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_init_unary_response_mixin</span><span class="p">(</span><span class="n">loop</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_conduct_rpc</span><span class="p">()))</span>
 
-    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_conduct_rpc</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ResponseType</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_conduct_rpc</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">ResponseType</span><span class="p">,</span> <span class="n">EOFType</span><span class="p">]:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">serialized_response</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cython_call</span><span class="o">.</span><span class="n">stream_unary</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_metadata</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metadata_sent_observer</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_context</span>
@@ -990,7 +1005,10 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">StreamStreamCall</span><span class="p">(</span>
-    <span class="n">_StreamRequestMixin</span><span class="p">,</span> <span class="n">_StreamResponseMixin</span><span class="p">,</span> <span class="n">Call</span><span class="p">,</span> <span class="n">_base_call</span><span class="o">.</span><span class="n">StreamStreamCall</span>
+    <span class="n">_StreamRequestMixin</span><span class="p">[</span><span class="n">RequestType</span><span class="p">],</span>
+    <span class="n">_StreamResponseMixin</span><span class="p">[</span><span class="n">ResponseType</span><span class="p">],</span>
+    <span class="n">Call</span><span class="p">,</span>
+    <span class="n">_base_call</span><span class="o">.</span><span class="n">StreamStreamCall</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">],</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Object for managing stream-stream RPC calls.</span>
 
