@@ -13,7 +13,7 @@ namespace {
 class WindowOverflowTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    memory_owhttp2-window-update-overflowner_ = std::make_unique<MemoryOwner>(
+    memory_owner_ = std::make_unique<MemoryOwner>(
         ResourceQuota::Default()->memory_quota()->CreateMemoryOwner());
   }
   std::unique_ptr<MemoryOwner> memory_owner_;
