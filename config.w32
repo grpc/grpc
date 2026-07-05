@@ -1477,7 +1477,7 @@ if (PHP_GRPC != "no") {
     "third_party\\zlib\\zutil.c " +
     ""
     , null,
-    "/DOPENSSL_NO_ASM /D_GNU_SOURCE /DWIN32_LEAN_AND_MEAN "+
+    "/std:c++17 /DOPENSSL_NO_ASM /D_GNU_SOURCE /DWIN32_LEAN_AND_MEAN "+
     "/D_HAS_EXCEPTIONS=0 /DNOMINMAX /DGRPC_ARES=0 /D_WIN32_WINNT=0x600 "+
     "/I"+configure_module_dirname+" "+
     "/I"+configure_module_dirname+"\\include "+
