@@ -171,4 +171,32 @@ static inline int php_grpc_zend_hash_del(HashTable *ht, char *key, int len) {
   zend_call_function(fci, fci_cache TSRMLS_CC)
 #endif
 
+#ifdef _MSC_VER
+  /* GCC statement expressions ({ ... }) are not supported by MSVC.
+   * Re-define using do-while for portability. This mirrors the guard
+   * that upstream grpc/grpc, causing MSVC builds to fail with cascading
+   * syntax errors at every call site of PHP_GRPC_CALL_FUNCTION 
+   * (e.g. call_credentials.c's plugin_get_metadata). NOTE: this form 
+   * discards the int return value of zend_call_function; if any call
+   * site starts capturing the return value, this macro needs to change
+   * back to an expression form (e.g.a static inline helper function)
+   * instead of do-while. */
+  #undef PHP_GRPC_CALL_FUNCTION
+  #if PHP_VERSION_ID >= 80300
+    #define PHP_GRPC_CALL_FUNCTION(fci, fci_cache)      \
+      do {                                               \
+        size_t old_allowed = EG(max_allowed_stack_size); \
+        void  *old_limit   = EG(stack_limit);            \
+        EG(max_allowed_stack_size) = 0;                  \
+        EG(stack_limit)            = 0;                  \
+        zend_call_function((fci), (fci_cache));          \
+        EG(max_allowed_stack_size) = old_allowed;        \
+        EG(stack_limit)            = old_limit;          \
+      } while (0)
+  #else
+    #define PHP_GRPC_CALL_FUNCTION(fci, fci_cache) \
+      zend_call_function((fci), (fci_cache))
+  #endif
+#endif
+
 #endif /* PHP7_WRAPPER_GRPC_H */
