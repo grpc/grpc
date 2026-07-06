@@ -66,8 +66,6 @@
   default: true
 - name: event_engine_listener
   default: true
-- name: event_engine_poller_for_python
-  default: true
 - name: fail_recv_metadata_on_deadline_exceeded
   default: false
 - name: free_large_allocator
@@ -80,8 +78,6 @@
   default: false
 - name: local_connector_secure
   default: false
-- name: max_inflight_pings_strict_limit
-  default: true
 - name: memory_optimization_01
   default: false
 - name: memory_optimization_02

@@ -22,7 +22,6 @@
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/util/string.h"
-#include "src/core/util/time.h"
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"

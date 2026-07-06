@@ -19,12 +19,12 @@
 
 #include "envoy/config/core/v3/grpc_service.upb.h"
 #include "src/core/util/validation_errors.h"
-#include "src/core/xds/grpc/xds_grpc_service.h"
+#include "src/core/xds/grpc/xds_server_grpc.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 
 namespace grpc_core {
 
-XdsGrpcService ParseXdsGrpcService(
+GrpcXdsServerTarget ParseXdsGrpcService(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_core_v3_GrpcService* grpc_service,
     ValidationErrors* errors);

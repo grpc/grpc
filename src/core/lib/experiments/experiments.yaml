@@ -150,13 +150,6 @@
   uses_polling: true
   allow_in_fuzzing_config: false
   platforms: ["all"]
-- name: event_engine_poller_for_python
-  description: "Enable event engine poller in gRPC Python"
-  expiry: 2026/06/30
-  owner: mlumish@google.com
-  test_tags: []
-  uses_polling: true
-  platforms: ["all"]
 - name: fail_recv_metadata_on_deadline_exceeded
   description: Fail recv initial metadata when the deadline is exceeded.
   expiry: 2026/09/01
@@ -196,11 +189,6 @@
   expiry: 2026/07/15
   owner: mattstev@google.com
   test_tags: ["core_end2end_test"]
-- name: max_inflight_pings_strict_limit
-  description: If set, the max inflight pings limit is strictly enforced.
-  expiry: 2026/07/01
-  owner: akshitpatel@google.com
-  test_tags: []
 - name: memory_optimization_01
   description: Memory Optimization
   expiry: 2027/01/16
@@ -239,12 +227,12 @@
   owner: akshitpatel@google.com
   test_tags: [flow_control_test]
 - name: optimization_01
-  description: Optimization 
+  description: Optimization
   expiry: 2026/09/07
   owner: tjagtap@google.com
   test_tags: []
 - name: optimization_02
-  description: Optimization 
+  description: Optimization
   expiry: 2026/09/07
   owner: tjagtap@google.com
   test_tags: []
@@ -264,19 +252,19 @@
   owner: alishananda@google.com
   test_tags: []
 - name: optimization_06
-  description: Optimization 
+  description: Optimization
   expiry: 2027/01/30
   owner: tjagtap@google.com
   test_tags: []
 - name: otel_export_telemetry_domains
   description: Export telemetry domains in OpenTelemetry metrics.
-  expiry: 2026/07/01
+  expiry: 2026/08/01
   owner: aadik@google.com
   test_tags: [core_end2end_test]
 - name: ph2_client
   description:
     Use promises for the http2 client transport. We have kept client and
-    server transport experiments separate to help with smoother roll outs. 
+    server transport experiments separate to help with smoother roll outs.
     When this flag is enabled for the test suites, it would test PH2 Client with CHTTP2 Server.
   expiry: 2027/03/16
   owner: tjagtap@google.com
@@ -342,7 +330,7 @@
   allow_in_fuzzing_config: false # experiment currently crashes if enabled
 - name: promise_batch_cleanup_on_cancel
   description: Fix completion queue tag handling during promise batch cancellation.
-  expiry: 2026/07/01
+  expiry: 2027/01/16
   owner: akshitpatel@google.com
   test_tags: []
 - name: promise_filter_send_cancel_metadata
@@ -451,7 +439,7 @@
 - name: wildcard_ip_expansion_restriction
   description:
     If set, adds optional restriction on when to expand wildcard IPs.
-  expiry: 2026/07/01
+  expiry: 2026/10/01
   owner: alishananda@google.com
   test_tags: ["core_end2end_test"]
 - name: xds_server_filter_chain_per_route

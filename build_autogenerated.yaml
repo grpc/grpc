@@ -29168,7 +29168,6 @@ targets:
   - src/core/ext/upb-gen/xds/core/v3/resource_locator.upb_minitable.h
   - src/core/ext/upb-gen/xds/core/v3/resource_name.upb.h
   - src/core/ext/upb-gen/xds/core/v3/resource_name.upb_minitable.h
-  - src/core/xds/grpc/xds_grpc_service.h
   - src/core/xds/grpc/xds_grpc_service_parser.h
   - test/core/test_util/scoped_env_var.h
   - test/cpp/util/cli_call.h
@@ -29340,7 +29339,6 @@ targets:
   - src/core/ext/upb-gen/xds/core/v3/resource.upb_minitable.c
   - src/core/ext/upb-gen/xds/core/v3/resource_locator.upb_minitable.c
   - src/core/ext/upb-gen/xds/core/v3/resource_name.upb_minitable.c
-  - src/core/xds/grpc/xds_grpc_service.cc
   - src/core/xds/grpc/xds_grpc_service_parser.cc
   - test/core/xds/xds_common_types_test.cc
   - test/cpp/util/cli_call.cc
@@ -32988,6 +32986,16 @@ targets:
   - grpcpp_channelz
   - grpc_test_util
   - grpc++_test_config
+- name: xds_transport_grpc_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/xds/xds_transport_grpc_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: xds_wrr_end2end_test
   gtest: true
   build: test
