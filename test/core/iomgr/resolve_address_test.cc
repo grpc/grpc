@@ -161,9 +161,7 @@ class ResolveAddressTest : public ::testing::Test {
 
  protected:
   void SetUp() override {
-    if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled() &&
-        !grpc_event_engine::experimental::
-            EventEngineExperimentDisabledForPython()) {
+    if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled()) {
       GTEST_SKIP()
           << "Skipping all legacy ResolveAddress tests. The "
              "event_engine_for_all_other_endpoints experiment is enabled, so "

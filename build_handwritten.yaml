@@ -15,7 +15,7 @@ settings:
   core_version: 55.0.0
   csharp_major_version: 2
   g_stands_for: garden
-  protobuf_version: 5.35.0
+  protobuf_version: 5.35.1
   supported_python_versions:
   - '3.10'
   - '3.11'

@@ -26,9 +26,7 @@
 #include "src/core/call/metadata_batch.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/matchers.h"
-#include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"
-#include "src/core/xds/grpc/xds_server_grpc.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
@@ -89,22 +87,6 @@ struct XdsExtension {
   // Validation fields that need to stay in scope until we're done
   // processing the extension.
   std::vector<ValidationErrors::ScopedField> validation_fields;
-};
-
-struct XdsGrpcService {
-  std::unique_ptr<GrpcXdsServerTarget> server_target;
-  Duration timeout;
-  std::vector<std::pair<std::string, std::string>> initial_metadata;
-
-  bool operator==(const XdsGrpcService& other) const {
-    if (timeout != other.timeout) return false;
-    if (initial_metadata != other.initial_metadata) return false;
-    if (server_target == nullptr) return other.server_target == nullptr;
-    if (other.server_target == nullptr) return false;
-    return server_target->Equals(*other.server_target);
-  }
-
-  std::string ToString() const;
 };
 
 struct HeaderMutationRules {

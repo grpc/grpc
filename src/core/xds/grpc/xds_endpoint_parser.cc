@@ -34,6 +34,7 @@
 #include "envoy/config/endpoint/v3/endpoint_components.upb.h"
 #include "envoy/type/v3/percent.upb.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "src/core/config/experiment_env_var.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -41,11 +42,9 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/load_balancing/ring_hash/ring_hash.h"
 #include "src/core/util/down_cast.h"
-#include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
-#include "src/core/util/string.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_cluster_parser.h"
@@ -66,23 +65,11 @@ namespace grpc_core {
 
 namespace {
 
-// TODO(roth): Remove this after 1.67 is released.
-bool XdsDualstackEndpointsEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_DUALSTACK_ENDPOINTS");
-  if (!value.has_value()) return true;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
-}
-
 // TODO(roth): Flip the default to false once this proves stable, then
 // remove it entirely at some point in the future.
 bool XdsEndpointHashKeyBackwardCompatEnabled() {
-  auto value = GetEnv("GRPC_XDS_ENDPOINT_HASH_KEY_BACKWARD_COMPAT");
-  if (!value.has_value()) return true;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
+  return IsExperimentEnvVarEnabled("GRPC_XDS_ENDPOINT_HASH_KEY_BACKWARD_COMPAT",
+                                   /*default_value=*/true);
 }
 
 void MaybeLogClusterLoadAssignment(
@@ -170,7 +157,9 @@ std::optional<EndpointAddresses> EndpointAddressesParse(
           envoy_config_endpoint_v3_Endpoint_address(endpoint), errors);
       if (address.has_value()) addresses.push_back(*address);
     }
-    if (XdsDualstackEndpointsEnabled()) {
+    // TODO(roth): Remove this after 1.67 is released.
+    if (IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_DUALSTACK_ENDPOINTS",
+                                  /*default_value=*/true)) {
       size_t size;
       auto* additional_addresses =
           envoy_config_endpoint_v3_Endpoint_additional_addresses(endpoint,

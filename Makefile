@@ -714,6 +714,7 @@ LIBGRPC_SRC = \
     src/core/config/config_vars.cc \
     src/core/config/config_vars_non_generated.cc \
     src/core/config/core_configuration.cc \
+    src/core/config/experiment_env_var.cc \
     src/core/config/load_config.cc \
     src/core/credentials/call/call_creds_registry_init.cc \
     src/core/credentials/call/call_creds_util.cc \
@@ -761,6 +762,7 @@ LIBGRPC_SRC = \
     src/core/credentials/transport/tls/grpc_tls_certificate_distributor.cc \
     src/core/credentials/transport/tls/grpc_tls_certificate_match.cc \
     src/core/credentials/transport/tls/grpc_tls_certificate_provider.cc \
+    src/core/credentials/transport/tls/grpc_tls_certificate_selector.cc \
     src/core/credentials/transport/tls/grpc_tls_certificate_verifier.cc \
     src/core/credentials/transport/tls/grpc_tls_credentials_options.cc \
     src/core/credentials/transport/tls/grpc_tls_crl_provider.cc \

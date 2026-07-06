@@ -38,6 +38,13 @@ class ResponseParameters extends \Google\Protobuf\Internal\Message
      * Generated from protobuf field <code>.grpc.testing.BoolValue compressed = 3;</code>
      */
     protected $compressed = null;
+    /**
+     * Whether to request the server to send the requesting peer's socket
+     * address in the response.
+     *
+     * Generated from protobuf field <code>.grpc.testing.BoolValue fill_peer_socket_address = 4;</code>
+     */
+    protected $fill_peer_socket_address = null;
 
     /**
      * Constructor.
@@ -55,6 +62,9 @@ class ResponseParameters extends \Google\Protobuf\Internal\Message
      *           "nullable" in order to interoperate seamlessly with clients not able to
      *           implement the full compression tests by introspecting the call to verify
      *           the response's compression status.
+     *     @type \Grpc\Testing\BoolValue $fill_peer_socket_address
+     *           Whether to request the server to send the requesting peer's socket
+     *           address in the response.
      * }
      */
     public function __construct($data = NULL) {
@@ -153,6 +163,43 @@ class ResponseParameters extends \Google\Protobuf\Internal\Message
     public function setCompressed(\Grpc\Testing\BoolValue|null $var)
     {
         $this->compressed = $var;
+
+        return $this;
+    }
+
+    /**
+     * Whether to request the server to send the requesting peer's socket
+     * address in the response.
+     *
+     * Generated from protobuf field <code>.grpc.testing.BoolValue fill_peer_socket_address = 4;</code>
+     * @return \Grpc\Testing\BoolValue|null
+     */
+    public function getFillPeerSocketAddress()
+    {
+        return $this->fill_peer_socket_address;
+    }
+
+    public function hasFillPeerSocketAddress()
+    {
+        return isset($this->fill_peer_socket_address);
+    }
+
+    public function clearFillPeerSocketAddress()
+    {
+        unset($this->fill_peer_socket_address);
+    }
+
+    /**
+     * Whether to request the server to send the requesting peer's socket
+     * address in the response.
+     *
+     * Generated from protobuf field <code>.grpc.testing.BoolValue fill_peer_socket_address = 4;</code>
+     * @param \Grpc\Testing\BoolValue $var
+     * @return $this
+     */
+    public function setFillPeerSocketAddress(\Grpc\Testing\BoolValue|null $var)
+    {
+        $this->fill_peer_socket_address = $var;
 
         return $this;
     }

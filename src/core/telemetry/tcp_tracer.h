@@ -19,10 +19,12 @@
 #ifndef GRPC_SRC_CORE_TELEMETRY_TCP_TRACER_H
 #define GRPC_SRC_CORE_TELEMETRY_TCP_TRACER_H
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/internal/write_event.h>
 #include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <optional>
 #include <string>
@@ -125,6 +127,42 @@ class TcpCallTracer {
       const std::vector<TcpEventMetric>& metrics);
 
   virtual ~TcpCallTracer() = default;
+
+  struct IpAddress {
+    uint16_t family = 0;
+    uint16_t port = 0;
+    uint8_t ip[16] = {0};
+  };
+
+  virtual void RecordConnectionTuple(const IpAddress& local_addr,
+                                     const IpAddress& peer_addr) {}
+
+  static IpAddress ExtractResolvedAddress(
+      const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
+          addr) {
+    IpAddress out;
+    const sockaddr* sa = addr.address();
+    if (sa == nullptr) {
+      out.family = 0;
+      out.port = 0;
+      memset(out.ip, 0, sizeof(out.ip));
+      return out;
+    }
+    out.family = sa->sa_family;
+    memset(out.ip, 0, sizeof(out.ip));
+    if (sa->sa_family == AF_INET) {
+      const sockaddr_in* addr4 = reinterpret_cast<const sockaddr_in*>(sa);
+      out.port = ntohs(addr4->sin_port);
+      memcpy(out.ip, &addr4->sin_addr.s_addr, 4);
+    } else if (sa->sa_family == AF_INET6) {
+      const sockaddr_in6* addr6 = reinterpret_cast<const sockaddr_in6*>(sa);
+      out.port = ntohs(addr6->sin6_port);
+      memcpy(out.ip, &addr6->sin6_addr.s6_addr, 16);
+    } else {
+      out.port = 0;
+    }
+    return out;
+  }
 
   // Records a per-message event with an optional snapshot of connection
   // metrics.
