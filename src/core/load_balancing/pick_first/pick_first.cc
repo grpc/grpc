@@ -33,6 +33,7 @@
 #include <vector>
 
 #include "src/core/config/core_configuration.h"
+#include "src/core/config/experiment_env_var.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -49,7 +50,6 @@
 #include "src/core/telemetry/metrics.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
-#include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
@@ -540,12 +540,7 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
       // Shuffle the list if needed.
       auto config = static_cast<PickFirstConfig*>(args.config.get());
       if (config->shuffle_addresses()) {
-        auto value = GetEnv("GRPC_EXPERIMENTAL_PF_WEIGHTED_SHUFFLING");
-        bool weighted_enabled = false;
-        if (value.has_value()) {
-          gpr_parse_bool_value(value->c_str(), &weighted_enabled);
-        }
-        if (weighted_enabled) {
+        if (PfWeightedShufflingEnabled()) {
           struct WeightedEndpoint {
             EndpointAddresses endpoint;
             double key;
@@ -1190,6 +1185,10 @@ class PickFirstFactory final : public LoadBalancingPolicyFactory {
 };
 
 }  // namespace
+
+bool PfWeightedShufflingEnabled() {
+  return IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_PF_WEIGHTED_SHUFFLING");
+}
 
 void RegisterPickFirstLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(

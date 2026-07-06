@@ -6967,6 +6967,7 @@ grpc_cc_library(
         "experiment_env_var",
         "grpc_check",
         "grpc_lb_address_filtering",
+        "grpc_lb_policy_pick_first",
         "grpc_lb_xds_channel_args",
         "grpc_outlier_detection_header",
         "json",
@@ -7299,7 +7300,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "connectivity_state",
-        "env",
+        "experiment_env_var",
         "experiments",
         "grpc_check",
         "health_check_client",

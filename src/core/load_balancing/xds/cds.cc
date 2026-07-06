@@ -43,6 +43,7 @@
 #include "src/core/load_balancing/lb_policy_factory.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/load_balancing/outlier_detection/outlier_detection.h"
+#include "src/core/load_balancing/pick_first/pick_first.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/xds/xds_dependency_manager.h"
 #include "src/core/util/debug_location.h"
@@ -168,13 +169,6 @@ bool XdsAggregateClusterBackwardCompatibilityEnabled() {
       "GRPC_XDS_AGGREGATE_CLUSTER_BACKWARD_COMPAT");
 }
 
-bool PfWeightedShufflingEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_PF_WEIGHTED_SHUFFLING");
-  if (!value.has_value()) return false;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
-}
 
 constexpr absl::string_view kCds = "cds_experimental";
 
