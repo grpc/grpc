@@ -777,8 +777,7 @@ class InterceptedUnaryUnaryCall(
                     continuation, client_call_details, request
                 )
                 if isinstance(call_or_response, _base_call.Call):
-                    res: Any = call_or_response
-                    return res
+                    return call_or_response  # type: ignore[return-value]
                 return UnaryUnaryCallResponse[RequestType, ResponseType](
                     call_or_response
                 )
