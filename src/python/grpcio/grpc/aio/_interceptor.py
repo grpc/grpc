@@ -29,6 +29,7 @@ from typing import (
     Generic,
     List,
     MutableSequence,
+    NamedTuple,
     Optional,
     Protocol,
     Sequence,
@@ -53,6 +54,7 @@ from ._metadata import Metadata
 from ._typing import DeserializingFunction
 from ._typing import DoneCallbackType
 from ._typing import EOFType
+from ._typing import MetadataType
 from ._typing import RequestIterableType
 from ._typing import RequestType
 from ._typing import ResponseIterableType
@@ -108,11 +110,16 @@ class ServerInterceptor(metaclass=ABCMeta):
         """
 
 
+class _ClientCallDetailsTuple(NamedTuple):
+    method: str
+    timeout: Optional[float]
+    metadata: Optional[MetadataType]
+    credentials: Optional[grpc.CallCredentials]
+    wait_for_ready: Optional[bool]
+
+
 class ClientCallDetails(
-    collections.namedtuple(
-        "ClientCallDetails",
-        ("method", "timeout", "metadata", "credentials", "wait_for_ready"),
-    ),
+    _ClientCallDetailsTuple,
     grpc.ClientCallDetails,
 ):
     """Describes an RPC to be invoked.
