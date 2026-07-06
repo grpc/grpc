@@ -36,7 +36,6 @@ from typing import (
     TypeAlias,
     Union,
 )
-import collections
 
 import grpc
 from grpc._cython import cygrpc
