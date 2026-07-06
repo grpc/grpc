@@ -69,9 +69,6 @@ where = ["src/python/grpcio"]
     "*.pxi",
 ]
 
-[tool.distutils.bdist_wheel]
-py_limited_api = "cp310"
-
 [tool.pyright]
 
 typeCheckingMode = "strict"
