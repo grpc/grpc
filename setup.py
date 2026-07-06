@@ -496,7 +496,12 @@ if "linux" in sys.platform or "darwin" in sys.platform:
     DEFINE_MACROS += (("PyMODINIT_FUNC", pymodinit),)
     DEFINE_MACROS += (("GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK", 1),)
 
-DEFINE_MACROS += (("Py_LIMITED_API", "0x030A0000"),)
+if sys.version_info >= (3, 12):
+    DEFINE_MACROS += (("Py_LIMITED_API", "0x030C00F0"),)
+    API_TAG = "cp312"
+else:
+    DEFINE_MACROS += (("Py_LIMITED_API", "0x030A00F0"),)
+    API_TAG = "cp310"
 
 def cython_extensions_and_necessity():
     cython_module_files = [
@@ -611,4 +616,9 @@ if __name__ == "__main__":
         extras_require=EXTRAS_REQUIRES,
         setup_requires=SETUP_REQUIRES,
         cmdclass=COMMAND_CLASS,
+        options={
+            "bdist_wheel": {
+                "py_limited_api": API_TAG
+            }
+        }
     )
