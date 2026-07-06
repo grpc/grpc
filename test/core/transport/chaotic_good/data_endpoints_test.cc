@@ -59,6 +59,7 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/util/match.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
@@ -72,6 +73,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 
 namespace grpc_core {
 
@@ -191,7 +193,9 @@ grpc_event_engine::experimental::Slice PaddingBytes(uint32_t padding) {
       buffer.data(), buffer.size());
 }
 
-MpscQueued<chaotic_good::OutgoingFrame> TestFrame(absl::string_view payload) {
+MpscQueued<chaotic_good::OutgoingFrame> TestFrame(
+    absl::string_view payload,
+    std::shared_ptr<TcpCallTracer> tracer = nullptr) {
   // We create an mpsc receiver that we can funnel frames through to get them
   // properly wrapped in an MpscQueued so that we don't need to special case
   // resource reclamation for DataEndpoints.
@@ -203,7 +207,7 @@ MpscQueued<chaotic_good::OutgoingFrame> TestFrame(absl::string_view payload) {
       1, Arena::MakePooled<Message>(
              SliceBuffer(Slice::FromCopiedString(payload)), 0));
   frames->MakeSender().UnbufferedImmediateSend(
-      chaotic_good::OutgoingFrame{std::move(frame), nullptr}, 1);
+      chaotic_good::OutgoingFrame{std::move(frame), std::move(tracer)}, 1);
   return std::move(*frames->Next()().value());
 }
 
@@ -228,6 +232,53 @@ DATA_ENDPOINTS_TEST(CanWrite) {
        PaddingBytes(64 - 5)},
       event_engine().get());
   data_endpoints.Write(123, TestFrame("hello"));
+  WaitForAllPendingWork();
+  close_ep();
+  WaitForAllPendingWork();
+}
+
+class MockTcpCallTracer : public TcpCallTracer {
+ public:
+  MOCK_METHOD(void, RecordEvent,
+              (grpc_event_engine::experimental::internal::WriteEvent event,
+               absl::Time time, size_t byte_offset,
+               const std::vector<TcpEventMetric>& metrics),
+              (override));
+};
+
+DATA_ENDPOINTS_TEST(WriteEventSinkWithTracer) {
+  auto telemetry_info = std::make_shared<util::testing::MockTelemetryInfo>();
+  EXPECT_CALL(*telemetry_info, GetMetricName(1))
+      .WillRepeatedly(::testing::Return("test_metric"));
+
+  util::testing::MockPromiseEndpoint ep(1234, 6148, telemetry_info);
+  auto close_ep = ep.ExpectDelayedReadClose(absl::UnavailableError("test done"),
+                                            event_engine().get());
+  chaotic_good::DataEndpoints data_endpoints(
+      Endpoints(std::move(ep.promise_endpoint)),
+      MakeRefCounted<chaotic_good::TransportContext>(
+          event_engine(), MakeTestChannelzSocketNode()),
+      64, 64, std::numeric_limits<uint32_t>::max(),
+      std::make_shared<chaotic_good::TcpZTraceCollector>(), false, "rand",
+      Time1Clock());
+
+  auto tracer = std::make_shared<::testing::StrictMock<MockTcpCallTracer>>();
+  EXPECT_CALL(
+      *tracer,
+      RecordEvent(
+          grpc_event_engine::experimental::internal::WriteEvent::kSendMsg,
+          ::testing::_, ::testing::_,
+          ::testing::ElementsAre(::testing::AllOf(
+              ::testing::Field(&TcpCallTracer::TcpEventMetric::key,
+                               "test_metric"),
+              ::testing::Field(&TcpCallTracer::TcpEventMetric::value, 42)))));
+
+  ep.ExpectWriteAndRunMetricsSink(
+      {DataFrameHeader(64, 123, 1, 5),
+       grpc_event_engine::experimental::Slice::FromCopiedString("hello"),
+       PaddingBytes(64 - 5)},
+      event_engine().get(), {{1, 42}});
+  data_endpoints.Write(123, TestFrame("hello", tracer));
   WaitForAllPendingWork();
   close_ep();
   WaitForAllPendingWork();

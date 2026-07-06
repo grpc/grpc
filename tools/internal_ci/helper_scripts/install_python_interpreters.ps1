@@ -22,7 +22,8 @@ function Install-Python {
         [string]$PythonVersion,
         [string]$PythonInstaller,
         [string]$PythonInstallPath,
-        [string]$PythonInstallerHash
+        [string]$PythonInstallerHash,
+        [string]$PythonInstallerHashAlgorithm = "MD5"
     )
     $PythonInstallerUrl = "https://www.python.org/ftp/python/$PythonVersion/$PythonInstaller.exe"
     $PythonInstallerPath = "C:\tools\$PythonInstaller.exe"
@@ -32,7 +33,7 @@ function Install-Python {
     Invoke-WebRequest -Uri $PythonInstallerUrl -OutFile $PythonInstallerPath
 
     # Validates checksum
-    $HashFromDownload = Get-FileHash -Path $PythonInstallerPath -Algorithm MD5
+    $HashFromDownload = Get-FileHash -Path $PythonInstallerPath -Algorithm $PythonInstallerHashAlgorithm
     if ($HashFromDownload.Hash -ne $PythonInstallerHash) {
         throw "Invalid Python installer: failed checksum!"
     }
@@ -149,3 +150,24 @@ $Python314x64Config = @{
     PythonInstallerHash = "b674030fe04f2d5c4c1385237998a10c"
 }
 Install-Python @Python314x64Config
+
+# Python 3.15
+# python.org only publishes SHA-256 (not MD5) for 3.15.0b2 installers,
+# so these configs override the default hash algorithm.
+$Python315x86Config = @{
+    PythonVersion = "3.15.0"
+    PythonInstaller = "python-3.15.0b2"
+    PythonInstallPath = "C:\Python315_32bit"
+    PythonInstallerHash = "308d6e8c8c7beb034f61602373f5336e0854c018d4f8b3aff856d9127ac879b5"
+    PythonInstallerHashAlgorithm = "SHA256"
+}
+Install-Python @Python315x86Config
+
+$Python315x64Config = @{
+    PythonVersion = "3.15.0"
+    PythonInstaller = "python-3.15.0b2-amd64"
+    PythonInstallPath = "C:\Python315"
+    PythonInstallerHash = "f73038ee13ab1b131e6b2082a0f5c94e2a6d0aa834c452f2e1cefb90eba92c89"
+    PythonInstallerHashAlgorithm = "SHA256"
+}
+Install-Python @Python315x64Config

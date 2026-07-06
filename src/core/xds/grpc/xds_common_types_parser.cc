@@ -40,7 +40,6 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/util/down_cast.h"
-#include "src/core/util/env.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/validation_errors.h"

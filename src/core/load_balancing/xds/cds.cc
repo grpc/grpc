@@ -19,7 +19,6 @@
 #include <grpc/grpc_security.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
 
 #include <algorithm>
 #include <map>
@@ -34,6 +33,7 @@
 
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/config/core_configuration.h"
+#include "src/core/config/experiment_env_var.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -46,7 +46,6 @@
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/xds/xds_dependency_manager.h"
 #include "src/core/util/debug_location.h"
-#include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
@@ -165,11 +164,8 @@ namespace {
 
 // TODO(roth): Remove this after the 1.63 release.
 bool XdsAggregateClusterBackwardCompatibilityEnabled() {
-  auto value = GetEnv("GRPC_XDS_AGGREGATE_CLUSTER_BACKWARD_COMPAT");
-  if (!value.has_value()) return false;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
+  return IsExperimentEnvVarEnabled(
+      "GRPC_XDS_AGGREGATE_CLUSTER_BACKWARD_COMPAT");
 }
 
 constexpr absl::string_view kCds = "cds_experimental";
@@ -350,7 +346,9 @@ class PriorityEndpointIterator final : public EndpointAddressesIterator {
                   .SetObject(hierarchical_path_attr)
                   .Set(GRPC_ARG_ADDRESS_WEIGHT, endpoint_weight)
                   .SetObject(locality_name->Ref())
-                  .Set(GRPC_ARG_XDS_LOCALITY_WEIGHT, locality.lb_weight);
+                  .Set(GRPC_ARG_XDS_LOCALITY_WEIGHT, locality.lb_weight)
+                  .Set(GRPC_ARG_LB_LOCALITY,
+                       locality_name->human_readable_string().as_string_view());
           if (!use_http_connect_) args = args.Remove(GRPC_ARG_XDS_HTTP_PROXY);
           callback(EndpointAddresses(endpoint.addresses(), args));
         }

@@ -54,9 +54,6 @@ const char* const additional_constraints_chaotic_good_send_supported_features =
 const char* const description_custom_frame_check =
     "Adding checks to custom HTTP2 frame.";
 const char* const additional_constraints_custom_frame_check = "{}";
-const char* const description_error_flatten =
-    "Flatten errors to ordinary absl::Status form.";
-const char* const additional_constraints_error_flatten = "{}";
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -153,6 +150,8 @@ const char* const description_optimization_04 = "Optimization";
 const char* const additional_constraints_optimization_04 = "{}";
 const char* const description_optimization_05 = "Optimization";
 const char* const additional_constraints_optimization_05 = "{}";
+const char* const description_optimization_06 = "Optimization";
+const char* const additional_constraints_optimization_06 = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
@@ -244,11 +243,6 @@ const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
 const char* const description_subchannel_connection_scaling =
     "Subchannel connection scaling support.";
 const char* const additional_constraints_subchannel_connection_scaling = "{}";
-const char* const description_subchannel_wrapper_cleanup_on_orphan =
-    "Fixes the subchannel wrapper to drop any non-cancelled watchers when it "
-    "gets orphaned.";
-const char* const additional_constraints_subchannel_wrapper_cleanup_on_orphan =
-    "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -314,8 +308,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true, true},
     {"custom_frame_check", description_custom_frame_check,
      additional_constraints_custom_frame_check, nullptr, 0, true, false},
-    {"error_flatten", description_error_flatten,
-     additional_constraints_error_flatten, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
     {"event_engine_dns", description_event_engine_dns,
@@ -363,7 +355,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
      true},
     {"memory_optimization_01", description_memory_optimization_01,
-     additional_constraints_memory_optimization_01, nullptr, 0, true, false},
+     additional_constraints_memory_optimization_01, nullptr, 0, false, false},
     {"memory_optimization_02", description_memory_optimization_02,
      additional_constraints_memory_optimization_02, nullptr, 0, false, false},
     {"message_size_refactoring", description_message_size_refactoring,
@@ -389,6 +381,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_optimization_04, nullptr, 0, true, true},
     {"optimization_05", description_optimization_05,
      additional_constraints_optimization_05, nullptr, 0, false, true},
+    {"optimization_06", description_optimization_06,
+     additional_constraints_optimization_06, nullptr, 0, false, true},
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
@@ -451,12 +445,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,
      true},
     {"subchannel_connection_scaling", description_subchannel_connection_scaling,
-     additional_constraints_subchannel_connection_scaling, nullptr, 0, false,
+     additional_constraints_subchannel_connection_scaling, nullptr, 0, true,
      true},
-    {"subchannel_wrapper_cleanup_on_orphan",
-     description_subchannel_wrapper_cleanup_on_orphan,
-     additional_constraints_subchannel_wrapper_cleanup_on_orphan, nullptr, 0,
-     true, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
@@ -526,9 +516,6 @@ const char* const additional_constraints_chaotic_good_send_supported_features =
 const char* const description_custom_frame_check =
     "Adding checks to custom HTTP2 frame.";
 const char* const additional_constraints_custom_frame_check = "{}";
-const char* const description_error_flatten =
-    "Flatten errors to ordinary absl::Status form.";
-const char* const additional_constraints_error_flatten = "{}";
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -625,6 +612,8 @@ const char* const description_optimization_04 = "Optimization";
 const char* const additional_constraints_optimization_04 = "{}";
 const char* const description_optimization_05 = "Optimization";
 const char* const additional_constraints_optimization_05 = "{}";
+const char* const description_optimization_06 = "Optimization";
+const char* const additional_constraints_optimization_06 = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
@@ -716,11 +705,6 @@ const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
 const char* const description_subchannel_connection_scaling =
     "Subchannel connection scaling support.";
 const char* const additional_constraints_subchannel_connection_scaling = "{}";
-const char* const description_subchannel_wrapper_cleanup_on_orphan =
-    "Fixes the subchannel wrapper to drop any non-cancelled watchers when it "
-    "gets orphaned.";
-const char* const additional_constraints_subchannel_wrapper_cleanup_on_orphan =
-    "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -786,8 +770,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true, true},
     {"custom_frame_check", description_custom_frame_check,
      additional_constraints_custom_frame_check, nullptr, 0, true, false},
-    {"error_flatten", description_error_flatten,
-     additional_constraints_error_flatten, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
     {"event_engine_dns", description_event_engine_dns,
@@ -835,7 +817,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
      true},
     {"memory_optimization_01", description_memory_optimization_01,
-     additional_constraints_memory_optimization_01, nullptr, 0, true, false},
+     additional_constraints_memory_optimization_01, nullptr, 0, false, false},
     {"memory_optimization_02", description_memory_optimization_02,
      additional_constraints_memory_optimization_02, nullptr, 0, false, false},
     {"message_size_refactoring", description_message_size_refactoring,
@@ -861,6 +843,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_optimization_04, nullptr, 0, true, true},
     {"optimization_05", description_optimization_05,
      additional_constraints_optimization_05, nullptr, 0, false, true},
+    {"optimization_06", description_optimization_06,
+     additional_constraints_optimization_06, nullptr, 0, false, true},
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
@@ -923,12 +907,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,
      true},
     {"subchannel_connection_scaling", description_subchannel_connection_scaling,
-     additional_constraints_subchannel_connection_scaling, nullptr, 0, false,
+     additional_constraints_subchannel_connection_scaling, nullptr, 0, true,
      true},
-    {"subchannel_wrapper_cleanup_on_orphan",
-     description_subchannel_wrapper_cleanup_on_orphan,
-     additional_constraints_subchannel_wrapper_cleanup_on_orphan, nullptr, 0,
-     true, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
@@ -998,9 +978,6 @@ const char* const additional_constraints_chaotic_good_send_supported_features =
 const char* const description_custom_frame_check =
     "Adding checks to custom HTTP2 frame.";
 const char* const additional_constraints_custom_frame_check = "{}";
-const char* const description_error_flatten =
-    "Flatten errors to ordinary absl::Status form.";
-const char* const additional_constraints_error_flatten = "{}";
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -1097,6 +1074,8 @@ const char* const description_optimization_04 = "Optimization";
 const char* const additional_constraints_optimization_04 = "{}";
 const char* const description_optimization_05 = "Optimization";
 const char* const additional_constraints_optimization_05 = "{}";
+const char* const description_optimization_06 = "Optimization";
+const char* const additional_constraints_optimization_06 = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
@@ -1188,11 +1167,6 @@ const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
 const char* const description_subchannel_connection_scaling =
     "Subchannel connection scaling support.";
 const char* const additional_constraints_subchannel_connection_scaling = "{}";
-const char* const description_subchannel_wrapper_cleanup_on_orphan =
-    "Fixes the subchannel wrapper to drop any non-cancelled watchers when it "
-    "gets orphaned.";
-const char* const additional_constraints_subchannel_wrapper_cleanup_on_orphan =
-    "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -1258,8 +1232,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true, true},
     {"custom_frame_check", description_custom_frame_check,
      additional_constraints_custom_frame_check, nullptr, 0, true, false},
-    {"error_flatten", description_error_flatten,
-     additional_constraints_error_flatten, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
     {"event_engine_dns", description_event_engine_dns,
@@ -1307,7 +1279,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
      true},
     {"memory_optimization_01", description_memory_optimization_01,
-     additional_constraints_memory_optimization_01, nullptr, 0, true, false},
+     additional_constraints_memory_optimization_01, nullptr, 0, false, false},
     {"memory_optimization_02", description_memory_optimization_02,
      additional_constraints_memory_optimization_02, nullptr, 0, false, false},
     {"message_size_refactoring", description_message_size_refactoring,
@@ -1333,6 +1305,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_optimization_04, nullptr, 0, true, true},
     {"optimization_05", description_optimization_05,
      additional_constraints_optimization_05, nullptr, 0, false, true},
+    {"optimization_06", description_optimization_06,
+     additional_constraints_optimization_06, nullptr, 0, false, true},
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
@@ -1395,12 +1369,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,
      true},
     {"subchannel_connection_scaling", description_subchannel_connection_scaling,
-     additional_constraints_subchannel_connection_scaling, nullptr, 0, false,
+     additional_constraints_subchannel_connection_scaling, nullptr, 0, true,
      true},
-    {"subchannel_wrapper_cleanup_on_orphan",
-     description_subchannel_wrapper_cleanup_on_orphan,
-     additional_constraints_subchannel_wrapper_cleanup_on_orphan, nullptr, 0,
-     true, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,

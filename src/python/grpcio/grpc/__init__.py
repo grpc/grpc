@@ -586,6 +586,8 @@ class ChannelCredentials:
     secure_channel requires an instance of this class.
     """
 
+    _credentials: _cygrpc.ChannelCredentials
+
     def __init__(self, credentials):
         self._credentials = credentials
 
