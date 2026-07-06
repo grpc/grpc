@@ -15,7 +15,6 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
-#include <atomic>
 #include <memory>
 #include <optional>
 

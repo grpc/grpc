@@ -149,6 +149,9 @@ grpc_cc_test(
     srcs = ["v3_bridge_test.cc"],
     external_deps = [
         "absl/log:log",
+        "absl/log:check",
+        "absl/synchronization",
+        "absl/time",
         "gtest",
     ],
     deps = [
