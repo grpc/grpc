@@ -1249,8 +1249,8 @@ XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::L4FilterChain::
 
 absl::StatusOr<ServerConfigSelector::CallConfig>
 XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::L4FilterChain::
-    XdsServerConfigSelector::GetCallConfig(
-        const ConnectionState* state, grpc_metadata_batch* metadata) {
+    XdsServerConfigSelector::GetCallConfig(const ConnectionState* state,
+                                           grpc_metadata_batch* metadata) {
   CallConfig call_config;
   if (metadata->get_pointer(HttpPathMetadata()) == nullptr) {
     return absl::InternalError("no path found");
