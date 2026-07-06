@@ -35,6 +35,7 @@
 #include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_common_types.h"
+#include "src/core/xds/grpc/xds_server_grpc.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "xds/type/matcher/v3/string.upb.h"
 
@@ -91,7 +92,7 @@ std::optional<XdsExtension> ExtractXdsExtension(
     const XdsResourceType::DecodeContext& context,
     const google_protobuf_Any* any, ValidationErrors* errors);
 
-XdsGrpcService ParseXdsGrpcService(
+GrpcXdsServerTarget ParseXdsGrpcService(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_core_v3_GrpcService* grpc_service,
     ValidationErrors* errors);

@@ -134,9 +134,7 @@ class Client {
   void Connect() {
     ExecCtx exec_ctx;
     grpc_resolved_address addr;
-    if (IsEventEngineDnsNonClientChannelEnabled() &&
-        !grpc_event_engine::experimental::
-            EventEngineExperimentDisabledForPython()) {
+    if (IsEventEngineDnsNonClientChannelEnabled()) {
       auto resolver =
           grpc_event_engine::experimental::GetDefaultEventEngine()
               ->GetDNSResolver(grpc_event_engine::experimental::EventEngine::

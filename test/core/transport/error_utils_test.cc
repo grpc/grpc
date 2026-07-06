@@ -64,9 +64,7 @@ TEST(ErrorUtilsTest, GetErrorGetStatusChild) {
   grpc_error_get_status(error, grpc_core::Timestamp(), &code, &message, nullptr,
                         nullptr);
   ASSERT_EQ(code, GRPC_STATUS_RESOURCE_EXHAUSTED);
-  ASSERT_EQ(message, grpc_core::IsErrorFlattenEnabled()
-                         ? "Parent (Child1) (Child2)"
-                         : "Child2");
+  ASSERT_EQ(message, "Parent (Child1) (Child2)");
 }
 
 // ---- Ok Status ----
@@ -86,25 +84,6 @@ TEST(ErrorUtilsTest, AbslStatusToGrpcErrorDoesNotReturnSpecialVariables) {
   grpc_error_handle error =
       absl_status_to_grpc_error(absl::CancelledError("CANCELLED"));
   ASSERT_NE(error, absl::CancelledError());
-}
-
-TEST(ErrorUtilsTest, GrpcSpecialErrorCancelledToAbslStatus) {
-  if (grpc_core::IsErrorFlattenEnabled()) {
-    GTEST_SKIP() << "This functionality not available with this experiment";
-  }
-  absl::Status status = grpc_error_to_absl_status(absl::CancelledError());
-  ASSERT_TRUE(absl::IsCancelled(status));
-  ASSERT_EQ(status.message(), "CANCELLED");
-}
-
-TEST(ErrorUtilsTest, GrpcSpecialErrorOOMToAbslStatus) {
-  if (grpc_core::IsErrorFlattenEnabled()) {
-    GTEST_SKIP() << "This functionality not available with this experiment";
-  }
-  absl::Status status =
-      grpc_error_to_absl_status(absl::ResourceExhaustedError(""));
-  ASSERT_TRUE(absl::IsResourceExhausted(status));
-  ASSERT_EQ(status.message(), "RESOURCE_EXHAUSTED");
 }
 
 // ---- Ordinary statuses ----
