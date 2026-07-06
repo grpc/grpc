@@ -136,6 +136,7 @@ class ClientCallDetails(
         credentials: An optional CallCredentials for the RPC.
         wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
     """
+
     pass
 
 
@@ -526,12 +527,16 @@ class _InterceptedUnaryResponseMixin(Generic[ResponseType]):
     def __await__(
         self: _InterceptedUnaryMixinProtocol[ResponseType],
     ) -> Generator[Any, None, ResponseType]:
-        call: Awaitable[ResponseType] = yield from self._interceptors_task.__await__()
+        call: Awaitable[ResponseType] = (
+            yield from self._interceptors_task.__await__()
+        )
         response: ResponseType = yield from call.__await__()
         return response
 
 
-class _InterceptedStreamResponseMixinProtocol(Generic[_ResponseType_co], Protocol):
+class _InterceptedStreamResponseMixinProtocol(
+    Generic[_ResponseType_co], Protocol
+):
     _interceptors_task: asyncio.Task[Any]
     _response_aiter: AsyncIterator[_ResponseType_co] | None
 
@@ -754,33 +759,45 @@ class InterceptedUnaryUnaryCall(
             request: RequestType,
         ) -> Union[
             _base_call.UnaryUnaryCall[RequestType, ResponseType],
-            UnaryUnaryCallResponse[ResponseType],
+            UnaryUnaryCallResponse[RequestType, ResponseType],
         ]:
             if interceptors:
 
-                continuation = functools.partial(
-                    _run_interceptor, interceptors[1:]
-                )
+                async def continuation(
+                    client_call_details: ClientCallDetails,
+                    request: RequestType,
+                ) -> _base_call.UnaryUnaryCall[RequestType, ResponseType]:
+                    result = await _run_interceptor(
+                        interceptors[1:], client_call_details, request
+                    )
+                    # UnaryUnaryCallResponse inherits from UnaryUnaryCall, so returning result is type safe
+                    return result
 
                 call_or_response = await interceptors[0].intercept_unary_unary(
                     continuation, client_call_details, request
                 )
-                if isinstance(call_or_response, _base_call.UnaryUnaryCall):
-                    return call_or_response
-                return UnaryUnaryCallResponse(call_or_response)
+                if isinstance(call_or_response, _base_call.Call):
+                    res: Any = call_or_response
+                    return res
+                return UnaryUnaryCallResponse[RequestType, ResponseType](
+                    call_or_response
+                )
 
-            return UnaryUnaryCall(
-                request,
-                _timeout_to_deadline(client_call_details.timeout),
-                client_call_details.metadata or Metadata(),
-                client_call_details.credentials,
-                client_call_details.wait_for_ready,
-                self._channel,
-                client_call_details.method,
-                request_serializer,
-                response_deserializer,
-                self._loop,
+            call: _base_call.UnaryUnaryCall[RequestType, ResponseType] = (
+                UnaryUnaryCall(
+                    request,
+                    _timeout_to_deadline(client_call_details.timeout),
+                    client_call_details.metadata or Metadata(),
+                    client_call_details.credentials,
+                    client_call_details.wait_for_ready,
+                    self._channel,
+                    client_call_details.method,
+                    request_serializer,
+                    response_deserializer,
+                    self._loop,
+                )
             )
+            return call
 
         client_call_details = ClientCallDetails(
             method, timeout, metadata, credentials, wait_for_ready
@@ -891,7 +908,9 @@ class InterceptedUnaryStreamCall(
                         )
                         raise RuntimeError(err_msg)
                     self._last_returned_call_from_interceptors = (
-                        UnaryStreamCallResponseIterator[RequestType, ResponseType](
+                        UnaryStreamCallResponseIterator[
+                            RequestType, ResponseType
+                        ](
                             self._last_returned_call_from_interceptors,
                             call_or_response_iterator,
                         )
@@ -1123,7 +1142,9 @@ class InterceptedStreamStreamCall(
                         )
                         raise RuntimeError(err_msg)
                     self._last_returned_call_from_interceptors = (
-                        StreamStreamCallResponseIterator[RequestType, ResponseType](
+                        StreamStreamCallResponseIterator[
+                            RequestType, ResponseType
+                        ](
                             self._last_returned_call_from_interceptors,
                             call_or_response_iterator,
                         )
@@ -1155,7 +1176,8 @@ class InterceptedStreamStreamCall(
 
 
 class UnaryUnaryCallResponse(
-    _base_call.UnaryUnaryCall[RequestType, ResponseType], Generic[RequestType, ResponseType]
+    _base_call.UnaryUnaryCall[RequestType, ResponseType],
+    Generic[RequestType, ResponseType],
 ):
     """Final UnaryUnaryCall class finished with a response."""
 
