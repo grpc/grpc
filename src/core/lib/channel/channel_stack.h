@@ -68,17 +68,12 @@
 #include "src/core/util/time_precise.h"
 #include "src/core/util/unique_type_name.h"
 
-namespace grpc_core {
-class Blackboard;
-}  // namespace grpc_core
-
 struct grpc_channel_element_args {
   grpc_channel_stack* channel_stack;
   grpc_core::ChannelArgs channel_args;
   int is_first;
   int is_last;
   grpc_core::RefCountedPtr<const grpc_core::FilterConfig> config;
-  const grpc_core::Blackboard* blackboard;
 };
 struct grpc_call_element_args {
   grpc_call_stack* call_stack;
@@ -276,8 +271,7 @@ grpc_error_handle grpc_channel_stack_init(
     int initial_refs, grpc_iomgr_cb_func destroy, void* destroy_arg,
     std::vector<grpc_core::FilterAndConfig> filters,
     const grpc_core::ChannelArgs& args, const char* name,
-    grpc_channel_stack* stack,
-    const grpc_core::Blackboard* blackboard = nullptr);
+    grpc_channel_stack* stack);
 // Destroy a channel stack
 void grpc_channel_stack_destroy(grpc_channel_stack* stack);
 

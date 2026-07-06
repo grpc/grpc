@@ -83,7 +83,7 @@ class StreamingOutputCallRequest extends \Google\Protobuf\Internal\Message
      * stream.
      *
      * Generated from protobuf field <code>.grpc.testing.PayloadType response_type = 1;</code>
-     * @return int
+     * @return int one of the values in {@see \Grpc\Testing\PayloadType}
      */
     public function getResponseType()
     {
@@ -97,10 +97,10 @@ class StreamingOutputCallRequest extends \Google\Protobuf\Internal\Message
      * stream.
      *
      * Generated from protobuf field <code>.grpc.testing.PayloadType response_type = 1;</code>
-     * @param int $var
+     * @param int $var one of the values in {@see \Grpc\Testing\PayloadType}
      * @return $this
      */
-    public function setResponseType($var)
+    public function setResponseType(int $var)
     {
         GPBUtil::checkEnum($var, \Grpc\Testing\PayloadType::class);
         $this->response_type = $var;
@@ -126,7 +126,7 @@ class StreamingOutputCallRequest extends \Google\Protobuf\Internal\Message
      * @param \Grpc\Testing\ResponseParameters[] $var
      * @return $this
      */
-    public function setResponseParameters($var)
+    public function setResponseParameters(array|RepeatedField $var)
     {
         $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \Grpc\Testing\ResponseParameters::class);
         $this->response_parameters = $arr;
@@ -162,9 +162,8 @@ class StreamingOutputCallRequest extends \Google\Protobuf\Internal\Message
      * @param \Grpc\Testing\Payload $var
      * @return $this
      */
-    public function setPayload($var)
+    public function setPayload(\Grpc\Testing\Payload|null $var)
     {
-        GPBUtil::checkMessage($var, \Grpc\Testing\Payload::class);
         $this->payload = $var;
 
         return $this;
@@ -198,9 +197,8 @@ class StreamingOutputCallRequest extends \Google\Protobuf\Internal\Message
      * @param \Grpc\Testing\EchoStatus $var
      * @return $this
      */
-    public function setResponseStatus($var)
+    public function setResponseStatus(\Grpc\Testing\EchoStatus|null $var)
     {
-        GPBUtil::checkMessage($var, \Grpc\Testing\EchoStatus::class);
         $this->response_status = $var;
 
         return $this;
@@ -234,9 +232,8 @@ class StreamingOutputCallRequest extends \Google\Protobuf\Internal\Message
      * @param \Grpc\Testing\TestOrcaReport $var
      * @return $this
      */
-    public function setOrcaOobReport($var)
+    public function setOrcaOobReport(\Grpc\Testing\TestOrcaReport|null $var)
     {
-        GPBUtil::checkMessage($var, \Grpc\Testing\TestOrcaReport::class);
         $this->orca_oob_report = $var;
 
         return $this;

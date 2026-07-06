@@ -365,8 +365,13 @@ ParsedMetadata<MetadataContainer>::SliceTraitVTable() {
       metadata_detail::DestroySliceValue,
       // set
       [](const Buffer& value, MetadataContainer* map) {
-        metadata_detail::SetSliceValue<Which::MementoToValue>(
-            map->GetOrCreatePointer(Which()), value);
+        if constexpr (Which::kRepeatable) {
+          map->GetOrCreatePointer(Which())->emplace_back(
+              Which::MementoToValue(metadata_detail::SliceFromBuffer(value)));
+        } else {
+          metadata_detail::SetSliceValue<Which::MementoToValue>(
+              map->GetOrCreatePointer(Which()), value);
+        }
       },
       // with_new_value
       WithNewValueSetSlice<Which::ParseMemento>,

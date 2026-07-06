@@ -63,6 +63,7 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
   ServerCall(ClientMetadataHandle client_initial_metadata,
              CallHandler call_handler, ServerInterface* server,
              grpc_completion_queue* cq,
+             grpc_metadata_array* publish_initial_metadata,
              RefCountedPtr<Arena> parent_arena = nullptr)
       : Call(false,
              client_initial_metadata->get(GrpcTimeoutMetadata())
@@ -78,6 +79,9 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
       parent_ctx->arena = std::move(parent_arena);
       arena()->SetContext<ParentCallContext>(parent_ctx);
     }
+    ProcessIncomingInitialMetadata(*client_initial_metadata_stored_);
+    PublishMetadataArray(client_initial_metadata_stored_.get(),
+                         publish_initial_metadata, false);
     SourceConstructed();
   }
 
@@ -92,9 +96,7 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
   bool is_trailers_only() const override {
     Crash("is_trailers_only not implemented for server calls");
   }
-  absl::string_view GetServerAuthority() const override {
-    Crash("unimplemented");
-  }
+  absl::string_view GetServerAuthority() const override;
   grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                              bool is_notify_tag_closure) override;
   void FailBatchImmediately(void* notify_tag, bool is_notify_tag_closure,

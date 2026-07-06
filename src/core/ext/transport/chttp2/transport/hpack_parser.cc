@@ -996,6 +996,15 @@ class HPackParser::Parser {
       }
     }
     auto value_slice = value.value.Take();
+    if (IsOptimization05Enabled() && !state_.is_binary_header &&
+        state_.field_error.ok()) {
+      auto r =
+          ValidateNonBinaryHeaderValueIsLegal(value_slice.as_string_view());
+      if (r != ValidateMetadataResult::kOk) {
+        input_->SetErrorAndContinueParsing(
+            HpackParseResult::InvalidMetadataError(r, key_string));
+      }
+    }
     const auto transport_size =
         key_string.size() + value.wire_size + hpack_constants::kEntryOverhead;
     if (state_.mitigation_engine != nullptr) {

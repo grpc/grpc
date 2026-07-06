@@ -505,6 +505,8 @@ INSTANTIATE_TEST_SUITE_P(FrameProtectorUtil, FlowTest,
 TEST(ConvertKeyExchangeGroupToStringTest, ValidCases) {
   EXPECT_EQ(*tsi::ConvertKeyExchangeGroupToString(GRPC_TLS_GROUP_SECP256R1),
             "P-256");
+  EXPECT_EQ(*tsi::ConvertKeyExchangeGroupToString(GRPC_TLS_GROUP_SECP384R1),
+            "P-384");
   EXPECT_EQ(*tsi::ConvertKeyExchangeGroupToString(GRPC_TLS_GROUP_X25519),
             "X25519");
 #if defined(OPENSSL_IS_BORINGSSL)
@@ -925,6 +927,20 @@ TEST(ParseUriString, DontSetASN1String) {
   EXPECT_EQ(parsed_uri.status().code(), absl::StatusCode::kInvalidArgument);
   GENERAL_NAME_free(subject_alt_name);
 }
+
+TEST(DefaultRepoRoots, RootsAreValid) {
+  FILE* file = fopen("etc/roots.pem", "r");
+  ASSERT_NE(file, nullptr);
+  X509* cert = nullptr;
+  int count = 0;
+  while ((cert = PEM_read_X509(file, nullptr, nullptr, nullptr)) != nullptr) {
+    count++;
+    X509_free(cert);
+  }
+  fclose(file);
+  EXPECT_GT(count, 0);
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 

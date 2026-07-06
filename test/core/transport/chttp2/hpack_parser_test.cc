@@ -625,14 +625,26 @@ INSTANTIATE_TEST_SUITE_P(
             "FuzzerCoverageMetadataLimits",
             {},
             {9},
+            {{"3f66726161616161616161616161616161616161616161616161616161616161"
+              "6161616161616161616161616161616161616161616161616161616161616161"
+              "6161616161616161616161616161616161616161616161616161616161616161"
+              "616161616161616161616161616161616161616161305c3030305c3030305c30"
+              "30305c3030305c3030305c3030305c3030305c3030305c3030305c3030305c30"
+              "30305c3030305c3030305c3030305c3030305c3030305c3030305c3030305c",
+              absl::ResourceExhaustedError(
+                  "received metadata size exceeds hard limit"),
+              kWithPriority}}},
+        Test{
+            "FuzzerCoverageMetadataLimits_InvalidValues",
+            {},
+            {9},
             {{"3f6672616d6573207ba2020656e645f6f665f686561646572733a2074727565a"
               "2020656e645f6f665f73747265616d3a2074727565a202073746f705f6275666"
               "66572696e675f61667465725f7365676d656e74733a2039a202070617273653a"
               "20225c3030305c3030305c3030305c3030305c3030305c3030305c3030305c30"
               "30305c3030305c3030305c3030305c3030305c3030305c3030305c3030305c30"
               "30305c3030305c3030305c3030305c3030305c3030305c3030305c3030305c",
-              absl::ResourceExhaustedError(
-                  "received metadata size exceeds hard limit"),
+              absl::InternalError("Illegal header value: from"),
               kWithPriority}}},
         Test{"FuzzerCoverage52046772706300073a737461747573033230300e7f",
              {},
@@ -824,7 +836,12 @@ INSTANTIATE_TEST_SUITE_P(
              {{"1f80808080808080808080808080808080808080808080808080808080",
                absl::InternalError(
                    "Malicious varint encoding detected in HPACK stream"),
-               kFailureIsConnectionError}}}),
+               kFailureIsConnectionError}}},
+        Test{"InvalidHeaderValueWithCRLF",
+             {},
+             {},
+             {{"00017804610d0a62",
+               absl::InternalError("Illegal header value: x"), 0}}}),
     NameFromConfig);
 
 class MockMitigationEngine : public MitigationEngine {
@@ -940,6 +957,7 @@ TEST_F(MitigationEngineParseTest, CloseConnection) {
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
+  grpc_core::ForceEnableExperiment("optimization_05", true);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

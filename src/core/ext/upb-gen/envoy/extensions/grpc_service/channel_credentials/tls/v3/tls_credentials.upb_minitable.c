@@ -15,27 +15,29 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal envoy_extensions_grpc_service_channel_credentials_tls_v3_TlsCredentials__submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__transport_0sockets__tls__v3__CommonTlsContext__CertificateProviderInstance_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__transport_0sockets__tls__v3__CommonTlsContext__CertificateProviderInstance_msg_init_ptr},
-};
+extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
+typedef struct {
+  upb_MiniTableField fields[2];
+  upb_MiniTableSubInternal subs[2];
+} envoy__extensions__grpc_0service__channel_0credentials__tls__v3__TlsCredentials_msg_init_Fields;
 
-static const upb_MiniTableField envoy_extensions_grpc_service_channel_credentials_tls_v3_TlsCredentials__fields[2] = {
-  {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+static const envoy__extensions__grpc_0service__channel_0credentials__tls__v3__TlsCredentials_msg_init_Fields envoy_extensions_grpc_service_channel_credentials_tls_v3_TlsCredentials__fields = {{
+  {1, UPB_SIZE(12, 16), 64, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(16, 24), 65, UPB_SIZE(4, 5), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__transport_0sockets__tls__v3__CommonTlsContext__CertificateProviderInstance_msg_init},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__transport_0sockets__tls__v3__CommonTlsContext__CertificateProviderInstance_msg_init},
+}};
 
 const upb_MiniTable envoy__extensions__grpc_0service__channel_0credentials__tls__v3__TlsCredentials_msg_init = {
-  &envoy_extensions_grpc_service_channel_credentials_tls_v3_TlsCredentials__submsgs[0],
-  &envoy_extensions_grpc_service_channel_credentials_tls_v3_TlsCredentials__fields[0],
+  &envoy_extensions_grpc_service_channel_credentials_tls_v3_TlsCredentials__fields.fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.grpc_service.channel_credentials.tls.v3.TlsCredentials",
 #endif
 };
 
-const upb_MiniTable* envoy__extensions__grpc_0service__channel_0credentials__tls__v3__TlsCredentials_msg_init_ptr = &envoy__extensions__grpc_0service__channel_0credentials__tls__v3__TlsCredentials_msg_init;
 static const upb_MiniTable *messages_layout[1] = {
   &envoy__extensions__grpc_0service__channel_0credentials__tls__v3__TlsCredentials_msg_init,
 };

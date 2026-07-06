@@ -15,13 +15,15 @@
 from __future__ import annotations
 
 from collections import OrderedDict
-from collections.abc import Collection
-from collections.abc import ItemsView
-from collections.abc import Iterable
-from collections.abc import Iterator
-from collections.abc import KeysView
-from collections.abc import Sequence
-from collections.abc import ValuesView
+from collections.abc import (
+    Collection,
+    ItemsView,
+    Iterable,
+    Iterator,
+    KeysView,
+    Sequence,
+    ValuesView,
+)
 from typing import Any, List, Optional, Tuple, Union
 
 from typing_extensions import Self
@@ -145,7 +147,9 @@ class Metadata(Collection):  # noqa: PLW1641
     def set_all(self, key: MetadataKey, values: List[MetadataValue]) -> None:
         self._metadata[key] = values
 
-    def __contains__(self, key: MetadataKey) -> bool:
+    def __contains__(self, key: object) -> bool:
+        if not isinstance(key, MetadataKey):
+            return False
         return key in self._metadata
 
     def __eq__(self, other: object) -> bool:

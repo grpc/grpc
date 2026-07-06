@@ -66,6 +66,11 @@ namespace grpc_core {
 #define GRPC_SETTINGS_TIMEOUT_DLOG \
   DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
 
+struct ApplySettingsResult {
+  bool did_change_peer_max_concurrent_streams = false;
+  bool should_spawn_security_frame_loop = false;
+};
+
 // This class can only be used only from a promise based HTTP2 transports
 // general_party_ .
 // This class is designed with the assumption that only 1 SETTINGS frame will be
@@ -74,8 +79,10 @@ namespace grpc_core {
 class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
  public:
   explicit SettingsPromiseManager(
+      const bool is_client,
       absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings)
-      : on_receive_first_settings_(std::move(on_receive_settings)),
+      : is_client_(is_client),
+        on_receive_first_settings_(std::move(on_receive_settings)),
         state_(SettingsState::kWaitingForFirstPeerSettings) {
     pending_peer_settings_.reserve(Http2Settings::kNumSettings + 1);
   }
@@ -230,7 +237,8 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
   // the peer that that needs some special handling too.
   http2::Http2ErrorCode MaybeReportAndApplyBufferedPeerSettings(
       grpc_event_engine::experimental::EventEngine* event_engine,
-      bool& should_spawn_security_frame_loop) {
+      ApplySettingsResult& apply_settings_result) {
+    const uint32_t old_setting = settings_.peer().max_concurrent_streams();
     std::vector<Http2SettingsFrame::Setting> settings_to_apply;
     settings_to_apply.reserve(pending_peer_settings_.size());
     for (const auto& [id, value] : pending_peer_settings_) {
@@ -239,10 +247,21 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
     pending_peer_settings_.clear();
     http2::Http2ErrorCode status =
         settings_.ApplyIncomingSettings(settings_to_apply);
+    if (status == http2::Http2ErrorCode::kNoError && is_client_) {
+      // Since PH2-Servers do not initiate streams, we ignore this setting for
+      // Servers.
+      const uint32_t applied_max_concurrent_streams =
+          settings_.peer().max_concurrent_streams();
+      apply_settings_result.did_change_peer_max_concurrent_streams =
+          (applied_max_concurrent_streams != old_setting);
+      // TODO(tjagtap) : [PH2][P0] : Plumb this with the StateWatcher code.
+    }
+
     if (state_ == SettingsState::kFirstPeerSettingsReceived) {
       MaybeReportInitialSettings(event_engine);
       state_ = SettingsState::kReady;
-      should_spawn_security_frame_loop = IsSecurityFrameExpected();
+      apply_settings_result.should_spawn_security_frame_loop =
+          IsSecurityFrameExpected();
     }
     GRPC_DCHECK(pending_peer_settings_.empty());
     return status;
@@ -316,15 +335,11 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
   };
 
  private:
-  Http2SettingsManager settings_;
-
   //////////////////////////////////////////////////////////////////////////////
   // Plumbing Settings with Chttp2Connector class
 
   void MaybeReportInitialSettings(
       grpc_event_engine::experimental::EventEngine* event_engine) {
-    // TODO(tjagtap) [PH2][P2] Relook at this while writing server. I think this
-    // will be different for client and server.
     if (on_receive_first_settings_ != nullptr) {
       GRPC_DCHECK(state_ == SettingsState::kFirstPeerSettingsReceived);
       GRPC_DCHECK(event_engine != nullptr);
@@ -345,8 +360,6 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
 
   void MaybeReportInitialSettingsAbort(
       grpc_event_engine::experimental::EventEngine* event_engine) {
-    // TODO(tjagtap) [PH2][P2] Relook at this while writing server. I think this
-    // will be different for client and server.
     if (on_receive_first_settings_ != nullptr) {
       GRPC_DCHECK(event_engine != nullptr);
       GRPC_DCHECK(state_ != SettingsState::kReady);
@@ -447,6 +460,7 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
 
   //////////////////////////////////////////////////////////////////////////////
   // Data Members for SETTINGS being received from the peer.
+  const bool is_client_;
 
   absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_first_settings_;
   absl::flat_hash_map<uint16_t, uint32_t> pending_peer_settings_;
@@ -465,6 +479,7 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
   // make them writable. This is tracked via channelz in case it causes any
   // performance issues in the future.
   size_t num_peer_initial_window_size_increases_ = 0;
+  Http2SettingsManager settings_;
 };
 
 }  // namespace grpc_core

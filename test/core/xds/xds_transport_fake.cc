@@ -139,6 +139,11 @@ void FakeXdsTransportFactory::FakeStreamingCall::StartRecvMessage() {
   }
 }
 
+void FakeXdsTransportFactory::FakeStreamingCall::SendHalfClose() {
+  MutexLock lock(&mu_);
+  half_closed_ = true;
+}
+
 void FakeXdsTransportFactory::FakeStreamingCall::SendMessageToClient(
     absl::string_view payload) {
   {

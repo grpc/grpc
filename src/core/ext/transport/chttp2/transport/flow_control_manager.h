@@ -45,16 +45,14 @@ constexpr int64_t kZero = 0;
 // This function does the settings related tasks equivalent to
 // grpc_chttp2_act_on_flowctl_action in chttp2_transport.cc
 inline void ActOnFlowControlActionSettings(
-    const chttp2::FlowControlAction& action, Http2Settings& local_settings,
-    const bool enable_preferred_rx_crypto_frame_advertisement) {
+    const chttp2::FlowControlAction& action, Http2Settings& local_settings) {
   if (action.send_initial_window_update() != kNoActionNeeded) {
     local_settings.SetInitialWindowSize(action.initial_window_size());
   }
   if (action.send_max_frame_size_update() != kNoActionNeeded) {
     local_settings.SetMaxFrameSize(action.max_frame_size());
   }
-  if (enable_preferred_rx_crypto_frame_advertisement &&
-      action.preferred_rx_crypto_frame_size_update() != kNoActionNeeded) {
+  if (action.preferred_rx_crypto_frame_size_update() != kNoActionNeeded) {
     local_settings.SetPreferredReceiveCryptoMessageSize(
         action.preferred_rx_crypto_frame_size());
   }

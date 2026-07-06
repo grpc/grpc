@@ -477,9 +477,6 @@ cdef extern from "grpc/grpc.h":
   ctypedef struct grpc_server_config_fetcher:
     pass
 
-  void grpc_server_set_config_fetcher(
-       grpc_server* server, grpc_server_config_fetcher* config_fetcher) nogil
-
   ctypedef struct grpc_server_xds_status_notifier:
     void (*on_serving_status_update)(void* user_data, const char* uri,
                                    grpc_status_code code,
@@ -489,6 +486,9 @@ cdef extern from "grpc/grpc.h":
   grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
        grpc_server_xds_status_notifier notifier,
        const grpc_channel_args* args) nogil
+
+  void grpc_server_config_fetcher_unref(
+      grpc_server_config_fetcher* server_config_fetcher) nogil
 
 
   void grpc_server_start(grpc_server *server) nogil
@@ -508,6 +508,9 @@ cdef extern from "grpc/grpc.h":
   char* grpc_channelz_get_socket(intptr_t socket_id)
 
   grpc_slice grpc_dump_xds_configs() nogil
+
+  const char *GRPC_ARG_SERVER_CONFIG_FETCHER
+  const grpc_arg_pointer_vtable *grpc_server_config_fetcher_arg_vtable() nogil
 
   ctypedef struct grpc_server_credentials:
     # We don't care about the internals (and in fact don't know them)

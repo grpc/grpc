@@ -18,12 +18,10 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <optional>
 #include <vector>
 
 #include "src/core/util/grpc_check.h"
 #include "absl/log/log.h"
-#include "absl/strings/str_join.h"
 #include "absl/types/span.h"
 
 namespace grpc_core {
@@ -72,22 +70,21 @@ class LinearHistogramShape {
 
 class ExponentialHistogramShape {
  public:
-  ExponentialHistogramShape(int64_t max, size_t buckets)
-      : max_(max), buckets_(buckets) {
-    first_non_trivial_ = -1;
+  ExponentialHistogramShape(int64_t max, size_t buckets) {
     GRPC_CHECK_GT(max, 0);
-    GRPC_CHECK_LT(buckets, 1000000000u);
+    // Increase if needed. As of June 2026, the maximum we are using is 100.
+    // Note that the BucketFor has to do a binary search, so it's better to
+    // keep the number of buckets small.
+    GRPC_CHECK_LE(buckets, 512u);
     if (max <= static_cast<int64_t>(buckets)) {
       for (size_t i = 0; i < static_cast<size_t>(max); ++i) {
         bounds_.push_back(i + 1);
       }
-      first_non_trivial_ = max;
-      buckets_ = max;
+      buckets = max;
       return;
     }
-    int64_t first_bucket = std::ceil(std::pow(max, 1.0 / (buckets_ + 1)));
+    int64_t first_bucket = std::ceil(std::pow(max, 1.0 / (buckets + 1)));
     if (first_bucket <= 1) first_bucket = 1;
-    if (first_bucket != 1) first_non_trivial_ = 0;
     bounds_.push_back(first_bucket);
     while (bounds_.size() < buckets) {
       int64_t nextb;
@@ -101,38 +98,10 @@ class ExponentialHistogramShape {
       }
       if (nextb <= bounds_.back() + 1) {
         nextb = bounds_.back() + 1;
-      } else if (first_non_trivial_ == -1) {
-        first_non_trivial_ = bounds_.size();
       }
       bounds_.push_back(nextb);
     }
-    GRPC_CHECK_EQ(bounds_.size(), buckets_);
-    if (first_non_trivial_ == -1) {
-      first_non_trivial_ = max_;
-      offset_ = 0;
-      shift_ = 0;
-      return;
-    }
-    offset_ = DoubleToUint(first_non_trivial_);
-    for (shift_ = 63; shift_ > 0; --shift_) {
-      bool found_alias = false;
-      for (size_t i = first_non_trivial_ + 1; i < bounds_.size(); ++i) {
-        if ((DoubleToUint(bounds_[i]) - offset_) >> shift_ ==
-            (DoubleToUint(bounds_[i - 1]) - offset_) >> shift_) {
-          found_alias = true;
-          break;
-        }
-      }
-      if (!found_alias) {
-        break;
-      }
-    }
-    GRPC_CHECK_GE(shift_, 0u);
-    GRPC_CHECK_LT(shift_, 64u);
-    for (size_t i = 0; i <= (DoubleToUint(max_) - offset_) >> shift_; ++i) {
-      lookup_table_.push_back(
-          BucketInBoundsFor(bounds_, UintToDouble((i << shift_) + offset_)));
-    }
+    GRPC_CHECK_EQ(bounds_.size(), buckets);
   }
 
   ExponentialHistogramShape(const ExponentialHistogramShape&) = delete;
@@ -141,63 +110,15 @@ class ExponentialHistogramShape {
   ExponentialHistogramShape(ExponentialHistogramShape&&) = default;
   ExponentialHistogramShape& operator=(ExponentialHistogramShape&&) = default;
 
-  size_t buckets() const { return buckets_; }
+  size_t buckets() const { return bounds_.size(); }
   size_t BucketFor(int64_t value) const {
-    if (value >= max_) return buckets_ - 1;
-    if (value < first_non_trivial_) {
-      if (value < 0) return 0;
-      return value;
-    }
-    auto index = (DoubleToUint(value) - offset_) >> shift_;
-    size_t bucket = lookup_table_[index];
-    GRPC_DCHECK_LT(bucket, buckets_) << absl::StrJoin(lookup_table_, ",");
-    GRPC_DCHECK_LT(bucket, bounds_.size()) << absl::StrJoin(bounds_, ",");
-    while (bucket < bounds_.size() - 1 && value >= bounds_[bucket]) {
-      ++bucket;
-    }
-    while (bucket > 0 && value < bounds_[bucket - 1]) {
-      --bucket;
-    }
-    GRPC_DCHECK_LT(value, bounds_[bucket]);
-    return bucket;
+    return BucketInBoundsFor(bounds_, value);
   }
 
   HistogramBuckets bounds() const { return bounds_; }
-  absl::Span<const size_t> lookup_table() const { return lookup_table_; }
 
  private:
-  union DblUint {
-    double dbl;
-    uint64_t uint;
-  };
-
-  static double UintToDouble(uint64_t x) {
-    union DblUint {
-      double dbl;
-      uint64_t uint;
-    };
-    DblUint val;
-    val.uint = x;
-    return val.dbl;
-  }
-
-  static uint64_t DoubleToUint(double x) {
-    union DblUint {
-      double dbl;
-      uint64_t uint;
-    };
-    DblUint val;
-    val.dbl = x;
-    return val.uint;
-  }
-
-  int64_t max_;
-  int64_t first_non_trivial_;
-  uint64_t offset_;
-  uint64_t shift_;
-  std::vector<size_t> lookup_table_;
   std::vector<int64_t> bounds_;
-  size_t buckets_;
 };
 
 }  // namespace grpc_core

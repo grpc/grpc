@@ -276,6 +276,7 @@ CC_FILES=[
     'third_party/protobuf/upb/mini_descriptor/internal/encode.c',
     'third_party/protobuf/upb/mini_descriptor/link.c',
     'third_party/protobuf/upb/mini_table/extension_registry.c',
+    'third_party/protobuf/upb/mini_table/generated_registry.c',
     'third_party/protobuf/upb/mini_table/internal/message.c',
     'third_party/protobuf/upb/mini_table/message.c',
     'third_party/protobuf/upb/reflection/def_pool.c',

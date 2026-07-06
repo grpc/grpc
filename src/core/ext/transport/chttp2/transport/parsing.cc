@@ -984,8 +984,9 @@ static grpc_error_handle init_settings_frame_parser(grpc_chttp2_transport* t) {
 }
 
 static grpc_error_handle init_security_frame_parser(grpc_chttp2_transport* t) {
-  grpc_error_handle err =
-      grpc_chttp2_security_frame_parser_begin_frame(&t->security_frame_parser);
+  grpc_error_handle err = grpc_chttp2_security_frame_parser_begin_frame(
+      &t->security_frame_parser, t->incoming_frame_size,
+      t->max_security_frame_size);
   if (!err.ok()) return err;
   t->parser = grpc_chttp2_transport::Parser{
       "security_frame", grpc_chttp2_security_frame_parser_parse,

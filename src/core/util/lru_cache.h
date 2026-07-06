@@ -52,6 +52,8 @@ class LruCache {
   // the new max size.
   void SetMaxSize(size_t max_size);
 
+  size_t max_size() const { return max_size_; }
+
  private:
   struct CacheEntry {
     Value value;

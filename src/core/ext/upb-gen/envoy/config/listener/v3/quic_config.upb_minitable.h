@@ -19,7 +19,6 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__config__listener__v3__QuicProtocolOptions_msg_init;
-extern const upb_MiniTable* envoy__config__listener__v3__QuicProtocolOptions_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_config_listener_v3_quic_config_proto_upb_file_layout;
 
