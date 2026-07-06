@@ -871,6 +871,17 @@ void OldSubchannel::Orphaned() {
   GRPC_CHECK(!shutdown_);
   shutdown_ = true;
   connector_.reset();
+  if (connected_subchannel_ != nullptr && stats_plugin_group_ != nullptr) {
+    auto scope = stats_plugin_group_->GetCollectionScope();
+    SubchannelMetricsDomainDisconnections::GetStorage(
+        scope, target_, backend_service_, locality_, "subchannel shutdown")
+        ->Increment(SubchannelMetricsDomainDisconnections::kDisconnections);
+    SubchannelConnectionsDomainOpenConnections::GetStorage(
+        scope, target_, connected_subchannel_->security_level(),
+        backend_service_, locality_)
+        ->Decrement(
+            SubchannelConnectionsDomainOpenConnections::kOpenConnections);
+  }
   connected_subchannel_.reset();
 }
 

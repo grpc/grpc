@@ -817,32 +817,32 @@ TEST_F(ClientLbSubchannelMetricsTest, SecurityLevelsPrivacyAndIntegrity) {
 }
 
 TEST_F(ClientLbSubchannelMetricsTest, DisconnectionOnSubchannelShutdown) {
-  ConnectionAttemptInjector injector;
-  StartServers(2, {}, grpc::InsecureServerCredentials());
+  StartServers(1, {}, grpc::InsecureServerCredentials());
   const int port1 = servers_[0]->port_;
-  const int port2 = servers_[1]->port_;
-  const int port3 = grpc_pick_unused_port_or_die();
+  const int port2 = grpc_pick_unused_port_or_die();
   FakeResolverResponseGeneratorWrapper response_generator;
-  auto channel =
-      BuildChannel("round_robin", response_generator, ChannelArguments(),
-                   grpc::InsecureChannelCredentials());
-  auto stub = BuildStub(channel);
-  auto hold3 = injector.AddHold(port3);
-  response_generator.SetNextResolution({port1, port2});
-  WaitForServers(DEBUG_LOCATION, stub, 0, 2);
-  response_generator.SetNextResolution({port2, port3});
-  hold3->Wait();
-  servers_[1]->Shutdown();
+  ChannelArguments args;
+  args.SetInt("grpc.testing.fixed_reconnect_backoff_ms", 10);
+  auto channel = BuildChannel("", response_generator, args,
+                              grpc::InsecureChannelCredentials());
+  response_generator.SetNextResolution({port1});
+  channel->GetState(true);
+  EXPECT_TRUE(WaitForChannelReady(channel.get()));
+  response_generator.SetNextResolution({port2});
   EXPECT_TRUE(
       WaitForChannelState(channel.get(), [](grpc_connectivity_state state) {
-        return state == GRPC_CHANNEL_CONNECTING;
+        return state != GRPC_CHANNEL_READY;
+      }));
+  channel->GetState(true);
+  EXPECT_TRUE(
+      WaitForChannelState(channel.get(), [](grpc_connectivity_state state) {
+        return state == GRPC_CHANNEL_TRANSIENT_FAILURE;
       }));
   std::string target = std::string(kDefaultAuthority);
   EXPECT_THAT(stats_plugin_->GetUInt64MetricValueByName(
                   "grpc.subchannel.disconnections",
                   {target, "", "", "subchannel shutdown"}),
               ::testing::Optional(1));
-  hold3->Resume();
 }
 
 TEST_F(ClientLbEnd2endTest, ChannelStateConnectingWhenResolving) {
