@@ -89,7 +89,10 @@ RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-clien
 
 #=================
 # C++ dependencies
-RUN apt-get update && apt-get -y install libc++-dev clang && apt-get clean
+
+COPY --from=repo_root tools/dockerfile/helper_scripts/install-clang.sh /root/install-clang.sh
+
+RUN /root/install-clang.sh
 
 #=================
 # Install cmake
