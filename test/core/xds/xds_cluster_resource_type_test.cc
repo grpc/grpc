@@ -1514,7 +1514,9 @@ TEST_F(LrsTest, NotSelfConfigSource) {
       << decode_result.resource.status();
 }
 
-TEST_F(LrsTest, IgnoresPropagationWithoutEnvVar) {
+TEST_F(LrsTest, IgnoresPropagationWithEnvVarDisabled) {
+  testing::ScopedEnvVar env_var("GRPC_EXPERIMENTAL_XDS_ORCA_LRS_PROPAGATION",
+                                "false");
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);
@@ -1540,8 +1542,6 @@ TEST_F(LrsTest, IgnoresPropagationWithoutEnvVar) {
 }
 
 TEST_F(LrsTest, Propagation) {
-  ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_XDS_ORCA_LRS_PROPAGATION");
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);
@@ -1573,8 +1573,6 @@ TEST_F(LrsTest, Propagation) {
 }
 
 TEST_F(LrsTest, PropagationNamedMetricsAll) {
-  ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_XDS_ORCA_LRS_PROPAGATION");
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);

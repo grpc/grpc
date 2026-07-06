@@ -112,6 +112,7 @@ class GrpcXdsClient final : public XdsClient {
 
 namespace internal {
 void SetXdsChannelArgsForTest(grpc_channel_args* args);
+void SetInhibitXdsClientMapRemovalForTest(bool inhibit);
 void UnsetGlobalXdsClientsForTest();
 // Sets bootstrap config to be used when no env var is set.
 // Does not take ownership of config.

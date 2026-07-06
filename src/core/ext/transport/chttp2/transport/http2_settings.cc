@@ -116,7 +116,7 @@ Http2ErrorCode Http2Settings::Apply(uint16_t key, uint32_t value) {
       max_frame_size_ = value;
       break;
     case kMaxHeaderListSizeWireId:
-      max_header_list_size_ = std::min(value, 16777216u);
+      max_header_list_size_ = std::min(value, kDefaultMaxHeaderListSize);
       break;
     case kGrpcAllowTrueBinaryMetadataWireId:
       if (value > 1) return Http2ErrorCode::kProtocolError;

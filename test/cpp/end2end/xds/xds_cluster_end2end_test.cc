@@ -1665,6 +1665,74 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
   size_t num_warmup_rpcs =
       WaitForAllBackends(DEBUG_LOCATION, 0, 4, /*check_status=*/nullptr,
                          WaitForBackendOptions().set_reset_counters(false));
+  // Send kNumRpcsPerAddress successful RPCs per server.
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsPerAddress * backends_.size());
+  // Send kNumRpcsPerAddress failed RPCs per server.
+  for (size_t i = 0; i < kNumFailuresPerAddress * backends_.size(); ++i) {
+    CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::FAILED_PRECONDITION, "",
+                        RpcOptions().set_server_fail(true));
+  }
+  const size_t total_successful_rpcs_sent =
+      (kNumRpcsPerAddress * backends_.size()) + num_warmup_rpcs;
+  const size_t total_failed_rpcs_sent =
+      kNumFailuresPerAddress * backends_.size();
+  // Check that the backends got the right number of requests.
+  size_t total_rpcs_sent = 0;
+  for (const auto& backend : backends_) {
+    total_rpcs_sent += backend->backend_service()->request_count();
+  }
+  EXPECT_EQ(total_rpcs_sent,
+            total_successful_rpcs_sent + total_failed_rpcs_sent);
+  // The load report received at the balancer should be correct.
+  std::vector<ClientStats> load_report =
+      balancer_->lrs_service()->WaitForLoadReport();
+  ASSERT_EQ(load_report.size(), 1UL);
+  ClientStats& client_stats = load_report.front();
+  EXPECT_EQ(client_stats.cluster_name(), kDefaultClusterName);
+  EXPECT_EQ(client_stats.eds_service_name(), kDefaultEdsServiceName);
+  EXPECT_EQ(total_successful_rpcs_sent,
+            client_stats.total_successful_requests());
+  EXPECT_EQ(0U, client_stats.total_requests_in_progress());
+  EXPECT_EQ(total_rpcs_sent, client_stats.total_issued_requests());
+  EXPECT_EQ(total_failed_rpcs_sent, client_stats.total_error_requests());
+  EXPECT_EQ(0U, client_stats.total_dropped_requests());
+  ASSERT_THAT(
+      client_stats.locality_stats(),
+      ::testing::ElementsAre(::testing::Pair("locality0", ::testing::_),
+                             ::testing::Pair("locality1", ::testing::_)));
+  size_t num_successful_rpcs = 0;
+  size_t num_failed_rpcs = 0;
+  for (const auto& [_, stats] : client_stats.locality_stats()) {
+    EXPECT_EQ(stats.total_requests_in_progress, 0U);
+    EXPECT_EQ(stats.total_issued_requests,
+              stats.total_successful_requests + stats.total_error_requests);
+    num_successful_rpcs += stats.total_successful_requests;
+    num_failed_rpcs += stats.total_error_requests;
+  }
+  EXPECT_EQ(num_successful_rpcs, total_successful_rpcs_sent);
+  EXPECT_EQ(num_failed_rpcs, total_failed_rpcs_sent);
+  EXPECT_EQ(num_successful_rpcs + num_failed_rpcs, total_rpcs_sent);
+  // The LRS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancer_->lrs_service()->request_count());
+  EXPECT_EQ(1U, balancer_->lrs_service()->response_count());
+}
+
+// TODO(roth): Remove this test after the env var goes away.
+TEST_P(ClientLoadReportingTest, OrcaPropagationDisabled) {
+  grpc_core::testing::ScopedEnvVar env(
+      "GRPC_EXPERIMENTAL_XDS_ORCA_LRS_PROPAGATION", "false");
+  CreateAndStartBackends(4);
+  const size_t kNumRpcsPerAddress = 10;
+  const size_t kNumFailuresPerAddress = 3;
+  EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 2)},
+      {"locality1", CreateEndpointsForBackends(2, 4)},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Wait until all backends are ready.
+  size_t num_warmup_rpcs =
+      WaitForAllBackends(DEBUG_LOCATION, 0, 4, /*check_status=*/nullptr,
+                         WaitForBackendOptions().set_reset_counters(false));
   // Send kNumRpcsPerAddress RPCs per server with named metrics.
   xds::data::orca::v3::OrcaLoadReport backend_metrics;
   auto& named_metrics = (*backend_metrics.mutable_named_metrics());
@@ -1748,8 +1816,6 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
 
 // Tests ORCA to LRS propagation.
 TEST_P(ClientLoadReportingTest, OrcaPropagation) {
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_XDS_ORCA_LRS_PROPAGATION");
   CreateAndStartBackends(4);
   const size_t kNumRpcsPerAddress = 10;
   const size_t kNumFailuresPerAddress = 3;
@@ -1872,8 +1938,6 @@ TEST_P(ClientLoadReportingTest, OrcaPropagation) {
 }
 
 TEST_P(ClientLoadReportingTest, OrcaPropagationNamedMetricsAll) {
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_XDS_ORCA_LRS_PROPAGATION");
   CreateAndStartBackends(4);
   const size_t kNumRpcsPerAddress = 10;
   const size_t kNumFailuresPerAddress = 3;
@@ -1977,8 +2041,6 @@ TEST_P(ClientLoadReportingTest, OrcaPropagationNamedMetricsAll) {
 }
 
 TEST_P(ClientLoadReportingTest, OrcaPropagationNotConfigured) {
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_XDS_ORCA_LRS_PROPAGATION");
   CreateAndStartBackends(4);
   const size_t kNumRpcsPerAddress = 10;
   const size_t kNumFailuresPerAddress = 3;
@@ -2072,19 +2134,12 @@ TEST_P(ClientLoadReportingTest, SendAllClusters) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait until all backends are ready.
   size_t num_warmup_rpcs = WaitForAllBackends(DEBUG_LOCATION);
-  // Send kNumRpcsPerAddress RPCs per server.
-  xds::data::orca::v3::OrcaLoadReport backend_metrics;
-  auto& named_metrics = (*backend_metrics.mutable_named_metrics());
-  named_metrics["foo"] = 1.0;
-  named_metrics["bar"] = 2.0;
-  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsPerAddress * backends_.size(),
-                 RpcOptions().set_backend_metrics(backend_metrics));
-  named_metrics["foo"] = 0.3;
-  named_metrics["bar"] = 0.4;
+  // Send kNumRpcsPerAddress successful RPCs per server.
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsPerAddress * backends_.size());
+  // Send kNumRpcsPerAddress failed RPCs per server.
   for (size_t i = 0; i < kNumFailuresPerAddress * backends_.size(); ++i) {
     CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::FAILED_PRECONDITION, "",
-                        RpcOptions().set_server_fail(true).set_backend_metrics(
-                            backend_metrics));
+                        RpcOptions().set_server_fail(true));
   }
   // Check that each backend got the right number of requests.
   for (size_t i = 0; i < backends_.size(); ++i) {
@@ -2105,29 +2160,6 @@ TEST_P(ClientLoadReportingTest, SendAllClusters) {
   EXPECT_EQ(kNumFailuresPerAddress * backends_.size(),
             client_stats.total_error_requests());
   EXPECT_EQ(0U, client_stats.total_dropped_requests());
-  EXPECT_THAT(
-      client_stats.locality_stats(),
-      ::testing::ElementsAre(::testing::Pair(
-          "locality0",
-          ::testing::Field(
-              &ClientStats::LocalityStats::load_metrics,
-              ::testing::UnorderedElementsAre(
-                  ::testing::Pair(
-                      "foo",
-                      LoadMetricEq(
-                          (kNumRpcsPerAddress + kNumFailuresPerAddress) *
-                              backends_.size(),
-                          (kNumRpcsPerAddress * backends_.size()) * 1.0 +
-                              (kNumFailuresPerAddress * backends_.size()) *
-                                  0.3)),
-                  ::testing::Pair(
-                      "bar",
-                      LoadMetricEq(
-                          (kNumRpcsPerAddress + kNumFailuresPerAddress) *
-                              backends_.size(),
-                          (kNumRpcsPerAddress * backends_.size()) * 2.0 +
-                              (kNumFailuresPerAddress * backends_.size()) *
-                                  0.4)))))));
   // The LRS service got a single request, and sent a single response.
   EXPECT_EQ(1U, balancer_->lrs_service()->request_count());
   EXPECT_EQ(1U, balancer_->lrs_service()->response_count());
@@ -2194,12 +2226,7 @@ TEST_P(ClientLoadReportingTest, BalancerRestart) {
   // This tells us that we're now using the new serverlist.
   num_rpcs += WaitForAllBackends(DEBUG_LOCATION, 2, 4);
   // Send one RPC per backend.
-  xds::data::orca::v3::OrcaLoadReport backend_metrics;
-  auto& named_metrics = (*backend_metrics.mutable_named_metrics());
-  named_metrics["foo"] = 1.0;
-  named_metrics["bar"] = 2.0;
-  CheckRpcSendOk(DEBUG_LOCATION, 2,
-                 RpcOptions().set_backend_metrics(backend_metrics));
+  CheckRpcSendOk(DEBUG_LOCATION, 2);
   num_rpcs += 2;
   // Check client stats.
   load_report = balancer_->lrs_service()->WaitForLoadReport();
@@ -2209,14 +2236,6 @@ TEST_P(ClientLoadReportingTest, BalancerRestart) {
   EXPECT_EQ(0U, client_stats.total_requests_in_progress());
   EXPECT_EQ(0U, client_stats.total_error_requests());
   EXPECT_EQ(0U, client_stats.total_dropped_requests());
-  EXPECT_THAT(client_stats.locality_stats(),
-              ::testing::ElementsAre(::testing::Pair(
-                  "locality0",
-                  ::testing::Field(
-                      &ClientStats::LocalityStats::load_metrics,
-                      ::testing::UnorderedElementsAre(
-                          ::testing::Pair("foo", LoadMetricEq(2, 2.0)),
-                          ::testing::Pair("bar", LoadMetricEq(2, 4.0)))))));
 }
 
 // Tests load reporting when switching over from one cluster to another.

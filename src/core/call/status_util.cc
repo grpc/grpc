@@ -115,8 +115,6 @@ bool grpc_status_code_from_int(int status_int, grpc_status_code* status) {
 
 namespace grpc_core {
 
-namespace internal {
-
 std::string StatusCodeSet::ToString() const {
   std::vector<absl::string_view> codes;
   for (size_t i = 0; i < GPR_ARRAY_SIZE(g_status_string_entries); ++i) {
@@ -126,8 +124,6 @@ std::string StatusCodeSet::ToString() const {
   }
   return absl::StrCat("{", absl::StrJoin(codes, ","), "}");
 }
-
-}  // namespace internal
 
 absl::Status MaybeRewriteIllegalStatusCode(absl::Status status,
                                            absl::string_view source) {

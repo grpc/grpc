@@ -57,6 +57,7 @@ fi
 # Disable HOMEBREW update to avoid new updates which potentially have problems.
 # Brew packages installed when Kokoro image was built tend to have less conflict.
 export HOMEBREW_NO_AUTO_UPDATE=1
+export HOMEBREW_NO_INSTALL_FROM_API=1
 
 # Dump the brew configuration for debugging just in case. Check "Core tap HEAD" field
 # because it should be the same as below unless it's been updated.
@@ -64,6 +65,12 @@ export HOMEBREW_NO_AUTO_UPDATE=1
 brew config
 
 if $is_sonoma; then
+  # A temporary fix for ca-certificates brew install:
+  # ==> Pouring ca-certificates--2026-05-14.all.bottle.tar.gz
+  # Error: undefined method '[]' for nil
+  # TODO(sergiitk): undo PR #42403 once ca-certificates is installable
+  brew install --build-from-source gnupg
+
   brew install cmake
   brew install gnupg
   brew install ccache
@@ -195,6 +202,14 @@ then
     shasum -c /tmp/python_installer_checksum.sha256
     time sudo installer -pkg ./python-3.14.0rc1-macos11.pkg -target /
   fi
+
+  # Install Python 3.15 if it doesn't exist
+  if [ ! -f "/usr/local/bin/python3.15" ]; then
+    time curl -O https://www.python.org/ftp/python/3.15.0/python-3.15.0b2-macos11.pkg
+    echo "29b5c95f255f846f77e1c119146836445f929de1392a3ae9ef24f559e1345418  python-3.15.0b2-macos11.pkg" > /tmp/python_installer_checksum.sha256
+    shasum -a 256 -c /tmp/python_installer_checksum.sha256
+    time sudo installer -pkg ./python-3.15.0b2-macos11.pkg -target /
+  fi
 fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_CSHARP}" == "true" ]
@@ -215,11 +230,11 @@ fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_PHP}" == "true" ]
 then
-  time brew install php@8.1 || true
-  if [ -e "/usr/local/opt/php@8.1/" ]; then
-    PHP_PATH="/usr/local/opt/php@8.1/"
-  elif [ -e "/opt/homebrew/opt/php@8.1" ]; then
-    PHP_PATH="/opt/homebrew/opt/php@8.1"
+  time brew install php@8.4 || true
+  if [ -e "/usr/local/opt/php@8.4/" ]; then
+    PHP_PATH="/usr/local/opt/php@8.4/"
+  elif [ -e "/opt/homebrew/opt/php@8.4" ]; then
+    PHP_PATH="/opt/homebrew/opt/php@8.4"
   else
     echo "Error: Unable to check php install path" >&2
     exit 1
@@ -229,7 +244,7 @@ then
   export CPPFLAGS="-I${PHP_PATH}include ${CPPFLAGS}"
   export PATH="${PHP_PATH}/bin:${PHP_PATH}/sbin:${PATH}"
 
-  # the exit code from "brew install php@8.1" is useless
+  # the exit code from "brew install php@8.4" is useless
   # so instead we check if PHP was indeed installed successfully.
   # Failing early is better than cryptic errors later in the build process.
   php --version
@@ -262,12 +277,12 @@ then
     rm composer-setup.php
 
     # Install PHP test dependencies.
-    php /tmp/composer.phar global require phpunit/phpunit:9.5.9 --no-security-blocking
+    php /tmp/composer.phar global require phpunit/phpunit:^13 --no-security-blocking
   else
     # Workaround for https://github.com/Homebrew/homebrew-core/issues/41081
     mkdir -p /usr/local/lib/php/pecl
     # Download the right version of phpunit to match PHP version
-    sudo curl -sSL https://phar.phpunit.de/phpunit-9.5.9.phar -o /usr/local/bin/phpunit
+    sudo curl -sSL https://phar.phpunit.de/phpunit-13.phar -o /usr/local/bin/phpunit
     sudo chmod +x /usr/local/bin/phpunit
   fi
 fi

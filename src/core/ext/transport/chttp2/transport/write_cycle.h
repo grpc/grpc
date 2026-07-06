@@ -30,10 +30,14 @@
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/util/debug_location.h"
 #include "absl/container/inlined_vector.h"
 
 namespace grpc_core {
 namespace http2 {
+
+#define GRPC_HTTP2_WRITE_CYCLE_DEBUG \
+  DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
 
 // Tracks the number of bytes that can be written in the current write
 // attempt.
@@ -329,7 +333,11 @@ class TransportWriteContext {
 
   // Calls to this function MUST only be made between StartWriteCycle and
   // EndWriteCycle.
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION WriteCycle& GetWriteCycle() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION WriteCycle& GetWriteCycle(
+      DebugLocation whence = {}) {
+    GRPC_HTTP2_WRITE_CYCLE_DEBUG << "GetWriteCycle whence: " << whence.file()
+                                 << ":" << whence.line()
+                                 << " Debug: " << DebugString();
     return *write_cycle_;
   }
 

@@ -367,7 +367,7 @@ class ErrorMethodHandler : public grpc::internal::MethodHandler {
       if (context->compression_level_set()) {
         ops->set_compression_level(context->compression_level());
       }
-      context->sent_initial_metadata_ = true;
+      context->MarkInitialMetadataSent();
     }
     ops->ServerSendStatus(&context->trailing_metadata_, status);
   }

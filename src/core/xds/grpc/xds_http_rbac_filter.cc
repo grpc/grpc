@@ -36,14 +36,13 @@
 #include "envoy/type/matcher/v3/string.upb.h"
 #include "envoy/type/v3/range.upb.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "src/core/config/experiment_env_var.h"
 #include "src/core/ext/filters/rbac/rbac_filter.h"
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/down_cast.h"
-#include "src/core/util/env.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
-#include "src/core/util/string.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/xds/grpc/xds_audit_logger_registry.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
@@ -59,15 +58,6 @@
 namespace grpc_core {
 
 namespace {
-
-// TODO(lwge): Remove once the feature is stable.
-bool XdsRbacAuditLoggingEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
-  if (!value.has_value()) return false;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
-}
 
 Json ParseRegexMatcherToJson(
     const envoy_type_matcher_v3_RegexMatcher* regex_matcher) {
@@ -479,7 +469,8 @@ Json ParseHttpRbacToJson(const XdsResourceType::DecodeContext& context,
                               Json::FromObject(std::move(policies_object)));
     }
     // Flatten the nested messages defined in rbac.proto
-    if (XdsRbacAuditLoggingEnabled() &&
+    // TODO(lwge): Remove env var guard once the feature is stable.
+    if (IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING") &&
         envoy_config_rbac_v3_RBAC_has_audit_logging_options(rules)) {
       ValidationErrors::ScopedField field(errors, ".audit_logging_options");
       const auto* audit_logging_options =

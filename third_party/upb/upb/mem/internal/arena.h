@@ -23,13 +23,14 @@
 // We need this because the decoder inlines a upb_Arena for performance but
 // the full struct is not visible outside of arena.c. Yes, I know, it's awful.
 #ifndef NDEBUG
-#define UPB_ARENA_BASE_SIZE_HACK 11
-#else
 #define UPB_ARENA_BASE_SIZE_HACK 10
+#else
+#define UPB_ARENA_BASE_SIZE_HACK 9
 #endif
 
-#define UPB_ARENA_SIZE_HACK \
-  (UPB_ARENA_BASE_SIZE_HACK + (UPB_XSAN_STRUCT_SIZE * 2))
+#define UPB_ARENA_SIZE_HACK                                                   \
+  (sizeof(void*) * (UPB_ARENA_BASE_SIZE_HACK + (UPB_XSAN_STRUCT_SIZE * 2))) + \
+      (sizeof(uint32_t) * 2)
 
 // LINT.IfChange(upb_Arena)
 
@@ -149,10 +150,14 @@ UPB_API_INLINE void* upb_Arena_Realloc(struct upb_Arena* a, void* ptr,
     }
   }
 
-  // We want to invalidate pointers to the old region if hwasan is enabled, so
-  // we poison and unpoison even if ptr == ret.
-  UPB_PRIVATE(upb_Xsan_PoisonRegion)(ptr, oldsize);
-  return UPB_PRIVATE(upb_Xsan_NewUnpoisonedRegion)(UPB_XSAN(a), ret, size);
+  if (ret) {
+    // We want to invalidate pointers to the old region if hwasan is enabled, so
+    // we poison and unpoison even if ptr == ret. However, if reallocation fails
+    // we do not want to poison the old memory, or attempt to poison null.
+    UPB_PRIVATE(upb_Xsan_PoisonRegion)(ptr, oldsize);
+    return UPB_PRIVATE(upb_Xsan_NewUnpoisonedRegion)(UPB_XSAN(a), ret, size);
+  }
+  return ret;
 }
 
 #ifdef __cplusplus

@@ -60,7 +60,7 @@ class ClientConfigureRequest extends \Google\Protobuf\Internal\Message
      * The types of RPCs the client sends.
      *
      * Generated from protobuf field <code>repeated .grpc.testing.ClientConfigureRequest.RpcType types = 1;</code>
-     * @return RepeatedField<int>
+     * @return RepeatedField<int> one of the values in {@see \Grpc\Testing\ClientConfigureRequest\RpcType}
      */
     public function getTypes()
     {
@@ -71,10 +71,10 @@ class ClientConfigureRequest extends \Google\Protobuf\Internal\Message
      * The types of RPCs the client sends.
      *
      * Generated from protobuf field <code>repeated .grpc.testing.ClientConfigureRequest.RpcType types = 1;</code>
-     * @param int[] $var
+     * @param int[] $var one of the values in {@see \Grpc\Testing\ClientConfigureRequest\RpcType}
      * @return $this
      */
-    public function setTypes($var)
+    public function setTypes(array|RepeatedField $var)
     {
         $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::ENUM, \Grpc\Testing\ClientConfigureRequest\RpcType::class);
         $this->types = $arr;
@@ -100,7 +100,7 @@ class ClientConfigureRequest extends \Google\Protobuf\Internal\Message
      * @param \Grpc\Testing\ClientConfigureRequest\Metadata[] $var
      * @return $this
      */
-    public function setMetadata($var)
+    public function setMetadata(array|RepeatedField $var)
     {
         $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \Grpc\Testing\ClientConfigureRequest\Metadata::class);
         $this->metadata = $arr;
@@ -128,7 +128,7 @@ class ClientConfigureRequest extends \Google\Protobuf\Internal\Message
      * @param int $var
      * @return $this
      */
-    public function setTimeoutSec($var)
+    public function setTimeoutSec(int $var)
     {
         GPBUtil::checkInt32($var);
         $this->timeout_sec = $var;

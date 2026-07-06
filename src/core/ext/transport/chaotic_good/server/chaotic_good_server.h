@@ -51,11 +51,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
-// Channel arg: integer number of data connections to specify
-// Defaults to 1 if not set
-#define GRPC_ARG_CHAOTIC_GOOD_DATA_CONNECTIONS \
-  "grpc.chaotic_good.data_connections"
-
 namespace grpc_core {
 namespace chaotic_good {
 class ChaoticGoodServerListener final : public Server::ListenerInterface {

@@ -45,17 +45,16 @@
 #include "re2/re2.h"
 #include "src/core/call/status_util.h"
 #include "src/core/config/core_configuration.h"
+#include "src/core/config/experiment_env_var.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/util/down_cast.h"
-#include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/match.h"
 #include "src/core/util/matchers.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/string.h"
 #include "src/core/util/time.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/xds/grpc/xds_cluster_specifier_plugin.h"
@@ -79,20 +78,17 @@
 
 namespace grpc_core {
 
-// TODO(apolcyn): remove this flag by the 1.58 release
-bool XdsRlsEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_RLS_LB");
-  if (!value.has_value()) return true;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
-}
-
 //
 // XdsRouteConfigResourceParse()
 //
 
 namespace {
+
+// TODO(apolcyn): remove this flag by the 1.58 release
+bool XdsRlsEnabled() {
+  return IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_RLS_LB",
+                                   /*default_value=*/true);
+}
 
 XdsRouteConfigResource::ClusterSpecifierPluginMap ClusterSpecifierPluginParse(
     const XdsResourceType::DecodeContext& context,
@@ -411,10 +407,8 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
     if (filter_config.has_value()) {
       entry.config = std::move(*filter_config);
     }
-    if (IsXdsChannelFilterChainPerRouteEnabled()) {
-      entry.filter_config = filter_impl->ParseOverrideConfig(
-          key, context, *extension_to_use, errors);
-    }
+    entry.filter_config = filter_impl->ParseOverrideConfig(
+        key, context, *extension_to_use, errors);
   }
   return typed_per_filter_config;
 }
@@ -778,7 +772,7 @@ std::shared_ptr<const XdsRouteConfigResource> XdsRouteConfigResourceParse(
     const envoy_config_route_v3_RouteConfiguration* route_config,
     ValidationErrors* errors) {
   auto rds_update = std::make_shared<XdsRouteConfigResource>();
-  // Get the cluster spcifier plugin map.
+  // Get the cluster specifier plugin map.
   if (XdsRlsEnabled()) {
     rds_update->cluster_specifier_plugin_map =
         ClusterSpecifierPluginParse(context, route_config, errors);

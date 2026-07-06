@@ -329,12 +329,15 @@ class InterceptedCall:
 
         call_completed = False
 
-        try:
+        if interceptors_task.cancelled() or (
+            interceptors_task.done()
+            and interceptors_task.exception() is not None
+        ):
+            call_completed = True
+        else:
             call = interceptors_task.result()
             if call.done():
                 call_completed = True
-        except (AioRpcError, asyncio.CancelledError):
-            call_completed = True
 
         if call_completed:
             for callback in self._pending_add_done_callbacks:
@@ -354,42 +357,47 @@ class InterceptedCall:
         callback(self)
 
     def cancel(self) -> bool:
+        if self._interceptors_task.cancelled():
+            return False
+
         if not self._interceptors_task.done():
             # There is no yet the intercepted call available,
             # Trying to cancel it by using the generic Asyncio
             # cancellation method.
             return self._interceptors_task.cancel()
 
-        try:
-            call = self._interceptors_task.result()
-        except AioRpcError:
+        if self._interceptors_task.exception() is not None:
             return False
-        except asyncio.CancelledError:
-            return False
+
+        call = self._interceptors_task.result()
 
         return call.cancel()
 
     def cancelled(self) -> bool:
+        if self._interceptors_task.cancelled():
+            return True
         if not self._interceptors_task.done():
             return False
 
-        try:
-            call = self._interceptors_task.result()
-        except AioRpcError as err:
-            return err.code() == grpc.StatusCode.CANCELLED
-        except asyncio.CancelledError:
-            return True
+        exc = self._interceptors_task.exception()
+        if exc is not None:
+            if isinstance(exc, AioRpcError):
+                return exc.code() == grpc.StatusCode.CANCELLED
+            return False
+
+        call = self._interceptors_task.result()
 
         return call.cancelled()
 
     def done(self) -> bool:
+        if self._interceptors_task.cancelled():
+            return True
         if not self._interceptors_task.done():
             return False
-
-        try:
-            call = self._interceptors_task.result()
-        except (AioRpcError, asyncio.CancelledError):
+        if self._interceptors_task.exception() is not None:
             return True
+
+        call = self._interceptors_task.result()
 
         return call.done()
 
@@ -398,11 +406,14 @@ class InterceptedCall:
             self._pending_add_done_callbacks.append(callback)
             return
 
-        try:
-            call = self._interceptors_task.result()
-        except (AioRpcError, asyncio.CancelledError):
+        if (
+            self._interceptors_task.cancelled()
+            or self._interceptors_task.exception() is not None
+        ):
             callback(self)
             return
+
+        call = self._interceptors_task.result()
 
         if call.done():
             callback(self)

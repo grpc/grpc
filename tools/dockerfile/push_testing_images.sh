@@ -77,14 +77,13 @@ EXCLUDE_DIRS=(
   tools/dockerfile/distribtest/csharp_dotnet5_x64
   tools/dockerfile/interoptest/grpc_interop_go1.8
   tools/dockerfile/interoptest/grpc_interop_go1.11
-  tools/dockerfile/test/cxx_gcc_7_x64
-  tools/dockerfile/test/cxx_gcc_8_x64
 )
 
 # a list of docker directories that are based on ARM64 base images
 ARM_DOCKERFILE_DIRS=(
   tools/dockerfile/distribtest/python_alpine_aarch64
   tools/dockerfile/distribtest/python_python310_bullseye_aarch64
+  tools/dockerfile/grpc_artifact_python_manylinux2014_aarch64
   tools/dockerfile/grpc_artifact_python_musllinux_1_2_aarch64
   tools/dockerfile/test/bazel_arm64
   tools/dockerfile/test/csharp_debian11_arm64

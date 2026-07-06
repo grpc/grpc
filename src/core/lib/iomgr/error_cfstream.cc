@@ -46,7 +46,6 @@ grpc_error_handle grpc_error_create_from_cferror(const char* file, int line,
       absl::StrFormat("%s (error domain:%s, code:%ld, description:%s)",
                       custom_desc, buf_domain, code, buf_desc);
   CFRelease(desc);
-  return StatusCreate(absl::StatusCode::kUnknown, error_msg,
-                      grpc_core::DebugLocation(file, line), {});
+  return absl::UnknownError(error_msg);
 }
 #endif  // GRPC_CFSTREAM

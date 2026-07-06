@@ -257,7 +257,7 @@ Party::WakeupHold ClientCall::StartCall(
     const grpc_op& send_initial_metadata_op) {
   GRPC_LATENT_SEE_SCOPE("ClientCall::StartCall");
   auto cur_state = call_state_.load(std::memory_order_acquire);
-  // TODO(akshitpatel): [PH2][P3]: Might need to invoke
+  // TODO(akshitpatel): [PH2][P1]: Might need to invoke
   // PrepareApplicationMetadata here.
   CToMetadata(send_initial_metadata_op.data.send_initial_metadata.metadata,
               send_initial_metadata_op.data.send_initial_metadata.count,
@@ -443,7 +443,7 @@ void ClientCall::OnReceivedStatus(ServerMetadataHandle server_trailing_metadata,
                           .value_or(GRPC_STATUS_UNKNOWN);
   *out_status = status;
   Slice message_slice;
-  if (!IsErrorFlattenEnabled() || status != GRPC_STATUS_OK) {
+  if (status != GRPC_STATUS_OK) {
     if (Slice* message =
             server_trailing_metadata->get_pointer(GrpcMessageMetadata())) {
       message_slice = message->Ref();

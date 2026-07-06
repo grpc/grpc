@@ -26,6 +26,7 @@
 #include "src/core/credentials/transport/tls/tls_credentials.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/ext/transport/chttp2/server/chttp2_server.h"
+#include "src/core/mitigation_engine/mitigation_engine.h"
 #include "src/core/server/server.h"
 #include "src/core/util/host_port.h"
 #include "test/core/end2end/cq_verifier.h"
@@ -170,6 +171,37 @@ class ListenerStateTestPeer {
 
 namespace {
 
+class TestMitigationEngine : public MitigationEngine {
+ public:
+  std::optional<Action> EvaluateIncomingConnection(
+      absl::string_view peer_address) override {
+    if (peer_address == "ipv4:127.0.0.1:12345") {
+      return Action::kCloseConnection;
+    }
+    return std::nullopt;
+  }
+
+  std::optional<Action> EvaluateIncomingMetadata(absl::string_view,
+                                                 absl::string_view) override {
+    return std::nullopt;
+  }
+
+  std::optional<Action> EvaluateAllIncomingMetadata(
+      const grpc_metadata_batch&) override {
+    return std::nullopt;
+  }
+};
+
+class TestMitigationEngineProvider : public MitigationEngineProvider {
+ public:
+  explicit TestMitigationEngineProvider(RefCountedPtr<MitigationEngine> engine)
+      : engine_(std::move(engine)) {}
+  RefCountedPtr<MitigationEngine> GetEngine() override { return engine_; }
+
+ private:
+  RefCountedPtr<MitigationEngine> engine_;
+};
+
 class Chttp2ServerListenerTest : public ::testing::Test {
  protected:
   void SetUpServer(const RefCountedPtr<grpc_server_credentials>& creds =
@@ -268,6 +300,43 @@ TEST_F(Chttp2ServerListenerTest, ConnectionRefusedAfterShutdown) {
   CqVerifier cqv(cq_);
   cqv.Expect(CqVerifier::tag(1), true);
   cqv.Verify();
+}
+
+TEST_F(Chttp2ServerListenerTest, EvaluateIncomingConnectionRejected) {
+  auto engine = MakeRefCounted<TestMitigationEngine>();
+  auto provider = MakeRefCounted<TestMitigationEngineProvider>(engine);
+
+  args_ = CoreConfiguration::Get()
+              .channel_args_preconditioning()
+              .PreconditionChannelArgs(nullptr);
+  args_ = args_.SetObject(provider);
+
+  server_ = MakeOrphanable<Server>(args_);
+  grpc_server_add_http2_port(
+      server_->c_ptr(),
+      JoinHostPort("localhost", grpc_pick_unused_port_or_die()).c_str(),
+      MakeRefCounted<InsecureServerCredentials>().get());
+  cq_ = grpc_completion_queue_create_for_next(/*reserved=*/nullptr);
+  server_->RegisterCompletionQueue(cq_);
+  grpc_server_start(server_->c_ptr());
+  listener_state_ =
+      ServerTestPeer(server_.get()).listener_states().front().get();
+  listener_ = DownCast<NewChttp2ServerListener*>(listener_state_->listener());
+
+  listener_state_->connection_quota()->SetMaxIncomingConnections(10);
+
+  auto mock_endpoint_controller =
+      grpc_event_engine::experimental::MockEndpointController::Create(
+          args_.GetObjectRef<EventEngine>());
+
+  Chttp2ServerListenerTestPeer(listener_).OnAccept(
+      /*tcp=*/mock_endpoint_controller->TakeCEndpoint(),
+      /*accepting_pollset=*/nullptr,
+      /*server_acceptor=*/nullptr);
+
+  EXPECT_EQ(
+      listener_state_->connection_quota()->TestOnlyActiveIncomingConnections(),
+      0);
 }
 
 using Chttp2ActiveConnectionTest = Chttp2ServerListenerTest;

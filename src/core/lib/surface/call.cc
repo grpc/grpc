@@ -173,6 +173,11 @@ Call::ParentCall* Call::parent_call() {
 }
 
 absl::Status Call::InitParent(Call* parent, uint32_t propagation_mask) {
+  // Virtual RPCs: Provide a link back to the parent session arena to fetch
+  // context.
+  auto* parent_ctx = arena()->New<ParentCallContext>();
+  parent_ctx->arena = parent->arena()->Ref();
+  arena()->SetContext<ParentCallContext>(parent_ctx);
   child_ = arena()->New<ChildCall>(parent);
 
   parent->InternalRef("child");
@@ -243,14 +248,6 @@ void Call::MaybeUnpublishFromParent() {
 }
 
 void Call::CancelWithStatus(grpc_status_code status, const char* description) {
-  if (!IsErrorFlattenEnabled()) {
-    CancelWithError(grpc_error_set_int(
-        grpc_error_set_str(
-            absl::Status(static_cast<absl::StatusCode>(status), description),
-            StatusStrProperty::kGrpcMessage, description),
-        StatusIntProperty::kRpcStatus, status));
-    return;
-  }
   if (status == GRPC_STATUS_OK) {
     VLOG(2) << "CancelWithStatus() called with OK status, using UNKNOWN";
     status = GRPC_STATUS_UNKNOWN;
@@ -629,7 +626,7 @@ const char* grpc_call_error_to_string(grpc_call_error error) {
     case GRPC_CALL_OK:
       return "GRPC_CALL_OK";
   }
-  GPR_UNREACHABLE_CODE(return "GRPC_CALL_ERROR_UNKNOW");
+  GPR_UNREACHABLE_CODE(return "GRPC_CALL_ERROR_UNKNOWN");
 }
 
 void grpc_call_run_in_event_engine(const grpc_call* call,

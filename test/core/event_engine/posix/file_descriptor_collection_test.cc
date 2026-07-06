@@ -56,6 +56,41 @@ TEST(FileDescriptorCollectionTest, RemoveHonorsGeneration) {
   EXPECT_EQ(collection.Remove(FileDescriptor(7, 2)), !ForkEnabled());
 }
 
+// Regression test for https://github.com/grpc/grpc/issues/40371
+// fd 0 is a valid file descriptor (e.g. when stdin is closed before forking)
+// and must not be treated as invalid.
+TEST(FileDescriptorTest, ZeroFdIsValid) {
+  FileDescriptor fd_zero(0, 1);
+  EXPECT_TRUE(fd_zero.ready());
+  EXPECT_EQ(fd_zero.fd(), 0);
+}
+
+TEST(FileDescriptorTest, NegativeFdIsInvalid) {
+  FileDescriptor fd_neg(-1, 1);
+  EXPECT_FALSE(fd_neg.ready());
+  EXPECT_EQ(fd_neg.fd(), -1);
+}
+
+TEST(FileDescriptorTest, DefaultConstructedIsInvalid) {
+  FileDescriptor fd_default;
+  EXPECT_FALSE(fd_default.ready());
+}
+
+TEST(FileDescriptorCollectionTest, AddZeroFd) {
+  FileDescriptorCollection collection(1);
+  FileDescriptor fd = collection.Add(0);
+  EXPECT_TRUE(fd.ready());
+  EXPECT_EQ(fd.fd(), 0);
+  EXPECT_EQ(fd.generation(), ForkEnabled() ? 1 : 0);
+  if (ForkEnabled()) {
+    EXPECT_THAT(collection.ClearAndReturnRawDescriptors(),
+                ::testing::UnorderedElementsAre(0));
+  } else {
+    EXPECT_THAT(collection.ClearAndReturnRawDescriptors(),
+                ::testing::IsEmpty());
+  }
+}
+
 }  // namespace grpc_event_engine::experimental
 
 int main(int argc, char** argv) {

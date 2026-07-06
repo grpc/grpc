@@ -41,11 +41,11 @@
 #include <grpcpp/support/string_ref.h>
 
 #include <atomic>
+#include <cstdint>
 #include <cstdlib>
 #include <functional>
+#include <limits>
 #include <map>
-#include <memory>
-#include <new>
 #include <string>
 #include <utility>
 #include <vector>
@@ -54,12 +54,154 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/grpc_check.h"
+#include "src/core/util/no_destruct.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/sync.h"
 #include "src/cpp/server/backend_metric_recorder.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
+
+namespace grpc {
+namespace internal {
+
+class SessionContextRegistry {
+ public:
+  static uint16_t Register(void (*destroy)(void*)) {
+    auto* state = GetState();
+    grpc_core::MutexLock lock(&state->mu);
+    uint16_t id = state->destroy_functions.size();
+    GRPC_CHECK_LT(id, std::numeric_limits<uint16_t>::max());
+    state->destroy_functions.push_back(destroy);
+    return id;
+  }
+
+  static void DestroyElement(uint16_t id, void* element) {
+    if (element == nullptr) return;
+    auto* state = GetState();
+    void (*destroy)(void*) = nullptr;
+    {
+      grpc_core::MutexLock lock(&state->mu);
+      if (id < state->destroy_functions.size()) {
+        destroy = state->destroy_functions[id];
+      }
+    }
+    if (destroy != nullptr) {
+      destroy(element);
+    }
+  }
+
+ private:
+  struct RegistryState {
+    grpc_core::Mutex mu;
+    std::vector<void (*)(void*)> destroy_functions;
+  };
+
+  static RegistryState* GetState() {
+    static grpc_core::NoDestruct<RegistryState> state;
+    return state.get();
+  }
+};
+
+class SessionContextList {
+ public:
+  ~SessionContextList() {
+    for (uint16_t i = 0; i < num_elements_; ++i) {
+      if (elements_[i] != nullptr) {
+        SessionContextRegistry::DestroyElement(i, elements_[i]);
+      }
+    }
+    delete[] elements_;
+  }
+
+  void Set(uint16_t id, void* ptr) {
+    // Resize the array to fit `id`. Since Set() is called only during the
+    // session handshake and the number of attached contexts is expected to be
+    // extremely small (typically <= 3), a simple, minimal array resizing
+    // allocation is sufficient here.
+    if (id >= num_elements_) {
+      uint16_t new_num = id + 1;
+      void** new_elements = new void*[new_num]();
+      for (uint16_t i = 0; i < num_elements_; ++i) {
+        new_elements[i] = elements_[i];
+      }
+      delete[] elements_;
+      elements_ = new_elements;
+      num_elements_ = new_num;
+    }
+    if (elements_[id] != nullptr) {
+      SessionContextRegistry::DestroyElement(id, elements_[id]);
+    }
+    elements_[id] = ptr;
+  }
+
+  void* Get(uint16_t id) const {
+    if (id < num_elements_ && elements_[id] != nullptr) {
+      return elements_[id];
+    }
+    return nullptr;
+  }
+
+ private:
+  void** elements_ = nullptr;
+  uint16_t num_elements_ = 0;
+};
+
+uint16_t ServerContextRegisterSessionContext(void (*destroy)(void*)) {
+  return SessionContextRegistry::Register(destroy);
+}
+
+void ServerContextSetSessionContext(grpc_call* call, uint16_t id, void* ptr) {
+  if (call == nullptr || id == std::numeric_limits<uint16_t>::max()) {
+    if (ptr != nullptr) {
+      SessionContextRegistry::DestroyElement(id, ptr);
+    }
+    return;
+  }
+  grpc_core::Arena* arena = grpc_call_get_arena(call);
+  auto* list = arena->GetContext<SessionContextList>();
+  if (list == nullptr) {
+    list = arena->New<SessionContextList>();
+    arena->SetContext<SessionContextList>(list);
+  }
+  list->Set(id, ptr);
+}
+
+void* ServerContextGetSessionContext(grpc_call* call, uint16_t id) {
+  if (call == nullptr || id == std::numeric_limits<uint16_t>::max()) {
+    return nullptr;
+  }
+  grpc_core::Arena* arena = grpc_call_get_arena(call);
+
+  auto* list = arena->GetContext<SessionContextList>();
+  if (list != nullptr) {
+    void* ptr = list->Get(id);
+    if (ptr != nullptr) return ptr;
+  }
+
+  auto* parent_call_context = arena->GetContext<grpc_core::ParentCallContext>();
+  if (parent_call_context != nullptr && parent_call_context->arena != nullptr) {
+    auto* parent_list =
+        parent_call_context->arena->GetContext<SessionContextList>();
+    if (parent_list != nullptr) {
+      return parent_list->Get(id);
+    }
+  }
+
+  return nullptr;
+}
+
+}  // namespace internal
+}  // namespace grpc
+
+namespace grpc_core {
+template <>
+struct ArenaContextType<grpc::internal::SessionContextList> {
+  static void Destroy(grpc::internal::SessionContextList* p) {
+    p->~SessionContextList();
+  }
+};
+}  // namespace grpc_core
 
 namespace grpc {
 

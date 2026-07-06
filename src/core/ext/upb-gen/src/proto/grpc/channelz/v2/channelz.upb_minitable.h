@@ -19,11 +19,8 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable grpc__channelz__v2__Data_msg_init;
-extern const upb_MiniTable* grpc__channelz__v2__Data_msg_init_ptr;
 extern const upb_MiniTable grpc__channelz__v2__Entity_msg_init;
-extern const upb_MiniTable* grpc__channelz__v2__Entity_msg_init_ptr;
 extern const upb_MiniTable grpc__channelz__v2__TraceEvent_msg_init;
-extern const upb_MiniTable* grpc__channelz__v2__TraceEvent_msg_init_ptr;
 
 extern const upb_MiniTableFile src_proto_grpc_channelz_v2_channelz_proto_upb_file_layout;
 

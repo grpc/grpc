@@ -13,6 +13,7 @@ graft third_party/upb
 graft third_party/utf8_range
 graft third_party/xxhash
 graft third_party/zlib
+include src/python/grpcio/cygrpc_exports.lds
 include src/python/grpcio/_parallel_compile_patch.py
 include src/python/grpcio/_spawn_patch.py
 include src/python/grpcio/commands.py

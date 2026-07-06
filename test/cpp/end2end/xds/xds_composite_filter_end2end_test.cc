@@ -67,10 +67,6 @@ using ::xds::type::v3::TypedStruct;
 class XdsCompositeFilterEnd2endTest : public XdsEnd2endTest {
  public:
   void SetUp() override {
-    if (!grpc_core::IsXdsChannelFilterChainPerRouteEnabled()) {
-      GTEST_SKIP()
-          << "test requires xds_channel_filter_chain_per_route experiment";
-    }
     grpc_core::SetXdsHttpFilterFactoryForTest([]() {
       return std::make_unique<grpc_core::XdsHttpAddHeaderFilterFactory>();
     });

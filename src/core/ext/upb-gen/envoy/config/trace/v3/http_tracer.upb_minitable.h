@@ -19,9 +19,7 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__config__trace__v3__Tracing_msg_init;
-extern const upb_MiniTable* envoy__config__trace__v3__Tracing_msg_init_ptr;
 extern const upb_MiniTable envoy__config__trace__v3__Tracing__Http_msg_init;
-extern const upb_MiniTable* envoy__config__trace__v3__Tracing__Http_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_config_trace_v3_http_tracer_proto_upb_file_layout;
 

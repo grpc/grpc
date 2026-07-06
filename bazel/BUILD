@@ -273,3 +273,8 @@ package_group(
     name = "wait_for_single_owner",
     packages = [],
 )
+
+package_group(
+    name = "virtual_rpcs",
+    packages = [],
+)

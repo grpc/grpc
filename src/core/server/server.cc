@@ -685,6 +685,12 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
         }
       }
       if (rc == nullptr) {
+        if (IsOptimization04Enabled() &&
+            server_->pending_backlog_protector_.Reject(
+                pending_filter_stack_.size(), SharedBitGen())) {
+          calld->FailCallCreation();
+          return;
+        }
         calld->SetState(CallData::CallState::PENDING);
         pending_filter_stack_.push(PendingCallFilterStack{calld});
         return;
@@ -1139,9 +1145,15 @@ auto Server::MatchAndPublishCall(CallHandler call_handler) {
           auto md = std::move(std::get<2>(r));
           auto* rc = mr.TakeCall();
           rc->Complete(std::move(std::get<0>(r)), *md);
-          grpc_call* call =
-              MakeServerCall(call_handler, std::move(md), this,
-                             rc->cq_bound_to_call, rc->initial_metadata);
+          RefCountedPtr<Arena> parent_arena = nullptr;
+          Arena* raw_arena = channel_args_.GetPointer<Arena>(
+              GRPC_ARG_SERVER_INTERNAL_PARENT_CALL_ARENA);
+          if (raw_arena != nullptr) {
+            parent_arena = raw_arena->Ref();
+          }
+          grpc_call* call = MakeServerCall(
+              call_handler, std::move(md), this, rc->cq_bound_to_call,
+              rc->initial_metadata, std::move(parent_arena));
           *rc->call = call;
           return Map(WaitForCqEndOp(false, rc->tag, absl::OkStatus(), mr.cq()),
                      [rc = std::unique_ptr<RequestedCall>(rc)](Empty) {
@@ -1175,6 +1187,7 @@ Server::Server(const ChannelArgs& args)
                          ? nullptr
                          : channelz::DataSource::channelz_node()
                                ->RefAsSubclass<channelz::ServerNode>()),
+      config_fetcher_(channel_args_.GetObjectRef<ServerConfigFetcher>()),
       server_call_tracer_factory_(ServerCallTracerFactory::Get(channel_args_)),
       compression_options_(CompressionOptionsFromChannelArgs(channel_args_)),
       max_time_in_pending_queue_(Duration::Seconds(
@@ -1357,9 +1370,17 @@ grpc_error_handle Server::SetupTransport(
       socket_node->AddParent(channelz_node_.get());
     }
 
-    // Initialize chand.
+    // Keep a local reference to the channel alive during setup to prevent
+    // premature destruction if the transport fails concurrently.
+    RefCountedPtr<Channel> channel_keep_alive = *channel;
     chand->InitTransport(Ref(), std::move(*channel), cq_idx, transport,
                          channelz_socket_uuid);
+
+    auto* parent_arena =
+        args.GetPointer<Arena>(GRPC_ARG_SERVER_INTERNAL_PARENT_CALL_ARENA);
+    if (parent_arena != nullptr) {
+      chand->set_parent_arena(parent_arena->Ref());
+    }
 
     stream_quota_->IncrementOpenChannels();
   }
@@ -1805,6 +1826,13 @@ void Server::ChannelData::AcceptStream(void* arg, Transport* /*transport*/,
   args.send_deadline = Timestamp::InfFuture();
   grpc_call* call;
   grpc_error_handle error = grpc_call_create(&args, &call);
+
+  if (chand->parent_arena() != nullptr && call != nullptr) {
+    auto* call_arena = grpc_call_get_arena(call);
+    auto* parent_link = call_arena->New<ParentCallContext>();
+    parent_link->arena = chand->parent_arena()->Ref();
+    call_arena->SetContext<ParentCallContext>(parent_link);
+  }
   grpc_call_stack* call_stack = grpc_call_get_call_stack(call);
   GRPC_CHECK_NE(call_stack, nullptr);
   grpc_call_element* elem = grpc_call_stack_element(call_stack, 0);
@@ -2242,22 +2270,16 @@ grpc_call_error grpc_server_request_registered_call(
       cq_for_notification, tag_new);
 }
 
-void grpc_server_set_config_fetcher(
-    grpc_server* server, grpc_server_config_fetcher* server_config_fetcher) {
-  grpc_core::ExecCtx exec_ctx;
-  GRPC_TRACE_LOG(api, INFO)
-      << "grpc_server_set_config_fetcher(server=" << server
-      << ", config_fetcher=" << server_config_fetcher << ")";
-  grpc_core::Server::FromC(server)->set_config_fetcher(
-      std::unique_ptr<grpc_core::ServerConfigFetcher>(
-          grpc_core::ServerConfigFetcher::FromC(server_config_fetcher)));
-}
-
-void grpc_server_config_fetcher_destroy(
+void grpc_server_config_fetcher_unref(
     grpc_server_config_fetcher* server_config_fetcher) {
   grpc_core::ExecCtx exec_ctx;
   GRPC_TRACE_LOG(api, INFO)
-      << "grpc_server_config_fetcher_destroy(config_fetcher="
+      << "grpc_server_config_fetcher_unref(config_fetcher="
       << server_config_fetcher << ")";
-  delete grpc_core::ServerConfigFetcher::FromC(server_config_fetcher);
+  grpc_core::ServerConfigFetcher::FromC(server_config_fetcher)->Unref();
+}
+
+const grpc_arg_pointer_vtable* grpc_server_config_fetcher_arg_vtable(void) {
+  return grpc_core::ChannelArgTypeTraits<
+      grpc_core::ServerConfigFetcher>::VTable();
 }

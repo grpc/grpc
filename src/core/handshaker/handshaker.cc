@@ -139,9 +139,14 @@ void HandshakeManager::Shutdown(absl::Status error) {
     is_shutdown_ = true;
     // Shutdown the handshaker that's currently in progress, if any.
     if (index_ > 0) {
+      auto& handshaker = *handshakers_[index_ - 1];
       GRPC_CHANNELZ_LOG(args_.trace_node)
-          << "Shutting down handshaker at index " << (index_ - 1);
-      handshakers_[index_ - 1]->Shutdown(std::move(error));
+          << "Shutting down handshaker " << handshaker.name() << " at index "
+          << (index_ - 1);
+      if (IsVerboseChannelzConnectionLoggingEnabled()) {
+        args_.trace_node.Commit();
+      }
+      handshaker.Shutdown(std::move(error));
     }
   }
 }
@@ -187,6 +192,9 @@ void HandshakeManager::CallNextHandshakerLocked(absl::Status error) {
   auto handshaker = handshakers_[index_];
   GRPC_CHANNELZ_LOG(args_.trace_node)
       << " calling handshaker " << handshaker->name() << " at index " << index_;
+  if (IsVerboseChannelzConnectionLoggingEnabled()) {
+    args_.trace_node.Commit();
+  }
   ++index_;
   handshaker->DoHandshake(&args_, [self = Ref()](absl::Status error) mutable {
     MutexLock lock(&self->mu_);
