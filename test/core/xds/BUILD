@@ -453,6 +453,7 @@ grpc_cc_test(
         "//src/core:upb_utils",
         "//src/core:validation_errors",
         "//src/core:xds_common_types",
+        "//src/core:xds_server_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:scoped_env_var",
         "//test/cpp/util:grpc_cli_utils",

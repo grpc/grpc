@@ -16,6 +16,7 @@
 #include <grpc/support/log.h>
 
 #include <memory>
+#include <optional>
 
 #include "src/core/call/call_spine.h"
 #include "src/core/call/metadata.h"
@@ -28,7 +29,11 @@
 #include "test/core/promise/poll_matcher.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "absl/log/check.h"
 #include "absl/log/log.h"
+#include "absl/synchronization/notification.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 namespace grpc_core {
 namespace {
@@ -146,6 +151,80 @@ TEST_F(V3BridgeTest, EarlyFailureCleansUpArena) {
   });
   // Verify that the arena can be destroyed.
   arena.reset();
+}
+
+// An interceptor that wires up a real v3 call (so the bridge spawns all of its
+// helper promises) but never produces server trailing metadata -- i.e. the
+// call stays in flight forever. It registers an OnDone callback on the v3
+// handler so the test can observe whether the v3 call pair is ever torn down.
+class HangingInterceptor : public V3InterceptorToV2Bridge<HangingInterceptor> {
+ public:
+  HangingInterceptor(std::shared_ptr<absl::Notification> done,
+                     std::shared_ptr<bool> cancelled)
+      : done_(std::move(done)), cancelled_(std::move(cancelled)) {}
+
+  void InterceptCall(UnstartedCallHandler unstarted_call_handler) override {
+    // Consume the call: start it and hold on to the handler so the v3 spine
+    // stays alive. We deliberately never push trailing metadata, leaving the
+    // call in flight.
+    CallHandler handler = unstarted_call_handler.StartCall();
+    const bool registered = handler.OnDone(
+        [done = done_, cancelled = cancelled_](bool was_cancelled) {
+          *cancelled = was_cancelled;
+          done->Notify();
+        });
+    CHECK(registered);
+    handler_.emplace(std::move(handler));
+  }
+  void Orphaned() override {}
+
+ private:
+  std::shared_ptr<absl::Notification> done_;
+  std::shared_ptr<bool> cancelled_;
+  std::optional<CallHandler> handler_;
+};
+
+// When the v2 promise is force-destroyed while the v3 call is still
+// in flight (as ServerCallData::Completed does with `promise =
+// ArenaPromise<>`), the bridge must propagate a cancellation to v3 call pair so
+// that the v3 handler's OnDone fires (with cancelled = true) and the v3 spine
+// is torn down rather than leaked.
+TEST_F(V3BridgeTest, ForceDestroyPromiseCancelsV3Call) {
+  auto done = std::make_shared<absl::Notification>(false);
+  auto cancelled = std::make_shared<bool>(false);
+  RunInActivity([&]() {
+    HangingInterceptor bridge(done, cancelled);
+    auto next_promise_factory = [](CallArgs) {
+      return ArenaPromise<ServerMetadataHandle>(
+          []() -> Poll<ServerMetadataHandle> { return Pending{}; });
+    };
+    CallArgs args{Arena::MakePooledForOverwrite<ClientMetadata>(),
+                  ClientInitialMetadataOutstandingToken::Empty(),
+                  nullptr,
+                  nullptr,
+                  nullptr,
+                  nullptr};
+    auto promise =
+        bridge.MakeCallPromise(std::move(args), next_promise_factory);
+    // Poll promise once to let the bridge wire everything up. The call is in
+    // flight, so the promise stays pending.
+    Poll<ServerMetadataHandle> result = promise();
+    EXPECT_TRUE(result.pending());
+    EXPECT_FALSE(done->HasBeenNotified());
+    // Promise is forced destroyed similar to how it's done in
+    // ServerCallData::Completed
+    promise = ArenaPromise<ServerMetadataHandle>();
+    // The v3 call pair must be cancelled as a result. The cancellation is
+    // pushed onto the v3 CallSpine's party and drained on an event engine
+    // thread, so wait for OnDone to fire.
+    EXPECT_TRUE(done->WaitForNotificationWithTimeout(absl::Seconds(2)))
+        << "v3 handler OnDone never fired -- the v3 CallSpine leaked because "
+           "the forced promise destruction was not propagated as a "
+           "cancellation.";
+    EXPECT_TRUE(*cancelled)
+        << "v3 call was torn down but not observed as a cancellation.";
+    arena_.reset();
+  });
 }
 
 }  // namespace

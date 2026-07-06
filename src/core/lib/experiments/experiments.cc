@@ -89,9 +89,6 @@ const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
     static_cast<uint8_t>(
         grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
-const char* const description_event_engine_poller_for_python =
-    "Enable event engine poller in gRPC Python";
-const char* const additional_constraints_event_engine_poller_for_python = "{}";
 const char* const description_fail_recv_metadata_on_deadline_exceeded =
     "Fail recv initial metadata when the deadline is exceeded.";
 const char* const
@@ -117,9 +114,6 @@ const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
 const char* const additional_constraints_local_connector_secure = "{}";
-const char* const description_max_inflight_pings_strict_limit =
-    "If set, the max inflight pings limit is strictly enforced.";
-const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
 const char* const description_memory_optimization_01 = "Memory Optimization";
 const char* const additional_constraints_memory_optimization_01 = "{}";
 const char* const description_memory_optimization_02 = "Memory Optimization 02";
@@ -327,10 +321,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
      required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
-    {"event_engine_poller_for_python",
-     description_event_engine_poller_for_python,
-     additional_constraints_event_engine_poller_for_python, nullptr, 0, true,
-     true},
     {"fail_recv_metadata_on_deadline_exceeded",
      description_fail_recv_metadata_on_deadline_exceeded,
      additional_constraints_fail_recv_metadata_on_deadline_exceeded, nullptr, 0,
@@ -350,10 +340,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
-    {"max_inflight_pings_strict_limit",
-     description_max_inflight_pings_strict_limit,
-     additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
-     true},
     {"memory_optimization_01", description_memory_optimization_01,
      additional_constraints_memory_optimization_01, nullptr, 0, false, false},
     {"memory_optimization_02", description_memory_optimization_02,
@@ -551,9 +537,6 @@ const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
     static_cast<uint8_t>(
         grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
-const char* const description_event_engine_poller_for_python =
-    "Enable event engine poller in gRPC Python";
-const char* const additional_constraints_event_engine_poller_for_python = "{}";
 const char* const description_fail_recv_metadata_on_deadline_exceeded =
     "Fail recv initial metadata when the deadline is exceeded.";
 const char* const
@@ -579,9 +562,6 @@ const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
 const char* const additional_constraints_local_connector_secure = "{}";
-const char* const description_max_inflight_pings_strict_limit =
-    "If set, the max inflight pings limit is strictly enforced.";
-const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
 const char* const description_memory_optimization_01 = "Memory Optimization";
 const char* const additional_constraints_memory_optimization_01 = "{}";
 const char* const description_memory_optimization_02 = "Memory Optimization 02";
@@ -789,10 +769,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
      required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
-    {"event_engine_poller_for_python",
-     description_event_engine_poller_for_python,
-     additional_constraints_event_engine_poller_for_python, nullptr, 0, true,
-     true},
     {"fail_recv_metadata_on_deadline_exceeded",
      description_fail_recv_metadata_on_deadline_exceeded,
      additional_constraints_fail_recv_metadata_on_deadline_exceeded, nullptr, 0,
@@ -812,10 +788,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
-    {"max_inflight_pings_strict_limit",
-     description_max_inflight_pings_strict_limit,
-     additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
-     true},
     {"memory_optimization_01", description_memory_optimization_01,
      additional_constraints_memory_optimization_01, nullptr, 0, false, false},
     {"memory_optimization_02", description_memory_optimization_02,
@@ -1013,9 +985,6 @@ const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
     static_cast<uint8_t>(
         grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
-const char* const description_event_engine_poller_for_python =
-    "Enable event engine poller in gRPC Python";
-const char* const additional_constraints_event_engine_poller_for_python = "{}";
 const char* const description_fail_recv_metadata_on_deadline_exceeded =
     "Fail recv initial metadata when the deadline is exceeded.";
 const char* const
@@ -1041,9 +1010,6 @@ const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
 const char* const additional_constraints_local_connector_secure = "{}";
-const char* const description_max_inflight_pings_strict_limit =
-    "If set, the max inflight pings limit is strictly enforced.";
-const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
 const char* const description_memory_optimization_01 = "Memory Optimization";
 const char* const additional_constraints_memory_optimization_01 = "{}";
 const char* const description_memory_optimization_02 = "Memory Optimization 02";
@@ -1251,10 +1217,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
      required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
-    {"event_engine_poller_for_python",
-     description_event_engine_poller_for_python,
-     additional_constraints_event_engine_poller_for_python, nullptr, 0, true,
-     true},
     {"fail_recv_metadata_on_deadline_exceeded",
      description_fail_recv_metadata_on_deadline_exceeded,
      additional_constraints_fail_recv_metadata_on_deadline_exceeded, nullptr, 0,
@@ -1274,10 +1236,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
-    {"max_inflight_pings_strict_limit",
-     description_max_inflight_pings_strict_limit,
-     additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
-     true},
     {"memory_optimization_01", description_memory_optimization_01,
      additional_constraints_memory_optimization_01, nullptr, 0, false, false},
     {"memory_optimization_02", description_memory_optimization_02,

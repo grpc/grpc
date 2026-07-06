@@ -1246,7 +1246,7 @@ Http2ClientTransport::Http2ClientTransport(
                         ->memory_quota()
                         ->CreateMemoryOwner()),
       flow_control_(
-          "PH2_Client",
+          /*peer_name=*/read_context_.peer_string().as_string_view(),
           channel_args.GetBool(GRPC_ARG_HTTP2_BDP_PROBE).value_or(true),
           &memory_owner_),
       security_frame_handler_(MakeRefCounted<SecurityFrameHandler>()),

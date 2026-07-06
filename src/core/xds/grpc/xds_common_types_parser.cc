@@ -689,33 +689,38 @@ std::pair<std::string, std::string> ParseXdsHeader(
 // ParseXdsGrpcService()
 //
 
-XdsGrpcService ParseXdsGrpcService(
+GrpcXdsServerTarget ParseXdsGrpcService(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_core_v3_GrpcService* grpc_service,
     ValidationErrors* errors) {
   if (grpc_service == nullptr) {
     errors->AddError("field not set");
-    return {};
+    return GrpcXdsServerTarget(/*server_uri=*/"",
+                               /*channel_creds_config=*/nullptr,
+                               /*call_creds_configs=*/{});
   }
-  XdsGrpcService xds_grpc_service;
   // timeout
-  if (auto* timeout = envoy_config_core_v3_GrpcService_timeout(grpc_service);
-      timeout != nullptr) {
+  Duration timeout = Duration::Zero();
+  if (auto* timeout_proto =
+          envoy_config_core_v3_GrpcService_timeout(grpc_service);
+      timeout_proto != nullptr) {
     ValidationErrors::ScopedField field(errors, ".timeout");
-    xds_grpc_service.timeout = ParseDuration(timeout, errors);
-    if (xds_grpc_service.timeout <= Duration::Zero()) {
+    timeout = ParseDuration(timeout_proto, errors);
+    if (timeout <= Duration::Zero()) {
       errors->AddError("duration must be positive");
     }
   }
   // initial_metadata
+  std::vector<std::pair<std::string, std::string>> initial_metadata;
   size_t initial_metadata_size;
-  auto* initial_metadata = envoy_config_core_v3_GrpcService_initial_metadata(
-      grpc_service, &initial_metadata_size);
+  auto* initial_metadata_proto =
+      envoy_config_core_v3_GrpcService_initial_metadata(grpc_service,
+                                                        &initial_metadata_size);
   for (size_t i = 0; i < initial_metadata_size; ++i) {
     ValidationErrors::ScopedField field(
         errors, absl::StrCat(".initial_metadata[", i, "]"));
-    xds_grpc_service.initial_metadata.push_back(
-        ParseXdsHeader(initial_metadata[i], errors));
+    initial_metadata.push_back(
+        ParseXdsHeader(initial_metadata_proto[i], errors));
   }
   // google_grpc
   ValidationErrors::ScopedField field(errors, ".google_grpc");
@@ -723,99 +728,97 @@ XdsGrpcService ParseXdsGrpcService(
       envoy_config_core_v3_GrpcService_google_grpc(grpc_service);
   if (google_grpc == nullptr) {
     errors->AddError("field not set");
-  } else {
-    // target_uri
-    std::string target_uri = UpbStringToStdString(
-        envoy_config_core_v3_GrpcService_GoogleGrpc_target_uri(google_grpc));
-    if (!CoreConfiguration::Get().resolver_registry().IsValidTarget(
-            target_uri)) {
-      ValidationErrors::ScopedField field(errors, ".target_uri");
-      errors->AddError("invalid target URI");
-    }
-    // credentials
-    RefCountedPtr<const ChannelCredsConfig> channel_creds_config;
-    std::vector<RefCountedPtr<const CallCredsConfig>> call_creds_configs;
-    if (DownCast<const GrpcXdsServer&>(context.server).TrustedXdsServer()) {
-      // Trusted xDS server.  Use credentials from the GoogleGrpc proto.
-      // First, look at channel creds.
-      {
-        ValidationErrors::ScopedField field(errors,
-                                            ".channel_credentials_plugin");
-        size_t size;
-        const auto* const* channel_creds_plugin =
-            envoy_config_core_v3_GrpcService_GoogleGrpc_channel_credentials_plugin(
-                google_grpc, &size);
-        if (size == 0) {
-          errors->AddError("field not set");
-        } else {
-          const auto& registry =
-              CoreConfiguration::Get().channel_creds_registry();
-          const auto& certificate_providers =
-              DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
-                  .certificate_providers();
-          for (size_t i = 0; i < size; ++i) {
-            ValidationErrors::ScopedField field(errors,
-                                                absl::StrCat("[", i, "]"));
-            absl::string_view type = UpbStringToAbsl(
-                google_protobuf_Any_type_url(channel_creds_plugin[i]));
-            if (!StripTypePrefix(type, errors)) continue;
-            if (!registry.IsProtoSupported(type)) continue;
-            ValidationErrors::ScopedField field2(errors, ".value");
-            absl::string_view serialized_config = UpbStringToAbsl(
-                google_protobuf_Any_value(channel_creds_plugin[i]));
-            channel_creds_config = registry.ParseProto(
-                type, serialized_config, certificate_providers, errors);
-            break;
-          }
-          if (channel_creds_config == nullptr) {
-            errors->AddError("no supported channel credentials type found");
-          }
-        }
-      }
-      // Now look at call creds.
-      {
-        ValidationErrors::ScopedField field(errors, ".call_credentials_plugin");
-        size_t size;
-        const auto* const* call_creds_plugin =
-            envoy_config_core_v3_GrpcService_GoogleGrpc_call_credentials_plugin(
-                google_grpc, &size);
-        const auto& registry = CoreConfiguration::Get().call_creds_registry();
+    return GrpcXdsServerTarget(/*server_uri=*/"",
+                               /*channel_creds_config=*/nullptr,
+                               /*call_creds_configs=*/{});
+  }
+  // target_uri
+  std::string target_uri = UpbStringToStdString(
+      envoy_config_core_v3_GrpcService_GoogleGrpc_target_uri(google_grpc));
+  if (!CoreConfiguration::Get().resolver_registry().IsValidTarget(target_uri)) {
+    ValidationErrors::ScopedField field(errors, ".target_uri");
+    errors->AddError("invalid target URI");
+  }
+  // credentials
+  RefCountedPtr<const ChannelCredsConfig> channel_creds_config;
+  std::vector<RefCountedPtr<const CallCredsConfig>> call_creds_configs;
+  if (DownCast<const GrpcXdsServer&>(context.server).TrustedXdsServer()) {
+    // Trusted xDS server.  Use credentials from the GoogleGrpc proto.
+    // First, look at channel creds.
+    {
+      ValidationErrors::ScopedField field(errors,
+                                          ".channel_credentials_plugin");
+      size_t size;
+      const auto* const* channel_creds_plugin =
+          envoy_config_core_v3_GrpcService_GoogleGrpc_channel_credentials_plugin(
+              google_grpc, &size);
+      if (size == 0) {
+        errors->AddError("field not set");
+      } else {
+        const auto& registry =
+            CoreConfiguration::Get().channel_creds_registry();
+        const auto& certificate_providers =
+            DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
+                .certificate_providers();
         for (size_t i = 0; i < size; ++i) {
           ValidationErrors::ScopedField field(errors,
                                               absl::StrCat("[", i, "]"));
           absl::string_view type = UpbStringToAbsl(
-              google_protobuf_Any_type_url(call_creds_plugin[i]));
+              google_protobuf_Any_type_url(channel_creds_plugin[i]));
           if (!StripTypePrefix(type, errors)) continue;
           if (!registry.IsProtoSupported(type)) continue;
           ValidationErrors::ScopedField field2(errors, ".value");
-          absl::string_view serialized_config =
-              UpbStringToAbsl(google_protobuf_Any_value(call_creds_plugin[i]));
-          call_creds_configs.push_back(
-              registry.ParseProto(type, serialized_config, errors));
+          absl::string_view serialized_config = UpbStringToAbsl(
+              google_protobuf_Any_value(channel_creds_plugin[i]));
+          channel_creds_config = registry.ParseProto(
+              type, serialized_config, certificate_providers, errors);
+          break;
+        }
+        if (channel_creds_config == nullptr) {
+          errors->AddError("no supported channel credentials type found");
         }
       }
-    } else {
-      // Not a trusted xDS server.  Do lookup in bootstrap.
-      const auto& bootstrap =
-          DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap());
-      auto& allowed_grpc_services = bootstrap.allowed_grpc_services();
-      auto it = allowed_grpc_services.find(target_uri);
-      if (it == allowed_grpc_services.end()) {
-        ValidationErrors::ScopedField field(errors, ".target_uri");
-        errors->AddError(
-            "service not present in \"allowed_grpc_services\" "
-            "in bootstrap config");
-      } else {
-        channel_creds_config = it->second.channel_creds_config;
-        call_creds_configs = it->second.call_creds_configs;
+    }
+    // Now look at call creds.
+    {
+      ValidationErrors::ScopedField field(errors, ".call_credentials_plugin");
+      size_t size;
+      const auto* const* call_creds_plugin =
+          envoy_config_core_v3_GrpcService_GoogleGrpc_call_credentials_plugin(
+              google_grpc, &size);
+      const auto& registry = CoreConfiguration::Get().call_creds_registry();
+      for (size_t i = 0; i < size; ++i) {
+        ValidationErrors::ScopedField field(errors, absl::StrCat("[", i, "]"));
+        absl::string_view type =
+            UpbStringToAbsl(google_protobuf_Any_type_url(call_creds_plugin[i]));
+        if (!StripTypePrefix(type, errors)) continue;
+        if (!registry.IsProtoSupported(type)) continue;
+        ValidationErrors::ScopedField field2(errors, ".value");
+        absl::string_view serialized_config =
+            UpbStringToAbsl(google_protobuf_Any_value(call_creds_plugin[i]));
+        call_creds_configs.push_back(
+            registry.ParseProto(type, serialized_config, errors));
       }
     }
-    xds_grpc_service.server_target = std::make_unique<GrpcXdsServerTarget>(
-        target_uri, std::move(channel_creds_config),
-        std::move(call_creds_configs), xds_grpc_service.initial_metadata,
-        xds_grpc_service.timeout);
+  } else {
+    // Not a trusted xDS server.  Do lookup in bootstrap.
+    const auto& bootstrap =
+        DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap());
+    auto& allowed_grpc_services = bootstrap.allowed_grpc_services();
+    auto it = allowed_grpc_services.find(target_uri);
+    if (it == allowed_grpc_services.end()) {
+      ValidationErrors::ScopedField field(errors, ".target_uri");
+      errors->AddError(
+          "service not present in \"allowed_grpc_services\" "
+          "in bootstrap config");
+    } else {
+      channel_creds_config = it->second.channel_creds_config;
+      call_creds_configs = it->second.call_creds_configs;
+    }
   }
-  return xds_grpc_service;
+  return GrpcXdsServerTarget(target_uri, std::move(channel_creds_config),
+                             std::move(call_creds_configs),
+                             std::move(initial_metadata), timeout);
 }
 
 //
