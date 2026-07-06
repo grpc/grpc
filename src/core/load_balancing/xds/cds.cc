@@ -169,7 +169,6 @@ bool XdsAggregateClusterBackwardCompatibilityEnabled() {
       "GRPC_XDS_AGGREGATE_CLUSTER_BACKWARD_COMPAT");
 }
 
-
 constexpr absl::string_view kCds = "cds_experimental";
 
 // Config for this LB policy.
@@ -724,6 +723,8 @@ void PriorityEndpointIterator::ForEach(
       for (const auto& [_, locality] : priority_entry.localities) {
         locality_weight_sum += locality.lb_weight;
       }
+      // This should never happen because the resource parsing code will strip
+      // out any localities with weight 0. However, we check this defensively.
       if (locality_weight_sum == 0) locality_weight_sum = 1;
     }
     for (const auto& [locality_name, locality] : priority_entry.localities) {
@@ -736,6 +737,9 @@ void PriorityEndpointIterator::ForEach(
           endpoint_weight_sum +=
               endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
         }
+        // This should never happen because the resource validation code will
+        // reject the resource if any endpoint has weight 0. However, we check
+        // this defensively.
         if (endpoint_weight_sum == 0) endpoint_weight_sum = 1;
       }
       std::vector<RefCountedStringValue> hierarchical_path = {
