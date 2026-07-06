@@ -314,6 +314,12 @@ TEST(ParserTest, MainTest) {
     test_request_fails(split_modes[i], "GET / ____/1.0\r\n");
     test_request_fails(split_modes[i], "GET / HTTP/1.2\r\n");
     test_request_fails(split_modes[i], "GET / HTTP/1.0\n");
+    // Request line that ends right after "HTTP/" walked past the end of the
+    // line while reading the version digits. The single-LF form reads past the
+    // buffer before the fix; both forms must be rejected without an OOB read.
+    test_request_fails(split_modes[i], "GET / HTTP/\n");
+    test_request_fails(split_modes[i], "GET / HTTP/\r\n");
+    test_request_fails(split_modes[i], "GET / HTTP/1\n");
 
     char* tmp1 =
         static_cast<char*>(gpr_malloc(2 * GRPC_HTTP_PARSER_MAX_HEADER_LENGTH));
