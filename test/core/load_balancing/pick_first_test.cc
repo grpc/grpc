@@ -1527,7 +1527,7 @@ TEST_F(PickFirstTest, WithWeightedShuffle) {
     std::vector<absl::string_view> addresses_after_update;
     GetOrderAddressesArePicked(kAddresses, &addresses_after_update);
     if (addresses_after_update.front() == kAddresses[0]) {
-      first_address_picked_count++;
+      ++first_address_picked_count;
     }
   }
   EXPECT_GE(first_address_picked_count, 9);

@@ -6954,7 +6954,6 @@ grpc_cc_library(
         "load_balancing/xds/cds.h",
     ],
     external_deps = [
-        "absl/functional:function_ref",
         "absl/log",
         "absl/status",
         "absl/status:statusor",

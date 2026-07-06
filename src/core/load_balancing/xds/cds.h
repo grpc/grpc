@@ -24,7 +24,6 @@
 #include "src/core/resolver/xds/xds_config.h"
 #include "src/core/util/ref_counted_string.h"
 #include "src/core/xds/grpc/xds_endpoint.h"
-#include "absl/functional/function_ref.h"
 
 namespace grpc_core {
 
