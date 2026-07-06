@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.81.0</span>
+   &#160;<span id="projectnumber">1.82.0</span>
    </div>
   </td>
  </tr>
@@ -89,6 +89,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a9f5539ac2c43c58b5f75b967be237089"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_session_reactor.html#a9f5539ac2c43c58b5f75b967be237089">Finish</a> (<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> s) ABSL_LOCKS_EXCLUDED(session_mu_)</td></tr>
 <tr class="memdesc:a9f5539ac2c43c58b5f75b967be237089"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finish is similar to <a class="el" href="classgrpc_1_1_server_bidi_reactor.html" title="ServerBidiReactor is the interface for a bidirectional streaming RPC.">ServerBidiReactor</a> except for one detail.  <a href="classgrpc_1_1experimental_1_1_server_session_reactor.html#a9f5539ac2c43c58b5f75b967be237089">More...</a><br /></td></tr>
 <tr class="separator:a9f5539ac2c43c58b5f75b967be237089"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a72327c3811987c8b9465f7dc9cffce8a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_session_reactor.html#a72327c3811987c8b9465f7dc9cffce8a">InitiateGracefulShutdown</a> (absl::AnyInvocable&lt; void(absl::Status)&gt; on_shutdown) ABSL_LOCKS_EXCLUDED(session_mu_)</td></tr>
+<tr class="memdesc:a72327c3811987c8b9465f7dc9cffce8a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initiate a graceful shutdown of a SESSION_RPC.  <a href="classgrpc_1_1experimental_1_1_server_session_reactor.html#a72327c3811987c8b9465f7dc9cffce8a">More...</a><br /></td></tr>
+<tr class="separator:a72327c3811987c8b9465f7dc9cffce8a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac57f9e8d8fd05d18b2951f73e6f4bad7"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_session_reactor.html#ac57f9e8d8fd05d18b2951f73e6f4bad7">OnSendInitialMetadataDone</a> (bool)</td></tr>
 <tr class="memdesc:ac57f9e8d8fd05d18b2951f73e6f4bad7"><td class="mdescLeft">&#160;</td><td class="mdescRight">The following notifications are exactly like <a class="el" href="classgrpc_1_1_server_bidi_reactor.html" title="ServerBidiReactor is the interface for a bidirectional streaming RPC.">ServerBidiReactor</a>.  <a href="classgrpc_1_1experimental_1_1_server_session_reactor.html#ac57f9e8d8fd05d18b2951f73e6f4bad7">More...</a><br /></td></tr>
 <tr class="separator:ac57f9e8d8fd05d18b2951f73e6f4bad7"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -185,6 +188,35 @@ Friends</h2></td></tr>
 
 <p>Finish is similar to <a class="el" href="classgrpc_1_1_server_bidi_reactor.html" title="ServerBidiReactor is the interface for a bidirectional streaming RPC.">ServerBidiReactor</a> except for one detail. </p>
 <p>If the status is non-OK, any message will not be sent. Instead, the client will only receive the status and any trailing metadata. </p>
+
+</div>
+</div>
+<a id="a72327c3811987c8b9465f7dc9cffce8a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a72327c3811987c8b9465f7dc9cffce8a">&#9670;&nbsp;</a></span>InitiateGracefulShutdown()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc::experimental::ServerSessionReactor::InitiateGracefulShutdown </td>
+          <td>(</td>
+          <td class="paramtype">absl::AnyInvocable&lt; void(absl::Status)&gt;&#160;</td>
+          <td class="paramname"><em>on_shutdown</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Initiate a graceful shutdown of a SESSION_RPC. </p>
+<p>This will send a GOAWAY frame to the client, telling it to finish active virtual RPCs on this session and stop opening new ones. The provided callback will be invoked with the final status of the inner transport when it completely shuts down (drains). </p>
 
 </div>
 </div>
@@ -326,7 +358,7 @@ Friends</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 29 2026 17:40:41 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Jul 4 2026 20:59:28 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

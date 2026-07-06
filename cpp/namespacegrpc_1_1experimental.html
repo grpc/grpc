@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.81.0</span>
+   &#160;<span id="projectnumber">1.82.0</span>
    </div>
   </td>
  </tr>
@@ -243,6 +243,14 @@ Functions</h2></td></tr>
 <tr class="memitem:ae38e21893afedf68729867eb397b33c3"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_server_credentials.html">ServerCredentials</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#ae38e21893afedf68729867eb397b33c3">TlsServerCredentials</a> (const <a class="el" href="classgrpc_1_1experimental_1_1_tls_server_credentials_options.html">experimental::TlsServerCredentialsOptions</a> &amp;options)</td></tr>
 <tr class="memdesc:ae38e21893afedf68729867eb397b33c3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds TLS <a class="el" href="classgrpc_1_1_server_credentials.html" title="Wrapper around grpc_server_credentials, a way to authenticate a server.">ServerCredentials</a> given TLS options.  <a href="namespacegrpc_1_1experimental.html#ae38e21893afedf68729867eb397b33c3">More...</a><br /></td></tr>
 <tr class="separator:ae38e21893afedf68729867eb397b33c3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4f2459dbfc9db3a8a53129d1aba1d8d3"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:a4f2459dbfc9db3a8a53129d1aba1d8d3"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#a4f2459dbfc9db3a8a53129d1aba1d8d3">SetSessionContext</a> (<a class="el" href="classgrpc_1_1_server_context_base.html">ServerContextBase</a> *context, std::shared_ptr&lt; T &gt; session_context)</td></tr>
+<tr class="memdesc:a4f2459dbfc9db3a8a53129d1aba1d8d3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the session context.  <a href="namespacegrpc_1_1experimental.html#a4f2459dbfc9db3a8a53129d1aba1d8d3">More...</a><br /></td></tr>
+<tr class="separator:a4f2459dbfc9db3a8a53129d1aba1d8d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5fe9d0037e255d5f3df296245ab5aeca"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:a5fe9d0037e255d5f3df296245ab5aeca"><td class="memTemplItemLeft" align="right" valign="top">std::shared_ptr&lt; T &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#a5fe9d0037e255d5f3df296245ab5aeca">GetSessionContext</a> (const <a class="el" href="classgrpc_1_1_server_context_base.html">ServerContextBase</a> *context)</td></tr>
+<tr class="memdesc:a5fe9d0037e255d5f3df296245ab5aeca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the session context.  <a href="namespacegrpc_1_1experimental.html#a5fe9d0037e255d5f3df296245ab5aeca">More...</a><br /></td></tr>
+<tr class="separator:a5fe9d0037e255d5f3df296245ab5aeca"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abf863776469f08e69e7ca6e82246fd7a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#abf863776469f08e69e7ca6e82246fd7a">RegisterGlobalClientInterceptorFactory</a> (<a class="el" href="classgrpc_1_1experimental_1_1_client_interceptor_factory_interface.html">ClientInterceptorFactoryInterface</a> *factory)</td></tr>
 <tr class="separator:abf863776469f08e69e7ca6e82246fd7a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a06e8ad17f59ec479769f014e79a4b068"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#a06e8ad17f59ec479769f014e79a4b068">TestOnlyResetGlobalClientInterceptorFactory</a> ()</td></tr>
@@ -253,9 +261,9 @@ Functions</h2></td></tr>
 <tr class="memitem:a059e5f2b7916fde797b4c13251cb1a6b"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel.html">Channel</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#a059e5f2b7916fde797b4c13251cb1a6b">CreateVirtualChannel</a> (<a class="el" href="classgrpc_1_1internal_1_1_call.html">grpc::internal::Call</a> call)</td></tr>
 <tr class="memdesc:a059e5f2b7916fde797b4c13251cb1a6b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new <em>custom</em> virtual <em><a class="el" href="classgrpc_1_1_channel.html" title="Channels represent a connection to an endpoint. Created by CreateChannel.">Channel</a></em> using <em>call</em>.  <a href="namespacegrpc_1_1experimental.html#a059e5f2b7916fde797b4c13251cb1a6b">More...</a><br /></td></tr>
 <tr class="separator:a059e5f2b7916fde797b4c13251cb1a6b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac1fed3ff16c1272b7baa0c2053b089ee"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel.html">Channel</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#ac1fed3ff16c1272b7baa0c2053b089ee">CreateVirtualChannel</a> (<a class="el" href="classgrpc_1_1internal_1_1_call.html">grpc::internal::Call</a> call, const <a class="el" href="classgrpc_1_1_channel_arguments.html">ChannelArguments</a> &amp;args)</td></tr>
-<tr class="memdesc:ac1fed3ff16c1272b7baa0c2053b089ee"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new <em>custom</em> virtual <em><a class="el" href="classgrpc_1_1_channel.html" title="Channels represent a connection to an endpoint. Created by CreateChannel.">Channel</a></em> using <em>call</em>.  <a href="namespacegrpc_1_1experimental.html#ac1fed3ff16c1272b7baa0c2053b089ee">More...</a><br /></td></tr>
-<tr class="separator:ac1fed3ff16c1272b7baa0c2053b089ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2c51f24ca722e967e209d121eb25531e"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel.html">Channel</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#a2c51f24ca722e967e209d121eb25531e">CreateVirtualChannel</a> (<a class="el" href="classgrpc_1_1internal_1_1_call.html">grpc::internal::Call</a> call, const <a class="el" href="classgrpc_1_1_channel_arguments.html">ChannelArguments</a> &amp;args, absl::AnyInvocable&lt; void()&gt; goaway_callback=nullptr)</td></tr>
+<tr class="memdesc:a2c51f24ca722e967e209d121eb25531e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new <em>custom</em> virtual <em><a class="el" href="classgrpc_1_1_channel.html" title="Channels represent a connection to an endpoint. Created by CreateChannel.">Channel</a></em> using <em>call</em>.  <a href="namespacegrpc_1_1experimental.html#a2c51f24ca722e967e209d121eb25531e">More...</a><br /></td></tr>
+<tr class="separator:a2c51f24ca722e967e209d121eb25531e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p><a class="el" href="classgrpc_1_1experimental_1_1_client_rpc_info.html">ClientRpcInfo</a> represents the state of a particular RPC as it appears to an interceptor. </p>
@@ -574,8 +582,8 @@ template&lt;class Request , class Response &gt; </div>
 
 </div>
 </div>
-<a id="ac1fed3ff16c1272b7baa0c2053b089ee"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac1fed3ff16c1272b7baa0c2053b089ee">&#9670;&nbsp;</a></span>CreateVirtualChannel() <span class="overload">[2/2]</span></h2>
+<a id="a2c51f24ca722e967e209d121eb25531e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2c51f24ca722e967e209d121eb25531e">&#9670;&nbsp;</a></span>CreateVirtualChannel() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -590,7 +598,13 @@ template&lt;class Request , class Response &gt; </div>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">const <a class="el" href="classgrpc_1_1_channel_arguments.html">ChannelArguments</a> &amp;&#160;</td>
-          <td class="paramname"><em>args</em>&#160;</td>
+          <td class="paramname"><em>args</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">absl::AnyInvocable&lt; void()&gt;&#160;</td>
+          <td class="paramname"><em>goaway_callback</em> = <code>nullptr</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -606,10 +620,45 @@ template&lt;class Request , class Response &gt; </div>
   <table class="params">
     <tr><td class="paramname">call</td><td>The call object to create the virtual channel from. </td></tr>
     <tr><td class="paramname">args</td><td>Options for channel creation. </td></tr>
+    <tr><td class="paramname">goaway_callback</td><td>Callback to be invoked when the channel receives a GOAWAY. </td></tr>
   </table>
   </dd>
 </dl>
 
+</div>
+</div>
+<a id="a5fe9d0037e255d5f3df296245ab5aeca"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5fe9d0037e255d5f3df296245ab5aeca">&#9670;&nbsp;</a></span>GetSessionContext()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt; T &gt; grpc::experimental::GetSessionContext </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classgrpc_1_1_server_context_base.html">ServerContextBase</a> *&#160;</td>
+          <td class="paramname"><em>context</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Get the session context. </p>
+<p>This is an experimental API.</p>
+<p>Retrieves the custom session context previously attached to the parent SESSION_RPC via <a class="el" href="namespacegrpc_1_1experimental.html#a4f2459dbfc9db3a8a53129d1aba1d8d3" title="Set the session context.">SetSessionContext()</a>. If called from a virtual child RPC, it automatically accesses the parent session's context lock-free.</p>
+<p>Example Usage: </p><div class="fragment"><div class="line"><span class="comment">// 2. In a virtual child RPC method handler:</span></div>
+<div class="line"><span class="keyword">auto</span> auth = grpc::experimental::GetSessionContext&lt;AuthContext&gt;(context);</div>
+</div><!-- fragment --> 
 </div>
 </div>
 <a id="a9354c3cab0a74d9d405c00781f789507"></a>
@@ -696,6 +745,54 @@ template&lt;class Request , class Response &gt; </div>
       </table>
 </div><div class="memdoc">
 
+</div>
+</div>
+<a id="a4f2459dbfc9db3a8a53129d1aba1d8d3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4f2459dbfc9db3a8a53129d1aba1d8d3">&#9670;&nbsp;</a></span>SetSessionContext()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc::experimental::SetSessionContext </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_server_context_base.html">ServerContextBase</a> *&#160;</td>
+          <td class="paramname"><em>context</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::shared_ptr&lt; T &gt;&#160;</td>
+          <td class="paramname"><em>session_context</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Set the session context. </p>
+<p>This is an experimental API.</p>
+<p>Session context allows attaching custom, user-defined data (e.g., auth tokens, tenant IDs, connection metadata) to a parent SESSION_RPC, which is then automatically inherited and accessible by all virtual child RPCs multiplexed over that session.</p>
+<dl class="section warning"><dt>Warning</dt><dd>Session context is intended to be established during the session handshake phase. Once virtual RPCs have started (i.e., after initial metadata has been sent), session context becomes immutable. Any attempt to call SetSessionContext after virtual RPCs have started will be ignored.</dd></dl>
+<p>Example Usage: </p><div class="fragment"><div class="line"><span class="keyword">struct </span>AuthContext { std::string tenant_id; };</div>
+<div class="line"> </div>
+<div class="line"><span class="comment">// 1. In the Session RPC handshake handler:</span></div>
+<div class="line"><a class="code" href="namespacegrpc_1_1experimental.html#a4f2459dbfc9db3a8a53129d1aba1d8d3">grpc::experimental::SetSessionContext</a>(</div>
+<div class="line">    context, std::make_shared&lt;AuthContext&gt;(<span class="stringliteral">&quot;tenant_a&quot;</span>));</div>
+</div><!-- fragment --> 
 </div>
 </div>
 <a id="a15c2a35be6f8f0eda53ba29bfa2c1eab"></a>
@@ -870,9 +967,10 @@ template&lt;class Request , class Response &gt; </div>
 </div>
 </div>
 </div><!-- contents -->
+<div class="ttc" id="anamespacegrpc_1_1experimental_html_a4f2459dbfc9db3a8a53129d1aba1d8d3"><div class="ttname"><a href="namespacegrpc_1_1experimental.html#a4f2459dbfc9db3a8a53129d1aba1d8d3">grpc::experimental::SetSessionContext</a></div><div class="ttdeci">void SetSessionContext(ServerContextBase *context, std::shared_ptr&lt; T &gt; session_context)</div><div class="ttdoc">Set the session context.</div><div class="ttdef"><b>Definition:</b> server_context.h:803</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 29 2026 17:40:41 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Jul 4 2026 20:59:28 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

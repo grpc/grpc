@@ -32,5 +32,6 @@ var searchData=
   ['grpc_20server_20reflection_20tutorial_116',['gRPC Server Reflection Tutorial',['../md_doc_server_reflection_tutorial.html',1,'']]],
   ['grpc_20versioning_20guide_117',['gRPC Versioning Guide',['../md_doc_versioning.html',1,'']]],
   ['grpc_20wait_20for_20ready_20semantics_118',['gRPC Wait for Ready Semantics',['../md_doc_wait-for-ready.html',1,'']]],
-  ['grpc_20server_20backward_20compatibility_20issues_20and_20workarounds_20management_119',['gRPC Server Backward Compatibility Issues and Workarounds Management',['../md_doc_workarounds.html',1,'']]]
+  ['grpc_20server_20backward_20compatibility_20issues_20and_20workarounds_20management_119',['gRPC Server Backward Compatibility Issues and Workarounds Management',['../md_doc_workarounds.html',1,'']]],
+  ['grpc_20php_20extension_20mirror_20_28pie_29_120',['gRPC PHP Extension Mirror (PIE)',['../md_src_php_ext_grpc__r_e_a_d_m_e.html',1,'']]]
 ];

@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>gRPC AsyncIO API &#8212; gRPC Python Docs v1.81.0</title>
+    <title>gRPC AsyncIO API &#8212; gRPC Python Docs v1.82.0</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="_static/documentation_options.js?v=e806274a"></script>
+    <script src="_static/documentation_options.js?v=7a79f9a1"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script async="async" src="https://www.googletagmanager.com/gtag/js?id=UA-60127042-1"></script>
@@ -62,7 +62,7 @@
     <link rel="prev" title="gRPC" href="grpc.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="1.81.0" />
+  <meta name="docsearch:version" content="1.82.0" />
   </head>
   
   
@@ -124,7 +124,7 @@
   
   
   
-    <p class="title logo__title">gRPC Python Docs v1.81.0</p>
+    <p class="title logo__title">gRPC Python Docs v1.82.0</p>
   
 </a></div>
     
@@ -796,7 +796,7 @@ perform certain clean-up logic, and then re-raise it.</p>
 
 <dl class="py exception">
 <dt class="sig sig-object py" id="grpc.aio.AioRpcError">
-<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc.aio.</span></span><span class="sig-name descname"><span class="pre">AioRpcError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">code</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_metadata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trailing_metadata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">details</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug_error_string</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_call.html#AioRpcError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.AioRpcError" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc.aio.</span></span><span class="sig-name descname"><span class="pre">AioRpcError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">code</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_metadata</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trailing_metadata</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">details</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug_error_string</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_call.html#AioRpcError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.AioRpcError" title="Link to this definition">#</a></dt>
 <dd><p>An implementation of RpcError to be used by the asynchronous API.</p>
 <p>Raised RpcError is a snapshot of the final status of the RPC, values are
 determined. Hence, its methods no longer needs to be coroutines.</p>
@@ -804,8 +804,8 @@ determined. Hence, its methods no longer needs to be coroutines.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>code</strong> (<a class="reference internal" href="grpc.html#grpc.StatusCode" title="grpc.StatusCode"><em>StatusCode</em></a>)</p></li>
-<li><p><strong>initial_metadata</strong> (<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a>)</p></li>
-<li><p><strong>trailing_metadata</strong> (<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a>)</p></li>
+<li><p><strong>initial_metadata</strong> (<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>trailing_metadata</strong> (<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a><em> | </em><em>None</em>)</p></li>
 <li><p><strong>details</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
 <li><p><strong>debug_error_string</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
 </ul>
@@ -837,7 +837,7 @@ determined. Hence, its methods no longer needs to be coroutines.</p>
 <dd class="field-odd"><p>The debug error string received.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>str</p>
+<dd class="field-even"><p>str | None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -865,7 +865,7 @@ determined. Hence, its methods no longer needs to be coroutines.</p>
 <dd class="field-odd"><p>The initial metadata received.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a></p>
+<dd class="field-even"><p><a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a> | None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -879,7 +879,7 @@ determined. Hence, its methods no longer needs to be coroutines.</p>
 <dd class="field-odd"><p>The trailing metadata received.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a></p>
+<dd class="field-even"><p><a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a> | None</p>
 </dd>
 </dl>
 </dd></dl>
