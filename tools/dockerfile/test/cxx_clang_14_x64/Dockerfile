@@ -23,6 +23,14 @@ RUN apt update && apt -y upgrade && apt install -y \
   zip \
   && apt clean
 #=================
+# Install cmake
+# Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
+
+COPY --from=repo_root tools/dockerfile/helper_scripts/install-cmake.sh /root/install-cmake.sh
+
+RUN /root/install-cmake.sh
+
+#=================
 # Setup git to access working directory across docker boundary.
 # This avoids the "fatal: detected dubious ownership in repository XYZ"
 # git error.

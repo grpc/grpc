@@ -22,6 +22,7 @@ RUN apt update && apt -y upgrade && apt install -y \
   time \
   zip \
   && apt clean
+{% include "../../cmake.include" %}
 {% include "../../git_avoid_dubious_ownership_error.include" %}
 {% include "../../run_tests_python_deps.include" %}
 {% include "../../cxx_test_deps.include" %}
