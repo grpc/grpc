@@ -15,7 +15,11 @@
 FROM debian:11
 
 # gRPC C++ dependencies based on https://github.com/grpc/grpc/blob/master/BUILDING.md
-RUN apt-get update && apt-get install -y build-essential autoconf cmake libtool pkg-config && apt-get clean
+RUN apt-get update && apt-get install -y build-essential autoconf libtool pkg-config
+
+COPY --from=repo_root tools/dockerfile/helper_scripts/install-cmake.sh /root/install-cmake.sh
+
+RUN /root/install-cmake.sh
 
 # C++ distribtests are setup in a way that requires git
 RUN apt-get update && apt-get install -y git && apt-get clean
