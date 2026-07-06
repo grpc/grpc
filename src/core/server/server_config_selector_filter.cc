@@ -248,7 +248,7 @@ class FilterChainBuilderImpl final : public FilterChainBuilder {
     if (builder_ == nullptr) InitBuilder();
     auto top_of_stack_destination = builder_->Build(destination_);
     if (!top_of_stack_destination.ok()) {
-      // FIXME: use MaybeRewriteIllegalStatusCode(), both here and throughout?
+      // TODO(roth): Maybe use MaybeRewriteIllegalStatusCode()?
       return top_of_stack_destination.status();
     }
     builder_.reset();

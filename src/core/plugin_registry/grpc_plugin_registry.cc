@@ -98,7 +98,6 @@ void RegisterBuiltins(CoreConfiguration::Builder* builder) {
     builder->channel_init()
         ->RegisterFilter<ServerConfigSelectorInterceptor>(GRPC_SERVER_CHANNEL)
         .IfHasChannelArg(ServerConfigSelectorProvider::ChannelArgName())
-        // FIXME: needs to be after census filter?
         .After({LegacyMaxAgeFilter::kFilter.name});
   }
 }
