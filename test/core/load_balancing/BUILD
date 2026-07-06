@@ -367,6 +367,7 @@ grpc_cc_test(
         "//src/core:grpc_lb_policy_cds",
         "//src/core:xds_config",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
     ],
 )
 

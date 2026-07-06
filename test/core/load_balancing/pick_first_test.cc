@@ -35,7 +35,6 @@
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/telemetry/metrics.h"
 #include "src/core/util/debug_location.h"
-#include "src/core/util/env.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -43,6 +42,7 @@
 #include "src/core/util/work_serializer.h"
 #include "test/core/load_balancing/lb_policy_test_lib.h"
 #include "test/core/test_util/fake_stats_plugin.h"
+#include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -1505,7 +1505,7 @@ TEST_F(PickFirstTest, WithShuffle) {
 }
 
 TEST_F(PickFirstTest, WithWeightedShuffle) {
-  SetEnv("GRPC_EXPERIMENTAL_PF_WEIGHTED_SHUFFLING", "true");
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_PF_WEIGHTED_SHUFFLING");
   constexpr std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445"};
   std::vector<EndpointAddresses> endpoints;
@@ -1531,7 +1531,6 @@ TEST_F(PickFirstTest, WithWeightedShuffle) {
     }
   }
   EXPECT_GE(first_address_picked_count, 9);
-  UnsetEnv("GRPC_EXPERIMENTAL_PF_WEIGHTED_SHUFFLING");
 }
 
 TEST_F(PickFirstTest, ShufflingDisabled) {

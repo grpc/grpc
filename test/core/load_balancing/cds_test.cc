@@ -19,8 +19,8 @@
 #include <vector>
 
 #include "src/core/resolver/xds/xds_config.h"
-#include "src/core/util/env.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -143,7 +143,7 @@ TEST_F(CdsChildNameStateTest, LocalityMovingBetweenPrioritiesSuboptimal) {
 class CdsPriorityEndpointIteratorTest : public CdsChildNameStateTest {};
 
 TEST_F(CdsPriorityEndpointIteratorTest, NormalizedWeights) {
-  SetEnv("GRPC_EXPERIMENTAL_PF_WEIGHTED_SHUFFLING", "true");
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_PF_WEIGHTED_SHUFFLING");
   auto endpoint_resource = std::make_shared<XdsEndpointResource>();
   auto& priority = endpoint_resource->priorities.emplace_back();
   auto locality_name1 = MakeLocality("subzone1");
@@ -176,11 +176,9 @@ TEST_F(CdsPriorityEndpointIteratorTest, NormalizedWeights) {
   EXPECT_EQ(resolved_weights[0], 536870912);
   EXPECT_EQ(resolved_weights[1], 536870912);
   EXPECT_EQ(resolved_weights[2], 1073741824);
-  UnsetEnv("GRPC_EXPERIMENTAL_PF_WEIGHTED_SHUFFLING");
 }
 
 TEST_F(CdsPriorityEndpointIteratorTest, OldWeightsWhenDisabled) {
-  SetEnv("GRPC_EXPERIMENTAL_PF_WEIGHTED_SHUFFLING", "false");
   auto endpoint_resource = std::make_shared<XdsEndpointResource>();
   auto& priority = endpoint_resource->priorities.emplace_back();
   auto locality_name1 = MakeLocality("subzone1");
@@ -203,11 +201,10 @@ TEST_F(CdsPriorityEndpointIteratorTest, OldWeightsWhenDisabled) {
   });
   ASSERT_EQ(resolved_weights.size(), 1);
   EXPECT_EQ(resolved_weights[0], 1000);
-  UnsetEnv("GRPC_EXPERIMENTAL_PF_WEIGHTED_SHUFFLING");
 }
 
 TEST_F(CdsPriorityEndpointIteratorTest, InvalidWeightsClamped) {
-  SetEnv("GRPC_EXPERIMENTAL_PF_WEIGHTED_SHUFFLING", "true");
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_PF_WEIGHTED_SHUFFLING");
   auto endpoint_resource = std::make_shared<XdsEndpointResource>();
   auto& priority = endpoint_resource->priorities.emplace_back();
   auto locality_name1 = MakeLocality("subzone1");
@@ -240,7 +237,6 @@ TEST_F(CdsPriorityEndpointIteratorTest, InvalidWeightsClamped) {
   EXPECT_EQ(resolved_weights[0], 536870912);
   EXPECT_EQ(resolved_weights[1], 536870912);
   EXPECT_EQ(resolved_weights[2], 1073741824);
-  UnsetEnv("GRPC_EXPERIMENTAL_PF_WEIGHTED_SHUFFLING");
 }
 
 }  // namespace
