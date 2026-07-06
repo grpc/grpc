@@ -550,8 +550,9 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
           SharedBitGen g;
           for (const auto& endpoint : endpoints) {
             double u = absl::Uniform<double>(g, 0.0, 1.0);
-            double weight =
+            int weight_arg =
                 endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
+            double weight = weight_arg <= 0 ? 1.0 : weight_arg;
             double key = std::pow(u, 1.0 / weight);
             weighted_endpoints.push_back({endpoint, key});
           }

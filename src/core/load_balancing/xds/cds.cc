@@ -734,8 +734,9 @@ void CdsPriorityEndpointIterator::ForEach(
         normalized_locality_weight =
             (locality.lb_weight * (uint64_t(1) << 31)) / locality_weight_sum;
         for (const auto& endpoint : locality.endpoints) {
-          endpoint_weight_sum +=
+          int weight =
               endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
+          endpoint_weight_sum += weight <= 0 ? 1 : weight;
         }
         // This should never happen because the resource validation code will
         // reject the resource if any endpoint has weight 0. However, we check
@@ -748,10 +749,11 @@ void CdsPriorityEndpointIterator::ForEach(
       auto hierarchical_path_attr =
           MakeRefCounted<HierarchicalPathArg>(std::move(hierarchical_path));
       for (const auto& endpoint : locality.endpoints) {
+        int weight_arg =
+            endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
+        uint32_t raw_endpoint_weight = weight_arg <= 0 ? 1 : weight_arg;
         uint32_t endpoint_weight;
         if (weighted_shuffling_enabled) {
-          uint32_t raw_endpoint_weight =
-              endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
           uint32_t normalized_endpoint_weight =
               (raw_endpoint_weight * (uint64_t(1) << 31)) / endpoint_weight_sum;
           endpoint_weight = (uint64_t(normalized_locality_weight) *
@@ -759,9 +761,7 @@ void CdsPriorityEndpointIterator::ForEach(
                             31;
           if (endpoint_weight == 0) endpoint_weight = 1;
         } else {
-          endpoint_weight =
-              locality.lb_weight *
-              endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
+          endpoint_weight = locality.lb_weight * raw_endpoint_weight;
         }
         ChannelArgs args =
             endpoint.args()
