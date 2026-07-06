@@ -90,6 +90,7 @@ void PythonOpenCensusCallTracer::RecordAnnotation(
 PythonOpenCensusCallTracer::~PythonOpenCensusCallTracer() {
   if (PythonCensusStatsEnabled()) {
     context_.Labels().emplace_back(kClientMethod, method_);
+    context_.Labels().emplace_back(kClientTarget, target_);
     RecordIntMetric(kRpcClientRetriesPerCallMeasureName, retries_ - 1,
                     context_.Labels(), identifier_, registered_method_,
                     /*include_exchange_labels=*/true);  // exclude first attempt

@@ -94,6 +94,7 @@ class OpenTelemetryPlugin:
     meter_provider: Optional[MeterProvider]
     target_attribute_filter: Callable[[str], bool]
     generic_method_attribute_filter: Callable[[str], bool]
+    retry_per_call_metrics_enabled: bool
     _plugins: List[_open_telemetry_observability._OpenTelemetryPlugin]
 
     def __init__(
@@ -103,6 +104,7 @@ class OpenTelemetryPlugin:
         meter_provider: Optional[MeterProvider] = None,
         target_attribute_filter: Optional[Callable[[str], bool]] = None,
         generic_method_attribute_filter: Optional[Callable[[str], bool]] = None,
+        enable_retry_per_call_metrics: bool = False,
     ):
         """
         Args:
@@ -125,9 +127,14 @@ class OpenTelemetryPlugin:
         this function returns.
         Return True means the original method name will be used, False means method name will
         be replaced with "other".
+          enable_retry_per_call_metrics: Once set to True, per-call retry metrics
+        (grpc.client.call.retries, grpc.client.call.transparent_retries and
+        grpc.client.call.retry_delay) will be recorded, following the OpenTelemetry
+        metrics gRFC (A66). These metrics are experimental and thus disabled by default.
         """
         self.plugin_options = plugin_options or []
         self.meter_provider = meter_provider
+        self.retry_per_call_metrics_enabled = enable_retry_per_call_metrics
         self.target_attribute_filter = target_attribute_filter or (
             lambda _target: True
         )

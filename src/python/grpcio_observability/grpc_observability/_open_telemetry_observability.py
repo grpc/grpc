@@ -45,6 +45,13 @@ GRPC_METHOD_LABEL = "grpc.method"
 GRPC_TARGET_LABEL = "grpc.target"
 GRPC_CLIENT_METRIC_PREFIX = "grpc.client"
 GRPC_OTHER_LABEL_VALUE = "other"
+_PER_CALL_RETRY_METRICS = frozenset(
+    (
+        MetricsName.CLIENT_RETRIES_PER_CALL,
+        MetricsName.CLIENT_TRANSPARENT_RETRIES_PER_CALL,
+        MetricsName.CLIENT_RETRY_DELAY_PER_CALL,
+    )
+)
 _observability_lock: threading.RLock = threading.RLock()
 _OPEN_TELEMETRY_OBSERVABILITY: Optional["OpenTelemetryObservability"] = None
 
@@ -87,13 +94,28 @@ class _OpenTelemetryPlugin:
         if meter_provider:
             meter = meter_provider.get_meter("grpc-python", grpc.__version__)
             enabled_metrics = _open_telemetry_measures.base_metrics()
+            if self._plugin.retry_per_call_metrics_enabled:
+                enabled_metrics = (
+                    enabled_metrics + _open_telemetry_measures.retry_metrics()
+                )
             self._metric_to_recorder = self._register_metrics(
                 meter, enabled_metrics
             )
 
     def _should_record(self, stats_data: StatsData) -> bool:
         # Decide if this plugin should record the stats_data.
-        return stats_data.name in self._metric_to_recorder
+        if stats_data.name not in self._metric_to_recorder:
+            return False
+        if stats_data.name in _PER_CALL_RETRY_METRICS:
+            # Per gRFC A66, per-call retry metrics are not reported for calls
+            # that had no retries (or no retry delay).
+            value = (
+                stats_data.value_float
+                if stats_data.measure_double
+                else stats_data.value_int
+            )
+            return value > 0
+        return True
 
     def _record_stats_data(self, stats_data: StatsData) -> None:
         recorder = self._metric_to_recorder[stats_data.name]
@@ -269,6 +291,16 @@ class _OpenTelemetryPlugin:
                 _open_telemetry_measures.SERVER_RPC_DURATION,
                 _open_telemetry_measures.SERVER_RPC_SEND_BYTES,
                 _open_telemetry_measures.SERVER_RPC_RECEIVED_BYTES,
+            ):
+                recorder = meter.create_histogram(
+                    name=metric.name,
+                    unit=metric.unit,
+                    description=metric.description,
+                )
+            elif metric in (
+                _open_telemetry_measures.CLIENT_CALL_RETRIES,
+                _open_telemetry_measures.CLIENT_CALL_TRANSPARENT_RETRIES,
+                _open_telemetry_measures.CLIENT_CALL_RETRY_DELAY,
             ):
                 recorder = meter.create_histogram(
                     name=metric.name,
