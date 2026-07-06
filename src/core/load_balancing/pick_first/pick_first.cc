@@ -549,16 +549,16 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
           weighted_endpoints.reserve(endpoints.size());
           SharedBitGen g;
           for (auto& endpoint : endpoints) {
-            double u = absl::Uniform<double>(g, 0.0, 1.0);
+            double e = absl::Exponential<double>(g);
             int weight_arg =
                 endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
             double weight = weight_arg <= 0 ? 1.0 : weight_arg;
-            double key = std::pow(u, 1.0 / weight);
+            double key = (weight == 1.0) ? e : (e / weight);
             weighted_endpoints.push_back({std::move(endpoint), key});
           }
           std::sort(weighted_endpoints.begin(), weighted_endpoints.end(),
                     [](const WeightedEndpoint& a, const WeightedEndpoint& b) {
-                      return a.key > b.key;
+                      return a.key < b.key;
                     });
           for (size_t i = 0; i < weighted_endpoints.size(); ++i) {
             endpoints[i] = std::move(weighted_endpoints[i].endpoint);
