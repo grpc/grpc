@@ -1511,7 +1511,7 @@ TEST_F(PickFirstTest, WithWeightedShuffle) {
   std::vector<EndpointAddresses> endpoints;
   endpoints.push_back(
       EndpointAddresses(MakeAddress(kAddresses[0]),
-                        ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 1000)));
+                        ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 10000)));
   endpoints.push_back(
       EndpointAddresses(MakeAddress(kAddresses[1]),
                         ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 1)));
@@ -1519,7 +1519,7 @@ TEST_F(PickFirstTest, WithWeightedShuffle) {
       EndpointAddresses(MakeAddress(kAddresses[2]),
                         ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 1)));
   size_t first_address_picked_count = 0;
-  constexpr size_t kRuns = 10;
+  constexpr size_t kRuns = 100;
   for (size_t i = 0; i < kRuns; ++i) {
     absl::Status status = ApplyUpdate(
         BuildUpdate(endpoints, MakePickFirstConfig(true)), lb_policy());
@@ -1530,7 +1530,7 @@ TEST_F(PickFirstTest, WithWeightedShuffle) {
       ++first_address_picked_count;
     }
   }
-  EXPECT_GE(first_address_picked_count, 9);
+  EXPECT_GE(first_address_picked_count, 95);
 }
 
 TEST_F(PickFirstTest, ShufflingDisabled) {
