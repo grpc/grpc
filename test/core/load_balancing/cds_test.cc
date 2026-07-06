@@ -140,12 +140,12 @@ TEST_F(CdsChildNameStateTest, LocalityMovingBetweenPrioritiesSuboptimal) {
   EXPECT_THAT(state.next_available_child_number(), 3);
 }
 
-class PriorityEndpointIteratorTest : public CdsChildNameStateTest {};
+class CdsPriorityEndpointIteratorTest : public CdsChildNameStateTest {};
 
-TEST_F(PriorityEndpointIteratorTest, NormalizedWeights) {
+TEST_F(CdsPriorityEndpointIteratorTest, NormalizedWeights) {
   SetEnv("GRPC_EXPERIMENTAL_PF_WEIGHTED_SHUFFLING", "true");
   auto endpoint_resource = std::make_shared<XdsEndpointResource>();
-  XdsEndpointResource::Priority priority;
+  auto& priority = endpoint_resource->priorities.emplace_back();
   auto locality_name1 = MakeLocality("subzone1");
   auto& locality1 = priority.localities[locality_name1.get()];
   locality1.name = locality_name1;
@@ -163,9 +163,8 @@ TEST_F(PriorityEndpointIteratorTest, NormalizedWeights) {
   locality2.lb_weight = 10;
   locality2.endpoints.push_back(EndpointAddresses(
       {addr}, ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 100)));
-  endpoint_resource->priorities.push_back(std::move(priority));
   std::vector<size_t> priority_child_numbers = {0};
-  PriorityEndpointIterator iterator(RefCountedStringValue("cluster_foo"),
+  CdsPriorityEndpointIterator iterator(RefCountedStringValue("cluster_foo"),
                                     /*use_http_connect=*/true,
                                     endpoint_resource, priority_child_numbers);
   std::vector<uint32_t> resolved_weights;
@@ -180,10 +179,10 @@ TEST_F(PriorityEndpointIteratorTest, NormalizedWeights) {
   UnsetEnv("GRPC_EXPERIMENTAL_PF_WEIGHTED_SHUFFLING");
 }
 
-TEST_F(PriorityEndpointIteratorTest, OldWeightsWhenDisabled) {
+TEST_F(CdsPriorityEndpointIteratorTest, OldWeightsWhenDisabled) {
   SetEnv("GRPC_EXPERIMENTAL_PF_WEIGHTED_SHUFFLING", "false");
   auto endpoint_resource = std::make_shared<XdsEndpointResource>();
-  XdsEndpointResource::Priority priority;
+  auto& priority = endpoint_resource->priorities.emplace_back();
   auto locality_name1 = MakeLocality("subzone1");
   auto& locality1 = priority.localities[locality_name1.get()];
   locality1.name = locality_name1;
@@ -193,9 +192,8 @@ TEST_F(PriorityEndpointIteratorTest, OldWeightsWhenDisabled) {
   ((struct sockaddr_in*)addr.addr)->sin_family = AF_INET;
   locality1.endpoints.push_back(EndpointAddresses(
       {addr}, ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 100)));
-  endpoint_resource->priorities.push_back(std::move(priority));
   std::vector<size_t> priority_child_numbers = {0};
-  PriorityEndpointIterator iterator(RefCountedStringValue("cluster_foo"),
+  CdsPriorityEndpointIterator iterator(RefCountedStringValue("cluster_foo"),
                                     /*use_http_connect=*/true,
                                     endpoint_resource, priority_child_numbers);
   std::vector<uint32_t> resolved_weights;

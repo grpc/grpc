@@ -440,7 +440,7 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
         // Compute new child numbers.
         child_name_state_.Update(old_cluster_config, endpoint_config);
         // Populate addresses and resolution_note for child policy.
-        update_args.addresses = std::make_shared<PriorityEndpointIterator>(
+        update_args.addresses = std::make_shared<CdsPriorityEndpointIterator>(
             cluster_name_, new_cluster_config->cluster->use_http_connect,
             endpoint_config.endpoints,
             child_name_state_.priority_child_numbers());
@@ -701,7 +701,7 @@ class CdsLbFactory final : public LoadBalancingPolicyFactory {
 
 }  // namespace
 
-PriorityEndpointIterator::PriorityEndpointIterator(
+CdsPriorityEndpointIterator::CdsPriorityEndpointIterator(
     RefCountedStringValue cluster_name, bool use_http_connect,
     std::shared_ptr<const XdsEndpointResource> endpoints,
     std::vector<size_t /*child_number*/> priority_child_numbers)
@@ -710,7 +710,7 @@ PriorityEndpointIterator::PriorityEndpointIterator(
       endpoints_(std::move(endpoints)),
       priority_child_numbers_(std::move(priority_child_numbers)) {}
 
-void PriorityEndpointIterator::ForEach(
+void CdsPriorityEndpointIterator::ForEach(
     absl::FunctionRef<void(const EndpointAddresses&)> callback) const {
   const auto& priority_list = GetUpdatePriorityList(endpoints_.get());
   bool weighted_shuffling_enabled = PfWeightedShufflingEnabled();

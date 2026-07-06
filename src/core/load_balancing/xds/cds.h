@@ -58,9 +58,9 @@ class CdsChildNameState {
   size_t next_available_child_number_ = 0;
 };
 
-class PriorityEndpointIterator final : public EndpointAddressesIterator {
+class CdsPriorityEndpointIterator final : public EndpointAddressesIterator {
  public:
-  PriorityEndpointIterator(
+  CdsPriorityEndpointIterator(
       RefCountedStringValue cluster_name, bool use_http_connect,
       std::shared_ptr<const XdsEndpointResource> endpoints,
       std::vector<size_t /*child_number*/> priority_child_numbers);
