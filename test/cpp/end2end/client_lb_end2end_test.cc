@@ -720,7 +720,7 @@ TEST_F(ClientLbSubchannelMetricsTest, MultipleConnectionAttemptsFailed) {
   ConnectionAttemptInjector injector;
   const int port = grpc_pick_unused_port_or_die();
   std::string target = grpc_core::LocalIpAndPort(port);
-  auto channel = CreateChannelWithBackoff(grpc_core::LocalIpUri(port));
+  auto channel = CreateChannelWithBackoff(target);
   std::vector<std::unique_ptr<ConnectionAttemptInjector::Hold>> holds;
   constexpr int kConnecionAttempts = 3;
   for (int i = 0; i < kConnecionAttempts + 1; ++i) {
@@ -743,7 +743,7 @@ TEST_F(ClientLbSubchannelMetricsTest, ConnectionAttemptIgnoredOnShutdown) {
   ConnectionAttemptInjector injector;
   const int port1 = grpc_pick_unused_port_or_die();
   const int port2 = grpc_pick_unused_port_or_die();
-  std::string target1 = grpc_core::LocalIpAndPort(port1);
+  StartServers(1, {port2}, grpc::InsecureServerCredentials());
   FakeResolverResponseGeneratorWrapper response_generator;
   ChannelArguments args;
   args.SetInt("grpc.testing.fixed_reconnect_backoff_ms", 10);
@@ -757,20 +757,20 @@ TEST_F(ClientLbSubchannelMetricsTest, ConnectionAttemptIgnoredOnShutdown) {
   response_generator.SetNextResolution({port2});
   hold2->Wait();
   hold1->Fail(absl::UnavailableError("first attempt failed"));
-  hold2->Fail(absl::UnavailableError("second attempt failed"));
+  hold2->Resume();
   EXPECT_TRUE(
       WaitForChannelState(channel.get(), [](grpc_connectivity_state state) {
-        return state == GRPC_CHANNEL_TRANSIENT_FAILURE;
+        return state == GRPC_CHANNEL_READY;
       }));
   std::string target = std::string(kDefaultAuthority);
   EXPECT_THAT(
       stats_plugin_->GetUInt64MetricValueByName(
           "grpc.subchannel.connection_attempts_succeeded", {target, "", ""}),
-      ::testing::Optional(0));
+      ::testing::Optional(1));
   EXPECT_THAT(
       stats_plugin_->GetUInt64MetricValueByName(
           "grpc.subchannel.connection_attempts_failed", {target, "", ""}),
-      ::testing::Optional(1));
+      ::testing::Optional(0));
 }
 
 TEST_F(ClientLbSubchannelMetricsTest, SecurityLevelsPrivacyAndIntegrity) {
