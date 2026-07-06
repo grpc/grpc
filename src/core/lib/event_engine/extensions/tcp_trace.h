@@ -36,7 +36,7 @@ class TcpTraceExtension {
   // Enable TCP telemetry collection using the Instrumentation API.
   virtual void EnableTcpTelemetry(
       grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope,
-      bool is_control_endpoint) = 0;
+      bool is_control_endpoint, bool trace_full_buffer) = 0;
 };
 
 }  // namespace grpc_event_engine::experimental

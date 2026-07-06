@@ -132,10 +132,8 @@ grpc_error_handle grpc_chttp2_rst_stream_parser_parse(void* parser,
     if (reason != static_cast<uint32_t>(Http2ErrorCode::kNoError) ||
         s->trailing_metadata_buffer.empty()) {
       error = grpc_error_set_int(
-          grpc_error_set_str(
-              GRPC_ERROR_CREATE("RST_STREAM"),
-              grpc_core::StatusStrProperty::kGrpcMessage,
-              absl::StrCat("Received RST_STREAM with error code ", reason)),
+          GRPC_ERROR_CREATE(absl::StrCat(
+              "RST_STREAM (Received RST_STREAM with error code ", reason, ")")),
           grpc_core::StatusIntProperty::kHttp2Error,
           static_cast<intptr_t>(reason));
     }

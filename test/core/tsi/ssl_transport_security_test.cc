@@ -501,9 +501,13 @@ class SslTransportSecurityTest
       if (ssl_fixture->expected_negotiated_group_.has_value()) {
         const tsi_peer_property* property = tsi_peer_get_property_by_name(
             peer, TSI_SSL_NEGOTIATED_KEY_EXCHANGE_GROUP);
+#if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30000000L
         ASSERT_NE(property, nullptr);
         ASSERT_EQ(std::string(property->value.data, property->value.length),
                   ssl_fixture->expected_negotiated_group_.value());
+#else
+        ASSERT_EQ(property, nullptr);
+#endif
       }
     }
 
@@ -1236,7 +1240,8 @@ TEST(SslTransportSecurityTest, TestServerHandshakerFactoryRefcounting) {
   cert_pair.private_key = testing::GetFileContents(
       absl::StrCat(kSslTsiTestCredentialsDir, "server0.key"));
   tsi_ssl_server_handshaker_options options;
-  options.pem_key_cert_pairs = {cert_pair};
+  options.pem_key_cert_pairs =
+      std::vector<tsi_ssl_pem_key_cert_pair>{cert_pair};
   if (!cert_chain.empty()) {
     options.root_cert_info = std::make_shared<tsi::RootCertInfo>(cert_chain);
   }

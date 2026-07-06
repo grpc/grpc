@@ -19,7 +19,6 @@
 #ifndef GRPC_SRC_CORE_UTIL_STATUS_HELPER_H
 #define GRPC_SRC_CORE_UTIL_STATUS_HELPER_H
 
-#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <optional>
@@ -29,7 +28,6 @@
 #include "src/core/util/debug_location.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "absl/time/time.h"
 
 extern "C" {
 struct google_rpc_Status;
@@ -43,6 +41,22 @@ struct upb_Arena;
   } while (0)
 
 namespace grpc_core {
+
+/// Adds prefix to the message of status.
+absl::Status AddMessagePrefix(absl::string_view prefix,
+                              const absl::Status& status);
+
+/// Adds detail to the message of status in parens.
+absl::Status AddMessageDetail(absl::string_view detail,
+                              const absl::Status& status);
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//                  ALL APIs BELOW ARE DEPRECATED!
+//
+//         Callers should instead use absl::Status APIs directly.
+//
+///////////////////////////////////////////////////////////////////////////////
 
 /// This enum should have the same value of grpc_error_ints
 enum class StatusIntProperty {
@@ -65,13 +79,6 @@ enum class StatusIntProperty {
   kLbPolicyDrop,
 };
 
-/// This enum should have the same value of grpc_error_strs
-// TODO(roth): Remove this after error_flatten experiment is removed.
-enum class StatusStrProperty {
-  /// peer that we were trying to communicate when this error occurred
-  kGrpcMessage,
-};
-
 /// Creates a status with given additional information
 absl::Status StatusCreate(absl::StatusCode code, absl::string_view msg,
                           const DebugLocation& location,
@@ -84,14 +91,6 @@ void StatusSetInt(absl::Status* status, StatusIntProperty key, intptr_t value);
 GRPC_MUST_USE_RESULT
 std::optional<intptr_t> StatusGetInt(const absl::Status& status,
                                      StatusIntProperty key);
-
-/// Sets the str property to the status
-void StatusSetStr(absl::Status* status, StatusStrProperty key,
-                  absl::string_view value);
-
-/// Gets the str property from the status
-GRPC_MUST_USE_RESULT std::optional<std::string> StatusGetStr(
-    const absl::Status& status, StatusStrProperty key);
 
 /// Adds a child status to status
 void StatusAddChild(absl::Status* status, absl::Status child);
@@ -106,10 +105,6 @@ GRPC_MUST_USE_RESULT std::vector<absl::Status> StatusGetChildren(
 /// e.g.
 ///   CANCELLATION:SampleMessage {errno:'2021', line:'54', children:[ABORTED]}
 GRPC_MUST_USE_RESULT std::string StatusToString(const absl::Status& status);
-
-/// Adds prefix to the message of status.
-absl::Status AddMessagePrefix(absl::string_view prefix,
-                              const absl::Status& status);
 
 namespace internal {
 
