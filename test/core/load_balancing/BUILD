@@ -360,6 +360,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        ":lb_policy_test_lib",
         "//:gpr",
         "//:grpc",
         "//:grpc_base",

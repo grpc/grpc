@@ -706,6 +706,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     return status_or_config.value();
   }
 
+ public:
   // Converts an address URI into a grpc_resolved_address.
   static grpc_resolved_address MakeAddress(absl::string_view address_uri) {
     auto uri = URI::Parse(address_uri);
@@ -715,7 +716,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     return address;
   }
 
-  std::vector<grpc_resolved_address> MakeAddressList(
+  static std::vector<grpc_resolved_address> MakeAddressList(
       absl::Span<const absl::string_view> addresses) {
     std::vector<grpc_resolved_address> addrs;
     for (const absl::string_view& address : addresses) {
@@ -724,7 +725,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     return addrs;
   }
 
-  EndpointAddresses MakeEndpointAddresses(
+  static EndpointAddresses MakeEndpointAddresses(
       absl::Span<const absl::string_view> addresses,
       const ChannelArgs& args = ChannelArgs()) {
     return EndpointAddresses(MakeAddressList(addresses), args);
@@ -743,7 +744,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     return update;
   }
 
-  std::vector<EndpointAddresses> MakeEndpointAddressesListFromAddressList(
+  static std::vector<EndpointAddresses>
+  MakeEndpointAddressesListFromAddressList(
       absl::Span<const absl::string_view> addresses) {
     std::vector<EndpointAddresses> endpoints;
     for (const absl::string_view address : addresses) {
@@ -752,6 +754,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     return endpoints;
   }
 
+ protected:
   // Convenient overload that takes a flat address list.
   LoadBalancingPolicy::UpdateArgs BuildUpdate(
       absl::Span<const absl::string_view> addresses,

@@ -20,6 +20,7 @@
 
 #include "src/core/resolver/xds/xds_config.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "test/core/load_balancing/lb_policy_test_lib.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "gmock/gmock.h"
@@ -29,7 +30,13 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-class CdsChildNameStateTest : public ::testing::Test {
+bool AddressesEqual(const grpc_resolved_address& addr1,
+                    const grpc_resolved_address& addr2) {
+  return addr1.len == addr2.len &&
+         memcmp(addr1.addr, addr2.addr, addr1.len) == 0;
+}
+
+class CdsTest : public ::testing::Test {
  protected:
   static RefCountedPtr<XdsLocalityName> MakeLocality(std::string sub_zone) {
     return MakeRefCounted<XdsLocalityName>("foo", "bar", sub_zone);
@@ -68,6 +75,8 @@ class CdsChildNameStateTest : public ::testing::Test {
         /*cluster=*/nullptr, endpoint_resource, /*resolution_note=*/"");
   }
 };
+
+using CdsChildNameStateTest = CdsTest;
 
 TEST_F(CdsChildNameStateTest, InitialUpdate) {
   CdsChildNameState state;
@@ -140,42 +149,59 @@ TEST_F(CdsChildNameStateTest, LocalityMovingBetweenPrioritiesSuboptimal) {
   EXPECT_THAT(state.next_available_child_number(), 3);
 }
 
-class CdsPriorityEndpointIteratorTest : public CdsChildNameStateTest {};
+using CdsPriorityEndpointIteratorTest = CdsTest;
 
 TEST_F(CdsPriorityEndpointIteratorTest, NormalizedWeights) {
   ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_PF_WEIGHTED_SHUFFLING");
+  constexpr std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445"};
   auto endpoint_resource = std::make_shared<XdsEndpointResource>();
   auto& priority = endpoint_resource->priorities.emplace_back();
   auto locality_name1 = MakeLocality("subzone1");
   auto& locality1 = priority.localities[locality_name1.get()];
   locality1.name = locality_name1;
   locality1.lb_weight = 10;
-  grpc_resolved_address addr{};
-  addr.len = sizeof(struct sockaddr_in);
-  ((struct sockaddr_in*)addr.addr)->sin_family = AF_INET;
-  locality1.endpoints.push_back(EndpointAddresses(
-      {addr}, ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 100)));
-  locality1.endpoints.push_back(EndpointAddresses(
-      {addr}, ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 100)));
+  locality1.endpoints.push_back(
+      EndpointAddresses(LoadBalancingPolicyTest::MakeAddress(kAddresses[0]),
+                        ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 1)));
+  locality1.endpoints.push_back(
+      EndpointAddresses(LoadBalancingPolicyTest::MakeAddress(kAddresses[1]),
+                        ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 2)));
   auto locality_name2 = MakeLocality("subzone2");
   auto& locality2 = priority.localities[locality_name2.get()];
   locality2.name = locality_name2;
   locality2.lb_weight = 10;
-  locality2.endpoints.push_back(EndpointAddresses(
-      {addr}, ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 100)));
+  locality2.endpoints.push_back(
+      EndpointAddresses(LoadBalancingPolicyTest::MakeAddress(kAddresses[2]),
+                        ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 3)));
   std::vector<size_t> priority_child_numbers = {0};
   CdsPriorityEndpointIterator iterator(
       RefCountedStringValue("cluster_foo"),
       /*use_http_connect=*/true, endpoint_resource, priority_child_numbers);
-  std::vector<uint32_t> resolved_weights;
+  struct ResolvedEndpoint {
+    grpc_resolved_address address;
+    uint32_t weight;
+  };
+  std::vector<ResolvedEndpoint> resolved_endpoints;
   iterator.ForEach([&](const EndpointAddresses& endpoint) {
-    resolved_weights.push_back(
-        endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(0));
+    resolved_endpoints.push_back(
+        {endpoint.address(),
+         static_cast<uint32_t>(
+             endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(0))});
   });
-  ASSERT_EQ(resolved_weights.size(), 3);
-  EXPECT_EQ(resolved_weights[0], 536870912);
-  EXPECT_EQ(resolved_weights[1], 536870912);
-  EXPECT_EQ(resolved_weights[2], 1073741824);
+  ASSERT_EQ(resolved_endpoints.size(), 3);
+  EXPECT_TRUE(
+      AddressesEqual(resolved_endpoints[0].address,
+                     LoadBalancingPolicyTest::MakeAddress(kAddresses[0])));
+  EXPECT_EQ(resolved_endpoints[0].weight, 357913941);
+  EXPECT_TRUE(
+      AddressesEqual(resolved_endpoints[1].address,
+                     LoadBalancingPolicyTest::MakeAddress(kAddresses[1])));
+  EXPECT_EQ(resolved_endpoints[1].weight, 715827882);
+  EXPECT_TRUE(
+      AddressesEqual(resolved_endpoints[2].address,
+                     LoadBalancingPolicyTest::MakeAddress(kAddresses[2])));
+  EXPECT_EQ(resolved_endpoints[2].weight, 1073741824);
 }
 
 TEST_F(CdsPriorityEndpointIteratorTest, OldWeightsWhenDisabled) {
@@ -185,11 +211,9 @@ TEST_F(CdsPriorityEndpointIteratorTest, OldWeightsWhenDisabled) {
   auto& locality1 = priority.localities[locality_name1.get()];
   locality1.name = locality_name1;
   locality1.lb_weight = 10;
-  grpc_resolved_address addr{};
-  addr.len = sizeof(struct sockaddr_in);
-  ((struct sockaddr_in*)addr.addr)->sin_family = AF_INET;
   locality1.endpoints.push_back(EndpointAddresses(
-      {addr}, ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 100)));
+      LoadBalancingPolicyTest::MakeAddress("ipv4:127.0.0.1:443"),
+      ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 100)));
   std::vector<size_t> priority_child_numbers = {0};
   CdsPriorityEndpointIterator iterator(
       RefCountedStringValue("cluster_foo"),
@@ -211,19 +235,19 @@ TEST_F(CdsPriorityEndpointIteratorTest, InvalidWeightsClamped) {
   auto& locality1 = priority.localities[locality_name1.get()];
   locality1.name = locality_name1;
   locality1.lb_weight = 10;
-  grpc_resolved_address addr{};
-  addr.len = sizeof(struct sockaddr_in);
-  ((struct sockaddr_in*)addr.addr)->sin_family = AF_INET;
-  locality1.endpoints.push_back(
-      EndpointAddresses({addr}, ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 0)));
   locality1.endpoints.push_back(EndpointAddresses(
-      {addr}, ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, -5)));
+      LoadBalancingPolicyTest::MakeAddress("ipv4:127.0.0.1:443"),
+      ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 0)));
+  locality1.endpoints.push_back(EndpointAddresses(
+      LoadBalancingPolicyTest::MakeAddress("ipv4:127.0.0.1:444"),
+      ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, -5)));
   auto locality_name2 = MakeLocality("subzone2");
   auto& locality2 = priority.localities[locality_name2.get()];
   locality2.name = locality_name2;
   locality2.lb_weight = 10;
-  locality2.endpoints.push_back(
-      EndpointAddresses({addr}, ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 1)));
+  locality2.endpoints.push_back(EndpointAddresses(
+      LoadBalancingPolicyTest::MakeAddress("ipv4:127.0.0.1:445"),
+      ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 1)));
   std::vector<size_t> priority_child_numbers = {0};
   CdsPriorityEndpointIterator iterator(
       RefCountedStringValue("cluster_foo"),
