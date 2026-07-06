@@ -63,7 +63,6 @@ ARTIFACT_REGISTRY_PREFIX=us-docker.pkg.dev/grpc-testing/testing-images-public
 
 # all dockerfile definitions we use for testing and for which we push an image to the registry
 ALL_DOCKERFILE_DIRS=(
-  tools/dockerfile/distribtest/cpp_debian11_x64/Dockerfile
   tools/dockerfile/test/*
   tools/dockerfile/grpc_artifact_*
   tools/dockerfile/interoptest/*

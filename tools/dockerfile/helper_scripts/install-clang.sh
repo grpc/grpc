@@ -27,7 +27,7 @@ elif [[ "${_VERSION}" -eq "11" ]]; then
     if ! grep "bullseye-backports" /etc/apt/sources.list; then
         echo "deb http://archive.debian.org/debian bullseye-backports main" >> /etc/apt/sources.list
     fi
-    apt-get update && apt-get install -y libc++-dev clang -t bullseye-backports cmake
+    apt-get update && apt-get install -y libc++-16-dev clang-16 -t bullseye-backports
 else
     printf "Unsupported OS: (%s %s)\n" ${_OS} ${_VERSION}
     exit 1
