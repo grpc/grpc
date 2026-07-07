@@ -41,7 +41,10 @@ class CdsTest : public ::testing::Test {
   static RefCountedPtr<XdsLocalityName> MakeLocality(std::string sub_zone) {
     return MakeRefCounted<XdsLocalityName>("foo", "bar", sub_zone);
   }
+};
 
+class CdsChildNameStateTest : public CdsTest {
+ protected:
   static std::shared_ptr<const XdsEndpointResource> MakeEndpointResource(
       const std::vector<std::vector<std::string /*sub_zone*/>>& priorities) {
     auto endpoint_resource = std::make_shared<XdsEndpointResource>();
@@ -75,8 +78,6 @@ class CdsTest : public ::testing::Test {
         /*cluster=*/nullptr, endpoint_resource, /*resolution_note=*/"");
   }
 };
-
-using CdsChildNameStateTest = CdsTest;
 
 TEST_F(CdsChildNameStateTest, InitialUpdate) {
   CdsChildNameState state;
