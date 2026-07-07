@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Invocation-side implementation of gRPC Asyncio Python."""
+# pyright: reportPrivateUsage = false
 
 import asyncio
+import types
 from typing import Any, Generic, List, Optional, Sequence, TypeVar
 import weakref
 
@@ -56,13 +58,13 @@ _USER_AGENT = "grpc-python-asyncio/{}".format(_grpcio_metadata.__version__)
 
 def _augment_channel_arguments(
     base_options: ChannelArgumentType, compression: Optional[grpc.Compression]
-):
+) -> ChannelArgumentType:
     compression_channel_argument = _compression.create_channel_option(
         compression
     )
     user_agent_channel_argument = (
         (
-            cygrpc.ChannelArgKey.primary_user_agent_string,
+            cygrpc.ChannelArgKey.primary_user_agent_string.decode(),
             _USER_AGENT,
         ),
     )
@@ -73,7 +75,9 @@ def _augment_channel_arguments(
     )
 
 
-class _BaseMultiCallable(Generic[ClientInterceptorT]):
+class _BaseMultiCallable(
+    Generic[RequestType, ResponseType, ClientInterceptorT]
+):
     """Base class of all multi callable objects.
 
     Handles the initialization logic and stores common attributes.
@@ -82,8 +86,8 @@ class _BaseMultiCallable(Generic[ClientInterceptorT]):
     _loop: asyncio.AbstractEventLoop
     _channel: cygrpc.AioChannel
     _method: bytes
-    _request_serializer: Optional[SerializingFunction]
-    _response_deserializer: Optional[DeserializingFunction]
+    _request_serializer: Optional[SerializingFunction[RequestType]]
+    _response_deserializer: Optional[DeserializingFunction[ResponseType]]
     _interceptors: Optional[Sequence[ClientInterceptorT]]
     _references: List[Any]
 
@@ -92,8 +96,8 @@ class _BaseMultiCallable(Generic[ClientInterceptorT]):
         self,
         channel: cygrpc.AioChannel,
         method: bytes,
-        request_serializer: Optional[SerializingFunction],
-        response_deserializer: Optional[DeserializingFunction],
+        request_serializer: Optional[SerializingFunction[RequestType]],
+        response_deserializer: Optional[DeserializingFunction[ResponseType]],
         interceptors: Optional[Sequence[ClientInterceptorT]],
         references: List[Any],
         loop: asyncio.AbstractEventLoop,
@@ -130,7 +134,9 @@ class _BaseMultiCallable(Generic[ClientInterceptorT]):
         metadata, as it should be used for the current call.
         """
         metadata = metadata or Metadata()
-        if not isinstance(metadata, Metadata) and isinstance(
+        if not isinstance(
+            metadata, Metadata
+        ) and isinstance(  # pyright: ignore[reportUnnecessaryIsInstance]
             metadata, Sequence
         ):
             metadata = Metadata.from_tuple(tuple(metadata))
@@ -144,7 +150,7 @@ class _BaseMultiCallable(Generic[ClientInterceptorT]):
 
 
 class UnaryUnaryMultiCallable(
-    _BaseMultiCallable[UnaryUnaryClientInterceptor],
+    _BaseMultiCallable[RequestType, ResponseType, UnaryUnaryClientInterceptor],
     _base_channel.UnaryUnaryMultiCallable[RequestType, ResponseType],
 ):
     def __call__(
@@ -158,6 +164,7 @@ class UnaryUnaryMultiCallable(
         compression: Optional[grpc.Compression] = None,
     ) -> _base_call.UnaryUnaryCall[RequestType, ResponseType]:
         metadata = self._init_metadata(metadata, compression)
+
         if not self._interceptors:
             call = UnaryUnaryCall(
                 request,
@@ -192,7 +199,7 @@ class UnaryUnaryMultiCallable(
 
 
 class UnaryStreamMultiCallable(
-    _BaseMultiCallable[UnaryStreamClientInterceptor],
+    _BaseMultiCallable[RequestType, ResponseType, UnaryStreamClientInterceptor],
     _base_channel.UnaryStreamMultiCallable[RequestType, ResponseType],
 ):
     def __call__(
@@ -241,7 +248,7 @@ class UnaryStreamMultiCallable(
 
 
 class StreamUnaryMultiCallable(
-    _BaseMultiCallable[StreamUnaryClientInterceptor],
+    _BaseMultiCallable[RequestType, ResponseType, StreamUnaryClientInterceptor],
     _base_channel.StreamUnaryMultiCallable[RequestType, ResponseType],
 ):
     def __call__(
@@ -289,7 +296,9 @@ class StreamUnaryMultiCallable(
 
 
 class StreamStreamMultiCallable(
-    _BaseMultiCallable[StreamStreamClientInterceptor],
+    _BaseMultiCallable[
+        RequestType, ResponseType, StreamStreamClientInterceptor
+    ],
     _base_channel.StreamStreamMultiCallable[RequestType, ResponseType],
 ):
     def __call__(
@@ -343,6 +352,7 @@ class Channel(_base_channel.Channel):
     _unary_stream_interceptors: List[UnaryStreamClientInterceptor]
     _stream_unary_interceptors: List[StreamUnaryClientInterceptor]
     _stream_stream_interceptors: List[StreamStreamClientInterceptor]
+    _active_calls: weakref.WeakSet[_base_call.Call]
 
     def __init__(
         self,
@@ -351,7 +361,7 @@ class Channel(_base_channel.Channel):
         credentials: Optional[cygrpc.ChannelCredentials],
         compression: Optional[grpc.Compression],
         interceptors: Optional[Sequence[ClientInterceptor]],
-    ):
+    ) -> None:
         """Constructor.
 
         Args:
@@ -404,10 +414,17 @@ class Channel(_base_channel.Channel):
     async def __aenter__(self) -> Self:
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: types.TracebackType | None,
+    ) -> None:
         await self._close(None)
 
-    async def _close(self, grace):  # pylint: disable=too-many-branches
+    async def _close(
+        self, grace: Optional[float]
+    ) -> None:  # pylint: disable=too-many-branches
         if self._channel.closed():
             return
 
@@ -418,7 +435,7 @@ class Channel(_base_channel.Channel):
         # No new calls will be accepted by the Cython channel.
         self._channel.closing()
 
-        async def _wait_for_call_to_complete(call):
+        async def _wait_for_call_to_complete(call: _base_call.Call) -> None:
             try:
                 await call.code()
             except Exception:  # pylint: disable=broad-except
@@ -448,10 +465,10 @@ class Channel(_base_channel.Channel):
         # Destroy the channel
         self._channel.close()
 
-    async def close(self, grace: Optional[float] = None):
+    async def close(self, grace: Optional[float] = None) -> None:
         await self._close(grace)
 
-    def __del__(self):
+    def __del__(self) -> None:
         if hasattr(self, "_channel") and not self._channel.closed():
             self._channel.close()
 
@@ -502,8 +519,10 @@ class Channel(_base_channel.Channel):
     def unary_unary(
         self,
         method: str,
-        request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None,
+        request_serializer: Optional[SerializingFunction[RequestType]] = None,
+        response_deserializer: Optional[
+            DeserializingFunction[ResponseType]
+        ] = None,
         _registered_method: Optional[bool] = False,
     ) -> UnaryUnaryMultiCallable[RequestType, ResponseType]:
         return UnaryUnaryMultiCallable(
@@ -522,8 +541,10 @@ class Channel(_base_channel.Channel):
     def unary_stream(
         self,
         method: str,
-        request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None,
+        request_serializer: Optional[SerializingFunction[RequestType]] = None,
+        response_deserializer: Optional[
+            DeserializingFunction[ResponseType]
+        ] = None,
         _registered_method: Optional[bool] = False,
     ) -> UnaryStreamMultiCallable[RequestType, ResponseType]:
         return UnaryStreamMultiCallable(
@@ -542,8 +563,10 @@ class Channel(_base_channel.Channel):
     def stream_unary(
         self,
         method: str,
-        request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None,
+        request_serializer: Optional[SerializingFunction[RequestType]] = None,
+        response_deserializer: Optional[
+            DeserializingFunction[ResponseType]
+        ] = None,
         _registered_method: Optional[bool] = False,
     ) -> StreamUnaryMultiCallable[RequestType, ResponseType]:
         return StreamUnaryMultiCallable(
@@ -562,8 +585,10 @@ class Channel(_base_channel.Channel):
     def stream_stream(
         self,
         method: str,
-        request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None,
+        request_serializer: Optional[SerializingFunction[RequestType]] = None,
+        response_deserializer: Optional[
+            DeserializingFunction[ResponseType]
+        ] = None,
         _registered_method: Optional[bool] = False,
     ) -> StreamStreamMultiCallable[RequestType, ResponseType]:
         return StreamStreamMultiCallable(
@@ -582,7 +607,7 @@ def insecure_channel(
     options: Optional[ChannelArgumentType] = None,
     compression: Optional[grpc.Compression] = None,
     interceptors: Optional[Sequence[ClientInterceptor]] = None,
-):
+) -> Channel:
     """Creates an insecure asynchronous Channel to a server.
 
     Args:
@@ -612,7 +637,7 @@ def secure_channel(
     options: Optional[ChannelArgumentType] = None,
     compression: Optional[grpc.Compression] = None,
     interceptors: Optional[Sequence[ClientInterceptor]] = None,
-):
+) -> Channel:
     """Creates a secure asynchronous Channel to a server.
 
     Args:

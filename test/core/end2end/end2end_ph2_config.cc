@@ -66,36 +66,68 @@ class Ph2InsecureFixture : public InsecureFixture {
 #define GRPC_HTTP2_PH2_FEATURE_MASK \
   (FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_IS_CALL_V3 | FEATURE_MASK_IS_PH2_CLIENT)
 
+///////////////////////////////////////////////////////////////////////////////
+// Avoid lists helpers
+
+#define GRPC_HTTP2_PH2_CLIENT_RETRY_AVOID_LIST            \
+  "|RetryHttp2Tests.Ping"                                 \
+  "|RetryHttp2Tests.BadPing"                              \
+  "|RetryHttp2Tests.RetryTransparentMaxConcurrentStreams" \
+  "|RetryHttp2Tests.HighInitialSeqno"                     \
+  "|RetryHttp2Tests.CancelDuringDelay"                    \
+  "|RetryTests.CancelDuringDelay"                         \
+  "|CoreEnd2endTests.CancelAfterAccept"
+
+#define GRPC_HTTP2_PH2_CLIENT_ONLY_AVOID_LIST                \
+  "|Http2SingleHopTests.MaxConcurrentStreams"                \
+  "|Http2SingleHopTests.MaxConcurrentStreamsTimeoutOnFirst"  \
+  "|Http2SingleHopTests.MaxConcurrentStreamsTimeoutOnSecond" \
+  "|Http2SingleHopTests.MaxConcurrentStreamsRejectOnClient"
+
+#define GRPC_HTTP2_PH2_SERVER_ONLY_AVOID_LIST "|Http2Tests.HighInitialSeqno"
+
+#define GRPC_HTTP2_PH2_CLIENT_SERVER_ONLY_AVOID_LIST ""
+
+#define GRPC_HTTP2_PH2_COMMON_AVOID_LIST  \
+  "|Http2SingleHopTests.KeepaliveTimeout" \
+  "|Http2Tests.GracefulServerShutdown"    \
+  "|Http2Tests.MaxAgeForciblyClose"       \
+  "|Http2Tests.MaxAgeGracefullyClose"     \
+  "|Http2SingleHopTests.ServerMaxConcurrentStreams"
+
+////////////////////////////////////////////////////////////////////////////////
+// Allow List of test suites for all configs
+
+#define GRPC_HTTP2_PH2_ALLOW_SUITE                          \
+  "|CoreEnd2endTests|CoreDeadlineTests|CoreLargeSendTests|" \
+  "CoreClientChannelTests|CoreDeadlineSingleHopTests|"      \
+  "Http2Tests|Http2SingleHopTests"
+
 #define RETRY_SUITE "|RetryTests|RetryHttp2Tests"
 
 #define SECURE_SUITE                                                   \
   "|SecureEnd2endTests|PerCallCredsTests|PerCallCredsOnInsecureTests|" \
   "ProxyAuthTests"
 
-#define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_RETRY_AVOID_LIST \
-  "|RetryHttp2Tests.Ping"                                    \
-  "|RetryHttp2Tests.BadPing"                                 \
-  "|RetryHttp2Tests.RetryTransparentMaxConcurrentStreams"    \
-  "|RetryHttp2Tests.HighInitialSeqno"                        \
-  "|RetryHttp2Tests.CancelDuringDelay"                       \
-  "|RetryTests.CancelDuringDelay"                            \
-  "|CoreEnd2endTests.CancelAfterAccept"
+///////////////////////////////////////////////////////////////////////////////
+// Avoid lists for each of the following configs:
+// 1. PH2 client and CHTTP2 server
+// 2. CHTTP2 client and PH2 server
+// 3. PH2 client and PH2 server
 
-#define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST       \
-  "|Http2SingleHopTests.KeepaliveTimeout"                    \
-  "|Http2SingleHopTests.MaxConcurrentStreams"                \
-  "|Http2SingleHopTests.MaxConcurrentStreamsTimeoutOnFirst"  \
-  "|Http2SingleHopTests.MaxConcurrentStreamsTimeoutOnSecond" \
-  "|Http2SingleHopTests.MaxConcurrentStreamsRejectOnClient"  \
-  "|Http2SingleHopTests.ServerMaxConcurrentStreams"          \
-  "|Http2Tests.GracefulServerShutdown"                       \
-  "|Http2Tests.MaxAgeForciblyClose"                          \
-  "|Http2Tests.MaxAgeGracefullyClose"
+#define GRPC_HTTP2_PH2_CLIENT_AVOID_LIST \
+  GRPC_HTTP2_PH2_CLIENT_ONLY_AVOID_LIST  \
+  GRPC_HTTP2_PH2_COMMON_AVOID_LIST
 
-#define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE     \
-  "|CoreEnd2endTests|CoreDeadlineTests|CoreLargeSendTests|" \
-  "CoreClientChannelTests|CoreDeadlineSingleHopTests|"      \
-  "Http2SingleHopTests|Http2Tests|CoreDeadlineSingleHopTests"
+#define GRPC_HTTP2_PH2_SERVER_AVOID_LIST \
+  GRPC_HTTP2_PH2_SERVER_ONLY_AVOID_LIST  \
+  GRPC_HTTP2_PH2_COMMON_AVOID_LIST
+
+#define GRPC_HTTP2_PH2_CLIENT_SERVER_AVOID_LIST \
+  GRPC_HTTP2_PH2_CLIENT_ONLY_AVOID_LIST         \
+  GRPC_HTTP2_PH2_SERVER_ONLY_AVOID_LIST         \
+  GRPC_HTTP2_PH2_COMMON_AVOID_LIST              \
+  GRPC_HTTP2_PH2_CLIENT_SERVER_ONLY_AVOID_LIST
 
 std::vector<CoreTestConfiguration> End2endTestConfigs() {
   std::vector<CoreTestConfiguration> list_of_configs;
@@ -119,11 +151,11 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
                   /*enable_retry=*/false);
             },
             /* include_test_suites */
-            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE,
+            GRPC_HTTP2_PH2_ALLOW_SUITE,
             /* include_specific_tests */
             "",
             /* exclude_specific_tests */
-            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST}};
+            GRPC_HTTP2_PH2_CLIENT_AVOID_LIST}};
 
     skip_windows_configs = std::vector<CoreTestConfiguration>{
         CoreTestConfiguration{
@@ -136,11 +168,11 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
               return std::make_unique<FakesecFixture>();
             },
             /* include_test_suites */
-            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE SECURE_SUITE,
+            GRPC_HTTP2_PH2_ALLOW_SUITE SECURE_SUITE,
             /* include_specific_tests */
             "",
             /* exclude_specific_tests */
-            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST},
+            GRPC_HTTP2_PH2_CLIENT_AVOID_LIST},
         CoreTestConfiguration{
             /*name=*/
             GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_INSECURE_CREDENTIALS,
@@ -152,11 +184,11 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
               return std::make_unique<InsecureCredsFixture>();
             },
             /* include_test_suites */
-            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE SECURE_SUITE,
+            GRPC_HTTP2_PH2_ALLOW_SUITE SECURE_SUITE,
             /* include_specific_tests */
             "",
             /* exclude_specific_tests */
-            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST},
+            GRPC_HTTP2_PH2_CLIENT_AVOID_LIST},
         CoreTestConfiguration{
             /*name=*/
             GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_FULLSTACK_LOCAL_IPV4,
@@ -172,11 +204,11 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
                   JoinHostPort("127.0.0.1", port), LOCAL_TCP);
             },
             /* include_test_suites */
-            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE SECURE_SUITE,
+            GRPC_HTTP2_PH2_ALLOW_SUITE SECURE_SUITE,
             /* include_specific_tests */
             "",
             /* exclude_specific_tests */
-            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST},
+            GRPC_HTTP2_PH2_CLIENT_AVOID_LIST},
         CoreTestConfiguration{
             /*name=*/
             GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_FULLSTACK_LOCAL_IPV6,
@@ -192,11 +224,11 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
                   JoinHostPort("[::1]", port), LOCAL_TCP);
             },
             /* include_test_suites */
-            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE SECURE_SUITE,
+            GRPC_HTTP2_PH2_ALLOW_SUITE SECURE_SUITE,
             /* include_specific_tests */
             "",
             /* exclude_specific_tests */
-            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST},
+            GRPC_HTTP2_PH2_CLIENT_AVOID_LIST},
         CoreTestConfiguration{
             /*name=*/GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_SSL_PROXY,
             /*feature_mask=*/FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
@@ -215,7 +247,7 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
             /* include_specific_tests */
             "",
             /* exclude_specific_tests */
-            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST},
+            GRPC_HTTP2_PH2_CLIENT_AVOID_LIST},
         CoreTestConfiguration{
             /*name=*/
             GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_TLS12,
@@ -232,7 +264,7 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
             /* include_specific_tests */
             "",
             /* exclude_specific_tests */
-            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST},
+            GRPC_HTTP2_PH2_CLIENT_AVOID_LIST},
         CoreTestConfiguration{
             /*name=*/
             GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_TLS13,
@@ -245,11 +277,11 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
               return std::make_unique<Oauth2Fixture>(grpc_tls_version::TLS1_3);
             },
             /* include_test_suites */
-            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE SECURE_SUITE,
+            GRPC_HTTP2_PH2_ALLOW_SUITE SECURE_SUITE,
             /* include_specific_tests */
             "",
             /* exclude_specific_tests */
-            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST},
+            GRPC_HTTP2_PH2_CLIENT_AVOID_LIST},
         CoreTestConfiguration{
             /*name=*/
             GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_SIMPLE_SSL_FULLSTACK_TLS12,
@@ -262,11 +294,11 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
               return std::make_unique<SslTlsFixture>(grpc_tls_version::TLS1_2);
             },
             /* include_test_suites */
-            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE SECURE_SUITE,
+            GRPC_HTTP2_PH2_ALLOW_SUITE SECURE_SUITE,
             /* include_specific_tests */
             "",
             /* exclude_specific_tests */
-            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST},
+            GRPC_HTTP2_PH2_CLIENT_AVOID_LIST},
         CoreTestConfiguration{
             /*name=*/
             GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_SIMPLE_SSL_FULLSTACK_TLS13,
@@ -280,11 +312,11 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
               return std::make_unique<SslTlsFixture>(grpc_tls_version::TLS1_3);
             },
             /* include_test_suites */
-            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE SECURE_SUITE,
+            GRPC_HTTP2_PH2_ALLOW_SUITE SECURE_SUITE,
             /* include_specific_tests */
             "",
             /* exclude_specific_tests */
-            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST},
+            GRPC_HTTP2_PH2_CLIENT_AVOID_LIST},
         CoreTestConfiguration{
             /*name=*/
             GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_SSL_CRED_RELOAD_TLS12,
@@ -297,11 +329,11 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
               return std::make_unique<SslCredReloadFixture>(TLS1_2);
             },
             /* include_test_suites */
-            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE SECURE_SUITE,
+            GRPC_HTTP2_PH2_ALLOW_SUITE SECURE_SUITE,
             /* include_specific_tests */
             "",
             /* exclude_specific_tests */
-            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST},
+            GRPC_HTTP2_PH2_CLIENT_AVOID_LIST},
         CoreTestConfiguration{
             /*name=*/
             GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_SSL_CRED_RELOAD_TLS13,
@@ -315,11 +347,11 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
               return std::make_unique<SslCredReloadFixture>(TLS1_3);
             },
             /* include_test_suites */
-            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE SECURE_SUITE,
+            GRPC_HTTP2_PH2_ALLOW_SUITE SECURE_SUITE,
             /* include_specific_tests */
             "",
             /* exclude_specific_tests */
-            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST},
+            GRPC_HTTP2_PH2_CLIENT_AVOID_LIST},
         CoreTestConfiguration{
             /*name=*/
             GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_CERT_WATCHER_PROVIDER_ASYNC_VERIFIER_TLS13,
@@ -333,11 +365,11 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
                   SecurityPrimitives::VerifierType::EXTERNAL_ASYNC_VERIFIER);
             },
             /* include_test_suites */
-            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE SECURE_SUITE,
+            GRPC_HTTP2_PH2_ALLOW_SUITE SECURE_SUITE,
             /* include_specific_tests */
             "",
             /* exclude_specific_tests */
-            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST},
+            GRPC_HTTP2_PH2_CLIENT_AVOID_LIST},
         CoreTestConfiguration{
             /*name=*/
             GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_CERT_WATCHER_PROVIDER_SYNC_VERIFIER_TLS12,
@@ -351,11 +383,11 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
                   SecurityPrimitives::VerifierType::HOSTNAME_VERIFIER);
             },
             /* include_test_suites */
-            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE SECURE_SUITE,
+            GRPC_HTTP2_PH2_ALLOW_SUITE SECURE_SUITE,
             /* include_specific_tests */
             "",
             /* exclude_specific_tests */
-            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST},
+            GRPC_HTTP2_PH2_CLIENT_AVOID_LIST},
         CoreTestConfiguration{
             /*name=*/
             GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_SIMPLE_SSL_FULLSTACK,
@@ -368,11 +400,11 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
                   SecurityPrimitives::VerifierType::EXTERNAL_SYNC_VERIFIER);
             },
             /* include_test_suites */
-            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE SECURE_SUITE,
+            GRPC_HTTP2_PH2_ALLOW_SUITE SECURE_SUITE,
             /* include_specific_tests */
             "",
             /* exclude_specific_tests */
-            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST},
+            GRPC_HTTP2_PH2_CLIENT_AVOID_LIST},
         CoreTestConfiguration{
             /*name=*/
             GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_STATIC_PROVIDER_ASYNC_VERIFIER_TLS13,
@@ -386,11 +418,11 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
                   SecurityPrimitives::VerifierType::EXTERNAL_ASYNC_VERIFIER);
             },
             /* include_test_suites */
-            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE SECURE_SUITE,
+            GRPC_HTTP2_PH2_ALLOW_SUITE SECURE_SUITE,
             /* include_specific_tests */
             "",
             /* exclude_specific_tests */
-            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST},
+            GRPC_HTTP2_PH2_CLIENT_AVOID_LIST},
         CoreTestConfiguration{
             /*name=*/GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_RETRY,
             /*feature_mask=*/FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
@@ -405,12 +437,12 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
                   /*enable_retry=*/true);
             },
             /* include_test_suites */
-            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE RETRY_SUITE,
+            GRPC_HTTP2_PH2_ALLOW_SUITE RETRY_SUITE,
             /* include_specific_tests */
             "",
             /* exclude_specific_tests */
-            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST
-                GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_RETRY_AVOID_LIST}};
+            GRPC_HTTP2_PH2_CLIENT_AVOID_LIST
+                GRPC_HTTP2_PH2_CLIENT_RETRY_AVOID_LIST}};
 
 #ifndef GPR_WINDOWS
     // TODO(akshitpatel): [PH2][P5] - Re-enable tests on Windows.
@@ -442,11 +474,11 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
               /*enable_retry=*/false);
         },
         /* include_test_suites */
-        "",
+        GRPC_HTTP2_PH2_ALLOW_SUITE,
         /* include_specific_tests */
-        "CoreEnd2endTests.SimpleRequest",
+        "",
         /* exclude_specific_tests */
-        ""});
+        GRPC_HTTP2_PH2_SERVER_AVOID_LIST});
     list_of_configs.insert(list_of_configs.end(),
                            chttp2client_ph2server_configs.begin(),
                            chttp2client_ph2server_configs.end());
@@ -470,11 +502,11 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
               /*enable_retry=*/false);
         },
         /* include_test_suites */
-        "",
+        GRPC_HTTP2_PH2_ALLOW_SUITE,
         /* include_specific_tests */
-        "CoreEnd2endTests.SimpleRequest",
+        "",
         /* exclude_specific_tests */
-        ""});
+        GRPC_HTTP2_PH2_CLIENT_SERVER_AVOID_LIST});
     list_of_configs.insert(list_of_configs.end(),
                            ph2client_ph2server_configs.begin(),
                            ph2client_ph2server_configs.end());

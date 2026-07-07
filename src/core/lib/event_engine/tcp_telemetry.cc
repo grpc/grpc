@@ -136,5 +136,11 @@ TcpTelemetryDomain::HistogramHandle<ExponentialHistogramShape>
             "grpc.tcp.transfer_latency_2m",
             "Time taken to transmit the first 2097152 bytes of a write.", "us",
             1e6, 20);
+TcpTelemetryDomain::HistogramHandle<ExponentialHistogramShape>
+    TcpTelemetryDomain::kTransferLatency8m =
+        TcpTelemetryDomain::RegisterHistogram<ExponentialHistogramShape>(
+            "grpc.tcp.transfer_latency_8m",
+            "Time taken to transmit the first 8388608 bytes of a write.", "us",
+            1e6, 20);
 
 }  // namespace grpc_core

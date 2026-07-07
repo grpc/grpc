@@ -1976,7 +1976,11 @@ class CallFilters {
   // Returns a promise that resolves to a StatusFlag indicating success
   StatusFlag PushServerInitialMetadata(ServerMetadataHandle md) {
     push_server_initial_metadata_ = std::move(md);
-    return call_state_.PushServerInitialMetadata();
+    auto flag = call_state_.PushServerInitialMetadata();
+    if (!IsStatusOk(flag)) {
+      push_server_initial_metadata_ = nullptr;
+    }
+    return flag;
   }
   // Client: Fetch server initial metadata
   // Returns a promise that resolves to ValueOrFailure<ServerMetadataHandle>

@@ -561,7 +561,7 @@ class RubyLanguage:
         return "ruby"
 
 
-_PYTHON_BINARY = "py39/bin/python"
+_PYTHON_BINARY = "py310/bin/python"
 
 
 class PythonLanguage:
