@@ -41,7 +41,6 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -176,15 +175,10 @@ HttpRequest::HttpRequest(
       pollent_(pollent),
       pollset_set_(grpc_pollset_set_create()),
       test_only_generate_response_(std::move(test_only_generate_response)),
-      use_event_engine_dns_resolver_(IsEventEngineDnsNonClientChannelEnabled()),
-      resolver_(!use_event_engine_dns_resolver_ ? GetDNSResolver() : nullptr),
       ee_resolver_(
-          use_event_engine_dns_resolver_
-              ? ChannelArgs::FromC(channel_args_)
-                    .GetObjectRef<EventEngine>()
-                    ->GetDNSResolver(
-                        EventEngine::DNSResolver::ResolverOptions())
-              : absl::InternalError("EventEngine DNS is not enabled")) {
+          ChannelArgs::FromC(channel_args_)
+              .GetObjectRef<EventEngine>()
+              ->GetDNSResolver(EventEngine::DNSResolver::ResolverOptions())) {
   grpc_http_parser_init(&parser_, GRPC_HTTP_RESPONSE, response);
   grpc_slice_buffer_init(&incoming_);
   grpc_slice_buffer_init(&outgoing_);
@@ -219,38 +213,15 @@ void HttpRequest::Start() {
   if (test_only_generate_response_.has_value()) {
     if (test_only_generate_response_.value()()) return;
   }
-  if (use_event_engine_dns_resolver_ && !ee_resolver_.ok()) {
-    Finish(ee_resolver_.status());
-    return;
-  }
   Ref().release();  // ref held by pending DNS resolution
-  if (use_event_engine_dns_resolver_) {
-    (*ee_resolver_)
-        ->LookupHostname(
-            [this](absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
-                       addresses_or) {
-              ExecCtx exec_ctx;
-              OnResolved(addresses_or);
-            },
-            uri_.authority(), uri_.scheme());
-  } else {
-    dns_request_handle_ = resolver_->LookupHostname(
-        [this](absl::StatusOr<std::vector<grpc_resolved_address>> addresses) {
-          if (addresses.ok()) {
-            std::vector<EventEngine::ResolvedAddress> ee_addresses;
-            for (const auto& addr : *addresses) {
-              ee_addresses.push_back(
-                  grpc_event_engine::experimental::CreateResolvedAddress(addr));
-            }
-            OnResolved(ee_addresses);
-          } else {
-            OnResolved(addresses.status());
-          }
-        },
-        uri_.authority(), uri_.scheme(), kDefaultDNSRequestTimeout,
-        pollset_set_,
-        /*name_server=*/"");
-  }
+  (*ee_resolver_)
+      ->LookupHostname(
+          [this](absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
+                     addresses_or) {
+            ExecCtx exec_ctx;
+            OnResolved(addresses_or);
+          },
+          uri_.authority(), uri_.scheme());
 }
 
 void HttpRequest::Orphan() {
@@ -259,16 +230,8 @@ void HttpRequest::Orphan() {
     GRPC_CHECK(!cancelled_);
     cancelled_ = true;
     // cancel potentially pending DNS resolution.
-    if (use_event_engine_dns_resolver_) {
-      if (*ee_resolver_ != nullptr) {
-        ee_resolver_->reset();
-      }
-    } else {
-      if (dns_request_handle_.has_value() &&
-          resolver_->Cancel(dns_request_handle_.value())) {
-        Finish(GRPC_ERROR_CREATE("cancelled during DNS resolution"));
-        Unref();
-      }
+    if (*ee_resolver_ != nullptr) {
+      ee_resolver_->reset();
     }
     if (handshake_mgr_ != nullptr) {
       // Shutdown will cancel any ongoing tcp connect.
@@ -410,11 +373,7 @@ void HttpRequest::OnResolved(
     absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses_or) {
   RefCountedPtr<HttpRequest> unreffer(this);
   MutexLock lock(&mu_);
-  if (use_event_engine_dns_resolver_) {
-    ee_resolver_->reset();
-  } else {
-    dns_request_handle_.reset();
-  }
+  ee_resolver_->reset();
   if (cancelled_) {
     Finish(GRPC_ERROR_CREATE("cancelled during DNS resolution"));
     return;

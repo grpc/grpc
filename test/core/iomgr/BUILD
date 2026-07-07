@@ -184,64 +184,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "resolve_address_using_ares_resolver_posix_test",
-    srcs = ["resolve_address_posix_test.cc"],
-    args = [
-        "--resolver=ares",
-    ],
-    external_deps = [
-        "absl/flags:flag",
-        "absl/flags:parse",
-        "absl/log:log",
-        "absl/strings:str_format",
-        "absl/strings",
-        "gtest",
-    ],
-    tags = ["no_windows"],
-    deps = [
-        "//:config_vars",
-        "//:gpr",
-        "//:grpc",
-        "//:iomgr",
-        "//src/core:env",
-        "//src/core:event_engine_shim",
-        "//src/core:time",
-        "//src/core:useful",
-        "//test/core/test_util:grpc_test_util",
-        "//test/core/test_util:grpc_test_util_base",
-    ],
-)
-
-grpc_cc_test(
-    name = "resolve_address_using_native_resolver_posix_test",
-    srcs = ["resolve_address_posix_test.cc"],
-    args = [
-        "--resolver=native",
-    ],
-    external_deps = [
-        "absl/flags:flag",
-        "absl/flags:parse",
-        "absl/log:log",
-        "absl/strings",
-        "absl/strings:str_format",
-        "gtest",
-    ],
-    tags = ["no_windows"],
-    deps = [
-        "//:config_vars",
-        "//:gpr",
-        "//:grpc",
-        "//:iomgr",
-        "//src/core:env",
-        "//src/core:event_engine_shim",
-        "//src/core:time",
-        "//src/core:useful",
-        "//test/core/test_util:grpc_test_util",
-        "//test/core/test_util:grpc_test_util_base",
-    ],
-)
-
-grpc_cc_test(
     name = "resolve_address_using_ares_resolver_test",
     srcs = ["resolve_address_test.cc"],
     external_deps = [

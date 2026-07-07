@@ -1625,7 +1625,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/port.h )
   s.files += %w( src/core/lib/iomgr/resolve_address.cc )
   s.files += %w( src/core/lib/iomgr/resolve_address.h )
-  s.files += %w( src/core/lib/iomgr/resolve_address_impl.h )
   s.files += %w( src/core/lib/iomgr/resolve_address_posix.cc )
   s.files += %w( src/core/lib/iomgr/resolve_address_posix.h )
   s.files += %w( src/core/lib/iomgr/resolve_address_windows.cc )

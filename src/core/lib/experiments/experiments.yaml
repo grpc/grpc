@@ -102,14 +102,6 @@
   uses_polling: true
   allow_in_fuzzing_config: false
   platforms: ["all"]
-- name: event_engine_dns_non_client_channel
-  description: If set, use EventEngine DNSResolver in other places besides client channel.
-  expiry: 2026/07/15
-  owner: mlumish@google.com
-  test_tags: ["core_end2end_test"]
-  allow_in_fuzzing_config: false
-  uses_polling: true
-  platforms: ["all"]
 - name: event_engine_for_all_other_endpoints
   description: Use EventEngine endpoints for all call sites, including direct uses of grpc_tcp_create.
   expiry: 2026/07/15
@@ -121,7 +113,6 @@
     [
       "event_engine_client",
       "event_engine_listener",
-      "event_engine_dns_non_client_channel",
     ]
   platforms: ["all"]
 - name: event_engine_fork

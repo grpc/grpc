@@ -1621,7 +1621,6 @@ grpc_cc_library(
         "//src/core:lib/iomgr/pollset_set_windows.h",
         "//src/core:lib/iomgr/pollset_windows.h",
         "//src/core:lib/iomgr/resolve_address.h",
-        "//src/core:lib/iomgr/resolve_address_impl.h",
         "//src/core:lib/iomgr/resolve_address_posix.h",
         "//src/core:lib/iomgr/resolve_address_windows.h",
         "//src/core:lib/iomgr/sockaddr.h",

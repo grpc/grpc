@@ -65,8 +65,6 @@
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/iomgr/vsock.h"
@@ -736,24 +734,12 @@ absl::StatusOr<int> Chttp2ServerAddPort(Server* server, const char* addr,
       resolved = grpc_resolve_vsock_address(parsed_addr_unprefixed);
       GRPC_RETURN_IF_ERROR(resolved.status());
     } else {
-      if (IsEventEngineDnsNonClientChannelEnabled()) {
-        absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>> ee_resolver =
-            args.GetObjectRef<EventEngine>()->GetDNSResolver(
-                EventEngine::DNSResolver::ResolverOptions());
-        GRPC_RETURN_IF_ERROR(ee_resolver.status());
-        results = grpc_event_engine::experimental::LookupHostnameBlocking(
-            ee_resolver->get(), parsed_addr, "https");
-      } else {
-        // TODO(yijiem): Remove this after event_engine_dns_non_client_channel
-        // is fully enabled.
-        absl::StatusOr<std::vector<grpc_resolved_address>> iomgr_results =
-            GetDNSResolver()->LookupHostnameBlocking(parsed_addr, "https");
-        GRPC_RETURN_IF_ERROR(iomgr_results.status());
-        for (const auto& addr : *iomgr_results) {
-          results->push_back(
-              grpc_event_engine::experimental::CreateResolvedAddress(addr));
-        }
-      }
+      absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>> ee_resolver =
+          args.GetObjectRef<EventEngine>()->GetDNSResolver(
+              EventEngine::DNSResolver::ResolverOptions());
+      GRPC_RETURN_IF_ERROR(ee_resolver.status());
+      results = grpc_event_engine::experimental::LookupHostnameBlocking(
+          ee_resolver->get(), parsed_addr, "https");
     }
     if (resolved.ok()) {
       for (const auto& addr : *resolved) {

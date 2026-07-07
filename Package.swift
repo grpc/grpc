@@ -1618,7 +1618,6 @@ let package = Package(
         "src/core/lib/iomgr/port.h",
         "src/core/lib/iomgr/resolve_address.cc",
         "src/core/lib/iomgr/resolve_address.h",
-        "src/core/lib/iomgr/resolve_address_impl.h",
         "src/core/lib/iomgr/resolve_address_posix.cc",
         "src/core/lib/iomgr/resolve_address_posix.h",
         "src/core/lib/iomgr/resolve_address_windows.cc",

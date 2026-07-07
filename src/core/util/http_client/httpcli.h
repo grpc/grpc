@@ -39,7 +39,6 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/http_client/parser.h"
@@ -266,10 +265,6 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   grpc_slice_buffer incoming_ ABSL_GUARDED_BY(mu_);
   grpc_slice_buffer outgoing_ ABSL_GUARDED_BY(mu_);
   grpc_error_handle overall_error_ ABSL_GUARDED_BY(mu_) = absl::OkStatus();
-  // TODO(yijiem): remove these once event_engine_dns_non_client_channel
-  // experiment is fully enabled.
-  bool use_event_engine_dns_resolver_;
-  std::shared_ptr<DNSResolver> resolver_;
   std::optional<DNSResolver::TaskHandle> dns_request_handle_
       ABSL_GUARDED_BY(mu_) = DNSResolver::kNullHandle;
   absl::StatusOr<std::unique_ptr<

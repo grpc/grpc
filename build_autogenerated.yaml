@@ -1046,7 +1046,6 @@ libs:
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/port.h
   - src/core/lib/iomgr/resolve_address.h
-  - src/core/lib/iomgr/resolve_address_impl.h
   - src/core/lib/iomgr/resolve_address_posix.h
   - src/core/lib/iomgr/resolve_address_windows.h
   - src/core/lib/iomgr/resolved_address.h
@@ -2793,7 +2792,6 @@ libs:
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/port.h
   - src/core/lib/iomgr/resolve_address.h
-  - src/core/lib/iomgr/resolve_address_impl.h
   - src/core/lib/iomgr/resolve_address_posix.h
   - src/core/lib/iomgr/resolve_address_windows.h
   - src/core/lib/iomgr/resolved_address.h
@@ -4919,7 +4917,6 @@ libs:
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/port.h
   - src/core/lib/iomgr/resolve_address.h
-  - src/core/lib/iomgr/resolve_address_impl.h
   - src/core/lib/iomgr/resolve_address_posix.h
   - src/core/lib/iomgr/resolve_address_windows.h
   - src/core/lib/iomgr/resolved_address.h
@@ -7585,7 +7582,6 @@ targets:
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/port.h
   - src/core/lib/iomgr/resolve_address.h
-  - src/core/lib/iomgr/resolve_address_impl.h
   - src/core/lib/iomgr/resolve_address_posix.h
   - src/core/lib/iomgr/resolve_address_windows.h
   - src/core/lib/iomgr/resolved_address.h
@@ -10036,16 +10032,6 @@ targets:
   - linux
   - posix
   - mac
-- name: dns_resolver_cooldown_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/resolver/dns_resolver_cooldown_test.cc
-  deps:
-  - gtest
-  - grpc_test_util
 - name: dns_resolver_test
   gtest: true
   build: test
@@ -13260,7 +13246,6 @@ targets:
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/port.h
   - src/core/lib/iomgr/resolve_address.h
-  - src/core/lib/iomgr/resolve_address_impl.h
   - src/core/lib/iomgr/resolve_address_posix.h
   - src/core/lib/iomgr/resolve_address_windows.h
   - src/core/lib/iomgr/resolved_address.h
@@ -16152,7 +16137,6 @@ targets:
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/port.h
   - src/core/lib/iomgr/resolve_address.h
-  - src/core/lib/iomgr/resolve_address_impl.h
   - src/core/lib/iomgr/resolve_address_posix.h
   - src/core/lib/iomgr/resolve_address_windows.h
   - src/core/lib/iomgr/resolved_address.h
@@ -22764,20 +22748,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-- name: resolve_address_using_ares_resolver_posix_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/iomgr/resolve_address_posix_test.cc
-  deps:
-  - gtest
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
 - name: resolve_address_using_ares_resolver_test
   gtest: true
   build: test
@@ -22791,20 +22761,6 @@ targets:
   - gtest
   - grpc_test_util
   - grpc++_test_config
-- name: resolve_address_using_native_resolver_posix_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/iomgr/resolve_address_posix_test.cc
-  deps:
-  - gtest
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
 - name: resolve_address_using_native_resolver_test
   gtest: true
   build: test
@@ -25809,7 +25765,6 @@ targets:
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/port.h
   - src/core/lib/iomgr/resolve_address.h
-  - src/core/lib/iomgr/resolve_address_impl.h
   - src/core/lib/iomgr/resolve_address_posix.h
   - src/core/lib/iomgr/resolve_address_windows.h
   - src/core/lib/iomgr/resolved_address.h
@@ -27158,7 +27113,6 @@ targets:
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/port.h
   - src/core/lib/iomgr/resolve_address.h
-  - src/core/lib/iomgr/resolve_address_impl.h
   - src/core/lib/iomgr/resolve_address_posix.h
   - src/core/lib/iomgr/resolve_address_windows.h
   - src/core/lib/iomgr/resolved_address.h
