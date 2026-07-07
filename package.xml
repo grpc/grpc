@@ -862,7 +862,6 @@
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/protobuf/descriptor.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/protobuf/duration.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h" role="src" />
@@ -1259,8 +1258,6 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/google/api/httpbody.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c" role="src" />
