@@ -14,7 +14,7 @@
 """Server-side implementation of gRPC Asyncio Python."""
 
 from concurrent.futures import Executor
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Mapping, Optional, Sequence
 
 import grpc
 from grpc import _common
@@ -22,7 +22,7 @@ from grpc import _compression
 from grpc import _observability
 from grpc._cython import cygrpc
 
-from . import _base_server
+from . import _base_server # pyright: ignore[reportPrivateUsage]
 from ._interceptor import ServerInterceptor
 from ._typing import ChannelArgumentType
 
@@ -93,7 +93,7 @@ class Server(_base_server.Server):
     def add_registered_method_handlers(
         self,
         service_name: str,
-        method_handlers: Dict[str, grpc.RpcMethodHandler],
+        method_handlers: Mapping[str, grpc.RpcMethodHandler],
     ) -> None:
         # TODO(xuanwn): Implement this for AsyncIO.
         pass

@@ -27,11 +27,11 @@ from typing import (
 from grpc._cython.cygrpc import _EOF
 
 # pylint: disable=unused-import
-from ._metadata import Metadata
-from ._metadata import MetadataKey
-from ._metadata import MetadataType
-from ._metadata import MetadataValue
-from ._metadata import MetadatumType
+from ._metadata import Metadata  # pyright: ignore[reportUnusedImport]
+from ._metadata import MetadataKey  # pyright: ignore[reportUnusedImport]
+from ._metadata import MetadataType  # pyright: ignore[reportUnusedImport]
+from ._metadata import MetadataValue  # pyright: ignore[reportUnusedImport]
+from ._metadata import MetadatumType  # pyright: ignore[reportUnusedImport]
 
 # pylint: enable=unused-import
 
