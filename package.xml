@@ -862,6 +862,7 @@
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/protobuf/descriptor.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/protobuf/duration.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h" role="src" />

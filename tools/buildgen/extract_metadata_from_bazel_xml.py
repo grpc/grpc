@@ -749,10 +749,10 @@ def _expand_upb_proto_library_rules(bazel_rules):
             for proto_src in protos:
                 # The descriptor.proto's upb-generated files are already provided
                 # by upb_descriptor_lib (see _patch_descriptor_upb_proto_library).
-                if (
-                    bazel_rule["generator_function"]
-                    == "grpc_upb_proto_library"
-                    and proto_src.endswith(":descriptor.proto")
+                if bazel_rule[
+                    "generator_function"
+                ] == "grpc_upb_proto_library" and proto_src.endswith(
+                    ":descriptor.proto"
                 ):
                     continue
                 prefix_to_strip = _prefix_to_strip(proto_src)
@@ -820,6 +820,9 @@ def _patch_descriptor_upb_proto_library(bazel_rules):
         )
         bazel_rule["hdrs"].append(
             ":src/core/ext/upb-gen/google/protobuf/descriptor.upb.h"
+        )
+        bazel_rule["hdrs"].append(
+            ":src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h"
         )
 
 

@@ -3670,6 +3670,7 @@ libs:
   public_headers: []
   headers:
   - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h
   - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c

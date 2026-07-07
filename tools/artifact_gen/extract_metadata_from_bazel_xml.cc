@@ -596,6 +596,8 @@ class ArtifactGen {
         ":src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c");
     bazel_rule.hdrs.push_back(
         ":src/core/ext/upb-gen/google/protobuf/descriptor.upb.h");
+    bazel_rule.hdrs.push_back(
+        ":src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h");
   }
 
   void PopulateCcTests() {

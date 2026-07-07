@@ -881,6 +881,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h )
   s.files += %w( src/core/ext/upb-gen/google/protobuf/descriptor.upb.h )
   s.files += %w( src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c )
+  s.files += %w( src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h )
   s.files += %w( src/core/ext/upb-gen/google/protobuf/duration.upb.h )
   s.files += %w( src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c )
   s.files += %w( src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h )
