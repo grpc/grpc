@@ -765,6 +765,8 @@ typedef struct grpc_tls_custom_verification_check_request {
      * This value will only be filled if the cryptographic peer certificate
      * verification was successful */
     const char* verified_root_cert_subject;
+    /* The negotiated key exchange group. */
+    const char* negotiated_key_exchange_group;
   } peer_info;
 } grpc_tls_custom_verification_check_request;
 
