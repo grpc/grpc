@@ -52,7 +52,7 @@ CLASSIFIERS = [
 ]
 
 INSTALL_REQUIRES = (
-    "protobuf>=6.33.5,<8.0.0",
+    "protobuf>=7.35.1,<8.0.0",
     "grpcio>={version}".format(version=grpc_version.VERSION),
 )
 

@@ -274,6 +274,9 @@ const char* const description_xds_server_filter_chain_per_route =
     "xDS servers use a separate filter chain for each route.";
 const char* const additional_constraints_xds_server_filter_chain_per_route =
     "{}";
+const uint8_t required_experiments_xds_server_filter_chain_per_route[] = {
+    static_cast<uint8_t>(
+        grpc_core::kExperimentIdV2NonOwningWakerImplementation)};
 }  // namespace
 
 namespace grpc_core {
@@ -463,8 +466,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"xds_server_filter_chain_per_route",
      description_xds_server_filter_chain_per_route,
-     additional_constraints_xds_server_filter_chain_per_route, nullptr, 0,
-     false, true},
+     additional_constraints_xds_server_filter_chain_per_route,
+     required_experiments_xds_server_filter_chain_per_route, 1, false, true},
 };
 
 }  // namespace grpc_core
@@ -722,6 +725,9 @@ const char* const description_xds_server_filter_chain_per_route =
     "xDS servers use a separate filter chain for each route.";
 const char* const additional_constraints_xds_server_filter_chain_per_route =
     "{}";
+const uint8_t required_experiments_xds_server_filter_chain_per_route[] = {
+    static_cast<uint8_t>(
+        grpc_core::kExperimentIdV2NonOwningWakerImplementation)};
 }  // namespace
 
 namespace grpc_core {
@@ -911,8 +917,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"xds_server_filter_chain_per_route",
      description_xds_server_filter_chain_per_route,
-     additional_constraints_xds_server_filter_chain_per_route, nullptr, 0,
-     false, true},
+     additional_constraints_xds_server_filter_chain_per_route,
+     required_experiments_xds_server_filter_chain_per_route, 1, false, true},
 };
 
 }  // namespace grpc_core
@@ -1170,6 +1176,9 @@ const char* const description_xds_server_filter_chain_per_route =
     "xDS servers use a separate filter chain for each route.";
 const char* const additional_constraints_xds_server_filter_chain_per_route =
     "{}";
+const uint8_t required_experiments_xds_server_filter_chain_per_route[] = {
+    static_cast<uint8_t>(
+        grpc_core::kExperimentIdV2NonOwningWakerImplementation)};
 }  // namespace
 
 namespace grpc_core {
@@ -1359,8 +1368,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"xds_server_filter_chain_per_route",
      description_xds_server_filter_chain_per_route,
-     additional_constraints_xds_server_filter_chain_per_route, nullptr, 0,
-     false, true},
+     additional_constraints_xds_server_filter_chain_per_route,
+     required_experiments_xds_server_filter_chain_per_route, 1, false, true},
 };
 
 }  // namespace grpc_core

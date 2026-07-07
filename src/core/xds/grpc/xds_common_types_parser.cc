@@ -16,12 +16,8 @@
 
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 
-#include <grpc/support/json.h>
-#include <stddef.h>
-#include <stdint.h>
-
 #include <algorithm>
-#include <map>
+#include <memory>
 #include <optional>
 #include <string>
 #include <utility>
@@ -29,8 +25,6 @@
 #include "envoy/config/common/mutation_rules/v3/mutation_rules.upb.h"
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
-#include "envoy/extensions/transport_sockets/tls/v3/common.upb.h"
-#include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/type/matcher/v3/regex.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/struct.upb.h"
@@ -43,7 +37,6 @@
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/validation_errors.h"
-#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "upb/base/status.hpp"
@@ -56,8 +49,6 @@
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -277,250 +268,6 @@ StringMatcher StringMatcherParse(
 }
 
 //
-// CommonTlsContextParse()
-//
-
-namespace {
-
-// CertificateProviderInstance is deprecated but we are still supporting it for
-// backward compatibility reasons. Note that we still parse the data into the
-// same CertificateProviderPluginInstance struct since the fields are the same.
-// TODO(yashykt): Remove this once we stop supporting the old way of fetching
-// certificate provider instances.
-CommonTlsContext::CertificateProviderPluginInstance
-CertificateProviderInstanceParse(
-    const XdsResourceType::DecodeContext& context,
-    const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance*
-        certificate_provider_instance_proto,
-    ValidationErrors* errors) {
-  CommonTlsContext::CertificateProviderPluginInstance cert_provider;
-  cert_provider.instance_name = UpbStringToStdString(
-      envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_instance_name(
-          certificate_provider_instance_proto));
-  const auto& bootstrap =
-      DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap());
-  if (bootstrap.certificate_providers().find(cert_provider.instance_name) ==
-      bootstrap.certificate_providers().end()) {
-    ValidationErrors::ScopedField field(errors, ".instance_name");
-    errors->AddError(
-        absl::StrCat("unrecognized certificate provider instance name: ",
-                     cert_provider.instance_name));
-  }
-  cert_provider.certificate_name = UpbStringToStdString(
-      envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_certificate_name(
-          certificate_provider_instance_proto));
-  return cert_provider;
-}
-
-CommonTlsContext::CertificateProviderPluginInstance
-CertificateProviderPluginInstanceParse(
-    const XdsResourceType::DecodeContext& context,
-    const envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance*
-        certificate_provider_plugin_instance_proto,
-    ValidationErrors* errors) {
-  CommonTlsContext::CertificateProviderPluginInstance cert_provider;
-  cert_provider.instance_name = UpbStringToStdString(
-      envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance_instance_name(
-          certificate_provider_plugin_instance_proto));
-  const auto& bootstrap =
-      DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap());
-  if (bootstrap.certificate_providers().find(cert_provider.instance_name) ==
-      bootstrap.certificate_providers().end()) {
-    ValidationErrors::ScopedField field(errors, ".instance_name");
-    errors->AddError(
-        absl::StrCat("unrecognized certificate provider instance name: ",
-                     cert_provider.instance_name));
-  }
-  cert_provider.certificate_name = UpbStringToStdString(
-      envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance_certificate_name(
-          certificate_provider_plugin_instance_proto));
-  return cert_provider;
-}
-
-CommonTlsContext::CertificateValidationContext
-CertificateValidationContextParse(
-    const XdsResourceType::DecodeContext& context,
-    const envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext*
-        certificate_validation_context_proto,
-    ValidationErrors* errors) {
-  CommonTlsContext::CertificateValidationContext certificate_validation_context;
-  size_t len = 0;
-  auto* subject_alt_names_matchers =
-      envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_match_subject_alt_names(
-          certificate_validation_context_proto, &len);
-  for (size_t i = 0; i < len; ++i) {
-    ValidationErrors::ScopedField field(
-        errors, absl::StrCat(".match_subject_alt_names[", i, "]"));
-    auto string_matcher =
-        StringMatcherParse(context, subject_alt_names_matchers[i], errors);
-    certificate_validation_context.match_subject_alt_names.push_back(
-        std::move(string_matcher));
-  }
-  auto* ca_certificate_provider_instance =
-      envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_ca_certificate_provider_instance(
-          certificate_validation_context_proto);
-  if (ca_certificate_provider_instance != nullptr) {
-    ValidationErrors::ScopedField field(errors,
-                                        ".ca_certificate_provider_instance");
-    certificate_validation_context.ca_certs =
-        CertificateProviderPluginInstanceParse(
-            context, ca_certificate_provider_instance, errors);
-  } else {
-    auto* system_root_certs =
-        envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_system_root_certs(
-            certificate_validation_context_proto);
-    if (system_root_certs != nullptr) {
-      certificate_validation_context.ca_certs =
-          CommonTlsContext::CertificateValidationContext::SystemRootCerts();
-    }
-  }
-  if (envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_verify_certificate_spki(
-          certificate_validation_context_proto, nullptr) != nullptr) {
-    ValidationErrors::ScopedField field(errors, ".verify_certificate_spki");
-    errors->AddError("feature unsupported");
-  }
-  if (envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_verify_certificate_hash(
-          certificate_validation_context_proto, nullptr) != nullptr) {
-    ValidationErrors::ScopedField field(errors, ".verify_certificate_hash");
-    errors->AddError("feature unsupported");
-  }
-  if (ParseBoolValue(
-          envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_require_signed_certificate_timestamp(
-              certificate_validation_context_proto))) {
-    ValidationErrors::ScopedField field(
-        errors, ".require_signed_certificate_timestamp");
-    errors->AddError("feature unsupported");
-  }
-  if (envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_has_crl(
-          certificate_validation_context_proto)) {
-    ValidationErrors::ScopedField field(errors, ".crl");
-    errors->AddError("feature unsupported");
-  }
-  if (envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_has_custom_validator_config(
-          certificate_validation_context_proto)) {
-    ValidationErrors::ScopedField field(errors, ".custom_validator_config");
-    errors->AddError("feature unsupported");
-  }
-  return certificate_validation_context;
-}
-
-}  // namespace
-
-CommonTlsContext CommonTlsContextParse(
-    const XdsResourceType::DecodeContext& context,
-    const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext*
-        common_tls_context_proto,
-    ValidationErrors* errors) {
-  CommonTlsContext common_tls_context;
-  // The validation context is derived from the oneof in
-  // 'validation_context_type'. 'validation_context_sds_secret_config' is not
-  // supported.
-  auto* combined_validation_context =
-      envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_combined_validation_context(
-          common_tls_context_proto);
-  if (combined_validation_context != nullptr) {
-    ValidationErrors::ScopedField field(errors, ".combined_validation_context");
-    auto* default_validation_context =
-        envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext_default_validation_context(
-            combined_validation_context);
-    if (default_validation_context != nullptr) {
-      ValidationErrors::ScopedField field(errors,
-                                          ".default_validation_context");
-      common_tls_context.certificate_validation_context =
-          CertificateValidationContextParse(context, default_validation_context,
-                                            errors);
-    }
-    // If after parsing default_validation_context,
-    // common_tls_context->certificate_validation_context.ca_certs does not
-    // contain a cert provider, fall back onto
-    // 'validation_context_certificate_provider_instance' inside
-    // 'combined_validation_context'. Note that this way of fetching root
-    // certificates is deprecated and will be removed in the future.
-    // TODO(yashykt): Remove this once it's no longer needed.
-    if (!std::holds_alternative<
-            CommonTlsContext::CertificateProviderPluginInstance>(
-            common_tls_context.certificate_validation_context.ca_certs)) {
-      const auto* validation_context_certificate_provider_instance =
-          envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext_validation_context_certificate_provider_instance(
-              combined_validation_context);
-      if (validation_context_certificate_provider_instance != nullptr) {
-        ValidationErrors::ScopedField field(
-            errors, ".validation_context_certificate_provider_instance");
-        common_tls_context.certificate_validation_context.ca_certs =
-            CertificateProviderInstanceParse(
-                context, validation_context_certificate_provider_instance,
-                errors);
-      }
-    }
-  } else if (
-      auto* validation_context =
-          envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_validation_context(
-              common_tls_context_proto);
-      validation_context != nullptr) {
-    ValidationErrors::ScopedField field(errors, ".validation_context");
-    common_tls_context.certificate_validation_context =
-        CertificateValidationContextParse(context, validation_context, errors);
-  } else if (
-      envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_has_validation_context_sds_secret_config(
-          common_tls_context_proto)) {
-    ValidationErrors::ScopedField field(
-        errors, ".validation_context_sds_secret_config");
-    errors->AddError("feature unsupported");
-  }
-  auto* tls_certificate_provider_instance =
-      envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_tls_certificate_provider_instance(
-          common_tls_context_proto);
-  if (tls_certificate_provider_instance != nullptr) {
-    ValidationErrors::ScopedField field(errors,
-                                        ".tls_certificate_provider_instance");
-    common_tls_context.tls_certificate_provider_instance =
-        CertificateProviderPluginInstanceParse(
-            context, tls_certificate_provider_instance, errors);
-  } else {
-    // Fall back onto 'tls_certificate_certificate_provider_instance'. Note that
-    // this way of fetching identity certificates is deprecated and will be
-    // removed in the future.
-    // TODO(yashykt): Remove this once it's no longer needed.
-    auto* tls_certificate_certificate_provider_instance =
-        envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_tls_certificate_certificate_provider_instance(
-            common_tls_context_proto);
-    if (tls_certificate_certificate_provider_instance != nullptr) {
-      ValidationErrors::ScopedField field(
-          errors, ".tls_certificate_certificate_provider_instance");
-      common_tls_context.tls_certificate_provider_instance =
-          CertificateProviderInstanceParse(
-              context, tls_certificate_certificate_provider_instance, errors);
-    } else {
-      size_t size;
-      envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_tls_certificates(
-          common_tls_context_proto, &size);
-      if (size != 0) {
-        ValidationErrors::ScopedField field(errors, ".tls_certificates");
-        errors->AddError("feature unsupported");
-      }
-      envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_tls_certificate_sds_secret_configs(
-          common_tls_context_proto, &size);
-      if (size != 0) {
-        ValidationErrors::ScopedField field(
-            errors, ".tls_certificate_sds_secret_configs");
-        errors->AddError("feature unsupported");
-      }
-    }
-  }
-  if (envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_has_tls_params(
-          common_tls_context_proto)) {
-    ValidationErrors::ScopedField field(errors, ".tls_params");
-    errors->AddError("feature unsupported");
-  }
-  if (envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_has_custom_handshaker(
-          common_tls_context_proto)) {
-    ValidationErrors::ScopedField field(errors, ".custom_handshaker");
-    errors->AddError("feature unsupported");
-  }
-  return common_tls_context;
-}
-
-//
 // ParseProtobufStructToJson()
 //
 
@@ -683,142 +430,6 @@ std::pair<std::string, std::string> ParseXdsHeader(
     }
   }
   return {std::string(key), value.has_value() ? std::move(*value) : ""};
-}
-
-//
-// ParseXdsGrpcService()
-//
-
-GrpcXdsServerTarget ParseXdsGrpcService(
-    const XdsResourceType::DecodeContext& context,
-    const envoy_config_core_v3_GrpcService* grpc_service,
-    ValidationErrors* errors) {
-  if (grpc_service == nullptr) {
-    errors->AddError("field not set");
-    return GrpcXdsServerTarget(/*server_uri=*/"",
-                               /*channel_creds_config=*/nullptr,
-                               /*call_creds_configs=*/{});
-  }
-  // timeout
-  Duration timeout = Duration::Zero();
-  if (auto* timeout_proto =
-          envoy_config_core_v3_GrpcService_timeout(grpc_service);
-      timeout_proto != nullptr) {
-    ValidationErrors::ScopedField field(errors, ".timeout");
-    timeout = ParseDuration(timeout_proto, errors);
-    if (timeout <= Duration::Zero()) {
-      errors->AddError("duration must be positive");
-    }
-  }
-  // initial_metadata
-  std::vector<std::pair<std::string, std::string>> initial_metadata;
-  size_t initial_metadata_size;
-  auto* initial_metadata_proto =
-      envoy_config_core_v3_GrpcService_initial_metadata(grpc_service,
-                                                        &initial_metadata_size);
-  for (size_t i = 0; i < initial_metadata_size; ++i) {
-    ValidationErrors::ScopedField field(
-        errors, absl::StrCat(".initial_metadata[", i, "]"));
-    initial_metadata.push_back(
-        ParseXdsHeader(initial_metadata_proto[i], errors));
-  }
-  // google_grpc
-  ValidationErrors::ScopedField field(errors, ".google_grpc");
-  auto* google_grpc =
-      envoy_config_core_v3_GrpcService_google_grpc(grpc_service);
-  if (google_grpc == nullptr) {
-    errors->AddError("field not set");
-    return GrpcXdsServerTarget(/*server_uri=*/"",
-                               /*channel_creds_config=*/nullptr,
-                               /*call_creds_configs=*/{});
-  }
-  // target_uri
-  std::string target_uri = UpbStringToStdString(
-      envoy_config_core_v3_GrpcService_GoogleGrpc_target_uri(google_grpc));
-  if (!CoreConfiguration::Get().resolver_registry().IsValidTarget(target_uri)) {
-    ValidationErrors::ScopedField field(errors, ".target_uri");
-    errors->AddError("invalid target URI");
-  }
-  // credentials
-  RefCountedPtr<const ChannelCredsConfig> channel_creds_config;
-  std::vector<RefCountedPtr<const CallCredsConfig>> call_creds_configs;
-  if (DownCast<const GrpcXdsServer&>(context.server).TrustedXdsServer()) {
-    // Trusted xDS server.  Use credentials from the GoogleGrpc proto.
-    // First, look at channel creds.
-    {
-      ValidationErrors::ScopedField field(errors,
-                                          ".channel_credentials_plugin");
-      size_t size;
-      const auto* const* channel_creds_plugin =
-          envoy_config_core_v3_GrpcService_GoogleGrpc_channel_credentials_plugin(
-              google_grpc, &size);
-      if (size == 0) {
-        errors->AddError("field not set");
-      } else {
-        const auto& registry =
-            CoreConfiguration::Get().channel_creds_registry();
-        const auto& certificate_providers =
-            DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
-                .certificate_providers();
-        for (size_t i = 0; i < size; ++i) {
-          ValidationErrors::ScopedField field(errors,
-                                              absl::StrCat("[", i, "]"));
-          absl::string_view type = UpbStringToAbsl(
-              google_protobuf_Any_type_url(channel_creds_plugin[i]));
-          if (!StripTypePrefix(type, errors)) continue;
-          if (!registry.IsProtoSupported(type)) continue;
-          ValidationErrors::ScopedField field2(errors, ".value");
-          absl::string_view serialized_config = UpbStringToAbsl(
-              google_protobuf_Any_value(channel_creds_plugin[i]));
-          channel_creds_config = registry.ParseProto(
-              type, serialized_config, certificate_providers, errors);
-          break;
-        }
-        if (channel_creds_config == nullptr) {
-          errors->AddError("no supported channel credentials type found");
-        }
-      }
-    }
-    // Now look at call creds.
-    {
-      ValidationErrors::ScopedField field(errors, ".call_credentials_plugin");
-      size_t size;
-      const auto* const* call_creds_plugin =
-          envoy_config_core_v3_GrpcService_GoogleGrpc_call_credentials_plugin(
-              google_grpc, &size);
-      const auto& registry = CoreConfiguration::Get().call_creds_registry();
-      for (size_t i = 0; i < size; ++i) {
-        ValidationErrors::ScopedField field(errors, absl::StrCat("[", i, "]"));
-        absl::string_view type =
-            UpbStringToAbsl(google_protobuf_Any_type_url(call_creds_plugin[i]));
-        if (!StripTypePrefix(type, errors)) continue;
-        if (!registry.IsProtoSupported(type)) continue;
-        ValidationErrors::ScopedField field2(errors, ".value");
-        absl::string_view serialized_config =
-            UpbStringToAbsl(google_protobuf_Any_value(call_creds_plugin[i]));
-        call_creds_configs.push_back(
-            registry.ParseProto(type, serialized_config, errors));
-      }
-    }
-  } else {
-    // Not a trusted xDS server.  Do lookup in bootstrap.
-    const auto& bootstrap =
-        DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap());
-    auto& allowed_grpc_services = bootstrap.allowed_grpc_services();
-    auto it = allowed_grpc_services.find(target_uri);
-    if (it == allowed_grpc_services.end()) {
-      ValidationErrors::ScopedField field(errors, ".target_uri");
-      errors->AddError(
-          "service not present in \"allowed_grpc_services\" "
-          "in bootstrap config");
-    } else {
-      channel_creds_config = it->second.channel_creds_config;
-      call_creds_configs = it->second.call_creds_configs;
-    }
-  }
-  return GrpcXdsServerTarget(target_uri, std::move(channel_creds_config),
-                             std::move(call_creds_configs),
-                             std::move(initial_metadata), timeout);
 }
 
 //

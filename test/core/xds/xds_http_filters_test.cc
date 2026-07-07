@@ -61,6 +61,7 @@
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
 #include "src/core/xds/grpc/xds_http_filter.h"
 #include "src/core/xds/grpc/xds_http_filter_registry.h"
 #include "src/core/xds/xds_client/xds_client.h"
@@ -105,13 +106,19 @@ using ::envoy::type::matcher::v3::HttpRequestHeaderMatchInput;
 class XdsHttpFilterTest : public ::testing::Test {
  protected:
   XdsHttpFilterTest()
-      : xds_client_(MakeXdsClient()),
-        decode_context_{xds_client_.get(), xds_server_, upb_def_pool_.ptr(),
-                        upb_arena_.ptr()} {}
+      : decode_context_{nullptr, xds_server_, upb_def_pool_.ptr(),
+                        upb_arena_.ptr()} {
+    Reset();
+  }
+
+  void Reset() {
+    xds_client_ = MakeXdsClient();
+    decode_context_.client = xds_client_.get();
+  }
 
   static RefCountedPtr<XdsClient> MakeXdsClient() {
     grpc_error_handle error;
-    auto bootstrap = GrpcXdsBootstrap::Create(
+    auto bootstrap = GrpcXdsBootstrapBuilder::Build(
         "{\n"
         "  \"xds_servers\": [\n"
         "    {\n"
@@ -148,9 +155,20 @@ class XdsHttpFilterTest : public ::testing::Test {
     return extension;
   }
 
-  const XdsHttpFilterImpl* GetFilter(absl::string_view type) {
-    return registry_.GetFilterForTopLevelType(
+  const XdsHttpFilterRegistry& registry() const {
+    const auto& bootstrap =
+        DownCast<const GrpcXdsBootstrap&>(xds_client_->bootstrap());
+    return bootstrap.http_filter_registry();
+  }
+
+  static const XdsHttpFilterImpl* GetFilter(
+      const XdsHttpFilterRegistry& registry, absl::string_view type) {
+    return registry.GetFilterForTopLevelType(
         absl::StripPrefix(type, "type.googleapis.com/"));
+  }
+
+  const XdsHttpFilterImpl* GetFilter(absl::string_view type) {
+    return GetFilter(registry(), type);
   }
 
   GrpcXdsServer xds_server_;
@@ -158,7 +176,6 @@ class XdsHttpFilterTest : public ::testing::Test {
   upb::DefPool upb_def_pool_;
   upb::Arena upb_arena_;
   XdsResourceType::DecodeContext decode_context_;
-  XdsHttpFilterRegistry registry_;
   ValidationErrors errors_;
   std::string type_url_storage_;
   std::string serialized_storage_;
@@ -171,26 +188,27 @@ class XdsHttpFilterTest : public ::testing::Test {
 using XdsHttpFilterRegistryTest = XdsHttpFilterTest;
 
 TEST_F(XdsHttpFilterRegistryTest, Basic) {
-  // Start with an empty registry.
-  registry_ = XdsHttpFilterRegistry(/*register_builtins=*/false);
+  XdsHttpFilterRegistry registry;
   // Returns null when a filter has not yet been registered.
   XdsExtension extension = MakeXdsExtension(Router());
-  EXPECT_EQ(GetFilter(extension.type), nullptr);
+  EXPECT_EQ(GetFilter(registry, extension.type), nullptr);
   // Now register the filter.
   auto filter = std::make_unique<XdsHttpRouterFilter>();
   auto* filter_ptr = filter.get();
-  registry_.RegisterFilter(std::move(filter));
+  registry.RegisterFilter(std::move(filter));
   // And check that it is now present.
-  EXPECT_EQ(GetFilter(extension.type), filter_ptr);
+  EXPECT_EQ(GetFilter(registry, extension.type), filter_ptr);
 }
 
 using XdsHttpFilterRegistryDeathTest = XdsHttpFilterTest;
 
 TEST_F(XdsHttpFilterRegistryDeathTest, DuplicateRegistryFails) {
   GTEST_FLAG_SET(death_test_style, "threadsafe");
+  XdsHttpFilterRegistry registry;
+  registry.RegisterFilter(std::make_unique<XdsHttpRouterFilter>());
   ASSERT_DEATH(
       // The router filter is already in the registry.
-      registry_.RegisterFilter(std::make_unique<XdsHttpRouterFilter>()), "");
+      registry.RegisterFilter(std::make_unique<XdsHttpRouterFilter>()), "");
 }
 
 //
@@ -1811,8 +1829,7 @@ class XdsCompositeFilterTest : public XdsHttpFilterTest {
   XdsCompositeFilterTest() : env_("GRPC_EXPERIMENTAL_XDS_COMPOSITE_FILTER") {}
 
   void SetUp() override {
-    // Recreate registry now that env var is set.
-    registry_ = XdsHttpFilterRegistry();
+    Reset();  // Recreate registry now that env var is set.
     XdsExtension extension = MakeXdsExtension(ExtensionWithMatcher());
     filter_ = GetFilter(extension.type);
     GRPC_CHECK_NE(filter_, nullptr) << extension.type;
