@@ -164,7 +164,7 @@ class UnaryUnaryMultiCallable(
         compression: Optional[grpc.Compression] = None,
     ) -> _base_call.UnaryUnaryCall[RequestType, ResponseType]:
         metadata = self._init_metadata(metadata, compression)
-        call: _base_call.UnaryUnaryCall[RequestType, ResponseType]
+
         if not self._interceptors:
             call = UnaryUnaryCall(
                 request,
@@ -214,7 +214,6 @@ class UnaryStreamMultiCallable(
     ) -> _base_call.UnaryStreamCall[RequestType, ResponseType]:
         metadata = self._init_metadata(metadata, compression)
 
-        call: _base_call.UnaryStreamCall[RequestType, ResponseType]
         if not self._interceptors:
             call = UnaryStreamCall(
                 request,
@@ -263,7 +262,6 @@ class StreamUnaryMultiCallable(
     ) -> _base_call.StreamUnaryCall[RequestType, ResponseType]:
         metadata = self._init_metadata(metadata, compression)
 
-        call: _base_call.StreamUnaryCall[RequestType, ResponseType]
         if not self._interceptors:
             call = StreamUnaryCall(
                 request_iterator,
@@ -314,7 +312,6 @@ class StreamStreamMultiCallable(
     ) -> _base_call.StreamStreamCall[RequestType, ResponseType]:
         metadata = self._init_metadata(metadata, compression)
 
-        call: _base_call.StreamStreamCall[RequestType, ResponseType]
         if not self._interceptors:
             call = StreamStreamCall(
                 request_iterator,
