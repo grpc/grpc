@@ -21,6 +21,7 @@ from abc import abstractmethod
 import asyncio
 import functools
 from typing import (
+    cast,
     Any,
     AsyncIterable,
     AsyncIterator,
@@ -763,40 +764,33 @@ class InterceptedUnaryUnaryCall(
         ]:
             if interceptors:
 
-                async def continuation(
-                    client_call_details: ClientCallDetails,
-                    request: RequestType,
-                ) -> _base_call.UnaryUnaryCall[RequestType, ResponseType]:
-                    result = await _run_interceptor(
-                        interceptors[1:], client_call_details, request
-                    )
-                    # UnaryUnaryCallResponse inherits from UnaryUnaryCall, so returning result is type safe
-                    return result
+                continuation = functools.partial(
+                    _run_interceptor, interceptors[1:]
+                )
 
                 call_or_response = await interceptors[0].intercept_unary_unary(
                     continuation, client_call_details, request
                 )
-                if isinstance(call_or_response, _base_call.Call):
-                    return call_or_response  # type: ignore[return-value]
-                return UnaryUnaryCallResponse[RequestType, ResponseType](
-                    call_or_response
-                )
 
-            call: _base_call.UnaryUnaryCall[RequestType, ResponseType] = (
-                UnaryUnaryCall(
-                    request,
-                    _timeout_to_deadline(client_call_details.timeout),
-                    client_call_details.metadata or Metadata(),
-                    client_call_details.credentials,
-                    client_call_details.wait_for_ready,
-                    self._channel,
-                    client_call_details.method,
-                    request_serializer,
-                    response_deserializer,
-                    self._loop,
-                )
+                if isinstance(call_or_response, _base_call.UnaryUnaryCall):
+                    return cast(
+                        _base_call.UnaryUnaryCall[RequestType, ResponseType],
+                        call_or_response,
+                    )
+                return UnaryUnaryCallResponse(call_or_response)
+
+            return UnaryUnaryCall(
+                request,
+                _timeout_to_deadline(client_call_details.timeout),
+                client_call_details.metadata or Metadata(),
+                client_call_details.credentials,
+                client_call_details.wait_for_ready,
+                self._channel,
+                client_call_details.method,
+                request_serializer,
+                response_deserializer,
+                self._loop,
             )
-            return call
 
         client_call_details = ClientCallDetails(
             method, timeout, metadata, credentials, wait_for_ready
