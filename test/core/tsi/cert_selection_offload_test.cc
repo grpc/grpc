@@ -20,7 +20,6 @@
 #include <openssl/bio.h>
 #include <openssl/pem.h>
 
-#include <array>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -245,13 +244,15 @@ class HandshakeHintsCertificateSelector : public SyncTestCertificateSelector {
               return absl::InternalError("failed to set max TLS version");
             }
             // Enforce the preference of post-quantum key exchange groups.
-            constexpr std::array<uint16_t, 4> kKeyExchangeGroupsWithPqc = {
+            std::vector<uint16_t> key_exchange_groups = {
                 SSL_GROUP_X25519_MLKEM768, SSL_GROUP_X25519,
                 SSL_GROUP_SECP256R1, SSL_GROUP_SECP384R1};
-            if (!SSL_set1_group_ids(ssl.get(), kKeyExchangeGroupsWithPqc.data(),
-                                    kKeyExchangeGroupsWithPqc.size())) {
+            if (!SSL_set1_group_ids(ssl.get(), key_exchange_groups.data(),
+                                    key_exchange_groups.size())) {
               return absl::InternalError("failed to set key exchange groups.");
             }
+            result->handshake_hints_result.key_exchange_groups =
+                std::move(key_exchange_groups);
             if (!SSL_request_handshake_hints(
                     ssl.get(),
                     reinterpret_cast<const uint8_t*>(

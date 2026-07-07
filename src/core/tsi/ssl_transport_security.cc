@@ -652,12 +652,11 @@ absl::Status ProcessSelectCertResultForHandshakeHints(
           handshaker->ssl, result.handshake_hints_result.cipher_list.c_str())) {
     return absl::InvalidArgumentError("Failed to set cipher list.");
   }
-  // Enforce the preference of post-quantum key exchange groups.
-  constexpr std::array<uint16_t, 4> kKeyExchangeGroupsWithPqc = {
-      SSL_GROUP_X25519_MLKEM768, SSL_GROUP_X25519, SSL_GROUP_SECP256R1,
-      SSL_GROUP_SECP384R1};
-  if (!SSL_set1_group_ids(handshaker->ssl, kKeyExchangeGroupsWithPqc.data(),
-                          kKeyExchangeGroupsWithPqc.size())) {
+  if (!result.handshake_hints_result.key_exchange_groups.empty() &&
+      !SSL_set1_group_ids(
+          handshaker->ssl,
+          result.handshake_hints_result.key_exchange_groups.data(),
+          result.handshake_hints_result.key_exchange_groups.size())) {
     return absl::InvalidArgumentError("Failed to set key exchange groups.");
   }
   // No session resumption.
