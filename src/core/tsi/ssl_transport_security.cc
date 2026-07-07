@@ -623,6 +623,8 @@ SelectCertificateInfo PrepareSelectCertificateInfo(
     select_cert_info.handshake_hints_info.ssl_capabilities =
         std::string(reinterpret_cast<const char*>(buffer), capabilities_len);
     OPENSSL_free(buffer);
+  } else {
+    VLOG(2) << "Failed to generate SSL capabilities";
   }
   select_cert_info.handshake_hints_info.client_hello =
       std::string(reinterpret_cast<const char*>(client_hello->client_hello),
@@ -3537,8 +3539,8 @@ tsi_result tsi_configure_server_ssl_context(
         pem_key_cert_pair->cert_chain.c_str(), &ssl_context.x509_subject_name);
     if (result != TSI_OK) return result;
   }
-  // Always configure the callback because responding to SNI is required in
-  // TLS 1.3.
+  // Always configure the callback because responding to SNI is required for
+  // ClientHello in TLS 1.3, and we need to respond to that.
   SSL_CTX_set_tlsext_servername_callback(
       ssl_context.ssl_ctx, ssl_server_handshaker_factory_servername_callback);
   SSL_CTX_set_tlsext_servername_arg(ssl_context.ssl_ctx, impl);

@@ -231,7 +231,8 @@ class HandshakeHintsCertificateSelector : public SyncTestCertificateSelector {
                                        nullptr)) {
               return absl::InternalError("failed to set SSL chain and key");
             }
-            if (!SSL_set_strict_cipher_list(ssl.get(), "ALL")) {
+            if (!SSL_set_strict_cipher_list(ssl.get(),
+                                            SSL_DEFAULT_CIPHER_LIST)) {
               return absl::InternalError("failed to set SSL cipher list");
             }
             // No session resumption.
@@ -272,9 +273,10 @@ class HandshakeHintsCertificateSelector : public SyncTestCertificateSelector {
             result->handshake_hints_result.handshake_hints = std::string(
                 reinterpret_cast<const char*>(CBB_data(hints_cbb.get())),
                 CBB_len(hints_cbb.get()));
-            // "ALL" means the default SSL cipher suite config. The test runs
-            // with the same SSL library so the consistency is guaranteed.
-            result->handshake_hints_result.cipher_list = "ALL";
+            // This SSL object and the one within TSI are in the same process
+            // with the same BoringSSL library so the consistency is guaranteed.
+            result->handshake_hints_result.cipher_list =
+                SSL_DEFAULT_CIPHER_LIST;
             uint16_t negotiated_version = SSL_version(ssl.get());
             result->handshake_hints_result.min_tls_version = negotiated_version;
             result->handshake_hints_result.max_tls_version = negotiated_version;
@@ -282,7 +284,7 @@ class HandshakeHintsCertificateSelector : public SyncTestCertificateSelector {
           return absl::OkStatus();
         },
         [](std::shared_ptr<AsyncCertificateSelectionHandle>*) {
-          return absl::InternalError("Expected syncrhonous cert selection.");
+          return absl::InternalError("Expected synchronous cert selection.");
         }));
     return select_cert_result;
   }
