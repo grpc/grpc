@@ -1,5 +1,4 @@
-#!/usr/bin/env bash
-# Copyright 2017 gRPC authors.
+# Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,13 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+FROM debian:13
 
-# Enter the gRPC repo root
-cd $(dirname $0)/../../..
+{% include "../../apt_get_basic.include" %}
+{% include "../../run_tests_python_deps_debian_13.include" %}
+{% include "../../cxx_deps.include" %}
+{% include "../../cmake.include" %}
+{% include "../../ccache_debian_13.include" %}
+{% include "../../run_tests_addons.include" %}
 
-source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-export DOCKERFILE_DIR=tools/dockerfile/test/cxx_debian13_x64
-export DOCKER_RUN_SCRIPT=tools/internal_ci/linux/grpc_memory_diff_in_docker.sh
-exec tools/run_tests/dockerize/build_and_run_docker.sh
+#=================
+# Setup git to access working directory across docker boundary
+
+RUN git config --global --add safe.directory "*"
+RUN git config --global protocol.file.allow always
+
+
+# Define the default command.
+CMD ["bash"]
