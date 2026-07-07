@@ -1509,15 +1509,12 @@ TEST_F(PickFirstTest, WithWeightedShuffle) {
   constexpr std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445"};
   std::vector<EndpointAddresses> endpoints;
-  endpoints.push_back(
-      EndpointAddresses(MakeAddress(kAddresses[0]),
-                        ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 10000)));
-  endpoints.push_back(
-      EndpointAddresses(MakeAddress(kAddresses[1]),
-                        ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 1)));
-  endpoints.push_back(
-      EndpointAddresses(MakeAddress(kAddresses[2]),
-                        ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 1)));
+  endpoints.push_back(MakeEndpointAddresses(
+      {kAddresses[0]}, ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 10000)));
+  endpoints.push_back(MakeEndpointAddresses(
+      {kAddresses[1]}, ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 1)));
+  endpoints.push_back(MakeEndpointAddresses(
+      {kAddresses[2]}, ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 1)));
   size_t first_address_picked_count = 0;
   constexpr size_t kRuns = 100;
   for (size_t i = 0; i < kRuns; ++i) {
