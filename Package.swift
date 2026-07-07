@@ -1268,6 +1268,8 @@ let package = Package(
         "src/core/ext/upbdefs-gen/google/api/httpbody.upbdefs.h",
         "src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c",
         "src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.h",
+        "src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c",
+        "src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.h",
         "src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c",
         "src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.h",
         "src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c",

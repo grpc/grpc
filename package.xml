@@ -1258,6 +1258,8 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/google/api/httpbody.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c" role="src" />

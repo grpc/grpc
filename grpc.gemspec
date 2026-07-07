@@ -1277,6 +1277,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upbdefs-gen/google/api/httpbody.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c )
   s.files += %w( src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.h )
+  s.files += %w( src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c )
+  s.files += %w( src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c )
   s.files += %w( src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c )

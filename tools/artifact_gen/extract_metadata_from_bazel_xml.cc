@@ -548,7 +548,10 @@ class ArtifactGen {
       for (std::string proto_src : protos) {
         // The descriptor.proto's upb-generated files are already provided
         // by upb_descriptor_lib (see _patch_descriptor_upb_proto_library).
-        if (absl::EndsWith(proto_src, ":descriptor.proto")) continue;
+        if (bazel_rule.generator_function == "grpc_upb_proto_library" &&
+            absl::EndsWith(proto_src, ":descriptor.proto")) {
+          continue;
+        }
         const std::string prefix_to_strip = get_prefix_to_strip(proto_src);
         // A no-op if this isn't a proto target.
         proto_src = proto_src.substr(prefix_to_strip.length());

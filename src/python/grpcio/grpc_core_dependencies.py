@@ -490,6 +490,7 @@ CORE_SOURCE_FILES = [
     'src/core/ext/upbdefs-gen/google/api/http.upbdefs.c',
     'src/core/ext/upbdefs-gen/google/api/httpbody.upbdefs.c',
     'src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c',
+    'src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c',
     'src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c',
     'src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c',
     'src/core/ext/upbdefs-gen/google/protobuf/struct.upbdefs.c',
