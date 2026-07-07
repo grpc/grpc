@@ -342,6 +342,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-gen/google/api/http.upb_minitable.c \
     src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c \
     src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c \
+    src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c \
     src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c \
     src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c \
     src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c \
