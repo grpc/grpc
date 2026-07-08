@@ -91,7 +91,10 @@ CLIENT_CALL_TRANSPARENT_RETRIES = Metric(
     "grpc.client.call.transparent_retries",
     MetricsName.CLIENT_TRANSPARENT_RETRIES_PER_CALL,
     "{transparent_retry}",
-    "Number of transparent retries during the client call. If there were no transparent retries, 0 is not reported.",
+    (
+        "Number of transparent retries during the client call. If there were"
+        " no transparent retries, 0 is not reported."
+    ),
 )
 CLIENT_CALL_RETRY_DELAY = Metric(
     "grpc.client.call.retry_delay",
