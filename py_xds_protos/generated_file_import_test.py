@@ -679,6 +679,9 @@ from envoy.type.v3 import ratelimit_unit_pb2
 from envoy.type.v3 import semantic_version_pb2
 from envoy.type.v3 import token_bucket_pb2
 from envoy.watchdog.v3 import abort_action_pb2
+# Some google.* modules below are provided by the googleapis-common-protos
+# dependency rather than compiled by xds-protos. They are tested here to ensure
+# they remain importable, since xds-protos previously bundled them.
 from google.api import annotations_pb2
 from google.api import auth_pb2
 from google.api import backend_pb2

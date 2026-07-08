@@ -166,12 +166,22 @@ def main():
     # Compile xDS protos
     compile_protos(ENVOY_API_PROTO_ROOT)
     compile_protos(XDS_PROTO_ROOT)
-    # We don't want to compile the entire GCP surface API, just the essential ones
-    compile_protos(GOOGLEAPIS_ROOT, os.path.join("google", "api"))
-    compile_protos(GOOGLEAPIS_ROOT, os.path.join("google", "rpc"))
-    compile_protos(GOOGLEAPIS_ROOT, os.path.join("google", "longrunning"))
-    compile_protos(GOOGLEAPIS_ROOT, os.path.join("google", "logging"))
-    compile_protos(GOOGLEAPIS_ROOT, os.path.join("google", "type"))
+    # Core google.api, google.rpc, google.type, google.longrunning, and
+    # google.logging.type protos are provided by googleapis-common-protos.
+    # Only compile the sub-packages not covered by that dependency.
+    compile_protos(GOOGLEAPIS_ROOT, os.path.join("google", "api", "apikeys"))
+    compile_protos(GOOGLEAPIS_ROOT, os.path.join("google", "api", "cloudquotas"))
+    compile_protos(GOOGLEAPIS_ROOT, os.path.join("google", "api", "expr"))
+    compile_protos(
+        GOOGLEAPIS_ROOT, os.path.join("google", "api", "servicecontrol")
+    )
+    compile_protos(
+        GOOGLEAPIS_ROOT, os.path.join("google", "api", "servicemanagement")
+    )
+    compile_protos(
+        GOOGLEAPIS_ROOT, os.path.join("google", "api", "serviceusage")
+    )
+    compile_protos(GOOGLEAPIS_ROOT, os.path.join("google", "logging", "v2"))
     compile_protos(VALIDATE_ROOT, "validate")
     compile_protos(OPENCENSUS_PROTO_ROOT)
     compile_protos(OPENTELEMETRY_PROTO_ROOT)
