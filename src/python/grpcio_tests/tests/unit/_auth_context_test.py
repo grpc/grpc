@@ -125,6 +125,7 @@ class AuthContextTest(unittest.TestCase):
                 "security_level": [b"TSI_PRIVACY_AND_INTEGRITY"],
                 "transport_security_type": [b"ssl"],
                 "ssl_session_reused": [b"false"],
+                "ssl_negotiated_key_exchange_group": [b"X25519MLKEM768"],
             },
             auth_data[_AUTH_CTX],
         )

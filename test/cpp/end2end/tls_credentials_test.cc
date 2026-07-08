@@ -169,7 +169,8 @@ void DoRpc(const std::string& server_addr,
 // NOLINTNEXTLINE(clang-diagnostic-unused-function)
 void DoRpcAndExpectFailure(const std::string& server_addr,
                            const TlsChannelCredentialsOptions& tls_options,
-                           grpc::StatusCode expected_code) {
+                           grpc::StatusCode expected_code,
+                           const std::string& expected_message_substr = "") {
   std::shared_ptr<Channel> channel =
       grpc::CreateChannel(server_addr, TlsCredentials(tls_options));
 
@@ -183,6 +184,12 @@ void DoRpcAndExpectFailure(const std::string& server_addr,
   EXPECT_EQ(result.error_code(), expected_code)
       << "Expected failure with code " << expected_code << ", but got code "
       << result.error_code() << ", message: " << result.error_message();
+  if (!expected_message_substr.empty()) {
+    EXPECT_NE(result.error_message().find(expected_message_substr),
+              std::string::npos)
+        << "Expected error message containing '" << expected_message_substr
+        << "', got: '" << result.error_message() << "'";
+  }
 }
 
 // TODO(gregorycooke) - failing with OpenSSL1.0.2
@@ -304,8 +311,9 @@ TEST_F(TlsCredentialsTest, KeyExchangeGroupMismatchFailsWithTestVerifier) {
             absl::OkStatus());
   tls_options.set_root_certificate_provider(client_certificate_provider);
   tls_options.set_sni_override("foo.test.google.fr");
-  DoRpcAndExpectFailure(server_addr_, tls_options,
-                        grpc::StatusCode::UNAUTHENTICATED);
+  DoRpcAndExpectFailure(
+      server_addr_, tls_options, grpc::StatusCode::UNAVAILABLE,
+      "Key exchange group mismatch: expected prime256v1, got X25519");
 }
 #endif  // OPENSSL_IS_BORINGSSL
 
