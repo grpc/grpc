@@ -210,7 +210,7 @@ TEST(TlsCertificateVerifierTest, VerifiedRootCertSubjectVerifierFailsMismatch) {
 }
 
 TEST(TlsCertificateVerifierTest, NegotiatedKeyExchangeGroupProperty) {
-  grpc_tls_custom_verification_check_request request;
+  grpc_tls_custom_verification_check_request request = {};
   constexpr char kExpectedGroup[] = "X25519";
   request.peer_info.negotiated_key_exchange_group = kExpectedGroup;
   TlsCustomVerificationCheckRequest cpp_request(&request);
