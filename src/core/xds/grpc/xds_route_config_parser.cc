@@ -54,6 +54,7 @@
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/match.h"
 #include "src/core/util/matchers.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/xds/grpc/xds_cluster_specifier_plugin.h"
@@ -70,6 +71,8 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 

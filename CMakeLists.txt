@@ -3086,6 +3086,7 @@ add_library(grpc
   src/core/util/http_client/parser.cc
   src/core/util/json/json_object_loader.cc
   src/core/util/json/json_reader.cc
+  src/core/util/json/json_util.cc
   src/core/util/json/json_writer.cc
   src/core/util/latent_see.cc
   src/core/util/load_file.cc
@@ -3110,7 +3111,6 @@ add_library(grpc
   src/core/xds/grpc/file_watcher_certificate_provider_factory.cc
   src/core/xds/grpc/xds_audit_logger_registry.cc
   src/core/xds/grpc/xds_bootstrap_grpc.cc
-  src/core/xds/grpc/xds_bootstrap_grpc_builder.cc
   src/core/xds/grpc/xds_certificate_provider.cc
   src/core/xds/grpc/xds_client_grpc.cc
   src/core/xds/grpc/xds_cluster.cc
@@ -3142,8 +3142,6 @@ add_library(grpc
   src/core/xds/grpc/xds_route_config_parser.cc
   src/core/xds/grpc/xds_routing.cc
   src/core/xds/grpc/xds_server_grpc.cc
-  src/core/xds/grpc/xds_tls_context.cc
-  src/core/xds/grpc/xds_tls_context_parser.cc
   src/core/xds/grpc/xds_transport_grpc.cc
   src/core/xds/xds_client/lrs_client.cc
   src/core/xds/xds_client/xds_api.cc
@@ -12988,7 +12986,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.pb.h
     ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.h
-    src/core/util/json/json_util.cc
     src/cpp/server/orca/orca_service.cc
     test/core/test_util/test_lb_policies.cc
     test/cpp/end2end/client_lb_end2end_test.cc
@@ -14655,7 +14652,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/ext/transport/chaotic_good_legacy/frame_header.cc
     src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
     src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-    src/core/util/json/json_util.cc
     src/core/util/seq_bit_set.cc
     test/core/call/batch_builder.cc
     test/core/end2end/cq_verifier.cc
@@ -14761,7 +14757,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/ext/transport/chaotic_good_legacy/frame_header.cc
     src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
     src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-    src/core/util/json/json_util.cc
     src/core/util/seq_bit_set.cc
     test/core/call/batch_builder.cc
     test/core/end2end/cq_verifier.cc
@@ -14955,7 +14950,6 @@ add_executable(end2end_http2_no_logging_test
   src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/util/json/json_util.cc
   src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
@@ -15059,7 +15053,6 @@ add_executable(end2end_http2_security_no_logging_test
   src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/util/json/json_util.cc
   src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
@@ -15163,7 +15156,6 @@ add_executable(end2end_http2_security_test
   src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/util/json/json_util.cc
   src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
@@ -15356,7 +15348,6 @@ add_executable(end2end_http2_test
   src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/util/json/json_util.cc
   src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
@@ -15549,7 +15540,6 @@ add_executable(end2end_inproc_no_logging_test
   src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/util/json/json_util.cc
   src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
@@ -15653,7 +15643,6 @@ add_executable(end2end_inproc_test
   src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/util/json/json_util.cc
   src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
@@ -15846,7 +15835,6 @@ add_executable(end2end_ph2_no_logging_test
   src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/util/json/json_util.cc
   src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
@@ -15950,7 +15938,6 @@ add_executable(end2end_ph2_test
   src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/util/json/json_util.cc
   src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
@@ -16143,7 +16130,6 @@ add_executable(end2end_posix_no_logging_test
   src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/util/json/json_util.cc
   src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
@@ -16247,7 +16233,6 @@ add_executable(end2end_posix_test
   src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/util/json/json_util.cc
   src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
@@ -16518,7 +16503,6 @@ add_executable(end2end_vrpc_no_logging_test
   src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/util/json/json_util.cc
   src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
@@ -16623,7 +16607,6 @@ add_executable(end2end_vrpc_test
   src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/util/json/json_util.cc
   src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
@@ -31267,7 +31250,6 @@ add_executable(rls_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.pb.h
   ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.h
-  src/core/util/json/json_util.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/test_call_creds.cc
@@ -42383,7 +42365,6 @@ add_executable(xds_common_types_test
   src/core/ext/upb-gen/xds/core/v3/resource.upb_minitable.c
   src/core/ext/upb-gen/xds/core/v3/resource_locator.upb_minitable.c
   src/core/ext/upb-gen/xds/core/v3/resource_name.upb_minitable.c
-  src/core/xds/grpc/xds_grpc_service_parser.cc
   test/core/xds/xds_common_types_test.cc
   test/cpp/util/cli_call.cc
   test/cpp/util/cli_credentials.cc

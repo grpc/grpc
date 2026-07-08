@@ -18,6 +18,7 @@
 
 #include "src/core/xds/grpc/xds_routing.h"
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -29,8 +30,6 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/matchers.h"
 #include "src/core/xds/grpc/xds_http_filter.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/functional/function_ref.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"

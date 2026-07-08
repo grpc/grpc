@@ -898,6 +898,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/util/iphone/cpu.cc \
     src/core/util/json/json_object_loader.cc \
     src/core/util/json/json_reader.cc \
+    src/core/util/json/json_util.cc \
     src/core/util/json/json_writer.cc \
     src/core/util/latent_see.cc \
     src/core/util/linux/cpu.cc \
@@ -951,7 +952,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/xds/grpc/file_watcher_certificate_provider_factory.cc \
     src/core/xds/grpc/xds_audit_logger_registry.cc \
     src/core/xds/grpc/xds_bootstrap_grpc.cc \
-    src/core/xds/grpc/xds_bootstrap_grpc_builder.cc \
     src/core/xds/grpc/xds_certificate_provider.cc \
     src/core/xds/grpc/xds_client_grpc.cc \
     src/core/xds/grpc/xds_cluster.cc \
@@ -983,8 +983,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/xds/grpc/xds_route_config_parser.cc \
     src/core/xds/grpc/xds_routing.cc \
     src/core/xds/grpc/xds_server_grpc.cc \
-    src/core/xds/grpc/xds_tls_context.cc \
-    src/core/xds/grpc/xds_tls_context_parser.cc \
     src/core/xds/grpc/xds_transport_grpc.cc \
     src/core/xds/xds_client/lrs_client.cc \
     src/core/xds/xds_client/xds_api.cc \

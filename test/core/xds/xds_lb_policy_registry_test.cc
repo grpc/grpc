@@ -42,7 +42,6 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
-#include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "upb/mem/arena.hpp"
@@ -81,8 +80,8 @@ absl::StatusOr<std::string> ConvertXdsPolicy(
       serialized_policy.data(), serialized_policy.size(), arena.ptr());
   ValidationErrors errors;
   ValidationErrors::ScopedField field(&errors, ".load_balancing_policy");
-  auto registry = GrpcXdsBootstrapBuilder::CreateXdsLbPolicyRegistry();
-  auto config = registry.ConvertXdsLbPolicyConfig(context, upb_policy, &errors);
+  auto config = XdsLbPolicyRegistry().ConvertXdsLbPolicyConfig(
+      context, upb_policy, &errors);
   if (!errors.ok()) {
     return errors.status(absl::StatusCode::kInvalidArgument,
                          "validation errors");

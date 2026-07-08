@@ -16,6 +16,7 @@
 
 #include "src/core/xds/grpc/xds_http_rbac_filter.h"
 
+#include <grpc/support/json.h>
 #include <stddef.h>
 #include <stdint.h>
 

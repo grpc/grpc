@@ -60,6 +60,7 @@
 #include "src/core/util/ref_counted_string.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/validation_errors.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_client_grpc.h"
 #include "src/core/xds/grpc/xds_endpoint.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"

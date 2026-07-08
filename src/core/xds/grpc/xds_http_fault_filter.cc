@@ -17,6 +17,8 @@
 #include "src/core/xds/grpc/xds_http_fault_filter.h"
 
 #include <grpc/status.h>
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <string>
@@ -30,7 +32,10 @@
 #include "google/protobuf/wrappers.upb.h"
 #include "src/core/call/status_util.h"
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/transport/status_conversion.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_writer.h"
 #include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_common_types.h"

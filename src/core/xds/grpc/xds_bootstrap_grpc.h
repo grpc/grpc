@@ -17,6 +17,8 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_BOOTSTRAP_GRPC_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_BOOTSTRAP_GRPC_H
 
+#include <grpc/support/port_platform.h>
+
 #include <map>
 #include <memory>
 #include <optional>
@@ -41,8 +43,6 @@
 namespace grpc_core {
 
 bool XdsExtProcOnClientEnabled();
-
-class GrpcXdsBootstrapBuilder;
 
 class GrpcXdsBootstrap final : public XdsBootstrap {
  public:
@@ -187,8 +187,6 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
   }
 
  private:
-  friend class GrpcXdsBootstrapBuilder;
-
   std::vector<GrpcXdsServer> servers_;
   std::optional<GrpcNode> node_;
   std::string client_default_listener_resource_name_template_;
