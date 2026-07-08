@@ -81,6 +81,12 @@ PKGUTIL_STYLE_INIT = (
 )
 NAMESPACE_PACKAGES = ["google"]
 
+# Directories shared with googleapis-common-protos. These must use implicit
+# namespace packages (no __init__.py) so that uninstalling xds-protos does
+# not break the google namespace for other packages.
+IMPLICIT_NAMESPACE_DIRS = {"google", os.path.join("google", "api"),
+                           os.path.join("google", "logging")}
+
 
 def add_test_import(proto_package_path: str, file_name: str, service: bool = False):
     TEST_IMPORTS.append(
@@ -154,6 +160,8 @@ def compile_protos(proto_root: str, sub_dir: str = ".") -> None:
 
 
 def create_init_file(path: str, package_path: str = "") -> None:
+    if package_path in IMPLICIT_NAMESPACE_DIRS:
+        return
     with open(os.path.join(path, "__init__.py"), "w") as f:
         # Apply the pkgutil-style namespace packaging, which is compatible for 2
         # and 3. Here is the full table of namespace compatibility:
