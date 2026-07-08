@@ -22,8 +22,6 @@
 
 #include "envoy/config/common/mutation_rules/v3/mutation_rules.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
-#include "envoy/config/core/v3/grpc_service.upb.h"
-#include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/type/matcher/v3/string.upb.h"
 #include "envoy/type/v3/percent.upb.h"
 #include "google/protobuf/any.upb.h"
@@ -31,11 +29,11 @@
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/util/json/json.h"
 #include "src/core/util/matchers.h"
 #include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_common_types.h"
-#include "src/core/xds/grpc/xds_server_grpc.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "xds/type/matcher/v3/string.upb.h"
 
@@ -78,12 +76,6 @@ StringMatcher StringMatcherParse(
     const xds_type_matcher_v3_StringMatcher* matcher_proto,
     ValidationErrors* errors);
 
-CommonTlsContext CommonTlsContextParse(
-    const XdsResourceType::DecodeContext& context,
-    const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext*
-        common_tls_context_proto,
-    ValidationErrors* errors);
-
 absl::StatusOr<Json> ParseProtobufStructToJson(
     const XdsResourceType::DecodeContext& context,
     const google_protobuf_Struct* resource);
@@ -91,11 +83,6 @@ absl::StatusOr<Json> ParseProtobufStructToJson(
 std::optional<XdsExtension> ExtractXdsExtension(
     const XdsResourceType::DecodeContext& context,
     const google_protobuf_Any* any, ValidationErrors* errors);
-
-GrpcXdsServerTarget ParseXdsGrpcService(
-    const XdsResourceType::DecodeContext& context,
-    const envoy_config_core_v3_GrpcService* grpc_service,
-    ValidationErrors* errors);
 
 HeaderMutationRules ParseHeaderMutationRules(
     const envoy_config_common_mutation_rules_v3_HeaderMutationRules*
