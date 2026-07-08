@@ -14,7 +14,6 @@
 
 #include "src/core/client_channel/client_channel.h"
 
-#include <grpc/context_types.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>

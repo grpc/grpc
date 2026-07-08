@@ -5923,7 +5923,6 @@ grpc_cc_library(
     deps = [
         "arena",
         "channel_args",
-        "client_channel_internal_header",
         "closure",
         "connectivity_state",
         "context",
