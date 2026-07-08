@@ -706,17 +706,17 @@ TEST_F(ClientLbSubchannelMetricsTest, SubchannelMetricsBasic) {
         return state == GRPC_CHANNEL_IDLE;
       }));
   if (grpc_core::IsSubchannelConnectionScalingEnabled()) {
-    EXPECT_TRUE(
-        stats_plugin_->GetUInt64MetricValueByName(
-            "grpc.subchannel.disconnections",
-            {target, "", "", "GOAWAY NO_ERROR"}) == 1u ||
-        stats_plugin_->GetUInt64MetricValueByName(
-            "grpc.subchannel.disconnections",
-            {target, "", "", "GOAWAY INTERNAL_ERROR"}) == 1u);
+    EXPECT_TRUE(stats_plugin_->GetUInt64MetricValueByName(
+                    "grpc.subchannel.disconnections",
+                    {target, "", "", "GOAWAY NO_ERROR"}) == 1u ||
+                stats_plugin_->GetUInt64MetricValueByName(
+                    "grpc.subchannel.disconnections",
+                    {target, "", "", "GOAWAY INTERNAL_ERROR"}) == 1u);
   } else {
-    EXPECT_THAT(stats_plugin_->GetUInt64MetricValueByName(
-                    "grpc.subchannel.disconnections", {target, "", "", "unknown"}),
-                ::testing::Optional(1));
+    EXPECT_THAT(
+        stats_plugin_->GetUInt64MetricValueByName(
+            "grpc.subchannel.disconnections", {target, "", "", "unknown"}),
+        ::testing::Optional(1));
   }
   EXPECT_THAT(stats_plugin_->GetInt64MetricValueByName(
                   "grpc.subchannel.open_connections", {target, "none", "", ""}),
