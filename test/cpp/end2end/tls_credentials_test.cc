@@ -76,14 +76,14 @@ class KeyExchangeGroupCheckingVerifier : public ExternalCertificateVerifier {
   bool Verify(grpc::experimental::TlsCustomVerificationCheckRequest* request,
               std::function<void(grpc::Status)>,
               grpc::Status* sync_status) override {
-    grpc::string_ref negotiated_group = request->negotiated_key_exchange_group();
+    grpc::string_ref negotiated_group =
+        request->negotiated_key_exchange_group();
     if (negotiated_group != expected_group_) {
       *sync_status = grpc::Status(
           grpc::StatusCode::UNAUTHENTICATED,
           "Key exchange group mismatch: expected " + expected_group_ +
               ", got " +
-              std::string(negotiated_group.data(),
-                          negotiated_group.length()));
+              std::string(negotiated_group.data(), negotiated_group.length()));
     } else {
       *sync_status = grpc::Status(grpc::StatusCode::OK, "");
     }
