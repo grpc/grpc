@@ -20,30 +20,128 @@
 #include <string.h>
 
 #include <map>
+#include <type_traits>
 
+#include "src/core/load_balancing/backend_metric_data.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.hpp"
 #include "upb/message/map.h"
 #include "xds/data/orca/v3/orca_load_report.upb.h"
 #include "absl/strings/string_view.h"
 
+// Forward-declare the new typed map Entry structures to satisfy compiler types.
+struct xds_data_orca_v3_OrcaLoadReport_RequestCostEntry;
+struct xds_data_orca_v3_OrcaLoadReport_UtilizationEntry;
+struct xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry;
+
+extern "C" {
+// Declare the new getter functions strongly. They are only referenced
+// if the new upb is active, via template specialization.
+upb_StringView xds_data_orca_v3_OrcaLoadReport_RequestCostEntry_key(
+    const xds_data_orca_v3_OrcaLoadReport_RequestCostEntry*);
+double xds_data_orca_v3_OrcaLoadReport_RequestCostEntry_value(
+    const xds_data_orca_v3_OrcaLoadReport_RequestCostEntry*);
+
+upb_StringView xds_data_orca_v3_OrcaLoadReport_UtilizationEntry_key(
+    const xds_data_orca_v3_OrcaLoadReport_UtilizationEntry*);
+double xds_data_orca_v3_OrcaLoadReport_UtilizationEntry_value(
+    const xds_data_orca_v3_OrcaLoadReport_UtilizationEntry*);
+
+upb_StringView xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry_key(
+    const xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry*);
+double xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry_value(
+    const xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry*);
+}
+
 namespace grpc_core {
+
+// Template declarations for entry getters.
+template <typename Entry>
+upb_StringView GetMapKey(const Entry* entry);
+
+template <typename Entry>
+double GetMapVal(const Entry* entry);
+
+// Specializations for RequestCostEntry.
+template <>
+inline upb_StringView GetMapKey(
+    const xds_data_orca_v3_OrcaLoadReport_RequestCostEntry* entry) {
+  return xds_data_orca_v3_OrcaLoadReport_RequestCostEntry_key(entry);
+}
+template <>
+inline double GetMapVal(
+    const xds_data_orca_v3_OrcaLoadReport_RequestCostEntry* entry) {
+  return xds_data_orca_v3_OrcaLoadReport_RequestCostEntry_value(entry);
+}
+
+// Specializations for UtilizationEntry.
+template <>
+inline upb_StringView GetMapKey(
+    const xds_data_orca_v3_OrcaLoadReport_UtilizationEntry* entry) {
+  return xds_data_orca_v3_OrcaLoadReport_UtilizationEntry_key(entry);
+}
+template <>
+inline double GetMapVal(
+    const xds_data_orca_v3_OrcaLoadReport_UtilizationEntry* entry) {
+  return xds_data_orca_v3_OrcaLoadReport_UtilizationEntry_value(entry);
+}
+
+// Specializations for NamedMetricsEntry.
+template <>
+inline upb_StringView GetMapKey(
+    const xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry* entry) {
+  return xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry_key(entry);
+}
+template <>
+inline double GetMapVal(
+    const xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry* entry) {
+  return xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry_value(entry);
+}
 
 namespace {
 
-std::map<absl::string_view, double> ParseMap(
-    xds_data_orca_v3_OrcaLoadReport* msg,
-    bool (*upb_next_func)(const xds_data_orca_v3_OrcaLoadReport* msg,
-                          upb_StringView* key, double* val, size_t* iter),
+// Traits helper to reliably detect if a next function is legacy (returns bool)
+template <typename T>
+struct is_legacy_next_func : std::false_type {};
+
+template <typename... Args>
+struct is_legacy_next_func<bool (*)(Args...)> : std::true_type {};
+
+template <typename... Args>
+struct is_legacy_next_func<bool(Args...)> : std::true_type {};
+
+template <typename NextFunc>
+decltype(BackendMetricData::request_cost) ParseMap(
+    xds_data_orca_v3_OrcaLoadReport* msg, NextFunc upb_next_func,
     BackendMetricAllocatorInterface* allocator) {
-  std::map<absl::string_view, double> result;
+  decltype(BackendMetricData::request_cost) result;
   size_t i = kUpb_Map_Begin;
-  upb_StringView key_view;
-  double value;
-  while (upb_next_func(msg, &key_view, &value, &i)) {
-    char* key = allocator->AllocateString(key_view.size);
-    memcpy(key, key_view.data, key_view.size);
-    result[absl::string_view(key, key_view.size)] = value;
+
+  // Check return-type using our traits helper
+  if constexpr (is_legacy_next_func<NextFunc>::value) {
+    // Legacy direct-map-unpacking path (compiled if old upb is active)
+    upb_StringView key_view;
+    double value;
+    while (upb_next_func(msg, &key_view, &value, &i)) {
+      char* key = allocator->AllocateString(key_view.size);
+      memcpy(key, key_view.data, key_view.size);
+      result[absl::string_view(key, key_view.size)] = value;
+    }
+  } else {
+    // Modern Entry-unpacking path (compiled if new upb is active)
+    while (true) {
+      auto entry = upb_next_func(msg, &i);
+      if (entry == nullptr) {
+        break;
+      }
+      // Resolves key using template helper
+      upb_StringView key_view = GetMapKey(entry);
+      // Resolves value using template helper
+      double value = GetMapVal(entry);
+      char* key = allocator->AllocateString(key_view.size);
+      memcpy(key, key_view.data, key_view.size);
+      result[absl::string_view(key, key_view.size)] = value;
+    }
   }
   return result;
 }
