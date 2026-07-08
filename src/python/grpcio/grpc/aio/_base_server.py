@@ -230,7 +230,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
             StatusCode.OK.
 
         Raises:
-          Exception: An exception is always raised to signal the abortion the
+          Exception: An exception is always raised to signal the abortion of the
             RPC to the gRPC runtime.
         """
         raise NotImplementedError()
