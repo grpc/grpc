@@ -133,47 +133,35 @@ REGISTERED_RPC_METHOD_HANDLERS = {
 }
 
 
-class _FlakyMethodHandler(grpc.RpcMethodHandler):
-    """Unary-unary handler that fails the first num_failed_attempts requests
-    with UNAVAILABLE (a retryable status) and succeeds afterwards."""
+def _make_flaky_handler(num_failed_attempts):
+    """Returns a unary-unary handler that fails the first num_failed_attempts
+    requests with UNAVAILABLE (a retryable status) and succeeds afterwards."""
+    remaining_failures = [num_failed_attempts]
 
-    def __init__(self, num_failed_attempts):
-        self.request_streaming = False
-        self.response_streaming = False
-        self.request_deserializer = None
-        self.response_serializer = None
-        self.unary_stream = None
-        self.stream_unary = None
-        self.stream_stream = None
-        self._remaining_failures = num_failed_attempts
+    def _handle(request, servicer_context):
+        if remaining_failures[0] > 0:
+            remaining_failures[0] -= 1
+            servicer_context.abort(grpc.StatusCode.UNAVAILABLE, "flaky failure")
+        return _RESPONSE
 
-        def _handle(request, servicer_context):
-            if self._remaining_failures > 0:
-                self._remaining_failures -= 1
-                servicer_context.abort(
-                    grpc.StatusCode.UNAVAILABLE, "flaky failure"
-                )
-            return _RESPONSE
-
-        self.unary_unary = _handle
+    return grpc.unary_unary_rpc_method_handler(_handle)
 
 
 def start_flaky_server(num_failed_attempts: int) -> Tuple[grpc.Server, int]:
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    handlers = {_UNARY_UNARY: _FlakyMethodHandler(num_failed_attempts)}
-    generic_handler = grpc.method_handlers_generic_handler(
-        _SERVICE_NAME, handlers
-    )
-    server.add_generic_rpc_handlers((generic_handler,))
-    server.add_registered_method_handlers(_SERVICE_NAME, handlers)
-    port = server.add_insecure_port("[::]:0")
-    server.start()
-    return server, port
+    handlers = {_UNARY_UNARY: _make_flaky_handler(num_failed_attempts)}
+    return start_server(handlers=handlers, registered_handlers=handlers)
 
 
 def start_server(
-    interceptors=None, register_method=True
+    interceptors=None,
+    register_method=True,
+    handlers=None,
+    registered_handlers=None,
 ) -> Tuple[grpc.Server, int]:
+    if handlers is None:
+        handlers = RPC_METHOD_HANDLERS
+    if registered_handlers is None:
+        registered_handlers = REGISTERED_RPC_METHOD_HANDLERS
     if interceptors:
         server = grpc.server(
             futures.ThreadPoolExecutor(max_workers=10),
@@ -182,20 +170,22 @@ def start_server(
     else:
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     generic_handler = grpc.method_handlers_generic_handler(
-        _SERVICE_NAME, RPC_METHOD_HANDLERS
+        _SERVICE_NAME, handlers
     )
     server.add_generic_rpc_handlers((generic_handler,))
     if register_method:
         server.add_registered_method_handlers(
-            _SERVICE_NAME, REGISTERED_RPC_METHOD_HANDLERS
+            _SERVICE_NAME, registered_handlers
         )
     port = server.add_insecure_port("[::]:0")
     server.start()
     return server, port
 
 
-def unary_unary_call(port, metadata=None, registered_method=False):
-    with grpc.insecure_channel(f"localhost:{port}") as channel:
+def unary_unary_call(
+    port, metadata=None, registered_method=False, options=None
+):
+    with grpc.insecure_channel(f"localhost:{port}", options=options) as channel:
         multi_callable = channel.unary_unary(
             grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),
             _registered_method=registered_method,
@@ -213,12 +203,7 @@ def unary_unary_call_with_retries(port, registered_method=True):
         ("grpc.service_config", _RETRY_SERVICE_CONFIG),
         ("grpc.enable_retries", 1),
     )
-    with grpc.insecure_channel(f"localhost:{port}", options=options) as channel:
-        multi_callable = channel.unary_unary(
-            grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),
-            _registered_method=registered_method,
-        )
-        unused_response, call = multi_callable.with_call(_REQUEST)
+    unary_unary_call(port, registered_method=registered_method, options=options)
 
 
 def intercepted_unary_unary_call(port, interceptors, metadata=None):

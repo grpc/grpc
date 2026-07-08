@@ -46,11 +46,7 @@ GRPC_TARGET_LABEL = "grpc.target"
 GRPC_CLIENT_METRIC_PREFIX = "grpc.client"
 GRPC_OTHER_LABEL_VALUE = "other"
 _PER_CALL_RETRY_METRICS = frozenset(
-    (
-        MetricsName.CLIENT_RETRIES_PER_CALL,
-        MetricsName.CLIENT_TRANSPARENT_RETRIES_PER_CALL,
-        MetricsName.CLIENT_RETRY_DELAY_PER_CALL,
-    )
+    metric.cyname for metric in _open_telemetry_measures.retry_metrics()
 )
 _observability_lock: threading.RLock = threading.RLock()
 _OPEN_TELEMETRY_OBSERVABILITY: Optional["OpenTelemetryObservability"] = None
