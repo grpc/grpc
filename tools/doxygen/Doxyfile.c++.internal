@@ -1207,6 +1207,8 @@ src/core/config/config_vars.h \
 src/core/config/config_vars_non_generated.cc \
 src/core/config/core_configuration.cc \
 src/core/config/core_configuration.h \
+src/core/config/experiment_env_var.cc \
+src/core/config/experiment_env_var.h \
 src/core/config/load_config.cc \
 src/core/config/load_config.h \
 src/core/credentials/call/call_credentials.h \
@@ -1296,6 +1298,8 @@ src/core/credentials/transport/tls/grpc_tls_certificate_distributor.h \
 src/core/credentials/transport/tls/grpc_tls_certificate_match.cc \
 src/core/credentials/transport/tls/grpc_tls_certificate_provider.cc \
 src/core/credentials/transport/tls/grpc_tls_certificate_provider.h \
+src/core/credentials/transport/tls/grpc_tls_certificate_selector.cc \
+src/core/credentials/transport/tls/grpc_tls_certificate_selector.h \
 src/core/credentials/transport/tls/grpc_tls_certificate_verifier.cc \
 src/core/credentials/transport/tls/grpc_tls_certificate_verifier.h \
 src/core/credentials/transport/tls/grpc_tls_credentials_options.cc \

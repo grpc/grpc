@@ -24,7 +24,7 @@ let package = Package(
 
   dependencies: [
     .package(url: "https://github.com/firebase/abseil-cpp-SwiftPM.git", "0.20250512.1"..<"0.20250512.2"),
-    .package(url: "https://github.com/firebase/boringssl-SwiftPM.git", "0.32.0"..<"0.33.0"),
+    .package(url: "https://github.com/firebase/boringssl-SwiftPM.git", "0.41.0"..<"0.42.0"),
   ],
 
   targets: [
@@ -230,6 +230,8 @@ let package = Package(
         "src/core/config/config_vars_non_generated.cc",
         "src/core/config/core_configuration.cc",
         "src/core/config/core_configuration.h",
+        "src/core/config/experiment_env_var.cc",
+        "src/core/config/experiment_env_var.h",
         "src/core/config/load_config.cc",
         "src/core/config/load_config.h",
         "src/core/credentials/call/call_credentials.h",
@@ -319,6 +321,8 @@ let package = Package(
         "src/core/credentials/transport/tls/grpc_tls_certificate_match.cc",
         "src/core/credentials/transport/tls/grpc_tls_certificate_provider.cc",
         "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h",
+        "src/core/credentials/transport/tls/grpc_tls_certificate_selector.cc",
+        "src/core/credentials/transport/tls/grpc_tls_certificate_selector.h",
         "src/core/credentials/transport/tls/grpc_tls_certificate_verifier.cc",
         "src/core/credentials/transport/tls/grpc_tls_certificate_verifier.h",
         "src/core/credentials/transport/tls/grpc_tls_credentials_options.cc",

@@ -23,7 +23,7 @@
 
 #include "envoy/extensions/filters/http/router/v3/router.upb.h"
 #include "envoy/extensions/filters/http/router/v3/router.upbdefs.h"
-#include "src/core/util/env.h"
+#include "src/core/config/experiment_env_var.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/sync.h"
@@ -112,14 +112,6 @@ RefCountedPtr<const FilterConfig> XdsHttpRouterFilter::ParseOverrideConfig(
 
 namespace {
 
-bool XdsCompositeFilterEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_COMPOSITE_FILTER");
-  if (!value.has_value()) return false;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
-}
-
 Mutex* g_mu = new Mutex;
 NoDestruct<absl::AnyInvocable<std::unique_ptr<XdsHttpFilterImpl>()>>
     g_http_filter_factory_factory ABSL_GUARDED_BY(*g_mu);
@@ -139,7 +131,7 @@ XdsHttpFilterRegistry::XdsHttpFilterRegistry(bool register_builtins) {
     RegisterFilter(std::make_unique<XdsHttpRbacFilter>());
     RegisterFilter(std::make_unique<XdsHttpStatefulSessionFilter>());
     RegisterFilter(std::make_unique<XdsHttpGcpAuthnFilter>());
-    if (XdsCompositeFilterEnabled()) {
+    if (IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_COMPOSITE_FILTER")) {
       RegisterFilter(std::make_unique<XdsHttpCompositeFilter>());
     }
     MutexLock lock(g_mu);

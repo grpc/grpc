@@ -278,3 +278,8 @@ package_group(
     name = "virtual_rpcs",
     packages = [],
 )
+
+package_group(
+    name = "friends",
+    packages = [],
+)

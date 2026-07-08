@@ -201,7 +201,8 @@ std::ostream& operator<<(std::ostream& out, const FlowControlAction& action);
 // This class manages the flow control at a connection level.
 class TransportFlowControl final {
  public:
-  explicit TransportFlowControl(absl::string_view name, bool enable_bdp_probe,
+  explicit TransportFlowControl(absl::string_view peer_name,
+                                bool enable_bdp_probe,
                                 MemoryOwner* memory_owner);
   ~TransportFlowControl() {}
 

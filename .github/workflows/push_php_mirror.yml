@@ -1,0 +1,56 @@
+name: Publish PHP Extension Mirror
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish-mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout grpc/grpc
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set Release Version
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          echo "RELEASE_VERSION=${VERSION}" >> $GITHUB_ENV
+
+      - name: Clone Mirror Repo
+        uses: actions/checkout@v4
+        with:
+          repository: grpc/grpc-php-ext
+          path: mirror
+          token: ${{ secrets.PHP_EXT_TOKEN }}
+
+      - name: Clean Mirror Repo (except .git & .gitignore)
+        run: |
+          find mirror -maxdepth 1 ! -name '.git' ! -name '.gitignore' ! -name 'mirror' -exec rm -rf {} +
+
+      - name: Sync Files to Mirror
+        run: |
+          # Copy extension files using the python helper script
+          python3 tools/distrib/php/package_mirror.py
+          
+          # Copy configuration files
+          cp src/php/ext/grpc/composer.json mirror/
+          cp src/php/ext/grpc/README.md mirror/README.md
+
+      - name: Push to Mirror
+        run: |
+          cd mirror
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          if [ -n "$(git status --porcelain)" ]; then
+            git add -A
+            git commit -m "Release v${{ env.RELEASE_VERSION }}"
+            git push origin main
+          else
+            echo "No changes detected for this release"
+          fi
+          git tag -f "v${{ env.RELEASE_VERSION }}"
+          git push origin "refs/tags/v${{ env.RELEASE_VERSION }}"

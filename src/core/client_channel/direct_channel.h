@@ -62,7 +62,9 @@ class DirectChannel final : public Channel {
                         grpc_completion_queue* cq,
                         grpc_pollset_set* pollset_set_alternative, Slice path,
                         std::optional<Slice> authority, Timestamp deadline,
-                        bool registered_method) override;
+                        bool registered_method,
+                        std::optional<absl::FunctionRef<void(Arena*)>>
+                            arena_init_function) override;
   grpc_event_engine::experimental::EventEngine* event_engine() const override {
     return event_engine_.get();
   }
