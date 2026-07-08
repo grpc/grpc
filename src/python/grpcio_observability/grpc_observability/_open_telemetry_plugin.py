@@ -129,8 +129,9 @@ class OpenTelemetryPlugin:
         be replaced with "other".
           enable_retry_per_call_metrics: Once set to True, per-call retry metrics
         (grpc.client.call.retries, grpc.client.call.transparent_retries and
-        grpc.client.call.retry_delay) will be recorded, following the OpenTelemetry
-        metrics gRFC (A66). These metrics are experimental and thus disabled by default.
+        grpc.client.call.retry_delay) will be recorded, following gRFC A96
+        (OTel Metrics for Retries). These metrics are experimental and thus
+        disabled by default.
         """
         self.plugin_options = plugin_options or []
         self.meter_provider = meter_provider

@@ -95,9 +95,7 @@ class _OpenTelemetryPlugin:
             meter = meter_provider.get_meter("grpc-python", grpc.__version__)
             enabled_metrics = _open_telemetry_measures.base_metrics()
             if self._plugin.retry_per_call_metrics_enabled:
-                enabled_metrics = (
-                    enabled_metrics + _open_telemetry_measures.retry_metrics()
-                )
+                enabled_metrics.extend(_open_telemetry_measures.retry_metrics())
             self._metric_to_recorder = self._register_metrics(
                 meter, enabled_metrics
             )
@@ -107,7 +105,7 @@ class _OpenTelemetryPlugin:
         if stats_data.name not in self._metric_to_recorder:
             return False
         if stats_data.name in _PER_CALL_RETRY_METRICS:
-            # Per gRFC A66, per-call retry metrics are not reported for calls
+            # Per gRFC A96, per-call retry metrics are not reported for calls
             # that had no retries (or no retry delay).
             value = (
                 stats_data.value_float
