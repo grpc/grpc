@@ -509,13 +509,16 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             self._server = server
             _test_server.unary_unary_call_with_retries(port=port)
 
+        # Wait until the value is recorded (appended after the entry in
+        # all_metrics), so that indexing metric_values below cannot race with
+        # the exporter thread.
         self.assert_eventually(
-            lambda: retries_metric in self.all_metrics,
-            message=lambda: f"metric {retries_metric} not found in exported metrics: {self.all_metrics.keys()}!",
+            lambda: bool(self._exporter.metric_values.get(retries_metric)),
+            message=lambda: f"metric {retries_metric} not found in exported metrics: {self._exporter.metric_values.keys()}!",
         )
         self.assert_eventually(
-            lambda: retry_delay_metric in self.all_metrics,
-            message=lambda: f"metric {retry_delay_metric} not found in exported metrics: {self.all_metrics.keys()}!",
+            lambda: bool(self._exporter.metric_values.get(retry_delay_metric)),
+            message=lambda: f"metric {retry_delay_metric} not found in exported metrics: {self._exporter.metric_values.keys()}!",
         )
         # The call had NUM_FAILED_ATTEMPTS retries (first attempt excluded)
         # and spent time in retry backoff.
