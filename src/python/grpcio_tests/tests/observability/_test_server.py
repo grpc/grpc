@@ -213,9 +213,7 @@ def unary_unary_call_with_retries(port, registered_method=True):
         ("grpc.service_config", _RETRY_SERVICE_CONFIG),
         ("grpc.enable_retries", 1),
     )
-    with grpc.insecure_channel(
-        f"localhost:{port}", options=options
-    ) as channel:
+    with grpc.insecure_channel(f"localhost:{port}", options=options) as channel:
         multi_callable = channel.unary_unary(
             grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),
             _registered_method=registered_method,
