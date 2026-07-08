@@ -85,7 +85,6 @@
 #include "src/core/resolver/resolver_registry.h"
 #include "src/core/service_config/service_config_call_data.h"
 #include "src/core/service_config/service_config_impl.h"
-#include "src/core/telemetry/telemetry_label.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
@@ -1874,11 +1873,6 @@ grpc_error_handle ClientChannelFilter::CallData::ApplyServiceConfigToCallLocked(
   // below us in the stack, and it will be cleaned up when the call ends.
   auto* service_config_call_data =
       arena_->New<ClientChannelServiceConfigCallData>(arena_);
-  auto* telemetry_label = arena_->GetContext<TelemetryLabel>();
-  if (telemetry_label != nullptr) {
-    service_config_call_data->SetCallAttribute(
-        arena_->New<TelemetryLabelAttribute>(telemetry_label->value));
-  }
   // Use the ConfigSelector to determine the config for the call.
   auto filter_chain = (*config_selector)
                           ->GetCallConfig({send_initial_metadata(), arena_,

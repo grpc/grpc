@@ -1910,8 +1910,6 @@ grpc_cc_library(
     ],
     deps = [
         "arena",
-        "grpc_service_config",
-        "unique_type_name",
         "//:gpr",
         "//:grpc_public_hdrs",
     ],

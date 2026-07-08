@@ -1723,11 +1723,11 @@ TEST_F(RlsMetricsEnd2endTest, TelemetryLabelPropagated) {
                                          "]",
                                          kServiceValue, kMethodValue, kTestKey))
           .Build());
-  rls_server_->service_.SetResponse(BuildRlsRequest({{kTestKey, rls_target0}}),
+  rls_server_->service_.SetResponse(BuildRlsRequest({{kTestKey, kTestValue}}),
                                     BuildRlsResponse({rls_target0}));
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions()
-                     .set_metadata({{"key1", rls_target0}})
+                     .set_metadata({{"key1", kTestValue}})
                      .set_telemetry_label(kCustomTelemetryLabel));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
