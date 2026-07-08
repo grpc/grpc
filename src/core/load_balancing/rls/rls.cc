@@ -52,8 +52,6 @@
 #include <vector>
 
 #include "src/core/channelz/channelz.h"
-#include "src/core/client_channel/client_channel_filter.h"
-#include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -62,6 +60,8 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call.h"
@@ -125,15 +125,6 @@ constexpr absl::string_view kMetricRlsDataPlaneTarget =
     "grpc.lb.rls.data_plane_target";
 constexpr absl::string_view kMetricLabelPickResult = "grpc.lb.pick_result";
 constexpr absl::string_view kMetricLabelTelemetry = "grpc.client.call.custom";
-
-absl::string_view GetTelemetryLabel(const LoadBalancingPolicy::PickArgs& args) {
-  if (args.call_state == nullptr) return "";
-  auto* lb_call_state = static_cast<ClientChannelLbCallState*>(args.call_state);
-  auto* telemetry_label_attribute =
-      lb_call_state->GetCallAttribute<TelemetryLabelAttribute>();
-  if (telemetry_label_attribute == nullptr) return "";
-  return telemetry_label_attribute->value();
-}
 
 const auto kMetricCacheSize =
     GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
@@ -1039,7 +1030,12 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
 
 LoadBalancingPolicy::PickResult RlsLb::Picker::PickFromDefaultTargetOrFail(
     const char* reason, PickArgs args, absl::Status status) {
-  auto telemetry_label = GetTelemetryLabel(args);
+  absl::string_view telemetry_label;
+  if (auto* arena = MaybeGetContext<Arena>()) {
+    if (auto* label = arena->GetContext<TelemetryLabel>()) {
+      telemetry_label = label->value;
+    }
+  }
   if (default_child_policy_ != nullptr) {
     GRPC_TRACE_LOG(rls_lb, INFO)
         << "[rlslb " << lb_policy_.get() << "] picker=" << this << ": "
@@ -1187,7 +1183,12 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(
       << child_policy_wrappers_.size() << ") in state "
       << ConnectivityStateName(child_policy_wrapper->connectivity_state())
       << "; delegating";
-  auto telemetry_label = GetTelemetryLabel(args);
+  absl::string_view telemetry_label;
+  if (auto* arena = MaybeGetContext<Arena>()) {
+    if (auto* label = arena->GetContext<TelemetryLabel>()) {
+      telemetry_label = label->value;
+    }
+  }
   auto pick_result = child_policy_wrapper->Pick(args);
   lb_policy_->MaybeExportPickCount(
       kMetricTargetPicks, child_policy_wrapper->target(), lookup_service,

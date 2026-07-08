@@ -5923,10 +5923,12 @@ grpc_cc_library(
         "absl/strings:str_format",
     ],
     deps = [
+        "arena",
         "channel_args",
         "client_channel_internal_header",
         "closure",
         "connectivity_state",
+        "context",
         "delegating_helper",
         "dual_ref_counted",
         "error",

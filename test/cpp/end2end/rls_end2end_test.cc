@@ -93,6 +93,7 @@ const char* kServiceValue = "grpc.testing.EchoTestService";
 const char* kMethodKey = "method_key";
 const char* kMethodValue = "Echo";
 const char* kConstantKey = "constant_key";
+const char* kCustomTelemetryLabel = "custom_label";
 const char* kConstantValue = "constant_value";
 
 using BackendService = CountedService<TestServiceImpl>;
@@ -238,6 +239,7 @@ class RlsEnd2endTest : public ::testing::Test {
     int timeout_ms = 5000;
     bool wait_for_ready = false;
     std::vector<std::pair<std::string, std::string>> metadata;
+    std::string telemetry_label;
 
     RpcOptions() {}
 
@@ -257,6 +259,11 @@ class RlsEnd2endTest : public ::testing::Test {
       return *this;
     }
 
+    RpcOptions& set_telemetry_label(absl::string_view label) {
+      telemetry_label = std::string(label);
+      return *this;
+    }
+
     // Populates context.
     void SetupRpc(ClientContext* context) const {
       for (const auto& [key, value] : metadata) {
@@ -267,6 +274,9 @@ class RlsEnd2endTest : public ::testing::Test {
             grpc_timeout_milliseconds_to_deadline(timeout_ms));
       }
       if (wait_for_ready) context->set_wait_for_ready(true);
+      if (!telemetry_label.empty()) {
+        context->SetContext(grpc::TelemetryLabel{telemetry_label});
+      }
     }
   };
 
@@ -1690,14 +1700,13 @@ TEST_F(RlsMetricsEnd2endTest, MetricValuesDefaultTargetRpcs) {
       ::testing::Optional(1));
 }
 
-TEST_F(RlsMetricsEnd2endTest, TelemetryLabelPropagatedTargetPicks) {
+TEST_F(RlsMetricsEnd2endTest, TelemetryLabelPropagated) {
   auto kMetricTargetPicks =
       grpc_core::GlobalInstrumentsRegistryTestPeer::
           FindUInt64CounterHandleByName("grpc.lb.rls.target_picks")
               .value();
   StartBackends(1);
   const std::string rls_target0 = grpc_core::LocalIpUri(backends_[0]->port_);
-
   SetNextResolution(
       MakeServiceConfigBuilder()
           .AddKeyBuilder(absl::StrFormat("\"names\":[{"
@@ -1714,28 +1723,19 @@ TEST_F(RlsMetricsEnd2endTest, TelemetryLabelPropagatedTargetPicks) {
                                          "]",
                                          kServiceValue, kMethodValue, kTestKey))
           .Build());
-
   rls_server_->service_.SetResponse(BuildRlsRequest({{kTestKey, rls_target0}}),
                                     BuildRlsResponse({rls_target0}));
-
-  ClientContext context;
-  RpcOptions().set_metadata({{"key1", rls_target0}}).SetupRpc(&context);
-  context.SetContext(grpc::TelemetryLabel{"custom_label"});
-
-  EchoRequest request;
-  request.set_message(kRequestMessage);
-  EchoResponse response;
-  auto status = stub_->Echo(&context, request, &response);
-  EXPECT_TRUE(status.ok()) << status.error_message();
-
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions()
+                     .set_metadata({{"key1", rls_target0}})
+                     .set_telemetry_label(kCustomTelemetryLabel));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
-
   // Check exported metrics has the telemetry label
   EXPECT_THAT(stats_plugin_->GetUInt64CounterValue(
                   kMetricTargetPicks,
                   {target_uri_, rls_server_target_, rls_target0, "complete"},
-                  {"custom_label"}),
+                  {kCustomTelemetryLabel}),
               ::testing::Optional(1));
 }
 
@@ -1745,7 +1745,6 @@ TEST_F(RlsMetricsEnd2endTest, TelemetryLabelPropagatedFailedPick) {
           FindUInt64CounterHandleByName("grpc.lb.rls.failed_picks")
               .value();
   StartBackends(1);
-
   SetNextResolution(
       MakeServiceConfigBuilder()
           .AddKeyBuilder(absl::StrFormat("\"names\":[{"
@@ -1762,20 +1761,11 @@ TEST_F(RlsMetricsEnd2endTest, TelemetryLabelPropagatedFailedPick) {
                                          "]",
                                          kServiceValue, kMethodValue, kTestKey))
           .Build());
-
-  ClientContext context;
-  RpcOptions().set_metadata({{"key1", kTestValue}}).SetupRpc(&context);
-  context.SetContext(grpc::TelemetryLabel{"custom_label"});
-
-  EchoRequest request;
-  request.set_message(kRequestMessage);
-  EchoResponse response;
-  auto status = stub_->Echo(&context, request, &response);
-  EXPECT_FALSE(status.ok());
-  EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
-  EXPECT_EQ("RLS request failed: INTERNAL: no response entry",
-            status.error_message());
-
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      "RLS request failed: INTERNAL: no response entry",
+                      RpcOptions()
+                          .set_metadata({{"key1", kTestValue}})
+                          .set_telemetry_label(kCustomTelemetryLabel));
   EXPECT_THAT(rls_server_->service_.GetUnmatchedRequests(),
               ::testing::ElementsAre(::testing::Property(
                   &RouteLookupRequest::DebugString,
@@ -1783,10 +1773,9 @@ TEST_F(RlsMetricsEnd2endTest, TelemetryLabelPropagatedFailedPick) {
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
   EXPECT_EQ(rls_server_->service_.response_count(), 0);
   EXPECT_EQ(backends_[0]->service_.request_count(), 0);
-
   EXPECT_THAT(stats_plugin_->GetUInt64CounterValue(
                   kMetricFailedPicks, {target_uri_, rls_server_target_},
-                  {"custom_label"}),
+                  {kCustomTelemetryLabel}),
               ::testing::Optional(1));
 }
 
@@ -1797,7 +1786,6 @@ TEST_F(RlsMetricsEnd2endTest, TelemetryLabelPropagatedDefaultTargetPick) {
               .value();
   StartBackends(1);
   const std::string default_target = grpc_core::LocalIpUri(backends_[0]->port_);
-
   SetNextResolution(
       MakeServiceConfigBuilder()
           .AddKeyBuilder(absl::StrFormat("\"names\":[{"
@@ -1815,17 +1803,10 @@ TEST_F(RlsMetricsEnd2endTest, TelemetryLabelPropagatedDefaultTargetPick) {
                                          kServiceValue, kMethodValue, kTestKey))
           .set_default_target(default_target)
           .Build());
-
-  ClientContext context;
-  RpcOptions().set_metadata({{"key1", kTestValue}}).SetupRpc(&context);
-  context.SetContext(grpc::TelemetryLabel{"custom_label"});
-
-  EchoRequest request;
-  request.set_message(kRequestMessage);
-  EchoResponse response;
-  auto status = stub_->Echo(&context, request, &response);
-  EXPECT_TRUE(status.ok()) << status.error_message();
-
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions()
+                     .set_metadata({{"key1", kTestValue}})
+                     .set_telemetry_label(kCustomTelemetryLabel));
   EXPECT_THAT(rls_server_->service_.GetUnmatchedRequests(),
               ::testing::ElementsAre(::testing::Property(
                   &RouteLookupRequest::DebugString,
@@ -1833,11 +1814,10 @@ TEST_F(RlsMetricsEnd2endTest, TelemetryLabelPropagatedDefaultTargetPick) {
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
   EXPECT_EQ(rls_server_->service_.response_count(), 0);
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
-
   EXPECT_THAT(stats_plugin_->GetUInt64CounterValue(
                   kMetricDefaultTargetPicks,
                   {target_uri_, rls_server_target_, default_target, "complete"},
-                  {"custom_label"}),
+                  {kCustomTelemetryLabel}),
               ::testing::Optional(1));
 }
 
