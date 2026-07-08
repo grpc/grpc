@@ -80,7 +80,9 @@ class KeyExchangeGroupCheckingVerifier : public ExternalCertificateVerifier {
       *sync_status = grpc::Status(
           grpc::StatusCode::UNAUTHENTICATED,
           "Key exchange group mismatch: expected " + expected_group_ +
-              ", got " + std::string(request->negotiated_key_exchange_group()));
+              ", got " +
+              std::string(request->negotiated_key_exchange_group().data(),
+                          request->negotiated_key_exchange_group().length()));
     } else {
       *sync_status = grpc::Status(grpc::StatusCode::OK, "");
     }
@@ -297,8 +299,9 @@ TEST_F(TlsCredentialsTest, KeyExchangeGroupMismatchFailsWithTestVerifier) {
   tls_options.set_key_exchange_groups({GRPC_TLS_GROUP_X25519});
   std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
   auto client_certificate_provider =
-      std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
-          root_cert);
+      std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
+  EXPECT_EQ(client_certificate_provider->UpdateRoot(root_cert),
+            absl::OkStatus());
   tls_options.set_root_certificate_provider(client_certificate_provider);
   tls_options.set_sni_override("foo.test.google.fr");
   DoRpcAndExpectFailure(server_addr_, tls_options,
