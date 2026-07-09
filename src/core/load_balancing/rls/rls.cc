@@ -124,7 +124,6 @@ constexpr absl::string_view kMetricLabelRlsInstanceUuid =
 constexpr absl::string_view kMetricRlsDataPlaneTarget =
     "grpc.lb.rls.data_plane_target";
 constexpr absl::string_view kMetricLabelPickResult = "grpc.lb.pick_result";
-constexpr absl::string_view kMetricLabelTelemetry = "grpc.client.call.custom";
 
 const auto kMetricCacheSize =
     GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
@@ -1031,10 +1030,8 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
 LoadBalancingPolicy::PickResult RlsLb::Picker::PickFromDefaultTargetOrFail(
     const char* reason, PickArgs args, absl::Status status) {
   absl::string_view telemetry_label;
-  if (auto* arena = MaybeGetContext<Arena>()) {
-    if (auto* label = arena->GetContext<TelemetryLabel>()) {
-      telemetry_label = label->value;
-    }
+  if (auto* label = GetContext<Arena>()->GetContext<TelemetryLabel>(); label != nullptr) {
+    telemetry_label = label->value;
   }
   if (default_child_policy_ != nullptr) {
     GRPC_TRACE_LOG(rls_lb, INFO)
@@ -1184,10 +1181,8 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(
       << ConnectivityStateName(child_policy_wrapper->connectivity_state())
       << "; delegating";
   absl::string_view telemetry_label;
-  if (auto* arena = MaybeGetContext<Arena>()) {
-    if (auto* label = arena->GetContext<TelemetryLabel>()) {
-      telemetry_label = label->value;
-    }
+  if (auto* label = GetContext<Arena>()->GetContext<TelemetryLabel>(); label != nullptr) {
+    telemetry_label = label->value;
   }
   auto pick_result = child_policy_wrapper->Pick(args);
   lb_policy_->MaybeExportPickCount(

@@ -73,7 +73,7 @@ absl::string_view OpenTelemetryStatusKey() { return "grpc.status"; }
 absl::string_view OpenTelemetryTargetKey() { return "grpc.target"; }
 
 absl::string_view OpenTelemetryCustomLabelKey() {
-  return "grpc.client.call.custom";
+  return grpc_core::kMetricLabelTelemetry;
 }
 
 namespace {
