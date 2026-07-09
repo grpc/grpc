@@ -6250,6 +6250,7 @@ grpc_cc_library(
         "down_cast",
         "envoy_config_common_mutation_rules_upb",
         "envoy_config_core_upb",
+        "envoy_config_route_upb",
         "envoy_type_matcher_upb",
         "envoy_type_upb",
         "grpc_matchers",

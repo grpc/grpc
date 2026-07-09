@@ -892,7 +892,8 @@ Rbac ParseXdsRbac(const XdsResourceType::DecodeContext& context,
     }
   }
   // audit_logging_options
-  if (XdsRbacAuditLoggingEnabled() &&
+  // TODO(lwge): Remove env var guard once the feature is stable.
+  if (IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING") &&
       envoy_config_rbac_v3_RBAC_has_audit_logging_options(rules)) {
     ValidationErrors::ScopedField field(errors, ".audit_logging_options");
     const auto* audit_logging_options =

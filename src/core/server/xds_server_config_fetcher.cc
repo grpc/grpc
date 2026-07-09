@@ -342,6 +342,7 @@ class XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::
  public:
   static absl::StatusOr<RefCountedPtr<XdsServerConfigSelector>> Create(
       const XdsHttpFilterRegistry& http_filter_registry,
+      XdsTransportFactory& transport_factory,
       const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
           http_filters,
       std::shared_ptr<const XdsRouteConfigResource> route_config,
@@ -1126,8 +1127,9 @@ XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::L4FilterChain::
   return XdsServerConfigSelector::Create(
       DownCast<const GrpcXdsBootstrap&>(fetcher_state_->xds_client->bootstrap())
           .http_filter_registry(),
+      *fetcher_state_->xds_client->transport_factory(),
       filter_chain_data_.http_connection_manager.http_filters,
-      std::move(*route_config), *filter_chain_match_manager_->blackboard_);
+      std::move(*route_config), *connection_manager_->blackboard_);
 }
 
 void XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::
@@ -1157,7 +1159,7 @@ void XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::
             route_config) {
   GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
       << "[L4FilterChain " << this << "]: received RDS update";
-  if (filter_chain_match_manager_ == nullptr) return;
+  if (connection_manager_ == nullptr) return;
   if (!route_config.ok()) {
     auto& hcm = filter_chain_data_.http_connection_manager;
     auto& rds_resource_name = std::get<std::string>(hcm.route_config);
@@ -1212,6 +1214,7 @@ absl::StatusOr<RefCountedPtr<
 XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::L4FilterChain::
     XdsServerConfigSelector::Create(
         const XdsHttpFilterRegistry& http_filter_registry,
+        XdsTransportFactory& transport_factory,
         const std::vector<
             XdsListenerResource::HttpConnectionManager::HttpFilter>&
             http_filters,
@@ -1221,7 +1224,7 @@ XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::L4FilterChain::
   FilterConfigListBuilder config_list_builder;
   XdsRouting::RouteConfigFilterChainBuilder route_config_builder(
       http_filters, http_filter_registry, config_list_builder,
-      /*add_last_filter=*/nullptr, blackboard);
+      /*add_last_filter=*/nullptr, transport_factory, blackboard);
   for (auto& vhost : route_config->virtual_hosts) {
     auto vhost_builder =
         route_config_builder.MakeVirtualHostFilterChainBuilder(vhost);
@@ -1257,9 +1260,8 @@ XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::L4FilterChain::
 }
 
 std::unique_ptr<ServerConfigSelector::ConnectionState>
-XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
-    L4FilterChain::XdsServerConfigSelector::BuildFilterChains(
-        FilterChainBuilder& builder) {
+XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::L4FilterChain::
+    XdsServerConfigSelector::BuildFilterChains(FilterChainBuilder& builder) {
   auto connection_state = std::make_unique<XdsConnectionState>();
   for (const auto& vhost : virtual_hosts_) {
     for (const auto& route : vhost.routes) {
