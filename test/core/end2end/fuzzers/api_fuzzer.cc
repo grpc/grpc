@@ -203,44 +203,6 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
 
 }  // namespace
 
-#if GRPC_ARES == 1
-grpc_ares_request* my_dns_lookup_hostname_ares(
-    const char* /*dns_server*/, const char* addr, const char* /*default_port*/,
-    grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
-    std::unique_ptr<grpc_core::EndpointAddressesList>* addresses,
-    int /*query_timeout*/) {
-  addr_req r;
-  r.addr = gpr_strdup(addr);
-  r.on_done = on_done;
-  r.addresses = addresses;
-  GetDefaultEventEngine()->RunAfter(grpc_core::Duration::Seconds(1), [r] {
-    grpc_core::ExecCtx exec_ctx;
-    finish_resolve(r);
-  });
-  return nullptr;
-}
-
-grpc_ares_request* my_dns_lookup_srv_ares(
-    const char* /*dns_server*/, const char* name,
-    grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
-    std::unique_ptr<grpc_core::EndpointAddressesList>* balancer_addresses,
-    int /*query_timeout*/) {
-  addr_req r;
-  r.addr = gpr_strdup(name);
-  r.on_done = on_done;
-  r.addresses = balancer_addresses;
-  GetDefaultEventEngine()->RunAfter(grpc_core::Duration::Seconds(1), [r] {
-    grpc_core::ExecCtx exec_ctx;
-    finish_resolve(r);
-  });
-  return nullptr;
-}
-
-static void my_cancel_ares_request(grpc_ares_request* request) {
-  GRPC_CHECK_NE(request, nullptr);
-}
-#endif
-
 ////////////////////////////////////////////////////////////////////////////////
 // globals
 
@@ -408,11 +370,6 @@ namespace testing {
 ApiFuzzer::ApiFuzzer(const fuzzing_event_engine::Actions& actions)
     : BasicFuzzer(actions) {
   ResetDNSResolver(std::make_unique<FuzzerDNSResolver>(engine().get()));
-#if GRPC_ARES == 1
-  grpc_dns_lookup_hostname_ares = my_dns_lookup_hostname_ares;
-  grpc_dns_lookup_srv_ares = my_dns_lookup_srv_ares;
-  grpc_cancel_ares_request = my_cancel_ares_request;
-#endif
 
   GRPC_CHECK_EQ(channel_, nullptr);
   GRPC_CHECK_EQ(server_, nullptr);
