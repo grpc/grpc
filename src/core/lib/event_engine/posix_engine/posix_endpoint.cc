@@ -279,14 +279,14 @@ void PosixEndpointImpl::FinishEstimate() {
   } else {
     target_length_ = 0.99 * target_length_ + 0.01 * bytes_read_this_round_;
   }
-  // Clamp target_length_ to [min_read_chunk_size_, max_read_chunk_size_].
-  // Without this, target_length_ grows unboundedly under sustained load,
-  // causing memory proportional to (num_connections * peak_message_size).
-  // max_read_chunk_size_ is the intended upper bound per
-  // GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE but was never applied to the estimator.
-  target_length_ = grpc_core::Clamp(target_length_,
-                                    static_cast<double>(min_read_chunk_size_),
-                                    static_cast<double>(max_read_chunk_size_));
+  // Opt-in: if a maximum read buffer size has been configured, clamp the
+  // adaptive target so that occasional large reads do not leave a permanently
+  // high read-buffer high-watermark. When unset (max_read_buffer_size_ < 0)
+  // the behavior is unchanged.
+  if (max_read_buffer_size_ >= 0 &&
+      target_length_ > static_cast<double>(max_read_buffer_size_)) {
+    target_length_ = static_cast<double>(max_read_buffer_size_);
+  }
   bytes_read_this_round_ = 0;
 }
 
@@ -1320,6 +1320,7 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
   bytes_read_this_round_ = 0;
   min_read_chunk_size_ = options.tcp_min_read_chunk_size;
   max_read_chunk_size_ = options.tcp_max_read_chunk_size;
+  max_read_buffer_size_ = options.tcp_max_read_buffer_size;
   bool zerocopy_enabled =
       options.tcp_tx_zero_copy_enabled && poller_->CanTrackErrors();
 #ifdef GRPC_LINUX_ERRQUEUE

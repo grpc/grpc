@@ -479,6 +479,7 @@ struct grpc_tcp {
   explicit grpc_tcp(const grpc_core::PosixTcpOptions& tcp_options)
       : min_read_chunk_size(tcp_options.tcp_min_read_chunk_size),
         max_read_chunk_size(tcp_options.tcp_max_read_chunk_size),
+        max_read_buffer_size(tcp_options.tcp_max_read_buffer_size),
         tcp_zerocopy_send_ctx(
             tcp_options.tcp_tx_zerocopy_max_simultaneous_sends,
             tcp_options.tcp_tx_zerocopy_send_bytes_threshold) {}
@@ -493,6 +494,7 @@ struct grpc_tcp {
 
   int min_read_chunk_size;
   int max_read_chunk_size;
+  int max_read_buffer_size;
 
   // garbage after the last read
   grpc_slice_buffer last_read_buffer;
@@ -737,14 +739,14 @@ static void finish_estimate(grpc_tcp* tcp) {
     tcp->target_length =
         0.99 * tcp->target_length + 0.01 * tcp->bytes_read_this_round;
   }
-  // Clamp target_length to [min_read_chunk_size, max_read_chunk_size].
-  // Without this, target_length grows unboundedly under sustained load,
-  // causing memory proportional to (num_connections * peak_message_size).
-  // max_read_chunk_size is the intended upper bound per
-  // GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE but was never applied to the estimator.
-  tcp->target_length = grpc_core::Clamp(
-      tcp->target_length, static_cast<double>(tcp->min_read_chunk_size),
-      static_cast<double>(tcp->max_read_chunk_size));
+  // Opt-in: if a maximum read buffer size has been configured, clamp the
+  // adaptive target so that occasional large reads do not leave a permanently
+  // high read-buffer high-watermark. When unset (max_read_buffer_size < 0) the
+  // behavior is unchanged.
+  if (tcp->max_read_buffer_size >= 0 &&
+      tcp->target_length > static_cast<double>(tcp->max_read_buffer_size)) {
+    tcp->target_length = static_cast<double>(tcp->max_read_buffer_size);
+  }
   tcp->bytes_read_this_round = 0;
 }
 
