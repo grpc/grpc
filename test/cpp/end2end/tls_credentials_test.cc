@@ -80,10 +80,11 @@ class KeyExchangeGroupCheckingVerifier : public ExternalCertificateVerifier {
     grpc::string_ref negotiated_group =
         request->negotiated_key_exchange_group();
     if (negotiated_group != expected_group_) {
-      *sync_status = grpc::Status(grpc::StatusCode::UNAUTHENTICATED,
-                                  "Key exchange group mismatch: expected " +
-                                      expected_group_ + ", got " +
-                                      std::string(negotiated_group));
+      *sync_status = grpc::Status(
+          grpc::StatusCode::UNAUTHENTICATED,
+          "Key exchange group mismatch: expected " + expected_group_ +
+              ", got " +
+              std::string(negotiated_group.data(), negotiated_group.length()));
     } else {
       *sync_status = grpc::Status(grpc::StatusCode::OK, "");
     }
@@ -166,13 +167,13 @@ void DoRpc(const std::string& server_addr,
                            << result.error_message() << ", "
                            << result.error_details();
   EXPECT_EQ(response.message(), kMessage);
-  if (!expected_group.empty()) {
+  if (!expected_key_exchange_group.empty()) {
     std::shared_ptr<const AuthContext> auth_context = context.auth_context();
     ASSERT_NE(auth_context, nullptr);
     std::vector<grpc::string_ref> properties = auth_context->FindPropertyValues(
         GRPC_SSL_NEGOTIATED_KEY_EXCHANGE_GROUP_PROPERTY_NAME);
     ASSERT_EQ(properties.size(), 1u);
-    EXPECT_EQ(expected_group,
+    EXPECT_EQ(expected_key_exchange_group,
               absl::string_view(properties[0].data(), properties[0].length()));
   }
 }
