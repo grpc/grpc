@@ -379,19 +379,20 @@ Http2Status Http2ServerTransport::ProcessIncomingMetadata(T&& frame) {
   bool is_new_stream = false;
   RefCountedPtr<Stream> stream = nullptr;
   // State update MUST happen before processing the frame.
-  read_context_.UpdateState(frame, /*is_existing_stream=*/(stream != nullptr));
   if (!read_context_.IsWaitingForContinuationFrame()) {
     // This is a HEADERS frame.
     stream = LookupStream(frame.stream_id);
     is_new_stream = (stream == nullptr);
     // TODO(tjagtap) : [PH2][P2] : Implement initial stream id checks for new
     // streams.
+    last_incoming_stream_id_ = frame.stream_id;
   } else {
     // This is a CONTINUATION frame.
     GRPC_DCHECK(read_context_.GetStreamId() == frame.stream_id);
     GRPC_DCHECK(LookupStream(frame.stream_id) != nullptr);
     is_new_stream = true;
   }
+  read_context_.UpdateState(frame, /*is_existing_stream=*/!is_new_stream);
 
   if (is_new_stream) {
     // TODO(tjagtap) : [PH2][P3] : Implement this.
@@ -401,6 +402,13 @@ Http2Status Http2ServerTransport::ProcessIncomingMetadata(T&& frame) {
     // frame and streams that are reserved using PUSH_PROMISE. An endpoint that
     // receives an unexpected stream identifier MUST respond with a connection
     // error (Section 5.4.1) of type PROTOCOL_ERROR.
+
+    if (goaway_manager_.IsFinalGracefulGoawayScheduledOrSent()) {
+      return read_context_.ParseAndDiscardHeaders(
+          std::move(frame.payload), frame.end_headers, Http2Status::Ok(),
+          settings_->acked().max_header_list_size());
+    }
+
     Http2Status append_result =
         read_context_.header_assembler().AppendFrame(frame);
     if (!append_result.IsOk()) {
@@ -451,6 +459,7 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
       << "Http2ServerTransport::ProcessIncomingFrame(ResetStreamFrame) { "
          "stream_id="
       << frame.stream_id << ", error_code=" << frame.error_code << " }";
+  read_context_.OnResetFrameReceived();
 
   Http2ErrorCode error_code = FrameErrorCodeToHttp2ErrorCode(frame.error_code);
   absl::Status status = absl::Status(ErrorCodeToAbslStatusCode(error_code),
@@ -480,6 +489,7 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
       << frame.ack << ", settings length=" << frame.settings.size() << "}";
 
   if (!frame.ack) {
+    read_context_.OnSettingsFrameReceived();
     Http2Status s = settings_->BufferPeerSettings(std::move(frame.settings));
     if (!s.IsOk()) {
       return s;
@@ -516,17 +526,9 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(Http2PingFrame&& frame) {
   if (frame.ack) {
     return ToHttpOkOrConnError(AckPing(frame.opaque));
   } else {
+    read_context_.OnPingFrameReceived();
     if (test_only_ack_pings_) {
-      // TODO(akshitpatel) : [PH2][P2] : Have a counter to track number
-      // of pending induced frames (Ping/Settings Ack). This is to
-      // ensure that if write is taking a long time, we can stop reads
-      // and prioritize writes. RFC9113: PING responses SHOULD be given
-      // higher priority than any other frame.
       ping_manager_->AddPendingPingAck(frame.opaque);
-      // TODO(akshitpatel) : [PH2][P2] : This is done assuming that the
-      // other ProcessFrame promises may return stream or connection
-      // failures. If this does not turn out to be true, consider
-      // returning absl::Status here.
       return ToHttpOkOrConnError(TriggerWriteCycle());
     } else {
       GRPC_HTTP2_SERVER_DLOG
@@ -713,6 +715,9 @@ Http2Status Http2ServerTransport::ProcessMetadata() {
                                settings_->acked().max_header_list_size());
     if (read_result.IsOk()) {
       ServerMetadataHandle metadata = TakeValue(std::move(read_result));
+      // TODO(tjagtap): [PH2][P0] : Might be worth differentiating between
+      // initial and trailing metadata based on the number of header frames
+      // received.
       if (read_context_.HeaderHasEndStream()) {
         // TODO(akshitpatel) [PH2][P1] : Implement receiving trailing metadata.
         // Details:
@@ -889,8 +894,8 @@ absl::Status Http2ServerTransport::PrepareControlFrames() {
     EnforceLatestIncomingSettings();
     settings_->MaybeGetSettingsAndSettingsAckFrames(flow_control_,
                                                     frame_sender);
-    // MaybeSpawnDelayedPing(ping_manager_->MaybeGetSerializedPingFrames(
-    //     frame_sender, NextAllowedPingInterval()));
+    MaybeSpawnDelayedPing(ping_manager_->MaybeGetSerializedPingFrames(
+        frame_sender, NextAllowedPingInterval()));
     MaybeGetWindowUpdateFrames(frame_sender);
     security_frame_handler_->MaybeAppendSecurityFrame(frame_sender);
   }
@@ -925,7 +930,7 @@ void Http2ServerTransport::NotifyFramesWriteDone() {
   // All notifications are expected to be synchronous.
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::NotifyFramesWriteDone";
   read_context_.ResumeReadLoopIfPaused();
-  // MaybeSpawnPingTimeout(ping_manager_->NotifyPingSent());
+  MaybeSpawnPingTimeout(ping_manager_->NotifyPingSent());
   goaway_manager_.NotifyGoawaySent();
   MaybeSpawnWaitForSettingsTimeout();
 }
@@ -1275,47 +1280,6 @@ absl::Status Http2ServerTransport::MaybeAddStreamToWritableStreamList(
   return absl::OkStatus();
 }
 
-// absl::StatusOr<uint32_t> Http2ServerTransport::NextStreamId() {
-//   if (next_stream_id_ > GetMaxAllowedStreamId()) {
-//     // TODO(tjagtap) : [PH2][P3] : Handle case if transport runs out of
-//     stream
-//     // ids
-//     // RFC9113 : Stream identifiers cannot be reused. Long-lived connections
-//     // can result in an endpoint exhausting the available range of stream
-//     // identifiers. A client that is unable to establish a new stream
-//     // identifier can establish a new connection for new streams. A server
-//     // that is unable to establish a new stream identifier can send a GOAWAY
-//     // frame so that the client is forced to open a new connection for new
-//     // streams.
-//     return absl::ResourceExhaustedError("No more stream ids available");
-//   }
-//   // TODO(akshitpatel) : [PH2][P3] : There is a channel arg to delay
-//   // starting new streams instead of failing them. This needs to be
-//   // implemented.
-//   {
-//     // TODO(tjagtap) : [PH2][P1] : For a server we will have to do
-//     // this for incoming streams only. If a server receives more
-//     // streams from a client than is allowed by the clients settings,
-//     // whether or not we should fail is debatable.
-//     MutexLock lock(&transport_mutex_);
-//     if (GetActiveStreamCountLocked() >=
-//         settings_->peer().max_concurrent_streams()) {
-//       return absl::ResourceExhaustedError("Reached max concurrent streams");
-//     }
-//   }
-
-//   // RFC9113 : Streams initiated by a client MUST use odd-numbered stream
-//   // identifiers.
-//   uint32_t new_stream_id = std::exchange(next_stream_id_, next_stream_id_ +
-//   2); if (GPR_UNLIKELY(next_stream_id_ > GetMaxAllowedStreamId())) {
-//     ReportDisconnection(
-//         absl::ResourceExhaustedError("Transport Stream IDs exhausted"),
-//         {},  // TODO(tjagtap) : [PH2][P2] : Report better disconnect info.
-//         "no_more_stream_ids");
-//   }
-//   return new_stream_id;
-// }
-
 //////////////////////////////////////////////////////////////////////////////
 // Stream Operations
 auto Http2ServerTransport::HandleMetadataAndMessages(
@@ -1432,7 +1396,6 @@ Http2Status Http2ServerTransport::IncomingStream(
       return Http2Status::Http2ConnectionError(Http2ErrorCode::kRefusedStream,
                                                "Transport is closed.");
     }
-    // TODO(akshitpatel) : [PH2][P1] : Check GOAWAY conditions here.
   }
 
   GRPC_DCHECK(LookupStream(stream_id) == nullptr);
@@ -1496,9 +1459,9 @@ void Http2ServerTransport::BeginCloseStream(
     GRPC_UNUSED absl::Status status =
         MaybeAddStreamToWritableStreamList(stream, enqueue_result.value());
   }
-
   HandleStreamStateChange(
       *stream, stream->OnInitiateReset(std::move(trailing_metadata_status)));
+  read_context_.OnResetFrameEnqueued(reset_stream_error_code);
 }
 
 void Http2ServerTransport::HandleStreamStateChange(Stream& stream,
@@ -1530,8 +1493,20 @@ void Http2ServerTransport::HandleStreamStateChange(Stream& stream,
 }
 
 void Http2ServerTransport::CleanupStream(Stream& stream) {
-  MutexLock lock(&transport_mutex_);
-  stream_list_.erase(stream.GetStreamId());
+  bool should_close = false;
+  {
+    MutexLock lock(&transport_mutex_);
+    stream_list_.erase(stream.GetStreamId());
+    // Close transport if graceful GOAWAY has been sent and there are no more
+    // streams.
+    if (goaway_manager_.IsFinalGracefulGoawaySent() && stream_list_.empty()) {
+      should_close = true;
+    }
+  }
+  if (should_close) {
+    MaybeSpawnCloseTransport(Http2Status::AbslConnectionError(
+        absl::StatusCode::kUnavailable, "Graceful shutdown complete."));
+  }
 }
 
 absl::Status Http2ServerTransport::UpdateAllStreamsWritability() {
@@ -1563,27 +1538,27 @@ absl::Status Http2ServerTransport::UpdateAllStreamsWritability() {
 //////////////////////////////////////////////////////////////////////////////
 // Ping Keepalive and Goaway
 
-// void Http2ServerTransport::MaybeSpawnPingTimeout(
-//     std::optional<uint64_t> opaque_data) {
-//   if (opaque_data.has_value()) {
-//     SpawnGuardedTransportParty(
-//         "PingTimeout", [self = RefAsSubclass<Http2ServerTransport>(),
-//                         opaque_data = *opaque_data]() {
-//           return self->ping_manager_->TimeoutPromise(opaque_data);
-//         });
-//   }
-// }
-// void Http2ServerTransport::MaybeSpawnDelayedPing(
-//     std::optional<Duration> delayed_ping_wait) {
-//   if (delayed_ping_wait.has_value()) {
-//     SpawnGuardedTransportParty(
-//         "DelayedPing", [self = RefAsSubclass<Http2ServerTransport>(),
-//                         wait = *delayed_ping_wait]() {
-//           GRPC_HTTP2_PING_LOG << "Scheduling delayed ping after wait=" <<
-//           wait; return self->ping_manager_->DelayedPingPromise(wait);
-//         });
-//   }
-// }
+void Http2ServerTransport::MaybeSpawnPingTimeout(
+    std::optional<uint64_t> opaque_data) {
+  if (opaque_data.has_value()) {
+    SpawnGuardedTransportParty(
+        "PingTimeout", [self = RefAsSubclass<Http2ServerTransport>(),
+                        opaque_data = *opaque_data]() {
+          return self->ping_manager_->TimeoutPromise(opaque_data);
+        });
+  }
+}
+void Http2ServerTransport::MaybeSpawnDelayedPing(
+    std::optional<Duration> delayed_ping_wait) {
+  if (delayed_ping_wait.has_value()) {
+    SpawnGuardedTransportParty(
+        "DelayedPing", [self = RefAsSubclass<Http2ServerTransport>(),
+                        wait = *delayed_ping_wait]() {
+          GRPC_HTTP2_PING_LOG << "Scheduling delayed ping after wait=" << wait;
+          return self->ping_manager_->DelayedPingPromise(wait);
+        });
+  }
+}
 
 absl::Status Http2ServerTransport::AckPing(uint64_t opaque_data) {
   // It is possible that the PingRatePolicy may decide to not send a ping
@@ -1604,14 +1579,44 @@ absl::Status Http2ServerTransport::AckPing(uint64_t opaque_data) {
   return absl::OkStatus();
 }
 
-// void Http2ServerTransport::MaybeSpawnKeepaliveLoop() {
-//   if (keepalive_manager_->IsKeepAliveLoopNeeded()) {
-//     SpawnGuardedTransportParty(
-//         "KeepaliveLoop", [self = RefAsSubclass<Http2ServerTransport>()]() {
-//           return self->keepalive_manager_->KeepaliveLoop();
-//         });
-//   }
-// }
+void Http2ServerTransport::MaybeSpawnKeepaliveLoop() {
+  if (keepalive_manager_->IsKeepAliveLoopNeeded()) {
+    SpawnGuardedTransportParty(
+        "KeepaliveLoop", [self = RefAsSubclass<Http2ServerTransport>()]() {
+          return self->keepalive_manager_->KeepaliveLoop();
+        });
+  }
+}
+
+auto Http2ServerTransport::SpawnGracefulGoawayPromise(Slice&& debug_data) {
+  SpawnGuardedTransportParty(
+      "GracefulGoaway",
+      [self = RefAsSubclass<Http2ServerTransport>(),
+       debug_data = std::forward<Slice>(debug_data)]() mutable {
+        GRPC_HTTP2_SERVER_DLOG
+            << "Http2ServerTransport::SpawnGracefulGoawayPromise: "
+               "Initiated graceful GOAWAY";
+        return self->UntilTransportClosed(Map(
+            self->goaway_manager_.RequestGoaway(
+                Http2ErrorCode::kNoError, std::move(debug_data),
+                self->last_incoming_stream_id_, /*immediate=*/false),
+            [self](absl::Status status) {
+              bool should_close = false;
+              {
+                MutexLock lock(&self->transport_mutex_);
+                if (self->GetActiveStreamCountLocked() == 0) {
+                  should_close = true;
+                }
+              }
+              if (should_close) {
+                self->MaybeSpawnCloseTransport(Http2Status::AbslConnectionError(
+                    absl::StatusCode::kUnavailable,
+                    "Graceful shutdown complete."));
+              }
+              return status;
+            }));
+      });
+}
 
 //////////////////////////////////////////////////////////////////////////////
 // Error Path and Close Path
@@ -1689,14 +1694,20 @@ void Http2ServerTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
                                  http2_status.GetAbslConnectionError(), whence);
         }
 
-        // Sleep for 1 second before closing the transport to let write buffers
-        // drain.
-        // TODO(akshitpatel) : [PH2][P1] : Replace sleep with sending GOAWAY
-        // before closing.
-        return Map(Sleep(Duration::Seconds(1)), [self](auto) mutable {
-          self->CloseTransport();
-          return Empty{};
-        });
+        // Sleep for kGoawaySendTimeoutSeconds before closing the transport to
+        // let write buffers drain.
+        return Map(
+            Race(AssertResultType<absl::Status>(
+                     self->goaway_manager_.RequestGoaway(
+                         http2_status.GetConnectionErrorCode(),
+                         Slice::FromCopiedString(std::string(
+                             http2_status.GetAbslConnectionError().message())),
+                         self->last_incoming_stream_id_, /*immediate=*/true)),
+                 Sleep(Duration::Seconds(kGoawaySendTimeoutSeconds))),
+            [self](auto) mutable {
+              self->CloseTransport();
+              return Empty{};
+            });
       });
 }
 
@@ -1805,10 +1816,6 @@ void Http2ServerTransport::ReadChannelArgs(const ChannelArgs& channel_args,
   keepalive_permit_without_calls_ = args.keepalive_permit_without_calls;
   test_only_ack_pings_ = args.test_only_ack_pings;
 
-  if (args.initial_sequence_number > 0) {
-    next_stream_id_ = args.initial_sequence_number;
-  }
-
   settings_->SetSettingsTimeout(args.settings_timeout);
   if (args.max_usable_hpack_table_size >= 0) {
     encoder_.SetMaxUsableSize(args.max_usable_hpack_table_size);
@@ -1891,9 +1898,7 @@ Http2ServerTransport::GoawayInterfaceImpl::Make(
 }
 
 uint32_t Http2ServerTransport::GoawayInterfaceImpl::GetLastAcceptedStreamId() {
-  // TODO(akshitpatel) : [PH2][P1] : This function is not needed for a client.
-  // Implement this for the server.
-  return 0;
+  return transport_->last_incoming_stream_id_;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1922,7 +1927,7 @@ Http2ServerTransport::Http2ServerTransport(
                         ->memory_quota()
                         ->CreateMemoryOwner()),
       flow_control_(
-          "PH2_Server",
+          /*peer_name=*/read_context_.peer_string().as_string_view(),
           channel_args.GetBool(GRPC_ARG_HTTP2_BDP_PROBE).value_or(true),
           &memory_owner_),
       security_frame_handler_(MakeRefCounted<SecurityFrameHandler>()),
@@ -1992,13 +1997,17 @@ void Http2ServerTransport::PerformOp(grpc_transport_op* op) {
     did_stuff = true;
   }
   if (!op->disconnect_with_error.ok()) {
-    MaybeSpawnCloseTransport(Http2Status::AbslConnectionError(
-        op->disconnect_with_error.code(),
+    MaybeSpawnCloseTransport(Http2Status::Http2ConnectionError(
+        AbslStatusCodeToErrorCode(op->disconnect_with_error.code()),
         std::string(op->disconnect_with_error.message())));
     did_stuff = true;
   }
+  // We always consider this case as a graceful shutdown.
   if (!op->goaway_error.ok()) {
-    // TODO(akshitpatel) : [PH2][P1] : Implement graceful GOAWAY handling.
+    GRPC_HTTP2_SERVER_DLOG << "GracefulGoaway triggered with error: "
+                           << op->goaway_error;
+    SpawnGracefulGoawayPromise(
+        Slice::FromCopiedString(op->goaway_error.message()));
     did_stuff = true;
   }
   GRPC_DCHECK(did_stuff) << "Unimplemented transport perform op ";
@@ -2025,7 +2034,7 @@ void Http2ServerTransport::Orphan() {
 
 void Http2ServerTransport::SpawnTransportLoops() {
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::SpawnTransportLoops Begin";
-  // MaybeSpawnKeepaliveLoop();
+  MaybeSpawnKeepaliveLoop();
 
   // SpawnGuardedTransportParty(
   //     "FlowControlPeriodicUpdateLoop",

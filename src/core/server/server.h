@@ -73,9 +73,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
-#define GRPC_ARG_SERVER_MAX_PENDING_REQUESTS "grpc.server.max_pending_requests"
-#define GRPC_ARG_SERVER_MAX_PENDING_REQUESTS_HARD_LIMIT \
-  "grpc.server.max_pending_requests_hard_limit"
 #define GRPC_ARG_SERVER_INTERNAL_PARENT_CALL_ARENA \
   "grpc.internal.parent_call_arena"
 
@@ -100,7 +97,7 @@ class ServerConfigFetcher
     virtual void UpdateConnectionManager(
         RefCountedPtr<ConnectionManager> manager) = 0;
     // Implementations should stop serving when this is called. Serving should
-    // only resume when UpdateConfig() is invoked.
+    // only resume when UpdateConnectionManager() is invoked.
     virtual void StopServing() = 0;
   };
 

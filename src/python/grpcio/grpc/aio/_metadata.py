@@ -147,7 +147,9 @@ class Metadata(Collection):  # noqa: PLW1641
     def set_all(self, key: MetadataKey, values: List[MetadataValue]) -> None:
         self._metadata[key] = values
 
-    def __contains__(self, key: MetadataKey) -> bool:
+    def __contains__(self, key: object) -> bool:
+        if not isinstance(key, MetadataKey):
+            return False
         return key in self._metadata
 
     def __eq__(self, other: object) -> bool:
