@@ -182,7 +182,7 @@ describe GRPC::Core::Call do
   end
 
   describe '#run_batch with array-valued metadata' do
-    it 'does not crash with long key and array value (DFVULN-864)' do
+    it 'does not crash with long key and array value' do
       make_test_call do |call|
         long_key = 'x-grpc-test-echo-initial' # 24 bytes (> 23)
         metadata = { long_key => %w[value-a value-b value-c] }

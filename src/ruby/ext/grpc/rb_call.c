@@ -416,7 +416,9 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
   if (!grpc_header_key_is_legal(key_slice)) {
     grpc_slice_unref(key_slice);
     rb_raise(rb_eArgError,
-             "'%"PRIsVALUE"' is an invalid header key, must match [a-z0-9-_.]+", key);
+             "'%" PRIsVALUE
+             "' is an invalid header key, must match [a-z0-9-_.]+",
+             key);
     return ST_STOP;
   }
 
@@ -435,7 +437,8 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
         VALUE val_entry = rb_ary_entry(val, i);
         grpc_slice_unref(value_slice);
         grpc_slice_unref(key_slice);
-        rb_raise(rb_eArgError, "Header value '%"PRIsVALUE"' has invalid characters",
+        rb_raise(rb_eArgError,
+                 "Header value '%" PRIsVALUE "' has invalid characters",
                  val_entry);
         return ST_STOP;
       }
@@ -451,8 +454,8 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
         !grpc_header_nonbin_value_is_legal(value_slice)) {
       grpc_slice_unref(value_slice);
       grpc_slice_unref(key_slice);
-      rb_raise(rb_eArgError, "Header value '%"PRIsVALUE"' has invalid characters",
-               val);
+      rb_raise(rb_eArgError,
+               "Header value '%" PRIsVALUE "' has invalid characters", val);
       return ST_STOP;
     }
     GRPC_RUBY_ASSERT(md_ary->count < md_ary->capacity);
