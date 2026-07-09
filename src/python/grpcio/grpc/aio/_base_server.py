@@ -217,6 +217,25 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
+    async def abort_with_status(self, status: grpc.Status) -> NoReturn:
+        """Raises an exception to terminate the RPC with a non-OK status.
+
+        The status passed as argument will supersede any existing status code,
+        status message and trailing metadata.
+
+        This is an EXPERIMENTAL API.
+
+        Args:
+          status: A grpc.Status object. The status code in it must not be
+            StatusCode.OK.
+
+        Raises:
+          Exception: An exception is always raised to signal the abortion of the
+            RPC to the gRPC runtime.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
     def set_trailing_metadata(self, trailing_metadata: MetadataType) -> None:
         """Sends the trailing metadata for the RPC.
 

@@ -43,6 +43,7 @@
 #include "src/core/load_balancing/lb_policy_factory.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/load_balancing/outlier_detection/outlier_detection.h"
+#include "src/core/load_balancing/pick_first/pick_first.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/xds/xds_dependency_manager.h"
 #include "src/core/util/debug_location.h"
@@ -313,54 +314,6 @@ std::string MakeChildPolicyName(absl::string_view cluster,
                       "}");
 }
 
-class PriorityEndpointIterator final : public EndpointAddressesIterator {
- public:
-  PriorityEndpointIterator(
-      RefCountedStringValue cluster_name, bool use_http_connect,
-      std::shared_ptr<const XdsEndpointResource> endpoints,
-      std::vector<size_t /*child_number*/> priority_child_numbers)
-      : cluster_name_(std::move(cluster_name)),
-        use_http_connect_(use_http_connect),
-        endpoints_(std::move(endpoints)),
-        priority_child_numbers_(std::move(priority_child_numbers)) {}
-
-  void ForEach(absl::FunctionRef<void(const EndpointAddresses&)> callback)
-      const override {
-    const auto& priority_list = GetUpdatePriorityList(endpoints_.get());
-    for (size_t priority = 0; priority < priority_list.size(); ++priority) {
-      const auto& priority_entry = priority_list[priority];
-      std::string priority_child_name = MakeChildPolicyName(
-          cluster_name_.as_string_view(), priority_child_numbers_[priority]);
-      for (const auto& [locality_name, locality] : priority_entry.localities) {
-        std::vector<RefCountedStringValue> hierarchical_path = {
-            RefCountedStringValue(priority_child_name),
-            locality_name->human_readable_string()};
-        auto hierarchical_path_attr =
-            MakeRefCounted<HierarchicalPathArg>(std::move(hierarchical_path));
-        for (const auto& endpoint : locality.endpoints) {
-          uint32_t endpoint_weight =
-              locality.lb_weight *
-              endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
-          ChannelArgs args =
-              endpoint.args()
-                  .SetObject(hierarchical_path_attr)
-                  .Set(GRPC_ARG_ADDRESS_WEIGHT, endpoint_weight)
-                  .SetObject(locality_name->Ref())
-                  .Set(GRPC_ARG_XDS_LOCALITY_WEIGHT, locality.lb_weight);
-          if (!use_http_connect_) args = args.Remove(GRPC_ARG_XDS_HTTP_PROXY);
-          callback(EndpointAddresses(endpoint.addresses(), args));
-        }
-      }
-    }
-  }
-
- private:
-  RefCountedStringValue cluster_name_;
-  bool use_http_connect_;
-  std::shared_ptr<const XdsEndpointResource> endpoints_;
-  std::vector<size_t /*child_number*/> priority_child_numbers_;
-};
-
 absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
   // Get new config.
   auto new_config = args.config.TakeAsSubclass<CdsLbConfig>();
@@ -487,7 +440,7 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
         // Compute new child numbers.
         child_name_state_.Update(old_cluster_config, endpoint_config);
         // Populate addresses and resolution_note for child policy.
-        update_args.addresses = std::make_shared<PriorityEndpointIterator>(
+        update_args.addresses = std::make_shared<CdsPriorityEndpointIterator>(
             cluster_name_, new_cluster_config->cluster->use_http_connect,
             endpoint_config.endpoints,
             child_name_state_.priority_child_numbers());
@@ -747,6 +700,83 @@ class CdsLbFactory final : public LoadBalancingPolicyFactory {
 };
 
 }  // namespace
+
+CdsPriorityEndpointIterator::CdsPriorityEndpointIterator(
+    RefCountedStringValue cluster_name, bool use_http_connect,
+    std::shared_ptr<const XdsEndpointResource> endpoints,
+    std::vector<size_t /*child_number*/> priority_child_numbers)
+    : cluster_name_(std::move(cluster_name)),
+      use_http_connect_(use_http_connect),
+      endpoints_(std::move(endpoints)),
+      priority_child_numbers_(std::move(priority_child_numbers)) {}
+
+void CdsPriorityEndpointIterator::ForEach(
+    absl::FunctionRef<void(const EndpointAddresses&)> callback) const {
+  const auto& priority_list = GetUpdatePriorityList(endpoints_.get());
+  bool weighted_shuffling_enabled = PfWeightedShufflingEnabled();
+  for (size_t priority = 0; priority < priority_list.size(); ++priority) {
+    const auto& priority_entry = priority_list[priority];
+    std::string priority_child_name = MakeChildPolicyName(
+        cluster_name_.as_string_view(), priority_child_numbers_[priority]);
+    uint64_t locality_weight_sum = 0;
+    if (weighted_shuffling_enabled) {
+      for (const auto& [_, locality] : priority_entry.localities) {
+        locality_weight_sum += locality.lb_weight;
+      }
+      // This should never happen because the resource parsing code will strip
+      // out any localities with weight 0. However, we check this defensively.
+      if (locality_weight_sum == 0) locality_weight_sum = 1;
+    }
+    for (const auto& [locality_name, locality] : priority_entry.localities) {
+      uint32_t normalized_locality_weight = 1;
+      uint64_t endpoint_weight_sum = 0;
+      if (weighted_shuffling_enabled) {
+        normalized_locality_weight =
+            (locality.lb_weight * (uint64_t(1) << 31)) / locality_weight_sum;
+        for (const auto& endpoint : locality.endpoints) {
+          int weight =
+              endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
+          endpoint_weight_sum += weight <= 0 ? 1 : weight;
+        }
+        // This should never happen because the resource validation code will
+        // reject the resource if any endpoint has weight 0. However, we check
+        // this defensively.
+        if (endpoint_weight_sum == 0) endpoint_weight_sum = 1;
+      }
+      std::vector<RefCountedStringValue> hierarchical_path = {
+          RefCountedStringValue(priority_child_name),
+          locality_name->human_readable_string()};
+      auto hierarchical_path_attr =
+          MakeRefCounted<HierarchicalPathArg>(std::move(hierarchical_path));
+      for (const auto& endpoint : locality.endpoints) {
+        int weight_arg =
+            endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
+        uint32_t raw_endpoint_weight = weight_arg <= 0 ? 1 : weight_arg;
+        uint32_t endpoint_weight;
+        if (weighted_shuffling_enabled) {
+          uint32_t normalized_endpoint_weight =
+              (raw_endpoint_weight * (uint64_t(1) << 31)) / endpoint_weight_sum;
+          endpoint_weight = (uint64_t(normalized_locality_weight) *
+                             normalized_endpoint_weight) >>
+                            31;
+          if (endpoint_weight == 0) endpoint_weight = 1;
+        } else {
+          endpoint_weight = locality.lb_weight * raw_endpoint_weight;
+        }
+        ChannelArgs args =
+            endpoint.args()
+                .SetObject(hierarchical_path_attr)
+                .Set(GRPC_ARG_ADDRESS_WEIGHT, endpoint_weight)
+                .SetObject(locality_name->Ref())
+                .Set(GRPC_ARG_XDS_LOCALITY_WEIGHT, locality.lb_weight)
+                .Set(GRPC_ARG_LB_LOCALITY,
+                     locality_name->human_readable_string().as_string_view());
+        if (!use_http_connect_) args = args.Remove(GRPC_ARG_XDS_HTTP_PROXY);
+        callback(EndpointAddresses(endpoint.addresses(), args));
+      }
+    }
+  }
+}
 
 void RegisterCdsLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(

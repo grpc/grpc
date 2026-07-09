@@ -171,12 +171,17 @@ auto ChaoticGoodServerTransport::StreamDispatch::CallOutboundLoop(
                       return Empty{};
                     }),
                 call_initiator.PullServerTrailingMetadata(),
-                [this, stream_id, call_tracer = std::move(call_tracer)](
-                    ServerMetadataHandle md) mutable {
+                // call_initiator's OnDone callback holds the only ref to the
+                // StreamDispatch, so if we want to access StreamDispatch
+                // members (outgoing_frames) after PullServerTrailingMetadata
+                // completes, we need to take a ref to it.
+                [outgoing_frames = outgoing_frames_, stream_id,
+                 call_tracer =
+                     std::move(call_tracer)](ServerMetadataHandle md) mutable {
                   ServerTrailingMetadataFrame frame;
                   frame.body = ServerMetadataProtoFromGrpc(*md);
                   frame.stream_id = stream_id;
-                  return outgoing_frames_.Send(
+                  return outgoing_frames.Send(
                       OutgoingFrame{std::move(frame), std::move(call_tracer)},
                       1);
                 });

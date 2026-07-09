@@ -48,7 +48,10 @@ exports_files([
 
 exports_files(
     glob(["include/**"]),
-    visibility = ["//:__subpackages__"],
+    visibility = [
+        "//:__subpackages__",
+        "//bazel:friends",
+    ],
 )
 
 bool_flag(
@@ -280,11 +283,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "garden"  # @unused
+g_stands_for = "gimbal"  # @unused
 
-core_version = "55.0.0"  # @unused
+core_version = "56.0.0"  # @unused
 
-version = "1.83.0-dev"  # @unused
+version = "1.84.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",

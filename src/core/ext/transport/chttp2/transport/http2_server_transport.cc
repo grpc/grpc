@@ -379,7 +379,6 @@ Http2Status Http2ServerTransport::ProcessIncomingMetadata(T&& frame) {
   bool is_new_stream = false;
   RefCountedPtr<Stream> stream = nullptr;
   // State update MUST happen before processing the frame.
-  read_context_.UpdateState(frame, /*is_existing_stream=*/(stream != nullptr));
   if (!read_context_.IsWaitingForContinuationFrame()) {
     // This is a HEADERS frame.
     stream = LookupStream(frame.stream_id);
@@ -393,6 +392,7 @@ Http2Status Http2ServerTransport::ProcessIncomingMetadata(T&& frame) {
     GRPC_DCHECK(LookupStream(frame.stream_id) != nullptr);
     is_new_stream = true;
   }
+  read_context_.UpdateState(frame, /*is_existing_stream=*/!is_new_stream);
 
   if (is_new_stream) {
     // TODO(tjagtap) : [PH2][P3] : Implement this.
@@ -459,6 +459,7 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
       << "Http2ServerTransport::ProcessIncomingFrame(ResetStreamFrame) { "
          "stream_id="
       << frame.stream_id << ", error_code=" << frame.error_code << " }";
+  read_context_.OnResetFrameReceived();
 
   Http2ErrorCode error_code = FrameErrorCodeToHttp2ErrorCode(frame.error_code);
   absl::Status status = absl::Status(ErrorCodeToAbslStatusCode(error_code),
@@ -488,6 +489,7 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
       << frame.ack << ", settings length=" << frame.settings.size() << "}";
 
   if (!frame.ack) {
+    read_context_.OnSettingsFrameReceived();
     Http2Status s = settings_->BufferPeerSettings(std::move(frame.settings));
     if (!s.IsOk()) {
       return s;
@@ -524,17 +526,9 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(Http2PingFrame&& frame) {
   if (frame.ack) {
     return ToHttpOkOrConnError(AckPing(frame.opaque));
   } else {
+    read_context_.OnPingFrameReceived();
     if (test_only_ack_pings_) {
-      // TODO(akshitpatel) : [PH2][P2] : Have a counter to track number
-      // of pending induced frames (Ping/Settings Ack). This is to
-      // ensure that if write is taking a long time, we can stop reads
-      // and prioritize writes. RFC9113: PING responses SHOULD be given
-      // higher priority than any other frame.
       ping_manager_->AddPendingPingAck(frame.opaque);
-      // TODO(akshitpatel) : [PH2][P2] : This is done assuming that the
-      // other ProcessFrame promises may return stream or connection
-      // failures. If this does not turn out to be true, consider
-      // returning absl::Status here.
       return ToHttpOkOrConnError(TriggerWriteCycle());
     } else {
       GRPC_HTTP2_SERVER_DLOG
@@ -1465,9 +1459,9 @@ void Http2ServerTransport::BeginCloseStream(
     GRPC_UNUSED absl::Status status =
         MaybeAddStreamToWritableStreamList(stream, enqueue_result.value());
   }
-
   HandleStreamStateChange(
       *stream, stream->OnInitiateReset(std::move(trailing_metadata_status)));
+  read_context_.OnResetFrameEnqueued(reset_stream_error_code);
 }
 
 void Http2ServerTransport::HandleStreamStateChange(Stream& stream,
