@@ -24,12 +24,17 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <thread>
+#include <vector>
+
 #include "src/core/config/config_vars.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 #include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
 #include "src/core/credentials/transport/tls/tls_credentials.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/transport/auth_context.h"
+#include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
+#include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/grpc_check.h"
@@ -37,6 +42,7 @@
 #include "test/core/test_util/test_call_creds.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
+#include "absl/synchronization/barrier.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -1258,6 +1264,241 @@ TEST_F(TlsSecurityConnectorTest,
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
   EXPECT_EQ(tls_connector->RootCertInfoForTesting(), spiffe_bundle_map_0_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
+}
+
+//
+// Handshaker factory cache tests (regression for #42129).
+//
+// These tests verify that connectors built from the same TlsCredentials
+// share a single tsi_ssl_client_handshaker_factory (and thus a single
+// SSL_CTX), instead of each subchannel allocating its own.
+
+namespace {
+
+tsi_ssl_client_handshaker_factory* GetClientFactory(
+    const RefCountedPtr<grpc_channel_security_connector>& connector) {
+  return static_cast<TlsChannelSecurityConnector*>(connector.get())
+      ->ClientHandshakerFactoryForTesting();
+}
+
+RefCountedPtr<TlsCredentials> MakeCredentialWithDistributorRoots(
+    RefCountedPtr<grpc_tls_certificate_distributor> distributor) {
+  RefCountedPtr<grpc_tls_certificate_provider> provider =
+      MakeRefCounted<TlsTestCertificateProvider>(std::move(distributor));
+  RefCountedPtr<grpc_tls_credentials_options> options =
+      MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_root_certificate_provider(std::move(provider));
+  options->set_root_cert_name(kRootCertName);
+  return MakeRefCounted<TlsCredentials>(std::move(options));
+}
+
+}  // namespace
+
+TEST_F(TlsSecurityConnectorTest,
+       FactorySharedAcrossConnectorsWithRootCertProvider) {
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor =
+      MakeRefCounted<grpc_tls_certificate_distributor>();
+  distributor->SetKeyMaterials(kRootCertName, root_cert_1_, std::nullopt);
+  RefCountedPtr<TlsCredentials> credential =
+      MakeCredentialWithDistributorRoots(std::move(distributor));
+  ChannelArgs args1;
+  RefCountedPtr<grpc_channel_security_connector> connector1 =
+      credential->create_security_connector(nullptr, kTargetName, &args1);
+  ASSERT_NE(connector1, nullptr);
+  ChannelArgs args2;
+  RefCountedPtr<grpc_channel_security_connector> connector2 =
+      credential->create_security_connector(nullptr, kTargetName, &args2);
+  ASSERT_NE(connector2, nullptr);
+  tsi_ssl_client_handshaker_factory* f1 = GetClientFactory(connector1);
+  tsi_ssl_client_handshaker_factory* f2 = GetClientFactory(connector2);
+  ASSERT_NE(f1, nullptr);
+  ASSERT_NE(f2, nullptr);
+  EXPECT_EQ(f1, f2);
+  EXPECT_EQ(tsi_ssl_client_handshaker_factory_get_ssl_ctx(f1),
+            tsi_ssl_client_handshaker_factory_get_ssl_ctx(f2));
+  EXPECT_TRUE(credential->HasCachedClientHandshakerFactoryForTesting());
+}
+
+TEST_F(TlsSecurityConnectorTest, FactorySharedAcrossConnectorsWithSystemRoots) {
+  RefCountedPtr<grpc_tls_credentials_options> options =
+      MakeRefCounted<grpc_tls_credentials_options>();
+  RefCountedPtr<TlsCredentials> credential =
+      MakeRefCounted<TlsCredentials>(options);
+  ChannelArgs args1;
+  RefCountedPtr<grpc_channel_security_connector> connector1 =
+      credential->create_security_connector(nullptr, kTargetName, &args1);
+  ASSERT_NE(connector1, nullptr);
+  ChannelArgs args2;
+  RefCountedPtr<grpc_channel_security_connector> connector2 =
+      credential->create_security_connector(nullptr, kTargetName, &args2);
+  ASSERT_NE(connector2, nullptr);
+  tsi_ssl_client_handshaker_factory* f1 = GetClientFactory(connector1);
+  tsi_ssl_client_handshaker_factory* f2 = GetClientFactory(connector2);
+  ASSERT_NE(f1, nullptr);
+  ASSERT_NE(f2, nullptr);
+  EXPECT_EQ(f1, f2);
+  EXPECT_TRUE(credential->HasCachedClientHandshakerFactoryForTesting());
+}
+
+TEST_F(TlsSecurityConnectorTest, FactoryNotSharedAcrossDifferentSessionCaches) {
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor =
+      MakeRefCounted<grpc_tls_certificate_distributor>();
+  distributor->SetKeyMaterials(kRootCertName, root_cert_1_, std::nullopt);
+  RefCountedPtr<TlsCredentials> credential =
+      MakeCredentialWithDistributorRoots(std::move(distributor));
+  // SslSessionLRUCache lacks the ChannelArgsCompare trait required by
+  // SetObject; use the C-API channel-arg constructor instead. The cache's
+  // lifetime is managed by the channel arg vtable.
+  grpc_ssl_session_cache* cache_a = grpc_ssl_session_cache_create_lru(8);
+  grpc_ssl_session_cache* cache_b = grpc_ssl_session_cache_create_lru(8);
+  ChannelArgs args1 =
+      ChannelArgs().Set(grpc_ssl_session_cache_create_channel_arg(cache_a));
+  RefCountedPtr<grpc_channel_security_connector> connector1 =
+      credential->create_security_connector(nullptr, kTargetName, &args1);
+  ASSERT_NE(connector1, nullptr);
+  ChannelArgs args2 =
+      ChannelArgs().Set(grpc_ssl_session_cache_create_channel_arg(cache_b));
+  RefCountedPtr<grpc_channel_security_connector> connector2 =
+      credential->create_security_connector(nullptr, kTargetName, &args2);
+  ASSERT_NE(connector2, nullptr);
+  EXPECT_NE(GetClientFactory(connector1), GetClientFactory(connector2));
+  grpc_ssl_session_cache_destroy(cache_a);
+  grpc_ssl_session_cache_destroy(cache_b);
+}
+
+TEST_F(TlsSecurityConnectorTest, FactoryInvalidatedOnRootRotation) {
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor =
+      MakeRefCounted<grpc_tls_certificate_distributor>();
+  distributor->SetKeyMaterials(kRootCertName, root_cert_1_, std::nullopt);
+  RefCountedPtr<TlsCredentials> credential =
+      MakeCredentialWithDistributorRoots(distributor);
+  ChannelArgs args1;
+  RefCountedPtr<grpc_channel_security_connector> connector1 =
+      credential->create_security_connector(nullptr, kTargetName, &args1);
+  ASSERT_NE(connector1, nullptr);
+  tsi_ssl_client_handshaker_factory* f_pre = GetClientFactory(connector1);
+  ASSERT_NE(f_pre, nullptr);
+  // Hold a ref to f_pre so we can compare pointers post-rotation.
+  tsi_ssl_client_handshaker_factory_ref(f_pre);
+  // Rotate roots: this fires OnCertificatesChanged on connector1, which
+  // updates its cached factory pointer.
+  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, std::nullopt);
+  tsi_ssl_client_handshaker_factory* f_post = GetClientFactory(connector1);
+  ASSERT_NE(f_post, nullptr);
+  EXPECT_NE(f_pre, f_post);
+  // A new connector created after rotation picks up the rotated factory.
+  ChannelArgs args2;
+  RefCountedPtr<grpc_channel_security_connector> connector2 =
+      credential->create_security_connector(nullptr, kTargetName, &args2);
+  ASSERT_NE(connector2, nullptr);
+  EXPECT_EQ(f_post, GetClientFactory(connector2));
+  tsi_ssl_client_handshaker_factory_unref(f_pre);
+}
+
+TEST_F(TlsSecurityConnectorTest, FactoryInvalidatedOnIdentityRotation) {
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor =
+      MakeRefCounted<grpc_tls_certificate_distributor>();
+  distributor->SetKeyMaterials(kRootCertName, root_cert_1_, std::nullopt);
+  distributor->SetKeyMaterials(kIdentityCertName, nullptr, identity_pairs_0_);
+  RefCountedPtr<grpc_tls_certificate_provider> provider =
+      MakeRefCounted<TlsTestCertificateProvider>(distributor);
+  RefCountedPtr<grpc_tls_credentials_options> options =
+      MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_root_certificate_provider(provider);
+  options->set_identity_certificate_provider(std::move(provider));
+  options->set_root_cert_name(kRootCertName);
+  options->set_identity_cert_name(kIdentityCertName);
+  RefCountedPtr<TlsCredentials> credential =
+      MakeRefCounted<TlsCredentials>(std::move(options));
+  ChannelArgs args1;
+  RefCountedPtr<grpc_channel_security_connector> connector1 =
+      credential->create_security_connector(nullptr, kTargetName, &args1);
+  ASSERT_NE(connector1, nullptr);
+  tsi_ssl_client_handshaker_factory* f_pre = GetClientFactory(connector1);
+  ASSERT_NE(f_pre, nullptr);
+  tsi_ssl_client_handshaker_factory_ref(f_pre);
+  distributor->SetKeyMaterials(kIdentityCertName, nullptr, identity_pairs_1_);
+  tsi_ssl_client_handshaker_factory* f_post = GetClientFactory(connector1);
+  ASSERT_NE(f_post, nullptr);
+  EXPECT_NE(f_pre, f_post);
+  tsi_ssl_client_handshaker_factory_unref(f_pre);
+}
+
+TEST_F(TlsSecurityConnectorTest, FactorySharedWhenCRLDirectorySet) {
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor =
+      MakeRefCounted<grpc_tls_certificate_distributor>();
+  distributor->SetKeyMaterials(kRootCertName, root_cert_1_, std::nullopt);
+  RefCountedPtr<grpc_tls_certificate_provider> provider =
+      MakeRefCounted<TlsTestCertificateProvider>(std::move(distributor));
+  RefCountedPtr<grpc_tls_credentials_options> options =
+      MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_root_certificate_provider(std::move(provider));
+  options->set_root_cert_name(kRootCertName);
+  options->set_crl_directory("test/core/tsi/test_creds/crl_data/crls");
+  RefCountedPtr<TlsCredentials> credential =
+      MakeRefCounted<TlsCredentials>(std::move(options));
+  ChannelArgs args1;
+  RefCountedPtr<grpc_channel_security_connector> connector1 =
+      credential->create_security_connector(nullptr, kTargetName, &args1);
+  ASSERT_NE(connector1, nullptr);
+  ChannelArgs args2;
+  RefCountedPtr<grpc_channel_security_connector> connector2 =
+      credential->create_security_connector(nullptr, kTargetName, &args2);
+  ASSERT_NE(connector2, nullptr);
+  // CRL directory is invariant across connectors built from the same
+  // credential, so it does not break sharing.
+  EXPECT_EQ(GetClientFactory(connector1), GetClientFactory(connector2));
+}
+
+TEST_F(TlsSecurityConnectorTest, FactoryInvalidatedOnTransitionToSpiffeBundle) {
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor =
+      MakeRefCounted<grpc_tls_certificate_distributor>();
+  distributor->SetKeyMaterials(kRootCertName, root_cert_1_, std::nullopt);
+  RefCountedPtr<TlsCredentials> credential =
+      MakeCredentialWithDistributorRoots(distributor);
+  ChannelArgs args1;
+  RefCountedPtr<grpc_channel_security_connector> connector1 =
+      credential->create_security_connector(nullptr, kTargetName, &args1);
+  ASSERT_NE(connector1, nullptr);
+  tsi_ssl_client_handshaker_factory* f_pre = GetClientFactory(connector1);
+  ASSERT_NE(f_pre, nullptr);
+  tsi_ssl_client_handshaker_factory_ref(f_pre);
+  distributor->SetKeyMaterials(kRootCertName, spiffe_bundle_map_0_,
+                               std::nullopt);
+  tsi_ssl_client_handshaker_factory* f_post = GetClientFactory(connector1);
+  ASSERT_NE(f_post, nullptr);
+  EXPECT_NE(f_pre, f_post);
+  tsi_ssl_client_handshaker_factory_unref(f_pre);
+}
+
+TEST_F(TlsSecurityConnectorTest, ConcurrentConstructionBuildsOneFactory) {
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor =
+      MakeRefCounted<grpc_tls_certificate_distributor>();
+  distributor->SetKeyMaterials(kRootCertName, root_cert_1_, std::nullopt);
+  RefCountedPtr<TlsCredentials> credential =
+      MakeCredentialWithDistributorRoots(std::move(distributor));
+  constexpr int kNumThreads = 16;
+  absl::Barrier barrier(kNumThreads);
+  std::vector<RefCountedPtr<grpc_channel_security_connector>> connectors(
+      kNumThreads);
+  std::vector<std::thread> threads;
+  threads.reserve(kNumThreads);
+  for (int i = 0; i < kNumThreads; ++i) {
+    threads.emplace_back([&, i] {
+      barrier.Block();
+      ChannelArgs args;
+      connectors[i] =
+          credential->create_security_connector(nullptr, kTargetName, &args);
+    });
+  }
+  for (auto& t : threads) t.join();
+  ASSERT_NE(connectors[0], nullptr);
+  tsi_ssl_client_handshaker_factory* expected = GetClientFactory(connectors[0]);
+  ASSERT_NE(expected, nullptr);
+  for (int i = 1; i < kNumThreads; ++i) {
+    ASSERT_NE(connectors[i], nullptr);
+    EXPECT_EQ(GetClientFactory(connectors[i]), expected);
+  }
 }
 
 }  // namespace testing
