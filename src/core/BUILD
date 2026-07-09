@@ -1023,6 +1023,7 @@ grpc_cc_library(
         "absl/meta:type_traits",
         "absl/strings",
         "@com_google_protobuf//upb/reflection",
+        "@com_google_protobuf//upb/reflection:reflection_cc",
     ],
     public_hdrs = [
         "lib/promise/detail/promise_like.h",
@@ -6335,6 +6336,7 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "@com_google_protobuf//upb/reflection",
+        "@com_google_protobuf//upb/reflection:reflection_cc",
     ],
     tags = ["nofixdeps"],
     deps = [
@@ -7270,6 +7272,7 @@ grpc_cc_library(
         "@com_google_protobuf//upb/mem",
         "@com_google_protobuf//upb/json",
         "@com_google_protobuf//upb/reflection",
+        "@com_google_protobuf//upb/reflection:reflection_cc",
     ],
     tags = ["nofixdeps"],
     visibility = ["//bazel:xds_client_grpc"],
@@ -11883,6 +11886,7 @@ grpc_cc_library(
     external_deps = [
         "@com_google_protobuf//upb/mem",
         "@com_google_protobuf//upb/reflection",
+        "@com_google_protobuf//upb/reflection:reflection_cc",
         "@com_google_protobuf//upb/text",
     ],
     deps = [
@@ -12223,6 +12227,7 @@ grpc_cc_library(
         "@com_google_protobuf//upb/mem",
         "@com_google_protobuf//upb/json",
         "@com_google_protobuf//upb/reflection",
+        "@com_google_protobuf//upb/reflection:reflection_cc",
     ],
     deps = [
         "json",

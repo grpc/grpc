@@ -1,0 +1,31 @@
+# Add reflection_cc alias for migration.
+#
+# See https://github.com/protocolbuffers/protobuf/commit/b846555308ad2e3e6c31dd1ae3a3a253a1780445.diff
+diff --git a/upb/reflection/BUILD b/upb/reflection/BUILD
+index a980f8c6bd0ff..6c1341c3916bd 100644
+--- a/upb/reflection/BUILD
++++ b/upb/reflection/BUILD
+@@ -60,6 +60,11 @@ bootstrap_cc_library(
+     ],
+ )
+ 
++alias(
++    name = "reflection_cc",
++    actual = ":reflection",
++)
++
+ bootstrap_cc_library(
+     name = "internal",
+     srcs = [
+@@ -138,6 +143,11 @@ bootstrap_cc_library(
+     ],
+ )
+ 
++alias(
++    name = "internal_cc",
++    actual = ":internal",
++)
++
+ cc_library(
+     name = "generated_reflection_support",
+     hdrs = [

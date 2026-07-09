@@ -172,7 +172,7 @@ EXTERNAL_DEPS = {
     "upb/mem/arena.h": "@com_google_protobuf//upb/mem",
     "upb/mem/arena.hpp": "@com_google_protobuf//upb/mem",
     "upb/text/encode.h": "upb_textformat_lib",
-    "upb/reflection/def.hpp": "upb_reflection",
+    "upb/reflection/def.hpp": "@com_google_protobuf//upb/reflection:reflection_cc",
     "xxhash.h": "xxhash",
     "zlib.h": "madler_zlib",
 }
