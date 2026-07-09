@@ -36,7 +36,6 @@
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_registry.h"
 #include "src/core/telemetry/stats.h"

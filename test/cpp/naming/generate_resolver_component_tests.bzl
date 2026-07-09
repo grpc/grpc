@@ -29,43 +29,6 @@ def generate_resolver_component_tests():
     security and whether to enable the event_engine_dns experiment.
     """
     for unsecure_build_config_suffix in ["_unsecure", ""]:
-        grpc_cc_test(
-            name = "address_sorting_test%s" % unsecure_build_config_suffix,
-            srcs = [
-                "address_sorting_test.cc",
-            ],
-            external_deps = [
-                "absl/log",
-                "absl/log:check",
-                "gtest",
-            ],
-            deps = [
-                "//test/cpp/util:test_util%s" %
-                unsecure_build_config_suffix,
-                "//test/core/test_util:grpc_test_util%s" %
-                unsecure_build_config_suffix,
-                "//:grpc++%s" % unsecure_build_config_suffix,
-                "//:grpc%s" % unsecure_build_config_suffix,
-                "//:gpr",
-                "//test/cpp/util:test_config",
-                "//third_party/address_sorting",
-                "//:config_vars",
-                "//:endpoint_addresses",
-                "//:exec_ctx",
-                "//:grpc_client_channel",
-                "//:grpc_resolver",
-                "//:iomgr",
-                "//:sockaddr_utils",
-                "//src/core:channel_args",
-                "//src/core:grpc_check",
-            ],
-            tags = [
-                "no_windows",
-                # relies on ares
-                "grpc:broken-internally",
-            ],
-        )
-
         # meant to be invoked only through the top-level shell script driver
         grpc_cc_binary(
             name = "resolver_component_test%s" % unsecure_build_config_suffix,

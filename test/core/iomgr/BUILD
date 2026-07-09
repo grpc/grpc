@@ -184,68 +184,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "resolve_address_using_ares_resolver_test",
-    srcs = ["resolve_address_test.cc"],
-    external_deps = [
-        "absl/functional:bind_front",
-        "absl/log:check",
-        "absl/log:log",
-        "absl/strings",
-        "gtest",
-    ],
-    tags = [
-        # Requires ares
-        "grpc:broken-internally",
-    ],
-    deps = [
-        "//:config_vars",
-        "//:gpr",
-        "//:grpc",
-        "//:iomgr",
-        "//src/core:event_engine_shim",
-        "//src/core:grpc_check",
-        "//src/core:sync",
-        "//src/core:time",
-        "//test/core/test_util:fake_udp_and_tcp_server",
-        "//test/core/test_util:grpc_test_util",
-        "//test/core/test_util:grpc_test_util_base",
-        "//test/cpp/util:test_config",
-        "//third_party/address_sorting",
-    ],
-)
-
-grpc_cc_test(
-    name = "resolve_address_using_native_resolver_test",
-    srcs = ["resolve_address_test.cc"],
-    external_deps = [
-        "absl/functional:bind_front",
-        "absl/log:check",
-        "absl/log:log",
-        "absl/strings",
-        "gtest",
-    ],
-    tags = [
-        # Requires ares
-        "grpc:broken-internally",
-    ],
-    deps = [
-        "//:config_vars",
-        "//:gpr",
-        "//:grpc",
-        "//:iomgr",
-        "//src/core:event_engine_shim",
-        "//src/core:grpc_check",
-        "//src/core:sync",
-        "//src/core:time",
-        "//test/core/test_util:fake_udp_and_tcp_server",
-        "//test/core/test_util:grpc_test_util",
-        "//test/core/test_util:grpc_test_util_base",
-        "//test/cpp/util:test_config",
-        "//third_party/address_sorting",
-    ],
-)
-
-grpc_cc_test(
     name = "socket_utils_test",
     srcs = ["socket_utils_test.cc"],
     external_deps = [

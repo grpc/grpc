@@ -42,7 +42,6 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/load_balancing/grpclb/grpclb_balancer_addresses.h"
-#include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_registry.h"

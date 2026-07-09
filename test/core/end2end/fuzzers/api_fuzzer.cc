@@ -46,7 +46,6 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/env.h"
