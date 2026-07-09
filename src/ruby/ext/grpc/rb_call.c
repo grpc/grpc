@@ -430,11 +430,16 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
     array_length = RARRAY_LEN(val);
     /* If the value is an array, add capacity for each value in the array */
     for (i = 0; i < array_length; i++) {
-      value_slice = grpc_slice_from_copied_buffer(
-          RSTRING_PTR(rb_ary_entry(val, i)), RSTRING_LEN(rb_ary_entry(val, i)));
+      VALUE val_entry = rb_ary_entry(val, i);
+      if (TYPE(val_entry) != T_STRING) {
+        grpc_slice_unref(key_slice);
+        rb_raise(rb_eTypeError, "Header values in array must be strings");
+        return ST_STOP;
+      }
+      value_slice = grpc_slice_from_copied_buffer(RSTRING_PTR(val_entry),
+                                                  RSTRING_LEN(val_entry));
       if (!grpc_is_binary_header(key_slice) &&
           !grpc_header_nonbin_value_is_legal(value_slice)) {
-        VALUE val_entry = rb_ary_entry(val, i);
         grpc_slice_unref(value_slice);
         grpc_slice_unref(key_slice);
         rb_raise(rb_eArgError,
