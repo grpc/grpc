@@ -27,7 +27,7 @@ common:bzlmod --noenable_workspace
 build:python-bzlmod --incompatible_default_to_explicit_init_py
 build:python-bzlmod --config=bzlmod # inherit bzlmod configuration
 
-# Can be explicitly disable via --config=no-bzlmod
+# Can be explicitly disabled via --config=no-bzlmod
 # TODO(weizheyuan): Remove this after migration is done.
 common:no-bzlmod --noenable_bzlmod
 common:no-bzlmod --enable_workspace
