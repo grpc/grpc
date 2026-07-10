@@ -26,6 +26,7 @@ import time
 import traceback
 from typing import (
     Callable,
+    cast,
     Dict,
     Iterable,
     Iterator,
@@ -622,10 +623,20 @@ def _call_behavior(
             response_or_iterator: Optional[Union[ResponseType, Iterator[ResponseType]]] = None
             if behavior is not None:
                 if send_response_callback is not None:
-                    response_or_iterator = behavior(argument, context, send_response_callback) # pyright: ignore
+                    experimental_behavior = cast(
+                        Callable[..., Union[ResponseType, Iterator[ResponseType]]],
+                        behavior,
+                    )
+                    response_or_iterator = experimental_behavior(
+                        argument, context, send_response_callback
+                    )
                 else:
-                    response_or_iterator = behavior(argument, context) # pyright: ignore
-            return response_or_iterator, True  # pyright: ignore
+                    standard_behavior = cast(
+                        Callable[..., Union[ResponseType, Iterator[ResponseType]]],
+                        behavior,
+                    )
+                    response_or_iterator = standard_behavior(argument, context)
+            return response_or_iterator, True
         except Exception as exception:  # pylint: disable=broad-except
             with state.condition:
                 if state.aborted:
