@@ -1030,7 +1030,8 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
 LoadBalancingPolicy::PickResult RlsLb::Picker::PickFromDefaultTargetOrFail(
     const char* reason, PickArgs args, absl::Status status) {
   absl::string_view telemetry_label;
-  if (auto* label = GetContext<Arena>()->GetContext<TelemetryLabel>(); label != nullptr) {
+  if (auto* label = GetContext<Arena>()->GetContext<TelemetryLabel>();
+      label != nullptr) {
     telemetry_label = label->value;
   }
   if (default_child_policy_ != nullptr) {
@@ -1181,7 +1182,8 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(
       << ConnectivityStateName(child_policy_wrapper->connectivity_state())
       << "; delegating";
   absl::string_view telemetry_label;
-  if (auto* label = GetContext<Arena>()->GetContext<TelemetryLabel>(); label != nullptr) {
+  if (auto* label = GetContext<Arena>()->GetContext<TelemetryLabel>();
+      label != nullptr) {
     telemetry_label = label->value;
   }
   auto pick_result = child_policy_wrapper->Pick(args);
