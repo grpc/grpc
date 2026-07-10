@@ -7,6 +7,5 @@ way that's convenient to debug, and run as either a unit test or a fuzzer.
 
 Various frameworks are built atop it:
 - transports use it as part of the transport test_suite
-
-Planned:
-- interceptors & filters should also use this
+- filters & interceptors use it via the v3 filter test_suite
+  (`test/core/filters/test_suite`, the `FilterTestV3` fixture)

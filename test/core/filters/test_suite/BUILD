@@ -153,6 +153,31 @@ grpc_fuzz_test(
 )
 
 grpc_fuzz_test(
+    name = "chain_test",
+    srcs = ["chain_test.cc"],
+    external_deps = [
+        "absl/status",
+        "gtest",
+        "fuzztest",
+        "fuzztest_main",
+    ],
+    deps = [
+        ":filter_test_v3",
+        "//:gpr",
+        "//:grpc_base",
+        "//src/core:arena",
+        "//src/core:channel_args",
+        "//src/core:grpc_client_authority_filter",
+        "//src/core:grpc_message_size_filter",
+        "//src/core:message",
+        "//src/core:metadata",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
+        "//src/core:status_flag",
+    ],
+)
+
+grpc_fuzz_test(
     name = "interceptor_test",
     srcs = ["interceptor_test.cc"],
     external_deps = [
