@@ -23,9 +23,6 @@
 
 #include <optional>
 
-#include "absl/status/status.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/call/metadata.h"
 #include "src/core/ext/filters/http/client_authority_filter.h"
 #include "src/core/ext/filters/message_size/message_size_filter.h"
@@ -33,6 +30,9 @@
 #include "src/core/lib/promise/status_flag.h"
 #include "test/core/filters/test_suite/filter_matchers.h"
 #include "test/core/filters/test_suite/filter_test.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 

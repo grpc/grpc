@@ -22,12 +22,12 @@
 
 #include <string>
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/call/metadata.h"
 #include "src/core/ext/filters/http/client_authority_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "test/core/filters/test_suite/filter_test.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 
@@ -45,16 +45,15 @@ FILTER_TEST_V3(RejectsMissingDefaultAuthority) {
 // When the client omits :authority, the filter fills it from the channel arg,
 // and the (post-filter) metadata seen at the server carries it.
 FILTER_TEST_V3(StampsDefaultAuthorityWhenAbsent) {
-  ASSERT_TRUE(
-      Add<ClientAuthorityFilter>().Build(WithDefaultAuthority("foo.test")).ok());
+  ASSERT_TRUE(Add<ClientAuthorityFilter>()
+                  .Build(WithDefaultAuthority("foo.test"))
+                  .ok());
 
   auto initiator = StartCall(NewClientMetadata());
   SpawnTestSeq(
       initiator, "client",
       [initiator]() mutable { return initiator.PullServerTrailingMetadata(); },
-      [](ValueOrFailure<ServerMetadataHandle> md) {
-        EXPECT_TRUE(md.ok());
-      });
+      [](ValueOrFailure<ServerMetadataHandle> md) { EXPECT_TRUE(md.ok()); });
 
   auto handler = TickUntilServerCall();
   SpawnTestSeq(
@@ -73,16 +72,15 @@ FILTER_TEST_V3(StampsDefaultAuthorityWhenAbsent) {
 
 // When the client already set :authority, the filter must not override it.
 FILTER_TEST_V3(PreservesClientProvidedAuthority) {
-  ASSERT_TRUE(
-      Add<ClientAuthorityFilter>().Build(WithDefaultAuthority("foo.test")).ok());
+  ASSERT_TRUE(Add<ClientAuthorityFilter>()
+                  .Build(WithDefaultAuthority("foo.test"))
+                  .ok());
 
   auto initiator = StartCall(NewClientMetadata({{":authority", "bar.test"}}));
   SpawnTestSeq(
       initiator, "client",
       [initiator]() mutable { return initiator.PullServerTrailingMetadata(); },
-      [](ValueOrFailure<ServerMetadataHandle> md) {
-        EXPECT_TRUE(md.ok());
-      });
+      [](ValueOrFailure<ServerMetadataHandle> md) { EXPECT_TRUE(md.ok()); });
 
   auto handler = TickUntilServerCall();
   SpawnTestSeq(

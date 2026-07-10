@@ -23,24 +23,24 @@
 
 #include <optional>
 
-#include "absl/status/status.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/call/metadata.h"
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "test/core/filters/test_suite/filter_matchers.h"
 #include "test/core/filters/test_suite/filter_test.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 
 // A message within the limit passes through and the call completes normally.
 FILTER_TEST_V3(WithinLimitPasses) {
-  ASSERT_TRUE(Add<ServerMessageSizeFilter>()
-                  .Build(ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH,
-                                           1024))
-                  .ok());
+  ASSERT_TRUE(
+      Add<ServerMessageSizeFilter>()
+          .Build(ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, 1024))
+          .ok());
 
   auto initiator = StartCall(NewClientMetadata());
   SpawnTestSeq(

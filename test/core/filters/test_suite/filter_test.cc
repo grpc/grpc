@@ -14,19 +14,19 @@
 
 #include "test/core/filters/test_suite/filter_test.h"
 
+#include <grpc/event_engine/event_engine.h>
+
 #include <optional>
 #include <string>
 #include <utility>
 
-#include <grpc/event_engine/event_engine.h>
-
-#include "absl/log/check.h"
-#include "absl/strings/str_cat.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/log/check.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 

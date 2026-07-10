@@ -24,10 +24,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/call/metadata.h"
 #include "src/core/channelz/property_list.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -35,6 +31,10 @@
 #include "src/core/lib/promise/status_flag.h"
 #include "test/core/filters/test_suite/filter_matchers.h"
 #include "test/core/filters/test_suite/filter_test.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 

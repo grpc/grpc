@@ -26,10 +26,6 @@
 #include <memory>
 #include <optional>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/call/call_spine.h"
 #include "src/core/call/interception_chain.h"
 #include "src/core/call/metadata.h"
@@ -39,6 +35,10 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "test/core/filters/test_suite/filter_matchers.h"
 #include "test/core/filters/test_suite/filter_test.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 
@@ -80,8 +80,9 @@ class HijackingInterceptor final : public Interceptor {
         "hijack", [this, unstarted_call_handler]() mutable {
           return Map(Hijack(std::move(unstarted_call_handler)),
                      [](ValueOrFailure<HijackedCall> hijacked_call) {
-                       ForwardCall(hijacked_call.value().original_call_handler(),
-                                   hijacked_call.value().MakeCall());
+                       ForwardCall(
+                           hijacked_call.value().original_call_handler(),
+                           hijacked_call.value().MakeCall());
                      });
         });
   }

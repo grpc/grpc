@@ -18,11 +18,11 @@
 #include <ostream>
 #include <string>
 
-#include "absl/strings/escaping.h"
-#include "gmock/gmock.h"
 #include "src/core/call/message.h"
 #include "src/core/call/metadata.h"
 #include "src/core/call/metadata_batch.h"
+#include "gmock/gmock.h"
+#include "absl/strings/escaping.h"
 
 // gmock matchers for asserting on the metadata and messages that flow through a
 // FilterTestV3 call. Shared with the older FilterTest<Filter> harness's
