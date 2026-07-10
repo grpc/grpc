@@ -20,6 +20,7 @@ from typing import (
     Iterable,
     Sequence,
     Tuple,
+    TypeAlias,
     TypeVar,
     Union,
 )
@@ -44,7 +45,7 @@ SerializingFunction = Callable[[SerializerInputType], bytes]
 DeserializingFunction = Callable[[bytes], DeserializerOutputType]
 
 ChannelArgumentType = Sequence[Tuple[str, Any]]
-EOFType = _EOF
+EOFType: TypeAlias = _EOF
 DoneCallbackType = Callable[[Any], None]
 RequestIterableType = Union[Iterable[RequestType], AsyncIterable[RequestType]]
 ResponseIterableType = AsyncIterable[ResponseType]

@@ -79,6 +79,7 @@
 #include "src/core/xds/grpc/xds_route_config.h"
 #include "src/core/xds/grpc/xds_routing.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
+#include "src/core/xds/xds_client/xds_transport.h"
 #include "absl/log/log.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
@@ -219,7 +220,9 @@ class XdsResolver final : public Resolver {
 
     void BuildFilterChains(const XdsConfig& xds_config,
                            const XdsHttpFilterRegistry& http_filter_registry,
-                           FilterChainBuilder& builder, Blackboard& blackboard);
+                           FilterChainBuilder& builder,
+                           XdsTransportFactory& transport_factory,
+                           Blackboard& blackboard);
 
    private:
     class RouteListIterator;
@@ -420,7 +423,8 @@ XdsResolver::RouteConfigData::GetRouteForRequest(
 void XdsResolver::RouteConfigData::BuildFilterChains(
     const XdsConfig& xds_config,
     const XdsHttpFilterRegistry& http_filter_registry,
-    FilterChainBuilder& builder, Blackboard& blackboard) {
+    FilterChainBuilder& builder, XdsTransportFactory& transport_factory,
+    Blackboard& blackboard) {
   const auto& hcm = std::get<XdsListenerResource::HttpConnectionManager>(
       xds_config.listener->listener);
   XdsRouting::RouteConfigFilterChainBuilder route_config_builder(
@@ -428,7 +432,7 @@ void XdsResolver::RouteConfigData::BuildFilterChains(
       [](FilterChainBuilder& builder) {
         builder.AddFilter<ClusterSelectionFilter>(nullptr);
       },
-      blackboard);
+      transport_factory, blackboard);
   auto vhost_builder = route_config_builder.MakeVirtualHostFilterChainBuilder(
       *xds_config.virtual_host);
   // Set the filter chain for each route.
@@ -759,8 +763,9 @@ void XdsResolver::XdsConfigSelector::BuildFilterChains(
   const auto& http_filter_registry =
       DownCast<const GrpcXdsBootstrap&>(resolver_->xds_client_->bootstrap())
           .http_filter_registry();
-  route_config_data_->BuildFilterChains(*xds_config_, http_filter_registry,
-                                        builder, *resolver_->blackboard_);
+  route_config_data_->BuildFilterChains(
+      *xds_config_, http_filter_registry, builder,
+      *resolver_->xds_client_->transport_factory(), *resolver_->blackboard_);
 }
 
 //

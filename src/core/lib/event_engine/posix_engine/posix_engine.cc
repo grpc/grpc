@@ -76,14 +76,6 @@ namespace grpc_event_engine::experimental {
 
 namespace {
 
-bool ShouldUsePosixPoller() {
-#if defined(GRPC_PYTHON_BUILD)
-  return grpc_core::IsEventEnginePollerForPythonEnabled();
-#else
-  return true;
-#endif
-}
-
 #if GRPC_ENABLE_FORK_SUPPORT && GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
 
 // Thread pool can outlive EE but we need to ensure the ordering if both
@@ -434,10 +426,8 @@ PosixEventEngine::PosixEventEngine(const Options& options)
     : connection_shards_(options.connection_shards),
       executor_(MakeThreadPool(options.reserve_threads)),
       timer_manager_(std::make_shared<TimerManager>(executor_)) {
-  if (ShouldUsePosixPoller()) {
-    poller_ = grpc_event_engine::experimental::MakeDefaultPoller(executor_);
-    SchedulePoller();
-  }
+  poller_ = grpc_event_engine::experimental::MakeDefaultPoller(executor_);
+  SchedulePoller();
 }
 
 #endif  // GRPC_POSIX_SOCKET_TCP
@@ -476,13 +466,17 @@ void PosixEventEngine::CancelAllPendingTimers() {
 PosixEventEngine::~PosixEventEngine() {
   {
     grpc_core::MutexLock lock(&mu_);
-    if (GRPC_TRACE_FLAG_ENABLED(event_engine)) {
-      for (auto handle : known_handles_) {
+    auto pending_handles = known_handles_;
+    for (auto handle : pending_handles) {
+      if (GRPC_TRACE_FLAG_ENABLED(event_engine)) {
         LOG(ERROR) << "(event_engine) PosixEventEngine:" << this
                    << " uncleared TaskHandle at shutdown:"
                    << HandleToString(handle);
       }
+      CancelInternal(handle);
     }
+    // Prevent new timers from being scheduled on this EventEngine.
+    disallow_new_timers_ = true;
     GRPC_CHECK(GPR_LIKELY(known_handles_.empty()));
   }
 #if defined(GRPC_POSIX_SOCKET_TCP)

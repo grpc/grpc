@@ -14,7 +14,7 @@
 """Invocation-side implementation of gRPC Asyncio Python."""
 
 import asyncio
-from collections.abc import AsyncIterable, Iterable
+from collections.abc import AsyncIterable
 import enum
 from functools import partial
 import logging
@@ -308,7 +308,7 @@ class _UnaryResponseMixin(Call[RequestType, ResponseType]):
             return True
         return False
 
-    def __await__(self) -> Generator[Any, None, ResponseType | EOFType]:
+    def __await__(self) -> Generator[Any, None, ResponseType]:
         """Wait till the ongoing RPC request finishes."""
         try:
             response = yield from self._call_response
@@ -458,9 +458,7 @@ class _StreamRequestMixin(Call[RequestType, ResponseType]):
                             rpc_error,
                         )
                         return
-            elif isinstance(  # pyright: ignore[reportUnnecessaryIsInstance]
-                request_iterator, Iterable
-            ):
+            else:
                 for request in request_iterator:
                     try:
                         await self._write(request)
@@ -473,12 +471,6 @@ class _StreamRequestMixin(Call[RequestType, ResponseType]):
                             rpc_error,
                         )
                         return
-            else:
-                err_msg = (
-                    f"request_iterator must be an {RequestIterableType},"
-                    f" got {type(request_iterator).__name__!r} instead"
-                )
-                raise TypeError(err_msg)
 
             await self._done_writing()
         except:  # pylint: disable=bare-except # noqa: E722
@@ -764,7 +756,7 @@ class StreamStreamCall(
         self._init_stream_request_mixin(request_iterator)
         self._init_stream_response_mixin(self._initializer)
 
-    async def _prepare_rpc(self):
+    async def _prepare_rpc(self) -> None:
         """Prepares the RPC for receiving/sending messages.
 
         All other operations around the stream should only happen after the
