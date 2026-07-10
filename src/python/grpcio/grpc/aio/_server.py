@@ -22,7 +22,7 @@ from grpc import _compression
 from grpc import _observability
 from grpc._cython import cygrpc
 
-from . import _base_server # pyright: ignore[reportPrivateUsage]
+from . import _base_server  # pyright: ignore[reportPrivateUsage]
 from ._interceptor import ServerInterceptor
 from ._typing import ChannelArgumentType
 

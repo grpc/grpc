@@ -112,9 +112,11 @@ def _abortion_code(
 def _details(state: _RPCState) -> bytes:
     return b"" if state.details is None else state.details
 
+
 class _HandlerCallDetailsTuple(NamedTuple):
     method: str
     invocation_metadata: Optional[MetadataType]
+
 
 class _HandlerCallDetails(
     _HandlerCallDetailsTuple,
@@ -175,7 +177,7 @@ class _GenericMethod(_Method):
         for generic_handler in self._generic_handlers:
             # Type is suppressed here because `service` lacks type annotations
             # in the public API (__init__.py), which will be updated with gRFC.
-            # TODO(asheshvidyut): Fix with Typing Phase 3
+            # TODO(asheshvidyut): Fix with Typing Hints Plan Phase 3
             method_handler: Optional[grpc.RpcMethodHandler] = generic_handler.service(  # type: ignore[reportUnknownMemberType]
                 handler_call_details
             )
@@ -423,7 +425,9 @@ class _Context(grpc.ServicerContext):
 
     def auth_context(self) -> Mapping[str, Sequence[bytes]]:
         auth_context = cygrpc.auth_context(self._rpc_event.call)
-        auth_context_dict: Mapping[str, Sequence[bytes]] = {} if auth_context is None else auth_context
+        auth_context_dict: Mapping[str, Sequence[bytes]] = (
+            {} if auth_context is None else auth_context
+        )
         return {
             _common.decode(key): value
             for key, value in auth_context_dict.items()
@@ -604,7 +608,10 @@ def _call_behavior(
     request_deserializer: Optional[DeserializingFunction],
     send_response_callback: Optional[Callable[[ResponseType], None]] = None,
 ) -> Tuple[Union[ResponseType, Iterator[ResponseType], None], bool]:
-    from grpc import _create_servicer_context
+    # TODO(asheshvidyut): Fix with Typing Hints Plan Phase 3
+    from grpc import (
+        _create_servicer_context, # pyright: ignore[reportUnknownVariableType]
+    )
 
     with _create_servicer_context(
         rpc_event, state, request_deserializer
@@ -615,7 +622,9 @@ def _call_behavior(
                 args = [argument, context]
                 if send_response_callback is not None:
                     args.append(send_response_callback)
-                response_or_iterator = behavior(*args)
+                response_or_iterator = behavior(
+                    *args
+                )
             return response_or_iterator, True
         except Exception as exception:  # pylint: disable=broad-except
             with state.condition:
