@@ -459,7 +459,11 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
       << "Http2ServerTransport::ProcessIncomingFrame(ResetStreamFrame) { "
          "stream_id="
       << frame.stream_id << ", error_code=" << frame.error_code << " }";
-  read_context_.OnResetFrameReceived();
+  const ShouldSendPing should_send_ping = read_context_.OnResetFrameReceived();
+  if (should_send_ping.should_send_ping_on_rst_stream) {
+    SpawnInfallibleTransportParty("PingOnResetStream",
+                                  UntilTransportClosed(PingOnResetStream()));
+  }
 
   Http2ErrorCode error_code = FrameErrorCodeToHttp2ErrorCode(frame.error_code);
   absl::Status status = absl::Status(ErrorCodeToAbslStatusCode(error_code),
@@ -1918,7 +1922,8 @@ Http2ServerTransport::Http2ServerTransport(
       on_close_callback_(on_close_callback),
       should_reset_ping_clock_(false),
       read_context_(MaxNewStreamsPerRead(channel_args), endpoint_, kIsClient,
-                    GetMaxSecurityFrameSize(channel_args)),
+                    GetMaxSecurityFrameSize(channel_args),
+                    GetPingOnRstStreamPercent(channel_args, kIsClient)),
       transport_write_context_(kIsClient),
       ping_manager_(std::nullopt),
       keepalive_manager_(std::nullopt),

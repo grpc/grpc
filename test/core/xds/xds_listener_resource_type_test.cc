@@ -442,6 +442,37 @@ TEST_P(HttpConnectionManagerTest, SetsMaxStreamDuration) {
             Duration::Milliseconds(5005));
 }
 
+TEST_P(HttpConnectionManagerTest, HttpFilterDisabled) {
+  HttpConnectionManager hcm;
+  auto* filter = hcm.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(Router());
+  filter->set_disabled(true);
+  auto* rds = hcm.mutable_rds();
+  rds->set_route_config_name("rds_name");
+  rds->mutable_config_source()->mutable_self();
+  Listener listener = MakeListener(hcm);
+  std::string serialized_resource;
+  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsListenerResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<const XdsListenerResource&>(**decode_result.resource);
+  auto http_connection_manager = GetHCMConfig(resource);
+  ASSERT_TRUE(http_connection_manager.has_value());
+  ASSERT_EQ(http_connection_manager->http_filters.size(), 1UL);
+  auto& router = http_connection_manager->http_filters[0];
+  EXPECT_EQ(router.name, "router");
+  EXPECT_EQ(router.config_proto_type,
+            "envoy.extensions.filters.http.router.v3.Router");
+  EXPECT_EQ(router.config, Json()) << JsonDump(router.config);
+  EXPECT_TRUE(router.disabled);
+}
+
 TEST_P(HttpConnectionManagerTest, InvalidMaxStreamDuration) {
   HttpConnectionManager hcm;
   auto* filter = hcm.add_http_filters();

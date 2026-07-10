@@ -75,7 +75,7 @@ inline bool ShouldEnablePh2Server() {
   return IsPh2ServerEnabled() || IsPh2ClientServerEnabled();
 }
 
-// TODO(akshitpatel) [PH2][P3] : Write a way to measure the total size of a
+// TODO(akshitpatel) [PH2][P5] : Write a way to measure the total size of a
 // transport object. Reference :
 // https://github.com/grpc/grpc/pull/41294/files#diff-c685cc4847f228327938326e2a45083a2d0845bacff0ac004bd802027a670c4e
 
@@ -152,6 +152,11 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
 uint32_t MaxNewStreamsPerRead(const ChannelArgs& channel_args);
 
 uint32_t GetMaxSecurityFrameSize(const ChannelArgs& channel_args);
+
+// Returns the percentage of RST streams on which we should send a ping.
+// Always returns 0 for client transport.
+uint8_t GetPingOnRstStreamPercent(const ChannelArgs& channel_args,
+                                  bool is_client);
 
 ///////////////////////////////////////////////////////////////////////////////
 // ChannelZ helpers
