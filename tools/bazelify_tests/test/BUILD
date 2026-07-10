@@ -33,7 +33,7 @@ grpc_run_tests_harness_test(
     args = [
         "-l c -c dbg --build_only",
     ],
-    docker_image_version = "tools/dockerfile/test/cxx_debian11_x64.current_version",
+    docker_image_version = "tools/dockerfile/test/cxx_debian12_x64.current_version",
 )
 
 grpc_run_tests_harness_test(
@@ -42,7 +42,7 @@ grpc_run_tests_harness_test(
     args = [
         "-l c -c opt --build_only",
     ],
-    docker_image_version = "tools/dockerfile/test/cxx_debian11_x64.current_version",
+    docker_image_version = "tools/dockerfile/test/cxx_debian12_x64.current_version",
 )
 
 grpc_run_tests_harness_test(
@@ -51,7 +51,7 @@ grpc_run_tests_harness_test(
     args = [
         "-l c++ -c dbg --build_only",
     ],
-    docker_image_version = "tools/dockerfile/test/cxx_debian11_x64.current_version",
+    docker_image_version = "tools/dockerfile/test/cxx_debian12_x64.current_version",
 )
 
 grpc_run_tests_harness_test(
@@ -60,7 +60,7 @@ grpc_run_tests_harness_test(
     args = [
         "-l c++ -c opt --build_only",
     ],
-    docker_image_version = "tools/dockerfile/test/cxx_debian11_x64.current_version",
+    docker_image_version = "tools/dockerfile/test/cxx_debian12_x64.current_version",
 )
 
 # Ruby
@@ -70,7 +70,7 @@ grpc_run_tests_harness_test(
     args = [
         "-l ruby -c dbg",
     ],
-    docker_image_version = "tools/dockerfile/test/ruby_debian11_x64.current_version",
+    docker_image_version = "tools/dockerfile/test/ruby_debian12_x64.current_version",
     prepare_script = ":prepare_ruby.sh",
     use_login_shell = True,  # ruby's docker image uses RVM which weirdly requires login shell
 )
@@ -81,7 +81,7 @@ grpc_run_tests_harness_test(
     args = [
         "-l ruby -c opt",
     ],
-    docker_image_version = "tools/dockerfile/test/ruby_debian11_x64.current_version",
+    docker_image_version = "tools/dockerfile/test/ruby_debian12_x64.current_version",
     prepare_script = ":prepare_ruby.sh",
     use_login_shell = True,  # ruby's docker image uses RVM which weirdly requires login shell
 )
@@ -122,7 +122,7 @@ grpc_run_tests_harness_test(
     args = [
         "-l csharp -c dbg",
     ],
-    docker_image_version = "tools/dockerfile/test/csharp_debian11_x64.current_version",
+    docker_image_version = "tools/dockerfile/test/csharp_debian12_x64.current_version",
 )
 
 grpc_run_tests_harness_test(
@@ -131,7 +131,7 @@ grpc_run_tests_harness_test(
     args = [
         "-l csharp -c opt",
     ],
-    docker_image_version = "tools/dockerfile/test/csharp_debian11_x64.current_version",
+    docker_image_version = "tools/dockerfile/test/csharp_debian12_x64.current_version",
 )
 
 test_suite(
@@ -320,7 +320,7 @@ grpc_build_artifact_task(
         "artifact_protoc_linux_aarch64",
     ],
     build_script = "build_package_csharp_linux.sh",
-    docker_image_version = "tools/dockerfile/test/csharp_debian11_x64.current_version",
+    docker_image_version = "tools/dockerfile/test/csharp_debian12_x64.current_version",
 )
 
 # C# distribtests
