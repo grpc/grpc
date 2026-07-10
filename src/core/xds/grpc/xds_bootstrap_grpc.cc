@@ -16,22 +16,15 @@
 
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 
-#include <grpc/support/json.h>
-#include <stdlib.h>
-
-#include <optional>
+#include <memory>
 #include <string>
-#include <utility>
-#include <vector>
 
-#include "src/core/util/down_cast.h"
-#include "src/core/util/env.h"
+#include "src/core/config/experiment_env_var.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/string.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
@@ -42,11 +35,7 @@ namespace grpc_core {
 
 // TODO(roth): Remove this once the feature passes interop tests.
 bool XdsExtProcOnClientEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT");
-  if (!value.has_value()) return false;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
+  return IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT");
 }
 
 //
@@ -232,9 +221,7 @@ absl::StatusOr<std::unique_ptr<GrpcXdsBootstrap>> GrpcXdsBootstrap::Create(
       return true;
     }
   };
-  auto bootstrap = LoadFromJson<GrpcXdsBootstrap>(*json, XdsJsonArgs());
-  if (!bootstrap.ok()) return bootstrap.status();
-  return std::make_unique<GrpcXdsBootstrap>(std::move(*bootstrap));
+  return LoadFromJson<std::unique_ptr<GrpcXdsBootstrap>>(*json, XdsJsonArgs());
 }
 
 const JsonLoaderInterface* GrpcXdsBootstrap::JsonLoader(const JsonArgs&) {

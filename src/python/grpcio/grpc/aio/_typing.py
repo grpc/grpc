@@ -25,23 +25,27 @@ from typing import (
     Union,
 )
 
-from grpc._cython.cygrpc import EOF
+from grpc._cython.cygrpc import _EOF
 
 # pylint: disable=unused-import
-from ._metadata import Metadata
-from ._metadata import MetadataKey
-from ._metadata import MetadataType
-from ._metadata import MetadataValue
-from ._metadata import MetadatumType
+from ._metadata import Metadata  # pyright: ignore[reportUnusedImport]
+from ._metadata import MetadataKey  # pyright: ignore[reportUnusedImport]
+from ._metadata import MetadataType  # pyright: ignore[reportUnusedImport]
+from ._metadata import MetadataValue  # pyright: ignore[reportUnusedImport]
+from ._metadata import MetadatumType  # pyright: ignore[reportUnusedImport]
 
 # pylint: enable=unused-import
 
 RequestType = TypeVar("RequestType")
 ResponseType = TypeVar("ResponseType")
-SerializingFunction = Callable[[Any], bytes]
-DeserializingFunction = Callable[[bytes], Any]
+
+SerializerInputType = TypeVar("SerializerInputType")
+DeserializerOutputType = TypeVar("DeserializerOutputType")
+SerializingFunction = Callable[[SerializerInputType], bytes]
+DeserializingFunction = Callable[[bytes], DeserializerOutputType]
+
 ChannelArgumentType = Sequence[Tuple[str, Any]]
-EOFType: TypeAlias = type(EOF)  # pyright: ignore[reportInvalidTypeForm]
+EOFType: TypeAlias = _EOF
 DoneCallbackType = Callable[[Any], None]
 RequestIterableType = Union[Iterable[RequestType], AsyncIterable[RequestType]]
 ResponseIterableType = AsyncIterable[ResponseType]

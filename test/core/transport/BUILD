@@ -31,7 +31,12 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    tags = ["no_windows"],  # TODO(jtattermusch): investigate the timeout on windows
+    tags = [
+        # Since BdpEstimator is a core utility that has absolutely nothing to do with EventEngine or
+        # Poller, we don't need to run it in the event manager suite.
+        "grpc:no-internal-poller",
+        "no_windows",  # TODO(jtattermusch): investigate the timeout on windows
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
