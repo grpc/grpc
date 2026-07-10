@@ -52,7 +52,7 @@ GRPC_TRACE=api ./helloworld_application_using_grpc --v=-1 --minloglevel=0
 GRPC_TRACE=tcp,http,api ./helloworld_application_using_grpc  --v=2 --minloglevel=0
 ```
 
-Known limitations: `GPRC_TRACE=tcp` is currently not implemented for Windows (you won't see any tcp traces).
+Known limitations: `GRPC_TRACE=tcp` is currently not implemented for Windows (you won't see any tcp traces).
 
 Please note that the `GRPC_TRACE` environment variable has nothing to do with gRPC's "tracing" feature (= tracing RPCs in
 microservice environment to gain insight about how requests are processed by deployment), it is merely used to enable printing
