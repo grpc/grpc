@@ -133,7 +133,7 @@ class _Method(abc.ABC):
 
     @abc.abstractmethod
     def handler(
-        self, handler_call_details: _HandlerCallDetails
+        self, handler_call_details: grpc.HandlerCallDetails
     ) -> Optional[grpc.RpcMethodHandler]:
         raise NotImplementedError()
 
@@ -153,7 +153,7 @@ class _RegisteredMethod(_Method):
 
     @override
     def handler(
-        self, handler_call_details: _HandlerCallDetails
+        self, handler_call_details: grpc.HandlerCallDetails
     ) -> Optional[grpc.RpcMethodHandler]:
         return self._registered_handler
 
@@ -171,7 +171,7 @@ class _GenericMethod(_Method):
 
     @override
     def handler(
-        self, handler_call_details: _HandlerCallDetails
+        self, handler_call_details: grpc.HandlerCallDetails
     ) -> Optional[grpc.RpcMethodHandler]:
         # If the same method have both generic and registered handler,
         # registered handler will take precedence.
@@ -1010,7 +1010,7 @@ def _find_method_handler(
     interceptor_pipeline: Optional[_interceptor._ServicePipeline],
 ) -> Optional[grpc.RpcMethodHandler]:
     def query_handlers(
-        handler_call_details: _HandlerCallDetails,
+        handler_call_details: grpc.HandlerCallDetails,
     ) -> Optional[grpc.RpcMethodHandler]:
         return method_with_handler.handler(handler_call_details)
 
@@ -1043,12 +1043,12 @@ def _reject_rpc(
             None, status, details, _EMPTY_FLAGS
         ),
     )
+    def _on_batch_complete(_ignored_event: cygrpc.BaseEvent) -> Tuple[_RPCState, Tuple[Any, ...]]:
+        return rpc_state, ()
+
     rpc_event.call.start_server_batch(
         operations,
-        lambda _ignored_event: (
-            rpc_state,
-            (),
-        ),
+        _on_batch_complete,
     )
 
 
