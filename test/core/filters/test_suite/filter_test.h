@@ -97,15 +97,17 @@ class FilterTestV3 : public YodelTest {
   CallHandler TickUntilServerCall();
 
   // Construct client metadata, optionally seeded with key/value pairs.
-  ClientMetadataHandle NewClientMetadata(
+  // Static so it can be called from driving lambdas without capturing `this`.
+  static ClientMetadataHandle NewClientMetadata(
       std::initializer_list<std::pair<absl::string_view, absl::string_view>>
           init = {});
   // Construct server metadata, optionally seeded with key/value pairs.
-  ServerMetadataHandle NewServerMetadata(
+  static ServerMetadataHandle NewServerMetadata(
       std::initializer_list<std::pair<absl::string_view, absl::string_view>>
           init = {});
   // Construct a message with the given payload and flags.
-  MessageHandle NewMessage(absl::string_view payload = "", uint32_t flags = 0);
+  static MessageHandle NewMessage(absl::string_view payload = "",
+                                  uint32_t flags = 0);
 
  private:
   // The controllable server end of the call: each call that traverses the

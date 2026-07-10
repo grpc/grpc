@@ -28,15 +28,11 @@
 #include "absl/status/statusor.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "src/core/call/message.h"
 #include "src/core/call/metadata.h"
 #include "src/core/channelz/property_list.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/promise/status_flag.h"
-#include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/slice/slice.h"
-#include "src/core/lib/slice/slice_buffer.h"
 #include "test/core/filters/test_suite/filter_matchers.h"
 #include "test/core/filters/test_suite/filter_test.h"
 
@@ -69,11 +65,6 @@ class PassThroughFilter : public ImplementChannelFilter<PassThroughFilter> {
   };
 };
 
-MessageHandle MakeMessage(absl::string_view payload) {
-  return Arena::MakePooled<Message>(
-      SliceBuffer(Slice::FromCopiedString(payload)), 0);
-}
-
 }  // namespace
 
 // A unary echo through a pass-through filter: client sends initial metadata + a
@@ -93,7 +84,7 @@ FILTER_TEST_V3(UnaryEchoThroughPassThroughFilter) {
   SpawnTestSeq(
       initiator, "client",
       [initiator]() mutable {
-        return initiator.PushMessage(MakeMessage("hello"));
+        return initiator.PushMessage(NewMessage("hello"));
       },
       [initiator](StatusFlag ok) mutable {
         EXPECT_TRUE(ok.ok());
@@ -134,7 +125,7 @@ FILTER_TEST_V3(UnaryEchoThroughPassThroughFilter) {
         // Pull the client message *before* producing any server output.
         return handler.PullMessage();
       },
-      [this, handler, echoed](ClientToServerNextMessage msg) mutable {
+      [handler, echoed](ClientToServerNextMessage msg) mutable {
         EXPECT_TRUE(msg.ok());
         EXPECT_TRUE(msg.has_value());
         EXPECT_THAT(msg.value(), HasMessagePayload("hello"));
@@ -144,7 +135,7 @@ FILTER_TEST_V3(UnaryEchoThroughPassThroughFilter) {
       },
       [handler, echoed](StatusFlag ok) mutable {
         EXPECT_TRUE(ok.ok());
-        return handler.PushMessage(MakeMessage(*echoed));
+        return handler.PushMessage(NewMessage(*echoed));
       },
       [handler](StatusFlag ok) mutable {
         EXPECT_TRUE(ok.ok());

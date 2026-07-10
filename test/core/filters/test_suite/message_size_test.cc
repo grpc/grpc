@@ -21,31 +21,19 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
-#include <memory>
 #include <optional>
 
 #include "absl/status/status.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "src/core/call/message.h"
 #include "src/core/call/metadata.h"
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/promise/status_flag.h"
-#include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/slice/slice.h"
-#include "src/core/lib/slice/slice_buffer.h"
 #include "test/core/filters/test_suite/filter_matchers.h"
 #include "test/core/filters/test_suite/filter_test.h"
 
 namespace grpc_core {
-
-namespace {
-MessageHandle MakeMessage(absl::string_view payload) {
-  return Arena::MakePooled<Message>(
-      SliceBuffer(Slice::FromCopiedString(payload)), 0);
-}
-}  // namespace
 
 // A message within the limit passes through and the call completes normally.
 FILTER_TEST_V3(WithinLimitPasses) {
@@ -58,7 +46,7 @@ FILTER_TEST_V3(WithinLimitPasses) {
   SpawnTestSeq(
       initiator, "client",
       [initiator]() mutable {
-        return initiator.PushMessage(MakeMessage("small"));
+        return initiator.PushMessage(NewMessage("small"));
       },
       [initiator](StatusFlag ok) mutable {
         EXPECT_TRUE(ok.ok());
@@ -89,7 +77,7 @@ FILTER_TEST_V3(WithinLimitPasses) {
         EXPECT_TRUE(md.ok());
         return handler.PullMessage();
       },
-      [this, handler](ClientToServerNextMessage msg) mutable {
+      [handler](ClientToServerNextMessage msg) mutable {
         EXPECT_TRUE(msg.ok());
         EXPECT_TRUE(msg.has_value());
         EXPECT_THAT(msg.value(), HasMessagePayload("small"));
