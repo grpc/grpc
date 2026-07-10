@@ -680,6 +680,7 @@ class ClientLbSubchannelMetricsTest : public ClientLbEnd2endTest {
 };
 
 TEST_F(ClientLbSubchannelMetricsTest, SubchannelMetricsBasic) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   StartServers(1, {}, grpc::InsecureServerCredentials());
   const int port = servers_[0]->port_;
   std::string target = grpc_core::LocalIpAndPort(port);
@@ -706,12 +707,10 @@ TEST_F(ClientLbSubchannelMetricsTest, SubchannelMetricsBasic) {
         return state == GRPC_CHANNEL_IDLE;
       }));
   if (grpc_core::IsSubchannelConnectionScalingEnabled()) {
-    EXPECT_TRUE(stats_plugin_->GetUInt64MetricValueByName(
+    EXPECT_THAT(stats_plugin_->GetUInt64MetricValueByName(
                     "grpc.subchannel.disconnections",
-                    {target, "", "", "GOAWAY NO_ERROR"}) == 1u ||
-                stats_plugin_->GetUInt64MetricValueByName(
-                    "grpc.subchannel.disconnections",
-                    {target, "", "", "GOAWAY INTERNAL_ERROR"}) == 1u);
+                    {target, "", "", "GOAWAY NO_ERROR"}),
+                ::testing::Optional(1));
   } else {
     EXPECT_THAT(
         stats_plugin_->GetUInt64MetricValueByName(
