@@ -236,7 +236,9 @@ def _possibly_finish_call(
 
 
 def _send_status_from_server(state: _RPCState, token: str) -> ServerCallbackTag:
-    def send_status_from_server(unused_send_status_from_server_event):
+    def send_status_from_server(
+        unused_send_status_from_server_event: cygrpc.BaseEvent,
+    ):
         with state.condition:
             return _possibly_finish_call(state, token)
 
@@ -303,7 +305,9 @@ def _abort(
 
 
 def _receive_close_on_server(state: _RPCState) -> ServerCallbackTag:
-    def receive_close_on_server(receive_close_on_server_event):
+    def receive_close_on_server(
+        receive_close_on_server_event: cygrpc.BaseEvent,
+    ):
         with state.condition:
             if receive_close_on_server_event.batch_operations[0].cancelled():
                 state.client = _CANCELLED
@@ -320,7 +324,7 @@ def _receive_message(
     call: cygrpc.Call,
     request_deserializer: Optional[DeserializingFunction],
 ) -> ServerCallbackTag:
-    def receive_message(receive_message_event):
+    def receive_message(receive_message_event: cygrpc.BaseEvent):
         serialized_request = _serialized_request(receive_message_event)
         if serialized_request is None:
             with state.condition:
@@ -349,7 +353,9 @@ def _receive_message(
 
 
 def _send_initial_metadata(state: _RPCState) -> ServerCallbackTag:
-    def send_initial_metadata(unused_send_initial_metadata_event):
+    def send_initial_metadata(
+        unused_send_initial_metadata_event: cygrpc.BaseEvent,
+    ):
         with state.condition:
             return _possibly_finish_call(state, _SEND_INITIAL_METADATA_TOKEN)
 
@@ -357,7 +363,7 @@ def _send_initial_metadata(state: _RPCState) -> ServerCallbackTag:
 
 
 def _send_message(state: _RPCState, token: str) -> ServerCallbackTag:
-    def send_message(unused_send_message_event):
+    def send_message(unused_send_message_event: cygrpc.BaseEvent):
         with state.condition:
             state.condition.notify_all()
             return _possibly_finish_call(state, token)
