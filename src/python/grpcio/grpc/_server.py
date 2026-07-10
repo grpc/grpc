@@ -16,7 +16,6 @@
 from __future__ import annotations
 
 import abc
-import collections
 from concurrent import futures
 import contextvars
 import enum
@@ -32,6 +31,7 @@ from typing import (
     Iterator,
     List,
     Mapping,
+    NamedTuple,
     Optional,
     Sequence,
     Set,
@@ -111,15 +111,12 @@ def _abortion_code(
 def _details(state: _RPCState) -> bytes:
     return b"" if state.details is None else state.details
 
+class _HandlerCallDetailsTuple(NamedTuple):
+    method: str
+    invocation_metadata: Optional[MetadataType]
 
 class _HandlerCallDetails(
-    collections.namedtuple(
-        "_HandlerCallDetails",
-        (
-            "method",
-            "invocation_metadata",
-        ),
-    ),
+    _HandlerCallDetailsTuple,
     grpc.HandlerCallDetails,
 ):
     pass
@@ -175,9 +172,14 @@ class _GenericMethod(_Method):
         # If the same method have both generic and registered handler,
         # registered handler will take precedence.
         for generic_handler in self._generic_handlers:
-            method_handler = generic_handler.service(handler_call_details)
+            # Type is suppressed here because `service` lacks type annotations
+            # in the public API (__init__.py), which will be updated with gRFC.
+            # TODO(asheshvidyut): Fix with Typing Phase 3
+            method_handler: Optional[grpc.RpcMethodHandler] = generic_handler.service(  # type: ignore[reportUnknownMemberType]
+                handler_call_details
+            )
             if method_handler is not None:
-                return method_handler
+                return method_handler  # type: ignore[reportUnknownVariableType]
         return None
 
 
