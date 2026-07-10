@@ -33,7 +33,10 @@ grpc_cc_library(
     name = "filter_test_v3",
     testonly = 1,
     srcs = ["filter_test.cc"],
-    hdrs = ["filter_test.h"],
+    hdrs = [
+        "filter_matchers.h",
+        "filter_test.h",
+    ],
     external_deps = [
         "absl/functional:any_invocable",
         "absl/log:check",
@@ -54,6 +57,7 @@ grpc_cc_library(
         "//src/core:interception_chain",
         "//src/core:message",
         "//src/core:metadata",
+        "//src/core:metadata_batch",
         "//src/core:poll",
         "//src/core:slice",
         "//src/core:slice_buffer",
@@ -76,6 +80,74 @@ grpc_fuzz_test(
         "//:grpc_base",
         "//src/core:channel_args",
         "//src/core:grpc_client_authority_filter",
+        "//src/core:metadata",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "message_flow_test",
+    srcs = ["message_flow_test.cc"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "gtest",
+        "fuzztest",
+        "fuzztest_main",
+    ],
+    deps = [
+        ":filter_test_v3",
+        "//:gpr",
+        "//:grpc_base",
+        "//src/core:arena",
+        "//src/core:channel_args",
+        "//src/core:channelz_property_list",
+        "//src/core:message",
+        "//src/core:metadata",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
+        "//src/core:status_flag",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "message_size_test",
+    srcs = ["message_size_test.cc"],
+    external_deps = [
+        "absl/status",
+        "gtest",
+        "fuzztest",
+        "fuzztest_main",
+    ],
+    deps = [
+        ":filter_test_v3",
+        "//:gpr",
+        "//:grpc_base",
+        "//src/core:arena",
+        "//src/core:channel_args",
+        "//src/core:grpc_message_size_filter",
+        "//src/core:message",
+        "//src/core:metadata",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
+        "//src/core:status_flag",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "filter_abort_test",
+    srcs = ["filter_abort_test.cc"],
+    external_deps = [
+        "absl/status:statusor",
+        "gtest",
+        "fuzztest",
+        "fuzztest_main",
+    ],
+    deps = [
+        ":filter_test_v3",
+        "//:gpr",
+        "//:grpc_base",
+        "//src/core:channel_args",
+        "//src/core:channelz_property_list",
         "//src/core:metadata",
     ],
 )
