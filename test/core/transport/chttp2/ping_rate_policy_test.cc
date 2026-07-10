@@ -105,9 +105,6 @@ TEST(PingRatePolicy, TooManyPingsInflightBlocksSendingPings) {
 }
 
 TEST(PingRatePolicy, TooManyPingsInflightBlocksSendingPingsStrictLimit) {
-  if (!IsMaxInflightPingsStrictLimitEnabled()) {
-    GTEST_SKIP() << "Strict limit is not enabled.";
-  }
   int max_inflight_pings = 1;
   auto channel_args =
       ChannelArgs().Set(GRPC_ARG_HTTP2_MAX_INFLIGHT_PINGS, max_inflight_pings);

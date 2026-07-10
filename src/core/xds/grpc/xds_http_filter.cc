@@ -23,6 +23,7 @@ RefCountedPtr<const FilterConfig> XdsHttpFilterImpl::MergeConfigs(
     RefCountedPtr<const FilterConfig> virtual_host_override_config,
     RefCountedPtr<const FilterConfig> route_override_config,
     RefCountedPtr<const FilterConfig> cluster_weight_override_config,
+    XdsTransportFactory& /*transport_factory*/,
     Blackboard& /*blackboard*/) const {
   if (cluster_weight_override_config != nullptr) {
     return cluster_weight_override_config;

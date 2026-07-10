@@ -48,7 +48,10 @@ exports_files([
 
 exports_files(
     glob(["include/**"]),
-    visibility = ["//:__subpackages__"],
+    visibility = [
+        "//:__subpackages__",
+        "//bazel:friends",
+    ],
 )
 
 bool_flag(
@@ -280,11 +283,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "garden"  # @unused
+g_stands_for = "gimbal"  # @unused
 
-core_version = "55.0.0"  # @unused
+core_version = "56.0.0"  # @unused
 
-version = "1.83.0-dev"  # @unused
+version = "1.84.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -669,6 +672,8 @@ grpc_cc_library(
         "//src/core:experiments",
         "//src/core:fused_filters",
         "//src/core:grpc_authorization_base",
+        "//src/core:grpc_channel_idle_filter",
+        "//src/core:grpc_server_config_selector_filter",
         "//src/core:http_proxy_mapper",
         "//src/core:init_internally",
         "//src/core:posix_event_engine_timer_manager",
@@ -773,6 +778,7 @@ grpc_cc_library(
         "//src/core:experiments",
         "//src/core:fused_filters",
         "//src/core:grpc_authorization_base",
+        "//src/core:grpc_channel_idle_filter",
         "//src/core:grpc_external_account_credentials",
         "//src/core:grpc_fake_credentials",
         "//src/core:grpc_google_default_credentials",
@@ -780,6 +786,7 @@ grpc_cc_library(
         "//src/core:grpc_insecure_credentials",
         "//src/core:grpc_local_credentials",
         "//src/core:grpc_oauth2_credentials",
+        "//src/core:grpc_server_config_selector_filter",
         "//src/core:grpc_ssl_credentials",
         "//src/core:grpc_tls_credentials",
         "//src/core:grpc_transport_chttp2_alpn",

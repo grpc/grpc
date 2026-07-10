@@ -200,10 +200,10 @@ class Channel(abc.ABC):
     @abc.abstractmethod
     async def __aexit__(
         self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
-    ) -> bool | None:
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> Optional[bool]:
         """Finishes the asynchronous context manager by closing the channel.
 
         Still active RPCs will be cancelled.
