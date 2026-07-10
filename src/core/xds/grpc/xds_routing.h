@@ -90,6 +90,18 @@ class XdsRouting final {
   // can be used on both the client and server side.
   class RouteConfigFilterChainBuilder {
    public:
+    // A slightly different interface than the normal FilterChainBuilder
+    // that passes in the XdsHttpFilterImpl.
+    class XdsFilterChainBuilder {
+     public:
+      virtual ~XdsFilterChainBuilder() = default;
+
+      virtual void AddFilter(const XdsHttpFilterImpl* filter_impl,
+                             RefCountedPtr<const FilterConfig> config) = 0;
+
+      virtual absl::StatusOr<RefCountedPtr<FilterChain>> Build() = 0;
+    };
+
     // Builds filter chains for each route within a VirtualHost.
     class VirtualHostFilterChainBuilder {
      public:
@@ -158,9 +170,8 @@ class XdsRouting final {
             XdsListenerResource::HttpConnectionManager::HttpFilter>&
             hcm_filter_configs,
         const XdsHttpFilterRegistry& http_filter_registry,
-        FilterChainBuilder& builder,
-        absl::AnyInvocable<void(FilterChainBuilder&)> add_last_filter,
-        XdsTransportFactory& transport_factory, Blackboard& blackboard);
+        XdsFilterChainBuilder& builder, XdsTransportFactory& transport_factory,
+        Blackboard& blackboard);
 
     // Returns a filter chain builder for a given virtual host.
     VirtualHostFilterChainBuilder MakeVirtualHostFilterChainBuilder(
@@ -173,8 +184,7 @@ class XdsRouting final {
 
     const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
         hcm_filter_configs_;
-    FilterChainBuilder& builder_;
-    absl::AnyInvocable<void(FilterChainBuilder&)> add_last_filter_;
+    XdsFilterChainBuilder& builder_;
     Blackboard& blackboard_;
     XdsTransportFactory& transport_factory_;
 
