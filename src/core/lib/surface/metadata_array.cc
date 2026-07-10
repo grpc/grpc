@@ -33,4 +33,5 @@ void grpc_metadata_array_destroy(grpc_metadata_array* array) {
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_metadata_array_destroy(array=" << array << ")";
   gpr_free(array->metadata);
+  memset(array, 0, sizeof(*array));
 }

@@ -164,6 +164,33 @@ TEST(CallUtils, WaitForCqEndOpToProto) {
   }
 }
 
+TEST(CallUtils, PublishMetadataArrayUseAfterFree) {
+  // When running this test, use the following arguments: --config=asan
+  grpc_metadata_array array;
+  grpc_metadata_array_init(&array);
+
+  auto arena = SimpleArenaAllocator()->MakeArena();
+  grpc_metadata_batch batch;
+  batch.Append("key", Slice::FromCopiedString("value"),
+               [&](absl::string_view, const Slice&) {});
+
+  PublishMetadataArray(&batch, &array, true);
+
+  // Free the underlying metadata array, but don't reset capacity/count.
+  grpc_metadata_array_destroy(&array);
+
+  // Now append more to the batch so its count is greater than the array's
+  // capacity. This forces PublishMetadataArray to call gpr_realloc on the freed
+  // pointer.
+  batch.Append("key2", Slice::FromCopiedString("value2"),
+               [&](absl::string_view, const Slice&) {});
+
+  PublishMetadataArray(&batch, &array, true);
+
+  // Cleanup the newly allocated array
+  grpc_metadata_array_destroy(&array);
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
