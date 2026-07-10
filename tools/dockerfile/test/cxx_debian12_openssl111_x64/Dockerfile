@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2023 the gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -90,33 +90,39 @@ RUN python3 -m pip install six==1.16.0
 RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
 
+# Some cxx tests depend on the twisted package
+RUN python3 -m pip install twisted
+
+#=================
+# C++ dependencies
+RUN apt-get update && apt-get -y install libc++-dev clang && apt-get clean
+
+#=================
+# Install cmake
+# Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
+
+RUN apt-get update && apt-get install -y cmake && apt-get clean
+
+#=================
+# Install ccache
+
+# Install ccache from source since ccache 3.x packaged with most linux distributions
+# does not support Redis backend for caching.
+RUN curl -sSL --fail --retry 5 -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.11.3/ccache-4.11.3.tar.gz \
+    && tar -zxf ccache.tar.gz \
+    && cd ccache-4.11.3 \
+    && mkdir build && cd build \
+    && cmake -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON -DHIREDIS_FROM_INTERNET=ON .. \
+    && make -j4 && make install \
+    && cd ../.. \
+    && rm -rf ccache-4.11.3 ccache.tar.gz
+
 
 RUN mkdir /var/local/jenkins
 
-#==================
-# Node dependencies
 
-# Install nvm
-RUN groupadd -g 999 appuser && useradd -r -u 999 -g appuser appuser
-RUN mkdir -p /home/appuser && chown appuser /home/appuser
-RUN chmod 777 /root
-USER appuser
-RUN touch ~/.profile
-RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
-# Install all versions of node that we want to test
-RUN /bin/bash -l -c "nvm install 16 && npm config set cache /tmp/npm-cache"
-RUN /bin/bash -l -c "nvm alias default 16"
-
-# Include the git workaround also for the user "appuser" we just created.
-#=================
-# Setup git to access working directory across docker boundary.
-# This avoids the "fatal: detected dubious ownership in repository XYZ"
-# git error.
-
-RUN git config --global --add safe.directory '*'
-RUN git config --global protocol.file.allow always
-
+# Install openssl 1.1.1 by installing libssl-dev on debian:12
+RUN apt-get update && apt-get install -y build-essential zlib1g-dev libssl-dev
 
 # Define the default command.
 CMD ["bash"]
-

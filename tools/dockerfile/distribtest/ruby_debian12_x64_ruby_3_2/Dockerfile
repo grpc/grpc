@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2024 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -62,31 +62,22 @@ RUN git config --global --add safe.directory '*'
 RUN git config --global protocol.file.allow always
 
 
-
-RUN mkdir /var/local/jenkins
-
 #==================
-# Node dependencies
+# Ruby dependencies
 
-# Install nvm
-RUN groupadd -g 999 appuser && useradd -r -u 999 -g appuser appuser
-RUN mkdir -p /home/appuser && chown appuser /home/appuser
-RUN chmod 777 /root
-USER appuser
-RUN touch ~/.profile
-RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
-# Install all versions of node that we want to test
-RUN /bin/bash -l -c "nvm install 16 && npm config set cache /tmp/npm-cache"
-RUN /bin/bash -l -c "nvm alias default 16"
+# Install rvm
+RUN apt-get update && apt-get install -y gnupg2 && apt-get clean
+RUN for i in 0 1 2 3 4; do sleep "${i}"; gpg2 --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB && break; done
+RUN \curl -sSL https://get.rvm.io | bash -s stable
 
-# Include the git workaround also for the user "appuser" we just created.
-#=================
-# Setup git to access working directory across docker boundary.
-# This avoids the "fatal: detected dubious ownership in repository XYZ"
-# git error.
-
-RUN git config --global --add safe.directory '*'
-RUN git config --global protocol.file.allow always
+# Install Ruby 3.2
+RUN apt-get update && apt-get install -y procps && apt-get clean
+RUN /bin/bash -l -c "rvm install ruby-3.2.11"
+RUN /bin/bash -l -c "rvm use --default ruby-3.2.11"
+RUN /bin/bash -l -c "echo 'gem: --no-document' > ~/.gemrc"
+RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
+RUN /bin/bash -l -c "echo 'rvm --default use ruby-3.2.11' >> ~/.bashrc"
+RUN /bin/bash -l -c "gem install bundler --no-document"
 
 
 # Define the default command.
