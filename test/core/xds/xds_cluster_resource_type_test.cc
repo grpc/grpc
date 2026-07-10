@@ -50,7 +50,6 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
-#include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
 #include "src/core/xds/grpc/xds_cluster.h"
 #include "src/core/xds/grpc/xds_cluster_parser.h"
 #include "src/core/xds/grpc/xds_common_types.h"
@@ -94,7 +93,7 @@ class XdsClusterTest : public ::testing::Test {
 
   static RefCountedPtr<XdsClient> MakeXdsClient() {
     grpc_error_handle error;
-    auto bootstrap = GrpcXdsBootstrapBuilder::Build(
+    auto bootstrap = GrpcXdsBootstrap::Create(
         "{\n"
         "  \"xds_servers\": [\n"
         "    {\n"

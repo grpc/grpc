@@ -20,7 +20,6 @@
 
 #include <memory>
 
-#include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
 #include "test/core/test_util/test_config.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -30,7 +29,7 @@ namespace testing {
 namespace {
 
 std::shared_ptr<GrpcXdsBootstrap> MakeBootstrap() {
-  auto bootstrap = GrpcXdsBootstrapBuilder::Build(
+  auto bootstrap = GrpcXdsBootstrap::Create(
       "{\"xds_servers\": ["
       "{\"server_uri\": \"dns://example.com\", "
       "\"channel_creds\": [{\"type\":\"insecure\"}]}"

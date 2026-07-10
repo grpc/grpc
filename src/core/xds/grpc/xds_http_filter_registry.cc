@@ -18,11 +18,128 @@
 
 #include <map>
 #include <utility>
+#include <variant>
 #include <vector>
 
+#include "envoy/extensions/filters/http/router/v3/router.upb.h"
+#include "envoy/extensions/filters/http/router/v3/router.upbdefs.h"
+#include "src/core/config/experiment_env_var.h"
 #include "src/core/util/grpc_check.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/sync.h"
+#include "src/core/xds/grpc/xds_http_composite_filter.h"
+#include "src/core/xds/grpc/xds_http_fault_filter.h"
+#include "src/core/xds/grpc/xds_http_gcp_authn_filter.h"
+#include "src/core/xds/grpc/xds_http_rbac_filter.h"
+#include "src/core/xds/grpc/xds_http_stateful_session_filter.h"
+#include "src/core/xds/grpc/xds_metadata_parser.h"
 
 namespace grpc_core {
+
+//
+// XdsHttpRouterFilter
+//
+
+absl::string_view XdsHttpRouterFilter::ConfigProtoName() const {
+  return "envoy.extensions.filters.http.router.v3.Router";
+}
+
+absl::string_view XdsHttpRouterFilter::OverrideConfigProtoName() const {
+  return "";
+}
+
+void XdsHttpRouterFilter::PopulateSymtab(upb_DefPool* symtab) const {
+  envoy_extensions_filters_http_router_v3_Router_getmsgdef(symtab);
+}
+
+std::optional<Json> XdsHttpRouterFilter::GenerateFilterConfig(
+    absl::string_view /*instance_name*/,
+    const XdsResourceType::DecodeContext& context,
+    const XdsExtension& extension, ValidationErrors* errors) const {
+  const absl::string_view* serialized_filter_config =
+      std::get_if<absl::string_view>(&extension.value);
+  if (serialized_filter_config == nullptr) {
+    errors->AddError("could not parse router filter config");
+    return std::nullopt;
+  }
+  if (envoy_extensions_filters_http_router_v3_Router_parse(
+          serialized_filter_config->data(), serialized_filter_config->size(),
+          context.arena) == nullptr) {
+    errors->AddError("could not parse router filter config");
+    return std::nullopt;
+  }
+  return Json();
+}
+
+std::optional<Json> XdsHttpRouterFilter::GenerateFilterConfigOverride(
+    absl::string_view /*instance_name*/,
+    const XdsResourceType::DecodeContext& /*context*/,
+    const XdsExtension& /*extension*/, ValidationErrors* errors) const {
+  errors->AddError("router filter does not support config override");
+  return std::nullopt;
+}
+
+RefCountedPtr<const FilterConfig> XdsHttpRouterFilter::ParseTopLevelConfig(
+    absl::string_view /*instance_name*/,
+    const XdsResourceType::DecodeContext& context,
+    const XdsExtension& extension, ValidationErrors* errors) const {
+  const absl::string_view* serialized_filter_config =
+      std::get_if<absl::string_view>(&extension.value);
+  if (serialized_filter_config == nullptr) {
+    errors->AddError("could not parse router filter config");
+    return nullptr;
+  }
+  if (envoy_extensions_filters_http_router_v3_Router_parse(
+          serialized_filter_config->data(), serialized_filter_config->size(),
+          context.arena) == nullptr) {
+    errors->AddError("could not parse router filter config");
+    return nullptr;
+  }
+  return nullptr;
+}
+
+RefCountedPtr<const FilterConfig> XdsHttpRouterFilter::ParseOverrideConfig(
+    absl::string_view /*instance_name*/,
+    const XdsResourceType::DecodeContext& /*context*/,
+    const XdsExtension& /*extension*/, ValidationErrors* errors) const {
+  errors->AddError("router filter does not support config override");
+  return nullptr;
+}
+
+//
+// XdsHttpFilterRegistry
+//
+
+namespace {
+
+Mutex* g_mu = new Mutex;
+NoDestruct<absl::AnyInvocable<std::unique_ptr<XdsHttpFilterImpl>()>>
+    g_http_filter_factory_factory ABSL_GUARDED_BY(*g_mu);
+
+}  // namespace
+
+void SetXdsHttpFilterFactoryForTest(
+    absl::AnyInvocable<std::unique_ptr<XdsHttpFilterImpl>()> factory) {
+  MutexLock lock(g_mu);
+  *g_http_filter_factory_factory = std::move(factory);
+}
+
+XdsHttpFilterRegistry::XdsHttpFilterRegistry(bool register_builtins) {
+  if (register_builtins) {
+    RegisterFilter(std::make_unique<XdsHttpRouterFilter>());
+    RegisterFilter(std::make_unique<XdsHttpFaultFilter>());
+    RegisterFilter(std::make_unique<XdsHttpRbacFilter>());
+    RegisterFilter(std::make_unique<XdsHttpStatefulSessionFilter>());
+    RegisterFilter(std::make_unique<XdsHttpGcpAuthnFilter>());
+    if (IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_COMPOSITE_FILTER")) {
+      RegisterFilter(std::make_unique<XdsHttpCompositeFilter>());
+    }
+    MutexLock lock(g_mu);
+    if (*g_http_filter_factory_factory != nullptr) {
+      RegisterFilter((*g_http_filter_factory_factory)());
+    }
+  }
+}
 
 void XdsHttpFilterRegistry::RegisterFilter(
     std::unique_ptr<XdsHttpFilterImpl> filter) {

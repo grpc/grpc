@@ -50,7 +50,6 @@
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/grpc/xds_route_config_parser.h"
-#include "src/core/xds/grpc/xds_tls_context_parser.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "upb/text/encode.h"
 #include "absl/log/log.h"
@@ -672,7 +671,6 @@ std::optional<FilterChain> FilterChainParse(
   return filter_chain;
 }
 
-// TODO(roth): Merge this with ParseXdsAddress() to avoid duplication.
 std::optional<std::string> AddressParse(
     const envoy_config_core_v3_Address* address_proto,
     ValidationErrors* errors) {

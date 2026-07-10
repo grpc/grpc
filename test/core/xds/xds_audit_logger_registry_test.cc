@@ -33,7 +33,6 @@
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
-#include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
 #include "test/core/test_util/test_config.h"
 #include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
@@ -69,9 +68,8 @@ absl::StatusOr<std::string> ConvertAuditLoggerConfig(
       envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_parse(
           serialized_config.data(), serialized_config.size(), arena.ptr());
   ValidationErrors errors;
-  auto registry = GrpcXdsBootstrapBuilder::CreateXdsAuditLoggerRegistry();
-  auto config_json =
-      registry.ConvertXdsAuditLoggerConfig(context, upb_config, &errors);
+  auto config_json = XdsAuditLoggerRegistry().ConvertXdsAuditLoggerConfig(
+      context, upb_config, &errors);
   if (!errors.ok()) {
     return errors.status(absl::StatusCode::kInvalidArgument,
                          "validation errors");

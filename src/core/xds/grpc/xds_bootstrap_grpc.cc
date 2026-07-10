@@ -16,10 +16,16 @@
 
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 
-#include <memory>
+#include <grpc/support/json.h>
+#include <stdlib.h>
+
+#include <optional>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "src/core/config/experiment_env_var.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/json/json_reader.h"
@@ -221,7 +227,9 @@ absl::StatusOr<std::unique_ptr<GrpcXdsBootstrap>> GrpcXdsBootstrap::Create(
       return true;
     }
   };
-  return LoadFromJson<std::unique_ptr<GrpcXdsBootstrap>>(*json, XdsJsonArgs());
+  auto bootstrap = LoadFromJson<GrpcXdsBootstrap>(*json, XdsJsonArgs());
+  if (!bootstrap.ok()) return bootstrap.status();
+  return std::make_unique<GrpcXdsBootstrap>(std::move(*bootstrap));
 }
 
 const JsonLoaderInterface* GrpcXdsBootstrap::JsonLoader(const JsonArgs&) {

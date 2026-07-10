@@ -16,6 +16,9 @@
 
 #include "src/core/xds/grpc/xds_audit_logger_registry.h"
 
+#include <grpc/support/port_platform.h>
+
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -26,11 +29,43 @@
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
+namespace {
+
 using experimental::AuditLoggerRegistry;
+
+class StdoutLoggerConfigFactory final
+    : public XdsAuditLoggerRegistry::ConfigFactory {
+ public:
+  Json::Object ConvertXdsAuditLoggerConfig(
+      const XdsResourceType::DecodeContext& /*context*/,
+      absl::string_view /*configuration*/,
+      ValidationErrors* /*errors*/) override {
+    // Stdout logger has no configuration right now. So we don't process the
+    // config protobuf.
+    return {};
+  }
+
+  absl::string_view type() override { return Type(); }
+  absl::string_view name() override { return "stdout_logger"; }
+
+  static absl::string_view Type() {
+    return "envoy.extensions.rbac.audit_loggers.stream.v3.StdoutAuditLog";
+  }
+};
+
+}  // namespace
+
+XdsAuditLoggerRegistry::XdsAuditLoggerRegistry() {
+  audit_logger_config_factories_.emplace(
+      StdoutLoggerConfigFactory::Type(),
+      std::make_unique<StdoutLoggerConfigFactory>());
+}
 
 Json XdsAuditLoggerRegistry::ConvertXdsAuditLoggerConfig(
     const XdsResourceType::DecodeContext& context,
@@ -85,5 +120,4 @@ Json XdsAuditLoggerRegistry::ConvertXdsAuditLoggerConfig(
   }
   return Json::FromObject({{std::string(name), std::move(config)}});
 }
-
 }  // namespace grpc_core

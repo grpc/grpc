@@ -2084,6 +2084,8 @@
     <file baseinstalldir="/" name="src/core/util/json/json_object_loader.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/json/json_reader.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/json/json_reader.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/json/json_util.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/json/json_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/json/json_writer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/json/json_writer.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/latent_see.cc" role="src" />
@@ -2193,8 +2195,6 @@
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_audit_logger_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_bootstrap_grpc.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_bootstrap_grpc.h" role="src" />
-    <file baseinstalldir="/" name="src/core/xds/grpc/xds_bootstrap_grpc_builder.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/xds/grpc/xds_bootstrap_grpc_builder.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_certificate_provider.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_certificate_provider.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_client_grpc.cc" role="src" />
@@ -2258,10 +2258,6 @@
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_server_grpc.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_server_grpc.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_server_grpc_interface.h" role="src" />
-    <file baseinstalldir="/" name="src/core/xds/grpc/xds_tls_context.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/xds/grpc/xds_tls_context.h" role="src" />
-    <file baseinstalldir="/" name="src/core/xds/grpc/xds_tls_context_parser.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/xds/grpc/xds_tls_context_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_transport_grpc.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_transport_grpc.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/xds_client/lrs_client.cc" role="src" />
