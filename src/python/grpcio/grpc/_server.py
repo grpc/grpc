@@ -51,6 +51,7 @@ from grpc._typing import ChannelArgumentType
 from grpc._typing import DeserializingFunction
 from grpc._typing import MetadataType
 from grpc._typing import NullaryCallbackType
+from grpc._typing import RequestType
 from grpc._typing import ResponseType
 from grpc._typing import SerializingFunction
 from grpc._typing import ServerCallbackTag
@@ -325,7 +326,7 @@ def _receive_close_on_server(state: _RPCState) -> ServerCallbackTag:
 def _receive_message(
     state: _RPCState,
     call: cygrpc.Call,
-    request_deserializer: Optional[DeserializingFunction],
+    request_deserializer: Optional[DeserializingFunction[RequestType]],
 ) -> ServerCallbackTag:
     def receive_message(receive_message_event: cygrpc.BaseEvent):
         serialized_request = _serialized_request(receive_message_event)
@@ -374,16 +375,18 @@ def _send_message(state: _RPCState, token: str) -> ServerCallbackTag:
     return send_message
 
 
-class _Context(grpc.ServicerContext):
+from typing import Generic
+
+class _Context(grpc.ServicerContext, Generic[RequestType]):
     _rpc_event: cygrpc.BaseEvent
     _state: _RPCState
-    request_deserializer: Optional[DeserializingFunction]
+    request_deserializer: Optional[DeserializingFunction[RequestType]]
 
     def __init__(
         self,
         rpc_event: cygrpc.BaseEvent,
         state: _RPCState,
-        request_deserializer: Optional[DeserializingFunction],
+        request_deserializer: Optional[DeserializingFunction[RequestType]],
     ):
         self._rpc_event = rpc_event
         self._state = state
@@ -497,16 +500,16 @@ class _Context(grpc.ServicerContext):
         pass
 
 
-class _RequestIterator:
+class _RequestIterator(Generic[RequestType]):
     _state: _RPCState
     _call: cygrpc.Call
-    _request_deserializer: Optional[DeserializingFunction]
+    _request_deserializer: Optional[DeserializingFunction[RequestType]]
 
     def __init__(
         self,
         state: _RPCState,
         call: cygrpc.Call,
-        request_deserializer: Optional[DeserializingFunction],
+        request_deserializer: Optional[DeserializingFunction[RequestType]],
     ):
         self._state = state
         self._call = call
@@ -550,7 +553,7 @@ class _RequestIterator:
                 if request is not None:
                     return request
 
-    def __iter__(self) -> _RequestIterator:
+    def __iter__(self) -> _RequestIterator[RequestType]:
         return self
 
     def __next__(self) -> Any:
@@ -563,7 +566,7 @@ class _RequestIterator:
 def _unary_request(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
-    request_deserializer: Optional[DeserializingFunction],
+    request_deserializer: Optional[DeserializingFunction[RequestType]],
 ) -> Callable[[], Any]:
     def unary_request():
         with state.condition:
@@ -603,9 +606,9 @@ def _unary_request(
 def _call_behavior(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
-    behavior: ArityAgnosticMethodHandler[Any, Any],
+    behavior: ArityAgnosticMethodHandler[RequestType, ResponseType],
     argument: Any,
-    request_deserializer: Optional[DeserializingFunction],
+    request_deserializer: Optional[DeserializingFunction[RequestType]],
     send_response_callback: Optional[Callable[[ResponseType], None]] = None,
 ) -> Tuple[Union[ResponseType, Iterator[ResponseType], None], bool]:
     # TODO(asheshvidyut): Fix with Typing Hints Plan Phase 3
@@ -613,19 +616,18 @@ def _call_behavior(
         _create_servicer_context, # pyright: ignore[reportUnknownVariableType]
     )
 
+    # TODO(asheshvidyut): Fix with Typing Hints Plan Phase 3
     with _create_servicer_context(
         rpc_event, state, request_deserializer
-    ) as context:
+    ) as context: # pyright: ignore[reportUnknownVariableType]
         try:
-            response_or_iterator = None
+            response_or_iterator: Optional[Union[ResponseType, Iterator[ResponseType]]] = None
             if behavior is not None:
-                args = [argument, context]
                 if send_response_callback is not None:
-                    args.append(send_response_callback)
-                response_or_iterator = behavior(
-                    *args
-                )
-            return response_or_iterator, True
+                    response_or_iterator = behavior(argument, context, send_response_callback) # pyright: ignore
+                else:
+                    response_or_iterator = behavior(argument, context) # pyright: ignore
+            return response_or_iterator, True  # pyright: ignore
         except Exception as exception:  # pylint: disable=broad-except
             with state.condition:
                 if state.aborted:
@@ -696,7 +698,7 @@ def _serialize_response(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
     response: Any,
-    response_serializer: Optional[SerializingFunction],
+    response_serializer: Optional[SerializingFunction[ResponseType]],
 ) -> Optional[bytes]:
     serialized_response = _common.serialize(response, response_serializer)
     if serialized_response is None:
@@ -794,10 +796,10 @@ def _status(
 def _unary_response_in_pool(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
-    behavior: ArityAgnosticMethodHandler[Any, Any],
+    behavior: ArityAgnosticMethodHandler[RequestType, ResponseType],
     argument_thunk: Callable[[], Any],
-    request_deserializer: Optional[SerializingFunction],
-    response_serializer: Optional[SerializingFunction],
+    request_deserializer: Optional[DeserializingFunction[RequestType]],
+    response_serializer: Optional[SerializingFunction[ResponseType]],
 ) -> None:
     cygrpc.install_context_from_request_call_event(rpc_event)
 
@@ -822,14 +824,14 @@ def _unary_response_in_pool(
 def _stream_response_in_pool(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
-    behavior: ArityAgnosticMethodHandler[Any, Any],
+    behavior: ArityAgnosticMethodHandler[RequestType, ResponseType],
     argument_thunk: Callable[[], Any],
-    request_deserializer: Optional[DeserializingFunction],
-    response_serializer: Optional[SerializingFunction],
+    request_deserializer: Optional[DeserializingFunction[RequestType]],
+    response_serializer: Optional[SerializingFunction[ResponseType]],
 ) -> None:
     cygrpc.install_context_from_request_call_event(rpc_event)
 
-    def send_response(response: Any) -> None:
+    def send_response(response: Optional[ResponseType]) -> None:
         if response is None:
             _status(rpc_event, state, None)
         else:
@@ -857,7 +859,7 @@ def _stream_response_in_pool(
                 )
                 if proceed and response_iterator is not None:
                     _send_message_callback_to_blocking_iterator_adapter(
-                        rpc_event, state, send_response, response_iterator
+                        rpc_event, state, send_response, response_iterator  # pyright: ignore[reportArgumentType]
                     )
     except Exception:  # pylint: disable=broad-except
         traceback.print_exc()

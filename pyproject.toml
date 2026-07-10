@@ -82,6 +82,7 @@ reportUnusedClass = "none"
 
 include = [
     "src/python/grpcio/grpc/_server.py",
+    "src/python/grpcio/grpc/_common.py",
     "src/python/grpcio/grpc/aio"
 ]
 
