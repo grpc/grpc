@@ -25,7 +25,6 @@ import threading
 import time
 import traceback
 from typing import (
-    Any,
     Callable,
     Dict,
     Iterable,
@@ -191,7 +190,6 @@ class _RPCState:
     context: contextvars.Context
     condition: threading.Condition
     due: Set[str]
-    request: Any
     client: str
     initial_metadata_allowed: bool
     compression_algorithm: Optional[grpc.Compression]
@@ -529,7 +527,7 @@ class _RequestIterator(Generic[RequestType]):
             )
             self._state.due.add(_RECEIVE_MESSAGE_TOKEN)
 
-    def _look_for_request(self) -> Any:
+    def _look_for_request(self) -> Optional[RequestType]:
         if self._state.client is _CANCELLED:
             _raise_rpc_error(self._state)
         elif (
@@ -544,7 +542,7 @@ class _RequestIterator(Generic[RequestType]):
 
         raise AssertionError()  # should never run
 
-    def _next(self) -> Any:
+    def _next(self) -> RequestType:
         with self._state.condition:
             self._raise_or_start_receive_message()
             while True:
@@ -556,10 +554,10 @@ class _RequestIterator(Generic[RequestType]):
     def __iter__(self) -> _RequestIterator[RequestType]:
         return self
 
-    def __next__(self) -> Any:
+    def __next__(self) -> RequestType:
         return self._next()
 
-    def next(self) -> Any:
+    def next(self) -> RequestType:
         return self._next()
 
 
@@ -567,7 +565,7 @@ def _unary_request(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
     request_deserializer: Optional[DeserializingFunction[RequestType]],
-) -> Callable[[], Any]:
+) -> Callable[[], Optional[RequestType]]:
     def unary_request():
         with state.condition:
             if not _is_rpc_state_active(state):
@@ -607,7 +605,7 @@ def _call_behavior(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
     behavior: ArityAgnosticMethodHandler[RequestType, ResponseType],
-    argument: Any,
+    argument: Union[RequestType, Iterator[RequestType]],
     request_deserializer: Optional[DeserializingFunction[RequestType]],
     send_response_callback: Optional[Callable[[ResponseType], None]] = None,
 ) -> Tuple[Union[ResponseType, Iterator[ResponseType], None], bool]:
@@ -697,7 +695,7 @@ def _take_response_from_response_iterator(
 def _serialize_response(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
-    response: Any,
+    response: ResponseType,
     response_serializer: Optional[SerializingFunction[ResponseType]],
 ) -> Optional[bytes]:
     serialized_response = _common.serialize(response, response_serializer)
@@ -797,7 +795,7 @@ def _unary_response_in_pool(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
     behavior: ArityAgnosticMethodHandler[RequestType, ResponseType],
-    argument_thunk: Callable[[], Any],
+    argument_thunk: Callable[[], Union[RequestType, Iterator[RequestType], None]],
     request_deserializer: Optional[DeserializingFunction[RequestType]],
     response_serializer: Optional[SerializingFunction[ResponseType]],
 ) -> None:
@@ -811,7 +809,7 @@ def _unary_response_in_pool(
             )
             if proceed:
                 serialized_response = _serialize_response(
-                    rpc_event, state, response, response_serializer
+                    rpc_event, state, response, response_serializer  # pyright: ignore[reportArgumentType]
                 )
                 if serialized_response is not None:
                     _status(rpc_event, state, serialized_response)
@@ -825,7 +823,7 @@ def _stream_response_in_pool(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
     behavior: ArityAgnosticMethodHandler[RequestType, ResponseType],
-    argument_thunk: Callable[[], Any],
+    argument_thunk: Callable[[], Union[RequestType, Iterator[RequestType], None]],
     request_deserializer: Optional[DeserializingFunction[RequestType]],
     response_serializer: Optional[SerializingFunction[ResponseType]],
 ) -> None:
@@ -890,7 +888,7 @@ def _send_message_callback_to_blocking_iterator_adapter(
 
 
 def _select_thread_pool_for_behavior(
-    behavior: ArityAgnosticMethodHandler[Any, Any],
+    behavior: ArityAgnosticMethodHandler[RequestType, ResponseType],
     default_thread_pool: futures.ThreadPoolExecutor,
 ) -> futures.ThreadPoolExecutor:
     pool = getattr(behavior, "experimental_thread_pool", None)
@@ -904,7 +902,7 @@ def _handle_unary_unary(
     state: _RPCState,
     method_handler: grpc.RpcMethodHandler,
     default_thread_pool: futures.ThreadPoolExecutor,
-) -> futures.Future[Any]:
+) -> futures.Future[None]:
     if method_handler.unary_unary is None:
         raise ValueError(_UNEXPECTED_NONE_METHOD_HANDLER_MSG)
     unary_request = _unary_request(
@@ -930,7 +928,7 @@ def _handle_unary_stream(
     state: _RPCState,
     method_handler: grpc.RpcMethodHandler,
     default_thread_pool: futures.ThreadPoolExecutor,
-) -> futures.Future[Any]:
+) -> futures.Future[None]:
     if method_handler.unary_stream is None:
         raise ValueError(_UNEXPECTED_NONE_METHOD_HANDLER_MSG)
     unary_request = _unary_request(
@@ -956,7 +954,7 @@ def _handle_stream_unary(
     state: _RPCState,
     method_handler: grpc.RpcMethodHandler,
     default_thread_pool: futures.ThreadPoolExecutor,
-) -> futures.Future[Any]:
+) -> futures.Future[None]:
     if method_handler.stream_unary is None:
         raise ValueError(_UNEXPECTED_NONE_METHOD_HANDLER_MSG)
     request_iterator = _RequestIterator(
@@ -982,7 +980,7 @@ def _handle_stream_stream(
     state: _RPCState,
     method_handler: grpc.RpcMethodHandler,
     default_thread_pool: futures.ThreadPoolExecutor,
-) -> futures.Future[Any]:
+) -> futures.Future[None]:
     if method_handler.stream_stream is None:
         raise ValueError(_UNEXPECTED_NONE_METHOD_HANDLER_MSG)
     request_iterator = _RequestIterator(
@@ -1043,7 +1041,7 @@ def _reject_rpc(
             None, status, details, _EMPTY_FLAGS
         ),
     )
-    def _on_batch_complete(_ignored_event: cygrpc.BaseEvent) -> Tuple[_RPCState, Tuple[Any, ...]]:
+    def _on_batch_complete(_ignored_event: cygrpc.BaseEvent) -> Tuple[_RPCState, Tuple[()]]:
         return rpc_state, ()
 
     rpc_event.call.start_server_batch(
@@ -1057,7 +1055,7 @@ def _handle_with_method_handler(
     state: _RPCState,
     method_handler: grpc.RpcMethodHandler,
     thread_pool: futures.ThreadPoolExecutor,
-) -> futures.Future[Any]:
+) -> futures.Future[None]:
     with state.condition:
         rpc_event.call.start_server_batch(
             (cygrpc.ReceiveCloseOnServerOperation(_EMPTY_FLAGS),),
@@ -1087,7 +1085,7 @@ def _handle_call(
     interceptor_pipeline: Optional[_interceptor._ServicePipeline],
     thread_pool: futures.ThreadPoolExecutor,
     concurrency_exceeded: bool,
-) -> Tuple[Optional[_RPCState], Optional[futures.Future[Any]]]:
+) -> Tuple[Optional[_RPCState], Optional[futures.Future[None]]]:
     """Handles RPC based on provided handlers.
 
       When receiving a call event from Core, registered method will have its
