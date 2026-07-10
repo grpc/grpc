@@ -63,7 +63,16 @@ namespace Grpc.Tools.Tests
             if (RuntimeInformation.OSArchitecture == Architecture.X64)
             {
                 _cpuMatched++;
-                Assert.AreEqual("x64", _task.Cpu);
+
+                // On macosx a single universal binary is shipped
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    Assert.AreEqual("universal", _task.Cpu);
+                }
+                else
+                {
+                    Assert.AreEqual("x64", _task.Cpu);
+                }
             }
         }
 
@@ -78,6 +87,11 @@ namespace Grpc.Tools.Tests
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
                     Assert.AreEqual("x86", _task.Cpu);
+                }
+                // On macosx a single universal binary is shipped
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    Assert.AreEqual("universal", _task.Cpu);
                 }
                 else
                 {
@@ -125,11 +139,19 @@ namespace Grpc.Tools.Tests
             Assert.AreEqual("x86", _task.Cpu);
         }
 
-        [Test, Platform("64-Bit")]
+        [Test, Platform(Include = "64-Bit", Exclude = "MacOSX")]
         public void CpuIsX64()
         {
             _cpuMatched++;
             Assert.AreEqual("x64", _task.Cpu);
+        }
+
+        // On macosx a single universal binary is shipped
+        [Test, Platform("MacOSX")]
+        public void CpuIsUniversal()
+        {
+            _cpuMatched++;
+            Assert.AreEqual("universal", _task.Cpu);
         }
 
         [Test, Platform("Win")]

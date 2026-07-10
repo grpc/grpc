@@ -35,7 +35,7 @@ namespace Grpc.Tools
         public string Os { get; set; }
 
         /// <summary>
-        /// Return one of 'x64', 'x86', 'arm64'.
+        /// Return one of 'x64', 'x86', 'arm64', or 'universal' (macOS).
         /// If the CPU is unknown, the property is not set.
         /// </summary>
         [Output]
@@ -60,8 +60,14 @@ namespace Grpc.Tools
                 default: Cpu = ""; break;
             }
 
+            // macOS ships a single universal (x64 + arm64) binary, so both
+            // architectures resolve to the same 'macosx_universal' tools folder.
+            if (Os == "macosx")
+            {
+                Cpu = "universal";
+            }
             // Use x86 on Windows arm64 until a native protoc is shipped
-            if (Os == "windows" && Cpu == "arm64")
+            else if (Os == "windows" && Cpu == "arm64")
             {
                 Cpu = "x86";
             }

@@ -33,7 +33,7 @@ It should be marked with `PrivateAssets="All"` to prevent it from being included
 
 Support is provided for the following platforms:
 * Windows (x86, x64, and arm64 via using the x86 binaries)
-* MacOS (x64 and arm64)
+* MacOS (x64 and arm64, served by a single universal binary)
 * Linux (x86, x64, and arm64)
 
 You may still use the MSBuild integration provided by `Grpc.Tools` for other architectures provided you can supply the codegen binaries for that platform/architecture.
@@ -266,9 +266,11 @@ Environment variables can be set to change the behavior of `Grpc.Tools` - settin
 | Name                | Synopsis                                                                      |
 |---------------------|-------------------------------------------------------------------------------|
 |`PROTOBUF_TOOLS_OS`  | Operating system version of the tools to use: `linux`, `macosx`, or `windows` |
-|`PROTOBUF_TOOLS_CPU` | CPU architecture version of the tools to use: `x86`, `x64`, or `arm64`        |
+|`PROTOBUF_TOOLS_CPU` | CPU architecture version of the tools to use: `x86`, `x64`, `arm64`, or `universal` (macOS) |
 |`PROTOBUF_PROTOC`    | Full path to the protocol buffers compiler                                    |
 |`GRPC_PROTOC_PLUGIN` | Full path to the grpc_csharp_plugin                                           |
+
+> **Note:** On macOS the tools are shipped as a single universal (x64 + arm64) binary, so `PROTOBUF_TOOLS_CPU` must be `universal`. The former `x64` and `arm64` values (used to force a specific slice) no longer resolve on macOS.
 
 For example, to use a custom built protoc compiler and grpc_csharp_plugin:
 ```bash
