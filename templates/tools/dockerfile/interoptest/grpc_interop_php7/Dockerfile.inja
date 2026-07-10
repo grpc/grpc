@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:11
+FROM debian:12
 
 {% include "../../apt_get_basic.include" %}
-{% include "../../run_tests_python_deps.include" %}
+{% include "../../run_tests_python_deps_pep668.include" %}
 {% include "../../php7_deps.include" %}
 {% include "../../php_common_deps.include" %}
 {% include "../../cmake.include" %}
