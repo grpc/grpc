@@ -151,3 +151,26 @@ grpc_fuzz_test(
         "//src/core:metadata",
     ],
 )
+
+grpc_fuzz_test(
+    name = "interceptor_test",
+    srcs = ["interceptor_test.cc"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "gtest",
+        "fuzztest",
+        "fuzztest_main",
+    ],
+    deps = [
+        ":filter_test_v3",
+        "//:gpr",
+        "//:grpc_base",
+        "//:ref_counted_ptr",
+        "//src/core:call_spine",
+        "//src/core:channel_args",
+        "//src/core:interception_chain",
+        "//src/core:map",
+        "//src/core:metadata",
+    ],
+)
