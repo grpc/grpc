@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Service-side implementation of gRPC Python."""
+# pyright: reportPrivateUsage = false
 
 from __future__ import annotations
 
@@ -422,7 +423,7 @@ class _Context(grpc.ServicerContext):
 
     def auth_context(self) -> Mapping[str, Sequence[bytes]]:
         auth_context = cygrpc.auth_context(self._rpc_event.call)
-        auth_context_dict = {} if auth_context is None else auth_context
+        auth_context_dict: Mapping[str, Sequence[bytes]] = {} if auth_context is None else auth_context
         return {
             _common.decode(key): value
             for key, value in auth_context_dict.items()
