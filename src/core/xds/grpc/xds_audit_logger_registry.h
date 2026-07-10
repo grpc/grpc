@@ -17,10 +17,9 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_AUDIT_LOGGER_REGISTRY_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_AUDIT_LOGGER_REGISTRY_H
 
-#include <grpc/support/port_platform.h>
-
 #include <map>
 #include <memory>
+#include <utility>
 
 #include "envoy/config/rbac/v3/rbac.upb.h"
 #include "src/core/util/json/json.h"
@@ -46,7 +45,12 @@ class XdsAuditLoggerRegistry final {
     virtual absl::string_view name() = 0;
   };
 
-  XdsAuditLoggerRegistry();
+  XdsAuditLoggerRegistry() = default;
+
+  template <typename T>
+  void RegisterFactory(std::unique_ptr<T> factory) {
+    audit_logger_config_factories_.emplace(T::Type(), std::move(factory));
+  }
 
   Json ConvertXdsAuditLoggerConfig(
       const XdsResourceType::DecodeContext& context,
