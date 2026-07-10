@@ -831,6 +831,11 @@ absl::Status Http2ClientTransport::PrepareControlFrames() {
     // by a SETTINGS frame, which MAY be empty.
     settings_->MaybeGetSettingsAndSettingsAckFrames(flow_control_,
                                                     frame_sender);
+    // TODO(tjagtap) [PH2][P2][Server] : This will be opposite for server. We
+    // must read before we write for the server. So the ReadLoop will be Spawned
+    // just after the constructor, and the write loop should be spawned only
+    // after the first SETTINGS frame is completely received.
+    //
     // Because the client is expected to write before it reads, we spawn the
     // ReadLoop of the client only after the first write is queued.
     SpawnGuardedTransportParty("ReadLoop", UntilTransportClosed(ReadLoop()));
