@@ -48,8 +48,8 @@ class _ServicePipeline:
     ) -> Optional[grpc.RpcMethodHandler]:
         if index < len(self.interceptors):
             interceptor = self.interceptors[index]
-            continuation = self._continuation(thunk, index + 1)
-            return interceptor.intercept_service(continuation, context)
+            thunk = self._continuation(thunk, index + 1)
+            return interceptor.intercept_service(thunk, context)
         return thunk(context)
 
     def execute(
