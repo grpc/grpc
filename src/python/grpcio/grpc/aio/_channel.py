@@ -361,7 +361,7 @@ class Channel(_base_channel.Channel):
         credentials: Optional[cygrpc.ChannelCredentials],
         compression: Optional[grpc.Compression],
         interceptors: Optional[Sequence[ClientInterceptor]],
-    ) -> None:
+    ):
         """Constructor.
 
         Args:
@@ -416,9 +416,9 @@ class Channel(_base_channel.Channel):
 
     async def __aexit__(
         self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: types.TracebackType | None,
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[types.TracebackType],
     ) -> None:
         await self._close(None)
 
@@ -468,7 +468,7 @@ class Channel(_base_channel.Channel):
     async def close(self, grace: Optional[float] = None) -> None:
         await self._close(grace)
 
-    def __del__(self) -> None:
+    def __del__(self):
         if hasattr(self, "_channel") and not self._channel.closed():
             self._channel.close()
 
@@ -607,7 +607,7 @@ def insecure_channel(
     options: Optional[ChannelArgumentType] = None,
     compression: Optional[grpc.Compression] = None,
     interceptors: Optional[Sequence[ClientInterceptor]] = None,
-) -> Channel:
+) -> _base_channel.Channel:
     """Creates an insecure asynchronous Channel to a server.
 
     Args:
@@ -637,7 +637,7 @@ def secure_channel(
     options: Optional[ChannelArgumentType] = None,
     compression: Optional[grpc.Compression] = None,
     interceptors: Optional[Sequence[ClientInterceptor]] = None,
-) -> Channel:
+) -> _base_channel.Channel:
     """Creates a secure asynchronous Channel to a server.
 
     Args:

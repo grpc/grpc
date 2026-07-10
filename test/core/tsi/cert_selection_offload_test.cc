@@ -20,6 +20,7 @@
 #include <openssl/bio.h>
 #include <openssl/pem.h>
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <utility>
@@ -29,6 +30,7 @@
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
+#include "src/core/util/match.h"
 #include "src/core/util/time.h"
 #include "src/core/util/wait_for_single_owner.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
@@ -165,6 +167,133 @@ class AsyncTestCertificateSelector : public CertificateSelector {
   bool was_done_ = false;
 };
 
+class HandshakeHintsCertificateSelector : public SyncTestCertificateSelector {
+ public:
+  HandshakeHintsCertificateSelector(
+      absl::string_view pem_cert_chain,
+      std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>>
+          pem_private_key,
+      tsi_tls_version tls_version)
+      : SyncTestCertificateSelector(pem_cert_chain, std::move(pem_private_key)),
+        tls_version_(tls_version) {}
+
+  std::variant<absl::StatusOr<SelectCertificateResult>,
+               std::shared_ptr<AsyncCertificateSelectionHandle>>
+  SelectCertificate(const SelectCertificateInfo& info,
+                    OnSelectCertificateComplete on_complete) override {
+    auto select_cert_result = SyncTestCertificateSelector::SelectCertificate(
+        info, std::move(on_complete));
+    GRPC_RETURN_IF_ERROR(MatchMutable(
+        &select_cert_result,
+        [&](absl::StatusOr<SelectCertificateResult>*
+                select_cert_result) mutable {
+          if (select_cert_result->ok()) {
+            auto& result = *select_cert_result;
+            // Perform an internal handshake to generate real hints.
+            bssl::UniquePtr<SSL_CTX> ctx(SSL_CTX_new(TLS_method()));
+            CHECK(ctx != nullptr);
+            // Important for TLS 1.3.
+            SSL_CTX_set_tlsext_servername_callback(
+                ctx.get(),
+                +[](SSL* /*ssl*/, int* /*out_alert*/, void* /*arg*/) {
+                  // SSL_TLSEXT_ERR_OK causes the server_name to be acked in
+                  // ServerHello.
+                  return SSL_TLSEXT_ERR_OK;
+                });
+            bssl::UniquePtr<SSL> ssl(SSL_new(ctx.get()));
+            CHECK(ssl != nullptr);
+            SSL_set_accept_state(ssl.get());
+            std::vector<CRYPTO_BUFFER*> cert_chain;
+            cert_chain.reserve(result->certificate_chain.size());
+            for (auto& cert : result->certificate_chain) {
+              cert_chain.push_back(cert.get());
+            }
+            bssl::UniquePtr<EVP_PKEY> private_key;
+            GRPC_RETURN_IF_ERROR(MatchMutable(
+                &result->private_key,
+                [&private_key](bssl::UniquePtr<EVP_PKEY>* key) {
+                  private_key = std::move(*key);
+                  return absl::OkStatus();
+                },
+                [](std::shared_ptr<PrivateKeySigner>*) {
+                  return absl::InternalError("PrivateKeySigner not expected");
+                }));
+            // This signer ensures test will fail if handshake hints don't work
+            // properly.
+            result->private_key = std::make_shared<SyncTestPrivateKeySigner>(
+                "", SyncTestPrivateKeySigner::Mode::kError);
+            // Use AssignCertificate to configure hints generation.
+            uint16_t version =
+                (tls_version_ == TSI_TLS1_2) ? TLS1_2_VERSION : TLS1_3_VERSION;
+            if (!SSL_set_chain_and_key(ssl.get(), cert_chain.data(),
+                                       cert_chain.size(), private_key.get(),
+                                       nullptr)) {
+              return absl::InternalError("failed to set SSL chain and key");
+            }
+            if (!SSL_set_strict_cipher_list(ssl.get(),
+                                            SSL_DEFAULT_CIPHER_LIST)) {
+              return absl::InternalError("failed to set SSL cipher list");
+            }
+            // No session resumption.
+            SSL_set_options(ssl.get(),
+                            SSL_OP_CIPHER_SERVER_PREFERENCE | SSL_OP_NO_TICKET);
+            if (!SSL_set_min_proto_version(ssl.get(), version)) {
+              return absl::InternalError("failed to set min TLS version");
+            }
+            if (!SSL_set_max_proto_version(ssl.get(), version)) {
+              return absl::InternalError("failed to set max TLS version");
+            }
+            // Enforce the preference of post-quantum key exchange groups.
+            std::vector<uint16_t> key_exchange_groups = {
+                SSL_GROUP_X25519_MLKEM768, SSL_GROUP_X25519,
+                SSL_GROUP_SECP256R1, SSL_GROUP_SECP384R1};
+            if (!SSL_set1_group_ids(ssl.get(), key_exchange_groups.data(),
+                                    key_exchange_groups.size())) {
+              return absl::InternalError("failed to set key exchange groups.");
+            }
+            result->handshake_hints_result.key_exchange_groups =
+                std::move(key_exchange_groups);
+            if (!SSL_request_handshake_hints(
+                    ssl.get(),
+                    reinterpret_cast<const uint8_t*>(
+                        info.handshake_hints_info.client_hello.data()),
+                    info.handshake_hints_info.client_hello.size(),
+                    reinterpret_cast<const uint8_t*>(
+                        info.handshake_hints_info.ssl_capabilities.data()),
+                    info.handshake_hints_info.ssl_capabilities.size())) {
+              return absl::InternalError("SSL_request_handshake_hints failed");
+            }
+            // Drive the handshake.
+            int ret = SSL_do_handshake(ssl.get());
+            int ssl_error = SSL_get_error(ssl.get(), ret);
+            CHECK_EQ(ssl_error, SSL_ERROR_HANDSHAKE_HINTS_READY);
+            // Extract real hints.
+            bssl::ScopedCBB hints_cbb;
+            CHECK(CBB_init(hints_cbb.get(), 256));
+            CHECK(SSL_serialize_handshake_hints(ssl.get(), hints_cbb.get()));
+            result->handshake_hints_result.handshake_hints = std::string(
+                reinterpret_cast<const char*>(CBB_data(hints_cbb.get())),
+                CBB_len(hints_cbb.get()));
+            // This SSL object and the one within TSI are in the same process
+            // with the same BoringSSL library so the consistency is guaranteed.
+            result->handshake_hints_result.cipher_list =
+                SSL_DEFAULT_CIPHER_LIST;
+            uint16_t negotiated_version = SSL_version(ssl.get());
+            result->handshake_hints_result.min_tls_version = negotiated_version;
+            result->handshake_hints_result.max_tls_version = negotiated_version;
+          }
+          return absl::OkStatus();
+        },
+        [](std::shared_ptr<AsyncCertificateSelectionHandle>*) {
+          return absl::InternalError("Expected synchronous cert selection.");
+        }));
+    return select_cert_result;
+  }
+
+ private:
+  tsi_tls_version tls_version_;
+};
+
 class SslCertSelectorTsiTestFixture {
  public:
   struct FixtureOptions {
@@ -215,6 +344,10 @@ class SslCertSelectorTsiTestFixture {
       cert_selector_ = std::make_shared<SyncTestCertificateSelector>(
           server_cert_, private_key, options.expect_cert_selection_success);
     }
+  }
+
+  void SetCertSelector(std::shared_ptr<CertificateSelector> cert_selector) {
+    cert_selector_ = std::move(cert_selector);
   }
 
   void Run(bool expect_success,
@@ -484,6 +617,20 @@ TEST_P(CertSelectionOffloadTest, AsyncCertSelectionWithAsyncSignerSucceeds) {
   options.tls_version = GetParam();
   auto fixture =
       std::make_shared<SslCertSelectorTsiTestFixture>(options, event_engine_);
+  fixture->Run(/*expect_success=*/true, event_engine_.get());
+}
+
+TEST_P(CertSelectionOffloadTest, HandshakeHintsSucceeds) {
+  SslCertSelectorTsiTestFixture::FixtureOptions options;
+  options.tls_version = GetParam();
+  auto fixture =
+      std::make_shared<SslCertSelectorTsiTestFixture>(options, event_engine_);
+  std::string server_key =
+      GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.key"));
+  std::string server_cert =
+      GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.pem"));
+  fixture->SetCertSelector(std::make_shared<HandshakeHintsCertificateSelector>(
+      server_cert, server_key, GetParam()));
   fixture->Run(/*expect_success=*/true, event_engine_.get());
 }
 

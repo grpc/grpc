@@ -39,7 +39,7 @@ BdpEstimator::BdpEstimator(absl::string_view name)
       stable_estimate_count_(0),
       ping_state_(PingState::UNSCHEDULED),
       bw_est_(0),
-      name_(name) {}
+      peer_name_(name) {}
 
 Timestamp BdpEstimator::CompletePing() {
   const gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
@@ -49,7 +49,7 @@ Timestamp BdpEstimator::CompletePing() {
   const double bw = (dt > 0) ? (static_cast<double>(accumulator_) / dt) : 0;
   const Duration start_inter_ping_delay = inter_ping_delay_;
   GRPC_TRACE_LOG(bdp_estimator, INFO)
-      << "bdp[" << name_ << "]:complete acc=" << accumulator_
+      << "bdp[" << peer_name_ << "]:complete acc=" << accumulator_
       << " est=" << estimate_ << " dt=" << dt << " bw=" << bw / 125000.0
       << "Mbs bw_est=" << bw_est_ / 125000.0 << "Mbs";
   GRPC_CHECK(ping_state_ == PingState::STARTED);
@@ -57,7 +57,7 @@ Timestamp BdpEstimator::CompletePing() {
     estimate_ = std::max(accumulator_, estimate_ * 2);
     bw_est_ = bw;
     GRPC_TRACE_LOG(bdp_estimator, INFO)
-        << "bdp[" << name_ << "]: estimate increased to " << estimate_;
+        << "bdp[" << peer_name_ << "]: estimate increased to " << estimate_;
     inter_ping_delay_ /= 2;  // if the ping estimate changes,
                              // exponentially get faster at probing
   } else if (inter_ping_delay_ < Duration::Seconds(kMaxInterPingDelaySeconds)) {
@@ -72,7 +72,7 @@ Timestamp BdpEstimator::CompletePing() {
   if (start_inter_ping_delay != inter_ping_delay_) {
     stable_estimate_count_ = 0;
     GRPC_TRACE_LOG(bdp_estimator, INFO)
-        << "bdp[" << name_ << "]:update_inter_time to "
+        << "bdp[" << peer_name_ << "]:update_inter_time to "
         << inter_ping_delay_.millis() << "ms";
   }
   ping_state_ = PingState::UNSCHEDULED;

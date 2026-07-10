@@ -614,7 +614,62 @@ SelectCertificateInfo PrepareSelectCertificateInfo(
   } else {
     VLOG(2) << "Client did not provide SNI for cert selection.";
   }
+  size_t capabilities_len = 0;
+  uint8_t* buffer;
+  bssl::ScopedCBB cbb;
+  if (CBB_init(cbb.get(), 128) &&
+      SSL_serialize_capabilities(client_hello->ssl, cbb.get()) &&
+      CBB_finish(cbb.get(), &buffer, &capabilities_len)) {
+    select_cert_info.handshake_hints_info.ssl_capabilities =
+        std::string(reinterpret_cast<const char*>(buffer), capabilities_len);
+    OPENSSL_free(buffer);
+  } else {
+    VLOG(2) << "Failed to generate SSL capabilities";
+  }
+  select_cert_info.handshake_hints_info.client_hello =
+      std::string(reinterpret_cast<const char*>(client_hello->client_hello),
+                  client_hello->client_hello_len);
   return select_cert_info;
+}
+
+absl::Status ProcessSelectCertResultForHandshakeHints(
+    tsi_ssl_handshaker* handshaker, const SelectCertificateResult& result) {
+  // If no handshake hints are provided, return early. This doesn't mean the
+  // handshake will fail. The private key operation will happen later.
+  if (result.handshake_hints_result.handshake_hints.empty()) {
+    return absl::OkStatus();
+  }
+  if (!SSL_set_min_proto_version(
+          handshaker->ssl, result.handshake_hints_result.min_tls_version)) {
+    return absl::InvalidArgumentError("Failed to set min TLS version.");
+  }
+  if (!SSL_set_max_proto_version(
+          handshaker->ssl, result.handshake_hints_result.max_tls_version)) {
+    return absl::InvalidArgumentError("Failed to set max TLS version.");
+  }
+  if (!result.handshake_hints_result.cipher_list.empty() &&
+      !SSL_set_strict_cipher_list(
+          handshaker->ssl, result.handshake_hints_result.cipher_list.c_str())) {
+    return absl::InvalidArgumentError("Failed to set cipher list.");
+  }
+  if (!result.handshake_hints_result.key_exchange_groups.empty() &&
+      !SSL_set1_group_ids(
+          handshaker->ssl,
+          result.handshake_hints_result.key_exchange_groups.data(),
+          result.handshake_hints_result.key_exchange_groups.size())) {
+    return absl::InvalidArgumentError("Failed to set key exchange groups.");
+  }
+  // No session resumption.
+  SSL_set_options(handshaker->ssl,
+                  SSL_OP_CIPHER_SERVER_PREFERENCE | SSL_OP_NO_TICKET);
+  if (!SSL_set_handshake_hints(
+          handshaker->ssl,
+          reinterpret_cast<const uint8_t*>(
+              result.handshake_hints_result.handshake_hints.data()),
+          result.handshake_hints_result.handshake_hints.size())) {
+    return absl::InternalError("Failed to set handshake hints.");
+  }
+  return absl::OkStatus();
 }
 
 absl::Status ProcessSelectCertificateResult(tsi_ssl_handshaker* handshaker,
@@ -628,7 +683,7 @@ absl::Status ProcessSelectCertificateResult(tsi_ssl_handshaker* handshaker,
   for (auto& raw_cert : result.certificate_chain) {
     cert_chain.push_back(raw_cert.get());
   }
-  return grpc_core::MatchMutable(
+  absl::Status pkey_status = grpc_core::MatchMutable(
       &result.private_key,
       [&](bssl::UniquePtr<EVP_PKEY>* key) {
         VLOG(2) << "Select cert result returned a static private key.";
@@ -656,6 +711,8 @@ absl::Status ProcessSelectCertificateResult(tsi_ssl_handshaker* handshaker,
             }
             return absl::OkStatus();
           });
+  GRPC_RETURN_IF_ERROR(pkey_status);
+  return ProcessSelectCertResultForHandshakeHints(handshaker, result);
 }
 
 // Invoked by the cert selector when it runs asynchronously.
@@ -3035,6 +3092,12 @@ static int ssl_server_handshaker_factory_servername_callback(SSL* ssl,
   if (servername == nullptr || strlen(servername) == 0) {
     return SSL_TLSEXT_ERR_NOACK;
   }
+#if defined(OPENSSL_IS_BORINGSSL)
+  // The cert selector will handle SNI.
+  if (impl->certificate_selector != nullptr) {
+    return SSL_TLSEXT_ERR_OK;
+  }
+#endif
 
   for (const auto& ssl_context : impl->ssl_contexts) {
     if (tsi_ssl_peer_matches_name(&ssl_context.x509_subject_name, servername)) {
@@ -3474,10 +3537,12 @@ tsi_result tsi_configure_server_ssl_context(
     result = tsi_ssl_extract_x509_subject_names_from_pem_cert(
         pem_key_cert_pair->cert_chain.c_str(), &ssl_context.x509_subject_name);
     if (result != TSI_OK) return result;
-    SSL_CTX_set_tlsext_servername_callback(
-        ssl_context.ssl_ctx, ssl_server_handshaker_factory_servername_callback);
-    SSL_CTX_set_tlsext_servername_arg(ssl_context.ssl_ctx, impl);
   }
+  // Always configure the callback because responding to SNI is required for
+  // ClientHello in TLS 1.3, and we need to respond to that.
+  SSL_CTX_set_tlsext_servername_callback(
+      ssl_context.ssl_ctx, ssl_server_handshaker_factory_servername_callback);
+  SSL_CTX_set_tlsext_servername_arg(ssl_context.ssl_ctx, impl);
 #if TSI_OPENSSL_ALPN_SUPPORT
   SSL_CTX_set_alpn_select_cb(ssl_context.ssl_ctx,
                              ServerHandshakerFactoryAlpnCallback, impl);

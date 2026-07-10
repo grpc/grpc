@@ -19,68 +19,19 @@
 
 #include <map>
 #include <memory>
-#include <optional>
-#include <string>
 #include <utility>
 #include <vector>
 
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
-#include "src/core/util/validation_errors.h"
-#include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_http_filter.h"
-#include "src/core/xds/xds_client/xds_resource_type.h"
 #include "upb/reflection/def.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
-// Exposed for testing purposes only.
-class XdsHttpRouterFilter final : public XdsHttpFilterImpl {
- public:
-  absl::string_view ConfigProtoName() const override;
-  absl::string_view OverrideConfigProtoName() const override;
-  void PopulateSymtab(upb_DefPool* symtab) const override;
-  std::optional<Json> GenerateFilterConfig(
-      absl::string_view /*instance_name*/,
-      const XdsResourceType::DecodeContext& context,
-      const XdsExtension& extension, ValidationErrors* errors) const override;
-  std::optional<Json> GenerateFilterConfigOverride(
-      absl::string_view /*instance_name*/,
-      const XdsResourceType::DecodeContext& context,
-      const XdsExtension& extension, ValidationErrors* errors) const override;
-  const grpc_channel_filter* channel_filter() const override { return nullptr; }
-  absl::StatusOr<ServiceConfigJsonEntry> GenerateMethodConfig(
-      const Json& /*hcm_filter_config*/,
-      const Json* /*filter_config_override*/) const override {
-    // This will never be called, since channel_filter() returns null.
-    return absl::UnimplementedError("router filter should never be called");
-  }
-  absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
-      const Json& /*hcm_filter_config*/) const override {
-    // This will never be called, since channel_filter() returns null.
-    return absl::UnimplementedError("router filter should never be called");
-  }
-  void AddFilter(FilterChainBuilder& /*builder*/,
-                 RefCountedPtr<const FilterConfig> /*config*/) const override {}
-  RefCountedPtr<const FilterConfig> ParseTopLevelConfig(
-      absl::string_view instance_name,
-      const XdsResourceType::DecodeContext& context,
-      const XdsExtension& extension, ValidationErrors* errors) const override;
-  RefCountedPtr<const FilterConfig> ParseOverrideConfig(
-      absl::string_view instance_name,
-      const XdsResourceType::DecodeContext& context,
-      const XdsExtension& extension, ValidationErrors* errors) const override;
-  bool IsSupportedOnClients() const override { return true; }
-  bool IsSupportedOnServers() const override { return true; }
-  bool IsTerminalFilter() const override { return true; }
-};
-
 class XdsHttpFilterRegistry final {
  public:
-  explicit XdsHttpFilterRegistry(bool register_builtins = true);
+  XdsHttpFilterRegistry() = default;
 
   // Not copyable.
   XdsHttpFilterRegistry(const XdsHttpFilterRegistry&) = delete;
@@ -113,9 +64,6 @@ class XdsHttpFilterRegistry final {
   std::map<absl::string_view, XdsHttpFilterImpl*> top_level_config_map_;
   std::map<absl::string_view, XdsHttpFilterImpl*> override_config_map_;
 };
-
-void SetXdsHttpFilterFactoryForTest(
-    absl::AnyInvocable<std::unique_ptr<XdsHttpFilterImpl>()> factory);
 
 }  // namespace grpc_core
 

@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 55.0.0
+PROJECT_NUMBER         = 56.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -2944,8 +2944,6 @@ src/core/util/json/json_object_loader.cc \
 src/core/util/json/json_object_loader.h \
 src/core/util/json/json_reader.cc \
 src/core/util/json/json_reader.h \
-src/core/util/json/json_util.cc \
-src/core/util/json/json_util.h \
 src/core/util/json/json_writer.cc \
 src/core/util/json/json_writer.h \
 src/core/util/latent_see.cc \
@@ -3056,6 +3054,8 @@ src/core/xds/grpc/xds_audit_logger_registry.cc \
 src/core/xds/grpc/xds_audit_logger_registry.h \
 src/core/xds/grpc/xds_bootstrap_grpc.cc \
 src/core/xds/grpc/xds_bootstrap_grpc.h \
+src/core/xds/grpc/xds_bootstrap_grpc_builder.cc \
+src/core/xds/grpc/xds_bootstrap_grpc_builder.h \
 src/core/xds/grpc/xds_certificate_provider.cc \
 src/core/xds/grpc/xds_certificate_provider.h \
 src/core/xds/grpc/xds_client_grpc.cc \
@@ -3119,6 +3119,10 @@ src/core/xds/grpc/xds_routing.h \
 src/core/xds/grpc/xds_server_grpc.cc \
 src/core/xds/grpc/xds_server_grpc.h \
 src/core/xds/grpc/xds_server_grpc_interface.h \
+src/core/xds/grpc/xds_tls_context.cc \
+src/core/xds/grpc/xds_tls_context.h \
+src/core/xds/grpc/xds_tls_context_parser.cc \
+src/core/xds/grpc/xds_tls_context_parser.h \
 src/core/xds/grpc/xds_transport_grpc.cc \
 src/core/xds/grpc/xds_transport_grpc.h \
 src/core/xds/xds_client/lrs_client.cc \
