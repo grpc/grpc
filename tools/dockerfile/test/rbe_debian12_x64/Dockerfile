@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:11
+FROM debian:12
 
 # Workaround the "tzdata hangs apt-get install during docker image build" issue for ubuntu20.04
 # by setting timezone to "Etc/UTC" in advance.

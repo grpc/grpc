@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:11
+FROM debian:12
 
 RUN apt update && apt -y upgrade
 RUN apt install -y apt-transport-https ca-certificates curl dirmngr gnupg unzip wget && apt clean
