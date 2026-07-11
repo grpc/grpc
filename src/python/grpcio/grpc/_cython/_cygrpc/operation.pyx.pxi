@@ -12,6 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from cpython.ref cimport Py_INCREF, Py_DECREF
+from libc.string cimport memcpy
+from cpython.bytes cimport PyBytes_FromStringAndSize
+
+cdef void py_decref_destroy(void* user_data) noexcept with gil:
+    Py_DECREF(<object>user_data)
+
 
 cdef class Operation:
 
@@ -48,7 +55,7 @@ cdef class SendInitialMetadataOperation(Operation):
 
 cdef class SendMessageOperation(Operation):
 
-  def __cinit__(self, bytes message, int flags):
+  def __cinit__(self, object message, int flags):
     if message is None:
       self._message = b''
     else:
@@ -61,8 +68,26 @@ cdef class SendMessageOperation(Operation):
   cdef void c(self) except *:
     self.c_op.type = GRPC_OP_SEND_MESSAGE
     self.c_op.flags = self._flags
-    cdef grpc_slice message_slice = grpc_slice_from_copied_buffer(
-        self._message, len(self._message))
+    
+    cdef grpc_slice message_slice
+    cdef bytes message_bytes
+
+    if isinstance(self._message, bytes):
+      message_bytes = self._message
+    else:
+      message_bytes = bytes(self._message)
+
+    if IsPythonZeroCopyEnabled():
+      if len(message_bytes) > 0:
+        Py_INCREF(message_bytes)
+        message_slice = grpc_slice_new_with_user_data(
+            <void*><char*>message_bytes, len(message_bytes), py_decref_destroy, <void*>message_bytes)
+      else:
+        message_slice = grpc_empty_slice()
+    else:
+      message_slice = grpc_slice_from_copied_buffer(
+          <const char *>message_bytes, len(message_bytes))
+      
     self._c_message_byte_buffer = grpc_raw_byte_buffer_create(
         &message_slice, 1)
     grpc_slice_unref(message_slice)
@@ -162,19 +187,48 @@ cdef class ReceiveMessageOperation(Operation):
     cdef grpc_slice message_slice
     cdef size_t message_slice_length
     cdef list chunks = []
+    cdef size_t total_length
+    cdef size_t offset
+    cdef char *dest
+    cdef bytes result
 
     if self._c_message_byte_buffer != NULL:
       message_reader_status = grpc_byte_buffer_reader_init(
           &message_reader, self._c_message_byte_buffer)
       if message_reader_status:
-        while grpc_byte_buffer_reader_next(&message_reader, &message_slice):
-          message_slice_length = grpc_slice_length(message_slice)
-          if message_slice_length > 0:
-            chunks.append((<char *>grpc_slice_start_ptr(message_slice))[:message_slice_length])
-          grpc_slice_unref(message_slice)
-
+        if IsPythonZeroCopyEnabled():
+          # When the zero-copy bazel experiment is enabled, copy all slices into 
+          # a single bytes object. This bounds Python objects to O(1) and copies
+          # the payload only once.
+          total_length = grpc_byte_buffer_length(self._c_message_byte_buffer)
+          if total_length > 0:
+            result = PyBytes_FromStringAndSize(NULL, total_length)
+            dest = result
+            offset = 0
+            while grpc_byte_buffer_reader_next(&message_reader, &message_slice):
+              message_slice_length = grpc_slice_length(message_slice)
+              if message_slice_length > 0:
+                if offset + message_slice_length > total_length:
+                  raise RuntimeError("Byte buffer length mismatch")
+                memcpy(dest + offset,
+                       grpc_slice_start_ptr(message_slice),
+                       message_slice_length)
+                offset += message_slice_length
+              grpc_slice_unref(message_slice)
+            if offset < total_length:
+              result = result[:offset]
+            self._message = result
+          else:
+            self._message = b''
+        else:
+          while grpc_byte_buffer_reader_next(&message_reader, &message_slice):
+            message_slice_length = grpc_slice_length(message_slice)
+            if message_slice_length > 0:
+              chunks.append((<char *>grpc_slice_start_ptr(message_slice))[:message_slice_length])
+            grpc_slice_unref(message_slice)
+          self._message = b"".join(chunks)
+        
         grpc_byte_buffer_reader_destroy(&message_reader)
-        self._message = b"".join(chunks)
       else:
         self._message = None
       grpc_byte_buffer_destroy(self._c_message_byte_buffer)
@@ -249,3 +303,7 @@ cdef class ReceiveCloseOnServerOperation(Operation):
 
   def cancelled(self):
     return self._cancelled
+
+
+def python_zero_copy_enabled():
+  return IsPythonZeroCopyEnabled()
