@@ -69,7 +69,7 @@ class _GenericHandler(grpc.GenericRpcHandler):
 
 async def start_server() -> Tuple[grpc.aio.Server, int]:
     server = grpc.aio.server()
-    port = server.add_insecure_port("[::]:0")
+    port = server.add_insecure_port("127.0.0.1:0")
     generic_handler = _GenericHandler()
     server.add_generic_rpc_handlers((generic_handler,))
     await server.start()
@@ -77,13 +77,13 @@ async def start_server() -> Tuple[grpc.aio.Server, int]:
 
 
 async def unary_unary_call(port):
-    async with grpc.aio.insecure_channel(f"localhost:{port}") as channel:
+    async with grpc.aio.insecure_channel(f"127.0.0.1:{port}") as channel:
         multi_callable = channel.unary_unary(_UNARY_UNARY)
         unused_response = await multi_callable(_REQUEST)
 
 
 async def unary_stream_call(port):
-    async with grpc.aio.insecure_channel(f"localhost:{port}") as channel:
+    async with grpc.aio.insecure_channel(f"127.0.0.1:{port}") as channel:
         multi_callable = channel.unary_stream(_UNARY_STREAM)
         call = multi_callable(_REQUEST)
         async for _ in call:
@@ -91,14 +91,14 @@ async def unary_stream_call(port):
 
 
 async def stream_unary_call(port):
-    async with grpc.aio.insecure_channel(f"localhost:{port}") as channel:
+    async with grpc.aio.insecure_channel(f"127.0.0.1:{port}") as channel:
         multi_callable = channel.stream_unary(_STREAM_UNARY)
         call = multi_callable(iter([_REQUEST] * STREAM_LENGTH))
         unused_response = await call
 
 
 async def stream_stream_call(port):
-    async with grpc.aio.insecure_channel(f"localhost:{port}") as channel:
+    async with grpc.aio.insecure_channel(f"127.0.0.1:{port}") as channel:
         multi_callable = channel.stream_stream(_STREAM_STREAM)
         call = multi_callable(iter([_REQUEST] * STREAM_LENGTH))
         async for _ in call:

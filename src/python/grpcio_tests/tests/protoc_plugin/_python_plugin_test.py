@@ -165,9 +165,9 @@ def _CreateService():
     getattr(service_pb2_grpc, ADD_SERVICER_TO_SERVER_IDENTIFIER)(
         Servicer(), server
     )
-    port = server.add_insecure_port("[::]:0")
+    port = server.add_insecure_port("127.0.0.1:0")
     server.start()
-    channel = grpc.insecure_channel("localhost:{}".format(port))
+    channel = grpc.insecure_channel("127.0.0.1:{}".format(port))
     stub = getattr(service_pb2_grpc, STUB_IDENTIFIER)(channel)
     return _Service(servicer_methods, server, stub)
 
@@ -187,9 +187,9 @@ def _CreateIncompleteService():
     getattr(service_pb2_grpc, ADD_SERVICER_TO_SERVER_IDENTIFIER)(
         Servicer(), server
     )
-    port = server.add_insecure_port("[::]:0")
+    port = server.add_insecure_port("127.0.0.1:0")
     server.start()
-    channel = grpc.insecure_channel("localhost:{}".format(port))
+    channel = grpc.insecure_channel("127.0.0.1:{}".format(port))
     stub = getattr(service_pb2_grpc, STUB_IDENTIFIER)(channel)
     return _Service(None, server, stub)
 
@@ -590,9 +590,9 @@ class SimpleStubsPluginTest(unittest.TestCase):
         service_pb2_grpc.add_TestServiceServicer_to_server(
             self.Servicer(), self._server
         )
-        self._port = self._server.add_insecure_port("[::]:0")
+        self._port = self._server.add_insecure_port("127.0.0.1:0")
         self._server.start()
-        self._target = "localhost:{}".format(self._port)
+        self._target = "127.0.0.1:{}".format(self._port)
 
     def tearDown(self):
         self._server.stop(None)

@@ -68,9 +68,9 @@ class ChannelReadyFutureTest(unittest.TestCase):
         server = grpc.server(
             recording_thread_pool, options=(("grpc.so_reuseport", 0),)
         )
-        port = server.add_insecure_port("[::]:0")
+        port = server.add_insecure_port("127.0.0.1:0")
         server.start()
-        channel = grpc.insecure_channel("localhost:{}".format(port))
+        channel = grpc.insecure_channel("127.0.0.1:{}".format(port))
         callback = _Callback()
 
         ready_future = grpc.channel_ready_future(channel)

@@ -35,8 +35,8 @@ class TestServerTimeRemaining(AioTestBase):
         self._server = aio.server(options=(("grpc.so_reuseport", 0),))
         self._adhoc_handlers = AdhocGenericHandler()
         self._server.add_generic_rpc_handlers((self._adhoc_handlers,))
-        port = self._server.add_insecure_port("[::]:0")
-        address = "localhost:%d" % port
+        port = self._server.add_insecure_port("127.0.0.1:0")
+        address = "127.0.0.1:%d" % port
         await self._server.start()
         # Create async channel
         self._channel = aio.insecure_channel(address)

@@ -111,14 +111,14 @@ class ChannelCloseTest(unittest.TestCase):
             max_workers=test_constants.THREAD_CONCURRENCY
         )
         self._server.add_registered_method_handlers("", _METHOD_HANDLERS)
-        self._port = self._server.add_insecure_port("[::]:0")
+        self._port = self._server.add_insecure_port("127.0.0.1:0")
         self._server.start()
 
     def tearDown(self):
         self._server.stop(None)
 
     def test_close_immediately_after_call_invocation(self):
-        channel = grpc.insecure_channel("localhost:{}".format(self._port))
+        channel = grpc.insecure_channel("127.0.0.1:{}".format(self._port))
         multi_callable = channel.stream_stream(
             grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_URI),
             _registered_method=True,
@@ -131,7 +131,7 @@ class ChannelCloseTest(unittest.TestCase):
         self.assertIs(response_iterator.code(), grpc.StatusCode.CANCELLED)
 
     def test_close_while_call_active(self):
-        channel = grpc.insecure_channel("localhost:{}".format(self._port))
+        channel = grpc.insecure_channel("127.0.0.1:{}".format(self._port))
         multi_callable = channel.stream_stream(
             grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_URI),
             _registered_method=True,
@@ -146,7 +146,7 @@ class ChannelCloseTest(unittest.TestCase):
 
     def test_context_manager_close_while_call_active(self):
         with grpc.insecure_channel(
-            "localhost:{}".format(self._port)
+            "127.0.0.1:{}".format(self._port)
         ) as channel:
             multi_callable = channel.stream_stream(
                 grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_URI),
@@ -161,7 +161,7 @@ class ChannelCloseTest(unittest.TestCase):
 
     def test_context_manager_close_while_many_calls_active(self):
         with grpc.insecure_channel(
-            "localhost:{}".format(self._port)
+            "127.0.0.1:{}".format(self._port)
         ) as channel:
             multi_callable = channel.stream_stream(
                 grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_URI),
@@ -183,7 +183,7 @@ class ChannelCloseTest(unittest.TestCase):
             self.assertIs(response_iterator.code(), grpc.StatusCode.CANCELLED)
 
     def test_many_concurrent_closes(self):
-        channel = grpc.insecure_channel("localhost:{}".format(self._port))
+        channel = grpc.insecure_channel("127.0.0.1:{}".format(self._port))
         multi_callable = channel.stream_stream(
             grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_URI),
             _registered_method=True,
@@ -212,7 +212,7 @@ class ChannelCloseTest(unittest.TestCase):
 
     def test_exception_in_callback(self):
         with grpc.insecure_channel(
-            "localhost:{}".format(self._port)
+            "127.0.0.1:{}".format(self._port)
         ) as channel:
             stream_multi_callable = channel.stream_stream(
                 grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_URI),

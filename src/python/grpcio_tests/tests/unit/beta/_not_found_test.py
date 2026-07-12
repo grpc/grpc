@@ -25,8 +25,8 @@ from tests.unit.framework.common import test_constants
 class NotFoundTest(unittest.TestCase):
     def setUp(self):
         self._server = implementations.server({})
-        port = self._server.add_insecure_port("[::]:0")
-        channel = implementations.insecure_channel("localhost", port)
+        port = self._server.add_insecure_port("127.0.0.1:0")
+        channel = implementations.insecure_channel("127.0.0.1", port)
         self._generic_stub = implementations.generic_stub(channel)
         self._server.start()
 

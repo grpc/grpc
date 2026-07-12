@@ -28,11 +28,11 @@ from grpc_csds import csds_pb2_grpc
 class TestAdmin(unittest.TestCase):
     def setUp(self):
         self._server = grpc.server(ThreadPoolExecutor())
-        port = self._server.add_insecure_port("localhost:0")
+        port = self._server.add_insecure_port("127.0.0.1:0")
         grpc_admin.add_admin_servicers(self._server)
         self._server.start()
 
-        self._channel = grpc.insecure_channel("localhost:%s" % port)
+        self._channel = grpc.insecure_channel("127.0.0.1:%s" % port)
 
     def tearDown(self):
         self._channel.close()

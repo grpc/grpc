@@ -363,8 +363,8 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
     def testTargetAttributeFilter(self):
         main_server, main_port = _test_server.start_server()
         backup_server, backup_port = _test_server.start_server()
-        main_target = f"localhost:{main_port}"
-        backup_target = f"localhost:{backup_port}"
+        main_target = f"127.0.0.1:{main_port}"
+        backup_target = f"127.0.0.1:{backup_port}"
 
         # Replace target label with 'other' for main_server.
         def target_filter(target: str) -> bool:
