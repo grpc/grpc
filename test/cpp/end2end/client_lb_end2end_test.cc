@@ -707,17 +707,12 @@ TEST_F(ClientLbSubchannelMetricsTest, SubchannelMetricsBasic) {
       WaitForChannelState(channel.get(), [](grpc_connectivity_state state) {
         return state == GRPC_CHANNEL_IDLE;
       }));
-  if (grpc_core::IsSubchannelConnectionScalingEnabled()) {
-    EXPECT_THAT(stats_plugin_->GetUInt64MetricValueByName(
-                    "grpc.subchannel.disconnections",
-                    {target, "", "", "GOAWAY NO_ERROR"}),
-                ::testing::Optional(1));
-  } else {
-    EXPECT_THAT(
-        stats_plugin_->GetUInt64MetricValueByName(
-            "grpc.subchannel.disconnections", {target, "", "", "unknown"}),
-        ::testing::Optional(1));
-  }
+  absl::string_view reason = grpc_core::IsSubchannelConnectionScalingEnabled()
+                                 ? "GOAWAY NO_ERROR"
+                                 : "unknown";
+  EXPECT_THAT(stats_plugin_->GetUInt64MetricValueByName(
+                  "grpc.subchannel.disconnections", {target, "", "", reason}),
+              ::testing::Optional(1));
   EXPECT_THAT(stats_plugin_->GetInt64MetricValueByName(
                   "grpc.subchannel.open_connections", {target, "none", "", ""}),
               ::testing::Optional(0));
