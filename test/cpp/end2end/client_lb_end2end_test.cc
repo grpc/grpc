@@ -758,12 +758,12 @@ TEST_F(ClientLbSubchannelMetricsTest, ConnectionAttemptIgnoredOnShutdown) {
   hold1->Wait();
   response_generator.SetNextResolution({port2});
   hold2->Wait();
-  hold1->Fail(absl::UnavailableError("first attempt failed"));
   hold2->Resume();
   EXPECT_TRUE(
       WaitForChannelState(channel.get(), [](grpc_connectivity_state state) {
         return state == GRPC_CHANNEL_READY;
       }));
+  hold1->Fail(absl::UnavailableError("first attempt failed"));
   std::string target = std::string(kDefaultAuthority);
   EXPECT_THAT(
       stats_plugin_->GetUInt64MetricValueByName(
