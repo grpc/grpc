@@ -5668,11 +5668,9 @@ grpc_cc_library(
     name = "grpc_rbac_filter",
     srcs = [
         "ext/filters/rbac/rbac_filter.cc",
-        "ext/filters/rbac/rbac_service_config_parser.cc",
     ],
     hdrs = [
         "ext/filters/rbac/rbac_filter.h",
-        "ext/filters/rbac/rbac_service_config_parser.h",
     ],
     external_deps = [
         "absl/status",
@@ -5689,13 +5687,8 @@ grpc_cc_library(
         "grpc_authorization_base",
         "grpc_matchers",
         "grpc_rbac_engine",
-        "grpc_service_config",
-        "json",
-        "json_args",
-        "json_object_loader",
         "latent_see",
         "metadata_batch",
-        "service_config_parser",
         "validation_errors",
         "//:config",
         "//:gpr",
@@ -6501,8 +6494,6 @@ grpc_cc_library(
         "envoy_type_upb",
         "experiment_env_var",
         "grpc_rbac_filter",
-        "json",
-        "json_writer",
         "protobuf_wrappers_upb",
         "upb_utils",
         "validation_errors",
@@ -7452,7 +7443,6 @@ grpc_cc_library(
     name = "grpc_xds_server_config_fetcher",
     srcs = [
         "server/xds_server_config_fetcher.cc",
-        "server/xds_server_config_fetcher_legacy.cc",
     ],
     external_deps = [
         "absl/base:core_headers",

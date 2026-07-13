@@ -29,8 +29,6 @@
 
 namespace grpc_core {
 
-extern const grpc_channel_filter kLegacyServerConfigSelectorFilter;
-
 // This filter handles injection of dynamic filters for server connections.
 //
 // This filter will get the ServerConfigSelectorProvider from channel

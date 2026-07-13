@@ -35,32 +35,6 @@ class XdsHttpFaultFilter final : public XdsHttpFilterImpl {
   absl::string_view ConfigProtoName() const override;
   absl::string_view OverrideConfigProtoName() const override;
   void PopulateSymtab(upb_DefPool* symtab) const override;
-  std::optional<Json> GenerateFilterConfig(
-      absl::string_view /*instance_name*/,
-      const XdsResourceType::DecodeContext& /*context*/,
-      const XdsExtension& /*extension*/,
-      ValidationErrors* /*errors*/) const override {
-    return std::nullopt;
-  }
-  std::optional<Json> GenerateFilterConfigOverride(
-      absl::string_view /*instance_name*/,
-      const XdsResourceType::DecodeContext& /*context*/,
-      const XdsExtension& /*extension*/,
-      ValidationErrors* /*errors*/) const override {
-    return std::nullopt;
-  }
-  const grpc_channel_filter* channel_filter() const override;
-  absl::StatusOr<ServiceConfigJsonEntry> GenerateMethodConfig(
-      const Json& /*hcm_filter_config*/,
-      const Json* /*filter_config_override*/) const override {
-    return absl::UnimplementedError(
-        "old-style filter config APIs not supported");
-  }
-  absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
-      const Json& /*hcm_filter_config*/) const override {
-    return absl::UnimplementedError(
-        "old-style filter config APIs not supported");
-  }
   void AddFilter(FilterChainBuilder& builder,
                  RefCountedPtr<const FilterConfig> config) const override;
   RefCountedPtr<const FilterConfig> ParseTopLevelConfig(

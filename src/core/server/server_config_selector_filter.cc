@@ -14,8 +14,6 @@
 
 #include "src/core/server/server_config_selector_filter.h"
 
-#include <grpc/support/port_platform.h>
-
 #include <functional>
 #include <memory>
 #include <optional>
@@ -43,127 +41,6 @@
 #include "absl/status/statusor.h"
 
 namespace grpc_core {
-
-namespace {
-
-class LegacyServerConfigSelectorFilter final
-    : public ImplementChannelFilter<LegacyServerConfigSelectorFilter>,
-      public InternallyRefCounted<LegacyServerConfigSelectorFilter> {
- public:
-  explicit LegacyServerConfigSelectorFilter(
-      RefCountedPtr<ServerConfigSelectorProvider>
-          server_config_selector_provider);
-
-  static absl::string_view TypeName() {
-    return "server_config_selector_filter";
-  }
-
-  LegacyServerConfigSelectorFilter(const LegacyServerConfigSelectorFilter&) =
-      delete;
-  LegacyServerConfigSelectorFilter& operator=(
-      const LegacyServerConfigSelectorFilter&) = delete;
-
-  static absl::StatusOr<OrphanablePtr<LegacyServerConfigSelectorFilter>> Create(
-      const ChannelArgs& args, ChannelFilter::Args);
-
-  void Orphan() override;
-
-  class Call {
-   public:
-    absl::Status OnClientInitialMetadata(
-        ClientMetadata& md, LegacyServerConfigSelectorFilter* filter);
-    static inline const NoInterceptor OnServerInitialMetadata;
-    static inline const NoInterceptor OnServerTrailingMetadata;
-    static inline const NoInterceptor OnClientToServerMessage;
-    static inline const NoInterceptor OnClientToServerHalfClose;
-    static inline const NoInterceptor OnServerToClientMessage;
-    static inline const NoInterceptor OnFinalize;
-  };
-
-  absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector() {
-    MutexLock lock(&mu_);
-    return config_selector_.value();
-  }
-
- private:
-  class ServerConfigSelectorWatcher
-      : public ServerConfigSelectorProvider::ServerConfigSelectorWatcher {
-   public:
-    explicit ServerConfigSelectorWatcher(
-        RefCountedPtr<LegacyServerConfigSelectorFilter> filter)
-        : filter_(filter) {}
-    void OnServerConfigSelectorUpdate(
-        absl::StatusOr<RefCountedPtr<ServerConfigSelector>> update) override {
-      MutexLock lock(&filter_->mu_);
-      filter_->config_selector_ = std::move(update);
-    }
-
-   private:
-    RefCountedPtr<LegacyServerConfigSelectorFilter> filter_;
-  };
-
-  RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider_;
-  std::shared_ptr<ServerConfigSelectorWatcher> watcher_;
-  Mutex mu_;
-  std::optional<absl::StatusOr<RefCountedPtr<ServerConfigSelector>>>
-      config_selector_ ABSL_GUARDED_BY(mu_);
-};
-
-absl::StatusOr<OrphanablePtr<LegacyServerConfigSelectorFilter>>
-LegacyServerConfigSelectorFilter::Create(const ChannelArgs& args,
-                                         ChannelFilter::Args) {
-  ServerConfigSelectorProvider* server_config_selector_provider =
-      args.GetObject<ServerConfigSelectorProvider>();
-  if (server_config_selector_provider == nullptr) {
-    return absl::UnknownError("No ServerConfigSelectorProvider object found");
-  }
-  return MakeOrphanable<LegacyServerConfigSelectorFilter>(
-      server_config_selector_provider->Ref());
-}
-
-LegacyServerConfigSelectorFilter::LegacyServerConfigSelectorFilter(
-    RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider)
-    : server_config_selector_provider_(
-          std::move(server_config_selector_provider)) {
-  GRPC_CHECK(server_config_selector_provider_ != nullptr);
-  watcher_ = std::make_shared<ServerConfigSelectorWatcher>(Ref());
-  auto config_selector = server_config_selector_provider_->Watch(watcher_);
-  MutexLock lock(&mu_);
-  // It's possible for the watcher to have already updated config_selector_
-  if (!config_selector_.has_value()) {
-    config_selector_ = std::move(config_selector);
-  }
-}
-
-void LegacyServerConfigSelectorFilter::Orphan() {
-  if (server_config_selector_provider_ != nullptr) {
-    server_config_selector_provider_->CancelWatch(std::move(watcher_));
-  }
-  Unref();
-}
-
-absl::Status LegacyServerConfigSelectorFilter::Call::OnClientInitialMetadata(
-    ClientMetadata& md, LegacyServerConfigSelectorFilter* filter) {
-  GRPC_LATENT_SEE_SCOPE(
-      "LegacyServerConfigSelectorFilter::Call::OnClientInitialMetadata");
-  auto sel = filter->config_selector();
-  if (!sel.ok()) return sel.status();
-  auto call_config = sel.value()->GetCallConfig(/*state=*/nullptr, &md);
-  if (!call_config.ok()) {
-    return absl::UnavailableError(StatusToString(call_config.status()));
-  }
-  auto* service_config_call_data =
-      GetContext<Arena>()->New<ServiceConfigCallData>(GetContext<Arena>());
-  service_config_call_data->SetServiceConfig(
-      std::move(call_config->service_config), call_config->method_configs);
-  return absl::OkStatus();
-}
-
-}  // namespace
-
-const grpc_channel_filter kLegacyServerConfigSelectorFilter =
-    MakePromiseBasedFilter<LegacyServerConfigSelectorFilter,
-                           FilterEndpoint::kServer>();
 
 //
 // ServerConfigSelectorInterceptor::Watcher
@@ -220,9 +97,7 @@ ServerConfigSelectorInterceptor::ServerConfigSelectorInterceptor(
   // Start watch for ServerConfigSelector.
   watcher_ = std::make_shared<Watcher>(
       WeakRef().TakeAsSubclass<ServerConfigSelectorInterceptor>());
-  // TODO(roth): Remove void cast when removing the
-  // xds_server_filter_chain_per_route experiment.
-  (void)server_config_selector_provider_->Watch(watcher_);
+  server_config_selector_provider_->Watch(watcher_);
 }
 
 namespace {
@@ -319,35 +194,26 @@ void ServerConfigSelectorInterceptor::InterceptCall(
                       return state.status();
                     }
                     // Use config selector to choose dynamic filter stack.
-                    auto call_config = (*state)->config_selector->GetCallConfig(
-                        (*state)->connection_state.get(), metadata.get());
-                    if (!call_config.ok()) {
+                    auto filter_chain =
+                        (*state)->config_selector->GetCallConfig(
+                            (*state)->connection_state.get(), metadata.get());
+                    if (!filter_chain.ok()) {
                       GRPC_TRACE_LOG(server_config_selector_interceptor, INFO)
                           << "[server_config_selector_interceptor "
                           << self.get() << "]: config selector returned error: "
-                          << call_config.status();
+                          << filter_chain.status();
                       return absl::UnavailableError(
-                          StatusToString(call_config.status()));
-                    }
-                    // Get filter chain.
-                    if (!call_config->filter_chain.ok()) {
-                      GRPC_TRACE_LOG(server_config_selector_interceptor, INFO)
-                          << "[server_config_selector_interceptor "
-                          << self.get()
-                          << "]: config selector returned failure for filter "
-                             "chain: "
-                          << call_config->filter_chain.status();
-                      return call_config->filter_chain.status();
+                          StatusToString(filter_chain.status()));
                     }
                     // Start call on selected filter chain.
                     GRPC_TRACE_LOG(server_config_selector_interceptor, INFO)
                         << "[server_config_selector_interceptor " << self.get()
                         << "]: starting call on dynamic filter chain";
-                    auto& filter_chain = DownCast<const FilterChainImpl&>(
-                        **call_config->filter_chain);
+                    auto& filter_chain_impl =
+                        DownCast<const FilterChainImpl&>(**filter_chain);
                     auto [initiator, unstarted_handler] = MakeCallPair(
                         std::move(metadata), GetContext<Arena>()->Ref());
-                    filter_chain.destination()->StartCall(
+                    filter_chain_impl.destination()->StartCall(
                         std::move(unstarted_handler));
                     ForwardCall(handler, initiator);
                     return absl::OkStatus();

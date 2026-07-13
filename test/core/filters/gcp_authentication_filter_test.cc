@@ -96,7 +96,7 @@ TEST_F(GcpAuthenticationFilterTest, CreateSucceeds) {
       MakeChannelArgs(kClusterName, kFilterInstanceName, nullptr);
   auto filter_config = MakeFilterConfig(kFilterInstanceName);
   auto filter = GcpAuthenticationFilter::Create(
-      channel_args, ChannelFilter::Args(/*instance_id=*/0, filter_config));
+      channel_args, ChannelFilter::Args(filter_config));
   EXPECT_TRUE(filter.ok()) << filter.status();
 }
 
@@ -105,8 +105,8 @@ TEST_F(GcpAuthenticationFilterTest, CreateFailsWithoutFilterConfig) {
   constexpr absl::string_view kFilterInstanceName = "gcp_authn_filter";
   auto channel_args = ChannelArgs().SetObject(
       MakeXdsConfig(kClusterName, kFilterInstanceName, nullptr));
-  auto filter = GcpAuthenticationFilter::Create(
-      channel_args, ChannelFilter::Args(/*instance_id=*/0));
+  auto filter =
+      GcpAuthenticationFilter::Create(channel_args, ChannelFilter::Args());
   EXPECT_EQ(filter.status(),
             absl::InternalError("gcp_auth: filter config not set"));
 }
@@ -114,7 +114,7 @@ TEST_F(GcpAuthenticationFilterTest, CreateFailsWithoutFilterConfig) {
 TEST_F(GcpAuthenticationFilterTest, CreateFailsXdsConfigNotFoundInChannelArgs) {
   auto filter_config = MakeFilterConfig("gcp_authn_filter");
   auto filter = GcpAuthenticationFilter::Create(
-      ChannelArgs(), ChannelFilter::Args(/*instance_id=*/0, filter_config));
+      ChannelArgs(), ChannelFilter::Args(filter_config));
   EXPECT_EQ(
       filter.status(),
       absl::InternalError("gcp_auth: xds config not found in channel args"));

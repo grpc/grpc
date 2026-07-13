@@ -57,26 +57,6 @@ class XdsHttpRouterFilter final : public XdsHttpFilterImpl {
   absl::string_view ConfigProtoName() const override;
   absl::string_view OverrideConfigProtoName() const override;
   void PopulateSymtab(upb_DefPool* symtab) const override;
-  std::optional<Json> GenerateFilterConfig(
-      absl::string_view /*instance_name*/,
-      const XdsResourceType::DecodeContext& context,
-      const XdsExtension& extension, ValidationErrors* errors) const override;
-  std::optional<Json> GenerateFilterConfigOverride(
-      absl::string_view /*instance_name*/,
-      const XdsResourceType::DecodeContext& context,
-      const XdsExtension& extension, ValidationErrors* errors) const override;
-  const grpc_channel_filter* channel_filter() const override { return nullptr; }
-  absl::StatusOr<ServiceConfigJsonEntry> GenerateMethodConfig(
-      const Json& /*hcm_filter_config*/,
-      const Json* /*filter_config_override*/) const override {
-    // This will never be called, since channel_filter() returns null.
-    return absl::UnimplementedError("router filter should never be called");
-  }
-  absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
-      const Json& /*hcm_filter_config*/) const override {
-    // This will never be called, since channel_filter() returns null.
-    return absl::UnimplementedError("router filter should never be called");
-  }
   void AddFilter(FilterChainBuilder& /*builder*/,
                  RefCountedPtr<const FilterConfig> /*config*/) const override {}
   RefCountedPtr<const FilterConfig> ParseTopLevelConfig(

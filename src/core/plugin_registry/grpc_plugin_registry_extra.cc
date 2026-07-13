@@ -21,7 +21,6 @@
 
 namespace grpc_core {
 #ifndef GRPC_NO_XDS
-extern void RbacFilterRegister(CoreConfiguration::Builder* builder);
 extern void RegisterXdsChannelStackModifier(
     CoreConfiguration::Builder* builder);
 extern void RegisterChannelDefaultCreds(CoreConfiguration::Builder* builder);
@@ -43,9 +42,6 @@ void RegisterExtraFilters(CoreConfiguration::Builder* builder) {
   // Use builder to avoid unused-parameter warning.
   (void)builder;
 #ifndef GRPC_NO_XDS
-  // rbac_filter is being guarded with GRPC_NO_XDS to avoid a dependency on the
-  // re2 library by default
-  RbacFilterRegister(builder);
   RegisterXdsChannelStackModifier(builder);
   RegisterChannelDefaultCreds(builder);
   RegisterDefaultCallCreds(builder);

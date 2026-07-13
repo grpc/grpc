@@ -172,29 +172,6 @@ class TestHttpFilter final : public XdsHttpFilterImpl {
 
   bool IsSupportedOnClients() const override { return true; }
   bool IsSupportedOnServers() const override { return true; }
-  const grpc_channel_filter* channel_filter() const override {
-    return &TestFilter::kFilterVtable;
-  }
-
-  // Legacy methods - can be stubbed out
-  std::optional<Json> GenerateFilterConfig(
-      absl::string_view, const XdsResourceType::DecodeContext&,
-      const XdsExtension&, ValidationErrors*) const override {
-    return std::nullopt;
-  }
-  std::optional<Json> GenerateFilterConfigOverride(
-      absl::string_view, const XdsResourceType::DecodeContext&,
-      const XdsExtension&, ValidationErrors*) const override {
-    return std::nullopt;
-  }
-  absl::StatusOr<ServiceConfigJsonEntry> GenerateMethodConfig(
-      const Json&, const Json*) const override {
-    return absl::UnimplementedError("not implemented");
-  }
-  absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
-      const Json&) const override {
-    return absl::UnimplementedError("not implemented");
-  }
 };
 
 // A fake filter chain that basically just contains the list of filters
@@ -281,7 +258,7 @@ class XdsRouteConfigFilterChainBuilderTest : public ::testing::Test {
 
   XdsRouteConfigResource::FilterConfigOverride MakeOverride(
       std::string value, bool disabled = false) {
-    return {"test.FilterConfig", Json(),
+    return {"test.FilterConfig",
             MakeRefCounted<TestFilterConfig>(std::move(value),
                                              /*blackboard_entry=*/nullptr),
             disabled};

@@ -45,10 +45,6 @@ void XdsHttpGcpAuthnFilter::PopulateSymtab(upb_DefPool* symtab) const {
       symtab);
 }
 
-const grpc_channel_filter* XdsHttpGcpAuthnFilter::channel_filter() const {
-  return &GcpAuthenticationFilter::kFilterVtable;
-}
-
 void XdsHttpGcpAuthnFilter::AddFilter(
     FilterChainBuilder& builder,
     RefCountedPtr<const FilterConfig> config) const {

@@ -310,13 +310,6 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
         entry.disabled =
             envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_disabled(
                 http_filter);
-        if (!is_client) {
-          std::optional<Json> filter_config = filter_impl->GenerateFilterConfig(
-              name, context, *extension, errors);
-          if (filter_config.has_value()) {
-            entry.config = std::move(*filter_config);
-          }
-        }
         entry.filter_config =
             filter_impl->ParseTopLevelConfig(name, context, *extension, errors);
       }

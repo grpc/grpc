@@ -63,10 +63,6 @@ void XdsHttpCompositeFilter::AddFilter(
   builder.AddFilter<CompositeFilter>(std::move(config));
 }
 
-const grpc_channel_filter* XdsHttpCompositeFilter::channel_filter() const {
-  return &CompositeFilter::kFilterVtable;
-}
-
 namespace {
 
 // Matcher action factory for SkipFilter.

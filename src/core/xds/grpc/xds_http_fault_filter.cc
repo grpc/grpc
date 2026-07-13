@@ -77,10 +77,6 @@ void XdsHttpFaultFilter::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_fault_v3_HTTPFault_getmsgdef(symtab);
 }
 
-const grpc_channel_filter* XdsHttpFaultFilter::channel_filter() const {
-  return &FaultInjectionFilter::kFilterVtable;
-}
-
 void XdsHttpFaultFilter::AddFilter(
     FilterChainBuilder& builder,
     RefCountedPtr<const FilterConfig> config) const {

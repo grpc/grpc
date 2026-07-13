@@ -86,68 +86,6 @@ class XdsHttpFilterImpl {
 
   // Returns true if the filter must be the last filter in the chain.
   virtual bool IsTerminalFilter() const { return false; }
-
-  /////////////////////////////////////////////////////////////////////////////
-  //
-  // ALL INTERFACES BELOW ARE DEPRECATED
-  //
-  /////////////////////////////////////////////////////////////////////////////
-  // TODO(roth): Remove these when removing the
-  // xds_server_filter_chain_per_route experiment.
-
-  // Service config data for the filter, returned by GenerateServiceConfig().
-  struct ServiceConfigJsonEntry {
-    // The top-level field name in the method config.
-    // Filter implementations should use their primary config proto type
-    // name for this.
-    // The value of this field in the method config will be a JSON array,
-    // which will be populated with the elements returned by each filter
-    // instance.
-    // Entry will be skipped if this field is empty.
-    std::string service_config_field_name;
-    // The element to add to the JSON array.
-    std::string element;
-  };
-
-  // Generates a Config from the xDS filter config proto.
-  // Used for the top-level config in the HCM HTTP filter list.
-  virtual std::optional<Json> GenerateFilterConfig(
-      absl::string_view instance_name,
-      const XdsResourceType::DecodeContext& context,
-      const XdsExtension& extension, ValidationErrors* errors) const = 0;
-
-  // Generates a Config from the xDS filter config proto.
-  // Used for the typed_per_filter_config override in VirtualHost and Route.
-  virtual std::optional<Json> GenerateFilterConfigOverride(
-      absl::string_view instance_name,
-      const XdsResourceType::DecodeContext& context,
-      const XdsExtension& extension, ValidationErrors* errors) const = 0;
-
-  // TODO(roth): Remove this once the legacy filter stack goes away.
-  virtual const grpc_channel_filter* channel_filter() const = 0;
-
-  // Modifies channel args that may affect service config parsing (not
-  // visible to the channel as a whole).
-  virtual ChannelArgs ModifyChannelArgs(const ChannelArgs& args) const {
-    return args;
-  }
-
-  // Function to convert the Configs into a JSON string to be added to the
-  // per-method part of the service config.
-  // The hcm_filter_config comes from the HttpConnectionManager config.
-  // The filter_config_override comes from the first of the ClusterWeight,
-  // Route, or VirtualHost entries that it is found in, or null if
-  // there is no override in any of those locations.
-  virtual absl::StatusOr<ServiceConfigJsonEntry> GenerateMethodConfig(
-      const Json& hcm_filter_config,
-      const Json* filter_config_override) const = 0;
-
-  // Function to convert the Configs into a JSON string to be added to the
-  // top level of the service config.
-  // The hcm_filter_config comes from the HttpConnectionManager config.
-  // Currently used only on the client side.
-  virtual absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
-      const Json& hcm_filter_config) const = 0;
 };
 
 }  // namespace grpc_core

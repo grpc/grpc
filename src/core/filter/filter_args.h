@@ -52,14 +52,11 @@ struct FilterAndConfig {
 // things that are ephemeral and disjoint from overall channel args.
 class FilterArgs {
  public:
-  FilterArgs() : FilterArgs(nullptr, nullptr, nullptr) {}
+  FilterArgs() : FilterArgs(nullptr, nullptr) {}
   FilterArgs(grpc_channel_stack* channel_stack,
              grpc_channel_element* channel_element,
-             size_t (*channel_stack_filter_instance_number)(
-                 grpc_channel_stack*, grpc_channel_element*),
              RefCountedPtr<const FilterConfig> config = nullptr)
-      : impl_(ChannelStackBased{channel_stack, channel_element,
-                                channel_stack_filter_instance_number}),
+      : impl_(ChannelStackBased{channel_stack, channel_element}),
         config_(std::move(config)) {}
   // While we're moving to call-v3 we need to have access to
   // grpc_channel_stack & friends here. That means that we can't rely on this
@@ -67,32 +64,12 @@ class FilterArgs {
   // of constructing this object without naming it ===> implicit construction.
   // TODO(ctiller): remove this once we're fully on call-v3
   // NOLINTNEXTLINE(google-explicit-constructor)
-  FilterArgs(size_t instance_id,
-             RefCountedPtr<const FilterConfig> config = nullptr)
-      : impl_(V3Based{instance_id}), config_(std::move(config)) {}
+  FilterArgs(RefCountedPtr<const FilterConfig> config = nullptr)
+      : config_(std::move(config)) {}
 
   ABSL_DEPRECATED("Direct access to channel stack is deprecated")
   grpc_channel_stack* channel_stack() const {
-    return std::get<ChannelStackBased>(impl_).channel_stack;
-  }
-
-  // Get the instance id of this filter.
-  // This id is unique amongst all filters /of the same type/ and densely
-  // packed (starting at 0) for a given channel stack instantiation.
-  // eg. for a stack with filter types A B C A B D A the instance ids would be
-  // 0 0 0 1 1 0 2.
-  // This is useful for filters that need to store per-instance data in a
-  // parallel data structure.
-  // TODO(roth): Remove this when removing the
-  // xds_server_filter_chain_per_route experiment.
-  size_t instance_id() const {
-    return Match(
-        impl_,
-        [](const ChannelStackBased& cs) {
-          return cs.channel_stack_filter_instance_number(cs.channel_stack,
-                                                         cs.channel_element);
-        },
-        [](const V3Based& v3) { return v3.instance_id; });
+    return impl_.value().channel_stack;
   }
 
   RefCountedPtr<const FilterConfig> config() const { return config_; }
@@ -103,20 +80,9 @@ class FilterArgs {
   struct ChannelStackBased {
     grpc_channel_stack* channel_stack;
     grpc_channel_element* channel_element;
-    // TODO(roth): Remove this when removing the
-    // xds_server_filter_chain_per_route experiment.
-    size_t (*channel_stack_filter_instance_number)(grpc_channel_stack*,
-                                                   grpc_channel_element*);
   };
 
-  struct V3Based {
-    // TODO(roth): Remove this when removing the
-    // xds_server_filter_chain_per_route experiment.
-    size_t instance_id;
-  };
-
-  using Impl = std::variant<ChannelStackBased, V3Based>;
-  Impl impl_;
+  std::optional<ChannelStackBased> impl_;
 
   const RefCountedPtr<const FilterConfig> config_;
 };
