@@ -61,14 +61,9 @@ def _start_a_test_server():
         ThreadPoolExecutor(max_workers=1), options=(("grpc.so_reuseport", 0),)
     )
     server.add_generic_rpc_handlers((_GenericHandler(),))
-    if os.name == "nt":
-        port = server.add_insecure_port("127.0.0.1:0")
-        address = "127.0.0.1:%d" % port
-    else:
-        address = "unix:/tmp/grpc_leak_test_%s" % uuid.uuid4().hex
-        server.add_insecure_port(address)
+    port = server.add_insecure_port("127.0.0.1:0")
     server.start()
-    return address, server
+    return "127.0.0.1:%d" % port, server
 
 
 def _perform_an_rpc(address):
