@@ -104,7 +104,7 @@ absl::StatusOr<RefCountedPtr<Channel>> ChannelCreate(
     case GRPC_CLIENT_CHANNEL:
       return ClientChannel::Create(std::move(target), std::move(args));
     case GRPC_CLIENT_DIRECT_CHANNEL:
-      return DirectChannel::Create(std::move(target), args);
+      return DirectChannel::Create(std::move(target), std::move(args));
     default:
       Crash(absl::StrCat("Invalid channel stack type for ChannelCreate: ",
                          grpc_channel_stack_type_string(channel_stack_type)));

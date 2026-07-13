@@ -37,13 +37,19 @@
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
+#include "src/core/util/shared_bit_gen.h"
 #include "absl/log/log.h"
-#include "absl/status/statusor.h"
+#include "absl/random/distributions.h"
 #include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 namespace http2 {
 constexpr uint32_t kCurrentCycleMaxResetStreams = 1024u;
+
+inline bool ShouldSendPingOnRstStream(
+    const uint8_t ping_on_rst_stream_percent) {
+  return absl::Bernoulli(SharedBitGen(), ping_on_rst_stream_percent / 100.0);
+}
 
 class ReadLoopPauseRestart {
  public:
@@ -166,14 +172,20 @@ class IncomingMetadataState {
   uint32_t stream_id_ = 0;
 };
 
+struct ShouldSendPing {
+  bool should_send_ping_on_rst_stream = false;
+};
+
 class ReadContext {
  public:
   explicit ReadContext(const uint32_t max_new_streams_per_read_cycle,
                        const PromiseEndpoint& endpoint, const bool is_client,
-                       const uint32_t max_security_frame_size)
+                       const uint32_t max_security_frame_size,
+                       const uint8_t ping_on_rst_stream_percent)
       : max_new_streams_per_read_cycle_(max_new_streams_per_read_cycle),
         peer_string_(GetPeerString(endpoint)),
         is_client_(is_client),
+        ping_on_rst_stream_percent_(ping_on_rst_stream_percent),
         max_security_frame_size_(max_security_frame_size),
         header_assembler_(is_client) {
     GRPC_DCHECK(max_new_streams_per_read_cycle > 0u)
@@ -296,7 +308,20 @@ class ReadContext {
   void OnPingFrameReceived() { IncrementInducedFrames(); }
 
   // Called when we read a RST_STREAM frame from the peer.
-  void OnResetFrameReceived() { IncrementResetStreamFrames(); }
+  // Returns true if a ping should be sent in response.
+  ShouldSendPing OnResetFrameReceived() {
+    IncrementResetStreamFrames();
+    if (ping_on_rst_stream_percent_ > 0 && !ping_on_rst_stream_in_progress_ &&
+        ShouldSendPingOnRstStream(ping_on_rst_stream_percent_)) {
+      IncrementInducedFrames();
+      return ShouldSendPing{true};
+    }
+    return ShouldSendPing{false};
+  }
+  void SetPingOnRstStreamInProgress(bool value) {
+    GRPC_DCHECK(!is_client_);
+    ping_on_rst_stream_in_progress_ = value;
+  }
 
   // Called when a HEADER frame is received.
   void UpdateState(const Http2HeaderFrame& frame,
@@ -477,6 +502,8 @@ class ReadContext {
   const Slice peer_string_;
   const bool is_client_;
 
+  const uint8_t ping_on_rst_stream_percent_;
+  bool ping_on_rst_stream_in_progress_ = false;
   const uint32_t max_security_frame_size_;
   uint32_t max_header_list_size_soft_limit_ =
       DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT;
