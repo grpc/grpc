@@ -62,7 +62,7 @@ class TypeSmokeTest(unittest.TestCase):
         del server
 
     def testChannelUpDown(self):
-        channel = cygrpc.Channel(b"[::]:0", None, None)
+        channel = cygrpc.Channel(b"127.0.0.1:0", None, None)
         channel.close(cygrpc.StatusCode.cancelled, "Test method anyway!")
 
     def test_metadata_plugin_call_credentials_up_down(self):
@@ -82,7 +82,7 @@ class TypeSmokeTest(unittest.TestCase):
         )
         completion_queue = cygrpc.CompletionQueue()
         server.register_completion_queue(completion_queue)
-        port = server.add_http2_port(b"[::]:0")
+        port = server.add_http2_port(b"127.0.0.1:0")
         self.assertIsInstance(port, int)
         server.start()
         del server
@@ -98,7 +98,7 @@ class TypeSmokeTest(unittest.TestCase):
             ],
             False,
         )
-        server.add_http2_port(b"[::]:0")
+        server.add_http2_port(b"127.0.0.1:0")
         server.register_completion_queue(completion_queue)
         server.start()
         shutdown_tag = object()
@@ -127,10 +127,10 @@ class ServerClientMixin:
         self.server.register_completion_queue(self.server_completion_queue)
         if server_credentials:
             self.port = self.server.add_http2_port(
-                b"[::]:0", server_credentials
+                b"127.0.0.1:0", server_credentials
             )
         else:
-            self.port = self.server.add_http2_port(b"[::]:0")
+            self.port = self.server.add_http2_port(b"127.0.0.1:0")
         self.server.start()
         self.client_completion_queue = cygrpc.CompletionQueue()
         if client_credentials:

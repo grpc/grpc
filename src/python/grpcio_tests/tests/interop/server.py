@@ -65,9 +65,9 @@ def serve(args):
     )
     if args.use_tls or args.use_alts:
         credentials = get_server_credentials(args.use_tls)
-        server.add_secure_port("[::]:{}".format(args.port), credentials)
+        server.add_secure_port("127.0.0.1:{}".format(args.port), credentials)
     else:
-        server.add_insecure_port("[::]:{}".format(args.port))
+        server.add_insecure_port("127.0.0.1:{}".format(args.port))
 
     server.start()
     _LOGGER.info("Server serving.")

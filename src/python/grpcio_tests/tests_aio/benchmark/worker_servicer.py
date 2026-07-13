@@ -114,10 +114,10 @@ def _create_server(config: control_pb2.ServerConfig) -> Tuple[aio.Server, int]:
             ((resources.private_key(), resources.certificate_chain()),)
         )
         port = server.add_secure_port(
-            "[::]:{}".format(config.port), server_creds
+            "127.0.0.1:{}".format(config.port), server_creds
         )
     else:
-        port = server.add_insecure_port("[::]:{}".format(config.port))
+        port = server.add_insecure_port("127.0.0.1:{}".format(config.port))
 
     return server, port
 

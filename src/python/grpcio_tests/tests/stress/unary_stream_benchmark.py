@@ -44,7 +44,7 @@ class Handler(unary_stream_benchmark_pb2_grpc.UnaryStreamBenchmarkServiceService
 
 
 server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
-server.add_insecure_port('[::]:%d')
+server.add_insecure_port('127.0.0.1:%d')
 unary_stream_benchmark_pb2_grpc.add_UnaryStreamBenchmarkServiceServicer_to_server(Handler(), server)
 server.start()
 server.wait_for_termination()
@@ -86,7 +86,7 @@ try:
             message_size=message_size, response_count=response_count
         )
         with grpc.insecure_channel(
-            "[::]:{}".format(_PORT), options=_GRPC_CHANNEL_OPTIONS
+            "127.0.0.1:{}".format(_PORT), options=_GRPC_CHANNEL_OPTIONS
         ) as channel:
             stub = (
                 unary_stream_benchmark_pb2_grpc.UnaryStreamBenchmarkServiceStub(

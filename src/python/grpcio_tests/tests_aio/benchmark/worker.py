@@ -30,7 +30,7 @@ async def run_worker_server(port: int) -> None:
         servicer, server
     )
 
-    server.add_insecure_port("[::]:{}".format(port))
+    server.add_insecure_port("127.0.0.1:{}".format(port))
 
     await server.start()
 

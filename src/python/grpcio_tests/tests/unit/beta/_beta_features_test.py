@@ -181,7 +181,7 @@ class BetaFeaturesTest(unittest.TestCase):
                 ),
             ]
         )
-        port = self._server.add_secure_port("[::]:0", server_credentials)
+        port = self._server.add_secure_port("127.0.0.1:0", server_credentials)
         self._server.start()
         self._channel_credentials = implementations.ssl_channel_credentials(
             resources.test_root_certificates()
@@ -352,7 +352,7 @@ class ContextManagementAndLifecycleTest(unittest.TestCase):
         server = implementations.server(
             self._method_implementations, options=self._server_options
         )
-        port = server.add_secure_port("[::]:0", self._server_credentials)
+        port = server.add_secure_port("127.0.0.1:0", self._server_credentials)
         server.start()
 
         channel = test_utilities.not_really_secure_channel(
@@ -384,15 +384,15 @@ class ContextManagementAndLifecycleTest(unittest.TestCase):
             server = implementations.server(
                 self._method_implementations, options=self._server_options
             )
-            port = server.add_secure_port("[::]:0", self._server_credentials)
+            port = server.add_secure_port("127.0.0.1:0", self._server_credentials)
             server.start()
             server.stop(test_constants.SHORT_TIMEOUT).wait()
         for _ in range(100):
             server = implementations.server(
                 self._method_implementations, options=self._server_options
             )
-            server.add_secure_port("[::]:0", self._server_credentials)
-            server.add_insecure_port("[::]:0")
+            server.add_secure_port("127.0.0.1:0", self._server_credentials)
+            server.add_insecure_port("127.0.0.1:0")
             with server:
                 server.stop(test_constants.SHORT_TIMEOUT)
             server.stop(test_constants.SHORT_TIMEOUT)

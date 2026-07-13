@@ -238,6 +238,7 @@ class MetadataFlagsTest(unittest.TestCase):
         #   exceptions and raise them again in main thread.
         unhandled_exceptions = queue.Queue()
 
+        # We just need an unused TCP port
         host, port, sock = get_socket(
             bind_address="127.0.0.1", sock_options=(socket.SO_REUSEADDR,)
         )
