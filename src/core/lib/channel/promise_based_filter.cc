@@ -891,9 +891,7 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
         push_.reset();
         next_.reset();
         if (IsRecvMessageFilterBypassFixEnabled()) {
-          if (discard_buffered_message) {
-            completed_status_ = StatusFromMetadata(metadata);
-          }
+          completed_status_ = StatusFromMetadata(metadata);
           if (intercepted_slice_buffer_ != nullptr) {
             *intercepted_slice_buffer_ = std::nullopt;
           }
@@ -1295,9 +1293,12 @@ class ClientCallData::PollContext {
               }
               // The promise terminated with its own (error) metadata while the
               // transport's trailing metadata was queued behind the receive
-              // message pump. The buffered message was just discarded above, so
-              // there is nothing left to bypass: release the queued trailing
-              // metadata now so the kComplete handling below picks it up.
+              // message pump. The buffered message was discarded above; since
+              // receive_message()->IsIdle() will not become true until the
+              // pending message completion callbacks execute, immediately
+              // promote the queued trailing metadata to kComplete so the
+              // synchronous handling below picks it up within this polling
+              // pass.
               if (self_->recv_trailing_state_ ==
                   RecvTrailingState::kCompletedQueuedBehindReceiveMessage) {
                 self_->recv_trailing_state_ = RecvTrailingState::kComplete;
