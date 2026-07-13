@@ -218,7 +218,7 @@ TEST_F(XdsAuditLoggerRegistryTest, ParseInvalidThirdPartyLoggerConfig) {
   auto* fields = logger.mutable_value()->mutable_fields();
   (*fields)["bad"].set_string_value("true");
   config_proto.mutable_audit_logger()->mutable_typed_config()->PackFrom(logger);
-  auto config = ConvertAuditLoggerConfig(config_proto);
+  auto config = ParseAuditLoggerConfig(config_proto);
   EXPECT_EQ(config.status(), absl::InvalidArgumentError(
                                  "validation errors: "
                                  "[field:audit_logger.typed_config.value"
