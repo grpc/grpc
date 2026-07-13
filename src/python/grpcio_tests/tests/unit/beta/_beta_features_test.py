@@ -384,7 +384,9 @@ class ContextManagementAndLifecycleTest(unittest.TestCase):
             server = implementations.server(
                 self._method_implementations, options=self._server_options
             )
-            port = server.add_secure_port("127.0.0.1:0", self._server_credentials)
+            port = server.add_secure_port(
+                "127.0.0.1:0", self._server_credentials
+            )
             server.start()
             server.stop(test_constants.SHORT_TIMEOUT).wait()
         for _ in range(100):
