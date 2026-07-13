@@ -1429,7 +1429,7 @@ def runs_per_test_type(arg_str):
         if n <= 0:
             raise ValueError
         return n
-    except:
+    except (ValueError, TypeError):
         msg = "'{}' is not a positive integer or 'inf'".format(arg_str)
         raise argparse.ArgumentTypeError(msg)
 
@@ -1457,7 +1457,7 @@ def _shut_down_legacy_server(legacy_server_port):
                 timeout=10,
             ).read()
         )
-    except:
+    except Exception:
         pass
     else:
         urllib.request.urlopen(
