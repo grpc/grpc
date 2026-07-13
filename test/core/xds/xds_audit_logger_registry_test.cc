@@ -79,27 +79,6 @@ ParseAuditLoggerConfig(const AuditLoggerConfigProto& config_proto) {
   return config;
 }
 
-absl::StatusOr<std::string> ConvertAuditLoggerConfig(
-    const AuditLoggerConfigProto& config) {
-  std::string serialized_config = config.SerializeAsString();
-  upb::Arena arena;
-  upb::DefPool def_pool;
-  XdsResourceType::DecodeContext context = {nullptr, GrpcXdsServer(),
-                                            def_pool.ptr(), arena.ptr()};
-  auto* upb_config =
-      envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_parse(
-          serialized_config.data(), serialized_config.size(), arena.ptr());
-  ValidationErrors errors;
-  auto registry = GrpcXdsBootstrapBuilder::CreateXdsAuditLoggerRegistry();
-  auto config_json =
-      registry.ConvertXdsAuditLoggerConfig(context, upb_config, &errors);
-  if (!errors.ok()) {
-    return errors.status(absl::StatusCode::kInvalidArgument,
-                         "validation errors");
-  }
-  return JsonDump(config_json);
-}
-
 class TestAuditLoggerFactory final : public AuditLoggerFactory {
  public:
   class Config final : public AuditLoggerFactory::Config {
@@ -145,15 +124,6 @@ class XdsAuditLoggerRegistryTest : public ::testing::Test {
 // StdoutLoggerTest
 //
 
-TEST(StdoutLoggerTest, BasicStdoutLogger) {
-  AuditLoggerConfigProto config;
-  config.mutable_audit_logger()->mutable_typed_config()->PackFrom(
-      StdoutAuditLog());
-  auto result = ConvertAuditLoggerConfig(config);
-  ASSERT_TRUE(result.ok()) << result.status();
-  EXPECT_EQ(*result, "{\"stdout_logger\":{}}");
-}
-
 TEST(StdoutLoggerTest, ParseBasicStdoutLogger) {
   AuditLoggerConfigProto config_proto;
   config_proto.mutable_audit_logger()->mutable_typed_config()->PackFrom(
@@ -167,18 +137,6 @@ TEST(StdoutLoggerTest, ParseBasicStdoutLogger) {
 //
 // ThirdPartyLoggerTest
 //
-
-TEST_F(XdsAuditLoggerRegistryTest, ValidThirdPartyLogger) {
-  AuditLoggerConfigProto config;
-  TypedStruct logger;
-  logger.set_type_url(absl::StrFormat("myorg/foo/bar/%s", kName));
-  auto* fields = logger.mutable_value()->mutable_fields();
-  (*fields)["foo"].set_string_value("bar");
-  config.mutable_audit_logger()->mutable_typed_config()->PackFrom(logger);
-  auto result = ConvertAuditLoggerConfig(config);
-  ASSERT_TRUE(result.ok()) << result.status();
-  EXPECT_EQ(*result, "{\"test_logger\":{\"foo\":\"bar\"}}");
-}
 
 TEST_F(XdsAuditLoggerRegistryTest, ParseValidThirdPartyLogger) {
   AuditLoggerConfigProto config_proto;
@@ -194,23 +152,6 @@ TEST_F(XdsAuditLoggerRegistryTest, ParseValidThirdPartyLogger) {
   EXPECT_EQ((*config)->ToString(), "{\"foo\":\"bar\"}");
 }
 
-TEST_F(XdsAuditLoggerRegistryTest, InvalidThirdPartyLoggerConfig) {
-  AuditLoggerConfigProto config;
-  TypedStruct logger;
-  logger.set_type_url(absl::StrFormat("myorg/foo/bar/%s", kName));
-  auto* fields = logger.mutable_value()->mutable_fields();
-  (*fields)["bad"].set_string_value("true");
-  config.mutable_audit_logger()->mutable_typed_config()->PackFrom(logger);
-  auto result = ConvertAuditLoggerConfig(config);
-  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(result.status().message(),
-            "validation errors: "
-            "[field:audit_logger.typed_config.value"
-            "[xds.type.v3.TypedStruct].value[test_logger] "
-            "error:invalid test_logger config]")
-      << result.status();
-}
-
 TEST_F(XdsAuditLoggerRegistryTest, ParseInvalidThirdPartyLoggerConfig) {
   AuditLoggerConfigProto config_proto;
   TypedStruct logger;
@@ -218,7 +159,7 @@ TEST_F(XdsAuditLoggerRegistryTest, ParseInvalidThirdPartyLoggerConfig) {
   auto* fields = logger.mutable_value()->mutable_fields();
   (*fields)["bad"].set_string_value("true");
   config_proto.mutable_audit_logger()->mutable_typed_config()->PackFrom(logger);
-  auto config = ConvertAuditLoggerConfig(config_proto);
+  auto config = ParseAuditLoggerConfig(config_proto);
   EXPECT_EQ(config.status(), absl::InvalidArgumentError(
                                  "validation errors: "
                                  "[field:audit_logger.typed_config.value"
@@ -230,31 +171,12 @@ TEST_F(XdsAuditLoggerRegistryTest, ParseInvalidThirdPartyLoggerConfig) {
 // XdsAuditLoggerRegistryTest
 //
 
-TEST_F(XdsAuditLoggerRegistryTest, EmptyAuditLoggerConfig) {
-  auto result = ConvertAuditLoggerConfig(AuditLoggerConfigProto());
-  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(result.status().message(),
-            "validation errors: [field:audit_logger error:field not present]")
-      << result.status();
-}
-
 TEST_F(XdsAuditLoggerRegistryTest, ParseEmptyAuditLoggerConfig) {
   auto config = ParseAuditLoggerConfig(AuditLoggerConfigProto());
   EXPECT_EQ(
       config.status(),
       absl::InvalidArgumentError(
           "validation errors: [field:audit_logger error:field not present]"));
-}
-
-TEST_F(XdsAuditLoggerRegistryTest, MissingTypedConfig) {
-  AuditLoggerConfigProto config;
-  config.mutable_audit_logger();
-  auto result = ConvertAuditLoggerConfig(config);
-  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(result.status().message(),
-            "validation errors: [field:audit_logger.typed_config error:field "
-            "not present]")
-      << result.status();
 }
 
 TEST_F(XdsAuditLoggerRegistryTest, ParseMissingTypedConfig) {
@@ -266,20 +188,6 @@ TEST_F(XdsAuditLoggerRegistryTest, ParseMissingTypedConfig) {
       absl::InvalidArgumentError(
           "validation errors: [field:audit_logger.typed_config error:field "
           "not present]"));
-}
-
-TEST_F(XdsAuditLoggerRegistryTest, NoSupportedType) {
-  AuditLoggerConfigProto config;
-  config.mutable_audit_logger()->mutable_typed_config()->PackFrom(
-      AuditLoggerConfigProto());
-  auto result = ConvertAuditLoggerConfig(config);
-  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(result.status().message(),
-            "validation errors: "
-            "[field:audit_logger.typed_config.value[envoy.config.rbac.v3.RBAC."
-            "AuditLoggingOptions.AuditLoggerConfig] error:unsupported audit "
-            "logger type]")
-      << result.status();
 }
 
 TEST_F(XdsAuditLoggerRegistryTest, ParseNoSupportedType) {
@@ -294,16 +202,6 @@ TEST_F(XdsAuditLoggerRegistryTest, ParseNoSupportedType) {
           "[field:audit_logger.typed_config.value[envoy.config.rbac.v3.RBAC."
           "AuditLoggingOptions.AuditLoggerConfig] error:unsupported audit "
           "logger type]"));
-}
-
-TEST_F(XdsAuditLoggerRegistryTest, NoSupportedTypeButIsOptional) {
-  AuditLoggerConfigProto config;
-  config.mutable_audit_logger()->mutable_typed_config()->PackFrom(
-      AuditLoggerConfigProto());
-  config.set_is_optional(true);
-  auto result = ConvertAuditLoggerConfig(config);
-  EXPECT_EQ(result.status().code(), absl::StatusCode::kOk);
-  EXPECT_EQ(*result, "null");
 }
 
 TEST_F(XdsAuditLoggerRegistryTest, ParseNoSupportedTypeButIsOptional) {
