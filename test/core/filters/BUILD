@@ -178,6 +178,7 @@ grpc_cc_test(
     ],
     deps = [
         "//:call_combiner",
+        "//:config",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc",
@@ -190,7 +191,6 @@ grpc_cc_test(
         "//src/core:channel_args",
         "//src/core:channel_args_preconditioning",
         "//src/core:closure",
-        "//:config",
         "//src/core:context",
         "//src/core:experiments",
         "//src/core:message",
