@@ -20,7 +20,7 @@ cd $(dirname $0)/../../..
 
 # some extra pip packages are needed for the check_on_pr.py script to work
 # TODO(jtattermusch): avoid needing to install these pip packages each time
-time python3 -m pip install --user -r tools/internal_ci/helper_scripts/requirements.linux_perf.txt
+time python3 -m pip install --only-binary :all: --user -r tools/internal_ci/helper_scripts/requirements.linux_perf.txt
 
 tools/run_tests/start_port_server.py
 
