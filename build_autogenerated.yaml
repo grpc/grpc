@@ -2965,6 +2965,8 @@ libs:
   - src/core/resolver/server_address.h
   - src/core/server/server.h
   - src/core/server/server_call_tracer_filter.h
+  - src/core/server/server_config_selector.h
+  - src/core/server/server_config_selector_filter.h
   - src/core/server/server_interface.h
   - src/core/service_config/service_config.h
   - src/core/service_config/service_config_call_data.h
@@ -3456,6 +3458,7 @@ libs:
   - src/core/server/add_port.cc
   - src/core/server/server.cc
   - src/core/server/server_call_tracer_filter.cc
+  - src/core/server/server_config_selector_filter.cc
   - src/core/service_config/service_config_channel_arg_filter.cc
   - src/core/service_config/service_config_impl.cc
   - src/core/service_config/service_config_parser.cc
@@ -4228,7 +4231,6 @@ libs:
   - include/grpcpp/support/time.h
   - include/grpcpp/support/validate_service_config.h
   - include/grpcpp/version_info.h
-  - include/grpcpp/virtual_channel.h
   - include/grpcpp/xds_server_builder.h
   headers:
   - src/core/client_channel/virtual_channel.h
@@ -4618,7 +4620,6 @@ libs:
   - include/grpcpp/support/time.h
   - include/grpcpp/support/validate_service_config.h
   - include/grpcpp/version_info.h
-  - include/grpcpp/virtual_channel.h
   headers:
   - src/core/client_channel/virtual_channel.h
   - src/core/telemetry/telemetry_label.h
@@ -22505,6 +22506,17 @@ targets:
   deps:
   - gtest
   - protobuf
+  - grpc_test_util
+- name: recv_message_filter_bypass_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/filters/recv_message_filter_bypass_test.cc
+  deps:
+  - gtest
+  - grpc_unsecure
   - grpc_test_util
 - name: ref_counted_ptr_test
   gtest: true

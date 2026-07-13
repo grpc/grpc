@@ -3509,6 +3509,7 @@ grpc_cc_library(
     external_deps = [
         "absl/functional:any_invocable",
         "absl/strings",
+        "absl/time",
     ],
     deps = [
         "arena",
@@ -4448,6 +4449,7 @@ grpc_cc_library(
     ],
     deps = [
         "dual_ref_counted",
+        "filter_chain",
         "grpc_service_config",
         "metadata_batch",
         "ref_counted",
@@ -4470,6 +4472,7 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/status",
         "absl/status:statusor",
+        "absl/strings",
     ],
     deps = [
         "arena",
@@ -9244,6 +9247,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log",
+        "absl/random:distributions",
         "absl/status:statusor",
         "absl/strings",
     ],
@@ -9257,6 +9261,7 @@ grpc_cc_library(
         ":http2_transport",
         ":metadata_info",
         ":ph2_stream",
+        ":shared_bit_gen",
         ":slice_buffer",
         "//:chttp2_frame",
         "//:debug_location",
@@ -9673,6 +9678,7 @@ grpc_cc_library(
         "http2_settings_promises",
         "http2_status",
         "internal_channel_arg_names",
+        "latch",
         "loop",
         "map",
         "metadata_info",
@@ -9680,6 +9686,7 @@ grpc_cc_library(
         "ph2_stream",
         "sync",
         "time",
+        "useful",
         "write_cycle",
         "write_size_policy",
         ":event_engine_tcp_socket_utils",
@@ -10411,7 +10418,6 @@ grpc_cc_library(
         "resource_quota",
         "seq",
         "slice",
-        "slice_buffer",
         "switch",
         "sync",
         "try_join",
@@ -10419,6 +10425,7 @@ grpc_cc_library(
         "//:exec_ctx",
         "//:gpr_platform",
         "//:grpc_base",
+        "//:promise",
         "//:ref_counted_ptr",
     ],
 )
