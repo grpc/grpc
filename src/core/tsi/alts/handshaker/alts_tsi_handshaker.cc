@@ -741,7 +741,7 @@ void alts_tsi_handshaker_result_set_unused_bytes(tsi_handshaker_result* result,
                                                  size_t bytes_consumed) {
   GRPC_CHECK(recv_bytes != nullptr);
   GRPC_CHECK_NE(result, nullptr);
-  if (GRPC_SLICE_LENGTH(*recv_bytes) == bytes_consumed) {
+  if (GRPC_SLICE_LENGTH(*recv_bytes) <= bytes_consumed) {
     return;
   }
   alts_tsi_handshaker_result* sresult =

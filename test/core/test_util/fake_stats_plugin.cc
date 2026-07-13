@@ -209,8 +209,8 @@ std::optional<T> FakeStatsPlugin::GetMetricValueByNameImpl(
   const auto& names = desc->domain->label_names();
   std::vector<std::string> keys;
   keys.reserve(names.size());
-  for (const auto& l : names) {
-    keys.emplace_back(l.label());
+  for (const auto& label : names) {
+    keys.emplace_back(label.label());
   }
   std::vector<std::string> values(labels.begin(), labels.end());
   DomainMetricsSink<T> sink(name, keys, values);
@@ -228,6 +228,11 @@ std::optional<uint64_t> FakeStatsPlugin::GetUInt64MetricValueByName(
 std::optional<int64_t> FakeStatsPlugin::GetInt64MetricValueByName(
     absl::string_view name, absl::Span<const absl::string_view> labels) {
   return GetMetricValueByNameImpl<int64_t>(name, labels);
+}
+
+std::optional<std::vector<uint64_t>> FakeStatsPlugin::GetHistogramValueByName(
+    absl::string_view name, absl::Span<const absl::string_view> labels) {
+  return GetMetricValueByNameImpl<std::vector<uint64_t>>(name, labels);
 }
 
 }  // namespace grpc_core

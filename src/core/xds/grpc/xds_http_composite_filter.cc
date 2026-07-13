@@ -285,12 +285,12 @@ RefCountedPtr<const FilterConfig> XdsHttpCompositeFilter::MergeConfigs(
     RefCountedPtr<const FilterConfig> virtual_host_override_config,
     RefCountedPtr<const FilterConfig> route_override_config,
     RefCountedPtr<const FilterConfig> cluster_weight_override_config,
-    Blackboard& blackboard) const {
+    XdsTransportFactory& transport_factory, Blackboard& blackboard) const {
   // Get the config to use via our base class.
   auto config_to_use = XdsHttpFilterImpl::MergeConfigs(
       std::move(top_level_config), std::move(virtual_host_override_config),
       std::move(route_override_config),
-      std::move(cluster_weight_override_config), blackboard);
+      std::move(cluster_weight_override_config), transport_factory, blackboard);
   auto& composite_config =
       DownCast<const CompositeFilter::Config&>(*config_to_use);
   if (composite_config.matcher == nullptr) return config_to_use;
@@ -310,7 +310,8 @@ RefCountedPtr<const FilterConfig> XdsHttpCompositeFilter::MergeConfigs(
       merged_configs.push_back(filter_impl->MergeConfigs(
           filter_config, /*virtual_host_override_config=*/nullptr,
           /*route_override_config=*/nullptr,
-          /*cluster_weight_override_config=*/nullptr, blackboard));
+          /*cluster_weight_override_config=*/nullptr, transport_factory,
+          blackboard));
     }
   });
   return new_config;

@@ -60,7 +60,7 @@ RefCountedPtr<const FilterConfig> XdsHttpGcpAuthnFilter::MergeConfigs(
     RefCountedPtr<const FilterConfig> /*virtual_host_override_config*/,
     RefCountedPtr<const FilterConfig> /*route_override_config*/,
     RefCountedPtr<const FilterConfig> /*cluster_weight_override_config*/,
-    Blackboard& blackboard) const {
+    XdsTransportFactory& /*transport_factory*/, Blackboard& blackboard) const {
   // Make a copy of the parsed config.
   const auto& parsed_config =
       DownCast<const GcpAuthenticationFilter::Config&>(*top_level_config);

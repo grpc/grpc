@@ -482,6 +482,9 @@ class Http2ClientTransport final : public ClientTransport,
   // Runs on the call party.
   std::optional<RefCountedPtr<Stream>> MakeStream(CallHandler call_handler);
 
+  void EnqueueResetStreamFromTransportParty(RefCountedPtr<Stream> stream,
+                                            uint32_t reset_stream_error_code);
+
   // Enqueues a RST_STREAM frame and immediately closes the stream for reads.
   // Writes will be closed by the write loop after the RST_STREAM frame is
   // written to the wire. Once writes are closed, the stream is considered fully

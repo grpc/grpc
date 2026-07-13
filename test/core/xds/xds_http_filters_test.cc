@@ -67,6 +67,7 @@
 #include "src/core/xds/xds_client/xds_client.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
+#include "test/core/xds/xds_transport_fake.h"
 #include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
 #include "xds/type/v3/typed_struct.pb.h"
@@ -106,7 +107,9 @@ using ::envoy::type::matcher::v3::HttpRequestHeaderMatchInput;
 class XdsHttpFilterTest : public ::testing::Test {
  protected:
   XdsHttpFilterTest()
-      : decode_context_{nullptr, xds_server_, upb_def_pool_.ptr(),
+      : transport_factory_(
+            MakeRefCounted<FakeXdsTransportFactory>([]() {}, nullptr)),
+        decode_context_{nullptr, xds_server_, upb_def_pool_.ptr(),
                         upb_arena_.ptr()} {
     Reset();
   }
@@ -116,7 +119,7 @@ class XdsHttpFilterTest : public ::testing::Test {
     decode_context_.client = xds_client_.get();
   }
 
-  static RefCountedPtr<XdsClient> MakeXdsClient() {
+  RefCountedPtr<XdsClient> MakeXdsClient() {
     grpc_error_handle error;
     auto bootstrap = GrpcXdsBootstrapBuilder::Build(
         "{\n"
@@ -133,8 +136,7 @@ class XdsHttpFilterTest : public ::testing::Test {
       Crash(absl::StrFormat("Error parsing bootstrap: %s",
                             bootstrap.status().ToString().c_str()));
     }
-    return MakeRefCounted<XdsClient>(std::move(*bootstrap),
-                                     /*transport_factory=*/nullptr,
+    return MakeRefCounted<XdsClient>(std::move(*bootstrap), transport_factory_,
                                      /*event_engine=*/nullptr,
                                      /*metrics_reporter=*/nullptr, "foo agent",
                                      "foo version");
@@ -172,6 +174,7 @@ class XdsHttpFilterTest : public ::testing::Test {
   }
 
   GrpcXdsServer xds_server_;
+  RefCountedPtr<FakeXdsTransportFactory> transport_factory_;
   RefCountedPtr<XdsClient> xds_client_;
   upb::DefPool upb_def_pool_;
   upb::Arena upb_arena_;
@@ -1802,10 +1805,11 @@ TEST_F(XdsGcpAuthnFilterTest, MergeConfigsGetsCacheFromBlackboard) {
   config->instance_name = "langley";
   config->cache_size = 1;
   auto blackboard = MakeRefCounted<Blackboard>();
-  auto merged_config = filter_->MergeConfigs(
-      config, /*virtual_host_override_config=*/nullptr,
-      /*route_override_config=*/nullptr,
-      /*cluster_weight_override_config=*/nullptr, *blackboard);
+  auto merged_config =
+      filter_->MergeConfigs(config, /*virtual_host_override_config=*/nullptr,
+                            /*route_override_config=*/nullptr,
+                            /*cluster_weight_override_config=*/nullptr,
+                            *transport_factory_, *blackboard);
   ASSERT_NE(merged_config, nullptr);
   ASSERT_EQ(merged_config->type(), GcpAuthenticationFilter::Config::Type());
   EXPECT_THAT(merged_config->ToString(),
@@ -2234,10 +2238,11 @@ TEST_F(XdsCompositeFilterTest, MergeConfigsHandlesBlackboardForNestedFilters) {
   // Now call MergeConfigs() and make sure it delegates to the child
   // filters to handle the blackboard.
   auto blackboard = MakeRefCounted<Blackboard>();
-  auto merged_config = filter_->MergeConfigs(
-      config, /*virtual_host_override_config=*/nullptr,
-      /*route_override_config=*/nullptr,
-      /*cluster_weight_override_config=*/nullptr, *blackboard);
+  auto merged_config =
+      filter_->MergeConfigs(config, /*virtual_host_override_config=*/nullptr,
+                            /*route_override_config=*/nullptr,
+                            /*cluster_weight_override_config=*/nullptr,
+                            *transport_factory_, *blackboard);
   ASSERT_NE(merged_config, nullptr);
   ASSERT_EQ(merged_config->type(), CompositeFilter::Config::Type());
   EXPECT_EQ(merged_config->ToString(),

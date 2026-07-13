@@ -340,10 +340,33 @@ class XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::
           http_filters,
       std::shared_ptr<const XdsRouteConfigResource> route_config);
 
+  std::unique_ptr<ConnectionState> BuildFilterChains(
+      FilterChainBuilder& builder) override {
+    for (const auto* filter_impl : filter_impls_) {
+      filter_impl->AddFilter(builder, nullptr);
+    }
+    return std::make_unique<XdsConnectionState>(builder.Build());
+  }
+
   absl::StatusOr<CallConfig> GetCallConfig(
-      grpc_metadata_batch* metadata) override;
+      const ConnectionState* state, grpc_metadata_batch* metadata) override;
 
  private:
+  // TODO(roth): Change this to contain a separate filter chain for each route.
+  class XdsConnectionState final : public ConnectionState {
+   public:
+    explicit XdsConnectionState(
+        absl::StatusOr<RefCountedPtr<const FilterChain>> filter_chain)
+        : filter_chain_(std::move(filter_chain)) {}
+
+    absl::StatusOr<RefCountedPtr<const FilterChain>> filter_chain() const {
+      return filter_chain_;
+    }
+
+   private:
+    absl::StatusOr<RefCountedPtr<const FilterChain>> filter_chain_;
+  };
+
   struct VirtualHost {
     struct Route {
       // True if an action other than kNonForwardingAction is configured.
@@ -394,6 +417,7 @@ class XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::
 
   std::shared_ptr<const XdsRouteConfigResource> route_config_;
   std::vector<VirtualHost> virtual_hosts_;
+  std::vector<const XdsHttpFilterImpl*> filter_impls_;
 };
 
 //
@@ -1087,43 +1111,12 @@ absl::StatusOr<ChannelArgs> XdsServerConfigFetcher::ListenerWatcher::
     XdsConnectionManager::L4FilterChain::UpdateChannelArgsForConnection(
         const ChannelArgs& args) const {
   if (!certificate_provider_.ok()) return certificate_provider_.status();
-  ChannelArgs new_args = args.SetObject(*certificate_provider_);
-  // Add channel stack modifier to insert HTTP filters.
-  // TODO(roth): Instead of using a channel stack modifier, register the
-  // ServerConfigSelectorInterceptor whenever there is a
-  // ServerConfigSelectorProvider in channel args, and have that
-  // interceptor inject the necessary HTTP filters.
-  std::vector<const grpc_channel_filter*> filters;
-  const auto& http_filter_registry =
-      DownCast<const GrpcXdsBootstrap&>(fetcher_state_->xds_client->bootstrap())
-          .http_filter_registry();
-  for (const auto& http_filter :
-       filter_chain_data_.http_connection_manager.http_filters) {
-    // Find filter.  This is guaranteed to succeed, because it's checked
-    // at config validation time in the XdsApi code.
-    const XdsHttpFilterImpl* filter_impl =
-        http_filter_registry.GetFilterForTopLevelType(
-            http_filter.config_proto_type);
-    GRPC_CHECK_NE(filter_impl, nullptr);
-    // Some filters like the router filter are no-op filters and do not have
-    // an implementation.
-    if (filter_impl->channel_filter() != nullptr) {
-      filters.push_back(filter_impl->channel_filter());
-    }
-  }
-  // Reverse the order, since filters flow *up* the stack on the server side.
-  std::reverse(filters.begin(), filters.end());
-  // Add config selector filter.
-  filters.push_back(&kServerConfigSelectorFilter);
-  new_args = new_args.SetObject(
-      MakeRefCounted<XdsChannelStackModifier>(std::move(filters)));
-  // TODO(roth): Don't add ConfigSelectorProvider if there are no filters.
-  new_args = new_args.SetObject(
-      // This is the only place where the provider is accessed from outside
-      // of the WorkSerializer, and it will always be set before this
-      // happens, so this read is safe even though the compiler can't tell.
-      ABSL_TS_UNCHECKED_READ(config_selector_provider_));
-  return new_args;
+  return args.SetObject(*certificate_provider_)
+      .SetObject(
+          // This is the only place where the provider is accessed from outside
+          // of the WorkSerializer, and it will always be set before this
+          // happens, so this read is safe even though the compiler can't tell.
+          ABSL_TS_UNCHECKED_READ(config_selector_provider_));
 }
 
 absl::StatusOr<RefCountedPtr<ServerConfigSelector>>
@@ -1201,8 +1194,7 @@ XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::L4FilterChain::
         std::shared_ptr<const XdsRouteConfigResource> route_config) {
   // TODO(roth): For each route, construct merged filter configs and
   // update blackboard.  Also add support for building filter chains for
-  // each connection.  And make sure to reverse the order of the filters
-  // when we construct the filter chain.
+  // each connection.
   auto config_selector = MakeRefCounted<XdsServerConfigSelector>();
   for (auto& vhost : route_config->virtual_hosts) {
     config_selector->virtual_hosts_.emplace_back();
@@ -1243,12 +1235,22 @@ XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::L4FilterChain::
     }
   }
   config_selector->route_config_ = std::move(route_config);
+  for (const auto& http_filter : http_filters) {
+    // Find filter.  This is guaranteed to succeed, because it's checked
+    // at config validation time in the XdsApi code.
+    const XdsHttpFilterImpl* filter_impl =
+        http_filter_registry.GetFilterForTopLevelType(
+            http_filter.config_proto_type);
+    GRPC_CHECK_NE(filter_impl, nullptr);
+    config_selector->filter_impls_.push_back(filter_impl);
+  }
   return config_selector;
 }
 
 absl::StatusOr<ServerConfigSelector::CallConfig>
 XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::L4FilterChain::
-    XdsServerConfigSelector::GetCallConfig(grpc_metadata_batch* metadata) {
+    XdsServerConfigSelector::GetCallConfig(const ConnectionState* state,
+                                           grpc_metadata_batch* metadata) {
   CallConfig call_config;
   if (metadata->get_pointer(HttpPathMetadata()) == nullptr) {
     return absl::InternalError("no path found");
@@ -1283,7 +1285,9 @@ XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::L4FilterChain::
         route.method_config->GetMethodParsedConfigVector(grpc_empty_slice());
     call_config.service_config = route.method_config;
   }
-  // TODO(roth): Return the filter chain to use for this call.
+  // TODO(roth): Return the filter chain for the individual route.
+  call_config.filter_chain =
+      DownCast<const XdsConnectionState*>(state)->filter_chain();
   return call_config;
 }
 

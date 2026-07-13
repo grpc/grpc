@@ -322,8 +322,14 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
           http_filters);
   ~XdsServerConfigSelector() override = default;
 
+  // Not used.
+  std::unique_ptr<ConnectionState> BuildFilterChains(
+      FilterChainBuilder& /*builder*/) override {
+    return nullptr;
+  }
+
   absl::StatusOr<CallConfig> GetCallConfig(
-      grpc_metadata_batch* metadata) override;
+      const ConnectionState* /*state*/, grpc_metadata_batch* metadata) override;
 
  private:
   struct VirtualHost {
@@ -1166,7 +1172,8 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 
 absl::StatusOr<ServerConfigSelector::CallConfig>
 XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
-    XdsServerConfigSelector::GetCallConfig(grpc_metadata_batch* metadata) {
+    XdsServerConfigSelector::GetCallConfig(const ConnectionState* /*state*/,
+                                           grpc_metadata_batch* metadata) {
   CallConfig call_config;
   if (metadata->get_pointer(HttpPathMetadata()) == nullptr) {
     return absl::InternalError("no path found");
