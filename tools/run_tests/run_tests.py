@@ -558,14 +558,12 @@ class CLanguage:
             _check_compiler(compiler, ["default", "cmake"])
 
         if compiler == "default" or compiler == "cmake":
-            return ("debian11", ["-DCMAKE_CXX_STANDARD=17"])
+            return ("debian12", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "gcc10":
             return ("gcc_10", ["-DCMAKE_CXX_STANDARD=17"])
-        elif compiler == "gcc10.2":
-            return ("debian11", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "gcc10.2_openssl102":
             return (
-                "debian11_openssl102",
+                "debian12_openssl102",
                 [
                     "-DgRPC_SSL_PROVIDER=package",
                     "-DCMAKE_CXX_STANDARD=17",
@@ -573,7 +571,7 @@ class CLanguage:
             )
         elif compiler == "gcc10.2_openssl111":
             return (
-                "debian11_openssl111",
+                "debian12_openssl111",
                 [
                     "-DgRPC_SSL_PROVIDER=package",
                     "-DCMAKE_CXX_STANDARD=17",
@@ -1033,7 +1031,7 @@ class RubyLanguage:
         return [["tools/run_tests/helper_scripts/post_tests_ruby.sh"]]
 
     def dockerfile_dir(self):
-        return "tools/dockerfile/test/ruby_debian11_%s" % _docker_arch_suffix(
+        return "tools/dockerfile/test/ruby_debian12_%s" % _docker_arch_suffix(
             self.args.arch
         )
 
