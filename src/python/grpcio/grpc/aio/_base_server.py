@@ -136,7 +136,7 @@ class Server(abc.ABC):
         """
 
     def add_registered_method_handlers(  # noqa: B027
-        self, service_name, method_handlers  # pyright: ignore
+        self, service_name, method_handlers  # pyright: ignore # noqa: PGH003
     ) -> None:
         """Registers GenericRpcHandlers with this Server.
 
