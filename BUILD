@@ -918,21 +918,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "virtual_channel",
-    hdrs = ["include/grpcpp/virtual_channel.h"],
-    external_deps = [
-        "absl/functional:any_invocable",
-    ],
-    visibility = [
-        "//:__subpackages__",
-        "//bazel:virtual_rpcs",
-    ],
-    deps = [
-        "grpc++_public_hdrs",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc_common",
     defines = select({
         "grpc_no_rls": ["GRPC_NO_RLS"],
@@ -2737,7 +2722,6 @@ grpc_cc_library(
         "server",
         "transport_auth_context",
         ":grpc_transport_chttp2",
-        ":virtual_channel",
         "//src/core:arena",
         "//src/core:channel_args",
         "//src/core:channel_fwd",
@@ -2840,7 +2824,6 @@ grpc_cc_library(
         "resource_quota_api",
         "server",
         "transport_auth_context",
-        ":virtual_channel",
         "//src/core:arena",
         "//src/core:channel_args",
         "//src/core:channel_init",

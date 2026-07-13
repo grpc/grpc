@@ -4231,7 +4231,6 @@ libs:
   - include/grpcpp/support/time.h
   - include/grpcpp/support/validate_service_config.h
   - include/grpcpp/version_info.h
-  - include/grpcpp/virtual_channel.h
   - include/grpcpp/xds_server_builder.h
   headers:
   - src/core/client_channel/virtual_channel.h
@@ -4621,7 +4620,6 @@ libs:
   - include/grpcpp/support/time.h
   - include/grpcpp/support/validate_service_config.h
   - include/grpcpp/version_info.h
-  - include/grpcpp/virtual_channel.h
   headers:
   - src/core/client_channel/virtual_channel.h
   - src/core/telemetry/telemetry_label.h
@@ -22508,6 +22506,17 @@ targets:
   deps:
   - gtest
   - protobuf
+  - grpc_test_util
+- name: recv_message_filter_bypass_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/filters/recv_message_filter_bypass_test.cc
+  deps:
+  - gtest
+  - grpc_unsecure
   - grpc_test_util
 - name: ref_counted_ptr_test
   gtest: true

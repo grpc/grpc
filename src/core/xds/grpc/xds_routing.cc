@@ -195,12 +195,10 @@ XdsRouting::RouteConfigFilterChainBuilder::RouteConfigFilterChainBuilder(
     const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
         hcm_filter_configs,
     const XdsHttpFilterRegistry& http_filter_registry,
-    FilterChainBuilder& builder,
-    absl::AnyInvocable<void(FilterChainBuilder&)> add_last_filter,
-    XdsTransportFactory& transport_factory, Blackboard& blackboard)
+    XdsFilterChainBuilder& builder, XdsTransportFactory& transport_factory,
+    Blackboard& blackboard)
     : hcm_filter_configs_(hcm_filter_configs),
       builder_(builder),
-      add_last_filter_(std::move(add_last_filter)),
       blackboard_(blackboard),
       transport_factory_(transport_factory) {
   filter_impls_.reserve(hcm_filter_configs.size());
@@ -233,9 +231,8 @@ XdsRouting::RouteConfigFilterChainBuilder::GetDefaultFilterChain() {
       GRPC_TRACE_LOG(xds_resolver, INFO)
           << "  Adding filter=" << filter_config.name
           << " config=" << (config == nullptr ? "<null>" : config->ToString());
-      filter_impl->AddFilter(builder_, std::move(config));
+      builder_.AddFilter(filter_impl, std::move(config));
     }
-    if (add_last_filter_ != nullptr) add_last_filter_(builder_);
     default_filter_chain_ = builder_.Build();
     GRPC_TRACE_LOG(xds_resolver, INFO)
         << "Filter chain creation status: " << default_filter_chain_.status();
@@ -325,10 +322,7 @@ XdsRouting::RouteConfigFilterChainBuilder::VirtualHostFilterChainBuilder::
       GRPC_TRACE_LOG(xds_resolver, INFO)
           << "  Adding filter=" << filter_config.name
           << " config=" << (config == nullptr ? "<null>" : config->ToString());
-      filter_impl->AddFilter(route_config_builder_.builder_, std::move(config));
-    }
-    if (route_config_builder_.add_last_filter_ != nullptr) {
-      route_config_builder_.add_last_filter_(route_config_builder_.builder_);
+      route_config_builder_.builder_.AddFilter(filter_impl, std::move(config));
     }
     vhost_filter_chain_ = route_config_builder_.builder_.Build();
     GRPC_TRACE_LOG(xds_resolver, INFO)
@@ -368,10 +362,7 @@ XdsRouting::RouteConfigFilterChainBuilder::VirtualHostFilterChainBuilder::
     GRPC_TRACE_LOG(xds_resolver, INFO)
         << "  Adding filter=" << filter_config.name
         << " config=" << (config == nullptr ? "<null>" : config->ToString());
-    filter_impl->AddFilter(route_config_builder_.builder_, std::move(config));
-  }
-  if (route_config_builder_.add_last_filter_ != nullptr) {
-    route_config_builder_.add_last_filter_(route_config_builder_.builder_);
+    route_config_builder_.builder_.AddFilter(filter_impl, std::move(config));
   }
   absl::StatusOr<RefCountedPtr<const FilterChain>> route_filter_chain =
       route_config_builder_.builder_.Build();
@@ -432,10 +423,7 @@ XdsRouting::RouteConfigFilterChainBuilder::VirtualHostFilterChainBuilder::
     GRPC_TRACE_LOG(xds_resolver, INFO)
         << "  Adding filter=" << filter_config.name
         << " config=" << (config == nullptr ? "<null>" : config->ToString());
-    filter_impl->AddFilter(route_config_builder.builder_, std::move(config));
-  }
-  if (route_config_builder.add_last_filter_ != nullptr) {
-    route_config_builder.add_last_filter_(route_config_builder.builder_);
+    route_config_builder.builder_.AddFilter(filter_impl, std::move(config));
   }
   auto filter_chain = route_config_builder.builder_.Build();
   GRPC_TRACE_LOG(xds_resolver, INFO)
