@@ -78,7 +78,7 @@ Call = collections.namedtuple("Call", ["did_raise", "returned_cert_config"])
 
 
 def _create_channel(port, credentials):
-    return grpc.secure_channel("localhost:{}".format(port), credentials)
+    return grpc.secure_channel("127.0.0.1:{}".format(port), credentials)
 
 
 def _create_client_stub(channel, expect_success):

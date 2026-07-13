@@ -42,7 +42,7 @@ class _Callback:
 
 class ChannelReadyFutureTest(unittest.TestCase):
     def test_lonely_channel_connectivity(self):
-        channel = grpc.insecure_channel("localhost:12345")
+        channel = grpc.insecure_channel("127.0.0.1:12345")
         callback = _Callback()
 
         ready_future = grpc.channel_ready_future(channel)

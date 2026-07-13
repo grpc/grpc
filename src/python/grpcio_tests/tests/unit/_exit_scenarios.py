@@ -190,7 +190,7 @@ if __name__ == "__main__":
         if args.wait_for_interrupt:
             time.sleep(WAIT_TIME)
     elif args.scenario == POLL_CONNECTIVITY_NO_SERVER:
-        channel = grpc.insecure_channel("localhost:12345")
+        channel = grpc.insecure_channel("127.0.0.1:12345")
 
         def connectivity_callback(connectivity):
             pass

@@ -141,13 +141,13 @@ class ServerClientMixin:
                 ),
             )
             self.client_channel = cygrpc.Channel(
-                "localhost:{}".format(self.port).encode(),
+                "127.0.0.1:{}".format(self.port).encode(),
                 client_channel_arguments,
                 client_credentials,
             )
         else:
             self.client_channel = cygrpc.Channel(
-                "localhost:{}".format(self.port).encode(), set(), None
+                "127.0.0.1:{}".format(self.port).encode(), set(), None
             )
         if host_override:
             self.host_argument = None  # default host

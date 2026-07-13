@@ -187,7 +187,7 @@ async def _create_sub_worker() -> _SubWorker:
         port,
         process.pid,
     )
-    channel = aio.insecure_channel(f"localhost:{port}")
+    channel = aio.insecure_channel(f"127.0.0.1:{port}")
     _LOGGER.info("Waiting for sub worker at port [%d]", port)
     await channel.channel_ready()
     stub = worker_service_pb2_grpc.WorkerServiceStub(channel)

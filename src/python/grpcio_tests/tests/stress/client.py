@@ -35,7 +35,7 @@ def _args(argv):
     parser.add_argument(
         "--server_addresses",
         help="comma separated list of hostname:port to run servers on",
-        default="localhost:8080",
+        default="127.0.0.1:8080",
         type=str,
     )
     parser.add_argument(

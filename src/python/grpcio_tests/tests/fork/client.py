@@ -31,7 +31,7 @@ def _args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--server_host",
-        default="localhost",
+        default="127.0.0.1",
         type=str,
         help="the host to which to connect",
     )

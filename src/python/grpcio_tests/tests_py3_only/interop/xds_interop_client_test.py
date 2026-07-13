@@ -115,7 +115,7 @@ def _collect_stats(
     stats_port: int, duration: int
 ) -> Mapping[str, Mapping[int, int]]:
     settings = {
-        "target": f"localhost:{stats_port}",
+        "target": f"127.0.0.1:{stats_port}",
         "insecure": True,
     }
     response = test_pb2_grpc.LoadBalancerStatsService.GetClientAccumulatedStats(
@@ -135,7 +135,7 @@ class XdsInteropClientTest(unittest.TestCase):
         self, server_port: int, stats_port: int, qps: int, num_channels: int
     ):
         settings = {
-            "target": f"localhost:{stats_port}",
+            "target": f"127.0.0.1:{stats_port}",
             "insecure": True,
         }
         for i in range(_TEST_ITERATIONS):
@@ -164,7 +164,7 @@ class XdsInteropClientTest(unittest.TestCase):
             logging.info("Sending RPC to server.")
             test_pb2_grpc.TestService.EmptyCall(
                 empty_pb2.Empty(),
-                f"localhost:{server_port}",
+                f"127.0.0.1:{server_port}",
                 insecure=True,
                 wait_for_ready=True,
             )

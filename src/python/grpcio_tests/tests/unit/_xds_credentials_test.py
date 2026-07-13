@@ -42,10 +42,10 @@ def xds_channel_server_without_xds(server_fallback_creds):
         ((resources.private_key(), resources.certificate_chain()),)
     )
     server_creds = grpc.xds_server_credentials(server_fallback_creds)
-    port = server.add_secure_port("localhost:0", server_creds)
+    port = server.add_secure_port("127.0.0.1:0", server_creds)
     server.start()
     try:
-        yield "localhost:{}".format(port)
+        yield "127.0.0.1:{}".format(port)
     finally:
         server.stop(None)
 
@@ -103,7 +103,7 @@ class XdsCredentialsTest(unittest.TestCase):
         server.add_registered_method_handlers(_SERVICE_NAME, _METHOD_HANDLERS)
         server_fallback_creds = grpc.insecure_server_credentials()
         server_creds = grpc.xds_server_credentials(server_fallback_creds)
-        port = server.add_secure_port("localhost:0", server_creds)
+        port = server.add_secure_port("127.0.0.1:0", server_creds)
         server.start()
         server.stop(None)
         # No exceptions thrown. A more comprehensive suite of tests will be

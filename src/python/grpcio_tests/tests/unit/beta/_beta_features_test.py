@@ -190,7 +190,7 @@ class BetaFeaturesTest(unittest.TestCase):
             _metadata_plugin
         )
         channel = test_utilities.not_really_secure_channel(
-            "localhost", port, self._channel_credentials, _SERVER_HOST_OVERRIDE
+            "127.0.0.1", port, self._channel_credentials, _SERVER_HOST_OVERRIDE
         )
         stub_options = implementations.stub_options(
             thread_pool_size=test_constants.POOL_SIZE
@@ -356,7 +356,7 @@ class ContextManagementAndLifecycleTest(unittest.TestCase):
         server.start()
 
         channel = test_utilities.not_really_secure_channel(
-            "localhost", port, self._channel_credentials, _SERVER_HOST_OVERRIDE
+            "127.0.0.1", port, self._channel_credentials, _SERVER_HOST_OVERRIDE
         )
         dynamic_stub = implementations.dynamic_stub(
             channel, _GROUP, self._cardinalities, options=self._stub_options

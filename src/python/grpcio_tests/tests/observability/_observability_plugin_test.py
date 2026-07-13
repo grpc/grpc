@@ -70,8 +70,8 @@ class OTelMetricExporter(MetricExporter):
         value is a list of labels recorded for that metric.
         An example item of this dict:
             {"grpc.client.attempt.started":
-              [{'grpc.method': 'test/UnaryUnary', 'grpc.target': 'localhost:42517'},
-               {'grpc.method': 'other', 'grpc.target': 'localhost:42517'}]}
+              [{'grpc.method': 'test/UnaryUnary', 'grpc.target': '127.0.0.1:42517'},
+               {'grpc.method': 'other', 'grpc.target': '127.0.0.1:42517'}]}
     """
 
     def __init__(

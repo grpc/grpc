@@ -30,7 +30,7 @@ def parse_interop_client_args(argv):
     parser = argparse_flags.ArgumentParser()
     parser.add_argument(
         "--server_host",
-        default="localhost",
+        default="127.0.0.1",
         type=str,
         help="the host to which to connect",
     )

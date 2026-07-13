@@ -179,7 +179,7 @@ async def start_test_server(
                 [(resources.private_key(), resources.certificate_chain())]
             )
         port = server.add_secure_port("[::]:%d" % port, server_credentials)
-        host = "localhost"
+        host = "127.0.0.1"
     else:
         port = server.add_insecure_port("127.0.0.1:%d" % port)
         host = "127.0.0.1"
