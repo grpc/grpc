@@ -682,9 +682,9 @@ TEST(RecvMessageFilterBypassTest,
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
+  grpc_core::ForceEnableExperiment("recv_message_filter_bypass_fix", true);
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_core::ForceEnableExperiment("recv_message_filter_bypass_fix", true);
   grpc::testing::TestGrpcScope grpc_scope;
   return RUN_ALL_TESTS();
 }
