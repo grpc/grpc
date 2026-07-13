@@ -155,6 +155,7 @@ class XdsInteropClientTest(unittest.TestCase):
 
     def test_configure_consistency(self):
         _, server_port, socket = framework_common.get_socket()
+        socket.close()
 
         with _start_python_with_args(
             _SERVER_PATH,
@@ -169,8 +170,8 @@ class XdsInteropClientTest(unittest.TestCase):
                 wait_for_ready=True,
             )
             logging.info("Server successfully started.")
-            socket.close()
             _, stats_port, stats_socket = framework_common.get_socket()
+            stats_socket.close()
             with _start_python_with_args(
                 _CLIENT_PATH,
                 [
@@ -180,7 +181,6 @@ class XdsInteropClientTest(unittest.TestCase):
                     f"--num_channels={_NUM_CHANNELS}",
                 ],
             ) as (client, client_stdout, client_stderr):
-                stats_socket.close()
                 try:
                     self._assert_client_consistent(
                         server_port, stats_port, _QPS, _NUM_CHANNELS
