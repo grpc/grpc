@@ -402,8 +402,11 @@ Rbac ParseXdsRbac(const XdsResourceType::DecodeContext& context,
     for (size_t i = 0; i < size; ++i) {
       ValidationErrors::ScopedField field(
           errors, absl::StrCat(".logger_configs[", i, "]"));
-      result.logger_configs.push_back(registry.ParseXdsAuditLoggerConfig(
-          context, logger_configs[i], errors));
+      auto config = registry.ParseXdsAuditLoggerConfig(
+          context, logger_configs[i], errors);
+      // Config will be null if audit logger is unsupported.
+      // Note that this may not be an error if the logger is optional.
+      if (config != nullptr) result.logger_configs.push_back(std::move(config));
     }
   }
   return result;
