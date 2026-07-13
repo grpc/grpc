@@ -57,6 +57,9 @@ single_version_override(
     module_name = "protobuf",
     patch_strip = 1,
     patches = [
+        # @com_google_protobuf//upb/reflection will be split into two separate targets
+        # @com_google_protobuf//upb/{reflection,reflection_cc}
+        # Patch it so our bazel rules are compatible with both protobuf master and v35.1
         "//bazel:protobuf_fix_upb_deps.patch",
     ],
     version = "35.1",
