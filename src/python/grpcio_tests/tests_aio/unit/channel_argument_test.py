@@ -124,7 +124,9 @@ class TestChannelArgument(AioTestBase):
 
     async def test_client(self):
         # Do not segfault, or raise exception!
-        channel = aio.insecure_channel("127.0.0.1:0", options=_TEST_CHANNEL_ARGS)
+        channel = aio.insecure_channel(
+            "127.0.0.1:0", options=_TEST_CHANNEL_ARGS
+        )
         await channel.close()
 
     async def test_server(self):

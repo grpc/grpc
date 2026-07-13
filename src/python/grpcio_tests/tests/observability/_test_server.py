@@ -41,7 +41,9 @@ def handle_unary_unary(request, servicer_context):
                     futures.ThreadPoolExecutor(max_workers=10)
                 )
                 second_server.add_generic_rpc_handlers((_GenericHandler(),))
-                second_server_port = second_server.add_insecure_port("127.0.0.1:0")
+                second_server_port = second_server.add_insecure_port(
+                    "127.0.0.1:0"
+                )
                 second_server.start()
                 unary_unary_call(port=second_server_port)
                 second_server.stop(0)
