@@ -1,4 +1,4 @@
-# Copyright 2022 The gRPC Authors
+# Copyright 2020 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,14 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM --platform=linux/arm64/v8 --platform=linux/arm64/v8 arm64v8/debian:12
+FROM debian:12
 
-{% include "../../apt_get_basic.include" %}
-{% include "../../run_tests_python_deps_pep668.include" %}
-{% include "../../cxx_deps.include" %}
+# gRPC C++ dependencies based on https://github.com/grpc/grpc/blob/master/BUILDING.md
+RUN apt-get update && apt-get install -y build-essential autoconf cmake libtool pkg-config && apt-get clean
 
-# Install bazel
-{% include "../../bazel.include" %}
+# C++ distribtests are setup in a way that requires git
+RUN apt-get update && apt-get install -y git && apt-get clean
 
-# Define the default command.
+RUN git config --global --add safe.directory /var/local/jenkins/grpc
+RUN git config --global protocol.file.allow always
+
+
 CMD ["bash"]
