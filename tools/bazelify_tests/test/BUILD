@@ -197,7 +197,7 @@ grpc_run_cpp_distribtest_test(
     name = "cpp_distribtest_cmake_aarch64_cross_linux",
     size = "enormous",
     args = ["test/distrib/cpp/run_distrib_test_cmake_aarch64_cross.sh"],
-    docker_image_version = "tools/dockerfile/distribtest/cpp_debian12_aarch64_cross_x64.current_version",
+    docker_image_version = "tools/dockerfile/distribtest/cpp_debian11_aarch64_cross_x64.current_version",
 )
 
 test_suite(
