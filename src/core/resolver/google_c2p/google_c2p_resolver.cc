@@ -15,7 +15,6 @@
 //
 
 #include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
 
 #include <cstdint>
 #include <memory>
@@ -77,6 +76,7 @@ class GoogleCloud2ProdResolver final : public Resolver {
   ResourceQuotaRefPtr resource_quota_;
   std::shared_ptr<WorkSerializer> work_serializer_;
   grpc_polling_entity pollent_;
+  const bool force_xds_;
   bool using_dns_ = false;
   OrphanablePtr<Resolver> child_resolver_;
   std::string metadata_server_name_ = "metadata.google.internal.";
@@ -103,38 +103,42 @@ GoogleCloud2ProdResolver::GoogleCloud2ProdResolver(ResolverArgs args)
     : resource_quota_(args.args.GetObjectRef<ResourceQuota>()),
       work_serializer_(std::move(args.work_serializer)),
       pollent_(grpc_polling_entity_create_from_pollset_set(args.pollset_set)),
+      force_xds_(args.uri.query_parameter_map().find("force-xds") !=
+                 args.uri.query_parameter_map().end()),
       args_(std::move(args.args)) {
   absl::string_view name_to_resolve = absl::StripPrefix(args.uri.path(), "/");
-  // If we're not running on GCP, we can't use DirectPath, so delegate
-  // to the DNS resolver.
-  const bool test_only_pretend_running_on_gcp =
-      args_.GetBool("grpc.testing.google_c2p_resolver_pretend_running_on_gcp")
-          .value_or(false);
-  const bool running_on_gcp =
-      test_only_pretend_running_on_gcp || grpc_alts_is_running_on_gcp();
   const bool federation_enabled = XdsFederationEnabled();
-  if (!running_on_gcp ||
-      // If the client is already using xDS and federation is not enabled,
-      // we can't use it here, because they may be talking to a completely
-      // different xDS server than we want to.
-      // TODO(roth): When we remove xDS federation env var protection,
-      // remove this constraint.
-      (!federation_enabled && XdsBootstrapConfigured())) {
-    using_dns_ = true;
-    child_resolver_ =
-        CoreConfiguration::Get().resolver_registry().CreateResolver(
-            absl::StrCat("dns:", name_to_resolve), args_, args.pollset_set,
-            work_serializer_, std::move(args.result_handler));
-    GRPC_CHECK(child_resolver_ != nullptr);
-    return;
-  }
-  // Maybe override metadata server name for testing
-  std::optional<std::string> test_only_metadata_server_override =
-      args_.GetOwnedString(
-          "grpc.testing.google_c2p_resolver_metadata_server_override");
-  if (test_only_metadata_server_override.has_value() &&
-      !test_only_metadata_server_override->empty()) {
-    metadata_server_name_ = std::move(*test_only_metadata_server_override);
+  if (!force_xds_) {
+    // If we're not running on GCP, we can't use DirectPath, so delegate
+    // to the DNS resolver.
+    const bool test_only_pretend_running_on_gcp =
+        args_.GetBool("grpc.testing.google_c2p_resolver_pretend_running_on_gcp")
+            .value_or(false);
+    const bool running_on_gcp =
+        test_only_pretend_running_on_gcp || grpc_alts_is_running_on_gcp();
+    if (!running_on_gcp ||
+        // If the client is already using xDS and federation is not enabled,
+        // we can't use it here, because they may be talking to a completely
+        // different xDS server than we want to.
+        // TODO(roth): When we remove xDS federation env var protection,
+        // remove this constraint.
+        (!federation_enabled && XdsBootstrapConfigured())) {
+      using_dns_ = true;
+      child_resolver_ =
+          CoreConfiguration::Get().resolver_registry().CreateResolver(
+              absl::StrCat("dns:", name_to_resolve), args_, args.pollset_set,
+              work_serializer_, std::move(args.result_handler));
+      GRPC_CHECK(child_resolver_ != nullptr);
+      return;
+    }
+    // Maybe override metadata server name for testing
+    std::optional<std::string> test_only_metadata_server_override =
+        args_.GetOwnedString(
+            "grpc.testing.google_c2p_resolver_metadata_server_override");
+    if (test_only_metadata_server_override.has_value() &&
+        !test_only_metadata_server_override->empty()) {
+      metadata_server_name_ = std::move(*test_only_metadata_server_override);
+    }
   }
   // Create xds resolver.
   xds_uri_ = federation_enabled
@@ -147,6 +151,10 @@ GoogleCloud2ProdResolver::GoogleCloud2ProdResolver(ResolverArgs args)
 }
 
 void GoogleCloud2ProdResolver::StartLocked() {
+  if (force_xds_) {
+    StartXdsResolver();
+    return;
+  }
   if (using_dns_) {
     child_resolver_->StartLocked();
     return;
