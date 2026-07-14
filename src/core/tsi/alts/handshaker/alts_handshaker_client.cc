@@ -107,6 +107,8 @@ typedef struct alts_grpc_handshaker_client {
   grpc_core::Mutex mu;
   // indicates if the handshaker call's RECV_STATUS_ON_CLIENT op is done.
   bool receive_status_finished = false;
+  // indicates if the TSI handshaker client is shutdown.
+  bool is_shutdown = false;
   // if non-null, contains arguments to complete a TSI next callback.
   recv_message_result* pending_recv_message_result = nullptr;
   // Maximum frame size used by frame protector.
@@ -202,11 +204,25 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
   alts_grpc_handshaker_client* client =
       reinterpret_cast<alts_grpc_handshaker_client*>(c);
   grpc_byte_buffer* recv_buffer = client->recv_buffer;
-  alts_tsi_handshaker* handshaker = client->handshaker;
   // Invalid input check.
   if (client->cb == nullptr) {
     LOG(ERROR)
         << "client->cb is nullptr in alts_tsi_handshaker_handle_response()";
+    return;
+  }
+  // TSI handshake has been shutdown.
+  bool is_shutdown = false;
+  alts_tsi_handshaker* handshaker = nullptr;
+  {
+    grpc_core::MutexLock lock(&client->mu);
+    is_shutdown = client->is_shutdown;
+    handshaker = client->handshaker;
+  }
+  if (is_shutdown ||
+      (handshaker != nullptr && alts_tsi_handshaker_has_shutdown(handshaker))) {
+    VLOG(2) << "TSI handshake shutdown";
+    handle_response_done(client, TSI_HANDSHAKE_SHUTDOWN,
+                         "TSI handshake shutdown", nullptr, 0, nullptr);
     return;
   }
   if (handshaker == nullptr) {
@@ -216,13 +232,6 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
         client, TSI_INTERNAL_ERROR,
         "handshaker is nullptr in alts_tsi_handshaker_handle_response()",
         nullptr, 0, nullptr);
-    return;
-  }
-  // TSI handshake has been shutdown.
-  if (alts_tsi_handshaker_has_shutdown(handshaker)) {
-    VLOG(2) << "TSI handshake shutdown";
-    handle_response_done(client, TSI_HANDSHAKE_SHUTDOWN,
-                         "TSI handshake shutdown", nullptr, 0, nullptr);
     return;
   }
   // Check for failed grpc read.
@@ -719,6 +728,10 @@ static void handshaker_client_shutdown(alts_handshaker_client* c) {
   GRPC_CHECK_NE(c, nullptr);
   alts_grpc_handshaker_client* client =
       reinterpret_cast<alts_grpc_handshaker_client*>(c);
+  {
+    grpc_core::MutexLock lock(&client->mu);
+    client->is_shutdown = true;
+  }
   if (client->call != nullptr) {
     grpc_call_cancel_internal(client->call);
   }
@@ -989,6 +1002,15 @@ void alts_handshaker_client_destroy(alts_handshaker_client* c) {
     alts_grpc_handshaker_client* client =
         reinterpret_cast<alts_grpc_handshaker_client*>(c);
     alts_grpc_handshaker_client_unref(client);
+  }
+}
+
+void alts_handshaker_client_clear_handshaker(alts_handshaker_client* c) {
+  if (c != nullptr) {
+    alts_grpc_handshaker_client* client =
+        reinterpret_cast<alts_grpc_handshaker_client*>(c);
+    grpc_core::MutexLock lock(&client->mu);
+    client->handshaker = nullptr;
   }
 }
 

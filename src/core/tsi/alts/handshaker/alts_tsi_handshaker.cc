@@ -670,8 +670,12 @@ static void handshaker_destroy(tsi_handshaker* self) {
   if (self == nullptr) {
     return;
   }
+  handshaker_shutdown(self);
   alts_tsi_handshaker* handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(self);
+  if (handshaker->client != nullptr) {
+    alts_handshaker_client_clear_handshaker(handshaker->client);
+  }
   alts_handshaker_client_destroy(handshaker->client);
   grpc_core::CSliceUnref(handshaker->target_name);
   grpc_alts_credentials_options_destroy(handshaker->options);
