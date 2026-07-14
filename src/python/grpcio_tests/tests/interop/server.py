@@ -13,6 +13,14 @@
 # limitations under the License.
 """The Python implementation of the GRPC interoperability test server."""
 
+import os
+os.environ["GRPC_BAZEL_RUNTIME"] = "1"
+try:
+    from tests import bazel_namespace_package_hack
+    bazel_namespace_package_hack.sys_path_to_site_dir_hack()
+except ImportError:
+    pass
+
 from concurrent import futures
 import logging
 
@@ -46,6 +54,12 @@ def parse_interop_server_arguments(argv):
         type=resources.parse_bool,
         help="require an ALTS connection",
     )
+    parser.add_argument(
+        "--enable_opentelemetry",
+        default=False,
+        type=resources.parse_bool,
+        help="enable OpenTelemetry tracing/observability",
+    )
     return parser.parse_args(argv[1:])
 
 
@@ -56,6 +70,22 @@ def get_server_credentials(use_tls):
         return grpc.ssl_server_credentials(((private_key, certificate_chain),))
     else:
         return grpc.alts_server_credentials()
+
+
+import signal
+
+def _serve_internal(server):
+    def _sig_handler(signum, frame):
+        _LOGGER.info("Received signal %d, stopping server...", signum)
+        server.stop(0)
+
+    signal.signal(signal.SIGTERM, _sig_handler)
+    signal.signal(signal.SIGINT, _sig_handler)
+
+    server.start()
+    _LOGGER.info("Server serving.")
+    server.wait_for_termination()
+    _LOGGER.info("Server stopped; exiting.")
 
 
 def serve(args):
@@ -69,10 +99,12 @@ def serve(args):
     else:
         server.add_insecure_port("[::]:{}".format(args.port))
 
-    server.start()
-    _LOGGER.info("Server serving.")
-    server.wait_for_termination()
-    _LOGGER.info("Server stopped; exiting.")
+    if args.enable_opentelemetry:
+        import grpc_observability
+        with grpc_observability.OpenTelemetryPlugin():
+            _serve_internal(server)
+    else:
+        _serve_internal(server)
 
 
 if __name__ == "__main__":

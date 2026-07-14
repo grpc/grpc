@@ -14,15 +14,19 @@
 """The Python implementation of the GRPC interoperability test client."""
 
 import os
+os.environ["GRPC_BAZEL_RUNTIME"] = "1"
+try:
+    from tests import bazel_namespace_package_hack
+    bazel_namespace_package_hack.sys_path_to_site_dir_hack()
+except ImportError:
+    pass
 
 from absl import app
 from absl.flags import argparse_flags
-from google import auth as google_auth
-from google.auth import jwt as google_auth_jwt
 import grpc
 
-from src.proto.grpc.testing import test_pb2_grpc
 from tests.interop import methods
+from src.proto.grpc.testing import test_pb2_grpc
 from tests.interop import resources
 
 
@@ -93,10 +97,19 @@ def parse_interop_client_args(argv):
             " round_robin " + "or pick_first)."
         ),
     )
+    parser.add_argument(
+        "--enable_opentelemetry",
+        default=False,
+        type=resources.parse_bool,
+        help="enable OpenTelemetry tracing/observability",
+    )
     return parser.parse_args(argv[1:])
 
 
 def _create_call_credentials(args):
+    import os
+    from google import auth as google_auth
+    from google.auth import jwt as google_auth_jwt
     if args.test_case == "oauth2_auth_token":
         google_credentials, unused_project_id = google_auth.default(
             scopes=[args.oauth_scope]
@@ -129,6 +142,7 @@ def _create_call_credentials(args):
 
 
 def get_secure_channel_parameters(args):
+    from google import auth as google_auth
     call_credentials = _create_call_credentials(args)
 
     channel_opts = ()
@@ -216,10 +230,18 @@ def _test_case_from_arg(test_case_arg):
 
 
 def test_interoperability(args):
-    channel = _create_channel(args)
-    stub = create_stub(channel, args)
-    test_case = _test_case_from_arg(args.test_case)
-    test_case.test_interoperability(stub, args)
+    if args.enable_opentelemetry:
+        import grpc_observability
+        with grpc_observability.OpenTelemetryPlugin():
+            channel = _create_channel(args)
+            stub = create_stub(channel, args)
+            test_case = _test_case_from_arg(args.test_case)
+            test_case.test_interoperability(stub, args)
+    else:
+        channel = _create_channel(args)
+        stub = create_stub(channel, args)
+        test_case = _test_case_from_arg(args.test_case)
+        test_case.test_interoperability(stub, args)
 
 
 if __name__ == "__main__":

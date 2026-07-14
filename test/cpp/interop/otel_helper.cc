@@ -66,13 +66,14 @@ void MaybeRegisterOpenTelemetry() {
     auto processor =
         opentelemetry::sdk::trace::SimpleSpanProcessorFactory::Create(
             std::move(exporter));
-    g_tracer_provider =
+    auto provider =
         std::make_shared<opentelemetry::sdk::trace::TracerProvider>(
             std::move(processor));
+    std::atomic_store(&g_tracer_provider, provider);
 
     auto status =
         grpc::OpenTelemetryPluginBuilder()
-            .SetTracerProvider(g_tracer_provider)
+            .SetTracerProvider(provider)
             .SetTextMapPropagator(grpc::OpenTelemetryPluginBuilder::
                                       MakeGrpcTraceBinTextMapPropagator())
             .BuildAndRegisterGlobal();
@@ -88,8 +89,9 @@ void MaybeRegisterOpenTelemetry() {
 }
 
 void ForceFlushOpenTelemetry() {
-  if (g_tracer_provider != nullptr) {
-    g_tracer_provider->ForceFlush();
+  auto provider = std::atomic_load(&g_tracer_provider);
+  if (provider != nullptr) {
+    provider->ForceFlush();
   }
 }
 

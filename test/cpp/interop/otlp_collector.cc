@@ -16,16 +16,20 @@
 //
 //
 
+#include <chrono>
 #include <fstream>
 #include <memory>
 #include <mutex>
+#include <signal.h>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/log/log.h"
 
+#include <grpc/support/atm.h>
 #include <grpcpp/grpcpp.h>
 
 #include <google/protobuf/util/json_util.h>
@@ -78,6 +82,11 @@ class TraceServiceServiceImpl final
       }
     }
     out << "\n]\n";
+    if (out.fail() || out.bad()) {
+      LOG(ERROR) << "Failed to write JSON spans to file: " << tmp_file;
+      return grpc::Status(grpc::StatusCode::INTERNAL,
+                          "Failed to write trace output");
+    }
     out.close();
 
     std::rename(tmp_file.c_str(), file_path_.c_str());
@@ -90,6 +99,12 @@ class TraceServiceServiceImpl final
   std::vector<std::string> requests_json_;
   std::mutex mu_;
 };
+
+static gpr_atm g_got_sigint = 0;
+
+static void sig_handler(int /*sig*/) {
+  gpr_atm_no_barrier_store(&g_got_sigint, 1);
+}
 
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
@@ -112,9 +127,16 @@ int main(int argc, char** argv) {
                            grpc::InsecureServerCredentials());
   builder.RegisterService(&service);
 
+  signal(SIGINT, sig_handler);
+  signal(SIGTERM, sig_handler);
+
   std::unique_ptr<grpc::Server> server(builder.BuildAndStart());
   LOG(INFO) << "OTLP Collector listening on port " << port << "...";
-  server->Wait();
+  while (!gpr_atm_no_barrier_load(&g_got_sigint)) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
+  server->Shutdown();
+  server.reset();
 
   return 0;
 }

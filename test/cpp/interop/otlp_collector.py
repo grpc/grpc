@@ -19,6 +19,7 @@
 import argparse
 import json
 import os
+import signal
 import threading
 import time
 from concurrent import futures
@@ -59,11 +60,15 @@ def serve():
     server.add_insecure_port(f"[::]:{args.port}")
     server.start()
     print(f"OTLP Collector listening on port {args.port}...")
-    try:
-        while True:
-            time.sleep(86400)
-    except KeyboardInterrupt:
+
+    def sig_handler(signum, frame):
+        print(f"OTLP Collector received signal {signum}, stopping server...")
         server.stop(0)
+
+    signal.signal(signal.SIGTERM, sig_handler)
+    signal.signal(signal.SIGINT, sig_handler)
+
+    server.wait_for_termination()
 
 if __name__ == "__main__":
     serve()

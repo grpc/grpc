@@ -28,12 +28,18 @@ py_library(
 py_library(
     name = "client_lib",
     srcs = ["client.py"],
-    imports = ["../../"],
+    imports = [
+        "../../",
+        "../../../../",
+    ],
     deps = [
         ":methods",
         ":resources",
         "//src/proto/grpc/testing:py_test_proto",
+        "//src/proto/grpc/testing:test_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_observability/grpc_observability:pyobservability",
+        "//src/python/grpcio_tests/tests:bazel_namespace_package_hack",
         requirement("absl-py"),
         requirement("google-auth"),
     ],
@@ -49,7 +55,10 @@ py_binary(
 py_library(
     name = "methods",
     srcs = ["methods.py"],
-    imports = ["../../"],
+    imports = [
+        "../../",
+        "../../../../",
+    ],
     deps = [
         "//src/proto/grpc/testing:empty_py_pb2",
         "//src/proto/grpc/testing:py_messages_proto",
@@ -80,7 +89,10 @@ py_library(
 py_library(
     name = "service",
     srcs = ["service.py"],
-    imports = ["../../"],
+    imports = [
+        "../../",
+        "../../../../",
+    ],
     deps = [
         "//src/proto/grpc/testing:empty_py_pb2",
         "//src/proto/grpc/testing:py_messages_proto",
@@ -92,12 +104,18 @@ py_library(
 py_library(
     name = "server",
     srcs = ["server.py"],
-    imports = ["../../"],
+    imports = [
+        "../../",
+        "../../../../",
+    ],
     deps = [
         ":resources",
         ":service",
         "//src/proto/grpc/testing:py_test_proto",
+        "//src/proto/grpc/testing:test_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_observability/grpc_observability:pyobservability",
+        "//src/python/grpcio_tests/tests:bazel_namespace_package_hack",
         "//src/python/grpcio_tests/tests/unit:test_common",
         requirement("absl-py"),
     ],
