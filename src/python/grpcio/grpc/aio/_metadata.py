@@ -110,7 +110,11 @@ class Metadata(Collection):  # noqa: PLW1641
         current_values = self.get_all(key)
         if not current_values:
             raise KeyError(repr(key))
-        self._metadata[key] = current_values[1:]
+        remaining = current_values[1:]
+        if remaining:
+            self._metadata[key] = remaining
+        else:
+            del self._metadata[key]
 
     def delete_all(self, key: MetadataKey) -> None:
         """Delete all mappings for <key>."""

@@ -195,6 +195,30 @@ class TestTypeMetadata(unittest.TestCase):
         with self.assertRaises(KeyError):
             del metadata["other key"]
 
+    def test_delitem_removes_key_when_last_value_deleted(self):
+        # Deleting the last value for a key must remove it entirely so that
+        # __contains__ and __getitem__ stay consistent (Python container protocol).
+        metadata = Metadata(("foo", "bar"))
+        del metadata["foo"]
+        self.assertNotIn("foo", metadata)
+        self.assertIsNone(metadata.get("foo"))
+        self.assertEqual(list(metadata), [])
+
+        # Multi-value: intermediate deletes keep the key; final delete removes it.
+        metadata = Metadata(("foo", "bar"), ("foo", "baz"))
+        del metadata["foo"]
+        self.assertIn("foo", metadata)
+        self.assertEqual(metadata["foo"], "baz")
+        del metadata["foo"]
+        self.assertNotIn("foo", metadata)
+
+        # del and delete_all must leave __contains__ in the same state.
+        md1 = Metadata(("foo", "bar"))
+        del md1["foo"]
+        md2 = Metadata(("foo", "bar"))
+        md2.delete_all("foo")
+        self.assertEqual("foo" in md1, "foo" in md2)
+
     def test_metadata_from_tuple(self):
         scenarios = (
             (self._DEFAULT_DATA, Metadata(*self._DEFAULT_DATA)),
