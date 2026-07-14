@@ -49,20 +49,20 @@ class XdsHttpFilterRegistry final {
     return *this;
   }
 
-  void RegisterFilter(std::unique_ptr<XdsHttpFilterImpl> filter);
+  void RegisterFilter(std::unique_ptr<XdsHttpFilterFactory> factory);
 
-  const XdsHttpFilterImpl* GetFilterForTopLevelType(
+  const XdsHttpFilterFactory* GetFilterForTopLevelType(
       absl::string_view proto_type_name) const;
 
-  const XdsHttpFilterImpl* GetFilterForOverrideType(
+  const XdsHttpFilterFactory* GetFilterForOverrideType(
       absl::string_view proto_type_name) const;
 
   void PopulateSymtab(upb_DefPool* symtab) const;
 
  private:
-  std::vector<std::unique_ptr<XdsHttpFilterImpl>> owning_list_;
-  std::map<absl::string_view, XdsHttpFilterImpl*> top_level_config_map_;
-  std::map<absl::string_view, XdsHttpFilterImpl*> override_config_map_;
+  std::vector<std::unique_ptr<XdsHttpFilterFactory>> owning_list_;
+  std::map<absl::string_view, XdsHttpFilterFactory*> top_level_config_map_;
+  std::map<absl::string_view, XdsHttpFilterFactory*> override_config_map_;
 };
 
 }  // namespace grpc_core

@@ -505,19 +505,19 @@ Json ParseHttpRbacToJson(const XdsResourceType::DecodeContext& context,
 
 }  // namespace
 
-absl::string_view XdsHttpRbacFilter::ConfigProtoName() const {
+absl::string_view XdsHttpRbacFilterFactory::ConfigProtoName() const {
   return "envoy.extensions.filters.http.rbac.v3.RBAC";
 }
 
-absl::string_view XdsHttpRbacFilter::OverrideConfigProtoName() const {
+absl::string_view XdsHttpRbacFilterFactory::OverrideConfigProtoName() const {
   return "envoy.extensions.filters.http.rbac.v3.RBACPerRoute";
 }
 
-void XdsHttpRbacFilter::PopulateSymtab(upb_DefPool* symtab) const {
+void XdsHttpRbacFilterFactory::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_rbac_v3_RBAC_getmsgdef(symtab);
 }
 
-std::optional<Json> XdsHttpRbacFilter::GenerateFilterConfig(
+std::optional<Json> XdsHttpRbacFilterFactory::GenerateFilterConfig(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context,
     const XdsExtension& extension, ValidationErrors* errors) const {
@@ -537,7 +537,7 @@ std::optional<Json> XdsHttpRbacFilter::GenerateFilterConfig(
   return ParseHttpRbacToJson(context, rbac, errors);
 }
 
-std::optional<Json> XdsHttpRbacFilter::GenerateFilterConfigOverride(
+std::optional<Json> XdsHttpRbacFilterFactory::GenerateFilterConfigOverride(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context,
     const XdsExtension& extension, ValidationErrors* errors) const {
@@ -567,23 +567,23 @@ std::optional<Json> XdsHttpRbacFilter::GenerateFilterConfigOverride(
   return rbac_json;
 }
 
-void XdsHttpRbacFilter::AddFilter(
+void XdsHttpRbacFilterFactory::AddFilter(
     FilterChainBuilder& builder,
     RefCountedPtr<const FilterConfig> config) const {
   builder.AddFilter<RbacFilter>(std::move(config));
 }
 
-const grpc_channel_filter* XdsHttpRbacFilter::channel_filter() const {
+const grpc_channel_filter* XdsHttpRbacFilterFactory::channel_filter() const {
   return &RbacFilter::kFilterVtable;
 }
 
-ChannelArgs XdsHttpRbacFilter::ModifyChannelArgs(
+ChannelArgs XdsHttpRbacFilterFactory::ModifyChannelArgs(
     const ChannelArgs& args) const {
   return args.Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
 }
 
-absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
-XdsHttpRbacFilter::GenerateMethodConfig(
+absl::StatusOr<XdsHttpFilterFactory::ServiceConfigJsonEntry>
+XdsHttpRbacFilterFactory::GenerateMethodConfig(
     const Json& hcm_filter_config, const Json* filter_config_override) const {
   const Json& policy_json = filter_config_override != nullptr
                                 ? *filter_config_override
@@ -592,8 +592,8 @@ XdsHttpRbacFilter::GenerateMethodConfig(
   return ServiceConfigJsonEntry{"rbacPolicy", JsonDump(policy_json)};
 }
 
-absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
-XdsHttpRbacFilter::GenerateServiceConfig(
+absl::StatusOr<XdsHttpFilterFactory::ServiceConfigJsonEntry>
+XdsHttpRbacFilterFactory::GenerateServiceConfig(
     const Json& /*hcm_filter_config*/) const {
   return ServiceConfigJsonEntry{"", ""};
 }
@@ -941,7 +941,7 @@ Rbac ParseXdsRbac(const XdsResourceType::DecodeContext& context,
 
 }  // namespace
 
-RefCountedPtr<const FilterConfig> XdsHttpRbacFilter::ParseTopLevelConfig(
+RefCountedPtr<const FilterConfig> XdsHttpRbacFilterFactory::ParseTopLevelConfig(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context,
     const XdsExtension& extension, ValidationErrors* errors) const {
@@ -963,7 +963,7 @@ RefCountedPtr<const FilterConfig> XdsHttpRbacFilter::ParseTopLevelConfig(
   return config;
 }
 
-RefCountedPtr<const FilterConfig> XdsHttpRbacFilter::ParseOverrideConfig(
+RefCountedPtr<const FilterConfig> XdsHttpRbacFilterFactory::ParseOverrideConfig(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context,
     const XdsExtension& extension, ValidationErrors* errors) const {
