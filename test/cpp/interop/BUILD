@@ -13,6 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
 
 licenses(["notice"])
 
@@ -95,6 +96,28 @@ grpc_cc_binary(
 )
 
 grpc_cc_library(
+    name = "otel_helper_lib",
+    srcs = [
+        "otel_helper.cc",
+    ],
+    hdrs = [
+        "otel_helper.h",
+    ],
+    external_deps = [
+        "absl/flags:flag",
+        "absl/log",
+        "otel/api",
+        "otel/exporters/otlp:otlp_grpc_exporter",
+        "otel/sdk/src/trace",
+        "otel/sdk:headers",
+    ],
+    deps = [
+        "//:grpc++",
+        "//src/cpp/ext/otel:otel_plugin",
+    ],
+)
+
+grpc_cc_library(
     name = "interop_server_lib",
     srcs = [
         "interop_server.cc",
@@ -105,6 +128,7 @@ grpc_cc_library(
         "absl/log:check",
     ],
     deps = [
+        ":otel_helper_lib",
         ":server_helper_lib",
         "//:gpr",
         "//:grpc",
@@ -171,6 +195,7 @@ grpc_cc_library(
     ],
     deps = [
         ":client_helper_lib",
+        ":otel_helper_lib",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
@@ -784,5 +809,21 @@ grpc_cc_library(
         "//src/core:json_args",
         "//src/core:json_object_loader",
         "//src/core:pollset_set",
+    ],
+)
+
+grpc_cc_binary(
+    name = "otlp_collector",
+    srcs = ["otlp_collector.cc"],
+    external_deps = [
+        "absl/flags:flag",
+        "absl/flags:parse",
+        "absl/log",
+        "protobuf",
+    ],
+    deps = [
+        "//:grpc++",
+        "@opentelemetry-proto//:trace_service_grpc_cc",
+        "@opentelemetry-proto//:trace_service_proto_cc",
     ],
 )

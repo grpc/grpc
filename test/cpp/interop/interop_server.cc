@@ -16,6 +16,14 @@
 //
 //
 
+#include <fstream>
+#include <memory>
+#include <sstream>
+#include <thread>
+
+#include "absl/flags/flag.h"
+#include "absl/log/log.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
 #include <grpcpp/ext/call_metric_recorder.h>
@@ -26,11 +34,6 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include <fstream>
-#include <memory>
-#include <sstream>
-#include <thread>
-
 #include "src/core/util/crash.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/string.h"
@@ -38,10 +41,9 @@
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
+#include "test/cpp/interop/otel_helper.h"
 #include "test/cpp/interop/server_helper.h"
 #include "test/cpp/util/test_config.h"
-#include "absl/flags/flag.h"
-#include "absl/log/log.h"
 
 ABSL_FLAG(bool, use_alts, false,
           "Whether to use alts. Enable alts will disable tls.");
@@ -419,6 +421,7 @@ void grpc::testing::interop::RunServer(
     ServerStartedCondition* server_started_condition,
     std::unique_ptr<std::vector<std::unique_ptr<ServerBuilderOption>>>
         server_options) {
+  grpc::testing::interop::MaybeRegisterOpenTelemetry();
   GRPC_CHECK_NE(port, 0);
   std::ostringstream server_address;
   server_address << "0.0.0.0:" << port;
@@ -457,4 +460,5 @@ void grpc::testing::interop::RunServer(
     gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                  gpr_time_from_seconds(5, GPR_TIMESPAN)));
   }
+  grpc::testing::interop::ForceFlushOpenTelemetry();
 }

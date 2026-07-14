@@ -21,10 +21,117 @@ import json
 import multiprocessing
 import os
 import re
+import socket
 import subprocess
 import sys
 import time
 import uuid
+
+_collector_port = None
+
+def get_free_port():
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind(('', 0))
+    port = s.getsockname()[1]
+    s.close()
+    return port
+
+def verify_tracing_spans(spans_file):
+    start_time = time.time()
+    all_spans = []
+    client_span = None
+    attempt_span = None
+    server_span = None
+
+    print("Verifying tracing spans with polling...")
+    while time.time() - start_time < 5.0:
+        if not os.path.exists(spans_file):
+            time.sleep(0.5)
+            continue
+        try:
+            with open(spans_file, "r") as f:
+                requests = json.load(f)
+        except (json.JSONDecodeError, IOError):
+            time.sleep(0.5)
+            continue
+
+        all_spans = []
+        for req in requests:
+            for resource_spans in req.get("resource_spans", []):
+                for scope_spans in resource_spans.get("scope_spans", []):
+                    for span in scope_spans.get("spans", []):
+                        all_spans.append(span)
+
+        client_span = next((s for s in all_spans if s.get("name") in ("Sent.grpc.testing.TestService.EmptyCall", "Sent.grpc.testing.TestService/EmptyCall")), None)
+        if not client_span:
+            time.sleep(0.5)
+            continue
+
+        trace_id = client_span.get("trace_id")
+        if not trace_id:
+            time.sleep(0.5)
+            continue
+
+        attempt_span = next((s for s in all_spans if s.get("name") in ("Attempt.grpc.testing.TestService.EmptyCall", "Attempt.grpc.testing.TestService/EmptyCall") and s.get("trace_id") == trace_id), None)
+        server_span = next((s for s in all_spans if s.get("name") in ("Recv.grpc.testing.TestService.EmptyCall", "Recv.grpc.testing.TestService/EmptyCall") and s.get("trace_id") == trace_id), None)
+
+        if not attempt_span or not server_span:
+            time.sleep(0.5)
+            continue
+
+        # Found all three matching spans
+        break
+    else:
+        print("Verification Failed: Timed out waiting for all 3 expected spans.")
+        return False
+
+    trace_id = client_span.get("trace_id")
+    if attempt_span.get("trace_id") != trace_id or server_span.get("trace_id") != trace_id:
+        print("Verification Failed: Trace ID mismatch.")
+        return False
+
+    if attempt_span.get("parent_span_id") != client_span.get("span_id"):
+        print("Verification Failed: Attempt span parent mismatch.")
+        return False
+    if server_span.get("parent_span_id") != attempt_span.get("span_id"):
+        print("Verification Failed: Server span parent mismatch.")
+        return False
+
+    attributes = attempt_span.get("attributes", [])
+    prev_attempts = None
+    trans_retry = None
+    for attr in attributes:
+        key = attr.get("key")
+        val_dict = attr.get("value", {})
+        if key == "previous-rpc-attempts":
+            prev_attempts = val_dict.get("int_value")
+        elif key == "transparent-retry":
+            trans_retry = val_dict.get("bool_value")
+
+    if prev_attempts is None or int(prev_attempts) != 0:
+        print(f"Verification Failed: previous-rpc-attempts attribute mismatch.")
+        return False
+    if trans_retry is None or trans_retry is not False:
+        print(f"Verification Failed: transparent-retry attribute mismatch.")
+        return False
+
+    attempt_events = [e.get("name") for e in attempt_span.get("events", [])]
+    client_events = [e.get("name") for e in client_span.get("events", [])]
+    if "Outbound message" not in attempt_events and "Outbound message" not in client_events:
+        print("Verification Failed: Outbound event not found in Client or Attempt span.")
+        return False
+    if "Inbound message" not in attempt_events and "Inbound message" not in client_events:
+        print("Verification Failed: Inbound event not found in Client or Attempt span.")
+        return False
+
+    server_events = [e.get("name") for e in server_span.get("events", [])]
+    if "Inbound message" not in server_events or "Outbound message" not in server_events:
+        print("Verification Failed: Inbound/Outbound event not found in Server span.")
+        return False
+
+    print("OTel Tracing span verification succeeded!")
+    return True
+
 
 import python_utils.dockerjob as dockerjob
 import python_utils.jobset as jobset
@@ -736,6 +843,7 @@ _TEST_CASES = [
     "special_status_message",
     "orca_per_rpc",
     "orca_oob",
+    "test_unary_rpc_tracing_export",
 ]
 
 _AUTH_TEST_CASES = [
@@ -1054,6 +1162,17 @@ def cloud_to_cloud_jobspec(
         sys.exit(1)
 
     client_test_case = test_case
+    if test_case == "test_unary_rpc_tracing_export":
+        client_test_case = "empty_unary"
+        interop_only_options += ["--enable_opentelemetry=true"]
+        add_env = add_env.copy()
+        add_env["GRPC_EXPERIMENTAL_ENABLE_OTEL_TRACING"] = "true"
+        add_env["OTEL_TRACES_EXPORTER"] = "otlp"
+        add_env["OTEL_METRICS_EXPORTER"] = "none"
+        add_env["OTEL_LOGS_EXPORTER"] = "none"
+        if _collector_port:
+            collector_host = "host.docker.internal" if docker_image else "localhost"
+            add_env["OTEL_EXPORTER_OTLP_ENDPOINT"] = f"http://{collector_host}:{_collector_port}"
     if test_case in _HTTP2_SERVER_TEST_CASES_THAT_USE_GRPC_CLIENTS:
         client_test_case = _GRPC_CLIENT_TEST_CASES_FOR_HTTP2_SERVER_TEST_CASES[
             test_case
@@ -1147,6 +1266,16 @@ def server_jobspec(
         "interop_server_%s" % language.safename
     )
     server_cmd = ["--port=%s" % _DEFAULT_SERVER_PORT]
+    environ = language.global_env()
+    if _collector_port and language.safename in ["cxx", "java", "python"]:
+        server_cmd += ["--enable_opentelemetry=true"]
+        environ = environ.copy()
+        environ["GRPC_EXPERIMENTAL_ENABLE_OTEL_TRACING"] = "true"
+        environ["OTEL_TRACES_EXPORTER"] = "otlp"
+        environ["OTEL_METRICS_EXPORTER"] = "none"
+        environ["OTEL_LOGS_EXPORTER"] = "none"
+        collector_host = "host.docker.internal" if docker_image else "localhost"
+        environ["OTEL_EXPORTER_OTLP_ENDPOINT"] = f"http://{collector_host}:{_collector_port}"
     if transport_security == "tls":
         server_cmd += ["--use_tls=true"]
     elif transport_security == "alts":
@@ -1164,7 +1293,6 @@ def server_jobspec(
             "--max_concurrent_streams_limit=%d" % max_concurrent_streams_limit
         ]
     cmdline = bash_cmdline(language.server_cmd(server_cmd))
-    environ = language.global_env()
     docker_args = ["--name=%s" % container_name]
     if language.safename == "http2":
         # we are running the http2 interop server. Open next N ports beginning
@@ -1195,6 +1323,9 @@ def server_jobspec(
 
     else:
         docker_args += ["-p", str(_DEFAULT_SERVER_PORT)]
+
+    if docker_image:
+        docker_args = docker_args + ["--add-host=host.docker.internal:host-gateway"]
 
     docker_cmdline = docker_run_cmdline(
         cmdline,
@@ -1442,6 +1573,11 @@ argp.add_argument(
     nargs="?",
     help="Upload test results to a specified BQ table.",
 )
+argp.add_argument(
+    "--test_case",
+    type=str,
+    help="Run a specific test case. If not specified, all test cases will be run.",
+)
 args = argp.parse_args()
 
 servers = set(
@@ -1567,7 +1703,19 @@ client_manual_cmd_log = [] if args.manual_run else None
 # Start interop servers.
 server_jobs = {}
 server_addresses = {}
+collector_proc = None
 try:
+    if not args.manual_run:
+        has_cxx = ("c++" in args.language or "all" in args.language) or ("c++" in servers)
+        if has_cxx:
+            _collector_port = get_free_port()
+            spans_file = os.path.abspath("captured_spans.json")
+            if os.path.exists(spans_file):
+                os.remove(spans_file)
+            collector_cmd = ["./bazel-bin/test/cpp/interop/otlp_collector", f"--port={_collector_port}", f"--file={spans_file}"]
+            print(f"Starting OTLP collector on port {_collector_port}...")
+            collector_proc = subprocess.Popen(collector_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            time.sleep(1)
     for s in servers:
         lang = str(s)
         spec = server_jobspec(
@@ -1610,6 +1758,10 @@ try:
         for server_host_nickname in args.prod_servers:
             for language in languages:
                 for test_case in _TEST_CASES:
+                    if args.test_case and test_case != args.test_case:
+                        continue
+                    if test_case == "test_unary_rpc_tracing_export":
+                        continue
                     if not test_case in language.unimplemented_test_cases():
                         if (
                             not test_case
@@ -1654,6 +1806,8 @@ try:
                                 jobs.append(test_job)
             if args.http2_interop:
                 for test_case in _HTTP2_TEST_CASES:
+                    if args.test_case and test_case != args.test_case:
+                        continue
                     test_job = cloud_to_prod_jobspec(
                         http2Interop,
                         test_case,
@@ -1674,6 +1828,8 @@ try:
         for server_host_nickname in args.prod_servers:
             for language in languages:
                 for test_case in _AUTH_TEST_CASES:
+                    if args.test_case and test_case != args.test_case:
+                        continue
                     if (
                         not args.skip_compute_engine_creds
                         or not compute_engine_creds_required(
@@ -1726,6 +1882,12 @@ try:
             skip_server = server_language.unimplemented_test_cases_server()
         for language in languages:
             for test_case in _TEST_CASES:
+                if args.test_case and test_case != args.test_case:
+                    continue
+                if test_case == "test_unary_rpc_tracing_export":
+                    allowed_tracing_languages = ["c++", "java", "python"]
+                    if str(language) not in allowed_tracing_languages or server_name not in allowed_tracing_languages:
+                        continue
                 if not test_case in language.unimplemented_test_cases():
                     if not test_case in skip_server:
                         test_job = cloud_to_cloud_jobspec(
@@ -1742,6 +1904,8 @@ try:
 
         if args.http2_interop:
             for test_case in _HTTP2_TEST_CASES:
+                if args.test_case and test_case != args.test_case:
+                    continue
                 if server_name == "go":
                     # TODO(carl-mastrangelo): Reenable after https://github.com/grpc/grpc-go/issues/434
                     continue
@@ -1764,6 +1928,8 @@ try:
             for test_case in set(_HTTP2_SERVER_TEST_CASES) - set(
                 _HTTP2_SERVER_TEST_CASES_THAT_USE_GRPC_CLIENTS
             ):
+                if args.test_case and test_case != args.test_case:
+                    continue
                 offset = sorted(_HTTP2_SERVER_TEST_CASES).index(test_case)
                 server_port = _DEFAULT_SERVER_PORT + offset
                 if not args.manual_run:
@@ -1867,6 +2033,12 @@ try:
         maxjobs=args.jobs,
         skip_jobs=args.manual_run,
     )
+    if not num_failures and not args.manual_run:
+        has_tracing_test = any(job.shortname.find("test_unary_rpc_tracing_export") != -1 for job in jobs)
+        if has_tracing_test:
+            spans_file = os.path.abspath("captured_spans.json")
+            if not verify_tracing_spans(spans_file):
+                num_failures = 1
     if args.bq_result_table and resultset:
         upload_interop_results_to_bq(resultset, args.bq_result_table)
     if num_failures:
@@ -1892,6 +2064,18 @@ try:
     else:
         sys.exit(0)
 finally:
+    if collector_proc:
+        print("Terminating OTLP collector...")
+        try:
+            collector_proc.terminate()
+            collector_proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            try:
+                collector_proc.kill()
+            except Exception:
+                pass
+        except Exception as e:
+            print(f"Error terminating OTLP collector: {e}")
     # Check if servers are still running.
     for server, job in list(server_jobs.items()):
         if not job.is_running():
