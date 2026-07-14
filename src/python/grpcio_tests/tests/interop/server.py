@@ -14,13 +14,16 @@
 """The Python implementation of the GRPC interoperability test server."""
 
 import os
+
 os.environ["GRPC_BAZEL_RUNTIME"] = "1"
 try:
     from tests import bazel_namespace_package_hack
+
     bazel_namespace_package_hack.sys_path_to_site_dir_hack()
 except ImportError:
     pass
 
+# pylint: disable=wrong-import-position
 from concurrent import futures
 import logging
 
@@ -32,6 +35,7 @@ from src.proto.grpc.testing import test_pb2_grpc
 from tests.interop import resources
 from tests.interop import service
 from tests.unit import test_common
+# pylint: enable=wrong-import-position
 
 logging.basicConfig()
 _LOGGER = logging.getLogger(__name__)

@@ -29,10 +29,9 @@
 #include "absl/flags/parse.h"
 #include "absl/log/log.h"
 
+#include <google/protobuf/util/json_util.h>
 #include <grpc/support/atm.h>
 #include <grpcpp/grpcpp.h>
-
-#include <google/protobuf/util/json_util.h>
 #include "opentelemetry/proto/collector/trace/v1/trace_service.grpc.pb.h"
 
 ABSL_FLAG(int, port, 0, "Port to listen on");

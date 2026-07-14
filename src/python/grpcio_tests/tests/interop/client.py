@@ -14,20 +14,24 @@
 """The Python implementation of the GRPC interoperability test client."""
 
 import os
+
 os.environ["GRPC_BAZEL_RUNTIME"] = "1"
 try:
     from tests import bazel_namespace_package_hack
+
     bazel_namespace_package_hack.sys_path_to_site_dir_hack()
 except ImportError:
     pass
 
+# pylint: disable=wrong-import-position
 from absl import app
 from absl.flags import argparse_flags
 import grpc
 
-from tests.interop import methods
 from src.proto.grpc.testing import test_pb2_grpc
+from tests.interop import methods
 from tests.interop import resources
+# pylint: enable=wrong-import-position
 
 
 def parse_interop_client_args(argv):
@@ -107,7 +111,6 @@ def parse_interop_client_args(argv):
 
 
 def _create_call_credentials(args):
-    import os
     from google import auth as google_auth
     from google.auth import jwt as google_auth_jwt
     if args.test_case == "oauth2_auth_token":
