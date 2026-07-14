@@ -178,17 +178,17 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
     // dtor sets state->watcher to nullptr.
     ~TlsCertificatesTestWatcher() override { state_->watcher = nullptr; }
 
-    void OnCertificatesChanged(
-        std::shared_ptr<tsi::RootCertInfo> roots,
-        std::optional<IdentityCredentials> identity_creds) override {
+    void OnCertificatesChanged(std::shared_ptr<tsi::RootCertInfo> roots,
+                               std::optional<KeyCertPairsOrSelector>
+                                   key_cert_pairs_or_selector) override {
       std::shared_ptr<tsi::RootCertInfo> updated_root;
       if (roots != nullptr) {
         updated_root = std::move(roots);
       }
       PemKeyCertPairList key_cert_pairs;
-      if (identity_creds.has_value()) {
+      if (key_cert_pairs_or_selector.has_value()) {
         MatchMutable(
-            &(*identity_creds),
+            &(*key_cert_pairs_or_selector),
             [&](PemKeyCertPairList* pem_key_cert_pairs) {
               key_cert_pairs = std::move(*pem_key_cert_pairs);
             },

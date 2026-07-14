@@ -195,12 +195,13 @@ class PemKeyCertPair {
 };
 
 using PemKeyCertPairList = std::vector<PemKeyCertPair>;
-using IdentityCredentials =
+using KeyCertPairsOrSelector =
     std::variant<PemKeyCertPairList, std::shared_ptr<CertificateSelector>>;
 
 // Checks whether `std::vector<PemKeyCertPair>` in the variant is empty, or the
 // `CertficateSelector` is nullptr.
-bool IsIdentityCredentialsEmpty(const IdentityCredentials& identity_creds);
+bool IsKeyCertPairsOrSelectorEmpty(
+    const KeyCertPairsOrSelector& key_cert_pairs_or_selector);
 
 }  // namespace grpc_core
 

@@ -65,11 +65,6 @@ class SyncTestCertificateSelector : public grpc_core::CertificateSelector {
 
 class AsyncTestCertificateSelector : public grpc_core::CertificateSelector {
  public:
-  struct AsyncCertificateSelectionHandleInternal
-      : public AsyncCertificateSelectionHandle {
-    grpc_event_engine::experimental::EventEngine::TaskHandle task_handle;
-  };
-
   AsyncTestCertificateSelector(
       absl::string_view pem_cert_chain,
       std::variant<absl::string_view,
@@ -91,6 +86,11 @@ class AsyncTestCertificateSelector : public grpc_core::CertificateSelector {
   bool WasCancelled();
 
  private:
+  struct AsyncCertificateSelectionHandleInternal
+      : public AsyncCertificateSelectionHandle {
+    grpc_event_engine::experimental::EventEngine::TaskHandle task_handle;
+  };
+
   absl::string_view pem_cert_chain_;
   std::variant<absl::string_view,
                std::shared_ptr<grpc::experimental::PrivateKeySigner>>

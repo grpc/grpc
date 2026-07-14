@@ -69,11 +69,6 @@ class AsyncTestPrivateKeySigner final
  public:
   enum class Mode { kSuccess, kDelayed, kCancellation, kError };
 
-  struct AsyncSigningHandleInternal
-      : public grpc_core::PrivateKeySigner::AsyncSigningHandle {
-    grpc_event_engine::experimental::EventEngine::TaskHandle task_handle;
-  };
-
   explicit AsyncTestPrivateKeySigner(
       absl::string_view private_key, Mode mode = Mode::kSuccess,
       absl::Duration delay = absl::ZeroDuration());
@@ -89,6 +84,11 @@ class AsyncTestPrivateKeySigner final
   bool WasCancelled() { return was_cancelled_.load(); }
 
  private:
+  struct AsyncSigningHandleInternal
+      : public grpc_core::PrivateKeySigner::AsyncSigningHandle {
+    grpc_event_engine::experimental::EventEngine::TaskHandle task_handle;
+  };
+
   bssl::UniquePtr<EVP_PKEY> pkey_;
   Mode mode_;
   absl::Duration delay_;

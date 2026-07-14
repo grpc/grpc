@@ -100,9 +100,9 @@ class TlsChannelSecurityConnector final
   std::optional<PemKeyCertPairList> KeyCertPairListForTesting() {
     MutexLock lock(&mu_);
     std::optional<PemKeyCertPairList> pem_key_cert_pairs;
-    if (identity_creds_.has_value()) {
+    if (key_cert_pairs_or_selector_.has_value()) {
       Match(
-          *identity_creds_,
+          *key_cert_pairs_or_selector_,
           [&pem_key_cert_pairs](const PemKeyCertPairList& key_cert_pairs) {
             pem_key_cert_pairs = key_cert_pairs;
           },
@@ -126,9 +126,9 @@ class TlsChannelSecurityConnector final
     explicit TlsChannelCertificateWatcher(
         TlsChannelSecurityConnector* security_connector)
         : security_connector_(security_connector) {}
-    void OnCertificatesChanged(
-        std::shared_ptr<tsi::RootCertInfo> root_certs,
-        std::optional<IdentityCredentials> identity_creds) override;
+    void OnCertificatesChanged(std::shared_ptr<tsi::RootCertInfo> root_certs,
+                               std::optional<KeyCertPairsOrSelector>
+                                   key_cert_pairs_or_selector) override;
     void OnError(grpc_error_handle root_cert_error,
                  grpc_error_handle identity_cert_error) override;
 
@@ -179,7 +179,8 @@ class TlsChannelSecurityConnector final
       ABSL_GUARDED_BY(mu_) = nullptr;
   tsi_ssl_session_cache* ssl_session_cache_ ABSL_GUARDED_BY(mu_) = nullptr;
   RefCountedPtr<TlsSessionKeyLogger> tls_session_key_logger_;
-  std::optional<IdentityCredentials> identity_creds_ ABSL_GUARDED_BY(mu_);
+  std::optional<KeyCertPairsOrSelector> key_cert_pairs_or_selector_
+      ABSL_GUARDED_BY(mu_);
   std::shared_ptr<tsi::RootCertInfo> root_cert_info_ ABSL_GUARDED_BY(mu_);
   std::map<grpc_closure* /*on_peer_checked*/, ChannelPendingVerifierRequest*>
       pending_verifier_requests_ ABSL_GUARDED_BY(verifier_request_map_mu_);
@@ -220,9 +221,9 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
   std::optional<PemKeyCertPairList> KeyCertPairListForTesting() {
     MutexLock lock(&mu_);
     std::optional<PemKeyCertPairList> pem_key_cert_pairs;
-    if (identity_creds_.has_value()) {
+    if (key_cert_pairs_or_selector_.has_value()) {
       Match(
-          *identity_creds_,
+          *key_cert_pairs_or_selector_,
           [&pem_key_cert_pairs](const PemKeyCertPairList& key_cert_pairs) {
             pem_key_cert_pairs = key_cert_pairs;
           },
@@ -246,9 +247,9 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
     explicit TlsServerCertificateWatcher(
         TlsServerSecurityConnector* security_connector)
         : security_connector_(security_connector) {}
-    void OnCertificatesChanged(
-        std::shared_ptr<tsi::RootCertInfo> roots,
-        std::optional<IdentityCredentials> identity_creds) override;
+    void OnCertificatesChanged(std::shared_ptr<tsi::RootCertInfo> roots,
+                               std::optional<KeyCertPairsOrSelector>
+                                   key_cert_pairs_or_selector) override;
 
     void OnError(grpc_error_handle root_cert_error,
                  grpc_error_handle identity_cert_error) override;
@@ -296,7 +297,8 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
       identity_certificate_watcher_ = nullptr;
   tsi_ssl_server_handshaker_factory* server_handshaker_factory_
       ABSL_GUARDED_BY(mu_) = nullptr;
-  std::optional<IdentityCredentials> identity_creds_ ABSL_GUARDED_BY(mu_);
+  std::optional<KeyCertPairsOrSelector> key_cert_pairs_or_selector_
+      ABSL_GUARDED_BY(mu_);
   std::shared_ptr<tsi::RootCertInfo> root_cert_info_ ABSL_GUARDED_BY(mu_);
   RefCountedPtr<TlsSessionKeyLogger> tls_session_key_logger_;
   std::map<grpc_closure* /*on_peer_checked*/, ServerPendingVerifierRequest*>

@@ -48,8 +48,8 @@ class RootCertificatesWatcher final
       : parent_(std::move(parent)) {}
 
   void OnCertificatesChanged(std::shared_ptr<RootCertInfo> roots,
-                             std::optional<IdentityCredentials>
-                             /* identity_creds */) override {
+                             std::optional<KeyCertPairsOrSelector>
+                             /* key_cert_pairs_or_selector */) override {
     if (roots != nullptr) {
       parent_->SetKeyMaterials("", roots, std::nullopt);
     }
@@ -79,11 +79,11 @@ class IdentityCertificatesWatcher final
       RefCountedPtr<grpc_tls_certificate_distributor> parent)
       : parent_(std::move(parent)) {}
 
-  void OnCertificatesChanged(
-      std::shared_ptr<RootCertInfo> /* root_certs */,
-      std::optional<IdentityCredentials> identity_creds) override {
-    if (identity_creds.has_value()) {
-      parent_->SetKeyMaterials("", nullptr, identity_creds);
+  void OnCertificatesChanged(std::shared_ptr<RootCertInfo> /* root_certs */,
+                             std::optional<KeyCertPairsOrSelector>
+                                 key_cert_pairs_or_selector) override {
+    if (key_cert_pairs_or_selector.has_value()) {
+      parent_->SetKeyMaterials("", nullptr, key_cert_pairs_or_selector);
     }
   }
 

@@ -192,7 +192,7 @@ class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
   // successful.
   absl::Status UpdateRoot(std::shared_ptr<tsi::RootCertInfo> root_certificates);
   absl::Status UpdateIdentityKeyCertPair(
-      const IdentityCredentials& identity_creds);
+      const KeyCertPairsOrSelector& key_cert_pairs_or_selector);
 
  private:
   struct WatcherInfo {
@@ -206,7 +206,7 @@ class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
   }
   absl::Status Update(
       std::optional<std::shared_ptr<tsi::RootCertInfo>> root_cert_info,
-      std::optional<const IdentityCredentials> identity_creds);
+      std::optional<const KeyCertPairsOrSelector> key_cert_pairs_or_selector);
 
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
 
@@ -214,7 +214,7 @@ class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
   mutable Mutex mu_;
   // The most-recent credential data. It will be empty if the most recent read
   // attempt failed.
-  IdentityCredentials identity_creds_ ABSL_GUARDED_BY(mu_);
+  KeyCertPairsOrSelector key_cert_pairs_or_selector_ ABSL_GUARDED_BY(mu_);
   absl::StatusOr<std::shared_ptr<tsi::RootCertInfo>> root_certificates_
       ABSL_GUARDED_BY(mu_);
   // Stores each cert_name we get from the distributor callback and its watcher

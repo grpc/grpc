@@ -32,6 +32,7 @@
 #include <vector>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/util/down_cast.h"
 #include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -168,7 +169,6 @@ std::variant<absl::StatusOr<std::string>,
 AsyncTestPrivateKeySigner::Sign(absl::string_view data_to_sign,
                                 SignatureAlgorithm signature_algorithm,
                                 OnSignComplete on_sign_complete) {
-  grpc_core::ExecCtx exec_ctx;
   auto event_engine = grpc_event_engine::experimental::GetDefaultEventEngine();
   auto handle = std::make_shared<AsyncSigningHandleInternal>();
 
@@ -198,10 +198,10 @@ AsyncTestPrivateKeySigner::Sign(absl::string_view data_to_sign,
 void AsyncTestPrivateKeySigner::Cancel(
     std::shared_ptr<grpc_core::PrivateKeySigner::AsyncSigningHandle> handle) {
   if (mode_ == Mode::kDelayed) {
-    grpc_core::ExecCtx exec_ctx;
     auto event_engine =
         grpc_event_engine::experimental::GetDefaultEventEngine();
-    auto* internal_handle = DownCast<AsyncSigningHandleInternal*>(handle.get());
+    auto* internal_handle =
+        grpc_core::DownCast<AsyncSigningHandleInternal*>(handle.get());
     event_engine->Cancel(internal_handle->task_handle);
   }
 }
