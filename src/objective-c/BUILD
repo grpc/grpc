@@ -145,7 +145,6 @@ grpc_objc_library(
         "//:grpc",
         "//:grpc++_public_hdrs",
         "//:grpc_core_credentials_header",
-        "//:grpc_objc",
     ],
 )
 
@@ -247,8 +246,8 @@ grpc_objc_library(
         ":rx_library",
         ":rx_library_headers",
         "//:gpr",
+        "//:grpc",
         "//:grpc_core_credentials_header",
-        "//:grpc_objc",
     ],
 )
 
