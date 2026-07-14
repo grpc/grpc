@@ -823,7 +823,7 @@ grpc_cc_binary(
     ],
     deps = [
         "//:grpc++",
-        "@opentelemetry-proto//:trace_service_grpc_cc",
-        "@opentelemetry-proto//:trace_service_proto_cc",
+        "@opentelemetry_proto//:trace_service_grpc_cc",
+        "@opentelemetry_proto//:trace_service_proto_cc",
     ],
 )

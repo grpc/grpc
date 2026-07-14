@@ -381,6 +381,17 @@ def grpc_deps():
             ],
         )
 
+    if "opentelemetry_proto" not in native.existing_rules():
+        http_archive(
+            name = "opentelemetry_proto",
+            sha256 = "07e26be7cc16630f5cc8910076a086f6858288fb9868ef648d08cb5cf876d756",
+            strip_prefix = "opentelemetry-proto-1.8.0",
+            urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/open-telemetry/opentelemetry-proto/archive/refs/tags/v1.8.0.tar.gz",
+                "https://github.com/open-telemetry/opentelemetry-proto/archive/refs/tags/v1.8.0.tar.gz",
+            ],
+        )
+
     # Building grpc with openssl is only supported when using bzlmod. Workspaces
     # are deprecated, so just create a dummy repo so that the grpc targets build
     # when using workspaces.

@@ -50,6 +50,7 @@ bazel_dep(name = "googletest", version = "1.17.0", repo_name = "com_google_googl
 bazel_dep(name = "opencensus-cpp", version = "0.0.0-20230502-50eb5de.bcr.2", repo_name = "io_opencensus_cpp")
 bazel_dep(name = "openssl", version = "3.3.1.bcr.1")
 bazel_dep(name = "opentelemetry-cpp", version = "1.19.0", repo_name = "io_opentelemetry_cpp")
+bazel_dep(name = "opentelemetry-proto", version = "1.8.0", repo_name = "opentelemetry_proto")
 
 # --- Protobuf related packages.
 bazel_dep(name = "protobuf", version = "35.1", repo_name = "com_google_protobuf")
