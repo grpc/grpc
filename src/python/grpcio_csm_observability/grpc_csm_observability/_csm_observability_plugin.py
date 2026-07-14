@@ -30,13 +30,14 @@ from opentelemetry.semconv.resource import ResourceAttributes
 
 TRAFFIC_DIRECTOR_AUTHORITY = "traffic-director-global.xds.googleapis.com"
 UNKNOWN_VALUE = "unknown"
+TYPE = "type"
 TYPE_GCE = "gcp_compute_engine"
 TYPE_GKE = "gcp_kubernetes_engine"
 MESH_ID_PREFIX = "mesh:"
 METADATA_EXCHANGE_KEY = "XEnvoyPeerMetadata"
 
 METADATA_EXCHANGE_KEY_FIXED_MAP = {
-    "type": "csm.remote_workload_type",
+    TYPE: "csm.remote_workload_type",
     "canonical_service": "csm.remote_workload_canonical_service",
 }
 
@@ -103,7 +104,7 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
             ResourceAttributes.CLOUD_ACCOUNT_ID, gcp_resource
         )
 
-        fields["type"] = struct_pb2.Value(string_value=resource_type_value)
+        fields[TYPE] = struct_pb2.Value(string_value=resource_type_value)
         fields["canonical_service"] = struct_pb2.Value(
             string_value=canonical_service_value
         )
@@ -278,7 +279,7 @@ def _deserialize_remote_labels(
         for local_key, remote_key in METADATA_EXCHANGE_KEY_FIXED_MAP.items()
     }
 
-    remote_type = get_value_from_struct("type", pb_struct)
+    remote_type = get_value_from_struct(TYPE, pb_struct)
     remote_type_map = _METADATA_EXCHANGE_MAP_BY_TYPE.get(remote_type)
     if remote_type_map:
         remote_labels.update(
