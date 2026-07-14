@@ -12,17 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:12
+FROM debian:11
 
 {% include "../../apt_get_basic.include" %}
-{% include "../../run_tests_python_deps_pep668.include" %}
+{% include "../../run_tests_python_deps.include" %}
 {% include "../../cxx_test_deps.include" %}
 {% include "../../cxx_deps.include" %}
 {% include "../../cmake.include" %}
 {% include "../../ccache.include" %}
 {% include "../../run_tests_addons.include" %}
 
-# Install openssl 1.1.1 by installing libssl-dev on debian:12
+# Install openssl 1.1.1 by installing libssl-dev on debian:11
 RUN apt-get update && apt-get install -y build-essential zlib1g-dev libssl-dev
 
 # Define the default command.

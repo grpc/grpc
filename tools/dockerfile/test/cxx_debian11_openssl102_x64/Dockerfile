@@ -1,4 +1,4 @@
-# Copyright 2023 the gRPC authors.
+# Copyright 2021 the gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:12
+FROM debian:11
 
 #=================
 # Basic C core dependencies
@@ -76,10 +76,7 @@ RUN apt-get update && apt-get install -y \
   && apt-get clean
 
 # use pinned version of pip to avoid sudden breakages
-# Some newer distros that have already implemented PEP 668. Use of
-# --break-system-packages is to workaround that. We should look into using
-# virtualenv in Dockerfile though.
-RUN python3 -m pip install --break-system-packages --upgrade pip==19.3.1
+RUN python3 -m pip install --upgrade pip==19.3.1
 
 # TODO(jtattermusch): currently six is needed for tools/run_tests scripts
 # but since our python2 usage is deprecated, we should get rid of it.
@@ -121,8 +118,17 @@ RUN curl -sSL --fail --retry 5 -o ccache.tar.gz https://github.com/ccache/ccache
 RUN mkdir /var/local/jenkins
 
 
-# Install openssl 1.1.1 by installing libssl-dev on debian:12
-RUN apt-get update && apt-get install -y build-essential zlib1g-dev libssl-dev
+# Install openssl 1.0.2 from source
+RUN apt-get update && apt-get install -y build-essential zlib1g-dev
+RUN cd /tmp && \
+    wget --no-check-certificate https://www.openssl.org/source/openssl-1.0.2u.tar.gz && \
+    tar -xf openssl-1.0.2u.tar.gz && \
+    cd openssl-1.0.2u && \
+    ./config --prefix=/usr/local/ssl --openssldir=/usr/local/ssl shared zlib && \
+    make -j 4 && \
+    make install && \
+    rm -rf /tmp/openssl-1.0.2u*
+ENV OPENSSL_ROOT_DIR=/usr/local/ssl
 
 # Define the default command.
 CMD ["bash"]
