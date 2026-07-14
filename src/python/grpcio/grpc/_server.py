@@ -623,20 +623,16 @@ def _call_behavior(
         try:
             response_or_iterator: Optional[Union[ResponseType, Iterator[ResponseType]]] = None
             if behavior is not None:
+                casted_behaviour = cast(
+                    Callable[..., Union[ResponseType, Iterator[ResponseType]]],
+                    behavior,
+                )
                 if send_response_callback is not None:
-                    experimental_behavior = cast(
-                        Callable[..., Union[ResponseType, Iterator[ResponseType]]],
-                        behavior,
-                    )
-                    response_or_iterator = experimental_behavior(
+                    response_or_iterator = casted_behaviour(
                         argument, context, send_response_callback
                     )
                 else:
-                    standard_behavior = cast(
-                        Callable[..., Union[ResponseType, Iterator[ResponseType]]],
-                        behavior,
-                    )
-                    response_or_iterator = standard_behavior(argument, context)
+                    response_or_iterator = casted_behaviour(argument, context)
             return response_or_iterator, True
         except Exception as exception:  # pylint: disable=broad-except
             with state.condition:
