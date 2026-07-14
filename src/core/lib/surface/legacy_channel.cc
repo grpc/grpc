@@ -180,7 +180,9 @@ grpc_call* LegacyChannel::CreateCall(
   args.authority = std::move(authority);
   args.send_deadline = deadline;
   args.registered_method = registered_method;
-  args.arena_init_function = arena_init_function;
+  if (arena_init_function.has_value()) {
+    args.arena_init_function.emplace(*arena_init_function);
+  }
   grpc_call* call;
   GRPC_LOG_IF_ERROR("call_create", grpc_call_create(&args, &call));
   return call;
