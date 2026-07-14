@@ -122,7 +122,7 @@ grpc_run_tests_harness_test(
     args = [
         "-l csharp -c dbg",
     ],
-    docker_image_version = "tools/dockerfile/test/csharp_debian12_x64.current_version",
+    docker_image_version = "tools/dockerfile/test/csharp_debian11_x64.current_version",
 )
 
 grpc_run_tests_harness_test(
@@ -131,7 +131,7 @@ grpc_run_tests_harness_test(
     args = [
         "-l csharp -c opt",
     ],
-    docker_image_version = "tools/dockerfile/test/csharp_debian12_x64.current_version",
+    docker_image_version = "tools/dockerfile/test/csharp_debian11_x64.current_version",
 )
 
 test_suite(
@@ -320,7 +320,7 @@ grpc_build_artifact_task(
         "artifact_protoc_linux_aarch64",
     ],
     build_script = "build_package_csharp_linux.sh",
-    docker_image_version = "tools/dockerfile/test/csharp_debian12_x64.current_version",
+    docker_image_version = "tools/dockerfile/test/csharp_debian11_x64.current_version",
 )
 
 # C# distribtests
@@ -332,7 +332,7 @@ grpc_run_distribtest_test(
         "package_csharp_linux",
     ],
     build_script = "run_distribtest_csharp_linux.sh",
-    docker_image_version = "tools/dockerfile/distribtest/csharp_debian12_x64.current_version",
+    docker_image_version = "tools/dockerfile/distribtest/csharp_debian11_x64.current_version",
 )
 
 grpc_run_distribtest_test(

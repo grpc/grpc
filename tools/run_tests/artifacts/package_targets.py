@@ -111,7 +111,7 @@ class CSharpPackage:
         if self.platform == "linux":
             return create_docker_jobspec(
                 self.name,
-                "tools/dockerfile/test/csharp_debian12_x64",
+                "tools/dockerfile/test/csharp_debian11_x64",
                 build_script,
                 environ=environ,
             )
