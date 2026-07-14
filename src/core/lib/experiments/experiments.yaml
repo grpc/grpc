@@ -186,7 +186,7 @@
   test_tags: []
 - name: local_connector_secure
   description: Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP connections.
-  expiry: 2026/07/15
+  expiry: 2026/08/30
   owner: mattstev@google.com
   test_tags: ["core_end2end_test"]
 - name: memory_optimization_01
