@@ -88,7 +88,7 @@ ARM_DOCKERFILE_DIRS=(
   tools/dockerfile/test/bazel_arm64
   tools/dockerfile/test/csharp_debian11_arm64
   tools/dockerfile/test/php8_debian12_arm64
-  tools/dockerfile/test/python_debian11_default_arm64
+  tools/dockerfile/test/python_debian12_default_arm64
   # TODO(weizheyuan): is this image still used?
   tools/dockerfile/test/ruby_debian11_arm64
 )
