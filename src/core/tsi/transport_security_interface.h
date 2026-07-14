@@ -465,6 +465,10 @@ typedef void (*tsi_handshaker_on_next_done_cb)(
     tsi_result status, void* user_data, const unsigned char* bytes_to_send,
     size_t bytes_to_send_size, tsi_handshaker_result* handshaker_result);
 
+struct TsiErrorDetails {
+  std::string error;
+};
+
 // Conduct a next step of the handshake.
 // - received_bytes is the buffer containing the data received from the peer.
 // - received_bytes_size is the size of the data received from the peer.
@@ -491,14 +495,12 @@ typedef void (*tsi_handshaker_on_next_done_cb)(
 // The caller is responsible for destroying the handshaker_result. However,
 // the caller should not free bytes_to_send, as the buffer is owned by the
 // tsi_handshaker object.
-tsi_result tsi_handshaker_next(tsi_handshaker* self,
-                               const unsigned char* received_bytes,
-                               size_t received_bytes_size,
-                               const unsigned char** bytes_to_send,
-                               size_t* bytes_to_send_size,
-                               tsi_handshaker_result** handshaker_result,
-                               tsi_handshaker_on_next_done_cb cb,
-                               void* user_data, std::string* error = nullptr);
+tsi_result tsi_handshaker_next(
+    tsi_handshaker* self, const unsigned char* received_bytes,
+    size_t received_bytes_size, const unsigned char** bytes_to_send,
+    size_t* bytes_to_send_size, tsi_handshaker_result** handshaker_result,
+    tsi_handshaker_on_next_done_cb cb, void* user_data,
+    TsiErrorDetails* error = nullptr);
 
 // This method shuts down a TSI handshake that is in progress.
 //

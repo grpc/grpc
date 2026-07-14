@@ -206,25 +206,30 @@ tsi_result tsi_handshaker_create_frame_protector(
   return result;
 }
 
-tsi_result tsi_handshaker_next(
-    tsi_handshaker* self, const unsigned char* received_bytes,
-    size_t received_bytes_size, const unsigned char** bytes_to_send,
-    size_t* bytes_to_send_size, tsi_handshaker_result** handshaker_result,
-    tsi_handshaker_on_next_done_cb cb, void* user_data, std::string* error) {
+tsi_result tsi_handshaker_next(tsi_handshaker* self,
+                               const unsigned char* received_bytes,
+                               size_t received_bytes_size,
+                               const unsigned char** bytes_to_send,
+                               size_t* bytes_to_send_size,
+                               tsi_handshaker_result** handshaker_result,
+                               tsi_handshaker_on_next_done_cb cb,
+                               void* user_data, TsiErrorDetails* error) {
   if (self == nullptr || self->vtable == nullptr) {
-    if (error != nullptr) *error = "invalid argument";
+    if (error != nullptr) error->error = "invalid argument";
     return TSI_INVALID_ARGUMENT;
   }
   if (self->handshaker_result_created) {
-    if (error != nullptr) *error = "handshaker already returned a result";
+    if (error != nullptr) error->error = "handshaker already returned a result";
     return TSI_FAILED_PRECONDITION;
   }
   if (self->handshake_shutdown) {
-    if (error != nullptr) *error = "handshaker shutdown";
+    if (error != nullptr) error->error = "handshaker shutdown";
     return TSI_HANDSHAKE_SHUTDOWN;
   }
   if (self->vtable->next == nullptr) {
-    if (error != nullptr) *error = "TSI handshaker does not implement next()";
+    if (error != nullptr) {
+      error->error = "TSI handshaker does not implement next()";
+    }
     return TSI_UNIMPLEMENTED;
   }
   return self->vtable->next(self, received_bytes, received_bytes_size,

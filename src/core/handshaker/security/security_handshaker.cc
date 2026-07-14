@@ -125,7 +125,7 @@ class SecurityHandshaker : public Handshaker {
   RefCountedPtr<grpc_auth_context> auth_context_;
   tsi_handshaker_result* handshaker_result_ = nullptr;
   size_t max_frame_size_ = 0;
-  std::string tsi_handshake_error_;
+  TsiErrorDetails tsi_handshake_error_;
   grpc_closure* on_peer_checked_ ABSL_GUARDED_BY(mu_) = nullptr;
 };
 
@@ -361,10 +361,11 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
   if (result != TSI_OK) {
     // TODO(roth): Get a better signal from the TSI layer as to what
     // status code we should use here.
-    return GRPC_ERROR_CREATE(absl::StrCat(
-        connector_->type().name(), " handshake failed (",
-        tsi_result_to_string(result), ")",
-        (tsi_handshake_error_.empty() ? "" : ": "), tsi_handshake_error_));
+    return GRPC_ERROR_CREATE(
+        absl::StrCat(connector_->type().name(), " handshake failed (",
+                     tsi_result_to_string(result), ")",
+                     (tsi_handshake_error_.error.empty() ? "" : ": "),
+                     tsi_handshake_error_.error));
   }
   // Update handshaker result.
   if (handshaker_result != nullptr) {
