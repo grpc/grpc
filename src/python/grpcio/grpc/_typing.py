@@ -61,7 +61,7 @@ IntegratedCallFactory = Callable[
     cygrpc.IntegratedCall,
 ]
 ServerTagCallbackType = Tuple[
-    Optional["_RPCState"], Optional[Sequence[NullaryCallbackType]]
+    Optional["_RPCState[Any]"], Optional[Sequence[NullaryCallbackType]]
 ]
 ServerCallbackTag = Callable[[cygrpc.BaseEvent], ServerTagCallbackType]
 ArityAgnosticMethodHandler = Union[
