@@ -186,7 +186,7 @@
   test_tags: []
 - name: local_connector_secure
   description: Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP connections.
-  expiry: 2026/07/15
+  expiry: 2026/08/30
   owner: mattstev@google.com
   test_tags: ["core_end2end_test"]
 - name: memory_optimization_01
@@ -213,7 +213,7 @@
   test_tags: []
 - name: metadata_publish_to_app_tag
   description: Publish metadata to the app using the kPublishToApp metadata field.
-  expiry: 2026/07/21
+  expiry: 2026/09/21
   owner: leonzz@google.com
   test_tags: []
 - name: monitoring_experiment
@@ -336,7 +336,7 @@
 - name: promise_filter_send_cancel_metadata
   description: Enables sending all trailing metadata fields from server side promise-based filters
     upon stream cancellation.
-  expiry: 2026/07/15
+  expiry: 2026/10/15
   owner: akshitpatel@google.com
   test_tags: []
   allow_in_fuzzing_config: true
@@ -419,7 +419,7 @@
   test_tags: ["endpoint_test", "flow_control_test"]
 - name: tsi_frame_protector_without_locks
   description: Do not hold locks while using the tsi_frame_protector.
-  expiry: 2026/07/15
+  expiry: 2026/08/30
   owner: mattstev@google.com
   test_tags: []
 - name: unconstrained_max_quota_buffer_size

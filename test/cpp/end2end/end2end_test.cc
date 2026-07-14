@@ -987,7 +987,6 @@ TEST_P(End2endTest, AuthoritySeenOnServerSide) {
 
 TEST_P(End2endTest, ReconnectChannel) {
   // This is flaky for PH2 Server.
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   if (GetParam().inproc() || GetParam().use_virtual_rpcs()) {
     return;
   }
