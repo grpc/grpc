@@ -201,8 +201,7 @@ void AsyncTestPrivateKeySigner::Cancel(
     grpc_core::ExecCtx exec_ctx;
     auto event_engine =
         grpc_event_engine::experimental::GetDefaultEventEngine();
-    auto internal_handle =
-        std::static_pointer_cast<AsyncSigningHandleInternal>(handle);
+    auto* internal_handle = DownCast<AsyncSigningHandleInternal*>(handle.get());
     event_engine->Cancel(internal_handle->task_handle);
   }
 }
