@@ -29,6 +29,7 @@ from typing import (
     Callable,
     cast,
     Dict,
+    Generic,
     Iterable,
     Iterator,
     List,
@@ -375,8 +376,6 @@ def _send_message(state: _RPCState[RequestType], token: str) -> ServerCallbackTa
 
     return send_message
 
-
-from typing import Generic
 
 class _Context(grpc.ServicerContext, Generic[RequestType]):
     _rpc_event: cygrpc.BaseEvent
