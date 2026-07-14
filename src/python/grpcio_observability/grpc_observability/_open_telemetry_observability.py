@@ -279,13 +279,17 @@ class _OpenTelemetryPlugin:
         return metric_to_recorder_map
 
     @staticmethod
-    def decode_labels(labels: Dict[str, AnyStr]) -> Dict[str, str]:
-        def _to_str(item: Union[str, AnyStr]) -> str:
-            if isinstance(item, bytes):
-                return item.decode("utf-8", errors="replace")
-            return str(item)
+    def _to_str(item: Union[str, AnyStr]) -> str:
+        if isinstance(item, bytes):
+            return item.decode("utf-8", errors="replace")
+        return str(item)
 
-        return {_to_str(key): _to_str(value) for key, value in labels.items()}
+    @staticmethod
+    def decode_labels(labels: Dict[str, AnyStr]) -> Dict[str, str]:
+        return {
+            _OpenTelemetryPlugin._to_str(key): _OpenTelemetryPlugin._to_str(val)
+            for key, val in labels.items()
+        }
 
 
 def start_open_telemetry_observability(
