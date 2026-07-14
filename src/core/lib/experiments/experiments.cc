@@ -202,6 +202,10 @@ const char* const description_promise_filter_send_cancel_metadata =
     "promise-based filters upon stream cancellation.";
 const char* const additional_constraints_promise_filter_send_cancel_metadata =
     "{}";
+const char* const description_recv_message_filter_bypass_fix =
+    "Receive message bypass happen if trailing metadata is received while "
+    "Server Initial Metadata is getting processed.";
+const char* const additional_constraints_recv_message_filter_bypass_fix = "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_return_preexisting_errors =
@@ -274,6 +278,9 @@ const char* const description_xds_server_filter_chain_per_route =
     "xDS servers use a separate filter chain for each route.";
 const char* const additional_constraints_xds_server_filter_chain_per_route =
     "{}";
+const uint8_t required_experiments_xds_server_filter_chain_per_route[] = {
+    static_cast<uint8_t>(
+        grpc_core::kExperimentIdV2NonOwningWakerImplementation)};
 }  // namespace
 
 namespace grpc_core {
@@ -351,7 +358,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_metadata_outstanding_token_refactor, nullptr, 0,
      false, true},
     {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
-     additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
+     additional_constraints_metadata_publish_to_app_tag, nullptr, 0, false,
      true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
@@ -406,6 +413,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_filter_send_cancel_metadata,
      additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0,
      false, true},
+    {"recv_message_filter_bypass_fix",
+     description_recv_message_filter_bypass_fix,
+     additional_constraints_recv_message_filter_bypass_fix, nullptr, 0, false,
+     true},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"return_preexisting_errors", description_return_preexisting_errors,
@@ -463,8 +474,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"xds_server_filter_chain_per_route",
      description_xds_server_filter_chain_per_route,
-     additional_constraints_xds_server_filter_chain_per_route, nullptr, 0,
-     false, true},
+     additional_constraints_xds_server_filter_chain_per_route,
+     required_experiments_xds_server_filter_chain_per_route, 1, false, true},
 };
 
 }  // namespace grpc_core
@@ -650,6 +661,10 @@ const char* const description_promise_filter_send_cancel_metadata =
     "promise-based filters upon stream cancellation.";
 const char* const additional_constraints_promise_filter_send_cancel_metadata =
     "{}";
+const char* const description_recv_message_filter_bypass_fix =
+    "Receive message bypass happen if trailing metadata is received while "
+    "Server Initial Metadata is getting processed.";
+const char* const additional_constraints_recv_message_filter_bypass_fix = "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_return_preexisting_errors =
@@ -722,6 +737,9 @@ const char* const description_xds_server_filter_chain_per_route =
     "xDS servers use a separate filter chain for each route.";
 const char* const additional_constraints_xds_server_filter_chain_per_route =
     "{}";
+const uint8_t required_experiments_xds_server_filter_chain_per_route[] = {
+    static_cast<uint8_t>(
+        grpc_core::kExperimentIdV2NonOwningWakerImplementation)};
 }  // namespace
 
 namespace grpc_core {
@@ -799,7 +817,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_metadata_outstanding_token_refactor, nullptr, 0,
      false, true},
     {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
-     additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
+     additional_constraints_metadata_publish_to_app_tag, nullptr, 0, false,
      true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
@@ -854,6 +872,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_filter_send_cancel_metadata,
      additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0,
      false, true},
+    {"recv_message_filter_bypass_fix",
+     description_recv_message_filter_bypass_fix,
+     additional_constraints_recv_message_filter_bypass_fix, nullptr, 0, false,
+     true},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"return_preexisting_errors", description_return_preexisting_errors,
@@ -911,8 +933,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"xds_server_filter_chain_per_route",
      description_xds_server_filter_chain_per_route,
-     additional_constraints_xds_server_filter_chain_per_route, nullptr, 0,
-     false, true},
+     additional_constraints_xds_server_filter_chain_per_route,
+     required_experiments_xds_server_filter_chain_per_route, 1, false, true},
 };
 
 }  // namespace grpc_core
@@ -1098,6 +1120,10 @@ const char* const description_promise_filter_send_cancel_metadata =
     "promise-based filters upon stream cancellation.";
 const char* const additional_constraints_promise_filter_send_cancel_metadata =
     "{}";
+const char* const description_recv_message_filter_bypass_fix =
+    "Receive message bypass happen if trailing metadata is received while "
+    "Server Initial Metadata is getting processed.";
+const char* const additional_constraints_recv_message_filter_bypass_fix = "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_return_preexisting_errors =
@@ -1170,6 +1196,9 @@ const char* const description_xds_server_filter_chain_per_route =
     "xDS servers use a separate filter chain for each route.";
 const char* const additional_constraints_xds_server_filter_chain_per_route =
     "{}";
+const uint8_t required_experiments_xds_server_filter_chain_per_route[] = {
+    static_cast<uint8_t>(
+        grpc_core::kExperimentIdV2NonOwningWakerImplementation)};
 }  // namespace
 
 namespace grpc_core {
@@ -1247,7 +1276,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_metadata_outstanding_token_refactor, nullptr, 0,
      false, true},
     {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
-     additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
+     additional_constraints_metadata_publish_to_app_tag, nullptr, 0, false,
      true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
@@ -1302,6 +1331,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_filter_send_cancel_metadata,
      additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0,
      false, true},
+    {"recv_message_filter_bypass_fix",
+     description_recv_message_filter_bypass_fix,
+     additional_constraints_recv_message_filter_bypass_fix, nullptr, 0, false,
+     true},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"return_preexisting_errors", description_return_preexisting_errors,
@@ -1359,8 +1392,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"xds_server_filter_chain_per_route",
      description_xds_server_filter_chain_per_route,
-     additional_constraints_xds_server_filter_chain_per_route, nullptr, 0,
-     false, true},
+     additional_constraints_xds_server_filter_chain_per_route,
+     required_experiments_xds_server_filter_chain_per_route, 1, false, true},
 };
 
 }  // namespace grpc_core

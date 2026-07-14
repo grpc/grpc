@@ -59,6 +59,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//src/core:channel_args_endpoint_config",
+        "//src/core:instrument",
         "//src/core:metrics",
         "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",

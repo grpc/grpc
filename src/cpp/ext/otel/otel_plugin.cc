@@ -73,7 +73,7 @@ absl::string_view OpenTelemetryStatusKey() { return "grpc.status"; }
 absl::string_view OpenTelemetryTargetKey() { return "grpc.target"; }
 
 absl::string_view OpenTelemetryCustomLabelKey() {
-  return "grpc.client.call.custom";
+  return grpc_core::kMetricLabelTelemetry;
 }
 
 namespace {
@@ -919,21 +919,16 @@ OpenTelemetryPluginImpl::~OpenTelemetryPluginImpl() {
   }
 }
 
-namespace {
-constexpr absl::string_view kLocality = "grpc.lb.locality";
-constexpr absl::string_view kBackendService = "grpc.lb.backend_service";
-}  // namespace
-
 absl::string_view OpenTelemetryPluginImpl::OptionalLabelKeyToString(
     grpc_core::ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey
         key) {
   switch (key) {
     case grpc_core::ClientCallTracerInterface::CallAttemptTracer::
         OptionalLabelKey::kLocality:
-      return kLocality;
+      return grpc_core::kMetricLabelLocality;
     case grpc_core::ClientCallTracerInterface::CallAttemptTracer::
         OptionalLabelKey::kBackendService:
-      return kBackendService;
+      return grpc_core::kMetricLabelBackendService;
     case grpc_core::ClientCallTracerInterface::CallAttemptTracer::
         OptionalLabelKey::kTelemetryLabel:
       return OpenTelemetryCustomLabelKey();
@@ -945,10 +940,10 @@ absl::string_view OpenTelemetryPluginImpl::OptionalLabelKeyToString(
 std::optional<
     grpc_core::ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey>
 OpenTelemetryPluginImpl::OptionalLabelStringToKey(absl::string_view key) {
-  if (key == kLocality) {
+  if (key == grpc_core::kMetricLabelLocality) {
     return grpc_core::ClientCallTracerInterface::CallAttemptTracer::
         OptionalLabelKey::kLocality;
-  } else if (key == kBackendService) {
+  } else if (key == grpc_core::kMetricLabelBackendService) {
     return grpc_core::ClientCallTracerInterface::CallAttemptTracer::
         OptionalLabelKey::kBackendService;
   } else if (key == OpenTelemetryCustomLabelKey()) {

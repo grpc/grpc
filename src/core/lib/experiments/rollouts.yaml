@@ -87,7 +87,7 @@
 - name: metadata_outstanding_token_refactor
   default: false
 - name: metadata_publish_to_app_tag
-  default: true
+  default: false
 - name: monitoring_experiment
   default: true
 - name: optimization_01

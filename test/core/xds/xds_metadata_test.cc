@@ -30,6 +30,7 @@
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
 #include "src/core/xds/grpc/xds_metadata_parser.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_client.h"
@@ -57,7 +58,7 @@ class XdsMetadataTest : public ::testing::Test {
                         upb_def_pool_.ptr(), upb_arena_.ptr()} {}
 
   static RefCountedPtr<XdsClient> MakeXdsClient() {
-    auto bootstrap = GrpcXdsBootstrap::Create(
+    auto bootstrap = GrpcXdsBootstrapBuilder::Build(
         "{\n"
         "  \"xds_servers\": [\n"
         "    {\n"

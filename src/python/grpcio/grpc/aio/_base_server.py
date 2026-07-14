@@ -18,7 +18,6 @@ from typing import Generic, Iterable, Mapping, NoReturn, Optional, Sequence
 
 import grpc
 
-from ._metadata import Metadata  # pylint: disable=unused-import
 from ._typing import DoneCallbackType
 from ._typing import MetadataType
 from ._typing import RequestType
@@ -212,6 +211,25 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
         Raises:
           Exception: An exception is always raised to signal the abortion the
+            RPC to the gRPC runtime.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def abort_with_status(self, status: grpc.Status) -> NoReturn:
+        """Raises an exception to terminate the RPC with a non-OK status.
+
+        The status passed as argument will supersede any existing status code,
+        status message and trailing metadata.
+
+        This is an EXPERIMENTAL API.
+
+        Args:
+          status: A grpc.Status object. The status code in it must not be
+            StatusCode.OK.
+
+        Raises:
+          Exception: An exception is always raised to signal the abortion of the
             RPC to the gRPC runtime.
         """
         raise NotImplementedError()
