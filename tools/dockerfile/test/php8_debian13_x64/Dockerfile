@@ -80,7 +80,7 @@ RUN python3 -m pip install --break-system-packages --upgrade google-auth==1.23.0
 # Install default PHP (which is 8.4 in Debian 13)
 RUN apt-get update && apt-get install -y php php-dev php-pear php-mbstring && apt-get clean
 
-# Install PHPUnit (PHPUnit 11 is the stable version that supports PHP 8.4)
+# Install PHPUnit 13
 RUN wget https://phar.phpunit.de/phpunit-13.phar && \
     mv phpunit-13.phar /usr/local/bin/phpunit && \
     chmod +x /usr/local/bin/phpunit
