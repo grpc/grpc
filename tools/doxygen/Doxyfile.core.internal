@@ -1168,8 +1168,6 @@ src/core/ext/filters/message_size/message_size_filter.h \
 src/core/ext/filters/rbac/AGENTS.md \
 src/core/ext/filters/rbac/rbac_filter.cc \
 src/core/ext/filters/rbac/rbac_filter.h \
-src/core/ext/filters/rbac/rbac_service_config_parser.cc \
-src/core/ext/filters/rbac/rbac_service_config_parser.h \
 src/core/ext/filters/stateful_session/AGENTS.md \
 src/core/ext/filters/stateful_session/stateful_session_filter.cc \
 src/core/ext/filters/stateful_session/stateful_session_filter.h \
@@ -2776,7 +2774,6 @@ src/core/server/server_interface.h \
 src/core/server/xds_channel_stack_modifier.cc \
 src/core/server/xds_channel_stack_modifier.h \
 src/core/server/xds_server_config_fetcher.cc \
-src/core/server/xds_server_config_fetcher_legacy.cc \
 src/core/service_config/AGENTS.md \
 src/core/service_config/service_config.h \
 src/core/service_config/service_config_call_data.h \
