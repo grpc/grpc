@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import asyncio
+import json
 from typing import Tuple
 
 import grpc
@@ -20,11 +21,30 @@ import grpc
 _REQUEST = b"\x00\x00\x00"
 _RESPONSE = b"\x00\x00\x00"
 
+_SERVICE_NAME = "test"
+_UNARY_UNARY_METHOD = "UnaryUnary"
 _UNARY_UNARY = "/test/UnaryUnary"
 _UNARY_STREAM = "/test/UnaryStream"
 _STREAM_UNARY = "/test/StreamUnary"
 _STREAM_STREAM = "/test/StreamStream"
 STREAM_LENGTH = 5
+
+_RETRY_SERVICE_CONFIG = json.dumps(
+    {
+        "methodConfig": [
+            {
+                "name": [{"service": _SERVICE_NAME}],
+                "retryPolicy": {
+                    "maxAttempts": 4,
+                    "initialBackoff": "0.1s",
+                    "maxBackoff": "1s",
+                    "backoffMultiplier": 2,
+                    "retryableStatusCodes": ["UNAVAILABLE"],
+                },
+            }
+        ]
+    }
+)
 
 
 class _GenericHandler(grpc.GenericRpcHandler):
@@ -76,8 +96,49 @@ async def start_server() -> Tuple[grpc.aio.Server, int]:
     return server, port
 
 
+def _make_flaky_handler(num_failed_attempts):
+    """Returns a unary-unary handler that fails the first num_failed_attempts
+    requests with UNAVAILABLE (a retryable status) and succeeds afterwards."""
+    remaining_failures = [num_failed_attempts]
+
+    async def _handle(unused_request, servicer_context):
+        if remaining_failures[0] > 0:
+            remaining_failures[0] -= 1
+            await servicer_context.abort(
+                grpc.StatusCode.UNAVAILABLE, "flaky failure"
+            )
+        return _RESPONSE
+
+    return grpc.unary_unary_rpc_method_handler(_handle)
+
+
+async def start_flaky_server(
+    num_failed_attempts: int,
+) -> Tuple[grpc.aio.Server, int]:
+    server = grpc.aio.server()
+    port = server.add_insecure_port("[::]:0")
+    handlers = {_UNARY_UNARY_METHOD: _make_flaky_handler(num_failed_attempts)}
+    server.add_generic_rpc_handlers(
+        (grpc.method_handlers_generic_handler(_SERVICE_NAME, handlers),)
+    )
+    await server.start()
+    return server, port
+
+
 async def unary_unary_call(port):
     async with grpc.aio.insecure_channel(f"localhost:{port}") as channel:
+        multi_callable = channel.unary_unary(_UNARY_UNARY)
+        unused_response = await multi_callable(_REQUEST)
+
+
+async def unary_unary_call_with_retries(port):
+    options = (
+        ("grpc.service_config", _RETRY_SERVICE_CONFIG),
+        ("grpc.enable_retries", 1),
+    )
+    async with grpc.aio.insecure_channel(
+        f"localhost:{port}", options=options
+    ) as channel:
         multi_callable = channel.unary_unary(_UNARY_UNARY)
         unused_response = await multi_callable(_REQUEST)
 

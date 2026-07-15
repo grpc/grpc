@@ -33,6 +33,10 @@ logger = logging.getLogger(__name__)
 
 STREAM_LENGTH = 5
 OTEL_EXPORT_INTERVAL_S = 0.5
+_RETRY_METRIC_NAMES = [
+    metric.name for metric in _open_telemetry_measures.retry_metrics()
+]
+_NUM_FAILED_ATTEMPTS = 2
 
 
 class OTelMetricExporter(otel_metrics_export.MetricExporter):
@@ -174,6 +178,56 @@ class OpenTelemetryObservabilityTest(AioTestBase):
                         f"in exported metrics: {metric_names}!"
                     ),
                 )
+
+
+class OpenTelemetryObservabilityRetryTest(AioTestBase):
+    """Validates that the per-call retry metrics are recorded for the AsyncIO
+    stack, which uses the same call tracer as the sync stack."""
+
+    async def setUp(self):
+        self.all_metrics = collections.defaultdict(list)
+        otel_exporter = OTelMetricExporter(self.all_metrics)
+        reader = otel_metrics_export.PeriodicExportingMetricReader(
+            exporter=otel_exporter,
+            export_interval_millis=OTEL_EXPORT_INTERVAL_S * 1000,
+        )
+        self._provider = otel_metrics.MeterProvider(metric_readers=(reader,))
+        self._otel_plugin = grpc_observability.OpenTelemetryPlugin(
+            meter_provider=self._provider,
+            enabled_metrics=_RETRY_METRIC_NAMES,
+        )
+        self._otel_plugin.register_global()
+        self._server, self._port = await _test_server.start_flaky_server(
+            num_failed_attempts=_NUM_FAILED_ATTEMPTS
+        )
+
+    async def tearDown(self):
+        await self._server.stop(0)
+        self._otel_plugin.deregister_global()
+        self._provider.shutdown(timeout_millis=1_000)
+
+    async def test_record_retry_metrics(self):
+        await _test_server.unary_unary_call_with_retries(port=self._port)
+
+        # Sleep here to make sure we have at least one export from
+        # OTel MetricExporter.
+        await asyncio.sleep(5)
+        for metric in (
+            _open_telemetry_measures.CLIENT_CALL_RETRIES,
+            _open_telemetry_measures.CLIENT_CALL_RETRY_DELAY,
+        ):
+            self.assertTrue(
+                metric.name in self.all_metrics,
+                msg=(
+                    f"metric {metric.name} not found"
+                    f"in exported metrics: {self.all_metrics.keys()}!"
+                ),
+            )
+        # No transparent retry happened, so 0 should not be reported.
+        self.assertNotIn(
+            _open_telemetry_measures.CLIENT_CALL_TRANSPARENT_RETRIES.name,
+            self.all_metrics,
+        )
 
 
 if __name__ == "__main__":

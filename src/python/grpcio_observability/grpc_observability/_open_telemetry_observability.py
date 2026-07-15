@@ -298,6 +298,9 @@ class _OpenTelemetryPlugin:
                 _open_telemetry_measures.CLIENT_RPC_DURATION,
                 _open_telemetry_measures.CLIENT_ATTEMPT_SEND_BYTES,
                 _open_telemetry_measures.CLIENT_ATTEMPT_RECEIVED_BYTES,
+                _open_telemetry_measures.CLIENT_CALL_RETRIES,
+                _open_telemetry_measures.CLIENT_CALL_TRANSPARENT_RETRIES,
+                _open_telemetry_measures.CLIENT_CALL_RETRY_DELAY,
             ):
                 recorder = meter.create_histogram(
                     name=metric.name,
@@ -314,10 +317,6 @@ class _OpenTelemetryPlugin:
                 _open_telemetry_measures.SERVER_RPC_DURATION,
                 _open_telemetry_measures.SERVER_RPC_SEND_BYTES,
                 _open_telemetry_measures.SERVER_RPC_RECEIVED_BYTES,
-            ) or metric in (
-                _open_telemetry_measures.CLIENT_CALL_RETRIES,
-                _open_telemetry_measures.CLIENT_CALL_TRANSPARENT_RETRIES,
-                _open_telemetry_measures.CLIENT_CALL_RETRY_DELAY,
             ):
                 recorder = meter.create_histogram(
                     name=metric.name,

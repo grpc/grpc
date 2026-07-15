@@ -45,6 +45,7 @@ OTEL_EXPORT_INTERVAL_S = 0.5
 _RETRY_METRIC_NAMES = [
     metric.name for metric in _open_telemetry_measures.retry_metrics()
 ]
+_BASE_METRIC_COUNT = len(_open_telemetry_measures.base_metrics())
 
 
 class OTelMetricExporter(MetricExporter):
@@ -317,7 +318,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
 
         self.all_metrics = defaultdict(list)
         _test_server.unary_unary_call(port=self._port)
-        with self.assertRaisesRegex(AssertionError, "No metrics was exported"):
+        with self.assertRaisesRegex(AssertionError, "Expected at least"):
             self._validate_metrics_exist(self.all_metrics)
 
     def testNoRecordAfterExitUseGlobal(self):
@@ -337,7 +338,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
 
         self.all_metrics = defaultdict(list)
         _test_server.unary_unary_call(port=self._port)
-        with self.assertRaisesRegex(AssertionError, "No metrics was exported"):
+        with self.assertRaisesRegex(AssertionError, "Expected at least"):
             self._validate_metrics_exist(self.all_metrics)
 
     def testRecordUnaryStream(self):
@@ -512,16 +513,15 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             self._server = server
             _test_server.unary_unary_call_with_retries(port=port)
 
-        # Wait until the value is recorded (appended after the entry in
+        # Wait until the values are recorded (appended after the entries in
         # all_metrics), so that indexing metric_values below cannot race with
         # the exporter thread.
         self.assert_eventually(
-            lambda: bool(self._exporter.metric_values.get(retries_metric)),
-            message=lambda: f"metric {retries_metric} not found in exported metrics: {self._exporter.metric_values.keys()}!",
-        )
-        self.assert_eventually(
-            lambda: bool(self._exporter.metric_values.get(retry_delay_metric)),
-            message=lambda: f"metric {retry_delay_metric} not found in exported metrics: {self._exporter.metric_values.keys()}!",
+            lambda: all(
+                self._exporter.metric_values.get(metric)
+                for metric in (retries_metric, retry_delay_metric)
+            ),
+            message=lambda: f"retry metrics not found in exported metrics: {self._exporter.metric_values.keys()}!",
         )
         # The call had NUM_FAILED_ATTEMPTS retries (first attempt excluded)
         # and spent time in retry backoff.
@@ -556,7 +556,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             self._server = server
             _test_server.unary_unary_call(port=port)
 
-        self._validate_metrics_exist(self.all_metrics)
+        self._validate_metrics_exist(self.all_metrics, _BASE_METRIC_COUNT)
         self._validate_all_metrics_names(self.all_metrics.keys())
 
     def testRetryMetricsDisabledByDefault(self):
@@ -569,7 +569,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             self._server = server
             _test_server.unary_unary_call_with_retries(port=port)
 
-        self._validate_metrics_exist(self.all_metrics)
+        self._validate_metrics_exist(self.all_metrics, _BASE_METRIC_COUNT)
         self._validate_all_metrics_names(self.all_metrics.keys())
         for retry_metric in _open_telemetry_measures.retry_metrics():
             self.assertNotIn(retry_metric.name, self.all_metrics)
@@ -583,7 +583,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             self._server = server
             _test_server.unary_unary_call(port=port)
 
-        self._validate_metrics_exist(self.all_metrics)
+        self._validate_metrics_exist(self.all_metrics, _BASE_METRIC_COUNT)
         self._validate_all_metrics_names(self.all_metrics.keys())
         # The call had no retries, so zero values should not be reported.
         for retry_metric in _open_telemetry_measures.retry_metrics():
@@ -606,11 +606,18 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         else:
             self.fail(message() + " after " + str(timeout))
 
-    def _validate_metrics_exist(self, all_metrics: Dict[str, Any]) -> None:
-        # Sleep here to make sure we have at least one export from OTel MetricExporter.
+    def _validate_metrics_exist(
+        self, all_metrics: Dict[str, Any], expected_count: int = 2
+    ) -> None:
+        # Sleep here to make sure we have at least the expected number of
+        # metrics from OTel MetricExporter. Waiting for a specific count avoids
+        # racing with exports that are still in flight.
         self.assert_eventually(
-            lambda: len(all_metrics.keys()) > 1,
-            message=lambda: f"No metrics was exported",
+            lambda: len(all_metrics.keys()) >= expected_count,
+            message=lambda: (
+                f"Expected at least {expected_count} metrics, got "
+                f"{len(all_metrics.keys())}: {all_metrics.keys()}"
+            ),
         )
 
     def _validate_all_metrics_names(self, metric_names: Set[str]) -> None:

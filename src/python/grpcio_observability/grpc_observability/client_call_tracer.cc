@@ -124,7 +124,10 @@ PythonOpenCensusCallTracer::StartNewAttempt(bool is_transparent_retry) {
   {
     grpc_core::MutexLock lock(&mu_);
     if (transparent_retries_ != 0 || retries_ != 0) {
-      if (PythonCensusStatsEnabled() && num_active_rpcs_ == 0) {
+      // Transparent retries are not counted towards retry delay, matching the
+      // C++ OpenTelemetry plugin.
+      if (PythonCensusStatsEnabled() && num_active_rpcs_ == 0 &&
+          !is_transparent_retry) {
         retry_delay_ += absl::Now() - time_at_last_attempt_end_;
       }
     }
