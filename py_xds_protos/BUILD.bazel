@@ -27,6 +27,7 @@ _XDS_PROTO_DIRECTORIES = [
     "envoy",
     "google",
     "opencensus",
+    "opentelemetry",
     "udpa",
     "validate",
     "xds",
