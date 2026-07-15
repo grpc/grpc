@@ -52,7 +52,7 @@ TEST(ErrorUtilsTest, GetErrorGetStatusFlat) {
 TEST(ErrorUtilsTest, GetErrorGetStatusChild) {
   std::vector<grpc_error_handle> children = {
       absl::UnknownError("Child1"),
-      absl::ResourcesExhaustedError("Child2"),
+      absl::ResourceExhaustedError("Child2"),
   };
   grpc_error_handle error = GRPC_ERROR_CREATE_FROM_VECTOR("Parent", &children);
   grpc_status_code code;
