@@ -545,6 +545,10 @@ static void read_channel_args(grpc_chttp2_transport* t,
 
   t->settings.mutable_local().SetAllowSecurityFrame(
       channel_args.GetBool(GRPC_ARG_SECURITY_FRAME_ALLOWED).value_or(false));
+  t->max_security_frame_size = static_cast<uint32_t>(grpc_core::Clamp(
+      channel_args.GetInt(GRPC_ARG_MAX_SECURITY_FRAME_SIZE)
+          .value_or(kMaxSecurityFrameSize),
+      kMinMaxSecurityFrameSize, static_cast<int>(kMaxSecurityFrameSize)));
 
   t->ping_on_rst_stream_percent = grpc_core::Clamp(
       channel_args.GetInt(GRPC_ARG_HTTP2_PING_ON_RST_STREAM_PERCENT)
@@ -693,6 +697,9 @@ void grpc_chttp2_transport::WriteSecurityFrameLocked(
   if (data == nullptr) {
     return;
   }
+  if (!closed_with_error.ok()) {
+    return;
+  }
   if (!settings.peer().allow_security_frame()) {
     close_transport_locked(
         this,
@@ -759,7 +766,8 @@ grpc_chttp2_transport::grpc_chttp2_transport(
         grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>();
     if (epte != nullptr && stats_plugin_group != nullptr) {
       epte->EnableTcpTelemetry(stats_plugin_group->GetCollectionScope(),
-                               /*is_control_endpoint=*/false);
+                               /*is_control_endpoint=*/false,
+                               /*trace_full_buffer=*/false);
       epte->SetTcpTracer(std::make_shared<grpc_core::DefaultTcpTracer>(
           std::move(stats_plugin_group)));
     }
@@ -872,6 +880,10 @@ void grpc_chttp2_transport::Orphan() {
 
 static void close_transport_locked(grpc_chttp2_transport* t,
                                    grpc_error_handle error) {
+  if (t->transport_framing_endpoint_extension != nullptr) {
+    t->transport_framing_endpoint_extension->SetSendFrameCallback(nullptr);
+    t->transport_framing_endpoint_extension = nullptr;
+  }
   end_all_the_calls(t, error);
   cancel_pings(t, error);
   if (t->closed_with_error.ok()) {
@@ -1372,14 +1384,11 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
                                      uint32_t last_stream_id,
                                      absl::string_view goaway_text) {
   t->goaway_error = grpc_error_set_int(
-      grpc_error_set_int(
-          grpc_core::StatusCreate(
-              absl::StatusCode::kUnavailable,
-              absl::StrFormat("GOAWAY received; Error code: %u; Debug Text: %s",
-                              goaway_error, goaway_text),
-              DEBUG_LOCATION, {}),
-          grpc_core::StatusIntProperty::kHttp2Error,
-          static_cast<intptr_t>(goaway_error)),
+      grpc_error_set_int(absl::UnavailableError(absl::StrFormat(
+                             "GOAWAY received; Error code: %u; Debug Text: %s",
+                             goaway_error, goaway_text)),
+                         grpc_core::StatusIntProperty::kHttp2Error,
+                         static_cast<intptr_t>(goaway_error)),
       grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
 
   GRPC_TRACE_LOG(http, INFO)

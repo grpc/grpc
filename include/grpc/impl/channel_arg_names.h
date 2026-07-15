@@ -120,6 +120,22 @@
     before the request is cancelled */
 #define GRPC_ARG_SERVER_MAX_UNREQUESTED_TIME_IN_SERVER_SECONDS \
   "grpc.server_max_unrequested_time_in_server"
+/** The soft limit on the number of pending requests in the server. Int valued.
+ *  If the number of pending queued requests exceeds this soft limit, then the
+ *  server will start to probabilistically reject new incoming requests up until
+ *  the hard limit. Defaults to 1000.
+ *  Note: It is not recommended to change this value unless the operational
+ *  implications are fully understood.
+ */
+#define GRPC_ARG_SERVER_MAX_PENDING_REQUESTS "grpc.server.max_pending_requests"
+/** The hard limit on the number of pending requests in the server. Int valued.
+ *  If the number of pending queued requests reaches this hard limit, all new
+ *  incoming requests will be rejected. Defaults to 3000.
+ *  Note: It is not recommended to change this value unless the operational
+ *  implications are fully understood.
+ */
+#define GRPC_ARG_SERVER_MAX_PENDING_REQUESTS_HARD_LIMIT \
+  "grpc.server.max_pending_requests_hard_limit"
 /** Channel arg to override the http2 :scheme header. String valued. */
 #define GRPC_ARG_HTTP2_SCHEME "grpc.http2_scheme"
 /** How many pings can the client send before needing to send a data/header
@@ -441,7 +457,14 @@
 /** \} */
 /** If non-zero, enable TCP tracing and stats collection. */
 #define GRPC_ARG_TCP_TRACING_ENABLED "grpc.tcp_tracing_enabled"
+/* Enable tracing full buffer payloads for TCP telemetry. */
+#define GRPC_ARG_TCP_TRACE_FULL_BUFFER "grpc.experimental.tcp_trace_full_buffer"
 /** Server config fetcher. */
 #define GRPC_ARG_SERVER_CONFIG_FETCHER "grpc.server_config_fetcher"
+/** Set the maximum size of a security frame that can be received on a HTTP2
+ * Connection. Check file core/ext/transport/chttp2/transport/frame.cc for
+ * details on the Security Frame.
+ */
+#define GRPC_ARG_MAX_SECURITY_FRAME_SIZE "grpc.http2.max_security_frame_size"
 
 #endif /* GRPC_IMPL_CHANNEL_ARG_NAMES_H */

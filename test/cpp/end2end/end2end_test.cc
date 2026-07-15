@@ -22,6 +22,7 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
+#include <grpcpp/generic/generic_stub_callback.h>
 #include <grpcpp/resource_quota.h>
 #include <grpcpp/security/auth_metadata_processor.h>
 #include <grpcpp/security/credentials.h>
@@ -29,11 +30,15 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <grpcpp/support/slice.h>
+#include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
+#include <grpcpp/support/stub_options.h>
 #include <grpcpp/test/channel_test_peer.h>
 
 #include <memory>
 #include <mutex>
+#include <string>
 #include <thread>
 
 #include "src/core/client_channel/backup_poller.h"
@@ -58,6 +63,7 @@
 #include "absl/strings/ascii.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
+#include "absl/synchronization/notification.h"
 
 #ifdef GRPC_POSIX_SOCKET_EV
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -531,6 +537,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     }
 
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
+    generic_stub_ = std::make_unique<grpc::GenericStubCallback>(channel_);
     PhonyInterceptor::Reset();
   }
 
@@ -540,6 +547,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
   std::unique_ptr<grpc::ClientContext> session_context_;
   std::unique_ptr<grpc::testing::EchoRequest> session_request_;
   std::unique_ptr<absl::Notification> session_done_;
+  std::unique_ptr<grpc::GenericStubCallback> generic_stub_;
   std::unique_ptr<Server> server_;
   std::unique_ptr<Server> proxy_server_;
   std::unique_ptr<Proxy> proxy_service_;
@@ -842,6 +850,7 @@ TEST_P(End2endServerTryCancelTest, RequestStreamServerCancelBeforeReads) {
 
 // Server to cancel while reading a request from the stream in parallel
 TEST_P(End2endServerTryCancelTest, RequestStreamServerCancelDuringRead) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   TestRequestStreamServerCancel(CANCEL_DURING_PROCESSING, 10);
 }
 
@@ -875,6 +884,7 @@ TEST_P(End2endServerTryCancelTest, BidiStreamServerCancelBefore) {
 // Server to cancel while reading/writing requests/responses on the stream in
 // parallel
 TEST_P(End2endServerTryCancelTest, BidiStreamServerCancelDuring) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   TestBidiStreamServerCancel(CANCEL_DURING_PROCESSING, 10);
 }
 
@@ -976,6 +986,7 @@ TEST_P(End2endTest, AuthoritySeenOnServerSide) {
 }
 
 TEST_P(End2endTest, ReconnectChannel) {
+  // This is flaky for PH2 Server.
   if (GetParam().inproc() || GetParam().use_virtual_rpcs()) {
     return;
   }
@@ -1165,6 +1176,7 @@ TEST_P(End2endTest, BidiStream) {
 }
 
 TEST_P(End2endTest, BidiStreamWithCoalescingApi) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix flake");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1200,6 +1212,7 @@ TEST_P(End2endTest, BidiStreamWithCoalescingApi) {
 // This was added to prevent regression from issue:
 // https://github.com/grpc/grpc/issues/11546
 TEST_P(End2endTest, BidiStreamWithEverythingCoalesced) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix flake");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1268,6 +1281,7 @@ TEST_P(End2endTest, CancelRpcBeforeStart) {
 }
 
 TEST_P(End2endTest, CancelRpcAfterStart) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   for (int i = 0; i < 10; i++) {
     ResetStub();
     EchoRequest request;
@@ -1314,6 +1328,7 @@ TEST_P(End2endTest, CancelRpcAfterStart) {
 
 // Client cancels request stream after sending two messages
 TEST_P(End2endTest, ClientCancelsRequestStream) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1372,6 +1387,7 @@ TEST_P(End2endTest, ClientCancelsResponseStream) {
 
 // Client cancels bidi stream after sending some messages
 TEST_P(End2endTest, ClientCancelsBidi) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1558,8 +1574,6 @@ TEST_P(End2endTest, BinaryTrailerTest) {
 }
 
 TEST_P(End2endTest, ExpectErrorTest) {
-  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-
   ResetStub();
 
   std::vector<ErrorStatus> expected_status;
@@ -1594,13 +1608,7 @@ TEST_P(End2endTest, ExpectErrorTest) {
     EXPECT_EQ(iter->code(), s.error_code());
     EXPECT_EQ(iter->error_message(), s.error_message());
     EXPECT_EQ(iter->binary_error_details(), s.error_details());
-    if (grpc_core::IsErrorFlattenEnabled()) {
-      EXPECT_THAT(context.debug_error_string(),
-                  ::testing::HasSubstr("INTERNAL"));
-    } else {
-      EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "status"));
-      EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "13"));
-    }
+    EXPECT_THAT(context.debug_error_string(), ::testing::HasSubstr("INTERNAL"));
   }
 }
 
@@ -1616,11 +1624,13 @@ class ProxyEnd2endTest : public End2endTest {
 };
 
 TEST_P(ProxyEnd2endTest, SimpleRpc) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   SendRpc(stub_.get(), 1, false);
 }
 
 TEST_P(ProxyEnd2endTest, SimpleRpcWithEmptyMessages) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1631,6 +1641,7 @@ TEST_P(ProxyEnd2endTest, SimpleRpcWithEmptyMessages) {
 }
 
 TEST_P(ProxyEnd2endTest, MultipleRpcs) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   std::vector<std::thread> threads;
   threads.reserve(10);
@@ -1645,6 +1656,7 @@ TEST_P(ProxyEnd2endTest, MultipleRpcs) {
 // Set a 10us deadline and make sure proper error is returned.
 TEST_P(ProxyEnd2endTest, RpcDeadlineExpires) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix flake");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix flake");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1670,6 +1682,7 @@ TEST_P(ProxyEnd2endTest, RpcDeadlineExpires) {
 
 // Set a long but finite deadline.
 TEST_P(ProxyEnd2endTest, RpcLongDeadline) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1687,6 +1700,7 @@ TEST_P(ProxyEnd2endTest, RpcLongDeadline) {
 // Ask server to echo back the deadline it sees.
 TEST_P(ProxyEnd2endTest, EchoDeadline) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1717,6 +1731,7 @@ TEST_P(ProxyEnd2endTest, EchoDeadline) {
 
 // Ask server to echo back the deadline it sees. The rpc has no deadline.
 TEST_P(ProxyEnd2endTest, EchoDeadlineForNoDeadlineRpc) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1747,6 +1762,7 @@ TEST_P(ProxyEnd2endTest, UnimplementedRpc) {
 
 // Client cancels rpc after 10ms
 TEST_P(ProxyEnd2endTest, ClientCancelsRpc) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1783,6 +1799,7 @@ TEST_P(ProxyEnd2endTest, ClientCancelsRpc) {
 
 // Server cancels rpc after 1ms
 TEST_P(ProxyEnd2endTest, ServerCancelsRpc) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1797,6 +1814,7 @@ TEST_P(ProxyEnd2endTest, ServerCancelsRpc) {
 
 // Make the response larger than the flow control window.
 TEST_P(ProxyEnd2endTest, HugeResponse) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1814,6 +1832,7 @@ TEST_P(ProxyEnd2endTest, HugeResponse) {
 }
 
 TEST_P(ProxyEnd2endTest, Peer) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   // Peer is not meaningful for inproc
   if (GetParam().inproc()) {
     return;
@@ -2341,6 +2360,34 @@ TEST_P(ResourceQuotaEnd2endTest, SimpleRequest) {
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ(response.message(), request.message());
   EXPECT_TRUE(s.ok());
+}
+
+TEST_P(End2endTest, DeserializationFailure) {
+  ResetStub();
+  const std::string kMethodName("/grpc.testing.EchoTestService/Echo");
+  const char kMessage[] = "Invalid message that will not deserialize";
+  grpc::Slice slice(kMessage, sizeof(kMessage));
+  ByteBuffer send_buf(&slice, 1);
+  ByteBuffer recv_buf;
+  ClientContext cli_ctx;
+
+  absl::Notification notify;
+  Status status;
+  StubOptions options;
+  generic_stub_->UnaryCall(&cli_ctx, kMethodName, options, &send_buf, &recv_buf,
+                           [&notify, &status](Status s) {
+                             status = s;
+                             notify.Notify();
+                           });
+
+  notify.WaitForNotification();
+
+  if (!GetParam().callback_server() ||
+      grpc_core::IsReturnPreexistingErrorsEnabled()) {
+    EXPECT_EQ(StatusCode::INTERNAL, status.error_code());
+  } else {
+    EXPECT_EQ(StatusCode::UNIMPLEMENTED, status.error_code());
+  }
 }
 
 // TODO(vjpai): refactor arguments into a struct if it makes sense

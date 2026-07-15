@@ -37,12 +37,19 @@
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
+#include "src/core/util/shared_bit_gen.h"
 #include "absl/log/log.h"
-#include "absl/status/statusor.h"
+#include "absl/random/distributions.h"
 #include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 namespace http2 {
+constexpr uint32_t kCurrentCycleMaxResetStreams = 1024u;
+
+inline bool ShouldSendPingOnRstStream(
+    const uint8_t ping_on_rst_stream_percent) {
+  return absl::Bernoulli(SharedBitGen(), ping_on_rst_stream_percent / 100.0);
+}
 
 class ReadLoopPauseRestart {
  public:
@@ -52,19 +59,14 @@ class ReadLoopPauseRestart {
   ReadLoopPauseRestart(ReadLoopPauseRestart&&) = delete;
   ReadLoopPauseRestart& operator=(ReadLoopPauseRestart&&) = delete;
 
-  // Signals that the read loop should pause. If it's already paused, this is a
+  // Signals that the ReadLoop should pause. If it's already paused, this is a
   // no-op.
-  void SetPauseReadLoop() {
-    // TODO(tjagtap) [PH2][P2][Settings] Plumb with when we receive urgent
-    // settings. Example - initial window size 0 is urgent because it indicates
-    // extreme memory pressure on the server.
-    should_pause_read_loop_ = true;
-  }
+  void SetPauseReadLoop() { should_pause_read_loop_ = true; }
 
   // If SetPauseReadLoop() was called, this returns Pending and
   // registers a waker that will be woken by WakeReadLoop().
-  // If the read loop does not need to be paused, this returns OkStatus.
-  // This should be polled by the read loop to yield control when requested.
+  // If the ReadLoop does not need to be paused, this returns OkStatus.
+  // This should be polled by the ReadLoop to yield control when requested.
   Poll<absl::Status> MaybePauseReadLoop() {
     if (should_pause_read_loop_) {
       read_loop_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
@@ -170,13 +172,21 @@ class IncomingMetadataState {
   uint32_t stream_id_ = 0;
 };
 
+struct ShouldSendPing {
+  bool should_send_ping_on_rst_stream = false;
+};
+
 class ReadContext {
  public:
   explicit ReadContext(const uint32_t max_new_streams_per_read_cycle,
-                       const PromiseEndpoint& endpoint, const bool is_client)
+                       const PromiseEndpoint& endpoint, const bool is_client,
+                       const uint32_t max_security_frame_size,
+                       const uint8_t ping_on_rst_stream_percent)
       : max_new_streams_per_read_cycle_(max_new_streams_per_read_cycle),
         peer_string_(GetPeerString(endpoint)),
         is_client_(is_client),
+        ping_on_rst_stream_percent_(ping_on_rst_stream_percent),
+        max_security_frame_size_(max_security_frame_size),
         header_assembler_(is_client) {
     GRPC_DCHECK(max_new_streams_per_read_cycle > 0u)
         << "0 is invalid, because we will never be able to create a stream.";
@@ -282,7 +292,35 @@ class ReadContext {
         /*last_stream_id=*/last_stream_id,
         /*is_client=*/is_client_,
         /*is_first_settings_processed=*/is_first_settings_processed,
-        /*tracker=*/tracker_);
+        /*tracker=*/tracker_,
+        /*max_security_frame_size=*/max_security_frame_size_);
+  }
+
+  // Called when we are closing a stream.
+  void OnResetFrameEnqueued(const uint32_t reset_stream_error_code) {
+    // TODO(tjagtap) [PH2][P1] Call this when we reject streams because of
+    // MAX_CONCURRENT_STREAMS limit.
+    if (reset_stream_error_code != 0u) {
+      IncrementInducedFrames();
+    }
+  }
+  void OnSettingsFrameReceived() { IncrementInducedFrames(); }
+  void OnPingFrameReceived() { IncrementInducedFrames(); }
+
+  // Called when we read a RST_STREAM frame from the peer.
+  // Returns true if a ping should be sent in response.
+  ShouldSendPing OnResetFrameReceived() {
+    IncrementResetStreamFrames();
+    if (ping_on_rst_stream_percent_ > 0 && !ping_on_rst_stream_in_progress_ &&
+        ShouldSendPingOnRstStream(ping_on_rst_stream_percent_)) {
+      IncrementInducedFrames();
+      return ShouldSendPing{true};
+    }
+    return ShouldSendPing{false};
+  }
+  void SetPingOnRstStreamInProgress(bool value) {
+    GRPC_DCHECK(!is_client_);
+    ping_on_rst_stream_in_progress_ = value;
   }
 
   // Called when a HEADER frame is received.
@@ -349,7 +387,21 @@ class ReadContext {
   //////////////////////////////////////////////////////////////////////////////
   // ReadLoopPauseRestart wrapper functions.
 
-  void SetPauseReadLoop() { read_loop_manager_.SetPauseReadLoop(); }
+  // A note on stalling the ReadLoop:
+  // We have intentionally decided against stalling the ReadLoop when receiving
+  // one SETTINGS frame or one PING frame because we have anyway capped the
+  // number of iterations of the ReadLoop. And so as long as the endpoint Read
+  // in the ReadLoop is resolving immediately, we are ok to delay sending
+  // SETTINGS ACK, PING ACK and applying the settings. We will only stall the
+  // ReadLoop if certain per cycle limits are exceeded.
+  // We are also not going to stall the ReadLoop on any urgent setting being
+  // received because we have our ReadLoop capped at a max number of iterations,
+  // and applying those new settings a little later is ok.
+
+  void SetPauseReadLoop() {
+    ResetReadCycleCounters();
+    read_loop_manager_.SetPauseReadLoop();
+  }
 
   Poll<absl::Status> MaybePauseReadLoop() {
     return read_loop_manager_.MaybePauseReadLoop();
@@ -396,37 +448,51 @@ class ReadContext {
   void ResetReadCycleCounters() {
     current_cycle_read_count_ = 0u;
     current_cycle_bytes_read_ = 0u;
+    current_cycle_num_induced_frames_ = 0u;
     current_cycle_num_new_streams_ = 0u;
+    current_cycle_num_reset_streams_ = 0u;
   }
   void IncrementIncomingStreams() {
     ++current_cycle_num_new_streams_;
     if (current_cycle_num_new_streams_ >= max_new_streams_per_read_cycle_) {
-      read_loop_manager_.SetPauseReadLoop();
-      ResetReadCycleCounters();
+      SetPauseReadLoop();
     }
   }
   void IncrementReadCycleCounters(const uint32_t payload_length) {
     current_cycle_bytes_read_ += kFrameHeaderSize + payload_length;
     ++current_cycle_read_count_;
     if (current_cycle_read_count_ >= kMaxFramesReadPerReadCycle) {
-      read_loop_manager_.SetPauseReadLoop();
-      ResetReadCycleCounters();
+      SetPauseReadLoop();
     }
   }
-
+  void IncrementInducedFrames() {
+    ++current_cycle_num_induced_frames_;
+    if (current_cycle_num_induced_frames_ >=
+        GrpcErrors::kDefaultMaxPendingInducedFrames) {
+      SetPauseReadLoop();
+    }
+  }
+  void IncrementResetStreamFrames() {
+    ++current_cycle_num_reset_streams_;
+    if (current_cycle_num_reset_streams_ >= kCurrentCycleMaxResetStreams) {
+      SetPauseReadLoop();
+    }
+  }
   // Counters to track total bytes and frames read per cycle.
-  // Checked against limits to pause the read loop when maxed out.
+  // Checked against limits to pause the ReadLoop when maxed out.
   // This yields execution to prevent starvation of other transport tasks.
   // As per RFC 9113, HTTP/2 frame sizes can vary significantly.
   // Some frames are very large, while others are extremely small.
-  // We stall the read loop based only on current_cycle_read_count_.
+  // We stall the ReadLoop based only on current_cycle_read_count_.
   // We measure current_cycle_bytes_read_ just for telemetry. We are not
-  // stalling the read loop based on the number of bytes read right now because
+  // stalling the ReadLoop based on the number of bytes read right now because
   // we think that current_cycle_read_count_ would be sufficient for now.
   uint64_t current_cycle_bytes_read_ = 0u;
   uint16_t current_cycle_read_count_ = 0u;
+  uint32_t current_cycle_num_induced_frames_ = 0u;
 
   uint32_t current_cycle_num_new_streams_ = 0u;
+  uint32_t current_cycle_num_reset_streams_ = 0u;
   // Unlike other limits, this cannot be a constexpr because it is set per
   // transport via a ChannelArg named "grpc.http2.max_requests_per_read".
   const uint32_t max_new_streams_per_read_cycle_;
@@ -436,6 +502,9 @@ class ReadContext {
   const Slice peer_string_;
   const bool is_client_;
 
+  const uint8_t ping_on_rst_stream_percent_;
+  bool ping_on_rst_stream_in_progress_ = false;
+  const uint32_t max_security_frame_size_;
   uint32_t max_header_list_size_soft_limit_ =
       DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT;
   HPackParser parser_;

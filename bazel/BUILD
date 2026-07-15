@@ -138,6 +138,11 @@ package_group(
 )
 
 package_group(
+    name = "insecure_credentials",
+    packages = [],
+)
+
+package_group(
     name = "grpc++_unsecure",
     packages = [],
 )
@@ -271,5 +276,15 @@ package_group(
 
 package_group(
     name = "wait_for_single_owner",
+    packages = [],
+)
+
+package_group(
+    name = "virtual_rpcs",
+    packages = [],
+)
+
+package_group(
+    name = "friends",
     packages = [],
 )

@@ -68,7 +68,7 @@ class TestsNeedingStreamObjects : public ::testing::TestWithParam<bool> {
  protected:
   TestsNeedingStreamObjects()
       : transport_flow_control_(
-            /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+            /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
             /*memory_owner=*/nullptr),
         is_client_(GetParam()) {}
 
@@ -170,7 +170,7 @@ TEST(Http2CommonTransportTest, TestReadChannelArgs) {
   // correctly.
   Http2Settings settings;
   chttp2::TransportFlowControl transport_flow_control(
-      /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
   ChannelArgs channel_args =
       ChannelArgs()
@@ -231,7 +231,7 @@ TEST(Http2CommonTransportTest, TestReadTransportChannelArgs) {
   // correctly into TransportChannelArgs.
   Http2Settings settings;
   chttp2::TransportFlowControl transport_flow_control(
-      /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
 
   {
@@ -313,7 +313,7 @@ TEST(Http2CommonTransportTest, TestReadTransportChannelArgs) {
 
 TEST(Http2CommonTransportTest, ProcessOutgoingDataFrameFlowControlTest) {
   chttp2::TransportFlowControl transport_flow_control(
-      /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
   chttp2::StreamFlowControl stream_flow_control(&transport_flow_control);
   EXPECT_EQ(transport_flow_control.remote_window(), chttp2::kDefaultWindow);
@@ -336,7 +336,7 @@ TEST(Http2CommonTransportTest, ProcessOutgoingDataFrameFlowControlTest) {
 TEST(Http2CommonTransportTest, ProcessIncomingDataFrameFlowControlNullStream) {
   const uint32_t frame_payload_size = 20000;
   chttp2::TransportFlowControl flow_control(
-      /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
   Http2FrameHeader frame_header;
   frame_header.length = frame_payload_size;
@@ -389,7 +389,7 @@ TEST(Http2CommonTransportTest, ProcessIncomingDataFrameFlowControlNullStream) {
 TEST(Http2CommonTransportTest, ProcessIncomingDataFrameFlowControlNullStream1) {
   const uint32_t frame_payload_size = 60000;
   chttp2::TransportFlowControl flow_control(
-      /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
   Http2FrameHeader frame_header;
   frame_header.length = frame_payload_size;
@@ -606,7 +606,7 @@ TEST_P(TestsNeedingStreamObjects,
 TEST(Http2CommonTransportTest,
      ProcessIncomingWindowUpdateFrameFlowControlNullStream) {
   chttp2::TransportFlowControl flow_control(
-      /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
   EXPECT_EQ(flow_control.remote_window(), chttp2::kDefaultWindow);
 
@@ -813,7 +813,9 @@ TEST_F(Http2ReadContextTest, SetAndGetFrameHeader) {
   // that was set.
   util::testing::MockPromiseEndpoint mock_endpoint(1234);
   ReadContext context(/*max_new_streams_per_read_cycle=*/32u,
-                      mock_endpoint.promise_endpoint, true);
+                      mock_endpoint.promise_endpoint, true,
+                      GrpcErrors::kMaxSecurityFrameSize,
+                      /*ping_on_rst_stream_percent=*/1u);
   Http2FrameHeader header;
   header.length = 100u;
   header.type = 1u;
@@ -844,7 +846,9 @@ TEST_F(Http2ReadContextTest, ReadCycleFramesLimits) {
        &was_pending_at_limit]() -> Poll<absl::Status> {
         util::testing::MockPromiseEndpoint mock_endpoint(1234);
         ReadContext read_context(/*max_new_streams_per_read_cycle=*/32u,
-                                 mock_endpoint.promise_endpoint, true);
+                                 mock_endpoint.promise_endpoint, true,
+                                 GrpcErrors::kMaxSecurityFrameSize,
+                                 /*ping_on_rst_stream_percent=*/1u);
         const Http2FrameHeader header = {
             0u,  // length
             0u,  // type

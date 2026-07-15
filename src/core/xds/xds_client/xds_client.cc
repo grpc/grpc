@@ -35,14 +35,13 @@
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/timestamp.upb.h"
 #include "google/rpc/status.upb.h"
+#include "src/core/config/experiment_env_var.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/backoff.h"
 #include "src/core/util/debug_location.h"
-#include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/string.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/uri.h"
@@ -69,18 +68,6 @@
 #define GRPC_XDS_MIN_CLIENT_LOAD_REPORTING_INTERVAL_MS 1000
 
 namespace grpc_core {
-
-namespace {
-
-bool XdsEndpointFallbackEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_ENDPOINT_FALLBACK");
-  if (!value.has_value()) return false;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
-}
-
-}  // namespace
 
 using ::grpc_event_engine::experimental::EventEngine;
 
@@ -509,7 +496,7 @@ bool XdsClient::XdsChannel::MaybeFallbackLocked(
     auto* bootstrap_authority =
         xds_client_->bootstrap().LookupAuthority(authority);
     xds_servers = bootstrap_authority->servers();
-    if (XdsEndpointFallbackEnabled()) {
+    if (IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_ENDPOINT_FALLBACK")) {
       fallback_on_reachability_only =
           bootstrap_authority->FallbackOnReachabilityOnly();
     }

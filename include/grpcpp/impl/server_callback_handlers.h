@@ -64,7 +64,11 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
         param.call, [call](bool) { call->MaybeDone(); }, call);
 
     ServerUnaryReactor* reactor = nullptr;
-    if (param.status.ok()) {
+    if (ReturnPreexistingErrors() && !param.status.ok()) {
+      reactor = new (grpc_call_arena_alloc(param.call->call(),
+                                           sizeof(UnimplementedUnaryReactor)))
+          UnimplementedUnaryReactor(param.status);
+    } else if (param.status.ok()) {
       reactor = grpc::internal::CatchingReactorGetter<ServerUnaryReactor>(
           get_reactor_,
           static_cast<grpc::CallbackServerContext*>(param.server_context),
@@ -280,7 +284,11 @@ class CallbackClientStreamingHandler : public grpc::internal::MethodHandler {
         reader);
 
     ServerReadReactor<RequestType>* reactor = nullptr;
-    if (param.status.ok()) {
+    if (ReturnPreexistingErrors() && !param.status.ok()) {
+      reactor = new (grpc_call_arena_alloc(
+          param.call->call(), sizeof(UnimplementedReadReactor<RequestType>)))
+          UnimplementedReadReactor<RequestType>(param.status);
+    } else if (param.status.ok()) {
       reactor =
           grpc::internal::CatchingReactorGetter<ServerReadReactor<RequestType>>(
               get_reactor_,
@@ -475,7 +483,11 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
         writer);
 
     ServerWriteReactor<ResponseType>* reactor = nullptr;
-    if (param.status.ok()) {
+    if (ReturnPreexistingErrors() && !param.status.ok()) {
+      reactor = new (grpc_call_arena_alloc(
+          param.call->call(), sizeof(UnimplementedWriteReactor<ResponseType>)))
+          UnimplementedWriteReactor<ResponseType>(param.status);
+    } else if (param.status.ok()) {
       reactor = grpc::internal::CatchingReactorGetter<
           ServerWriteReactor<ResponseType>>(
           get_reactor_,
@@ -704,7 +716,12 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
         stream);
 
     ServerBidiReactor<RequestType, ResponseType>* reactor = nullptr;
-    if (param.status.ok()) {
+    if (ReturnPreexistingErrors() && !param.status.ok()) {
+      reactor = new (grpc_call_arena_alloc(
+          param.call->call(),
+          sizeof(UnimplementedBidiReactor<RequestType, ResponseType>)))
+          UnimplementedBidiReactor<RequestType, ResponseType>(param.status);
+    } else if (param.status.ok()) {
       reactor = grpc::internal::CatchingReactorGetter<
           ServerBidiReactor<RequestType, ResponseType>>(
           get_reactor_,

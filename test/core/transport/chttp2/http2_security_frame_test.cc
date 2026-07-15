@@ -28,6 +28,7 @@
 #include <utility>
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/frame_security.h"
 #include "src/core/ext/transport/chttp2/transport/security_frame.h"
 #include "src/core/ext/transport/chttp2/transport/write_cycle.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -543,6 +544,32 @@ TEST_P(SecurityFrameHandlerTest, SimulatorTest) {
 }
 
 INSTANTIATE_TEST_SUITE_P(IsClient, SecurityFrameHandlerTest, ::testing::Bool());
+
+TEST(SecurityFrameParserTest, Chttp2SecurityFrame16KBLimits) {
+  if (IsCustomFrameCheckEnabled()) {
+    // Purpose: Verify that CHTTP2 security frame parser accepts frames up to
+    // exactly 16KB and rejects frames exceeding 16KB.
+
+    // Step 1: Verify exactly 16KB (16384 bytes) frame is accepted.
+    grpc_chttp2_security_frame_parser parser_valid;
+    const absl::Status status_valid =
+        grpc_chttp2_security_frame_parser_begin_frame(&parser_valid, 16384u,
+                                                      16384u);
+    EXPECT_TRUE(status_valid.ok());
+
+    // Step 2: Verify 16KB + 1 byte (16385 bytes) frame is rejected.
+    grpc_chttp2_security_frame_parser parser_invalid;
+    const absl::Status status_invalid =
+        grpc_chttp2_security_frame_parser_begin_frame(&parser_invalid, 16385u,
+                                                      16384u);
+    EXPECT_FALSE(status_invalid.ok());
+    EXPECT_THAT(
+        status_invalid.message(),
+        ::testing::HasSubstr(
+            "Security frame is larger than the maximum allowed size : 16384, "
+            "Received size : 16385"));
+  }
+}
 
 }  // namespace http2
 }  // namespace grpc_core

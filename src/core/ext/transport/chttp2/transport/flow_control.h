@@ -201,7 +201,8 @@ std::ostream& operator<<(std::ostream& out, const FlowControlAction& action);
 // This class manages the flow control at a connection level.
 class TransportFlowControl final {
  public:
-  explicit TransportFlowControl(absl::string_view name, bool enable_bdp_probe,
+  explicit TransportFlowControl(absl::string_view peer_name,
+                                bool enable_bdp_probe,
                                 MemoryOwner* memory_owner);
   ~TransportFlowControl() {}
 
@@ -318,7 +319,7 @@ class TransportFlowControl final {
   // Call periodically (at a low-ish rate, 100ms - 10s makes sense)
   // to perform more complex flow control calculations and return an action
   // to let the transport change its parameters.
-  // TODO(tjagtap) [PH2][P2] Plumb with PH2 flow control.
+  // TODO(tjagtap) [PH2][P2][FCV3] Plumb with PH2 flow control.
   FlowControlAction PeriodicUpdate();
 
   int64_t test_only_target_window() const { return target_window(); }
@@ -525,7 +526,7 @@ class StreamFlowControl final {
     // `min_progress_size` bytes to make progress on reading the current stream.
     // An example usage of this would be, say we receive the first 1000 bytes of
     // a 2000 byte gRPC message, we can call SetMinProgressSize(1000)
-    // TODO(tjagtap) [PH2][P2] Plumb with PH2 flow control.
+    // TODO(tjagtap) [PH2][P2][FCV3] Plumb with PH2 flow control.
     void SetMinProgressSize(int64_t min_progress_size) {
       sfc_->min_progress_size_ = min_progress_size;
     }

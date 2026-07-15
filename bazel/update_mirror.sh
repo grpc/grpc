@@ -26,12 +26,15 @@ cd $(dirname $0)/..
 # Create a temp directory to hold the versioned tarball,
 # and clean it up when the script exits.
 tmpdir="$(mktemp -d)"
+success=0
+failure=0
 function cleanup {
+  echo "stats: Attempted to upload $((success+failure)) files in total, ${success} succeeded, ${failure} failed."
   rm -rf "$tmpdir"
 }
 trap cleanup EXIT
 
-function upload() {
+function _upload() {
   local uri="$1"
   local dst_path="${uri}"
 
@@ -57,32 +60,38 @@ function upload() {
   rm -rf "${tmpdir}/archive"
 }
 
-function upload_bzlmod_deps {
-  local bazel_modules=($(bazel mod graph 2>/dev/null |
-    tail -n +2 | # ignore the <root> module
-    sed -E 's/^[^[:alnum:]]*([a-zA-Z0-9@\._-]+).*$/\1/' | sort | uniq))
-
-  local urls=()
-  if [ "${#bazel_modules[@]}" -gt 0 ]; then
-    urls=($(bazel mod show_repo 2>/dev/null "${bazel_modules[@]}" | grep -Eo 'https://[^"]+' | sort | uniq))
+# Wrapper of _upload() which handles errors and keep track of stats.
+function upload() {
+  local url="$1"
+  local exit_code=0
+  _upload "${url}" || exit_code=$?
+  if [[ "$exit_code" != 0 ]]; then
+    echo "Failed to upload url ${url}"
+    failure=$((failure + 1))
+  else
+    success=$((success + 1))
   fi
+  return 0
+}
 
-  for url in "${urls[@]}" ; do
-    url="${url#https://}" # strip https:// prefix
-    case "$url" in
-        *grpc-bazel-mirror*)
-          echo "Skipping URL from mirror site: ${url}"
-          ;;
-        *github.com*)
-          echo "Uploading archive from github.com: ${url}"
-          upload "${url}"
-          ;;
-        *)
-          echo "Uploading archive from non-github site: ${url}"
-          upload "${url}"
-          ;;
-    esac
-  done
+function upload_bzlmod_deps {
+  tools/bazel mod show_repo --all_repos --output=streamed_jsonproto > ${tmpdir}/repos.ndjson || true
+  python3 bazel/update_mirror_helper.py ${tmpdir}/repos.ndjson ${tmpdir}/repos.txt
+  while read -r url; do
+      case "$url" in
+          *grpc-bazel-mirror*)
+            echo "Skipping URL from mirror site: ${url}"
+            ;;
+          *github.com*)
+            echo "Uploading archive from github.com: ${url}"
+            upload "${url}"
+            ;;
+          *)
+            echo "Uploading archive from non-github site: ${url}"
+            upload "${url}"
+            ;;
+      esac
+  done < "${tmpdir}/repos.txt"
 }
 
 # How to check that all mirror URLs work:
@@ -94,10 +103,10 @@ function upload_bzlmod_deps {
 # upload "github.com/google/boringssl/archive/1c2769383f027befac5b75b6cedd25daf3bf4dcf.tar.gz"
 
 # bazel binaries used by the tools/bazel wrapper script
-upload github.com/bazelbuild/bazel/releases/download/8.0.1/bazel-8.0.1-linux-arm64
-upload github.com/bazelbuild/bazel/releases/download/8.0.1/bazel-8.0.1-linux-x86_64
-upload github.com/bazelbuild/bazel/releases/download/8.0.1/bazel-8.0.1-darwin-x86_64
-upload github.com/bazelbuild/bazel/releases/download/8.0.1/bazel-8.0.1-windows-x86_64.exe
+upload github.com/bazelbuild/bazel/releases/download/8.7.0/bazel-8.7.0-linux-arm64
+upload github.com/bazelbuild/bazel/releases/download/8.7.0/bazel-8.7.0-linux-x86_64
+upload github.com/bazelbuild/bazel/releases/download/8.7.0/bazel-8.7.0-darwin-x86_64
+upload github.com/bazelbuild/bazel/releases/download/8.7.0/bazel-8.7.0-windows-x86_64.exe
 
 # Collect the github archives to mirror from grpc_deps.bzl
 # TODO(weizheyuan): Considier removing this block completely (since it's used by WORKSPACE only)

@@ -128,10 +128,19 @@ grpc::internal::Call Channel::CreateCallInternal(
   const bool kRegistered = method.channel_tag() && context->authority().empty();
   grpc_call* c_call = nullptr;
   if (kRegistered) {
-    c_call = grpc_channel_create_registered_call(
+    auto* rc =
+        static_cast<grpc_core::Channel::RegisteredCall*>(method.channel_tag());
+    c_call = grpc_channel_create_call_with_arena_init(
         c_channel_, context->propagate_from_call_,
-        context->propagation_options_.c_bitmask(), cq->cq(),
-        method.channel_tag(), context->raw_deadline(), nullptr);
+        context->propagation_options_.c_bitmask(), cq->cq(), rc->path.Ref(),
+        rc->authority.has_value()
+            ? std::optional<grpc_core::Slice>(rc->authority->Ref())
+            : std::nullopt,
+        context->raw_deadline(),
+        /*registered_method=*/true, [context](grpc_core::Arena* arena) {
+          impl::CallContextRegistry::Propagate(context->context_elements_,
+                                               arena);
+        });
   } else {
     const ::std::string* host_str = nullptr;
     if (!context->authority_.empty()) {
@@ -145,21 +154,24 @@ grpc::internal::Call Channel::CreateCallInternal(
     if (host_str != nullptr) {
       host_slice = grpc::SliceFromCopiedString(*host_str);
     }
-    c_call = grpc_channel_create_call(
+    c_call = grpc_channel_create_call_with_arena_init(
         c_channel_, context->propagate_from_call_,
-        context->propagation_options_.c_bitmask(), cq->cq(), method_slice,
-        host_str == nullptr ? nullptr : &host_slice, context->raw_deadline(),
-        nullptr);
+        context->propagation_options_.c_bitmask(), cq->cq(),
+        grpc_core::Slice(grpc_core::CSliceRef(method_slice)),
+        host_str == nullptr
+            ? std::nullopt
+            : std::optional<grpc_core::Slice>(grpc_core::CSliceRef(host_slice)),
+        context->raw_deadline(),
+        /*registered_method=*/false, [context](grpc_core::Arena* arena) {
+          impl::CallContextRegistry::Propagate(context->context_elements_,
+                                               arena);
+        });
     grpc_slice_unref(method_slice);
     if (host_str != nullptr) {
       grpc_slice_unref(host_slice);
     }
   }
   grpc_census_call_set_context(c_call, context->census_context());
-  if (context->context_elements_ != nullptr) {
-    grpc_core::Arena* arena = grpc_call_get_arena(c_call);
-    impl::CallContextRegistry::Propagate(context->context_elements_, arena);
-  }
 
   // ClientRpcInfo should be set before call because set_call also checks
   // whether the call has been cancelled, and if the call was cancelled, we
