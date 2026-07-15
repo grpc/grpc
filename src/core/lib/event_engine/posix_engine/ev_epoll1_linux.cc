@@ -226,7 +226,7 @@ void Epoll1EventHandle::OrphanHandle(PosixEngineClosure* on_done,
 // shutdown() syscall on that fd)
 void Epoll1EventHandle::HandleShutdownInternal(absl::Status why,
                                                bool releasing_fd) {
-  if (why.code() != absl::StatusCode::kCancelled) {
+  if (!absl::IsCancelled(why)) {
     why = absl::UnavailableError(why.message());
   }
   if (read_closure_.SetShutdown(why)) {

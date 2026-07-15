@@ -92,6 +92,9 @@ GRPC_MUST_USE_RESULT
 std::optional<intptr_t> StatusGetInt(const absl::Status& status,
                                      StatusIntProperty key);
 
+absl::Status ReplaceStatusCode(const absl::Status& status,
+                               absl::StatusCode code);
+
 /// Adds a child status to status
 void StatusAddChild(absl::Status* status, absl::Status child);
 

@@ -80,8 +80,6 @@ absl::Status StatusCreate(absl::StatusCode code, absl::string_view msg,
   return s;
 }
 
-namespace {
-
 absl::Status ReplaceStatusCode(const absl::Status& status,
                                absl::StatusCode code) {
   absl::Status new_status(code, status.message());
@@ -91,8 +89,6 @@ absl::Status ReplaceStatusCode(const absl::Status& status,
       });
   return new_status;
 }
-
-}  // namespace
 
 void StatusSetInt(absl::Status* status, StatusIntProperty key, intptr_t value) {
   if (key == StatusIntProperty::kRpcStatus) {
