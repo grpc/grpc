@@ -2750,7 +2750,7 @@ static tsi_result ssl_handshaker_next(
   return handshake_result.tsi_handshake_result;
 }
 
-static void ssl_handshaker_shutdown(tsi_handshaker* self) {
+static void ssl_handshaker_shutdown(tsi_handshaker* self, bool peer_closed) {
   tsi_ssl_handshaker* impl = static_cast<tsi_ssl_handshaker*>(self);
 #if defined(OPENSSL_IS_BORINGSSL)
   std::shared_ptr<grpc_core::PrivateKeySigner> key_signer;
@@ -2765,7 +2765,7 @@ static void ssl_handshaker_shutdown(tsi_handshaker* self) {
     if (impl->ssl == nullptr) return;
     impl->is_shutdown = true;
     impl->MaybeRecordTelemetry({
-        /*tsi_result=*/TSI_HANDSHAKE_SHUTDOWN,
+        /*tsi_result=*/peer_closed ? TSI_CLOSE_NOTIFY : TSI_HANDSHAKE_SHUTDOWN,
         /*ssl_error=*/SSL_ERROR_NONE,
         /*err_code=*/0,
     });

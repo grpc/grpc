@@ -184,7 +184,7 @@ TlsTelemetryHandshakeResult MapSslErrorToTlsTelemetryHandshakeResult(
           break;
         // Handshake timeout
         case SSL_R_READ_TIMEOUT_EXPIRED:
-          result = TlsTelemetryHandshakeResult::kHandshakeTimeout;
+          result = TlsTelemetryHandshakeResult::kCancelled;
           break;
         // Certificate verification failures
         case SSL_R_CERTIFICATE_VERIFY_FAILED: {
@@ -285,8 +285,6 @@ absl::string_view TlsTelemetryHandshakeResultToString(
       return "PRIVATE_KEY_SIGNING_FAILED";
     case TlsTelemetryHandshakeResult::kUnexpectedMessage:
       return "UNEXPECTED_MESSAGE";
-    case TlsTelemetryHandshakeResult::kHandshakeTimeout:
-      return "HANDSHAKE_TIMEOUT";
     case TlsTelemetryHandshakeResult::kPeerConnectionClosed:
       return "PEER_CONNECTION_CLOSED";
     case TlsTelemetryHandshakeResult::kInternalSystemError:

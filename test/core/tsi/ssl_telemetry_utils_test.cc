@@ -144,7 +144,7 @@ TEST(SslTelemetryUtilsTest,
       MapSslErrorToTlsTelemetryHandshakeResult(
           TSI_OK, SSL_ERROR_SSL,
           TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_READ_TIMEOUT_EXPIRED), X509_V_OK),
-      TlsTelemetryHandshakeResult::kHandshakeTimeout);
+      TlsTelemetryHandshakeResult::kCancelled);
   // Certificate verification failures delegation
   EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
                 TSI_OK, SSL_ERROR_SSL,

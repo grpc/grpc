@@ -53,7 +53,6 @@ enum class TlsTelemetryHandshakeResult {
   kPrivateKeySigningFailed,
   // Other failures
   kUnexpectedMessage,
-  kHandshakeTimeout,
   kPeerConnectionClosed,
   kCancelled,
   kInternalSystemError
