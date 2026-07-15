@@ -18,10 +18,6 @@ from typing import Generic, Iterable, Mapping, NoReturn, Optional, Sequence
 
 import grpc
 
-# pylint: disable=unused-import
-from ._metadata import Metadata  # pyright: ignore[reportUnusedImport]
-
-# pylint: enable=unused-import
 from ._typing import DoneCallbackType
 from ._typing import MetadataType
 from ._typing import RequestType
@@ -143,9 +139,7 @@ class Server(abc.ABC):
     # for type annotation of service_name and method_handlers as it will be
     # taken up along with the sync stack changes.
     def add_registered_method_handlers(  # noqa: B027
-        self,
-        service_name: str,
-        method_handlers: Mapping[str, grpc.RpcMethodHandler],
+        self, service_name, method_handlers  # pyright: ignore # noqa: PGH003
     ) -> None:
         """Registers GenericRpcHandlers with this Server.
 
@@ -373,7 +367,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         """
         raise NotImplementedError()
 
-    def details(self) -> str:
+    def details(self):  # pyright: ignore[reportUnknownParameterType]
         """Accesses the value to be used as detail string upon RPC completion.
 
         This is an EXPERIMENTAL API.
