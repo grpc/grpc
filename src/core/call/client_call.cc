@@ -46,6 +46,7 @@
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/surface/call_utils.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
@@ -62,7 +63,9 @@ namespace grpc_core {
 
 namespace {
 
-grpc_call_error ValidateClientBatch(const grpc_op* ops, size_t nops) {
+grpc_call_error ValidateClientBatch(
+    const grpc_op* ops, size_t nops,
+    CallOpInvariantsValidator& call_op_invariants_validator) {
   BitSet<8> got_ops;
   for (size_t op_idx = 0; op_idx < nops; op_idx++) {
     const grpc_op& op = ops[op_idx];
@@ -94,7 +97,7 @@ grpc_call_error ValidateClientBatch(const grpc_op* ops, size_t nops) {
     if (got_ops.is_set(op.op)) return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
     got_ops.set(op.op);
   }
-  return GRPC_CALL_OK;
+  return call_op_invariants_validator.ValidateAndCommit(ops, nops);
 }
 
 }  // namespace
@@ -161,7 +164,8 @@ grpc_call_error ClientCall::StartBatch(const grpc_op* ops, size_t nops,
     EndOpImmediately(cq_, notify_tag, is_notify_tag_closure);
     return GRPC_CALL_OK;
   }
-  const grpc_call_error validation_result = ValidateClientBatch(ops, nops);
+  const grpc_call_error validation_result =
+      ValidateClientBatch(ops, nops, call_op_invariants_validator_);
   if (validation_result != GRPC_CALL_OK) {
     return validation_result;
   }
@@ -325,8 +329,12 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
   }
   if (!is_notify_tag_closure) grpc_cq_begin_op(cq_, notify_tag);
   BatchOpIndex op_index(ops, nops);
-  auto send_message =
-      op_index.OpHandler<GRPC_OP_SEND_MESSAGE>([this](const grpc_op& op) {
+  uint8_t concurrent_ops_to_reset = 0;
+
+  auto send_message = op_index.OpHandler<GRPC_OP_SEND_MESSAGE>(
+      [this, &concurrent_ops_to_reset](const grpc_op& op) {
+        concurrent_ops_to_reset |=
+            CallOpInvariantsValidator::OpBit(GRPC_OP_SEND_MESSAGE);
         SliceBuffer send;
         grpc_slice_buffer_swap(
             &op.data.send_message.send_message->data.raw.slice_buffer,
@@ -344,8 +352,10 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
               return Success{};
             };
           });
-  auto recv_message =
-      op_index.OpHandler<GRPC_OP_RECV_MESSAGE>([this](const grpc_op& op) {
+  auto recv_message = op_index.OpHandler<GRPC_OP_RECV_MESSAGE>(
+      [this, &concurrent_ops_to_reset](const grpc_op& op) {
+        concurrent_ops_to_reset |=
+            CallOpInvariantsValidator::OpBit(GRPC_OP_RECV_MESSAGE);
         return message_receiver_.MakeBatchOp(op, &started_call_initiator_);
       });
   auto recv_initial_metadata =
@@ -382,7 +392,9 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
       AllOk<StatusFlag>(
           TrySeq(std::move(send_message), std::move(send_close_from_client)),
           TrySeq(std::move(recv_initial_metadata), std::move(recv_message))),
-      [self = WeakRef()](StatusFlag x) { return x; });
+      [guard = PrimaryOpsCleanup<ClientCall>(WeakRefAsSubclass<ClientCall>(),
+                                             concurrent_ops_to_reset)](
+          StatusFlag x) { return x; });
   Party::WakeupHold wakeup_hold;
   if (const grpc_op* op = op_index.op(GRPC_OP_SEND_INITIAL_METADATA)) {
     wakeup_hold = StartCall(*op);

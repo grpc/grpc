@@ -365,6 +365,13 @@ class GoawayManager {
            !context_->was_immediate;
   }
 
+  bool IsGracefulGoawayInProgress() const {
+    return context_->goaway_state ==
+               GoawayState::kInitialGracefulGoawayScheduled ||
+           context_->goaway_state == GoawayState::kInitialGracefulGoawaySent ||
+           context_->goaway_state == GoawayState::kFinalGracefulGoawayScheduled;
+  }
+
   // Called from the transport write cycle to notify the GOAWAY manager that a
   // GOAWAY frame may have been sent. If a GOAWAY frame is sent in current
   // write cycle, this function handles the needed state transition.

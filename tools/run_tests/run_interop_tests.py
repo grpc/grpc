@@ -1813,7 +1813,7 @@ try:
     if "java" in servers:
         languages_for_mcs_cs = set(
             _LANGUAGES[l]
-            for l in _LANGUAGES_WITH_HTTP2_CLIENTS_FOR_HTTP2_SERVER_TEST_CASES
+            for l in _LANGUAGES_FOR_MCS_TEST_CASE
             if "all" in args.language or l in args.language
         )
         if not languages_for_mcs_cs:

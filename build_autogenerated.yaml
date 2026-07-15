@@ -1233,6 +1233,7 @@ libs:
   - src/core/telemetry/stats.h
   - src/core/telemetry/stats_data.h
   - src/core/telemetry/tcp_tracer.h
+  - src/core/telemetry/telemetry_label.h
   - src/core/transport/auth_context.h
   - src/core/transport/auth_context_comparator_registry.h
   - src/core/transport/endpoint_transport.h
@@ -2983,6 +2984,7 @@ libs:
   - src/core/telemetry/stats.h
   - src/core/telemetry/stats_data.h
   - src/core/telemetry/tcp_tracer.h
+  - src/core/telemetry/telemetry_label.h
   - src/core/transport/auth_context.h
   - src/core/transport/auth_context_comparator_registry.h
   - src/core/transport/endpoint_transport.h
@@ -4231,11 +4233,9 @@ libs:
   - include/grpcpp/support/time.h
   - include/grpcpp/support/validate_service_config.h
   - include/grpcpp/version_info.h
-  - include/grpcpp/virtual_channel.h
   - include/grpcpp/xds_server_builder.h
   headers:
   - src/core/client_channel/virtual_channel.h
-  - src/core/telemetry/telemetry_label.h
   - src/core/xds/grpc/xds_enabled_server.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
@@ -4621,10 +4621,8 @@ libs:
   - include/grpcpp/support/time.h
   - include/grpcpp/support/validate_service_config.h
   - include/grpcpp/version_info.h
-  - include/grpcpp/virtual_channel.h
   headers:
   - src/core/client_channel/virtual_channel.h
-  - src/core/telemetry/telemetry_label.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/server/backend_metric_recorder.h
@@ -22509,6 +22507,17 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
+- name: recv_message_filter_bypass_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/filters/recv_message_filter_bypass_test.cc
+  deps:
+  - gtest
+  - grpc_unsecure
+  - grpc_test_util
 - name: ref_counted_ptr_test
   gtest: true
   build: test
@@ -25626,7 +25635,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/cpp/end2end/end2end_test_utils.h
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
