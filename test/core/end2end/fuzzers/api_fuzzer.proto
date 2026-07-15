@@ -186,6 +186,7 @@ message Action {
         Empty destroy_call = 21;
         uint32 resize_resource_quota = 22;
         uint32 sleep_ms = 23;
+        Empty post_mortem_emit = 24;
     }
 }
 

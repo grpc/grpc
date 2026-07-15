@@ -26,13 +26,14 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 # some distribtests use a pre-registered binfmt_misc hook
 # to automatically execute foreign binaries (such as aarch64)
 # under qemu emulator.
-source tools/internal_ci/helper_scripts/prepare_qemu_rc
+# TODO(b/441764156): make it available if we add arm. No need for regular x64.
+# source tools/internal_ci/helper_scripts/prepare_qemu_rc
 
 # configure ccache
 source tools/internal_ci/helper_scripts/prepare_ccache_rc
 
 # Build all python linux artifacts (this step actually builds all the binary wheels and source archives)
-tools/run_tests/task_runner.py -f artifact linux python latest-manylinux ${TASK_RUNNER_EXTRA_FILTERS} -j 12 -x build_artifacts/sponge_log.xml || FAILED="true"
+tools/run_tests/task_runner.py -f artifact linux python latest-manylinux ${TASK_RUNNER_EXTRA_FILTERS} -x build_artifacts/sponge_log.xml || FAILED="true"
 
 # the next step expects to find the artifacts from the previous step in the "input_artifacts" folder.
 rm -rf input_artifacts
@@ -42,7 +43,7 @@ rm -rf artifacts_from_build_artifacts_step
 mv artifacts artifacts_from_build_artifacts_step || true
 
 # This step simply collects python artifacts from subdirectories of input_artifacts/ and copies them to artifacts/
-tools/run_tests/task_runner.py -f package linux python -x build_packages/sponge_log.xml || FAILED="true"
+tools/run_tests/task_runner.py -b python_package -x build_packages/sponge_log.xml || FAILED="true"
 
 # the next step expects to find the artifacts from the previous step in the "input_artifacts" folder.
 # in addition to that, preserve the contents of "artifacts" directory since we want kokoro

@@ -12,15 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Implementation of the metadata abstraction for gRPC Asyncio Python."""
+from __future__ import annotations
+
 from collections import OrderedDict
-from collections import abc
-from typing import Any, Iterator, List, Optional, Tuple, Union
+from collections.abc import (
+    Collection,
+    ItemsView,
+    Iterable,
+    Iterator,
+    KeysView,
+    Sequence,
+    ValuesView,
+)
+from typing import Any, Optional, Tuple, Union
+
+from typing_extensions import Self
 
 MetadataKey = str
 MetadataValue = Union[str, bytes]
+MetadatumType = Tuple[MetadataKey, MetadataValue]
+MetadataType = Union["Metadata", Sequence[MetadatumType]]
 
 
-class Metadata(abc.Collection):
+class Metadata(Collection[MetadatumType]):  # noqa: PLW1641
     """Metadata abstraction for the asynchronous calls and interceptors.
 
     The metadata is a mapping from str -> List[str]
@@ -33,13 +47,32 @@ class Metadata(abc.Collection):
         * Allows partial mutation on the data without recreating the new object from scratch.
     """
 
-    def __init__(self, *args: Tuple[MetadataKey, MetadataValue]) -> None:
+    _metadata: OrderedDict[MetadataKey, list[MetadataValue]]
+
+    def __init__(self, *args: MetadatumType) -> None:
         self._metadata = OrderedDict()
         for md_key, md_value in args:
             self.add(md_key, md_value)
 
     @classmethod
-    def from_tuple(cls, raw_metadata: tuple):
+    def from_tuple(cls, raw_metadata: Iterable[MetadatumType]) -> Self:
+        # Note: We unintentionally support non-tuple arguments here. We plan
+        # to emit a DeprecationWarning when a non-tuple type is used.
+        if raw_metadata:
+            return cls(*raw_metadata)
+        return cls()
+
+    @classmethod
+    def _create(
+        cls,
+        raw_metadata: Union[None, Self, Iterable[MetadatumType]],
+    ) -> Self:
+        # TODO(asheshvidyut): Make this method public and encourage people to use it instead
+        # of `from_tuple` to create metadata from non-tuple types.
+        if raw_metadata is None:
+            return cls()
+        if isinstance(raw_metadata, cls):
+            return raw_metadata
         if raw_metadata:
             return cls(*raw_metadata)
         return cls()
@@ -61,7 +94,8 @@ class Metadata(abc.Collection):
         try:
             return self._metadata[key][0]
         except (ValueError, IndexError) as e:
-            raise KeyError("{0!r}".format(key)) from e
+            error_msg = f"{key!r}"
+            raise KeyError(error_msg) from e
 
     def __setitem__(self, key: MetadataKey, value: MetadataValue) -> None:
         """Calling metadata[<key>] = <value>
@@ -89,36 +123,38 @@ class Metadata(abc.Collection):
             for value in values:
                 yield (key, value)
 
-    def keys(self) -> abc.KeysView:
-        return abc.KeysView(self)
+    def keys(self) -> KeysView[MetadataKey]:
+        return KeysView(self._metadata)
 
-    def values(self) -> abc.ValuesView:
-        return abc.ValuesView(self)
+    def values(self) -> ValuesView[list[MetadataValue]]:
+        return ValuesView(self._metadata)
 
-    def items(self) -> abc.ItemsView:
-        return abc.ItemsView(self)
+    def items(self) -> ItemsView[MetadataKey, list[MetadataValue]]:
+        return ItemsView(self._metadata)
 
     def get(
-        self, key: MetadataKey, default: MetadataValue = None
+        self, key: MetadataKey, default: Optional[MetadataValue] = None
     ) -> Optional[MetadataValue]:
         try:
             return self[key]
         except KeyError:
             return default
 
-    def get_all(self, key: MetadataKey) -> List[MetadataValue]:
+    def get_all(self, key: MetadataKey) -> list[MetadataValue]:
         """For compatibility with other Metadata abstraction objects (like in Java),
         this would return all items under the desired <key>.
         """
         return self._metadata.get(key, [])
 
-    def set_all(self, key: MetadataKey, values: List[MetadataValue]) -> None:
+    def set_all(self, key: MetadataKey, values: list[MetadataValue]) -> None:
         self._metadata[key] = values
 
-    def __contains__(self, key: MetadataKey) -> bool:
+    def __contains__(self, key: object) -> bool:
+        if not isinstance(key, MetadataKey):
+            return False
         return key in self._metadata
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
             return self._metadata == other._metadata
         if isinstance(other, tuple):

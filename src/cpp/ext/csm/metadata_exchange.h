@@ -26,13 +26,13 @@
 #include <utility>
 #include <vector>
 
-#include "absl/strings/string_view.h"
 #include "google/protobuf/struct.upb.h"
 #include "opentelemetry/sdk/common/attribute_utils.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
 #include "upb/mem/arena.hpp"
+#include "absl/strings/string_view.h"
 
 namespace grpc {
 namespace internal {
@@ -54,7 +54,9 @@ class ServiceMeshLabelsInjector : public LabelsInjector {
   // Add optional labels to the traced calls.
   bool AddOptionalLabels(
       bool is_client,
-      absl::Span<const grpc_core::RefCountedStringValue> optional_labels,
+      absl::Span<const std::variant<grpc_core::RefCountedStringValue,
+                                    absl::string_view>>
+          optional_labels,
       opentelemetry::nostd::function_ref<
           bool(opentelemetry::nostd::string_view,
                opentelemetry::common::AttributeValue)>
@@ -63,7 +65,8 @@ class ServiceMeshLabelsInjector : public LabelsInjector {
   // Gets the size of the actual optional labels.
   size_t GetOptionalLabelsSize(
       bool is_client,
-      absl::Span<const grpc_core::RefCountedStringValue> /*optional_labels*/)
+      absl::Span<const std::variant<grpc_core::RefCountedStringValue,
+                                    absl::string_view>> /*optional_labels*/)
       const override {
     return is_client ? 2 : 0;
   }

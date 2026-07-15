@@ -26,8 +26,8 @@
 #include <string>
 #include <vector>
 
-#include "absl/strings/string_view.h"
 #include "src/core/credentials/call/oauth2/oauth2_credentials.h"
+#include "src/core/credentials/call/regional_access_boundary_fetcher.h"
 #include "src/core/credentials/call/token_fetcher/token_fetcher_credentials.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -38,6 +38,7 @@
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -64,6 +65,9 @@ class ExternalAccountCredentials : public TokenFetcherCredentials {
     std::string client_id;
     std::string client_secret;
     std::string workforce_pool_user_project;
+    std::string workforce_pool_id;
+    std::string workload_pool_project;
+    std::string workload_pool_id;
   };
 
   static absl::StatusOr<RefCountedPtr<ExternalAccountCredentials>> Create(
@@ -75,7 +79,6 @@ class ExternalAccountCredentials : public TokenFetcherCredentials {
       Options options, std::vector<std::string> scopes,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine = nullptr);
-  ~ExternalAccountCredentials() override;
 
  protected:
   // A base class for a cancellable fetch operation.
@@ -200,6 +203,8 @@ class ExternalAccountCredentials : public TokenFetcherCredentials {
 
   Options options_;
   std::vector<std::string> scopes_;
+  RefCountedPtr<RegionalAccessBoundaryFetcher>
+      regional_access_boundary_fetcher_;
 };
 
 }  // namespace grpc_core

@@ -16,18 +16,34 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/ext/filters/rbac")
+grpc_package(
+    name = "test/core/ext/filters/rbac",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_test(
     name = "rbac_service_config_parser_test",
     srcs = ["rbac_service_config_parser_test.cc"],
     external_deps = [
         "gtest",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
     ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:grpc_public_hdrs",
+        "//:grpc_service_config_impl",
+        "//:ref_counted_ptr",
+        "//src/core:grpc_audit_logging",
         "//src/core:grpc_rbac_filter",
+        "//src/core:grpc_service_config",
+        "//src/core:json_writer",
+        "//src/core:slice",
         "//test/core/test_util:grpc_test_util",
     ],
 )

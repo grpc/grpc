@@ -24,6 +24,9 @@ import urllib.parse
 import urllib.request
 import uuid
 
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+import utils_common
+
 gcp_utils_dir = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "../../gcp/utils")
 )
@@ -150,7 +153,10 @@ def _get_resultstore_data(api_key, invocation_id):
             else raw_resp.decode("utf-8", "ignore")
         )
         results = json.loads(decoded_resp)
-        all_actions.extend(results["actions"])
+        # ResultStore API may omit the 'actions' field if no actions are found
+        # (e.g., in highly cached small runs) or due to eventual consistency
+        # delays.
+        all_actions.extend(results.get("actions", []))
         if "nextPageToken" not in results:
             break
         page_token = results["nextPageToken"]
@@ -265,6 +271,7 @@ if __name__ == "__main__":
             test_cases = []
             for tests_item in action["testAction"]["testSuite"]["tests"]:
                 test_cases += tests_item["testSuite"]["tests"]
+
         for test_case in test_cases:
             if any(s in test_case["testCase"] for s in ["errors", "failures"]):
                 result = "FAILED"
@@ -290,15 +297,21 @@ if __name__ == "__main__":
                             "test_case": test_case["testCase"]["caseName"],
                             "result": result,
                             "timestamp": action["timing"]["startTime"],
-                            "duration": _parse_test_duration(
-                                action["timing"]["duration"]
-                            ),
                         },
                     }
+                    | (
+                        {
+                            "duration": _parse_test_duration(
+                                action["timing"]["duration"]
+                            )
+                        }
+                        if "duration" in action["timing"]
+                        else {}
+                    )
                 )
             except Exception as e:
                 print(("Failed to parse test result. Error: %s" % str(e)))
-                print((json.dumps(test_case, indent=4)))
+                print((json.dumps(action, indent=4)))
                 bq_rows.append(
                     {
                         "insertId": str(uuid.uuid4()),
@@ -311,7 +324,7 @@ if __name__ == "__main__":
                             "test_class_name": "N/A",
                             "test_case": "N/A",
                             "result": "UNPARSABLE",
-                            "timestamp": "N/A",
+                            "timestamp": action["timing"]["startTime"],
                         },
                     }
                 )
@@ -321,7 +334,7 @@ if __name__ == "__main__":
             json.dump(bq_rows, f, indent=4, sort_keys=True)
         print(("Dumped BQ data to file %s" % args.bq_dump_file))
 
-    if not args.skip_upload:
+    if not args.skip_upload and utils_common.should_upload_results_on_ci():
         # BigQuery sometimes fails with large uploads, so batch 1,000 rows at a time.
         MAX_ROWS = 1000
         for i in range(0, len(bq_rows), MAX_ROWS):

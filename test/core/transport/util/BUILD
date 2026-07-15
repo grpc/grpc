@@ -18,6 +18,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/core/transport/util",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "tests",
 )
 
@@ -27,12 +31,23 @@ grpc_cc_library(
     srcs = ["mock_promise_endpoint.cc"],
     hdrs = ["mock_promise_endpoint.h"],
     external_deps = [
+        "absl/functional:any_invocable",
         "absl/log:log",
+        "absl/status",
+        "absl/strings",
+        "absl/time",
+        "absl/types:span",
         "gtest",
     ],
     deps = [
+        "//:debug_location",
+        "//:event_engine_base_hdrs",
         "//:grpc",
+        "//src/core:event_engine_tcp_socket_utils",
         "//src/core:grpc_promise_endpoint",
+        "//src/core:notification",
+        "//src/core:transport_framing_endpoint_extension",
+        "//src/core:useful",
     ],
 )
 
@@ -41,14 +56,27 @@ grpc_cc_library(
     testonly = 1,
     hdrs = ["transport_test.h"],
     external_deps = [
+        "absl/functional:any_invocable",
         "absl/log:log",
+        "absl/status",
+        "absl/strings",
         "gtest",
     ],
     deps = [
+        "//:config",
+        "//:event_engine_base_hdrs",
         "//:iomgr_timer",
+        "//src/core:call_arena_allocator",
+        "//src/core:call_spine",
+        "//src/core:channel_args",
+        "//src/core:event_engine_context",
+        "//src/core:grpc_check",
+        "//src/core:grpc_promise_endpoint",
         "//src/core:memory_quota",
         "//src/core:resource_quota",
+        "//src/core:slice_buffer",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
+        "//test/core/test_util:grpc_test_util_base",
     ],
 )

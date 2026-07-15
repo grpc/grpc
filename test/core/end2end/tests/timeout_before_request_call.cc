@@ -19,12 +19,12 @@
 
 #include <memory>
 
-#include "absl/log/log.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
 namespace {
@@ -121,8 +121,8 @@ CORE_END2END_TEST(CoreDeadlineSingleHopTests,
 
   const size_t kMessageSize = 10 * 1024 * 1024;
   auto send_from_client = RandomSlice(kMessageSize);
-  InitServer(
-      ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, kMessageSize));
+  InitServer(DefaultServerArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH,
+                                     kMessageSize));
   InitClient(
       ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, kMessageSize));
 

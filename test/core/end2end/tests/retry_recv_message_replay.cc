@@ -23,8 +23,6 @@
 #include <new>
 #include <optional>
 
-#include "absl/status/status.h"
-#include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -38,6 +36,8 @@
 #include "src/core/util/time.h"
 #include "src/core/util/unique_type_name.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 namespace {
@@ -129,14 +129,15 @@ grpc_channel_filter FailFirstSendOpFilter::kFilterVtable = {
 // a grpc_error.
 CORE_END2END_TEST(RetryTests, RetryRecvMessageReplay) {
   SKIP_IF_V3();  // Need to convert filter
-  CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
-    builder->channel_init()
-        ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
-                         &FailFirstSendOpFilter::kFilterVtable)
-        // Skip on proxy (which explicitly disables retries).
-        .IfChannelArg(GRPC_ARG_ENABLE_RETRIES, true);
-  });
-  InitServer(ChannelArgs());
+  CoreConfiguration::RegisterEphemeralBuilder(
+      [](CoreConfiguration::Builder* builder) {
+        builder->channel_init()
+            ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
+                             &FailFirstSendOpFilter::kFilterVtable)
+            // Skip on proxy (which explicitly disables retries).
+            .IfChannelArg(GRPC_ARG_ENABLE_RETRIES, true);
+      });
+  InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
       "{\n"

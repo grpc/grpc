@@ -46,11 +46,11 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-#include "absl/log/check.h"
+#include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/util/grpc_check.h"
+#include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "gtest/gtest.h"
-#include "src/core/lib/iomgr/sockaddr.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -70,7 +70,7 @@ EventEngine::ResolvedAddress MakeAddr4(const uint8_t* data, size_t data_len) {
       const_cast<sockaddr*>(resolved_addr4.address()));
   memset(&resolved_addr4, 0, sizeof(resolved_addr4));
   addr4->sin_family = AF_INET;
-  CHECK_EQ(data_len, sizeof(addr4->sin_addr.s_addr));
+  GRPC_CHECK_EQ(data_len, sizeof(addr4->sin_addr.s_addr));
   memcpy(&addr4->sin_addr.s_addr, data, data_len);
   addr4->sin_port = htons(12345);
   return EventEngine::ResolvedAddress(
@@ -84,7 +84,7 @@ EventEngine::ResolvedAddress MakeAddr6(const uint8_t* data, size_t data_len) {
       const_cast<sockaddr*>(resolved_addr6.address()));
   memset(&resolved_addr6, 0, sizeof(resolved_addr6));
   addr6->sin6_family = AF_INET6;
-  CHECK_EQ(data_len, sizeof(addr6->sin6_addr.s6_addr));
+  GRPC_CHECK_EQ(data_len, sizeof(addr6->sin6_addr.s6_addr));
   memcpy(&addr6->sin6_addr.s6_addr, data, data_len);
   addr6->sin6_port = htons(12345);
   return EventEngine::ResolvedAddress(

@@ -41,7 +41,7 @@ class TestServiceClient extends \Grpc\BaseStub {
      * @param \Grpc\Testing\EmptyMessage $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
-     * @return \Grpc\UnaryCall
+     * @return \Grpc\UnaryCall<\Grpc\Testing\EmptyMessage>
      */
     public function EmptyCall(\Grpc\Testing\EmptyMessage $argument,
       $metadata = [], $options = []) {
@@ -56,7 +56,7 @@ class TestServiceClient extends \Grpc\BaseStub {
      * @param \Grpc\Testing\SimpleRequest $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
-     * @return \Grpc\UnaryCall
+     * @return \Grpc\UnaryCall<\Grpc\Testing\SimpleResponse>
      */
     public function UnaryCall(\Grpc\Testing\SimpleRequest $argument,
       $metadata = [], $options = []) {
@@ -73,7 +73,7 @@ class TestServiceClient extends \Grpc\BaseStub {
      * @param \Grpc\Testing\SimpleRequest $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
-     * @return \Grpc\UnaryCall
+     * @return \Grpc\UnaryCall<\Grpc\Testing\SimpleResponse>
      */
     public function CacheableUnaryCall(\Grpc\Testing\SimpleRequest $argument,
       $metadata = [], $options = []) {
@@ -147,7 +147,7 @@ class TestServiceClient extends \Grpc\BaseStub {
      * @param \Grpc\Testing\EmptyMessage $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
-     * @return \Grpc\UnaryCall
+     * @return \Grpc\UnaryCall<\Grpc\Testing\EmptyMessage>
      */
     public function UnimplementedCall(\Grpc\Testing\EmptyMessage $argument,
       $metadata = [], $options = []) {

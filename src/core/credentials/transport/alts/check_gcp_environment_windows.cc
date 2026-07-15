@@ -27,6 +27,8 @@
 #include <tchar.h>
 #include <windows.h>
 
+#include <memory>
+
 #include "src/core/credentials/transport/alts/check_gcp_environment.h"
 #include "src/core/util/crash.h"
 

@@ -18,6 +18,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/cpp/util",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "public",
 )
 
@@ -43,8 +47,13 @@ grpc_cc_library(
     hdrs = [
         "proto_reflection_descriptor_database.h",
     ],
-    external_deps = ["absl/log:log"],
+    external_deps = [
+        "absl/log:log",
+        "absl/container:flat_hash_map",
+        "absl/container:flat_hash_set",
+    ],
     deps = [
+        "//:gpr",
         "//:grpc++",
         "//:grpc++_config_proto",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
@@ -78,11 +87,16 @@ grpc_cc_library(
         "absl/flags:flag",
         "absl/log:check",
         "absl/log:log",
+        "absl/memory",
         "protobuf",
     ],
     deps = [
+        "//:gpr",
         "//:grpc++",
+        "//:grpc++_config_proto",
         "//:subprocess",
+        "//src/core:grpc_check",
+        "//src/core:grpc_fake_credentials",
         "//test/core/end2end:ssl_test_data",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
@@ -101,10 +115,20 @@ grpc_cc_library(
     external_deps = [
         "gtest",
         "protobuf",
+        "absl/strings",
     ],
     deps = [
+        "//:channelz",
+        "//:gpr",
+        "//:grpc",
         "//:grpc++",
+        "//:grpc++_config_proto",
+        "//src/core:error",
+        "//src/core:json",
+        "//src/core:json_reader",
+        "//src/core:json_writer",
         "//src/proto/grpc/channelz:channelz_proto",
+        "//src/proto/grpc/channelz:channelz_proto_cc_proto",
     ],
 )
 
@@ -114,10 +138,13 @@ grpc_cc_library(
     hdrs = GRPCXX_TESTUTIL_HDRS,
     external_deps = [
         "protobuf",
+        "absl/memory",
     ],
     deps = [
+        "//:grpc++_config_proto",
         "//:grpc++_unsecure",
         "//:subprocess",
+        "//src/core:grpc_fake_credentials",
         "//test/core/test_util:grpc_test_util_base",
         "//test/core/test_util:grpc_test_util_unsecure",
     ],
@@ -144,10 +171,18 @@ grpc_cc_library(
         "absl/log:log",
         "protobuf",
         "protobuf_clib",
+        "absl/strings",
+        "absl/memory",
     ],
     deps = [
         ":grpc++_proto_reflection_desc_db",
+        "//:gpr",
+        "//:grpc",
         "//:grpc++",
+        "//:grpc++_config_proto",
+        "//:grpc_slice",
+        "//src/core:grpc_check",
+        "//src/core:load_file",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
     ],
 )
@@ -162,9 +197,14 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/strings",
     ],
     deps = [
+        ":grpc++_proto_reflection_desc_db",
         ":grpc_cli_utils",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
     ],
 )
 
@@ -178,8 +218,10 @@ grpc_cc_library(
     ],
     external_deps = ["absl/log:log"],
     deps = [
+        "//:gpr",
         "//:grpc++",
         "//src/proto/grpc/testing:metrics_cc_grpc",
+        "//src/proto/grpc/testing:metrics_cc_proto",
     ],
 )
 
@@ -199,6 +241,8 @@ grpc_cc_test(
     external_deps = [
         "absl/flags:flag",
         "gtest",
+        "absl/strings",
+        "absl/log:check",
     ],
     tags = [
         "grpc:internal-test-filter:-GrpcToolTest.CallCommandWithBadMetadata",
@@ -209,9 +253,16 @@ grpc_cc_test(
     ],
     deps = [
         ":grpc_cli_libs",
+        ":grpc_cli_utils",
         ":test_util",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++_base",
         "//:grpc++_reflection",
+        "//:grpc_base",
+        "//src/core:env",
         "//src/proto/grpc/testing:echo_cc_grpc",
+        "//src/proto/grpc/testing:echo_cc_proto",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//src/proto/grpc/testing:simple_messages_cc_proto",
         "//test/core/test_util:grpc_test_util",
@@ -231,6 +282,12 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         ":test_util",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc++_base",
+        "//:grpc_base",
+        "//:grpc_slice",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -246,6 +303,12 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         ":test_util",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc++_base",
+        "//:grpc_base",
+        "//:grpc_slice",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -271,12 +334,20 @@ grpc_cc_test(
         "time_test.cc",
     ],
     external_deps = [
+        "absl/base",
+        "absl/time",
         "gtest",
     ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        ":test_config",
         ":test_util",
+        "//:gpr",
+        "//:grpc++",
+        "//:grpc++_base",
+        "//src/core:time_precise",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -290,7 +361,12 @@ grpc_cc_test(
     ],
     deps = [
         ":grpc_cli_libs",
+        ":grpc_cli_utils",
         ":test_util",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc++_base",
+        "//:grpc_base",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/core/test_util:grpc_test_util",
     ],
@@ -325,11 +401,12 @@ grpc_cc_binary(
         "absl/flags:flag",
     ],
     visibility = [
-        "@grpc:cli",
+        "//bazel:cli",
     ],
     deps = [
         ":grpc++_proto_reflection_desc_db",
         ":grpc_cli_libs",
+        ":grpc_cli_utils",
         ":test_config",
         "//:grpc++",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
@@ -344,15 +421,23 @@ grpc_cc_binary(
         "absl/log:check",
         "absl/log:log",
         "absl/strings",
+        "absl/strings:str_format",
+        "protobuf",
     ],
     tags = [
         "no_windows",  # unistd.h
     ],
     deps = [
         "//:gpr",
+        "//:grpc",
         "//:grpc++",
         "//:grpcpp_channelz",
+        "//src/core:grpc_check",
+        "//src/core:json",
+        "//src/core:json_writer",
         "//src/proto/grpc/channelz:channelz_proto",
+        "//src/proto/grpc/channelz:channelz_proto_cc_proto",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
@@ -369,6 +454,7 @@ grpc_cc_test(
     external_deps = [
         "absl/log:check",
         "absl/log:log",
+        "absl/strings",
         "gtest",
     ],
     flaky = True,
@@ -386,10 +472,34 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//:grpcpp_channelz",
+        "//src/core:env",
+        "//src/core:grpc_check",
         "//src/proto/grpc/channelz:channelz_proto",
         "//src/proto/grpc/testing:test_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_library(
+    name = "channelz_util",
+    testonly = 1,
+    srcs = [
+        "channelz_util.cc",
+    ],
+    hdrs = [
+        "channelz_util.h",
+    ],
+    external_deps = [
+        "protobuf",
+        "absl/strings",
+    ],
+    deps = [
+        "//:channelz",
+        "//src/core:down_cast",
+        "//src/core:grpc_check",
+        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -421,6 +531,9 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         ":test_util",
+        "//:grpc++",
+        "//:grpc++_base",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -436,6 +549,9 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         ":test_util",
+        "//:grpc++",
+        "//:grpc++_base",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -448,6 +564,7 @@ grpc_cc_library(
         "get_grpc_test_runfile_dir.h",
     ],
     external_deps = [
+        "absl/strings",
     ],
     deps = [
         "//src/core:env",

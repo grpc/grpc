@@ -18,6 +18,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/cpp/test",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "public",
 )
 
@@ -26,6 +30,7 @@ grpc_cc_test(
     srcs = ["mock_stream_test.cc"],
     external_deps = [
         "gtest",
+        "absl/memory",
     ],
     deps = [
         "//:gpr",
@@ -49,6 +54,9 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//:grpc++_test",
+        "//:grpc_base",
+        "//src/core:arena",
+        "//src/core:telemetry_label",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],

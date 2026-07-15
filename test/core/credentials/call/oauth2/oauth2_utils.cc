@@ -27,7 +27,6 @@
 #include <grpc/support/sync.h>
 #include <string.h>
 
-#include "absl/log/log.h"
 #include "src/core/credentials/call/call_credentials.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
@@ -35,6 +34,7 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/notification.h"
+#include "absl/log/log.h"
 
 char* grpc_test_fetch_oauth2_token_with_credentials(
     grpc_call_credentials* creds) {

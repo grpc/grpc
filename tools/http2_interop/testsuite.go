@@ -26,7 +26,7 @@ import (
 // This means the name of the test case is lost, so we need to grab a copy of pc before.
 func Report(t testing.TB) {
 	// If the goroutine panics, Fatal()s, or Skip()s, the function name is at the 3rd callstack
-	// layer.  On success, its at 1st.  Since it's hard to check which happened, just try both.
+	// layer.  On success, it's at 1st.  Since it's hard to check which happened, just try both.
 	pcs := make([]uintptr, 10)
 	total := runtime.Callers(1, pcs)
 	var name string

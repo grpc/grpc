@@ -21,8 +21,8 @@
 #include <algorithm>
 #include <vector>
 
-#include "absl/time/time.h"
 #include "gtest/gtest.h"
+#include "absl/time/time.h"
 
 TEST(TimeUtilTest, ToGprTimeSpecFromAbslDurationWithRegularValues) {
   std::vector<int> times = {-10, -1, 0, 1, 10};

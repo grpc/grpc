@@ -19,10 +19,6 @@
 #include <limits>
 #include <memory>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/random/bit_gen_ref.h"
-#include "absl/status/statusor.h"
 #include "fuzztest/fuzztest.h"
 #include "src/core/ext/transport/chaotic_good_legacy/frame.h"
 #include "src/core/ext/transport/chaotic_good_legacy/frame_header.h"
@@ -32,9 +28,13 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "test/core/promise/test_context.h"
 #include "test/core/transport/chaotic_good_legacy/frame_fuzzer.pb.h"
+#include "absl/log/log.h"
+#include "absl/random/bit_gen_ref.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 namespace chaotic_good_legacy {
@@ -47,15 +47,15 @@ struct DeterministicBitGen : public std::numeric_limits<uint64_t> {
 template <typename T>
 void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
   FrameHeader hdr = input.MakeHeader();
-  CHECK_EQ(hdr.type, expected_frame_type);
-  CHECK_EQ(hdr.payload_connection_id, 0);
+  GRPC_CHECK_EQ(hdr.type, expected_frame_type);
+  GRPC_CHECK_EQ(hdr.payload_connection_id, 0);
   SliceBuffer payload;
   input.SerializePayload(payload);
-  CHECK_GE(hdr.payload_length, payload.Length());
+  GRPC_CHECK_GE(hdr.payload_length, payload.Length());
   T output;
   auto deser = output.Deserialize(hdr, std::move(payload));
-  CHECK_OK(deser);
-  CHECK_EQ(input.ToString(), output.ToString());
+  GRPC_CHECK_OK(deser);
+  GRPC_CHECK_EQ(input.ToString(), output.ToString());
 }
 
 template <typename T>

@@ -16,23 +16,37 @@
 
 #include "src/core/client_channel/client_channel_service_config.h"
 
-#include <grpc/support/port_platform.h>
-
 #include <map>
 #include <optional>
 #include <utility>
 
+#include "src/core/config/experiment_env_var.h"
+#include "src/core/load_balancing/lb_policy_registry.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/str_cat.h"
-#include "src/core/load_balancing/lb_policy_registry.h"
 
 // As per the retry design, we do not allow more than 5 retry attempts.
 #define MAX_MAX_RETRY_ATTEMPTS 5
 
 namespace grpc_core {
 namespace internal {
+
+namespace {
+
+class ConnectionScalingJsonArgs final : public JsonArgs {
+ public:
+  bool IsEnabled(absl::string_view key) const override {
+    if (key == "connection_scaling") {
+      return IsExperimentEnvVarEnabled(
+          "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
+    }
+    return true;
+  }
+};
+
+}  // namespace
 
 //
 // ClientChannelGlobalParsedConfig::HealthCheckConfig
@@ -44,6 +58,21 @@ ClientChannelGlobalParsedConfig::HealthCheckConfig::JsonLoader(
   static const auto* loader =
       JsonObjectLoader<HealthCheckConfig>()
           .OptionalField("serviceName", &HealthCheckConfig::service_name)
+          .Finish();
+  return loader;
+}
+
+//
+// ClientChannelGlobalParsedConfig::ConnectionScaling
+//
+
+const JsonLoaderInterface*
+ClientChannelGlobalParsedConfig::ConnectionScaling::JsonLoader(
+    const JsonArgs&) {
+  static const auto* loader =
+      JsonObjectLoader<ConnectionScaling>()
+          .OptionalField("maxConnectionsPerSubchannel",
+                         &ConnectionScaling::max_connections_per_subchannel)
           .Finish();
   return loader;
 }
@@ -63,6 +92,9 @@ const JsonLoaderInterface* ClientChannelGlobalParsedConfig::JsonLoader(
               &ClientChannelGlobalParsedConfig::parsed_deprecated_lb_policy_)
           .OptionalField("healthCheckConfig",
                          &ClientChannelGlobalParsedConfig::health_check_config_)
+          .OptionalField("connectionScaling",
+                         &ClientChannelGlobalParsedConfig::connection_scaling_,
+                         "connection_scaling")
           .Finish();
   return loader;
 }
@@ -138,14 +170,14 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
                                                     const Json& json,
                                                     ValidationErrors* errors) {
   return LoadFromJson<std::unique_ptr<ClientChannelGlobalParsedConfig>>(
-      json, JsonArgs(), errors);
+      json, ConnectionScalingJsonArgs(), errors);
 }
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
 ClientChannelServiceConfigParser::ParsePerMethodParams(
     const ChannelArgs& /*args*/, const Json& json, ValidationErrors* errors) {
   return LoadFromJson<std::unique_ptr<ClientChannelMethodParsedConfig>>(
-      json, JsonArgs(), errors);
+      json, ConnectionScalingJsonArgs(), errors);
 }
 
 }  // namespace internal

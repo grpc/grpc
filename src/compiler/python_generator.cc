@@ -120,7 +120,7 @@ bool PrivateGenerator::PrintBetaServicer(const grpc_generator::Service* service,
   StringMap service_dict;
   service_dict["Service"] = service->name();
   out->Print("\n\n");
-  out->Print(service_dict, "class Beta$Service$Servicer(object):\n");
+  out->Print(service_dict, "class Beta$Service$Servicer:\n");
   {
     IndentScope raii_class_indent(out);
     out->Print(
@@ -156,7 +156,7 @@ bool PrivateGenerator::PrintBetaStub(const grpc_generator::Service* service,
   StringMap service_dict;
   service_dict["Service"] = service->name();
   out->Print("\n\n");
-  out->Print(service_dict, "class Beta$Service$Stub(object):\n");
+  out->Print(service_dict, "class Beta$Service$Stub:\n");
   {
     IndentScope raii_class_indent(out);
     out->Print(
@@ -410,7 +410,7 @@ bool PrivateGenerator::PrintStub(
   StringMap dict;
   dict["Service"] = service->name();
   out->Print("\n\n");
-  out->Print(dict, "class $Service$Stub(object):\n");
+  out->Print(dict, "class $Service$Stub:\n");
   {
     IndentScope raii_class_indent(out);
     StringVector service_comments = service->GetAllComments();
@@ -478,7 +478,7 @@ bool PrivateGenerator::PrintServicer(const grpc_generator::Service* service,
   StringMap service_dict;
   service_dict["Service"] = service->name();
   out->Print("\n\n");
-  out->Print(service_dict, "class $Service$Servicer(object):\n");
+  out->Print(service_dict, "class $Service$Servicer:\n");
   {
     IndentScope raii_class_indent(out);
     StringVector service_comments = service->GetAllComments();
@@ -591,7 +591,7 @@ bool PrivateGenerator::PrintServiceClass(
   dict["Service"] = service->name();
   out->Print("\n\n");
   out->Print(" # This class is part of an EXPERIMENTAL API.\n");
-  out->Print(dict, "class $Service$(object):\n");
+  out->Print(dict, "class $Service$:\n");
   {
     IndentScope class_indent(out);
     StringVector service_comments = service->GetAllComments();
@@ -767,7 +767,7 @@ bool PrivateGenerator::PrintPreamble(grpc_generator::Printer* out) {
           out->Print(
               var,
               "f'The grpc package installed is at version {GRPC_VERSION},'\n"
-              "+ f' but the generated code in $Pb2GrpcFileName$_pb2_grpc.py "
+              "+ ' but the generated code in $Pb2GrpcFileName$_pb2_grpc.py "
               "depends on'\n"
               "+ f' grpcio>={GRPC_GENERATED_VERSION}.'\n"
               "+ f' Please upgrade your grpc module to "
@@ -950,6 +950,7 @@ bool PythonGrpcGenerator::Generate(const FileDescriptor* file,
     std::string base(
         file->name().substr(0, file->name().size() - proto_suffix_length));
     std::replace(base.begin(), base.end(), '-', '_');
+    std::replace(base.begin(), base.end(), '.', '/');
     pb2_file_name = base + "_pb2.py";
     pb2_grpc_file_name = base + "_pb2_grpc.py";
   } else {

@@ -26,11 +26,11 @@
 #include <grpc/support/time.h>
 #include <time.h>
 
+#include "src/core/util/time_util.h"
 #include "absl/base/call_once.h"
 #include "absl/synchronization/mutex.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-#include "src/core/util/time_util.h"
 
 void gpr_mu_init(gpr_mu* mu) {
   static_assert(sizeof(gpr_mu) == sizeof(absl::Mutex),

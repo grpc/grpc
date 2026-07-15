@@ -27,11 +27,6 @@
 #include <optional>
 #include <utility>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/handshaker_factory.h"
@@ -50,9 +45,14 @@
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/uri.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 
@@ -119,11 +119,17 @@ void TCPConnectHandshaker::Shutdown(absl::Status /*error*/) {
 void TCPConnectHandshaker::DoHandshake(
     HandshakerArgs* args,
     absl::AnyInvocable<void(absl::Status)> on_handshake_done) {
+  // If the endpoint already exists, skip the TCP connection step.
+  // In this case, the handshaker becomes a no-op, it simply completes the
+  // handshake successfully without performing any action.
+  if (args->endpoint != nullptr) {
+    InvokeOnHandshakeDone(args, std::move(on_handshake_done), absl::OkStatus());
+    return;
+  }
   {
     MutexLock lock(&mu_);
     on_handshake_done_ = std::move(on_handshake_done);
   }
-  CHECK_EQ(args->endpoint.get(), nullptr);
   args_ = args;
   absl::string_view resolved_address_text =
       args->args.GetString(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS).value();
@@ -179,7 +185,7 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
       }
       return;
     }
-    CHECK_NE(self->endpoint_to_destroy_, nullptr);
+    GRPC_CHECK_NE(self->endpoint_to_destroy_, nullptr);
     self->args_->endpoint.reset(self->endpoint_to_destroy_);
     self->endpoint_to_destroy_ = nullptr;
     if (self->bind_endpoint_to_pollset_) {

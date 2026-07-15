@@ -26,8 +26,6 @@
 
 #include <utility>
 
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/handshaker/handshaker.h"
@@ -39,13 +37,15 @@
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
 extern const char kInsecureTransportSecurityType[];
 
 // Exposed for testing purposes only.
-// Create an auth context which is necessary to pass the santiy check in
+// Create an auth context which is necessary to pass the sanity check in
 // client_auth_filter that verifies if the peer's auth context is obtained
 // during handshakes.
 RefCountedPtr<grpc_auth_context> TestOnlyMakeInsecureAuthContext();

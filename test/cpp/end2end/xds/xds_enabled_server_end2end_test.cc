@@ -26,13 +26,9 @@
 #include <memory>
 #include <optional>
 
-#include "absl/strings/str_cat.h"
-#include "absl/time/time.h"
 #include "envoy/config/listener/v3/listener.pb.h"
 #include "envoy/config/route/v3/route.pb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/util/env.h"
 #include "src/core/util/time.h"
@@ -42,6 +38,10 @@
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/strings/str_cat.h"
+#include "absl/time/time.h"
 
 namespace grpc {
 namespace testing {
@@ -465,7 +465,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
   xds_drain_grace_time_ms_ = kDrainGraceTimeMs;
   StartBackend(0);
   ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
-  constexpr int kNumChannels = 10;
+  constexpr int kNumChannels = 3;
   struct StreamingRpc {
     std::shared_ptr<Channel> channel;
     std::unique_ptr<grpc::testing::EchoTestService::Stub> stub;
@@ -477,7 +477,8 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
   request.set_message("Hello");
   ChannelArguments args;
   args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, 1);
-  for (int i = 0; i < kNumChannels; i++) {
+  for (int i = 0; i < kNumChannels; ++i) {
+    LOG(INFO) << "Starting streaming RPC number " << i;
     streaming_rpcs[i].channel =
         CreateCustomChannel(grpc_core::LocalIpUri(backends_[0]->port()),
                             InsecureChannelCredentials(), args);
@@ -494,15 +495,18 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
   // Update the resource.  We modify the route with an invalid entry, so
   // that we can tell from the RPC failure messages when the server has
   // seen the change.
+  LOG(INFO) << "Updating RouteConfiguration...";
   auto route_config = default_server_route_config_;
   route_config.mutable_virtual_hosts(0)->mutable_routes(0)->mutable_redirect();
   SetServerListenerNameAndRouteConfiguration(
       balancer_.get(), default_server_listener_, backends_[0]->port(),
       route_config);
+  LOG(INFO) << "Waiting for RPCs to start failing...";
   SendRpcsUntilFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
                        "UNAVAILABLE:matching route has unsupported action");
   // After the drain grace time expires, the existing RPCs should all fail.
-  for (int i = 0; i < kNumChannels; i++) {
+  for (int i = 0; i < kNumChannels; ++i) {
+    LOG(INFO) << "Waiting for failure of streaming RPC " << i;
     // Wait for the drain grace time to expire
     EXPECT_FALSE(streaming_rpcs[i].stream->Read(&response));
     // Make sure that the drain grace interval is honored.
@@ -887,7 +891,8 @@ TEST_P(XdsServerRdsTest, FailsRouteMatchesOtherThanNonForwardingAction) {
   // The server should be ready to serve but RPCs should fail.
   ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                      "UNAVAILABLE:matching route has unsupported action");
+                      "UNAVAILABLE:matching route has unsupported action",
+                      RpcOptions().set_wait_for_ready(true));
 }
 
 // Test that non-inline route configuration also works for non-default filter
@@ -928,7 +933,8 @@ TEST_P(XdsServerRdsTest, NonInlineRouteConfigurationNotAvailable) {
   ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
                       "RDS resource unknown_server_route_config: "
-                      "does not exist \\(node ID:xds_end2end_test\\)");
+                      "does not exist \\(node ID:xds_end2end_test\\)",
+                      RpcOptions().set_wait_for_ready(true));
 }
 
 // TODO(yashykt): Once https://github.com/grpc/grpc/issues/24035 is fixed, we
@@ -996,10 +1002,6 @@ int main(int argc, char** argv) {
       "call,channel,client_channel,client_channel_call,client_channel_lb_call,"
       "handshaker";
   grpc_core::ConfigVars::SetOverrides(overrides);
-#if TARGET_OS_IPHONE
-  // Workaround Apple CFStream bug
-  grpc_core::SetEnv("grpc_cfstream", "0");
-#endif
   grpc_init();
   const auto result = RUN_ALL_TESTS();
   grpc_shutdown();

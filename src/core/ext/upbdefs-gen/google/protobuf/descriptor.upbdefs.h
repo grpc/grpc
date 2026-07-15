@@ -6,13 +6,16 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
+
+
 #ifndef GOOGLE_PROTOBUF_DESCRIPTOR_PROTO_UPB_H__UPBDEFS_H_
 #define GOOGLE_PROTOBUF_DESCRIPTOR_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
 
-#include "upb/port/def.inc" // Must be last.
+#include "upb/port/def.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -154,6 +157,11 @@ UPB_INLINE const upb_MessageDef *google_protobuf_FeatureSet_getmsgdef(upb_DefPoo
   return upb_DefPool_FindMessageByName(s, "google.protobuf.FeatureSet");
 }
 
+UPB_INLINE const upb_MessageDef *google_protobuf_FeatureSet_VisibilityFeature_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &google_protobuf_descriptor_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "google.protobuf.FeatureSet.VisibilityFeature");
+}
+
 UPB_INLINE const upb_MessageDef *google_protobuf_FeatureSetDefaults_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &google_protobuf_descriptor_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "google.protobuf.FeatureSetDefaults");
@@ -183,6 +191,7 @@ UPB_INLINE const upb_MessageDef *google_protobuf_GeneratedCodeInfo_Annotation_ge
   _upb_DefPool_LoadDefInit(s, &google_protobuf_descriptor_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "google.protobuf.GeneratedCodeInfo.Annotation");
 }
+
 
 #ifdef __cplusplus
 }  /* extern "C" */

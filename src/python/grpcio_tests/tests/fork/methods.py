@@ -31,18 +31,22 @@ import grpc
 from src.proto.grpc.testing import empty_pb2
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc
+from tests.fork import debugger
 
 _LOGGER = logging.getLogger(__name__)
 _RPC_TIMEOUT_S = 10
 _CHILD_FINISH_TIMEOUT_S = 20
-_GDB_TIMEOUT_S = 60
+_LIFEBEAT_PERIOD_S = 15
 
 
 def _channel(args):
     target = "{}:{}".format(args["server_host"], args["server_port"])
     if args["use_tls"]:
         channel_credentials = grpc.ssl_channel_credentials()
-        channel = grpc.secure_channel(target, channel_credentials)
+        channel = grpc.secure_channel(
+            target,
+            channel_credentials,
+        )
     else:
         channel = grpc.insecure_channel(target)
     return channel
@@ -85,7 +89,7 @@ def _blocking_unary(stub):
     _validate_payload_type_and_length(response, messages_pb2.COMPRESSABLE, size)
 
 
-class _Pipe(object):
+class _Pipe:
     def __init__(self):
         self._condition = threading.Condition()
         self._values = []
@@ -123,7 +127,7 @@ class _Pipe(object):
         self.close()
 
 
-class _ChildProcess(object):
+class _ChildProcess:
     def __init__(self, task, args=None):
         if args is None:
             args = ()
@@ -133,7 +137,6 @@ class _ChildProcess(object):
         self._child_pid = None
         self._rc = None
         self._args = args
-
         self._task = task
 
     def _child_main(self):
@@ -179,10 +182,12 @@ class _ChildProcess(object):
             self._child_main()
         else:
             self._child_pid = ret
+            sys.stderr.write("Child %d started\n" % ret)
 
     def wait(self, timeout):
         total = 0.0
         wait_interval = 1.0
+        next_lifebeat = 0
         while total < timeout:
             ret, termination = os.waitpid(self._child_pid, os.WNOHANG)
             if ret == self._child_pid:
@@ -190,59 +195,38 @@ class _ChildProcess(object):
                 return True
             time.sleep(wait_interval)
             total += wait_interval
+            if total > next_lifebeat:
+                sys.stderr.write(
+                    "Child %d is still running\n" % self._child_pid
+                )
+                next_lifebeat = total + _LIFEBEAT_PERIOD_S
         else:
             return False
 
-    def _print_backtraces(self):
-        cmd = [
-            "gdb",
-            "-ex",
-            "set confirm off",
-            "-ex",
-            "echo attaching",
-            "-ex",
-            "attach {}".format(self._child_pid),
-            "-ex",
-            "echo print_backtrace",
-            "-ex",
-            "thread apply all bt",
-            "-ex",
-            "echo printed_backtrace",
-            "-ex",
-            "quit",
-        ]
-        streams = tuple(tempfile.TemporaryFile() for _ in range(2))
-        sys.stderr.write("Invoking gdb\n")
-        sys.stderr.flush()
-        process = subprocess.Popen(cmd, stdout=streams[0], stderr=streams[1])
-        try:
-            process.wait(timeout=_GDB_TIMEOUT_S)
-        except subprocess.TimeoutExpired:
-            sys.stderr.write("gdb stacktrace generation timed out.\n")
-        finally:
-            for stream_name, stream in zip(("STDOUT", "STDERR"), streams):
-                stream.seek(0)
-                sys.stderr.write(
-                    "gdb {}:\n{}\n".format(
-                        stream_name, stream.read().decode("ascii")
-                    )
-                )
-                stream.close()
-            sys.stderr.flush()
-
     def finish(self):
         terminated = self.wait(_CHILD_FINISH_TIMEOUT_S)
-        sys.stderr.write("Exit code: {}\n".format(self._rc))
+
         if not terminated:
-            self._print_backtraces()
-            raise RuntimeError("Child process did not terminate")
+            sys.stderr.write("Finishing child %d\n" % self._child_pid)
+            debugger.print_backtraces(self._child_pid)
+            raise RuntimeError(
+                "Child process %d did not terminate" % self._child_pid
+            )
+
+        waitstatus = self._rc
+        exit_code = os.waitstatus_to_exitcode(waitstatus)
+        sys.stderr.write(f"Exit code: {exit_code} ({waitstatus=})\n")
+
         if self._rc != 0:
-            raise ValueError("Child process failed with exitcode %d" % self._rc)
+            raise ValueError(
+                f"Child process {self._child_pid} failed"
+                f" with {exit_code=} ({waitstatus=})"
+            )
         try:
             exception = self._exceptions.get(block=False)
             raise ValueError(
-                'Child process failed: "%s": "%s"'
-                % (repr(exception), exception)
+                'Child process %d failed: "%s": "%s"'
+                % (self._child_pid, repr(exception), exception)
             )
         except queue.Empty:
             pass
@@ -252,11 +236,13 @@ def _async_unary_same_channel(channel):
     def child_target():
         try:
             _async_unary(stub)
-            raise Exception(
-                "Child should not be able to re-use channel after fork"
-            )
-        except ValueError as expected_value_error:
-            pass
+        except grpc.RpcError as rpc_error:
+            if rpc_error.code() not in (
+                grpc.StatusCode.UNAVAILABLE,
+                grpc.StatusCode.CANCELLED,
+            ):
+                raise ValueError("Unexpected status code") from rpc_error
+            _async_unary(stub)
 
     stub = test_pb2_grpc.TestServiceStub(channel)
     _async_unary(stub)
@@ -271,6 +257,7 @@ def _async_unary_new_channel(channel, args):
         with _channel(args) as child_channel:
             child_stub = test_pb2_grpc.TestServiceStub(child_channel)
             _async_unary(child_stub)
+
             child_channel.close()
 
     stub = test_pb2_grpc.TestServiceStub(channel)
@@ -285,11 +272,13 @@ def _blocking_unary_same_channel(channel):
     def child_target():
         try:
             _blocking_unary(stub)
-            raise Exception(
-                "Child should not be able to re-use channel after fork"
-            )
-        except ValueError as expected_value_error:
-            pass
+        except grpc.RpcError as rpc_error:
+            if rpc_error.code() not in (
+                grpc.StatusCode.UNAVAILABLE,
+                grpc.StatusCode.CANCELLED,
+            ):
+                raise ValueError("Unexpected status code") from rpc_error
+            _async_unary(stub)
 
     stub = test_pb2_grpc.TestServiceStub(channel)
     _blocking_unary(stub)
@@ -347,14 +336,13 @@ def _connectivity_watch(channel, args):
             child_stub = test_pb2_grpc.TestServiceStub(child_channel)
             child_channel.subscribe(child_connectivity_callback)
             _async_unary(child_stub)
+            _async_unary(stub)
             if not child_channel_ready_event.wait(timeout=_RPC_TIMEOUT_S):
-                raise ValueError("Channel did not move to READY")
-            if len(parent_states) > 1:
-                raise ValueError(
-                    "Received connectivity updates on parent callback",
-                    parent_states,
-                )
+                raise ValueError("Child channel did not move to READY")
+            if not parent_channel_ready_event.wait(timeout=_RPC_TIMEOUT_S):
+                raise ValueError("Parent channel did not move to READY")
             child_channel.unsubscribe(child_connectivity_callback)
+            channel.unsubscribe(parent_connectivity_callback)
 
     def parent_connectivity_callback(state):
         parent_states.append(state)
@@ -435,21 +423,18 @@ def _in_progress_bidi_continue_call(channel):
         stub = test_pb2_grpc.TestServiceStub(parent_channel)
         try:
             _async_unary(stub)
-            raise Exception(
-                "Child should not be able to re-use channel after fork"
-            )
-        except ValueError as expected_value_error:
-            pass
+        except grpc.RpcError as rpc_error:
+            if rpc_error.code() not in (
+                grpc.StatusCode.UNAVAILABLE,
+                grpc.StatusCode.CANCELLED,
+            ):
+                raise ValueError("Unexpected status code") from rpc_error
+            _async_unary(stub)
         inherited_code = parent_bidi_call.code()
-        inherited_details = parent_bidi_call.details()
         if inherited_code != grpc.StatusCode.CANCELLED:
             raise ValueError(
-                "Expected inherited code CANCELLED, got %s" % inherited_code
-            )
-        if inherited_details != "Channel closed due to fork":
-            raise ValueError(
-                "Expected inherited details Channel closed due to fork, got %s"
-                % inherited_details
+                "Expected inherited code CANCELLED, "
+                f"got {inherited_code} (details: {parent_bidi_call.details()})"
             )
 
     # Don't run child_target after closing the parent call, as the call may have
@@ -464,11 +449,13 @@ def _in_progress_bidi_same_channel_async_call(channel):
         stub = test_pb2_grpc.TestServiceStub(parent_channel)
         try:
             _async_unary(stub)
-            raise Exception(
-                "Child should not be able to re-use channel after fork"
-            )
-        except ValueError as expected_value_error:
-            pass
+        except grpc.RpcError as rpc_error:
+            if rpc_error.code() not in (
+                grpc.StatusCode.UNAVAILABLE,
+                grpc.StatusCode.CANCELLED,
+            ):
+                raise ValueError("Unexpected status code") from rpc_error
+            _async_unary(stub)
 
     _ping_pong_with_child_processes_after_first_response(
         channel, None, child_target
@@ -480,11 +467,13 @@ def _in_progress_bidi_same_channel_blocking_call(channel):
         stub = test_pb2_grpc.TestServiceStub(parent_channel)
         try:
             _blocking_unary(stub)
-            raise Exception(
-                "Child should not be able to re-use channel after fork"
-            )
-        except ValueError as expected_value_error:
-            pass
+        except grpc.RpcError as rpc_error:
+            if rpc_error.code() not in (
+                grpc.StatusCode.UNAVAILABLE,
+                grpc.StatusCode.CANCELLED,
+            ):
+                raise ValueError("Unexpected status code") from rpc_error
+            _async_unary(stub)
 
     _ping_pong_with_child_processes_after_first_response(
         channel, None, child_target
@@ -574,3 +563,15 @@ def dump_object_map():
         sys.stderr.write(f.read())
         sys.stderr.write("\n")
         sys.stderr.flush()
+
+
+def setup_logger():
+    logging.basicConfig(
+        level=logging.INFO,
+        style="{",
+        format=(
+            "{levelname[0]}{asctime}.{msecs:03.0f} {process}/{thread} "
+            "{filename}:{lineno}] {message}"
+        ),
+        datefmt="%m%d %H:%M:%S",
+    )

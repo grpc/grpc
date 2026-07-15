@@ -27,15 +27,15 @@
 
 #include <thread>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "gtest/gtest.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 namespace grpc {
 namespace testing {
@@ -77,7 +77,7 @@ class ShutdownTest : public ::testing::TestWithParam<string> {
     return server;
   }
 
-  void TearDown() override { CHECK(shutdown_); }
+  void TearDown() override { GRPC_CHECK(shutdown_); }
 
   void ResetStub() {
     string target = "dns:localhost:" + to_string(port_);
@@ -99,9 +99,9 @@ class ShutdownTest : public ::testing::TestWithParam<string> {
     EchoResponse response;
     request.set_message("Hello");
     ClientContext context;
-    CHECK(!shutdown_);
+    GRPC_CHECK(!shutdown_);
     Status s = stub_->Echo(&context, request, &response);
-    CHECK(shutdown_);
+    GRPC_CHECK(shutdown_);
   }
 
  protected:
@@ -124,7 +124,7 @@ std::vector<string> GetAllCredentialsTypeList() {
   for (auto sec = sec_list.begin(); sec != sec_list.end(); sec++) {
     credentials_types.push_back(*sec);
   }
-  CHECK(!credentials_types.empty());
+  GRPC_CHECK(!credentials_types.empty());
 
   std::string credentials_type_list("credentials types:");
   for (const string& type : credentials_types) {

@@ -21,14 +21,14 @@
 #include <optional>
 #include <vector>
 
-#include "absl/random/random.h"
 #include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/util/time.h"
+#include "gtest/gtest.h"
+#include "absl/random/random.h"
 
 namespace grpc_core {
 
@@ -51,7 +51,8 @@ void EncodeTimeouts(std::vector<uint32_t> timeouts) {
     parser.BeginFrame(
         &b, kMetadataSizeLimit, kMetadataSizeLimit, HPackParser::Boundary::None,
         HPackParser::Priority::None,
-        HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false});
+        HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false},
+        nullptr);
     for (size_t j = 0; j < encoded.Count(); j++) {
       EXPECT_TRUE(parser
                       .Parse(encoded.c_slice_at(j), j == encoded.Count() - 1,

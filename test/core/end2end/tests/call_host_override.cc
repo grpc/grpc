@@ -22,10 +22,10 @@
 #include <memory>
 #include <optional>
 
-#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace {
@@ -33,7 +33,7 @@ namespace {
 CORE_END2END_TEST(CoreClientChannelTests, CallHostOverride) {
   InitClient(ChannelArgs().Set(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
                                "foo.test.google.fr:1234"));
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   auto c = NewClientCall("/foo")
                .Timeout(Duration::Seconds(30))
                .Host("foo.test.google.fr:1234")

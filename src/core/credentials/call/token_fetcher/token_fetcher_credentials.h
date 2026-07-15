@@ -24,13 +24,10 @@
 #include <utility>
 #include <variant>
 
-#include "absl/container/flat_hash_set.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/status/statusor.h"
+#include "src/core/call/metadata.h"
 #include "src/core/credentials/call/call_credentials.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/transport/metadata.h"
 #include "src/core/util/backoff.h"
 #include "src/core/util/http_client/httpcli.h"
 #include "src/core/util/orphanable.h"
@@ -39,6 +36,9 @@
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 
@@ -55,7 +55,11 @@ class TokenFetcherCredentials : public grpc_call_credentials {
     Timestamp ExpirationTime() const { return expiration_; }
 
     // Adds the token to the call's client initial metadata.
-    void AddTokenToClientInitialMetadata(ClientMetadata& metadata) const;
+    virtual void AddTokenToClientInitialMetadata(ClientMetadata& metadata);
+
+   protected:
+    // Returns the token's value.
+    const Slice& token() const { return token_; }
 
    private:
     Slice token_;
@@ -66,6 +70,8 @@ class TokenFetcherCredentials : public grpc_call_credentials {
 
   void Orphaned() override;
 
+  // TODO(roth): Change internal code to not override this method and then
+  // change it to 'final'.
   ArenaPromise<absl::StatusOr<ClientMetadataHandle>> GetRequestMetadata(
       ClientMetadataHandle initial_metadata,
       const GetRequestMetadataArgs* args) override;
@@ -174,6 +180,35 @@ class TokenFetcherCredentials : public grpc_call_credentials {
   OrphanablePtr<FetchState> fetch_state_ ABSL_GUARDED_BY(&mu_);
 
   grpc_polling_entity pollent_ ABSL_GUARDED_BY(&mu_);
+};
+
+// A base class for fetching tokens via an HTTP request.
+class HttpTokenFetcherCredentials : public TokenFetcherCredentials {
+ public:
+  virtual OrphanablePtr<HttpRequest> StartHttpRequest(
+      grpc_polling_entity* pollent, Timestamp deadline,
+      grpc_http_response* response, grpc_closure* on_complete) = 0;
+
+ protected:
+  // State held for a pending HTTP request.
+  class HttpFetchRequest : public TokenFetcherCredentials::FetchRequest {
+   public:
+    // The given callback should assume the http response status has already
+    // been checked and handle the token parsing.
+    HttpFetchRequest(
+        HttpTokenFetcherCredentials* creds, Timestamp deadline,
+        absl::AnyInvocable<void(absl::StatusOr<grpc_http_response>)> on_done);
+    ~HttpFetchRequest() override { grpc_http_response_destroy(&response_); }
+
+    void Orphan() override;
+
+   private:
+    static void OnHttpResponse(void* arg, grpc_error_handle error);
+    OrphanablePtr<HttpRequest> http_request_;
+    grpc_closure on_http_response_;
+    grpc_http_response response_;
+    absl::AnyInvocable<void(absl::StatusOr<grpc_http_response>)> on_done_;
+  };
 };
 
 }  // namespace grpc_core

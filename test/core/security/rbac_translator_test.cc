@@ -18,15 +18,15 @@
 
 #include <memory>
 
-#include "absl/strings/match.h"
-#include "absl/strings/string_view.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/strings/match.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -82,16 +82,16 @@ class TestAuditLoggerFactory : public AuditLoggerFactory {
     std::string config_dump_;
   };
   absl::string_view name() const override { return kLoggerName; }
-  absl::StatusOr<std::unique_ptr<AuditLoggerFactory::Config>>
+  absl::StatusOr<std::shared_ptr<const AuditLoggerFactory::Config>>
   ParseAuditLoggerConfig(const Json& json) override {
     // Config with a field "bad" will be considered invalid.
     if (json.object().find("bad") != json.object().end()) {
       return absl::InvalidArgumentError("bad logger config.");
     }
-    return std::make_unique<TestAuditLoggerConfig>(JsonDump(json));
+    return std::make_shared<TestAuditLoggerConfig>(JsonDump(json));
   }
   std::unique_ptr<AuditLogger> CreateAuditLogger(
-      std::unique_ptr<AuditLoggerFactory::Config>) override {
+      std::shared_ptr<const AuditLoggerFactory::Config>) override {
     // This test target should never need to create a logger.
     Crash("unreachable");
     return nullptr;

@@ -25,9 +25,9 @@
 
 #include <memory>
 
-#include "absl/types/span.h"
-#include "gtest/gtest.h"
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"
+#include "gtest/gtest.h"
+#include "absl/types/span.h"
 
 static void alts_crypter_test_random_seal_unseal(alts_crypter* server_seal,
                                                  alts_crypter* server_unseal,

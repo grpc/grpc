@@ -24,8 +24,8 @@
 
 namespace grpc_event_engine::experimental {
 
-std::unique_ptr<EventEngine> DefaultEventEngineFactory() {
-  return std::make_unique<WindowsEventEngine>();
+std::shared_ptr<EventEngine> DefaultEventEngineFactory() {
+  return std::make_shared<WindowsEventEngine>();
 }
 
 }  // namespace grpc_event_engine::experimental
@@ -34,8 +34,8 @@ std::unique_ptr<EventEngine> DefaultEventEngineFactory() {
 
 namespace grpc_event_engine::experimental {
 
-std::unique_ptr<EventEngine> DefaultEventEngineFactory() {
-  return std::make_unique<CFEventEngine>();
+std::shared_ptr<EventEngine> DefaultEventEngineFactory() {
+  return std::make_shared<CFEventEngine>();
 }
 
 }  // namespace grpc_event_engine::experimental
@@ -44,8 +44,8 @@ std::unique_ptr<EventEngine> DefaultEventEngineFactory() {
 
 namespace grpc_event_engine::experimental {
 
-std::unique_ptr<EventEngine> DefaultEventEngineFactory() {
-  return std::make_unique<PosixEventEngine>();
+std::shared_ptr<EventEngine> DefaultEventEngineFactory() {
+  return PosixEventEngine::MakePosixEventEngine();
 }
 
 }  // namespace grpc_event_engine::experimental

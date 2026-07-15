@@ -15,7 +15,13 @@
 load("//bazel:grpc_build_system.bzl", "grpc_package")
 load(":generate_tests.bzl", "grpc_bad_client_tests")
 
-grpc_package(name = "test/core/bad_client")
+grpc_package(
+    name = "test/core/bad_client",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 licenses(["notice"])
 

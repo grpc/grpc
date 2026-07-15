@@ -22,9 +22,9 @@
 
 #include <string>
 
-#include "absl/strings/string_view.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -38,7 +38,7 @@ class RefCountedString {
   RefCountedString& operator=(const RefCountedString&) = delete;
 
   // Provide the same interface as RefCounted<>.
-  // We reimplement this instead of inheritting to make pointer math
+  // We reimplement this instead of inheriting to make pointer math
   // easier in Make().
   RefCountedPtr<RefCountedString> Ref() {
     IncrementRefCount();

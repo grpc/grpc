@@ -16,10 +16,13 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
-#include "absl/strings/str_cat.h"
+#include "src/proto/grpc/channelz/v2/promise.upb.h"
+#include "upb/mem/arena.hpp"
 #include "gtest/gtest.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 
@@ -159,7 +162,8 @@ TEST(SeqTest, ThreeTypedPendingThens) {
     };
   };
 
-  auto seq_combinator = Seq(initial, next1, next2, next3);
+  auto seq_combinator = Seq(std::move(initial), std::move(next1),
+                            std::move(next2), std::move(next3));
 
   auto retval = seq_combinator();
   EXPECT_TRUE(retval.pending());
@@ -205,7 +209,8 @@ TEST(SeqTest, TwoThens) {
   auto initial = [] { return std::string("a"); };
   auto next1 = [](std::string i) { return [i]() { return i + "b"; }; };
   auto next2 = [](std::string i) { return [i]() { return i + "c"; }; };
-  EXPECT_EQ(Seq(initial, next1, next2)(), Poll<std::string>("abc"));
+  EXPECT_EQ(Seq(std::move(initial), std::move(next1), std::move(next2))(),
+            Poll<std::string>("abc"));
 }
 
 TEST(SeqTest, ThreeThens) {
@@ -225,6 +230,51 @@ TEST(SeqTest, ThreeThens) {
             return [i, y = std::make_unique<int>(4)]() { return i + "d"; };
           })(),
       Poll<std::string>("abcd"));
+}
+
+TEST(SeqTest, ToProto) {
+  auto x = Seq([]() { return 42; },
+               [polled = false](int i) mutable -> Poll<int> {
+                 if (!polled) {
+                   polled = true;
+                   return Pending{};
+                 }
+                 return i + 1;
+               },
+               [](int i) { return i; });
+  EXPECT_TRUE(promise_detail::kHasToProtoMethod<decltype(x)>)
+      << TypeName<decltype(x)>();
+  auto validate_proto = [](grpc_channelz_v2_Promise* promise_proto,
+                           int current_step) {
+    ASSERT_TRUE(grpc_channelz_v2_Promise_has_seq_promise(promise_proto));
+    const auto* seq_promise =
+        grpc_channelz_v2_Promise_seq_promise(promise_proto);
+    size_t num_steps;
+    const auto* const* steps =
+        grpc_channelz_v2_Promise_Seq_steps(seq_promise, &num_steps);
+    EXPECT_EQ(num_steps, 3);
+    for (size_t i = 0; i < num_steps; i++) {
+      if (i == static_cast<size_t>(current_step)) {
+        EXPECT_TRUE(
+            grpc_channelz_v2_Promise_SeqStep_has_polling_promise(steps[i]));
+      } else {
+        EXPECT_FALSE(
+            grpc_channelz_v2_Promise_SeqStep_has_polling_promise(steps[i]));
+      }
+    }
+  };
+  upb::Arena arena;
+  auto* promise_proto = grpc_channelz_v2_Promise_new(arena.ptr());
+  PromiseAsProto(x, promise_proto, arena.ptr());
+  validate_proto(promise_proto, 0);
+  x();
+  promise_proto = grpc_channelz_v2_Promise_new(arena.ptr());
+  PromiseAsProto(x, promise_proto, arena.ptr());
+  validate_proto(promise_proto, 1);
+  x();
+  promise_proto = grpc_channelz_v2_Promise_new(arena.ptr());
+  PromiseAsProto(x, promise_proto, arena.ptr());
+  validate_proto(promise_proto, 2);
 }
 
 struct Big {

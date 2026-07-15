@@ -21,9 +21,9 @@
 #include <string>
 #include <vector>
 
+#include "src/core/util/time.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "src/core/util/time.h"
 
 namespace grpc_event_engine::experimental {
 
@@ -41,6 +41,9 @@ grpc_core::Timestamp ToTimestamp(grpc_core::Timestamp now,
 absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
 LookupHostnameBlocking(EventEngine::DNSResolver* dns_resolver,
                        absl::string_view name, absl::string_view default_port);
+
+absl::string_view WriteEventToString(
+    grpc_event_engine::experimental::internal::WriteEvent event);
 
 }  // namespace grpc_event_engine::experimental
 

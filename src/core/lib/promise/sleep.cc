@@ -38,7 +38,8 @@ Sleep::~Sleep() {
 
 Poll<absl::Status> Sleep::operator()() {
   // Invalidate now so that we see a fresh version of the time.
-  // TODO(ctiller): the following can be safely removed when we remove ExecCtx.
+  // TODO(akshitpatel): the following can be safely removed when we remove
+  // ExecCtx.
   ExecCtx::Get()->InvalidateNow();
   const auto now = Timestamp::Now();
   // If the deadline is earlier than now we can just return.
@@ -53,7 +54,7 @@ Poll<absl::Status> Sleep::operator()() {
 }
 
 Sleep::ActiveClosure::ActiveClosure(Timestamp deadline)
-    : waker_(GetContext<Activity>()->MakeOwningWaker()),
+    : waker_(GetContext<Activity>()->MakeNonOwningWaker()),
       event_engine_(GetContext<EventEngine>()->shared_from_this()),
       timer_handle_(
           event_engine_->RunAfter(deadline - Timestamp::Now(), this)) {}

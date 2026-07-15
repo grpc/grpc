@@ -20,6 +20,7 @@
 #define GRPCPP_SUPPORT_PROTO_BUFFER_WRITER_H
 
 #include <grpc/byte_buffer.h>
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/impl/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
@@ -59,10 +60,13 @@ class ProtoBufferWriter : public grpc::protobuf::io::ZeroCopyOutputStream {
   /// \param[out] byte_buffer A pointer to the grpc::ByteBuffer created
   /// \param block_size How big are the chunks to allocate at a time
   /// \param total_size How many total bytes are required for this proto
-  ProtoBufferWriter(ByteBuffer* byte_buffer, int block_size, int total_size)
+  ProtoBufferWriter(
+      ByteBuffer* byte_buffer, int block_size, int total_size,
+      grpc_event_engine::experimental::MemoryAllocator* allocator = nullptr)
       : block_size_(block_size),
         total_size_(total_size),
         byte_count_(0),
+        allocator_(allocator),
         have_backup_(false) {
     ABSL_CHECK(!byte_buffer->Valid());
     /// Create an empty raw byte buffer and look at its underlying slice buffer
@@ -98,11 +102,16 @@ class ProtoBufferWriter : public grpc::protobuf::io::ZeroCopyOutputStream {
     } else {
       // When less than a whole block is needed, only allocate that much.
       // But make sure the allocated slice is not inlined.
-      size_t allocate_length =
+      const size_t allocate_length =
           remain > static_cast<size_t>(block_size_) ? block_size_ : remain;
-      slice_ = grpc_slice_malloc(allocate_length > GRPC_SLICE_INLINED_SIZE
-                                     ? allocate_length
-                                     : GRPC_SLICE_INLINED_SIZE + 1);
+      const size_t slice_size = allocate_length > GRPC_SLICE_INLINED_SIZE
+                                    ? allocate_length
+                                    : GRPC_SLICE_INLINED_SIZE + 1;
+      if (allocator_ == nullptr) {
+        slice_ = grpc_slice_malloc(slice_size);
+      } else {
+        slice_ = allocator_->MakeSlice(slice_size);
+      }
     }
     *data = GRPC_SLICE_START_PTR(slice_);
     // On win x64, int is only 32bit
@@ -207,6 +216,7 @@ class ProtoBufferWriter : public grpc::protobuf::io::ZeroCopyOutputStream {
   const int block_size_;  ///< size to alloc for each new \a grpc_slice needed
   const int total_size_;  ///< byte size of proto being serialized
   int64_t byte_count_;    ///< bytes written since this object was created
+  grpc_event_engine::experimental::MemoryAllocator* allocator_ = nullptr;
   grpc_slice_buffer*
       slice_buffer_;  ///< internal buffer of slices holding the serialized data
   bool have_backup_;  ///< if we are holding a backup slice or not

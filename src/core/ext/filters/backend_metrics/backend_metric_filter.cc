@@ -24,8 +24,7 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/log.h"
-#include "absl/strings/string_view.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
@@ -35,16 +34,18 @@
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/util/latent_see.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.hpp"
 #include "xds/data/orca/v3/orca_load_report.upb.h"
+#include "absl/log/log.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
 namespace {
+
 std::optional<std::string> MaybeSerializeBackendMetrics(
     BackendMetricProvider* provider) {
   if (provider == nullptr) return std::nullopt;
@@ -103,8 +104,13 @@ std::optional<std::string> MaybeSerializeBackendMetrics(
   size_t len;
   char* buf =
       xds_data_orca_v3_OrcaLoadReport_serialize(response, arena.ptr(), &len);
+  if (buf == nullptr) {
+    LOG_EVERY_N_SEC(ERROR, 10) << "Failed to serialize ORCA load report";
+    return std::nullopt;
+  }
   return std::string(buf, len);
 }
+
 }  // namespace
 
 const grpc_channel_filter BackendMetricFilter::kFilter =
@@ -116,8 +122,7 @@ BackendMetricFilter::Create(const ChannelArgs&, ChannelFilter::Args) {
 }
 
 void BackendMetricFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
-      "BackendMetricFilter::Call::OnServerTrailingMetadata");
+  GRPC_LATENT_SEE_SCOPE("BackendMetricFilter::Call::OnServerTrailingMetadata");
   if (md.get(GrpcCallWasCancelled()).value_or(false)) return;
   auto* ctx = MaybeGetContext<BackendMetricProvider>();
   if (ctx == nullptr) {

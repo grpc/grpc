@@ -19,11 +19,8 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable grpc__lookup__v1__RouteLookupRequest_msg_init;
-extern const upb_MiniTable* grpc__lookup__v1__RouteLookupRequest_msg_init_ptr;
 extern const upb_MiniTable grpc__lookup__v1__RouteLookupRequest__KeyMapEntry_msg_init;
-extern const upb_MiniTable* grpc__lookup__v1__RouteLookupRequest__KeyMapEntry_msg_init_ptr;
 extern const upb_MiniTable grpc__lookup__v1__RouteLookupResponse_msg_init;
-extern const upb_MiniTable* grpc__lookup__v1__RouteLookupResponse_msg_init_ptr;
 
 extern const upb_MiniTableFile src_proto_grpc_lookup_v1_rls_proto_upb_file_layout;
 

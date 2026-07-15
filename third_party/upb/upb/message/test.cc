@@ -5,8 +5,11 @@
 // license that can be found in the LICENSE file or at
 // https://developers.google.com/open-source/licenses/bsd
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
+#include <cstring>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -15,8 +18,12 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/cleanup/cleanup.h"
+#include "absl/numeric/bits.h"
 #include "absl/strings/escaping.h"
+#include "absl/strings/string_view.h"
 #include "google/protobuf/test_messages_proto3.upb.h"
+#include "upb/base/status.h"
 #include "upb/base/status.hpp"
 #include "upb/base/string_view.h"
 #include "upb/base/upcast.h"
@@ -24,6 +31,7 @@
 #include "upb/json/encode.h"
 #include "upb/mem/arena.h"
 #include "upb/mem/arena.hpp"
+#include "upb/message/accessors.h"
 #include "upb/message/array.h"
 #include "upb/message/compare.h"
 #include "upb/message/map.h"
@@ -32,8 +40,13 @@
 #include "upb/message/test.upb_minitable.h"
 #include "upb/message/test.upbdefs.h"
 #include "upb/message/value.h"
+#include "upb/mini_descriptor/decode.h"
+#include "upb/mini_table/debug_string.h"
+#include "upb/mini_table/extension.h"
 #include "upb/mini_table/extension_registry.h"
 #include "upb/mini_table/field.h"
+#include "upb/mini_table/internal/extension.h"
+#include "upb/mini_table/internal/message.h"
 #include "upb/mini_table/message.h"
 #include "upb/reflection/def.h"
 #include "upb/reflection/def.hpp"
@@ -44,6 +57,10 @@
 #include "upb/wire/encode.h"
 #include "upb/wire/eps_copy_input_stream.h"
 #include "upb/wire/types.h"
+#include "upb/wire/writer.h"
+
+// Must be last
+#include "upb/port/def.inc"
 
 void VerifyMessage(const upb_test_TestExtensions* ext_msg) {
   EXPECT_TRUE(upb_test_TestExtensions_has_optional_int32_ext(ext_msg));
@@ -91,7 +108,7 @@ TEST(MessageTest, Extensions) {
   char* serialized =
       upb_test_TestExtensions_serialize(ext_msg, arena.ptr(), &size);
   ASSERT_TRUE(serialized != nullptr);
-  ASSERT_GE(size, 0);
+  ASSERT_GE(size, 0u);
 
   upb_test_TestExtensions* ext_msg2 = upb_test_TestExtensions_parse_ex(
       serialized, size, upb_DefPool_ExtensionRegistry(defpool.ptr()), 0,
@@ -150,7 +167,7 @@ TEST(MessageTest, ExtensionsDeterministic) {
   char* serialized =
       upb_test_TestExtensions_serialize(ext_msg, arena.ptr(), &size);
   ASSERT_TRUE(serialized != nullptr);
-  ASSERT_GE(size, 0);
+  ASSERT_GE(size, 0u);
 
   size_t deterministic_size;
   char* deterministic_serialized = upb_test_TestExtensions_serialize_ex(
@@ -199,7 +216,7 @@ TEST(MessageTest, ExtensionsEmpty) {
     char* serialized = upb_test_TestExtensions_serialize_ex(
         ext_msg_with_empty, options, arena.ptr(), &size_with_empty);
     ASSERT_TRUE(serialized != nullptr);
-    ASSERT_GE(size_with_empty, 0);
+    ASSERT_GE(size_with_empty, 0u);
 
     size_t size;
     serialized = upb_test_TestExtensions_serialize_ex(ext_msg, options,
@@ -221,6 +238,20 @@ void VerifyMessageSet(const upb_test_TestMessageSet* mset_msg) {
   EXPECT_TRUE(member != nullptr);
   EXPECT_TRUE(upb_test_MessageSetMember_has_optional_int32(member));
   EXPECT_EQ(234, upb_test_MessageSetMember_optional_int32(member));
+}
+
+TEST(MessageTest, LargeMessageSetExtension) {
+  upb::Arena arena;
+  upb_ExtensionRegistry* reg = upb_ExtensionRegistry_New(arena.ptr());
+  ASSERT_TRUE(reg != nullptr);
+
+  upb_MiniTableExtension ext;
+  memset(&ext, 0, sizeof(ext));
+  ext.UPB_PRIVATE(field).UPB_ONLYBITS(number) = (1 << 29) + 5;
+  ext.UPB_PRIVATE(extendee) = &upb_0test__TestMessageSet_msg_init;
+
+  EXPECT_EQ(upb_ExtensionRegistry_Add(reg, &ext),
+            kUpb_ExtensionRegistryStatus_Ok);
 }
 
 TEST(MessageTest, MessageSet) {
@@ -251,7 +282,7 @@ TEST(MessageTest, MessageSet) {
   char* serialized =
       upb_test_TestMessageSet_serialize(ext_msg, arena.ptr(), &size);
   ASSERT_TRUE(serialized != nullptr);
-  ASSERT_GE(size, 0);
+  ASSERT_GE(size, 0u);
 
   upb_test_TestMessageSet* ext_msg2 = upb_test_TestMessageSet_parse_ex(
       serialized, size, upb_DefPool_ExtensionRegistry(defpool.ptr()), 0,
@@ -297,7 +328,7 @@ TEST(MessageTest, UnknownMessageSet) {
   char* serialized =
       upb_test_FakeMessageSet_serialize(fake, arena.ptr(), &size);
   ASSERT_TRUE(serialized != nullptr);
-  ASSERT_GE(size, 0);
+  ASSERT_GE(size, 0u);
 
   upb::DefPool defpool;
   upb::MessageDefPtr m(upb_test_TestMessageSet_getmsgdef(defpool.ptr()));
@@ -310,7 +341,7 @@ TEST(MessageTest, UnknownMessageSet) {
   char* serialized2 =
       upb_test_TestMessageSet_serialize(message_set, arena.ptr(), &size);
   ASSERT_TRUE(serialized2 != nullptr);
-  ASSERT_GE(size, 0);
+  ASSERT_GE(size, 0u);
 
   // Parse back into a fake MessageSet and verify that the unknown MessageSet
   // item was preserved in full (both type_id and message).
@@ -320,7 +351,7 @@ TEST(MessageTest, UnknownMessageSet) {
 
   const upb_test_FakeMessageSet_Item* const* items =
       upb_test_FakeMessageSet_item(fake2, &size);
-  ASSERT_EQ(1, size);
+  ASSERT_EQ(1u, size);
   EXPECT_EQ(12345, upb_test_FakeMessageSet_Item_type_id(items[0]));
   EXPECT_TRUE(upb_StringView_IsEqual(
       data_view, upb_test_FakeMessageSet_Item_message(items[0])));
@@ -331,6 +362,38 @@ TEST(MessageTest, UnknownMessageSet) {
   EXPECT_FALSE(upb_test_FakeMessageSet_Item_has_unknown_fixed64(items[0]));
   EXPECT_FALSE(upb_test_FakeMessageSet_Item_has_unknown_bytes(items[0]));
   EXPECT_FALSE(upb_test_FakeMessageSet_Item_has_unknowngroup(items[0]));
+}
+
+TEST(MessageTest, MessageSetSubmessageEncoding) {
+  upb::Arena arena;
+
+  // Create a normal extension message and use the set the doppelgänger message
+  // set member extension on it. This will allow us to serialize as a normal
+  // extension and then attempt to parse it as a message set.
+  // This mimics the behavior of an encoder that is message set unaware.
+  upb_test_TestExtensions* ext_msg = upb_test_TestExtensions_new(arena.ptr());
+  upb_test_MessageSetMember* ext_member =
+      upb_test_MessageSetMember_new(arena.ptr());
+  upb_test_MessageSetMember_set_optional_int32(ext_member, 234);
+  upb_test_MessageSetMember_set_doppelganger_message_set_extension(
+      ext_msg, ext_member, arena.ptr());
+
+  size_t size;
+  char* serialized =
+      upb_test_TestExtensions_serialize(ext_msg, arena.ptr(), &size);
+  ASSERT_TRUE(serialized != nullptr);
+  ASSERT_GE(size, 0u);
+
+  upb::DefPool defpool;
+  upb::MessageDefPtr m(upb_test_TestMessageSet_getmsgdef(defpool.ptr()));
+  EXPECT_TRUE(m.ptr() != nullptr);
+
+  upb_test_TestMessageSet* message_set = upb_test_TestMessageSet_parse_ex(
+      serialized, size, upb_DefPool_ExtensionRegistry(defpool.ptr()), 0,
+      arena.ptr());
+  ASSERT_TRUE(message_set != nullptr);
+
+  VerifyMessageSet(message_set);
 }
 
 TEST(MessageTest, Proto2Enum) {
@@ -370,7 +433,7 @@ TEST(MessageTest, Proto2Enum) {
   EXPECT_EQ(false, upb_test_Proto2EnumMessage_has_optional_enum(enum_msg));
   const int32_t* vals_const =
       upb_test_Proto2EnumMessage_repeated_enum(enum_msg, &size);
-  EXPECT_EQ(4, size);  // Two unknown values moved to the unknown field set.
+  EXPECT_EQ(4u, size);  // Two unknown values moved to the unknown field set.
 
   // Parsing back into the fake message shows the original data, except the
   // repeated enum is rearranged.
@@ -392,12 +455,12 @@ TEST(MessageTest, Proto2Enum) {
   };
 
   vals_const = upb_test_Proto2FakeEnumMessage_repeated_enum(fake_msg2, &size);
-  EXPECT_EQ(6, size);
+  EXPECT_EQ(6u, size);
   EXPECT_THAT(std::vector<int32_t>(vals_const, vals_const + size),
               ::testing::ElementsAreArray(expected));
 
   vals_const = upb_test_Proto2FakeEnumMessage_packed_enum(fake_msg2, &size);
-  EXPECT_EQ(6, size);
+  EXPECT_EQ(6u, size);
   EXPECT_THAT(std::vector<int32_t>(vals_const, vals_const + size),
               ::testing::ElementsAreArray(expected));
 }
@@ -407,6 +470,37 @@ TEST(MessageTest, TestBadUTF8) {
   std::string serialized("r\x03\xed\xa0\x81");
   EXPECT_EQ(nullptr, protobuf_test_messages_proto3_TestAllTypesProto3_parse(
                          serialized.data(), serialized.size(), arena.ptr()));
+}
+
+// On a 32 bit platform, upb_StringView has the same size as an int64 field, but
+// lower alignment requirements - when selecting the representation for oneof,
+// both size and alignment need to be considered.
+TEST(MessageTest, OneOf32BitStringViewInt64Alignment) {
+  upb::Arena arena;
+  upb_StringView md = {nullptr, 0};
+  uint32_t field_tag;
+  {
+    upb_DefPool* d = upb_DefPool_New();
+    auto free = absl::MakeCleanup([d]() { upb_DefPool_Free(d); });
+    const upb_MessageDef* def = upb_test_TestOneOfAlignment_getmsgdef(d);
+    const upb_FieldDef* field_def =
+        upb_MessageDef_FindFieldByName(def, "should_be_sixty_four_aligned");
+    field_tag = upb_FieldDef_Number(field_def);
+    EXPECT_TRUE(upb_MessageDef_MiniDescriptorEncode(def, arena.ptr(), &md));
+  }
+  upb_Status status;
+  upb_Status_Clear(&status);
+  const upb_MiniTable* table = _upb_MiniTable_Build(
+      md.data, md.size, kUpb_MiniTablePlatform_32Bit, arena.ptr(), &status);
+  if (!status.ok) {
+    FAIL() << "Could not build minitable: " << status.msg;
+  }
+  const upb_MiniTableField* mtfield =
+      upb_MiniTable_FindFieldByNumber(table, field_tag);
+  uint16_t offset = UPB_PRIVATE(_upb_MiniTableField_Offset)(mtfield);
+  size_t alignment = 1 << absl::countr_zero(offset);
+  // Must align to at least 64 bit
+  EXPECT_GE(alignment, 8u);
 }
 
 TEST(MessageTest, DecodeRequiredFieldsTopLevelMessage) {
@@ -429,7 +523,7 @@ TEST(MessageTest, DecodeRequiredFieldsTopLevelMessage) {
   char* serialized =
       upb_test_TestRequiredFields_serialize(test_msg, arena.ptr(), &size);
   ASSERT_TRUE(serialized != nullptr);
-  EXPECT_NE(0, size);
+  EXPECT_NE(0u, size);
 
   // Fails, but the code path is slightly different because the serialized
   // payload is not empty.
@@ -453,7 +547,7 @@ TEST(MessageTest, DecodeRequiredFieldsTopLevelMessage) {
   serialized =
       upb_test_TestRequiredFields_serialize(test_msg, arena.ptr(), &size);
   ASSERT_TRUE(serialized != nullptr);
-  EXPECT_NE(0, size);
+  EXPECT_NE(0u, size);
 
   upb_test_TestRequiredFields* test_msg2 = upb_test_TestRequiredFields_parse_ex(
       serialized, size, nullptr, kUpb_DecodeOption_CheckRequired, arena.ptr());
@@ -481,7 +575,7 @@ TEST(MessageTest, DecodeRequiredFieldsSubMessage) {
   size_t size;
   char* serialized =
       upb_test_SubMessageHasRequired_serialize(sub_msg, arena.ptr(), &size);
-  EXPECT_NE(0, size);
+  EXPECT_NE(0u, size);
 
   // No parse error when parsing normally.
   EXPECT_NE(nullptr, upb_test_SubMessageHasRequired_parse(serialized, size,
@@ -498,7 +592,7 @@ TEST(MessageTest, DecodeRequiredFieldsSubMessage) {
 
   serialized =
       upb_test_SubMessageHasRequired_serialize(sub_msg, arena.ptr(), &size);
-  EXPECT_NE(0, size);
+  EXPECT_NE(0u, size);
 
   // No parse error; sub-message now is complete.
   EXPECT_NE(nullptr, upb_test_SubMessageHasRequired_parse_ex(
@@ -516,7 +610,7 @@ TEST(MessageTest, EncodeRequiredFields) {
   char* serialized =
       upb_test_TestRequiredFields_serialize_ex(test_msg, 0, arena.ptr(), &size);
   ASSERT_TRUE(serialized != nullptr);
-  EXPECT_EQ(size, 0);
+  EXPECT_EQ(size, 0u);
 
   // Fails, we asked for required field checking but the required field is
   // missing.
@@ -587,7 +681,7 @@ TEST(MessageTest, MapField) {
   char* serialized = upb_test_TestMapFieldExtra_serialize_ex(
       test_msg_extra, 0, arena.ptr(), &size);
   ASSERT_NE(nullptr, serialized);
-  ASSERT_NE(0, size);
+  ASSERT_NE(0u, size);
 
   upb_test_TestMapField* test_msg =
       upb_test_TestMapField_parse(serialized, size, arena.ptr());
@@ -596,13 +690,118 @@ TEST(MessageTest, MapField) {
   ASSERT_FALSE(upb_test_TestMapField_map_field_get(test_msg, 0, nullptr));
   serialized =
       upb_test_TestMapField_serialize_ex(test_msg, 0, arena.ptr(), &size);
-  ASSERT_NE(0, size);
+  ASSERT_NE(0u, size);
   // parse into second instance
   upb_test_TestMapFieldExtra* test_msg_extra2 =
       upb_test_TestMapFieldExtra_parse(serialized, size, arena.ptr());
   ASSERT_NE(nullptr, test_msg_extra2);
   ASSERT_TRUE(
       upb_test_TestMapFieldExtra_map_field_get(test_msg_extra2, 0, nullptr));
+}
+
+TEST(MessageTest, MapFieldDeterministicEncoding) {
+  upb::Arena arena1;
+  upb_test_TestMapField* test_msg1 = upb_test_TestMapField_new(arena1.ptr());
+  for (int i = 0; i <= 1000; i++) {
+    ASSERT_TRUE(upb_test_TestMapField_map_field_set(
+        test_msg1, i, upb_test_TestMapField_ZERO, arena1.ptr()));
+  }
+  for (int i = 1001; i <= 2000; i++) {
+    ASSERT_TRUE(upb_test_TestMapField_map_field_set(
+        test_msg1, i, upb_test_TestMapField_ONE, arena1.ptr()));
+  }
+  for (int i = 2001; i <= 3000; i++) {
+    ASSERT_TRUE(upb_test_TestMapField_map_field_set(
+        test_msg1, i, upb_test_TestMapField_TWO, arena1.ptr()));
+  }
+  size_t size1;
+  char* serialized1;
+  upb_EncodeStatus status1 = upb_Encode(
+      UPB_UPCAST(test_msg1), &upb_0test__TestMapField_msg_init,
+      kUpb_EncodeOption_Deterministic, arena1.ptr(), &serialized1, &size1);
+  ASSERT_EQ(status1, kUpb_EncodeStatus_Ok);
+  ASSERT_NE(nullptr, serialized1);
+
+  upb::Arena arena2;
+  upb_test_TestMapField* test_msg2 = upb_test_TestMapField_new(arena2.ptr());
+  // Add the same values in reverse order.
+  for (int i = 3000; i >= 2001; i--) {
+    ASSERT_TRUE(upb_test_TestMapField_map_field_set(
+        test_msg2, i, upb_test_TestMapField_TWO, arena2.ptr()));
+  }
+  for (int i = 2000; i >= 1001; i--) {
+    ASSERT_TRUE(upb_test_TestMapField_map_field_set(
+        test_msg2, i, upb_test_TestMapField_ONE, arena2.ptr()));
+  }
+  for (int i = 1000; i >= 0; i--) {
+    ASSERT_TRUE(upb_test_TestMapField_map_field_set(
+        test_msg2, i, upb_test_TestMapField_ZERO, arena2.ptr()));
+  }
+  size_t size2;
+  char* serialized2;
+  upb_EncodeStatus status2 = upb_Encode(
+      UPB_UPCAST(test_msg2), &upb_0test__TestMapField_msg_init,
+      kUpb_EncodeOption_Deterministic, arena2.ptr(), &serialized2, &size2);
+  ASSERT_EQ(status2, kUpb_EncodeStatus_Ok);
+  ASSERT_NE(nullptr, serialized2);
+
+  EXPECT_EQ(size1, size2);
+  EXPECT_EQ(0, memcmp(serialized1, serialized2, size1));
+}
+
+TEST(MessageTest, AdjacentAliasedUnknown) {
+  const upb_MiniTable* table = &upb_0test__EmptyMessage_msg_init;
+  upb::Arena arena;
+  upb_Message* msg = upb_Message_New(table, arena.ptr());
+  char region[900];
+  memset(region, 0, sizeof(region));
+  region[0] = 0x0A;  // Tag number 1
+  region[1] = 0xA9;
+  region[2] = 0x02;
+  region[300] = 0x12;  // Tag number 2
+  region[301] = 0xA9;
+  region[302] = 0x02;
+  region[600] = 0x1A;  // Tag number 3
+  region[601] = 0xA9;
+  region[602] = 0x02;
+  // All adjacent fields should be part of a single unknown field entry
+  {
+    upb_DecodeStatus status =
+        upb_Decode(region, sizeof(region), msg, table, nullptr,
+                   kUpb_DecodeOption_AliasString, arena.ptr());
+    ASSERT_EQ(status, kUpb_DecodeStatus_Ok);
+    uintptr_t iter = kUpb_Message_UnknownBegin;
+    upb_StringView data;
+    ASSERT_TRUE(upb_Message_NextUnknown(msg, &data, &iter));
+    EXPECT_EQ(region, data.data);
+    EXPECT_EQ(sizeof(region), data.size);
+    EXPECT_FALSE(upb_Message_NextUnknown(msg, &data, &iter));
+  }
+
+  upb_Message_Clear(msg, table);
+
+  // Separate decodes should not produce merged aliases, even with adjacent
+  // entries as we don't know that they're part of the same object
+  {
+    upb_Decode(region, 300, msg, table, nullptr, kUpb_DecodeOption_AliasString,
+               arena.ptr());
+    upb_Decode(region + 300, 300, msg, table, nullptr,
+               kUpb_DecodeOption_AliasString, arena.ptr());
+    upb_Decode(region + 600, 300, msg, table, nullptr,
+               kUpb_DecodeOption_AliasString, arena.ptr());
+    upb_StringView data;
+    uintptr_t iter = kUpb_Message_UnknownBegin;
+    ASSERT_TRUE(upb_Message_NextUnknown(msg, &data, &iter));
+    EXPECT_EQ(region, data.data);
+    EXPECT_EQ(300u, data.size);
+    ASSERT_TRUE(upb_Message_NextUnknown(msg, &data, &iter));
+    EXPECT_EQ(region + 300, data.data);
+    EXPECT_EQ(300u, data.size);
+    ASSERT_TRUE(upb_Message_NextUnknown(msg, &data, &iter));
+    EXPECT_EQ(region + 600, data.data);
+    EXPECT_EQ(300u, data.size);
+    ASSERT_FALSE(upb_Message_NextUnknown(msg, &data, &iter));
+  }
 }
 
 TEST(MessageTest, Freeze) {
@@ -623,7 +822,7 @@ TEST(MessageTest, Freeze) {
     upb_Array* arr = _upb_test_TestFreeze_array_int_mutable_upb_array(
         raw, &size, arena.ptr());
     ASSERT_NE(arr, nullptr);
-    ASSERT_EQ(size, 0);
+    ASSERT_EQ(size, 0u);
     ASSERT_FALSE(upb_Array_IsFrozen(arr));
     upb_Map* map =
         _upb_test_TestFreeze_map_int_mutable_upb_map(raw, arena.ptr());
@@ -646,7 +845,7 @@ TEST(MessageTest, Freeze) {
     upb_Array* arr = _upb_test_TestFreeze_array_int_mutable_upb_array(
         raw, &size, arena.ptr());
     ASSERT_NE(arr, nullptr);
-    ASSERT_EQ(size, 0);
+    ASSERT_EQ(size, 0u);
     ASSERT_FALSE(upb_Array_IsFrozen(arr));
     upb_Map* map =
         _upb_test_TestFreeze_map_int_mutable_upb_map(raw, arena.ptr());
@@ -663,7 +862,7 @@ TEST(MessageTest, Freeze) {
     ASSERT_TRUE(upb_Message_IsFrozen(UPB_UPCAST(nest)));
 
     const upb_MiniTableField* fa = upb_MiniTable_FindFieldByNumber(m, 20);
-    const upb_MiniTable* ma = upb_MiniTable_SubMessage(m, fa);
+    const upb_MiniTable* ma = upb_MiniTable_SubMessage(fa);
     upb_Array_Freeze(arr, ma);
     ASSERT_FALSE(upb_Message_IsFrozen(msg));
     ASSERT_TRUE(upb_Array_IsFrozen(arr));
@@ -671,11 +870,120 @@ TEST(MessageTest, Freeze) {
     ASSERT_TRUE(upb_Message_IsFrozen(UPB_UPCAST(nest)));
 
     const upb_MiniTableField* fm = upb_MiniTable_FindFieldByNumber(m, 10);
-    const upb_MiniTable* mm = upb_MiniTable_SubMessage(m, fm);
+    const upb_MiniTable* mm = upb_MiniTable_SubMessage(fm);
     upb_Map_Freeze(map, mm);
     ASSERT_FALSE(upb_Message_IsFrozen(msg));
     ASSERT_TRUE(upb_Array_IsFrozen(arr));
     ASSERT_TRUE(upb_Map_IsFrozen(map));
     ASSERT_TRUE(upb_Message_IsFrozen(UPB_UPCAST(nest)));
   }
+}
+
+/* Tests some somewhat tricky math used in size calculations while encoding */
+TEST(MessageTest, SkippedVarintSize) {
+  for (uint32_t clz = 0; clz <= 64; clz++) {
+    // Optimized math used in encoding
+    uint32_t skip =
+        UPB_PRIVATE(upb_WireWriter_VarintUnusedSizeFromLeadingZeros64)(clz);
+    // traditional varint size calculation
+    uint64_t val = clz == 64 ? 0 : (~uint64_t{0} >> clz);
+    uint32_t count = 0;
+    do {
+      count++;
+      val >>= 7;
+    } while (val);
+    EXPECT_EQ(skip, 10 - count);
+  }
+}
+
+TEST(MessageTest, MessageTooBig) {
+  if (sizeof(size_t) <= 4) {
+    GTEST_SKIP() << "Skipping test because size_t is too small";
+  }
+  if (UPB_MSAN || UPB_ASAN) {
+    GTEST_SKIP() << "Skipping test because sanitizers that track shadow memory "
+                    "increase overhead and lead to OOMs";
+  }
+  upb::Arena arena;
+  size_t buf_size = 2 * 1024;
+  void* bytes = upb_Arena_Malloc(arena.ptr(), buf_size);
+  memset(bytes, 0, buf_size);
+  upb_StringView bytes_view;
+  bytes_view.data = (const char*)bytes;
+  bytes_view.size = buf_size;
+  upb_test_TestRepeatedMessageBig* msg =
+      upb_test_TestRepeatedMessageBig_new(arena.ptr());
+
+  {
+    size_t size;
+    upb_test_TestRepeatedMessageBig_resize_repeated_bytes(msg, 1024,
+                                                          arena.ptr());
+    upb_StringView* arr =
+        upb_test_TestRepeatedMessageBig_mutable_repeated_bytes(msg, &size);
+
+    for (size_t i = 0; i < size; i++) {
+      arr[i] = bytes_view;
+    }
+    // Message is slightly more than 2mb to serialize
+  }
+  {
+    upb_test_TestRepeatedMessageBig* parent =
+        upb_test_TestRepeatedMessageBig_new(arena.ptr());
+    upb_test_TestRepeatedMessageBig_resize_repeated_message(parent, 1024,
+                                                            arena.ptr());
+    size_t size;
+    upb_test_TestRepeatedMessageBig** arr =
+        upb_test_TestRepeatedMessageBig_mutable_repeated_message(parent, &size);
+
+    for (size_t i = 0; i < size; i++) {
+      arr[i] = msg;
+    }
+    // Message is slightly more than 2gb to serialize, but no individual length
+    // delimited message is larger
+    msg = parent;
+  }
+  char* ptr;
+  size_t size;
+  upb_EncodeStatus status;
+  {
+    upb::Arena out_arena;
+    status =
+        upb_Encode(UPB_UPCAST(msg), &upb_0test__TestRepeatedMessageBig_msg_init,
+                   0, out_arena.ptr(), &ptr, &size);
+    // If the top level message exceeds the limit, that's OK
+  }
+  if (status == kUpb_EncodeStatus_OutOfMemory) {
+    GTEST_SKIP()
+        << "Skipping test because we could not allocate a few gigabytes";
+  }
+  EXPECT_EQ(status, kUpb_EncodeStatus_Ok);
+  {
+    upb::Arena out_arena;
+    status = upb_EncodeLengthPrefixed(
+        UPB_UPCAST(msg), &upb_0test__TestRepeatedMessageBig_msg_init, 0,
+        out_arena.ptr(), &ptr, &size);
+  }
+  if (status != kUpb_EncodeStatus_OutOfMemory &&
+      status != kUpb_EncodeStatus_MaxSizeExceeded) {
+    // If we ever try to length-delimit something larger than fits in 32 bits,
+    // it's an error
+    FAIL() << "Expected OutOfMemory or MaxSizeExceeded, got " << status;
+  }
+}
+
+TEST(MessageTest, ArenaSpaceAllocatedAfterDecode) {
+  upb::Arena arena;
+  uintptr_t space_allocated_before =
+      upb_Arena_SpaceAllocated(arena.ptr(), nullptr);
+  char region[300];
+  memset(region, 0, sizeof(region));
+  region[0] = 0x0A;  // Tag number 1
+  region[1] = 0xA9;
+  region[2] = 0x02;
+  upb_test_EmptyMessage* msg =
+      upb_test_EmptyMessage_parse(region, sizeof(region), arena.ptr());
+  EXPECT_NE(msg, nullptr);
+  uintptr_t space_allocated_after =
+      upb_Arena_SpaceAllocated(arena.ptr(), nullptr);
+  EXPECT_GT(space_allocated_after, space_allocated_before + 297u);
 }

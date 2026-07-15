@@ -15,7 +15,7 @@
 import http2_base_server
 
 
-class TestcaseRstStreamAfterHeader(object):
+class TestcaseRstStreamAfterHeader:
     """
     In response to an incoming request, this test sends headers, followed by
     a reset stream frame. Client asserts that the RPC failed.
@@ -23,9 +23,9 @@ class TestcaseRstStreamAfterHeader(object):
 
     def __init__(self):
         self._base_server = http2_base_server.H2ProtocolBaseServer()
-        self._base_server._handlers[
-            "RequestReceived"
-        ] = self.on_request_received
+        self._base_server._handlers["RequestReceived"] = (
+            self.on_request_received
+        )
 
     def get_base_server(self):
         return self._base_server

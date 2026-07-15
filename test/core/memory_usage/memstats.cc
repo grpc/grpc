@@ -19,7 +19,7 @@
 #include <fstream>
 #include <string>
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 #include "absl/strings/str_cat.h"
 
 long GetMemUsage(std::optional<int> pid) {
@@ -46,7 +46,7 @@ long GetMemUsage(std::optional<int> pid) {
   stat_stream.close();
 
   // pid does not connect to an existing process
-  CHECK(!state.empty());
+  GRPC_CHECK(!state.empty());
 
   // Calculations in case x86-64 is configured to use 2MB pages
   long page_size_kb = sysconf(_SC_PAGE_SIZE) / 1024;

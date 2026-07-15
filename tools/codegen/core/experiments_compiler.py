@@ -17,8 +17,6 @@
 A module to assist in generating experiment related code and artifacts.
 """
 
-from __future__ import print_function
-
 import collections
 from copy import deepcopy
 import ctypes
@@ -167,7 +165,7 @@ def AreExperimentsOrdered(experiments):
     return True
 
 
-class ExperimentDefinition(object):
+class ExperimentDefinition:
     def __init__(self, attributes):
         self._error = False
         if "name" not in attributes:
@@ -211,6 +209,12 @@ class ExperimentDefinition(object):
 
         if "test_tags" in attributes:
             self._test_tags = attributes["test_tags"]
+
+        self._platforms = ["posix"]
+        if "platforms" in attributes:
+            self._platforms = attributes["platforms"]
+            if isinstance(self._platforms, str):
+                self._platforms = [self._platforms]
 
         for requirement in attributes.get("requires", []):
             self._requires.add(requirement)
@@ -313,11 +317,15 @@ class ExperimentDefinition(object):
     def allow_in_fuzzing_config(self):
         return self._allow_in_fuzzing_config
 
+    @property
+    def platforms(self):
+        return self._platforms
+
     def additional_constraints(self, platform):
         return self._additional_constraints.get(platform, {})
 
 
-class ExperimentsCompiler(object):
+class ExperimentsCompiler:
     def __init__(
         self,
         defaults,
@@ -341,9 +349,9 @@ class ExperimentsCompiler(object):
                 % experiment_definition.name
             )
             return False
-        self._experiment_definitions[
-            experiment_definition.name
-        ] = experiment_definition
+        self._experiment_definitions[experiment_definition.name] = (
+            experiment_definition
+        )
         return True
 
     def AddRolloutSpecification(self, rollout_attributes):
@@ -355,10 +363,10 @@ class ExperimentsCompiler(object):
             return False
         if rollout_attributes["name"] not in self._experiment_definitions:
             print(
-                "WARNING: rollout for an undefined experiment: %s ignored"
+                "ERROR: rollout for an undefined experiment: %s ignored"
                 % rollout_attributes["name"]
             )
-            return True
+            return False
         return self._experiment_definitions[
             rollout_attributes["name"]
         ].AddRolloutSpecification(
@@ -529,7 +537,7 @@ class ExperimentsCompiler(object):
             if "kDefaultForDebugOnly" in have_defaults:
                 print("const bool kDefaultForDebugOnly = true;", file=file_desc)
             print("#endif", file=file_desc)
-        print("}", file=file_desc)
+        print("}  // namespace", file=file_desc)
         print(file=file_desc)
         print("namespace grpc_core {", file=file_desc)
         print(file=file_desc)
@@ -548,9 +556,11 @@ class ExperimentsCompiler(object):
                     ToCStr(exp.name),
                     exp.name,
                     exp.name,
-                    f"required_experiments_{exp.name}"
-                    if exp._requires
-                    else "nullptr",
+                    (
+                        f"required_experiments_{exp.name}"
+                        if exp._requires
+                        else "nullptr"
+                    ),
                     len(exp._requires),
                     self._defaults[exp.default(platform)],
                     "true" if exp.allow_in_fuzzing_config else "false",
@@ -674,6 +684,8 @@ class ExperimentsCompiler(object):
 
         for platform in self._platforms_define.keys():
             for _, exp in self._experiment_definitions.items():
+                if "all" not in exp.platforms and platform not in exp.platforms:
+                    continue
                 for tag in exp.test_tags:
                     # Search through default values for all platforms.
                     default = exp.default(platform)

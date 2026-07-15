@@ -21,11 +21,11 @@
 #include <utility>
 #include <variant>
 
-#include "absl/status/statusor.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/util/construct_destruct.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 
@@ -113,10 +113,11 @@ class If {
       typename PollTraits<decltype(std::declval<TruePromise>()())>::Type;
 
  public:
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION If(C condition, T if_true, F if_false)
-      : state_(Evaluating{ConditionPromise(std::move(condition)),
-                          TrueFactory(std::move(if_true)),
-                          FalseFactory(std::move(if_false))}) {}
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION If(C&& condition, T&& if_true,
+                                          F&& if_false)
+      : state_(Evaluating{ConditionPromise(std::forward<C>(condition)),
+                          TrueFactory(std::forward<T>(if_true)),
+                          FalseFactory(std::forward<F>(if_false))}) {}
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> operator()() {
     return std::visit(CallPoll<false>{this}, state_);
@@ -173,10 +174,11 @@ class If<bool, T, F> {
       typename PollTraits<decltype(std::declval<TruePromise>()())>::Type;
 
  public:
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION If(bool condition, T if_true, F if_false)
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION If(bool condition, T&& if_true,
+                                          F&& if_false)
       : condition_(condition) {
-    TrueFactory true_factory(std::move(if_true));
-    FalseFactory false_factory(std::move(if_false));
+    TrueFactory true_factory(std::forward<T>(if_true));
+    FalseFactory false_factory(std::forward<F>(if_false));
     if (condition_) {
       Construct(&if_true_, true_factory.Make());
     } else {
@@ -217,6 +219,26 @@ class If<bool, T, F> {
     } else {
       return if_false_();
     }
+  }
+
+  void ToProto(grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* if_proto =
+        grpc_channelz_v2_Promise_mutable_if_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_If_set_condition(if_proto, condition_);
+    if (condition_) {
+      PromiseAsProto(
+          if_true_,
+          grpc_channelz_v2_Promise_If_mutable_promise(if_proto, arena), arena);
+    } else {
+      PromiseAsProto(
+          if_false_,
+          grpc_channelz_v2_Promise_If_mutable_promise(if_proto, arena), arena);
+    }
+    grpc_channelz_v2_Promise_If_set_true_factory(
+        if_proto, StdStringToUpbString(TypeName<TruePromise>()));
+    grpc_channelz_v2_Promise_If_set_false_factory(
+        if_proto, StdStringToUpbString(TypeName<FalsePromise>()));
   }
 
  private:

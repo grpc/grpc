@@ -14,8 +14,8 @@
 """Invocation-side implementation of gRPC Asyncio Python."""
 
 import asyncio
-import sys
-from typing import Any, Iterable, List, Optional, Sequence
+from typing import Any, List, Optional, Sequence
+import weakref
 
 import grpc
 from grpc import _common
@@ -50,16 +50,6 @@ from ._utils import _timeout_to_deadline
 
 _USER_AGENT = "grpc-python-asyncio/{}".format(_grpcio_metadata.__version__)
 
-if sys.version_info[1] < 7:
-
-    def _all_tasks() -> Iterable[asyncio.Task]:
-        return asyncio.Task.all_tasks()  # pylint: disable=no-member
-
-else:
-
-    def _all_tasks() -> Iterable[asyncio.Task]:
-        return asyncio.all_tasks()
-
 
 def _augment_channel_arguments(
     base_options: ChannelArgumentType, compression: Optional[grpc.Compression]
@@ -89,8 +79,8 @@ class _BaseMultiCallable:
     _loop: asyncio.AbstractEventLoop
     _channel: cygrpc.AioChannel
     _method: bytes
-    _request_serializer: SerializingFunction
-    _response_deserializer: DeserializingFunction
+    _request_serializer: Optional[SerializingFunction]
+    _response_deserializer: Optional[DeserializingFunction]
     _interceptors: Optional[Sequence[ClientInterceptor]]
     _references: List[Any]
     _loop: asyncio.AbstractEventLoop
@@ -100,8 +90,8 @@ class _BaseMultiCallable:
         self,
         channel: cygrpc.AioChannel,
         method: bytes,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         interceptors: Optional[Sequence[ClientInterceptor]],
         references: List[Any],
         loop: asyncio.AbstractEventLoop,
@@ -114,6 +104,21 @@ class _BaseMultiCallable:
         self._interceptors = interceptors
         self._references = references
 
+        if not self._references:
+            error_msg = (
+                "MultiCallable must be attached to a Channel, unexpectedly"
+                " found no references."
+            )
+            raise ValueError(error_msg)
+        if not isinstance(self._references[0], Channel):
+            error_msg = (
+                "Invalid reference type. MultiCallable must be attached to a"
+                " Channel."
+            )
+            raise TypeError(error_msg)
+
+        self._python_channel = self._references[0]
+
     @staticmethod
     def _init_metadata(
         metadata: Optional[MetadataType] = None,
@@ -123,8 +128,10 @@ class _BaseMultiCallable:
         metadata, as it should be used for the current call.
         """
         metadata = metadata or Metadata()
-        if not isinstance(metadata, Metadata) and isinstance(metadata, tuple):
-            metadata = Metadata.from_tuple(metadata)
+        if not isinstance(metadata, Metadata) and isinstance(
+            metadata, Sequence
+        ):
+            metadata = Metadata.from_tuple(tuple(metadata))
         if compression:
             metadata = Metadata(
                 *_compression.augment_metadata(metadata, compression)
@@ -174,6 +181,8 @@ class UnaryUnaryMultiCallable(
                 self._loop,
             )
 
+        self._python_channel._register_call(call)
+
         return call
 
 
@@ -220,6 +229,8 @@ class UnaryStreamMultiCallable(
                 self._loop,
             )
 
+        self._python_channel._register_call(call)
+
         return call
 
 
@@ -264,6 +275,8 @@ class StreamUnaryMultiCallable(
                 self._response_deserializer,
                 self._loop,
             )
+
+        self._python_channel._register_call(call)
 
         return call
 
@@ -310,6 +323,8 @@ class StreamStreamMultiCallable(
                 self._loop,
             )
 
+        self._python_channel._register_call(call)
+
         return call
 
 
@@ -325,7 +340,7 @@ class Channel(_base_channel.Channel):
         self,
         target: str,
         options: ChannelArgumentType,
-        credentials: Optional[grpc.ChannelCredentials],
+        credentials: Optional[cygrpc.ChannelCredentials],
         compression: Optional[grpc.Compression],
         interceptors: Optional[Sequence[ClientInterceptor]],
     ):
@@ -356,7 +371,7 @@ class Channel(_base_channel.Channel):
                 elif isinstance(interceptor, StreamStreamClientInterceptor):
                     self._stream_stream_interceptors.append(interceptor)
                 else:
-                    raise ValueError(
+                    raise ValueError(  # noqa: TRY004
                         "Interceptor {} must be ".format(interceptor)
                         + "{} or ".format(UnaryUnaryClientInterceptor.__name__)
                         + "{} or ".format(UnaryStreamClientInterceptor.__name__)
@@ -371,6 +386,12 @@ class Channel(_base_channel.Channel):
             credentials,
             self._loop,
         )
+        self._active_calls = weakref.WeakSet()
+
+    def _register_call(self, call: _base_call.Call) -> None:
+        """Register a call to be tracked by the channel."""
+        self._active_calls.add(call)
+        call.add_done_callback(self._active_calls.discard)
 
     async def __aenter__(self):
         return self
@@ -382,73 +403,39 @@ class Channel(_base_channel.Channel):
         if self._channel.closed():
             return
 
+        if grace and grace < 0:
+            error_msg = f"grace must be non-negative, got {grace}."
+            raise ValueError(error_msg)
+
         # No new calls will be accepted by the Cython channel.
         self._channel.closing()
 
-        # Iterate through running tasks
-        tasks = _all_tasks()
-        calls = []
-        call_tasks = []
-        for task in tasks:
+        async def _wait_for_call_to_complete(call):
             try:
-                stack = task.get_stack(limit=1)
-            except AttributeError as attribute_error:
-                # NOTE(lidiz) tl;dr: If the Task is created with a CPython
-                # object, it will trigger AttributeError.
-                #
-                # In the global finalizer, the event loop schedules
-                # a CPython PyAsyncGenAThrow object.
-                # https://github.com/python/cpython/blob/00e45877e33d32bb61aa13a2033e3bba370bda4d/Lib/asyncio/base_events.py#L484
-                #
-                # However, the PyAsyncGenAThrow object is written in C and
-                # failed to include the normal Python frame objects. Hence,
-                # this exception is a false negative, and it is safe to ignore
-                # the failure. It is fixed by https://github.com/python/cpython/pull/18669,
-                # but not available until 3.9 or 3.8.3. So, we have to keep it
-                # for a while.
-                # TODO(lidiz) drop this hack after 3.8 deprecation
-                if "frame" in str(attribute_error):
-                    continue
-                else:
-                    raise
+                await call.code()
+            except Exception:  # pylint: disable=broad-except
+                # Ignore exceptions here as true RPC errors bubble up via
+                # standard application paths. Silencing prevents channel close
+                # from failing and suppresses asyncio noise warnings.
+                pass
 
-            # If the Task is created by a C-extension, the stack will be empty.
-            if not stack:
-                continue
+        calls = list(self._active_calls)
 
-            # Locate ones created by `aio.Call`.
-            frame = stack[0]
-            candidate = frame.f_locals.get("self")
-            # Explicitly check for a non-null candidate instead of the more pythonic 'if candidate:'
-            # because doing 'if candidate:' assumes that the coroutine implements '__bool__' which
-            # might not always be the case.
-            if candidate is not None:
-                if isinstance(candidate, _base_call.Call):
-                    if hasattr(candidate, "_channel"):
-                        # For intercepted Call object
-                        if candidate._channel is not self._channel:
-                            continue
-                    elif hasattr(candidate, "_cython_call"):
-                        # For normal Call object
-                        if candidate._cython_call._channel is not self._channel:
-                            continue
-                    else:
-                        # Unidentified Call object
-                        raise cygrpc.InternalError(
-                            f"Unrecognized call object: {candidate}"
-                        )
-
-                    calls.append(candidate)
-                    call_tasks.append(task)
-
-        # If needed, try to wait for them to finish.
-        # Call objects are not always awaitables.
-        if grace and call_tasks:
-            await asyncio.wait(call_tasks, timeout=grace)
+        if grace:
+            call_tasks = [
+                self._loop.create_task(_wait_for_call_to_complete(call))
+                for call in calls
+                if not call.done()
+            ]
+            if call_tasks:
+                await asyncio.wait(call_tasks, timeout=grace)
 
         # Time to cancel existing calls.
         for call in calls:
             call.cancel()
+
+        calls.clear()
+        self._active_calls.clear()
 
         # Destroy the channel
         self._channel.close()
@@ -457,9 +444,8 @@ class Channel(_base_channel.Channel):
         await self._close(grace)
 
     def __del__(self):
-        if hasattr(self, "_channel"):
-            if not self._channel.closed():
-                self._channel.close()
+        if hasattr(self, "_channel") and not self._channel.closed():
+            self._channel.close()
 
     def get_state(
         self, try_to_connect: bool = False
@@ -471,9 +457,25 @@ class Channel(_base_channel.Channel):
         self,
         last_observed_state: grpc.ChannelConnectivity,
     ) -> None:
-        assert await self._channel.watch_connectivity_state(
+        # We raise a RuntimeError if watch_connectivity_state returns False.
+        #
+        # The watch_connectivity_state method returns True when it observes a state change
+        # and False when it times out (which shouldn't happen since no timeout is specified).
+        # A channel close triggers a transition to SHUTDOWN, which resolves all pending watch
+        # calls and makes them return True. Thus, watch_connectivity_state should only return
+        # True under normal operation; returning False indicates an implementation issue.
+        #
+        # We do not use an assert statement here because asserts
+        # can be optimized out under python -O.
+        # See https://github.com/grpc/grpc/issues/42393 for context.
+        resolved = await self._channel.watch_connectivity_state(
             last_observed_state.value[0], None
         )
+        if not resolved:
+            error_msg = (
+                "gRPC channel connectivity state watch failed unexpectedly."
+            )
+            raise RuntimeError(error_msg)
 
     async def channel_ready(self) -> None:
         state = self.get_state(try_to_connect=True)

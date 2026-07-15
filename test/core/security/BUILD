@@ -16,7 +16,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/security")
+grpc_package(
+    name = "test/core/security",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_test(
     name = "cel_authorization_engine_test",
@@ -38,6 +44,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:sockaddr_utils",
         "//src/core:grpc_authorization_base",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
@@ -47,11 +54,17 @@ grpc_cc_test(
 grpc_cc_test(
     name = "rbac_translator_test",
     srcs = ["rbac_translator_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/strings",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
         "//:grpc_authorization_provider",
+        "//src/core:grpc_audit_logging",
+        "//src/core:json",
+        "//src/core:json_writer",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],
@@ -64,6 +77,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:grpc_authorization_base",
         "//src/core:grpc_rbac_engine",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
@@ -77,7 +91,9 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:grpc_audit_logging",
         "//src/core:grpc_rbac_engine",
+        "//src/core:json",
         "//test/core/test_util:audit_logging_utils",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
@@ -97,6 +113,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc_authorization_provider",
+        "//src/core:grpc_rbac_engine",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],
@@ -105,11 +122,20 @@ grpc_cc_test(
 grpc_cc_test(
     name = "grpc_audit_logging_test",
     srcs = ["grpc_audit_logging_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/time",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
         "//src/core:grpc_audit_logging",
+        "//src/core:json",
+        "//src/core:json_reader",
+        "//src/core:json_writer",
         "//test/core/test_util:grpc_test_util",
     ],
 )

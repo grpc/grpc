@@ -1,0 +1,931 @@
+//
+//
+// Copyright 2025 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
+
+#include "src/core/ext/transport/chttp2/transport/http2_transport.h"
+
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/slice.h>
+#include <grpc/grpc.h>
+
+#include <cstddef>
+#include <cstdint>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "src/core/call/call_spine.h"
+#include "src/core/ext/transport/chttp2/transport/flow_control.h"
+#include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
+#include "src/core/ext/transport/chttp2/transport/read_context.h"
+#include "src/core/ext/transport/chttp2/transport/stream.h"
+#include "src/core/ext/transport/chttp2/transport/transport_common.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/promise/loop.h"
+#include "src/core/lib/promise/party.h"
+#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/sleep.h"
+#include "src/core/lib/promise/try_seq.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
+#include "test/core/transport/util/mock_promise_endpoint.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+
+namespace grpc_core {
+namespace http2 {
+namespace testing {
+
+class TestsNeedingStreamObjects : public ::testing::TestWithParam<bool> {
+ protected:
+  TestsNeedingStreamObjects()
+      : transport_flow_control_(
+            /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+            /*memory_owner=*/nullptr),
+        is_client_(GetParam()) {}
+
+  void SetUp() override {}
+
+  RefCountedPtr<Stream> CreateMinimalTestStream(uint32_t stream_id) {
+    RefCountedPtr<Arena> arena = SimpleArenaAllocator()->MakeArena();
+    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        grpc_event_engine::experimental::GetDefaultEventEngine().get());
+    Arena::PoolPtr<ClientMetadata> client_initial_metadata =
+        Arena::MakePooledForOverwrite<ClientMetadata>();
+    client_initial_metadata->Set(HttpPathMetadata(),
+                                 Slice::FromCopiedString("/foo/bar"));
+    std::unique_ptr<CallInitiatorAndHandler> call_pair =
+        std::make_unique<CallInitiatorAndHandler>(
+            MakeCallPair(std::move(client_initial_metadata), std::move(arena)));
+    RefCountedPtr<Stream> stream =
+        is_client_ ? MakeRefCounted<Stream>(call_pair->handler.StartCall(),
+                                            transport_flow_control_)
+                   : MakeRefCounted<Stream>(
+                         call_pair->initiator, transport_flow_control_,
+                         stream_id, /*allow_true_binary_metadata_peer=*/true);
+    if (is_client_) {
+      stream->InitializeClientStream(stream_id,
+                                     /*allow_true_binary_metadata_peer=*/true);
+    }
+    GRPC_CHECK_EQ(stream->GetStreamId(), stream_id);
+    stream_set_.push_back(std::move(stream));
+    return stream_set_.back();
+  }
+  chttp2::TransportFlowControl transport_flow_control_;
+
+ private:
+  std::vector<RefCountedPtr<Stream>> stream_set_;
+  const bool is_client_;
+};
+
+INSTANTIATE_TEST_SUITE_P(TestsNeedingStreamObjects, TestsNeedingStreamObjects,
+                         ::testing::Bool());
+
+///////////////////////////////////////////////////////////////////////////////
+// Connection Preface Validation Tests
+
+class ConnectionPrefaceValidationTest : public ::testing::Test {
+ protected:
+  void VerifyProtocolError(absl::StatusOr<Slice> input) {
+    Http2Status result = ValidateIncomingConnectionPreface(input);
+    EXPECT_FALSE(result.IsOk());
+    EXPECT_EQ(result.GetType(), Http2Status::Http2ErrorType::kConnectionError);
+    EXPECT_EQ(result.GetConnectionErrorCode(), Http2ErrorCode::kProtocolError);
+    EXPECT_EQ(result.GetAbslConnectionError().message(),
+              RFC9113::kFirstSettingsFrameServer);
+  }
+};
+
+TEST_F(ConnectionPrefaceValidationTest,
+       ValidateIncomingConnectionPrefaceSuccess) {
+  absl::StatusOr<Slice> status =
+      Slice::FromStaticString(GRPC_CHTTP2_CLIENT_CONNECT_STRING);
+  Http2Status result = ValidateIncomingConnectionPreface(status);
+  EXPECT_TRUE(result.IsOk());
+}
+
+TEST_F(ConnectionPrefaceValidationTest,
+       ValidateIncomingConnectionPrefaceErrorStatus) {
+  absl::Status error = absl::InternalError("some error");
+  absl::StatusOr<Slice> status = error;
+  Http2Status result = ValidateIncomingConnectionPreface(status);
+  EXPECT_FALSE(result.IsOk());
+  EXPECT_EQ(result.GetType(), Http2Status::Http2ErrorType::kConnectionError);
+  EXPECT_EQ(result.GetAbslConnectionError().code(),
+            absl::StatusCode::kInternal);
+  EXPECT_EQ(result.GetAbslConnectionError().message(), "some error");
+}
+
+TEST_F(ConnectionPrefaceValidationTest,
+       ValidateIncomingConnectionPrefaceWrongString) {
+  // Case 1: Random wrong string
+  VerifyProtocolError(Slice::FromStaticString("WRONG STRING"));
+
+  std::string correct_preface = GRPC_CHTTP2_CLIENT_CONNECT_STRING;
+
+  // Case 2: One character different
+  std::string wrong_preface = correct_preface;
+  wrong_preface.back() = 'a';
+  VerifyProtocolError(Slice::FromCopiedString(wrong_preface));
+
+  // Case 3: One character less
+  std::string short_preface =
+      correct_preface.substr(0, correct_preface.length() - 1);
+  VerifyProtocolError(Slice::FromCopiedString(short_preface));
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Settings and ChannelArgs helpers tests
+
+TEST(Http2CommonTransportTest, TestReadChannelArgs) {
+  // Test to validate that ReadChannelArgs reads all the channel args
+  // correctly.
+  Http2Settings settings;
+  chttp2::TransportFlowControl transport_flow_control(
+      /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*memory_owner=*/nullptr);
+  ChannelArgs channel_args =
+      ChannelArgs()
+          .Set(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER, 2048)
+          .Set(GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES, 1024)
+          .Set(GRPC_ARG_HTTP2_MAX_FRAME_SIZE, 16384)
+          .Set(GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE, true)
+          .Set(GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY, 1)
+          .Set(GRPC_ARG_SECURITY_FRAME_ALLOWED, true);
+  ReadSettingsFromChannelArgs(channel_args, settings, transport_flow_control,
+                              /*is_client=*/true);
+  // Settings read from ChannelArgs.
+  EXPECT_EQ(settings.header_table_size(), 2048u);
+  EXPECT_EQ(settings.initial_window_size(), 1024u);
+  EXPECT_EQ(settings.max_frame_size(), 16384u);
+  EXPECT_EQ(settings.preferred_receive_crypto_message_size(), INT_MAX);
+  EXPECT_EQ(settings.allow_true_binary_metadata(), true);
+  EXPECT_EQ(settings.allow_security_frame(), true);
+  // Default settings
+  EXPECT_EQ(settings.max_concurrent_streams(), 4294967295u);
+  EXPECT_EQ(settings.max_header_list_size(), 16384u);
+  EXPECT_EQ(settings.enable_push(), true);
+
+  // If ChannelArgs don't have a value for the setting, the default must be
+  // loaded into the Settings object
+  Http2Settings settings2;
+  EXPECT_EQ(settings2.header_table_size(), 4096u);
+  EXPECT_EQ(settings2.max_concurrent_streams(), 4294967295u);
+  EXPECT_EQ(settings2.initial_window_size(), 65535u);
+  EXPECT_EQ(settings2.max_frame_size(), 16384u);
+  // TODO(tjagtap) : [PH2][P4] : Investigate why we change it in
+  // ReadSettingsFromChannelArgs . Right now ReadSettingsFromChannelArgs is
+  // functinally similar to the legacy read_channel_args.
+  EXPECT_EQ(settings2.max_header_list_size(), 16777216u);
+  EXPECT_EQ(settings2.preferred_receive_crypto_message_size(), 0u);
+  EXPECT_EQ(settings2.enable_push(), true);
+  EXPECT_EQ(settings2.allow_true_binary_metadata(), false);
+  EXPECT_EQ(settings2.allow_security_frame(), false);
+
+  ReadSettingsFromChannelArgs(ChannelArgs(), settings2, transport_flow_control,
+                              /*is_client=*/true);
+  EXPECT_EQ(settings2.header_table_size(), 4096u);
+  EXPECT_EQ(settings2.max_concurrent_streams(), 4294967295u);
+  EXPECT_EQ(settings2.initial_window_size(), 65535u);
+  EXPECT_EQ(settings2.max_frame_size(), 16384u);
+  // TODO(tjagtap) : [PH2][P4] : Investigate why we change it in
+  // ReadSettingsFromChannelArgs . Right now ReadSettingsFromChannelArgs is
+  // functinally similar to the legacy read_channel_args.
+  EXPECT_EQ(settings2.max_header_list_size(), 16384u);
+  EXPECT_EQ(settings2.preferred_receive_crypto_message_size(), 0u);
+  EXPECT_EQ(settings2.enable_push(), true);
+  EXPECT_EQ(settings2.allow_true_binary_metadata(), false);
+  EXPECT_EQ(settings2.allow_security_frame(), false);
+}
+
+TEST(Http2CommonTransportTest, TestReadTransportChannelArgs) {
+  // Test to validate that ReadChannelArgs reads all the channel args
+  // correctly into TransportChannelArgs.
+  Http2Settings settings;
+  chttp2::TransportFlowControl transport_flow_control(
+      /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*memory_owner=*/nullptr);
+
+  {
+    TransportChannelArgs args;
+    // 1. Test Client Defaults
+    ReadChannelArgs(ChannelArgs(), args, settings, transport_flow_control,
+                    /*is_client=*/true);
+
+    EXPECT_EQ(args.keepalive_time, Duration::Infinity());
+    EXPECT_EQ(args.keepalive_timeout, Duration::Infinity());
+    EXPECT_EQ(args.ping_timeout, Duration::Infinity());
+    EXPECT_EQ(args.settings_timeout, Duration::Infinity());
+    EXPECT_EQ(args.keepalive_permit_without_calls, false);
+    EXPECT_EQ(transport_flow_control.ph2_enable_rx_crypto(), false);
+    EXPECT_EQ(args.max_usable_hpack_table_size, -1);
+    EXPECT_GE(args.max_header_list_size_soft_limit, 8192u);
+  }
+
+  {
+    // 2. Test Server Defaults
+    TransportChannelArgs args;
+    ReadChannelArgs(ChannelArgs(), args, settings, transport_flow_control,
+                    /*is_client=*/false);
+
+    EXPECT_EQ(args.keepalive_time, Duration::Hours(2));
+    EXPECT_EQ(args.keepalive_timeout, Duration::Seconds(20));
+    EXPECT_EQ(args.ping_timeout, Duration::Minutes(1));
+    EXPECT_EQ(args.settings_timeout, Duration::Minutes(1));
+    EXPECT_EQ(args.keepalive_permit_without_calls, false);
+    EXPECT_EQ(transport_flow_control.ph2_enable_rx_crypto(), false);
+    EXPECT_EQ(args.max_usable_hpack_table_size, -1);
+    EXPECT_GE(args.max_header_list_size_soft_limit, 8192u);
+  }
+
+  {
+    // 3. Test Overrides
+    TransportChannelArgs args;
+    ChannelArgs channel_args =
+        ChannelArgs()
+            .Set(GRPC_ARG_KEEPALIVE_TIME_MS, 10000)    // 10s
+            .Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 5000)  // 5s
+            .Set(GRPC_ARG_PING_TIMEOUT_MS, 3000)       // 3s
+            .Set(GRPC_ARG_SETTINGS_TIMEOUT, 15000)     // 15s
+            .Set(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, true)
+            .Set(GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE, true)
+            .Set(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER, 1024)
+            .Set(GRPC_ARG_MAX_METADATA_SIZE, 12345);
+
+    ReadChannelArgs(channel_args, args, settings, transport_flow_control,
+                    /*is_client=*/true);
+
+    EXPECT_EQ(args.keepalive_time, Duration::Seconds(10));
+    EXPECT_EQ(args.keepalive_timeout, Duration::Seconds(5));
+    EXPECT_EQ(args.ping_timeout, Duration::Seconds(3));
+    EXPECT_EQ(args.settings_timeout, Duration::Seconds(15));
+    EXPECT_EQ(args.keepalive_permit_without_calls, true);
+    EXPECT_EQ(transport_flow_control.ph2_enable_rx_crypto(), true);
+    EXPECT_EQ(args.max_usable_hpack_table_size, 1024);
+    EXPECT_EQ(args.max_header_list_size_soft_limit, 12345u);
+  }
+
+  {
+    // 4. Test Settings Timeout logic derived from keepalive_timeout
+    TransportChannelArgs args;
+    ChannelArgs channel_args_2 =
+        ChannelArgs()
+            .Set(GRPC_ARG_KEEPALIVE_TIME_MS, 100000)  // 100s, just to be finite
+            .Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 40000);  // 40s
+
+    ReadChannelArgs(channel_args_2, args, settings, transport_flow_control,
+                    /*is_client=*/true);
+
+    EXPECT_EQ(args.settings_timeout, Duration::Seconds(80));
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Flow control helpers tests
+
+TEST(Http2CommonTransportTest, ProcessOutgoingDataFrameFlowControlTest) {
+  chttp2::TransportFlowControl transport_flow_control(
+      /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*memory_owner=*/nullptr);
+  chttp2::StreamFlowControl stream_flow_control(&transport_flow_control);
+  EXPECT_EQ(transport_flow_control.remote_window(), chttp2::kDefaultWindow);
+  EXPECT_EQ(stream_flow_control.remote_window_delta(), 0);
+
+  ProcessOutgoingDataFrameFlowControl(stream_flow_control, 1000);
+  EXPECT_EQ(transport_flow_control.remote_window(),
+            chttp2::kDefaultWindow - 1000);
+  EXPECT_EQ(stream_flow_control.remote_window_delta(), -1000);
+
+  // Test with 0 tokens consumed
+  for (int i = 0; i < 3; ++i) {
+    ProcessOutgoingDataFrameFlowControl(stream_flow_control, 0);
+    EXPECT_EQ(transport_flow_control.remote_window(),
+              chttp2::kDefaultWindow - 1000);
+    EXPECT_EQ(stream_flow_control.remote_window_delta(), -1000);
+  }
+}
+
+TEST(Http2CommonTransportTest, ProcessIncomingDataFrameFlowControlNullStream) {
+  const uint32_t frame_payload_size = 20000;
+  chttp2::TransportFlowControl flow_control(
+      /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*memory_owner=*/nullptr);
+  Http2FrameHeader frame_header;
+  frame_header.length = frame_payload_size;
+  frame_header.type = 0;  // DATA Frame
+  frame_header.flags = 0;
+  frame_header.stream_id = 1;
+
+  EXPECT_EQ(flow_control.test_only_announced_window(), chttp2::kDefaultWindow);
+
+  // First DATA frame of size frame_payload_size
+  ValueOrHttp2Status<chttp2::FlowControlAction> action1 =
+      ProcessIncomingDataFrameFlowControl(frame_header, flow_control,
+                                          /*stream=*/nullptr);
+  EXPECT_TRUE(action1.IsOk());
+  EXPECT_EQ(flow_control.test_only_announced_window(),
+            chttp2::kDefaultWindow - frame_payload_size);
+
+  // 2nd DATA frame of size frame_payload_size
+  ValueOrHttp2Status<chttp2::FlowControlAction> action2 =
+      ProcessIncomingDataFrameFlowControl(frame_header, flow_control,
+                                          /*stream=*/nullptr);
+  EXPECT_TRUE(action2.IsOk());
+  EXPECT_EQ(flow_control.test_only_announced_window(),
+            chttp2::kDefaultWindow - 2 * frame_payload_size);
+
+  // 3rd DATA frame of size frame_payload_size
+  ValueOrHttp2Status<chttp2::FlowControlAction> action3 =
+      ProcessIncomingDataFrameFlowControl(frame_header, flow_control,
+                                          /*stream=*/nullptr);
+  EXPECT_TRUE(action3.IsOk());
+  EXPECT_EQ(flow_control.test_only_announced_window(),
+            chttp2::kDefaultWindow - 3 * frame_payload_size);
+
+  // 4th DATA frame of size frame_payload_size.
+  // This will fail because the flow control window is exhausted.
+  ValueOrHttp2Status<chttp2::FlowControlAction> action4 =
+      ProcessIncomingDataFrameFlowControl(frame_header, flow_control,
+                                          /*stream=*/nullptr);
+  // Invalid operation because flow control window was exceeded.
+  EXPECT_FALSE(action4.IsOk());
+  EXPECT_EQ(action4.GetErrorType(),
+            Http2Status::Http2ErrorType::kConnectionError);
+  EXPECT_EQ(action4.GetConnectionErrorCode(),
+            Http2ErrorCode::kFlowControlError);
+  EXPECT_EQ(action4.DebugString(),
+            "Connection Error: {Error Code:FLOW_CONTROL_ERROR, Message:frame "
+            "of size 20000 overflows local window of 5535}");
+}
+
+TEST(Http2CommonTransportTest, ProcessIncomingDataFrameFlowControlNullStream1) {
+  const uint32_t frame_payload_size = 60000;
+  chttp2::TransportFlowControl flow_control(
+      /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*memory_owner=*/nullptr);
+  Http2FrameHeader frame_header;
+  frame_header.length = frame_payload_size;
+  frame_header.type = 0;  // DATA Frame
+  frame_header.flags = 0;
+  frame_header.stream_id = 1;
+
+  EXPECT_EQ(flow_control.test_only_announced_window(), chttp2::kDefaultWindow);
+
+  // Receive first large DATA frame.
+  ValueOrHttp2Status<chttp2::FlowControlAction> action1 =
+      ProcessIncomingDataFrameFlowControl(frame_header, flow_control,
+                                          /*stream=*/nullptr);
+  EXPECT_TRUE(action1.IsOk());
+  EXPECT_EQ(flow_control.test_only_announced_window(),
+            chttp2::kDefaultWindow - frame_payload_size);
+
+  // Send the flow control update to peer
+  uint32_t increment = flow_control.MaybeSendUpdate(/*writing_anyway=*/true);
+
+  // Receive 2nd large DATA frame.
+  // This should be accepted because we sent fresh flow control tokens.
+  ValueOrHttp2Status<chttp2::FlowControlAction> action2 =
+      ProcessIncomingDataFrameFlowControl(frame_header, flow_control,
+                                          /*stream=*/nullptr);
+  EXPECT_TRUE(action2.IsOk());
+  EXPECT_EQ(flow_control.test_only_announced_window(),
+            (chttp2::kDefaultWindow + increment) - 2 * frame_payload_size);
+
+  // For an empty DATA frame the flow control window must not change.
+  // All empty DATA frames should be accepted by flow control.
+  frame_header.length = 0;
+  for (int i = 0; i < 3; ++i) {
+    ValueOrHttp2Status<chttp2::FlowControlAction> action3 =
+        ProcessIncomingDataFrameFlowControl(frame_header, flow_control,
+                                            /*stream=*/nullptr);
+    EXPECT_TRUE(action3.IsOk());
+    EXPECT_EQ(flow_control.test_only_announced_window(),
+              (chttp2::kDefaultWindow + increment) - 2 * frame_payload_size);
+  }
+}
+
+TEST_P(TestsNeedingStreamObjects,
+       ProcessIncomingDataFrameFlowControlWithStream) {
+  const uint32_t frame_payload_size = 20000;
+  RefCountedPtr<Stream> stream = CreateMinimalTestStream(1);
+  Http2FrameHeader frame_header;
+  frame_header.length = frame_payload_size;
+  frame_header.type = 0;  // DATA Frame
+  frame_header.flags = 0;
+  frame_header.stream_id = 1;
+
+  EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
+            chttp2::kDefaultWindow);
+  EXPECT_EQ(stream->GetStreamFlowControl().test_only_announced_window_delta(),
+            0);
+
+  // First DATA frame of size frame_payload_size
+  ValueOrHttp2Status<chttp2::FlowControlAction> action1 =
+      ProcessIncomingDataFrameFlowControl(frame_header, transport_flow_control_,
+                                          stream.get());
+  EXPECT_TRUE(action1.IsOk());
+  EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
+            chttp2::kDefaultWindow - frame_payload_size);
+  EXPECT_EQ(stream->GetStreamFlowControl().test_only_announced_window_delta(),
+            -static_cast<int64_t>(frame_payload_size));
+
+  // 2nd DATA frame of size frame_payload_size
+  ValueOrHttp2Status<chttp2::FlowControlAction> action2 =
+      ProcessIncomingDataFrameFlowControl(frame_header, transport_flow_control_,
+                                          stream.get());
+  EXPECT_TRUE(action2.IsOk());
+  EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
+            chttp2::kDefaultWindow - 2 * frame_payload_size);
+  EXPECT_EQ(stream->GetStreamFlowControl().test_only_announced_window_delta(),
+            -2 * static_cast<int64_t>(frame_payload_size));
+
+  // 3rd DATA frame of size frame_payload_size
+  ValueOrHttp2Status<chttp2::FlowControlAction> action3 =
+      ProcessIncomingDataFrameFlowControl(frame_header, transport_flow_control_,
+                                          stream.get());
+  EXPECT_TRUE(action3.IsOk());
+  EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
+            chttp2::kDefaultWindow - 3 * frame_payload_size);
+  EXPECT_EQ(stream->GetStreamFlowControl().test_only_announced_window_delta(),
+            -3 * static_cast<int64_t>(frame_payload_size));
+
+  // 4th DATA frame of size frame_payload_size.
+  // This will fail because the flow control window is exhausted.
+  ValueOrHttp2Status<chttp2::FlowControlAction> action4 =
+      ProcessIncomingDataFrameFlowControl(frame_header, transport_flow_control_,
+                                          stream.get());
+  // Invalid operation because flow control window was exceeded.
+  EXPECT_FALSE(action4.IsOk());
+  EXPECT_EQ(action4.GetErrorType(),
+            Http2Status::Http2ErrorType::kConnectionError);
+  EXPECT_EQ(action4.GetConnectionErrorCode(),
+            Http2ErrorCode::kFlowControlError);
+  EXPECT_EQ(action4.DebugString(),
+            "Connection Error: {Error Code:FLOW_CONTROL_ERROR, Message:frame "
+            "of size 20000 overflows local window of 5535}");
+}
+
+TEST_P(TestsNeedingStreamObjects,
+       ProcessIncomingDataFrameTransportWindowUpdate) {
+  const uint32_t frame_payload_size = 60000;
+  RefCountedPtr<Stream> stream = CreateMinimalTestStream(1);
+  Http2FrameHeader frame_header;
+  frame_header.length = frame_payload_size;
+  frame_header.type = 0;  // DATA Frame
+  frame_header.flags = 0;
+  frame_header.stream_id = 1;
+
+  EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
+            chttp2::kDefaultWindow);
+  EXPECT_EQ(stream->GetStreamFlowControl().test_only_announced_window_delta(),
+            0);
+
+  // Receive first large DATA frame.
+  ValueOrHttp2Status<chttp2::FlowControlAction> action1 =
+      ProcessIncomingDataFrameFlowControl(frame_header, transport_flow_control_,
+                                          stream.get());
+  EXPECT_TRUE(action1.IsOk());
+  EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
+            chttp2::kDefaultWindow - frame_payload_size);
+  EXPECT_EQ(stream->GetStreamFlowControl().test_only_announced_window_delta(),
+            -static_cast<int64_t>(frame_payload_size));
+
+  // Send the flow control update to peer for transport
+  uint32_t increment =
+      transport_flow_control_.MaybeSendUpdate(/*writing_anyway=*/true);
+  EXPECT_GT(increment, 0);
+  EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
+            chttp2::kDefaultWindow - frame_payload_size + increment);
+
+  // Receive 2nd large DATA frame.
+  // This should be fail because stream window is not updated.
+  ValueOrHttp2Status<chttp2::FlowControlAction> action2 =
+      ProcessIncomingDataFrameFlowControl(frame_header, transport_flow_control_,
+                                          stream.get());
+  EXPECT_FALSE(action2.IsOk());
+  EXPECT_EQ(action2.GetErrorType(),
+            Http2Status::Http2ErrorType::kConnectionError);
+  EXPECT_EQ(action2.GetConnectionErrorCode(),
+            Http2ErrorCode::kFlowControlError);
+  EXPECT_EQ(
+      action2.DebugString(),
+      "Connection Error: {Error Code:FLOW_CONTROL_ERROR, Message:frame of "
+      "size 60000 overflows local window of 5535}");
+}
+
+TEST_P(TestsNeedingStreamObjects,
+       ProcessIncomingDataFrameTransportAndStreamWindowUpdate) {
+  const uint32_t frame_payload_size = 60000;
+  RefCountedPtr<Stream> stream = CreateMinimalTestStream(1);
+  Http2FrameHeader frame_header;
+  frame_header.length = frame_payload_size;
+  frame_header.type = 0;  // DATA Frame
+  frame_header.flags = 0;
+  frame_header.stream_id = 1;
+  int64_t expected_announced_window = chttp2::kDefaultWindow;
+  int64_t expected_announced_window_delta = 0;
+
+  EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
+            expected_announced_window);
+  EXPECT_EQ(stream->GetStreamFlowControl().test_only_announced_window_delta(),
+            expected_announced_window_delta);
+
+  // Receive first large DATA frame.
+  ValueOrHttp2Status<chttp2::FlowControlAction> action1 =
+      ProcessIncomingDataFrameFlowControl(frame_header, transport_flow_control_,
+                                          stream.get());
+  expected_announced_window -= frame_payload_size;
+  expected_announced_window_delta -= frame_payload_size;
+  EXPECT_TRUE(action1.IsOk());
+  EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
+            expected_announced_window);
+  EXPECT_EQ(stream->GetStreamFlowControl().test_only_announced_window_delta(),
+            expected_announced_window_delta);
+
+  chttp2::StreamFlowControl::IncomingUpdateContext stream_flow_control_context(
+      &stream->GetStreamFlowControl());
+  stream_flow_control_context.SetMinProgressSize(frame_payload_size);
+  chttp2::FlowControlAction action = stream_flow_control_context.MakeAction();
+  EXPECT_EQ(action.send_stream_update(),
+            chttp2::FlowControlAction::Urgency::UPDATE_IMMEDIATELY);
+
+  // Send the flow control update to peer for stream
+  uint32_t transport_increment =
+      transport_flow_control_.MaybeSendUpdate(/*writing_anyway=*/true);
+  uint32_t stream_increment = stream->GetStreamFlowControl().MaybeSendUpdate();
+  EXPECT_GT(transport_increment, 0);
+  EXPECT_GT(stream_increment, 0);
+  expected_announced_window += transport_increment;
+  expected_announced_window_delta += stream_increment;
+  EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
+            expected_announced_window);
+  EXPECT_EQ(stream->GetStreamFlowControl().test_only_announced_window_delta(),
+            expected_announced_window_delta);
+
+  // Receive 2nd large DATA frame.
+  ValueOrHttp2Status<chttp2::FlowControlAction> action2 =
+      ProcessIncomingDataFrameFlowControl(frame_header, transport_flow_control_,
+                                          stream.get());
+  EXPECT_TRUE(action2.IsOk());
+  expected_announced_window -= frame_payload_size;
+  expected_announced_window_delta -= frame_payload_size;
+  EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
+            expected_announced_window);
+  EXPECT_EQ(stream->GetStreamFlowControl().test_only_announced_window_delta(),
+            expected_announced_window_delta);
+}
+
+TEST(Http2CommonTransportTest,
+     ProcessIncomingWindowUpdateFrameFlowControlNullStream) {
+  chttp2::TransportFlowControl flow_control(
+      /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*memory_owner=*/nullptr);
+  EXPECT_EQ(flow_control.remote_window(), chttp2::kDefaultWindow);
+
+  Http2WindowUpdateFrame frame;
+  frame.increment = 1000;
+
+  // If stream_id != 0 and stream is null, no change in flow control window.
+  frame.stream_id = 1;
+  ProcessIncomingWindowUpdateFrameFlowControl(frame, flow_control,
+                                              /*stream=*/nullptr);
+  EXPECT_EQ(flow_control.remote_window(), chttp2::kDefaultWindow);
+
+  // If stream_id == 0, transport flow control window should increase.
+  frame.stream_id = 0;
+  ProcessIncomingWindowUpdateFrameFlowControl(frame, flow_control,
+                                              /*stream=*/nullptr);
+  EXPECT_EQ(flow_control.remote_window(), chttp2::kDefaultWindow + 1000);
+
+  // If increment is 0, no change in flow control window.
+  // Although 0 increment would be a connection layer at the frame parsing
+  // layer, we should be graceful with it at this layer.
+  frame.increment = 0;
+  frame.stream_id = 0;
+  ProcessIncomingWindowUpdateFrameFlowControl(frame, flow_control,
+                                              /*stream=*/nullptr);
+  EXPECT_EQ(flow_control.remote_window(), chttp2::kDefaultWindow + 1000);
+  frame.stream_id = 1;
+  ProcessIncomingWindowUpdateFrameFlowControl(frame, flow_control,
+                                              /*stream=*/nullptr);
+  EXPECT_EQ(flow_control.remote_window(), chttp2::kDefaultWindow + 1000);
+
+  // Large increment
+  frame.increment = 10000;
+  frame.stream_id = 0;
+  ProcessIncomingWindowUpdateFrameFlowControl(frame, flow_control,
+                                              /*stream=*/nullptr);
+  EXPECT_EQ(flow_control.remote_window(),
+            chttp2::kDefaultWindow + 1000 + 10000);
+}
+
+TEST_P(TestsNeedingStreamObjects,
+       ProcessIncomingWindowUpdateFrameFlowControlWithStream) {
+  RefCountedPtr<Stream> stream = CreateMinimalTestStream(1);
+  EXPECT_EQ(transport_flow_control_.remote_window(), chttp2::kDefaultWindow);
+  EXPECT_EQ(stream->GetStreamFlowControl().remote_window_delta(), 0);
+
+  Http2WindowUpdateFrame frame;
+  frame.increment = 1000;
+
+  // If stream_id != 0 and stream is not null, stream flow control window
+  // should increase.
+  frame.stream_id = 1;
+  ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
+                                              stream.get());
+  EXPECT_EQ(transport_flow_control_.remote_window(), chttp2::kDefaultWindow);
+  EXPECT_EQ(stream->GetStreamFlowControl().remote_window_delta(), 1000);
+
+  // If stream_id == 0, transport flow control window should increase.
+  frame.stream_id = 0;
+  ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
+                                              stream.get());
+  EXPECT_EQ(transport_flow_control_.remote_window(),
+            chttp2::kDefaultWindow + 1000);
+  EXPECT_EQ(stream->GetStreamFlowControl().remote_window_delta(), 1000);
+
+  // If increment is 0, no change in flow control window.
+  // Although 0 increment would be a connection layer at the frame parsing
+  // layer, we should be graceful with it at this layer.
+  frame.increment = 0;
+  frame.stream_id = 0;
+  ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
+                                              stream.get());
+  EXPECT_EQ(transport_flow_control_.remote_window(),
+            chttp2::kDefaultWindow + 1000);
+  EXPECT_EQ(stream->GetStreamFlowControl().remote_window_delta(), 1000);
+  frame.stream_id = 1;
+  ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
+                                              stream.get());
+  EXPECT_EQ(transport_flow_control_.remote_window(),
+            chttp2::kDefaultWindow + 1000);
+  EXPECT_EQ(stream->GetStreamFlowControl().remote_window_delta(), 1000);
+
+  // Large increment
+  frame.increment = 10000;
+  frame.stream_id = 1;
+  ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
+                                              stream.get());
+  EXPECT_EQ(transport_flow_control_.remote_window(),
+            chttp2::kDefaultWindow + 1000);
+  EXPECT_EQ(stream->GetStreamFlowControl().remote_window_delta(), 1000 + 10000);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Read and Write helper tests
+
+class Http2ReadContextTest : public ::testing::Test {
+ protected:
+  RefCountedPtr<Party> MakeParty() {
+    RefCountedPtr<Arena> arena = SimpleArenaAllocator()->MakeArena();
+    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        event_engine_.get());
+    return Party::Make(std::move(arena));
+  }
+
+ private:
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
+      grpc_event_engine::experimental::GetDefaultEventEngine();
+};
+
+TEST_F(Http2ReadContextTest, WakeWithoutPause) {
+  // Test that calling ResumeReadLoopIfPaused before MaybePauseReadLoop has
+  // no effect and does not crash.
+  ReadLoopPauseRestart read_loop_manager;
+  read_loop_manager.ResumeReadLoopIfPaused();
+  read_loop_manager.ResumeReadLoopIfPaused();
+  read_loop_manager.ResumeReadLoopIfPaused();
+  read_loop_manager.MaybePauseReadLoop();
+  read_loop_manager.SetPauseReadLoop();
+}
+
+class SimulatedTransport : public RefCounted<SimulatedTransport> {
+ public:
+  auto SimulatedReadAndProcessOneFrame() {
+    return [self = this->Ref()]() -> Poll<absl::Status> {
+      ++(self->i);
+      if (self->i % 2 == 0) {
+        // Doing this alternate times to make sure that SetPauseReadLoop is
+        // idempotent
+        absl::StrAppend(&self->execution_order, "Pause ");
+        return self->read_loop_manager.MaybePauseReadLoop();
+      }
+      absl::StrAppend(&self->execution_order, ". ");
+      return absl::OkStatus();
+    };
+  }
+  auto SimulatedReadLoop() {
+    return AssertResultType<absl::Status>(Loop([self = this->Ref()]() {
+      return TrySeq(self->SimulatedReadAndProcessOneFrame(),
+                    [self]() -> LoopCtl<absl::Status> {
+                      if (self->i < 10) {
+                        absl::StrAppend(&self->execution_order, "SetPause ");
+                        self->read_loop_manager.SetPauseReadLoop();
+                        return Continue();
+                      }
+                      absl::StrAppend(&self->execution_order, "EndRead ");
+                      self->did_end_read = true;
+                      return absl::OkStatus();
+                    });
+    }));
+  }
+  auto SimulatedOneWrite() {
+    return [self = this->Ref()]() -> Poll<absl::Status> {
+      absl::StrAppend(&self->execution_order, "Wake ");
+      self->read_loop_manager.ResumeReadLoopIfPaused();
+      return absl::OkStatus();
+    };
+  }
+
+  auto SimulatedWriteLoop() {
+    return AssertResultType<absl::Status>(Loop([self = this->Ref()]() {
+      return TrySeq(Sleep(Duration::Milliseconds(100)),
+                    self->SimulatedOneWrite(),
+                    [self]() -> LoopCtl<absl::Status> {
+                      if (self->did_end_read) {
+                        absl::StrAppend(&self->execution_order, "EndWrite ");
+                        return absl::OkStatus();
+                      }
+                      absl::StrAppend(&self->execution_order, "_ ");
+                      return Continue();
+                    });
+    }));
+  }
+
+  std::string execution_order;
+
+ private:
+  ReadLoopPauseRestart read_loop_manager;
+  int i = 0;
+  bool did_end_read = false;
+};
+
+TEST_F(Http2ReadContextTest, PauseAndWake) {
+  RefCountedPtr<SimulatedTransport> transport =
+      MakeRefCounted<SimulatedTransport>();
+  ExecCtx ctx;
+  RefCountedPtr<Party> party = MakeParty();
+  Notification n1;
+  Notification n2;
+  party->Spawn("Read", transport->SimulatedReadLoop(),
+               [&n1](absl::Status status) { n1.Notify(); });
+  party->Spawn("Write", transport->SimulatedWriteLoop(),
+               [&n2](absl::Status status) { n2.Notify(); });
+  n1.WaitForNotification();
+  n2.WaitForNotification();
+  EXPECT_STREQ(transport->execution_order.c_str(),
+               ". SetPause Pause Wake _ . SetPause Pause Wake _ . "
+               "SetPause Pause Wake _ . SetPause Pause Wake _ . "
+               "SetPause Pause Wake _ . EndRead Wake EndWrite ");
+}
+
+TEST_F(Http2ReadContextTest, SetAndGetFrameHeader) {
+  // Purpose: Verify that SetCurrentFrameHeader stores header attributes
+  // correctly. Assertions: GetCurrentFrameHeader returns the exact frame header
+  // that was set.
+  util::testing::MockPromiseEndpoint mock_endpoint(1234);
+  ReadContext context(/*max_new_streams_per_read_cycle=*/32u,
+                      mock_endpoint.promise_endpoint, true,
+                      GrpcErrors::kMaxSecurityFrameSize,
+                      /*ping_on_rst_stream_percent=*/1u);
+  Http2FrameHeader header;
+  header.length = 100u;
+  header.type = 1u;
+  header.flags = 2u;
+  header.stream_id = 3u;
+
+  context.SetCurrentFrameHeader(header);
+  const Http2FrameHeader& retrieved_header = context.GetCurrentFrameHeader();
+  EXPECT_EQ(retrieved_header.length, 100u);
+  EXPECT_EQ(retrieved_header.type, 1u);
+  EXPECT_EQ(retrieved_header.flags, 2u);
+  EXPECT_EQ(retrieved_header.stream_id, 3u);
+}
+
+TEST_F(Http2ReadContextTest, ReadCycleFramesLimits) {
+  // Verify that MaybePauseReadLoop only pauses when frame limit is reached.
+  // Assertions: MaybePauseReadLoop does not pause under limit, but pauses at
+  // limit.
+  ExecCtx ctx;
+  const RefCountedPtr<Party> party = MakeParty();
+  bool was_pending_under_limit = false;
+  bool was_pending_at_limit = false;
+  Notification notification;
+
+  party->Spawn(
+      "TestFramesLimits",
+      [&was_pending_under_limit,
+       &was_pending_at_limit]() -> Poll<absl::Status> {
+        util::testing::MockPromiseEndpoint mock_endpoint(1234);
+        ReadContext read_context(/*max_new_streams_per_read_cycle=*/32u,
+                                 mock_endpoint.promise_endpoint, true,
+                                 GrpcErrors::kMaxSecurityFrameSize,
+                                 /*ping_on_rst_stream_percent=*/1u);
+        const Http2FrameHeader header = {
+            0u,  // length
+            0u,  // type
+            0u,  // flags
+            1u   // stream_id
+        };
+
+        // Step 1: Set frames strictly under the limit.
+        for (uint32_t i = 0u; i < kMaxFramesReadPerReadCycle - 1u; ++i) {
+          read_context.SetCurrentFrameHeader(header);
+          // Step 2: Verify read loop does not pause under the limit.
+          const Poll<absl::Status> poll_under =
+              read_context.MaybePauseReadLoop();
+          if (poll_under.pending()) {
+            was_pending_under_limit = true;
+            read_context.ResumeReadLoopIfPaused();
+          }
+        }
+
+        // Step 3: Set one more frame to hit the limit.
+        read_context.SetCurrentFrameHeader(header);
+        // Step 4: Verify read loop pauses at the limit.
+        const Poll<absl::Status> poll_at = read_context.MaybePauseReadLoop();
+        if (poll_at.pending()) {
+          was_pending_at_limit = true;
+          read_context.ResumeReadLoopIfPaused();
+          EXPECT_TRUE(read_context.TestOnlyCheckCounters(0u, 0u, false));
+        }
+        return absl::OkStatus();
+      },
+      [&notification](absl::Status status) { notification.Notify(); });
+
+  notification.WaitForNotification();
+  EXPECT_FALSE(was_pending_under_limit);
+  EXPECT_TRUE(was_pending_at_limit);
+}
+
+TEST(Http2CommonTransportTest, TestTarpitDuration) {
+  // Verify that TarpitDuration generates random values within bounds across
+  // many runs.
+  int min_duration_ms = 10;
+  int max_duration_ms = 30;
+  for (int i = 0; i < 1000; ++i) {
+    const Duration current_duration =
+        TarpitDuration(min_duration_ms, max_duration_ms);
+    EXPECT_GE(current_duration, Duration::Milliseconds(min_duration_ms));
+    EXPECT_LE(current_duration, Duration::Milliseconds(max_duration_ms));
+  }
+
+  // Verify that TarpitDuration returns exactly min when bounds are equal.
+  const int exact_duration_ms = 15;
+  for (int i = 0; i < 50; ++i) {
+    const Duration duration =
+        TarpitDuration(exact_duration_ms, exact_duration_ms);
+    EXPECT_EQ(duration, Duration::Milliseconds(exact_duration_ms));
+  }
+
+  // Verify that TarpitDuration gracefully handles bad inputs without
+  // crashing.
+  min_duration_ms = 30;
+  max_duration_ms = 10;
+  for (int i = 0; i < 50; ++i) {
+    const Duration current_duration =
+        TarpitDuration(min_duration_ms, max_duration_ms);
+    EXPECT_EQ(current_duration, Duration::Milliseconds(min_duration_ms));
+  }
+}
+
+}  // namespace testing
+}  // namespace http2
+}  // namespace grpc_core
+
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  // Must call to create default EventEngine.
+  grpc_init();
+  int ret = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return ret;
+}

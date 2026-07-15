@@ -31,14 +31,14 @@
 #include <string>
 #include <utility>
 
+#include "src/core/util/directory_reader.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "src/core/util/directory_reader.h"
-#include "src/core/util/sync.h"
-#include "src/core/util/time.h"
 
 namespace grpc_core {
 namespace experimental {

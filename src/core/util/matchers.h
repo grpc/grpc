@@ -22,9 +22,9 @@
 #include <optional>
 #include <string>
 
+#include "re2/re2.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "re2/re2.h"
 
 namespace grpc_core {
 

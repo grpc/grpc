@@ -15,10 +15,10 @@
 #ifndef GRPC_TEST_CORE_CALL_BATCH_BUILDER_H
 #define GRPC_TEST_CORE_CALL_BATCH_BUILDER_H
 
-#include "absl/strings/str_cat.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/slice/slice.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "gtest/gtest.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 
@@ -28,6 +28,9 @@ ByteBufferUniquePtr ByteBufferFromSlice(Slice slice);
 
 std::optional<std::string> FindInMetadataArray(const grpc_metadata_array& md,
                                                absl::string_view key);
+
+std::optional<std::vector<std::string>> FindRepeatedInMetadataArray(
+    const grpc_metadata_array& md, absl::string_view key);
 
 // Receiving container for incoming metadata.
 class IncomingMetadata final : public CqVerifier::SuccessfulStateString {

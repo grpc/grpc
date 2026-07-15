@@ -21,17 +21,17 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/status/statusor.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/load_balancing/grpclb/grpclb_client_stats.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 
-class ClientLoadReportingFilter final
+class ClientLoadReportingFilter
     : public ImplementChannelFilter<ClientLoadReportingFilter> {
  public:
   static const grpc_channel_filter kFilter;
@@ -47,6 +47,10 @@ class ClientLoadReportingFilter final
     static inline const NoInterceptor OnClientToServerMessage;
     static inline const NoInterceptor OnClientToServerHalfClose;
     static inline const NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList().Set("saw_initial_metadata",
+                                          saw_initial_metadata_);
+    }
 
    private:
     RefCountedPtr<GrpcLbClientStats> client_stats_;

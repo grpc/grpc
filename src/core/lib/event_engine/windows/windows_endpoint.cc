@@ -18,18 +18,19 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/support/log_windows.h>
 
-#include "absl/cleanup/cleanup.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_format.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
+#include "src/core/lib/event_engine/windows/win_socket.h"
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/status_helper.h"
+#include "absl/cleanup/cleanup.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc_event_engine::experimental {
 
@@ -57,16 +58,10 @@ WindowsEndpoint::WindowsEndpoint(
       allocator_(std::move(allocator)),
       io_state_(std::make_shared<AsyncIOState>(
           this, std::move(socket), std::move(engine), thread_pool)) {
-  char addr[EventEngine::ResolvedAddress::MAX_SIZE_BYTES];
-  int addr_len = sizeof(addr);
-  if (getsockname(io_state_->socket->raw_socket(),
-                  reinterpret_cast<sockaddr*>(addr), &addr_len) < 0) {
-    grpc_core::Crash(absl::StrFormat(
-        "Unrecoverable error: Failed to get local socket name. %s",
-        GRPC_WSA_ERROR(WSAGetLastError(), "getsockname").ToString().c_str()));
-  }
-  local_address_ =
-      EventEngine::ResolvedAddress(reinterpret_cast<sockaddr*>(addr), addr_len);
+  auto local_address = SocketToAddress(io_state_->socket->raw_socket());
+  GRPC_CHECK(local_address.ok())
+      << "Failed to get local socket address: " << local_address.status();
+  local_address_ = std::move(*local_address);
   local_address_string_ = *ResolvedAddressToURI(local_address_);
   peer_address_string_ = *ResolvedAddressToURI(peer_address_);
 }
@@ -86,7 +81,7 @@ void WindowsEndpoint::AsyncIOState::DoTcpRead(SliceBuffer* buffer) {
     return;
   }
   // Prepare the WSABUF struct
-  CHECK(buffer->Count() <= kMaxWSABUFCount);
+  GRPC_CHECK(buffer->Count() <= kMaxWSABUFCount);
   WSABUF wsa_buffers[kMaxWSABUFCount];
   for (size_t i = 0; i < buffer->Count(); i++) {
     auto& slice = buffer->MutableSliceAt(i);
@@ -126,7 +121,7 @@ void WindowsEndpoint::AsyncIOState::DoTcpRead(SliceBuffer* buffer) {
 }
 
 bool WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
-                           SliceBuffer* buffer, const ReadArgs* /* args */) {
+                           SliceBuffer* buffer, ReadArgs /* args */) {
   if (io_state_->socket->IsShutdown()) {
     io_state_->thread_pool->Run([on_read = std::move(on_read)]() mutable {
       on_read(absl::InternalError("Socket is shutting down."));
@@ -147,7 +142,7 @@ bool WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
 }
 
 bool WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
-                            SliceBuffer* data, const WriteArgs* /* args */) {
+                            SliceBuffer* data, WriteArgs /* args */) {
   GRPC_TRACE_LOG(event_engine_endpoint, INFO)
       << "WindowsEndpoint::" << this << " writing";
   if (io_state_->socket->IsShutdown()) {
@@ -165,11 +160,11 @@ bool WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
           << " WRITE (peer=" << peer_address_string_ << "): " << str;
     }
   }
-  CHECK(data->Count() <= UINT_MAX);
+  GRPC_CHECK(data->Count() <= UINT_MAX);
   absl::InlinedVector<WSABUF, kMaxWSABUFCount> buffers(data->Count());
   for (size_t i = 0; i < data->Count(); i++) {
     auto& slice = data->MutableSliceAt(i);
-    CHECK(slice.size() <= ULONG_MAX);
+    GRPC_CHECK(slice.size() <= ULONG_MAX);
     buffers[i].len = slice.size();
     buffers[i].buf = (char*)slice.begin();
   }
@@ -294,7 +289,7 @@ void WindowsEndpoint::HandleReadClosure::Run() {
     return ResetAndReturnCallback()(status);
   }
   if (result.bytes_transferred == 0) {
-    DCHECK_GT(io_state.use_count(), 0);
+    GRPC_DCHECK_GT(io_state.use_count(), 0);
     // Either the endpoint is shut down or we've seen the end of the stream
     if (GRPC_TRACE_FLAG_ENABLED(event_engine_endpoint_data)) {
       LOG(INFO) << "WindowsEndpoint::" << this << " read 0 bytes.";
@@ -313,8 +308,8 @@ void WindowsEndpoint::HandleReadClosure::Run() {
     }
     return ResetAndReturnCallback()(status);
   }
-  DCHECK_GT(result.bytes_transferred, 0);
-  DCHECK(result.bytes_transferred <= buffer_->Length());
+  GRPC_DCHECK_GT(result.bytes_transferred, 0);
+  GRPC_DCHECK(result.bytes_transferred <= buffer_->Length());
   buffer_->MoveFirstNBytesIntoSliceBuffer(result.bytes_transferred,
                                           last_read_buffer_);
   if (buffer_->Length() == 0) {
@@ -345,9 +340,9 @@ bool WindowsEndpoint::HandleReadClosure::MaybeFinishIfDataHasAlreadyBeenRead() {
 void WindowsEndpoint::HandleReadClosure::DonateSpareSlices(
     SliceBuffer* buffer) {
   // Donee buffer must be empty.
-  CHECK_EQ(buffer->Length(), 0);
+  GRPC_CHECK_EQ(buffer->Length(), 0);
   // HandleReadClosure must be in the reset state.
-  CHECK_EQ(buffer_, nullptr);
+  GRPC_CHECK_EQ(buffer_, nullptr);
   buffer->Swap(last_read_buffer_);
 }
 
@@ -365,7 +360,7 @@ void WindowsEndpoint::HandleWriteClosure::Run() {
   if (result.wsa_error != 0) {
     status = GRPC_WSA_ERROR(result.wsa_error, "WSASend");
   } else {
-    CHECK(result.bytes_transferred == buffer_->Length());
+    GRPC_CHECK(result.bytes_transferred == buffer_->Length());
   }
   return ResetAndReturnCallback()(status);
 }

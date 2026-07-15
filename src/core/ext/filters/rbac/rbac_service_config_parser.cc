@@ -25,14 +25,14 @@
 #include <optional>
 #include <string>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/matchers.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 
@@ -205,7 +205,8 @@ struct RbacConfig {
       std::map<std::string, Policy> policies;
       // Defaults to kNone since its json field is optional.
       Rbac::AuditCondition audit_condition = Rbac::AuditCondition::kNone;
-      std::vector<std::unique_ptr<AuditLoggerFactory::Config>> logger_configs;
+      std::vector<std::shared_ptr<const AuditLoggerFactory::Config>>
+          logger_configs;
 
       Rules() {}
       Rules(const Rules&) = delete;

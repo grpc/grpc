@@ -13,6 +13,8 @@ add_subdirectory(${GRPC_SRC_DIR} ${GRPC_BUILD_DIR})
 #include_directories(${GRPC_SRC_DIR}/include)
 include_directories(${GRPC_SRC_DIR})
 include_directories(${_gRPC_ABSL_INCLUDE_DIR})
+include_directories(${_gRPC_UPB_INCLUDE_DIR})
+include_directories(${_gRPC_UPB_GRPC_GENERATED_DIR})
 
 set(GRPC_PROTO_GENS_DIR ${CMAKE_BINARY_DIR}/gens)
 file(MAKE_DIRECTORY ${GRPC_PROTO_GENS_DIR})
@@ -123,3 +125,9 @@ target_link_libraries(grpc-interop
   test_proto_lib
   android
   ${log-lib})
+
+target_include_directories(grpc-interop
+  PRIVATE
+    "${GRPC_SRC_DIR}/src/core/ext/upb-gen"
+    "${GRPC_SRC_DIR}/src/core/ext/upbdefs-gen"
+    "${GRPC_SRC_DIR}/third_party/upb")

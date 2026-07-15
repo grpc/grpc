@@ -27,12 +27,7 @@
 #include <string>
 #include <vector>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_format.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/promise/seq.h"
@@ -41,12 +36,17 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/transport/chaotic_good_legacy/transport_test.h"
 #include "test/core/transport/util/mock_promise_endpoint.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
 
 using testing::_;
 using testing::MockFunction;

@@ -446,18 +446,17 @@ typedef struct {
 
 typedef struct grpc_server_config_fetcher grpc_server_config_fetcher;
 
+/** EXPERIMENTAL.  Channel arg vtable for server config fetcher. */
+GRPCAPI const grpc_arg_pointer_vtable* grpc_server_config_fetcher_arg_vtable(
+    void);
+
 /** EXPERIMENTAL.  Creates an xDS config fetcher. */
 GRPCAPI grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
     grpc_server_xds_status_notifier notifier, const grpc_channel_args* args);
 
-/** EXPERIMENTAL.  Destroys a config fetcher. */
-GRPCAPI void grpc_server_config_fetcher_destroy(
+/** EXPERIMENTAL.  Unrefs a config fetcher. */
+GRPCAPI void grpc_server_config_fetcher_unref(
     grpc_server_config_fetcher* config_fetcher);
-
-/** EXPERIMENTAL.  Sets the server's config fetcher.  Takes ownership.
-    Must be called before adding ports */
-GRPCAPI void grpc_server_set_config_fetcher(
-    grpc_server* server, grpc_server_config_fetcher* config_fetcher);
 
 /** Add a HTTP2 over an encrypted link over tcp listener.
    Returns bound port number on success, 0 on failure.
@@ -528,6 +527,10 @@ GRPCAPI void grpc_resource_quota_resize(grpc_resource_quota* resource_quota,
 /** Update the size of the maximum number of threads allowed */
 GRPCAPI void grpc_resource_quota_set_max_threads(
     grpc_resource_quota* resource_quota, int new_max_threads);
+
+/** Update the size of the maximum number of streams allowed */
+GRPCAPI void grpc_resource_quota_set_max_outstanding_streams(
+    grpc_resource_quota* resource_quota, int new_max_outstanding_streams);
 
 /** EXPERIMENTAL.  Dumps xDS configs as a serialized ClientConfig proto.
     The full name of the proto is envoy.service.status.v3.ClientConfig. */

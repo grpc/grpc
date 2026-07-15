@@ -20,9 +20,9 @@
 #include <map>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/lib/security/authorization/authorization_engine.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
 
@@ -44,21 +44,19 @@ bool ShouldLog(const Decision& decision,
 
 }  // namespace
 
-GrpcAuthorizationEngine::GrpcAuthorizationEngine(Rbac policy)
-    : name_(std::move(policy.name)),
-      action_(policy.action),
-      audit_condition_(policy.audit_condition) {
-  for (auto& sub_policy : policy.policies) {
-    Policy policy;
-    policy.name = sub_policy.first;
-    policy.matcher = std::make_unique<PolicyAuthorizationMatcher>(
-        std::move(sub_policy.second));
-    policies_.push_back(std::move(policy));
+GrpcAuthorizationEngine::GrpcAuthorizationEngine(const Rbac& rbac)
+    : name_(rbac.name),
+      action_(rbac.action),
+      audit_condition_(rbac.audit_condition) {
+  for (auto& [name, policy] : rbac.policies) {
+    auto& engine_policy = policies_.emplace_back();
+    engine_policy.name = name;
+    engine_policy.matcher =
+        std::make_unique<PolicyAuthorizationMatcher>(policy);
   }
-  for (auto& logger_config : policy.logger_configs) {
-    auto logger =
-        AuditLoggerRegistry::CreateAuditLogger(std::move(logger_config));
-    CHECK(logger != nullptr);
+  for (const auto& logger_config : rbac.logger_configs) {
+    auto logger = AuditLoggerRegistry::CreateAuditLogger(logger_config);
+    GRPC_CHECK(logger != nullptr);
     audit_loggers_.push_back(std::move(logger));
   }
 }

@@ -18,7 +18,7 @@ import time
 import http2_base_server
 
 
-class TestcaseGoaway(object):
+class TestcaseGoaway:
     """
     This test does the following:
       Process incoming request normally, i.e. send headers, data and trailers.
@@ -28,9 +28,9 @@ class TestcaseGoaway(object):
 
     def __init__(self, iteration):
         self._base_server = http2_base_server.H2ProtocolBaseServer()
-        self._base_server._handlers[
-            "RequestReceived"
-        ] = self.on_request_received
+        self._base_server._handlers["RequestReceived"] = (
+            self.on_request_received
+        )
         self._base_server._handlers["DataReceived"] = self.on_data_received
         self._base_server._handlers["SendDone"] = self.on_send_done
         self._base_server._handlers["ConnectionLost"] = self.on_connection_lost

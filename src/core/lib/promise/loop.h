@@ -17,15 +17,18 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <cstddef>
 #include <utility>
 #include <variant>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/util/construct_destruct.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 
@@ -40,7 +43,7 @@ namespace grpc_core {
 //
 // Running of the Loop combinator:
 //
-// 1. The input promise is guranteed to run at least once when the combinator
+// 1. The input promise is guaranteed to run at least once when the combinator
 //    is invoked.
 // 2. The Loop combinators execution will keep running input promise for
 //    as long as the input promise returns the Continue() object.
@@ -123,7 +126,7 @@ struct LoopTraits<absl::StatusOr<LoopCtl<absl::Status>>> {
 
 }  // namespace promise_detail
 
-template <typename F>
+template <typename F, bool kYield>
 class Loop {
  private:
   static_assert(promise_detail::kIsRepeatedPromiseFactory<void, F>);
@@ -135,8 +138,8 @@ class Loop {
  public:
   using Result = typename promise_detail::LoopTraits<PromiseResult>::Result;
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit Loop(F f)
-      : factory_(std::move(f)) {}
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit Loop(F&& f)
+      : factory_(std::forward<F>(f)) {}
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~Loop() {
     if (started_) Destruct(&promise_);
   }
@@ -170,6 +173,13 @@ class Loop {
               << "loop[" << this << "] iteration complete, continue";
           Destruct(&promise_);
           Construct(&promise_, factory_.Make());
+          if constexpr (kYield) {
+            GRPC_TRACE_LOG(promise_primitives, INFO)
+                << "loop[" << this << "] iteration yield";
+            auto* activity = GetContext<Activity>();
+            activity->ForceImmediateRepoll(activity->CurrentParticipant());
+            return Pending();
+          }
           continue;
         }
         GRPC_TRACE_LOG(promise_primitives, INFO)
@@ -185,6 +195,21 @@ class Loop {
     }
   }
 
+  void ToProto(grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* loop_promise =
+        grpc_channelz_v2_Promise_mutable_loop_promise(promise_proto, arena);
+    if constexpr (kYield) {
+      grpc_channelz_v2_Promise_Loop_set_yield(loop_promise, true);
+    }
+    PromiseAsProto(
+        promise_,
+        grpc_channelz_v2_Promise_Loop_mutable_promise(loop_promise, arena),
+        arena);
+    grpc_channelz_v2_Promise_Loop_set_loop_factory(
+        loop_promise, StdStringToUpbString(TypeName<Factory>()));
+  }
+
  private:
   GPR_NO_UNIQUE_ADDRESS Factory factory_;
   GPR_NO_UNIQUE_ADDRESS union {
@@ -194,7 +219,46 @@ class Loop {
 };
 
 template <typename F>
-Loop(F) -> Loop<F>;
+Loop(F) -> Loop<F, false>;
+
+// A version of Loop that yields the activity to another promise once per
+// iteration.
+template <typename F>
+auto YieldingLoop(F&& f) {
+  return Loop<F, true>(std::forward<F>(f));
+}
+
+template <typename PromiseFactory>
+auto NTimes(size_t times, PromiseFactory&& promise_factory) {
+  DCHECK_GT(times, 1u);
+  return Loop(
+      [i = size_t{0}, times,
+       promise_factory =
+           promise_detail::RepeatedPromiseFactory<size_t, PromiseFactory>(
+               std::forward<PromiseFactory>(promise_factory))]() mutable {
+        return Seq(promise_factory.Make(i), [&i, times](auto result) {
+          using Result = decltype(result);
+          LoopCtl<Result> lc = std::move(result);
+          ++i;
+          if (i != times) lc = Continue{};
+          return lc;
+        });
+      });
+}
+
+template <typename PromiseFactory>
+auto WhilstSuccessful(PromiseFactory&& promise_factory) {
+  return Loop(
+      [promise_factory =
+           promise_detail::RepeatedPromiseFactory<void, PromiseFactory>(
+               std::forward<PromiseFactory>(promise_factory))]() mutable {
+        return Seq(promise_factory.Make(), [](auto result) {
+          using Result = decltype(result);
+          if (result.ok()) return LoopCtl<Result>(Continue());
+          return LoopCtl<Result>(std::move(result));
+        });
+      });
+}
 
 }  // namespace grpc_core
 

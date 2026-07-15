@@ -18,6 +18,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/core/test_util",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "public",
 )
 
@@ -83,6 +87,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:span",
+        "absl/status",
     ],
     tags = ["nofixdeps"],
     deps = [
@@ -91,20 +96,43 @@ grpc_cc_library(
         "//:grpc_base",
         "//:grpc_security_base",
         "//:grpc_trace",
+        "//:iomgr",
         "//:iomgr_timer",
         "//:ref_counted_ptr",
+        "//:transport_auth_context",
         "//src/core:arena",
+        "//src/core:channel_args",
         "//src/core:closure",
+        "//src/core:down_cast",
+        "//src/core:endpoint_info_handshaker",
+        "//src/core:event_engine_shim",
+        "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:event_engine_utils",
+        "//src/core:experiments",
         "//src/core:grpc_authorization_base",
+        "//src/core:grpc_check",
         "//src/core:grpc_sockaddr",
         "//src/core:iomgr_fwd",
         "//src/core:memory_quota",
+        "//src/core:metadata_batch",
         "//src/core:resolved_address",
         "//src/core:resource_quota",
         "//src/core:slice",
         "//src/core:slice_refcount",
         "//src/core:time",
         "//src/core:useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "test_memory_allocator",
+    testonly = 1,
+    hdrs = ["test_memory_allocator.h"],
+    external_deps = [
+        "absl/strings",
+    ],
+    deps = [
+        "//:grpc_base",
     ],
 )
 
@@ -123,17 +151,22 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/time",
     ],
     deps = [
         "build",
+        "grpc_test_util_base",
         "stack_tracer",
         "//:config",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc",
+        "//:grpc_base",
+        "//:grpc_core_credentials_header",
         "//:grpc_public_hdrs",
         "//:grpc_security_base",
         "//:httpcli",
+        "//:iomgr",
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:tsi_ssl_credentials",
@@ -142,16 +175,21 @@ grpc_cc_library(
         "//src/core:channel_args_preconditioning",
         "//src/core:closure",
         "//src/core:error",
+        "//src/core:experiments",
         "//src/core:gpr_atm",
+        "//src/core:grpc_check",
         "//src/core:grpc_sockaddr",
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
         "//src/core:load_file",
+        "//src/core:postmortem",
         "//src/core:resolved_address",
         "//src/core:slice",
         "//src/core:slice_refcount",
         "//src/core:status_helper",
+        "//src/core:sync",
         "//src/core:time",
+        "//src/core:wait_for_single_owner",
         "//test/core/event_engine:test_init",
     ],
     alwayslink = 1,
@@ -170,16 +208,21 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/log:globals",
     ],
     deps = [
         "build",
+        "grpc_test_util_base",
         "stack_tracer",
         "//:config",
         "//:exec_ctx",
         "//:gpr",
+        "//:grpc_base",
+        "//:grpc_core_credentials_header",
         "//:grpc_security_base",
         "//:grpc_unsecure",
         "//:httpcli",
+        "//:iomgr",
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:uri",
@@ -188,12 +231,16 @@ grpc_cc_library(
         "//src/core:closure",
         "//src/core:error",
         "//src/core:gpr_atm",
+        "//src/core:grpc_check",
         "//src/core:grpc_sockaddr",
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
+        "//src/core:postmortem",
         "//src/core:resolved_address",
         "//src/core:status_helper",
+        "//src/core:sync",
         "//src/core:time",
+        "//src/core:wait_for_single_owner",
         "//test/core/event_engine:test_init",
     ],
     alwayslink = 1,
@@ -233,7 +280,11 @@ grpc_cc_library(
     ],
     deps = [
         ":grpc_test_util",
+        "//:gpr",
         "//:grpc",
+        "//src/core:env",
+        "//src/core:error",
+        "//src/core:grpc_check",
         "//test/cpp/util:test_config",
     ],
 )
@@ -322,6 +373,7 @@ grpc_cc_library(
         "//src/core:down_cast",
         "//src/core:error",
         "//src/core:grpc_backend_metric_data",
+        "//src/core:grpc_check",
         "//src/core:json",
         "//src/core:json_util",
         "//src/core:lb_metadata",
@@ -351,6 +403,8 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc",
         "//:sockaddr_utils",
+        "//src/core:grpc_check",
+        "//src/core:grpc_sockaddr",
         "//src/core:resolved_address",
     ],
 )
@@ -362,12 +416,15 @@ grpc_cc_library(
     external_deps = [
         "absl/status:statusor",
         "absl/strings",
+        "absl/log",
     ],
     deps = [
         "grpc_test_util_unsecure",
         "//:gpr",
         "//:grpc",
         "//:sockaddr_utils",
+        "//src/core:grpc_check",
+        "//src/core:grpc_sockaddr",
         "//src/core:resolved_address",
     ],
 )
@@ -394,7 +451,10 @@ grpc_cc_library(
     testonly = True,
     srcs = ["socket_use_after_close_detector.cc"],
     hdrs = ["socket_use_after_close_detector.h"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
     deps = [
         "grpc_test_util_unsecure",
         "//:gpr",
@@ -534,9 +594,16 @@ grpc_cc_library(
         "gtest",
     ],
     deps = [
+        "//:call_tracer",
+        "//:config",
         "//:grpc",
+        "//:grpc_base",
         "//src/core:examine_stack",
+        "//src/core:grpc_check",
+        "//src/core:instrument",
         "//src/core:metrics",
+        "//src/core:ref_counted",
+        "//src/core:tcp_tracer",
     ],
 )
 
@@ -548,7 +615,11 @@ grpc_cc_library(
     external_deps = [
     ],
     deps = [
+        "//:event_engine_base_hdrs",
         "//:grpc",
+        "//src/core:default_event_engine",
+        "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:ref_counted",
     ],
 )
 
@@ -558,7 +629,10 @@ grpc_cc_library(
     srcs = ["fail_first_call_filter.cc"],
     hdrs = ["fail_first_call_filter.h"],
     external_deps = [],
-    deps = ["//:grpc"],
+    deps = [
+        "//:grpc",
+        "//:grpc_base",
+    ],
 )
 
 grpc_cc_library(
@@ -566,7 +640,79 @@ grpc_cc_library(
     testonly = True,
     srcs = ["test_call_creds.cc"],
     hdrs = ["test_call_creds.h"],
+    external_deps = [
+        "absl/status:statusor",
+        "absl/strings",
+    ],
     deps = [
         "//:grpc",
+        "//:grpc_base",
+        "//:grpc_core_credentials_header",
+        "//:grpc_security_base",
+        "//:promise",
+        "//src/core:arena_promise",
+        "//src/core:channel_args",
+        "//src/core:metadata_batch",
+        "//src/core:slice",
+        "//src/core:unique_type_name",
+        "//src/core:useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "postmortem",
+    testonly = 1,
+    hdrs = ["postmortem.h"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//src/core:postmortem",
+    ],
+)
+
+grpc_cc_library(
+    name = "xds_http_add_header_filter",
+    testonly = 1,
+    srcs = ["xds_http_add_header_filter.cc"],
+    hdrs = ["xds_http_add_header_filter.h"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "//:grpc_base",
+        "//src/core:json_object_loader",
+        "//src/core:xds_http_filter",
+    ],
+)
+
+grpc_cc_library(
+    name = "test_timeout",
+    testonly = True,
+    hdrs = ["test_timeout.h"],
+    external_deps = [
+    ],
+    deps = [
+        "//:grpc",
+        "//:grpc_base",
+        "//src/core:grpc_check",
+        "//src/core:time",
+    ],
+)
+
+grpc_cc_test(
+    name = "test_timeout_test",
+    srcs = ["test_timeout_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    tags = ["grpc:no-internal-poller"],
+    deps = [
+        ":test_timeout",
+        "//:grpc",
+        "//src/core:default_event_engine",
+        "//src/core:time",
     ],
 )

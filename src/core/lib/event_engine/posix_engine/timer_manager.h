@@ -27,13 +27,12 @@
 #include <optional>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/posix_engine/timer.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
+#include "absl/base/thread_annotations.h"
 
 namespace grpc_event_engine::experimental {
 
@@ -41,11 +40,11 @@ namespace grpc_event_engine::experimental {
 // all times, and thus effectively preventing the thundering herd problem.
 // TODO(ctiller): consider unifying this thread pool and the one in
 // thread_pool.{h,cc}.
-class TimerManager final : public grpc_event_engine::experimental::Forkable {
+class TimerManager final {
  public:
   explicit TimerManager(
       std::shared_ptr<grpc_event_engine::experimental::ThreadPool> thread_pool);
-  ~TimerManager() override;
+  ~TimerManager();
 
   grpc_core::Timestamp Now() { return host_.Now(); }
 
@@ -58,9 +57,8 @@ class TimerManager final : public grpc_event_engine::experimental::Forkable {
   // Called on destruction, prefork, and manually when needed.
   void Shutdown();
 
-  void PrepareFork() override;
-  void PostforkParent() override;
-  void PostforkChild() override;
+  void PrepareFork();
+  void PostFork();
 
  private:
   class Host final : public TimerListHost {
@@ -75,11 +73,19 @@ class TimerManager final : public grpc_event_engine::experimental::Forkable {
     TimerManager* const timer_manager_;
   };
 
+  enum class State {
+    kRunning,   // processing timers
+    kShutdown,  // Shutdown
+    kSuspended  // Temporarily suspended, e.g. on fork
+  };
+
   void RestartPostFork();
   void MainLoop();
   void RunSomeTimers(std::vector<experimental::EventEngine::Closure*> timers);
   bool WaitUntil(grpc_core::Timestamp next);
   void Kick();
+
+  void SuspendOrShutdown(bool shutdown);
 
   grpc_core::Mutex mu_;
   // Condvar associated with the main thread waiting to wakeup and work.
@@ -89,13 +95,9 @@ class TimerManager final : public grpc_event_engine::experimental::Forkable {
   // thread.
   grpc_core::CondVar cv_wait_;
   Host host_;
-  // are we shutting down?
-  bool shutdown_ ABSL_GUARDED_BY(mu_) = false;
-  // are we shutting down?
+  State state_ ABSL_GUARDED_BY(mu_) = State::kRunning;
   bool kicked_ ABSL_GUARDED_BY(mu_) = false;
-  // number of timer wakeups
   uint64_t wakeups_ ABSL_GUARDED_BY(mu_) = false;
-  // actual timer implementation
   std::unique_ptr<TimerList> timer_list_;
   std::shared_ptr<grpc_event_engine::experimental::ThreadPool> thread_pool_;
   std::optional<grpc_core::Notification> main_loop_exit_signal_;

@@ -28,7 +28,7 @@
 #include <vector>
 
 #include "re2/re2.h"
-#include "src/core/lib/channel/status_util.h"
+#include "src/core/call/status_util.h"
 #include "src/core/util/matchers.h"
 #include "src/core/util/time.h"
 #include "src/core/xds/grpc/xds_http_filter.h"
@@ -38,15 +38,30 @@
 namespace grpc_core {
 
 struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
-  using TypedPerFilterConfig =
-      std::map<std::string, XdsHttpFilterImpl::FilterConfig>;
+  struct FilterConfigOverride {
+    absl::string_view config_proto_type;
+    Json config;
+    RefCountedPtr<const FilterConfig> filter_config;
+    bool disabled = false;
+
+    bool operator==(const FilterConfigOverride& other) const {
+      if (config_proto_type != other.config_proto_type) return false;
+      if (config != other.config) return false;
+      if (disabled != other.disabled) return false;
+      if (filter_config == nullptr) return other.filter_config == nullptr;
+      if (other.filter_config == nullptr) return false;
+      return *filter_config == *other.filter_config;
+    }
+    std::string ToString() const;
+  };
+  using TypedPerFilterConfig = std::map<std::string, FilterConfigOverride>;
 
   using ClusterSpecifierPluginMap =
       std::map<std::string /*cluster_specifier_plugin_name*/,
                std::string /*LB policy config*/>;
 
   struct RetryPolicy {
-    internal::StatusCodeSet retry_on;
+    StatusCodeSet retry_on;
     uint32_t num_retries;
 
     struct RetryBackOff {

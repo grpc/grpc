@@ -27,18 +27,25 @@
   proto_re = re.compile('(.*)\\.proto')
   lib_map = {lib.name: lib for lib in libs}
 
-  third_party_proto_prefixes = {lib.proto_prefix for lib in external_proto_libraries}
-
   gpr_libs = ['gpr']
   grpc_libs = ['grpc', 'grpc_unsecure']
   grpcxx_libs = ['grpc++', 'grpc++_unsecure']
   protoc_libs = ['benchmark_helpers', 'grpc++_reflection', 'grpcpp_channelz']
 
+
+  def _remove_prefix(string, prefix):
+    # TODO(sergiitk): delete and use str.removeprefix once CI VMs off of py 3.8
+    if string.startswith(prefix):
+      return string[len(prefix):]
+    return string
+
   def third_party_proto_import_path(path):
     """Removes third_party prefix to match ProtoBuf's relative import path."""
-    for prefix in third_party_proto_prefixes:
-      if path.startswith(prefix):
-        return path[len(prefix):]
+    for lib in external_proto_libraries:
+      if path.startswith(lib.proto_prefix):
+        path = _remove_prefix(path, lib.proto_prefix)
+        path = _remove_prefix(path, lib.strip_path_prefix)
+        break
     return path
 
   def proto_replace_ext(filename, ext):
@@ -421,14 +428,14 @@
     set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /wd4267")
     # TODO(jtattermusch): needed to build boringssl with VS2017, revisit later
     set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /wd4987 /wd4774 /wd4819 /wd4996 /wd4619")
-    # Silences thousands of trucation warnings
+    # Silences thousands of truncation warnings
     set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /wd4503")
     # Tell MSVC to build grpc using utf-8
     set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /utf-8")
     # Inconsistent object sizes can cause stack corruption and should be treated as an error
     set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /we4789")
     # To decrease the size of PDB files
-    set(CMAKE_EXE_LINKER_FLAGS "/opt:ref /opt:icf /pdbcompress")
+    set(CMAKE_EXE_LINKER_FLAGS "<%text>${CMAKE_EXE_LINKER_FLAGS}</%text> /opt:ref /opt:icf /pdbcompress")
   endif()
   if (MINGW)
     add_definitions(-D_WIN32_WINNT=0x600)
@@ -516,6 +523,7 @@
     # Download the archive via HTTP, validate the checksum, and extract to ${external_proto_library.destination}.
     download_archive(
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/${external_proto_library.destination}
+      https://storage.googleapis.com/grpc-bazel-mirror/${_remove_prefix(download_url, "https://")}
       ${download_url}
       ${external_proto_library.hash}
       ${external_proto_library.strip_prefix}
@@ -528,7 +536,7 @@
     set(_gRPC_ALLTARGETS_LIBRARIES <%text>${_gRPC_ALLTARGETS_LIBRARIES}</%text> ws2_32 crypt32)
     set(_gRPC_STATIC_WIN32 STATIC)
   endif()
-    
+
   if(BUILD_SHARED_LIBS AND WIN32)
 
   # Currently for shared lib on Windows (i.e. a DLL) certain bits of source code
@@ -713,7 +721,7 @@
     DEPENDS tools_c tools_cxx)
 
   % for src in sorted(protobuf_gen_files):
-  % if not src.startswith('third_party/'):
+  % if not (src.startswith('third_party/') or src.startswith('test/') or src.startswith('src/proto/grpc/testing/')):
   protobuf_generate_grpc_cpp_with_import_path_correction(
     ${src} ${third_party_proto_import_path(src)}
   )
@@ -724,7 +732,7 @@
   # in the third_party directory as long as test builds are disabled.
   if (gRPC_BUILD_TESTS)
   % for src in sorted(protobuf_gen_files):
-  % if src.startswith('third_party/'):
+  % if (src.startswith('third_party/') or src.startswith('test/') or src.startswith('src/proto/grpc/testing/')):
   protobuf_generate_grpc_cpp_with_import_path_correction(
     ${src} ${third_party_proto_import_path(src)}
   )
@@ -892,6 +900,12 @@
     % endfor
       )
     endif()
+    % endif
+    ## upb from protobuf 33.x requires this flag to compile. See https://github.com/grpc/grpc/issues/41951
+    % if 'upb_' in lib.name:
+    target_compile_options(${lib.name} PRIVATE
+      /Zc:preprocessor
+    )
     % endif
     if(gRPC_INSTALL)
       install(FILES <%text>${CMAKE_CURRENT_BINARY_DIR}/</%text>${lib.name}.pdb
@@ -1160,13 +1174,15 @@
     "${" ".join(get_pkgconfig_libs_private("grpc++_unsecure"))}"
     "grpc++_unsecure.pc")
 
-  # grpcpp_otel_plugin .pc file
-  generate_pkgconfig(
-    "gRPC++ OpenTelemetry Plugin"
-    "OpenTelemetry Plugin for gRPC C++"
-    "<%text>${gRPC_CPP_VERSION}</%text>"
-    "${" ".join(get_pkgconfig_requires("grpcpp_otel_plugin"))}"
-    "${" ".join(get_pkgconfig_requires_private("grpcpp_otel_plugin"))}"
-    "${" ".join(get_pkgconfig_libs("grpcpp_otel_plugin"))}"
-    "${" ".join(get_pkgconfig_libs_private("grpcpp_otel_plugin"))}"
-    "grpcpp_otel_plugin.pc")
+  if(gRPC_BUILD_GRPCPP_OTEL_PLUGIN)
+    # grpcpp_otel_plugin .pc file
+    generate_pkgconfig(
+      "gRPC++ OpenTelemetry Plugin"
+      "OpenTelemetry Plugin for gRPC C++"
+      "<%text>${gRPC_CPP_VERSION}</%text>"
+      "${" ".join(get_pkgconfig_requires("grpcpp_otel_plugin"))}"
+      "${" ".join(get_pkgconfig_requires_private("grpcpp_otel_plugin"))}"
+      "${" ".join(get_pkgconfig_libs("grpcpp_otel_plugin"))}"
+      "${" ".join(get_pkgconfig_libs_private("grpcpp_otel_plugin"))}"
+      "grpcpp_otel_plugin.pc")
+  endif()

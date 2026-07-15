@@ -24,7 +24,7 @@
 
 namespace grpc_core {
 
-bool XdsGcpAuthFilterEnabled();
+bool XdsHttpConnectEnabled();
 
 XdsMetadataMap ParseXdsMetadataMap(
     const XdsResourceType::DecodeContext& context,

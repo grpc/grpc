@@ -20,7 +20,11 @@
 // TODO(ctiller): fold back into bm_fullstack_unary_ping_pong.cc once chaotic
 // good can run without custom experiment configuration.
 
-#include "src/cpp/ext/chaotic_good.h"
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/security/server_credentials.h>
+
+#include "src/core/ext/transport/chaotic_good/chaotic_good.h"
+#include "src/core/transport/endpoint_transport.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/microbenchmarks/fullstack_unary_ping_pong.h"
 #include "test/cpp/util/test_config.h"
@@ -35,8 +39,11 @@ class ChaoticGoodFixture : public BaseFixture {
       const FixtureConfiguration& config = FixtureConfiguration()) {
     auto address = MakeAddress(&port_);
     ServerBuilder b;
+    b.AddChannelArgument(
+        GRPC_ARG_PREFERRED_TRANSPORT_PROTOCOLS,
+        std::string(grpc_core::chaotic_good::WireFormatPreferences()));
     if (!address.empty()) {
-      b.AddListeningPort(address, ChaoticGoodInsecureServerCredentials());
+      b.AddListeningPort(address, InsecureServerCredentials());
     }
     cq_ = b.AddCompletionQueue(true);
     b.RegisterService(service);
@@ -44,9 +51,12 @@ class ChaoticGoodFixture : public BaseFixture {
     server_ = b.BuildAndStart();
     ChannelArguments args;
     config.ApplyCommonChannelArguments(&args);
+    args.SetString(
+        GRPC_ARG_PREFERRED_TRANSPORT_PROTOCOLS,
+        std::string(grpc_core::chaotic_good::WireFormatPreferences()));
     if (!address.empty()) {
-      channel_ = grpc::CreateCustomChannel(
-          address, ChaoticGoodInsecureChannelCredentials(), args);
+      channel_ = grpc::CreateCustomChannel(address,
+                                           InsecureChannelCredentials(), args);
     } else {
       channel_ = server_->InProcessChannel(args);
     }

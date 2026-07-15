@@ -23,12 +23,8 @@
 #include <utility>
 #include <vector>
 
-#include "absl/random/bit_gen_ref.h"
-#include "absl/status/status.h"
-#include "absl/strings/escaping.h"
-#include "absl/strings/match.h"
 #include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
@@ -41,7 +37,6 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
 #include "test/core/test_util/fuzz_config_vars.h"
@@ -49,6 +44,11 @@
 #include "test/core/test_util/proto_bit_gen.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/transport/chttp2/hpack_sync_fuzzer.pb.h"
+#include "gtest/gtest.h"
+#include "absl/random/bit_gen_ref.h"
+#include "absl/status/status.h"
+#include "absl/strings/escaping.h"
+#include "absl/strings/match.h"
 
 namespace grpc_core {
 namespace {
@@ -132,7 +132,7 @@ void FuzzOneInput(const hpack_sync_fuzzer::Msg& msg) {
   parser.BeginFrame(
       &read_metadata, 1024, 1024, HPackParser::Boundary::EndOfHeaders,
       HPackParser::Priority::None,
-      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false});
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false}, nullptr);
   std::vector<std::pair<size_t, absl::Status>> seen_errors;
   for (size_t i = 0; i < encode_output.Count(); i++) {
     auto err = parser.Parse(
@@ -200,7 +200,8 @@ void FuzzOneInput(const hpack_sync_fuzzer::Msg& msg) {
     parser.BeginFrame(
         &read_metadata_2, 1024, 1024, HPackParser::Boundary::EndOfHeaders,
         HPackParser::Priority::None,
-        HPackParser::LogInfo{3, HPackParser::LogInfo::kHeaders, false});
+        HPackParser::LogInfo{3, HPackParser::LogInfo::kHeaders, false},
+        nullptr);
     auto err = parser.Parse(encode_output_2.c_slice_at(0), true,
                             absl::BitGenRef(proto_bit_src),
                             /*call_tracer=*/nullptr);
@@ -246,6 +247,16 @@ TEST(HpackSyncFuzzer, FuzzOneInputRegression2) {
   FuzzOneInput(ParseTestProto(
       R"pb(
         headers { literal_not_idx { key: "grpc-status" value: "-1" } }
+      )pb"));
+}
+
+TEST(HpackSyncFuzzer, FuzzOneInputRegressionCRLFValue) {
+  FuzzOneInput(ParseTestProto(
+      R"pb(
+        config_vars { experiments: "optimization_05" }
+        headers {
+          literal_not_idx { key: "x-custom" value: "val\r\nEvil: true" }
+        }
       )pb"));
 }
 

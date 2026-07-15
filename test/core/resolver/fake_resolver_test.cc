@@ -30,11 +30,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/container/inlined_vector.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_format.h"
-#include "absl/synchronization/notification.h"
-#include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -50,6 +45,11 @@
 #include "src/core/util/uri.h"
 #include "src/core/util/work_serializer.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/container/inlined_vector.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
+#include "absl/synchronization/notification.h"
 
 namespace grpc_core {
 namespace testing {

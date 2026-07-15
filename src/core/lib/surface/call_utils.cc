@@ -40,13 +40,9 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
-#include "src/core/lib/channel/status_util.h"
+#include "src/core/call/metadata.h"
+#include "src/core/call/metadata_batch.h"
+#include "src/core/call/status_util.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
@@ -56,11 +52,15 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/validate_metadata.h"
-#include "src/core/lib/transport/metadata.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/match.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -213,18 +213,57 @@ bool ValidateMetadata(size_t count, grpc_metadata* metadata) {
 }
 
 void EndOpImmediately(grpc_completion_queue* cq, void* notify_tag,
-                      bool is_notify_tag_closure) {
+                      bool is_notify_tag_closure, grpc_error_handle error) {
   if (!is_notify_tag_closure) {
-    CHECK(grpc_cq_begin_op(cq, notify_tag));
+    GRPC_CHECK(grpc_cq_begin_op(cq, notify_tag));
     grpc_cq_end_op(
-        cq, notify_tag, absl::OkStatus(),
+        cq, notify_tag, std::move(error),
         [](void*, grpc_cq_completion* completion) { gpr_free(completion); },
         nullptr,
         static_cast<grpc_cq_completion*>(
             gpr_malloc(sizeof(grpc_cq_completion))));
   } else {
     Closure::Run(DEBUG_LOCATION, static_cast<grpc_closure*>(notify_tag),
-                 absl::OkStatus());
+                 std::move(error));
+  }
+}
+
+void PreFillReceiveOpsForInvalidMetadata(const grpc_op* ops, size_t nops) {
+  for (size_t i = 0; i < nops; ++i) {
+    switch (ops[i].op) {
+      case GRPC_OP_RECV_STATUS_ON_CLIENT:
+        if (ops[i].data.recv_status_on_client.status != nullptr) {
+          *ops[i].data.recv_status_on_client.status = GRPC_STATUS_INTERNAL;
+        }
+        if (ops[i].data.recv_status_on_client.status_details != nullptr) {
+          *ops[i].data.recv_status_on_client.status_details =
+              grpc_slice_from_static_string("Invalid metadata");
+        }
+        if (ops[i].data.recv_status_on_client.trailing_metadata != nullptr) {
+          grpc_metadata_array_init(
+              ops[i].data.recv_status_on_client.trailing_metadata);
+        }
+        break;
+      case GRPC_OP_RECV_CLOSE_ON_SERVER:
+        if (ops[i].data.recv_close_on_server.cancelled != nullptr) {
+          *ops[i].data.recv_close_on_server.cancelled = 1;
+        }
+        break;
+      case GRPC_OP_RECV_INITIAL_METADATA:
+        if (ops[i].data.recv_initial_metadata.recv_initial_metadata !=
+            nullptr) {
+          grpc_metadata_array_init(
+              ops[i].data.recv_initial_metadata.recv_initial_metadata);
+        }
+        break;
+      case GRPC_OP_RECV_MESSAGE:
+        if (ops[i].data.recv_message.recv_message != nullptr) {
+          *ops[i].data.recv_message.recv_message = nullptr;
+        }
+        break;
+      default:
+        break;
+    }
   }
 }
 

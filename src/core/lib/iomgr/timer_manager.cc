@@ -22,12 +22,12 @@
 #include <grpc/support/port_platform.h>
 #include <inttypes.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/thd.h"
+#include "absl/log/log.h"
 
 struct completed_thread {
   grpc_core::Thread thd;
@@ -80,7 +80,7 @@ static void gc_completed_threads(void) {
 }
 
 static void start_timer_thread_and_unlock(void) {
-  CHECK(g_threaded);
+  GRPC_CHECK(g_threaded);
   ++g_waiter_count;
   ++g_thread_count;
   gpr_mu_unlock(&g_mu);

@@ -15,7 +15,6 @@
 
 set -ex
 
-
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
@@ -24,3 +23,5 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 export DOCKERFILE_DIR=tools/dockerfile/test/bazel
 export DOCKER_RUN_SCRIPT=tools/internal_ci/linux/grpc_examples_tests_cpp_in_docker.sh
 exec tools/run_tests/dockerize/build_and_run_docker.sh
+
+exec tools/internal_ci/linux/grpc_env_check.sh

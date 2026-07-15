@@ -27,8 +27,6 @@
 
 #include <algorithm>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
@@ -39,8 +37,10 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/iomgr/tcp_server.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/time.h"
 #include "test/core/test_util/test_config.h"
+#include "absl/log/log.h"
 
 static void on_server_destroyed(void* data, grpc_error_handle /*error*/) {
   test_tcp_server* server = static_cast<test_tcp_server*>(data);
@@ -82,11 +82,11 @@ void test_tcp_server_start(test_tcp_server* server, int port) {
       &server->shutdown_complete,
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
       server->on_connect, server->cb_data, &server->tcp_server);
-  CHECK_OK(error);
+  GRPC_CHECK_OK(error);
   error =
       grpc_tcp_server_add_port(server->tcp_server, &resolved_addr, &port_added);
-  CHECK_OK(error);
-  CHECK(port_added == port);
+  GRPC_CHECK_OK(error);
+  GRPC_CHECK(port_added == port);
 
   grpc_tcp_server_start(server->tcp_server, &server->pollset);
   LOG(INFO) << "test tcp server listening on 0.0.0.0:" << port;

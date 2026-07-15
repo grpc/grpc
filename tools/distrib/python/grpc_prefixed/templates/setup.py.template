@@ -14,31 +14,40 @@
 """Setup module for the {{ name_long }} package."""
 
 import sys
+import os
 
 import setuptools
 
+_PACKAGE_PATH = os.path.realpath(os.path.dirname(__file__))
+_README_PATH = os.path.join(_PACKAGE_PATH, "README.rst")
+
+# Ensure we're in the proper directory whether or not we're being used by pip.
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
 CLASSIFIERS = [
-    'Development Status :: 7 - Inactive',
-    'Programming Language :: Python',
-    'Programming Language :: Python :: 3',
-    'License :: OSI Approved :: Apache Software License',
+    "Development Status :: 7 - Inactive",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
 ]
 
 
-HINT = 'Please install the official package with: pip install {{ destination_package }}'
+HINT = "Please install the official package with: pip install {{ destination_package }}"
 
 
-if 'sdist' not in sys.argv:
+if "sdist" not in sys.argv:
     raise RuntimeError(HINT)
 
 
 setuptools.setup(
-    name='{{ name }}',
-    version='{{ version }}',
+    name="{{ name }}",
+    version="{{ version }}",
     description=HINT,
-    author='The gRPC Authors',
-    author_email='grpc-io@googlegroups.com',
-    url='https://grpc.io',
-    license='Apache License 2.0',
-    classifiers=CLASSIFIERS
+    author="The gRPC Authors",
+    author_email="grpc-io@googlegroups.com",
+    long_description=open(_README_PATH, "r").read(),
+    long_description_content_type="text/x-rst",
+    url="https://grpc.io",
+    license="Apache License 2.0",
+    classifiers=CLASSIFIERS,
 )

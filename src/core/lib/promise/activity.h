@@ -25,10 +25,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
@@ -36,10 +32,14 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/util/construct_destruct.h"
 #include "src/core/util/dump_args.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/latent_see.h"
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 
@@ -99,8 +99,9 @@ class Waker {
   }
 
   // Wake the underlying activity.
+  // A Waker object can only be woken up once. Calling Wakeup() or WakeupAsync()
+  // consumes the waker, rendering subsequent calls no-ops.
   void Wakeup() { Take().Wakeup(); }
-
   void WakeupAsync() { Take().WakeupAsync(); }
 
   template <typename H>
@@ -122,6 +123,7 @@ class Waker {
   }
 
   std::string DebugString() const {
+    if (is_unwakeable()) return "<unwakeable>";
     return absl::StrFormat("Waker{%p, %d}", wakeable_and_arg_.wakeable,
                            wakeable_and_arg_.wakeup_mask);
   }
@@ -511,11 +513,11 @@ class PromiseActivity final
     // We shouldn't destruct without calling Cancel() first, and that must get
     // us to be done_, so we assume that and have no logic to destruct the
     // promise here.
-    CHECK(done_);
+    GRPC_CHECK(done_);
   }
 
   void RunScheduledWakeup() {
-    CHECK(wakeup_scheduled_.exchange(false, std::memory_order_acq_rel));
+    GRPC_CHECK(wakeup_scheduled_.exchange(false, std::memory_order_acq_rel));
     Step();
     WakeupComplete();
   }
@@ -564,7 +566,7 @@ class PromiseActivity final
   }
 
   void WakeupAsync(WakeupMask) final {
-    GRPC_LATENT_SEE_INNER_SCOPE("PromiseActivity::WakeupAsync");
+    GRPC_LATENT_SEE_SCOPE("PromiseActivity::WakeupAsync");
     wakeup_flow_.Begin(GRPC_LATENT_SEE_METADATA("Activity::Wakeup"));
     if (!wakeup_scheduled_.exchange(true, std::memory_order_acq_rel)) {
       // Can't safely run, so ask to run later.
@@ -581,7 +583,7 @@ class PromiseActivity final
   // Notification that we're no longer executing - it's ok to destruct the
   // promise.
   void MarkDone() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
-    CHECK(!std::exchange(done_, true));
+    GRPC_CHECK(!std::exchange(done_, true));
     ScopedContext contexts(this);
     Destruct(&promise_holder_.promise);
   }
@@ -589,7 +591,7 @@ class PromiseActivity final
   // In response to Wakeup, run the Promise state machine again until it
   // settles. Then check for completion, and if we have completed, call on_done.
   void Step() ABSL_LOCKS_EXCLUDED(mu()) {
-    GRPC_LATENT_SEE_PARENT_SCOPE("PromiseActivity::Step");
+    GRPC_LATENT_SEE_SCOPE("PromiseActivity::Step");
     wakeup_flow_.End();
     // Poll the promise until things settle out under a lock.
     mu()->Lock();
@@ -628,10 +630,10 @@ class PromiseActivity final
   // Until there are no wakeups from within and the promise is incomplete:
   // poll the promise.
   std::optional<ResultType> StepLoop() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
-    CHECK(is_current());
+    GRPC_CHECK(is_current());
     while (true) {
       // Run the promise.
-      CHECK(!done_);
+      GRPC_CHECK(!done_);
       auto r = promise_holder_.promise();
       if (auto* status = r.value_if_ready()) {
         // If complete, destroy the promise, flag done, and exit this loop.

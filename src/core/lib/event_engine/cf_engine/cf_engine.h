@@ -26,14 +26,11 @@
 #include "src/core/lib/event_engine/posix_engine/lockfree_event.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
-#include "src/core/lib/surface/init_internally.h"
 #include "src/core/util/sync.h"
 
 namespace grpc_event_engine::experimental {
 
-class CFEventEngine : public EventEngine,
-                      public Scheduler,
-                      public grpc_core::KeepsGrpcInitialized {
+class CFEventEngine : public EventEngine {
  public:
   CFEventEngine();
   ~CFEventEngine() override;
@@ -60,6 +57,7 @@ class CFEventEngine : public EventEngine,
   TaskHandle RunAfter(Duration when,
                       absl::AnyInvocable<void()> closure) override;
   bool Cancel(TaskHandle handle) override;
+  ThreadPool* thread_pool() const { return thread_pool_.get(); }
 
  private:
   struct Closure;

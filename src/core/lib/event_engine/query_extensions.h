@@ -17,6 +17,8 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
+#include <type_traits>
+
 #include "absl/strings/string_view.h"
 
 namespace grpc_event_engine::experimental {
@@ -56,27 +58,14 @@ class ExtendedType : public EEClass, public Exports... {
 };
 
 /// A helper method which returns a valid pointer if the extension is
-/// supported by the endpoint.
-template <typename T>
-T* QueryExtension(EventEngine::Endpoint* endpoint) {
-  if (endpoint == nullptr) return nullptr;
-  return static_cast<T*>(endpoint->QueryExtension(T::EndpointExtensionName()));
-}
-
-/// A helper method which returns a valid pointer if the extension is
-/// supported by the listener.
-template <typename T>
-T* QueryExtension(EventEngine::Listener* listener) {
-  if (listener == nullptr) return nullptr;
-  return static_cast<T*>(listener->QueryExtension(T::EndpointExtensionName()));
-}
-
-/// A helper method which returns a valid pointer if the extension is
-/// supported by the EventEngine.
-template <typename T>
-T* QueryExtension(EventEngine* engine) {
-  if (engine == nullptr) return nullptr;
-  return static_cast<T*>(engine->QueryExtension(T::EndpointExtensionName()));
+/// supported by the extending object. Returns nullptr if the extension is not
+/// supported.
+template <typename Extension, class ExtensibleClass>
+std::enable_if_t<std::is_base_of_v<Extensible, ExtensibleClass>, Extension*>
+QueryExtension(ExtensibleClass* extending_obj) {
+  if (extending_obj == nullptr) return nullptr;
+  return static_cast<Extension*>(
+      extending_obj->QueryExtension(Extension::EndpointExtensionName()));
 }
 
 }  // namespace grpc_event_engine::experimental

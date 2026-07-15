@@ -16,7 +16,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/cpp/server/load_reporter")
+grpc_package(
+    name = "test/cpp/server/load_reporter",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_test(
     name = "lb_load_data_store_test",
@@ -25,6 +31,8 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
+        "//:gpr_platform",
+        "//:grpc",
         "//:lb_load_data_store",
         "//test/core/test_util:grpc_test_util",
     ],

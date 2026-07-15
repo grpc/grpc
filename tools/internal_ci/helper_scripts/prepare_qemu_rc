@@ -33,5 +33,5 @@ cat /proc/sys/fs/binfmt_misc/qemu-aarch64
 # to install qemu-user-static with the right flags.
 docker run --rm --privileged multiarch/qemu-user-static:5.2.0-2 --reset --credential yes --persistent yes
 
-# Print current qemu reqistration to make sure everything is setup correctly.
+# Print current qemu registration to make sure everything is setup correctly.
 cat /proc/sys/fs/binfmt_misc/qemu-aarch64

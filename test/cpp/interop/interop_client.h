@@ -78,6 +78,7 @@ class InteropClient {
   bool DoPickFirstUnary();
   bool DoOrcaPerRpc();
   bool DoOrcaOob();
+  bool DoMcsConnectionScaling();
 
   // The following interop test are not yet part of the interop spec, and are
   // not implemented cross-language. They are considered experimental for now,

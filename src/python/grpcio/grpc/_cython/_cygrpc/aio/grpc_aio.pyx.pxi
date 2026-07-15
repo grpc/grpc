@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import enum
+import sys
 
 cdef str _GRPC_ASYNCIO_ENGINE = os.environ.get('GRPC_ASYNCIO_ENGINE', 'poller').upper()
 cdef _AioState _global_aio_state = _AioState()
@@ -110,5 +111,32 @@ cpdef shutdown_grpc_aio():
     with _global_aio_state.lock:
         assert _global_aio_state.refcount > 0
         _global_aio_state.refcount -= 1
+
+        # Do not manually shutdown when python interpreter already being
+        # finalized (cleaning up resources, destroying objects, preparing
+        # for program exit, etc). Context:
+        # 1. Some of the resources we'll try to access may already be
+        #    freed, and the order is not deterministic.
+        #    Examples: #38679, #33342, #36655.
+        # 2. PollerCompletionQueue.shutdown() will try to wait on its poller
+        #    thread to finish gracefully. Since Python 3.14, joining non-daemon
+        #    threads during finalization results in PythonFinalizationError.
+        #    Details in https://github.com/python/cpython/pull/130402.
+        #
+        # Why `sys is None` check:
+        # Python interpreter in some cases unloads top-level symbols (sys,
+        # _LOGGER), earlier than AioChannel.__dealloc__ triggers shutdown.
+        # If sys is unloaded, we assume the interpreter is finalizing, otherwise
+        # we check sys.is_finalizing().
+        if sys is None or sys.is_finalizing():
+            return
+
+        # Only call the shutdown when refcount down to 0.
+        # Note that we expose `init_grpc_aio` which, will result in an incorrect
+        # positive refcount when called manually.
+        # Before the above finalization check was added, init_grpc_aio's
+        # side-effect was sometimes misused to avoid deadlock on finalization.
+        # a positive refcount when called manually. See #22365, #38679, #33342.
+        # TODO(sergiitk): consider deprecating init_grpc_aio from public APIs.
         if not _global_aio_state.refcount:
             _actual_aio_shutdown()

@@ -26,6 +26,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/log/initialize.h"
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"
@@ -111,6 +112,7 @@ class GreeterClientReactor final
 
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
+  absl::InitializeLog();
   grpc::ChannelArguments channel_arguments;
   auto channel = grpc::CreateCustomChannel(absl::GetFlag(FLAGS_target),
                                            grpc::InsecureChannelCredentials(),

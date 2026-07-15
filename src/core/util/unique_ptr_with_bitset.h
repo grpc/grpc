@@ -18,7 +18,7 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 #include "absl/numeric/bits.h"
 
 namespace grpc_core {
@@ -36,7 +36,7 @@ class UniquePtrWithBitset {
   UniquePtrWithBitset(std::unique_ptr<T>&& p)
       : UniquePtrWithBitset(p.release()) {}
   ~UniquePtrWithBitset() {
-    DCHECK_LE(kBits, static_cast<size_t>(absl::countr_zero(alignof(T))));
+    GRPC_DCHECK_LE(kBits, static_cast<size_t>(absl::countr_zero(alignof(T))));
     delete get();
   }
   UniquePtrWithBitset(const UniquePtrWithBitset&) = delete;
@@ -59,15 +59,15 @@ class UniquePtrWithBitset {
   }
 
   void SetBit(size_t bit) {
-    DCHECK_LT(bit, kBits);
+    GRPC_DCHECK_LT(bit, kBits);
     p_ |= 1 << bit;
   }
   void ClearBit(size_t bit) {
-    DCHECK_LT(bit, kBits);
+    GRPC_DCHECK_LT(bit, kBits);
     p_ &= ~(1 << bit);
   }
   bool TestBit(size_t bit) const {
-    DCHECK_LT(bit, kBits);
+    GRPC_DCHECK_LT(bit, kBits);
     return p_ & (1 << bit);
   }
 

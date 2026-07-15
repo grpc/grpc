@@ -25,15 +25,15 @@
 
 #include <algorithm>
 
-#include "absl/container/flat_hash_map.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_format.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_format.h"
 
 grpc_slice grpc_chttp2_ping_create(uint8_t ack, uint64_t opaque_8bytes) {
   grpc_slice slice = GRPC_SLICE_MALLOC(9 + 8);
@@ -89,7 +89,9 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
   }
 
   if (p->byte == 8) {
-    CHECK(is_last);
+    GRPC_CHECK(is_last);
+    t->http2_ztrace_collector.Append(
+        grpc_core::H2PingTrace<true>{p->is_ack != 0, p->opaque_8bytes});
     if (p->is_ack) {
       GRPC_TRACE_LOG(http2_ping, INFO)
           << (t->is_client ? "CLIENT" : "SERVER") << "[" << t
@@ -113,13 +115,16 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
             << "CLIENT[" << t << "]: received ping " << p->opaque_8bytes;
       }
       if (t->ack_pings) {
+        grpc_error_handle error =
+            grpc_chttp2_increase_num_pending_induced_frames(t);
+        if (GPR_UNLIKELY(!error.ok())) return error;
+
         if (t->ping_ack_count == t->ping_ack_capacity) {
           t->ping_ack_capacity =
               std::max(t->ping_ack_capacity * 3 / 2, size_t{3});
           t->ping_acks = static_cast<uint64_t*>(gpr_realloc(
               t->ping_acks, t->ping_ack_capacity * sizeof(*t->ping_acks)));
         }
-        t->num_pending_induced_frames++;
         t->ping_acks[t->ping_ack_count++] = p->opaque_8bytes;
         grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_PING_RESPONSE);
       }

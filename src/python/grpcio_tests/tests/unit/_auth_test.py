@@ -21,7 +21,7 @@ import unittest
 from grpc import _auth
 
 
-class MockGoogleCreds(object):
+class MockGoogleCreds:
     def get_access_token(self):
         token = collections.namedtuple(
             "MockAccessTokenInfo", ("access_token", "expires_in")
@@ -30,7 +30,7 @@ class MockGoogleCreds(object):
         return token
 
 
-class MockExceptionGoogleCreds(object):
+class MockExceptionGoogleCreds:
     def get_access_token(self):
         raise Exception()
 

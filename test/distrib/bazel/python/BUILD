@@ -17,8 +17,8 @@
 load(
     "@com_github_grpc_grpc//bazel:python_rules.bzl",
     "py_grpc_library",
-    "py_proto_library",
 )
+load("@com_google_protobuf//bazel:py_proto_library.bzl", "py_proto_library")
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@rules_python//python:defs.bzl", "py_library", "py_test")
 load("//:python_rules_test.bzl", "python_rules_test_suite")
@@ -85,7 +85,7 @@ py_test(
 proto_library(
     name = "helloworld_moved_proto",
     srcs = ["helloworld.proto"],
-    import_prefix = "google/cloud",
+    import_prefix = "foo/bar",
     strip_import_prefix = "",
     deps = [
         ":hello_dep_proto",
@@ -194,5 +194,41 @@ py_test(
     python_version = "PY3",
     deps = [
         ":helloworld_py_pb2_grpc_library_changed",
+    ],
+)
+
+# Test that we can compile a Protobuf file that was generated dynamically via `genrule`.
+
+genrule(
+    name = "gen_echo_proto",
+    srcs = ["echo.proto"],
+    outs = ["gen_echo.proto"],
+    cmd = "cp $(location echo.proto) $(location gen_echo.proto)",
+)
+
+proto_library(
+    name = "gen_echo_proto_lib",
+    srcs = [":gen_echo_proto"],
+)
+
+py_proto_library(
+    name = "gen_echo_py_pb2",
+    deps = [":gen_echo_proto_lib"],
+)
+
+py_grpc_library(
+    name = "gen_echo_py_pb2_grpc",
+    srcs = [":gen_echo_proto_lib"],
+    deps = [":gen_echo_py_pb2"],
+)
+
+py_test(
+    name = "import_generated_proto_test",
+    srcs = ["import_generated_proto.py"],
+    main = "import_generated_proto.py",
+    python_version = "PY3",
+    deps = [
+        ":gen_echo_py_pb2",
+        ":gen_echo_py_pb2_grpc",
     ],
 )

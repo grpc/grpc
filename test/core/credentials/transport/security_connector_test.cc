@@ -25,9 +25,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "absl/log/log.h"
-#include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
+#include "src/core/credentials/transport/tls/load_system_roots.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/transport/auth_context.h"
@@ -38,6 +37,8 @@
 #include "src/core/util/string.h"
 #include "src/core/util/tmpfile.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 #ifndef TSI_OPENSSL_ALPN_SUPPORT
 #define TSI_OPENSSL_ALPN_SUPPORT 1
@@ -155,7 +156,7 @@ static int check_spiffe_id(const grpc_auth_context* ctx,
   return 1;
 }
 
-static void test_unauthenticated_ssl_peer(void) {
+TEST(SecurityConnectorTest, UnauthenticatedSslPeer) {
   tsi_peer peer;
   tsi_peer rpeer;
   ASSERT_EQ(tsi_construct_peer(2, &peer), TSI_OK);
@@ -184,7 +185,7 @@ static void test_unauthenticated_ssl_peer(void) {
   ctx.reset(DEBUG_LOCATION, "test");
 }
 
-static void test_cn_only_ssl_peer_to_auth_context(void) {
+TEST(SecurityConnectorTest, CnOnlySslPeerToAuthContext) {
   tsi_peer peer;
   tsi_peer rpeer;
   const char* expected_cn = "cn1";
@@ -236,7 +237,7 @@ static void test_cn_only_ssl_peer_to_auth_context(void) {
   ctx.reset(DEBUG_LOCATION, "test");
 }
 
-static void test_cn_and_one_san_ssl_peer_to_auth_context(void) {
+TEST(SecurityConnectorTest, CnAndOneSanSslPeerToAuthContext) {
   tsi_peer peer;
   tsi_peer rpeer;
   const char* expected_cn = "cn1";
@@ -295,7 +296,7 @@ static void test_cn_and_one_san_ssl_peer_to_auth_context(void) {
   ctx.reset(DEBUG_LOCATION, "test");
 }
 
-static void test_cn_and_multiple_sans_ssl_peer_to_auth_context(void) {
+TEST(SecurityConnectorTest, CnAndMultipleSansSslPeerToAuthContext) {
   tsi_peer peer;
   tsi_peer rpeer;
   const char* expected_cn = "cn1";
@@ -355,8 +356,7 @@ static void test_cn_and_multiple_sans_ssl_peer_to_auth_context(void) {
   ctx.reset(DEBUG_LOCATION, "test");
 }
 
-static void test_cn_and_multiple_sans_and_others_ssl_peer_to_auth_context(
-    void) {
+TEST(SecurityConnectorTest, CnAndMultipleSansAndOthersSslPeerToAuthContext) {
   tsi_peer peer;
   tsi_peer rpeer;
   const char* expected_cn = "cn1";
@@ -422,7 +422,7 @@ static void test_cn_and_multiple_sans_and_others_ssl_peer_to_auth_context(
   ctx.reset(DEBUG_LOCATION, "test");
 }
 
-static void test_dns_peer_to_auth_context(void) {
+TEST(SecurityConnectorTest, DnsPeerToAuthContext) {
   tsi_peer peer;
   const std::vector<std::string> expected_dns = {"dns1", "dns2", "dns3"};
   ASSERT_EQ(tsi_construct_peer(expected_dns.size(), &peer), TSI_OK);
@@ -441,7 +441,7 @@ static void test_dns_peer_to_auth_context(void) {
   ctx.reset(DEBUG_LOCATION, "test");
 }
 
-static void test_uri_peer_to_auth_context(void) {
+TEST(SecurityConnectorTest, UriPeerToAuthContext) {
   tsi_peer peer;
   const std::vector<std::string> expected_uri = {"uri1", "uri2", "uri3"};
   ASSERT_EQ(tsi_construct_peer(expected_uri.size(), &peer), TSI_OK);
@@ -460,7 +460,7 @@ static void test_uri_peer_to_auth_context(void) {
   ctx.reset(DEBUG_LOCATION, "test");
 }
 
-static void test_email_peer_to_auth_context(void) {
+TEST(SecurityConnectorTest, EmailPeerToAuthContext) {
   tsi_peer peer;
   const std::vector<std::string> expected_emails = {"email1", "email2"};
   ASSERT_EQ(tsi_construct_peer(expected_emails.size(), &peer), TSI_OK);
@@ -479,7 +479,7 @@ static void test_email_peer_to_auth_context(void) {
   ctx.reset(DEBUG_LOCATION, "test");
 }
 
-static void test_ip_peer_to_auth_context(void) {
+TEST(SecurityConnectorTest, IpPeerToAuthContext) {
   tsi_peer peer;
   const std::vector<std::string> expected_ips = {"128.128.128.128",
                                                  "255.255.255.255"};
@@ -499,7 +499,7 @@ static void test_ip_peer_to_auth_context(void) {
   ctx.reset(DEBUG_LOCATION, "test");
 }
 
-static void test_spiffe_id_peer_to_auth_context(void) {
+TEST(SecurityConnectorTest, SpiffeIdPeerToAuthContext) {
   // Invalid SPIFFE IDs should not be plumbed.
   std::string long_id(2050, 'x');
   std::string long_domain(256, 'x');
@@ -585,7 +585,7 @@ static void test_spiffe_id_peer_to_auth_context(void) {
   multiple_uri_ctx.reset(DEBUG_LOCATION, "test");
 }
 
-static void test_subject_to_auth_context(void) {
+TEST(SecurityConnectorTest, SubjectToAuthContext) {
   tsi_peer peer;
   const char* expected_subject = "subject1";
   ASSERT_EQ(tsi_construct_peer(1, &peer), TSI_OK);
@@ -615,7 +615,7 @@ static grpc_ssl_roots_override_result override_roots_permanent_failure(
   return GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY;
 }
 
-static void test_ipv6_address_san(void) {
+TEST(SecurityConnectorTest, IPv6AddressSan) {
   const char* addresses[] = {
       "2001:db8::1",     "fe80::abcd:ef65:4321%em0", "fd11:feed:beef:0:cafe::4",
       "128.10.0.1:8888", "[2001:db8::1]:8080",       "[2001:db8::1%em1]:8080",
@@ -652,7 +652,7 @@ class TestDefaultSslRootStore : public DefaultSslRootStore {
 
 // TODO(unknown): Convert this test to C++ test when security_connector
 // implementation is converted to C++.
-static void test_default_ssl_roots(void) {
+TEST(SecurityConnectorTest, DefaultSslRoots) {
   const char* roots_for_env_var = "roots for env var";
 
   char* roots_env_var_file_path;
@@ -696,6 +696,27 @@ static void test_default_ssl_roots(void) {
   ASSERT_STREQ(roots_contents, roots_for_override_api);
   gpr_free(roots_contents);
 
+  // Now set the config to prefer system roots over the callback. Only check
+  // if we find system roots.
+  auto system_roots = grpc_core::LoadSystemRootCerts();
+
+  if (!GRPC_SLICE_IS_EMPTY(system_roots)) {
+    auto system_roots_contents = grpc_slice_to_c_string(system_roots);
+    grpc_slice_unref(system_roots);
+
+    overrides.use_system_roots_over_language_callback = true;
+    grpc_core::ConfigVars::SetOverrides(overrides);
+    roots = grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
+    roots_contents = grpc_slice_to_c_string(roots);
+    grpc_slice_unref(roots);
+
+    ASSERT_STREQ(roots_contents, system_roots_contents);
+    gpr_free(roots_contents);
+    gpr_free(system_roots_contents);
+
+    overrides.use_system_roots_over_language_callback = false;
+  }
+
   // Now setup a permanent failure for the overridden roots and we should get
   // an empty slice.
   overrides.not_use_system_ssl_roots = true;
@@ -712,7 +733,7 @@ static void test_default_ssl_roots(void) {
   gpr_free(roots_env_var_file_path);
 }
 
-static void test_peer_alpn_check(void) {
+TEST(SecurityConnectorTest, PeerAlpnCheck) {
 #if TSI_OPENSSL_ALPN_SUPPORT
   tsi_peer peer;
   const char* alpn = "h2";
@@ -748,25 +769,6 @@ static void test_peer_alpn_check(void) {
 #else
   ASSERT_EQ(grpc_ssl_check_alpn(nullptr), absl::OkStatus());
 #endif
-}
-
-TEST(SecurityConnectorTest, MainTest) {
-  grpc_init();
-  test_unauthenticated_ssl_peer();
-  test_cn_only_ssl_peer_to_auth_context();
-  test_cn_and_one_san_ssl_peer_to_auth_context();
-  test_cn_and_multiple_sans_ssl_peer_to_auth_context();
-  test_cn_and_multiple_sans_and_others_ssl_peer_to_auth_context();
-  test_dns_peer_to_auth_context();
-  test_uri_peer_to_auth_context();
-  test_email_peer_to_auth_context();
-  test_ip_peer_to_auth_context();
-  test_spiffe_id_peer_to_auth_context();
-  test_subject_to_auth_context();
-  test_ipv6_address_san();
-  test_default_ssl_roots();
-  test_peer_alpn_check();
-  grpc_shutdown();
 }
 
 int main(int argc, char** argv) {

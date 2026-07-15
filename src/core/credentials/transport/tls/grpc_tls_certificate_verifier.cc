@@ -24,12 +24,12 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/strings/string_view.h"
 #include "src/core/credentials/transport/tls/tls_utils.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -108,7 +108,7 @@ UniqueTypeName NoOpCertificateVerifier::type() const {
 bool HostNameCertificateVerifier::Verify(
     grpc_tls_custom_verification_check_request* request,
     std::function<void(absl::Status)>, absl::Status* sync_status) {
-  CHECK_NE(request, nullptr);
+  GRPC_CHECK_NE(request, nullptr);
   // Extract the target name, and remove its port.
   const char* target_name = request->target_name;
   if (target_name == nullptr) {

@@ -36,9 +36,6 @@
 #include <random>
 #include <thread>
 
-#include "absl/log/log.h"
-#include "absl/memory/memory.h"
-#include "gtest/gtest.h"
 #include "src/core/util/backoff.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/env.h"
@@ -47,6 +44,9 @@
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
 
 #ifdef GPR_LINUX
 

@@ -22,6 +22,8 @@
 #include <memory>
 #include <string>
 
+#include "absl/flags/parse.h"
+#include "absl/log/initialize.h"
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"
 #else
@@ -73,6 +75,8 @@ class GreeterClient {
 };
 
 int main(int argc, char** argv) {
+  absl::ParseCommandLine(argc, argv);
+  absl::InitializeLog();
   // Instantiate the client. It requires a channel, out of which the actual RPCs
   // are created. This channel models a connection to an endpoint (in this case,
   // localhost at port 50051). We indicate that the channel isn't authenticated

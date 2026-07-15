@@ -28,7 +28,8 @@ REPORT_SUITE_NAME="$(echo ${TEST_TARGET} | sed 's|^.*[:/]||')"
 tar -xopf ${ARCHIVE_WITH_SUBMODULES}
 cd grpc
 
-# TODO(jtattermusch): adjust GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS for faster build.
+# Use all available cores to speed up the build
+export GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS="$(nproc)"
 
 # Run distribtest script passed as args
 "$@"

@@ -19,13 +19,13 @@
 #include <string>
 #include <vector>
 
-#include "absl/strings/string_view.h"
 #include "envoy/config/cluster/v3/cluster.pb.h"
 #include "envoy/config/endpoint/v3/endpoint.pb.h"
 #include "envoy/config/listener/v3/listener.pb.h"
 #include "envoy/config/route/v3/route.pb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
 #include "test/cpp/end2end/xds/xds_server.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc {
 namespace testing {
@@ -54,6 +54,12 @@ class XdsBootstrapBuilder {
       const std::string& type, const std::string& config = "") {
     xds_channel_creds_type_ = type;
     xds_channel_creds_config_ = config;
+    return *this;
+  }
+  XdsBootstrapBuilder& SetXdsCallCredentials(const std::string& type,
+                                             const std::string& config = "") {
+    xds_call_creds_type_ = type;
+    xds_call_creds_config_ = config;
     return *this;
   }
   XdsBootstrapBuilder& SetClientDefaultListenerResourceNameTemplate(
@@ -112,6 +118,8 @@ class XdsBootstrapBuilder {
   std::vector<std::string> servers_;
   std::string xds_channel_creds_type_ = "fake";
   std::string xds_channel_creds_config_;
+  std::string xds_call_creds_type_;
+  std::string xds_call_creds_config_;
   std::string client_default_listener_resource_name_template_;
   std::map<std::string /*key*/, PluginInfo> plugins_;
   std::map<std::string /*authority_name*/, AuthorityInfo> authorities_;

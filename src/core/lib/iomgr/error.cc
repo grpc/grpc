@@ -24,17 +24,18 @@
 #include <inttypes.h>
 #include <string.h>
 
+#include "src/core/util/crash.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-#include "src/core/util/crash.h"
 
 #ifdef GPR_WINDOWS
 #include <grpc/support/log_windows.h>
 #endif
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/strerror.h"
 #include "src/core/util/useful.h"
@@ -109,11 +110,6 @@ absl::Status grpc_wsa_error(const grpc_core::DebugLocation& location, int err,
 grpc_error_handle grpc_error_set_int(grpc_error_handle src,
                                      grpc_core::StatusIntProperty which,
                                      intptr_t value) {
-  if (src.ok()) {
-    src = absl::UnknownError("");
-    StatusSetInt(&src, grpc_core::StatusIntProperty::kRpcStatus,
-                 GRPC_STATUS_OK);
-  }
   grpc_core::StatusSetInt(&src, which, value);
   return src;
 }
@@ -124,73 +120,14 @@ bool grpc_error_get_int(grpc_error_handle error,
   if (value.has_value()) {
     *p = *value;
     return true;
-  } else {
-    // TODO(veblush): Remove this once absl::Status migration is done
-    if (which == grpc_core::StatusIntProperty::kRpcStatus) {
-      switch (error.code()) {
-        case absl::StatusCode::kOk:
-          *p = GRPC_STATUS_OK;
-          return true;
-        case absl::StatusCode::kResourceExhausted:
-          *p = GRPC_STATUS_RESOURCE_EXHAUSTED;
-          return true;
-        case absl::StatusCode::kCancelled:
-          *p = GRPC_STATUS_CANCELLED;
-          return true;
-        default:
-          break;
-      }
-    }
-    return false;
   }
-}
-
-grpc_error_handle grpc_error_set_str(grpc_error_handle src,
-                                     grpc_core::StatusStrProperty which,
-                                     absl::string_view str) {
-  if (src.ok()) {
-    src = absl::UnknownError("");
-    StatusSetInt(&src, grpc_core::StatusIntProperty::kRpcStatus,
-                 GRPC_STATUS_OK);
-  }
-  grpc_core::StatusSetStr(&src, which, str);
-  return src;
-}
-
-bool grpc_error_get_str(grpc_error_handle error,
-                        grpc_core::StatusStrProperty which, std::string* s) {
-  std::optional<std::string> value = grpc_core::StatusGetStr(error, which);
-  if (value.has_value()) {
-    *s = std::move(*value);
-    return true;
-  } else {
-    // TODO(veblush): Remove this once absl::Status migration is done
-    if (which == grpc_core::StatusStrProperty::kGrpcMessage) {
-      switch (error.code()) {
-        case absl::StatusCode::kOk:
-          *s = "";
-          return true;
-        case absl::StatusCode::kCancelled:
-          *s = "CANCELLED";
-          return true;
-        default:
-          break;
-      }
-    }
-    return false;
-  }
+  return false;
 }
 
 grpc_error_handle grpc_error_add_child(grpc_error_handle src,
                                        grpc_error_handle child) {
-  if (src.ok()) {
-    return child;
-  } else {
-    if (!child.ok()) {
-      grpc_core::StatusAddChild(&src, child);
-    }
-    return src;
-  }
+  grpc_core::StatusAddChild(&src, child);
+  return src;
 }
 
 bool grpc_log_error(const char* what, grpc_error_handle error, const char* file,

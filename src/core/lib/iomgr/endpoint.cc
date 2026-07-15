@@ -25,9 +25,10 @@ void grpc_endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
   ep->vtable->read(ep, slices, cb, urgent, min_progress_size);
 }
 
-void grpc_endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                         grpc_closure* cb, void* arg, int max_frame_size) {
-  ep->vtable->write(ep, slices, cb, arg, max_frame_size);
+void grpc_endpoint_write(
+    grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb,
+    grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args) {
+  ep->vtable->write(ep, slices, cb, std::move(args));
 }
 
 void grpc_endpoint_add_to_pollset(grpc_endpoint* ep, grpc_pollset* pollset) {

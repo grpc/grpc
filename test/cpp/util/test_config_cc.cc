@@ -18,8 +18,8 @@
 
 #include <vector>
 
-#include "absl/flags/parse.h"
 #include "test/cpp/util/test_config.h"
+#include "absl/flags/parse.h"
 
 namespace grpc {
 namespace testing {

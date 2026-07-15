@@ -41,7 +41,7 @@ class HookServiceClient extends \Grpc\BaseStub {
      * @param \Grpc\Testing\EmptyMessage $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
-     * @return \Grpc\UnaryCall
+     * @return \Grpc\UnaryCall<\Grpc\Testing\EmptyMessage>
      */
     public function Hook(\Grpc\Testing\EmptyMessage $argument,
       $metadata = [], $options = []) {
@@ -56,7 +56,7 @@ class HookServiceClient extends \Grpc\BaseStub {
      * @param \Grpc\Testing\SetReturnStatusRequest $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
-     * @return \Grpc\UnaryCall
+     * @return \Grpc\UnaryCall<\Grpc\Testing\EmptyMessage>
      */
     public function SetReturnStatus(\Grpc\Testing\SetReturnStatusRequest $argument,
       $metadata = [], $options = []) {
@@ -71,7 +71,7 @@ class HookServiceClient extends \Grpc\BaseStub {
      * @param \Grpc\Testing\EmptyMessage $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
-     * @return \Grpc\UnaryCall
+     * @return \Grpc\UnaryCall<\Grpc\Testing\EmptyMessage>
      */
     public function ClearReturnStatus(\Grpc\Testing\EmptyMessage $argument,
       $metadata = [], $options = []) {

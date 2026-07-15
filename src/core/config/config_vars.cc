@@ -20,17 +20,19 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/config/load_config.h"
 #include "absl/flags/flag.h"
 #include "absl/strings/escaping.h"
 #include "absl/types/optional.h"
-#include "src/core/config/load_config.h"
 
 #ifndef GPR_DEFAULT_LOG_VERBOSITY_STRING
 #define GPR_DEFAULT_LOG_VERBOSITY_STRING ""
 #endif  // !GPR_DEFAULT_LOG_VERBOSITY_STRING
 
 #ifdef GRPC_ENABLE_FORK_SUPPORT
+#ifndef GRPC_ENABLE_FORK_SUPPORT_DEFAULT
 #define GRPC_ENABLE_FORK_SUPPORT_DEFAULT true
+#endif  // !defined(GRPC_ENABLE_FORK_SUPPORT_DEFAULT)
 #else
 #define GRPC_ENABLE_FORK_SUPPORT_DEFAULT false
 #endif  // GRPC_ENABLE_FORK_SUPPORT
@@ -68,6 +70,9 @@ ABSL_FLAG(absl::optional<std::string>, grpc_system_ssl_roots_dir, {},
           "Custom directory to SSL Roots");
 ABSL_FLAG(absl::optional<std::string>, grpc_default_ssl_roots_file_path, {},
           "Path to the default SSL roots file.");
+ABSL_FLAG(absl::optional<bool>, grpc_use_system_roots_over_language_callback,
+          {},
+          "Prefer loading system root certificates over language callback.");
 ABSL_FLAG(absl::optional<bool>, grpc_not_use_system_ssl_roots, {},
           "Disable loading system root certificates.");
 ABSL_FLAG(absl::optional<std::string>, grpc_ssl_cipher_suites, {},
@@ -76,6 +81,24 @@ ABSL_FLAG(absl::optional<bool>, grpc_cpp_experimental_disable_reflection, {},
           "EXPERIMENTAL. Only respected when there is a dependency on "
           ":grpc++_reflection. If true, no reflection server will be "
           "automatically added.");
+ABSL_FLAG(
+    absl::optional<int32_t>, grpc_channelz_max_orphaned_nodes, {},
+    "EXPERIMENTAL: If non-zero, extend the lifetime of channelz nodes past the "
+    "underlying object lifetime, up to this many nodes. The value may be "
+    "adjusted slightly to account for implementation limits.");
+ABSL_FLAG(absl::optional<bool>, grpc_channelz_call_tracer, {},
+          "EXPERIMENTAL: If true, channelz will allow inspecting calls as well "
+          "as channels.");
+ABSL_FLAG(absl::optional<double>, grpc_experimental_target_memory_pressure, {},
+          "EXPERIMENTAL: The target pressure for the memory quota pressure "
+          "controller. This is a value between 0 and 1.");
+ABSL_FLAG(absl::optional<double>, grpc_experimental_memory_pressure_threshold,
+          {},
+          "EXPERIMENTAL: The threshold for the memory quota pressure "
+          "controller. This is a value between 0 and 1, and must always be "
+          "greater than the target pressure.");
+ABSL_FLAG(absl::optional<int32_t>, grpc_chaotic_good_metrics_update_interval_ms,
+          {}, "Interval in milliseconds for updating metrics in chaotic good.");
 
 namespace grpc_core {
 
@@ -84,12 +107,32 @@ ConfigVars::ConfigVars(const Overrides& overrides)
           LoadConfig(FLAGS_grpc_client_channel_backup_poll_interval_ms,
                      "GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS",
                      overrides.client_channel_backup_poll_interval_ms, 5000)),
+      channelz_max_orphaned_nodes_(
+          LoadConfig(FLAGS_grpc_channelz_max_orphaned_nodes,
+                     "GRPC_CHANNELZ_MAX_ORPHANED_NODES",
+                     overrides.channelz_max_orphaned_nodes, 0)),
+      chaotic_good_metrics_update_interval_ms_(
+          LoadConfig(FLAGS_grpc_chaotic_good_metrics_update_interval_ms,
+                     "GRPC_CHAOTIC_GOOD_METRICS_UPDATE_INTERVAL_MS",
+                     overrides.chaotic_good_metrics_update_interval_ms, 100)),
+      experimental_target_memory_pressure_(
+          LoadConfig(FLAGS_grpc_experimental_target_memory_pressure,
+                     "GRPC_EXPERIMENTAL_TARGET_MEMORY_PRESSURE",
+                     overrides.experimental_target_memory_pressure, 0.95)),
+      experimental_memory_pressure_threshold_(
+          LoadConfig(FLAGS_grpc_experimental_memory_pressure_threshold,
+                     "GRPC_EXPERIMENTAL_MEMORY_PRESSURE_THRESHOLD",
+                     overrides.experimental_memory_pressure_threshold, 0.99)),
       enable_fork_support_(LoadConfig(
           FLAGS_grpc_enable_fork_support, "GRPC_ENABLE_FORK_SUPPORT",
           overrides.enable_fork_support, GRPC_ENABLE_FORK_SUPPORT_DEFAULT)),
       abort_on_leaks_(LoadConfig(FLAGS_grpc_abort_on_leaks,
                                  "GRPC_ABORT_ON_LEAKS",
                                  overrides.abort_on_leaks, false)),
+      use_system_roots_over_language_callback_(
+          LoadConfig(FLAGS_grpc_use_system_roots_over_language_callback,
+                     "GRPC_USE_SYSTEM_ROOTS_OVER_LANGUAGE_CALLBACK",
+                     overrides.use_system_roots_over_language_callback, false)),
       not_use_system_ssl_roots_(LoadConfig(
           FLAGS_grpc_not_use_system_ssl_roots, "GRPC_NOT_USE_SYSTEM_SSL_ROOTS",
           overrides.not_use_system_ssl_roots, false)),
@@ -97,6 +140,9 @@ ConfigVars::ConfigVars(const Overrides& overrides)
           LoadConfig(FLAGS_grpc_cpp_experimental_disable_reflection,
                      "GRPC_CPP_EXPERIMENTAL_DISABLE_REFLECTION",
                      overrides.cpp_experimental_disable_reflection, false)),
+      channelz_call_tracer_(LoadConfig(FLAGS_grpc_channelz_call_tracer,
+                                       "GRPC_CHANNELZ_CALL_TRACER",
+                                       overrides.channelz_call_tracer, false)),
       dns_resolver_(LoadConfig(FLAGS_grpc_dns_resolver, "GRPC_DNS_RESOLVER",
                                overrides.dns_resolver, "")),
       verbosity_(LoadConfig(FLAGS_grpc_verbosity, "GRPC_VERBOSITY",
@@ -143,10 +189,19 @@ std::string ConfigVars::ToString() const {
       ", system_ssl_roots_dir: ", "\"", absl::CEscape(SystemSslRootsDir()),
       "\"", ", default_ssl_roots_file_path: ", "\"",
       absl::CEscape(DefaultSslRootsFilePath()), "\"",
+      ", use_system_roots_over_language_callback: ",
+      UseSystemRootsOverLanguageCallback() ? "true" : "false",
       ", not_use_system_ssl_roots: ", NotUseSystemSslRoots() ? "true" : "false",
       ", ssl_cipher_suites: ", "\"", absl::CEscape(SslCipherSuites()), "\"",
       ", cpp_experimental_disable_reflection: ",
-      CppExperimentalDisableReflection() ? "true" : "false");
+      CppExperimentalDisableReflection() ? "true" : "false",
+      ", channelz_max_orphaned_nodes: ", ChannelzMaxOrphanedNodes(),
+      ", channelz_call_tracer: ", ChannelzCallTracer() ? "true" : "false",
+      ", experimental_target_memory_pressure: ",
+      ExperimentalTargetMemoryPressure(),
+      ", experimental_memory_pressure_threshold: ",
+      ExperimentalMemoryPressureThreshold(),
+      ", chaotic_good_metrics_update_interval_ms: ",
+      ChaoticGoodMetricsUpdateIntervalMs());
 }
-
 }  // namespace grpc_core

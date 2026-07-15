@@ -6,13 +6,16 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
+
+
 #ifndef ENVOY_CONFIG_BOOTSTRAP_V3_BOOTSTRAP_PROTO_UPB_H__UPBDEFS_H_
 #define ENVOY_CONFIG_BOOTSTRAP_V3_BOOTSTRAP_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
 
-#include "upb/port/def.inc" // Must be last.
+#include "upb/port/def.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -133,6 +136,7 @@ UPB_INLINE const upb_MessageDef *envoy_config_bootstrap_v3_MemoryAllocatorManage
   _upb_DefPool_LoadDefInit(s, &envoy_config_bootstrap_v3_bootstrap_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.bootstrap.v3.MemoryAllocatorManager");
 }
+
 
 #ifdef __cplusplus
 }  /* extern "C" */

@@ -15,7 +15,13 @@
 load("//bazel:grpc_build_system.bzl", "grpc_package")
 load(":generate_tests.bzl", "grpc_bad_ssl_tests")
 
-grpc_package(name = "test/core/bad_ssl")
+grpc_package(
+    name = "test/core/bad_ssl",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 licenses(["notice"])
 

@@ -224,6 +224,13 @@ grpc_run_simple_command_test(
 )
 
 grpc_run_simple_command_test(
+    name = "bazel_build_out_of_tree_with_bzlmod_linux",
+    size = "enormous",
+    args = ["tools/bazelify_tests/test/bazel_build_out_of_tree_with_bzlmod_linux.sh"],
+    docker_image_version = "tools/dockerfile/test/bazel.current_version",
+)
+
+grpc_run_simple_command_test(
     name = "bazel_build_with_grpc_no_xds_linux",
     size = "enormous",
     args = ["tools/bazelify_tests/test/bazel_build_with_grpc_no_xds_linux.sh"],
@@ -240,6 +247,7 @@ grpc_run_simple_command_test(
 test_suite(
     name = "bazel_build_tests_linux",
     tests = [
+        ":bazel_build_out_of_tree_with_bzlmod_linux",
         ":bazel_build_with_bzlmod_linux",
         ":bazel_build_with_grpc_no_xds_linux",
         ":bazel_build_with_grpc_no_xds_negative_test_linux",
@@ -251,19 +259,19 @@ test_suite(
 grpc_build_artifact_task(
     name = "artifact_protoc_linux_x64",
     build_script = "build_artifact_protoc_linux.sh",
-    docker_image_version = "tools/dockerfile/grpc_artifact_centos6_x64.current_version",
+    docker_image_version = "tools/dockerfile/grpc_artifact_manylinux2014_x64.current_version",
 )
 
 grpc_build_artifact_task(
     name = "artifact_protoc_linux_x86",
     build_script = "build_artifact_protoc_linux.sh",
-    docker_image_version = "tools/dockerfile/grpc_artifact_centos6_x86.current_version",
+    docker_image_version = "tools/dockerfile/grpc_artifact_manylinux2014_x86.current_version",
 )
 
 grpc_build_artifact_task(
     name = "artifact_protoc_linux_aarch64",
-    build_script = "build_artifact_protoc_linux_aarch64.sh",
-    docker_image_version = "tools/dockerfile/grpc_artifact_protoc_aarch64.current_version",
+    build_script = "build_artifact_protoc_manylinux_2_28_aarch64.sh",
+    docker_image_version = "tools/dockerfile/grpc_artifact_manylinux_2_28_aarch64.current_version",
 )
 
 # PHP artifact build tasks
@@ -277,15 +285,14 @@ grpc_build_artifact_task(
 # Python artifact build tasks
 
 grpc_build_artifact_task(
-    name = "artifact_python_linux_x64_manylinux2014_cp313",
-    build_script = "build_artifact_python_linux_x64_cp313.sh",
+    name = "artifact_python_linux_x64_manylinux2014_cp315",
+    build_script = "build_artifact_python_linux_x64_cp315.sh",
     docker_image_version = "tools/dockerfile/grpc_artifact_python_manylinux2014_x64.current_version",
 )
 
-# Building 39 here since default Python version in testing image is 3.9.
 grpc_build_artifact_task(
-    name = "artifact_python_linux_x64_manylinux2014_cp39",
-    build_script = "build_artifact_python_linux_x64_cp39.sh",
+    name = "artifact_python_linux_x64_manylinux2014_cp310",
+    build_script = "build_artifact_python_linux_x64_cp310.sh",
     docker_image_version = "tools/dockerfile/grpc_artifact_python_manylinux2014_x64.current_version",
 )
 
@@ -295,8 +302,8 @@ grpc_build_artifact_task(
     name = "package_python_linux",
     # TODO(jtattermusch): add more python artifacts once they are migrated from artifact_targets.py
     artifact_deps = [
-        "artifact_python_linux_x64_manylinux2014_cp313",
-        "artifact_python_linux_x64_manylinux2014_cp39",
+        "artifact_python_linux_x64_manylinux2014_cp310",
+        "artifact_python_linux_x64_manylinux2014_cp315",
     ],
     build_script = "build_package_python_linux.sh",
     docker_image_version = "tools/dockerfile/grpc_artifact_python_manylinux2014_x64.current_version",
@@ -429,8 +436,8 @@ test_suite(
         ":artifact_protoc_linux_aarch64_build_test",
         ":artifact_protoc_linux_x64_build_test",
         ":artifact_protoc_linux_x86_build_test",
-        ":artifact_python_linux_x64_manylinux2014_cp313_build_test",
-        ":artifact_python_linux_x64_manylinux2014_cp39_build_test",
+        ":artifact_python_linux_x64_manylinux2014_cp310_build_test",
+        ":artifact_python_linux_x64_manylinux2014_cp315_build_test",
         ":package_csharp_linux_build_test",
         ":package_python_linux_build_test",
     ],

@@ -34,8 +34,10 @@
 #define TSI_ALTS_CERTIFICATE_TYPE "ALTS"
 #define TSI_ALTS_RPC_VERSIONS "rpc_versions"
 #define TSI_ALTS_CONTEXT "alts_context"
+#define TSI_ALTS_NEGOTIATED_TRANSPORT_PROTOCOL \
+  "alts_negotiated_transport_protocol"
 
-const size_t kTsiAltsNumOfPeerProperties = 5;
+inline const size_t kTsiAltsMinNumOfPeerProperties = 5;
 
 // Frame size negotiation extends send frame size range to
 // [kTsiAltsMinFrameSize, kTsiAltsMaxFrameSize].
@@ -60,6 +62,9 @@ typedef struct alts_tsi_handshaker alts_tsi_handshaker;
 ///  method.
 ///- user_specified_max_frame_size: Determines the maximum frame size used by
 ///  frame protector that is specified via user. If unspecified, the value is 0.
+///- preferred_transport_protocols: a comma separated list of preferred
+///  transport protocols to be negotiated for this connection. If empty, no
+///  negotiation will occur.
 ///
 /// It returns TSI_OK on success and an error status code on failure. Note that
 /// if interested_parties is nullptr, a dedicated TSI thread will be created and
@@ -69,7 +74,8 @@ tsi_result alts_tsi_handshaker_create(
     const grpc_alts_credentials_options* options, const char* target_name,
     const char* handshaker_service_url, bool is_client,
     grpc_pollset_set* interested_parties, tsi_handshaker** self,
-    size_t user_specified_max_frame_size);
+    size_t user_specified_max_frame_size,
+    std::optional<std::string> preferred_transport_protocols);
 
 ///
 /// This method creates an ALTS TSI handshaker result instance.

@@ -24,14 +24,16 @@ module Helloworld
     # The greeting service definition.
     class Service
 
-      include GRPC::GenericService
+      include ::GRPC::GenericService
 
       self.marshal_class_method = :encode
       self.unmarshal_class_method = :decode
       self.service_name = 'helloworld.Greeter'
 
       # Sends a greeting
-      rpc :SayHello, HelloRequest, HelloReply
+      rpc :SayHello, ::Helloworld::HelloRequest, ::Helloworld::HelloReply
+      rpc :SayHelloStreamReply, ::Helloworld::HelloRequest, stream(::Helloworld::HelloReply)
+      rpc :SayHelloBidiStream, stream(::Helloworld::HelloRequest), stream(::Helloworld::HelloReply)
     end
 
     Stub = Service.rpc_stub_class

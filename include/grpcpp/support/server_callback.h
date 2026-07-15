@@ -33,10 +33,29 @@
 #include <type_traits>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
+
+struct grpc_endpoint;
+namespace grpc_core {
+class Transport;
+}
 
 namespace grpc {
 
+class Server;
+
 // Declare base class of all reactors as internal
+namespace experimental {
+namespace internal {
+void BindSessionToInnerServer(grpc_call* call, grpc::Server* inner_server,
+                              grpc_core::Transport** out_transport,
+                              grpc_endpoint** out_endpoint);
+void InitiateSessionGracefulShutdown(
+    grpc_core::Transport* transport, grpc_endpoint* endpoint,
+    absl::AnyInvocable<void(absl::Status)> on_shutdown);
+}  // namespace internal
+}  // namespace experimental
+
 namespace internal {
 
 // Forward declarations
@@ -49,6 +68,8 @@ class CallbackServerStreamingHandler;
 template <class Request, class Response>
 class CallbackBidiHandler;
 
+bool ReturnPreexistingErrors();
+
 class ServerReactor {
  public:
   virtual ~ServerReactor() = default;
@@ -56,7 +77,7 @@ class ServerReactor {
   virtual void OnCancel() = 0;
 
   // The following is not API. It is for internal use only and specifies whether
-  // all reactions of this Reactor can be run without an extra executor
+  // all reactions of this Reactor can be run without extra EventEngine
   // scheduling. This should only be used for internally-defined reactors with
   // trivial reactions.
   virtual bool InternalInlineable() { return false; }
@@ -90,7 +111,7 @@ class ServerCallbackCall {
   // advance (used for the ServerContext CompletionOp), and one for where we
   // know the inlineability of the OnDone reaction. You should set the inline
   // flag to true if either the Reactor is InternalInlineable() or if this
-  // callback is already being forced to run dispatched to an executor
+  // callback is already being forced to run dispatched to an EventEngine thread
   // (typically because it contains additional work than just the MaybeDone).
 
   void MaybeDone() {
@@ -141,12 +162,12 @@ class ServerCallbackCall {
   // ever invoked on a fully-Unref'fed ServerCallbackCall.
   virtual void CallOnDone() = 0;
 
-  // If the OnDone reaction is inlineable, execute it inline. Otherwise send it
-  // to an executor.
+  // If the OnDone reaction is inlineable, execute it inline. Otherwise run it
+  // async on EventEngine.
   void ScheduleOnDone(bool inline_ondone);
 
-  // If the OnCancel reaction is inlineable, execute it inline. Otherwise send
-  // it to an executor.
+  // If the OnCancel reaction is inlineable, execute it inline. Otherwise run it
+  // async on EventEngine.
   void CallOnCancel(ServerReactor* reactor);
 
   // Implement the cancellation constraint counter. Return true if OnCancel
@@ -194,6 +215,11 @@ class ServerWriteReactor;
 template <class Request, class Response>
 class ServerBidiReactor;
 
+namespace experimental {
+class ServerSessionReactor;
+class ServerCallbackSession;
+}  // namespace experimental
+
 // NOTE: The actual call/stream object classes are provided as API only to
 // support mocking. There are no implementations of these class interfaces in
 // the API.
@@ -211,6 +237,25 @@ class ServerCallbackUnary : public internal::ServerCallbackCall {
     reactor->InternalBindCall(this);
   }
 };
+
+namespace experimental {
+class ServerCallbackSession : public grpc::internal::ServerCallbackCall {
+ public:
+  ~ServerCallbackSession() override {}
+
+  virtual void Finish(grpc::Status s) = 0;
+  virtual void SendInitialMetadata() = 0;
+  virtual void BindInnerServer(grpc::Server* inner_server) = 0;
+  virtual void InitiateGracefulShutdown(
+      absl::AnyInvocable<void(absl::Status)> on_shutdown) = 0;
+
+ protected:
+  template <class Reactor>
+  void BindReactor(Reactor* reactor) {
+    reactor->InternalBindSession(this);
+  }
+};
+}  // namespace experimental
 
 template <class Request>
 class ServerCallbackReader : public internal::ServerCallbackCall {
@@ -771,6 +816,109 @@ class ServerUnaryReactor : public internal::ServerReactor {
   PreBindBacklog backlog_ ABSL_GUARDED_BY(call_mu_);
 };
 
+namespace experimental {
+class ServerSessionReactor : public grpc::internal::ServerReactor {
+ public:
+  ServerSessionReactor() : session_(nullptr) {}
+  ~ServerSessionReactor() override = default;
+
+  /// StartVirtualRPCs is exactly like ServerBidiReactor's
+  /// StartSendInitialMetadata.
+  void StartVirtualRPCs() ABSL_LOCKS_EXCLUDED(session_mu_) {
+    ServerCallbackSession* session = session_.load(std::memory_order_acquire);
+    if (session == nullptr) {
+      grpc::internal::MutexLock l(&session_mu_);
+      session = session_.load(std::memory_order_relaxed);
+      if (session == nullptr) {
+        backlog_.send_initial_metadata_wanted = true;
+        return;
+      }
+    }
+    session->SendInitialMetadata();
+  }
+
+  /// Finish is similar to ServerBidiReactor except for one detail.
+  /// If the status is non-OK, any message will not be sent. Instead,
+  /// the client will only receive the status and any trailing metadata.
+  void Finish(grpc::Status s) ABSL_LOCKS_EXCLUDED(session_mu_) {
+    ServerCallbackSession* session = session_.load(std::memory_order_acquire);
+    if (session == nullptr) {
+      grpc::internal::MutexLock l(&session_mu_);
+      session = session_.load(std::memory_order_relaxed);
+      if (session == nullptr) {
+        backlog_.finish_wanted = true;
+        backlog_.status_wanted = std::move(s);
+        return;
+      }
+    }
+    session->Finish(std::move(s));
+  }
+
+  /// Initiate a graceful shutdown of a SESSION_RPC.
+  ///
+  /// This will send a GOAWAY frame to the client, telling it to finish active
+  /// virtual RPCs on this session and stop opening new ones. The provided
+  /// callback will be invoked with the final status of the inner transport
+  /// when it completely shuts down (drains).
+  void InitiateGracefulShutdown(
+      absl::AnyInvocable<void(absl::Status)> on_shutdown)
+      ABSL_LOCKS_EXCLUDED(session_mu_) {
+    ServerCallbackSession* session = session_.load(std::memory_order_acquire);
+    if (session == nullptr) {
+      grpc::internal::MutexLock l(&session_mu_);
+      session = session_.load(std::memory_order_relaxed);
+      if (session == nullptr) {
+        backlog_.graceful_shutdown_wanted_callback = std::move(on_shutdown);
+        return;
+      }
+    }
+    session->InitiateGracefulShutdown(std::move(on_shutdown));
+  }
+
+  /// The following notifications are exactly like ServerBidiReactor.
+  virtual void OnSendInitialMetadataDone(bool /*ok*/) {}
+  void OnDone() override = 0;
+  void OnCancel() override {}
+
+ private:
+  friend class ServerCallbackSession;
+  // May be overridden by internal implementation details. This is not a public
+  // customization point.
+  virtual void InternalBindSession(ServerCallbackSession* session)
+      ABSL_LOCKS_EXCLUDED(session_mu_) {
+    grpc::internal::MutexLock l(&session_mu_);
+
+    if (GPR_UNLIKELY(backlog_.send_initial_metadata_wanted)) {
+      session->SendInitialMetadata();
+    }
+    if (GPR_UNLIKELY(backlog_.graceful_shutdown_wanted_callback != nullptr)) {
+      session->InitiateGracefulShutdown(
+          std::move(backlog_.graceful_shutdown_wanted_callback));
+    }
+    if (GPR_UNLIKELY(backlog_.finish_wanted)) {
+      session->Finish(std::move(backlog_.status_wanted));
+    }
+    // Set session_ last so that other functions can use it lock-free
+    session_.store(session, std::memory_order_release);
+  }
+
+  grpc::internal::Mutex session_mu_;
+  std::atomic<ServerCallbackSession*> session_{nullptr};
+  struct PreBindBacklog {
+    bool send_initial_metadata_wanted = false;
+    bool finish_wanted = false;
+    absl::AnyInvocable<void(absl::Status)> graceful_shutdown_wanted_callback;
+    grpc::Status status_wanted;
+  };
+
+  // Resolves a race condition where application code calls reactor methods
+  // before gRPC binds the session to the reactor.
+  // These early operations are stored here and executed during
+  // InternalBindSession().
+  PreBindBacklog backlog_ ABSL_GUARDED_BY(session_mu_);
+};
+}  // namespace experimental
+
 namespace internal {
 
 template <class Base>
@@ -791,6 +939,13 @@ using UnimplementedBidiReactor =
     FinishOnlyReactor<ServerBidiReactor<Request, Response>>;
 
 }  // namespace internal
+
+namespace experimental {
+namespace internal {
+using UnimplementedSessionReactor =
+    grpc::internal::FinishOnlyReactor<ServerSessionReactor>;
+}  // namespace internal
+}  // namespace experimental
 
 // TODO(vjpai): Remove namespace experimental when last known users are migrated
 // off.

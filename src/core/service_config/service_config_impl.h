@@ -26,16 +26,16 @@
 #include <unordered_map>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_parser.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/validation_errors.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 // The main purpose of the code here is to parse the service config in
 // JSON form, which will look like this:
@@ -86,8 +86,8 @@ class ServiceConfigImpl final : public ServiceConfig {
   /// lifetime of the returned object is tied to the lifetime of the
   /// ServiceConfig object.
   ServiceConfigParser::ParsedConfig* GetGlobalParsedConfig(
-      size_t index) override {
-    DCHECK(index < parsed_global_configs_.size());
+      size_t index) const override {
+    GRPC_DCHECK(index < parsed_global_configs_.size());
     return parsed_global_configs_[index].get();
   }
 

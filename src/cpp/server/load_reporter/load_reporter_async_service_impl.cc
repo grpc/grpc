@@ -24,9 +24,9 @@
 #include <grpcpp/support/status.h>
 #include <inttypes.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "src/core/util/grpc_check.h"
 #include "src/cpp/server/load_reporter/constants.h"
+#include "absl/log/log.h"
 
 // IWYU pragma: no_include "google/protobuf/duration.pb.h"
 
@@ -34,8 +34,8 @@ namespace grpc {
 namespace load_reporter {
 
 void LoadReporterAsyncServiceImpl::CallableTag::Run(bool ok) {
-  CHECK(handler_function_ != nullptr);
-  CHECK_NE(handler_, nullptr);
+  GRPC_CHECK(handler_function_ != nullptr);
+  GRPC_CHECK_NE(handler_, nullptr);
   handler_function_(std::move(handler_), ok);
 }
 
@@ -109,7 +109,7 @@ void LoadReporterAsyncServiceImpl::Work(void* arg) {
   while (true) {
     if (!service->cq_->Next(&tag, &ok)) {
       // The completion queue is shutting down.
-      CHECK(service->shutdown_);
+      GRPC_CHECK(service->shutdown_);
       break;
     }
     if (tag == service) {
@@ -164,7 +164,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnRequestDelivered(
     // tag will not pop out if the call never starts (
     // https://github.com/grpc/grpc/issues/10136). So we need to manually
     // release the ownership of the handler in this case.
-    CHECK_NE(on_done_notified_.ReleaseHandler(), nullptr);
+    GRPC_CHECK_NE(on_done_notified_.ReleaseHandler(), nullptr);
   }
   if (!ok || shutdown_) {
     // The value of ok being false means that the server is shutting down.
@@ -326,7 +326,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::SendReport(
 
 void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnDoneNotified(
     std::shared_ptr<ReportLoadHandler> self, bool ok) {
-  CHECK(ok);
+  GRPC_CHECK(ok);
   done_notified_ = true;
   if (ctx_.IsCancelled()) {
     is_cancelled_ = true;

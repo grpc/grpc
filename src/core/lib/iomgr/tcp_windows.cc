@@ -27,8 +27,6 @@
 #include <grpc/support/string_util.h>
 #include <limits.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -40,8 +38,10 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/string.h"
 #include "src/core/util/useful.h"
+#include "absl/log/log.h"
 
 #if defined(__MSYS__) && defined(GPR_ARCH_64)
 // Nasty workaround for nasty bug when using the 64 bits msys compiler
@@ -182,7 +182,7 @@ static void on_read(void* tcpp, grpc_error_handle error) {
       grpc_slice_buffer_reset_and_unref(tcp->read_slices);
     } else {
       if (info->bytes_transferred != 0 && !tcp->shutting_down) {
-        CHECK((size_t)info->bytes_transferred <= tcp->read_slices->length);
+        GRPC_CHECK((size_t)info->bytes_transferred <= tcp->read_slices->length);
         if (static_cast<size_t>(info->bytes_transferred) !=
             tcp->read_slices->length) {
           grpc_slice_buffer_trim_end(
@@ -191,7 +191,7 @@ static void on_read(void* tcpp, grpc_error_handle error) {
                   static_cast<size_t>(info->bytes_transferred),
               &tcp->last_read_buffer);
         }
-        CHECK((size_t)info->bytes_transferred == tcp->read_slices->length);
+        GRPC_CHECK((size_t)info->bytes_transferred == tcp->read_slices->length);
 
         if (GRPC_TRACE_FLAG_ENABLED(tcp) && ABSL_VLOG_IS_ON(2)) {
           size_t i;
@@ -256,7 +256,7 @@ static void win_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
                           GRPC_SLICE_MALLOC(DEFAULT_TARGET_READ_SIZE));
   }
 
-  CHECK(tcp->read_slices->count <= MAX_WSABUF_COUNT);
+  GRPC_CHECK(tcp->read_slices->count <= MAX_WSABUF_COUNT);
   for (i = 0; i < tcp->read_slices->count; i++) {
     buffers[i].len = (ULONG)GRPC_SLICE_LENGTH(
         tcp->read_slices->slices[i]);  // we know slice size fits in 32bit.
@@ -313,7 +313,7 @@ static void on_write(void* tcpp, grpc_error_handle error) {
     if (info->wsa_error != 0) {
       error = GRPC_WSA_ERROR(info->wsa_error, "WSASend");
     } else {
-      CHECK(info->bytes_transferred <= tcp->write_slices->length);
+      GRPC_CHECK(info->bytes_transferred <= tcp->write_slices->length);
     }
   }
 
@@ -323,8 +323,9 @@ static void on_write(void* tcpp, grpc_error_handle error) {
 
 // Initiates a write.
 static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                      grpc_closure* cb, void* /* arg */,
-                      int /* max_frame_size */) {
+                      grpc_closure* cb,
+                      grpc_event_engine::experimental::EventEngine::Endpoint::
+                          WriteArgs /*args*/) {
   grpc_tcp* tcp = (grpc_tcp*)ep;
   grpc_winsocket* socket = tcp->socket;
   grpc_winsocket_callback_info* info = &socket->write_info;
@@ -358,7 +359,7 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
 
   tcp->write_cb = cb;
   tcp->write_slices = slices;
-  CHECK(tcp->write_slices->count <= UINT_MAX);
+  GRPC_CHECK(tcp->write_slices->count <= UINT_MAX);
   if (tcp->write_slices->count > GPR_ARRAY_SIZE(local_buffers)) {
     buffers = (WSABUF*)gpr_malloc(sizeof(WSABUF) * tcp->write_slices->count);
     allocated = buffers;
@@ -366,7 +367,7 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
 
   for (i = 0; i < tcp->write_slices->count; i++) {
     len = GRPC_SLICE_LENGTH(tcp->write_slices->slices[i]);
-    CHECK(len <= ULONG_MAX);
+    GRPC_CHECK(len <= ULONG_MAX);
     buffers[i].len = (ULONG)len;
     buffers[i].buf = (char*)GRPC_SLICE_START_PTR(tcp->write_slices->slices[i]);
   }

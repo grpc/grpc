@@ -20,8 +20,8 @@
 #include <grpc/support/port_platform.h>
 #include <stddef.h>
 
-#include "absl/strings/string_view.h"
 #include "src/core/load_balancing/backend_metric_data.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

@@ -24,10 +24,11 @@
 #include <mutex>
 #include <string>
 
+#include "wrapping_event_engine.h"
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/log/initialize.h"
 #include "absl/log/log.h"
-#include "wrapping_event_engine.h"
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"
@@ -87,6 +88,7 @@ class GreeterClient {
 
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
+  absl::InitializeLog();
   // Create some EventEngine of your choosing, likely your own.
   auto custom_engine = std::make_shared<my_application::WrappingEventEngine>();
   // Provide this engine to gRPC. Now there are 2 refs to this engine: one here,

@@ -72,6 +72,9 @@ py_library(
     data = [
         "//src/python/grpcio_tests/tests/interop/credentials",
     ],
+    deps = [
+        requirement("cryptography"),
+    ],
 )
 
 py_library(
@@ -138,6 +141,23 @@ py_test(
     srcs = ["_secure_intraop_test.py"],
     imports = ["../../"],
     main = "_secure_intraop_test.py",
+    python_version = "PY3",
+    deps = [
+        ":_intraop_test_case",
+        ":server",
+        ":service",
+        "//src/proto/grpc/testing:py_test_proto",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_tests/tests/unit:test_common",
+    ],
+)
+
+py_test(
+    name = "_security_tests",
+    size = "small",
+    srcs = ["security_test.py"],
+    imports = ["../../"],
+    main = "security_test.py",
     python_version = "PY3",
     deps = [
         ":_intraop_test_case",

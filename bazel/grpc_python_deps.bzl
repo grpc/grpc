@@ -14,7 +14,6 @@
 """Load dependencies needed to compile and test the grpc python library as a 3rd-party consumer."""
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load("@com_github_grpc_grpc//third_party/py:python_configure.bzl", "python_configure")
 
 # buildifier: disable=unnamed-macro
 def grpc_python_deps():
@@ -22,16 +21,18 @@ def grpc_python_deps():
     if "rules_python" not in native.existing_rules():
         http_archive(
             name = "rules_python",
-            sha256 = "4f7e2aa1eb9aa722d96498f5ef514f426c1f55161c3c9ae628c857a7128ceb07",
-            strip_prefix = "rules_python-1.0.0",
-            url = "https://github.com/bazelbuild/rules_python/releases/download/1.0.0/rules_python-1.0.0.tar.gz",
+            sha256 = "2119ca04726066c53b8f1ff42dffa090ea7f3e42a75679f1cfda937406cf7753",
+            strip_prefix = "rules_python-2.0.2",
+            url = "https://github.com/bazel-contrib/rules_python/releases/download/2.0.2/rules_python-2.0.2.tar.gz",
         )
 
-    python_configure(name = "local_config_python")
-
-    native.bind(
-        name = "python_headers",
-        actual = "@local_config_python//:python_headers",
+    # This version should be same as that in G3
+    http_archive(
+        name = "grpc_typing_extensions",
+        build_file = "@com_github_grpc_grpc//third_party:typing_extensions.BUILD",
+        sha256 = "bf6f56b36d8bc9156e518eb1cc37a146284082fa53522033f772aefbecfd15fc",
+        strip_prefix = "typing_extensions-4.12.2",
+        url = "https://github.com/python/typing_extensions/archive/4.12.2.tar.gz",
     )
 
     if "cython" not in native.existing_rules():

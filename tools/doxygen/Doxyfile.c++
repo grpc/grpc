@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.72.0-dev
+PROJECT_NUMBER         = 1.84.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -66,7 +66,7 @@ OUTPUT_DIRECTORY       = doc/ref/c++
 # directories (in 2 levels) under the output directory of each output format and
 # will distribute the generated files over these directories. Enabling this
 # option can be useful when feeding doxygen a huge amount of source files, where
-# putting all generated files in the same directory would otherwise causes
+# putting all generated files in the same directory would otherwise cause
 # performance problems for the file system.
 # The default value is: NO.
 
@@ -450,7 +450,7 @@ EXTRACT_LOCAL_METHODS  = NO
 # If this flag is set to YES, the members of anonymous namespaces will be
 # extracted and appear in the documentation as a namespace called
 # 'anonymous_namespace{file}', where file will be replaced with the base name of
-# the file that contains the anonymous namespace. By default anonymous namespace
+# the file that contains the anonymous namespace. By default anonymous namespaces
 # are hidden.
 # The default value is: NO.
 
@@ -822,7 +822,6 @@ include/grpc++/impl/codegen/async_stream.h \
 include/grpc++/impl/codegen/async_unary_call.h \
 include/grpc++/impl/codegen/byte_buffer.h \
 include/grpc++/impl/codegen/call.h \
-include/grpc++/impl/codegen/call_hook.h \
 include/grpc++/impl/codegen/channel_interface.h \
 include/grpc++/impl/codegen/client_context.h \
 include/grpc++/impl/codegen/client_unary_call.h \
@@ -882,12 +881,16 @@ include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
 include/grpc/census.h \
 include/grpc/compression.h \
+include/grpc/context_types.h \
+include/grpc/create_channel_from_endpoint.h \
 include/grpc/credentials.h \
+include/grpc/credentials_cpp.h \
 include/grpc/event_engine/endpoint_config.h \
 include/grpc/event_engine/event_engine.h \
 include/grpc/event_engine/extensible.h \
 include/grpc/event_engine/internal/memory_allocator_impl.h \
 include/grpc/event_engine/internal/slice_cast.h \
+include/grpc/event_engine/internal/write_event.h \
 include/grpc/event_engine/memory_allocator.h \
 include/grpc/event_engine/memory_request.h \
 include/grpc/event_engine/port.h \
@@ -931,6 +934,7 @@ include/grpc/impl/propagation_bits.h \
 include/grpc/impl/slice_type.h \
 include/grpc/load_reporting.h \
 include/grpc/passive_listener.h \
+include/grpc/private_key_signer.h \
 include/grpc/slice.h \
 include/grpc/slice_buffer.h \
 include/grpc/status.h \
@@ -956,6 +960,7 @@ include/grpc/support/thd_id.h \
 include/grpc/support/time.h \
 include/grpc/support/workaround_list.h \
 include/grpcpp/alarm.h \
+include/grpcpp/call_context_types.h \
 include/grpcpp/channel.h \
 include/grpcpp/client_context.h \
 include/grpcpp/completion_queue.h \
@@ -970,8 +975,9 @@ include/grpcpp/generic/generic_stub.h \
 include/grpcpp/generic/generic_stub_callback.h \
 include/grpcpp/grpcpp.h \
 include/grpcpp/health_check_service_interface.h \
+include/grpcpp/impl/allowed_call_context_types.h \
 include/grpcpp/impl/call.h \
-include/grpcpp/impl/call_hook.h \
+include/grpcpp/impl/call_context_registry.h \
 include/grpcpp/impl/call_op_set.h \
 include/grpcpp/impl/call_op_set_interface.h \
 include/grpcpp/impl/channel_argument_option.h \
@@ -982,7 +988,6 @@ include/grpcpp/impl/codegen/async_stream.h \
 include/grpcpp/impl/codegen/async_unary_call.h \
 include/grpcpp/impl/codegen/byte_buffer.h \
 include/grpcpp/impl/codegen/call.h \
-include/grpcpp/impl/codegen/call_hook.h \
 include/grpcpp/impl/codegen/call_op_set.h \
 include/grpcpp/impl/codegen/call_op_set_interface.h \
 include/grpcpp/impl/codegen/callback_common.h \
@@ -1060,6 +1065,7 @@ include/grpcpp/security/tls_certificate_provider.h \
 include/grpcpp/security/tls_certificate_verifier.h \
 include/grpcpp/security/tls_credentials_options.h \
 include/grpcpp/security/tls_crl_provider.h \
+include/grpcpp/security/tls_private_key_signer.h \
 include/grpcpp/server.h \
 include/grpcpp/server_builder.h \
 include/grpcpp/server_context.h \

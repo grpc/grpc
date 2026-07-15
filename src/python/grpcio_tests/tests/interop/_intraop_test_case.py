@@ -16,7 +16,7 @@
 from tests.interop import methods
 
 
-class IntraopTestCase(object):
+class IntraopTestCase:
     """Unit test methods.
 
     This class must be mixed in with unittest.TestCase and a class that defines

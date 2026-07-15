@@ -20,11 +20,12 @@
 
 #include <vector>
 
-#include "absl/status/status.h"
-#include "gtest/gtest.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/status_helper.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 namespace {
 
@@ -63,7 +64,7 @@ TEST(ErrorUtilsTest, GetErrorGetStatusChild) {
   grpc_error_get_status(error, grpc_core::Timestamp(), &code, &message, nullptr,
                         nullptr);
   ASSERT_EQ(code, GRPC_STATUS_RESOURCE_EXHAUSTED);
-  ASSERT_EQ(message, "Child2");
+  ASSERT_EQ(message, "Parent (Child1) (Child2)");
 }
 
 // ---- Ok Status ----
@@ -83,19 +84,6 @@ TEST(ErrorUtilsTest, AbslStatusToGrpcErrorDoesNotReturnSpecialVariables) {
   grpc_error_handle error =
       absl_status_to_grpc_error(absl::CancelledError("CANCELLED"));
   ASSERT_NE(error, absl::CancelledError());
-}
-
-TEST(ErrorUtilsTest, GrpcSpecialErrorCancelledToAbslStatus) {
-  absl::Status status = grpc_error_to_absl_status(absl::CancelledError());
-  ASSERT_TRUE(absl::IsCancelled(status));
-  ASSERT_EQ(status.message(), "CANCELLED");
-}
-
-TEST(ErrorUtilsTest, GrpcSpecialErrorOOMToAbslStatus) {
-  absl::Status status =
-      grpc_error_to_absl_status(absl::ResourceExhaustedError(""));
-  ASSERT_TRUE(absl::IsResourceExhausted(status));
-  ASSERT_EQ(status.message(), "RESOURCE_EXHAUSTED");
 }
 
 // ---- Ordinary statuses ----

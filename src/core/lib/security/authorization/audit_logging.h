@@ -26,27 +26,27 @@
 #include <map>
 #include <memory>
 
+#include "src/core/util/sync.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "src/core/util/sync.h"
 
 namespace grpc_core {
 namespace experimental {
 
 class AuditLoggerRegistry {
  public:
-  static void RegisterFactory(std::unique_ptr<AuditLoggerFactory>);
+  static void RegisterFactory(std::unique_ptr<AuditLoggerFactory> factory);
 
   static bool FactoryExists(absl::string_view name);
 
-  static absl::StatusOr<std::unique_ptr<AuditLoggerFactory::Config>>
+  static absl::StatusOr<std::shared_ptr<const AuditLoggerFactory::Config>>
   ParseConfig(absl::string_view name, const Json& json);
 
   // This assume the given config is parsed and validated already.
   // Therefore, it should always succeed in creating a logger.
   static std::unique_ptr<AuditLogger> CreateAuditLogger(
-      std::unique_ptr<AuditLoggerFactory::Config>);
+      std::shared_ptr<const AuditLoggerFactory::Config> config);
 
   // Factories are registered during initialization. They should never be
   // unregistered since they will be looked up at any time till the program

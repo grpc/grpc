@@ -18,21 +18,17 @@
 
 #include "src/core/client_channel/retry_throttle.h"
 
-#include <grpc/support/port_platform.h>
-
 #include <atomic>
 #include <cstdint>
 #include <limits>
-#include <map>
-#include <string>
-#include <utility>
 
+#include "src/core/client_channel/retry_service_config.h"
 #include "src/core/util/useful.h"
 
 namespace grpc_core {
-namespace internal {
 
 namespace {
+
 template <typename T>
 T ClampedAdd(std::atomic<T>& value, T delta, T min, T max) {
   T prev_value = value.load(std::memory_order_relaxed);
@@ -43,45 +39,69 @@ T ClampedAdd(std::atomic<T>& value, T delta, T min, T max) {
                                         std::memory_order_relaxed));
   return new_value;
 }
+
 }  // namespace
 
 //
-// ServerRetryThrottleData
+// RetryThrottler
 //
 
-ServerRetryThrottleData::ServerRetryThrottleData(uintptr_t max_milli_tokens,
-                                                 uintptr_t milli_token_ratio,
-                                                 uintptr_t milli_tokens)
+RefCountedPtr<RetryThrottler> RetryThrottler::Create(
+    uintptr_t max_milli_tokens, uintptr_t milli_token_ratio,
+    RefCountedPtr<RetryThrottler> previous) {
+  if (previous != nullptr && previous->max_milli_tokens_ == max_milli_tokens &&
+      previous->milli_token_ratio_ == milli_token_ratio) {
+    return previous;
+  }
+  // previous is null or has different parameters.  Create a new one.
+  uintptr_t initial_milli_tokens = max_milli_tokens;
+  // If there was a pre-existing entry for this server name, initialize
+  // the token count by scaling proportionately to the old data.  This
+  // ensures that if we're already throttling retries on the old scale,
+  // we will start out doing the same thing on the new one.
+  if (previous != nullptr) {
+    double token_fraction = static_cast<double>(previous->milli_tokens_) /
+                            static_cast<double>(previous->max_milli_tokens_);
+    initial_milli_tokens =
+        static_cast<uintptr_t>(token_fraction * max_milli_tokens);
+  }
+  auto throttle_data = MakeRefCounted<RetryThrottler>(
+      max_milli_tokens, milli_token_ratio, initial_milli_tokens);
+  if (previous != nullptr) previous->SetReplacement(throttle_data);
+  return throttle_data;
+}
+
+RetryThrottler::RetryThrottler(uintptr_t max_milli_tokens,
+                               uintptr_t milli_token_ratio,
+                               uintptr_t milli_tokens)
     : max_milli_tokens_(max_milli_tokens),
       milli_token_ratio_(milli_token_ratio),
       milli_tokens_(milli_tokens) {}
 
-ServerRetryThrottleData::~ServerRetryThrottleData() {
-  ServerRetryThrottleData* replacement =
-      replacement_.load(std::memory_order_acquire);
+RetryThrottler::~RetryThrottler() {
+  RetryThrottler* replacement = replacement_.load(std::memory_order_acquire);
   if (replacement != nullptr) {
     replacement->Unref();
   }
 }
 
-void ServerRetryThrottleData::SetReplacement(
-    RefCountedPtr<ServerRetryThrottleData> replacement) {
+void RetryThrottler::SetReplacement(RefCountedPtr<RetryThrottler> replacement) {
   replacement_.store(replacement.release(), std::memory_order_release);
 }
 
-void ServerRetryThrottleData::GetReplacementThrottleDataIfNeeded(
-    ServerRetryThrottleData** throttle_data) {
+void RetryThrottler::GetReplacementThrottleDataIfNeeded(
+    RetryThrottler** throttle_data) {
   while (true) {
-    ServerRetryThrottleData* new_throttle_data =
+    RetryThrottler* new_throttle_data =
         (*throttle_data)->replacement_.load(std::memory_order_acquire);
     if (new_throttle_data == nullptr) return;
     *throttle_data = new_throttle_data;
   }
 }
 
-bool ServerRetryThrottleData::RecordFailure() {
+bool RetryThrottler::RecordFailure() {
   // First, check if we are stale and need to be replaced.
-  ServerRetryThrottleData* throttle_data = this;
+  RetryThrottler* throttle_data = this;
   GetReplacementThrottleDataIfNeeded(&throttle_data);
   // We decrement milli_tokens by 1000 (1 token) for each failure.
   const uintptr_t new_value = ClampedAdd<intptr_t>(
@@ -93,9 +113,9 @@ bool ServerRetryThrottleData::RecordFailure() {
   return new_value > throttle_data->max_milli_tokens_ / 2;
 }
 
-void ServerRetryThrottleData::RecordSuccess() {
+void RetryThrottler::RecordSuccess() {
   // First, check if we are stale and need to be replaced.
-  ServerRetryThrottleData* throttle_data = this;
+  RetryThrottler* throttle_data = this;
   GetReplacementThrottleDataIfNeeded(&throttle_data);
   // We increment milli_tokens by milli_token_ratio for each success.
   ClampedAdd<intptr_t>(
@@ -105,45 +125,22 @@ void ServerRetryThrottleData::RecordSuccess() {
                                  std::numeric_limits<intptr_t>::max())));
 }
 
-//
-// ServerRetryThrottleMap
-//
-
-ServerRetryThrottleMap* ServerRetryThrottleMap::Get() {
-  static ServerRetryThrottleMap* m = new ServerRetryThrottleMap();
-  return m;
-}
-
-RefCountedPtr<ServerRetryThrottleData> ServerRetryThrottleMap::GetDataForServer(
-    const std::string& server_name, uintptr_t max_milli_tokens,
-    uintptr_t milli_token_ratio) {
-  MutexLock lock(&mu_);
-  auto& throttle_data = map_[server_name];
-  if (throttle_data == nullptr ||
-      throttle_data->max_milli_tokens() != max_milli_tokens ||
-      throttle_data->milli_token_ratio() != milli_token_ratio) {
-    // Entry not found, or found with old parameters.  Create a new one.
-    auto old_throttle_data = std::move(throttle_data);
-    uintptr_t initial_milli_tokens = max_milli_tokens;
-    // If there was a pre-existing entry for this server name, initialize
-    // the token count by scaling proportionately to the old data.  This
-    // ensures that if we're already throttling retries on the old scale,
-    // we will start out doing the same thing on the new one.
-    if (old_throttle_data != nullptr) {
-      double token_fraction =
-          static_cast<double>(old_throttle_data->milli_tokens()) /
-          static_cast<double>(old_throttle_data->max_milli_tokens());
-      initial_milli_tokens =
-          static_cast<uintptr_t>(token_fraction * max_milli_tokens);
-    }
-    throttle_data = MakeRefCounted<ServerRetryThrottleData>(
-        max_milli_tokens, milli_token_ratio, initial_milli_tokens);
-    if (old_throttle_data != nullptr) {
-      old_throttle_data->SetReplacement(throttle_data);
-    }
+void RetryThrottlerChannelArgsUpdater::Update(
+    const ServiceConfig& service_config, ChannelArgs& args) {
+  // Get retry throttling parameters from service config.
+  const auto* config = static_cast<const RetryGlobalConfig*>(
+      service_config.GetGlobalParsedConfig(
+          RetryServiceConfigParser::ParserIndex()));
+  if (config == nullptr) {
+    throttler_.reset();  // No throttling config.
+    return;
   }
-  return throttle_data;
+  // Create a new throttler that replaces the current throttler and add
+  // it to channel args.
+  throttler_ = RetryThrottler::Create(config->max_milli_tokens(),
+                                      config->milli_token_ratio(),
+                                      std::move(throttler_));
+  args = args.SetObject(throttler_);
 }
 
-}  // namespace internal
 }  // namespace grpc_core

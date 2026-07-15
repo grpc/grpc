@@ -1,12 +1,7 @@
 gRPC Python
 ===========
 
-|compat_check_pypi|
-
 Package for gRPC Python.
-
-.. |compat_check_pypi| image:: https://python-compatibility-tools.appspot.com/one_badge_image?package=grpcio
-   :target: https://python-compatibility-tools.appspot.com/one_badge_target?package=grpcio
 
 
 Installation

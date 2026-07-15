@@ -18,7 +18,7 @@ import threading
 from src.proto.grpc.testing import stats_pb2
 
 
-class Histogram(object):
+class Histogram:
     """Histogram class used for recording performance testing data.
 
     This class is thread safe.

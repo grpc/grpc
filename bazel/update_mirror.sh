@@ -19,55 +19,94 @@
 #
 # This script should be run each time bazel dependencies are updated.
 
-set -e
+PS4='+ $(date "+[%H:%M:%S %Z]") $LINENO:\011'
+set -ex
+set -o pipefail
 
 cd $(dirname $0)/..
 
 # Create a temp directory to hold the versioned tarball,
 # and clean it up when the script exits.
 tmpdir="$(mktemp -d)"
+archive_dir=${tmpdir}/archives
+mkdir -p ${archive_dir}
+
+success=0
+failure=0
 function cleanup {
+  echo "stats: Attempted to upload $((success+failure)) files in total, ${success} succeeded, ${failure} failed."
   rm -rf "$tmpdir"
 }
 trap cleanup EXIT
 
-function upload {
-  local file="$1"
+function _download() {
+  local uri="$1"
+  # The relative path of gcs object.
+  local obj_path="${uri#https://}"
 
-  if gsutil stat "gs://grpc-bazel-mirror/${file}" > /dev/null
-  then
-    echo "Skipping ${file}"
-  else
-    echo "Downloading https://${file}"
-    curl -L --fail --output "${tmpdir}/archive" "https://${file}"
+  if [[ "$obj_path" == sourceforge.net/*/download ]]; then
+    obj_path="${obj_path%/download}"
+  fi
 
-    echo "Uploading https://${file} to https://storage.googleapis.com/grpc-bazel-mirror/${file}"
-    gsutil cp "${tmpdir}/archive" "gs://grpc-bazel-mirror/${file}"
+  local local_path="${archive_dir}/${obj_path}" 
 
-    rm -rf "${tmpdir}/archive"
+  echo "Downloading ${uri}"
+  if ! curl -L --fail --create-dirs --output "${local_path}" "${uri}"; then
+    echo "Failed to download ${uri}: curl command failed"
+    return 1
+  fi
+
+  if [[ ! -s "${local_path}" ]]; then
+    echo "Failed to download ${uri}: zero bytes returned"
+    return 1
   fi
 }
 
-# How to check that all mirror URLs work:
-# 1. clean $HOME/.cache/bazel
-# 2. bazel clean --expunge
-# 3. bazel sync (failed downloads will print warnings)
+# Wrapper of _download() which handles errors and keep track of stats.
+function download() {
+  local url="$1"
+  if ! _download "${url}"; then
+    echo "Failed to download url ${url}"
+    failure=$((failure + 1))
+  else
+    success=$((success + 1))
+  fi
+}
 
-# A specific link can be upload manually by running e.g.
-# upload "github.com/google/boringssl/archive/1c2769383f027befac5b75b6cedd25daf3bf4dcf.tar.gz"
+function rsync_archives() {
+  gcloud storage rsync --recursive "${archive_dir}/" gs://grpc-bazel-mirror/
+}
 
-# bazel binaries used by the tools/bazel wrapper script
-upload github.com/bazelbuild/bazel/releases/download/7.4.1/bazel-7.4.1-linux-arm64
-upload github.com/bazelbuild/bazel/releases/download/7.4.1/bazel-7.4.1-linux-x86_64
-upload github.com/bazelbuild/bazel/releases/download/7.4.1/bazel-7.4.1-darwin-x86_64
-upload github.com/bazelbuild/bazel/releases/download/7.4.1/bazel-7.4.1-windows-x86_64.exe
-upload github.com/bazelbuild/bazel/releases/download/8.0.1/bazel-8.0.1-linux-arm64
-upload github.com/bazelbuild/bazel/releases/download/8.0.1/bazel-8.0.1-linux-x86_64
-upload github.com/bazelbuild/bazel/releases/download/8.0.1/bazel-8.0.1-darwin-x86_64
-upload github.com/bazelbuild/bazel/releases/download/8.0.1/bazel-8.0.1-windows-x86_64.exe
+# Download everything into a temporary folder and perform rsync in one go.
+function upload_deps {
+  local bzlmod_deps_file=${tmpdir}/bzlmod_deps.ndjson
+  local output_file=${tmpdir}/urls_to_upload.txt
+  local existing_archives_file=${tmpdir}/existing_archives.txt
 
-# Collect the github archives to mirror from grpc_deps.bzl
-grep -o '"https://github.com/[^"]*"' bazel/grpc_deps.bzl | sed 's/^"https:\/\///' | sed 's/"$//' | while read -r line ; do
-    echo "Updating mirror for ${line}"
-    upload "${line}"
-done
+  tools/bazel mod show_repo --all_repos --output=streamed_jsonproto > ${bzlmod_deps_file} || true
+  gcloud storage objects list '--format=json(name, md5_hash)' 'gs://grpc-bazel-mirror/**' | jq '.[] | "https://" + .name ' -r > ${existing_archives_file}
+
+  python3 \
+    bazel/update_mirror_helper.py \
+    --bzlmod_deps_file=${bzlmod_deps_file} \
+    --existing_archives_file=${existing_archives_file} \
+    --output_file=${output_file}
+
+  while read -r url; do
+      case "$url" in
+          *github.com*)
+            echo "Downloading archive from github.com: ${url}"
+            download "${url}"
+            ;;
+          *)
+            echo "Downloading archive from non-github site: ${url}"
+            download "${url}"
+            ;;
+      esac
+  done < "${output_file}"
+  rsync_archives
+}
+
+upload_deps
+
+

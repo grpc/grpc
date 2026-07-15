@@ -55,6 +55,14 @@ class DeserializeFuncType;
 class GrpcByteBufferPeer;
 
 }  // namespace internal
+
+namespace experimental {
+namespace internal {
+template <class RequestType>
+class CallbackSessionHandler;
+}  // namespace internal
+}  // namespace experimental
+
 /// A sequence of bytes.
 class ByteBuffer final {
  public:
@@ -173,6 +181,8 @@ class ByteBuffer final {
   friend class internal::CallbackUnaryHandler;
   template <class RequestType, class ResponseType>
   friend class internal::CallbackServerStreamingHandler;
+  template <class RequestType>
+  friend class experimental::internal::CallbackSessionHandler;
   template <StatusCode code>
   friend class internal::ErrorMethodHandler;
   template <class R>

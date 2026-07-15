@@ -112,7 +112,7 @@ class TypeSmokeTest(unittest.TestCase):
         del completion_queue
 
 
-class ServerClientMixin(object):
+class ServerClientMixin:
     def setUpMixin(self, server_credentials, client_credentials, host_override):
         self.server_completion_queue = cygrpc.CompletionQueue()
         self.server = cygrpc.Server(
@@ -205,7 +205,7 @@ class ServerClientMixin(object):
         SERVER_INITIAL_METADATA_VALUE = "whodawha?"
         SERVER_TRAILING_METADATA_KEY = "california_is_in_a_drought"
         SERVER_TRAILING_METADATA_VALUE = "zomg it is"
-        SERVER_STATUS_CODE = cygrpc.StatusCode.ok
+        SERVER_STATUS_CODE = cygrpc.StatusCode.invalid_argument
         SERVER_STATUS_DETAILS = "our work is never over"
         REQUEST = b"in death a member of project mayhem has a name"
         RESPONSE = b"his name is robert paulson"

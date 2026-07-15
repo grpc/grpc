@@ -86,7 +86,6 @@ expected_files = [
     "include/grpc++/impl/codegen/method_handler_impl.h",
     "include/grpc++/impl/codegen/string_ref.h",
     "include/grpc++/impl/codegen/completion_queue_tag.h",
-    "include/grpc++/impl/codegen/call_hook.h",
     "include/grpc++/impl/codegen/completion_queue.h",
     "include/grpc++/impl/codegen/serialization_traits.h",
     "include/grpc++/impl/codegen/create_auth_context.h",

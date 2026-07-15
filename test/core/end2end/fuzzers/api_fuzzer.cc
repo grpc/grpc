@@ -35,16 +35,7 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/str_split.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
 #include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -59,6 +50,7 @@
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/data/ssl_test_data.h"
@@ -70,6 +62,14 @@
 #include "test/core/test_util/fuzz_config_vars_helpers.h"
 #include "test/core/test_util/fuzzing_channel_args.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 // IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
 
@@ -86,7 +86,8 @@ static void finish_resolve(addr_req r) {
   if (0 == strcmp(r.addr, "server")) {
     *r.addresses = std::make_unique<grpc_core::EndpointAddressesList>();
     grpc_resolved_address fake_resolved_address;
-    CHECK(grpc_parse_ipv4_hostport("1.2.3.4:5", &fake_resolved_address, false));
+    GRPC_CHECK(
+        grpc_parse_ipv4_hostport("1.2.3.4:5", &fake_resolved_address, false));
     (*r.addresses)
         ->emplace_back(fake_resolved_address, grpc_core::ChannelArgs());
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, r.on_done, absl::OkStatus());
@@ -203,6 +204,7 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
 
 }  // namespace
 
+#if GRPC_ARES == 1
 grpc_ares_request* my_dns_lookup_hostname_ares(
     const char* /*dns_server*/, const char* addr, const char* /*default_port*/,
     grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
@@ -236,8 +238,9 @@ grpc_ares_request* my_dns_lookup_srv_ares(
 }
 
 static void my_cancel_ares_request(grpc_ares_request* request) {
-  CHECK_NE(request, nullptr);
+  GRPC_CHECK_NE(request, nullptr);
 }
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // globals
@@ -406,17 +409,19 @@ namespace testing {
 ApiFuzzer::ApiFuzzer(const fuzzing_event_engine::Actions& actions)
     : BasicFuzzer(actions) {
   ResetDNSResolver(std::make_unique<FuzzerDNSResolver>(engine().get()));
+#if GRPC_ARES == 1
   grpc_dns_lookup_hostname_ares = my_dns_lookup_hostname_ares;
   grpc_dns_lookup_srv_ares = my_dns_lookup_srv_ares;
   grpc_cancel_ares_request = my_cancel_ares_request;
+#endif
 
-  CHECK_EQ(channel_, nullptr);
-  CHECK_EQ(server_, nullptr);
+  GRPC_CHECK_EQ(channel_, nullptr);
+  GRPC_CHECK_EQ(server_, nullptr);
 }
 
 ApiFuzzer::~ApiFuzzer() {
-  CHECK_EQ(channel_, nullptr);
-  CHECK_EQ(server_, nullptr);
+  GRPC_CHECK_EQ(channel_, nullptr);
+  GRPC_CHECK_EQ(server_, nullptr);
 }
 
 void ApiFuzzer::Tick() {
@@ -449,6 +454,7 @@ ApiFuzzer::Result ApiFuzzer::CreateChannel(
   ExecCtx exec_ctx;
   testing::FuzzingEnvironment fuzzing_env;
   fuzzing_env.resource_quota = resource_quota();
+  fuzzing_env.event_engine = engine();
   ChannelArgs args = testing::CreateChannelArgsFromFuzzingConfiguration(
       create_channel.channel_args(), fuzzing_env);
   if (create_channel.inproc()) {
@@ -464,7 +470,7 @@ ApiFuzzer::Result ApiFuzzer::CreateChannel(
                             creds, args.ToC().get());
     grpc_channel_credentials_release(creds);
   }
-  CHECK_NE(channel_, nullptr);
+  GRPC_CHECK_NE(channel_, nullptr);
   channel_force_delete_ = false;
   return Result::kComplete;
 }
@@ -476,10 +482,11 @@ ApiFuzzer::Result ApiFuzzer::CreateServer(
     ExecCtx exec_ctx;
     testing::FuzzingEnvironment fuzzing_env;
     fuzzing_env.resource_quota = resource_quota();
+    fuzzing_env.event_engine = engine();
     ChannelArgs args = testing::CreateChannelArgsFromFuzzingConfiguration(
         create_server.channel_args(), fuzzing_env);
     server_ = grpc_server_create(args.ToC().get(), nullptr);
-    CHECK_NE(server_, nullptr);
+    GRPC_CHECK_NE(server_, nullptr);
     grpc_server_register_completion_queue(server_, cq(), nullptr);
     for (const auto& http2_port : create_server.http2_ports()) {
       auto* creds = ReadServerCreds(http2_port.server_creds());
@@ -516,7 +523,7 @@ FUZZ_TEST(MyTestSuite, RunApiFuzzer)
 
 auto ParseTestProto(const std::string& proto) {
   api_fuzzer::Msg msg;
-  CHECK(google::protobuf::TextFormat::ParseFromString(proto, &msg));
+  GRPC_CHECK(google::protobuf::TextFormat::ParseFromString(proto, &msg));
   return msg;
 }
 
@@ -560,6 +567,39 @@ TEST(MyTestSuite, RunApiFuzzerRegression2) {
                  }
                }
              }
+           }
+      )pb"));
+}
+
+// Regression test for a fuzzer-discovered crash.
+// Sequence:
+// - Creates channel to "server".
+// - Creates call "test".
+// - Sends status 1 from server to fail the call.
+// - Creates channel.
+// - Queues a recv message op.
+// - Creates in-process channel.
+// Runs with CallV3 enabled.
+TEST(MyTestSuite, RunApiFuzzerRegression3) {
+  RunApiFuzzer(ParseTestProto(
+      R"pb(actions { create_channel { target: "server" } }
+           actions {
+             create_call {
+               method { value: "test" }
+               host { value: "test" }
+               timeout: 1978490146
+             }
+           }
+           actions {
+             queue_batch {
+               operations { send_status_from_server { status_code: 1 } }
+             }
+           }
+           actions { create_channel {} }
+           actions { queue_batch { operations { receive_message {} } } }
+           actions { create_channel { inproc: true } }
+           config_vars {
+             experiments: "-subchannel_connection_scaling,ph2_client"
            }
       )pb"));
 }

@@ -19,13 +19,9 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable google__protobuf__Struct_msg_init;
-extern const upb_MiniTable* google__protobuf__Struct_msg_init_ptr;
 extern const upb_MiniTable google__protobuf__Struct__FieldsEntry_msg_init;
-extern const upb_MiniTable* google__protobuf__Struct__FieldsEntry_msg_init_ptr;
 extern const upb_MiniTable google__protobuf__Value_msg_init;
-extern const upb_MiniTable* google__protobuf__Value_msg_init_ptr;
 extern const upb_MiniTable google__protobuf__ListValue_msg_init;
-extern const upb_MiniTable* google__protobuf__ListValue_msg_init_ptr;
 
 extern const upb_MiniTableFile google_protobuf_struct_proto_upb_file_layout;
 

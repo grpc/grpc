@@ -19,12 +19,9 @@
 #include <stdint.h>
 
 #include <string>
+#include <type_traits>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
@@ -32,6 +29,10 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/util/construct_destruct.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 
@@ -124,10 +125,10 @@ class ForEach {
  public:
   using Result = decltype(Done<ActionResult>::Make(false));
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ForEach(Reader reader, Action action,
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ForEach(Reader&& reader, Action&& action,
                                                DebugLocation whence = {})
-      : reader_(std::move(reader)),
-        action_factory_(std::move(action)),
+      : reader_(std::forward<Reader>(reader)),
+        action_factory_(std::forward<Action>(action)),
         whence_(whence) {
     Construct(&reader_next_, reader_.Next());
   }
@@ -145,13 +146,13 @@ class ForEach {
       : reader_(std::move(other.reader_)),
         action_factory_(std::move(other.action_factory_)),
         whence_(other.whence_) {
-    DCHECK(reading_next_);
-    DCHECK(other.reading_next_);
+    GRPC_DCHECK(reading_next_);
+    GRPC_DCHECK(other.reading_next_);
     Construct(&reader_next_, std::move(other.reader_next_));
   }
   ForEach& operator=(ForEach&& other) noexcept {
-    DCHECK(reading_next_);
-    DCHECK(other.reading_next_);
+    GRPC_DCHECK(reading_next_);
+    GRPC_DCHECK(other.reading_next_);
     reader_ = std::move(other.reader_);
     action_factory_ = std::move(other.action_factory_);
     reader_next_ = std::move(other.reader_next_);
@@ -164,10 +165,33 @@ class ForEach {
     return PollAction();
   }
 
+  void ToProto(grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* for_each_promise =
+        grpc_channelz_v2_Promise_mutable_for_each_promise(promise_proto, arena);
+
+    grpc_channelz_v2_Promise_ForEach_set_reader_factory(
+        for_each_promise, StdStringToUpbString(TypeName<Reader>()));
+    grpc_channelz_v2_Promise_ForEach_set_action_factory(
+        for_each_promise, StdStringToUpbString(TypeName<ActionFactory>()));
+    if (reading_next_) {
+      PromiseAsProto(reader_next_,
+                     grpc_channelz_v2_Promise_ForEach_mutable_reader_promise(
+                         for_each_promise, arena),
+                     arena);
+    } else {
+      PromiseAsProto(in_action_.promise,
+                     grpc_channelz_v2_Promise_ForEach_mutable_action_promise(
+                         for_each_promise, arena),
+                     arena);
+    }
+  }
+
  private:
   struct InAction {
-    InAction(ActionPromise promise, ReaderResult result)
-        : promise(std::move(promise)), result(std::move(result)) {}
+    InAction(ActionPromise&& promise, ReaderResult&& result)
+        : promise(std::forward<ActionPromise>(promise)),
+          result(std::forward<ReaderResult>(result)) {}
     ActionPromise promise;
     ReaderResult result;
   };
@@ -240,9 +264,9 @@ class ForEach {
 template <typename Reader, typename Action>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline for_each_detail::ForEach<Reader,
                                                                      Action>
-ForEach(Reader reader, Action action, DebugLocation whence = {}) {
-  return for_each_detail::ForEach<Reader, Action>(std::move(reader),
-                                                  std::move(action), whence);
+ForEach(Reader&& reader, Action&& action, DebugLocation whence = {}) {
+  return for_each_detail::ForEach<std::decay_t<Reader>, std::decay_t<Action>>(
+      std::forward<Reader>(reader), std::forward<Action>(action), whence);
 }
 
 }  // namespace grpc_core

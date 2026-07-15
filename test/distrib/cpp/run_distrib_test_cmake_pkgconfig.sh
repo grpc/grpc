@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+PS4='+ $(date "+[%H:%M:%S %Z]")\011 '
 set -ex
 
 cd "$(dirname "$0")/../../.."
@@ -97,6 +98,7 @@ cmake \
   -DgRPC_SSL_PROVIDER=package \
   -DgRPC_ZLIB_PROVIDER=package \
   -DgRPC_BUILD_GRPCPP_OTEL_PLUGIN=ON \
+  -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
   ../..
 make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}" install
 popd

@@ -33,12 +33,15 @@ namespace experimental {
 
 class ChannelzServicePlugin : public grpc::ServerBuilderPlugin {
  public:
-  ChannelzServicePlugin() : channelz_service_(new grpc::ChannelzService()) {}
+  ChannelzServicePlugin()
+      : channelz_service_(new grpc::ChannelzService()),
+        channelz_v2_service_(new grpc::ChannelzV2Service()) {}
 
   std::string name() override { return "channelz_service"; }
 
   void InitServer(grpc::ServerInitializer* si) override {
     si->RegisterService(channelz_service_);
+    si->RegisterService(channelz_v2_service_);
   }
 
   void Finish(grpc::ServerInitializer* /*si*/) override {}
@@ -46,21 +49,18 @@ class ChannelzServicePlugin : public grpc::ServerBuilderPlugin {
   void ChangeArguments(const std::string& /*name*/, void* /*value*/) override {}
 
   bool has_sync_methods() const override {
-    if (channelz_service_) {
-      return channelz_service_->has_synchronous_methods();
-    }
-    return false;
+    return channelz_service_->has_synchronous_methods() ||
+           channelz_v2_service_->has_synchronous_methods();
   }
 
   bool has_async_methods() const override {
-    if (channelz_service_) {
-      return channelz_service_->has_async_methods();
-    }
-    return false;
+    return channelz_service_->has_async_methods() ||
+           channelz_v2_service_->has_async_methods();
   }
 
  private:
-  std::shared_ptr<grpc::ChannelzService> channelz_service_;
+  const std::shared_ptr<grpc::ChannelzService> channelz_service_;
+  const std::shared_ptr<grpc::ChannelzV2Service> channelz_v2_service_;
 };
 
 static std::unique_ptr<grpc::ServerBuilderPlugin>

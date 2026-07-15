@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+set -eux
 
 ACTION="${1:-}"
 [[ $ACTION == '' ]] || [[ $ACTION == '--diff' ]] || [[ $ACTION == '--check' ]]
@@ -22,16 +22,25 @@ ACTION="${1:-}"
 cd "$(dirname "${0}")/../.."
 
 DIRS=(
+    'bazel/update_mirror_helper.py'
     'examples'
     'src'
     'test'
     'tools'
     'setup.py'
+    'doc/python'
 )
 
-VIRTUALENV=venv_black_code
-python3 -m virtualenv $VIRTUALENV
-source $VIRTUALENV/bin/activate
+VIRTUALENV=".venv-ci-black"
+python3 -m venv "${VIRTUALENV}"
+source "${VIRTUALENV}/bin/activate"
+python -VV
 
-python3 -m pip install black==23.3.0
-python3 -m black --config=black.toml $ACTION "${DIRS[@]}"
+pip install black==25.1.0
+pip list
+
+if [[ "$ACTION" == "--check" ]]; then
+    exec black --config=grpc-style-config.toml --check --diff "${DIRS[@]}"
+else
+    exec black --config=grpc-style-config.toml $ACTION "${DIRS[@]}"
+fi

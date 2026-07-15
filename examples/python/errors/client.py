@@ -13,8 +13,6 @@
 # limitations under the License.
 """This example handles rich error status in client-side."""
 
-from __future__ import print_function
-
 import logging
 
 from google.rpc import error_details_pb2

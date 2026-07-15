@@ -24,6 +24,9 @@
 #include <string>
 #include <vector>
 
+#include "absl/flags/parse.h"
+#include "absl/log/initialize.h"
+
 #ifdef BAZEL_BUILD
 #include "examples/protos/keyvaluestore.grpc.pb.h"
 #else
@@ -141,6 +144,8 @@ void RunServer() {
 }
 
 int main(int argc, char** argv) {
+  absl::ParseCommandLine(argc, argv);
+  absl::InitializeLog();
   RunServer();
 
   return 0;

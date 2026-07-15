@@ -16,12 +16,15 @@
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_MESSAGE_CHUNKER_H
 
 #include <cstdint>
+#include <utility>
 
 #include "src/core/ext/transport/chaotic_good/frame.h"
+#include "src/core/ext/transport/chaotic_good/frame_transport.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/seq.h"
+#include "src/core/lib/promise/status_flag.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -91,36 +94,51 @@ class MessageChunker {
       : max_chunk_size_(max_chunk_size), alignment_(alignment) {}
 
   template <typename Output>
-  auto Send(MessageHandle message, uint32_t stream_id, Output& output) {
+  auto Send(MessageHandle message, uint32_t stream_id,
+            std::shared_ptr<TcpCallTracer> call_tracer, Output& output) {
     return If(
         ShouldChunk(*message),
         [&]() {
           BeginMessageFrame begin;
           begin.body.set_length(message->payload()->Length());
           begin.stream_id = stream_id;
-          return Seq(output.Send(std::move(begin)),
-                     Loop([chunker = message_chunker_detail::PayloadChunker(
-                               max_chunk_size_, alignment_, stream_id,
-                               std::move(*message->payload())),
-                           &output]() mutable {
-                       auto next = chunker.NextChunk();
-                       return Map(output.Send(std::move(next.frame)),
-                                  [done = next.done](bool x) -> LoopCtl<bool> {
-                                    if (!done) return Continue{};
-                                    return x;
-                                  });
-                     }));
+          uint32_t tokens = begin.MakeHeader().payload_length;
+          return Seq(
+              output.Send(OutgoingFrame{std::move(begin), call_tracer}, tokens),
+              Loop([chunker = message_chunker_detail::PayloadChunker(
+                        max_chunk_size_, alignment_, stream_id,
+                        std::move(*message->payload())),
+                    &output, call_tracer = std::move(call_tracer)]() mutable {
+                auto next = chunker.NextChunk();
+                uint32_t tokens = FrameMpscTokens(next.frame);
+                return Map(
+                    output.Send(
+                        OutgoingFrame{std::move(next.frame), call_tracer},
+                        tokens),
+                    [done = next.done](StatusFlag x) -> LoopCtl<StatusFlag> {
+                      if (!done) return Continue{};
+                      return x;
+                    });
+              }));
         },
         [&]() {
           MessageFrame frame;
           frame.message = std::move(message);
           frame.stream_id = stream_id;
-          return output.Send(std::move(frame));
+          uint32_t tokens = FrameMpscTokens(frame);
+          return output.Send(OutgoingFrame{std::move(frame), call_tracer},
+                             tokens);
         });
   }
 
   uint32_t max_chunk_size() const { return max_chunk_size_; }
   uint32_t alignment() const { return alignment_; }
+
+  void AddData(channelz::DataSink sink) {
+    sink.AddData("message_chunker", channelz::PropertyList()
+                                        .Set("max_chunk_size", max_chunk_size_)
+                                        .Set("alignment", alignment_));
+  }
 
  private:
   bool ShouldChunk(Message& message) {

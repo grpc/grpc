@@ -17,12 +17,12 @@
 #include <grpc/support/port_platform.h>
 #include <stddef.h>
 
-#include "absl/log/check.h"
-#include "absl/strings/str_format.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/status_helper.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc_core {
 
@@ -52,7 +52,7 @@ class MetadataSizeLimitExceededEncoder {
 };
 
 absl::Status MakeStreamError(absl::Status error) {
-  DCHECK(!error.ok());
+  GRPC_DCHECK(!error.ok());
   return grpc_error_set_int(std::move(error), StatusIntProperty::kStreamId, 0);
 }
 }  // namespace
@@ -176,6 +176,28 @@ absl::Status HpackParseResult::BuildMaterialized() const {
           "Invalid HPACK index received (%d)", state_->invalid_hpack_index));
     case HpackParseStatus::kIllegalHpackOpCode:
       return absl::InternalError("Illegal hpack op code");
+    case HpackParseStatus::kMitigationEngineConnectionError:
+      if (state_->key.empty()) {
+        return absl::InternalError(
+            absl::StrCat("Mitigation engine triggered action ",
+                         MitigationEngine::ActionToString(state_->action)));
+      } else {
+        return absl::InternalError(
+            absl::StrCat("Mitigation engine triggered action ",
+                         MitigationEngine::ActionToString(state_->action),
+                         " for key: ", state_->key));
+      }
+    case HpackParseStatus::kMitigationEngineStreamError:
+      if (state_->key.empty()) {
+        return MakeStreamError(absl::InternalError(
+            absl::StrCat("Mitigation engine triggered action ",
+                         MitigationEngine::ActionToString(state_->action))));
+      } else {
+        return MakeStreamError(absl::InternalError(
+            absl::StrCat("Mitigation engine triggered action ",
+                         MitigationEngine::ActionToString(state_->action),
+                         " for key: ", state_->key)));
+      }
   }
   GPR_UNREACHABLE_CODE(return absl::UnknownError("Should never reach here"));
 }

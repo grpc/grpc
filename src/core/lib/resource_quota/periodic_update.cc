@@ -22,6 +22,20 @@
 
 namespace grpc_core {
 
+bool PeriodicUpdate::Interrupt(absl::FunctionRef<void(Duration)> f) {
+  int64_t old_value = updates_remaining_.load(std::memory_order_acquire);
+  while (true) {
+    if (old_value <= 1) return false;
+    if (!updates_remaining_.compare_exchange_weak(old_value, 0,
+                                                  std::memory_order_acquire)) {
+      continue;
+    }
+    f(Timestamp::Now() - period_start_);
+    updates_remaining_.store(old_value, std::memory_order_release);
+    return true;
+  }
+}
+
 bool PeriodicUpdate::MaybeEndPeriod(absl::FunctionRef<void(Duration)> f) {
   if (period_start_ == Timestamp::ProcessEpoch()) {
     period_start_ = Timestamp::Now();

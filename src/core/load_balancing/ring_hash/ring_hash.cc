@@ -32,17 +32,9 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/attributes.h"
-#include "absl/container/inlined_vector.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/random/random.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/config/core_configuration.h"
+#include "src/core/config/experiment_env_var.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -60,7 +52,7 @@
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
-#include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
@@ -69,6 +61,14 @@
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/work_serializer.h"
 #include "src/core/util/xxhash_inline.h"
+#include "absl/base/attributes.h"
+#include "absl/container/inlined_vector.h"
+#include "absl/log/log.h"
+#include "absl/random/random.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -81,19 +81,12 @@ namespace {
 
 constexpr absl::string_view kRingHash = "ring_hash_experimental";
 
-bool XdsRingHashSetRequestHashKeyEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_RING_HASH_SET_REQUEST_HASH_KEY");
-  if (!value.has_value()) return false;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
-}
-
 class RingHashJsonArgs final : public JsonArgs {
  public:
   bool IsEnabled(absl::string_view key) const override {
     if (key == "request_hash_header") {
-      return XdsRingHashSetRequestHashKeyEnabled();
+      return IsExperimentEnvVarEnabled(
+          "GRPC_EXPERIMENTAL_RING_HASH_SET_REQUEST_HASH_KEY");
     }
     return true;
   }
@@ -594,7 +587,7 @@ void RingHash::RingHashEndpoint::RequestConnectionLocked() {
 }
 
 void RingHash::RingHashEndpoint::CreateChildPolicy() {
-  CHECK(child_policy_ == nullptr);
+  GRPC_CHECK(child_policy_ == nullptr);
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = ring_hash_->work_serializer();
   lb_policy_args.args =
@@ -636,7 +629,7 @@ absl::Status RingHash::RingHashEndpoint::UpdateChildPolicyLocked() {
       CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
           Json::FromArray(
               {Json::FromObject({{"pick_first", Json::FromObject({})}})}));
-  CHECK(config.ok());
+  GRPC_CHECK(config.ok());
   // Update child policy.
   LoadBalancingPolicy::UpdateArgs update_args;
   update_args.addresses =

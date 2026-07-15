@@ -29,6 +29,7 @@
 
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h"
+#include "src/core/tsi/transport_security_grpc.h"
 
 // V-table for alts_grpc_record_protocol implementations.
 struct alts_grpc_record_protocol_vtable {
@@ -53,6 +54,8 @@ struct alts_grpc_record_protocol {
   size_t tag_length;
   iovec_t* iovec_buf;
   size_t iovec_buf_length;
+  tsi_zero_copy_grpc_protector_allocator_cb alloc_cb;
+  void* alloc_user_data;
 };
 
 ///

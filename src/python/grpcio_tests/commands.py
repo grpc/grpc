@@ -31,12 +31,13 @@ from setuptools.command import test
 
 PYTHON_STEM = os.path.dirname(os.path.abspath(__file__))
 GRPC_STEM = os.path.abspath(PYTHON_STEM + "../../../../")
-GRPC_PROTO_STEM = os.path.join(GRPC_STEM, "src", "proto")
-PROTO_STEM = os.path.join(PYTHON_STEM, "src", "proto")
-PYTHON_PROTO_TOP_LEVEL = os.path.join(PYTHON_STEM, "src")
+PYTHON_REL_PATH = os.path.relpath(PYTHON_STEM, start=GRPC_STEM)
+GRPC_PROTO_STEM = os.path.join("src", "proto")
+PROTO_STEM = os.path.join(PYTHON_REL_PATH, "src", "proto")
+PYTHON_PROTO_TOP_LEVEL = os.path.join(PYTHON_REL_PATH, "src")
 
 
-class CommandError(object):
+class CommandError:
     pass
 
 
@@ -73,6 +74,25 @@ class BuildPy(build_py.build_py):
         except CommandError as error:
             sys.stderr.write("warning: %s\n" % error.message)
         build_py.build_py.run(self)
+
+
+class BuildPackageProtos(setuptools.Command):
+    """Command to generate project *_pb2.py modules from proto files."""
+
+    description = "build grpc protobuf modules"
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        from grpc_tools import command
+
+        # find and build all protos in the current package
+        command.build_package_protos(PYTHON_REL_PATH)
 
 
 class TestLite(setuptools.Command):
@@ -152,7 +172,7 @@ class TestAio(setuptools.Command):
             sys.exit("Test failure")
 
 
-class RunInterop(test.test):
+class RunInterop(setuptools.Command):
     description = "run interop test client/server"
     user_options = [
         ("args=", None, "pass-thru arguments for the client/server"),
@@ -205,7 +225,7 @@ class RunInterop(test.test):
         client.test_interoperability(client.parse_interop_client_args(sys.argv))
 
 
-class RunFork(test.test):
+class RunFork(setuptools.Command):
     description = "run fork test client"
     user_options = [("args=", "a", "pass-thru arguments for the client")]
 

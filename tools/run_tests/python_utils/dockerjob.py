@@ -13,8 +13,6 @@
 # limitations under the License.
 """Helpers to run docker instances as jobs."""
 
-from __future__ import print_function
-
 import json
 import os
 import subprocess
@@ -55,7 +53,7 @@ def docker_mapped_port(cid, port, timeout_seconds=15):
             output = subprocess.check_output(
                 "docker port %s %s" % (cid, port), stderr=_DEVNULL, shell=True
             ).decode()
-            return int(output.split(":", 2)[1])
+            return int(output.split("\n")[0].split(":", 2)[1])
         except subprocess.CalledProcessError as e:
             pass
     raise Exception(

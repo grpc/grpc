@@ -16,13 +16,13 @@
 
 #include "src/cpp/ext/gcp/observability_logging_sink.h"
 
-#include "absl/strings/escaping.h"
-#include "absl/strings/str_format.h"
-#include "gmock/gmock.h"
 #include "google/protobuf/text_format.h"
-#include "gtest/gtest.h"
 #include "src/core/util/json/json_reader.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/strings/escaping.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc {
 namespace internal {

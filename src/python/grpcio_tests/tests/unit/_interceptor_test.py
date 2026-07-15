@@ -49,7 +49,7 @@ class _ApplicationErrorStandin(Exception):
     pass
 
 
-class _Callback(object):
+class _Callback:
     def __init__(self):
         self._condition = threading.Condition()
         self._value = None
@@ -68,7 +68,7 @@ class _Callback(object):
             return self._value
 
 
-class _Handler(object):
+class _Handler:
     def __init__(self, control, record):
         self._control = control
         self._record = record

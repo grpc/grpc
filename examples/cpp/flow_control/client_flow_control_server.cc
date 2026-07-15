@@ -27,6 +27,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/log/initialize.h"
 #include "absl/strings/str_format.h"
 
 #ifdef BAZEL_BUILD
@@ -51,7 +52,7 @@ class SlowReadingBidiReactor final
   SlowReadingBidiReactor() { StartRead(&req_); }
 
   void OnReadDone(bool ok) override {
-    std::cout << "Recieved request with " << req_.name().length()
+    std::cout << "Received request with " << req_.name().length()
               << " bytes name\n";
     if (!ok) {
       Finish(grpc::Status::OK);
@@ -106,6 +107,7 @@ void RunServer(uint16_t port) {
 
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
+  absl::InitializeLog();
   RunServer(absl::GetFlag(FLAGS_port));
   return 0;
 }

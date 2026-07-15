@@ -38,19 +38,24 @@ class DelegatingChannel : public grpc::ChannelInterface {
     return delegate_channel()->GetState(try_to_connect);
   }
 
+  grpc_event_engine::experimental::MemoryAllocator* memory_allocator()
+      const override {
+    return delegate_channel_->memory_allocator();
+  }
+
   std::shared_ptr<grpc::ChannelInterface> delegate_channel() {
     return delegate_channel_;
   }
 
  private:
-  internal::Call CreateCall(const internal::RpcMethod& method,
-                            ClientContext* context,
-                            grpc::CompletionQueue* cq) final {
+  grpc::internal::Call CreateCall(const grpc::internal::RpcMethod& method,
+                                  ClientContext* context,
+                                  grpc::CompletionQueue* cq) final {
     return delegate_channel()->CreateCall(method, context, cq);
   }
 
-  void PerformOpsOnCall(internal::CallOpSetInterface* ops,
-                        internal::Call* call) final {
+  void PerformOpsOnCall(grpc::internal::CallOpSetInterface* ops,
+                        grpc::internal::Call* call) final {
     delegate_channel()->PerformOpsOnCall(ops, call);
   }
 
@@ -70,10 +75,9 @@ class DelegatingChannel : public grpc::ChannelInterface {
     return delegate_channel()->WaitForStateChangeImpl(last_observed, deadline);
   }
 
-  internal::Call CreateCallInternal(const internal::RpcMethod& method,
-                                    ClientContext* context,
-                                    grpc::CompletionQueue* cq,
-                                    size_t interceptor_pos) final {
+  grpc::internal::Call CreateCallInternal(
+      const grpc::internal::RpcMethod& method, ClientContext* context,
+      grpc::CompletionQueue* cq, size_t interceptor_pos) final {
     return delegate_channel()->CreateCallInternal(method, context, cq,
                                                   interceptor_pos);
   }

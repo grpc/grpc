@@ -18,6 +18,8 @@ import contextlib
 import enum
 import logging
 import sys
+import typing
+from typing import Any, Protocol
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
@@ -428,8 +430,8 @@ class ClientCallDetails(abc.ABC):
         the service-side of the RPC.
       credentials: An optional CallCredentials for the RPC.
       wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-      compression: An element of grpc.compression, e.g.
-        grpc.compression.Gzip.
+      compression: An element of grpc.Compression, e.g.
+        grpc.Compression.Gzip.
     """
 
 
@@ -575,7 +577,7 @@ class StreamStreamClientInterceptor(abc.ABC):
 ############  Authentication & Authorization Interfaces & Classes  #############
 
 
-class ChannelCredentials(object):
+class ChannelCredentials:
     """An encapsulation of the data required to create a secure Channel.
 
     This class has no supported interface - it exists to define the type of its
@@ -588,7 +590,7 @@ class ChannelCredentials(object):
         self._credentials = credentials
 
 
-class CallCredentials(object):
+class CallCredentials:
     """An encapsulation of the data required to assert an identity over a call.
 
     A CallCredentials has to be used with secure Channel, otherwise the
@@ -644,7 +646,7 @@ class AuthMetadataPlugin(abc.ABC):
         raise NotImplementedError()
 
 
-class ServerCredentials(object):
+class ServerCredentials:
     """An encapsulation of the data required to open a secure port on a Server.
 
     This class has no supported interface - it exists to define the type of its
@@ -655,7 +657,7 @@ class ServerCredentials(object):
         self._credentials = credentials
 
 
-class ServerCertificateConfiguration(object):
+class ServerCertificateConfiguration:
     """A certificate configuration for use with an SSL-enabled Server.
 
     Instances of this class can be returned in the certificate configuration
@@ -697,8 +699,8 @@ class UnaryUnaryMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
           The response value for the RPC.
@@ -731,8 +733,8 @@ class UnaryUnaryMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
           The response value for the RPC and a Call value for the RPC.
@@ -765,8 +767,8 @@ class UnaryUnaryMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
             An object that is both a Call for the RPC and a Future.
@@ -802,8 +804,8 @@ class UnaryStreamMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
             An object that is a Call for the RPC, an iterator of response
@@ -839,8 +841,8 @@ class StreamUnaryMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
           The response value for the RPC.
@@ -874,8 +876,8 @@ class StreamUnaryMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
           The response value for the RPC and a Call object for the RPC.
@@ -908,8 +910,8 @@ class StreamUnaryMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
             An object that is both a Call for the RPC and a Future.
@@ -945,8 +947,8 @@ class StreamStreamMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
             An object that is a Call for the RPC, an iterator of response
@@ -1182,8 +1184,8 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         """Set the compression algorithm to be used for the entire call.
 
         Args:
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
         """
         raise NotImplementedError()
 
@@ -1358,13 +1360,17 @@ class RpcMethodHandler(abc.ABC):
     """
 
 
-class HandlerCallDetails(abc.ABC):
+@typing.runtime_checkable
+class HandlerCallDetails(Protocol):
     """Describes an RPC that has just arrived for service.
 
     Attributes:
       method: The method name of the RPC.
       invocation_metadata: The :term:`metadata` sent by the client.
     """
+
+    method: str
+    invocation_metadata: Any
 
 
 class GenericRpcHandler(abc.ABC):
@@ -1454,7 +1460,9 @@ class Server(abc.ABC):
         """
         raise NotImplementedError()
 
-    def add_registered_method_handlers(self, service_name, method_handlers):
+    def add_registered_method_handlers(  # noqa: B027
+        self, service_name, method_handlers
+    ):
         """Registers GenericRpcHandlers with this Server.
 
         This method is only safe to call before the server is started.
@@ -1838,25 +1846,23 @@ def ssl_server_credentials(
       object is an argument to add_secure_port() method during server setup.
     """
     if not private_key_certificate_chain_pairs:
-        raise ValueError(
+        error_msg = (
             "At least one private key-certificate chain pair is required!"
         )
-    elif require_client_auth and root_certificates is None:
-        raise ValueError(
-            "Illegal to require client auth without providing root"
-            " certificates!"
+        raise ValueError(error_msg)
+    if require_client_auth and root_certificates is None:
+        error_msg = "Illegal to require client auth without providing root certificates!"
+        raise ValueError(error_msg)
+    return ServerCredentials(
+        _cygrpc.server_credentials_ssl(
+            root_certificates,
+            [
+                _cygrpc.SslPemKeyCertPair(key, pem)
+                for key, pem in private_key_certificate_chain_pairs
+            ],
+            require_client_auth,
         )
-    else:
-        return ServerCredentials(
-            _cygrpc.server_credentials_ssl(
-                root_certificates,
-                [
-                    _cygrpc.SslPemKeyCertPair(key, pem)
-                    for key, pem in private_key_certificate_chain_pairs
-                ],
-                require_client_auth,
-            )
-        )
+    )
 
 
 def xds_server_credentials(fallback_credentials):
@@ -1909,10 +1915,8 @@ def ssl_server_certificate_configuration(
                 ],
             )
         )
-    else:
-        raise ValueError(
-            "At least one private key-certificate chain pair is required!"
-        )
+    error_msg = "At least one private key-certificate chain pair is required!"
+    raise ValueError(error_msg)
 
 
 def dynamic_ssl_server_credentials(
@@ -2038,6 +2042,7 @@ def alts_channel_credentials(service_accounts=None):
         peer identity of the server, handshake will fail. The arg can be empty
         if the client does not have any information about trusted server
         identity.
+
     Returns:
       A ChannelCredentials for use with an ALTS-enabled Channel
     """
@@ -2204,8 +2209,8 @@ def server(
       maximum_concurrent_rpcs: The maximum number of concurrent RPCs this server
         will service before returning RESOURCE_EXHAUSTED status, or None to
         indicate no limit.
-      compression: An element of grpc.compression, e.g.
-        grpc.compression.Gzip. This compression algorithm will be used for the
+      compression: An element of grpc.Compression, e.g.
+        grpc.Compression.Gzip. This compression algorithm will be used for the
         lifetime of the server unless overridden.
       xds: If set to true, retrieves server configuration via xDS. This is an
         EXPERIMENTAL option.
@@ -2253,70 +2258,70 @@ class Compression(enum.IntEnum):
 ###################################  __all__  #################################
 
 __all__ = (
-    "FutureTimeoutError",
-    "FutureCancelledError",
-    "Future",
-    "ChannelConnectivity",
-    "StatusCode",
-    "Status",
-    "RpcError",
-    "RpcContext",
-    "Call",
-    "ChannelCredentials",
-    "CallCredentials",
     "AuthMetadataContext",
-    "AuthMetadataPluginCallback",
     "AuthMetadataPlugin",
-    "Compression",
+    "AuthMetadataPluginCallback",
+    "Call",
+    "CallCredentials",
+    "Channel",
+    "ChannelConnectivity",
+    "ChannelCredentials",
     "ClientCallDetails",
+    "Compression",
+    "Future",
+    "FutureCancelledError",
+    "FutureTimeoutError",
+    "GenericRpcHandler",
+    "HandlerCallDetails",
+    "LocalConnectionType",
+    "RpcContext",
+    "RpcError",
+    "RpcMethodHandler",
+    "Server",
     "ServerCertificateConfiguration",
     "ServerCredentials",
-    "LocalConnectionType",
-    "UnaryUnaryMultiCallable",
-    "UnaryStreamMultiCallable",
-    "StreamUnaryMultiCallable",
-    "StreamStreamMultiCallable",
-    "UnaryUnaryClientInterceptor",
-    "UnaryStreamClientInterceptor",
-    "StreamUnaryClientInterceptor",
-    "StreamStreamClientInterceptor",
-    "Channel",
-    "ServicerContext",
-    "RpcMethodHandler",
-    "HandlerCallDetails",
-    "GenericRpcHandler",
-    "ServiceRpcHandler",
-    "Server",
     "ServerInterceptor",
-    "unary_unary_rpc_method_handler",
-    "unary_stream_rpc_method_handler",
-    "stream_unary_rpc_method_handler",
-    "stream_stream_rpc_method_handler",
-    "method_handlers_generic_handler",
-    "ssl_channel_credentials",
-    "metadata_call_credentials",
+    "ServiceRpcHandler",
+    "ServicerContext",
+    "Status",
+    "StatusCode",
+    "StreamStreamClientInterceptor",
+    "StreamStreamMultiCallable",
+    "StreamUnaryClientInterceptor",
+    "StreamUnaryMultiCallable",
+    "UnaryStreamClientInterceptor",
+    "UnaryStreamMultiCallable",
+    "UnaryUnaryClientInterceptor",
+    "UnaryUnaryMultiCallable",
     "access_token_call_credentials",
+    "alts_channel_credentials",
+    "alts_server_credentials",
+    "channel_ready_future",
     "composite_call_credentials",
     "composite_channel_credentials",
     "compute_engine_channel_credentials",
+    "dynamic_ssl_server_credentials",
+    "insecure_channel",
+    "insecure_server_credentials",
+    "intercept_channel",
     "local_channel_credentials",
     "local_server_credentials",
-    "alts_channel_credentials",
-    "alts_server_credentials",
-    "ssl_server_credentials",
-    "ssl_server_certificate_configuration",
-    "dynamic_ssl_server_credentials",
-    "channel_ready_future",
-    "insecure_channel",
-    "secure_channel",
-    "intercept_channel",
-    "server",
+    "metadata_call_credentials",
+    "method_handlers_generic_handler",
     "protos",
-    "services",
     "protos_and_services",
+    "secure_channel",
+    "server",
+    "services",
+    "ssl_channel_credentials",
+    "ssl_server_certificate_configuration",
+    "ssl_server_credentials",
+    "stream_stream_rpc_method_handler",
+    "stream_unary_rpc_method_handler",
+    "unary_stream_rpc_method_handler",
+    "unary_unary_rpc_method_handler",
     "xds_channel_credentials",
     "xds_server_credentials",
-    "insecure_server_credentials",
 )
 
 ############################### Extension Shims ################################

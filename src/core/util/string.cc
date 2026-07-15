@@ -29,10 +29,18 @@
 #include <string.h>
 #include <time.h>
 
-#include "absl/strings/str_cat.h"
-#include "absl/time/time.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/useful.h"
+#include "absl/strings/str_cat.h"
+#include "absl/time/time.h"
+
+namespace grpc_core {
+
+void StrAppend(std::string& dst, absl::string_view s) {
+  absl::StrAppend(&dst, s);
+}
+
+}  // namespace grpc_core
 
 char* gpr_strdup(const char* src) {
   char* dst;

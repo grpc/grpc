@@ -14,8 +14,8 @@
 
 #include "src/core/call/request_buffer.h"
 
-#include "gtest/gtest.h"
 #include "test/core/promise/poll_matcher.h"
+#include "gtest/gtest.h"
 
 using testing::Mock;
 using testing::StrictMock;

@@ -26,15 +26,15 @@
 #include <tuple>
 #include <vector>
 
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/event_engine/thread_pool/thread_count.h"
 #include "src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/thd.h"
 #include "src/core/util/time.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -65,6 +65,8 @@ TYPED_TEST(ThreadPoolTest, CanDestroyInsideClosure) {
   n.WaitForNotification();
 }
 
+#if GRPC_ENABLE_FORK_SUPPORT
+
 TYPED_TEST(ThreadPoolTest, CanSurviveFork) {
   TypeParam p(8);
   grpc_core::Notification inner_closure_ran;
@@ -77,7 +79,7 @@ TYPED_TEST(ThreadPoolTest, CanSurviveFork) {
   });
   // simulate a fork and watch the child process
   p.PrepareFork();
-  p.PostforkChild();
+  p.PostFork();
   inner_closure_ran.WaitForNotification();
   grpc_core::Notification n2;
   p.Run([&n2] { n2.Notify(); });
@@ -128,7 +130,7 @@ TYPED_TEST(ThreadPoolTest, ForkStressTest) {
       continue;
     }
     pool.PrepareFork();
-    pool.PostforkChild();
+    pool.PostFork();
     fork_count.fetch_add(1);
   }
   ASSERT_GE(fork_count.load(), expected_runcount / num_closures_between_forks);
@@ -151,8 +153,7 @@ TYPED_TEST(ThreadPoolTest, StartQuiesceRaceStressTest) {
         "t1",
         [](void* arg) {
           ThdState* state = static_cast<ThdState*>(arg);
-          state->i % 2 == 0 ? state->pool->Quiesce()
-                            : state->pool->PostforkParent();
+          state->i % 2 == 0 ? state->pool->Quiesce() : state->pool->PostFork();
         },
         &state, nullptr,
         grpc_core::Thread::Options().set_tracked(false).set_joinable(true));
@@ -160,8 +161,7 @@ TYPED_TEST(ThreadPoolTest, StartQuiesceRaceStressTest) {
         "t2",
         [](void* arg) {
           ThdState* state = static_cast<ThdState*>(arg);
-          state->i % 2 == 1 ? state->pool->Quiesce()
-                            : state->pool->PostforkParent();
+          state->i % 2 == 1 ? state->pool->Quiesce() : state->pool->PostFork();
         },
         &state, nullptr,
         grpc_core::Thread::Options().set_tracked(false).set_joinable(true));
@@ -171,6 +171,8 @@ TYPED_TEST(ThreadPoolTest, StartQuiesceRaceStressTest) {
     t2.Join();
   }
 }
+
+#endif  // GRPC_ENABLE_FORK_SUPPORT
 
 void ScheduleSelf(ThreadPool* p) {
   p->Run([p] { ScheduleSelf(p); });

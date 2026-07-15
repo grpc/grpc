@@ -24,19 +24,18 @@
 #include <memory>
 #include <optional>
 
-#include "absl/strings/string_view.h"
+#include "src/core/call/status_util.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/status_util.h"
 #include "src/core/service_config/service_config_parser.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
-namespace internal {
 
 class RetryGlobalConfig final : public ServiceConfigParser::ParsedConfig {
  public:
@@ -110,7 +109,6 @@ class RetryServiceConfigParser final : public ServiceConfigParser::Parser {
   static absl::string_view parser_name() { return "retry"; }
 };
 
-}  // namespace internal
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_CLIENT_CHANNEL_RETRY_SERVICE_CONFIG_H

@@ -17,22 +17,21 @@
 
 #include <memory>
 #include <optional>
-#include <string>
-#include <type_traits>
 #include <vector>
 
+#include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/instrument.h"
+#include "src/core/telemetry/metrics.h"
+#include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/util/ref_counted.h"
+#include "gmock/gmock.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
-#include "gmock/gmock.h"
-#include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/telemetry/call_tracer.h"
-#include "src/core/telemetry/metrics.h"
-#include "src/core/telemetry/tcp_tracer.h"
-#include "src/core/util/ref_counted.h"
 
 namespace grpc_core {
 
@@ -58,18 +57,28 @@ namespace grpc_core {
 //               VerifyCsmServiceLabels());
 void RegisterFakeStatsPlugin();
 
-class FakeClientCallTracer : public ClientCallTracer {
+class FakeClientCallTracer : public ClientCallTracerInterface {
  public:
   class FakeClientCallAttemptTracer
-      : public ClientCallTracer::CallAttemptTracer,
+      : public ClientCallTracerInterface::CallAttemptTracer,
         public RefCounted<FakeClientCallAttemptTracer> {
    public:
     explicit FakeClientCallAttemptTracer(
         std::vector<std::string>* annotation_logger)
         : annotation_logger_(annotation_logger) {}
     void RecordSendInitialMetadata(
+        grpc_metadata_batch* send_initial_metadata) override {
+      GRPC_CHECK(!IsCallTracerSendInitialMetadataIsAnAnnotationEnabled());
+      MutateSendInitialMetadata(send_initial_metadata);
+    }
+    void MutateSendInitialMetadata(
         grpc_metadata_batch* /*send_initial_metadata*/) override {}
     void RecordSendTrailingMetadata(
+        grpc_metadata_batch* send_trailing_metadata) override {
+      GRPC_CHECK(!IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled());
+      MutateSendTrailingMetadata(send_trailing_metadata);
+    }
+    void MutateSendTrailingMetadata(
         grpc_metadata_batch* /*send_trailing_metadata*/) override {}
     void RecordSendMessage(const Message& /*send_message*/) override {}
     void RecordSendCompressedMessage(
@@ -85,7 +94,7 @@ class FakeClientCallTracer : public ClientCallTracer {
         grpc_metadata_batch* /*recv_trailing_metadata*/,
         const grpc_transport_stream_stats* /*transport_stream_stats*/)
         override {}
-    void RecordEnd(const gpr_timespec& /*latency*/) override { Unref(); }
+    void RecordEnd() override { Unref(); }
     void RecordIncomingBytes(
         const TransportByteSize& /*transport_byte_size*/) override {}
     void RecordOutgoingBytes(
@@ -94,7 +103,7 @@ class FakeClientCallTracer : public ClientCallTracer {
       annotation_logger_->push_back(std::string(annotation));
     }
     void RecordAnnotation(const Annotation& /*annotation*/) override {}
-    std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
+    std::shared_ptr<TcpCallTracer> StartNewTcpTrace() override {
       return nullptr;
     }
     void SetOptionalLabel(OptionalLabelKey key,
@@ -162,14 +171,24 @@ class FakeClientCallTracerFactory {
   std::vector<std::unique_ptr<FakeClientCallTracer>> fake_client_call_tracers_;
 };
 
-class FakeServerCallTracer : public ServerCallTracer {
+class FakeServerCallTracer : public ServerCallTracerInterface {
  public:
   explicit FakeServerCallTracer(std::vector<std::string>* annotation_logger)
       : annotation_logger_(annotation_logger) {}
   ~FakeServerCallTracer() override {}
   void RecordSendInitialMetadata(
+      grpc_metadata_batch* send_initial_metadata) override {
+    GRPC_CHECK(!IsCallTracerSendInitialMetadataIsAnAnnotationEnabled());
+    MutateSendInitialMetadata(send_initial_metadata);
+  }
+  void MutateSendInitialMetadata(
       grpc_metadata_batch* /*send_initial_metadata*/) override {}
   void RecordSendTrailingMetadata(
+      grpc_metadata_batch* send_trailing_metadata) override {
+    GRPC_CHECK(!IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled());
+    MutateSendTrailingMetadata(send_trailing_metadata);
+  }
+  void MutateSendTrailingMetadata(
       grpc_metadata_batch* /*send_trailing_metadata*/) override {}
   void RecordSendMessage(const Message& /*send_message*/) override {}
   void RecordSendCompressedMessage(
@@ -191,9 +210,7 @@ class FakeServerCallTracer : public ServerCallTracer {
     annotation_logger_->push_back(std::string(annotation));
   }
   void RecordAnnotation(const Annotation& /*annotation*/) override {}
-  std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
-    return nullptr;
-  }
+  std::shared_ptr<TcpCallTracer> StartNewTcpTrace() override { return nullptr; }
   std::string TraceId() override { return ""; }
   std::string SpanId() override { return ""; }
   bool IsSampled() override { return false; }
@@ -210,8 +227,6 @@ std::string MakeLabelString(
 
 class FakeStatsPlugin : public StatsPlugin {
  public:
-  class ScopeConfig : public StatsPlugin::ScopeConfig {};
-
   explicit FakeStatsPlugin(
       absl::AnyInvocable<
           bool(const experimental::StatsPluginChannelScope& /*scope*/) const>
@@ -261,6 +276,17 @@ class FakeStatsPlugin : public StatsPlugin {
               Crash("unknown instrument type");
           }
         });
+    InstrumentLabelSet labels;
+    InstrumentMetadata::ForEachInstrument([&](const auto* desc) {
+      for (const auto& l : desc->domain->label_names()) {
+        labels.Set(l);
+      }
+    });
+    collection_scope_ = CreateCollectionScope({}, labels);
+  }
+
+  RefCountedPtr<CollectionScope> GetCollectionScope() const override {
+    return collection_scope_;
   }
 
   std::pair<bool, std::shared_ptr<StatsPlugin::ScopeConfig>>
@@ -362,12 +388,12 @@ class FakeStatsPlugin : public StatsPlugin {
     callbacks_.erase(callback);
   }
 
-  ClientCallTracer* GetClientCallTracer(
+  ClientCallTracerInterface* GetClientCallTracer(
       const Slice& /*path*/, bool /*registered_method*/,
       std::shared_ptr<StatsPlugin::ScopeConfig> /*scope_config*/) override {
     return nullptr;
   }
-  ServerCallTracer* GetServerCallTracer(
+  ServerCallTracerInterface* GetServerCallTracer(
       std::shared_ptr<StatsPlugin::ScopeConfig> /*scope_config*/) override {
     return nullptr;
   }
@@ -454,7 +480,118 @@ class FakeStatsPlugin : public StatsPlugin {
     return iter->second.GetValue(label_values, optional_values);
   }
 
+  std::optional<uint64_t> GetUInt64MetricValueByName(
+      absl::string_view name, absl::Span<const absl::string_view> labels = {});
+  std::optional<int64_t> GetInt64MetricValueByName(
+      absl::string_view name, absl::Span<const absl::string_view> labels = {});
+  std::optional<std::vector<uint64_t>> GetHistogramValueByName(
+      absl::string_view name, absl::Span<const absl::string_view> labels = {});
+
  private:
+  template <typename T>
+  std::optional<T> GetMetricValueByNameImpl(
+      absl::string_view name, absl::Span<const absl::string_view> labels);
+
+  template <typename T>
+  class DomainMetricsSink final : public MetricsSink {
+   public:
+    explicit DomainMetricsSink(absl::string_view target_name,
+                               absl::Span<const std::string> label_keys,
+                               absl::Span<const std::string> label_values)
+        : target_name_(target_name),
+          target_label_keys_(label_keys.begin(), label_keys.end()),
+          target_label_values_(label_values.begin(), label_values.end()) {}
+
+    void Counter(InstrumentLabelList label_keys,
+                 absl::Span<const std::string> label_values,
+                 absl::string_view name, uint64_t value) override {
+      if constexpr (std::is_same_v<T, uint64_t>) {
+        RecordValue(label_keys, label_values, name, value);
+      }
+    }
+    void UpDownCounter(InstrumentLabelList label_keys,
+                       absl::Span<const std::string> label_values,
+                       absl::string_view name, uint64_t value) override {
+      if constexpr (std::is_same_v<T, uint64_t>) {
+        RecordValue(label_keys, label_values, name, value);
+      }
+    }
+    void Histogram(InstrumentLabelList label_keys,
+                   absl::Span<const std::string> label_values,
+                   absl::string_view name, HistogramBuckets /*bounds*/,
+                   absl::Span<const uint64_t> counts) override {
+      if constexpr (std::is_same_v<T, std::vector<uint64_t>>) {
+        RecordValue(label_keys, label_values, name,
+                    std::vector<uint64_t>(counts.begin(), counts.end()));
+      }
+    }
+    void DoubleGauge(InstrumentLabelList label_keys,
+                     absl::Span<const std::string> label_values,
+                     absl::string_view name, double value) override {
+      if constexpr (std::is_same_v<T, double>) {
+        RecordValue(label_keys, label_values, name, value);
+      }
+    }
+    void IntGauge(InstrumentLabelList label_keys,
+                  absl::Span<const std::string> label_values,
+                  absl::string_view name, int64_t value) override {
+      if constexpr (std::is_same_v<T, int64_t>) {
+        RecordValue(label_keys, label_values, name, value);
+      }
+    }
+    void UintGauge(InstrumentLabelList label_keys,
+                   absl::Span<const std::string> label_values,
+                   absl::string_view name, uint64_t value) override {
+      if constexpr (std::is_same_v<T, uint64_t>) {
+        RecordValue(label_keys, label_values, name, value);
+      }
+    }
+
+    std::optional<T> captured_value() const { return captured_value_; }
+
+   private:
+    void RecordValue(InstrumentLabelList label_keys,
+                     absl::Span<const std::string> label_values,
+                     absl::string_view name, T value) {
+      if (!Matches(label_keys, label_values, name)) return;
+      if (!captured_value_.has_value()) {
+        captured_value_ = std::move(value);
+      } else {
+        if constexpr (std::is_arithmetic_v<T>) {
+          *captured_value_ += value;
+        } else if constexpr (std::is_same_v<T, std::vector<uint64_t>>) {
+          if (captured_value_->size() < value.size()) {
+            captured_value_->resize(value.size(), 0);
+          }
+          for (size_t i = 0; i < value.size(); ++i) {
+            (*captured_value_)[i] += value[i];
+          }
+        }
+      }
+    }
+    bool Matches(InstrumentLabelList label_keys,
+                 absl::Span<const std::string> label_values,
+                 absl::string_view name) const {
+      if (name != target_name_) return false;
+      if (label_keys.size() != target_label_keys_.size() ||
+          label_values.size() != target_label_values_.size()) {
+        return false;
+      }
+      for (size_t i = 0; i < label_keys.size(); ++i) {
+        if (label_keys[i].label() != target_label_keys_[i] ||
+            label_values[i] != target_label_values_[i]) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    absl::string_view target_name_;
+    std::vector<std::string> target_label_keys_;
+    std::vector<std::string> target_label_values_;
+    std::optional<T> captured_value_;
+  };
+
   class Reporter : public CallbackMetricReporter {
    public:
     explicit Reporter(FakeStatsPlugin& plugin) : plugin_(plugin) {}
@@ -636,6 +773,7 @@ class FakeStatsPlugin : public StatsPlugin {
   absl::flat_hash_map<uint32_t, Gauge<double>> double_callback_gauges_
       ABSL_GUARDED_BY(&callback_mu_);
   std::set<RegisteredMetricCallback*> callbacks_ ABSL_GUARDED_BY(&callback_mu_);
+  RefCountedPtr<CollectionScope> collection_scope_;
 };
 
 class FakeStatsPluginBuilder {

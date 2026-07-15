@@ -25,13 +25,13 @@
 #include <string>
 #include <thread>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "gtest/gtest.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/notification.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/util/string_ref_helper.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 using std::chrono::system_clock;
 
@@ -48,6 +48,11 @@ void MaybeEchoDeadline(ServerContextBase* context, const EchoRequest* request,
     if (context->deadline() != system_clock::time_point::max()) {
       Timepoint2Timespec(context->deadline(), &deadline);
     }
+    LOG(INFO) << "MaybeEchoDeadline context->deadline(): " << deadline.tv_sec
+              << "." << deadline.tv_nsec;
+    const gpr_timespec raw_deadline = context->raw_deadline();
+    LOG(INFO) << "MaybeEchoDeadline context->raw_deadline(): "
+              << raw_deadline.tv_sec << "." << raw_deadline.tv_nsec;
     response->mutable_param()->set_request_deadline(deadline.tv_sec);
   }
 }
@@ -90,8 +95,8 @@ int GetIntValueFromMetadataHelper(
     const char* key,
     const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
     int default_value) {
-  if (metadata.find(key) != metadata.end()) {
-    std::istringstream iss(ToString(metadata.find(key)->second));
+  if (auto [it, end] = metadata.equal_range(key); it != end) {
+    std::istringstream iss(ToString(it->second));
     iss >> default_value;
     LOG(INFO) << key << " : " << default_value;
   }
@@ -208,7 +213,7 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
       }
       if (req_->has_param() && req_->param().server_die()) {
         LOG(ERROR) << "The request should not reach application handler.";
-        CHECK(0);
+        GRPC_CHECK(0);
       }
       if (req_->has_param() && req_->param().has_expected_error()) {
         const auto& error = req_->param().expected_error();

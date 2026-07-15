@@ -12,12 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/grpc_security.h>
+
 #include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
+#include "src/core/credentials/transport/security_connector.h"
+#include "src/core/transport/auth_context.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/handshake/test_handshake.h"
 #include "test/core/test_util/fuzzing_channel_args.h"
 #include "test/core/test_util/fuzzing_channel_args.pb.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace {
@@ -36,13 +42,29 @@ auto AnyChannelArgs() {
 // Without supplying channel args, we should expect basic TCP connections to
 // succeed every time.
 void BasicHandshakeSucceeds(const fuzzing_event_engine::Actions& actions) {
-  if (!IsEventEngineClientEnabled()) {
-    GTEST_SKIP() << "Needs event_engine_client experiment";
+  if (!grpc_event_engine::experimental::IsSaneTimerEnvironment()) {
+    GTEST_SKIP() << "Needs most EventEngine experiments enabled";
   }
-  if (!IsEventEngineListenerEnabled()) {
-    GTEST_SKIP() << "Needs event_engine_listener experiment";
+  auto status_or_args =
+      TestHandshake(BaseChannelArgs(), BaseChannelArgs(), actions);
+  ASSERT_TRUE(status_or_args.ok());
+  auto args = status_or_args.value();
+
+  RefCountedPtr<grpc_auth_context> client_auth_context =
+      std::get<0>(args).GetObjectRef<grpc_auth_context>();
+  RefCountedPtr<grpc_auth_context> server_auth_context =
+      std::get<1>(args).GetObjectRef<grpc_auth_context>();
+  RefCountedPtr<grpc_security_connector> client_security_connector =
+      std::get<0>(args).GetObjectRef<grpc_security_connector>();
+  RefCountedPtr<grpc_security_connector> server_security_connector =
+      std::get<1>(args).GetObjectRef<grpc_security_connector>();
+  if (client_auth_context != nullptr && server_auth_context != nullptr) {
+    EXPECT_EQ(client_auth_context->protocol(), server_auth_context->protocol());
+    EXPECT_EQ(client_security_connector->type().name(),
+              client_auth_context->protocol());
+    EXPECT_EQ(server_security_connector->type().name(),
+              server_auth_context->protocol());
   }
-  CHECK_OK(TestHandshake(BaseChannelArgs(), BaseChannelArgs(), actions));
 }
 FUZZ_TEST(HandshakerFuzzer, BasicHandshakeSucceeds);
 
@@ -55,11 +77,8 @@ TEST(HandshakerFuzzer, BasicHandshakeSucceedsRegression1) {
 void RandomChannelArgsDontCauseCrashes(
     const ChannelArgs& client_args, const ChannelArgs& server_args,
     const fuzzing_event_engine::Actions& actions) {
-  if (!IsEventEngineClientEnabled()) {
-    GTEST_SKIP() << "Needs event_engine_client experiment";
-  }
-  if (!IsEventEngineListenerEnabled()) {
-    GTEST_SKIP() << "Needs event_engine_listener experiment";
+  if (!grpc_event_engine::experimental::IsSaneTimerEnvironment()) {
+    GTEST_SKIP() << "Needs most EventEngine experiments enabled";
   }
   std::ignore = TestHandshake(client_args, server_args, actions);
 }

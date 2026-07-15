@@ -4,16 +4,12 @@
 # license that can be found in the LICENSE file or at
 # https://opensource.org/licenses/MIT.
 
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_license//rules:license.bzl", "license")
 
-DEFAULT_VISIBILITY = [
-    "//src/google/protobuf:__subpackages__",
-    "//third_party/utf8_range:__subpackages__",
-    "//util/utf8/internal:__subpackages__",
-]
-
 package(
-    default_applicable_licenses = ["//third_party/utf8_range:license"],
+    default_applicable_licenses = [":license"],
     default_visibility = ["//visibility:public"],
 )
 
@@ -56,7 +52,6 @@ cc_library(
 
 cc_library(
     name = "utf8_validity",
-    srcs = ["utf8_validity.cc"],
     hdrs = ["utf8_validity.h"],
     strip_include_prefix = "/third_party/utf8_range",
     deps = [

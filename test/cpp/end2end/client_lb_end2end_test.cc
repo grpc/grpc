@@ -38,16 +38,10 @@
 #include <string>
 #include <thread>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/memory/memory.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
+#include "src/core/channelz/channelz.h"
+#include "src/core/channelz/channelz_registry.h"
 #include "src/core/client_channel/backup_poller.h"
+#include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/config_selector.h"
 #include "src/core/client_channel/global_subchannel_pool.h"
 #include "src/core/config/config_vars.h"
@@ -66,20 +60,35 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "src/cpp/server/secure_server_credentials.h"
+#include "src/proto/grpc/channelz/v2/channelz.pb.h"
+#include "src/proto/grpc/channelz/v2/property_list.pb.h"
 #include "src/proto/grpc/health/v1/health.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
+#include "test/core/test_util/postmortem.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
+#include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/test_lb_policies.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
+#include "test/cpp/util/channelz_util.h"
 #include "test/cpp/util/credentials.h"
 #include "xds/data/orca/v3/orca_load_report.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc {
 namespace testing {
@@ -237,9 +246,9 @@ class FakeResolverResponseGeneratorWrapper {
     for (const int& port : ports) {
       absl::StatusOr<grpc_core::URI> lb_uri =
           grpc_core::URI::Parse(grpc_core::LocalIpUri(port));
-      CHECK_OK(lb_uri);
+      GRPC_CHECK_OK(lb_uri);
       grpc_resolved_address address;
-      CHECK(grpc_parse_uri(*lb_uri, &address));
+      GRPC_CHECK(grpc_parse_uri(*lb_uri, &address));
       result.addresses->emplace_back(address, per_address_args);
     }
     if (result.addresses->empty()) {
@@ -273,20 +282,27 @@ class ClientLbEnd2endTest : public ::testing::Test {
 
   void CreateServers(
       size_t num_servers, std::vector<int> ports = {},
-      std::shared_ptr<ServerCredentials> server_creds = nullptr) {
+      std::shared_ptr<ServerCredentials> server_creds = nullptr,
+      std::optional<uint32_t> max_concurrent_streams = std::nullopt,
+      uint32_t idle_timeout_ms = 0) {
     servers_.clear();
     for (size_t i = 0; i < num_servers; ++i) {
       int port = 0;
       if (ports.size() == num_servers) port = ports[i];
-      servers_.emplace_back(new ServerData(port, server_creds));
+      servers_.emplace_back(new ServerData(
+          port, server_creds, max_concurrent_streams, idle_timeout_ms));
     }
   }
 
   void StartServer(size_t index) { servers_[index]->Start(); }
 
-  void StartServers(size_t num_servers, std::vector<int> ports = {},
-                    std::shared_ptr<ServerCredentials> server_creds = nullptr) {
-    CreateServers(num_servers, std::move(ports), std::move(server_creds));
+  void StartServers(
+      size_t num_servers, std::vector<int> ports = {},
+      std::shared_ptr<ServerCredentials> server_creds = nullptr,
+      std::optional<uint32_t> max_concurrent_streams = std::nullopt,
+      uint32_t idle_timeout_ms = 0) {
+    CreateServers(num_servers, std::move(ports), std::move(server_creds),
+                  max_concurrent_streams, idle_timeout_ms);
     for (size_t i = 0; i < num_servers; ++i) {
       StartServer(i);
     }
@@ -312,6 +328,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
       const FakeResolverResponseGeneratorWrapper& response_generator,
       ChannelArguments args = ChannelArguments(),
       std::shared_ptr<ChannelCredentials> channel_creds = nullptr) {
+    ApplyCommonChannelArguments(args);
     if (!lb_policy_name.empty()) {
       args.SetLoadBalancingPolicyName(lb_policy_name);
     }  // else, default to pick first
@@ -407,6 +424,8 @@ class ClientLbEnd2endTest : public ::testing::Test {
   struct ServerData {
     const int port_;
     const std::shared_ptr<ServerCredentials> server_creds_;
+    const std::optional<uint32_t> max_concurrent_streams_;
+    const uint32_t idle_timeout_ms_;
     std::unique_ptr<Server> server_;
     MyTestServiceImpl service_;
     std::unique_ptr<experimental::ServerMetricRecorder> server_metric_recorder_;
@@ -421,7 +440,9 @@ class ClientLbEnd2endTest : public ::testing::Test {
     bool started_ ABSL_GUARDED_BY(mu_) = false;
 
     explicit ServerData(
-        int port = 0, std::shared_ptr<ServerCredentials> server_creds = nullptr)
+        int port = 0, std::shared_ptr<ServerCredentials> server_creds = nullptr,
+        std::optional<uint32_t> max_concurrent_streams = std::nullopt,
+        uint32_t idle_timeout_ms = 0)
         : port_(port > 0 ? port : grpc_pick_unused_port_or_die()),
           server_creds_(
               server_creds == nullptr
@@ -429,6 +450,8 @@ class ClientLbEnd2endTest : public ::testing::Test {
                         ServerCredentials>(new SecureServerCredentials(
                         grpc_fake_transport_security_server_credentials_create()))
                   : std::move(server_creds)),
+          max_concurrent_streams_(max_concurrent_streams),
+          idle_timeout_ms_(idle_timeout_ms),
           server_metric_recorder_(experimental::ServerMetricRecorder::Create()),
           orca_service_(
               server_metric_recorder_.get(),
@@ -454,6 +477,14 @@ class ClientLbEnd2endTest : public ::testing::Test {
                                server_creds_);
       builder.RegisterService(&service_);
       builder.RegisterService(&orca_service_);
+      if (max_concurrent_streams_.has_value()) {
+        builder.AddChannelArgument(GRPC_ARG_MAX_CONCURRENT_STREAMS,
+                                   *max_concurrent_streams_);
+      }
+      if (idle_timeout_ms_ > 0) {
+        builder.AddChannelArgument(GRPC_ARG_MAX_CONNECTION_IDLE_MS,
+                                   idle_timeout_ms_);
+      }
       if (enable_noop_health_check_service_) {
         builder.RegisterService(&noop_health_check_service_impl_);
       }
@@ -504,13 +535,14 @@ class ClientLbEnd2endTest : public ::testing::Test {
       const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
       size_t start_index = 0, size_t stop_index = 0,
       absl::AnyInvocable<void(const Status&)> status_check = nullptr,
-      absl::Duration timeout = absl::Seconds(30)) {
+      absl::Duration timeout = absl::Seconds(30), bool wait_for_ready = false) {
     if (stop_index == 0) stop_index = servers_.size();
     auto deadline = absl::Now() + (timeout * grpc_test_slowdown_factor());
     LOG(INFO) << "========= WAITING FOR BACKENDS [" << start_index << ", "
               << stop_index << ") ==========";
     while (!SeenAllServers(start_index, stop_index)) {
-      Status status = SendRpc(stub);
+      Status status = SendRpc(stub, /*response=*/nullptr, /*timeout_ms=*/1000,
+                              /*wait_for_ready=*/wait_for_ready);
       if (status_check != nullptr) {
         if (!status.ok()) status_check(status);
       } else {
@@ -530,9 +562,10 @@ class ClientLbEnd2endTest : public ::testing::Test {
       const grpc_core::DebugLocation& location,
       const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
       size_t server_index,
-      absl::AnyInvocable<void(const Status&)> status_check = nullptr) {
+      absl::AnyInvocable<void(const Status&)> status_check = nullptr,
+      bool wait_for_ready = false) {
     WaitForServers(location, stub, server_index, server_index + 1,
-                   std::move(status_check));
+                   std::move(status_check), absl::Seconds(30), wait_for_ready);
   }
 
   bool WaitForChannelState(
@@ -596,6 +629,11 @@ class ClientLbEnd2endTest : public ::testing::Test {
         // Prefixes added for context
         "(Failed to connect to remote host: )?"
         "(Timeout occurred: )?"
+        // Parenthetical wrappers
+        "( ?\\(*("
+        "Secure read failed|"
+        "Handshake (read|write) failed|"
+        "Delayed close due to in-progress write|"
         // Syscall
         "((connect|sendmsg|recvmsg|getsockopt\\(SO\\_ERROR\\)): ?)?"
         // strerror() output or other message
@@ -605,10 +643,13 @@ class ClientLbEnd2endTest : public ::testing::Test {
         "|FD shutdown"
         "|Endpoint closing)"
         // errno value
-        "( \\([0-9]+\\))?");
+        "( \\([0-9]+\\))?"
+        // close paren from wrappers above
+        ")\\)*)+");
   }
 
   std::vector<std::unique_ptr<ServerData>> servers_;
+  grpc_core::PostMortem port_mortem_;
 };
 
 TEST_F(ClientLbEnd2endTest, ChannelStateConnectingWhenResolving) {
@@ -675,7 +716,7 @@ class AuthorityOverrideTest : public ClientLbEnd2endTest {
  protected:
   static void SetUpTestSuite() {
     grpc_core::CoreConfiguration::Reset();
-    grpc_core::CoreConfiguration::RegisterBuilder(
+    grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
         [](grpc_core::CoreConfiguration::Builder* builder) {
           grpc_core::RegisterAuthorityOverrideLoadBalancingPolicy(builder);
         });
@@ -689,6 +730,7 @@ class AuthorityOverrideTest : public ClientLbEnd2endTest {
 };
 
 TEST_F(AuthorityOverrideTest, NoOverride) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   StartServers(1);
   FakeResolverResponseGeneratorWrapper response_generator;
   auto channel = BuildChannel("", response_generator);
@@ -707,6 +749,7 @@ TEST_F(AuthorityOverrideTest, NoOverride) {
 }
 
 TEST_F(AuthorityOverrideTest, OverrideFromResolver) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   StartServers(1);
   FakeResolverResponseGeneratorWrapper response_generator;
   auto channel = BuildChannel("", response_generator);
@@ -730,6 +773,7 @@ TEST_F(AuthorityOverrideTest, OverrideFromResolver) {
 }
 
 TEST_F(AuthorityOverrideTest, OverrideOnChannel) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   StartServers(1);
   // Set authority via channel arg.
   FakeResolverResponseGeneratorWrapper response_generator;
@@ -751,6 +795,7 @@ TEST_F(AuthorityOverrideTest, OverrideOnChannel) {
 }
 
 TEST_F(AuthorityOverrideTest, OverrideFromLbPolicy) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   // We use InsecureCreds here to avoid the authority check in the fake
   // security connector.
   StartServers(1, {}, InsecureServerCredentials());
@@ -774,6 +819,7 @@ TEST_F(AuthorityOverrideTest, OverrideFromLbPolicy) {
 }
 
 TEST_F(AuthorityOverrideTest, PerRpcOverride) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   // We use InsecureCreds here to avoid the authority check in the fake
   // security connector.
   StartServers(1, {}, InsecureServerCredentials());
@@ -797,6 +843,7 @@ TEST_F(AuthorityOverrideTest, PerRpcOverride) {
 
 TEST_F(AuthorityOverrideTest,
        ChannelOverrideTakesPrecedenceOverResolverOverride) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   StartServers(1);
   // Set authority via channel arg.
   FakeResolverResponseGeneratorWrapper response_generator;
@@ -824,6 +871,7 @@ TEST_F(AuthorityOverrideTest,
 
 TEST_F(AuthorityOverrideTest,
        LbPolicyOverrideTakesPrecedenceOverChannelOverride) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   // We use InsecureCreds here to avoid the authority check in the fake
   // security connector.
   StartServers(1, {}, InsecureServerCredentials());
@@ -849,6 +897,7 @@ TEST_F(AuthorityOverrideTest,
 
 TEST_F(AuthorityOverrideTest,
        PerRpcOverrideTakesPrecedenceOverLbPolicyOverride) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   // We use InsecureCreds here to avoid the authority check in the fake
   // security connector.
   StartServers(1, {}, InsecureServerCredentials());
@@ -953,6 +1002,8 @@ TEST_F(PickFirstTest, SelectsReadyAtStartup) {
 }
 
 TEST_F(PickFirstTest, BackOffInitialReconnect) {
+  SKIP_TEST_FOR_PH2_CLIENT(
+      "TODO(tjagtap) [PH2][P3][Client] Flake less than 1 in 100 times");
   StartServers(1);
   ChannelArguments args;
   constexpr int kInitialBackOffMs = 100;
@@ -1110,6 +1161,7 @@ TEST_F(ClientLbEnd2endTest,
 }
 
 TEST_F(PickFirstTest, Updates) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix flake");
   // Start servers and send one RPC per server.
   const int kNumServers = 3;
   StartServers(kNumServers);
@@ -1530,22 +1582,18 @@ TEST_F(RoundRobinTest, Basic) {
   auto stub = BuildStub(channel);
   response_generator.SetNextResolution(GetServersPorts());
   // Wait until all backends are ready.
-  do {
-    CheckRpcSendOk(DEBUG_LOCATION, stub);
-  } while (!SeenAllServers());
-  ResetCounters();
+  WaitForServers(DEBUG_LOCATION, stub);
   // "Sync" to the end of the list. Next sequence of picks will start at the
   // first server (index 0).
   WaitForServer(DEBUG_LOCATION, stub, servers_.size() - 1);
+  // Backends should be iterated over in the order in which the addresses were
+  // given.
   std::vector<int> connection_order;
   for (size_t i = 0; i < servers_.size(); ++i) {
     CheckRpcSendOk(DEBUG_LOCATION, stub);
     UpdateConnectionOrder(servers_, &connection_order);
   }
-  // Backends should be iterated over in the order in which the addresses were
-  // given.
-  const auto expected = std::vector<int>{0, 1, 2};
-  EXPECT_EQ(expected, connection_order);
+  EXPECT_THAT(connection_order, ::testing::ElementsAre(0, 1, 2));
   // Check LB policy name for the channel.
   EXPECT_EQ("round_robin", channel->GetLoadBalancingPolicyName());
 }
@@ -1570,6 +1618,7 @@ TEST_F(RoundRobinTest, ProcessPending) {
 }
 
 TEST_F(RoundRobinTest, Updates) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   // Start servers.
   const int kNumServers = 3;
   StartServers(kNumServers);
@@ -1705,6 +1754,7 @@ TEST_F(RoundRobinTest, ManyUpdates) {
 }
 
 TEST_F(RoundRobinTest, ReresolveOnSubchannelConnectionFailure) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   // Start 3 servers.
   StartServers(3);
   // Create channel.
@@ -1771,6 +1821,7 @@ TEST_F(RoundRobinTest, FailsEmptyResolverUpdate) {
 }
 
 TEST_F(RoundRobinTest, TransientFailure) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix flake");
   // Start servers and create channel.  Channel should go to READY state.
   const int kNumServers = 3;
   StartServers(kNumServers);
@@ -1899,6 +1950,8 @@ TEST_F(RoundRobinTest, ReportsLatestStatusInTransientFailure) {
 }
 
 TEST_F(RoundRobinTest, DoesNotFailRpcsUponDisconnection) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   // Start connection injector.
   ConnectionAttemptInjector injector;
   // Start server.
@@ -1958,6 +2011,8 @@ TEST_F(RoundRobinTest, DoesNotFailRpcsUponDisconnection) {
 }
 
 TEST_F(RoundRobinTest, SingleReconnect) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug (flake)");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   const int kNumServers = 3;
   StartServers(kNumServers);
   const auto ports = GetServersPorts();
@@ -2013,6 +2068,7 @@ TEST_F(RoundRobinTest, SingleReconnect) {
 // If health checking is required by client but health checking service
 // is not running on the server, the channel should be treated as healthy.
 TEST_F(RoundRobinTest, ServersHealthCheckingUnimplementedTreatedAsHealthy) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   StartServers(1);  // Single server
   ChannelArguments args;
   args.SetServiceConfigJSON(
@@ -2027,6 +2083,7 @@ TEST_F(RoundRobinTest, ServersHealthCheckingUnimplementedTreatedAsHealthy) {
 }
 
 TEST_F(RoundRobinTest, HealthChecking) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   EnableDefaultHealthCheckService(true);
   // Start servers.
   const int kNumServers = 3;
@@ -2051,7 +2108,7 @@ TEST_F(RoundRobinTest, HealthChecking) {
   EXPECT_TRUE(WaitForChannelReady(channel.get()));
   // New channel state may be reported before the picker is updated, so
   // wait for the server before proceeding.
-  WaitForServer(DEBUG_LOCATION, stub, 0);
+  WaitForServer(DEBUG_LOCATION, stub, 0, nullptr, true /* wait_for_ready */);
   for (int i = 0; i < 10; ++i) {
     CheckRpcSendOk(DEBUG_LOCATION, stub);
   }
@@ -2114,6 +2171,7 @@ TEST_F(RoundRobinTest, HealthChecking) {
 }
 
 TEST_F(RoundRobinTest, HealthCheckingHandlesSubchannelFailure) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   EnableDefaultHealthCheckService(true);
   // Start servers.
   const int kNumServers = 3;
@@ -2129,7 +2187,7 @@ TEST_F(RoundRobinTest, HealthCheckingHandlesSubchannelFailure) {
   auto channel = BuildChannel("round_robin", response_generator, args);
   auto stub = BuildStub(channel);
   response_generator.SetNextResolution(GetServersPorts());
-  WaitForServer(DEBUG_LOCATION, stub, 0);
+  WaitForServer(DEBUG_LOCATION, stub, 0, nullptr, true /* wait_for_ready */);
   // Stop server 0 and send a new resolver result to ensure that RR
   // checks each subchannel's state.
   servers_[0]->StopListeningAndSendGoaways();
@@ -2141,6 +2199,7 @@ TEST_F(RoundRobinTest, HealthCheckingHandlesSubchannelFailure) {
 }
 
 TEST_F(RoundRobinTest, WithHealthCheckingInhibitPerChannel) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   EnableDefaultHealthCheckService(true);
   // Start server.
   const int kNumServers = 1;
@@ -2187,6 +2246,7 @@ TEST_F(RoundRobinTest, WithHealthCheckingInhibitPerChannel) {
 }
 
 TEST_F(RoundRobinTest, HealthCheckingServiceNamePerChannel) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   EnableDefaultHealthCheckService(true);
   // Start server.
   const int kNumServers = 1;
@@ -2240,6 +2300,7 @@ TEST_F(RoundRobinTest, HealthCheckingServiceNamePerChannel) {
 
 TEST_F(RoundRobinTest,
        HealthCheckingServiceNameChangesAfterSubchannelsCreated) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   EnableDefaultHealthCheckService(true);
   // Start server.
   const int kNumServers = 1;
@@ -2267,6 +2328,7 @@ TEST_F(RoundRobinTest,
 }
 
 TEST_F(RoundRobinTest, HealthCheckingRetryOnStreamEnd) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   // Start servers.
   const int kNumServers = 2;
   CreateServers(kNumServers);
@@ -2299,7 +2361,7 @@ class ClientLbPickArgsTest : public ClientLbEnd2endTest {
 
   static void SetUpTestSuite() {
     grpc_core::CoreConfiguration::Reset();
-    grpc_core::CoreConfiguration::RegisterBuilder(
+    grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
         [](grpc_core::CoreConfiguration::Builder* builder) {
           grpc_core::RegisterTestPickArgsLoadBalancingPolicy(builder,
                                                              SavePickArgs);
@@ -2482,7 +2544,7 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
 
   static void SetUpTestSuite() {
     grpc_core::CoreConfiguration::Reset();
-    grpc_core::CoreConfiguration::RegisterBuilder(
+    grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
         [](grpc_core::CoreConfiguration::Builder* builder) {
           grpc_core::RegisterInterceptRecvTrailingMetadataLoadBalancingPolicy(
               builder, ReportTrailerIntercepted);
@@ -2578,6 +2640,7 @@ ClientLbInterceptTrailingMetadataTest*
     ClientLbInterceptTrailingMetadataTest::current_test_instance_ = nullptr;
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, StatusOk) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   StartServers(1);
   FakeResolverResponseGeneratorWrapper response_generator;
   auto channel =
@@ -2594,6 +2657,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, StatusOk) {
 }
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, StatusFailed) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   StartServers(1);
   FakeResolverResponseGeneratorWrapper response_generator;
   auto channel =
@@ -2615,6 +2679,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, StatusFailed) {
 
 TEST_F(ClientLbInterceptTrailingMetadataTest,
        StatusCancelledWithoutStartingRecvTrailingMetadata) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   StartServers(1);
   FakeResolverResponseGeneratorWrapper response_generator;
   auto channel =
@@ -2638,6 +2703,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest,
 }
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesDisabled) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   const int kNumServers = 1;
   const int kNumRpcs = 10;
   StartServers(kNumServers);
@@ -2666,6 +2732,8 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesDisabled) {
 }
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesEnabled) {
+  SKIP_RETRY_TEST_FOR_PH2_CLIENT(
+      "TODO (tjagtap) [PH2][P5][Retry] Test with Retry-PH2 feature");
   const int kNumServers = 1;
   const int kNumRpcs = 10;
   StartServers(kNumServers);
@@ -2708,6 +2776,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesEnabled) {
 }
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, Valid) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   RunPerRpcMetricReportingTest(OrcaLoadReportBuilder()
                                    .SetApplicationUtilization(0.25)
                                    .SetCpuUtilization(0.5)
@@ -2737,6 +2806,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, Valid) {
 }
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, NegativeValues) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   RunPerRpcMetricReportingTest(OrcaLoadReportBuilder()
                                    .SetApplicationUtilization(-0.3)
                                    .SetCpuUtilization(-0.1)
@@ -2754,6 +2824,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, NegativeValues) {
 }
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, AboveOneUtilization) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   RunPerRpcMetricReportingTest(OrcaLoadReportBuilder()
                                    .SetApplicationUtilization(1.9)
                                    .SetCpuUtilization(1.1)
@@ -2771,6 +2842,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, AboveOneUtilization) {
 }
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricDataMerge) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   const int kNumServers = 1;
   const int kNumRpcs = 10;
   StartServers(kNumServers);
@@ -2885,7 +2957,7 @@ class ClientLbAddressTest : public ClientLbEnd2endTest {
 
   static void SetUpTestSuite() {
     grpc_core::CoreConfiguration::Reset();
-    grpc_core::CoreConfiguration::RegisterBuilder(
+    grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
         [](grpc_core::CoreConfiguration::Builder* builder) {
           grpc_core::RegisterAddressTestLoadBalancingPolicy(builder,
                                                             SaveAddress);
@@ -2954,7 +3026,7 @@ class OobBackendMetricTest : public ClientLbEnd2endTest {
 
   static void SetUpTestSuite() {
     grpc_core::CoreConfiguration::Reset();
-    grpc_core::CoreConfiguration::RegisterBuilder(
+    grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
         [](grpc_core::CoreConfiguration::Builder* builder) {
           grpc_core::RegisterOobBackendMetricTestLoadBalancingPolicy(
               builder, BackendMetricCallback);
@@ -2994,6 +3066,7 @@ class OobBackendMetricTest : public ClientLbEnd2endTest {
 OobBackendMetricTest* OobBackendMetricTest::current_test_instance_ = nullptr;
 
 TEST_F(OobBackendMetricTest, Basic) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   StartServers(1);
   // Set initial backend metric data on server.
   constexpr char kMetricName[] = "foo";
@@ -3075,7 +3148,7 @@ class ControlPlaneStatusRewritingTest : public ClientLbEnd2endTest {
  protected:
   static void SetUpTestSuite() {
     grpc_core::CoreConfiguration::Reset();
-    grpc_core::CoreConfiguration::RegisterBuilder(
+    grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
         [](grpc_core::CoreConfiguration::Builder* builder) {
           grpc_core::RegisterFailLoadBalancingPolicy(
               builder, absl::AbortedError("nope"));
@@ -3128,7 +3201,9 @@ TEST_F(ControlPlaneStatusRewritingTest, RewritesFromConfigSelector) {
     bool Equals(const ConfigSelector* other) const override {
       return status_ == static_cast<const FailConfigSelector*>(other)->status_;
     }
-    absl::Status GetCallConfig(GetCallConfigArgs /*args*/) override {
+    void BuildFilterChains(grpc_core::FilterChainBuilder&) override {}
+    absl::StatusOr<grpc_core::RefCountedPtr<const grpc_core::FilterChain>>
+    GetCallConfig(GetCallConfigArgs /*args*/) override {
       return status_;
     }
 
@@ -3201,7 +3276,7 @@ class WeightedRoundRobinTest : public ClientLbEnd2endTest {
       const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
       const std::vector<size_t>& expected_weights, size_t total_passes = 3,
       EchoRequest* request_ptr = nullptr, int timeout_ms = 15000) {
-    CHECK_EQ(expected_weights.size(), servers_.size());
+    GRPC_CHECK_EQ(expected_weights.size(), servers_.size());
     size_t total_picks_per_pass = 0;
     for (size_t picks : expected_weights) {
       total_picks_per_pass += picks;
@@ -3235,6 +3310,7 @@ class WeightedRoundRobinTest : public ClientLbEnd2endTest {
 };
 
 TEST_F(WeightedRoundRobinTest, CallAndServerMetric) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   const int kNumServers = 3;
   StartServers(kNumServers);
   // Report server metrics that should give 6:4:3 WRR picks.
@@ -3279,6 +3355,7 @@ TEST_F(WeightedRoundRobinTest, CallAndServerMetric) {
 // all of its subchannels every time it saw an update, thus causing the
 // WRR policy to re-enter the blackout period for that address.
 TEST_F(WeightedRoundRobinTest, WithOutlierDetection) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   const int kBlackoutPeriodSeconds = 10;
   const int kNumServers = 3;
   StartServers(kNumServers);
@@ -3343,6 +3420,7 @@ INSTANTIATE_TEST_SUITE_P(WeightedRoundRobin, WeightedRoundRobinParamTest,
                                            kServiceConfigOob));
 
 TEST_P(WeightedRoundRobinParamTest, Basic) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   const int kNumServers = 3;
   StartServers(kNumServers);
   // Report server metrics that should give 1:2:4 WRR picks.
@@ -3370,6 +3448,731 @@ TEST_P(WeightedRoundRobinParamTest, Basic) {
   EXPECT_EQ("weighted_round_robin", channel->GetLoadBalancingPolicyName());
 }
 
+//
+// connection scaling tests
+//
+
+class ConnectionScalingTest : public ClientLbEnd2endTest {
+ protected:
+  // A class for running a long-running RPC using the callback API.
+  class LongRunningRpc {
+   public:
+    ~LongRunningRpc() { CancelRpc(); }
+
+    // Starts the RPC.
+    void StartRpc(grpc::testing::EchoTestService::Stub* stub) {
+      LOG(INFO) << "Starting long-running RPC...";
+      request_.mutable_param()->set_client_cancel_after_us(1 * 1000 * 1000);
+      stub->async()->Echo(&context_, &request_, &response_,
+                          [this](Status status) {
+                            grpc_core::MutexLock lock(&mu_);
+                            status_ = std::move(status);
+                            cv_.Signal();
+                          });
+    }
+
+    // Cancels the RPC.
+    void CancelRpc() {
+      context_.TryCancel();
+      (void)GetStatus();
+    }
+
+    // Gets the RPC's status.  Blocks if the RPC is not yet complete.
+    Status GetStatus() {
+      grpc_core::MutexLock lock(&mu_);
+      while (!status_.has_value()) {
+        cv_.Wait(&mu_);
+      }
+      return *status_;
+    }
+
+   private:
+    EchoRequest request_;
+    EchoResponse response_;
+    ClientContext context_;
+    grpc_core::Mutex mu_;
+    grpc_core::CondVar cv_;
+    std::optional<Status> status_ ABSL_GUARDED_BY(&mu_);
+  };
+
+  std::unique_ptr<LongRunningRpc> StartLongRunningRpc(
+      grpc::testing::EchoTestService::Stub* stub) {
+    auto rpc = std::make_unique<LongRunningRpc>();
+    rpc->StartRpc(stub);
+    return rpc;
+  }
+
+  bool WaitFor(absl::FunctionRef<bool()> is_done,
+               absl::Duration timeout = absl::Seconds(10)) {
+    const absl::Time kDeadline =
+        absl::Now() + (timeout * grpc_test_slowdown_factor());
+    while (!is_done()) {
+      if (absl::Now() > kDeadline) return false;
+      absl::SleepFor(absl::Milliseconds(1) * grpc_test_slowdown_factor());
+    }
+    return true;
+  }
+};
+
+// TODO(roth): We'd also like to test the following connection scaling
+// cases, but they're harder to cover:
+// - one connection closes, but there is another still working, queued
+//   RPCs should trigger a connection attempt (need a way to trigger
+//   just one connection closing)
+// - server changes MCS value dynamically (need a way to trigger the MCS
+//   change on the server -- might be able to do this after the MCS
+//   ResourceQuota changes land)
+
+TEST_F(ConnectionScalingTest, SingleConnection) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
+  const int kMaxConcurrentStreams = 3;
+  // Start a server with MAX_CONCURRENT_STREAMS set.
+  StartServers(1, {}, nullptr,
+               /*max_concurrent_streams=*/kMaxConcurrentStreams);
+  FakeResolverResponseGeneratorWrapper response_generator;
+  auto channel = BuildChannel("pick_first", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts());
+  // Start kMaxConcurrentStreams long-running RPCs.
+  std::vector<std::unique_ptr<LongRunningRpc>> rpcs;
+  for (size_t i = 0; i < kMaxConcurrentStreams; ++i) {
+    rpcs.emplace_back(StartLongRunningRpc(stub.get()));
+  }
+  // Wait for the server to see the first kMaxConcurrentStreams RPCs.
+  LOG(INFO) << "Waiting for server to see the initial RPCs...";
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.RpcsWaitingForClientCancel() ==
+           kMaxConcurrentStreams;
+  })) << "timeout waiting for initial RPCs to start -- RPCs started: "
+      << servers_[0]->service_.RpcsWaitingForClientCancel();
+  EXPECT_EQ(servers_[0]->service_.request_count(), kMaxConcurrentStreams);
+  // Server should see only one connection.
+  EXPECT_EQ(servers_[0]->service_.clients().size(), 1);
+  // Start another RPC, which should get queued.
+  rpcs.emplace_back(StartLongRunningRpc(stub.get()));
+  // TODO(roth): Use a metric to determine when it's actually queued?
+  // Cancel one RPC to allow another one through.
+  LOG(INFO) << "Cancelling the first RPC...";
+  rpcs[0].reset();
+  // Now the server should see the 4th RPC.
+  LOG(INFO) << "Waiting for server to see the last RPC...";
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.request_count() == kMaxConcurrentStreams + 1;
+  })) << "timeout waiting for last RPC to start";
+}
+
+TEST_F(ConnectionScalingTest, MultipleConnections) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
+  if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
+    GTEST_SKIP()
+        << "this test requires the subchannel_connection_scaling experiment";
+  }
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
+  constexpr char kServiceConfig[] =
+      "{\n"
+      "  \"connectionScaling\": {\n"
+      "    \"maxConnectionsPerSubchannel\": 2\n"
+      "  }\n"
+      "}";
+  const int kMaxConcurrentStreams = 3;
+  // Start a server with MAX_CONCURRENT_STREAMS set.
+  StartServers(1, {}, nullptr,
+               /*max_concurrent_streams=*/kMaxConcurrentStreams);
+  FakeResolverResponseGeneratorWrapper response_generator;
+  auto channel = BuildChannel("pick_first", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts(), kServiceConfig);
+  // Start kMaxConcurrentStreams long-running RPCs.
+  std::vector<std::unique_ptr<LongRunningRpc>> rpcs;
+  for (size_t i = 0; i < kMaxConcurrentStreams; ++i) {
+    rpcs.emplace_back(StartLongRunningRpc(stub.get()));
+  }
+  // Wait for the server to see the first kMaxConcurrentStreams RPCs.
+  LOG(INFO) << "Waiting for server to see the initial RPCs...";
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.RpcsWaitingForClientCancel() ==
+           kMaxConcurrentStreams;
+  })) << "timeout waiting for initial RPCs to start -- RPCs started: "
+      << servers_[0]->service_.RpcsWaitingForClientCancel();
+  // There should be only one connection.
+  EXPECT_EQ(servers_[0]->service_.clients().size(), 1);
+  // Start another RPC, which will trigger the creation of a new
+  // connection.
+  rpcs.emplace_back(StartLongRunningRpc(stub.get()));
+  // Now the server should see the new RPC.
+  LOG(INFO) << "Waiting for server to see the last RPC...";
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.RpcsWaitingForClientCancel() ==
+           kMaxConcurrentStreams + 1;
+  })) << "timeout waiting for last RPC to start";
+  // And there should be another connection.
+  EXPECT_EQ(servers_[0]->service_.clients().size(), 2);
+}
+
+TEST_F(ConnectionScalingTest, HonorsMaxConnectionsPerSubchannel) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
+  if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
+    GTEST_SKIP()
+        << "this test requires the subchannel_connection_scaling experiment";
+  }
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
+  constexpr char kServiceConfig[] =
+      "{\n"
+      "  \"connectionScaling\": {\n"
+      "    \"maxConnectionsPerSubchannel\": 2\n"
+      "  }\n"
+      "}";
+  const int kMaxConcurrentStreams = 2;
+  // Start a server with MAX_CONCURRENT_STREAMS set.
+  StartServers(1, {}, nullptr,
+               /*max_concurrent_streams=*/kMaxConcurrentStreams);
+  FakeResolverResponseGeneratorWrapper response_generator;
+  auto channel = BuildChannel("pick_first", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts(), kServiceConfig);
+  // Start enough RPCs for 2 connections.
+  std::vector<std::unique_ptr<LongRunningRpc>> rpcs;
+  const int kNumRpcs = kMaxConcurrentStreams * 2;
+  for (size_t i = 0; i < kNumRpcs; ++i) {
+    rpcs.emplace_back(StartLongRunningRpc(stub.get()));
+  }
+  // Wait for the server to see enough RPCs for the first two connections.
+  LOG(INFO) << "Waiting for server to see the initial RPCs...";
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.RpcsWaitingForClientCancel() == kNumRpcs;
+  })) << "timeout waiting for initial RPCs to start -- RPCs started: "
+      << servers_[0]->service_.RpcsWaitingForClientCancel();
+  // There should be two connections.
+  EXPECT_EQ(servers_[0]->service_.clients().size(), 2);
+  // Start another RPC, which will wind up being queued.
+  rpcs.emplace_back(StartLongRunningRpc(stub.get()));
+  // TODO(roth): Use a metric to determine when it's actually queued?
+  // Cancel the first RPC.
+  LOG(INFO) << "Cancelling the first RPC...";
+  rpcs[0].reset();
+  // Now the server should see the new RPC.
+  LOG(INFO) << "Waiting for server to see the last RPC...";
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.request_count() == kNumRpcs + 1;
+  })) << "timeout waiting for last RPC to start";
+  // There should still be two connections.
+  EXPECT_EQ(servers_[0]->service_.clients().size(), 2);
+}
+
+TEST_F(ConnectionScalingTest,
+       QueuedRpcsTriggerNewConnectionAttemptAfterBackoff) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
+  if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
+    GTEST_SKIP()
+        << "this test requires the subchannel_connection_scaling experiment";
+  }
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
+  constexpr char kServiceConfig[] =
+      "{\n"
+      "  \"connectionScaling\": {\n"
+      "    \"maxConnectionsPerSubchannel\": 2\n"
+      "  }\n"
+      "}";
+  const int kMaxConcurrentStreams = 3;
+  // Start a server with MAX_CONCURRENT_STREAMS set.
+  StartServers(1, {}, nullptr,
+               /*max_concurrent_streams=*/kMaxConcurrentStreams);
+  FakeResolverResponseGeneratorWrapper response_generator;
+  auto channel = BuildChannel("pick_first", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts(), kServiceConfig);
+  // Start kMaxConcurrentStreams long-running RPCs.
+  std::vector<std::unique_ptr<LongRunningRpc>> rpcs;
+  for (size_t i = 0; i < kMaxConcurrentStreams; ++i) {
+    rpcs.emplace_back(StartLongRunningRpc(stub.get()));
+  }
+  // Wait for the server to see the first kMaxConcurrentStreams RPCs.
+  LOG(INFO) << "Waiting for server to see the initial RPCs...";
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.RpcsWaitingForClientCancel() ==
+           kMaxConcurrentStreams;
+  })) << "timeout waiting for initial RPCs to start -- RPCs started: "
+      << servers_[0]->service_.RpcsWaitingForClientCancel();
+  // There should be only one connection.
+  EXPECT_EQ(servers_[0]->service_.clients().size(), 1);
+  // Intercept the next two connection attempts.
+  ConnectionAttemptInjector injector;
+  auto hold1 = injector.AddHold(servers_[0]->port_);
+  auto hold2 = injector.AddHold(servers_[0]->port_);
+  // Start another RPC, which will trigger the creation of a new
+  // connection.
+  rpcs.emplace_back(StartLongRunningRpc(stub.get()));
+  // Fail the connection attempt.
+  hold1->Wait();
+  hold1->Fail(absl::UnavailableError("nyet"));
+  // The failed connection attempt will put the subchannel into backoff,
+  // but the last RPC is still queued.  When backoff expires, the
+  // subchannel will retry the queue, which will trigger a new
+  // connection attempt.
+  hold2->Wait();
+  hold2->Resume();
+  // Now the server should see the new RPC.
+  LOG(INFO) << "Waiting for server to see the last RPC...";
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.RpcsWaitingForClientCancel() ==
+           kMaxConcurrentStreams + 1;
+  })) << "timeout waiting for last RPC to start";
+  // And there should be another connection.
+  EXPECT_EQ(servers_[0]->service_.clients().size(), 2);
+}
+
+TEST_F(ConnectionScalingTest, QueuedRpcCancelled) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
+  if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
+    GTEST_SKIP()
+        << "this test requires the subchannel_connection_scaling experiment";
+  }
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
+  constexpr char kServiceConfig[] =
+      "{\n"
+      "  \"connectionScaling\": {\n"
+      "    \"maxConnectionsPerSubchannel\": 2\n"
+      "  }\n"
+      "}";
+  const int kMaxConcurrentStreams = 3;
+  // Start a server with MAX_CONCURRENT_STREAMS set.
+  StartServers(1, {}, nullptr,
+               /*max_concurrent_streams=*/kMaxConcurrentStreams);
+  FakeResolverResponseGeneratorWrapper response_generator;
+  auto channel = BuildChannel("pick_first", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts(), kServiceConfig);
+  // Start kMaxConcurrentStreams long-running RPCs.
+  std::vector<std::unique_ptr<LongRunningRpc>> rpcs;
+  for (size_t i = 0; i < kMaxConcurrentStreams; ++i) {
+    rpcs.emplace_back(StartLongRunningRpc(stub.get()));
+  }
+  // Wait for the server to see the first kMaxConcurrentStreams RPCs.
+  LOG(INFO) << "Waiting for server to see the initial RPCs...";
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.RpcsWaitingForClientCancel() ==
+           kMaxConcurrentStreams;
+  })) << "timeout waiting for initial RPCs to start -- RPCs started: "
+      << servers_[0]->service_.RpcsWaitingForClientCancel();
+  // There should be only one connection.
+  EXPECT_EQ(servers_[0]->service_.clients().size(), 1);
+  // Intercept the next connection attempt.
+  ConnectionAttemptInjector injector;
+  auto hold = injector.AddHold(servers_[0]->port_);
+  // Start another RPC, which will trigger the creation of a new
+  // connection.
+  rpcs.emplace_back(StartLongRunningRpc(stub.get()));
+  // Wait for the connection attempt to start.
+  hold->Wait();
+  // Start yet another RPC, which we'll use to know when the connection
+  // attempt is complete.
+  rpcs.emplace_back(StartLongRunningRpc(stub.get()));
+  // Cancel the first queued RPC.
+  rpcs[kMaxConcurrentStreams].reset();
+  // Allow the connection attempt to complete.
+  hold->Resume();
+  // Now the server should see the new RPC.
+  LOG(INFO) << "Waiting for server to see the last RPC...";
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.RpcsWaitingForClientCancel() ==
+           kMaxConcurrentStreams + 1;
+  })) << "timeout waiting for last RPC to start";
+  // And there should be another connection.
+  EXPECT_EQ(servers_[0]->service_.clients().size(), 2);
+}
+
+TEST_F(ConnectionScalingTest, QueuedRpcsFailWhenLastConnectionCloses) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
+  if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
+    GTEST_SKIP()
+        << "this test requires the subchannel_connection_scaling experiment";
+  }
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
+  constexpr char kServiceConfig[] =
+      "{\n"
+      "  \"connectionScaling\": {\n"
+      "    \"maxConnectionsPerSubchannel\": 2\n"
+      "  }\n"
+      "}";
+  const int kMaxConcurrentStreams = 3;
+  // Start a server with MAX_CONCURRENT_STREAMS set.
+  StartServers(1, {}, nullptr,
+               /*max_concurrent_streams=*/kMaxConcurrentStreams);
+  FakeResolverResponseGeneratorWrapper response_generator;
+  // Disable retries, so that we can see the RPCs fail instead of being
+  // transparently retried.
+  ChannelArguments channel_args;
+  channel_args.SetInt(GRPC_ARG_ENABLE_RETRIES, 0);
+  auto channel = BuildChannel("pick_first", response_generator, channel_args);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts(), kServiceConfig);
+  // Start kMaxConcurrentStreams long-running RPCs.
+  std::vector<std::unique_ptr<LongRunningRpc>> rpcs;
+  for (size_t i = 0; i < kMaxConcurrentStreams; ++i) {
+    rpcs.emplace_back(StartLongRunningRpc(stub.get()));
+  }
+  // Wait for the server to see the first kMaxConcurrentStreams RPCs.
+  LOG(INFO) << "Waiting for server to see the initial RPCs...";
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.RpcsWaitingForClientCancel() ==
+           kMaxConcurrentStreams;
+  })) << "timeout waiting for initial RPCs to start -- RPCs started: "
+      << servers_[0]->service_.RpcsWaitingForClientCancel();
+  // There should be only one connection.
+  EXPECT_EQ(servers_[0]->service_.clients().size(), 1);
+  // Intercept the next connection attempt.
+  ConnectionAttemptInjector injector;
+  auto hold = injector.AddHold(servers_[0]->port_);
+  // Start two more RPCs, which will trigger the creation of a new
+  // connection.  When the connection attempt starts, we know that the
+  // subchannel has queued these RPCs.
+  rpcs.emplace_back(StartLongRunningRpc(stub.get()));
+  rpcs.emplace_back(StartLongRunningRpc(stub.get()));
+  // Wait for the connection attempt to start.
+  hold->Wait();
+  // Have the server send a GOAWAY, which tells the subchannel to drop
+  // the existing connection.  We do this instead of shutting down the
+  // server, so that we don't terminate any of the initial set of RPCs,
+  // because that would lead to a race condition: the subchannel could
+  // see those RPC failures before it sees the disconnection, in which
+  // case it would start one of the queued RPCs on the connection, which
+  // would cause the RPC to fail with the wrong status message.
+  servers_[0]->StopListeningAndSendGoaways();
+  // The two queued RPCs should have failed.
+  for (size_t i = kMaxConcurrentStreams; i < kMaxConcurrentStreams + 2; ++i) {
+    auto& rpc = rpcs[i];
+    Status status = rpc->GetStatus();
+    EXPECT_EQ(status.error_code(), GRPC_STATUS_UNAVAILABLE);
+    EXPECT_THAT(
+        status.error_message(),
+        ::testing::MatchesRegex("(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                                "subchannel lost all connections"));
+    rpc.reset();
+  }
+  // Fail the connection attempt.
+  hold->Fail(absl::UnavailableError("lo"));
+}
+
+TEST_F(ConnectionScalingTest,
+       QueuedRpcsTransparentlyRetriedWhenLastConnectionCloses) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
+  if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
+    GTEST_SKIP()
+        << "this test requires the subchannel_connection_scaling experiment";
+  }
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
+  constexpr char kServiceConfig[] =
+      "{\n"
+      "  \"connectionScaling\": {\n"
+      "    \"maxConnectionsPerSubchannel\": 2\n"
+      "  }\n"
+      "}";
+  const int kMaxConcurrentStreams = 3;
+  // Start two servers with MAX_CONCURRENT_STREAMS set.
+  StartServers(2, {}, nullptr,
+               /*max_concurrent_streams=*/kMaxConcurrentStreams);
+  // Channel initially talks only to the first server.
+  FakeResolverResponseGeneratorWrapper response_generator;
+  auto channel = BuildChannel("pick_first", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts(0, 1), kServiceConfig);
+  // Start kMaxConcurrentStreams long-running RPCs.
+  std::vector<std::unique_ptr<LongRunningRpc>> rpcs;
+  for (size_t i = 0; i < kMaxConcurrentStreams; ++i) {
+    rpcs.emplace_back(StartLongRunningRpc(stub.get()));
+  }
+  // Wait for the server to see the first kMaxConcurrentStreams RPCs.
+  LOG(INFO) << "Waiting for server to see the initial RPCs...";
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.RpcsWaitingForClientCancel() ==
+           kMaxConcurrentStreams;
+  })) << "timeout waiting for initial RPCs to start -- RPCs started: "
+      << servers_[0]->service_.RpcsWaitingForClientCancel();
+  // There should be only one connection.
+  EXPECT_EQ(servers_[0]->service_.clients().size(), 1);
+  // Intercept the next connection attempt.
+  ConnectionAttemptInjector injector;
+  auto hold = injector.AddHold(servers_[0]->port_);
+  // Start two more RPCs, which will trigger the creation of a new
+  // connection.  When the connection attempt starts, we know that the
+  // subchannel has queued these RPCs.
+  rpcs.emplace_back(StartLongRunningRpc(stub.get()));
+  rpcs.emplace_back(StartLongRunningRpc(stub.get()));
+  // Wait for the connection attempt to start.
+  hold->Wait();
+  // Send a resolver update to the channel pointing to the second server.
+  response_generator.SetNextResolution(GetServersPorts(1, 2), kServiceConfig);
+  // When pick_first sees the update, it will put the channel into IDLE state.
+  ASSERT_TRUE(
+      WaitForChannelState(channel.get(), [&](grpc_connectivity_state state) {
+        if (state == GRPC_CHANNEL_READY) return false;
+        EXPECT_EQ(state, GRPC_CHANNEL_IDLE);
+        return true;
+      }));
+  // Shut down the first server, which closes the existing connection.
+  // This should trigger the subchannel to fail the two queued RPCs in a
+  // way that will be transparently retried.  The retry will cause
+  // pick_first to connect to the second server.
+  servers_[0]->Shutdown();
+  // Resume the connection attempt.  (It will fail, but we don't care.)
+  hold->Resume();
+  // The RPCs should have hit the second server.
+  LOG(INFO) << "Waiting for server to see RPCs on the new server...";
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[1]->service_.RpcsWaitingForClientCancel() == 2;
+  })) << "timeout waiting for initial RPCs to start -- RPCs started: "
+      << servers_[1]->service_.RpcsWaitingForClientCancel();
+}
+
+// TODO(roth): Ideally, we should also have a variant of this test with
+// retries enabled, to show that the RPCs are failed in a way that is
+// eligible for transparent retries.  I tried writing that in a way that
+// started a couple of RPCs and then sent a resolver update to switch to
+// a new server, but that results in a tight infinite loop of
+// transparent retries, and the test never manages to get to the point
+// of the resolver update.  I suspect this has something to do with
+// ExecCtx constantly handling the transparent retries before it can
+// return control back to the application, but I haven't dug into it
+// deeply enough to verify.  When we finish migrating to v3, try writing
+// that test again.
+TEST_F(ConnectionScalingTest, QueuedRpcsFailAtMaxConnectionsIfConfigured) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
+  if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
+    GTEST_SKIP()
+        << "this test requires the subchannel_connection_scaling experiment";
+  }
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
+  constexpr char kServiceConfig[] =
+      "{\n"
+      "  \"connectionScaling\": {\n"
+      "    \"maxConnectionsPerSubchannel\": 2\n"
+      "  }\n"
+      "}";
+  const int kMaxConcurrentStreams = 3;
+  // Start a server with MAX_CONCURRENT_STREAMS set.
+  StartServers(1, {}, nullptr,
+               /*max_concurrent_streams=*/kMaxConcurrentStreams);
+  FakeResolverResponseGeneratorWrapper response_generator;
+  // Set channel arg to fail instead of queueing.
+  // Also disable retries so that we see the failures instead of them
+  // being transparently retried.
+  ChannelArguments channel_args;
+  channel_args.SetInt(GRPC_ARG_ENABLE_RETRIES, 0);
+  channel_args.SetInt(GRPC_ARG_MAX_CONCURRENT_STREAMS_REJECT_ON_CLIENT, 1);
+  auto channel = BuildChannel("pick_first", response_generator, channel_args);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts(), kServiceConfig);
+  // Start kMaxConcurrentStreams * 2 long-running RPCs.  This will
+  // create two connections, both of which will be at their limit.
+  std::vector<std::unique_ptr<LongRunningRpc>> rpcs;
+  for (size_t i = 0; i < kMaxConcurrentStreams * 2; ++i) {
+    rpcs.emplace_back(StartLongRunningRpc(stub.get()));
+  }
+  // Wait for the server to see the RPCs.
+  LOG(INFO) << "Waiting for server to see the initial RPCs...";
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.RpcsWaitingForClientCancel() ==
+           kMaxConcurrentStreams * 2;
+  })) << "timeout waiting for initial RPCs to start -- RPCs started: "
+      << servers_[0]->service_.RpcsWaitingForClientCancel();
+  // There should be two connections.
+  EXPECT_EQ(servers_[0]->service_.clients().size(), 2);
+  // Start two more RPCs.  Both should fail.
+  rpcs.emplace_back(StartLongRunningRpc(stub.get()));
+  rpcs.emplace_back(StartLongRunningRpc(stub.get()));
+  // The two queued RPCs should have failed.
+  LOG(INFO) << "Waiting for RPCs to fail...";
+  for (size_t i = kMaxConcurrentStreams * 2;
+       i < (kMaxConcurrentStreams * 2) + 2; ++i) {
+    auto& rpc = rpcs[i];
+    Status status = rpc->GetStatus();
+    EXPECT_EQ(status.error_code(), GRPC_STATUS_RESOURCE_EXHAUSTED);
+    EXPECT_THAT(
+        status.error_message(),
+        ::testing::MatchesRegex("(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                                "subchannel at max number of connections, "
+                                "but no quota to send RPC"));
+    rpc.reset();
+  }
+}
+
+TEST_F(ConnectionScalingTest,
+       MaxConnectionsPerSubchannelChangeTriggersConnectionAttempt) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
+  if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
+    GTEST_SKIP()
+        << "this test requires the subchannel_connection_scaling experiment";
+  }
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
+  constexpr char kServiceConfig1[] =
+      "{\n"
+      "  \"connectionScaling\": {\n"
+      "    \"maxConnectionsPerSubchannel\": 1\n"
+      "  }\n"
+      "}";
+  const int kMaxConcurrentStreams = 3;
+  // Start two servers with MAX_CONCURRENT_STREAMS set.
+  StartServers(1, {}, nullptr,
+               /*max_concurrent_streams=*/kMaxConcurrentStreams);
+  // Channel initially talks only to the first server.
+  FakeResolverResponseGeneratorWrapper response_generator;
+  auto channel = BuildChannel("pick_first", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts(), kServiceConfig1);
+  // Start kMaxConcurrentStreams long-running RPCs.
+  std::vector<std::unique_ptr<LongRunningRpc>> rpcs;
+  for (size_t i = 0; i < kMaxConcurrentStreams; ++i) {
+    rpcs.emplace_back(StartLongRunningRpc(stub.get()));
+  }
+  // Wait for the server to see the first kMaxConcurrentStreams RPCs.
+  LOG(INFO) << "Waiting for server to see the initial RPCs...";
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.RpcsWaitingForClientCancel() ==
+           kMaxConcurrentStreams;
+  })) << "timeout waiting for initial RPCs to start -- RPCs started: "
+      << servers_[0]->service_.RpcsWaitingForClientCancel();
+  // There should be only one connection.
+  EXPECT_EQ(servers_[0]->service_.clients().size(), 1);
+  // Intercept the next connection attempt.
+  ConnectionAttemptInjector injector;
+  auto hold = injector.AddHold(servers_[0]->port_);
+  // Start two more RPCs, which will be queued.
+  rpcs.emplace_back(StartLongRunningRpc(stub.get()));
+  rpcs.emplace_back(StartLongRunningRpc(stub.get()));
+  // TODO(roth): Use a metric to determine when they're actually queued?
+  // No connection attempt should be started yet, since
+  // max_connections_per_subchannel is currently 1.
+  EXPECT_FALSE(hold->IsStarted());
+  // Send a resolver update that increases max_connections_per_subchannel.
+  constexpr char kServiceConfig2[] =
+      "{\n"
+      "  \"connectionScaling\": {\n"
+      "    \"maxConnectionsPerSubchannel\": 2\n"
+      "  }\n"
+      "}";
+  response_generator.SetNextResolution(GetServersPorts(), kServiceConfig2);
+  // Now that we can create a second connection, the queued RPCs should
+  // cause us to do that.
+  hold->Wait();
+  hold->Resume();
+  // The server should see all of the RPCs now.
+  LOG(INFO) << "Waiting for server to see the new RPCs...";
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.RpcsWaitingForClientCancel() ==
+           kMaxConcurrentStreams + 2;
+  })) << "timeout waiting for initial RPCs to start -- RPCs started: "
+      << servers_[0]->service_.RpcsWaitingForClientCancel();
+  // There should be two connections.
+  EXPECT_EQ(servers_[0]->service_.clients().size(), 2);
+}
+
+TEST_F(ConnectionScalingTest, IdleConnectionsClosed) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
+  if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
+    GTEST_SKIP()
+        << "this test requires the subchannel_connection_scaling experiment";
+  }
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
+  constexpr char kServiceConfig[] =
+      "{\n"
+      "  \"connectionScaling\": {\n"
+      "    \"maxConnectionsPerSubchannel\": 2\n"
+      "  }\n"
+      "}";
+  const int kMaxConcurrentStreams = 3;
+  // Start a server with MAX_CONCURRENT_STREAMS set and an IDLE timeout
+  // of 10 seconds.
+  const uint32_t kIdleTimeoutMs = 10000;
+  StartServers(1, {}, nullptr, /*max_concurrent_streams=*/kMaxConcurrentStreams,
+               /*idle_timeout_ms=*/kIdleTimeoutMs);
+  FakeResolverResponseGeneratorWrapper response_generator;
+  auto channel = BuildChannel("pick_first", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts(), kServiceConfig);
+  // Start kMaxConcurrentStreams long-running RPCs.
+  std::vector<std::unique_ptr<LongRunningRpc>> rpcs;
+  for (size_t i = 0; i < kMaxConcurrentStreams; ++i) {
+    rpcs.emplace_back(StartLongRunningRpc(stub.get()));
+  }
+  // Wait for the server to see the first kMaxConcurrentStreams RPCs.
+  LOG(INFO) << "Waiting for server to see the initial RPCs...";
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.RpcsWaitingForClientCancel() ==
+           kMaxConcurrentStreams;
+  })) << "timeout waiting for initial RPCs to start -- RPCs started: "
+      << servers_[0]->service_.RpcsWaitingForClientCancel();
+  // The server should see only one connection.
+  EXPECT_EQ(servers_[0]->service_.clients().size(), 1);
+  // Find the subchannel in channelz, and verify that there's only one
+  // connection there as well.
+  auto subchannel_nodes = ChannelzUtil::GetSubchannelsForAddress(
+      grpc_core::LocalIpUri(servers_[0]->port_));
+  EXPECT_EQ(subchannel_nodes.size(), 1);
+  if (subchannel_nodes.empty()) return;
+  auto socket_nodes =
+      ChannelzUtil::GetSubchannelConnections(subchannel_nodes.front().id());
+  EXPECT_EQ(socket_nodes.size(), 1);
+  // Start another RPC, which will trigger the creation of a new
+  // connection.
+  rpcs.emplace_back(StartLongRunningRpc(stub.get()));
+  // Now the server should see the new RPC.
+  LOG(INFO) << "Waiting for server to see the last RPC...";
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.RpcsWaitingForClientCancel() ==
+           kMaxConcurrentStreams + 1;
+  })) << "timeout waiting for last RPC to start";
+  // The server should see a second connection.
+  EXPECT_EQ(servers_[0]->service_.clients().size(), 2);
+  // And channelz should too.
+  socket_nodes =
+      ChannelzUtil::GetSubchannelConnections(subchannel_nodes.front().id());
+  EXPECT_EQ(socket_nodes.size(), 2);
+  // Cancel all of the RPCs.
+  LOG(INFO) << "Cancelling RPCs...";
+  rpcs.clear();
+  // Wait for server to see no active RPCs.
+  LOG(INFO) << "Waiting for server to see the RPCs cancelled...";
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.RpcsWaitingForClientCancel() == 0;
+  })) << "timeout waiting for server to see RPCs cancelled";
+  // Send RPCs in a loop.  These should all go on the first connection, so
+  // after the idle timeout, the server should close the second connection,
+  // and channelz should show only one connection.  We add a fudge factor
+  // to account for timing.
+  LOG(INFO) << "Sending RPCs until second connection closes...";
+  absl::Time deadline =
+      absl::Now() +
+      absl::Milliseconds(kIdleTimeoutMs * 3 * grpc_test_slowdown_factor());
+  while (true) {
+    ASSERT_LT(absl::Now(), deadline)
+        << "timed out waiting for connection to close";
+    // Use a long-running RPC here that stays alive while we're grabbing
+    // channelz data, to make sure the second connection doesn't get
+    // closed while we're getting the channelz data.
+    auto rpc = StartLongRunningRpc(stub.get());
+    socket_nodes =
+        ChannelzUtil::GetSubchannelConnections(subchannel_nodes.front().id());
+    rpc.reset();
+    LOG(INFO) << "Channelz socket nodes:";
+    for (auto& socket_node : socket_nodes) {
+      LOG(INFO) << "  Socket node: " << socket_node.DebugString();
+    }
+    if (socket_nodes.size() < 2) break;
+  }
+  EXPECT_EQ(socket_nodes.size(), 1);
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
@@ -3382,10 +4185,6 @@ int main(int argc, char** argv) {
   grpc_core::ConfigVars::Overrides overrides;
   overrides.client_channel_backup_poll_interval_ms = 1;
   grpc_core::ConfigVars::SetOverrides(overrides);
-#if TARGET_OS_IPHONE
-  // Workaround Apple CFStream bug
-  grpc_core::SetEnv("grpc_cfstream", "0");
-#endif
   grpc_init();
   grpc::testing::ConnectionAttemptInjector::Init();
   const auto result = RUN_ALL_TESTS();

@@ -14,6 +14,7 @@
 """Utility functions for generating protobuf code."""
 
 load("@rules_proto//proto:defs.bzl", "ProtoInfo")
+load(":grpc_util.bzl", "strip_extension")
 
 _PROTO_EXTENSION = ".proto"
 _VIRTUAL_IMPORTS = "/_virtual_imports/"
@@ -196,8 +197,8 @@ def get_staged_proto_file(label, context, source_file):
     Returns:
       The original proto file OR a new file in the staged location.
     """
-    if source_file.dirname == label.package or \
-       is_in_virtual_imports(source_file):
+    source_package = strip_extension(source_file.short_path, sep = "/")
+    if source_package == label.package or is_in_virtual_imports(source_file):
         # Current target and source_file are in same package
         return source_file
     else:
@@ -233,7 +234,7 @@ def includes_from_deps(deps):
     return [
         file
         for src in deps
-        for file in src[ProtoInfo].transitive_imports.to_list()
+        for file in src[ProtoInfo].transitive_sources.to_list()
     ]
 
 def get_proto_arguments(protos, genfiles_dir_path):

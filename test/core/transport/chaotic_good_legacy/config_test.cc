@@ -17,8 +17,8 @@
 #include <vector>
 
 #include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace {

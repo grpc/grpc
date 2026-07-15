@@ -36,14 +36,12 @@ from subprocess import PIPE
 import sys
 import sysconfig
 
-import _metadata
 from setuptools import Extension
 from setuptools.command import egg_info
 
 # Redirect the manifest template from MANIFEST.in to PYTHON-MANIFEST.in.
 egg_info.manifest_maker.template = "PYTHON-MANIFEST.in"
 
-PY3 = sys.version_info.major == 3
 PYTHON_STEM = os.path.join("src", "python", "grpcio")
 CORE_INCLUDE = (
     "include",
@@ -57,6 +55,8 @@ CARES_INCLUDE = (
     os.path.join("third_party", "cares", "cares", "include"),
     os.path.join("third_party", "cares"),
     os.path.join("third_party", "cares", "cares"),
+    os.path.join("third_party", "cares", "cares", "src", "lib", "include"),
+    os.path.join("third_party", "cares", "cares", "src", "lib"),
 )
 if "darwin" in sys.platform:
     CARES_INCLUDE += (os.path.join("third_party", "cares", "config_darwin"),)
@@ -67,9 +67,7 @@ if "linux" in sys.platform:
 if "openbsd" in sys.platform:
     CARES_INCLUDE += (os.path.join("third_party", "cares", "config_openbsd"),)
 RE2_INCLUDE = (os.path.join("third_party", "re2"),)
-SSL_INCLUDE = (
-    os.path.join("third_party", "boringssl-with-bazel", "src", "include"),
-)
+SSL_INCLUDE = (os.path.join("third_party", "boringssl-with-bazel", "include"),)
 UPB_INCLUDE = (os.path.join("third_party", "upb"),)
 UPB_GRPC_GENERATED_INCLUDE = (os.path.join("src", "core", "ext", "upb-gen"),)
 UPBDEFS_GRPC_GENERATED_INCLUDE = (
@@ -81,17 +79,15 @@ ZLIB_INCLUDE = (os.path.join("third_party", "zlib"),)
 README = os.path.join(PYTHON_STEM, "README.rst")
 
 # Ensure we're in the proper directory whether or not we're being used by pip.
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.abspath(PYTHON_STEM))
 
-# Break import-style to ensure we can actually find our in-repo dependencies.
 import _parallel_compile_patch
 import _spawn_patch
 import grpc_core_dependencies
-import python_version
 
 import commands
 import grpc_version
+import python_version
 
 _parallel_compile_patch.monkeypatch_compile_maybe()
 _spawn_patch.monkeypatch_spawn()
@@ -99,18 +95,14 @@ _spawn_patch.monkeypatch_spawn()
 
 LICENSE = "Apache License 2.0"
 
-CLASSIFIERS = (
-    [
-        "Development Status :: 5 - Production/Stable",
-        "Programming Language :: Python",
-        "Programming Language :: Python :: 3",
-    ]
-    + [
-        f"Programming Language :: Python :: {x}"
-        for x in python_version.SUPPORTED_PYTHON_VERSIONS
-    ]
-    + ["License :: OSI Approved :: Apache Software License"]
-)
+CLASSIFIERS = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+] + [
+    f"Programming Language :: Python :: {x}"
+    for x in python_version.SUPPORTED_PYTHON_VERSIONS
+]
 
 
 def _env_bool_value(env_name, default):
@@ -261,6 +253,12 @@ if sys.platform == "darwin":
 EXTRA_ENV_COMPILE_ARGS = os.environ.get("GRPC_PYTHON_CFLAGS", None)
 EXTRA_ENV_LINK_ARGS = os.environ.get("GRPC_PYTHON_LDFLAGS", None)
 if EXTRA_ENV_COMPILE_ARGS is None:
+
+    # NOTE: Keep in sync with c- and cpp-specific arg filters!
+    #       For Linux and Darwin args, update
+    #       BuildExt.build_extensions#new_compile() in commands.py
+    #       For Windows, update _commandfile_spawn() in _spawn_patch.py.
+
     EXTRA_ENV_COMPILE_ARGS = ""
     if "win32" in sys.platform:
         # MSVC by defaults uses C++14 and C89 so both needs to be configured.
@@ -269,6 +267,9 @@ if EXTRA_ENV_COMPILE_ARGS is None:
         # We need to statically link the C++ Runtime, only the C runtime is
         # available dynamically
         EXTRA_ENV_COMPILE_ARGS += " /MT"
+        # Required to build upb from protobuf 33.x
+        # https://github.com/grpc/grpc/issues/41951
+        EXTRA_ENV_COMPILE_ARGS += " /Zc:preprocessor"
     elif "linux" in sys.platform:
         # GCC by defaults uses C17 so only C++17 needs to be specified.
         EXTRA_ENV_COMPILE_ARGS += " -std=c++17"
@@ -291,11 +292,20 @@ if EXTRA_ENV_LINK_ARGS is None:
             EXTRA_ENV_LINK_ARGS += " -latomic"
     if "linux" in sys.platform:
         EXTRA_ENV_LINK_ARGS += " -static-libgcc"
+        _version_script = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "src",
+            "python",
+            "grpcio",
+            "cygrpc_exports.lds",
+        )
+        EXTRA_ENV_LINK_ARGS += f' -Wl,--version-script="{_version_script}"'
 
 # Explicitly link Core Foundation framework for MacOS to ensure no symbol is
 # missing when compiled using package managers like Conda.
 if "darwin" in sys.platform:
     EXTRA_ENV_LINK_ARGS += " -framework CoreFoundation"
+    EXTRA_ENV_LINK_ARGS += " -Wl,-exported_symbol,_PyInit_cygrpc"
 
 EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
@@ -307,7 +317,20 @@ CYTHON_EXTENSION_PACKAGE_NAMES = ()
 
 CYTHON_EXTENSION_MODULE_NAMES = ("grpc._cython.cygrpc",)
 
-CYTHON_HELPER_C_FILES = ()
+GRPCIO_CC_SRCS = ()
+
+_PRIVATE_KEY_SIGNING_FILES = (
+    os.path.join(
+        PYTHON_STEM,
+        "grpc",
+        "_cython",
+        "_cygrpc",
+        "private_key_signing",
+        "private_key_signer_py_wrapper.cc",
+    ),
+)
+
+GRPCIO_CC_SRCS += _PRIVATE_KEY_SIGNING_FILES
 
 CORE_C_FILES = tuple(grpc_core_dependencies.CORE_SOURCE_FILES)
 if "win32" in sys.platform:
@@ -400,7 +423,7 @@ DEFINE_MACROS += (
     ("GRPC_XDS_USER_AGENT_NAME_SUFFIX", _quote_build_define("Python")),
     (
         "GRPC_XDS_USER_AGENT_VERSION_SUFFIX",
-        _quote_build_define(_metadata.__version__),
+        _quote_build_define(grpc_version.VERSION),
     ),
 )
 
@@ -454,10 +477,6 @@ else:
         ("GRPC_ENABLE_FORK_SUPPORT", 1),
     )
 
-# Fix for multiprocessing support on Apple devices.
-# TODO(vigneshbabu): Remove this once the poll poller gets fork support.
-DEFINE_MACROS += (("GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER", 1),)
-
 # Fix for Cython build issue in aarch64.
 # It's required to define this macro before include <inttypes.h>.
 # <inttypes.h> was included in core/telemetry/call_tracer.h.
@@ -470,7 +489,7 @@ DEFINE_MACROS += (("__STDC_FORMAT_MACROS", None),)
 LDFLAGS = tuple(EXTRA_LINK_ARGS)
 CFLAGS = tuple(EXTRA_COMPILE_ARGS)
 if "linux" in sys.platform or "darwin" in sys.platform:
-    pymodinit_type = "PyObject*" if PY3 else "void"
+    pymodinit_type = "PyObject*"
     pymodinit = 'extern "C" __attribute__((visibility ("default"))) {}'.format(
         pymodinit_type
     )
@@ -501,9 +520,10 @@ def cython_extensions_and_necessity():
             name=module_name,
             sources=(
                 [module_file]
-                + list(CYTHON_HELPER_C_FILES)
+                + list(GRPCIO_CC_SRCS)
                 + core_c_files
                 + asm_files
+                + ["third_party/abseil-cpp/absl/log/initialize.cc"]
             ),
             include_dirs=list(EXTENSION_INCLUDE_DIRECTORIES),
             libraries=list(EXTENSION_LIBRARIES),
@@ -536,11 +556,7 @@ def cython_extensions_and_necessity():
 
 CYTHON_EXTENSION_MODULES, need_cython = cython_extensions_and_necessity()
 
-PACKAGE_DIRECTORIES = {
-    "": PYTHON_STEM,
-}
-
-INSTALL_REQUIRES = ()
+INSTALL_REQUIRES = ("typing-extensions~=4.12",)
 
 EXTRAS_REQUIRES = {
     "protobuf": "grpcio-tools>={version}".format(version=grpc_version.VERSION),
@@ -563,7 +579,7 @@ except ImportError:
         sys.stderr.write(
             "We could not find Cython. Setup may take 10-20 minutes.\n"
         )
-        SETUP_REQUIRES += ("cython>=3.0.0",)
+        SETUP_REQUIRES += ("cython==3.1.1",)
 
 COMMAND_CLASS = {
     "doc": commands.SphinxDocumentation,
@@ -584,40 +600,13 @@ shutil.copyfile(
     os.path.join("etc", "roots.pem"), os.path.join(credentials_dir, "roots.pem")
 )
 
-PACKAGE_DATA = {
-    # Binaries that may or may not be present in the final installation, but are
-    # mentioned here for completeness.
-    "grpc._cython": [
-        "_credentials/roots.pem",
-        "_windows/grpc_c.32.python",
-        "_windows/grpc_c.64.python",
-    ],
-}
-PACKAGES = setuptools.find_packages(PYTHON_STEM)
-
-setuptools.setup(
-    name="grpcio",
-    version=grpc_version.VERSION,
-    description="HTTP/2-based RPC framework",
-    author="The gRPC Authors",
-    author_email="grpc-io@googlegroups.com",
-    url="https://grpc.io",
-    project_urls={
-        "Source Code": "https://github.com/grpc/grpc",
-        "Bug Tracker": "https://github.com/grpc/grpc/issues",
-        "Documentation": "https://grpc.github.io/grpc/python",
-    },
-    license=LICENSE,
-    classifiers=CLASSIFIERS,
-    long_description_content_type="text/x-rst",
-    long_description=open(README).read(),
-    ext_modules=CYTHON_EXTENSION_MODULES,
-    packages=list(PACKAGES),
-    package_dir=PACKAGE_DIRECTORIES,
-    package_data=PACKAGE_DATA,
-    python_requires=f">={python_version.MIN_PYTHON_VERSION}",
-    install_requires=INSTALL_REQUIRES,
-    extras_require=EXTRAS_REQUIRES,
-    setup_requires=SETUP_REQUIRES,
-    cmdclass=COMMAND_CLASS,
-)
+if __name__ == "__main__":
+    setuptools.setup(
+        classifiers=CLASSIFIERS,
+        ext_modules=CYTHON_EXTENSION_MODULES,
+        python_requires=f">={python_version.MIN_PYTHON_VERSION}",
+        install_requires=INSTALL_REQUIRES,
+        extras_require=EXTRAS_REQUIRES,
+        setup_requires=SETUP_REQUIRES,
+        cmdclass=COMMAND_CLASS,
+    )

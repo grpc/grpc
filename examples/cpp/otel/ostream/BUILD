@@ -23,8 +23,11 @@ cc_binary(
         "//examples/cpp/otel:util",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/log:initialize",
         "@io_opentelemetry_cpp//exporters/ostream:ostream_metric_exporter",
+        "@io_opentelemetry_cpp//exporters/ostream:ostream_span_exporter",
         "@io_opentelemetry_cpp//sdk/src/metrics",
+        "@io_opentelemetry_cpp//sdk/src/trace",
     ],
 )
 
@@ -37,8 +40,11 @@ cc_binary(
         "//examples/cpp/otel:util",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/log:initialize",
         "@com_google_absl//absl/strings:str_format",
         "@io_opentelemetry_cpp//exporters/ostream:ostream_metric_exporter",
+        "@io_opentelemetry_cpp//exporters/ostream:ostream_span_exporter",
         "@io_opentelemetry_cpp//sdk/src/metrics",
+        "@io_opentelemetry_cpp//sdk/src/trace",
     ],
 )

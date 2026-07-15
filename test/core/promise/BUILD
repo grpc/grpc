@@ -18,7 +18,13 @@ load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/promise")
+grpc_package(
+    name = "test/core/promise",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_library(
     name = "poll_matcher",
@@ -103,7 +109,14 @@ grpc_cc_test(
     external_deps = ["gtest"],
     uses_event_engine = False,
     uses_polling = False,
-    deps = ["//:promise"],
+    deps = [
+        "//:promise",
+        "//src/core:channelz_property_list",
+        "//src/core:json_writer",
+        "//src/core:upb_utils",
+        "//src/proto/grpc/channelz/v2:promise_upb_proto",
+        "//src/proto/grpc/channelz/v2:property_list_upb_proto",
+    ],
 )
 
 grpc_cc_test(
@@ -156,6 +169,7 @@ grpc_cc_test(
     srcs = ["match_promise_test.cc"],
     external_deps = [
         "absl/functional:any_invocable",
+        "absl/strings",
         "gtest",
     ],
     tags = ["promise_test"],
@@ -226,7 +240,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "switch_test",
     srcs = ["switch_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/strings",
+    ],
     tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
@@ -256,7 +273,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "join_test",
     srcs = ["join_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "@com_google_protobuf//upb/mem",
+    ],
     tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
@@ -265,6 +285,7 @@ grpc_cc_test(
         "//src/core:join",
         "//src/core:poll",
         "//src/core:status_flag",
+        "//src/proto/grpc/channelz/v2:promise_upb_proto",
     ],
 )
 
@@ -274,11 +295,15 @@ grpc_cc_test(
     external_deps = [
         "absl/utility",
         "gtest",
+        "@com_google_protobuf//upb/mem",
     ],
     tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
-    deps = ["//src/core:try_join"],
+    deps = [
+        "//src/core:try_join",
+        "//src/proto/grpc/channelz/v2:promise_upb_proto",
+    ],
 )
 
 grpc_cc_test(
@@ -287,6 +312,7 @@ grpc_cc_test(
     external_deps = [
         "absl/utility",
         "gtest",
+        "@com_google_protobuf//upb/mem",
     ],
     tags = ["promise_test"],
     uses_event_engine = False,
@@ -294,29 +320,43 @@ grpc_cc_test(
     deps = [
         "//:promise",
         "//src/core:all_ok",
+        "//src/proto/grpc/channelz/v2:promise_upb_proto",
     ],
 )
 
 grpc_cc_test(
     name = "seq_test",
     srcs = ["seq_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/strings",
+        "@com_google_protobuf//upb/mem",
+    ],
     tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
-    deps = ["//src/core:seq"],
+    deps = [
+        "//:promise_upb",
+        "//src/core:json_writer",
+        "//src/core:seq",
+    ],
 )
 
 grpc_cc_test(
     name = "try_seq_test",
     srcs = ["try_seq_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "@com_google_protobuf//upb/mem",
+    ],
     tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "poll_matcher",
+        "//src/core:json_writer",
         "//src/core:try_seq",
+        "//src/proto/grpc/channelz/v2:promise_upb_proto",
     ],
 )
 
@@ -333,6 +373,7 @@ grpc_cc_test(
         "//:ref_counted_ptr",
         "//src/core:arena",
         "//src/core:memory_quota",
+        "//src/core:metadata_batch",
         "//src/core:poll",
         "//src/core:resource_quota",
         "//src/core:try_seq",
@@ -380,7 +421,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "for_each_test",
     srcs = ["for_each_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "@com_google_protobuf//upb/mem",
+    ],
     tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
@@ -399,6 +443,7 @@ grpc_cc_test(
         "//src/core:resource_quota",
         "//src/core:seq",
         "//src/core:try_seq",
+        "//src/proto/grpc/channelz/v2:promise_upb_proto",
     ],
 )
 
@@ -442,6 +487,7 @@ grpc_cc_test(
         "test_wakeup_schedulers",
         "//:gpr",
         "//:grpc",
+        "//:grpc_base",
         "//:ref_counted_ptr",
         "//src/core:activity",
         "//src/core:event_engine_memory_allocator",
@@ -491,21 +537,38 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
+grpc_fuzz_test(
     name = "mpsc_test",
     srcs = ["mpsc_test.cc"],
     external_deps = [
         "gtest",
+        "fuzztest",
+        "fuzztest_main",
     ],
     tags = ["promise_test"],
-    uses_event_engine = False,
-    uses_polling = False,
     deps = [
         "poll_matcher",
         "//:gpr",
         "//:promise",
         "//src/core:activity",
         "//src/core:mpsc",
+        "//src/core:status_flag",
+    ],
+)
+
+grpc_cc_test(
+    name = "lock_based_mpsc_test",
+    srcs = ["lock_based_mpsc_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    tags = ["promise_test"],
+    deps = [
+        "poll_matcher",
+        "//:gpr",
+        "//:promise",
+        "//src/core:activity",
+        "//src/core:lock_based_mpsc",
     ],
 )
 
@@ -521,6 +584,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "poll_matcher",
+        "//:gpr",
         "//src/core:loop",
         "//src/core:map",
         "//src/core:notification",
@@ -554,6 +618,7 @@ grpc_fuzz_test(
         "//:gpr",
         "//:promise",
         "//src/core:activity",
+        "//src/core:grpc_check",
         "//src/core:join",
         "//src/core:map",
         "//src/core:poll",
@@ -609,6 +674,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:event_engine_base_hdrs",
         "//:grpc",
         "//src/core:activity",
         "//src/core:event_engine_wakeup_scheduler",
@@ -631,6 +697,7 @@ grpc_cc_test(
         "test_wakeup_schedulers",
         "//:exec_ctx",
         "//:grpc",
+        "//:grpc_base",
         "//:orphanable",
         "//src/core:arena",
         "//src/core:default_event_engine",
@@ -682,21 +749,26 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc_unsecure",
         "//:ref_counted_ptr",
         "//src/core:1999",
+        "//src/core:arena",
         "//src/core:context",
         "//src/core:default_event_engine",
+        "//src/core:event_engine_context",
         "//src/core:event_engine_memory_allocator",
         "//src/core:inter_activity_latch",
+        "//src/core:json_writer",
         "//src/core:memory_quota",
         "//src/core:notification",
         "//src/core:poll",
         "//src/core:resource_quota",
         "//src/core:seq",
         "//src/core:sleep",
+        "//src/core:sync",
         "//src/core:time",
     ],
 )
@@ -707,44 +779,55 @@ grpc_cc_test(
     external_deps = [
         "absl/base:core_headers",
         "absl/log:log",
+        "absl/strings",
+        "absl/strings:str_format",
         "gtest",
     ],
-    tags = ["party_mpsc_test"],
+    tags = [
+        "no_windows",
+        "party_mpsc_test",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "poll_matcher",
+        "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc_unsecure",
         "//:ref_counted_ptr",
         "//src/core:1999",
+        "//src/core:arena",
         "//src/core:context",
         "//src/core:default_event_engine",
         "//src/core:event_engine_memory_allocator",
+        "//src/core:json_writer",
+        "//src/core:loop",
         "//src/core:memory_quota",
         "//src/core:mpsc",
         "//src/core:notification",
         "//src/core:poll",
         "//src/core:resource_quota",
         "//src/core:seq",
+        "//src/core:shared_bit_gen",
         "//src/core:sleep",
         "//src/core:time",
     ],
 )
 
 grpc_internal_proto_library(
-    name = "inter_activity_mutex_test_proto",
-    srcs = ["inter_activity_mutex_test.proto"],
+    name = "inter_activity_mutex_fuzzer_proto",
+    srcs = ["inter_activity_mutex_fuzzer.proto"],
 )
 
 grpc_cc_proto_library(
-    name = "inter_activity_mutex_test_cc_proto",
-    deps = ["inter_activity_mutex_test_proto"],
+    name = "inter_activity_mutex_fuzzer_cc_proto",
+    deps = ["inter_activity_mutex_fuzzer_proto"],
 )
 
 grpc_fuzz_test(
-    name = "inter_activity_mutex_test",
-    srcs = ["inter_activity_mutex_test.cc"],
+    name = "inter_activity_mutex_fuzzer",
+    srcs = ["inter_activity_mutex_fuzzer.cc"],
     external_deps = [
         "gtest",
         "fuzztest",
@@ -752,10 +835,36 @@ grpc_fuzz_test(
     ],
     tags = ["promise_test"],
     deps = [
-        "inter_activity_mutex_test_cc_proto",
+        "inter_activity_mutex_fuzzer_cc_proto",
         "poll_matcher",
         "//:grpc",
+        "//:promise",
         "//src/core:1999",
+        "//src/core:arena",
+        "//src/core:inter_activity_mutex",
+        "//src/core:notification",
+        "//src/core:resource_quota",
+        "//src/core:seq",
+        "//src/core:time",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
+
+grpc_cc_test(
+    name = "inter_activity_mutex_test",
+    srcs = ["inter_activity_mutex_test.cc"],
+    external_deps = [
+        "gtest",
+        "gtest_main",
+    ],
+    tags = ["promise_test"],
+    deps = [
+        "poll_matcher",
+        "//:grpc",
+        "//:grpc_base",
+        "//:promise",
+        "//src/core:1999",
+        "//src/core:arena",
         "//src/core:inter_activity_mutex",
         "//src/core:notification",
         "//src/core:resource_quota",
@@ -771,6 +880,7 @@ grpc_cc_benchmark(
     deps = [
         "//:grpc",
         "//src/core:1999",
+        "//src/core:arena",
         "//src/core:default_event_engine",
     ],
 )

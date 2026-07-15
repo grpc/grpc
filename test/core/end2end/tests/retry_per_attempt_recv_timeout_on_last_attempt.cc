@@ -20,12 +20,13 @@
 #include <memory>
 #include <optional>
 
-#include "absl/strings/str_format.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc_core {
 namespace {
@@ -35,7 +36,7 @@ namespace {
 // - both attempts do not receive a response until after perAttemptRecvTimeout
 CORE_END2END_TEST(RetryTests, RetryPerAttemptRecvTimeoutOnLastAttempt) {
   SKIP_IF_V3();  // Not working yet
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   InitClient(
       ChannelArgs()
           .Set(GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING, true)
@@ -89,7 +90,8 @@ CORE_END2END_TEST(RetryTests, RetryPerAttemptRecvTimeoutOnLastAttempt) {
   Expect(1, true);
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_CANCELLED);
-  EXPECT_EQ(server_status.message(), "retry perAttemptRecvTimeout exceeded");
+  EXPECT_THAT(server_status.message(),
+              ::testing::HasSubstr("retry perAttemptRecvTimeout exceeded"));
   EXPECT_EQ(s1->method(), "/service/method");
 }
 

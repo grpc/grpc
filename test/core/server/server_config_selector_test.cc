@@ -20,24 +20,25 @@
 
 #include <grpc/grpc.h>
 
-#include "absl/status/status.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 namespace testing {
 namespace {
 
 class TestServerConfigSelectorProvider : public ServerConfigSelectorProvider {
+ public:
   absl::StatusOr<RefCountedPtr<ServerConfigSelector>> Watch(
-      std::unique_ptr<ServerConfigSelectorWatcher> /*watcher*/) override {
+      std::shared_ptr<ServerConfigSelectorWatcher> /*watcher*/) override {
     return absl::UnavailableError("Test ServerConfigSelector");
   }
+  void CancelWatch(
+      std::shared_ptr<ServerConfigSelectorWatcher> /*watcher*/) override {}
 
   void Orphaned() override {}
-
-  void CancelWatch() override {}
 };
 
 // Test that ServerConfigSelectorProvider can be safely copied to channel args

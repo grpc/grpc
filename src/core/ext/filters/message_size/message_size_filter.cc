@@ -19,101 +19,21 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 #include <grpc/support/port_platform.h>
-#include <inttypes.h>
 
-#include <functional>
-#include <utility>
-
-#include "absl/log/log.h"
-#include "absl/strings/str_format.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/latch.h"
-#include "src/core/lib/promise/race.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/transport/transport.h"
-#include "src/core/service_config/service_config_call_data.h"
+#include "src/core/transport/message_size_service_config.h"
 #include "src/core/util/latent_see.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc_core {
-
-//
-// MessageSizeParsedConfig
-//
-
-const MessageSizeParsedConfig* MessageSizeParsedConfig::GetFromCallContext(
-    Arena* arena, size_t service_config_parser_index) {
-  auto* svc_cfg_call_data = arena->GetContext<ServiceConfigCallData>();
-  if (svc_cfg_call_data == nullptr) return nullptr;
-  return static_cast<const MessageSizeParsedConfig*>(
-      svc_cfg_call_data->GetMethodParsedConfig(service_config_parser_index));
-}
-
-MessageSizeParsedConfig MessageSizeParsedConfig::GetFromChannelArgs(
-    const ChannelArgs& channel_args) {
-  MessageSizeParsedConfig limits;
-  limits.max_send_size_ = GetMaxSendSizeFromChannelArgs(channel_args);
-  limits.max_recv_size_ = GetMaxRecvSizeFromChannelArgs(channel_args);
-  return limits;
-}
-
-std::optional<uint32_t> GetMaxRecvSizeFromChannelArgs(const ChannelArgs& args) {
-  if (args.WantMinimalStack()) return std::nullopt;
-  int size = args.GetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH)
-                 .value_or(GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH);
-  if (size < 0) return std::nullopt;
-  return static_cast<uint32_t>(size);
-}
-
-std::optional<uint32_t> GetMaxSendSizeFromChannelArgs(const ChannelArgs& args) {
-  if (args.WantMinimalStack()) return std::nullopt;
-  int size = args.GetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH)
-                 .value_or(GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH);
-  if (size < 0) return std::nullopt;
-  return static_cast<uint32_t>(size);
-}
-
-const JsonLoaderInterface* MessageSizeParsedConfig::JsonLoader(
-    const JsonArgs&) {
-  static const auto* loader =
-      JsonObjectLoader<MessageSizeParsedConfig>()
-          .OptionalField("maxRequestMessageBytes",
-                         &MessageSizeParsedConfig::max_send_size_)
-          .OptionalField("maxResponseMessageBytes",
-                         &MessageSizeParsedConfig::max_recv_size_)
-          .Finish();
-  return loader;
-}
-
-//
-// MessageSizeParser
-//
-
-std::unique_ptr<ServiceConfigParser::ParsedConfig>
-MessageSizeParser::ParsePerMethodParams(const ChannelArgs& /*args*/,
-                                        const Json& json,
-                                        ValidationErrors* errors) {
-  return LoadFromJson<std::unique_ptr<MessageSizeParsedConfig>>(
-      json, JsonArgs(), errors);
-}
-
-void MessageSizeParser::Register(CoreConfiguration::Builder* builder) {
-  builder->service_config_parser()->RegisterParser(
-      std::make_unique<MessageSizeParser>());
-}
-
-size_t MessageSizeParser::ParserIndex() {
-  return CoreConfiguration::Get().service_config_parser().GetParserIndex(
-      parser_name());
-}
 
 //
 // MessageSizeFilter
@@ -187,7 +107,7 @@ void ClientMessageSizeFilter::Call::OnClientInitialMetadata(
 
 ServerMetadataHandle ServerMessageSizeFilter::Call::OnClientToServerMessage(
     const Message& message, ServerMessageSizeFilter* filter) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
+  GRPC_LATENT_SEE_SCOPE(
       "ServerMessageSizeFilter::Call::OnClientToServerMessage");
   return CheckPayload(message, filter->parsed_config_.max_recv_size(),
                       /*is_client=*/false, false);
@@ -195,7 +115,7 @@ ServerMetadataHandle ServerMessageSizeFilter::Call::OnClientToServerMessage(
 
 ServerMetadataHandle ServerMessageSizeFilter::Call::OnServerToClientMessage(
     const Message& message, ServerMessageSizeFilter* filter) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
+  GRPC_LATENT_SEE_SCOPE(
       "ServerMessageSizeFilter::Call::OnServerToClientMessage");
   return CheckPayload(message, filter->parsed_config_.max_send_size(),
                       /*is_client=*/false, true);
@@ -203,7 +123,7 @@ ServerMetadataHandle ServerMessageSizeFilter::Call::OnServerToClientMessage(
 
 ServerMetadataHandle ClientMessageSizeFilter::Call::OnClientToServerMessage(
     const Message& message) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
+  GRPC_LATENT_SEE_SCOPE(
       "ClientMessageSizeFilter::Call::OnClientToServerMessage");
   return CheckPayload(message, limits_.max_send_size(), /*is_client=*/true,
                       true);
@@ -211,7 +131,7 @@ ServerMetadataHandle ClientMessageSizeFilter::Call::OnClientToServerMessage(
 
 ServerMetadataHandle ClientMessageSizeFilter::Call::OnServerToClientMessage(
     const Message& message) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
+  GRPC_LATENT_SEE_SCOPE(
       "ClientMessageSizeFilter::Call::OnServerToClientMessage");
   return CheckPayload(message, limits_.max_recv_size(), /*is_client=*/true,
                       false);

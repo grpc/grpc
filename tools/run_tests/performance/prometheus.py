@@ -143,16 +143,16 @@ class Prometheus:
                     container_matcher, pod
                 ).items():
                     container_data[container] = {}
-                    container_data[container][
-                        "cpuSeconds"
-                    ] = compute_total_cpu_seconds(data)
+                    container_data[container]["cpuSeconds"] = (
+                        compute_total_cpu_seconds(data)
+                    )
 
                 for container, data in self._fetch_memory_for_pod(
                     container_matcher, pod
                 ).items():
-                    container_data[container][
-                        "memoryMean"
-                    ] = compute_average_memory_usage(data)
+                    container_data[container]["memoryMean"] = (
+                        compute_average_memory_usage(data)
+                    )
 
                 pod_data[pod] = container_data
             processed_data[role] = pod_data

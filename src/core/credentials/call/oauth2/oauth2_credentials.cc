@@ -19,6 +19,7 @@
 #include "src/core/credentials/call/oauth2/oauth2_credentials.h"
 
 #include <grpc/credentials.h>
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
@@ -35,24 +36,16 @@
 #include <memory>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/numbers.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/credentials/call/json_util.h"
+#include "src/core/credentials/call/regional_access_boundary_fetcher.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/http_client/httpcli_ssl_credentials.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
@@ -61,6 +54,13 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/uri.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/numbers.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
 using grpc_core::Json;
 
@@ -211,58 +211,6 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
 
 namespace grpc_core {
 
-// State held for a pending HTTP request.
-class Oauth2TokenFetcherCredentials::HttpFetchRequest final
-    : public TokenFetcherCredentials::FetchRequest {
- public:
-  HttpFetchRequest(
-      Oauth2TokenFetcherCredentials* creds, Timestamp deadline,
-      absl::AnyInvocable<
-          void(absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
-          on_done)
-      : on_done_(std::move(on_done)) {
-    GRPC_CLOSURE_INIT(&on_http_response_, OnHttpResponse, this, nullptr);
-    Ref().release();  // Ref held by HTTP request callback.
-    http_request_ = creds->StartHttpRequest(creds->pollent(), deadline,
-                                            &response_, &on_http_response_);
-  }
-
-  ~HttpFetchRequest() override { grpc_http_response_destroy(&response_); }
-
-  void Orphan() override {
-    http_request_.reset();
-    Unref();
-  }
-
- private:
-  static void OnHttpResponse(void* arg, grpc_error_handle error) {
-    RefCountedPtr<HttpFetchRequest> self(static_cast<HttpFetchRequest*>(arg));
-    if (!error.ok()) {
-      self->on_done_(std::move(error));
-      return;
-    }
-    // Parse oauth2 token.
-    std::optional<Slice> access_token_value;
-    Duration token_lifetime;
-    grpc_credentials_status status =
-        grpc_oauth2_token_fetcher_credentials_parse_server_response(
-            &self->response_, &access_token_value, &token_lifetime);
-    if (status != GRPC_CREDENTIALS_OK) {
-      self->on_done_(absl::UnavailableError("error parsing oauth2 token"));
-      return;
-    }
-    self->on_done_(MakeRefCounted<Token>(std::move(*access_token_value),
-                                         Timestamp::Now() + token_lifetime));
-  }
-
-  OrphanablePtr<HttpRequest> http_request_;
-  grpc_closure on_http_response_;
-  grpc_http_response response_;
-  absl::AnyInvocable<void(
-      absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
-      on_done_;
-};
-
 std::string Oauth2TokenFetcherCredentials::debug_string() {
   return "OAuth2TokenFetcherCredentials";
 }
@@ -278,7 +226,27 @@ Oauth2TokenFetcherCredentials::FetchToken(
     absl::AnyInvocable<
         void(absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
         on_done) {
-  return MakeOrphanable<HttpFetchRequest>(this, deadline, std::move(on_done));
+  return MakeOrphanable<HttpTokenFetcherCredentials::HttpFetchRequest>(
+      this, deadline,
+      [on_done = std::move(on_done)](
+          absl::StatusOr<grpc_http_response> response) mutable {
+        if (!response.ok()) {
+          on_done(response.status());
+          return;
+        }
+        // Parse oauth2 token.
+        std::optional<Slice> access_token_value;
+        Duration token_lifetime;
+        grpc_credentials_status status =
+            grpc_oauth2_token_fetcher_credentials_parse_server_response(
+                &(*response), &access_token_value, &token_lifetime);
+        if (status != GRPC_CREDENTIALS_OK) {
+          on_done(absl::UnavailableError("error parsing oauth2 token"));
+          return;
+        }
+        on_done(MakeRefCounted<Token>(std::move(*access_token_value),
+                                      Timestamp::Now() + token_lifetime));
+      });
 }
 
 }  // namespace grpc_core
@@ -289,22 +257,48 @@ Oauth2TokenFetcherCredentials::FetchToken(
 
 namespace {
 
-class grpc_compute_engine_token_fetcher_credentials
-    : public grpc_core::Oauth2TokenFetcherCredentials {
+class TokenWithEmail final : public grpc_core::TokenFetcherCredentials::Token {
  public:
-  grpc_compute_engine_token_fetcher_credentials() = default;
-  ~grpc_compute_engine_token_fetcher_credentials() override = default;
+  TokenWithEmail(
+      grpc_core::Slice token, grpc_core::Timestamp expiration,
+      grpc_core::RefCountedPtr<grpc_core::EmailFetcher> email_fetcher)
+      : Token(std::move(token), expiration),
+        email_fetcher_(std::move(email_fetcher)) {}
+
+  void AddTokenToClientInitialMetadata(
+      grpc_core::ClientMetadata& metadata) override {
+    Token::AddTokenToClientInitialMetadata(metadata);
+    email_fetcher_->Fetch(token().as_string_view(), metadata);
+  }
+
+ private:
+  grpc_core::RefCountedPtr<grpc_core::EmailFetcher> email_fetcher_;
+};
+
+class grpc_compute_engine_token_fetcher_credentials
+    : public grpc_core::HttpTokenFetcherCredentials {
+ public:
+  grpc_compute_engine_token_fetcher_credentials()
+      : email_fetcher_(grpc_core::MakeRefCounted<grpc_core::EmailFetcher>()) {}
+  explicit grpc_compute_engine_token_fetcher_credentials(
+      std::vector<grpc_core::URI::QueryParam> query_params)
+      : email_fetcher_(grpc_core::MakeRefCounted<grpc_core::EmailFetcher>()),
+        query_params_(std::move(query_params)) {}
 
   std::string debug_string() override {
-    return absl::StrFormat(
-        "GoogleComputeEngineTokenFetcherCredentials{%s}",
-        grpc_core::Oauth2TokenFetcherCredentials::debug_string());
+    return "GoogleComputeEngineTokenFetcherCredentials";
+  }
+
+  grpc_core::UniqueTypeName type() const override {
+    static grpc_core::UniqueTypeName::Factory kFactory("ComputeEngine");
+    return kFactory.Create();
   }
 
  private:
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> StartHttpRequest(
       grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
       grpc_http_response* response, grpc_closure* on_complete) override {
+    memset(response, 0, sizeof(*response));
     grpc_http_header header = {const_cast<char*>("Metadata-Flavor"),
                                const_cast<char*>("Google")};
     grpc_http_request request;
@@ -314,10 +308,11 @@ class grpc_compute_engine_token_fetcher_credentials
     // TODO(ctiller): Carry the memory quota in ctx and share it with the host
     // channel. This would allow us to cancel an authentication query when under
     // extreme memory pressure.
-    auto uri = grpc_core::URI::Create("http", GRPC_COMPUTE_ENGINE_METADATA_HOST,
+    auto uri = grpc_core::URI::Create("http", /*user_info=*/"",
+                                      GRPC_COMPUTE_ENGINE_METADATA_HOST,
                                       GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH,
-                                      {} /* query params */, "" /* fragment */);
-    CHECK(uri.ok());  // params are hardcoded
+                                      query_params_, "" /* fragment */);
+    GRPC_CHECK(uri.ok());  // params are hardcoded
     auto http_request = grpc_core::HttpRequest::Get(
         std::move(*uri), /*args=*/nullptr, pollent, &request, deadline,
         on_complete, response,
@@ -326,17 +321,53 @@ class grpc_compute_engine_token_fetcher_credentials
     http_request->Start();
     return http_request;
   }
-};
 
+  grpc_core::OrphanablePtr<FetchRequest> FetchToken(
+      grpc_core::Timestamp deadline,
+      absl::AnyInvocable<void(absl::StatusOr<grpc_core::RefCountedPtr<
+                                  TokenFetcherCredentials::Token>>)>
+          on_done) override {
+    email_fetcher_->StartEmailFetch();
+    return grpc_core::MakeOrphanable<HttpFetchRequest>(
+        this, deadline,
+        [email_fetcher = email_fetcher_, on_done = std::move(on_done)](
+            absl::StatusOr<grpc_http_response> response) mutable {
+          if (!response.ok()) {
+            on_done(response.status());
+            return;
+          }
+          std::optional<grpc_core::Slice> access_token_value;
+          grpc_core::Duration token_lifetime;
+          grpc_credentials_status status =
+              grpc_oauth2_token_fetcher_credentials_parse_server_response(
+                  &(*response), &access_token_value, &token_lifetime);
+          if (status != GRPC_CREDENTIALS_OK) {
+            on_done(absl::UnavailableError("error parsing oauth2 token"));
+            return;
+          }
+          on_done(grpc_core::MakeRefCounted<TokenWithEmail>(
+              std::move(*access_token_value),
+              grpc_core::Timestamp::Now() + token_lifetime,
+              std::move(email_fetcher)));
+        });
+  }
+
+  grpc_core::RefCountedPtr<grpc_core::EmailFetcher> email_fetcher_;
+  std::vector<grpc_core::URI::QueryParam> query_params_;
+};
 }  // namespace
 
 grpc_call_credentials* grpc_google_compute_engine_credentials_create(
-    void* reserved) {
+    grpc_google_compute_engine_credentials_options* options) {
   GRPC_TRACE_LOG(api, INFO)
-      << "grpc_compute_engine_credentials_create(reserved=" << reserved << ")";
-  CHECK_EQ(reserved, nullptr);
+      << "grpc_compute_engine_credentials_create(options=" << options << ")";
+  std::vector<grpc_core::URI::QueryParam> query_params;
+  if (options != nullptr && options->alts_hard_bound) {
+    query_params.push_back({"transport", "alts"});
+  }
   return grpc_core::MakeRefCounted<
-             grpc_compute_engine_token_fetcher_credentials>()
+             grpc_compute_engine_token_fetcher_credentials>(
+             std::move(query_params))
       .release();
 }
 
@@ -372,10 +403,11 @@ grpc_google_refresh_token_credentials::StartHttpRequest(
   // TODO(ctiller): Carry the memory quota in ctx and share it with the host
   // channel. This would allow us to cancel an authentication query when under
   // extreme memory pressure.
-  auto uri = grpc_core::URI::Create("https", GRPC_GOOGLE_OAUTH2_SERVICE_HOST,
+  auto uri = grpc_core::URI::Create("https", /*user_info=*/"",
+                                    GRPC_GOOGLE_OAUTH2_SERVICE_HOST,
                                     GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH,
                                     {} /* query params */, "" /* fragment */);
-  CHECK(uri.ok());  // params are hardcoded
+  GRPC_CHECK(uri.ok());  // params are hardcoded
   auto http_request = grpc_core::HttpRequest::Post(
       std::move(*uri), /*args=*/nullptr, pollent, &request, deadline,
       on_complete, response, grpc_core::CreateHttpRequestSSLCredentials());
@@ -424,7 +456,7 @@ grpc_call_credentials* grpc_google_refresh_token_credentials_create(
       << "grpc_refresh_token_credentials_create(json_refresh_token="
       << create_loggable_refresh_token(&token) << ", reserved=" << reserved
       << ")";
-  CHECK_EQ(reserved, nullptr);
+  GRPC_CHECK_EQ(reserved, nullptr);
   return grpc_refresh_token_credentials_create_from_auth_refresh_token(token)
       .release();
 }
@@ -602,7 +634,7 @@ absl::StatusOr<URI> ValidateStsCredentialsOptions(
 
 grpc_call_credentials* grpc_sts_credentials_create(
     const grpc_sts_credentials_options* options, void* reserved) {
-  CHECK_EQ(reserved, nullptr);
+  GRPC_CHECK_EQ(reserved, nullptr);
   absl::StatusOr<grpc_core::URI> sts_url =
       grpc_core::ValidateStsCredentialsOptions(options);
   if (!sts_url.ok()) {
@@ -648,7 +680,7 @@ grpc_call_credentials* grpc_access_token_credentials_create(
   GRPC_TRACE_LOG(api, INFO) << "grpc_access_token_credentials_create(access_"
                                "token=<redacted>, reserved="
                             << reserved << ")";
-  CHECK_EQ(reserved, nullptr);
+  GRPC_CHECK_EQ(reserved, nullptr);
   return grpc_core::MakeRefCounted<grpc_access_token_credentials>(access_token)
       .release();
 }

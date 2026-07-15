@@ -23,7 +23,7 @@
 #include <vector>
 
 #if defined(GPR_LINUX) || defined(GPR_ANDROID) || defined(GPR_FREEBSD) || \
-    defined(GPR_APPLE)
+    defined(GPR_APPLE) || defined(GPR_NETBSD) || defined(GPR_OPENBSD)
 
 #include <dirent.h>
 #include <fcntl.h>
@@ -33,13 +33,13 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "absl/log/log.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/credentials/transport/tls/load_system_roots.h"
 #include "src/core/credentials/transport/tls/load_system_roots_supported.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/load_file.h"
 #include "src/core/util/useful.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
 namespace {
@@ -59,7 +59,13 @@ const char* kCertDirectories[] = {""};
 #elif defined(GPR_APPLE)    // endif GPR_FREEBSD
 const char* kCertFiles[] = {"/etc/ssl/cert.pem"};
 const char* kCertDirectories[] = {""};
-#endif                      // GPR_APPLE
+#elif defined(GPR_NETBSD)   // endif GPR_APPLE
+const char* kCertFiles[] = {"/etc/openssl/certs/ca-certificates.crt"};
+const char* kCertDirectories[] = {"/etc/openssl/certs"};
+#elif defined(GPR_OPENBSD)  // endif GPR_NETBSD
+const char* kCertFiles[] = {"/etc/ssl/cert.pem"};
+const char* kCertDirectories[] = {""};
+#endif                      // GPR_OPENBSD
 
 grpc_slice GetSystemRootCerts() {
   size_t num_cert_files_ = GPR_ARRAY_SIZE(kCertFiles);
@@ -131,6 +137,7 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory) {
       } else {
         LOG(ERROR) << "failed to read file: " << roots_filenames[i].path;
       }
+      close(file_descriptor);
     }
   }
   bundle_slice = grpc_slice_new(bundle_string, bytes_read, gpr_free);
@@ -162,4 +169,5 @@ grpc_slice LoadSystemRootCerts() {
 
 }  // namespace grpc_core
 
-#endif  // GPR_LINUX || GPR_ANDROID || GPR_FREEBSD || GPR_APPLE
+#endif  // GPR_LINUX || GPR_ANDROID || GPR_FREEBSD || GPR_APPLE ||
+        // GPR_NETNSD || GPR_OPENBSD

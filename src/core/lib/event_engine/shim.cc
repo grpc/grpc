@@ -21,18 +21,15 @@
 
 namespace grpc_event_engine::experimental {
 
-bool UseEventEngineClient() {
-#if defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
-  return false;
-#endif
-  return grpc_core::IsEventEngineClientEnabled();
-}
+bool UseEventEngineClient() { return grpc_core::IsEventEngineClientEnabled(); }
 
 bool UseEventEngineListener() {
-#if defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
-  return false;
-#endif
   return grpc_core::IsEventEngineListenerEnabled();
+}
+
+bool UsePollsetAlternative() {
+  return UseEventEngineClient() && UseEventEngineListener() &&
+         grpc_core::IsPollsetAlternativeEnabled();
 }
 
 }  // namespace grpc_event_engine::experimental

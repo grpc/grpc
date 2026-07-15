@@ -23,6 +23,7 @@
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
+#include <stdbool.h>
 
 #include "rb_grpc.h"
 #include "rb_grpc_imports.generated.h"

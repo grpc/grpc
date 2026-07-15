@@ -30,7 +30,7 @@ from ._typing import EOFType
 from ._typing import RequestType
 from ._typing import ResponseType
 
-__all__ = "RpcContext", "Call", "UnaryUnaryCall", "UnaryStreamCall"
+__all__ = "Call", "RpcContext", "UnaryStreamCall", "UnaryUnaryCall"
 
 
 class RpcContext(metaclass=ABCMeta):

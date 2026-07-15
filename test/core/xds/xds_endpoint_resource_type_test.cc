@@ -26,15 +26,11 @@
 #include <utility>
 #include <vector>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_format.h"
 #include "envoy/config/core/v3/address.pb.h"
 #include "envoy/config/core/v3/base.pb.h"
 #include "envoy/config/core/v3/health_check.pb.h"
 #include "envoy/config/endpoint/v3/endpoint.pb.h"
 #include "envoy/type/v3/percent.pb.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -44,6 +40,7 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
 #include "src/core/xds/grpc/xds_endpoint.h"
 #include "src/core/xds/grpc/xds_endpoint_parser.h"
 #include "src/core/xds/grpc/xds_health_status.h"
@@ -55,6 +52,10 @@
 #include "test/core/test_util/test_config.h"
 #include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
 
 using envoy::config::endpoint::v3::ClusterLoadAssignment;
 
@@ -72,7 +73,7 @@ class XdsEndpointTest : public ::testing::Test {
 
   static RefCountedPtr<XdsClient> MakeXdsClient() {
     grpc_error_handle error;
-    auto bootstrap = GrpcXdsBootstrap::Create(
+    auto bootstrap = GrpcXdsBootstrapBuilder::Build(
         "{\n"
         "  \"xds_servers\": [\n"
         "    {\n"

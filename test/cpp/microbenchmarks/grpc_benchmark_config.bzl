@@ -16,6 +16,7 @@
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
 
 HISTORY = 1
+MONITORING = 2
 
 def grpc_benchmark_args():
     """Command line arguments for running a microbenchmark as a test"""
@@ -24,7 +25,7 @@ def grpc_benchmark_args():
 def grpc_cc_benchmark(name, external_deps = [], tags = [], uses_polling = False, uses_event_engine = False, **kwargs):
     """Base rule for gRPC benchmarks.
 
-    This is an opinionated configuration for gRPC benchmarks.
+    This is an opinionated configuration for gRPC microbenchmarks.
 
     We disable uses_polling, uses_event_engine by default so that we minimize
     unnecessary uses of CI time.
@@ -44,6 +45,7 @@ def grpc_cc_benchmark(name, external_deps = [], tags = [], uses_polling = False,
         **kwargs: per grpc_cc_test
     """
     kwargs.pop("monitoring", None)
+    kwargs.pop("labels", {})
     grpc_cc_test(
         name = name,
         args = grpc_benchmark_args(),

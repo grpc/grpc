@@ -22,10 +22,10 @@
 
 #include <memory>
 
-#include "gtest/gtest.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/http_client/httpcli.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 TEST(FormatRequestTest, FormatGetRequest) {
   grpc_http_header hdr = {const_cast<char*>("x-yz"), const_cast<char*>("abc")};

@@ -15,22 +15,22 @@
 #ifndef GRPC_SRC_CORE_CLIENT_CHANNEL_RETRY_INTERCEPTOR_H
 #define GRPC_SRC_CORE_CLIENT_CHANNEL_RETRY_INTERCEPTOR_H
 
+#include "src/core/call/interception_chain.h"
 #include "src/core/call/request_buffer.h"
 #include "src/core/client_channel/client_channel_args.h"
 #include "src/core/client_channel/retry_service_config.h"
 #include "src/core/client_channel/retry_throttle.h"
 #include "src/core/filter/filter_args.h"
-#include "src/core/lib/transport/interception_chain.h"
 #include "src/core/util/backoff.h"
 
 namespace grpc_core {
 
 namespace retry_detail {
+
 class RetryState {
  public:
-  RetryState(
-      const internal::RetryMethodConfig* retry_policy,
-      RefCountedPtr<internal::ServerRetryThrottleData> retry_throttle_data);
+  RetryState(const RetryMethodConfig* retry_policy,
+             RefCountedPtr<RetryThrottler> retry_throttler);
 
   // if nullopt --> commit & don't retry
   // if duration --> retry after duration
@@ -41,33 +41,31 @@ class RetryState {
 
   template <typename Sink>
   friend void AbslStringify(Sink& sink, const RetryState& state) {
-    sink.Append(absl::StrCat(
-        "policy:{",
-        state.retry_policy_ != nullptr ? absl::StrCat(*state.retry_policy_)
-                                       : "none",
-        "} throttle:", state.retry_throttle_data_ != nullptr,
-        " attempts:", state.num_attempts_completed_));
+    sink.Append(absl::StrCat("policy:{",
+                             state.retry_policy_ != nullptr
+                                 ? absl::StrCat(*state.retry_policy_)
+                                 : "none",
+                             "} throttler:", state.retry_throttler_ != nullptr,
+                             " attempts:", state.num_attempts_completed_));
   }
 
  private:
-  const internal::RetryMethodConfig* const retry_policy_;
-  RefCountedPtr<internal::ServerRetryThrottleData> retry_throttle_data_;
+  const RetryMethodConfig* const retry_policy_;
+  RefCountedPtr<RetryThrottler> retry_throttler_;
   int num_attempts_completed_ = 0;
   BackOff retry_backoff_;
 };
 
-absl::StatusOr<RefCountedPtr<internal::ServerRetryThrottleData>>
-ServerRetryThrottleDataFromChannelArgs(const ChannelArgs& args);
 }  // namespace retry_detail
 
 class RetryInterceptor : public Interceptor {
  public:
-  RetryInterceptor(
-      const ChannelArgs& args,
-      RefCountedPtr<internal::ServerRetryThrottleData> retry_throttle_data);
-
   static absl::StatusOr<RefCountedPtr<RetryInterceptor>> Create(
-      const ChannelArgs& args, const FilterArgs&);
+      const ChannelArgs& args, const FilterArgs& /*filter_args*/) {
+    return MakeRefCounted<RetryInterceptor>(args);
+  }
+
+  explicit RetryInterceptor(const ChannelArgs& args);
 
   void Orphaned() override {}
 
@@ -145,11 +143,11 @@ class RetryInterceptor : public Interceptor {
     bool committed_ = false;
   };
 
-  const internal::RetryMethodConfig* GetRetryPolicy();
+  const RetryMethodConfig* GetRetryPolicy();
 
   const size_t per_rpc_retry_buffer_size_;
   const size_t service_config_parser_index_;
-  const RefCountedPtr<internal::ServerRetryThrottleData> retry_throttle_data_;
+  const RefCountedPtr<RetryThrottler> retry_throttler_;
 };
 
 }  // namespace grpc_core

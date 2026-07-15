@@ -43,7 +43,7 @@ bazel build --config=dbg examples/cpp/debugging:crashing_greeter_client
 gdb -ex run \
     --args ./bazel-bin/examples/cpp/debugging/crashing_greeter_client \
             --crash_on_errors=true \
-            --target=localhork:50051
+            --target=localhost:50051
 ```
 
 Once the exception is thrown, you can use `bt` to see the stack trace and examine the crash, `info threads` to get the set of threads, etc. See the [GDB documentation](https://sourceware.org/gdb/current/onlinedocs/gdb.html/) for a more complete list of available features and commands.
@@ -57,7 +57,7 @@ gdb -ex 'b helloworld::Greeter::Stub::SayHello' \
     -ex run \
     --args ./bazel-bin/examples/cpp/debugging/crashing_greeter_client \
             --crash_on_errors=true \
-            --target=localhork:50051
+            --target=localhost:50051
 ```
 
 ## gRPC Admin Interface: Live Channel Tracing

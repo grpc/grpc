@@ -27,6 +27,8 @@
 #else
 #include "helloworld.grpc.pb.h"
 #endif
+#include "absl/flags/parse.h"
+#include "absl/log/initialize.h"
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -91,6 +93,8 @@ void RunServer() {
 }
 
 int main(int argc, char** argv) {
+  absl::ParseCommandLine(argc, argv);
+  absl::InitializeLog();
   RunServer();
 
   return 0;

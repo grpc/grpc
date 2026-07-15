@@ -146,6 +146,8 @@ class TestWaitForReady(AioTestBase):
                     self._channel, grpc.ChannelConnectivity.TRANSIENT_FAILURE
                 )
 
+                server = None
+
                 try:
                     # Start the server
                     _, server = await start_test_server(port=self._port)

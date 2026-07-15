@@ -30,14 +30,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
-#include "absl/types/span.h"
-#include "gtest/gtest.h"
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/weighted_target/weighted_target.h"
@@ -48,15 +40,26 @@
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
+#include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/load_balancing/lb_policy_test_lib.h"
 #include "test/core/test_util/fake_stats_plugin.h"
+#include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
+#include "absl/types/span.h"
 
 namespace grpc_core {
 namespace testing {
 namespace {
 
 constexpr absl::string_view kLocalityName = "locality0";
+constexpr absl::string_view kBackendServiceName = "backend_service0";
 
 class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
  protected:
@@ -92,6 +95,15 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
       json_["errorUtilizationPenalty"] = Json::FromNumber(value);
       return *this;
     }
+    ConfigBuilder& SetMetricNamesForComputingUtilization(
+        std::vector<std::string>& metric_names) {
+      Json::Array array;
+      for (const auto& name : metric_names) {
+        array.emplace_back(Json::FromString(name));
+      }
+      json_["metricNamesForComputingUtilization"] = Json::FromArray(array);
+      return *this;
+    }
 
     RefCountedPtr<LoadBalancingPolicy::Config> Build() {
       Json config = Json::FromArray({Json::FromObject(
@@ -107,11 +119,15 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
   WeightedRoundRobinTest()
       : LoadBalancingPolicyTest(
             "weighted_round_robin",
-            ChannelArgs().Set(GRPC_ARG_LB_WEIGHTED_TARGET_CHILD,
-                              kLocalityName)) {}
+            ChannelArgs()
+                .Set(GRPC_ARG_LB_WEIGHTED_TARGET_CHILD, kLocalityName)
+                .Set(GRPC_ARG_BACKEND_SERVICE, kBackendServiceName)) {}
 
   void SetUp() override {
     LoadBalancingPolicyTest::SetUp();
+    if (!grpc_event_engine::experimental::IsSaneTimerEnvironment()) {
+      GTEST_SKIP() << "Needs most EventEngine experiments enabled";
+    }
     SetExpectedTimerDuration(std::chrono::seconds(1));
   }
 
@@ -162,14 +178,19 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
     return absl::StrJoin(pick_map, ",", absl::PairFormatter("="));
   }
 
-  static BackendMetricData MakeBackendMetricData(double app_utilization,
-                                                 double qps, double eps,
-                                                 double cpu_utilization = 0) {
+  static BackendMetricData MakeBackendMetricData(
+      double app_utilization, double qps, double eps,
+      double cpu_utilization = 0, double mem_utilization = 0,
+      std::map<absl::string_view, double> named_metrics = {},
+      std::map<absl::string_view, double> utilization = {}) {
     BackendMetricData b;
     b.cpu_utilization = cpu_utilization;
+    b.mem_utilization = mem_utilization;
     b.application_utilization = app_utilization;
     b.qps = qps;
     b.eps = eps;
+    b.named_metrics = std::move(named_metrics);
+    b.utilization = std::move(utilization);
     return b;
   }
 
@@ -196,7 +217,6 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
       const auto& address = picks[i];
       auto& subchannel_call_tracker = subchannel_call_trackers[i];
       if (subchannel_call_tracker != nullptr) {
-        subchannel_call_tracker->Start();
         std::optional<BackendMetricData> backend_metric_data;
         auto it = backend_metrics.find(address);
         if (it != backend_metrics.end()) {
@@ -204,8 +224,11 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
           backend_metric_data->qps = it->second.qps;
           backend_metric_data->eps = it->second.eps;
           backend_metric_data->cpu_utilization = it->second.cpu_utilization;
+          backend_metric_data->mem_utilization = it->second.mem_utilization;
           backend_metric_data->application_utilization =
               it->second.application_utilization;
+          backend_metric_data->named_metrics = it->second.named_metrics;
+          backend_metric_data->utilization = it->second.utilization;
         }
         FakeMetadata metadata({});
         FakeBackendMetricAccessor backend_metric_accessor(
@@ -226,8 +249,10 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
       backend_metric_data.qps = p.second.qps;
       backend_metric_data.eps = p.second.eps;
       backend_metric_data.cpu_utilization = p.second.cpu_utilization;
+      backend_metric_data.mem_utilization = p.second.mem_utilization;
       backend_metric_data.application_utilization =
           p.second.application_utilization;
+      backend_metric_data.named_metrics = p.second.named_metrics;
       subchannel->SendOobBackendMetricReport(backend_metric_data);
     }
   }
@@ -328,7 +353,6 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
 };
 
 TEST_F(WeightedRoundRobinTest, Basic) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
@@ -357,7 +381,6 @@ TEST_F(WeightedRoundRobinTest, Basic) {
 }
 
 TEST_F(WeightedRoundRobinTest, CpuUtilWithNoAppUtil) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
@@ -392,7 +415,6 @@ TEST_F(WeightedRoundRobinTest, CpuUtilWithNoAppUtil) {
 }
 
 TEST_F(WeightedRoundRobinTest, AppUtilOverCpuUtil) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
@@ -426,8 +448,241 @@ TEST_F(WeightedRoundRobinTest, AppUtilOverCpuUtil) {
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
 }
 
+TEST_F(WeightedRoundRobinTest, WrrCustomMetricDisabledFallback) {
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  std::vector<std::string> metric_names = {"named_metrics.foo"};
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses,
+      ConfigBuilder().SetMetricNamesForComputingUtilization(metric_names));
+  ASSERT_NE(picker, nullptr);
+  // Address 0 reports a high named metric "foo", but since feature is disabled,
+  // it should use cpu_utilization (fallback) or app_utilization.
+  // Here we provide
+  // app_utilization=0
+  // cpu_utilization=0.1.
+  // "foo" = 0.9.
+  // If ignored, utilization = 0.1 (cpu).
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0],
+        MakeBackendMetricData(/*app_utilization=*/0,
+                              /*qps=*/100.0, /*eps=*/0.0,
+                              /*cpu_utilization=*/0.1,
+                              /*mem_utilization=*/0.0, {{"foo", 0.9}})},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.1)}},
+      {{kAddresses[0], 1}, {kAddresses[1], 1}, {kAddresses[2], 1}});
+}
+
+TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledCpuUtilization) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  std::vector<std::string> metric_names = {"cpu_utilization"};
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses,
+      ConfigBuilder().SetMetricNamesForComputingUtilization(metric_names));
+  ASSERT_NE(picker, nullptr);
+  // Addr 0: cpu=0.9, weight ~ 1.1
+  // Addr 1: cpu=0.1, weight ~ 10
+  // Ratio 1:9
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.9)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.1)}},
+      {{kAddresses[0], 1},
+       {kAddresses[1], 9},
+       {kAddresses[2], 5}});  // Addr 2 gets average
+}
+
+TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledMemUtilization) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  std::vector<std::string> metric_names = {"mem_utilization"};
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses,
+      ConfigBuilder().SetMetricNamesForComputingUtilization(metric_names));
+  ASSERT_NE(picker, nullptr);
+  // Addr 0: mem=0.9, weight ~ 1.1
+  // Addr 1: mem=0.1, weight ~ 10
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.0,
+                                             /*mem_utilization=*/0.9)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.0,
+                                             /*mem_utilization=*/0.1)}},
+      {{kAddresses[0], 1}, {kAddresses[1], 9}, {kAddresses[2], 5}});
+}
+
+TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledAppUtilization) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  std::vector<std::string> metric_names = {"application_utilization"};
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses,
+      ConfigBuilder().SetMetricNamesForComputingUtilization(metric_names));
+  ASSERT_NE(picker, nullptr);
+  // Checks that we use application_utilization when specified in the list of
+  // custom metric names.
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0.9,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0.1,
+                                             /*qps=*/100.0, /*eps=*/0.0)}},
+      {{kAddresses[0], 1}, {kAddresses[1], 9}, {kAddresses[2], 5}});
+}
+
+TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledNamedMetric) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  std::vector<std::string> metric_names = {"named_metrics.foo"};
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses,
+      ConfigBuilder().SetMetricNamesForComputingUtilization(metric_names));
+  ASSERT_NE(picker, nullptr);
+  // Addr 0: foo=0.9
+  // Addr 1: foo=0.1
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0],
+        MakeBackendMetricData(/*app_utilization=*/0,
+                              /*qps=*/100.0, /*eps=*/0.0,
+                              /*cpu_utilization=*/0.0,
+                              /*mem_utilization=*/0.0, {{"foo", 0.9}})},
+       {kAddresses[1],
+        MakeBackendMetricData(/*app_utilization=*/0,
+                              /*qps=*/100.0, /*eps=*/0.0,
+                              /*cpu_utilization=*/0.0,
+                              /*mem_utilization=*/0.0, {{"foo", 0.1}})}},
+      {{kAddresses[0], 1}, {kAddresses[1], 9}, {kAddresses[2], 5}});
+}
+
+TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledUtilizationMetric) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  std::vector<std::string> metric_names = {"utilization.foo"};
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses,
+      ConfigBuilder().SetMetricNamesForComputingUtilization(metric_names));
+  ASSERT_NE(picker, nullptr);
+  // Addr 0: foo=0.9
+  // Addr 1: foo=0.1
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0],
+        MakeBackendMetricData(/*app_utilization=*/0,
+                              /*qps=*/100.0, /*eps=*/0.0,
+                              /*cpu_utilization=*/0.0,
+                              /*mem_utilization=*/0.0, {}, {{"foo", 0.9}})},
+       {kAddresses[1],
+        MakeBackendMetricData(/*app_utilization=*/0,
+                              /*qps=*/100.0, /*eps=*/0.0,
+                              /*cpu_utilization=*/0.0,
+                              /*mem_utilization=*/0.0, {}, {{"foo", 0.1}})}},
+      {{kAddresses[0], 1}, {kAddresses[1], 9}, {kAddresses[2], 5}});
+}
+
+TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledMultipleMetricsMax) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  // Checks that we take the MAX of the specified metrics.
+  std::vector<std::string> metric_names = {"named_metrics.foo",
+                                           "named_metrics.bar"};
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses,
+      ConfigBuilder().SetMetricNamesForComputingUtilization(metric_names));
+  ASSERT_NE(picker, nullptr);
+  // Addr 0: foo=0.9, bar=0.1 -> max 0.9
+  // Addr 1: foo=0.1, bar=0.1 -> max 0.1
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.0,
+                                             /*mem_utilization=*/0.0,
+                                             {{"foo", 0.9}, {"bar", 0.1}})},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.0,
+                                             /*mem_utilization=*/0.0,
+                                             {{"foo", 0.1}, {"bar", 0.1}})}},
+      {{kAddresses[0], 1}, {kAddresses[1], 9}, {kAddresses[2], 5}});
+}
+
+TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledFallbackPriority) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  std::vector<std::string> metric_names = {"named_metrics.foo"};
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses,
+      ConfigBuilder().SetMetricNamesForComputingUtilization(metric_names));
+  ASSERT_NE(picker, nullptr);
+  // Addr 0: foo=0.9, app=0.1, cpu=0.1
+  // Uses foo (0.9). Weight: 100/0.9 = 111.1
+  // Addr 1: foo=-1.0 (ignored), app=0.9, cpu=0.1
+  // Falls back to app (0.9). Weight: 100/0.9 = 111.1
+  // Addr 2: foo=0.0 (ignored), app=0.0 (ignored), cpu=0.45
+  // Falls back to cpu (0.45). Weight: 100/0.45 = 222.2
+  // We expect weights in ratio 1:1:2.
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0],
+        MakeBackendMetricData(
+            /*app_utilization=*/0.1, /*qps=*/100.0, /*eps=*/0.0,
+            /*cpu_utilization=*/0.1, /*mem_utilization=*/0.0, {{"foo", 0.9}})},
+       {kAddresses[1],
+        MakeBackendMetricData(
+            /*app_utilization=*/0.9, /*qps=*/100.0, /*eps=*/0.0,
+            /*cpu_utilization=*/0.1, /*mem_utilization=*/0.0, {{"foo", -1.0}})},
+       {kAddresses[2], MakeBackendMetricData(
+                           /*app_utilization=*/0.0, /*qps=*/100.0, /*eps=*/0.0,
+                           /*cpu_utilization=*/0.45, /*mem_utilization=*/0.0,
+                           {{"foo", 0.0}})}},
+      {{kAddresses[0], 1}, {kAddresses[1], 1}, {kAddresses[2], 2}});
+}
+
+// TODO(rishesh): Once the env var guard is removed, this entire test case can
+// be removed, since it will be a duplicate of several existing tests above.
+// Checks that if enabled but no metric names provided, we default to CPU.
+TEST_F(WeightedRoundRobinTest,
+       WrrCustomMetricEnabledNoMetricNamesDefaultsToCpu) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  // No metric names provided, should default to CPU utilization.
+  auto picker = SendInitialUpdateAndWaitForConnected(kAddresses);
+  ASSERT_NE(picker, nullptr);
+  // Addr 0: cpu=0.9
+  // Addr 1: cpu=0.1
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.9)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.1)}},
+      {{kAddresses[0], 1}, {kAddresses[1], 9}, {kAddresses[2], 5}});
+}
+
 TEST_F(WeightedRoundRobinTest, Eps) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
@@ -447,7 +702,6 @@ TEST_F(WeightedRoundRobinTest, Eps) {
 }
 
 TEST_F(WeightedRoundRobinTest, IgnoresDuplicateAddresses) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
@@ -480,7 +734,6 @@ TEST_F(WeightedRoundRobinTest, IgnoresDuplicateAddresses) {
 }
 
 TEST_F(WeightedRoundRobinTest, FallsBackToRoundRobinWithoutWeights) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
@@ -493,7 +746,6 @@ TEST_F(WeightedRoundRobinTest, FallsBackToRoundRobinWithoutWeights) {
 }
 
 TEST_F(WeightedRoundRobinTest, OobReporting) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
@@ -531,7 +783,6 @@ TEST_F(WeightedRoundRobinTest, OobReporting) {
 }
 
 TEST_F(WeightedRoundRobinTest, OobReportingCpuUtilWithNoAppUtil) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
@@ -576,7 +827,6 @@ TEST_F(WeightedRoundRobinTest, OobReportingCpuUtilWithNoAppUtil) {
 }
 
 TEST_F(WeightedRoundRobinTest, OobReportingAppUtilOverCpuUtil) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
@@ -621,7 +871,6 @@ TEST_F(WeightedRoundRobinTest, OobReportingAppUtilOverCpuUtil) {
 }
 
 TEST_F(WeightedRoundRobinTest, HonorsOobReportingPeriod) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   auto picker = SendInitialUpdateAndWaitForConnected(
@@ -647,7 +896,6 @@ TEST_F(WeightedRoundRobinTest, HonorsOobReportingPeriod) {
 }
 
 TEST_F(WeightedRoundRobinTest, HonorsWeightUpdatePeriod) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   SetExpectedTimerDuration(std::chrono::seconds(2));
@@ -666,7 +914,6 @@ TEST_F(WeightedRoundRobinTest, HonorsWeightUpdatePeriod) {
 }
 
 TEST_F(WeightedRoundRobinTest, WeightUpdatePeriodLowerBound) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   SetExpectedTimerDuration(std::chrono::milliseconds(100));
@@ -686,7 +933,6 @@ TEST_F(WeightedRoundRobinTest, WeightUpdatePeriodLowerBound) {
 }
 
 TEST_F(WeightedRoundRobinTest, WeightExpirationPeriod) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
@@ -714,7 +960,6 @@ TEST_F(WeightedRoundRobinTest, WeightExpirationPeriod) {
 }
 
 TEST_F(WeightedRoundRobinTest, BlackoutPeriodAfterWeightExpiration) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
@@ -759,7 +1004,6 @@ TEST_F(WeightedRoundRobinTest, BlackoutPeriodAfterWeightExpiration) {
 }
 
 TEST_F(WeightedRoundRobinTest, BlackoutPeriodAfterDisconnect) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
@@ -812,7 +1056,6 @@ TEST_F(WeightedRoundRobinTest, BlackoutPeriodAfterDisconnect) {
 }
 
 TEST_F(WeightedRoundRobinTest, BlackoutPeriodDoesNotGetResetAfterUpdate) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
@@ -852,7 +1095,6 @@ TEST_F(WeightedRoundRobinTest, BlackoutPeriodDoesNotGetResetAfterUpdate) {
 }
 
 TEST_F(WeightedRoundRobinTest, ZeroErrorUtilPenalty) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
@@ -872,7 +1114,6 @@ TEST_F(WeightedRoundRobinTest, ZeroErrorUtilPenalty) {
 }
 
 TEST_F(WeightedRoundRobinTest, MultipleAddressesPerEndpoint) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   // Can't use timer duration expectation here, because the Happy
   // Eyeballs timer inside pick_first will use a different duration than
   // the timer in WRR.
@@ -1012,7 +1253,6 @@ TEST_F(WeightedRoundRobinTest, MultipleAddressesPerEndpoint) {
 }
 
 TEST_F(WeightedRoundRobinTest, MetricDefinitionRrFallback) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   const auto* descriptor =
       GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
           "grpc.lb.wrr.rr_fallback");
@@ -1025,12 +1265,12 @@ TEST_F(WeightedRoundRobinTest, MetricDefinitionRrFallback) {
   EXPECT_EQ(descriptor->name, "grpc.lb.wrr.rr_fallback");
   EXPECT_EQ(descriptor->unit, "{update}");
   EXPECT_THAT(descriptor->label_keys, ::testing::ElementsAre("grpc.target"));
-  EXPECT_THAT(descriptor->optional_label_keys,
-              ::testing::ElementsAre("grpc.lb.locality"));
+  EXPECT_THAT(
+      descriptor->optional_label_keys,
+      ::testing::ElementsAre("grpc.lb.locality", "grpc.lb.backend_service"));
 }
 
 TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeightNotYetUsable) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   const auto* descriptor =
       GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
           "grpc.lb.wrr.endpoint_weight_not_yet_usable");
@@ -1043,12 +1283,12 @@ TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeightNotYetUsable) {
   EXPECT_EQ(descriptor->name, "grpc.lb.wrr.endpoint_weight_not_yet_usable");
   EXPECT_EQ(descriptor->unit, "{endpoint}");
   EXPECT_THAT(descriptor->label_keys, ::testing::ElementsAre("grpc.target"));
-  EXPECT_THAT(descriptor->optional_label_keys,
-              ::testing::ElementsAre("grpc.lb.locality"));
+  EXPECT_THAT(
+      descriptor->optional_label_keys,
+      ::testing::ElementsAre("grpc.lb.locality", "grpc.lb.backend_service"));
 }
 
 TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeightStale) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   const auto* descriptor =
       GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
           "grpc.lb.wrr.endpoint_weight_stale");
@@ -1061,12 +1301,12 @@ TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeightStale) {
   EXPECT_EQ(descriptor->name, "grpc.lb.wrr.endpoint_weight_stale");
   EXPECT_EQ(descriptor->unit, "{endpoint}");
   EXPECT_THAT(descriptor->label_keys, ::testing::ElementsAre("grpc.target"));
-  EXPECT_THAT(descriptor->optional_label_keys,
-              ::testing::ElementsAre("grpc.lb.locality"));
+  EXPECT_THAT(
+      descriptor->optional_label_keys,
+      ::testing::ElementsAre("grpc.lb.locality", "grpc.lb.backend_service"));
 }
 
 TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeights) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   const auto* descriptor =
       GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
           "grpc.lb.wrr.endpoint_weights");
@@ -1079,12 +1319,12 @@ TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeights) {
   EXPECT_EQ(descriptor->name, "grpc.lb.wrr.endpoint_weights");
   EXPECT_EQ(descriptor->unit, "{weight}");
   EXPECT_THAT(descriptor->label_keys, ::testing::ElementsAre("grpc.target"));
-  EXPECT_THAT(descriptor->optional_label_keys,
-              ::testing::ElementsAre("grpc.lb.locality"));
+  EXPECT_THAT(
+      descriptor->optional_label_keys,
+      ::testing::ElementsAre("grpc.lb.locality", "grpc.lb.backend_service"));
 }
 
 TEST_F(WeightedRoundRobinTest, MetricValues) {
-  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
   const auto kRrFallback =
       GlobalInstrumentsRegistryTestPeer::FindUInt64CounterHandleByName(
           "grpc.lb.wrr.rr_fallback")
@@ -1102,7 +1342,8 @@ TEST_F(WeightedRoundRobinTest, MetricValues) {
           "grpc.lb.wrr.endpoint_weights")
           .value();
   const absl::string_view kLabelValues[] = {target_};
-  const absl::string_view kOptionalLabelValues[] = {kLocalityName};
+  const absl::string_view kOptionalLabelValues[] = {kLocalityName,
+                                                    kBackendServiceName};
   auto stats_plugin = std::make_shared<FakeStatsPlugin>(
       nullptr, /*use_disabled_by_default_metrics=*/true);
   stats_plugin_group_.AddStatsPlugin(stats_plugin, nullptr);

@@ -25,8 +25,7 @@
 #include <optional>
 #include <utility>
 
-#include "absl/container/inlined_vector.h"
-#include "absl/functional/any_invocable.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/client_channel/retry_filter.h"
 #include "src/core/client_channel/retry_service_config.h"
@@ -39,7 +38,6 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/backoff.h"
 #include "src/core/util/debug_location.h"
@@ -47,6 +45,8 @@
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
+#include "absl/container/inlined_vector.h"
+#include "absl/functional/any_invocable.h"
 
 namespace grpc_core {
 
@@ -252,12 +252,13 @@ class RetryFilter::LegacyCallData final {
     void MaybeCancelPerAttemptRecvTimer();
 
     LegacyCallData* calld_;
-    OrphanablePtr<ClientChannelFilter::FilterBasedLoadBalancedCall> lb_call_;
+    OrphanablePtr<ClientChannelFilter::LoadBalancedCall> lb_call_;
     bool lb_call_committed_ = false;
 
     grpc_closure on_per_attempt_recv_timer_;
-    std::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
-        per_attempt_recv_timer_handle_;
+    grpc_event_engine::experimental::EventEngine::TaskHandle
+        per_attempt_recv_timer_handle_ =
+            grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid;
 
     // BatchData.batch.payload points to this.
     grpc_transport_stream_op_batch_payload batch_payload_;
@@ -361,16 +362,15 @@ class RetryFilter::LegacyCallData final {
   void AddClosureToStartTransparentRetry(CallCombinerClosureList* closures);
   static void StartTransparentRetry(void* arg, grpc_error_handle error);
 
-  OrphanablePtr<ClientChannelFilter::FilterBasedLoadBalancedCall>
-  CreateLoadBalancedCall(absl::AnyInvocable<void()> on_commit,
-                         bool is_transparent_retry);
+  OrphanablePtr<ClientChannelFilter::LoadBalancedCall> CreateLoadBalancedCall(
+      absl::AnyInvocable<void()> on_commit, bool is_transparent_retry);
 
   void CreateCallAttempt(bool is_transparent_retry);
 
   RetryFilter* chand_;
   grpc_polling_entity* pollent_;
-  RefCountedPtr<internal::ServerRetryThrottleData> retry_throttle_data_;
-  const internal::RetryMethodConfig* retry_policy_ = nullptr;
+  RefCountedPtr<RetryThrottler> retry_throttler_;
+  const RetryMethodConfig* retry_policy_ = nullptr;
   BackOff retry_backoff_;
 
   Timestamp deadline_;
@@ -390,8 +390,7 @@ class RetryFilter::LegacyCallData final {
   // LB call used when we've committed to a call attempt and the retry
   // state for that attempt is no longer needed.  This provides a fast
   // path for long-running streaming calls that minimizes overhead.
-  OrphanablePtr<ClientChannelFilter::FilterBasedLoadBalancedCall>
-      committed_call_;
+  OrphanablePtr<ClientChannelFilter::LoadBalancedCall> committed_call_;
 
   // When are are not yet fully committed to a particular call (i.e.,
   // either we might still retry or we have committed to the call but
@@ -409,8 +408,8 @@ class RetryFilter::LegacyCallData final {
   bool retry_codepath_started_ : 1;
   bool sent_transparent_retry_not_seen_by_server_ : 1;
   int num_attempts_completed_ = 0;
-  std::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
-      retry_timer_handle_;
+  grpc_event_engine::experimental::EventEngine::TaskHandle retry_timer_handle_ =
+      grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid;
   grpc_closure retry_closure_;
 
   // Cached data for retrying send ops.

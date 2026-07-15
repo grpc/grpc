@@ -23,15 +23,16 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
+#include "src/core/call/metadata_batch.h"
+#include "src/core/lib/surface/validate_metadata.h"
+#include "src/core/mitigation_engine/mitigation_engine.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "src/core/lib/surface/validate_metadata.h"
-#include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/util/crash.h"
-#include "src/core/util/ref_counted.h"
-#include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
 
@@ -69,6 +70,8 @@ enum class HpackParseStatus : uint8_t {
   kMetadataParseError,
   // Parse failed due to a base64 decode error
   kUnbase64Failed,
+  // Error triggered by the mitigation engine (stream error)
+  kMitigationEngineStreamError,
 
   ///////////////////////////////////////////////////////////////////
   // Connection Errors - result in the tcp connection closing
@@ -102,6 +105,8 @@ enum class HpackParseStatus : uint8_t {
   kMaliciousVarintEncoding,
   // Illegal hpack op code
   kIllegalHpackOpCode,
+  // Error triggered by the mitigation engine
+  kMitigationEngineConnectionError,
 };
 
 inline bool IsStreamError(HpackParseStatus status) {
@@ -191,7 +196,7 @@ class HpackParseResult {
 
   static HpackParseResult InvalidMetadataError(ValidateMetadataResult result,
                                                absl::string_view key) {
-    DCHECK(result != ValidateMetadataResult::kOk);
+    GRPC_DCHECK(result != ValidateMetadataResult::kOk);
     HpackParseResult p{HpackParseStatus::kInvalidMetadata};
     p.state_->key = std::string(key);
     p.state_->validate_metadata_result = result;
@@ -257,6 +262,18 @@ class HpackParseResult {
     p.state_->metadata_limit_exceeded_by_atom =
         MetadataLimitExceededByAtom{value_length, limit};
     p.state_->key = std::string(key);
+    return p;
+  }
+
+  static HpackParseResult MitigationEngineError(
+      absl::string_view key, MitigationEngine::Action action) {
+    HpackParseStatus status =
+        action == MitigationEngine::Action::kCloseConnection
+            ? HpackParseStatus::kMitigationEngineConnectionError
+            : HpackParseStatus::kMitigationEngineStreamError;
+    HpackParseResult p{status};
+    p.state_->key = std::string(key);
+    p.state_->action = action;
     return p;
   }
 
@@ -335,6 +352,9 @@ class HpackParseResult {
       MetadataLimitExceededByAtom metadata_limit_exceeded_by_atom;
       // Set if status == kIllegalTableSizeChange
       IllegalTableSizeChange illegal_table_size_change;
+      // Set if status == kMitigationEngineConnectionError or
+      // kMitigationEngineStreamError
+      MitigationEngine::Action action;
     };
     std::string key;
     mutable std::optional<absl::Status> materialized_status;

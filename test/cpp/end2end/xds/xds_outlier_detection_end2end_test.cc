@@ -17,17 +17,17 @@
 #include <thread>
 #include <vector>
 
-#include "absl/log/check.h"
 #include "envoy/config/cluster/v3/cluster.pb.h"
 #include "envoy/config/cluster/v3/outlier_detection.pb.h"
 #include "envoy/extensions/filters/http/fault/v3/fault.pb.h"
 #include "envoy/extensions/filters/http/router/v3/router.pb.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace grpc {
 namespace testing {
@@ -202,7 +202,7 @@ TEST_P(OutlierDetectionTest, SuccessRateMaxPercent) {
     } else if (backends_[i]->backend_service()->request_count() == 100) {
       ++regular_load_backend_count;
     } else {
-      CHECK(1);
+      GRPC_CHECK(1);
     }
   }
   EXPECT_EQ(1, empty_load_backend_count);
@@ -616,7 +616,7 @@ TEST_P(OutlierDetectionTest, FailurePercentageMaxPercentage) {
     } else if (backends_[i]->backend_service()->request_count() == 100) {
       ++regular_load_backend_count;
     } else {
-      CHECK(1);
+      GRPC_CHECK(1);
     }
   }
   EXPECT_EQ(1, empty_load_backend_count);
@@ -984,7 +984,7 @@ TEST_P(OutlierDetectionTest, SuccessRateAndFailurePercentage) {
       // The extra load could go to 2 remaining backends or just 1 of them.
       ++double_load_backend_count;
     } else if (backends_[i]->backend_service()->request_count() > 300) {
-      CHECK(1);
+      GRPC_CHECK(1);
     }
   }
   EXPECT_EQ(2, empty_load_backend_count);
@@ -1134,7 +1134,8 @@ TEST_P(OutlierDetectionTest, EjectionRetainedAcrossPriorities) {
   // Priority 0: backend 0 and a non-existent backend.
   // Priority 1: backend 1.
   EdsResourceArgs args({
-      {"locality0", {CreateEndpoint(0), MakeNonExistentEndpoint()}},
+      {"locality_not_existing", {MakeNonExistentEndpoint()}},
+      {"locality0", {CreateEndpoint(0)}},
       {"locality1", {CreateEndpoint(1)}, kDefaultLocalityWeight, 1},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
@@ -1154,8 +1155,12 @@ TEST_P(OutlierDetectionTest, EjectionRetainedAcrossPriorities) {
   // Now send an EDS update that moves backend 0 to priority 1.
   // We also add backend 2, so that we know when the client sees the update.
   args = EdsResourceArgs({
-      {"locality0", {MakeNonExistentEndpoint()}},
-      {"locality1", CreateEndpointsForBackends(), kDefaultLocalityWeight, 1},
+      {"locality_not_existing", {MakeNonExistentEndpoint()}},
+      {"locality0", {CreateEndpoint(0)}, kDefaultLocalityWeight, 1},
+      {"locality1",
+       {CreateEndpoint(1), CreateEndpoint(2)},
+       kDefaultLocalityWeight,
+       1},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForBackend(DEBUG_LOCATION, 2);
@@ -1179,10 +1184,6 @@ int main(int argc, char** argv) {
   grpc_core::ConfigVars::Overrides overrides;
   overrides.client_channel_backup_poll_interval_ms = 1;
   grpc_core::ConfigVars::SetOverrides(overrides);
-#if TARGET_OS_IPHONE
-  // Workaround Apple CFStream bug
-  grpc_core::SetEnv("grpc_cfstream", "0");
-#endif
   grpc_init();
   const auto result = RUN_ALL_TESTS();
   grpc_shutdown();

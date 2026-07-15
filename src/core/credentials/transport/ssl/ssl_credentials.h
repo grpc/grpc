@@ -25,12 +25,12 @@
 #include <grpc/support/port_platform.h>
 #include <stddef.h>
 
-#include "absl/log/check.h"
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/credentials/transport/ssl/ssl_security_connector.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/tsi/ssl_transport_security.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/useful.h"
@@ -115,7 +115,7 @@ class grpc_ssl_server_credentials final : public grpc_server_credentials {
 
   grpc_ssl_certificate_config_reload_status FetchCertConfig(
       grpc_ssl_server_certificate_config** config) {
-    DCHECK(has_cert_config_fetcher());
+    GRPC_DCHECK(has_cert_config_fetcher());
     return certificate_config_fetcher_.cb(certificate_config_fetcher_.user_data,
                                           config);
   }
@@ -137,8 +137,14 @@ class grpc_ssl_server_credentials final : public grpc_server_credentials {
   grpc_ssl_server_certificate_config_fetcher certificate_config_fetcher_;
 };
 
-tsi_ssl_pem_key_cert_pair* grpc_convert_grpc_to_tsi_cert_pairs(
+std::vector<tsi_ssl_pem_key_cert_pair> grpc_convert_grpc_to_tsi_cert_pairs(
     const grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs,
     size_t num_key_cert_pairs);
+
+// Compares the leaf certificate of the peer in two auth contexts.
+// Returns true if both contexts have the same leaf certificate (PEM).
+// Returns false otherwise.
+bool SslLeafHashComparator(const grpc_auth_context* ctx1,
+                           const grpc_auth_context* ctx2);
 
 #endif  // GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_SSL_SSL_CREDENTIALS_H

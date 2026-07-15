@@ -21,13 +21,6 @@
 #include <set>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/core/v3/config_source.upb.h"
@@ -48,15 +41,22 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/util/down_cast.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/match.h"
+#include "src/core/util/string.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/grpc/xds_route_config_parser.h"
+#include "src/core/xds/grpc/xds_tls_context_parser.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "upb/text/encode.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 
@@ -82,53 +82,92 @@ struct FilterChain {
 };
 
 std::string FilterChain::FilterChainMatch::ToString() const {
-  std::vector<std::string> contents;
+  std::string result = "{";
+  bool is_first = true;
   if (destination_port != 0) {
-    contents.push_back(absl::StrCat("destination_port=", destination_port));
+    StrAppend(result, "destination_port=");
+    StrAppend(result, std::to_string(destination_port));
+    is_first = false;
   }
   if (!prefix_ranges.empty()) {
-    std::vector<std::string> prefix_ranges_content;
-    prefix_ranges_content.reserve(prefix_ranges.size());
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "prefix_ranges={");
+    bool first_range = true;
     for (const auto& range : prefix_ranges) {
-      prefix_ranges_content.push_back(range.ToString());
+      if (!first_range) StrAppend(result, ", ");
+      StrAppend(result, range.ToString());
+      first_range = false;
     }
-    contents.push_back(absl::StrCat(
-        "prefix_ranges={", absl::StrJoin(prefix_ranges_content, ", "), "}"));
+    StrAppend(result, "}");
+    is_first = false;
   }
   if (source_type == XdsListenerResource::FilterChainMap::ConnectionSourceType::
                          kSameIpOrLoopback) {
-    contents.push_back("source_type=SAME_IP_OR_LOOPBACK");
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "source_type=SAME_IP_OR_LOOPBACK");
+    is_first = false;
   } else if (source_type == XdsListenerResource::FilterChainMap::
                                 ConnectionSourceType::kExternal) {
-    contents.push_back("source_type=EXTERNAL");
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "source_type=EXTERNAL");
+    is_first = false;
   }
   if (!source_prefix_ranges.empty()) {
-    std::vector<std::string> source_prefix_ranges_content;
-    source_prefix_ranges_content.reserve(source_prefix_ranges.size());
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "source_prefix_ranges={");
+    bool first_range = true;
     for (const auto& range : source_prefix_ranges) {
-      source_prefix_ranges_content.push_back(range.ToString());
+      if (!first_range) StrAppend(result, ", ");
+      StrAppend(result, range.ToString());
+      first_range = false;
     }
-    contents.push_back(
-        absl::StrCat("source_prefix_ranges={",
-                     absl::StrJoin(source_prefix_ranges_content, ", "), "}"));
+    StrAppend(result, "}");
+    is_first = false;
   }
   if (!source_ports.empty()) {
-    contents.push_back(
-        absl::StrCat("source_ports={", absl::StrJoin(source_ports, ", "), "}"));
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "source_ports={");
+    bool first_port = true;
+    for (uint32_t port : source_ports) {
+      if (!first_port) StrAppend(result, ", ");
+      StrAppend(result, std::to_string(port));
+      first_port = false;
+    }
+    StrAppend(result, "}");
+    is_first = false;
   }
   if (!server_names.empty()) {
-    contents.push_back(
-        absl::StrCat("server_names={", absl::StrJoin(server_names, ", "), "}"));
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "server_names={");
+    bool first_name = true;
+    for (const auto& name : server_names) {
+      if (!first_name) StrAppend(result, ", ");
+      StrAppend(result, name);
+      first_name = false;
+    }
+    StrAppend(result, "}");
+    is_first = false;
   }
   if (!transport_protocol.empty()) {
-    contents.push_back(absl::StrCat("transport_protocol=", transport_protocol));
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "transport_protocol=");
+    StrAppend(result, transport_protocol);
+    is_first = false;
   }
   if (!application_protocols.empty()) {
-    contents.push_back(absl::StrCat("application_protocols={",
-                                    absl::StrJoin(application_protocols, ", "),
-                                    "}"));
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "application_protocols={");
+    bool first_protocol = true;
+    for (const auto& protocol : application_protocols) {
+      if (!first_protocol) StrAppend(result, ", ");
+      StrAppend(result, protocol);
+      first_protocol = false;
+    }
+    StrAppend(result, "}");
+    is_first = false;
   }
-  return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
+  StrAppend(result, "}");
+  return result;
 }
 
 void MaybeLogHttpConnectionManager(
@@ -251,7 +290,7 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
         auto extension = ExtractXdsExtension(context, typed_config, errors);
         if (!extension.has_value()) continue;
         const XdsHttpFilterImpl* filter_impl =
-            http_filter_registry.GetFilterForType(extension->type);
+            http_filter_registry.GetFilterForTopLevelType(extension->type);
         if (filter_impl == nullptr) {
           if (!is_optional) errors->AddError("unsupported filter type");
           continue;
@@ -264,14 +303,22 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
           }
           continue;
         }
-        std::optional<XdsHttpFilterImpl::FilterConfig> filter_config =
-            filter_impl->GenerateFilterConfig(name, context,
-                                              std::move(*extension), errors);
-        if (filter_config.has_value()) {
-          http_connection_manager.http_filters.emplace_back(
-              XdsListenerResource::HttpConnectionManager::HttpFilter{
-                  std::string(name), std::move(*filter_config)});
+        http_connection_manager.http_filters.emplace_back();
+        auto& entry = http_connection_manager.http_filters.back();
+        entry.name = std::string(name);
+        entry.config_proto_type = filter_impl->ConfigProtoName();
+        entry.disabled =
+            envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_disabled(
+                http_filter);
+        if (!is_client) {
+          std::optional<Json> filter_config = filter_impl->GenerateFilterConfig(
+              name, context, *extension, errors);
+          if (filter_config.has_value()) {
+            entry.config = std::move(*filter_config);
+          }
         }
+        entry.filter_config =
+            filter_impl->ParseTopLevelConfig(name, context, *extension, errors);
       }
     }
     if (errors->size() == original_error_size &&
@@ -284,23 +331,21 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
     // out of which only one gets added in the final list.
     for (const auto& http_filter : http_connection_manager.http_filters) {
       const XdsHttpFilterImpl* filter_impl =
-          http_filter_registry.GetFilterForType(
-              http_filter.config.config_proto_type_name);
+          http_filter_registry.GetFilterForTopLevelType(
+              http_filter.config_proto_type);
       if (&http_filter != &http_connection_manager.http_filters.back()) {
         // Filters before the last filter must not be terminal.
         if (filter_impl->IsTerminalFilter()) {
-          errors->AddError(
-              absl::StrCat("terminal filter for config type ",
-                           http_filter.config.config_proto_type_name,
-                           " must be the last filter in the chain"));
+          errors->AddError(absl::StrCat(
+              "terminal filter for config type ", http_filter.config_proto_type,
+              " must be the last filter in the chain"));
         }
       } else {
         // The last filter must be terminal.
         if (!filter_impl->IsTerminalFilter()) {
-          errors->AddError(
-              absl::StrCat("non-terminal filter for config type ",
-                           http_filter.config.config_proto_type_name,
-                           " is the last filter in the chain"));
+          errors->AddError(absl::StrCat("non-terminal filter for config type ",
+                                        http_filter.config_proto_type,
+                                        " is the last filter in the chain"));
         }
       }
     }
@@ -516,10 +561,16 @@ std::optional<FilterChain::FilterChainMatch> FilterChainMatchParse(
     }
   }
   // source_type
-  filter_chain_match.source_type =
-      static_cast<XdsListenerResource::FilterChainMap::ConnectionSourceType>(
-          envoy_config_listener_v3_FilterChainMatch_source_type(
-              filter_chain_match_proto));
+  int32_t source_type = envoy_config_listener_v3_FilterChainMatch_source_type(
+      filter_chain_match_proto);
+  if (source_type < 0 || source_type > 2) {
+    ValidationErrors::ScopedField field(errors, ".source_type");
+    errors->AddError("invalid value");
+  } else {
+    filter_chain_match.source_type =
+        static_cast<XdsListenerResource::FilterChainMap::ConnectionSourceType>(
+            source_type);
+  }
   // source_prefix_ranges
   auto* source_prefix_ranges =
       envoy_config_listener_v3_FilterChainMatch_source_prefix_ranges(
@@ -621,6 +672,7 @@ std::optional<FilterChain> FilterChainParse(
   return filter_chain;
 }
 
+// TODO(roth): Merge this with ParseXdsAddress() to avoid duplication.
 std::optional<std::string> AddressParse(
     const envoy_config_core_v3_Address* address_proto,
     ValidationErrors* errors) {
@@ -739,8 +791,8 @@ void AddFilterChainDataForSourceType(
     const FilterChain& filter_chain,
     InternalFilterChainMap::DestinationIp* destination_ip,
     ValidationErrors* errors) {
-  CHECK(static_cast<unsigned int>(filter_chain.filter_chain_match.source_type) <
-        3u);
+  GRPC_CHECK(static_cast<unsigned int>(
+                 filter_chain.filter_chain_match.source_type) < 3u);
   AddFilterChainDataForSourceIpRange(
       filter_chain,
       &destination_ip->source_types_array[static_cast<int>(

@@ -13,10 +13,6 @@
 # limitations under the License.
 """A search algorithm over the space of all bytestrings."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import base64
 import hashlib
 import itertools

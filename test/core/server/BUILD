@@ -16,13 +16,20 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/server")
+grpc_package(
+    name = "test/core/server",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_test(
     name = "server_config_selector_test",
     srcs = ["server_config_selector_test.cc"],
     external_deps = [
         "gtest",
+        "absl/status",
     ],
     uses_event_engine = False,
     uses_polling = False,
@@ -43,12 +50,18 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:config",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
         "//:grpc_base",
         "//:grpc_opencensus_plugin",
+        "//:iomgr",
         "//src/core:channel_args",
+        "//src/core:channel_init",
+        "//src/core:channel_stack_type",
         "//src/core:grpc_xds_channel_stack_modifier",
+        "//src/core:iomgr_fwd",
         "//test/core/test_util:grpc_test_util",
     ],
 )

@@ -29,13 +29,13 @@
 #include <sstream>
 #include <string>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_format.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/tsi/alts/fake_handshaker/handshaker.grpc.pb.h"
 #include "test/core/tsi/alts/fake_handshaker/handshaker.pb.h"
 #include "test/core/tsi/alts/fake_handshaker/transport_security_common.pb.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_format.h"
 
 // Fake handshake messages.
 constexpr char kClientInitFrame[] = "ClientInit";
@@ -96,8 +96,8 @@ class FakeHandshakerService : public HandshakerService::Service {
   Status ProcessRequest(HandshakerContext* context,
                         const HandshakerReq& request,
                         HandshakerResp* response) {
-    CHECK(context != nullptr);
-    CHECK_NE(response, nullptr);
+    GRPC_CHECK(context != nullptr);
+    GRPC_CHECK_NE(response, nullptr);
     response->Clear();
     if (request.has_client_start()) {
       VLOG(2) << "Process client start request.";
@@ -115,8 +115,8 @@ class FakeHandshakerService : public HandshakerService::Service {
   Status ProcessClientStart(HandshakerContext* context,
                             const StartClientHandshakeReq& request,
                             HandshakerResp* response) {
-    CHECK(context != nullptr);
-    CHECK_NE(response, nullptr);
+    GRPC_CHECK(context != nullptr);
+    GRPC_CHECK_NE(response, nullptr);
     // Checks request.
     if (context->state != INITIAL) {
       return Status(StatusCode::FAILED_PRECONDITION, kWrongStateError);
@@ -142,8 +142,8 @@ class FakeHandshakerService : public HandshakerService::Service {
   Status ProcessServerStart(HandshakerContext* context,
                             const StartServerHandshakeReq& request,
                             HandshakerResp* response) {
-    CHECK(context != nullptr);
-    CHECK_NE(response, nullptr);
+    GRPC_CHECK(context != nullptr);
+    GRPC_CHECK_NE(response, nullptr);
     // Checks request.
     if (context->state != INITIAL) {
       return Status(StatusCode::FAILED_PRECONDITION, kWrongStateError);
@@ -179,8 +179,8 @@ class FakeHandshakerService : public HandshakerService::Service {
   Status ProcessNext(HandshakerContext* context,
                      const NextHandshakeMessageReq& request,
                      HandshakerResp* response) {
-    CHECK(context != nullptr);
-    CHECK_NE(response, nullptr);
+    GRPC_CHECK(context != nullptr);
+    GRPC_CHECK_NE(response, nullptr);
     if (context->is_client) {
       // Processes next request on client side.
       if (context->state != SENT) {
@@ -226,7 +226,7 @@ class FakeHandshakerService : public HandshakerService::Service {
   Status WriteErrorResponse(
       ServerReaderWriter<HandshakerResp, HandshakerReq>* stream,
       const Status& status) {
-    CHECK(!status.ok());
+    GRPC_CHECK(!status.ok());
     HandshakerResp response;
     response.mutable_status()->set_code(status.error_code());
     response.mutable_status()->set_details(status.error_message());

@@ -15,7 +15,13 @@
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
-grpc_package(name = "test/core/util/http_client")
+grpc_package(
+    name = "test/core/util/http_client",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 licenses(["notice"])
 
@@ -31,6 +37,7 @@ grpc_fuzz_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:httpcli",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -121,12 +128,18 @@ grpc_cc_test(
 grpc_cc_test(
     name = "parser_test",
     srcs = ["parser_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/status",
+        "absl/strings:str_format",
+        "gtest",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:httpcli",
+        "//src/core:useful",
         "//test/core/end2end:ssl_test_data",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
@@ -140,6 +153,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:httpcli",
         "//src/core:slice",
         "//test/core/end2end:ssl_test_data",
         "//test/core/test_util:grpc_test_util",

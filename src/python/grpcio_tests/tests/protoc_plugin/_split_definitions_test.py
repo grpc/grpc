@@ -111,7 +111,7 @@ def _packagify(directory):
             init_file.write(b"")
 
 
-class _Servicer(object):
+class _Servicer:
     def __init__(self, response_class):
         self._response_class = response_class
 
@@ -142,7 +142,7 @@ def _protoc(
     return protoc.main(args)
 
 
-class _Mid2016ProtocStyle(object):
+class _Mid2016ProtocStyle:
     def name(self):
         return "Mid2016ProtocStyle"
 
@@ -161,7 +161,7 @@ class _Mid2016ProtocStyle(object):
         )
 
 
-class _SingleProtocExecutionProtocStyle(object):
+class _SingleProtocExecutionProtocStyle:
     def name(self):
         return "SingleProtocExecutionProtocStyle"
 
@@ -180,7 +180,7 @@ class _SingleProtocExecutionProtocStyle(object):
         )
 
 
-class _ProtoBeforeGrpcProtocStyle(object):
+class _ProtoBeforeGrpcProtocStyle:
     def name(self):
         return "ProtoBeforeGrpcProtocStyle"
 
@@ -197,7 +197,7 @@ class _ProtoBeforeGrpcProtocStyle(object):
         return pb2_protoc_exit_code, pb2_grpc_protoc_exit_code
 
 
-class _GrpcBeforeProtoProtocStyle(object):
+class _GrpcBeforeProtoProtocStyle:
     def name(self):
         return "GrpcBeforeProtoProtocStyle"
 
@@ -356,9 +356,9 @@ def _create_test_case_class(split_proto, protoc_style):
         attributes["SERVICES_PROTO_FILE_NAME"] = "services.proto"
         attributes["EXPECTED_MESSAGES_PB2"] = "split_messages.sub.messages_pb2"
         attributes["EXPECTED_SERVICES_PB2"] = "split_services.services_pb2"
-        attributes[
-            "EXPECTED_SERVICES_PB2_GRPC"
-        ] = "split_services.services_pb2_grpc"
+        attributes["EXPECTED_SERVICES_PB2_GRPC"] = (
+            "split_services.services_pb2_grpc"
+        )
     else:
         attributes["MESSAGES_PROTO_RELATIVE_DIRECTORY_NAMES"] = ()
         attributes["MESSAGES_PROTO_FILE_NAME"] = "same.proto"

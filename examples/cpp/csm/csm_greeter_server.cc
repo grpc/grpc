@@ -27,14 +27,15 @@
 #include <memory>
 #include <string>
 
-#include "absl/flags/flag.h"
-#include "absl/flags/parse.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
 #include "opentelemetry/exporters/prometheus/exporter_factory.h"
 #include "opentelemetry/exporters/prometheus/exporter_options.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 #include "src/core/util/gethostname.h"
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
+#include "absl/log/initialize.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"
@@ -100,6 +101,7 @@ void RunServer(const char* hostname) {
 
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
+  absl::InitializeLog();
   opentelemetry::exporter::metrics::PrometheusExporterOptions opts;
   // default was "localhost:9464" which causes connection issue across GKE pods
   opts.url = "0.0.0.0:9464";

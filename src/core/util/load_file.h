@@ -19,8 +19,8 @@
 
 #include <string>
 
-#include "absl/status/statusor.h"
 #include "src/core/lib/slice/slice.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 

@@ -20,4 +20,8 @@ build --jobs=100
 # TODO(jtattermusch): Remove the workaround.
 build --dynamic_mode=off
 
+# use double the default value for "moderate" and "long" timeout as seeing 
+# quite a few tests timeout
+build --test_timeout=60,600,1800,3600
+
 import %workspace%/tools/remote_build/include/test_config_common.bazelrc

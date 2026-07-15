@@ -13,43 +13,47 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableField grpc_health_v1_HealthCheckRequest__fields[1] = {
+extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
+typedef struct {
+  upb_MiniTableField fields[1];
+} grpc__health__v1__HealthCheckRequest_msg_init_Fields;
+
+static const grpc__health__v1__HealthCheckRequest_msg_init_Fields grpc_health_v1_HealthCheckRequest__fields = {{
   {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-};
+}};
 
 const upb_MiniTable grpc__health__v1__HealthCheckRequest_msg_init = {
-  NULL,
-  &grpc_health_v1_HealthCheckRequest__fields[0],
+  &grpc_health_v1_HealthCheckRequest__fields.fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.health.v1.HealthCheckRequest",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_pss_1bt},
+    {0x000800003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
   })
 };
 
-const upb_MiniTable* grpc__health__v1__HealthCheckRequest_msg_init_ptr = &grpc__health__v1__HealthCheckRequest_msg_init;
-static const upb_MiniTableField grpc_health_v1_HealthCheckResponse__fields[1] = {
+typedef struct {
+  upb_MiniTableField fields[1];
+} grpc__health__v1__HealthCheckResponse_msg_init_Fields;
+
+static const grpc__health__v1__HealthCheckResponse_msg_init_Fields grpc_health_v1_HealthCheckResponse__fields = {{
   {1, 8, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
-};
+}};
 
 const upb_MiniTable grpc__health__v1__HealthCheckResponse_msg_init = {
-  NULL,
-  &grpc_health_v1_HealthCheckResponse__fields[0],
+  &grpc_health_v1_HealthCheckResponse__fields.fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.health.v1.HealthCheckResponse",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f000008, &upb_psv4_1bt},
+    {0x000800003f000008, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
   })
 };
 
-const upb_MiniTable* grpc__health__v1__HealthCheckResponse_msg_init_ptr = &grpc__health__v1__HealthCheckResponse_msg_init;
 static const upb_MiniTable *messages_layout[2] = {
   &grpc__health__v1__HealthCheckRequest_msg_init,
   &grpc__health__v1__HealthCheckResponse_msg_init,

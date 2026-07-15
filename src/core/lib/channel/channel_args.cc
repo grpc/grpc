@@ -32,13 +32,13 @@
 #include <string>
 #include <vector>
 
+#include "src/core/util/useful.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-#include "src/core/util/useful.h"
 
 namespace grpc_core {
 
@@ -289,6 +289,21 @@ absl::string_view ChannelArgs::Value::ToString(
   }
   backing_strings.emplace_back(absl::StrFormat("%p", rep_.c_pointer()));
   return backing_strings.back();
+}
+
+channelz::PropertyList ChannelArgs::ToPropertyList() const {
+  channelz::PropertyList result;
+  args_.ForEach(
+      [&result](const RefCountedStringValue& key, const Value& value) {
+        if (auto i = value.GetIfInt(); i.has_value()) {
+          result.Set(key.as_string_view(), *i);
+        } else if (auto s = value.GetIfString(); s != nullptr) {
+          result.Set(key.as_string_view(), s->as_string_view());
+        } else if (auto p = value.GetIfPointer(); p != nullptr) {
+          result.Set(key.as_string_view(), "POINTER");
+        }
+      });
+  return result;
 }
 
 std::string ChannelArgs::ToString() const {

@@ -130,7 +130,7 @@ async def _receive_message(GrpcCallWrapper grpc_call_wrapper,
         # the callback (e.g. cancelled).
         #
         # Since they all indicates finish, they are better be merged.
-        _LOGGER.debug('Failed to receive any message from Core')
+        _LOGGER.debug('Failed to receive any message from Core: %s', e)
     # NOTE(lidiz) The returned message might be an empty bytes (aka. b'').
     # Please explicitly check if it is None or falsey string object!
     return receive_op.message()

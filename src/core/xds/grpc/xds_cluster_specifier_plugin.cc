@@ -16,17 +16,13 @@
 
 #include "src/core/xds/grpc/xds_cluster_specifier_plugin.h"
 
-#include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <map>
 #include <utility>
 #include <variant>
 
-#include "absl/log/check.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/proto/grpc/lookup/v1/rls_config.upb.h"
@@ -34,6 +30,8 @@
 #include "upb/base/status.hpp"
 #include "upb/json/encode.h"
 #include "upb/mem/arena.hpp"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 
@@ -89,7 +87,7 @@ Json XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
   upb_JsonEncode(plugin_config, msg_type, symtab, 0,
                  reinterpret_cast<char*>(buf), json_size + 1, status.ptr());
   auto json = JsonParse(reinterpret_cast<char*>(buf));
-  CHECK(json.ok());
+  GRPC_CHECK(json.ok());
   return Json::FromArray({Json::FromObject(
       {{"rls_experimental",
         Json::FromObject({

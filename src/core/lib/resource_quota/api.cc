@@ -24,13 +24,13 @@
 #include <string>
 #include <utility>
 
-#include "absl/strings/str_cat.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/resource_quota/thread_quota.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 
@@ -99,4 +99,11 @@ extern "C" void grpc_resource_quota_set_max_threads(
   grpc_core::ResourceQuota::FromC(resource_quota)
       ->thread_quota()
       ->SetMax(new_max_threads);
+}
+
+extern "C" void grpc_resource_quota_set_max_outstanding_streams(
+    grpc_resource_quota* resource_quota, int new_max_outstanding_streams) {
+  grpc_core::ResourceQuota::FromC(resource_quota)
+      ->stream_quota()
+      ->SetMaxOutstandingStreams(new_max_outstanding_streams);
 }

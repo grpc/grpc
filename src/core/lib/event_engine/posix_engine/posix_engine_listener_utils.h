@@ -17,8 +17,9 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
-#include "absl/status/statusor.h"
+#include "src/core/lib/event_engine/posix_engine/posix_interface.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_event_engine::experimental {
 
@@ -30,15 +31,13 @@ class ListenerSocketsContainer {
  public:
   struct ListenerSocket {
     // Listener socket fd
-    PosixSocketWrapper sock;
+    FileDescriptor sock;
     // Assigned/chosen listening port
     int port;
-    // Socket configuration
-    bool zero_copy_enabled;
     // Address at which the socket is listening for connections
     grpc_event_engine::experimental::EventEngine::ResolvedAddress addr;
     // Dual stack mode.
-    PosixSocketWrapper::DSMode dsmode;
+    EventEnginePosixInterface::DSMode dsmode;
   };
   // Adds a socket to the internal db of sockets associated with a listener.
   virtual void Append(ListenerSocket socket) = 0;
@@ -52,6 +51,20 @@ class ListenerSocketsContainer {
   virtual ~ListenerSocketsContainer() = default;
 };
 
+// Creates a listener socket, and prepares it with specified options, but
+// does not bind or listen on it.
+absl::StatusOr<ListenerSocketsContainer::ListenerSocket>
+CreateListenerSocketWithoutBinding(EventEnginePosixInterface* posix_interface,
+                                   const PosixTcpOptions& options,
+                                   const EventEngine::ResolvedAddress& addr);
+
+// Binds and listens on a listener socket. The socket must have been created
+// with `CreateListenerSocketWithoutBinding`.
+absl::Status BindListenerSocket(
+    EventEnginePosixInterface* posix_interface,
+    const EventEngine::ResolvedAddress& addr,
+    ListenerSocketsContainer::ListenerSocket& socket);
+
 // Creates and configures a socket to be used by the EventEngine Listener. The
 // type of the socket to create is determined by the by the passed address. The
 // socket configuration is specified by passed tcp options. If successful, it
@@ -59,7 +72,7 @@ class ListenerSocketsContainer {
 // socket fd and its dsmode. If unsuccessful, it returns a Not-OK status.
 absl::StatusOr<ListenerSocketsContainer::ListenerSocket>
 CreateAndPrepareListenerSocket(
-    const PosixTcpOptions& options,
+    EventEnginePosixInterface* posix_interface, const PosixTcpOptions& options,
     const grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr);
 
 // Instead of creating and adding a socket bound to specific address, this
@@ -67,10 +80,14 @@ CreateAndPrepareListenerSocket(
 // server. The newly created socket is configured according to the passed
 // options and added to the passed ListenerSocketsContainer object. The function
 // returns the port at which the created socket listens for incoming
-// connections.
+// connections. The optional socket_filter is used to provide additional
+// constraints on whether the wildcard address should be expanded.
 absl::StatusOr<int> ListenerContainerAddWildcardAddresses(
+    EventEnginePosixInterface* posix_interface,
     ListenerSocketsContainer& listener_sockets, const PosixTcpOptions& options,
-    int requested_port);
+    int requested_port,
+    absl::AnyInvocable<bool(const ListenerSocketsContainer::ListenerSocket&)>
+        socket_filter = nullptr);
 
 // Get all addresses assigned to network interfaces on the machine and create
 // and add a socket for each local address. Each newly created socket is
@@ -79,6 +96,7 @@ absl::StatusOr<int> ListenerContainerAddWildcardAddresses(
 // every socket. If set to 0, a random port will be used for every socket.
 // The function returns the chosen port number for all created sockets.
 absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
+    EventEnginePosixInterface* posix_interface,
     ListenerSocketsContainer& listener_sockets, const PosixTcpOptions& options,
     int requested_port);
 

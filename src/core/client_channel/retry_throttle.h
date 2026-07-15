@@ -19,30 +19,27 @@
 #ifndef GRPC_SRC_CORE_CLIENT_CHANNEL_RETRY_THROTTLE_H
 #define GRPC_SRC_CORE_CLIENT_CHANNEL_RETRY_THROTTLE_H
 
-#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <atomic>
-#include <map>
-#include <string>
 
-#include "absl/base/thread_annotations.h"
+#include "src/core/service_config/service_config.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/sync.h"
 
 namespace grpc_core {
-namespace internal {
 
-class ServerRetryThrottleMap;
-
-/// Tracks retry throttling data for an individual server name.
-class ServerRetryThrottleData final
-    : public RefCounted<ServerRetryThrottleData> {
+/// Tracks retry throttling data for a channel.
+class RetryThrottler final : public RefCounted<RetryThrottler> {
  public:
-  ServerRetryThrottleData(uintptr_t max_milli_tokens,
-                          uintptr_t milli_token_ratio, uintptr_t milli_tokens);
-  ~ServerRetryThrottleData() override;
+  static RefCountedPtr<RetryThrottler> Create(
+      uintptr_t max_milli_tokens, uintptr_t milli_token_ratio,
+      RefCountedPtr<RetryThrottler> previous);
+
+  // Do not instantiate directly -- use Create() instead.
+  RetryThrottler(uintptr_t max_milli_tokens, uintptr_t milli_token_ratio,
+                 uintptr_t milli_tokens);
+  ~RetryThrottler() override;
 
   /// Records a failure.  Returns true if it's okay to send a retry.
   bool RecordFailure();
@@ -50,49 +47,47 @@ class ServerRetryThrottleData final
   /// Records a success.
   void RecordSuccess();
 
+  // Exposed for testing purposes only.
   uintptr_t max_milli_tokens() const { return max_milli_tokens_; }
   uintptr_t milli_token_ratio() const { return milli_token_ratio_; }
   intptr_t milli_tokens() const {
     return milli_tokens_.load(std::memory_order_relaxed);
   }
 
+  static absl::string_view ChannelArgName() {
+    return "grpc.internal.retry_throttler";
+  }
+  static int ChannelArgsCompare(const RetryThrottler* a,
+                                const RetryThrottler* b) {
+    return QsortCompare(a, b);
+  }
+
  private:
-  friend ServerRetryThrottleMap;
+  void SetReplacement(RefCountedPtr<RetryThrottler> replacement);
 
-  void SetReplacement(RefCountedPtr<ServerRetryThrottleData> replacement);
-
-  void GetReplacementThrottleDataIfNeeded(
-      ServerRetryThrottleData** throttle_data);
+  void GetReplacementThrottleDataIfNeeded(RetryThrottler** throttle_data);
 
   const uintptr_t max_milli_tokens_;
   const uintptr_t milli_token_ratio_;
   std::atomic<intptr_t> milli_tokens_;
-  // A pointer to the replacement for this ServerRetryThrottleData entry.
+  // A pointer to the replacement for this RetryThrottler entry.
   // If non-nullptr, then this entry is stale and must not be used.
   // We hold a reference to the replacement.
-  std::atomic<ServerRetryThrottleData*> replacement_{nullptr};
+  std::atomic<RetryThrottler*> replacement_{nullptr};
 };
 
-/// Global map of server name to retry throttle data.
-class ServerRetryThrottleMap final {
+// Tracks retry throttler state across service config updates and
+// handles adding the current throttler to channel args.
+class RetryThrottlerChannelArgsUpdater final {
  public:
-  static ServerRetryThrottleMap* Get();
-
-  /// Returns the failure data for \a server_name, creating a new entry if
-  /// needed.
-  RefCountedPtr<ServerRetryThrottleData> GetDataForServer(
-      const std::string& server_name, uintptr_t max_milli_tokens,
-      uintptr_t milli_token_ratio);
+  // Applies the latest service config update and adds the current
+  // throttler to channel args if needed.
+  void Update(const ServiceConfig& service_config, ChannelArgs& args);
 
  private:
-  using StringToDataMap =
-      std::map<std::string, RefCountedPtr<ServerRetryThrottleData>>;
-
-  Mutex mu_;
-  StringToDataMap map_ ABSL_GUARDED_BY(mu_);
+  RefCountedPtr<RetryThrottler> throttler_;
 };
 
-}  // namespace internal
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_CLIENT_CHANNEL_RETRY_THROTTLE_H

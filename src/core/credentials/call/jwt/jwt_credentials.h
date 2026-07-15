@@ -29,18 +29,19 @@
 #include <optional>
 #include <string>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/time.h"
 #include "src/core/credentials/call/call_credentials.h"
 #include "src/core/credentials/call/jwt/json_token.h"
+#include "src/core/credentials/call/regional_access_boundary_fetcher.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/useful.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 
 class grpc_service_account_jwt_access_credentials
     : public grpc_call_credentials {
@@ -88,6 +89,8 @@ class grpc_service_account_jwt_access_credentials
 
   grpc_auth_json_key key_;
   gpr_timespec jwt_lifetime_;
+  grpc_core::RefCountedPtr<grpc_core::RegionalAccessBoundaryFetcher>
+      regional_access_boundary_fetcher_;
 };
 
 // Private constructor for jwt credentials from an already parsed json key.

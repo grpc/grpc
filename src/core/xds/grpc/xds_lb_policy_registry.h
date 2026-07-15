@@ -17,16 +17,15 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_LB_POLICY_REGISTRY_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_LB_POLICY_REGISTRY_H
 
-#include <grpc/support/port_platform.h>
-
 #include <map>
 #include <memory>
+#include <utility>
 
-#include "absl/strings/string_view.h"
 #include "envoy/config/cluster/v3/cluster.upb.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -45,7 +44,12 @@ class XdsLbPolicyRegistry final {
     virtual absl::string_view type() = 0;
   };
 
-  XdsLbPolicyRegistry();
+  XdsLbPolicyRegistry() = default;
+
+  template <typename T>
+  void RegisterFactory(std::unique_ptr<T> factory) {
+    policy_config_factories_.emplace(T::Type(), std::move(factory));
+  }
 
   // Converts an xDS cluster load balancing policy message to gRPC's JSON
   // format. An error is returned if none of the lb policies in the list are

@@ -18,16 +18,18 @@
 #include <grpc/support/port_platform.h>
 
 #include <tuple>
+#include <type_traits>
+#include <utility>
 #include <variant>
 
-#include "absl/log/check.h"
-#include "absl/meta/type_traits.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "src/core/lib/promise/detail/join_state.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/status_flag.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/meta/type_traits.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 
@@ -212,7 +214,7 @@ struct TryJoinTraits {
   template <typename R, typename T>
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static R EarlyReturn(
       const ValueOrFailure<T>& x) {
-    CHECK(!x.ok());
+    GRPC_CHECK(!x.ok());
     return FailureStatusCast<R>(Failure{});
   }
   template <typename... A>
@@ -231,6 +233,11 @@ class TryJoin {
     return state_.PollOnce();
   }
 
+  void ToProto(grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    state_.ToProto(grpc_channelz_v2_Promise_TRY, promise_proto, arena);
+  }
+
  private:
   JoinState<TryJoinTraits<R>, Promises...> state_;
 };
@@ -247,15 +254,16 @@ struct WrapInStatusOrTuple {
 }  // namespace promise_detail
 
 template <template <typename> class R, typename... Promises>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::TryJoin<R,
-                                                                    Promises...>
-TryJoin(Promises... promises) {
-  return promise_detail::TryJoin<R, Promises...>(std::move(promises)...);
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto TryJoin(
+    Promises&&... promises) {
+  return promise_detail::TryJoin<R, std::decay_t<Promises>...>(
+      std::forward<Promises>(promises)...);
 }
 
 template <template <typename> class R, typename F>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto TryJoin(F promise) {
-  return Map(promise, promise_detail::WrapInStatusOrTuple<R>{});
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto TryJoin(F&& promise) {
+  return Map(std::forward<F>(promise),
+             promise_detail::WrapInStatusOrTuple<R>{});
 }
 
 }  // namespace grpc_core

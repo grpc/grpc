@@ -14,8 +14,6 @@
 # limitations under the License.
 """Run interop (cross-language) tests in parallel."""
 
-from __future__ import print_function
-
 import argparse
 import atexit
 import itertools
@@ -25,12 +23,8 @@ import os
 import re
 import subprocess
 import sys
-import tempfile
 import time
-import traceback
 import uuid
-
-import six
 
 import python_utils.dockerjob as dockerjob
 import python_utils.jobset as jobset
@@ -445,7 +439,7 @@ class NodePureJSLanguage:
         return "nodepurejs"
 
 
-class PHP7Language:
+class PHP8Language:
     def __init__(self):
         self.client_cwd = None
         self.server_cwd = None
@@ -476,7 +470,7 @@ class PHP7Language:
         return _SKIP_COMPRESSION + _ORCA_TEST_CASES
 
     def __str__(self):
-        return "php7"
+        return "php8"
 
 
 class ObjcLanguage:
@@ -487,7 +481,7 @@ class ObjcLanguage:
     def client_cmd(self, args):
         # from args, extract the server port and craft xcodebuild command out of it
         for arg in args:
-            port = re.search("--server_port=(\d+)", arg)
+            port = re.search(r"--server_port=(\d+)", arg)
             if port:
                 portnum = port.group(1)
                 cmdline = (
@@ -567,7 +561,7 @@ class RubyLanguage:
         return "ruby"
 
 
-_PYTHON_BINARY = "py39/bin/python"
+_PYTHON_BINARY = "py310/bin/python"
 
 
 class PythonLanguage:
@@ -700,7 +694,7 @@ _LANGUAGES = {
     "javaokhttp": JavaOkHttpClient(),
     "node": NodeLanguage(),
     "nodepurejs": NodePureJSLanguage(),
-    "php7": PHP7Language(),
+    "php8": PHP8Language(),
     "objc": ObjcLanguage(),
     "ruby": RubyLanguage(),
     "python": PythonLanguage(),
@@ -718,7 +712,7 @@ _SERVERS = [
     "python",
     "dart",
     "pythonasyncio",
-    "php7",
+    "php8",
 ]
 
 _TEST_CASES = [
@@ -783,6 +777,8 @@ _LANGUAGES_WITH_HTTP2_CLIENTS_FOR_HTTP2_SERVER_TEST_CASES = [
 ]
 
 _LANGUAGES_FOR_ALTS_TEST_CASES = ["java", "go", "c++", "python"]
+
+_LANGUAGES_FOR_MCS_TEST_CASE = ["c++"]
 
 _SERVERS_FOR_ALTS_TEST_CASES = ["java", "go", "c++", "python"]
 
@@ -890,7 +886,7 @@ def auth_options(
         if language in [
             "aspnetcore",
             "node",
-            "php7",
+            "php8",
             "python",
             "ruby",
             "nodepurejs",
@@ -1037,6 +1033,7 @@ def cloud_to_cloud_jobspec(
     docker_image=None,
     transport_security="tls",
     manual_cmd_log=None,
+    add_env={},
 ):
     """Creates jobspec for cloud-to-cloud interop test"""
     interop_only_options = [
@@ -1073,6 +1070,11 @@ def cloud_to_cloud_jobspec(
             '--service_config_json=\'{"loadBalancingConfig":[{"test_backend_metrics_load_balancer":{}}]}\''
         ]
 
+    if test_case == "max_concurrent_streams_connection_scaling":
+        interop_only_options += [
+            '--service_config_json=\'{"connectionScaling":{"maxConnectionsPerSubchannel": 2}}\''
+        ]
+
     common_options = [
         "--test_case=%s" % client_test_case,
         "--server_host=%s" % server_host,
@@ -1096,6 +1098,7 @@ def cloud_to_cloud_jobspec(
         cwd = language.client_cwd
 
     environ = language.global_env()
+    environ.update(add_env)
     if docker_image and language.safename != "objc":
         # we can't run client in docker for objc.
         container_name = dockerjob.random_name(
@@ -1133,7 +1136,11 @@ def cloud_to_cloud_jobspec(
 
 
 def server_jobspec(
-    language, docker_image, transport_security="tls", manual_cmd_log=None
+    language,
+    docker_image,
+    transport_security="tls",
+    manual_cmd_log=None,
+    max_concurrent_streams_limit=None,
 ):
     """Create jobspec for running a server"""
     container_name = dockerjob.random_name(
@@ -1152,6 +1159,10 @@ def server_jobspec(
             % transport_security
         )
         sys.exit(1)
+    if max_concurrent_streams_limit is not None:
+        server_cmd += [
+            "--max_concurrent_streams_limit=%d" % max_concurrent_streams_limit
+        ]
     cmdline = bash_cmdline(language.server_cmd(server_cmd))
     environ = language.global_env()
     docker_args = ["--name=%s" % container_name]
@@ -1220,7 +1231,7 @@ def build_interop_image_jobspec(language, tag=None):
         cmdline=["tools/run_tests/dockerize/build_interop_image.sh"],
         environ=env,
         shortname="build_docker_%s" % (language),
-        timeout_seconds=45 * 60,
+        timeout_seconds=75 * 60,
     )
     build_job.tag = tag
     return build_job
@@ -1470,7 +1481,7 @@ if not args.use_docker and servers:
 
 # we want to include everything but objc in 'all'
 # because objc won't run on non-mac platforms
-all_but_objc = set(six.iterkeys(_LANGUAGES)) - set(["objc"])
+all_but_objc = set(_LANGUAGES) - set(["objc"])
 languages = set(
     _LANGUAGES[l]
     for l in itertools.chain.from_iterable(
@@ -1546,7 +1557,7 @@ if args.use_docker:
                 "Failed to build interop docker images.",
                 do_newline=True,
             )
-            for image in six.itervalues(docker_images):
+            for image in docker_images.values():
                 dockerjob.remove_image(image, skip_nonexistent=True)
             sys.exit(1)
 
@@ -1799,9 +1810,48 @@ try:
                     )
                     jobs.append(test_job)
 
+    if "java" in servers:
+        languages_for_mcs_cs = set(
+            _LANGUAGES[l]
+            for l in _LANGUAGES_FOR_MCS_TEST_CASE
+            if "all" in args.language or l in args.language
+        )
+        if not languages_for_mcs_cs:
+            print(
+                "MCS connection scaling tests will be skipped since none of the supported client languages for MCS connection scaling testcases was specified"
+            )
+        else:
+            mcs_server_jobspec = server_jobspec(
+                _LANGUAGES["java"],
+                docker_images.get("java"),
+                args.transport_security,
+                manual_cmd_log=server_manual_cmd_log,
+                max_concurrent_streams_limit=2,
+            )
+            mcs_server_job = dockerjob.DockerJob(mcs_server_jobspec)
+            # Because the gRPC Java server takes some time to come up
+            time.sleep(30)
+
+            for language in languages_for_mcs_cs:
+                test_job = cloud_to_cloud_jobspec(
+                    language,
+                    "max_concurrent_streams_connection_scaling",
+                    "java-mcs",
+                    "localhost",
+                    mcs_server_job.mapped_port(_DEFAULT_SERVER_PORT),
+                    docker_image=docker_images.get(str(language)),
+                    transport_security=args.transport_security,
+                    manual_cmd_log=client_manual_cmd_log,
+                    add_env={
+                        "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING": "true",
+                        "GRPC_EXPERIMENTS": "subchannel_connection_scaling",
+                    },
+                )
+                jobs.append(test_job)
+
     if not jobs:
         print("No jobs to run.")
-        for image in six.itervalues(docker_images):
+        for image in docker_images.values():
             dockerjob.remove_image(image, skip_nonexistent=True)
         sys.exit(1)
 
@@ -1847,9 +1897,9 @@ finally:
         if not job.is_running():
             print('Server "%s" has exited prematurely.' % server)
 
-    dockerjob.finish_jobs([j for j in six.itervalues(server_jobs)])
+    dockerjob.finish_jobs([j for j in server_jobs.values()])
 
-    for image in six.itervalues(docker_images):
+    for image in docker_images.values():
         if not args.manual_run:
             print("Removing docker image %s" % image)
             dockerjob.remove_image(image)

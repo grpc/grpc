@@ -7,7 +7,7 @@ A Ruby implementation of gRPC.
 PREREQUISITES
 -------------
 
-- Ruby 2.x. The gRPC API uses keyword args.
+- Ruby 3.x-4.x. The gRPC API uses keyword args.
 
 INSTALLATION
 ---------------
@@ -33,21 +33,16 @@ BUILD FROM SOURCE
 git submodule update --init
 ```
 
-- Install Ruby 2.x. Consider doing this with [RVM](http://rvm.io), it's a nice way of controlling
+- Install Ruby. Consider doing this with [RVM](http://rvm.io), it's a nice way of controlling
   the exact ruby version that's used.
 ```sh
 $ command curl -sSL https://rvm.io/mpapis.asc | gpg --import -
-$ \curl -sSL https://get.rvm.io | bash -s stable --ruby=ruby-2
+$ \curl -sSL https://get.rvm.io | bash -s stable --ruby=ruby-3
 $
 $ # follow the instructions to ensure that your're using the latest stable version of Ruby
 $ # and that the rvm command is installed
 ```
 - Make sure your run `source $HOME/.rvm/scripts/rvm` as instructed to complete the set up of RVM
-
-- Install [bundler](http://bundler.io/)
-```
-$ gem install bundler
-```
 
 - Finally,  build and install the gRPC gem locally.
 ```sh

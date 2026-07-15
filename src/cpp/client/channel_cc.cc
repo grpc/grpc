@@ -16,6 +16,7 @@
 //
 //
 
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/slice.h>
@@ -25,6 +26,7 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/call.h>
+#include <grpcpp/impl/call_context_registry.h>
 #include <grpcpp/impl/call_op_set_interface.h>
 #include <grpcpp/impl/completion_queue_tag.h>
 #include <grpcpp/impl/rpc_method.h>
@@ -39,8 +41,10 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/surface/call.h"
+#include "src/core/lib/surface/channel.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc {
 
@@ -64,6 +68,11 @@ Channel::~Channel() {
       CompletionQueue::ReleaseCallbackAlternativeCQ(callback_cq);
     }
   }
+}
+
+grpc_event_engine::experimental::MemoryAllocator* Channel::memory_allocator()
+    const {
+  return grpc_core::Channel::FromC(c_channel_)->memory_allocator();
 }
 
 namespace {
@@ -105,6 +114,12 @@ void ChannelResetConnectionBackoff(Channel* channel) {
   grpc_channel_reset_connect_backoff(channel->c_channel_);
 }
 
+int64_t ChannelGetChannelzUuid(Channel* channel) {
+  auto* node = grpc_channel_get_channelz_node(channel->c_channel_);
+  if (node == nullptr) return 0;
+  return node->uuid();
+}
+
 }  // namespace experimental
 
 grpc::internal::Call Channel::CreateCallInternal(
@@ -113,10 +128,19 @@ grpc::internal::Call Channel::CreateCallInternal(
   const bool kRegistered = method.channel_tag() && context->authority().empty();
   grpc_call* c_call = nullptr;
   if (kRegistered) {
-    c_call = grpc_channel_create_registered_call(
+    auto* rc =
+        static_cast<grpc_core::Channel::RegisteredCall*>(method.channel_tag());
+    c_call = grpc_channel_create_call_with_arena_init(
         c_channel_, context->propagate_from_call_,
-        context->propagation_options_.c_bitmask(), cq->cq(),
-        method.channel_tag(), context->raw_deadline(), nullptr);
+        context->propagation_options_.c_bitmask(), cq->cq(), rc->path.Ref(),
+        rc->authority.has_value()
+            ? std::optional<grpc_core::Slice>(rc->authority->Ref())
+            : std::nullopt,
+        context->raw_deadline(),
+        /*registered_method=*/true, [context](grpc_core::Arena* arena) {
+          impl::CallContextRegistry::Propagate(context->context_elements_,
+                                               arena);
+        });
   } else {
     const ::std::string* host_str = nullptr;
     if (!context->authority_.empty()) {
@@ -130,11 +154,18 @@ grpc::internal::Call Channel::CreateCallInternal(
     if (host_str != nullptr) {
       host_slice = grpc::SliceFromCopiedString(*host_str);
     }
-    c_call = grpc_channel_create_call(
+    c_call = grpc_channel_create_call_with_arena_init(
         c_channel_, context->propagate_from_call_,
-        context->propagation_options_.c_bitmask(), cq->cq(), method_slice,
-        host_str == nullptr ? nullptr : &host_slice, context->raw_deadline(),
-        nullptr);
+        context->propagation_options_.c_bitmask(), cq->cq(),
+        grpc_core::Slice(grpc_core::CSliceRef(method_slice)),
+        host_str == nullptr
+            ? std::nullopt
+            : std::optional<grpc_core::Slice>(grpc_core::CSliceRef(host_slice)),
+        context->raw_deadline(),
+        /*registered_method=*/false, [context](grpc_core::Arena* arena) {
+          impl::CallContextRegistry::Propagate(context->context_elements_,
+                                               arena);
+        });
     grpc_slice_unref(method_slice);
     if (host_str != nullptr) {
       grpc_slice_unref(host_slice);
@@ -150,7 +181,7 @@ grpc::internal::Call Channel::CreateCallInternal(
       interceptor_creators_, interceptor_pos);
   context->set_call(c_call, shared_from_this());
 
-  return grpc::internal::Call(c_call, this, cq, info);
+  return grpc::internal::Call(c_call, cq, info);
 }
 
 grpc::internal::Call Channel::CreateCall(
@@ -159,11 +190,8 @@ grpc::internal::Call Channel::CreateCall(
   return CreateCallInternal(method, context, cq, 0);
 }
 
-void Channel::PerformOpsOnCall(grpc::internal::CallOpSetInterface* ops,
-                               grpc::internal::Call* call) {
-  ops->FillOps(
-      call);  // Make a copy of call. It's fine since Call just has pointers
-}
+void Channel::PerformOpsOnCall(grpc::internal::CallOpSetInterface*,
+                               grpc::internal::Call*) {}
 
 void* Channel::RegisterMethod(const char* method) {
   return grpc_channel_register_call(
@@ -207,7 +235,7 @@ bool Channel::WaitForStateChangeImpl(grpc_connectivity_state last_observed,
   void* tag = nullptr;
   NotifyOnStateChangeImpl(last_observed, deadline, &cq, nullptr);
   cq.Next(&tag, &ok);
-  CHECK_EQ(tag, nullptr);
+  GRPC_CHECK_EQ(tag, nullptr);
   return ok;
 }
 
@@ -217,9 +245,9 @@ class ShutdownCallback : public grpc_completion_queue_functor {
   ShutdownCallback() {
     functor_run = &ShutdownCallback::Run;
     // Set inlineable to true since this callback is trivial and thus does not
-    // need to be run from the executor (triggering a thread hop). This should
-    // only be used by internal callbacks like this and not by user application
-    // code.
+    // need to be run from the EventEngine (potentially triggering a thread
+    // hop). This should only be used by internal callbacks like this and not by
+    // user application code.
     inlineable = true;
   }
   // TakeCQ takes ownership of the cq into the shutdown callback

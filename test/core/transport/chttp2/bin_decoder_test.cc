@@ -23,13 +23,13 @@
 
 #include <memory>
 
-#include "absl/log/log.h"
-#include "gtest/gtest.h"
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/util/string.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 static int all_ok = 1;
 

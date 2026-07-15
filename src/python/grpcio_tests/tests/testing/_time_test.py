@@ -28,7 +28,7 @@ _MANY = 10000
 _PATHOLOGICAL_SCHEDULING = "pathological thread scheduling!"
 
 
-class _TimeNoter(object):
+class _TimeNoter:
     def __init__(self, time):
         self._condition = threading.Condition()
         self._time = time
@@ -43,7 +43,7 @@ class _TimeNoter(object):
             return tuple(self._call_times)
 
 
-class TimeTest(object):
+class TimeTest:
     def test_sleep_for(self):
         start_time = self._time.time()
         self._time.sleep_for(_QUANTUM)

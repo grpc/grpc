@@ -23,8 +23,6 @@
 #include <grpc/support/sync.h>
 #include <inttypes.h>
 
-#include "absl/log/log.h"
-#include "absl/status/status.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -34,6 +32,8 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/util/memory.h"
 #include "src/core/util/time.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
 
 #define DEFAULT_POLL_INTERVAL_MS 5000
 
@@ -62,7 +62,6 @@ static grpc_core::Duration g_poll_interval =
 static bool g_backup_polling_disabled;
 
 void grpc_client_channel_global_init_backup_polling() {
-  // Disable backup polling if EventEngine is used everywhere.
   g_backup_polling_disabled = grpc_core::IsEventEngineClientEnabled() &&
                               grpc_core::IsEventEngineListenerEnabled() &&
                               grpc_core::IsEventEngineDnsEnabled();

@@ -30,14 +30,8 @@
 #include <utility>
 #include <variant>
 
-#include "absl/base/attributes.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/span.h"
+#include "src/core/call/metadata_info.h"
+#include "src/core/call/parsed_metadata.h"
 #include "src/core/ext/transport/chttp2/transport/decode_huff.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parse_result.h"
@@ -46,12 +40,19 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/validate_metadata.h"
-#include "src/core/lib/transport/metadata_info.h"
-#include "src/core/lib/transport/parsed_metadata.h"
+#include "src/core/mitigation_engine/mitigation_engine.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/match.h"
+#include "absl/base/attributes.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 
 // IWYU pragma: no_include <type_traits>
 
@@ -193,7 +194,7 @@ class HPackParser::Input {
   std::optional<StringPrefix> ParseStringPrefix() {
     auto cur = Next();
     if (!cur.has_value()) {
-      DCHECK(eof_error());
+      GRPC_DCHECK(eof_error());
       return {};
     }
     // Huffman if the top bit is 1
@@ -204,7 +205,7 @@ class HPackParser::Input {
       // all ones ==> varint string length
       auto v = ParseVarint(0x7f);
       if (!v.has_value()) {
-        DCHECK(eof_error());
+        GRPC_DCHECK(eof_error());
         return {};
       }
       strlen = *v;
@@ -231,7 +232,7 @@ class HPackParser::Input {
   // Intended for errors that are specific to a stream and recoverable.
   // Callers should ensure that any hpack table updates happen.
   void SetErrorAndContinueParsing(HpackParseResult error) {
-    DCHECK(error.stream_error());
+    GRPC_DCHECK(error.stream_error());
     SetError(std::move(error));
   }
 
@@ -239,7 +240,7 @@ class HPackParser::Input {
   // Intended for unrecoverable errors, with the expectation that they will
   // close the connection on return to chttp2.
   void SetErrorAndStopParsing(HpackParseResult error) {
-    DCHECK(error.connection_error());
+    GRPC_DCHECK(error.connection_error());
     SetError(std::move(error));
     begin_ = end_;
   }
@@ -248,17 +249,17 @@ class HPackParser::Input {
   // min_progress_size: how many bytes beyond the current frontier do we need to
   // read prior to being able to get further in this parse.
   void UnexpectedEOF(size_t min_progress_size) {
-    CHECK_GT(min_progress_size, 0u);
+    GRPC_CHECK_GT(min_progress_size, 0u);
     if (eof_error()) return;
     // Set min progress size, taking into account bytes parsed already but not
     // consumed.
     min_progress_size_ = min_progress_size + (begin_ - frontier_);
-    DCHECK(eof_error());
+    GRPC_DCHECK(eof_error());
   }
 
   // Update the frontier - signifies we've successfully parsed another element
   void UpdateFrontier() {
-    DCHECK_EQ(skip_bytes_, 0u);
+    GRPC_DCHECK_EQ(skip_bytes_, 0u);
     frontier_ = begin_;
   }
 
@@ -381,7 +382,7 @@ HPackParser::String::StringResult HPackParser::String::ParseUncompressed(
   // Check there's enough bytes
   if (input->remaining() < length) {
     input->UnexpectedEOF(/*min_progress_size=*/length);
-    DCHECK(input->eof_error());
+    GRPC_DCHECK(input->eof_error());
     return StringResult{HpackParseStatus::kEof, wire_size, String{}};
   }
   auto* refcount = input->slice_refcount();
@@ -601,7 +602,7 @@ class HPackParser::Parser {
 
  private:
   bool ParseTop() {
-    DCHECK(state_.parse_state == ParseState::kTop);
+    GRPC_DCHECK(state_.parse_state == ParseState::kTop);
     auto cur = *input_->Next();
     input_->ClearFieldError();
     switch (cur >> 4) {
@@ -773,7 +774,7 @@ class HPackParser::Parser {
 
   // Parse an index encoded key and a string encoded value
   bool StartIdxKey(uint32_t index, bool add_to_table) {
-    DCHECK(state_.parse_state == ParseState::kTop);
+    GRPC_DCHECK(state_.parse_state == ParseState::kTop);
     input_->UpdateFrontier();
     const auto* elem = state_.hpack_table.Lookup(index);
     if (GPR_UNLIKELY(elem == nullptr)) {
@@ -789,14 +790,14 @@ class HPackParser::Parser {
 
   // Parse a varint index encoded key and a string encoded value
   bool StartVarIdxKey(uint32_t offset, bool add_to_table) {
-    DCHECK(state_.parse_state == ParseState::kTop);
+    GRPC_DCHECK(state_.parse_state == ParseState::kTop);
     auto index = input_->ParseVarint(offset);
     if (GPR_UNLIKELY(!index.has_value())) return false;
     return StartIdxKey(*index, add_to_table);
   }
 
   bool StartParseLiteralKey(bool add_to_table) {
-    DCHECK(state_.parse_state == ParseState::kTop);
+    GRPC_DCHECK(state_.parse_state == ParseState::kTop);
     state_.add_to_table = add_to_table;
     state_.parse_state = ParseState::kParsingKeyLength;
     input_->UpdateFrontier();
@@ -831,7 +832,7 @@ class HPackParser::Parser {
   }
 
   bool ParseKeyLength() {
-    DCHECK(state_.parse_state == ParseState::kParsingKeyLength);
+    GRPC_DCHECK(state_.parse_state == ParseState::kParsingKeyLength);
     auto pfx = input_->ParseStringPrefix();
     if (!pfx.has_value()) return false;
     state_.is_string_huff_compressed = pfx->huff;
@@ -852,14 +853,14 @@ class HPackParser::Parser {
   }
 
   bool ParseKeyBody() {
-    DCHECK(state_.parse_state == ParseState::kParsingKeyBody);
+    GRPC_DCHECK(state_.parse_state == ParseState::kParsingKeyBody);
     auto key = String::Parse(input_, state_.is_string_huff_compressed,
                              state_.string_length);
     switch (key.status) {
       case HpackParseStatus::kOk:
         break;
       case HpackParseStatus::kEof:
-        DCHECK(input_->eof_error());
+        GRPC_DCHECK(input_->eof_error());
         return false;
       default:
         input_->SetErrorAndStopParsing(
@@ -899,7 +900,7 @@ class HPackParser::Parser {
   }
 
   bool SkipKeyBody() {
-    DCHECK(state_.parse_state == ParseState::kSkippingKeyBody);
+    GRPC_DCHECK(state_.parse_state == ParseState::kSkippingKeyBody);
     if (!SkipStringBody()) return false;
     input_->UpdateFrontier();
     state_.parse_state = ParseState::kSkippingValueLength;
@@ -907,7 +908,7 @@ class HPackParser::Parser {
   }
 
   bool SkipValueLength() {
-    DCHECK(state_.parse_state == ParseState::kSkippingValueLength);
+    GRPC_DCHECK(state_.parse_state == ParseState::kSkippingValueLength);
     auto pfx = input_->ParseStringPrefix();
     if (!pfx.has_value()) return false;
     state_.string_length = pfx->length;
@@ -917,7 +918,7 @@ class HPackParser::Parser {
   }
 
   bool SkipValueBody() {
-    DCHECK(state_.parse_state == ParseState::kSkippingValueBody);
+    GRPC_DCHECK(state_.parse_state == ParseState::kSkippingValueBody);
     if (!SkipStringBody()) return false;
     input_->UpdateFrontier();
     state_.parse_state = ParseState::kTop;
@@ -928,7 +929,7 @@ class HPackParser::Parser {
   }
 
   bool ParseValueLength() {
-    DCHECK(state_.parse_state == ParseState::kParsingValueLength);
+    GRPC_DCHECK(state_.parse_state == ParseState::kParsingValueLength);
     auto pfx = input_->ParseStringPrefix();
     if (!pfx.has_value()) return false;
     state_.is_string_huff_compressed = pfx->huff;
@@ -952,7 +953,7 @@ class HPackParser::Parser {
   }
 
   bool ParseValueBody() {
-    DCHECK(state_.parse_state == ParseState::kParsingValueBody);
+    GRPC_DCHECK(state_.parse_state == ParseState::kParsingValueBody);
     auto value =
         state_.is_binary_header
             ? String::ParseBinary(input_, state_.is_string_huff_compressed,
@@ -980,7 +981,7 @@ class HPackParser::Parser {
       case HpackParseStatus::kOk:
         break;
       case HpackParseStatus::kEof:
-        DCHECK(input_->eof_error());
+        GRPC_DCHECK(input_->eof_error());
         return false;
       default: {
         auto result =
@@ -995,8 +996,32 @@ class HPackParser::Parser {
       }
     }
     auto value_slice = value.value.Take();
+    if (IsOptimization05Enabled() && !state_.is_binary_header &&
+        state_.field_error.ok()) {
+      auto r =
+          ValidateNonBinaryHeaderValueIsLegal(value_slice.as_string_view());
+      if (r != ValidateMetadataResult::kOk) {
+        input_->SetErrorAndContinueParsing(
+            HpackParseResult::InvalidMetadataError(r, key_string));
+      }
+    }
     const auto transport_size =
         key_string.size() + value.wire_size + hpack_constants::kEntryOverhead;
+    if (state_.mitigation_engine != nullptr) {
+      auto action = state_.mitigation_engine->EvaluateIncomingMetadata(
+          key_string, value_slice.as_string_view(), state_.peer_address);
+      if (action.has_value()) {
+        if (action.value() == MitigationEngine::Action::kCloseConnection) {
+          input_->SetErrorAndStopParsing(
+              HpackParseResult::MitigationEngineError(
+                  key_string, MitigationEngine::Action::kCloseConnection));
+        } else if (action.value() == MitigationEngine::Action::kRejectRpc) {
+          input_->SetErrorAndContinueParsing(
+              HpackParseResult::MitigationEngineError(
+                  key_string, MitigationEngine::Action::kRejectRpc));
+        }
+      }
+    }
     auto md = grpc_metadata_batch::Parse(
         key_string, std::move(value_slice), state_.add_to_table, transport_size,
         [key_string, this](absl::string_view message, const Slice&) {
@@ -1092,13 +1117,17 @@ void HPackParser::BeginFrame(grpc_metadata_batch* metadata_buffer,
                              uint32_t metadata_size_soft_limit,
                              uint32_t metadata_size_hard_limit,
                              Boundary boundary, Priority priority,
-                             LogInfo log_info) {
+                             LogInfo log_info,
+                             MitigationEngine* mitigation_engine,
+                             absl::string_view peer_address) {
   metadata_buffer_ = metadata_buffer;
   if (metadata_buffer != nullptr) {
     metadata_buffer->Set(GrpcStatusFromWire(), true);
   }
   boundary_ = boundary;
   priority_ = priority;
+  state_.mitigation_engine = mitigation_engine;
+  state_.peer_address = peer_address;
   state_.dynamic_table_updates_allowed = 2;
   state_.metadata_early_detection.SetLimits(
       /*soft_limit=*/metadata_size_soft_limit,
@@ -1106,9 +1135,9 @@ void HPackParser::BeginFrame(grpc_metadata_batch* metadata_buffer,
   log_info_ = log_info;
 }
 
-grpc_error_handle HPackParser::Parse(
-    const grpc_slice& slice, bool is_last, absl::BitGenRef bitsrc,
-    CallTracerAnnotationInterface* call_tracer) {
+grpc_error_handle HPackParser::Parse(const grpc_slice& slice, bool is_last,
+                                     absl::BitGenRef bitsrc,
+                                     CallSpan* call_tracer) {
   if (GPR_UNLIKELY(!unparsed_bytes_.empty())) {
     unparsed_bytes_.insert(unparsed_bytes_.end(), GRPC_SLICE_START_PTR(slice),
                            GRPC_SLICE_END_PTR(slice));
@@ -1129,15 +1158,29 @@ grpc_error_handle HPackParser::Parse(
                     is_last, call_tracer);
 }
 
-grpc_error_handle HPackParser::ParseInput(
-    Input input, bool is_last, CallTracerAnnotationInterface* call_tracer) {
+grpc_error_handle HPackParser::ParseInput(Input input, bool is_last,
+                                          CallSpan* call_tracer) {
   ParseInputInner(&input);
   if (is_last && is_boundary()) {
+    if (state_.mitigation_engine != nullptr && metadata_buffer_ != nullptr) {
+      auto action = state_.mitigation_engine->EvaluateAllIncomingMetadata(
+          *metadata_buffer_, state_.peer_address);
+      if (action.has_value()) {
+        if (action.value() == MitigationEngine::Action::kCloseConnection) {
+          input.SetErrorAndStopParsing(HpackParseResult::MitigationEngineError(
+              /*key=*/"", MitigationEngine::Action::kCloseConnection));
+        } else if (action.value() == MitigationEngine::Action::kRejectRpc) {
+          input.SetErrorAndContinueParsing(
+              HpackParseResult::MitigationEngineError(
+                  /*key=*/"", MitigationEngine::Action::kRejectRpc));
+        }
+      }
+    }
     if (state_.metadata_early_detection.Reject(state_.frame_length,
                                                input.bitsrc())) {
       HandleMetadataSoftSizeLimitExceeded(&input);
     }
-    global_stats().IncrementHttp2MetadataSize(state_.frame_length);
+    http2_global_stats().IncrementHttp2MetadataSize(state_.frame_length);
     if (call_tracer != nullptr && call_tracer->IsSampled() &&
         metadata_buffer_ != nullptr) {
       MetadataSizesAnnotation metadata_sizes_annotation(

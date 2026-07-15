@@ -53,7 +53,7 @@ class NoSuchMethodError(Exception):
         self.details = details
 
 
-class Outcome(object):
+class Outcome:
     """The outcome of an operation.
 
     Attributes:

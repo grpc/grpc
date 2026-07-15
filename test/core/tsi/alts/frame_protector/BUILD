@@ -16,7 +16,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/tsi/alts/frame_protector")
+grpc_package(
+    name = "test/core/tsi/alts/frame_protector",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_test(
     name = "alts_counter_test",
@@ -25,6 +31,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:tsi_alts_frame_protector",
         "//test/core/test_util:grpc_test_util",
         "//test/core/tsi/alts/crypt:alts_crypt_test_util",
     ],
@@ -40,6 +47,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:tsi_alts_frame_protector",
         "//test/core/test_util:grpc_test_util",
         "//test/core/tsi/alts/crypt:alts_crypt_test_util",
     ],
@@ -52,6 +60,8 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:tsi_alts_frame_protector",
+        "//:tsi_base",
         "//test/core/test_util:grpc_test_util",
         "//test/core/tsi:transport_security_test_lib",
         "//test/core/tsi/alts/crypt:alts_crypt_test_util",
@@ -65,6 +75,8 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:tsi_alts_frame_protector",
+        "//src/core:useful",
         "//test/core/test_util:grpc_test_util",
         "//test/core/tsi/alts/crypt:alts_crypt_test_util",
     ],

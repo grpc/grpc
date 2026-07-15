@@ -27,11 +27,6 @@
 #include <variant>
 #include <vector>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
 #include "envoy/config/core/v3/address.pb.h"
 #include "envoy/config/core/v3/base.pb.h"
 #include "envoy/config/core/v3/config_source.pb.h"
@@ -43,8 +38,6 @@
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.pb.h"
 #include "envoy/type/matcher/v3/string.pb.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/error.h"
@@ -54,17 +47,24 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_listener.h"
 #include "src/core/xds/grpc/xds_listener_parser.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
-#include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
 #include "xds/type/v3/typed_struct.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 
 using envoy::config::listener::v3::Listener;
 using envoy::extensions::filters::http::fault::v3::HTTPFault;
@@ -88,7 +88,7 @@ class XdsListenerTest : public ::testing::Test {
 
   static RefCountedPtr<XdsClient> MakeXdsClient() {
     grpc_error_handle error;
-    auto bootstrap = GrpcXdsBootstrap::Create(
+    auto bootstrap = GrpcXdsBootstrapBuilder::Build(
         "{\n"
         "  \"xds_servers\": [\n"
         "    {\n"
@@ -286,9 +286,9 @@ TEST_P(HttpConnectionManagerTest, MinimumValidConfig) {
   ASSERT_EQ(http_connection_manager->http_filters.size(), 1UL);
   auto& router = http_connection_manager->http_filters[0];
   EXPECT_EQ(router.name, "router");
-  EXPECT_EQ(router.config.config_proto_type_name,
+  EXPECT_EQ(router.config_proto_type,
             "envoy.extensions.filters.http.router.v3.Router");
-  EXPECT_EQ(router.config.config, Json()) << JsonDump(router.config.config);
+  EXPECT_EQ(router.config, Json()) << JsonDump(router.config);
   EXPECT_EQ(http_connection_manager->http_max_stream_duration,
             Duration::Zero());
 }
@@ -321,9 +321,9 @@ TEST_P(HttpConnectionManagerTest, RdsConfigSourceUsesAds) {
   ASSERT_EQ(http_connection_manager->http_filters.size(), 1UL);
   auto& router = http_connection_manager->http_filters[0];
   EXPECT_EQ(router.name, "router");
-  EXPECT_EQ(router.config.config_proto_type_name,
+  EXPECT_EQ(router.config_proto_type,
             "envoy.extensions.filters.http.router.v3.Router");
-  EXPECT_EQ(router.config.config, Json()) << JsonDump(router.config.config);
+  EXPECT_EQ(router.config, Json()) << JsonDump(router.config);
   EXPECT_EQ(http_connection_manager->http_max_stream_duration,
             Duration::Zero());
 }
@@ -435,11 +435,42 @@ TEST_P(HttpConnectionManagerTest, SetsMaxStreamDuration) {
   ASSERT_EQ(http_connection_manager->http_filters.size(), 1UL);
   auto& router = http_connection_manager->http_filters[0];
   EXPECT_EQ(router.name, "router");
-  EXPECT_EQ(router.config.config_proto_type_name,
+  EXPECT_EQ(router.config_proto_type,
             "envoy.extensions.filters.http.router.v3.Router");
-  EXPECT_EQ(router.config.config, Json()) << JsonDump(router.config.config);
+  EXPECT_EQ(router.config, Json()) << JsonDump(router.config);
   EXPECT_EQ(http_connection_manager->http_max_stream_duration,
             Duration::Milliseconds(5005));
+}
+
+TEST_P(HttpConnectionManagerTest, HttpFilterDisabled) {
+  HttpConnectionManager hcm;
+  auto* filter = hcm.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(Router());
+  filter->set_disabled(true);
+  auto* rds = hcm.mutable_rds();
+  rds->set_route_config_name("rds_name");
+  rds->mutable_config_source()->mutable_self();
+  Listener listener = MakeListener(hcm);
+  std::string serialized_resource;
+  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsListenerResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<const XdsListenerResource&>(**decode_result.resource);
+  auto http_connection_manager = GetHCMConfig(resource);
+  ASSERT_TRUE(http_connection_manager.has_value());
+  ASSERT_EQ(http_connection_manager->http_filters.size(), 1UL);
+  auto& router = http_connection_manager->http_filters[0];
+  EXPECT_EQ(router.name, "router");
+  EXPECT_EQ(router.config_proto_type,
+            "envoy.extensions.filters.http.router.v3.Router");
+  EXPECT_EQ(router.config, Json()) << JsonDump(router.config);
+  EXPECT_TRUE(router.disabled);
 }
 
 TEST_P(HttpConnectionManagerTest, InvalidMaxStreamDuration) {
@@ -637,9 +668,9 @@ TEST_P(HttpConnectionManagerTest, HttpFilterTypeNotSupportedButOptional) {
   ASSERT_EQ(http_connection_manager->http_filters.size(), 1UL);
   auto& router = http_connection_manager->http_filters[0];
   EXPECT_EQ(router.name, "router");
-  EXPECT_EQ(router.config.config_proto_type_name,
+  EXPECT_EQ(router.config_proto_type,
             "envoy.extensions.filters.http.router.v3.Router");
-  EXPECT_EQ(router.config.config, Json()) << JsonDump(router.config.config);
+  EXPECT_EQ(router.config, Json()) << JsonDump(router.config);
 }
 
 TEST_P(HttpConnectionManagerTest, NoHttpFilters) {
@@ -697,14 +728,14 @@ TEST_P(HttpConnectionManagerTest, TerminalFilterNotLast) {
                    ".value["
                    "envoy.extensions.filters.network.http_connection_manager.v3"
                    ".HttpConnectionManager].http_filters errors:["
-                   "terminal filter for config type "
-                   "envoy.extensions.filters.http.router.v3.Router must be the "
-                   "last filter in the chain; "
                    "non-terminal filter for config type ",
                    (GetParam().in_api_listener
                         ? "envoy.extensions.filters.http.fault.v3.HTTPFault"
                         : "envoy.extensions.filters.http.rbac.v3.RBAC"),
-                   " is the last filter in the chain]]"))
+                   " is the last filter in the chain; "
+                   "terminal filter for config type "
+                   "envoy.extensions.filters.http.router.v3.Router must be the "
+                   "last filter in the chain]]"))
       << decode_result.resource.status();
 }
 
@@ -776,9 +807,9 @@ TEST_F(HttpConnectionManagerClientOrServerOnlyTest,
   ASSERT_EQ(api_listener->http_filters.size(), 1UL);
   auto& router = api_listener->http_filters[0];
   EXPECT_EQ(router.name, "router");
-  EXPECT_EQ(router.config.config_proto_type_name,
+  EXPECT_EQ(router.config_proto_type,
             "envoy.extensions.filters.http.router.v3.Router");
-  EXPECT_EQ(router.config.config, Json()) << JsonDump(router.config.config);
+  EXPECT_EQ(router.config, Json()) << JsonDump(router.config);
 }
 
 TEST_F(HttpConnectionManagerClientOrServerOnlyTest,
@@ -862,9 +893,9 @@ TEST_F(HttpConnectionManagerClientOrServerOnlyTest,
   ASSERT_EQ(http_connection_manager.http_filters.size(), 1UL);
   auto& router = http_connection_manager.http_filters[0];
   EXPECT_EQ(router.name, "router");
-  EXPECT_EQ(router.config.config_proto_type_name,
+  EXPECT_EQ(router.config_proto_type,
             "envoy.extensions.filters.http.router.v3.Router");
-  EXPECT_EQ(router.config.config, Json()) << JsonDump(router.config.config);
+  EXPECT_EQ(router.config, Json()) << JsonDump(router.config);
 }
 
 //
@@ -982,9 +1013,9 @@ TEST_F(TcpListenerTest, MinimumValidConfig) {
   ASSERT_EQ(http_connection_manager.http_filters.size(), 1UL);
   auto& router = http_connection_manager.http_filters[0];
   EXPECT_EQ(router.name, "router");
-  EXPECT_EQ(router.config.config_proto_type_name,
+  EXPECT_EQ(router.config_proto_type,
             "envoy.extensions.filters.http.router.v3.Router");
-  EXPECT_EQ(router.config.config, Json()) << JsonDump(router.config.config);
+  EXPECT_EQ(router.config, Json()) << JsonDump(router.config);
   EXPECT_EQ(http_connection_manager.http_max_stream_duration, Duration::Zero());
 }
 
@@ -1060,10 +1091,44 @@ TEST_F(TcpListenerTest, FilterChainMatchCriteria) {
   ASSERT_EQ(http_connection_manager.http_filters.size(), 1UL);
   auto& router = http_connection_manager.http_filters[0];
   EXPECT_EQ(router.name, "router");
-  EXPECT_EQ(router.config.config_proto_type_name,
+  EXPECT_EQ(router.config_proto_type,
             "envoy.extensions.filters.http.router.v3.Router");
-  EXPECT_EQ(router.config.config, Json()) << JsonDump(router.config.config);
+  EXPECT_EQ(router.config, Json()) << JsonDump(router.config);
   EXPECT_EQ(http_connection_manager.http_max_stream_duration, Duration::Zero());
+}
+
+TEST_F(TcpListenerTest, InvalidConnectionSourceType) {
+  Listener listener;
+  listener.set_name("foo");
+  HttpConnectionManager hcm;
+  auto* filter = hcm.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(Router());
+  auto* rds = hcm.mutable_rds();
+  rds->set_route_config_name("rds_name");
+  rds->mutable_config_source()->mutable_self();
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(hcm);
+  auto* match = filter_chain->mutable_filter_chain_match();
+  match->set_source_type(
+      static_cast<
+          envoy::config::listener::v3::FilterChainMatch_ConnectionSourceType>(
+          3));
+  auto* address = listener.mutable_address()->mutable_socket_address();
+  address->set_address("127.0.0.1");
+  address->set_port_value(443);
+  std::string serialized_resource;
+  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsListenerResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating server Listener: ["
+            "field:filter_chains[0].filter_chain_match.source_type "
+            "error:invalid value]")
+      << decode_result.resource.status();
 }
 
 TEST_F(TcpListenerTest, SocketAddressNotPresent) {
@@ -1567,7 +1632,6 @@ TEST_F(TcpListenerTest, DownstreamTlsContextWithCaCertProviderInstance) {
 }
 
 TEST_F(TcpListenerTest, SystemRootCerts) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_SYSTEM_ROOT_CERTS");
   Listener listener;
   listener.set_name("foo");
   HttpConnectionManager hcm;

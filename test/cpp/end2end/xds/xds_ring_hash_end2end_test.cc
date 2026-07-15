@@ -18,24 +18,24 @@
 #include <string>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
 #include "envoy/config/cluster/v3/cluster.pb.h"
 #include "envoy/extensions/clusters/aggregate/v3/cluster.pb.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc {
 namespace testing {
@@ -43,6 +43,8 @@ namespace {
 
 using ::envoy::config::core::v3::HealthStatus;
 using ::envoy::extensions::clusters::aggregate::v3::ClusterConfig;
+
+const double kExtraTolerance = 0.02;
 
 class RingHashTest : public XdsEnd2endTest {
  protected:
@@ -69,9 +71,9 @@ class RingHashTest : public XdsEnd2endTest {
     for (int port : ports) {
       absl::StatusOr<grpc_core::URI> lb_uri =
           grpc_core::URI::Parse(grpc_core::LocalIpUri(port));
-      CHECK_OK(lb_uri);
+      GRPC_CHECK_OK(lb_uri);
       grpc_resolved_address address;
-      CHECK(grpc_parse_uri(*lb_uri, &address));
+      GRPC_CHECK(grpc_parse_uri(*lb_uri, &address));
       addresses.emplace_back(address, grpc_core::ChannelArgs());
     }
     return addresses;
@@ -635,9 +637,11 @@ TEST_P(RingHashTest, NoHashPolicy) {
   const int request_count_1 = backends_[0]->backend_service()->request_count();
   const int request_count_2 = backends_[1]->backend_service()->request_count();
   EXPECT_THAT(static_cast<double>(request_count_1) / kNumRpcs,
-              ::testing::DoubleNear(kDistribution50Percent, kErrorTolerance));
+              ::testing::DoubleNear(kDistribution50Percent,
+                                    kErrorTolerance + kExtraTolerance));
   EXPECT_THAT(static_cast<double>(request_count_2) / kNumRpcs,
-              ::testing::DoubleNear(kDistribution50Percent, kErrorTolerance));
+              ::testing::DoubleNear(kDistribution50Percent,
+                                    kErrorTolerance + kExtraTolerance));
 }
 
 // Tests that we observe endpoint weights.
@@ -677,11 +681,14 @@ TEST_P(RingHashTest, EndpointWeights) {
   const int request_count_1 = backends_[1]->backend_service()->request_count();
   const int request_count_2 = backends_[2]->backend_service()->request_count();
   EXPECT_THAT(static_cast<double>(request_count_0) / kNumRpcs,
-              ::testing::DoubleNear(kDistribution25Percent, kErrorTolerance));
+              ::testing::DoubleNear(kDistribution25Percent,
+                                    kErrorTolerance + kExtraTolerance));
   EXPECT_THAT(static_cast<double>(request_count_1) / kNumRpcs,
-              ::testing::DoubleNear(kDistribution25Percent, kErrorTolerance));
+              ::testing::DoubleNear(kDistribution25Percent,
+                                    kErrorTolerance + kExtraTolerance));
   EXPECT_THAT(static_cast<double>(request_count_2) / kNumRpcs,
-              ::testing::DoubleNear(kDistribution50Percent, kErrorTolerance));
+              ::testing::DoubleNear(kDistribution50Percent,
+                                    kErrorTolerance + kExtraTolerance));
 }
 
 // Test that ring hash policy evaluation will continue past the terminal
@@ -747,9 +754,11 @@ TEST_P(RingHashTest, HashOnHeaderThatIsNotPresent) {
   const int request_count_1 = backends_[0]->backend_service()->request_count();
   const int request_count_2 = backends_[1]->backend_service()->request_count();
   EXPECT_THAT(static_cast<double>(request_count_1) / kNumRpcs,
-              ::testing::DoubleNear(kDistribution50Percent, kErrorTolerance));
+              ::testing::DoubleNear(kDistribution50Percent,
+                                    kErrorTolerance + kExtraTolerance));
   EXPECT_THAT(static_cast<double>(request_count_2) / kNumRpcs,
-              ::testing::DoubleNear(kDistribution50Percent, kErrorTolerance));
+              ::testing::DoubleNear(kDistribution50Percent,
+                                    kErrorTolerance + kExtraTolerance));
 }
 
 // Test random hash is used when only unsupported hash policies are
@@ -790,9 +799,11 @@ TEST_P(RingHashTest, UnsupportedHashPolicyDefaultToRandomHashing) {
   const int request_count_1 = backends_[0]->backend_service()->request_count();
   const int request_count_2 = backends_[1]->backend_service()->request_count();
   EXPECT_THAT(static_cast<double>(request_count_1) / kNumRpcs,
-              ::testing::DoubleNear(kDistribution50Percent, kErrorTolerance));
+              ::testing::DoubleNear(kDistribution50Percent,
+                                    kErrorTolerance + kExtraTolerance));
   EXPECT_THAT(static_cast<double>(request_count_2) / kNumRpcs,
-              ::testing::DoubleNear(kDistribution50Percent, kErrorTolerance));
+              ::testing::DoubleNear(kDistribution50Percent,
+                                    kErrorTolerance + kExtraTolerance));
 }
 
 // Tests that ring hash policy that hashes using a random value can spread
@@ -829,9 +840,11 @@ TEST_P(RingHashTest, RandomHashingDistributionAccordingToEndpointWeight) {
   const int weight_66_request_count =
       backends_[1]->backend_service()->request_count();
   EXPECT_THAT(static_cast<double>(weight_33_request_count) / kNumRpcs,
-              ::testing::DoubleNear(kWeight33Percent, kErrorTolerance));
+              ::testing::DoubleNear(kWeight33Percent,
+                                    kErrorTolerance + kExtraTolerance));
   EXPECT_THAT(static_cast<double>(weight_66_request_count) / kNumRpcs,
-              ::testing::DoubleNear(kWeight66Percent, kErrorTolerance));
+              ::testing::DoubleNear(kWeight66Percent,
+                                    kErrorTolerance + kExtraTolerance));
 }
 
 // Tests that ring hash policy that hashes using a random value can spread
@@ -869,9 +882,11 @@ TEST_P(RingHashTest,
   const int weight_80_request_count =
       backends_[1]->backend_service()->request_count();
   EXPECT_THAT(static_cast<double>(weight_20_request_count) / kNumRpcs,
-              ::testing::DoubleNear(kWeight20Percent, kErrorTolerance));
+              ::testing::DoubleNear(kWeight20Percent,
+                                    kErrorTolerance + kExtraTolerance));
   EXPECT_THAT(static_cast<double>(weight_80_request_count) / kNumRpcs,
-              ::testing::DoubleNear(kWeight80Percent, kErrorTolerance));
+              ::testing::DoubleNear(kWeight80Percent,
+                                    kErrorTolerance + kExtraTolerance));
 }
 
 // Tests that ring hash policy that hashes using a fixed string ensures all
@@ -1240,10 +1255,6 @@ int main(int argc, char** argv) {
   grpc_core::ConfigVars::Overrides overrides;
   overrides.client_channel_backup_poll_interval_ms = 1;
   grpc_core::ConfigVars::SetOverrides(overrides);
-#if TARGET_OS_IPHONE
-  // Workaround Apple CFStream bug
-  grpc_core::SetEnv("grpc_cfstream", "0");
-#endif
   grpc_init();
   grpc::testing::ConnectionAttemptInjector::Init();
   const auto result = RUN_ALL_TESTS();

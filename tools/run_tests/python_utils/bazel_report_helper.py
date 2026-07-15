@@ -20,6 +20,9 @@ import platform
 import sys
 import uuid
 
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+import utils_common
+
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), "../../.."))
 os.chdir(_ROOT)
 
@@ -87,7 +90,7 @@ def _generate_junit_report_string(
             % bazel_invocation_url
         )
     else:
-        # The failure output will be displayes in both resultstore UI and sponge when clicking on the failing testcase.
+        # The failure output will be displayed in both resultstore UI and sponge when clicking on the failing testcase.
         test_output_tag = (
             '<failure message="Failure">FAILED. See bazel invocation results'
             " here: %s</failure>" % bazel_invocation_url
@@ -291,6 +294,10 @@ if __name__ == "__main__":
     report_path = args.report_path
     report_suite_name = args.report_suite_name
     upload_results = True if os.getenv("UPLOAD_TEST_RESULTS") else False
+
+    if upload_results:
+        # Only upload results when initiated by the CI.
+        upload_results = utils_common.should_upload_results_on_ci()
 
     _append_to_kokoro_bazel_invocations(invocation_id)
     _create_bazel_wrapper(

@@ -23,12 +23,12 @@
 #include <string>
 #include <utility>
 
+#include "src/core/call/metadata.h"
 #include "src/core/credentials/call/call_credentials.h"
 #include "src/core/credentials/call/token_fetcher/token_fetcher_credentials.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/transport/metadata.h"
 #include "src/core/util/http_client/httpcli.h"
 #include "src/core/util/http_client/parser.h"
 #include "src/core/util/orphanable.h"
@@ -40,20 +40,13 @@ namespace grpc_core {
 
 // A base class for JWT token fetching credentials.
 // Subclasses must implement StartHttpRequest().
-class JwtTokenFetcherCallCredentials : public TokenFetcherCredentials {
+class JwtTokenFetcherCallCredentials : public HttpTokenFetcherCredentials {
  public:
   OrphanablePtr<FetchRequest> FetchToken(
       Timestamp deadline,
       absl::AnyInvocable<
           void(absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
           on_done) final;
-
- private:
-  class HttpFetchRequest;
-
-  virtual OrphanablePtr<HttpRequest> StartHttpRequest(
-      grpc_polling_entity* pollent, Timestamp deadline,
-      grpc_http_response* response, grpc_closure* on_complete) = 0;
 };
 
 // GCP service account identity call credentials.

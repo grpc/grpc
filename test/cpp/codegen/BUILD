@@ -16,7 +16,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_test", "grpc_pa
 
 licenses(["notice"])
 
-grpc_package(name = "test/cpp/codegen")
+grpc_package(
+    name = "test/cpp/codegen",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_test(
     name = "codegen_test_full",
@@ -27,7 +33,9 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:gpr",
         "//:grpc++",
+        "//:grpc++_base",
         "//test/core/test_util:grpc_test_util",
     ],
 )

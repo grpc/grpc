@@ -28,11 +28,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_split.h"
-#include "absl/strings/string_view.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/util/wait_for_single_owner.h"
@@ -42,6 +37,11 @@
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "test/core/tsi/transport_security_test_lib.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
 
 static constexpr absl::string_view kCrlPath =
     "test/core/tsi/test_creds/crl_data/crls/current.crl";
@@ -91,13 +91,13 @@ class CrlProviderTest : public ::testing::Test {
   void SetUp() override {
     std::string pem_cert = GetFileContents(kRootCert.data());
     X509* issuer = ReadPemCert(pem_cert);
-    auto base_crl_issuer = IssuerFromCert(issuer);
+    auto base_crl_issuer = tsi::IssuerFromCert(issuer);
     ASSERT_EQ(base_crl_issuer.status(), absl::OkStatus());
     base_crl_issuer_ = *base_crl_issuer;
     std::string intermediate_string =
         GetFileContents(kCrlIntermediateIssuerPath.data());
     X509* intermediate_issuer = ReadPemCert(intermediate_string);
-    auto intermediate_crl_issuer = IssuerFromCert(intermediate_issuer);
+    auto intermediate_crl_issuer = tsi::IssuerFromCert(intermediate_issuer);
     ASSERT_EQ(intermediate_crl_issuer.status(), absl::OkStatus());
     intermediate_crl_issuer_ = *intermediate_crl_issuer;
     X509_free(issuer);

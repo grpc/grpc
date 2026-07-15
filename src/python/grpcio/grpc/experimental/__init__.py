@@ -15,10 +15,12 @@
 
 These APIs are subject to be removed during any minor version release.
 """
+from __future__ import annotations
 
 import copy
 import functools
 import sys
+from typing import Callable, Optional, Union
 import warnings
 
 import grpc
@@ -27,7 +29,7 @@ from grpc._cython import cygrpc as _cygrpc
 _EXPERIMENTAL_APIS_USED = set()
 
 
-class ChannelOptions(object):
+class ChannelOptions:
     """Indicates a channel option unique to gRPC Python.
 
     This enumeration is part of an EXPERIMENTAL API.
@@ -106,15 +108,65 @@ def wrap_server_method_handler(wrapper, handler):
             # NOTE(lidiz) _replace is a public API:
             #   https://docs.python.org/dev/library/collections.html
             return handler._replace(unary_unary=wrapper(handler.unary_unary))
-        else:
-            return handler._replace(unary_stream=wrapper(handler.unary_stream))
-    else:
-        if not handler.response_streaming:
-            return handler._replace(stream_unary=wrapper(handler.stream_unary))
-        else:
-            return handler._replace(
-                stream_stream=wrapper(handler.stream_stream)
-            )
+        return handler._replace(unary_stream=wrapper(handler.unary_stream))
+    if not handler.response_streaming:
+        return handler._replace(stream_unary=wrapper(handler.stream_unary))
+    return handler._replace(stream_stream=wrapper(handler.stream_stream))
+
+
+# A Callable to return in the async case
+# See the `ssl_channel_credentials_with_custom_signer` docstring for more detail on usage.
+PrivateKeySignCancel = Callable[[], None]
+PrivateKeySignatureAlgorithm = _cygrpc.PrivateKeySignatureAlgorithm
+PrivateKeySignOnComplete = Callable[[Union[bytes, Exception]], None]
+
+# See the `ssl_channel_credentials_with_custom_signer` docstring for more detail on usage.
+# The custom signing function for a user to implement and pass to gRPC Python.
+CustomPrivateKeySign = Callable[
+    [
+        bytes,
+        PrivateKeySignatureAlgorithm,
+        "PrivateKeySignOnComplete",
+    ],
+    Union[bytes, "PrivateKeySignCancel"],
+]
+
+
+@experimental_api
+def ssl_channel_credentials_with_custom_signer(
+    *,
+    private_key_sign_fn: "CustomPrivateKeySign",
+    root_certificates: Optional[bytes] = None,
+    certificate_chain: bytes,
+) -> grpc.ChannelCredentials:
+    """Creates a ChannelCredentials for use with an SSL-enabled Channel with a custom signer.
+
+    THIS IS AN EXPERIMENTAL API.
+    This API will be removed in a future version and combined with `grpc.ssl_channel_credentials`.
+
+    Args:
+      private_key_sign_fn: a function with the signature of
+        `CustomPrivateKeySign`. This function can return synchronously or
+        asynchronously.  To return synchronously, return the signed bytes.  To
+        return asynchronously, return a callable matching the
+        `PrivateKeySignCancel` signature.This can be a no-op if no cancellation is
+        needed. In the async case, this function must return this callable
+        quickly, then call the passed in `PrivateKeySignOnComplete` when the async
+        signing operation is complete to trigger gRPC to continue the handshake.
+      root_certificates: The PEM-encoded root certificates as a byte string,
+        or None to retrieve them from a default location chosen by gRPC
+        runtime.
+      certificate_chain: The PEM-encoded certificate chain as a byte string
+        to use
+
+    Returns:
+      A ChannelCredentials for use with an SSL-enabled Channel.
+    """
+    return grpc.ChannelCredentials(
+        _cygrpc.SSLChannelCredentials(
+            root_certificates, None, certificate_chain, private_key_sign_fn
+        )
+    )
 
 
 __all__ = (
@@ -122,6 +174,7 @@ __all__ = (
     "ExperimentalApiWarning",
     "UsageError",
     "insecure_channel_credentials",
+    "ssl_channel_credentials_with_custom_signer",
     "wrap_server_method_handler",
 )
 
@@ -131,4 +184,9 @@ if sys.version_info > (3, 6):
     from grpc._simple_stubs import unary_stream
     from grpc._simple_stubs import unary_unary
 
-    __all__ = __all__ + (unary_unary, unary_stream, stream_unary, stream_stream)
+    __all__ += (
+        "stream_stream",
+        "stream_unary",
+        "unary_stream",
+        "unary_unary",
+    )

@@ -19,10 +19,13 @@
 #ifndef GRPCPP_IMPL_CHANNEL_INTERFACE_H
 #define GRPCPP_IMPL_CHANNEL_INTERFACE_H
 
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/time.h>
+
+#include <functional>
 
 namespace grpc {
 template <class R>
@@ -52,11 +55,15 @@ class ClientCallbackUnaryFactory;
 
 class ChannelInterface;
 class ClientContext;
-class CompletionQueue;
 
 namespace experimental {
 class DelegatingChannel;
-}
+class ClientSessionReactor;
+namespace internal {
+class ClientCallbackSessionImpl;
+class ClientCallbackSessionFactory;
+}  // namespace internal
+}  // namespace experimental
 
 namespace internal {
 class Call;
@@ -65,6 +72,7 @@ class RpcMethod;
 class InterceptedChannel;
 template <class InputMessage, class OutputMessage>
 class BlockingUnaryCallImpl;
+
 }  // namespace internal
 
 /// Codegen interface for \a grpc::Channel.
@@ -102,6 +110,11 @@ class ChannelInterface {
     return true;
   }
 
+  virtual grpc_event_engine::experimental::MemoryAllocator* memory_allocator()
+      const {
+    return nullptr;
+  }
+
  private:
   template <class R>
   friend class grpc::ClientReader;
@@ -123,10 +136,13 @@ class ChannelInterface {
   template <class W>
   friend class grpc::internal::ClientCallbackWriterFactory;
   friend class grpc::internal::ClientCallbackUnaryFactory;
+  friend class grpc::experimental::internal::ClientCallbackSessionFactory;
   template <class InputMessage, class OutputMessage>
   friend class grpc::internal::BlockingUnaryCallImpl;
   template <class InputMessage, class OutputMessage>
   friend class grpc::internal::CallbackUnaryCallImpl;
+  friend class grpc::experimental::internal::ClientCallbackSessionImpl;
+
   friend class grpc::internal::RpcMethod;
   friend class grpc::experimental::DelegatingChannel;
   friend class grpc::internal::InterceptedChannel;

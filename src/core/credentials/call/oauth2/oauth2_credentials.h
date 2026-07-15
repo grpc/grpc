@@ -30,14 +30,11 @@
 #include <string>
 #include <utility>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "src/core/credentials/call/call_credentials.h"
 #include "src/core/credentials/call/token_fetcher/token_fetcher_credentials.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/transport.h"
@@ -51,6 +48,8 @@
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/uri.h"
 #include "src/core/util/useful.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 // Constants.
 #define GRPC_STS_POST_MINIMAL_BODY_FORMAT_STRING                               \
@@ -90,7 +89,7 @@ namespace grpc_core {
 
 // A base class for oauth2 token fetching credentials.
 // Subclasses must implement StartHttpRequest().
-class Oauth2TokenFetcherCredentials : public TokenFetcherCredentials {
+class Oauth2TokenFetcherCredentials : public HttpTokenFetcherCredentials {
  public:
   std::string debug_string() override;
 
@@ -102,13 +101,7 @@ class Oauth2TokenFetcherCredentials : public TokenFetcherCredentials {
           void(absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
           on_done) final;
 
-  virtual OrphanablePtr<HttpRequest> StartHttpRequest(
-      grpc_polling_entity* pollent, Timestamp deadline,
-      grpc_http_response* response, grpc_closure* on_complete) = 0;
-
  private:
-  class HttpFetchRequest;
-
   int cmp_impl(const grpc_call_credentials* other) const override {
     // TODO(yashykt): Check if we can do something better here
     return QsortCompare(static_cast<const grpc_call_credentials*>(this), other);

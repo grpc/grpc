@@ -105,14 +105,14 @@ RUN apt-get update && apt-get install -y cmake && apt-get clean
 
 # Install ccache from source since ccache 3.x packaged with most linux distributions
 # does not support Redis backend for caching.
-RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.7.5/ccache-4.7.5.tar.gz \
+RUN curl -sSL --fail --retry 5 -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.11.3/ccache-4.11.3.tar.gz \
     && tar -zxf ccache.tar.gz \
-    && cd ccache-4.7.5 \
+    && cd ccache-4.11.3 \
     && mkdir build && cd build \
     && cmake -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON -DHIREDIS_FROM_INTERNET=ON .. \
     && make -j4 && make install \
     && cd ../.. \
-    && rm -rf ccache-4.7.5 ccache.tar.gz
+    && rm -rf ccache-4.11.3 ccache.tar.gz
 
 
 RUN mkdir /var/local/jenkins
@@ -121,7 +121,7 @@ RUN mkdir /var/local/jenkins
 # Install openssl 1.0.2 from source
 RUN apt-get update && apt-get install -y build-essential zlib1g-dev
 RUN cd /tmp && \
-    wget --no-check-certificate https://www.openssl.org/source/old/1.0.2/openssl-1.0.2u.tar.gz && \
+    wget --no-check-certificate https://www.openssl.org/source/openssl-1.0.2u.tar.gz && \
     tar -xf openssl-1.0.2u.tar.gz && \
     cd openssl-1.0.2u && \
     ./config --prefix=/usr/local/ssl --openssldir=/usr/local/ssl shared zlib && \

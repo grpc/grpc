@@ -16,7 +16,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/credentials/transport/local")
+grpc_package(
+    name = "test/core/credentials/transport/local",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_test(
     name = "local_security_connector_test",
@@ -28,6 +34,10 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:grpc_client_channel",
+        "//:grpc_security_base",
+        "//:transport_auth_context",
+        "//:tsi_base",
         "//src/core:channel_args",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",

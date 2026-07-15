@@ -18,6 +18,7 @@
 #include "src/core/credentials/call/jwt/jwt_credentials.h"
 
 #include <grpc/credentials.h>
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/json.h>
 #include <grpc/support/port_platform.h>
@@ -30,20 +31,20 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/credentials/call/call_creds_util.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/promise.h"
-#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/uri.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 using grpc_core::Json;
 
@@ -101,6 +102,10 @@ grpc_service_account_jwt_access_credentials::GetRequestMetadata(
         absl::UnauthenticatedError("Could not generate JWT."));
   }
 
+  if (regional_access_boundary_fetcher_ != nullptr) {
+    regional_access_boundary_fetcher_->Fetch(jwt_value->as_string_view(),
+                                             *initial_metadata);
+  }
   initial_metadata->Append(
       GRPC_AUTHORIZATION_METADATA_KEY, std::move(*jwt_value),
       [](absl::string_view, const grpc_core::Slice&) { abort(); });
@@ -110,7 +115,12 @@ grpc_service_account_jwt_access_credentials::GetRequestMetadata(
 grpc_service_account_jwt_access_credentials::
     grpc_service_account_jwt_access_credentials(grpc_auth_json_key key,
                                                 gpr_timespec token_lifetime)
-    : key_(key) {
+    : key_(key),
+      regional_access_boundary_fetcher_(
+          grpc_core::RegionalAccessBoundaryFetcher::Create(absl::StrFormat(
+              "https://iamcredentials.googleapis.com/v1/projects/-/"
+              "serviceAccounts/%s/allowedLocations",
+              key_.client_email))) {
   gpr_timespec max_token_lifetime = grpc_max_auth_token_lifetime();
   if (gpr_time_cmp(token_lifetime, max_token_lifetime) > 0) {
     VLOG(2) << "Cropping token lifetime to maximum allowed value ("
@@ -161,7 +171,7 @@ grpc_call_credentials* grpc_service_account_jwt_access_credentials_create(
             << " }, reserved=" << reserved << ")";
     gpr_free(clean_json);
   }
-  CHECK_EQ(reserved, nullptr);
+  GRPC_CHECK_EQ(reserved, nullptr);
   grpc_core::ExecCtx exec_ctx;
   return grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
              grpc_auth_json_key_create_from_string(json_key), token_lifetime)

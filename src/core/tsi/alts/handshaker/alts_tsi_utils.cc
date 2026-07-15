@@ -21,10 +21,10 @@
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/support/port_platform.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/log/log.h"
 
 tsi_result alts_tsi_utils_convert_to_tsi_result(grpc_status_code code) {
   switch (code) {
@@ -45,8 +45,8 @@ tsi_result alts_tsi_utils_convert_to_tsi_result(grpc_status_code code) {
 
 grpc_gcp_HandshakerResp* alts_tsi_utils_deserialize_response(
     grpc_byte_buffer* resp_buffer, upb_Arena* arena) {
-  CHECK_NE(resp_buffer, nullptr);
-  CHECK_NE(arena, nullptr);
+  GRPC_CHECK_NE(resp_buffer, nullptr);
+  GRPC_CHECK_NE(arena, nullptr);
   grpc_byte_buffer_reader bbr;
   grpc_byte_buffer_reader_init(&bbr, resp_buffer);
   grpc_slice slice = grpc_byte_buffer_reader_readall(&bbr);

@@ -39,7 +39,7 @@ See [end-to-end benchmarking documentation](/tools/run_tests/peformance/README.m
 
 # Artifacts & Packages (task_runner.py)
 
-A generalized framework for running predefined tasks based on their labels. We use this to building binary artifacts & distrib packages and testing them)
+A generalized framework for running predefined tasks based on their labels. We use this to build binary artifacts & distrib packages and testing them.
 
 ###### Example
 `tools/run_tests/task_runner.py -f python artifact linux x64` (build tasks with labels `python`, `artifact`, `linux`, and `x64`)

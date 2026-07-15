@@ -28,14 +28,7 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "fuzztest/fuzztest.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
@@ -53,6 +46,7 @@
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/service_config/service_config_call_data.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/match.h"
@@ -68,6 +62,12 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/load_balancing/pick_first_fuzzer.pb.h"
 #include "test/core/test_util/fuzzing_channel_args.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 using grpc_event_engine::experimental::EventEngine;
 using grpc_event_engine::experimental::FuzzingEventEngine;
@@ -80,7 +80,9 @@ namespace testing {
 // to any LB policy (or even across all LB policies).
 class Fuzzer {
  public:
-  explicit Fuzzer(const fuzzing_event_engine::Actions& fuzzing_ee_actions) {
+  Fuzzer(bool always_tick,
+         const fuzzing_event_engine::Actions& fuzzing_ee_actions)
+      : always_tick_(always_tick) {
     event_engine_ = std::make_shared<FuzzingEventEngine>(
         FuzzingEventEngine::Options(), fuzzing_ee_actions);
     grpc_timer_manager_set_start_threaded(false);
@@ -125,23 +127,30 @@ class Fuzzer {
         DoPick();
         break;
       case pick_first_fuzzer::Action::kTick:
-        event_engine_->TickForDuration(Duration::Milliseconds(
-            // Cap to 10 hours.
-            std::min<uint64_t>(action.tick().ms(), 36000000)));
+        if (!always_tick_) {
+          event_engine_->TickForDuration(Duration::Milliseconds(
+              // Cap to 10 hours.
+              std::min<uint64_t>(action.tick().ms(), 36000000)));
+        }
         break;
       case pick_first_fuzzer::Action::ACTION_TYPE_NOT_SET:
         break;
     }
-    // In TF state, we should always be trying to connect to at least
-    // one subchannel, if there are any.  Note that we check this only
-    // if we've received a new picker since the last update we sent to
-    // the LB policy, since the check would fail in the case where the
-    // LB policy previously had an empty address list and was sent a
-    // non-empty list but had not yet had a chance to trigger a
-    // connection attempt on any subchannels.
-    if (got_picker_since_last_update_ &&
-        state_ == GRPC_CHANNEL_TRANSIENT_FAILURE && num_subchannels_ > 0) {
-      ASSERT_GT(num_subchannels_connecting_, 0);
+    // When the LB policy is reporting TF state, we should always be trying
+    // to connect to at least one subchannel, if there are any not in state
+    // TF.  In order to evaluate this, we need to know that the LB
+    // policy has seen the result of any subchannel connectivity state
+    // updates, which means that we need to tick the FuzzingEventEngine.
+    // However, we do want the fuzzer to also be able to control the
+    // timing here, so we run all inputs twice, once with
+    // always_tick_=false and then again with always_tick_=true, and we
+    // do this check only in the latter case.
+    if (always_tick_) {
+      event_engine_->TickUntilIdle();
+      if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE &&
+          num_subchannels_ > num_subchannels_transient_failure_) {
+        ASSERT_GT(num_subchannels_connecting_, 0);
+      }
     }
   }
 
@@ -176,7 +185,7 @@ class Fuzzer {
         break;
       }
     }
-    CHECK_NE(subchannel, nullptr);
+    GRPC_CHECK_NE(subchannel, nullptr);
     // Advance the subchannel through the connectivity states until it
     // gets to READY.
     LOG(INFO) << "Found subchannel for " << subchannel->address()
@@ -257,33 +266,50 @@ class Fuzzer {
       class WatcherWrapper : public AsyncConnectivityStateWatcherInterface {
        public:
         WatcherWrapper(
-            std::shared_ptr<WorkSerializer> work_serializer,
+            SubchannelState* state,
             std::unique_ptr<
                 SubchannelInterface::ConnectivityStateWatcherInterface>
                 watcher)
-            : AsyncConnectivityStateWatcherInterface(
-                  std::move(work_serializer)),
+            : AsyncConnectivityStateWatcherInterface(state->work_serializer()),
+              state_(state),
               watcher_(std::move(watcher)) {}
 
         WatcherWrapper(
-            std::shared_ptr<WorkSerializer> work_serializer,
+            SubchannelState* state,
             std::shared_ptr<
                 SubchannelInterface::ConnectivityStateWatcherInterface>
                 watcher)
-            : AsyncConnectivityStateWatcherInterface(
-                  std::move(work_serializer)),
+            : AsyncConnectivityStateWatcherInterface(state->work_serializer()),
+              state_(state),
               watcher_(std::move(watcher)) {}
+
+        ~WatcherWrapper() override {
+          if (current_state_ == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+            --state_->fuzzer_->num_subchannels_transient_failure_;
+          }
+        }
 
         void OnConnectivityStateChange(grpc_connectivity_state new_state,
                                        const absl::Status& status) override {
           LOG(INFO) << "notifying watcher: state="
                     << ConnectivityStateName(new_state) << " status=" << status;
+          if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+            ++state_->fuzzer_->num_subchannels_transient_failure_;
+          } else if (current_state_ == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+            --state_->fuzzer_->num_subchannels_transient_failure_;
+          } else if (!current_state_.has_value() &&
+                     new_state == GRPC_CHANNEL_CONNECTING) {
+            state_->ConnectionRequested();
+          }
+          current_state_ = new_state;
           watcher_->OnConnectivityStateChange(new_state, status);
         }
 
        private:
+        SubchannelState* state_;
         std::shared_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
             watcher_;
+        std::optional<grpc_connectivity_state> current_state_;
       };
 
       std::string address() const override { return state_->address_; }
@@ -293,8 +319,8 @@ class Fuzzer {
               SubchannelInterface::ConnectivityStateWatcherInterface>
               watcher) override {
         auto* watcher_ptr = watcher.get();
-        auto watcher_wrapper = MakeOrphanable<WatcherWrapper>(
-            state_->work_serializer(), std::move(watcher));
+        auto watcher_wrapper =
+            MakeOrphanable<WatcherWrapper>(state_, std::move(watcher));
         watcher_map_[watcher_ptr] = watcher_wrapper.get();
         state_->state_tracker_.AddWatcher(GRPC_CHANNEL_SHUTDOWN,
                                           std::move(watcher_wrapper));
@@ -317,13 +343,13 @@ class Fuzzer {
         if (w->type() == HealthProducer::Type()) {
           // TODO(roth): Support health checking in test framework.
           // For now, we just hard-code this to the raw connectivity state.
-          CHECK(health_watcher_ == nullptr);
-          CHECK_EQ(health_watcher_wrapper_, nullptr);
+          GRPC_CHECK(health_watcher_ == nullptr);
+          GRPC_CHECK_EQ(health_watcher_wrapper_, nullptr);
           health_watcher_.reset(static_cast<HealthWatcher*>(watcher.release()));
           auto connectivity_watcher = health_watcher_->TakeWatcher();
           auto* connectivity_watcher_ptr = connectivity_watcher.get();
           auto watcher_wrapper = MakeOrphanable<WatcherWrapper>(
-              state_->work_serializer(), std::move(connectivity_watcher));
+              state_, std::move(connectivity_watcher));
           health_watcher_wrapper_ = watcher_wrapper.get();
           state_->state_tracker_.AddWatcher(GRPC_CHANNEL_SHUTDOWN,
                                             std::move(watcher_wrapper));
@@ -397,19 +423,19 @@ class Fuzzer {
 
     // To be invoked by FakeHelper.
     RefCountedPtr<SubchannelInterface> CreateSubchannel() {
-      if (num_subchannels_ == 0) ++fuzzer_->num_subchannels_;
+      ++fuzzer_->num_subchannels_;
       ++num_subchannels_;
       return MakeRefCounted<FakeSubchannel>(this);
     }
 
    private:
     void SubchannelDestroyed() {
+      --fuzzer_->num_subchannels_;
       --num_subchannels_;
       if (num_subchannels_ == 0) {
         state_tracker_.SetState(GRPC_CHANNEL_IDLE, absl::OkStatus(),
                                 "all subchannels destroyed");
         ConnectionAttemptComplete();
-        --fuzzer_->num_subchannels_;
       }
     }
 
@@ -447,13 +473,14 @@ class Fuzzer {
       // TODO(roth): Need to use per_address_args here.
       SubchannelKey key(
           address, args.RemoveAllKeysWithPrefix(GRPC_ARG_NO_SUBCHANNEL_PREFIX));
+      LOG(INFO) << "Subchannel key: " << key.ToString();
       auto it = fuzzer_->subchannel_pool_.find(key);
       if (it == fuzzer_->subchannel_pool_.end()) {
-        it = fuzzer_->subchannel_pool_
-                 .emplace(
-                     std::piecewise_construct, std::forward_as_tuple(key),
-                     std::forward_as_tuple(std::move(*address_uri), fuzzer_))
-                 .first;
+        auto [new_it, created] = fuzzer_->subchannel_pool_.emplace(
+            std::piecewise_construct, std::forward_as_tuple(key),
+            std::forward_as_tuple(std::move(*address_uri), fuzzer_));
+        if (created) LOG(INFO) << "Created subchannel pool entry";
+        it = new_it;
       }
       return it->second.CreateSubchannel();
     }
@@ -466,7 +493,6 @@ class Fuzzer {
       fuzzer_->state_ = state;
       fuzzer_->status_ = status;
       fuzzer_->picker_ = std::move(picker);
-      fuzzer_->got_picker_since_last_update_ = true;
     }
 
     void RequestReresolution() override {}
@@ -493,7 +519,7 @@ class Fuzzer {
       return fuzzer_->stats_plugin_group_;
     }
 
-    void AddTraceEvent(TraceSeverity, absl::string_view) override {}
+    void AddTraceEvent(absl::string_view) override {}
 
     Fuzzer* const fuzzer_;
   };
@@ -536,9 +562,7 @@ class Fuzzer {
       return nullptr;
     }
 
-    ClientCallTracer::CallAttemptTracer* GetCallAttemptTracer() const override {
-      return nullptr;
-    }
+    CallAttemptTracer* GetCallAttemptTracer() const override { return nullptr; }
 
     std::vector<void*> allocations_;
   };
@@ -564,7 +588,6 @@ class Fuzzer {
     ExecCtx exec_ctx;
     absl::Status status = lb_policy_->UpdateLocked(std::move(*update_args));
     LOG(INFO) << "UpdateLocked() returned status: " << status;
-    got_picker_since_last_update_ = false;
     return true;
   }
 
@@ -668,6 +691,9 @@ class Fuzzer {
   }
 
   static absl::Status ToAbslStatus(const pick_first_fuzzer::Status& status) {
+    if (status.code() > 16 || status.code() < 0) {
+      return absl::UnknownError(status.message());
+    }
     return absl::Status(static_cast<absl::StatusCode>(status.code()),
                         status.message());
   }
@@ -697,9 +723,11 @@ class Fuzzer {
     ChannelArgs args = CreateChannelArgsFromFuzzingConfiguration(
         notification.channel_args(), FuzzingEnvironment());
     SubchannelKey key(*address, args);
+    LOG(INFO) << "Subchannel key: " << key.ToString();
     auto [it, created] = subchannel_pool_.emplace(
         std::piecewise_construct, std::forward_as_tuple(key),
         std::forward_as_tuple(*address_uri, this));
+    if (created) LOG(INFO) << "Created subchannel pool entry";
     auto& subchannel_state = it->second;
     // Set the state only if the subchannel was just created or it's a
     // valid state transition from its current state.
@@ -736,7 +764,7 @@ class Fuzzer {
     Match(
         result.result,
         [&](const LoadBalancingPolicy::PickResult::Complete& complete) {
-          CHECK_NE(complete.subchannel.get(), nullptr);
+          GRPC_CHECK_NE(complete.subchannel.get(), nullptr);
           LOG(INFO) << "Pick returned Complete: "
                     << complete.subchannel->address();
           EXPECT_EQ(state_, GRPC_CHANNEL_READY)
@@ -759,6 +787,7 @@ class Fuzzer {
         });
   }
 
+  const bool always_tick_;
   std::shared_ptr<FuzzingEventEngine> event_engine_;
   std::shared_ptr<WorkSerializer> work_serializer_;
   LoadBalancingPolicy::ChannelControlHelper* helper_ = nullptr;
@@ -766,8 +795,8 @@ class Fuzzer {
   std::map<SubchannelKey, SubchannelState> subchannel_pool_;
   uint64_t num_subchannels_ = 0;
   uint64_t num_subchannels_connecting_ = 0;
+  uint64_t num_subchannels_transient_failure_ = 0;
   uint64_t last_update_num_endpoints_ = 0;
-  bool got_picker_since_last_update_ = false;
   GlobalStatsPluginRegistry::StatsPluginGroup stats_plugin_group_;
   std::string target_ = "dns:server.example.com";
   std::string authority_ = "server.example.com";
@@ -810,17 +839,31 @@ static const char* kBasicCase = R"pb(
 
 auto ParseTestProto(const std::string& proto) {
   pick_first_fuzzer::Msg msg;
-  CHECK(google::protobuf::TextFormat::ParseFromString(proto, &msg));
+  GRPC_CHECK(google::protobuf::TextFormat::ParseFromString(proto, &msg));
   return msg;
 }
 
-void Fuzz(const pick_first_fuzzer::Msg& message) {
-  Fuzzer fuzzer(message.fuzzing_event_engine_actions());
+void FuzzImpl(bool always_tick, const pick_first_fuzzer::Msg& message) {
+  LOG(INFO) << "### RUNNING WITH always_tick=" << always_tick;
+  Fuzzer fuzzer(always_tick, message.fuzzing_event_engine_actions());
   for (const auto& action : message.actions()) {
     fuzzer.Act(action);
   }
   fuzzer.CheckCanBecomeReady();
 }
+
+void Fuzz(const pick_first_fuzzer::Msg& message) {
+  // We run every test case twice:
+  // - always_tick=false, which allows the fuzzer input to control ticking
+  //   time forward, thus allowing the fuzzer to find bugs that occur when
+  //   callbacks hit in a particular order.
+  // - always_tick=true, which allows us to deterministically ensure
+  //   that the LB policy is always trying to connect when it is in
+  //   TRANSIENT_FAILURE state.
+  FuzzImpl(/*always_tick=*/false, message);
+  FuzzImpl(/*always_tick=*/true, message);
+}
+
 FUZZ_TEST(PickFirstFuzzer, Fuzz)
     .WithDomains(::fuzztest::Arbitrary<pick_first_fuzzer::Msg>().WithSeeds(
         {ParseTestProto(kBasicCase)}));
@@ -835,6 +878,159 @@ TEST(PickFirstFuzzer, PassesInTfWhenNotYetStartedConnecting) {
   Fuzz(ParseTestProto(R"pb(
     actions { create_lb_policy {} }
     actions { update {} }
+    actions {
+      update { endpoint_list { endpoints { addresses { localhost_port: 1 } } } }
+    }
+  )pb"));
+}
+
+TEST(PickFirstFuzzer, AllSubchannelsInTransientFailure) {
+  Fuzz(ParseTestProto(R"pb(
+    actions { create_lb_policy {} }
+    actions {
+      subchannel_connectivity_notification {
+        address { uri: "ipv4:127.0.0.1:1024" }
+        state: TRANSIENT_FAILURE
+      }
+    }
+    actions {
+      update {
+        endpoint_list { endpoints { addresses { uri: "ipv4:127.0.0.1:1024" } } }
+      }
+    }
+    actions { tick { ms: 10 } }
+  )pb"));
+}
+
+TEST(PickFirstFuzzer, SubchannelGoesBackToIdleButNotificationPending) {
+  Fuzz(ParseTestProto(R"pb(
+    actions { create_lb_policy {} }
+    actions {
+      subchannel_connectivity_notification {
+        address { uri: "ipv4:127.0.0.1:1024" }
+        state: TRANSIENT_FAILURE
+      }
+    }
+    actions {
+      update {
+        endpoint_list { endpoints { addresses { uri: "ipv4:127.0.0.1:1024" } } }
+      }
+    }
+    actions { tick { ms: 10 } }
+    actions {
+      subchannel_connectivity_notification {
+        address { uri: "ipv4:127.0.0.1:1024" }
+        state: IDLE
+      }
+    }
+  )pb"));
+}
+
+TEST(PickFirstFuzzer,
+     PendingTransientFailureStateNotificationWhenSubchannelUnreffed) {
+  Fuzz(ParseTestProto(R"pb(
+    actions { create_lb_policy {} }
+    actions {
+      update {
+        endpoint_list { endpoints { addresses { uri: "ipv4:127.0.0.1:1024" } } }
+      }
+    }
+    actions {
+      subchannel_connectivity_notification {
+        address { uri: "ipv4:127.0.0.1:1024" }
+        state: CONNECTING
+      }
+    }
+    actions { tick { ms: 100 } }
+    actions {
+      subchannel_connectivity_notification {
+        address { uri: "ipv4:127.0.0.1:1024" }
+        state: TRANSIENT_FAILURE
+      }
+    }
+    actions {
+      update {
+        endpoint_list { endpoints { addresses { uri: "ipv4:127.0.0.2:1024" } } }
+      }
+    }
+  )pb"));
+}
+
+TEST(PickFirstFuzzer, TwoSubchannelsWithSameAddress) {
+  Fuzz(ParseTestProto(R"pb(
+    actions { create_lb_policy {} }
+    actions {
+      update {
+        endpoint_list {
+          endpoints { addresses { localhost_port: 1024 } }
+          endpoints { addresses { localhost_port: 1024 } }
+        }
+      }
+    }
+    actions { tick { ms: 1 } }
+    actions {
+      subchannel_connectivity_notification {
+        address { localhost_port: 1024 }
+        state: CONNECTING
+      }
+    }
+    actions {
+      subchannel_connectivity_notification {
+        address { localhost_port: 1024 }
+        state: TRANSIENT_FAILURE
+      }
+    }
+    actions { tick { ms: 1 } }
+  )pb"));
+}
+
+TEST(PickFirstFuzzer, LbPolicyHasNotYetSeenConnectingToTfUpdate) {
+  Fuzz(ParseTestProto(R"pb(
+    actions { create_lb_policy {} }
+    actions {
+      subchannel_connectivity_notification {
+        address { localhost_port: 0 }
+        state: TRANSIENT_FAILURE
+      }
+    }
+    actions {
+      update { endpoint_list { endpoints { addresses { localhost_port: 0 } } } }
+    }
+    actions {
+      subchannel_connectivity_notification {
+        address { localhost_port: 0 }
+        state: IDLE
+      }
+    }
+    actions { tick { ms: 1 } }
+    actions {
+      subchannel_connectivity_notification {
+        address { localhost_port: 0 }
+        state: CONNECTING
+      }
+    }
+    actions {
+      subchannel_connectivity_notification {
+        address { localhost_port: 0 }
+        state: TRANSIENT_FAILURE
+      }
+    }
+  )pb"));
+}
+
+TEST(PickFirstFuzzer,
+     SubchannelStartsInConnectingWhenPolicyIsInTransientFailure) {
+  Fuzz(ParseTestProto(R"pb(
+    actions { create_lb_policy {} }
+    actions {
+      update { endpoint_error { code: -300870593 message: "\350\250\227" } }
+    }
+    actions {
+      subchannel_connectivity_notification {
+        address { localhost_port: 1 }
+        state: CONNECTING
+      }
+    }
     actions {
       update { endpoint_list { endpoints { addresses { localhost_port: 1 } } } }
     }

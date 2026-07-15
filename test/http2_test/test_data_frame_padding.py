@@ -23,7 +23,7 @@ _LARGE_PADDING_LENGTH = 255
 _SMALL_READ_CHUNK_SIZE = 5
 
 
-class TestDataFramePadding(object):
+class TestDataFramePadding:
     """
     In response to an incoming request, this test sends headers, followed by
     data, followed by a reset stream frame. Client asserts that the RPC failed.
@@ -34,9 +34,9 @@ class TestDataFramePadding(object):
         self._base_server = http2_base_server.H2ProtocolBaseServer()
         self._base_server._handlers["DataReceived"] = self.on_data_received
         self._base_server._handlers["WindowUpdated"] = self.on_window_update
-        self._base_server._handlers[
-            "RequestReceived"
-        ] = self.on_request_received
+        self._base_server._handlers["RequestReceived"] = (
+            self.on_request_received
+        )
 
         # _total_updates maps stream ids to total flow control updates received
         self._total_updates = {}

@@ -17,8 +17,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/strings/string_view.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_event_engine::experimental {
 
@@ -42,19 +42,6 @@ class ChaoticGoodExtension {
   /// one provided to it through the channel args. It is safe to call this
   /// only when there are no outstanding Reads on the Endpoint.
   virtual void UseMemoryQuota(grpc_core::MemoryQuotaRefPtr mem_quota) = 0;
-
-  /// Forces the endpoint to receive rpcs in one contiguous block of memory.
-  /// It is safe to call this only when there are no outstanding Reads on
-  /// the Endpoint.
-  virtual void EnableRpcReceiveCoalescing() = 0;
-
-  /// Disables rpc receive coalescing until it is explicitly enabled again.
-  /// It is safe to call this only when there are no outstanding Reads on
-  /// the Endpoint.
-  virtual void DisableRpcReceiveCoalescing() = 0;
-  /// If invoked, the endpoint tries to preserve proper order and alignment of
-  /// any memory that maybe shared across reads.
-  virtual void EnforceRxMemoryAlignment() = 0;
 };
 
 }  // namespace grpc_event_engine::experimental

@@ -28,12 +28,12 @@
 #include <thread>
 #include <vector>
 
-#include "absl/strings/str_format.h"
-#include "gtest/gtest.h"
 #include "src/core/util/env.h"
 #include "test/core/test_util/fake_udp_and_tcp_server.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/strings/str_format.h"
 
 namespace {
 

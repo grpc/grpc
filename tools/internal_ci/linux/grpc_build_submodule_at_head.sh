@@ -42,26 +42,16 @@ echo ""
 
 # Update bazel for generate_projects
 case "$SUBMODULE_NAME" in
-  abseil-cpp)
-    BAZEL_DEP_NAME="com_google_absl"
+  abseil-cpp|boringssl|protobuf)
+    BAZEL_DEP_PATH="$(pwd)/third_party/${SUBMODULE_NAME}"
+    echo "bazel override_module is set for ${SUBMODULE_NAME} to ${BAZEL_DEP_PATH}"
+    echo "build --override_module=${SUBMODULE_NAME}=${BAZEL_DEP_PATH}" >> "tools/bazel.rc"
+    echo "query --override_module=${SUBMODULE_NAME}=${BAZEL_DEP_PATH}" >> "tools/bazel.rc"
     ;;
-  boringssl)
-    BAZEL_DEP_NAME="boringssl"
-    ;;
-  protobuf)
-    BAZEL_DEP_NAME="com_google_protobuf"
+  *)
+   echo "No bazel dependency is specified so skipping bazel reconfiguration."
     ;;
 esac
-if [ -z "$BAZEL_DEP_NAME" ]
-then
-   echo "No bazel dependency is specified so skipping bazel reconfiguration."
-else
-   BAZEL_DEP_PATH="$(pwd)/third_party/${SUBMODULE_NAME}"
-   echo "bazel override_repository is set for ${BAZEL_DEP_NAME} to ${BAZEL_DEP_PATH}"
-   echo "build --override_repository=${BAZEL_DEP_NAME}=${BAZEL_DEP_PATH}" >> "tools/bazel.rc"
-   echo "query --override_repository=${BAZEL_DEP_NAME}=${BAZEL_DEP_PATH}" >> "tools/bazel.rc"
-fi
-echo ""
 
 if [ "${SUBMODULE_NAME}" == "abseil-cpp" ]
 then
@@ -81,6 +71,12 @@ then
   cp -r third_party/protobuf/third_party/utf8_range third_party/utf8_range/
 fi
 
+# TODO(sergiitk): remove this logic once the CI uses python3.9+.
+# Note: we set GRPC_GENERATE_PROJECTS_SKIP_XDS_PROTOS to skip xds-protos
+# generation, which shouldn't bee needed for _at_head jobs.
+# Normally, it doesn't hurt to generate them, but our CI uses python3.8,
+# which grpcio python packages dropped at v1.71.0.
+export GRPC_GENERATE_PROJECTS_SKIP_XDS_PROTOS="${GRPC_GENERATE_PROJECTS_SKIP_XDS_PROTOS:-1}"
 tools/buildgen/generate_projects.sh
 
 # commit so that changes are passed to Docker

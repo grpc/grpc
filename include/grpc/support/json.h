@@ -22,6 +22,7 @@
 
 #include <map>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -45,6 +46,30 @@ class Json {
     kObject,   // Use object() for payload.
     kArray,    // Use array() for payload.
   };
+
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, Type type) {
+    switch (type) {
+      case Type::kNull:
+        sink.Append("null");
+        break;
+      case Type::kBoolean:
+        sink.Append("boolean");
+        break;
+      case Type::kNumber:
+        sink.Append("number");
+        break;
+      case Type::kString:
+        sink.Append("string");
+        break;
+      case Type::kObject:
+        sink.Append("object");
+        break;
+      case Type::kArray:
+        sink.Append("array");
+        break;
+    }
+  }
 
   using Object = std::map<std::string, Json>;
   using Array = std::vector<Json>;
@@ -72,27 +97,8 @@ class Json {
     json.value_ = NumberValue{std::move(str)};
     return json;
   }
-  static Json FromNumber(int32_t value) {
-    Json json;
-    json.value_ = NumberValue{absl::StrCat(value)};
-    return json;
-  }
-  static Json FromNumber(uint32_t value) {
-    Json json;
-    json.value_ = NumberValue{absl::StrCat(value)};
-    return json;
-  }
-  static Json FromNumber(int64_t value) {
-    Json json;
-    json.value_ = NumberValue{absl::StrCat(value)};
-    return json;
-  }
-  static Json FromNumber(uint64_t value) {
-    Json json;
-    json.value_ = NumberValue{absl::StrCat(value)};
-    return json;
-  }
-  static Json FromNumber(double value) {
+  template <typename T>
+  static std::enable_if_t<std::is_arithmetic_v<T>, Json> FromNumber(T value) {
     Json json;
     json.value_ = NumberValue{absl::StrCat(value)};
     return json;

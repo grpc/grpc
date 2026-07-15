@@ -35,9 +35,9 @@ namespace testing {
 //
 //  // To inject a hold for the next connection attempt for a given port.
 //  auto hold = injector.AddHold(port);
-//  hold.Wait();
+//  hold->Wait();
 //  // ...do stuff...
-//  hold.Resume();  // Or hold.Fail() if you want to force a failure.
+//  hold->Resume();  // Or hold->Fail() if you want to force a failure.
 //
 //  // Inject a fixed delay for all connection attempts.
 //  injector.SetDelay(grpc_core::Duration::Seconds(10));

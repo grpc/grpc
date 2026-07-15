@@ -20,11 +20,11 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/functional/any_invocable.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
 
 namespace grpc_event_engine::experimental {
 
@@ -132,6 +132,9 @@ absl::Status PrepareSocket(SOCKET sock);
 
 // Set non block option for socket.
 absl::Status SetSocketNonBlock(SOCKET sock);
+
+// Get the local address of a socket.
+absl::StatusOr<EventEngine::ResolvedAddress> SocketToAddress(SOCKET sock);
 
 }  // namespace grpc_event_engine::experimental
 

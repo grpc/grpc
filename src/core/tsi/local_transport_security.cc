@@ -25,10 +25,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "absl/log/log.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/tsi/transport_security_grpc.h"
 #include "src/core/util/crash.h"
+#include "absl/log/log.h"
 
 namespace {
 

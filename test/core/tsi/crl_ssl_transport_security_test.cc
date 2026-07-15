@@ -22,20 +22,20 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "test/core/tsi/transport_security_test_lib.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 extern "C" {
 #include <openssl/crypto.h>
@@ -103,15 +103,9 @@ class CrlSslTransportSecurityTest
       expect_client_success_1_2_ = expect_client_success_1_2;
       expect_client_success_1_3_ = expect_client_success_1_3;
 
-      server_pem_key_cert_pairs_ = static_cast<tsi_ssl_pem_key_cert_pair*>(
-          gpr_malloc(sizeof(tsi_ssl_pem_key_cert_pair)));
-      server_pem_key_cert_pairs_[0].private_key = server_key_.c_str();
-      server_pem_key_cert_pairs_[0].cert_chain = server_cert_.c_str();
-      client_pem_key_cert_pairs_ = static_cast<tsi_ssl_pem_key_cert_pair*>(
-          gpr_malloc(sizeof(tsi_ssl_pem_key_cert_pair)));
-      client_pem_key_cert_pairs_[0].private_key = client_key_.c_str();
-      client_pem_key_cert_pairs_[0].cert_chain = client_cert_.c_str();
-      CHECK_NE(root_store_, nullptr);
+      server_pem_key_cert_pairs_.emplace_back(server_key_, server_cert_);
+      client_pem_key_cert_pairs_.emplace_back(client_key_, client_cert_);
+      GRPC_CHECK_NE(root_store_, nullptr);
     }
 
     void Run() {
@@ -120,9 +114,6 @@ class CrlSslTransportSecurityTest
     }
 
     ~SslTsiTestFixture() {
-      gpr_free(server_pem_key_cert_pairs_);
-      gpr_free(client_pem_key_cert_pairs_);
-
       tsi_ssl_root_certs_store_destroy(root_store_);
       tsi_ssl_server_handshaker_factory_unref(server_handshaker_factory_);
       tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
@@ -130,7 +121,7 @@ class CrlSslTransportSecurityTest
 
    private:
     static void SetupHandshakers(tsi_test_fixture* fixture) {
-      CHECK_NE(fixture, nullptr);
+      GRPC_CHECK_NE(fixture, nullptr);
       auto* self = reinterpret_cast<SslTsiTestFixture*>(fixture);
       self->SetupHandshakers();
     }
@@ -138,8 +129,9 @@ class CrlSslTransportSecurityTest
     void SetupHandshakers() {
       // Create client handshaker factory.
       tsi_ssl_client_handshaker_options client_options;
-      client_options.pem_root_certs = root_cert_.c_str();
-      client_options.pem_key_cert_pair = client_pem_key_cert_pairs_;
+      client_options.root_cert_info =
+          std::make_shared<tsi::RootCertInfo>(root_cert_.c_str());
+      client_options.pem_key_cert_pair = &client_pem_key_cert_pairs_[0];
       client_options.crl_directory = crl_directory_;
       client_options.crl_provider = crl_provider_;
       client_options.root_store = root_store_;
@@ -151,8 +143,8 @@ class CrlSslTransportSecurityTest
       // Create server handshaker factory.
       tsi_ssl_server_handshaker_options server_options;
       server_options.pem_key_cert_pairs = server_pem_key_cert_pairs_;
-      server_options.num_key_cert_pairs = 1;
-      server_options.pem_client_root_certs = root_cert_.c_str();
+      server_options.root_cert_info =
+          std::make_shared<tsi::RootCertInfo>(root_cert_.c_str());
       server_options.crl_directory = crl_directory_;
       server_options.crl_provider = crl_provider_;
       server_options.client_certificate_request =
@@ -167,15 +159,17 @@ class CrlSslTransportSecurityTest
       // Create server and client handshakers.
       EXPECT_EQ(tsi_ssl_client_handshaker_factory_create_handshaker(
                     client_handshaker_factory_, nullptr, 0, 0,
-                    &base_.client_handshaker),
+                    /*alpn_preferred_protocol_list=*/std::nullopt,
+                    /*collection_scope=*/nullptr, &base_.client_handshaker),
                 TSI_OK);
       EXPECT_EQ(tsi_ssl_server_handshaker_factory_create_handshaker(
-                    server_handshaker_factory_, 0, 0, &base_.server_handshaker),
+                    server_handshaker_factory_, 0, 0,
+                    /*collection_scope=*/nullptr, &base_.server_handshaker),
                 TSI_OK);
     }
 
     static void CheckHandshakerPeers(tsi_test_fixture* fixture) {
-      CHECK_NE(fixture, nullptr);
+      GRPC_CHECK_NE(fixture, nullptr);
       auto* self = reinterpret_cast<SslTsiTestFixture*>(fixture);
       self->CheckHandshakerPeers();
     }
@@ -255,8 +249,8 @@ class CrlSslTransportSecurityTest
     bool expect_server_success_;
     bool expect_client_success_1_2_;
     bool expect_client_success_1_3_;
-    tsi_ssl_pem_key_cert_pair* client_pem_key_cert_pairs_;
-    tsi_ssl_pem_key_cert_pair* server_pem_key_cert_pairs_;
+    std::vector<tsi_ssl_pem_key_cert_pair> client_pem_key_cert_pairs_;
+    std::vector<tsi_ssl_pem_key_cert_pair> server_pem_key_cert_pairs_;
     std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider_;
   };
 };
@@ -417,7 +411,7 @@ TEST_P(CrlSslTransportSecurityTest,
 std::string TestNameSuffix(
     const ::testing::TestParamInfo<tsi_tls_version>& version) {
   if (version.param == tsi_tls_version::TSI_TLS1_2) return "TLS_1_2";
-  CHECK(version.param == tsi_tls_version::TSI_TLS1_3);
+  GRPC_CHECK(version.param == tsi_tls_version::TSI_TLS1_3);
   return "TLS_1_3";
 }
 

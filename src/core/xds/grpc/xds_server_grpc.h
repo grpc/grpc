@@ -19,45 +19,84 @@
 
 #include <set>
 #include <string>
+#include <utility>
+#include <vector>
 
+#include "src/core/credentials/call/call_creds_registry.h"
 #include "src/core/credentials/transport/channel_creds_registry.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_server_grpc_interface.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 
 namespace grpc_core {
 
-class GrpcXdsServer final : public GrpcXdsServerInterface {
- public:
-  const std::string& server_uri() const override { return server_uri_; }
+RefCountedPtr<const ChannelCredsConfig> ParseXdsBootstrapChannelCreds(
+    const Json& json, const JsonArgs& args, ValidationErrors* errors);
 
+std::vector<RefCountedPtr<const CallCredsConfig>> ParseXdsBootstrapCallCreds(
+    const Json& json, const JsonArgs& args, ValidationErrors* errors);
+
+class GrpcXdsServerTarget final : public GrpcXdsServerInterface {
+ public:
+  explicit GrpcXdsServerTarget(
+      std::string server_uri,
+      RefCountedPtr<const ChannelCredsConfig> channel_creds_config,
+      std::vector<RefCountedPtr<const CallCredsConfig>> call_creds_configs,
+      std::vector<std::pair<std::string, std::string>> initial_metadata = {},
+      Duration timeout = Duration::Infinity())
+      : server_uri_(std::move(server_uri)),
+        channel_creds_config_(std::move(channel_creds_config)),
+        call_creds_configs_(std::move(call_creds_configs)),
+        initial_metadata_(std::move(initial_metadata)),
+        timeout_(timeout) {}
+
+  bool Equals(const XdsServerTarget& other) const override;
+  std::string Key() const override;
+  const std::string& server_uri() const override { return server_uri_; }
+  RefCountedPtr<const ChannelCredsConfig> channel_creds_config()
+      const override {
+    return channel_creds_config_;
+  }
+  const std::vector<RefCountedPtr<const CallCredsConfig>>& call_creds_configs()
+      const override {
+    return call_creds_configs_;
+  }
+  const std::vector<std::pair<std::string, std::string>>& initial_metadata()
+      const override {
+    return initial_metadata_;
+  }
+  Duration timeout() const override { return timeout_; }
+
+ private:
+  std::string server_uri_;
+  RefCountedPtr<const ChannelCredsConfig> channel_creds_config_;
+  std::vector<RefCountedPtr<const CallCredsConfig>> call_creds_configs_;
+  std::vector<std::pair<std::string, std::string>> initial_metadata_;
+  Duration timeout_;
+};
+
+class GrpcXdsServer final : public XdsBootstrap::XdsServer {
+ public:
   bool IgnoreResourceDeletion() const override;
   bool FailOnDataErrors() const override;
   bool ResourceTimerIsTransientFailure() const override;
-
   bool TrustedXdsServer() const;
-
   bool Equals(const XdsServer& other) const override;
-
   std::string Key() const override;
-
-  RefCountedPtr<ChannelCredsConfig> channel_creds_config() const override {
-    return channel_creds_config_;
+  std::shared_ptr<const XdsBootstrap::XdsServerTarget> target() const override {
+    return server_target_;
   }
-
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
   void JsonPostLoad(const Json& json, const JsonArgs& args,
                     ValidationErrors* errors);
 
-  Json ToJson() const;
-
  private:
-  std::string server_uri_;
-  RefCountedPtr<ChannelCredsConfig> channel_creds_config_;
+  std::shared_ptr<GrpcXdsServerTarget> server_target_;
   std::set<std::string> server_features_;
 };
 

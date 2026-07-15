@@ -23,20 +23,24 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <ostream>
 #include <string>
 #include <tuple>
 #include <vector>
 
-#include "absl/log/check.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
+#include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/useful.h"
 #include "absl/log/log.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
-#include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/resource_quota/memory_quota.h"
-#include "src/core/util/useful.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace chttp2 {
@@ -95,12 +99,32 @@ std::ostream& operator<<(std::ostream& out, const FlowControlAction& action) {
   return out << action.DebugString();
 }
 
-TransportFlowControl::TransportFlowControl(absl::string_view name,
+std::string FlowControlAction::ImmediateUpdateReasons() const {
+  std::string result;
+  if (send_stream_update_ == Urgency::UPDATE_IMMEDIATELY) {
+    absl::StrAppend(&result, "send_stream_update,");
+  }
+  if (send_transport_update_ == Urgency::UPDATE_IMMEDIATELY) {
+    absl::StrAppend(&result, "send_transport_update,");
+  }
+  if (send_initial_window_update_ == Urgency::UPDATE_IMMEDIATELY) {
+    absl::StrAppend(&result, "send_initial_window_update,");
+  }
+  if (send_max_frame_size_update_ == Urgency::UPDATE_IMMEDIATELY) {
+    absl::StrAppend(&result, "send_max_frame_size_update,");
+  }
+  if (preferred_rx_crypto_frame_size_update_ == Urgency::UPDATE_IMMEDIATELY) {
+    absl::StrAppend(&result, "preferred_rx_crypto_frame_size_update,");
+  }
+  return result;
+}
+
+TransportFlowControl::TransportFlowControl(absl::string_view peer_name,
                                            bool enable_bdp_probe,
                                            MemoryOwner* memory_owner)
     : memory_owner_(memory_owner),
       enable_bdp_probe_(enable_bdp_probe),
-      bdp_estimator_(name) {}
+      bdp_estimator_(peer_name) {}
 
 uint32_t TransportFlowControl::DesiredAnnounceSize(bool writing_anyway) const {
   const uint32_t target_announced_window =
@@ -291,7 +315,7 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
                         Http2Settings::max_max_frame_size()),
                   &action, &FlowControlAction::set_send_max_frame_size_update);
 
-    if (IsTcpFrameSizeTuningEnabled()) {
+    if (IsTcpFrameSizeTuningEnabled() && ph2_enable_rx_crypto_) {
       // Advertise PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE to peer. By advertising
       // PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE to the peer, we are informing the
       // peer that we have tcp frame size tuning enabled and we inform it of our
@@ -332,7 +356,7 @@ void StreamFlowControl::SentUpdate(uint32_t announce) {
   TransportFlowControl::IncomingUpdateContext tfc_upd(tfc_);
   pending_size_ = std::nullopt;
   tfc_upd.UpdateAnnouncedWindowDelta(&announced_window_delta_, announce);
-  CHECK_EQ(DesiredAnnounceSize(), 0u);
+  GRPC_CHECK_EQ(DesiredAnnounceSize(), 0u);
   std::ignore = tfc_upd.MakeAction();
 }
 
@@ -380,9 +404,21 @@ FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
   return action;
 }
 
+void StreamFlowControl::IncomingUpdateContext::HackIncrementPendingSize(
+    int64_t pending_size) {
+  GRPC_CHECK_GE(pending_size, 0);
+  if (sfc_->pending_size_.has_value()) {
+    int64_t final_size = Clamp(sfc_->pending_size_.value() + pending_size,
+                               int64_t{0}, kMaxWindowUpdateSize);
+    *sfc_->pending_size_ = final_size;
+  } else {
+    sfc_->pending_size_ = pending_size;
+  }
+}
+
 void StreamFlowControl::IncomingUpdateContext::SetPendingSize(
     int64_t pending_size) {
-  CHECK_GE(pending_size, 0);
+  GRPC_CHECK_GE(pending_size, 0);
   sfc_->pending_size_ = pending_size;
 }
 

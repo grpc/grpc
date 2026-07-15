@@ -68,13 +68,16 @@ _GRPC_DEP_NAMES = [
     "com_google_googleapis",
     "com_google_libprotobuf_mutator",
     "com_github_cncf_xds",
+    "dev_cel",
     "google_cloud_cpp",
     "rules_shell",
     "rules_java",
+    "yaml-cpp",
 ]
 
 _GRPC_BAZEL_ONLY_DEPS = [
     "platforms",
+    "com_google_googletest",
     "rules_cc",
     "com_google_absl",
     "com_google_fuzztest",
@@ -96,10 +99,11 @@ _GRPC_BAZEL_ONLY_DEPS = [
     "google_cloud_cpp",
     "rules_shell",
     "rules_java",
+    "yaml-cpp",
 ]
 
 
-class BazelEvalState(object):
+class BazelEvalState:
     def __init__(self, names_and_urls, overridden_name=None):
         self.names_and_urls = names_and_urls
         self.overridden_name = overridden_name
@@ -163,6 +167,7 @@ build_rules = {
     "git_repository": lambda **args: eval_state.git_repository(**args),
     "grpc_python_deps": lambda: None,
     "Label": lambda a: None,
+    "repository_rule": lambda **args: lambda name: None,
 }
 exec((bazel_file), build_rules)
 grpc_dep_names_set = set(_GRPC_DEP_NAMES)
@@ -220,6 +225,7 @@ for name in _GRPC_DEP_NAMES:
         "git_repository": lambda **args: state.git_repository(**args),
         "grpc_python_deps": lambda *args, **kwargs: None,
         "Label": lambda a: None,
+        "repository_rule": lambda **args: lambda name: None,
     }
     exec((bazel_file), rules)
     assert name not in list(names_and_urls_with_overridden_name.keys())

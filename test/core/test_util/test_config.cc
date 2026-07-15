@@ -26,6 +26,13 @@
 
 #include <mutex>
 
+#include "src/core/lib/surface/init.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/postmortem_emit.h"
+#include "src/core/util/wait_for_single_owner.h"
+#include "test/core/event_engine/test_init.h"
+#include "test/core/test_util/build.h"
+#include "test/core/test_util/stack_tracer.h"
 #include "absl/debugging/failure_signal_handler.h"
 #include "absl/log/globals.h"
 #include "absl/log/initialize.h"
@@ -34,11 +41,6 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
-#include "src/core/lib/surface/init.h"
-#include "src/core/util/crash.h"
-#include "test/core/event_engine/test_init.h"
-#include "test/core/test_util/build.h"
-#include "test/core/test_util/stack_tracer.h"
 
 int64_t g_fixture_slowdown_factor = 1;
 int64_t g_poller_slowdown_factor = 1;
@@ -74,10 +76,14 @@ int64_t grpc_test_sanitizer_slowdown_factor() {
     sanitizer_multiplier = 4;
   } else if (BuiltUnderUbsan()) {
     sanitizer_multiplier = 5;
+  } else if (BuiltUnderDebug()) {
+    sanitizer_multiplier = 2;
   }
   return sanitizer_multiplier;
 }
 
+// WARNING: Hardcoded values used to support different sanitizers and
+// scenarios will make this inherently flaky in some environments.
 int64_t grpc_test_slowdown_factor() {
   return grpc_test_sanitizer_slowdown_factor() * g_fixture_slowdown_factor *
          g_poller_slowdown_factor;
@@ -155,6 +161,10 @@ void grpc_test_init(int* argc, char** argv) {
   // seed rng with pid, so we don't end up with the same random numbers as a
   // concurrently running test binary
   srand(seed());
+  grpc_core::SetWaitForSingleOwnerStalledCallback([]() {
+    grpc_core::PostMortemEmit();
+    AsanAssertNoLeaks();
+  });
 }
 
 void grpc_set_absl_verbosity_debug() {

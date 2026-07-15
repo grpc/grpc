@@ -16,7 +16,6 @@
 
 #include <memory>
 
-#include "absl/cleanup/cleanup.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/tcp_connect/tcp_connect_handshaker.h"
@@ -28,6 +27,7 @@
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
+#include "absl/cleanup/cleanup.h"
 
 using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 using ::grpc_event_engine::experimental::EventEngine;

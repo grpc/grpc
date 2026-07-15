@@ -19,6 +19,7 @@ from typing import Any, Dict, Optional, Sequence
 import grpc
 from grpc import _common
 from grpc import _compression
+from grpc import _observability
 from grpc._cython import cygrpc
 
 from . import _base_server
@@ -30,7 +31,14 @@ def _augment_channel_arguments(
     base_options: ChannelArgumentType, compression: Optional[grpc.Compression]
 ):
     compression_option = _compression.create_channel_option(compression)
-    return tuple(base_options) + compression_option
+    maybe_server_call_tracer_factory_option = (
+        _observability.create_server_call_tracer_factory_option(xds=False)
+    )
+    return (
+        tuple(base_options)
+        + compression_option
+        + maybe_server_call_tracer_factory_option
+    )
 
 
 class Server(_base_server.Server):
@@ -53,10 +61,13 @@ class Server(_base_server.Server):
                 if not isinstance(interceptor, ServerInterceptor)
             ]
             if invalid_interceptors:
-                raise ValueError(
-                    "Interceptor must be ServerInterceptor, the "
-                    f"following are invalid: {invalid_interceptors}"
+                error_msg = (
+                    "Interceptor must be ServerInterceptor,"
+                    "the following are invalid: {invalid_interceptors}"
                 )
+                # TODO(asheshvidyut): fix the value error below
+                # not caught by ruff.
+                raise ValueError(error_msg)
         self._server = cygrpc.AioServer(
             self._loop,
             thread_pool,
@@ -189,12 +200,11 @@ class Server(_base_server.Server):
         The Cython AioServer doesn't hold a ref-count to this class. It should
         be safe to slightly extend the underlying Cython object's life span.
         """
-        if hasattr(self, "_server"):
-            if self._server.is_running():
-                cygrpc.schedule_coro_threadsafe(
-                    self._server.shutdown(None),
-                    self._loop,
-                )
+        if hasattr(self, "_server") and self._server.is_running():
+            cygrpc.schedule_coro_threadsafe(
+                self._server.shutdown(None),
+                self._loop,
+            )
 
 
 def server(
@@ -222,8 +232,8 @@ def server(
       maximum_concurrent_rpcs: The maximum number of concurrent RPCs this server
         will service before returning RESOURCE_EXHAUSTED status, or None to
         indicate no limit.
-      compression: An element of grpc.compression, e.g.
-        grpc.compression.Gzip. This compression algorithm will be used for the
+      compression: An element of grpc.Compression, e.g.
+        grpc.Compression.Gzip. This compression algorithm will be used for the
         lifetime of the server unless overridden by set_compression.
 
     Returns:

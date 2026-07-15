@@ -19,6 +19,7 @@
 #include "src/core/util/http_client/httpcli.h"
 
 #include <ares.h>
+#include <fcntl.h>
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -26,6 +27,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 #include <string.h>
+#include <sys/poll.h>
 #include <sys/socket.h>
 
 #include <memory>
@@ -33,17 +35,12 @@
 #include <thread>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
-#include "gtest/gtest.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/host_port.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/subprocess.h"
 #include "src/core/util/time.h"
@@ -52,6 +49,12 @@
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/util/http_client/httpcli_test_util.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 namespace {
 
@@ -92,7 +95,7 @@ class HttpRequestTest : public ::testing::Test {
   void RunAndKick(const std::function<void()>& f) {
     grpc_core::MutexLockForGprMu lock(mu_);
     f();
-    CHECK(GRPC_LOG_IF_ERROR(
+    GRPC_CHECK(GRPC_LOG_IF_ERROR(
         "pollset_kick",
         grpc_pollset_kick(grpc_polling_entity_pollset(&pops_), nullptr)));
   }
@@ -100,9 +103,9 @@ class HttpRequestTest : public ::testing::Test {
   void PollUntil(const std::function<bool()>& predicate, absl::Time deadline) {
     gpr_mu_lock(mu_);
     while (!predicate()) {
-      CHECK(absl::Now() < deadline);
+      GRPC_CHECK(absl::Now() < deadline);
       grpc_pollset_worker* worker = nullptr;
-      CHECK(GRPC_LOG_IF_ERROR(
+      GRPC_CHECK(GRPC_LOG_IF_ERROR(
           "pollset_work", grpc_pollset_work(grpc_polling_entity_pollset(&pops_),
                                             &worker, NSecondsTime(1))));
       gpr_mu_unlock(mu_);
@@ -122,6 +125,69 @@ class HttpRequestTest : public ::testing::Test {
   }
 
   static void TearDownTestSuite() { gpr_subprocess_destroy(g_server); }
+
+  static void WaitForServerReady(const std::string& host_port,
+                                 absl::Duration timeout) {
+    absl::Time deadline = absl::Now() + timeout;
+
+    std::string host;
+    std::string port;
+    GRPC_CHECK(grpc_core::SplitHostPort(host_port, &host, &port));
+
+    struct sockaddr_in serv_addr;
+    std::memset(&serv_addr, 0, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(atoi(port.c_str()));
+    inet_pton(AF_INET, host.c_str(), &serv_addr.sin_addr);
+
+    while (absl::Now() < deadline) {
+      int sock = socket(AF_INET, SOCK_STREAM, 0);
+      if (sock < 0) return;
+
+      // Set socket to non-blocking mode
+      int flags = fcntl(sock, F_GETFL, 0);
+      fcntl(sock, F_SETFL, flags | O_NONBLOCK);
+
+      // Attempt connection
+      int res = connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
+
+      if (res == 0) {
+        // Instant success (rare for non-blocking but possible)
+        close(sock);
+        return;
+      }
+
+      if (errno == EINPROGRESS) {
+        // Connection is underway. Use poll to wait for completion.
+        struct pollfd pfd;
+        pfd.fd = sock;
+        pfd.events = POLLOUT;  // Socket becomes writable when connected
+
+        // Calculate remaining milliseconds for poll
+        int remaining_ms = absl::ToInt64Milliseconds(deadline - absl::Now());
+        if (remaining_ms < 0) remaining_ms = 0;
+
+        int poll_res = poll(&pfd, 1, remaining_ms);
+
+        if (poll_res > 0) {
+          // Check if it's a real connection or an error
+          int result;
+          socklen_t len = sizeof(result);
+          getsockopt(sock, SOL_SOCKET, SO_ERROR, &result, &len);
+
+          if (result == 0) {
+            // Successfully connected
+            close(sock);
+            return;
+          }
+        }
+      }
+
+      // Clean up and retry if time remains
+      close(sock);
+      absl::SleepFor(absl::Milliseconds(100));
+    }
+  }
 
  private:
   static void DestroyPops(void* p, grpc_error_handle /*error*/) {
@@ -162,10 +228,10 @@ void OnFinish(void* arg, grpc_error_handle error) {
   grpc_http_response response = request_state->response;
   LOG(INFO) << "response status=" << response.status
             << " error=" << grpc_core::StatusToString(error);
-  CHECK(error.ok());
-  CHECK_EQ(response.status, 200);
-  CHECK(response.body_length == strlen(expect));
-  CHECK_EQ(memcmp(expect, response.body, response.body_length), 0);
+  GRPC_CHECK(error.ok());
+  GRPC_CHECK_EQ(response.status, 200);
+  GRPC_CHECK(response.body_length == strlen(expect));
+  GRPC_CHECK_EQ(memcmp(expect, response.body, response.body_length), 0);
   request_state->test->RunAndKick(
       [request_state]() { request_state->done = true; });
 }
@@ -181,7 +247,7 @@ void OnFinishExpectFailure(void* arg, grpc_error_handle error) {
   grpc_http_response response = request_state->response;
   LOG(INFO) << "response status=" << response.status
             << " error=" << grpc_core::StatusToString(error);
-  CHECK(!error.ok());
+  GRPC_CHECK(!error.ok());
   request_state->test->RunAndKick(
       [request_state]() { request_state->done = true; });
 }
@@ -191,13 +257,16 @@ TEST_F(HttpRequestTest, Get) {
   grpc_http_request req;
   grpc_core::ExecCtx exec_ctx;
   std::string host = absl::StrFormat("localhost:%d", g_server_port);
+  // Wait for Server to become ready. Trying to send a request immediately
+  // can result in a connection_refused error.
+  WaitForServerReady(host, absl::Seconds(10));
   LOG(INFO) << "requesting from " << host;
   memset(&req, 0, sizeof(req));
   auto uri = grpc_core::URI::Create(
-      "http", host, "/get",
+      "http", /*user_info=*/"", host, "/get",
       /*query_parameter_pairs=*/{{"foo", "bar"}, {"baz", "quux"}},
       /*fragment=*/"");
-  CHECK(uri.ok());
+  GRPC_CHECK(uri.ok());
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
       grpc_core::HttpRequest::Get(
           std::move(*uri), nullptr /* channel args */, pops(), &req,
@@ -217,15 +286,18 @@ TEST_F(HttpRequestTest, Post) {
   grpc_http_request req;
   grpc_core::ExecCtx exec_ctx;
   std::string host = absl::StrFormat("localhost:%d", g_server_port);
+  // Wait for Server to become ready. Trying to send a request immediately
+  // can result in a connection_refused error.
+  WaitForServerReady(host, absl::Seconds(10));
   LOG(INFO) << "posting to " << host;
   memset(&req, 0, sizeof(req));
   req.body = const_cast<char*>("hello");
   req.body_length = 5;
   auto uri = grpc_core::URI::Create(
-      "http", host, "/post",
+      "http", /*user_info=*/"", host, "/post",
       /*query_parameter_pairs=*/{{"foo", "bar"}, {"mumble", "frotz"}},
       /*fragment=*/"");
-  CHECK(uri.ok());
+  GRPC_CHECK(uri.ok());
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
       grpc_core::HttpRequest::Post(
           std::move(*uri), nullptr /* channel args */, pops(), &req,
@@ -248,12 +320,14 @@ void InjectNonResponsiveDNSServer(ares_channel* channel) {
   // Configure a non-responsive DNS server at the front of c-ares's nameserver
   // list.
   struct ares_addr_port_node dns_server_addrs[1];
+  memset(dns_server_addrs, 0, sizeof(struct ares_addr_port_node));
   dns_server_addrs[0].family = AF_INET6;
   (reinterpret_cast<char*>(&dns_server_addrs[0].addr.addr6))[15] = 0x1;
   dns_server_addrs[0].tcp_port = g_fake_non_responsive_dns_server_port;
   dns_server_addrs[0].udp_port = g_fake_non_responsive_dns_server_port;
   dns_server_addrs[0].next = nullptr;
-  CHECK(ares_set_servers_ports(*channel, dns_server_addrs) == ARES_SUCCESS);
+  GRPC_CHECK(ares_set_servers_ports(*channel, dns_server_addrs) ==
+             ARES_SUCCESS);
 }
 
 TEST_F(HttpRequestTest, CancelGetDuringDNSResolution) {
@@ -278,9 +352,10 @@ TEST_F(HttpRequestTest, CancelGetDuringDNSResolution) {
       grpc_core::ExecCtx exec_ctx;
       memset(&req, 0, sizeof(grpc_http_request));
       auto uri = grpc_core::URI::Create(
-          "http", "dont-care-since-wont-be-resolved.test.com:443", "/get",
+          "http", /*user_info=*/"",
+          "dont-care-since-wont-be-resolved.test.com:443", "/get",
           {} /* query params */, "" /* fragment */);
-      CHECK(uri.ok());
+      GRPC_CHECK(uri.ok());
       grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
           grpc_core::HttpRequest::Get(
               std::move(*uri), nullptr /* channel args */, pops(), &req,
@@ -333,10 +408,10 @@ TEST_F(HttpRequestTest, CancelGetWhileReadingResponse) {
       grpc_http_request req;
       grpc_core::ExecCtx exec_ctx;
       memset(&req, 0, sizeof(req));
-      auto uri = grpc_core::URI::Create("http", fake_http_server_ptr->address(),
-                                        "/get", {} /* query params */,
-                                        "" /* fragment */);
-      CHECK(uri.ok());
+      auto uri = grpc_core::URI::Create(
+          "http", /*user_info=*/"", fake_http_server_ptr->address(), "/get",
+          {} /* query params */, "" /* fragment */);
+      GRPC_CHECK(uri.ok());
       grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
           grpc_core::HttpRequest::Get(
               std::move(*uri), nullptr /* channel args */, pops(), &req,
@@ -394,10 +469,10 @@ TEST_F(HttpRequestTest, CancelGetRacesWithConnectionFailure) {
       grpc_http_request req;
       grpc_core::ExecCtx exec_ctx;
       memset(&req, 0, sizeof(req));
-      auto uri =
-          grpc_core::URI::Create("http", fake_server_address, "/get",
-                                 {} /* query params */, "" /* fragment */);
-      CHECK(uri.ok());
+      auto uri = grpc_core::URI::Create(
+          "http", /*user_info=*/"", fake_server_address, "/get",
+          {} /* query params */, "" /* fragment */);
+      GRPC_CHECK(uri.ok());
       grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
           grpc_core::HttpRequest::Get(
               std::move(*uri), nullptr /* channel args */, pops(), &req,
@@ -460,9 +535,10 @@ TEST_F(HttpRequestTest, CallerPollentsAreNotReferencedAfterCallbackIsRan) {
   grpc_polling_entity wrapped_pollset_set_to_destroy_eagerly =
       grpc_polling_entity_create_from_pollset_set(
           request_state.pollset_set_to_destroy_eagerly);
-  auto uri = grpc_core::URI::Create("http", fake_server_address, "/get",
-                                    {} /* query params */, "" /* fragment */);
-  CHECK(uri.ok());
+  auto uri =
+      grpc_core::URI::Create("http", /*user_info=*/"", fake_server_address,
+                             "/get", {} /* query params */, "" /* fragment */);
+  GRPC_CHECK(uri.ok());
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
       grpc_core::HttpRequest::Get(
           std::move(*uri), nullptr /* channel args */,
@@ -510,11 +586,14 @@ TEST_F(HttpRequestTest,
   grpc_http_request req;
   grpc_core::ExecCtx exec_ctx;
   std::string host = absl::StrFormat("localhost:%d", g_server_port);
+  // Wait for Server to become ready. Trying to send a request immediately
+  // can result in a connection_refused error.
+  WaitForServerReady(host, absl::Seconds(10));
   LOG(INFO) << "requesting from " << host;
   memset(&req, 0, sizeof(req));
-  auto uri = grpc_core::URI::Create("http", host, "/get", {} /* query params */,
-                                    "" /* fragment */);
-  CHECK(uri.ok());
+  auto uri = grpc_core::URI::Create("http", /*user_info=*/"", host, "/get",
+                                    {} /* query params */, "" /* fragment */);
+  GRPC_CHECK(uri.ok());
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
       grpc_core::HttpRequest::Get(
           std::move(*uri), nullptr /* channel args */, pops(), &req,

@@ -28,6 +28,9 @@
 // Base for tsi_frame_protector implementations.
 // See transport_security_interface.h for documentation.
 // All methods must be implemented.
+// Implementations must provide the following thread-safety guarantees:
+// - protect and unprotect can be called concurrently,
+// - protect_flush and unprotect can be called concurrently.
 struct tsi_frame_protector_vtable {
   tsi_result (*protect)(tsi_frame_protector* self,
                         const unsigned char* unprotected_bytes,
@@ -80,6 +83,13 @@ struct tsi_handshaker_vtable {
   void (*shutdown)(tsi_handshaker* self);
 };
 struct tsi_handshaker {
+  tsi_handshaker() = default;
+  explicit tsi_handshaker(const tsi_handshaker_vtable* vtable)
+      : vtable(vtable),
+        frame_protector_created(false),
+        handshaker_result_created(false),
+        handshake_shutdown(false) {}
+
   const tsi_handshaker_vtable* vtable;
   bool frame_protector_created;
   bool handshaker_result_created;

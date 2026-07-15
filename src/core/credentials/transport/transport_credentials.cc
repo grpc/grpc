@@ -20,12 +20,12 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/useful.h"
+#include "absl/log/log.h"
 
 // -- Common. --
 
@@ -110,7 +110,7 @@ void grpc_server_credentials::set_auth_metadata_processor(
 
 void grpc_server_credentials_set_auth_metadata_processor(
     grpc_server_credentials* creds, grpc_auth_metadata_processor processor) {
-  DCHECK_NE(creds, nullptr);
+  GRPC_DCHECK_NE(creds, nullptr);
   creds->set_auth_metadata_processor(processor);
 }
 

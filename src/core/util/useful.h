@@ -19,6 +19,7 @@
 
 #include <cstddef>
 #include <limits>
+#include <type_traits>
 #include <variant>
 
 #include "absl/log/check.h"
@@ -114,8 +115,58 @@ inline T SaturatingAdd(T a, T b) {
   return a + b;
 }
 
-inline uint32_t MixHash32(uint32_t a, uint32_t b) {
-  return absl::rotl(a, 2u) ^ b;
+template <
+    typename T,
+    std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
+inline T SaturatingMul(T a, T b) {
+  if (a == 0 || b == 0) return 0;
+  if (b > std::numeric_limits<T>::max() / a) {
+    return std::numeric_limits<T>::max();
+  }
+  return a * b;
+}
+
+template <
+    typename T,
+    std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
+inline T SaturatingMul(T a, T b) {
+  if (a == 0 || b == 0) return 0;
+  if (a == std::numeric_limits<T>::min()) {
+    // negation is ub
+    if (b == -1) return std::numeric_limits<T>::max();
+    if (b == 1) return std::numeric_limits<T>::min();
+    if (b > 1) return std::numeric_limits<T>::min();
+    return std::numeric_limits<T>::max();
+  }
+  if (b == std::numeric_limits<T>::min()) {
+    if (a == -1) return std::numeric_limits<T>::max();
+    if (a == 1) return std::numeric_limits<T>::min();
+    if (a > 1) return std::numeric_limits<T>::min();
+    return std::numeric_limits<T>::max();
+  }
+  if (a > 0 && b > 0) {
+    // both positive
+    if (a > std::numeric_limits<T>::max() / b) {
+      return std::numeric_limits<T>::max();
+    }
+  } else if (a < 0 && b < 0) {
+    // both negative
+    if (a < std::numeric_limits<T>::max() / b) {
+      return std::numeric_limits<T>::max();
+    }
+  } else {
+    // one positive, one negative
+    if (a > 0) {
+      if (b < std::numeric_limits<T>::min() / a) {
+        return std::numeric_limits<T>::min();
+      }
+    } else {
+      if (a < std::numeric_limits<T>::min() / b) {
+        return std::numeric_limits<T>::min();
+      }
+    }
+  }
+  return a * b;
 }
 
 inline uint32_t RoundUpToPowerOf2(uint32_t v) {
