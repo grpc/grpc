@@ -52,11 +52,4 @@ absl::Status grpc_error_to_absl_status(grpc_error_handle error);
 /// \a absl::OkStatus().
 grpc_error_handle absl_status_to_grpc_error(absl::Status status);
 
-// FIXME: remove
-/// A utility function to check whether there is a clear status code that
-/// doesn't need to be guessed in \a error. This means that \a error or some
-/// child has grpc_core::StatusIntProperty::kRpcStatus set, or that it is
-/// absl::OkStatus() or absl::CancelledError()
-bool grpc_error_has_clear_grpc_status(grpc_error_handle error);
-
 #endif  // GRPC_SRC_CORE_LIB_TRANSPORT_ERROR_UTILS_H

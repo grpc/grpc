@@ -54,8 +54,6 @@ const char* GetStatusIntPropertyUrl(StatusIntProperty key) {
   switch (key) {
     case StatusIntProperty::kStreamId:
       return TYPE_URL(TYPE_INT_TAG "stream_id");
-    case StatusIntProperty::kRpcStatus:
-      return TYPE_URL(TYPE_INT_TAG "grpc_status");
     case StatusIntProperty::kHttp2Error:
       return TYPE_URL(TYPE_INT_TAG "http2_error");
     case StatusIntProperty::ChannelConnectivityState:
@@ -91,20 +89,12 @@ absl::Status ReplaceStatusCode(const absl::Status& status,
 }
 
 void StatusSetInt(absl::Status* status, StatusIntProperty key, intptr_t value) {
-  if (key == StatusIntProperty::kRpcStatus) {
-    // When setting the RPC status, just replace the top-level status code.
-    *status = ReplaceStatusCode(*status, static_cast<absl::StatusCode>(value));
-    return;
-  }
   status->SetPayload(GetStatusIntPropertyUrl(key),
                      absl::Cord(std::to_string(value)));
 }
 
 std::optional<intptr_t> StatusGetInt(const absl::Status& status,
                                      StatusIntProperty key) {
-  if (key == StatusIntProperty::kRpcStatus) {
-    return static_cast<intptr_t>(status.code());
-  }
   auto p = status.GetPayload(GetStatusIntPropertyUrl(key));
   if (p.has_value()) {
     auto sv = p->TryFlat();

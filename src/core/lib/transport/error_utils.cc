@@ -103,7 +103,3 @@ absl::Status grpc_error_to_absl_status(grpc_error_handle error) {
 grpc_error_handle absl_status_to_grpc_error(absl::Status status) {
   return status;
 }
-
-bool grpc_error_has_clear_grpc_status(grpc_error_handle error) {
-  return error.code() != absl::StatusCode::kUnknown;
-}
