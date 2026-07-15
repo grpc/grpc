@@ -92,7 +92,8 @@ def _enabled_optional_metrics(
         if name in optional_metrics:
             enabled_metrics.append(optional_metrics[name])
         elif name not in default_metric_names:
-            raise ValueError(f"Unknown metric name: {name}")
+            error_msg = f"Unknown metric name: {name}"
+            raise ValueError(error_msg)
     return enabled_metrics
 
 
