@@ -52,7 +52,6 @@ struct FilterAndConfig {
 // things that are ephemeral and disjoint from overall channel args.
 class FilterArgs {
  public:
-  FilterArgs() : FilterArgs(nullptr, nullptr) {}
   FilterArgs(grpc_channel_stack* channel_stack,
              grpc_channel_element* channel_element,
              RefCountedPtr<const FilterConfig> config = nullptr)
