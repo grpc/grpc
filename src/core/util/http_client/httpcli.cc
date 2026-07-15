@@ -420,7 +420,7 @@ void HttpRequest::OnResolved(
     return;
   }
   if (!addresses_or.ok()) {
-    Finish(absl_status_to_grpc_error(addresses_or.status()));
+    Finish(addresses_or.status());
     return;
   }
   addresses_ = std::move(*addresses_or);

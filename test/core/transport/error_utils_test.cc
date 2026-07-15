@@ -63,45 +63,6 @@ TEST(ErrorUtilsTest, GetErrorGetStatusChild) {
   ASSERT_EQ(message, "Parent (Child1) (Child2)");
 }
 
-// ---- Ok Status ----
-TEST(ErrorUtilsTest, AbslOkToGrpcError) {
-  grpc_error_handle error = absl_status_to_grpc_error(absl::OkStatus());
-  ASSERT_EQ(absl::OkStatus(), error);
-}
-
-TEST(ErrorUtilsTest, GrpcSpecialErrorNoneToAbslStatus) {
-  absl::Status status = grpc_error_to_absl_status(absl::OkStatus());
-  ASSERT_TRUE(status.ok());
-  ASSERT_EQ(status.message(), "");
-}
-
-// ---- Asymmetry of conversions of "Special" errors ----
-TEST(ErrorUtilsTest, AbslStatusToGrpcErrorDoesNotReturnSpecialVariables) {
-  grpc_error_handle error =
-      absl_status_to_grpc_error(absl::CancelledError("CANCELLED"));
-  ASSERT_NE(error, absl::CancelledError());
-}
-
-// ---- Ordinary statuses ----
-TEST(ErrorUtilsTest, AbslUnavailableToGrpcError) {
-  grpc_error_handle error =
-      absl_status_to_grpc_error(absl::UnavailableError("Making tea"));
-  // Status code checks
-  ASSERT_EQ(static_cast<grpc_status_code>(error.code()),
-            GRPC_STATUS_UNAVAILABLE);
-  // Status message checks
-  ASSERT_EQ(error.message(), "Making tea");
-}
-
-TEST(ErrorUtilsTest, GrpcErrorUnavailableToAbslStatus) {
-  grpc_error_handle error = absl::UnavailableError(
-      "weighted_target: all children report state TRANSIENT_FAILURE");
-  absl::Status status = grpc_error_to_absl_status(error);
-  ASSERT_TRUE(absl::IsUnavailable(status));
-  ASSERT_EQ(status.message(),
-            "weighted_target: all children report state TRANSIENT_FAILURE");
-}
-
 }  // namespace
 
 int main(int argc, char** argv) {

@@ -95,11 +95,3 @@ void grpc_error_get_status(grpc_error_handle error,
     }
   }
 }
-
-absl::Status grpc_error_to_absl_status(grpc_error_handle error) {
-  return error;
-}
-
-grpc_error_handle absl_status_to_grpc_error(absl::Status status) {
-  return status;
-}

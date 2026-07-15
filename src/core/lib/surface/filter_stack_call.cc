@@ -137,8 +137,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
         GrpcRegisteredMethod(), reinterpret_cast<void*>(static_cast<uintptr_t>(
                                     args->registered_method)));
     if (parent != nullptr) {
-      add_init_error(&error, absl_status_to_grpc_error(call->InitParent(
-                                 parent, args->propagation_mask)));
+      add_init_error(&error, call->InitParent(parent, args->propagation_mask));
     }
     // Client call tracers should be created after propagating relevant
     // properties (tracing included) from the parent.

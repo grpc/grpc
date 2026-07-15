@@ -1412,7 +1412,7 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
       grpc_chttp2_cancel_stream(s->t.get(), s, s->t->goaway_error, false);
     }
   }
-  absl::Status status = grpc_error_to_absl_status(t->goaway_error);
+  absl::Status status = t->goaway_error;
   grpc_core::Transport::StateWatcher::DisconnectInfo disconnect_info;
   disconnect_info.reason = grpc_core::Transport::StateWatcher::kGoaway;
   disconnect_info.http2_error_code = static_cast<Http2ErrorCode>(goaway_error);

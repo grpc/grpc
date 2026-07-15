@@ -150,8 +150,7 @@ UrlExternalAccountCredentials::RetrieveSubjectToken(
                   url_full_path_, {} /* query params */, "" /* fragment */);
   if (!url_for_request.ok()) {
     return MakeOrphanable<NoOpFetchBody>(
-        event_engine(), std::move(on_done),
-        absl_status_to_grpc_error(url_for_request.status()));
+        event_engine(), std::move(on_done), url_for_request.status());
   }
   return MakeOrphanable<HttpFetchBody>(
       [&](grpc_http_response* response, grpc_closure* on_http_response) {
