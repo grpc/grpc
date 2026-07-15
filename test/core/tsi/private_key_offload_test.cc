@@ -87,13 +87,11 @@ class SslOffloadTsiTestFixture {
       server_pem_key_cert_pairs_.emplace_back(
           std::make_shared<SyncTestPrivateKeySigner>(server1_key_),
           server1_cert_);
-      client_pem_key_cert_pair_ =
-          grpc_core::PemKeyCertPair(client_key_, client_cert_);
+      client_pem_key_cert_pair_ = PemKeyCertPair(client_key_, client_cert_);
     } else {
       server_pem_key_cert_pairs_.emplace_back(server0_key_, server0_cert_);
       server_pem_key_cert_pairs_.emplace_back(server1_key_, server1_cert_);
-      client_pem_key_cert_pair_ =
-          grpc_core::PemKeyCertPair(signer_, client_cert_);
+      client_pem_key_cert_pair_ = PemKeyCertPair(signer_, client_cert_);
     }
   }
 
@@ -206,8 +204,8 @@ class SslOffloadTsiTestFixture {
   std::string server1_cert_;
   std::string client_key_;
   std::string client_cert_;
-  grpc_core::PemKeyCertPairList server_pem_key_cert_pairs_;
-  grpc_core::PemKeyCertPair client_pem_key_cert_pair_;
+  PemKeyCertPairList server_pem_key_cert_pairs_;
+  PemKeyCertPair client_pem_key_cert_pair_;
   OffloadParty offload_party_;
   std::shared_ptr<PrivateKeySigner> signer_;
   tsi_tls_version tls_version_;
