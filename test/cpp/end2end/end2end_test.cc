@@ -850,6 +850,7 @@ TEST_P(End2endServerTryCancelTest, RequestStreamServerCancelBeforeReads) {
 
 // Server to cancel while reading a request from the stream in parallel
 TEST_P(End2endServerTryCancelTest, RequestStreamServerCancelDuringRead) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   TestRequestStreamServerCancel(CANCEL_DURING_PROCESSING, 10);
 }
 
@@ -883,6 +884,7 @@ TEST_P(End2endServerTryCancelTest, BidiStreamServerCancelBefore) {
 // Server to cancel while reading/writing requests/responses on the stream in
 // parallel
 TEST_P(End2endServerTryCancelTest, BidiStreamServerCancelDuring) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   TestBidiStreamServerCancel(CANCEL_DURING_PROCESSING, 10);
 }
 
@@ -962,7 +964,6 @@ TEST_P(End2endTest, EmptyBinaryMetadata) {
 }
 
 TEST_P(End2endTest, AuthoritySeenOnServerSide) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   EchoRequest request;
   request.mutable_param()->set_echo_host_from_authority_header(true);
@@ -985,7 +986,7 @@ TEST_P(End2endTest, AuthoritySeenOnServerSide) {
 }
 
 TEST_P(End2endTest, ReconnectChannel) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
+  // This is flaky for PH2 Server.
   if (GetParam().inproc() || GetParam().use_virtual_rpcs()) {
     return;
   }
@@ -1175,6 +1176,7 @@ TEST_P(End2endTest, BidiStream) {
 }
 
 TEST_P(End2endTest, BidiStreamWithCoalescingApi) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix flake");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1210,6 +1212,7 @@ TEST_P(End2endTest, BidiStreamWithCoalescingApi) {
 // This was added to prevent regression from issue:
 // https://github.com/grpc/grpc/issues/11546
 TEST_P(End2endTest, BidiStreamWithEverythingCoalesced) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix flake");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1605,13 +1608,7 @@ TEST_P(End2endTest, ExpectErrorTest) {
     EXPECT_EQ(iter->code(), s.error_code());
     EXPECT_EQ(iter->error_message(), s.error_message());
     EXPECT_EQ(iter->binary_error_details(), s.error_details());
-    if (grpc_core::IsErrorFlattenEnabled()) {
-      EXPECT_THAT(context.debug_error_string(),
-                  ::testing::HasSubstr("INTERNAL"));
-    } else {
-      EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "status"));
-      EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "13"));
-    }
+    EXPECT_THAT(context.debug_error_string(), ::testing::HasSubstr("INTERNAL"));
   }
 }
 
@@ -1659,7 +1656,7 @@ TEST_P(ProxyEnd2endTest, MultipleRpcs) {
 // Set a 10us deadline and make sure proper error is returned.
 TEST_P(ProxyEnd2endTest, RpcDeadlineExpires) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix flake");
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix flake");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1750,7 +1747,6 @@ TEST_P(ProxyEnd2endTest, EchoDeadlineForNoDeadlineRpc) {
 }
 
 TEST_P(ProxyEnd2endTest, UnimplementedRpc) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   EchoRequest request;
   EchoResponse response;

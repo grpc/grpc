@@ -54,7 +54,6 @@
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/match.h"
 #include "src/core/util/matchers.h"
-#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/xds/grpc/xds_cluster_specifier_plugin.h"
@@ -71,8 +70,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 
@@ -369,6 +366,7 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
     auto* extension_to_use = &*extension;
     std::optional<XdsExtension> nested_extension;
     bool is_optional = false;
+    bool disabled = false;
     if (extension->type == "envoy.config.route.v3.FilterConfig") {
       absl::string_view* serialized_config =
           std::get_if<absl::string_view>(&extension->value);
@@ -382,9 +380,10 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
         errors->AddError("could not parse FilterConfig");
         continue;
       }
+      disabled = envoy_config_route_v3_FilterConfig_disabled(filter_config);
+      any = envoy_config_route_v3_FilterConfig_config(filter_config);
       is_optional =
           envoy_config_route_v3_FilterConfig_is_optional(filter_config);
-      any = envoy_config_route_v3_FilterConfig_config(filter_config);
       extension->validation_fields.emplace_back(errors, ".config");
       nested_extension = ExtractXdsExtension(context, any, errors);
       if (!nested_extension.has_value()) continue;
@@ -401,6 +400,7 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
     }
     auto& entry = typed_per_filter_config[std::string(key)];
     entry.config_proto_type = filter_impl->OverrideConfigProtoName();
+    entry.disabled = disabled;
     std::optional<Json> filter_config =
         filter_impl->GenerateFilterConfigOverride(key, context,
                                                   *extension_to_use, errors);

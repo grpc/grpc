@@ -167,7 +167,7 @@ pip_install_dir_and_deps() {
 pip_install -U gevent
 
 pip_install --upgrade 'cython==3.1.1'
-pip_install --upgrade six 'protobuf>=6.33.5,<8.0.0'
+pip_install --upgrade six 'protobuf>=7.35.1,<8.0.0'
 
 if [ "$("$VENV_PYTHON" -c "import sys; print(sys.version_info[0])")" == "2" ]
 then

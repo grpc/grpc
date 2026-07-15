@@ -29,6 +29,7 @@
 #include "src/core/xds/grpc/blackboard.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
+#include "src/core/xds/xds_client/xds_transport.h"
 #include "upb/reflection/def.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -75,7 +76,7 @@ class XdsHttpFilterImpl {
       RefCountedPtr<const FilterConfig> virtual_host_override_config,
       RefCountedPtr<const FilterConfig> route_override_config,
       RefCountedPtr<const FilterConfig> cluster_weight_override_config,
-      Blackboard& blackboard) const;
+      XdsTransportFactory& transport_factory, Blackboard& blackboard) const;
 
   // Returns true if the filter is supported on clients; false otherwise
   virtual bool IsSupportedOnClients() const = 0;

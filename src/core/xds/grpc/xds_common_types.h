@@ -23,62 +23,14 @@
 #include <variant>
 #include <vector>
 
+#include "re2/re2.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/util/json/json.h"
-#include "src/core/util/matchers.h"
-#include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"
-#include "src/core/xds/grpc/xds_server_grpc.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
-
-struct CommonTlsContext {
-  struct CertificateProviderPluginInstance {
-    std::string instance_name;
-    std::string certificate_name;
-
-    bool operator==(const CertificateProviderPluginInstance& other) const {
-      return instance_name == other.instance_name &&
-             certificate_name == other.certificate_name;
-    }
-
-    std::string ToString() const;
-    bool Empty() const;
-  };
-
-  struct CertificateValidationContext {
-    struct SystemRootCerts {
-      bool operator==(const SystemRootCerts&) const { return true; }
-    };
-    std::variant<std::monostate, CertificateProviderPluginInstance,
-                 SystemRootCerts>
-        ca_certs;
-    std::vector<StringMatcher> match_subject_alt_names;
-
-    bool operator==(const CertificateValidationContext& other) const {
-      return ca_certs == other.ca_certs &&
-             match_subject_alt_names == other.match_subject_alt_names;
-    }
-
-    std::string ToString() const;
-    bool Empty() const;
-  };
-
-  CertificateValidationContext certificate_validation_context;
-  CertificateProviderPluginInstance tls_certificate_provider_instance;
-
-  bool operator==(const CommonTlsContext& other) const {
-    return certificate_validation_context ==
-               other.certificate_validation_context &&
-           tls_certificate_provider_instance ==
-               other.tls_certificate_provider_instance;
-  }
-
-  std::string ToString() const;
-  bool Empty() const;
-};
 
 struct XdsExtension {
   // The type, either from the top level or from inside the TypedStruct.
@@ -89,22 +41,6 @@ struct XdsExtension {
   // Validation fields that need to stay in scope until we're done
   // processing the extension.
   std::vector<ValidationErrors::ScopedField> validation_fields;
-};
-
-struct XdsGrpcService {
-  std::unique_ptr<GrpcXdsServerTarget> server_target;
-  Duration timeout;
-  std::vector<std::pair<std::string, std::string>> initial_metadata;
-
-  bool operator==(const XdsGrpcService& other) const {
-    if (timeout != other.timeout) return false;
-    if (initial_metadata != other.initial_metadata) return false;
-    if (server_target == nullptr) return other.server_target == nullptr;
-    if (other.server_target == nullptr) return false;
-    return server_target->Equals(*other.server_target);
-  }
-
-  std::string ToString() const;
 };
 
 struct HeaderMutationRules {
