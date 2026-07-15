@@ -89,9 +89,6 @@ const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
     static_cast<uint8_t>(
         grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
-const char* const description_event_engine_poller_for_python =
-    "Enable event engine poller in gRPC Python";
-const char* const additional_constraints_event_engine_poller_for_python = "{}";
 const char* const description_fail_recv_metadata_on_deadline_exceeded =
     "Fail recv initial metadata when the deadline is exceeded.";
 const char* const
@@ -117,9 +114,6 @@ const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
 const char* const additional_constraints_local_connector_secure = "{}";
-const char* const description_max_inflight_pings_strict_limit =
-    "If set, the max inflight pings limit is strictly enforced.";
-const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
 const char* const description_memory_optimization_01 = "Memory Optimization";
 const char* const additional_constraints_memory_optimization_01 = "{}";
 const char* const description_memory_optimization_02 = "Memory Optimization 02";
@@ -208,6 +202,10 @@ const char* const description_promise_filter_send_cancel_metadata =
     "promise-based filters upon stream cancellation.";
 const char* const additional_constraints_promise_filter_send_cancel_metadata =
     "{}";
+const char* const description_recv_message_filter_bypass_fix =
+    "Receive message bypass happen if trailing metadata is received while "
+    "Server Initial Metadata is getting processed.";
+const char* const additional_constraints_recv_message_filter_bypass_fix = "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_return_preexisting_errors =
@@ -280,6 +278,9 @@ const char* const description_xds_server_filter_chain_per_route =
     "xDS servers use a separate filter chain for each route.";
 const char* const additional_constraints_xds_server_filter_chain_per_route =
     "{}";
+const uint8_t required_experiments_xds_server_filter_chain_per_route[] = {
+    static_cast<uint8_t>(
+        grpc_core::kExperimentIdV2NonOwningWakerImplementation)};
 }  // namespace
 
 namespace grpc_core {
@@ -327,10 +328,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
      required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
-    {"event_engine_poller_for_python",
-     description_event_engine_poller_for_python,
-     additional_constraints_event_engine_poller_for_python, nullptr, 0, true,
-     true},
     {"fail_recv_metadata_on_deadline_exceeded",
      description_fail_recv_metadata_on_deadline_exceeded,
      additional_constraints_fail_recv_metadata_on_deadline_exceeded, nullptr, 0,
@@ -350,10 +347,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
-    {"max_inflight_pings_strict_limit",
-     description_max_inflight_pings_strict_limit,
-     additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
-     true},
     {"memory_optimization_01", description_memory_optimization_01,
      additional_constraints_memory_optimization_01, nullptr, 0, false, false},
     {"memory_optimization_02", description_memory_optimization_02,
@@ -365,7 +358,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_metadata_outstanding_token_refactor, nullptr, 0,
      false, true},
     {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
-     additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
+     additional_constraints_metadata_publish_to_app_tag, nullptr, 0, false,
      true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
@@ -419,7 +412,11 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"promise_filter_send_cancel_metadata",
      description_promise_filter_send_cancel_metadata,
      additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0,
-     false, true},
+     true, true},
+    {"recv_message_filter_bypass_fix",
+     description_recv_message_filter_bypass_fix,
+     additional_constraints_recv_message_filter_bypass_fix, nullptr, 0, false,
+     true},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"return_preexisting_errors", description_return_preexisting_errors,
@@ -477,8 +474,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"xds_server_filter_chain_per_route",
      description_xds_server_filter_chain_per_route,
-     additional_constraints_xds_server_filter_chain_per_route, nullptr, 0,
-     false, true},
+     additional_constraints_xds_server_filter_chain_per_route,
+     required_experiments_xds_server_filter_chain_per_route, 1, false, true},
 };
 
 }  // namespace grpc_core
@@ -551,9 +548,6 @@ const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
     static_cast<uint8_t>(
         grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
-const char* const description_event_engine_poller_for_python =
-    "Enable event engine poller in gRPC Python";
-const char* const additional_constraints_event_engine_poller_for_python = "{}";
 const char* const description_fail_recv_metadata_on_deadline_exceeded =
     "Fail recv initial metadata when the deadline is exceeded.";
 const char* const
@@ -579,9 +573,6 @@ const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
 const char* const additional_constraints_local_connector_secure = "{}";
-const char* const description_max_inflight_pings_strict_limit =
-    "If set, the max inflight pings limit is strictly enforced.";
-const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
 const char* const description_memory_optimization_01 = "Memory Optimization";
 const char* const additional_constraints_memory_optimization_01 = "{}";
 const char* const description_memory_optimization_02 = "Memory Optimization 02";
@@ -670,6 +661,10 @@ const char* const description_promise_filter_send_cancel_metadata =
     "promise-based filters upon stream cancellation.";
 const char* const additional_constraints_promise_filter_send_cancel_metadata =
     "{}";
+const char* const description_recv_message_filter_bypass_fix =
+    "Receive message bypass happen if trailing metadata is received while "
+    "Server Initial Metadata is getting processed.";
+const char* const additional_constraints_recv_message_filter_bypass_fix = "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_return_preexisting_errors =
@@ -742,6 +737,9 @@ const char* const description_xds_server_filter_chain_per_route =
     "xDS servers use a separate filter chain for each route.";
 const char* const additional_constraints_xds_server_filter_chain_per_route =
     "{}";
+const uint8_t required_experiments_xds_server_filter_chain_per_route[] = {
+    static_cast<uint8_t>(
+        grpc_core::kExperimentIdV2NonOwningWakerImplementation)};
 }  // namespace
 
 namespace grpc_core {
@@ -789,10 +787,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
      required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
-    {"event_engine_poller_for_python",
-     description_event_engine_poller_for_python,
-     additional_constraints_event_engine_poller_for_python, nullptr, 0, true,
-     true},
     {"fail_recv_metadata_on_deadline_exceeded",
      description_fail_recv_metadata_on_deadline_exceeded,
      additional_constraints_fail_recv_metadata_on_deadline_exceeded, nullptr, 0,
@@ -812,10 +806,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
-    {"max_inflight_pings_strict_limit",
-     description_max_inflight_pings_strict_limit,
-     additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
-     true},
     {"memory_optimization_01", description_memory_optimization_01,
      additional_constraints_memory_optimization_01, nullptr, 0, false, false},
     {"memory_optimization_02", description_memory_optimization_02,
@@ -827,7 +817,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_metadata_outstanding_token_refactor, nullptr, 0,
      false, true},
     {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
-     additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
+     additional_constraints_metadata_publish_to_app_tag, nullptr, 0, false,
      true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
@@ -881,7 +871,11 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"promise_filter_send_cancel_metadata",
      description_promise_filter_send_cancel_metadata,
      additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0,
-     false, true},
+     true, true},
+    {"recv_message_filter_bypass_fix",
+     description_recv_message_filter_bypass_fix,
+     additional_constraints_recv_message_filter_bypass_fix, nullptr, 0, false,
+     true},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"return_preexisting_errors", description_return_preexisting_errors,
@@ -939,8 +933,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"xds_server_filter_chain_per_route",
      description_xds_server_filter_chain_per_route,
-     additional_constraints_xds_server_filter_chain_per_route, nullptr, 0,
-     false, true},
+     additional_constraints_xds_server_filter_chain_per_route,
+     required_experiments_xds_server_filter_chain_per_route, 1, false, true},
 };
 
 }  // namespace grpc_core
@@ -1013,9 +1007,6 @@ const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
     static_cast<uint8_t>(
         grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
-const char* const description_event_engine_poller_for_python =
-    "Enable event engine poller in gRPC Python";
-const char* const additional_constraints_event_engine_poller_for_python = "{}";
 const char* const description_fail_recv_metadata_on_deadline_exceeded =
     "Fail recv initial metadata when the deadline is exceeded.";
 const char* const
@@ -1041,9 +1032,6 @@ const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
 const char* const additional_constraints_local_connector_secure = "{}";
-const char* const description_max_inflight_pings_strict_limit =
-    "If set, the max inflight pings limit is strictly enforced.";
-const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
 const char* const description_memory_optimization_01 = "Memory Optimization";
 const char* const additional_constraints_memory_optimization_01 = "{}";
 const char* const description_memory_optimization_02 = "Memory Optimization 02";
@@ -1132,6 +1120,10 @@ const char* const description_promise_filter_send_cancel_metadata =
     "promise-based filters upon stream cancellation.";
 const char* const additional_constraints_promise_filter_send_cancel_metadata =
     "{}";
+const char* const description_recv_message_filter_bypass_fix =
+    "Receive message bypass happen if trailing metadata is received while "
+    "Server Initial Metadata is getting processed.";
+const char* const additional_constraints_recv_message_filter_bypass_fix = "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_return_preexisting_errors =
@@ -1204,6 +1196,9 @@ const char* const description_xds_server_filter_chain_per_route =
     "xDS servers use a separate filter chain for each route.";
 const char* const additional_constraints_xds_server_filter_chain_per_route =
     "{}";
+const uint8_t required_experiments_xds_server_filter_chain_per_route[] = {
+    static_cast<uint8_t>(
+        grpc_core::kExperimentIdV2NonOwningWakerImplementation)};
 }  // namespace
 
 namespace grpc_core {
@@ -1251,10 +1246,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
      required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
-    {"event_engine_poller_for_python",
-     description_event_engine_poller_for_python,
-     additional_constraints_event_engine_poller_for_python, nullptr, 0, true,
-     true},
     {"fail_recv_metadata_on_deadline_exceeded",
      description_fail_recv_metadata_on_deadline_exceeded,
      additional_constraints_fail_recv_metadata_on_deadline_exceeded, nullptr, 0,
@@ -1274,10 +1265,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
-    {"max_inflight_pings_strict_limit",
-     description_max_inflight_pings_strict_limit,
-     additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
-     true},
     {"memory_optimization_01", description_memory_optimization_01,
      additional_constraints_memory_optimization_01, nullptr, 0, false, false},
     {"memory_optimization_02", description_memory_optimization_02,
@@ -1289,7 +1276,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_metadata_outstanding_token_refactor, nullptr, 0,
      false, true},
     {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
-     additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
+     additional_constraints_metadata_publish_to_app_tag, nullptr, 0, false,
      true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
@@ -1343,7 +1330,11 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"promise_filter_send_cancel_metadata",
      description_promise_filter_send_cancel_metadata,
      additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0,
-     false, true},
+     true, true},
+    {"recv_message_filter_bypass_fix",
+     description_recv_message_filter_bypass_fix,
+     additional_constraints_recv_message_filter_bypass_fix, nullptr, 0, false,
+     true},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"return_preexisting_errors", description_return_preexisting_errors,
@@ -1401,8 +1392,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"xds_server_filter_chain_per_route",
      description_xds_server_filter_chain_per_route,
-     additional_constraints_xds_server_filter_chain_per_route, nullptr, 0,
-     false, true},
+     additional_constraints_xds_server_filter_chain_per_route,
+     required_experiments_xds_server_filter_chain_per_route, 1, false, true},
 };
 
 }  // namespace grpc_core

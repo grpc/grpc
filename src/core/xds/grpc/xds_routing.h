@@ -19,7 +19,6 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_ROUTING_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_ROUTING_H
 
-#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <map>
@@ -32,6 +31,7 @@
 #include "src/core/xds/grpc/xds_http_filter_registry.h"
 #include "src/core/xds/grpc/xds_listener.h"
 #include "src/core/xds/grpc/xds_route_config.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
@@ -90,6 +90,18 @@ class XdsRouting final {
   // can be used on both the client and server side.
   class RouteConfigFilterChainBuilder {
    public:
+    // A slightly different interface than the normal FilterChainBuilder
+    // that passes in the XdsHttpFilterImpl.
+    class XdsFilterChainBuilder {
+     public:
+      virtual ~XdsFilterChainBuilder() = default;
+
+      virtual void AddFilter(const XdsHttpFilterImpl* filter_impl,
+                             RefCountedPtr<const FilterConfig> config) = 0;
+
+      virtual absl::StatusOr<RefCountedPtr<FilterChain>> Build() = 0;
+    };
+
     // Builds filter chains for each route within a VirtualHost.
     class VirtualHostFilterChainBuilder {
      public:
@@ -158,8 +170,7 @@ class XdsRouting final {
             XdsListenerResource::HttpConnectionManager::HttpFilter>&
             hcm_filter_configs,
         const XdsHttpFilterRegistry& http_filter_registry,
-        FilterChainBuilder& builder,
-        absl::AnyInvocable<void(FilterChainBuilder&)> add_last_filter,
+        XdsFilterChainBuilder& builder, XdsTransportFactory& transport_factory,
         Blackboard& blackboard);
 
     // Returns a filter chain builder for a given virtual host.
@@ -173,9 +184,9 @@ class XdsRouting final {
 
     const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
         hcm_filter_configs_;
-    FilterChainBuilder& builder_;
-    absl::AnyInvocable<void(FilterChainBuilder&)> add_last_filter_;
+    XdsFilterChainBuilder& builder_;
     Blackboard& blackboard_;
+    XdsTransportFactory& transport_factory_;
 
     // Same size as hcm_filter_configs_.
     std::vector<const XdsHttpFilterImpl*> filter_impls_;
