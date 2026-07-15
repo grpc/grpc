@@ -1755,6 +1755,7 @@ grpc_cc_test(
 
 grpc_cc_library(
     name = "tls_test_private_key_signer",
+    testonly = True,
     srcs = ["tls_test_private_key_signer.cc"],
     hdrs = ["tls_test_private_key_signer.h"],
     external_deps = [
@@ -1826,6 +1827,7 @@ grpc_cc_test(
 
 grpc_cc_library(
     name = "tls_test_certificate_selector",
+    testonly = True,
     srcs = ["tls_test_certificate_selector.cc"],
     hdrs = ["tls_test_certificate_selector.h"],
     external_deps = [
