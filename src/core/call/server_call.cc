@@ -163,6 +163,7 @@ void ServerCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                          self->saw_was_cancelled_.store(
                              true, std::memory_order_relaxed);
                          self->ResetDeadline();
+                         self->PropagateCancellationToChildren();
                          *cancelled = result ? 1 : 0;
                          return Success{};
                        });

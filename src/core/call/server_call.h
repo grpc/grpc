@@ -92,6 +92,7 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
           self->call_handler_.PushServerTrailingMetadata(
               CancelledServerMetadataFromStatus(error));
         });
+    PropagateCancellationToChildren();
   }
   bool is_trailers_only() const override {
     Crash("is_trailers_only not implemented for server calls");
@@ -115,7 +116,6 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
       CancelWithError(absl::CancelledError());
     }
   }
-
   void SetCompletionQueue(grpc_completion_queue*) override {
     Crash("unimplemented");
   }
@@ -139,7 +139,9 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
     return gpr_strdup("unknown");
   }
 
-  bool Completed() final { Crash("unimplemented"); }
+  bool Completed() final {
+    return saw_was_cancelled_.load(std::memory_order_relaxed);
+  }
   bool failed_before_recv_message() const final {
     return call_handler_.WasCancelledPushed();
   }
