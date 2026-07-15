@@ -250,8 +250,8 @@ class SpiffeSslTransportSecurityTest
     bool expect_server_success_;
     bool expect_client_success_1_2_;
     bool expect_client_success_1_3_;
-    std::vector<tsi_ssl_pem_key_cert_pair> client_pem_key_cert_pairs_;
-    std::vector<tsi_ssl_pem_key_cert_pair> server_pem_key_cert_pairs_;
+    grpc_core::PemKeyCertPairList client_pem_key_cert_pairs_;
+    grpc_core::PemKeyCertPairList server_pem_key_cert_pairs_;
   };
 };
 

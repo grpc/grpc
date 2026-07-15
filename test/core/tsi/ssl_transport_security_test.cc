@@ -105,12 +105,11 @@ typedef struct ssl_key_cert_lib {
   bool skip_server_certificate_verification;
   std::string root_cert;
   tsi_ssl_root_certs_store* root_store;
-  std::vector<tsi_ssl_pem_key_cert_pair> server_pem_key_cert_pairs;
-  std::vector<tsi_ssl_pem_key_cert_pair> bad_server_pem_key_cert_pairs;
-  std::vector<tsi_ssl_pem_key_cert_pair>
-      leaf_signed_by_intermediate_key_cert_pairs;
-  tsi_ssl_pem_key_cert_pair client_pem_key_cert_pair;
-  tsi_ssl_pem_key_cert_pair bad_client_pem_key_cert_pair;
+  grpc_core::PemKeyCertPairList server_pem_key_cert_pairs;
+  grpc_core::PemKeyCertPairList bad_server_pem_key_cert_pairs;
+  grpc_core::PemKeyCertPairList leaf_signed_by_intermediate_key_cert_pairs;
+  grpc_core::PemKeyCertPair client_pem_key_cert_pair;
+  grpc_core::PemKeyCertPair bad_client_pem_key_cert_pair;
   uint16_t server_num_key_cert_pairs;
   uint16_t bad_server_num_key_cert_pairs;
   uint16_t leaf_signed_by_intermediate_num_key_cert_pairs;
@@ -195,18 +194,16 @@ class SslTransportSecurityTest
               absl::StrCat(kSslTsiTestCredentialsDir, "badserver.key")),
           testing::GetFileContents(
               absl::StrCat(kSslTsiTestCredentialsDir, "badserver.pem")));
-      key_cert_lib_->client_pem_key_cert_pair.private_key =
+      key_cert_lib_->client_pem_key_cert_pair = grpc_core::PemKeyCertPair(
           testing::GetFileContents(
-              absl::StrCat(kSslTsiTestCredentialsDir, "client.key"));
-      key_cert_lib_->client_pem_key_cert_pair.cert_chain =
+              absl::StrCat(kSslTsiTestCredentialsDir, "client.key")),
           testing::GetFileContents(
-              absl::StrCat(kSslTsiTestCredentialsDir, "client.pem"));
-      key_cert_lib_->bad_client_pem_key_cert_pair.private_key =
+              absl::StrCat(kSslTsiTestCredentialsDir, "client.pem")));
+      key_cert_lib_->bad_client_pem_key_cert_pair = grpc_core::PemKeyCertPair(
           testing::GetFileContents(
-              absl::StrCat(kSslTsiTestCredentialsDir, "badclient.key"));
-      key_cert_lib_->bad_client_pem_key_cert_pair.cert_chain =
+              absl::StrCat(kSslTsiTestCredentialsDir, "badclient.key")),
           testing::GetFileContents(
-              absl::StrCat(kSslTsiTestCredentialsDir, "badclient.pem"));
+              absl::StrCat(kSslTsiTestCredentialsDir, "badclient.pem")));
       key_cert_lib_->bad_server_pem_key_cert_pairs.emplace_back(
           testing::GetFileContents(absl::StrCat(
               kSslTsiTestCredentialsDir, "leaf_signed_by_intermediate.key")),
@@ -1234,14 +1231,12 @@ TEST(SslTransportSecurityTest, TestServerHandshakerFactoryRefcounting) {
   tsi_handshaker* handshaker[3];
   std::string cert_chain = testing::GetFileContents(
       absl::StrCat(kSslTsiTestCredentialsDir, "server0.pem"));
-  tsi_ssl_pem_key_cert_pair cert_pair;
-
-  cert_pair.cert_chain = cert_chain;
-  cert_pair.private_key = testing::GetFileContents(
-      absl::StrCat(kSslTsiTestCredentialsDir, "server0.key"));
+  grpc_core::PemKeyCertPair cert_pair(
+      testing::GetFileContents(
+          absl::StrCat(kSslTsiTestCredentialsDir, "server0.key")),
+      cert_chain);
   tsi_ssl_server_handshaker_options options;
-  options.pem_key_cert_pairs =
-      std::vector<tsi_ssl_pem_key_cert_pair>{cert_pair};
+  options.pem_key_cert_pairs = grpc_core::PemKeyCertPairList{cert_pair};
   if (!cert_chain.empty()) {
     options.root_cert_info = std::make_shared<tsi::RootCertInfo>(cert_chain);
   }
