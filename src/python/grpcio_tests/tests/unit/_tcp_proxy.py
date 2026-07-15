@@ -18,10 +18,6 @@ which a test needs to spy on the bytes put on the wire between a server and
 a client.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import datetime
 import select
 import socket

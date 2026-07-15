@@ -22,21 +22,27 @@ namespace grpc_core {
 
 #if defined UNICODE || defined _UNICODE
 TcharString CharToTchar(std::string input) {
-  int needed = MultiByteToWideChar(CP_UTF8, 0, input.c_str(), -1, NULL, 0);
+  if (input.size() > INT_MAX) return TcharString();
+  int len = static_cast<int>(input.size());
+  int needed = MultiByteToWideChar(CP_UTF8, 0, input.c_str(), len, nullptr, 0);
   if (needed <= 0) return TcharString();
   TcharString ret(needed, L'\0');
-  MultiByteToWideChar(CP_UTF8, 0, input.c_str(), -1,
-                      const_cast<LPTSTR>(ret.data()), needed);
+  int result =
+      MultiByteToWideChar(CP_UTF8, 0, input.c_str(), len, ret.data(), needed);
+  if (result <= 0) return TcharString();
   return ret;
 }
 
 std::string TcharToChar(TcharString input) {
-  int needed =
-      WideCharToMultiByte(CP_UTF8, 0, input.c_str(), -1, NULL, 0, NULL, NULL);
+  if (input.size() > INT_MAX) return std::string();
+  int len = static_cast<int>(input.size());
+  int needed = WideCharToMultiByte(CP_UTF8, 0, input.c_str(), len, nullptr, 0,
+                                   nullptr, nullptr);
   if (needed <= 0) return std::string();
   std::string ret(needed, '\0');
-  WideCharToMultiByte(CP_UTF8, 0, input.c_str(), -1,
-                      const_cast<LPSTR>(ret.data()), needed, NULL, NULL);
+  int result = WideCharToMultiByte(CP_UTF8, 0, input.c_str(), len, ret.data(),
+                                   needed, nullptr, nullptr);
+  if (result <= 0) return std::string();
   return ret;
 }
 #else

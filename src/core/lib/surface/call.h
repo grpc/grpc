@@ -70,6 +70,8 @@ typedef struct grpc_call_create_args {
 
   grpc_core::Timestamp send_deadline;
   bool registered_method;  // client_only
+
+  std::optional<absl::FunctionRef<void(grpc_core::Arena*)>> arena_init_function;
 } grpc_call_create_args;
 
 namespace grpc_core {
@@ -77,6 +79,15 @@ namespace grpc_core {
 template <>
 struct ArenaContextType<census_context> {
   static void Destroy(census_context*) {}
+};
+
+struct ParentCallContext {
+  RefCountedPtr<Arena> arena;
+};
+
+template <>
+struct ArenaContextType<ParentCallContext> {
+  static void Destroy(ParentCallContext* p) { p->~ParentCallContext(); }
 };
 
 class Call : public CppImplOf<Call, grpc_call>,

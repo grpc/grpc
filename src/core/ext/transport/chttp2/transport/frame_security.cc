@@ -27,6 +27,7 @@
 #include "src/core/lib/transport/transport_framing_endpoint_extension.h"
 #include "src/core/util/grpc_check.h"
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 absl::Status grpc_chttp2_security_frame_parser_parse(void* parser,
                                                      grpc_chttp2_transport* t,
@@ -52,7 +53,15 @@ absl::Status grpc_chttp2_security_frame_parser_parse(void* parser,
 }
 
 absl::Status grpc_chttp2_security_frame_parser_begin_frame(
-    grpc_chttp2_security_frame_parser* parser) {
+    grpc_chttp2_security_frame_parser* parser, const uint32_t length,
+    const uint32_t max_frame_size) {
+  if (GPR_UNLIKELY(length > max_frame_size &&
+                   grpc_core::IsCustomFrameCheckEnabled())) {
+    return GRPC_ERROR_CREATE(absl::StrCat(
+        "gRPC Transport Error : Security frame is larger than the maximum "
+        "allowed size : ",
+        max_frame_size, ", Received size : ", length));
+  }
   parser->payload.Clear();
   return absl::OkStatus();
 }

@@ -151,6 +151,7 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/time",
     ],
     deps = [
         "build",
@@ -599,6 +600,7 @@ grpc_cc_library(
         "//:grpc_base",
         "//src/core:examine_stack",
         "//src/core:grpc_check",
+        "//src/core:instrument",
         "//src/core:metrics",
         "//src/core:ref_counted",
         "//src/core:tcp_tracer",

@@ -58,7 +58,7 @@ class ServerCallTest : public YodelTest {
                 call_.store(MakeServerCall(std::move(handler),
                                            std::move(client_initial_metadata),
                                            &test_server_, cq_,
-                                           &publish_initial_metadata_),
+                                           &publish_initial_metadata_, nullptr),
                             std::memory_order_release);
                 return absl::OkStatus();
               });

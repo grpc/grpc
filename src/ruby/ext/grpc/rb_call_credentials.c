@@ -26,6 +26,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <ruby/thread.h>
+#include <stdbool.h>
 
 #include "rb_call.h"
 #include "rb_event_thread.h"

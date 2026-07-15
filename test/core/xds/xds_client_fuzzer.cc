@@ -39,6 +39,7 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/wait_for_single_owner.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
 #include "src/core/xds/grpc/xds_cluster.h"
 #include "src/core/xds/grpc/xds_cluster_parser.h"
 #include "src/core/xds/grpc/xds_endpoint.h"
@@ -74,7 +75,7 @@ class Fuzzer {
         FuzzingEventEngine::Options(), fuzzing_ee_actions);
     grpc_timer_manager_set_start_threaded(false);
     grpc_init();
-    auto bootstrap = GrpcXdsBootstrap::Create(bootstrap_json);
+    auto bootstrap = GrpcXdsBootstrapBuilder::Build(bootstrap_json);
     if (!bootstrap.ok()) {
       LOG(ERROR) << "error creating bootstrap: " << bootstrap.status();
       // Leave xds_client_ unset, so Act() will be a no-op.

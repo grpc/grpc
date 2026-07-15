@@ -29,8 +29,8 @@ namespace retry_detail {
 
 class RetryState {
  public:
-  RetryState(const internal::RetryMethodConfig* retry_policy,
-             RefCountedPtr<internal::RetryThrottler> retry_throttler);
+  RetryState(const RetryMethodConfig* retry_policy,
+             RefCountedPtr<RetryThrottler> retry_throttler);
 
   // if nullopt --> commit & don't retry
   // if duration --> retry after duration
@@ -50,8 +50,8 @@ class RetryState {
   }
 
  private:
-  const internal::RetryMethodConfig* const retry_policy_;
-  RefCountedPtr<internal::RetryThrottler> retry_throttler_;
+  const RetryMethodConfig* const retry_policy_;
+  RefCountedPtr<RetryThrottler> retry_throttler_;
   int num_attempts_completed_ = 0;
   BackOff retry_backoff_;
 };
@@ -60,17 +60,14 @@ class RetryState {
 
 class RetryInterceptor : public Interceptor {
  public:
-  RetryInterceptor(const ChannelArgs& args,
-                   RefCountedPtr<internal::RetryThrottler> retry_throttler);
-
   static absl::StatusOr<RefCountedPtr<RetryInterceptor>> Create(
-      const ChannelArgs& args, const FilterArgs& filter_args);
+      const ChannelArgs& args, const FilterArgs& /*filter_args*/) {
+    return MakeRefCounted<RetryInterceptor>(args);
+  }
+
+  explicit RetryInterceptor(const ChannelArgs& args);
 
   void Orphaned() override {}
-
-  static void UpdateBlackboard(const ServiceConfig& service_config,
-                               const Blackboard* old_blackboard,
-                               Blackboard* new_blackboard);
 
  protected:
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override;
@@ -146,11 +143,11 @@ class RetryInterceptor : public Interceptor {
     bool committed_ = false;
   };
 
-  const internal::RetryMethodConfig* GetRetryPolicy();
+  const RetryMethodConfig* GetRetryPolicy();
 
   const size_t per_rpc_retry_buffer_size_;
   const size_t service_config_parser_index_;
-  const RefCountedPtr<internal::RetryThrottler> retry_throttler_;
+  const RefCountedPtr<RetryThrottler> retry_throttler_;
 };
 
 }  // namespace grpc_core

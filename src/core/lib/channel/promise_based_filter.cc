@@ -19,6 +19,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -26,6 +27,7 @@
 #include "src/core/call/metadata.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/slice/slice.h"
@@ -33,6 +35,8 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/latent_see.h"
 #include "src/core/util/manual_constructor.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted.h"
 #include "src/core/util/status_helper.h"
 #include "absl/base/attributes.h"
 #include "absl/functional/function_ref.h"
@@ -81,6 +85,61 @@ absl::Status StatusFromMetadata(const ServerMetadata& md) {
 ///////////////////////////////////////////////////////////////////////////////
 // BaseCallData
 
+class BaseCallData::WeakWakerHandle final : public Wakeable, public Orphanable {
+ public:
+  explicit WeakWakerHandle(BaseCallData* base) : base_(base) {}
+
+  void Ref() { refs_.Ref(); }
+
+  void Orphan() override {
+    mu_.Lock();
+    base_ = nullptr;
+    mu_.Unlock();
+    Unref();
+  }
+
+  void Wakeup(WakeupMask wakeup_mask) override { WakeupGeneric(wakeup_mask); }
+
+  void WakeupAsync(WakeupMask wakeup_mask) override {
+    WakeupGeneric(wakeup_mask);
+  }
+
+  void Drop(WakeupMask) override { Unref(); }
+
+  std::string ActivityDebugTag(WakeupMask) const override {
+    MutexLock lock(&mu_);
+    return base_ == nullptr ? "<unknown>" : base_->DebugTag();
+  }
+
+ private:
+  void WakeupGeneric(WakeupMask wakeup_mask) {
+    BaseCallData* wakeup_base = nullptr;
+    {
+      MutexLock lock(&mu_);
+      if (base_ != nullptr) {
+        auto* call_stack = base_->call_stack();
+        if (call_stack->refcount.refs.RefIfNonZero(DEBUG_LOCATION, "waker")) {
+          wakeup_base = base_;
+        }
+      }
+    }
+    if (wakeup_base != nullptr) {
+      wakeup_base->Wakeup(wakeup_mask);
+    }
+    Unref();
+  }
+
+  void Unref() {
+    if (refs_.Unref()) {
+      delete this;
+    }
+  }
+
+  RefCount refs_;
+  mutable Mutex mu_;
+  BaseCallData* base_ ABSL_GUARDED_BY(mu_);
+};
+
 BaseCallData::BaseCallData(
     grpc_call_element* elem, const grpc_call_element_args* args, uint8_t flags,
     absl::FunctionRef<Interceptor*()> make_send_interceptor,
@@ -127,9 +186,18 @@ BaseCallData::~BaseCallData() {
 // Orphan().
 void BaseCallData::Orphan() { abort(); }
 
-// For now we don't care about owning/non-owning wakers, instead just share
-// implementation.
-Waker BaseCallData::MakeNonOwningWaker() { return MakeOwningWaker(); }
+Waker BaseCallData::MakeNonOwningWaker() {
+  if (IsV2NonOwningWakerImplementationEnabled()) {
+    if (handle_ == nullptr) {
+      handle_ = MakeOrphanable<WeakWakerHandle>(this);
+    }
+    handle_->Ref();
+    // The wakeup mask is unused by BaseCallData and WeakWakerHandle, so 0 is
+    // passed as a placeholder.
+    return Waker(handle_.get(), 0);
+  }
+  return MakeOwningWaker();
+}
 
 Waker BaseCallData::MakeOwningWaker() {
   GRPC_CALL_STACK_REF(call_stack_, "waker");
@@ -144,6 +212,14 @@ void BaseCallData::Wakeup(WakeupMask) {
   };
   auto* closure = GRPC_CLOSURE_CREATE(wakeup, this, nullptr);
   GRPC_CALL_COMBINER_START(call_combiner_, closure, absl::OkStatus(), "wakeup");
+}
+
+void BaseCallData::WakeupAsync(WakeupMask wakeup_mask) {
+  if (IsV2NonOwningWakerImplementationEnabled()) {
+    Wakeup(wakeup_mask);
+  } else {
+    Crash("not implemented");
+  }
 }
 
 void BaseCallData::Drop(WakeupMask) {
@@ -495,6 +571,14 @@ void BaseCallData::SendMessage::Done(const ServerMetadata& metadata,
     case State::kPushedToPipe:
       push_.reset();
       next_.reset();
+      // Ensure captured transport batches are released if the call terminates
+      // while a message is in-flight. This prevents deadlocks where the
+      // transport never receives the batch, leaving the RPC hanging for
+      // metadata.
+      if (IsV2NonOwningWakerImplementationEnabled()) {
+        GRPC_DCHECK(batch_.is_captured());
+        batch_.CancelWith(StatusFromMetadata(metadata), flusher);
+      }
       state_ = State::kCancelledButNotYetPolled;
       if (base_->is_current()) base_->ForceImmediateRepoll();
       break;
@@ -748,7 +832,8 @@ void BaseCallData::ReceiveMessage::OnComplete(absl::Status status) {
 }
 
 void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
-                                        Flusher* flusher) {
+                                        Flusher* flusher,
+                                        bool discard_buffered_message) {
   GRPC_TRACE_LOG(channel, INFO)
       << base_->LogTag() << " ReceiveMessage.Done st=" << StateString(state_)
       << " md=" << metadata.DebugString();
@@ -766,16 +851,36 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
       state_ = State::kCancelledWhilstForwardingNoPipe;
       break;
     case State::kCompletedWhileBatchCompleted:
-    case State::kBatchCompleted:
-      state_ = State::kCompletedWhileBatchCompleted;
-      break;
+    case State::kBatchCompleted: {
+      if (IsRecvMessageFilterBypassFixEnabled() && discard_buffered_message) {
+        state_ = State::kBatchCompletedButCancelled;
+        // Store the cancellation status so that WakeInsideCombiner() can
+        // propagate it to the application's message ready callback instead of
+        // defaulting to OK.
+        completed_status_ = StatusFromMetadata(metadata);
+        // Drop the buffered message here so it cannot bypass the trailing
+        // metadata; WakeInsideCombiner() just fires the completion.
+        if (intercepted_slice_buffer_ != nullptr) {
+          *intercepted_slice_buffer_ = std::nullopt;
+        }
+      } else {
+        state_ = State::kCompletedWhileBatchCompleted;
+      }
+    } break;
     case State::kCompletedWhilePulledFromPipe:
     case State::kCompletedWhilePushedToPipe:
     case State::kPulledFromPipe:
     case State::kPushedToPipe: {
-      auto status_code =
-          metadata.get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
-      if (status_code == GRPC_STATUS_OK) {
+      // Discard the buffered message only when the call is being torn down
+      // (short-circuit / cancellation / server-initiated non-OK);
+      // With the feature disabled, fall back to keying the discard off a
+      // non-OK trailing status.
+      bool discard =
+          IsRecvMessageFilterBypassFixEnabled()
+              ? discard_buffered_message
+              : metadata.get(GrpcStatusMetadata())
+                        .value_or(GRPC_STATUS_UNKNOWN) != GRPC_STATUS_OK;
+      if (!discard) {
         if (state_ == State::kCompletedWhilePulledFromPipe ||
             state_ == State::kPulledFromPipe) {
           state_ = State::kCompletedWhilePulledFromPipe;
@@ -785,12 +890,31 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
       } else {
         push_.reset();
         next_.reset();
-        flusher->AddClosure(intercepted_on_complete_,
-                            StatusFromMetadata(metadata), "recv_message_done");
+        if (IsRecvMessageFilterBypassFixEnabled()) {
+          completed_status_ = StatusFromMetadata(metadata);
+          if (intercepted_slice_buffer_ != nullptr) {
+            *intercepted_slice_buffer_ = std::nullopt;
+          }
+        } else {
+          completed_status_ = StatusFromMetadata(metadata);
+        }
+        flusher->AddClosure(intercepted_on_complete_, completed_status_,
+                            "recv_message_done");
         state_ = State::kCancelled;
       }
     } break;
     case State::kBatchCompletedNoPipe:
+      if (IsRecvMessageFilterBypassFixEnabled() && discard_buffered_message) {
+        // Store the cancellation status so that WakeInsideCombiner() can
+        // propagate it to the application's message ready callback instead of
+        // defaulting to OK.
+        completed_status_ = StatusFromMetadata(metadata);
+        // Drop the buffered message here so it cannot bypass the trailing
+        // metadata; WakeInsideCombiner() just fires the completion.
+        if (intercepted_slice_buffer_ != nullptr) {
+          *intercepted_slice_buffer_ = std::nullopt;
+        }
+      }
       state_ = State::kBatchCompletedButCancelledNoPipe;
       break;
     case State::kBatchCompletedButCancelled:
@@ -801,6 +925,18 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
     case State::kCancelledWhilstForwardingNoPipe:
     case State::kCancelled:
       break;
+  }
+}
+
+bool BaseCallData::ReceiveMessage::IsIdle() const {
+  switch (state_) {
+    case State::kInitial:
+    case State::kIdle:
+    case State::kCancelled:
+    case State::kCancelledWhilstIdle:
+      return true;
+    default:
+      return false;
   }
 }
 
@@ -827,7 +963,6 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
       state_ = State::kCancelled;
       break;
     case State::kBatchCompletedButCancelled:
-    case State::kCompletedWhileBatchCompleted:
       interceptor()->Push()->Close();
       state_ = State::kCancelled;
       flusher->AddClosure(std::exchange(intercepted_on_complete_, nullptr),
@@ -838,6 +973,16 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
       flusher->AddClosure(std::exchange(intercepted_on_complete_, nullptr),
                           completed_status_, "recv_message");
       break;
+    case State::kCompletedWhileBatchCompleted:
+      if (!IsRecvMessageFilterBypassFixEnabled()) {
+        // existing behavior
+        interceptor()->Push()->Close();
+        state_ = State::kCancelled;
+        flusher->AddClosure(std::exchange(intercepted_on_complete_, nullptr),
+                            completed_status_, "recv_message");
+        break;
+      }
+      [[fallthrough]];
     case State::kBatchCompleted:
       if (completed_status_.ok() && intercepted_slice_buffer_->has_value()) {
         if (!allow_push_to_pipe) break;
@@ -1039,6 +1184,14 @@ class ClientCallData::PollContext {
           flusher_, self_->recv_initial_metadata_ == nullptr
                         ? true
                         : self_->recv_initial_metadata_->AllowRecvMessage());
+      if (self_->recv_trailing_state_ ==
+              RecvTrailingState::kCompletedQueuedBehindReceiveMessage &&
+          self_->receive_message()->IsIdle()) {
+        // Now that the receive message pump is idle (finished processing all
+        // in-flight messages), we can finally release the trailing metadata.
+        self_->recv_trailing_state_ = RecvTrailingState::kComplete;
+        repoll_ = true;
+      }
     }
     if (self_->server_initial_metadata_pipe() != nullptr) {
       if (self_->recv_initial_metadata_->metadata_push_.has_value()) {
@@ -1125,7 +1278,34 @@ class ClientCallData::PollContext {
             self_->send_message()->Done(*md, flusher_);
           }
           if (self_->receive_message() != nullptr) {
-            self_->receive_message()->Done(*md, flusher_);
+            if (IsRecvMessageFilterBypassFixEnabled()) {
+              // The promise produced its own terminal metadata while a
+              // message was still in flight: the call is being
+              // short-circuited, so that message is discarded rather than
+              // delivered.
+              self_->receive_message()->Done(*md, flusher_,
+                                             /*discard_buffered_message=*/true);
+              // Done() defers the completion closure to WakeInsideCombiner,
+              // which already ran this poll. If the pump isn't idle, repoll to
+              // drain it, else the call stalls.
+              if (!self_->receive_message()->IsIdle()) {
+                repoll_ = true;
+              }
+              // The promise terminated with its own (error) metadata while the
+              // transport's trailing metadata was queued behind the receive
+              // message pump. The buffered message was discarded above; since
+              // receive_message()->IsIdle() will not become true until the
+              // pending message completion callbacks execute, immediately
+              // promote the queued trailing metadata to kComplete so the
+              // synchronous handling below picks it up within this polling
+              // pass.
+              if (self_->recv_trailing_state_ ==
+                  RecvTrailingState::kCompletedQueuedBehindReceiveMessage) {
+                self_->recv_trailing_state_ = RecvTrailingState::kComplete;
+              }
+            } else {
+              self_->receive_message()->Done(*md, flusher_);
+            }
           }
           if (self_->recv_trailing_state_ == RecvTrailingState::kComplete) {
             if (self_->recv_trailing_metadata_ != md.get()) {
@@ -1164,7 +1344,10 @@ class ClientCallData::PollContext {
                       std::exchange(
                           self_->recv_initial_metadata_->original_on_ready,
                           nullptr),
-                      absl::CancelledError(),
+                      IsV2NonOwningWakerImplementationEnabled() &&
+                              !StatusFromMetadata(*md).ok()
+                          ? StatusFromMetadata(*md)
+                          : absl::CancelledError(),
                       "wake_inside_combiner:recv_initial_metadata_ready");
               }
             }
@@ -1352,6 +1535,8 @@ const char* ClientCallData::StateString(RecvTrailingState state) {
       return "INITIAL";
     case RecvTrailingState::kQueued:
       return "QUEUED";
+    case RecvTrailingState::kCompletedQueuedBehindReceiveMessage:
+      return "QUEUED_BEHIND_RECEIVE_MESSAGE";
     case RecvTrailingState::kComplete:
       return "COMPLETE";
     case RecvTrailingState::kForwarded:
@@ -1559,7 +1744,8 @@ void ClientCallData::Cancel(grpc_error_handle error, Flusher* flusher) {
     send_message()->Done(*ServerMetadataFromStatus(error), flusher);
   }
   if (receive_message() != nullptr) {
-    receive_message()->Done(*ServerMetadataFromStatus(error), flusher);
+    receive_message()->Done(*ServerMetadataFromStatus(error), flusher,
+                            /*discard_buffered_message=*/true);
   }
 }
 
@@ -1752,6 +1938,7 @@ Poll<ServerMetadataHandle> ClientCallData::PollTrailingMetadata() {
     case RecvTrailingState::kInitial:
     case RecvTrailingState::kQueued:
     case RecvTrailingState::kForwarded:
+    case RecvTrailingState::kCompletedQueuedBehindReceiveMessage:
       // No trailing metadata yet: we are pending.
       // We return that and expect the promise to be repolled later (if it's
       // not cancelled).
@@ -1806,9 +1993,19 @@ void ClientCallData::RecvTrailingMetadataReady(grpc_error_handle error) {
   }
   // Record that we've got the callback.
   GRPC_CHECK(recv_trailing_state_ == RecvTrailingState::kForwarded);
-  recv_trailing_state_ = RecvTrailingState::kComplete;
+  if (IsRecvMessageFilterBypassFixEnabled() && receive_message() != nullptr &&
+      !receive_message()->IsIdle()) {
+    // If the receive message pump is still active processing a message,
+    // queue the trailing metadata until the pump goes idle to avoid bypassing
+    // the message interceptors of filters higher in the stack.
+    recv_trailing_state_ =
+        RecvTrailingState::kCompletedQueuedBehindReceiveMessage;
+  } else {
+    recv_trailing_state_ = RecvTrailingState::kComplete;
+  }
   if (receive_message() != nullptr) {
-    receive_message()->Done(*recv_trailing_metadata_, &flusher);
+    receive_message()->Done(*recv_trailing_metadata_, &flusher,
+                            /*discard_buffered_message=*/!error.ok());
   }
   if (send_message() != nullptr) {
     send_message()->Done(*recv_trailing_metadata_, &flusher);
@@ -2122,13 +2319,15 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
     switch (send_trailing_state_) {
       case SendTrailingState::kInitial:
         send_trailing_metadata_batch_ = batch;
+        // Server ends the RPC non-OK, so the app is done reading: any buffered
+        // inbound (client->server) message has no consumer. Drop it.
         if (receive_message() != nullptr &&
             batch->payload->send_trailing_metadata.send_trailing_metadata
                     ->get(GrpcStatusMetadata())
                     .value_or(GRPC_STATUS_UNKNOWN) != GRPC_STATUS_OK) {
           receive_message()->Done(
               *batch->payload->send_trailing_metadata.send_trailing_metadata,
-              &flusher);
+              &flusher, /* discard_buffered_message */ true);
         }
         if (send_message() != nullptr && !send_message()->IsIdle()) {
           send_trailing_state_ = SendTrailingState::kQueuedBehindSendMessage;
@@ -2231,7 +2430,8 @@ void ServerCallData::Completed(grpc_error_handle error,
     send_message()->Done(*ServerMetadataFromStatus(error), flusher);
   }
   if (receive_message() != nullptr) {
-    receive_message()->Done(*ServerMetadataFromStatus(error), flusher);
+    receive_message()->Done(*ServerMetadataFromStatus(error), flusher,
+                            /* discard_buffered_message */ true);
   }
 }
 

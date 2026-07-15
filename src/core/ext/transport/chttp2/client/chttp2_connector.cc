@@ -209,7 +209,7 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
     } else {
       GRPC_HTTP2_CONNECTOR_DLOG
           << "Chttp2Connector::OnHandshakeDone creating PH2 transport";
-      // TODO(tjagtap) : [PH2][P1] : Validate this code block thoroughly once
+      // TODO(tjagtap) : [PH2][P2] : Validate this code block thoroughly once
       // the ping pong test is in place.
       std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
           event_engine_endpoint = grpc_event_engine::experimental::
@@ -322,7 +322,7 @@ absl::StatusOr<grpc_channel*> CreateHttp2Channel(std::string target,
   // 8-15 months.
   const bool is_v3 = false;
 #else
-  const bool is_v3 = IsPromiseBasedHttp2ClientTransportEnabled();
+  const bool is_v3 = grpc_core::http2::ShouldEnablePh2Client();
 #endif  // GRPC_EXPERIMENTAL_TEMPORARILY_DISABLE_PH2
   auto r = ChannelCreate(
       target,

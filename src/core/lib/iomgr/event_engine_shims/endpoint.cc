@@ -212,7 +212,7 @@ class EventEngineEndpointWrapper {
         kShutdownBit + 1) {
       auto* supports_fd =
           QueryExtension<EndpointSupportsFdExtension>(endpoint_.get());
-      if (supports_fd != nullptr && fd_ > 0 && on_release_fd_) {
+      if (supports_fd != nullptr && fd_ >= 0 && on_release_fd_) {
         supports_fd->Shutdown(std::move(on_release_fd_));
       }
       OnShutdownInternal();
@@ -241,7 +241,7 @@ class EventEngineEndpointWrapper {
         Ref();
         if (shutdown_ref_.fetch_sub(1, std::memory_order_acq_rel) ==
             kShutdownBit + 1) {
-          if (supports_fd != nullptr && fd_ > 0 && on_release_fd_) {
+          if (supports_fd != nullptr && fd_ >= 0 && on_release_fd_) {
             supports_fd->Shutdown(std::move(on_release_fd_));
           }
           OnShutdownInternal();

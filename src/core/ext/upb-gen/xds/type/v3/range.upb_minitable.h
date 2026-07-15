@@ -19,11 +19,8 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable xds__type__v3__Int64Range_msg_init;
-extern const upb_MiniTable* xds__type__v3__Int64Range_msg_init_ptr;
 extern const upb_MiniTable xds__type__v3__Int32Range_msg_init;
-extern const upb_MiniTable* xds__type__v3__Int32Range_msg_init_ptr;
 extern const upb_MiniTable xds__type__v3__DoubleRange_msg_init;
-extern const upb_MiniTable* xds__type__v3__DoubleRange_msg_init_ptr;
 
 extern const upb_MiniTableFile xds_type_v3_range_proto_upb_file_layout;
 

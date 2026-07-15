@@ -33,6 +33,7 @@
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
 #include "test/core/test_util/test_config.h"
 #include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
@@ -68,8 +69,9 @@ absl::StatusOr<std::string> ConvertAuditLoggerConfig(
       envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_parse(
           serialized_config.data(), serialized_config.size(), arena.ptr());
   ValidationErrors errors;
-  auto config_json = XdsAuditLoggerRegistry().ConvertXdsAuditLoggerConfig(
-      context, upb_config, &errors);
+  auto registry = GrpcXdsBootstrapBuilder::CreateXdsAuditLoggerRegistry();
+  auto config_json =
+      registry.ConvertXdsAuditLoggerConfig(context, upb_config, &errors);
   if (!errors.ok()) {
     return errors.status(absl::StatusCode::kInvalidArgument,
                          "validation errors");
@@ -80,7 +82,7 @@ absl::StatusOr<std::string> ConvertAuditLoggerConfig(
 class TestAuditLoggerFactory : public AuditLoggerFactory {
  public:
   absl::string_view name() const override { return kName; }
-  absl::StatusOr<std::unique_ptr<AuditLoggerFactory::Config>>
+  absl::StatusOr<std::shared_ptr<const AuditLoggerFactory::Config>>
   ParseAuditLoggerConfig(const Json& json) override {
     if (json.object().find("bad") != json.object().end()) {
       return absl::InvalidArgumentError("invalid test_logger config");
@@ -88,7 +90,7 @@ class TestAuditLoggerFactory : public AuditLoggerFactory {
     return nullptr;
   }
   std::unique_ptr<AuditLogger> CreateAuditLogger(
-      std::unique_ptr<AuditLoggerFactory::Config>) override {
+      std::shared_ptr<const AuditLoggerFactory::Config>) override {
     Crash("unreachable");
     return nullptr;
   }

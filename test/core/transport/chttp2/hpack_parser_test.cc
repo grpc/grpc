@@ -24,16 +24,20 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
+#include <vector>
 
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/mitigation_engine/mitigation_engine.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/time.h"
@@ -43,6 +47,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/cleanup/cleanup.h"
+#include "absl/random/bit_gen_ref.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -123,7 +128,8 @@ class ParseTest : public ::testing::TestWithParam<Test> {
                                        : HPackParser::Boundary::None),
         flags & kWithPriority ? HPackParser::Priority::Included
                               : HPackParser::Priority::None,
-        HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false});
+        HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false},
+        nullptr);
 
     grpc_split_slices(mode, const_cast<grpc_slice*>(&input.c_slice()), 1,
                       &slices, &nslices);
@@ -623,14 +629,26 @@ INSTANTIATE_TEST_SUITE_P(
             "FuzzerCoverageMetadataLimits",
             {},
             {9},
+            {{"3f66726161616161616161616161616161616161616161616161616161616161"
+              "6161616161616161616161616161616161616161616161616161616161616161"
+              "6161616161616161616161616161616161616161616161616161616161616161"
+              "616161616161616161616161616161616161616161305c3030305c3030305c30"
+              "30305c3030305c3030305c3030305c3030305c3030305c3030305c3030305c30"
+              "30305c3030305c3030305c3030305c3030305c3030305c3030305c3030305c",
+              absl::ResourceExhaustedError(
+                  "received metadata size exceeds hard limit"),
+              kWithPriority}}},
+        Test{
+            "FuzzerCoverageMetadataLimits_InvalidValues",
+            {},
+            {9},
             {{"3f6672616d6573207ba2020656e645f6f665f686561646572733a2074727565a"
               "2020656e645f6f665f73747265616d3a2074727565a202073746f705f6275666"
               "66572696e675f61667465725f7365676d656e74733a2039a202070617273653a"
               "20225c3030305c3030305c3030305c3030305c3030305c3030305c3030305c30"
               "30305c3030305c3030305c3030305c3030305c3030305c3030305c3030305c30"
               "30305c3030305c3030305c3030305c3030305c3030305c3030305c3030305c",
-              absl::ResourceExhaustedError(
-                  "received metadata size exceeds hard limit"),
+              absl::InternalError("Illegal header value: from"),
               kWithPriority}}},
         Test{"FuzzerCoverage52046772706300073a737461747573033230300e7f",
              {},
@@ -822,14 +840,163 @@ INSTANTIATE_TEST_SUITE_P(
              {{"1f80808080808080808080808080808080808080808080808080808080",
                absl::InternalError(
                    "Malicious varint encoding detected in HPACK stream"),
-               kFailureIsConnectionError}}}),
+               kFailureIsConnectionError}}},
+        Test{"InvalidHeaderValueWithCRLF",
+             {},
+             {},
+             {{"00017804610d0a62",
+               absl::InternalError("Illegal header value: x"), 0}}}),
     NameFromConfig);
+
+class MockMitigationEngine : public MitigationEngine {
+ public:
+  enum class Behavior { kNone, kRejectRpc, kCloseConnection };
+  explicit MockMitigationEngine(Behavior behavior = Behavior::kNone)
+      : behavior_(behavior) {}
+
+  std::optional<Action> EvaluateIncomingConnection(absl::string_view) override {
+    return std::nullopt;
+  }
+
+  std::optional<Action> EvaluateIncomingMetadata(
+      absl::string_view key, absl::string_view,
+      absl::string_view peer_address) override {
+    last_incoming_peer_address_ = std::string(peer_address);
+    if (behavior_ == Behavior::kRejectRpc && key == "custom-key") {
+      return Action::kRejectRpc;
+    }
+    return std::nullopt;
+  }
+
+  std::optional<Action> EvaluateAllIncomingMetadata(
+      const grpc_metadata_batch&, absl::string_view peer_address) override {
+    last_all_incoming_peer_address_ = std::string(peer_address);
+    if (behavior_ == Behavior::kCloseConnection) {
+      return Action::kCloseConnection;
+    }
+    return std::nullopt;
+  }
+
+  absl::string_view last_incoming_peer_address() const {
+    return last_incoming_peer_address_;
+  }
+  absl::string_view last_all_incoming_peer_address() const {
+    return last_all_incoming_peer_address_;
+  }
+
+ private:
+  Behavior behavior_;
+  std::string last_incoming_peer_address_;
+  std::string last_all_incoming_peer_address_;
+};
+
+class MitigationEngineParseTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    grpc_init();
+    parser_ = std::make_unique<HPackParser>();
+  }
+  void TearDown() override {
+    ExecCtx exec_ctx;
+    parser_.reset();
+    grpc_shutdown();
+  }
+  std::unique_ptr<HPackParser> parser_;
+};
+
+TEST_F(MitigationEngineParseTest, RejectRpc) {
+  ExecCtx exec_ctx;
+  auto engine = MakeRefCounted<MockMitigationEngine>(
+      MockMitigationEngine::Behavior::kRejectRpc);
+  grpc_metadata_batch b;
+  parser_->BeginFrame(
+      &b, 4096, 4096, HPackParser::Boundary::None, HPackParser::Priority::None,
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false},
+      engine.get());
+
+  auto input =
+      ParseHexstring("400a637573746f6d2d6b65790d637573746f6d2d686561646572");
+
+  absl::BitGen bitgen;
+  auto err =
+      parser_->Parse(input.c_slice(), true, absl::BitGenRef(bitgen), nullptr);
+
+  EXPECT_FALSE(err.ok());
+  intptr_t stream_id;
+  EXPECT_TRUE(
+      grpc_error_get_int(err, StatusIntProperty::kStreamId, &stream_id));
+
+  grpc_status_code code;
+  std::string message;
+  grpc_error_get_status(err, Timestamp::InfFuture(), &code, &message, nullptr,
+                        nullptr);
+  EXPECT_EQ(code, GRPC_STATUS_INTERNAL);
+  EXPECT_THAT(message, ::testing::HasSubstr(
+                           "Mitigation engine triggered action Reject RPC for "
+                           "key: custom-key"));
+}
+
+TEST_F(MitigationEngineParseTest, CloseConnection) {
+  ExecCtx exec_ctx;
+  auto engine = MakeRefCounted<MockMitigationEngine>(
+      MockMitigationEngine::Behavior::kCloseConnection);
+  grpc_metadata_batch b;
+  parser_->BeginFrame(
+      &b, 4096, 4096, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false},
+      engine.get());
+
+  auto input =
+      ParseHexstring("400a637573746f6d2d6b65790d637573746f6d2d686561646572");
+
+  absl::BitGen bitgen;
+  auto err =
+      parser_->Parse(input.c_slice(), true, absl::BitGenRef(bitgen), nullptr);
+
+  EXPECT_FALSE(err.ok());
+  intptr_t stream_id;
+  EXPECT_FALSE(
+      grpc_error_get_int(err, StatusIntProperty::kStreamId, &stream_id));
+
+  grpc_status_code code;
+  std::string message;
+  grpc_error_get_status(err, Timestamp::InfFuture(), &code, &message, nullptr,
+                        nullptr);
+  EXPECT_EQ(code, GRPC_STATUS_INTERNAL);
+  EXPECT_THAT(message,
+              ::testing::HasSubstr(
+                  "Mitigation engine triggered action Close Connection"));
+}
+
+TEST_F(MitigationEngineParseTest, PeerAddressPassedCorrectly) {
+  ExecCtx exec_ctx;
+  auto engine = MakeRefCounted<MockMitigationEngine>();
+  grpc_metadata_batch b;
+  parser_->BeginFrame(
+      &b, 4096, 4096, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false},
+      engine.get(), "ipv4:127.0.0.1:12345");
+
+  auto input =
+      ParseHexstring("400a637573746f6d2d6b65790d637573746f6d2d686561646572");
+
+  absl::BitGen bitgen;
+  auto err =
+      parser_->Parse(input.c_slice(), true, absl::BitGenRef(bitgen), nullptr);
+
+  EXPECT_TRUE(err.ok());
+  EXPECT_EQ(engine->last_incoming_peer_address(), "ipv4:127.0.0.1:12345");
+  EXPECT_EQ(engine->last_all_incoming_peer_address(), "ipv4:127.0.0.1:12345");
+}
 
 }  // namespace
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
+  grpc_core::ForceEnableExperiment("optimization_05", true);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

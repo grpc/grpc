@@ -46,6 +46,10 @@ void CheckPeer(std::string peer_name) {
 }
 
 void SimpleRequestBody(CoreEnd2endTest& test) {
+  // Force early initialization of the fixture (and its background calls, if
+  // any) before taking the baseline global stats snapshot.
+  test.client();
+
   auto before = global_stats().Collect();
   auto c = test.NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   EXPECT_NE(c.GetPeer(), std::nullopt);
@@ -77,8 +81,9 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
   EXPECT_EQ(s.method(), "/foo");
   EXPECT_FALSE(client_close.was_cancelled());
   uint64_t expected_calls = 1;
-  if (test.test_config()->feature_mask &
-      FEATURE_MASK_SUPPORTS_REQUEST_PROXYING) {
+  if ((test.test_config()->feature_mask &
+       FEATURE_MASK_SUPPORTS_REQUEST_PROXYING) &&
+      !(test.test_config()->feature_mask & FEATURE_MASK_IS_VIRTUAL_RPC)) {
     expected_calls *= 2;
   }
   auto after = global_stats().Collect();

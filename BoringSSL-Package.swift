@@ -327,5 +327,5 @@ let package = Package(
       path: testPath
     ),
   ],
-  cxxLanguageStandard: .cxx14
+  cxxLanguageStandard: .cxx17
 )

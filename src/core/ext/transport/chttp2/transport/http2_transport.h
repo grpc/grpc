@@ -26,17 +26,15 @@
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/write_cycle.h"
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/latch.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
 #include "absl/log/log.h"
-#include "absl/status/status.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -45,8 +43,8 @@ namespace http2 {
 // and it is functions. The code will be written iteratively.
 // Do not use or edit any of these functions unless you are
 // familiar with the PH2 project (Moving chttp2 to promises.)
-// TODO(tjagtap) : [PH2][P3] : Update the experimental status of the code before
-// http2 rollout begins.
+// TODO(tjagtap) : [PH2][P3] : Update the experimental status of the code when
+// CHTTP2 is deleted.
 
 #define GRPC_HTTP2_CLIENT_DLOG \
   DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
@@ -67,55 +65,22 @@ struct CloseStreamArgs {
   bool close_writes;
 };
 
-// TODO(akshitpatel) [PH2][P3] : Write a way to measure the total size of a
+inline bool ShouldEnablePh2Client() {
+  return IsPh2ClientEnabled() || IsPh2ClientServerEnabled();
+}
+
+inline bool ShouldEnablePh2Server() {
+  return IsPh2ServerEnabled() || IsPh2ClientServerEnabled();
+}
+
+// TODO(akshitpatel) [PH2][P5] : Write a way to measure the total size of a
 // transport object. Reference :
 // https://github.com/grpc/grpc/pull/41294/files#diff-c685cc4847f228327938326e2a45083a2d0845bacff0ac004bd802027a670c4e
 
 ///////////////////////////////////////////////////////////////////////////////
 // Read and Write helpers
 
-class Http2ReadContext {
- public:
-  Http2ReadContext() = default;
-  Http2ReadContext(const Http2ReadContext&) = delete;
-  Http2ReadContext& operator=(const Http2ReadContext&) = delete;
-  Http2ReadContext(Http2ReadContext&&) = delete;
-  Http2ReadContext& operator=(Http2ReadContext&&) = delete;
-
-  // Signals that the read loop should pause. If it's already paused, this is a
-  // no-op.
-  void SetPauseReadLoop() {
-    // TODO(tjagtap) [PH2][P2][Settings] Plumb with when we receive urgent
-    // settings. Example - initial window size 0 is urgent because it indicates
-    // extreme memory pressure on the server.
-    should_pause_read_loop_ = true;
-  }
-
-  // If SetPauseReadLoop() was called, this returns Pending and
-  // registers a waker that will be woken by WakeReadLoop().
-  // If SetPauseReadLoop() was not called, this returns OkStatus.
-  // This should be polled by the read loop to yield control when requested.
-  Poll<absl::Status> MaybePauseReadLoop() {
-    if (should_pause_read_loop_) {
-      read_loop_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
-      return Pending{};
-    }
-    return absl::OkStatus();
-  }
-
-  // If SetPauseReadLoop() was called, resumes it by
-  // waking up the ReadLoop. If not paused, this is a no-op.
-  void ResumeReadLoopIfPaused() {
-    if (should_pause_read_loop_) {
-      should_pause_read_loop_ = false;
-      read_loop_waker_.Wakeup();
-    }
-  }
-
- private:
-  bool should_pause_read_loop_ = false;
-  Waker read_loop_waker_;
-};
+constexpr uint32_t kMaxFramesReadPerReadCycle = 16u * 1024u;  // 16K frames
 
 Http2Status ValidateIncomingConnectionPreface(
     const absl::StatusOr<Slice>& status);
@@ -126,7 +91,7 @@ inline Http2Status ValidateMetadataFrameState(
     const uint32_t max_header_list_size) {
   if (stream.IsStreamHalfClosedRemote()) {
     return incoming_headers.ParseAndDiscardHeaders(
-        std::move(frame.payload), frame.end_headers, &stream,
+        std::move(frame.payload), frame.end_headers,
         Http2Status::Http2StreamError(
             Http2ErrorCode::kStreamClosed,
             std::string(RFC9113::kHalfClosedRemoteState)),
@@ -138,7 +103,7 @@ inline Http2Status ValidateMetadataFrameState(
             stream.IsInitialMetadataReceived(),
             stream.IsTrailingMetadataReceived())) {
       return incoming_headers.ParseAndDiscardHeaders(
-          std::move(frame.payload), frame.end_headers, &stream,
+          std::move(frame.payload), frame.end_headers,
           Http2Status::Http2StreamError(
               Http2ErrorCode::kInternalError,
               std::string(GrpcErrors::kTooManyMetadata)),
@@ -163,7 +128,6 @@ struct TransportChannelArgs {
   Duration ping_timeout;
   Duration settings_timeout;
   bool keepalive_permit_without_calls;
-  bool enable_preferred_rx_crypto_frame_advertisement;
   // This is used to test peer behaviour when we never send a ping ack.
   bool test_only_ack_pings;
   uint32_t max_header_list_size_soft_limit;
@@ -183,6 +147,15 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
                                  chttp2::TransportFlowControl& flow_control,
                                  bool is_client);
 
+uint32_t MaxNewStreamsPerRead(const ChannelArgs& channel_args);
+
+uint32_t GetMaxSecurityFrameSize(const ChannelArgs& channel_args);
+
+// Returns the percentage of RST streams on which we should send a ping.
+// Always returns 0 for client transport.
+uint8_t GetPingOnRstStreamPercent(const ChannelArgs& channel_args,
+                                  bool is_client);
+
 ///////////////////////////////////////////////////////////////////////////////
 // ChannelZ helpers
 
@@ -199,7 +172,7 @@ void ProcessOutgoingDataFrameFlowControl(
     uint32_t flow_control_tokens_consumed);
 
 ValueOrHttp2Status<chttp2::FlowControlAction>
-ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame,
+ProcessIncomingDataFrameFlowControl(const Http2FrameHeader& frame,
                                     chttp2::TransportFlowControl& flow_control,
                                     Stream* stream);
 
@@ -212,6 +185,64 @@ void MaybeAddTransportWindowUpdateFrame(
     chttp2::TransportFlowControl& flow_control, FrameSender& frame_sender);
 
 void MaybeAddStreamWindowUpdateFrame(Stream& stream, FrameSender& frame_sender);
+
+// ===========================================================================
+// 3-Stage Transport Shutdown State Machine
+// ===========================================================================
+// Transport shutdown progresses through three distinct stages to ensure
+// thread-safe, lock-free (where possible), and protocol-compliant cleanup.
+//
+// Stage 1: Shutdown Initiated
+//   Triggered by MaybeSpawnCloseTransport(). Rejects new external watches
+//   and immediately clears stream_list_ (Snapshot 1) to stop read/write
+//   processing for active streams.
+//   Note: MaybeSpawnCloseTransport is invoked from both transport party and
+//   other threads (Orphan flow).
+//
+// Stage 2: Party Shutdown Initiated (Party Lockdown)
+//   Triggered when the CloseTransport promise starts running on the transport
+//   party. Thread-confined to the party (no locks/atomics needed).
+//   Clears stream_list_ again (Snapshot 2) to capture raced streams, and
+//   causes the transport to immediately reject any new or queued streams
+//   (via InitializeStream() on client, or IncomingStream() on server).
+//
+// Stage 3: Shutdown Completed (Final Termination)
+//   Triggered when CloseTransport() finishes (GOAWAY sent or timed out on
+//   client). Wakes up and cancels all remaining promises on the transport
+//   party.
+// ===========================================================================
+class TransportShutdownTracker {
+ public:
+  TransportShutdownTracker() = default;
+
+  // Transport shutdown is not copyable or movable.
+  TransportShutdownTracker(const TransportShutdownTracker&) = delete;
+  TransportShutdownTracker& operator=(const TransportShutdownTracker&) = delete;
+  TransportShutdownTracker(TransportShutdownTracker&&) = delete;
+  TransportShutdownTracker& operator=(TransportShutdownTracker&&) = delete;
+
+  // Stage 1: Shutdown Initiated
+  void InitiateShutdown(const Mutex& mu) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu) {
+    shutdown_initiated_ = true;
+  }
+  bool IsShutdownInitiated(const Mutex& mu) const
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu) {
+    return shutdown_initiated_;
+  }
+
+  // Stage 2: Party Shutdown Initiated (Party Lockdown)
+  void InitiatePartyShutdown() { party_shutdown_initiated_ = true; }
+  bool IsPartyShutdownInitiated() const { return party_shutdown_initiated_; }
+
+  // Stage 3: Shutdown Completed (Final Termination)
+  void MarkShutdownComplete() { shutdown_completed_latch_.Set(); }
+  auto WaitShutdownComplete() { return shutdown_completed_latch_.Wait(); }
+
+ private:
+  bool shutdown_initiated_ = false;
+  bool party_shutdown_initiated_ = false;
+  Latch<void> shutdown_completed_latch_;
+};
 
 //
 }  // namespace http2

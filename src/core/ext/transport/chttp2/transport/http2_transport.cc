@@ -49,9 +49,13 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
+#include "src/core/util/useful.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+
+#define GRPC_ARG_HTTP2_PING_ON_RST_STREAM_PERCENT \
+  "grpc.http2.ping_on_rst_stream_percent"
 
 namespace grpc_core {
 namespace http2 {
@@ -72,6 +76,9 @@ namespace http2 {
 //           Milestone 4. Either do the TODOs or delete them.
 // [PH2][EXT] This is a TODO related to a project unrelated to PH2 but happening
 //            in parallel.
+// [PH2][CHTTP2] This TODO is a part of CHTTP2 deletion.
+// [PH2][Px][FCV3] This TODO is related to Flow Control plumbing with the
+// Application and the Call V3 stack.
 
 constexpr Duration kDefaultPingTimeout = Duration::Minutes(1);
 constexpr Duration kDefaultKeepaliveTimeout = Duration::Seconds(20);
@@ -132,8 +139,6 @@ std::string TransportChannelArgs::DebugString() const {
       " keepalive_timeout: ", keepalive_timeout,
       " ping_timeout: ", ping_timeout, " settings_timeout: ", settings_timeout,
       " keepalive_permit_without_calls: ", keepalive_permit_without_calls,
-      " enable_preferred_rx_crypto_frame_advertisement: ",
-      enable_preferred_rx_crypto_frame_advertisement,
       " max_header_list_size_soft_limit: ", max_header_list_size_soft_limit,
       " max_usable_hpack_table_size: ", max_usable_hpack_table_size,
       " initial_sequence_number: ", initial_sequence_number,
@@ -172,11 +177,6 @@ void ReadChannelArgs(const ChannelArgs& channel_args,
   args.keepalive_permit_without_calls =
       channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
           .value_or(kDefaultKeepalivePermitWithoutCalls);
-
-  args.enable_preferred_rx_crypto_frame_advertisement =
-      channel_args
-          .GetBool(GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE)
-          .value_or(kDefaultEnablePreferredRxCryptoFrameAdvertisement);
 
   args.max_usable_hpack_table_size =
       channel_args.GetInt(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER).value_or(-1);
@@ -235,9 +235,12 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
         channel_args.GetInt(GRPC_ARG_HTTP2_MAX_FRAME_SIZE).value_or(-1));
   }
 
-  if (channel_args
+  const bool enable_preferred_crypto =
+      channel_args
           .GetBool(GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE)
-          .value_or(false)) {
+          .value_or(kDefaultEnablePreferredRxCryptoFrameAdvertisement);
+  flow_control.set_ph2_enable_rx_crypto(enable_preferred_crypto);
+  if (enable_preferred_crypto) {
     local_settings.SetPreferredReceiveCryptoMessageSize(INT_MAX);
   }
 
@@ -249,11 +252,6 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
 
   local_settings.SetAllowSecurityFrame(
       channel_args.GetBool(GRPC_ARG_SECURITY_FRAME_ALLOWED).value_or(false));
-
-  // TODO(tjagtap) : [PH2][P4] : If max_header_list_size is set only once
-  // in the life of a transport, consider making this a data member of
-  // class IncomingMetadataTracker instead of accessing via acked settings again
-  // and again. Else delete this comment.
 
   GRPC_HTTP2_COMMON_DLOG
       << "Http2Settings: {"
@@ -269,6 +267,28 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
       << local_settings.allow_true_binary_metadata()
       << ", allow_security_frame: " << local_settings.allow_security_frame()
       << "}";
+}
+
+uint32_t MaxNewStreamsPerRead(const ChannelArgs& channel_args) {
+  return Clamp(
+      channel_args.GetInt("grpc.http2.max_requests_per_read").value_or(32), 1,
+      10000);
+}
+
+uint32_t GetMaxSecurityFrameSize(const ChannelArgs& channel_args) {
+  return static_cast<uint32_t>(
+      Clamp(channel_args.GetInt(GRPC_ARG_MAX_SECURITY_FRAME_SIZE)
+                .value_or(GrpcErrors::kMaxSecurityFrameSize),
+            GrpcErrors::kMinMaxSecurityFrameSize,
+            static_cast<int>(GrpcErrors::kMaxSecurityFrameSize)));
+}
+
+uint8_t GetPingOnRstStreamPercent(const ChannelArgs& channel_args,
+                                  const bool is_client) {
+  if (is_client) return 0;
+  return Clamp(channel_args.GetInt(GRPC_ARG_HTTP2_PING_ON_RST_STREAM_PERCENT)
+                   .value_or(1),
+               0, 100);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -311,7 +331,7 @@ void ProcessOutgoingDataFrameFlowControl(
 }
 
 ValueOrHttp2Status<chttp2::FlowControlAction>
-ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame_header,
+ProcessIncomingDataFrameFlowControl(const Http2FrameHeader& frame_header,
                                     chttp2::TransportFlowControl& flow_control,
                                     Stream* stream) {
   GRPC_DCHECK_EQ(frame_header.type, 0u);
@@ -401,6 +421,22 @@ bool ProcessIncomingWindowUpdateFrameFlowControl(
 
 void MaybeAddTransportWindowUpdateFrame(
     chttp2::TransportFlowControl& flow_control, FrameSender& frame_sender) {
+  // Known Limitation:
+  // 1. writing_anyway is set to true always. This might cause the write cycle
+  // to just write 1 window update frame in one entire iteration of the
+  // Multiplexer Loop, making it wasteful. In most of the scenarios this is fine
+  // as TriggerWriteCycle is only invoked from code points that want to write
+  // frames on the wire.
+  // 2. This is because we write control frames before we write HEADER and DATA
+  // frames. So we don't know if we are going to write or not when we call
+  // this function.
+  // 3. Setting writing_anyway to false always might be a problem, because we
+  // would rather send a WINDOW_UPDATE frame with a small increment, than not
+  // send it at all.
+  // 4. In the future if we want to fix this, we need to call
+  // MaybeAddTransportWindowUpdateFrame once while writing control frames, and
+  // once after all the DATA and HEADER frames are written for the current write
+  // cycle.
   uint32_t window_size =
       flow_control.DesiredAnnounceSize(/*writing_anyway=*/true);
   if (window_size > 0) {

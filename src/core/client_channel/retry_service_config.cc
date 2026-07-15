@@ -39,7 +39,6 @@
 #define MAX_MAX_RETRY_ATTEMPTS 5
 
 namespace grpc_core {
-namespace internal {
 
 //
 // RetryGlobalConfig
@@ -276,5 +275,4 @@ RetryServiceConfigParser::ParsePerMethodParams(const ChannelArgs& args,
   return std::move(method_params.retry_policy);
 }
 
-}  // namespace internal
 }  // namespace grpc_core

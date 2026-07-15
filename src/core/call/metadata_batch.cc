@@ -90,7 +90,7 @@ void DebugStringBuilder::AddAfterRedaction(absl::string_view key,
   } else {
     // If the type of metadata is not in the allow list, we want to prevent it
     // from getting logged. Custom metadata types may have sensitive information
-    // that should never be logged. Programatically, we have no way to know
+    // that should never be logged. Programmatically, we have no way to know
     // which data is sensitive and which is not. So we redact all values which
     // are not in the allow list.
     Add(key,

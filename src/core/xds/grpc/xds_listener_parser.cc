@@ -50,6 +50,7 @@
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/grpc/xds_route_config_parser.h"
+#include "src/core/xds/grpc/xds_tls_context_parser.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "upb/text/encode.h"
 #include "absl/log/log.h"
@@ -306,17 +307,18 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
         auto& entry = http_connection_manager.http_filters.back();
         entry.name = std::string(name);
         entry.config_proto_type = filter_impl->ConfigProtoName();
-        if (!is_client || !IsXdsChannelFilterChainPerRouteEnabled()) {
+        entry.disabled =
+            envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_disabled(
+                http_filter);
+        if (!is_client) {
           std::optional<Json> filter_config = filter_impl->GenerateFilterConfig(
               name, context, *extension, errors);
           if (filter_config.has_value()) {
             entry.config = std::move(*filter_config);
           }
         }
-        if (IsXdsChannelFilterChainPerRouteEnabled()) {
-          entry.filter_config = filter_impl->ParseTopLevelConfig(
-              name, context, *extension, errors);
-        }
+        entry.filter_config =
+            filter_impl->ParseTopLevelConfig(name, context, *extension, errors);
       }
     }
     if (errors->size() == original_error_size &&
@@ -670,6 +672,7 @@ std::optional<FilterChain> FilterChainParse(
   return filter_chain;
 }
 
+// TODO(roth): Merge this with ParseXdsAddress() to avoid duplication.
 std::optional<std::string> AddressParse(
     const envoy_config_core_v3_Address* address_proto,
     ValidationErrors* errors) {

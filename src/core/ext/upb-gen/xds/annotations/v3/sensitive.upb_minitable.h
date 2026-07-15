@@ -18,7 +18,7 @@
 extern "C" {
 #endif
 
-extern const upb_MiniTableExtension xds_annotations_v3_sensitive_ext;
+extern const upb_MiniTableExtension* xds_annotations_v3_sensitive_ext;
 
 extern const upb_MiniTableFile xds_annotations_v3_sensitive_proto_upb_file_layout;
 

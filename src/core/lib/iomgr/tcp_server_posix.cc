@@ -332,7 +332,7 @@ static void deactivated_all_ports(grpc_tcp_server* s) {
     grpc_tcp_listener* sp;
     for (sp = s->head; sp; sp = sp->next) {
       // Do not unlink if there is a pre-allocated FD
-      if (grpc_tcp_server_pre_allocated_fd(s) <= 0) {
+      if (grpc_tcp_server_pre_allocated_fd(s) < 0) {
         grpc_unlink_if_unix_domain_socket(&sp->addr);
       }
       GRPC_CLOSURE_INIT(&sp->destroyed_closure, destroyed_port, s,
@@ -643,7 +643,7 @@ static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
             if (!listen_fd.ok()) {
               return;
             }
-            GRPC_DCHECK_GT(*listen_fd, 0);
+            GRPC_DCHECK_GE(*listen_fd, 0);
             s->listen_fd_to_index_map.insert_or_assign(
                 *listen_fd, std::tuple(s->n_bind_ports, fd_index++));
           });
@@ -698,7 +698,7 @@ static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
 
   /* Do not unlink if there are pre-allocated FDs, or it will stop
      working after the first client connects */
-  if (grpc_tcp_server_pre_allocated_fd(s) <= 0) {
+  if (grpc_tcp_server_pre_allocated_fd(s) < 0) {
     grpc_unlink_if_unix_domain_socket(addr);
   }
 

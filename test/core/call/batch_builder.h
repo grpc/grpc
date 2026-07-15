@@ -29,6 +29,9 @@ ByteBufferUniquePtr ByteBufferFromSlice(Slice slice);
 std::optional<std::string> FindInMetadataArray(const grpc_metadata_array& md,
                                                absl::string_view key);
 
+std::optional<std::vector<std::string>> FindRepeatedInMetadataArray(
+    const grpc_metadata_array& md, absl::string_view key);
+
 // Receiving container for incoming metadata.
 class IncomingMetadata final : public CqVerifier::SuccessfulStateString {
  public:

@@ -139,11 +139,14 @@ grpc_cc_library(
     external_deps = [
         "absl/log",
         "absl/log:globals",
+        "absl/synchronization",
     ],
     deps = [
+        "//:generic_stub_session_hdrs",
         "//:grpc",
         "//:grpc++",
         "//src/core:experiments",
+        "//src/core:grpc_check",
     ],
 )
 
@@ -166,6 +169,7 @@ grpc_cc_test(
     ],
     deps = [
         ":end2end_test_utils",
+        ":test_service_impl",
         "//:config_vars",
         "//:debug_location",
         "//:gpr",
@@ -175,6 +179,7 @@ grpc_cc_test(
         "//:grpc_public_hdrs",
         "//:iomgr",
         "//src/core:client_channel_backup_poller",
+        "//src/core:experiments",
         "//src/core:grpc_check",
         "//src/core:iomgr_port",
         "//src/proto/grpc/health/v1:health_cc_grpc",
@@ -184,6 +189,36 @@ grpc_cc_test(
         "//test/core/test_util:build",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "session_end2end_test",
+    srcs = ["session_end2end_test.cc"],
+    external_deps = [
+        "absl/strings",
+        "absl/synchronization",
+        "absl/time",
+        "gtest",
+    ],
+    deps = [
+        ":end2end_test_utils",
+        "//:config",
+        "//:generic_stub_session_hdrs",
+        "//:grpc",
+        "//:grpc++_public_hdrs",
+        "//:grpc_base",
+        "//:grpc_public_hdrs",
+        "//src/core:call_filters",
+        "//src/core:channel_args",
+        "//src/core:channel_fwd",
+        "//src/core:channel_init",
+        "//src/core:channel_stack_type",
+        "//src/core:experiments",
+        "//src/proto/grpc/testing:echo_cc_grpc",
+        "//src/proto/grpc/testing:echo_cc_proto",
+        "//test/core/test_util:build",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -346,6 +381,7 @@ grpc_cc_test(
         ":end2end_test_utils",
         ":interceptors_util",
         ":test_service_impl",
+        "//:generic_stub_session_hdrs",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
@@ -432,6 +468,7 @@ grpc_cc_library(
         "absl/memory",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/synchronization",
         "gtest",
     ],
     linkstatic = True,
@@ -440,6 +477,7 @@ grpc_cc_library(
         ":interceptors_util",
         ":test_service_impl",
         "//:config_vars",
+        "//:generic_stub_session_hdrs",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
@@ -885,6 +923,7 @@ grpc_cc_test(
     ],
     deps = [
         ":counted_service",
+        ":end2end_test_utils",
         ":rls_server",
         ":test_service_impl",
         "//:config_vars",
@@ -1501,10 +1540,13 @@ grpc_cc_test(
         "cpp_end2end_test",
     ],
     deps = [
+        ":end2end_test_utils",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//:grpc++_base",
+        "//:grpc++_public_hdrs",
+        "//:grpc_public_hdrs",
         "//src/core:grpc_check",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//src/proto/grpc/testing:echo_messages_cc_proto",

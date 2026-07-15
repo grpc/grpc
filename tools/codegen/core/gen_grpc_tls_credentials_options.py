@@ -17,8 +17,6 @@
 # Generator script for src/core/credentials/transport/tls/grpc_tls_credentials_options.h and test/core/credentials/transport/tls/grpc_tls_credentials_options_comparator_test.cc
 # Should be executed from grpc's root directory.
 
-from __future__ import print_function
-
 import collections
 from dataclasses import dataclass
 import difflib

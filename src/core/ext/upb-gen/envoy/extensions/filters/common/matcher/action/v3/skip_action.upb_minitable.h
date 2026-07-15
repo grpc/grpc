@@ -19,7 +19,6 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__extensions__filters__common__matcher__action__v3__SkipFilter_msg_init;
-extern const upb_MiniTable* envoy__extensions__filters__common__matcher__action__v3__SkipFilter_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_extensions_filters_common_matcher_action_v3_skip_action_proto_upb_file_layout;
 

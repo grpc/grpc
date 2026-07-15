@@ -201,11 +201,16 @@ std::ostream& operator<<(std::ostream& out, const FlowControlAction& action);
 // This class manages the flow control at a connection level.
 class TransportFlowControl final {
  public:
-  explicit TransportFlowControl(absl::string_view name, bool enable_bdp_probe,
+  explicit TransportFlowControl(absl::string_view peer_name,
+                                bool enable_bdp_probe,
                                 MemoryOwner* memory_owner);
   ~TransportFlowControl() {}
 
   bool bdp_probe() const { return enable_bdp_probe_; }
+  bool ph2_enable_rx_crypto() const { return ph2_enable_rx_crypto_; }
+  void set_ph2_enable_rx_crypto(const bool enable) {
+    ph2_enable_rx_crypto_ = enable;
+  }
 
   // Returns a non-zero announce if we should send a transport update to our
   // peer, else returns zero; writing_anyway indicates if a write would happen
@@ -314,7 +319,7 @@ class TransportFlowControl final {
   // Call periodically (at a low-ish rate, 100ms - 10s makes sense)
   // to perform more complex flow control calculations and return an action
   // to let the transport change its parameters.
-  // TODO(tjagtap) [PH2][P2] Plumb with PH2 flow control.
+  // TODO(tjagtap) [PH2][P2][FCV3] Plumb with PH2 flow control.
   FlowControlAction PeriodicUpdate();
 
   int64_t test_only_target_window() const { return target_window(); }
@@ -471,6 +476,13 @@ class TransportFlowControl final {
   uint32_t acked_init_window_ = kDefaultWindow;
   uint32_t sent_init_window_ = kDefaultWindow;
   absl::flat_hash_set<uint32_t> window_update_list_;
+
+  // Preferred_rx_crypto_frame_sizes are advertised to the peer
+  // For CHTTP2, this is always true.
+  // For PH2, this is set by the transport based on the channel arg
+  // GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE.
+  // TODO(tjagtap) [PH2][CHTTP2] Edit comment when CHTTP2 is getting deleted.
+  bool ph2_enable_rx_crypto_ = true;
 };
 
 // Implementation of flow control that abides to HTTP/2 spec and attempts
@@ -514,7 +526,7 @@ class StreamFlowControl final {
     // `min_progress_size` bytes to make progress on reading the current stream.
     // An example usage of this would be, say we receive the first 1000 bytes of
     // a 2000 byte gRPC message, we can call SetMinProgressSize(1000)
-    // TODO(tjagtap) [PH2][P2] Plumb with PH2 flow control.
+    // TODO(tjagtap) [PH2][P2][FCV3] Plumb with PH2 flow control.
     void SetMinProgressSize(int64_t min_progress_size) {
       sfc_->min_progress_size_ = min_progress_size;
     }

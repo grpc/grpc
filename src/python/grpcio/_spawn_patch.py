@@ -62,7 +62,7 @@ def _commandfile_spawn(self, command, **kwargs):
         new_command = []
         for arg in command:
             # /Tp, /Tc:
-            #    ccache performs a preprocessor run to generate cachable
+            #    ccache performs a preprocessor run to generate cacheable
             #    file, and /Tp /Tc flags seems to be repositioned such that
             #    the msvc backend doesn't recognize it.
             #    e.g. /SomeFlag /Tpfile.cc -> /Tp /SomeFlag file.cc

@@ -14,7 +14,7 @@
 
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/dockerfile/grpc_artifact_python_musllinux_1_2_aarch64/Dockerfile.inja`!!!
 
-FROM quay.io/pypa/musllinux_1_2_aarch64:2025.07.27-1
+FROM quay.io/pypa/musllinux_1_2_aarch64:2026.06.03-1
 
 RUN git config --global protocol.file.allow always && \
   git config --global --add safe.directory /var/local/jenkins/grpc && \
@@ -28,12 +28,12 @@ RUN apk add openssl openssl-dev zstd zstd-dev hiredis-dev
 # For some reason, this specific build segfaults on ccache unless cython is intalled.
 #===================================
 # Install Python build requirements
-RUN /opt/python/cp39-cp39/bin/pip install --upgrade 'cython==3.1.1' && \
-  /opt/python/cp310-cp310/bin/pip install --upgrade 'cython==3.1.1' && \
+RUN /opt/python/cp310-cp310/bin/pip install --upgrade 'cython==3.1.1' && \
   /opt/python/cp311-cp311/bin/pip install --upgrade 'cython==3.1.1' && \
   /opt/python/cp312-cp312/bin/pip install --upgrade 'cython==3.1.1' && \
   /opt/python/cp313-cp313/bin/pip install --upgrade 'cython==3.1.1' && \
-  /opt/python/cp314-cp314/bin/pip install --upgrade 'cython==3.1.1'
+  /opt/python/cp314-cp314/bin/pip install --upgrade 'cython==3.1.1' && \
+  /opt/python/cp315-cp315/bin/pip install --upgrade 'cython==3.1.1'
 
 
 #=================
