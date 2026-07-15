@@ -42,6 +42,9 @@ logger = logging.getLogger(__name__)
 
 STREAM_LENGTH = 5
 OTEL_EXPORT_INTERVAL_S = 0.5
+_RETRY_METRIC_NAMES = [
+    metric.name for metric in _open_telemetry_measures.retry_metrics()
+]
 
 
 class OTelMetricExporter(MetricExporter):
@@ -501,7 +504,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
 
         with grpc_observability.OpenTelemetryPlugin(
             meter_provider=self._provider,
-            enable_retry_per_call_metrics=True,
+            enabled_metrics=_RETRY_METRIC_NAMES,
         ):
             server, port = _test_server.start_flaky_server(
                 num_failed_attempts=NUM_FAILED_ATTEMPTS
@@ -536,6 +539,26 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         self.assertEqual(labels.get(GRPC_METHOD_LABEL), UNARY_METHOD_NAME)
         self.assertIn(GRPC_TARGET_LABEL, labels)
 
+    def testEnablingUnknownMetricRaises(self):
+        with self.assertRaises(ValueError):
+            grpc_observability.OpenTelemetryPlugin(
+                meter_provider=self._provider,
+                enabled_metrics=["grpc.client.call.no_such_metric"],
+            )
+
+    def testEnablingDefaultMetricIsNoOp(self):
+        default_metric = _open_telemetry_measures.CLIENT_ATTEMPT_STARTED.name
+        with grpc_observability.OpenTelemetryPlugin(
+            meter_provider=self._provider,
+            enabled_metrics=[default_metric],
+        ):
+            server, port = _test_server.start_server()
+            self._server = server
+            _test_server.unary_unary_call(port=port)
+
+        self._validate_metrics_exist(self.all_metrics)
+        self._validate_all_metrics_names(self.all_metrics.keys())
+
     def testRetryMetricsDisabledByDefault(self):
         with grpc_observability.OpenTelemetryPlugin(
             meter_provider=self._provider
@@ -554,7 +577,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
     def testRetryMetricsNotReportedForCallsWithoutRetries(self):
         with grpc_observability.OpenTelemetryPlugin(
             meter_provider=self._provider,
-            enable_retry_per_call_metrics=True,
+            enabled_metrics=_RETRY_METRIC_NAMES,
         ):
             server, port = _test_server.start_server()
             self._server = server

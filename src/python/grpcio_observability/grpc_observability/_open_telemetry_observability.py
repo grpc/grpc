@@ -72,6 +72,30 @@ GRPC_STATUS_CODE_TO_STRING = {
 }
 
 
+def _enabled_optional_metrics(
+    enabled_metric_names: Iterable[str],
+) -> List[_open_telemetry_measures.Metric]:
+    """Resolves metric names to the optional metrics they enable.
+
+    Metrics which are enabled by default are always recorded, so naming one of
+    them is a no-op. Unknown names are rejected to surface typos.
+    """
+    optional_metrics = {
+        metric.name: metric
+        for metric in _open_telemetry_measures.optional_metrics()
+    }
+    default_metric_names = {
+        metric.name for metric in _open_telemetry_measures.base_metrics()
+    }
+    enabled_metrics = []
+    for name in enabled_metric_names:
+        if name in optional_metrics:
+            enabled_metrics.append(optional_metrics[name])
+        elif name not in default_metric_names:
+            raise ValueError(f"Unknown metric name: {name}")
+    return enabled_metrics
+
+
 class _OpenTelemetryPlugin:
     _plugin: OpenTelemetryPlugin
     _metric_to_recorder: Dict[MetricsName, Union[Counter, Histogram]]
@@ -86,12 +110,17 @@ class _OpenTelemetryPlugin:
         self._enabled_client_plugin_options = None
         self._enabled_server_plugin_options = None
 
+        # Resolve names before checking meter_provider so that an invalid name
+        # is reported even when no metrics will be collected.
+        enabled_optional_metrics = _enabled_optional_metrics(
+            self._plugin.enabled_metrics
+        )
+
         meter_provider = self._plugin.meter_provider
         if meter_provider:
             meter = meter_provider.get_meter("grpc-python", grpc.__version__)
             enabled_metrics = _open_telemetry_measures.base_metrics()
-            if self._plugin.retry_per_call_metrics_enabled:
-                enabled_metrics.extend(_open_telemetry_measures.retry_metrics())
+            enabled_metrics.extend(enabled_optional_metrics)
             self._metric_to_recorder = self._register_metrics(
                 meter, enabled_metrics
             )
