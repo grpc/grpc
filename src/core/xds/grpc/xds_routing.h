@@ -91,12 +91,12 @@ class XdsRouting final {
   class RouteConfigFilterChainBuilder {
    public:
     // A slightly different interface than the normal FilterChainBuilder
-    // that passes in the XdsHttpFilterImpl.
+    // that passes in the XdsHttpFilterFactory.
     class XdsFilterChainBuilder {
      public:
       virtual ~XdsFilterChainBuilder() = default;
 
-      virtual void AddFilter(const XdsHttpFilterImpl* filter_impl,
+      virtual void AddFilter(const XdsHttpFilterFactory* factory,
                              RefCountedPtr<const FilterConfig> config) = 0;
 
       virtual absl::StatusOr<RefCountedPtr<FilterChain>> Build() = 0;
@@ -189,7 +189,7 @@ class XdsRouting final {
     XdsTransportFactory& transport_factory_;
 
     // Same size as hcm_filter_configs_.
-    std::vector<const XdsHttpFilterImpl*> filter_impls_;
+    std::vector<const XdsHttpFilterFactory*> factories_;
 
     // Cached default filter chain, to be used for any route that does
     // not have any filter config overrides.

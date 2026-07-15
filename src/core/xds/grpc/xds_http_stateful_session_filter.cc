@@ -38,17 +38,18 @@
 
 namespace grpc_core {
 
-absl::string_view XdsHttpStatefulSessionFilter::ConfigProtoName() const {
+absl::string_view XdsHttpStatefulSessionFilterFactory::ConfigProtoName() const {
   return "envoy.extensions.filters.http.stateful_session.v3.StatefulSession";
 }
 
-absl::string_view XdsHttpStatefulSessionFilter::OverrideConfigProtoName()
+absl::string_view XdsHttpStatefulSessionFilterFactory::OverrideConfigProtoName()
     const {
   return "envoy.extensions.filters.http.stateful_session.v3"
          ".StatefulSessionPerRoute";
 }
 
-void XdsHttpStatefulSessionFilter::PopulateSymtab(upb_DefPool* symtab) const {
+void XdsHttpStatefulSessionFilterFactory::PopulateSymtab(
+    upb_DefPool* symtab) const {
   envoy_extensions_filters_http_stateful_session_v3_StatefulSession_getmsgdef(
       symtab);
   envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute_getmsgdef(
@@ -57,7 +58,7 @@ void XdsHttpStatefulSessionFilter::PopulateSymtab(upb_DefPool* symtab) const {
       symtab);
 }
 
-void XdsHttpStatefulSessionFilter::AddFilter(
+void XdsHttpStatefulSessionFilterFactory::AddFilter(
     FilterChainBuilder& builder,
     RefCountedPtr<const FilterConfig> config) const {
   builder.AddFilter<StatefulSessionFilter>(std::move(config));
@@ -130,7 +131,7 @@ RefCountedPtr<StatefulSessionFilter::Config> ParseStatefulSession(
 }  // namespace
 
 RefCountedPtr<const FilterConfig>
-XdsHttpStatefulSessionFilter::ParseTopLevelConfig(
+XdsHttpStatefulSessionFilterFactory::ParseTopLevelConfig(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context,
     const XdsExtension& extension, ValidationErrors* errors) const {
@@ -152,7 +153,7 @@ XdsHttpStatefulSessionFilter::ParseTopLevelConfig(
 }
 
 RefCountedPtr<const FilterConfig>
-XdsHttpStatefulSessionFilter::ParseOverrideConfig(
+XdsHttpStatefulSessionFilterFactory::ParseOverrideConfig(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context,
     const XdsExtension& extension, ValidationErrors* errors) const {

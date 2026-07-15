@@ -53,19 +53,19 @@
 
 namespace grpc_core {
 
-absl::string_view XdsHttpRbacFilter::ConfigProtoName() const {
+absl::string_view XdsHttpRbacFilterFactory::ConfigProtoName() const {
   return "envoy.extensions.filters.http.rbac.v3.RBAC";
 }
 
-absl::string_view XdsHttpRbacFilter::OverrideConfigProtoName() const {
+absl::string_view XdsHttpRbacFilterFactory::OverrideConfigProtoName() const {
   return "envoy.extensions.filters.http.rbac.v3.RBACPerRoute";
 }
 
-void XdsHttpRbacFilter::PopulateSymtab(upb_DefPool* symtab) const {
+void XdsHttpRbacFilterFactory::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_rbac_v3_RBAC_getmsgdef(symtab);
 }
 
-void XdsHttpRbacFilter::AddFilter(
+void XdsHttpRbacFilterFactory::AddFilter(
     FilterChainBuilder& builder,
     RefCountedPtr<const FilterConfig> config) const {
   builder.AddFilter<RbacFilter>(std::move(config));
@@ -414,7 +414,7 @@ Rbac ParseXdsRbac(const XdsResourceType::DecodeContext& context,
 
 }  // namespace
 
-RefCountedPtr<const FilterConfig> XdsHttpRbacFilter::ParseTopLevelConfig(
+RefCountedPtr<const FilterConfig> XdsHttpRbacFilterFactory::ParseTopLevelConfig(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context,
     const XdsExtension& extension, ValidationErrors* errors) const {
@@ -436,7 +436,7 @@ RefCountedPtr<const FilterConfig> XdsHttpRbacFilter::ParseTopLevelConfig(
   return config;
 }
 
-RefCountedPtr<const FilterConfig> XdsHttpRbacFilter::ParseOverrideConfig(
+RefCountedPtr<const FilterConfig> XdsHttpRbacFilterFactory::ParseOverrideConfig(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context,
     const XdsExtension& extension, ValidationErrors* errors) const {

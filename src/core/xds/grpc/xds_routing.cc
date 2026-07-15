@@ -201,16 +201,16 @@ XdsRouting::RouteConfigFilterChainBuilder::RouteConfigFilterChainBuilder(
       builder_(builder),
       blackboard_(blackboard),
       transport_factory_(transport_factory) {
-  filter_impls_.reserve(hcm_filter_configs.size());
+  factories_.reserve(hcm_filter_configs.size());
   for (const auto& http_filter : hcm_filter_configs) {
     // Find filter.  This is guaranteed to succeed, because it's checked
     // at config validation time.
-    const XdsHttpFilterImpl* filter_impl =
+    const XdsHttpFilterFactory* factory =
         http_filter_registry.GetFilterForTopLevelType(
             http_filter.config_proto_type);
-    GRPC_CHECK_NE(filter_impl, nullptr);
+    GRPC_CHECK_NE(factory, nullptr);
     // Add filter to list.
-    filter_impls_.push_back(filter_impl);
+    factories_.push_back(factory);
   }
 }
 
@@ -218,20 +218,20 @@ absl::StatusOr<RefCountedPtr<const FilterChain>>
 XdsRouting::RouteConfigFilterChainBuilder::GetDefaultFilterChain() {
   if (default_filter_chain_.ok() && *default_filter_chain_ == nullptr) {
     GRPC_TRACE_LOG(xds_resolver, INFO) << "Building default filter chain:";
-    for (size_t i = 0; i < filter_impls_.size(); ++i) {
-      auto* filter_impl = filter_impls_[i];
+    for (size_t i = 0; i < factories_.size(); ++i) {
+      auto* factory = factories_[i];
       const auto& filter_config = hcm_filter_configs_[i];
       if (filter_config.disabled) continue;
       RefCountedPtr<const FilterConfig> config;
       if (filter_config.filter_config != nullptr) {
-        config = filter_impl->MergeConfigs(filter_config.filter_config, nullptr,
-                                           nullptr, nullptr, transport_factory_,
-                                           blackboard_);
+        config =
+            factory->MergeConfigs(filter_config.filter_config, nullptr, nullptr,
+                                  nullptr, transport_factory_, blackboard_);
       }
       GRPC_TRACE_LOG(xds_resolver, INFO)
           << "  Adding filter=" << filter_config.name
           << " config=" << (config == nullptr ? "<null>" : config->ToString());
-      builder_.AddFilter(filter_impl, std::move(config));
+      builder_.AddFilter(factory, std::move(config));
     }
     default_filter_chain_ = builder_.Build();
     GRPC_TRACE_LOG(xds_resolver, INFO)
@@ -243,12 +243,12 @@ XdsRouting::RouteConfigFilterChainBuilder::GetDefaultFilterChain() {
 namespace {
 
 RefCountedPtr<const FilterConfig> GetOverrideConfig(
-    const XdsHttpFilterImpl* filter_impl,
+    const XdsHttpFilterFactory* factory,
     const XdsRouteConfigResource::TypedPerFilterConfig& typed_per_filter_config,
     const std::string& name) {
   auto it = typed_per_filter_config.find(name);
   if (it == typed_per_filter_config.end()) return nullptr;
-  if (it->second.config_proto_type != filter_impl->OverrideConfigProtoName()) {
+  if (it->second.config_proto_type != factory->OverrideConfigProtoName()) {
     return nullptr;
   }
   return it->second.filter_config;
@@ -261,7 +261,7 @@ RefCountedPtr<const FilterConfig> GetOverrideConfig(
 // 3. VirtualHost override
 // 4. HCM config (least specific, default)
 bool IsFilterDisabled(
-    const XdsHttpFilterImpl* filter_impl,
+    const XdsHttpFilterFactory* factory,
     const XdsListenerResource::HttpConnectionManager::HttpFilter&
         hcm_filter_config,
     const XdsRouteConfigResource::TypedPerFilterConfig*
@@ -303,18 +303,18 @@ XdsRouting::RouteConfigFilterChainBuilder::VirtualHostFilterChainBuilder::
       return route_config_builder_.GetDefaultFilterChain();
     }
     GRPC_TRACE_LOG(xds_resolver, INFO) << "Building virtual host filter chain:";
-    for (size_t i = 0; i < route_config_builder_.filter_impls_.size(); ++i) {
-      auto* filter_impl = route_config_builder_.filter_impls_[i];
+    for (size_t i = 0; i < route_config_builder_.factories_.size(); ++i) {
+      auto* factory = route_config_builder_.factories_[i];
       const auto& filter_config = route_config_builder_.hcm_filter_configs_[i];
-      if (IsFilterDisabled(filter_impl, filter_config,
+      if (IsFilterDisabled(factory, filter_config,
                            &vhost_.typed_per_filter_config, nullptr, nullptr)) {
         continue;
       }
       RefCountedPtr<const FilterConfig> config;
       if (filter_config.filter_config != nullptr) {
         auto vhost_override_config = GetOverrideConfig(
-            filter_impl, vhost_.typed_per_filter_config, filter_config.name);
-        config = filter_impl->MergeConfigs(
+            factory, vhost_.typed_per_filter_config, filter_config.name);
+        config = factory->MergeConfigs(
             filter_config.filter_config, std::move(vhost_override_config),
             nullptr, nullptr, route_config_builder_.transport_factory_,
             route_config_builder_.blackboard_);
@@ -322,7 +322,7 @@ XdsRouting::RouteConfigFilterChainBuilder::VirtualHostFilterChainBuilder::
       GRPC_TRACE_LOG(xds_resolver, INFO)
           << "  Adding filter=" << filter_config.name
           << " config=" << (config == nullptr ? "<null>" : config->ToString());
-      route_config_builder_.builder_.AddFilter(filter_impl, std::move(config));
+      route_config_builder_.builder_.AddFilter(factory, std::move(config));
     }
     vhost_filter_chain_ = route_config_builder_.builder_.Build();
     GRPC_TRACE_LOG(xds_resolver, INFO)
@@ -339,10 +339,10 @@ XdsRouting::RouteConfigFilterChainBuilder::VirtualHostFilterChainBuilder::
   // If there are no per-route overrides, use the vhost filter chain.
   if (route.typed_per_filter_config.empty()) return GetVirtualHostFilterChain();
   // Otherwise, build a new filter chain for the route.
-  for (size_t i = 0; i < route_config_builder_.filter_impls_.size(); ++i) {
-    auto* filter_impl = route_config_builder_.filter_impls_[i];
+  for (size_t i = 0; i < route_config_builder_.factories_.size(); ++i) {
+    auto* factory = route_config_builder_.factories_[i];
     const auto& filter_config = route_config_builder_.hcm_filter_configs_[i];
-    if (IsFilterDisabled(filter_impl, filter_config,
+    if (IsFilterDisabled(factory, filter_config,
                          &vhost_.typed_per_filter_config,
                          &route.typed_per_filter_config, nullptr)) {
       continue;
@@ -350,19 +350,19 @@ XdsRouting::RouteConfigFilterChainBuilder::VirtualHostFilterChainBuilder::
     RefCountedPtr<const FilterConfig> config;
     if (filter_config.filter_config != nullptr) {
       auto vhost_override_config = GetOverrideConfig(
-          filter_impl, vhost_.typed_per_filter_config, filter_config.name);
+          factory, vhost_.typed_per_filter_config, filter_config.name);
       auto route_override_config = GetOverrideConfig(
-          filter_impl, route.typed_per_filter_config, filter_config.name);
-      config = filter_impl->MergeConfigs(
-          filter_config.filter_config, std::move(vhost_override_config),
-          std::move(route_override_config), nullptr,
-          route_config_builder_.transport_factory_,
-          route_config_builder_.blackboard_);
+          factory, route.typed_per_filter_config, filter_config.name);
+      config = factory->MergeConfigs(filter_config.filter_config,
+                                     std::move(vhost_override_config),
+                                     std::move(route_override_config), nullptr,
+                                     route_config_builder_.transport_factory_,
+                                     route_config_builder_.blackboard_);
     }
     GRPC_TRACE_LOG(xds_resolver, INFO)
         << "  Adding filter=" << filter_config.name
         << " config=" << (config == nullptr ? "<null>" : config->ToString());
-    route_config_builder_.builder_.AddFilter(filter_impl, std::move(config));
+    route_config_builder_.builder_.AddFilter(factory, std::move(config));
   }
   absl::StatusOr<RefCountedPtr<const FilterChain>> route_filter_chain =
       route_config_builder_.builder_.Build();
@@ -394,10 +394,10 @@ XdsRouting::RouteConfigFilterChainBuilder::VirtualHostFilterChainBuilder::
   }
   // Otherwise, build a new filter chain for the ClusterWeight.
   auto& route_config_builder = vhost_builder_.route_config_builder_;
-  for (size_t i = 0; i < route_config_builder.filter_impls_.size(); ++i) {
-    auto* filter_impl = route_config_builder.filter_impls_[i];
+  for (size_t i = 0; i < route_config_builder.factories_.size(); ++i) {
+    auto* factory = route_config_builder.factories_[i];
     const auto& filter_config = route_config_builder.hcm_filter_configs_[i];
-    if (IsFilterDisabled(filter_impl, filter_config,
+    if (IsFilterDisabled(factory, filter_config,
                          &vhost_builder_.vhost_.typed_per_filter_config,
                          &route_.typed_per_filter_config,
                          &cluster_weight.typed_per_filter_config)) {
@@ -406,24 +406,23 @@ XdsRouting::RouteConfigFilterChainBuilder::VirtualHostFilterChainBuilder::
     RefCountedPtr<const FilterConfig> config;
     if (filter_config.filter_config != nullptr) {
       auto vhost_override_config = GetOverrideConfig(
-          filter_impl, vhost_builder_.vhost_.typed_per_filter_config,
+          factory, vhost_builder_.vhost_.typed_per_filter_config,
           filter_config.name);
       auto route_override_config = GetOverrideConfig(
-          filter_impl, route_.typed_per_filter_config, filter_config.name);
-      auto cluster_weight_override_config =
-          GetOverrideConfig(filter_impl, cluster_weight.typed_per_filter_config,
-                            filter_config.name);
-      config = filter_impl->MergeConfigs(
-          filter_config.filter_config, std::move(vhost_override_config),
-          std::move(route_override_config),
-          std::move(cluster_weight_override_config),
-          route_config_builder.transport_factory_,
-          route_config_builder.blackboard_);
+          factory, route_.typed_per_filter_config, filter_config.name);
+      auto cluster_weight_override_config = GetOverrideConfig(
+          factory, cluster_weight.typed_per_filter_config, filter_config.name);
+      config = factory->MergeConfigs(filter_config.filter_config,
+                                     std::move(vhost_override_config),
+                                     std::move(route_override_config),
+                                     std::move(cluster_weight_override_config),
+                                     route_config_builder.transport_factory_,
+                                     route_config_builder.blackboard_);
     }
     GRPC_TRACE_LOG(xds_resolver, INFO)
         << "  Adding filter=" << filter_config.name
         << " config=" << (config == nullptr ? "<null>" : config->ToString());
-    route_config_builder.builder_.AddFilter(filter_impl, std::move(config));
+    route_config_builder.builder_.AddFilter(factory, std::move(config));
   }
   auto filter_chain = route_config_builder.builder_.Build();
   GRPC_TRACE_LOG(xds_resolver, INFO)
