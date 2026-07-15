@@ -66,8 +66,6 @@
   default: true
 - name: event_engine_listener
   default: true
-- name: event_engine_poller_for_python
-  default: true
 - name: fail_recv_metadata_on_deadline_exceeded
   default: false
 - name: free_large_allocator
@@ -80,8 +78,6 @@
   default: false
 - name: local_connector_secure
   default: false
-- name: max_inflight_pings_strict_limit
-  default: true
 - name: memory_optimization_01
   default: false
 - name: memory_optimization_02
@@ -91,7 +87,7 @@
 - name: metadata_outstanding_token_refactor
   default: false
 - name: metadata_publish_to_app_tag
-  default: true
+  default: false
 - name: monitoring_experiment
   default: true
 - name: optimization_01
@@ -117,7 +113,7 @@
 - name: promise_batch_cleanup_on_cancel
   default: true
 - name: promise_filter_send_cancel_metadata
-  default: false
+  default: true
 - name: return_preexisting_errors
   default: true
 - name: schedule_cancellation_over_write
@@ -125,8 +121,6 @@
 - name: skip_clear_peer_on_cancellation
   default: false
 - name: subchannel_connection_scaling
-  default: true
-- name: subchannel_wrapper_cleanup_on_orphan
   default: true
 - name: tcp_frame_size_tuning
   default: false

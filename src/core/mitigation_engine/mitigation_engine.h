@@ -43,24 +43,28 @@ class MitigationEngine : public RefCounted<MitigationEngine> {
     return "Unknown Action";
   }
   ~MitigationEngine() override = default;
+
   // Evaluates an incoming connection based on the peer address.
   virtual std::optional<Action> EvaluateIncomingConnection(
       absl::string_view peer_address) = 0;
+
   // Evaluates an incoming metadata key/value pair. Please note that this
   // function only evaluates *new* key/value pairs; if an incoming header has
   // already been seen by the connection, it will not be evaluated again.
   virtual std::optional<Action> EvaluateIncomingMetadata(
-      absl::string_view key, absl::string_view value) = 0;
+      absl::string_view key, absl::string_view value,
+      absl::string_view peer_address) = 0;
+
   // Evaluates all incoming metadata after they have been parsed.
   virtual std::optional<Action> EvaluateAllIncomingMetadata(
-      const grpc_metadata_batch& metadata) = 0;
+      const grpc_metadata_batch& metadata, absl::string_view peer_address) = 0;
 };
 
 class MitigationEngineProvider
     : public DualRefCounted<MitigationEngineProvider> {
  public:
   static absl::string_view ChannelArgName() {
-    return "grpc.internal.mitigation_engine_provider";
+    return "grpc.mitigation_engine_provider";
   }
 
   static int ChannelArgsCompare(const MitigationEngineProvider* a,

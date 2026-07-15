@@ -96,9 +96,7 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
   bool is_trailers_only() const override {
     Crash("is_trailers_only not implemented for server calls");
   }
-  absl::string_view GetServerAuthority() const override {
-    Crash("unimplemented");
-  }
+  absl::string_view GetServerAuthority() const override;
   grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                              bool is_notify_tag_closure) override;
   void FailBatchImmediately(void* notify_tag, bool is_notify_tag_closure,
@@ -160,12 +158,16 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
   }
 
  private:
+  template <typename T>
+  friend class PrimaryOpsCleanup;
+
   void CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                    bool is_notify_tag_closure);
 
   std::string DebugTag() { return absl::StrFormat("SERVER_CALL[%p]: ", this); }
 
   CallHandler call_handler_;
+  CallOpInvariantsValidator call_op_invariants_validator_;
   std::atomic<bool> sent_server_initial_metadata_batch_{false};
   Latch<void> server_initial_metadata_scheduled_;
   MessageReceiver message_receiver_;

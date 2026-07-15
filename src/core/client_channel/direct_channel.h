@@ -41,8 +41,8 @@ class DirectChannel final : public Channel {
     OrphanablePtr<ClientTransport> transport_;
   };
 
-  static absl::StatusOr<RefCountedPtr<DirectChannel>> Create(
-      std::string target, const ChannelArgs& args);
+  static absl::StatusOr<RefCountedPtr<DirectChannel>> Create(std::string target,
+                                                             ChannelArgs args);
 
   DirectChannel(
       std::string target, const ChannelArgs& args,

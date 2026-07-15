@@ -404,20 +404,18 @@ void ClientChannel::SubchannelWrapper::Orphaned() {
           }
           self->client_channel_->subchannel_map_.erase(it);
         }
-        if (IsSubchannelWrapperCleanupOnOrphanEnabled()) {
-          // We need to make sure that the internal subchannel gets unreffed
-          // inside of the WorkSerializer, so that updates to the local
-          // subchannel pool are properly synchronized.  To that end, we
-          // drop our ref to the internal subchannel here.  We also cancel
-          // any watchers that were not properly cancelled, in case any of
-          // them are holding a ref to the internal subchannel.
-          for (const auto& [_, watcher] : self->watcher_map_) {
-            self->subchannel_->CancelConnectivityStateWatch(watcher);
-          }
-          self->watcher_map_.clear();
-          self->data_watchers_.clear();
-          self->subchannel_.reset();
+        // We need to make sure that the internal subchannel gets unreffed
+        // inside of the WorkSerializer, so that updates to the local
+        // subchannel pool are properly synchronized.  To that end, we
+        // drop our ref to the internal subchannel here.  We also cancel
+        // any watchers that were not properly cancelled, in case any of
+        // them are holding a ref to the internal subchannel.
+        for (const auto& [_, watcher] : self->watcher_map_) {
+          self->subchannel_->CancelConnectivityStateWatch(watcher);
         }
+        self->watcher_map_.clear();
+        self->data_watchers_.clear();
+        self->subchannel_.reset();
       });
 }
 
@@ -587,6 +585,12 @@ absl::StatusOr<RefCountedPtr<Channel>> ClientChannel::Create(
   // Get URI to resolve, using proxy mapper if needed.
   if (target.empty()) {
     return absl::InternalError("target URI is empty in client channel");
+  }
+  auto channel_args_mutator =
+      grpc_channel_args_get_client_channel_creation_mutator();
+  if (channel_args_mutator != nullptr) {
+    channel_args =
+        channel_args_mutator(target.c_str(), channel_args, GRPC_CLIENT_CHANNEL);
   }
   std::string uri_to_resolve = CoreConfiguration::Get()
                                    .proxy_mapper_registry()

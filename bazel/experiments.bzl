@@ -32,7 +32,6 @@ EXPERIMENT_ENABLES = {
     "event_engine_listener": "event_engine_listener",
     "event_engine_callback_cq": "event_engine_callback_cq,event_engine_client,event_engine_listener",
     "event_engine_for_all_other_endpoints": "event_engine_client,event_engine_dns,event_engine_dns_non_client_channel,event_engine_for_all_other_endpoints,event_engine_listener",
-    "event_engine_poller_for_python": "event_engine_poller_for_python",
     "fail_recv_metadata_on_deadline_exceeded": "fail_recv_metadata_on_deadline_exceeded",
     "free_large_allocator": "free_large_allocator",
     "fuse_filters": "fuse_filters",
@@ -40,7 +39,6 @@ EXPERIMENT_ENABLES = {
     "inproc_cancel_stream": "inproc_cancel_stream",
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
     "local_connector_secure": "local_connector_secure",
-    "max_inflight_pings_strict_limit": "max_inflight_pings_strict_limit",
     "memory_optimization_01": "memory_optimization_01",
     "memory_optimization_02": "memory_optimization_02",
     "message_size_refactoring": "message_size_refactoring",
@@ -66,6 +64,7 @@ EXPERIMENT_ENABLES = {
     "promise_based_inproc_transport": "promise_based_inproc_transport",
     "promise_batch_cleanup_on_cancel": "promise_batch_cleanup_on_cancel",
     "promise_filter_send_cancel_metadata": "promise_filter_send_cancel_metadata",
+    "recv_message_filter_bypass_fix": "recv_message_filter_bypass_fix",
     "retry_in_callv3": "retry_in_callv3",
     "return_preexisting_errors": "return_preexisting_errors",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
@@ -74,7 +73,6 @@ EXPERIMENT_ENABLES = {
     "secure_endpoint_read_coalescing": "event_engine_client,event_engine_listener,secure_endpoint_read_coalescing",
     "skip_clear_peer_on_cancellation": "skip_clear_peer_on_cancellation",
     "subchannel_connection_scaling": "subchannel_connection_scaling",
-    "subchannel_wrapper_cleanup_on_orphan": "subchannel_wrapper_cleanup_on_orphan",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
     "tsi_frame_protector_without_locks": "tsi_frame_protector_without_locks",
@@ -83,7 +81,7 @@ EXPERIMENT_ENABLES = {
     "v2_non_owning_waker_implementation": "v2_non_owning_waker_implementation",
     "verbose_channelz_connection_logging": "verbose_channelz_connection_logging",
     "wildcard_ip_expansion_restriction": "wildcard_ip_expansion_restriction",
-    "xds_server_filter_chain_per_route": "xds_server_filter_chain_per_route",
+    "xds_server_filter_chain_per_route": "v2_non_owning_waker_implementation,xds_server_filter_chain_per_route",
 }
 
 EXPERIMENT_POLLERS = [
@@ -93,7 +91,6 @@ EXPERIMENT_POLLERS = [
     "event_engine_fork",
     "event_engine_listener",
     "event_engine_for_all_other_endpoints",
-    "event_engine_poller_for_python",
     "pipelined_read_secure_endpoint",
 ]
 
@@ -179,6 +176,7 @@ EXPERIMENTS = {
                 "ph2_server",
                 "pipelined_read_secure_endpoint",
                 "pollset_alternative",
+                "recv_message_filter_bypass_fix",
                 "retry_in_callv3",
                 "secure_endpoint_offload_large_reads",
                 "secure_endpoint_offload_large_writes",
@@ -237,9 +235,6 @@ EXPERIMENTS = {
                 "event_engine_listener",
                 "subchannel_connection_scaling",
             ],
-            "cpp_end2end_test": [
-                "subchannel_wrapper_cleanup_on_orphan",
-            ],
             "cpp_lb_end2end_test": [
                 "subchannel_connection_scaling",
             ],
@@ -254,9 +249,6 @@ EXPERIMENTS = {
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
-            ],
-            "xds_end2end_test": [
-                "subchannel_wrapper_cleanup_on_orphan",
             ],
         },
     },

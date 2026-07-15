@@ -25,11 +25,11 @@
 cmake_minimum_required(VERSION 3.16)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.83.0-dev")
-set(gRPC_CORE_VERSION     "55.0.0")
-set(gRPC_CORE_SOVERSION   "55")
-set(gRPC_CPP_VERSION      "1.83.0-dev")
-set(gRPC_CPP_SOVERSION    "1.83")
+set(PACKAGE_VERSION       "1.84.0-dev")
+set(gRPC_CORE_VERSION     "56.0.0")
+set(gRPC_CORE_SOVERSION   "56")
+set(gRPC_CPP_VERSION      "1.84.0-dev")
+set(gRPC_CPP_SOVERSION    "1.84")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -1344,7 +1344,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx call_filters_test)
   add_dependencies(buildtests_cxx call_finalization_test)
   add_dependencies(buildtests_cxx call_state_test)
-  add_dependencies(buildtests_cxx call_tracer_test)
   add_dependencies(buildtests_cxx call_utils_test)
   add_dependencies(buildtests_cxx cancel_ares_query_test)
   add_dependencies(buildtests_cxx cancel_callback_test)
@@ -1721,6 +1720,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx rbac_service_config_parser_test)
   add_dependencies(buildtests_cxx rbac_translator_test)
   add_dependencies(buildtests_cxx read_context_test)
+  add_dependencies(buildtests_cxx recv_message_filter_bypass_test)
   add_dependencies(buildtests_cxx ref_counted_ptr_test)
   add_dependencies(buildtests_cxx ref_counted_test)
   add_dependencies(buildtests_cxx regional_access_boundary_fetcher_test)
@@ -2008,6 +2008,7 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_cxx xds_security_spiffe_end2end_test)
   endif()
   add_dependencies(buildtests_cxx xds_stats_watcher_test)
+  add_dependencies(buildtests_cxx xds_transport_grpc_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx xds_wrr_end2end_test)
   endif()
@@ -3087,7 +3088,6 @@ add_library(grpc
   src/core/util/http_client/parser.cc
   src/core/util/json/json_object_loader.cc
   src/core/util/json/json_reader.cc
-  src/core/util/json/json_util.cc
   src/core/util/json/json_writer.cc
   src/core/util/latent_see.cc
   src/core/util/load_file.cc
@@ -3112,6 +3112,7 @@ add_library(grpc
   src/core/xds/grpc/file_watcher_certificate_provider_factory.cc
   src/core/xds/grpc/xds_audit_logger_registry.cc
   src/core/xds/grpc/xds_bootstrap_grpc.cc
+  src/core/xds/grpc/xds_bootstrap_grpc_builder.cc
   src/core/xds/grpc/xds_certificate_provider.cc
   src/core/xds/grpc/xds_client_grpc.cc
   src/core/xds/grpc/xds_cluster.cc
@@ -3143,6 +3144,8 @@ add_library(grpc
   src/core/xds/grpc/xds_route_config_parser.cc
   src/core/xds/grpc/xds_routing.cc
   src/core/xds/grpc/xds_server_grpc.cc
+  src/core/xds/grpc/xds_tls_context.cc
+  src/core/xds/grpc/xds_tls_context_parser.cc
   src/core/xds/grpc/xds_transport_grpc.cc
   src/core/xds/xds_client/lrs_client.cc
   src/core/xds/xds_client/xds_api.cc
@@ -3839,6 +3842,7 @@ add_library(grpc_unsecure
   src/core/server/add_port.cc
   src/core/server/server.cc
   src/core/server/server_call_tracer_filter.cc
+  src/core/server/server_config_selector_filter.cc
   src/core/service_config/service_config_channel_arg_filter.cc
   src/core/service_config/service_config_impl.cc
   src/core/service_config/service_config_parser.cc
@@ -5269,7 +5273,6 @@ foreach(_hdr
   include/grpcpp/support/time.h
   include/grpcpp/support/validate_service_config.h
   include/grpcpp/version_info.h
-  include/grpcpp/virtual_channel.h
   include/grpcpp/xds_server_builder.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
@@ -6018,7 +6021,6 @@ foreach(_hdr
   include/grpcpp/support/time.h
   include/grpcpp/support/validate_service_config.h
   include/grpcpp/version_info.h
-  include/grpcpp/virtual_channel.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -10200,49 +10202,6 @@ target_link_libraries(call_state_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(call_tracer_test
-  test/core/telemetry/call_tracer_test.cc
-  test/core/test_util/fake_stats_plugin.cc
-)
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(call_tracer_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-      "GRPC_DLL_IMPORTS"
-    )
-  endif()
-endif()
-target_compile_features(call_tracer_test PUBLIC cxx_std_17)
-target_include_directories(call_tracer_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(call_tracer_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
 add_executable(call_utils_test
   src/core/call/call_arena_allocator.cc
   src/core/call/call_filters.cc
@@ -10742,6 +10701,12 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(cds_test
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/load_balancing/cds_test.cc
 )
 if(WIN32 AND MSVC)
@@ -10776,6 +10741,7 @@ target_include_directories(cds_test
 target_link_libraries(cds_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -13023,6 +12989,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.pb.h
     ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.h
+    src/core/util/json/json_util.cc
     src/cpp/server/orca/orca_service.cc
     test/core/test_util/test_lb_policies.cc
     test/cpp/end2end/client_lb_end2end_test.cc
@@ -14689,6 +14656,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/ext/transport/chaotic_good_legacy/frame_header.cc
     src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
     src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+    src/core/util/json/json_util.cc
     src/core/util/seq_bit_set.cc
     test/core/call/batch_builder.cc
     test/core/end2end/cq_verifier.cc
@@ -14794,6 +14762,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/ext/transport/chaotic_good_legacy/frame_header.cc
     src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
     src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+    src/core/util/json/json_util.cc
     src/core/util/seq_bit_set.cc
     test/core/call/batch_builder.cc
     test/core/end2end/cq_verifier.cc
@@ -14987,6 +14956,7 @@ add_executable(end2end_http2_no_logging_test
   src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  src/core/util/json/json_util.cc
   src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
@@ -15090,6 +15060,7 @@ add_executable(end2end_http2_security_no_logging_test
   src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  src/core/util/json/json_util.cc
   src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
@@ -15193,6 +15164,7 @@ add_executable(end2end_http2_security_test
   src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  src/core/util/json/json_util.cc
   src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
@@ -15385,6 +15357,7 @@ add_executable(end2end_http2_test
   src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  src/core/util/json/json_util.cc
   src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
@@ -15577,6 +15550,7 @@ add_executable(end2end_inproc_no_logging_test
   src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  src/core/util/json/json_util.cc
   src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
@@ -15680,6 +15654,7 @@ add_executable(end2end_inproc_test
   src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  src/core/util/json/json_util.cc
   src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
@@ -15872,6 +15847,7 @@ add_executable(end2end_ph2_no_logging_test
   src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  src/core/util/json/json_util.cc
   src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
@@ -15975,6 +15951,7 @@ add_executable(end2end_ph2_test
   src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  src/core/util/json/json_util.cc
   src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
@@ -16167,6 +16144,7 @@ add_executable(end2end_posix_no_logging_test
   src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  src/core/util/json/json_util.cc
   src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
@@ -16270,6 +16248,7 @@ add_executable(end2end_posix_test
   src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  src/core/util/json/json_util.cc
   src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
@@ -16540,6 +16519,7 @@ add_executable(end2end_vrpc_no_logging_test
   src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  src/core/util/json/json_util.cc
   src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
@@ -16644,6 +16624,7 @@ add_executable(end2end_vrpc_test
   src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  src/core/util/json/json_util.cc
   src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
@@ -30435,6 +30416,49 @@ target_link_libraries(read_context_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(recv_message_filter_bypass_test
+  test/core/filters/recv_message_filter_bypass_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(recv_message_filter_bypass_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(recv_message_filter_bypass_test PUBLIC cxx_std_17)
+target_include_directories(recv_message_filter_bypass_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(recv_message_filter_bypass_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_unsecure
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(ref_counted_ptr_test
   test/core/util/ref_counted_ptr_test.cc
 )
@@ -31287,6 +31311,7 @@ add_executable(rls_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.pb.h
   ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.h
+  src/core/util/json/json_util.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/test_call_creds.cc
@@ -42402,6 +42427,7 @@ add_executable(xds_common_types_test
   src/core/ext/upb-gen/xds/core/v3/resource.upb_minitable.c
   src/core/ext/upb-gen/xds/core/v3/resource_locator.upb_minitable.c
   src/core/ext/upb-gen/xds/core/v3/resource_name.upb_minitable.c
+  src/core/xds/grpc/xds_grpc_service_parser.cc
   test/core/xds/xds_common_types_test.cc
   test/cpp/util/cli_call.cc
   test/cpp/util/cli_credentials.cc
@@ -47392,6 +47418,10 @@ add_executable(xds_http_filters_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/cel/expr/checked.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/cel/expr/checked.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/cel/expr/checked.pb.h
@@ -47844,7 +47874,10 @@ add_executable(xds_http_filters_test
   ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/typed_struct.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/typed_struct.pb.h
   ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/typed_struct.grpc.pb.h
+  test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/xds/xds_http_filters_test.cc
+  test/core/xds/xds_transport_fake.cc
   test/cpp/util/cli_call.cc
   test/cpp/util/cli_credentials.cc
   test/cpp/util/proto_file_parser.cc
@@ -53480,7 +53513,14 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(xds_routing_test
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/xds/xds_routing_test.cc
+  test/core/xds/xds_transport_fake.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -53514,6 +53554,7 @@ target_include_directories(xds_routing_test
 target_link_libraries(xds_routing_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -55254,6 +55295,48 @@ target_link_libraries(xds_stats_watcher_test
   grpcpp_channelz
   grpc_test_util
   grpc++_test_config
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(xds_transport_grpc_test
+  test/core/xds/xds_transport_grpc_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(xds_transport_grpc_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(xds_transport_grpc_test PUBLIC cxx_std_17)
+target_include_directories(xds_transport_grpc_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(xds_transport_grpc_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
 )
 
 
