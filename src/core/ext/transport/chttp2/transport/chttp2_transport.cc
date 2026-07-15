@@ -886,7 +886,7 @@ static void close_transport_locked(grpc_chttp2_transport* t,
   cancel_pings(t, error);
   if (t->closed_with_error.ok()) {
     if (absl::IsUnknown(error)) {
-      error = ReplaceStatusCode(error, absl::StatusCode::kUnavailable);
+      error = grpc_core::ReplaceStatusCode(error, absl::StatusCode::kUnavailable);
     }
     if (t->write_state != GRPC_CHTTP2_WRITE_STATE_IDLE) {
       if (t->close_transport_on_writes_finished.ok()) {
@@ -2889,7 +2889,7 @@ static void end_all_the_calls(grpc_chttp2_transport* t,
   if (!t->is_client && absl::IsUnknown(error) &&
       !grpc_error_get_int(error, grpc_core::StatusIntProperty::kHttp2Error,
                           &http2_error)) {
-    error = ReplaceStatusCode(error, absl::StatusCode::kUnavailable);
+    error = grpc_core::ReplaceStatusCode(error, absl::StatusCode::kUnavailable);
   }
   cancel_unstarted_streams(t, error, false);
   std::vector<grpc_chttp2_stream*> to_cancel;

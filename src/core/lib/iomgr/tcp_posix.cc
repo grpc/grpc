@@ -1556,7 +1556,7 @@ void TcpZerocopySendRecord::UpdateOffsetForBytesSent(size_t sending_length,
 }
 
 static absl::Status OSError(int err, absl::string_view call_name) {
-  return absl::UnavailableERror(
+  return absl::UnavailableError(
       absl::StrCat(call_name, ": ", grpc_core::StrError(err), " (", err, ")"));
 }
 
