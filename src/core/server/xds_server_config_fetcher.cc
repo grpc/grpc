@@ -953,8 +953,7 @@ class XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::
     }
   }
 
-  void Watch(
-      std::shared_ptr<ServerConfigSelectorWatcher> watcher) override {
+  void Watch(std::shared_ptr<ServerConfigSelectorWatcher> watcher) override {
     fetcher_state_->work_serializer.Run(
         [self = WeakRefAsSubclass<XdsServerConfigSelectorProvider>(),
          watcher = std::move(watcher)]()

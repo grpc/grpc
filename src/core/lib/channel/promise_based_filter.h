@@ -2257,7 +2257,8 @@ struct BaseCallDataMethods {
 
 // The type of object returned by a filter's Create method.
 template <typename T>
-using CreatedType = typename decltype(T::Create(ChannelArgs(), {nullptr, nullptr}))::value_type;
+using CreatedType =
+    typename decltype(T::Create(ChannelArgs(), {nullptr, nullptr}))::value_type;
 
 template <typename GrpcChannelOrCallElement>
 inline ChannelFilter* ChannelFilterFromElem(GrpcChannelOrCallElement* elem) {
