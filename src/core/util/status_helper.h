@@ -95,10 +95,6 @@ absl::Status ReplaceStatusCode(const absl::Status& status,
 /// Adds a child status to status
 void StatusAddChild(absl::Status* status, absl::Status child);
 
-/// Returns all children status from a status
-GRPC_MUST_USE_RESULT std::vector<absl::Status> StatusGetChildren(
-    absl::Status status);
-
 /// Returns a string representation from status
 /// Error status will be like
 ///   STATUS[:MESSAGE] [{PAYLOADS[, children:[CHILDREN-STATUS-LISTS]]}]

@@ -142,8 +142,6 @@ void StatusAddChild(absl::Status* status, absl::Status child) {
   *status = std::move(new_status);
 }
 
-std::vector<absl::Status> StatusGetChildren(absl::Status status) { return {}; }
-
 std::string StatusToString(const absl::Status& status) {
   if (status.ok()) {
     return "OK";
