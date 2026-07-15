@@ -206,9 +206,9 @@ static void on_read(void* tcpp, grpc_error_handle error) {
       } else {
         GRPC_TRACE_LOG(tcp, INFO) << "TCP:" << tcp << " unref read_slice";
         grpc_slice_buffer_reset_and_unref(tcp->read_slices);
-        error = absl::UnavailableError(
-            tcp->shutting_down ? "TCP stream shutting down"
-                               : "End of TCP stream");
+        error = absl::UnavailableError(tcp->shutting_down
+                                           ? "TCP stream shutting down"
+                                           : "End of TCP stream");
       }
     }
   }

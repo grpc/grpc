@@ -337,10 +337,9 @@ void PollEventHandle::ShutdownHandle(absl::Status why) {
     // only shutdown once
     if (!is_shutdown_) {
       is_shutdown_ = true;
-      shutdown_error_ =
-          absl::IsCancelled(why)
-          ? std::move(why)
-          : absl::UnavailableError(why.message());
+      shutdown_error_ = absl::IsCancelled(why)
+                            ? std::move(why)
+                            : absl::UnavailableError(why.message());
       SetReadyLocked(&read_closure_);
       SetReadyLocked(&write_closure_);
     }

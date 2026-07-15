@@ -2557,8 +2557,8 @@ bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
         if (!send_initial_metadata()
                  ->GetOrCreatePointer(WaitForReady())
                  ->value) {
-          *error = MaybeRewriteIllegalStatusCode(
-              std::move(fail_pick->status), "LB pick");
+          *error = MaybeRewriteIllegalStatusCode(std::move(fail_pick->status),
+                                                 "LB pick");
           return true;
         }
         // If wait_for_ready is true, then queue to retry when we get a new
@@ -2570,10 +2570,10 @@ bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
         GRPC_TRACE_LOG(client_channel_lb_call, INFO)
             << "chand=" << chand_ << " lb_call=" << this
             << ": LB pick dropped: " << drop_pick->status;
-        *error = grpc_error_set_int(
-            MaybeRewriteIllegalStatusCode(
-                std::move(drop_pick->status), "LB drop"),
-            StatusIntProperty::kLbPolicyDrop, 1);
+        *error =
+            grpc_error_set_int(MaybeRewriteIllegalStatusCode(
+                                   std::move(drop_pick->status), "LB drop"),
+                               StatusIntProperty::kLbPolicyDrop, 1);
         return true;
       });
 }

@@ -896,10 +896,9 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
         grpc_error_handle status_error =
             op->data.send_status_from_server.status == GRPC_STATUS_OK
                 ? absl::OkStatus()
-                : absl::Status(
-                      static_cast<absl::StatusCode>(
-                          op->data.send_status_from_server.status),
-                      "Server returned error");
+                : absl::Status(static_cast<absl::StatusCode>(
+                                   op->data.send_status_from_server.status),
+                               "Server returned error");
         if (op->data.send_status_from_server.status_details != nullptr) {
           send_trailing_metadata_.Set(
               GrpcMessageMetadata(),

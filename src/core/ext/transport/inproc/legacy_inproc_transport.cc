@@ -1156,8 +1156,8 @@ void close_transport_locked(inproc_transport* t) {
     // Also end all streams on this transport
     while (t->stream_list != nullptr) {
       // cancel_stream_locked also adjusts stream list
-      cancel_stream_locked(
-          t->stream_list, absl::UnavailableError("Transport closed"));
+      cancel_stream_locked(t->stream_list,
+                           absl::UnavailableError("Transport closed"));
     }
   }
 }
