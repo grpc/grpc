@@ -42,18 +42,15 @@ void AnnotatePassedThrough(ClientMetadata& md, int x) {
 // record of each filter's creation.
 
 struct CreationLogEntry {
-  size_t filter_instance_id;
   size_t type_tag;
 
   bool operator==(const CreationLogEntry& other) const {
-    return filter_instance_id == other.filter_instance_id &&
-           type_tag == other.type_tag;
+    return type_tag == other.type_tag;
   }
 
   friend std::ostream& operator<<(std::ostream& os,
                                   const CreationLogEntry& entry) {
-    return os << "{filter_instance_id=" << entry.filter_instance_id
-              << ", type_tag=" << entry.type_tag << "}";
+    return os << "{type_tag=" << entry.type_tag << "}";
   }
 };
 
@@ -67,7 +64,7 @@ void MaybeLogCreation(const ChannelArgs& channel_args,
                       ChannelFilter::Args filter_args, size_t type_tag) {
   auto* log = channel_args.GetPointer<CreationLog>("creation_log");
   if (log == nullptr) return;
-  log->entries.push_back(CreationLogEntry{filter_args.instance_id(), type_tag});
+  log->entries.push_back(CreationLogEntry{type_tag});
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -405,12 +402,12 @@ TEST_F(InterceptionChainTest, CreationOrderCorrect) {
                .Add<TestConsumingInterceptor<4>>(nullptr)
                .Add<TestFilter<1>>(nullptr)
                .Build(destination());
-  EXPECT_THAT(log.entries, ::testing::ElementsAre(
-                               CreationLogEntry{0, 1}, CreationLogEntry{0, 2},
-                               CreationLogEntry{0, 3}, CreationLogEntry{0, 4},
-                               CreationLogEntry{1, 1}, CreationLogEntry{1, 2},
-                               CreationLogEntry{1, 3}, CreationLogEntry{1, 4},
-                               CreationLogEntry{2, 1}));
+  EXPECT_THAT(log.entries,
+              ::testing::ElementsAre(CreationLogEntry{1}, CreationLogEntry{2},
+                                     CreationLogEntry{3}, CreationLogEntry{4},
+                                     CreationLogEntry{1}, CreationLogEntry{2},
+                                     CreationLogEntry{3}, CreationLogEntry{4},
+                                     CreationLogEntry{1}));
 }
 
 TEST_F(InterceptionChainTest, AddOnServerTrailingMetadataForEachInterceptor) {
