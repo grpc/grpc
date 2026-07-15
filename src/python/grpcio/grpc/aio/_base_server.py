@@ -135,6 +135,9 @@ class Server(abc.ABC):
           A bool indicates if the operation times out.
         """
 
+    # Suppressing pyright[reportUnknownParameterType, reportMissingParameterType]
+    # for type annotation of service_name and method_handlers as it will be
+    # taken up along with the sync stack changes.
     def add_registered_method_handlers(  # noqa: B027
         self, service_name, method_handlers  # pyright: ignore # noqa: PGH003
     ) -> None:
