@@ -130,8 +130,6 @@ grpc_fuzz_test(
     ],
 )
 
-
-
 grpc_fuzz_test(
     name = "compression_filter_test",
     srcs = ["compression_filter_test.cc"],

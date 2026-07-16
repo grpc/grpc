@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "src/core/ext/filters/http/message_compress/compression_filter.h"
+
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/compression_types.h>
 #include <grpc/impl/grpc_types.h>
@@ -20,12 +22,8 @@
 #include <optional>
 #include <string>
 
-#include "absl/status/status.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/call/message.h"
 #include "src/core/call/metadata.h"
-#include "src/core/ext/filters/http/message_compress/compression_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -33,6 +31,9 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "test/core/filters/filter_matchers.h"
 #include "test/core/filters/v3_filter_test/v3_filter_test.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 
@@ -56,11 +57,13 @@ FILTER_TEST_V3(RoundTripCompressesAndDecompresses) {
   const std::string request = CompressiblePayload();
   const std::string response = CompressiblePayload();
 
-  auto [initiator, handler] = StartCall(Arena::MakePooledForOverwrite<ClientMetadata>());
+  auto [initiator, handler] =
+      StartCall(Arena::MakePooledForOverwrite<ClientMetadata>());
   SpawnTestSeq(
       initiator, "client",
       [initiator = initiator, request]() mutable {
-        return initiator.PushMessage(Arena::MakePooled<Message>(SliceBuffer(Slice::FromCopiedString(request)), 0));
+        return initiator.PushMessage(Arena::MakePooled<Message>(
+            SliceBuffer(Slice::FromCopiedString(request)), 0));
       },
       [initiator = initiator](StatusFlag ok) mutable {
         EXPECT_TRUE(ok.ok());
@@ -80,8 +83,9 @@ FILTER_TEST_V3(RoundTripCompressesAndDecompresses) {
         EXPECT_TRUE(msg.has_value());
         // Client filter decompressed the server's message back to the original.
         EXPECT_THAT(msg.value(), HasMessagePayload(response));
-        EXPECT_THAT(msg.value(),
-                    HasMessageFlags(GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED));
+        EXPECT_THAT(
+            msg.value(),
+            HasMessageFlags(GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED));
         return initiator.PullMessage();
       },
       [initiator = initiator](ServerToClientNextMessage msg) mutable {
@@ -96,7 +100,9 @@ FILTER_TEST_V3(RoundTripCompressesAndDecompresses) {
 
   SpawnTestSeq(
       handler, "server",
-      [handler = handler]() mutable { return handler.PullClientInitialMetadata(); },
+      [handler = handler]() mutable {
+        return handler.PullClientInitialMetadata();
+      },
       [handler = handler](ValueOrFailure<ClientMetadataHandle> md) mutable {
         EXPECT_TRUE(md.ok());
         // Client filter advertised its encoding on client initial metadata.
@@ -108,13 +114,16 @@ FILTER_TEST_V3(RoundTripCompressesAndDecompresses) {
         EXPECT_TRUE(msg.has_value());
         // Server filter decompressed the client's message back to the original.
         EXPECT_THAT(msg.value(), HasMessagePayload(request));
-        EXPECT_THAT(msg.value(),
-                    HasMessageFlags(GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED));
-        return handler.PushServerInitialMetadata(Arena::MakePooledForOverwrite<ServerMetadata>());
+        EXPECT_THAT(
+            msg.value(),
+            HasMessageFlags(GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED));
+        return handler.PushServerInitialMetadata(
+            Arena::MakePooledForOverwrite<ServerMetadata>());
       },
       [handler = handler, response](StatusFlag ok) mutable {
         EXPECT_TRUE(ok.ok());
-        return handler.PushMessage(Arena::MakePooled<Message>(SliceBuffer(Slice::FromCopiedString(response)), 0));
+        return handler.PushMessage(Arena::MakePooled<Message>(
+            SliceBuffer(Slice::FromCopiedString(response)), 0));
       },
       [handler = handler](StatusFlag ok) mutable {
         EXPECT_TRUE(ok.ok());
@@ -138,11 +147,13 @@ FILTER_TEST_V3(ClientFilterCompressesOnTheWire) {
   ASSERT_TRUE(Add<ClientCompressionFilter>().Build(GzipArgs()).ok());
   const std::string request = CompressiblePayload();
 
-  auto [initiator, handler] = StartCall(Arena::MakePooledForOverwrite<ClientMetadata>());
+  auto [initiator, handler] =
+      StartCall(Arena::MakePooledForOverwrite<ClientMetadata>());
   SpawnTestSeq(
       initiator, "client",
       [initiator = initiator, request]() mutable {
-        return initiator.PushMessage(Arena::MakePooled<Message>(SliceBuffer(Slice::FromCopiedString(request)), 0));
+        return initiator.PushMessage(Arena::MakePooled<Message>(
+            SliceBuffer(Slice::FromCopiedString(request)), 0));
       },
       [initiator = initiator](StatusFlag ok) mutable {
         EXPECT_TRUE(ok.ok());
@@ -167,7 +178,9 @@ FILTER_TEST_V3(ClientFilterCompressesOnTheWire) {
 
   SpawnTestSeq(
       handler, "server",
-      [handler = handler]() mutable { return handler.PullClientInitialMetadata(); },
+      [handler = handler]() mutable {
+        return handler.PullClientInitialMetadata();
+      },
       [handler = handler](ValueOrFailure<ClientMetadataHandle> md) mutable {
         EXPECT_TRUE(md.ok());
         EXPECT_THAT(**md, HasMetadataKeyValue("grpc-encoding", "gzip"));
@@ -179,7 +192,8 @@ FILTER_TEST_V3(ClientFilterCompressesOnTheWire) {
         // The payload arrives compressed: flagged and strictly smaller.
         EXPECT_THAT(msg.value(), HasMessageFlags(GRPC_WRITE_INTERNAL_COMPRESS));
         EXPECT_LT(msg.value().payload()->Length(), request.size());
-        return handler.PushServerInitialMetadata(Arena::MakePooledForOverwrite<ServerMetadata>());
+        return handler.PushServerInitialMetadata(
+            Arena::MakePooledForOverwrite<ServerMetadata>());
       },
       [handler = handler](StatusFlag ok) mutable {
         EXPECT_TRUE(ok.ok());
@@ -202,11 +216,14 @@ FILTER_TEST_V3(NoCompressFlagIsHonored) {
   ASSERT_TRUE(Add<ClientCompressionFilter>().Build(GzipArgs()).ok());
   const std::string request = CompressiblePayload();
 
-  auto [initiator, handler] = StartCall(Arena::MakePooledForOverwrite<ClientMetadata>());
+  auto [initiator, handler] =
+      StartCall(Arena::MakePooledForOverwrite<ClientMetadata>());
   SpawnTestSeq(
       initiator, "client",
       [initiator = initiator, request]() mutable {
-        return initiator.PushMessage(Arena::MakePooled<Message>(SliceBuffer(Slice::FromCopiedString(request)), GRPC_WRITE_NO_COMPRESS));
+        return initiator.PushMessage(Arena::MakePooled<Message>(
+            SliceBuffer(Slice::FromCopiedString(request)),
+            GRPC_WRITE_NO_COMPRESS));
       },
       [initiator = initiator](StatusFlag ok) mutable {
         EXPECT_TRUE(ok.ok());
@@ -231,7 +248,9 @@ FILTER_TEST_V3(NoCompressFlagIsHonored) {
 
   SpawnTestSeq(
       handler, "server",
-      [handler = handler]() mutable { return handler.PullClientInitialMetadata(); },
+      [handler = handler]() mutable {
+        return handler.PullClientInitialMetadata();
+      },
       [handler = handler](ValueOrFailure<ClientMetadataHandle> md) mutable {
         EXPECT_TRUE(md.ok());
         return handler.PullMessage();
@@ -242,7 +261,8 @@ FILTER_TEST_V3(NoCompressFlagIsHonored) {
         // Untouched: original bytes, NO_COMPRESS preserved, not compressed.
         EXPECT_THAT(msg.value(), HasMessagePayload(request));
         EXPECT_THAT(msg.value(), HasMessageFlags(GRPC_WRITE_NO_COMPRESS));
-        return handler.PushServerInitialMetadata(Arena::MakePooledForOverwrite<ServerMetadata>());
+        return handler.PushServerInitialMetadata(
+            Arena::MakePooledForOverwrite<ServerMetadata>());
       },
       [handler = handler](StatusFlag ok) mutable {
         EXPECT_TRUE(ok.ok());
@@ -261,27 +281,32 @@ FILTER_TEST_V3(NoCompressFlagIsHonored) {
 // Negative scenario: the server rejects the call with an error status (a
 // trailers-only response). The compression filters carry no message here; the
 // test asserts the failure propagates cleanly through the filter stack so the
-// client observes the server's status. Robust under any fuzzed schedule -- there
-// is no message to drain, mirroring the initial-metadata abort pattern.
+// client observes the server's status. Robust under any fuzzed schedule --
+// there is no message to drain, mirroring the initial-metadata abort pattern.
 FILTER_TEST_V3(ServerAbortsCallWithErrorStatus) {
   ASSERT_TRUE(Add<ClientCompressionFilter>()
                   .Add<ServerCompressionFilter>()
                   .Build(GzipArgs())
                   .ok());
 
-  auto [initiator, handler] = StartCall(Arena::MakePooledForOverwrite<ClientMetadata>());
+  auto [initiator, handler] =
+      StartCall(Arena::MakePooledForOverwrite<ClientMetadata>());
   SpawnTestSeq(
       initiator, "client",
-      [initiator = initiator]() mutable { return initiator.PullServerTrailingMetadata(); },
+      [initiator = initiator]() mutable {
+        return initiator.PullServerTrailingMetadata();
+      },
       [](ValueOrFailure<ServerMetadataHandle> md) {
         EXPECT_TRUE(md.ok());
-        EXPECT_THAT(**md,
-                    HasMetadataResult(absl::UnavailableError("server aborted")));
+        EXPECT_THAT(
+            **md, HasMetadataResult(absl::UnavailableError("server aborted")));
       });
 
   SpawnTestSeq(
       handler, "server",
-      [handler = handler]() mutable { return handler.PullClientInitialMetadata(); },
+      [handler = handler]() mutable {
+        return handler.PullClientInitialMetadata();
+      },
       [handler = handler](ValueOrFailure<ClientMetadataHandle> md) mutable {
         EXPECT_TRUE(md.ok());
         handler.PushServerTrailingMetadata(ServerMetadataFromStatus(
@@ -299,11 +324,13 @@ FILTER_TEST_V3(OversizeCompressedMessageRejected) {
           .ok());
   const std::string request = CompressiblePayload();
 
-  auto [initiator, handler] = StartCall(Arena::MakePooledForOverwrite<ClientMetadata>());
+  auto [initiator, handler] =
+      StartCall(Arena::MakePooledForOverwrite<ClientMetadata>());
   SpawnTestSeq(
       initiator, "client",
       [initiator = initiator, request]() mutable {
-        return initiator.PushMessage(Arena::MakePooled<Message>(SliceBuffer(Slice::FromCopiedString(request)), 0));
+        return initiator.PushMessage(Arena::MakePooled<Message>(
+            SliceBuffer(Slice::FromCopiedString(request)), 0));
       },
       [initiator = initiator](StatusFlag) mutable {
         // The push may resolve ok or fail depending on when the downstream
@@ -320,7 +347,9 @@ FILTER_TEST_V3(OversizeCompressedMessageRejected) {
 
   SpawnTestSeq(
       handler, "server",
-      [handler = handler]() mutable { return handler.PullClientInitialMetadata(); },
+      [handler = handler]() mutable {
+        return handler.PullClientInitialMetadata();
+      },
       [handler = handler](ValueOrFailure<ClientMetadataHandle> md) mutable {
         EXPECT_TRUE(md.ok());
         return handler.PullMessage();

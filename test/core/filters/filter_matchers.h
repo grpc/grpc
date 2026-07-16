@@ -25,9 +25,10 @@
 #include "absl/strings/escaping.h"
 
 // gmock matchers for asserting on the metadata and messages that flow through a
-// filter call. Shared by both filter test harnesses -- the v2 FilterTest<Filter>
-// (filter_test.h) and the v3 FilterTestV3 (v3_filter_test/v3_filter_test.h) --
-// so tests read the same vocabulary in either.
+// filter call. Shared by both filter test harnesses -- the v2
+// FilterTest<Filter> (filter_test.h) and the v3 FilterTestV3
+// (v3_filter_test/v3_filter_test.h) -- so tests read the same vocabulary in
+// either.
 
 // Metadata has a given key with a given value.
 MATCHER_P2(HasMetadataKeyValue, key, value, "") {

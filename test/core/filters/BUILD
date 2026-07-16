@@ -97,8 +97,8 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        ":filter_matchers",
         "filter_test",
+        ":filter_matchers",
         "//:grpc_base",
         "//:grpc_unsecure",
         "//src/core:activity",
@@ -125,8 +125,8 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        ":filter_matchers",
         "filter_test",
+        ":filter_matchers",
         "//:grpc",
         "//:grpc_base",
         "//:grpc_core_credentials_header",
@@ -154,8 +154,8 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        ":filter_matchers",
         "filter_test",
+        ":filter_matchers",
         "//:channel_arg_names",
         "//src/core:grpc_client_authority_filter",
     ],
@@ -174,8 +174,8 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        ":filter_matchers",
         "filter_test",
+        ":filter_matchers",
         "//:grpc",
         "//:grpc_base",
         "//:grpc_security_base",

@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "test/core/filters/filter_matchers.h"
 #include "test/core/filters/filter_test.h"
 
 #include <grpc/compression.h>
@@ -33,6 +32,7 @@
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/transport.h"
+#include "test/core/filters/filter_matchers.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/statusor.h"

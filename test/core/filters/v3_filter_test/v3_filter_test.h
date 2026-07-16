@@ -34,8 +34,8 @@
 //   CallInitiator (client)  <->  CallFilters::Stack  <->  CallHandler (server)
 //
 // The stack is assembled with `CallFilters::StackBuilder` and attached directly
-// to a real call spine, so the six call lifecycle hooks fire through the genuine
-// CallFilters / CallSpine executor, exactly as they do in production.
+// to a real call spine, so the six call lifecycle hooks fire through the
+// genuine CallFilters / CallSpine executor, exactly as they do in production.
 //
 // Because it is built on the yodel harness, every FILTER_TEST_V3 is also a
 // fuzz target: the FuzzingEventEngine perturbs scheduling, message sizes, and
@@ -64,9 +64,9 @@ class FilterTestV3 : public YodelTest {
   template <typename T>
   FilterTestV3& Add(RefCountedPtr<const FilterConfig> config = nullptr) {
     make_filter_fns_.push_back([config = std::move(config)](
-                           const ChannelArgs& args,
-                           CallFilters::StackBuilder& builder,
-                           size_t instance_id) mutable -> absl::Status {
+                                   const ChannelArgs& args,
+                                   CallFilters::StackBuilder& builder,
+                                   size_t instance_id) mutable -> absl::Status {
       auto filter = T::Create(args, FilterArgs(instance_id, std::move(config)));
       if (!filter.ok()) return filter.status();
       // StackBuilder holds a bare pointer to the filter, so hand it ownership

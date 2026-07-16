@@ -23,6 +23,8 @@
 //     terminates it before the server, and the client sees that status.
 //   * Composition: a chain of filters runs in Add() order.
 
+#include "test/core/filters/v3_filter_test/v3_filter_test.h"
+
 #include <grpc/status.h>
 
 #include <memory>
@@ -40,7 +42,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "test/core/filters/filter_matchers.h"
-#include "test/core/filters/v3_filter_test/v3_filter_test.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
@@ -171,14 +172,16 @@ FILTER_TEST_V3(UnaryEchoThroughPassThroughFilter) {
   // "echo-test" is a custom key with no metadata trait, so it must be appended
   // by name. Unknown keys are never parsed, so the error callback is
   // unreachable; the test asserts the key arrives intact below regardless.
-  auto client_initial_metadata = Arena::MakePooledForOverwrite<ClientMetadata>();
+  auto client_initial_metadata =
+      Arena::MakePooledForOverwrite<ClientMetadata>();
   client_initial_metadata->Append("echo-test", Slice::FromStaticString("on"),
                                   [](absl::string_view, const Slice&) {});
   auto [initiator, handler] = StartCall(std::move(client_initial_metadata));
   SpawnTestSeq(
       initiator, "client",
       [initiator = initiator]() mutable {
-        return initiator.PushMessage(Arena::MakePooled<Message>(SliceBuffer(Slice::FromCopiedString("hello")), 0));
+        return initiator.PushMessage(Arena::MakePooled<Message>(
+            SliceBuffer(Slice::FromCopiedString("hello")), 0));
       },
       [initiator = initiator](StatusFlag ok) mutable {
         EXPECT_TRUE(ok.ok());
@@ -211,7 +214,9 @@ FILTER_TEST_V3(UnaryEchoThroughPassThroughFilter) {
   auto echoed = std::make_shared<std::string>();
   SpawnTestSeq(
       handler, "server",
-      [handler = handler]() mutable { return handler.PullClientInitialMetadata(); },
+      [handler = handler]() mutable {
+        return handler.PullClientInitialMetadata();
+      },
       [handler = handler](ValueOrFailure<ClientMetadataHandle> md) mutable {
         EXPECT_TRUE(md.ok());
         EXPECT_THAT(**md, HasMetadataKeyValue("echo-test", "on"));
@@ -233,7 +238,8 @@ FILTER_TEST_V3(UnaryEchoThroughPassThroughFilter) {
       },
       [handler = handler, echoed](StatusFlag ok) mutable {
         EXPECT_TRUE(ok.ok());
-        return handler.PushMessage(Arena::MakePooled<Message>(SliceBuffer(Slice::FromCopiedString(*echoed)), 0));
+        return handler.PushMessage(Arena::MakePooled<Message>(
+            SliceBuffer(Slice::FromCopiedString(*echoed)), 0));
       },
       [handler = handler](StatusFlag ok) mutable {
         EXPECT_TRUE(ok.ok());
