@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/telemetry/instrument.h"
 #include "test/core/test_util/test_config.h"
 #include "gmock/gmock.h"

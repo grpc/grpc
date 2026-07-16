@@ -260,6 +260,7 @@ grpc_cc_test(
     deps = [
         "//:grpc",
         "//:grpc_client_channel",
+        "//src/core:instrument",
         "//test/core/test_util:grpc_test_util",
     ],
 )
