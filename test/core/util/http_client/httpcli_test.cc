@@ -36,6 +36,7 @@
 #include <utility>
 
 #include "src/core/credentials/transport/transport_credentials.h"
+#include "src/core/lib/event_engine/ares_resolver.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/util/grpc_check.h"
@@ -336,6 +337,9 @@ TEST_F(HttpRequestTest, CancelGetDuringDNSResolution) {
           kWaitForClientToSendFirstBytes,
       grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
   g_fake_non_responsive_dns_server_port = fake_dns_server.port();
+  void (*prev_test_only_inject_config)(ares_channel* channel) =
+      event_engine_grpc_ares_test_only_inject_config;
+  event_engine_grpc_ares_test_only_inject_config = InjectNonResponsiveDNSServer;
   // Run the same test on several threads in parallel to try to trigger races
   // etc.
   int kNumThreads = 10;
@@ -377,6 +381,7 @@ TEST_F(HttpRequestTest, CancelGetDuringDNSResolution) {
   for (auto& t : threads) {
     t.join();
   }
+  event_engine_grpc_ares_test_only_inject_config = prev_test_only_inject_config;
 }
 
 TEST_F(HttpRequestTest, CancelGetWhileReadingResponse) {

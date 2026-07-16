@@ -84,6 +84,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:subprocess",
+        "//src/core:ares_resolver",
         "//test/core/end2end:ssl_test_data",
         "//test/core/test_util:fake_udp_and_tcp_server",
         "//test/core/test_util:grpc_test_util",
