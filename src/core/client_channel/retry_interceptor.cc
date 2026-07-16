@@ -282,17 +282,9 @@ auto RetryInterceptor::Attempt::ServerToClientGotTrailersOnlyResponse() {
         GRPC_TRACE_LOG(retry, INFO)
             << self->DebugTag()
             << " got server trailing metadata: " << md->DebugString();
-        std::optional<Duration> delay;
-        // Never retry LB drops.
-        if (md->get(LbPolicyDrop())) {
-          GRPC_TRACE_LOG(retry, INFO)
-              << self->DebugTag() << " LB policy drop, not retrying";
-        } else {
-          delay = self->call_->ShouldRetry(
-              *md, [self = self.get()]() -> std::string {
-                return self->DebugTag();
-              });
-        }
+        auto delay = self->call_->ShouldRetry(
+            *md,
+            [self = self.get()]() -> std::string { return self->DebugTag(); });
         return If(
             delay.has_value(),
             [self, delay]() {
