@@ -1657,6 +1657,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
         "absl/log",
+        "absl/strings:string_view",
         "absl/synchronization",
     ],
     tags = ["tls_credentials_test"],
