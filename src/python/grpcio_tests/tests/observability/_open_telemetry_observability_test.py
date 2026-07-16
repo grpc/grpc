@@ -505,7 +505,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
 
         with grpc_observability.OpenTelemetryPlugin(
             meter_provider=self._provider,
-            enabled_metrics=_RETRY_METRIC_NAMES,
+            additional_metrics=_RETRY_METRIC_NAMES,
         ):
             server, port = _test_server.start_flaky_server(
                 num_failed_attempts=NUM_FAILED_ATTEMPTS
@@ -543,14 +543,14 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             grpc_observability.OpenTelemetryPlugin(
                 meter_provider=self._provider,
-                enabled_metrics=["grpc.client.call.no_such_metric"],
+                additional_metrics=["grpc.client.call.no_such_metric"],
             )
 
     def testEnablingDefaultMetricIsNoOp(self):
         default_metric = _open_telemetry_measures.CLIENT_ATTEMPT_STARTED.name
         with grpc_observability.OpenTelemetryPlugin(
             meter_provider=self._provider,
-            enabled_metrics=[default_metric],
+            additional_metrics=[default_metric],
         ):
             server, port = _test_server.start_server()
             self._server = server
@@ -577,7 +577,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
     def testRetryMetricsNotReportedForCallsWithoutRetries(self):
         with grpc_observability.OpenTelemetryPlugin(
             meter_provider=self._provider,
-            enabled_metrics=_RETRY_METRIC_NAMES,
+            additional_metrics=_RETRY_METRIC_NAMES,
         ):
             server, port = _test_server.start_server()
             self._server = server

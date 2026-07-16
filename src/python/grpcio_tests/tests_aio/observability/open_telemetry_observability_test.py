@@ -194,7 +194,7 @@ class OpenTelemetryObservabilityRetryTest(AioTestBase):
         self._provider = otel_metrics.MeterProvider(metric_readers=(reader,))
         self._otel_plugin = grpc_observability.OpenTelemetryPlugin(
             meter_provider=self._provider,
-            enabled_metrics=_RETRY_METRIC_NAMES,
+            additional_metrics=_RETRY_METRIC_NAMES,
         )
         self._otel_plugin.register_global()
         self._server, self._port = await _test_server.start_flaky_server(

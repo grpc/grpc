@@ -72,29 +72,29 @@ GRPC_STATUS_CODE_TO_STRING = {
 }
 
 
-def _enabled_optional_metrics(
-    enabled_metric_names: Iterable[str],
+def _resolve_additional_metrics(
+    additional_metric_names: Iterable[str],
 ) -> List[_open_telemetry_measures.Metric]:
-    """Resolves metric names to the optional metrics they enable.
+    """Resolves metric names to the additional metrics they enable.
 
     Metrics which are enabled by default are always recorded, so naming one of
     them is a no-op. Unknown names are rejected to surface typos.
     """
     optional_metrics = {
         metric.name: metric
-        for metric in _open_telemetry_measures.optional_metrics()
+        for metric in _open_telemetry_measures.retry_metrics()
     }
     default_metric_names = {
         metric.name for metric in _open_telemetry_measures.base_metrics()
     }
-    enabled_metrics = []
-    for name in enabled_metric_names:
+    additional_metrics = []
+    for name in additional_metric_names:
         if name in optional_metrics:
-            enabled_metrics.append(optional_metrics[name])
+            additional_metrics.append(optional_metrics[name])
         elif name not in default_metric_names:
             error_msg = f"Unknown metric name: {name}"
             raise ValueError(error_msg)
-    return enabled_metrics
+    return additional_metrics
 
 
 class _OpenTelemetryPlugin:
@@ -113,15 +113,15 @@ class _OpenTelemetryPlugin:
 
         # Resolve names before checking meter_provider so that an invalid name
         # is reported even when no metrics will be collected.
-        enabled_optional_metrics = _enabled_optional_metrics(
-            self._plugin.enabled_metrics
+        additional_metrics = _resolve_additional_metrics(
+            self._plugin.additional_metrics
         )
 
         meter_provider = self._plugin.meter_provider
         if meter_provider:
             meter = meter_provider.get_meter("grpc-python", grpc.__version__)
             enabled_metrics = _open_telemetry_measures.base_metrics()
-            enabled_metrics.extend(enabled_optional_metrics)
+            enabled_metrics.extend(additional_metrics)
             self._metric_to_recorder = self._register_metrics(
                 meter, enabled_metrics
             )

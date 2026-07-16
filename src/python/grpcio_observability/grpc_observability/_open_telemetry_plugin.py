@@ -94,7 +94,7 @@ class OpenTelemetryPlugin:
     meter_provider: Optional[MeterProvider]
     target_attribute_filter: Callable[[str], bool]
     generic_method_attribute_filter: Callable[[str], bool]
-    enabled_metrics: List[str]
+    additional_metrics: List[str]
     _plugins: List[_open_telemetry_observability._OpenTelemetryPlugin]
 
     def __init__(
@@ -104,7 +104,7 @@ class OpenTelemetryPlugin:
         meter_provider: Optional[MeterProvider] = None,
         target_attribute_filter: Optional[Callable[[str], bool]] = None,
         generic_method_attribute_filter: Optional[Callable[[str], bool]] = None,
-        enabled_metrics: Optional[Iterable[str]] = None,
+        additional_metrics: Optional[Iterable[str]] = None,
     ):
         """
         Args:
@@ -127,16 +127,16 @@ class OpenTelemetryPlugin:
         this function returns.
         Return True means the original method name will be used, False means method name will
         be replaced with "other".
-          enabled_metrics: Names of metrics which are not enabled by default and
-        should be recorded by this plugin, for example the per-call retry
-        metrics from gRFC A96 (grpc.client.call.retries,
+          additional_metrics: Names of metrics which are not enabled by default
+        and should additionally be recorded by this plugin, for example the
+        per-call retry metrics from gRFC A96 (grpc.client.call.retries,
         grpc.client.call.transparent_retries and grpc.client.call.retry_delay).
         Metrics which are enabled by default are always recorded, so naming one
         of them here has no effect. An unknown metric name raises ValueError.
         """
         self.plugin_options = plugin_options or []
         self.meter_provider = meter_provider
-        self.enabled_metrics = list(enabled_metrics or [])
+        self.additional_metrics = list(additional_metrics or [])
         self.target_attribute_filter = target_attribute_filter or (
             lambda _target: True
         )

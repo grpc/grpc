@@ -131,8 +131,3 @@ def retry_metrics() -> List[Metric]:
         CLIENT_CALL_TRANSPARENT_RETRIES,
         CLIENT_CALL_RETRY_DELAY,
     ]
-
-
-def optional_metrics() -> List[Metric]:
-    """Metrics which are not enabled by default and must be requested by name."""
-    return retry_metrics()
