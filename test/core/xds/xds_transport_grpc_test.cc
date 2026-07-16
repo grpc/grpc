@@ -37,19 +37,28 @@ namespace {
 class GrpcXdsTransportTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    auto json = JsonParse("{\"channel_creds\": [{\"type\": \"insecure\"}]}");
+    auto json = JsonParse(
+        "{\"channel_creds\": [{\"type\": \"insecure\"}], "
+        "\"call_creds\": [{\"type\": \"jwt_token_file\", "
+        "\"config\": {\"jwt_token_file\": \"/path/to/file\"}}]}");
     ASSERT_TRUE(json.ok()) << json.status().ToString();
     ValidationErrors errors;
     channel_creds_config_ =
         ParseXdsBootstrapChannelCreds(*json, JsonArgs(), &errors);
     ASSERT_TRUE(errors.ok());
     ASSERT_NE(channel_creds_config_, nullptr);
+    call_creds_configs_ =
+        ParseXdsBootstrapCallCreds(*json, JsonArgs(), &errors);
+    ASSERT_TRUE(errors.ok());
+    ASSERT_GT(call_creds_configs_.size(), 0);
     auto store = MakeRefCounted<CertificateProviderStore>(
         CertificateProviderStore::PluginDefinitionMap{});
     factory_ = MakeRefCounted<GrpcXdsTransportFactory>(ChannelArgs(),
                                                        std::move(store));
   }
+
   RefCountedPtr<const ChannelCredsConfig> channel_creds_config_;
+  std::vector<RefCountedPtr<const CallCredsConfig>> call_creds_configs_;
   RefCountedPtr<GrpcXdsTransportFactory> factory_;
 };
 
@@ -66,6 +75,29 @@ TEST_F(GrpcXdsTransportTest, IdenticalTargetsShareTransport) {
   auto transport2 = factory_->GetTransport(target, &status2);
   ASSERT_TRUE(status2.ok()) << status2.ToString();
   EXPECT_EQ(transport1, transport2);
+}
+
+TEST_F(GrpcXdsTransportTest, DifferingCallCredsSharesChannel) {
+  ExecCtx exec_ctx;
+  GrpcXdsServerTarget target1("localhost:1234", channel_creds_config_,
+                              /*call_creds_configs=*/{},
+                              /*initial_metadata=*/{}, Duration::Seconds(10));
+  GrpcXdsServerTarget target2("localhost:1234", channel_creds_config_,
+                              /*call_creds_configs=*/call_creds_configs_,
+                              /*initial_metadata=*/{}, Duration::Seconds(10));
+  EXPECT_NE(target1.Key(), target2.Key());
+  absl::Status status1;
+  auto transport1 = factory_->GetTransport(target1, &status1);
+  ASSERT_TRUE(status1.ok()) << status1.ToString();
+  absl::Status status2;
+  auto transport2 = factory_->GetTransport(target2, &status2);
+  ASSERT_TRUE(status2.ok()) << status2.ToString();
+  EXPECT_NE(transport1, transport2);
+  auto* grpc_transport1 =
+      DownCast<GrpcXdsTransportFactory::GrpcXdsTransport*>(transport1.get());
+  auto* grpc_transport2 =
+      DownCast<GrpcXdsTransportFactory::GrpcXdsTransport*>(transport2.get());
+  EXPECT_EQ(grpc_transport1->channel(), grpc_transport2->channel());
 }
 
 TEST_F(GrpcXdsTransportTest, DifferingMetadataSharesChannel) {

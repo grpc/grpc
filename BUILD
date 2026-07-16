@@ -918,21 +918,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "virtual_channel",
-    hdrs = ["include/grpcpp/virtual_channel.h"],
-    external_deps = [
-        "absl/functional:any_invocable",
-    ],
-    visibility = [
-        "//:__subpackages__",
-        "//bazel:virtual_rpcs",
-    ],
-    deps = [
-        "grpc++_public_hdrs",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc_common",
     defines = select({
         "grpc_no_rls": ["GRPC_NO_RLS"],
@@ -1098,6 +1083,7 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "ref_counted_ptr",
         "transport_auth_context",
+        ":grpc++_insecure_credentials",
         "//src/core:experiments",
         "//src/core:gpr_atm",
         "//src/core:grpc_check",
@@ -1244,6 +1230,22 @@ grpc_cc_library(
     ],
 )
 
+# This library is required to support insecure credentials.
+grpc_cc_library(
+    name = "grpc++_insecure_credentials",
+    srcs = [
+        "src/cpp/client/insecure_credentials.cc",
+        "src/cpp/server/insecure_server_credentials.cc",
+    ],
+    visibility = ["//bazel:insecure_credentials"],
+    deps = [
+        "gpr",
+        "grpc++_base",
+        "grpc++_public_hdrs",
+        "grpc_public_hdrs",
+    ],
+)
+
 # TODO(hork): restructure the grpc++_unsecure and grpc++ build targets in a
 # similar way to how the grpc_unsecure and grpc targets were restructured in
 # #25586
@@ -1255,6 +1257,7 @@ grpc_cc_library(
         "src/cpp/server/insecure_server_credentials.cc",
     ],
     external_deps = [
+        "absl/base:core_headers",
         "absl/functional:any_invocable",
         "absl/log:log",
         "absl/log:absl_check",
@@ -2652,7 +2655,6 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc++_base",
     srcs = GRPCXX_SRCS + [
-        "src/cpp/client/insecure_credentials.cc",
         "src/cpp/client/secure_credentials.cc",
         "src/cpp/common/auth_property_iterator.cc",
         "src/cpp/common/secure_auth_context.cc",
@@ -2660,7 +2662,6 @@ grpc_cc_library(
         "src/cpp/common/tls_certificate_provider.cc",
         "src/cpp/common/tls_certificate_verifier.cc",
         "src/cpp/common/tls_credentials_options.cc",
-        "src/cpp/server/insecure_server_credentials.cc",
         "src/cpp/server/secure_server_credentials.cc",
     ],
     hdrs = GRPCXX_HDRS + [
@@ -2721,7 +2722,6 @@ grpc_cc_library(
         "server",
         "transport_auth_context",
         ":grpc_transport_chttp2",
-        ":virtual_channel",
         "//src/core:arena",
         "//src/core:channel_args",
         "//src/core:channel_fwd",
@@ -2824,7 +2824,6 @@ grpc_cc_library(
         "resource_quota_api",
         "server",
         "transport_auth_context",
-        ":virtual_channel",
         "//src/core:arena",
         "//src/core:channel_args",
         "//src/core:channel_init",
