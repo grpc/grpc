@@ -2570,10 +2570,9 @@ bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
         GRPC_TRACE_LOG(client_channel_lb_call, INFO)
             << "chand=" << chand_ << " lb_call=" << this
             << ": LB pick dropped: " << drop_pick->status;
-        *error = grpc_error_set_int(
-            absl_status_to_grpc_error(MaybeRewriteIllegalStatusCode(
-                std::move(drop_pick->status), "LB drop")),
-            StatusIntProperty::kLbPolicyDrop, 1);
+        is_drop_ = true;
+        *error = absl_status_to_grpc_error(MaybeRewriteIllegalStatusCode(
+            std::move(drop_pick->status), "LB drop"));
         return true;
       });
 }
@@ -2711,7 +2710,7 @@ void ClientChannelFilter::LoadBalancedCall::RecvTrailingMetadataReady(
       << " call_attempt_tracer_=" << self->call_attempt_tracer_
       << " lb_subchannel_call_tracker_="
       << self->lb_subchannel_call_tracker_.get()
-      << " failure_error_=" << StatusToString(self->failure_error_);
+      << " is_drop_=" << self->is_drop_;
   // Check if we have a tracer or an LB callback to invoke.
   if (self->call_attempt_tracer_ != nullptr ||
       self->lb_subchannel_call_tracker_ != nullptr) {
@@ -2745,11 +2744,9 @@ void ClientChannelFilter::LoadBalancedCall::RecvTrailingMetadataReady(
     self->RecordCallCompletion(status, self->recv_trailing_metadata_,
                                self->transport_stream_stats_, peer_string);
   }
+  // If we dropped the call, indicate that fact in the metadata.
+  if (self->is_drop_) self->recv_trailing_metadata_->Set(LbPolicyDrop(), true);
   // Chain to original callback.
-  if (!self->failure_error_.ok()) {
-    error = self->failure_error_;
-    self->failure_error_ = absl::OkStatus();
-  }
   Closure::Run(DEBUG_LOCATION, self->original_recv_trailing_metadata_ready_,
                error);
 }

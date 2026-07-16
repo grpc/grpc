@@ -450,8 +450,8 @@ class ClientChannelFilter::LoadBalancedCall final
   // Set when we get a cancel_stream op.
   grpc_error_handle cancel_error_;
 
-  // Set when we fail inside the LB call.
-  grpc_error_handle failure_error_;
+  // Set when the LB picker returns a drop result.
+  bool is_drop_ = false;
 
   LbQueuedCallCanceller* lb_call_canceller_
       ABSL_GUARDED_BY(&ClientChannelFilter::lb_mu_) = nullptr;
