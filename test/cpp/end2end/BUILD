@@ -1776,6 +1776,7 @@ grpc_cc_library(
         "//:grpc_base",
         "//:tsi_ssl_credentials",
         "//src/core:default_event_engine",
+        "//src/core:down_cast",
         "//src/core:grpc_tls_credentials",
         "//src/core:ssl_transport_security_utils",
     ],
@@ -1847,6 +1848,7 @@ grpc_cc_library(
         "//:grpc_base",
         "//:tsi_ssl_credentials",
         "//src/core:default_event_engine",
+        "//src/core:down_cast",
         "//src/core:grpc_tls_certificate_selector",
     ],
 )
@@ -1886,6 +1888,7 @@ grpc_cc_test(
         "//src/core:grpc_tls_credentials",
         "//src/core:ssl_transport_security_utils",
         "//src/proto/grpc/testing:echo_cc_grpc",
+        "//src/core:grpc_tls_certificate_selector",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
