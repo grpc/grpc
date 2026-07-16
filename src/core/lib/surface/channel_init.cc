@@ -131,9 +131,17 @@ ChannelInit::FilterRegistration& ChannelInit::Builder::RegisterFilter(
     grpc_channel_stack_type type, UniqueTypeName name,
     const grpc_channel_filter* filter, FilterAdder filter_adder,
     SourceLocation registration_source) {
-  filters_[type].emplace_back(std::make_unique<FilterRegistration>(
-      name, filter, filter_adder, registration_source));
-  return *filters_[type].back();
+  // TODO(weizheyuan):
+  if (grpc_channel_stack_type_is_client(type)){
+    filters_[type].emplace_back(std::make_unique<FilterRegistration>(
+        name, filter, filter_adder, registration_source));
+    return *filters_[type].back();
+  }
+  // Is server side.
+  auto& server_filters = *filters_[type];
+  server_filters.insert(server_filters.begin(), ::make_unique<FilterRegistration>(
+        name, filter, filter_adder, registration_source));
+  return *filters_[type].front();
 }
 
 void ChannelInit::Builder::RegisterFusedFilter(
