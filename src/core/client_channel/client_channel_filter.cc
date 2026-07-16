@@ -2482,6 +2482,9 @@ ClientChannelFilter::LoadBalancedCall::PickSubchannel(bool was_queued) {
 bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
     LoadBalancingPolicy::SubchannelPicker* picker, grpc_error_handle* error) {
   GRPC_CHECK(subchannel_call_ == nullptr);
+  // Adding the call arena to TLS so that LB pickers can access call context
+  // from the arena.
+  promise_detail::Context<Arena> arena_ctx(arena_);
   // Perform LB pick.
   LoadBalancingPolicy::PickArgs pick_args;
   Slice* path = send_initial_metadata()->get_pointer(HttpPathMetadata());

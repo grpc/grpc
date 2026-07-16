@@ -628,14 +628,15 @@ class _InterceptedStreamRequestMixin(Generic[RequestType]):
         request: Union[RequestType, _FINISH_ITERATOR_SENTINEL_T],
         call: _base_call.Call,
     ):
+        if self._write_to_iterator_queue is None:
+            msg = "Write iterator queue is None"
+            raise ValueError(msg)
+
         # Write the specified 'request' to the request iterator queue using the
         # specified 'call' to allow for interruption of the write in the case
         # of abrupt termination of the call.
         if self._status_code_task is None:
             self._status_code_task = self._loop.create_task(call.code())
-
-        if self._write_to_iterator_queue is None:
-            return
 
         await asyncio.wait(
             (

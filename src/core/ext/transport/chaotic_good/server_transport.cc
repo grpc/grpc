@@ -16,37 +16,31 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
-#include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
 
+#include <cstdint>
+#include <limits>
 #include <memory>
+#include <optional>
 #include <string>
-#include <tuple>
+#include <utility>
+#include <variant>
 
 #include "src/core/channelz/property_list.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chaotic_good/frame_transport.h"
 #include "src/core/ext/transport/chaotic_good/message_chunker.h"
-#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/event_engine_wakeup_scheduler.h"
 #include "src/core/lib/promise/for_each.h"
-#include "src/core/lib/promise/loop.h"
+#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/switch.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/slice/slice.h"
-#include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "absl/cleanup/cleanup.h"
 #include "absl/log/log.h"
-#include "absl/random/bit_gen_ref.h"
-#include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -97,6 +91,14 @@ void ChaoticGoodServerTransport::StreamDispatch::DispatchFrame(
     IncomingFrame frame) {
   auto stream = LookupStream(frame.header().stream_id);
   if (stream == nullptr) return;
+  if (stream->client_half_closed) {
+    stream->call.SpawnCancel(
+        absl::InternalError("Received frame after half-close"));
+    return;
+  }
+  if constexpr (std::is_same_v<T, ClientEndOfStream>) {
+    stream->client_half_closed = true;
+  }
   stream->spawn_serializer->Spawn(
       [this, stream, frame = std::move(frame)]() mutable {
         GRPC_DCHECK_NE(stream.get(), nullptr);

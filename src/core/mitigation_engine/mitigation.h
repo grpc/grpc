@@ -25,19 +25,27 @@
 #include "src/core/mitigation_engine/mitigation_engine.h"
 #include "src/core/util/ref_counted.h"
 #include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 
 namespace grpc_core {
 
 // Mitigations represent read-only configuration rules.
 class Mitigation : public RefCounted<Mitigation> {
  public:
+  struct EvaluationResult {
+    explicit EvaluationResult(MitigationEngine::Action action)
+        : action(action) {}
+
+    MitigationEngine::Action action;
+    bool reject_new_connections = false;
+    absl::Duration max_duration;
+  };
+
   ~Mitigation() override = default;
 
-  virtual std::optional<MitigationEngine::Action>
-  EvaluateIncomingMetadataParsed(absl::string_view key,
-                                 absl::string_view value) const = 0;
-  virtual std::optional<MitigationEngine::Action>
-  EvaluateIncomingMetadataAllParsed(
+  virtual std::optional<EvaluationResult> EvaluateIncomingMetadataParsed(
+      absl::string_view key, absl::string_view value) const = 0;
+  virtual std::optional<EvaluationResult> EvaluateIncomingMetadataAllParsed(
       const grpc_metadata_batch& metadata) const = 0;
 
   Mitigation() = default;

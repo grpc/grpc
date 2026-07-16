@@ -321,6 +321,29 @@ class XdsResolver final : public Resolver {
     };
   };
 
+  // Wraps a FilterChainBuilder in an XdsFilterChainBuilder.
+  // Also adds the ClusterSelectionFilter to the end of each filter chain.
+  class FilterChainBuilderWrapper final
+      : public XdsRouting::RouteConfigFilterChainBuilder::
+            XdsFilterChainBuilder {
+   public:
+    explicit FilterChainBuilderWrapper(FilterChainBuilder& builder)
+        : builder_(builder) {}
+
+    void AddFilter(const XdsHttpFilterImpl* filter_impl,
+                   RefCountedPtr<const FilterConfig> config) override {
+      filter_impl->AddFilter(builder_, std::move(config));
+    }
+
+    absl::StatusOr<RefCountedPtr<FilterChain>> Build() override {
+      builder_.AddFilter<ClusterSelectionFilter>(nullptr);
+      return builder_.Build();
+    }
+
+   private:
+    FilterChainBuilder& builder_;
+  };
+
   RefCountedPtr<ClusterRef> GetOrCreateClusterRef(
       absl::string_view cluster_key, absl::string_view cluster_name) {
     auto it = cluster_ref_map_.find(cluster_key);
@@ -427,11 +450,9 @@ void XdsResolver::RouteConfigData::BuildFilterChains(
     Blackboard& blackboard) {
   const auto& hcm = std::get<XdsListenerResource::HttpConnectionManager>(
       xds_config.listener->listener);
+  FilterChainBuilderWrapper builder_wrapper(builder);
   XdsRouting::RouteConfigFilterChainBuilder route_config_builder(
-      hcm.http_filters, http_filter_registry, builder,
-      [](FilterChainBuilder& builder) {
-        builder.AddFilter<ClusterSelectionFilter>(nullptr);
-      },
+      hcm.http_filters, http_filter_registry, builder_wrapper,
       transport_factory, blackboard);
   auto vhost_builder = route_config_builder.MakeVirtualHostFilterChainBuilder(
       *xds_config.virtual_host);
