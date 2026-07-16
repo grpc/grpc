@@ -301,17 +301,6 @@ class ChannelInit {
 
   class Builder {
    public:
-    // Register a builder in the normal filter registration pass.
-    // This occurs first during channel build time.
-    // The FilterRegistration methods can be called to declaratively define
-    // properties of the filter being registered.
-    // TODO(ctiller): remove in favor of the version that does not mention
-    // grpc_channel_filter
-    FilterRegistration& RegisterFilter(grpc_channel_stack_type type,
-                                       UniqueTypeName name,
-                                       const grpc_channel_filter* filter,
-                                       FilterAdder filter_adder = nullptr,
-                                       SourceLocation registration_source = {});
     FilterRegistration& RegisterFilter(
         grpc_channel_stack_type type, const grpc_channel_filter* filter,
         SourceLocation registration_source = {}) {
@@ -383,6 +372,18 @@ class ChannelInit {
     ChannelInit Build();
 
    private:
+    // Register a builder in the normal filter registration pass.
+    // This occurs first during channel build time.
+    // The FilterRegistration methods can be called to declaratively define
+    // properties of the filter being registered.
+    // TODO(ctiller): remove in favor of the version that does not mention
+    // grpc_channel_filter
+    FilterRegistration& RegisterFilter(grpc_channel_stack_type type,
+                                       UniqueTypeName name,
+                                       const grpc_channel_filter* filter,
+                                       FilterAdder filter_adder = nullptr,
+                                       SourceLocation registration_source = {});
+
     std::vector<std::unique_ptr<FilterRegistration>>
         filters_[GRPC_NUM_CHANNEL_STACK_TYPES];
     std::vector<std::unique_ptr<FilterRegistration>>
