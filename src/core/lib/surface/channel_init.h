@@ -301,6 +301,15 @@ class ChannelInit {
 
   class Builder {
    public:
+     // TODO(weizheyuan): revert it back
+    FilterRegistration& RegisterV1Filter(
+        grpc_channel_stack_type type, const grpc_channel_filter* filter,
+        SourceLocation registration_source = {}) {
+      GRPC_CHECK(filter != nullptr);
+      return RegisterFilter(type, NameFromChannelFilter(filter), filter,
+                            nullptr, registration_source);
+    }
+
     FilterRegistration& RegisterFilter(
         grpc_channel_stack_type type, const grpc_channel_filter* filter,
         SourceLocation registration_source = {}) {
@@ -308,6 +317,7 @@ class ChannelInit {
       return RegisterFilter(type, NameFromChannelFilter(filter), filter,
                             nullptr, registration_source);
     }
+
     template <typename Filter>
     FilterRegistration& RegisterFilter(
         grpc_channel_stack_type type, SourceLocation registration_source = {}) {

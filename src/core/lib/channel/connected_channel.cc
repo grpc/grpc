@@ -323,7 +323,7 @@ void RegisterConnectedChannel(CoreConfiguration::Builder* builder) {
       .Terminal()
       .If(TransportSupportsClientPromiseBasedCalls);
   builder->channel_init()
-      ->RegisterFilter(GRPC_SERVER_CHANNEL, &kPromiseBasedTransportFilter)
+      ->RegisterV1Filter(GRPC_SERVER_CHANNEL, &kPromiseBasedTransportFilter)
       .Terminal()
       .If(TransportSupportsServerPromiseBasedCalls);
 
@@ -341,11 +341,11 @@ void RegisterConnectedChannel(CoreConfiguration::Builder* builder) {
       .Terminal()
       .IfNot(TransportSupportsClientPromiseBasedCalls);
   builder->channel_init()
-      ->RegisterFilter(GRPC_SERVER_CHANNEL, &kConnectedFilter)
+      ->RegisterV1Filter(GRPC_SERVER_CHANNEL, &kConnectedFilter)
       .Terminal()
       .IfNot(TransportSupportsServerPromiseBasedCalls);
   builder->channel_init()
-      ->RegisterFilter(GRPC_SERVER_VIRTUAL_CHANNEL, &kConnectedFilter)
+      ->RegisterV1Filter(GRPC_SERVER_VIRTUAL_CHANNEL, &kConnectedFilter)
       .Terminal()
       .IfNot(TransportSupportsServerPromiseBasedCalls);
 }
