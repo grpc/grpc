@@ -495,7 +495,6 @@ TEST_P(XdsSecurityTest, TestTlsHandshakeTelemetry) {
   std::vector<absl::string_view> client_labels = {
       "OK", client_target, "false", client_locality, kDefaultClusterName};
   std::vector<absl::string_view> server_labels = {"OK", "false"};
-
   uint64_t client_count_before =
       stats_plugin_
           ->GetUInt64MetricValueByName("grpc.client.tls.handshakes",
@@ -506,11 +505,9 @@ TEST_P(XdsSecurityTest, TestTlsHandshakeTelemetry) {
           ->GetUInt64MetricValueByName("grpc.server.tls.handshakes",
                                        server_labels)
           .value_or(0);
-
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
                                           "", {}, authenticated_identity_);
-
   uint64_t client_count_after =
       stats_plugin_
           ->GetUInt64MetricValueByName("grpc.client.tls.handshakes",
@@ -521,7 +518,6 @@ TEST_P(XdsSecurityTest, TestTlsHandshakeTelemetry) {
           ->GetUInt64MetricValueByName("grpc.server.tls.handshakes",
                                        server_labels)
           .value_or(0);
-
   EXPECT_EQ(client_count_after, client_count_before + 1);
   EXPECT_EQ(server_count_after, server_count_before + 1);
 }
