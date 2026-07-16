@@ -111,9 +111,7 @@ class MockSourceAddrFactory : public address_sorting_source_addr_factory {
          !ipv6_supported_)) {
       return false;
     }
-    sockaddr dest_addr_sockaddr;
-    memcpy(&dest_addr_sockaddr, dest_addr, dest_addr->len);
-    EventEngine::ResolvedAddress dest_addr_as_resolved_addr(&dest_addr_sockaddr,
+    EventEngine::ResolvedAddress dest_addr_as_resolved_addr(reinterpret_cast<const sockaddr *>(&dest_addr->addr),
                                                             dest_addr->len);
     std::string ip_addr_str =
         ResolvedAddressToString(dest_addr_as_resolved_addr).value();
@@ -344,7 +342,7 @@ TEST_F(AddressSortingTest,
   });
   auto sorted_addrs = grpc_event_engine::experimental::SortAddresses(lb_addrs);
   VerifyLbAddrOutputs(
-      lb_addrs, {
+      sorted_addrs, {
                     // The AF_INET address should be IPv4-mapped by the sort,
                     // and IPv4-mapped
                     // addresses have higher precedence than 3ffe::/16 by spec.
@@ -382,7 +380,7 @@ TEST_F(AddressSortingTest,
   };
   EXPECT_THAT(
       acceptable_addresses,
-      ::testing::Contains(ResolvedAddressToString(lb_addrs[1]).value()));
+      ::testing::Contains(ResolvedAddressToString(sorted_addrs[1]).value()));
 }
 
 TEST_F(AddressSortingTest,
@@ -403,7 +401,7 @@ TEST_F(AddressSortingTest,
   });
   auto sorted_addrs = grpc_event_engine::experimental::SortAddresses(lb_addrs);
   VerifyLbAddrOutputs(
-      lb_addrs,
+      sorted_addrs,
       {
           // ::1 should match the localhost precedence entry and be prioritized
           "[::1]:443",
@@ -427,7 +425,7 @@ TEST_F(AddressSortingTest,
   });
   auto sorted_addrs = grpc_event_engine::experimental::SortAddresses(lb_addrs);
   VerifyLbAddrOutputs(
-      lb_addrs, {
+      sorted_addrs, {
                     // The 2000::/16 address should match the ::/0 prefix rule
                     "[2000::5001]:443",
                     "[2001::1234]:443",
