@@ -19,6 +19,7 @@ py_binary(
     name = "xds_interop_client",
     srcs = ["xds_interop_client.py"],
     python_version = "PY3",
+    legacy_create_init = False,
     # csm_observability dependency was added first because we have another opentelemetry module in xds_protos,
     # Since we need the actual opentelemetry module, we need include csm_observability before grpc_admin.
     deps = ["//src/python/grpcio_csm_observability/grpc_csm_observability:csm_observability"] + [
@@ -38,6 +39,7 @@ py_binary(
     name = "xds_interop_server",
     srcs = ["xds_interop_server.py"],
     python_version = "PY3",
+    legacy_create_init = False,
     deps = [
         "//src/proto/grpc/testing:empty_py_pb2",
         "//src/proto/grpc/testing:py_messages_proto",
@@ -58,6 +60,7 @@ py_test(
     srcs = ["xds_interop_client_test.py"],
     imports = ["."],
     python_version = "PY3",
+    legacy_create_init = False,
     deps = [
         ":xds_interop_client",
         ":xds_interop_server",
