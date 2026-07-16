@@ -116,7 +116,7 @@ cdef class AioChannel:
         Get or registers a call handler for a method.
 
         This method is not thread-safe. It is acceptable since method is only called
-        during multicallable construction, not during RPC exeution. Moreover there
+        during multicallable construction, not during RPC execution. Moreover there
         are no `await` suspension points, which can interleave.
 
         Args:
