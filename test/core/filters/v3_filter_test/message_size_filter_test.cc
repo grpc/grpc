@@ -12,12 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// M2 gate test (failure path): a filter that aborts a call.
-// ServerMessageSizeFilter rejects a client->server message larger than the
-// configured receive limit by returning error trailing metadata from
-// OnClientToServerMessage; the client observes RESOURCE_EXHAUSTED rather than a
-// normal completion.
-
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
@@ -95,6 +89,119 @@ FILTER_TEST_V3(WithinLimitPasses) {
         EXPECT_FALSE(msg.has_value());  // client half-closed
         handler.PushServerTrailingMetadata(
             ServerMetadataFromStatus(GRPC_STATUS_OK));
+      });
+
+  WaitForAllPendingWork();
+}
+
+FILTER_TEST_V3(AtLimitPasses) {
+  ASSERT_TRUE(
+      Add<ServerMessageSizeFilter>()
+          .Build(ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, 5))
+          .ok());
+
+  auto [initiator, handler] =
+      StartCall(Arena::MakePooledForOverwrite<ClientMetadata>());
+  SpawnTestSeq(
+      initiator, "client",
+      [initiator = initiator]() mutable {
+        // Exactly 5 bytes against a 5 byte limit.
+        return initiator.PushMessage(Arena::MakePooled<Message>(
+            SliceBuffer(Slice::FromCopiedString("exact")), 0));
+      },
+      [initiator = initiator](StatusFlag ok) mutable {
+        EXPECT_TRUE(ok.ok());
+        initiator.FinishSends();
+        return initiator.PullServerInitialMetadata();
+      },
+      [initiator = initiator](
+          ValueOrFailure<std::optional<ServerMetadataHandle>> md) mutable {
+        EXPECT_TRUE(md.ok());
+        EXPECT_TRUE(md.value().has_value());
+        return initiator.PullMessage();
+      },
+      [initiator = initiator](ServerToClientNextMessage msg) mutable {
+        EXPECT_TRUE(msg.ok());
+        EXPECT_FALSE(msg.has_value());  // server sends no message
+        return initiator.PullServerTrailingMetadata();
+      },
+      [](ValueOrFailure<ServerMetadataHandle> md) {
+        ASSERT_TRUE(md.ok());
+        EXPECT_THAT(**md, HasMetadataResult(absl::OkStatus()));
+      });
+
+  SpawnTestSeq(
+      handler, "server",
+      [handler = handler]() mutable {
+        return handler.PullClientInitialMetadata();
+      },
+      [handler = handler](ValueOrFailure<ClientMetadataHandle> md) mutable {
+        EXPECT_TRUE(md.ok());
+        return handler.PullMessage();
+      },
+      [handler = handler](ClientToServerNextMessage msg) mutable {
+        // Delivered, not rejected: the limit is inclusive.
+        EXPECT_TRUE(msg.ok());
+        EXPECT_TRUE(msg.has_value());
+        EXPECT_THAT(msg.value(), HasMessagePayload("exact"));
+        return handler.PushServerInitialMetadata(
+            Arena::MakePooledForOverwrite<ServerMetadata>());
+      },
+      [handler = handler](StatusFlag ok) mutable {
+        EXPECT_TRUE(ok.ok());
+        return handler.PullMessage();
+      },
+      [handler = handler](ClientToServerNextMessage msg) mutable {
+        EXPECT_TRUE(msg.ok());
+        EXPECT_FALSE(msg.has_value());  // client half-closed
+        handler.PushServerTrailingMetadata(
+            ServerMetadataFromStatus(GRPC_STATUS_OK));
+      });
+
+  WaitForAllPendingWork();
+}
+
+FILTER_TEST_V3(ExceedsLimitRejected) {
+  ASSERT_TRUE(Add<ServerMessageSizeFilter>()
+                  .Build(ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH,
+                                           4))
+                  .ok());
+
+  auto [initiator, handler] =
+      StartCall(Arena::MakePooledForOverwrite<ClientMetadata>());
+  SpawnTestSeq(
+      initiator, "client",
+      [initiator = initiator]() mutable {
+        // 11 bytes against a 4 byte limit.
+        return initiator.PushMessage(Arena::MakePooled<Message>(
+            SliceBuffer(Slice::FromCopiedString("much too big")), 0));
+      },
+      [initiator = initiator](StatusFlag) mutable {
+        // The push may resolve ok or fail depending on when the rejection
+        // lands; either way the call ends with the status asserted below.
+        initiator.FinishSends();
+        return initiator.PullServerTrailingMetadata();
+      },
+      [](ValueOrFailure<ServerMetadataHandle> md) {
+        ASSERT_TRUE(md.ok());
+        auto code = (**md).get(GrpcStatusMetadata());
+        ASSERT_TRUE(code.has_value());
+        EXPECT_EQ(*code, GRPC_STATUS_RESOURCE_EXHAUSTED);
+      });
+
+  SpawnTestSeq(
+      handler, "server",
+      [handler = handler]() mutable {
+        return handler.PullClientInitialMetadata();
+      },
+      [handler = handler](ValueOrFailure<ClientMetadataHandle> md) mutable {
+        EXPECT_TRUE(md.ok());
+        return handler.PullMessage();
+      },
+      [](ClientToServerNextMessage msg) {
+        // The filter rejected the oversized message: the pull fails rather than
+        // delivering it.
+        EXPECT_FALSE(msg.ok());
       });
 
   WaitForAllPendingWork();

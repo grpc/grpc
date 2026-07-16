@@ -14,8 +14,7 @@
 
 // Tests for the FilterTestV3 harness itself.
 //
-// Unlike the other tests in this directory -- which exercise real production
-// filters -- these use synthetic filters defined right here, so every assertion
+// Using synthetic filters defined right here, so every assertion
 // is about the harness plumbing rather than any particular filter's behavior:
 //
 //   * Happy path: all six call lifecycle events fire end-to-end through a
@@ -166,10 +165,6 @@ class SecondFilter : public ImplementChannelFilter<SecondFilter> {
 // OnClientToServerMessage, OnClientToServerHalfClose, OnServerInitialMetadata,
 // OnServerToClientMessage and OnServerTrailingMetadata across the real spine.
 //
-// Ordering note: the server pulls the client's message before producing any
-// output. Producing server output first would create a cyclic wait (client
-// blocked pushing its message, server blocked pushing its metadata) and
-// deadlock.
 FILTER_TEST_V3(UnaryEchoThroughPassThroughFilter) {
   ASSERT_TRUE(Add<PassThroughFilter>().Build().ok());
 

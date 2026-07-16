@@ -12,21 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Tests for the v3 message-compression filters (ClientCompressionFilter and
-// ServerCompressionFilter). These are the richest message-transforming filters
-// in the tree: they rewrite payloads in both directions and negotiate the
-// algorithm through initial metadata. The tests drive real gzip on the real
-// CallSpine and assert on the observable effects -- metadata keys, message
-// flags, and payload bytes -- rather than on any internal state.
-//
-// Compression facts exercised here (see compression_filter.cc):
-//   * The client filter stamps `grpc-encoding` on client initial metadata and
-//     compresses client->server messages, setting GRPC_WRITE_INTERNAL_COMPRESS.
-//   * The server filter decompresses those messages, clearing INTERNAL_COMPRESS
-//     and setting GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED, and mirrors the
-//     behavior for server->client messages.
-//   * A message flagged GRPC_WRITE_NO_COMPRESS is passed through uncompressed.
-
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/compression_types.h>
 #include <grpc/impl/grpc_types.h>
@@ -63,11 +48,6 @@ ChannelArgs GzipArgs() {
 }
 }  // namespace
 
-// Full round trip through client + server compression filters. A message sent
-// in each direction is compressed by the sending side's filter and transparently
-// decompressed by the receiving side's filter, so each endpoint sees the
-// original bytes back -- but flagged WAS_COMPRESSED, proving it really went over
-// the wire compressed rather than passing through untouched.
 FILTER_TEST_V3(RoundTripCompressesAndDecompresses) {
   ASSERT_TRUE(Add<ClientCompressionFilter>()
                   .Add<ServerCompressionFilter>()
@@ -311,10 +291,6 @@ FILTER_TEST_V3(ServerAbortsCallWithErrorStatus) {
   WaitForAllPendingWork();
 }
 
-// Negative scenario: a client->server message whose compressed size still
-// exceeds the receive limit is rejected by the server filter's decompression
-// path with RESOURCE_EXHAUSTED. The client observes the error status instead of
-// a normal completion, and the server's message pull fails.
 FILTER_TEST_V3(OversizeCompressedMessageRejected) {
   ASSERT_TRUE(
       Add<ClientCompressionFilter>()

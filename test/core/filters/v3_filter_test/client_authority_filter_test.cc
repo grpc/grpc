@@ -12,11 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// M1 gate test: proves FilterTestV3 drives a real v3 filter on the genuine
-// CallSpine. ClientAuthorityFilter should stamp the :authority header from the
-// GRPC_ARG_DEFAULT_AUTHORITY channel arg when the client did not set one, and
-// leave a client-provided :authority untouched.
-
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
@@ -28,7 +23,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "test/core/filters/v3_filter_test/v3_filter_test.h"
-#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 namespace grpc_core {
@@ -39,14 +33,29 @@ ChannelArgs WithDefaultAuthority(absl::string_view authority) {
 }
 }  // namespace
 
-// Build failures surface as a non-OK status from Build().
-FILTER_TEST_V3(RejectsMissingDefaultAuthority) {
+// Without GRPC_ARG_DEFAULT_AUTHORITY the filter cannot be constructed; the
+// failure surfaces as a non-OK status from Build().
+FILTER_TEST_V3(DefaultFails) {
   EXPECT_FALSE(Add<ClientAuthorityFilter>().Build(ChannelArgs()).ok());
+}
+
+// With a valid authority arg the filter constructs and the stack builds.
+FILTER_TEST_V3(WithArgSucceeds) {
+  EXPECT_EQ(
+      Add<ClientAuthorityFilter>().Build(WithDefaultAuthority("foo.test")),
+      absl::OkStatus());
+}
+
+// The authority arg must be a string: an int-valued arg fails construction.
+FILTER_TEST_V3(NonStringArgFails) {
+  EXPECT_FALSE(Add<ClientAuthorityFilter>()
+                   .Build(ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY, 123))
+                   .ok());
 }
 
 // When the client omits :authority, the filter fills it from the channel arg,
 // and the (post-filter) metadata seen at the server carries it.
-FILTER_TEST_V3(StampsDefaultAuthorityWhenAbsent) {
+FILTER_TEST_V3(PromiseCompletesImmediatelyAndSetsAuthority) {
   ASSERT_TRUE(Add<ClientAuthorityFilter>()
                   .Build(WithDefaultAuthority("foo.test"))
                   .ok());
@@ -72,7 +81,7 @@ FILTER_TEST_V3(StampsDefaultAuthorityWhenAbsent) {
 }
 
 // When the client already set :authority, the filter must not override it.
-FILTER_TEST_V3(PreservesClientProvidedAuthority) {
+FILTER_TEST_V3(PromiseCompletesImmediatelyAndDoesNotSetAuthority) {
   ASSERT_TRUE(Add<ClientAuthorityFilter>()
                   .Build(WithDefaultAuthority("foo.test"))
                   .ok());

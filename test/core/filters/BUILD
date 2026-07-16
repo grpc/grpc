@@ -59,6 +59,7 @@ grpc_cc_library(
     ],
     tags = ["nofixdeps"],  # until event engine tests are under fixbuilddeps
     deps = [
+        ":filter_matchers",
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc",

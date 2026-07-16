@@ -31,11 +31,6 @@
 
 // FilterTestV3 is a unit-test harness for the *native v3* filter API.
 //
-// Unlike the older FilterTest<Filter> (test/core/filters/filter_test.h), which
-// drives a single filter through the v2 `MakeCallPromise` bridge on a synthetic
-// pipe rig, FilterTestV3 runs the filter(s) under test on the real v3 call
-// machinery:
-//
 //   CallInitiator (client)  <->  CallFilters::Stack  <->  CallHandler (server)
 //
 // The stack is assembled with `CallFilters::StackBuilder` and attached directly
@@ -68,7 +63,7 @@ class FilterTestV3 : public YodelTest {
   // failures surface as Build()'s status.
   template <typename T>
   FilterTestV3& Add(RefCountedPtr<const FilterConfig> config = nullptr) {
-    add_ops_.push_back([config = std::move(config)](
+    make_filter_fns_.push_back([config = std::move(config)](
                            const ChannelArgs& args,
                            CallFilters::StackBuilder& builder,
                            size_t instance_id) mutable -> absl::Status {
@@ -99,18 +94,19 @@ class FilterTestV3 : public YodelTest {
   };
 
   // Start a call running through the filter stack, returning both ends. Both
-  // exist as soon as the call is started, so no ticking is needed:
+  // exist as soon as the call is started:
   //
   //   auto [initiator, handler] = StartCall(NewClientMetadata());
   StartedCall StartCall(ClientMetadataHandle client_initial_metadata);
 
  private:
-  // Creates one filter and adds it to the stack under construction. Returns the
-  // filter's construction status.
-  using AddOp = absl::AnyInvocable<absl::Status(
+  // Constructs one filter and adds it to the stack under construction,
+  // returning that filter's construction status. Each Add<T>() queues one of
+  // these; Build() runs them in order.
+  using MakeFilterFn = absl::AnyInvocable<absl::Status(
       const ChannelArgs&, CallFilters::StackBuilder&, size_t instance_id)>;
 
-  std::vector<AddOp> add_ops_;
+  std::vector<MakeFilterFn> make_filter_fns_;
   RefCountedPtr<CallFilters::Stack> stack_;
 };
 

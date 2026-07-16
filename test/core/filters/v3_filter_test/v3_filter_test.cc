@@ -24,17 +24,14 @@
 
 namespace grpc_core {
 
-///////////////////////////////////////////////////////////////////////////////
-// FilterTestV3
-
 absl::Status FilterTestV3::Build(ChannelArgs args) {
   CHECK(stack_ == nullptr) << "Build() must be called exactly once";
   args = args.SetObject<grpc_event_engine::experimental::EventEngine>(
       event_engine());
   CallFilters::StackBuilder builder;
   size_t instance_id = 0;
-  for (auto& op : add_ops_) {
-    auto status = op(args, builder, instance_id++);
+  for (auto& make_filter : make_filter_fns_) {
+    auto status = make_filter(args, builder, instance_id++);
     if (!status.ok()) return status;
   }
   stack_ = builder.Build();
