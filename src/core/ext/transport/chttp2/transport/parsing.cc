@@ -536,7 +536,8 @@ static grpc_error_handle init_header_skip_frame_parser(
       t->settings.acked().max_header_list_size(),
       hpack_boundary_type(t, is_eoh), priority_type,
       hpack_parser_log_info(t, HPackParser::LogInfo::kDontKnow),
-      t->mitigation_engine.get());
+      t->mitigation_engine.get(), t->peer_string.as_string_view(),
+      t->auth_context);
   return absl::OkStatus();
 }
 
@@ -879,14 +880,16 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
     return GRPC_ERROR_CREATE(
         "Trailing metadata frame received without an end-o-stream");
   }
-  t->hpack_parser.BeginFrame(incoming_metadata_buffer,
-                             /*metadata_size_soft_limit=*/
-                             t->max_header_list_size_soft_limit,
-                             /*metadata_size_hard_limit=*/
-                             t->settings.acked().max_header_list_size(),
-                             hpack_boundary_type(t, is_eoh), priority_type,
-                             hpack_parser_log_info(t, frame_type),
-                             t->mitigation_engine.get());
+  t->hpack_parser.BeginFrame(
+      incoming_metadata_buffer,
+      /*metadata_size_soft_limit=*/
+      t->max_header_list_size_soft_limit,
+      /*metadata_size_hard_limit=*/
+      t->settings.acked().max_header_list_size(),
+      hpack_boundary_type(t, is_eoh), priority_type,
+      hpack_parser_log_info(t, frame_type), t->mitigation_engine.get(),
+      t->peer_string.as_string_view(),
+      t->auth_context);
   return absl::OkStatus();
 }
 
