@@ -42,26 +42,16 @@ echo ""
 
 # Update bazel for generate_projects
 case "$SUBMODULE_NAME" in
-  abseil-cpp)
-    BAZEL_DEP_NAME="com_google_absl"
+  abseil-cpp|boringssl|protobuf)
+    BAZEL_DEP_PATH="$(pwd)/third_party/${SUBMODULE_NAME}"
+    echo "bazel override_module is set for ${SUBMODULE_NAME} to ${BAZEL_DEP_PATH}"
+    echo "build --override_module=${SUBMODULE_NAME}=${BAZEL_DEP_PATH}" >> "tools/bazel.rc"
+    echo "query --override_module=${SUBMODULE_NAME}=${BAZEL_DEP_PATH}" >> "tools/bazel.rc"
     ;;
-  boringssl)
-    BAZEL_DEP_NAME="boringssl"
-    ;;
-  protobuf)
-    BAZEL_DEP_NAME="com_google_protobuf"
+  *)
+   echo "No bazel dependency is specified so skipping bazel reconfiguration."
     ;;
 esac
-if [ -z "$BAZEL_DEP_NAME" ]
-then
-   echo "No bazel dependency is specified so skipping bazel reconfiguration."
-else
-   BAZEL_DEP_PATH="$(pwd)/third_party/${SUBMODULE_NAME}"
-   echo "bazel override_repository is set for ${BAZEL_DEP_NAME} to ${BAZEL_DEP_PATH}"
-   echo "build --override_repository=${BAZEL_DEP_NAME}=${BAZEL_DEP_PATH}" >> "tools/bazel.rc"
-   echo "query --override_repository=${BAZEL_DEP_NAME}=${BAZEL_DEP_PATH}" >> "tools/bazel.rc"
-fi
-echo ""
 
 if [ "${SUBMODULE_NAME}" == "abseil-cpp" ]
 then

@@ -48,7 +48,10 @@ exports_files([
 
 exports_files(
     glob(["include/**"]),
-    visibility = ["//:__subpackages__"],
+    visibility = [
+        "//:__subpackages__",
+        "//bazel:friends",
+    ],
 )
 
 bool_flag(
@@ -280,11 +283,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "garden"  # @unused
+g_stands_for = "gimbal"  # @unused
 
-core_version = "55.0.0"  # @unused
+core_version = "56.0.0"  # @unused
 
-version = "1.83.0-dev"  # @unused
+version = "1.84.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -669,6 +672,8 @@ grpc_cc_library(
         "//src/core:experiments",
         "//src/core:fused_filters",
         "//src/core:grpc_authorization_base",
+        "//src/core:grpc_channel_idle_filter",
+        "//src/core:grpc_server_config_selector_filter",
         "//src/core:http_proxy_mapper",
         "//src/core:init_internally",
         "//src/core:posix_event_engine_timer_manager",
@@ -773,6 +778,7 @@ grpc_cc_library(
         "//src/core:experiments",
         "//src/core:fused_filters",
         "//src/core:grpc_authorization_base",
+        "//src/core:grpc_channel_idle_filter",
         "//src/core:grpc_external_account_credentials",
         "//src/core:grpc_fake_credentials",
         "//src/core:grpc_google_default_credentials",
@@ -780,6 +786,7 @@ grpc_cc_library(
         "//src/core:grpc_insecure_credentials",
         "//src/core:grpc_local_credentials",
         "//src/core:grpc_oauth2_credentials",
+        "//src/core:grpc_server_config_selector_filter",
         "//src/core:grpc_ssl_credentials",
         "//src/core:grpc_tls_credentials",
         "//src/core:grpc_transport_chttp2_alpn",
@@ -908,21 +915,6 @@ grpc_cc_library(
 grpc_cc_library(
     name = "cpp_impl_of",
     hdrs = ["//src/core:util/cpp_impl_of.h"],
-)
-
-grpc_cc_library(
-    name = "virtual_channel",
-    hdrs = ["include/grpcpp/virtual_channel.h"],
-    external_deps = [
-        "absl/functional:any_invocable",
-    ],
-    visibility = [
-        "//:__subpackages__",
-        "//bazel:virtual_rpcs",
-    ],
-    deps = [
-        "grpc++_public_hdrs",
-    ],
 )
 
 grpc_cc_library(
@@ -1091,6 +1083,7 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "ref_counted_ptr",
         "transport_auth_context",
+        ":grpc++_insecure_credentials",
         "//src/core:experiments",
         "//src/core:gpr_atm",
         "//src/core:grpc_check",
@@ -1237,6 +1230,22 @@ grpc_cc_library(
     ],
 )
 
+# This library is required to support insecure credentials.
+grpc_cc_library(
+    name = "grpc++_insecure_credentials",
+    srcs = [
+        "src/cpp/client/insecure_credentials.cc",
+        "src/cpp/server/insecure_server_credentials.cc",
+    ],
+    visibility = ["//bazel:insecure_credentials"],
+    deps = [
+        "gpr",
+        "grpc++_base",
+        "grpc++_public_hdrs",
+        "grpc_public_hdrs",
+    ],
+)
+
 # TODO(hork): restructure the grpc++_unsecure and grpc++ build targets in a
 # similar way to how the grpc_unsecure and grpc targets were restructured in
 # #25586
@@ -1248,6 +1257,7 @@ grpc_cc_library(
         "src/cpp/server/insecure_server_credentials.cc",
     ],
     external_deps = [
+        "absl/base:core_headers",
         "absl/functional:any_invocable",
         "absl/log:log",
         "absl/log:absl_check",
@@ -1755,10 +1765,12 @@ grpc_cc_library(
         "absl/functional:function_ref",
         "absl/status",
         "absl/strings",
+        "absl/time",
         "absl/types:span",
     ],
     visibility = ["//bazel:alt_grpc_base_legacy"],
     deps = [
+        "event_engine_base_hdrs",
         "gpr",
         "//src/core:arena",
         "//src/core:call_final_info",
@@ -2643,7 +2655,6 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc++_base",
     srcs = GRPCXX_SRCS + [
-        "src/cpp/client/insecure_credentials.cc",
         "src/cpp/client/secure_credentials.cc",
         "src/cpp/common/auth_property_iterator.cc",
         "src/cpp/common/secure_auth_context.cc",
@@ -2651,7 +2662,6 @@ grpc_cc_library(
         "src/cpp/common/tls_certificate_provider.cc",
         "src/cpp/common/tls_certificate_verifier.cc",
         "src/cpp/common/tls_credentials_options.cc",
-        "src/cpp/server/insecure_server_credentials.cc",
         "src/cpp/server/secure_server_credentials.cc",
     ],
     hdrs = GRPCXX_HDRS + [
@@ -2660,6 +2670,7 @@ grpc_cc_library(
         "src/cpp/server/secure_server_credentials.h",
     ],
     external_deps = [
+        "absl/base",
         "absl/base:core_headers",
         "absl/functional:any_invocable",
         "absl/log:log",
@@ -2711,7 +2722,6 @@ grpc_cc_library(
         "server",
         "transport_auth_context",
         ":grpc_transport_chttp2",
-        ":virtual_channel",
         "//src/core:arena",
         "//src/core:channel_args",
         "//src/core:channel_fwd",
@@ -2719,6 +2729,7 @@ grpc_cc_library(
         "//src/core:channel_stack_type",
         "//src/core:closure",
         "//src/core:default_event_engine",
+        "//src/core:down_cast",
         "//src/core:env",
         "//src/core:error",
         "//src/core:experiments",
@@ -2813,13 +2824,13 @@ grpc_cc_library(
         "resource_quota_api",
         "server",
         "transport_auth_context",
-        ":virtual_channel",
         "//src/core:arena",
         "//src/core:channel_args",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
         "//src/core:closure",
         "//src/core:default_event_engine",
+        "//src/core:down_cast",
         "//src/core:error",
         "//src/core:experiments",
         "//src/core:gpr_atm",
@@ -4648,7 +4659,10 @@ grpc_cc_library(
         "absl/functional:bind_front",
         "absl/log:log",
         "absl/status",
+        "absl/time",
+        "absl/strings:str_format",
         "absl/status:statusor",
+        "absl/functional:any_invocable",
         "absl/strings",
         "libcrypto",
         "libssl",
@@ -4664,6 +4678,7 @@ grpc_cc_library(
         "grpc_credentials_util",
         "grpc_public_hdrs",
         "grpc_security_base",
+        "grpc_trace",
         "ref_counted_ptr",
         "ssl_telemetry_utils",
         "transport_auth_context",
@@ -4671,10 +4686,10 @@ grpc_cc_library(
         "tsi_ssl_session_cache",
         "//src/core:channel_args",
         "//src/core:default_event_engine",
-        "//src/core:env",
         "//src/core:error",
         "//src/core:grpc_check",
         "//src/core:grpc_crl_provider",
+        "//src/core:grpc_tls_certificate_selector",
         "//src/core:grpc_transport_chttp2_alpn",
         "//src/core:load_file",
         "//src/core:match",
@@ -4684,6 +4699,7 @@ grpc_cc_library(
         "//src/core:spiffe_utils",
         "//src/core:ssl_key_logging",
         "//src/core:ssl_transport_security_utils",
+        "//src/core:status_helper",
         "//src/core:sync",
         "//src/core:tsi_ssl_types",
         "//src/core:useful",
@@ -4831,7 +4847,7 @@ grpc_cc_library(
         "work_serializer",
         "//src/core:down_cast",
         "//src/core:dual_ref_counted",
-        "//src/core:env",
+        "//src/core:experiment_env_var",
         "//src/core:grpc_backend_metric_data",
         "//src/core:grpc_check",
         "//src/core:json",

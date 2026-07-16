@@ -28,6 +28,7 @@
 #include <memory>
 #include <utility>
 
+#include "src/core/call/security_context.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/surface/call.h"
@@ -36,6 +37,7 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/transport/session_endpoint.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/status/statusor.h"
@@ -66,6 +68,12 @@ absl::StatusOr<RefCountedPtr<Channel>> VirtualChannel::Create(
     grpc_call* call, ChannelArgs args,
     absl::AnyInvocable<void()> goaway_callback) {
   Call* core_call = Call::FromC(call);
+
+  auto* sec_ctx = DownCast<grpc_client_security_context*>(
+      core_call->arena()->GetContext<SecurityContext>());
+  if (sec_ctx != nullptr && sec_ctx->auth_context != nullptr) {
+    args = args.SetObject(sec_ctx->auth_context);
+  }
 
   // TODO(snohria): Add support for Call V3.
   GRPC_CHECK(core_call->call_stack() != nullptr);

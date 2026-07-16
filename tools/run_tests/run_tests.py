@@ -559,8 +559,6 @@ class CLanguage:
 
         if compiler == "default" or compiler == "cmake":
             return ("debian11", ["-DCMAKE_CXX_STANDARD=17"])
-        elif compiler == "gcc8":
-            return ("gcc_8", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "gcc10":
             return ("gcc_10", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "gcc10.2":
@@ -593,9 +591,9 @@ class CLanguage:
             return ("gcc_14", ["-DCMAKE_CXX_STANDARD=20"])
         elif compiler == "gcc_musl":
             return ("alpine", ["-DCMAKE_CXX_STANDARD=17"])
-        elif compiler == "clang11":
+        elif compiler == "clang14":
             return (
-                "clang_11",
+                "clang_14",
                 self._clang_cmake_configure_extra_args()
                 + [
                     "-DCMAKE_CXX_STANDARD=17",
@@ -845,6 +843,13 @@ class PythonLanguage:
             bits=bits,
             config_vars=config_vars,
         )
+        python315_config = _python_config_generator(
+            name="py315",
+            major="3",
+            minor="15",
+            bits=bits,
+            config_vars=config_vars,
+        )
         pypy27_config = _pypy_config_generator(
             name="pypy", major="2", config_vars=config_vars
         )
@@ -869,8 +874,8 @@ class PythonLanguage:
                 # Default set tested on master. Test oldest and newest.
                 return (
                     python310_config,
-                    python312_config,
                     python314_config,
+                    python315_config,
                 )
         elif args.compiler == "python3.10":
             return (python310_config,)
@@ -882,6 +887,8 @@ class PythonLanguage:
             return (python313_config,)
         elif args.compiler == "python3.14":
             return (python314_config,)
+        elif args.compiler == "python3.15":
+            return (python315_config,)
         elif args.compiler == "pypy":
             return (pypy27_config,)
         elif args.compiler == "pypy3":
@@ -895,6 +902,7 @@ class PythonLanguage:
                 python312_config,
                 python313_config,
                 python314_config,
+                python315_config,
             )
         else:
             raise Exception("Compiler %s not supported." % args.compiler)
@@ -1065,7 +1073,7 @@ class CSharpLanguage:
         for test_runtime in self.test_runtimes:
             if test_runtime == "coreclr":
                 assembly_extension = ".dll"
-                assembly_subdir = "bin/%s/netcoreapp3.1" % msbuild_config
+                assembly_subdir = "bin/%s/net6.0" % msbuild_config
                 runtime_cmd = ["dotnet", "exec"]
             elif test_runtime == "mono":
                 assembly_extension = ".exe"
@@ -1720,7 +1728,6 @@ argp.add_argument(
     "--compiler",
     choices=[
         "default",
-        "gcc8",
         # The gcc:10 docker image which is 10.5 as of May 2026.
         "gcc10",
         # Uses debian11 docker image which comes with gcc 10.2
@@ -1730,7 +1737,7 @@ argp.add_argument(
         "gcc12_openssl309",
         "gcc14",
         "gcc_musl",
-        "clang11",
+        "clang14",
         "clang19",
         # TODO: Automatically populate from supported version
         "python3.10",
@@ -1738,6 +1745,7 @@ argp.add_argument(
         "python3.12",
         "python3.13",
         "python3.14",
+        "python3.15",
         "pypy",
         "pypy3",
         "python_alpine",

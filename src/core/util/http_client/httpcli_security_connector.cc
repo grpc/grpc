@@ -139,6 +139,10 @@ class grpc_httpcli_ssl_channel_security_connector final
     return ImmediateOkStatus();
   }
 
+  UniqueTypeName type() const override {
+    return GRPC_UNIQUE_TYPE_NAME_HERE("httpcli_ssl");
+  }
+
   const char* secure_peer_name() const { return secure_peer_name_; }
 
  private:
