@@ -1037,7 +1037,7 @@ cdef class AioServer:
         return rpc_state
 
     def _make_request_call_future(self, object method_bytes):
-        """ Crete a future that resolves with the next incoming call.
+        """ Create a future that resolves with the next incoming call.
 
         When `method_bytes` is provided creates a future for the associated
         registered method. Otherwise creates a future for generic
