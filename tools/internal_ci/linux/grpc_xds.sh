@@ -22,6 +22,4 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
 export DOCKERFILE_DIR=tools/dockerfile/test/bazel
 export DOCKER_RUN_SCRIPT=$BAZEL_SCRIPT
-export GRPC_TEST_REPORT_BASE_DIR="${KOKORO_ARTIFACTS_DIR}/grpc/reports"
-
 exec tools/run_tests/dockerize/build_and_run_docker.sh
