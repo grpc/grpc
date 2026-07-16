@@ -16,10 +16,10 @@
 
 #include <utility>
 
+#include "src/core/util/string.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-#include "src/core/util/string.h"
 
 namespace grpc_core {
 
