@@ -3535,7 +3535,8 @@ tsi_result tsi_configure_server_ssl_context(
 
   if (pem_key_cert_pair != nullptr) {
     result = tsi_ssl_extract_x509_subject_names_from_pem_cert(
-        pem_key_cert_pair->cert_chain().c_str(), &ssl_context.x509_subject_name);
+        pem_key_cert_pair->cert_chain().c_str(),
+        &ssl_context.x509_subject_name);
     if (result != TSI_OK) return result;
   }
   // Always configure the callback because responding to SNI is required for
