@@ -631,7 +631,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
 
   std::optional<uint32_t> max_recv_message_length;
 
-  // Current mitigation engine, retrieved once per connection.
+  grpc_auth_context* auth_context = nullptr;
   grpc_core::RefCountedPtr<grpc_core::MitigationEngine> mitigation_engine;
 };
 
