@@ -1,4 +1,4 @@
-// Copyright 2022 The gRPC Authors
+// Copyright 2023 The gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,17 +11,30 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_SRC_CORE_RESOLVER_DNS_DNS_RESOLVER_PLUGIN_H
-#define GRPC_SRC_CORE_RESOLVER_DNS_DNS_RESOLVER_PLUGIN_H
+#ifndef GRPC_SRC_CORE_RESOLVER_DNS_DNS_RESOLVER_H
+#define GRPC_SRC_CORE_RESOLVER_DNS_DNS_RESOLVER_H
 #include <grpc/support/port_platform.h>
 
 #include "src/core/config/core_configuration.h"
+#include "src/core/resolver/resolver.h"
+#include "src/core/resolver/resolver_factory.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/uri.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
+
+class EventEngineClientChannelDNSResolverFactory final
+    : public ResolverFactory {
+ public:
+  absl::string_view scheme() const override { return "dns"; }
+  bool IsValidUri(const URI& uri) const override;
+  OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override;
+};
 
 // Centralized decision logic about which client channel DNS resolver to enable.
 void RegisterDnsResolver(CoreConfiguration::Builder* builder);
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_RESOLVER_DNS_DNS_RESOLVER_PLUGIN_H
+#endif  // GRPC_SRC_CORE_RESOLVER_DNS_DNS_RESOLVER_H

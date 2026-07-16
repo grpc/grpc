@@ -41,6 +41,9 @@
 
 namespace grpc_event_engine::experimental {
 
+std::vector<EventEngine::ResolvedAddress> SortAddresses(
+    const std::vector<EventEngine::ResolvedAddress>& addresses);
+
 class AresResolver : public RefCountedDNSResolverInterface {
  public:
 #ifdef GRPC_ENABLE_FORK_SUPPORT

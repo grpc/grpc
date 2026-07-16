@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_RESOLVER_DNS_EVENT_ENGINE_SERVICE_CONFIG_HELPER_H
-#define GRPC_SRC_CORE_RESOLVER_DNS_EVENT_ENGINE_SERVICE_CONFIG_HELPER_H
+#ifndef GRPC_SRC_CORE_RESOLVER_DNS_SERVICE_CONFIG_HELPER_H
+#define GRPC_SRC_CORE_RESOLVER_DNS_SERVICE_CONFIG_HELPER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -29,4 +29,4 @@ absl::StatusOr<std::string> ChooseServiceConfig(
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_RESOLVER_DNS_EVENT_ENGINE_SERVICE_CONFIG_HELPER_H
+#endif  // GRPC_SRC_CORE_RESOLVER_DNS_SERVICE_CONFIG_HELPER_H

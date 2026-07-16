@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.h"
+#include "src/core/resolver/dns/dns_resolver.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/channel_arg_names.h>
@@ -27,13 +27,14 @@
 #include <utility>
 #include <vector>
 
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/load_balancing/grpclb/grpclb_balancer_addresses.h"
-#include "src/core/resolver/dns/event_engine/service_config_helper.h"
+#include "src/core/resolver/dns/service_config_helper.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/polling_resolver.h"
 #include "src/core/resolver/resolver.h"
@@ -571,6 +572,12 @@ EventEngineClientChannelDNSResolverFactory::CreateResolver(
                             .value_or(Duration::Seconds(30)));
   return MakeOrphanable<EventEngineClientChannelDNSResolver>(
       std::move(args), min_time_between_resolutions);
+}
+
+void RegisterDnsResolver(CoreConfiguration::Builder* builder) {
+  VLOG(2) << "Using EventEngine dns resolver";
+  builder->resolver_registry()->RegisterResolverFactory(
+      std::make_unique<EventEngineClientChannelDNSResolverFactory>());
 }
 
 }  // namespace grpc_core

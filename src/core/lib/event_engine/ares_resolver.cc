@@ -79,6 +79,28 @@
 
 namespace grpc_event_engine::experimental {
 
+std::vector<EventEngine::ResolvedAddress> SortAddresses(
+    const std::vector<EventEngine::ResolvedAddress>& addresses) {
+  address_sorting_sortable* sortables = static_cast<address_sorting_sortable*>(
+      gpr_zalloc(sizeof(address_sorting_sortable) * addresses.size()));
+  for (size_t i = 0; i < addresses.size(); i++) {
+    sortables[i].user_data =
+        const_cast<EventEngine::ResolvedAddress*>(&addresses[i]);
+    memcpy(&sortables[i].dest_addr.addr, addresses[i].address(),
+           addresses[i].size());
+    sortables[i].dest_addr.len = addresses[i].size();
+  }
+  address_sorting_rfc_6724_sort(sortables, addresses.size());
+  std::vector<EventEngine::ResolvedAddress> sorted_addresses;
+  sorted_addresses.reserve(addresses.size());
+  for (size_t i = 0; i < addresses.size(); ++i) {
+    sorted_addresses.emplace_back(
+        *static_cast<EventEngine::ResolvedAddress*>(sortables[i].user_data));
+  }
+  gpr_free(sortables);
+  return sorted_addresses;
+}
+
 namespace {
 
 // A hard limit on the number of records (A/AAAA or SRV) we may get from a
@@ -149,28 +171,6 @@ absl::Status SetRequestDNSServer(absl::string_view dns_server,
     return AresStatusToAbslStatus(status, ares_strerror(status));
   }
   return absl::OkStatus();
-}
-
-std::vector<EventEngine::ResolvedAddress> SortAddresses(
-    const std::vector<EventEngine::ResolvedAddress>& addresses) {
-  address_sorting_sortable* sortables = static_cast<address_sorting_sortable*>(
-      gpr_zalloc(sizeof(address_sorting_sortable) * addresses.size()));
-  for (size_t i = 0; i < addresses.size(); i++) {
-    sortables[i].user_data =
-        const_cast<EventEngine::ResolvedAddress*>(&addresses[i]);
-    memcpy(&sortables[i].dest_addr.addr, addresses[i].address(),
-           addresses[i].size());
-    sortables[i].dest_addr.len = addresses[i].size();
-  }
-  address_sorting_rfc_6724_sort(sortables, addresses.size());
-  std::vector<EventEngine::ResolvedAddress> sorted_addresses;
-  sorted_addresses.reserve(addresses.size());
-  for (size_t i = 0; i < addresses.size(); ++i) {
-    sorted_addresses.emplace_back(
-        *static_cast<EventEngine::ResolvedAddress*>(sortables[i].user_data));
-  }
-  gpr_free(sortables);
-  return sorted_addresses;
 }
 
 struct QueryArg {

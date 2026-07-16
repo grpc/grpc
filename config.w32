@@ -765,9 +765,8 @@ if (PHP_GRPC != "no") {
     "src\\core\\net\\socket_mutator.cc " +
     "src\\core\\plugin_registry\\grpc_plugin_registry.cc " +
     "src\\core\\plugin_registry\\grpc_plugin_registry_extra.cc " +
-    "src\\core\\resolver\\dns\\dns_resolver_plugin.cc " +
-    "src\\core\\resolver\\dns\\event_engine\\event_engine_client_channel_resolver.cc " +
-    "src\\core\\resolver\\dns\\event_engine\\service_config_helper.cc " +
+    "src\\core\\resolver\\dns\\dns_resolver.cc " +
+    "src\\core\\resolver\\dns\\service_config_helper.cc " +
     "src\\core\\resolver\\endpoint_addresses.cc " +
     "src\\core\\resolver\\fake\\fake_resolver.cc " +
     "src\\core\\resolver\\google_c2p\\google_c2p_resolver.cc " +
@@ -1862,7 +1861,6 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\plugin_registry");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\resolver");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\resolver\\dns");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\resolver\\dns\\event_engine");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\resolver\\fake");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\resolver\\google_c2p");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\resolver\\sockaddr");
