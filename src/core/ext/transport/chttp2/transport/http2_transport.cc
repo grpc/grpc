@@ -49,9 +49,13 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
+#include "src/core/util/useful.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+
+#define GRPC_ARG_HTTP2_PING_ON_RST_STREAM_PERCENT \
+  "grpc.http2.ping_on_rst_stream_percent"
 
 namespace grpc_core {
 namespace http2 {
@@ -277,6 +281,14 @@ uint32_t GetMaxSecurityFrameSize(const ChannelArgs& channel_args) {
                 .value_or(GrpcErrors::kMaxSecurityFrameSize),
             GrpcErrors::kMinMaxSecurityFrameSize,
             static_cast<int>(GrpcErrors::kMaxSecurityFrameSize)));
+}
+
+uint8_t GetPingOnRstStreamPercent(const ChannelArgs& channel_args,
+                                  const bool is_client) {
+  if (is_client) return 0;
+  return Clamp(channel_args.GetInt(GRPC_ARG_HTTP2_PING_ON_RST_STREAM_PERCENT)
+                   .value_or(1),
+               0, 100);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

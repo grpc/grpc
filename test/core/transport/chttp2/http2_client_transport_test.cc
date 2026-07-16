@@ -1502,7 +1502,7 @@ TEST_F(Http2ClientTransportTest, TestActiveStreamAllowedToDrainAfterGoaway) {
   step3->Wait();
 }
 
-// TODO(tjagtap) : [PH2][P2] Write tests similar to
+// TODO(tjagtap) : [PH2][P3] Write tests similar to
 // TestHeaderDataHeaderFrameOrder for Continuation frame read.
 
 // TODO(tjagtap) : [PH2][P4] Write tests

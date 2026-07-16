@@ -419,7 +419,7 @@ class Channel(_base_channel.Channel):
         exc_type: Optional[type[BaseException]],
         exc_val: Optional[BaseException],
         exc_tb: Optional[types.TracebackType],
-    ) -> None:
+    ) -> Optional[bool]:
         await self._close(None)
 
     async def _close(
