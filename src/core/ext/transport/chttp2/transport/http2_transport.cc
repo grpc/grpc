@@ -336,6 +336,7 @@ ProcessIncomingDataFrameFlowControl(const Http2FrameHeader& frame_header,
                                     Stream* stream) {
   GRPC_DCHECK_EQ(frame_header.type, 0u);
   if (frame_header.length > 0) {
+    flow_control.OnReceiveDataFrame(frame_header.length);
     if (stream == nullptr) {
       // This flow control bookkeeping needs to happen even though the stream is
       // gone because otherwise we will go out-of-sync with the peer.

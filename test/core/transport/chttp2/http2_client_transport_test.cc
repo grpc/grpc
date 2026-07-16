@@ -230,7 +230,6 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromCall) {
                                                      /*stream_id=*/1,
                                                      /*end_stream=*/true)});
 
-  step->ThenExpectWrite([](SliceBuffer& buffer) {});
   step->ThenPerformRead({helper_.SerializedHeaderFrame(
       std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
       /*stream_id=*/1,

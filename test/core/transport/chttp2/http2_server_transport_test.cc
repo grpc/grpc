@@ -848,6 +848,114 @@ TEST_F(Http2ServerTransportTest, PingOnRstStreamTest) {
   step2->Wait();
 }
 
+TEST_F(Http2ServerTransportTest, TestBdpProbeEnabled) {
+  ExecCtx ctx;
+  InitTransport(GetChannelArgs()
+                    .Set(GRPC_ARG_HTTP2_BDP_PROBE, true)
+                    // Disable all sources of pings except for BDP.
+                    .Set("grpc.http2.ping_on_rst_stream_percent", 0)
+                    .Set(GRPC_ARG_KEEPALIVE_TIME_MS, INT_MAX));
+  SpawnTransportLoopsAndExchangeSettings();
+
+  auto step1 = endpoint()->NewStep();
+
+  auto factory_factory = [](CallHandler call_handler) {
+    LOG(INFO) << "New stream created on the server";
+    return [call_handler]() mutable {
+      return TrySeq(
+          call_handler.PullClientInitialMetadata(),
+          [call_handler](ClientMetadataHandle metadata) mutable {
+            LOG(INFO) << "Client initial metadata: " << metadata->DebugString();
+            return call_handler.PushServerInitialMetadata(
+                ServerMetadataFromStatus(absl::OkStatus()));
+          },
+          [call_handler]() mutable {
+            return Map(call_handler.PullMessage(),
+                       [](auto msg) { return absl::OkStatus(); });
+          },
+          [call_handler]() mutable {
+            MessageHandle message = Arena::MakePooled<Message>(
+                SliceBuffer(Slice::FromExternalString(kString1)), 0);
+            return call_handler.PushMessage(std::move(message));
+          },
+          [call_handler]() mutable {
+            return call_handler.PushServerTrailingMetadata(
+                ServerMetadataFromStatus(absl::CancelledError()));
+          });
+    };
+  };
+  AddStream(std::move(factory_factory));
+
+  // Client sends a header frame.
+  step1->ThenPerformRead({
+      helper_.SerializedHeaderFrame(std::string(kPathDemoServiceStep.begin(),
+                                                kPathDemoServiceStep.end())),
+  });
+
+  step1->ThenExpectWrite([&](SliceBuffer& buffer) {
+    SliceBuffer expected;
+    expected.Append(Slice(grpc_slice_copy(
+        helper_
+            .SerializedHeaderFrame(
+                std::string(kGrpcStatusOK.begin(), kGrpcStatusOK.end()),
+                /*stream_id=*/1, /*end_headers=*/true, /*end_stream=*/false)
+            .c_slice())));
+    EXPECT_EQ(buffer.JoinIntoString(), expected.JoinIntoString());
+    buffer.Clear();
+  });
+  step1->Wait();
+
+  auto step2 = endpoint()->NewStep();
+  // Client sends a data frame.
+  step2->ThenPerformRead({
+      helper_.SerializedDataFrame(std::string(kString1.begin(), kString1.end()),
+                                  /*stream_id=*/1, /*end_stream=*/false),
+  });
+
+  step2->ThenExpectWrite([&, step2](SliceBuffer& buffer) {
+    uint64_t opaque_id =
+        VerifyPingFrameAndReturnOpaqueId(buffer, /*is_ack=*/false);
+    step2->InsertReadAtHead(
+        {helper_.SerializedPingFrame(/*ack=*/true,
+                                     /*opaque=*/opaque_id)});
+
+    SliceBuffer expected;
+    auto add_expected = [&](transport::testing::EventEngineSlice slice) {
+      expected.Append(Slice(grpc_slice_copy(slice.c_slice())));
+    };
+
+    add_expected(helper_.SerializedPingFrame(/*ack=*/false, opaque_id));
+    add_expected(helper_.SerializedWindowUpdateFrame(0, 21));
+    add_expected(helper_.SerializedDataFrame(
+        std::string(kString1.begin(), kString1.end()), /*stream_id=*/1,
+        /*end_stream=*/false));
+    add_expected(helper_.SerializedHeaderFrame(
+        std::string(kGrpcStatusCancelled.begin(), kGrpcStatusCancelled.end()),
+        /*stream_id=*/1, /*end_headers=*/true, /*end_stream=*/true));
+    add_expected(helper_.SerializedResetStreamFrame(
+        /*stream_id=*/1,
+        /*error_code=*/static_cast<uint32_t>(http2::Http2ErrorCode::kNoError)));
+
+    EXPECT_EQ(buffer.JoinIntoString(), expected.JoinIntoString());
+    buffer.Clear();
+  });
+  step2->Wait();
+  std::shared_ptr<EventSequenceEndpoint::Step> step3 = endpoint()->NewStep();
+  step3->ThenExpectWrite({
+      helper_.SerializedSettingsFrame(
+          {{Http2Settings::kInitialWindowSizeWireId, 4194304},
+           {Http2Settings::kMaxFrameSizeWireId, 4194304}}),
+      helper_.SerializedWindowUpdateFrame(0, 4128769),
+  });
+  step3->Wait();
+  event_engine()->Tick();
+
+  // Teardown the transport.
+  std::shared_ptr<EventSequenceEndpoint::Step> step4 = endpoint()->NewStep();
+  AddTransportCloseExpectations(step4.get(), /*last_stream_id=*/1);
+  step4->Wait();
+}
+
 TEST_F(Http2ServerTransportTest, TestNextAllowedPingIntervalKeepaliveEnabled) {
   ExecCtx ctx;
   InitTransport(GetChannelArgs().Set(GRPC_ARG_KEEPALIVE_TIME_MS, 1000));

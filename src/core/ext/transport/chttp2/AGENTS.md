@@ -255,25 +255,40 @@ We need to ensure that our slots do not exceed 16.
 
 ## PH2 Common Party Slots Usage
 
+<!--
+TODO(tjagtap) [PH2][P2] Validate this before roll out begins.
+Last checked on 26-June-2026
+-->
+
 | Name | Category | Description | Max Spawns at a time | When is it spawned | Max Duration | Resolution |
 |---|---|---|---|---|---|---|
 | SecurityFrameLoop | Loop | Security Frame | 1 | After Constructor | Lifetime of the transport | Transport Close |
 | ReadLoop | Loop | | 1 | After 1st write | Lifetime of the transport | Transport Close |
-| FlowControlPeriodicUpdateLoop | Loop | | 1 | After Constructor | Lifetime of the transport | Transport Close |
+| BdpLoop | Loop | BDP Loop | Default - 1 (0 if GRPC_ARG_HTTP2_BDP_PROBE is explicitly set to false) | After Constructor | Lifetime of the transport | Transport Close |
 | MultiplexerLoop | Loop | | 1 | After Constructor | Lifetime of the transport | Transport Close |
 | AddData | Misc | ChannelZ AddData | 1 | On demand | Immediate | Immediate |
 | CloseTransport | Misc | Close transport | 1 | While closing transport. Only once in the life of a transport | As long as it takes to close the transport | Transport Close |
 | WaitForSettingsTimeout | Timeout | Settings Timeout | 1 | When we write SETTINGS | Settings timeout | Settings Ack Received or Settings Timeout |
-| Keepalive | Loop | Keepalive Loop | 1 | If Keepalive is enabled, after constructor | Lifetime of the transport | Transport Close |
+| KeepaliveLoop | Loop | Keepalive Loop | 1 | If Keepalive is enabled, after constructor | Lifetime of the transport | Transport Close |
 | Ping | Timeout + Misc | | 4 | Sending a ping request | Timeout or a specific duration | |
 | | | **Total** | 12 | | | |
 
 ## PH2 Client Party Slots Usage
 
+<!--
+TODO(tjagtap) [PH2][P2] Validate this before roll out begins.
+Last checked on 26-June-2026
+-->
+
 | Name | Category | Description | Max Spawns at a time | When is it spawned | Max Duration | Resolution |
 |---|---|---|---|---|---|---|
 
 ## PH2 Server Party Slots Usage
+
+<!--
+TODO(tjagtap) [PH2][P2] Validate this before roll out begins.
+Last checked on 26-June-2026
+-->
 
 | Name | Category | Description | Max Spawns at a time | When is it spawned | Max Duration | Resolution |
 |---|---|---|---|---|---|---|
