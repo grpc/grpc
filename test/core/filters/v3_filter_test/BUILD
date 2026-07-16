@@ -20,23 +20,20 @@ load(
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 grpc_package(
-    name = "test/core/filters/test_suite",
+    name = "test/core/filters/v3_filter_test",
     features = [
         "layering_check",
         "parse_headers",
     ],
 )
 
-# Native v3 filter test harness. Runs filters/interceptors on the real
-# InterceptionChain / CallSpine, and (via yodel) doubles every test as a fuzzer.
+# Native v3 filter test harness. Builds a CallFilters::Stack and runs it on a
+# real CallSpine, and (via yodel) doubles every test as a fuzzer.
 grpc_cc_library(
-    name = "filter_test_v3",
+    name = "v3_filter_test",
     testonly = 1,
-    srcs = ["filter_test.cc"],
-    hdrs = [
-        "filter_matchers.h",
-        "filter_test.h",
-    ],
+    srcs = ["v3_filter_test.cc"],
+    hdrs = ["v3_filter_test.h"],
     external_deps = [
         "absl/functional:any_invocable",
         "absl/log:check",
@@ -50,24 +47,20 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc_base",
         "//:ref_counted_ptr",
-        "//src/core:call_destination",
+        "//src/core:call_filters",
         "//src/core:call_spine",
         "//src/core:channel_args",
         "//src/core:filter_args",
-        "//src/core:interception_chain",
         "//src/core:message",
         "//src/core:metadata",
         "//src/core:metadata_batch",
-        "//src/core:poll",
-        "//src/core:slice",
-        "//src/core:slice_buffer",
         "//test/core/call/yodel:yodel_test",
     ],
 )
 
 grpc_fuzz_test(
-    name = "client_authority_test",
-    srcs = ["client_authority_test.cc"],
+    name = "client_authority_filter_test",
+    srcs = ["client_authority_filter_test.cc"],
     external_deps = [
         "absl/strings",
         "gtest",
@@ -75,18 +68,20 @@ grpc_fuzz_test(
         "fuzztest_main",
     ],
     deps = [
-        ":filter_test_v3",
+        ":v3_filter_test",
         "//:gpr",
         "//:grpc_base",
+        "//src/core:arena",
         "//src/core:channel_args",
         "//src/core:grpc_client_authority_filter",
         "//src/core:metadata",
+        "//src/core:slice",
     ],
 )
 
 grpc_fuzz_test(
-    name = "message_flow_test",
-    srcs = ["message_flow_test.cc"],
+    name = "v3_filter_test_test",
+    srcs = ["v3_filter_test_test.cc"],
     external_deps = [
         "absl/status",
         "absl/status:statusor",
@@ -95,19 +90,24 @@ grpc_fuzz_test(
         "fuzztest_main",
     ],
     deps = [
-        ":filter_test_v3",
+        ":v3_filter_test",
         "//:gpr",
         "//:grpc_base",
+        "//src/core:arena",
         "//src/core:channel_args",
         "//src/core:channelz_property_list",
+        "//src/core:message",
         "//src/core:metadata",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
         "//src/core:status_flag",
+        "//test/core/filters:filter_matchers",
     ],
 )
 
 grpc_fuzz_test(
-    name = "message_size_test",
-    srcs = ["message_size_test.cc"],
+    name = "message_size_filter_test",
+    srcs = ["message_size_filter_test.cc"],
     external_deps = [
         "absl/status",
         "gtest",
@@ -115,38 +115,26 @@ grpc_fuzz_test(
         "fuzztest_main",
     ],
     deps = [
-        ":filter_test_v3",
+        ":v3_filter_test",
         "//:gpr",
         "//:grpc_base",
+        "//src/core:arena",
         "//src/core:channel_args",
         "//src/core:grpc_message_size_filter",
+        "//src/core:message",
         "//src/core:metadata",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
         "//src/core:status_flag",
+        "//test/core/filters:filter_matchers",
     ],
 )
 
-grpc_fuzz_test(
-    name = "filter_abort_test",
-    srcs = ["filter_abort_test.cc"],
-    external_deps = [
-        "absl/status:statusor",
-        "gtest",
-        "fuzztest",
-        "fuzztest_main",
-    ],
-    deps = [
-        ":filter_test_v3",
-        "//:gpr",
-        "//:grpc_base",
-        "//src/core:channel_args",
-        "//src/core:channelz_property_list",
-        "//src/core:metadata",
-    ],
-)
+
 
 grpc_fuzz_test(
-    name = "chain_test",
-    srcs = ["chain_test.cc"],
+    name = "compression_filter_test",
+    srcs = ["compression_filter_test.cc"],
     external_deps = [
         "absl/status",
         "gtest",
@@ -154,36 +142,17 @@ grpc_fuzz_test(
         "fuzztest_main",
     ],
     deps = [
-        ":filter_test_v3",
+        ":v3_filter_test",
         "//:gpr",
         "//:grpc_base",
+        "//:grpc_http_filters",
+        "//src/core:arena",
         "//src/core:channel_args",
-        "//src/core:grpc_client_authority_filter",
-        "//src/core:grpc_message_size_filter",
+        "//src/core:message",
         "//src/core:metadata",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
         "//src/core:status_flag",
-    ],
-)
-
-grpc_fuzz_test(
-    name = "interceptor_test",
-    srcs = ["interceptor_test.cc"],
-    external_deps = [
-        "absl/status",
-        "absl/status:statusor",
-        "gtest",
-        "fuzztest",
-        "fuzztest_main",
-    ],
-    deps = [
-        ":filter_test_v3",
-        "//:gpr",
-        "//:grpc_base",
-        "//:ref_counted_ptr",
-        "//src/core:call_spine",
-        "//src/core:channel_args",
-        "//src/core:interception_chain",
-        "//src/core:map",
-        "//src/core:metadata",
+        "//test/core/filters:filter_matchers",
     ],
 )

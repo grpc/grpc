@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_TEST_CORE_FILTERS_TEST_SUITE_FILTER_MATCHERS_H
-#define GRPC_TEST_CORE_FILTERS_TEST_SUITE_FILTER_MATCHERS_H
+#ifndef GRPC_TEST_CORE_FILTERS_FILTER_MATCHERS_H
+#define GRPC_TEST_CORE_FILTERS_FILTER_MATCHERS_H
 
 #include <ostream>
 #include <string>
@@ -25,8 +25,9 @@
 #include "absl/strings/escaping.h"
 
 // gmock matchers for asserting on the metadata and messages that flow through a
-// FilterTestV3 call. Shared with the older FilterTest<Filter> harness's
-// vocabulary so tests read the same in both.
+// filter call. Shared by both filter test harnesses -- the v2 FilterTest<Filter>
+// (filter_test.h) and the v3 FilterTestV3 (v3_filter_test/v3_filter_test.h) --
+// so tests read the same vocabulary in either.
 
 // Metadata has a given key with a given value.
 MATCHER_P2(HasMetadataKeyValue, key, value, "") {
@@ -75,4 +76,4 @@ inline std::ostream& operator<<(std::ostream& os, const Message& msg) {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_TEST_CORE_FILTERS_TEST_SUITE_FILTER_MATCHERS_H
+#endif  // GRPC_TEST_CORE_FILTERS_FILTER_MATCHERS_H

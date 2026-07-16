@@ -18,6 +18,7 @@
 
 #include <memory>
 
+#include "test/core/filters/filter_matchers.h"
 #include "test/core/filters/filter_test.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"

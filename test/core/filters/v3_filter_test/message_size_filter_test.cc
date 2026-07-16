@@ -23,12 +23,16 @@
 
 #include <optional>
 
+#include "src/core/call/message.h"
 #include "src/core/call/metadata.h"
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/promise/status_flag.h"
-#include "test/core/filters/test_suite/filter_matchers.h"
-#include "test/core/filters/test_suite/filter_test.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_buffer.h"
+#include "test/core/filters/filter_matchers.h"
+#include "test/core/filters/v3_filter_test/v3_filter_test.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
@@ -42,24 +46,24 @@ FILTER_TEST_V3(WithinLimitPasses) {
           .Build(ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, 1024))
           .ok());
 
-  auto initiator = StartCall(NewClientMetadata());
+  auto [initiator, handler] = StartCall(Arena::MakePooledForOverwrite<ClientMetadata>());
   SpawnTestSeq(
       initiator, "client",
-      [initiator]() mutable {
-        return initiator.PushMessage(NewMessage("small"));
+      [initiator = initiator]() mutable {
+        return initiator.PushMessage(Arena::MakePooled<Message>(SliceBuffer(Slice::FromCopiedString("small")), 0));
       },
-      [initiator](StatusFlag ok) mutable {
+      [initiator = initiator](StatusFlag ok) mutable {
         EXPECT_TRUE(ok.ok());
         initiator.FinishSends();
         return initiator.PullServerInitialMetadata();
       },
-      [initiator](
+      [initiator = initiator](
           ValueOrFailure<std::optional<ServerMetadataHandle>> md) mutable {
         EXPECT_TRUE(md.ok());
         EXPECT_TRUE(md.value().has_value());
         return initiator.PullMessage();
       },
-      [initiator](ServerToClientNextMessage msg) mutable {
+      [initiator = initiator](ServerToClientNextMessage msg) mutable {
         EXPECT_TRUE(msg.ok());
         EXPECT_FALSE(msg.has_value());  // server sends no message
         return initiator.PullServerTrailingMetadata();
@@ -69,25 +73,24 @@ FILTER_TEST_V3(WithinLimitPasses) {
         EXPECT_THAT(**md, HasMetadataResult(absl::OkStatus()));
       });
 
-  auto handler = TickUntilServerCall();
   SpawnTestSeq(
       handler, "server",
-      [handler]() mutable { return handler.PullClientInitialMetadata(); },
-      [handler](ValueOrFailure<ClientMetadataHandle> md) mutable {
+      [handler = handler]() mutable { return handler.PullClientInitialMetadata(); },
+      [handler = handler](ValueOrFailure<ClientMetadataHandle> md) mutable {
         EXPECT_TRUE(md.ok());
         return handler.PullMessage();
       },
-      [handler](ClientToServerNextMessage msg) mutable {
+      [handler = handler](ClientToServerNextMessage msg) mutable {
         EXPECT_TRUE(msg.ok());
         EXPECT_TRUE(msg.has_value());
         EXPECT_THAT(msg.value(), HasMessagePayload("small"));
-        return handler.PushServerInitialMetadata(NewServerMetadata());
+        return handler.PushServerInitialMetadata(Arena::MakePooledForOverwrite<ServerMetadata>());
       },
-      [handler](StatusFlag ok) mutable {
+      [handler = handler](StatusFlag ok) mutable {
         EXPECT_TRUE(ok.ok());
         return handler.PullMessage();
       },
-      [handler](ClientToServerNextMessage msg) mutable {
+      [handler = handler](ClientToServerNextMessage msg) mutable {
         EXPECT_TRUE(msg.ok());
         EXPECT_FALSE(msg.has_value());  // client half-closed
         handler.PushServerTrailingMetadata(

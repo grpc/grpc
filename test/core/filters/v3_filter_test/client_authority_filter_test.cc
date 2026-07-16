@@ -25,7 +25,9 @@
 #include "src/core/call/metadata.h"
 #include "src/core/ext/filters/http/client_authority_filter.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "test/core/filters/test_suite/filter_test.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice.h"
+#include "test/core/filters/v3_filter_test/v3_filter_test.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -49,17 +51,16 @@ FILTER_TEST_V3(StampsDefaultAuthorityWhenAbsent) {
                   .Build(WithDefaultAuthority("foo.test"))
                   .ok());
 
-  auto initiator = StartCall(NewClientMetadata());
+  auto [initiator, handler] = StartCall(Arena::MakePooledForOverwrite<ClientMetadata>());
   SpawnTestSeq(
       initiator, "client",
-      [initiator]() mutable { return initiator.PullServerTrailingMetadata(); },
+      [initiator = initiator]() mutable { return initiator.PullServerTrailingMetadata(); },
       [](ValueOrFailure<ServerMetadataHandle> md) { EXPECT_TRUE(md.ok()); });
 
-  auto handler = TickUntilServerCall();
   SpawnTestSeq(
       handler, "server",
-      [handler]() mutable { return handler.PullClientInitialMetadata(); },
-      [handler](ValueOrFailure<ClientMetadataHandle> md) mutable {
+      [handler = handler]() mutable { return handler.PullClientInitialMetadata(); },
+      [handler = handler](ValueOrFailure<ClientMetadataHandle> md) mutable {
         ASSERT_TRUE(md.ok());
         std::string authority;
         EXPECT_EQ((**md).GetStringValue(":authority", &authority), "foo.test");
@@ -76,17 +77,19 @@ FILTER_TEST_V3(PreservesClientProvidedAuthority) {
                   .Build(WithDefaultAuthority("foo.test"))
                   .ok());
 
-  auto initiator = StartCall(NewClientMetadata({{":authority", "bar.test"}}));
+  auto client_initial_metadata = Arena::MakePooledForOverwrite<ClientMetadata>();
+  client_initial_metadata->Set(HttpAuthorityMetadata(),
+                               Slice::FromStaticString("bar.test"));
+  auto [initiator, handler] = StartCall(std::move(client_initial_metadata));
   SpawnTestSeq(
       initiator, "client",
-      [initiator]() mutable { return initiator.PullServerTrailingMetadata(); },
+      [initiator = initiator]() mutable { return initiator.PullServerTrailingMetadata(); },
       [](ValueOrFailure<ServerMetadataHandle> md) { EXPECT_TRUE(md.ok()); });
 
-  auto handler = TickUntilServerCall();
   SpawnTestSeq(
       handler, "server",
-      [handler]() mutable { return handler.PullClientInitialMetadata(); },
-      [handler](ValueOrFailure<ClientMetadataHandle> md) mutable {
+      [handler = handler]() mutable { return handler.PullClientInitialMetadata(); },
+      [handler = handler](ValueOrFailure<ClientMetadataHandle> md) mutable {
         ASSERT_TRUE(md.ok());
         std::string authority;
         EXPECT_EQ((**md).GetStringValue(":authority", &authority), "bar.test");

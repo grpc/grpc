@@ -25,6 +25,25 @@ grpc_package(
     ],
 )
 
+# gmock matchers for metadata/messages flowing through a filter call. Depend on
+# this directly from tests that use the matchers; it is independent of which
+# harness (v2 :filter_test or v3 v3_filter_test/) the test is written against.
+grpc_cc_library(
+    name = "filter_matchers",
+    testonly = 1,
+    hdrs = ["filter_matchers.h"],
+    external_deps = [
+        "absl/strings",
+        "gtest",
+    ],
+    visibility = ["//test:__subpackages__"],
+    deps = [
+        "//src/core:message",
+        "//src/core:metadata",
+        "//src/core:metadata_batch",
+    ],
+)
+
 grpc_cc_library(
     name = "filter_test",
     testonly = 1,
@@ -77,6 +96,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        ":filter_matchers",
         "filter_test",
         "//:grpc_base",
         "//:grpc_unsecure",
@@ -104,6 +124,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        ":filter_matchers",
         "filter_test",
         "//:grpc",
         "//:grpc_base",
@@ -132,6 +153,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        ":filter_matchers",
         "filter_test",
         "//:channel_arg_names",
         "//src/core:grpc_client_authority_filter",
@@ -151,6 +173,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        ":filter_matchers",
         "filter_test",
         "//:grpc",
         "//:grpc_base",
