@@ -14,10 +14,11 @@
 
 import asyncio
 import collections
+import datetime
 import logging
 import os
 import sys
-from typing import Any, List, Set
+from typing import Any, Callable, List, Optional, Set
 import unittest
 
 import grpc_observability
@@ -36,6 +37,7 @@ OTEL_EXPORT_INTERVAL_S = 0.5
 _RETRY_METRIC_NAMES = [
     metric.name for metric in _open_telemetry_measures.retry_metrics()
 ]
+_BASE_METRIC_COUNT = len(_open_telemetry_measures.base_metrics())
 _NUM_FAILED_ATTEMPTS = 2
 
 
@@ -94,11 +96,45 @@ class OTelMetricExporter(otel_metrics_export.MetricExporter):
                         )
 
 
+class _ObservabilityTestBase(AioTestBase):
+    async def assert_eventually(
+        self,
+        predicate: Callable[[], bool],
+        *,
+        timeout: Optional[datetime.timedelta] = None,
+        message: Optional[Callable[[], str]] = None,
+    ) -> None:
+        message = message or (lambda: "Proposition did not evaluate to true")
+        timeout = timeout or datetime.timedelta(seconds=5)
+        end = datetime.datetime.now() + timeout
+        while datetime.datetime.now() < end:
+            if predicate():
+                return
+            await asyncio.sleep(OTEL_EXPORT_INTERVAL_S)
+        self.fail(message())
+
+    async def _validate_metrics_exist(
+        self,
+        all_metrics: dict[str, Any],
+        expected_count: int = _BASE_METRIC_COUNT,
+    ) -> None:
+        # Wait until we have at least the expected number of metrics from the
+        # OTel MetricExporter instead of relying on a fixed sleep, so that we
+        # do not race with exports that are still in flight.
+        await self.assert_eventually(
+            lambda: len(all_metrics.keys()) >= expected_count,
+            message=lambda: (
+                f"Expected at least {expected_count} metrics, got "
+                f"{len(all_metrics.keys())}: {all_metrics.keys()}"
+            ),
+        )
+
+
 @unittest.skipIf(
     os.name == "nt" or "darwin" in sys.platform,
     "Observability is not supported in Windows and MacOS",
 )
-class OpenTelemetryObservabilityTest(AioTestBase):
+class OpenTelemetryObservabilityTest(_ObservabilityTestBase):
     async def setUp(self):
         self.all_metrics = collections.defaultdict(list)
         otel_exporter = OTelMetricExporter(self.all_metrics)
@@ -142,17 +178,6 @@ class OpenTelemetryObservabilityTest(AioTestBase):
         await self._validate_metrics_exist(self.all_metrics)
         self._validate_all_metrics_names(self.all_metrics.keys())
 
-    async def _validate_metrics_exist(
-        self, all_metrics: dict[str, Any]
-    ) -> None:
-        # Sleep here to make sure we have at least one export from
-        # OTel MetricExporter.
-        await asyncio.sleep(5)
-        self.assertTrue(
-            len(all_metrics.keys()) > 1,
-            msg="No metrics were exported after 5s",
-        )
-
     def _validate_all_metrics_names(self, metric_names: Set[str]) -> None:
         self._validate_server_metrics_names(metric_names)
         self._validate_client_metrics_names(metric_names)
@@ -180,7 +205,11 @@ class OpenTelemetryObservabilityTest(AioTestBase):
                 )
 
 
-class OpenTelemetryObservabilityRetryTest(AioTestBase):
+@unittest.skipIf(
+    os.name == "nt" or "darwin" in sys.platform,
+    "Observability is not supported in Windows and MacOS",
+)
+class OpenTelemetryObservabilityRetryTest(_ObservabilityTestBase):
     """Validates that the per-call retry metrics are recorded for the AsyncIO
     stack, which uses the same call tracer as the sync stack."""
 
@@ -209,9 +238,12 @@ class OpenTelemetryObservabilityRetryTest(AioTestBase):
     async def test_record_retry_metrics(self):
         await _test_server.unary_unary_call_with_retries(port=self._port)
 
-        # Sleep here to make sure we have at least one export from
-        # OTel MetricExporter.
-        await asyncio.sleep(5)
+        # Base metrics plus grpc.client.call.retries and
+        # grpc.client.call.retry_delay. Transparent retries stay at 0 and are
+        # therefore not reported.
+        await self._validate_metrics_exist(
+            self.all_metrics, expected_count=_BASE_METRIC_COUNT + 2
+        )
         for metric in (
             _open_telemetry_measures.CLIENT_CALL_RETRIES,
             _open_telemetry_measures.CLIENT_CALL_RETRY_DELAY,
