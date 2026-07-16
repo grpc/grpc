@@ -23,6 +23,10 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/unique_type_name.h"
 
+// A boolean channel arg indicating whether the filter stack is for the
+// server side.
+#define GRPC_ARG_IS_SERVER_FILTER_STACK "grpc.internal.is_server_filter_stack"
+
 namespace grpc_core {
 
 // A base class for filter configs.

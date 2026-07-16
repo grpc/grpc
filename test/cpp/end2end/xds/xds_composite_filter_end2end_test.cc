@@ -68,8 +68,12 @@ using ::xds::type::v3::TypedStruct;
 class XdsCompositeFilterEnd2endTest : public XdsEnd2endTest {
  public:
   void SetUp() override {
-    grpc_core::GrpcXdsBootstrapBuilder::SetXdsHttpFilterFactoryForTest([]() {
-      return std::make_unique<grpc_core::XdsHttpAddHeaderFilterFactory>();
+    grpc_core::GrpcXdsBootstrapBuilder::SetXdsHttpFilterFactoryInitForTest(
+        [](grpc_core::XdsHttpFilterRegistry& registry) {
+      registry.RegisterFilter(
+          std::make_unique<grpc_core::XdsHttpAddHeaderFilterFactory>());
+      registry.RegisterFilter(
+          std::make_unique<grpc_core::XdsHttpServerAddHeaderFilterFactory>());
     });
     CreateAndStartBackends(1);
     EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
@@ -78,16 +82,21 @@ class XdsCompositeFilterEnd2endTest : public XdsEnd2endTest {
   }
 
   void TearDown() override {
-    grpc_core::GrpcXdsBootstrapBuilder::SetXdsHttpFilterFactoryForTest(nullptr);
+    grpc_core::GrpcXdsBootstrapBuilder::SetXdsHttpFilterFactoryInitForTest(
+        nullptr);
     XdsEnd2endTest::TearDown();
   }
 
   static TypedExtensionConfig BuildAddHeaderFilterConfig(
-      const std::string& header_name, const std::string& header_value) {
+      bool is_client, const std::string& header_name,
+      const std::string& header_value) {
     TypedStruct typed_struct;
     typed_struct.set_type_url(
-        absl::StrCat("type.googleapis.com/",
-                     grpc_core::XdsHttpAddHeaderFilterFactory::kFilterName));
+        absl::StrCat(
+            "type.googleapis.com/",
+            is_client
+                ? grpc_core::XdsHttpAddHeaderFilterFactory::kFilterName
+                : grpc_core::XdsHttpServerAddHeaderFilterFactory::kFilterName));
     auto* value_map = typed_struct.mutable_value()->mutable_fields();
     (*value_map)["header_name"].set_string_value(header_name);
     (*value_map)["header_value"].set_string_value(header_value);
@@ -98,7 +107,8 @@ class XdsCompositeFilterEnd2endTest : public XdsEnd2endTest {
   }
 
   // Matcher action.  Either a header to add, or nullopt for SkipFilter.
-  using ActionData = std::optional<std::pair<std::string, std::string>>;
+  using ActionData = std::optional<std::tuple<
+      bool /*is_client*/, std::string /*key*/, std::string /*value*/>>;
 
   // Matcher data.  Maps input header value to action.
   using MatcherData = std::map<std::string, ActionData>;
@@ -112,10 +122,10 @@ class XdsCompositeFilterEnd2endTest : public XdsEnd2endTest {
     }
     // Otherwise, add an ExecuteFilterAction whose typed_config field
     // contains the filter to delegate to, which will be an AddHeaderFilter.
-    const auto& [add_header_name, add_header_value] = *action_data;
+    const auto& [is_client, add_header_name, add_header_value] = *action_data;
     ExecuteFilterAction action;
-    *action.mutable_typed_config() =
-        BuildAddHeaderFilterConfig(add_header_name, add_header_value);
+    *action.mutable_typed_config() = BuildAddHeaderFilterConfig(
+        is_client, add_header_name, add_header_value);
     any->PackFrom(action);
   }
 
@@ -184,8 +194,8 @@ TEST_P(XdsCompositeFilterEnd2endTest, TopLevelConfig) {
       "GRPC_EXPERIMENTAL_XDS_COMPOSITE_FILTER");
   // Configure the composite filter.
   MatcherData matcher_data;
-  matcher_data["enterprise"] = {"status", "legend"};
-  matcher_data["yorktown"] = {"sunk", "midway"};
+  matcher_data["enterprise"] = {true, "status", "legend"};
+  matcher_data["yorktown"] = {true, "sunk", "midway"};
   matcher_data["hornet"] = std::nullopt;  // SkipFilter
   SetListenerAndRouteConfiguration(
       balancer_.get(),
@@ -237,8 +247,8 @@ TEST_P(XdsCompositeFilterEnd2endTest, OnNoMatch) {
       "GRPC_EXPERIMENTAL_XDS_COMPOSITE_FILTER");
   // Configure the composite filter.
   MatcherData matcher_data;
-  matcher_data["enterprise"] = {"status", "legend"};
-  std::pair<std::string, std::string> on_no_match = {"status", "unknown"};
+  matcher_data["enterprise"] = {true, "status", "legend"};
+  ActionData::value_type on_no_match = {true, "status", "unknown"};
   SetListenerAndRouteConfiguration(
       balancer_.get(),
       BuildListenerWithCompositeFilter(BuildMatcher(
@@ -282,7 +292,7 @@ TEST_P(XdsCompositeFilterEnd2endTest, OverrideConfig) {
   // The top-level filter has an empty matcher, but there is an override
   // config in the route.
   MatcherData matcher_data;
-  matcher_data["enterprise"] = {"status", "legend"};
+  matcher_data["enterprise"] = {true, "status", "legend"};
   Listener listener = BuildListenerWithCompositeFilter(std::nullopt);
   RouteConfiguration route_config = BuildRouteConfigWithOverrideConfig(
       BuildMatcher("name", std::move(matcher_data)));
@@ -298,6 +308,30 @@ TEST_P(XdsCompositeFilterEnd2endTest, OverrideConfig) {
                            << " message=" << status.error_message();
   EXPECT_THAT(server_initial_metadata,
               ::testing::Contains(::testing::Pair("status", "legend")));
+}
+
+TEST_P(XdsCompositeFilterEnd2endTest, ChildFilterNotSupportedOnClientSide) {
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_XDS_COMPOSITE_FILTER");
+  // Configure the composite filter.
+  // The top-level filter has an empty matcher, but there is an override
+  // config in the route.
+  MatcherData matcher_data;
+  matcher_data["enterprise"] = {/*is_client=*/false, "status", "legend"};
+  Listener listener = BuildListenerWithCompositeFilter(std::nullopt);
+  RouteConfiguration route_config = BuildRouteConfigWithOverrideConfig(
+      BuildMatcher("name", std::move(matcher_data)));
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  // Send RPC with name=enterprise.
+  LOG(INFO) << "Sending RPC with name=enterprise...";
+  std::multimap<std::string, std::string> server_initial_metadata;
+  Status status = SendRpc(RpcOptions()
+                              .set_metadata({{"name", "enterprise"}})
+                              .set_echo_metadata_initially(true));
+  EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
+  EXPECT_EQ(
+      status.error_message(),
+      "io.grpc.test.ServerAddHeaderFilter filter not supported on clients");
 }
 
 TEST_P(XdsCompositeFilterEnd2endTest, FilterUnsupportedWithoutEnvVar) {

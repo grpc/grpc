@@ -213,7 +213,10 @@ ServerConfigSelectorInterceptor::Create(const ChannelArgs& args,
 ServerConfigSelectorInterceptor::ServerConfigSelectorInterceptor(
     const ChannelArgs& args, ChannelFilter::Args /*filter_args*/,
     RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider)
-    : args_(args),
+    : args_(
+          // Add a channel arg to tell filters that they're running on
+          // the server side.
+          args.Set(GRPC_ARG_IS_SERVER_FILTER_STACK, 1)),
       server_config_selector_provider_(
           std::move(server_config_selector_provider)),
       config_selector_(nullptr) {
