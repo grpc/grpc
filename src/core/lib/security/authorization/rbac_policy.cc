@@ -19,6 +19,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
+#include "src/core/util/string.h"
 
 namespace grpc_core {
 
@@ -89,30 +90,30 @@ absl::string_view AuditConditionString(Rbac::AuditCondition audit_condition) {
 
 std::string Rbac::ToString() const {
   std::string str = "Rbac{name=";
-  absl::StrAppend(&str, name);
-  absl::StrAppend(&str, ", action=");
-  absl::StrAppend(&str, action == Rbac::Action::kAllow ? "Allow" : "Deny");
-  absl::StrAppend(&str, ", audit_condition=");
-  absl::StrAppend(&str, AuditConditionString(audit_condition));
-  absl::StrAppend(&str, ", policies={");
+  StrAppend(str, name);
+  StrAppend(str, ", action=");
+  StrAppend(str, action == Rbac::Action::kAllow ? "Allow" : "Deny");
+  StrAppend(str, ", audit_condition=");
+  StrAppend(str, AuditConditionString(audit_condition));
+  StrAppend(str, ", policies={");
   bool is_first = true;
   for (const auto& [name, policy] : policies) {
-    if (!is_first) absl::StrAppend(&str, ", ");
-    absl::StrAppend(&str, name);
-    absl::StrAppend(&str, "=");
-    absl::StrAppend(&str, policy.ToString());
+    if (!is_first) StrAppend(str, ", ");
+    StrAppend(str, name);
+    StrAppend(str, "=");
+    StrAppend(str, policy.ToString());
     is_first = false;
   }
-  absl::StrAppend(&str, "}, audit_loggers={");
+  StrAppend(str, "}, audit_loggers={");
   is_first = true;
   for (const auto& config : logger_configs) {
-    if (!is_first) absl::StrAppend(&str, ", ");
-    absl::StrAppend(&str, config->name());
-    absl::StrAppend(&str, "=");
-    absl::StrAppend(&str, config->ToString());
+    if (!is_first) StrAppend(str, ", ");
+    StrAppend(str, config->name());
+    StrAppend(str, "=");
+    StrAppend(str, config->ToString());
     is_first = false;
   }
-  absl::StrAppend(&str, "}}");
+  StrAppend(str, "}}");
   return str;
 }
 
@@ -548,10 +549,10 @@ bool Rbac::Policy::operator==(const Rbac::Policy& other) const {
 
 std::string Rbac::Policy::ToString() const {
   std::string str = "{permissions=";
-  absl::StrAppend(&str, permissions.ToString());
-  absl::StrAppend(&str, ", principals=");
-  absl::StrAppend(&str, principals.ToString());
-  absl::StrAppend(&str, "}");
+  StrAppend(str, permissions.ToString());
+  StrAppend(str, ", principals=");
+  StrAppend(str, principals.ToString());
+  StrAppend(str, "}");
   return str;
 }
 
