@@ -312,14 +312,27 @@ class RubyDistribTest:
 
 
 class PHP8DistribTest:
-    """Tests PHP8 package"""
+    """Tests PHP package"""
 
-    def __init__(self, platform, arch, docker_suffix=None, presubmit=False):
-        self.name = "php8_%s_%s_%s" % (platform, arch, docker_suffix)
+    def __init__(
+        self,
+        platform,
+        arch,
+        docker_suffix=None,
+        php_version="8.2",
+        presubmit=False,
+    ):
+        self.php_version = php_version
+        self.name = "php_%s_%s_%s_v%s" % (
+            platform,
+            arch,
+            docker_suffix or "default",
+            php_version,
+        )
         self.platform = platform
         self.arch = arch
         self.docker_suffix = docker_suffix
-        self.labels = ["distribtest", "php", "php8", platform, arch]
+        self.labels = ["distribtest", "php", "php8", platform, arch, php_version]
         if presubmit:
             self.labels.append("presubmit")
         if docker_suffix:
@@ -332,17 +345,27 @@ class PHP8DistribTest:
         # TODO(jtattermusch): honor inner_jobs arg for this task.
         del inner_jobs
         if self.platform == "linux":
+            if self.docker_suffix and self.docker_suffix.startswith("php"):
+                dockerfile_dir = "tools/dockerfile/distribtest/%s_%s" % (
+                    self.docker_suffix,
+                    self.arch,
+                )
+            else:
+                dockerfile_dir = "tools/dockerfile/distribtest/php%s_%s_%s" % (
+                    self.php_version,
+                    self.docker_suffix or "debian12",
+                    self.arch,
+                )
             return create_docker_jobspec(
                 self.name,
-                "tools/dockerfile/distribtest/php8_%s_%s"
-                % (self.docker_suffix, self.arch),
+                dockerfile_dir,
                 "test/distrib/php/run_distrib_test.sh",
                 copy_rel_path="test/distrib",
             )
         elif self.platform == "macos":
             return create_jobspec(
                 self.name,
-                ["test/distrib/php/run_distrib_test_macos.sh"],
+                ["test/distrib/php/run_distrib_test_macos.sh", self.php_version],
                 environ={"EXTERNAL_GIT_ROOT": "../../../.."},
                 timeout_seconds=30 * 60,
                 use_workspace=True,
@@ -573,7 +596,13 @@ def targets():
             ruby_version="ruby_4_0",
             presubmit=True,
         ),
-        # PHP8
-        PHP8DistribTest("linux", "x64", "debian12", presubmit=True),
-        PHP8DistribTest("macos", "x64", presubmit=True),
+        # PHP
+        PHP8DistribTest("linux", "x64", "debian12", php_version="8.2", presubmit=True),
+        PHP8DistribTest("linux", "x64", "debian12", php_version="8.3", presubmit=True),
+        PHP8DistribTest("linux", "x64", "debian13", php_version="8.4", presubmit=True),
+        PHP8DistribTest("linux", "x64", "debian13", php_version="8.5", presubmit=True),
+        PHP8DistribTest("macos", "x64", php_version="8.2", presubmit=True),
+        PHP8DistribTest("macos", "x64", php_version="8.3", presubmit=True),
+        PHP8DistribTest("macos", "x64", php_version="8.4", presubmit=True),
+        PHP8DistribTest("macos", "x64", php_version="8.5", presubmit=True),
     ]

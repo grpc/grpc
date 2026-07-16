@@ -247,15 +247,15 @@ fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_PHP}" == "true" ]
 then
-  time brew install php@8.4 || true
-  if [ -e "/usr/local/opt/php@8.4/" ]; then
-    PHP_PATH="/usr/local/opt/php@8.4/"
-  elif [ -e "/opt/homebrew/opt/php@8.4" ]; then
-    PHP_PATH="/opt/homebrew/opt/php@8.4"
-  else
-    echo "Error: Unable to check php install path" >&2
-    exit 1
-  fi
+  time brew install php@8.2 php@8.3 php@8.4 php@8.5 || true
+  for ver in 8.2 8.3 8.4 8.5; do
+    if [ -e "/usr/local/opt/php@${ver}/" ]; then
+      PHP_PATH="/usr/local/opt/php@${ver}/"
+    elif [ -e "/opt/homebrew/opt/php@${ver}" ]; then
+      PHP_PATH="/opt/homebrew/opt/php@${ver}"
+    fi
+  done
+  PHP_PATH="${PHP_PATH:-/usr/local/opt/php@8.4/}"
 
   export LDFLAGS="-L${PHP_PATH}/lib ${LDFLAGS}"
   export CPPFLAGS="-I${PHP_PATH}include ${CPPFLAGS}"

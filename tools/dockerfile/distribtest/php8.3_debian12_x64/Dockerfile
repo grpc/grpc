@@ -1,4 +1,4 @@
-# Copyright 2020 gRPC authors.
+# Copyright 2024 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,8 +14,4 @@
 
 FROM debian:12
 
-RUN apt-get update && apt-get install -y php8.2 php8.2-dev php-pear wget zlib1g-dev
-
-RUN wget https://phar.phpunit.de/phpunit-8.5.8.phar && \
-  mv phpunit-8.5.8.phar /usr/local/bin/phpunit && \
-  chmod +x /usr/local/bin/phpunit
+RUN apt-get update && apt-get install -y php8.3 php8.3-dev php-pear wget zlib1g-dev && apt-get clean

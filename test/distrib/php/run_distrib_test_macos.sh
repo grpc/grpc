@@ -24,8 +24,22 @@ cp -r "$EXTERNAL_GIT_ROOT"/input_artifacts/grpc-*.tgz .
 # the exact version string in advance)
 GRPC_PEAR_PACKAGE_NAME=$(find . -regex '.*/grpc-[0-9].*.tgz' | sed 's|./||')
 
+PHP_VERSION="${1:-8.2}"
+PHP_PATH="/usr/local/opt/php@${PHP_VERSION}"
+if [ ! -d "${PHP_PATH}" ]; then
+  PHP_PATH="/opt/homebrew/opt/php@${PHP_VERSION}"
+fi
+
+if [ -d "${PHP_PATH}" ]; then
+  PECL_BIN="${PHP_PATH}/bin/pecl"
+  PHP_BIN="${PHP_PATH}/bin/php"
+else
+  PECL_BIN="pecl"
+  PHP_BIN="php"
+fi
+
 # Use -j4 since higher parallelism can lead to "resource unavailable"
 # errors during the build. See b/257261061#comment4
-sudo MAKEFLAGS=-j4 pecl install "${GRPC_PEAR_PACKAGE_NAME}"
+sudo MAKEFLAGS=-j4 "${PECL_BIN}" install "${GRPC_PEAR_PACKAGE_NAME}"
 
-php -d extension=grpc.so -d max_execution_time=300 distribtest.php
+"${PHP_BIN}" -d extension=grpc.so -d max_execution_time=300 distribtest.php
