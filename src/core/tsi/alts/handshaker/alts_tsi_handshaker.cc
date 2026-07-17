@@ -28,6 +28,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/syscall.h>
+#include <unistd.h>
 
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -40,8 +42,8 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/memory.h"
 #include "src/core/util/sync.h"
-#include "upb/mem/arena.hpp"
 #include "absl/log/log.h"
+#include "upb/mem/arena.hpp"
 
 namespace {
 constexpr absl::string_view kUseGrpcExperimentalAltsHandshakerKeepaliveParams =
@@ -295,9 +297,10 @@ static const tsi_handshaker_result_vtable result_vtable = {
     handshaker_result_get_unused_bytes,
     handshaker_result_destroy};
 
-tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
-                                             bool is_client,
-                                             tsi_handshaker_result** result) {
+// Workaround compiler optimization bug with HWASan build (b/533806293).
+__attribute__((optnone)) tsi_result
+alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp, bool is_client,
+                                  tsi_handshaker_result** result) {
   if (result == nullptr || resp == nullptr) {
     LOG(ERROR) << "Invalid arguments to create_handshaker_result()";
     return TSI_INVALID_ARGUMENT;
@@ -672,6 +675,10 @@ static void handshaker_destroy(tsi_handshaker* self) {
   }
   alts_tsi_handshaker* handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(self);
+  fprintf(stderr, "Jetski: DESTROY_HANDSHAKER handshaker=%p pid=%d tid=%d\n",
+          handshaker, (int)getpid(), (int)syscall(SYS_gettid));
+  fflush(stderr);
+  alts_handshaker_client_clear_handshaker(handshaker->client);
   alts_handshaker_client_destroy(handshaker->client);
   grpc_core::CSliceUnref(handshaker->target_name);
   grpc_alts_credentials_options_destroy(handshaker->options);
@@ -698,7 +705,8 @@ static const tsi_handshaker_vtable handshaker_vtable_dedicated = {
     handshaker_next_dedicated,
     handshaker_shutdown};
 
-bool alts_tsi_handshaker_has_shutdown(alts_tsi_handshaker* handshaker) {
+__attribute__((noinline)) bool alts_tsi_handshaker_has_shutdown(
+    alts_tsi_handshaker* handshaker) {
   GRPC_CHECK_NE(handshaker, nullptr);
   grpc_core::MutexLock lock(&handshaker->mu);
   return handshaker->shutdown;
@@ -733,6 +741,9 @@ tsi_result alts_tsi_handshaker_create(
                                    : kTsiAltsMaxFrameSize;
   handshaker->preferred_transport_protocols = preferred_transport_protocols;
   *self = &handshaker->base;
+  fprintf(stderr, "Jetski: CREATE_HANDSHAKER handshaker=%p pid=%d tid=%d\n",
+          handshaker, (int)getpid(), (int)syscall(SYS_gettid));
+  fflush(stderr);
   return TSI_OK;
 }
 

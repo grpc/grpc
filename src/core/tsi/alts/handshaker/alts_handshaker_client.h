@@ -159,6 +159,8 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
 void alts_handshaker_client_handle_response(alts_handshaker_client* client,
                                             bool is_ok);
 
+void alts_handshaker_client_clear_handshaker(alts_handshaker_client* client);
+
 // Returns the max number of concurrent handshakes that are permitted.
 //
 // Exposed for testing purposes only.

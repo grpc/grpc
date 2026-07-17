@@ -104,6 +104,7 @@ void alts_tsi_handshaker_result_set_unused_bytes(tsi_handshaker_result* result,
 /// This method returns a boolean value indicating if an ALTS TSI handshaker
 /// has been shutdown or not.
 ///
-bool alts_tsi_handshaker_has_shutdown(alts_tsi_handshaker* handshaker);
+__attribute__((noinline)) bool alts_tsi_handshaker_has_shutdown(
+    alts_tsi_handshaker* handshaker);
 
 #endif  // GRPC_SRC_CORE_TSI_ALTS_HANDSHAKER_ALTS_TSI_HANDSHAKER_H
