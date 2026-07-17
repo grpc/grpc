@@ -39,7 +39,9 @@ from ._metadata import MetadatumType
 RequestType = TypeVar("RequestType")
 ResponseType = TypeVar("ResponseType")
 
-SerializerInputType_contra = TypeVar("SerializerInputType_contra", contravariant=True)
+SerializerInputType_contra = TypeVar(
+    "SerializerInputType_contra", contravariant=True
+)
 DeserializerOutputType_co = TypeVar("DeserializerOutputType_co", covariant=True)
 SerializingFunction = Callable[[SerializerInputType_contra], bytes]
 DeserializingFunction = Callable[[bytes], DeserializerOutputType_co]
