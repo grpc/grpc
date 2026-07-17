@@ -138,7 +138,6 @@ class ClientCallDetails(
         wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
     """
 
-    pass
 
 
 class ClientInterceptor(metaclass=ABCMeta):
@@ -1221,18 +1220,18 @@ class UnaryUnaryCallResponse(
         pass
 
 
-class _StreamCallResponseIterator(Generic[ResponseType]):
+class _StreamCallResponseIterator(Generic[RequestType, ResponseType]):
     _call: Union[
-        _base_call.UnaryStreamCall[Any, ResponseType],
-        _base_call.StreamStreamCall[Any, ResponseType],
+        _base_call.UnaryStreamCall[RequestType, ResponseType],
+        _base_call.StreamStreamCall[RequestType, ResponseType],
     ]
     _response_iterator: AsyncIterable[ResponseType]
 
     def __init__(
         self,
         call: Union[
-            _base_call.UnaryStreamCall[Any, ResponseType],
-            _base_call.StreamStreamCall[Any, ResponseType],
+            _base_call.UnaryStreamCall[RequestType, ResponseType],
+            _base_call.StreamStreamCall[RequestType, ResponseType],
         ],
         response_iterator: AsyncIterable[ResponseType],
     ) -> None:
@@ -1279,7 +1278,7 @@ class _StreamCallResponseIterator(Generic[ResponseType]):
 
 
 class UnaryStreamCallResponseIterator(
-    _StreamCallResponseIterator[ResponseType],
+    _StreamCallResponseIterator[RequestType, ResponseType],
     _base_call.UnaryStreamCall[RequestType, ResponseType],
     Generic[RequestType, ResponseType],
 ):
@@ -1292,7 +1291,7 @@ class UnaryStreamCallResponseIterator(
 
 
 class StreamStreamCallResponseIterator(
-    _StreamCallResponseIterator[ResponseType],
+    _StreamCallResponseIterator[RequestType, ResponseType],
     _base_call.StreamStreamCall[RequestType, ResponseType],
     Generic[RequestType, ResponseType],
 ):
