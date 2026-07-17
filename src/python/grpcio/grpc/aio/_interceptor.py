@@ -620,6 +620,21 @@ class _InterceptedStreamRequestMixin:
         )
 
 
+def _resolve_registered_call_handle(
+    channel: cygrpc.AioChannel,
+    original_method: bytes,
+    new_method: bytes,
+    registered_call_handle: int,
+) -> int:
+    """Returns the registered call handle matching the outgoing method."""
+    resolved_registered_call_handle = registered_call_handle
+    if new_method != original_method and registered_call_handle != 0:
+        resolved_registered_call_handle = channel.get_registered_call_handle(
+            new_method,
+        )
+    return resolved_registered_call_handle
+
+
 class InterceptedUnaryUnaryCall(
     _InterceptedUnaryResponseMixin, InterceptedCall, _base_call.UnaryUnaryCall
 ):
@@ -698,6 +713,13 @@ class InterceptedUnaryUnaryCall(
                     return call_or_response
                 return UnaryUnaryCallResponse(call_or_response)
 
+            registered_call_handle = _resolve_registered_call_handle(
+                self._channel,
+                method,
+                client_call_details.method,
+                self._registered_call_handle,
+            )
+
             return UnaryUnaryCall(
                 request,
                 _timeout_to_deadline(client_call_details.timeout),
@@ -709,7 +731,7 @@ class InterceptedUnaryUnaryCall(
                 request_serializer,
                 response_deserializer,
                 self._loop,
-                self._registered_call_handle,
+                registered_call_handle,
             )
 
         client_call_details = ClientCallDetails(
@@ -813,6 +835,14 @@ class InterceptedUnaryStreamCall(
                         )
                     )
                 return self._last_returned_call_from_interceptors
+
+            registered_call_handle = _resolve_registered_call_handle(
+                self._channel,
+                method,
+                client_call_details.method,
+                self._registered_call_handle,
+            )
+
             self._last_returned_call_from_interceptors = UnaryStreamCall(
                 request,
                 _timeout_to_deadline(client_call_details.timeout),
@@ -824,7 +854,7 @@ class InterceptedUnaryStreamCall(
                 request_serializer,
                 response_deserializer,
                 self._loop,
-                self._registered_call_handle,
+                registered_call_handle,
             )
 
             return self._last_returned_call_from_interceptors
@@ -918,6 +948,14 @@ class InterceptedStreamUnaryCall(
                 return await interceptors[0].intercept_stream_unary(
                     continuation, client_call_details, request_iterator
                 )
+
+            registered_call_handle = _resolve_registered_call_handle(
+                self._channel,
+                method,
+                client_call_details.method,
+                self._registered_call_handle,
+            )
+
             return StreamUnaryCall(
                 request_iterator,
                 _timeout_to_deadline(client_call_details.timeout),
@@ -929,7 +967,7 @@ class InterceptedStreamUnaryCall(
                 request_serializer,
                 response_deserializer,
                 self._loop,
-                self._registered_call_handle,
+                registered_call_handle,
             )
 
         client_call_details = ClientCallDetails(
@@ -1039,6 +1077,14 @@ class InterceptedStreamStreamCall(
                         )
                     )
                 return self._last_returned_call_from_interceptors
+
+            registered_call_handle = _resolve_registered_call_handle(
+                self._channel,
+                method,
+                client_call_details.method,
+                self._registered_call_handle,
+            )
+
             self._last_returned_call_from_interceptors = StreamStreamCall(
                 request_iterator,
                 _timeout_to_deadline(client_call_details.timeout),
@@ -1050,7 +1096,7 @@ class InterceptedStreamStreamCall(
                 request_serializer,
                 response_deserializer,
                 self._loop,
-                self._registered_call_handle,
+                registered_call_handle,
             )
             return self._last_returned_call_from_interceptors
 
