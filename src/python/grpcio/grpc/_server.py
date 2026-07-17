@@ -714,7 +714,7 @@ def _take_response_from_response_iterator(
 def _serialize_response(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState[RequestType],
-    response: ResponseType,
+    response: Any,
     response_serializer: Optional[SerializingFunction[ResponseType]],
 ) -> Optional[bytes]:
     serialized_response = _common.serialize(response, response_serializer)
@@ -835,7 +835,7 @@ def _unary_response_in_pool(
                     rpc_event,
                     state,
                     response,
-                    response_serializer,  # pyright: ignore[reportArgumentType]
+                    response_serializer,
                 )
                 if serialized_response is not None:
                     _status(rpc_event, state, serialized_response)
