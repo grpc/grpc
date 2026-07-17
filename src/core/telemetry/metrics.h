@@ -39,6 +39,7 @@
 namespace grpc_core {
 
 constexpr absl::string_view kMetricLabelTarget = "grpc.target";
+constexpr absl::string_view kMetricLabelTelemetry = "grpc.client.call.custom";
 constexpr absl::string_view kMetricLabelBackendService =
     "grpc.lb.backend_service";
 constexpr absl::string_view kMetricLabelLocality = "grpc.lb.locality";

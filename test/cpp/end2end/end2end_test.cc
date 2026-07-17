@@ -987,7 +987,6 @@ TEST_P(End2endTest, AuthoritySeenOnServerSide) {
 
 TEST_P(End2endTest, ReconnectChannel) {
   // This is flaky for PH2 Server.
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   if (GetParam().inproc() || GetParam().use_virtual_rpcs()) {
     return;
   }
@@ -1213,6 +1212,7 @@ TEST_P(End2endTest, BidiStreamWithCoalescingApi) {
 // This was added to prevent regression from issue:
 // https://github.com/grpc/grpc/issues/11546
 TEST_P(End2endTest, BidiStreamWithEverythingCoalesced) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix flake");
   ResetStub();
   EchoRequest request;
   EchoResponse response;

@@ -697,6 +697,9 @@ void grpc_chttp2_transport::WriteSecurityFrameLocked(
   if (data == nullptr) {
     return;
   }
+  if (!closed_with_error.ok()) {
+    return;
+  }
   if (!settings.peer().allow_security_frame()) {
     close_transport_locked(
         this,
@@ -877,6 +880,10 @@ void grpc_chttp2_transport::Orphan() {
 
 static void close_transport_locked(grpc_chttp2_transport* t,
                                    grpc_error_handle error) {
+  if (t->transport_framing_endpoint_extension != nullptr) {
+    t->transport_framing_endpoint_extension->SetSendFrameCallback(nullptr);
+    t->transport_framing_endpoint_extension = nullptr;
+  }
   end_all_the_calls(t, error);
   cancel_pings(t, error);
   if (t->closed_with_error.ok()) {

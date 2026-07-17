@@ -24,10 +24,13 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
+#include <vector>
 
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -44,6 +47,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/cleanup/cleanup.h"
+#include "absl/random/bit_gen_ref.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -847,14 +851,17 @@ INSTANTIATE_TEST_SUITE_P(
 class MockMitigationEngine : public MitigationEngine {
  public:
   enum class Behavior { kNone, kRejectRpc, kCloseConnection };
-  explicit MockMitigationEngine(Behavior behavior) : behavior_(behavior) {}
+  explicit MockMitigationEngine(Behavior behavior = Behavior::kNone)
+      : behavior_(behavior) {}
 
   std::optional<Action> EvaluateIncomingConnection(absl::string_view) override {
     return std::nullopt;
   }
 
-  std::optional<Action> EvaluateIncomingMetadata(absl::string_view key,
-                                                 absl::string_view) override {
+  std::optional<Action> EvaluateIncomingMetadata(
+      absl::string_view key, absl::string_view,
+      absl::string_view peer_address) override {
+    last_incoming_peer_address_ = std::string(peer_address);
     if (behavior_ == Behavior::kRejectRpc && key == "custom-key") {
       return Action::kRejectRpc;
     }
@@ -862,15 +869,25 @@ class MockMitigationEngine : public MitigationEngine {
   }
 
   std::optional<Action> EvaluateAllIncomingMetadata(
-      const grpc_metadata_batch&) override {
+      const grpc_metadata_batch&, absl::string_view peer_address) override {
+    last_all_incoming_peer_address_ = std::string(peer_address);
     if (behavior_ == Behavior::kCloseConnection) {
       return Action::kCloseConnection;
     }
     return std::nullopt;
   }
 
+  absl::string_view last_incoming_peer_address() const {
+    return last_incoming_peer_address_;
+  }
+  absl::string_view last_all_incoming_peer_address() const {
+    return last_all_incoming_peer_address_;
+  }
+
  private:
   Behavior behavior_;
+  std::string last_incoming_peer_address_;
+  std::string last_all_incoming_peer_address_;
 };
 
 class MitigationEngineParseTest : public ::testing::Test {
@@ -950,6 +967,28 @@ TEST_F(MitigationEngineParseTest, CloseConnection) {
   EXPECT_THAT(message,
               ::testing::HasSubstr(
                   "Mitigation engine triggered action Close Connection"));
+}
+
+TEST_F(MitigationEngineParseTest, PeerAddressPassedCorrectly) {
+  ExecCtx exec_ctx;
+  auto engine = MakeRefCounted<MockMitigationEngine>();
+  grpc_metadata_batch b;
+  parser_->BeginFrame(
+      &b, 4096, 4096, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false},
+      engine.get(), "ipv4:127.0.0.1:12345");
+
+  auto input =
+      ParseHexstring("400a637573746f6d2d6b65790d637573746f6d2d686561646572");
+
+  absl::BitGen bitgen;
+  auto err =
+      parser_->Parse(input.c_slice(), true, absl::BitGenRef(bitgen), nullptr);
+
+  EXPECT_TRUE(err.ok());
+  EXPECT_EQ(engine->last_incoming_peer_address(), "ipv4:127.0.0.1:12345");
+  EXPECT_EQ(engine->last_all_incoming_peer_address(), "ipv4:127.0.0.1:12345");
 }
 
 }  // namespace
