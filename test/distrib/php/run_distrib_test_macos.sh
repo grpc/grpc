@@ -40,6 +40,6 @@ fi
 
 # Use -j4 since higher parallelism can lead to "resource unavailable"
 # errors during the build. See b/257261061#comment4
-sudo MAKEFLAGS=-j4 "${PECL_BIN}" install "${GRPC_PEAR_PACKAGE_NAME}"
+sudo env PATH="$PATH" MAKEFLAGS=-j4 "${PECL_BIN}" install "${GRPC_PEAR_PACKAGE_NAME}"
 
 "${PHP_BIN}" -d extension=grpc.so -d max_execution_time=300 distribtest.php

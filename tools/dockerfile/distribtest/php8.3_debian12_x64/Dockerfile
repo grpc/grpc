@@ -14,4 +14,8 @@
 
 FROM debian:12
 
-RUN apt-get update && apt-get install -y php8.3 php8.3-dev php-pear wget zlib1g-dev && apt-get clean
+RUN apt-get update && apt-get install -y lsb-release apt-transport-https ca-certificates curl gnupg && \
+    curl -sSLo /usr/share/keyrings/deb.sury.org-php.gpg https://packages.sury.org/php/apt.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/deb.sury.org-php.gpg] https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list
+
+RUN apt-get update && apt-get install -y php8.3 php8.3-dev php8.3-xml php-pear wget zlib1g-dev && apt-get clean
