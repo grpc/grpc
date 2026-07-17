@@ -4992,6 +4992,7 @@ grpc_cc_library(
         "down_cast",
         "error",
         "grpc_check",
+        "grpc_tls_certificate_selector",
         "iomgr_fwd",
         "load_file",
         "match",
