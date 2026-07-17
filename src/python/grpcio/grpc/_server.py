@@ -40,6 +40,7 @@ from typing import (
 )
 
 import grpc
+import grpc.experimental
 from grpc import _common
 from grpc import _compression
 from grpc import _interceptor
@@ -1445,7 +1446,10 @@ class _Server(grpc.Server):
         # Can't register method once server started.
         with self._state.lock:
             if self._state.stage is _ServerStage.STARTED:
-                raise UsageError('Cannot register method handlers once server has started')
+                error_msg = (
+                    "Cannot register method handlers once server has started"
+                )
+                raise grpc.experimental.UsageError(error_msg)
 
         # TODO(xuanwn): We should validate method_handlers first.
         method_to_handlers = {
