@@ -207,6 +207,8 @@
     <file baseinstalldir="/" name="src/core/client_channel/subchannel.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/subchannel.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/subchannel_interface_internal.h" role="src" />
+    <file baseinstalldir="/" name="src/core/client_channel/subchannel_metrics.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/client_channel/subchannel_metrics.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/subchannel_pool_interface.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/subchannel_pool_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/subchannel_stream_client.cc" role="src" />
@@ -1954,6 +1956,7 @@
     <file baseinstalldir="/" name="src/core/telemetry/stats_data.h" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/tcp_tracer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/tcp_tracer.h" role="src" />
+    <file baseinstalldir="/" name="src/core/telemetry/telemetry_label.h" role="src" />
     <file baseinstalldir="/" name="src/core/transport/auth_context.cc" role="src" />
     <file baseinstalldir="/" name="src/core/transport/auth_context.h" role="src" />
     <file baseinstalldir="/" name="src/core/transport/auth_context_comparator_registry.h" role="src" />

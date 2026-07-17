@@ -1096,7 +1096,6 @@ include/grpcpp/support/sync_stream.h \
 include/grpcpp/support/time.h \
 include/grpcpp/support/validate_service_config.h \
 include/grpcpp/version_info.h \
-include/grpcpp/virtual_channel.h \
 include/grpcpp/xds_server_builder.h \
 src/core/call/call_arena_allocator.cc \
 src/core/call/call_arena_allocator.h \
@@ -1194,6 +1193,8 @@ src/core/client_channel/retry_throttle.h \
 src/core/client_channel/subchannel.cc \
 src/core/client_channel/subchannel.h \
 src/core/client_channel/subchannel_interface_internal.h \
+src/core/client_channel/subchannel_metrics.cc \
+src/core/client_channel/subchannel_metrics.h \
 src/core/client_channel/subchannel_pool_interface.cc \
 src/core/client_channel/subchannel_pool_interface.h \
 src/core/client_channel/subchannel_stream_client.cc \

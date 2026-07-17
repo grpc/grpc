@@ -918,21 +918,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "virtual_channel",
-    hdrs = ["include/grpcpp/virtual_channel.h"],
-    external_deps = [
-        "absl/functional:any_invocable",
-    ],
-    visibility = [
-        "//:__subpackages__",
-        "//bazel:virtual_rpcs",
-    ],
-    deps = [
-        "grpc++_public_hdrs",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc_common",
     defines = select({
         "grpc_no_rls": ["GRPC_NO_RLS"],
@@ -2737,7 +2722,6 @@ grpc_cc_library(
         "server",
         "transport_auth_context",
         ":grpc_transport_chttp2",
-        ":virtual_channel",
         "//src/core:arena",
         "//src/core:channel_args",
         "//src/core:channel_fwd",
@@ -2840,7 +2824,6 @@ grpc_cc_library(
         "resource_quota_api",
         "server",
         "transport_auth_context",
-        ":virtual_channel",
         "//src/core:arena",
         "//src/core:channel_args",
         "//src/core:channel_init",
@@ -4086,6 +4069,7 @@ grpc_cc_library(
         "//src/core:client_channel/retry_filter.cc",
         "//src/core:client_channel/retry_filter_legacy_call_data.cc",
         "//src/core:client_channel/subchannel.cc",
+        "//src/core:client_channel/subchannel_metrics.cc",
         "//src/core:client_channel/subchannel_stream_client.cc",
         "//src/core:client_channel/subchannel_stream_limiter.cc",
     ],
@@ -4102,6 +4086,7 @@ grpc_cc_library(
         "//src/core:client_channel/retry_filter_legacy_call_data.h",
         "//src/core:client_channel/subchannel.h",
         "//src/core:client_channel/subchannel_interface_internal.h",
+        "//src/core:client_channel/subchannel_metrics.h",
         "//src/core:client_channel/subchannel_stream_client.h",
         "//src/core:client_channel/subchannel_stream_limiter.h",
     ],
@@ -4183,6 +4168,7 @@ grpc_cc_library(
         "//src/core:http2_client_transport",
         "//src/core:idle_filter_state",
         "//src/core:init_internally",
+        "//src/core:instrument",
         "//src/core:interception_chain",
         "//src/core:iomgr_fwd",
         "//src/core:json",

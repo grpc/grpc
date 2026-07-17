@@ -226,7 +226,6 @@ Pod::Spec.new do |s|
                       'include/grpcpp/support/time.h',
                       'include/grpcpp/support/validate_service_config.h',
                       'include/grpcpp/version_info.h',
-                      'include/grpcpp/virtual_channel.h',
                       'include/grpcpp/xds_server_builder.h'
   end
 
@@ -336,6 +335,7 @@ Pod::Spec.new do |s|
                       'src/core/client_channel/retry_throttle.h',
                       'src/core/client_channel/subchannel.h',
                       'src/core/client_channel/subchannel_interface_internal.h',
+                      'src/core/client_channel/subchannel_metrics.h',
                       'src/core/client_channel/subchannel_pool_interface.h',
                       'src/core/client_channel/subchannel_stream_client.h',
                       'src/core/client_channel/subchannel_stream_limiter.h',
@@ -1782,6 +1782,7 @@ Pod::Spec.new do |s|
                               'src/core/client_channel/retry_throttle.h',
                               'src/core/client_channel/subchannel.h',
                               'src/core/client_channel/subchannel_interface_internal.h',
+                              'src/core/client_channel/subchannel_metrics.h',
                               'src/core/client_channel/subchannel_pool_interface.h',
                               'src/core/client_channel/subchannel_stream_client.h',
                               'src/core/client_channel/subchannel_stream_limiter.h',
