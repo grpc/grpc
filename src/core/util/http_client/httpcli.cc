@@ -213,6 +213,10 @@ void HttpRequest::Start() {
   if (test_only_generate_response_.has_value()) {
     if (test_only_generate_response_.value()()) return;
   }
+  if (!ee_resolver_.ok()) {
+    Finish(ee_resolver_.status());
+    return;
+  }
   Ref().release();  // ref held by pending DNS resolution
   (*ee_resolver_)
       ->LookupHostname(

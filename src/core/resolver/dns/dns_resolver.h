@@ -24,7 +24,7 @@
 
 namespace grpc_core {
 
-class EventEngineClientChannelDNSResolverFactory final
+class ClientChannelDNSResolverFactory final
     : public ResolverFactory {
  public:
   absl::string_view scheme() const override { return "dns"; }

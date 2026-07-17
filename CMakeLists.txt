@@ -2863,9 +2863,6 @@ add_library(grpc
   src/core/lib/iomgr/pollset_set.cc
   src/core/lib/iomgr/pollset_set_windows.cc
   src/core/lib/iomgr/pollset_windows.cc
-  src/core/lib/iomgr/resolve_address.cc
-  src/core/lib/iomgr/resolve_address_posix.cc
-  src/core/lib/iomgr/resolve_address_windows.cc
   src/core/lib/iomgr/sockaddr_utils_posix.cc
   src/core/lib/iomgr/socket_factory_posix.cc
   src/core/lib/iomgr/socket_mutator.cc
@@ -3688,9 +3685,6 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/pollset_set.cc
   src/core/lib/iomgr/pollset_set_windows.cc
   src/core/lib/iomgr/pollset_windows.cc
-  src/core/lib/iomgr/resolve_address.cc
-  src/core/lib/iomgr/resolve_address_posix.cc
-  src/core/lib/iomgr/resolve_address_windows.cc
   src/core/lib/iomgr/sockaddr_utils_posix.cc
   src/core/lib/iomgr/socket_factory_posix.cc
   src/core/lib/iomgr/socket_mutator.cc
@@ -6181,9 +6175,6 @@ add_library(grpc_authorization_provider
   src/core/lib/iomgr/pollset_set.cc
   src/core/lib/iomgr/pollset_set_windows.cc
   src/core/lib/iomgr/pollset_windows.cc
-  src/core/lib/iomgr/resolve_address.cc
-  src/core/lib/iomgr/resolve_address_posix.cc
-  src/core/lib/iomgr/resolve_address_windows.cc
   src/core/lib/iomgr/sockaddr_utils_posix.cc
   src/core/lib/iomgr/socket_factory_posix.cc
   src/core/lib/iomgr/socket_mutator.cc
@@ -10324,9 +10315,6 @@ add_executable(call_utils_test
   src/core/lib/iomgr/pollset_set.cc
   src/core/lib/iomgr/pollset_set_windows.cc
   src/core/lib/iomgr/pollset_windows.cc
-  src/core/lib/iomgr/resolve_address.cc
-  src/core/lib/iomgr/resolve_address_posix.cc
-  src/core/lib/iomgr/resolve_address_windows.cc
   src/core/lib/iomgr/sockaddr_utils_posix.cc
   src/core/lib/iomgr/socket_factory_posix.cc
   src/core/lib/iomgr/socket_mutator.cc
@@ -17934,9 +17922,6 @@ add_executable(filter_fusion_test
   src/core/lib/iomgr/pollset_set.cc
   src/core/lib/iomgr/pollset_set_windows.cc
   src/core/lib/iomgr/pollset_windows.cc
-  src/core/lib/iomgr/resolve_address.cc
-  src/core/lib/iomgr/resolve_address_posix.cc
-  src/core/lib/iomgr/resolve_address_windows.cc
   src/core/lib/iomgr/sockaddr_utils_posix.cc
   src/core/lib/iomgr/socket_factory_posix.cc
   src/core/lib/iomgr/socket_mutator.cc
@@ -22297,9 +22282,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/lib/iomgr/pollset_set.cc
     src/core/lib/iomgr/pollset_set_windows.cc
     src/core/lib/iomgr/pollset_windows.cc
-    src/core/lib/iomgr/resolve_address.cc
-    src/core/lib/iomgr/resolve_address_posix.cc
-    src/core/lib/iomgr/resolve_address_windows.cc
     src/core/lib/iomgr/sockaddr_utils_posix.cc
     src/core/lib/iomgr/socket_factory_posix.cc
     src/core/lib/iomgr/socket_mutator.cc
@@ -36799,9 +36781,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/lib/iomgr/pollset_set.cc
     src/core/lib/iomgr/pollset_set_windows.cc
     src/core/lib/iomgr/pollset_windows.cc
-    src/core/lib/iomgr/resolve_address.cc
-    src/core/lib/iomgr/resolve_address_posix.cc
-    src/core/lib/iomgr/resolve_address_windows.cc
     src/core/lib/iomgr/sockaddr_utils_posix.cc
     src/core/lib/iomgr/socket_factory_posix.cc
     src/core/lib/iomgr/socket_mutator.cc
@@ -37915,9 +37894,6 @@ add_executable(v3_bridge_test
   src/core/lib/iomgr/pollset_set.cc
   src/core/lib/iomgr/pollset_set_windows.cc
   src/core/lib/iomgr/pollset_windows.cc
-  src/core/lib/iomgr/resolve_address.cc
-  src/core/lib/iomgr/resolve_address_posix.cc
-  src/core/lib/iomgr/resolve_address_windows.cc
   src/core/lib/iomgr/sockaddr_utils_posix.cc
   src/core/lib/iomgr/socket_factory_posix.cc
   src/core/lib/iomgr/socket_mutator.cc

@@ -962,7 +962,7 @@ grpc_cc_library(
         "//src/core:grpc_transport_chttp2_server",
         "//src/core:grpc_transport_inproc",
         "//src/core:grpc_fault_injection_filter",
-        "//src/core:grpc_resolver_dns_event_engine",
+        "//src/core:grpc_resolver_dns",
     ],
 )
 
@@ -1569,9 +1569,6 @@ grpc_cc_library(
         "//src/core:lib/iomgr/pollset.cc",
         "//src/core:lib/iomgr/pollset_set_windows.cc",
         "//src/core:lib/iomgr/pollset_windows.cc",
-        "//src/core:lib/iomgr/resolve_address.cc",
-        "//src/core:lib/iomgr/resolve_address_posix.cc",
-        "//src/core:lib/iomgr/resolve_address_windows.cc",
         "//src/core:lib/iomgr/socket_factory_posix.cc",
         "//src/core:lib/iomgr/socket_utils_common_posix.cc",
         "//src/core:lib/iomgr/socket_utils_linux.cc",
@@ -1620,9 +1617,6 @@ grpc_cc_library(
         "//src/core:lib/iomgr/pollset.h",
         "//src/core:lib/iomgr/pollset_set_windows.h",
         "//src/core:lib/iomgr/pollset_windows.h",
-        "//src/core:lib/iomgr/resolve_address.h",
-        "//src/core:lib/iomgr/resolve_address_posix.h",
-        "//src/core:lib/iomgr/resolve_address_windows.h",
         "//src/core:lib/iomgr/sockaddr.h",
         "//src/core:lib/iomgr/sockaddr_posix.h",
         "//src/core:lib/iomgr/sockaddr_windows.h",

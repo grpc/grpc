@@ -24,7 +24,6 @@
 
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
-#include "src/core/lib/iomgr/resolve_address_posix.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/iomgr/tcp_server.h"
@@ -37,7 +36,6 @@ extern grpc_pollset_vtable grpc_posix_pollset_vtable;
 extern grpc_pollset_set_vtable grpc_posix_pollset_set_vtable;
 
 static void iomgr_platform_init(void) {
-  grpc_core::ResetDNSResolver(std::make_unique<grpc_core::NativeDNSResolver>());
   grpc_wakeup_fd_global_init();
   grpc_event_engine_init();
   grpc_tcp_posix_init();
@@ -49,7 +47,6 @@ static void iomgr_platform_shutdown(void) {
   grpc_tcp_posix_shutdown();
   grpc_event_engine_shutdown();
   grpc_wakeup_fd_global_destroy();
-  grpc_core::ResetDNSResolver(nullptr);  // delete the resolver
 }
 
 static void iomgr_platform_shutdown_background_closure(void) {

@@ -32,7 +32,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/load_balancing/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/resolver/dns/service_config_helper.h"
 #include "src/core/resolver/endpoint_addresses.h"
@@ -62,6 +61,8 @@
 namespace grpc_core {
 namespace {
 
+const char* kDefaultSecurePort = "https";
+
 #define GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER 1.6
 #define GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS 120
@@ -77,11 +78,11 @@ using grpc_event_engine::experimental::EventEngine;
 // addresses.
 
 // ----------------------------------------------------------------------------
-// EventEngineClientChannelDNSResolver
+// ClientChannelDNSResolver
 // ----------------------------------------------------------------------------
-class EventEngineClientChannelDNSResolver final : public PollingResolver {
+class ClientChannelDNSResolver final : public PollingResolver {
  public:
-  EventEngineClientChannelDNSResolver(ResolverArgs args,
+  ClientChannelDNSResolver(ResolverArgs args,
                                       Duration min_time_between_resolutions);
   OrphanablePtr<Orphanable> StartRequest() override;
 
@@ -93,7 +94,7 @@ class EventEngineClientChannelDNSResolver final : public PollingResolver {
       : public InternallyRefCounted<EventEngineDNSRequestWrapper> {
    public:
     EventEngineDNSRequestWrapper(
-        RefCountedPtr<EventEngineClientChannelDNSResolver> resolver,
+        RefCountedPtr<ClientChannelDNSResolver> resolver,
         std::unique_ptr<EventEngine::DNSResolver> event_engine_resolver);
     ~EventEngineDNSRequestWrapper() override;
 
@@ -129,7 +130,7 @@ class EventEngineClientChannelDNSResolver final : public PollingResolver {
     void MaybePopulateServiceConfigLocked(Resolver::Result* result)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_);
 
-    RefCountedPtr<EventEngineClientChannelDNSResolver> resolver_;
+    RefCountedPtr<ClientChannelDNSResolver> resolver_;
     Mutex on_resolved_mu_;
     // Lookup callbacks
     bool is_hostname_inflight_ ABSL_GUARDED_BY(on_resolved_mu_) = false;
@@ -161,7 +162,7 @@ class EventEngineClientChannelDNSResolver final : public PollingResolver {
   std::shared_ptr<EventEngine> event_engine_;
 };
 
-EventEngineClientChannelDNSResolver::EventEngineClientChannelDNSResolver(
+ClientChannelDNSResolver::ClientChannelDNSResolver(
     ResolverArgs args, Duration min_time_between_resolutions)
     : PollingResolver(std::move(args), min_time_between_resolutions,
                       BackOff::Options()
@@ -186,7 +187,7 @@ EventEngineClientChannelDNSResolver::EventEngineClientChannelDNSResolver(
                           .value_or(GRPC_DNS_DEFAULT_QUERY_TIMEOUT_MS)))),
       event_engine_(channel_args().GetObjectRef<EventEngine>()) {}
 
-OrphanablePtr<Orphanable> EventEngineClientChannelDNSResolver::StartRequest() {
+OrphanablePtr<Orphanable> ClientChannelDNSResolver::StartRequest() {
   auto dns_resolver =
       event_engine_->GetDNSResolver({/*dns_server=*/authority()});
   if (!dns_resolver.ok()) {
@@ -197,7 +198,7 @@ OrphanablePtr<Orphanable> EventEngineClientChannelDNSResolver::StartRequest() {
     return nullptr;
   }
   return MakeOrphanable<EventEngineDNSRequestWrapper>(
-      RefAsSubclass<EventEngineClientChannelDNSResolver>(DEBUG_LOCATION,
+      RefAsSubclass<ClientChannelDNSResolver>(DEBUG_LOCATION,
                                                          "dns-resolving"),
       std::move(*dns_resolver));
 }
@@ -206,9 +207,9 @@ OrphanablePtr<Orphanable> EventEngineClientChannelDNSResolver::StartRequest() {
 // EventEngineDNSRequestWrapper definition
 // ----------------------------------------------------------------------------
 
-EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
+ClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     EventEngineDNSRequestWrapper(
-        RefCountedPtr<EventEngineClientChannelDNSResolver> resolver,
+        RefCountedPtr<ClientChannelDNSResolver> resolver,
         std::unique_ptr<EventEngine::DNSResolver> event_engine_resolver)
     : resolver_(std::move(resolver)),
       event_engine_resolver_(std::move(event_engine_resolver)) {
@@ -271,12 +272,12 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
       });
 }
 
-EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
+ClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     ~EventEngineDNSRequestWrapper() {
   resolver_.reset(DEBUG_LOCATION, "dns-resolving");
 }
 
-void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
+void ClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     Orphan() {
   {
     MutexLock lock(&on_resolved_mu_);
@@ -292,7 +293,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   Unref(DEBUG_LOCATION, "Orphan");
 }
 
-void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
+void ClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     OnTimeout() {
   MutexLock lock(&on_resolved_mu_);
   GRPC_TRACE_VLOG(event_engine_client_channel_resolver, 2)
@@ -302,7 +303,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   event_engine_resolver_.reset();
 }
 
-void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
+void ClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     OnHostnameResolved(absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
                            new_addresses) {
   std::optional<Resolver::Result> result;
@@ -327,7 +328,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   }
 }
 
-void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
+void ClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     OnSRVResolved(
         absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
             srv_records) {
@@ -380,7 +381,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   }
 }
 
-void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
+void ClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     OnBalancerHostnamesResolved(
         std::string authority,
         absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
@@ -414,7 +415,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   result = OnResolvedLocked();
 }
 
-void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
+void ClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     OnTXTResolved(absl::StatusOr<std::vector<std::string>> service_config) {
   std::optional<Resolver::Result> result;
   {
@@ -457,13 +458,13 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   }
 }
 
-void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
+void ClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     MaybePopulateAddressesLocked(Resolver::Result* result) {
   if (addresses_.empty()) return;
   result->addresses = std::move(addresses_);
 }
 
-void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
+void ClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     MaybePopulateBalancerAddressesLocked(Resolver::Result* result) {
   if (!balancer_addresses_.empty()) {
     result->args =
@@ -471,7 +472,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   }
 }
 
-void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
+void ClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     MaybePopulateServiceConfigLocked(Resolver::Result* result) {
   // This function is called only if we are returning addresses.  In that case,
   // we currently ignore TXT lookup failures.
@@ -499,7 +500,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   }
 }
 
-std::optional<Resolver::Result> EventEngineClientChannelDNSResolver::
+std::optional<Resolver::Result> ClientChannelDNSResolver::
     EventEngineDNSRequestWrapper::OnResolvedLocked() {
   if (orphaned_) return std::nullopt;
   // Wait for all requested queries to return.
@@ -553,7 +554,7 @@ std::optional<Resolver::Result> EventEngineClientChannelDNSResolver::
 
 }  // namespace
 
-bool EventEngineClientChannelDNSResolverFactory::IsValidUri(
+bool ClientChannelDNSResolverFactory::IsValidUri(
     const URI& uri) const {
   if (absl::StripPrefix(uri.path(), "/").empty()) {
     LOG(ERROR) << "no server name supplied in dns URI";
@@ -563,21 +564,21 @@ bool EventEngineClientChannelDNSResolverFactory::IsValidUri(
 }
 
 OrphanablePtr<Resolver>
-EventEngineClientChannelDNSResolverFactory::CreateResolver(
+ClientChannelDNSResolverFactory::CreateResolver(
     ResolverArgs args) const {
   Duration min_time_between_resolutions = std::max(
       Duration::Zero(), args.args
                             .GetDurationFromIntMillis(
                                 GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS)
                             .value_or(Duration::Seconds(30)));
-  return MakeOrphanable<EventEngineClientChannelDNSResolver>(
+  return MakeOrphanable<ClientChannelDNSResolver>(
       std::move(args), min_time_between_resolutions);
 }
 
 void RegisterDnsResolver(CoreConfiguration::Builder* builder) {
   VLOG(2) << "Using EventEngine dns resolver";
   builder->resolver_registry()->RegisterResolverFactory(
-      std::make_unique<EventEngineClientChannelDNSResolverFactory>());
+      std::make_unique<ClientChannelDNSResolverFactory>());
 }
 
 }  // namespace grpc_core

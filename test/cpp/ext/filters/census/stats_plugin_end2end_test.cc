@@ -661,6 +661,8 @@ TEST_F(StatsPluginEnd2EndTest,
   // result before TryCheckResolution and the call would not be queued:
   // https://github.com/grpc/grpc/blob/master/src/core/ext/filters/client_channel/client_channel.cc#L2340.
   // We could use a FakeResolver and introduce a delay to deflake this test.
+  // TODO(mlumish): re-add "Delayed name resolution complete." annotation check
+  // for EventEngine DNS resolver
   //
   // Check presence of trace annotation for removal from channel's pending
   // lb pick queue.

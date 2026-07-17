@@ -37,7 +37,7 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/event_engine/util/aborting_event_engine.h"
-#include "test/core/ext/filters/event_engine_client_channel_resolver/resolver_fuzzer.pb.h"
+#include "test/core/resolver/resolver_fuzzer.pb.h"
 #include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/fuzz_config_vars_helpers.h"
 #include "test/core/test_util/fuzzing_channel_args.h"
@@ -53,7 +53,7 @@ namespace {
 
 using event_engine_client_channel_resolver::ExecutionStep;
 using event_engine_client_channel_resolver::TXTRecordType;
-using grpc_core::EventEngineClientChannelDNSResolverFactory;
+using grpc_core::ClientChannelDNSResolverFactory;
 using grpc_event_engine::experimental::FuzzingEventEngine;
 using grpc_event_engine::experimental::URIToResolvedAddress;
 
@@ -260,7 +260,7 @@ void Fuzz(const event_engine_client_channel_resolver::Msg& msg) {
   {
     // scoped to ensure the resolver is orphaned when done resolving.
     auto work_serializer = std::make_shared<grpc_core::WorkSerializer>(engine);
-    EventEngineClientChannelDNSResolverFactory resolver_factory;
+    ClientChannelDNSResolverFactory resolver_factory;
     auto resolver_args = ConstructResolverArgs(
         grpc_core::testing::CreateChannelArgsFromFuzzingConfiguration(
             msg.channel_args(), {})

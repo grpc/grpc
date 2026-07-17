@@ -44,7 +44,6 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
-#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/util/debug_location.h"
@@ -96,112 +95,6 @@ static void finish_resolve(addr_req r) {
   }
   gpr_free(r.addr);
 }
-
-namespace {
-
-using grpc_event_engine::experimental::FuzzingEventEngine;
-using grpc_event_engine::experimental::GetDefaultEventEngine;
-
-class FuzzerDNSResolver : public grpc_core::DNSResolver {
- public:
-  class FuzzerDNSRequest {
-   public:
-    FuzzerDNSRequest(
-        absl::string_view name,
-        std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-            on_done)
-        : name_(std::string(name)), on_done_(std::move(on_done)) {
-      GetDefaultEventEngine()->RunAfter(grpc_core::Duration::Seconds(1),
-                                        [this] {
-                                          grpc_core::ExecCtx exec_ctx;
-                                          FinishResolve();
-                                        });
-    }
-
-   private:
-    void FinishResolve() {
-      if (name_ == "server") {
-        std::vector<grpc_resolved_address> addrs;
-        grpc_resolved_address addr;
-        memset(&addr, 0, sizeof(addr));
-        addrs.push_back(addr);
-        on_done_(std::move(addrs));
-      } else {
-        on_done_(absl::UnknownError("Resolution failed"));
-      }
-      delete this;
-    }
-
-    const std::string name_;
-    const std::function<void(
-        absl::StatusOr<std::vector<grpc_resolved_address>>)>
-        on_done_;
-  };
-
-  explicit FuzzerDNSResolver(FuzzingEventEngine* engine) : engine_(engine) {}
-
-  TaskHandle LookupHostname(
-      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-          on_resolved,
-      absl::string_view name, absl::string_view /* default_port */,
-      grpc_core::Duration /* timeout */,
-      grpc_pollset_set* /* interested_parties */,
-      absl::string_view /* name_server */) override {
-    new FuzzerDNSRequest(name, std::move(on_resolved));
-    return kNullHandle;
-  }
-
-  absl::StatusOr<std::vector<grpc_resolved_address>> LookupHostnameBlocking(
-      absl::string_view name, absl::string_view default_port) override {
-    // To mimic the resolution delay
-    absl::SleepFor(absl::Seconds(1));
-    if (name == "server") {
-      std::vector<grpc_resolved_address> addrs;
-      grpc_resolved_address addr;
-      memset(&addr, 0, sizeof(addr));
-      addrs.push_back(addr);
-      return addrs;
-    } else {
-      return absl::UnknownError("Resolution failed");
-    }
-  }
-
-  TaskHandle LookupSRV(
-      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-          on_resolved,
-      absl::string_view /* name */, grpc_core::Duration /* timeout */,
-      grpc_pollset_set* /* interested_parties */,
-      absl::string_view /* name_server */) override {
-    engine_->Run([on_resolved] {
-      grpc_core::ExecCtx exec_ctx;
-      on_resolved(absl::UnimplementedError(
-          "The Fuzzing DNS resolver does not support looking up SRV records"));
-    });
-    return {-1, -1};
-  };
-
-  TaskHandle LookupTXT(
-      std::function<void(absl::StatusOr<std::string>)> on_resolved,
-      absl::string_view /* name */, grpc_core::Duration /* timeout */,
-      grpc_pollset_set* /* interested_parties */,
-      absl::string_view /* name_server */) override {
-    // Not supported
-    engine_->Run([on_resolved] {
-      grpc_core::ExecCtx exec_ctx;
-      on_resolved(absl::UnimplementedError(
-          "The Fuzing DNS resolver does not support looking up TXT records"));
-    });
-    return {-1, -1};
-  };
-
-  // FuzzerDNSResolver does not support cancellation.
-  bool Cancel(TaskHandle /*handle*/) override { return false; }
-
- private:
-  FuzzingEventEngine* engine_;
-};
-
-}  // namespace
 
 ////////////////////////////////////////////////////////////////////////////////
 // globals
@@ -369,8 +262,6 @@ namespace testing {
 
 ApiFuzzer::ApiFuzzer(const fuzzing_event_engine::Actions& actions)
     : BasicFuzzer(actions) {
-  ResetDNSResolver(std::make_unique<FuzzerDNSResolver>(engine().get()));
-
   GRPC_CHECK_EQ(channel_, nullptr);
   GRPC_CHECK_EQ(server_, nullptr);
 }

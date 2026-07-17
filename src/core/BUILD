@@ -7935,7 +7935,7 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_resolver_dns_event_engine",
+    name = "grpc_resolver_dns",
     srcs = [
         "resolver/dns/dns_resolver.cc",
     ],
