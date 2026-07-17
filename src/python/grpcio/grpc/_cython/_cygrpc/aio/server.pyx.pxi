@@ -977,9 +977,6 @@ cdef class AioServer:
         # Cannot register method once server started.
         if self._status != AIO_SERVER_STATUS_READY:
             raise UsageError('Cannot register method handlers once server has started')
-        # Cannot register method once server started.
-        if self._status != AIO_SERVER_STATUS_READY:
-            return
 
         for fully_qualified_method in method_handlers:
             self._server.register_method(fully_qualified_method)
