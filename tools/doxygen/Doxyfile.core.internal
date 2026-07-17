@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 55.0.0
+PROJECT_NUMBER         = 56.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -996,6 +996,8 @@ src/core/client_channel/retry_throttle.h \
 src/core/client_channel/subchannel.cc \
 src/core/client_channel/subchannel.h \
 src/core/client_channel/subchannel_interface_internal.h \
+src/core/client_channel/subchannel_metrics.cc \
+src/core/client_channel/subchannel_metrics.h \
 src/core/client_channel/subchannel_pool_interface.cc \
 src/core/client_channel/subchannel_pool_interface.h \
 src/core/client_channel/subchannel_stream_client.cc \
@@ -1008,6 +1010,8 @@ src/core/config/config_vars.h \
 src/core/config/config_vars_non_generated.cc \
 src/core/config/core_configuration.cc \
 src/core/config/core_configuration.h \
+src/core/config/experiment_env_var.cc \
+src/core/config/experiment_env_var.h \
 src/core/config/load_config.cc \
 src/core/config/load_config.h \
 src/core/credentials/AGENTS.md \
@@ -1100,6 +1104,8 @@ src/core/credentials/transport/tls/grpc_tls_certificate_distributor.h \
 src/core/credentials/transport/tls/grpc_tls_certificate_match.cc \
 src/core/credentials/transport/tls/grpc_tls_certificate_provider.cc \
 src/core/credentials/transport/tls/grpc_tls_certificate_provider.h \
+src/core/credentials/transport/tls/grpc_tls_certificate_selector.cc \
+src/core/credentials/transport/tls/grpc_tls_certificate_selector.h \
 src/core/credentials/transport/tls/grpc_tls_certificate_verifier.cc \
 src/core/credentials/transport/tls/grpc_tls_certificate_verifier.h \
 src/core/credentials/transport/tls/grpc_tls_credentials_options.cc \
@@ -2802,6 +2808,7 @@ src/core/telemetry/stats_data.cc \
 src/core/telemetry/stats_data.h \
 src/core/telemetry/tcp_tracer.cc \
 src/core/telemetry/tcp_tracer.h \
+src/core/telemetry/telemetry_label.h \
 src/core/transport/AGENTS.md \
 src/core/transport/auth_context.cc \
 src/core/transport/auth_context.h \
@@ -2940,8 +2947,6 @@ src/core/util/json/json_object_loader.cc \
 src/core/util/json/json_object_loader.h \
 src/core/util/json/json_reader.cc \
 src/core/util/json/json_reader.h \
-src/core/util/json/json_util.cc \
-src/core/util/json/json_util.h \
 src/core/util/json/json_writer.cc \
 src/core/util/json/json_writer.h \
 src/core/util/latent_see.cc \
@@ -3052,6 +3057,8 @@ src/core/xds/grpc/xds_audit_logger_registry.cc \
 src/core/xds/grpc/xds_audit_logger_registry.h \
 src/core/xds/grpc/xds_bootstrap_grpc.cc \
 src/core/xds/grpc/xds_bootstrap_grpc.h \
+src/core/xds/grpc/xds_bootstrap_grpc_builder.cc \
+src/core/xds/grpc/xds_bootstrap_grpc_builder.h \
 src/core/xds/grpc/xds_certificate_provider.cc \
 src/core/xds/grpc/xds_certificate_provider.h \
 src/core/xds/grpc/xds_client_grpc.cc \
@@ -3115,6 +3122,10 @@ src/core/xds/grpc/xds_routing.h \
 src/core/xds/grpc/xds_server_grpc.cc \
 src/core/xds/grpc/xds_server_grpc.h \
 src/core/xds/grpc/xds_server_grpc_interface.h \
+src/core/xds/grpc/xds_tls_context.cc \
+src/core/xds/grpc/xds_tls_context.h \
+src/core/xds/grpc/xds_tls_context_parser.cc \
+src/core/xds/grpc/xds_tls_context_parser.h \
 src/core/xds/grpc/xds_transport_grpc.cc \
 src/core/xds/grpc/xds_transport_grpc.h \
 src/core/xds/xds_client/lrs_client.cc \

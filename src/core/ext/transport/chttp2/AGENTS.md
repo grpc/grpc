@@ -253,7 +253,7 @@ Since the number of slots in a Party is 16, we need to account for all the slots
 that we use in the transport.
 We need to ensure that our slots do not exceed 16.
 
-## PH2 Client Party Slots Usage
+## PH2 Common Party Slots Usage
 
 | Name | Category | Description | Max Spawns at a time | When is it spawned | Max Duration | Resolution |
 |---|---|---|---|---|---|---|
@@ -264,11 +264,19 @@ We need to ensure that our slots do not exceed 16.
 | AddData | Misc | ChannelZ AddData | 1 | On demand | Immediate | Immediate |
 | CloseTransport | Misc | Close transport | 1 | While closing transport. Only once in the life of a transport | As long as it takes to close the transport | Transport Close |
 | WaitForSettingsTimeout | Timeout | Settings Timeout | 1 | When we write SETTINGS | Settings timeout | Settings Ack Received or Settings Timeout |
-| Keepalive | Loop | Keepalive Loop | 1 | If Keepalive is enabled, after constructor | Lifetime of the transport | Transport Close
-| Ping | Timeout + Misc | | 4 | Sending a ping request | Timeout or a specific duration |
+| Keepalive | Loop | Keepalive Loop | 1 | If Keepalive is enabled, after constructor | Lifetime of the transport | Transport Close |
+| Ping | Timeout + Misc | | 4 | Sending a ping request | Timeout or a specific duration | |
 | | | **Total** | 12 | | | |
+
+## PH2 Client Party Slots Usage
+
+| Name | Category | Description | Max Spawns at a time | When is it spawned | Max Duration | Resolution |
+|---|---|---|---|---|---|---|
 
 ## PH2 Server Party Slots Usage
 
 | Name | Category | Description | Max Spawns at a time | When is it spawned | Max Duration | Resolution |
 |---|---|---|---|---|---|---|
+| Graceful Goaway | Misc | | 1 | Sending a graceful Goaway | As long as it takes to complete the graceful goaway process | |
+| | | **Total** | 1 | | | |
+

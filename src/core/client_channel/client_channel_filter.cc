@@ -465,20 +465,18 @@ class ClientChannelFilter::SubchannelWrapper final
             }
             chand_->subchannel_map_.erase(it);
           }
-          if (IsSubchannelWrapperCleanupOnOrphanEnabled()) {
-            // We need to make sure that the internal subchannel gets unreffed
-            // inside of the WorkSerializer, so that updates to the local
-            // subchannel pool are properly synchronized.  To that end, we
-            // drop our ref to the internal subchannel here.  We also cancel
-            // any watchers that were not properly cancelled, in case any of
-            // them are holding a ref to the internal subchannel.
-            for (const auto& [_, watcher] : watcher_map_) {
-              subchannel_->CancelConnectivityStateWatch(watcher);
-            }
-            watcher_map_.clear();
-            data_watchers_.clear();
-            subchannel_.reset();
+          // We need to make sure that the internal subchannel gets unreffed
+          // inside of the WorkSerializer, so that updates to the local
+          // subchannel pool are properly synchronized.  To that end, we
+          // drop our ref to the internal subchannel here.  We also cancel
+          // any watchers that were not properly cancelled, in case any of
+          // them are holding a ref to the internal subchannel.
+          for (const auto& [_, watcher] : watcher_map_) {
+            subchannel_->CancelConnectivityStateWatch(watcher);
           }
+          watcher_map_.clear();
+          data_watchers_.clear();
+          subchannel_.reset();
           WeakUnref(DEBUG_LOCATION, "subchannel map cleanup");
         });
   }
@@ -2484,6 +2482,9 @@ ClientChannelFilter::LoadBalancedCall::PickSubchannel(bool was_queued) {
 bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
     LoadBalancingPolicy::SubchannelPicker* picker, grpc_error_handle* error) {
   GRPC_CHECK(subchannel_call_ == nullptr);
+  // Adding the call arena to TLS so that LB pickers can access call context
+  // from the arena.
+  promise_detail::Context<Arena> arena_ctx(arena_);
   // Perform LB pick.
   LoadBalancingPolicy::PickArgs pick_args;
   Slice* path = send_initial_metadata()->get_pointer(HttpPathMetadata());

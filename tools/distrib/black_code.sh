@@ -22,6 +22,7 @@ ACTION="${1:-}"
 cd "$(dirname "${0}")/../.."
 
 DIRS=(
+    'bazel/update_mirror_helper.py'
     'examples'
     'src'
     'test'
@@ -31,7 +32,7 @@ DIRS=(
 )
 
 VIRTUALENV=".venv-ci-black"
-python3 -m virtualenv "${VIRTUALENV}"
+python3 -m venv "${VIRTUALENV}"
 source "${VIRTUALENV}/bin/activate"
 python -VV
 

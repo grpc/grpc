@@ -70,14 +70,23 @@ where = ["src/python/grpcio"]
 ]
 
 [tool.pyright]
+
+typeCheckingMode = "strict"
+
+reportUnnecessaryComparison = "none"
+reportConstantRedefinition = "none"
+reportUnusedFunction = "none"
+reportUnusedVariable = "none"
+reportIncompleteStub = "none"
+reportUnusedClass = "none"
+
 include = [
     "src/python/grpcio/grpc/_channel.py",
     "src/python/grpcio/grpc/_server.py",
+    "src/python/grpcio/grpc/_common.py",
     "src/python/grpcio/grpc/aio"
 ]
 
-typeCheckingMode = "standard"
-reportMissingTypeArgument = "error"
 exclude = [
     "**/third_party",
     "**/build",

@@ -322,8 +322,14 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
           http_filters);
   ~XdsServerConfigSelector() override = default;
 
+  // Not used.
+  std::unique_ptr<ConnectionState> BuildFilterChains(
+      FilterChainBuilder& /*builder*/) override {
+    return nullptr;
+  }
+
   absl::StatusOr<CallConfig> GetCallConfig(
-      grpc_metadata_batch* metadata) override;
+      const ConnectionState* /*state*/, grpc_metadata_batch* metadata) override;
 
  private:
   struct VirtualHost {
@@ -399,8 +405,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   }
 
   absl::StatusOr<RefCountedPtr<ServerConfigSelector>> Watch(
-      std::unique_ptr<ServerConfigSelectorProvider::ServerConfigSelectorWatcher>
-          watcher) override {
+      std::shared_ptr<ServerConfigSelectorWatcher> watcher) override {
     GRPC_CHECK(watcher_ == nullptr);
     watcher_ = std::move(watcher);
     if (!static_resource_.ok()) {
@@ -412,7 +417,11 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
         static_resource_.value(), http_filters_);
   }
 
-  void CancelWatch() override { watcher_.reset(); }
+  void CancelWatch(
+      std::shared_ptr<ServerConfigSelectorWatcher> watcher) override {
+    GRPC_CHECK(watcher == watcher_);
+    watcher_.reset();
+  }
 
  private:
   void Orphaned() override {}
@@ -425,7 +434,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   // copying the HTTP filters here.
   std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>
       http_filters_;
-  std::unique_ptr<ServerConfigSelectorProvider::ServerConfigSelectorWatcher>
+  std::shared_ptr<ServerConfigSelectorProvider::ServerConfigSelectorWatcher>
       watcher_;
 };
 
@@ -447,9 +456,9 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   }
 
   absl::StatusOr<RefCountedPtr<ServerConfigSelector>> Watch(
-      std::unique_ptr<ServerConfigSelectorProvider::ServerConfigSelectorWatcher>
-          watcher) override;
-  void CancelWatch() override;
+      std::shared_ptr<ServerConfigSelectorWatcher> watcher) override;
+  void CancelWatch(
+      std::shared_ptr<ServerConfigSelectorWatcher> watcher) override;
 
  private:
   class RouteConfigWatcher;
@@ -468,7 +477,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       http_filters_;
   RouteConfigWatcher* route_config_watcher_ = nullptr;
   Mutex mu_;
-  std::unique_ptr<ServerConfigSelectorProvider::ServerConfigSelectorWatcher>
+  std::shared_ptr<ServerConfigSelectorProvider::ServerConfigSelectorWatcher>
       watcher_ ABSL_GUARDED_BY(mu_);
   absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>> resource_
       ABSL_GUARDED_BY(mu_);
@@ -1163,7 +1172,8 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 
 absl::StatusOr<ServerConfigSelector::CallConfig>
 XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
-    XdsServerConfigSelector::GetCallConfig(grpc_metadata_batch* metadata) {
+    XdsServerConfigSelector::GetCallConfig(const ConnectionState* /*state*/,
+                                           grpc_metadata_batch* metadata) {
   CallConfig call_config;
   if (metadata->get_pointer(HttpPathMetadata()) == nullptr) {
     return absl::InternalError("no path found");
@@ -1238,9 +1248,7 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 absl::StatusOr<RefCountedPtr<ServerConfigSelector>>
 XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     DynamicXdsServerConfigSelectorProvider::Watch(
-        std::unique_ptr<
-            ServerConfigSelectorProvider::ServerConfigSelectorWatcher>
-            watcher) {
+        std::shared_ptr<ServerConfigSelectorWatcher> watcher) {
   absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>> resource;
   {
     MutexLock lock(&mu_);
@@ -1258,8 +1266,10 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 }
 
 void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
-    DynamicXdsServerConfigSelectorProvider::CancelWatch() {
+    DynamicXdsServerConfigSelectorProvider::CancelWatch(
+        std::shared_ptr<ServerConfigSelectorWatcher> watcher) {
   MutexLock lock(&mu_);
+  GRPC_CHECK(watcher == watcher_);
   watcher_.reset();
 }
 

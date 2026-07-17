@@ -1,4 +1,4 @@
-# Copyright 2021 gRPC authors.
+# Copyright 2026 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,9 +12,47 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM silkeh/clang:11-bullseye
+FROM debian:12
 
-RUN apt update && apt -y upgrade && apt install -y build-essential curl git time wget zip && apt clean
+#=================
+# Basic C core dependencies
+
+# C/C++ dependencies according to https://github.com/grpc/grpc/blob/master/BUILDING.md
+RUN apt-get update && apt-get install -y \
+  build-essential \
+  autoconf \
+  libtool \
+  pkg-config \
+  && apt-get clean
+
+# GCC
+RUN apt-get update && apt-get install -y \
+  gcc \
+  g++ \
+  && apt-get clean
+
+# libc6
+RUN apt-get update && apt-get install -y \
+  libc6 \
+  libc6-dbg \
+  libc6-dev \
+  && apt-get clean
+
+# Tools
+RUN apt-get update && apt-get install -y \
+  bzip2 \
+  curl \
+  dnsutils \
+  git \
+  lcov \
+  make \
+  strace \
+  time \
+  unzip \
+  wget \
+  zip \
+  && apt-get clean
+
 #=================
 # Setup git to access working directory across docker boundary.
 # This avoids the "fatal: detected dubious ownership in repository XYZ"
@@ -22,6 +60,7 @@ RUN apt update && apt -y upgrade && apt install -y build-essential curl git time
 
 RUN git config --global --add safe.directory '*'
 RUN git config --global protocol.file.allow always
+
 
 #====================
 # run_tests.py python dependencies
@@ -37,7 +76,10 @@ RUN apt-get update && apt-get install -y \
   && apt-get clean
 
 # use pinned version of pip to avoid sudden breakages
-RUN python3 -m pip install --upgrade pip==19.3.1
+# Some newer distros that have already implemented PEP 668. Use of
+# --break-system-packages is to workaround that. We should look into using
+# virtualenv in Dockerfile though.
+RUN python3 -m pip install --break-system-packages --upgrade pip==19.3.1
 
 # TODO(jtattermusch): currently six is needed for tools/run_tests scripts
 # but since our python2 usage is deprecated, we should get rid of it.
@@ -48,32 +90,35 @@ RUN python3 -m pip install six==1.16.0
 RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
 
-# Some cxx tests depend on the twisted package
-RUN python3 -m pip install twisted
+#=================
+# PHP8 dependencies
+
+RUN apt-get update && apt-get install -y php8.2 php8.2-dev php-pear && apt-get clean
+
+# Install composer
+RUN curl -sS https://getcomposer.org/installer | php
+RUN mv composer.phar /usr/local/bin/composer
 
 #=================
-# Install cmake using the install script.
-RUN curl -sSL -o cmake-linux.sh https://github.com/Kitware/CMake/releases/download/v3.16.1/cmake-3.16.1-Linux-x86_64.sh \
-    && sh cmake-linux.sh -- --skip-license --prefix=/usr \
-    && rm cmake-linux.sh
+# Install cmake
+# Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
+
+RUN apt-get update && apt-get install -y cmake && apt-get clean
 
 #=================
 # Install ccache
 
 # Install ccache from source since ccache 3.x packaged with most linux distributions
 # does not support Redis backend for caching.
-RUN curl -sSL --fail --retry 5 -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.7.5/ccache-4.7.5.tar.gz \
+RUN curl -sSL --fail --retry 5 -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.11.3/ccache-4.11.3.tar.gz \
     && tar -zxf ccache.tar.gz \
-    && cd ccache-4.7.5 \
+    && cd ccache-4.11.3 \
     && mkdir build && cd build \
     && cmake -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON -DHIREDIS_FROM_INTERNET=ON .. \
     && make -j4 && make install \
     && cd ../.. \
-    && rm -rf ccache-4.7.5 ccache.tar.gz
+    && rm -rf ccache-4.11.3 ccache.tar.gz
 
 
 RUN mkdir /var/local/jenkins
 
-
-# Define the default command.
-CMD ["bash"]

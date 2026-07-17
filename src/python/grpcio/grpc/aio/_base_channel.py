@@ -14,12 +14,13 @@
 """Abstract base classes for Channel objects and Multicallable objects."""
 
 import abc
+from types import TracebackType
 from typing import Generic, Optional
 
 import grpc
 from typing_extensions import Self
 
-from . import _base_call
+from . import _base_call  # pyright: ignore[reportPrivateUsage]
 from ._typing import DeserializingFunction
 from ._typing import MetadataType
 from ._typing import RequestIterableType
@@ -197,7 +198,12 @@ class Channel(abc.ABC):
         """
 
     @abc.abstractmethod
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+    async def __aexit__(
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> Optional[bool]:
         """Finishes the asynchronous context manager by closing the channel.
 
         Still active RPCs will be cancelled.
@@ -272,8 +278,10 @@ class Channel(abc.ABC):
     def unary_unary(
         self,
         method: str,
-        request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None,
+        request_serializer: Optional[SerializingFunction[RequestType]] = None,
+        response_deserializer: Optional[
+            DeserializingFunction[ResponseType]
+        ] = None,
         _registered_method: Optional[bool] = False,
     ) -> UnaryUnaryMultiCallable[RequestType, ResponseType]:
         """Creates a UnaryUnaryMultiCallable for a unary-unary method.
@@ -296,8 +304,10 @@ class Channel(abc.ABC):
     def unary_stream(
         self,
         method: str,
-        request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None,
+        request_serializer: Optional[SerializingFunction[RequestType]] = None,
+        response_deserializer: Optional[
+            DeserializingFunction[ResponseType]
+        ] = None,
         _registered_method: Optional[bool] = False,
     ) -> UnaryStreamMultiCallable[RequestType, ResponseType]:
         """Creates a UnaryStreamMultiCallable for a unary-stream method.
@@ -320,8 +330,10 @@ class Channel(abc.ABC):
     def stream_unary(
         self,
         method: str,
-        request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None,
+        request_serializer: Optional[SerializingFunction[RequestType]] = None,
+        response_deserializer: Optional[
+            DeserializingFunction[ResponseType]
+        ] = None,
         _registered_method: Optional[bool] = False,
     ) -> StreamUnaryMultiCallable[RequestType, ResponseType]:
         """Creates a StreamUnaryMultiCallable for a stream-unary method.
@@ -344,8 +356,10 @@ class Channel(abc.ABC):
     def stream_stream(
         self,
         method: str,
-        request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None,
+        request_serializer: Optional[SerializingFunction[RequestType]] = None,
+        response_deserializer: Optional[
+            DeserializingFunction[ResponseType]
+        ] = None,
         _registered_method: Optional[bool] = False,
     ) -> StreamStreamMultiCallable[RequestType, ResponseType]:
         """Creates a StreamStreamMultiCallable for a stream-stream method.
