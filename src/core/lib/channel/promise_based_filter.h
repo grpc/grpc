@@ -1253,8 +1253,6 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
 
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       CallArgs call_args, NextPromiseFactory next_promise_factory) final {
-// FIXME: figure out why this is being called in the v3 stack
-Crash("WTF");
     // Create a latch to get the call handler, and put a pointer to it
     // in call context, so that CallDestinationToNextV2Filter can set
     // it when it starts the call.
