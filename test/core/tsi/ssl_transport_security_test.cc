@@ -1235,7 +1235,7 @@ TEST(SslTransportSecurityTest, TestServerHandshakerFactoryRefcounting) {
                                kSslTsiTestCredentialsDir, "server0.key")),
                            cert_chain);
   tsi_ssl_server_handshaker_options options;
-  options.pem_key_cert_pairs = PemKeyCertPairList{cert_pair};
+  options.key_cert_pairs_or_selector = PemKeyCertPairList{cert_pair};
   if (!cert_chain.empty()) {
     options.root_cert_info = std::make_shared<tsi::RootCertInfo>(cert_chain);
   }
