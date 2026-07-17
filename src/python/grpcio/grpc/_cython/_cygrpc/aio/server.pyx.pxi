@@ -1146,7 +1146,6 @@ cdef class AioServer:
                         self._limiter.decrease_once_finished(rpc_task)
 
                     if self._status == AIO_SERVER_STATUS_RUNNING:
-                    if self._status == AIO_SERVER_STATUS_RUNNING:
                         # Unconditionally re-arm the call request future even when concurrency_exceeded
                         # is True. This enables application-layer load shedding (fast RESOURCE_EXHAUSTED
                         # rejection in _handle_rpc) without blocking Core completion queues.
