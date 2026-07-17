@@ -180,7 +180,7 @@ class _GenericMethod(_Method):
         for generic_handler in self._generic_handlers:
             # Type is suppressed here because `service` lacks type annotations
             # in the public API (__init__.py), which will be updated with gRFC.
-            # TODO(asheshvidyut): Fix with Typing Hints Plan Phase 3
+            # TODO(asheshvidyut): Fix with Typing Hints Public API changes
             method_handler: Optional[grpc.RpcMethodHandler] = generic_handler.service(  # type: ignore[reportUnknownMemberType]
                 handler_call_details
             )
@@ -620,12 +620,12 @@ def _call_behavior(
     request_deserializer: Optional[DeserializingFunction[RequestType]],
     send_response_callback: Optional[Callable[[ResponseType], None]] = None,
 ) -> Tuple[Union[ResponseType, Iterator[ResponseType], None], bool]:
-    # TODO(asheshvidyut): Fix with Typing Hints Plan Phase 3
+    # TODO(asheshvidyut): Fix with Typing Hints Public API changes
     from grpc import (
         _create_servicer_context,  # pyright: ignore[reportUnknownVariableType]
     )
 
-    # TODO(asheshvidyut): Fix with Typing Hints Plan Phase 3
+    # TODO(asheshvidyut): Fix with Typing Hints Public API changes
     with _create_servicer_context(
         rpc_event, state, request_deserializer
     ) as context:  # pyright: ignore[reportUnknownVariableType]
