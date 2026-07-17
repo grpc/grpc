@@ -171,7 +171,7 @@ class SpiffeSslTransportSecurityTest
                 TSI_OK);
       // Create server handshaker factory.
       tsi_ssl_server_handshaker_options server_options;
-      server_options.pem_key_cert_pairs = server_pem_key_cert_pairs_;
+      server_options.key_cert_pairs_or_selector = server_pem_key_cert_pairs_;
       if (server_spiffe_bundle_map_ != nullptr) {
         server_options.root_cert_info = server_spiffe_bundle_map_;
       } else {

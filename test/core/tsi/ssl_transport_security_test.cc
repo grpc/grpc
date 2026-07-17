@@ -399,10 +399,10 @@ class SslTransportSecurityTest
         }
       }
       if (key_cert_lib->use_cert_signed_by_intermediate_ca) {
-        server_options.pem_key_cert_pairs =
+        server_options.key_cert_pairs_or_selector =
             key_cert_lib->leaf_signed_by_intermediate_key_cert_pairs;
       } else {
-        server_options.pem_key_cert_pairs =
+        server_options.key_cert_pairs_or_selector =
             key_cert_lib->use_bad_server_cert
                 ? key_cert_lib->bad_server_pem_key_cert_pairs
                 : key_cert_lib->server_pem_key_cert_pairs;

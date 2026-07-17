@@ -144,7 +144,7 @@ class SslOffloadTsiTestFixture {
         TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY;
     server_options.min_tls_version = tls_version_;
     server_options.max_tls_version = tls_version_;
-    server_options.pem_key_cert_pairs = server_pem_key_cert_pairs_;
+    server_options.key_cert_pairs_or_selector = server_pem_key_cert_pairs_;
     ASSERT_EQ(tsi_create_ssl_server_handshaker_factory_with_options(
                   &server_options, &server_handshaker_factory_),
               TSI_OK);
