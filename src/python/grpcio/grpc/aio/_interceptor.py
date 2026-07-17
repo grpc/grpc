@@ -139,7 +139,6 @@ class ClientCallDetails(
     """
 
 
-
 class ClientInterceptor(metaclass=ABCMeta):
     """Base class used for all Aio Client Interceptor classes"""
 
