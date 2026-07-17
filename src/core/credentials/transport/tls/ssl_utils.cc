@@ -493,7 +493,7 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
   const char** alpn_protocol_strings =
       grpc_fill_alpn_protocol_strings(&num_alpn_protocols);
   tsi_ssl_server_handshaker_options options;
-  options.pem_key_cert_pairs = std::move(key_cert_pairs);
+  options.key_cert_pairs_or_selector = std::move(key_cert_pairs);
   options.client_certificate_request =
       grpc_get_tsi_client_certificate_request_type(client_certificate_request);
   options.cipher_suites = grpc_get_ssl_cipher_suites();

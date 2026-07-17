@@ -3370,25 +3370,25 @@ static tsi_ssl_handshaker_factory_vtable server_handshaker_factory_vtable = {
     tsi_ssl_server_handshaker_factory_destroy};
 
 tsi_result tsi_create_ssl_server_handshaker_factory(
-    tsi_ssl_key_cert_pairs pem_key_cert_pairs,
+    grpc_core::KeyCertPairsOrSelector key_cert_pairs_or_selector,
     const char* pem_client_root_certs, int force_client_auth,
     const char* cipher_suites, const char** alpn_protocols,
     uint16_t num_alpn_protocols, tsi_ssl_server_handshaker_factory** factory) {
   return tsi_create_ssl_server_handshaker_factory_ex(
-      std::move(pem_key_cert_pairs), pem_client_root_certs,
+      std::move(key_cert_pairs_or_selector), pem_client_root_certs,
       force_client_auth ? TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
                         : TSI_DONT_REQUEST_CLIENT_CERTIFICATE,
       cipher_suites, alpn_protocols, num_alpn_protocols, factory);
 }
 
 tsi_result tsi_create_ssl_server_handshaker_factory_ex(
-    tsi_ssl_key_cert_pairs pem_key_cert_pairs,
+    grpc_core::KeyCertPairsOrSelector key_cert_pairs_or_selector,
     const char* pem_client_root_certs,
     tsi_client_certificate_request_type client_certificate_request,
     const char* cipher_suites, const char** alpn_protocols,
     uint16_t num_alpn_protocols, tsi_ssl_server_handshaker_factory** factory) {
   tsi_ssl_server_handshaker_options options;
-  options.pem_key_cert_pairs = std::move(pem_key_cert_pairs);
+  options.key_cert_pairs_or_selector = std::move(key_cert_pairs_or_selector);
   if (pem_client_root_certs != nullptr) {
     options.root_cert_info =
         std::make_shared<tsi::RootCertInfo>(pem_client_root_certs);
@@ -3583,7 +3583,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
   impl->base.vtable = &server_handshaker_factory_vtable;
 
   tsi_result result = grpc_core::Match(
-      options->pem_key_cert_pairs,
+      options->key_cert_pairs_or_selector,
       [&](const grpc_core::PemKeyCertPairList& pem_key_cert_pairs) {
         if (pem_key_cert_pairs.empty()) {
           return TSI_INVALID_ARGUMENT;

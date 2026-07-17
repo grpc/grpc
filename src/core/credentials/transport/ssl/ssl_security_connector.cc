@@ -246,7 +246,7 @@ class grpc_ssl_server_security_connector
             grpc_fill_alpn_protocol_strings(&num_alpn_protocols);
       }
       tsi_ssl_server_handshaker_options options;
-      options.pem_key_cert_pairs =
+      options.key_cert_pairs_or_selector =
           server_credentials->config().pem_key_cert_pairs;
       if (server_credentials->config().pem_root_certs != nullptr) {
         options.root_cert_info = std::make_shared<tsi::RootCertInfo>(
@@ -369,7 +369,7 @@ class grpc_ssl_server_security_connector
         static_cast<const grpc_ssl_server_credentials*>(this->server_creds());
     GRPC_DCHECK_NE(config->pem_root_certs, nullptr);
     tsi_ssl_server_handshaker_options options;
-    options.pem_key_cert_pairs = grpc_convert_grpc_to_key_cert_pairs(
+    options.key_cert_pairs_or_selector = grpc_convert_grpc_to_key_cert_pairs(
         config->pem_key_cert_pairs, config->num_key_cert_pairs);
     if (config->pem_root_certs != nullptr) {
       options.root_cert_info =

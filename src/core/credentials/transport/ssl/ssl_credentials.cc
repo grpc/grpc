@@ -152,9 +152,8 @@ void grpc_ssl_credentials::build_config(
   if (pem_key_cert_pair != nullptr) {
     GRPC_CHECK_NE(pem_key_cert_pair->private_key, nullptr);
     GRPC_CHECK_NE(pem_key_cert_pair->cert_chain, nullptr);
-    config_.pem_key_cert_pair =
-        grpc_core::PemKeyCertPair(pem_key_cert_pair->private_key,
-                                  pem_key_cert_pair->cert_chain);
+    config_.pem_key_cert_pair = grpc_core::PemKeyCertPair(
+        pem_key_cert_pair->private_key, pem_key_cert_pair->cert_chain);
   }
   if (verify_options != nullptr) {
     memcpy(&config_.verify_options, verify_options,
@@ -296,7 +295,7 @@ grpc_core::PemKeyCertPairList grpc_convert_grpc_to_key_cert_pairs(
   for (size_t i = 0; i < num_key_cert_pairs; i++) {
     GRPC_CHECK_NE(pem_key_cert_pairs[i].private_key, nullptr);
     GRPC_CHECK_NE(pem_key_cert_pairs[i].cert_chain, nullptr);
-    key_cert_pairs.emplace_back(std::string(pem_key_cert_pairs[i].private_key),
+    key_cert_pairs.emplace_back(pem_key_cert_pairs[i].private_key,
                                 pem_key_cert_pairs[i].cert_chain);
   }
   return key_cert_pairs;
