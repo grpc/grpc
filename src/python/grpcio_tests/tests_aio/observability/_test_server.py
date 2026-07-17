@@ -27,14 +27,28 @@ _STREAM_UNARY = "StreamUnary"
 _STREAM_STREAM = "StreamStream"
 STREAM_LENGTH = 5
 
+ABORT_RPC_METADATA = ("control", "abort")
+ABORT_MID_STREAM_RPC_METADATA = ("control", "abort_mid_stream")
+RAISE_EXCEPTION_RPC_METADATA = ("control", "exception")
 
-async def unary_unary(unused_request, unused_context):
+
+async def unary_unary(unused_request, servicer_context):
+    if ABORT_RPC_METADATA in servicer_context.invocation_metadata():
+        await servicer_context.abort(
+            grpc.StatusCode.ABORTED, "Aborting RPC for testing purpose"
+    )
+    if RAISE_EXCEPTION_RPC_METADATA in servicer_context.invocation_metadata():
+        raise RuntimeError("Failing RPC for testing purpose")
     return _RESPONSE
 
 
-async def unary_stream(unused_request, unused_context):
+async def unary_stream(unused_request, servicer_context):
     for _ in range(STREAM_LENGTH):
         yield _RESPONSE
+        if ABORT_MID_STREAM_RPC_METADATA in servicer_context.invocation_metadata():
+            await servicer_context.abort(
+                grpc.StatusCode.ABORTED, "Aborting RPC for testing purpose"
+            )
 
 
 async def stream_unary(request_iterator, unused_context):
@@ -99,22 +113,22 @@ async def start_server(register_method=False) -> Tuple[grpc.aio.Server, int]:
     return server, port
 
 
-async def unary_unary_call(port, registered_method=False):
+async def unary_unary_call(port, registered_method=False, metadata=None):
     async with grpc.aio.insecure_channel(f"localhost:{port}") as channel:
         multi_callable = channel.unary_unary(
             grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),
             _registered_method=registered_method,
         )
-        unused_response = await multi_callable(_REQUEST)
+        unused_response = await multi_callable(_REQUEST, metadata=metadata)
 
 
-async def unary_stream_call(port, registered_method=False):
+async def unary_stream_call(port, registered_method=False, metadata=None):
     async with grpc.aio.insecure_channel(f"localhost:{port}") as channel:
         multi_callable = channel.unary_stream(
             grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_STREAM),
             _registered_method=registered_method,
         )
-        call = multi_callable(_REQUEST)
+        call = multi_callable(_REQUEST, metadata=metadata)
         async for _ in call:
             pass
 
@@ -138,3 +152,15 @@ async def stream_stream_call(port, registered_method=False):
         call = multi_callable(iter([_REQUEST] * STREAM_LENGTH))
         async for _ in call:
             pass
+
+
+async def stream_stream_call_with_client_cancel(port, registered_method=False):
+    async with grpc.aio.insecure_channel(f"localhost:{port}") as channel:
+        multi_callable = channel.stream_stream(
+            grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_STREAM),
+            _registered_method=registered_method,
+        )
+        call = multi_callable()
+        await call.write(_REQUEST)
+        await call.read()
+        return call.cancel()

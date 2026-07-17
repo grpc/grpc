@@ -22,6 +22,7 @@ import time
 from typing import Any, Callable, Iterable, Optional
 import unittest
 
+import grpc
 import grpc_observability
 from grpc_observability import _open_telemetry_measures
 from grpc_observability._open_telemetry_observability import (
@@ -306,6 +307,71 @@ class OpenTelemetryObservabilityRegisteredMethodsTest(
         await _test_server.stream_stream_call(
             port=self._port, registered_method=True
         )
+
+        await self._validate_metrics_exist(self.all_metrics)
+        self._validate_all_metrics_names(self.all_metrics.keys())
+        self._validate_all_method_labels(self.all_metrics, "test/StreamStream")
+
+    async def test_record_unary_unary_aborted(self):
+        self._server, self._port = await _test_server.start_server(
+            register_method=True
+        )
+        with self.assertRaises(grpc.RpcError) as ex_context:
+            await _test_server.unary_unary_call(
+                port=self._port,
+                registered_method=True,
+                metadata=(_test_server.ABORT_RPC_METADATA,),
+            )
+
+        self.assertEqual(ex_context.exception.code(), grpc.StatusCode.ABORTED)
+
+        await self._validate_metrics_exist(self.all_metrics)
+        self._validate_all_metrics_names(self.all_metrics.keys())
+        self._validate_all_method_labels(self.all_metrics, "test/UnaryUnary")
+
+    async def test_record_unary_unary_unhandled_exception(self):
+        self._server, self._port = await _test_server.start_server(
+            register_method=True
+        )
+        with self.assertRaises(grpc.RpcError) as ex_context:
+            await _test_server.unary_unary_call(
+                port=self._port,
+                registered_method=True,
+                metadata=(_test_server.RAISE_EXCEPTION_RPC_METADATA,),
+            )
+
+        self.assertEqual(ex_context.exception.code(), grpc.StatusCode.UNKNOWN)
+
+        await self._validate_metrics_exist(self.all_metrics)
+        self._validate_all_metrics_names(self.all_metrics.keys())
+        self._validate_all_method_labels(self.all_metrics, "test/UnaryUnary")
+
+    async def test_record_unary_stream_aborted_mid_stream(self):
+        self._server, self._port = await _test_server.start_server(
+            register_method=True
+        )
+        with self.assertRaises(grpc.RpcError) as ex_context:
+            await _test_server.unary_stream_call(
+                port=self._port,
+                registered_method=True,
+                metadata=(_test_server.ABORT_MID_STREAM_RPC_METADATA,),
+            )
+
+        self.assertEqual(ex_context.exception.code(), grpc.StatusCode.ABORTED)
+
+        await self._validate_metrics_exist(self.all_metrics)
+        self._validate_all_metrics_names(self.all_metrics.keys())
+        self._validate_all_method_labels(self.all_metrics, "test/UnaryStream")
+
+    async def test_record_stream_stream_when_client_cancel(self):
+        self._server, self._port = await _test_server.start_server(
+            register_method=True
+        )
+        cancelled = await _test_server.stream_stream_call_with_client_cancel(
+            port=self._port, registered_method=True
+        )
+
+        self.assertTrue(cancelled)
 
         await self._validate_metrics_exist(self.all_metrics)
         self._validate_all_metrics_names(self.all_metrics.keys())
