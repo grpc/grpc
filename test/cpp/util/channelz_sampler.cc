@@ -43,7 +43,7 @@
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/cpp/server/channelz/channelz_service.h"
-#include "src/proto/grpc/channelz/channelz.pb.h"
+#include "grpc/channelz/v1/channelz.pb.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/test_config.h"
 #include "test/cpp/util/test_credentials_provider.h"

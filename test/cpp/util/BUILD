@@ -127,8 +127,7 @@ grpc_cc_library(
         "//src/core:json",
         "//src/core:json_reader",
         "//src/core:json_writer",
-        "//src/proto/grpc/channelz:channelz_proto",
-        "//src/proto/grpc/channelz:channelz_proto_cc_proto",
+        "//third_party/grpc_proto:channelz_cc_grpc",
     ],
 )
 
@@ -435,11 +434,11 @@ grpc_cc_binary(
         "//src/core:grpc_check",
         "//src/core:json",
         "//src/core:json_writer",
-        "//src/proto/grpc/channelz:channelz_proto",
         "//src/proto/grpc/channelz:channelz_proto_cc_proto",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
+        "//third_party/grpc_proto:channelz_cc_grpc",
     ],
 )
 
@@ -474,10 +473,10 @@ grpc_cc_test(
         "//:grpcpp_channelz",
         "//src/core:env",
         "//src/core:grpc_check",
-        "//src/proto/grpc/channelz:channelz_proto",
         "//src/proto/grpc/testing:test_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
+        "//third_party/grpc_proto:channelz_cc_grpc",
     ],
 )
 

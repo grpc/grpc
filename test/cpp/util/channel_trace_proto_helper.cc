@@ -29,7 +29,7 @@
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
-#include "src/proto/grpc/channelz/channelz.pb.h"
+#include "grpc/channelz/v1/channelz.pb.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
