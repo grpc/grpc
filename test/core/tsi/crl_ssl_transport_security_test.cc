@@ -142,7 +142,7 @@ class CrlSslTransportSecurityTest
                 TSI_OK);
       // Create server handshaker factory.
       tsi_ssl_server_handshaker_options server_options;
-      server_options.pem_key_cert_pairs = server_pem_key_cert_pairs_;
+      server_options.key_cert_pairs_or_selector = server_pem_key_cert_pairs_;
       server_options.root_cert_info =
           std::make_shared<tsi::RootCertInfo>(root_cert_.c_str());
       server_options.crl_directory = crl_directory_;
