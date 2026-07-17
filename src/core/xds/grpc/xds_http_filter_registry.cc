@@ -25,26 +25,26 @@
 namespace grpc_core {
 
 void XdsHttpFilterRegistry::RegisterFilter(
-    std::unique_ptr<XdsHttpFilterImpl> filter) {
+    std::unique_ptr<XdsHttpFilterFactory> factory) {
   GRPC_CHECK(
-      top_level_config_map_.emplace(filter->ConfigProtoName(), filter.get())
+      top_level_config_map_.emplace(factory->ConfigProtoName(), factory.get())
           .second);
-  auto override_proto_name = filter->OverrideConfigProtoName();
+  auto override_proto_name = factory->OverrideConfigProtoName();
   if (!override_proto_name.empty()) {
-    GRPC_CHECK(
-        override_config_map_.emplace(override_proto_name, filter.get()).second);
+    GRPC_CHECK(override_config_map_.emplace(override_proto_name, factory.get())
+                   .second);
   }
-  owning_list_.push_back(std::move(filter));
+  owning_list_.push_back(std::move(factory));
 }
 
-const XdsHttpFilterImpl* XdsHttpFilterRegistry::GetFilterForTopLevelType(
+const XdsHttpFilterFactory* XdsHttpFilterRegistry::GetFilterForTopLevelType(
     absl::string_view proto_type_name) const {
   auto it = top_level_config_map_.find(proto_type_name);
   if (it == top_level_config_map_.end()) return nullptr;
   return it->second;
 }
 
-const XdsHttpFilterImpl* XdsHttpFilterRegistry::GetFilterForOverrideType(
+const XdsHttpFilterFactory* XdsHttpFilterRegistry::GetFilterForOverrideType(
     absl::string_view proto_type_name) const {
   auto it = override_config_map_.find(proto_type_name);
   if (it == override_config_map_.end()) return nullptr;
@@ -52,8 +52,8 @@ const XdsHttpFilterImpl* XdsHttpFilterRegistry::GetFilterForOverrideType(
 }
 
 void XdsHttpFilterRegistry::PopulateSymtab(upb_DefPool* symtab) const {
-  for (const auto& filter : owning_list_) {
-    filter->PopulateSymtab(symtab);
+  for (const auto& factory : owning_list_) {
+    factory->PopulateSymtab(symtab);
   }
 }
 

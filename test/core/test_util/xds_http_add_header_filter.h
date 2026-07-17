@@ -117,7 +117,7 @@ class AddHeaderFilter final : public ImplementChannelFilter<AddHeaderFilter> {
 };
 
 // xDS HTTP filter factory for AddHeaderFilter.
-class XdsHttpAddHeaderFilterFactory final : public XdsHttpFilterImpl {
+class XdsHttpAddHeaderFilterFactory final : public XdsHttpFilterFactory {
  public:
   static constexpr absl::string_view kFilterName =
       "io.grpc.test.AddHeaderFilter";

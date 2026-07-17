@@ -163,14 +163,14 @@ class XdsHttpFilterTest : public ::testing::Test {
     return bootstrap.http_filter_registry();
   }
 
-  static const XdsHttpFilterImpl* GetFilter(
+  static const XdsHttpFilterFactory* GetFactory(
       const XdsHttpFilterRegistry& registry, absl::string_view type) {
     return registry.GetFilterForTopLevelType(
         absl::StripPrefix(type, "type.googleapis.com/"));
   }
 
-  const XdsHttpFilterImpl* GetFilter(absl::string_view type) {
-    return GetFilter(registry(), type);
+  const XdsHttpFilterFactory* GetFactory(absl::string_view type) {
+    return GetFactory(registry(), type);
   }
 
   GrpcXdsServer xds_server_;
@@ -194,13 +194,13 @@ TEST_F(XdsHttpFilterRegistryTest, Basic) {
   XdsHttpFilterRegistry registry;
   // Returns null when a filter has not yet been registered.
   XdsExtension extension = MakeXdsExtension(Router());
-  EXPECT_EQ(GetFilter(registry, extension.type), nullptr);
+  EXPECT_EQ(GetFactory(registry, extension.type), nullptr);
   // Now register the filter.
-  auto filter = std::make_unique<XdsHttpRouterFilter>();
-  auto* filter_ptr = filter.get();
-  registry.RegisterFilter(std::move(filter));
+  auto factory = std::make_unique<XdsHttpRouterFilterFactory>();
+  auto* factory_ptr = factory.get();
+  registry.RegisterFilter(std::move(factory));
   // And check that it is now present.
-  EXPECT_EQ(GetFilter(registry, extension.type), filter_ptr);
+  EXPECT_EQ(GetFactory(registry, extension.type), factory_ptr);
 }
 
 using XdsHttpFilterRegistryDeathTest = XdsHttpFilterTest;
@@ -208,10 +208,11 @@ using XdsHttpFilterRegistryDeathTest = XdsHttpFilterTest;
 TEST_F(XdsHttpFilterRegistryDeathTest, DuplicateRegistryFails) {
   GTEST_FLAG_SET(death_test_style, "threadsafe");
   XdsHttpFilterRegistry registry;
-  registry.RegisterFilter(std::make_unique<XdsHttpRouterFilter>());
+  registry.RegisterFilter(std::make_unique<XdsHttpRouterFilterFactory>());
   ASSERT_DEATH(
       // The router filter is already in the registry.
-      registry.RegisterFilter(std::make_unique<XdsHttpRouterFilter>()), "");
+      registry.RegisterFilter(std::make_unique<XdsHttpRouterFilterFactory>()),
+      "");
 }
 
 //
@@ -222,27 +223,27 @@ class XdsRouterFilterTest : public XdsHttpFilterTest {
  protected:
   XdsRouterFilterTest() {
     XdsExtension extension = MakeXdsExtension(Router());
-    filter_ = GetFilter(extension.type);
-    GRPC_CHECK_NE(filter_, nullptr);
+    factory_ = GetFactory(extension.type);
+    GRPC_CHECK_NE(factory_, nullptr);
   }
 
-  const XdsHttpFilterImpl* filter_;
+  const XdsHttpFilterFactory* factory_;
 };
 
 TEST_F(XdsRouterFilterTest, Accessors) {
-  EXPECT_EQ(filter_->ConfigProtoName(),
+  EXPECT_EQ(factory_->ConfigProtoName(),
             "envoy.extensions.filters.http.router.v3.Router");
-  EXPECT_EQ(filter_->OverrideConfigProtoName(), "");
-  EXPECT_EQ(filter_->channel_filter(), nullptr);
-  EXPECT_TRUE(filter_->IsSupportedOnClients());
-  EXPECT_TRUE(filter_->IsSupportedOnServers());
-  EXPECT_TRUE(filter_->IsTerminalFilter());
+  EXPECT_EQ(factory_->OverrideConfigProtoName(), "");
+  EXPECT_EQ(factory_->channel_filter(), nullptr);
+  EXPECT_TRUE(factory_->IsSupportedOnClients());
+  EXPECT_TRUE(factory_->IsSupportedOnServers());
+  EXPECT_TRUE(factory_->IsTerminalFilter());
 }
 
 TEST_F(XdsRouterFilterTest, GenerateFilterConfig) {
   XdsExtension extension = MakeXdsExtension(Router());
   auto config =
-      filter_->GenerateFilterConfig("", decode_context_, extension, &errors_);
+      factory_->GenerateFilterConfig("", decode_context_, extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
@@ -253,7 +254,7 @@ TEST_F(XdsRouterFilterTest, GenerateFilterConfigTypedStruct) {
   XdsExtension extension = MakeXdsExtension(Router());
   extension.value = Json();
   auto config =
-      filter_->GenerateFilterConfig("", decode_context_, extension, &errors_);
+      factory_->GenerateFilterConfig("", decode_context_, extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -270,7 +271,7 @@ TEST_F(XdsRouterFilterTest, GenerateFilterConfigUnparsable) {
   std::string serialized_resource("\0", 1);
   extension.value = absl::string_view(serialized_resource);
   auto config =
-      filter_->GenerateFilterConfig("", decode_context_, extension, &errors_);
+      factory_->GenerateFilterConfig("", decode_context_, extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -284,8 +285,8 @@ TEST_F(XdsRouterFilterTest, GenerateFilterConfigUnparsable) {
 
 TEST_F(XdsRouterFilterTest, GenerateFilterConfigOverride) {
   XdsExtension extension = MakeXdsExtension(Router());
-  auto config = filter_->GenerateFilterConfigOverride("", decode_context_,
-                                                      extension, &errors_);
+  auto config = factory_->GenerateFilterConfigOverride("", decode_context_,
+                                                       extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -300,7 +301,7 @@ TEST_F(XdsRouterFilterTest, GenerateFilterConfigOverride) {
 TEST_F(XdsRouterFilterTest, ParseTopLevelConfig) {
   XdsExtension extension = MakeXdsExtension(Router());
   auto config =
-      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   EXPECT_EQ(config, nullptr);
@@ -310,7 +311,7 @@ TEST_F(XdsRouterFilterTest, ParseTopLevelConfigTypedStruct) {
   XdsExtension extension = MakeXdsExtension(Router());
   extension.value = Json();
   auto config =
-      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -327,7 +328,7 @@ TEST_F(XdsRouterFilterTest, ParseTopLevelConfigUnparsable) {
   std::string serialized_resource("\0", 1);
   extension.value = absl::string_view(serialized_resource);
   auto config =
-      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -342,7 +343,7 @@ TEST_F(XdsRouterFilterTest, ParseTopLevelConfigUnparsable) {
 TEST_F(XdsRouterFilterTest, ParseOverrideConfig) {
   XdsExtension extension = MakeXdsExtension(Router());
   auto config =
-      filter_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+      factory_->ParseOverrideConfig("", decode_context_, extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -362,22 +363,22 @@ class XdsFaultInjectionFilterTest : public XdsHttpFilterTest {
  protected:
   XdsFaultInjectionFilterTest() {
     XdsExtension extension = MakeXdsExtension(HTTPFault());
-    filter_ = GetFilter(extension.type);
-    GRPC_CHECK_NE(filter_, nullptr);
+    factory_ = GetFactory(extension.type);
+    GRPC_CHECK_NE(factory_, nullptr);
   }
 
-  const XdsHttpFilterImpl* filter_;
+  const XdsHttpFilterFactory* factory_;
 };
 
 TEST_F(XdsFaultInjectionFilterTest, Accessors) {
-  EXPECT_EQ(filter_->ConfigProtoName(),
+  EXPECT_EQ(factory_->ConfigProtoName(),
             "envoy.extensions.filters.http.fault.v3.HTTPFault");
-  EXPECT_EQ(filter_->OverrideConfigProtoName(),
+  EXPECT_EQ(factory_->OverrideConfigProtoName(),
             "envoy.extensions.filters.http.fault.v3.HTTPFault");
-  EXPECT_EQ(filter_->channel_filter(), &FaultInjectionFilter::kFilterVtable);
-  EXPECT_TRUE(filter_->IsSupportedOnClients());
-  EXPECT_FALSE(filter_->IsSupportedOnServers());
-  EXPECT_FALSE(filter_->IsTerminalFilter());
+  EXPECT_EQ(factory_->channel_filter(), &FaultInjectionFilter::kFilterVtable);
+  EXPECT_TRUE(factory_->IsSupportedOnClients());
+  EXPECT_FALSE(factory_->IsSupportedOnServers());
+  EXPECT_FALSE(factory_->IsTerminalFilter());
 }
 
 // The fault injection filter accepts the same config proto as both the
@@ -389,11 +390,11 @@ class XdsFaultInjectionFilterConfigTest
  protected:
   RefCountedPtr<const FilterConfig> ParseConfig(XdsExtension extension) {
     if (GetParam()) {
-      return filter_->ParseOverrideConfig("", decode_context_, extension,
-                                          &errors_);
+      return factory_->ParseOverrideConfig("", decode_context_, extension,
+                                           &errors_);
     }
-    return filter_->ParseTopLevelConfig("", decode_context_, extension,
-                                        &errors_);
+    return factory_->ParseTopLevelConfig("", decode_context_, extension,
+                                         &errors_);
   }
 };
 
@@ -543,26 +544,26 @@ class XdsRbacFilterTest : public XdsHttpFilterTest {
  protected:
   XdsRbacFilterTest() {
     XdsExtension extension = MakeXdsExtension(RBAC());
-    filter_ = GetFilter(extension.type);
-    GRPC_CHECK_NE(filter_, nullptr);
+    factory_ = GetFactory(extension.type);
+    GRPC_CHECK_NE(factory_, nullptr);
   }
 
-  const XdsHttpFilterImpl* filter_;
+  const XdsHttpFilterFactory* factory_;
 };
 
 TEST_F(XdsRbacFilterTest, Accessors) {
-  EXPECT_EQ(filter_->ConfigProtoName(),
+  EXPECT_EQ(factory_->ConfigProtoName(),
             "envoy.extensions.filters.http.rbac.v3.RBAC");
-  EXPECT_EQ(filter_->OverrideConfigProtoName(),
+  EXPECT_EQ(factory_->OverrideConfigProtoName(),
             "envoy.extensions.filters.http.rbac.v3.RBACPerRoute");
-  EXPECT_EQ(filter_->channel_filter(), &RbacFilter::kFilterVtable);
-  EXPECT_FALSE(filter_->IsSupportedOnClients());
-  EXPECT_TRUE(filter_->IsSupportedOnServers());
-  EXPECT_FALSE(filter_->IsTerminalFilter());
+  EXPECT_EQ(factory_->channel_filter(), &RbacFilter::kFilterVtable);
+  EXPECT_FALSE(factory_->IsSupportedOnClients());
+  EXPECT_TRUE(factory_->IsSupportedOnServers());
+  EXPECT_FALSE(factory_->IsTerminalFilter());
 }
 
 TEST_F(XdsRbacFilterTest, ModifyChannelArgs) {
-  ChannelArgs args = filter_->ModifyChannelArgs(ChannelArgs());
+  ChannelArgs args = factory_->ModifyChannelArgs(ChannelArgs());
   auto value = args.GetInt(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG);
   ASSERT_TRUE(value.has_value());
   EXPECT_EQ(*value, 1);
@@ -571,18 +572,46 @@ TEST_F(XdsRbacFilterTest, ModifyChannelArgs) {
 TEST_F(XdsRbacFilterTest, GenerateFilterConfig) {
   XdsExtension extension = MakeXdsExtension(RBAC());
   auto config =
-      filter_->GenerateFilterConfig("", decode_context_, extension, &errors_);
+      factory_->GenerateFilterConfig("", decode_context_, extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
   EXPECT_EQ(*config, Json::FromObject({})) << JsonDump(*config);
 }
 
+TEST_F(XdsRbacFilterTest, ParseTopLevelConfig) {
+  XdsExtension extension = MakeXdsExtension(RBAC());
+  auto config =
+      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->ToString(),
+            "Rbac{name=, action=Deny, audit_condition=None, policies={}, "
+            "audit_loggers={}}");
+}
+
 TEST_F(XdsRbacFilterTest, GenerateFilterConfigTypedStruct) {
   XdsExtension extension = MakeXdsExtension(RBAC());
   extension.value = Json();
   auto config =
-      filter_->GenerateFilterConfig("", decode_context_, extension, &errors_);
+      factory_->GenerateFilterConfig("", decode_context_, extension, &errors_);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(
+      status.message(),
+      "errors validating filter config: ["
+      "field:http_filter.value[envoy.extensions.filters.http.rbac.v3.RBAC] "
+      "error:could not parse HTTP RBAC filter config]")
+      << status;
+}
+
+TEST_F(XdsRbacFilterTest, ParseTopLevelConfigTypedStruct) {
+  XdsExtension extension = MakeXdsExtension(RBAC());
+  extension.value = Json();
+  auto config =
+      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -599,7 +628,24 @@ TEST_F(XdsRbacFilterTest, GenerateFilterConfigUnparsable) {
   std::string serialized_resource("\0", 1);
   extension.value = absl::string_view(serialized_resource);
   auto config =
-      filter_->GenerateFilterConfig("", decode_context_, extension, &errors_);
+      factory_->GenerateFilterConfig("", decode_context_, extension, &errors_);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(
+      status.message(),
+      "errors validating filter config: ["
+      "field:http_filter.value[envoy.extensions.filters.http.rbac.v3.RBAC] "
+      "error:could not parse HTTP RBAC filter config]")
+      << status;
+}
+
+TEST_F(XdsRbacFilterTest, ParseTopLevelConfigUnparsable) {
+  XdsExtension extension = MakeXdsExtension(RBAC());
+  std::string serialized_resource("\0", 1);
+  extension.value = absl::string_view(serialized_resource);
+  auto config =
+      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -613,19 +659,46 @@ TEST_F(XdsRbacFilterTest, GenerateFilterConfigUnparsable) {
 
 TEST_F(XdsRbacFilterTest, GenerateFilterConfigOverride) {
   XdsExtension extension = MakeXdsExtension(RBACPerRoute());
-  auto config = filter_->GenerateFilterConfigOverride("", decode_context_,
-                                                      extension, &errors_);
+  auto config = factory_->GenerateFilterConfigOverride("", decode_context_,
+                                                       extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
   EXPECT_EQ(*config, Json::FromObject({})) << JsonDump(*config);
 }
 
+TEST_F(XdsRbacFilterTest, ParseOverrideConfig) {
+  XdsExtension extension = MakeXdsExtension(RBACPerRoute());
+  auto config =
+      factory_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->ToString(),
+            "Rbac{name=, action=Deny, audit_condition=None, policies={}, "
+            "audit_loggers={}}");
+}
+
 TEST_F(XdsRbacFilterTest, GenerateFilterConfigOverrideTypedStruct) {
   XdsExtension extension = MakeXdsExtension(RBACPerRoute());
   extension.value = Json();
-  auto config = filter_->GenerateFilterConfigOverride("", decode_context_,
-                                                      extension, &errors_);
+  auto config = factory_->GenerateFilterConfigOverride("", decode_context_,
+                                                       extension, &errors_);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value[envoy.extensions.filters.http.rbac.v3"
+            ".RBACPerRoute] error:could not parse RBACPerRoute]")
+      << status;
+}
+
+TEST_F(XdsRbacFilterTest, ParseOverrideConfigTypedStruct) {
+  XdsExtension extension = MakeXdsExtension(RBACPerRoute());
+  extension.value = Json();
+  auto config =
+      factory_->ParseOverrideConfig("", decode_context_, extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -640,8 +713,24 @@ TEST_F(XdsRbacFilterTest, GenerateFilterConfigOverrideUnparsable) {
   XdsExtension extension = MakeXdsExtension(RBACPerRoute());
   std::string serialized_resource("\0", 1);
   extension.value = absl::string_view(serialized_resource);
-  auto config = filter_->GenerateFilterConfigOverride("", decode_context_,
-                                                      extension, &errors_);
+  auto config = factory_->GenerateFilterConfigOverride("", decode_context_,
+                                                       extension, &errors_);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value[envoy.extensions.filters.http.rbac.v3"
+            ".RBACPerRoute] error:could not parse RBACPerRoute]")
+      << status;
+}
+
+TEST_F(XdsRbacFilterTest, ParseOverrideConfigUnparsable) {
+  XdsExtension extension = MakeXdsExtension(RBACPerRoute());
+  std::string serialized_resource("\0", 1);
+  extension.value = absl::string_view(serialized_resource);
+  auto config =
+      factory_->ParseOverrideConfig("", decode_context_, extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -654,7 +743,7 @@ TEST_F(XdsRbacFilterTest, GenerateFilterConfigOverrideUnparsable) {
 
 TEST_F(XdsRbacFilterTest, GenerateMethodConfig) {
   Json hcm_config = Json::FromObject({{"name", Json::FromString("foo")}});
-  auto config = filter_->GenerateMethodConfig(hcm_config, nullptr);
+  auto config = factory_->GenerateMethodConfig(hcm_config, nullptr);
   ASSERT_TRUE(config.ok()) << config.status();
   EXPECT_EQ(config->service_config_field_name, "rbacPolicy");
   EXPECT_EQ(config->element,
@@ -663,7 +752,7 @@ TEST_F(XdsRbacFilterTest, GenerateMethodConfig) {
 
 TEST_F(XdsRbacFilterTest, GenerateServiceConfig) {
   Json config = Json::FromObject({{"foo", Json::FromString("bar")}});
-  auto service_config = filter_->GenerateServiceConfig(config);
+  auto service_config = factory_->GenerateServiceConfig(config);
   ASSERT_TRUE(service_config.ok()) << service_config.status();
   EXPECT_EQ(service_config->service_config_field_name, "");
   EXPECT_EQ(service_config->element, "");
@@ -680,18 +769,31 @@ class XdsRbacFilterConfigTest : public XdsRbacFilterTest,
       RBACPerRoute rbac_per_route;
       *rbac_per_route.mutable_rbac() = rbac;
       XdsExtension extension = MakeXdsExtension(rbac_per_route);
-      return filter_->GenerateFilterConfigOverride("", decode_context_,
-                                                   extension, &errors_);
+      return factory_->GenerateFilterConfigOverride("", decode_context_,
+                                                    extension, &errors_);
     }
     XdsExtension extension = MakeXdsExtension(rbac);
-    return filter_->GenerateFilterConfig("", decode_context_, extension,
+    return factory_->GenerateFilterConfig("", decode_context_, extension,
+                                          &errors_);
+  }
+
+  RefCountedPtr<const FilterConfig> ParseConfig(RBAC rbac) {
+    if (GetParam()) {
+      RBACPerRoute rbac_per_route;
+      *rbac_per_route.mutable_rbac() = rbac;
+      XdsExtension extension = MakeXdsExtension(rbac_per_route);
+      return factory_->ParseOverrideConfig("", decode_context_, extension,
+                                           &errors_);
+    }
+    XdsExtension extension = MakeXdsExtension(rbac);
+    return factory_->ParseTopLevelConfig("", decode_context_, extension,
                                          &errors_);
   }
 
   std::string FieldPrefix() {
     return absl::StrCat("http_filter.value[",
-                        (GetParam() ? filter_->OverrideConfigProtoName()
-                                    : filter_->ConfigProtoName()),
+                        (GetParam() ? factory_->OverrideConfigProtoName()
+                                    : factory_->ConfigProtoName()),
                         "]", (GetParam() ? ".rbac" : ""));
   }
 };
@@ -705,6 +807,16 @@ TEST_P(XdsRbacFilterConfigTest, EmptyConfig) {
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
   EXPECT_EQ(*config, Json::FromObject({})) << JsonDump(*config);
+}
+
+TEST_P(XdsRbacFilterConfigTest, ParseEmptyConfig) {
+  auto config = ParseConfig(RBAC());
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->ToString(),
+            "Rbac{name=, action=Deny, audit_condition=None, policies={}, "
+            "audit_loggers={}}");
 }
 
 TEST_P(XdsRbacFilterConfigTest, AllPermissionTypes) {
@@ -864,6 +976,143 @@ TEST_P(XdsRbacFilterConfigTest, AllPermissionTypes) {
             "}}}}");
 }
 
+TEST_P(XdsRbacFilterConfigTest, ParseAllPermissionTypes) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto& policy = (*rules->mutable_policies())["policy_name"];
+  // any
+  policy.add_permissions()->set_any(true);
+  // header exact match with invert
+  auto* header = policy.add_permissions()->mutable_header();
+  header->set_name("header_name1");
+  header->set_exact_match("exact_match");
+  header->set_invert_match(true);
+  // header regex match
+  header = policy.add_permissions()->mutable_header();
+  header->set_name("header_name2");
+  header->mutable_safe_regex_match()->set_regex("regex_match");
+  // header range match
+  header = policy.add_permissions()->mutable_header();
+  header->set_name("header_name3");
+  auto* range = header->mutable_range_match();
+  range->set_start(1);
+  range->set_end(3);
+  // header present match
+  header = policy.add_permissions()->mutable_header();
+  header->set_name("header_name4");
+  header->set_present_match(true);
+  // header prefix match
+  header = policy.add_permissions()->mutable_header();
+  header->set_name("header_name5");
+  header->set_prefix_match("prefix_match");
+  // header suffix match
+  header = policy.add_permissions()->mutable_header();
+  header->set_name("header_name6");
+  header->set_suffix_match("suffix_match");
+  // header contains match
+  header = policy.add_permissions()->mutable_header();
+  header->set_name("header_name7");
+  header->set_contains_match("contains_match");
+  // path exact match with ignore_case
+  auto* string_matcher =
+      policy.add_permissions()->mutable_url_path()->mutable_path();
+  string_matcher->set_exact("exact_match");
+  string_matcher->set_ignore_case(true);
+  // path prefix match
+  string_matcher = policy.add_permissions()->mutable_url_path()->mutable_path();
+  string_matcher->set_prefix("prefix_match");
+  // path suffix match
+  string_matcher = policy.add_permissions()->mutable_url_path()->mutable_path();
+  string_matcher->set_suffix("suffix_match");
+  // path contains match
+  string_matcher = policy.add_permissions()->mutable_url_path()->mutable_path();
+  string_matcher->set_contains("contains_match");
+  // path regex match
+  string_matcher = policy.add_permissions()->mutable_url_path()->mutable_path();
+  string_matcher->mutable_safe_regex()->set_regex("regex_match");
+  // destination IP match with prefix len
+  auto* cidr_range = policy.add_permissions()->mutable_destination_ip();
+  cidr_range->set_address_prefix("127.0.0");
+  cidr_range->mutable_prefix_len()->set_value(24);
+  // destination IP match
+  cidr_range = policy.add_permissions()->mutable_destination_ip();
+  cidr_range->set_address_prefix("10.0.0");
+  // destination port match
+  policy.add_permissions()->set_destination_port(1234);
+  // metadata match
+  policy.add_permissions()->mutable_metadata();
+  // metadata match with invert
+  policy.add_permissions()->mutable_metadata()->set_invert(true);
+  // requested server name
+  string_matcher = policy.add_permissions()->mutable_requested_server_name();
+  string_matcher->set_exact("exact_match");
+  // not
+  policy.add_permissions()->mutable_not_rule()->set_any(true);
+  // and
+  policy.add_permissions()->mutable_and_rules()->add_rules()->set_any(true);
+  // or
+  policy.add_permissions()->mutable_or_rules()->add_rules()->set_any(true);
+  auto config = ParseConfig(rbac);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->ToString(),
+            "Rbac{name=, action=Allow, audit_condition=None, policies={"
+            "policy_name={permissions={or=["
+            // any
+            "{any}, "
+            // header exact match with invert
+            "{header=HeaderMatcher{header_name1 not "
+            "StringMatcher{exact=exact_match}}}, "
+            // header regex match
+            "{header=HeaderMatcher{header_name2 "
+            "StringMatcher{safe_regex=regex_match}}}, "
+            // header range match
+            "{header=HeaderMatcher{header_name3 range=[1, 3]}}, "
+            // header present match
+            "{header=HeaderMatcher{header_name4 present=true}}, "
+            // header prefix match
+            "{header=HeaderMatcher{header_name5 "
+            "StringMatcher{prefix=prefix_match}}}, "
+            // header suffix match
+            "{header=HeaderMatcher{header_name6 "
+            "StringMatcher{suffix=suffix_match}}}, "
+            // header contains match
+            "{header=HeaderMatcher{header_name7 "
+            "StringMatcher{contains=contains_match}}}, "
+            // path exact match with ignore_case
+            "{path=StringMatcher{exact=exact_match, case_sensitive=false}}, "
+            // path prefix match
+            "{path=StringMatcher{prefix=prefix_match}}, "
+            // path suffix match
+            "{path=StringMatcher{suffix=suffix_match}}, "
+            // path contains match
+            "{path=StringMatcher{contains=contains_match}}, "
+            // path regex match
+            "{path=StringMatcher{safe_regex=regex_match}}, "
+            // destination IP match with prefix len
+            "{dest_ip=CidrRange{address_prefix=127.0.0,prefix_len=24}}, "
+            // destination IP match
+            "{dest_ip=CidrRange{address_prefix=10.0.0,prefix_len=0}}, "
+            // destination port match
+            "{dest_port=1234}, "
+            // metadata match
+            "{metadata}, "
+            // metadata match with invert
+            "{invert metadata}, "
+            // requested server name
+            "{requested_server_name=StringMatcher{exact=exact_match}}, "
+            // not
+            "{not {any}}, "
+            // and
+            "{and=[{any}]}, "
+            // or
+            "{or=[{any}]}"
+            "]}, principals={or=[]}}}, "
+            "audit_loggers={}}");
+}
+
 TEST_P(XdsRbacFilterConfigTest, AtMaxPermissionDepth) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
@@ -927,6 +1176,65 @@ TEST_P(XdsRbacFilterConfigTest, AtMaxPermissionDepth) {
             "}}}}");
 }
 
+TEST_P(XdsRbacFilterConfigTest, ParseAtMaxPermissionDepth) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto& policy = (*rules->mutable_policies())["policy_name"];
+  // We want to make sure that all of "and", "or", and "not" track
+  // depth, so we're including them all here.  We will start out with a
+  // single "and" and a single "or" and then use "not" for the rest.
+  auto* permission = policy.add_permissions();
+  permission = permission->mutable_and_rules()->add_rules();
+  permission = permission->mutable_or_rules()->add_rules();
+  for (size_t i = 0; i < 14; ++i) {
+    permission = permission->mutable_not_rule();
+  }
+  permission->set_any(true);
+  auto config = ParseConfig(rbac);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->ToString(),
+            "Rbac{name=, action=Allow, audit_condition=None, policies={"
+            "policy_name={permissions={or=["
+            "{and=["
+            "{or=["
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{any}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "]}"
+            "]}"
+            "]}, principals={or=[]}}}, "
+            "audit_loggers={}}");
+}
+
 TEST_P(XdsRbacFilterConfigTest, ExceedsMaxPermissionDepth) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
@@ -943,6 +1251,50 @@ TEST_P(XdsRbacFilterConfigTest, ExceedsMaxPermissionDepth) {
   }
   permission->set_any(true);
   auto config = GenerateConfig(rbac);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(
+      status.message(),
+      absl::StrCat("errors validating filter config: [field:", FieldPrefix(),
+                   ".rules.policies[policy_name]"
+                   ".permissions[0].and_permission.rules[0]"
+                   ".or_permission.rules[0]"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule "
+                   "error:exceeded max recursion depth]"))
+      << status;
+}
+
+TEST_P(XdsRbacFilterConfigTest, ParseExceedsMaxPermissionDepth) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto& policy = (*rules->mutable_policies())["policy_name"];
+  // We want to make sure that all of "and", "or", and "not" track
+  // depth, so we're including them all here.  We will start out with a
+  // single "and" and a single "or" and then use "not" for the rest.
+  auto* permission = policy.add_permissions();
+  permission = permission->mutable_and_rules()->add_rules();
+  permission = permission->mutable_or_rules()->add_rules();
+  for (size_t i = 0; i < 15; ++i) {
+    permission = permission->mutable_not_rule();
+  }
+  permission->set_any(true);
+  auto config = ParseConfig(rbac);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -1056,6 +1408,85 @@ TEST_P(XdsRbacFilterConfigTest, AllPrincipalTypes) {
             "}}}}");
 }
 
+TEST_P(XdsRbacFilterConfigTest, ParseAllPrincipalTypes) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto& policy = (*rules->mutable_policies())["policy_name"];
+  // any
+  policy.add_principals()->set_any(true);
+  // authenticated principal name
+  // (not testing all possible string matchers here, since they're
+  // covered in the AllPermissionTypes test above)
+  auto* string_matcher = policy.add_principals()
+                             ->mutable_authenticated()
+                             ->mutable_principal_name();
+  string_matcher->set_exact("exact_match");
+  // source IP
+  auto* cidr_range = policy.add_principals()->mutable_source_ip();
+  cidr_range->set_address_prefix("127.0.0");
+  // direct remote IP
+  cidr_range = policy.add_principals()->mutable_direct_remote_ip();
+  cidr_range->set_address_prefix("127.0.1");
+  // remote IP
+  cidr_range = policy.add_principals()->mutable_remote_ip();
+  cidr_range->set_address_prefix("127.0.2");
+  // header match
+  // (not testing all possible header matchers here, since they're
+  // covered in the AllPermissionTypes test above)
+  auto* header = policy.add_principals()->mutable_header();
+  header->set_name("header_name1");
+  header->set_exact_match("exact_match");
+  // path match
+  // (not testing all possible string matchers here, since they're
+  // covered in the AllPermissionTypes test above)
+  string_matcher = policy.add_principals()->mutable_url_path()->mutable_path();
+  string_matcher->set_exact("exact_match");
+  // metadata match
+  // (not testing invert here, since it's covered in the AllPermissionTypes
+  // test above)
+  policy.add_principals()->mutable_metadata();
+  // not
+  policy.add_principals()->mutable_not_id()->set_any(true);
+  // and
+  policy.add_principals()->mutable_and_ids()->add_ids()->set_any(true);
+  // or
+  policy.add_principals()->mutable_or_ids()->add_ids()->set_any(true);
+  auto config = ParseConfig(rbac);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->ToString(),
+            "Rbac{name=, action=Allow, audit_condition=None, policies={"
+            "policy_name={permissions={or=[]}, principals={or=["
+            // any
+            "{any}, "
+            // authenticated principal name
+            "{principal_name=StringMatcher{exact=exact_match}}, "
+            // source IP match
+            "{source_ip=CidrRange{address_prefix=127.0.0,prefix_len=0}}, "
+            // direct remote IP
+            "{direct_remote_ip="
+            "CidrRange{address_prefix=127.0.1,prefix_len=0}}, "
+            // remote IP
+            "{remote_ip=CidrRange{address_prefix=127.0.2,prefix_len=0}}, "
+            // header exact match with invert
+            "{header=HeaderMatcher{header_name1 "
+            "StringMatcher{exact=exact_match}}}, "
+            // path exact match
+            "{path=StringMatcher{exact=exact_match}}, "
+            // metadata match
+            "{metadata}, "
+            // not
+            "{not {any}}, "
+            // and
+            "{and=[{any}]}, "
+            // or
+            "{or=[{any}]}"
+            "]}}}, "
+            "audit_loggers={}}");
+}
+
 TEST_P(XdsRbacFilterConfigTest, AtMaxPrincipalDepth) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
@@ -1119,6 +1550,65 @@ TEST_P(XdsRbacFilterConfigTest, AtMaxPrincipalDepth) {
             "}}}}");
 }
 
+TEST_P(XdsRbacFilterConfigTest, ParseAtMaxPrincipalDepth) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto& policy = (*rules->mutable_policies())["policy_name"];
+  // We want to make sure that all of "and", "or", and "not" track
+  // depth, so we're including them all here.  We will start out with a
+  // single "and" and a single "or" and then use "not" for the rest.
+  auto* principal = policy.add_principals();
+  principal = principal->mutable_and_ids()->add_ids();
+  principal = principal->mutable_or_ids()->add_ids();
+  for (size_t i = 0; i < 14; ++i) {
+    principal = principal->mutable_not_id();
+  }
+  principal->set_any(true);
+  auto config = ParseConfig(rbac);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->ToString(),
+            "Rbac{name=, action=Allow, audit_condition=None, policies={"
+            "policy_name={permissions={or=[]}, principals={or=["
+            "{and=["
+            "{or=["
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{any}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "]}"
+            "]}"
+            "]}}}, "
+            "audit_loggers={}}");
+}
+
 TEST_P(XdsRbacFilterConfigTest, ExceedsMaxPrincipalDepth) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
@@ -1135,6 +1625,50 @@ TEST_P(XdsRbacFilterConfigTest, ExceedsMaxPrincipalDepth) {
   }
   principal->set_any(true);
   auto config = GenerateConfig(rbac);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(
+      status.message(),
+      absl::StrCat("errors validating filter config: [field:", FieldPrefix(),
+                   ".rules.policies[policy_name]"
+                   ".principals[0].and_ids.ids[0]"
+                   ".or_ids.ids[0]"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id "
+                   "error:exceeded max recursion depth]"))
+      << status;
+}
+
+TEST_P(XdsRbacFilterConfigTest, ParseExceedsMaxPrincipalDepth) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto& policy = (*rules->mutable_policies())["policy_name"];
+  // We want to make sure that all of "and", "or", and "not" track
+  // depth, so we're including them all here.  We will start out with a
+  // single "and" and a single "or" and then use "not" for the rest.
+  auto* principal = policy.add_principals();
+  principal = principal->mutable_and_ids()->add_ids();
+  principal = principal->mutable_or_ids()->add_ids();
+  for (size_t i = 0; i < 15; ++i) {
+    principal = principal->mutable_not_id();
+  }
+  principal->set_any(true);
+  auto config = ParseConfig(rbac);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -1183,6 +1717,29 @@ TEST_P(XdsRbacFilterConfigTest, AuditLoggingOptionsIgnoredWithFeatureDisabled) {
   EXPECT_EQ(JsonDump(*config), "{\"rules\":{\"action\":0}}");
 }
 
+TEST_P(XdsRbacFilterConfigTest,
+       ParseAuditLoggingOptionsIgnoredWithFeatureDisabled) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto* logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(
+      envoy::config::rbac::v3::RBAC_AuditLoggingOptions_AuditCondition_ON_DENY);
+  envoy::config::rbac::v3::RBAC_AuditLoggingOptions::AuditLoggerConfig
+      logger_config;
+  auto* audit_logger = logger_config.mutable_audit_logger();
+  audit_logger->mutable_typed_config()->set_type_url(
+      "/envoy.extensions.rbac.audit_loggers.stream.v3.StdoutAuditLog");
+  *logging_options->add_logger_configs() = logger_config;
+  auto config = ParseConfig(rbac);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->ToString(),
+            "Rbac{name=, action=Allow, audit_condition=None, policies={}, "
+            "audit_loggers={}}");
+}
+
 TEST_P(XdsRbacFilterConfigTest, AuditLoggingOptions) {
   ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
   RBAC rbac;
@@ -1208,6 +1765,29 @@ TEST_P(XdsRbacFilterConfigTest, AuditLoggingOptions) {
             "}}");
 }
 
+TEST_P(XdsRbacFilterConfigTest, ParseAuditLoggingOptions) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto* logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(
+      envoy::config::rbac::v3::RBAC_AuditLoggingOptions_AuditCondition_ON_DENY);
+  envoy::config::rbac::v3::RBAC_AuditLoggingOptions::AuditLoggerConfig
+      logger_config;
+  auto* audit_logger = logger_config.mutable_audit_logger();
+  audit_logger->mutable_typed_config()->set_type_url(
+      "/envoy.extensions.rbac.audit_loggers.stream.v3.StdoutAuditLog");
+  *logging_options->add_logger_configs() = logger_config;
+  auto config = ParseConfig(rbac);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->ToString(),
+            "Rbac{name=, action=Allow, audit_condition=OnDeny, policies={}, "
+            "audit_loggers={stdout_logger={}}}");
+}
+
 TEST_P(XdsRbacFilterConfigTest, InvalidAuditCondition) {
   ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
   RBAC rbac;
@@ -1219,6 +1799,29 @@ TEST_P(XdsRbacFilterConfigTest, InvalidAuditCondition) {
           envoy::config::rbac::v3::RBAC_AuditLoggingOptions_AuditCondition>(
           100));
   auto config = GenerateConfig(rbac);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            absl::StrCat("errors validating filter config: ["
+                         "field:",
+                         FieldPrefix(),
+                         ".rules.audit_logging_options.audit_condition "
+                         "error:invalid audit condition]"))
+      << status;
+}
+
+TEST_P(XdsRbacFilterConfigTest, ParseInvalidAuditCondition) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto* logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(
+      static_cast<
+          envoy::config::rbac::v3::RBAC_AuditLoggingOptions_AuditCondition>(
+          100));
+  auto config = ParseConfig(rbac);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -1256,6 +1859,54 @@ TEST_P(XdsRbacFilterConfigTest, InvalidAuditLoggerConfig) {
       << status;
 }
 
+TEST_P(XdsRbacFilterConfigTest, ParseInvalidAuditLoggerConfig) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto* logging_options = rules->mutable_audit_logging_options();
+  envoy::config::rbac::v3::RBAC_AuditLoggingOptions::AuditLoggerConfig
+      logger_config;
+  auto* audit_logger = logger_config.mutable_audit_logger();
+  audit_logger->mutable_typed_config()->set_type_url("/foo_logger");
+  *logging_options->add_logger_configs() = logger_config;
+  auto config = ParseConfig(rbac);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            absl::StrCat("errors validating filter config: ["
+                         "field:",
+                         FieldPrefix(),
+                         ".rules.audit_logging_options.logger_configs[0].audit_"
+                         "logger.typed_config.value[foo_logger] "
+                         "error:unsupported audit logger type]"))
+      << status;
+}
+
+TEST_P(XdsRbacFilterConfigTest, ParseInvalidButOptionalAuditLoggerConfig) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto* logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(
+      envoy::config::rbac::v3::RBAC_AuditLoggingOptions_AuditCondition_ON_DENY);
+  envoy::config::rbac::v3::RBAC_AuditLoggingOptions::AuditLoggerConfig
+      logger_config;
+  logger_config.set_is_optional(true);
+  auto* audit_logger = logger_config.mutable_audit_logger();
+  audit_logger->mutable_typed_config()->set_type_url("/foo_logger");
+  *logging_options->add_logger_configs() = logger_config;
+  auto config = ParseConfig(rbac);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->ToString(),
+            "Rbac{name=, action=Allow, audit_condition=OnDeny, policies={}, "
+            "audit_loggers={}}");
+}
+
 TEST_P(XdsRbacFilterConfigTest, InvalidFieldsInPolicy) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
@@ -1264,6 +1915,30 @@ TEST_P(XdsRbacFilterConfigTest, InvalidFieldsInPolicy) {
   policy.mutable_condition();
   policy.mutable_checked_condition();
   auto config = GenerateConfig(rbac);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            absl::StrCat("errors validating filter config: ["
+                         "field:",
+                         FieldPrefix(),
+                         ".rules.policies[policy_name].checked_condition "
+                         "error:checked condition not supported; "
+                         "field:",
+                         FieldPrefix(),
+                         ".rules.policies[policy_name].condition "
+                         "error:condition not supported]"))
+      << status;
+}
+
+TEST_P(XdsRbacFilterConfigTest, ParseInvalidFieldsInPolicy) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto& policy = (*rules->mutable_policies())["policy_name"];
+  policy.mutable_condition();
+  policy.mutable_checked_condition();
+  auto config = ParseConfig(rbac);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -1315,6 +1990,41 @@ TEST_P(XdsRbacFilterConfigTest, InvalidHeaderMatchers) {
       << status;
 }
 
+TEST_P(XdsRbacFilterConfigTest, ParseInvalidHeaderMatchers) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto& policy = (*rules->mutable_policies())["policy_name"];
+  auto* header = policy.add_permissions()->mutable_header();
+  header->set_name(":scheme");
+  header->set_exact_match("exact_match");
+  header = policy.add_principals()->mutable_header();
+  header->set_name("grpc-foo");
+  header->set_exact_match("exact_match");
+  header = policy.add_principals()->mutable_header();
+  header->set_name("header_name");
+  auto config = ParseConfig(rbac);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(
+      status.message(),
+      absl::StrCat("errors validating filter config: ["
+                   "field:",
+                   FieldPrefix(),
+                   ".rules.policies[policy_name].permissions[0].header.name "
+                   "error:':scheme' not allowed in header; "
+                   "field:",
+                   FieldPrefix(),
+                   ".rules.policies[policy_name].principals[0].header.name "
+                   "error:'grpc-' prefixes not allowed in header; "
+                   "field:",
+                   FieldPrefix(),
+                   ".rules.policies[policy_name].principals[1].header "
+                   "error:invalid header matcher]"))
+      << status;
+}
+
 TEST_P(XdsRbacFilterConfigTest, InvalidStringMatchers) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
@@ -1333,6 +2043,31 @@ TEST_P(XdsRbacFilterConfigTest, InvalidStringMatchers) {
                    FieldPrefix(),
                    ".rules.policies[policy_name].permissions[0].url_path.path "
                    "error:invalid match pattern; "
+                   "field:",
+                   FieldPrefix(),
+                   ".rules.policies[policy_name].principals[0].url_path.path "
+                   "error:field not present]"))
+      << status;
+}
+
+TEST_P(XdsRbacFilterConfigTest, ParseInvalidStringMatchers) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto& policy = (*rules->mutable_policies())["policy_name"];
+  policy.add_permissions()->mutable_url_path()->mutable_path();
+  policy.add_principals()->mutable_url_path();
+  auto config = ParseConfig(rbac);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(
+      status.message(),
+      absl::StrCat("errors validating filter config: ["
+                   "field:",
+                   FieldPrefix(),
+                   ".rules.policies[policy_name].permissions[0].url_path.path "
+                   "error:invalid string matcher; "
                    "field:",
                    FieldPrefix(),
                    ".rules.policies[policy_name].principals[0].url_path.path "
@@ -1364,6 +2099,30 @@ TEST_P(XdsRbacFilterConfigTest, InvalidPermissionAndPrincipal) {
       << status;
 }
 
+TEST_P(XdsRbacFilterConfigTest, ParseInvalidPermissionAndPrincipal) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto& policy = (*rules->mutable_policies())["policy_name"];
+  policy.add_permissions();
+  policy.add_principals();
+  auto config = ParseConfig(rbac);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            absl::StrCat("errors validating filter config: ["
+                         "field:",
+                         FieldPrefix(),
+                         ".rules.policies[policy_name].permissions[0] "
+                         "error:invalid rule; "
+                         "field:",
+                         FieldPrefix(),
+                         ".rules.policies[policy_name].principals[0] "
+                         "error:invalid rule]"))
+      << status;
+}
+
 //
 // StatefulSession filter tests
 //
@@ -1372,24 +2131,24 @@ class XdsStatefulSessionFilterTest : public XdsHttpFilterTest {
  protected:
   void SetUp() override {
     XdsExtension extension = MakeXdsExtension(StatefulSession());
-    filter_ = GetFilter(extension.type);
-    GRPC_CHECK_NE(filter_, nullptr);
+    factory_ = GetFactory(extension.type);
+    GRPC_CHECK_NE(factory_, nullptr);
   }
 
-  const XdsHttpFilterImpl* filter_;
+  const XdsHttpFilterFactory* factory_;
 };
 
 TEST_F(XdsStatefulSessionFilterTest, Accessors) {
   EXPECT_EQ(
-      filter_->ConfigProtoName(),
+      factory_->ConfigProtoName(),
       "envoy.extensions.filters.http.stateful_session.v3.StatefulSession");
-  EXPECT_EQ(filter_->OverrideConfigProtoName(),
+  EXPECT_EQ(factory_->OverrideConfigProtoName(),
             "envoy.extensions.filters.http.stateful_session.v3"
             ".StatefulSessionPerRoute");
-  EXPECT_EQ(filter_->channel_filter(), &StatefulSessionFilter::kFilterVtable);
-  EXPECT_TRUE(filter_->IsSupportedOnClients());
-  EXPECT_FALSE(filter_->IsSupportedOnServers());
-  EXPECT_FALSE(filter_->IsTerminalFilter());
+  EXPECT_EQ(factory_->channel_filter(), &StatefulSessionFilter::kFilterVtable);
+  EXPECT_TRUE(factory_->IsSupportedOnClients());
+  EXPECT_FALSE(factory_->IsSupportedOnServers());
+  EXPECT_FALSE(factory_->IsTerminalFilter());
 }
 
 TEST_F(XdsStatefulSessionFilterTest, ParseOverrideConfigDisabled) {
@@ -1397,7 +2156,7 @@ TEST_F(XdsStatefulSessionFilterTest, ParseOverrideConfigDisabled) {
   stateful_session_per_route.set_disabled(true);
   XdsExtension extension = MakeXdsExtension(stateful_session_per_route);
   auto config =
-      filter_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+      factory_->ParseOverrideConfig("", decode_context_, extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
@@ -1409,7 +2168,7 @@ TEST_F(XdsStatefulSessionFilterTest, ParseTopLevelConfigTypedStruct) {
   XdsExtension extension = MakeXdsExtension(StatefulSession());
   extension.value = Json();
   auto config =
-      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -1427,7 +2186,7 @@ TEST_F(XdsStatefulSessionFilterTest, ParseTopLevelConfigUnparsable) {
   std::string serialized_resource("\0", 1);
   extension.value = absl::string_view(serialized_resource);
   auto config =
-      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -1444,7 +2203,7 @@ TEST_F(XdsStatefulSessionFilterTest, ParseOverrideConfigTypedStruct) {
   XdsExtension extension = MakeXdsExtension(StatefulSessionPerRoute());
   extension.value = Json();
   auto config =
-      filter_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+      factory_->ParseOverrideConfig("", decode_context_, extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -1462,7 +2221,7 @@ TEST_F(XdsStatefulSessionFilterTest, ParseOverrideConfigUnparsable) {
   std::string serialized_resource("\0", 1);
   extension.value = absl::string_view(serialized_resource);
   auto config =
-      filter_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+      factory_->ParseOverrideConfig("", decode_context_, extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -1487,18 +2246,18 @@ class XdsStatefulSessionFilterConfigTest
       StatefulSessionPerRoute stateful_session_per_route;
       *stateful_session_per_route.mutable_stateful_session() = stateful_session;
       XdsExtension extension = MakeXdsExtension(stateful_session_per_route);
-      return filter_->ParseOverrideConfig("", decode_context_, extension,
-                                          &errors_);
+      return factory_->ParseOverrideConfig("", decode_context_, extension,
+                                           &errors_);
     }
     XdsExtension extension = MakeXdsExtension(stateful_session);
-    return filter_->ParseTopLevelConfig("", decode_context_, extension,
-                                        &errors_);
+    return factory_->ParseTopLevelConfig("", decode_context_, extension,
+                                         &errors_);
   }
 
   std::string FieldPrefix() {
     return absl::StrCat("http_filter.value[",
-                        (GetParam() ? filter_->OverrideConfigProtoName()
-                                    : filter_->ConfigProtoName()),
+                        (GetParam() ? factory_->OverrideConfigProtoName()
+                                    : factory_->ConfigProtoName()),
                         "]", (GetParam() ? ".stateful_session" : ""));
   }
 };
@@ -1677,27 +2436,28 @@ class XdsGcpAuthnFilterTest : public XdsHttpFilterTest {
  protected:
   XdsGcpAuthnFilterTest() {
     XdsExtension extension = MakeXdsExtension(GcpAuthnFilterConfig());
-    filter_ = GetFilter(extension.type);
-    GRPC_CHECK_NE(filter_, nullptr) << extension.type;
+    factory_ = GetFactory(extension.type);
+    GRPC_CHECK_NE(factory_, nullptr) << extension.type;
   }
 
-  const XdsHttpFilterImpl* filter_;
+  const XdsHttpFilterFactory* factory_;
 };
 
 TEST_F(XdsGcpAuthnFilterTest, Accessors) {
-  EXPECT_EQ(filter_->ConfigProtoName(),
+  EXPECT_EQ(factory_->ConfigProtoName(),
             "envoy.extensions.filters.http.gcp_authn.v3.GcpAuthnFilterConfig");
-  EXPECT_EQ(filter_->OverrideConfigProtoName(), "");
-  EXPECT_EQ(filter_->channel_filter(), &GcpAuthenticationFilter::kFilterVtable);
-  EXPECT_TRUE(filter_->IsSupportedOnClients());
-  EXPECT_FALSE(filter_->IsSupportedOnServers());
-  EXPECT_FALSE(filter_->IsTerminalFilter());
+  EXPECT_EQ(factory_->OverrideConfigProtoName(), "");
+  EXPECT_EQ(factory_->channel_filter(),
+            &GcpAuthenticationFilter::kFilterVtable);
+  EXPECT_TRUE(factory_->IsSupportedOnClients());
+  EXPECT_FALSE(factory_->IsSupportedOnServers());
+  EXPECT_FALSE(factory_->IsTerminalFilter());
 }
 
 TEST_F(XdsGcpAuthnFilterTest, ParseTopLevelConfigEmpty) {
   XdsExtension extension = MakeXdsExtension(GcpAuthnFilterConfig());
-  auto config = filter_->ParseTopLevelConfig("enterprise", decode_context_,
-                                             extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("enterprise", decode_context_,
+                                              extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
@@ -1710,8 +2470,8 @@ TEST_F(XdsGcpAuthnFilterTest, ParseTopLevelConfigCacheSizeDefault) {
   GcpAuthnFilterConfig proto;
   proto.mutable_cache_config();
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config = filter_->ParseTopLevelConfig("yorktown", decode_context_,
-                                             extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("yorktown", decode_context_,
+                                              extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
@@ -1724,8 +2484,8 @@ TEST_F(XdsGcpAuthnFilterTest, ParseTopLevelConfigCacheSize) {
   GcpAuthnFilterConfig proto;
   proto.mutable_cache_config()->mutable_cache_size()->set_value(6);
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config = filter_->ParseTopLevelConfig("hornet", decode_context_,
-                                             extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("hornet", decode_context_,
+                                              extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
@@ -1738,8 +2498,8 @@ TEST_F(XdsGcpAuthnFilterTest, ParseTopLevelConfigCacheSizeZero) {
   GcpAuthnFilterConfig proto;
   proto.mutable_cache_config()->mutable_cache_size()->set_value(0);
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config = filter_->ParseTopLevelConfig("ranger", decode_context_,
-                                             extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("ranger", decode_context_,
+                                              extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -1755,8 +2515,8 @@ TEST_F(XdsGcpAuthnFilterTest, ParseTopLevelConfigCacheSizeZero) {
 TEST_F(XdsGcpAuthnFilterTest, ParseTopLevelConfigTypedStruct) {
   XdsExtension extension = MakeXdsExtension(GcpAuthnFilterConfig());
   extension.value = Json();
-  auto config = filter_->ParseTopLevelConfig("lexington", decode_context_,
-                                             extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("lexington", decode_context_,
+                                              extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -1772,8 +2532,8 @@ TEST_F(XdsGcpAuthnFilterTest, ParseTopLevelConfigUnparseable) {
   XdsExtension extension = MakeXdsExtension(GcpAuthnFilterConfig());
   std::string serialized_resource("\0", 1);
   extension.value = absl::string_view(serialized_resource);
-  auto config = filter_->ParseTopLevelConfig("saratoga", decode_context_,
-                                             extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("saratoga", decode_context_,
+                                              extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -1787,8 +2547,8 @@ TEST_F(XdsGcpAuthnFilterTest, ParseTopLevelConfigUnparseable) {
 
 TEST_F(XdsGcpAuthnFilterTest, ParseOverrideConfig) {
   XdsExtension extension = MakeXdsExtension(GcpAuthnFilterConfig());
-  auto config = filter_->ParseOverrideConfig("wasp", decode_context_, extension,
-                                             &errors_);
+  auto config = factory_->ParseOverrideConfig("wasp", decode_context_,
+                                              extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -1806,10 +2566,10 @@ TEST_F(XdsGcpAuthnFilterTest, MergeConfigsGetsCacheFromBlackboard) {
   config->cache_size = 1;
   auto blackboard = MakeRefCounted<Blackboard>();
   auto merged_config =
-      filter_->MergeConfigs(config, /*virtual_host_override_config=*/nullptr,
-                            /*route_override_config=*/nullptr,
-                            /*cluster_weight_override_config=*/nullptr,
-                            *transport_factory_, *blackboard);
+      factory_->MergeConfigs(config, /*virtual_host_override_config=*/nullptr,
+                             /*route_override_config=*/nullptr,
+                             /*cluster_weight_override_config=*/nullptr,
+                             *transport_factory_, *blackboard);
   ASSERT_NE(merged_config, nullptr);
   ASSERT_EQ(merged_config->type(), GcpAuthenticationFilter::Config::Type());
   EXPECT_THAT(merged_config->ToString(),
@@ -1835,23 +2595,23 @@ class XdsCompositeFilterTest : public XdsHttpFilterTest {
   void SetUp() override {
     Reset();  // Recreate registry now that env var is set.
     XdsExtension extension = MakeXdsExtension(ExtensionWithMatcher());
-    filter_ = GetFilter(extension.type);
-    GRPC_CHECK_NE(filter_, nullptr) << extension.type;
+    factory_ = GetFactory(extension.type);
+    GRPC_CHECK_NE(factory_, nullptr) << extension.type;
   }
 
-  const XdsHttpFilterImpl* filter_;
+  const XdsHttpFilterFactory* factory_;
   ScopedExperimentalEnvVar env_;
 };
 
 TEST_F(XdsCompositeFilterTest, Accessors) {
-  EXPECT_EQ(filter_->ConfigProtoName(),
+  EXPECT_EQ(factory_->ConfigProtoName(),
             "envoy.extensions.common.matching.v3.ExtensionWithMatcher");
-  EXPECT_EQ(filter_->OverrideConfigProtoName(),
+  EXPECT_EQ(factory_->OverrideConfigProtoName(),
             "envoy.extensions.common.matching.v3.ExtensionWithMatcherPerRoute");
-  EXPECT_EQ(filter_->channel_filter(), &CompositeFilter::kFilterVtable);
-  EXPECT_TRUE(filter_->IsSupportedOnClients());
-  EXPECT_FALSE(filter_->IsSupportedOnServers());
-  EXPECT_FALSE(filter_->IsTerminalFilter());
+  EXPECT_EQ(factory_->channel_filter(), &CompositeFilter::kFilterVtable);
+  EXPECT_TRUE(factory_->IsSupportedOnClients());
+  EXPECT_FALSE(factory_->IsSupportedOnServers());
+  EXPECT_FALSE(factory_->IsTerminalFilter());
 }
 
 TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigSkipFilter) {
@@ -1869,7 +2629,7 @@ TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigSkipFilter) {
       SkipFilter());
   XdsExtension extension = MakeXdsExtension(extension_with_matcher);
   auto config =
-      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
@@ -1898,7 +2658,7 @@ TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigSingleFilter) {
       execute_filter_action);
   XdsExtension extension = MakeXdsExtension(extension_with_matcher);
   auto config =
-      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.message("unexpected errors");
   ASSERT_NE(config, nullptr);
   ASSERT_EQ(config->type(), CompositeFilter::Config::Type());
@@ -1929,7 +2689,7 @@ TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigFilterChain) {
       execute_filter_action);
   XdsExtension extension = MakeXdsExtension(extension_with_matcher);
   auto config =
-      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.message("unexpected errors");
   ASSERT_NE(config, nullptr);
   ASSERT_EQ(config->type(), CompositeFilter::Config::Type());
@@ -1962,7 +2722,7 @@ TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigSamplePercentage) {
       execute_filter_action);
   XdsExtension extension = MakeXdsExtension(extension_with_matcher);
   auto config =
-      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.message("unexpected errors");
   ASSERT_NE(config, nullptr);
   ASSERT_EQ(config->type(), CompositeFilter::Config::Type());
@@ -1980,7 +2740,7 @@ TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigNoMatcher) {
       ->PackFrom(Composite());
   XdsExtension extension = MakeXdsExtension(extension_with_matcher);
   auto config =
-      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
@@ -2009,7 +2769,7 @@ TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigInvalidNestedFilterConfig) {
       execute_filter_action);
   XdsExtension extension = MakeXdsExtension(extension_with_matcher);
   auto config =
-      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
   EXPECT_EQ(errors_.message("errors validating filter config"),
             "errors validating filter config: "
             "[field:http_filter.value["
@@ -2041,7 +2801,7 @@ TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigTerminalFilter) {
       execute_filter_action);
   XdsExtension extension = MakeXdsExtension(extension_with_matcher);
   auto config =
-      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
   EXPECT_EQ(errors_.message("errors validating filter config"),
             "errors validating filter config: "
             "[field:http_filter.value["
@@ -2057,7 +2817,7 @@ TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigTypedStruct) {
   XdsExtension extension = MakeXdsExtension(ExtensionWithMatcher());
   extension.value = Json();
   auto config =
-      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -2074,7 +2834,7 @@ TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigUnparseable) {
   std::string serialized_resource("\0", 1);
   extension.value = absl::string_view(serialized_resource);
   auto config =
-      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -2092,7 +2852,7 @@ TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigUnparseable) {
 TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigRequiredFieldsMissing) {
   XdsExtension extension = MakeXdsExtension(ExtensionWithMatcher());
   auto config =
-      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -2119,7 +2879,7 @@ TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigWrongExtensionConfigType) {
       SkipFilter());
   XdsExtension extension = MakeXdsExtension(extension_with_matcher);
   auto config =
-      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -2145,7 +2905,7 @@ TEST_F(XdsCompositeFilterTest, ParseOverrideConfigBasic) {
       SkipFilter());
   XdsExtension extension = MakeXdsExtension(extension_with_matcher);
   auto config =
-      filter_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+      factory_->ParseOverrideConfig("", decode_context_, extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
@@ -2159,7 +2919,7 @@ TEST_F(XdsCompositeFilterTest, ParseOverrideConfigTypedStruct) {
   XdsExtension extension = MakeXdsExtension(ExtensionWithMatcherPerRoute());
   extension.value = Json();
   auto config =
-      filter_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+      factory_->ParseOverrideConfig("", decode_context_, extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -2176,7 +2936,7 @@ TEST_F(XdsCompositeFilterTest, ParseOverrideConfigUnparseable) {
   std::string serialized_resource("\0", 1);
   extension.value = absl::string_view(serialized_resource);
   auto config =
-      filter_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+      factory_->ParseOverrideConfig("", decode_context_, extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -2194,7 +2954,7 @@ TEST_F(XdsCompositeFilterTest, ParseOverrideConfigUnparseable) {
 TEST_F(XdsCompositeFilterTest, ParseOverrideConfigRequiredFieldMissing) {
   XdsExtension extension = MakeXdsExtension(ExtensionWithMatcherPerRoute());
   auto config =
-      filter_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+      factory_->ParseOverrideConfig("", decode_context_, extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -2232,17 +2992,17 @@ TEST_F(XdsCompositeFilterTest, MergeConfigsHandlesBlackboardForNestedFilters) {
       execute_filter_action);
   XdsExtension extension = MakeXdsExtension(extension_with_matcher);
   auto config =
-      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.message("unexpected errors");
   ASSERT_NE(config, nullptr);
   // Now call MergeConfigs() and make sure it delegates to the child
   // filters to handle the blackboard.
   auto blackboard = MakeRefCounted<Blackboard>();
   auto merged_config =
-      filter_->MergeConfigs(config, /*virtual_host_override_config=*/nullptr,
-                            /*route_override_config=*/nullptr,
-                            /*cluster_weight_override_config=*/nullptr,
-                            *transport_factory_, *blackboard);
+      factory_->MergeConfigs(config, /*virtual_host_override_config=*/nullptr,
+                             /*route_override_config=*/nullptr,
+                             /*cluster_weight_override_config=*/nullptr,
+                             *transport_factory_, *blackboard);
   ASSERT_NE(merged_config, nullptr);
   ASSERT_EQ(merged_config->type(), CompositeFilter::Config::Type());
   EXPECT_EQ(merged_config->ToString(),

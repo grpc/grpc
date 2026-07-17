@@ -65,29 +65,30 @@ uint32_t GetDenominator(const envoy_type_v3_FractionalPercent* fraction) {
 
 }  // namespace
 
-absl::string_view XdsHttpFaultFilter::ConfigProtoName() const {
+absl::string_view XdsHttpFaultFilterFactory::ConfigProtoName() const {
   return "envoy.extensions.filters.http.fault.v3.HTTPFault";
 }
 
-absl::string_view XdsHttpFaultFilter::OverrideConfigProtoName() const {
+absl::string_view XdsHttpFaultFilterFactory::OverrideConfigProtoName() const {
   return "envoy.extensions.filters.http.fault.v3.HTTPFault";
 }
 
-void XdsHttpFaultFilter::PopulateSymtab(upb_DefPool* symtab) const {
+void XdsHttpFaultFilterFactory::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_fault_v3_HTTPFault_getmsgdef(symtab);
 }
 
-const grpc_channel_filter* XdsHttpFaultFilter::channel_filter() const {
+const grpc_channel_filter* XdsHttpFaultFilterFactory::channel_filter() const {
   return &FaultInjectionFilter::kFilterVtable;
 }
 
-void XdsHttpFaultFilter::AddFilter(
+void XdsHttpFaultFilterFactory::AddFilter(
     FilterChainBuilder& builder,
     RefCountedPtr<const FilterConfig> config) const {
   builder.AddFilter<FaultInjectionFilter>(std::move(config));
 }
 
-RefCountedPtr<const FilterConfig> XdsHttpFaultFilter::ParseTopLevelConfig(
+RefCountedPtr<const FilterConfig>
+XdsHttpFaultFilterFactory::ParseTopLevelConfig(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context,
     const XdsExtension& extension, ValidationErrors* errors) const {
@@ -185,7 +186,8 @@ RefCountedPtr<const FilterConfig> XdsHttpFaultFilter::ParseTopLevelConfig(
   return config;
 }
 
-RefCountedPtr<const FilterConfig> XdsHttpFaultFilter::ParseOverrideConfig(
+RefCountedPtr<const FilterConfig>
+XdsHttpFaultFilterFactory::ParseOverrideConfig(
     absl::string_view instance_name,
     const XdsResourceType::DecodeContext& context,
     const XdsExtension& extension, ValidationErrors* errors) const {
