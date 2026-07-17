@@ -532,9 +532,6 @@ class Http2ServerTransport final : public ServerTransport,
     if (goaway_manager_.IsGracefulGoawayInProgress()) {
       return Duration::Zero();
     }
-    if (IsMultipingEnabled()) {
-      return Duration::Seconds(1);
-    }
     return keepalive_time_ == Duration::Infinity() ? Duration::Seconds(20)
                                                    : keepalive_time_ / 2;
   }

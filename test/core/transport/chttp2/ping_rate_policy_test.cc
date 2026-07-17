@@ -105,9 +105,7 @@ TEST(PingRatePolicy, TooManyPingsInflightBlocksSendingPings) {
 }
 
 TEST(PingRatePolicy, TooManyPingsInflightBlocksSendingPingsStrictLimit) {
-  int max_inflight_pings = 1;
-  auto channel_args =
-      ChannelArgs().Set(GRPC_ARG_HTTP2_MAX_INFLIGHT_PINGS, max_inflight_pings);
+  auto channel_args = ChannelArgs();
   Chttp2PingRatePolicy policy{channel_args, false};
 
   EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(1), 0),

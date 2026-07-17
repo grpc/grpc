@@ -29,12 +29,6 @@
 
 namespace grpc_core {
 
-// How many pings do we allow to be inflight at any given time?
-// In older versions of gRPC this was implicitly 1.
-// With the multiping experiment we allow this to rise to 100 by default.
-// TODO(ctiller): consider making this public API
-#define GRPC_ARG_HTTP2_MAX_INFLIGHT_PINGS "grpc.http2.max_inflight_pings"
-
 class Chttp2PingRatePolicy {
  public:
   explicit Chttp2PingRatePolicy(const ChannelArgs& args, bool is_client);
@@ -83,7 +77,6 @@ class Chttp2PingRatePolicy {
   channelz::PropertyList ChannelzProperties() const {
     return channelz::PropertyList()
         .Set("max_pings_without_data_sent", max_pings_without_data_sent_)
-        .Set("max_inflight_pings", max_inflight_pings_)
         .Set("pings_before_data_sending_required",
              pings_before_data_sending_required_)
         .Set("last_ping_sent_time", last_ping_sent_time_);

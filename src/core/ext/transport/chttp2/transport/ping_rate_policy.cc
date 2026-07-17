@@ -43,16 +43,13 @@ Chttp2PingRatePolicy::Chttp2PingRatePolicy(const ChannelArgs& args,
               : 0),
       // Configuration via channel arg dominates, otherwise if the multiping
       // experiment is enabled we use 100, otherwise 1.
-      max_inflight_pings_(
-          std::max(0, args.GetInt(GRPC_ARG_HTTP2_MAX_INFLIGHT_PINGS)
-                          .value_or(g_default_max_inflight_pings.value_or(
-                              IsMultipingEnabled() ? 100 : 1)))) {}
+      max_inflight_pings_(1) {}
 
 void Chttp2PingRatePolicy::SetDefaults(const ChannelArgs& args) {
   g_default_max_pings_without_data_sent =
       std::max(0, args.GetInt(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA)
                       .value_or(g_default_max_pings_without_data_sent));
-  g_default_max_inflight_pings = args.GetInt(GRPC_ARG_HTTP2_MAX_INFLIGHT_PINGS);
+  g_default_max_inflight_pings = 1;
 }
 
 Chttp2PingRatePolicy::RequestSendPingResult

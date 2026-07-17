@@ -422,8 +422,7 @@ PING_MANAGER_TEST(DISABLED_TestPingManagerDelayedPing) {
   // Delayed ping
   ping_interface->ExpectTriggerWrite();
 
-  auto channel_args =
-      GetChannelArgs().Set(GRPC_ARG_HTTP2_MAX_INFLIGHT_PINGS, 2);
+  auto channel_args = GetChannelArgs();
   PingManager ping_system(channel_args, /*ping_timeout=*/Duration::Seconds(100),
                           std::move(ping_interface), event_engine());
   auto party = GetParty();
@@ -626,10 +625,9 @@ PING_MANAGER_TEST(TestPingManagerImportantPing) {
       std::make_unique<StrictMock<MockPingInterface>>();
   ping_interface->ExpectPingTimeout();
 
-  PingManager ping_system(
-      GetChannelArgs().Set(GRPC_ARG_HTTP2_MAX_INFLIGHT_PINGS, 1),
-      /*ping_timeout=*/Duration::Seconds(100), std::move(ping_interface),
-      event_engine());
+  PingManager ping_system(GetChannelArgs(),
+                          /*ping_timeout=*/Duration::Seconds(100),
+                          std::move(ping_interface), event_engine());
 
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   EXPECT_FALSE(ping_system.PingRequested());
@@ -697,10 +695,9 @@ PING_MANAGER_TEST(TestPingManagerPingTimeoutAfterAck) {
   std::unique_ptr<StrictMock<MockPingInterface>> ping_interface =
       std::make_unique<StrictMock<MockPingInterface>>();
 
-  PingManager ping_system(
-      GetChannelArgs().Set(GRPC_ARG_HTTP2_MAX_INFLIGHT_PINGS, 1),
-      /*ping_timeout=*/Duration::Seconds(100), std::move(ping_interface),
-      event_engine());
+  PingManager ping_system(GetChannelArgs(),
+                          /*ping_timeout=*/Duration::Seconds(100),
+                          std::move(ping_interface), event_engine());
   SliceBuffer output_buf;
 
   SpawnPingRequest(
