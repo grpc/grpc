@@ -118,8 +118,7 @@ typedef struct tsi_ssl_client_handshaker_factory
 // Object that holds a private key / certificate chain pair in PEM format.
 namespace grpc_core {
 
-using PrivateKey =
-    std::variant<std::string, std::shared_ptr<grpc_core::PrivateKeySigner>>;
+using PrivateKey = std::variant<std::string, std::shared_ptr<PrivateKeySigner>>;
 
 class PemKeyCertPair {
  public:
