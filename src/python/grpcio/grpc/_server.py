@@ -181,7 +181,7 @@ class _GenericMethod(_Method):
             # Type is suppressed here because `service` lacks type annotations
             # in the public API (__init__.py), which will be updated with gRFC.
             # TODO(asheshvidyut): Fix with Typing Hints Public API changes
-            method_handler: Optional[grpc.RpcMethodHandler] = generic_handler.service(  # type: ignore[reportUnknownMemberType]
+            method_handler: Optional[grpc.RpcMethodHandler] = generic_handler.service(  # type: ignore[reportUnknownMemberType] # pylint: disable=line-too-long
                 handler_call_details
             )
             if method_handler is not None:
