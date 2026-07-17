@@ -1242,7 +1242,9 @@ struct ArenaContextType<V3InterceptorToV2State> {
 template <typename Derived>
 class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
  public:
-  V3InterceptorToV2Bridge() {
+  // Set use_bridge=false to use this interceptor directly in a v3 stack.
+  explicit V3InterceptorToV2Bridge(bool use_bridge = true) {
+    if (!use_bridge) return;
     // Insert CallDestinationToNextV2Filter as the wrapped destination in
     // Interceptor, so that we can route the server side of the
     // interceptor back into the v2 filter chain.
@@ -1251,6 +1253,8 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
 
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       CallArgs call_args, NextPromiseFactory next_promise_factory) final {
+// FIXME: figure out why this is being called in the v3 stack
+Crash("WTF");
     // Create a latch to get the call handler, and put a pointer to it
     // in call context, so that CallDestinationToNextV2Filter can set
     // it when it starts the call.
@@ -1510,11 +1514,6 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
             });
           }
         });
-  }
-
- protected:
-  RefCountedPtr<UnstartedCallDestination> wrapped_destination() const {
-    return wrapped_destination_;  // From Interceptor class.
   }
 
  private:

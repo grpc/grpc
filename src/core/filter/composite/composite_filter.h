@@ -140,6 +140,8 @@ class CompositeFilter final : public V3InterceptorToV2Bridge<CompositeFilter> {
                   ChannelFilter::Args filter_args);
 
  private:
+  void Init(const ChannelArgs& args) override;
+
   void Orphaned() override {}
 
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override;

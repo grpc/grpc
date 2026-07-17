@@ -93,7 +93,6 @@ class HijackedCall final {
 // preceding filters.  We don't actually have any use-case for seeing
 // the unprocessed initial metadata and deciding to do a PassThrough(),
 // and its presence in this API is confusing.
-
 class Interceptor : public UnstartedCallDestination {
  public:
   using UnstartedCallDestination::UnstartedCallDestination;
@@ -106,6 +105,11 @@ class Interceptor : public UnstartedCallDestination {
   }
 
  protected:
+  // Performs initialization steps after the interception chain has been
+  // constructed.  In particular, wrapped_destination() may be called
+  // from inside this method.
+  virtual void Init(const ChannelArgs& args) {}
+
   virtual void InterceptCall(UnstartedCallHandler unstarted_call_handler) = 0;
 
   // Returns a promise that resolves to a HijackedCall instance.
@@ -139,6 +143,15 @@ class Interceptor : public UnstartedCallDestination {
   // Pass through this call to the next filter.
   void PassThrough(UnstartedCallHandler unstarted_call_handler) {
     wrapped_destination_->StartCall(std::move(unstarted_call_handler));
+  }
+
+  // The next call destination in the interception chain.  To be used by
+  // interceptors that need to delegate to their own interception chains.
+  //
+  // Note: This will not return a useful value until Init() has been
+  // called -- do NOT call this from within the ctor.
+  RefCountedPtr<UnstartedCallDestination> wrapped_destination() const {
+    return wrapped_destination_;
   }
 
  private:
@@ -180,7 +193,7 @@ class InterceptionChainBuilder final {
   // Call class must be one compatible with the filters described in
   // call_filters.h.
   template <typename T>
-  absl::enable_if_t<sizeof(typename T::Call) != 0, InterceptionChainBuilder&>
+  absl::enable_if_t<sizeof(typename T::Call) != 0 && !std::is_base_of<Interceptor, T>::value, InterceptionChainBuilder&>
   Add(RefCountedPtr<const FilterConfig> config) {
     if (!status_.ok()) return *this;
     auto filter = T::Create(

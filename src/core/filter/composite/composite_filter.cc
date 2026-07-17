@@ -95,7 +95,13 @@ class InterceptionChainBuilderWrapper final : public FilterChainBuilder {
 CompositeFilter::CompositeFilter(const ChannelArgs& args,
                                  RefCountedPtr<const Config> config,
                                  ChannelFilter::Args filter_args)
-    : config_(std::move(config)) {
+    : V3InterceptorToV2Bridge<CompositeFilter>(
+          // On the server side, we disable the bridge, because we're
+          // being used in a native v3 stack.
+          !args.GetBool(GRPC_ARG_IS_SERVER_FILTER_STACK).value_or(false)),
+      config_(std::move(config)) {}
+
+void CompositeFilter::Init(const ChannelArgs& args) {
   if (config_->matcher == nullptr) return;
   // Populate filter_chain_map_ from config_.
   const bool is_server =
