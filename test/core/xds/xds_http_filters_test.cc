@@ -1144,6 +1144,29 @@ TEST_P(XdsRbacFilterConfigTest, ParseInvalidAuditLoggerConfig) {
       << status;
 }
 
+TEST_P(XdsRbacFilterConfigTest, ParseInvalidButOptionalAuditLoggerConfig) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto* logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(
+      envoy::config::rbac::v3::RBAC_AuditLoggingOptions_AuditCondition_ON_DENY);
+  envoy::config::rbac::v3::RBAC_AuditLoggingOptions::AuditLoggerConfig
+      logger_config;
+  logger_config.set_is_optional(true);
+  auto* audit_logger = logger_config.mutable_audit_logger();
+  audit_logger->mutable_typed_config()->set_type_url("/foo_logger");
+  *logging_options->add_logger_configs() = logger_config;
+  auto config = ParseConfig(rbac);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->ToString(),
+            "Rbac{name=, action=Allow, audit_condition=OnDeny, policies={}, "
+            "audit_loggers={}}");
+}
+
 TEST_P(XdsRbacFilterConfigTest, ParseInvalidFieldsInPolicy) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();

@@ -246,6 +246,7 @@ libs:
   - src/core/client_channel/retry_throttle.h
   - src/core/client_channel/subchannel.h
   - src/core/client_channel/subchannel_interface_internal.h
+  - src/core/client_channel/subchannel_metrics.h
   - src/core/client_channel/subchannel_pool_interface.h
   - src/core/client_channel/subchannel_stream_client.h
   - src/core/client_channel/subchannel_stream_limiter.h
@@ -1232,6 +1233,7 @@ libs:
   - src/core/telemetry/stats.h
   - src/core/telemetry/stats_data.h
   - src/core/telemetry/tcp_tracer.h
+  - src/core/telemetry/telemetry_label.h
   - src/core/transport/auth_context.h
   - src/core/transport/auth_context_comparator_registry.h
   - src/core/transport/endpoint_transport.h
@@ -1431,6 +1433,7 @@ libs:
   - src/core/client_channel/retry_service_config.cc
   - src/core/client_channel/retry_throttle.cc
   - src/core/client_channel/subchannel.cc
+  - src/core/client_channel/subchannel_metrics.cc
   - src/core/client_channel/subchannel_pool_interface.cc
   - src/core/client_channel/subchannel_stream_client.cc
   - src/core/client_channel/subchannel_stream_limiter.cc
@@ -2523,6 +2526,7 @@ libs:
   - src/core/client_channel/retry_throttle.h
   - src/core/client_channel/subchannel.h
   - src/core/client_channel/subchannel_interface_internal.h
+  - src/core/client_channel/subchannel_metrics.h
   - src/core/client_channel/subchannel_pool_interface.h
   - src/core/client_channel/subchannel_stream_client.h
   - src/core/client_channel/subchannel_stream_limiter.h
@@ -2980,6 +2984,7 @@ libs:
   - src/core/telemetry/stats.h
   - src/core/telemetry/stats_data.h
   - src/core/telemetry/tcp_tracer.h
+  - src/core/telemetry/telemetry_label.h
   - src/core/transport/auth_context.h
   - src/core/transport/auth_context_comparator_registry.h
   - src/core/transport/endpoint_transport.h
@@ -3094,6 +3099,7 @@ libs:
   - src/core/client_channel/retry_service_config.cc
   - src/core/client_channel/retry_throttle.cc
   - src/core/client_channel/subchannel.cc
+  - src/core/client_channel/subchannel_metrics.cc
   - src/core/client_channel/subchannel_pool_interface.cc
   - src/core/client_channel/subchannel_stream_client.cc
   - src/core/client_channel/subchannel_stream_limiter.cc
@@ -4228,11 +4234,9 @@ libs:
   - include/grpcpp/support/time.h
   - include/grpcpp/support/validate_service_config.h
   - include/grpcpp/version_info.h
-  - include/grpcpp/virtual_channel.h
   - include/grpcpp/xds_server_builder.h
   headers:
   - src/core/client_channel/virtual_channel.h
-  - src/core/telemetry/telemetry_label.h
   - src/core/xds/grpc/xds_enabled_server.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
@@ -4618,10 +4622,8 @@ libs:
   - include/grpcpp/support/time.h
   - include/grpcpp/support/validate_service_config.h
   - include/grpcpp/version_info.h
-  - include/grpcpp/virtual_channel.h
   headers:
   - src/core/client_channel/virtual_channel.h
-  - src/core/telemetry/telemetry_label.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/server/backend_metric_recorder.h
@@ -9529,6 +9531,7 @@ targets:
   headers:
   - src/core/util/json/json_util.h
   - src/cpp/server/orca/orca_service.h
+  - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_lb_policies.h
@@ -9552,6 +9555,7 @@ targets:
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - src/core/util/json/json_util.cc
   - src/cpp/server/orca/orca_service.cc
+  - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/test_lb_policies.cc
   - test/cpp/end2end/client_lb_end2end_test.cc
   - test/cpp/end2end/connection_attempt_injector.cc
@@ -22496,6 +22500,17 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
+- name: recv_message_filter_bypass_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/filters/recv_message_filter_bypass_test.cc
+  deps:
+  - gtest
+  - grpc_unsecure
+  - grpc_test_util
 - name: ref_counted_ptr_test
   gtest: true
   build: test
@@ -24401,6 +24416,16 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: subchannel_metrics_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/subchannel_metrics_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: subchannel_stream_limiter_test
   gtest: true
   build: test
@@ -25613,7 +25638,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/cpp/end2end/end2end_test_utils.h
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
