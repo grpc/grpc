@@ -1,4 +1,4 @@
-# Copyright 2016 gRPC authors.
+# Copyright 2026 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:11
+FROM debian:12
 
 {% include "../../apt_get_basic.include" %}
-{% include "../../run_tests_python_deps.include" %}
-{% include "../../php7_deps.include" %}
+{% include "../../run_tests_python_deps_pep668.include" %}
+{% include "../../php8_deps.include" %}
 {% include "../../php_common_deps.include" %}
 {% include "../../cmake.include" %}
 {% include "../../ccache.include" %}
