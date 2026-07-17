@@ -138,7 +138,6 @@ class ClientCallDetails(
         wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
     """
 
-    pass
 
 
 class ClientInterceptor(metaclass=ABCMeta):
@@ -775,7 +774,7 @@ class InterceptedUnaryUnaryCall(
 
                 if isinstance(call_or_response, _base_call.UnaryUnaryCall):
                     return cast(
-                        _base_call.UnaryUnaryCall[RequestType, ResponseType],
+                        "_base_call.UnaryUnaryCall[RequestType, ResponseType]",
                         call_or_response,
                     )
                 return UnaryUnaryCallResponse(call_or_response)

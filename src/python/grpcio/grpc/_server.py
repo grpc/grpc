@@ -241,7 +241,9 @@ def _possibly_finish_call(
     return None, ()
 
 
-def _send_status_from_server(state: _RPCState[RequestType], token: str) -> ServerCallbackTag:
+def _send_status_from_server(
+    state: _RPCState[RequestType], token: str
+) -> ServerCallbackTag:
     def send_status_from_server(
         unused_send_status_from_server_event: cygrpc.BaseEvent,
     ):
@@ -277,7 +279,10 @@ def _get_initial_metadata_operation(
 
 
 def _abort(
-    state: _RPCState[RequestType], call: cygrpc.Call, code: cygrpc.StatusCode, details: bytes
+    state: _RPCState[RequestType],
+    call: cygrpc.Call,
+    code: cygrpc.StatusCode,
+    details: bytes,
 ) -> None:
     if state.client is not _CANCELLED:
         effective_code = _abortion_code(state, code)
@@ -310,7 +315,9 @@ def _abort(
         state.due.add(token)
 
 
-def _receive_close_on_server(state: _RPCState[RequestType]) -> ServerCallbackTag:
+def _receive_close_on_server(
+    state: _RPCState[RequestType],
+) -> ServerCallbackTag:
     def receive_close_on_server(
         receive_close_on_server_event: cygrpc.BaseEvent,
     ):
@@ -368,7 +375,9 @@ def _send_initial_metadata(state: _RPCState[RequestType]) -> ServerCallbackTag:
     return send_initial_metadata
 
 
-def _send_message(state: _RPCState[RequestType], token: str) -> ServerCallbackTag:
+def _send_message(
+    state: _RPCState[RequestType], token: str
+) -> ServerCallbackTag:
     def send_message(unused_send_message_event: cygrpc.BaseEvent):
         with state.condition:
             state.condition.notify_all()
@@ -613,18 +622,20 @@ def _call_behavior(
 ) -> Tuple[Union[ResponseType, Iterator[ResponseType], None], bool]:
     # TODO(asheshvidyut): Fix with Typing Hints Plan Phase 3
     from grpc import (
-        _create_servicer_context, # pyright: ignore[reportUnknownVariableType]
+        _create_servicer_context,  # pyright: ignore[reportUnknownVariableType]
     )
 
     # TODO(asheshvidyut): Fix with Typing Hints Plan Phase 3
     with _create_servicer_context(
         rpc_event, state, request_deserializer
-    ) as context: # pyright: ignore[reportUnknownVariableType]
+    ) as context:  # pyright: ignore[reportUnknownVariableType]
         try:
-            response_or_iterator: Optional[Union[ResponseType, Iterator[ResponseType]]] = None
+            response_or_iterator: Optional[
+                Union[ResponseType, Iterator[ResponseType]]
+            ] = None
             if behavior is not None:
                 casted_behaviour = cast(
-                    Callable[..., Union[ResponseType, Iterator[ResponseType]]],
+                    "Callable[..., Union[ResponseType, Iterator[ResponseType]]]",
                     behavior,
                 )
                 if send_response_callback is not None:
@@ -733,7 +744,9 @@ def _reset_per_message_state(state: _RPCState[RequestType]) -> None:
 
 
 def _send_response(
-    rpc_event: cygrpc.BaseEvent, state: _RPCState[RequestType], serialized_response: bytes
+    rpc_event: cygrpc.BaseEvent,
+    state: _RPCState[RequestType],
+    serialized_response: bytes,
 ) -> bool:
     with state.condition:
         if not _is_rpc_state_active(state):
@@ -803,7 +816,9 @@ def _unary_response_in_pool(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState[RequestType],
     behavior: ArityAgnosticMethodHandler[RequestType, ResponseType],
-    argument_thunk: Callable[[], Union[RequestType, Iterator[RequestType], None]],
+    argument_thunk: Callable[
+        [], Union[RequestType, Iterator[RequestType], None]
+    ],
     request_deserializer: Optional[DeserializingFunction[RequestType]],
     response_serializer: Optional[SerializingFunction[ResponseType]],
 ) -> None:
@@ -817,7 +832,10 @@ def _unary_response_in_pool(
             )
             if proceed:
                 serialized_response = _serialize_response(
-                    rpc_event, state, response, response_serializer  # pyright: ignore[reportArgumentType]
+                    rpc_event,
+                    state,
+                    response,
+                    response_serializer,  # pyright: ignore[reportArgumentType]
                 )
                 if serialized_response is not None:
                     _status(rpc_event, state, serialized_response)
@@ -831,7 +849,9 @@ def _stream_response_in_pool(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState[RequestType],
     behavior: ArityAgnosticMethodHandler[RequestType, ResponseType],
-    argument_thunk: Callable[[], Union[RequestType, Iterator[RequestType], None]],
+    argument_thunk: Callable[
+        [], Union[RequestType, Iterator[RequestType], None]
+    ],
     request_deserializer: Optional[DeserializingFunction[RequestType]],
     response_serializer: Optional[SerializingFunction[ResponseType]],
 ) -> None:
@@ -865,7 +885,10 @@ def _stream_response_in_pool(
                 )
                 if proceed and response_iterator is not None:
                     _send_message_callback_to_blocking_iterator_adapter(
-                        rpc_event, state, send_response, response_iterator  # pyright: ignore[reportArgumentType]
+                        rpc_event,
+                        state,
+                        send_response,
+                        response_iterator,  # pyright: ignore[reportArgumentType]
                     )
     except Exception:  # pylint: disable=broad-except
         traceback.print_exc()
@@ -1049,7 +1072,10 @@ def _reject_rpc(
             None, status, details, _EMPTY_FLAGS
         ),
     )
-    def _on_batch_complete(_ignored_event: cygrpc.BaseEvent) -> Tuple[_RPCState[RequestType], Tuple[()]]:
+
+    def _on_batch_complete(
+        _ignored_event: cygrpc.BaseEvent,
+    ) -> Tuple[_RPCState[RequestType], Tuple[()]]:
         return rpc_state, ()
 
     rpc_event.call.start_server_batch(
