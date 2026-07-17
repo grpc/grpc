@@ -99,7 +99,11 @@ CompositeFilter::CompositeFilter(const ChannelArgs& args,
           // On the server side, we disable the bridge, because we're
           // being used in a native v3 stack.
           !args.GetBool(GRPC_ARG_IS_SERVER_FILTER_STACK).value_or(false)),
-      config_(std::move(config)) {}
+      config_(std::move(config)) {
+  if (!args.GetBool(GRPC_ARG_IS_SERVER_FILTER_STACK).value_or(false)) {
+    Init(args);
+  }
+}
 
 void CompositeFilter::Init(const ChannelArgs& args) {
   if (config_->matcher == nullptr) return;
