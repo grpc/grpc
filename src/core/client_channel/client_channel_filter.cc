@@ -1683,7 +1683,6 @@ void ClientChannelFilter::StartTransportOpLocked(grpc_transport_op* op) {
         << "chand=" << this << ": disconnect_with_error: "
         << StatusToString(op->disconnect_with_error);
     DestroyResolverAndLbPolicyLocked();
-    intptr_t value;
     if (op->go_idle) {
       if (disconnect_error_.ok()) {  // Ignore if we're shutting down.
         // Enter IDLE state.
