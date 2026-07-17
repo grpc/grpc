@@ -137,6 +137,7 @@ class ClientCallDetails(
         credentials: An optional CallCredentials for the RPC.
         wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
     """
+    pass
 
 
 class ClientInterceptor(metaclass=ABCMeta):
