@@ -93,6 +93,11 @@ class XdsTestType {
     return *this;
   }
 
+  XdsTestType& set_filter_on_server() {
+    filter_on_server_ = true;
+    return *this;
+  }
+
   XdsTestType& set_bootstrap_source(BootstrapSource bootstrap_source) {
     bootstrap_source_ = bootstrap_source;
     return *this;
@@ -116,6 +121,7 @@ class XdsTestType {
   HttpFilterConfigLocation filter_config_setup() const {
     return filter_config_setup_;
   }
+  bool filter_on_server() const { return filter_on_server_; }
   BootstrapSource bootstrap_source() const { return bootstrap_source_; }
   ::envoy::config::rbac::v3::RBAC_Action rbac_action() const {
     return rbac_action_;
@@ -133,6 +139,7 @@ class XdsTestType {
     if (filter_config_setup_ == kHttpFilterConfigInRoute) {
       retval += "FilterPerRouteOverride";
     }
+    if (filter_on_server_) retval += "FilterOnServer";
     if (bootstrap_source_ == kBootstrapFromFile) {
       retval += "BootstrapFromFile";
     } else if (bootstrap_source_ == kBootstrapFromEnvVar) {
@@ -164,6 +171,7 @@ class XdsTestType {
   bool enable_rds_testing_ = false;
   bool use_csds_streaming_ = false;
   HttpFilterConfigLocation filter_config_setup_ = kHttpFilterConfigInListener;
+  bool filter_on_server_ = false;
   BootstrapSource bootstrap_source_ = kBootstrapFromChannelArg;
   ::envoy::config::rbac::v3::RBAC_Action rbac_action_ =
       ::envoy::config::rbac::v3::RBAC_Action_LOG;
