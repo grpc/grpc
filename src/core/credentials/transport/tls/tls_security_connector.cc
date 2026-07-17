@@ -216,7 +216,6 @@ void PendingVerifierRequestDestroy(
     gpr_free(const_cast<char*>(request->peer_info.verified_root_cert_subject));
   }
 }
-
 }  // namespace
 
 // -------------------channel security connector-------------------
@@ -549,8 +548,7 @@ TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
   if (key_cert_pairs_or_selector_.has_value()) {
     Match(
         *key_cert_pairs_or_selector_,
-        [&pem_key_cert_pair](
-            const PemKeyCertPairList& pem_key_cert_pairs) {
+        [&pem_key_cert_pair](const PemKeyCertPairList& pem_key_cert_pairs) {
           pem_key_cert_pair =
               pem_key_cert_pairs.empty() ? nullptr : &pem_key_cert_pairs[0];
         },
@@ -834,7 +832,8 @@ TlsServerSecurityConnector::UpdateHandshakerFactoryLocked() {
   GRPC_CHECK(key_cert_pairs_or_selector_.has_value());
   GRPC_CHECK(!IsKeyCertPairsOrSelectorEmpty(*key_cert_pairs_or_selector_));
   return grpc_ssl_tsi_server_handshaker_factory_init(
-      *key_cert_pairs_or_selector_, root_cert_info_, options_->cert_request_type(),
+      *key_cert_pairs_or_selector_, root_cert_info_,
+      options_->cert_request_type(),
       grpc_get_tsi_tls_version(options_->min_tls_version()),
       grpc_get_tsi_tls_version(options_->max_tls_version()),
       tls_session_key_logger_.get(), options_->crl_directory().c_str(),

@@ -837,6 +837,13 @@ grpc_cc_test(
 grpc_cc_test(
     name = "client_lb_end2end_test",
     srcs = ["client_lb_end2end_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:client.key",
+        "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
     external_deps = [
         "absl/log:check",
         "absl/log:log",
@@ -895,6 +902,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_cc_grpc",
+        "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
         "//test/core/test_util:postmortem",
@@ -1754,6 +1762,7 @@ grpc_cc_test(
 
 grpc_cc_library(
     name = "tls_test_private_key_signer",
+    testonly = True,
     srcs = ["tls_test_private_key_signer.cc"],
     hdrs = ["tls_test_private_key_signer.h"],
     external_deps = [
@@ -1774,6 +1783,7 @@ grpc_cc_library(
         "//:grpc_base",
         "//:tsi_ssl_credentials",
         "//src/core:default_event_engine",
+        "//src/core:down_cast",
         "//src/core:grpc_tls_credentials",
         "//src/core:ssl_transport_security_utils",
     ],
@@ -1825,6 +1835,7 @@ grpc_cc_test(
 
 grpc_cc_library(
     name = "tls_test_certificate_selector",
+    testonly = True,
     srcs = ["tls_test_certificate_selector.cc"],
     hdrs = ["tls_test_certificate_selector.h"],
     external_deps = [
@@ -1844,6 +1855,7 @@ grpc_cc_library(
         "//:grpc_base",
         "//:tsi_ssl_credentials",
         "//src/core:default_event_engine",
+        "//src/core:down_cast",
         "//src/core:grpc_tls_certificate_selector",
     ],
 )
@@ -1880,6 +1892,7 @@ grpc_cc_test(
         "//:grpc_base",
         "//:tsi_ssl_credentials",
         "//src/core:default_event_engine",
+        "//src/core:grpc_tls_certificate_selector",
         "//src/core:grpc_tls_credentials",
         "//src/core:ssl_transport_security_utils",
         "//src/proto/grpc/testing:echo_cc_grpc",

@@ -197,12 +197,13 @@ class XdsRouting final {
         nullptr;
   };
 
+  // TODO(roth): Remove this struct and the following two methods when
+  // removing the xds_server_filter_chain_per_route experiment.
   struct GeneratePerHttpFilterConfigsResult {
     // Map of service config field name to list of elements for that field.
     std::map<std::string, std::vector<std::string>> per_filter_configs;
     ChannelArgs args;
   };
-
   // Generates per-HTTP filter configs for a method config.
   static absl::StatusOr<GeneratePerHttpFilterConfigsResult>
   GeneratePerHTTPFilterConfigsForMethodConfig(
@@ -214,7 +215,6 @@ class XdsRouting final {
       const XdsRouteConfigResource::Route::RouteAction::ClusterWeight*
           cluster_weight,
       const ChannelArgs& args);
-
   // Generates per-HTTP filter configs for the top-level service config.
   static absl::StatusOr<GeneratePerHttpFilterConfigsResult>
   GeneratePerHTTPFilterConfigsForServiceConfig(

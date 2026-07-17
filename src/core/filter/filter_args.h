@@ -83,8 +83,8 @@ class FilterArgs {
   // 0 0 0 1 1 0 2.
   // This is useful for filters that need to store per-instance data in a
   // parallel data structure.
-  // TODO(roth): Remove this once server side is migrated to the new
-  // approach for handling xDS filter configs.
+  // TODO(roth): Remove this when removing the
+  // xds_server_filter_chain_per_route experiment.
   size_t instance_id() const {
     return Match(
         impl_,
@@ -103,11 +103,15 @@ class FilterArgs {
   struct ChannelStackBased {
     grpc_channel_stack* channel_stack;
     grpc_channel_element* channel_element;
+    // TODO(roth): Remove this when removing the
+    // xds_server_filter_chain_per_route experiment.
     size_t (*channel_stack_filter_instance_number)(grpc_channel_stack*,
                                                    grpc_channel_element*);
   };
 
   struct V3Based {
+    // TODO(roth): Remove this when removing the
+    // xds_server_filter_chain_per_route experiment.
     size_t instance_id;
   };
 

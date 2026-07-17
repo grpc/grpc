@@ -31,7 +31,6 @@
 #include <utility>
 #include <vector>
 
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/down_cast.h"
 #include "absl/log/check.h"
 #include "absl/status/statusor.h"

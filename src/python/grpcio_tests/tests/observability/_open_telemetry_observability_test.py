@@ -27,6 +27,9 @@ from grpc_observability import _open_telemetry_measures
 from grpc_observability._open_telemetry_observability import (
     GRPC_OTHER_LABEL_VALUE,
 )
+from grpc_observability._open_telemetry_observability import (
+    _OpenTelemetryPlugin,
+)
 from grpc_observability._open_telemetry_observability import GRPC_METHOD_LABEL
 from grpc_observability._open_telemetry_observability import GRPC_TARGET_LABEL
 from opentelemetry.sdk.metrics import MeterProvider
@@ -521,6 +524,45 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
                     base_metric.name in metric_names,
                     msg=f"metric {base_metric.name} not found in exported metrics: {metric_names}!",
                 )
+
+
+@unittest.skipIf(
+    os.name == "nt" or "darwin" in sys.platform,
+    "Observability is not supported in Windows and MacOS",
+)
+class DecodeLabelsTest(unittest.TestCase):
+    def testInvalidUtf8ValueDoesNotRaise(self):
+        key = "key"
+        invalid_value = b"\xffbad"
+        decoded = _OpenTelemetryPlugin.decode_labels({key: invalid_value})
+        self.assertIn(key, decoded)
+        self.assertIsInstance(decoded[key], str)
+
+    def testInvalidUtf8KeyDoesNotRaise(self):
+        invalid_key = b"\xffbad"
+        value = "value"
+        decoded = _OpenTelemetryPlugin.decode_labels({invalid_key: value})
+        self.assertNotIn(invalid_key, decoded)
+        self.assertEqual(len(decoded), 1)
+
+    def testBytesKeyAndBytesValueAreDecodedToStr(self):
+        key_as_bytes = b"my_key"
+        key_as_str = "my_key"
+        value_as_bytes = b"my_value"
+        decoded = _OpenTelemetryPlugin.decode_labels(
+            {key_as_bytes: value_as_bytes}
+        )
+        self.assertNotIn(key_as_bytes, decoded)
+        self.assertIn(key_as_str, decoded)
+        self.assertIsInstance(decoded[key_as_str], str)
+
+    def testStrKeyAndStrValuePassThroughUnchanged(self):
+        key = "key"
+        value = "value"
+        decoded = _OpenTelemetryPlugin.decode_labels({key: value})
+        self.assertIn(key, decoded)
+        self.assertEqual(decoded[key], value)
+        self.assertIsInstance(decoded[key], str)
 
 
 if __name__ == "__main__":
