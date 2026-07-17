@@ -153,7 +153,7 @@ void grpc_ssl_credentials::build_config(
     GRPC_CHECK_NE(pem_key_cert_pair->private_key, nullptr);
     GRPC_CHECK_NE(pem_key_cert_pair->cert_chain, nullptr);
     config_.pem_key_cert_pair =
-        grpc_core::PemKeyCertPair(std::string(pem_key_cert_pair->private_key),
+        grpc_core::PemKeyCertPair(pem_key_cert_pair->private_key,
                                   pem_key_cert_pair->cert_chain);
   }
   if (verify_options != nullptr) {
