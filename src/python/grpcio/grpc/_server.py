@@ -1445,7 +1445,7 @@ class _Server(grpc.Server):
         # Can't register method once server started.
         with self._state.lock:
             if self._state.stage is _ServerStage.STARTED:
-                return
+                raise UsageError('Cannot register method handlers once server has started')
 
         # TODO(xuanwn): We should validate method_handlers first.
         method_to_handlers = {
