@@ -82,10 +82,7 @@ reportUnusedClass = "none"
 
 include = [
     "src/python/grpcio/grpc/aio/_channel.py",
-<<<<<<< feature/python/pyright-part-5
     "src/python/grpcio/grpc/aio/_interceptor.py",
-=======
->>>>>>> master
     "src/python/grpcio/grpc/aio/_base_channel.py",
     "src/python/grpcio/grpc/aio/_call.py",
     "src/python/grpcio/grpc/aio/_metadata.py",
