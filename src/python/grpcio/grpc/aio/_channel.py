@@ -510,7 +510,9 @@ class Channel(_base_channel.Channel):
 
     # TODO(xuanwn): Implement this method after we have
     # observability for Asyncio.
-    def _get_registered_call_handle(self, method: str) -> int:  # type: ignore # noqa: PGH003
+    def _get_registered_call_handle(
+        self, method: str
+    ) -> int:  # pyright: ignore[reportReturnType]
         pass
 
     # TODO(xuanwn): Implement _registered_method after we have

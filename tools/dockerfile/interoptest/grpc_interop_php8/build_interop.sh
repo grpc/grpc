@@ -43,6 +43,10 @@ cd src/php
 
 DONE=0
 for ((i = 0; i < 5; i++)); do
+  if [ $i -gt 0 ]; then
+    echo "Retry $((i+1))/5: Sleeping 5 seconds before next composer install attempt..."
+    sleep 5
+  fi
   php -d extension=ext/grpc/modules/grpc.so /usr/local/bin/composer install && DONE=1 && break
 done
 

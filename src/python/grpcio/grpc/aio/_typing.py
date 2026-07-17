@@ -39,10 +39,12 @@ from ._metadata import MetadatumType
 RequestType = TypeVar("RequestType")
 ResponseType = TypeVar("ResponseType")
 
-SerializerInputType = TypeVar("SerializerInputType")
-DeserializerOutputType = TypeVar("DeserializerOutputType")
-SerializingFunction = Callable[[SerializerInputType], bytes]
-DeserializingFunction = Callable[[bytes], DeserializerOutputType]
+SerializerInputType_contra = TypeVar(
+    "SerializerInputType_contra", contravariant=True
+)
+DeserializerOutputType_co = TypeVar("DeserializerOutputType_co", covariant=True)
+SerializingFunction = Callable[[SerializerInputType_contra], bytes]
+DeserializingFunction = Callable[[bytes], DeserializerOutputType_co]
 
 ChannelArgumentType = Sequence[Tuple[str, Any]]
 EOFType: TypeAlias = _EOF
