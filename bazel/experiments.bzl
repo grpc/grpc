@@ -212,12 +212,6 @@ EXPERIMENTS = {
             "secure_endpoint_test": [
                 "pipelined_read_secure_endpoint",
             ],
-            "xds_end2end_test": [
-                "xds_server_filter_chain_per_route",
-            ],
-            "xds_test": [
-                "xds_server_filter_chain_per_route",
-            ],
         },
         "on": {
             "cancel_ares_query_test": [
@@ -249,6 +243,12 @@ EXPERIMENTS = {
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
+            ],
+            "xds_end2end_test": [
+                "xds_server_filter_chain_per_route",
+            ],
+            "xds_test": [
+                "xds_server_filter_chain_per_route",
             ],
         },
     },

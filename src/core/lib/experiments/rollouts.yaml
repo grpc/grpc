@@ -134,3 +134,5 @@
   default: false
 - name: verbose_channelz_connection_logging
   default: false
+- name: xds_server_filter_chain_per_route
+  default: true
