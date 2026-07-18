@@ -332,7 +332,14 @@ class PHP8DistribTest:
         self.platform = platform
         self.arch = arch
         self.docker_suffix = docker_suffix
-        self.labels = ["distribtest", "php", "php8", platform, arch, php_version]
+        self.labels = [
+            "distribtest",
+            "php",
+            "php8",
+            platform,
+            arch,
+            php_version,
+        ]
         if presubmit:
             self.labels.append("presubmit")
         if docker_suffix:
@@ -365,7 +372,10 @@ class PHP8DistribTest:
         elif self.platform == "macos":
             return create_jobspec(
                 self.name,
-                ["test/distrib/php/run_distrib_test_macos.sh", self.php_version],
+                [
+                    "test/distrib/php/run_distrib_test_macos.sh",
+                    self.php_version,
+                ],
                 environ={"EXTERNAL_GIT_ROOT": "../../../.."},
                 timeout_seconds=30 * 60,
                 use_workspace=True,
@@ -597,10 +607,18 @@ def targets():
             presubmit=True,
         ),
         # PHP
-        PHP8DistribTest("linux", "x64", "debian12", php_version="8.2", presubmit=True),
-        PHP8DistribTest("linux", "x64", "debian12", php_version="8.3", presubmit=True),
-        PHP8DistribTest("linux", "x64", "debian13", php_version="8.4", presubmit=True),
-        PHP8DistribTest("linux", "x64", "debian13", php_version="8.5", presubmit=True),
+        PHP8DistribTest(
+            "linux", "x64", "debian12", php_version="8.2", presubmit=True
+        ),
+        PHP8DistribTest(
+            "linux", "x64", "debian12", php_version="8.3", presubmit=True
+        ),
+        PHP8DistribTest(
+            "linux", "x64", "debian13", php_version="8.4", presubmit=True
+        ),
+        PHP8DistribTest(
+            "linux", "x64", "debian13", php_version="8.5", presubmit=True
+        ),
         PHP8DistribTest("macos", "x64", php_version="8.2", presubmit=True),
         PHP8DistribTest("macos", "x64", php_version="8.3", presubmit=True),
         PHP8DistribTest("macos", "x64", php_version="8.4", presubmit=True),

@@ -38,6 +38,9 @@ else
   PHP_BIN="php"
 fi
 
+# Force PECL to use resolved /private/tmp directory to avoid macOS symlink path mismatch
+sudo env PATH="$PATH" "${PECL_BIN}" config-set temp_dir /private/tmp/pear/temp
+
 # Use -j4 since higher parallelism can lead to "resource unavailable"
 # errors during the build. See b/257261061#comment4
 sudo env PATH="$PATH" MAKEFLAGS=-j4 "${PECL_BIN}" install "${GRPC_PEAR_PACKAGE_NAME}"
