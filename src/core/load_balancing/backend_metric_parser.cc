@@ -21,6 +21,7 @@
 
 #include <map>
 
+#include "src/core/load_balancing/backend_metric_data.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.hpp"
 #include "upb/message/map.h"
@@ -31,10 +32,9 @@ namespace grpc_core {
 
 namespace {
 
+template <typename NextFunc>
 std::map<absl::string_view, double> ParseMap(
-    xds_data_orca_v3_OrcaLoadReport* msg,
-    bool (*upb_next_func)(const xds_data_orca_v3_OrcaLoadReport* msg,
-                          upb_StringView* key, double* val, size_t* iter),
+    xds_data_orca_v3_OrcaLoadReport* msg, NextFunc upb_next_func,
     BackendMetricAllocatorInterface* allocator) {
   std::map<absl::string_view, double> result;
   size_t i = kUpb_Map_Begin;
