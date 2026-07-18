@@ -30,18 +30,32 @@ if [ ! -d "${PHP_PATH}" ]; then
   PHP_PATH="/opt/homebrew/opt/php@${PHP_VERSION}"
 fi
 
+# For PHP 8.5, Homebrew formula is 'php' (unversioned) instead of 'php@8.5'
+if [ "${PHP_VERSION}" == "8.5" ] && [ ! -d "${PHP_PATH}" ]; then
+  if [ -d "/usr/local/opt/php" ]; then
+    PHP_PATH="/usr/local/opt/php"
+  elif [ -d "/opt/homebrew/opt/php" ]; then
+    PHP_PATH="/opt/homebrew/opt/php"
+  fi
+fi
+
 if [ -d "${PHP_PATH}" ]; then
   PECL_BIN="${PHP_PATH}/bin/pecl"
   PHP_BIN="${PHP_PATH}/bin/php"
+  export PATH="${PHP_PATH}/bin:${PATH}"
 else
   PECL_BIN="pecl"
   PHP_BIN="php"
 fi
 
-# Force PECL to use resolved /private/tmp directory to avoid macOS symlink path mismatch
+# Force PECL to use resolved, version-unique /private/tmp directory to avoid macOS symlink path mismatch
+# and race conditions when multiple PHP distribtests run concurrently (-j 4).
+PECL_TEMP_DIR="/private/tmp/pear/temp_${PHP_VERSION}"
+sudo mkdir -p "${PECL_TEMP_DIR}"
+
 # Use -j4 since higher parallelism can lead to "resource unavailable"
 # errors during the build. See b/257261061#comment4
-sudo mkdir -p /private/tmp/pear/temp
-sudo env PATH="$PATH" MAKEFLAGS=-j4 "${PECL_BIN}" -d temp_dir=/private/tmp/pear/temp install "${GRPC_PEAR_PACKAGE_NAME}"
+sudo env PATH="$PATH" MAKEFLAGS=-j4 "${PECL_BIN}" -d temp_dir="${PECL_TEMP_DIR}" install "${GRPC_PEAR_PACKAGE_NAME}"
+sudo rm -rf "${PECL_TEMP_DIR}"
 
 "${PHP_BIN}" -d extension=grpc.so -d max_execution_time=300 distribtest.php

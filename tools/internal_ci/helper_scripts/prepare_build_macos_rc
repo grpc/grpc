@@ -247,15 +247,27 @@ fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_PHP}" == "true" ]
 then
-  time brew install php@8.2 php@8.3 php@8.4 php@8.5 || true
+  time brew install php@8.2 php@8.3 php@8.4 php || true
   for ver in 8.2 8.3 8.4 8.5; do
-    if [ -e "/usr/local/opt/php@${ver}/" ]; then
-      PHP_PATH="/usr/local/opt/php@${ver}/"
-    elif [ -e "/opt/homebrew/opt/php@${ver}" ]; then
-      PHP_PATH="/opt/homebrew/opt/php@${ver}"
+    if [ "${ver}" == "8.5" ]; then
+      if [ -e "/usr/local/opt/php/" ]; then
+        PHP_PATH="/usr/local/opt/php/"
+      elif [ -e "/opt/homebrew/opt/php" ]; then
+        PHP_PATH="/opt/homebrew/opt/php"
+      elif [ -e "/usr/local/opt/php@8.5/" ]; then
+        PHP_PATH="/usr/local/opt/php@8.5/"
+      elif [ -e "/opt/homebrew/opt/php@8.5" ]; then
+        PHP_PATH="/opt/homebrew/opt/php@8.5"
+      fi
+    else
+      if [ -e "/usr/local/opt/php@${ver}/" ]; then
+        PHP_PATH="/usr/local/opt/php@${ver}/"
+      elif [ -e "/opt/homebrew/opt/php@${ver}" ]; then
+        PHP_PATH="/opt/homebrew/opt/php@${ver}"
+      fi
     fi
   done
-  PHP_PATH="${PHP_PATH:-/usr/local/opt/php@8.4/}"
+  PHP_PATH="${PHP_PATH:-/usr/local/opt/php/}"
 
   export LDFLAGS="-L${PHP_PATH}/lib ${LDFLAGS}"
   export CPPFLAGS="-I${PHP_PATH}include ${CPPFLAGS}"
