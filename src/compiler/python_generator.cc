@@ -89,6 +89,25 @@ PrivateGenerator::PrivateGenerator(const GeneratorConfiguration& config,
                                    const grpc_generator::File* file)
     : config(config), file(file) {}
 
+// Escapes a comment string so it is safe to embed within a Python triple-quoted
+// docstring. Replaces backslashes first, then triple-quote sequences.
+std::string EscapePythonDocstring(const std::string& input) {
+  std::string result;
+  result.reserve(input.size());
+  for (size_t i = 0; i < input.size(); i++) {
+    if (input[i] == '\\') {
+      result += "\\\\";
+    } else if (input[i] == '"' && i + 2 < input.size() && input[i + 1] == '"' &&
+               input[i + 2] == '"') {
+      result += "\\\"\\\"\\\"";
+      i += 2;
+    } else {
+      result += input[i];
+    }
+  }
+  return result;
+}
+
 void PrivateGenerator::PrintAllComments(StringVector comments,
                                         grpc_generator::Printer* out) {
   if (comments.empty()) {
@@ -108,7 +127,8 @@ void PrivateGenerator::PrintAllComments(StringVector comments,
        ++it) {
     size_t start_pos = it->find_first_not_of(' ');
     if (start_pos != std::string::npos) {
-      out->PrintRaw(it->c_str() + start_pos);
+      std::string escaped = EscapePythonDocstring(it->substr(start_pos));
+      out->PrintRaw(escaped.c_str());
     }
     out->Print("\n");
   }

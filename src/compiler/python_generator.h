@@ -78,6 +78,10 @@ class PythonGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   GeneratorConfiguration config_;
 };
 
+// Escapes a comment string so it is safe to embed within a Python triple-quoted
+// docstring. Exposed for testing.
+std::string EscapePythonDocstring(const std::string& input);
+
 }  // namespace grpc_python_generator
 
 #endif  // GRPC_INTERNAL_COMPILER_PYTHON_GENERATOR_H
