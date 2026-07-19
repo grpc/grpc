@@ -50,12 +50,12 @@ fi
 
 # Force PECL to use resolved, version-unique /private/tmp directory to avoid macOS symlink path mismatch
 # and race conditions when multiple PHP distribtests run concurrently (-j 4).
-PECL_TEMP_DIR="/private/tmp/pear/temp_${PHP_VERSION}"
+PECL_TEMP_DIR="/private/tmp/pear/temp_${PHP_VERSION}_$$"
 sudo mkdir -p "${PECL_TEMP_DIR}"
 
 # Use -j4 since higher parallelism can lead to "resource unavailable"
 # errors during the build. See b/257261061#comment4
-sudo env PATH="$PATH" MAKEFLAGS=-j4 "${PECL_BIN}" -d temp_dir="${PECL_TEMP_DIR}" install "${GRPC_PEAR_PACKAGE_NAME}"
+sudo env PATH="$PATH" MAKEFLAGS=-j4 "${PECL_BIN}" -d temp_dir="${PECL_TEMP_DIR}" -d download_dir="${PECL_TEMP_DIR}" -d cache_dir="${PECL_TEMP_DIR}" install "${GRPC_PEAR_PACKAGE_NAME}"
 sudo rm -rf "${PECL_TEMP_DIR}"
 
 "${PHP_BIN}" -d extension=grpc.so -d max_execution_time=300 distribtest.php
