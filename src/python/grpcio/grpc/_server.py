@@ -27,7 +27,6 @@ import traceback
 from typing import (
     Any,
     Callable,
-    cast,
     Dict,
     Generic,
     Iterable,
@@ -40,6 +39,7 @@ from typing import (
     Set,
     Tuple,
     Union,
+    cast,
 )
 
 import grpc

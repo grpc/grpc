@@ -20,9 +20,9 @@ from typing import Any, AnyStr, Callable, Optional
 import grpc
 from grpc._cython import cygrpc
 from grpc._typing import DeserializingFunction
-from grpc._typing import SerializingFunction
 from grpc._typing import RequestType
 from grpc._typing import ResponseType
+from grpc._typing import SerializingFunction
 
 _LOGGER = logging.getLogger(__name__)
 
