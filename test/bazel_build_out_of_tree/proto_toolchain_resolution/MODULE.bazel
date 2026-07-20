@@ -28,5 +28,9 @@ local_path_override(
     path = "../../..",
 )
 
-bazel_dep(name = "protobuf", version = "35.0")
 bazel_dep(name = "bazel_skylib", version = "1.9.0")
+bazel_dep(name = "protobuf", version = "35.0")
+
+# Use a recent version of BoringSSL because the one otherwise brought in transitively
+# generates compiler warnings despite being compiled with -Werror, thus failing to build.
+bazel_dep(name = "boringssl", version = "0.20260526.0")
