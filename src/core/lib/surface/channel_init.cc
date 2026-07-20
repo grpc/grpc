@@ -138,7 +138,7 @@ ChannelInit::FilterRegistration& ChannelInit::Builder::RegisterFilter(
     return *filters_[type].back();
   }
   // Is server side.
-  auto& server_filters = *filters_[type];
+  auto& server_filters = filters_[type];
   server_filters.insert(server_filters.begin(),
                         std::make_unique<FilterRegistration>(
                             name, filter, filter_adder, registration_source));

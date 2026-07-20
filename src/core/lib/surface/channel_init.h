@@ -301,7 +301,7 @@ class ChannelInit {
 
   class Builder {
    public:
-    // TODO(weizheyuan): revert it back
+    // TODO(weizheyuan): Remove this method and use RegisterFilter.
     FilterRegistration& RegisterV1Filter(
         grpc_channel_stack_type type, const grpc_channel_filter* filter,
         SourceLocation registration_source = {}) {
