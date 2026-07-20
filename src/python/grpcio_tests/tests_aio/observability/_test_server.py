@@ -40,7 +40,7 @@ async def unary_unary(unused_request, servicer_context):
     if ABORT_RPC_METADATA in servicer_context.invocation_metadata():
         await servicer_context.abort(
             grpc.StatusCode.ABORTED, "Aborting RPC for testing purpose"
-    )
+        )
     if RAISE_EXCEPTION_RPC_METADATA in servicer_context.invocation_metadata():
         raise RuntimeError("Failing RPC for testing purpose")
     return _RESPONSE
@@ -49,7 +49,10 @@ async def unary_unary(unused_request, servicer_context):
 async def unary_stream(unused_request, servicer_context):
     for _ in range(STREAM_LENGTH):
         yield _RESPONSE
-        if ABORT_MID_STREAM_RPC_METADATA in servicer_context.invocation_metadata():
+        if (
+            ABORT_MID_STREAM_RPC_METADATA
+            in servicer_context.invocation_metadata()
+        ):
             await servicer_context.abort(
                 grpc.StatusCode.ABORTED, "Aborting RPC for testing purpose"
             )

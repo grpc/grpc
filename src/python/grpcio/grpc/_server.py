@@ -40,7 +40,6 @@ from typing import (
 )
 
 import grpc
-import grpc.experimental
 from grpc import _common
 from grpc import _compression
 from grpc import _interceptor
@@ -55,6 +54,7 @@ from grpc._typing import ResponseType
 from grpc._typing import SerializingFunction
 from grpc._typing import ServerCallbackTag
 from grpc._typing import ServerTagCallbackType
+import grpc.experimental
 from typing_extensions import override
 
 _LOGGER = logging.getLogger(__name__)
