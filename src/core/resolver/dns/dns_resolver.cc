@@ -83,7 +83,7 @@ using grpc_event_engine::experimental::EventEngine;
 class ClientChannelDNSResolver final : public PollingResolver {
  public:
   ClientChannelDNSResolver(ResolverArgs args,
-                                      Duration min_time_between_resolutions);
+                           Duration min_time_between_resolutions);
   OrphanablePtr<Orphanable> StartRequest() override;
 
  private:
@@ -198,8 +198,7 @@ OrphanablePtr<Orphanable> ClientChannelDNSResolver::StartRequest() {
     return nullptr;
   }
   return MakeOrphanable<EventEngineDNSRequestWrapper>(
-      RefAsSubclass<ClientChannelDNSResolver>(DEBUG_LOCATION,
-                                                         "dns-resolving"),
+      RefAsSubclass<ClientChannelDNSResolver>(DEBUG_LOCATION, "dns-resolving"),
       std::move(*dns_resolver));
 }
 
@@ -277,8 +276,7 @@ ClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   resolver_.reset(DEBUG_LOCATION, "dns-resolving");
 }
 
-void ClientChannelDNSResolver::EventEngineDNSRequestWrapper::
-    Orphan() {
+void ClientChannelDNSResolver::EventEngineDNSRequestWrapper::Orphan() {
   {
     MutexLock lock(&on_resolved_mu_);
     orphaned_ = true;
@@ -293,8 +291,7 @@ void ClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   Unref(DEBUG_LOCATION, "Orphan");
 }
 
-void ClientChannelDNSResolver::EventEngineDNSRequestWrapper::
-    OnTimeout() {
+void ClientChannelDNSResolver::EventEngineDNSRequestWrapper::OnTimeout() {
   MutexLock lock(&on_resolved_mu_);
   GRPC_TRACE_VLOG(event_engine_client_channel_resolver, 2)
       << "(event_engine client channel resolver) DNSResolver::"
@@ -303,9 +300,8 @@ void ClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   event_engine_resolver_.reset();
 }
 
-void ClientChannelDNSResolver::EventEngineDNSRequestWrapper::
-    OnHostnameResolved(absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
-                           new_addresses) {
+void ClientChannelDNSResolver::EventEngineDNSRequestWrapper::OnHostnameResolved(
+    absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> new_addresses) {
   std::optional<Resolver::Result> result;
   {
     MutexLock lock(&on_resolved_mu_);
@@ -328,10 +324,9 @@ void ClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   }
 }
 
-void ClientChannelDNSResolver::EventEngineDNSRequestWrapper::
-    OnSRVResolved(
-        absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
-            srv_records) {
+void ClientChannelDNSResolver::EventEngineDNSRequestWrapper::OnSRVResolved(
+    absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
+        srv_records) {
   std::optional<Resolver::Result> result;
   auto cleanup = absl::MakeCleanup([&]() {
     if (result.has_value()) {
@@ -415,8 +410,8 @@ void ClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   result = OnResolvedLocked();
 }
 
-void ClientChannelDNSResolver::EventEngineDNSRequestWrapper::
-    OnTXTResolved(absl::StatusOr<std::vector<std::string>> service_config) {
+void ClientChannelDNSResolver::EventEngineDNSRequestWrapper::OnTXTResolved(
+    absl::StatusOr<std::vector<std::string>> service_config) {
   std::optional<Resolver::Result> result;
   {
     MutexLock lock(&on_resolved_mu_);
@@ -500,8 +495,8 @@ void ClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   }
 }
 
-std::optional<Resolver::Result> ClientChannelDNSResolver::
-    EventEngineDNSRequestWrapper::OnResolvedLocked() {
+std::optional<Resolver::Result>
+ClientChannelDNSResolver::EventEngineDNSRequestWrapper::OnResolvedLocked() {
   if (orphaned_) return std::nullopt;
   // Wait for all requested queries to return.
   if (is_hostname_inflight_ || is_srv_inflight_ || is_txt_inflight_ ||
@@ -554,8 +549,7 @@ std::optional<Resolver::Result> ClientChannelDNSResolver::
 
 }  // namespace
 
-bool ClientChannelDNSResolverFactory::IsValidUri(
-    const URI& uri) const {
+bool ClientChannelDNSResolverFactory::IsValidUri(const URI& uri) const {
   if (absl::StripPrefix(uri.path(), "/").empty()) {
     LOG(ERROR) << "no server name supplied in dns URI";
     return false;
@@ -563,16 +557,15 @@ bool ClientChannelDNSResolverFactory::IsValidUri(
   return true;
 }
 
-OrphanablePtr<Resolver>
-ClientChannelDNSResolverFactory::CreateResolver(
+OrphanablePtr<Resolver> ClientChannelDNSResolverFactory::CreateResolver(
     ResolverArgs args) const {
   Duration min_time_between_resolutions = std::max(
       Duration::Zero(), args.args
                             .GetDurationFromIntMillis(
                                 GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS)
                             .value_or(Duration::Seconds(30)));
-  return MakeOrphanable<ClientChannelDNSResolver>(
-      std::move(args), min_time_between_resolutions);
+  return MakeOrphanable<ClientChannelDNSResolver>(std::move(args),
+                                                  min_time_between_resolutions);
 }
 
 void RegisterDnsResolver(CoreConfiguration::Builder* builder) {

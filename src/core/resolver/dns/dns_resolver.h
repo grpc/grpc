@@ -24,8 +24,7 @@
 
 namespace grpc_core {
 
-class ClientChannelDNSResolverFactory final
-    : public ResolverFactory {
+class ClientChannelDNSResolverFactory final : public ResolverFactory {
  public:
   absl::string_view scheme() const override { return "dns"; }
   bool IsValidUri(const URI& uri) const override;
