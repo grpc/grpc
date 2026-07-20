@@ -21,7 +21,6 @@ from abc import abstractmethod
 import asyncio
 import functools
 from typing import (
-    cast,
     Any,
     AsyncIterable,
     AsyncIterator,
@@ -38,6 +37,7 @@ from typing import (
     TypeAlias,
     TypeVar,
     Union,
+    cast,
 )
 
 import grpc
