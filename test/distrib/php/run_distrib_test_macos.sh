@@ -73,6 +73,7 @@ if (is_array($c)) {
 # Use -j4 since higher parallelism can lead to "resource unavailable"
 # errors during the build. See b/257261061#comment4
 sudo env PATH="$PATH" \
+  PHP_PEAR_SYSCONF_DIR="${PECL_TEMP_DIR}" \
   PHP_PEAR_TEMP_DIR="${PECL_TEMP_DIR}" \
   PHP_PEAR_DOWNLOAD_DIR="${PECL_TEMP_DIR}" \
   PHP_PEAR_CACHE_DIR="${PECL_TEMP_DIR}" \
