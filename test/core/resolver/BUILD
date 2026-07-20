@@ -140,8 +140,8 @@ grpc_cc_test(
 )
 
 grpc_internal_proto_library(
-    name = "resolver_fuzzer_proto",
-    srcs = ["resolver_fuzzer.proto"],
+    name = "dns_resolver_fuzzer_proto",
+    srcs = ["dns_resolver_fuzzer.proto"],
     deps = [
         "//test/core/test_util:fuzz_config_vars_proto",
         "//test/core/test_util:fuzzing_channel_args_proto",
@@ -149,13 +149,13 @@ grpc_internal_proto_library(
 )
 
 grpc_cc_proto_library(
-    name = "resolver_fuzzer_cc_proto",
-    deps = ["resolver_fuzzer_proto"],
+    name = "dns_resolver_fuzzer_cc_proto",
+    deps = ["dns_resolver_fuzzer_proto"],
 )
 
 grpc_fuzz_test(
-    name = "resolver_fuzzer",
-    srcs = ["resolver_fuzzer.cc"],
+    name = "dns_resolver_fuzzer",
+    srcs = ["dns_resolver_fuzzer.cc"],
     external_deps = [
         "absl/base:core_headers",
         "absl/functional:any_invocable",
@@ -172,7 +172,7 @@ grpc_fuzz_test(
         "no_windows",
     ],
     deps = [
-        "resolver_fuzzer_cc_proto",
+        "dns_resolver_fuzzer_cc_proto",
         "//:debug_location",
         "//:event_engine_base_hdrs",
         "//:gpr",

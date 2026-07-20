@@ -49,6 +49,7 @@
 #include <algorithm>
 #include <chrono>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <type_traits>
 #include <utility>
@@ -76,6 +77,8 @@
 #ifdef GRPC_POSIX_SOCKET_ARES_EV_DRIVER
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #endif
+
+void AresOnceInit();
 
 namespace grpc_event_engine::experimental {
 
@@ -276,6 +279,7 @@ AresResolver::AresResolver(
 #endif  // GRPC_ENABLE_FORK_SUPPORT
       event_engine_(std::move(event_engine)) {
   (void)dns_server;  // Used whether or not compiled with fork support
+  AresOnceInit();
   polled_fd_factory_->Initialize(&mutex_, event_engine_.get());
 }
 
@@ -966,21 +970,22 @@ absl::Status AresInit() {
   }
   return absl::OkStatus();
 }
-void AresShutdown() {
-  if (ShouldUseAresDnsResolver()) {
-    // ares_library_init and ares_library_cleanup are currently no-op except
-    // under Windows. Calling them may cause race conditions when other parts of
-    // the binary calls these functions concurrently.
-#ifdef GPR_WINDOWS
-    ares_library_cleanup();
-#endif  // GPR_WINDOWS
-  }
-}
 
 #else  // GRPC_ARES == 1
 
 bool ShouldUseAresDnsResolver() { return false; }
 absl::Status AresInit() { return absl::OkStatus(); }
-void AresShutdown() {}
 
 #endif  // GRPC_ARES == 1
+
+std::once_flag init_flag;
+
+void AresOnceInit() {
+  std::call_once(init_flag, [](){
+    address_sorting_init();
+    auto status = AresInit();
+    if (!status.ok()) {
+      VLOG(2) << "AresInit failed: " << status.message();
+    }
+  });
+}

@@ -657,12 +657,8 @@ TEST_F(StatsPluginEnd2EndTest,
   auto sent_span_data =
       GetSpanByName(recorded_spans, absl::StrCat("Sent.", client_method_name_));
   ASSERT_NE(sent_span_data, recorded_spans.end());
-  // TODO(yijiem): the EventEngine DNS resolver might be faster in getting the
-  // result before TryCheckResolution and the call would not be queued:
-  // https://github.com/grpc/grpc/blob/master/src/core/ext/filters/client_channel/client_channel.cc#L2340.
-  // We could use a FakeResolver and introduce a delay to deflake this test.
   // TODO(mlumish): re-add "Delayed name resolution complete." annotation check
-  // for EventEngine DNS resolver
+  // for EventEngine DNS resolver, possibly using a FakeResolver to force a delay.
   //
   // Check presence of trace annotation for removal from channel's pending
   // lb pick queue.

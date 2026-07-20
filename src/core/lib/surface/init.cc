@@ -109,12 +109,6 @@ void grpc_init(void) {
       g_shutting_down_cv->SignalAll();
     }
     grpc_iomgr_init();
-    // TODO(murgatroid99): Move DNS init calls to EventEngine
-    address_sorting_init();
-    auto status = AresInit();
-    if (!status.ok()) {
-      VLOG(2) << "AresInit failed: " << status.message();
-    }
     grpc_iomgr_start();
   }
 
@@ -127,8 +121,6 @@ void grpc_shutdown_internal_locked(void)
     grpc_core::ExecCtx exec_ctx(0);
     grpc_iomgr_shutdown_background_closure();
     grpc_timer_manager_set_threading(false);  // shutdown timer_manager thread
-    address_sorting_shutdown();
-    AresShutdown();
     grpc_iomgr_shutdown();
   }
   g_shutting_down = false;
