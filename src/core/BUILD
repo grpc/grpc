@@ -4992,6 +4992,7 @@ grpc_cc_library(
         "down_cast",
         "error",
         "grpc_check",
+        "grpc_tls_certificate_selector",
         "iomgr_fwd",
         "load_file",
         "match",
@@ -6254,6 +6255,7 @@ grpc_cc_library(
         "down_cast",
         "envoy_config_common_mutation_rules_upb",
         "envoy_config_core_upb",
+        "envoy_config_route_upb",
         "envoy_type_matcher_upb",
         "envoy_type_upb",
         "grpc_matchers",
@@ -7464,6 +7466,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        "blackboard",
         "channel_args",
         "channel_args_preconditioning",
         "channel_fwd",

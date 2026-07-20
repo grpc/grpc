@@ -790,6 +790,64 @@ TEST_F(Http2ServerTransportTest, TestServerGracefulGoAway) {
   event_engine()->Tick();
 }
 
+TEST_F(Http2ServerTransportTest, PingOnRstStreamTest) {
+  InitTransport(GetChannelArgs()
+                    .Set("grpc.http2.ping_on_rst_stream_percent", 100)
+                    // Disable all sources of pings except for RST streams.
+                    .Set(GRPC_ARG_KEEPALIVE_TIME_MS, INT_MAX)
+                    .Set(GRPC_ARG_HTTP2_BDP_PROBE, false));
+  SpawnTransportLoopsAndExchangeSettings();
+  StrictMock<MockFunction<void(bool)>> on_done;
+  EXPECT_CALL(on_done, Call(true));
+
+  auto factory_factory = [&on_done](CallHandler call_handler) {
+    return [call_handler, &on_done]() mutable {
+      return TrySeq(
+          call_handler.PullClientInitialMetadata(),
+          [call_handler, &on_done](ClientMetadataHandle metadata) mutable {
+            return Map(call_handler.WasCancelled(),
+                       [&on_done](bool cancelled) -> absl::Status {
+                         on_done.Call(cancelled);
+                         return absl::OkStatus();
+                       });
+          });
+    };
+  };
+  AddStream(std::move(factory_factory));
+
+  auto step = endpoint()->NewStep();
+  // Client sends a header frame to start stream 1.
+  step->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1,
+          /*end_headers=*/true,
+          /*end_stream=*/false),
+  });
+  // Client sends RST_STREAM.
+  step->ThenPerformRead({
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/1,
+          /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kCancel)),
+  });
+  // Server should send a PING frame due to the RST_STREAM.
+  // We capture the outgoing PING, read its opaque_id, and provide an ACK.
+  step->ThenExpectWrite([&, step](SliceBuffer& buffer) {
+    uint64_t opaque_id =
+        VerifyPingFrameAndReturnOpaqueId(buffer, /*is_ack=*/false);
+    step->InsertReadAtHead({helper_.SerializedPingFrame(/*ack=*/true,
+                                                        /*opaque=*/opaque_id)});
+  });
+
+  step->Wait();
+  event_engine()->Tick();
+
+  // Teardown the transport.
+  std::shared_ptr<EventSequenceEndpoint::Step> step2 = endpoint()->NewStep();
+  AddTransportCloseExpectations(step2.get(), /*last_stream_id=*/1);
+  step2->Wait();
+}
+
 TEST_F(Http2ServerTransportTest, TestNextAllowedPingIntervalKeepaliveEnabled) {
   ExecCtx ctx;
   InitTransport(GetChannelArgs().Set(GRPC_ARG_KEEPALIVE_TIME_MS, 1000));

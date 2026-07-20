@@ -45,7 +45,6 @@ EXPERIMENT_ENABLES = {
     "metadata_outstanding_token_refactor": "metadata_outstanding_token_refactor",
     "metadata_publish_to_app_tag": "metadata_publish_to_app_tag",
     "monitoring_experiment": "monitoring_experiment",
-    "multiping": "multiping",
     "optimization_01": "optimization_01",
     "optimization_02": "optimization_02",
     "optimization_03": "optimization_03",
@@ -195,7 +194,6 @@ EXPERIMENTS = {
                 "tcp_rcv_lowat",
             ],
             "flow_control_test": [
-                "multiping",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],

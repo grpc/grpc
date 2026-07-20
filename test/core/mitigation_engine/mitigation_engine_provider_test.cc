@@ -41,11 +41,13 @@ class TestMitigationEngine : public MitigationEngine {
     return std::nullopt;
   }
   std::optional<Action> EvaluateIncomingMetadata(
-      absl::string_view key, absl::string_view value) override {
+      absl::string_view key, absl::string_view value,
+      absl::string_view /*peer_address*/) override {
     return std::nullopt;
   }
   std::optional<Action> EvaluateAllIncomingMetadata(
-      const grpc_metadata_batch& metadata) override {
+      const grpc_metadata_batch& metadata,
+      absl::string_view /*peer_address*/) override {
     return std::nullopt;
   }
 

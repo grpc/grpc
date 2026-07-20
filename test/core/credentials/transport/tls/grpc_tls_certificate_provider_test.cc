@@ -25,6 +25,7 @@
 #include <utility>
 
 #include "src/core/util/grpc_check.h"
+#include "src/core/util/match.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "gmock/gmock.h"
@@ -174,20 +175,27 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
     // dtor sets state->watcher to nullptr.
     ~TlsCertificatesTestWatcher() override { state_->watcher = nullptr; }
 
-    void OnCertificatesChanged(
-        std::shared_ptr<tsi::RootCertInfo> roots,
-        std::optional<PemKeyCertPairList> key_cert_pairs) override {
-      MutexLock lock(&state_->mu);
+    void OnCertificatesChanged(std::shared_ptr<tsi::RootCertInfo> roots,
+                               std::optional<KeyCertPairsOrSelector>
+                                   key_cert_pairs_or_selector) override {
       tsi::RootCertInfo updated_root;
       if (roots != nullptr) {
         updated_root = *roots;
       }
-      PemKeyCertPairList updated_identity;
-      if (key_cert_pairs.has_value()) {
-        updated_identity = std::move(*key_cert_pairs);
+      PemKeyCertPairList key_cert_pairs;
+      if (key_cert_pairs_or_selector.has_value()) {
+        MatchMutable(
+            &(*key_cert_pairs_or_selector),
+            [&](PemKeyCertPairList* pem_key_cert_pairs) {
+              key_cert_pairs = std::move(*pem_key_cert_pairs);
+            },
+            [](std::shared_ptr<CertificateSelector>*) {
+              // Not supposed to happen in this test.
+            });
       }
+      MutexLock lock(&state_->mu);
       state_->cert_update_queue.emplace_back(updated_root,
-                                             std::move(updated_identity));
+                                             std::move(key_cert_pairs));
     }
 
     void OnError(grpc_error_handle root_cert_error,

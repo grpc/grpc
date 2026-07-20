@@ -24,7 +24,7 @@ from collections.abc import (
     Sequence,
     ValuesView,
 )
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, Optional, Tuple, Union
 
 from typing_extensions import Self
 
@@ -34,7 +34,7 @@ MetadatumType = Tuple[MetadataKey, MetadataValue]
 MetadataType = Union["Metadata", Sequence[MetadatumType]]
 
 
-class Metadata(Collection):  # noqa: PLW1641
+class Metadata(Collection[MetadatumType]):  # noqa: PLW1641
     """Metadata abstraction for the asynchronous calls and interceptors.
 
     The metadata is a mapping from str -> List[str]
@@ -47,13 +47,15 @@ class Metadata(Collection):  # noqa: PLW1641
         * Allows partial mutation on the data without recreating the new object from scratch.
     """
 
+    _metadata: OrderedDict[MetadataKey, list[MetadataValue]]
+
     def __init__(self, *args: MetadatumType) -> None:
         self._metadata = OrderedDict()
         for md_key, md_value in args:
             self.add(md_key, md_value)
 
     @classmethod
-    def from_tuple(cls, raw_metadata: tuple):
+    def from_tuple(cls, raw_metadata: Iterable[MetadatumType]) -> Self:
         # Note: We unintentionally support non-tuple arguments here. We plan
         # to emit a DeprecationWarning when a non-tuple type is used.
         if raw_metadata:
@@ -121,13 +123,13 @@ class Metadata(Collection):  # noqa: PLW1641
             for value in values:
                 yield (key, value)
 
-    def keys(self) -> KeysView:
+    def keys(self) -> KeysView[MetadataKey]:
         return KeysView(self._metadata)
 
-    def values(self) -> ValuesView:
+    def values(self) -> ValuesView[list[MetadataValue]]:
         return ValuesView(self._metadata)
 
-    def items(self) -> ItemsView:
+    def items(self) -> ItemsView[MetadataKey, list[MetadataValue]]:
         return ItemsView(self._metadata)
 
     def get(
@@ -138,13 +140,13 @@ class Metadata(Collection):  # noqa: PLW1641
         except KeyError:
             return default
 
-    def get_all(self, key: MetadataKey) -> List[MetadataValue]:
+    def get_all(self, key: MetadataKey) -> list[MetadataValue]:
         """For compatibility with other Metadata abstraction objects (like in Java),
         this would return all items under the desired <key>.
         """
         return self._metadata.get(key, [])
 
-    def set_all(self, key: MetadataKey, values: List[MetadataValue]) -> None:
+    def set_all(self, key: MetadataKey, values: list[MetadataValue]) -> None:
         self._metadata[key] = values
 
     def __contains__(self, key: object) -> bool:
