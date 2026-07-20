@@ -498,18 +498,16 @@ TEST_P(XdsSecurityTest, TestTlsHandshakeTelemetry) {
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
                                           "", {}, authenticated_identity_);
-  uint64_t client_count_after =
-      stats_plugin_
-          ->GetUInt64MetricValueByName("grpc.client.tls.handshakes",
-                                       client_labels)
-          .value_or(0);
-  uint64_t server_count_after =
-      stats_plugin_
-          ->GetUInt64MetricValueByName("grpc.server.tls.handshakes",
-                                       server_labels)
-          .value_or(0);
-  EXPECT_EQ(client_count_after, 1);
-  EXPECT_EQ(server_count_after, 1);
+  EXPECT_EQ(stats_plugin_
+                ->GetUInt64MetricValueByName("grpc.client.tls.handshakes",
+                                             client_labels)
+                .value_or(0),
+            1);
+  EXPECT_EQ(stats_plugin_
+                ->GetUInt64MetricValueByName("grpc.server.tls.handshakes",
+                                             server_labels)
+                .value_or(0),
+            1);
 }
 
 TEST_P(XdsSecurityTest, TestMtlsConfigurationWithNoSanMatchers) {
