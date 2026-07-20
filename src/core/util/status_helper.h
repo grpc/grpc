@@ -73,10 +73,6 @@ enum class StatusIntProperty {
   /// channel connectivity state associated with the error
   // TODO(roth): Remove this when the promise migration is done.
   ChannelConnectivityState,
-  /// LB policy drop
-  // TODO(roth): Replace this with something else, possibly a call
-  // context element.
-  kLbPolicyDrop,
 };
 
 /// Creates a status with given additional information

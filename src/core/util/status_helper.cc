@@ -60,8 +60,6 @@ const char* GetStatusIntPropertyUrl(StatusIntProperty key) {
       return TYPE_URL(TYPE_INT_TAG "http2_error");
     case StatusIntProperty::ChannelConnectivityState:
       return TYPE_URL(TYPE_INT_TAG "channel_connectivity_state");
-    case StatusIntProperty::kLbPolicyDrop:
-      return TYPE_URL(TYPE_INT_TAG "lb_policy_drop");
   }
   GPR_UNREACHABLE_CODE(return "unknown");
 }

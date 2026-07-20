@@ -76,7 +76,7 @@ python -m grpc_tools.protoc \
     ${HEALTH_PROTO_SOURCE_DIR}/health.proto
 
 cd /var/local/jenkins/grpc/
-bazel build //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client
+bazel build --config=python //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client
 
 # Run legacy ping_pong test. All tests are migrated to
 # https://github.com/grpc/psm-interop
@@ -91,4 +91,5 @@ GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_cluster_manager_lb,c
     --gcp_suffix=$(date '+%s') \
     --verbose \
     ${XDS_V3_OPT-} \
-    --client_cmd='bazel run //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client -- --server=xds:///{server_uri} --stats_port={stats_port} --qps={qps} {rpcs_to_send} {metadata_to_send}'
+    --client_cmd='bazel run --config=python //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client -- --server=xds:///{server_uri} --stats_port={stats_port} --qps={qps} {rpcs_to_send} {metadata_to_send}'
+
