@@ -1001,7 +1001,7 @@ def _start_unary_request(
 
 
 def _end_unary_response_blocking(
-    state: _RPCState[Any],
+    state: _RPCState[ResponseType],
     call: cygrpc.SegregatedCall,
     with_call: bool,
     deadline: Optional[float],
