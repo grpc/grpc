@@ -2567,8 +2567,8 @@ bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
             << "chand=" << chand_ << " lb_call=" << this
             << ": LB pick dropped: " << drop_pick->status;
         is_drop_ = true;
-        *error = MaybeRewriteIllegalStatusCode(
-            std::move(drop_pick->status), "LB drop");
+        *error = MaybeRewriteIllegalStatusCode(std::move(drop_pick->status),
+                                               "LB drop");
         return true;
       });
 }
