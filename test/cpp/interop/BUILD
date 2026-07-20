@@ -823,6 +823,7 @@ grpc_cc_binary(
         "absl/log",
         "protobuf",
         "protobuf_clib",
+        "protobuf_headers",
     ],
     deps = [
         "//:gpr",
