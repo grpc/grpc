@@ -268,7 +268,7 @@ task 'publish:native_debug', [:gem_dir] do |_t, args|
   require 'open3'
   require 'shellwords'
 
-  # Helper to log and execute commands. Usage: run_cmd.call('gsutil', 'ls', '-b', gcs_base)
+  # Helper to log and execute commands. Usage: run_cmd.call('gcloud', 'storage', 'ls', gcs_base)
   run_cmd = lambda do |*cmd_parts|
     puts "Executing: #{Shellwords.join(cmd_parts)}"
     success = system(*cmd_parts)
