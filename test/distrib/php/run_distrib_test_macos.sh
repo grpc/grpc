@@ -56,7 +56,7 @@ sudo mkdir -p "${PECL_TEMP_DIR}"
 PEAR_CONF="${PECL_TEMP_DIR}/pear.conf"
 sudo "${PECL_BIN}" config-create "${PECL_TEMP_DIR}" "${PEAR_CONF}"
 
-# Update temp_dir, download_dir, and cache_dir inside pear.conf
+# Update temp_dir, download_dir, cache_dir, and build_dir inside pear.conf
 sudo "${PHP_BIN}" -r '
 $f = "'"${PEAR_CONF}"'";
 $dir = "'"${PECL_TEMP_DIR}"'";
@@ -65,6 +65,7 @@ if (is_array($c)) {
     $c["temp_dir"] = $dir;
     $c["download_dir"] = $dir;
     $c["cache_dir"] = $dir;
+    $c["build_dir"] = $dir;
     file_put_contents($f, serialize($c));
 }
 '
@@ -75,7 +76,8 @@ sudo env PATH="$PATH" \
   PHP_PEAR_TEMP_DIR="${PECL_TEMP_DIR}" \
   PHP_PEAR_DOWNLOAD_DIR="${PECL_TEMP_DIR}" \
   PHP_PEAR_CACHE_DIR="${PECL_TEMP_DIR}" \
-  MAKEFLAGS=-j4 "${PECL_BIN}" -c "${PEAR_CONF}" -d temp_dir="${PECL_TEMP_DIR}" -d download_dir="${PECL_TEMP_DIR}" -d cache_dir="${PECL_TEMP_DIR}" install "${GRPC_PEAR_PACKAGE_NAME}"
+  PHP_PEAR_BUILD_DIR="${PECL_TEMP_DIR}" \
+  MAKEFLAGS=-j4 "${PECL_BIN}" -c "${PEAR_CONF}" -d temp_dir="${PECL_TEMP_DIR}" -d download_dir="${PECL_TEMP_DIR}" -d cache_dir="${PECL_TEMP_DIR}" -d build_dir="${PECL_TEMP_DIR}" install "${GRPC_PEAR_PACKAGE_NAME}"
 sudo rm -rf "${PECL_TEMP_DIR}"
 
 "${PHP_BIN}" -d extension=grpc.so -d max_execution_time=300 distribtest.php
