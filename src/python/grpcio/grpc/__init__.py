@@ -23,7 +23,8 @@ import sys
 import typing
 from typing import Any, Callable, Optional, Protocol, Sequence, Tuple, Union
 
-from grpc._typing import MetadataType
+if typing.TYPE_CHECKING:
+    from grpc._typing import MetadataType
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
@@ -763,7 +764,7 @@ class UnaryUnaryMultiCallable(abc.ABC):
         credentials: Optional[Any] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[Any] = None,
-    ) -> Any
+    ) -> Any:
         """Synchronously invokes the underlying RPC.
 
         Args:

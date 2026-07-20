@@ -13,6 +13,8 @@
 # limitations under the License.
 """Common types for gRPC Sync API"""
 
+from __future__ import annotations
+
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -42,8 +44,8 @@ MetadataType = Sequence[Tuple[str, Union[str, bytes]]]
 ChannelArgumentType = Tuple[str, Any]
 DoneCallbackType = Callable[[Any], None]
 NullaryCallbackType = Callable[[], None]
-RequestIterableType = Iterable[Any]
-ResponseIterableType = Iterable[Any]
+RequestIterableType = Iterable[RequestType]
+ResponseIterableType = Iterable[ResponseType]
 UserTag = Callable[[cygrpc.BaseEvent], bool]
 IntegratedCallFactory = Callable[
     [
