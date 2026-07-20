@@ -1513,7 +1513,7 @@ TEST_P(SslTransportSecurityTest, TestServerHandshakerOverrideALPN) {
   DoHandshake();
 }
 
-class TestMetricsSink : public MetricsSink {
+class TestMetricsSink final : public MetricsSink {
  public:
   using Labels = std::map<std::string, std::string>;
 
