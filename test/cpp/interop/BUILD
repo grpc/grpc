@@ -814,7 +814,9 @@ grpc_cc_library(
 
 grpc_cc_binary(
     name = "otlp_collector",
-    srcs = ["otlp_collector.cc"],
+    srcs = [
+        "otlp_collector.cc",
+    ],
     external_deps = [
         "absl/flags:flag",
         "absl/flags:parse",
@@ -822,6 +824,7 @@ grpc_cc_binary(
         "protobuf",
     ],
     deps = [
+        "//:gpr",
         "//:grpc++",
         "@opentelemetry_proto//:trace_service_grpc_cc",
         "@opentelemetry_proto//:trace_service_proto_cc",

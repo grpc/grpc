@@ -16,11 +16,12 @@
 //
 //
 
+#include <atomic>
 #include <chrono>
+#include <csignal>
 #include <fstream>
 #include <memory>
 #include <mutex>
-#include <signal.h>
 #include <string>
 #include <thread>
 #include <vector>
@@ -30,7 +31,6 @@
 #include "absl/log/log.h"
 
 #include <google/protobuf/util/json_util.h>
-#include <grpc/support/atm.h>
 #include <grpcpp/grpcpp.h>
 #include "opentelemetry/proto/collector/trace/v1/trace_service.grpc.pb.h"
 
@@ -88,7 +88,12 @@ class TraceServiceServiceImpl final
     }
     out.close();
 
-    std::rename(tmp_file.c_str(), file_path_.c_str());
+    if (std::rename(tmp_file.c_str(), file_path_.c_str()) != 0) {
+      LOG(ERROR) << "Failed to rename temporary file " << tmp_file << " to "
+                 << file_path_;
+      return grpc::Status(grpc::StatusCode::INTERNAL,
+                          "Failed to update trace output file");
+    }
 
     return grpc::Status::OK;
   }
@@ -99,10 +104,10 @@ class TraceServiceServiceImpl final
   std::mutex mu_;
 };
 
-static gpr_atm g_got_sigint = 0;
+static std::atomic<bool> g_got_sigint{false};
 
 static void sig_handler(int /*sig*/) {
-  gpr_atm_no_barrier_store(&g_got_sigint, 1);
+  g_got_sigint.store(true, std::memory_order_relaxed);
 }
 
 int main(int argc, char** argv) {
@@ -131,7 +136,7 @@ int main(int argc, char** argv) {
 
   std::unique_ptr<grpc::Server> server(builder.BuildAndStart());
   LOG(INFO) << "OTLP Collector listening on port " << port << "...";
-  while (!gpr_atm_no_barrier_load(&g_got_sigint)) {
+  while (!g_got_sigint.load(std::memory_order_relaxed)) {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
   server->Shutdown();
