@@ -131,9 +131,6 @@ const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
-const char* const description_multiping =
-    "Allow more than one ping to be in flight at a time by default.";
-const char* const additional_constraints_multiping = "{}";
 const char* const description_optimization_01 = "Optimization";
 const char* const additional_constraints_optimization_01 = "{}";
 const char* const description_optimization_02 = "Optimization";
@@ -362,8 +359,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
-    {"multiping", description_multiping, additional_constraints_multiping,
-     nullptr, 0, false, true},
     {"optimization_01", description_optimization_01,
      additional_constraints_optimization_01, nullptr, 0, true, true},
     {"optimization_02", description_optimization_02,
@@ -590,9 +585,6 @@ const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
-const char* const description_multiping =
-    "Allow more than one ping to be in flight at a time by default.";
-const char* const additional_constraints_multiping = "{}";
 const char* const description_optimization_01 = "Optimization";
 const char* const additional_constraints_optimization_01 = "{}";
 const char* const description_optimization_02 = "Optimization";
@@ -821,8 +813,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
-    {"multiping", description_multiping, additional_constraints_multiping,
-     nullptr, 0, false, true},
     {"optimization_01", description_optimization_01,
      additional_constraints_optimization_01, nullptr, 0, true, true},
     {"optimization_02", description_optimization_02,
@@ -1049,9 +1039,6 @@ const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
-const char* const description_multiping =
-    "Allow more than one ping to be in flight at a time by default.";
-const char* const additional_constraints_multiping = "{}";
 const char* const description_optimization_01 = "Optimization";
 const char* const additional_constraints_optimization_01 = "{}";
 const char* const description_optimization_02 = "Optimization";
@@ -1280,8 +1267,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
-    {"multiping", description_multiping, additional_constraints_multiping,
-     nullptr, 0, false, true},
     {"optimization_01", description_optimization_01,
      additional_constraints_optimization_01, nullptr, 0, true, true},
     {"optimization_02", description_optimization_02,

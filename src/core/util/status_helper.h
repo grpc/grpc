@@ -70,9 +70,6 @@ enum class StatusIntProperty {
   /// http2 error code associated with the error (see the HTTP2 RFC)
   // TODO(tjagtap): Remove this as part of creating a new HTTP/2 error type.
   kHttp2Error,
-  /// channel connectivity state associated with the error
-  // TODO(roth): Remove this when the promise migration is done.
-  ChannelConnectivityState,
 };
 
 /// Creates a status with given additional information

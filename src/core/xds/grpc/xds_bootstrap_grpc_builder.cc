@@ -71,13 +71,13 @@ GrpcXdsBootstrapBuilder::Build(absl::string_view json_string) {
 namespace {
 
 Mutex* g_mu = new Mutex;
-NoDestruct<absl::AnyInvocable<std::unique_ptr<XdsHttpFilterImpl>()>>
+NoDestruct<absl::AnyInvocable<std::unique_ptr<XdsHttpFilterFactory>()>>
     g_http_filter_factory_factory ABSL_GUARDED_BY(*g_mu);
 
 }  // namespace
 
 void GrpcXdsBootstrapBuilder::SetXdsHttpFilterFactoryForTest(
-    absl::AnyInvocable<std::unique_ptr<XdsHttpFilterImpl>()> factory) {
+    absl::AnyInvocable<std::unique_ptr<XdsHttpFilterFactory>()> factory) {
   MutexLock lock(g_mu);
   *g_http_filter_factory_factory = std::move(factory);
 }
@@ -86,13 +86,15 @@ XdsHttpFilterRegistry GrpcXdsBootstrapBuilder::CreateXdsHttpFilterRegistry(
     bool register_builtins) {
   XdsHttpFilterRegistry registry;
   if (register_builtins) {
-    registry.RegisterFilter(std::make_unique<XdsHttpRouterFilter>());
-    registry.RegisterFilter(std::make_unique<XdsHttpFaultFilter>());
-    registry.RegisterFilter(std::make_unique<XdsHttpRbacFilter>());
-    registry.RegisterFilter(std::make_unique<XdsHttpStatefulSessionFilter>());
-    registry.RegisterFilter(std::make_unique<XdsHttpGcpAuthnFilter>());
+    registry.RegisterFilter(std::make_unique<XdsHttpRouterFilterFactory>());
+    registry.RegisterFilter(std::make_unique<XdsHttpFaultFilterFactory>());
+    registry.RegisterFilter(std::make_unique<XdsHttpRbacFilterFactory>());
+    registry.RegisterFilter(
+        std::make_unique<XdsHttpStatefulSessionFilterFactory>());
+    registry.RegisterFilter(std::make_unique<XdsHttpGcpAuthnFilterFactory>());
     if (IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_COMPOSITE_FILTER")) {
-      registry.RegisterFilter(std::make_unique<XdsHttpCompositeFilter>());
+      registry.RegisterFilter(
+          std::make_unique<XdsHttpCompositeFilterFactory>());
     }
     MutexLock lock(g_mu);
     if (*g_http_filter_factory_factory != nullptr) {
@@ -410,22 +412,22 @@ XdsAuditLoggerRegistry GrpcXdsBootstrapBuilder::CreateXdsAuditLoggerRegistry() {
 }
 
 //
-// XdsHttpRouterFilter
+// XdsHttpRouterFilterFactory
 //
 
-absl::string_view XdsHttpRouterFilter::ConfigProtoName() const {
+absl::string_view XdsHttpRouterFilterFactory::ConfigProtoName() const {
   return "envoy.extensions.filters.http.router.v3.Router";
 }
 
-absl::string_view XdsHttpRouterFilter::OverrideConfigProtoName() const {
+absl::string_view XdsHttpRouterFilterFactory::OverrideConfigProtoName() const {
   return "";
 }
 
-void XdsHttpRouterFilter::PopulateSymtab(upb_DefPool* symtab) const {
+void XdsHttpRouterFilterFactory::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_router_v3_Router_getmsgdef(symtab);
 }
 
-std::optional<Json> XdsHttpRouterFilter::GenerateFilterConfig(
+std::optional<Json> XdsHttpRouterFilterFactory::GenerateFilterConfig(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context,
     const XdsExtension& extension, ValidationErrors* errors) const {
@@ -444,7 +446,7 @@ std::optional<Json> XdsHttpRouterFilter::GenerateFilterConfig(
   return Json();
 }
 
-std::optional<Json> XdsHttpRouterFilter::GenerateFilterConfigOverride(
+std::optional<Json> XdsHttpRouterFilterFactory::GenerateFilterConfigOverride(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& /*context*/,
     const XdsExtension& /*extension*/, ValidationErrors* errors) const {
@@ -452,7 +454,8 @@ std::optional<Json> XdsHttpRouterFilter::GenerateFilterConfigOverride(
   return std::nullopt;
 }
 
-RefCountedPtr<const FilterConfig> XdsHttpRouterFilter::ParseTopLevelConfig(
+RefCountedPtr<const FilterConfig>
+XdsHttpRouterFilterFactory::ParseTopLevelConfig(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context,
     const XdsExtension& extension, ValidationErrors* errors) const {
@@ -471,7 +474,8 @@ RefCountedPtr<const FilterConfig> XdsHttpRouterFilter::ParseTopLevelConfig(
   return nullptr;
 }
 
-RefCountedPtr<const FilterConfig> XdsHttpRouterFilter::ParseOverrideConfig(
+RefCountedPtr<const FilterConfig>
+XdsHttpRouterFilterFactory::ParseOverrideConfig(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& /*context*/,
     const XdsExtension& /*extension*/, ValidationErrors* errors) const {
