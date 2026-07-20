@@ -330,9 +330,9 @@ class XdsResolver final : public Resolver {
     explicit FilterChainBuilderWrapper(FilterChainBuilder& builder)
         : builder_(builder) {}
 
-    void AddFilter(const XdsHttpFilterImpl* filter_impl,
+    void AddFilter(const XdsHttpFilterFactory* factory,
                    RefCountedPtr<const FilterConfig> config) override {
-      filter_impl->AddFilter(builder_, std::move(config));
+      factory->AddFilter(builder_, std::move(config));
     }
 
     absl::StatusOr<RefCountedPtr<FilterChain>> Build() override {

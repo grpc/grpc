@@ -38,15 +38,16 @@
 
 namespace grpc_core {
 
-absl::string_view XdsHttpCompositeFilter::ConfigProtoName() const {
+absl::string_view XdsHttpCompositeFilterFactory::ConfigProtoName() const {
   return "envoy.extensions.common.matching.v3.ExtensionWithMatcher";
 }
 
-absl::string_view XdsHttpCompositeFilter::OverrideConfigProtoName() const {
+absl::string_view XdsHttpCompositeFilterFactory::OverrideConfigProtoName()
+    const {
   return "envoy.extensions.common.matching.v3.ExtensionWithMatcherPerRoute";
 }
 
-void XdsHttpCompositeFilter::PopulateSymtab(upb_DefPool* symtab) const {
+void XdsHttpCompositeFilterFactory::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_common_matching_v3_ExtensionWithMatcher_getmsgdef(symtab);
   envoy_extensions_common_matching_v3_ExtensionWithMatcherPerRoute_getmsgdef(
       symtab);
@@ -57,13 +58,14 @@ void XdsHttpCompositeFilter::PopulateSymtab(upb_DefPool* symtab) const {
       symtab);
 }
 
-void XdsHttpCompositeFilter::AddFilter(
+void XdsHttpCompositeFilterFactory::AddFilter(
     FilterChainBuilder& builder,
     RefCountedPtr<const FilterConfig> config) const {
   builder.AddFilter<CompositeFilter>(std::move(config));
 }
 
-const grpc_channel_filter* XdsHttpCompositeFilter::channel_filter() const {
+const grpc_channel_filter* XdsHttpCompositeFilterFactory::channel_filter()
+    const {
   return &CompositeFilter::kFilterVtable;
 }
 
@@ -168,22 +170,21 @@ class ExecuteFilterActionFactory final : public XdsMatcherActionFactory {
         envoy_config_core_v3_TypedExtensionConfig_typed_config(typed_config);
     ValidationErrors::ScopedField field(errors, ".typed_config.typed_config");
     auto extension = ExtractXdsExtension(context, any, errors);
-    const XdsHttpFilterImpl* filter_impl = nullptr;
+    const XdsHttpFilterFactory* factory = nullptr;
     RefCountedPtr<const FilterConfig> config;
     if (extension.has_value()) {
-      filter_impl =
-          http_filter_registry.GetFilterForTopLevelType(extension->type);
-      if (filter_impl == nullptr) {
+      factory = http_filter_registry.GetFilterForTopLevelType(extension->type);
+      if (factory == nullptr) {
         errors->AddError("unsupported filter type");
-      } else if (filter_impl->IsTerminalFilter()) {
+      } else if (factory->IsTerminalFilter()) {
         errors->AddError(
             "terminal filters may not be used under composite filter");
       } else {
         config =
-            filter_impl->ParseTopLevelConfig(name, context, *extension, errors);
+            factory->ParseTopLevelConfig(name, context, *extension, errors);
       }
     }
-    return {filter_impl, std::move(config)};
+    return {factory, std::move(config)};
   }
 };
 
@@ -201,7 +202,8 @@ std::unique_ptr<XdsMatcher> ParseMatcher(
 
 }  // namespace
 
-RefCountedPtr<const FilterConfig> XdsHttpCompositeFilter::ParseTopLevelConfig(
+RefCountedPtr<const FilterConfig>
+XdsHttpCompositeFilterFactory::ParseTopLevelConfig(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context,
     const XdsExtension& extension, ValidationErrors* errors) const {
@@ -252,7 +254,8 @@ RefCountedPtr<const FilterConfig> XdsHttpCompositeFilter::ParseTopLevelConfig(
   return config;
 }
 
-RefCountedPtr<const FilterConfig> XdsHttpCompositeFilter::ParseOverrideConfig(
+RefCountedPtr<const FilterConfig>
+XdsHttpCompositeFilterFactory::ParseOverrideConfig(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context,
     const XdsExtension& extension, ValidationErrors* errors) const {
@@ -280,14 +283,14 @@ RefCountedPtr<const FilterConfig> XdsHttpCompositeFilter::ParseOverrideConfig(
   return config;
 }
 
-RefCountedPtr<const FilterConfig> XdsHttpCompositeFilter::MergeConfigs(
+RefCountedPtr<const FilterConfig> XdsHttpCompositeFilterFactory::MergeConfigs(
     RefCountedPtr<const FilterConfig> top_level_config,
     RefCountedPtr<const FilterConfig> virtual_host_override_config,
     RefCountedPtr<const FilterConfig> route_override_config,
     RefCountedPtr<const FilterConfig> cluster_weight_override_config,
     XdsTransportFactory& transport_factory, Blackboard& blackboard) const {
   // Get the config to use via our base class.
-  auto config_to_use = XdsHttpFilterImpl::MergeConfigs(
+  auto config_to_use = XdsHttpFilterFactory::MergeConfigs(
       std::move(top_level_config), std::move(virtual_host_override_config),
       std::move(route_override_config),
       std::move(cluster_weight_override_config), transport_factory, blackboard);
@@ -305,9 +308,9 @@ RefCountedPtr<const FilterConfig> XdsHttpCompositeFilter::MergeConfigs(
         DownCast<const CompositeFilter::ExecuteFilterAction&>(action);
     auto& merged_configs = new_config->merged_config_map[&action];
     GRPC_CHECK(merged_configs.empty());
-    for (const auto& [filter_impl, filter_config] :
+    for (const auto& [factory, filter_config] :
          execute_filter_action.filter_chain()) {
-      merged_configs.push_back(filter_impl->MergeConfigs(
+      merged_configs.push_back(factory->MergeConfigs(
           filter_config, /*virtual_host_override_config=*/nullptr,
           /*route_override_config=*/nullptr,
           /*cluster_weight_override_config=*/nullptr, transport_factory,
