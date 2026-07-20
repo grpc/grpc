@@ -106,6 +106,7 @@
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/transport/auth_context.h"
+#include "src/core/transport/message_size_service_config.h"
 #include "src/core/util/bitset.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
@@ -504,6 +505,8 @@ static void read_channel_args(grpc_chttp2_transport* t,
           .value_or(grpc_core::Duration::Seconds(1))
           .millis();
   GRPC_CHECK(t->min_tarpit_duration_ms <= t->max_tarpit_duration_ms);
+  t->max_receive_message_length =
+      grpc_core::GetMaxRecvSizeFromChannelArgs(channel_args);
   t->max_header_list_size_soft_limit =
       grpc_core::GetSoftLimitFromChannelArgs(channel_args);
 

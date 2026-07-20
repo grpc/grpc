@@ -19,6 +19,7 @@
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
@@ -74,6 +75,19 @@
   "\x10\x07:status\x03" #STATUS_CODE
 
 #define UNPARSABLE_RESP "Bad Request\n"
+
+#define HTTP2_GRPC_OVERSIZED_RESP        \
+  "\x00\x00>\x01\x04\x00\x00\x00\x01"    \
+  "\x10\x0e"                             \
+  "content-length\x01"                   \
+  "5"                                    \
+  "\x10\x0c"                             \
+  "content-type\x10"                     \
+  "application/grpc"                     \
+  "\x10\x07:status\x03"                  \
+  "200"                                  \
+  "\x00\x00\x05\x00\x00\x00\x00\x00\x01" \
+  "\x00\x00\x00\x00\x02"
 
 #define HTTP2_DETAIL_MSG(STATUS_CODE) \
   "Received http2 header with status: " #STATUS_CODE
@@ -198,7 +212,8 @@ static gpr_timespec n_sec_deadline(int seconds) {
 }
 
 static void start_rpc(int target_port, grpc_status_code expected_status,
-                      const char* expected_detail) {
+                      const char* expected_detail,
+                      const grpc_channel_args* channel_args) {
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -212,7 +227,8 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   state.target = grpc_core::JoinHostPort("127.0.0.1", target_port);
 
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-  state.channel = grpc_channel_create(state.target.c_str(), creds, nullptr);
+  state.channel =
+      grpc_channel_create(state.target.c_str(), creds, channel_args);
   grpc_channel_credentials_release(creds);
   grpc_slice host = grpc_slice_from_static_string("localhost");
   // The default connect deadline is 20 seconds, so reduce the RPC deadline to 1
@@ -329,7 +345,8 @@ static void run_test(bool http2_response, bool send_settings,
                      const char* response_payload,
                      size_t response_payload_length,
                      grpc_status_code expected_status,
-                     const char* expected_detail) {
+                     const char* expected_detail,
+                     const grpc_channel_args* channel_args = nullptr) {
   test_tcp_server test_server;
   grpc_core::ExecCtx exec_ctx;
   gpr_event ev;
@@ -348,7 +365,7 @@ static void run_test(bool http2_response, bool send_settings,
   // poll server until sending out the response
   std::unique_ptr<grpc_core::Thread> thdptr(
       poll_server_until_read_done(&test_server, &ev));
-  start_rpc(server_port, expected_status, expected_detail);
+  start_rpc(server_port, expected_status, expected_detail, channel_args);
   gpr_event_wait(&ev, gpr_inf_future(GPR_CLOCK_REALTIME));
   thdptr->Join();
   state.on_connect_done->WaitForNotification();
@@ -410,6 +427,19 @@ int main(int argc, char** argv) {
   // attempt deadline.
   run_test(true, false, HTTP2_RESP(404), sizeof(HTTP2_RESP(404)) - 1,
            GRPC_STATUS_DEADLINE_EXCEEDED, nullptr);
+
+  grpc_arg service_config_arg;
+  service_config_arg.type = GRPC_ARG_STRING;
+  service_config_arg.key = const_cast<char*>(GRPC_ARG_SERVICE_CONFIG);
+  service_config_arg.value.string = const_cast<char*>(
+      "{\"methodConfig\":[{\"name\":[{\"service\":\"Service\","
+      "\"method\":\"Method\"}],\"maxResponseMessageBytes\":1}]}");
+  grpc_channel_args service_config_args = {1, &service_config_arg};
+  run_test(true, true, HTTP2_GRPC_OVERSIZED_RESP,
+           sizeof(HTTP2_GRPC_OVERSIZED_RESP) - 1,
+           GRPC_STATUS_RESOURCE_EXHAUSTED,
+           "CLIENT: Received message larger than max (2 vs. 1)",
+           &service_config_args);
   grpc_shutdown();
   return 0;
 }

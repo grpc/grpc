@@ -25,19 +25,38 @@
 #include <zconf.h>
 #include <zlib.h>
 
+#include <algorithm>
+#include <cstdint>
+#include <optional>
+
 #include "src/core/lib/slice/slice.h"
 #include "src/core/util/grpc_check.h"
 #include "absl/log/log.h"
 
 #define OUTPUT_BLOCK_SIZE 1024
 
-static int zlib_body(z_stream* zs, grpc_slice_buffer* input,
-                     grpc_slice_buffer* output,
-                     int (*flate)(z_stream* zs, int flush)) {
+enum class ZlibBodyResult { kOk, kError, kTooLarge };
+
+static ZlibBodyResult zlib_body(z_stream* zs, grpc_slice_buffer* input,
+                                grpc_slice_buffer* output,
+                                int (*flate)(z_stream* zs, int flush),
+                                std::optional<uint32_t> max_output_size) {
   int r = Z_STREAM_END;  // Do not fail on an empty input.
   int flush;
   size_t i;
-  grpc_slice outbuf = GRPC_SLICE_MALLOC(OUTPUT_BLOCK_SIZE);
+  const size_t output_length_before = output->length;
+  auto allocate_output_slice = [&]() {
+    size_t block_size = OUTPUT_BLOCK_SIZE;
+    if (max_output_size.has_value()) {
+      const uint64_t max_plus_one = static_cast<uint64_t>(*max_output_size) + 1;
+      const uint64_t output_length = output->length - output_length_before;
+      GRPC_CHECK_LT(output_length, max_plus_one);
+      block_size = static_cast<size_t>(
+          std::min<uint64_t>(OUTPUT_BLOCK_SIZE, max_plus_one - output_length));
+    }
+    return GRPC_SLICE_MALLOC(block_size);
+  };
+  grpc_slice outbuf = allocate_output_slice();
   const uInt uint_max = ~uInt{0};
 
   GRPC_CHECK(GRPC_SLICE_LENGTH(outbuf) <= uint_max);
@@ -52,7 +71,7 @@ static int zlib_body(z_stream* zs, grpc_slice_buffer* input,
     do {
       if (zs->avail_out == 0) {
         grpc_slice_buffer_add_indexed(output, outbuf);
-        outbuf = GRPC_SLICE_MALLOC(OUTPUT_BLOCK_SIZE);
+        outbuf = allocate_output_slice();
         GRPC_CHECK(GRPC_SLICE_LENGTH(outbuf) <= uint_max);
         zs->avail_out = static_cast<uInt> GRPC_SLICE_LENGTH(outbuf);
         zs->next_out = GRPC_SLICE_START_PTR(outbuf);
@@ -61,6 +80,11 @@ static int zlib_body(z_stream* zs, grpc_slice_buffer* input,
       if (r < 0 && r != Z_BUF_ERROR /* not fatal */) {
         VLOG(2) << "zlib error (" << r << ")";
         goto error;
+      }
+      if (max_output_size.has_value()) {
+        const size_t output_size = output->length - output_length_before +
+                                   GRPC_SLICE_LENGTH(outbuf) - zs->avail_out;
+        if (output_size > *max_output_size) goto too_large;
       }
     } while (zs->avail_out == 0);
     if (zs->avail_in) {
@@ -73,15 +97,20 @@ static int zlib_body(z_stream* zs, grpc_slice_buffer* input,
     goto error;
   }
 
-  GRPC_CHECK(outbuf.refcount);
-  outbuf.data.refcounted.length -= zs->avail_out;
-  grpc_slice_buffer_add_indexed(output, outbuf);
+  grpc_slice_buffer_add_indexed(
+      output, grpc_slice_split_head(&outbuf,
+                                    GRPC_SLICE_LENGTH(outbuf) - zs->avail_out));
+  grpc_core::CSliceUnref(outbuf);
 
-  return 1;
+  return ZlibBodyResult::kOk;
 
 error:
   grpc_core::CSliceUnref(outbuf);
-  return 0;
+  return ZlibBodyResult::kError;
+
+too_large:
+  grpc_core::CSliceUnref(outbuf);
+  return ZlibBodyResult::kTooLarge;
 }
 
 static void* zalloc_gpr(void* /*opaque*/, unsigned int items,
@@ -104,7 +133,9 @@ static int zlib_compress(grpc_slice_buffer* input, grpc_slice_buffer* output,
   r = deflateInit2(&zs, Z_DEFAULT_COMPRESSION, Z_DEFLATED, 15 | (gzip ? 16 : 0),
                    8, Z_DEFAULT_STRATEGY);
   GRPC_CHECK(r == Z_OK);
-  r = zlib_body(&zs, input, output, deflate) && output->length < input->length;
+  r = zlib_body(&zs, input, output, deflate, std::nullopt) ==
+          ZlibBodyResult::kOk &&
+      output->length < input->length;
   if (!r) {
     for (i = count_before; i < output->count; i++) {
       grpc_core::CSliceUnref(output->slices[i]);
@@ -116,10 +147,12 @@ static int zlib_compress(grpc_slice_buffer* input, grpc_slice_buffer* output,
   return r;
 }
 
-static int zlib_decompress(grpc_slice_buffer* input, grpc_slice_buffer* output,
-                           int gzip) {
+static grpc_core::MessageDecompressionResult zlib_decompress(
+    grpc_slice_buffer* input, grpc_slice_buffer* output, int gzip,
+    std::optional<uint32_t> max_output_size) {
   z_stream zs;
   int r;
+  ZlibBodyResult result;
   size_t i;
   size_t count_before = output->count;
   size_t length_before = output->length;
@@ -128,8 +161,8 @@ static int zlib_decompress(grpc_slice_buffer* input, grpc_slice_buffer* output,
   zs.zfree = zfree_gpr;
   r = inflateInit2(&zs, 15 | (gzip ? 16 : 0));
   GRPC_CHECK(r == Z_OK);
-  r = zlib_body(&zs, input, output, inflate);
-  if (!r) {
+  result = zlib_body(&zs, input, output, inflate, max_output_size);
+  if (result != ZlibBodyResult::kOk) {
     for (i = count_before; i < output->count; i++) {
       grpc_core::CSliceUnref(output->slices[i]);
     }
@@ -137,7 +170,12 @@ static int zlib_decompress(grpc_slice_buffer* input, grpc_slice_buffer* output,
     output->length = length_before;
   }
   inflateEnd(&zs);
-  return r;
+  if (result == ZlibBodyResult::kTooLarge) {
+    return grpc_core::MessageDecompressionResult::kTooLarge;
+  }
+  return result == ZlibBodyResult::kOk
+             ? grpc_core::MessageDecompressionResult::kOk
+             : grpc_core::MessageDecompressionResult::kError;
 }
 
 static int copy(grpc_slice_buffer* input, grpc_slice_buffer* output) {
@@ -175,18 +213,30 @@ int grpc_msg_compress(grpc_compression_algorithm algorithm,
   return 1;
 }
 
-int grpc_msg_decompress(grpc_compression_algorithm algorithm,
-                        grpc_slice_buffer* input, grpc_slice_buffer* output) {
+grpc_core::MessageDecompressionResult grpc_core::DecompressMessageWithLimit(
+    grpc_compression_algorithm algorithm, grpc_slice_buffer* input,
+    grpc_slice_buffer* output, std::optional<uint32_t> max_output_size) {
   switch (algorithm) {
     case GRPC_COMPRESS_NONE:
-      return copy(input, output);
+      if (max_output_size.has_value() && input->length > *max_output_size) {
+        return MessageDecompressionResult::kTooLarge;
+      }
+      copy(input, output);
+      return MessageDecompressionResult::kOk;
     case GRPC_COMPRESS_DEFLATE:
-      return zlib_decompress(input, output, 0);
+      return zlib_decompress(input, output, 0, max_output_size);
     case GRPC_COMPRESS_GZIP:
-      return zlib_decompress(input, output, 1);
+      return zlib_decompress(input, output, 1, max_output_size);
     case GRPC_COMPRESS_ALGORITHMS_COUNT:
       break;
   }
   LOG(ERROR) << "invalid compression algorithm " << algorithm;
-  return 0;
+  return MessageDecompressionResult::kError;
+}
+
+int grpc_msg_decompress(grpc_compression_algorithm algorithm,
+                        grpc_slice_buffer* input, grpc_slice_buffer* output) {
+  return grpc_core::DecompressMessageWithLimit(algorithm, input, output,
+                                               std::nullopt) ==
+         grpc_core::MessageDecompressionResult::kOk;
 }

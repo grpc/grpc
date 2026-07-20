@@ -207,9 +207,12 @@ void grpc_run_bad_client_test(
   grpc_completion_queue* shutdown_cq;
   grpc_completion_queue* client_cq;
 
-  const auto server_args = grpc_core::ChannelArgs().Set(
+  auto server_args = grpc_core::ChannelArgs().Set(
       GRPC_ARG_MAX_CONCURRENT_STREAMS,
       (flags & GRPC_BAD_CLIENT_MAX_CONCURRENT_REQUESTS_OF_ONE) ? 1 : 10000);
+  if (flags & GRPC_BAD_CLIENT_MAX_RECEIVE_MESSAGE_LENGTH_ONE) {
+    server_args = server_args.Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, 1);
+  }
 
   // Init grpc
   grpc_init();

@@ -181,8 +181,16 @@ absl::StatusOr<MessageHandle> ChannelCompression::DecompressMessage(
   }
   // Try to decompress the payload.
   SliceBuffer decompressed_slices;
-  if (grpc_msg_decompress(args.algorithm, message->payload()->c_slice_buffer(),
-                          decompressed_slices.c_slice_buffer()) == 0) {
+  const auto result = DecompressMessageWithLimit(
+      args.algorithm, message->payload()->c_slice_buffer(),
+      decompressed_slices.c_slice_buffer(), args.max_recv_message_length);
+  if (result == MessageDecompressionResult::kTooLarge) {
+    GRPC_CHECK(args.max_recv_message_length.has_value());
+    return absl::ResourceExhaustedError(absl::StrFormat(
+        "%s: Received message larger than max after decompression (%u)",
+        is_client ? "CLIENT" : "SERVER", *args.max_recv_message_length));
+  }
+  if (result == MessageDecompressionResult::kError) {
     return absl::InternalError(
         absl::StrCat("Unexpected error decompressing data for algorithm ",
                      CompressionAlgorithmAsString(args.algorithm)));

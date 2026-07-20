@@ -19,8 +19,11 @@
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"
 
 #include <grpc/slice_buffer.h>
+#include <grpc/status.h>
 #include <grpc/support/port_platform.h>
 #include <stdlib.h>
+
+#include <algorithm>
 
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
@@ -29,6 +32,7 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/stats.h"
+#include "src/core/transport/message_size_service_config.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/status_helper.h"
 #include "absl/status/status.h"
@@ -84,11 +88,90 @@ void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer* inbuf,
   call_tracer->RecordOutgoingBytes({header_size, 0, 0});
 }
 
+static uint32_t message_length_from_header(
+    const uint8_t header[GRPC_HEADER_SIZE_IN_BYTES]) {
+  return (static_cast<uint32_t>(header[1]) << 24) |
+         (static_cast<uint32_t>(header[2]) << 16) |
+         (static_cast<uint32_t>(header[3]) << 8) |
+         static_cast<uint32_t>(header[4]);
+}
+
+static grpc_error_handle parse_grpc_frame_header(
+    grpc_chttp2_stream* s, const uint8_t header[GRPC_HEADER_SIZE_IN_BYTES],
+    uint32_t* message_flags) {
+  switch (header[0]) {
+    case 0:
+      if (message_flags != nullptr) *message_flags = 0;
+      break;
+    case 1:
+      if (message_flags != nullptr) {
+        *message_flags = GRPC_WRITE_INTERNAL_COMPRESS;
+      }
+      break;
+    default: {
+      grpc_error_handle error = GRPC_ERROR_CREATE(
+          absl::StrFormat("Bad GRPC frame type 0x%02x", header[0]));
+      return grpc_error_set_int(error, grpc_core::StatusIntProperty::kStreamId,
+                                static_cast<intptr_t>(s->id));
+    }
+  }
+
+  return absl::OkStatus();
+}
+
+static grpc_error_handle message_too_large_error(grpc_chttp2_stream* s,
+                                                 uint32_t message_length,
+                                                 uint32_t max_length) {
+  grpc_error_handle error = absl::ResourceExhaustedError(absl::StrFormat(
+      "%s: Received message larger than max (%u vs. %u)",
+      s->t->is_client ? "CLIENT" : "SERVER", message_length, max_length));
+  return grpc_error_set_int(error, grpc_core::StatusIntProperty::kStreamId,
+                            static_cast<intptr_t>(s->id));
+}
+
+static grpc_error_handle check_incoming_message_size(grpc_chttp2_transport* t,
+                                                     grpc_chttp2_stream* s,
+                                                     const grpc_slice& slice) {
+  const std::optional<uint32_t> max_receive_message_length =
+      grpc_core::GetMaxRecvSizeFromCallContext(s->arena,
+                                               t->max_receive_message_length);
+  if (!max_receive_message_length.has_value()) return absl::OkStatus();
+
+  const uint8_t* p = GRPC_SLICE_START_PTR(slice);
+  size_t remaining = GRPC_SLICE_LENGTH(slice);
+  while (remaining > 0) {
+    if (s->incoming_grpc_message_bytes_remaining > 0) {
+      const size_t consumed =
+          std::min<size_t>(remaining, s->incoming_grpc_message_bytes_remaining);
+      s->incoming_grpc_message_bytes_remaining -=
+          static_cast<uint32_t>(consumed);
+      p += consumed;
+      remaining -= consumed;
+      continue;
+    }
+    while (remaining > 0 &&
+           s->incoming_grpc_header_bytes < GRPC_HEADER_SIZE_IN_BYTES) {
+      s->incoming_grpc_header[s->incoming_grpc_header_bytes++] = *p++;
+      --remaining;
+    }
+    if (s->incoming_grpc_header_bytes < GRPC_HEADER_SIZE_IN_BYTES) break;
+    const uint32_t message_length =
+        message_length_from_header(s->incoming_grpc_header);
+    const bool is_uncompressed = s->incoming_grpc_header[0] == 0;
+    s->incoming_grpc_header_bytes = 0;
+    if (is_uncompressed && message_length > *max_receive_message_length) {
+      return message_too_large_error(s, message_length,
+                                     *max_receive_message_length);
+    }
+    s->incoming_grpc_message_bytes_remaining = message_length;
+  }
+  return absl::OkStatus();
+}
+
 grpc_core::Poll<grpc_error_handle> grpc_deframe_unprocessed_incoming_frames(
     grpc_chttp2_stream* s, int64_t* min_progress_size,
     grpc_core::SliceBuffer* stream_out, uint32_t* message_flags) {
   grpc_slice_buffer* slices = &s->frame_storage;
-  grpc_error_handle error;
 
   if (slices->length < GRPC_HEADER_SIZE_IN_BYTES) {
     if (min_progress_size != nullptr) {
@@ -100,28 +183,10 @@ grpc_core::Poll<grpc_error_handle> grpc_deframe_unprocessed_incoming_frames(
   uint8_t header[GRPC_HEADER_SIZE_IN_BYTES];
   grpc_slice_buffer_copy_first_into_buffer(slices, GRPC_HEADER_SIZE_IN_BYTES,
                                            header);
-
-  switch (header[0]) {
-    case 0:
-      if (message_flags != nullptr) *message_flags = 0;
-      break;
-    case 1:
-      if (message_flags != nullptr) {
-        *message_flags = GRPC_WRITE_INTERNAL_COMPRESS;
-      }
-      break;
-    default:
-      error = GRPC_ERROR_CREATE(
-          absl::StrFormat("Bad GRPC frame type 0x%02x", header[0]));
-      error = grpc_error_set_int(error, grpc_core::StatusIntProperty::kStreamId,
-                                 static_cast<intptr_t>(s->id));
-      return error;
-  }
-
-  size_t length = (static_cast<uint32_t>(header[1]) << 24) |
-                  (static_cast<uint32_t>(header[2]) << 16) |
-                  (static_cast<uint32_t>(header[3]) << 8) |
-                  static_cast<uint32_t>(header[4]);
+  grpc_error_handle error = parse_grpc_frame_header(s, header, message_flags);
+  if (!error.ok()) return error;
+  const uint32_t message_length = message_length_from_header(header);
+  const size_t length = message_length;
 
   if (slices->length < length + GRPC_HEADER_SIZE_IN_BYTES) {
     if (min_progress_size != nullptr) {
@@ -150,6 +215,8 @@ grpc_error_handle grpc_chttp2_data_parser_parse(void* /*parser*/,
                                                 int is_last) {
   grpc_core::CSliceRef(slice);
   grpc_slice_buffer_add(&s->frame_storage, slice);
+  grpc_error_handle error = check_incoming_message_size(t, s, slice);
+  if (!error.ok()) return error;
   grpc_chttp2_maybe_complete_recv_message(t, s);
 
   if (is_last) {

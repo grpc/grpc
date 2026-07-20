@@ -149,6 +149,40 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   grpc_call_unref(s);
 }
 
+static void oversized_message_verifier(grpc_server* server,
+                                       grpc_completion_queue* cq,
+                                       void* /*registered_method*/) {
+  grpc_call* s;
+  grpc_call_details call_details;
+  grpc_metadata_array request_metadata_recv;
+  grpc_core::CqVerifier cqv(cq);
+
+  grpc_call_details_init(&call_details);
+  grpc_metadata_array_init(&request_metadata_recv);
+  GRPC_CHECK_EQ(grpc_server_request_call(server, &s, &call_details,
+                                         &request_metadata_recv, cq, cq,
+                                         grpc_core::CqVerifier::tag(101)),
+                GRPC_CALL_OK);
+  cqv.Expect(grpc_core::CqVerifier::tag(101), true);
+  cqv.Verify();
+
+  int cancelled = 0;
+  grpc_op op;
+  memset(&op, 0, sizeof(op));
+  op.op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  op.data.recv_close_on_server.cancelled = &cancelled;
+  GRPC_CHECK_EQ(grpc_call_start_batch(s, &op, 1,
+                                      grpc_core::CqVerifier::tag(102), nullptr),
+                GRPC_CALL_OK);
+  cqv.Expect(grpc_core::CqVerifier::tag(102), true);
+  cqv.Verify();
+  GRPC_CHECK_EQ(cancelled, 1);
+
+  grpc_metadata_array_destroy(&request_metadata_recv);
+  grpc_call_details_destroy(&call_details);
+  grpc_call_unref(s);
+}
+
 static void VerifyRpcDoesNotGetCanceled(grpc_server* server,
                                         grpc_completion_queue* cq,
                                         void* /*registered_method*/) {
@@ -241,6 +275,34 @@ int main(int argc, char** argv) {
                            "\x00\x00\x05\x00\x00\x00\x00\x00\x01"
                            "\x34\x00\x00\x00\x00",
                            0);
+  // Reject an oversized declared message length after receiving only the gRPC
+  // header, without waiting for the application to request or buffer the
+  // declared payload.
+  GRPC_RUN_BAD_CLIENT_TEST(oversized_message_verifier,
+                           rst_stream_client_validator,
+                           PFX_STR
+                           "\x00\x00\x05\x00\x00\x00\x00\x00\x01"
+                           "\x00\x00\x00\x00\x02",
+                           GRPC_BAD_CLIENT_MAX_RECEIVE_MESSAGE_LENGTH_ONE);
+  // Preserve the same early rejection when the five-byte gRPC header spans
+  // multiple HTTP/2 DATA frames.
+  GRPC_RUN_BAD_CLIENT_TEST(oversized_message_verifier,
+                           rst_stream_client_validator,
+                           PFX_STR
+                           "\x00\x00\x04\x00\x00\x00\x00\x00\x01"
+                           "\x00\x00\x00\x00"
+                           "\x00\x00\x01\x00\x00\x00\x00\x00\x01"
+                           "\x02",
+                           GRPC_BAD_CLIENT_MAX_RECEIVE_MESSAGE_LENGTH_ONE);
+  // Apply the same check to subsequent messages even if the application has
+  // not consumed the preceding message.
+  GRPC_RUN_BAD_CLIENT_TEST(oversized_message_verifier,
+                           rst_stream_client_validator,
+                           PFX_STR
+                           "\x00\x00\x0b\x00\x00\x00\x00\x00\x01"
+                           "\x00\x00\x00\x00\x01\x61"
+                           "\x00\x00\x00\x00\x02",
+                           GRPC_BAD_CLIENT_MAX_RECEIVE_MESSAGE_LENGTH_ONE);
   // push a data frame with bad flags
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR "\x00\x00\x00\x00\x02\x00\x00\x00\x01", 0);
