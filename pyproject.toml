@@ -81,6 +81,7 @@ reportIncompleteStub = "none"
 reportUnusedClass = "none"
 
 include = [
+    "src/python/grpcio/grpc/_interceptor.py",
     "src/python/grpcio/grpc/_channel.py",
     "src/python/grpcio/grpc/_server.py",
     "src/python/grpcio/grpc/_common.py",
