@@ -83,8 +83,6 @@ def _transform(
     transformer: Optional[
         Union[
             SerializingFunction[RequestType],
-            SerializingFunction[ResponseType],
-            DeserializingFunction[RequestType],
             DeserializingFunction[ResponseType],
         ]
     ],
