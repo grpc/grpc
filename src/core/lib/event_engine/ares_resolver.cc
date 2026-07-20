@@ -981,7 +981,7 @@ absl::Status AresInit() { return absl::OkStatus(); }
 std::once_flag init_flag;
 
 void AresOnceInit() {
-  std::call_once(init_flag, [](){
+  std::call_once(init_flag, []() {
     address_sorting_init();
     auto status = AresInit();
     if (!status.ok()) {

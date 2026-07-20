@@ -658,7 +658,8 @@ TEST_F(StatsPluginEnd2EndTest,
       GetSpanByName(recorded_spans, absl::StrCat("Sent.", client_method_name_));
   ASSERT_NE(sent_span_data, recorded_spans.end());
   // TODO(mlumish): re-add "Delayed name resolution complete." annotation check
-  // for EventEngine DNS resolver, possibly using a FakeResolver to force a delay.
+  // for EventEngine DNS resolver, possibly using a FakeResolver to force a
+  // delay.
   //
   // Check presence of trace annotation for removal from channel's pending
   // lb pick queue.
