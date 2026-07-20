@@ -15,7 +15,7 @@
 
 import logging
 import time
-from typing import Any, AnyStr, Callable, Optional
+from typing import Any, AnyStr, Callable, Optional, Union
 
 import grpc
 from grpc._cython import cygrpc
@@ -80,7 +80,14 @@ def decode(b: AnyStr) -> str:
 
 def _transform(
     message: Any,
-    transformer: Optional[Callable[[Any], Any]],
+    transformer: Optional[
+        Union[
+            SerializingFunction[RequestType],
+            SerializingFunction[ResponseType],
+            DeserializingFunction[RequestType],
+            DeserializingFunction[ResponseType],
+        ]
+    ],
     exception_message: str,
 ) -> Any:
     if transformer is None:
