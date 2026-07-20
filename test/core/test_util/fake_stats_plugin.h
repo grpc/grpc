@@ -512,8 +512,8 @@ class FakeStatsPlugin : public StatsPlugin {
     void UpDownCounter(InstrumentLabelList label_keys,
                        absl::Span<const std::string> label_values,
                        absl::string_view name, uint64_t value) override {
-      if constexpr (std::is_same_v<T, uint64_t> || std::is_same_v<T, int64_t>) {
-        RecordValue(label_keys, label_values, name, static_cast<T>(value));
+      if constexpr (std::is_same_v<T, uint64_t>) {
+        RecordValue(label_keys, label_values, name, value);
       }
     }
     void Histogram(InstrumentLabelList label_keys,

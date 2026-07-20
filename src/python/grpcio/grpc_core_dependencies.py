@@ -57,7 +57,6 @@ CORE_SOURCE_FILES = [
     'src/core/client_channel/retry_service_config.cc',
     'src/core/client_channel/retry_throttle.cc',
     'src/core/client_channel/subchannel.cc',
-    'src/core/client_channel/subchannel_metrics.cc',
     'src/core/client_channel/subchannel_pool_interface.cc',
     'src/core/client_channel/subchannel_stream_client.cc',
     'src/core/client_channel/subchannel_stream_limiter.cc',

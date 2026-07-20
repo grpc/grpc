@@ -337,7 +337,7 @@ class XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::
 namespace {
 
 using FilterInstance =
-    std::pair<const XdsHttpFilterImpl*, RefCountedPtr<const FilterConfig>>;
+    std::pair<const XdsHttpFilterFactory*, RefCountedPtr<const FilterConfig>>;
 
 struct FilterList final : public FilterChain {
   std::vector<FilterInstance> filters;
@@ -346,10 +346,10 @@ struct FilterList final : public FilterChain {
 class FilterListBuilder final
     : public XdsRouting::RouteConfigFilterChainBuilder::XdsFilterChainBuilder {
  public:
-  void AddFilter(const XdsHttpFilterImpl* filter_impl,
+  void AddFilter(const XdsHttpFilterFactory* factory,
                  RefCountedPtr<const FilterConfig> config) override {
     if (filters_ == nullptr) filters_ = MakeRefCounted<FilterList>();
-    filters_->filters.emplace_back(filter_impl, std::move(config));
+    filters_->filters.emplace_back(factory, std::move(config));
   }
 
   absl::StatusOr<RefCountedPtr<FilterChain>> Build() override {
@@ -1261,8 +1261,8 @@ XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::L4FilterChain::
       auto it = cache.find(route.filter_list.get());
       if (it == cache.end()) {
         // Not found in cache, so construct a new filter chain.
-        for (const auto& [filter_impl, config] : route.filter_list->filters) {
-          filter_impl->AddFilter(builder, config);
+        for (const auto& [factory, config] : route.filter_list->filters) {
+          factory->AddFilter(builder, config);
         }
         filter_chain = builder.Build();
         cache.emplace(route.filter_list.get(), filter_chain);

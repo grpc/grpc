@@ -37,9 +37,9 @@
 
 namespace grpc_core {
 
-class XdsHttpFilterImpl {
+class XdsHttpFilterFactory {
  public:
-  virtual ~XdsHttpFilterImpl() = default;
+  virtual ~XdsHttpFilterFactory() = default;
 
   // Returns the top-level filter config proto message name.
   virtual absl::string_view ConfigProtoName() const = 0;

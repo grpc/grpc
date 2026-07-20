@@ -455,6 +455,9 @@ typedef struct grpc_transport_op {
       nullptr;
   /// should the transport be disconnected
   grpc_error_handle disconnect_with_error;
+  /// should the transport go IDLE
+  /// (used only by client channel, only if disconnect_with_error is set)
+  bool go_idle = false;
   /// Start a graceful goaway with the specified error message. (The error code
   /// is ignored since graceful GOAWAYs use a NO_ERROR error code.) Use
   /// disconnect_with_error if graceful shutdown is not needed.

@@ -331,7 +331,6 @@ class StatsPlugin {
       GlobalInstrumentsRegistry::GlobalInstrumentHandle handle, double value,
       absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_label_values) = 0;
-
   // Records a uint64 \a value to the histogram specified by \a handle. \a
   // label_values and \a optional_label_values specify attributes that are
   // associated with this measurement and must match with their corresponding
