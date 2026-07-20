@@ -1202,7 +1202,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable, Generic[RequestType
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None,
-    ) -> _MultiThreadedRendezvous[Any]:
+    ) -> _MultiThreadedRendezvous[ResponseType]:
         state, operations, deadline, rendezvous = self._prepare(
             request, timeout, metadata, wait_for_ready, compression
         )
@@ -1641,7 +1641,7 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable, Generic[Request
         compression: Optional[grpc.Compression] = None,
     ) -> _MultiThreadedRendezvous[ResponseType]:
         deadline = _deadline(timeout)
-        state = _RPCState[Any](_STREAM_STREAM_INITIAL_DUE, None, None, None, None)
+        state = _RPCState[ResponseType](_STREAM_STREAM_INITIAL_DUE, None, None, None, None)
         initial_metadata_flags = _InitialMetadataFlags().with_wait_for_ready(
             wait_for_ready
         )
@@ -2145,7 +2145,7 @@ class Channel(grpc.Channel):
         _registered_call_handle = None
         if _registered_method:
             _registered_call_handle = self._get_registered_call_handle(method)
-        return _UnaryUnaryMultiCallable[RequestType, ResponseType](
+        return _UnaryUnaryMultiCallable[Any, Any](
             self._channel,
             _channel_managed_call_management(self._call_state),
             _common.encode(method),
@@ -2200,7 +2200,7 @@ class Channel(grpc.Channel):
         _registered_call_handle = None
         if _registered_method:
             _registered_call_handle = self._get_registered_call_handle(method)
-        return _StreamUnaryMultiCallable[RequestType, ResponseType](
+        return _StreamUnaryMultiCallable[Any, Any](
             self._channel,
             _channel_managed_call_management(self._call_state),
             _common.encode(method),
@@ -2221,7 +2221,7 @@ class Channel(grpc.Channel):
         _registered_call_handle = None
         if _registered_method:
             _registered_call_handle = self._get_registered_call_handle(method)
-        return _StreamStreamMultiCallable[RequestType, ResponseType](
+        return _StreamStreamMultiCallable[Any, Any](
             self._channel,
             _channel_managed_call_management(self._call_state),
             _common.encode(method),
