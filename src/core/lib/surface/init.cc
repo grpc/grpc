@@ -109,6 +109,7 @@ void grpc_init(void) {
       g_shutting_down_cv->SignalAll();
     }
     grpc_iomgr_init();
+    // TODO(murgatroid99): Move DNS init calls to EventEngine
     address_sorting_init();
     auto status = AresInit();
     if (!status.ok()) {
