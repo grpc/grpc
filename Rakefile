@@ -277,15 +277,16 @@ task 'publish:native_debug', [:gem_dir] do |_t, args|
 
   gem_dir = File.expand_path(args[:gem_dir] || 'build/ruby/nativedebug')
   force_upload = ENV['REUPLOAD'].to_s.downcase == 'true'
-  gcs_base = 'gs://packages.grpc.io/grpc-ruby-native-debug-symbols'
+  gcs_bucket = 'gs://packages.grpc.io'
+  gcs_base = "#{gcs_bucket}/grpc-ruby-native-debug-symbols"
 
   fail "Directory '#{gem_dir}' not found" unless Dir.exist?(gem_dir)
 
   gem_files = Dir["#{gem_dir}/*native-debug*.gem"]
   fail "No native-debug gems found in '#{gem_dir}'" if gem_files.empty?
 
-  puts 'Checking gsutil availability and bucket access.'
-  run_cmd.call('gsutil', 'ls', '-b', gcs_base)
+  puts 'Checking google cloud storage availability and bucket access.'
+  run_cmd.call('gcloud', 'storage', 'buckets', 'describe', gcs_bucket)
 
   gems_by_version = gem_files.group_by do |path|
     full_version = Gem::Package.new(path).spec.version.to_s
@@ -303,7 +304,7 @@ task 'publish:native_debug', [:gem_dir] do |_t, args|
       gcs_version_path = "#{gcs_base}/v#{base_version}"
 
       # Check only for existence of gems
-      stdout, _stderr, status = Open3.capture3('gsutil', 'ls', "#{gcs_version_path}/*.gem")
+      stdout, _stderr, status = Open3.capture3('gcloud', 'storage', 'ls', "#{gcs_version_path}/*.gem")
       has_gems = status.success? && !stdout.strip.empty?
 
       if has_gems && !force_upload
@@ -313,7 +314,7 @@ task 'publish:native_debug', [:gem_dir] do |_t, args|
 
       if force_upload && has_gems
         puts "Force upload enabled. Clearing existing files in #{gcs_version_path}."
-        run_cmd.call('gsutil', '-m', 'rm', "#{gcs_version_path}/*.gem", "#{gcs_version_path}/checksums.txt")
+        run_cmd.call('gcloud', 'storage', 'rm', "#{gcs_version_path}/*.gem", "#{gcs_version_path}/checksums.txt")
       end
 
       begin
@@ -331,7 +332,7 @@ task 'publish:native_debug', [:gem_dir] do |_t, args|
 
         # Upload all gems and the checksums file
         files_to_upload = version_gem_files.map { |f| File.basename(f) } + ['checksums.txt']
-        run_cmd.call('gsutil', '-m', 'cp', *files_to_upload, "#{gcs_version_path}/")
+        run_cmd.call('gcloud', 'storage', 'cp', *files_to_upload, "#{gcs_version_path}/")
       ensure
         FileUtils.rm_f('checksums.txt')
       end
