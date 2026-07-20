@@ -21,7 +21,6 @@ from abc import abstractmethod
 import asyncio
 import functools
 from typing import (
-    cast,
     Any,
     AsyncIterable,
     AsyncIterator,
@@ -38,6 +37,7 @@ from typing import (
     TypeAlias,
     TypeVar,
     Union,
+    cast,
 )
 
 import grpc
@@ -137,7 +137,6 @@ class ClientCallDetails(
         credentials: An optional CallCredentials for the RPC.
         wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
     """
-
 
 
 class ClientInterceptor(metaclass=ABCMeta):
