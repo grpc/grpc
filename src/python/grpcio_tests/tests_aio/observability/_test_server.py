@@ -22,9 +22,13 @@ _RESPONSE = b"\x00\x00\x00"
 
 _SERVICE_NAME = "test"
 _UNARY_UNARY = "UnaryUnary"
+_UNARY_UNARY_ALTERNATIVE = "UnaryUnaryAlt"
 _UNARY_STREAM = "UnaryStream"
+_UNARY_STREAM_ALTERNATIVE = "UnaryStreamAlt"
 _STREAM_UNARY = "StreamUnary"
+_STREAM_UNARY_ALTERNATIVE = "StreamUnaryAlt"
 _STREAM_STREAM = "StreamStream"
+_STREAM_STREAM_ALTERNATIVE = "StreamStreamAlt"
 STREAM_LENGTH = 5
 
 ABORT_RPC_METADATA = ("control", "abort")
@@ -84,17 +88,25 @@ class _MethodHandler(grpc.RpcMethodHandler):
 
 RPC_METHOD_HANDLERS = {
     _UNARY_UNARY: _MethodHandler(False, False),
+    _UNARY_UNARY_ALTERNATIVE: _MethodHandler(False, False),
     _UNARY_STREAM: _MethodHandler(False, True),
+    _UNARY_STREAM_ALTERNATIVE: _MethodHandler(False, True),
     _STREAM_UNARY: _MethodHandler(True, False),
+    _STREAM_UNARY_ALTERNATIVE: _MethodHandler(True, False),
     _STREAM_STREAM: _MethodHandler(True, True),
+    _STREAM_STREAM_ALTERNATIVE: _MethodHandler(True, True),
 }
 
 
 REGISTERED_RPC_METHOD_HANDLERS = {
     _UNARY_UNARY: _MethodHandler(False, False),
+    _UNARY_UNARY_ALTERNATIVE: _MethodHandler(False, False),
     _UNARY_STREAM: _MethodHandler(False, True),
+    _UNARY_STREAM_ALTERNATIVE: _MethodHandler(False, True),
     _STREAM_UNARY: _MethodHandler(True, False),
+    _STREAM_UNARY_ALTERNATIVE: _MethodHandler(True, False),
     _STREAM_STREAM: _MethodHandler(True, True),
+    _STREAM_STREAM_ALTERNATIVE: _MethodHandler(True, True),
 }
 
 
@@ -113,8 +125,12 @@ async def start_server(register_method=False) -> Tuple[grpc.aio.Server, int]:
     return server, port
 
 
-async def unary_unary_call(port, registered_method=False, metadata=None):
-    async with grpc.aio.insecure_channel(f"localhost:{port}") as channel:
+async def unary_unary_call(
+    port, registered_method=False, metadata=None, interceptors=None
+):
+    async with grpc.aio.insecure_channel(
+        f"localhost:{port}", interceptors=interceptors
+    ) as channel:
         multi_callable = channel.unary_unary(
             grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),
             _registered_method=registered_method,
@@ -122,8 +138,12 @@ async def unary_unary_call(port, registered_method=False, metadata=None):
         unused_response = await multi_callable(_REQUEST, metadata=metadata)
 
 
-async def unary_stream_call(port, registered_method=False, metadata=None):
-    async with grpc.aio.insecure_channel(f"localhost:{port}") as channel:
+async def unary_stream_call(
+    port, registered_method=False, metadata=None, interceptors=None
+):
+    async with grpc.aio.insecure_channel(
+        f"localhost:{port}", interceptors=interceptors
+    ) as channel:
         multi_callable = channel.unary_stream(
             grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_STREAM),
             _registered_method=registered_method,
@@ -133,8 +153,10 @@ async def unary_stream_call(port, registered_method=False, metadata=None):
             pass
 
 
-async def stream_unary_call(port, registered_method=False):
-    async with grpc.aio.insecure_channel(f"localhost:{port}") as channel:
+async def stream_unary_call(port, registered_method=False, interceptors=None):
+    async with grpc.aio.insecure_channel(
+        f"localhost:{port}", interceptors=interceptors
+    ) as channel:
         multi_callable = channel.stream_unary(
             grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_UNARY),
             _registered_method=registered_method,
@@ -143,8 +165,10 @@ async def stream_unary_call(port, registered_method=False):
         unused_response = await call
 
 
-async def stream_stream_call(port, registered_method=False):
-    async with grpc.aio.insecure_channel(f"localhost:{port}") as channel:
+async def stream_stream_call(port, registered_method=False, interceptors=None):
+    async with grpc.aio.insecure_channel(
+        f"localhost:{port}", interceptors=interceptors
+    ) as channel:
         multi_callable = channel.stream_stream(
             grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_STREAM),
             _registered_method=registered_method,

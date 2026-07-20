@@ -23,6 +23,7 @@ from typing import Any, Callable, Iterable, Optional
 import unittest
 
 import grpc
+from grpc.experimental import aio
 import grpc_observability
 from grpc_observability import _open_telemetry_measures
 from grpc_observability._open_telemetry_observability import (
@@ -95,6 +96,66 @@ class OTelMetricExporter(otel_metrics_export.MetricExporter):
                         self.all_metrics[metric.name].append(
                             data_point.attributes
                         )
+
+
+class _MethodReplacingInterceptorBase:
+    """Client interceptor base which reroutes RPC to another method"""
+    def __init__(self, from_method: str, to_method: str):
+        self._from_method = grpc._common.fully_qualified_method(
+            "test", from_method).encode()
+        self._to_method = grpc._common.fully_qualified_method(
+            "test", to_method).encode()
+
+    def _reroute_method(self, client_call_details):
+        if client_call_details.method == self._from_method:
+            client_call_details = client_call_details._replace(
+                method=self._to_method
+            )
+        return client_call_details
+
+
+class _UnaryUnaryMethodReplacingInterceptor(
+    _MethodReplacingInterceptorBase, aio.UnaryUnaryClientInterceptor
+):
+    async def intercept_unary_unary(
+        self, continuation, client_call_details, request
+    ):
+        return await continuation(
+            self._reroute_method(client_call_details), request
+        )
+
+
+class _UnaryStreamMethodReplacingInterceptor(
+    _MethodReplacingInterceptorBase, aio.UnaryStreamClientInterceptor
+):
+    async def intercept_unary_stream(
+        self, continuation, client_call_details, request
+    ):
+        return await continuation(
+            self._reroute_method(client_call_details), request
+        )
+
+
+class _StreamUnaryMethodReplacingInterceptor(
+    _MethodReplacingInterceptorBase, aio.StreamUnaryClientInterceptor
+):
+    async def intercept_stream_unary(
+        self, continuation, client_call_details, request
+    ):
+        return await continuation(
+            self._reroute_method(client_call_details), request
+        )
+
+
+class _StreamStreamMethodReplacingInterceptor(
+    _MethodReplacingInterceptorBase, aio.StreamStreamClientInterceptor
+):
+    async def intercept_stream_stream(
+        self, continuation, client_call_details, request
+    ):
+        return await continuation(
+            self._reroute_method(client_call_details), request
+        )
 
 
 class OpenTelemetryObservabilityBase(AioTestBase):
@@ -376,6 +437,72 @@ class OpenTelemetryObservabilityRegisteredMethodsTest(
         await self._validate_metrics_exist(self.all_metrics)
         self._validate_all_metrics_names(self.all_metrics.keys())
         self._validate_all_method_labels(self.all_metrics, "test/StreamStream")
+
+
+    async def test_record_unary_unary_with_method_rerouting_interceptor(self):
+        self._server, self._port = await _test_server.start_server(
+            register_method=True
+        )
+        interceptor = _UnaryUnaryMethodReplacingInterceptor(
+            from_method="UnaryUnary", to_method="UnaryUnaryAlt")
+        await _test_server.unary_unary_call(
+            port=self._port, registered_method=True, interceptors=[interceptor]
+        )
+
+        await self._validate_metrics_exist(self.all_metrics)
+        self._validate_all_metrics_names(self.all_metrics.keys())
+        self._validate_all_method_labels(self.all_metrics, "test/UnaryUnaryAlt")
+
+
+    async def test_record_unary_stream_with_method_rerouting_interceptor(self):
+        self._server, self._port = await _test_server.start_server(
+            register_method=True
+        )
+        interceptor = _UnaryStreamMethodReplacingInterceptor(
+            from_method="UnaryStream", to_method="UnaryStreamAlt")
+        await _test_server.unary_stream_call(
+            port=self._port, registered_method=True, interceptors=[interceptor]
+        )
+
+        await self._validate_metrics_exist(self.all_metrics)
+        self._validate_all_metrics_names(self.all_metrics.keys())
+        self._validate_all_method_labels(
+            self.all_metrics, "test/UnaryStreamAlt"
+        )
+
+
+    async def test_record_stream_unary_with_method_rerouting_interceptor(self):
+        self._server, self._port = await _test_server.start_server(
+            register_method=True
+        )
+        interceptor = _StreamUnaryMethodReplacingInterceptor(
+            from_method="StreamUnary", to_method="StreamUnaryAlt")
+        await _test_server.stream_unary_call(
+            port=self._port, registered_method=True, interceptors=[interceptor]
+        )
+
+        await self._validate_metrics_exist(self.all_metrics)
+        self._validate_all_metrics_names(self.all_metrics.keys())
+        self._validate_all_method_labels(
+            self.all_metrics, "test/StreamUnaryAlt"
+        )
+
+
+    async def test_record_stream_stream_with_method_rerouting_interceptor(self):
+        self._server, self._port = await _test_server.start_server(
+            register_method=True
+        )
+        interceptor = _StreamStreamMethodReplacingInterceptor(
+            from_method="StreamStream", to_method="StreamStreamAlt")
+        await _test_server.stream_stream_call(
+            port=self._port, registered_method=True, interceptors=[interceptor]
+        )
+
+        await self._validate_metrics_exist(self.all_metrics)
+        self._validate_all_metrics_names(self.all_metrics.keys())
+        self._validate_all_method_labels(
+            self.all_metrics, "test/StreamStreamAlt"
+        )
 
 
 if __name__ == "__main__":
