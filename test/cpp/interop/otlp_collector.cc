@@ -30,7 +30,7 @@
 #include "absl/flags/parse.h"
 #include "absl/log/log.h"
 
-#include <google/protobuf/util/json_util.h>
+#include <google/protobuf/json/json.h>
 #include <grpcpp/grpcpp.h>
 #include "opentelemetry/proto/collector/trace/v1/trace_service.grpc.pb.h"
 
@@ -50,11 +50,11 @@ class TraceServiceServiceImpl final
       opentelemetry::proto::collector::trace::v1::ExportTraceServiceResponse*
       /*response*/) override {
     std::string json_string;
-    google::protobuf::util::JsonPrintOptions options;
+    google::protobuf::json::PrintOptions options;
     options.add_whitespace = true;
     options.always_print_fields_with_no_presence = true;
     options.preserve_proto_field_names = true;
-    auto status = google::protobuf::util::MessageToJsonString(
+    auto status = google::protobuf::json::MessageToJsonString(
         *request, &json_string, options);
     if (!status.ok()) {
       LOG(ERROR) << "Failed to serialize ExportTraceServiceRequest to JSON: "
