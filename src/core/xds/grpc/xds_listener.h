@@ -140,6 +140,8 @@ struct XdsListenerResource : public XdsResourceType::ResourceData {
         return *data == *other.data;
       }
     };
+    // TODO(roth): Unify this with Rbac::CidrRange, possibly as part of
+    // addressing https://github.com/grpc/grpc/issues/34172.
     struct CidrRange {
       grpc_resolved_address address;
       uint32_t prefix_len;
