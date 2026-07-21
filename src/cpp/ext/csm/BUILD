@@ -49,8 +49,6 @@ grpc_cc_library(
         "otel/api",
         "otel/sdk/src/metrics",
         "otel/sdk:headers",
-        "@com_google_protobuf//upb/base",
-        "@com_google_protobuf//upb/mem",
     ],
     tags = [
         # TODO(b/332369798): Remove after fixing bug
@@ -72,5 +70,7 @@ grpc_cc_library(
         "//src/core:slice",
         "//src/core:xds_enabled_server",
         "//src/cpp/ext/otel:otel_plugin",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
     ],
 )

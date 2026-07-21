@@ -31,6 +31,8 @@
 #include <utility>
 #include <vector>
 
+#include "src/core/client_channel/client_channel_args.h"
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_selector.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_verifier.h"
 #include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
@@ -216,15 +218,24 @@ void PendingVerifierRequestDestroy(
   }
 }
 
-std::vector<tsi_ssl_pem_key_cert_pair> ConvertToTsiPemKeyCertPair(
-    const PemKeyCertPairList& cert_pair_list) {
-  std::vector<tsi_ssl_pem_key_cert_pair> tsi_pairs;
-  for (size_t i = 0; i < cert_pair_list.size(); i++) {
-    GRPC_CHECK(!IsPrivateKeyEmpty(cert_pair_list[i].private_key()));
-    GRPC_CHECK(!cert_pair_list[i].cert_chain().empty());
-    tsi_pairs.emplace_back(cert_pair_list[i].private_key(),
-                           cert_pair_list[i].cert_chain());
-  }
+tsi_ssl_key_cert_pairs ConvertToTsiPemKeyCertPair(
+    const KeyCertPairsOrSelector& key_cert_pairs_or_selector) {
+  tsi_ssl_key_cert_pairs tsi_pairs;
+  Match(
+      key_cert_pairs_or_selector,
+      [&](const PemKeyCertPairList& key_cert_pairs) {
+        std::vector<tsi_ssl_pem_key_cert_pair> tsi_pem_key_cert_pairs;
+        for (size_t i = 0; i < key_cert_pairs.size(); i++) {
+          GRPC_CHECK(!IsPrivateKeyEmpty(key_cert_pairs[i].private_key()));
+          GRPC_CHECK(!key_cert_pairs[i].cert_chain().empty());
+          tsi_pem_key_cert_pairs.emplace_back(key_cert_pairs[i].private_key(),
+                                              key_cert_pairs[i].cert_chain());
+        }
+        tsi_pairs = std::move(tsi_pem_key_cert_pairs);
+      },
+      [&](const std::shared_ptr<CertificateSelector>& selector) {
+        tsi_pairs = selector;
+      });
   return tsi_pairs;
 }
 
@@ -369,12 +380,17 @@ void TlsChannelSecurityConnector::add_handshakers(
     RefCountedPtr<CollectionScope> collection_scope =
         stats_plugin_group != nullptr ? stats_plugin_group->GetCollectionScope()
                                       : nullptr;
+    std::string backend_service(
+        args.GetString(GRPC_ARG_BACKEND_SERVICE).value_or(""));
+    std::string locality(args.GetString(GRPC_ARG_LB_LOCALITY).value_or(""));
+    std::string target(args.GetString(GRPC_ARG_SERVER_URI).value_or(""));
     tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
         client_handshaker_factory_, server_name_indication,
         /*network_bio_buf_size=*/0,
         /*ssl_bio_buf_size=*/0,
         args.GetOwnedString(GRPC_ARG_TRANSPORT_PROTOCOLS),
-        std::move(collection_scope), &tsi_hs);
+        std::move(collection_scope), std::move(target), std::move(locality),
+        std::move(backend_service), &tsi_hs);
     if (result != TSI_OK) {
       LOG(ERROR) << "Handshaker creation failed with error "
                  << tsi_result_to_string(result);
@@ -455,15 +471,17 @@ ArenaPromise<absl::Status> TlsChannelSecurityConnector::CheckCallHost(
 }
 
 void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
-    OnCertificatesChanged(std::shared_ptr<tsi::RootCertInfo> root_certs,
-                          std::optional<PemKeyCertPairList> key_cert_pairs) {
+    OnCertificatesChanged(
+        std::shared_ptr<tsi::RootCertInfo> root_certs,
+        std::optional<KeyCertPairsOrSelector> key_cert_pairs_or_selector) {
   GRPC_CHECK_NE(security_connector_, nullptr);
   MutexLock lock(&security_connector_->mu_);
   if (root_certs != nullptr) {
     security_connector_->root_cert_info_ = std::move(root_certs);
   }
-  if (key_cert_pairs.has_value()) {
-    security_connector_->pem_key_cert_pair_list_ = std::move(key_cert_pairs);
+  if (key_cert_pairs_or_selector.has_value()) {
+    security_connector_->key_cert_pairs_or_selector_ =
+        std::move(key_cert_pairs_or_selector);
   }
   const bool root_ready =
       security_connector_->options_->root_certificate_distributor() ==
@@ -472,7 +490,7 @@ void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
   const bool identity_ready =
       security_connector_->options_->identity_certificate_distributor() ==
           nullptr ||
-      security_connector_->pem_key_cert_pair_list_.has_value();
+      security_connector_->key_cert_pairs_or_selector_.has_value();
   if (root_ready && identity_ready) {
     if (security_connector_->UpdateHandshakerFactoryLocked() !=
         GRPC_SECURITY_OK) {
@@ -554,14 +572,23 @@ TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
   if (client_handshaker_factory_ != nullptr) {
     tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
   }
-  std::vector<tsi_ssl_pem_key_cert_pair> pem_key_cert_pair;
-  if (pem_key_cert_pair_list_.has_value()) {
-    pem_key_cert_pair = ConvertToTsiPemKeyCertPair(*pem_key_cert_pair_list_);
+  tsi_ssl_key_cert_pairs key_cert_pairs;
+  if (key_cert_pairs_or_selector_.has_value()) {
+    key_cert_pairs = ConvertToTsiPemKeyCertPair(*key_cert_pairs_or_selector_);
   }
+  tsi_ssl_pem_key_cert_pair* pem_key_cert_pair = nullptr;
+  MatchMutable(
+      &key_cert_pairs,
+      [&pem_key_cert_pair](
+          std::vector<tsi_ssl_pem_key_cert_pair>* pem_key_cert_pairs) {
+        pem_key_cert_pair =
+            pem_key_cert_pairs->empty() ? nullptr : &pem_key_cert_pairs->at(0);
+      },
+      // This is not expected to happen and we do nothing here.
+      [](std::shared_ptr<CertificateSelector>*) {});
   bool use_default_roots = options_->root_certificate_distributor() == nullptr;
   return grpc_ssl_tsi_client_handshaker_factory_init(
-      pem_key_cert_pair.empty() ? nullptr : &pem_key_cert_pair[0],
-      use_default_roots ? nullptr : root_cert_info_,
+      pem_key_cert_pair, use_default_roots ? nullptr : root_cert_info_,
       skip_server_certificate_verification,
       grpc_get_tsi_tls_version(options_->min_tls_version()),
       grpc_get_tsi_tls_version(options_->max_tls_version()), ssl_session_cache_,
@@ -730,15 +757,17 @@ int TlsServerSecurityConnector::cmp(
 }
 
 void TlsServerSecurityConnector::TlsServerCertificateWatcher::
-    OnCertificatesChanged(std::shared_ptr<tsi::RootCertInfo> roots,
-                          std::optional<PemKeyCertPairList> key_cert_pairs) {
+    OnCertificatesChanged(
+        std::shared_ptr<tsi::RootCertInfo> roots,
+        std::optional<KeyCertPairsOrSelector> key_cert_pairs_or_selector) {
   GRPC_CHECK_NE(security_connector_, nullptr);
   MutexLock lock(&security_connector_->mu_);
   if (roots != nullptr) {
     security_connector_->root_cert_info_ = std::move(roots);
   }
-  if (key_cert_pairs.has_value()) {
-    security_connector_->pem_key_cert_pair_list_ = std::move(key_cert_pairs);
+  if (key_cert_pairs_or_selector.has_value()) {
+    security_connector_->key_cert_pairs_or_selector_ =
+        std::move(key_cert_pairs_or_selector);
   }
   bool root_being_watched =
       security_connector_->options_->root_certificate_distributor() != nullptr;
@@ -747,7 +776,7 @@ void TlsServerSecurityConnector::TlsServerCertificateWatcher::
       security_connector_->options_->identity_certificate_distributor() !=
       nullptr;
   bool identity_has_value =
-      security_connector_->pem_key_cert_pair_list_.has_value();
+      security_connector_->key_cert_pairs_or_selector_.has_value();
   if ((root_being_watched && root_has_value && identity_being_watched &&
        identity_has_value) ||
       (root_being_watched && root_has_value && !identity_being_watched) ||
@@ -831,10 +860,10 @@ TlsServerSecurityConnector::UpdateHandshakerFactoryLocked() {
     tsi_ssl_server_handshaker_factory_unref(server_handshaker_factory_);
   }
   // The identity certs on the server side shouldn't be empty.
-  GRPC_CHECK(pem_key_cert_pair_list_.has_value());
-  GRPC_CHECK(!(*pem_key_cert_pair_list_).empty());
-  std::vector<tsi_ssl_pem_key_cert_pair> pem_key_cert_pairs =
-      ConvertToTsiPemKeyCertPair(*pem_key_cert_pair_list_);
+  GRPC_CHECK(key_cert_pairs_or_selector_.has_value());
+  GRPC_CHECK(!IsKeyCertPairsOrSelectorEmpty(*key_cert_pairs_or_selector_));
+  tsi_ssl_key_cert_pairs pem_key_cert_pairs =
+      ConvertToTsiPemKeyCertPair(*key_cert_pairs_or_selector_);
   return grpc_ssl_tsi_server_handshaker_factory_init(
       pem_key_cert_pairs, root_cert_info_, options_->cert_request_type(),
       grpc_get_tsi_tls_version(options_->min_tls_version()),

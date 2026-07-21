@@ -1297,195 +1297,219 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
           });
     }
     // Now return a promise that does all the things.
-    return Race(
-        // Get server trailing metadata from the v3 promise via the
-        // inter-activity latch.
-        If(
-            IsV2NonOwningWakerImplementationEnabled(),
-            [pipe_owner]() {
-              return pipe_owner->server_trailing_metadata.Wait();
-            },
-            [initiator = initiator]() mutable {
-              return initiator.PullServerTrailingMetadata();
-            }),
-        // This promise does the rest of the things, but it will always
-        // return pending, because the promise can't actually finish
-        // until the initiator returns trailing metadata above.
-        TrySeq(
-            state->call_handler_latch.Wait(),
-            [initiator = initiator, pipe_owner,
-             call_args = std::move(call_args),
-             next_promise_factory =
-                 std::move(next_promise_factory)](CallHandler handler) mutable {
-              // Intercept all pipes from v2 API.
-              //
-              // For client-to-server messages, we do the following:
-              // 1. Push the message into the v3 initiator, which sends
-              //    it to the v3 interceptor.  Note that this needs to
-              //    be done inside of the v3 initiator's activity.
-              // 2. Pull the message from the v3 handler, where it will
-              //    arrive when the v3 interceptor is done with it.
-              //    Note that this needs to be done inside of the v3
-              //    handler's activity.  We then push the message into
-              //    an inter-activity pipe to return it to the v2 activity.
-              // 3. In the v2 activity, read the message from the
-              //    inter-activity pipe and send it on to the next
-              //    filter.
-              //
-              // Step 2: Spawn a promise to pull messages from the v3
-              // handler and push them into an inter-activity pipe to
-              // return them to the v2 activity.
-              handler.SpawnGuarded(
-                  "pull_client_to_server_message",
-                  [handler, pipe_owner]() mutable {
-                    return ForEach(
-                        MessagesFrom(handler),
-                        [pipe_owner](MessageHandle message) {
-                          return Map(
-                              pipe_owner->client_to_server_messages.sender.Push(
-                                  std::move(message)),
-                              [](bool x) { return StatusFlag(x); });
-                        });
-                  });
-              call_args.client_to_server_messages->InterceptAndMap(
-                  [initiator, handler,
-                   pipe_owner](MessageHandle message) mutable {
-                    // Step 1: Push the message onto the v3 initiator in
-                    // its activity.
-                    initiator.SpawnPushMessage(std::move(message));
-                    // Step 3: Here in the v2 activity, read the message
-                    // from the inter-activity pipe and return it.
-                    return Map(
-                        pipe_owner->client_to_server_messages.receiver.Next(),
-                        [](InterActivityPipe<MessageHandle, 1>::NextResult
-                               message) -> std::optional<MessageHandle> {
-                          if (!message.has_value()) return std::nullopt;
-                          return std::move(*message);
-                        });
-                  });
-              // For server initial metadata, we do a similar thing, but
-              // in the opposite direction, and using an inter-activity
-              // latch instead of a pipe:
-              // 1. Push the metadata into the v3 handler, which sends
-              //    it to the v3 interceptor.  Note that this needs to
-              //    be done inside of the v3 handler's activity.
-              // 2. Pull the metadata from the v3 initiator, where it will
-              //    arrive when the v3 interceptor is done with it.
-              //    Note that this needs to be done inside of the v3
-              //    initiator's activity.  We then use an inter-activity
-              //    latch to return the metadata to the v2 activity.
-              // 3. In the v2 activity, read the metadata from the
-              //    inter-activity latch and send it on to the previous
-              //    filter.
-              //
-              // Step 2: Spawn a promise to pull the metadata from the v3
-              // initiator and use an inter-activity latch to return it to
-              // the v2 activity.
-              initiator.SpawnGuarded(
-                  "pull_server_initial_metadata",
-                  [initiator, pipe_owner]() mutable {
-                    return TrySeq(
-                        initiator.PullServerInitialMetadata(),
-                        [pipe_owner](
-                            std::optional<ServerMetadataHandle> metadata) {
-                          pipe_owner->server_initial_metadata.Set(
-                              std::move(metadata));
-                        });
-                  });
-              call_args.server_initial_metadata->InterceptAndMap(
-                  [initiator, handler,
-                   pipe_owner](ServerMetadataHandle metadata) mutable {
-                    // Step 1: Push the metadata onto the v3 handler in
-                    // its activity.
-                    handler.SpawnPushServerInitialMetadata(std::move(metadata));
-                    // Step 3: Here in the v2 activity, read from the
-                    // inter-activity latch and return the metadata.
-                    return pipe_owner->server_initial_metadata.Wait();
-                  });
-              // We handle server-to-client messages the same as
-              // client-to-server messages, except in the opposite
-              // direction:
-              // 1. Push the message into the v3 handler, which sends
-              //    it to the v3 interceptor.  Note that this needs to
-              //    be done inside of the v3 handler's activity.
-              // 2. Pull the message from the v3 initiator, where it will
-              //    arrive when the v3 interceptor is done with it.
-              //    Note that this needs to be done inside of the v3
-              //    initiator's activity.  We then push the message into
-              //    an inter-activity pipe to return it to the v2 activity.
-              // 3. In the v2 activity, read the message from the
-              //    inter-activity pipe and send it on to the next
-              //    filter.
-              //
-              // Step 2: Spawn a promise to pull messages from the v3
-              // initiator and push them into an inter-activity pipe to
-              // return them to the v2 activity.
-              initiator.SpawnGuarded(
-                  "pull_server_to_client_message",
-                  [initiator, pipe_owner]() mutable {
-                    return ForEach(
-                        MessagesFrom(initiator),
-                        [pipe_owner](MessageHandle message) {
-                          return Map(
-                              pipe_owner->server_to_client_messages.sender.Push(
-                                  std::move(message)),
-                              [](bool x) { return StatusFlag(x); });
-                        });
-                  });
-              call_args.server_to_client_messages->InterceptAndMap(
-                  [initiator, handler,
-                   pipe_owner](MessageHandle message) mutable {
-                    // Step 1: Push the message onto the v3 handler in
-                    // its activity.
-                    handler.SpawnPushMessage(std::move(message));
-                    // Step 3: Here in the v2 activity, read from the
-                    // inter-activity pipe and return the messages.
-                    return Map(
-                        pipe_owner->server_to_client_messages.receiver.Next(),
-                        [](InterActivityPipe<MessageHandle, 1>::NextResult
-                               message) -> std::optional<MessageHandle> {
-                          if (!message.has_value()) return std::nullopt;
-                          return std::move(*message);
-                        });
-                  });
-              // In the v3 handler's activity, pull client initial metadata.
-              // Use an inter-activity latch to get it back to the v2
-              // activity.
-              handler.SpawnGuarded(
-                  "pull_client_initial_metadata",
-                  [handler, pipe_owner]() mutable {
-                    return TrySeq(handler.PullClientInitialMetadata(),
-                                  [pipe_owner](ClientMetadataHandle metadata) {
-                                    pipe_owner->client_initial_metadata.Set(
-                                        std::move(metadata));
-                                  });
-                  });
-              // A wrapper for next_promise_factory that does the following:
-              // - Pulls client initial metadata from the V3 handler via
-              //   the inter-activity latch and injects it into the next
-              //   V2 filter via CallArgs.
-              // - Polls the next promise to get server trailing metadata
-              //   from the next V2 filter and feeds it into the V3 handler.
-              // Note that this does not actually pull the trailing metadata
-              // from the V3 initiator; instead, we do that in a separate
-              // promise above.  That promise will always complete at the
-              // end of the call, so we always return pending here.
-              return Seq(
-                  pipe_owner->client_initial_metadata.Wait(),
-                  [next_promise_factory = std::move(next_promise_factory),
-                   call_args = std::move(call_args),
-                   handler](ClientMetadataHandle metadata) mutable {
-                    call_args.client_initial_metadata = std::move(metadata);
-                    return Seq(next_promise_factory(std::move(call_args)),
-                               [handler](ServerMetadataHandle metadata) mutable
-                                   -> Poll<ServerMetadataHandle> {
-                                 handler.SpawnPushServerTrailingMetadata(
-                                     std::move(metadata));
-                                 // We always lose the race.
-                                 return Pending{};
-                               });
-                  });
-            }));
+    // The returned promise is wrapped in OnCancel so that, if the v2 stack
+    // destroys it before it completes (e.g. the forced-cancellation path in
+    // ServerCallData::Completed, which resets promise_ to an empty
+    // ArenaPromise), we actively propagate a cancellation into the v3 call
+    // pair.
+    return OnCancel(
+        Race(
+            // Get server trailing metadata from the v3 promise via the
+            // inter-activity latch.
+            If(
+                IsV2NonOwningWakerImplementationEnabled(),
+                [pipe_owner]() {
+                  return pipe_owner->server_trailing_metadata.Wait();
+                },
+                [initiator = initiator]() mutable {
+                  return initiator.PullServerTrailingMetadata();
+                }),
+            // This promise does the rest of the things, but it will always
+            // return pending, because the promise can't actually finish
+            // until the initiator returns trailing metadata above.
+            TrySeq(
+                state->call_handler_latch.Wait(),
+                [initiator = initiator, pipe_owner,
+                 call_args = std::move(call_args),
+                 next_promise_factory = std::move(next_promise_factory)](
+                    CallHandler handler) mutable {
+                  // Intercept all pipes from v2 API.
+                  //
+                  // For client-to-server messages, we do the following:
+                  // 1. Push the message into the v3 initiator, which sends
+                  //    it to the v3 interceptor.  Note that this needs to
+                  //    be done inside of the v3 initiator's activity.
+                  // 2. Pull the message from the v3 handler, where it will
+                  //    arrive when the v3 interceptor is done with it.
+                  //    Note that this needs to be done inside of the v3
+                  //    handler's activity.  We then push the message into
+                  //    an inter-activity pipe to return it to the v2 activity.
+                  // 3. In the v2 activity, read the message from the
+                  //    inter-activity pipe and send it on to the next
+                  //    filter.
+                  //
+                  // Step 2: Spawn a promise to pull messages from the v3
+                  // handler and push them into an inter-activity pipe to
+                  // return them to the v2 activity.
+                  handler.SpawnGuarded(
+                      "pull_client_to_server_message",
+                      [handler, pipe_owner]() mutable {
+                        return ForEach(
+                            MessagesFrom(handler),
+                            [pipe_owner](MessageHandle message) {
+                              return Map(pipe_owner->client_to_server_messages
+                                             .sender.Push(std::move(message)),
+                                         [](bool x) { return StatusFlag(x); });
+                            });
+                      });
+                  call_args.client_to_server_messages->InterceptAndMap(
+                      [initiator, handler,
+                       pipe_owner](MessageHandle message) mutable {
+                        // Step 1: Push the message onto the v3 initiator in
+                        // its activity.
+                        initiator.SpawnPushMessage(std::move(message));
+                        // Step 3: Here in the v2 activity, read the message
+                        // from the inter-activity pipe and return it.
+                        return Map(
+                            pipe_owner->client_to_server_messages.receiver
+                                .Next(),
+                            [](InterActivityPipe<MessageHandle, 1>::NextResult
+                                   message) -> std::optional<MessageHandle> {
+                              if (!message.has_value()) return std::nullopt;
+                              return std::move(*message);
+                            });
+                      });
+                  // For server initial metadata, we do a similar thing, but
+                  // in the opposite direction, and using an inter-activity
+                  // latch instead of a pipe:
+                  // 1. Push the metadata into the v3 handler, which sends
+                  //    it to the v3 interceptor.  Note that this needs to
+                  //    be done inside of the v3 handler's activity.
+                  // 2. Pull the metadata from the v3 initiator, where it will
+                  //    arrive when the v3 interceptor is done with it.
+                  //    Note that this needs to be done inside of the v3
+                  //    initiator's activity.  We then use an inter-activity
+                  //    latch to return the metadata to the v2 activity.
+                  // 3. In the v2 activity, read the metadata from the
+                  //    inter-activity latch and send it on to the previous
+                  //    filter.
+                  //
+                  // Step 2: Spawn a promise to pull the metadata from the v3
+                  // initiator and use an inter-activity latch to return it to
+                  // the v2 activity.
+                  initiator.SpawnGuarded(
+                      "pull_server_initial_metadata",
+                      [initiator, pipe_owner]() mutable {
+                        return TrySeq(
+                            initiator.PullServerInitialMetadata(),
+                            [pipe_owner](
+                                std::optional<ServerMetadataHandle> metadata) {
+                              pipe_owner->server_initial_metadata.Set(
+                                  std::move(metadata));
+                            });
+                      });
+                  call_args.server_initial_metadata->InterceptAndMap(
+                      [initiator, handler,
+                       pipe_owner](ServerMetadataHandle metadata) mutable {
+                        // Step 1: Push the metadata onto the v3 handler in
+                        // its activity.
+                        handler.SpawnPushServerInitialMetadata(
+                            std::move(metadata));
+                        // Step 3: Here in the v2 activity, read from the
+                        // inter-activity latch and return the metadata.
+                        return pipe_owner->server_initial_metadata.Wait();
+                      });
+                  // We handle server-to-client messages the same as
+                  // client-to-server messages, except in the opposite
+                  // direction:
+                  // 1. Push the message into the v3 handler, which sends
+                  //    it to the v3 interceptor.  Note that this needs to
+                  //    be done inside of the v3 handler's activity.
+                  // 2. Pull the message from the v3 initiator, where it will
+                  //    arrive when the v3 interceptor is done with it.
+                  //    Note that this needs to be done inside of the v3
+                  //    initiator's activity.  We then push the message into
+                  //    an inter-activity pipe to return it to the v2 activity.
+                  // 3. In the v2 activity, read the message from the
+                  //    inter-activity pipe and send it on to the next
+                  //    filter.
+                  //
+                  // Step 2: Spawn a promise to pull messages from the v3
+                  // initiator and push them into an inter-activity pipe to
+                  // return them to the v2 activity.
+                  initiator.SpawnGuarded(
+                      "pull_server_to_client_message",
+                      [initiator, pipe_owner]() mutable {
+                        return ForEach(
+                            MessagesFrom(initiator),
+                            [pipe_owner](MessageHandle message) {
+                              return Map(pipe_owner->server_to_client_messages
+                                             .sender.Push(std::move(message)),
+                                         [](bool x) { return StatusFlag(x); });
+                            });
+                      });
+                  call_args.server_to_client_messages->InterceptAndMap(
+                      [initiator, handler,
+                       pipe_owner](MessageHandle message) mutable {
+                        // Step 1: Push the message onto the v3 handler in
+                        // its activity.
+                        handler.SpawnPushMessage(std::move(message));
+                        // Step 3: Here in the v2 activity, read from the
+                        // inter-activity pipe and return the messages.
+                        return Map(
+                            pipe_owner->server_to_client_messages.receiver
+                                .Next(),
+                            [](InterActivityPipe<MessageHandle, 1>::NextResult
+                                   message) -> std::optional<MessageHandle> {
+                              if (!message.has_value()) return std::nullopt;
+                              return std::move(*message);
+                            });
+                      });
+                  // In the v3 handler's activity, pull client initial metadata.
+                  // Use an inter-activity latch to get it back to the v2
+                  // activity.
+                  handler.SpawnGuarded(
+                      "pull_client_initial_metadata",
+                      [handler, pipe_owner]() mutable {
+                        return TrySeq(
+                            handler.PullClientInitialMetadata(),
+                            [pipe_owner](ClientMetadataHandle metadata) {
+                              pipe_owner->client_initial_metadata.Set(
+                                  std::move(metadata));
+                            });
+                      });
+                  // A wrapper for next_promise_factory that does the following:
+                  // - Pulls client initial metadata from the V3 handler via
+                  //   the inter-activity latch and injects it into the next
+                  //   V2 filter via CallArgs.
+                  // - Polls the next promise to get server trailing metadata
+                  //   from the next V2 filter and feeds it into the V3 handler.
+                  // Note that this does not actually pull the trailing metadata
+                  // from the V3 initiator; instead, we do that in a separate
+                  // promise above.  That promise will always complete at the
+                  // end of the call, so we always return pending here.
+                  return Seq(
+                      pipe_owner->client_initial_metadata.Wait(),
+                      [next_promise_factory = std::move(next_promise_factory),
+                       call_args = std::move(call_args),
+                       handler](ClientMetadataHandle metadata) mutable {
+                        call_args.client_initial_metadata = std::move(metadata);
+                        return Seq(
+                            next_promise_factory(std::move(call_args)),
+                            [handler](ServerMetadataHandle metadata) mutable
+                                -> Poll<ServerMetadataHandle> {
+                              handler.SpawnPushServerTrailingMetadata(
+                                  std::move(metadata));
+                              // We always lose the race.
+                              return Pending{};
+                            });
+                      });
+                })),
+        [initiator = initiator]() mutable {
+          // The v2 promise was destroyed before completing: propagate the
+          // cancellation into the v3 call pair so its CallSpine is torn down
+          // and the v3 interceptor is notified.
+          if (IsV2NonOwningWakerImplementationEnabled()) {
+            initiator.SpawnCancel(
+                absl::CancelledError("call cancelled by v2 filter stack"));
+          } else {
+            initiator.SpawnInfallible("v2-force-cancel", [initiator]() mutable {
+              initiator.Cancel();
+              return Map(initiator.PullServerTrailingMetadata(),
+                         [](ServerMetadataHandle) { return Empty{}; });
+            });
+          }
+        });
   }
 
  protected:
@@ -1843,7 +1867,14 @@ class BaseCallData : public Activity,
     // work.
     void WakeInsideCombiner(Flusher* flusher, bool allow_push_to_pipe);
     // Call is completed, we have trailing metadata. Close things out.
-    void Done(const ServerMetadata& metadata, Flusher* flusher);
+    // discard_buffered_message: the call is being torn down (the promise
+    // produced its own terminal metadata, an out-of-band cancellation, or a
+    // server-initiated non-OK termination) and the receiver has stopped
+    // reading, so drop any message buffered here instead of delivering it up
+    // the stack.
+    void Done(const ServerMetadata& metadata, Flusher* flusher,
+              bool discard_buffered_message = false);
+    bool IsIdle() const;
 
     channelz::PropertyList ChannelzProperties() {
       return channelz::PropertyList().Set("state", StateString(state_));
@@ -2002,6 +2033,9 @@ class ClientCallData : public BaseCallData {
     kQueued,
     // We've forwarded the op to the next filter.
     kForwarded,
+    // Trailing metadata is received, but we queue it until the in-progress
+    // receive message operation finishes.
+    kCompletedQueuedBehindReceiveMessage,
     // The op has completed from below, but we haven't yet forwarded it up
     // (the promise gets to interject and mutate it).
     kComplete,
@@ -2300,7 +2334,7 @@ struct ChannelFilterWithFlagsMethods {
                                       args->config));
     if (!status.ok()) {
       new (elem->channel_data) F*(nullptr);
-      return absl_status_to_grpc_error(status.status());
+      return status.status();
     }
     new (elem->channel_data) F*(status->release());
     return absl::OkStatus();

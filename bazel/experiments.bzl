@@ -37,14 +37,12 @@ EXPERIMENT_ENABLES = {
     "inproc_cancel_stream": "inproc_cancel_stream",
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
     "local_connector_secure": "local_connector_secure",
-    "max_inflight_pings_strict_limit": "max_inflight_pings_strict_limit",
     "memory_optimization_01": "memory_optimization_01",
     "memory_optimization_02": "memory_optimization_02",
     "message_size_refactoring": "message_size_refactoring",
     "metadata_outstanding_token_refactor": "metadata_outstanding_token_refactor",
     "metadata_publish_to_app_tag": "metadata_publish_to_app_tag",
     "monitoring_experiment": "monitoring_experiment",
-    "multiping": "multiping",
     "optimization_01": "optimization_01",
     "optimization_02": "optimization_02",
     "optimization_03": "optimization_03",
@@ -63,6 +61,7 @@ EXPERIMENT_ENABLES = {
     "promise_based_inproc_transport": "promise_based_inproc_transport",
     "promise_batch_cleanup_on_cancel": "promise_batch_cleanup_on_cancel",
     "promise_filter_send_cancel_metadata": "promise_filter_send_cancel_metadata",
+    "recv_message_filter_bypass_fix": "recv_message_filter_bypass_fix",
     "retry_in_callv3": "retry_in_callv3",
     "return_preexisting_errors": "return_preexisting_errors",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
@@ -79,7 +78,7 @@ EXPERIMENT_ENABLES = {
     "v2_non_owning_waker_implementation": "v2_non_owning_waker_implementation",
     "verbose_channelz_connection_logging": "verbose_channelz_connection_logging",
     "wildcard_ip_expansion_restriction": "wildcard_ip_expansion_restriction",
-    "xds_server_filter_chain_per_route": "xds_server_filter_chain_per_route",
+    "xds_server_filter_chain_per_route": "v2_non_owning_waker_implementation,xds_server_filter_chain_per_route",
 }
 
 EXPERIMENT_POLLERS = [
@@ -158,6 +157,7 @@ EXPERIMENTS = {
                 "ph2_server",
                 "pipelined_read_secure_endpoint",
                 "pollset_alternative",
+                "recv_message_filter_bypass_fix",
                 "retry_in_callv3",
                 "secure_endpoint_offload_large_reads",
                 "secure_endpoint_offload_large_writes",
@@ -176,7 +176,6 @@ EXPERIMENTS = {
                 "tcp_rcv_lowat",
             ],
             "flow_control_test": [
-                "multiping",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],

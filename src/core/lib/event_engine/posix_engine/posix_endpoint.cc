@@ -216,10 +216,10 @@ bool CmsgIsZeroCopy(const cmsghdr& cmsg) {
 absl::Status PosixOSError(const PosixErrorOr<int64_t>& error_no,
                           absl::string_view call_name) {
   if (error_no.IsPosixError()) {
-    return absl::UnknownError(
+    return absl::UnavailableError(
         absl::StrCat(call_name, ": ", error_no.StrError()));
   }
-  return absl::UnknownError(
+  return absl::UnavailableError(
       absl::StrCat(call_name, ": Wrong file descriptor generation"));
 }
 
@@ -281,12 +281,6 @@ void PosixEndpointImpl::FinishEstimate() {
     target_length_ = 0.99 * target_length_ + 0.01 * bytes_read_this_round_;
   }
   bytes_read_this_round_ = 0;
-}
-
-absl::Status PosixEndpointImpl::TcpAnnotateError(absl::Status src_error) const {
-  grpc_core::StatusSetInt(&src_error, grpc_core::StatusIntProperty::kRpcStatus,
-                          GRPC_STATUS_UNAVAILABLE);
-  return src_error;
 }
 
 // Returns true if data available to read or error other than EAGAIN.
@@ -365,14 +359,11 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
       incoming_buffer_->Clear();
       if (res.IsWrongGenerationError()) {
         status = absl::CancelledError("Closed on fork");
-        grpc_core::StatusSetInt(&status,
-                                grpc_core::StatusIntProperty::kRpcStatus,
-                                GRPC_STATUS_CANCELLED);
       } else if (read_bytes == 0) {
-        status = TcpAnnotateError(absl::InternalError("Socket closed"));
+        status = absl::UnavailableError("Socket closed");
       } else {
-        status = TcpAnnotateError(
-            absl::InternalError(absl::StrCat("recvmsg:", res.StrError())));
+        status =
+            absl::UnavailableError(absl::StrCat("recvmsg:", res.StrError()));
       }
       return true;
     }
@@ -579,7 +570,7 @@ bool PosixEndpointImpl::HandleReadLocked(absl::Status& status) {
     }
   } else {
     if (!memory_owner_.is_valid() && status.ok()) {
-      status = TcpAnnotateError(absl::UnknownError("Shutting down endpoint"));
+      status = absl::UnavailableError("Shutting down endpoint");
     }
     incoming_buffer_->Clear();
     last_read_buffer_.Clear();
@@ -1033,7 +1024,7 @@ bool PosixEndpointImpl::DoFlushZerocopy(TcpZerocopySendRecord* record,
         record->UnwindIfThrottled(unwind_slice_idx, unwind_byte_idx);
         return false;
       } else {
-        status = TcpAnnotateError(PosixOSError(send_status, "sendmsg"));
+        status = PosixOSError(send_status, "sendmsg");
         return true;
       }
     }
@@ -1129,7 +1120,7 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
         }
         return false;
       } else {
-        status = TcpAnnotateError(PosixOSError(send_result, "sendmsg"));
+        status = PosixOSError(send_result, "sendmsg");
         outgoing_buffer_->Clear();
         return true;
       }
@@ -1205,7 +1196,7 @@ bool PosixEndpointImpl::Write(
     GRPC_TRACE_LOG(event_engine_endpoint, INFO)
         << "Endpoint[" << this << "]: Write skipped";
     if (handle_->IsHandleShutdown()) {
-      status = TcpAnnotateError(absl::InternalError("EOF"));
+      status = absl::UnavailableError("EOF");
       engine_->Run(
           [on_writable = std::move(on_writable), status, this]() mutable {
             GRPC_TRACE_LOG(event_engine_endpoint, INFO)
@@ -1264,8 +1255,6 @@ void PosixEndpointImpl::MaybeShutdown(
     handle_->SetHasError();
   }
   on_release_fd_ = std::move(on_release_fd);
-  grpc_core::StatusSetInt(&why, grpc_core::StatusIntProperty::kRpcStatus,
-                          GRPC_STATUS_UNAVAILABLE);
   handle_->ShutdownHandle(why);
   read_mu_.Lock();
   memory_owner_.Reset();

@@ -63,6 +63,10 @@ bool IsMetricEnabledByDefault(absl::string_view) { return false; }
 bool IsOpenTelemetryLabelOptional(absl::string_view label_key) {
   // TODO(ctiller): register other optional labels here with
   // `if (label_key =="xyz") return true;` checks.
+  if (label_key == grpc_core::kMetricLabelLocality ||
+      label_key == grpc_core::kMetricLabelBackendService) {
+    return true;
+  }
   return absl::StartsWith(label_key, "test_optional.");
 }
 
@@ -73,7 +77,7 @@ absl::string_view OpenTelemetryStatusKey() { return "grpc.status"; }
 absl::string_view OpenTelemetryTargetKey() { return "grpc.target"; }
 
 absl::string_view OpenTelemetryCustomLabelKey() {
-  return "grpc.client.call.custom";
+  return grpc_core::kMetricLabelTelemetry;
 }
 
 namespace {

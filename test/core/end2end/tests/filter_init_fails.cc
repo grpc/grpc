@@ -51,9 +51,7 @@ namespace {
 
 grpc_error_handle init_call_elem(grpc_call_element* /*elem*/,
                                  const grpc_call_element_args* /*args*/) {
-  return grpc_error_set_int(GRPC_ERROR_CREATE("access denied"),
-                            StatusIntProperty::kRpcStatus,
-                            GRPC_STATUS_PERMISSION_DENIED);
+  return absl::PermissionDeniedError("access denied");
 }
 
 void destroy_call_elem(grpc_call_element* /*elem*/,
@@ -63,9 +61,7 @@ void destroy_call_elem(grpc_call_element* /*elem*/,
 grpc_error_handle init_channel_elem(grpc_channel_element* /*elem*/,
                                     grpc_channel_element_args* args) {
   if (args->channel_args.GetBool("channel_init_fails").value_or(false)) {
-    return grpc_error_set_int(
-        GRPC_ERROR_CREATE("Test channel filter init error"),
-        StatusIntProperty::kRpcStatus, GRPC_STATUS_INVALID_ARGUMENT);
+    return absl::InvalidArgumentError("Test channel filter init error");
   }
   return absl::OkStatus();
 }

@@ -34,6 +34,7 @@
 #include <vector>
 
 #include "src/core/config/config_vars.h"
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_selector.h"
 #include "src/core/credentials/transport/tls/load_system_roots.h"
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -479,7 +480,7 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
 }
 
 grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
-    std::vector<tsi_ssl_pem_key_cert_pair> pem_key_cert_pairs,
+    tsi_ssl_key_cert_pairs key_cert_pairs,
     std::shared_ptr<tsi::RootCertInfo> root_cert_info,
     grpc_ssl_client_certificate_request_type client_certificate_request,
     tsi_tls_version min_tls_version, tsi_tls_version max_tls_version,
@@ -492,7 +493,7 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
   const char** alpn_protocol_strings =
       grpc_fill_alpn_protocol_strings(&num_alpn_protocols);
   tsi_ssl_server_handshaker_options options;
-  options.pem_key_cert_pairs = pem_key_cert_pairs;
+  options.pem_key_cert_pairs = std::move(key_cert_pairs);
   options.client_certificate_request =
       grpc_get_tsi_client_certificate_request_type(client_certificate_request);
   options.cipher_suites = grpc_get_ssl_cipher_suites();
@@ -651,6 +652,18 @@ void DefaultSslRootStore::InitRootStoreOnce() {
         tsi_ssl_root_certs_store_create(reinterpret_cast<const char*>(
             GRPC_SLICE_START_PTR(default_pem_root_certs_)));
   }
+}
+
+bool IsKeyCertPairsOrSelectorEmpty(
+    const KeyCertPairsOrSelector& key_cert_pairs_or_selector) {
+  return Match(
+      key_cert_pairs_or_selector,
+      [](const PemKeyCertPairList& pem_key_cert_pairs) {
+        return pem_key_cert_pairs.empty();
+      },
+      [](const std::shared_ptr<CertificateSelector>& selector) {
+        return selector == nullptr;
+      });
 }
 
 }  // namespace grpc_core

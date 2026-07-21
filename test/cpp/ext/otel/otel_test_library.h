@@ -157,6 +157,18 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
       return *this;
     }
 
+    Options& set_client_credentials_options(
+        grpc::experimental::TlsChannelCredentialsOptions options) {
+      client_credentials_options.emplace(std::move(options));
+      return *this;
+    }
+
+    Options& set_server_credentials_options(
+        grpc::experimental::TlsServerCredentialsOptions options) {
+      server_credentials_options.emplace(std::move(options));
+      return *this;
+    }
+
     std::vector<absl::string_view> metric_names;
     // TODO(yashykt): opentelemetry::sdk::resource::Resource doesn't have a copy
     // assignment operator so wrapping it in a unique_ptr till it is fixed.
@@ -188,6 +200,10 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
         per_channel_stats_plugins;
     std::vector<std::shared_ptr<grpc::experimental::OpenTelemetryPlugin>>
         per_server_stats_plugins;
+    std::optional<grpc::experimental::TlsChannelCredentialsOptions>
+        client_credentials_options;
+    std::optional<grpc::experimental::TlsServerCredentialsOptions>
+        server_credentials_options;
   };
 
   class MetricsCollectorThread {
@@ -217,6 +233,14 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
   ConfigureOTBuilder(
       OpenTelemetryPluginEnd2EndTest::Options options,
       grpc::internal::OpenTelemetryPluginBuilderImpl* ot_builder);
+
+  static grpc::experimental::TlsChannelCredentialsOptions MakeClientTlsOptions(
+      const std::string& root_cert_path,
+      const std::string& client_key_path = "",
+      const std::string& client_cert_path = "");
+  static grpc::experimental::TlsServerCredentialsOptions MakeServerTlsOptions(
+      const std::string& root_cert_path, const std::string& server_key_path,
+      const std::string& server_cert_path, bool require_client_cert = false);
 
   // Note that we can't use SetUp() here since we want to send in parameters.
   void Init(Options config);
