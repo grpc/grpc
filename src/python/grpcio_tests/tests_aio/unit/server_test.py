@@ -724,6 +724,36 @@ class TestServer(AioTestBase):
         response = await unary_unary_call(_REQUEST)
         self.assertEqual(response, _REGISTERED_RESPONSE)
 
+    async def test_add_registered_handler_after_server_start(self):
+        async def registered_unary_unary_handler(
+            unused_request, unused_context
+        ):
+            return _RESPONSE
+        registered_handlers = {
+            "AddedAfterServerStart": grpc.unary_unary_rpc_method_handler(
+                registered_unary_unary_handler
+            ),
+        }
+        with self.assertRaises(aio.UsageError) as exception_ctx:
+            self._server.add_registered_method_handlers(
+                "test", registered_handlers
+            )
+        self.assertIn(
+            "Cannot register method handlers once server has started",
+            str(exception_ctx.exception)
+        )
+
+        # The failed registration must not have exposed the method
+        call = self._channel.unary_unary(
+            "/test/AddedAfterServerStart", _registered_method=True,
+        )(_REQUEST)
+        with self.assertRaises(grpc.RpcError) as rpc_exception_ctx:
+            await call
+
+        self.assertIn(
+            "Method not found",
+            str(rpc_exception_ctx.exception.details()))
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
