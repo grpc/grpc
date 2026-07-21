@@ -239,12 +239,19 @@ class ServerHandlerTest(unittest.TestCase):
         self._server = test_common.test_server()
         port = self._server.add_insecure_port("[::]:0")
         self._server.start()
-        self._server.add_registered_method_handlers(
-            _SERVICE_NAME, _REGISTERED_METHOD_HANDLERS
+        with self.assertRaises(grpc.experimental.UsageError) as exception_ctx:
+            self._server.add_registered_method_handlers(
+                _SERVICE_NAME, _REGISTERED_METHOD_HANDLERS
+            )
+        self.assertIn(
+            "Cannot register method handlers once server has started",
+            str(exception_ctx.exception)
         )
+
+        # The failed registration must not have exposed the method
         self._channel = grpc.insecure_channel("localhost:%d" % port)
 
-        with self.assertRaises(grpc.RpcError) as exception_context:
+        with self.assertRaises(grpc.RpcError) as rpc_exception_ctx:
             self._channel.unary_unary(
                 grpc._common.fully_qualified_method(
                     _SERVICE_NAME, _UNARY_UNARY_REGISTERED
@@ -252,7 +259,7 @@ class ServerHandlerTest(unittest.TestCase):
                 _registered_method=True,
             )(_REQUEST)
 
-        self.assertIn("Method not found", str(exception_context.exception))
+        self.assertIn("Method not found", str(rpc_exception_ctx.exception))
 
     def test_server_with_both_registered_and_generic_handlers(self):
         self._server = test_common.test_server()
