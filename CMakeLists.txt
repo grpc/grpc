@@ -23200,6 +23200,8 @@ target_link_libraries(interop_client
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_config
   grpc++_test_util
+  grpc_opentelemetry
+  opentelemetry-cpp::otlp_grpc_exporter
 )
 
 
@@ -23255,6 +23257,8 @@ target_link_libraries(interop_server
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_config
   grpc++_test_util
+  grpc_opentelemetry
+  opentelemetry-cpp::otlp_grpc_exporter
 )
 
 
