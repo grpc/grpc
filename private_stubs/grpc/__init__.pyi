@@ -15,7 +15,6 @@
 # support internal type checking (e.g. Pyright). They are not public APIs.
 """gRPC's Python API type stubs."""
 
-
 import abc
 import enum
 from types import TracebackType
@@ -57,7 +56,6 @@ __version__: str
 ############################### Future Interface  ###############################
 
 class FutureTimeoutError(Exception): ...
-
 class FutureCancelledError(Exception): ...
 
 class Future(abc.ABC):
@@ -131,7 +129,7 @@ class RpcContext(abc.ABC):
     @abc.abstractmethod
     def add_callback(self, callback: Any) -> Any: ...
 
-#########################  Invocation-Side Context  ################            
+#########################  Invocation-Side Context  ################
 
 class Call(RpcContext, metaclass=abc.ABCMeta):
     @abc.abstractmethod
@@ -469,74 +467,62 @@ def unary_unary_rpc_method_handler(
     request_deserializer: Optional[Callable[[bytes], Any]] = None,
     response_serializer: Optional[Callable[[Any], bytes]] = None,
 ) -> RpcMethodHandler: ...
-
 def unary_stream_rpc_method_handler(
     behavior: Callable[[Any, ServicerContext], Iterator[Any]],
     request_deserializer: Optional[Callable[[bytes], Any]] = None,
     response_serializer: Optional[Callable[[Any], bytes]] = None,
 ) -> RpcMethodHandler: ...
-
 def stream_unary_rpc_method_handler(
     behavior: Callable[[Iterator[Any], ServicerContext], Any],
     request_deserializer: Optional[Callable[[bytes], Any]] = None,
     response_serializer: Optional[Callable[[Any], bytes]] = None,
 ) -> RpcMethodHandler: ...
-
 def stream_stream_rpc_method_handler(
     behavior: Callable[[Iterator[Any], ServicerContext], Iterator[Any]],
     request_deserializer: Optional[Callable[[bytes], Any]] = None,
     response_serializer: Optional[Callable[[Any], bytes]] = None,
 ) -> RpcMethodHandler: ...
-
 def method_handlers_generic_handler(
     service: str, method_handlers: Mapping[str, RpcMethodHandler]
 ) -> GenericRpcHandler: ...
-
 def ssl_channel_credentials(
     root_certificates: Optional[bytes] = None,
     private_key: Optional[bytes] = None,
     certificate_chain: Optional[bytes] = None,
 ) -> ChannelCredentials: ...
-
 def xds_channel_credentials(
     fallback_credentials: Optional[ChannelCredentials] = None,
 ) -> ChannelCredentials: ...
-
 def metadata_call_credentials(
     metadata_plugin: AuthMetadataPlugin, name: Optional[str] = None
 ) -> CallCredentials: ...
-
 def access_token_call_credentials(access_token: str) -> CallCredentials: ...
-
-def composite_call_credentials(*call_credentials: CallCredentials) -> CallCredentials: ...
-
+def composite_call_credentials(
+    *call_credentials: CallCredentials,
+) -> CallCredentials: ...
 def composite_channel_credentials(
     channel_credentials: ChannelCredentials, *call_credentials: CallCredentials
 ) -> ChannelCredentials: ...
-
 def ssl_server_credentials(
     private_key_certificate_chain_pairs: Sequence[Tuple[bytes, bytes]],
     root_certificates: Optional[bytes] = None,
     require_client_auth: bool = False,
 ) -> ServerCredentials: ...
-
 def xds_server_credentials(
     fallback_credentials: ServerCredentials,
 ) -> ServerCredentials: ...
-
 def insecure_server_credentials() -> ServerCredentials: ...
-
 def ssl_server_certificate_configuration(
     private_key_certificate_chain_pairs: Sequence[Tuple[bytes, bytes]],
     root_certificates: Optional[bytes] = None,
 ) -> ServerCertificateConfiguration: ...
-
 def dynamic_ssl_server_credentials(
     initial_certificate_configuration: ServerCertificateConfiguration,
-    certificate_configuration_fetcher: Callable[[], Optional[ServerCertificateConfiguration]],
+    certificate_configuration_fetcher: Callable[
+        [], Optional[ServerCertificateConfiguration]
+    ],
     require_client_authentication: bool = False,
 ) -> ServerCredentials: ...
-
 @enum.unique
 class LocalConnectionType(enum.Enum):
     UDS = ...
@@ -545,36 +531,28 @@ class LocalConnectionType(enum.Enum):
 def local_channel_credentials(
     local_connect_type: LocalConnectionType = LocalConnectionType.LOCAL_TCP,
 ) -> ChannelCredentials: ...
-
 def local_server_credentials(
     local_connect_type: LocalConnectionType = LocalConnectionType.LOCAL_TCP,
 ) -> ServerCredentials: ...
-
 def alts_channel_credentials(
     service_accounts: Optional[Sequence[str]] = None,
 ) -> ChannelCredentials: ...
-
 def alts_server_credentials() -> ServerCredentials: ...
-
 def compute_engine_channel_credentials(
     call_credentials: CallCredentials,
 ) -> ChannelCredentials: ...
-
 def channel_ready_future(channel: Channel) -> Future[None]: ...
-
 def insecure_channel(
     target: str,
     options: Optional[Sequence[Tuple[str, Any]]] = None,
     compression: Optional[Compression] = None,
 ) -> Channel: ...
-
 def secure_channel(
     target: str,
     credentials: ChannelCredentials,
     options: Optional[Sequence[Tuple[str, Any]]] = None,
     compression: Optional[Compression] = None,
 ) -> Channel: ...
-
 def intercept_channel(
     channel: Channel,
     *interceptors: Union[
@@ -584,7 +562,6 @@ def intercept_channel(
         StreamStreamClientInterceptor,
     ],
 ) -> Channel: ...
-
 def server(
     thread_pool: Any,
     handlers: Optional[Sequence[GenericRpcHandler]] = None,
@@ -594,11 +571,9 @@ def server(
     compression: Optional[Compression] = None,
     xds: bool = False,
 ) -> Server: ...
-
 def _create_servicer_context(
     rpc_event: Any, state: Any, request_deserializer: Any
 ) -> ContextManager[ServicerContext]: ...
-
 @enum.unique
 class Compression(enum.IntEnum):
     NoCompression = ...
@@ -681,7 +656,3 @@ __all__ = (
 )
 
 def __getattr__(name: str) -> Any: ...
-
-
-
-
