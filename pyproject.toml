@@ -71,6 +71,7 @@ where = ["src/python/grpcio"]
 
 [tool.pyright]
 stubPath = "private_stubs"
+extraPaths = ["src/python/grpcio"]
 
 typeCheckingMode = "strict"
 

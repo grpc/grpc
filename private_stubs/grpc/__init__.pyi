@@ -20,76 +20,79 @@ import sys
 import typing
 from typing import Any, Callable, Dict, Generic, Iterable, Iterator, List, Optional, Protocol, Sequence, Tuple, TypeVar, Union
 
-from grpc import aio as aio
-from grpc import beta as beta
-from grpc import experimental as experimental
-from grpc import framework as framework
 from grpc._cython import cygrpc as _cygrpc
 from grpc._runtime_protos import protos as protos
 from grpc._runtime_protos import protos_and_services as protos_and_services
 from grpc._runtime_protos import services as services
+from grpc import _interceptor as _interceptor
 
-# Module namespaces for private submodules imported via `from grpc import _<module>`
-class _common:
-    CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY: Any
-    CYGRPC_STATUS_CODE_TO_STATUS_CODE: Any
-    STATUS_CODE_TO_CYGRPC_STATUS_CODE: Any
-    @staticmethod
-    def encode(s: Any, *args: Any, **kwargs: Any) -> bytes: ...
-    @staticmethod
-    def decode(b: Any, *args: Any, **kwargs: Any) -> str: ...
-    @staticmethod
-    def validate_port_binding_result(address: str, port: int) -> int: ...
-    @staticmethod
-    def augment_metadata(metadata: Any, channel_credentials: Any) -> Any: ...
-    @staticmethod
-    def serialize(message: Any, *args: Any, **kwargs: Any) -> bytes: ...
-    @staticmethod
-    def deserialize(bytestring: Any, *args: Any, **kwargs: Any) -> Any: ...
-    @staticmethod
-    def fully_qualified_method(group: Any, method: Any) -> str: ...
-    @staticmethod
-    def wait(wait_fn: Any, wait_complete_fn: Any, timeout: Optional[float] = None, spin_cb: Any = None) -> bool: ...
-
-class _compression:
-    @staticmethod
-    def create_channel_option(compression: Any) -> Any: ...
-    @staticmethod
-    def compression_algorithm_to_metadata(compression: Any) -> Any: ...
-    @staticmethod
-    def augment_metadata(metadata: Any, compression: Any) -> Any: ...
-
-class _observability:
-    @staticmethod
-    def maybe_server_call_tracer_factory_option(options: Any = None, xds: Any = None, *args: Any, **kwargs: Any) -> Any: ...
-    @staticmethod
-    def create_server_call_tracer_factory_option(options: Any = None, *args: Any, **kwargs: Any) -> Any: ...
-
-class _interceptor:
-    class _ServicePipeline:
-        def execute(self, *args: Any, **kwargs: Any) -> Any: ...
-    @staticmethod
-    def service_pipeline(interceptors: Any) -> Any: ...
-
-class _grpcio_metadata:
-    __version__: str
-
-class _simple_stubs:
-    class ChannelCache:
-        @staticmethod
-        def get(*args: Any, **kwargs: Any) -> Any: ...
-        @staticmethod
-        def get_channel(*args: Any, **kwargs: Any) -> Any: ...
+def __getattr__(name: str) -> Any: ...
 
 __all__ = (
-    "_common",
-    "_compression",
-    "_observability",
-    "_interceptor",
-    "_utilities",
-    "_simple_stubs",
-    "_grpcio_metadata",
-    "_cygrpc",
+    "AuthMetadataContext",
+    "AuthMetadataPlugin",
+    "AuthMetadataPluginCallback",
+    "Call",
+    "CallCredentials",
+    "Channel",
+    "ChannelConnectivity",
+    "ChannelCredentials",
+    "ClientCallDetails",
+    "Compression",
+    "Future",
+    "FutureCancelledError",
+    "FutureTimeoutError",
+    "GenericRpcHandler",
+    "HandlerCallDetails",
+    "LocalConnectionType",
+    "RpcContext",
+    "RpcError",
+    "RpcMethodHandler",
+    "Server",
+    "ServerCertificateConfiguration",
+    "ServerCredentials",
+    "ServerInterceptor",
+    "ServiceRpcHandler",
+    "ServicerContext",
+    "Status",
+    "StatusCode",
+    "StreamStreamClientInterceptor",
+    "StreamStreamMultiCallable",
+    "StreamUnaryClientInterceptor",
+    "StreamUnaryMultiCallable",
+    "UnaryStreamClientInterceptor",
+    "UnaryStreamMultiCallable",
+    "UnaryUnaryClientInterceptor",
+    "UnaryUnaryMultiCallable",
+    "access_token_call_credentials",
+    "alts_channel_credentials",
+    "alts_server_credentials",
+    "channel_ready_future",
+    "composite_call_credentials",
+    "composite_channel_credentials",
+    "compute_engine_channel_credentials",
+    "dynamic_ssl_server_credentials",
+    "insecure_channel",
+    "insecure_server_credentials",
+    "intercept_channel",
+    "local_channel_credentials",
+    "local_server_credentials",
+    "metadata_call_credentials",
+    "method_handlers_generic_handler",
+    "protos",
+    "protos_and_services",
+    "secure_channel",
+    "server",
+    "services",
+    "ssl_channel_credentials",
+    "ssl_server_certificate_configuration",
+    "ssl_server_credentials",
+    "stream_stream_rpc_method_handler",
+    "stream_unary_rpc_method_handler",
+    "unary_stream_rpc_method_handler",
+    "unary_unary_rpc_method_handler",
+    "xds_channel_credentials",
+    "xds_server_credentials",
 )
 
 __version__: str
@@ -361,7 +364,7 @@ def ssl_channel_credentials(root_certificates: Optional[bytes] = None, private_k
 def metadata_call_credentials(metadata_plugin: AuthMetadataPlugin, name: Optional[str] = None) -> CallCredentials: ...
 def access_token_call_credentials(access_token: str) -> CallCredentials: ...
 def composite_call_credentials(*call_credentials: CallCredentials) -> CallCredentials: ...
-def composite_channel_credentials(channel_credentials: ChannelCredentials, *call_credentials: CallCredentials) -> CallCredentials: ...
+def composite_channel_credentials(channel_credentials: ChannelCredentials, *call_credentials: CallCredentials) -> ChannelCredentials: ...
 def ssl_server_credentials(private_key_certificate_chain_pairs: Sequence[Tuple[bytes, bytes]], root_certificates: Optional[bytes] = None, require_client_auth: bool = False) -> ServerCredentials: ...
 def ssl_server_certificate_configuration(private_key_certificate_chain_pairs: Sequence[Tuple[bytes, bytes]], root_certificates: Optional[bytes] = None) -> ServerCertificateConfiguration: ...
 def dynamic_ssl_server_credentials(initial_certificate_configuration: ServerCertificateConfiguration, certificate_configuration_fetcher: Callable[[], ServerCertificateConfiguration], require_client_auth: bool = False) -> ServerCredentials: ...
