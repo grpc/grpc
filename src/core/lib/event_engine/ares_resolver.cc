@@ -49,7 +49,6 @@
 #include <algorithm>
 #include <chrono>
 #include <memory>
-#include <mutex>
 #include <optional>
 #include <type_traits>
 #include <utility>
@@ -66,6 +65,7 @@
 #include "src/core/util/host_port.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/base/call_once.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
@@ -77,8 +77,6 @@
 #ifdef GRPC_POSIX_SOCKET_ARES_EV_DRIVER
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #endif
-
-void AresOnceInit();
 
 namespace grpc_event_engine::experimental {
 
@@ -105,6 +103,18 @@ std::vector<EventEngine::ResolvedAddress> SortAddresses(
 }
 
 namespace {
+
+absl::once_flag init_flag;
+
+void AresOnceInit() {
+  absl::call_once(init_flag, []() {
+    address_sorting_init();
+    auto status = AresInit();
+    if (!status.ok()) {
+      VLOG(2) << "AresInit failed: " << status.message();
+    }
+  });
+}
 
 // A hard limit on the number of records (A/AAAA or SRV) we may get from a
 // single response. This is to be defensive to prevent a bad DNS response from
@@ -977,15 +987,3 @@ bool ShouldUseAresDnsResolver() { return false; }
 absl::Status AresInit() { return absl::OkStatus(); }
 
 #endif  // GRPC_ARES == 1
-
-std::once_flag init_flag;
-
-void AresOnceInit() {
-  std::call_once(init_flag, []() {
-    address_sorting_init();
-    auto status = AresInit();
-    if (!status.ok()) {
-      VLOG(2) << "AresInit failed: " << status.message();
-    }
-  });
-}
