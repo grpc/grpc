@@ -245,7 +245,7 @@ class ServerHandlerTest(unittest.TestCase):
             )
         self.assertIn(
             "Cannot register method handlers once server has started",
-            str(exception_ctx.exception)
+            str(exception_ctx.exception),
         )
 
         # The failed registration must not have exposed the method
