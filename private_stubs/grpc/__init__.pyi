@@ -369,7 +369,6 @@ class Channel(abc.ABC):
         exc_tb: Any,
     ) -> Any: ...
 
-
 ##########################  Service-Side Context  ##############################
 
 class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
