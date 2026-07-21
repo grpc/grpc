@@ -14,11 +14,14 @@
 
 FROM ubuntu:20.04
 
+# Install apt-get-install-retry wrapper script
+{% include "../../apt_get_install_with_retry.include" %}
+
 # Workaround the "tzdata hangs apt-get install during docker image build" issue for ubuntu20.04
 # by setting timezone to "Etc/UTC" in advance.
 RUN echo "Etc/UTC" > /etc/timezone
 
-RUN apt-get update && apt-get install -y build-essential curl git time wget zip && apt-get clean
+RUN /usr/local/bin/apt-get-install-retry build-essential curl git time wget zip && apt-get clean
 
 {% include "../../run_tests_python_deps.include" %}
 
@@ -55,7 +58,7 @@ ENV TSAN_SYMBOLIZER_PATH=/usr/local/bin/llvm-symbolizer
 ENV UBSAN_SYMBOLIZER_PATH=/usr/local/bin/llvm-symbolizer
 
 # TODO(jtattermusch): Remove python2 once some tests stop failing without it.
-RUN apt-get update && apt-get install -y python2 && apt-get clean
+RUN /usr/local/bin/apt-get-install-retry python2 && apt-get clean
 
 # Define the default command.
 CMD ["bash"]

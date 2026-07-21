@@ -23,7 +23,7 @@ FROM debian:11
 {% include "../../run_tests_addons.include" %}
 
 # Install openssl 1.0.2 from source
-RUN apt-get update && apt-get install -y build-essential zlib1g-dev
+RUN /usr/local/bin/apt-get-install-retry build-essential zlib1g-dev
 RUN cd /tmp && \
     wget --no-check-certificate https://www.openssl.org/source/openssl-1.0.2u.tar.gz && \
     tar -xf openssl-1.0.2u.tar.gz && \

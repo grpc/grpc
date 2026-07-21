@@ -1,8 +1,11 @@
 #=================
+# Install apt-get-install-retry wrapper script
+{% include "apt_get_install_with_retry.include" %}
+
 # Basic C core dependencies
 
 # C/C++ dependencies according to https://github.com/grpc/grpc/blob/master/BUILDING.md
-RUN apt-get update && apt-get install -y \
+RUN /usr/local/bin/apt-get-install-retry \
   build-essential \
   autoconf \
   libtool \
@@ -10,20 +13,20 @@ RUN apt-get update && apt-get install -y \
   && apt-get clean
 
 # GCC
-RUN apt-get update && apt-get install -y \
+RUN /usr/local/bin/apt-get-install-retry \
   gcc \
   g++ \
   && apt-get clean
 
 # libc6
-RUN apt-get update && apt-get install -y \
+RUN /usr/local/bin/apt-get-install-retry \
   libc6 \
   libc6-dbg \
   libc6-dev \
   && apt-get clean
 
 # Tools
-RUN apt-get update && apt-get install -y \
+RUN /usr/local/bin/apt-get-install-retry \
   bzip2 \
   curl \
   dnsutils \

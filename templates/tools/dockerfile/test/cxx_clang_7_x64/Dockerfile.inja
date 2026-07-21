@@ -14,7 +14,10 @@
 
 FROM silkeh/clang:7-buster
 
-RUN apt update && apt -y upgrade && apt install -y build-essential curl git time wget zip && apt clean
+{% include "../../apt_get_install_with_retry.include" %}
+
+RUN /usr/local/bin/apt-get-install-retry build-essential curl git time wget zip
+
 {% include "../../git_avoid_dubious_ownership_error.include" %}
 {% include "../../run_tests_python_deps.include" %}
 {% include "../../cxx_test_deps.include" %}

@@ -14,14 +14,19 @@
 
 FROM gcc:10
 
-RUN apt-get update && apt-get install -y curl git time zip && apt-get clean
+# Install apt-get-install-retry wrapper script
+{% include "../../apt_get_install_with_retry.include" %}
+
+RUN /usr/local/bin/apt-get-install-retry curl git time zip
+
 {% include "../../git_avoid_dubious_ownership_error.include" %}
 {% include "../../run_tests_python_deps.include" %}
 {% include "../../cxx_test_deps.include" %}
 {% include "../../cmake.include" %}
 
 # Install ccache 4.2 from official repo.
-RUN apt-get install -y ccache
+RUN /usr/local/bin/apt-get-install-retry ccache
+
 {% include "../../run_tests_addons.include" %}
 
 # Define the default command.

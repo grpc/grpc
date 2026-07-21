@@ -23,7 +23,7 @@ FROM debian:12
 {% include "../../run_tests_addons.include" %}
 
 # Install openssl 3.0.9
-RUN apt-get update && apt-get install -y libssl-dev
+RUN /usr/local/bin/apt-get-install-retry libssl-dev
 
 # Define the default command.
 CMD ["bash"]

@@ -19,11 +19,13 @@
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/dockerfile/grpc_artifact_python_linux_armv7/Dockerfile.inja`!!!
 FROM dockcross/linux-armv7
 
+{% include "../apt_get_basic.include" %}
+
 # Configure git early so the cache reused by other py build based on the same image.
 {% include "../git_config.include" %}
 
-RUN apt update && apt install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev \
-                                 libnss3-dev libssl-dev libreadline-dev libffi-dev && apt-get clean
+RUN /usr/local/bin/apt-get-install-retry build-essential zlib1g-dev libncurses5-dev libgdbm-dev \
+                                 libnss3-dev libssl-dev libreadline-dev libffi-dev
 
 ADD install_python_for_wheel_crosscompilation.sh /scripts/install_python_for_wheel_crosscompilation.sh
 

@@ -16,7 +16,10 @@
 
 FROM python:3.10-slim-bookworm
 
-RUN apt-get update -y && apt-get upgrade -y && apt-get install -y build-essential clang curl
+RUN apt-get update -y && apt-get upgrade -y
+ADD --chmod=0755 tools/internal_ci/helper_scripts/apt_get_install_with_retry.sh /usr/local/bin/apt-get-install-with-retry
+
+RUN apt-get-install-with-retry build-essential clang curl
 
 WORKDIR /workdir
 
@@ -27,7 +30,7 @@ COPY . .
 RUN tools/bazel build //test/cpp/interop:xds_interop_client
 RUN cp -rL /workdir/bazel-bin/test/cpp/interop/xds_interop_client /artifacts/
 
-ENV TINI_VERSION v0.19.0
+ENV TINI_VERSION=v0.19.0
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
 RUN chmod +x /tini
 

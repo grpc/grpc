@@ -1,5 +1,5 @@
 #=================
 # PHP Test dependencies
 
- RUN apt-get update && apt-get install -y \
+ RUN /usr/local/bin/apt-get-install-retry \
     valgrind

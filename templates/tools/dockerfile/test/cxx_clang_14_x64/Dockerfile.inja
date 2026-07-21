@@ -14,7 +14,12 @@
 
 FROM silkeh/clang:14-bullseye
 
-RUN apt update && apt -y upgrade && apt install -y \
+# Install apt-get-install-retry wrapper script
+{% include "../../apt_get_install_with_retry.include" %}
+
+
+RUN apt update && apt -y upgrade
+RUN /usr/local/bin/apt-get-install-retry \
   build-essential \
   ccache \
   curl \

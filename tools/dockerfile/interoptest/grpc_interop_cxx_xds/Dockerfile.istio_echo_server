@@ -16,8 +16,10 @@
 
 FROM phusion/baseimage:master@sha256:65ea10d5f757e5e86272625f8675d437dd83d8db64bdb429e2354d58f5462750
 
-RUN apt-get update -y && \
-    apt-get install -y \
+RUN apt-get update -y && apt-get upgrade -y
+ADD --chmod=0755 tools/internal_ci/helper_scripts/apt_get_install_with_retry.sh /usr/local/bin/apt-get-install-with-retry
+
+RUN apt-get-install-with-retry \
     build-essential \
     clang \
     python3 \
