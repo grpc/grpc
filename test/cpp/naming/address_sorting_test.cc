@@ -185,13 +185,13 @@ void VerifyLbAddrOutputs(
 }
 
 // We need to run each test case inside of its own
-// isolated grpc_init/grpc_shutdown pair, so that
+// isolated address_sorting_init/address_sorting_shutdown pair, so that
 // the "address sorting source addr factory" can be
 // restored to its default for each test case.
 class AddressSortingTest : public ::testing::Test {
  protected:
-  void SetUp() override { grpc_init(); }
-  void TearDown() override { grpc_shutdown(); }
+  void SetUp() override { address_sorting_init(); }
+  void TearDown() override { address_sorting_shutdown(); }
 };
 
 // Tests for rule 1
