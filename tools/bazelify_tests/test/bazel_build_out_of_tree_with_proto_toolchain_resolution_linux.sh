@@ -21,8 +21,8 @@ cd test/bazel_build_out_of_tree/proto_toolchain_resolution
 
 # Build minimal downstream cc / python / objc gRPC codegen targets with
 # --incompatible_enable_proto_toolchain_resolution enabled (set in this module's
-# .bazelrc). This guards the protoc toolchain migration in
-# bazel/private/proto_toolchain_helpers.bzl.
+# .bazelrc). This guards the migration of the gRPC codegen rules to proto
+# toolchain resolution (see //bazel/toolchains:BUILD).
 $GIT_ROOT/tools/bazel \
     test \
     -- \

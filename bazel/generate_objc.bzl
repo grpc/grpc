@@ -16,7 +16,7 @@
 This module contains build rules relating to gRPC Objective-C.
 """
 
-load("//bazel/private:proto_toolchain_helpers.bzl", "toolchains")
+load("@com_google_protobuf//bazel/common:proto_lang_toolchain_info.bzl", "ProtoLangToolchainInfo")
 load("@rules_proto//proto:defs.bzl", "ProtoInfo")
 load(
     "//bazel:protobuf.bzl",
@@ -101,7 +101,7 @@ def _generate_objc_impl(ctx):
         inputs = protos + well_known_proto_files,
         tools = tools,
         outputs = out_files,
-        executable = toolchains.find_protoc(ctx, "_protoc"),
+        executable = ctx.attr._objc_toolchain[ProtoLangToolchainInfo].proto_compiler,
         arguments = arguments,
     )
 
@@ -180,16 +180,13 @@ generate_objc = rule(
         "well_known_protos": attr.label(
             default = Label("@com_google_protobuf//:well_known_type_protos"),
         ),
-    } | toolchains.if_legacy_toolchain({
-        "_protoc": attr.label(
-            default = Label("@com_google_protobuf//:protoc"),
-            executable = True,
-            cfg = "exec",
+        "_objc_toolchain": attr.label(
+            default = Label("//bazel/toolchains:grpc_objective_c_toolchain"),
+            providers = [ProtoLangToolchainInfo],
         ),
-    }),
+    },
     output_to_genfiles = True,
     implementation = _generate_objc_impl,
-    toolchains = toolchains.use_toolchain(toolchains.PROTO_TOOLCHAIN),
 )
 
 def _group_objc_files_impl(ctx):
