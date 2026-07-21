@@ -1506,10 +1506,8 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                               // this factory run exactly once, and subsequent
                               // polls only execute the trivial,
                               // side-effect-free inner lambda.
-                              return []() -> Poll<ServerMetadataHandle> {
-                                // We always lose the race.
-                                return Pending{};
-                              };
+                              // We always lose the race.
+                              return Never<ServerMetadataHandle>();
                             });
                       });
                 })),
