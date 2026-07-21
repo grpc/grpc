@@ -36,6 +36,7 @@
 #include "absl/synchronization/notification.h"
 
 #if defined(OPENSSL_IS_BORINGSSL)
+#include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/tsi/private_key_signer_test_util.h"
 
 namespace grpc_core {
@@ -51,13 +52,17 @@ enum class OffloadParty {
 
 class SslOffloadTsiTestFixture {
  public:
-  SslOffloadTsiTestFixture(OffloadParty offload_party,
-                           std::shared_ptr<PrivateKeySigner> signer,
-                           tsi_tls_version tls_version, std::string sni = "")
+  SslOffloadTsiTestFixture(
+      OffloadParty offload_party, std::shared_ptr<PrivateKeySigner> signer,
+      tsi_tls_version tls_version, std::string sni = "",
+      RefCountedPtr<CollectionScope> client_collection_scope = nullptr,
+      RefCountedPtr<CollectionScope> server_collection_scope = nullptr)
       : offload_party_(offload_party),
         signer_(std::move(signer)),
         tls_version_(tls_version),
-        sni_(std::move(sni)) {
+        sni_(std::move(sni)),
+        client_collection_scope_(std::move(client_collection_scope)),
+        server_collection_scope_(std::move(server_collection_scope)) {
     tsi_test_fixture_init(&base_);
     base_.test_unused_bytes = true;
     base_.vtable = &kVtable;
@@ -157,13 +162,13 @@ class SslOffloadTsiTestFixture {
     ASSERT_EQ(
         tsi_ssl_client_handshaker_factory_create_handshaker(
             client_handshaker_factory_, sni_.empty() ? nullptr : sni_.c_str(),
-            0, 0, std::nullopt, /*collection_scope=*/nullptr,
+            0, 0, std::nullopt, /*collection_scope=*/client_collection_scope_,
             /*target=*/sni_, /*locality=*/"",
             /*backend_service=*/"", &client_hs),
         TSI_OK);
     ASSERT_EQ(tsi_ssl_server_handshaker_factory_create_handshaker(
                   server_handshaker_factory_, 0, 0,
-                  /*collection_scope=*/nullptr, &server_hs),
+                  /*collection_scope=*/server_collection_scope_, &server_hs),
               TSI_OK);
     base_.client_handshaker = client_hs;
     base_.server_handshaker = server_hs;
@@ -216,6 +221,23 @@ class SslOffloadTsiTestFixture {
   std::string sni_;
   bool expect_success_ = false;
   bool expect_success_on_client_ = false;
+  RefCountedPtr<CollectionScope> client_collection_scope_ =
+      grpc_core::CreateCollectionScope(
+          {}, {"grpc.status", "grpc.target",
+               "grpc.tls.private_key.offloader_name",
+               "grpc.tls.private_key_algorithm", "grpc.lb.locality",
+               "grpc.lb.backend_service"});
+  RefCountedPtr<CollectionScope> server_collection_scope_ =
+      grpc_core::CreateCollectionScope(
+          {}, {"grpc.status", "grpc.tls.private_key.offloader_name",
+               "grpc.tls.private_key_algorithm"});
+ public:
+  RefCountedPtr<CollectionScope> client_collection_scope() const {
+    return client_collection_scope_;
+  }
+  RefCountedPtr<CollectionScope> server_collection_scope() const {
+    return server_collection_scope_;
+  }
 };
 
 struct tsi_test_fixture_vtable SslOffloadTsiTestFixture::kVtable = {
@@ -437,6 +459,34 @@ TEST_P(PrivateKeyOffloadTest, OffloadFailsWithSignCancelledOnClient) {
   fixture->Run(/*expect_success=*/false, /*expect_success_on_client*/ false,
                event_engine_.get());
   EXPECT_TRUE(signer->WasCancelled());
+}
+
+TEST_P(PrivateKeyOffloadTest, OffloadTelemetryRecordedOnServer) {
+  auto plugin = MakeStatsPluginForTarget("");
+  auto fixture = std::make_shared<SslOffloadTsiTestFixture>(
+      OffloadParty::kServer, nullptr, GetParam(), "",
+      /*client_collection_scope=*/nullptr,
+      /*server_collection_scope=*/plugin->GetCollectionScope());
+  fixture->Run(/*expect_success=*/true, /*expect_success_on_client*/ true,
+               event_engine_.get());
+  auto hist = plugin->GetHistogramValueByName(
+      "grpc.server.tls.offload_private_key_signing_duration",
+      {"OK", "SyncTestPrivateKeySigner", "RsaPssRsaeSha256"});
+  ASSERT_TRUE(hist.has_value());
+}
+
+TEST_P(PrivateKeyOffloadTest, OffloadTelemetryRecordedOnClient) {
+  auto plugin = MakeStatsPluginForTarget("");
+  auto fixture = std::make_shared<SslOffloadTsiTestFixture>(
+      OffloadParty::kClient, nullptr, GetParam(), "",
+      /*client_collection_scope=*/plugin->GetCollectionScope(),
+      /*server_collection_scope=*/nullptr);
+  fixture->Run(/*expect_success=*/true, /*expect_success_on_client*/ true,
+               event_engine_.get());
+  auto hist = plugin->GetHistogramValueByName(
+      "grpc.client.tls.offload_private_key_signing_duration",
+      {"OK", "", "SyncTestPrivateKeySigner", "RsaPssRsaeSha256", "", ""});
+  ASSERT_TRUE(hist.has_value());
 }
 
 std::string TestNameSuffix(

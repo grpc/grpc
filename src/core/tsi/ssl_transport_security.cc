@@ -300,6 +300,12 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
   // The handle for an in-flight async signing operation.
   std::shared_ptr<grpc_core::PrivateKeySigner::AsyncSigningHandle>
       signing_handle ABSL_GUARDED_BY(mu);
+  absl::Time signing_start_time ABSL_GUARDED_BY(mu);
+  std::string signing_algorithm_str ABSL_GUARDED_BY(mu);
+  bool signing_metric_recorded ABSL_GUARDED_BY(mu) = false;
+
+  void MaybeRecordOffloadPrivateKeySigningTelemetry(absl::Status status)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu);
 #endif
 };
 
@@ -354,6 +360,67 @@ void tsi_ssl_handshaker::MaybeRecordTelemetry(
         grpc_core::TlsServerHandshakeTelemetryDomain::kHandshakes);
   }
 }
+
+#if defined(OPENSSL_IS_BORINGSSL)
+absl::string_view PrivateKeySignerSignatureAlgorithmToString(
+    grpc_core::PrivateKeySigner::SignatureAlgorithm algorithm) {
+  switch (algorithm) {
+    case grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha256:
+      return "RsaPkcs1Sha256";
+    case grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha384:
+      return "RsaPkcs1Sha384";
+    case grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha512:
+      return "RsaPkcs1Sha512";
+    case grpc_core::PrivateKeySigner::SignatureAlgorithm::
+        kEcdsaSecp256r1Sha256:
+      return "EcdsaSecp256r1Sha256";
+    case grpc_core::PrivateKeySigner::SignatureAlgorithm::
+        kEcdsaSecp384r1Sha384:
+      return "EcdsaSecp384r1Sha384";
+    case grpc_core::PrivateKeySigner::SignatureAlgorithm::
+        kEcdsaSecp521r1Sha512:
+      return "EcdsaSecp521r1Sha512";
+    case grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha256:
+      return "RsaPssRsaeSha256";
+    case grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha384:
+      return "RsaPssRsaeSha384";
+    case grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha512:
+      return "RsaPssRsaeSha512";
+  }
+  return "";
+}
+
+void tsi_ssl_handshaker::MaybeRecordOffloadPrivateKeySigningTelemetry(
+    absl::Status status) {
+  if (collection_scope == nullptr) return;
+  if (signing_metric_recorded) return;
+  signing_metric_recorded = true;
+
+  std::string status_str = absl::StatusCodeToString(status.code());
+  std::string offloader_name =
+      key_signer != nullptr ? std::string(key_signer->Name()) : "";
+  int64_t duration_sec =
+      absl::ToInt64Seconds(absl::Now() - signing_start_time);
+
+  if (is_client) {
+    auto storage =
+        grpc_core::TlsClientPrivateKeyOffloadTelemetryDomain::GetStorage(
+            collection_scope, status_str, target, offloader_name,
+            signing_algorithm_str, locality, backend_service);
+    storage->Increment(
+        grpc_core::TlsClientPrivateKeyOffloadTelemetryDomain::kDuration,
+        duration_sec);
+  } else {
+    auto storage =
+        grpc_core::TlsServerPrivateKeyOffloadTelemetryDomain::GetStorage(
+            collection_scope, status_str, offloader_name,
+            signing_algorithm_str);
+    storage->Increment(
+        grpc_core::TlsServerPrivateKeyOffloadTelemetryDomain::kDuration,
+        duration_sec);
+  }
+}
+#endif
 
 static std::pair<tsi_result, std::optional<HandshakerNextArgs>>
 ssl_handshaker_next_async(tsi_ssl_handshaker* self)
@@ -586,6 +653,8 @@ void TlsOffloadSignDoneCallback(
     if (handshaker->is_shutdown) return;
     handshaker->signed_bytes = std::move(signed_data);
     handshaker->signing_handle.reset();
+    handshaker->MaybeRecordOffloadPrivateKeySigningTelemetry(
+        handshaker->signed_bytes.status());
     // Once the signed bytes are obtained, tell everything to resume the
     // pending async operation.
     auto async_result = ssl_handshaker_next_async(handshaker.get());
@@ -638,6 +707,8 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
     handshaker->MaybeSetError("Handshaker is shutting down");
     return ssl_private_key_failure;
   }
+  handshaker->signing_start_time = absl::Now();
+  handshaker->signing_metric_recorded = false;
   // Create the completion callback by binding the current context.
   auto done_callback =
       absl::bind_front(TlsOffloadSignDoneCallback, handshaker->Ref());
@@ -648,10 +719,17 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
   auto algorithm = ToSignatureAlgorithmClass(signature_algorithm);
   if (!algorithm.ok()) {
     handshaker->MaybeSetError(algorithm.status().ToString());
+    handshaker->signing_algorithm_str.clear();
+    handshaker->MaybeRecordOffloadPrivateKeySigningTelemetry(
+        algorithm.status());
     return ssl_private_key_failure;
   }
+  handshaker->signing_algorithm_str = std::string(
+      PrivateKeySignerSignatureAlgorithmToString(*algorithm));
   if (handshaker->key_signer == nullptr) {
     handshaker->MaybeSetError("PrivateKeySigner is null");
+    handshaker->MaybeRecordOffloadPrivateKeySigningTelemetry(
+        absl::InternalError("PrivateKeySigner is null"));
     return ssl_private_key_failure;
   }
   auto result = handshaker->key_signer->Sign(
@@ -663,6 +741,8 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
       [&](absl::StatusOr<std::string>* status_or_string)
           ABSL_NO_THREAD_SAFETY_ANALYSIS {
             handshaker->signed_bytes = std::move(*status_or_string);
+            handshaker->MaybeRecordOffloadPrivateKeySigningTelemetry(
+                handshaker->signed_bytes.status());
             return TlsPrivateKeyOffloadComplete(ssl, out, out_len, max_out);
           },
       [&](std::shared_ptr<grpc_core::PrivateKeySigner::AsyncSigningHandle>*
@@ -2828,6 +2908,8 @@ static void ssl_handshaker_shutdown(tsi_handshaker* self, bool peer_closed) {
     });
 #if defined(OPENSSL_IS_BORINGSSL)
     if (impl->key_signer != nullptr && impl->signing_handle != nullptr) {
+      impl->MaybeRecordOffloadPrivateKeySigningTelemetry(
+          absl::CancelledError("Handshaker shutdown"));
       key_signer = std::move(impl->key_signer);
       signing_handle = std::move(impl->signing_handle);
     }

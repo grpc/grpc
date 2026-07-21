@@ -28,4 +28,22 @@ TlsServerHandshakeTelemetryDomain::CounterHandle
         "grpc.server.tls.handshakes",
         "Total number of server-side TLS handshakes", "{handshake}");
 
+TlsClientPrivateKeyOffloadTelemetryDomain::HistogramHandle<
+    ExponentialHistogramShape>
+    TlsClientPrivateKeyOffloadTelemetryDomain::kDuration =
+        RegisterHistogram<ExponentialHistogramShape>(
+            "grpc.client.tls.offload_private_key_signing_duration",
+            "EXPERIMENTAL: Measures the duration of the offloaded private key "
+            "signing operation.",
+            "s", 60, 20);
+
+TlsServerPrivateKeyOffloadTelemetryDomain::HistogramHandle<
+    ExponentialHistogramShape>
+    TlsServerPrivateKeyOffloadTelemetryDomain::kDuration =
+        RegisterHistogram<ExponentialHistogramShape>(
+            "grpc.server.tls.offload_private_key_signing_duration",
+            "EXPERIMENTAL: Measures the duration of the offloaded private key "
+            "signing operation.",
+            "s", 60, 20);
+
 }  // namespace grpc_core
