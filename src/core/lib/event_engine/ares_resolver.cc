@@ -104,6 +104,22 @@ std::vector<EventEngine::ResolvedAddress> SortAddresses(
 
 namespace {
 
+absl::Status AresInit() {
+  if (ShouldUseAresDnsResolver()) {
+    // ares_library_init and ares_library_cleanup are currently no-op except
+    // under Windows. Calling them may cause race conditions when other parts of
+    // the binary calls these functions concurrently.
+#ifdef GPR_WINDOWS
+    int status = ares_library_init(ARES_LIB_INIT_ALL);
+    if (status != ARES_SUCCESS) {
+      return GRPC_ERROR_CREATE(
+          absl::StrCat("ares_library_init failed: ", ares_strerror(status)));
+    }
+#endif  // GPR_WINDOWS
+  }
+  return absl::OkStatus();
+}
+
 absl::once_flag init_flag;
 
 void AresOnceInit() {
@@ -965,25 +981,8 @@ bool ShouldUseAresDnsResolver() {
         // defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
 }
 
-absl::Status AresInit() {
-  if (ShouldUseAresDnsResolver()) {
-    // ares_library_init and ares_library_cleanup are currently no-op except
-    // under Windows. Calling them may cause race conditions when other parts of
-    // the binary calls these functions concurrently.
-#ifdef GPR_WINDOWS
-    int status = ares_library_init(ARES_LIB_INIT_ALL);
-    if (status != ARES_SUCCESS) {
-      return GRPC_ERROR_CREATE(
-          absl::StrCat("ares_library_init failed: ", ares_strerror(status)));
-    }
-#endif  // GPR_WINDOWS
-  }
-  return absl::OkStatus();
-}
-
 #else  // GRPC_ARES == 1
 
 bool ShouldUseAresDnsResolver() { return false; }
-absl::Status AresInit() { return absl::OkStatus(); }
 
 #endif  // GRPC_ARES == 1
