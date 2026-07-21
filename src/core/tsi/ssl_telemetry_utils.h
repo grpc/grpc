@@ -21,6 +21,12 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <openssl/ssl.h>
+
+#if defined(OPENSSL_IS_BORINGSSL)
+#include <grpc/private_key_signer.h>
+#endif
+
 #include "src/core/tsi/transport_security_interface.h"
 #include "absl/strings/string_view.h"
 
@@ -78,6 +84,11 @@ TlsTelemetryHandshakeResult MapSslErrorToTlsTelemetryHandshakeResult(
 // representation for monitoring.
 absl::string_view TlsTelemetryHandshakeResultToString(
     TlsTelemetryHandshakeResult result);
+
+#if defined(OPENSSL_IS_BORINGSSL)
+absl::string_view PrivateKeySignerSignatureAlgorithmToString(
+    PrivateKeySigner::SignatureAlgorithm algorithm);
+#endif
 
 }  // namespace grpc_core
 

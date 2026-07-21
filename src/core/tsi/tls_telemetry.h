@@ -15,6 +15,7 @@
 #ifndef GRPC_SRC_CORE_TSI_TLS_TELEMETRY_H
 #define GRPC_SRC_CORE_TSI_TLS_TELEMETRY_H
 
+#include "src/core/telemetry/histogram.h"
 #include "src/core/telemetry/instrument.h"
 
 namespace grpc_core {
@@ -52,7 +53,7 @@ class TlsClientPrivateKeyOffloadTelemetryDomain final
   using Backend = LowContentionBackend;
   static constexpr absl::string_view kName = "tls_client_private_key_offload";
 
-  static HistogramHandle<ExponentialHistogramShape> kDuration;
+  static HistogramHandle<ExplicitHistogramShape> kDuration;
 };
 
 class TlsServerPrivateKeyOffloadTelemetryDomain final
@@ -64,7 +65,7 @@ class TlsServerPrivateKeyOffloadTelemetryDomain final
   using Backend = LowContentionBackend;
   static constexpr absl::string_view kName = "tls_server_private_key_offload";
 
-  static HistogramHandle<ExponentialHistogramShape> kDuration;
+  static HistogramHandle<ExplicitHistogramShape> kDuration;
 };
 
 }  // namespace grpc_core

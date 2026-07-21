@@ -17,6 +17,20 @@
 #include "src/core/telemetry/instrument.h"
 
 namespace grpc_core {
+namespace {
+
+const std::vector<int64_t>& GetLatencyBuckets() {
+  static const auto* buckets = new std::vector<int64_t>{
+      0,      10,     50,     100,    300,    600,    800,
+      1000,   2000,   3000,   4000,   5000,   6000,   8000,
+      10000,  13000,  16000,  20000,  25000,  30000,  40000,
+      50000,  65000,  80000,  100000, 130000, 160000, 200000,
+      250000, 300000, 400000, 500000, 650000, 800000, 1000000,
+      2000000, 5000000, 10000000, 20000000, 50000000, 100000000};
+  return *buckets;
+}
+
+}  // namespace
 
 TlsClientHandshakeTelemetryDomain::CounterHandle
     TlsClientHandshakeTelemetryDomain::kHandshakes = RegisterCounter(
@@ -29,21 +43,21 @@ TlsServerHandshakeTelemetryDomain::CounterHandle
         "Total number of server-side TLS handshakes", "{handshake}");
 
 TlsClientPrivateKeyOffloadTelemetryDomain::HistogramHandle<
-    ExponentialHistogramShape>
+    ExplicitHistogramShape>
     TlsClientPrivateKeyOffloadTelemetryDomain::kDuration =
-        RegisterHistogram<ExponentialHistogramShape>(
+        RegisterHistogram<ExplicitHistogramShape>(
             "grpc.client.tls.offload_private_key_signing_duration",
             "EXPERIMENTAL: Measures the duration of the offloaded private key "
             "signing operation.",
-            "s", 60, 20);
+            "us", GetLatencyBuckets());
 
 TlsServerPrivateKeyOffloadTelemetryDomain::HistogramHandle<
-    ExponentialHistogramShape>
+    ExplicitHistogramShape>
     TlsServerPrivateKeyOffloadTelemetryDomain::kDuration =
-        RegisterHistogram<ExponentialHistogramShape>(
+        RegisterHistogram<ExplicitHistogramShape>(
             "grpc.server.tls.offload_private_key_signing_duration",
             "EXPERIMENTAL: Measures the duration of the offloaded private key "
             "signing operation.",
-            "s", 60, 20);
+            "us", GetLatencyBuckets());
 
 }  // namespace grpc_core

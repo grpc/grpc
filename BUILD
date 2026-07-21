@@ -4638,6 +4638,7 @@ grpc_cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "gpr",
+        "grpc_public_hdrs",
         "tsi_base",
         "//src/core:tsi_ssl_types",
     ],

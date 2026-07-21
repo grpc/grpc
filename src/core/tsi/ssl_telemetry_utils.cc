@@ -16,12 +16,17 @@
 //
 //
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/tsi/ssl_telemetry_utils.h"
 
-#include <grpc/support/port_platform.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 #include <openssl/x509.h>
+
+#if defined(OPENSSL_IS_BORINGSSL)
+#include <grpc/private_key_signer.h>
+#endif
 
 #include "absl/strings/string_view.h"
 
@@ -296,5 +301,32 @@ absl::string_view TlsTelemetryHandshakeResultToString(
   }
   return "UNKNOWN_FAILURE";
 }
+
+#if defined(OPENSSL_IS_BORINGSSL)
+absl::string_view PrivateKeySignerSignatureAlgorithmToString(
+    PrivateKeySigner::SignatureAlgorithm algorithm) {
+  switch (algorithm) {
+    case PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha256:
+      return "RsaPkcs1Sha256";
+    case PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha384:
+      return "RsaPkcs1Sha384";
+    case PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha512:
+      return "RsaPkcs1Sha512";
+    case PrivateKeySigner::SignatureAlgorithm::kEcdsaSecp256r1Sha256:
+      return "EcdsaSecp256r1Sha256";
+    case PrivateKeySigner::SignatureAlgorithm::kEcdsaSecp384r1Sha384:
+      return "EcdsaSecp384r1Sha384";
+    case PrivateKeySigner::SignatureAlgorithm::kEcdsaSecp521r1Sha512:
+      return "EcdsaSecp521r1Sha512";
+    case PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha256:
+      return "RsaPssRsaeSha256";
+    case PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha384:
+      return "RsaPssRsaeSha384";
+    case PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha512:
+      return "RsaPssRsaeSha512";
+  }
+  return "";
+}
+#endif
 
 }  // namespace grpc_core

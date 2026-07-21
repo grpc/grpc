@@ -285,6 +285,8 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu);
 
 #if defined(OPENSSL_IS_BORINGSSL)
+  void MaybeRecordOffloadPrivateKeySigningTelemetry(absl::Status status)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu);
   std::shared_ptr<AsyncCertificateSelectionHandle> cert_selection_handle
       ABSL_GUARDED_BY(mu);
   // Will be set if the certificate selector is used and the asynchronous cert
@@ -303,9 +305,6 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
   absl::Time signing_start_time ABSL_GUARDED_BY(mu);
   std::string signing_algorithm_str ABSL_GUARDED_BY(mu);
   bool signing_metric_recorded ABSL_GUARDED_BY(mu) = false;
-
-  void MaybeRecordOffloadPrivateKeySigningTelemetry(absl::Status status)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu);
 #endif
 };
 
@@ -362,34 +361,6 @@ void tsi_ssl_handshaker::MaybeRecordTelemetry(
 }
 
 #if defined(OPENSSL_IS_BORINGSSL)
-absl::string_view PrivateKeySignerSignatureAlgorithmToString(
-    grpc_core::PrivateKeySigner::SignatureAlgorithm algorithm) {
-  switch (algorithm) {
-    case grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha256:
-      return "RsaPkcs1Sha256";
-    case grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha384:
-      return "RsaPkcs1Sha384";
-    case grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha512:
-      return "RsaPkcs1Sha512";
-    case grpc_core::PrivateKeySigner::SignatureAlgorithm::
-        kEcdsaSecp256r1Sha256:
-      return "EcdsaSecp256r1Sha256";
-    case grpc_core::PrivateKeySigner::SignatureAlgorithm::
-        kEcdsaSecp384r1Sha384:
-      return "EcdsaSecp384r1Sha384";
-    case grpc_core::PrivateKeySigner::SignatureAlgorithm::
-        kEcdsaSecp521r1Sha512:
-      return "EcdsaSecp521r1Sha512";
-    case grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha256:
-      return "RsaPssRsaeSha256";
-    case grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha384:
-      return "RsaPssRsaeSha384";
-    case grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha512:
-      return "RsaPssRsaeSha512";
-  }
-  return "";
-}
-
 void tsi_ssl_handshaker::MaybeRecordOffloadPrivateKeySigningTelemetry(
     absl::Status status) {
   if (collection_scope == nullptr) return;
@@ -399,8 +370,8 @@ void tsi_ssl_handshaker::MaybeRecordOffloadPrivateKeySigningTelemetry(
   std::string status_str = absl::StatusCodeToString(status.code());
   std::string offloader_name =
       key_signer != nullptr ? std::string(key_signer->Name()) : "";
-  int64_t duration_sec =
-      absl::ToInt64Seconds(absl::Now() - signing_start_time);
+  int64_t duration_us =
+      absl::ToInt64Microseconds(absl::Now() - signing_start_time);
 
   if (is_client) {
     auto storage =
@@ -409,7 +380,7 @@ void tsi_ssl_handshaker::MaybeRecordOffloadPrivateKeySigningTelemetry(
             signing_algorithm_str, locality, backend_service);
     storage->Increment(
         grpc_core::TlsClientPrivateKeyOffloadTelemetryDomain::kDuration,
-        duration_sec);
+        duration_us);
   } else {
     auto storage =
         grpc_core::TlsServerPrivateKeyOffloadTelemetryDomain::GetStorage(
@@ -417,7 +388,7 @@ void tsi_ssl_handshaker::MaybeRecordOffloadPrivateKeySigningTelemetry(
             signing_algorithm_str);
     storage->Increment(
         grpc_core::TlsServerPrivateKeyOffloadTelemetryDomain::kDuration,
-        duration_sec);
+        duration_us);
   }
 }
 #endif
