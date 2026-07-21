@@ -794,7 +794,7 @@ class TestInterceptedUnaryUnaryCallWithRegisteredMethods(AioTestBase):
     async def tearDown(self):
         await self._server.stop(0)
 
-    async def _unary_unary_handler(self, unused_request_iter, unused_context):
+    async def _unary_unary_handler(self, unused_request, unused_context):
         return self._RESPONSE
 
     async def test_unary_unary_interceptor(self):

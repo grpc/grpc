@@ -244,8 +244,8 @@ class TestInterceptedStreamStreamCallWithRegisteredMethods(AioTestBase):
     async def tearDown(self):
         await self._server.stop(0)
 
-    async def _stream_stream_handler(self, unused_request_iter, unused_context):
-        for _ in range(_NUM_STREAM_RESPONSES):
+    async def _stream_stream_handler(self, request_iter, unused_context):
+        async for _ in request_iter:
             yield self._RESPONSE
 
     async def test_stream_stream_interceptor(self):

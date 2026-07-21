@@ -590,7 +590,7 @@ class TestInterceptedStreamUnaryCallWithRegisteredMethods(AioTestBase):
         await self._server.stop(0)
 
     async def _stream_unary_handler(self, request_iter, unused_context):
-        for _ in range(_NUM_STREAM_REQUESTS):
+        async for _ in request_iter:
             pass
         return self._RESPONSE
 
