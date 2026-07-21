@@ -145,8 +145,7 @@ done:
   if (err.ok()) {
     return addresses;
   }
-  auto error_result = grpc_error_to_absl_status(err);
-  return error_result;
+  return err;
 }
 
 DNSResolver::TaskHandle NativeDNSResolver::LookupSRV(

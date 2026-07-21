@@ -31,6 +31,7 @@
 #include <utility>
 #include <vector>
 
+#include "src/core/client_channel/client_channel_args.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_selector.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_verifier.h"
 #include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
@@ -379,12 +380,17 @@ void TlsChannelSecurityConnector::add_handshakers(
     RefCountedPtr<CollectionScope> collection_scope =
         stats_plugin_group != nullptr ? stats_plugin_group->GetCollectionScope()
                                       : nullptr;
+    std::string backend_service(
+        args.GetString(GRPC_ARG_BACKEND_SERVICE).value_or(""));
+    std::string locality(args.GetString(GRPC_ARG_LB_LOCALITY).value_or(""));
+    std::string target(args.GetString(GRPC_ARG_SERVER_URI).value_or(""));
     tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
         client_handshaker_factory_, server_name_indication,
         /*network_bio_buf_size=*/0,
         /*ssl_bio_buf_size=*/0,
         args.GetOwnedString(GRPC_ARG_TRANSPORT_PROTOCOLS),
-        std::move(collection_scope), &tsi_hs);
+        std::move(collection_scope), std::move(target), std::move(locality),
+        std::move(backend_service), &tsi_hs);
     if (result != TSI_OK) {
       LOG(ERROR) << "Handshaker creation failed with error "
                  << tsi_result_to_string(result);

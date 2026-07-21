@@ -19,6 +19,9 @@
 #include "test/cpp/ext/otel/otel_test_library.h"
 
 #include <grpcpp/grpcpp.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/security/tls_certificate_provider.h>
+#include <grpcpp/security/tls_credentials_options.h>
 
 #include <atomic>
 #include <memory>
@@ -32,7 +35,9 @@
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/notification.h"
 #include "test/core/test_util/fake_stats_plugin.h"
+#include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tls_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
 #include "gmock/gmock.h"
@@ -244,29 +249,103 @@ void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
     channel_args.SetString(GRPC_ARG_SERVICE_CONFIG, config.service_config);
   }
   grpc_init();
+  std::shared_ptr<ServerCredentials> server_creds;
+  if (config.server_credentials_options.has_value()) {
+    server_creds = grpc::experimental::TlsServerCredentials(
+        *config.server_credentials_options);
+  } else {
+    server_creds = grpc::InsecureServerCredentials();
+  }
   grpc::ServerBuilder builder;
   int port;
-  // Use IPv4 here because it's less flaky than IPv6 ("[::]:0") on Travis.
-  builder.AddListeningPort("0.0.0.0:0", grpc::InsecureServerCredentials(),
-                           &port);
+  builder.AddListeningPort("0.0.0.0:0", std::move(server_creds), &port);
   builder.RegisterService(&service_);
   for (auto& per_server_stats_plugin : config.per_server_stats_plugins) {
     per_server_stats_plugin->AddToServerBuilder(&builder);
   }
-  server_ = builder.BuildAndStart();
-  ASSERT_NE(nullptr, server_);
-  ASSERT_NE(0, port);
-  server_address_ = absl::StrCat("localhost:", port);
-  canonical_server_address_ = absl::StrCat("dns:///", server_address_);
   for (auto& per_channel_stats_plugin : config.per_channel_stats_plugins) {
     per_channel_stats_plugin->AddToChannelArguments(&channel_args);
   }
+  std::shared_ptr<ChannelCredentials> channel_creds;
+  if (config.client_credentials_options.has_value()) {
+    channel_creds =
+        grpc::experimental::TlsCredentials(*config.client_credentials_options);
+  } else {
+    channel_creds = grpc::InsecureChannelCredentials();
+  }
   reader_ = BuildAndRegisterOpenTelemetryPlugin(std::move(config));
-
-  auto channel = grpc::CreateCustomChannel(
-      server_address_, grpc::InsecureChannelCredentials(), channel_args);
+  server_ = builder.BuildAndStart();
+  ASSERT_NE(nullptr, server_);
+  ASSERT_NE(0, port);
+  server_address_ = grpc_core::LocalIpAndPort(port);
+  canonical_server_address_ = absl::StrCat("dns:///", server_address_);
+  auto channel =
+      grpc::CreateCustomChannel(server_address_, channel_creds, channel_args);
   stub_ = EchoTestService::NewStub(channel);
   generic_stub_ = std::make_unique<GenericStub>(std::move(channel));
+}
+
+grpc::experimental::TlsChannelCredentialsOptions
+OpenTelemetryPluginEnd2EndTest::MakeClientTlsOptions(
+    const std::string& root_cert_path, const std::string& client_key_path,
+    const std::string& client_cert_path) {
+  grpc::experimental::TlsChannelCredentialsOptions client_tls_options;
+  auto client_certificate_provider =
+      std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
+  std::string root_cert = grpc_core::testing::GetFileContents(root_cert_path);
+  EXPECT_TRUE(client_certificate_provider->UpdateRoot(root_cert).ok());
+  if (!client_key_path.empty() && !client_cert_path.empty()) {
+    std::string client_key =
+        grpc_core::testing::GetFileContents(client_key_path);
+    std::string client_cert =
+        grpc_core::testing::GetFileContents(client_cert_path);
+    grpc::experimental::IdentityKeyOrSignerCertPair client_key_cert_pair = {
+        client_key, client_cert};
+    EXPECT_TRUE(
+        client_certificate_provider
+            ->UpdateIdentityKeyCertPair(
+                std::vector<grpc::experimental::IdentityKeyOrSignerCertPair>{
+                    client_key_cert_pair})
+            .ok());
+    client_tls_options.set_identity_certificate_provider(
+        client_certificate_provider);
+  }
+  client_tls_options.set_root_certificate_provider(client_certificate_provider);
+  client_tls_options.set_sni_override("foo.test.google.fr");
+  return client_tls_options;
+}
+
+grpc::experimental::TlsServerCredentialsOptions
+OpenTelemetryPluginEnd2EndTest::MakeServerTlsOptions(
+    const std::string& root_cert_path, const std::string& server_key_path,
+    const std::string& server_cert_path, bool require_client_cert) {
+  std::string root_cert = grpc_core::testing::GetFileContents(root_cert_path);
+  std::string server_key = grpc_core::testing::GetFileContents(server_key_path);
+  std::string server_cert =
+      grpc_core::testing::GetFileContents(server_cert_path);
+  grpc::experimental::IdentityKeyOrSignerCertPair key_cert_pair = {server_key,
+                                                                   server_cert};
+  auto certificate_provider =
+      std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
+  EXPECT_TRUE(certificate_provider->UpdateRoot(root_cert).ok());
+  EXPECT_TRUE(
+      certificate_provider
+          ->UpdateIdentityKeyCertPair(
+              std::vector<grpc::experimental::IdentityKeyOrSignerCertPair>{
+                  key_cert_pair})
+          .ok());
+  auto server_options_or =
+      grpc::experimental::TlsServerCredentialsOptions::Create(
+          certificate_provider);
+  EXPECT_TRUE(server_options_or.ok());
+  grpc::experimental::TlsServerCredentialsOptions server_options =
+      *std::move(server_options_or);
+  server_options.set_root_certificate_provider(certificate_provider);
+  if (require_client_cert) {
+    server_options.set_cert_request_type(
+        GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
+  }
+  return server_options;
 }
 
 void OpenTelemetryPluginEnd2EndTest::TearDown() {
