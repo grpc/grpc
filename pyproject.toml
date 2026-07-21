@@ -82,6 +82,11 @@ reportIncompleteStub = "none"
 reportUnusedClass = "none"
 
 include = [
+    "src/python/grpcio/grpc/_auth.py",
+    "src/python/grpcio/grpc/_compression.py",
+    "src/python/grpcio/grpc/_grpcio_metadata.py",
+    "src/python/grpcio/grpc/_observability.py",
+    "src/python/grpcio/grpc/_typing.py",
     "src/python/grpcio/grpc/_interceptor.py",
     "src/python/grpcio/grpc/_channel.py",
     "src/python/grpcio/grpc/_server.py",
