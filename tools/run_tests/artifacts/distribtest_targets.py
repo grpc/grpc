@@ -358,8 +358,7 @@ class PHP8DistribTest:
                     self.arch,
                 )
             else:
-                dockerfile_dir = "tools/dockerfile/distribtest/php%s_%s_%s" % (
-                    self.php_version,
+                dockerfile_dir = "tools/dockerfile/distribtest/php8_%s_%s" % (
                     self.docker_suffix or "debian12",
                     self.arch,
                 )
