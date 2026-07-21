@@ -1642,6 +1642,12 @@ TEST_P(SslTransportSecurityTest, TestBadServerCertMetricsIncremented) {
             sink_before.GetTotalCount("grpc.server.tls.handshakes"));
 }
 TEST_P(SslTransportSecurityTest, TestBadClientCertMetricsIncremented) {
+#if OPENSSL_VERSION_NUMBER < 0x10101000L
+  if (std::get<0>(GetParam()) == TSI_TLS1_3) {
+    GTEST_SKIP() << "TLS 1.3 is not supported in OpenSSL < 1.1.1";
+    return;
+  }
+#endif
   TestOnlyResetInstruments();
   auto root_scope = CreateRootCollectionScope(
       {"grpc.tls.handshake.result", "grpc.tls.handshake.resumed"}, 32, 32);
