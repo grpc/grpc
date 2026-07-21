@@ -53,3 +53,6 @@
 [submodule "third_party/cel-spec"]
 	path = third_party/cel-spec
 	url = https://github.com/google/cel-spec
+[submodule "third_party/grpc-proto"]
+	path = third_party/grpc-proto
+	url = https://github.com/grpc/grpc-proto.git

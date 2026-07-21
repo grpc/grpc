@@ -32,6 +32,7 @@ CANONICAL_TO_APPARENT_NAME_MAPPING = {
     "@@protoc-gen-validate+": "@com_envoyproxy_protoc_gen_validate",
     "@@opencensus-proto+": "opencensus_proto",
     "@@envoy_api+": "@envoy_api",
+    "@@grpc-proto+": "@grpc_proto",
 }
 
 

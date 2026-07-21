@@ -91,6 +91,7 @@ EXTERNAL_LINKS = {
     "@dev_cel//": "proto/",
     "@envoy_api//": "",
     "@opencensus_proto//": "",
+    "@grpc_proto//": "",
 }
 
 EXTERNAL_PROTO_LIBRARIES = {
@@ -117,6 +118,10 @@ EXTERNAL_PROTO_LIBRARIES = {
         destination="third_party/cel-spec",
         proto_prefix="third_party/cel-spec/",
         strip_path_prefix="proto/",
+    ),
+    "grpc_proto": ExternalProtoLibrary(
+        destination="third_party/grpc-proto",
+        proto_prefix="third_party/grpc-proto/",
     ),
 }
 
@@ -293,10 +298,14 @@ def _try_extract_source_file_path(label: str) -> str:
         for lib_name, external_proto_lib in EXTERNAL_PROTO_LIBRARIES.items():
             apparent_repo_maybe = "@" + lib_name + "//"
             if label.startswith(apparent_repo_maybe):
-                return label.replace(
-                    apparent_repo_maybe,
-                    external_proto_lib.proto_prefix,
-                ).replace(":", "/")
+                return (
+                    label.replace(
+                        apparent_repo_maybe,
+                        external_proto_lib.proto_prefix,
+                    )
+                    .replace("/:", "/")
+                    .replace(":", "/")
+                )
             else:
                 canonical_repo_maybe = APPARENT_TO_CANONICAL_NAME_MAPPING.get(
                     "@" + lib_name
@@ -305,10 +314,14 @@ def _try_extract_source_file_path(label: str) -> str:
                     continue
                 canonical_repo_maybe = canonical_repo_maybe + "//"
                 if label.startswith(canonical_repo_maybe):
-                    return label.replace(
-                        canonical_repo_maybe,
-                        external_proto_lib.proto_prefix,
-                    ).replace(":", "/")
+                    return (
+                        label.replace(
+                            canonical_repo_maybe,
+                            external_proto_lib.proto_prefix,
+                        )
+                        .replace("/:", "/")
+                        .replace(":", "/")
+                    )
 
         # No external library match found
         return None
