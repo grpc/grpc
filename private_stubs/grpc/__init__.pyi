@@ -59,29 +59,29 @@ ResponseType = TypeVar("ResponseType")
 MetadataType = Sequence[Tuple[str, Union[str, bytes]]]
 
 
-############################## Future Interface  ###############################
+############################### Future Interface  ###############################
 
 class FutureTimeoutError(Exception): ...
 
 class FutureCancelledError(Exception): ...
 
-class Future(abc.ABC, Generic[ResponseType]):
+class Future(abc.ABC):
     @abc.abstractmethod
-    def cancel(self) -> bool: ...
+    def cancel(self) -> Any: ...
     @abc.abstractmethod
-    def cancelled(self) -> bool: ...
+    def cancelled(self) -> Any: ...
     @abc.abstractmethod
-    def running(self) -> bool: ...
+    def running(self) -> Any: ...
     @abc.abstractmethod
-    def done(self) -> bool: ...
+    def done(self) -> Any: ...
     @abc.abstractmethod
-    def result(self, timeout: Optional[float] = None) -> ResponseType: ...
+    def result(self, timeout: Optional[float] = None) -> Any: ...
     @abc.abstractmethod
-    def exception(self, timeout: Optional[float] = None) -> Optional[Exception]: ...
+    def exception(self, timeout: Optional[float] = None) -> Any: ...
     @abc.abstractmethod
-    def traceback(self, timeout: Optional[float] = None) -> Optional[TracebackType]: ...
+    def traceback(self, timeout: Optional[float] = None) -> Any: ...
     @abc.abstractmethod
-    def add_done_callback(self, fn: Callable[[Future[ResponseType]], Any]) -> None: ...
+    def add_done_callback(self, fn: Any) -> Any: ...
 
 ################################  gRPC Enums  ##################################
 
@@ -128,25 +128,25 @@ class RpcError(Exception): ...
 
 class RpcContext(abc.ABC):
     @abc.abstractmethod
-    def is_active(self) -> bool: ...
+    def is_active(self) -> Any: ...
     @abc.abstractmethod
-    def time_remaining(self) -> Optional[float]: ...
+    def time_remaining(self) -> Any: ...
     @abc.abstractmethod
-    def cancel(self) -> None: ...
+    def cancel(self) -> Any: ...
     @abc.abstractmethod
-    def add_callback(self, callback: Callable[[], Any]) -> bool: ...
+    def add_callback(self, callback: Any) -> Any: ...
 
 #########################  Invocation-Side Context  ################            
 
 class Call(RpcContext, metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def initial_metadata(self) -> Optional[MetadataType]: ...
+    def initial_metadata(self) -> Any: ...
     @abc.abstractmethod
-    def trailing_metadata(self) -> Optional[MetadataType]: ...
+    def trailing_metadata(self) -> Any: ...
     @abc.abstractmethod
-    def code(self) -> Optional[StatusCode]: ...
+    def code(self) -> Any: ...
     @abc.abstractmethod
-    def details(self) -> Optional[str]: ...
+    def details(self) -> Any: ...
 
 ##############  Invocation-Side Interceptor Interfaces & Classes  ##############
 
@@ -157,7 +157,6 @@ class ClientCallDetails(abc.ABC):
     credentials: Optional[CallCredentials]
     wait_for_ready: Optional[bool]
     compression: Optional[Compression]
-
 
 class UnaryUnaryClientInterceptor(abc.ABC):
     @abc.abstractmethod
@@ -233,93 +232,93 @@ class ServerCertificateConfiguration:
 
 ########################  Multi-Callable Interfaces  ###########################
 
-class UnaryUnaryMultiCallable(abc.ABC, Generic[RequestType, ResponseType]):
+class UnaryUnaryMultiCallable(abc.ABC):
     @abc.abstractmethod
     def __call__(
         self,
-        request: RequestType,
+        request: Any,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[Compression] = None,
-    ) -> ResponseType: ...
+    ) -> Any: ...
     @abc.abstractmethod
     def with_call(
         self,
-        request: RequestType,
+        request: Any,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[Compression] = None,
-    ) -> Tuple[ResponseType, Call]: ...
+    ) -> Any: ...
     @abc.abstractmethod
     def future(
         self,
-        request: RequestType,
+        request: Any,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[Compression] = None,
-    ) -> Future[ResponseType]: ...
+    ) -> Any: ...
 
-class UnaryStreamMultiCallable(abc.ABC, Generic[RequestType, ResponseType]):
+class UnaryStreamMultiCallable(abc.ABC):
     @abc.abstractmethod
     def __call__(
         self,
-        request: RequestType,
+        request: Any,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[Compression] = None,
-    ) -> Iterator[ResponseType]: ...
+    ) -> Any: ...
 
-class StreamUnaryMultiCallable(abc.ABC, Generic[RequestType, ResponseType]):
+class StreamUnaryMultiCallable(abc.ABC):
     @abc.abstractmethod
     def __call__(
         self,
-        request_iterator: Iterable[RequestType],
+        request_iterator: Any,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[Compression] = None,
-    ) -> ResponseType: ...
+    ) -> Any: ...
     @abc.abstractmethod
     def with_call(
         self,
-        request_iterator: Iterable[RequestType],
+        request_iterator: Any,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[Compression] = None,
-    ) -> Tuple[ResponseType, Call]: ...
+    ) -> Any: ...
     @abc.abstractmethod
     def future(
         self,
-        request_iterator: Iterable[RequestType],
+        request_iterator: Any,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[Compression] = None,
-    ) -> Future[ResponseType]: ...
+    ) -> Any: ...
 
-class StreamStreamMultiCallable(abc.ABC, Generic[RequestType, ResponseType]):
+class StreamStreamMultiCallable(abc.ABC):
     @abc.abstractmethod
     def __call__(
         self,
-        request_iterator: Iterable[RequestType],
+        request_iterator: Any,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[Compression] = None,
-    ) -> Iterator[ResponseType]: ...
+    ) -> Any: ...
 
 #############################  Channel Interface  ##############################
 
@@ -327,14 +326,14 @@ class Channel(abc.ABC):
     @abc.abstractmethod
     def subscribe(
         self,
-        callback: Callable[[ChannelConnectivity], None],
+        callback: Any,
         try_to_connect: bool = False,
-    ) -> None: ...
+    ) -> Any: ...
     @abc.abstractmethod
     def unsubscribe(
         self,
-        callback: Callable[[ChannelConnectivity], None],
-    ) -> None: ...
+        callback: Any,
+    ) -> Any: ...
     @abc.abstractmethod
     def unary_unary(
         self,
@@ -342,7 +341,7 @@ class Channel(abc.ABC):
         request_serializer: Optional[Callable[[Any], bytes]] = None,
         response_deserializer: Optional[Callable[[bytes], Any]] = None,
         _registered_method: bool = False,
-    ) -> UnaryUnaryMultiCallable[Any, Any]: ...
+    ) -> Any: ...
     @abc.abstractmethod
     def unary_stream(
         self,
@@ -350,7 +349,7 @@ class Channel(abc.ABC):
         request_serializer: Optional[Callable[[Any], bytes]] = None,
         response_deserializer: Optional[Callable[[bytes], Any]] = None,
         _registered_method: bool = False,
-    ) -> UnaryStreamMultiCallable[Any, Any]: ...
+    ) -> Any: ...
     @abc.abstractmethod
     def stream_unary(
         self,
@@ -358,7 +357,7 @@ class Channel(abc.ABC):
         request_serializer: Optional[Callable[[Any], bytes]] = None,
         response_deserializer: Optional[Callable[[bytes], Any]] = None,
         _registered_method: bool = False,
-    ) -> StreamUnaryMultiCallable[Any, Any]: ...
+    ) -> Any: ...
     @abc.abstractmethod
     def stream_stream(
         self,
@@ -366,16 +365,17 @@ class Channel(abc.ABC):
         request_serializer: Optional[Callable[[Any], bytes]] = None,
         response_deserializer: Optional[Callable[[bytes], Any]] = None,
         _registered_method: bool = False,
-    ) -> StreamStreamMultiCallable[Any, Any]: ...
+    ) -> Any: ...
     @abc.abstractmethod
-    def close(self) -> None: ...
-    def __enter__(self: Channel) -> Channel: ...
+    def close(self) -> Any: ...
+    def __enter__(self) -> Any: ...
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
-    ) -> None: ...
+        exc_type: Any,
+        exc_val: Any,
+        exc_tb: Any,
+    ) -> Any: ...
+
 
 ##########################  Service-Side Context  ##############################
 
