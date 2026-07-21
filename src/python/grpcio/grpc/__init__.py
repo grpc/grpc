@@ -13,18 +13,13 @@
 # limitations under the License.
 """gRPC's Python API."""
 
-from __future__ import annotations
-
 import abc
 import contextlib
 import enum
 import logging
 import sys
 import typing
-from typing import Any, Callable, Optional, Protocol, Sequence, Tuple, Union
-
-if typing.TYPE_CHECKING:
-    from grpc._typing import MetadataType
+from typing import Any, Protocol
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
@@ -313,21 +308,6 @@ class Status(abc.ABC):
       trailing_metadata: The trailing :term:`metadata` in the RPC.
     """
 
-    @property
-    @abc.abstractmethod
-    def code(self) -> StatusCode:
-        """A StatusCode object to be sent to the client."""
-
-    @property
-    @abc.abstractmethod
-    def details(self) -> str:
-        """A UTF-8-encodable string to be sent to the client upon termination of the RPC."""
-
-    @property
-    @abc.abstractmethod
-    def trailing_metadata(self) -> Any:
-        """The trailing :term:`metadata` in the RPC."""
-
 
 #############################  gRPC Exceptions  ################################
 
@@ -343,7 +323,7 @@ class RpcContext(abc.ABC):
     """Provides RPC-related information and action."""
 
     @abc.abstractmethod
-    def is_active(self) -> bool:
+    def is_active(self):
         """Describes whether the RPC is active or has terminated.
 
         Returns:
@@ -353,7 +333,7 @@ class RpcContext(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def time_remaining(self) -> Optional[float]:
+    def time_remaining(self):
         """Describes the length of allowed time remaining for the RPC.
 
         Returns:
@@ -364,7 +344,7 @@ class RpcContext(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def cancel(self) -> Any:
+    def cancel(self):
         """Cancels the RPC.
 
         Idempotent and has no effect if the RPC has already terminated.
@@ -372,7 +352,7 @@ class RpcContext(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def add_callback(self, callback: Any) -> bool:
+    def add_callback(self, callback):
         """Registers a callback to be called on RPC termination.
 
         Args:
@@ -393,7 +373,7 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
     """Invocation-side utility object for an RPC."""
 
     @abc.abstractmethod
-    def initial_metadata(self) -> Optional[MetadataType]:
+    def initial_metadata(self):
         """Accesses the initial metadata sent by the server.
 
         This method blocks until the value is available.
@@ -404,7 +384,7 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def trailing_metadata(self) -> Optional[MetadataType]:
+    def trailing_metadata(self):
         """Accesses the trailing metadata sent by the server.
 
         This method blocks until the value is available.
@@ -415,7 +395,7 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def code(self) -> Optional[StatusCode]:
+    def code(self):
         """Accesses the status code sent by the server.
 
         This method blocks until the value is available.
@@ -426,7 +406,7 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def details(self) -> Optional[str]:
+    def details(self):
         """Accesses the details sent by the server.
 
         This method blocks until the value is available.
@@ -454,24 +434,12 @@ class ClientCallDetails(abc.ABC):
         grpc.Compression.Gzip.
     """
 
-    method: Any
-    timeout: Optional[float]
-    metadata: Optional[Any]
-    credentials: Optional[CallCredentials]
-    wait_for_ready: Optional[bool]
-    compression: Optional[Compression]
-
 
 class UnaryUnaryClientInterceptor(abc.ABC):
     """Affords intercepting unary-unary invocations."""
 
     @abc.abstractmethod
-    def intercept_unary_unary(
-        self,
-        continuation: Callable[[ClientCallDetails, Any], Any],
-        client_call_details: ClientCallDetails,
-        request: Any,
-    ) -> Any:
+    def intercept_unary_unary(self, continuation, client_call_details, request):
         """Intercepts a unary-unary invocation asynchronously.
 
         Args:
@@ -506,11 +474,8 @@ class UnaryStreamClientInterceptor(abc.ABC):
 
     @abc.abstractmethod
     def intercept_unary_stream(
-        self,
-        continuation: Callable[[ClientCallDetails, Any], Any],
-        client_call_details: ClientCallDetails,
-        request: Any,
-    ) -> Any:
+        self, continuation, client_call_details, request
+    ):
         """Intercepts a unary-stream invocation.
 
         Args:
@@ -544,11 +509,8 @@ class StreamUnaryClientInterceptor(abc.ABC):
 
     @abc.abstractmethod
     def intercept_stream_unary(
-        self,
-        continuation: Callable[[ClientCallDetails, Any], Any],
-        client_call_details: ClientCallDetails,
-        request_iterator: Any,
-    ) -> Any:
+        self, continuation, client_call_details, request_iterator
+    ):
         """Intercepts a stream-unary invocation asynchronously.
 
         Args:
@@ -582,11 +544,8 @@ class StreamStreamClientInterceptor(abc.ABC):
 
     @abc.abstractmethod
     def intercept_stream_stream(
-        self,
-        continuation: Callable[[ClientCallDetails, Any], Any],
-        client_call_details: ClientCallDetails,
-        request_iterator: Any,
-    ) -> Any:
+        self, continuation, client_call_details, request_iterator
+    ):
         """Intercepts a stream-stream invocation.
 
         Args:
@@ -724,13 +683,13 @@ class UnaryUnaryMultiCallable(abc.ABC):
     @abc.abstractmethod
     def __call__(
         self,
-        request: Any,
-        timeout: Optional[float] = None,
-        metadata: Optional[MetadataType] = None,
-        credentials: Optional[Any] = None,
-        wait_for_ready: Optional[bool] = None,
-        compression: Optional[Any] = None,
-    ) -> Any:
+        request,
+        timeout=None,
+        metadata=None,
+        credentials=None,
+        wait_for_ready=None,
+        compression=None,
+    ):
         """Synchronously invokes the underlying RPC.
 
         Args:
@@ -758,13 +717,13 @@ class UnaryUnaryMultiCallable(abc.ABC):
     @abc.abstractmethod
     def with_call(
         self,
-        request: Any,
-        timeout: Optional[float] = None,
-        metadata: Optional[MetadataType] = None,
-        credentials: Optional[Any] = None,
-        wait_for_ready: Optional[bool] = None,
-        compression: Optional[Any] = None,
-    ) -> Any:
+        request,
+        timeout=None,
+        metadata=None,
+        credentials=None,
+        wait_for_ready=None,
+        compression=None,
+    ):
         """Synchronously invokes the underlying RPC.
 
         Args:
@@ -792,13 +751,13 @@ class UnaryUnaryMultiCallable(abc.ABC):
     @abc.abstractmethod
     def future(
         self,
-        request: Any,
-        timeout: Optional[float] = None,
-        metadata: Optional[MetadataType] = None,
-        credentials: Optional[Any] = None,
-        wait_for_ready: Optional[bool] = None,
-        compression: Optional[Any] = None,
-    ) -> Any:
+        request,
+        timeout=None,
+        metadata=None,
+        credentials=None,
+        wait_for_ready=None,
+        compression=None,
+    ):
         """Asynchronously invokes the underlying RPC.
 
         Args:
@@ -829,13 +788,13 @@ class UnaryStreamMultiCallable(abc.ABC):
     @abc.abstractmethod
     def __call__(
         self,
-        request: Any,
-        timeout: Optional[float] = None,
-        metadata: Optional[MetadataType] = None,
-        credentials: Optional[Any] = None,
-        wait_for_ready: Optional[bool] = None,
-        compression: Optional[Any] = None,
-    ) -> Any:
+        request,
+        timeout=None,
+        metadata=None,
+        credentials=None,
+        wait_for_ready=None,
+        compression=None,
+    ):
         """Invokes the underlying RPC.
 
         Args:
@@ -865,13 +824,13 @@ class StreamUnaryMultiCallable(abc.ABC):
     @abc.abstractmethod
     def __call__(
         self,
-        request_iterator: Any,
-        timeout: Optional[float] = None,
-        metadata: Optional[MetadataType] = None,
-        credentials: Optional[Any] = None,
-        wait_for_ready: Optional[bool] = None,
-        compression: Optional[Any] = None,
-    ) -> Any:
+        request_iterator,
+        timeout=None,
+        metadata=None,
+        credentials=None,
+        wait_for_ready=None,
+        compression=None,
+    ):
         """Synchronously invokes the underlying RPC.
 
         Args:
@@ -900,13 +859,13 @@ class StreamUnaryMultiCallable(abc.ABC):
     @abc.abstractmethod
     def with_call(
         self,
-        request_iterator: Any,
-        timeout: Optional[float] = None,
-        metadata: Optional[MetadataType] = None,
-        credentials: Optional[Any] = None,
-        wait_for_ready: Optional[bool] = None,
-        compression: Optional[Any] = None,
-    ) -> Any:
+        request_iterator,
+        timeout=None,
+        metadata=None,
+        credentials=None,
+        wait_for_ready=None,
+        compression=None,
+    ):
         """Synchronously invokes the underlying RPC on the client.
 
         Args:
@@ -935,13 +894,13 @@ class StreamUnaryMultiCallable(abc.ABC):
     @abc.abstractmethod
     def future(
         self,
-        request_iterator: Any,
-        timeout: Optional[float] = None,
-        metadata: Optional[MetadataType] = None,
-        credentials: Optional[Any] = None,
-        wait_for_ready: Optional[bool] = None,
-        compression: Optional[Any] = None,
-    ) -> Any:
+        request_iterator,
+        timeout=None,
+        metadata=None,
+        credentials=None,
+        wait_for_ready=None,
+        compression=None,
+    ):
         """Asynchronously invokes the underlying RPC on the client.
 
         Args:
@@ -972,13 +931,13 @@ class StreamStreamMultiCallable(abc.ABC):
     @abc.abstractmethod
     def __call__(
         self,
-        request_iterator: Any,
-        timeout: Optional[float] = None,
-        metadata: Optional[MetadataType] = None,
-        credentials: Optional[Any] = None,
-        wait_for_ready: Optional[bool] = None,
-        compression: Optional[Any] = None,
-    ) -> Any:
+        request_iterator,
+        timeout=None,
+        metadata=None,
+        credentials=None,
+        wait_for_ready=None,
+        compression=None,
+    ):
         """Invokes the underlying RPC on the client.
 
         Args:
@@ -1013,11 +972,7 @@ class Channel(abc.ABC):
     """
 
     @abc.abstractmethod
-    def subscribe(
-        self,
-        callback: Callable[[ChannelConnectivity], None],
-        try_to_connect: bool = False,
-    ) -> None:
+    def subscribe(self, callback, try_to_connect=False):
         """Subscribe to this Channel's connectivity state machine.
 
         A Channel may be in any of the states described by ChannelConnectivity.
@@ -1038,7 +993,7 @@ class Channel(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def unsubscribe(self, callback: Callable[[ChannelConnectivity], None]) -> None:
+    def unsubscribe(self, callback):
         """Unsubscribes a subscribed callback from this Channel's connectivity.
 
         Args:
@@ -1050,11 +1005,11 @@ class Channel(abc.ABC):
     @abc.abstractmethod
     def unary_unary(
         self,
-        method: Any,
-        request_serializer: Optional[Callable[[Any], bytes]] = None,
-        response_deserializer: Optional[Callable[[bytes], Any]] = None,
-        _registered_method: bool = False,
-    ) -> UnaryUnaryMultiCallable:
+        method,
+        request_serializer=None,
+        response_deserializer=None,
+        _registered_method=False,
+    ):
         """Creates a UnaryUnaryMultiCallable for a unary-unary method.
 
         Args:
@@ -1075,11 +1030,11 @@ class Channel(abc.ABC):
     @abc.abstractmethod
     def unary_stream(
         self,
-        method: Any,
-        request_serializer: Optional[Callable[[Any], bytes]] = None,
-        response_deserializer: Optional[Callable[[bytes], Any]] = None,
-        _registered_method: bool = False,
-    ) -> UnaryStreamMultiCallable:
+        method,
+        request_serializer=None,
+        response_deserializer=None,
+        _registered_method=False,
+    ):
         """Creates a UnaryStreamMultiCallable for a unary-stream method.
 
         Args:
@@ -1100,11 +1055,11 @@ class Channel(abc.ABC):
     @abc.abstractmethod
     def stream_unary(
         self,
-        method: Any,
-        request_serializer: Optional[Callable[[Any], bytes]] = None,
-        response_deserializer: Optional[Callable[[bytes], Any]] = None,
-        _registered_method: bool = False,
-    ) -> StreamUnaryMultiCallable:
+        method,
+        request_serializer=None,
+        response_deserializer=None,
+        _registered_method=False,
+    ):
         """Creates a StreamUnaryMultiCallable for a stream-unary method.
 
         Args:
@@ -1125,11 +1080,11 @@ class Channel(abc.ABC):
     @abc.abstractmethod
     def stream_stream(
         self,
-        method: Any,
-        request_serializer: Optional[Callable[[Any], bytes]] = None,
-        response_deserializer: Optional[Callable[[bytes], Any]] = None,
-        _registered_method: bool = False,
-    ) -> StreamStreamMultiCallable:
+        method,
+        request_serializer=None,
+        response_deserializer=None,
+        _registered_method=False,
+    ):
         """Creates a StreamStreamMultiCallable for a stream-stream method.
 
         Args:
@@ -1372,46 +1327,39 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
 
 
 class RpcMethodHandler(abc.ABC):
-    """An implementation of a single RPC method."""
+    """An implementation of a single RPC method.
 
-    request_streaming: bool
-    """Whether the RPC supports exactly one request message or any arbitrary number of
-    request messages."""
-
-    response_streaming: bool
-    """Whether the RPC supports exactly one response message or any arbitrary number of
-    response messages."""
-
-    request_deserializer: Optional[Callable[[bytes], Any]]
-    """A callable :term:`deserializer` that accepts a byte string and returns an
-    object suitable to be passed to this object's business logic, or None to indicate
-    that this object's business logic should be passed the raw request bytes."""
-
-    response_serializer: Optional[Callable[[Any], bytes]]
-    """A callable :term:`serializer` that accepts an object produced by this
-    object's business logic and returns a byte string, or None to indicate that the
-    byte strings produced by this object's business logic should be transmitted on the
-    wire as they are."""
-
-    unary_unary: Optional[Callable[..., Any]]
-    """The application-specific business logic as a callable value that takes a request value and a
-    ServicerContext object and returns a response value. Only non-None if both request_streaming and
-    response_streaming are False."""
-
-    unary_stream: Optional[Callable[..., Any]]
-    """The application-specific business logic as a callable value that takes a request value and a
-    ServicerContext object and returns an iterator of response values. Only non-None if
-    request_streaming is False and response_streaming is True."""
-
-    stream_unary: Optional[Callable[..., Any]]
-    """The application-specific business logic as a callable value that takes an iterator of request
-    values and a ServicerContext object and returns a response value. Only non-None if
-    request_streaming is True and response_streaming is False."""
-
-    stream_stream: Optional[Callable[..., Any]]
-    """The application-specific business logic as a callable value that takes an iterator of request
-    values and a ServicerContext object and returns an iterator of response values. Only non-None if
-    request_streaming and response_streaming are both True."""
+    Attributes:
+      request_streaming: Whether the RPC supports exactly one request message
+        or any arbitrary number of request messages.
+      response_streaming: Whether the RPC supports exactly one response message
+        or any arbitrary number of response messages.
+      request_deserializer: A callable :term:`deserializer` that accepts a byte string and
+        returns an object suitable to be passed to this object's business
+        logic, or None to indicate that this object's business logic should be
+        passed the raw request bytes.
+      response_serializer: A callable :term:`serializer` that accepts an object produced
+        by this object's business logic and returns a byte string, or None to
+        indicate that the byte strings produced by this object's business logic
+        should be transmitted on the wire as they are.
+      unary_unary: This object's application-specific business logic as a
+        callable value that takes a request value and a ServicerContext object
+        and returns a response value. Only non-None if both request_streaming
+        and response_streaming are False.
+      unary_stream: This object's application-specific business logic as a
+        callable value that takes a request value and a ServicerContext object
+        and returns an iterator of response values. Only non-None if
+        request_streaming is False and response_streaming is True.
+      stream_unary: This object's application-specific business logic as a
+        callable value that takes an iterator of request values and a
+        ServicerContext object and returns a response value. Only non-None if
+        request_streaming is True and response_streaming is False.
+      stream_stream: This object's application-specific business logic as a
+        callable value that takes an iterator of request values and a
+        ServicerContext object and returns an iterator of response values.
+        Only non-None if request_streaming and response_streaming are both
+        True.
+    """
 
 
 @typing.runtime_checkable
@@ -1471,11 +1419,7 @@ class ServerInterceptor(abc.ABC):
     """Affords intercepting incoming RPCs on the service-side."""
 
     @abc.abstractmethod
-    def intercept_service(
-        self,
-        continuation: Callable[[HandlerCallDetails], Optional[RpcMethodHandler]],
-        handler_call_details: HandlerCallDetails,
-    ) -> Optional[RpcMethodHandler]:
+    def intercept_service(self, continuation, handler_call_details):
         """Intercepts incoming RPCs before handing them over to a handler.
 
         State can be passed from an interceptor to downstream interceptors
