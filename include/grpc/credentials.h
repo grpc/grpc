@@ -1080,6 +1080,15 @@ GRPCAPI void grpc_tls_credentials_options_set_verify_server_cert(
 /**
  * EXPERIMENTAL API - Subject to change
  *
+ * Sets the options of whether to skip the Server Auth EKU check.
+ * Passing in a non-zero value indicates skipping the check.
+ */
+GRPCAPI void grpc_tls_credentials_options_set_skip_server_auth_eku(
+    grpc_tls_credentials_options* options, int skip_server_auth_eku);
+
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
  * Sets whether or not a TLS server should send a list of CA names in the
  * ServerHello. This list of CA names is read from the server's trust bundle, so
  * that the client can use this list as a hint to know which certificate it

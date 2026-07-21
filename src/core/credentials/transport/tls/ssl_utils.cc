@@ -421,7 +421,8 @@ void grpc_shallow_peer_destruct(tsi_peer* peer) {
 grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     tsi_ssl_pem_key_cert_pair* pem_key_cert_pair,
     std::shared_ptr<tsi::RootCertInfo> root_cert_info,
-    bool skip_server_certificate_verification, tsi_tls_version min_tls_version,
+    bool skip_server_certificate_verification, bool skip_server_auth_eku,
+    tsi_tls_version min_tls_version,
     tsi_tls_version max_tls_version, tsi_ssl_session_cache* ssl_session_cache,
     tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,
     const char* crl_directory,
@@ -462,6 +463,7 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
   options.key_logger = tls_session_key_logger;
   options.skip_server_certificate_verification =
       skip_server_certificate_verification;
+  options.skip_server_auth_eku = skip_server_auth_eku;
   options.min_tls_version = min_tls_version;
   options.max_tls_version = max_tls_version;
   options.crl_directory = crl_directory;

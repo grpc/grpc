@@ -589,7 +589,7 @@ TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
   bool use_default_roots = options_->root_certificate_distributor() == nullptr;
   return grpc_ssl_tsi_client_handshaker_factory_init(
       pem_key_cert_pair, use_default_roots ? nullptr : root_cert_info_,
-      skip_server_certificate_verification,
+      skip_server_certificate_verification, options_->skip_server_auth_eku(),
       grpc_get_tsi_tls_version(options_->min_tls_version()),
       grpc_get_tsi_tls_version(options_->max_tls_version()), ssl_session_cache_,
       tls_session_key_logger_.get(), options_->crl_directory().c_str(),

@@ -52,6 +52,16 @@ TEST(TlsCredentialsOptionsComparatorTest, DifferentVerifyServerCert) {
   delete options_1;
   delete options_2;
 }
+TEST(TlsCredentialsOptionsComparatorTest, DifferentSkipServerAuthEku) {
+  auto* options_1 = grpc_tls_credentials_options_create();
+  auto* options_2 = grpc_tls_credentials_options_create();
+  options_1->set_skip_server_auth_eku(false);
+  options_2->set_skip_server_auth_eku(true);
+  EXPECT_FALSE(*options_1 == *options_2);
+  EXPECT_FALSE(*options_2 == *options_1);
+  delete options_1;
+  delete options_2;
+}
 TEST(TlsCredentialsOptionsComparatorTest, DifferentMinTlsVersion) {
   auto* options_1 = grpc_tls_credentials_options_create();
   auto* options_2 = grpc_tls_credentials_options_create();

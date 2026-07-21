@@ -190,6 +190,7 @@ struct tsi_ssl_client_handshaker_options {
 
   // skip server certificate verification.
   bool skip_server_certificate_verification;
+  bool skip_server_auth_eku;
 
   // The min and max TLS versions that will be negotiated by the handshaker.
   tsi_tls_version min_tls_version;
@@ -228,6 +229,7 @@ struct tsi_ssl_client_handshaker_options {
         session_cache(nullptr),
         key_logger(nullptr),
         skip_server_certificate_verification(false),
+        skip_server_auth_eku(false),
         min_tls_version(tsi_tls_version::TSI_TLS1_2),
         max_tls_version(tsi_tls_version::TSI_TLS1_3),
         crl_directory(nullptr) {}

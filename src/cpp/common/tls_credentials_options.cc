@@ -165,6 +165,14 @@ void TlsChannelCredentialsOptions::set_verify_server_certs(
                                                       verify_server_certs);
 }
 
+void TlsChannelCredentialsOptions::set_skip_server_auth_eku(
+    bool skip_server_auth_eku) {
+  grpc_tls_credentials_options* options = mutable_c_credentials_options();
+  GRPC_CHECK_NE(options, nullptr);
+  grpc_tls_credentials_options_set_skip_server_auth_eku(options,
+                                                       skip_server_auth_eku);
+}
+
 void TlsChannelCredentialsOptions::set_sni_override(
     std::optional<std::string> sni_override) {
   grpc_tls_credentials_options* options = mutable_c_credentials_options();
