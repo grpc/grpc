@@ -36,10 +36,10 @@ if TYPE_CHECKING:
 
 RequestType = TypeVar("RequestType")
 ResponseType = TypeVar("ResponseType")
-SerializerInputType = TypeVar("SerializerInputType")
-DeserializerOutputType = TypeVar("DeserializerOutputType")
-SerializingFunction = Callable[[SerializerInputType], bytes]
-DeserializingFunction = Callable[[bytes], DeserializerOutputType]
+SerializerInputType_contra = TypeVar("SerializerInputType_contra", contravariant=True)
+DeserializerOutputType_co = TypeVar("DeserializerOutputType_co", covariant=True)
+SerializingFunction = Callable[[SerializerInputType_contra], bytes]
+DeserializingFunction = Callable[[bytes], DeserializerOutputType_co]
 MetadataType = Sequence[Tuple[str, Union[str, bytes]]]
 ChannelArgumentType = Tuple[str, Any]
 DoneCallbackType = Callable[[Any], None]

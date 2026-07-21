@@ -15,13 +15,11 @@
 
 import logging
 import time
-from typing import Any, AnyStr, Callable, Optional
+from typing import Any, AnyStr, Callable, Optional, Union
 
 import grpc
 from grpc._cython import cygrpc
 from grpc._typing import DeserializingFunction
-from grpc._typing import RequestType
-from grpc._typing import ResponseType
 from grpc._typing import SerializingFunction
 
 _LOGGER = logging.getLogger(__name__)
@@ -80,7 +78,9 @@ def decode(b: AnyStr) -> str:
 
 def _transform(
     message: Any,
-    transformer: Optional[Callable[[Any], Any]],
+    transformer: Optional[
+        Union[SerializingFunction[Any], DeserializingFunction[Any]]
+    ],
     exception_message: str,
 ) -> Any:
     if transformer is None:
@@ -93,15 +93,16 @@ def _transform(
 
 
 def serialize(
-    message: RequestType, serializer: Optional[SerializingFunction[RequestType]]
+    message: Any,
+    serializer: Optional[SerializingFunction[Any]],
 ) -> bytes:
     return _transform(message, serializer, "Exception serializing message!")
 
 
 def deserialize(
     serialized_message: bytes,
-    deserializer: Optional[DeserializingFunction[ResponseType]],
-) -> ResponseType:
+    deserializer: Optional[DeserializingFunction[Any]],
+) -> Any:
     return _transform(
         serialized_message, deserializer, "Exception deserializing message!"
     )
