@@ -54,11 +54,6 @@ from grpc._runtime_protos import services as services
 
 __version__: str
 
-RequestType = TypeVar("RequestType")
-ResponseType = TypeVar("ResponseType")
-MetadataType = Sequence[Tuple[str, Union[str, bytes]]]
-
-
 ############################### Future Interface  ###############################
 
 class FutureTimeoutError(Exception): ...
@@ -118,7 +113,7 @@ class StatusCode(enum.Enum):
 class Status(abc.ABC):
     code: StatusCode
     details: str
-    trailing_metadata: MetadataType
+    trailing_metadata: Any
 
 #############################  gRPC Exceptions  ################################
 
@@ -211,7 +206,7 @@ class AuthMetadataContext(abc.ABC):
 class AuthMetadataPluginCallback(abc.ABC):
     def __call__(
         self,
-        metadata: MetadataType,
+        metadata: Any,
         error: Optional[Exception],
     ) -> None: ...
 
@@ -238,7 +233,7 @@ class UnaryUnaryMultiCallable(abc.ABC):
         self,
         request: Any,
         timeout: Optional[float] = None,
-        metadata: Optional[MetadataType] = None,
+        metadata: Optional[Any] = None,
         credentials: Optional[CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[Compression] = None,
@@ -248,7 +243,7 @@ class UnaryUnaryMultiCallable(abc.ABC):
         self,
         request: Any,
         timeout: Optional[float] = None,
-        metadata: Optional[MetadataType] = None,
+        metadata: Optional[Any] = None,
         credentials: Optional[CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[Compression] = None,
@@ -258,7 +253,7 @@ class UnaryUnaryMultiCallable(abc.ABC):
         self,
         request: Any,
         timeout: Optional[float] = None,
-        metadata: Optional[MetadataType] = None,
+        metadata: Optional[Any] = None,
         credentials: Optional[CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[Compression] = None,
@@ -270,7 +265,7 @@ class UnaryStreamMultiCallable(abc.ABC):
         self,
         request: Any,
         timeout: Optional[float] = None,
-        metadata: Optional[MetadataType] = None,
+        metadata: Optional[Any] = None,
         credentials: Optional[CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[Compression] = None,
@@ -282,7 +277,7 @@ class StreamUnaryMultiCallable(abc.ABC):
         self,
         request_iterator: Any,
         timeout: Optional[float] = None,
-        metadata: Optional[MetadataType] = None,
+        metadata: Optional[Any] = None,
         credentials: Optional[CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[Compression] = None,
@@ -292,7 +287,7 @@ class StreamUnaryMultiCallable(abc.ABC):
         self,
         request_iterator: Any,
         timeout: Optional[float] = None,
-        metadata: Optional[MetadataType] = None,
+        metadata: Optional[Any] = None,
         credentials: Optional[CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[Compression] = None,
@@ -302,7 +297,7 @@ class StreamUnaryMultiCallable(abc.ABC):
         self,
         request_iterator: Any,
         timeout: Optional[float] = None,
-        metadata: Optional[MetadataType] = None,
+        metadata: Optional[Any] = None,
         credentials: Optional[CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[Compression] = None,
@@ -314,7 +309,7 @@ class StreamStreamMultiCallable(abc.ABC):
         self,
         request_iterator: Any,
         timeout: Optional[float] = None,
-        metadata: Optional[MetadataType] = None,
+        metadata: Optional[Any] = None,
         credentials: Optional[CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[Compression] = None,
@@ -381,7 +376,7 @@ class Channel(abc.ABC):
 
 class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def invocation_metadata(self) -> Optional[MetadataType]: ...
+    def invocation_metadata(self) -> Optional[Any]: ...
     @abc.abstractmethod
     def peer(self) -> str: ...
     @abc.abstractmethod
@@ -392,10 +387,10 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
     def auth_context(self) -> Mapping[str, Iterable[bytes]]: ...
     def set_compression(self, compression: Compression) -> None: ...
     @abc.abstractmethod
-    def send_initial_metadata(self, initial_metadata: MetadataType) -> None: ...
+    def send_initial_metadata(self, initial_metadata: Any) -> None: ...
     @abc.abstractmethod
-    def set_trailing_metadata(self, trailing_metadata: MetadataType) -> None: ...
-    def trailing_metadata(self) -> Optional[MetadataType]: ...
+    def set_trailing_metadata(self, trailing_metadata: Any) -> None: ...
+    def trailing_metadata(self) -> Optional[Any]: ...
     @abc.abstractmethod
     def abort(self, code: StatusCode, details: str) -> None: ...
     @abc.abstractmethod
