@@ -270,10 +270,12 @@ std::vector<ChannelInit::FilterNode> ChannelInit::SelectFiltersByPredicate(
   std::vector<FilterNode> filter_list;
   int i = 0;
   // Create an in-place linked list of individual filters
-  for (const auto& filter : filters) {
-    if (!is_terminal && SkipV2(filter.version)) continue;
-    if (!filter.CheckPredicates(builder->channel_args())) continue;
-    filter_list.push_back(FilterNode{&filter, ++i});
+  if constexpr (!is_terminal) {
+    for (const auto& filter : filters) {
+      if (SkipV2(filter.version)) continue;
+      if (!filter.CheckPredicates(builder->channel_args())) continue;
+      filter_list.push_back(FilterNode{&filter, ++i});
+    }
   }
   if (!filter_list.empty()) {
     filter_list.back().next = -1;
