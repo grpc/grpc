@@ -66,30 +66,33 @@ using ::grpc::experimental::StaticDataCertificateProvider;
 void XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::
     OnServingStatusUpdate(std::string uri, ServingStatusUpdate update) {
   grpc_core::MutexLock lock(&mu_);
-  status_map[uri] = update.status;
-  cond_.Signal();
+  status_map_[uri].emplace_back(static_cast<absl::StatusCode>(static_cast<int>(
+                                    update.status.error_code())),
+                                update.status.error_message());
+  if (cond_ != nullptr) cond_->Signal();
 }
 
-bool XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::
-    WaitOnServingStatusChange(const std::string& uri,
-                              grpc::StatusCode expected_status,
-                              absl::Duration timeout) {
+std::optional<absl::Status>
+XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::GetNextStatus(
+    const std::string& uri, absl::Duration timeout) {
+  timeout *= grpc_test_slowdown_factor();
   grpc_core::MutexLock lock(&mu_);
-  absl::Time deadline = absl::Now() + timeout * grpc_test_slowdown_factor();
-  std::map<std::string, grpc::Status>::iterator it;
-  while ((it = status_map.find(uri)) == status_map.end() ||
-         it->second.error_code() != expected_status) {
-    if (cond_.WaitWithDeadline(&mu_, deadline)) {
-      LOG(ERROR) << "\nTimeout Elapsed waiting on serving status "
-                    "change\nExpected status: "
-                 << expected_status << "\nActual:"
-                 << (it == status_map.end()
-                         ? "Entry not found in map"
-                         : absl::StrCat(it->second.error_code()));
-      return false;
+  auto& queue = status_map_[uri];
+  if (queue.empty()) {
+    grpc_core::CondVar cv;
+    cond_ = &cv;
+    while (queue.empty()) {
+      if (cv.WaitWithTimeout(&mu_, timeout)) {
+        LOG(ERROR) << "timed out waiting for server status notification";
+        cond_ = nullptr;
+        return std::nullopt;
+      }
     }
+    cond_ = nullptr;
   }
-  return true;
+  absl::Status status = std::move(queue.front());
+  queue.pop_front();
+  return status;
 }
 
 //

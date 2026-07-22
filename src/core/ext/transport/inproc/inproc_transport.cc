@@ -252,11 +252,7 @@ InprocServerTransport::MakeClientTransport() {
 RefCountedPtr<Channel> MakeLameChannel(absl::string_view why,
                                        absl::Status error) {
   LOG(ERROR) << why << ": " << error.message();
-  intptr_t integer;
-  grpc_status_code status = GRPC_STATUS_INTERNAL;
-  if (grpc_error_get_int(error, StatusIntProperty::kRpcStatus, &integer)) {
-    status = static_cast<grpc_status_code>(integer);
-  }
+  grpc_status_code status = static_cast<grpc_status_code>(error.code());
   return RefCountedPtr<Channel>(Channel::FromC(grpc_lame_client_channel_create(
       nullptr, status, std::string(why).c_str())));
 }

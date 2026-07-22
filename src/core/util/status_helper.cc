@@ -54,12 +54,8 @@ const char* GetStatusIntPropertyUrl(StatusIntProperty key) {
   switch (key) {
     case StatusIntProperty::kStreamId:
       return TYPE_URL(TYPE_INT_TAG "stream_id");
-    case StatusIntProperty::kRpcStatus:
-      return TYPE_URL(TYPE_INT_TAG "grpc_status");
     case StatusIntProperty::kHttp2Error:
       return TYPE_URL(TYPE_INT_TAG "http2_error");
-    case StatusIntProperty::ChannelConnectivityState:
-      return TYPE_URL(TYPE_INT_TAG "channel_connectivity_state");
   }
   GPR_UNREACHABLE_CODE(return "unknown");
 }
@@ -78,8 +74,6 @@ absl::Status StatusCreate(absl::StatusCode code, absl::string_view msg,
   return s;
 }
 
-namespace {
-
 absl::Status ReplaceStatusCode(const absl::Status& status,
                                absl::StatusCode code) {
   absl::Status new_status(code, status.message());
@@ -90,23 +84,13 @@ absl::Status ReplaceStatusCode(const absl::Status& status,
   return new_status;
 }
 
-}  // namespace
-
 void StatusSetInt(absl::Status* status, StatusIntProperty key, intptr_t value) {
-  if (key == StatusIntProperty::kRpcStatus) {
-    // When setting the RPC status, just replace the top-level status code.
-    *status = ReplaceStatusCode(*status, static_cast<absl::StatusCode>(value));
-    return;
-  }
   status->SetPayload(GetStatusIntPropertyUrl(key),
                      absl::Cord(std::to_string(value)));
 }
 
 std::optional<intptr_t> StatusGetInt(const absl::Status& status,
                                      StatusIntProperty key) {
-  if (key == StatusIntProperty::kRpcStatus) {
-    return static_cast<intptr_t>(status.code());
-  }
   auto p = status.GetPayload(GetStatusIntPropertyUrl(key));
   if (p.has_value()) {
     auto sv = p->TryFlat();
@@ -153,8 +137,6 @@ void StatusAddChild(absl::Status* status, absl::Status child) {
       });
   *status = std::move(new_status);
 }
-
-std::vector<absl::Status> StatusGetChildren(absl::Status status) { return {}; }
 
 std::string StatusToString(const absl::Status& status) {
   if (status.ok()) {

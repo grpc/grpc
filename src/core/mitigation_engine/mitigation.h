@@ -39,6 +39,7 @@ class Mitigation : public RefCounted<Mitigation> {
     MitigationEngine::Action action;
     bool reject_new_connections = false;
     absl::Duration max_duration;
+    absl::string_view rule_name;
   };
 
   ~Mitigation() override = default;
