@@ -1145,8 +1145,7 @@ TEST_P(XdsFederationTest, FederationServer) {
   // Start backends and wait for them to start serving.
   StartAllBackends();
   for (const auto& backend : backends_) {
-    ASSERT_TRUE(backend->notifier()->WaitOnServingStatusChange(
-        grpc_core::LocalIpAndPort(backend->port()), grpc::StatusCode::OK));
+    ASSERT_EQ(backend->GetNextStatus(), absl::OkStatus());
   }
   // Make sure everything works.
   WaitForAllBackends(DEBUG_LOCATION);
