@@ -208,4 +208,4 @@ void AsyncTestPrivateKeySigner::Cancel(
 }  // namespace testing
 }  // namespace grpc
 
-#endif
+#endif  // OPENSSL_IS_BORINGSSL

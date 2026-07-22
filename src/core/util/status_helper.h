@@ -64,9 +64,6 @@ enum class StatusIntProperty {
   /// wire stream
   // TODO(tjagtap): Remove this when the PH2 migration is done.
   kStreamId,
-  /// grpc status code representing this error
-  // TODO(roth): Remove this after error_flatten experiment is removed.
-  kRpcStatus,
   /// http2 error code associated with the error (see the HTTP2 RFC)
   // TODO(tjagtap): Remove this as part of creating a new HTTP/2 error type.
   kHttp2Error,
@@ -85,12 +82,11 @@ GRPC_MUST_USE_RESULT
 std::optional<intptr_t> StatusGetInt(const absl::Status& status,
                                      StatusIntProperty key);
 
+absl::Status ReplaceStatusCode(const absl::Status& status,
+                               absl::StatusCode code);
+
 /// Adds a child status to status
 void StatusAddChild(absl::Status* status, absl::Status child);
-
-/// Returns all children status from a status
-GRPC_MUST_USE_RESULT std::vector<absl::Status> StatusGetChildren(
-    absl::Status status);
 
 /// Returns a string representation from status
 /// Error status will be like
