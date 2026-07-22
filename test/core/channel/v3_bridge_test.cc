@@ -41,6 +41,9 @@ namespace {
 class EarlyFailureInterceptor
     : public V3InterceptorToV2Bridge<EarlyFailureInterceptor> {
  public:
+  EarlyFailureInterceptor()
+      : V3InterceptorToV2Bridge<EarlyFailureInterceptor>(ChannelArgs()) {}
+
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override {
     // Start the call and fail it immediately.
     auto handler = unstarted_call_handler.StartCall();
@@ -161,7 +164,9 @@ class HangingInterceptor : public V3InterceptorToV2Bridge<HangingInterceptor> {
  public:
   HangingInterceptor(std::shared_ptr<absl::Notification> done,
                      std::shared_ptr<bool> cancelled)
-      : done_(std::move(done)), cancelled_(std::move(cancelled)) {}
+      : V3InterceptorToV2Bridge<HangingInterceptor>(ChannelArgs()),
+        done_(std::move(done)),
+        cancelled_(std::move(cancelled)) {}
 
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override {
     // Consume the call: start it and hold on to the handler so the v3 spine
