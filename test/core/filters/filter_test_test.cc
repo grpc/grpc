@@ -244,7 +244,8 @@ FILTER_TEST(FilterTest, UnaryEchoThroughPassThroughFilter) {
   EXPECT_TRUE(PullClientHalfClose(handler));
 
   // Server responds.
-  PushServerInitialMetadata(handler, NewServerMetadata({{"server-hdr", "yes"}}));
+  PushServerInitialMetadata(handler,
+                            NewServerMetadata({{"server-hdr", "yes"}}));
   PushServerMessage(handler, NewMessage("hello"));
 
   // Client receives the response.
@@ -291,7 +292,8 @@ FILTER_TEST(FilterTest, UnaryEchoThroughAsyncFilter) {
   EXPECT_THAT(request.value(), HasMessagePayload("hello"));
   EXPECT_TRUE(PullClientHalfClose(handler));
 
-  PushServerInitialMetadata(handler, NewServerMetadata({{"server-hdr", "yes"}}));
+  PushServerInitialMetadata(handler,
+                            NewServerMetadata({{"server-hdr", "yes"}}));
   PushServerMessage(handler, NewMessage("hello"));
 
   ValueOrFailure<std::optional<ServerMetadataHandle>> server_initial_metadata =
@@ -329,9 +331,9 @@ FILTER_TEST(FilterTest, FilterRejectsAtInitialMetadata) {
   ValueOrFailure<ServerMetadataHandle> server_trailing_metadata =
       PullServerTrailingMetadata();
   ASSERT_TRUE(server_trailing_metadata.ok());
-  EXPECT_THAT(**server_trailing_metadata,
-              HasMetadataResult(
-                  absl::PermissionDeniedError("rejected by filter")));
+  EXPECT_THAT(
+      **server_trailing_metadata,
+      HasMetadataResult(absl::PermissionDeniedError("rejected by filter")));
 
   WaitForAllPendingWork();
 }
@@ -375,9 +377,9 @@ FILTER_TEST(FilterTest, ConsumingInterceptorCreatesNoChildCall) {
   ValueOrFailure<ServerMetadataHandle> server_trailing_metadata =
       PullServerTrailingMetadata();
   ASSERT_TRUE(server_trailing_metadata.ok());
-  EXPECT_THAT(**server_trailing_metadata,
-              HasMetadataResult(
-                  absl::UnimplementedError("consumed by interceptor")));
+  EXPECT_THAT(
+      **server_trailing_metadata,
+      HasMetadataResult(absl::UnimplementedError("consumed by interceptor")));
 
   WaitForAllPendingWork();
 }

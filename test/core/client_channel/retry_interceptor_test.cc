@@ -77,7 +77,7 @@ class RetryInterceptorTest : public FilterTest {
   void InitCallArena(Arena* arena) override {
     if (service_config_ == nullptr) return;
     arena->New<ServiceConfigCallData>(arena)->SetServiceConfig(service_config_,
-                                                              method_configs_);
+                                                               method_configs_);
   }
 
  private:

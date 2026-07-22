@@ -9391,37 +9391,41 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/call/yodel/yodel_test.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/filters/filter_matchers.h
   - test/core/filters/filter_test.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
+  - test/core/test_util/postmortem.h
+  - test/core/test_util/proto_bit_gen.h
+  - third_party/utf8_range/utf8_validity.h
   src:
+  - test/core/call/yodel/fuzzer.proto
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
+  - test/core/call/yodel/yodel_test.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/filters/client_auth_filter_test.cc
   - test/core/filters/filter_test.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   deps:
   - gtest
-  - protobuf
-  - grpc_test_util
-- name: client_authority_filter_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/event_engine/event_engine_test_utils.h
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
-  - test/core/filters/filter_matchers.h
-  - test/core/filters/filter_test.h
-  src:
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
-  - test/core/event_engine/event_engine_test_utils.cc
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  - test/core/filters/client_authority_filter_test.cc
-  - test/core/filters/filter_test.cc
-  deps:
-  - gtest
+  - absl/base:dynamic_annotations
+  - absl/base:fast_type_id
+  - absl/base:nullability
+  - absl/base:prefetch
+  - absl/container:layout
+  - absl/container:node_hash_set
+  - absl/functional:overload
+  - absl/log:absl_check
+  - absl/log:absl_log
+  - absl/numeric:int128
+  - absl/strings:internal
+  - absl/types:compare
   - protobuf
   - grpc_test_util
 - name: client_callback_end2end_test
@@ -13789,26 +13793,6 @@ targets:
   - cares
   - gpr
   - address_sorting
-- name: filter_test_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/event_engine/event_engine_test_utils.h
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
-  - test/core/filters/filter_matchers.h
-  - test/core/filters/filter_test.h
-  src:
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
-  - test/core/event_engine/event_engine_test_utils.cc
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  - test/core/filters/filter_test.cc
-  - test/core/filters/filter_test_test.cc
-  deps:
-  - gtest
-  - grpc_unsecure
-  - protobuf
-  - grpc_test_util
 - name: flaky_network_test
   gtest: true
   build: test
@@ -14843,18 +14827,41 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/call/yodel/yodel_test.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/filters/filter_matchers.h
   - test/core/filters/filter_test.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
+  - test/core/test_util/postmortem.h
+  - test/core/test_util/proto_bit_gen.h
+  - third_party/utf8_range/utf8_validity.h
   src:
+  - test/core/call/yodel/fuzzer.proto
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
+  - test/core/call/yodel/yodel_test.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/filters/filter_test.cc
   - test/core/filters/gcp_authentication_filter_test.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   deps:
   - gtest
+  - absl/base:dynamic_annotations
+  - absl/base:fast_type_id
+  - absl/base:nullability
+  - absl/base:prefetch
+  - absl/container:layout
+  - absl/container:node_hash_set
+  - absl/functional:overload
+  - absl/log:absl_check
+  - absl/log:absl_log
+  - absl/numeric:int128
+  - absl/strings:internal
+  - absl/types:compare
   - protobuf
   - grpc_test_util
 - name: generic_end2end_test

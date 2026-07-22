@@ -749,6 +749,9 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/testing/xds/v3/orca_service.proto src/proto/grpc/testing/xds/v3/orca_service.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
+  test/core/call/yodel/fuzzer.proto test/core/call/yodel/fuzzer.proto
+)
+protobuf_generate_grpc_cpp_with_import_path_correction(
   test/core/end2end/end2end_test_fuzzer.proto test/core/end2end/end2end_test_fuzzer.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
@@ -1379,7 +1382,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx chunked_vector_test)
   add_dependencies(buildtests_cxx cli_call_test)
   add_dependencies(buildtests_cxx client_auth_filter_test)
-  add_dependencies(buildtests_cxx client_authority_filter_test)
   add_dependencies(buildtests_cxx client_callback_end2end_test)
   add_dependencies(buildtests_cxx client_channel_service_config_test)
   add_dependencies(buildtests_cxx client_context_test_peer_test)
@@ -1488,7 +1490,6 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_cxx file_watcher_certificate_provider_factory_test)
   add_dependencies(buildtests_cxx filter_fusion_test)
-  add_dependencies(buildtests_cxx filter_test_test)
   add_dependencies(buildtests_cxx flaky_network_test)
   add_dependencies(buildtests_cxx flow_control_manager_test)
   add_dependencies(buildtests_cxx flow_control_test)
@@ -12487,14 +12488,25 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(client_auth_filter_test
+  ${_gRPC_PROTO_GENS_DIR}/test/core/call/yodel/fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/call/yodel/fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/call/yodel/fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/call/yodel/fuzzer.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
+  test/core/call/yodel/yodel_test.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/filters/client_auth_filter_test.cc
   test/core/filters/filter_test.cc
+  test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/fuzz_config_vars_helpers.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -12528,56 +12540,18 @@ target_include_directories(client_auth_filter_test
 target_link_libraries(client_auth_filter_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(client_authority_filter_test
-  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
-  test/core/event_engine/event_engine_test_utils.cc
-  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  test/core/filters/client_authority_filter_test.cc
-  test/core/filters/filter_test.cc
-)
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(client_authority_filter_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-      "GRPC_DLL_IMPORTS"
-    )
-  endif()
-endif()
-target_compile_features(client_authority_filter_test PUBLIC cxx_std_17)
-target_include_directories(client_authority_filter_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(client_authority_filter_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
+  absl::dynamic_annotations
+  absl::fast_type_id
+  absl::nullability
+  absl::prefetch
+  absl::layout
+  absl::node_hash_set
+  absl::overload
+  absl::absl_check
+  absl::absl_log
+  absl::int128
+  absl::strings_internal
+  absl::compare
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -18200,57 +18174,6 @@ target_link_libraries(filter_fusion_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(filter_test_test
-  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
-  test/core/event_engine/event_engine_test_utils.cc
-  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  test/core/filters/filter_test.cc
-  test/core/filters/filter_test_test.cc
-)
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(filter_test_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-      "GRPC_DLL_IMPORTS"
-    )
-  endif()
-endif()
-target_compile_features(filter_test_test PUBLIC cxx_std_17)
-target_include_directories(filter_test_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(filter_test_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
 add_executable(flaky_network_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
@@ -19114,14 +19037,25 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(gcp_authentication_filter_test
+  ${_gRPC_PROTO_GENS_DIR}/test/core/call/yodel/fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/call/yodel/fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/call/yodel/fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/call/yodel/fuzzer.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
+  test/core/call/yodel/yodel_test.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/filters/filter_test.cc
   test/core/filters/gcp_authentication_filter_test.cc
+  test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/fuzz_config_vars_helpers.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -19155,6 +19089,18 @@ target_include_directories(gcp_authentication_filter_test
 target_link_libraries(gcp_authentication_filter_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::dynamic_annotations
+  absl::fast_type_id
+  absl::nullability
+  absl::prefetch
+  absl::layout
+  absl::node_hash_set
+  absl::overload
+  absl::absl_check
+  absl::absl_log
+  absl::int128
+  absl::strings_internal
+  absl::compare
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )

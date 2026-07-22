@@ -372,7 +372,7 @@ ServerMetadataHandle FilterTestV2Base::Call::NewServerMetadata(
 }
 
 MessageHandle FilterTestV2Base::Call::NewMessage(absl::string_view payload,
-                                               uint32_t flags) {
+                                                 uint32_t flags) {
   SliceBuffer buffer;
   if (!payload.empty()) buffer.Append(Slice::FromCopiedString(payload));
   return impl_->arena()->MakePooled<Message>(std::move(buffer), flags);
@@ -544,16 +544,16 @@ void FilterTest::PushClientMessage(MessageHandle message) {
 }
 
 void FilterTest::PushClientHalfClose() {
-  SpawnTestSeq(initiator(), "push-client-half-close",
-               [initiator = initiator()]() mutable { initiator.FinishSends(); });
+  SpawnTestSeq(
+      initiator(), "push-client-half-close",
+      [initiator = initiator()]() mutable { initiator.FinishSends(); });
 }
 
 ValueOrFailure<ClientMetadataHandle> FilterTest::PullClientInitialMetadata(
     CallHandler handler) {
-  return BlockingRun(handler, "pull-client-initial-metadata",
-                     [handler]() mutable {
-                       return handler.PullClientInitialMetadata();
-                     });
+  return BlockingRun(
+      handler, "pull-client-initial-metadata",
+      [handler]() mutable { return handler.PullClientInitialMetadata(); });
 }
 
 ClientToServerNextMessage FilterTest::PullClientMessage(CallHandler handler) {
@@ -600,10 +600,9 @@ void FilterTest::PushServerTrailingMetadata(CallHandler handler,
 ValueOrFailure<std::optional<ServerMetadataHandle>>
 FilterTest::PullServerInitialMetadata() {
   CallInitiator initiator = this->initiator();
-  return BlockingRun(initiator, "pull-server-initial-metadata",
-                     [initiator]() mutable {
-                       return initiator.PullServerInitialMetadata();
-                     });
+  return BlockingRun(
+      initiator, "pull-server-initial-metadata",
+      [initiator]() mutable { return initiator.PullServerInitialMetadata(); });
 }
 
 ServerToClientNextMessage FilterTest::PullServerMessage() {
@@ -615,10 +614,9 @@ ServerToClientNextMessage FilterTest::PullServerMessage() {
 
 ValueOrFailure<ServerMetadataHandle> FilterTest::PullServerTrailingMetadata() {
   CallInitiator initiator = this->initiator();
-  return BlockingRun(initiator, "pull-server-trailing-metadata",
-                     [initiator]() mutable {
-                       return initiator.PullServerTrailingMetadata();
-                     });
+  return BlockingRun(
+      initiator, "pull-server-trailing-metadata",
+      [initiator]() mutable { return initiator.PullServerTrailingMetadata(); });
 }
 
 ///////////////////////////////////////////////////////////////////////////////

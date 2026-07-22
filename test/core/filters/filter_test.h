@@ -247,9 +247,8 @@ class FilterTest : public YodelTest {
   // Returns the build status so tests can assert on construction failures.
   // Must be called exactly once, before starting a call.
   template <typename T>
-  absl::Status InitChannel(
-      const ChannelArgs& args = ChannelArgs(),
-      RefCountedPtr<const FilterConfig> config = nullptr) {
+  absl::Status InitChannel(const ChannelArgs& args = ChannelArgs(),
+                           RefCountedPtr<const FilterConfig> config = nullptr) {
     InterceptionChainBuilder builder(WithTestChannelArgs(args));
     builder.Add<T>(std::move(config));
     return FinishInitChannel(builder);
@@ -312,7 +311,8 @@ class FilterTest : public YodelTest {
   void PushServerInitialMetadata(CallHandler handler, ServerMetadataHandle md);
   void PushServerMessage(CallHandler handler, MessageHandle message);
   void PushServerTrailingMetadata(CallHandler handler, ServerMetadataHandle md);
-  ValueOrFailure<std::optional<ServerMetadataHandle>> PullServerInitialMetadata();
+  ValueOrFailure<std::optional<ServerMetadataHandle>>
+  PullServerInitialMetadata();
   ServerToClientNextMessage PullServerMessage();
   ValueOrFailure<ServerMetadataHandle> PullServerTrailingMetadata();
 
@@ -359,13 +359,13 @@ class FilterTest : public YodelTest {
         void, PromiseFactory>::Promise::Result;
     std::shared_ptr<std::optional<Result>> result =
         std::make_shared<std::optional<Result>>();
-    half.SpawnInfallible(
-        name, [factory = std::move(factory), result]() mutable {
-          return Map(factory(), [result](Result r) {
-            *result = std::move(r);
-            return Empty{};
-          });
-        });
+    half.SpawnInfallible(name,
+                         [factory = std::move(factory), result]() mutable {
+                           return Map(factory(), [result](Result r) {
+                             *result = std::move(r);
+                             return Empty{};
+                           });
+                         });
     auto poll = [result]() -> Poll<Result> {
       if (!result->has_value()) return Pending{};
       return std::move(**result);
@@ -386,7 +386,8 @@ class FilterTest : public YodelTest {
 
 }  // namespace grpc_core
 
-// Expect one of the events corresponding to the methods in FilterTestV2::Events.
+// Expect one of the events corresponding to the methods in
+// FilterTestV2::Events.
 #define EXPECT_EVENT(event) EXPECT_CALL(events, event)
 
 // Declare one test in a FilterTest-derived suite. Reads like TEST_F(), and
