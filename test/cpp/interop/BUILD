@@ -13,7 +13,6 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
-load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
 
 licenses(["notice"])
 

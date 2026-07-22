@@ -16,14 +16,6 @@
 //
 //
 
-#include <fstream>
-#include <memory>
-#include <sstream>
-#include <thread>
-
-#include "absl/flags/flag.h"
-#include "absl/log/log.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
 #include <grpcpp/ext/call_metric_recorder.h>
@@ -33,6 +25,11 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+
+#include <fstream>
+#include <memory>
+#include <sstream>
+#include <thread>
 
 #include "src/core/util/crash.h"
 #include "src/core/util/grpc_check.h"
@@ -44,6 +41,9 @@
 #include "test/cpp/interop/otel_helper.h"
 #include "test/cpp/interop/server_helper.h"
 #include "test/cpp/util/test_config.h"
+
+#include "absl/flags/flag.h"
+#include "absl/log/log.h"
 
 ABSL_FLAG(bool, use_alts, false,
           "Whether to use alts. Enable alts will disable tls.");
