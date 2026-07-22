@@ -378,24 +378,29 @@ TEST_P(XdsCompositeFilterEnd2endTest,
 }
 
 TEST_P(XdsCompositeFilterEnd2endTest, FilterUnsupportedWithoutEnvVar) {
-// FIXME
-  // On the server side, we don't get a good error message, because the
-  // test framework doesn't provide access to the error message reported
-  // to the server status notifier.
-  if (GetParam().filter_on_server()) {
-    GTEST_SKIP() << "not running test on server";
-  }
   SetListenerAndRouteConfig(BuildListenerWithCompositeFilter(std::nullopt));
   StartBackend(0);
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      "empty address list \\(LDS resource server.example.com: "
-      "invalid resource: errors validating ApiListener: "
-      "\\[field:api_listener.api_listener.value\\["
-      "envoy.extensions.filters.network.http_connection_manager.v3"
-      ".HttpConnectionManager\\].http_filters\\[0\\].typed_config.value\\["
-      "envoy.extensions.common.matching.v3.ExtensionWithMatcher\\] "
-      "error:unsupported filter type\\].*");
+  if (GetParam().filter_on_server()) {
+    EXPECT_EQ(backends_[0]->GetNextStatus(),
+              absl::InvalidArgumentError(
+                  "LDS resource: invalid resource: errors validating server "
+                  "Listener: [field:default_filter_chain.filters[0]"
+                  ".typed_config.value[envoy.extensions.filters.network"
+                  ".http_connection_manager.v3.HttpConnectionManager]"
+                  ".http_filters[0].typed_config.value["
+                  "envoy.extensions.common.matching.v3.ExtensionWithMatcher] "
+                  "error:unsupported filter type] (node ID:xds_end2end_test)"));
+  } else {
+    CheckRpcSendFailure(
+        DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+        "empty address list \\(LDS resource server.example.com: "
+        "invalid resource: errors validating ApiListener: "
+        "\\[field:api_listener.api_listener.value\\["
+        "envoy.extensions.filters.network.http_connection_manager.v3"
+        ".HttpConnectionManager\\].http_filters\\[0\\].typed_config.value\\["
+        "envoy.extensions.common.matching.v3.ExtensionWithMatcher\\] "
+        "error:unsupported filter type\\].*");
+  }
 }
 
 }  // namespace
