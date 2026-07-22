@@ -317,8 +317,7 @@ typedef struct tsi_ssl_server_handshaker_factory
 // TO BE DEPRECATED.
 // Creates a server handshaker factory.
 // - key_cert_pairs_or_selector is an array private key / certificate chains of
-// the
-//   server.
+//   the server.
 // - pem_root_certs is the NULL-terminated string containing the PEM encoding
 //   of the client root certificates. This parameter may be NULL if the server
 //   does not want the client to be authenticated with SSL.
