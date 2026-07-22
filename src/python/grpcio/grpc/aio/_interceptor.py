@@ -584,8 +584,6 @@ class _InterceptedStreamRequestMixin(
         asyncio.Queue[Union[RequestType, _FINISH_ITERATOR_SENTINEL_T]]
     ]
     _status_code_task: Optional[asyncio.Task[grpc.StatusCode]]
-    _interceptors_task: asyncio.Task[Any]
-    _loop: asyncio.AbstractEventLoop
 
     def _init_stream_request_mixin(
         self, request_iterator: Optional[RequestIterableType[RequestType]]
