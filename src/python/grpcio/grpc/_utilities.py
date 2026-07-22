@@ -16,7 +16,7 @@
 import logging
 import threading
 import time
-from typing import Any, Callable, Dict, MutableSequence, NamedTuple, Optional
+from typing import Any, Callable, Dict, Iterator, MutableSequence, NamedTuple, Optional
 
 import grpc
 from grpc import _common
@@ -34,10 +34,10 @@ class _RpcMethodHandler(NamedTuple):
     response_streaming: bool
     request_deserializer: Optional[Callable[[bytes], Any]]
     response_serializer: Optional[Callable[[Any], bytes]]
-    unary_unary: Optional[Callable[..., Any]]
-    unary_stream: Optional[Callable[..., Any]]
-    stream_unary: Optional[Callable[..., Any]]
-    stream_stream: Optional[Callable[..., Any]]
+    unary_unary: Optional[Callable[[Any, grpc.ServicerContext], Any]]
+    unary_stream: Optional[Callable[[Any, grpc.ServicerContext], Iterator[Any]]]
+    stream_unary: Optional[Callable[[Iterator[Any], grpc.ServicerContext], Any]]
+    stream_stream: Optional[Callable[[Iterator[Any], grpc.ServicerContext], Iterator[Any]]]
 
 
 class RpcMethodHandler(_RpcMethodHandler, grpc.RpcMethodHandler):
