@@ -35,7 +35,6 @@ from typing import (
     Protocol,
     Sequence,
     TypeAlias,
-    TypeVar,
     Union,
     cast,
 )
@@ -65,7 +64,7 @@ from ._utils import _timeout_to_deadline
 
 _LOCAL_CANCELLATION_DETAILS = "Locally cancelled by application!"
 
-_ResponseType_co = TypeVar("_ResponseType_co", covariant=True)
+
 
 
 class _FinishIteratorSentinel:
@@ -517,15 +516,15 @@ class InterceptedCall:
         return await call.wait_for_connection()
 
 
-class _InterceptedUnaryMixinProtocol(Generic[_ResponseType_co], Protocol):
+class _InterceptedUnaryMixinProtocol(Protocol):
     _interceptors_task: asyncio.Task[Any]
 
 
-class _InterceptedUnaryResponseMixin(Generic[ResponseType]):
+class _InterceptedUnaryResponseMixin(
+    _InterceptedUnaryMixinProtocol, Generic[ResponseType]
+):
 
-    def __await__(
-        self: _InterceptedUnaryMixinProtocol[ResponseType],
-    ) -> Generator[Any, None, ResponseType]:
+    def __await__(self) -> Generator[Any, None, ResponseType]:
         call: Awaitable[ResponseType] = (
             yield from self._interceptors_task.__await__()
         )
@@ -533,18 +532,15 @@ class _InterceptedUnaryResponseMixin(Generic[ResponseType]):
         return response
 
 
-class _InterceptedStreamResponseMixinProtocol(
-    Generic[_ResponseType_co], Protocol
-):
+class _InterceptedStreamResponseMixinProtocol(Protocol):
     _interceptors_task: asyncio.Task[Any]
-    _response_aiter: AsyncIterator[_ResponseType_co] | None
-
-    def _wait_for_interceptor_task_response_iterator(
-        self,
-    ) -> AsyncIterator[_ResponseType_co]: ...
+    _response_aiter: Optional[AsyncIterator[Any]]
 
 
-class _InterceptedStreamResponseMixin(Generic[ResponseType]):
+class _InterceptedStreamResponseMixin(
+    _InterceptedStreamResponseMixinProtocol, Generic[ResponseType]
+):
+    _response_aiter: AsyncIterator[ResponseType] | None
 
     def _init_stream_response_mixin(self) -> None:
         # Is initialized later, otherwise if the iterator is not finally
@@ -552,24 +548,20 @@ class _InterceptedStreamResponseMixin(Generic[ResponseType]):
         self._response_aiter = None
 
     async def _wait_for_interceptor_task_response_iterator(
-        self: _InterceptedStreamResponseMixinProtocol[ResponseType],
+        self,
     ) -> AsyncIterator[ResponseType]:
         call = await self._interceptors_task
         async for response in call:
             yield response
 
-    def __aiter__(
-        self: _InterceptedStreamResponseMixinProtocol[ResponseType],
-    ) -> AsyncIterator[ResponseType]:
+    def __aiter__(self) -> AsyncIterator[ResponseType]:
         if self._response_aiter is None:
             self._response_aiter = (
                 self._wait_for_interceptor_task_response_iterator()
             )
         return self._response_aiter
 
-    async def read(
-        self: _InterceptedStreamResponseMixinProtocol[ResponseType],
-    ) -> Union[EOFType, ResponseType]:
+    async def read(self) -> Union[EOFType, ResponseType]:
         if self._response_aiter is None:
             self._response_aiter = (
                 self._wait_for_interceptor_task_response_iterator()
@@ -580,7 +572,13 @@ class _InterceptedStreamResponseMixin(Generic[ResponseType]):
             return cygrpc.EOF
 
 
-class _InterceptedStreamRequestMixin(Generic[RequestType]):
+class _InterceptedStreamRequestMixinProtocol(Protocol):
+    _interceptors_task: asyncio.Task[Any]
+    _loop: asyncio.AbstractEventLoop
+
+class _InterceptedStreamRequestMixin(
+    _InterceptedStreamRequestMixinProtocol, Generic[RequestType]
+):
     _write_to_iterator_async_gen: Optional[AsyncIterable[RequestType]]
     _write_to_iterator_queue: Optional[
         asyncio.Queue[Union[RequestType, _FINISH_ITERATOR_SENTINEL_T]]
@@ -690,8 +688,8 @@ class _InterceptedStreamRequestMixin(Generic[RequestType]):
 
 
 class InterceptedUnaryUnaryCall(
-    _InterceptedUnaryResponseMixin[ResponseType],
     InterceptedCall,
+    _InterceptedUnaryResponseMixin[ResponseType],
     _base_call.UnaryUnaryCall[RequestType, ResponseType],
 ):
     """Used for running a `UnaryUnaryCall` wrapped by interceptors.
@@ -803,8 +801,8 @@ class InterceptedUnaryUnaryCall(
 
 
 class InterceptedUnaryStreamCall(
-    _InterceptedStreamResponseMixin[ResponseType],
     InterceptedCall,
+    _InterceptedStreamResponseMixin[ResponseType],
     _base_call.UnaryStreamCall[RequestType, ResponseType],
 ):
     """Used for running a `UnaryStreamCall` wrapped by interceptors."""
@@ -935,9 +933,9 @@ class InterceptedUnaryStreamCall(
 
 
 class InterceptedStreamUnaryCall(
-    _InterceptedUnaryResponseMixin[ResponseType],
-    _InterceptedStreamRequestMixin[RequestType],
     InterceptedCall,
+    _InterceptedStreamRequestMixin[RequestType],
+    _InterceptedUnaryResponseMixin[ResponseType],
     _base_call.StreamUnaryCall[RequestType, ResponseType],
 ):
     """Used for running a `StreamUnaryCall` wrapped by interceptors.
@@ -1035,9 +1033,9 @@ class InterceptedStreamUnaryCall(
 
 
 class InterceptedStreamStreamCall(
-    _InterceptedStreamResponseMixin[ResponseType],
-    _InterceptedStreamRequestMixin[RequestType],
     InterceptedCall,
+    _InterceptedStreamRequestMixin[RequestType],
+    _InterceptedStreamResponseMixin[ResponseType],
     _base_call.StreamStreamCall[RequestType, ResponseType],
 ):
     """Used for running a `StreamStreamCall` wrapped by interceptors."""
