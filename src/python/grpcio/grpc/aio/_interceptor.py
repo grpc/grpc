@@ -65,8 +65,6 @@ from ._utils import _timeout_to_deadline
 _LOCAL_CANCELLATION_DETAILS = "Locally cancelled by application!"
 
 
-
-
 class _FinishIteratorSentinel:
     pass
 
@@ -574,6 +572,7 @@ class _InterceptedStreamResponseMixin(
 class _InterceptedStreamRequestMixinProtocol(Protocol):
     _interceptors_task: asyncio.Task[Any]
     _loop: asyncio.AbstractEventLoop
+
 
 class _InterceptedStreamRequestMixin(
     _InterceptedStreamRequestMixinProtocol, Generic[RequestType]
