@@ -381,6 +381,17 @@ def grpc_deps():
             ],
         )
 
+    if "grpc_proto" not in native.existing_rules():
+        http_archive(
+            name = "grpc_proto",
+            sha256 = "5e9b520b22afbd53a662cc29017064be253c1dfa6df8958738594e7fec6ade33",
+            strip_prefix = "grpc-proto-ec30f589e2519d595688b9a42f88a91bdd6b733f",
+            urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/grpc/grpc-proto/archive/ec30f589e2519d595688b9a42f88a91bdd6b733f.tar.gz",
+                "https://github.com/grpc/grpc-proto/archive/ec30f589e2519d595688b9a42f88a91bdd6b733f.tar.gz",
+            ],
+        )
+
     # Building grpc with openssl is only supported when using bzlmod. Workspaces
     # are deprecated, so just create a dummy repo so that the grpc targets build
     # when using workspaces.
