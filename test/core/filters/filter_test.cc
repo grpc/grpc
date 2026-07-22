@@ -532,22 +532,10 @@ typename CallHalf::NextMessage ReleaseCallState(
 }  // namespace
 
 void FilterTest::PushClientMessage(MessageHandle message) {
-  SpawnTestSeq(
-      initiator(), "push-client-message",
-      [initiator = initiator(), message = std::move(message)]() mutable {
-        return initiator.PushMessage(std::move(message));
-      },
-      // The push resolving to failure is a legitimate outcome (the call may
-      // have been terminated downstream), so it is not asserted on here: tests
-      // that care assert on what the other end of the call observes.
-      [](StatusFlag) {});
+  initiator().SpawnPushMessage(std::move(message));
 }
 
-void FilterTest::PushClientHalfClose() {
-  SpawnTestSeq(
-      initiator(), "push-client-half-close",
-      [initiator = initiator()]() mutable { initiator.FinishSends(); });
-}
+void FilterTest::PushClientHalfClose() { initiator().SpawnFinishSends(); }
 
 ValueOrFailure<ClientMetadataHandle> FilterTest::PullClientInitialMetadata(
     CallHandler handler) {
@@ -572,29 +560,16 @@ bool FilterTest::PullClientHalfClose(CallHandler handler) {
 
 void FilterTest::PushServerInitialMetadata(CallHandler handler,
                                            ServerMetadataHandle md) {
-  SpawnTestSeq(
-      handler, "push-server-initial-metadata",
-      [handler, md = std::move(md)]() mutable {
-        return handler.PushServerInitialMetadata(std::move(md));
-      },
-      [](StatusFlag) {});
+  handler.SpawnPushServerInitialMetadata(std::move(md));
 }
 
 void FilterTest::PushServerMessage(CallHandler handler, MessageHandle message) {
-  SpawnTestSeq(
-      handler, "push-server-message",
-      [handler, message = std::move(message)]() mutable {
-        return handler.PushMessage(std::move(message));
-      },
-      [](StatusFlag) {});
+  handler.SpawnPushMessage(std::move(message));
 }
 
 void FilterTest::PushServerTrailingMetadata(CallHandler handler,
                                             ServerMetadataHandle md) {
-  SpawnTestSeq(handler, "push-server-trailing-metadata",
-               [handler, md = std::move(md)]() mutable {
-                 handler.PushServerTrailingMetadata(std::move(md));
-               });
+  handler.SpawnPushServerTrailingMetadata(std::move(md));
 }
 
 ValueOrFailure<std::optional<ServerMetadataHandle>>

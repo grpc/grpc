@@ -276,26 +276,11 @@ class FilterTest : public YodelTest {
   CallInitiator initiator();
 
   // Driving the six call operations.
-
-  // Push*() is asynchronous: it queues the operation and returns immediately.
-  // Every push has to run on the call's party and the test body is not on it,
-  // which is why they are all spawned rather than called directly -- see the
-  // Spawn* variants that call_spine.h provides for exactly this reason. The
-  // two message pushes additionally cannot complete until the other end pulls,
-  // so blocking on one of those would deadlock. Pushes are spawned via
-  // SpawnTestSeq, so WaitForAllPendingWork() waits for them.
   //
-  // Pull*() is synchronous: it ticks the event engine until the value is
-  // available and returns it. Pulls are not registered as pending work -- they
-  // have already completed by the time they return.
+  // Push*() is asynchronous and serializes operations onto the call's party in
+  // FIFO order.
   //
-  // The client operations act on the single initiator implicitly; the server
-  // operations take the handler to act on, since there can be many.
-  //
-  // Client initial metadata has no push half: it is an argument to call
-  // creation rather than something sent over the call. Supply it to
-  // StartCall()/StartCallForFilter() above; PullClientInitialMetadata() below
-  // is how the server end receives it.
+  // Pull*() is synchronous and ticks the event engine until the value arrives.
 
   // client -> server
   void PushClientMessage(MessageHandle message);
