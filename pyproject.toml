@@ -90,7 +90,6 @@ include = [
     "src/python/grpcio/grpc/_interceptor.py",
     "src/python/grpcio/grpc/_observability.py",
     "src/python/grpcio/grpc/_plugin_wrapping.py",
-    "src/python/grpcio/grpc/_runtime_protos.py",
     "src/python/grpcio/grpc/_typing.py",
     "src/python/grpcio/grpc/_server.py",
     "src/python/grpcio/grpc/_utilities.py",
