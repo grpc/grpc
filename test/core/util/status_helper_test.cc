@@ -37,7 +37,6 @@ TEST(StatusUtilTest, CreateStatus) {
                    {absl::OkStatus(), absl::CancelledError()});
   EXPECT_EQ(absl::StatusCode::kCancelled, s.code());
   EXPECT_EQ("Test ()", s.message());
-  EXPECT_THAT(StatusGetChildren(s), ::testing::ElementsAre());
 }
 
 TEST(StatusUtilTest, SetAndGetInt) {
@@ -52,7 +51,7 @@ TEST(StatusUtilTest, GetIntNotExistent) {
             StatusGetInt(s, StatusIntProperty::kStreamId));
 }
 
-TEST(StatusUtilTest, AddAndGetChildren) {
+TEST(StatusUtilTest, AddChildren) {
   absl::Status s = absl::UnknownError("Message1");
   absl::Status child1 = absl::AbortedError("Message2");
   absl::Status child2 = absl::DeadlineExceededError("Message3");
@@ -62,7 +61,6 @@ TEST(StatusUtilTest, AddAndGetChildren) {
   StatusAddChild(&s, child3);
   EXPECT_EQ(s.code(), absl::StatusCode::kAborted);
   EXPECT_EQ(s.message(), "Message1 (Message2) (Message3) ()");
-  EXPECT_THAT(StatusGetChildren(s), ::testing::ElementsAre());
 }
 
 TEST(StatusUtilTest, ToAndFromProto) {

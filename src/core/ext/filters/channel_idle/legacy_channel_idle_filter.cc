@@ -284,9 +284,8 @@ void LegacyChannelIdleFilter::StartIdleTimer() {
 
 void LegacyChannelIdleFilter::CloseChannel(absl::string_view reason) {
   auto* op = grpc_make_transport_op(nullptr);
-  op->disconnect_with_error = grpc_error_set_int(
-      GRPC_ERROR_CREATE(reason), StatusIntProperty::ChannelConnectivityState,
-      GRPC_CHANNEL_IDLE);
+  op->disconnect_with_error = GRPC_ERROR_CREATE(reason);
+  op->go_idle = true;
   // Pass the transport op down to the channel stack.
   auto* elem = grpc_channel_stack_element(channel_stack_, 0);
   elem->filter->start_transport_op(elem, op);

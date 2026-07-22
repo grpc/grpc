@@ -119,7 +119,7 @@ class TestFilterConfig final : public FilterConfig {
 };
 
 // An xDS HTTP filter factory for the test filter.
-class TestHttpFilter final : public XdsHttpFilterImpl {
+class TestHttpFilterFactory final : public XdsHttpFilterFactory {
  public:
   static constexpr absl::string_view kConfigProtoName = "test.FilterConfig";
   absl::string_view ConfigProtoName() const override {
@@ -200,7 +200,7 @@ class TestHttpFilter final : public XdsHttpFilterImpl {
 // A fake filter chain that basically just contains the list of filters
 // and configs.
 using XdsFilterInstance =
-    std::pair<const XdsHttpFilterImpl*, RefCountedPtr<const FilterConfig>>;
+    std::pair<const XdsHttpFilterFactory*, RefCountedPtr<const FilterConfig>>;
 struct FakeFilterChain final : public FilterChain {
   std::vector<XdsFilterInstance> filters;
 };
@@ -209,10 +209,10 @@ struct FakeFilterChain final : public FilterChain {
 class FakeFilterChainBuilder final
     : public XdsRouting::RouteConfigFilterChainBuilder::XdsFilterChainBuilder {
  public:
-  void AddFilter(const XdsHttpFilterImpl* filter_impl,
+  void AddFilter(const XdsHttpFilterFactory* factory,
                  RefCountedPtr<const FilterConfig> config) override {
     MaybeInitFilterChain();
-    filter_chain_->filters.emplace_back(filter_impl, std::move(config));
+    filter_chain_->filters.emplace_back(factory, std::move(config));
   }
 
   absl::StatusOr<RefCountedPtr<FilterChain>> Build() override {
@@ -258,14 +258,15 @@ MATCHER_P(IsFilterChain, matcher, "") {
 class XdsRouteConfigFilterChainBuilderTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    registry_.RegisterFilter(std::make_unique<TestHttpFilter>());
+    registry_.RegisterFilter(std::make_unique<TestHttpFilterFactory>());
     blackboard_ = MakeRefCounted<Blackboard>();
     transport_factory_ = MakeRefCounted<FakeXdsTransportFactory>(
         []() {}, /*event_engine=*/nullptr);
   }
 
-  const XdsHttpFilterImpl* GetTestXdsHttpFilter() const {
-    return registry_.GetFilterForTopLevelType(TestHttpFilter::kConfigProtoName);
+  const XdsHttpFilterFactory* GetTestXdsHttpFilterFactory() const {
+    return registry_.GetFilterForTopLevelType(
+        TestHttpFilterFactory::kConfigProtoName);
   }
 
   XdsListenerResource::HttpConnectionManager::HttpFilter MakeHcmFilter(
@@ -336,7 +337,7 @@ TEST_F(XdsRouteConfigFilterChainBuilderTest,
   auto filter_chain = vhost_builder.BuildFilterChainForRoute(route);
   EXPECT_THAT(filter_chain,
               IsFilterChain(::testing::ElementsAre(IsFilterAndConfig(
-                  GetTestXdsHttpFilter(), "hcm/blackboard{hcm}"))));
+                  GetTestXdsHttpFilterFactory(), "hcm/blackboard{hcm}"))));
   EXPECT_EQ(GetBlackboardEntry("hcm"), "hcm");
 }
 
@@ -351,9 +352,10 @@ TEST_F(XdsRouteConfigFilterChainBuilderTest,
       route_config_builder.MakeVirtualHostFilterChainBuilder(vhost);
   auto route = MakeRoute();
   auto filter_chain = vhost_builder.BuildFilterChainForRoute(route);
-  EXPECT_THAT(filter_chain,
-              IsFilterChain(::testing::ElementsAre(IsFilterAndConfig(
-                  GetTestXdsHttpFilter(), "hcm+vhost/blackboard{hcm+vhost}"))));
+  EXPECT_THAT(
+      filter_chain,
+      IsFilterChain(::testing::ElementsAre(IsFilterAndConfig(
+          GetTestXdsHttpFilterFactory(), "hcm+vhost/blackboard{hcm+vhost}"))));
   EXPECT_EQ(GetBlackboardEntry("hcm+vhost"), "hcm+vhost");
 }
 
@@ -368,9 +370,10 @@ TEST_F(XdsRouteConfigFilterChainBuilderTest,
       route_config_builder.MakeVirtualHostFilterChainBuilder(vhost);
   auto route = MakeRoute({{"filter1", MakeOverride("route")}});
   auto filter_chain = vhost_builder.BuildFilterChainForRoute(route);
-  EXPECT_THAT(filter_chain,
-              IsFilterChain(::testing::ElementsAre(IsFilterAndConfig(
-                  GetTestXdsHttpFilter(), "hcm+route/blackboard{hcm+route}"))));
+  EXPECT_THAT(
+      filter_chain,
+      IsFilterChain(::testing::ElementsAre(IsFilterAndConfig(
+          GetTestXdsHttpFilterFactory(), "hcm+route/blackboard{hcm+route}"))));
   EXPECT_EQ(GetBlackboardEntry("hcm+route"), "hcm+route");
 }
 
@@ -387,7 +390,7 @@ TEST_F(XdsRouteConfigFilterChainBuilderTest,
   auto filter_chain = vhost_builder.BuildFilterChainForRoute(route);
   EXPECT_THAT(filter_chain,
               IsFilterChain(::testing::ElementsAre(IsFilterAndConfig(
-                  GetTestXdsHttpFilter(),
+                  GetTestXdsHttpFilterFactory(),
                   "hcm+vhost+route/blackboard{hcm+vhost+route}"))));
   EXPECT_EQ(GetBlackboardEntry("hcm+vhost+route"), "hcm+vhost+route");
 }
@@ -409,7 +412,7 @@ TEST_F(XdsRouteConfigFilterChainBuilderTest,
       weighted_cluster_builder.BuildFilterChainForClusterWeight(cluster_weight);
   EXPECT_THAT(filter_chain,
               IsFilterChain(::testing::ElementsAre(IsFilterAndConfig(
-                  GetTestXdsHttpFilter(), "hcm/blackboard{hcm}"))));
+                  GetTestXdsHttpFilterFactory(), "hcm/blackboard{hcm}"))));
   EXPECT_EQ(GetBlackboardEntry("hcm"), "hcm");
 }
 
@@ -428,9 +431,10 @@ TEST_F(XdsRouteConfigFilterChainBuilderTest,
   auto cluster_weight = MakeClusterWeight("cluster1", 100);
   auto filter_chain =
       weighted_cluster_builder.BuildFilterChainForClusterWeight(cluster_weight);
-  EXPECT_THAT(filter_chain,
-              IsFilterChain(::testing::ElementsAre(IsFilterAndConfig(
-                  GetTestXdsHttpFilter(), "hcm+vhost/blackboard{hcm+vhost}"))));
+  EXPECT_THAT(
+      filter_chain,
+      IsFilterChain(::testing::ElementsAre(IsFilterAndConfig(
+          GetTestXdsHttpFilterFactory(), "hcm+vhost/blackboard{hcm+vhost}"))));
   EXPECT_EQ(GetBlackboardEntry("hcm+vhost"), "hcm+vhost");
 }
 
@@ -449,9 +453,10 @@ TEST_F(XdsRouteConfigFilterChainBuilderTest,
   auto cluster_weight = MakeClusterWeight("cluster1", 100);
   auto filter_chain =
       weighted_cluster_builder.BuildFilterChainForClusterWeight(cluster_weight);
-  EXPECT_THAT(filter_chain,
-              IsFilterChain(::testing::ElementsAre(IsFilterAndConfig(
-                  GetTestXdsHttpFilter(), "hcm+route/blackboard{hcm+route}"))));
+  EXPECT_THAT(
+      filter_chain,
+      IsFilterChain(::testing::ElementsAre(IsFilterAndConfig(
+          GetTestXdsHttpFilterFactory(), "hcm+route/blackboard{hcm+route}"))));
   EXPECT_EQ(GetBlackboardEntry("hcm+route"), "hcm+route");
 }
 
@@ -473,7 +478,7 @@ TEST_F(
       weighted_cluster_builder.BuildFilterChainForClusterWeight(cluster_weight);
   EXPECT_THAT(filter_chain,
               IsFilterChain(::testing::ElementsAre(IsFilterAndConfig(
-                  GetTestXdsHttpFilter(),
+                  GetTestXdsHttpFilterFactory(),
                   "hcm+vhost+route/blackboard{hcm+vhost+route}"))));
   EXPECT_EQ(GetBlackboardEntry("hcm+vhost+route"), "hcm+vhost+route");
 }
@@ -494,9 +499,10 @@ TEST_F(XdsRouteConfigFilterChainBuilderTest,
       MakeClusterWeight("cluster1", 100, {{"filter1", MakeOverride("cw")}});
   auto filter_chain =
       weighted_cluster_builder.BuildFilterChainForClusterWeight(cluster_weight);
-  EXPECT_THAT(filter_chain,
-              IsFilterChain(::testing::ElementsAre(IsFilterAndConfig(
-                  GetTestXdsHttpFilter(), "hcm+cw/blackboard{hcm+cw}"))));
+  EXPECT_THAT(
+      filter_chain,
+      IsFilterChain(::testing::ElementsAre(IsFilterAndConfig(
+          GetTestXdsHttpFilterFactory(), "hcm+cw/blackboard{hcm+cw}"))));
   EXPECT_EQ(GetBlackboardEntry("hcm+cw"), "hcm+cw");
 }
 
@@ -517,10 +523,10 @@ TEST_F(
       MakeClusterWeight("cluster1", 100, {{"filter1", MakeOverride("cw")}});
   auto filter_chain =
       weighted_cluster_builder.BuildFilterChainForClusterWeight(cluster_weight);
-  EXPECT_THAT(
-      filter_chain,
-      IsFilterChain(::testing::ElementsAre(IsFilterAndConfig(
-          GetTestXdsHttpFilter(), "hcm+vhost+cw/blackboard{hcm+vhost+cw}"))));
+  EXPECT_THAT(filter_chain,
+              IsFilterChain(::testing::ElementsAre(
+                  IsFilterAndConfig(GetTestXdsHttpFilterFactory(),
+                                    "hcm+vhost+cw/blackboard{hcm+vhost+cw}"))));
   EXPECT_EQ(GetBlackboardEntry("hcm+vhost+cw"), "hcm+vhost+cw");
 }
 
@@ -541,10 +547,10 @@ TEST_F(
       MakeClusterWeight("cluster1", 100, {{"filter1", MakeOverride("cw")}});
   auto filter_chain =
       weighted_cluster_builder.BuildFilterChainForClusterWeight(cluster_weight);
-  EXPECT_THAT(
-      filter_chain,
-      IsFilterChain(::testing::ElementsAre(IsFilterAndConfig(
-          GetTestXdsHttpFilter(), "hcm+route+cw/blackboard{hcm+route+cw}"))));
+  EXPECT_THAT(filter_chain,
+              IsFilterChain(::testing::ElementsAre(
+                  IsFilterAndConfig(GetTestXdsHttpFilterFactory(),
+                                    "hcm+route+cw/blackboard{hcm+route+cw}"))));
   EXPECT_EQ(GetBlackboardEntry("hcm+route+cw"), "hcm+route+cw");
 }
 
@@ -567,7 +573,7 @@ TEST_F(
       weighted_cluster_builder.BuildFilterChainForClusterWeight(cluster_weight);
   EXPECT_THAT(filter_chain,
               IsFilterChain(::testing::ElementsAre(IsFilterAndConfig(
-                  GetTestXdsHttpFilter(),
+                  GetTestXdsHttpFilterFactory(),
                   "hcm+vhost+route+cw/blackboard{hcm+vhost+route+cw}"))));
   EXPECT_EQ(GetBlackboardEntry("hcm+vhost+route+cw"), "hcm+vhost+route+cw");
 }
@@ -585,9 +591,9 @@ TEST_F(XdsRouteConfigFilterChainBuilderTest, MultipleFilters) {
   auto filter_chain = vhost_builder.BuildFilterChainForRoute(route);
   EXPECT_THAT(filter_chain,
               IsFilterChain(::testing::ElementsAre(
-                  IsFilterAndConfig(GetTestXdsHttpFilter(),
+                  IsFilterAndConfig(GetTestXdsHttpFilterFactory(),
                                     "hcm1+vhost1/blackboard{hcm1+vhost1}"),
-                  IsFilterAndConfig(GetTestXdsHttpFilter(),
+                  IsFilterAndConfig(GetTestXdsHttpFilterFactory(),
                                     "hcm2+route2/blackboard{hcm2+route2}"))));
   EXPECT_EQ(GetBlackboardEntry("hcm1+vhost1"), "hcm1+vhost1");
   EXPECT_EQ(GetBlackboardEntry("hcm2+route2"), "hcm2+route2");
@@ -683,9 +689,10 @@ TEST_F(XdsRouteConfigFilterChainBuilderTest,
       route_config_builder.MakeVirtualHostFilterChainBuilder(vhost);
   auto route = MakeRoute();
   auto filter_chain = vhost_builder.BuildFilterChainForRoute(route);
-  EXPECT_THAT(filter_chain,
-              IsFilterChain(::testing::ElementsAre(IsFilterAndConfig(
-                  GetTestXdsHttpFilter(), "hcm+vhost/blackboard{hcm+vhost}"))));
+  EXPECT_THAT(
+      filter_chain,
+      IsFilterChain(::testing::ElementsAre(IsFilterAndConfig(
+          GetTestXdsHttpFilterFactory(), "hcm+vhost/blackboard{hcm+vhost}"))));
   EXPECT_EQ(GetBlackboardEntry("hcm+vhost"), "hcm+vhost");
 }
 
@@ -703,7 +710,7 @@ TEST_F(XdsRouteConfigFilterChainBuilderTest,
   auto filter_chain = vhost_builder.BuildFilterChainForRoute(route);
   EXPECT_THAT(filter_chain,
               IsFilterChain(::testing::ElementsAre(IsFilterAndConfig(
-                  GetTestXdsHttpFilter(),
+                  GetTestXdsHttpFilterFactory(),
                   "hcm+vhost+route/blackboard{hcm+vhost+route}"))));
   EXPECT_EQ(GetBlackboardEntry("hcm+vhost+route"), "hcm+vhost+route");
 }
@@ -728,7 +735,7 @@ TEST_F(XdsRouteConfigFilterChainBuilderTest,
       weighted_cluster_builder.BuildFilterChainForClusterWeight(cluster_weight);
   EXPECT_THAT(filter_chain,
               IsFilterChain(::testing::ElementsAre(IsFilterAndConfig(
-                  GetTestXdsHttpFilter(),
+                  GetTestXdsHttpFilterFactory(),
                   "hcm+vhost+route+cw/blackboard{hcm+vhost+route+cw}"))));
   EXPECT_EQ(GetBlackboardEntry("hcm+vhost+route+cw"), "hcm+vhost+route+cw");
 }

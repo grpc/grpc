@@ -2334,7 +2334,7 @@ struct ChannelFilterWithFlagsMethods {
                                       args->config));
     if (!status.ok()) {
       new (elem->channel_data) F*(nullptr);
-      return absl_status_to_grpc_error(status.status());
+      return status.status();
     }
     new (elem->channel_data) F*(status->release());
     return absl::OkStatus();

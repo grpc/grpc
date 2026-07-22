@@ -146,10 +146,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "alts_util_test",
     srcs = ["alts_util_test.cc"],
-    external_deps = [
-        "gtest",
-        "@com_google_protobuf//upb/mem",
-    ],
+    external_deps = ["gtest"],
     deps = [
         "//:alts_upb",
         "//:grpc++",
@@ -158,6 +155,7 @@ grpc_cc_test(
         "//:tsi_alts_credentials",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
+        "@com_google_protobuf//upb/mem",
     ],
 )
 

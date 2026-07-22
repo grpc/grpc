@@ -157,7 +157,9 @@ class SslOffloadTsiTestFixture {
     ASSERT_EQ(
         tsi_ssl_client_handshaker_factory_create_handshaker(
             client_handshaker_factory_, sni_.empty() ? nullptr : sni_.c_str(),
-            0, 0, std::nullopt, /*collection_scope=*/nullptr, &client_hs),
+            0, 0, std::nullopt, /*collection_scope=*/nullptr,
+            /*target=*/sni_, /*locality=*/"",
+            /*backend_service=*/"", &client_hs),
         TSI_OK);
     ASSERT_EQ(tsi_ssl_server_handshaker_factory_create_handshaker(
                   server_handshaker_factory_, 0, 0,
