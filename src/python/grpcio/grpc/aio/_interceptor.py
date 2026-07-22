@@ -606,7 +606,7 @@ class _InterceptedStreamRequestMixin(
 
     async def _proxy_writes_as_request_iterator(
         self,
-    ) -> AsyncIterable[RequestType]:
+    ) -> AsyncIterator[RequestType]:
         await self._interceptors_task
 
         if self._write_to_iterator_queue is None:
