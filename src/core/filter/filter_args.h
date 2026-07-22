@@ -23,6 +23,9 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/unique_type_name.h"
 
+// A boolean channel arg indicating whether we're using the v3 filter stack.
+#define GRPC_ARG_USE_V3_STACK "grpc.internal.use_v3_stack"
+
 // A boolean channel arg indicating whether the filter stack is for the
 // server side.
 #define GRPC_ARG_IS_SERVER_FILTER_STACK "grpc.internal.is_server_filter_stack"

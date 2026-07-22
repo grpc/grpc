@@ -378,6 +378,13 @@ TEST_P(XdsCompositeFilterEnd2endTest,
 }
 
 TEST_P(XdsCompositeFilterEnd2endTest, FilterUnsupportedWithoutEnvVar) {
+// FIXME
+  // On the server side, we don't get a good error message, because the
+  // test framework doesn't provide access to the error message reported
+  // to the server status notifier.
+  if (GetParam().filter_on_server()) {
+    GTEST_SKIP() << "not running test on server";
+  }
   SetListenerAndRouteConfig(BuildListenerWithCompositeFilter(std::nullopt));
   StartBackend(0);
   CheckRpcSendFailure(

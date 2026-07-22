@@ -64,8 +64,16 @@ absl::StatusOr<RefCountedPtr<CompositeFilter>> CompositeFilter::Create(
     return absl::InternalError("composite filter config has wrong type");
   }
   auto config = filter_args.config().TakeAsSubclass<const Config>();
-  return MakeRefCounted<CompositeFilter>(args, std::move(config),
-                                         std::move(filter_args));
+  return MakeRefCounted<CompositeFilter>(args, std::move(config));
+}
+
+CompositeFilter::CompositeFilter(const ChannelArgs& args,
+                                 RefCountedPtr<const Config> config)
+    : V3InterceptorToV2Bridge<CompositeFilter>(args),
+      config_(std::move(config)) {
+  if (!args.GetBool(GRPC_ARG_USE_V3_STACK).value_or(false)) {
+    Init(args);
+  }
 }
 
 namespace {
@@ -91,19 +99,6 @@ class InterceptionChainBuilderWrapper final : public FilterChainBuilder {
 };
 
 }  // namespace
-
-CompositeFilter::CompositeFilter(const ChannelArgs& args,
-                                 RefCountedPtr<const Config> config,
-                                 ChannelFilter::Args filter_args)
-    : V3InterceptorToV2Bridge<CompositeFilter>(
-          // On the server side, we disable the bridge, because we're
-          // being used in a native v3 stack.
-          !args.GetBool(GRPC_ARG_IS_SERVER_FILTER_STACK).value_or(false)),
-      config_(std::move(config)) {
-  if (!args.GetBool(GRPC_ARG_IS_SERVER_FILTER_STACK).value_or(false)) {
-    Init(args);
-  }
-}
 
 void CompositeFilter::Init(const ChannelArgs& args) {
   if (config_->matcher == nullptr) return;
