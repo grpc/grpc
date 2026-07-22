@@ -66,11 +66,13 @@ using ::grpc::experimental::StaticDataCertificateProvider;
 void XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::
     OnServingStatusUpdate(std::string uri, ServingStatusUpdate update) {
   grpc_core::MutexLock lock(&mu_);
-  status_map_[uri].emplace_back(update.status);
+  status_map_[uri].emplace_back(static_cast<absl::StatusCode>(static_cast<int>(
+                                    update.status.error_code())),
+                                update.status.error_message());
   if (cond_ != nullptr) cond_->Signal();
 }
 
-std::optional<grpc::Status>
+std::optional<absl::Status>
 XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::GetNextStatus(
     const std::string& uri, absl::Duration timeout) {
   timeout *= grpc_test_slowdown_factor();
@@ -88,7 +90,7 @@ XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::GetNextStatus(
     }
     cond_ = nullptr;
   }
-  grpc::Status status = std::move(queue.front());
+  absl::Status status = std::move(queue.front());
   queue.pop_front();
   return status;
 }
@@ -101,7 +103,9 @@ bool XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::
       absl::Now() + timeout * grpc_test_slowdown_factor();
   grpc_core::MutexLock lock(&mu_);
   auto& queue = status_map_[uri];
-  while (queue.empty() || queue.back().error_code() != expected_status) {
+  while (queue.empty() ||
+         queue.back().code() !=
+             static_cast<absl::StatusCode>(static_cast<int>(expected_status))) {
     grpc_core::CondVar cv;
     cond_ = &cv;
     if (cv.WaitWithDeadline(&mu_, deadline)) {
@@ -109,7 +113,7 @@ bool XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::
                     "change\nExpected status: "
                  << expected_status << "\nActual:"
                  << (queue.empty() ? "No notification received"
-                                   : absl::StrCat(queue.back().error_code()));
+                                   : absl::StrCat(queue.back().code()));
       cond_ = nullptr;
       return false;
     }

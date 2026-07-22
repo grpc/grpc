@@ -220,7 +220,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
       void OnServingStatusUpdate(std::string uri,
                                  ServingStatusUpdate update) override;
 
-      std::optional<grpc::Status> GetNextStatus(
+      std::optional<absl::Status> GetNextStatus(
           const std::string& uri, absl::Duration timeout = absl::Seconds(10));
 
       GRPC_DEPRECATED("Use GetNextStatus() instead")
@@ -231,7 +231,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
      private:
       grpc_core::Mutex mu_;
       grpc_core::CondVar* cond_ ABSL_GUARDED_BY(&mu_) = nullptr;
-      std::map<std::string, std::deque<grpc::Status>> status_map_
+      std::map<std::string, std::deque<absl::Status>> status_map_
           ABSL_GUARDED_BY(&mu_);
     };
 
@@ -256,6 +256,12 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
 
     XdsServingStatusNotifier* notifier() { return &notifier_; }
 
+    std::optional<absl::Status> GetNextStatus(
+        absl::Duration timeout = absl::Seconds(10)) {
+      return notifier_.GetNextStatus(grpc_core::LocalIpAndPort(port_), timeout);
+    }
+
+    GRPC_DEPRECATED("Use GetNextStatus() instead")
     GRPC_MUST_USE_RESULT bool WaitOnServingStatusChange(
         grpc::StatusCode expected_status,
         absl::Duration timeout = absl::Seconds(10)) {
