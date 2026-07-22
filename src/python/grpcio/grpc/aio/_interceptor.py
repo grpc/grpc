@@ -1262,7 +1262,7 @@ class _StreamCallResponseIterator(Generic[RequestType, ResponseType]):
         return await self._call.code()
 
     async def details(self) -> str:
-        return (await self._call.details()) or ""
+        return await self._call.details()
 
     async def debug_error_string(self) -> Optional[str]:
         return await self._call.debug_error_string()  # type: ignore[reportAttributeAccessIssue]
