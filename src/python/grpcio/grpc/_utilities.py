@@ -16,7 +16,7 @@
 import logging
 import threading
 import time
-from typing import Any, Callable, Dict, List, NamedTuple, Optional
+from typing import Any, Callable, Dict, MutableSequence, NamedTuple, Optional
 
 import grpc
 from grpc import _common
@@ -74,7 +74,7 @@ class _ChannelReadyFuture(grpc.Future):
     _channel: grpc.Channel
     _matured: bool
     _cancelled: bool
-    _done_callbacks: Optional[List[DoneCallbackType]]
+    _done_callbacks: Optional[MutableSequence[DoneCallbackType]]
 
     def __init__(self, channel: grpc.Channel):
         self._condition = threading.Condition()
