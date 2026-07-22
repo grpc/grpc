@@ -17,15 +17,15 @@
 #
 
 import argparse
+from concurrent import futures
 import json
 import os
 import signal
 import threading
 import time
-from concurrent import futures
-import grpc
-from google.protobuf import json_format
 
+from google.protobuf import json_format
+import grpc
 from opentelemetry.proto.collector.trace.v1 import trace_service_pb2
 from opentelemetry.proto.collector.trace.v1 import trace_service_pb2_grpc
 
