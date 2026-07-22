@@ -43,6 +43,8 @@ if [ -d "${PHP_PATH}" ]; then
   PECL_BIN="${PHP_PATH}/bin/pecl"
   PHP_BIN="${PHP_PATH}/bin/php"
   export PATH="${PHP_PATH}/bin:${PATH}"
+  export LDFLAGS="-L${PHP_PATH}/lib ${LDFLAGS}"
+  export CPPFLAGS="-I${PHP_PATH}/include ${CPPFLAGS}"
 else
   PECL_BIN="pecl"
   PHP_BIN="php"
