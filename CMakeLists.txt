@@ -23200,9 +23200,14 @@ target_link_libraries(interop_client
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_config
   grpc++_test_util
-  grpc_opentelemetry
-  opentelemetry-cpp::otlp_grpc_exporter
 )
+if(TARGET grpcpp_otel_plugin)
+  target_link_libraries(interop_client grpcpp_otel_plugin)
+endif()
+if(TARGET opentelemetry-cpp::otlp_grpc_exporter)
+  target_link_libraries(interop_client opentelemetry-cpp::otlp_grpc_exporter)
+endif()
+
 
 
 endif()
@@ -23257,9 +23262,14 @@ target_link_libraries(interop_server
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_config
   grpc++_test_util
-  grpc_opentelemetry
-  opentelemetry-cpp::otlp_grpc_exporter
 )
+if(TARGET grpcpp_otel_plugin)
+  target_link_libraries(interop_server grpcpp_otel_plugin)
+endif()
+if(TARGET opentelemetry-cpp::otlp_grpc_exporter)
+  target_link_libraries(interop_server opentelemetry-cpp::otlp_grpc_exporter)
+endif()
+
 
 
 endif()
