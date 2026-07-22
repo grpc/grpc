@@ -1244,8 +1244,6 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
  public:
   // Set use_bridge=false to use this interceptor directly in a v3 stack.
   explicit V3InterceptorToV2Bridge(bool use_bridge = true) {
-// FIXME: remove
-use_bridge_ = use_bridge;
     if (!use_bridge) return;
     // Insert CallDestinationToNextV2Filter as the wrapped destination in
     // Interceptor, so that we can route the server side of the
@@ -1255,8 +1253,6 @@ use_bridge_ = use_bridge;
 
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       CallArgs call_args, NextPromiseFactory next_promise_factory) final {
-// FIXME: remove
-if (!use_bridge_) Crash("SHOULD NOT HAPPEN");
     // Create a latch to get the call handler, and put a pointer to it
     // in call context, so that CallDestinationToNextV2Filter can set
     // it when it starts the call.
@@ -1552,9 +1548,6 @@ if (!use_bridge_) Crash("SHOULD NOT HAPPEN");
 
     void Orphaned() override {}
   };
-
-// FIXME: remove
-bool use_bridge_;
 };
 
 // Designator for whether a filter is client side or server side.
