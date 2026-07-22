@@ -2610,7 +2610,7 @@ TEST_F(XdsCompositeFilterTest, Accessors) {
             "envoy.extensions.common.matching.v3.ExtensionWithMatcherPerRoute");
   EXPECT_EQ(factory_->channel_filter(), &CompositeFilter::kFilterVtable);
   EXPECT_TRUE(factory_->IsSupportedOnClients());
-  EXPECT_FALSE(factory_->IsSupportedOnServers());
+  EXPECT_TRUE(factory_->IsSupportedOnServers());
   EXPECT_FALSE(factory_->IsTerminalFilter());
 }
 
