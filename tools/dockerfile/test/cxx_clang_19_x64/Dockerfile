@@ -72,7 +72,7 @@ done
 EOF
 
 
-RUN /usr/local/bin/apt-get-install-retry build-essential curl git time wget zip
+RUN apt-get-install-retry build-essential curl git time wget zip
 
 #=================
 # Setup git to access working directory across docker boundary.
@@ -88,7 +88,7 @@ RUN git config --global protocol.file.allow always
 # Basic python dependencies to be able to run tools/run_tests python scripts
 # These dependencies are not sufficient to build gRPC Python, gRPC Python
 # deps are defined elsewhere (e.g. python_deps.include)
-RUN /usr/local/bin/apt-get-install-retry \
+RUN apt-get-install-retry \
   python3 \
   python3-pip \
   python3-setuptools \
@@ -117,7 +117,7 @@ RUN python3 -m pip install twisted
 # Install cmake
 # Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
 
-RUN /usr/local/bin/apt-get-install-retry cmake
+RUN apt-get-install-retry cmake
 
 #=================
 # Install ccache

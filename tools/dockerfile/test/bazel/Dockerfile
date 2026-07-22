@@ -83,7 +83,7 @@ EOF
 
 
 # Install basic packages
-RUN /usr/local/bin/apt-get-install-retry \
+RUN apt-get-install-retry \
   autoconf \
   build-essential \
   curl \
@@ -136,7 +136,7 @@ RUN git config --system --add safe.directory '*'
 RUN git config --system protocol.file.allow always
 
 
-RUN /usr/local/bin/apt-get-install-retry gdb
+RUN apt-get-install-retry gdb
 
 RUN mkdir -p /var/local/jenkins
 

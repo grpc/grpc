@@ -77,7 +77,7 @@ EOF
 # Basic C core dependencies
 
 # C/C++ dependencies according to https://github.com/grpc/grpc/blob/master/BUILDING.md
-RUN /usr/local/bin/apt-get-install-retry \
+RUN apt-get-install-retry \
   build-essential \
   autoconf \
   libtool \
@@ -85,20 +85,20 @@ RUN /usr/local/bin/apt-get-install-retry \
   && apt-get clean
 
 # GCC
-RUN /usr/local/bin/apt-get-install-retry \
+RUN apt-get-install-retry \
   gcc \
   g++ \
   && apt-get clean
 
 # libc6
-RUN /usr/local/bin/apt-get-install-retry \
+RUN apt-get-install-retry \
   libc6 \
   libc6-dbg \
   libc6-dev \
   && apt-get clean
 
 # Tools
-RUN /usr/local/bin/apt-get-install-retry \
+RUN apt-get-install-retry \
   bzip2 \
   curl \
   dnsutils \
@@ -125,7 +125,7 @@ RUN git config --global protocol.file.allow always
 RUN mkdir /var/local/jenkins
 
 
-RUN /usr/local/bin/apt-get-install-retry python3 python3-all-dev python3-pip
+RUN apt-get-install-retry python3 python3-all-dev python3-pip
 RUN ln -s $(which python3) /usr/bin/python
 
 # Google Cloud Platform API libraries
@@ -137,7 +137,7 @@ RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-clien
 # Install cmake
 # Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
 
-RUN /usr/local/bin/apt-get-install-retry cmake
+RUN apt-get-install-retry cmake
 
 #=================
 # Install ccache

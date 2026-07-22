@@ -19,7 +19,7 @@ FROM silkeh/clang:14-bullseye
 
 
 RUN apt update && apt -y upgrade
-RUN /usr/local/bin/apt-get-install-retry \
+RUN apt-get-install-retry \
   build-essential \
   ccache \
   curl \

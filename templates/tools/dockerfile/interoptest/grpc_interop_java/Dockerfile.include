@@ -16,7 +16,7 @@ FROM debian:bullseye
 
 {% include "../../apt_get_install_with_retry.include" %}
 
-RUN /usr/local/bin/apt-get-install-retry --no-install-recommends openjdk-11-jdk-headless
+RUN apt-get-install-retry --no-install-recommends openjdk-11-jdk-headless
 
 WORKDIR /var/local/git/grpc-java/
 

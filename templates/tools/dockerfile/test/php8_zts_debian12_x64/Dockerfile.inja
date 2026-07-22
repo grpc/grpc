@@ -17,7 +17,7 @@ FROM php:8-zts-bookworm
 {% include "../../apt_get_basic.include" %}
 
 
-RUN /usr/local/bin/apt-get-install-retry  \
+RUN apt-get-install-retry  \
   autoconf automake build-essential git libtool curl \
   zlib1g-dev 
  
@@ -26,7 +26,7 @@ RUN /usr/local/bin/apt-get-install-retry  \
 {% include "../../run_tests_python_deps_pep668.include" %}
 {% include "../../php_common_deps.include" %}
 {% include "../../cmake.include" %}
-RUN /usr/local/bin/apt-get-install-retry  ccache
+RUN apt-get-install-retry  ccache
 {% include "../../run_tests_addons.include" %}
 {% include "../../xds_interop_deps.include" %}
 

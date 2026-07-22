@@ -85,7 +85,7 @@ EOF
 
 
 # Dependencies to run http2_test_server.py
-RUN /usr/local/bin/apt-get-install-retry  python3-all-dev python3-pip
+RUN apt-get-install-retry  python3-all-dev python3-pip
 # pip packages needed to run http2_test_server.py
 # TODO(jtattermusch): revisit which pip packages are actually needed to run http2 interop server/client
 RUN python3 -m pip install --break-system-packages --upgrade pip==19.3.1

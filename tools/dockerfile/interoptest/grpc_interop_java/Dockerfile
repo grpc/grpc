@@ -72,7 +72,7 @@ done
 EOF
 
 
-RUN /usr/local/bin/apt-get-install-retry --no-install-recommends openjdk-11-jdk-headless
+RUN apt-get-install-retry --no-install-recommends openjdk-11-jdk-headless
 
 WORKDIR /var/local/git/grpc-java/
 

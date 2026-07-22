@@ -1,5 +1,5 @@
 #=================
 # PHP Test dependencies
 
- RUN /usr/local/bin/apt-get-install-retry \
+ RUN apt-get-install-retry \
     valgrind

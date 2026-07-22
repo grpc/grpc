@@ -82,7 +82,7 @@ EOF
 # Basic C core dependencies
 
 # C/C++ dependencies according to https://github.com/grpc/grpc/blob/master/BUILDING.md
-RUN /usr/local/bin/apt-get-install-retry \
+RUN apt-get-install-retry \
   build-essential \
   autoconf \
   libtool \
@@ -90,20 +90,20 @@ RUN /usr/local/bin/apt-get-install-retry \
   && apt-get clean
 
 # GCC
-RUN /usr/local/bin/apt-get-install-retry \
+RUN apt-get-install-retry \
   gcc \
   g++ \
   && apt-get clean
 
 # libc6
-RUN /usr/local/bin/apt-get-install-retry \
+RUN apt-get-install-retry \
   libc6 \
   libc6-dbg \
   libc6-dev \
   && apt-get clean
 
 # Tools
-RUN /usr/local/bin/apt-get-install-retry \
+RUN apt-get-install-retry \
   bzip2 \
   curl \
   dnsutils \
@@ -134,7 +134,7 @@ RUN git config --global protocol.file.allow always && \
   git config --global --add safe.directory '/var/local/jenkins/grpc/.git/modules/third_party/*'
 
 
-RUN /usr/local/bin/apt-get-install-retry build-essential zlib1g-dev libncurses5-dev libgdbm-dev \
+RUN apt-get-install-retry build-essential zlib1g-dev libncurses5-dev libgdbm-dev \
                                  libnss3-dev libssl-dev libreadline-dev libffi-dev
 
 ADD install_python_for_wheel_crosscompilation.sh /scripts/install_python_for_wheel_crosscompilation.sh

@@ -77,7 +77,7 @@ EOF
 # Basic C core dependencies
 
 # C/C++ dependencies according to https://github.com/grpc/grpc/blob/master/BUILDING.md
-RUN /usr/local/bin/apt-get-install-retry \
+RUN apt-get-install-retry \
   build-essential \
   autoconf \
   libtool \
@@ -85,20 +85,20 @@ RUN /usr/local/bin/apt-get-install-retry \
   && apt-get clean
 
 # GCC
-RUN /usr/local/bin/apt-get-install-retry \
+RUN apt-get-install-retry \
   gcc \
   g++ \
   && apt-get clean
 
 # libc6
-RUN /usr/local/bin/apt-get-install-retry \
+RUN apt-get-install-retry \
   libc6 \
   libc6-dbg \
   libc6-dev \
   && apt-get clean
 
 # Tools
-RUN /usr/local/bin/apt-get-install-retry \
+RUN apt-get-install-retry \
   bzip2 \
   curl \
   dnsutils \
@@ -123,7 +123,7 @@ RUN git config --global protocol.file.allow always
 
 
 
-RUN /usr/local/bin/apt-get-install-retry  \
+RUN apt-get-install-retry  \
   autoconf automake build-essential git libtool curl \
   zlib1g-dev 
  
@@ -142,7 +142,7 @@ RUN git config --global protocol.file.allow always
 # Basic python dependencies to be able to run tools/run_tests python scripts
 # These dependencies are not sufficient to build gRPC Python, gRPC Python
 # deps are defined elsewhere (e.g. python_deps.include)
-RUN /usr/local/bin/apt-get-install-retry \
+RUN apt-get-install-retry \
   python3 \
   python3-pip \
   python3-setuptools \
@@ -172,9 +172,9 @@ RUN mv composer.phar /usr/local/bin/composer
 # Install cmake
 # Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
 
-RUN /usr/local/bin/apt-get-install-retry cmake
+RUN apt-get-install-retry cmake
 
-RUN /usr/local/bin/apt-get-install-retry  ccache
+RUN apt-get-install-retry  ccache
 
 RUN mkdir /var/local/jenkins
 

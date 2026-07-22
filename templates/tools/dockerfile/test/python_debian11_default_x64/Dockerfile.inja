@@ -26,7 +26,7 @@ FROM python:3.10-bullseye
 
 # Python test coverage requires libsqlite3, and it have
 # to be installed before Python.
-RUN /usr/local/bin/apt-get-install-retry libsqlite3-dev
+RUN apt-get-install-retry libsqlite3-dev
 
 
 # for Python test coverage reporting

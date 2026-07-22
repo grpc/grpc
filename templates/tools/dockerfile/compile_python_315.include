@@ -1,8 +1,8 @@
 #=================
 # Compile CPython 3.15.0b2 from source
 
-RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev libsqlite3-dev && apt-get clean
-RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
+RUN apt-get-install-retry zlib1g-dev libssl-dev libsqlite3-dev  && apt-get clean&& apt-get clean
+RUN apt-get-install-retry jq build-essential libffi-dev  && apt-get clean&& apt-get clean
 
 RUN cd /tmp && \
     wget -q https://www.python.org/ftp/python/3.15.0/Python-3.15.0b2.tgz && \

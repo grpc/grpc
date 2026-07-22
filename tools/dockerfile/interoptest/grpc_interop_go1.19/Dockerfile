@@ -90,7 +90,7 @@ RUN git config --global protocol.file.allow always
 # Basic python dependencies to be able to run tools/run_tests python scripts
 # These dependencies are not sufficient to build gRPC Python, gRPC Python
 # deps are defined elsewhere (e.g. python_deps.include)
-RUN /usr/local/bin/apt-get-install-retry \
+RUN apt-get-install-retry \
   python3 \
   python3-pip \
   python3-setuptools \

@@ -77,7 +77,7 @@ EOF
 # by setting timezone to "Etc/UTC" in advance.
 RUN echo "Etc/UTC" > /etc/timezone
 
-RUN /usr/local/bin/apt-get-install-retry build-essential curl git time wget zip && apt-get clean
+RUN apt-get-install-retry build-essential curl git time wget zip && apt-get clean
 
 #====================
 # run_tests.py python dependencies
@@ -85,7 +85,7 @@ RUN /usr/local/bin/apt-get-install-retry build-essential curl git time wget zip 
 # Basic python dependencies to be able to run tools/run_tests python scripts
 # These dependencies are not sufficient to build gRPC Python, gRPC Python
 # deps are defined elsewhere (e.g. python_deps.include)
-RUN /usr/local/bin/apt-get-install-retry \
+RUN apt-get-install-retry \
   python3 \
   python3-pip \
   python3-setuptools \
@@ -138,7 +138,7 @@ ENV TSAN_SYMBOLIZER_PATH=/usr/local/bin/llvm-symbolizer
 ENV UBSAN_SYMBOLIZER_PATH=/usr/local/bin/llvm-symbolizer
 
 # TODO(jtattermusch): Remove python2 once some tests stop failing without it.
-RUN /usr/local/bin/apt-get-install-retry python2 && apt-get clean
+RUN apt-get-install-retry python2 && apt-get clean
 
 # Define the default command.
 CMD ["bash"]

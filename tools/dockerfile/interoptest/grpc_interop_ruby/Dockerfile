@@ -77,7 +77,7 @@ EOF
 # Basic C core dependencies
 
 # C/C++ dependencies according to https://github.com/grpc/grpc/blob/master/BUILDING.md
-RUN /usr/local/bin/apt-get-install-retry \
+RUN apt-get-install-retry \
   build-essential \
   autoconf \
   libtool \
@@ -85,20 +85,20 @@ RUN /usr/local/bin/apt-get-install-retry \
   && apt-get clean
 
 # GCC
-RUN /usr/local/bin/apt-get-install-retry \
+RUN apt-get-install-retry \
   gcc \
   g++ \
   && apt-get clean
 
 # libc6
-RUN /usr/local/bin/apt-get-install-retry \
+RUN apt-get-install-retry \
   libc6 \
   libc6-dbg \
   libc6-dev \
   && apt-get clean
 
 # Tools
-RUN /usr/local/bin/apt-get-install-retry \
+RUN apt-get-install-retry \
   bzip2 \
   curl \
   dnsutils \
@@ -127,7 +127,7 @@ RUN git config --global protocol.file.allow always
 # Basic python dependencies to be able to run tools/run_tests python scripts
 # These dependencies are not sufficient to build gRPC Python, gRPC Python
 # deps are defined elsewhere (e.g. python_deps.include)
-RUN /usr/local/bin/apt-get-install-retry \
+RUN apt-get-install-retry \
   python3 \
   python3-pip \
   python3-setuptools \
@@ -150,12 +150,12 @@ RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-clien
 # Ruby dependencies
 
 # Install rvm
-RUN /usr/local/bin/apt-get-install-retry gnupg2
+RUN apt-get-install-retry gnupg2
 RUN for i in 0 1 2 3 4; do sleep "${i}"; gpg2 --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB && break; done
 RUN \curl -sSL https://get.rvm.io | bash -s stable
 
 # Install Ruby 3.2
-RUN /usr/local/bin/apt-get-install-retry procps
+RUN apt-get-install-retry procps
 RUN /bin/bash -l -c "rvm install ruby-3.2.11"
 RUN /bin/bash -l -c "rvm use --default ruby-3.2.11"
 RUN /bin/bash -l -c "echo 'gem: --no-document' > ~/.gemrc"
@@ -171,7 +171,7 @@ RUN ln -s /bin/mkdir /usr/bin/mkdir
 # Install cmake
 # Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
 
-RUN /usr/local/bin/apt-get-install-retry cmake
+RUN apt-get-install-retry cmake
 
 #=================
 # Install ccache

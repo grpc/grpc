@@ -73,10 +73,10 @@ EOF
 
 
 # Install prerequisites for the clang-tidy script
-RUN /usr/local/bin/apt-get-install-retry  python3 jq git
+RUN apt-get-install-retry  python3 jq git
 
 # otherwise clang-tidy will report missing <gtest/gtest.h> header
-RUN /usr/local/bin/apt-get-install-retry  libgtest-dev
+RUN apt-get-install-retry  libgtest-dev
 
 ADD clang_tidy_all_the_things.sh /
 

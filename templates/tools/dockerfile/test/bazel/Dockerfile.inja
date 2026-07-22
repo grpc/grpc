@@ -17,7 +17,7 @@
 {% include "../../git_avoid_dubious_ownership_error.include" %}
 {% include "../../git_avoid_dubious_ownership_error_allusers.include" %}
 
-RUN /usr/local/bin/apt-get-install-retry gdb
+RUN apt-get-install-retry gdb
 
 RUN mkdir -p /var/local/jenkins
 

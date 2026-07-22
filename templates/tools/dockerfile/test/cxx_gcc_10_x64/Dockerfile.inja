@@ -17,7 +17,7 @@ FROM gcc:10
 # Install apt-get-install-retry wrapper script
 {% include "../../apt_get_install_with_retry.include" %}
 
-RUN /usr/local/bin/apt-get-install-retry curl git time zip
+RUN apt-get-install-retry curl git time zip
 
 {% include "../../git_avoid_dubious_ownership_error.include" %}
 {% include "../../run_tests_python_deps.include" %}
@@ -25,7 +25,7 @@ RUN /usr/local/bin/apt-get-install-retry curl git time zip
 {% include "../../cmake.include" %}
 
 # Install ccache 4.2 from official repo.
-RUN /usr/local/bin/apt-get-install-retry ccache
+RUN apt-get-install-retry ccache
 
 {% include "../../run_tests_addons.include" %}
 

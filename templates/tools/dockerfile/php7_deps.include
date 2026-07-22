@@ -1,4 +1,4 @@
 #=================
 # PHP7 dependencies
 
-RUN /usr/local/bin/apt-get-install-retry php7.4-dev php-pear
+RUN apt-get-install-retry php7.4-dev php-pear

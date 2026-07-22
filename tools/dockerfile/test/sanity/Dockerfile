@@ -72,7 +72,7 @@ done
 EOF
 
 
-RUN /usr/local/bin/apt-get-install-retry python3 python3-pip && apt clean
+RUN apt-get-install-retry python3 python3-pip && apt clean
 
 RUN python3 -m pip install --break-system-packages --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
@@ -86,7 +86,7 @@ RUN mkdir /var/local/jenkins
 # autoconf automake libtool curl shellcheck: main dependencies
 # jq git: prerequisites for the clang-tidy script
 # libgtest-dev: otherwise clang-tidy will report missing <gtest/gtest.h> header
-RUN /usr/local/bin/apt-get-install-retry \
+RUN apt-get-install-retry \
     autoconf \
     automake \
     curl \

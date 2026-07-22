@@ -1,4 +1,4 @@
 #=================
 # PHP8 dependencies
 
-RUN /usr/local/bin/apt-get-install-retry php8.2 php8.2-dev php-pear && apt-get clean
+RUN apt-get-install-retry php8.2 php8.2-dev php-pear && apt-get clean

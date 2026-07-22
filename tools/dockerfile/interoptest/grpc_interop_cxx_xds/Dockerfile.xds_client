@@ -17,9 +17,9 @@
 FROM python:3.10-slim-bookworm
 
 RUN apt-get update -y && apt-get upgrade -y
-ADD --chmod=0755 tools/internal_ci/helper_scripts/apt_get_install_with_retry.sh /usr/local/bin/apt-get-install-with-retry
+ADD --chmod=0755 tools/internal_ci/helper_scripts/apt_get_install_with_retry.sh apt-get-install-retry
 
-RUN apt-get-install-with-retry build-essential clang curl
+RUN apt-get-install-retry build-essential clang curl
 
 WORKDIR /workdir
 
