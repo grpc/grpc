@@ -26,6 +26,7 @@ except ImportError:
 # pylint: disable=wrong-import-position
 from concurrent import futures
 import logging
+import signal
 
 from absl import app
 from absl.flags import argparse_flags
@@ -75,9 +76,6 @@ def get_server_credentials(use_tls):
         return grpc.ssl_server_credentials(((private_key, certificate_chain),))
     else:
         return grpc.alts_server_credentials()
-
-
-import signal
 
 
 def _serve_internal(server):
