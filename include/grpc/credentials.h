@@ -1080,7 +1080,7 @@ GRPCAPI void grpc_tls_credentials_options_set_verify_server_cert(
 /**
  * EXPERIMENTAL API - Subject to change
  *
- * Sets the options of whether to skip the Server Auth EKU check.
+ * UNSAFE: Sets the option of whether to skip the Server Auth EKU check (RFC 5280, https://datatracker.ietf.org/doc/html/rfc5280).
  * Passing in a non-zero value indicates skipping the check.
  */
 GRPCAPI void grpc_tls_credentials_options_set_skip_server_auth_eku(

@@ -175,7 +175,7 @@ class TlsChannelCredentialsOptions final : public TlsCredentialsOptions {
   // The default is true.
   void set_verify_server_certs(bool verify_server_certs);
 
-  // Sets the decision of whether to skip the Server Auth EKU check.
+  // UNSAFE: Sets the decision of whether to skip the Server Auth EKU check (RFC 5280, https://datatracker.ietf.org/doc/html/rfc5280).
   // The default is false.
   void set_skip_server_auth_eku(bool skip_server_auth_eku);
 

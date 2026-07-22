@@ -146,12 +146,6 @@ struct tsi_ssl_handshaker_factory {
 static void tsi_ssl_handshaker_factory_unref(
     tsi_ssl_handshaker_factory* factory);
 
-static void tsi_ssl_client_handshaker_factory_destroy(
-    tsi_ssl_handshaker_factory* factory);
-
-static tsi_ssl_handshaker_factory_vtable client_handshaker_factory_vtable = {
-    tsi_ssl_client_handshaker_factory_destroy};
-
 struct tsi_ssl_client_handshaker_factory {
   tsi_ssl_handshaker_factory base;
   SSL_CTX* ssl_context;
@@ -163,7 +157,6 @@ struct tsi_ssl_client_handshaker_factory {
 #if defined(OPENSSL_IS_BORINGSSL)
   std::shared_ptr<grpc_core::PrivateKeySigner> key_signer;
 #endif
-  bool skip_server_auth_eku;
 };
 
 // Wrapper of the SSL_CTX for use on the server side. In addition to the
@@ -962,7 +955,6 @@ static void init_openssl(void) {
   g_ssl_ctx_ex_crl_provider_index =
       SSL_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
   GRPC_CHECK_NE(g_ssl_ctx_ex_crl_provider_index, -1);
-
 
   g_ssl_ctx_ex_spiffe_bundle_map_index =
       SSL_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
@@ -1978,24 +1970,6 @@ absl::Status ConfigureSpiffeRoots(
   return absl::OkStatus();
 }
 
-static bool GetSkipServerAuthEKU(X509_STORE_CTX* ctx) {
-  int ssl_index = SSL_get_ex_data_X509_STORE_CTX_idx();
-  if (ssl_index < 0) return false;
-  SSL* ssl = static_cast<SSL*>(X509_STORE_CTX_get_ex_data(ctx, ssl_index));
-  if (ssl == nullptr) return false;
-  SSL_CTX* ssl_ctx = SSL_get_SSL_CTX(ssl);
-  if (ssl_ctx == nullptr) return false;
-  tsi_ssl_handshaker_factory* factory = static_cast<tsi_ssl_handshaker_factory*>(
-      SSL_CTX_get_ex_data(ssl_ctx, g_ssl_ctx_ex_factory_index));
-  if (factory == nullptr) return false;
-  if (factory->vtable == &client_handshaker_factory_vtable) {
-    tsi_ssl_client_handshaker_factory* client_factory =
-        reinterpret_cast<tsi_ssl_client_handshaker_factory*>(factory);
-    return client_factory->skip_server_auth_eku;
-  }
-  return false;
-}
-
 // The custom verification function to set in OpenSSL using
 // X509_set_cert_verify_callback. This calls the standard OpenSSL procedure
 // (X509_verify_cert), then also extracts the root certificate in the built
@@ -2004,13 +1978,6 @@ static bool GetSkipServerAuthEKU(X509_STORE_CTX* ctx) {
 // found, 0 if a trusted chain could not be built.
 static int CustomVerificationFunction(X509_STORE_CTX* ctx, void* arg) {
   GRPC_CHECK(ctx != nullptr);
-  if (GetSkipServerAuthEKU(ctx)) {
-    X509_VERIFY_PARAM* param = X509_STORE_CTX_get0_param(ctx);
-    if (param == nullptr ||
-        X509_VERIFY_PARAM_set_purpose(param, X509_PURPOSE_ANY) != 1) {
-      LOG(WARNING) << "Failed to set purpose to ANY for skipping EKU.";
-    }
-  }
   grpc_core::SpiffeBundleMap* spiffe_bundle_map = GetSpiffeBundleMap(ctx);
   if (spiffe_bundle_map != nullptr) {
     // If a SPIFFE Bundle Map is configured, we'll use
@@ -3287,7 +3254,8 @@ static void ssl_keylogging_callback(const SSL* ssl, const char* info) {
 
 // --- tsi_ssl_handshaker_factory constructors. ---
 
-
+static tsi_ssl_handshaker_factory_vtable client_handshaker_factory_vtable = {
+    tsi_ssl_client_handshaker_factory_destroy};
 
 tsi_result tsi_create_ssl_client_handshaker_factory(
     const tsi_ssl_pem_key_cert_pair* pem_key_cert_pair,
@@ -3345,7 +3313,6 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   tsi_ssl_handshaker_factory_init(&impl->base);
   impl->base.vtable = &client_handshaker_factory_vtable;
   impl->ssl_context = ssl_context;
-  impl->skip_server_auth_eku = options->skip_server_auth_eku;
   if (options->session_cache != nullptr) {
     // Unref is called manually on factory destruction.
     impl->session_cache =
@@ -3370,8 +3337,10 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   }
 #endif
 
-  // Need to set factory at g_ssl_ctx_ex_factory_index
-  SSL_CTX_set_ex_data(ssl_context, g_ssl_ctx_ex_factory_index, impl);
+  if (options->session_cache != nullptr || options->key_logger != nullptr) {
+    // Need to set factory at g_ssl_ctx_ex_factory_index
+    SSL_CTX_set_ex_data(ssl_context, g_ssl_ctx_ex_factory_index, impl);
+  }
 
   do {
     result = populate_ssl_context(ssl_context, options->pem_key_cert_pair,
@@ -3465,6 +3434,11 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   } else {
     SSL_CTX_set_cert_verify_callback(ssl_context, CustomVerificationFunction,
                                      nullptr);
+  }
+  if (options->skip_server_auth_eku) {
+    if (SSL_CTX_set_purpose(ssl_context, X509_PURPOSE_ANY) != 1) {
+      LOG(WARNING) << "Failed to set purpose to ANY on SSL_CTX.";
+    }
   }
 #if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
   if (options->crl_provider != nullptr) {
