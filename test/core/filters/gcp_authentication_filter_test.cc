@@ -39,7 +39,7 @@
 namespace grpc_core {
 namespace {
 
-class GcpAuthenticationFilterTest : public FilterTest<GcpAuthenticationFilter> {
+class GcpAuthenticationFilterTest : public FilterTestV2<GcpAuthenticationFilter> {
  protected:
   static RefCountedPtr<const FilterConfig> MakeFilterConfig(
       absl::string_view filter_instance_name) {

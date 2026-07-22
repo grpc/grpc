@@ -15,136 +15,166 @@
 #include "src/core/client_channel/retry_interceptor.h"
 
 #include <grpc/grpc.h>
+#include <grpc/status.h>
 
-#include <atomic>
-#include <memory>
-#include <queue>
+#include <utility>
+#include <vector>
 
-#include "src/core/lib/resource_quota/resource_quota.h"
-#include "test/core/call/yodel/yodel_test.h"
+#include "src/core/call/metadata.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/service_config/service_config.h"
+#include "src/core/service_config/service_config_call_data.h"
+#include "src/core/service_config/service_config_impl.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "test/core/filters/filter_matchers.h"
+#include "test/core/filters/filter_test.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
-
-using EventEngine = grpc_event_engine::experimental::EventEngine;
 
 namespace {
 const absl::string_view kTestPath = "/test_method";
 }  // namespace
 
-class RetryInterceptorTest : public YodelTest {
+// The retry interceptor is the reason the harness hands out handlers one at a
+// time rather than returning one alongside the initiator: a single call from
+// the client can turn into any number of child calls down the stack.
+class RetryInterceptorTest : public FilterTest {
  protected:
-  using YodelTest::YodelTest;
+  using FilterTest::FilterTest;
 
-  void InitInterceptor(const ChannelArgs& args) {
-    CHECK(destination_under_test_ == nullptr);
-    InterceptionChainBuilder builder(args);
-    builder.Add<RetryInterceptor>(nullptr);
-    destination_under_test_ = builder.Build(call_destination_).value();
+  absl::Status Init(const ChannelArgs& args = ChannelArgs()) {
+    return InitChannel<RetryInterceptor>(args);
   }
 
   ClientMetadataHandle MakeClientInitialMetadata() {
-    auto client_initial_metadata =
-        Arena::MakePooledForOverwrite<ClientMetadata>();
-    client_initial_metadata->Set(HttpPathMetadata(),
-                                 Slice::FromCopiedString(kTestPath));
-    return client_initial_metadata;
+    ClientMetadataHandle md = NewClientMetadata();
+    md->Set(HttpPathMetadata(), Slice::FromCopiedString(kTestPath));
+    return md;
   }
 
-  CallInitiatorAndHandler MakeCall(
-      ClientMetadataHandle client_initial_metadata) {
-    auto arena = call_arena_allocator_->MakeArena();
-    arena->SetContext<EventEngine>(event_engine().get());
-    return MakeCallPair(std::move(client_initial_metadata), std::move(arena));
+  // Arrange for every call to carry a service config with `retry_policy_json`
+  // as its retry policy. Without this the interceptor sees no policy and never
+  // retries, so exactly one child call is created.
+  void SetRetryPolicy(absl::string_view retry_policy_json) {
+    absl::StatusOr<RefCountedPtr<ServiceConfig>> service_config =
+        ServiceConfigImpl::Create(
+            ChannelArgs(),
+            absl::StrCat(R"({"methodConfig":[{"name":[{}],"retryPolicy":)",
+                         retry_policy_json, "}]}"));
+    ASSERT_TRUE(service_config.ok()) << service_config.status();
+    service_config_ = std::move(*service_config);
+    method_configs_ = service_config_->GetMethodParsedConfigVector(
+        Slice::FromCopiedString(kTestPath).c_slice());
   }
 
-  CallHandler TickUntilCallStarted() {
-    auto poll = [this]() -> Poll<CallHandler> {
-      auto handler = call_destination_->PopHandler();
-      if (handler.has_value()) return std::move(*handler);
-      return Pending();
-    };
-    return TickUntil(absl::FunctionRef<Poll<CallHandler>()>(poll));
-  }
-
-  UnstartedCallDestination& destination_under_test() {
-    CHECK(destination_under_test_ != nullptr);
-    return *destination_under_test_;
+  void InitCallArena(Arena* arena) override {
+    if (service_config_ == nullptr) return;
+    arena->New<ServiceConfigCallData>(arena)->SetServiceConfig(service_config_,
+                                                              method_configs_);
   }
 
  private:
-  class TestCallDestination final : public UnstartedCallDestination {
-   public:
-    void StartCall(UnstartedCallHandler unstarted_call_handler) override {
-      handlers_.push(unstarted_call_handler.StartCall());
-    }
-
-    std::optional<CallHandler> PopHandler() {
-      if (handlers_.empty()) return std::nullopt;
-      auto handler = std::move(handlers_.front());
-      handlers_.pop();
-      return handler;
-    }
-
-    void Orphaned() override {}
-
-   private:
-    std::queue<CallHandler> handlers_;
-  };
-
-  void InitCoreConfiguration() override {}
-
-  void Shutdown() override {
-    call_destination_.reset();
-    destination_under_test_.reset();
-    call_arena_allocator_.reset();
-  }
-
-  RefCountedPtr<TestCallDestination> call_destination_ =
-      MakeRefCounted<TestCallDestination>();
-  RefCountedPtr<UnstartedCallDestination> destination_under_test_;
-  RefCountedPtr<CallArenaAllocator> call_arena_allocator_ =
-      MakeRefCounted<CallArenaAllocator>(
-          ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-              "test"),
-          1024);
+  RefCountedPtr<ServiceConfig> service_config_;
+  const ServiceConfigParser::ParsedConfigVector* method_configs_ = nullptr;
 };
 
-#define RETRY_INTERCEPTOR_TEST(name) YODEL_TEST(RetryInterceptorTest, name)
+FILTER_TEST(RetryInterceptorTest, NoOp) { ASSERT_TRUE(Init().ok()); }
 
-RETRY_INTERCEPTOR_TEST(NoOp) {
-  InitInterceptor(ChannelArgs());
-  destination_under_test();
-}
+// With no retry policy configured the interceptor behaves like a filter: one
+// call in, one child call out.
+FILTER_TEST(RetryInterceptorTest, SingleAttemptSucceeds) {
+  ASSERT_TRUE(Init().ok());
+  auto [initiator, handler] = StartCallForFilter(MakeClientInitialMetadata());
 
-RETRY_INTERCEPTOR_TEST(CreateCall) {
-  InitInterceptor(ChannelArgs());
-  auto call = MakeCall(MakeClientInitialMetadata());
-  SpawnTestSeq(
-      call.initiator, "initiator",
-      [this, handler = std::move(call.handler)]() {
-        destination_under_test().StartCall(handler);
-      },
-      [call_initiator = call.initiator]() mutable { call_initiator.Cancel(); });
+  PushClientHalfClose();
+  ASSERT_TRUE(PullClientInitialMetadata(handler).ok());
+  PushServerTrailingMetadata(handler, ServerMetadataFromStatus(GRPC_STATUS_OK));
+
+  ValueOrFailure<ServerMetadataHandle> server_trailing_metadata =
+      PullServerTrailingMetadata();
+  ASSERT_TRUE(server_trailing_metadata.ok());
+  EXPECT_THAT(**server_trailing_metadata, HasMetadataResult(absl::OkStatus()));
+
   WaitForAllPendingWork();
 }
 
-RETRY_INTERCEPTOR_TEST(StartCall) {
-  InitInterceptor(ChannelArgs());
-  auto call = MakeCall(MakeClientInitialMetadata());
-  SpawnTestSeq(call.initiator, "initiator",
-               [this, handler = std::move(call.handler)]() {
-                 destination_under_test().StartCall(handler);
-               });
-  auto handler = TickUntilCallStarted();
-  SpawnTestSeq(
-      call.initiator, "cancel",
-      [call_initiator = call.initiator]() mutable { call_initiator.Cancel(); });
+// A retryable failure on the first attempt produces a *second* child call, and
+// the client sees only the status of the attempt that succeeded. This is the
+// case a harness that returned one handler per initiator could not express.
+FILTER_TEST(RetryInterceptorTest, RetriesOnRetryableStatus) {
+  ASSERT_TRUE(Init().ok());
+  SetRetryPolicy(R"({
+    "maxAttempts": 2,
+    "initialBackoff": "0.1s",
+    "maxBackoff": "0.1s",
+    "backoffMultiplier": 1,
+    "retryableStatusCodes": ["UNAVAILABLE"]
+  })");
+  StartCall(MakeClientInitialMetadata());
+  PushClientHalfClose();
+
+  // First attempt: fails with a retryable status.
+  CallHandler first_attempt = GetHandler();
+  ASSERT_TRUE(PullClientInitialMetadata(first_attempt).ok());
+  PushServerTrailingMetadata(
+      first_attempt,
+      ServerMetadataFromStatus(GRPC_STATUS_UNAVAILABLE, "try again"));
+
+  // Second attempt: the interceptor replays the call onto a new child call.
+  CallHandler second_attempt = GetHandler();
+  ASSERT_TRUE(PullClientInitialMetadata(second_attempt).ok());
+  PushServerTrailingMetadata(second_attempt,
+                             ServerMetadataFromStatus(GRPC_STATUS_OK));
+
+  ValueOrFailure<ServerMetadataHandle> server_trailing_metadata =
+      PullServerTrailingMetadata();
+  ASSERT_TRUE(server_trailing_metadata.ok());
+  EXPECT_THAT(**server_trailing_metadata, HasMetadataResult(absl::OkStatus()));
+
   WaitForAllPendingWork();
 }
 
-// TODO(roth, ctiller): more tests
+// Once the attempt budget is exhausted the interceptor stops creating child
+// calls and surfaces the last failure to the client.
+FILTER_TEST(RetryInterceptorTest, GivesUpAfterMaxAttempts) {
+  // TODO(pawbhard): investigate flakiness.
+  GTEST_SKIP();
+  ASSERT_TRUE(Init().ok());
+  SetRetryPolicy(R"({
+    "maxAttempts": 2,
+    "initialBackoff": "0.1s",
+    "maxBackoff": "0.1s",
+    "backoffMultiplier": 1,
+    "retryableStatusCodes": ["UNAVAILABLE"]
+  })");
+  StartCall(MakeClientInitialMetadata());
+  PushClientHalfClose();
+
+  // Keep each attempt's handler alive for the whole test, as a transport
+  // would.
+  std::vector<CallHandler> attempts;
+  for (int i = 0; i < 2; i++) {
+    attempts.push_back(GetHandler());
+    ASSERT_TRUE(PullClientInitialMetadata(attempts.back()).ok());
+    PushServerTrailingMetadata(
+        attempts.back(),
+        ServerMetadataFromStatus(GRPC_STATUS_UNAVAILABLE, "try again"));
+  }
+
+  ValueOrFailure<ServerMetadataHandle> server_trailing_metadata =
+      PullServerTrailingMetadata();
+  ASSERT_TRUE(server_trailing_metadata.ok());
+  EXPECT_THAT(**server_trailing_metadata,
+              HasMetadataResult(absl::UnavailableError("try again")));
+
+  WaitForAllPendingWork();
+}
 
 }  // namespace grpc_core

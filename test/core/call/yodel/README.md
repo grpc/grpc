@@ -8,4 +8,4 @@ way that's convenient to debug, and run as either a unit test or a fuzzer.
 Various frameworks are built atop it:
 - transports use it as part of the transport test_suite
 - filters use it via the v3 filter test suite
-  (`test/core/filters/v3_filter_test`, the `FilterTestV3` fixture)
+  (`test/core/filters/filter_test.h`, the `FilterTest` fixture)

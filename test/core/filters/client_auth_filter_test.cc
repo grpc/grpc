@@ -51,7 +51,7 @@
 namespace grpc_core {
 namespace {
 
-class ClientAuthFilterTest : public FilterTest<ClientAuthFilter> {
+class ClientAuthFilterTest : public FilterTestV2<ClientAuthFilter> {
  protected:
   class FailCallCreds : public grpc_call_credentials {
    public:
