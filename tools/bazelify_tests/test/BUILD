@@ -389,20 +389,56 @@ test_suite(
 # PHP distribtests
 
 grpc_run_distribtest_test(
-    name = "distribtest_php_linux_x64_debian12",
+    name = "distribtest_php_linux_x64_debian12_v8.2",
     size = "enormous",
     artifact_deps = [
         "artifact_php_linux_x64",
     ],
     build_script = "run_distribtest_php_linux.sh",
-    docker_image_version = "tools/dockerfile/distribtest/php8_debian12_x64.current_version",
+    docker_image_version = "tools/dockerfile/distribtest/php8.2_debian12_x64.current_version",
+    docker_run_as_root = True,
+)
+
+grpc_run_distribtest_test(
+    name = "distribtest_php_linux_x64_debian12_v8.3",
+    size = "enormous",
+    artifact_deps = [
+        "artifact_php_linux_x64",
+    ],
+    build_script = "run_distribtest_php_linux.sh",
+    docker_image_version = "tools/dockerfile/distribtest/php8.3_debian12_x64.current_version",
+    docker_run_as_root = True,
+)
+
+grpc_run_distribtest_test(
+    name = "distribtest_php_linux_x64_debian13_v8.4",
+    size = "enormous",
+    artifact_deps = [
+        "artifact_php_linux_x64",
+    ],
+    build_script = "run_distribtest_php_linux.sh",
+    docker_image_version = "tools/dockerfile/distribtest/php8.4_debian13_x64.current_version",
+    docker_run_as_root = True,
+)
+
+grpc_run_distribtest_test(
+    name = "distribtest_php_linux_x64_debian13_v8.5",
+    size = "enormous",
+    artifact_deps = [
+        "artifact_php_linux_x64",
+    ],
+    build_script = "run_distribtest_php_linux.sh",
+    docker_image_version = "tools/dockerfile/distribtest/php8.5_debian13_x64.current_version",
     docker_run_as_root = True,
 )
 
 test_suite(
     name = "php_distribtests_linux",
     tests = [
-        ":distribtest_php_linux_x64_debian12",
+        ":distribtest_php_linux_x64_debian12_v8.2",
+        ":distribtest_php_linux_x64_debian12_v8.3",
+        ":distribtest_php_linux_x64_debian13_v8.4",
+        ":distribtest_php_linux_x64_debian13_v8.5",
     ],
 )
 
