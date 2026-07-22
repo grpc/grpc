@@ -931,6 +931,7 @@ class InterceptedUnaryStreamCall(
         raise NotImplementedError()
 
 
+# pylint: disable=too-many-ancestors
 class InterceptedStreamUnaryCall(
     InterceptedCall,
     _InterceptedStreamRequestMixin[RequestType],
@@ -1031,6 +1032,7 @@ class InterceptedStreamUnaryCall(
         raise NotImplementedError()
 
 
+# pylint: disable=too-many-ancestors
 class InterceptedStreamStreamCall(
     InterceptedCall,
     _InterceptedStreamRequestMixin[RequestType],
