@@ -770,6 +770,9 @@ class InterceptedUnaryUnaryCall(
                 )
 
                 if isinstance(call_or_response, _base_call.UnaryUnaryCall):
+                    # Pyright loses the generic type arguments when doing
+                    # the isinstance check against the base class. We must
+                    # cast to restore them and avoid Unknown type errors.
                     return cast(
                         "_base_call.UnaryUnaryCall[RequestType, ResponseType]",
                         call_or_response,
