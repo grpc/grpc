@@ -35,6 +35,7 @@ from src.proto.grpc.testing import test_pb2_grpc
 from tests.interop import resources
 from tests.interop import service
 from tests.unit import test_common
+
 # pylint: enable=wrong-import-position
 
 logging.basicConfig()
@@ -78,6 +79,7 @@ def get_server_credentials(use_tls):
 
 import signal
 
+
 def _serve_internal(server):
     def _sig_handler(signum, frame):
         _LOGGER.info("Received signal %d, stopping server...", signum)
@@ -105,6 +107,7 @@ def serve(args):
 
     if args.enable_opentelemetry:
         import grpc_observability
+
         with grpc_observability.OpenTelemetryPlugin():
             _serve_internal(server)
     else:

@@ -29,6 +29,7 @@ from google.protobuf import json_format
 from opentelemetry.proto.collector.trace.v1 import trace_service_pb2
 from opentelemetry.proto.collector.trace.v1 import trace_service_pb2_grpc
 
+
 class TraceServiceServicer(trace_service_pb2_grpc.TraceServiceServicer):
     def __init__(self, file_path):
         self._file_path = file_path
@@ -36,7 +37,9 @@ class TraceServiceServicer(trace_service_pb2_grpc.TraceServiceServicer):
         self._lock = threading.Lock()
 
     def Export(self, request, context):
-        req_dict = json_format.MessageToDict(request, preserving_proto_field_name=True)
+        req_dict = json_format.MessageToDict(
+            request, preserving_proto_field_name=True
+        )
         with self._lock:
             self._requests.append(req_dict)
             tmp_file = self._file_path + ".tmp"
@@ -46,6 +49,7 @@ class TraceServiceServicer(trace_service_pb2_grpc.TraceServiceServicer):
             os.replace(tmp_file, self._file_path)
 
         return trace_service_pb2.ExportTraceServiceResponse()
+
 
 def serve():
     parser = argparse.ArgumentParser()
@@ -69,6 +73,7 @@ def serve():
     signal.signal(signal.SIGINT, sig_handler)
 
     server.wait_for_termination()
+
 
 if __name__ == "__main__":
     serve()

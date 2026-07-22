@@ -31,6 +31,7 @@ import grpc
 from src.proto.grpc.testing import test_pb2_grpc
 from tests.interop import methods
 from tests.interop import resources
+
 # pylint: enable=wrong-import-position
 
 
@@ -113,6 +114,7 @@ def parse_interop_client_args(argv):
 def _create_call_credentials(args):
     from google import auth as google_auth
     from google.auth import jwt as google_auth_jwt
+
     if args.test_case == "oauth2_auth_token":
         google_credentials, unused_project_id = google_auth.default(
             scopes=[args.oauth_scope]
@@ -146,6 +148,7 @@ def _create_call_credentials(args):
 
 def get_secure_channel_parameters(args):
     from google import auth as google_auth
+
     call_credentials = _create_call_credentials(args)
 
     channel_opts = ()
@@ -235,6 +238,7 @@ def _test_case_from_arg(test_case_arg):
 def test_interoperability(args):
     if args.enable_opentelemetry:
         import grpc_observability
+
         with grpc_observability.OpenTelemetryPlugin():
             channel = _create_channel(args)
             stub = create_stub(channel, args)

@@ -41,12 +41,14 @@ def sys_path_to_site_dir_hack():
     try:
         import pkgutil
         import google
+
         google.__path__ = pkgutil.extend_path(google.__path__, google.__name__)
     except Exception:
         pass
     try:
         import pkgutil
         import src
+
         src.__path__ = pkgutil.extend_path(src.__path__, src.__name__)
     except Exception:
         pass

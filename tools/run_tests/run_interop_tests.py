@@ -29,12 +29,14 @@ import uuid
 
 _collector_port = None
 
+
 def get_free_port():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind(('', 0))
+    s.bind(("", 0))
     port = s.getsockname()[1]
     s.close()
     return port
+
 
 def verify_tracing_spans(spans_file):
     start_time = time.time()
@@ -62,7 +64,18 @@ def verify_tracing_spans(spans_file):
                     for span in scope_spans.get("spans", []):
                         all_spans.append(span)
 
-        client_span = next((s for s in all_spans if s.get("name") in ("Sent.grpc.testing.TestService.EmptyCall", "Sent.grpc.testing.TestService/EmptyCall")), None)
+        client_span = next(
+            (
+                s
+                for s in all_spans
+                if s.get("name")
+                in (
+                    "Sent.grpc.testing.TestService.EmptyCall",
+                    "Sent.grpc.testing.TestService/EmptyCall",
+                )
+            ),
+            None,
+        )
         if not client_span:
             time.sleep(0.5)
             continue
@@ -72,8 +85,32 @@ def verify_tracing_spans(spans_file):
             time.sleep(0.5)
             continue
 
-        attempt_span = next((s for s in all_spans if s.get("name") in ("Attempt.grpc.testing.TestService.EmptyCall", "Attempt.grpc.testing.TestService/EmptyCall") and s.get("trace_id") == trace_id), None)
-        server_span = next((s for s in all_spans if s.get("name") in ("Recv.grpc.testing.TestService.EmptyCall", "Recv.grpc.testing.TestService/EmptyCall") and s.get("trace_id") == trace_id), None)
+        attempt_span = next(
+            (
+                s
+                for s in all_spans
+                if s.get("name")
+                in (
+                    "Attempt.grpc.testing.TestService.EmptyCall",
+                    "Attempt.grpc.testing.TestService/EmptyCall",
+                )
+                and s.get("trace_id") == trace_id
+            ),
+            None,
+        )
+        server_span = next(
+            (
+                s
+                for s in all_spans
+                if s.get("name")
+                in (
+                    "Recv.grpc.testing.TestService.EmptyCall",
+                    "Recv.grpc.testing.TestService/EmptyCall",
+                )
+                and s.get("trace_id") == trace_id
+            ),
+            None,
+        )
 
         if not attempt_span or not server_span:
             time.sleep(0.5)
@@ -82,11 +119,16 @@ def verify_tracing_spans(spans_file):
         # Found all three matching spans
         break
     else:
-        print("Verification Failed: Timed out waiting for all 3 expected spans.")
+        print(
+            "Verification Failed: Timed out waiting for all 3 expected spans."
+        )
         return False
 
     trace_id = client_span.get("trace_id")
-    if attempt_span.get("trace_id") != trace_id or server_span.get("trace_id") != trace_id:
+    if (
+        attempt_span.get("trace_id") != trace_id
+        or server_span.get("trace_id") != trace_id
+    ):
         print("Verification Failed: Trace ID mismatch.")
         return False
 
@@ -117,16 +159,31 @@ def verify_tracing_spans(spans_file):
 
     attempt_events = [e.get("name") for e in attempt_span.get("events", [])]
     client_events = [e.get("name") for e in client_span.get("events", [])]
-    if "Outbound message" not in attempt_events and "Outbound message" not in client_events:
-        print("Verification Failed: Outbound event not found in Client or Attempt span.")
+    if (
+        "Outbound message" not in attempt_events
+        and "Outbound message" not in client_events
+    ):
+        print(
+            "Verification Failed: Outbound event not found in Client or Attempt span."
+        )
         return False
-    if "Inbound message" not in attempt_events and "Inbound message" not in client_events:
-        print("Verification Failed: Inbound event not found in Client or Attempt span.")
+    if (
+        "Inbound message" not in attempt_events
+        and "Inbound message" not in client_events
+    ):
+        print(
+            "Verification Failed: Inbound event not found in Client or Attempt span."
+        )
         return False
 
     server_events = [e.get("name") for e in server_span.get("events", [])]
-    if "Inbound message" not in server_events or "Outbound message" not in server_events:
-        print("Verification Failed: Inbound/Outbound event not found in Server span.")
+    if (
+        "Inbound message" not in server_events
+        or "Outbound message" not in server_events
+    ):
+        print(
+            "Verification Failed: Inbound/Outbound event not found in Server span."
+        )
         return False
 
     print("OTel Tracing span verification succeeded!")
@@ -1171,8 +1228,12 @@ def cloud_to_cloud_jobspec(
         add_env["OTEL_METRICS_EXPORTER"] = "none"
         add_env["OTEL_LOGS_EXPORTER"] = "none"
         if _collector_port:
-            collector_host = "host.docker.internal" if docker_image else "localhost"
-            add_env["OTEL_EXPORTER_OTLP_ENDPOINT"] = f"http://{collector_host}:{_collector_port}"
+            collector_host = (
+                "host.docker.internal" if docker_image else "localhost"
+            )
+            add_env["OTEL_EXPORTER_OTLP_ENDPOINT"] = (
+                f"http://{collector_host}:{_collector_port}"
+            )
     if test_case in _HTTP2_SERVER_TEST_CASES_THAT_USE_GRPC_CLIENTS:
         client_test_case = _GRPC_CLIENT_TEST_CASES_FOR_HTTP2_SERVER_TEST_CASES[
             test_case
@@ -1275,7 +1336,9 @@ def server_jobspec(
         environ["OTEL_METRICS_EXPORTER"] = "none"
         environ["OTEL_LOGS_EXPORTER"] = "none"
         collector_host = "host.docker.internal" if docker_image else "localhost"
-        environ["OTEL_EXPORTER_OTLP_ENDPOINT"] = f"http://{collector_host}:{_collector_port}"
+        environ["OTEL_EXPORTER_OTLP_ENDPOINT"] = (
+            f"http://{collector_host}:{_collector_port}"
+        )
     if transport_security == "tls":
         server_cmd += ["--use_tls=true"]
     elif transport_security == "alts":
@@ -1325,7 +1388,9 @@ def server_jobspec(
         docker_args += ["-p", str(_DEFAULT_SERVER_PORT)]
 
     if docker_image:
-        docker_args = docker_args + ["--add-host=host.docker.internal:host-gateway"]
+        docker_args = docker_args + [
+            "--add-host=host.docker.internal:host-gateway"
+        ]
 
     docker_cmdline = docker_run_cmdline(
         cmdline,
@@ -1706,15 +1771,25 @@ server_addresses = {}
 collector_proc = None
 try:
     if not args.manual_run:
-        has_cxx = ("c++" in args.language or "all" in args.language) or ("c++" in servers)
+        has_cxx = ("c++" in args.language or "all" in args.language) or (
+            "c++" in servers
+        )
         if has_cxx:
             _collector_port = get_free_port()
             spans_file = os.path.abspath("captured_spans.json")
             if os.path.exists(spans_file):
                 os.remove(spans_file)
-            collector_cmd = ["./bazel-bin/test/cpp/interop/otlp_collector", f"--port={_collector_port}", f"--file={spans_file}"]
+            collector_cmd = [
+                "./bazel-bin/test/cpp/interop/otlp_collector",
+                f"--port={_collector_port}",
+                f"--file={spans_file}",
+            ]
             print(f"Starting OTLP collector on port {_collector_port}...")
-            collector_proc = subprocess.Popen(collector_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            collector_proc = subprocess.Popen(
+                collector_cmd,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
             time.sleep(1)
     for s in servers:
         lang = str(s)
@@ -1886,7 +1961,10 @@ try:
                     continue
                 if test_case == "test_unary_rpc_tracing_export":
                     allowed_tracing_languages = ["c++", "java", "python"]
-                    if str(language) not in allowed_tracing_languages or server_name not in allowed_tracing_languages:
+                    if (
+                        str(language) not in allowed_tracing_languages
+                        or server_name not in allowed_tracing_languages
+                    ):
                         continue
                 if not test_case in language.unimplemented_test_cases():
                     if not test_case in skip_server:
@@ -2034,7 +2112,10 @@ try:
         skip_jobs=args.manual_run,
     )
     if not num_failures and not args.manual_run:
-        has_tracing_test = any(job.shortname.find("test_unary_rpc_tracing_export") != -1 for job in jobs)
+        has_tracing_test = any(
+            job.shortname.find("test_unary_rpc_tracing_export") != -1
+            for job in jobs
+        )
         if has_tracing_test:
             spans_file = os.path.abspath("captured_spans.json")
             if not verify_tracing_spans(spans_file):
