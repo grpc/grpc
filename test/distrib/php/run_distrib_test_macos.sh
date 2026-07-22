@@ -59,18 +59,10 @@ PEAR_CONF="${PECL_TEMP_DIR}/pear.conf"
 sudo "${PECL_BIN}" config-create "${PECL_TEMP_DIR}" "${PEAR_CONF}"
 
 # Update temp_dir, download_dir, cache_dir, and build_dir inside pear.conf
-sudo "${PHP_BIN}" -r '
-$f = "'"${PEAR_CONF}"'";
-$dir = "'"${PECL_TEMP_DIR}"'";
-$c = unserialize(file_get_contents($f));
-if (is_array($c)) {
-    $c["temp_dir"] = $dir;
-    $c["download_dir"] = $dir;
-    $c["cache_dir"] = $dir;
-    $c["build_dir"] = $dir;
-    file_put_contents($f, serialize($c));
-}
-'
+sudo "${PECL_BIN}" -c "${PEAR_CONF}" config-set temp_dir "${PECL_TEMP_DIR}"
+sudo "${PECL_BIN}" -c "${PEAR_CONF}" config-set download_dir "${PECL_TEMP_DIR}"
+sudo "${PECL_BIN}" -c "${PEAR_CONF}" config-set cache_dir "${PECL_TEMP_DIR}"
+sudo "${PECL_BIN}" -c "${PEAR_CONF}" config-set build_dir "${PECL_TEMP_DIR}"
 
 # Use -j4 since higher parallelism can lead to "resource unavailable"
 # errors during the build. See b/257261061#comment4
