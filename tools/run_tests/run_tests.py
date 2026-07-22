@@ -563,7 +563,7 @@ class CLanguage:
             return ("gcc_10", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "gcc10.2_openssl102":
             return (
-                "debian12_openssl102",
+                "debian11_openssl102",
                 [
                     "-DgRPC_SSL_PROVIDER=package",
                     "-DCMAKE_CXX_STANDARD=17",
@@ -571,7 +571,7 @@ class CLanguage:
             )
         elif compiler == "gcc10.2_openssl111":
             return (
-                "debian12_openssl111",
+                "debian11_openssl111",
                 [
                     "-DgRPC_SSL_PROVIDER=package",
                     "-DCMAKE_CXX_STANDARD=17",
