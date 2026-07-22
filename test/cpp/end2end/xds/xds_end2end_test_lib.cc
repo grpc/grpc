@@ -95,33 +95,6 @@ XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::GetNextStatus(
   return status;
 }
 
-bool XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::
-    WaitOnServingStatusChange(const std::string& uri,
-                              grpc::StatusCode expected_status,
-                              absl::Duration timeout) {
-  const absl::Time deadline =
-      absl::Now() + timeout * grpc_test_slowdown_factor();
-  grpc_core::MutexLock lock(&mu_);
-  auto& queue = status_map_[uri];
-  while (queue.empty() ||
-         queue.back().code() !=
-             static_cast<absl::StatusCode>(static_cast<int>(expected_status))) {
-    grpc_core::CondVar cv;
-    cond_ = &cv;
-    if (cv.WaitWithDeadline(&mu_, deadline)) {
-      LOG(ERROR) << "\nTimeout Elapsed waiting on serving status "
-                    "change\nExpected status: "
-                 << expected_status << "\nActual:"
-                 << (queue.empty() ? "No notification received"
-                                   : absl::StrCat(queue.back().code()));
-      cond_ = nullptr;
-      return false;
-    }
-    cond_ = nullptr;
-  }
-  return true;
-}
-
 //
 // XdsEnd2endTest::ServerThread::XdsChannelArgsServerBuilderOption
 //

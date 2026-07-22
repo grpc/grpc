@@ -223,11 +223,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
       std::optional<absl::Status> GetNextStatus(
           const std::string& uri, absl::Duration timeout = absl::Seconds(10));
 
-      GRPC_DEPRECATED("Use GetNextStatus() instead")
-      GRPC_MUST_USE_RESULT bool WaitOnServingStatusChange(
-          const std::string& uri, grpc::StatusCode expected_status,
-          absl::Duration timeout = absl::Seconds(10));
-
      private:
       grpc_core::Mutex mu_;
       grpc_core::CondVar* cond_ ABSL_GUARDED_BY(&mu_) = nullptr;
@@ -254,19 +249,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
 
     int port() const { return port_; }
 
-    XdsServingStatusNotifier* notifier() { return &notifier_; }
-
     std::optional<absl::Status> GetNextStatus(
         absl::Duration timeout = absl::Seconds(10)) {
       return notifier_.GetNextStatus(grpc_core::LocalIpAndPort(port_), timeout);
-    }
-
-    GRPC_DEPRECATED("Use GetNextStatus() instead")
-    GRPC_MUST_USE_RESULT bool WaitOnServingStatusChange(
-        grpc::StatusCode expected_status,
-        absl::Duration timeout = absl::Seconds(10)) {
-      return notifier_.WaitOnServingStatusChange(
-          grpc_core::LocalIpAndPort(port_), expected_status, timeout);
     }
 
     void set_allow_put_requests(bool allow_put_requests) {
