@@ -156,6 +156,12 @@
   owner: vigneshbabu@google.com
   test_tags: []
   allow_in_fuzzing_config: false
+- name: fix_v3_filter_stack_server_side_ordering
+  description: If set, reverse the server side ordering for v3 filter stack.
+  expiry: 2026/10/15
+  owner: weizheyuan@google.com
+  test_tags: ["core_end2end_test"]
+  platforms: ["all"]
 - name: free_large_allocator
   description: If set, return all free bytes from a "big" allocator
   expiry: 2026/09/30
