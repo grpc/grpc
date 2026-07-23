@@ -54,8 +54,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
-using ::testing::_;
-
 namespace grpc_core {
 
 ////////////////////////////////////////////////////////////////////////////////

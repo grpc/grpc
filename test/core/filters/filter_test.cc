@@ -41,8 +41,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
-using grpc_event_engine::experimental::FuzzingEventEngine;
-
 namespace grpc_core {
 
 ///////////////////////////////////////////////////////////////////////////////
