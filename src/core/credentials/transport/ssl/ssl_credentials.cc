@@ -152,8 +152,8 @@ void grpc_ssl_credentials::build_config(
   if (pem_key_cert_pair != nullptr) {
     GRPC_CHECK_NE(pem_key_cert_pair->private_key, nullptr);
     GRPC_CHECK_NE(pem_key_cert_pair->cert_chain, nullptr);
-    config_.pem_key_cert_pair.cert_chain = pem_key_cert_pair->cert_chain;
-    config_.pem_key_cert_pair.private_key = pem_key_cert_pair->private_key;
+    config_.pem_key_cert_pair = grpc_core::PemKeyCertPair(
+        pem_key_cert_pair->private_key, pem_key_cert_pair->cert_chain);
   }
   if (verify_options != nullptr) {
     memcpy(&config_.verify_options, verify_options,
@@ -186,8 +186,8 @@ grpc_security_status grpc_ssl_credentials::InitializeClientHandshakerFactory(
   }
 
   bool has_key_cert_pair =
-      !grpc_core::IsPrivateKeyEmpty(config->pem_key_cert_pair.private_key) &&
-      !config->pem_key_cert_pair.cert_chain.empty();
+      !grpc_core::IsPrivateKeyEmpty(config->pem_key_cert_pair.private_key()) &&
+      !config->pem_key_cert_pair.cert_chain().empty();
   tsi_ssl_client_handshaker_options options;
   if (pem_root_certs == nullptr) {
     LOG(ERROR) << "Handshaker factory creation failed. pem_root_certs cannot "
@@ -285,20 +285,20 @@ grpc_core::UniqueTypeName grpc_ssl_server_credentials::Type() {
   return kFactory.Create();
 }
 
-std::vector<tsi_ssl_pem_key_cert_pair> grpc_convert_grpc_to_tsi_cert_pairs(
+grpc_core::PemKeyCertPairList grpc_convert_grpc_to_key_cert_pairs(
     const grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs,
     size_t num_key_cert_pairs) {
-  std::vector<tsi_ssl_pem_key_cert_pair> tsi_pairs;
+  grpc_core::PemKeyCertPairList key_cert_pairs;
   if (num_key_cert_pairs > 0) {
     GRPC_CHECK_NE(pem_key_cert_pairs, nullptr);
   }
   for (size_t i = 0; i < num_key_cert_pairs; i++) {
     GRPC_CHECK_NE(pem_key_cert_pairs[i].private_key, nullptr);
     GRPC_CHECK_NE(pem_key_cert_pairs[i].cert_chain, nullptr);
-    tsi_pairs.emplace_back(pem_key_cert_pairs[i].private_key,
-                           pem_key_cert_pairs[i].cert_chain);
+    key_cert_pairs.emplace_back(pem_key_cert_pairs[i].private_key,
+                                pem_key_cert_pairs[i].cert_chain);
   }
-  return tsi_pairs;
+  return key_cert_pairs;
 }
 
 void grpc_ssl_server_credentials::build_config(
@@ -307,7 +307,7 @@ void grpc_ssl_server_credentials::build_config(
     grpc_ssl_client_certificate_request_type client_certificate_request) {
   config_.client_certificate_request = client_certificate_request;
   config_.pem_root_certs = gpr_strdup(pem_root_certs);
-  config_.pem_key_cert_pairs = grpc_convert_grpc_to_tsi_cert_pairs(
+  config_.pem_key_cert_pairs = grpc_convert_grpc_to_key_cert_pairs(
       pem_key_cert_pairs, num_key_cert_pairs);
 }
 
