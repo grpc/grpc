@@ -215,14 +215,15 @@ def _c_measurement_to_measurement(object measurement
 cdef list _c_event_to_events(const vector[Event]& c_events):
   return [
     {
-      "name": _decode(event.name),
+      "name": _decode(c_events[i].name),
       "attributes": {
-        _decode(attr.key): _decode(attr.value) 
-        for attr in event.attributes
+        _decode(c_events[i].attributes[j].key):
+          _decode(c_events[i].attributes[j].value) 
+        for j in range(c_events[i].attributes.size())
       },
-      "time_stamp": _decode(event.time_stamp),
+      "time_stamp": _decode(c_events[i].time_stamp),
     }
-    for event in c_events
+    for i in range(c_events.size())
   ]
 
 
