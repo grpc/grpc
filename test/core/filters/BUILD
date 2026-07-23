@@ -154,7 +154,6 @@ grpc_fuzz_test(
     deps = [
         "filter_test",
         ":filter_matchers",
-        ":filter_test_v2",
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc_base",
@@ -175,6 +174,42 @@ grpc_fuzz_test(
         "//src/core:poll",
         "//src/core:seq",
         "//src/core:slice",
+    ],
+)
+
+grpc_cc_test(
+    name = "filter_test_v2_test",
+    srcs = ["filter_test_v2_test.cc"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "gtest",
+        "gtest_main",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        ":filter_matchers",
+        ":filter_test_v2",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_unsecure",
+        "//:ref_counted_ptr",
+        "//src/core:activity",
+        "//src/core:arena_promise",
+        "//src/core:channel_args",
+        "//src/core:context",
+        "//src/core:filter_args",
+        "//src/core:map",
+        "//src/core:message",
+        "//src/core:metadata",
+        "//src/core:metadata_batch",
+        "//src/core:pipe",
+        "//src/core:poll",
+        "//src/core:seq",
+        "//src/core:slice",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 

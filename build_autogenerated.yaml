@@ -13770,6 +13770,27 @@ targets:
   - cares
   - gpr
   - address_sorting
+- name: filter_test_v2_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/filters/filter_matchers.h
+  - test/core/filters/filter_test_v2.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/filters/filter_test_v2.cc
+  - test/core/filters/filter_test_v2_test.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
+  deps:
+  - gtest
+  - grpc_unsecure
+  - protobuf
+  - grpc_test_util
 - name: flaky_network_test
   gtest: true
   build: test
