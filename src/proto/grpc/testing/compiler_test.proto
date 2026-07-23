@@ -17,7 +17,7 @@
 // File detached comment 2
 
 // File leading comment 1
-syntax = "proto3";
+edition = "2026";
 
 // Ignored detached comment
 // The comments in this file are not meant for readability
@@ -27,10 +27,8 @@ syntax = "proto3";
 // Ignored package leading comment
 package grpc.testing;
 
-message Request {
-}
-message Response {
-}
+message Request {}
+message Response {}
 
 // ServiceA detached comment 1
 
