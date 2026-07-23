@@ -59,6 +59,7 @@ OpenTelemetryPluginOption = (
     Any  # _open_telemetry_plugin.py imports this module.
 )
 
+GRPC_PYTHON_STR = "grpc-python"
 GRPC_METHOD_LABEL = "grpc.method"
 GRPC_TARGET_LABEL = "grpc.target"
 GRPC_CLIENT_METRIC_PREFIX = "grpc.client"
@@ -94,8 +95,16 @@ class _GrpcIdGenerator(sdk_trace.IdGenerator):
     """
 
     def __init__(self, trace_id: str, span_id: str):
-        self._trace_id = int(trace_id, 16)
-        self._span_id = int(span_id, 16)
+        try:
+            self._trace_id = int(trace_id, 16)
+        except ValueError:
+            _LOGGER.warning("Failed to parse trace_id: '%s'", trace_id)
+            self._trace_id = 0
+        try:
+            self._span_id = int(span_id, 16)
+        except ValueError:
+            _LOGGER.warning("Failed to parse span_id: '%s'", span_id)
+            self._span_id = 0
 
     def generate_span_id(self) -> int:
         return self._span_id
@@ -129,7 +138,7 @@ class _OpenTelemetryPlugin:
 
         meter_provider = self._plugin.meter_provider
         if meter_provider:
-            meter = meter_provider.get_meter("grpc-python", grpc.__version__)
+            meter = meter_provider.get_meter(GRPC_PYTHON_STR, grpc.__version__)
             enabled_metrics = _open_telemetry_measures.base_metrics()
             self._metric_to_recorder = self._register_metrics(
                 meter, enabled_metrics
@@ -147,7 +156,7 @@ class _OpenTelemetryPlugin:
                 raise ValueError(error_msg)
 
             self._tracer = tracer_provider.get_tracer(
-                "grpc-python", grpc.__version__
+                GRPC_PYTHON_STR, grpc.__version__
             )
             if text_map_propagator:
                 self._text_map_propagator = text_map_propagator
@@ -220,9 +229,20 @@ class _OpenTelemetryPlugin:
         context: Optional[otel_context.Context] = None,
     ) -> otel_context.Context:
         """Builds new Otel context from trace_id, span_id and sampling flag."""
+        try:
+            parsed_trace_id = int(trace_id, 16)
+        except ValueError:
+            _LOGGER.warning("Failed to parse trace_id: '%s'", trace_id)
+            parsed_trace_id = 0
+        try:
+            parsed_span_id = int(span_id, 16)
+        except ValueError:
+            _LOGGER.warning("Failed to parse span_id: '%s'", span_id)
+            parsed_span_id = 0
+
         span_context = trace.SpanContext(
-            trace_id=int(trace_id, 16) if trace_id else 0,
-            span_id=int(span_id, 16) if span_id else 0,
+            trace_id=parsed_trace_id,
+            span_id=parsed_span_id,
             is_remote=True,
             trace_flags=trace.TraceFlags(
                 trace.TraceFlags.SAMPLED
@@ -279,23 +299,47 @@ class _OpenTelemetryPlugin:
             self._tracer.id_generator = _GrpcIdGenerator(
                 trace_id=tracing_data.trace_id, span_id=tracing_data.span_id
             )
+            try:
+                parsed_start_time = int(tracing_data.start_time)
+            except ValueError:
+                _LOGGER.warning(
+                    "Invalid start_time '%s' for span, defaulting to current "
+                    "time.",
+                    tracing_data.start_time
+                )
+                # For None tracing library auto-generates the current time
+                parsed_start_time = None
             span = self._tracer.start_span(
                 name=tracing_data.name,
                 context=local_ctx,
                 kind=trace.SpanKind.INTERNAL,
                 attributes=tracing_data.span_labels,
                 links=None,
-                start_time=tracing_data.start_time,
+                start_time=parsed_start_time,
             )
 
         for event in tracing_data.span_events:
-            span.add_event(
-                name=event["name"],
-                attributes=event["attributes"],
-                timestamp=event["time_stamp"],
-            )
+            try:
+                span.add_event(
+                    name=event["name"],
+                    attributes=event["attributes"],
+                    timestamp=int(event["time_stamp"]),
+                )
+            except ValueError:
+                # Gracefully log the issue and move to the next event
+                _LOGGER.warning("Skipping malformed span event: %s", event)
+                continue
         span.set_status(self._status_to_otel_status(tracing_data.status))
-        span.end(end_time=tracing_data.end_time)
+        try:
+            parsed_end_time = int(tracing_data.end_time)
+        except ValueError:
+            _LOGGER.warning(
+                "Invalid end_time '%s' for span, defaulting to current time.",
+                tracing_data.end_time
+            )
+            # For None tracing library auto-generates the current time
+            parsed_end_time = None
+        span.end(end_time=parsed_end_time)
 
     def maybe_record_tracing_data(self, tracing_data: TracingData) -> None:
         """Records tracing data to SpanExporter configured for given TracerProvider."""

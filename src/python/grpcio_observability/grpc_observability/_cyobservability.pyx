@@ -212,19 +212,18 @@ def _c_measurement_to_measurement(object measurement
   return py_measurement
 
 
-def _c_event_to_events(vector[Event] c_events) -> List[_PyEvent]:
-  py_events = []
-
-  for event in c_events:
-    py_attributes = {}
-    for attribute in event.attributes:
-      py_attributes[_decode(attribute.key)] = _decode(attribute.value)
-    py_events.append({
+cdef list _c_event_to_events(const vector[Event]& c_events):
+  return [
+    {
       "name": _decode(event.name),
-      "attributes": py_attributes,
+      "attributes": {
+        _decode(attr.key): _decode(attr.value) 
+        for attr in event.attributes
+      },
       "time_stamp": _decode(event.time_stamp),
-    })
-  return py_events
+    }
+    for event in c_events
+  ]
 
 
 def observability_deinit() -> None:

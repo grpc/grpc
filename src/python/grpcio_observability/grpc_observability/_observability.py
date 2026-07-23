@@ -79,10 +79,10 @@ class TracingData:
 
     Attributes:
       name: The name for tracing data, also the name for the Span.
-      start_time: The start time for the span in RFC3339 UTC "Zulu" format, e.g.
-       2014-10-02T15:01:23Z
-      end_time: The end time for the span in RFC3339 UTC "Zulu" format, e.g.
-       2014-10-02T15:01:23Z
+      start_time: The start time for the span as Unix epoch nanoseconds, in
+       decimal string form, e.g. "1696258883000000000"
+      end_time: The end time for the span as Unix epoch nanoseconds, in
+       decimal string form, e.g. "1696258883000000000"
       trace_id: The identifier for the trace associated with this span as a
        32-character hexadecimal encoded string,
        e.g. 26ed0036f2eff2b7317bccce3e28d01f
@@ -101,9 +101,8 @@ class TracingData:
         - "name" - represents event name.
         - "attributes" - represents optional event attributes in a form
           of dictionary.
-        - "time_stamp" - represents time stamp when event occurred.
-          The time stamp have a format which can be converted to Python
-          datetime.datetime, e.g. 2023-05-29 17:07:09.895.
+        - "time_stamp" - represents time stamp when event occurred as Unix epoch
+          nanoseconds, in decimal string form, e.g. "1696258883000000000"
     """
 
     name: str
