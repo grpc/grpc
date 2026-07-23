@@ -36,6 +36,8 @@
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
+namespace grpc_core {
+
 // FilterTest: the test harness for filters and interceptors written against
 // the v3 filter API.
 //

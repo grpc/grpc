@@ -27,6 +27,8 @@
 // gmock matchers for asserting on the metadata and messages that flow through a
 // filter call.
 
+namespace grpc_core {
+
 // Metadata has a given key with a given value.
 MATCHER_P2(HasMetadataKeyValue, key, value, "") {
   std::string temp;
@@ -59,8 +61,6 @@ MATCHER_P(HasMetadataResult, absl_status, "") {
 MATCHER_P(HasMessagePayload, value, "") {
   return arg.payload()->JoinIntoString() == value;
 }
-
-namespace grpc_core {
 
 inline std::ostream& operator<<(std::ostream& os,
                                 const grpc_metadata_batch& md) {
