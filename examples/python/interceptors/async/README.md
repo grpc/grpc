@@ -41,3 +41,21 @@ INFO:root:Interceptor1 called with rpc_id: default
 INFO:root:Interceptor2 called with rpc_id: Interceptor1-59ac966558b3d7d11a06bd45f1a0f89d
 INFO:root:Handle rpc with id Interceptor2-Interceptor1-59ac966558b3d7d11a06bd45f1a0f89d in server handler.
 ```
+
+### Running client with client interceptors
+
+You can also run the client with client-side interceptors:
+
+```bash
+python3 -m async_greeter_client_with_interceptor
+```
+
+* On client side (using client interceptors), you should see logs similar to:
+
+```
+[ClientLoggingInterceptor] Intercepting UnaryUnary RPC: /helloworld.Greeter/SayHello
+[PassThroughClientInterceptor] Passing UnaryUnary continuation through directly.
+Sending request with rpc id: 59ac966558b3d7d11a06bd45f1a0f89d
+Greeter client received: Hello, you!
+```
+

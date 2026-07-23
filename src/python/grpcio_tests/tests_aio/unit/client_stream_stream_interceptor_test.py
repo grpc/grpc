@@ -59,12 +59,133 @@ class _StreamStreamInterceptorWithRequestAndResponseIterator(
         )
 
 
+class _AllInOneInterceptor(
+    aio.UnaryUnaryClientInterceptor,
+    aio.UnaryStreamClientInterceptor,
+    aio.StreamUnaryClientInterceptor,
+    aio.StreamStreamClientInterceptor,
+):
+    def __init__(self):
+        self.stream_stream_called = False
+
+    async def intercept_unary_unary(
+        self, continuation, client_call_details, request
+    ):
+        return await continuation(client_call_details, request)
+
+    async def intercept_unary_stream(
+        self, continuation, client_call_details, request
+    ):
+        return await continuation(client_call_details, request)
+
+    async def intercept_stream_unary(
+        self, continuation, client_call_details, request_iterator
+    ):
+        return await continuation(client_call_details, request_iterator)
+
+    async def intercept_stream_stream(
+        self, continuation, client_call_details, request_iterator
+    ):
+        self.stream_stream_called = True
+        return await continuation(client_call_details, request_iterator)
+
+
+class _ExceptionRaisingMultiArityInterceptor(
+    aio.UnaryUnaryClientInterceptor,
+    aio.StreamStreamClientInterceptor,
+):
+    async def intercept_unary_unary(
+        self, continuation, client_call_details, request
+    ):
+        return await continuation(client_call_details, request)
+
+    async def intercept_stream_stream(
+        self, continuation, client_call_details, request_iterator
+    ):
+        raise ValueError("expected exception from intercept_stream_stream")
+
+
 class TestStreamStreamClientInterceptor(AioTestBase):
     async def setUp(self):
         self._server_target, self._server = await start_test_server()
 
     async def tearDown(self):
         await self._server.stop(None)
+
+    async def test_multi_arity_interceptor_exception_raised_like_issue_description(
+        self,
+    ):
+        interceptor = _ExceptionRaisingMultiArityInterceptor()
+        channel = aio.insecure_channel(
+            self._server_target, interceptors=[interceptor]
+        )
+        stub = test_pb2_grpc.TestServiceStub(channel)
+
+        request = messages_pb2.StreamingOutputCallRequest()
+        call = stub.FullDuplexCall()
+
+        with self.assertRaisesRegex(
+            ValueError, "expected exception from intercept_stream_stream"
+        ):
+            await call.write(request)
+
+        await channel.close()
+
+    async def test_multi_arity_interceptor_write_and_read(self):
+        interceptor = _AllInOneInterceptor()
+        channel = aio.insecure_channel(
+            self._server_target, interceptors=[interceptor]
+        )
+        stub = test_pb2_grpc.TestServiceStub(channel)
+
+        request = messages_pb2.StreamingOutputCallRequest()
+        request.response_parameters.append(
+            messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE)
+        )
+
+        call = stub.FullDuplexCall()
+        await call.write(request)
+        await call.done_writing()
+
+        response_cnt = 0
+        async for response in call:
+            response_cnt += 1
+            self.assertIsInstance(
+                response, messages_pb2.StreamingOutputCallResponse
+            )
+
+        self.assertEqual(response_cnt, 1)
+        self.assertTrue(interceptor.stream_stream_called)
+        await channel.close()
+
+    async def test_multi_arity_interceptor(self):
+        interceptor = _AllInOneInterceptor()
+        channel = aio.insecure_channel(
+            self._server_target, interceptors=[interceptor]
+        )
+        stub = test_pb2_grpc.TestServiceStub(channel)
+
+        request = messages_pb2.StreamingOutputCallRequest()
+        request.response_parameters.append(
+            messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE)
+        )
+
+        async def request_iterator():
+            for _ in range(_NUM_STREAM_REQUESTS):
+                yield request
+
+        call = stub.FullDuplexCall(request_iterator())
+
+        response_cnt = 0
+        async for response in call:
+            response_cnt += 1
+            self.assertIsInstance(
+                response, messages_pb2.StreamingOutputCallResponse
+            )
+
+        self.assertEqual(response_cnt, _NUM_STREAM_RESPONSES)
+        self.assertTrue(interceptor.stream_stream_called)
+        await channel.close()
 
     async def test_intercepts(self):
         for interceptor_class in (
@@ -115,6 +236,38 @@ class TestStreamStreamClientInterceptor(AioTestBase):
                 interceptor.assert_in_final_state(self)
 
                 await channel.close()
+
+    async def test_unawaited_continuation_stream_stream_interceptor(self):
+        class UnawaitedContinuationInterceptor(
+            aio.StreamStreamClientInterceptor
+        ):
+            async def intercept_stream_stream(
+                self, continuation, client_call_details, request_iterator
+            ):
+                return continuation(client_call_details, request_iterator)
+
+        request = messages_pb2.StreamingOutputCallRequest()
+        request.response_parameters.append(
+            messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE)
+        )
+
+        async def request_iterator():
+            for _ in range(_NUM_STREAM_REQUESTS):
+                yield request
+
+        async with aio.insecure_channel(
+            self._server_target,
+            interceptors=[UnawaitedContinuationInterceptor()],
+        ) as channel:
+            stub = test_pb2_grpc.TestServiceStub(channel)
+            call = stub.FullDuplexCall(request_iterator())
+            response_cnt = 0
+            async for response in call:
+                response_cnt += 1
+                self.assertIsInstance(
+                    response, messages_pb2.StreamingOutputCallResponse
+                )
+            self.assertEqual(response_cnt, _NUM_STREAM_RESPONSES)
 
     async def test_intercepts_using_write_and_read(self):
         for interceptor_class in (
