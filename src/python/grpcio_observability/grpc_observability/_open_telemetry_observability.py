@@ -117,6 +117,7 @@ class _OpenTelemetryPlugin:
     _plugin: OpenTelemetryPlugin
     _metric_to_recorder: Dict[MetricsName, Union[Counter, Histogram]]
     _tracer: Optional[sdk_trace.Tracer]
+    _tracer_lock: threading.Lock
     _trace_ctx_var: contextvars.ContextVar
     _text_map_propagator: Optional[TraceContextTextMapPropagator]
     _enabled_client_plugin_options: Optional[List[OpenTelemetryPluginOption]]
