@@ -25,19 +25,19 @@ cp -r "$EXTERNAL_GIT_ROOT"/input_artifacts/grpc-*.tgz .
 GRPC_PEAR_PACKAGE_NAME=$(find . -regex '.*/grpc-[0-9].*.tgz' | sed 's|./||')
 
 PHP_VERSION="${1:-8.2}"
-PHP_PATH="/usr/local/opt/php@${PHP_VERSION}"
-if [ ! -d "${PHP_PATH}" ]; then
-  PHP_PATH="/opt/homebrew/opt/php@${PHP_VERSION}"
+# For PHP 8.5, the Homebrew formula is 'php' (unversioned) instead of 'php@8.5'
+FORMULA="php@${PHP_VERSION}"
+if [ "${PHP_VERSION}" == "8.5" ]; then
+  FORMULA="php"
 fi
 
-# For PHP 8.5, Homebrew formula is 'php' (unversioned) instead of 'php@8.5'
-if [ "${PHP_VERSION}" == "8.5" ] && [ ! -d "${PHP_PATH}" ]; then
-  if [ -d "/usr/local/opt/php" ]; then
-    PHP_PATH="/usr/local/opt/php"
-  elif [ -d "/opt/homebrew/opt/php" ]; then
-    PHP_PATH="/opt/homebrew/opt/php"
+PHP_PATH=""
+for prefix in "/usr/local/opt" "/opt/homebrew/opt"; do
+  if [ -d "${prefix}/${FORMULA}" ]; then
+    PHP_PATH="${prefix}/${FORMULA}"
+    break
   fi
-fi
+done
 
 if [ -d "${PHP_PATH}" ]; then
   PECL_BIN="${PHP_PATH}/bin/pecl"
