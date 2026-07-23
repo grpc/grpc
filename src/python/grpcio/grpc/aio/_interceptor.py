@@ -1314,4 +1314,4 @@ class StreamStreamCallResponseIterator(
 
     @property
     def _done_writing_flag(self) -> bool:
-        return self._call._done_writing_flag  # pyright: ignore
+        return self._call._done_writing_flag  # pyright: ignore # noqa: PGH003
