@@ -131,9 +131,9 @@ ChannelInit::FilterRegistration& ChannelInit::Builder::RegisterFilter(
     grpc_channel_stack_type type, UniqueTypeName name,
     const grpc_channel_filter* filter, FilterAdder filter_adder,
     SourceLocation registration_source) {
-    filters_[type].emplace_back(std::make_unique<FilterRegistration>(
-        name, filter, filter_adder, registration_source));
-    return *filters_[type].back();
+  filters_[type].emplace_back(std::make_unique<FilterRegistration>(
+      name, filter, filter_adder, registration_source));
+  return *filters_[type].back();
 }
 
 void ChannelInit::Builder::RegisterFusedFilter(
