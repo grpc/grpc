@@ -533,7 +533,6 @@ class _InterceptedUnaryResponseMixin(
 
 class _InterceptedStreamResponseMixinProtocol(Protocol):
     _interceptors_task: asyncio.Task[Any]
-    _response_aiter: Optional[AsyncIterator[Any]]
 
 
 class _InterceptedStreamResponseMixin(
