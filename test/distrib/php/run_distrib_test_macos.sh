@@ -58,12 +58,6 @@ sudo mkdir -p "${PECL_TEMP_DIR}"
 PEAR_CONF="${PECL_TEMP_DIR}/pear.conf"
 sudo "${PECL_BIN}" config-create "${PECL_TEMP_DIR}" "${PEAR_CONF}"
 
-# Update temp_dir, download_dir, cache_dir, and build_dir inside pear.conf
-sudo "${PECL_BIN}" -c "${PEAR_CONF}" config-set temp_dir "${PECL_TEMP_DIR}"
-sudo "${PECL_BIN}" -c "${PEAR_CONF}" config-set download_dir "${PECL_TEMP_DIR}"
-sudo "${PECL_BIN}" -c "${PEAR_CONF}" config-set cache_dir "${PECL_TEMP_DIR}"
-sudo "${PECL_BIN}" -c "${PEAR_CONF}" config-set build_dir "${PECL_TEMP_DIR}"
-
 # Use -j4 since higher parallelism can lead to "resource unavailable"
 # errors during the build. See b/257261061#comment4
 sudo env PATH="$PATH" \

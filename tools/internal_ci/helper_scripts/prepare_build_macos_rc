@@ -248,7 +248,25 @@ fi
 if [ "${PREPARE_BUILD_INSTALL_DEPS_PHP}" == "true" ]
 then
   time brew install php@8.2 php@8.3 php@8.4 php || true
-  # PHP_PATH, LDFLAGS, and CPPFLAGS are set dynamically in run_distrib_test_macos.sh
+  # Dynamically find one of the installed PHP versions to put in PATH for Composer installation below.
+  # (Per-version PATH, LDFLAGS, and CPPFLAGS are handled separately in run_distrib_test_macos.sh)
+  PHP_PATH=""
+  for ver in 8.4 8.3 8.2; do
+    if [ -d "/usr/local/opt/php@${ver}" ]; then
+      PHP_PATH="/usr/local/opt/php@${ver}"
+      break
+    elif [ -d "/opt/homebrew/opt/php@${ver}" ]; then
+      PHP_PATH="/opt/homebrew/opt/php@${ver}"
+      break
+    fi
+  done
+  if [ -z "${PHP_PATH}" ]; then
+    if [ -d "/usr/local/opt/php" ]; then
+      PHP_PATH="/usr/local/opt/php"
+    elif [ -d "/opt/homebrew/opt/php" ]; then
+      PHP_PATH="/opt/homebrew/opt/php"
+    fi
+  fi
   export PATH="${PHP_PATH}/bin:${PHP_PATH}/sbin:${PATH}"
 
   # the exit code from "brew install php@8.4" is useless
