@@ -749,9 +749,6 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/testing/xds/v3/orca_service.proto src/proto/grpc/testing/xds/v3/orca_service.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
-  test/core/call/yodel/fuzzer.proto test/core/call/yodel/fuzzer.proto
-)
-protobuf_generate_grpc_cpp_with_import_path_correction(
   test/core/end2end/end2end_test_fuzzer.proto test/core/end2end/end2end_test_fuzzer.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
@@ -12488,25 +12485,14 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(client_auth_filter_test
-  ${_gRPC_PROTO_GENS_DIR}/test/core/call/yodel/fuzzer.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/test/core/call/yodel/fuzzer.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/test/core/call/yodel/fuzzer.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/test/core/call/yodel/fuzzer.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
-  test/core/call/yodel/yodel_test.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/filters/client_auth_filter_test.cc
-  test/core/filters/filter_test.cc
-  test/core/test_util/fuzz_config_vars.cc
-  test/core/test_util/fuzz_config_vars_helpers.cc
+  test/core/filters/filter_test_v2.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -12540,18 +12526,6 @@ target_include_directories(client_auth_filter_test
 target_link_libraries(client_auth_filter_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::dynamic_annotations
-  absl::fast_type_id
-  absl::nullability
-  absl::prefetch
-  absl::layout
-  absl::node_hash_set
-  absl::overload
-  absl::absl_check
-  absl::absl_log
-  absl::int128
-  absl::strings_internal
-  absl::compare
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -19037,25 +19011,14 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(gcp_authentication_filter_test
-  ${_gRPC_PROTO_GENS_DIR}/test/core/call/yodel/fuzzer.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/test/core/call/yodel/fuzzer.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/test/core/call/yodel/fuzzer.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/test/core/call/yodel/fuzzer.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
-  test/core/call/yodel/yodel_test.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  test/core/filters/filter_test.cc
+  test/core/filters/filter_test_v2.cc
   test/core/filters/gcp_authentication_filter_test.cc
-  test/core/test_util/fuzz_config_vars.cc
-  test/core/test_util/fuzz_config_vars_helpers.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -19089,18 +19052,6 @@ target_include_directories(gcp_authentication_filter_test
 target_link_libraries(gcp_authentication_filter_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::dynamic_annotations
-  absl::fast_type_id
-  absl::nullability
-  absl::prefetch
-  absl::layout
-  absl::node_hash_set
-  absl::overload
-  absl::absl_check
-  absl::absl_log
-  absl::int128
-  absl::strings_internal
-  absl::compare
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )

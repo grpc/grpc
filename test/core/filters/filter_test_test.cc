@@ -49,6 +49,7 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "test/core/filters/filter_matchers.h"
+#include "test/core/filters/filter_test_v2.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"

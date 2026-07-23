@@ -26,9 +26,6 @@ grpc_package(
     ],
 )
 
-# gmock matchers for metadata/messages flowing through a filter call. Depend on
-# this directly from tests that use the matchers; it is independent of which
-# harness (FilterTest or FilterTestV2) the test is written against.
 grpc_cc_library(
     name = "filter_matchers",
     testonly = 1,
@@ -45,11 +42,6 @@ grpc_cc_library(
     ],
 )
 
-# Test harnesses for filters. `FilterTest` is the harness for the v3 filter
-# API: it builds an InterceptionChain, so it hosts both v3 filters and v3
-# interceptors, and (via yodel) doubles every test as a fuzz target.
-# `FilterTestV2` is the older harness for v2 filters; it goes away once there
-# are no v2 filters left.
 grpc_cc_library(
     name = "filter_test",
     testonly = 1,
@@ -77,7 +69,6 @@ grpc_cc_library(
         "//src/core:activity",
         "//src/core:arena",
         "//src/core:arena_promise",
-        "//src/core:basic_seq",
         "//src/core:call_finalization",
         "//src/core:call_spine",
         "//src/core:channel_args",
@@ -104,9 +95,52 @@ grpc_cc_library(
     ],
 )
 
-# Self-tests for both harnesses in filter_test.{h,cc}. This is a fuzz test
-# because every FilterTest case doubles as a fuzz target; the FilterTestV2 cases
-# in the same file are ordinary TEST_F()s that fuzztest_main runs alongside them.
+grpc_cc_library(
+    name = "filter_test_v2",
+    testonly = 1,
+    srcs = ["filter_test_v2.cc"],
+    hdrs = ["filter_test_v2.h"],
+    external_deps = [
+        "absl/memory",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+        "gtest",
+    ],
+    tags = ["nofixdeps"],  # until event engine tests are under fixbuilddeps
+    visibility = ["//test:__subpackages__"],
+    deps = [
+        ":filter_matchers",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_base",
+        "//:iomgr_timer",
+        "//:ref_counted_ptr",
+        "//src/core:activity",
+        "//src/core:arena",
+        "//src/core:arena_promise",
+        "//src/core:call_finalization",
+        "//src/core:channel_args",
+        "//src/core:context",
+        "//src/core:default_event_engine",
+        "//src/core:filter_args",
+        "//src/core:memory_quota",
+        "//src/core:message",
+        "//src/core:metadata",
+        "//src/core:metadata_batch",
+        "//src/core:pipe",
+        "//src/core:poll",
+        "//src/core:resource_quota",
+        "//src/core:seq",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
+    ],
+)
+
 grpc_fuzz_test(
     name = "filter_test_test",
     srcs = ["filter_test_test.cc"],
@@ -120,6 +154,7 @@ grpc_fuzz_test(
     deps = [
         "filter_test",
         ":filter_matchers",
+        ":filter_test_v2",
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc_base",
@@ -155,8 +190,8 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "filter_test",
         ":filter_matchers",
+        ":filter_test_v2",
         "//:grpc",
         "//:grpc_base",
         "//:grpc_core_credentials_header",
@@ -246,8 +281,8 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "filter_test",
         ":filter_matchers",
+        ":filter_test_v2",
         "//:grpc",
         "//:grpc_base",
         "//:grpc_security_base",

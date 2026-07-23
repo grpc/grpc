@@ -36,7 +36,7 @@
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/useful.h"
 #include "test/core/filters/filter_matchers.h"
-#include "test/core/filters/filter_test.h"
+#include "test/core/filters/filter_test_v2.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
