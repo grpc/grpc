@@ -22,7 +22,10 @@ os.chdir(os.path.join(os.path.dirname(sys.argv[0]), "../../.."))
 
 BAD_REGEXES = [
     (r'\n#include "include/(.*)"', r"\n#include <\1>"),
-    (r'\n#include "grpc(.*)"', r"\n#include <grpc\1>"),
+    (
+        r'\n#include "grpc([^"]*(?<!\.upb\.h)(?<!\.upbdefs\.h)(?<!\.upb_minitable\.h))"',
+        r"\n#include <grpc\1>",
+    ),
     (r"\n#include <gtest(.*)>", r'\n#include "gtest\1"'),
     (r"\n#include <gmock(.*)>", r'\n#include "gmock\1"'),
 ]
@@ -46,6 +49,8 @@ def check_include_style(directory_root):
                 filename.endswith(".upb.h")
                 or filename.endswith(".upbdefs.h")
                 or filename.endswith(".upbdefs.c")
+                or filename.endswith(".upb_minitable.h")
+                or filename.endswith(".upb_minitable.c")
             ):
                 continue
             with open(path) as f:

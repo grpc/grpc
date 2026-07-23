@@ -191,18 +191,18 @@ INTERNAL_DEPS = {
     "google/protobuf/timestamp.upb.h": "protobuf_timestamp_upb",
     "google/protobuf/wrappers.upb.h": "protobuf_wrappers_upb",
     "grpc/status.h": "grpc_public_hdrs",
-    "src/proto/grpc/channelz/channelz.grpc.pb.h": (
-        "//src/proto/grpc/channelz:channelz_proto"
-    ),
+    "grpc/channelz/v1/channelz.pb.h": "//:channelz_cc_grpc",
+    "grpc/channelz/v1/channelz.grpc.pb.h": "//:channelz_cc_grpc",
     "src/proto/grpc/core/stats.pb.h": "//src/proto/grpc/core:stats_proto",
     "src/proto/grpc/health/v1/health.upb.h": "grpc_health_upb",
     "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h": (
         "//src/proto/grpc/lb/v1:load_reporter_proto"
     ),
     "src/proto/grpc/lb/v1/load_balancer.upb.h": "grpc_lb_upb",
-    "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h": (
-        "//src/proto/grpc/reflection/v1alpha:reflection_proto"
-    ),
+    "grpc/reflection/v1/reflection.pb.h": "//:reflection_v1_cc_grpc",
+    "grpc/reflection/v1/reflection.grpc.pb.h": "//:reflection_v1_cc_grpc",
+    "grpc/reflection/v1alpha/reflection.pb.h": "//:reflection_v1alpha_cc_grpc",
+    "grpc/reflection/v1alpha/reflection.grpc.pb.h": "//:reflection_v1alpha_cc_grpc",
     "src/proto/grpc/gcp/transport_security_common.upb.h": "alts_upb",
     "src/proto/grpc/gcp/handshaker.upb.h": "alts_upb",
     "src/proto/grpc/gcp/altscontext.upb.h": "alts_upb",

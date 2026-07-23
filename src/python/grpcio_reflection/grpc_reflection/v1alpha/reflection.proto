@@ -1,4 +1,4 @@
-// Copyright 2016 gRPC authors.
+// Copyright 2016 The gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,12 +11,21 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 // Service exported by server reflection
+
+
+// Warning: this entire file is deprecated. Use this instead:
+// https://github.com/grpc/grpc-proto/blob/master/grpc/reflection/v1/reflection.proto
 
 syntax = "proto3";
 
 package grpc.reflection.v1alpha;
+
+option deprecated = true;
+option go_package = "google.golang.org/grpc/reflection/grpc_reflection_v1alpha";
+option java_multiple_files = true;
+option java_package = "io.grpc.reflection.v1alpha";
+option java_outer_classname = "ServerReflectionProto";
 
 service ServerReflection {
   // The reflection service is structured as a bidirectional stream, ensuring
@@ -44,8 +53,8 @@ message ServerReflectionRequest {
     // message type with the given field number.
     ExtensionRequest file_containing_extension = 5;
 
-    // Finds the tag numbers used by all known extensions of the given message
-    // type, and appends them to ExtensionNumberResponse in an undefined order.
+    // Finds the tag numbers used by all known extensions of extendee_type, and
+    // appends them to ExtensionNumberResponse in an undefined order.
     // Its corresponding method is best-effort: it's not guaranteed that the
     // reflection service will implement this method, and it's not guaranteed
     // that this method will provide all extensions. Returns
@@ -72,7 +81,7 @@ message ExtensionRequest {
 message ServerReflectionResponse {
   string valid_host = 1;
   ServerReflectionRequest original_request = 2;
-  // The server set one of the following fields accroding to the message_request
+  // The server set one of the following fields according to the message_request
   // in the request.
   oneof message_response {
     // This message is used to answer file_by_filename, file_containing_symbol,

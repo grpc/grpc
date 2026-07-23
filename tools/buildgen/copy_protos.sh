@@ -16,7 +16,7 @@
 
 set -euo pipefail
 
-GRPC_ROOT=$(realpath "$(dirname "$0")/../..")
+GRPC_ROOT=$(realpath "$(dirname "${BASH_SOURCE[0]:-$0}")/../..")
 
 # Source and destination directories (base paths).
 SRC_BASE="$GRPC_ROOT/src/proto/grpc"
@@ -28,13 +28,16 @@ copy_proto() {
   local DST_SUBDIR="$3"
 
   local SRC_FILE="$SRC_BASE/$SRC_SUBDIR/$PROTO_NAME.proto"
+  if [ ! -f "$SRC_FILE" ]; then
+    SRC_FILE="$GRPC_ROOT/third_party/grpc-proto/grpc/$SRC_SUBDIR/$PROTO_NAME.proto"
+  fi
   local DST_FILE="$DST_BASE/$DST_SUBDIR/$PROTO_NAME.proto"
 
   cp "$SRC_FILE" "$DST_FILE"
   echo "Copied: $SRC_FILE -> $DST_FILE"
 }
 
-copy_proto "channelz" "channelz" "grpcio_channelz/grpc_channelz/v1"
+copy_proto "channelz" "channelz/v1" "grpcio_channelz/grpc_channelz/v1"
 copy_proto "health" "health/v1" "grpcio_health_checking/grpc_health/v1"
 copy_proto "reflection" "reflection/v1alpha" "grpcio_reflection/grpc_reflection/v1alpha"
 
