@@ -23,7 +23,9 @@
 #include <initializer_list>
 #include <utility>
 
+#include "src/core/call/call_destination.h"
 #include "src/core/call/call_spine.h"
+#include "src/core/call/interception_chain.h"
 #include "src/core/call/message.h"
 #include "src/core/call/metadata.h"
 #include "src/core/filter/filter_args.h"

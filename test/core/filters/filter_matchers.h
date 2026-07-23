@@ -47,12 +47,12 @@ MATCHER_P(HasMessageFlags, value, "") { return arg.flags() == value; }
 
 // Metadata encodes a given absl::Status (grpc-status + grpc-message).
 MATCHER_P(HasMetadataResult, absl_status, "") {
-  auto status = arg.get(grpc_core::GrpcStatusMetadata());
+  auto status = arg.get(GrpcStatusMetadata());
   if (!status.has_value()) return false;
   if (static_cast<absl::StatusCode>(status.value()) != absl_status.code()) {
     return false;
   }
-  auto* message = arg.get_pointer(grpc_core::GrpcMessageMetadata());
+  auto* message = arg.get_pointer(GrpcMessageMetadata());
   if (message == nullptr) return absl_status.message().empty();
   return message->as_string_view() == absl_status.message();
 }
