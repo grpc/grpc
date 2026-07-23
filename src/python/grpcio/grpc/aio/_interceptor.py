@@ -110,17 +110,18 @@ class ServerInterceptor(metaclass=ABCMeta):
         """
 
 
-class _ClientCallDetailsTuple(NamedTuple):
-    method: bytes
-    timeout: Optional[float]
-    metadata: Optional[Metadata]
-    credentials: Optional[grpc.CallCredentials]
-    wait_for_ready: Optional[bool]
-
-
 class ClientCallDetails(
-    _ClientCallDetailsTuple,
-    grpc.ClientCallDetails,
+  NamedTuple(
+    "ClientCallDetails",
+    [
+      ("method", bytes),
+      ("timeout", Optional[float]),
+      ("metadata", Optional[Metadata]),
+      ("credentials", Optional[grpc.CallCredentials]),
+      ("wait_for_ready", Optional[bool]),
+    ]
+  ),
+  grpc.ClientCallDetails,
 ):
     """Describes an RPC to be invoked.
 
@@ -134,6 +135,7 @@ class ClientCallDetails(
         credentials: An optional CallCredentials for the RPC.
         wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
     """
+    pass
 
 
 class ClientInterceptor(metaclass=ABCMeta):
