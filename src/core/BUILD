@@ -8136,6 +8136,51 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "slice_map",
+    srcs = [
+        "load_balancing/slicer/slice_map.cc",
+    ],
+    hdrs = [
+        "load_balancing/slicer/slice_map.h",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "lb_policy",
+        "ref_counted",
+        "//:gpr",
+        "//:grpc_public_hdrs",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "slicer_picker",
+    srcs = [
+        "load_balancing/slicer/slicer_picker.cc",
+    ],
+    hdrs = [
+        "load_balancing/slicer/slicer_picker.h",
+    ],
+    external_deps = [
+        "absl/random:distributions",
+        "absl/status",
+        "absl/strings",
+    ],
+    deps = [
+        "lb_policy",
+        "shared_bit_gen",
+        "slice_map",
+        "//:gpr",
+        "//:grpc_public_hdrs",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "static_stride_scheduler",
     srcs = [
         "load_balancing/weighted_round_robin/static_stride_scheduler.cc",

@@ -400,6 +400,44 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "slice_map_test",
+    srcs = ["slice_map_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/status",
+        "absl/strings",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:grpc_base",
+        "//:ref_counted_ptr",
+        "//src/core:slice_map",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "slicer_picker_test",
+    srcs = ["slicer_picker_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/strings",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:grpc_base",
+        "//:ref_counted_ptr",
+        "//src/core:slice_map",
+        "//src/core:slicer_picker",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "static_stride_scheduler_test",
     srcs = ["static_stride_scheduler_test.cc"],
     external_deps = [
