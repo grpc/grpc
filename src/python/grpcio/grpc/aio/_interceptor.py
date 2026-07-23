@@ -1314,4 +1314,12 @@ class StreamStreamCallResponseIterator(
 
     @property
     def _done_writing_flag(self) -> bool:
-        return self._call._done_writing_flag  # pyright: ignore # noqa: PGH003
+        if not isinstance(
+            self._call,
+            StreamUnaryCall
+            | StreamStreamCall
+            | StreamStreamCallResponseIterator,
+        ):
+            err_msg = "Should not happen: expected client-streaming call"
+            raise TypeError(err_msg)
+        return self._call._done_writing_flag
