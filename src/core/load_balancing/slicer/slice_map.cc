@@ -30,7 +30,6 @@ namespace grpc_core {
 absl::StatusOr<RefCountedPtr<SliceMap>> SliceMap::Make(
     const EndpointMap& endpoint_map, const LogicalAssignment* assignment) {
   auto slice_map = MakeRefCounted<SliceMap>();
-
   // No assignment yet: build a "total fallback" map containing every endpoint
   // and no slices. Every pick will use the fallback pool (all_endpoints_).
   if (assignment == nullptr || assignment->slices.empty()) {
@@ -40,9 +39,7 @@ absl::StatusOr<RefCountedPtr<SliceMap>> SliceMap::Make(
     }
     return slice_map;
   }
-
   slice_map->generation_ = assignment->generation;
-
   // Assign a stable index to each endpoint, with the assignment's endpoints
   // first (in the order they appear) followed by any resolver endpoints not
   // named by the assignment. `index_for_name` maps hostname -> index into
@@ -62,7 +59,6 @@ absl::StatusOr<RefCountedPtr<SliceMap>> SliceMap::Make(
     index_for_name.emplace(ep_it->first, index);
     return index;
   };
-
   // Build the slices, indexing each assigned endpoint as we go.
   slice_map->slices_.reserve(assignment->slices.size());
   for (const auto& slice_assignment : assignment->slices) {
@@ -84,7 +80,6 @@ absl::StatusOr<RefCountedPtr<SliceMap>> SliceMap::Make(
             entry.all_endpoints_in_slice.size();
     slice_map->slices_.push_back(std::move(entry));
   }
-
   // Append any resolver endpoints not named by the assignment so they remain
   // reachable via the fallback pool.
   for (const auto& [name, state] : endpoint_map) {
@@ -92,14 +87,12 @@ absl::StatusOr<RefCountedPtr<SliceMap>> SliceMap::Make(
       slice_map->all_endpoints_.push_back(state);
     }
   }
-
   // The sharding service does not guarantee sorted slices; sort by start_key so
   // Lookup() can binary-search.
   std::sort(slice_map->slices_.begin(), slice_map->slices_.end(),
             [](const SliceEntry& a, const SliceEntry& b) {
               return a.start_key < b.start_key;
             });
-
   return slice_map;
 }
 

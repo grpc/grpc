@@ -146,16 +146,32 @@ TEST(SlicerPickerTest, ReadySliceDelegatesToReadyEndpoint) {
   EXPECT_EQ(FailMessage(DoPick(picker, "k")), "r");
 }
 
-TEST(SlicerPickerTest, MissingHeaderUsesEmptyKey) {
+TEST(SlicerPickerTest, MissingHeaderFailsWhenFallbackDisabled) {
   SliceMap::EndpointMap endpoints;
   endpoints["r"] = MakeEndpoint(GRPC_CHANNEL_READY, "r");
-  auto assignment = OneSlice({"r"});  // slice starts at "".
+  auto assignment = OneSlice({"r"});  // Slice starts at "".
   auto slice_map = SliceMap::Make(endpoints, &assignment);
   ASSERT_TRUE(slice_map.ok()) << slice_map.status();
 
   SlicerPicker picker(*slice_map, std::string(kHeader),
                       /*fallback_enabled=*/false);
-  // No header => empty key => matches the slice starting at "".
+  // A request with no slice-key header cannot be routed; it must not be silently
+  // treated as the empty key (which would match the slice starting at "").
+  auto msg = FailMessage(DoPick(picker, std::nullopt));
+  ASSERT_TRUE(msg.has_value());
+  EXPECT_THAT(*msg, ::testing::HasSubstr("no \"slice-key\" header"));
+}
+
+TEST(SlicerPickerTest, MissingHeaderUsesFallbackPoolWhenEnabled) {
+  SliceMap::EndpointMap endpoints;
+  endpoints["r"] = MakeEndpoint(GRPC_CHANNEL_READY, "r");
+  auto assignment = OneSlice({"r"});
+  auto slice_map = SliceMap::Make(endpoints, &assignment);
+  ASSERT_TRUE(slice_map.ok()) << slice_map.status();
+
+  SlicerPicker picker(*slice_map, std::string(kHeader),
+                      /*fallback_enabled=*/true);
+  // No key => fallback pool (single endpoint => deterministic "r").
   EXPECT_EQ(FailMessage(DoPick(picker, std::nullopt)), "r");
 }
 

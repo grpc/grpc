@@ -30,12 +30,24 @@
 namespace grpc_core {
 namespace {
 
+using ::testing::ElementsAre;
 using ::testing::UnorderedElementsAre;
 
 // EndpointState with the given connectivity state and a null picker (the picker
 // is not exercised by these tests).
 RefCountedPtr<EndpointState> Endpoint(grpc_connectivity_state state) {
   return MakeRefCounted<EndpointState>(state, nullptr);
+}
+
+// The connectivity states of every endpoint in the map (i.e. the fallback
+// pool). Endpoints carry no identity of their own, so tests assert on the
+// multiset of states rather than on endpoint names.
+std::vector<grpc_connectivity_state> AllStates(const SliceMap& slice_map) {
+  std::vector<grpc_connectivity_state> result;
+  for (const auto& endpoint : slice_map.all_endpoints()) {
+    result.push_back(endpoint->connectivity_state());
+  }
+  return result;
 }
 
 // Returns the connectivity states of the endpoints in `slice`'s bucket for
@@ -64,7 +76,8 @@ TEST(SliceMapTest, TotalFallbackWhenNoAssignment) {
   EXPECT_EQ((*slice_map)->Lookup(""), nullptr);
   EXPECT_EQ((*slice_map)->Lookup("anything"), nullptr);
   // The fallback pool is every endpoint.
-  EXPECT_EQ((*slice_map)->all_endpoints().size(), 2);
+  EXPECT_THAT(AllStates(**slice_map),
+              UnorderedElementsAre(GRPC_CHANNEL_READY, GRPC_CHANNEL_CONNECTING));
   EXPECT_EQ((*slice_map)->generation(), 0);
 }
 
@@ -78,7 +91,7 @@ TEST(SliceMapTest, EmptyAssignmentSlicesIsTotalFallback) {
   auto slice_map = SliceMap::Make(endpoints, &assignment);
   ASSERT_TRUE(slice_map.ok()) << slice_map.status();
   EXPECT_TRUE((*slice_map)->slices().empty());
-  EXPECT_EQ((*slice_map)->all_endpoints().size(), 1);
+  EXPECT_THAT(AllStates(**slice_map), ElementsAre(GRPC_CHANNEL_READY));
   // A total-fallback map has no assignment, so generation is 0.
   EXPECT_EQ((*slice_map)->generation(), 0);
 }
@@ -161,13 +174,17 @@ TEST(SliceMapTest, UnmappedEndpointsAppendedToFallbackPoolOnly) {
   ASSERT_TRUE(slice_map.ok()) << slice_map.status();
 
   // All three endpoints are in the fallback pool.
-  EXPECT_EQ((*slice_map)->all_endpoints().size(), 3);
-  // But the single slice contains only the assigned endpoint.
+  EXPECT_THAT(AllStates(**slice_map),
+              UnorderedElementsAre(GRPC_CHANNEL_READY, GRPC_CHANNEL_READY,
+                                   GRPC_CHANNEL_IDLE));
+  // But the single slice contains only the assigned (READY) endpoint.
   ASSERT_EQ((*slice_map)->slices().size(), 1);
   const SliceEntry& slice = (*slice_map)->slices()[0];
-  size_t total = 0;
-  for (const auto& bucket : slice.endpoints_by_state) total += bucket.size();
-  EXPECT_EQ(total, 1);
+  EXPECT_THAT(StatesInBucket(**slice_map, slice, GRPC_CHANNEL_READY),
+              ElementsAre(GRPC_CHANNEL_READY));
+  // The slice's only endpoint is that READY one (flat list == READY bucket).
+  EXPECT_EQ(slice.all_endpoints_in_slice,
+            slice.endpoints_by_state[GRPC_CHANNEL_READY]);
 }
 
 TEST(SliceMapTest, InFallbackWhenSliceHasNoEndpoints) {
@@ -237,7 +254,15 @@ TEST(SliceMapTest, EndpointSharedAcrossSlicesIsDeduplicated) {
   auto slice_map = SliceMap::Make(endpoints, &assignment);
   ASSERT_TRUE(slice_map.ok()) << slice_map.status();
   // "shared" appears in both slices but is stored once in all_endpoints().
-  EXPECT_EQ((*slice_map)->all_endpoints().size(), 2);
+  EXPECT_THAT(AllStates(**slice_map),
+              UnorderedElementsAre(GRPC_CHANNEL_READY, GRPC_CHANNEL_READY));
+  // ...and slice "b" reuses the very index that slice "a" assigned to "shared"
+  // (its first endpoint), rather than a duplicate entry.
+  ASSERT_EQ((*slice_map)->slices().size(), 2);
+  const SliceEntry& slice_a = (*slice_map)->slices()[0];  // start_key "a"
+  const SliceEntry& slice_b = (*slice_map)->slices()[1];  // start_key "b"
+  EXPECT_THAT(slice_b.all_endpoints_in_slice,
+              ElementsAre(slice_a.all_endpoints_in_slice[0]));
 }
 
 }  // namespace
