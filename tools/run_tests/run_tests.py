@@ -1728,8 +1728,6 @@ argp.add_argument(
         "default",
         # The gcc:10 docker image which is 10.5 as of May 2026.
         "gcc10",
-        # Uses debian11 docker image which comes with gcc 10.2
-        "gcc10.2",
         "gcc10.2_openssl102",
         "gcc10.2_openssl111",
         "gcc12_openssl309",
