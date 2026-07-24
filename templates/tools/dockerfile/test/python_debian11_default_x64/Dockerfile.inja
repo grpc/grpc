@@ -36,6 +36,6 @@ RUN python3.10 -m pip install six
 
 {% include "../../gcp_api_libraries.include" %}
 
-{% include "../../cmake.include" %}
+{% include "../../cmake_bullseye_backports.include" %}
 {% include "../../ccache.include" %}
 
