@@ -1262,6 +1262,7 @@ libs:
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_grpc.h
   - src/core/tsi/transport_security_interface.h
+  - src/core/util/address_sorting_init.h
   - src/core/util/atomic_utils.h
   - src/core/util/avl.h
   - src/core/util/backoff.h
@@ -2202,6 +2203,7 @@ libs:
   - src/core/tsi/tls_telemetry.cc
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
+  - src/core/util/address_sorting_init.cc
   - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/event_log.cc
@@ -2970,6 +2972,7 @@ libs:
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_grpc.h
   - src/core/tsi/transport_security_interface.h
+  - src/core/util/address_sorting_init.h
   - src/core/util/atomic_utils.h
   - src/core/util/avl.h
   - src/core/util/backoff.h
@@ -3444,6 +3447,7 @@ libs:
   - src/core/tsi/local_transport_security.cc
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
+  - src/core/util/address_sorting_init.cc
   - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/event_log.cc
@@ -5040,6 +5044,7 @@ libs:
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_grpc.h
   - src/core/tsi/transport_security_interface.h
+  - src/core/util/address_sorting_init.h
   - src/core/util/atomic_utils.h
   - src/core/util/avl.h
   - src/core/util/backoff.h
@@ -5367,6 +5372,7 @@ libs:
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
+  - src/core/util/address_sorting_init.cc
   - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/event_log.cc
@@ -7683,6 +7689,7 @@ targets:
   - src/core/transport/auth_context_comparator_registry.h
   - src/core/transport/endpoint_transport.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
+  - src/core/util/address_sorting_init.h
   - src/core/util/atomic_utils.h
   - src/core/util/avl.h
   - src/core/util/backoff.h
@@ -7976,6 +7983,7 @@ targets:
   - src/core/telemetry/stats_data.cc
   - src/core/telemetry/tcp_tracer.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  - src/core/util/address_sorting_init.cc
   - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/event_log.cc
@@ -13379,6 +13387,7 @@ targets:
   - src/core/transport/auth_context_comparator_registry.h
   - src/core/transport/endpoint_transport.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
+  - src/core/util/address_sorting_init.h
   - src/core/util/atomic_utils.h
   - src/core/util/avl.h
   - src/core/util/backoff.h
@@ -13672,6 +13681,7 @@ targets:
   - src/core/telemetry/stats_data.cc
   - src/core/telemetry/tcp_tracer.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  - src/core/util/address_sorting_init.cc
   - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/event_log.cc
@@ -16264,6 +16274,7 @@ targets:
   - src/core/transport/auth_context_comparator_registry.h
   - src/core/transport/endpoint_transport.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
+  - src/core/util/address_sorting_init.h
   - src/core/util/atomic_utils.h
   - src/core/util/avl.h
   - src/core/util/backoff.h
@@ -16560,6 +16571,7 @@ targets:
   - src/core/telemetry/stats_data.cc
   - src/core/telemetry/tcp_tracer.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  - src/core/util/address_sorting_init.cc
   - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/event_log.cc
@@ -25899,6 +25911,7 @@ targets:
   - src/core/transport/auth_context_comparator_registry.h
   - src/core/transport/endpoint_transport.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
+  - src/core/util/address_sorting_init.h
   - src/core/util/atomic_utils.h
   - src/core/util/avl.h
   - src/core/util/backoff.h
@@ -26194,6 +26207,7 @@ targets:
   - src/core/telemetry/stats_data.cc
   - src/core/telemetry/tcp_tracer.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  - src/core/util/address_sorting_init.cc
   - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/event_log.cc
@@ -27241,6 +27255,7 @@ targets:
   - src/core/transport/auth_context_comparator_registry.h
   - src/core/transport/endpoint_transport.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
+  - src/core/util/address_sorting_init.h
   - src/core/util/atomic_utils.h
   - src/core/util/avl.h
   - src/core/util/backoff.h
@@ -27535,6 +27550,7 @@ targets:
   - src/core/telemetry/stats_data.cc
   - src/core/telemetry/tcp_tracer.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  - src/core/util/address_sorting_init.cc
   - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/event_log.cc

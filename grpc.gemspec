@@ -2026,6 +2026,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/tsi/transport_security_grpc.cc )
   s.files += %w( src/core/tsi/transport_security_grpc.h )
   s.files += %w( src/core/tsi/transport_security_interface.h )
+  s.files += %w( src/core/util/address_sorting_init.cc )
+  s.files += %w( src/core/util/address_sorting_init.h )
   s.files += %w( src/core/util/alloc.cc )
   s.files += %w( src/core/util/alloc.h )
   s.files += %w( src/core/util/atomic_utils.h )

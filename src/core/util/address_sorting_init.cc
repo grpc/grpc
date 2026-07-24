@@ -31,9 +31,7 @@ absl::once_flag init_flag;
 }  // namespace
 
 void AddressSortingInitOnce() {
-  absl::call_once(init_flag, []() {
-    address_sorting_init();
-  });
+  absl::call_once(init_flag, []() { address_sorting_init(); });
 }
 
 }  // namespace grpc_core
