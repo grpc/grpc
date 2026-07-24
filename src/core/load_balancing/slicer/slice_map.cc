@@ -20,10 +20,11 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <optional>
 #include <utility>
 
-#include "absl/strings/str_cat.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 
@@ -46,14 +47,11 @@ absl::StatusOr<RefCountedPtr<SliceMap>> SliceMap::Make(
   // all_endpoints_ and is local to Make(): only the resulting indices are
   // retained in the SliceMap.
   std::map<absl::string_view, size_t> index_for_name;
-  auto index_of = [&](const std::string& name) -> absl::StatusOr<size_t> {
+  auto index_of = [&](const std::string& name) -> std::optional<size_t> {
     auto it = index_for_name.find(name);
     if (it != index_for_name.end()) return it->second;
     auto ep_it = endpoint_map.find(name);
-    if (ep_it == endpoint_map.end()) {
-      return absl::NotFoundError(absl::StrCat(
-          "endpoint \"", name, "\" named by slice assignment not found"));
-    }
+    if (ep_it == endpoint_map.end()) return std::nullopt;
     size_t index = slice_map->all_endpoints_.size();
     slice_map->all_endpoints_.push_back(ep_it->second);
     index_for_name.emplace(ep_it->first, index);
@@ -66,7 +64,7 @@ absl::StatusOr<RefCountedPtr<SliceMap>> SliceMap::Make(
     entry.start_key = slice_assignment.start_key;
     for (const auto& name : slice_assignment.endpoint_names) {
       auto index = index_of(name);
-      if (!index.ok()) return index.status();
+      if (!index.has_value()) continue;
       grpc_connectivity_state state =
           slice_map->all_endpoints_[*index]->connectivity_state();
       entry.all_endpoints_in_slice.push_back(*index);

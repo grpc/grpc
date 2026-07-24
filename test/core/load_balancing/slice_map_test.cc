@@ -21,11 +21,11 @@
 #include <string>
 #include <vector>
 
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "src/core/util/ref_counted_ptr.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace {
@@ -76,8 +76,9 @@ TEST(SliceMapTest, TotalFallbackWhenNoAssignment) {
   EXPECT_EQ((*slice_map)->Lookup(""), nullptr);
   EXPECT_EQ((*slice_map)->Lookup("anything"), nullptr);
   // The fallback pool is every endpoint.
-  EXPECT_THAT(AllStates(**slice_map),
-              UnorderedElementsAre(GRPC_CHANNEL_READY, GRPC_CHANNEL_CONNECTING));
+  EXPECT_THAT(
+      AllStates(**slice_map),
+      UnorderedElementsAre(GRPC_CHANNEL_READY, GRPC_CHANNEL_CONNECTING));
   EXPECT_EQ((*slice_map)->generation(), 0);
 }
 
@@ -155,8 +156,9 @@ TEST(SliceMapTest, EndpointsBucketedByState) {
               UnorderedElementsAre(GRPC_CHANNEL_READY, GRPC_CHANNEL_READY));
   EXPECT_THAT(StatesInBucket(**slice_map, slice, GRPC_CHANNEL_CONNECTING),
               UnorderedElementsAre(GRPC_CHANNEL_CONNECTING));
-  EXPECT_THAT(StatesInBucket(**slice_map, slice, GRPC_CHANNEL_TRANSIENT_FAILURE),
-              UnorderedElementsAre(GRPC_CHANNEL_TRANSIENT_FAILURE));
+  EXPECT_THAT(
+      StatesInBucket(**slice_map, slice, GRPC_CHANNEL_TRANSIENT_FAILURE),
+      UnorderedElementsAre(GRPC_CHANNEL_TRANSIENT_FAILURE));
   EXPECT_TRUE(slice.endpoints_by_state[GRPC_CHANNEL_IDLE].empty());
   EXPECT_FALSE(slice.in_fallback);
 }
@@ -228,7 +230,7 @@ TEST(SliceMapTest, NotInFallbackWithOneNonTransientFailureEndpoint) {
   EXPECT_FALSE((*slice_map)->slices()[0].in_fallback);
 }
 
-TEST(SliceMapTest, MissingAssignedEndpointIsError) {
+TEST(SliceMapTest, MissingAssignedEndpointIsSkipped) {
   SliceMap::EndpointMap endpoints;
   endpoints["a"] = Endpoint(GRPC_CHANNEL_READY);
 
@@ -236,8 +238,12 @@ TEST(SliceMapTest, MissingAssignedEndpointIsError) {
   assignment.slices = {{/*start_key=*/"", {"a", "does-not-exist"}}};
 
   auto slice_map = SliceMap::Make(endpoints, &assignment);
-  ASSERT_FALSE(slice_map.ok());
-  EXPECT_EQ(slice_map.status().code(), absl::StatusCode::kNotFound);
+  ASSERT_TRUE(slice_map.ok()) << slice_map.status();
+  ASSERT_EQ((*slice_map)->slices().size(), 1);
+  const SliceEntry& slice = (*slice_map)->slices()[0];
+  EXPECT_THAT(StatesInBucket(**slice_map, slice, GRPC_CHANNEL_READY),
+              ElementsAre(GRPC_CHANNEL_READY));
+  EXPECT_FALSE(slice.in_fallback);
 }
 
 TEST(SliceMapTest, EndpointSharedAcrossSlicesIsDeduplicated) {

@@ -29,12 +29,12 @@
 #include <utility>
 #include <vector>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -70,7 +70,7 @@ class EndpointState final : public RefCounted<EndpointState> {
   // request is issued at most once for the life of this EndpointState (the
   // first caller wins); later calls are no-ops. Returns true iff this call was
   // the one that triggered the request. Safe to call concurrently from picks.
-  bool ExitIdle() {
+  bool ExitIdle() const {
     bool expected = false;
     if (!connect_triggered_.compare_exchange_strong(
             expected, true, std::memory_order_relaxed)) {
@@ -88,8 +88,8 @@ class EndpointState final : public RefCounted<EndpointState> {
  private:
   grpc_connectivity_state connectivity_state_;
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker_;
-  absl::AnyInvocable<void()> exit_idle_;
-  std::atomic<bool> connect_triggered_{false};
+  mutable absl::AnyInvocable<void()> exit_idle_;
+  mutable std::atomic<bool> connect_triggered_{false};
 };
 
 // One key-range entry within a SliceMap. The range starts at start_key

@@ -23674,6 +23674,18 @@ targets:
   deps:
   - gtest
   - grpc
+- name: slice_map_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/load_balancing/slicer/slice_map.h
+  src:
+  - src/core/load_balancing/slicer/slice_map.cc
+  - test/core/load_balancing/slice_map_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: slice_string_helpers_test
   gtest: true
   build: test
@@ -23699,6 +23711,20 @@ targets:
   - absl/container:flat_hash_map
   - absl/hash:hash
   - gpr
+- name: slicer_picker_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/load_balancing/slicer/slice_map.h
+  - src/core/load_balancing/slicer/slicer_picker.h
+  src:
+  - src/core/load_balancing/slicer/slice_map.cc
+  - src/core/load_balancing/slicer/slicer_picker.cc
+  - test/core/load_balancing/slicer_picker_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: sockaddr_resolver_test
   gtest: true
   build: test

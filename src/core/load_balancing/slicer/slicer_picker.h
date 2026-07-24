@@ -55,7 +55,8 @@ class SlicerPicker final : public LoadBalancingPolicy::SubchannelPicker {
   PickResult PickFromFallbackPool(PickArgs args);
   // Delegates to a random endpoint from `indices` (indices into
   // slice_map_->all_endpoints()).
-  PickResult DelegateToRandom(const std::vector<size_t>& indices, PickArgs args);
+  PickResult DelegateToRandom(const std::vector<size_t>& indices,
+                              PickArgs args);
   // Delegates the pick to `endpoint`'s picker, or queues if it has none.
   PickResult Delegate(const EndpointState& endpoint, PickArgs args);
 

@@ -22,14 +22,14 @@
 #include <string>
 #include <variant>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/slicer/slice_map.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace {
@@ -61,8 +61,8 @@ class FakeMetadata final : public LoadBalancingPolicy::MetadataInterface {
  public:
   explicit FakeMetadata(std::optional<std::string> value)
       : value_(std::move(value)) {}
-  std::optional<absl::string_view> Lookup(absl::string_view key,
-                                          std::string* /*buffer*/) const override {
+  std::optional<absl::string_view> Lookup(
+      absl::string_view key, std::string* /*buffer*/) const override {
     if (value_.has_value() && key == kHeader) return absl::string_view(*value_);
     return std::nullopt;
   }
@@ -96,13 +96,15 @@ bool IsQueue(const PickResult& result) {
   return std::holds_alternative<PickResult::Queue>(result.result);
 }
 
-PickResult DoPick(SlicerPicker& picker, std::optional<std::string> header_value) {
+PickResult DoPick(SlicerPicker& picker,
+                  std::optional<std::string> header_value) {
   FakeMetadata metadata(std::move(header_value));
   PickArgs args{/*path=*/"", &metadata, /*call_state=*/nullptr};
   return picker.Pick(args);
 }
 
-// Builds a single-slice assignment starting at "" with the given endpoint names.
+// Builds a single-slice assignment starting at "" with the given endpoint
+// names.
 SliceMap::LogicalAssignment OneSlice(std::vector<std::string> endpoint_names) {
   SliceMap::LogicalAssignment assignment;
   assignment.slices = {{/*start_key=*/"", std::move(endpoint_names)}};
@@ -119,7 +121,8 @@ TEST(SlicerPickerTest, NoAssignmentFallbackDisabledFails) {
                       /*fallback_enabled=*/false);
   auto result = DoPick(picker, "anything");
   ASSERT_TRUE(FailMessage(result).has_value());
-  EXPECT_THAT(*FailMessage(result), ::testing::HasSubstr("no slice assignment"));
+  EXPECT_THAT(*FailMessage(result),
+              ::testing::HasSubstr("no slice assignment"));
 }
 
 TEST(SlicerPickerTest, NoAssignmentFallbackEnabledUsesFallbackPool) {
@@ -155,8 +158,9 @@ TEST(SlicerPickerTest, MissingHeaderFailsWhenFallbackDisabled) {
 
   SlicerPicker picker(*slice_map, std::string(kHeader),
                       /*fallback_enabled=*/false);
-  // A request with no slice-key header cannot be routed; it must not be silently
-  // treated as the empty key (which would match the slice starting at "").
+  // A request with no slice-key header cannot be routed; it must not be
+  // silently treated as the empty key (which would match the slice starting at
+  // "").
   auto msg = FailMessage(DoPick(picker, std::nullopt));
   ASSERT_TRUE(msg.has_value());
   EXPECT_THAT(*msg, ::testing::HasSubstr("no \"slice-key\" header"));
@@ -219,7 +223,8 @@ TEST(SlicerPickerTest, ConnectingQueues) {
   EXPECT_TRUE(IsQueue(DoPick(picker, "k")));
 }
 
-TEST(SlicerPickerTest, AllTransientFailureFallbackDisabledFailsViaEndpointPicker) {
+TEST(SlicerPickerTest,
+     AllTransientFailureFallbackDisabledFailsViaEndpointPicker) {
   SliceMap::EndpointMap endpoints;
   endpoints["tf1"] = MakeEndpoint(GRPC_CHANNEL_TRANSIENT_FAILURE, "tf1");
   endpoints["tf2"] = MakeEndpoint(GRPC_CHANNEL_TRANSIENT_FAILURE, "tf2");
@@ -249,10 +254,10 @@ TEST(SlicerPickerTest, EmptySliceQueues) {
 }
 
 TEST(SlicerPickerTest, SliceInFallbackUsesGlobalFallbackPool) {
-  // The slice contains only a TRANSIENT_FAILURE endpoint (=> in_fallback), while
-  // the resolver also has an unassigned READY endpoint "fb". With fallback
-  // enabled, picks must be served from the global pool (which includes "fb"),
-  // not from the slice alone.
+  // The slice contains only a TRANSIENT_FAILURE endpoint (=> in_fallback),
+  // while the resolver also has an unassigned READY endpoint "fb". With
+  // fallback enabled, picks must be served from the global pool (which includes
+  // "fb"), not from the slice alone.
   SliceMap::EndpointMap endpoints;
   endpoints["tf"] = MakeEndpoint(GRPC_CHANNEL_TRANSIENT_FAILURE, "tf");
   endpoints["fb"] = MakeEndpoint(GRPC_CHANNEL_READY, "fb");
@@ -272,6 +277,19 @@ TEST(SlicerPickerTest, SliceInFallbackUsesGlobalFallbackPool) {
     if (*msg == "fb") saw_fb = true;
   }
   EXPECT_TRUE(saw_fb);
+}
+
+TEST(SlicerPickerTest, FallbackPoolTriggersExitIdleOnIdleEndpoint) {
+  int exit_idle_count = 0;
+  SliceMap::EndpointMap endpoints;
+  endpoints["i"] = MakeEndpoint(GRPC_CHANNEL_IDLE, "i", &exit_idle_count);
+  auto slice_map = SliceMap::Make(endpoints, /*assignment=*/nullptr);
+  ASSERT_TRUE(slice_map.ok()) << slice_map.status();
+
+  SlicerPicker picker(*slice_map, std::string(kHeader),
+                      /*fallback_enabled=*/true);
+  (void)DoPick(picker, "anything");
+  EXPECT_EQ(exit_idle_count, 1);
 }
 
 }  // namespace
