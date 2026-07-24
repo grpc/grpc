@@ -259,6 +259,14 @@ ExtProcFilter::ExtProcChannel::~ExtProcChannel() {
 
 class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
  public:
+  friend class ClientInitialMetadataProcessor;
+  friend class ClientToServerMessageProcessor;
+  friend class ServerInitialMetadataProcessor;
+  friend class ServerToExtProcInitialMetadataProcessor;
+  friend class ExtProcToClientInitialMetadataProcessor;
+  friend class ServerToClientMessageProcessor;
+  friend class ServerTrailingMetadataProcessor;
+
   ExtProcCall(RefCountedPtr<ExtProcFilter> ext_proc_filter,
               RefCountedPtr<XdsTransportFactory::XdsTransport> transport,
               CallHandler handler);
@@ -1574,10 +1582,11 @@ class ClientToServerMessageProcessor {
   ::google_protobuf_Struct* attributes_;
 };
 
-// Intercepts and processes server initial metadata.
-class ServerInitialMetadataProcessor {
+// Fetches server initial metadata from the backend, sends the ProcessingRequest
+// to the external processor, and handles send errors across all modes.
+class ServerToExtProcInitialMetadataProcessor {
  public:
-  explicit ServerInitialMetadataProcessor(
+  explicit ServerToExtProcInitialMetadataProcessor(
       RefCountedPtr<ExtProcFilter::ExtProcCall> call)
       : call_(std::move(call)) {}
 
@@ -1603,11 +1612,16 @@ class ServerInitialMetadataProcessor {
         [payload = std::move(payload)]() { return payload; });
   }
 
-  absl::AnyInvocable<Poll<absl::Status>()> Process() {
+  // Fetches server initial metadata from the backend and dispatches to
+  // ext_proc.
+  template <typename NextHandler>
+  absl::AnyInvocable<Poll<absl::Status>()> FetchAndSend(
+      NextHandler next_handler) {
     return Seq(
         // Pull server initial metadata from backend.
         call_->initiator_.PullServerInitialMetadata(),
-        [self = *this](std::optional<ServerMetadataHandle> md) mutable
+        [self = *this, next_handler = std::move(next_handler)](
+            std::optional<ServerMetadataHandle> md) mutable
             -> absl::AnyInvocable<Poll<absl::Status>()> {
           // If metadata is empty, this is a trailers-only RPC.
           if (!md.has_value()) {
@@ -1621,37 +1635,69 @@ class ServerInitialMetadataProcessor {
               !self.call_->IsStreamClosed() &&
               !self.call_->ext_proc_stream_half_closed();
           if (!send_headers) {
-            return self.NonProcessingMode(std::move(metadata));
+            return next_handler.NonProcessingMode(std::move(metadata));
           } else if (self.call_->config()->observability_mode) {
-            return self.ObservabilityMode(std::move(metadata));
+            return self.ObservabilityMode(
+                std::move(metadata),
+                [next_handler](
+                    RefCountedPtr<ExtProcFilter::ExtProcCall> /*call*/,
+                    ServerMetadataHandle metadata,
+                    Timestamp start_time) mutable {
+                  return next_handler.ObservabilityMode(std::move(metadata),
+                                                        start_time);
+                });
+          } else if (self.call_->drain_requested()) {
+            return self.DrainMode(std::move(metadata));
           } else {
-            return self.NormalMode(std::move(metadata));
+            return self.NormalMode(
+                std::move(metadata),
+                [next_handler](
+                    RefCountedPtr<ExtProcFilter::ExtProcCall> /*call*/,
+                    ServerMetadataHandle metadata,
+                    Timestamp start_time) mutable {
+                  return next_handler.NormalMode(std::move(metadata),
+                                                 start_time);
+                });
           }
         });
   }
 
- private:
-  // Forwards server initial metadata without ext_proc processing.
-  absl::AnyInvocable<Poll<absl::Status>()> NonProcessingMode(
-      ServerMetadataHandle metadata) {
-    return [call = call_, metadata = std::move(metadata)]() mutable {
-      // If the stream closed with an error and fail-open is not allowed,
-      // propagate the stream error.
-      if (call != nullptr && call->IsStreamClosed() &&
-          !call->IsStreamClosedCleanly() && !call->IsFailOpenAllowed()) {
-        return call->GetStreamStatus();
-      }
-      GRPC_TRACE_LOG(ext_proc_filter, INFO)
-          << "ExtProc: ServerInitialMetadataNonProcessingMode metadata: "
-          << metadata->DebugString();
-      call->handler_.SpawnPushServerInitialMetadata(std::move(metadata));
-      return absl::OkStatus();
-    };
+  // Normal mode: sends headers to ext_proc and invokes callback upon send
+  // completion.
+  absl::AnyInvocable<Poll<absl::Status>()> NormalMode(
+      ServerMetadataHandle metadata, OnSuccessCallback on_success) {
+    return InitialMetadataHelper(std::move(metadata), /*end_of_stream=*/false,
+                                 std::move(on_success));
   }
 
-  // Helper for sending server initial metadata to ext_proc and handling
-  // duration stats recording and fail-open/fail-closed error handling upon
-  // completion.
+  // Observability mode: sends headers to ext_proc and invokes callback upon
+  // send completion.
+  absl::AnyInvocable<Poll<absl::Status>()> ObservabilityMode(
+      ServerMetadataHandle metadata, OnSuccessCallback on_success) {
+    return InitialMetadataHelper(std::move(metadata),
+                                 /*end_of_stream=*/call_->is_trailers_only(),
+                                 std::move(on_success));
+  }
+
+  // Handles server initial metadata when the external processor has requested a
+  // drain.
+  absl::AnyInvocable<Poll<absl::Status>()> DrainMode(
+      ServerMetadataHandle metadata) {
+    return Map(
+        call_->WaitForStreamStatus(),
+        [call = call_, metadata = std::move(metadata)](
+            absl::Status status) mutable -> absl::Status {
+          if (!call->IsStreamClosedCleanly() && !call->IsFailOpenAllowed()) {
+            return status;
+          }
+          call->handler_.SpawnPushServerInitialMetadata(std::move(metadata));
+          return absl::OkStatus();
+        });
+  }
+
+ private:
+  // Helper for sending server initial metadata to ext_proc and handling send
+  // errors across all modes.
   absl::AnyInvocable<Poll<absl::Status>()> InitialMetadataHelper(
       ServerMetadataHandle metadata, bool end_of_stream,
       OnSuccessCallback on_success) {
@@ -1662,9 +1708,6 @@ class ServerInitialMetadataProcessor {
          on_success = std::move(on_success)](absl::Status status) mutable
             -> absl::AnyInvocable<Poll<absl::Status>()> {
           if (!status.ok()) {
-            // If fail-open is allowed or the stream closed cleanly (e.g.
-            // trailers received), ignore the send error and forward server
-            // initial metadata to client.
             if (call->IsFailOpenAllowed() || call->IsStreamClosedCleanly()) {
               call->ext_proc_filter_->RecordServerHeadersDuration(
                   (Timestamp::Now() - start_time).seconds());
@@ -1685,94 +1728,112 @@ class ServerInitialMetadataProcessor {
         });
   }
 
-  // Handles server initial metadata in observability mode.
-  absl::AnyInvocable<Poll<absl::Status>()> ObservabilityMode(
+  RefCountedPtr<ExtProcFilter::ExtProcCall> call_;
+};
+
+// Receives response message from ext_proc server, applies mutations, handles
+// errors, and pushes final metadata to client in all modes.
+class ExtProcToClientInitialMetadataProcessor {
+ public:
+  explicit ExtProcToClientInitialMetadataProcessor(
+      RefCountedPtr<ExtProcFilter::ExtProcCall> call)
+      : call_(std::move(call)) {}
+
+  // Non-processing mode: pushes server initial metadata directly to client.
+  absl::AnyInvocable<Poll<absl::Status>()> NonProcessingMode(
       ServerMetadataHandle metadata) {
-    return InitialMetadataHelper(
-        std::move(metadata), /*end_of_stream=*/call_->is_trailers_only(),
-        [](RefCountedPtr<ExtProcFilter::ExtProcCall> call,
-           ServerMetadataHandle metadata,
-           Timestamp start_time) -> absl::AnyInvocable<Poll<absl::Status>()> {
-          call->ext_proc_filter_->RecordServerHeadersDuration(
-              (Timestamp::Now() - start_time).seconds());
-          call->handler_.SpawnPushServerInitialMetadata(std::move(metadata));
-          return Immediate(absl::OkStatus());
-        });
+    return [call = call_, metadata = std::move(metadata)]() mutable {
+      if (call != nullptr && call->IsStreamClosed() &&
+          !call->IsStreamClosedCleanly() && !call->IsFailOpenAllowed()) {
+        return call->GetStreamStatus();
+      }
+      GRPC_TRACE_LOG(ext_proc_filter, INFO)
+          << "ExtProc: ServerInitialMetadataNonProcessingMode metadata: "
+          << metadata->DebugString();
+      call->handler_.SpawnPushServerInitialMetadata(std::move(metadata));
+      return absl::OkStatus();
+    };
   }
 
-  // Handles server initial metadata when the external processor has requested a
-  // drain.
-  absl::AnyInvocable<Poll<absl::Status>()> DrainMode(
-      ServerMetadataHandle metadata) {
+  // Observability mode: records duration and pushes server initial metadata to
+  // client.
+  absl::AnyInvocable<Poll<absl::Status>()> ObservabilityMode(
+      ServerMetadataHandle metadata, Timestamp start_time) {
+    call_->ext_proc_filter_->RecordServerHeadersDuration(
+        (Timestamp::Now() - start_time).seconds());
+    call_->handler_.SpawnPushServerInitialMetadata(std::move(metadata));
+    return Immediate(absl::OkStatus());
+  }
+
+  // Normal mode: gets response from ext_proc server, applies mutations, handles
+  // errors, and pushes to client.
+  absl::AnyInvocable<Poll<absl::Status>()> NormalMode(
+      ServerMetadataHandle metadata, Timestamp start_time) {
     return Map(
-        call_->WaitForStreamStatus(),
-        [call = call_, metadata = std::move(metadata)](
-            absl::Status status) mutable -> absl::Status {
-          // If the stream did not close cleanly and fail-open is not allowed,
-          // return the stream error status.
-          if (!call->IsStreamClosedCleanly() && !call->IsFailOpenAllowed()) {
-            return status;
+        // Wait for response headers from the external processing server.
+        call_->response_headers_latch().Wait(),
+        [metadata = std::move(metadata), call = call_, start_time](
+            absl::StatusOr<ExtProcResponse> response) mutable -> absl::Status {
+          // Propagate error if ext_proc response processing failed.
+          if (!response.ok()) {
+            return response.status();
           }
+          // Apply header mutations if response contains ResponseHeaders.
+          if (const auto* headers =
+                  std::get_if<ExtProcResponse::ResponseHeaders>(
+                      &response->response);
+              headers != nullptr) {
+            const auto* rules = call->config()->mutation_rules.has_value()
+                                    ? &call->config()->mutation_rules.value()
+                                    : nullptr;
+            if (auto status =
+                    ApplyHeaderMutations(headers->mutation, rules, *metadata);
+                !status.ok()) {
+              return status;
+            }
+          }
+          // Check if the stream closed with an error and fail-open is not
+          // allowed.
+          if (!call->IsFailOpenAllowed() && call->IsStreamClosed()) {
+            return call->GetStreamStatus();
+          }
+          // Record server headers processing duration.
+          call->ext_proc_filter_->RecordServerHeadersDuration(
+              (Timestamp::Now() - start_time).seconds());
+          // Forward the (possibly mutated) server initial metadata to the
+          // client.
           call->handler_.SpawnPushServerInitialMetadata(std::move(metadata));
           return absl::OkStatus();
         });
   }
 
-  // Intercepts, sends to ext_proc, and applies mutations to server initial
-  // metadata.
-  absl::AnyInvocable<Poll<absl::Status>()> NormalMode(
-      ServerMetadataHandle metadata) {
-    if (call_->drain_requested()) {
-      return DrainMode(std::move(metadata));
-    }
-    return InitialMetadataHelper(
-        std::move(metadata), /*end_of_stream=*/false,
-        [](RefCountedPtr<ExtProcFilter::ExtProcCall> call,
-           ServerMetadataHandle metadata,
-           Timestamp start_time) -> absl::AnyInvocable<Poll<absl::Status>()> {
-          return Map(
-              // Wait for response headers from the external processing server.
-              call->response_headers_latch().Wait(),
-              [metadata = std::move(metadata), call,
-               start_time](absl::StatusOr<ExtProcResponse> response) mutable
-                  -> absl::Status {
-                // Propagate error if ext_proc response processing failed.
-                if (!response.ok()) {
-                  return response.status();
-                }
-                // Apply header mutations if response contains ResponseHeaders.
-                if (const auto* headers =
-                        std::get_if<ExtProcResponse::ResponseHeaders>(
-                            &response->response);
-                    headers != nullptr) {
-                  const auto* rules =
-                      call->config()->mutation_rules.has_value()
-                          ? &call->config()->mutation_rules.value()
-                          : nullptr;
-                  if (auto status = ApplyHeaderMutations(headers->mutation,
-                                                         rules, *metadata);
-                      !status.ok()) {
-                    return status;
-                  }
-                }
-                // Check if the stream closed with an error and fail-open is not
-                // allowed.
-                if (!call->IsFailOpenAllowed() && call->IsStreamClosed()) {
-                  return call->GetStreamStatus();
-                }
-                // Record server headers processing duration.
-                call->ext_proc_filter_->RecordServerHeadersDuration(
-                    (Timestamp::Now() - start_time).seconds());
-                // Forward the (possibly mutated) server initial metadata to the
-                // client.
-                call->handler_.SpawnPushServerInitialMetadata(
-                    std::move(metadata));
-                return absl::OkStatus();
-              });
-        });
+  RefCountedPtr<ExtProcFilter::ExtProcCall> call_;
+};
+
+// Orchestrates server initial metadata processing by coordinating
+// ServerToExtProcInitialMetadataProcessor and
+// ExtProcToClientInitialMetadataProcessor.
+class ServerInitialMetadataProcessor {
+ public:
+  explicit ServerInitialMetadataProcessor(
+      RefCountedPtr<ExtProcFilter::ExtProcCall> call)
+      : server_to_extproc_(call), extproc_to_client_(std::move(call)) {}
+
+  static auto SendServerInitialMetadataRequest(
+      RefCountedPtr<ExtProcFilter::ExtProcCall> call,
+      const ServerMetadataHandle& metadata, bool end_of_stream = false) {
+    return ServerToExtProcInitialMetadataProcessor::
+        SendServerInitialMetadataRequest(std::move(call), metadata,
+                                         end_of_stream);
   }
 
-  RefCountedPtr<ExtProcFilter::ExtProcCall> call_;
+  absl::AnyInvocable<Poll<absl::Status>()> Process() {
+    return server_to_extproc_.FetchAndSend(extproc_to_client_);
+  }
+
+ private:
+  ServerToExtProcInitialMetadataProcessor server_to_extproc_;
+  ExtProcToClientInitialMetadataProcessor extproc_to_client_;
 };
 
 // Intercepts and processes server-to-client messages.
