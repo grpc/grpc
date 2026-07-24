@@ -214,32 +214,20 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   class ServerThread {
    public:
     // A status notifier for xDS-enabled servers.
-    //
-    // TODO(yashykt): This notifier records the most recent state seen
-    // for every URI and then lets the caller wait until the status for
-    // that URI is the expected one.  If we are expecting an update that
-    // has the same status as the previous one, then we really have no
-    // way of knowing whether the second update has actually been sent.
-    // A better approach here would be to queue the updates received by
-    // the notifier and then have a method to get the next update from
-    // the queue, if any.
-    // Also, we should change the callers to check not just the status
-    // but also the corresponding error message, so that we can verify
-    // that we're emitting useful error messages for our users.
     class XdsServingStatusNotifier
         : public grpc::XdsServerServingStatusNotifierInterface {
      public:
       void OnServingStatusUpdate(std::string uri,
                                  ServingStatusUpdate update) override;
 
-      GRPC_MUST_USE_RESULT bool WaitOnServingStatusChange(
-          const std::string& uri, grpc::StatusCode expected_status,
-          absl::Duration timeout = absl::Seconds(10));
+      std::optional<absl::Status> GetNextStatus(
+          const std::string& uri, absl::Duration timeout = absl::Seconds(10));
 
      private:
       grpc_core::Mutex mu_;
-      grpc_core::CondVar cond_;
-      std::map<std::string, grpc::Status> status_map ABSL_GUARDED_BY(mu_);
+      grpc_core::CondVar* cond_ ABSL_GUARDED_BY(&mu_) = nullptr;
+      std::map<std::string, std::deque<absl::Status>> status_map_
+          ABSL_GUARDED_BY(&mu_);
     };
 
     // If use_xds_enabled_server is true, the server will use xDS.
@@ -261,13 +249,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
 
     int port() const { return port_; }
 
-    XdsServingStatusNotifier* notifier() { return &notifier_; }
-
-    GRPC_MUST_USE_RESULT bool WaitOnServingStatusChange(
-        grpc::StatusCode expected_status,
+    std::optional<absl::Status> GetNextStatus(
         absl::Duration timeout = absl::Seconds(10)) {
-      return notifier_.WaitOnServingStatusChange(
-          grpc_core::LocalIpAndPort(port_), expected_status, timeout);
+      return notifier_.GetNextStatus(grpc_core::LocalIpAndPort(port_), timeout);
     }
 
     void set_allow_put_requests(bool allow_put_requests) {

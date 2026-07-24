@@ -77,6 +77,7 @@ void PendingVerifierRequestInit(
   bool has_peer_cert = false;
   bool has_peer_cert_full_chain = false;
   bool has_verified_root_cert_subject = false;
+  bool has_negotiated_key_exchange_group = false;
   std::vector<char*> uri_names;
   std::vector<char*> dns_names;
   std::vector<char*> email_names;
@@ -113,6 +114,10 @@ void PendingVerifierRequestInit(
       request->peer_info.verified_root_cert_subject =
           CopyCoreString(prop->value.data, prop->value.length);
       has_verified_root_cert_subject = true;
+    } else if (strcmp(prop->name, TSI_SSL_NEGOTIATED_KEY_EXCHANGE_GROUP) == 0) {
+      request->peer_info.negotiated_key_exchange_group =
+          CopyCoreString(prop->value.data, prop->value.length);
+      has_negotiated_key_exchange_group = true;
     }
   }
   if (!has_common_name) {
@@ -126,6 +131,9 @@ void PendingVerifierRequestInit(
   }
   if (!has_verified_root_cert_subject) {
     request->peer_info.verified_root_cert_subject = nullptr;
+  }
+  if (!has_negotiated_key_exchange_group) {
+    request->peer_info.negotiated_key_exchange_group = nullptr;
   }
   request->peer_info.san_names.uri_names_size = uri_names.size();
   if (!uri_names.empty()) {
@@ -215,6 +223,10 @@ void PendingVerifierRequestDestroy(
   }
   if (request->peer_info.verified_root_cert_subject != nullptr) {
     gpr_free(const_cast<char*>(request->peer_info.verified_root_cert_subject));
+  }
+  if (request->peer_info.negotiated_key_exchange_group != nullptr) {
+    gpr_free(
+        const_cast<char*>(request->peer_info.negotiated_key_exchange_group));
   }
 }
 }  // namespace
