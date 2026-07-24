@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM --platform=linux/arm64/v8 arm64v8/debian:12
+FROM arm64v8/debian:12
 
 #=================
 # Basic C core dependencies
@@ -100,9 +100,7 @@ RUN apt-get update && apt-get install -y php8.2 php8.2-dev php-pear && apt-get c
 # Install cmake
 # Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
 
-COPY --from=repo_root tools/dockerfile/helper_scripts/install-cmake.sh /root/install-cmake.sh
-
-RUN /root/install-cmake.sh
+RUN apt-get update && apt-get install -y cmake && apt-get clean
 
 RUN apt-get update && apt-get install -y ccache && apt-get clean
 

@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2021 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,22 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:13
+FROM silkeh/clang:7-buster
 
-{% include "../../apt_get_basic.include" %}
-{% include "../../run_tests_python_deps_debian_13.include" %}
+RUN apt update && apt -y upgrade && apt install -y build-essential curl git time wget zip && apt clean
+{% include "../../git_avoid_dubious_ownership_error.include" %}
+{% include "../../run_tests_python_deps.include" %}
+{% include "../../cxx_test_deps.include" %}
 {% include "../../cxx_deps.include" %}
-{% include "../../cmake.include" %}
-{% include "../../ccache_debian_13.include" %}
+{% include "../../cmake_from_install_script.include" %}
+{% include "../../ccache.include" %}
 {% include "../../run_tests_addons.include" %}
-
-
-#=================
-# Setup git to access working directory across docker boundary
-
-RUN git config --global --add safe.directory "*"
-RUN git config --global protocol.file.allow always
-
 
 # Define the default command.
 CMD ["bash"]

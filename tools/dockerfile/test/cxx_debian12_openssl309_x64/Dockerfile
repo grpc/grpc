@@ -95,18 +95,13 @@ RUN python3 -m pip install twisted
 
 #=================
 # C++ dependencies
-
-COPY --from=repo_root tools/dockerfile/helper_scripts/install-clang.sh /root/install-clang.sh
-
-RUN /root/install-clang.sh
+RUN apt-get update && apt-get -y install libc++-dev clang && apt-get clean
 
 #=================
 # Install cmake
 # Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
 
-COPY --from=repo_root tools/dockerfile/helper_scripts/install-cmake.sh /root/install-cmake.sh
-
-RUN /root/install-cmake.sh
+RUN apt-get update && apt-get install -y cmake && apt-get clean
 
 #=================
 # Install ccache
