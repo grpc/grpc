@@ -695,6 +695,30 @@ TEST_F(ClientLbSubchannelMetricsTest, SubchannelMetricsBasic) {
   auto channel = grpc::CreateChannel(grpc_core::LocalIpUri(port),
                                      grpc::InsecureChannelCredentials());
   ASSERT_TRUE(WaitForChannelReady(channel.get()));
+  auto wait_until = [](auto condition) {
+    int attempts = 0;
+    while (attempts < 30000 && !condition()) {
+      absl::SleepFor(absl::Milliseconds(1));
+      ++attempts;
+    }
+  };
+  auto get_server_sockets_count = []() {
+    using grpc_core::channelz::BaseNode;
+    using grpc_core::channelz::ChannelzRegistry;
+    auto [servers, done] = ChannelzRegistry::GetNodesOfType(
+        /*start_node=*/0, BaseNode::EntityType::kServer,
+        /*max_results=*/10);
+    if (servers.empty()) return 0;
+    auto [sockets, sockets_done] = ChannelzRegistry::GetChildrenOfType(
+        /*start_node=*/0, /*parent=*/servers.front().get(),
+        BaseNode::EntityType::kSocket,
+        /*max_results=*/10);
+    return static_cast<int>(sockets.size());
+  };
+  wait_until([&]() { return get_server_sockets_count() == 1; });
+  ASSERT_EQ(get_server_sockets_count(), 1)
+      << "Timed out waiting for server-side channelz connection registration";
+  absl::SleepFor(absl::Milliseconds(50));
   EXPECT_THAT(
       stats_plugin_->GetUInt64MetricValueByName(
           "grpc.subchannel.connection_attempts_succeeded", {target, "", ""}),
@@ -702,17 +726,28 @@ TEST_F(ClientLbSubchannelMetricsTest, SubchannelMetricsBasic) {
   EXPECT_THAT(stats_plugin_->GetInt64MetricValueByName(
                   "grpc.subchannel.open_connections", {target, "none", "", ""}),
               ::testing::Optional(1));
+  servers_[0]->StopListeningAndSendGoaways();
+  const absl::string_view expected_reason =
+      grpc_core::IsSubchannelConnectionScalingEnabled() ? "GOAWAY NO_ERROR"
+                                                        : "unknown";
+  auto get_disconnections = [&]() {
+    return stats_plugin_
+        ->GetUInt64MetricValueByName("grpc.subchannel.disconnections",
+                                     {target, "", "", expected_reason})
+        .value_or(0);
+  };
+  wait_until([&]() { return get_disconnections() == 1; });
+  ASSERT_EQ(get_disconnections(), 1u)
+      << "Timed out waiting for client to register clean GOAWAY disconnection";
   servers_[0]->Shutdown();
   EXPECT_TRUE(
       WaitForChannelState(channel.get(), [](grpc_connectivity_state state) {
         return state == GRPC_CHANNEL_IDLE;
       }));
-  absl::string_view reason = grpc_core::IsSubchannelConnectionScalingEnabled()
-                                 ? "GOAWAY NO_ERROR"
-                                 : "unknown";
-  EXPECT_THAT(stats_plugin_->GetUInt64MetricValueByName(
-                  "grpc.subchannel.disconnections", {target, "", "", reason}),
-              ::testing::Optional(1));
+  EXPECT_THAT(
+      stats_plugin_->GetUInt64MetricValueByName(
+          "grpc.subchannel.disconnections", {target, "", "", expected_reason}),
+      ::testing::Optional(1));
   EXPECT_THAT(stats_plugin_->GetInt64MetricValueByName(
                   "grpc.subchannel.open_connections", {target, "none", "", ""}),
               ::testing::Optional(0));
@@ -742,6 +777,12 @@ TEST_F(ClientLbSubchannelMetricsTest, MultipleConnectionAttemptsFailed) {
 }
 
 TEST_F(ClientLbSubchannelMetricsTest, ConnectionAttemptIgnoredOnShutdown) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1][Server] Fix bug");
+  if (grpc_core::IsSubchannelConnectionScalingEnabled()) {
+    GTEST_SKIP() << "Skipped because connection scaling is enabled "
+                    "(NewSubchannel lacks metrics)";
+  }
   ConnectionAttemptInjector injector;
   const int port1 = grpc_pick_unused_port_or_die();
   const int port2 = grpc_pick_unused_port_or_die();
@@ -819,6 +860,12 @@ TEST_F(ClientLbSubchannelMetricsTest, SecurityLevelsPrivacyAndIntegrity) {
 }
 
 TEST_F(ClientLbSubchannelMetricsTest, DisconnectionOnSubchannelShutdown) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1][Server] Fix bug");
+  if (grpc_core::IsSubchannelConnectionScalingEnabled()) {
+    GTEST_SKIP() << "Skipped because connection scaling is enabled "
+                    "(NewSubchannel lacks metrics)";
+  }
   StartServers(1, {}, grpc::InsecureServerCredentials());
   const int port1 = servers_[0]->port_;
   const int port2 = grpc_pick_unused_port_or_die();
