@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM --platform=linux/arm64/v8 arm64v8/ruby:3.2-bullseye
+FROM --platform=linux/arm64/v8 arm64v8/ruby:3.2-bookworm
 
 {% include "../../apt_get_basic.include" %}
-{% include "../../run_tests_python_deps.include" %}
+{% include "../../run_tests_python_deps_pep668.include" %}
 {% include "../../cmake.include" %}
 {% include "../../ccache.include" %}
 {% include "../../run_tests_addons.include" %}
