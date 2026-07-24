@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from cpython cimport PyObject
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 
@@ -50,9 +51,10 @@ cdef extern from "python_observability_context.h" namespace "grpc_observability"
     string key
     string value
 
-  ctypedef struct Annotation:
+  ctypedef struct Event:
+    string name
+    vector[Label] attributes
     string time_stamp
-    string description
 
   ctypedef struct Measurement:
     cMetricsName name
@@ -70,22 +72,29 @@ cdef extern from "python_observability_context.h" namespace "grpc_observability"
     string parent_span_id
     string status
     vector[Label] span_labels
-    vector[Annotation] span_annotations
+    vector[Label] received_headers
+    vector[Event] span_events
     int64_t child_span_count
     bint should_sample
 
 cdef extern from "observability_util.h" namespace "grpc_observability":
   cdef cGcpObservabilityConfig ReadAndActivateObservabilityConfig() nogil
   cdef void NativeObservabilityInit() except +
+  ctypedef vector[Label] (*GetPropagationHeadersCb)(const char* trace_id,
+                                                    const char* span_id,
+                                                    bint is_sampled,
+                                                    PyObject* py_callable) noexcept nogil
   cdef void* CreateClientCallTracer(const char* method,
                                     const char* target,
                                     const char* trace_id,
                                     const char* parent_span_id,
                                     const char* identifier,
                                     const vector[Label] exchange_labels,
+                                    GetPropagationHeadersCb get_propagation_headers_cb,
+                                    PyObject* py_callable,
                                     bint add_csm_optional_labels,
                                     bint registered_method) except +
-  cdef void* CreateServerCallTracerFactory(const vector[Label] exchange_labels, const char* identifier) except +
+  cdef void* CreateServerCallTracerFactory(const vector[Label] exchange_labels, const vector[string] propagation_fields, const char* identifier) except +
   cdef queue[NativeCensusData]* g_census_data_buffer
   cdef void AwaitNextBatchLocked(unique_lock[mutex]&, int) nogil
   cdef bint PythonCensusStatsEnabled() nogil

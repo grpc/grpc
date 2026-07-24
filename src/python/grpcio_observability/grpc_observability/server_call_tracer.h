@@ -37,12 +37,15 @@ class PythonOpenCensusServerCallTracerFactory
       grpc_core::Arena* arena,
       const grpc_core::ChannelArgs& channel_args) override;
   explicit PythonOpenCensusServerCallTracerFactory(
-      const std::vector<Label>& exchange_labels, const char* identifier);
+      const std::vector<Label>& exchange_labels,
+      const std::vector<std::string>& propagation_fields,
+      const char* identifier);
 
   bool IsServerTraced(const grpc_core::ChannelArgs& args) override;
 
  private:
   const std::vector<Label> exchange_labels_;
+  const std::vector<std::string> propagation_fields_;
   std::string identifier_;
 };
 
@@ -60,12 +63,15 @@ class PythonOpenCensusServerCallTracer
   // Maximum size of server stats that are sent on the wire.
   static constexpr uint32_t kMaxServerStatsLen = 16;
 
-  PythonOpenCensusServerCallTracer(const std::vector<Label>& exchange_labels,
-                                   std::string identifier)
+  PythonOpenCensusServerCallTracer(
+      const std::vector<Label>& exchange_labels,
+      const std::vector<std::string>& propagation_fields,
+      std::string identifier)
       : start_time_(absl::Now()),
         recv_message_count_(0),
         sent_message_count_(0),
         labels_injector_(exchange_labels),
+        propagation_fields_(propagation_fields),
         identifier_(identifier) {}
 
   std::string TraceId() override;
@@ -133,6 +139,8 @@ class PythonOpenCensusServerCallTracer
   char stats_buf_[kMaxServerStatsLen];
   PythonLabelsInjector labels_injector_;
   std::vector<Label> labels_from_peer_;
+  const std::vector<std::string> propagation_fields_;
+  std::vector<std::string> received_headers_;
   std::string identifier_;
   bool registered_method_ = false;
   // TODO(roth, ctiller): Won't need atomic here once chttp2 is migrated
