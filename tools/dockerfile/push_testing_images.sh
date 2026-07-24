@@ -225,6 +225,7 @@ process_dockerfile() {
   local docker_exit_code=0
   docker build \
     ${ALWAYS_BUILD:+--no-cache --pull} \
+    --build-context repo_root=. \
     -t ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} \
     -t ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:infrastructure-public-image-${DOCKER_IMAGE_TAG} \
     ${DOCKERFILE_DIR} || docker_exit_code=$?
