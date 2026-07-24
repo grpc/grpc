@@ -60,6 +60,7 @@
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/util/address_sorting_init.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
@@ -123,8 +124,8 @@ absl::Status AresInit() {
 absl::once_flag init_flag;
 
 void AresOnceInit() {
+  grpc_core::AddressSortingInitOnce();
   absl::call_once(init_flag, []() {
-    address_sorting_init();
     auto status = AresInit();
     if (!status.ok()) {
       VLOG(2) << "AresInit failed: " << status.message();
