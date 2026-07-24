@@ -12330,11 +12330,11 @@ grpc_cc_library(
         "util/address_sorting_init.h",
     ],
     external_deps = [
-        "absl/base"
+        "absl/base",
     ],
     deps = [
         "//third_party/address_sorting",
-    ]
+    ],
 )
 
 ### UPB Targets
