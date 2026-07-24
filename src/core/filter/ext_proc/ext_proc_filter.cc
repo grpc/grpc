@@ -265,6 +265,8 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
   friend class ServerToExtProcInitialMetadataProcessor;
   friend class ExtProcToClientInitialMetadataProcessor;
   friend class ServerToClientMessageProcessor;
+  friend class ServerToExtProcMessageProcessor;
+  friend class ExtProcToClientMessageProcessor;
   friend class ServerTrailingMetadataProcessor;
   friend class ServerToExtProcTrailingMetadataProcessor;
   friend class ExtProcToClientTrailingMetadataProcessor;
@@ -1838,32 +1840,14 @@ class ServerInitialMetadataProcessor {
   ExtProcToClientInitialMetadataProcessor extproc_to_client_;
 };
 
-// Intercepts and processes server-to-client messages.
-class ServerToClientMessageProcessor {
+// Intercepts server-to-client messages from backend, prepares and dispatches
+// ProcessingRequest messages to the external processing server.
+class ServerToExtProcMessageProcessor {
  public:
-  explicit ServerToClientMessageProcessor(
+  explicit ServerToExtProcMessageProcessor(
       RefCountedPtr<ExtProcFilter::ExtProcCall> call)
       : call_(std::move(call)) {}
 
-  absl::AnyInvocable<Poll<absl::Status>()> Process() {
-    // For trailers-only RPCs, no response body processing is needed.
-    if (call_->is_trailers_only()) {
-      return Immediate(absl::OkStatus());
-    }
-    // Check if response body processing is enabled and stream is open.
-    const bool send_body =
-        call_->config()->processing_mode->send_response_body &&
-        !call_->IsStreamClosed();
-    if (!send_body) {
-      return NonProcessingMode();
-    } else if (call_->config()->observability_mode) {
-      return ObservabilityMode();
-    } else {
-      return NormalMode();
-    }
-  }
-
- private:
   // Prepares the ProcessingRequest protobuf message for server response body
   // and sends it over the ext_proc stream.
   static auto SendServerMessageRequest(
@@ -1906,16 +1890,6 @@ class ServerToClientMessageProcessor {
         });
   }
 
-  // Forwards server messages to client without ext_proc processing.
-  absl::AnyInvocable<Poll<absl::Status>()> NonProcessingMode() {
-    return ForEach(MessagesFrom(call_->initiator_),
-                   // Forward unmutated message directly to client handler.
-                   [call = call_](MessageHandle message) mutable {
-                     call->handler_.SpawnPushMessage(std::move(message));
-                     return absl::OkStatus();
-                   });
-  }
-
   // Handles server-to-client messages in observability mode.
   absl::AnyInvocable<Poll<absl::Status>()> ObservabilityMode() {
     return ForEach(
@@ -1943,9 +1917,11 @@ class ServerToClientMessageProcessor {
         });
   }
 
-  // Intercepts server-to-client messages, sends to ext_proc, and forwards
-  // mutated response messages to the client.
-  absl::AnyInvocable<Poll<absl::Status>()> NormalMode() {
+  // Intercepts server-to-client messages, sends to ext_proc, and coordinates
+  // with next_handler (ExtProcToClientMessageProcessor) for response delivery.
+  template <typename NextHandler>
+  absl::AnyInvocable<Poll<absl::Status>()> NormalMode(
+      NextHandler next_handler) {
     // send_loop: intercepts server messages and dispatches them to ext_proc.
     auto send_loop = Seq(
         ForEach(MessagesFrom(call_->initiator_),
@@ -2011,7 +1987,38 @@ class ServerToClientMessageProcessor {
         });
     // read_loop: receives mutated response body chunks from ext_proc and
     // forwards to client.
-    auto read_loop = ForEach(
+    auto read_loop = next_handler.NormalMode();
+    // Join send_loop and read_loop concurrently.
+    return Map(
+        TryJoin<absl::StatusOr>(std::move(send_loop), std::move(read_loop)),
+        [](auto result) -> absl::Status { return result.status(); });
+  }
+
+ private:
+  RefCountedPtr<ExtProcFilter::ExtProcCall> call_;
+};
+
+// Receives response message chunks from ext_proc server, constructs mutated
+// messages, and pushes them to the client handler.
+class ExtProcToClientMessageProcessor {
+ public:
+  explicit ExtProcToClientMessageProcessor(
+      RefCountedPtr<ExtProcFilter::ExtProcCall> call)
+      : call_(std::move(call)) {}
+
+  // Forwards server messages to client without ext_proc processing.
+  absl::AnyInvocable<Poll<absl::Status>()> NonProcessingMode() {
+    return ForEach(MessagesFrom(call_->initiator_),
+                   // Forward unmutated message directly to client handler.
+                   [call = call_](MessageHandle message) mutable {
+                     call->handler_.SpawnPushMessage(std::move(message));
+                     return absl::OkStatus();
+                   });
+  }
+
+  // Receives mutated response body chunks from ext_proc and forwards to client.
+  absl::AnyInvocable<Poll<absl::Status>()> NormalMode() {
+    return ForEach(
         std::move(call_->response_body_pipe().receiver),
         [call = call_](absl::StatusOr<ExtProcResponse> response) mutable {
           if (!response.ok()) {
@@ -2025,20 +2032,48 @@ class ServerToClientMessageProcessor {
           call->handler_.SpawnPushMessage(std::move(new_msg));
           return absl::OkStatus();
         });
-    // Join send_loop and read_loop concurrently.
-    return Map(
-        TryJoin<absl::StatusOr>(std::move(send_loop), std::move(read_loop)),
-        [](auto result) -> absl::Status { return result.status(); });
   }
 
+ private:
   RefCountedPtr<ExtProcFilter::ExtProcCall> call_;
 };
 
-// Main dispatcher and processor for server trailing metadata. Distinguishes
-// between "trailers-only" RPCs and normal RPCs and routes accordingly.
-//// Sends server trailing metadata (or trailers-only initial metadata) to the
-/// external processor
-// and handles send errors across all modes.
+// Main dispatcher and orchestrator for server-to-client messages. Coordinates
+// ServerToExtProcMessageProcessor and ExtProcToClientMessageProcessor.
+class ServerToClientMessageProcessor {
+ public:
+  explicit ServerToClientMessageProcessor(
+      RefCountedPtr<ExtProcFilter::ExtProcCall> call)
+      : call_(call),
+        server_to_extproc_(call),
+        extproc_to_client_(std::move(call)) {}
+
+  absl::AnyInvocable<Poll<absl::Status>()> Process() {
+    // For trailers-only RPCs, no response body processing is needed.
+    if (call_->is_trailers_only()) {
+      return Immediate(absl::OkStatus());
+    }
+    // Check if response body processing is enabled and stream is open.
+    const bool send_body =
+        call_->config()->processing_mode->send_response_body &&
+        !call_->IsStreamClosed();
+    if (!send_body) {
+      return extproc_to_client_.NonProcessingMode();
+    } else if (call_->config()->observability_mode) {
+      return server_to_extproc_.ObservabilityMode();
+    } else {
+      return server_to_extproc_.NormalMode(extproc_to_client_);
+    }
+  }
+
+ private:
+  RefCountedPtr<ExtProcFilter::ExtProcCall> call_;
+  ServerToExtProcMessageProcessor server_to_extproc_;
+  ExtProcToClientMessageProcessor extproc_to_client_;
+};
+
+// Sends server trailing metadata (or trailers-only initial metadata) to the
+// external processor and handles send errors across all modes.
 class ServerToExtProcTrailingMetadataProcessor {
  public:
   explicit ServerToExtProcTrailingMetadataProcessor(
