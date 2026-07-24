@@ -59,8 +59,7 @@ absl::StatusOr<RefCountedPtr<SliceMap>> SliceMap::Make(
       grpc_connectivity_state state =
           slice_map->all_endpoints_[*index]->connectivity_state();
       entry.all_endpoints_in_slice.push_back(*index);
-      if (state >= 0 &&
-          static_cast<size_t>(state) < entry.endpoints_by_state.size()) {
+      if (static_cast<size_t>(state) < entry.endpoints_by_state.size()) {
         entry.endpoints_by_state[state].push_back(*index);
       }
     }

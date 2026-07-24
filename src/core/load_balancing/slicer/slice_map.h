@@ -82,14 +82,6 @@ class EndpointState final : public RefCounted<EndpointState> {
   mutable std::atomic<bool> connect_triggered_{false};
 };
 
-// Represents a key-range slice and its assigned endpoints.
-struct SliceEntry {
-  std::string start_key;
-  std::vector<size_t> all_endpoints_in_slice;
-  std::array<std::vector<size_t>, 5> endpoints_by_state;
-  bool in_fallback = false;
-};
-
 // Immutable key-to-endpoint range map for slicer LB policy.
 class SliceMap final : public RefCounted<SliceMap> {
  public:
@@ -103,6 +95,14 @@ class SliceMap final : public RefCounted<SliceMap> {
   struct LogicalAssignment {
     std::vector<SliceAssignment> slices;
     int64_t generation = 0;
+  };
+
+  // Represents a key-range slice and its assigned endpoints.
+  struct SliceEntry {
+    std::string start_key;
+    std::vector<size_t> all_endpoints_in_slice;
+    std::array<std::vector<size_t>, 5> endpoints_by_state;
+    bool in_fallback = false;
   };
 
   // Builds a SliceMap. Missing endpoints in assignment are skipped.
@@ -126,6 +126,8 @@ class SliceMap final : public RefCounted<SliceMap> {
   std::vector<SliceEntry> slices_;
   int64_t generation_ = 0;
 };
+
+using SliceEntry = SliceMap::SliceEntry;
 
 }  // namespace grpc_core
 

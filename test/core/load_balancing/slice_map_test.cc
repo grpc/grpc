@@ -111,7 +111,6 @@ TEST(SliceMapTest, LookupFindsContainingSlice) {
       {/*start_key=*/"a", {"a"}},
       {/*start_key=*/"t", {"c"}},
   };
-
   auto slice_map = SliceMap::Make(endpoints, &assignment);
   ASSERT_TRUE(slice_map.ok()) << slice_map.status();
   ASSERT_EQ((*slice_map)->slices().size(), 3);
@@ -151,7 +150,6 @@ TEST(SliceMapTest, EndpointsBucketedByState) {
   ASSERT_TRUE(slice_map.ok()) << slice_map.status();
   ASSERT_EQ((*slice_map)->slices().size(), 1);
   const SliceEntry& slice = (*slice_map)->slices()[0];
-
   EXPECT_THAT(StatesInBucket(**slice_map, slice, GRPC_CHANNEL_READY),
               UnorderedElementsAre(GRPC_CHANNEL_READY, GRPC_CHANNEL_READY));
   EXPECT_THAT(StatesInBucket(**slice_map, slice, GRPC_CHANNEL_CONNECTING),

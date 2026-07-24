@@ -116,7 +116,6 @@ TEST(SlicerPickerTest, NoAssignmentFallbackDisabledFails) {
   endpoints["a"] = MakeEndpoint(GRPC_CHANNEL_READY, "a");
   auto slice_map = SliceMap::Make(endpoints, /*assignment=*/nullptr);
   ASSERT_TRUE(slice_map.ok()) << slice_map.status();
-
   SlicerPicker picker(*slice_map, std::string(kHeader),
                       /*fallback_enabled=*/false);
   auto result = DoPick(picker, "anything");
@@ -143,7 +142,6 @@ TEST(SlicerPickerTest, ReadySliceDelegatesToReadyEndpoint) {
   auto assignment = OneSlice({"r"});
   auto slice_map = SliceMap::Make(endpoints, &assignment);
   ASSERT_TRUE(slice_map.ok()) << slice_map.status();
-
   SlicerPicker picker(*slice_map, std::string(kHeader),
                       /*fallback_enabled=*/false);
   EXPECT_EQ(FailMessage(DoPick(picker, "k")), "r");
@@ -155,7 +153,6 @@ TEST(SlicerPickerTest, MissingHeaderFailsWhenFallbackDisabled) {
   auto assignment = OneSlice({"r"});  // Slice starts at "".
   auto slice_map = SliceMap::Make(endpoints, &assignment);
   ASSERT_TRUE(slice_map.ok()) << slice_map.status();
-
   SlicerPicker picker(*slice_map, std::string(kHeader),
                       /*fallback_enabled=*/false);
   // A request with no slice-key header cannot be routed; it must not be
@@ -172,7 +169,6 @@ TEST(SlicerPickerTest, MissingHeaderUsesFallbackPoolWhenEnabled) {
   auto assignment = OneSlice({"r"});
   auto slice_map = SliceMap::Make(endpoints, &assignment);
   ASSERT_TRUE(slice_map.ok()) << slice_map.status();
-
   SlicerPicker picker(*slice_map, std::string(kHeader),
                       /*fallback_enabled=*/true);
   // No key => fallback pool (single endpoint => deterministic "r").
@@ -186,7 +182,6 @@ TEST(SlicerPickerTest, IdleWithNoReadyTriggersExitIdleAndQueues) {
   auto assignment = OneSlice({"i"});
   auto slice_map = SliceMap::Make(endpoints, &assignment);
   ASSERT_TRUE(slice_map.ok()) << slice_map.status();
-
   SlicerPicker picker(*slice_map, std::string(kHeader),
                       /*fallback_enabled=*/false);
   EXPECT_TRUE(IsQueue(DoPick(picker, "k")));
@@ -203,7 +198,6 @@ TEST(SlicerPickerTest, IdleWithReadyDelegatesToReady) {
   auto assignment = OneSlice({"i", "r"});
   auto slice_map = SliceMap::Make(endpoints, &assignment);
   ASSERT_TRUE(slice_map.ok()) << slice_map.status();
-
   SlicerPicker picker(*slice_map, std::string(kHeader),
                       /*fallback_enabled=*/false);
   // Whether the random endpoint is "i" or "r", the pick resolves to "r": either
@@ -247,7 +241,6 @@ TEST(SlicerPickerTest, EmptySliceQueues) {
   auto assignment = OneSlice({});  // Slice with no endpoints.
   auto slice_map = SliceMap::Make(endpoints, &assignment);
   ASSERT_TRUE(slice_map.ok()) << slice_map.status();
-
   SlicerPicker picker(*slice_map, std::string(kHeader),
                       /*fallback_enabled=*/false);
   EXPECT_TRUE(IsQueue(DoPick(picker, "k")));
@@ -264,7 +257,6 @@ TEST(SlicerPickerTest, SliceInFallbackUsesGlobalFallbackPool) {
   auto assignment = OneSlice({"tf"});
   auto slice_map = SliceMap::Make(endpoints, &assignment);
   ASSERT_TRUE(slice_map.ok()) << slice_map.status();
-
   SlicerPicker picker(*slice_map, std::string(kHeader),
                       /*fallback_enabled=*/true);
   // Over many picks the random fallback selection must include "fb", which is
@@ -285,7 +277,6 @@ TEST(SlicerPickerTest, FallbackPoolTriggersExitIdleOnIdleEndpoint) {
   endpoints["i"] = MakeEndpoint(GRPC_CHANNEL_IDLE, "i", &exit_idle_count);
   auto slice_map = SliceMap::Make(endpoints, /*assignment=*/nullptr);
   ASSERT_TRUE(slice_map.ok()) << slice_map.status();
-
   SlicerPicker picker(*slice_map, std::string(kHeader),
                       /*fallback_enabled=*/true);
   (void)DoPick(picker, "anything");

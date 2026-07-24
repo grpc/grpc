@@ -41,11 +41,8 @@ class SlicerPicker final : public LoadBalancingPolicy::SubchannelPicker {
   PickResult Pick(PickArgs args) override;
 
  private:
-  PickResult PickFromSlice(const SliceEntry& slice, PickArgs args);
+  PickResult PickFromSlice(const SliceMap::SliceEntry& slice, PickArgs args);
   PickResult PickFromFallbackPool(PickArgs args);
-  PickResult DelegateToRandom(const std::vector<size_t>& indices,
-                              PickArgs args);
-  PickResult Delegate(const EndpointState& endpoint, PickArgs args);
 
   RefCountedPtr<SliceMap> slice_map_;
   std::string slice_key_header_;

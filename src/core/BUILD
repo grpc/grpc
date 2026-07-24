@@ -8171,6 +8171,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        "grpc_check",
         "lb_policy",
         "shared_bit_gen",
         "slice_map",
