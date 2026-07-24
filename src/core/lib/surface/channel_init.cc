@@ -33,6 +33,7 @@
 #include "src/core/channelz/channelz.h"
 #include "src/core/channelz/property_list.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/grpc_check.h"
@@ -270,15 +271,23 @@ std::vector<ChannelInit::FilterNode> ChannelInit::SelectFiltersByPredicate(
   std::vector<FilterNode> filter_list;
   int i = 0;
   // Create an in-place linked list of individual filters
-  if constexpr (!is_terminal) {
-    for (const auto& filter : filters) {
-      if (SkipV2(filter.version)) continue;
+  auto build_filter_list = [&](auto&& it_begin, auto&& it_end) {
+    for (auto it = it_begin; it != it_end; ++it) {
+      const Filter& filter = *it;
+      if (!is_terminal && SkipV2(filter.version)) continue;
       if (!filter.CheckPredicates(builder->channel_args())) continue;
       filter_list.push_back(FilterNode{&filter, ++i});
     }
-  }
-  if (!filter_list.empty()) {
-    filter_list.back().next = -1;
+    if (!filter_list.empty()) {
+      filter_list.back().next = -1;
+    }
+  };
+  if (!grpc_channel_stack_type_is_client(builder->channel_stack_type()) &&
+      IsFixV3FilterStackServerSideOrderingEnabled()) {
+    // Reverse the filter order.
+    build_filter_list(filters.rbegin(), filters.rend());
+  } else {
+    build_filter_list(filters.begin(), filters.end());
   }
   return filter_list;
 }
