@@ -98,12 +98,10 @@ RUN python3 -m pip install twisted
 RUN apt-get update && apt-get -y install libc++-dev clang && apt-get clean
 
 #=================
-# Install cmake from bullseye-backports
-# Note that this step should be only used for Debian 11 (bullseye) images.
+# Install cmake
+# Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
 
-RUN echo "deb http://archive.debian.org/debian bullseye-backports main" > /etc/apt/sources.list.d/bullseye-backports.list && \
-    apt-get update && \
-    apt-get install -y -t bullseye-backports cmake
+RUN apt-get update && apt-get install -y cmake && apt-get clean
 
 #=================
 # Install ccache
