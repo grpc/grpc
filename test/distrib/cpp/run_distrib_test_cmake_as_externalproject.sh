@@ -19,7 +19,12 @@ set -ex
 cd "$(dirname "$0")/../../.."
 
 # Install openssl (to use instead of boringssl)
-apt-get update && apt-get install -y libssl-dev
+# Install a newer CMake version at runtime to satisfy BoringSSL's 3.22+ requirement
+# (The pinned Docker image might only have an older CMake version, e.g. 3.18 on Debian 11)
+apt-get update && apt-get install -y libssl-dev wget
+wget -qO- https://github.com/Kitware/CMake/releases/download/v3.28.1/cmake-3.28.1-linux-x86_64.tar.gz | tar --strip-components=1 -xz -C /usr/local
+export PATH="/usr/local/bin:$PATH"
+cmake --version
 
 # To increase the confidence that gRPC installation works without depending on
 # too many submodules unnecessarily, just wipe out contents of most submodules

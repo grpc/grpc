@@ -55,7 +55,7 @@ fi
 # Create a clean virtual environment.
 if [[ ! -d "${VENV_DIR}" ]]; then
   # Attempt to install virtualenv.
-  if ! python3 -m pip freeze | grep virtualenv &>/dev/null; then
+  if ! python3 -c "import virtualenv" &>/dev/null; then
     echo "virtualenv Python module not installed. Attempting to install via pip." >/dev/stderr
     if INSTALL_OUTPUT=$(! python3 -m pip install virtualenv --upgrade &>/dev/stdout); then
       echo "$INSTALL_OUTPUT"
