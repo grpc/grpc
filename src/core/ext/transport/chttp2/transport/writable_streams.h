@@ -143,7 +143,7 @@ class WritableStreams {
             // enter the un-prioritised queue and then dequeue it.
             [this]() { return queue_.NextBatch(kMaxBatchSize); }),
         [this](std::vector<std::optional<StreamIDAndPriority>> batch) {
-          AddToPrioritizedQueue(batch);
+          AddToPrioritizedQueue(std::move(batch));
           return Empty{};
         });
   }
@@ -165,6 +165,11 @@ class WritableStreams {
                                "Failed to enqueue to list of writable streams");
   }
 
+  void MarkClosed() {
+    queue_.MarkClosed();
+    prioritized_queue_.Clear();
+  }
+
   bool TestOnlyPriorityQueueHasWritableStreams(
       const bool transport_tokens_available) const {
     return !prioritized_queue_.HasNoWritableStreams(transport_tokens_available);
@@ -175,10 +180,17 @@ class WritableStreams {
    public:
     PrioritizedQueue() : buckets_(kLastPriority) {}
 
+    void Clear() {
+      for (auto& bucket : buckets_) {
+        bucket = std::queue<StreamPtr>();
+      }
+      total_streams_ = 0u;
+    }
+
     // Pushes a stream id with the given priority to the queue. Sorting is done
     // based on the priority. If the priority is higher than the max priority,
     // it will be set to the default priority.
-    void Push(const StreamPtr stream, WritableStreamPriority priority) {
+    void Push(StreamPtr stream, WritableStreamPriority priority) {
       if (priority >= WritableStreamPriority::kLastPriority) {
         priority = WritableStreamPriority::kDefault;
       }
@@ -188,7 +200,7 @@ class WritableStreams {
           << "Pushing stream id: " << stream->GetStreamId() << " with priority "
           << GetWritableStreamPriorityString(priority) << " with total streams "
           << total_streams_;
-      buckets_[static_cast<uint8_t>(priority)].push(stream);
+      buckets_[static_cast<uint8_t>(priority)].push(std::move(stream));
     }
 
     // Pops a stream id from the queue based on the priority. If the priority is
@@ -209,7 +221,7 @@ class WritableStreams {
             continue;
           }
 
-          StreamPtr stream = bucket.front();
+          StreamPtr stream = std::move(bucket.front());
           bucket.pop();
           total_streams_--;
           GRPC_WRITABLE_STREAMS_DEBUG
@@ -218,7 +230,7 @@ class WritableStreams {
               << GetWritableStreamPriorityString(
                      static_cast<WritableStreamPriority>(i))
               << " with " << total_streams_ << " streams remaining";
-          return stream;
+          return std::move(stream);
         }
       }
       return std::nullopt;
@@ -246,22 +258,22 @@ class WritableStreams {
   };
 
   struct StreamIDAndPriority {
-    const StreamPtr stream;
-    const WritableStreamPriority priority;
+    StreamPtr stream;
+    WritableStreamPriority priority;
   };
 
   void AddToPrioritizedQueue(
-      const std::vector<std::optional<StreamIDAndPriority>>& batch) {
+      std::vector<std::optional<StreamIDAndPriority>> batch) {
     GRPC_WRITABLE_STREAMS_DEBUG << "AddToPrioritizedQueue batch size "
                                 << batch.size();
-    for (const std::optional<StreamIDAndPriority>& stream_id_priority : batch) {
+    for (std::optional<StreamIDAndPriority>& stream_id_priority : batch) {
       // Ignore stream id kInvalidStreamID. These are used to force resolve
       // WaitForReady().
       if (!stream_id_priority.has_value()) {
         GRPC_WRITABLE_STREAMS_DEBUG << "Skipping nullopt from batch";
         continue;
       }
-      prioritized_queue_.Push(stream_id_priority->stream,
+      prioritized_queue_.Push(std::move(stream_id_priority->stream),
                               stream_id_priority->priority);
     }
   }

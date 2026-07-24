@@ -541,7 +541,8 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
             stream->GetStreamFlowControl(), settings_->peer()));
     if (update.became_writable) {
       absl::Status status = writable_stream_list_.EnqueueWrapper(
-          stream, update.priority, AreTransportFlowControlTokensAvailable());
+          WritableStreamWrapper(std::move(stream)), update.priority,
+          AreTransportFlowControlTokensAvailable());
       if (!status.ok()) {
         return ToHttpOkOrConnError(status);
       }
@@ -958,7 +959,7 @@ absl::Status Http2ClientTransport::DequeueStreamFrames(
           stream->GetStreamFlowControl(), settings_->peer()));
   stream->GetStreamFlowControl().ReportIfStalled(
       /*is_client=*/kIsClient, stream->GetStreamId(), settings_->peer());
-  StreamDataQueue<ClientMetadataHandle>::DequeueResult result =
+  const StreamDataQueue<ClientMetadataHandle>::DequeueResult result =
       stream->DequeueFrames(tokens, stream_flow_control_tokens,
                             settings_->peer().max_frame_size(), encoder_,
                             frame_sender);
@@ -968,7 +969,8 @@ absl::Status Http2ClientTransport::DequeueStreamFrames(
     // Stream is still writable. Enqueue it back to the writable
     // stream list.
     absl::Status status = writable_stream_list_.EnqueueWrapper(
-        stream, result.priority, AreTransportFlowControlTokensAvailable());
+        WritableStreamWrapper(stream), result.priority,
+        AreTransportFlowControlTokensAvailable());
 
     if (GPR_UNLIKELY(!status.ok())) {
       GRPC_HTTP2_CLIENT_DLOG
@@ -1052,7 +1054,7 @@ auto Http2ClientTransport::MultiplexerLoop() {
             // In some cases, we may write more than max_write_size_ bytes(like
             // writing metadata).
             while (write_cycle.GetWriteBytesRemaining() > 0) {
-              std::optional<RefCountedPtr<Stream>> optional_stream =
+              std::optional<WritableStreamWrapper> optional_stream =
                   writable_stream_list_.ImmediateNext(
                       AreTransportFlowControlTokensAvailable());
               if (!optional_stream.has_value()) {
@@ -1061,7 +1063,7 @@ auto Http2ClientTransport::MultiplexerLoop() {
                        "No writable streams available ";
                 break;
               }
-              RefCountedPtr<Stream> stream = std::move(optional_stream.value());
+              RefCountedPtr<Stream> stream = optional_stream->TakeStream();
               GRPC_HTTP2_CLIENT_DLOG
                   << "Http2ClientTransport::MultiplexerLoop "
                      "Next writable stream id = "
@@ -1420,6 +1422,14 @@ void Http2ClientTransport::CloseTransport() {
   shutdown_tracker_.MarkShutdownComplete();
   settings_->HandleTransportShutdown(event_engine_.get());
 
+  // This is added to prevent leaks in the case when the party (any by extension
+  // the transport promises) is destroyed and a new stream is created and
+  // enqueued in the writable stream list. In this case, that new stream will
+  // not get any notification of the transport being closed resulting in a leak.
+  // To prevent this, we close the enqueues to the writable stream list here and
+  // drop any streams that are still in the list.
+  writable_stream_list_.MarkClosed();
+
   // This is the only place where the general_party_ is reset.
   general_party_.reset();
 }
@@ -1643,8 +1653,8 @@ absl::Status Http2ClientTransport::MaybeAddStreamToWritableStreamList(
         << stream->GetStreamId() << " became writable";
     // TODO(akshitpatel) [PH2][P4][Perf]: Might be worth exploring if this
     // function should take a raw stream ptr and take a ref here.
-    absl::Status status =
-        writable_stream_list_.Enqueue(std::move(stream), result.priority);
+    absl::Status status = writable_stream_list_.Enqueue(
+        WritableStreamWrapper(std::move(stream)), result.priority);
     if (!status.ok()) {
       return HandleError(
           /*stream=*/nullptr,

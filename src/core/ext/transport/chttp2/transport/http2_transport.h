@@ -244,6 +244,39 @@ class TransportShutdownTracker {
   Latch<void> shutdown_completed_latch_;
 };
 
+////////////////////////////////////////////////////////////////////////////////
+// Stream Helpers
+
+// Wrapper around the Stream class to be used in the writable stream list on the
+// client side. This is used as a fail-safe mechanism to cancel the stream when
+// the stream is not being tracked by the transport and the transport is
+// shutting down.
+class WritableStreamWrapper {
+ public:
+  explicit WritableStreamWrapper(RefCountedPtr<Stream> s)
+      : stream(std::move(s)) {}
+
+  // WritableStreamWrapper is only movable constructible.
+  WritableStreamWrapper(WritableStreamWrapper&& other) noexcept
+      : stream(std::exchange(other.stream, nullptr)) {}
+
+  WritableStreamWrapper(const WritableStreamWrapper&) = delete;
+  WritableStreamWrapper& operator=(const WritableStreamWrapper&) = delete;
+  WritableStreamWrapper& operator=(WritableStreamWrapper&& other) = delete;
+
+  ~WritableStreamWrapper() { MaybeCancel(); }
+
+  Stream* operator->() const { return stream.get(); }
+  Stream* get() const { return stream.get(); }
+  Stream& operator*() const { return *stream; }
+
+  RefCountedPtr<Stream> TakeStream() { return std::move(stream); }
+
+ private:
+  void MaybeCancel();
+  RefCountedPtr<Stream> stream;
+};
+
 //
 }  // namespace http2
 }  // namespace grpc_core

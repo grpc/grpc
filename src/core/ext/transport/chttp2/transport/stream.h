@@ -220,7 +220,6 @@ class Stream : public RefCounted<Stream> {
         stream_id_(kInvalidStreamId),
         did_receive_initial_metadata_(false),
         did_receive_trailing_metadata_(false),
-        did_push_server_trailing_metadata_(false),
         did_cancel_(false),
         data_queue_(MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
             std::get<CallHandler>(call_).arena(), /*is_client*/ true,
@@ -236,7 +235,6 @@ class Stream : public RefCounted<Stream> {
         stream_id_(stream_id),
         did_receive_initial_metadata_(false),
         did_receive_trailing_metadata_(false),
-        did_push_server_trailing_metadata_(false),
         did_cancel_(false),
         data_queue_(MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
             std::get<CallInitiator>(call_).arena(), /*is_client*/ false,
@@ -347,7 +345,7 @@ class Stream : public RefCounted<Stream> {
     SetTrailingMetadataReceived();
     const StreamStateChange change = state_.OnTrailingMetadataReceived();
     if (is_client()) {
-      MaybePushServerTrailingMetadata(std::move(metadata));
+      PushServerTrailingMetadata(std::move(metadata));
     } else {
       // Server: custom HTTP2 implementations might send trailing metadata.
       // We just close reads and do nothing else (upper layers discard client
@@ -374,7 +372,25 @@ class Stream : public RefCounted<Stream> {
 
   StreamStateChange OnResetReceived(absl::Status status) {
     const StreamStateChange change = state_.OnResetReceived();
-    CancelCall(std::move(status));
+    if (is_client()) {
+      if (status.ok()) {
+        // Recv RST with no error: push TrailingMetadata with OK status.
+        PushServerTrailingMetadata(ServerMetadataFromStatus(status));
+      } else {
+        // Recv RST with error: cancel call with the status.
+        CancelCall(std::move(status));
+      }
+    } else {
+      // Server
+      if (status.ok()) {
+        // Recv RST with no error: convert to error and cancel call.
+        CancelCall(absl::CancelledError(
+            "RST stream with NO_ERROR received on server"));
+      } else {
+        // Recv RST with error: cancel call with the status.
+        CancelCall(std::move(status));
+      }
+    }
     return change;
   }
 
@@ -419,19 +435,14 @@ class Stream : public RefCounted<Stream> {
     return Http2Status::Ok();
   }
 
-  void MaybePushServerTrailingMetadata(ServerMetadataHandle&& metadata) {
+  void PushServerTrailingMetadata(ServerMetadataHandle&& metadata) {
     GRPC_DCHECK(is_client());
-    GRPC_HTTP2_STREAM_LOG << "Stream::MaybePushServerTrailingMetadata "
+    GRPC_HTTP2_STREAM_LOG << "Stream::PushServerTrailingMetadata "
                              "stream_id="
                           << stream_id_
-                          << " metadata=" << metadata->DebugString()
-                          << " did_push_server_trailing_metadata="
-                          << did_push_server_trailing_metadata_;
+                          << " metadata=" << metadata->DebugString();
 
-    if (!did_push_server_trailing_metadata_) {
-      did_push_server_trailing_metadata_ = true;
-      GetCallHandler().SpawnPushServerTrailingMetadata(std::move(metadata));
-    }
+    GetCallHandler().SpawnPushServerTrailingMetadata(std::move(metadata));
   }
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool IsInitialMetadataReceived() const {
@@ -493,6 +504,17 @@ class Stream : public RefCounted<Stream> {
     return std::holds_alternative<CallInitiator>(call_);
   }
 
+  // This function is idempotent and thread-safe.
+  void CancelCall(absl::Status&& status) {
+    GRPC_DCHECK(!status.ok());
+    if (did_cancel_.exchange(true, std::memory_order_relaxed)) return;
+    if (is_client()) {
+      PushServerTrailingMetadata(CancelledServerMetadataFromStatus(status));
+    } else {
+      GetCallInitiator().SpawnCancel(std::forward<absl::Status>(status));
+    }
+  }
+
  private:
   void InitializeStream(const bool allow_true_binary_metadata_peer) {
     GRPC_HTTP2_STREAM_LOG << "Stream::InitializeStream stream_id="
@@ -505,23 +527,13 @@ class Stream : public RefCounted<Stream> {
   chttp2::StreamFlowControl flow_control_;
   std::variant<CallInitiator, CallHandler> call_;
 
-  // This function is idempotent.
-  void CancelCall(absl::Status&& status) {
-    if (std::exchange(did_cancel_, true)) return;
-    if (is_client()) {
-      MaybePushServerTrailingMetadata(
-          CancelledServerMetadataFromStatus(status));
-    } else {
-      GetCallInitiator().SpawnCancel(std::forward<absl::Status>(status));
-    }
-  }
-
   StreamState state_;
   uint32_t stream_id_;
   bool did_receive_initial_metadata_;
   bool did_receive_trailing_metadata_;
-  bool did_push_server_trailing_metadata_;
-  bool did_cancel_;
+  // did_cancel_ is atomic because CancelCall can be called from the Call Party
+  // thread concurrently with transport-party triggers.
+  std::atomic<bool> did_cancel_;
   // Change this if ClientMetadataHandle and ServerMetadataHandle are changed
   // to different types.
   RefCountedPtr<StreamDataQueue<Arena::PoolPtr<grpc_metadata_batch>>>
