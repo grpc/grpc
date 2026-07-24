@@ -87,13 +87,11 @@ class SslOffloadTsiTestFixture {
       server_pem_key_cert_pairs_.emplace_back(
           std::make_shared<SyncTestPrivateKeySigner>(server1_key_),
           server1_cert_);
-      client_pem_key_cert_pair_ =
-          tsi_ssl_pem_key_cert_pair(client_key_, client_cert_);
+      client_pem_key_cert_pair_ = PemKeyCertPair(client_key_, client_cert_);
     } else {
       server_pem_key_cert_pairs_.emplace_back(server0_key_, server0_cert_);
       server_pem_key_cert_pairs_.emplace_back(server1_key_, server1_cert_);
-      client_pem_key_cert_pair_ =
-          tsi_ssl_pem_key_cert_pair(signer_, client_cert_);
+      client_pem_key_cert_pair_ = PemKeyCertPair(signer_, client_cert_);
     }
   }
 
@@ -146,7 +144,7 @@ class SslOffloadTsiTestFixture {
         TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY;
     server_options.min_tls_version = tls_version_;
     server_options.max_tls_version = tls_version_;
-    server_options.pem_key_cert_pairs = server_pem_key_cert_pairs_;
+    server_options.key_cert_pairs_or_selector = server_pem_key_cert_pairs_;
     ASSERT_EQ(tsi_create_ssl_server_handshaker_factory_with_options(
                   &server_options, &server_handshaker_factory_),
               TSI_OK);
@@ -208,8 +206,8 @@ class SslOffloadTsiTestFixture {
   std::string server1_cert_;
   std::string client_key_;
   std::string client_cert_;
-  std::vector<tsi_ssl_pem_key_cert_pair> server_pem_key_cert_pairs_;
-  tsi_ssl_pem_key_cert_pair client_pem_key_cert_pair_;
+  PemKeyCertPairList server_pem_key_cert_pairs_;
+  PemKeyCertPair client_pem_key_cert_pair_;
   OffloadParty offload_party_;
   std::shared_ptr<PrivateKeySigner> signer_;
   tsi_tls_version tls_version_;
