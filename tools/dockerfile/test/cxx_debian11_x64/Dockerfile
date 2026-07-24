@@ -98,12 +98,12 @@ COPY --from=repo_root tools/dockerfile/helper_scripts/install-clang.sh /root/ins
 RUN /root/install-clang.sh
 
 #=================
-# Install cmake
-# Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
+# Install cmake from bullseye-backports
+# Note that this step should be only used for Debian 11 (bullseye) images.
 
-COPY --from=repo_root tools/dockerfile/helper_scripts/install-cmake.sh /root/install-cmake.sh
-
-RUN /root/install-cmake.sh
+RUN echo "deb http://archive.debian.org/debian bullseye-backports main" > /etc/apt/sources.list.d/bullseye-backports.list && \
+    apt-get update && \
+    apt-get install -y -t bullseye-backports cmake
 
 #=================
 # Install ccache

@@ -41,7 +41,8 @@ class ReadContextTest : public ::testing::TestWithParam<bool> {
     mock_endpoint.emplace(1234);
     tracker.emplace(
         /*max_new_streams_per_read_cycle=*/32u, mock_endpoint->promise_endpoint,
-        /*is_client=*/GetParam(), GrpcErrors::kMaxSecurityFrameSize);
+        /*is_client=*/GetParam(), GrpcErrors::kMaxSecurityFrameSize,
+        /*ping_on_rst_stream_percent=*/0u);
   }
 
   std::optional<util::testing::MockPromiseEndpoint> mock_endpoint;
@@ -204,7 +205,8 @@ TEST(GetPeerStringTest, GetPeerString) {
   util::testing::MockPromiseEndpoint mock_endpoint(1234);
   ReadContext tracker(/*max_new_streams_per_read_cycle=*/32u,
                       mock_endpoint.promise_endpoint,
-                      /*is_client=*/true, GrpcErrors::kMaxSecurityFrameSize);
+                      /*is_client=*/true, GrpcErrors::kMaxSecurityFrameSize,
+                      /*ping_on_rst_stream_percent=*/0u);
   EXPECT_EQ(tracker.peer_string(),
             Slice::FromCopiedString("ipv4:127.0.0.1:1234"));
 }
@@ -212,6 +214,41 @@ TEST(GetPeerStringTest, GetPeerString) {
 TEST_P(ReadContextTest, PeerString) {
   EXPECT_EQ(tracker->peer_string(),
             Slice::FromCopiedString("ipv4:127.0.0.1:1234"));
+}
+
+TEST(ShouldSendPingOnRstStreamTest, AdequateRangeAndRandomness) {
+  // Test 0% rate gives 0% true results.
+  const uint32_t kNumTrials = 1000u;
+  uint32_t true_count_0 = 0u;
+  for (uint32_t i = 0u; i < kNumTrials; ++i) {
+    if (ShouldSendPingOnRstStream(0u)) {
+      true_count_0++;
+    }
+  }
+  EXPECT_EQ(true_count_0, 0u);
+
+  // Test 100% rate gives 100% true results.
+  uint32_t true_count_100 = 0u;
+  for (uint32_t i = 0u; i < kNumTrials; ++i) {
+    if (ShouldSendPingOnRstStream(100u)) {
+      true_count_100++;
+    }
+  }
+  EXPECT_EQ(true_count_100, kNumTrials);
+
+  // Test 50% rate gives approximately 50% true results.
+  uint32_t true_count_50 = 0u;
+  for (uint32_t i = 0u; i < kNumTrials; ++i) {
+    if (ShouldSendPingOnRstStream(50u)) {
+      true_count_50++;
+    }
+  }
+  // This is a binomial distribution. Mean is 500.
+  // One standard deviations is 15.8.
+  // So this range is (200/15.8 = 12.7) standard deviations.
+  // The probability of this failing is in the order of (10^-35)
+  EXPECT_GE(true_count_50, 300u);
+  EXPECT_LE(true_count_50, 700u);
 }
 
 INSTANTIATE_TEST_SUITE_P(ReadContext, ReadContextTest, ::testing::Bool());

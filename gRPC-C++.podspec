@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.83.0-dev'
+  version = '1.84.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -226,7 +226,6 @@ Pod::Spec.new do |s|
                       'include/grpcpp/support/time.h',
                       'include/grpcpp/support/validate_service_config.h',
                       'include/grpcpp/version_info.h',
-                      'include/grpcpp/virtual_channel.h',
                       'include/grpcpp/xds_server_builder.h'
   end
 
@@ -1362,6 +1361,7 @@ Pod::Spec.new do |s|
                       'src/core/tsi/ssl_transport_security.h',
                       'src/core/tsi/ssl_transport_security_utils.h',
                       'src/core/tsi/ssl_types.h',
+                      'src/core/tsi/tls_telemetry.h',
                       'src/core/tsi/transport_security.h',
                       'src/core/tsi/transport_security_grpc.h',
                       'src/core/tsi/transport_security_interface.h',
@@ -2807,6 +2807,7 @@ Pod::Spec.new do |s|
                               'src/core/tsi/ssl_transport_security.h',
                               'src/core/tsi/ssl_transport_security_utils.h',
                               'src/core/tsi/ssl_types.h',
+                              'src/core/tsi/tls_telemetry.h',
                               'src/core/tsi/transport_security.h',
                               'src/core/tsi/transport_security_grpc.h',
                               'src/core/tsi/transport_security_interface.h',

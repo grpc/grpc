@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.83.0-dev'
+  version = '1.84.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -2089,6 +2089,7 @@ Pod::Spec.new do |s|
                       'src/core/telemetry/stats_data.h',
                       'src/core/telemetry/tcp_tracer.cc',
                       'src/core/telemetry/tcp_tracer.h',
+                      'src/core/telemetry/telemetry_label.h',
                       'src/core/transport/auth_context.cc',
                       'src/core/transport/auth_context.h',
                       'src/core/transport/auth_context_comparator_registry.h',
@@ -2154,6 +2155,8 @@ Pod::Spec.new do |s|
                       'src/core/tsi/ssl_transport_security_utils.cc',
                       'src/core/tsi/ssl_transport_security_utils.h',
                       'src/core/tsi/ssl_types.h',
+                      'src/core/tsi/tls_telemetry.cc',
+                      'src/core/tsi/tls_telemetry.h',
                       'src/core/tsi/transport_security.cc',
                       'src/core/tsi/transport_security.h',
                       'src/core/tsi/transport_security_grpc.cc',
@@ -3711,6 +3714,7 @@ Pod::Spec.new do |s|
                               'src/core/telemetry/stats.h',
                               'src/core/telemetry/stats_data.h',
                               'src/core/telemetry/tcp_tracer.h',
+                              'src/core/telemetry/telemetry_label.h',
                               'src/core/transport/auth_context.h',
                               'src/core/transport/auth_context_comparator_registry.h',
                               'src/core/transport/endpoint_transport.h',
@@ -3744,6 +3748,7 @@ Pod::Spec.new do |s|
                               'src/core/tsi/ssl_transport_security.h',
                               'src/core/tsi/ssl_transport_security_utils.h',
                               'src/core/tsi/ssl_types.h',
+                              'src/core/tsi/tls_telemetry.h',
                               'src/core/tsi/transport_security.h',
                               'src/core/tsi/transport_security_grpc.h',
                               'src/core/tsi/transport_security_interface.h',

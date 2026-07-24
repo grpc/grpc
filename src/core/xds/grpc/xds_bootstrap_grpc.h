@@ -124,10 +124,6 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
                       ValidationErrors* errors);
   };
 
-  // Creates bootstrap object from json_string.
-  static absl::StatusOr<std::unique_ptr<GrpcXdsBootstrap>> Create(
-      absl::string_view json_string);
-
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
   void JsonPostLoad(const Json& json, const JsonArgs& args,
                     ValidationErrors* errors);
@@ -188,6 +184,10 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
 
  private:
   friend class GrpcXdsBootstrapBuilder;
+
+  // External callers should use GrpcXdsBootstrapBuilder::Build() instead.
+  static absl::StatusOr<std::unique_ptr<GrpcXdsBootstrap>> Create(
+      absl::string_view json_string);
 
   std::vector<GrpcXdsServer> servers_;
   std::optional<GrpcNode> node_;

@@ -18,10 +18,7 @@
 
 #include <grpc/status.h>
 
-#include <memory>
-#include <optional>
 #include <string>
-#include <vector>
 
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
@@ -31,18 +28,13 @@
 namespace grpc_core {
 namespace {
 
-using ::testing::ElementsAre;
-
 CORE_END2END_TEST(CoreEnd2endTests, SimpleMetadata) {
   auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   IncomingStatusOnClient server_status;
   IncomingMetadata server_initial_metadata;
   IncomingMessage server_message;
   c.NewBatch(1)
-      .SendInitialMetadata({{"key1", "val1"},
-                            {"key2", "val2"},
-                            {"tracestate", "congo=1234,rojo=5678"},
-                            {"tracestate", "gato=abc"}})
+      .SendInitialMetadata({{"key1", "val1"}, {"key2", "val2"}})
       .SendMessage("hello world")
       .SendCloseFromClient()
       .RecvInitialMetadata(server_initial_metadata)
@@ -74,10 +66,6 @@ CORE_END2END_TEST(CoreEnd2endTests, SimpleMetadata) {
   EXPECT_EQ(client_message.payload(), "hello world");
   EXPECT_EQ(s.GetInitialMetadata("key1"), "val1");
   EXPECT_EQ(s.GetInitialMetadata("key2"), "val2");
-  std::optional<std::vector<std::string>> tracestates =
-      s.GetRepeatedInitialMetadata("tracestate");
-  ASSERT_TRUE(tracestates.has_value());
-  EXPECT_THAT(*tracestates, ElementsAre("congo=1234,rojo=5678", "gato=abc"));
   EXPECT_EQ(server_initial_metadata.Get("key3"), "val3");
   EXPECT_EQ(server_initial_metadata.Get("key4"), "val4");
   EXPECT_EQ(server_status.GetTrailingMetadata("key5"), "val5");

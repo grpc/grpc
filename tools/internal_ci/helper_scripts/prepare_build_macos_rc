@@ -133,8 +133,25 @@ if [ "${PREPARE_BUILD_INSTALL_DEPS_OBJC}" == "true" ]
 then
   # cocoapods
   export LANG=en_US.UTF-8
-  # use "sudo" to avoid permission error on kokoro monterey image
-  time sudo gem install cocoapods --version 1.15.2 --no-document --user-install
+
+# 1. Install the latest stable Ruby via Homebrew
+brew install ruby
+
+# 2. Add the Homebrew-installed Ruby to the PATH
+# Homebrew usually installs the latest Ruby to /usr/local/opt/ruby/bin
+export PATH="/usr/local/opt/ruby/bin:$PATH"
+
+# 3. Ensure the gem command points to the new Ruby
+# This installs CocoaPods into the user's gem directory to avoid permission issues
+gem install cocoapods -v 1.15.2 --no-document --user-install
+
+# 4. Add the gem binary directory to PATH
+export PATH="$(ruby -e 'puts Gem.user_dir')/bin:$PATH"
+  
+  # 2. Verify the installation
+  ruby --version
+  pod --version
+  
   # pre-fetch cocoapods master repo's most recent commit only
   mkdir -p ~/.cocoapods/repos
   time git clone --depth 1 https://github.com/CocoaPods/Specs.git ~/.cocoapods/repos/master

@@ -18,7 +18,7 @@ FROM i386/debian:11
 {% include "../../run_tests_python_deps.include" %}
 {% include "../../cxx_test_deps.include" %}
 {% include "../../cxx_deps.include" %}
-{% include "../../cmake.include" %}
+{% include "../../cmake_bullseye_backports.include" %}
 {% include "../../ccache.include" %}
 {% include "../../run_tests_addons.include" %}
 

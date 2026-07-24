@@ -331,7 +331,7 @@ class Http2ClientTransport final : public ClientTransport,
                                             Poll<absl::Status>>,
                              bool> = true>
   auto UntilTransportClosed(Promise&& promise) {
-    return Race(Map(transport_closed_latch_.Wait(),
+    return Race(Map(shutdown_tracker_.WaitShutdownComplete(),
                     [self = RefAsSubclass<Http2ClientTransport>()](Empty) {
                       GRPC_HTTP2_CLIENT_DLOG << "Transport closed";
                       return absl::CancelledError("Transport closed");
@@ -344,7 +344,7 @@ class Http2ClientTransport final : public ClientTransport,
                                             Poll<Empty>>,
                              bool> = true>
   auto UntilTransportClosed(Promise&& promise) {
-    return Race(Map(transport_closed_latch_.Wait(),
+    return Race(Map(shutdown_tracker_.WaitShutdownComplete(),
                     [self = RefAsSubclass<Http2ClientTransport>()](Empty) {
                       GRPC_HTTP2_CLIENT_DLOG << "Transport closed";
                       return Empty{};
@@ -482,6 +482,9 @@ class Http2ClientTransport final : public ClientTransport,
   // Runs on the call party.
   std::optional<RefCountedPtr<Stream>> MakeStream(CallHandler call_handler);
 
+  void EnqueueResetStreamFromTransportParty(RefCountedPtr<Stream> stream,
+                                            uint32_t reset_stream_error_code);
+
   // Enqueues a RST_STREAM frame and immediately closes the stream for reads.
   // Writes will be closed by the write loop after the RST_STREAM frame is
   // written to the wire. Once writes are closed, the stream is considered fully
@@ -556,6 +559,14 @@ class Http2ClientTransport final : public ClientTransport,
 
   void MaybeSpawnCloseTransport(Http2Status http2_status,
                                 DebugLocation whence = {});
+
+  auto CloseTransportFactory(
+      absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list,
+      Http2Status http2_status, DebugLocation whence = {});
+
+  void CloseAllActiveStreams(
+      absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>>&& stream_list,
+      const Http2Status& http2_status, DebugLocation whence);
 
   // This function MUST run on the transport party.
   void CloseTransport();
@@ -681,8 +692,7 @@ class Http2ClientTransport final : public ClientTransport,
 
   uint32_t next_stream_id_;
   HPackCompressor encoder_;
-  bool is_transport_closed_ ABSL_GUARDED_BY(transport_mutex_) = false;
-  Latch<void> transport_closed_latch_;
+  TransportShutdownTracker shutdown_tracker_;
 
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(transport_mutex_){
       "http2_client", GRPC_CHANNEL_READY};

@@ -22,6 +22,7 @@
 
 #include "envoy/config/common/mutation_rules/v3/mutation_rules.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
+#include "envoy/config/route/v3/route_components.upb.h"
 #include "envoy/type/matcher/v3/string.upb.h"
 #include "envoy/type/v3/percent.upb.h"
 #include "google/protobuf/any.upb.h"
@@ -74,6 +75,11 @@ StringMatcher StringMatcherParse(
 StringMatcher StringMatcherParse(
     const XdsResourceType::DecodeContext& context,
     const xds_type_matcher_v3_StringMatcher* matcher_proto,
+    ValidationErrors* errors);
+
+HeaderMatcher ParseXdsHeaderMatcher(
+    const XdsResourceType::DecodeContext& context,
+    const envoy_config_route_v3_HeaderMatcher* matcher,
     ValidationErrors* errors);
 
 absl::StatusOr<Json> ParseProtobufStructToJson(

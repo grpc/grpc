@@ -22,10 +22,10 @@
 #include <grpc/grpc.h>
 #include <grpcpp/impl/generic_stub_session.h>
 #include <grpcpp/support/channel_arguments.h>
-#include <grpcpp/virtual_channel.h>
 
 #include <memory>
 #include <string>
+#include <utility>
 
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/util/grpc_check.h"
@@ -83,12 +83,11 @@ inline void ApplyCommonChannelArguments(ChannelArguments& args) {
 class TestClientSessionReactor
     : public grpc::experimental::ClientSessionReactor {
  public:
-  explicit TestClientSessionReactor(const grpc::ChannelArguments& args,
-                                    absl::Notification* session_done = nullptr)
-      : args_(args), session_done_(session_done) {}
+  explicit TestClientSessionReactor(absl::Notification* session_done = nullptr)
+      : session_done_(session_done) {}
 
-  void OnSessionReady(grpc::internal::Call call) override {
-    virtual_channel_ = grpc::experimental::CreateVirtualChannel(call, args_);
+  void OnSessionReady(std::shared_ptr<grpc::Channel> virtual_channel) override {
+    virtual_channel_ = std::move(virtual_channel);
     ready_.Notify();
   }
   void OnSessionAcknowledged(bool ok) override { acked_.Notify(); }
@@ -114,7 +113,6 @@ class TestClientSessionReactor
   void SignalCallerDone() { caller_done_.Notify(); }
 
  private:
-  grpc::ChannelArguments args_;
   std::shared_ptr<grpc::Channel> virtual_channel_;
   absl::Notification ready_;
   absl::Notification acked_;
@@ -135,9 +133,9 @@ std::shared_ptr<grpc::Channel> MaybeWrapVirtualChannel(
   auto session_stub = std::make_unique<
       grpc::experimental::GenericStubSession<RequestType, ResponseType>>(
       channel);
-  auto* session_reactor = new TestClientSessionReactor(args, session_done);
+  auto* session_reactor = new TestClientSessionReactor(session_done);
   session_stub->PrepareSessionCall(context, method_name, {}, request,
-                                   session_reactor);
+                                   session_reactor, args);
   session_reactor->StartCall();
   session_reactor->WaitForReady();
   auto vchannel = session_reactor->virtual_channel();

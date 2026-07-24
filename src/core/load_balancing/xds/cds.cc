@@ -768,7 +768,9 @@ void CdsPriorityEndpointIterator::ForEach(
                 .SetObject(hierarchical_path_attr)
                 .Set(GRPC_ARG_ADDRESS_WEIGHT, endpoint_weight)
                 .SetObject(locality_name->Ref())
-                .Set(GRPC_ARG_XDS_LOCALITY_WEIGHT, locality.lb_weight);
+                .Set(GRPC_ARG_XDS_LOCALITY_WEIGHT, locality.lb_weight)
+                .Set(GRPC_ARG_LB_LOCALITY,
+                     locality_name->human_readable_string().as_string_view());
         if (!use_http_connect_) args = args.Remove(GRPC_ARG_XDS_HTTP_PROXY);
         callback(EndpointAddresses(endpoint.addresses(), args));
       }

@@ -41,7 +41,7 @@ class GrpcXdsBootstrapBuilder final {
       absl::string_view json_string);
 
   static void SetXdsHttpFilterFactoryForTest(
-      absl::AnyInvocable<std::unique_ptr<XdsHttpFilterImpl>()> factory);
+      absl::AnyInvocable<std::unique_ptr<XdsHttpFilterFactory>()> factory);
 
   static XdsHttpFilterRegistry CreateXdsHttpFilterRegistry(
       bool register_builtins = true);
@@ -52,7 +52,7 @@ class GrpcXdsBootstrapBuilder final {
 };
 
 // Exposed for testing purposes only.
-class XdsHttpRouterFilter final : public XdsHttpFilterImpl {
+class XdsHttpRouterFilterFactory final : public XdsHttpFilterFactory {
  public:
   absl::string_view ConfigProtoName() const override;
   absl::string_view OverrideConfigProtoName() const override;

@@ -101,9 +101,9 @@ def _update_visibility(visibility):
 
     final_visibility = list(visibility)
     if (final_visibility != ["//visibility:public"] and
-        final_visibility != ["//visibility:private"] and
-        "//:__subpackages__" not in final_visibility):
-        final_visibility.append("//:__subpackages__")
+        final_visibility != ["//visibility:private"]):
+        if ("//:__subpackages__" not in final_visibility):
+            final_visibility.append("//:__subpackages__")
 
         if ("//bazel:friends" not in final_visibility):
             final_visibility.append("//bazel:friends")

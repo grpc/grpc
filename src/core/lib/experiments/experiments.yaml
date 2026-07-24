@@ -90,13 +90,13 @@
   allow_in_fuzzing_config: false
 - name: event_engine_callback_cq
   description: Use EventEngine instead of the CallbackAlternativeCQ.
-  expiry: 2026/07/15
+  expiry: 2026/08/15
   owner: mlumish@google.com
   requires: ["event_engine_client", "event_engine_listener"]
   platforms: ["all"]
 - name: event_engine_client
   description: Use EventEngine clients instead of iomgr's grpc_tcp_client
-  expiry: 2026/07/15
+  expiry: 2026/08/15
   owner: mlumish@google.com
   test_tags: ["core_end2end_test", "event_engine_client_test"]
   uses_polling: true
@@ -121,7 +121,7 @@
   platforms: ["all"]
 - name: event_engine_for_all_other_endpoints
   description: Use EventEngine endpoints for all call sites, including direct uses of grpc_tcp_create.
-  expiry: 2026/07/15
+  expiry: 2026/09/15
   owner: mlumish@google.com
   test_tags: ["core_end2end_test"]
   allow_in_fuzzing_config: false
@@ -136,7 +136,7 @@
   platforms: ["all"]
 - name: event_engine_fork
   description: Enables event engine fork handling, including onfork events and file descriptor generations
-  expiry: 2026/07/15
+  expiry: 2026/08/15
   owner: mlumish@google.com
   test_tags: ["core_end2end_test", "event_engine_fork_test"]
   uses_polling: true
@@ -144,7 +144,7 @@
   platforms: ["all"]
 - name: event_engine_listener
   description: Use EventEngine listeners instead of iomgr's grpc_tcp_server
-  expiry: 2026/07/15
+  expiry: 2026/08/15
   owner: mlumish@google.com
   test_tags: ["core_end2end_test", "event_engine_listener_test"]
   uses_polling: true
@@ -186,7 +186,7 @@
   test_tags: []
 - name: local_connector_secure
   description: Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP connections.
-  expiry: 2026/07/15
+  expiry: 2026/08/30
   owner: mattstev@google.com
   test_tags: ["core_end2end_test"]
 - name: memory_optimization_01
@@ -213,7 +213,7 @@
   test_tags: []
 - name: metadata_publish_to_app_tag
   description: Publish metadata to the app using the kPublishToApp metadata field.
-  expiry: 2026/07/21
+  expiry: 2026/09/21
   owner: leonzz@google.com
   test_tags: []
 - name: monitoring_experiment
@@ -221,11 +221,6 @@
   expiry: never-ever
   owner: vigneshbabu@google.com
   test_tags: []
-- name: multiping
-  description: Allow more than one ping to be in flight at a time by default.
-  expiry: 2027/01/16
-  owner: akshitpatel@google.com
-  test_tags: [flow_control_test]
 - name: optimization_01
   description: Optimization
   expiry: 2026/09/07
@@ -310,7 +305,7 @@
   description:
     Code outside iomgr that relies directly on pollsets will use non-pollset alternatives when
     enabled.
-  expiry: 2026/07/15
+  expiry: 2026/08/15
   owner: mlumish@google.com
   test_tags: ["core_end2end_test"]
   requires: ["event_engine_client", "event_engine_listener"]
@@ -336,10 +331,17 @@
 - name: promise_filter_send_cancel_metadata
   description: Enables sending all trailing metadata fields from server side promise-based filters
     upon stream cancellation.
-  expiry: 2026/07/15
+  expiry: 2026/10/15
   owner: akshitpatel@google.com
   test_tags: []
   allow_in_fuzzing_config: true
+- name: recv_message_filter_bypass_fix
+  description:
+    Receive message bypass happen if trailing metadata is received while
+    Server Initial Metadata is getting processed.
+  expiry: 2026/08/25
+  owner: bpawan@google.com
+  test_tags: [core_end2end_test]
 - name: retry_in_callv3
   description: Support retries with call-v3
   expiry: 2027/01/16
@@ -412,7 +414,7 @@
   test_tags: ["endpoint_test", "flow_control_test"]
 - name: tsi_frame_protector_without_locks
   description: Do not hold locks while using the tsi_frame_protector.
-  expiry: 2026/07/15
+  expiry: 2026/08/30
   owner: mattstev@google.com
   test_tags: []
 - name: unconstrained_max_quota_buffer_size

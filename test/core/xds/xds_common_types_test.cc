@@ -53,6 +53,7 @@
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/grpc/xds_grpc_service_parser.h"
 #include "src/core/xds/grpc/xds_server_grpc.h"
@@ -95,7 +96,7 @@ class XdsCommonTypesTest : public ::testing::Test {
   static RefCountedPtr<XdsClient> MakeXdsClient(
       absl::string_view extra_bootstrap_text = "",
       bool trusted_xds_server = false) {
-    auto bootstrap = GrpcXdsBootstrap::Create(
+    auto bootstrap = GrpcXdsBootstrapBuilder::Build(
         absl::StrCat("{\n"
                      "  \"xds_servers\": [\n"
                      "    {\n"

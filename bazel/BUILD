@@ -138,6 +138,11 @@ package_group(
 )
 
 package_group(
+    name = "insecure_credentials",
+    packages = [],
+)
+
+package_group(
     name = "grpc++_unsecure",
     packages = [],
 )

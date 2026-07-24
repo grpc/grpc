@@ -185,6 +185,8 @@ class Http2ServerTransportTest : public Http2TransportTest {
             static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
     });
   }
+  static constexpr absl::string_view kGoawayDebugData =
+      "Server is stopping to serve requests.";
 
  private:
   OrphanablePtr<Http2ServerTransport> server_transport_;
@@ -643,8 +645,6 @@ TEST_F(Http2ServerTransportTest, TestServerGracefulGoAway) {
   ExecCtx ctx;
   InitTransport(GetChannelArgs());
   SpawnTransportLoopsAndExchangeSettings();
-  constexpr absl::string_view kGoawayDebugData =
-      "Server is stopping to serve requests.";
 
   // Step 1: Client initiates stream 1.
   auto step1 = endpoint()->NewStep();
@@ -788,6 +788,141 @@ TEST_F(Http2ServerTransportTest, TestServerGracefulGoAway) {
   });
   step7->Wait();
   event_engine()->Tick();
+}
+
+TEST_F(Http2ServerTransportTest, PingOnRstStreamTest) {
+  InitTransport(GetChannelArgs()
+                    .Set("grpc.http2.ping_on_rst_stream_percent", 100)
+                    // Disable all sources of pings except for RST streams.
+                    .Set(GRPC_ARG_KEEPALIVE_TIME_MS, INT_MAX)
+                    .Set(GRPC_ARG_HTTP2_BDP_PROBE, false));
+  SpawnTransportLoopsAndExchangeSettings();
+  StrictMock<MockFunction<void(bool)>> on_done;
+  EXPECT_CALL(on_done, Call(true));
+
+  auto factory_factory = [&on_done](CallHandler call_handler) {
+    return [call_handler, &on_done]() mutable {
+      return TrySeq(
+          call_handler.PullClientInitialMetadata(),
+          [call_handler, &on_done](ClientMetadataHandle metadata) mutable {
+            return Map(call_handler.WasCancelled(),
+                       [&on_done](bool cancelled) -> absl::Status {
+                         on_done.Call(cancelled);
+                         return absl::OkStatus();
+                       });
+          });
+    };
+  };
+  AddStream(std::move(factory_factory));
+
+  auto step = endpoint()->NewStep();
+  // Client sends a header frame to start stream 1.
+  step->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1,
+          /*end_headers=*/true,
+          /*end_stream=*/false),
+  });
+  // Client sends RST_STREAM.
+  step->ThenPerformRead({
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/1,
+          /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kCancel)),
+  });
+  // Server should send a PING frame due to the RST_STREAM.
+  // We capture the outgoing PING, read its opaque_id, and provide an ACK.
+  step->ThenExpectWrite([&, step](SliceBuffer& buffer) {
+    uint64_t opaque_id =
+        VerifyPingFrameAndReturnOpaqueId(buffer, /*is_ack=*/false);
+    step->InsertReadAtHead({helper_.SerializedPingFrame(/*ack=*/true,
+                                                        /*opaque=*/opaque_id)});
+  });
+
+  step->Wait();
+  event_engine()->Tick();
+
+  // Teardown the transport.
+  std::shared_ptr<EventSequenceEndpoint::Step> step2 = endpoint()->NewStep();
+  AddTransportCloseExpectations(step2.get(), /*last_stream_id=*/1);
+  step2->Wait();
+}
+
+TEST_F(Http2ServerTransportTest, TestNextAllowedPingIntervalKeepaliveEnabled) {
+  ExecCtx ctx;
+  InitTransport(GetChannelArgs().Set(GRPC_ARG_KEEPALIVE_TIME_MS, 1000));
+  SpawnTransportLoopsAndExchangeSettings();
+  EXPECT_EQ(server_transport()->TestOnlyNextAllowedPingInterval(),
+            Duration::Milliseconds(500));
+
+  auto step = endpoint()->NewStep();
+  AddTransportCloseExpectations(step.get());
+  step->Wait();
+}
+
+TEST_F(Http2ServerTransportTest, TestNextAllowedPingIntervalKeepaliveDisabled) {
+  ExecCtx ctx;
+  InitTransport(GetChannelArgs().Set(GRPC_ARG_KEEPALIVE_TIME_MS, INT_MAX));
+  SpawnTransportLoopsAndExchangeSettings();
+  EXPECT_EQ(server_transport()->TestOnlyNextAllowedPingInterval(),
+            Duration::Seconds(20));
+
+  auto step = endpoint()->NewStep();
+  AddTransportCloseExpectations(step.get());
+  step->Wait();
+}
+
+TEST_F(Http2ServerTransportTest, TestNextAllowedPingIntervalGracefulGoaway) {
+  ExecCtx ctx;
+  InitTransport(GetChannelArgs().Set(GRPC_ARG_KEEPALIVE_TIME_MS, 1000));
+  SpawnTransportLoopsAndExchangeSettings();
+
+  EXPECT_EQ(server_transport()->TestOnlyNextAllowedPingInterval(),
+            Duration::Milliseconds(500));
+
+  uint64_t ping_opaque_id = 0;
+  auto step = endpoint()->NewStep();
+  step->ThenExpectWrite(
+      [&, expected_goaway = helper_.SerializedGoawayFrame(
+              /*debug_data=*/kGoawayDebugData,
+              /*last_stream_id=*/0x7fffffff,
+              /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kNoError))](
+          SliceBuffer& buffer) mutable {
+        Slice joined = buffer.JoinIntoSlice();
+        size_t goaway_len = expected_goaway.length();
+        EXPECT_GE(joined.length(), goaway_len + 17);
+        EXPECT_EQ(absl::string_view(
+                      reinterpret_cast<const char*>(joined.data()), goaway_len),
+                  expected_goaway.as_string_view());
+
+        Slice ping_slice =
+            Slice::FromCopiedBuffer(joined.as_string_view().substr(goaway_len));
+        SliceBuffer ping_buffer;
+        ping_buffer.Append(std::move(ping_slice));
+        ping_opaque_id =
+            VerifyPingFrameAndReturnOpaqueId(ping_buffer, /*is_ack=*/false);
+      });
+
+  grpc_transport_op* op = grpc_make_transport_op(nullptr);
+  op->goaway_error = absl::UnavailableError(kGoawayDebugData);
+  server_transport()->PerformOp(op);
+
+  step->Wait();
+
+  EXPECT_EQ(server_transport()->TestOnlyNextAllowedPingInterval(),
+            Duration::Zero());
+
+  auto step2 = endpoint()->NewStep();
+  step2->ThenPerformRead({
+      helper_.SerializedPingFrame(/*ack=*/true, /*opaque=*/ping_opaque_id),
+  });
+  step2->ThenExpectWrite({
+      helper_.SerializedGoawayFrame(
+          /*debug_data=*/kGoawayDebugData,
+          /*last_stream_id=*/0,
+          /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kNoError)),
+  });
+  step2->Wait();
 }
 
 }  // namespace testing

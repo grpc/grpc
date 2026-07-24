@@ -586,6 +586,12 @@ absl::StatusOr<RefCountedPtr<Channel>> ClientChannel::Create(
   if (target.empty()) {
     return absl::InternalError("target URI is empty in client channel");
   }
+  auto channel_args_mutator =
+      grpc_channel_args_get_client_channel_creation_mutator();
+  if (channel_args_mutator != nullptr) {
+    channel_args =
+        channel_args_mutator(target.c_str(), channel_args, GRPC_CLIENT_CHANNEL);
+  }
   std::string uri_to_resolve = CoreConfiguration::Get()
                                    .proxy_mapper_registry()
                                    .MapName(target, &channel_args)

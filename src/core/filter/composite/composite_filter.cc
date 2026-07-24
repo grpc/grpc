@@ -110,8 +110,7 @@ CompositeFilter::CompositeFilter(const ChannelArgs& args,
     InterceptionChainBuilder builder(args);
     InterceptionChainBuilderWrapper builder_wrapper(builder);
     for (size_t i = 0; i < merged_configs.size(); ++i) {
-      const auto* filter_impl =
-          execute_filter_action.filter_chain()[i].filter_impl;
+      const auto* factory = execute_filter_action.filter_chain()[i].factory;
       const auto& filter_config = merged_configs[i];
       // TODO(roth): Currently, this code assumes that it is always
       // running on the client side, so we'll need to remove this
@@ -128,13 +127,13 @@ CompositeFilter::CompositeFilter(const ChannelArgs& args,
       //    is_client parameter to the xDS HTTP filter AddFilter()
       //    method, and use that to do this initialization differently
       //    on client side vs. server side.
-      if (!filter_impl->IsSupportedOnClients()) {
+      if (!factory->IsSupportedOnClients()) {
         filter_chain_map_[&execute_filter_action] = absl::UnavailableError(
-            absl::StrCat(filter_impl->ConfigProtoName(),
+            absl::StrCat(factory->ConfigProtoName(),
                          " filter not supported on clients"));
         return;
       }
-      filter_impl->AddFilter(builder_wrapper, filter_config);
+      factory->AddFilter(builder_wrapper, filter_config);
     }
     filter_chain_map_[&execute_filter_action] =
         builder.Build(wrapped_destination());

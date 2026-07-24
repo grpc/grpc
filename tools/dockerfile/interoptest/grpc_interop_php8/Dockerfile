@@ -1,4 +1,4 @@
-# Copyright 2016 gRPC authors.
+# Copyright 2026 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:11
+FROM debian:12
 
 #=================
 # Basic C core dependencies
@@ -76,7 +76,10 @@ RUN apt-get update && apt-get install -y \
   && apt-get clean
 
 # use pinned version of pip to avoid sudden breakages
-RUN python3 -m pip install --upgrade pip==19.3.1
+# Some newer distros that have already implemented PEP 668. Use of
+# --break-system-packages is to workaround that. We should look into using
+# virtualenv in Dockerfile though.
+RUN python3 -m pip install --break-system-packages --upgrade pip==19.3.1
 
 # TODO(jtattermusch): currently six is needed for tools/run_tests scripts
 # but since our python2 usage is deprecated, we should get rid of it.
@@ -88,9 +91,9 @@ RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-clien
 
 
 #=================
-# PHP7 dependencies
+# PHP8 dependencies
 
-RUN apt-get update && apt-get install -y php7.4-dev php-pear && apt-get clean
+RUN apt-get update && apt-get install -y php8.2 php8.2-dev php-pear && apt-get clean
 
 # Install composer
 RUN curl -sS https://getcomposer.org/installer | php
