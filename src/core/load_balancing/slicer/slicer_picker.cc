@@ -17,25 +17,15 @@
 #include "src/core/load_balancing/slicer/slicer_picker.h"
 
 #include <grpc/impl/connectivity_state.h>
-#include <grpc/support/port_platform.h>
-#include <stddef.h>
-
-#include <optional>
-#include <string>
-#include <utility>
-#include <vector>
 
 #include "src/core/util/shared_bit_gen.h"
 #include "absl/random/distributions.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
 namespace {
 
-// Returns a uniformly random index in [0, count). `count` must be > 0.
+// Random index in [0, count).
 size_t RandomIndex(size_t count) {
   return absl::Uniform<size_t>(SharedBitGen(), 0, count);
 }
@@ -49,28 +39,24 @@ SlicerPicker::SlicerPicker(RefCountedPtr<SliceMap> slice_map,
       fallback_enabled_(fallback_enabled) {}
 
 LoadBalancingPolicy::PickResult SlicerPicker::Pick(PickArgs args) {
-  // Extract the slice key from the request header. A present-but-empty value is
-  // a valid key; an absent header means the request carries no key at all.
+  // Extract slice key from request header.
   std::string buffer;
   std::optional<absl::string_view> key =
       args.initial_metadata->Lookup(slice_key_header_, &buffer);
-  // Without a key we cannot route the request to a slice. Rather than silently
-  // treating it as some slice's key, serve it from the fallback pool if enabled
-  // and otherwise fail the pick.
+
   if (!key.has_value()) {
     if (fallback_enabled_) return PickFromFallbackPool(args);
     return PickResult::Fail(absl::UnavailableError(absl::StrCat(
         "slicer: request has no \"", slice_key_header_, "\" header")));
   }
   const SliceEntry* slice = slice_map_->Lookup(*key);
-  // No assignment covers this key (only happens before any good assignment has
-  // been received from the sharding service).
+  // Unmapped key range.
   if (slice == nullptr) {
     if (fallback_enabled_) return PickFromFallbackPool(args);
     return PickResult::Fail(
         absl::UnavailableError("slicer: no slice assignment for request key"));
   }
-  // The matching slice is in fallback mode.
+  // Slice in fallback mode.
   if (slice->in_fallback && fallback_enabled_)
     return PickFromFallbackPool(args);
   return PickFromSlice(*slice, args);
@@ -80,36 +66,33 @@ LoadBalancingPolicy::PickResult SlicerPicker::PickFromSlice(
     const SliceEntry& slice, PickArgs args) {
   const auto& all = slice_map_->all_endpoints();
   const std::vector<size_t>& flat = slice.all_endpoints_in_slice;
-  // Queue the pick when the slice has no endpoints. This happens when the name
-  // resolver update trails the assignment.
+  // Queue if slice has no endpoints.
   if (flat.empty()) return PickResult::Queue();
   const std::vector<size_t>& ready =
       slice.endpoints_by_state[GRPC_CHANNEL_READY];
   const std::vector<size_t>& idle = slice.endpoints_by_state[GRPC_CHANNEL_IDLE];
   const std::vector<size_t>& connecting =
       slice.endpoints_by_state[GRPC_CHANNEL_CONNECTING];
-  // Pick a random endpoint from the slice, then branch on its state.
+  // Select random endpoint in slice.
   EndpointState& ep = *all[flat[RandomIndex(flat.size())]];
   switch (ep.connectivity_state()) {
     case GRPC_CHANNEL_READY:
       return Delegate(ep, args);
     case GRPC_CHANNEL_IDLE:
-      // Trigger a connection attempt, then delegate to a READY endpoint if one
-      // exists, else queue.
+      // Exit IDLE and delegate to READY endpoint if available, else queue.
       ep.ExitIdle();
       if (!ready.empty()) return DelegateToRandom(ready, args);
       return PickResult::Queue();
     default:
       break;  // CONNECTING or TRANSIENT_FAILURE.
   }
-  // The randomly selected endpoint is CONNECTING or TRANSIENT_FAILURE. Wake up
-  // one not-yet-triggered IDLE endpoint, if any.
+  // Wake up one IDLE endpoint if any.
   for (size_t index : idle) {
     if (all[index]->ExitIdle()) break;
   }
-  // Prefer a READY endpoint if one exists.
+  // Delegate to READY endpoint if available.
   if (!ready.empty()) return DelegateToRandom(ready, args);
-  // Queue if anything is (or is now) making progress toward READY.
+  // Queue if connection in progress.
   bool idle_in_progress = false;
   for (size_t index : idle) {
     if (all[index]->connect_triggered()) {
@@ -118,15 +101,14 @@ LoadBalancingPolicy::PickResult SlicerPicker::PickFromSlice(
     }
   }
   if (!connecting.empty() || idle_in_progress) return PickResult::Queue();
-  // Nothing is connecting; delegate to the TRANSIENT_FAILURE endpoint's picker
-  // so the RPC fails with the underlying connection status.
+  // Delegate to TRANSIENT_FAILURE endpoint's picker.
   return Delegate(ep, args);
 }
 
 LoadBalancingPolicy::PickResult SlicerPicker::PickFromFallbackPool(
     PickArgs args) {
   const auto& all = slice_map_->all_endpoints();
-  // Queue if there are no endpoints at all.
+  // Queue if no endpoints in fallback pool.
   if (all.empty()) return PickResult::Queue();
   return Delegate(*all[RandomIndex(all.size())], args);
 }
