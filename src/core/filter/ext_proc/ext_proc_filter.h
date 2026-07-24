@@ -141,7 +141,11 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
 
   friend class ExtProcCall;
   friend class ClientInitialMetadataProcessor;
+  friend class ClientToExtProcInitialMetadataProcessor;
+  friend class ExtProcToServerInitialMetadataProcessor;
   friend class ClientToServerMessageProcessor;
+  friend class ClientToExtProcMessageProcessor;
+  friend class ExtProcToServerMessageProcessor;
   friend class ServerInitialMetadataProcessor;
   friend class ServerToClientMessageProcessor;
   friend class ServerTrailingMetadataProcessor;
