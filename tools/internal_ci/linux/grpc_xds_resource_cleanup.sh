@@ -108,6 +108,14 @@ cleanup::job::cleanup_cluster_dualstack() {
 }
 
 #######################################
+# The Cloud Run job cleans up leaked Serverless NEGs, backend services,
+# meshes, routes, and Cloud Run services.
+#######################################
+cleanup::job::cleanup_cloud_run() {
+  cleanup::run_clean "$1" --mode=cloudrun
+}
+
+#######################################
 # Set common variables for the cleanup script.
 # Globals:
 #   TEST_DRIVER_FLAGFILE: Relative path to test driver flagfile
@@ -164,6 +172,7 @@ main() {
     "cleanup_cluster_url_map"
     "cleanup_cluster_gamma"
     "cleanup_cluster_dualstack"
+    "cleanup_cloud_run"
   )
   for job_name in "${cleanup_jobs[@]}"; do
     echo "-------------------- Starting job ${job_name} --------------------"
