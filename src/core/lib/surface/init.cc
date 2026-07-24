@@ -80,10 +80,17 @@ void RegisterSecurityFilters(CoreConfiguration::Builder* builder) {
   builder->channel_init()
       ->RegisterFilter<ServerAuthFilter>(GRPC_SERVER_CHANNEL)
       .IfHasChannelArg(GRPC_SERVER_CREDENTIALS_ARG);
-  builder->channel_init()
-      ->RegisterFilter<GrpcServerAuthzFilter>(GRPC_SERVER_CHANNEL)
-      .IfHasChannelArg(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER)
-      .After<ServerAuthFilter>();
+  if (IsFixV3FilterStackServerSideOrderingEnabled()) {
+    builder->channel_init()
+        ->RegisterFilter<GrpcServerAuthzFilter>(GRPC_SERVER_CHANNEL)
+        .IfHasChannelArg(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER)
+        .Before<ServerAuthFilter>();
+  } else {
+    builder->channel_init()
+        ->RegisterFilter<GrpcServerAuthzFilter>(GRPC_SERVER_CHANNEL)
+        .IfHasChannelArg(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER)
+        .After<ServerAuthFilter>();
+  }
 }
 }  // namespace grpc_core
 
