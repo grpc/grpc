@@ -15,7 +15,7 @@
 FROM debian:12
 
 # C++ distribtests are setup in a way that requires git
-RUN apt-get update && apt-get install -y git cmake && apt-get clean
+RUN apt-get update && apt-get install -y git cmake build-essential && apt-get clean
 
 RUN git config --global --add safe.directory /var/local/jenkins/grpc
 RUN git config --global protocol.file.allow always
