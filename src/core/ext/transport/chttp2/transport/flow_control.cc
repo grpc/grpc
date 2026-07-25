@@ -124,6 +124,8 @@ TransportFlowControl::TransportFlowControl(absl::string_view peer_name,
                                            MemoryOwner* memory_owner)
     : memory_owner_(memory_owner),
       enable_bdp_probe_(enable_bdp_probe),
+      bdp_ping_blocked_(true),
+      bdp_ping_started_(false),
       bdp_estimator_(peer_name) {}
 
 uint32_t TransportFlowControl::DesiredAnnounceSize(bool writing_anyway) const {
@@ -348,6 +350,8 @@ std::string TransportFlowControl::Stats::ToString() const {
                       " announced_stream_total_over_incoming_window: ",
                       announced_stream_total_over_incoming_window,
                       " bdp_accumulator: ", bdp_accumulator,
+                      " bdp_ping_blocked: ", bdp_ping_blocked,
+                      " bdp_ping_started: ", bdp_ping_started,
                       " bdp_estimate: ", bdp_estimate,
                       " bdp_bw_est: ", bdp_bw_est);
 }
