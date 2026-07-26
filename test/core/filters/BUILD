@@ -102,6 +102,7 @@ grpc_cc_library(
     srcs = ["filter_test_v2.cc"],
     hdrs = ["filter_test_v2.h"],
     external_deps = [
+        "absl/functional:function_ref",
         "absl/memory",
         "absl/status",
         "absl/status:statusor",
