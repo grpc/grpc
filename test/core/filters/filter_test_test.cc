@@ -12,12 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Tests for the filter test harnesses themselves -- FilterTest (v3) and
-// FilterTestV2 -- using synthetic filters and interceptors defined right here,
-// so every assertion is about harness plumbing rather than any particular
-// filter's behavior. Both live here for the same reason both harnesses live in
-// filter_test.{h,cc}: the v2 half goes away wholesale once there are no v2
-// filters left.
+// Tests for the v3 FilterTest harness itself, using synthetic filters and
+// interceptors defined right here, so every assertion is about harness plumbing
+// rather than any particular filter's behavior. (The v2 harness lives in
+// filter_test_v2.{h,cc}, tested by filter_test_v2_test.cc.)
 
 #include "test/core/filters/filter_test.h"
 
@@ -221,9 +219,8 @@ class ConsumingInterceptor final : public Interceptor {
 // not complete until the far end pulls: pushing server trailing metadata while
 // a message push is still outstanding would race the message.
 FILTER_TEST(FilterTest, UnaryEchoThroughPassThroughFilter) {
-  ASSERT_TRUE(InitChannel<PassThroughFilter>().ok());
-  auto [initiator, handler] =
-      StartCallForFilter(NewClientMetadata({{"echo-test", "on"}}));
+  ASSERT_TRUE(CreateFilterChain<PassThroughFilter>().ok());
+  StartCallForFilter(NewClientMetadata({{"echo-test", "on"}}));
 
   // Client sends the request.
   PushClientMessage(NewMessage("hello"));
@@ -231,35 +228,34 @@ FILTER_TEST(FilterTest, UnaryEchoThroughPassThroughFilter) {
 
   // Server receives it.
   ValueOrFailure<ClientMetadataHandle> client_initial_metadata =
-      PullClientInitialMetadata(handler);
+      PullClientInitialMetadata();
   ASSERT_TRUE(client_initial_metadata.ok());
   EXPECT_THAT(**client_initial_metadata,
               HasMetadataKeyValue("echo-test", "on"));
-  ClientToServerNextMessage request = PullClientMessage(handler);
+  ClientToServerNextMessage request = PullClientMessage();
   ASSERT_TRUE(request.ok());
   ASSERT_TRUE(request.has_value());
   EXPECT_THAT(request.value(), HasMessagePayload("hello"));
-  EXPECT_TRUE(PullClientHalfClose(handler));
+  EXPECT_TRUE(PullClientHalfClose());
 
   // Server responds.
-  PushServerInitialMetadata(handler,
-                            NewServerMetadata({{"server-hdr", "yes"}}));
-  PushServerMessage(handler, NewMessage("hello"));
+  PushServerInitialMetadata(NewServerMetadata({{"server-hdr", "yes"}}));
+  PushServerMessage(NewMessage("hello"));
 
   // Client receives the response.
   ValueOrFailure<std::optional<ServerMetadataHandle>> server_initial_metadata =
       PullServerInitialMetadata();
   ASSERT_TRUE(server_initial_metadata.ok());
-  ASSERT_TRUE(server_initial_metadata->has_value());
-  EXPECT_THAT(***server_initial_metadata,
-              HasMetadataKeyValue("server-hdr", "yes"));
+  EXPECT_THAT(*server_initial_metadata,
+              ::testing::Optional(::testing::Pointee(
+                  HasMetadataKeyValue("server-hdr", "yes"))));
   ServerToClientNextMessage response = PullServerMessage();
   ASSERT_TRUE(response.ok());
   ASSERT_TRUE(response.has_value());
   EXPECT_THAT(response.value(), HasMessagePayload("hello"));
 
   // Server finishes, client observes the status.
-  PushServerTrailingMetadata(handler, ServerMetadataFromStatus(GRPC_STATUS_OK));
+  PushServerTrailingMetadata(ServerMetadataFromStatus(GRPC_STATUS_OK));
   ValueOrFailure<ServerMetadataHandle> server_trailing_metadata =
       PullServerTrailingMetadata();
   ASSERT_TRUE(server_trailing_metadata.ok());
@@ -272,40 +268,38 @@ FILTER_TEST(FilterTest, UnaryEchoThroughPassThroughFilter) {
 // before completing. Nothing about the test changes: the harness resumes each
 // hook and all six operations still arrive.
 FILTER_TEST(FilterTest, UnaryEchoThroughAsyncFilter) {
-  ASSERT_TRUE(InitChannel<AsyncFilter>().ok());
-  auto [initiator, handler] =
-      StartCallForFilter(NewClientMetadata({{"echo-test", "on"}}));
+  ASSERT_TRUE(CreateFilterChain<AsyncFilter>().ok());
+  StartCallForFilter(NewClientMetadata({{"echo-test", "on"}}));
 
   PushClientMessage(NewMessage("hello"));
   PushClientHalfClose();
 
   ValueOrFailure<ClientMetadataHandle> client_initial_metadata =
-      PullClientInitialMetadata(handler);
+      PullClientInitialMetadata();
   ASSERT_TRUE(client_initial_metadata.ok());
   EXPECT_THAT(**client_initial_metadata,
               HasMetadataKeyValue("echo-test", "on"));
-  ClientToServerNextMessage request = PullClientMessage(handler);
+  ClientToServerNextMessage request = PullClientMessage();
   ASSERT_TRUE(request.ok());
   ASSERT_TRUE(request.has_value());
   EXPECT_THAT(request.value(), HasMessagePayload("hello"));
-  EXPECT_TRUE(PullClientHalfClose(handler));
+  EXPECT_TRUE(PullClientHalfClose());
 
-  PushServerInitialMetadata(handler,
-                            NewServerMetadata({{"server-hdr", "yes"}}));
-  PushServerMessage(handler, NewMessage("hello"));
+  PushServerInitialMetadata(NewServerMetadata({{"server-hdr", "yes"}}));
+  PushServerMessage(NewMessage("hello"));
 
   ValueOrFailure<std::optional<ServerMetadataHandle>> server_initial_metadata =
       PullServerInitialMetadata();
   ASSERT_TRUE(server_initial_metadata.ok());
-  ASSERT_TRUE(server_initial_metadata->has_value());
-  EXPECT_THAT(***server_initial_metadata,
-              HasMetadataKeyValue("server-hdr", "yes"));
+  EXPECT_THAT(*server_initial_metadata,
+              ::testing::Optional(::testing::Pointee(
+                  HasMetadataKeyValue("server-hdr", "yes"))));
   ServerToClientNextMessage response = PullServerMessage();
   ASSERT_TRUE(response.ok());
   ASSERT_TRUE(response.has_value());
   EXPECT_THAT(response.value(), HasMessagePayload("hello"));
 
-  PushServerTrailingMetadata(handler, ServerMetadataFromStatus(GRPC_STATUS_OK));
+  PushServerTrailingMetadata(ServerMetadataFromStatus(GRPC_STATUS_OK));
   ValueOrFailure<ServerMetadataHandle> server_trailing_metadata =
       PullServerTrailingMetadata();
   ASSERT_TRUE(server_trailing_metadata.ok());
@@ -319,12 +313,12 @@ FILTER_TEST(FilterTest, UnaryEchoThroughAsyncFilter) {
 // terminates the call before it reaches the server, so the client observes the
 // filter's status directly.
 FILTER_TEST(FilterTest, FilterRejectsAtInitialMetadata) {
-  ASSERT_TRUE(InitChannel<RejectingFilter>().ok());
-  auto [initiator, handler] = StartCallForFilter(NewClientMetadata());
+  ASSERT_TRUE(CreateFilterChain<RejectingFilter>().ok());
+  StartCallForFilter(NewClientMetadata());
 
   // Filters only execute as the server pulls: driving the pull fires the
   // filter, and because the filter aborts, the pull resolves to failure.
-  EXPECT_FALSE(PullClientInitialMetadata(handler).ok());
+  EXPECT_FALSE(PullClientInitialMetadata().ok());
 
   ValueOrFailure<ServerMetadataHandle> server_trailing_metadata =
       PullServerTrailingMetadata();
@@ -339,25 +333,24 @@ FILTER_TEST(FilterTest, FilterRejectsAtInitialMetadata) {
 // An interceptor in the stack works just like a filter does, because it starts
 // exactly one child call.
 FILTER_TEST(FilterTest, UnaryEchoThroughPassThroughInterceptor) {
-  ASSERT_TRUE(InitChannel<PassThroughInterceptor>().ok());
-  auto [initiator, handler] =
-      StartCallForFilter(NewClientMetadata({{"echo-test", "on"}}));
+  ASSERT_TRUE(CreateFilterChain<PassThroughInterceptor>().ok());
+  StartCallForFilter(NewClientMetadata({{"echo-test", "on"}}));
 
   PushClientMessage(NewMessage("hello"));
   PushClientHalfClose();
 
   ValueOrFailure<ClientMetadataHandle> client_initial_metadata =
-      PullClientInitialMetadata(handler);
+      PullClientInitialMetadata();
   ASSERT_TRUE(client_initial_metadata.ok());
   EXPECT_THAT(**client_initial_metadata,
               HasMetadataKeyValue("echo-test", "on"));
-  ClientToServerNextMessage request = PullClientMessage(handler);
+  ClientToServerNextMessage request = PullClientMessage();
   ASSERT_TRUE(request.ok());
   ASSERT_TRUE(request.has_value());
   EXPECT_THAT(request.value(), HasMessagePayload("hello"));
-  EXPECT_TRUE(PullClientHalfClose(handler));
+  EXPECT_TRUE(PullClientHalfClose());
 
-  PushServerTrailingMetadata(handler, ServerMetadataFromStatus(GRPC_STATUS_OK));
+  PushServerTrailingMetadata(ServerMetadataFromStatus(GRPC_STATUS_OK));
   ValueOrFailure<ServerMetadataHandle> server_trailing_metadata =
       PullServerTrailingMetadata();
   ASSERT_TRUE(server_trailing_metadata.ok());
@@ -369,15 +362,14 @@ FILTER_TEST(FilterTest, UnaryEchoThroughPassThroughInterceptor) {
 // An interceptor that consumes the call creates *no* child call, so there is no
 // handler to collect: this is why StartCall() hands back only the initiator.
 FILTER_TEST(FilterTest, ConsumingInterceptorCreatesNoChildCall) {
-  ASSERT_TRUE(InitChannel<ConsumingInterceptor>().ok());
+  ASSERT_TRUE(CreateFilterChain<ConsumingInterceptor>().ok());
   StartCall(NewClientMetadata());
 
-  ValueOrFailure<ServerMetadataHandle> server_trailing_metadata =
-      PullServerTrailingMetadata();
-  ASSERT_TRUE(server_trailing_metadata.ok());
-  EXPECT_THAT(
-      **server_trailing_metadata,
-      HasMetadataResult(absl::UnimplementedError("consumed by interceptor")));
+  EXPECT_EQ(PullServerTrailingStatus(),
+            absl::UnimplementedError("consumed by interceptor"));
+
+  // The interceptor answered the call itself: nothing went down the stack.
+  EXPECT_EQ(ChildCallsStarted(), 0);
 
   WaitForAllPendingWork();
 }

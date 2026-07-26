@@ -18,7 +18,6 @@
 #include <grpc/status.h>
 
 #include <utility>
-#include <vector>
 
 #include "src/core/call/metadata.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -50,7 +49,7 @@ class RetryInterceptorTest : public FilterTest {
   using FilterTest::FilterTest;
 
   absl::Status Init(const ChannelArgs& args = ChannelArgs()) {
-    return InitChannel<RetryInterceptor>(args);
+    return CreateFilterChain<RetryInterceptor>(args);
   }
 
   ClientMetadataHandle MakeClientInitialMetadata() {
@@ -74,7 +73,7 @@ class RetryInterceptorTest : public FilterTest {
         Slice::FromCopiedString(kTestPath).c_slice());
   }
 
-  void InitCallArena(Arena* arena) override {
+  void InitAfterCallArena(Arena* arena) override {
     if (service_config_ == nullptr) return;
     arena->New<ServiceConfigCallData>(arena)->SetServiceConfig(service_config_,
                                                                method_configs_);
@@ -91,23 +90,27 @@ FILTER_TEST(RetryInterceptorTest, NoOp) { ASSERT_TRUE(Init().ok()); }
 // call in, one child call out.
 FILTER_TEST(RetryInterceptorTest, SingleAttemptSucceeds) {
   ASSERT_TRUE(Init().ok());
-  auto [initiator, handler] = StartCallForFilter(MakeClientInitialMetadata());
+  StartCallForFilter(MakeClientInitialMetadata());
 
+  PushClientMessage(NewMessage("hello"));
   PushClientHalfClose();
-  ASSERT_TRUE(PullClientInitialMetadata(handler).ok());
-  PushServerTrailingMetadata(handler, ServerMetadataFromStatus(GRPC_STATUS_OK));
+  ASSERT_TRUE(PullClientInitialMetadata().ok());
+  ClientToServerNextMessage message = PullClientMessage();
+  ASSERT_TRUE(message.ok());
+  ASSERT_TRUE(message.has_value());
+  EXPECT_THAT(message.value(), HasMessagePayload("hello"));
+  PushServerTrailingMetadata(ServerMetadataFromStatus(GRPC_STATUS_OK));
 
-  ValueOrFailure<ServerMetadataHandle> server_trailing_metadata =
-      PullServerTrailingMetadata();
-  ASSERT_TRUE(server_trailing_metadata.ok());
-  EXPECT_THAT(**server_trailing_metadata, HasMetadataResult(absl::OkStatus()));
+  EXPECT_TRUE(PullServerTrailingStatus().ok());
+
+  // No retry policy, so the interceptor made exactly one child call.
+  EXPECT_EQ(ChildCallsStarted(), 1);
 
   WaitForAllPendingWork();
 }
 
 // A retryable failure on the first attempt produces a *second* child call, and
-// the client sees only the status of the attempt that succeeded. This is the
-// case a harness that returned one handler per initiator could not express.
+// the client sees only the status of the attempt that succeeded.
 FILTER_TEST(RetryInterceptorTest, RetriesOnRetryableStatus) {
   ASSERT_TRUE(Init().ok());
   SetRetryPolicy(R"({
@@ -118,25 +121,35 @@ FILTER_TEST(RetryInterceptorTest, RetriesOnRetryableStatus) {
     "retryableStatusCodes": ["UNAVAILABLE"]
   })");
   StartCall(MakeClientInitialMetadata());
+  PushClientMessage(NewMessage("hello"));
   PushClientHalfClose();
 
-  // First attempt: fails with a retryable status.
-  CallHandler first_attempt = GetHandler();
+  // First attempt: fails with a retryable status. The interceptor buffers the
+  // client message and replays it onto each attempt.
+  CallHandler first_attempt = GetNextHandler();
   ASSERT_TRUE(PullClientInitialMetadata(first_attempt).ok());
+  ClientToServerNextMessage first_message = PullClientMessage(first_attempt);
+  ASSERT_TRUE(first_message.ok());
+  ASSERT_TRUE(first_message.has_value());
+  EXPECT_THAT(first_message.value(), HasMessagePayload("hello"));
   PushServerTrailingMetadata(
       first_attempt,
       ServerMetadataFromStatus(GRPC_STATUS_UNAVAILABLE, "try again"));
 
   // Second attempt: the interceptor replays the call onto a new child call.
-  CallHandler second_attempt = GetHandler();
+  CallHandler second_attempt = GetNextHandler();
   ASSERT_TRUE(PullClientInitialMetadata(second_attempt).ok());
+  ClientToServerNextMessage second_message = PullClientMessage(second_attempt);
+  ASSERT_TRUE(second_message.ok());
+  ASSERT_TRUE(second_message.has_value());
+  EXPECT_THAT(second_message.value(), HasMessagePayload("hello"));
   PushServerTrailingMetadata(second_attempt,
                              ServerMetadataFromStatus(GRPC_STATUS_OK));
 
-  ValueOrFailure<ServerMetadataHandle> server_trailing_metadata =
-      PullServerTrailingMetadata();
-  ASSERT_TRUE(server_trailing_metadata.ok());
-  EXPECT_THAT(**server_trailing_metadata, HasMetadataResult(absl::OkStatus()));
+  EXPECT_TRUE(PullServerTrailingStatus().ok());
+
+  // One retry, so the interceptor made exactly two child calls.
+  EXPECT_EQ(ChildCallsStarted(), 2);
 
   WaitForAllPendingWork();
 }
@@ -144,8 +157,6 @@ FILTER_TEST(RetryInterceptorTest, RetriesOnRetryableStatus) {
 // Once the attempt budget is exhausted the interceptor stops creating child
 // calls and surfaces the last failure to the client.
 FILTER_TEST(RetryInterceptorTest, GivesUpAfterMaxAttempts) {
-  // TODO(pawbhard): investigate flakiness.
-  GTEST_SKIP();
   ASSERT_TRUE(Init().ok());
   SetRetryPolicy(R"({
     "maxAttempts": 2,
@@ -155,26 +166,31 @@ FILTER_TEST(RetryInterceptorTest, GivesUpAfterMaxAttempts) {
     "retryableStatusCodes": ["UNAVAILABLE"]
   })");
   StartCall(MakeClientInitialMetadata());
+  PushClientMessage(NewMessage("hello"));
   PushClientHalfClose();
 
-  // Keep each attempt's handler alive for the whole test, as a transport
-  // would.
-  std::vector<CallHandler> attempts;
+  // Fail each attempt in turn, releasing its handler as a transport would once
+  // the call has failed.
   for (int i = 0; i < 2; i++) {
-    attempts.push_back(GetHandler());
-    ASSERT_TRUE(PullClientInitialMetadata(attempts.back()).ok());
+    CallHandler attempt = GetNextHandler();
+    ASSERT_TRUE(PullClientInitialMetadata(attempt).ok());
+    ClientToServerNextMessage message = PullClientMessage(attempt);
+    ASSERT_TRUE(message.ok());
+    ASSERT_TRUE(message.has_value());
+    EXPECT_THAT(message.value(), HasMessagePayload("hello"));
     PushServerTrailingMetadata(
-        attempts.back(),
-        ServerMetadataFromStatus(GRPC_STATUS_UNAVAILABLE, "try again"));
+        attempt, ServerMetadataFromStatus(GRPC_STATUS_UNAVAILABLE,
+                                          "try again"));
   }
 
-  ValueOrFailure<ServerMetadataHandle> server_trailing_metadata =
-      PullServerTrailingMetadata();
-  ASSERT_TRUE(server_trailing_metadata.ok());
-  EXPECT_THAT(**server_trailing_metadata,
-              HasMetadataResult(absl::UnavailableError("try again")));
+  EXPECT_EQ(PullServerTrailingStatus(), absl::UnavailableError("try again"));
+
+  // maxAttempts is 2, so the interceptor stopped after two child calls.
+  EXPECT_EQ(ChildCallsStarted(), 2);
 
   WaitForAllPendingWork();
 }
+
+// TODO(roth, bpawan): more tests
 
 }  // namespace grpc_core

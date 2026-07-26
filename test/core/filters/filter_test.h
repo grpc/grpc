@@ -61,43 +61,37 @@ namespace grpc_core {
 //    protected:
 //     using FilterTest::FilterTest;  // required: FILTER_TEST() constructs this
 //
-//     absl::Status Init() { return InitChannel<MyFilter>(MyArgs()); }
+//     absl::Status Init() { return CreateFilterChain<MyFilter>(MyArgs()); }
 //   };
 //
 //   FILTER_TEST(MyFilterTest, UnaryRpc) {
 //     ASSERT_TRUE(Init().ok());
-//     auto [initiator, handler] = StartCallForFilter(NewClientMetadata());
+//     StartCallForFilter(NewClientMetadata());
 //     PushClientMessage(NewMessage("hello"));
 //     PushClientHalfClose();
-//     EXPECT_THAT(PullClientMessage(handler).value(),
-//                 HasMessagePayload("hello"));
-//     PushServerTrailingMetadata(handler, ServerMetadataFromStatus(...));
+//     EXPECT_THAT(PullClientMessage().value(), HasMessagePayload("hello"));
+//     PushServerTrailingMetadata(ServerMetadataFromStatus(...));
 //     EXPECT_THAT(**PullServerTrailingMetadata(), HasMetadataResult(...));
 //     WaitForAllPendingWork();
 //   }
+//
+// Interceptors may create more than one child call: use StartCall() plus
+// GetNextHandler() and pass each handler to the explicit-handler overloads.
 class FilterTest : public YodelTest {
- public:
+ protected:
   using YodelTest::YodelTest;
 
-  // The two ends of a call started through a filter. Note that `initiator` and
-  // `handler` are structured bindings at the call site, so lambdas must capture
-  // them by init-capture (`[initiator = initiator]`) rather than plain capture.
-  struct StartedCall {
-    CallInitiator initiator;
-    CallHandler handler;
-  };
-
- protected:
   // Building the stack under test
 
   // Build a stack containing exactly the one filter or interceptor under test.
   // Returns the build status so tests can assert on construction failures.
   // Must be called exactly once, before starting a call.
-  template <typename T>
-  absl::Status InitChannel(const ChannelArgs& args = ChannelArgs(),
-                           RefCountedPtr<const FilterConfig> config = nullptr) {
+  template <typename Filter>
+  absl::Status CreateFilterChain(
+      const ChannelArgs& args = ChannelArgs(),
+      RefCountedPtr<const FilterConfig> config = nullptr) {
     InterceptionChainBuilder builder(WithTestChannelArgs(args));
-    builder.Add<T>(std::move(config));
+    builder.Add<Filter>(std::move(config));
     return FinishInitChannel(builder);
   }
 
@@ -106,21 +100,23 @@ class FilterTest : public YodelTest {
   // Start a call through the stack under test and return the client end of it.
   // Only the initiator is returned: an interceptor may start any number of
   // child calls (or none), so handlers are collected separately by
-  // GetHandler(). Must be called exactly once per test.
+  // GetNextHandler(). Also becomes the implicit initiator.
   CallInitiator StartCall(ClientMetadataHandle client_initial_metadata);
 
   // Return the handler for the next call started against the bottom of the
-  // stack, ticking the event engine until one appears. Call once per child
-  // call the filter or interceptor under test is expected to create.
-  CallHandler GetHandler();
+  // stack, ticking the event engine until one appears. Call once per child call
+  // the filter or interceptor is expected to create. Also becomes the implicit
+  // handler.
+  CallHandler GetNextHandler();
 
   // Convenience for the filter case, where a call always creates exactly one
-  // child call: StartCall() followed by exactly one GetHandler().
-  StartedCall StartCallForFilter(ClientMetadataHandle client_initial_metadata);
+  // child call: StartCall() followed by one GetNextHandler(). May be called only
+  // once per test.
+  void StartCallForFilter(ClientMetadataHandle client_initial_metadata);
 
-  // The initiator of the call started by StartCall(). All the client-side
-  // Push/Pull helpers below act on it, since there is only ever one.
-  CallInitiator initiator();
+  // Number of child calls started against the bottom of the stack, whether or
+  // not they were collected via GetNextHandler().
+  int ChildCallsStarted() const;
 
   // Driving the six call operations.
   //
@@ -128,25 +124,39 @@ class FilterTest : public YodelTest {
   // FIFO order.
   //
   // Pull*() is synchronous and ticks the event engine until the value arrives.
+  //
+  // Client-side operations act on the implicit initiator. Handler-side
+  // operations either take a handler explicitly (needed when there is more than
+  // one child call) or act on the implicit handler.
 
   // client -> server
   void PushClientMessage(MessageHandle message);
   void PushClientHalfClose();
   ValueOrFailure<ClientMetadataHandle> PullClientInitialMetadata(
       CallHandler handler);
+  ValueOrFailure<ClientMetadataHandle> PullClientInitialMetadata();
   ClientToServerNextMessage PullClientMessage(CallHandler handler);
-  // True iff the client->server stream ended cleanly (i.e. the client
-  // half-closed rather than the call failing).
+  ClientToServerNextMessage PullClientMessage();
+  // True iff the client->server stream ended cleanly (the client half-closed).
+  // Otherwise records a test failure saying whether the call failed or a message
+  // arrived instead, and returns false.
   bool PullClientHalfClose(CallHandler handler);
+  bool PullClientHalfClose();
 
   // server -> client
   void PushServerInitialMetadata(CallHandler handler, ServerMetadataHandle md);
+  void PushServerInitialMetadata(ServerMetadataHandle md);
   void PushServerMessage(CallHandler handler, MessageHandle message);
+  void PushServerMessage(MessageHandle message);
   void PushServerTrailingMetadata(CallHandler handler, ServerMetadataHandle md);
+  void PushServerTrailingMetadata(ServerMetadataHandle md);
+  // nullopt for the trailers-only case (no separate initial metadata).
   ValueOrFailure<std::optional<ServerMetadataHandle>>
   PullServerInitialMetadata();
   ServerToClientNextMessage PullServerMessage();
   ValueOrFailure<ServerMetadataHandle> PullServerTrailingMetadata();
+  // As above, but returns the call's status, for tests that only care about it.
+  absl::Status PullServerTrailingStatus();
 
   // Constructing the things that flow through a call
 
@@ -161,12 +171,16 @@ class FilterTest : public YodelTest {
   // Called with the call's arena immediately after the call is created and
   // before it is started. Override to install call context objects (for
   // example ServiceConfigCallData) that the filter under test requires.
-  virtual void InitCallArena(Arena* arena) {}
+  virtual void InitAfterCallArena(Arena* arena) {}
 
  private:
+  // The implicit initiator/handler used by the no-argument operation helpers.
+  CallInitiator initiator();
+  CallHandler handler();
+
   // The bottom of the chain under test: stands in for the transport (or for
   // whatever the next interceptor down would be), and records the handler for
-  // every call started through it so that GetHandler() can hand them out.
+  // every call started through it so that GetNextHandler() can hand them out.
   //
   // This is the same construct other yodel-based fixtures already use to
   // collect started calls -- `ServerCallDestination` in
@@ -178,8 +192,12 @@ class FilterTest : public YodelTest {
 
     std::optional<CallHandler> PopHandler();
 
+    // Total number of calls ever started against this destination.
+    int calls_started() const { return calls_started_; }
+
    private:
     std::queue<CallHandler> handlers_;
+    int calls_started_ = 0;
   };
 
   // Run `factory` to completion on `half`'s party, ticking the event engine
@@ -214,13 +232,10 @@ class FilterTest : public YodelTest {
       MakeRefCounted<TestCallDestination>();
   RefCountedPtr<UnstartedCallDestination> chain_;
   std::optional<CallInitiator> initiator_;
+  std::optional<CallHandler> handler_;
 };
 
 }  // namespace grpc_core
-
-// Expect one of the events corresponding to the methods in
-// FilterTestV2::Events.
-#define EXPECT_EVENT(event) EXPECT_CALL(events, event)
 
 // Declare one test in a FilterTest-derived suite. Reads like TEST_F(), and
 // like all yodel tests each one doubles as a fuzz target.

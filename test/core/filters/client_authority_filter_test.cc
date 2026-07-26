@@ -33,15 +33,15 @@ class ClientAuthorityFilterTest : public FilterTest {
   using FilterTest::FilterTest;
 
   absl::Status InitWithDefaultAuthority(absl::string_view default_authority) {
-    return InitChannel<ClientAuthorityFilter>(
+    return CreateFilterChain<ClientAuthorityFilter>(
         ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY, default_authority));
   }
 };
 
 // Without GRPC_ARG_DEFAULT_AUTHORITY the filter cannot be constructed; the
-// failure surfaces as a non-OK status from InitChannel().
+// failure surfaces as a non-OK status from CreateFilterChain().
 FILTER_TEST(ClientAuthorityFilterTest, DefaultFails) {
-  EXPECT_FALSE(InitChannel<ClientAuthorityFilter>().ok());
+  EXPECT_FALSE(CreateFilterChain<ClientAuthorityFilter>().ok());
 }
 
 FILTER_TEST(ClientAuthorityFilterTest, WithArgSucceeds) {
@@ -50,7 +50,7 @@ FILTER_TEST(ClientAuthorityFilterTest, WithArgSucceeds) {
 
 // The authority arg must be a string: an int-valued arg fails construction.
 FILTER_TEST(ClientAuthorityFilterTest, NonStringArgFails) {
-  EXPECT_FALSE(InitChannel<ClientAuthorityFilter>(
+  EXPECT_FALSE(CreateFilterChain<ClientAuthorityFilter>(
                    ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY, 123))
                    .ok());
 }
@@ -59,33 +59,32 @@ FILTER_TEST(ClientAuthorityFilterTest, NonStringArgFails) {
 // arg, and the metadata seen at the server carries it.
 FILTER_TEST(ClientAuthorityFilterTest, SetsAuthority) {
   ASSERT_TRUE(InitWithDefaultAuthority("foo.test.google.au").ok());
-  auto [initiator, handler] = StartCallForFilter(NewClientMetadata());
+  StartCallForFilter(NewClientMetadata());
 
   ValueOrFailure<ClientMetadataHandle> client_initial_metadata =
-      PullClientInitialMetadata(handler);
+      PullClientInitialMetadata();
   ASSERT_TRUE(client_initial_metadata.ok());
   EXPECT_THAT(**client_initial_metadata,
               HasMetadataKeyValue(":authority", "foo.test.google.au"));
 
-  PushServerTrailingMetadata(handler, ServerMetadataFromStatus(GRPC_STATUS_OK));
-  EXPECT_TRUE(PullServerTrailingMetadata().ok());
+  PushServerTrailingMetadata(ServerMetadataFromStatus(GRPC_STATUS_OK));
+  EXPECT_TRUE(PullServerTrailingStatus().ok());
   WaitForAllPendingWork();
 }
 
 // When the client already set :authority, the filter must not override it.
 FILTER_TEST(ClientAuthorityFilterTest, DoesNotOverrideAuthority) {
   ASSERT_TRUE(InitWithDefaultAuthority("foo.test.google.au").ok());
-  auto [initiator, handler] = StartCallForFilter(
-      NewClientMetadata({{":authority", "bar.test.google.au"}}));
+  StartCallForFilter(NewClientMetadata({{":authority", "bar.test.google.au"}}));
 
   ValueOrFailure<ClientMetadataHandle> client_initial_metadata =
-      PullClientInitialMetadata(handler);
+      PullClientInitialMetadata();
   ASSERT_TRUE(client_initial_metadata.ok());
   EXPECT_THAT(**client_initial_metadata,
               HasMetadataKeyValue(":authority", "bar.test.google.au"));
 
-  PushServerTrailingMetadata(handler, ServerMetadataFromStatus(GRPC_STATUS_OK));
-  EXPECT_TRUE(PullServerTrailingMetadata().ok());
+  PushServerTrailingMetadata(ServerMetadataFromStatus(GRPC_STATUS_OK));
+  EXPECT_TRUE(PullServerTrailingStatus().ok());
   WaitForAllPendingWork();
 }
 
