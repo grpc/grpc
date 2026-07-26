@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "test/core/filters/filter_test.h"
+#include "test/core/filters/filter_test_v2.h"
 
 #include <grpc/compression.h>
 
@@ -53,7 +53,7 @@ class NoOpFilter final : public ChannelFilter {
     return std::make_unique<NoOpFilter>();
   }
 };
-using NoOpFilterTest = FilterTest<NoOpFilter>;
+using NoOpFilterTest = FilterTestV2<NoOpFilter>;
 
 class DelayStartFilter final : public ChannelFilter {
  public:
@@ -74,7 +74,7 @@ class DelayStartFilter final : public ChannelFilter {
     return std::make_unique<DelayStartFilter>();
   }
 };
-using DelayStartFilterTest = FilterTest<DelayStartFilter>;
+using DelayStartFilterTest = FilterTestV2<DelayStartFilter>;
 
 class AddClientInitialMetadataFilter final : public ChannelFilter {
  public:
@@ -91,7 +91,7 @@ class AddClientInitialMetadataFilter final : public ChannelFilter {
   }
 };
 using AddClientInitialMetadataFilterTest =
-    FilterTest<AddClientInitialMetadataFilter>;
+    FilterTestV2<AddClientInitialMetadataFilter>;
 
 class AddServerTrailingMetadataFilter final : public ChannelFilter {
  public:
@@ -109,7 +109,7 @@ class AddServerTrailingMetadataFilter final : public ChannelFilter {
   }
 };
 using AddServerTrailingMetadataFilterTest =
-    FilterTest<AddServerTrailingMetadataFilter>;
+    FilterTestV2<AddServerTrailingMetadataFilter>;
 
 class AddServerInitialMetadataFilter final : public ChannelFilter {
  public:
@@ -127,7 +127,7 @@ class AddServerInitialMetadataFilter final : public ChannelFilter {
   }
 };
 using AddServerInitialMetadataFilterTest =
-    FilterTest<AddServerInitialMetadataFilter>;
+    FilterTestV2<AddServerInitialMetadataFilter>;
 
 TEST_F(NoOpFilterTest, NoOp) {}
 

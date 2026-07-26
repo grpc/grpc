@@ -26,10 +26,10 @@ grpc_package(
 )
 
 grpc_cc_library(
-    name = "filter_test",
+    name = "filter_test_v2",
     testonly = 1,
-    srcs = ["filter_test.cc"],
-    hdrs = ["filter_test.h"],
+    srcs = ["filter_test_v2.cc"],
+    hdrs = ["filter_test_v2.h"],
     external_deps = [
         "absl/memory",
         "absl/status",
@@ -68,8 +68,8 @@ grpc_cc_library(
 )
 
 grpc_cc_test(
-    name = "filter_test_test",
-    srcs = ["filter_test_test.cc"],
+    name = "filter_test_v2_test",
+    srcs = ["filter_test_v2_test.cc"],
     external_deps = [
         "absl/status:statusor",
         "gtest",
@@ -77,7 +77,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "filter_test",
+        "filter_test_v2",
         "//:grpc_base",
         "//:grpc_unsecure",
         "//src/core:activity",
@@ -104,7 +104,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "filter_test",
+        "filter_test_v2",
         "//:grpc",
         "//:grpc_base",
         "//:grpc_core_credentials_header",
@@ -132,7 +132,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "filter_test",
+        "filter_test_v2",
         "//:channel_arg_names",
         "//src/core:grpc_client_authority_filter",
     ],
@@ -151,7 +151,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "filter_test",
+        "filter_test_v2",
         "//:grpc",
         "//:grpc_base",
         "//:grpc_security_base",
