@@ -179,8 +179,8 @@ FILTER_TEST(RetryInterceptorTest, GivesUpAfterMaxAttempts) {
     ASSERT_TRUE(message.has_value());
     EXPECT_THAT(message.value(), HasMessagePayload("hello"));
     PushServerTrailingMetadata(
-        attempt, ServerMetadataFromStatus(GRPC_STATUS_UNAVAILABLE,
-                                          "try again"));
+        attempt,
+        ServerMetadataFromStatus(GRPC_STATUS_UNAVAILABLE, "try again"));
   }
 
   EXPECT_EQ(PullServerTrailingStatus(), absl::UnavailableError("try again"));

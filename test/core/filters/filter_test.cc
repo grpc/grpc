@@ -204,7 +204,9 @@ bool FilterTest::PullClientHalfClose(CallHandler handler) {
   return true;
 }
 
-bool FilterTest::PullClientHalfClose() { return PullClientHalfClose(handler()); }
+bool FilterTest::PullClientHalfClose() {
+  return PullClientHalfClose(handler());
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // FilterTest: server -> client operations

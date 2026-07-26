@@ -201,9 +201,8 @@ FILTER_TEST(CompressionFilterTest, ServerFilterCompressesResponse) {
       PullServerInitialMetadata();
   ASSERT_TRUE(server_initial_metadata.ok());
   EXPECT_THAT(*server_initial_metadata,
-              ::testing::Optional(
-                  ::testing::Pointee(HasMetadataKeyValue("grpc-encoding",
-                                                         "gzip"))));
+              ::testing::Optional(::testing::Pointee(
+                  HasMetadataKeyValue("grpc-encoding", "gzip"))));
 
   ServerToClientNextMessage message = PullServerMessage();
   ASSERT_TRUE(message.ok());

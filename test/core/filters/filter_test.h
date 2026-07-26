@@ -110,8 +110,8 @@ class FilterTest : public YodelTest {
   CallHandler GetNextHandler();
 
   // Convenience for the filter case, where a call always creates exactly one
-  // child call: StartCall() followed by one GetNextHandler(). May be called only
-  // once per test.
+  // child call: StartCall() followed by one GetNextHandler(). May be called
+  // only once per test.
   void StartCallForFilter(ClientMetadataHandle client_initial_metadata);
 
   // Number of child calls started against the bottom of the stack, whether or
@@ -138,8 +138,8 @@ class FilterTest : public YodelTest {
   ClientToServerNextMessage PullClientMessage(CallHandler handler);
   ClientToServerNextMessage PullClientMessage();
   // True iff the client->server stream ended cleanly (the client half-closed).
-  // Otherwise records a test failure saying whether the call failed or a message
-  // arrived instead, and returns false.
+  // Otherwise records a test failure saying whether the call failed or a
+  // message arrived instead, and returns false.
   bool PullClientHalfClose(CallHandler handler);
   bool PullClientHalfClose();
 
