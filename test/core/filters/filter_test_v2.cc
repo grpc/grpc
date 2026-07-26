@@ -371,7 +371,7 @@ ServerMetadataHandle FilterTestV2Base::Call::NewServerMetadata(
 }
 
 MessageHandle FilterTestV2Base::Call::NewMessage(absl::string_view payload,
-                                               uint32_t flags) {
+                                                 uint32_t flags) {
   SliceBuffer buffer;
   if (!payload.empty()) buffer.Append(Slice::FromCopiedString(payload));
   return impl_->arena()->MakePooled<Message>(std::move(buffer), flags);
