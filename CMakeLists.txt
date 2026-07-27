@@ -34726,6 +34726,7 @@ add_executable(streaming_call_promise_wrapper_test
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  src/core/xds/grpc/streaming_call_promise_wrapper.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/xds/streaming_call_promise_wrapper_test.cc

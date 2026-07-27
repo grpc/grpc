@@ -14,121 +14,33 @@
 // limitations under the License.
 //
 
-#include "src/core/xds/xds_client/streaming_call_promise_wrapper.h"
+#include "src/core/xds/grpc/streaming_call_promise_wrapper.h"
 
 #include <grpc/grpc.h>
 
-#include <cstdio>
-#include <deque>
 #include <memory>
 #include <optional>
 #include <string>
+#include <utility>
 
 #include "src/core/lib/iomgr/timer_manager.h"
-#include "src/core/lib/promise/party.h"
-#include "src/core/lib/resource_quota/arena.h"
-#include "src/core/util/sync.h"
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/map.h"
+#include "src/core/lib/promise/status_flag.h"
+#include "src/core/util/down_cast.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/wait_for_single_owner.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
+#include "test/core/promise/test_wakeup_schedulers.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/xds/xds_transport_fake.h"
 #include "gtest/gtest.h"
-#include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
+
+using grpc_event_engine::experimental::FuzzingEventEngine;
 
 namespace grpc_core {
-namespace testing {
-
-struct CallbackEvent {
-  enum class Type { kRecvMessage, kStatusReceived };
-  Type type;
-  std::string payload;
-  absl::Status status;
-
-  std::string ToString() const {
-    switch (type) {
-      case Type::kRecvMessage:
-        return absl::StrCat("OnRecvMessage(payload=\"", payload, "\")");
-      case Type::kStatusReceived:
-        return absl::StrCat("OnStatusReceived(status=", status.ToString(), ")");
-    }
-  }
-};
-
-class FakeEventHandler
-    : public XdsTransportFactory::XdsTransport::StreamingCall::EventHandler {
- public:
-  explicit FakeEventHandler(
-      std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
-          event_engine)
-      : event_engine_(std::move(event_engine)) {}
-
-  void OnRequestSent(bool ok) override {
-    MutexLock lock(&mu_);
-    if (ok) {
-      ++sent_ok_count_;
-    } else {
-      ++sent_fail_count_;
-    }
-  }
-
-  size_t sent_ok_count() const {
-    MutexLock lock(&mu_);
-    return sent_ok_count_;
-  }
-
-  size_t sent_fail_count() const {
-    MutexLock lock(&mu_);
-    return sent_fail_count_;
-  }
-
-  void OnRecvMessage(absl::string_view payload) override {
-    MutexLock lock(&mu_);
-    events_.push_back({CallbackEvent::Type::kRecvMessage, std::string(payload),
-                       absl::OkStatus()});
-  }
-
-  void OnStatusReceived(absl::Status status) override {
-    MutexLock lock(&mu_);
-    events_.push_back(
-        {CallbackEvent::Type::kStatusReceived, "", std::move(status)});
-  }
-
-  std::optional<CallbackEvent> WaitForNextEvent() {
-    while (true) {
-      {
-        MutexLock lock(&mu_);
-        if (!events_.empty()) {
-          CallbackEvent event = std::move(events_.front());
-          events_.pop_front();
-          return event;
-        }
-        if (event_engine_->IsIdle()) return std::nullopt;
-      }
-      event_engine_->Tick();
-    }
-  }
-
-  bool HasEvent() {
-    MutexLock lock(&mu_);
-    return !events_.empty();
-  }
-
-  void ExpectNoEvent() {
-    event_engine_->TickUntilIdle();
-    EXPECT_FALSE(HasEvent());
-  }
-
- private:
-  std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
-      event_engine_;
-  mutable Mutex mu_;
-  std::deque<CallbackEvent> events_ ABSL_GUARDED_BY(&mu_);
-  size_t sent_ok_count_ ABSL_GUARDED_BY(&mu_) = 0;
-  size_t sent_fail_count_ ABSL_GUARDED_BY(&mu_) = 0;
-};
+namespace {
 
 class FakeXdsServerTarget : public XdsBootstrap::XdsServerTarget {
  public:
@@ -137,7 +49,8 @@ class FakeXdsServerTarget : public XdsBootstrap::XdsServerTarget {
   const std::string& server_uri() const override { return server_uri_; }
   std::string Key() const override { return server_uri_; }
   bool Equals(const XdsServerTarget& other) const override {
-    return server_uri_ == other.server_uri();
+    const auto& o = DownCast<const FakeXdsServerTarget&>(other);
+    return server_uri_ == o.server_uri_;
   }
 
  private:
@@ -146,325 +59,200 @@ class FakeXdsServerTarget : public XdsBootstrap::XdsServerTarget {
 
 class StreamingCallPromiseWrapperTest : public ::testing::Test {
  protected:
-  StreamingCallPromiseWrapperTest() : server_target_("localhost:4321") {}
-
   void SetUp() override {
-    event_engine_ =
-        std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
-            grpc_event_engine::experimental::FuzzingEventEngine::Options(),
-            ::fuzzing_event_engine::Actions());
-    grpc_timer_manager_set_start_threaded(false);
-    grpc_init();
+    event_engine_ = std::make_shared<FuzzingEventEngine>(
+        FuzzingEventEngine::Options(), fuzzing_event_engine::Actions());
+    transport_factory_ = MakeRefCounted<FakeXdsTransportFactory>(
+        []() { FAIL() << "Too many pending reads"; }, event_engine_);
+    transport_factory_->SetAbortOnUndrainedMessages(false);
+    target_ = std::make_unique<FakeXdsServerTarget>("localhost:1234");
   }
 
   void TearDown() override {
+    wrapper_.reset();
+    stream_.reset();
     transport_.reset();
+    transport_factory_->SetAutoCompleteMessagesFromClient(true);
     transport_factory_.reset();
     event_engine_->FuzzingDone();
     event_engine_->TickUntilIdle();
     event_engine_->UnsetGlobalHooks();
     WaitForSingleOwner(std::move(event_engine_));
-    grpc_shutdown_blocking();
   }
 
-  void InitTransport(bool autocomplete = true) {
-    transport_factory_ = MakeRefCounted<FakeXdsTransportFactory>(
-        []() { FAIL() << "Multiple concurrent reads"; }, event_engine_);
-    transport_factory_->SetAutoCompleteMessagesFromClient(autocomplete);
-  }
-
-  RefCountedPtr<StreamingCallPromiseWrapper> MakeSerializedCall() {
+  void InitStream(bool auto_complete_messages_from_client = true) {
+    transport_factory_->SetAutoCompleteMessagesFromClient(
+        auto_complete_messages_from_client);
     absl::Status status;
     transport_ = static_cast<XdsTransportFactory*>(transport_factory_.get())
-                     ->GetTransport(server_target_, &status);
-    EXPECT_TRUE(status.ok()) << status.ToString();
-    auto handler = std::make_unique<FakeEventHandler>(event_engine_);
-    event_handler_ = handler.get();
-    return MakeRefCounted<StreamingCallPromiseWrapper>(
-        *transport_, FakeXdsTransportFactory::kAdsMethod, std::move(handler));
+                     ->GetTransport(*target_, &status);
+    ASSERT_TRUE(status.ok()) << status;
+    ASSERT_NE(transport_, nullptr);
+    wrapper_ = MakeRefCounted<StreamingCallPromiseWrapper>(*transport_,
+                                                           "/test.Method");
+    stream_ = transport_factory_->WaitForStream(*target_, "/test.Method");
+    ASSERT_NE(stream_, nullptr);
   }
 
-  RefCountedPtr<Party> MakeParty() {
-    auto arena = SimpleArenaAllocator()->MakeArena();
-    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
-        event_engine_.get());
-    return Party::Make(std::move(arena));
-  }
-
-  std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
-      event_engine_;
+  std::shared_ptr<FuzzingEventEngine> event_engine_;
   RefCountedPtr<FakeXdsTransportFactory> transport_factory_;
+  std::unique_ptr<FakeXdsServerTarget> target_;
   RefCountedPtr<XdsTransportFactory::XdsTransport> transport_;
-  FakeXdsServerTarget server_target_;
-  FakeEventHandler* event_handler_ = nullptr;
+  RefCountedPtr<StreamingCallPromiseWrapper> wrapper_;
+  RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall> stream_;
 };
 
-TEST_F(StreamingCallPromiseWrapperTest, SingleWriteSuccess) {
-  InitTransport(true);
-  auto wrapper = MakeSerializedCall();
-  auto fake_stream = transport_factory_->WaitForStream(
-      server_target_, FakeXdsTransportFactory::kAdsMethod);
-  ASSERT_NE(fake_stream, nullptr);
-  auto party = MakeParty();
-  bool resolved = false;
-  absl::Status status;
-  party->Spawn(
-      "SendPromise",
-      [wrapper = wrapper.get()]() { return wrapper->Send("hello"); },
-      [&resolved, &status](absl::Status s) {
-        resolved = true;
-        status = std::move(s);
-      });
-  auto msg = fake_stream->WaitForMessageFromClient();
-  ASSERT_TRUE(msg.has_value());
-  EXPECT_EQ(*msg, "hello");
-  EXPECT_FALSE(resolved);
+TEST_F(StreamingCallPromiseWrapperTest, SendSuccess) {
+  InitStream();
+  bool send_completed = false;
+  auto activity = MakeActivity(
+      Map(wrapper_->Send("hello world"),
+          [&](StatusFlag status) {
+            EXPECT_TRUE(status.ok());
+            send_completed = true;
+            return absl::OkStatus();
+          }),
+      InlineWakeupScheduler(),
+      [](const absl::Status& status) { EXPECT_TRUE(status.ok()) << status; });
   event_engine_->TickUntilIdle();
-  EXPECT_TRUE(resolved);
-  EXPECT_TRUE(status.ok());
+  EXPECT_TRUE(send_completed);
+  EXPECT_EQ(stream_->WaitForMessageFromClient(), "hello world");
 }
 
-TEST_F(StreamingCallPromiseWrapperTest, SequentialWrites) {
-  InitTransport(true);
-  auto wrapper = MakeSerializedCall();
-  auto fake_stream = transport_factory_->WaitForStream(
-      server_target_, FakeXdsTransportFactory::kAdsMethod);
-  ASSERT_NE(fake_stream, nullptr);
-  auto party = MakeParty();
-  for (int i = 0; i < 5; ++i) {
-    std::string payload = absl::StrCat("msg_", i);
-    bool resolved = false;
-    absl::Status status;
-    party->Spawn(
-        "SendPromise",
-        [wrapper = wrapper.get(), payload]() { return wrapper->Send(payload); },
-        [&resolved, &status](absl::Status s) {
-          resolved = true;
-          status = std::move(s);
-        });
-    auto msg = fake_stream->WaitForMessageFromClient();
-    ASSERT_TRUE(msg.has_value());
-    EXPECT_EQ(*msg, payload);
-    EXPECT_FALSE(resolved);
-    event_engine_->TickUntilIdle();
-    EXPECT_TRUE(resolved);
-    EXPECT_TRUE(status.ok());
-  }
-}
-
-TEST_F(StreamingCallPromiseWrapperTest, WriteFailure) {
-  InitTransport(false);
-  auto wrapper = MakeSerializedCall();
-  auto fake_stream = transport_factory_->WaitForStream(
-      server_target_, FakeXdsTransportFactory::kAdsMethod);
-  ASSERT_NE(fake_stream, nullptr);
-  auto party = MakeParty();
-  bool resolved1 = false;
-  absl::Status status1;
-  party->Spawn(
-      "Send1", [wrapper = wrapper.get()]() { return wrapper->Send("msg1"); },
-      [&resolved1, &status1](absl::Status s) {
-        resolved1 = true;
-        status1 = std::move(s);
-      });
-  // Get msg1 from fake stream
-  auto msg1 = fake_stream->WaitForMessageFromClient();
-  ASSERT_TRUE(msg1.has_value());
-  EXPECT_EQ(*msg1, "msg1");
-  // Complete msg1 with ok = false
-  fake_stream->CompleteSendMessageFromClient(false);
+TEST_F(StreamingCallPromiseWrapperTest, SendFailure) {
+  InitStream(/*auto_complete_messages_from_client=*/false);
+  bool send_completed = false;
+  auto activity =
+      MakeActivity(Map(wrapper_->Send("hello world"),
+                       [&](StatusFlag status) {
+                         EXPECT_FALSE(status.ok());
+                         send_completed = true;
+                         return absl::OkStatus();
+                       }),
+                   InlineWakeupScheduler(), [](const absl::Status&) {});
   event_engine_->TickUntilIdle();
-  // Verify msg1 resolves to failure
-  EXPECT_TRUE(resolved1);
-  EXPECT_FALSE(status1.ok());
-}
-
-TEST_F(StreamingCallPromiseWrapperTest, StreamOrphaning) {
-  InitTransport(false);
-  auto wrapper = MakeSerializedCall();
-  auto fake_stream = transport_factory_->WaitForStream(
-      server_target_, FakeXdsTransportFactory::kAdsMethod);
-  ASSERT_NE(fake_stream, nullptr);
-  auto party = MakeParty();
-  bool resolved1 = false;
-  absl::Status status1;
-  party->Spawn(
-      "Send1", [wrapper = wrapper.get()]() { return wrapper->Send("msg1"); },
-      [&resolved1, &status1](absl::Status s) {
-        resolved1 = true;
-        status1 = std::move(s);
-      });
-  auto msg1 = fake_stream->WaitForMessageFromClient();
-  ASSERT_TRUE(msg1.has_value());
-  EXPECT_EQ(*msg1, "msg1");
-  // Orphan the wrapper
-  wrapper.reset();
-  // Verify the underlying stream is orphaned
-  EXPECT_TRUE(fake_stream->IsOrphaned());
-  // Tick the event engine to let cleanup run and resolve pending promises
+  EXPECT_FALSE(send_completed);
+  stream_->CompleteSendMessageFromClient(false);
   event_engine_->TickUntilIdle();
-  // Verify pending promise resolved to failure status
-  EXPECT_TRUE(resolved1);
-  EXPECT_FALSE(status1.ok());
+  EXPECT_TRUE(send_completed);
 }
 
-TEST_F(StreamingCallPromiseWrapperTest, RapidSequentialCalls) {
-  InitTransport(false);
-  auto wrapper = MakeSerializedCall();
-  auto fake_stream = transport_factory_->WaitForStream(
-      server_target_, FakeXdsTransportFactory::kAdsMethod);
-  ASSERT_NE(fake_stream, nullptr);
-  auto party = MakeParty();
-  for (int i = 0; i < 100; ++i) {
-    bool resolved = false;
-    absl::Status status;
-    party->Spawn(
-        absl::StrCat("Send_", i),
-        [wrapper = wrapper.get(), i]() {
-          return wrapper->Send(absl::StrCat("msg_", i));
-        },
-        [&resolved, &status](absl::Status s) {
-          resolved = true;
-          status = std::move(s);
-        });
-    auto msg = fake_stream->WaitForMessageFromClient();
-    ASSERT_TRUE(msg.has_value());
-    EXPECT_EQ(*msg, absl::StrCat("msg_", i));
-    EXPECT_FALSE(resolved);
-    fake_stream->CompleteSendMessageFromClient(true);
-    event_engine_->TickUntilIdle();
-    EXPECT_TRUE(resolved);
-    EXPECT_TRUE(status.ok());
-  }
-}
-
-TEST_F(StreamingCallPromiseWrapperTest, InterleavedReadsAndWrites) {
-  InitTransport(false);
-  auto wrapper = MakeSerializedCall();
-  auto fake_stream = transport_factory_->WaitForStream(
-      server_target_, FakeXdsTransportFactory::kAdsMethod);
-  ASSERT_NE(fake_stream, nullptr);
-  auto party = MakeParty();
-  bool resolved1 = false;
-  absl::Status status1;
-  party->Spawn(
-      "Send1", [wrapper = wrapper.get()]() { return wrapper->Send("write_1"); },
-      [&resolved1, &status1](absl::Status s) {
-        resolved1 = true;
-        status1 = std::move(s);
-      });
-  auto w1 = fake_stream->WaitForMessageFromClient();
-  ASSERT_TRUE(w1.has_value());
-  EXPECT_EQ(*w1, "write_1");
-  // Start reading from the wrapper
-  wrapper->StartRecvMessage();
-  // Send a message from the server to the client
-  fake_stream->SendMessageToClient("server_response_1");
-  // Wait and verify we received the read callback
-  auto r_event = event_handler_->WaitForNextEvent();
-  ASSERT_TRUE(r_event.has_value());
-  EXPECT_EQ(r_event->type, CallbackEvent::Type::kRecvMessage);
-  EXPECT_EQ(r_event->payload, "server_response_1");
-  // Complete write_1
-  fake_stream->CompleteSendMessageFromClient(true);
+TEST_F(StreamingCallPromiseWrapperTest, SendCancelledOnStatusReceived) {
+  InitStream(/*auto_complete_messages_from_client=*/false);
+  bool send_completed = false;
+  auto activity =
+      MakeActivity(Map(wrapper_->Send("hello world"),
+                       [&](StatusFlag status) {
+                         EXPECT_FALSE(status.ok());
+                         send_completed = true;
+                         return absl::OkStatus();
+                       }),
+                   InlineWakeupScheduler(), [](const absl::Status&) {});
   event_engine_->TickUntilIdle();
-  EXPECT_TRUE(resolved1);
-  EXPECT_TRUE(status1.ok());
-
-  // Subsequent write
-  bool resolved2 = false;
-  absl::Status status2;
-  party->Spawn(
-      "Send2", [wrapper = wrapper.get()]() { return wrapper->Send("write_2"); },
-      [&resolved2, &status2](absl::Status s) {
-        resolved2 = true;
-        status2 = std::move(s);
-      });
-  auto w2 = fake_stream->WaitForMessageFromClient();
-  ASSERT_TRUE(w2.has_value());
-  EXPECT_EQ(*w2, "write_2");
-  fake_stream->CompleteSendMessageFromClient(true);
+  EXPECT_FALSE(send_completed);
+  stream_->MaybeSendStatusToClient(absl::AbortedError("server aborted"));
   event_engine_->TickUntilIdle();
-  EXPECT_TRUE(resolved2);
-  EXPECT_TRUE(status2.ok());
+  EXPECT_TRUE(send_completed);
 }
 
-TEST_F(StreamingCallPromiseWrapperTest, StreamDestructionCleanup) {
-  transport_factory_ = MakeRefCounted<FakeXdsTransportFactory>(
-      []() { FAIL() << "Multiple concurrent reads"; }, event_engine_);
-  transport_factory_->SetAbortOnUndrainedMessages(false);
-  transport_factory_->SetAutoCompleteMessagesFromClient(false);
-  auto wrapper = MakeSerializedCall();
-  auto fake_stream = transport_factory_->WaitForStream(
-      server_target_, FakeXdsTransportFactory::kAdsMethod);
-  ASSERT_NE(fake_stream, nullptr);
-  auto party = MakeParty();
-  bool resolved1 = false;
-  absl::Status status1;
-  party->Spawn(
-      "Send1", [wrapper = wrapper.get()]() { return wrapper->Send("msg1"); },
-      [&resolved1, &status1](absl::Status s) {
-        resolved1 = true;
-        status1 = std::move(s);
-      });
-  auto msg1 = fake_stream->WaitForMessageFromClient();
-  ASSERT_TRUE(msg1.has_value());
-  EXPECT_EQ(*msg1, "msg1");
-  wrapper.reset();
-  EXPECT_TRUE(fake_stream->IsOrphaned());
+TEST_F(StreamingCallPromiseWrapperTest, PullMessageSuccess) {
+  InitStream();
+  std::optional<std::string> received_message;
+  auto activity = MakeActivity(
+      Map(wrapper_->PullMessage(),
+          [&](const ValueOrFailure<std::optional<std::string>>& res) {
+            EXPECT_TRUE(res.ok());
+            received_message = res.value();
+            return absl::OkStatus();
+          }),
+      InlineWakeupScheduler(),
+      [](const absl::Status& status) { EXPECT_TRUE(status.ok()) << status; });
   event_engine_->TickUntilIdle();
-  EXPECT_TRUE(resolved1);
-  EXPECT_FALSE(status1.ok());
+  EXPECT_FALSE(received_message.has_value());
+  stream_->SendMessageToClient("server response");
+  event_engine_->TickUntilIdle();
+  ASSERT_TRUE(received_message.has_value());
+  EXPECT_EQ(*received_message, "server response");
 }
 
-TEST_F(StreamingCallPromiseWrapperTest, HalfCloseSerialization) {
-  InitTransport(false);
-  auto wrapper = MakeSerializedCall();
-  auto fake_stream = transport_factory_->WaitForStream(
-      server_target_, FakeXdsTransportFactory::kAdsMethod);
-  ASSERT_NE(fake_stream, nullptr);
-  auto party = MakeParty();
-  bool resolved = false;
-  absl::Status status;
-  party->Spawn(
-      "Send1", [wrapper = wrapper.get()]() { return wrapper->Send("msg1"); },
-      [&resolved, &status](absl::Status s) {
-        resolved = true;
-        status = std::move(s);
-      });
-  // Call SendHalfClose. It should be queued.
-  wrapper->SendHalfClose();
-
-  // Verify msg1 is forwarded, but not half-close
-  auto msg1 = fake_stream->WaitForMessageFromClient();
-  ASSERT_TRUE(msg1.has_value());
-  EXPECT_EQ(*msg1, "msg1");
-  EXPECT_FALSE(fake_stream->half_closed());
-
-  // Complete msg1
-  fake_stream->CompleteSendMessageFromClient(true);
+TEST_F(StreamingCallPromiseWrapperTest, PullMessageEndOfStream) {
+  InitStream();
+  bool pull_completed = false;
+  std::optional<std::string> received_message;
+  auto activity = MakeActivity(
+      Map(wrapper_->PullMessage(),
+          [&](const ValueOrFailure<std::optional<std::string>>& res) {
+            EXPECT_TRUE(res.ok());
+            received_message = res.value();
+            pull_completed = true;
+            return absl::OkStatus();
+          }),
+      InlineWakeupScheduler(),
+      [](const absl::Status& status) { EXPECT_TRUE(status.ok()) << status; });
   event_engine_->TickUntilIdle();
-
-  EXPECT_TRUE(resolved);
-  EXPECT_TRUE(status.ok());
-
-  // Verify half-close is now processed
-  EXPECT_TRUE(fake_stream->half_closed());
-
-  // Verify we can still receive messages after half-close
-  wrapper->StartRecvMessage();
-  fake_stream->SendMessageToClient("resp1");
-  auto recv_event = event_handler_->WaitForNextEvent();
-  ASSERT_TRUE(recv_event.has_value());
-  EXPECT_EQ(recv_event->type, CallbackEvent::Type::kRecvMessage);
-  EXPECT_EQ(recv_event->payload, "resp1");
+  EXPECT_FALSE(pull_completed);
+  stream_->MaybeSendStatusToClient(absl::OkStatus());
+  event_engine_->TickUntilIdle();
+  EXPECT_TRUE(pull_completed);
+  EXPECT_FALSE(received_message.has_value());
 }
 
-}  // namespace testing
+TEST_F(StreamingCallPromiseWrapperTest, PullMessageError) {
+  InitStream();
+  bool pull_completed = false;
+  bool pull_status = true;
+  auto activity = MakeActivity(
+      Map(wrapper_->PullMessage(),
+          [&](const ValueOrFailure<std::optional<std::string>>& res) {
+            pull_completed = true;
+            pull_status = res.ok();
+            return absl::OkStatus();
+          }),
+      InlineWakeupScheduler(),
+      [](const absl::Status& status) { EXPECT_TRUE(status.ok()) << status; });
+  event_engine_->TickUntilIdle();
+  EXPECT_FALSE(pull_completed);
+  stream_->MaybeSendStatusToClient(absl::InternalError("stream error"));
+  event_engine_->TickUntilIdle();
+  EXPECT_TRUE(pull_completed);
+  EXPECT_FALSE(pull_status);
+}
+
+TEST_F(StreamingCallPromiseWrapperTest, PullServerTrailingMetadata) {
+  InitStream();
+  absl::Status received_status = absl::UnknownError("initial");
+  auto activity = MakeActivity(
+      Map(wrapper_->PullServerTrailingMetadata(),
+          [&](const absl::Status& status) {
+            received_status = status;
+            return absl::OkStatus();
+          }),
+      InlineWakeupScheduler(),
+      [](const absl::Status& status) { EXPECT_TRUE(status.ok()) << status; });
+  event_engine_->TickUntilIdle();
+  EXPECT_EQ(received_status, absl::UnknownError("initial"));
+  stream_->MaybeSendStatusToClient(absl::UnavailableError("unavailable"));
+  event_engine_->TickUntilIdle();
+  EXPECT_EQ(received_status, absl::UnavailableError("unavailable"));
+}
+
+TEST_F(StreamingCallPromiseWrapperTest, SendHalfClose) {
+  InitStream();
+  EXPECT_FALSE(stream_->half_closed());
+  wrapper_->SendHalfClose();
+  event_engine_->TickUntilIdle();
+  EXPECT_TRUE(stream_->half_closed());
+}
+
+}  // namespace
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  grpc::testing::TestEnvironment env(&argc, argv);
+  grpc_timer_manager_set_start_threaded(false);
+  grpc_init();
+  int r = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return r;
 }

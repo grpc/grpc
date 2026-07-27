@@ -190,6 +190,34 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "streaming_call_promise_wrapper_test",
+    srcs = ["streaming_call_promise_wrapper_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/status",
+    ],
+    tags = ["xds_test"],
+    uses_event_engine = True,
+    uses_polling = False,
+    deps = [
+        ":xds_transport_fake",
+        "//:grpc",
+        "//:iomgr_timer",
+        "//:ref_counted_ptr",
+        "//src/core:activity",
+        "//src/core:down_cast",
+        "//src/core:join",
+        "//src/core:map",
+        "//src/core:status_flag",
+        "//src/core:streaming_call_promise_wrapper",
+        "//src/core:wait_for_single_owner",
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/promise:test_wakeup_schedulers",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "xds_audit_logger_registry_test",
     srcs = ["xds_audit_logger_registry_test.cc"],
     external_deps = [
