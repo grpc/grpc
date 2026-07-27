@@ -471,3 +471,5 @@ void MaybeAddStreamWindowUpdateFrame(Stream& stream,
 
 }  // namespace http2
 }  // namespace grpc_core
+
+// test comment CL6
