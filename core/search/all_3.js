@@ -53,7 +53,7 @@ var searchData=
   ['cq_5fshutdown_5fcb_95',['cq_shutdown_cb',['../structgrpc__completion__queue__attributes.html#a6faddba9d18cf836653a6207fa1c762d',1,'grpc_completion_queue_attributes']]],
   ['create_5fchannel_5ffrom_5fendpoint_2eh_96',['create_channel_from_endpoint.h',['../create__channel__from__endpoint_8h.html',1,'']]],
   ['create_5fhard_5fbound_5fcredentials_97',['create_hard_bound_credentials',['../structgrpc__google__default__credentials__options.html#a152d855c4d43775467aeeb8d216bd699',1,'grpc_google_default_credentials_options']]],
-  ['createauditlogger_98',['CreateAuditLogger',['../classgrpc__core_1_1experimental_1_1_audit_logger_factory.html#a30cc3475541241f53567186be0b22264',1,'grpc_core::experimental::AuditLoggerFactory']]],
+  ['createauditlogger_98',['CreateAuditLogger',['../classgrpc__core_1_1experimental_1_1_audit_logger_factory.html#afa0847ce8ba652ac2d65f827b3b84d15',1,'grpc_core::experimental::AuditLoggerFactory']]],
   ['createdirectoryreloadercrlprovider_99',['CreateDirectoryReloaderCrlProvider',['../namespacegrpc__core_1_1experimental.html#a6e81a74a0bec0c212f21c8f1cca17255',1,'grpc_core::experimental']]],
   ['createeventengine_100',['CreateEventEngine',['../namespacegrpc__event__engine_1_1experimental.html#a78096983951be8d133af980af7a7ec74',1,'grpc_event_engine::experimental']]],
   ['createlistener_101',['CreateListener',['../classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a42219352c1ecf679da50671e9a1b35fb',1,'grpc_event_engine::experimental::EventEngine']]],

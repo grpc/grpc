@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc.aio._interceptor &#8212; gRPC Python Docs v1.82.0</title>
+    <title>grpc.aio._interceptor &#8212; gRPC Python Docs v1.83.0</title>
   
   
   
@@ -38,7 +38,7 @@
   <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../_static/documentation_options.js?v=7a79f9a1"></script>
+    <script src="../../../_static/documentation_options.js?v=0bacb3f8"></script>
     <script src="../../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script async="async" src="https://www.googletagmanager.com/gtag/js?id=UA-60127042-1"></script>
@@ -59,7 +59,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="1.82.0" />
+  <meta name="docsearch:version" content="1.83.0" />
   </head>
   
   
@@ -121,7 +121,7 @@
   
   
   
-    <p class="title logo__title">gRPC Python Docs v1.82.0</p>
+    <p class="title logo__title">gRPC Python Docs v1.83.0</p>
   
 </a></div>
     
@@ -629,12 +629,15 @@
 
         <span class="n">call_completed</span> <span class="o">=</span> <span class="kc">False</span>
 
-        <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">interceptors_task</span><span class="o">.</span><span class="n">cancelled</span><span class="p">()</span> <span class="ow">or</span> <span class="p">(</span>
+            <span class="n">interceptors_task</span><span class="o">.</span><span class="n">done</span><span class="p">()</span>
+            <span class="ow">and</span> <span class="n">interceptors_task</span><span class="o">.</span><span class="n">exception</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="p">):</span>
+            <span class="n">call_completed</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
             <span class="n">call</span> <span class="o">=</span> <span class="n">interceptors_task</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">call</span><span class="o">.</span><span class="n">done</span><span class="p">():</span>
                 <span class="n">call_completed</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="k">except</span> <span class="p">(</span><span class="n">AioRpcError</span><span class="p">,</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">CancelledError</span><span class="p">):</span>
-            <span class="n">call_completed</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="k">if</span> <span class="n">call_completed</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">callback</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pending_add_done_callbacks</span><span class="p">:</span>
@@ -654,42 +657,47 @@
         <span class="n">callback</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors_task</span><span class="o">.</span><span class="n">cancelled</span><span class="p">():</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors_task</span><span class="o">.</span><span class="n">done</span><span class="p">():</span>
             <span class="c1"># There is no yet the intercepted call available,</span>
             <span class="c1"># Trying to cancel it by using the generic Asyncio</span>
             <span class="c1"># cancellation method.</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors_task</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
 
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">call</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors_task</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
-        <span class="k">except</span> <span class="n">AioRpcError</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors_task</span><span class="o">.</span><span class="n">exception</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>
-        <span class="k">except</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">CancelledError</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="n">call</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors_task</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
 
         <span class="k">return</span> <span class="n">call</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">cancelled</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors_task</span><span class="o">.</span><span class="n">cancelled</span><span class="p">():</span>
+            <span class="k">return</span> <span class="kc">True</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors_task</span><span class="o">.</span><span class="n">done</span><span class="p">():</span>
             <span class="k">return</span> <span class="kc">False</span>
 
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">call</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors_task</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
-        <span class="k">except</span> <span class="n">AioRpcError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">err</span><span class="o">.</span><span class="n">code</span><span class="p">()</span> <span class="o">==</span> <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">CANCELLED</span>
-        <span class="k">except</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">CancelledError</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">True</span>
+        <span class="n">exc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors_task</span><span class="o">.</span><span class="n">exception</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">exc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">exc</span><span class="p">,</span> <span class="n">AioRpcError</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">exc</span><span class="o">.</span><span class="n">code</span><span class="p">()</span> <span class="o">==</span> <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">CANCELLED</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="n">call</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors_task</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
 
         <span class="k">return</span> <span class="n">call</span><span class="o">.</span><span class="n">cancelled</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">done</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors_task</span><span class="o">.</span><span class="n">cancelled</span><span class="p">():</span>
+            <span class="k">return</span> <span class="kc">True</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors_task</span><span class="o">.</span><span class="n">done</span><span class="p">():</span>
             <span class="k">return</span> <span class="kc">False</span>
-
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">call</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors_task</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
-        <span class="k">except</span> <span class="p">(</span><span class="n">AioRpcError</span><span class="p">,</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">CancelledError</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors_task</span><span class="o">.</span><span class="n">exception</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="n">call</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors_task</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
 
         <span class="k">return</span> <span class="n">call</span><span class="o">.</span><span class="n">done</span><span class="p">()</span>
 
@@ -698,11 +706,14 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_pending_add_done_callbacks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">callback</span><span class="p">)</span>
             <span class="k">return</span>
 
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">call</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors_task</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
-        <span class="k">except</span> <span class="p">(</span><span class="n">AioRpcError</span><span class="p">,</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">CancelledError</span><span class="p">):</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors_task</span><span class="o">.</span><span class="n">cancelled</span><span class="p">()</span>
+            <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors_task</span><span class="o">.</span><span class="n">exception</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="p">):</span>
             <span class="n">callback</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
             <span class="k">return</span>
+
+        <span class="n">call</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors_task</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="n">call</span><span class="o">.</span><span class="n">done</span><span class="p">():</span>
             <span class="n">callback</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>

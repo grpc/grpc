@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">55.0.0</span>
+   &#160;<span id="projectnumber">56.0.0</span>
    </div>
   </td>
  </tr>
@@ -142,6 +142,12 @@ Macros</h2></td></tr>
 <tr class="memitem:ga3f8b16398c4051ebf86fb7fcf26e02b3"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga3f8b16398c4051ebf86fb7fcf26e02b3">GRPC_ARG_SERVER_MAX_UNREQUESTED_TIME_IN_SERVER_SECONDS</a>&#160;&#160;&#160;&quot;grpc.server_max_unrequested_time_in_server&quot;</td></tr>
 <tr class="memdesc:ga3f8b16398c4051ebf86fb7fcf26e02b3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maximum time to allow a request to be: (1) received by the server, but (2) not requested by a RequestCall (in the completion queue based API) before the request is cancelled.  <a href="group__grpc__arg__keys.html#ga3f8b16398c4051ebf86fb7fcf26e02b3">More...</a><br /></td></tr>
 <tr class="separator:ga3f8b16398c4051ebf86fb7fcf26e02b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga98d1a6e6cb3a655671075cff925e86ef"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga98d1a6e6cb3a655671075cff925e86ef">GRPC_ARG_SERVER_MAX_PENDING_REQUESTS</a>&#160;&#160;&#160;&quot;grpc.server.max_pending_requests&quot;</td></tr>
+<tr class="memdesc:ga98d1a6e6cb3a655671075cff925e86ef"><td class="mdescLeft">&#160;</td><td class="mdescRight">The soft limit on the number of pending requests in the server.  <a href="group__grpc__arg__keys.html#ga98d1a6e6cb3a655671075cff925e86ef">More...</a><br /></td></tr>
+<tr class="separator:ga98d1a6e6cb3a655671075cff925e86ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga532b979ac7d0488ad1e22be82b0413bd"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga532b979ac7d0488ad1e22be82b0413bd">GRPC_ARG_SERVER_MAX_PENDING_REQUESTS_HARD_LIMIT</a>&#160;&#160;&#160;&quot;grpc.server.max_pending_requests_hard_limit&quot;</td></tr>
+<tr class="memdesc:ga532b979ac7d0488ad1e22be82b0413bd"><td class="mdescLeft">&#160;</td><td class="mdescRight">The hard limit on the number of pending requests in the server.  <a href="group__grpc__arg__keys.html#ga532b979ac7d0488ad1e22be82b0413bd">More...</a><br /></td></tr>
+<tr class="separator:ga532b979ac7d0488ad1e22be82b0413bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga7797da9f3f5a1381484b2cabca1920fc"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga7797da9f3f5a1381484b2cabca1920fc">GRPC_ARG_HTTP2_SCHEME</a>&#160;&#160;&#160;&quot;grpc.http2_scheme&quot;</td></tr>
 <tr class="memdesc:ga7797da9f3f5a1381484b2cabca1920fc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Channel arg to override the http2 :scheme header.  <a href="group__grpc__arg__keys.html#ga7797da9f3f5a1381484b2cabca1920fc">More...</a><br /></td></tr>
 <tr class="separator:ga7797da9f3f5a1381484b2cabca1920fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -1653,6 +1659,40 @@ Macros</h2></td></tr>
 
 </div>
 </div>
+<a id="ga98d1a6e6cb3a655671075cff925e86ef"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga98d1a6e6cb3a655671075cff925e86ef">&#9670;&nbsp;</a></span>GRPC_ARG_SERVER_MAX_PENDING_REQUESTS</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_SERVER_MAX_PENDING_REQUESTS&#160;&#160;&#160;&quot;grpc.server.max_pending_requests&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>The soft limit on the number of pending requests in the server. </p>
+<p>Int valued. If the number of pending queued requests exceeds this soft limit, then the server will start to probabilistically reject new incoming requests up until the hard limit. Defaults to 1000. Note: It is not recommended to change this value unless the operational implications are fully understood. </p>
+
+</div>
+</div>
+<a id="ga532b979ac7d0488ad1e22be82b0413bd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga532b979ac7d0488ad1e22be82b0413bd">&#9670;&nbsp;</a></span>GRPC_ARG_SERVER_MAX_PENDING_REQUESTS_HARD_LIMIT</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_SERVER_MAX_PENDING_REQUESTS_HARD_LIMIT&#160;&#160;&#160;&quot;grpc.server.max_pending_requests_hard_limit&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>The hard limit on the number of pending requests in the server. </p>
+<p>Int valued. If the number of pending queued requests reaches this hard limit, all new incoming requests will be rejected. Defaults to 3000. Note: It is not recommended to change this value unless the operational implications are fully understood. </p>
+
+</div>
+</div>
 <a id="ga3f8b16398c4051ebf86fb7fcf26e02b3"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ga3f8b16398c4051ebf86fb7fcf26e02b3">&#9670;&nbsp;</a></span>GRPC_ARG_SERVER_MAX_UNREQUESTED_TIME_IN_SERVER_SECONDS</h2>
 
@@ -2011,7 +2051,7 @@ Macros</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Jul 4 2026 20:59:26 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Jul 27 2026 05:43:11 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

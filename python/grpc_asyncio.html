@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>gRPC AsyncIO API &#8212; gRPC Python Docs v1.82.0</title>
+    <title>gRPC AsyncIO API &#8212; gRPC Python Docs v1.83.0</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="_static/documentation_options.js?v=7a79f9a1"></script>
+    <script src="_static/documentation_options.js?v=0bacb3f8"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script async="async" src="https://www.googletagmanager.com/gtag/js?id=UA-60127042-1"></script>
@@ -62,7 +62,7 @@
     <link rel="prev" title="gRPC" href="grpc.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="1.82.0" />
+  <meta name="docsearch:version" content="1.83.0" />
   </head>
   
   
@@ -124,7 +124,7 @@
   
   
   
-    <p class="title logo__title">gRPC Python Docs v1.82.0</p>
+    <p class="title logo__title">gRPC Python Docs v1.83.0</p>
   
 </a></div>
     
@@ -1383,6 +1383,28 @@ termination of the RPC.</p></li>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="grpc.aio.ServicerContext.abort_with_status">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">abort_with_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">status</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_server.html#ServicerContext.abort_with_status"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.ServicerContext.abort_with_status" title="Link to this definition">#</a></dt>
+<dd><p>Raises an exception to terminate the RPC with a non-OK status.</p>
+<p>The status passed as argument will supersede any existing status code,
+status message and trailing metadata.</p>
+<p>This is an EXPERIMENTAL API.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>status</strong> (<em>Status</em>) – A grpc.Status object. The status code in it must not be
+StatusCode.OK.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>Exception</strong> – An exception is always raised to signal the abortion of the
+    RPC to the gRPC runtime.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>NoReturn</em></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="grpc.aio.ServicerContext.add_done_callback">
 <span class="sig-name descname"><span class="pre">add_done_callback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">callback</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_server.html#ServicerContext.add_done_callback"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.ServicerContext.add_done_callback" title="Link to this definition">#</a></dt>
 <dd><p>Registers a callback to be called on RPC termination.</p>
@@ -2308,6 +2330,7 @@ grpc.Compression.Gzip.</p></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#server-side-context">Server-Side Context</a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#grpc.aio.ServicerContext"><code class="docutils literal notranslate"><span class="pre">ServicerContext</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#grpc.aio.ServicerContext.abort"><code class="docutils literal notranslate"><span class="pre">ServicerContext.abort()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#grpc.aio.ServicerContext.abort_with_status"><code class="docutils literal notranslate"><span class="pre">ServicerContext.abort_with_status()</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#grpc.aio.ServicerContext.add_done_callback"><code class="docutils literal notranslate"><span class="pre">ServicerContext.add_done_callback()</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#grpc.aio.ServicerContext.auth_context"><code class="docutils literal notranslate"><span class="pre">ServicerContext.auth_context()</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#grpc.aio.ServicerContext.cancelled"><code class="docutils literal notranslate"><span class="pre">ServicerContext.cancelled()</span></code></a></li>

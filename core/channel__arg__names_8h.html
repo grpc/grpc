@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">55.0.0</span>
+   &#160;<span id="projectnumber">56.0.0</span>
    </div>
   </td>
  </tr>
@@ -145,6 +145,12 @@ Macros</h2></td></tr>
 <tr class="memitem:ga3f8b16398c4051ebf86fb7fcf26e02b3"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga3f8b16398c4051ebf86fb7fcf26e02b3">GRPC_ARG_SERVER_MAX_UNREQUESTED_TIME_IN_SERVER_SECONDS</a>&#160;&#160;&#160;&quot;grpc.server_max_unrequested_time_in_server&quot;</td></tr>
 <tr class="memdesc:ga3f8b16398c4051ebf86fb7fcf26e02b3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maximum time to allow a request to be: (1) received by the server, but (2) not requested by a RequestCall (in the completion queue based API) before the request is cancelled.  <a href="group__grpc__arg__keys.html#ga3f8b16398c4051ebf86fb7fcf26e02b3">More...</a><br /></td></tr>
 <tr class="separator:ga3f8b16398c4051ebf86fb7fcf26e02b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga98d1a6e6cb3a655671075cff925e86ef"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga98d1a6e6cb3a655671075cff925e86ef">GRPC_ARG_SERVER_MAX_PENDING_REQUESTS</a>&#160;&#160;&#160;&quot;grpc.server.max_pending_requests&quot;</td></tr>
+<tr class="memdesc:ga98d1a6e6cb3a655671075cff925e86ef"><td class="mdescLeft">&#160;</td><td class="mdescRight">The soft limit on the number of pending requests in the server.  <a href="group__grpc__arg__keys.html#ga98d1a6e6cb3a655671075cff925e86ef">More...</a><br /></td></tr>
+<tr class="separator:ga98d1a6e6cb3a655671075cff925e86ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga532b979ac7d0488ad1e22be82b0413bd"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga532b979ac7d0488ad1e22be82b0413bd">GRPC_ARG_SERVER_MAX_PENDING_REQUESTS_HARD_LIMIT</a>&#160;&#160;&#160;&quot;grpc.server.max_pending_requests_hard_limit&quot;</td></tr>
+<tr class="memdesc:ga532b979ac7d0488ad1e22be82b0413bd"><td class="mdescLeft">&#160;</td><td class="mdescRight">The hard limit on the number of pending requests in the server.  <a href="group__grpc__arg__keys.html#ga532b979ac7d0488ad1e22be82b0413bd">More...</a><br /></td></tr>
+<tr class="separator:ga532b979ac7d0488ad1e22be82b0413bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga7797da9f3f5a1381484b2cabca1920fc"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga7797da9f3f5a1381484b2cabca1920fc">GRPC_ARG_HTTP2_SCHEME</a>&#160;&#160;&#160;&quot;grpc.http2_scheme&quot;</td></tr>
 <tr class="memdesc:ga7797da9f3f5a1381484b2cabca1920fc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Channel arg to override the http2 :scheme header.  <a href="group__grpc__arg__keys.html#ga7797da9f3f5a1381484b2cabca1920fc">More...</a><br /></td></tr>
 <tr class="separator:ga7797da9f3f5a1381484b2cabca1920fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -357,11 +363,33 @@ Macros</h2></td></tr>
 <tr class="memitem:a26980bf3a21d63933b2f457960297f2c"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="channel__arg__names_8h.html#a26980bf3a21d63933b2f457960297f2c">GRPC_ARG_TCP_TRACING_ENABLED</a>&#160;&#160;&#160;&quot;grpc.tcp_tracing_enabled&quot;</td></tr>
 <tr class="memdesc:a26980bf3a21d63933b2f457960297f2c"><td class="mdescLeft">&#160;</td><td class="mdescRight">If non-zero, enable TCP tracing and stats collection.  <a href="channel__arg__names_8h.html#a26980bf3a21d63933b2f457960297f2c">More...</a><br /></td></tr>
 <tr class="separator:a26980bf3a21d63933b2f457960297f2c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7c3df24a364dc973913b65ff9f1cd3c3"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="channel__arg__names_8h.html#a7c3df24a364dc973913b65ff9f1cd3c3">GRPC_ARG_TCP_TRACE_FULL_BUFFER</a>&#160;&#160;&#160;&quot;grpc.experimental.tcp_trace_full_buffer&quot;</td></tr>
+<tr class="separator:a7c3df24a364dc973913b65ff9f1cd3c3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a75d613c5f1a00dc452e54a44d6d2b4b3"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="channel__arg__names_8h.html#a75d613c5f1a00dc452e54a44d6d2b4b3">GRPC_ARG_SERVER_CONFIG_FETCHER</a>&#160;&#160;&#160;&quot;grpc.server_config_fetcher&quot;</td></tr>
 <tr class="memdesc:a75d613c5f1a00dc452e54a44d6d2b4b3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Server config fetcher.  <a href="channel__arg__names_8h.html#a75d613c5f1a00dc452e54a44d6d2b4b3">More...</a><br /></td></tr>
 <tr class="separator:a75d613c5f1a00dc452e54a44d6d2b4b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aadb3e4364c734598b1aa4efb0c8752a5"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="channel__arg__names_8h.html#aadb3e4364c734598b1aa4efb0c8752a5">GRPC_ARG_MAX_SECURITY_FRAME_SIZE</a>&#160;&#160;&#160;&quot;grpc.http2.max_security_frame_size&quot;</td></tr>
+<tr class="memdesc:aadb3e4364c734598b1aa4efb0c8752a5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the maximum size of a security frame that can be received on a HTTP2 Connection.  <a href="channel__arg__names_8h.html#aadb3e4364c734598b1aa4efb0c8752a5">More...</a><br /></td></tr>
+<tr class="separator:aadb3e4364c734598b1aa4efb0c8752a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
+<a id="aadb3e4364c734598b1aa4efb0c8752a5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aadb3e4364c734598b1aa4efb0c8752a5">&#9670;&nbsp;</a></span>GRPC_ARG_MAX_SECURITY_FRAME_SIZE</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_MAX_SECURITY_FRAME_SIZE&#160;&#160;&#160;&quot;grpc.http2.max_security_frame_size&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set the maximum size of a security frame that can be received on a HTTP2 Connection. </p>
+<p>Check file core/ext/transport/chttp2/transport/frame.cc for details on the Security Frame. </p>
+
+</div>
+</div>
 <a id="a75d613c5f1a00dc452e54a44d6d2b4b3"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a75d613c5f1a00dc452e54a44d6d2b4b3">&#9670;&nbsp;</a></span>GRPC_ARG_SERVER_CONFIG_FETCHER</h2>
 
@@ -375,6 +403,20 @@ Macros</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Server config fetcher. </p>
+
+</div>
+</div>
+<a id="a7c3df24a364dc973913b65ff9f1cd3c3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7c3df24a364dc973913b65ff9f1cd3c3">&#9670;&nbsp;</a></span>GRPC_ARG_TCP_TRACE_FULL_BUFFER</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_TCP_TRACE_FULL_BUFFER&#160;&#160;&#160;&quot;grpc.experimental.tcp_trace_full_buffer&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
 
 </div>
 </div>
@@ -397,7 +439,7 @@ Macros</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Jul 4 2026 20:59:25 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Jul 27 2026 05:43:11 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
