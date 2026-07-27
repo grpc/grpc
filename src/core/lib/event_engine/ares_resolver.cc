@@ -283,6 +283,7 @@ AresResolver::CreateAresResolver(
     std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
     std::shared_ptr<EventEngine> event_engine) {
   ares_channel channel;
+  AresOnceInit();
   absl::Status status =
       InitAresChannel(dns_server, *polled_fd_factory, &channel);
   if (!status.ok()) {
