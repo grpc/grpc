@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc.aio._channel &#8212; gRPC Python Docs v1.82.0</title>
+    <title>grpc.aio._channel &#8212; gRPC Python Docs v1.83.0</title>
   
   
   
@@ -38,7 +38,7 @@
   <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../_static/documentation_options.js?v=7a79f9a1"></script>
+    <script src="../../../_static/documentation_options.js?v=0bacb3f8"></script>
     <script src="../../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script async="async" src="https://www.googletagmanager.com/gtag/js?id=UA-60127042-1"></script>
@@ -59,7 +59,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="1.82.0" />
+  <meta name="docsearch:version" content="1.83.0" />
   </head>
   
   
@@ -121,7 +121,7 @@
   
   
   
-    <p class="title logo__title">gRPC Python Docs v1.82.0</p>
+    <p class="title logo__title">gRPC Python Docs v1.83.0</p>
   
 </a></div>
     
@@ -278,8 +278,8 @@
 <span class="sd">&quot;&quot;&quot;Invocation-side implementation of gRPC Asyncio Python.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">weakref</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">grpc</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">grpc</span><span class="w"> </span><span class="kn">import</span> <span class="n">_common</span>
@@ -313,16 +313,6 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">._utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_timeout_to_deadline</span>
 
 <span class="n">_USER_AGENT</span> <span class="o">=</span> <span class="s2">&quot;grpc-python-asyncio/</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_grpcio_metadata</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
-
-<span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">7</span><span class="p">:</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_all_tasks</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">asyncio</span><span class="o">.</span><span class="n">Task</span><span class="p">]:</span>
-        <span class="k">return</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Task</span><span class="o">.</span><span class="n">all_tasks</span><span class="p">()</span>  <span class="c1"># pylint: disable=no-member</span>
-
-<span class="k">else</span><span class="p">:</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_all_tasks</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">asyncio</span><span class="o">.</span><span class="n">Task</span><span class="p">]:</span>
-        <span class="k">return</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">all_tasks</span><span class="p">()</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_augment_channel_arguments</span><span class="p">(</span>
@@ -377,6 +367,21 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span> <span class="o">=</span> <span class="n">response_deserializer</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors</span> <span class="o">=</span> <span class="n">interceptors</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_references</span> <span class="o">=</span> <span class="n">references</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_references</span><span class="p">:</span>
+            <span class="n">error_msg</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="s2">&quot;MultiCallable must be attached to a Channel, unexpectedly&quot;</span>
+                <span class="s2">&quot; found no references.&quot;</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_references</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">Channel</span><span class="p">):</span>
+            <span class="n">error_msg</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="s2">&quot;Invalid reference type. MultiCallable must be attached to a&quot;</span>
+                <span class="s2">&quot; Channel.&quot;</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_python_channel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_references</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_init_metadata</span><span class="p">(</span>
@@ -440,6 +445,8 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
             <span class="p">)</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_python_channel</span><span class="o">.</span><span class="n">_register_call</span><span class="p">(</span><span class="n">call</span><span class="p">)</span>
+
         <span class="k">return</span> <span class="n">call</span>
 
 
@@ -486,6 +493,8 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
             <span class="p">)</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_python_channel</span><span class="o">.</span><span class="n">_register_call</span><span class="p">(</span><span class="n">call</span><span class="p">)</span>
+
         <span class="k">return</span> <span class="n">call</span>
 
 
@@ -531,6 +540,8 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
             <span class="p">)</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_python_channel</span><span class="o">.</span><span class="n">_register_call</span><span class="p">(</span><span class="n">call</span><span class="p">)</span>
+
         <span class="k">return</span> <span class="n">call</span>
 
 
@@ -575,6 +586,8 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
             <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_python_channel</span><span class="o">.</span><span class="n">_register_call</span><span class="p">(</span><span class="n">call</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">call</span>
 
@@ -637,6 +650,12 @@
             <span class="n">credentials</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
         <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_active_calls</span> <span class="o">=</span> <span class="n">weakref</span><span class="o">.</span><span class="n">WeakSet</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_register_call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">call</span><span class="p">:</span> <span class="n">_base_call</span><span class="o">.</span><span class="n">Call</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Register a call to be tracked by the channel.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_active_calls</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">call</span><span class="p">)</span>
+        <span class="n">call</span><span class="o">.</span><span class="n">add_done_callback</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_active_calls</span><span class="o">.</span><span class="n">discard</span><span class="p">)</span>
 
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="fm">__aenter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span>
@@ -648,70 +667,39 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="o">.</span><span class="n">closed</span><span class="p">():</span>
             <span class="k">return</span>
 
+        <span class="k">if</span> <span class="n">grace</span> <span class="ow">and</span> <span class="n">grace</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">error_msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;grace must be non-negative, got </span><span class="si">{</span><span class="n">grace</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
+
         <span class="c1"># No new calls will be accepted by the Cython channel.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="o">.</span><span class="n">closing</span><span class="p">()</span>
 
-        <span class="c1"># Iterate through running tasks</span>
-        <span class="n">tasks</span> <span class="o">=</span> <span class="n">_all_tasks</span><span class="p">()</span>
-        <span class="n">calls</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">call_tasks</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">task</span> <span class="ow">in</span> <span class="n">tasks</span><span class="p">:</span>
+        <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_wait_for_call_to_complete</span><span class="p">(</span><span class="n">call</span><span class="p">):</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">stack</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">get_stack</span><span class="p">(</span><span class="n">limit</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-            <span class="k">except</span> <span class="ne">AttributeError</span> <span class="k">as</span> <span class="n">attribute_error</span><span class="p">:</span>
-                <span class="c1"># NOTE(lidiz) tl;dr: If the Task is created with a CPython</span>
-                <span class="c1"># object, it will trigger AttributeError.</span>
-                <span class="c1">#</span>
-                <span class="c1"># In the global finalizer, the event loop schedules</span>
-                <span class="c1"># a CPython PyAsyncGenAThrow object.</span>
-                <span class="c1"># https://github.com/python/cpython/blob/00e45877e33d32bb61aa13a2033e3bba370bda4d/Lib/asyncio/base_events.py#L484</span>
-                <span class="c1">#</span>
-                <span class="c1"># However, the PyAsyncGenAThrow object is written in C and</span>
-                <span class="c1"># failed to include the normal Python frame objects. Hence,</span>
-                <span class="c1"># this exception is a false negative, and it is safe to ignore</span>
-                <span class="c1"># the failure. It is fixed by https://github.com/python/cpython/pull/18669,</span>
-                <span class="c1"># but not available until 3.9 or 3.8.3. So, we have to keep it</span>
-                <span class="c1"># for a while.</span>
-                <span class="c1"># TODO(lidiz): drop this hack after 3.8 deprecation</span>
-                <span class="k">if</span> <span class="s2">&quot;frame&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">attribute_error</span><span class="p">):</span>
-                    <span class="k">continue</span>
-                <span class="k">raise</span>
+                <span class="k">await</span> <span class="n">call</span><span class="o">.</span><span class="n">code</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>  <span class="c1"># pylint: disable=broad-except</span>
+                <span class="c1"># Ignore exceptions here as true RPC errors bubble up via</span>
+                <span class="c1"># standard application paths. Silencing prevents channel close</span>
+                <span class="c1"># from failing and suppresses asyncio noise warnings.</span>
+                <span class="k">pass</span>
 
-            <span class="c1"># If the Task is created by a C-extension, the stack will be empty.</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">stack</span><span class="p">:</span>
-                <span class="k">continue</span>
+        <span class="n">calls</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_active_calls</span><span class="p">)</span>
 
-            <span class="c1"># Locate ones created by `aio.Call`.</span>
-            <span class="n">frame</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">candidate</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">f_locals</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;self&quot;</span><span class="p">)</span>
-            <span class="c1"># Explicitly check for a non-null candidate instead of the more pythonic &#39;if candidate:&#39;</span>
-            <span class="c1"># because doing &#39;if candidate:&#39; assumes that the coroutine implements &#39;__bool__&#39; which</span>
-            <span class="c1"># might not always be the case.</span>
-            <span class="k">if</span> <span class="n">candidate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">candidate</span><span class="p">,</span> <span class="n">_base_call</span><span class="o">.</span><span class="n">Call</span><span class="p">):</span>
-                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">candidate</span><span class="p">,</span> <span class="s2">&quot;_channel&quot;</span><span class="p">):</span>
-                    <span class="c1"># For intercepted Call object</span>
-                    <span class="k">if</span> <span class="n">candidate</span><span class="o">.</span><span class="n">_channel</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">:</span>
-                        <span class="k">continue</span>
-                <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">candidate</span><span class="p">,</span> <span class="s2">&quot;_cython_call&quot;</span><span class="p">):</span>
-                    <span class="c1"># For normal Call object</span>
-                    <span class="k">if</span> <span class="n">candidate</span><span class="o">.</span><span class="n">_cython_call</span><span class="o">.</span><span class="n">_channel</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">:</span>
-                        <span class="k">continue</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="c1"># Unidentified Call object</span>
-                    <span class="n">error_msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Unrecognized call object: </span><span class="si">{</span><span class="n">candidate</span><span class="si">}</span><span class="s2">&quot;</span>
-                    <span class="k">raise</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">InternalError</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
-
-                <span class="n">calls</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">candidate</span><span class="p">)</span>
-                <span class="n">call_tasks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
-
-        <span class="c1"># If needed, try to wait for them to finish.</span>
-        <span class="c1"># Call objects are not always awaitables.</span>
-        <span class="k">if</span> <span class="n">grace</span> <span class="ow">and</span> <span class="n">call_tasks</span><span class="p">:</span>
-            <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">call_tasks</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">grace</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">grace</span><span class="p">:</span>
+            <span class="n">call_tasks</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">_wait_for_call_to_complete</span><span class="p">(</span><span class="n">call</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">calls</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">call</span><span class="o">.</span><span class="n">done</span><span class="p">()</span>
+            <span class="p">]</span>
+            <span class="k">if</span> <span class="n">call_tasks</span><span class="p">:</span>
+                <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">call_tasks</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">grace</span><span class="p">)</span>
 
         <span class="c1"># Time to cancel existing calls.</span>
         <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">calls</span><span class="p">:</span>
             <span class="n">call</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+
+        <span class="n">calls</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_active_calls</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
 
         <span class="c1"># Destroy the channel</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>

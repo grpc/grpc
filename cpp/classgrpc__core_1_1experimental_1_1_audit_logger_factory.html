@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.82.0</span>
+   &#160;<span id="projectnumber">1.83.0</span>
    </div>
   </td>
  </tr>
@@ -87,10 +87,10 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:ade6598f4e4640fa3e92b2092a6c410d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9296d6f0052871944f88e6de49ceaab6"><td class="memItemLeft" align="right" valign="top">virtual absl::string_view&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__core_1_1experimental_1_1_audit_logger_factory.html#a9296d6f0052871944f88e6de49ceaab6">name</a> () const =0</td></tr>
 <tr class="separator:a9296d6f0052871944f88e6de49ceaab6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aebae714b07439254e51db5c1a5b92891"><td class="memItemLeft" align="right" valign="top">virtual absl::StatusOr&lt; std::unique_ptr&lt; <a class="el" href="classgrpc__core_1_1experimental_1_1_audit_logger_factory_1_1_config.html">Config</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__core_1_1experimental_1_1_audit_logger_factory.html#aebae714b07439254e51db5c1a5b92891">ParseAuditLoggerConfig</a> (const <a class="el" href="classgrpc__core_1_1experimental_1_1_json.html">Json</a> &amp;json)=0</td></tr>
-<tr class="separator:aebae714b07439254e51db5c1a5b92891"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a30cc3475541241f53567186be0b22264"><td class="memItemLeft" align="right" valign="top">virtual std::unique_ptr&lt; <a class="el" href="classgrpc__core_1_1experimental_1_1_audit_logger.html">AuditLogger</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__core_1_1experimental_1_1_audit_logger_factory.html#a30cc3475541241f53567186be0b22264">CreateAuditLogger</a> (std::unique_ptr&lt; <a class="el" href="classgrpc__core_1_1experimental_1_1_audit_logger_factory_1_1_config.html">AuditLoggerFactory::Config</a> &gt;)=0</td></tr>
-<tr class="separator:a30cc3475541241f53567186be0b22264"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a71089fb2e05f245973b8bf4f57046037"><td class="memItemLeft" align="right" valign="top">virtual absl::StatusOr&lt; std::shared_ptr&lt; const <a class="el" href="classgrpc__core_1_1experimental_1_1_audit_logger_factory_1_1_config.html">Config</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__core_1_1experimental_1_1_audit_logger_factory.html#a71089fb2e05f245973b8bf4f57046037">ParseAuditLoggerConfig</a> (const <a class="el" href="classgrpc__core_1_1experimental_1_1_json.html">Json</a> &amp;json)=0</td></tr>
+<tr class="separator:a71089fb2e05f245973b8bf4f57046037"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afa0847ce8ba652ac2d65f827b3b84d15"><td class="memItemLeft" align="right" valign="top">virtual std::unique_ptr&lt; <a class="el" href="classgrpc__core_1_1experimental_1_1_audit_logger.html">AuditLogger</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__core_1_1experimental_1_1_audit_logger_factory.html#afa0847ce8ba652ac2d65f827b3b84d15">CreateAuditLogger</a> (std::shared_ptr&lt; const <a class="el" href="classgrpc__core_1_1experimental_1_1_audit_logger_factory_1_1_config.html">Config</a> &gt; config)=0</td></tr>
+<tr class="separator:afa0847ce8ba652ac2d65f827b3b84d15"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="ade6598f4e4640fa3e92b2092a6c410d2"></a>
@@ -119,8 +119,8 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a30cc3475541241f53567186be0b22264"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a30cc3475541241f53567186be0b22264">&#9670;&nbsp;</a></span>CreateAuditLogger()</h2>
+<a id="afa0847ce8ba652ac2d65f827b3b84d15"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afa0847ce8ba652ac2d65f827b3b84d15">&#9670;&nbsp;</a></span>CreateAuditLogger()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -131,8 +131,8 @@ Public Member Functions</h2></td></tr>
         <tr>
           <td class="memname">virtual std::unique_ptr&lt;<a class="el" href="classgrpc__core_1_1experimental_1_1_audit_logger.html">AuditLogger</a>&gt; grpc_core::experimental::AuditLoggerFactory::CreateAuditLogger </td>
           <td>(</td>
-          <td class="paramtype">std::unique_ptr&lt; <a class="el" href="classgrpc__core_1_1experimental_1_1_audit_logger_factory_1_1_config.html">AuditLoggerFactory::Config</a> &gt;&#160;</td>
-          <td class="paramname"></td><td>)</td>
+          <td class="paramtype">std::shared_ptr&lt; const <a class="el" href="classgrpc__core_1_1experimental_1_1_audit_logger_factory_1_1_config.html">Config</a> &gt;&#160;</td>
+          <td class="paramname"><em>config</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -170,8 +170,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="aebae714b07439254e51db5c1a5b92891"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aebae714b07439254e51db5c1a5b92891">&#9670;&nbsp;</a></span>ParseAuditLoggerConfig()</h2>
+<a id="a71089fb2e05f245973b8bf4f57046037"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a71089fb2e05f245973b8bf4f57046037">&#9670;&nbsp;</a></span>ParseAuditLoggerConfig()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -180,7 +180,7 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual absl::StatusOr&lt;std::unique_ptr&lt;<a class="el" href="classgrpc__core_1_1experimental_1_1_audit_logger_factory_1_1_config.html">Config</a>&gt; &gt; grpc_core::experimental::AuditLoggerFactory::ParseAuditLoggerConfig </td>
+          <td class="memname">virtual absl::StatusOr&lt;std::shared_ptr&lt;const <a class="el" href="classgrpc__core_1_1experimental_1_1_audit_logger_factory_1_1_config.html">Config</a>&gt; &gt; grpc_core::experimental::AuditLoggerFactory::ParseAuditLoggerConfig </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="classgrpc__core_1_1experimental_1_1_json.html">Json</a> &amp;&#160;</td>
           <td class="paramname"><em>json</em></td><td>)</td>
@@ -202,7 +202,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Jul 4 2026 20:59:28 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Jul 27 2026 05:43:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

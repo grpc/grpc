@@ -250,7 +250,7 @@ var searchData=
   ['create_5fchannel_5ffrom_5fendpoint_2eh_359',['create_channel_from_endpoint.h',['../create__channel__from__endpoint_8h.html',1,'']]],
   ['create_5fchannel_5fposix_2eh_360',['create_channel_posix.h',['../grpc_09_09_2create__channel__posix_8h.html',1,'(Global Namespace)'],['../grpcpp_2create__channel__posix_8h.html',1,'(Global Namespace)']]],
   ['create_5fhard_5fbound_5fcredentials_361',['create_hard_bound_credentials',['../structgrpc__google__default__credentials__options.html#a152d855c4d43775467aeeb8d216bd699',1,'grpc_google_default_credentials_options']]],
-  ['createauditlogger_362',['CreateAuditLogger',['../classgrpc__core_1_1experimental_1_1_audit_logger_factory.html#a30cc3475541241f53567186be0b22264',1,'grpc_core::experimental::AuditLoggerFactory']]],
+  ['createauditlogger_362',['CreateAuditLogger',['../classgrpc__core_1_1experimental_1_1_audit_logger_factory.html#afa0847ce8ba652ac2d65f827b3b84d15',1,'grpc_core::experimental::AuditLoggerFactory']]],
   ['createauthcontext_363',['CreateAuthContext',['../namespacegrpc.html#a15df427a035a58013d9db2f432ebda33',1,'grpc']]],
   ['createchannel_364',['CreateChannel',['../namespacegrpc.html#ad62b23e19fdcd13898119cd94818616d',1,'grpc']]],
   ['createchannelfromendpoint_365',['CreateChannelFromEndpoint',['../namespacegrpc_1_1experimental.html#a5b17f0e8292e6b2fb243849ac7c0e077',1,'grpc::experimental']]],
