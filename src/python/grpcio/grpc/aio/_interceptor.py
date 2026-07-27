@@ -538,6 +538,7 @@ class _InterceptedStreamResponseMixinProtocol(Protocol):
 class _InterceptedStreamResponseMixin(
     _InterceptedStreamResponseMixinProtocol, Generic[ResponseType]
 ):
+    _response_aiter: Optional[AsyncIterator[ResponseType]]
 
     def _init_stream_response_mixin(self) -> None:
         # Is initialized later, otherwise if the iterator is not finally
