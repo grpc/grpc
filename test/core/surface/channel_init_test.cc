@@ -243,6 +243,38 @@ TEST(ChannelInitTest, OrderingConstraintsAreSatisfied) {
             std::vector<std::string>({"c", "b", "a", "terminator"}));
 }
 
+// Ensure that `fix_v3_filter_stack_server_side_ordering` experiment doesn't
+// affect client side ordering.
+TEST(ChannelInitServerFilterTest, ReversalDoesNotAffectClient) {
+  ChannelInit::Builder b{/*fix_v3_filter_stack_server_side_ordering=*/true};
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("a")).FloatToTop();
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("b"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("c")).SinkToBottom();
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("terminator")).Terminal();
+  EXPECT_EQ(GetFilterNames(b.Build(), GRPC_CLIENT_CHANNEL, ChannelArgs()),
+            std::vector<std::string>({"a", "b", "c", "terminator"}));
+}
+
+TEST(ChannelInitServerFilterTest, OrderingConstraintsAreSatisfied) {
+  ChannelInit::Builder b{/*fix_v3_filter_stack_server_side_ordering=*/true};
+  b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("a")).FloatToTop();
+  b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("b"));
+  b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("c")).SinkToBottom();
+  b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("terminator")).Terminal();
+  EXPECT_EQ(GetFilterNames(b.Build(), GRPC_SERVER_CHANNEL, ChannelArgs()),
+            std::vector<std::string>({"c", "b", "a", "terminator"}));
+}
+
+TEST(ChannelInitServerFilterTest, CanAddBeforeAllOnce) {
+  ChannelInit::Builder b{/*fix_v3_filter_stack_server_side_ordering=*/true};
+  b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("a")).BeforeAll();
+  b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("b"));
+  b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("c"));
+  b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("terminal")).Terminal();
+  EXPECT_EQ(GetFilterNames(b.Build(), GRPC_SERVER_CHANNEL, ChannelArgs()),
+            std::vector<std::string>({"c", "b", "a", "terminal"}));
+}
+
 TEST(ChannelInitDeathTest, AmbiguousTopCrashes) {
   ChannelInit::Builder b;
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("c")).FloatToTop();
