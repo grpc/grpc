@@ -147,7 +147,7 @@ LANG_RELEASE_MATRIX = {
             ("v1.76.0", ReleaseInfo()),
             ("v1.78.0", ReleaseInfo()),
             ("v1.80.0", ReleaseInfo()),
-            ("v1.81.0", ReleaseInfo()),
+            ("v1.81.1", ReleaseInfo()),
             ("v1.82.0", ReleaseInfo()),
             ("v1.83.0", ReleaseInfo()),
         ]
@@ -931,13 +931,13 @@ LANG_RELEASE_MATRIX = {
                 ),
             ),
             (
-                "v1.81.0",
+                "v1.81.1",
                 ReleaseInfo(
                     runtimes=["python"], testcases_file="python__master"
                 ),
             ),
             (
-                "v1.82.0",
+                "v1.82.1",
                 ReleaseInfo(
                     runtimes=["python"], testcases_file="python__master"
                 ),
@@ -1059,7 +1059,7 @@ LANG_RELEASE_MATRIX = {
             ("v1.76.0", ReleaseInfo()),
             ("v1.78.0", ReleaseInfo()),
             ("v1.80.0", ReleaseInfo()),
-            ("v1.81.0", ReleaseInfo()),
+            ("v1.81.1", ReleaseInfo()),
             ("v1.82.0", ReleaseInfo()),
             ("v1.83.0", ReleaseInfo()),
         ]
