@@ -41,9 +41,9 @@ def start_test_server(port: int = 0) -> Tuple[str, Any]:
     )
 
     server.add_generic_rpc_handlers((_create_extra_generic_handler(servicer),))
-    port = server.add_insecure_port("[::]:%d" % port)
+    port = server.add_insecure_port("127.0.0.1:%d" % port)
     server.start()
-    return "localhost:%d" % port, server
+    return "127.0.0.1:%d" % port, server
 
 
 def _create_extra_generic_handler(servicer: TestServiceServicer) -> Any:

@@ -42,7 +42,7 @@ INVALID_TEST_CHANNEL_ARGS = [
 
 class ChannelArgsTest(unittest.TestCase):
     def test_client(self):
-        grpc.insecure_channel("localhost:8080", options=TEST_CHANNEL_ARGS)
+        grpc.insecure_channel("127.0.0.1:8080", options=TEST_CHANNEL_ARGS)
 
     def test_server(self):
         grpc.server(
@@ -54,7 +54,7 @@ class ChannelArgsTest(unittest.TestCase):
             self.assertRaises(
                 ValueError,
                 grpc.insecure_channel,
-                "localhost:8080",
+                "127.0.0.1:8080",
                 options=invalid_arg,
             )
 

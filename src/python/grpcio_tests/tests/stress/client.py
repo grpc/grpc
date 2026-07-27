@@ -35,7 +35,7 @@ def _args(argv):
     parser.add_argument(
         "--server_addresses",
         help="comma separated list of hostname:port to run servers on",
-        default="localhost:8080",
+        default="127.0.0.1:8080",
         type=str,
     )
     parser.add_argument(
@@ -141,7 +141,7 @@ def run_test(args):
     metrics_pb2_grpc.add_MetricsServiceServicer_to_server(
         metrics_server.MetricsServer(hist), server
     )
-    server.add_insecure_port("[::]:{}".format(args.metrics_port))
+    server.add_insecure_port("127.0.0.1:{}".format(args.metrics_port))
     server.start()
 
     for test_server_target in test_server_targets:

@@ -209,7 +209,7 @@ class _TestGenericHandlerItself(grpc.GenericRpcHandler):
 
 async def _start_test_server():
     server = aio.server()
-    port = server.add_insecure_port("[::]:0")
+    port = server.add_insecure_port("127.0.0.1:0")
     server.add_generic_rpc_handlers(
         (
             _TestGenericHandlerForMethods(),
@@ -217,7 +217,7 @@ async def _start_test_server():
         )
     )
     await server.start()
-    return "localhost:%d" % port, server
+    return "127.0.0.1:%d" % port, server
 
 
 class TestMetadata(AioTestBase):

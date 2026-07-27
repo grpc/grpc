@@ -24,7 +24,7 @@ class AbslLogTest(unittest.TestCase):
     def setUp(self):
         # Basic client script to start a grpc channel to a non-existent server,
         # just to check the GRPC_TRACE logs.
-        script = "import grpc; channel = grpc.insecure_channel('localhost:1234'); print('Channel created'); channel.close()"
+        script = "import grpc; channel = grpc.insecure_channel('127.0.0.1:1234'); print('Channel created'); channel.close()"
 
         # Set up the environment variables
         env = os.environ.copy()

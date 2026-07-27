@@ -34,7 +34,7 @@ class SecureIntraopTest(_intraop_test_case.IntraopTestCase, unittest.TestCase):
             service.TestService(), self.server
         )
         port = self.server.add_secure_port(
-            "[::]:0",
+            "127.0.0.1:0",
             grpc.ssl_server_credentials(
                 [
                     (
@@ -46,7 +46,7 @@ class SecureIntraopTest(_intraop_test_case.IntraopTestCase, unittest.TestCase):
         )
         self.server.start()
         self.channel = grpc.secure_channel(
-            "localhost:{}".format(port),
+            "127.0.0.1:{}".format(port),
             grpc.ssl_channel_credentials(resources.test_root_certificates()),
             (
                 (
@@ -73,7 +73,7 @@ class SecureInteropWithSyncPrivateKeyOffloadingTest(
         )
         # Configure the server for mTLS so the client will do Private Key signing
         port = self.server.add_secure_port(
-            "[::]:0",
+            "127.0.0.1:0",
             grpc.ssl_server_credentials(
                 [
                     (
@@ -87,7 +87,7 @@ class SecureInteropWithSyncPrivateKeyOffloadingTest(
         )
         self.server.start()
         self.channel = grpc.secure_channel(
-            "localhost:{}".format(port),
+            "127.0.0.1:{}".format(port),
             grpc.experimental.ssl_channel_credentials_with_custom_signer(
                 private_key_sign_fn=resources.sync_client_private_key_signer,
                 root_certificates=resources.test_root_certificates(),
@@ -118,7 +118,7 @@ class SecureInteropWithAsyncPrivateKeyOffloadingTest(
         )
         # Configure the server for mTLS so the client will do Private Key signing
         port = self.server.add_secure_port(
-            "[::]:0",
+            "127.0.0.1:0",
             grpc.ssl_server_credentials(
                 [
                     (
@@ -132,7 +132,7 @@ class SecureInteropWithAsyncPrivateKeyOffloadingTest(
         )
         self.server.start()
         self.channel = grpc.secure_channel(
-            "localhost:{}".format(port),
+            "127.0.0.1:{}".format(port),
             grpc.experimental.ssl_channel_credentials_with_custom_signer(
                 private_key_sign_fn=resources.async_client_private_key_signer,
                 root_certificates=resources.test_root_certificates(),

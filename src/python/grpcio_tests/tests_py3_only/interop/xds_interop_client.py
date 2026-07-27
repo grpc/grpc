@@ -647,7 +647,7 @@ if __name__ == "__main__":
         help="The per-RPC timeout in seconds.",
     )
     parser.add_argument(
-        "--server", default="localhost:50051", help="The address of the server."
+        "--server", default="127.0.0.1:50051", help="The address of the server."
     )
     parser.add_argument(
         "--stats_port",

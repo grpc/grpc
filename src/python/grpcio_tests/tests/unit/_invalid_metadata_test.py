@@ -66,7 +66,7 @@ def _stream_stream_multi_callable(channel):
 
 class InvalidMetadataTest(unittest.TestCase):
     def setUp(self):
-        self._channel = grpc.insecure_channel("localhost:8080")
+        self._channel = grpc.insecure_channel("127.0.0.1:8080")
         self._unary_unary = _unary_unary_multi_callable(self._channel)
         self._unary_stream = _unary_stream_multi_callable(self._channel)
         self._stream_unary = _stream_unary_multi_callable(self._channel)

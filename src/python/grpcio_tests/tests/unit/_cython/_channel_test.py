@@ -22,7 +22,7 @@ from tests.unit.framework.common import test_constants
 
 
 def _channel():
-    return cygrpc.Channel(b"localhost:54321", (), None)
+    return cygrpc.Channel(b"127.0.0.1:54321", (), None)
 
 
 def _connectivity_loop(channel):

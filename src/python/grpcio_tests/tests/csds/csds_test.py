@@ -60,11 +60,11 @@ class TestCsds(unittest.TestCase):
     def setUp(self):
         os.environ["GRPC_XDS_BOOTSTRAP_CONFIG"] = _DUMMY_BOOTSTRAP_FILE
         self._server = grpc.server(ThreadPoolExecutor())
-        port = self._server.add_insecure_port("localhost:0")
+        port = self._server.add_insecure_port("127.0.0.1:0")
         grpc_csds.add_csds_servicer(self._server)
         self._server.start()
 
-        self._channel = grpc.insecure_channel("localhost:%s" % port)
+        self._channel = grpc.insecure_channel("127.0.0.1:%s" % port)
         self._stub = csds_pb2_grpc.ClientStatusDiscoveryServiceStub(
             self._channel
         )

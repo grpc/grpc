@@ -57,13 +57,13 @@ class BaseWatchTests:
                 _NOT_SERVING_SERVICE, health_pb2.HealthCheckResponse.NOT_SERVING
             )
             self._server = test_common.test_server()
-            port = self._server.add_insecure_port("[::]:0")
+            port = self._server.add_insecure_port("127.0.0.1:0")
             health_pb2_grpc.add_HealthServicer_to_server(
                 self._servicer, self._server
             )
             self._server.start()
 
-            self._channel = grpc.insecure_channel("localhost:%d" % port)
+            self._channel = grpc.insecure_channel("127.0.0.1:%d" % port)
             self._stub = health_pb2_grpc.HealthStub(self._channel)
 
         def tearDown(self):

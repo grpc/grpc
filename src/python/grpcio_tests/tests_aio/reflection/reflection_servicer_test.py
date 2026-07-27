@@ -59,10 +59,10 @@ class ReflectionServicerTest(AioTestBase):
     async def setUp(self):
         self._server = aio.server()
         reflection.enable_server_reflection(_SERVICE_NAMES, self._server)
-        port = self._server.add_insecure_port("[::]:0")
+        port = self._server.add_insecure_port("127.0.0.1:0")
         await self._server.start()
 
-        self._channel = aio.insecure_channel("localhost:%d" % port)
+        self._channel = aio.insecure_channel("127.0.0.1:%d" % port)
         self._stub = reflection_pb2_grpc.ServerReflectionStub(self._channel)
 
     async def tearDown(self):

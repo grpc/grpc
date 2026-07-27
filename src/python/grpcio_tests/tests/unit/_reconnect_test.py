@@ -59,7 +59,9 @@ class TestServer:
 
     def __init__(self):
         self.pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
-        self.host, self.port, self._sock = test_common.get_socket(listen=False)
+        self.host, self.port, self._sock = test_common.get_socket(
+            bind_address="127.0.0.1", listen=False
+        )
 
     @property
     def addr(self) -> str:

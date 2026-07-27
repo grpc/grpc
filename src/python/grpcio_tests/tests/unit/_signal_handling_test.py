@@ -40,7 +40,7 @@ else:
         os.path.join(os.path.dirname(os.path.abspath(__file__)), client_name)
     )
 
-_HOST = "localhost"
+_HOST = "127.0.0.1"
 
 # The gevent test harness cannot run the monkeypatch code for the child process,
 # so we need to instrument it manually.

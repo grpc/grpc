@@ -151,10 +151,10 @@ class WorkerServer(worker_service_pb2_grpc.WorkerServiceServicer):
                 ((resources.private_key(), resources.certificate_chain()),)
             )
             port = server.add_secure_port(
-                "[::]:{}".format(server_port), server_creds
+                "127.0.0.1:{}".format(server_port), server_creds
             )
         else:
-            port = server.add_insecure_port("[::]:{}".format(server_port))
+            port = server.add_insecure_port("127.0.0.1:{}".format(server_port))
 
         return (server, port)
 

@@ -25,7 +25,7 @@ from tests_aio.benchmark import benchmark_servicer
 async def _start_async_server():
     server = aio.server()
 
-    port = server.add_insecure_port("localhost:%s" % 50051)
+    port = server.add_insecure_port("127.0.0.1:%s" % 50051)
     servicer = benchmark_servicer.BenchmarkServicer()
     benchmark_service_pb2_grpc.add_BenchmarkServiceServicer_to_server(
         servicer, server

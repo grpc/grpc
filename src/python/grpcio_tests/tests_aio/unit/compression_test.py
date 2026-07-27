@@ -103,10 +103,10 @@ class _GenericHandler(grpc.GenericRpcHandler):
 
 async def _start_test_server(options=None):
     server = aio.server(options=options)
-    port = server.add_insecure_port("[::]:0")
+    port = server.add_insecure_port("127.0.0.1:0")
     server.add_generic_rpc_handlers((_GenericHandler(),))
     await server.start()
-    return f"localhost:{port}", server
+    return f"127.0.0.1:{port}", server
 
 
 class TestCompression(AioTestBase):
@@ -187,11 +187,11 @@ class TestCompression(AioTestBase):
 
     async def test_server_default_compression_algorithm(self):
         server = aio.server(compression=grpc.Compression.Deflate)
-        port = server.add_insecure_port("[::]:0")
+        port = server.add_insecure_port("127.0.0.1:0")
         server.add_generic_rpc_handlers((_GenericHandler(),))
         await server.start()
 
-        async with aio.insecure_channel(f"localhost:{port}") as channel:
+        async with aio.insecure_channel(f"127.0.0.1:{port}") as channel:
             multicallable = channel.unary_unary(_TEST_UNARY_UNARY)
             call = multicallable(_REQUEST)
             self.assertEqual(_RESPONSE, await call)

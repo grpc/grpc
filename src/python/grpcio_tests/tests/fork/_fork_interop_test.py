@@ -56,7 +56,7 @@ _CLIENT_FORK_SCRIPT_TEMPLATE = """if True:
     cygrpc._GRPC_ENABLE_FORK_SUPPORT = True
     os.environ['GRPC_ENABLE_FORK_SUPPORT'] = 'true'
     methods.TestCase.%s.run_test({
-      'server_host': 'localhost',
+      'server_host': '127.0.0.1',
       'server_port': %d,
       'use_tls': False
     })
@@ -87,7 +87,7 @@ class ForkInteropTest(unittest.TestCase):
             server = test_common.test_server()
             test_pb2_grpc.add_TestServiceServicer_to_server(
                 interop_service.TestService(), server)
-            port = server.add_insecure_port('[::]:0')
+            port = server.add_insecure_port('127.0.0.1:0')
             server.start()
             print(port)
             sys.stdout.flush()

@@ -55,8 +55,8 @@ class OTelMetricExporter(MetricExporter):
         value is a list of labels recorded for that metric.
         An example item of this dict:
             {"grpc.client.attempt.started":
-              [{'grpc.method': 'test/UnaryUnary', 'grpc.target': 'localhost:42517'},
-               {'grpc.method': 'other', 'grpc.target': 'localhost:42517'}]}
+              [{'grpc.method': 'test/UnaryUnary', 'grpc.target': '127.0.0.1:42517'},
+               {'grpc.method': 'other', 'grpc.target': '127.0.0.1:42517'}]}
     """
 
     def __init__(
@@ -366,8 +366,8 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
     def testTargetAttributeFilter(self):
         main_server, main_port = _test_server.start_server()
         backup_server, backup_port = _test_server.start_server()
-        main_target = f"localhost:{main_port}"
-        backup_target = f"localhost:{backup_port}"
+        main_target = f"127.0.0.1:{main_port}"
+        backup_target = f"127.0.0.1:{backup_port}"
 
         # Replace target label with 'other' for main_server.
         def target_filter(target: str) -> bool:
