@@ -1882,6 +1882,8 @@ def ssl_server_credentials(
     private_key_certificate_chain_pairs,
     root_certificates=None,
     require_client_auth=False,
+    minimum_tls_version=None,
+    maximum_tls_version=None,
 ):
     """Creates a ServerCredentials for use with an SSL-enabled Server.
 
@@ -1894,6 +1896,10 @@ def ssl_server_credentials(
       require_client_auth: A boolean indicating whether or not to require
         clients to be authenticated. May only be True if root_certificates
         is not None.
+      minimum_tls_version: The minimum TLS version that may be negotiated, or
+        None to use gRPC's default of TLS 1.2.
+      maximum_tls_version: The maximum TLS version that may be negotiated, or
+        None to use gRPC's default of TLS 1.3.
 
     Returns:
       A ServerCredentials for use with an SSL-enabled Server. Typically, this
@@ -1907,6 +1913,7 @@ def ssl_server_credentials(
     if require_client_auth and root_certificates is None:
         error_msg = "Illegal to require client auth without providing root certificates!"
         raise ValueError(error_msg)
+    _validate_tls_versions(minimum_tls_version, maximum_tls_version)
     return ServerCredentials(
         _cygrpc.server_credentials_ssl(
             root_certificates,
@@ -1915,6 +1922,16 @@ def ssl_server_credentials(
                 for key, pem in private_key_certificate_chain_pairs
             ],
             require_client_auth,
+            (
+                minimum_tls_version.value
+                if minimum_tls_version is not None
+                else None
+            ),
+            (
+                maximum_tls_version.value
+                if maximum_tls_version is not None
+                else None
+            ),
         )
     )
 

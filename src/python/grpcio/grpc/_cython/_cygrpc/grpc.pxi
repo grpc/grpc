@@ -607,6 +607,10 @@ cdef extern from "grpc/credentials.h":
     grpc_tls_credentials_options *options,
     grpc_tls_version version) nogil
 
+  void grpc_tls_credentials_options_set_cert_request_type(
+    grpc_tls_credentials_options *options,
+    grpc_ssl_client_certificate_request_type type) nogil
+
   ctypedef struct grpc_tls_certificate_provider:
     # We don't care about the internals (and in fact don't know them)
     pass
@@ -664,6 +668,9 @@ cdef extern from "grpc/credentials.h":
       verify_peer_options *verify_options, void *reserved) nogil
 
   grpc_channel_credentials *grpc_tls_credentials_create(
+    grpc_tls_credentials_options *options) nogil
+
+  grpc_server_credentials *grpc_tls_server_credentials_create(
     grpc_tls_credentials_options *options) nogil
 
   grpc_channel_credentials *grpc_composite_channel_credentials_create(
