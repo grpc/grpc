@@ -515,12 +515,12 @@ class InterceptedCall:
         return await call.wait_for_connection()
 
 
-class _InterceptedUnaryMixinProtocol(Protocol):
+class _InterceptedResponseMixinProtocol(Protocol):
     _interceptors_task: asyncio.Task[Any]
 
 
 class _InterceptedUnaryResponseMixin(
-    _InterceptedUnaryMixinProtocol, Generic[ResponseType]
+    _InterceptedResponseMixinProtocol, Generic[ResponseType]
 ):
 
     def __await__(self) -> Generator[Any, None, ResponseType]:
@@ -531,12 +531,8 @@ class _InterceptedUnaryResponseMixin(
         return response
 
 
-class _InterceptedStreamResponseMixinProtocol(Protocol):
-    _interceptors_task: asyncio.Task[Any]
-
-
 class _InterceptedStreamResponseMixin(
-    _InterceptedStreamResponseMixinProtocol, Generic[ResponseType]
+    _InterceptedResponseMixinProtocol, Generic[ResponseType]
 ):
 
     def _init_stream_response_mixin(self) -> None:
