@@ -127,6 +127,12 @@ ChannelInit::FilterRegistration&
 ChannelInit::FilterRegistration::ExcludeFromMinimalStack() {
   return If([](const ChannelArgs& args) { return !args.WantMinimalStack(); });
 }
+ChannelInit::Builder::Builder()
+    : fix_v3_filter_stack_server_side_ordering_(
+          IsFixV3FilterStackServerSideOrderingEnabled()) {}
+ChannelInit::Builder::Builder(bool fix_v3_filter_stack_server_side_ordering)
+    : fix_v3_filter_stack_server_side_ordering_(
+          fix_v3_filter_stack_server_side_ordering) {}
 
 ChannelInit::FilterRegistration& ChannelInit::Builder::RegisterFilter(
     grpc_channel_stack_type type, UniqueTypeName name,
@@ -267,7 +273,8 @@ class ChannelInit::DependencyTracker {
 
 template <bool is_terminal>
 std::vector<ChannelInit::FilterNode> ChannelInit::SelectFiltersByPredicate(
-    const std::vector<Filter>& filters, ChannelStackBuilder* builder) {
+    const std::vector<Filter>& filters, ChannelStackBuilder* builder,
+    bool fix_v3_filter_stack_server_side_ordering) {
   std::vector<FilterNode> filter_list;
   int i = 0;
   // Create an in-place linked list of individual filters
@@ -283,7 +290,7 @@ std::vector<ChannelInit::FilterNode> ChannelInit::SelectFiltersByPredicate(
     }
   };
   if (!grpc_channel_stack_type_is_client(builder->channel_stack_type()) &&
-      IsFixV3FilterStackServerSideOrderingEnabled()) {
+      fix_v3_filter_stack_server_side_ordering) {
     // Reverse the filter order.
     build_filter_list(filters.rbegin(), filters.rend());
   } else {
@@ -574,6 +581,8 @@ void ChannelInit::PrintChannelStackTrace(
 
 ChannelInit ChannelInit::Builder::Build() {
   ChannelInit result;
+  result.fix_v3_filter_stack_server_side_ordering_ =
+      fix_v3_filter_stack_server_side_ordering_;
   for (int i = 0; i < GRPC_NUM_CHANNEL_STACK_TYPES; i++) {
     result.stack_configs_[i] =
         BuildStackConfig(filters_[i], fused_filters_[i], post_processors_[i],
@@ -591,10 +600,11 @@ bool ChannelInit::Filter::CheckPredicates(const ChannelArgs& args) const {
 
 bool ChannelInit::CreateStack(ChannelStackBuilder* builder) const {
   const auto& stack_config = stack_configs_[builder->channel_stack_type()];
-  auto filter_list =
-      SelectFiltersByPredicate<false>(stack_config.filters, builder);
+  auto filter_list = SelectFiltersByPredicate<false>(
+      stack_config.filters, builder, fix_v3_filter_stack_server_side_ordering_);
   auto terminal_filter_list =
-      SelectFiltersByPredicate<true>(stack_config.terminators, builder);
+      SelectFiltersByPredicate<true>(stack_config.terminators, builder,
+                                     fix_v3_filter_stack_server_side_ordering_);
 
   if (terminal_filter_list.size() != 1) {
     int filter_count = terminal_filter_list.size();

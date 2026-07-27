@@ -301,6 +301,10 @@ class ChannelInit {
 
   class Builder {
    public:
+    Builder();
+
+    // TEST ONLY.
+    explicit Builder(bool fix_v3_filter_stack_server_side_ordering);
     FilterRegistration& RegisterFilter(
         grpc_channel_stack_type type, const grpc_channel_filter* filter,
         SourceLocation registration_source = {}) {
@@ -391,6 +395,9 @@ class ChannelInit {
         fused_filters_[GRPC_NUM_CHANNEL_STACK_TYPES];
     PostProcessor post_processors_[GRPC_NUM_CHANNEL_STACK_TYPES]
                                   [static_cast<int>(PostProcessorSlot::kCount)];
+    // TODO(weizheyuan): Remove this once the corresponding experiment
+    // `fix_v3_filter_stack_server_side_ordering` is deleted.
+    bool fix_v3_filter_stack_server_side_ordering_ = false;
   };
 
   /// Construct a channel stack of some sort: see channel_stack.h for details
@@ -447,6 +454,7 @@ class ChannelInit {
   };
 
   StackConfig stack_configs_[GRPC_NUM_CHANNEL_STACK_TYPES];
+  bool fix_v3_filter_stack_server_side_ordering_ = false;
 
   static std::tuple<std::vector<Filter>, std::vector<Filter>>
   SortFilterRegistrationsByDependencies(
@@ -459,8 +467,9 @@ class ChannelInit {
           filter_registrations);
 
   template <bool is_terminal>
-  static std::vector<FilterNode> SelectFiltersByPredicate(
-      const std::vector<Filter>& filters, ChannelStackBuilder* builder);
+  static std::vector<ChannelInit::FilterNode> SelectFiltersByPredicate(
+      const std::vector<Filter>& filters, ChannelStackBuilder* builder,
+      bool fix_v3_filter_stack_server_side_ordering);
 
   static void MergeFusedFilters(ChannelStackBuilder* builder,
                                 const std::vector<Filter>& fused_filters);
