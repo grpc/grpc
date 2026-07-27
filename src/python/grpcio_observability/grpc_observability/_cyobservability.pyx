@@ -118,10 +118,9 @@ def activate_stats() -> None:
   EnablePythonCensusStats(True);
 
 
-def activate_tracing() -> None:
+def activate_tracing(double sampling_rate=1.0) -> None:
   EnablePythonCensusTracing(True)
-  # always sample when OTel tracing is enabled
-  ProbabilitySampler.Get().SetThreshold(1.0)
+  ProbabilitySampler.Get().SetThreshold(sampling_rate)
 
 
 def create_client_call_tracer(bytes method_name, bytes target, bytes trace_id, str identifier,

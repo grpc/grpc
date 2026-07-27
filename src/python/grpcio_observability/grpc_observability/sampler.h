@@ -35,7 +35,7 @@ class ProbabilitySampler final {
   ProbabilitySampler() = default;
 
   // Probability is converted to a value between [0, UINT64_MAX].
-  uint64_t threshold_;
+  uint64_t threshold_ = 0U;
 };
 
 }  // namespace grpc_observability

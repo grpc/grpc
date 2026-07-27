@@ -43,6 +43,7 @@ from opentelemetry.metrics import Counter
 from opentelemetry.metrics import Histogram
 from opentelemetry.metrics import Meter
 from opentelemetry.sdk import trace as sdk_trace
+from opentelemetry.sdk.trace import sampling as sdk_sampling
 from opentelemetry.trace.propagation.tracecontext import (
     TraceContextTextMapPropagator,
 )
@@ -218,6 +219,55 @@ class _OpenTelemetryPlugin:
 
     def is_tracing_configured(self) -> bool:
         return self._tracer is not None
+
+    def _extract_sample_rate(self, sampler) -> float:
+        if isinstance(sampler, sdk_sampling.ParentBased):
+            # we have to compress whole ParentBased decision table into one
+            # scalar. That "compression" is only possible when the decision
+            # about sampling is made at root span level with children
+            # inheriting root behaviour (default delegates)
+            has_default_delegates = (
+                sampler._remote_parent_sampled is sdk_sampling.ALWAYS_ON
+                and sampler._remote_parent_not_sampled is sdk_sampling.ALWAYS_OFF
+                and sampler._local_parent_sampled is sdk_sampling.ALWAYS_ON
+                and sampler._local_parent_not_sampled is sdk_sampling.ALWAYS_OFF
+            )
+            if not has_default_delegates:
+                return 1.0
+            return self._extract_sample_rate(sampler._root)
+        if isinstance(sampler, sdk_sampling.StaticSampler):
+            if sampler._decision is sdk_sampling.Decision.DROP:
+                return 0.0
+            return 1.0
+        if isinstance(sampler, sdk_sampling.TraceIdRatioBased):
+            return sampler.rate
+        # Custom sampler; buffer everything
+        return 1.0
+
+    def get_effective_sampling_rate(self) -> float:
+        """Best effort extraction of the sampling rate from a TracerProvider.
+
+        Returns the probability with which the provider's sampler will sample
+        a root span, or 1.0 whenever the sampler cannot be introspected (non-SDK
+        providers, custom samplers, customized ParentBased delegates). 1.0 is
+        always safe: every span is created at C++ layer and the provider's
+        sampler still makes the final decision at export time.
+        """
+        sampler = getattr(self._plugin.tracer_provider, "sampler", None)
+        if sampler is None:
+            # Probably not an SDK TracerProvider. We have to buffer every span
+            # from C++ layer. Final decision will be made at export time.
+            return 1.0
+
+        try:
+            return self._extract_sample_rate(sampler)
+        except AttributeError:
+            msg = (
+                f"Could not introspect sampler {sampler};"
+                "using sampling rate 1.0"
+            )
+            _LOGGER.warning(msg)
+            return 1.0
 
     def get_trace_context(self) -> Optional[otel_context.Context]:
         return self._trace_ctx_var.get()
@@ -562,7 +612,9 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
 
         if self._should_enable_tracing():
             try:
-                _cyobservability.activate_tracing()
+                _cyobservability.activate_tracing(
+                    self._get_tracing_sample_rate()
+                )
                 self.set_tracing(True)
             except Exception as e:  # pylint: disable=broad-except
                 error_msg = f"Activate observability tracing failed with: {e}"
@@ -717,6 +769,17 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
 
     def _should_enable_tracing(self) -> bool:
         return any(_plugin.is_tracing_configured() for _plugin in self._plugins)
+
+    def _get_tracing_sample_rate(self) -> float:
+        # There is a single sampler object shared by all plugins, so buffer
+        # the highest rate any plugin needs; each plugin's own SDK sampler
+        # still makes the final (per span) decision at export time
+        rates = [
+            _plugin.get_effective_sampling_rate()
+            for _plugin in self._plugins
+            if _plugin.is_tracing_configured()
+        ]
+        return max(rates)
 
     def get_enabled_optional_labels(self) -> List[OptionalLabelType]:
         return []
