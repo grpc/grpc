@@ -138,8 +138,8 @@ void Http2ServerTransport::AddData(channelz::DataSink sink) {
       MutexLock lock(&self->transport_mutex_);
       if (GPR_LIKELY(!self->shutdown_tracker_.IsShutdownInitiated(
               self->transport_mutex_))) {
-        GRPC_DCHECK(self->general_party_ != nullptr);
-        party = self->general_party_;
+        GRPC_DCHECK(self->transport_party_ != nullptr);
+        party = self->transport_party_;
       } else {
         GRPC_HTTP2_SERVER_DLOG
             << "Http2ServerTransport::AddData Transport is closed.";
@@ -172,8 +172,8 @@ void Http2ServerTransport::SpawnAddChannelzData(RefCountedPtr<Party> party,
                 .Set("settings", self->settings_->ChannelzProperties())
                 .Set("flow_control",
                      self->flow_control_.stats().ChannelzProperties()));
-        self->general_party_->ExportToChannelz("Http2ServerTransport Party",
-                                               sink);
+        self->transport_party_->ExportToChannelz("Http2ServerTransport Party",
+                                                 sink);
         GRPC_HTTP2_SERVER_DLOG
             << "Http2ServerTransport::SpawnAddChannelzData End";
         return Empty{};
@@ -1764,7 +1764,7 @@ void Http2ServerTransport::CloseTransport() {
     on_close_callback_ = nullptr;
   }
 
-  general_party_.reset();
+  transport_party_.reset();
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1928,7 +1928,7 @@ Http2ServerTransport::Http2ServerTransport(
   // Initialize the general party and write party.
   RefCountedPtr<Arena> party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<EventEngine>(event_engine_.get());
-  general_party_ = Party::Make(std::move(party_arena));
+  transport_party_ = Party::Make(std::move(party_arena));
 
   InitLocalSettings(settings_->mutable_local(), /*is_client=*/kIsClient);
   TransportChannelArgs args;
@@ -1954,7 +1954,7 @@ Http2ServerTransport::Http2ServerTransport(
 Http2ServerTransport::~Http2ServerTransport() {
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport Destructor Begin";
   // GRPC_DCHECK(stream_list_.empty());
-  // GRPC_DCHECK(general_party_ == nullptr);
+  // GRPC_DCHECK(transport_party_ == nullptr);
   // memory_owner_.Reset();
 
   // TODO(akshitpatel) : [PH2][P0][Close] : Remove call to
