@@ -4,6 +4,8 @@
   "tests_aio.health_check.health_servicer_test.HealthServicerTest",
   "tests_aio.interop.local_interop_test.InsecureLocalInteropTest",
   "tests_aio.interop.local_interop_test.SecureLocalInteropTest",
+  "tests_aio.observability.open_telemetry_observability_test.OpenTelemetryObservabilityRetryTest",
+  "tests_aio.observability.open_telemetry_observability_test.OpenTelemetryObservabilityTest",
   "tests_aio.reflection.reflection_servicer_test.ReflectionServicerTest",
   "tests_aio.status.grpc_status_test.StatusTest",
   "tests_aio.unit._metadata_test.TestMetadataWithServer",

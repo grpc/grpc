@@ -45,6 +45,10 @@ logger = logging.getLogger(__name__)
 
 STREAM_LENGTH = 5
 OTEL_EXPORT_INTERVAL_S = 0.5
+_RETRY_METRIC_NAMES = [
+    metric.name for metric in _open_telemetry_measures.retry_metrics()
+]
+_BASE_METRIC_COUNT = len(_open_telemetry_measures.base_metrics())
 
 
 class OTelMetricExporter(MetricExporter):
@@ -72,6 +76,9 @@ class OTelMetricExporter(MetricExporter):
             preferred_aggregation=preferred_aggregation,
         )
         self.all_metrics = all_metrics
+        # Maps metric name to a list of recorded data point values (the sum
+        # for histogram data points).
+        self.metric_values = defaultdict(list)
 
     def export(
         self,
@@ -96,6 +103,13 @@ class OTelMetricExporter(MetricExporter):
                         self.all_metrics[metric.name].append(
                             data_point.attributes
                         )
+                        self.metric_values[metric.name].append(
+                            getattr(
+                                data_point,
+                                "sum",
+                                getattr(data_point, "value", None),
+                            )
+                        )
 
 
 class _ClientUnaryUnaryInterceptor(grpc.UnaryUnaryClientInterceptor):
@@ -118,9 +132,9 @@ class _ServerInterceptor(grpc.ServerInterceptor):
 class OpenTelemetryObservabilityTest(unittest.TestCase):
     def setUp(self):
         self.all_metrics = defaultdict(list)
-        otel_exporter = OTelMetricExporter(self.all_metrics)
+        self._exporter = OTelMetricExporter(self.all_metrics)
         reader = PeriodicExportingMetricReader(
-            exporter=otel_exporter,
+            exporter=self._exporter,
             export_interval_millis=OTEL_EXPORT_INTERVAL_S * 1000,
         )
         self._provider = MeterProvider(metric_readers=[reader])
@@ -307,7 +321,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
 
         self.all_metrics = defaultdict(list)
         _test_server.unary_unary_call(port=self._port)
-        with self.assertRaisesRegex(AssertionError, "No metrics was exported"):
+        with self.assertRaisesRegex(AssertionError, "Expected at least"):
             self._validate_metrics_exist(self.all_metrics)
 
     def testNoRecordAfterExitUseGlobal(self):
@@ -327,7 +341,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
 
         self.all_metrics = defaultdict(list)
         _test_server.unary_unary_call(port=self._port)
-        with self.assertRaisesRegex(AssertionError, "No metrics was exported"):
+        with self.assertRaisesRegex(AssertionError, "Expected at least"):
             self._validate_metrics_exist(self.all_metrics)
 
     def testRecordUnaryStream(self):
@@ -481,6 +495,103 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         self.assertTrue(GRPC_OTHER_LABEL_VALUE in server_method_values)
         self.assertTrue(UNARY_METHOD_NAME not in server_method_values)
 
+    def testRecordRetryMetrics(self):
+        UNARY_METHOD_NAME = "test/UnaryUnary"
+        NUM_FAILED_ATTEMPTS = 2
+        retries_metric = _open_telemetry_measures.CLIENT_CALL_RETRIES.name
+        retry_delay_metric = (
+            _open_telemetry_measures.CLIENT_CALL_RETRY_DELAY.name
+        )
+        transparent_retries_metric = (
+            _open_telemetry_measures.CLIENT_CALL_TRANSPARENT_RETRIES.name
+        )
+
+        with grpc_observability.OpenTelemetryPlugin(
+            meter_provider=self._provider,
+            additional_metrics=_RETRY_METRIC_NAMES,
+        ):
+            server, port = _test_server.start_flaky_server(
+                num_failed_attempts=NUM_FAILED_ATTEMPTS
+            )
+            self._server = server
+            _test_server.unary_unary_call_with_retries(port=port)
+
+        # Wait until the values are recorded (appended after the entries in
+        # all_metrics), so that indexing metric_values below cannot race with
+        # the exporter thread.
+        self.assert_eventually(
+            lambda: all(
+                self._exporter.metric_values.get(metric)
+                for metric in (retries_metric, retry_delay_metric)
+            ),
+            message=lambda: f"retry metrics not found in exported metrics: {self._exporter.metric_values.keys()}!",
+        )
+        # The call had NUM_FAILED_ATTEMPTS retries (first attempt excluded)
+        # and spent time in retry backoff.
+        self.assertEqual(
+            self._exporter.metric_values[retries_metric][0],
+            NUM_FAILED_ATTEMPTS,
+        )
+        self.assertGreater(
+            self._exporter.metric_values[retry_delay_metric][0], 0
+        )
+        # No transparent retry happened, so 0 should not be reported.
+        self.assertNotIn(transparent_retries_metric, self.all_metrics)
+        # Per-call retry metrics should have method and target labels.
+        labels = self.all_metrics[retries_metric][0]
+        self.assertEqual(labels.get(GRPC_METHOD_LABEL), UNARY_METHOD_NAME)
+        self.assertIn(GRPC_TARGET_LABEL, labels)
+
+    def testEnablingUnknownMetricRaises(self):
+        with self.assertRaises(ValueError):
+            grpc_observability.OpenTelemetryPlugin(
+                meter_provider=self._provider,
+                additional_metrics=["grpc.client.call.no_such_metric"],
+            )
+
+    def testEnablingDefaultMetricIsNoOp(self):
+        default_metric = _open_telemetry_measures.CLIENT_ATTEMPT_STARTED.name
+        with grpc_observability.OpenTelemetryPlugin(
+            meter_provider=self._provider,
+            additional_metrics=[default_metric],
+        ):
+            server, port = _test_server.start_server()
+            self._server = server
+            _test_server.unary_unary_call(port=port)
+
+        self._validate_metrics_exist(self.all_metrics, _BASE_METRIC_COUNT)
+        self._validate_all_metrics_names(self.all_metrics.keys())
+
+    def testRetryMetricsDisabledByDefault(self):
+        with grpc_observability.OpenTelemetryPlugin(
+            meter_provider=self._provider
+        ):
+            server, port = _test_server.start_flaky_server(
+                num_failed_attempts=2
+            )
+            self._server = server
+            _test_server.unary_unary_call_with_retries(port=port)
+
+        self._validate_metrics_exist(self.all_metrics, _BASE_METRIC_COUNT)
+        self._validate_all_metrics_names(self.all_metrics.keys())
+        for retry_metric in _open_telemetry_measures.retry_metrics():
+            self.assertNotIn(retry_metric.name, self.all_metrics)
+
+    def testRetryMetricsNotReportedForCallsWithoutRetries(self):
+        with grpc_observability.OpenTelemetryPlugin(
+            meter_provider=self._provider,
+            additional_metrics=_RETRY_METRIC_NAMES,
+        ):
+            server, port = _test_server.start_server()
+            self._server = server
+            _test_server.unary_unary_call(port=port)
+
+        self._validate_metrics_exist(self.all_metrics, _BASE_METRIC_COUNT)
+        self._validate_all_metrics_names(self.all_metrics.keys())
+        # The call had no retries, so zero values should not be reported.
+        for retry_metric in _open_telemetry_measures.retry_metrics():
+            self.assertNotIn(retry_metric.name, self.all_metrics)
+
     def assert_eventually(
         self,
         predicate: Callable[[], bool],
@@ -498,11 +609,18 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         else:
             self.fail(message() + " after " + str(timeout))
 
-    def _validate_metrics_exist(self, all_metrics: Dict[str, Any]) -> None:
-        # Sleep here to make sure we have at least one export from OTel MetricExporter.
+    def _validate_metrics_exist(
+        self, all_metrics: Dict[str, Any], expected_count: int = 2
+    ) -> None:
+        # Sleep here to make sure we have at least the expected number of
+        # metrics from OTel MetricExporter. Waiting for a specific count avoids
+        # racing with exports that are still in flight.
         self.assert_eventually(
-            lambda: len(all_metrics.keys()) > 1,
-            message=lambda: f"No metrics was exported",
+            lambda: len(all_metrics.keys()) >= expected_count,
+            message=lambda: (
+                f"Expected at least {expected_count} metrics, got "
+                f"{len(all_metrics.keys())}: {all_metrics.keys()}"
+            ),
         )
 
     def _validate_all_metrics_names(self, metric_names: Set[str]) -> None:
