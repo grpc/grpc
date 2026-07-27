@@ -1486,12 +1486,28 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                         call_args.client_initial_metadata = std::move(metadata);
                         return Seq(
                             next_promise_factory(std::move(call_args)),
-                            [handler](ServerMetadataHandle metadata) mutable
-                                -> Poll<ServerMetadataHandle> {
+                            [handler](ServerMetadataHandle metadata) mutable {
                               handler.SpawnPushServerTrailingMetadata(
                                   std::move(metadata));
+                              // We return a lambda (promise) here instead of
+                              // returning `Pending{}` directly to make this
+                              // step safe for subsequent polls. During V2 call
+                              // teardown, cancellation of active streams
+                              // propagates through the V2 filter stack, which
+                              // wakes up this activity and triggers re-polls of
+                              // the bridge promise. If we returned `Pending{}`
+                              // directly, this factory lambda would be
+                              // re-evaluated on every poll, causing duplicate
+                              // calls to `SpawnPushServerTrailingMetadata` and
+                              // attempting to move from the already-moved
+                              // `metadata` parameter (leading to
+                              // crashes/undefined behavior). Returning the
+                              // inner lambda ensures that the side-effects in
+                              // this factory run exactly once, and subsequent
+                              // polls only execute the trivial,
+                              // side-effect-free inner lambda.
                               // We always lose the race.
-                              return Pending{};
+                              return Never<ServerMetadataHandle>();
                             });
                       });
                 })),
