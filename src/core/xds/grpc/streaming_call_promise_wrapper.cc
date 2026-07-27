@@ -55,7 +55,7 @@ class StreamingCallPromiseWrapper::EventHandler final
 };
 
 StreamingCallPromiseWrapper::StreamingCallPromiseWrapper(
-    XdsTransport& transport, const char* method, bool /*wait_for_ready*/) {
+    XdsTransport& transport, const char* method) {
   auto internal_event_handler = std::make_unique<EventHandler>(
       WeakRefAsSubclass<StreamingCallPromiseWrapper>());
   call_ =

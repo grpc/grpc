@@ -54,8 +54,7 @@ class StreamingCallPromiseWrapper final
   // Constructs a new streaming call wrapper for the given method on the
   // transport.
   explicit StreamingCallPromiseWrapper(XdsTransport& transport,
-                                       const char* method,
-                                       bool /*wait_for_ready*/ = true);
+                                       const char* method);
 
   // Sends a message on the stream.
   //
