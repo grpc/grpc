@@ -15,13 +15,12 @@
 
 # NOTE(lidiz) This module only exists in Bazel BUILD file, for more details
 # please refer to comments in the "bazel_namespace_package_hack" module.
-if __name__ == "__main__":
-    try:
-        from tests import bazel_namespace_package_hack
+try:
+    from tests import bazel_namespace_package_hack
 
-        bazel_namespace_package_hack.sys_path_to_site_dir_hack()
-    except ImportError:
-        pass
+    bazel_namespace_package_hack.sys_path_to_site_dir_hack()
+except ImportError:
+    pass
 
 import enum
 import json

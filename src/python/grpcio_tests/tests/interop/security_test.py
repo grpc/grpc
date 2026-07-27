@@ -23,14 +23,13 @@ import time
 import unittest
 import weakref
 
-if __name__ == "__main__":
-    os.environ["GRPC_BAZEL_RUNTIME"] = "1"
-    try:
-        from tests import bazel_namespace_package_hack
+os.environ["GRPC_BAZEL_RUNTIME"] = "1"
+try:
+    from tests import bazel_namespace_package_hack
 
-        bazel_namespace_package_hack.sys_path_to_site_dir_hack()
-    except ImportError:
-        pass
+    bazel_namespace_package_hack.sys_path_to_site_dir_hack()
+except ImportError:
+    pass
 
 import grpc
 import grpc.experimental
