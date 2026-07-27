@@ -55,11 +55,11 @@ class StreamingCallPromiseWrapper::EventHandler final
 };
 
 StreamingCallPromiseWrapper::StreamingCallPromiseWrapper(
-    XdsTransport& transport, const char* method) {
+    XdsTransport& transport, const char* method, bool wait_for_ready) {
   auto internal_event_handler = std::make_unique<EventHandler>(
       WeakRefAsSubclass<StreamingCallPromiseWrapper>());
-  call_ =
-      transport.CreateStreamingCall(method, std::move(internal_event_handler));
+  call_ = transport.CreateStreamingCall(
+      method, std::move(internal_event_handler), wait_for_ready);
 }
 
 Poll<StatusFlag> StreamingCallPromiseWrapper::PollSend() {
@@ -104,7 +104,7 @@ StreamingCallPromiseWrapper::PollPullMessage() {
     }
   }
   // Initiate the read on the transport without holding mu_.
-  if (start_recv) {
+  if (start_recv && call_ != nullptr) {
     call_->StartRecvMessage();
   }
   MutexLock lock(&mu_);
@@ -179,6 +179,7 @@ void StreamingCallPromiseWrapper::OnStatusReceived(absl::Status status) {
     recv_waker = std::move(recv_message_waker_);
     status_waker = std::move(status_waker_);
   }
+  call_.reset();
   // Wake all pending promises so they can observe stream termination.
   send_waker.Wakeup();
   recv_waker.Wakeup();
@@ -196,7 +197,7 @@ void StreamingCallPromiseWrapper::SendHalfClose() {
   expected = SendState::kIdle;
   if (send_state_.compare_exchange_strong(expected,
                                           SendState::kHalfCloseInFlight)) {
-    call_->SendHalfClose();
+    if (call_ != nullptr) call_->SendHalfClose();
   }
 }
 

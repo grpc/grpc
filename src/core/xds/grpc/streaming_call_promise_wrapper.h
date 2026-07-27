@@ -54,7 +54,8 @@ class StreamingCallPromiseWrapper final
   // Constructs a new streaming call wrapper for the given method on the
   // transport.
   explicit StreamingCallPromiseWrapper(XdsTransport& transport,
-                                       const char* method);
+                                       const char* method,
+                                       bool wait_for_ready = true);
 
   // Sends a message on the stream.
   //
@@ -66,9 +67,12 @@ class StreamingCallPromiseWrapper final
   // previous Send() resolves or if a previous send failed or closed.
   auto Send(std::string msg) {
     SendState expected = SendState::kIdle;
-    GRPC_CHECK(send_state_.compare_exchange_strong(
-        expected, SendState::kSendMessageInFlight));
-    call_->SendMessage(std::move(msg));
+    if (send_state_.compare_exchange_strong(expected,
+                                            SendState::kSendMessageInFlight)) {
+      if (call_ != nullptr) {
+        call_->SendMessage(std::move(msg));
+      }
+    }
     return [self = WeakRefAsSubclass<StreamingCallPromiseWrapper>()]() {
       return self->PollSend();
     };

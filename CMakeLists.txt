@@ -3143,6 +3143,7 @@ add_library(grpc
   src/core/xds/grpc/blackboard.cc
   src/core/xds/grpc/certificate_provider_store.cc
   src/core/xds/grpc/file_watcher_certificate_provider_factory.cc
+  src/core/xds/grpc/streaming_call_promise_wrapper.cc
   src/core/xds/grpc/xds_audit_logger_registry.cc
   src/core/xds/grpc/xds_bootstrap_grpc.cc
   src/core/xds/grpc/xds_bootstrap_grpc_builder.cc
@@ -3183,7 +3184,6 @@ add_library(grpc
   src/core/xds/grpc/xds_tls_context_parser.cc
   src/core/xds/grpc/xds_transport_grpc.cc
   src/core/xds/xds_client/lrs_client.cc
-  src/core/xds/xds_client/streaming_call_promise_wrapper.cc
   src/core/xds/xds_client/xds_api.cc
   src/core/xds/xds_client/xds_backend_metric_propagation.cc
   src/core/xds/xds_client/xds_bootstrap.cc
@@ -34726,7 +34726,6 @@ add_executable(streaming_call_promise_wrapper_test
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
-  src/core/xds/grpc/streaming_call_promise_wrapper.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/xds/streaming_call_promise_wrapper_test.cc

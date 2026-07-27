@@ -5782,6 +5782,7 @@ grpc_cc_library(
         "inter_activity_latch",
         "inter_activity_pipe",
         "latch",
+        "loop",
         "map",
         "match",
         "message",
@@ -5791,6 +5792,7 @@ grpc_cc_library(
         "pipe",
         "prioritized_race",
         "seq",
+        "status_flag",
         "sync",
         "time",
         "try_join",
@@ -5806,8 +5808,8 @@ grpc_cc_library(
         "//:grpc_trace",
         "//:orphanable",
         "//:ref_counted_ptr",
-        "//:streaming_call_promise_wrapper",
         "//:xds_client",
+        "//src/core:streaming_call_promise_wrapper",
     ],
 )
 

@@ -78,6 +78,9 @@ class ExternalProcessorBuilder {
         envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SKIP);
     processing_mode->set_response_trailer_mode(
         envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SKIP);
+    auto* timeout = ext_proc_.mutable_grpc_service()->mutable_timeout();
+    timeout->set_seconds(1);  // 1s
+    timeout->set_nanos(0);
   }
 
   ExternalProcessorBuilder& SetTargetUri(const std::string& target_uri) {
@@ -199,6 +202,12 @@ class ExternalProcessorBuilder {
   ExternalProcessorBuilder& SetDeferredCloseTimeout(
       const google::protobuf::Duration& timeout) {
     *ext_proc_.mutable_deferred_close_timeout() = timeout;
+    return *this;
+  }
+
+  ExternalProcessorBuilder& SetGrpcServiceTimeout(
+      const google::protobuf::Duration& timeout) {
+    *ext_proc_.mutable_grpc_service()->mutable_timeout() = timeout;
     return *this;
   }
 
@@ -976,7 +985,10 @@ TEST_P(XdsExtProcEnd2endTest,
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   })));
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::INTERNAL, "Send failed");
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      MakeConnectionFailureRegex(
+                          "failed to connect to all addresses; last error: ",
+                          /*resolution_note=*/""));
 }
 
 TEST_P(XdsExtProcEnd2endTest,
@@ -1074,7 +1086,10 @@ TEST_P(XdsExtProcEnd2endTest,
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   })));
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::INTERNAL, "Send failed");
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      MakeConnectionFailureRegex(
+                          "failed to connect to all addresses; last error: ",
+                          /*resolution_note=*/""));
 }
 
 TEST_P(XdsExtProcEnd2endTest,
