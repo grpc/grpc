@@ -42,6 +42,10 @@ using grpc_event_engine::experimental::FuzzingEventEngine;
 namespace grpc_core {
 namespace {
 
+constexpr char kMethod[] = "/test.Method";
+constexpr char kClientMessage[] = "hello world";
+constexpr char kServerMessage[] = "server response";
+
 class FakeXdsServerTarget : public XdsBootstrap::XdsServerTarget {
  public:
   explicit FakeXdsServerTarget(std::string server_uri)
@@ -88,9 +92,9 @@ class StreamingCallPromiseWrapperTest : public ::testing::Test {
                      ->GetTransport(*target_, &status);
     ASSERT_TRUE(status.ok()) << status;
     ASSERT_NE(transport_, nullptr);
-    wrapper_ = MakeRefCounted<StreamingCallPromiseWrapper>(*transport_,
-                                                           "/test.Method");
-    stream_ = transport_factory_->WaitForStream(*target_, "/test.Method");
+    wrapper_ =
+        MakeRefCounted<StreamingCallPromiseWrapper>(*transport_, kMethod);
+    stream_ = transport_factory_->WaitForStream(*target_, kMethod);
     ASSERT_NE(stream_, nullptr);
   }
 
@@ -106,7 +110,7 @@ TEST_F(StreamingCallPromiseWrapperTest, SendSuccess) {
   InitStream();
   bool send_completed = false;
   auto activity = MakeActivity(
-      Map(wrapper_->Send("hello world"),
+      Map(wrapper_->Send(kClientMessage),
           [&](StatusFlag status) {
             EXPECT_TRUE(status.ok());
             send_completed = true;
@@ -116,14 +120,14 @@ TEST_F(StreamingCallPromiseWrapperTest, SendSuccess) {
       [](const absl::Status& status) { EXPECT_TRUE(status.ok()) << status; });
   event_engine_->TickUntilIdle();
   EXPECT_TRUE(send_completed);
-  EXPECT_EQ(stream_->WaitForMessageFromClient(), "hello world");
+  EXPECT_EQ(stream_->WaitForMessageFromClient(), kClientMessage);
 }
 
 TEST_F(StreamingCallPromiseWrapperTest, SendFailure) {
   InitStream(/*auto_complete_messages_from_client=*/false);
   bool send_completed = false;
   auto activity =
-      MakeActivity(Map(wrapper_->Send("hello world"),
+      MakeActivity(Map(wrapper_->Send(kClientMessage),
                        [&](StatusFlag status) {
                          EXPECT_FALSE(status.ok());
                          send_completed = true;
@@ -141,7 +145,7 @@ TEST_F(StreamingCallPromiseWrapperTest, SendCancelledOnStatusReceived) {
   InitStream(/*auto_complete_messages_from_client=*/false);
   bool send_completed = false;
   auto activity =
-      MakeActivity(Map(wrapper_->Send("hello world"),
+      MakeActivity(Map(wrapper_->Send(kClientMessage),
                        [&](StatusFlag status) {
                          EXPECT_FALSE(status.ok());
                          send_completed = true;
@@ -169,10 +173,10 @@ TEST_F(StreamingCallPromiseWrapperTest, PullMessageSuccess) {
       [](const absl::Status& status) { EXPECT_TRUE(status.ok()) << status; });
   event_engine_->TickUntilIdle();
   EXPECT_FALSE(received_message.has_value());
-  stream_->SendMessageToClient("server response");
+  stream_->SendMessageToClient(kServerMessage);
   event_engine_->TickUntilIdle();
   ASSERT_TRUE(received_message.has_value());
-  EXPECT_EQ(*received_message, "server response");
+  EXPECT_EQ(*received_message, kServerMessage);
 }
 
 TEST_F(StreamingCallPromiseWrapperTest, PullMessageEndOfStream) {
