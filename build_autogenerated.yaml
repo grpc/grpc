@@ -24359,6 +24359,28 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: streaming_call_promise_wrapper_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/join.h
+  - src/core/xds/grpc/streaming_call_promise_wrapper.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/promise/test_wakeup_schedulers.h
+  - test/core/xds/xds_transport_fake.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - src/core/xds/grpc/streaming_call_promise_wrapper.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/xds/streaming_call_promise_wrapper_test.cc
+  - test/core/xds/xds_transport_fake.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
 - name: streaming_throughput_test
   gtest: true
   build: test
