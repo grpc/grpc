@@ -62,7 +62,6 @@ class StreamingCallPromiseWrapperTest : public ::testing::Test {
   void SetUp() override {
     event_engine_ = std::make_shared<FuzzingEventEngine>(
         FuzzingEventEngine::Options(), fuzzing_event_engine::Actions());
-    grpc_timer_manager_set_start_threaded(false);
     transport_factory_ = MakeRefCounted<FakeXdsTransportFactory>(
         []() { FAIL() << "Too many pending reads"; }, event_engine_);
     transport_factory_->SetAbortOnUndrainedMessages(false);
@@ -251,6 +250,7 @@ TEST_F(StreamingCallPromiseWrapperTest, SendHalfClose) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
+  grpc_timer_manager_set_start_threaded(false);
   grpc_init();
   int r = RUN_ALL_TESTS();
   grpc_shutdown();
