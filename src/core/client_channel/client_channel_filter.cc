@@ -1043,7 +1043,7 @@ ClientChannelFilter::ClientChannelFilter(grpc_channel_element_args* args,
   auto service_config =
       ServiceConfigImpl::Create(channel_args_, *service_config_json);
   if (!service_config.ok()) {
-    *error = absl_status_to_grpc_error(service_config.status());
+    *error = service_config.status();
     return;
   }
   default_service_config_ = std::move(*service_config);
@@ -1643,11 +1643,11 @@ grpc_error_handle ClientChannelFilter::DoPingLocked(grpc_transport_op* op) {
       },
       // Fail pick.
       [](LoadBalancingPolicy::PickResult::Fail* fail_pick) {
-        return absl_status_to_grpc_error(fail_pick->status);
+        return fail_pick->status;
       },
       // Drop pick.
       [](LoadBalancingPolicy::PickResult::Drop* drop_pick) {
-        return absl_status_to_grpc_error(drop_pick->status);
+        return drop_pick->status;
       });
 }
 
@@ -1683,11 +1683,7 @@ void ClientChannelFilter::StartTransportOpLocked(grpc_transport_op* op) {
         << "chand=" << this << ": disconnect_with_error: "
         << StatusToString(op->disconnect_with_error);
     DestroyResolverAndLbPolicyLocked();
-    intptr_t value;
-    if (grpc_error_get_int(op->disconnect_with_error,
-                           StatusIntProperty::ChannelConnectivityState,
-                           &value) &&
-        static_cast<grpc_connectivity_state>(value) == GRPC_CHANNEL_IDLE) {
+    if (op->go_idle) {
       if (disconnect_error_.ok()) {  // Ignore if we're shutting down.
         // Enter IDLE state.
         UpdateStateAndPickerLocked(GRPC_CHANNEL_IDLE, absl::Status(),
@@ -1703,7 +1699,7 @@ void ClientChannelFilter::StartTransportOpLocked(grpc_transport_op* op) {
       UpdateStateAndPickerLocked(
           GRPC_CHANNEL_SHUTDOWN, absl::Status(), "shutdown from API",
           MakeRefCounted<LoadBalancingPolicy::TransientFailurePicker>(
-              grpc_error_to_absl_status(op->disconnect_with_error)));
+              op->disconnect_with_error));
       // TODO(roth): If this happens when we're still waiting for a
       // resolver result, we need to trigger failures for all calls in
       // the resolver queue here.
@@ -1875,8 +1871,8 @@ grpc_error_handle ClientChannelFilter::CallData::ApplyServiceConfigToCallLocked(
                           ->GetCallConfig({send_initial_metadata(), arena_,
                                            service_config_call_data});
   if (!filter_chain.ok()) {
-    return absl_status_to_grpc_error(
-        MaybeRewriteIllegalStatusCode(filter_chain.status(), "ConfigSelector"));
+    return MaybeRewriteIllegalStatusCode(filter_chain.status(),
+                                         "ConfigSelector");
   }
   dynamic_filters_ = filter_chain->TakeAsSubclass<const DynamicFilters>();
   // Apply our own method params to the call.
@@ -1946,7 +1942,7 @@ bool ClientChannelFilter::CallData::CheckResolutionLocked(
       GRPC_TRACE_LOG(client_channel_call, INFO)
           << "chand=" << chand() << " calld=" << this
           << ": resolution failed, failing call";
-      *config_selector = absl_status_to_grpc_error(resolver_error);
+      *config_selector = resolver_error;
       return true;
     }
     // Either the resolver has not yet returned a result, or it has
@@ -2482,6 +2478,9 @@ ClientChannelFilter::LoadBalancedCall::PickSubchannel(bool was_queued) {
 bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
     LoadBalancingPolicy::SubchannelPicker* picker, grpc_error_handle* error) {
   GRPC_CHECK(subchannel_call_ == nullptr);
+  // Adding the call arena to TLS so that LB pickers can access call context
+  // from the arena.
+  promise_detail::Context<Arena> arena_ctx(arena_);
   // Perform LB pick.
   LoadBalancingPolicy::PickArgs pick_args;
   Slice* path = send_initial_metadata()->get_pointer(HttpPathMetadata());
@@ -2554,8 +2553,8 @@ bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
         if (!send_initial_metadata()
                  ->GetOrCreatePointer(WaitForReady())
                  ->value) {
-          *error = absl_status_to_grpc_error(MaybeRewriteIllegalStatusCode(
-              std::move(fail_pick->status), "LB pick"));
+          *error = MaybeRewriteIllegalStatusCode(std::move(fail_pick->status),
+                                                 "LB pick");
           return true;
         }
         // If wait_for_ready is true, then queue to retry when we get a new
@@ -2567,10 +2566,9 @@ bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
         GRPC_TRACE_LOG(client_channel_lb_call, INFO)
             << "chand=" << chand_ << " lb_call=" << this
             << ": LB pick dropped: " << drop_pick->status;
-        *error = grpc_error_set_int(
-            absl_status_to_grpc_error(MaybeRewriteIllegalStatusCode(
-                std::move(drop_pick->status), "LB drop")),
-            StatusIntProperty::kLbPolicyDrop, 1);
+        is_drop_ = true;
+        *error = MaybeRewriteIllegalStatusCode(std::move(drop_pick->status),
+                                               "LB drop");
         return true;
       });
 }
@@ -2708,7 +2706,7 @@ void ClientChannelFilter::LoadBalancedCall::RecvTrailingMetadataReady(
       << " call_attempt_tracer_=" << self->call_attempt_tracer_
       << " lb_subchannel_call_tracker_="
       << self->lb_subchannel_call_tracker_.get()
-      << " failure_error_=" << StatusToString(self->failure_error_);
+      << " is_drop_=" << self->is_drop_;
   // Check if we have a tracer or an LB callback to invoke.
   if (self->call_attempt_tracer_ != nullptr ||
       self->lb_subchannel_call_tracker_ != nullptr) {
@@ -2742,11 +2740,9 @@ void ClientChannelFilter::LoadBalancedCall::RecvTrailingMetadataReady(
     self->RecordCallCompletion(status, self->recv_trailing_metadata_,
                                self->transport_stream_stats_, peer_string);
   }
+  // If we dropped the call, indicate that fact in the metadata.
+  if (self->is_drop_) self->recv_trailing_metadata_->Set(LbPolicyDrop(), true);
   // Chain to original callback.
-  if (!self->failure_error_.ok()) {
-    error = self->failure_error_;
-    self->failure_error_ = absl::OkStatus();
-  }
   Closure::Run(DEBUG_LOCATION, self->original_recv_trailing_metadata_ready_,
                error);
 }

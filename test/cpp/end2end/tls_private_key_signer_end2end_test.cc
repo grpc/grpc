@@ -44,22 +44,16 @@
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
+#include "test/cpp/end2end/tls_test_private_key_signer.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/log/check.h"
-#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/synchronization/notification.h"
 #include "absl/time/time.h"
 
 #if defined(OPENSSL_IS_BORINGSSL)
-
-#include <openssl/digest.h>
-#include <openssl/ec.h>
-#include <openssl/evp.h>
-#include <openssl/rsa.h>
-#include <openssl/ssl.h>
 
 namespace grpc {
 namespace testing {
@@ -79,49 +73,6 @@ constexpr absl::string_view kClientKeyPath =
     "src/core/tsi/test_creds/client.key";
 constexpr absl::string_view kClientCertPath =
     "src/core/tsi/test_creds/client.pem";
-
-bssl::UniquePtr<EVP_PKEY> LoadPrivateKeyFromString(
-    absl::string_view private_pem) {
-  bssl::UniquePtr<BIO> bio(
-      BIO_new_mem_buf(private_pem.data(), private_pem.size()));
-  return bssl::UniquePtr<EVP_PKEY>(
-      PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, nullptr));
-}
-
-uint16_t GetBoringSslAlgorithm(
-    grpc::experimental::PrivateKeySigner::SignatureAlgorithm
-        signature_algorithm) {
-  switch (signature_algorithm) {
-    case grpc::experimental::PrivateKeySigner::SignatureAlgorithm::
-        kRsaPkcs1Sha256:
-      return SSL_SIGN_RSA_PKCS1_SHA256;
-    case grpc::experimental::PrivateKeySigner::SignatureAlgorithm::
-        kRsaPkcs1Sha384:
-      return SSL_SIGN_RSA_PKCS1_SHA384;
-    case grpc::experimental::PrivateKeySigner::SignatureAlgorithm::
-        kRsaPkcs1Sha512:
-      return SSL_SIGN_RSA_PKCS1_SHA512;
-    case grpc::experimental::PrivateKeySigner::SignatureAlgorithm::
-        kEcdsaSecp256r1Sha256:
-      return SSL_SIGN_ECDSA_SECP256R1_SHA256;
-    case grpc::experimental::PrivateKeySigner::SignatureAlgorithm::
-        kEcdsaSecp384r1Sha384:
-      return SSL_SIGN_ECDSA_SECP384R1_SHA384;
-    case grpc::experimental::PrivateKeySigner::SignatureAlgorithm::
-        kEcdsaSecp521r1Sha512:
-      return SSL_SIGN_ECDSA_SECP521R1_SHA512;
-    case grpc::experimental::PrivateKeySigner::SignatureAlgorithm::
-        kRsaPssRsaeSha256:
-      return SSL_SIGN_RSA_PSS_RSAE_SHA256;
-    case grpc::experimental::PrivateKeySigner::SignatureAlgorithm::
-        kRsaPssRsaeSha384:
-      return SSL_SIGN_RSA_PSS_RSAE_SHA384;
-    case grpc::experimental::PrivateKeySigner::SignatureAlgorithm::
-        kRsaPssRsaeSha512:
-      return SSL_SIGN_RSA_PSS_RSAE_SHA512;
-  }
-  return -1;
-}
 
 class TlsPrivateKeyOffloadTest : public ::testing::Test {
  protected:
@@ -259,149 +210,6 @@ void DoRpcAndExpectFailure(
                 ::testing::HasSubstr(std::string(expected_error_message)));
   }
 }
-
-absl::StatusOr<std::string> SignWithBoringSSL(
-    absl::string_view data_to_sign,
-    grpc::experimental::PrivateKeySigner::SignatureAlgorithm
-        signature_algorithm,
-    EVP_PKEY* private_key) {
-  const uint8_t* in = reinterpret_cast<const uint8_t*>(data_to_sign.data());
-  const size_t in_len = data_to_sign.size();
-
-  uint16_t boring_signature_algorithm =
-      GetBoringSslAlgorithm(signature_algorithm);
-  if (EVP_PKEY_id(private_key) !=
-      SSL_get_signature_algorithm_key_type(boring_signature_algorithm)) {
-    fprintf(stderr, "Key type does not match signature algorithm.\n");
-  }
-
-  // Determine the hash.
-  const EVP_MD* md =
-      SSL_get_signature_algorithm_digest(boring_signature_algorithm);
-  bssl::ScopedEVP_MD_CTX ctx;
-  EVP_PKEY_CTX* pctx;
-  if (!EVP_DigestSignInit(ctx.get(), &pctx, md, nullptr, private_key)) {
-    return absl::InternalError("EVP_DigestSignInit failed");
-  }
-
-  // Configure additional signature parameters.
-  if (SSL_is_signature_algorithm_rsa_pss(boring_signature_algorithm)) {
-    if (!EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PSS_PADDING) ||
-        !EVP_PKEY_CTX_set_rsa_pss_saltlen(pctx, -1)) {
-      return absl::InternalError("EVP_PKEY_CTX failed");
-    }
-  }
-
-  size_t len = 0;
-  if (!EVP_DigestSign(ctx.get(), nullptr, &len, in, in_len)) {
-    return absl::InternalError("EVP_DigestSign failed");
-  }
-  std::vector<uint8_t> private_key_result;
-  private_key_result.resize(len);
-  if (!EVP_DigestSign(ctx.get(), private_key_result.data(), &len, in, in_len)) {
-    return absl::InternalError("EVP_DigestSign failed");
-  }
-  private_key_result.resize(len);
-  return std::string(private_key_result.begin(), private_key_result.end());
-}
-
-class SyncTestPrivateKeySigner final
-    : public grpc::experimental::PrivateKeySigner {
- public:
-  enum class Mode { kSuccess, kError };
-
-  explicit SyncTestPrivateKeySigner(absl::string_view private_key,
-                                    Mode mode = Mode::kSuccess)
-      : pkey_(LoadPrivateKeyFromString(private_key)), mode_(mode) {}
-
-  std::variant<absl::StatusOr<std::string>,
-               std::shared_ptr<grpc_core::PrivateKeySigner::AsyncSigningHandle>>
-  Sign(absl::string_view data_to_sign, SignatureAlgorithm signature_algorithm,
-       OnSignComplete /*on_sign_complete*/) override {
-    if (mode_ == Mode::kError) {
-      return absl::InternalError("Test error sync");
-    }
-    return SignWithBoringSSL(data_to_sign, signature_algorithm, pkey_.get());
-  }
-
-  void Cancel(std::shared_ptr<grpc_core::PrivateKeySigner::AsyncSigningHandle>
-              /*handle*/) override {}
-
- private:
-  bssl::UniquePtr<EVP_PKEY> pkey_;
-  Mode mode_;
-};
-
-class AsyncTestPrivateKeySigner final
-    : public grpc::experimental::PrivateKeySigner,
-      public std::enable_shared_from_this<AsyncTestPrivateKeySigner> {
- public:
-  enum class Mode { kSuccess, kDelayed, kCancellation, kError };
-
-  struct AsyncSigningHandleInternal
-      : public grpc_core::PrivateKeySigner::AsyncSigningHandle {
-    grpc_event_engine::experimental::EventEngine::TaskHandle task_handle;
-  };
-
-  explicit AsyncTestPrivateKeySigner(
-      absl::string_view private_key, Mode mode = Mode::kSuccess,
-      absl::Duration delay = absl::ZeroDuration())
-      : pkey_(LoadPrivateKeyFromString(private_key)),
-        mode_(mode),
-        delay_(delay) {}
-
-  std::variant<absl::StatusOr<std::string>,
-               std::shared_ptr<grpc_core::PrivateKeySigner::AsyncSigningHandle>>
-  Sign(absl::string_view data_to_sign, SignatureAlgorithm signature_algorithm,
-       OnSignComplete on_sign_complete) override {
-    grpc_core::ExecCtx exec_ctx;
-    auto event_engine =
-        grpc_event_engine::experimental::GetDefaultEventEngine();
-    auto handle = std::make_shared<AsyncSigningHandleInternal>();
-
-    if (mode_ == Mode::kCancellation) {
-      event_engine->Run([self = shared_from_this()]() {
-        while (!self->was_cancelled_.load()) {
-          absl::SleepFor(absl::Milliseconds(10));
-        }
-      });
-    } else {
-      handle->task_handle = event_engine->RunAfter(
-          std::chrono::nanoseconds(absl::ToInt64Nanoseconds(delay_)),
-          [self = shared_from_this(), data_to_sign = std::string(data_to_sign),
-           signature_algorithm,
-           on_sign_complete = std::move(on_sign_complete)]() mutable {
-            if (self->mode_ == Mode::kError) {
-              on_sign_complete(absl::InternalError("Test error async"));
-            } else {
-              on_sign_complete(SignWithBoringSSL(
-                  data_to_sign, signature_algorithm, self->pkey_.get()));
-            }
-          });
-    }
-    return handle;
-  }
-
-  void Cancel(std::shared_ptr<grpc_core::PrivateKeySigner::AsyncSigningHandle>
-                  handle) override {
-    if (mode_ == Mode::kDelayed) {
-      grpc_core::ExecCtx exec_ctx;
-      auto event_engine =
-          grpc_event_engine::experimental::GetDefaultEventEngine();
-      auto internal_handle =
-          std::static_pointer_cast<AsyncSigningHandleInternal>(handle);
-      event_engine->Cancel(internal_handle->task_handle);
-    }
-  }
-
-  bool WasCancelled() { return was_cancelled_.load(); }
-
- private:
-  bssl::UniquePtr<EVP_PKEY> pkey_;
-  Mode mode_;
-  absl::Duration delay_;
-  std::atomic<bool> was_cancelled_{false};
-};
 
 // Verifies that the server can successfully offload signing to an asynchronous
 // custom signer.

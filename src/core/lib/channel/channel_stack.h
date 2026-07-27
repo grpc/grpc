@@ -257,6 +257,8 @@ grpc_channel_element* grpc_channel_stack_last_element(
 // A utility function for a filter to determine how many other instances
 // of the same filter exist above it in the same stack.  Intended to be
 // used in the filter's init_channel_elem() method.
+// TODO(roth): Remove this when removing the
+// xds_server_filter_chain_per_route experiment.
 size_t grpc_channel_stack_filter_instance_number(
     grpc_channel_stack* channel_stack, grpc_channel_element* elem);
 

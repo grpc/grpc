@@ -814,7 +814,8 @@ TEST_F(Http2ReadContextTest, SetAndGetFrameHeader) {
   util::testing::MockPromiseEndpoint mock_endpoint(1234);
   ReadContext context(/*max_new_streams_per_read_cycle=*/32u,
                       mock_endpoint.promise_endpoint, true,
-                      GrpcErrors::kMaxSecurityFrameSize);
+                      GrpcErrors::kMaxSecurityFrameSize,
+                      /*ping_on_rst_stream_percent=*/1u);
   Http2FrameHeader header;
   header.length = 100u;
   header.type = 1u;
@@ -846,7 +847,8 @@ TEST_F(Http2ReadContextTest, ReadCycleFramesLimits) {
         util::testing::MockPromiseEndpoint mock_endpoint(1234);
         ReadContext read_context(/*max_new_streams_per_read_cycle=*/32u,
                                  mock_endpoint.promise_endpoint, true,
-                                 GrpcErrors::kMaxSecurityFrameSize);
+                                 GrpcErrors::kMaxSecurityFrameSize,
+                                 /*ping_on_rst_stream_percent=*/1u);
         const Http2FrameHeader header = {
             0u,  // length
             0u,  // type

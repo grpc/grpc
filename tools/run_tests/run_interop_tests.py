@@ -603,7 +603,7 @@ class NodePureJSLanguage:
         return "nodepurejs"
 
 
-class PHP7Language:
+class PHP8Language:
     def __init__(self):
         self.client_cwd = None
         self.server_cwd = None
@@ -634,7 +634,7 @@ class PHP7Language:
         return _SKIP_COMPRESSION + _ORCA_TEST_CASES
 
     def __str__(self):
-        return "php7"
+        return "php8"
 
 
 class ObjcLanguage:
@@ -858,7 +858,7 @@ _LANGUAGES = {
     "javaokhttp": JavaOkHttpClient(),
     "node": NodeLanguage(),
     "nodepurejs": NodePureJSLanguage(),
-    "php7": PHP7Language(),
+    "php8": PHP8Language(),
     "objc": ObjcLanguage(),
     "ruby": RubyLanguage(),
     "python": PythonLanguage(),
@@ -876,7 +876,7 @@ _SERVERS = [
     "python",
     "dart",
     "pythonasyncio",
-    "php7",
+    "php8",
 ]
 
 _TEST_CASES = [
@@ -1051,7 +1051,7 @@ def auth_options(
         if language in [
             "aspnetcore",
             "node",
-            "php7",
+            "php8",
             "python",
             "ruby",
             "nodepurejs",
@@ -2057,7 +2057,7 @@ try:
     if "java" in servers:
         languages_for_mcs_cs = set(
             _LANGUAGES[l]
-            for l in _LANGUAGES_WITH_HTTP2_CLIENTS_FOR_HTTP2_SERVER_TEST_CASES
+            for l in _LANGUAGES_FOR_MCS_TEST_CASE
             if "all" in args.language or l in args.language
         )
         if not languages_for_mcs_cs:

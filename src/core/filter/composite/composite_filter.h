@@ -58,11 +58,11 @@ class CompositeFilter final : public V3InterceptorToV2Bridge<CompositeFilter> {
   class ExecuteFilterAction final : public XdsMatcher::Action {
    public:
     struct Filter {
-      const XdsHttpFilterImpl* filter_impl;
+      const XdsHttpFilterFactory* factory;
       RefCountedPtr<const FilterConfig> filter_config;
 
       bool operator==(const Filter& other) const {
-        if (filter_impl != other.filter_impl) return false;
+        if (factory != other.factory) return false;
         if (filter_config == nullptr) return other.filter_config == nullptr;
         if (other.filter_config == nullptr) return false;
         return *filter_config == *other.filter_config;

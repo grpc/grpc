@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 55.0.0
+PROJECT_NUMBER         = 56.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -2806,6 +2806,7 @@ src/core/telemetry/stats_data.cc \
 src/core/telemetry/stats_data.h \
 src/core/telemetry/tcp_tracer.cc \
 src/core/telemetry/tcp_tracer.h \
+src/core/telemetry/telemetry_label.h \
 src/core/transport/AGENTS.md \
 src/core/transport/auth_context.cc \
 src/core/transport/auth_context.h \
@@ -2876,6 +2877,8 @@ src/core/tsi/ssl_transport_security.h \
 src/core/tsi/ssl_transport_security_utils.cc \
 src/core/tsi/ssl_transport_security_utils.h \
 src/core/tsi/ssl_types.h \
+src/core/tsi/tls_telemetry.cc \
+src/core/tsi/tls_telemetry.h \
 src/core/tsi/transport_security.cc \
 src/core/tsi/transport_security.h \
 src/core/tsi/transport_security_grpc.cc \

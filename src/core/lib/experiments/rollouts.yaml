@@ -113,7 +113,7 @@
 - name: promise_batch_cleanup_on_cancel
   default: true
 - name: promise_filter_send_cancel_metadata
-  default: false
+  default: true
 - name: return_preexisting_errors
   default: true
 - name: schedule_cancellation_over_write
