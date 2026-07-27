@@ -37773,6 +37773,16 @@ add_executable(try_seq_test
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/iomgr/sockaddr_utils_posix.cc
   src/core/lib/iomgr/socket_utils_windows.cc
+  src/core/lib/promise/activity.cc
+  src/core/lib/promise/sleep.cc
+  src/core/lib/resource_quota/arena.cc
+  src/core/lib/resource_quota/memory_quota.cc
+  src/core/lib/resource_quota/periodic_update.cc
+  src/core/lib/resource_quota/resource_quota.cc
+  src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
+  src/core/lib/resource_quota/thread_quota.cc
+  src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
@@ -37781,9 +37791,11 @@ add_executable(try_seq_test
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/status_conversion.cc
   src/core/telemetry/histogram_view.cc
+  src/core/telemetry/instrument.cc
   src/core/telemetry/stats.cc
   src/core/telemetry/stats_data.cc
   src/core/util/backoff.cc
+  src/core/util/dump_args.cc
   src/core/util/glob.cc
   src/core/util/grpc_check.cc
   src/core/util/grpc_if_nametoindex_posix.cc
@@ -37836,6 +37848,7 @@ target_link_libraries(try_seq_test
   absl::btree
   absl::flat_hash_map
   absl::inlined_vector
+  absl::node_hash_map
   absl::function_ref
   absl::hash
   absl::type_traits
