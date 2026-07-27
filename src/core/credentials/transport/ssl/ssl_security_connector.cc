@@ -387,6 +387,10 @@ class grpc_ssl_server_security_connector
     options.cipher_suites = grpc_get_ssl_cipher_suites();
     options.alpn_protocols = alpn_protocol_strings;
     options.num_alpn_protocols = static_cast<uint16_t>(num_alpn_protocols);
+    options.min_tls_version =
+        grpc_get_tsi_tls_version(server_creds->config().min_tls_version);
+    options.max_tls_version =
+        grpc_get_tsi_tls_version(server_creds->config().max_tls_version);
     tsi_result result = tsi_create_ssl_server_handshaker_factory_with_options(
         &options, &new_handshaker_factory);
     gpr_free(alpn_protocol_strings);

@@ -449,6 +449,18 @@ grpc_ssl_server_credentials_create_options_using_config_fetcher(
     grpc_ssl_client_certificate_request_type client_certificate_request,
     grpc_ssl_server_certificate_config_callback cb, void* user_data);
 
+/** Sets the minimum TLS version that may be negotiated by SSL server
+   credentials created with this options object. Defaults to TLS 1.2. */
+GRPCAPI void grpc_ssl_server_credentials_options_set_min_tls_version(
+    grpc_ssl_server_credentials_options* options,
+    grpc_tls_version min_tls_version);
+
+/** Sets the maximum TLS version that may be negotiated by SSL server
+   credentials created with this options object. Defaults to TLS 1.3. */
+GRPCAPI void grpc_ssl_server_credentials_options_set_max_tls_version(
+    grpc_ssl_server_credentials_options* options,
+    grpc_tls_version max_tls_version);
+
 /** Destroys a grpc_ssl_server_credentials_options object. */
 GRPCAPI void grpc_ssl_server_credentials_options_destroy(
     grpc_ssl_server_credentials_options* options);

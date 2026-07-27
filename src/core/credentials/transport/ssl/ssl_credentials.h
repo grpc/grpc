@@ -120,11 +120,6 @@ class grpc_ssl_server_credentials final : public grpc_server_credentials {
                                           config);
   }
 
-  // TODO(mattstev): Plumb to wrapped languages. Until then, setting the TLS
-  // version should be done for testing purposes only.
-  void set_min_tls_version(grpc_tls_version min_tls_version);
-  void set_max_tls_version(grpc_tls_version max_tls_version);
-
   const grpc_ssl_server_config& config() const { return config_; }
 
  private:
