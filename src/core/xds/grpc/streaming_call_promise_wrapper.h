@@ -27,9 +27,7 @@
 #include "src/core/util/dual_ref_counted.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/orphanable.h"
-#include "src/core/util/sync.h"
 #include "src/core/xds/xds_client/xds_transport.h"
-#include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
@@ -46,46 +44,53 @@ namespace grpc_core {
 // DualRefCounted is used to manage object lifetime: strong references are held
 // by clients and active promise workflows, while weak references are passed to
 // the underlying transport event handler to avoid reference cycles.
-class StreamingCallPromiseWrapper final
-    : public DualRefCounted<StreamingCallPromiseWrapper> {
+class XdsStreamingCallPromiseWrapper final
+    : public DualRefCounted<XdsStreamingCallPromiseWrapper> {
  public:
   using XdsTransport = XdsTransportFactory::XdsTransport;
 
   // Constructs a new streaming call wrapper for the given method on the
   // transport.
-  explicit StreamingCallPromiseWrapper(XdsTransport& transport,
-                                       const char* method,
-                                       bool wait_for_ready = true);
+  XdsStreamingCallPromiseWrapper(XdsTransport& transport, const char* method,
+                                 bool wait_for_ready = true);
 
-  // Sends a message on the stream.
+  // Pushes a message on the stream.
   //
   // Returns a promise that resolves to:
   // - Success{} when the message has been successfully transmitted.
   // - Failure{} if the stream has failed or closed.
   //
-  // Contract: The caller MUST NOT call Send() again until the promise from the
-  // previous Send() resolves or if a previous send failed or closed.
-  auto Send(std::string msg) {
+  // Contract: The caller MUST NOT call PushMessage() again until the promise
+  // from the previous PushMessage() resolves or if a previous send failed or
+  // closed.
+  auto PushMessage(std::string msg) {
     SendState expected = SendState::kIdle;
-    if (send_state_.compare_exchange_strong(expected,
-                                            SendState::kSendMessageInFlight)) {
-      if (call_ != nullptr) {
-        call_->SendMessage(std::move(msg));
-      }
-    }
-    return [self = WeakRefAsSubclass<StreamingCallPromiseWrapper>()]() {
-      return self->PollSend();
+    GRPC_CHECK(send_state_.compare_exchange_strong(
+        expected, SendState::kSendMessageInFlight));
+    send_message_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+    call_->SendMessage(std::move(msg));
+    return [self = WeakRefAsSubclass<XdsStreamingCallPromiseWrapper>()]() {
+      return self->PollPushMessage();
     };
   }
 
   // Pulls an incoming message from the stream.
   //
   // Returns a promise that resolves to:
-  // - ValueOrFailure(std::optional<string>(msg)) when a message is received.
-  // - ValueOrFailure(std::nullopt) when the stream closes cleanly (EOF).
-  // - Failure{} when the stream terminates with an error status.
+  // - std::optional<string>(msg) when a message is received.
+  // - std::nullopt when the stream closes (end of stream).
   auto PullMessage() {
-    return [self = WeakRefAsSubclass<StreamingCallPromiseWrapper>()]() {
+    RecvState recv_state = RecvState::kIdle;
+    if (!recv_state_.compare_exchange_strong(recv_state,
+                                             RecvState::kRecvMessageInFlight)) {
+      GRPC_CHECK(recv_state == RecvState::kReceivedStatus);
+      // Must be kReceivedStatus. Don't actually need to start the
+      // recv_message op; we'll return nullopt on the first poll.
+    } else {
+      call_->StartRecvMessage();
+      recv_message_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+    }
+    return [self = WeakRefAsSubclass<XdsStreamingCallPromiseWrapper>()]() {
       return self->PollPullMessage();
     };
   }
@@ -96,7 +101,8 @@ class StreamingCallPromiseWrapper final
   // resolving to the final absl::Status received from the server (or a
   // cancellation error if orphaned).
   auto PullServerTrailingMetadata() {
-    return [self = WeakRefAsSubclass<StreamingCallPromiseWrapper>()]() {
+    recv_status_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+    return [self = WeakRefAsSubclass<XdsStreamingCallPromiseWrapper>()]() {
       return self->PollPullServerTrailingMetadata();
     };
   }
@@ -115,7 +121,7 @@ class StreamingCallPromiseWrapper final
 
   enum class SendState {
     // Initial state: no send op in flight.
-    // Upon calling Send(), transitions to kSendMessageInFlight.
+    // Upon calling PushMessage(), transitions to kSendMessageInFlight.
     // Upon calling SendHalfClose(), transitions to kHalfCloseInFlight.
     kIdle,
     // Send message in flight.
@@ -132,18 +138,28 @@ class StreamingCallPromiseWrapper final
     // Otherwise, transitions to kHalfCloseInFlight.
     kSendMessageInFlightAndHalfCloseRequested,
     // A half-close is in flight.
-    // When complete, transitions to kHalfClosed.
     kHalfCloseInFlight,
-    // The stream has been half-closed.
-    // Once entering this state, we never leave.
-    kHalfClosed,
   };
 
-  // Internal polling implementation for Send().
-  Poll<StatusFlag> PollSend();
+  enum class RecvState {
+    // Initial state.
+    // If status is received, transitions to kReceivedStatus.
+    // If PullMessage() is called, transitions to kRecvMessageInFlight.
+    kIdle,
+    // A PullMessage() promise is pending.
+    // If a message is received, transitions to kIdle.
+    // If status is received, transitions to kReceivedStatus.
+    kRecvMessageInFlight,
+    // Status has been received.
+    // We never leave this state.
+    kReceivedStatus,
+  };
+
+  // Internal polling implementation for PushMessage().
+  Poll<StatusFlag> PollPushMessage();
 
   // Internal polling implementation for PullMessage().
-  Poll<ValueOrFailure<std::optional<std::string>>> PollPullMessage();
+  Poll<std::optional<std::string>> PollPullMessage();
 
   // Internal polling implementation for PullServerTrailingMetadata().
   Poll<absl::Status> PollPullServerTrailingMetadata();
@@ -155,21 +171,19 @@ class StreamingCallPromiseWrapper final
   void OnStatusReceived(absl::Status status);
 
   OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall> call_;
+
+  // State for outgoing messages (PushMessage).
   std::atomic<SendState> send_state_{SendState::kIdle};
-
-  mutable Mutex mu_;
-
-  // Wakers for suspended promises.
-  Waker send_message_waker_ ABSL_GUARDED_BY(mu_);
-  Waker recv_message_waker_ ABSL_GUARDED_BY(mu_);
-  Waker status_waker_ ABSL_GUARDED_BY(mu_);
+  Waker send_message_waker_;
 
   // State for incoming messages (PullMessage).
-  bool recv_message_in_flight_ ABSL_GUARDED_BY(mu_) = false;
-  std::optional<std::string> incoming_message_ ABSL_GUARDED_BY(mu_);
+  std::atomic<RecvState> recv_state_{RecvState::kIdle};
+  Waker recv_message_waker_;
+  std::optional<std::string> recv_message_;
 
   // Trailing metadata status from the server (PullServerTrailingMetadata).
-  std::optional<absl::Status> status_ ABSL_GUARDED_BY(mu_);
+  Waker recv_status_waker_;
+  absl::Status status_;
 };
 
 }  // namespace grpc_core
