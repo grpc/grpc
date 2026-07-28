@@ -262,6 +262,9 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
 
   ~ExtProcCall() override;
 
+  // Main entry point for an external processor call. Spawns and manages the
+  // concurrent request (client-to-server) and response (server-to-client)
+  // processing pipelines alongside side-stream message pulling.
   absl::AnyInvocable<Poll<absl::Status>()> Call();
 
  private:
@@ -523,9 +526,8 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
   }
 
   bool IsFailOpenAllowed() const {
-    const bool allow =
-        ext_proc_filter_->config_->failure_mode_allow.value_or(false);
-    if (ext_proc_filter_->config_->observability_mode) return allow;
+    const bool allow = config().failure_mode_allow.value_or(false);
+    if (config().observability_mode) return allow;
     return allow && !first_body_message_sent_;
   }
 
@@ -715,11 +717,11 @@ ExtProcFilter::ExtProcCall::ExtProcCall(
 ExtProcFilter::ExtProcCall::~ExtProcCall() {
   GRPC_TRACE_LOG(ext_proc_filter, INFO)
       << "ExtProcCall " << this << " destroyed";
-  if (ext_proc_filter_->config_->deferred_close_timeout != Duration::Zero() &&
-      ext_proc_filter_->config_->observability_mode) {
+  if (config().deferred_close_timeout != Duration::Zero() &&
+      config().observability_mode) {
     if (ext_proc_filter_->event_engine_ != nullptr) {
       ext_proc_filter_->event_engine_->RunAfter(
-          ext_proc_filter_->config_->deferred_close_timeout,
+          config().deferred_close_timeout,
           [call = std::move(streaming_call_),
            transport = std::move(transport_)]() mutable {
             call.reset();
@@ -784,7 +786,7 @@ absl::AnyInvocable<Poll<absl::Status>()>
 ExtProcFilter::ExtProcCall::OnRecvMessage(absl::string_view payload) {
   // In observability mode, we only log the message and ignore it.
   // We must continue reading the stream to keep it alive.
-  if (ext_proc_filter_->config_->observability_mode) {
+  if (config().observability_mode) {
     GRPC_TRACE_LOG(ext_proc_filter, INFO)
         << "ExtProcCall " << this
         << " message received in observability mode (ignored), size="
@@ -817,7 +819,7 @@ ExtProcFilter::ExtProcCall::OnRecvMessage(absl::string_view payload) {
   }
   // Dispatch the parsed response to the appropriate processor based on the
   // response type.
-  const auto& processing_mode = *ext_proc_filter_->config_->processing_mode;
+  const auto& processing_mode = *config().processing_mode;
   auto return_error = [this](absl::string_view message)
       -> absl::AnyInvocable<Poll<absl::Status>()> {
     auto error = absl::InternalError(message);
@@ -828,10 +830,9 @@ ExtProcFilter::ExtProcCall::OnRecvMessage(absl::string_view payload) {
       (*parsed_response).response,
       [&](const ExtProcResponse::ImmediateResponse&)
           -> absl::AnyInvocable<Poll<absl::Status>()> {
-        if (ext_proc_filter_->config_->disable_immediate_response ||
-            !server_trailers_sent_) {
+        if (config().disable_immediate_response || !server_trailers_sent_) {
           return return_error(
-              ext_proc_filter_->config_->disable_immediate_response
+              config().disable_immediate_response
                   ? "unhandled immediate response due to config disabled it"
                   : "Immediate response received but trailers not sent to "
                     "ext_proc");
@@ -977,16 +978,14 @@ void ExtProcFilter::ExtProcCall::OnStatusReceived(absl::Status status) {
       << "ExtProcCall " << this << " status received: " << status;
   const bool has_outstanding_messages =
       outstanding_c2s_messages_ > 0 || outstanding_s2c_messages_ > 0;
-  const bool must_drain =
-      !ext_proc_filter_->config_->observability_mode &&
-      (ext_proc_filter_->config_->processing_mode->send_request_body ||
-       ext_proc_filter_->config_->processing_mode->send_response_body);
+  const bool must_drain = !config().observability_mode &&
+                          (config().processing_mode->send_request_body ||
+                           config().processing_mode->send_response_body);
   const bool drain_requested = drain_requested_;
   if (status.ok()) {
     if (must_drain && !drain_requested) {
       status = absl::InternalError("Stream closed cleanly without drain");
-    } else if (has_outstanding_messages &&
-               !ext_proc_filter_->config_->observability_mode) {
+    } else if (has_outstanding_messages && !config().observability_mode) {
       status = absl::InternalError(
           "Stream closed cleanly with outstanding messages");
     }
@@ -1018,7 +1017,7 @@ void ExtProcFilter::ExtProcCall::OnStatusReceived(absl::Status status) {
 
 void ExtProcFilter::ExtProcCall::CompleteOutstandingProcessors(
     absl::StatusOr<ExtProcResponse> response) {
-  const auto& processing_mode = *ext_proc_filter_->config_->processing_mode;
+  const auto& processing_mode = *config().processing_mode;
   if (processing_mode.send_request_headers && !request_headers_received_ &&
       client_initial_metadata_latch_.IsSet()) {
     auto promise = MakeRefCounted<ClientInitialMetadataProcessor>(Ref())
@@ -1214,10 +1213,9 @@ absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ExtProcCall::
       call_->handler_.PullClientInitialMetadata(),
       [self = Ref()](ClientMetadataHandle metadata) mutable
           -> absl::AnyInvocable<Poll<absl::Status>()> {
-        if (!self->call_->ext_proc_filter_->config_->processing_mode
-                 ->send_request_headers) {
+        if (!self->call_->config().processing_mode->send_request_headers) {
           return self->NonProcessingMode(std::move(metadata));
-        } else if (self->call_->ext_proc_filter_->config_->observability_mode) {
+        } else if (self->call_->config().observability_mode) {
           return Seq(self->SendAndHandleClientInitialMetadata(metadata),
                      [self, metadata = std::move(metadata)](
                          absl::Status status) mutable
@@ -1314,15 +1312,13 @@ ExtProcFilter::ExtProcCall::ClientInitialMetadataProcessor::NonProcessingMode(
   GRPC_TRACE_LOG(ext_proc_filter, INFO)
       << "ExtProc: Client initial metadata received (non-processing):\n"
       << metadata->DebugString();
-  const auto& processing_mode =
-      *call_->ext_proc_filter_->config_->processing_mode;
+  const auto& processing_mode = *call_->config().processing_mode;
   ::google_protobuf_Struct* attributes = nullptr;
   if (processing_mode.send_request_body &&
-      !call_->ext_proc_filter_->config_->request_attributes.empty()) {
+      !call_->config().request_attributes.empty()) {
     auto* arena = call_->handler_.arena()->New<upb::Arena>();
     attributes = CreateExtProcAttributesProtoStruct(
-        arena->ptr(), call_->ext_proc_filter_->config_->request_attributes,
-        *metadata,
+        arena->ptr(), call_->config().request_attributes, *metadata,
         call_->ext_proc_filter_->default_authority_.as_string_view());
   }
   call_->request_attributes_ = attributes;
@@ -1352,10 +1348,9 @@ ExtProcFilter::ExtProcCall::ClientInitialMetadataProcessor::NormalMode(
   if (const auto* headers =
           std::get_if<ExtProcResponse::RequestHeaders>(&response->response);
       headers != nullptr) {
-    const auto* rules =
-        call_->ext_proc_filter_->config_->mutation_rules.has_value()
-            ? &call_->ext_proc_filter_->config_->mutation_rules.value()
-            : nullptr;
+    const auto* rules = call_->config().mutation_rules.has_value()
+                            ? &call_->config().mutation_rules.value()
+                            : nullptr;
     auto status = ApplyHeaderMutations(headers->mutation, rules, *metadata);
     if (!status.ok()) return Immediate(status);
   }
@@ -1818,7 +1813,7 @@ absl::AnyInvocable<Poll<absl::Status>()>
 ExtProcFilter::ExtProcCall::ServerMessageProcessor::SendServerMessageRequest(
     RefCountedPtr<ExtProcFilter::ExtProcCall> call,
     const MessageHandle& message) {
-  if (!call->ext_proc_filter_->config_->observability_mode) {
+  if (!call->config().observability_mode) {
     call->outstanding_s2c_messages_++;
   }
   std::string message_bytes;
@@ -1978,7 +1973,7 @@ ExtProcFilter::ExtProcCall::ClientMessageProcessor::SendClientMessageRequest(
   if (message != nullptr) {
     message_bytes = message->payload()->JoinIntoString();
   }
-  if (!call->ext_proc_filter_->config_->observability_mode) {
+  if (!call->config().observability_mode) {
     call->outstanding_c2s_messages_++;
   }
   if (end_of_stream_without_message) {
