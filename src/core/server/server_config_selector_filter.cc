@@ -213,7 +213,12 @@ ServerConfigSelectorInterceptor::Create(const ChannelArgs& args,
 ServerConfigSelectorInterceptor::ServerConfigSelectorInterceptor(
     const ChannelArgs& args, ChannelFilter::Args /*filter_args*/,
     RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider)
-    : args_(args),
+    : V3InterceptorToV2Bridge<ServerConfigSelectorInterceptor>(args),
+      args_(
+          // Tell filters that they're running in a v3 stack and running
+          // on the server side.
+          args.Set(GRPC_ARG_USE_V3_STACK, 1)
+              .Set(GRPC_ARG_IS_SERVER_FILTER_STACK, 1)),
       server_config_selector_provider_(
           std::move(server_config_selector_provider)),
       config_selector_(nullptr) {
@@ -329,14 +334,6 @@ void ServerConfigSelectorInterceptor::InterceptCall(
                       return absl::UnavailableError(
                           StatusToString(call_config.status()));
                     }
-                    // TODO(roth): Remove this once we switch to per-route
-                    // filter chains.
-                    auto* service_config_call_data =
-                        GetContext<Arena>()->New<ServiceConfigCallData>(
-                            GetContext<Arena>());
-                    service_config_call_data->SetServiceConfig(
-                        std::move(call_config->service_config),
-                        call_config->method_configs);
                     // Get filter chain.
                     if (!call_config->filter_chain.ok()) {
                       GRPC_TRACE_LOG(server_config_selector_interceptor, INFO)

@@ -1056,14 +1056,14 @@ absl::StatusOr<ChannelArgs> XdsServerConfigFetcher::ListenerWatcher::
        filter_chain->http_connection_manager.http_filters) {
     // Find filter.  This is guaranteed to succeed, because it's checked
     // at config validation time in the XdsApi code.
-    const XdsHttpFilterImpl* filter_impl =
+    const XdsHttpFilterFactory* factory =
         http_filter_registry.GetFilterForTopLevelType(
             http_filter.config_proto_type);
-    GRPC_CHECK_NE(filter_impl, nullptr);
+    GRPC_CHECK_NE(factory, nullptr);
     // Some filters like the router filter are no-op filters and do not have
     // an implementation.
-    if (filter_impl->channel_filter() != nullptr) {
-      filters.push_back(filter_impl->channel_filter());
+    if (factory->channel_filter() != nullptr) {
+      filters.push_back(factory->channel_filter());
     }
   }
   // Add config selector filter.

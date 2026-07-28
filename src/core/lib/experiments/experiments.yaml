@@ -221,11 +221,6 @@
   expiry: never-ever
   owner: vigneshbabu@google.com
   test_tags: []
-- name: multiping
-  description: Allow more than one ping to be in flight at a time by default.
-  expiry: 2027/01/16
-  owner: akshitpatel@google.com
-  test_tags: [flow_control_test]
 - name: optimization_01
   description: Optimization
   expiry: 2026/09/07
