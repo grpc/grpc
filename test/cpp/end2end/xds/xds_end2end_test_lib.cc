@@ -74,15 +74,14 @@ void XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::
 
 std::optional<absl::Status>
 XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::GetNextStatus(
-    const std::string& uri, absl::Duration timeout) {
-  timeout *= grpc_test_slowdown_factor();
+    const std::string& uri, absl::Time deadline) {
   grpc_core::MutexLock lock(&mu_);
   auto& queue = status_map_[uri];
   if (queue.empty()) {
     grpc_core::CondVar cv;
     cond_ = &cv;
     while (queue.empty()) {
-      if (cv.WaitWithTimeout(&mu_, timeout)) {
+      if (cv.WaitWithDeadline(&mu_, deadline)) {
         LOG(ERROR) << "timed out waiting for server status notification";
         cond_ = nullptr;
         return std::nullopt;

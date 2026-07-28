@@ -57,17 +57,13 @@ class XdsEnabledServerTest : public XdsEnd2endTest {
  protected:
   void SetUp() override {}  // No-op -- individual tests do this themselves.
 
-  void DoSetUp(
-      const std::optional<XdsBootstrapBuilder>& builder = std::nullopt) {
+  void DoSetUp(const std::optional<XdsBootstrapBuilder>& builder = std::nullopt,
+               int xds_resource_does_not_exist_timeout_ms = 0) {
     // We use insecure creds here as a convenience to be able to easily
     // create new channels in some of the tests below.  None of the
     // tests here actually depend on the channel creds anyway.
     InitClient(builder, /*lb_expected_authority=*/"",
-               // Using a low timeout to quickly end negative tests.
-               // Prefer using GetNextStatus() or a similar loop on the
-               // client side to wait on status changes instead of
-               // increasing this timeout.
-               /*xds_resource_does_not_exist_timeout_ms=*/500,
+               xds_resource_does_not_exist_timeout_ms,
                /*balancer_authority_override=*/"", /*args=*/nullptr,
                InsecureChannelCredentials());
     CreateBackends(1, /*xds_enabled=*/true, InsecureServerCredentials());
@@ -872,10 +868,7 @@ TEST_P(XdsServerFilterChainMatchTest,
 // server-side RDS tests
 //
 
-class XdsServerRdsTest : public XdsEnabledServerTest {
- public:
-  void SetUp() override { DoSetUp(); }
-};
+using XdsServerRdsTest = XdsEnabledServerTest;
 
 // Test both with and without RDS.
 // Run with bootstrap from env var so that we use one XdsClient.
@@ -889,12 +882,14 @@ INSTANTIATE_TEST_SUITE_P(
     &XdsTestType::Name);
 
 TEST_P(XdsServerRdsTest, Basic) {
+  DoSetUp();
   StartBackend(0);
   ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
   CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_wait_for_ready(true));
 }
 
 TEST_P(XdsServerRdsTest, FailsRouteMatchesOtherThanNonForwardingAction) {
+  DoSetUp();
   SetServerListenerNameAndRouteConfiguration(
       balancer_.get(), default_server_listener_, backends_[0]->port(),
       default_route_config_ /* inappropriate route config for servers */);
@@ -910,6 +905,7 @@ TEST_P(XdsServerRdsTest, FailsRouteMatchesOtherThanNonForwardingAction) {
 // chains
 TEST_P(XdsServerRdsTest, NonInlineRouteConfigurationNonDefaultFilterChain) {
   if (!GetParam().enable_rds_testing()) return;
+  DoSetUp();
   Listener listener = default_server_listener_;
   auto* filter_chain = listener.add_filter_chains();
   HttpConnectionManager http_connection_manager =
@@ -929,6 +925,8 @@ TEST_P(XdsServerRdsTest, NonInlineRouteConfigurationNonDefaultFilterChain) {
 
 TEST_P(XdsServerRdsTest, NonInlineRouteConfigurationNotAvailable) {
   if (!GetParam().enable_rds_testing()) return;
+  DoSetUp(/*builder=*/std::nullopt,
+          /*xds_resource_does_not_exist_timeout_ms=*/500);
   Listener listener = default_server_listener_;
   HttpConnectionManager http_connection_manager =
       ServerHcmAccessor().Unpack(listener);
@@ -941,7 +939,14 @@ TEST_P(XdsServerRdsTest, NonInlineRouteConfigurationNotAvailable) {
                                              backends_[0]->port(),
                                              default_server_route_config_);
   StartBackend(0);
-  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
+  const absl::Time deadline =
+      absl::Now() + (absl::Seconds(10) * grpc_test_slowdown_factor());
+  while (true) {
+    auto status = backends_[0]->GetNextStatus(deadline);
+    ASSERT_TRUE(status.has_value()) << "timed out waiting for server status";
+    if (status->ok()) break;
+    LOG(INFO) << "waiting for OK server status, got: " << *status;
+  }
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
                       "RDS resource unknown_server_route_config: "
                       "does not exist \\(node ID:xds_end2end_test\\)",
@@ -952,6 +957,7 @@ TEST_P(XdsServerRdsTest, NonInlineRouteConfigurationNotAvailable) {
 // should add tests that make sure that different route configs are used for
 // incoming connections with a different match.
 TEST_P(XdsServerRdsTest, MultipleRouteConfigurations) {
+  DoSetUp();
   Listener listener = default_server_listener_;
   // Set a filter chain with a new route config name
   auto new_route_config = default_server_route_config_;
