@@ -382,14 +382,16 @@ TEST_P(XdsCompositeFilterEnd2endTest, FilterUnsupportedWithoutEnvVar) {
   StartBackend(0);
   if (GetParam().filter_on_server()) {
     EXPECT_EQ(backends_[0]->GetNextStatus(),
-              absl::InvalidArgumentError(
-                  "LDS resource: invalid resource: errors validating server "
+              absl::InvalidArgumentError(absl::StrCat(
+                  "LDS resource ", GetServerListenerName(backends_[0]->port()),
+                  ": invalid resource: errors validating server "
                   "Listener: [field:default_filter_chain.filters[0]"
                   ".typed_config.value[envoy.extensions.filters.network"
                   ".http_connection_manager.v3.HttpConnectionManager]"
                   ".http_filters[0].typed_config.value["
                   "envoy.extensions.common.matching.v3.ExtensionWithMatcher] "
-                  "error:unsupported filter type] (node ID:xds_end2end_test)"));
+                  "error:unsupported filter type] "
+                  "(node ID:xds_end2end_test)")));
   } else {
     CheckRpcSendFailure(
         DEBUG_LOCATION, StatusCode::UNAVAILABLE,

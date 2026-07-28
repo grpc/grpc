@@ -117,8 +117,9 @@ TEST_P(XdsEnabledServerTest, ListenerDeletionFailsByDefault) {
       kLdsTypeUrl, GetServerListenerName(backends_[0]->port()));
   // Server should stop serving.
   EXPECT_EQ(backends_[0]->GetNextStatus(),
-            absl::NotFoundError(
-                "LDS resource: does not exist (node ID:xds_end2end_test)"));
+            absl::NotFoundError(absl::StrCat(
+                "LDS resource ", GetServerListenerName(backends_[0]->port()),
+                ": does not exist (node ID:xds_end2end_test)")));
 }
 
 TEST_P(XdsEnabledServerTest, ListenerDeletionIgnoredIfConfigured) {
@@ -189,8 +190,9 @@ TEST_P(XdsEnabledServerTest,
       kLdsTypeUrl, GetServerListenerName(backends_[0]->port()));
   // Server should stop serving.
   EXPECT_EQ(backends_[0]->GetNextStatus(),
-            absl::NotFoundError(
-                "LDS resource: does not exist (node ID:xds_end2end_test)"));
+            absl::NotFoundError(absl::StrCat(
+                "LDS resource ", GetServerListenerName(backends_[0]->port()),
+                ": does not exist (node ID:xds_end2end_test)")));
 }
 
 TEST_P(XdsEnabledServerTest,
@@ -267,9 +269,10 @@ TEST_P(XdsEnabledServerTest, NonTcpListener) {
   ClientHcmAccessor().Pack(hcm, &listener);
   balancer_->ads_service()->SetLdsResource(listener);
   StartBackend(0);
-  EXPECT_EQ(
-      backends_[0]->GetNextStatus(),
-      absl::FailedPreconditionError("LDS resource is not a TCP listener"));
+  EXPECT_EQ(backends_[0]->GetNextStatus(),
+            absl::FailedPreconditionError(absl::StrCat(
+                "LDS resource ", GetServerListenerName(backends_[0]->port()),
+                " is not a TCP listener")));
 }
 
 // Verify that a mismatch of listening address results in "not serving"
@@ -285,8 +288,9 @@ TEST_P(XdsEnabledServerTest, ListenerAddressMismatch) {
                                              default_server_route_config_);
   StartBackend(0);
   EXPECT_EQ(backends_[0]->GetNextStatus(),
-            absl::FailedPreconditionError(
-                "Address in LDS update does not match listening address"));
+            absl::FailedPreconditionError(absl::StrCat(
+                "LDS resource ", GetServerListenerName(backends_[0]->port()),
+                " address does not match listening address")));
 }
 
 //
@@ -329,9 +333,10 @@ TEST_P(XdsEnabledServerStatusNotificationTest, NotServingStatus) {
   SetInvalidLdsUpdate();
   StartBackend(0);
   EXPECT_EQ(backends_[0]->GetNextStatus(),
-            absl::InvalidArgumentError(
-                "LDS resource: invalid resource: Listener has neither "
-                "address nor ApiListener (node ID:xds_end2end_test)"));
+            absl::InvalidArgumentError(absl::StrCat(
+                "LDS resource ", GetServerListenerName(backends_[0]->port()),
+                ": invalid resource: Listener has neither "
+                "address nor ApiListener (node ID:xds_end2end_test)")));
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
                       MakeConnectionFailureRegex(
                           "connections to all backends failing; last error: "));
@@ -362,9 +367,10 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
   SetInvalidLdsUpdate();
   StartBackend(0);
   ASSERT_EQ(backends_[0]->GetNextStatus(),
-            absl::InvalidArgumentError(
-                "LDS resource: invalid resource: Listener has neither "
-                "address nor ApiListener (node ID:xds_end2end_test)"));
+            absl::InvalidArgumentError(absl::StrCat(
+                "LDS resource ", GetServerListenerName(backends_[0]->port()),
+                ": invalid resource: Listener has neither "
+                "address nor ApiListener (node ID:xds_end2end_test)")));
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
                       MakeConnectionFailureRegex(
                           "connections to all backends failing; last error: "));
@@ -386,8 +392,9 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
   // Deleting the resource should result in a non-serving status.
   UnsetLdsUpdate();
   ASSERT_EQ(backends_[0]->GetNextStatus(),
-            absl::NotFoundError(
-                "LDS resource: does not exist (node ID:xds_end2end_test)"));
+            absl::NotFoundError(absl::StrCat(
+                "LDS resource ", GetServerListenerName(backends_[0]->port()),
+                ": does not exist (node ID:xds_end2end_test)")));
   SendRpcsUntilFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
       MakeConnectionFailureRegex(
@@ -405,8 +412,9 @@ TEST_P(XdsEnabledServerStatusNotificationTest, RepeatedServingStatusChanges) {
     // Deleting the resource will make the server start rejecting connections
     UnsetLdsUpdate();
     ASSERT_EQ(backends_[0]->GetNextStatus(),
-              absl::NotFoundError(
-                  "LDS resource: does not exist (node ID:xds_end2end_test)"));
+              absl::NotFoundError(absl::StrCat(
+                  "LDS resource ", GetServerListenerName(backends_[0]->port()),
+                  ": does not exist (node ID:xds_end2end_test)")));
     SendRpcsUntilFailure(
         DEBUG_LOCATION, StatusCode::UNAVAILABLE,
         MakeConnectionFailureRegex(
@@ -446,8 +454,9 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ExistingRpcsOnResourceDeletion) {
   // Deleting the resource will make the server start rejecting connections
   UnsetLdsUpdate();
   ASSERT_EQ(backends_[0]->GetNextStatus(),
-            absl::NotFoundError(
-                "LDS resource: does not exist (node ID:xds_end2end_test)"));
+            absl::NotFoundError(absl::StrCat(
+                "LDS resource ", GetServerListenerName(backends_[0]->port()),
+                ": does not exist (node ID:xds_end2end_test)")));
   SendRpcsUntilFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
       MakeConnectionFailureRegex(
@@ -1009,9 +1018,6 @@ int main(int argc, char** argv) {
   // updates from all the subchannels's FDs.
   grpc_core::ConfigVars::Overrides overrides;
   overrides.client_channel_backup_poll_interval_ms = 1;
-  overrides.trace =
-      "call,channel,client_channel,client_channel_call,client_channel_lb_call,"
-      "handshaker";
   grpc_core::ConfigVars::SetOverrides(overrides);
   grpc_init();
   const auto result = RUN_ALL_TESTS();

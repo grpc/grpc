@@ -2998,9 +2998,6 @@ int main(int argc, char** argv) {
   // updates from all the subchannels's FDs.
   grpc_core::ConfigVars::Overrides overrides;
   overrides.client_channel_backup_poll_interval_ms = 1;
-  overrides.trace =
-      "call,channel,client_channel,client_channel_call,client_channel_lb_call,"
-      "handshaker";
   grpc_core::ConfigVars::SetOverrides(overrides);
   grpc::testing::FakeCertificateProvider::CertDataMapWrapper cert_data_map_1;
   grpc::testing::g_fake1_cert_data_map = &cert_data_map_1;
