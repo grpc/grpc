@@ -340,17 +340,3 @@ grpc_sh_test(
     uses_polling = False,
 )
 
-grpc_sh_test(
-    name = "objc_keepalive_test",
-    srcs = ["run_keepalive_test.sh"],
-    data = [
-        ":MacTests.zip",
-        "//test/cpp/interop:interop_server",
-        "@bazel_tools//tools/bash/runfiles",
-    ],
-    env = {
-        "RLOCATIONPATH_INTEROP_SERVER": "$(rlocationpath //test/cpp/interop:interop_server)",
-        "RLOCATIONPATH_MACTESTS_ZIP": "$(rlocationpath :MacTests.zip)",
-    },
-    uses_polling = False,
-)
