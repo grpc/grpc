@@ -519,6 +519,13 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
   // occurs and fail-open is not allowed.
   absl::AnyInvocable<Poll<absl::Status>()> ServerToClientCall();
 
+  // Parses and processes an incoming response message payload from the side-stream.
+  absl::AnyInvocable<Poll<absl::Status>()> ProcessSideStreamResponse(
+      absl::string_view payload);
+
+  // Handles transport status updates/closure on the ext_proc side-stream.
+  void HandleSideStreamStatus(absl::Status status);
+
   const Config& config() const { return *ext_proc_filter_->config_; }
 
   bool IsFirstMessageOnStream() {
@@ -636,10 +643,6 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
 
   void Orphaned() override { CloseStream(); }
 
-  // Member functions
-  absl::AnyInvocable<Poll<absl::Status>()> OnRecvMessage(
-      absl::string_view payload);
-  void OnStatusReceived(absl::Status status);
   void CompleteOutstandingProcessors(absl::StatusOr<ExtProcResponse> response);
 
   // Flags tracking whether the respective ext_proc response messages have
@@ -752,7 +755,7 @@ ExtProcFilter::ExtProcCall::PullMessagesFromSideStream() {
               if (!msg.has_value()) {
                 return Immediate(LoopCtl<absl::Status>(absl::OkStatus()));
               }
-              return Seq(self->OnRecvMessage(*msg),
+              return Seq(self->ProcessSideStreamResponse(*msg),
                          [](absl::Status status) -> LoopCtl<absl::Status> {
                            if (!status.ok()) return status;
                            return Continue();
@@ -772,7 +775,7 @@ ExtProcFilter::ExtProcCall::PullMessagesFromSideStream() {
         return streaming_call->PullServerTrailingMetadata();
       },
       [self = Ref()](absl::Status status) -> absl::Status {
-        self->OnStatusReceived(status);
+        self->HandleSideStreamStatus(status);
         absl::Status final_status = self->GetStreamClosedStatus(status);
         GRPC_TRACE_LOG(ext_proc_filter, INFO)
             << "ExtProcCall " << self.get()
@@ -783,7 +786,8 @@ ExtProcFilter::ExtProcCall::PullMessagesFromSideStream() {
 }
 
 absl::AnyInvocable<Poll<absl::Status>()>
-ExtProcFilter::ExtProcCall::OnRecvMessage(absl::string_view payload) {
+ExtProcFilter::ExtProcCall::ProcessSideStreamResponse(
+    absl::string_view payload) {
   // In observability mode, we only log the message and ignore it.
   // We must continue reading the stream to keep it alive.
   if (config().observability_mode) {
@@ -973,7 +977,7 @@ ExtProcFilter::ExtProcCall::OnRecvMessage(absl::string_view payload) {
       });
 }
 
-void ExtProcFilter::ExtProcCall::OnStatusReceived(absl::Status status) {
+void ExtProcFilter::ExtProcCall::HandleSideStreamStatus(absl::Status status) {
   GRPC_TRACE_LOG(ext_proc_filter, INFO)
       << "ExtProcCall " << this << " status received: " << status;
   const bool has_outstanding_messages =
