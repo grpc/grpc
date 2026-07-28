@@ -2308,7 +2308,6 @@ ExtProcFilter::ExtProcFilter(const ChannelArgs& args,
                       .GetDefaultAuthority(
                           args.GetString(GRPC_ARG_SERVER_URI).value_or(""))))),
       target_(args.GetString(GRPC_ARG_SERVER_URI).value_or("")),
-      is_client_(true),
       stats_plugin_group_(
           args.GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>()) {}
 
@@ -2330,7 +2329,7 @@ bool ExtProcFilter::StartTransportOp(grpc_transport_op* op) {
 }
 
 void ExtProcFilter::RecordClientHeadersDuration(double duration_seconds) const {
-  if (stats_plugin_group_ != nullptr && is_client_) {
+  if (stats_plugin_group_ != nullptr) {
     stats_plugin_group_->RecordHistogram(
         kMetricClientExtProcClientHeadersDuration, duration_seconds, {target_},
         {});
@@ -2339,7 +2338,7 @@ void ExtProcFilter::RecordClientHeadersDuration(double duration_seconds) const {
 
 void ExtProcFilter::RecordClientHalfCloseDuration(
     double duration_seconds) const {
-  if (stats_plugin_group_ != nullptr && is_client_) {
+  if (stats_plugin_group_ != nullptr) {
     stats_plugin_group_->RecordHistogram(
         kMetricClientExtProcClientHalfCloseDuration, duration_seconds,
         {target_}, {});
@@ -2347,7 +2346,7 @@ void ExtProcFilter::RecordClientHalfCloseDuration(
 }
 
 void ExtProcFilter::RecordServerHeadersDuration(double duration_seconds) const {
-  if (stats_plugin_group_ != nullptr && is_client_) {
+  if (stats_plugin_group_ != nullptr) {
     stats_plugin_group_->RecordHistogram(
         kMetricClientExtProcServerHeadersDuration, duration_seconds, {target_},
         {});
@@ -2356,7 +2355,7 @@ void ExtProcFilter::RecordServerHeadersDuration(double duration_seconds) const {
 
 void ExtProcFilter::RecordServerTrailersDuration(
     double duration_seconds) const {
-  if (stats_plugin_group_ != nullptr && is_client_) {
+  if (stats_plugin_group_ != nullptr) {
     stats_plugin_group_->RecordHistogram(
         kMetricClientExtProcServerTrailersDuration, duration_seconds, {target_},
         {});
