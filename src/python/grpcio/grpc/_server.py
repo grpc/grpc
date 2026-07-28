@@ -54,7 +54,6 @@ from grpc._typing import ResponseType
 from grpc._typing import SerializingFunction
 from grpc._typing import ServerCallbackTag
 from grpc._typing import ServerTagCallbackType
-import grpc.experimental
 from typing_extensions import override
 
 _LOGGER = logging.getLogger(__name__)
@@ -1449,7 +1448,8 @@ class _Server(grpc.Server):
                 error_msg = (
                     "Cannot register method handlers once server has started"
                 )
-                raise grpc.experimental.UsageError(error_msg)
+                _LOGGER.warning(error_msg)
+                return
 
         # TODO(xuanwn): We should validate method_handlers first.
         method_to_handlers = {
