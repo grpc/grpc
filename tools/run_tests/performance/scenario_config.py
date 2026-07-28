@@ -1567,6 +1567,7 @@ class JavaLanguage(Language):
     def __str__(self):
         return "java"
 
+
 class RustLanguage(Language):
     def worker_cmdline(self):
         return ["tools/run_tests/performance/run_worker_rust.sh"]
