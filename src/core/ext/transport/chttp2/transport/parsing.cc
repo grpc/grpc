@@ -623,8 +623,7 @@ error_handler:
     return absl::OkStatus();
   } else if (s != nullptr) {
     // handle stream errors by closing the stream
-    grpc_chttp2_mark_stream_closed(t, s, true, false,
-                                   absl_status_to_grpc_error(status));
+    grpc_chttp2_mark_stream_closed(t, s, true, false, status);
     grpc_error_handle rst_error = grpc_chttp2_add_rst_stream_to_next_write(
         t, t->incoming_stream_id,
         static_cast<uint32_t>(Http2ErrorCode::kProtocolError),
@@ -632,7 +631,7 @@ error_handler:
     if (GPR_UNLIKELY(!rst_error.ok())) return rst_error;
     return init_non_header_skip_frame_parser(t);
   } else {
-    return absl_status_to_grpc_error(status);
+    return status;
   }
 }
 

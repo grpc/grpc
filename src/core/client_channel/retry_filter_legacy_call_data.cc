@@ -653,9 +653,7 @@ void RetryFilter::LegacyCallData::CallAttempt::OnPerAttemptRecvTimerLocked(
     // TODO(roth): When implementing hedging, we should not cancel the
     // current attempt.
     call_attempt->MaybeAddBatchForCancelOp(
-        grpc_error_set_int(
-            GRPC_ERROR_CREATE("retry perAttemptRecvTimeout exceeded"),
-            StatusIntProperty::kRpcStatus, GRPC_STATUS_CANCELLED),
+        absl::CancelledError("retry perAttemptRecvTimeout exceeded"),
         &closures);
     // Check whether we should retry.
     if (call_attempt->ShouldRetry(/*status=*/std::nullopt,
@@ -1132,10 +1130,7 @@ void RetryFilter::LegacyCallData::CallAttempt::BatchData::
       CallCombinerClosureList closures;
       // Cancel call attempt.
       call_attempt->MaybeAddBatchForCancelOp(
-          error.ok() ? grpc_error_set_int(
-                           GRPC_ERROR_CREATE("call attempt failed"),
-                           StatusIntProperty::kRpcStatus, GRPC_STATUS_CANCELLED)
-                     : error,
+          error.ok() ? absl::CancelledError("call attempt failed") : error,
           &closures);
       // For transparent retries, add a closure to immediately start a new
       // call attempt.

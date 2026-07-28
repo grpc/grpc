@@ -193,6 +193,7 @@ ExternalRepoPrefix GetExternalRepoPrefix(const std::string& file) {
       {"@@cel-spec+//", "@dev_cel//", "proto/"},
       {"@@envoy_api+//", "@envoy_api//", ""},
       {"@@opencensus-proto+//", "@opencensus_proto//", ""},
+      {"@@grpc-proto+//:", "@grpc_proto//:", ""},
   };
   for (const auto& elink : kExternalLinks) {
     if (absl::StartsWith(file, elink.canonical_repo)) {
@@ -232,7 +233,7 @@ std::string GetBazelBinRootPath(const ExternalRepoPrefix& external_repo_prefix,
     name_part = std::filesystem::path(name_part).stem().string();
     return absl::StrCat(
         kBazelBinRoot, "external/",
-        absl::StrReplaceAll(canonical_repo, {{"@", ""}, {"//", ""}}),
+        absl::StrReplaceAll(canonical_repo, {{"@", ""}, {"//", ""}, {":", ""}}),
         "/src/google/protobuf/_virtual_imports/", name_part, "_proto/", file);
   }
   if (apparent_repo == "@dev_cel//") {
@@ -241,14 +242,14 @@ std::string GetBazelBinRootPath(const ExternalRepoPrefix& external_repo_prefix,
     name_part = std::filesystem::path(name_part).stem().string();
     return absl::StrCat(
         kBazelBinRoot, "external/",
-        absl::StrReplaceAll(canonical_repo, {{"@", ""}, {"//", ""}}),
+        absl::StrReplaceAll(canonical_repo, {{"@", ""}, {"//", ""}, {":", ""}}),
         "/proto/cel/expr/_virtual_imports/", name_part, "_proto/", file);
   }
   if (absl::StartsWith(apparent_repo, "@")) {
     return absl::StrCat(
         kBazelBinRoot, "external/",
-        absl::StrReplaceAll(canonical_repo, {{"@", ""}, {"//", ""}}), "/",
-        source_dir, file);
+        absl::StrReplaceAll(canonical_repo, {{"@", ""}, {"//", ""}, {":", ""}}),
+        "/", source_dir, file);
   } else {
     return absl::StrCat(kBazelBinRoot, file);
   }
