@@ -63,11 +63,7 @@ class XdsEnabledServerTest : public XdsEnd2endTest {
     // create new channels in some of the tests below.  None of the
     // tests here actually depend on the channel creds anyway.
     InitClient(builder, /*lb_expected_authority=*/"",
-               // Using a low timeout to quickly end negative tests.
-               // Prefer using GetNextStatus() or a similar loop on the
-               // client side to wait on status changes instead of
-               // increasing this timeout.
-               /*xds_resource_does_not_exist_timeout_ms=*/500,
+               /*xds_resource_does_not_exist_timeout_ms=*/0,
                /*balancer_authority_override=*/"", /*args=*/nullptr,
                InsecureChannelCredentials());
     CreateBackends(1, /*xds_enabled=*/true, InsecureServerCredentials());

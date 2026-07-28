@@ -1170,11 +1170,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     builder.AddCertificateProviderPlugin("file_plugin", "file_watcher",
                                          absl::StrJoin(fields, ",\n"));
     InitClient(builder, /*lb_expected_authority=*/"",
-               /*xds_resource_does_not_exist_timeout_ms=*/
-               500,  // using a low timeout to quickly end negative tests.
-                     // Prefer using GetNextStatus() or a similar loop on
-                     // the client side to wait on status changes instead
-                     // of increasing this timeout.
+               /*xds_resource_does_not_exist_timeout_ms=*/0,
                /*balancer_authority_override=*/"", /*args=*/nullptr,
                CreateXdsChannelCredentials());
     CreateBackends(1, /*xds_enabled=*/true,
