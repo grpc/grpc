@@ -498,11 +498,18 @@ async def _finish_handler_with_stream_responses(RPCState rpc_state,
                                                                     rpc_state.server.thread_pool())
 
         # Consumes messages from the generator
-        async for response_message in async_response_generator:
-            # Raises exception if aborted
-            rpc_state.raise_for_termination()
+        try:
+            async for response_message in async_response_generator:
+                # Raises exception if aborted
+                rpc_state.raise_for_termination()
 
-            await servicer_context.write(response_message)
+                await servicer_context.write(response_message)
+        finally:
+            # Close the generator here so its finally blocks run inside this
+            # RPC task's contextvars.Context. Otherwise CPython's asyncgen
+            # finalizer hook runs aclose() on a foreign Context, breaking
+            # ContextVar.Token.reset in interceptor wrappers.
+            await async_response_generator.aclose()
 
     # Raises exception if aborted
     rpc_state.raise_for_termination()
