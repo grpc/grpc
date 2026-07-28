@@ -253,7 +253,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     void Start();
     void Shutdown();
 
-    std::string target() const { return absl::StrCat("localhost:", port_); }
+    std::string target() const { return grpc_core::LocalIpAndPort(port_); }
 
     int port() const { return port_; }
 
