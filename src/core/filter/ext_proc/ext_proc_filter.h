@@ -136,20 +136,11 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
   ExtProcFilter(const ChannelArgs& args, RefCountedPtr<const Config> config);
+  ~ExtProcFilter() override;
 
   RefCountedPtr<ExtProcChannel> channel() const { return config_->channel(); }
-
-  friend class ExtProcCall;
-  friend class ClientInitialMetadataProcessor;
-  friend class ClientToExtProcInitialMetadataProcessor;
-  friend class ExtProcToServerInitialMetadataProcessor;
-  friend class ClientToServerMessageProcessor;
-  friend class ClientToExtProcMessageProcessor;
-  friend class ExtProcToServerMessageProcessor;
-  friend class ServerInitialMetadataProcessor;
-  friend class ServerToClientMessageProcessor;
-  friend class ServerTrailingMetadataProcessor;
-
+  
+  private:
   class ExtProcCall;
 
   void RecordClientHeadersDuration(double duration_seconds) const;
@@ -157,7 +148,14 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
   void RecordServerHeadersDuration(double duration_seconds) const;
   void RecordServerTrailersDuration(double duration_seconds) const;
 
-  void Orphaned() override {}
+  void Orphaned() override {
+    GRPC_TRACE_LOG(ext_proc_filter, INFO)
+        << "ExtProcFilter " << this << " Orphaned()";
+    event_engine_.reset();
+    config_.reset();
+  }
+
+  bool StartTransportOp(grpc_transport_op* op) override;
 
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override;
 

@@ -1279,6 +1279,7 @@ TEST_P(XdsExtProcEnd2endTest, RequestBodyContinueAndReplace) {
   // error), not a connection error.
   EXPECT_THAT(status, GrpcStatusIs(StatusCode::INTERNAL,
                                    "CONTINUE_AND_REPLACE is not supported"));
+  alternative_ext_proc_server_->Shutdown();
 }
 
 TEST_P(XdsExtProcEnd2endTest,

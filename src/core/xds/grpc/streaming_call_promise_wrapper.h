@@ -65,10 +65,15 @@ class XdsStreamingCallPromiseWrapper final
   // closed.
   auto PushMessage(std::string msg) {
     SendState expected = SendState::kIdle;
-    GRPC_CHECK(send_state_.compare_exchange_strong(
-        expected, SendState::kSendMessageInFlight));
+    if (send_state_.compare_exchange_strong(expected,
+                                            SendState::kSendMessageInFlight)) {
+      if (call_ != nullptr) {
+        call_->SendMessage(std::move(msg));
+      } else {
+        send_state_.store(SendState::kSendFailed);
+      }
+    }
     send_message_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
-    call_->SendMessage(std::move(msg));
     return [self = WeakRefAsSubclass<XdsStreamingCallPromiseWrapper>()]() {
       return self->PollPushMessage();
     };
@@ -87,7 +92,7 @@ class XdsStreamingCallPromiseWrapper final
       // Must be kReceivedStatus. Don't actually need to start the
       // recv_message op; we'll return nullopt on the first poll.
     } else {
-      call_->StartRecvMessage();
+      if (call_ != nullptr) call_->StartRecvMessage();
       recv_message_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
     }
     return [self = WeakRefAsSubclass<XdsStreamingCallPromiseWrapper>()]() {

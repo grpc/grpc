@@ -5783,6 +5783,7 @@ grpc_cc_library(
         "inter_activity_pipe",
         "latch",
         "loop",
+        "ref_counted",
         "map",
         "match",
         "message",

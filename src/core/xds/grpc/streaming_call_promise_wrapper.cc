@@ -124,12 +124,15 @@ void XdsStreamingCallPromiseWrapper::OnRecvMessage(absl::string_view payload) {
 }
 
 void XdsStreamingCallPromiseWrapper::OnStatusReceived(absl::Status status) {
-  status_ = std::move(status);
   RecvState prev_state = recv_state_.exchange(RecvState::kReceivedStatus);
-  if (prev_state == RecvState::kRecvMessageInFlight) {
-    recv_message_waker_.Wakeup();
+  if (prev_state != RecvState::kReceivedStatus) {
+    status_ = std::move(status);
+    call_.reset();
+    if (prev_state == RecvState::kRecvMessageInFlight) {
+      recv_message_waker_.Wakeup();
+    }
+    recv_status_waker_.Wakeup();
   }
-  recv_status_waker_.Wakeup();
 }
 
 void XdsStreamingCallPromiseWrapper::SendHalfClose() {
