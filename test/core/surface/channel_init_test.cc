@@ -243,6 +243,14 @@ TEST(ChannelInitTest, OrderingConstraintsAreSatisfied) {
             std::vector<std::string>({"c", "b", "a", "terminator"}));
 }
 
+TEST(ChannelInitServerFilterTest, AmbiguousBottomCrashes) {
+  ChannelInit::Builder b{/*fix_v3_filter_stack_server_side_ordering=*/true};
+  b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("c")).SinkToBottom();
+  b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("b")).SinkToBottom();
+  b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("terminator")).Terminal();
+  EXPECT_DEATH_IF_SUPPORTED(b.Build(), "Ambiguous");
+}
+
 // Ensure that `fix_v3_filter_stack_server_side_ordering` experiment doesn't
 // affect client side ordering.
 TEST(ChannelInitServerFilterTest, ReversalDoesNotAffectClient) {
@@ -273,6 +281,16 @@ TEST(ChannelInitServerFilterTest, CanAddBeforeAllOnce) {
   b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("terminal")).Terminal();
   EXPECT_EQ(GetFilterNames(b.Build(), GRPC_SERVER_CHANNEL, ChannelArgs()),
             std::vector<std::string>({"c", "b", "a", "terminal"}));
+}
+
+TEST(ChannelInitServerFilterTest, CanSinkToBottomOnce) {
+  ChannelInit::Builder b{/*fix_v3_filter_stack_server_side_ordering=*/true};
+  b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("a")).SinkToBottom();
+  b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("b"));
+  b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("c"));
+  b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("terminal")).Terminal();
+  EXPECT_EQ(GetFilterNames(b.Build(), GRPC_SERVER_CHANNEL, ChannelArgs()),
+            std::vector<std::string>({"a", "c", "b", "terminal"}));
 }
 
 TEST(ChannelInitDeathTest, AmbiguousTopCrashes) {
