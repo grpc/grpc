@@ -143,8 +143,6 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
   };
 
  private:
-  void Init(const ChannelArgs& args) override;
-
   void Orphaned() override {}
 
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override;

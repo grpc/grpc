@@ -173,13 +173,8 @@ absl::StatusOr<RefCountedPtr<ExtProcFilter>> ExtProcFilter::Create(
 
 ExtProcFilter::ExtProcFilter(const ChannelArgs& args,
                              RefCountedPtr<const Config> config)
-    : V3InterceptorToV2Bridge<ExtProcFilter>(args), config_(std::move(config)) {
-  if (!args.GetBool(GRPC_ARG_USE_V3_STACK).value_or(false)) {
-    Init(args);
-  }
-}
-
-void ExtProcFilter::Init(const ChannelArgs& /*args*/) {}
+    : V3InterceptorToV2Bridge<ExtProcFilter>(args),
+      config_(std::move(config)) {}
 
 void ExtProcFilter::InterceptCall(UnstartedCallHandler unstarted_call_handler) {
   CallHandler handler = Consume(std::move(unstarted_call_handler));
