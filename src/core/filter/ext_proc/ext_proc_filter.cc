@@ -265,7 +265,7 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
   // Main entry point for an external processor call. Spawns and manages the
   // concurrent request (client-to-server) and response (server-to-client)
   // processing pipelines alongside side-stream message pulling.
-  absl::AnyInvocable<Poll<absl::Status>()> Call();
+  absl::AnyInvocable<Poll<absl::Status>()> Run();
 
  private:
   // Orchestrates the processing of client initial metadata (request headers)
@@ -1192,13 +1192,13 @@ ExtProcFilter::ExtProcCall::ClientToServerCall() {
       });
 }
 
-absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ExtProcCall::Call() {
+absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ExtProcCall::Run() {
   return Map(TryJoin<absl::StatusOr>(ClientToServerCall(),
                                      PullMessagesFromSideStream()),
              [self = Ref()](auto result) -> absl::Status {
                GRPC_TRACE_LOG(ext_proc_filter, INFO)
                    << "ExtProcCall " << self.get()
-                   << " Call() finished with status: " << result.status();
+                   << " Run() finished with status: " << result.status();
                return result.status();
              });
 }
@@ -2383,7 +2383,7 @@ void ExtProcFilter::InterceptCall(UnstartedCallHandler unstarted_call_handler) {
         }
         auto ext_proc_call = MakeRefCounted<ExtProcCall>(
             ext_proc_filter, std::move(transport), handler);
-        return ArenaPromise<absl::Status>(ext_proc_call->Call());
+        return ArenaPromise<absl::Status>(ext_proc_call->Run());
       });
 }
 
