@@ -339,4 +339,3 @@ grpc_sh_test(
     },
     uses_polling = False,
 )
-
