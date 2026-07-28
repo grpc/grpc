@@ -735,9 +735,7 @@ class TestServer(AioTestBase):
                 registered_unary_unary_handler
             ),
         }
-        self._server.add_registered_method_handlers(
-            "test", registered_handlers
-        )
+        self._server.add_registered_method_handlers("test", registered_handlers)
 
         call = self._channel.unary_unary(
             "/test/AddedAfterServerStart",
