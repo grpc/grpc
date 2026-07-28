@@ -24,20 +24,19 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/status_flag.h"
-#include "src/core/util/sync.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
 // EventHandler bridges callback-driven events from XdsTransport::StreamingCall
-// into StreamingCallPromiseWrapper. It holds a weak reference to avoid
+// into XdsStreamingCallPromiseWrapper. It holds a weak reference to avoid
 // reference cycles between the transport stream and the wrapper.
-class StreamingCallPromiseWrapper::EventHandler final
+class XdsStreamingCallPromiseWrapper::EventHandler final
     : public XdsTransportFactory::XdsTransport::StreamingCall::EventHandler {
  public:
   explicit EventHandler(
-      WeakRefCountedPtr<StreamingCallPromiseWrapper> promise_wrapper)
+      WeakRefCountedPtr<XdsStreamingCallPromiseWrapper> promise_wrapper)
       : promise_wrapper_(std::move(promise_wrapper)) {}
 
   void OnRequestSent(bool ok) override { promise_wrapper_->OnRequestSent(ok); }
@@ -51,25 +50,22 @@ class StreamingCallPromiseWrapper::EventHandler final
   }
 
  private:
-  WeakRefCountedPtr<StreamingCallPromiseWrapper> promise_wrapper_;
+  WeakRefCountedPtr<XdsStreamingCallPromiseWrapper> promise_wrapper_;
 };
 
-StreamingCallPromiseWrapper::StreamingCallPromiseWrapper(
+XdsStreamingCallPromiseWrapper::XdsStreamingCallPromiseWrapper(
     XdsTransport& transport, const char* method) {
   auto internal_event_handler = std::make_unique<EventHandler>(
-      WeakRefAsSubclass<StreamingCallPromiseWrapper>());
+      WeakRefAsSubclass<XdsStreamingCallPromiseWrapper>());
   call_ =
       transport.CreateStreamingCall(method, std::move(internal_event_handler));
 }
 
-Poll<StatusFlag> StreamingCallPromiseWrapper::PollSend() {
-  MutexLock lock(&mu_);
+Poll<StatusFlag> XdsStreamingCallPromiseWrapper::PollPushMessage() {
   SendState state = send_state_.load();
-  // If the send is still in flight on the transport, register the current
-  // activity's waker to be notified when OnRequestSent is invoked.
+  // If the send is still in flight on the transport, wait for completion.
   if (state == SendState::kSendMessageInFlight ||
       state == SendState::kSendMessageInFlightAndHalfCloseRequested) {
-    send_message_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
     return Pending{};
   }
   // If the send failed or the stream terminated while the send was pending,
@@ -80,112 +76,63 @@ Poll<StatusFlag> StreamingCallPromiseWrapper::PollSend() {
   return Success{};
 }
 
-Poll<ValueOrFailure<std::optional<std::string>>>
-StreamingCallPromiseWrapper::PollPullMessage() {
-  bool start_recv = false;
-  {
-    MutexLock lock(&mu_);
-    // Check if a message has already been received and buffered.
-    if (incoming_message_.has_value()) {
-      std::string msg = std::move(*incoming_message_);
-      incoming_message_.reset();
-      return ValueOrFailure<std::optional<std::string>>(
-          std::optional<std::string>(std::move(msg)));
-    }
-    // Check if the stream has terminated.
-    if (status_.has_value()) {
-      if (!status_->ok()) return Failure{};
-      return ValueOrFailure<std::optional<std::string>>(std::nullopt);
-    }
-    // If no read is currently active on the underlying stream, initiate one.
-    if (!recv_message_in_flight_) {
-      recv_message_in_flight_ = true;
-      start_recv = true;
-    }
+Poll<std::optional<std::string>>
+XdsStreamingCallPromiseWrapper::PollPullMessage() {
+  RecvState recv_state = recv_state_.load();
+  switch (recv_state) {
+    case RecvState::kIdle:
+      return std::exchange(recv_message_, std::nullopt);
+    case RecvState::kRecvMessageInFlight:
+      return Pending{};
+    case RecvState::kReceivedStatus:
+      return std::nullopt;
   }
-  // Initiate the read on the transport without holding mu_.
-  if (start_recv) {
-    call_->StartRecvMessage();
-  }
-  MutexLock lock(&mu_);
-  // Suspend the promise and register the activity waker for notification.
-  recv_message_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
-  return Pending{};
 }
 
 Poll<absl::Status>
-StreamingCallPromiseWrapper::PollPullServerTrailingMetadata() {
-  MutexLock lock(&mu_);
-  // If the stream has terminated, resolve to the final status immediately.
-  if (status_.has_value()) {
-    return *status_;
-  }
-  // Suspend the promise until OnStatusReceived or Orphaned is invoked.
-  status_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
-  return Pending{};
+XdsStreamingCallPromiseWrapper::PollPullServerTrailingMetadata() {
+  if (recv_state_.load() != RecvState::kReceivedStatus) return Pending{};
+  return status_;
 }
 
-void StreamingCallPromiseWrapper::OnRequestSent(bool ok) {
-  Waker waker;
+void XdsStreamingCallPromiseWrapper::OnRequestSent(bool ok) {
   bool send_half_close = false;
-  {
-    MutexLock lock(&mu_);
-    if (!ok) {
-      send_state_.store(SendState::kSendFailed);
-      waker = std::move(send_message_waker_);
-    } else {
-      SendState state = send_state_.load();
-      if (state == SendState::kSendMessageInFlightAndHalfCloseRequested) {
-        send_state_.store(SendState::kHalfCloseInFlight);
-        send_half_close = true;
-        waker = std::move(send_message_waker_);
-      } else if (state == SendState::kSendMessageInFlight) {
-        send_state_.store(SendState::kIdle);
-        waker = std::move(send_message_waker_);
-      } else if (state == SendState::kHalfCloseInFlight) {
-        send_state_.store(SendState::kHalfClosed);
-      }
+  if (!ok) {
+    send_state_.store(SendState::kSendFailed);
+  } else {
+    SendState state = send_state_.load();
+    if (state == SendState::kSendMessageInFlightAndHalfCloseRequested) {
+      send_state_.store(SendState::kHalfCloseInFlight);
+      send_half_close = true;
+    } else if (state == SendState::kSendMessageInFlight) {
+      send_state_.store(SendState::kIdle);
     }
   }
-  // Initiate half-close outside the lock if requested while send was pending.
+  // Initiate half-close outside if requested while send was pending.
   if (send_half_close && call_ != nullptr) {
     call_->SendHalfClose();
   }
-  // Wake any waiting send promise outside the lock.
-  waker.Wakeup();
+  // Wake any waiting send promise.
+  send_message_waker_.Wakeup();
 }
 
-void StreamingCallPromiseWrapper::OnRecvMessage(absl::string_view payload) {
-  Waker waker;
-  {
-    MutexLock lock(&mu_);
-    incoming_message_ = std::string(payload);
-    recv_message_in_flight_ = false;
-    waker = std::move(recv_message_waker_);
+void XdsStreamingCallPromiseWrapper::OnRecvMessage(absl::string_view payload) {
+  recv_message_ = std::string(payload);
+  RecvState expected = RecvState::kRecvMessageInFlight;
+  recv_state_.compare_exchange_strong(expected, RecvState::kIdle);
+  recv_message_waker_.Wakeup();
+}
+
+void XdsStreamingCallPromiseWrapper::OnStatusReceived(absl::Status status) {
+  status_ = std::move(status);
+  RecvState prev_state = recv_state_.exchange(RecvState::kReceivedStatus);
+  if (prev_state == RecvState::kRecvMessageInFlight) {
+    recv_message_waker_.Wakeup();
   }
-  waker.Wakeup();
+  recv_status_waker_.Wakeup();
 }
 
-void StreamingCallPromiseWrapper::OnStatusReceived(absl::Status status) {
-  Waker send_waker;
-  Waker recv_waker;
-  Waker status_waker;
-  {
-    MutexLock lock(&mu_);
-    status_ = std::move(status);
-    recv_message_in_flight_ = false;
-    send_state_.store(SendState::kSendFailed);
-    send_waker = std::move(send_message_waker_);
-    recv_waker = std::move(recv_message_waker_);
-    status_waker = std::move(status_waker_);
-  }
-  // Wake all pending promises so they can observe stream termination.
-  send_waker.Wakeup();
-  recv_waker.Wakeup();
-  status_waker.Wakeup();
-}
-
-void StreamingCallPromiseWrapper::SendHalfClose() {
+void XdsStreamingCallPromiseWrapper::SendHalfClose() {
   SendState expected = SendState::kSendMessageInFlight;
   // If a send is in flight, record that half-close was requested. OnRequestSent
   // will issue the half-close once the message send completes.
@@ -200,27 +147,14 @@ void StreamingCallPromiseWrapper::SendHalfClose() {
   }
 }
 
-void StreamingCallPromiseWrapper::Orphaned() {
-  Waker send_waker;
-  Waker recv_waker;
-  Waker status_waker;
-  {
-    MutexLock lock(&mu_);
-    send_state_.store(SendState::kSendFailed);
-    if (!status_.has_value()) {
-      status_ = absl::CancelledError("Stream closed");
-    }
-    send_waker = std::move(send_message_waker_);
-    recv_waker = std::move(recv_message_waker_);
-    status_waker = std::move(status_waker_);
+void XdsStreamingCallPromiseWrapper::Orphaned() {
+  send_state_.store(SendState::kSendFailed);
+  if (recv_state_.exchange(RecvState::kReceivedStatus) !=
+      RecvState::kReceivedStatus) {
+    status_ = absl::CancelledError("Stream closed");
   }
   // Release the underlying streaming call.
-  auto call = std::move(call_);
-  call.reset();
-  // Wake all pending promises so they observe cancellation immediately.
-  send_waker.Wakeup();
-  recv_waker.Wakeup();
-  status_waker.Wakeup();
+  call_.reset();
 }
 
 }  // namespace grpc_core
