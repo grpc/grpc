@@ -119,9 +119,8 @@ MATCHER_P3(IsImmediateResponse, status_matcher, details_matcher,
                                status_matcher),
               ::testing::Field(&ExtProcResponse::ImmediateResponse::details,
                                details_matcher),
-              ::testing::Field(
-                  &ExtProcResponse::ImmediateResponse::header_mutation,
-                  header_mutation_matcher))),
+              ::testing::Field(&ExtProcResponse::ImmediateResponse::mutation,
+                               header_mutation_matcher))),
       arg, result_listener);
 }
 

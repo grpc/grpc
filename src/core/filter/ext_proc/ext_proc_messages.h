@@ -269,7 +269,7 @@ struct ExtProcResponse {
     // error message to return with.
     std::string details;
     // Headers to set in the response.
-    HeaderMutation header_mutation;
+    HeaderMutation mutation;
   };
 
   // The variant representing the actual response content.

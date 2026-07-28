@@ -260,7 +260,7 @@ absl::StatusOr<ExtProcResponse> ExtProcResponse::Parse(
           envoy_service_ext_proc_v3_ImmediateResponse_headers(
               immediate_response));
       if (!header_mutation.ok()) return header_mutation.status();
-      immediate_response_value.header_mutation = std::move(*header_mutation);
+      immediate_response_value.mutation = std::move(*header_mutation);
       auto grpc_status =
           envoy_service_ext_proc_v3_ImmediateResponse_grpc_status(
               immediate_response);
