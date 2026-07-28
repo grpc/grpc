@@ -139,8 +139,8 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
   ~ExtProcFilter() override;
 
   RefCountedPtr<ExtProcChannel> channel() const { return config_->channel(); }
-  
-  private:
+
+ private:
   class ExtProcCall;
 
   void RecordClientHeadersDuration(double duration_seconds) const;
