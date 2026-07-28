@@ -42,8 +42,13 @@ PyProtoInfo = provider(
     },
 )
 
-def _merge_pyinfos(pyinfos):
+def _merge_pyinfos(direct_pyinfo, transitive_pyinfos):
+    pyinfos = [direct_pyinfo] + transitive_pyinfos
     return PyInfo(
+        direct_original_sources = direct_pyinfo.direct_original_sources,
+        direct_pyi_files = direct_pyinfo.direct_pyi_files,
+        transitive_original_sources = depset(transitive = [p.transitive_original_sources for p in pyinfos]),
+        transitive_pyi_files = depset(transitive = [p.transitive_pyi_files for p in pyinfos]),
         transitive_sources = depset(transitive = [p.transitive_sources for p in pyinfos]),
         imports = depset(transitive = [p.imports for p in pyinfos]),
     )
@@ -99,8 +104,8 @@ def _gen_py_aspect_impl(target, context):
     py_info = PyInfo(transitive_sources = depset(direct = out_files), imports = depset(direct = imports))
     return PyProtoInfo(
         py_info = _merge_pyinfos(
+            py_info,
             [
-                py_info,
                 context.attr._protobuf_library[PyInfo],
             ] + [dep[PyProtoInfo].py_info for dep in context.rule.attr.deps],
         ),
@@ -148,7 +153,7 @@ def _generate_py_impl(context):
     # Collect output PyInfo provider.
     imports = [context.label.package + "/" + i for i in context.attr.imports]
     py_info = PyInfo(transitive_sources = depset(direct = py_sources), imports = depset(direct = imports))
-    out_pyinfo = _merge_pyinfos([py_info, context.attr.deps[0][PyProtoInfo].py_info])
+    out_pyinfo = _merge_pyinfos(py_info, [context.attr.deps[0][PyProtoInfo].py_info])
 
     runfiles = context.runfiles(files = out_pyinfo.transitive_sources.to_list()).merge(context.attr._protobuf_library[DefaultInfo].data_runfiles)
     return [
@@ -252,10 +257,15 @@ def _generate_pb2_grpc_src_impl(context):
         import_path = "{}/{}".format(context.workspace_name, import_path)
         imports.append(import_path)
 
-    p = PyInfo(transitive_sources = depset(direct = out_files), imports = depset(direct = imports))
+    p = PyInfo(
+        direct_original_sources = depset(direct = out_files),
+        transitive_original_sources = depset(direct = out_files),
+        transitive_sources = depset(direct = out_files),
+        imports = depset(direct = imports),
+    )
     py_info = _merge_pyinfos(
+        p,
         [
-            p,
             context.attr.grpc_library[PyInfo],
         ] + [dep[PyInfo] for dep in context.attr.py_deps],
     )
@@ -299,6 +309,7 @@ _generate_pb2_grpc_src = rule(
         ),
     },
     implementation = _generate_pb2_grpc_src_impl,
+    provides = [PyInfo],
 )
 
 def py_grpc_library(
