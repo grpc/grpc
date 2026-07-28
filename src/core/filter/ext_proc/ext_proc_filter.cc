@@ -254,6 +254,40 @@ ExtProcFilter::ExtProcChannel::~ExtProcChannel() {
 // ExtProcFilter::ExtProcCall
 //
 
+// High-Level Architecture of 3 Concurrent Pipeline Loops:
+//
+//  LOOP 1: Request Pipeline Loop [ClientToServerCall()]
+//  +-----------------------------------------------------------------------+
+//  | TrySeq(                                                               |
+//  |     MakeRefCounted<ClientInitialMetadataProcessor>(Ref())             |
+//  |         ->ProcessFromClientToExtProcServer(),                         |
+//  |     MakeRefCounted<ClientMessageProcessor>(Ref(), request_attributes_)|
+//  |         ->ProcessFromClientToExtProcServer())                         |
+//  +-----------------------------------------------------------------------+
+//                                     ||
+//                          Joined via TryJoin()
+//                                     ||
+//  LOOP 2: Side-Stream Pull Loop [PullMessagesFromSideStream()]
+//  +-----------------------------------------------------------------------+
+//  | PullMessagesFromSideStream()                                          |
+//  |   -> Loop: streaming_call_->PullMessage()                             |
+//  |   -> ProcessSideStreamResponse() -> CompleteOutstandingProcessors()   |
+//  |   -> HandleSideStreamStatus(status)                                   |
+//  +-----------------------------------------------------------------------+
+//                                     ||
+//                       Spawned when child call starts
+//                                     ||
+//  LOOP 3: Response Pipeline Loop [ServerToClientCall()]
+//  +-----------------------------------------------------------------------+
+//  | TrySeq(                                                               |
+//  |     MakeRefCounted<ServerInitialMetadataProcessor>(Ref())             |
+//  |         ->ProcessFromServerToExtProcServer(),                         |
+//  |     MakeRefCounted<ServerMessageProcessor>(Ref())                     |
+//  |         ->ProcessFromServerToExtProcServer(),                         |
+//  |     MakeRefCounted<ServerTrailingMetadataProcessor>(Ref())            |
+//  |         ->ProcessFromServerToExtProcServer())                         |
+//  +-----------------------------------------------------------------------+
+
 class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
  public:
   ExtProcCall(RefCountedPtr<ExtProcFilter> ext_proc_filter,
@@ -519,7 +553,8 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
   // occurs and fail-open is not allowed.
   absl::AnyInvocable<Poll<absl::Status>()> ServerToClientCall();
 
-  // Parses and processes an incoming response message payload from the side-stream.
+  // Parses and processes an incoming response message payload from the
+  // side-stream.
   absl::AnyInvocable<Poll<absl::Status>()> ProcessSideStreamResponse(
       absl::string_view payload);
 
