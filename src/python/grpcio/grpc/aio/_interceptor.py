@@ -19,6 +19,7 @@ from abc import abstractmethod
 import asyncio
 import collections
 import functools
+import inspect
 from typing import (
     AsyncIterable,
     AsyncIterator,
@@ -691,6 +692,11 @@ class InterceptedUnaryUnaryCall(
                     continuation, client_call_details, request
                 )
 
+                if inspect.isawaitable(call_or_response) and not isinstance(
+                    call_or_response, _base_call.UnaryUnaryCall
+                ):
+                    call_or_response = await call_or_response
+
                 if isinstance(call_or_response, _base_call.UnaryUnaryCall):
                     return call_or_response
                 return UnaryUnaryCallResponse(call_or_response)
@@ -792,6 +798,13 @@ class InterceptedUnaryStreamCall(
                 ].intercept_unary_stream(
                     continuation, client_call_details, request
                 )
+
+                if inspect.isawaitable(
+                    call_or_response_iterator
+                ) and not isinstance(
+                    call_or_response_iterator, _base_call.UnaryStreamCall
+                ):
+                    call_or_response_iterator = await call_or_response_iterator
 
                 if isinstance(
                     call_or_response_iterator, _base_call.UnaryStreamCall
@@ -906,9 +919,16 @@ class InterceptedStreamUnaryCall(
                     _run_interceptor, interceptors[1:]
                 )
 
-                return await interceptors[0].intercept_stream_unary(
+                call_or_response = await interceptors[0].intercept_stream_unary(
                     continuation, client_call_details, request_iterator
                 )
+
+                if inspect.isawaitable(call_or_response) and not isinstance(
+                    call_or_response, _base_call.StreamUnaryCall
+                ):
+                    call_or_response = await call_or_response
+
+                return call_or_response
             return StreamUnaryCall(
                 request_iterator,
                 _timeout_to_deadline(client_call_details.timeout),
@@ -1012,6 +1032,13 @@ class InterceptedStreamStreamCall(
                 ].intercept_stream_stream(
                     continuation, client_call_details, request_iterator
                 )
+
+                if inspect.isawaitable(
+                    call_or_response_iterator
+                ) and not isinstance(
+                    call_or_response_iterator, _base_call.StreamStreamCall
+                ):
+                    call_or_response_iterator = await call_or_response_iterator
 
                 if isinstance(
                     call_or_response_iterator, _base_call.StreamStreamCall
