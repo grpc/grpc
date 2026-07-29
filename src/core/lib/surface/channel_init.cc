@@ -49,13 +49,6 @@ namespace grpc_core {
 UniqueTypeName (*NameFromChannelFilter)(const grpc_channel_filter*);
 
 namespace {
-struct CompareChannelFiltersByName {
-  bool operator()(UniqueTypeName a, UniqueTypeName b) const {
-    // Compare lexicographically instead of by pointer value so that different
-    // builds make the same choices.
-    return a.name() < b.name();
-  }
-};
 
 struct CompareFusedChannelFiltersByName {
   bool operator()(ChannelInit::FilterRegistration* a,
