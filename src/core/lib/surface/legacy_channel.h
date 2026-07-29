@@ -28,7 +28,6 @@
 
 #include "src/core/call/call_arena_allocator.h"
 #include "src/core/client_channel/client_channel_filter.h"
-#include "src/core/filter/blackboard.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"  // IWYU pragma: keep
@@ -48,8 +47,7 @@ class LegacyChannel final : public Channel {
  public:
   static absl::StatusOr<RefCountedPtr<Channel>> Create(
       std::string target, ChannelArgs args,
-      grpc_channel_stack_type channel_stack_type,
-      const Blackboard* blackboard = nullptr);
+      grpc_channel_stack_type channel_stack_type);
 
   // Do not instantiate directly -- use Create() instead.
   LegacyChannel(bool is_client, std::string target,
@@ -64,7 +62,9 @@ class LegacyChannel final : public Channel {
                         grpc_completion_queue* cq,
                         grpc_pollset_set* pollset_set_alternative, Slice path,
                         std::optional<Slice> authority, Timestamp deadline,
-                        bool registered_method) override;
+                        bool registered_method,
+                        std::optional<absl::FunctionRef<void(Arena*)>>
+                            arena_init_function) override;
 
   void StartCall(UnstartedCallHandler) override {
     Crash("StartCall() not supported on LegacyChannel");

@@ -26,6 +26,7 @@
 #include <string>
 #include <utility>
 
+#include "src/core/client_channel/client_channel_args.h"
 #include "src/core/credentials/transport/ssl/ssl_credentials.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/credentials/transport/transport_credentials.h"
@@ -39,6 +40,7 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/transport/auth_context.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
@@ -103,13 +105,24 @@ class grpc_ssl_channel_security_connector final
                        grpc_core::HandshakeManager* handshake_mgr) override {
     // Instantiate TSI handshaker.
     tsi_handshaker* tsi_hs = nullptr;
+    auto stats_plugin_group = args.GetObject<
+        grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>();
+    grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope =
+        stats_plugin_group != nullptr ? stats_plugin_group->GetCollectionScope()
+                                      : nullptr;
+    std::string backend_service(
+        args.GetString(GRPC_ARG_BACKEND_SERVICE).value_or(""));
+    std::string locality(args.GetString(GRPC_ARG_LB_LOCALITY).value_or(""));
+    std::string target(args.GetString(GRPC_ARG_SERVER_URI).value_or(""));
     tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
         client_handshaker_factory_,
         overridden_target_name_.empty() ? target_name_.c_str()
                                         : overridden_target_name_.c_str(),
         /*network_bio_buf_size=*/0,
         /*ssl_bio_buf_size=*/0,
-        args.GetOwnedString(GRPC_ARG_TRANSPORT_PROTOCOLS), &tsi_hs);
+        args.GetOwnedString(GRPC_ARG_TRANSPORT_PROTOCOLS),
+        std::move(collection_scope), std::move(target), std::move(locality),
+        std::move(backend_service), &tsi_hs);
     if (result != TSI_OK) {
       LOG(ERROR) << "Handshaker creation failed with error "
                  << tsi_result_to_string(result);
@@ -239,7 +252,7 @@ class grpc_ssl_server_security_connector
             grpc_fill_alpn_protocol_strings(&num_alpn_protocols);
       }
       tsi_ssl_server_handshaker_options options;
-      options.pem_key_cert_pairs =
+      options.key_cert_pairs_or_selector =
           server_credentials->config().pem_key_cert_pairs;
       if (server_credentials->config().pem_root_certs != nullptr) {
         options.root_cert_info = std::make_shared<tsi::RootCertInfo>(
@@ -274,9 +287,14 @@ class grpc_ssl_server_security_connector
     // Instantiate TSI handshaker.
     try_fetch_ssl_server_credentials();
     tsi_handshaker* tsi_hs = nullptr;
+    auto stats_plugin_group = args.GetObject<
+        grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>();
+    grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope =
+        stats_plugin_group != nullptr ? stats_plugin_group->GetCollectionScope()
+                                      : nullptr;
     tsi_result result = tsi_ssl_server_handshaker_factory_create_handshaker(
         server_handshaker_factory_, /*network_bio_buf_size=*/0,
-        /*ssl_bio_buf_size=*/0, &tsi_hs);
+        /*ssl_bio_buf_size=*/0, std::move(collection_scope), &tsi_hs);
     if (result != TSI_OK) {
       LOG(ERROR) << "Handshaker creation failed with error "
                  << tsi_result_to_string(result);
@@ -357,7 +375,7 @@ class grpc_ssl_server_security_connector
         static_cast<const grpc_ssl_server_credentials*>(this->server_creds());
     GRPC_DCHECK_NE(config->pem_root_certs, nullptr);
     tsi_ssl_server_handshaker_options options;
-    options.pem_key_cert_pairs = grpc_convert_grpc_to_tsi_cert_pairs(
+    options.key_cert_pairs_or_selector = grpc_convert_grpc_to_key_cert_pairs(
         config->pem_key_cert_pairs, config->num_key_cert_pairs);
     if (config->pem_root_certs != nullptr) {
       options.root_cert_info =

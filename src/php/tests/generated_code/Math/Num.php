@@ -6,8 +6,8 @@
 namespace Math;
 
 use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
+use Google\Protobuf\RepeatedField;
 
 /**
  * Generated from protobuf message <code>math.Num</code>
@@ -47,7 +47,7 @@ class Num extends \Google\Protobuf\Internal\Message
      * @param int|string $var
      * @return $this
      */
-    public function setNum($var)
+    public function setNum(int|string $var)
     {
         GPBUtil::checkInt64($var);
         $this->num = $var;

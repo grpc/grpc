@@ -26,26 +26,16 @@
 #include <vector>
 
 #include "src/core/config/core_configuration.h"
+#include "src/core/config/experiment_env_var.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 #include "src/core/util/down_cast.h"
-#include "src/core/util/env.h"
 #include "absl/log/log.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
 
 namespace grpc_core {
 
 namespace {
 
 constexpr absl::string_view kFileWatcherPlugin = "file_watcher";
-
-bool SpiffeBundleMapEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_MTLS_SPIFFE");
-  if (!value.has_value()) return false;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
-}
 
 }  // namespace
 
@@ -58,27 +48,40 @@ absl::string_view FileWatcherCertificateProviderFactory::Config::name() const {
 }
 
 std::string FileWatcherCertificateProviderFactory::Config::ToString() const {
-  std::vector<std::string> parts;
-  parts.push_back("{");
+  std::string result = "{";
+  bool is_first = true;
   if (!identity_cert_file_.empty()) {
-    parts.push_back(
-        absl::StrFormat("certificate_file=\"%s\", ", identity_cert_file_));
+    StrAppend(result, "certificate_file=\"");
+    StrAppend(result, identity_cert_file_);
+    StrAppend(result, "\"");
+    is_first = false;
   }
   if (!private_key_file_.empty()) {
-    parts.push_back(
-        absl::StrFormat("private_key_file=\"%s\", ", private_key_file_));
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "private_key_file=\"");
+    StrAppend(result, private_key_file_);
+    StrAppend(result, "\"");
+    is_first = false;
   }
   if (!root_cert_file_.empty()) {
-    parts.push_back(
-        absl::StrFormat("ca_certificate_file=\"%s\", ", root_cert_file_));
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "ca_certificate_file=\"");
+    StrAppend(result, root_cert_file_);
+    StrAppend(result, "\"");
+    is_first = false;
   }
   if (!spiffe_bundle_map_file_.empty()) {
-    parts.push_back(absl::StrFormat("spiffe_bundle_map_file=\"%s\", ",
-                                    spiffe_bundle_map_file_));
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "spiffe_bundle_map_file=\"");
+    StrAppend(result, spiffe_bundle_map_file_);
+    StrAppend(result, "\"");
+    is_first = false;
   }
-  parts.push_back(
-      absl::StrFormat("refresh_interval=%ldms}", refresh_interval_.millis()));
-  return absl::StrJoin(parts, "");
+  if (!is_first) StrAppend(result, ", ");
+  StrAppend(result, "refresh_interval=");
+  StrAppend(result, absl::StrCat(refresh_interval_.millis()));
+  StrAppend(result, "ms}");
+  return result;
 }
 
 const JsonLoaderInterface*
@@ -103,7 +106,7 @@ void FileWatcherCertificateProviderFactory::Config::JsonPostLoad(
         "fields \"certificate_file\" and \"private_key_file\" must be both set "
         "or both unset");
   }
-  if (SpiffeBundleMapEnabled()) {
+  if (IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_MTLS_SPIFFE")) {
     if (json.object().find("certificate_file") == json.object().end() &&
         json.object().find("ca_certificate_file") == json.object().end() &&
         json.object().find("spiffe_bundle_map_file") == json.object().end()) {

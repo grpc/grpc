@@ -36,6 +36,7 @@
 #include "src/core/util/status_helper.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -43,8 +44,11 @@ namespace chaotic_good {
 absl::Status ReadProto(SliceBuffer payload,
                        google::protobuf::MessageLite& msg) {
   auto payload_slice = payload.JoinIntoSlice();
-  const bool ok =
-      msg.ParseFromArray(payload_slice.data(), payload_slice.length());
+  if (payload_slice.length() > std::numeric_limits<int32_t>::max()) {
+    return absl::InternalError("Payload too large to parse as protobuf");
+  }
+  const bool ok = msg.ParseFromArray(
+      payload_slice.data(), static_cast<int32_t>(payload_slice.length()));
   return ok ? absl::OkStatus() : absl::InternalError("Protobuf parse error");
 }
 
@@ -296,7 +300,11 @@ absl::StatusOr<Frame> DeserializeFrame(const FrameHeader& header,
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD: Deserialize " << header << " with payload "
       << absl::CEscape(payload.JoinIntoString());
-  GRPC_CHECK_EQ(header.payload_length, payload.Length());
+  if (header.payload_length != payload.Length()) {
+    return absl::InternalError(absl::StrCat(
+        "Invalid payload length for frame type ", FrameTypeString(header.type),
+        ": expected ", header.payload_length, ", got ", payload.Length()));
+  }
   auto s = frame.Deserialize(header, std::move(payload));
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD: DeserializeFrame "

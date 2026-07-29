@@ -559,8 +559,8 @@ class CLanguage:
 
         if compiler == "default" or compiler == "cmake":
             return ("debian11", ["-DCMAKE_CXX_STANDARD=17"])
-        elif compiler == "gcc8":
-            return ("gcc_8", ["-DCMAKE_CXX_STANDARD=17"])
+        elif compiler == "gcc10":
+            return ("gcc_10", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "gcc10.2":
             return ("debian11", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "gcc10.2_openssl102":
@@ -591,9 +591,9 @@ class CLanguage:
             return ("gcc_14", ["-DCMAKE_CXX_STANDARD=20"])
         elif compiler == "gcc_musl":
             return ("alpine", ["-DCMAKE_CXX_STANDARD=17"])
-        elif compiler == "clang11":
+        elif compiler == "clang14":
             return (
-                "clang_11",
+                "clang_14",
                 self._clang_cmake_configure_extra_args()
                 + [
                     "-DCMAKE_CXX_STANDARD=17",
@@ -808,13 +808,6 @@ class PythonLanguage:
 
         # TODO: Supported version range should be defined by a single
         # source of truth.
-        python39_config = _python_config_generator(
-            name="py39",
-            major="3",
-            minor="9",
-            bits=bits,
-            config_vars=config_vars,
-        )
         python310_config = _python_config_generator(
             name="py310",
             major="3",
@@ -850,6 +843,13 @@ class PythonLanguage:
             bits=bits,
             config_vars=config_vars,
         )
+        python315_config = _python_config_generator(
+            name="py315",
+            major="3",
+            minor="15",
+            bits=bits,
+            config_vars=config_vars,
+        )
         pypy27_config = _pypy_config_generator(
             name="pypy", major="2", config_vars=config_vars
         )
@@ -859,26 +859,24 @@ class PythonLanguage:
 
         if args.compiler == "default":
             if os.name == "nt":
-                return (python39_config,)
+                return (python310_config,)
             elif os.uname()[0] == "Darwin":
                 # NOTE(rbellevi): Testing takes significantly longer on
                 # MacOS, so we restrict the number of interpreter versions
                 # tested.
-                return (python39_config,)
+                return (python310_config,)
             elif platform.machine() == "aarch64":
                 # Currently the python_debian11_default_arm64 docker image
-                # only has python3.9 installed (and that seems sufficient
+                # only has python3.10 installed (and that seems sufficient
                 # for arm64 testing)
-                return (python39_config,)
+                return (python310_config,)
             else:
                 # Default set tested on master. Test oldest and newest.
                 return (
-                    python39_config,
-                    python312_config,
+                    python310_config,
                     python314_config,
+                    python315_config,
                 )
-        elif args.compiler == "python3.9":
-            return (python39_config,)
         elif args.compiler == "python3.10":
             return (python310_config,)
         elif args.compiler == "python3.11":
@@ -889,6 +887,8 @@ class PythonLanguage:
             return (python313_config,)
         elif args.compiler == "python3.14":
             return (python314_config,)
+        elif args.compiler == "python3.15":
+            return (python315_config,)
         elif args.compiler == "pypy":
             return (pypy27_config,)
         elif args.compiler == "pypy3":
@@ -897,12 +897,12 @@ class PythonLanguage:
             return (python311_config,)
         elif args.compiler == "all_the_cpythons":
             return (
-                python39_config,
                 python310_config,
                 python311_config,
                 python312_config,
                 python313_config,
                 python314_config,
+                python315_config,
             )
         else:
             raise Exception("Compiler %s not supported." % args.compiler)
@@ -1073,7 +1073,7 @@ class CSharpLanguage:
         for test_runtime in self.test_runtimes:
             if test_runtime == "coreclr":
                 assembly_extension = ".dll"
-                assembly_subdir = "bin/%s/netcoreapp3.1" % msbuild_config
+                assembly_subdir = "bin/%s/net6.0" % msbuild_config
                 runtime_cmd = ["dotnet", "exec"]
             elif test_runtime == "mono":
                 assembly_extension = ".exe"
@@ -1283,7 +1283,7 @@ class Sanity:
             # test suite's timeout, see _create_test_jobs in run_tests_matrix.py
             return [
                 self.config.job_spec(
-                    cmd["script"].split(),
+                    cmd["script"].split() + self.args.script_args,
                     timeout_seconds=80 * 60,
                     environ=environ,
                     cpu_cost=cmd.get("cpu_cost", 1),
@@ -1728,22 +1728,24 @@ argp.add_argument(
     "--compiler",
     choices=[
         "default",
-        "gcc8",
+        # The gcc:10 docker image which is 10.5 as of May 2026.
+        "gcc10",
+        # Uses debian11 docker image which comes with gcc 10.2
         "gcc10.2",
         "gcc10.2_openssl102",
         "gcc10.2_openssl111",
         "gcc12_openssl309",
         "gcc14",
         "gcc_musl",
-        "clang11",
+        "clang14",
         "clang19",
         # TODO: Automatically populate from supported version
-        "python3.9",
         "python3.10",
         "python3.11",
         "python3.12",
         "python3.13",
         "python3.14",
+        "python3.15",
         "pypy",
         "pypy3",
         "python_alpine",
@@ -1846,6 +1848,12 @@ argp.add_argument(
     default=[],
     action="append",
     help="Extra arguments that will be passed to the cmake configure command. Only works for C/C++.",
+)
+argp.add_argument(
+    "--script_args",
+    default=[],
+    action="append",
+    help="Extra arguments passed to test script. Currently only supported for sanity scripts. Can be used multiple times.",
 )
 args = argp.parse_args()
 

@@ -242,6 +242,7 @@ class ServerHandlerTest(unittest.TestCase):
         self._server.add_registered_method_handlers(
             _SERVICE_NAME, _REGISTERED_METHOD_HANDLERS
         )
+
         self._channel = grpc.insecure_channel("localhost:%d" % port)
 
         with self.assertRaises(grpc.RpcError) as exception_context:

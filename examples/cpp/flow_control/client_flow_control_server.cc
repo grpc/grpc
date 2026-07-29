@@ -52,7 +52,7 @@ class SlowReadingBidiReactor final
   SlowReadingBidiReactor() { StartRead(&req_); }
 
   void OnReadDone(bool ok) override {
-    std::cout << "Recieved request with " << req_.name().length()
+    std::cout << "Received request with " << req_.name().length()
               << " bytes name\n";
     if (!ok) {
       Finish(grpc::Status::OK);

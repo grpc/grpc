@@ -77,7 +77,7 @@ def check_linker_need_libatomic():
     )
     cxx = os.environ.get("CXX", "c++")
     cpp_test = subprocess.Popen(
-        [cxx, "-x", "c++", "-std=c++17", "-"],
+        shlex.split(cxx) + ["-x", "c++", "-std=c++17", "-"],
         stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE,
@@ -88,7 +88,7 @@ def check_linker_need_libatomic():
     # Double-check to see if -latomic actually can solve the problem.
     # https://github.com/grpc/grpc/issues/22491
     cpp_test = subprocess.Popen(
-        [cxx, "-x", "c++", "-std=c++17", "-", "-latomic"],
+        shlex.split(cxx) + ["-x", "c++", "-std=c++17", "-", "-latomic"],
         stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE,
@@ -186,6 +186,9 @@ if EXTRA_ENV_COMPILE_ARGS is None:
         # We need to statically link the C++ Runtime, only the C runtime is
         # available dynamically
         EXTRA_ENV_COMPILE_ARGS += " /MT"
+        # Required to build upb from protobuf 33.x
+        # https://github.com/grpc/grpc/issues/41951
+        EXTRA_ENV_COMPILE_ARGS += " /Zc:preprocessor"
     elif "linux" in sys.platform:
         # GCC by defaults uses C17 so only C++17 needs to be specified.
         EXTRA_ENV_COMPILE_ARGS += " -std=c++17"
@@ -334,7 +337,7 @@ if __name__ == "__main__":
         ext_modules=extension_modules(),
         python_requires=f">={python_version.MIN_PYTHON_VERSION}",
         install_requires=[
-            "protobuf>=6.31.1,<7.0.0",
+            "protobuf>=7.35.1,<8.0.0",
             "grpcio>={version}".format(version=grpc_version.VERSION),
             "setuptools>=77.0.1",
         ],

@@ -84,7 +84,7 @@ describe 'Server Interceptors' do
         run_services_on_server(@server, services: [service]) do
           stub = build_insecure_stub(EchoStub)
           expect_any_instance_of(GRPC::ActiveCall).to(
-            receive(:client_streamer).with(requests)
+            receive(:client_streamer).with(requests, metadata: client_metadata)
               .once.and_call_original
           )
           op = stub.a_client_streaming_rpc(requests, client_call_opts)
@@ -122,7 +122,7 @@ describe 'Server Interceptors' do
         run_services_on_server(@server, services: [service]) do
           stub = build_insecure_stub(EchoStub)
           expect_any_instance_of(GRPC::ActiveCall).to(
-            receive(:server_streamer).with(request)
+            receive(:server_streamer).with(request, metadata: client_metadata)
               .once.and_call_original
           )
           op = stub.a_server_streaming_rpc(request, client_call_opts)
@@ -162,7 +162,7 @@ describe 'Server Interceptors' do
         run_services_on_server(@server, services: [service]) do
           stub = build_insecure_stub(EchoStub)
           expect_any_instance_of(GRPC::ActiveCall).to(
-            receive(:bidi_streamer).with(requests)
+            receive(:bidi_streamer).with(requests, metadata: client_metadata)
               .once.and_call_original
           )
           op = stub.a_bidi_rpc(requests, client_call_opts)
@@ -196,6 +196,20 @@ describe 'Server Interceptors' do
       expect(interceptor2).to receive(:request_response)
         .once.and_call_original
       expect(interceptor3).to receive(:request_response)
+        .once.and_call_original
+
+      run_services_on_server(@server, services: [service]) do
+        stub = build_insecure_stub(EchoStub)
+        expect(stub.an_rpc(request)).to be_a(EchoMsg)
+      end
+    end
+
+    it 'should be invoked in FIFO order', server: true do
+      expect(interceptor).to receive(:request_response).ordered
+        .once.and_call_original
+      expect(interceptor2).to receive(:request_response).ordered
+        .once.and_call_original
+      expect(interceptor3).to receive(:request_response).ordered
         .once.and_call_original
 
       run_services_on_server(@server, services: [service]) do

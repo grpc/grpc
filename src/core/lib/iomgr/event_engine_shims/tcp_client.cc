@@ -62,8 +62,7 @@ int64_t event_engine_tcp_client_connect(
         }
         GRPC_TRACE_LOG(event_engine, INFO)
             << "EventEngine::Connect Status: " << ep.status();
-        grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_connect,
-                                absl_status_to_grpc_error(conn_status));
+        grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_connect, conn_status);
       },
       CreateResolvedAddress(*addr), config,
       resource_quota != nullptr

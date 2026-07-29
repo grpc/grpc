@@ -29,6 +29,7 @@
 #include <string>
 #include <thread>
 
+#include "src/core/channelz/channelz.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/upb_utils.h"
@@ -354,6 +355,105 @@ TEST(ChannelTracerTest, TestSmallMemoryLimitProto) {
   size_t size;
   grpc_channelz_v2_Entity_trace(entity, &size);
   ASSERT_EQ(size, 0);
+  upb_Arena_Free(arena);
+}
+
+TEST(ChannelTracerTest, TraceNodeChildEventsTest) {
+  auto channelz_node = MakeRefCounted<ChannelNode>(
+      "target", kEventListMemoryLimit, /*is_internal_channel=*/false);
+  ChannelTrace::Node root_node =
+      channelz_node->NewTraceNode("Handshake connection");
+  TraceFlag noop_flag(false, "noop");
+  TraceNode trace_node(std::move(root_node), noop_flag, []() { return ""; });
+
+  GRPC_CHANNELZ_LOG(trace_node) << "calling handshaker 1";
+  GRPC_CHANNELZ_LOG(trace_node) << "calling handshaker 2";
+
+  trace_node.Commit();
+
+  const ChannelTrace& tracer = channelz_node->trace();
+
+  Json json = tracer.RenderJson();
+  ValidateJsonProtoTranslation(json);
+  EXPECT_THAT(json,
+              IsChannelTraceWithEvents(
+                  3, ::testing::ElementsAre(
+                         IsTraceEvent("Handshake connection", "CT_INFO"),
+                         IsTraceEvent("calling handshaker 1", "CT_INFO"),
+                         IsTraceEvent("calling handshaker 2", "CT_INFO"))))
+      << JsonDump(json);
+
+  // Also verify using Proto / UPB representation to enforce top-level
+  // chronological rendering
+  upb_Arena* arena = upb_Arena_New();
+  grpc_channelz_v2_Entity* entity = grpc_channelz_v2_Entity_new(arena);
+
+  tracer.Render(entity, arena);
+
+  size_t size;
+  const grpc_channelz_v2_TraceEvent* const* trace =
+      grpc_channelz_v2_Entity_trace(entity, &size);
+
+  // There is only one top-level trace event. Other
+  // trace events should be nested as child traces.
+  ASSERT_EQ(size, 1);
+
+  EXPECT_EQ(
+      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[0])),
+      "Handshake connection");
+
+  size_t data_size;
+  const grpc_channelz_v2_Data* const* data =
+      grpc_channelz_v2_TraceEvent_data(trace[0], &data_size);
+  ASSERT_EQ(data_size, 2);
+
+  for (size_t i = 0; i < data_size; ++i) {
+    EXPECT_EQ(UpbStringToStdString(grpc_channelz_v2_Data_name(data[i])),
+              "child_trace");
+    const google_protobuf_Any* any = grpc_channelz_v2_Data_value(data[i]);
+    EXPECT_EQ(UpbStringToStdString(google_protobuf_Any_type_url(any)),
+              "type.googleapis.com/grpc.channelz.v2.TraceEvent");
+
+    upb_StringView val = google_protobuf_Any_value(any);
+    auto* child_event =
+        grpc_channelz_v2_TraceEvent_parse(val.data, val.size, arena);
+    ASSERT_NE(child_event, nullptr);
+
+    std::string expected_desc = absl::StrCat("calling handshaker ", i + 1);
+    EXPECT_EQ(UpbStringToStdString(
+                  grpc_channelz_v2_TraceEvent_description(child_event)),
+              expected_desc);
+  }
+
+  upb_Arena_Free(arena);
+}
+
+TEST(ChannelTracerTest, TraceNodeEphemeralTest) {
+  auto channelz_node = MakeRefCounted<ChannelNode>(
+      "target", kEventListMemoryLimit, /*is_internal_channel=*/false);
+
+  {
+    ChannelTrace::Node root_node =
+        channelz_node->NewTraceNode("Handshake connection");
+    TraceFlag noop_flag(false, "noop");
+    TraceNode trace_node(std::move(root_node), noop_flag, []() { return ""; });
+
+    GRPC_CHANNELZ_LOG(trace_node) << "calling handshaker 1";
+    GRPC_CHANNELZ_LOG(trace_node) << "calling handshaker 2";
+
+    // trace_node.Commit() is deliberately NOT called here.
+  }
+
+  const ChannelTrace& tracer = channelz_node->trace();
+
+  // Verify that since trace_node was not committed, nothing remains in the Ring
+  // Buffer.
+  upb_Arena* arena = upb_Arena_New();
+  grpc_channelz_v2_Entity* entity = grpc_channelz_v2_Entity_new(arena);
+  tracer.Render(entity, arena);
+  size_t size;
+  grpc_channelz_v2_Entity_trace(entity, &size);
+  EXPECT_EQ(size, 0);
   upb_Arena_Free(arena);
 }
 

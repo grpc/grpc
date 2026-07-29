@@ -91,7 +91,7 @@ bool ThreadManager::IsShutdown() {
 }
 
 int ThreadManager::GetMaxActiveThreadsSoFar() {
-  grpc_core::MutexLock list_lock(&list_mu_);
+  grpc_core::MutexLock lock(&mu_);
   return max_active_threads_sofar_;
 }
 

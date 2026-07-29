@@ -23,6 +23,7 @@
 #include <inttypes.h>
 #include <string.h>
 
+#include <cmath>
 #include <memory>
 #include <optional>
 #include <set>
@@ -32,6 +33,7 @@
 #include <vector>
 
 #include "src/core/config/core_configuration.h"
+#include "src/core/config/experiment_env_var.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -538,8 +540,33 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
       // Shuffle the list if needed.
       auto config = static_cast<PickFirstConfig*>(args.config.get());
       if (config->shuffle_addresses()) {
-        SharedBitGen g;
-        absl::c_shuffle(endpoints, g);
+        if (PfWeightedShufflingEnabled()) {
+          struct WeightedEndpoint {
+            EndpointAddresses endpoint;
+            double key;
+          };
+          std::vector<WeightedEndpoint> weighted_endpoints;
+          weighted_endpoints.reserve(endpoints.size());
+          SharedBitGen g;
+          for (auto& endpoint : endpoints) {
+            double e = absl::Exponential<double>(g);
+            int weight_arg =
+                endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
+            double weight = weight_arg <= 0 ? 1.0 : weight_arg;
+            double key = (weight == 1.0) ? e : (e / weight);
+            weighted_endpoints.push_back({std::move(endpoint), key});
+          }
+          std::sort(weighted_endpoints.begin(), weighted_endpoints.end(),
+                    [](const WeightedEndpoint& a, const WeightedEndpoint& b) {
+                      return a.key < b.key;
+                    });
+          for (size_t i = 0; i < weighted_endpoints.size(); ++i) {
+            endpoints[i] = std::move(weighted_endpoints[i].endpoint);
+          }
+        } else {
+          SharedBitGen g;
+          absl::c_shuffle(endpoints, g);
+        }
       }
       // Flatten the list so that we have one address per endpoint.
       // While we're iterating, also determine the desired address family
@@ -615,12 +642,6 @@ void PickFirst::GoIdle() {
   UnsetSelectedSubchannel();
   // Drop the current subchannel list, if any.
   subchannel_list_.reset();
-  if (!IsPickFirstReadyToConnectingEnabled()) {
-    // Request a re-resolution.
-    // TODO(roth): We may want to request re-resolution in
-    // ExitIdleLocked() instead.
-    channel_control_helper()->RequestReresolution();
-  }
   // Enter idle.
   UpdateState(GRPC_CHANNEL_IDLE, absl::OkStatus(),
               MakeRefCounted<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
@@ -785,17 +806,14 @@ void PickFirst::SubchannelList::SubchannelData::SubchannelState::
   stats_plugins.AddCounter(kMetricDisconnections, 1,
                            {pick_first_->channel_control_helper()->GetTarget()},
                            {});
-  if (IsPickFirstReadyToConnectingEnabled()) {
-    // TODO(roth): We may want to request re-resolution in
-    // ExitIdleLocked() instead, at least if we go IDLE below.
-    pick_first_->channel_control_helper()->RequestReresolution();
-  }
+  // TODO(roth): We may want to request re-resolution in
+  // ExitIdleLocked() instead, at least if we go IDLE below.
+  pick_first_->channel_control_helper()->RequestReresolution();
   // If the subchannel went to CONNECTING or TRANSIENT_FAILURE, we go
   // back to CONNECTING and start a new Happy Eyeballs pass.
   // Otherwise, go IDLE.
-  if (IsPickFirstReadyToConnectingEnabled() &&
-      (new_state == GRPC_CHANNEL_CONNECTING ||
-       new_state == GRPC_CHANNEL_TRANSIENT_FAILURE)) {
+  if (new_state == GRPC_CHANNEL_CONNECTING ||
+      new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     pick_first_->UpdateState(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
                              MakeRefCounted<QueuePicker>(nullptr));
     pick_first_->AttemptToConnectUsingLatestUpdateArgsLocked();
@@ -1167,6 +1185,10 @@ class PickFirstFactory final : public LoadBalancingPolicyFactory {
 };
 
 }  // namespace
+
+bool PfWeightedShufflingEnabled() {
+  return IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_PF_WEIGHTED_SHUFFLING");
+}
 
 void RegisterPickFirstLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(

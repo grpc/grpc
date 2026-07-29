@@ -16,15 +16,19 @@
 //
 //
 #include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/security/tls_certificate_provider.h>
 #include <grpcpp/security/tls_certificate_verifier.h>
 #include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
 #include <memory>
+#include <utility>
 
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
@@ -33,6 +37,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/log/log.h"
+#include "absl/strings/string_view.h"
 #include "absl/synchronization/notification.h"
 
 namespace grpc {
@@ -62,23 +67,69 @@ class NoOpCertificateVerifier : public ExternalCertificateVerifier {
   }
 };
 
+class KeyExchangeGroupCheckingVerifier : public ExternalCertificateVerifier {
+ public:
+  explicit KeyExchangeGroupCheckingVerifier(absl::string_view expected_group)
+      : expected_group_(expected_group) {}
+
+  ~KeyExchangeGroupCheckingVerifier() override = default;
+
+  bool Verify(grpc::experimental::TlsCustomVerificationCheckRequest* request,
+              std::function<void(grpc::Status)>,
+              grpc::Status* sync_status) override {
+    grpc::string_ref negotiated_group =
+        request->negotiated_key_exchange_group();
+    if (negotiated_group != expected_group_) {
+      *sync_status = grpc::Status(
+          grpc::StatusCode::UNAUTHENTICATED,
+          "Key exchange group mismatch: expected " + expected_group_ +
+              ", got " +
+              std::string(negotiated_group.data(), negotiated_group.length()));
+    } else {
+      *sync_status = grpc::Status(grpc::StatusCode::OK, "");
+    }
+    return true;
+  }
+
+  void Cancel(grpc::experimental::TlsCustomVerificationCheckRequest*) override {
+  }
+
+ private:
+  std::string expected_group_;
+};
+
 class TlsCredentialsTest : public ::testing::Test {
  protected:
-  void RunServer(absl::Notification* notification) {
+  void RunServer(absl::Notification* notification,
+                 const std::vector<grpc_tls_key_exchange_group>*
+                     key_exchange_groups = nullptr) {
     std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
-    grpc::SslServerCredentialsOptions::PemKeyCertPair key_cert_pair = {
-        grpc_core::testing::GetFileContents(kServerKeyPath),
-        grpc_core::testing::GetFileContents(kServerCertPath)};
-    grpc::SslServerCredentialsOptions ssl_options;
-    ssl_options.pem_key_cert_pairs.push_back(key_cert_pair);
-    ssl_options.pem_root_certs = root_cert;
-
+    std::string server_key =
+        grpc_core::testing::GetFileContents(kServerKeyPath);
+    std::string server_cert =
+        grpc_core::testing::GetFileContents(kServerCertPath);
+    grpc::experimental::IdentityKeyCertPair key_cert_pair = {server_key,
+                                                             server_cert};
+    std::vector<grpc::experimental::IdentityKeyCertPair>
+        identity_key_cert_pairs;
+    identity_key_cert_pairs.push_back(key_cert_pair);
+    auto certificate_provider =
+        std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
+            root_cert, identity_key_cert_pairs);
+    auto server_options_or =
+        grpc::experimental::TlsServerCredentialsOptions::Create(
+            certificate_provider);
+    ASSERT_TRUE(server_options_or.ok());
+    grpc::experimental::TlsServerCredentialsOptions server_options =
+        *std::move(server_options_or);
+    server_options.set_root_certificate_provider(certificate_provider);
+    if (key_exchange_groups != nullptr) {
+      server_options.set_key_exchange_groups(*key_exchange_groups);
+    }
     grpc::ServerBuilder builder;
-    TestServiceImpl service_;
-
-    builder
-        .AddListeningPort(server_addr_, grpc::SslServerCredentials(ssl_options))
-        .RegisterService(&service_);
+    builder.AddListeningPort(
+        server_addr_, grpc::experimental::TlsServerCredentials(server_options));
+    builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
     notification->Notify();
     server_->Wait();
@@ -100,7 +151,8 @@ class TlsCredentialsTest : public ::testing::Test {
 
 // NOLINTNEXTLINE(clang-diagnostic-unused-function)
 void DoRpc(const std::string& server_addr,
-           const TlsChannelCredentialsOptions& tls_options) {
+           const TlsChannelCredentialsOptions& tls_options,
+           absl::string_view expected_key_exchange_group = "") {
   std::shared_ptr<Channel> channel =
       grpc::CreateChannel(server_addr, TlsCredentials(tls_options));
 
@@ -111,12 +163,45 @@ void DoRpc(const std::string& server_addr,
   ClientContext context;
   context.set_deadline(grpc_timeout_seconds_to_deadline(/*time_s=*/10));
   grpc::Status result = stub->Echo(&context, request, &response);
-  EXPECT_TRUE(result.ok());
-  if (!result.ok()) {
-    LOG(ERROR) << "Echo failed: " << result.error_code() << ", "
-               << result.error_message() << ", " << result.error_details();
-  }
+  EXPECT_TRUE(result.ok()) << "Echo failed: " << result.error_code() << ", "
+                           << result.error_message() << ", "
+                           << result.error_details();
   EXPECT_EQ(response.message(), kMessage);
+  if (!expected_key_exchange_group.empty()) {
+    std::shared_ptr<const AuthContext> auth_context = context.auth_context();
+    ASSERT_NE(auth_context, nullptr);
+    std::vector<grpc::string_ref> properties = auth_context->FindPropertyValues(
+        GRPC_SSL_NEGOTIATED_KEY_EXCHANGE_GROUP_PROPERTY_NAME);
+    ASSERT_EQ(properties.size(), 1u);
+    EXPECT_EQ(expected_key_exchange_group,
+              absl::string_view(properties[0].data(), properties[0].length()));
+  }
+}
+
+// NOLINTNEXTLINE(clang-diagnostic-unused-function)
+void DoRpcAndExpectFailure(const std::string& server_addr,
+                           const TlsChannelCredentialsOptions& tls_options,
+                           grpc::StatusCode expected_code,
+                           const std::string& expected_message_substr = "") {
+  std::shared_ptr<Channel> channel =
+      grpc::CreateChannel(server_addr, TlsCredentials(tls_options));
+
+  auto stub = grpc::testing::EchoTestService::NewStub(channel);
+  grpc::testing::EchoRequest request;
+  grpc::testing::EchoResponse response;
+  request.set_message(kMessage);
+  ClientContext context;
+  context.set_deadline(grpc_timeout_seconds_to_deadline(/*time_s=*/10));
+  grpc::Status result = stub->Echo(&context, request, &response);
+  EXPECT_EQ(result.error_code(), expected_code)
+      << "Expected failure with code " << expected_code << ", but got code "
+      << result.error_code() << ", message: " << result.error_message();
+  if (!expected_message_substr.empty()) {
+    EXPECT_NE(result.error_message().find(expected_message_substr),
+              std::string::npos)
+        << "Expected error message containing '" << expected_message_substr
+        << "', got: '" << result.error_message() << "'";
+  }
 }
 
 // TODO(gregorycooke) - failing with OpenSSL1.0.2
@@ -141,7 +226,110 @@ TEST_F(TlsCredentialsTest, SkipServerCertificateVerification) {
 
   DoRpc(server_addr_, tls_options);
 }
-#endif  // OPENSSL_VERSION_NUMBER >= 0x10100000
+#endif  // OPENSSL_VERSION_NUMBER >= 0x1100000
+
+#if defined(OPENSSL_IS_BORINGSSL)
+TEST_F(TlsCredentialsTest, KeyExchangeGroupMlkem) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  const std::vector<grpc_tls_key_exchange_group> key_exchange_groups = {
+      GRPC_TLS_GROUP_X25519_MLKEM768};
+  server_thread_ = new std::thread(
+      [&]() { RunServer(&notification, &key_exchange_groups); });
+  notification.WaitForNotification();
+  TlsChannelCredentialsOptions tls_options;
+  tls_options.set_certificate_verifier(
+      ExternalCertificateVerifier::Create<KeyExchangeGroupCheckingVerifier>(
+          "X25519MLKEM768"));
+  tls_options.set_check_call_host(false);
+  tls_options.set_key_exchange_groups({GRPC_TLS_GROUP_X25519_MLKEM768});
+  std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
+  auto client_certificate_provider =
+      std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
+          root_cert);
+  tls_options.set_root_certificate_provider(client_certificate_provider);
+  tls_options.set_sni_override("foo.test.google.fr");
+  DoRpc(server_addr_, tls_options,
+        /*expected_key_exchange_group=*/"X25519MLKEM768");
+}
+
+TEST_F(TlsCredentialsTest, KeyExchangeGroupX25519) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  const std::vector<grpc_tls_key_exchange_group> key_exchange_groups = {
+      GRPC_TLS_GROUP_X25519};
+  server_thread_ = new std::thread(
+      [&]() { RunServer(&notification, &key_exchange_groups); });
+  notification.WaitForNotification();
+  TlsChannelCredentialsOptions tls_options;
+  tls_options.set_certificate_verifier(
+      ExternalCertificateVerifier::Create<KeyExchangeGroupCheckingVerifier>(
+          "X25519"));
+  tls_options.set_check_call_host(false);
+  tls_options.set_key_exchange_groups({GRPC_TLS_GROUP_X25519});
+  std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
+  auto client_certificate_provider =
+      std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
+          root_cert);
+  tls_options.set_root_certificate_provider(client_certificate_provider);
+  tls_options.set_sni_override("foo.test.google.fr");
+  DoRpc(server_addr_, tls_options, /*expected_key_exchange_group=*/"X25519");
+}
+
+TEST_F(TlsCredentialsTest, KeyExchangeGroupSECP256R1) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  const std::vector<grpc_tls_key_exchange_group> key_exchange_groups = {
+      GRPC_TLS_GROUP_SECP256R1};
+  server_thread_ = new std::thread(
+      [&]() { RunServer(&notification, &key_exchange_groups); });
+  notification.WaitForNotification();
+  TlsChannelCredentialsOptions tls_options;
+  tls_options.set_certificate_verifier(
+      ExternalCertificateVerifier::Create<KeyExchangeGroupCheckingVerifier>(
+          "prime256v1"));
+  tls_options.set_check_call_host(false);
+  tls_options.set_key_exchange_groups({GRPC_TLS_GROUP_SECP256R1});
+  std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
+  auto client_certificate_provider =
+      std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
+          root_cert);
+  tls_options.set_root_certificate_provider(client_certificate_provider);
+  tls_options.set_sni_override("foo.test.google.fr");
+  DoRpc(server_addr_, tls_options,
+        /*expected_key_exchange_group=*/"prime256v1");
+}
+
+TEST_F(TlsCredentialsTest, KeyExchangeGroupMismatchFailsWithTestVerifier) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  const std::vector<grpc_tls_key_exchange_group> key_exchange_groups = {
+      GRPC_TLS_GROUP_X25519};
+  server_thread_ = new std::thread(
+      [&]() { RunServer(&notification, &key_exchange_groups); });
+  notification.WaitForNotification();
+  TlsChannelCredentialsOptions tls_options;
+  tls_options.set_certificate_verifier(
+      ExternalCertificateVerifier::Create<KeyExchangeGroupCheckingVerifier>(
+          "prime256v1"));
+  tls_options.set_check_call_host(false);
+  tls_options.set_key_exchange_groups({GRPC_TLS_GROUP_X25519});
+  std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
+  auto client_certificate_provider =
+      std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
+  EXPECT_EQ(client_certificate_provider->UpdateRoot(root_cert),
+            absl::OkStatus());
+  tls_options.set_root_certificate_provider(client_certificate_provider);
+  tls_options.set_sni_override("foo.test.google.fr");
+  DoRpcAndExpectFailure(
+      server_addr_, tls_options, grpc::StatusCode::UNAVAILABLE,
+      "Key exchange group mismatch: expected prime256v1, got X25519");
+}
+#endif  // OPENSSL_IS_BORINGSSL
 
 }  // namespace
 }  // namespace testing

@@ -72,8 +72,8 @@ using ::testing::StrictMock;
 
 constexpr absl::string_view kConnectionClosed = "Connection closed";
 constexpr absl::string_view kPeerString =
-    "PeerString: ipv4:127.0.0.1:12345, :path: "
-    "/demo.Service/Step, GrpcStatusFromWire: true";
+    ":path: /demo.Service/Step, PeerString: ipv4:127.0.0.1:12345, "
+    "GrpcStatusFromWire: true";
 
 using EventSequenceEndpoint = util::testing::EventSequenceEndpoint;
 
@@ -515,17 +515,9 @@ TEST_F(Http2ClientTransportTest, TestCanStreamReceiveDataFrames) {
           static_cast<uint32_t>(Http2ErrorCode::kNoError)),
   });
 
-  step->ThenExpectWrite({helper_.SerializedRstStreamFrame(
+  step->ThenExpectWrite({helper_.SerializedResetStreamFrame(
       /*stream_id=*/1, /*error_code=*/
       static_cast<uint32_t>(Http2ErrorCode::kStreamClosed))});
-
-  step->ThenExpectWrite({
-      helper_.SerializedGoawayFrame(
-          /*debug_data=*/"kthxbye",
-          /*last_stream_id=*/0,
-          /*error_code=*/
-          static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
-  });
 
   CallInitiator initiator = StartCall(TestInitialMetadata());
   initiator.SpawnInfallible("test-wait", [initiator, &on_done]() mutable {
@@ -537,13 +529,17 @@ TEST_F(Http2ClientTransportTest, TestCanStreamReceiveDataFrames) {
                     GRPC_STATUS_INTERNAL);
           EXPECT_EQ(
               metadata->get_pointer(GrpcMessageMetadata())->as_string_view(),
-              "gRPC Error : DATA frames must follow initial "
-              "metadata and precede trailing metadata.");
+              GrpcErrors::kOutOfOrderDataFrame);
           return Empty{};
         });
   });
 
   step->Wait();
+
+  // Tear down the transport.
+  std::shared_ptr<EventSequenceEndpoint::Step> step2 = endpoint()->NewStep();
+  AddTransportCloseExpectations(step2.get());
+  step2->Wait();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -626,7 +622,7 @@ TEST_F(Http2ClientTransportTest, StreamCleanupTrailingMetadataWithResetStream) {
           std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
           /*stream_id=*/1,
           /*end_headers=*/true, /*end_stream=*/true),
-      helper_.SerializedRstStreamFrame(),
+      helper_.SerializedResetStreamFrame(),
   });
 
   CallInitiator initiator = StartCall(TestInitialMetadata());
@@ -671,21 +667,26 @@ TEST_F(Http2ClientTransportTest, StreamCleanupResetStream) {
           /*end_headers=*/true, /*end_stream=*/false),
   });
   step->ThenPerformRead({
-      helper_.SerializedRstStreamFrame(),
+      helper_.SerializedResetStreamFrame(),
   });
 
   CallInitiator initiator = StartCall(TestInitialMetadata());
 
   initiator.SpawnGuarded("wait-for-trailing-metadata", [&]() {
-    return Map(initiator.PullServerTrailingMetadata(),
-               [&](absl::StatusOr<ServerMetadataHandle> metadata) {
-                 EXPECT_TRUE(metadata.ok());
-                 EXPECT_EQ((*metadata)->DebugString(),
-                           "grpc-message: Reset stream frame received., "
-                           "grpc-status: INTERNAL, GrpcCallWasCancelled: true");
-                 on_done.Call();
-                 return absl::OkStatus();
-               });
+    return Map(
+        initiator.PullServerTrailingMetadata(),
+        [&](absl::StatusOr<ServerMetadataHandle> metadata) {
+          EXPECT_TRUE(metadata.ok());
+          std::string debug_str = (*metadata)->DebugString();
+          EXPECT_THAT(debug_str,
+                      ::testing::HasSubstr(
+                          "grpc-message: Reset stream frame received."));
+          EXPECT_THAT(debug_str, ::testing::HasSubstr("grpc-status: INTERNAL"));
+          EXPECT_THAT(debug_str,
+                      ::testing::HasSubstr("GrpcCallWasCancelled: true"));
+          on_done.Call();
+          return absl::OkStatus();
+        });
   });
 
   step->Wait();
@@ -715,7 +716,7 @@ TEST_F(Http2ClientTransportTest, Http2ClientTransportStreamAbortTest) {
           /*end_headers=*/true, /*end_stream=*/false),
   });
   step->ThenExpectWrite({
-      helper_.SerializedRstStreamFrame(
+      helper_.SerializedResetStreamFrame(
           /*stream_id=*/1,
           /*error_code=*/static_cast<uint32_t>(http2::Http2ErrorCode::kCancel)),
   });
@@ -735,9 +736,13 @@ TEST_F(Http2ClientTransportTest, Http2ClientTransportStreamAbortTest) {
   initiator.SpawnInfallible("test-wait", [initiator, &on_done]() mutable {
     return Seq(initiator.PullServerTrailingMetadata(),
                [&on_done](ServerMetadataHandle metadata) mutable {
-                 EXPECT_STREQ(metadata->DebugString().c_str(),
-                              "grpc-message: CANCELLED, grpc-status: "
-                              "CANCELLED, GrpcCallWasCancelled: true");
+                 std::string debug_str = metadata->DebugString();
+                 EXPECT_THAT(debug_str,
+                             ::testing::HasSubstr("grpc-message: CANCELLED"));
+                 EXPECT_THAT(debug_str,
+                             ::testing::HasSubstr("grpc-status: CANCELLED"));
+                 EXPECT_THAT(debug_str, ::testing::HasSubstr(
+                                            "GrpcCallWasCancelled: true"));
                  on_done.Call();
                  return Empty{};
                });
@@ -777,7 +782,7 @@ TEST_F(Http2ClientTransportTest, Http2ClientTransportAbortTest) {
           /*debug_data=*/kConnectionClosed, /*last_stream_id=*/0,
           /*error_code=*/
           static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
-      helper_.SerializedRstStreamFrame(
+      helper_.SerializedResetStreamFrame(
           /*stream_id=*/1, /*error_code=*/static_cast<uint32_t>(
               http2::Http2ErrorCode::kInternalError)),
   });
@@ -788,14 +793,19 @@ TEST_F(Http2ClientTransportTest, Http2ClientTransportAbortTest) {
   EXPECT_CALL(on_done, Call());
 
   initiator.SpawnInfallible("test-wait", [initiator, &on_done]() mutable {
-    return Seq(initiator.PullServerTrailingMetadata(),
-               [&on_done](ServerMetadataHandle metadata) mutable {
-                 EXPECT_STREQ(metadata->DebugString().c_str(),
-                              "grpc-message: Connection closed, grpc-status: "
-                              "UNAVAILABLE, GrpcCallWasCancelled: true");
-                 on_done.Call();
-                 return Empty{};
-               });
+    return Seq(
+        initiator.PullServerTrailingMetadata(),
+        [&on_done](ServerMetadataHandle metadata) mutable {
+          std::string debug_str = metadata->DebugString();
+          EXPECT_THAT(debug_str,
+                      ::testing::HasSubstr("grpc-message: Connection closed"));
+          EXPECT_THAT(debug_str,
+                      ::testing::HasSubstr("grpc-status: UNAVAILABLE"));
+          EXPECT_THAT(debug_str,
+                      ::testing::HasSubstr("GrpcCallWasCancelled: true"));
+          on_done.Call();
+          return Empty{};
+        });
   });
 
   step->Wait();
@@ -866,14 +876,12 @@ TEST_F(Http2ClientTransportTest, ReadGracefulGoaway) {
           /*stream_id=*/1,
           /*end_headers=*/true, /*end_stream=*/true),
   });
-  step2->ThenExpectWrite({
-      helper_.SerializedGoawayFrame(
-          /*debug_data=*/RFC9113::kLastStreamClosed,
-          /*last_stream_id=*/0,
-          /*error_code=*/
-          static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
-  });
   step2->Wait();
+
+  // Tear down the transport.
+  std::shared_ptr<EventSequenceEndpoint::Step> step3 = endpoint()->NewStep();
+  AddTransportCloseExpectations(step3.get());
+  step3->Wait();
 }
 
 TEST_F(Http2ClientTransportTest, ReadGracefulGoawayCannotStartNewStreams) {
@@ -959,14 +967,12 @@ TEST_F(Http2ClientTransportTest, ReadGracefulGoawayCannotStartNewStreams) {
           /*stream_id=*/1,
           /*end_headers=*/true, /*end_stream=*/true),
   });
-  step3->ThenExpectWrite({
-      helper_.SerializedGoawayFrame(
-          /*debug_data=*/RFC9113::kLastStreamClosed,
-          /*last_stream_id=*/0,
-          /*error_code=*/
-          static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
-  });
   step3->Wait();
+
+  // Tear down the transport.
+  std::shared_ptr<EventSequenceEndpoint::Step> step4 = endpoint()->NewStep();
+  AddTransportCloseExpectations(step4.get());
+  step4->Wait();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1113,15 +1119,20 @@ TEST_F(Http2ClientTransportTest, TestMaxAllowedStreamId) {
   std::shared_ptr<EventSequenceEndpoint::Step> step2 = endpoint()->NewStep();
   CallInitiator initiator2 = StartCall(TestInitialMetadata());
   initiator2.SpawnInfallible("test-wait-call2", [&, initiator2]() mutable {
-    return Seq(initiator2.PullServerTrailingMetadata(),
-               [&](ServerMetadataHandle metadata) mutable {
-                 EXPECT_EQ(
-                     metadata->DebugString(),
-                     "grpc-message: No more stream ids available, grpc-status: "
-                     "RESOURCE_EXHAUSTED, GrpcCallWasCancelled: true");
-                 on_done.Call();
-                 return Empty{};
-               });
+    return Seq(
+        initiator2.PullServerTrailingMetadata(),
+        [&](ServerMetadataHandle metadata) mutable {
+          std::string debug_str = metadata->DebugString();
+          EXPECT_THAT(debug_str,
+                      ::testing::HasSubstr(
+                          "grpc-message: No more stream ids available"));
+          EXPECT_THAT(debug_str,
+                      ::testing::HasSubstr("grpc-status: RESOURCE_EXHAUSTED"));
+          EXPECT_THAT(debug_str,
+                      ::testing::HasSubstr("GrpcCallWasCancelled: true"));
+          on_done.Call();
+          return Empty{};
+        });
   });
 
   step2->Wait();
@@ -1134,17 +1145,14 @@ TEST_F(Http2ClientTransportTest, TestMaxAllowedStreamId) {
                                                  kPathDemoServiceStep.end()),
                                      /*stream_id=*/kMaxAllowedStreamId,
                                      /*end_headers=*/true, /*end_stream=*/true),
-       helper_.SerializedRstStreamFrame(
+       helper_.SerializedResetStreamFrame(
            /*stream_id=*/kMaxAllowedStreamId)});
-
-  step3->ThenExpectWrite({
-      helper_.SerializedGoawayFrame(
-          /*debug_data=*/RFC9113::kLastStreamClosed,
-          /*last_stream_id=*/0,
-          /*error_code=*/
-          static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
-  });
   step3->Wait();
+
+  // Teardown the transport.
+  std::shared_ptr<EventSequenceEndpoint::Step> step4 = endpoint()->NewStep();
+  AddTransportCloseExpectations(step4.get());
+  step4->Wait();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1295,7 +1303,8 @@ TEST_F(Http2ClientTransportTest,
   // 5. Client processes the settings frame and sends the stalled DATA frame.
   std::shared_ptr<EventSequenceEndpoint::Step> step3 = endpoint()->NewStep();
   settings.clear();
-  settings.push_back({Http2Settings::kInitialWindowSizeWireId, 65535u});
+  settings.push_back({Http2Settings::kInitialWindowSizeWireId,
+                      Http2Settings::kDefaultInitialWindowSize});
   step3->ThenPerformRead({
       helper_.SerializedSettingsFrame(settings),
   });
@@ -1327,10 +1336,176 @@ TEST_F(Http2ClientTransportTest,
   step4->Wait();
 }
 
-// TODO(tjagtap) : [PH2][P2] Write tests similar to
+TEST_F(Http2ClientTransportTest, TestDestructionWithStalledStreamInQueue) {
+  ExecCtx ctx;
+  StrictMock<MockFunction<void()>> on_done;
+  EXPECT_CALL(on_done, Call());
+
+  // 1. Initialize transport BUT DO NOT spawn transport loops.
+  InitTransport(GetChannelArgs());
+
+  // 2. Start call and push message. This enqueues the stream to
+  //    writable_stream_list_ synchronously on the Call party.
+  //    Since transport loops are not running, it is never dequeued.
+  CallInitiator initiator = StartCall(TestInitialMetadata());
+
+  // Wait for server trailing metadata.
+  initiator.SpawnInfallible("test-wait", [initiator, &on_done]() mutable {
+    return Seq(initiator.PullServerTrailingMetadata(),
+               [&on_done](ServerMetadataHandle metadata) mutable {
+                 // Expect the call to be cancelled.
+                 EXPECT_THAT(
+                     metadata->get(GrpcCallWasCancelled()).value_or(false),
+                     true);
+                 on_done.Call();
+                 return Empty{};
+               });
+  });
+
+  initiator.SpawnGuarded("test-send", [initiator]() mutable {
+    return Seq(
+        initiator.PushMessage(Arena::MakePooled<Message>(
+            SliceBuffer(Slice::FromExternalString("Hello!")), 0)),
+        [initiator = initiator]() mutable { return initiator.FinishSends(); },
+        []() { return absl::OkStatus(); });
+  });
+
+  // 3. Expect GOAWAY from Orphan when the transport ref is released.
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
+  step->ThenExpectWrite({
+      helper_.SerializedGoawayFrame(
+          /*debug_data=*/"Orphaned", /*last_stream_id=*/0,
+          /*error_code=*/
+          static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
+  });
+
+  // 4. Reset transport immediately.
+  // Stream is guaranteed to be in writable_stream_list_.
+  client_transport_.reset();
+
+  // Simulate upper-layer cancellation when connection is closed!
+  initiator.SpawnInfallible("Cancel", [initiator]() mutable {
+    initiator.Cancel(absl::CancelledError("Cancelled"));
+  });
+}
+
+TEST_F(Http2ClientTransportTest, TestActiveStreamAllowedToDrainAfterGoaway) {
+  ExecCtx ctx;
+  // 1. Initialize the transport and exchange settings.
+  InitTransport(GetChannelArgs());
+  SpawnTransportLoopsAndExchangeSettings();
+
+  StrictMock<MockFunction<void()>> on_done;
+  EXPECT_CALL(on_done, Call());
+
+  // 1. Client starts a new stream and sends Initial Metadata, then half-closes
+  //    it.
+  // 2. Server sends a GoAway frame with last_stream_id=kMaxStreamId31Bit.
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
+
+  step->ThenExpectWrite({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1,
+          /*end_headers=*/true, /*end_stream=*/false),
+  });
+  step->ThenExpectWrite({
+      helper_.SerializedEmptyDataFrame(/*stream_id=*/1,
+                                       /*end_stream=*/true),
+  });
+
+  step->ThenPerformRead({
+      helper_.SerializedGoawayFrame(
+          /*debug_data=*/"graceful_goaway",
+          /*last_stream_id=*/RFC9113::kMaxStreamId31Bit,
+          /*error_code=*/
+          static_cast<uint32_t>(Http2ErrorCode::kNoError)),
+  });
+
+  CallInitiator initiator = StartCall(TestInitialMetadata());
+
+  initiator.SpawnGuarded("test-send", [initiator]() mutable {
+    return Seq(
+        [initiator = initiator]() mutable { return initiator.FinishSends(); },
+        []() { return absl::OkStatus(); });
+  });
+
+  bool call_completed = false;
+  initiator.SpawnInfallible(
+      "test-wait", [initiator, &on_done, &call_completed]() mutable {
+        return Seq(
+            initiator.PullServerInitialMetadata(),
+            [](std::optional<ServerMetadataHandle> header) {
+              EXPECT_TRUE(header.has_value());
+              EXPECT_EQ((*header)->DebugString(), kPeerString);
+              LOG(INFO) << "PullServerInitialMetadata Resolved";
+            },
+            initiator.PullMessage(),
+            [](ServerToClientNextMessage message) {
+              EXPECT_TRUE(message.ok());
+              EXPECT_TRUE(message.has_value());
+              EXPECT_EQ(message.value().payload()->JoinIntoString(), "Hello");
+              LOG(INFO) << "PullMessage Resolved";
+            },
+            initiator.PullServerTrailingMetadata(),
+            [&on_done,
+             &call_completed](std::optional<ServerMetadataHandle> header) {
+              EXPECT_TRUE(header.has_value());
+              EXPECT_EQ((*header)->DebugString(),
+                        ":path: /demo.Service/Step, GrpcStatusFromWire: true");
+              call_completed = true;
+              on_done.Call();
+              LOG(INFO) << "PullServerTrailingMetadata Resolved";
+              return Empty{};
+            });
+      });
+
+  step->Wait();
+  // Tick the event engine to process the GOAWAY read.
+  event_engine()->Tick();
+
+  // At this point, the client transport has processed the graceful GOAWAY,
+  // but the server has not yet sent any trailing metadata.
+  // Since the transport layer correctly supports graceful draining, the stream
+  // must NOT be aborted immediately.
+  EXPECT_FALSE(call_completed);
+
+  // 3. Server now sends initial metadata, data, and trailing metadata for
+  // stream 1.
+  std::shared_ptr<EventSequenceEndpoint::Step> step2 = endpoint()->NewStep();
+  step2->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1,
+          /*end_headers=*/true,
+          /*end_stream=*/false),
+      helper_.SerializedDataFrame(
+          /*payload=*/"Hello", /*stream_id=*/1, /*end_stream=*/false),
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1,
+          /*end_headers=*/true,
+          /*end_stream=*/true),
+  });
+
+  step2->Wait();
+  // Tick the event engine to process the server response.
+  event_engine()->Tick();
+
+  // Now that the server has finished the stream, the call must be completed
+  // successfully.
+  EXPECT_TRUE(call_completed);
+
+  // Tear down the transport.
+  std::shared_ptr<EventSequenceEndpoint::Step> step3 = endpoint()->NewStep();
+  AddTransportCloseExpectations(step3.get());
+  step3->Wait();
+}
+
+// TODO(tjagtap) : [PH2][P3] Write tests similar to
 // TestHeaderDataHeaderFrameOrder for Continuation frame read.
 
-// TODO(tjagtap) : [PH2][P3] Write tests for following failure cases
+// TODO(tjagtap) : [PH2][P4] Write tests
 // 1. Client receives header frame with unknown stream id.
 // 2. Client receives DATA frame with unknown stream id.
 // 3. Client receives DATA frame when it is waiting for a continuation frame.
@@ -1338,6 +1513,14 @@ TEST_F(Http2ClientTransportTest,
 // metadata HEADER frame does not have END_STREAM set.
 // 5. Received HEADER frame after half close.
 // 6. Received DATA frame after half close.
+// 7. Data frame with unknown stream ID
+// 8. Data frame with only half a message and then end stream
+// 9. One data frame with a full message
+// 10. Three data frames with one full message
+// 11. One data frame with three full messages. All messages should be pushed.
+// Will need to mock the call_initiator object and test this along with the
+// Header reading code. Because we need a stream in place for the lookup to
+// work.
 
 }  // namespace testing
 

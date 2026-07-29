@@ -209,19 +209,19 @@ int main(int argc, char** argv) {
   if (absl::GetFlag(FLAGS_use_xds)) {
     args_vec.push_back(grpc_channel_arg_integer_create(
         const_cast<char*>(GRPC_ARG_XDS_ENABLED_SERVER), 1));
-  }
-
-  grpc_channel_args args = {args_vec.size(), args_vec.data()};
-  server = grpc_server_create(&args, nullptr);
-
-  if (absl::GetFlag(FLAGS_use_xds)) {
+    grpc_channel_args args = {args_vec.size(), args_vec.data()};
     grpc_server_config_fetcher* config_fetcher =
         grpc_server_config_fetcher_xds_create({OnServingStatusUpdate, nullptr},
                                               &args);
     if (config_fetcher != nullptr) {
-      grpc_server_set_config_fetcher(server, config_fetcher);
+      args_vec.push_back(grpc_channel_arg_pointer_create(
+          const_cast<char*>(GRPC_ARG_SERVER_CONFIG_FETCHER), config_fetcher,
+          grpc_server_config_fetcher_arg_vtable()));
     }
   }
+
+  grpc_channel_args args = {args_vec.size(), args_vec.data()};
+  server = grpc_server_create(&args, nullptr);
 
   std::string kChaoticGoodWireFormatPreferences(
       grpc_core::chaotic_good::WireFormatPreferences());

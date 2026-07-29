@@ -30,7 +30,7 @@ test/distrib/bazel/python_second_test_repo
 tools/artifact_gen
 
 # Directories build containing own BUILD files.
-test/bzlmod
+test/bazel_build_out_of_tree
 src/python/grpcio_tests/src/
 tools/distrib/python/grpcio_tools/build/
 tools/distrib/python/grpcio_tools/protobuf/

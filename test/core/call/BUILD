@@ -83,7 +83,6 @@ grpc_cc_test(
     external_deps = [
         "absl/strings",
         "gtest",
-        "@com_google_protobuf//upb/mem",
     ],
     deps = [
         "//:grpc_base",
@@ -92,6 +91,7 @@ grpc_cc_test(
         "//src/core:upb_utils",
         "//src/proto/grpc/channelz/v2:promise_upb_proto",
         "//src/proto/grpc/channelz/v2:property_list_upb_proto",
+        "@com_google_protobuf//upb/mem",
     ],
 )
 
@@ -224,12 +224,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "call_filters_test",
     srcs = ["call_filters_test.cc"],
-    external_deps = [
-        "gtest",
-        "@com_google_protobuf//upb/base",
-        "@com_google_protobuf//upb/mem",
-        "@com_google_protobuf//upb/text",
-    ],
+    external_deps = ["gtest"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -241,6 +236,9 @@ grpc_cc_test(
         "//src/core:upb_utils",
         "//src/proto/grpc/channelz/v2:property_list_cc_proto",
         "//test/core/promise:poll_matcher",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
+        "@com_google_protobuf//upb/text",
     ],
 )
 

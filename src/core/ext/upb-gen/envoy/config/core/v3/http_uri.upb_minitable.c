@@ -17,33 +17,35 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal envoy_config_core_v3_HttpUri__submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
-};
+extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
+typedef struct {
+  upb_MiniTableField fields[3];
+  upb_MiniTableSubInternal subs[1];
+} envoy__config__core__v3__HttpUri_msg_init_Fields;
 
-static const upb_MiniTableField envoy_config_core_v3_HttpUri__fields[3] = {
+static const envoy__config__core__v3__HttpUri_msg_init_Fields envoy_config_core_v3_HttpUri__fields = {{
   {1, UPB_SIZE(20, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(28, 32), UPB_SIZE(-17, -13), kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(12, 48), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+  {3, UPB_SIZE(12, 48), 64, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
+}};
 
 const upb_MiniTable envoy__config__core__v3__HttpUri_msg_init = {
-  &envoy_config_core_v3_HttpUri__submsgs[0],
-  &envoy_config_core_v3_HttpUri__fields[0],
+  &envoy_config_core_v3_HttpUri__fields.fields[0],
   UPB_SIZE(40, 56), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.HttpUri",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-    {0x0020000c02000012, &upb_pos_1bt},
+    {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x0020000c02000012, &upb_DecodeFast_String_Oneof_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
-const upb_MiniTable* envoy__config__core__v3__HttpUri_msg_init_ptr = &envoy__config__core__v3__HttpUri_msg_init;
 static const upb_MiniTable *messages_layout[1] = {
   &envoy__config__core__v3__HttpUri_msg_init,
 };

@@ -22,8 +22,6 @@
 
 #ifdef GPR_WINDOWS
 
-// Some platforms (namely msys) need wchar to be included BEFORE
-// anything else, especially strsafe.h.
 #include <grpc/support/alloc.h>
 #include <grpc/support/log_windows.h>
 #include <grpc/support/string_util.h>
@@ -32,6 +30,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <strsafe.h>
+// The conflict is specific to Windows because the StrCat macro that causes the
+// issue is defined in the strsafe.h header file, which is part of the Windows
+// SDK and is only included when compiling for Windows.
+#undef StrCat
 #include <wchar.h>
 
 #include "src/core/util/string.h"

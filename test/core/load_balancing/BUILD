@@ -228,7 +228,6 @@ grpc_cc_test(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//src/core:channel_args",
-        "//src/core:experiments",
         "//src/core:grpc_lb_policy_round_robin",
         "//test/core/test_util:grpc_test_util",
     ],
@@ -350,6 +349,30 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "cds_test",
+    srcs = ["cds_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    tags = [
+        "lb_unit_test",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        ":lb_policy_test_lib",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_base",
+        "//:ref_counted_ptr",
+        "//src/core:grpc_lb_policy_cds",
+        "//src/core:xds_config",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
+    ],
+)
+
+grpc_cc_test(
     name = "rls_lb_config_parser_test",
     srcs = ["rls_lb_config_parser_test.cc"],
     external_deps = [
@@ -424,9 +447,13 @@ grpc_cc_test(
         "//:grpc_service_config_impl",
         "//:ref_counted_ptr",
         "//src/core:channel_args",
+        "//src/core:client_channel_service_config",
+        "//src/core:down_cast",
+        "//src/core:grpc_lb_policy_weighted_round_robin",
         "//src/core:grpc_service_config",
         "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
     ],
 )
 
@@ -464,6 +491,7 @@ grpc_cc_test(
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
     ],
 )
 

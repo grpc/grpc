@@ -1,3 +1,5 @@
+# TODO: converge this with tools/bazel.rc to avoid duplicated code.
+#
 # Enable bzlmod. Used for migraion.
 common --enable_bzlmod=true
 common --enable_workspace=false

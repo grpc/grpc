@@ -105,6 +105,7 @@ _TAG_COLOR = {
     "SUCCESS": "green",
     "IDLE": "gray",
     "SKIPPED": "cyan",
+    "LOG": "gray",
 }
 
 _FORMAT = "%(asctime)-15s %(message)s"
@@ -150,8 +151,8 @@ def message(tag, msg, explanatory_text=None, do_newline=False):
                             if explanatory_text is not None
                             else ""
                         ),
-                        _COLORS[_TAG_COLOR[tag]][1],
-                        _COLORS[_TAG_COLOR[tag]][0],
+                        _COLORS[_TAG_COLOR.get(tag, "gray")][1],
+                        _COLORS[_TAG_COLOR.get(tag, "gray")][0],
                         tag,
                         msg,
                         (
@@ -308,12 +309,19 @@ class Job:
             )
             if not os.path.exists(logfile_dir):
                 os.makedirs(logfile_dir)
+            message("LOG", f"Logging output to {self._spec.logfilename}")
             self._logfile = open(self._spec.logfilename, "w+")
         else:
             # macOS: a series of quick os.unlink invocation might cause OS
             # error during the creation of temporary file. By using
             # NamedTemporaryFile, we defer the removal of file and directory.
-            self._logfile = tempfile.NamedTemporaryFile()
+            self._logfile = tempfile.NamedTemporaryFile(delete=False)
+            print(
+                "Job "
+                + self._spec.shortname
+                + " started with log file "
+                + self._logfile.name
+            )
         env = dict(os.environ)
         env.update(self._spec.environ)
         env.update(self._add_env)

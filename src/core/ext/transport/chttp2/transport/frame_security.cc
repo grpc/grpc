@@ -25,7 +25,9 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/transport_framing_endpoint_extension.h"
+#include "src/core/util/grpc_check.h"
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 absl::Status grpc_chttp2_security_frame_parser_parse(void* parser,
                                                      grpc_chttp2_transport* t,
@@ -51,7 +53,15 @@ absl::Status grpc_chttp2_security_frame_parser_parse(void* parser,
 }
 
 absl::Status grpc_chttp2_security_frame_parser_begin_frame(
-    grpc_chttp2_security_frame_parser* parser) {
+    grpc_chttp2_security_frame_parser* parser, const uint32_t length,
+    const uint32_t max_frame_size) {
+  if (GPR_UNLIKELY(length > max_frame_size &&
+                   grpc_core::IsCustomFrameCheckEnabled())) {
+    return GRPC_ERROR_CREATE(absl::StrCat(
+        "gRPC Transport Error : Security frame is larger than the maximum "
+        "allowed size : ",
+        max_frame_size, ", Received size : ", length));
+  }
   parser->payload.Clear();
   return absl::OkStatus();
 }
@@ -59,6 +69,7 @@ absl::Status grpc_chttp2_security_frame_parser_begin_frame(
 void grpc_chttp2_security_frame_create(grpc_slice_buffer* payload,
                                        uint32_t length,
                                        grpc_slice_buffer* frame) {
+  GRPC_CHECK_EQ(payload->length, length);
   grpc_slice hdr;
   uint8_t* p;
   static const size_t header_size = 9;
@@ -76,5 +87,5 @@ void grpc_chttp2_security_frame_create(grpc_slice_buffer* payload,
   *p++ = 0;
 
   grpc_slice_buffer_add(frame, hdr);
-  grpc_slice_buffer_move_first_no_ref(payload, payload->length, frame);
+  grpc_slice_buffer_move_first_no_ref(payload, length, frame);
 }

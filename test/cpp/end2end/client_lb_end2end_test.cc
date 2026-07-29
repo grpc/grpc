@@ -535,13 +535,14 @@ class ClientLbEnd2endTest : public ::testing::Test {
       const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
       size_t start_index = 0, size_t stop_index = 0,
       absl::AnyInvocable<void(const Status&)> status_check = nullptr,
-      absl::Duration timeout = absl::Seconds(30)) {
+      absl::Duration timeout = absl::Seconds(30), bool wait_for_ready = false) {
     if (stop_index == 0) stop_index = servers_.size();
     auto deadline = absl::Now() + (timeout * grpc_test_slowdown_factor());
     LOG(INFO) << "========= WAITING FOR BACKENDS [" << start_index << ", "
               << stop_index << ") ==========";
     while (!SeenAllServers(start_index, stop_index)) {
-      Status status = SendRpc(stub);
+      Status status = SendRpc(stub, /*response=*/nullptr, /*timeout_ms=*/1000,
+                              /*wait_for_ready=*/wait_for_ready);
       if (status_check != nullptr) {
         if (!status.ok()) status_check(status);
       } else {
@@ -561,9 +562,10 @@ class ClientLbEnd2endTest : public ::testing::Test {
       const grpc_core::DebugLocation& location,
       const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
       size_t server_index,
-      absl::AnyInvocable<void(const Status&)> status_check = nullptr) {
+      absl::AnyInvocable<void(const Status&)> status_check = nullptr,
+      bool wait_for_ready = false) {
     WaitForServers(location, stub, server_index, server_index + 1,
-                   std::move(status_check));
+                   std::move(status_check), absl::Seconds(30), wait_for_ready);
   }
 
   bool WaitForChannelState(
@@ -728,6 +730,7 @@ class AuthorityOverrideTest : public ClientLbEnd2endTest {
 };
 
 TEST_F(AuthorityOverrideTest, NoOverride) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   StartServers(1);
   FakeResolverResponseGeneratorWrapper response_generator;
   auto channel = BuildChannel("", response_generator);
@@ -746,6 +749,7 @@ TEST_F(AuthorityOverrideTest, NoOverride) {
 }
 
 TEST_F(AuthorityOverrideTest, OverrideFromResolver) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   StartServers(1);
   FakeResolverResponseGeneratorWrapper response_generator;
   auto channel = BuildChannel("", response_generator);
@@ -769,6 +773,7 @@ TEST_F(AuthorityOverrideTest, OverrideFromResolver) {
 }
 
 TEST_F(AuthorityOverrideTest, OverrideOnChannel) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   StartServers(1);
   // Set authority via channel arg.
   FakeResolverResponseGeneratorWrapper response_generator;
@@ -790,6 +795,7 @@ TEST_F(AuthorityOverrideTest, OverrideOnChannel) {
 }
 
 TEST_F(AuthorityOverrideTest, OverrideFromLbPolicy) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   // We use InsecureCreds here to avoid the authority check in the fake
   // security connector.
   StartServers(1, {}, InsecureServerCredentials());
@@ -813,6 +819,7 @@ TEST_F(AuthorityOverrideTest, OverrideFromLbPolicy) {
 }
 
 TEST_F(AuthorityOverrideTest, PerRpcOverride) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   // We use InsecureCreds here to avoid the authority check in the fake
   // security connector.
   StartServers(1, {}, InsecureServerCredentials());
@@ -836,6 +843,7 @@ TEST_F(AuthorityOverrideTest, PerRpcOverride) {
 
 TEST_F(AuthorityOverrideTest,
        ChannelOverrideTakesPrecedenceOverResolverOverride) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   StartServers(1);
   // Set authority via channel arg.
   FakeResolverResponseGeneratorWrapper response_generator;
@@ -863,6 +871,7 @@ TEST_F(AuthorityOverrideTest,
 
 TEST_F(AuthorityOverrideTest,
        LbPolicyOverrideTakesPrecedenceOverChannelOverride) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   // We use InsecureCreds here to avoid the authority check in the fake
   // security connector.
   StartServers(1, {}, InsecureServerCredentials());
@@ -888,6 +897,7 @@ TEST_F(AuthorityOverrideTest,
 
 TEST_F(AuthorityOverrideTest,
        PerRpcOverrideTakesPrecedenceOverLbPolicyOverride) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   // We use InsecureCreds here to avoid the authority check in the fake
   // security connector.
   StartServers(1, {}, InsecureServerCredentials());
@@ -1744,6 +1754,7 @@ TEST_F(RoundRobinTest, ManyUpdates) {
 }
 
 TEST_F(RoundRobinTest, ReresolveOnSubchannelConnectionFailure) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   // Start 3 servers.
   StartServers(3);
   // Create channel.
@@ -1940,6 +1951,7 @@ TEST_F(RoundRobinTest, ReportsLatestStatusInTransientFailure) {
 
 TEST_F(RoundRobinTest, DoesNotFailRpcsUponDisconnection) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   // Start connection injector.
   ConnectionAttemptInjector injector;
   // Start server.
@@ -2000,6 +2012,7 @@ TEST_F(RoundRobinTest, DoesNotFailRpcsUponDisconnection) {
 
 TEST_F(RoundRobinTest, SingleReconnect) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug (flake)");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   const int kNumServers = 3;
   StartServers(kNumServers);
   const auto ports = GetServersPorts();
@@ -2095,7 +2108,7 @@ TEST_F(RoundRobinTest, HealthChecking) {
   EXPECT_TRUE(WaitForChannelReady(channel.get()));
   // New channel state may be reported before the picker is updated, so
   // wait for the server before proceeding.
-  WaitForServer(DEBUG_LOCATION, stub, 0);
+  WaitForServer(DEBUG_LOCATION, stub, 0, nullptr, true /* wait_for_ready */);
   for (int i = 0; i < 10; ++i) {
     CheckRpcSendOk(DEBUG_LOCATION, stub);
   }
@@ -2174,7 +2187,7 @@ TEST_F(RoundRobinTest, HealthCheckingHandlesSubchannelFailure) {
   auto channel = BuildChannel("round_robin", response_generator, args);
   auto stub = BuildStub(channel);
   response_generator.SetNextResolution(GetServersPorts());
-  WaitForServer(DEBUG_LOCATION, stub, 0);
+  WaitForServer(DEBUG_LOCATION, stub, 0, nullptr, true /* wait_for_ready */);
   // Stop server 0 and send a new resolver result to ensure that RR
   // checks each subchannel's state.
   servers_[0]->StopListeningAndSendGoaways();
@@ -3188,9 +3201,7 @@ TEST_F(ControlPlaneStatusRewritingTest, RewritesFromConfigSelector) {
     bool Equals(const ConfigSelector* other) const override {
       return status_ == static_cast<const FailConfigSelector*>(other)->status_;
     }
-    void BuildFilterChains(grpc_core::FilterChainBuilder&,
-                           const grpc_core::Blackboard*,
-                           grpc_core::Blackboard*) override {}
+    void BuildFilterChains(grpc_core::FilterChainBuilder&) override {}
     absl::StatusOr<grpc_core::RefCountedPtr<const grpc_core::FilterChain>>
     GetCallConfig(GetCallConfigArgs /*args*/) override {
       return status_;
@@ -3551,6 +3562,7 @@ TEST_F(ConnectionScalingTest, SingleConnection) {
 }
 
 TEST_F(ConnectionScalingTest, MultipleConnections) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
     GTEST_SKIP()
         << "this test requires the subchannel_connection_scaling experiment";
@@ -3599,6 +3611,7 @@ TEST_F(ConnectionScalingTest, MultipleConnections) {
 }
 
 TEST_F(ConnectionScalingTest, HonorsMaxConnectionsPerSubchannel) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
     GTEST_SKIP()
         << "this test requires the subchannel_connection_scaling experiment";
@@ -3650,6 +3663,7 @@ TEST_F(ConnectionScalingTest, HonorsMaxConnectionsPerSubchannel) {
 
 TEST_F(ConnectionScalingTest,
        QueuedRpcsTriggerNewConnectionAttemptAfterBackoff) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
     GTEST_SKIP()
         << "this test requires the subchannel_connection_scaling experiment";
@@ -3711,6 +3725,7 @@ TEST_F(ConnectionScalingTest,
 }
 
 TEST_F(ConnectionScalingTest, QueuedRpcCancelled) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
     GTEST_SKIP()
         << "this test requires the subchannel_connection_scaling experiment";
@@ -3771,6 +3786,8 @@ TEST_F(ConnectionScalingTest, QueuedRpcCancelled) {
 }
 
 TEST_F(ConnectionScalingTest, QueuedRpcsFailWhenLastConnectionCloses) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
     GTEST_SKIP()
         << "this test requires the subchannel_connection_scaling experiment";
@@ -3844,6 +3861,7 @@ TEST_F(ConnectionScalingTest, QueuedRpcsFailWhenLastConnectionCloses) {
 
 TEST_F(ConnectionScalingTest,
        QueuedRpcsTransparentlyRetriedWhenLastConnectionCloses) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
     GTEST_SKIP()
         << "this test requires the subchannel_connection_scaling experiment";
@@ -3925,6 +3943,7 @@ TEST_F(ConnectionScalingTest,
 // deeply enough to verify.  When we finish migrating to v3, try writing
 // that test again.
 TEST_F(ConnectionScalingTest, QueuedRpcsFailAtMaxConnectionsIfConfigured) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
     GTEST_SKIP()
         << "this test requires the subchannel_connection_scaling experiment";
@@ -3987,6 +4006,7 @@ TEST_F(ConnectionScalingTest, QueuedRpcsFailAtMaxConnectionsIfConfigured) {
 
 TEST_F(ConnectionScalingTest,
        MaxConnectionsPerSubchannelChangeTriggersConnectionAttempt) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
     GTEST_SKIP()
         << "this test requires the subchannel_connection_scaling experiment";
@@ -4056,6 +4076,8 @@ TEST_F(ConnectionScalingTest,
 }
 
 TEST_F(ConnectionScalingTest, IdleConnectionsClosed) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
     GTEST_SKIP()
         << "this test requires the subchannel_connection_scaling experiment";

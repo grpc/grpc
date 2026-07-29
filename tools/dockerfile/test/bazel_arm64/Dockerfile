@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM arm64v8/debian:11
+FROM --platform=linux/arm64/v8 arm64v8/debian:11
 
 #=================
 # Basic C core dependencies
@@ -97,7 +97,7 @@ RUN apt-get update && apt-get -y install libc++-dev clang && apt-get clean
 # Bazel installation
 
 # Must be in sync with tools/bazel
-ENV BAZEL_VERSION 8.0.1
+ENV BAZEL_VERSION 8.7.0
 
 # The correct bazel version is already preinstalled, no need to use //tools/bazel wrapper.
 ENV DISABLE_BAZEL_WRAPPER 1

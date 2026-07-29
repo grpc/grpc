@@ -23,6 +23,8 @@ import unittest
 
 from typeguard import install_import_hook
 
+
+# AIO
 install_import_hook('grpc.aio')
 install_import_hook('grpc.aio._channel')
 install_import_hook('grpc.aio._server')
@@ -34,6 +36,20 @@ install_import_hook('grpc.aio._typing')
 install_import_hook('grpc.aio._call')
 install_import_hook('grpc.aio._metadata')
 
+# SYNC
+install_import_hook('grpc')
+install_import_hook('grpc._auth')
+install_import_hook('grpc._channel')
+install_import_hook('grpc._common')
+install_import_hook('grpc._compression')
+install_import_hook('grpc._interceptor')
+install_import_hook('grpc._observability')
+install_import_hook('grpc._plugin_wrapping')
+install_import_hook('grpc._runtime_protos')
+install_import_hook('grpc._server')
+install_import_hook('grpc._simple_stubs')
+install_import_hook('grpc._typing')
+install_import_hook('grpc._utilities')
 
 class SingleLoader:
     def __init__(

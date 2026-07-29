@@ -135,6 +135,11 @@ class TlsCredentialsOptions {
   // handshake. If not set, the underlying SSL library will use TLS v1.3.
   // @param tls_version: The maximum TLS version.
   void set_max_tls_version(grpc_tls_version tls_version);
+  // Sets the list of key exchange groups (TLS curves) that will be negotiated
+  // during the TLS handshake, in order of preference. If not set, a default
+  // list will be used.
+  void set_key_exchange_groups(
+      const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups);
 
   // ----- Getters for member fields ----
   // Returns a deep copy of the internal c options. The caller takes ownership

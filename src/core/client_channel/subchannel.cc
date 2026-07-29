@@ -923,8 +923,7 @@ void OldSubchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
                   "remaining in TRANSIENT_FAILURE"
                 : ", backing off for " +
                       std::to_string(time_until_next_attempt.millis()) + " ms");
-    SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
-                               grpc_error_to_absl_status(error));
+    SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE, error);
     if (created_from_endpoint_) return;
     retry_timer_handle_ = event_engine_->RunAfter(
         time_until_next_attempt,
@@ -1616,7 +1615,7 @@ void NewSubchannel::QueuedCall::ResumeOnConnectionLocked(
   // It's possible that the subchannel will get quota for the call
   // and try to resume it before buffered_call_ contains any batches.
   // In that case, we will not be holding the call combiner here, so we
-  // must not yeild it.  That's why we use
+  // must not yield it.  That's why we use
   // YieldCallCombinerIfPendingBatchesFound here.
   if (!error.ok()) {
     buffered_call_.Fail(error,
@@ -1750,8 +1749,6 @@ class NewSubchannel::ConnectionStateWatcher final
       // connection attempt.
       subchannel->RetryQueuedRpcsLocked();
     }
-    // Reset backoff.
-    subchannel->backoff_.Reset();
   }
 
   void OnPeerMaxConcurrentStreamsUpdate(
@@ -2192,7 +2189,7 @@ void NewSubchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
             }
           });
     }
-    SetLastFailureLocked(grpc_error_to_absl_status(error));
+    SetLastFailureLocked(error);
     MaybeUpdateConnectivityStateLocked();
   }
 }
@@ -2264,6 +2261,8 @@ bool NewSubchannel::PublishTransportLocked() {
         connecting_result_.max_concurrent_streams);
   }
   connecting_result_.Reset();
+  // Reset backoff.
+  backoff_.Reset();
   // Publish.
   GRPC_TRACE_LOG(subchannel, INFO)
       << "subchannel " << this << " " << key_.ToString()

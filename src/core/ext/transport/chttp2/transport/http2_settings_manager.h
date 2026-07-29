@@ -32,8 +32,6 @@
 
 namespace grpc_core {
 
-// TODO(tjagtap) [PH2][P1][Settings] : Add new DCHECKs to PH2-Only functions in
-// this class.
 class Http2SettingsManager {
  public:
   // Only local and peer settings can be edited by the transport.

@@ -24,6 +24,7 @@
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/security/tls_certificate_provider.h>
+#include <grpcpp/security/tls_certificate_verifier.h>
 #include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/security/tls_private_key_signer.h>
 #include <grpcpp/server.h>
@@ -43,10 +44,10 @@
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
+#include "test/cpp/end2end/tls_test_private_key_signer.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/log/check.h"
-#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/synchronization/notification.h"
@@ -54,18 +55,16 @@
 
 #if defined(OPENSSL_IS_BORINGSSL)
 
-#include <openssl/digest.h>
-#include <openssl/ec.h>
-#include <openssl/evp.h>
-#include <openssl/rsa.h>
-#include <openssl/ssl.h>
-
 namespace grpc {
 namespace testing {
 namespace {
 
 constexpr absl::string_view kMessage = "Hello";
 constexpr absl::string_view kCaPemPath = "src/core/tsi/test_creds/ca.pem";
+constexpr absl::string_view kServerKey0Path =
+    "src/core/tsi/test_creds/server0.key";
+constexpr absl::string_view kServerCert0Path =
+    "src/core/tsi/test_creds/server0.pem";
 constexpr absl::string_view kServerKeyPath =
     "src/core/tsi/test_creds/server1.key";
 constexpr absl::string_view kServerCertPath =
@@ -74,49 +73,6 @@ constexpr absl::string_view kClientKeyPath =
     "src/core/tsi/test_creds/client.key";
 constexpr absl::string_view kClientCertPath =
     "src/core/tsi/test_creds/client.pem";
-
-bssl::UniquePtr<EVP_PKEY> LoadPrivateKeyFromString(
-    absl::string_view private_pem) {
-  bssl::UniquePtr<BIO> bio(
-      BIO_new_mem_buf(private_pem.data(), private_pem.size()));
-  return bssl::UniquePtr<EVP_PKEY>(
-      PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, nullptr));
-}
-
-uint16_t GetBoringSslAlgorithm(
-    grpc::experimental::PrivateKeySigner::SignatureAlgorithm
-        signature_algorithm) {
-  switch (signature_algorithm) {
-    case grpc::experimental::PrivateKeySigner::SignatureAlgorithm::
-        kRsaPkcs1Sha256:
-      return SSL_SIGN_RSA_PKCS1_SHA256;
-    case grpc::experimental::PrivateKeySigner::SignatureAlgorithm::
-        kRsaPkcs1Sha384:
-      return SSL_SIGN_RSA_PKCS1_SHA384;
-    case grpc::experimental::PrivateKeySigner::SignatureAlgorithm::
-        kRsaPkcs1Sha512:
-      return SSL_SIGN_RSA_PKCS1_SHA512;
-    case grpc::experimental::PrivateKeySigner::SignatureAlgorithm::
-        kEcdsaSecp256r1Sha256:
-      return SSL_SIGN_ECDSA_SECP256R1_SHA256;
-    case grpc::experimental::PrivateKeySigner::SignatureAlgorithm::
-        kEcdsaSecp384r1Sha384:
-      return SSL_SIGN_ECDSA_SECP384R1_SHA384;
-    case grpc::experimental::PrivateKeySigner::SignatureAlgorithm::
-        kEcdsaSecp521r1Sha512:
-      return SSL_SIGN_ECDSA_SECP521R1_SHA512;
-    case grpc::experimental::PrivateKeySigner::SignatureAlgorithm::
-        kRsaPssRsaeSha256:
-      return SSL_SIGN_RSA_PSS_RSAE_SHA256;
-    case grpc::experimental::PrivateKeySigner::SignatureAlgorithm::
-        kRsaPssRsaeSha384:
-      return SSL_SIGN_RSA_PSS_RSAE_SHA384;
-    case grpc::experimental::PrivateKeySigner::SignatureAlgorithm::
-        kRsaPssRsaeSha512:
-      return SSL_SIGN_RSA_PSS_RSAE_SHA512;
-  }
-  return -1;
-}
 
 class TlsPrivateKeyOffloadTest : public ::testing::Test {
  protected:
@@ -179,7 +135,8 @@ class TlsPrivateKeyOffloadTest : public ::testing::Test {
 };
 
 void DoRpc(const std::string& server_addr,
-           const experimental::TlsChannelCredentialsOptions& tls_options) {
+           const experimental::TlsChannelCredentialsOptions& tls_options,
+           bool expect_sni_match = false) {
   ChannelArguments channel_args;
   channel_args.SetSslTargetNameOverride("foo.test.google.fr");
   std::shared_ptr<Channel> channel = grpc::CreateCustomChannel(
@@ -193,6 +150,18 @@ void DoRpc(const std::string& server_addr,
   ClientContext context;
   context.set_deadline(grpc_timeout_seconds_to_deadline(/*time_s=*/5));
   grpc::Status result = stub->Echo(&context, request, &response);
+  if (expect_sni_match) {
+    std::vector<grpc::string_ref> san_names =
+        context.auth_context()->FindPropertyValues(GRPC_X509_SAN_PROPERTY_NAME);
+    bool sni_match = false;
+    for (const auto& san : san_names) {
+      if (san.ends_with("test.google.fr")) {
+        sni_match = true;
+        break;
+      }
+    }
+    EXPECT_TRUE(sni_match);
+  }
   EXPECT_TRUE(result.ok()) << result.error_message().c_str() << ", "
                            << result.error_details().c_str();
   EXPECT_EQ(response.message(), kMessage);
@@ -242,153 +211,14 @@ void DoRpcAndExpectFailure(
   }
 }
 
-absl::StatusOr<std::string> SignWithBoringSSL(
-    absl::string_view data_to_sign,
-    grpc::experimental::PrivateKeySigner::SignatureAlgorithm
-        signature_algorithm,
-    EVP_PKEY* private_key) {
-  const uint8_t* in = reinterpret_cast<const uint8_t*>(data_to_sign.data());
-  const size_t in_len = data_to_sign.size();
-
-  uint16_t boring_signature_algorithm =
-      GetBoringSslAlgorithm(signature_algorithm);
-  if (EVP_PKEY_id(private_key) !=
-      SSL_get_signature_algorithm_key_type(boring_signature_algorithm)) {
-    fprintf(stderr, "Key type does not match signature algorithm.\n");
-  }
-
-  // Determine the hash.
-  const EVP_MD* md =
-      SSL_get_signature_algorithm_digest(boring_signature_algorithm);
-  bssl::ScopedEVP_MD_CTX ctx;
-  EVP_PKEY_CTX* pctx;
-  if (!EVP_DigestSignInit(ctx.get(), &pctx, md, nullptr, private_key)) {
-    return absl::InternalError("EVP_DigestSignInit failed");
-  }
-
-  // Configure additional signature parameters.
-  if (SSL_is_signature_algorithm_rsa_pss(boring_signature_algorithm)) {
-    if (!EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PSS_PADDING) ||
-        !EVP_PKEY_CTX_set_rsa_pss_saltlen(pctx, -1)) {
-      return absl::InternalError("EVP_PKEY_CTX failed");
-    }
-  }
-
-  size_t len = 0;
-  if (!EVP_DigestSign(ctx.get(), nullptr, &len, in, in_len)) {
-    return absl::InternalError("EVP_DigestSign failed");
-  }
-  std::vector<uint8_t> private_key_result;
-  private_key_result.resize(len);
-  if (!EVP_DigestSign(ctx.get(), private_key_result.data(), &len, in, in_len)) {
-    return absl::InternalError("EVP_DigestSign failed");
-  }
-  private_key_result.resize(len);
-  return std::string(private_key_result.begin(), private_key_result.end());
-}
-
-class SyncTestPrivateKeySigner final
-    : public grpc::experimental::PrivateKeySigner {
- public:
-  enum class Mode { kSuccess, kError };
-
-  explicit SyncTestPrivateKeySigner(absl::string_view private_key,
-                                    Mode mode = Mode::kSuccess)
-      : pkey_(LoadPrivateKeyFromString(private_key)), mode_(mode) {}
-
-  std::variant<absl::StatusOr<std::string>,
-               std::shared_ptr<grpc_core::PrivateKeySigner::AsyncSigningHandle>>
-  Sign(absl::string_view data_to_sign, SignatureAlgorithm signature_algorithm,
-       OnSignComplete /*on_sign_complete*/) override {
-    if (mode_ == Mode::kError) {
-      return absl::InternalError("Test error sync");
-    }
-    return SignWithBoringSSL(data_to_sign, signature_algorithm, pkey_.get());
-  }
-
-  void Cancel(std::shared_ptr<grpc_core::PrivateKeySigner::AsyncSigningHandle>
-              /*handle*/) override {}
-
- private:
-  bssl::UniquePtr<EVP_PKEY> pkey_;
-  Mode mode_;
-};
-
-class AsyncTestPrivateKeySigner final
-    : public grpc::experimental::PrivateKeySigner,
-      public std::enable_shared_from_this<AsyncTestPrivateKeySigner> {
- public:
-  enum class Mode { kSuccess, kDelayed, kCancellation, kError };
-
-  struct AsyncSigningHandleInternal
-      : public grpc_core::PrivateKeySigner::AsyncSigningHandle {
-    grpc_event_engine::experimental::EventEngine::TaskHandle task_handle;
-  };
-
-  explicit AsyncTestPrivateKeySigner(
-      absl::string_view private_key, Mode mode = Mode::kSuccess,
-      absl::Duration delay = absl::ZeroDuration())
-      : pkey_(LoadPrivateKeyFromString(private_key)),
-        mode_(mode),
-        delay_(delay) {}
-
-  std::variant<absl::StatusOr<std::string>,
-               std::shared_ptr<grpc_core::PrivateKeySigner::AsyncSigningHandle>>
-  Sign(absl::string_view data_to_sign, SignatureAlgorithm signature_algorithm,
-       OnSignComplete on_sign_complete) override {
-    grpc_core::ExecCtx exec_ctx;
-    auto event_engine =
-        grpc_event_engine::experimental::GetDefaultEventEngine();
-    auto handle = std::make_shared<AsyncSigningHandleInternal>();
-
-    if (mode_ == Mode::kCancellation) {
-      event_engine->Run([self = shared_from_this()]() {
-        while (!self->was_cancelled_.load()) {
-          absl::SleepFor(absl::Milliseconds(10));
-        }
-      });
-    } else {
-      handle->task_handle = event_engine->RunAfter(
-          std::chrono::nanoseconds(absl::ToInt64Nanoseconds(delay_)),
-          [self = shared_from_this(), data_to_sign = std::string(data_to_sign),
-           signature_algorithm,
-           on_sign_complete = std::move(on_sign_complete)]() mutable {
-            if (self->mode_ == Mode::kError) {
-              on_sign_complete(absl::InternalError("Test error async"));
-            } else {
-              on_sign_complete(SignWithBoringSSL(
-                  data_to_sign, signature_algorithm, self->pkey_.get()));
-            }
-          });
-    }
-    return handle;
-  }
-
-  void Cancel(std::shared_ptr<grpc_core::PrivateKeySigner::AsyncSigningHandle>
-                  handle) override {
-    if (mode_ == Mode::kDelayed) {
-      grpc_core::ExecCtx exec_ctx;
-      auto event_engine =
-          grpc_event_engine::experimental::GetDefaultEventEngine();
-      auto internal_handle =
-          std::static_pointer_cast<AsyncSigningHandleInternal>(handle);
-      event_engine->Cancel(internal_handle->task_handle);
-    }
-  }
-
-  bool WasCancelled() { return was_cancelled_.load(); }
-
- private:
-  bssl::UniquePtr<EVP_PKEY> pkey_;
-  Mode mode_;
-  absl::Duration delay_;
-  std::atomic<bool> was_cancelled_{false};
-};
-
 // Verifies that the server can successfully offload signing to an asynchronous
 // custom signer.
-TEST_F(TlsPrivateKeyOffloadTest, OffloadWithCustomKeySignerAsync) {
+TEST_F(TlsPrivateKeyOffloadTest, OffloadWithCustomKeySignerAsyncWithSniMatch) {
   server_addr_ = absl::StrCat("localhost:", grpc_pick_unused_port_or_die());
+  std::string server_key_0 =
+      grpc_core::testing::GetFileContents(std::string(kServerKey0Path));
+  std::string server_cert_0 =
+      grpc_core::testing::GetFileContents(std::string(kServerCert0Path));
   std::string server_key =
       grpc_core::testing::GetFileContents(std::string(kServerKeyPath));
   std::string server_cert =
@@ -399,6 +229,13 @@ TEST_F(TlsPrivateKeyOffloadTest, OffloadWithCustomKeySignerAsync) {
   std::vector<experimental::IdentityKeyOrSignerCertPair>
       server_identity_key_cert_pairs;
   signer_ = std::make_shared<AsyncTestPrivateKeySigner>(server_key);
+  // The bad signer should not be used with correct SNI matching.
+  std::shared_ptr<experimental::PrivateKeySigner> bad_signer =
+      std::make_shared<AsyncTestPrivateKeySigner>(
+          server_key_0, AsyncTestPrivateKeySigner::Mode::kError);
+  server_identity_key_cert_pairs.emplace_back(
+      grpc::experimental::IdentityKeyOrSignerCertPair{bad_signer,
+                                                      server_cert_0});
   server_identity_key_cert_pairs.emplace_back(
       grpc::experimental::IdentityKeyOrSignerCertPair{signer_, server_cert});
   auto server_certificate_provider =
@@ -431,6 +268,60 @@ TEST_F(TlsPrivateKeyOffloadTest, OffloadWithCustomKeySignerAsync) {
   options.watch_identity_key_cert_pairs();
   options.set_identity_cert_name("identity");
   options.set_check_call_host(false);
+
+  DoRpc(server_addr_, options);
+}
+
+// Verifies that the server can successfully offload signing to an asynchronous
+// custom signer.
+TEST_F(TlsPrivateKeyOffloadTest,
+       OffloadWithCustomKeySignerAsyncWithoutSniMatch) {
+  server_addr_ = absl::StrCat("localhost:", grpc_pick_unused_port_or_die());
+  std::string server_key_0 =
+      grpc_core::testing::GetFileContents(std::string(kServerKey0Path));
+  std::string server_cert_0 =
+      grpc_core::testing::GetFileContents(std::string(kServerCert0Path));
+  std::string ca_cert =
+      grpc_core::testing::GetFileContents(std::string(kCaPemPath));
+
+  // SNI doesn't match so the default certificate will be used.
+  std::vector<experimental::IdentityKeyOrSignerCertPair>
+      server_identity_key_cert_pairs;
+  signer_ = std::make_shared<AsyncTestPrivateKeySigner>(server_key_0);
+  server_identity_key_cert_pairs.emplace_back(
+      grpc::experimental::IdentityKeyOrSignerCertPair{signer_, server_cert_0});
+  auto server_certificate_provider =
+      std::make_shared<experimental::InMemoryCertificateProvider>();
+  ASSERT_TRUE(server_certificate_provider
+                  ->UpdateIdentityKeyCertPair(server_identity_key_cert_pairs)
+                  .ok());
+  ASSERT_TRUE(server_certificate_provider->UpdateRoot(ca_cert).ok());
+
+  StartServer(server_certificate_provider);
+
+  std::string client_key =
+      grpc_core::testing::GetFileContents(std::string(kClientKeyPath));
+  std::string client_cert =
+      grpc_core::testing::GetFileContents(std::string(kClientCertPath));
+  auto client_certificate_provider =
+      std::make_shared<experimental::InMemoryCertificateProvider>();
+  std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs;
+  identity_key_cert_pairs.emplace_back(
+      experimental::IdentityKeyCertPair{client_key, client_cert});
+  ASSERT_TRUE(client_certificate_provider
+                  ->UpdateIdentityKeyCertPair(identity_key_cert_pairs)
+                  .ok());
+  ASSERT_TRUE(client_certificate_provider->UpdateRoot(ca_cert).ok());
+
+  grpc::experimental::TlsChannelCredentialsOptions options;
+  options.set_certificate_provider(client_certificate_provider);
+  options.watch_root_certs();
+  options.set_root_cert_name("root");
+  options.watch_identity_key_cert_pairs();
+  options.set_identity_cert_name("identity");
+  // Skip the host name check so that the handshake can succeed.
+  options.set_certificate_verifier(
+      std::make_shared<experimental::NoOpCertificateVerifier>());
 
   DoRpc(server_addr_, options);
 }

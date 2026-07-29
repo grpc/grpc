@@ -20,9 +20,9 @@
 
 #if defined(GRPC_POSIX_WAKEUP_FD) || defined(GRPC_LINUX_EVENTFD)
 #include <fcntl.h>
+#endif  // defined(GRPC_POSIX_WAKEUP_FD) || defined(GRPC_LINUX_EVENTFD)
 
 #include "src/core/util/strerror.h"
-#endif  // defined(GRPC_POSIX_WAKEUP_FD) || defined(GRPC_LINUX_EVENTFD)
 
 #ifdef GRPC_POSIX_SOCKET
 
@@ -393,7 +393,7 @@ absl::StatusOr<int> InternalCreateDualStackSocket(
       errno = EAFNOSUPPORT;
     }
     // Check if we've got a valid dualstack socket.
-    if (newfd > 0 && SetSocketDualStack(newfd)) {
+    if (newfd >= 0 && SetSocketDualStack(newfd)) {
       dsmode = EventEnginePosixInterface::DSMode::DSMODE_DUALSTACK;
       return newfd;
     }
@@ -473,7 +473,7 @@ void EventEnginePosixInterface::AdvanceGeneration() {
         "Fork support is disabled but AdvanceGeneration was called");
   }
   for (int fd : descriptors_.ClearAndReturnRawDescriptors()) {
-    if (fd > 0) {
+    if (fd >= 0) {
       close(fd);
     }
   }
@@ -736,13 +736,13 @@ absl::StatusOr<int> EventEnginePosixInterface::GetUnusedPort() {
   if (bind(*fd, wild.address(), wild.size()) != 0) {
     close(*fd);
     return absl::FailedPreconditionError(
-        absl::StrCat("bind(GetUnusedPort): ", std::strerror(errno)));
+        absl::StrCat("bind(GetUnusedPort): ", grpc_core::StrError(errno)));
   }
   socklen_t len = wild.size();
   if (getsockname(*fd, const_cast<sockaddr*>(wild.address()), &len) != 0) {
     close(*fd);
-    return absl::FailedPreconditionError(
-        absl::StrCat("getsockname(GetUnusedPort): ", std::strerror(errno)));
+    return absl::FailedPreconditionError(absl::StrCat(
+        "getsockname(GetUnusedPort): ", grpc_core::StrError(errno)));
   }
   close(*fd);
   int port = ResolvedAddressGetPort(wild);
@@ -857,18 +857,18 @@ EventEnginePosixInterface::BindListenerSocket(
     sockaddr_str = absl::StrReplaceAll(*sockaddr_str, {{"\0", "@"}});
     return absl::FailedPreconditionError(
         absl::StrCat("Error in bind for address '", *sockaddr_str,
-                     "': ", std::strerror(errno)));
+                     "': ", grpc_core::StrError(errno)));
   }
   if (listen(f, GetMaxAcceptQueueSize()) < 0) {
     return absl::FailedPreconditionError(
-        absl::StrCat("Error in listen: ", std::strerror(errno)));
+        absl::StrCat("Error in listen: ", grpc_core::StrError(errno)));
   }
   socklen_t len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
   EventEngine::ResolvedAddress sockname_temp;
   if (getsockname(f, const_cast<sockaddr*>(sockname_temp.address()), &len) <
       0) {
     return absl::FailedPreconditionError(
-        absl::StrCat("Error in getsockname: ", std::strerror(errno)));
+        absl::StrCat("Error in getsockname: ", grpc_core::StrError(errno)));
   }
   return sockname_temp;
 }
@@ -995,7 +995,7 @@ absl::Status EventEnginePosixInterface::PrepareTcpClientSocket(
     const PosixTcpOptions& options) {
   bool close_fd = true;
   auto sock_cleanup = absl::MakeCleanup([&close_fd, &fd]() -> void {
-    if (close_fd && fd > 0) {
+    if (close_fd && fd >= 0) {
       close(fd);
     }
   });
