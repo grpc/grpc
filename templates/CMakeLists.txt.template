@@ -721,7 +721,7 @@
     DEPENDS tools_c tools_cxx)
 
   % for src in sorted(protobuf_gen_files):
-  % if not (src.startswith('third_party/') or src.startswith('test/') or src.startswith('src/proto/grpc/testing/')):
+  % if not ((src.startswith('third_party/') and not src.startswith('third_party/grpc-proto/')) or src.startswith('test/') or src.startswith('src/proto/grpc/testing/')):
   protobuf_generate_grpc_cpp_with_import_path_correction(
     ${src} ${third_party_proto_import_path(src)}
   )
@@ -732,7 +732,7 @@
   # in the third_party directory as long as test builds are disabled.
   if (gRPC_BUILD_TESTS)
   % for src in sorted(protobuf_gen_files):
-  % if (src.startswith('third_party/') or src.startswith('test/') or src.startswith('src/proto/grpc/testing/')):
+  % if ((src.startswith('third_party/') and not src.startswith('third_party/grpc-proto/')) or src.startswith('test/') or src.startswith('src/proto/grpc/testing/')):
   protobuf_generate_grpc_cpp_with_import_path_correction(
     ${src} ${third_party_proto_import_path(src)}
   )

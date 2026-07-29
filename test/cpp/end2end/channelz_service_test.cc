@@ -39,8 +39,6 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/wait_for_single_owner.h"
 #include "src/cpp/client/secure_credentials.h"
-#include "src/proto/grpc/channelz/channelz.grpc.pb.h"
-#include "src/proto/grpc/channelz/channelz.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/test_util/port.h"
@@ -53,6 +51,8 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/memory/memory.h"
+#include <grpc/channelz/v1/channelz.grpc.pb.h>
+#include <grpc/channelz/v1/channelz.pb.h>
 
 using grpc::channelz::v1::Address;
 using grpc::channelz::v1::GetChannelRequest;
