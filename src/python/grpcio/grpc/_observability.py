@@ -228,6 +228,23 @@ def get_plugin() -> Generator[Optional[ObservabilityPlugin], None, None]:
         yield _OBSERVABILITY_PLUGIN
 
 
+def get_plugin_ref() -> Optional[ObservabilityPlugin]:
+    """Return the registered ObservabilityPlugin without acquiring _plugin_lock.
+
+    Intended for latency-sensitive per-call paths that run on the AsyncIO event
+    loop thread. Blocking on the process-global _plugin_lock there would stall
+    the entire event loop whenever another thread holds it (e.g. during a
+    metrics export), freezing every coroutine on the loop.
+
+    Reading the module-level reference is atomic under the GIL, and the plugin
+    is only ever swapped under _plugin_lock by set_plugin() at
+    (de)registration, which is rare. A caller therefore observes either the
+    previous or the next plugin -- never a torn value -- which is safe for the
+    best-effort "should this call be traced?" decision.
+    """
+    return _OBSERVABILITY_PLUGIN
+
+
 def set_plugin(observability_plugin: Optional[ObservabilityPlugin]) -> None:
     """Save ObservabilityPlugin to _observability module.
 
