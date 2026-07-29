@@ -35,7 +35,7 @@ def clear_server_call_tracer_factory() -> None:
   _register_server_call_tracer_factory(NULL)
 
 
-cdef void save_server_trace_context(grpc_call* call):
+cdef void save_server_trace_context(grpc_call* call) except *:
   cdef CallSpan* server_call_tracer
   with _observability.get_plugin() as plugin:
     if not (plugin and plugin.tracing_enabled):

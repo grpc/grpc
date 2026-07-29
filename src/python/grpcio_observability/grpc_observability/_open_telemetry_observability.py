@@ -96,16 +96,23 @@ class _GrpcIdGenerator(sdk_trace.IdGenerator):
     """
 
     def __init__(self, trace_id: str, span_id: str):
-        try:
-            self._trace_id = int(trace_id, 16)
-        except ValueError:
-            _LOGGER.warning("Failed to parse trace_id: '%s'", trace_id)
+        if not trace_id:
             self._trace_id = 0
-        try:
-            self._span_id = int(span_id, 16)
-        except ValueError:
-            _LOGGER.warning("Failed to parse span_id: '%s'", span_id)
+        else:
+            try:
+                self._trace_id = int(trace_id, 16)
+            except ValueError:
+                _LOGGER.warning("Failed to parse trace_id: '%s'", trace_id)
+                self._trace_id = 0
+
+        if not span_id:
             self._span_id = 0
+        else:
+            try:
+                self._span_id = int(span_id, 16)
+            except ValueError:
+                _LOGGER.warning("Failed to parse span_id: '%s'", span_id)
+                self._span_id = 0
 
     def generate_span_id(self) -> int:
         return self._span_id
@@ -280,16 +287,23 @@ class _OpenTelemetryPlugin:
         context: Optional[otel_context.Context] = None,
     ) -> otel_context.Context:
         """Builds new Otel context from trace_id, span_id and sampling flag."""
-        try:
-            parsed_trace_id = int(trace_id, 16)
-        except ValueError:
-            _LOGGER.warning("Failed to parse trace_id: '%s'", trace_id)
+        if not trace_id:
             parsed_trace_id = 0
-        try:
-            parsed_span_id = int(span_id, 16)
-        except ValueError:
-            _LOGGER.warning("Failed to parse span_id: '%s'", span_id)
+        else:
+            try:
+                parsed_trace_id = int(trace_id, 16)
+            except ValueError:
+                _LOGGER.warning("Failed to parse trace_id: '%s'", trace_id)
+                parsed_trace_id = 0
+
+        if not span_id:
             parsed_span_id = 0
+        else:
+            try:
+                parsed_span_id = int(span_id, 16)
+            except ValueError:
+                _LOGGER.warning("Failed to parse span_id: '%s'", span_id)
+                parsed_span_id = 0
 
         span_context = trace.SpanContext(
             trace_id=parsed_trace_id,
