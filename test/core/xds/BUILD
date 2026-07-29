@@ -202,6 +202,7 @@ grpc_cc_test(
     deps = [
         ":xds_transport_fake",
         "//:grpc",
+        "//:grpc_base",
         "//:iomgr_timer",
         "//:ref_counted_ptr",
         "//src/core:activity",
