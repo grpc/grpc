@@ -322,18 +322,10 @@ void RegisterConnectedChannel(CoreConfiguration::Builder* builder) {
                        &kPromiseBasedTransportFilter)
       .Terminal()
       .If(TransportSupportsClientPromiseBasedCalls);
-
-  if (IsFixV3FilterStackServerSideOrderingEnabled()) {
-    builder->channel_init()
-        ->RegisterFilter(GRPC_SERVER_CHANNEL, &kPromiseBasedTransportFilter)
-        .BeforeAll()
-        .If(TransportSupportsServerPromiseBasedCalls);
-  } else {
-    builder->channel_init()
-        ->RegisterFilter(GRPC_SERVER_CHANNEL, &kPromiseBasedTransportFilter)
-        .Terminal()
-        .If(TransportSupportsServerPromiseBasedCalls);
-  }
+  builder->channel_init()
+      ->RegisterFilter(GRPC_SERVER_CHANNEL, &kPromiseBasedTransportFilter)
+      .Terminal()
+      .If(TransportSupportsServerPromiseBasedCalls);
 
   // Option 2: the transport does not support promise based calls.
   builder->channel_init()
@@ -348,25 +340,14 @@ void RegisterConnectedChannel(CoreConfiguration::Builder* builder) {
       ->RegisterFilter(GRPC_CLIENT_VIRTUAL_CHANNEL, &kConnectedFilter)
       .Terminal()
       .IfNot(TransportSupportsClientPromiseBasedCalls);
-  if (IsFixV3FilterStackServerSideOrderingEnabled()) {
-    builder->channel_init()
-        ->RegisterFilter(GRPC_SERVER_CHANNEL, &kConnectedFilter)
-        .BeforeAll()
-        .IfNot(TransportSupportsServerPromiseBasedCalls);
-    builder->channel_init()
-        ->RegisterFilter(GRPC_SERVER_VIRTUAL_CHANNEL, &kConnectedFilter)
-        .BeforeAll()
-        .IfNot(TransportSupportsServerPromiseBasedCalls);
-  } else {
-    builder->channel_init()
-        ->RegisterFilter(GRPC_SERVER_CHANNEL, &kConnectedFilter)
-        .Terminal()
-        .IfNot(TransportSupportsServerPromiseBasedCalls);
-    builder->channel_init()
-        ->RegisterFilter(GRPC_SERVER_VIRTUAL_CHANNEL, &kConnectedFilter)
-        .Terminal()
-        .IfNot(TransportSupportsServerPromiseBasedCalls);
-  }
+  builder->channel_init()
+      ->RegisterFilter(GRPC_SERVER_CHANNEL, &kConnectedFilter)
+      .Terminal()
+      .IfNot(TransportSupportsServerPromiseBasedCalls);
+  builder->channel_init()
+      ->RegisterFilter(GRPC_SERVER_VIRTUAL_CHANNEL, &kConnectedFilter)
+      .Terminal()
+      .IfNot(TransportSupportsServerPromiseBasedCalls);
 }
 
 }  // namespace grpc_core

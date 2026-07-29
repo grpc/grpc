@@ -90,11 +90,11 @@ void RegisterBuiltins(CoreConfiguration::Builder* builder) {
     builder->channel_init()
         ->RegisterFilter(GRPC_SERVER_CHANNEL, &Server::kServerTopFilter)
         .SkipV3()
-        .Terminal();
+        .SinkToBottom();
     builder->channel_init()
         ->RegisterFilter(GRPC_SERVER_VIRTUAL_CHANNEL, &Server::kServerTopFilter)
         .SkipV3()
-        .Terminal();
+        .SinkToBottom();
     if (IsXdsServerFilterChainPerRouteEnabled()) {
       builder->channel_init()
           ->RegisterFilter<ServerConfigSelectorInterceptor>(GRPC_SERVER_CHANNEL)
