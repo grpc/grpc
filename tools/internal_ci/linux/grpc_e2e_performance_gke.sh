@@ -221,7 +221,6 @@ if [[ -v "useLanguage[rust]" ]]; then
   runnerLangArgs+=(-l "rust:${GRPC_RUST_REPO}:${GRPC_RUST_COMMIT}")
 fi
 
-
 # Disable broken tests by regex.
 # The test disabled here hangs on 8 cores. The result of this test is not
 # displayed on the public dashboard. The test runs and passes on the 30-core
