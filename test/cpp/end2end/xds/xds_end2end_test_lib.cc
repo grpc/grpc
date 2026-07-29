@@ -65,24 +65,27 @@ using ::grpc::experimental::StaticDataCertificateProvider;
 
 void XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::
     OnServingStatusUpdate(std::string uri, ServingStatusUpdate update) {
+  absl::Status status(static_cast<absl::StatusCode>(
+                          static_cast<int>(update.status.error_code())),
+                      update.status.error_message());
   grpc_core::MutexLock lock(&mu_);
-  status_map_[uri].emplace_back(static_cast<absl::StatusCode>(static_cast<int>(
-                                    update.status.error_code())),
-                                update.status.error_message());
+  LOG(INFO) << "Received server status notification for " << uri << ": "
+            << status;
+  status_map_[uri].emplace_back(std::move(status));
   if (cond_ != nullptr) cond_->Signal();
 }
 
 std::optional<absl::Status>
 XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::GetNextStatus(
-    const std::string& uri, absl::Duration timeout) {
-  timeout *= grpc_test_slowdown_factor();
+    const std::string& uri, absl::Time deadline) {
+  LOG(INFO) << "Getting next server status notification for " << uri;
   grpc_core::MutexLock lock(&mu_);
   auto& queue = status_map_[uri];
   if (queue.empty()) {
     grpc_core::CondVar cv;
     cond_ = &cv;
     while (queue.empty()) {
-      if (cv.WaitWithTimeout(&mu_, timeout)) {
+      if (cv.WaitWithDeadline(&mu_, deadline)) {
         LOG(ERROR) << "timed out waiting for server status notification";
         cond_ = nullptr;
         return std::nullopt;
