@@ -1,8 +1,11 @@
-bazel-bin
-bazel-grpc
-bazel-out
+bazel-*
 build
 .cache
 .git
+dist
+pyb
 # python virtual environments
+.venv*
+**/.venv*
 */.venv*
+*virtual_environment*
