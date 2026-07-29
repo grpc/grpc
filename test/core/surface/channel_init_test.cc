@@ -274,13 +274,30 @@ TEST(ChannelInitServerFilterTest, OrderingConstraintsAreSatisfied) {
 }
 
 TEST(ChannelInitServerFilterTest, CanAddBeforeAllOnce) {
-  ChannelInit::Builder b{/*fix_v3_filter_stack_server_side_ordering=*/true};
-  b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("a")).BeforeAll();
-  b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("b"));
-  b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("c"));
-  b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("terminal")).Terminal();
-  EXPECT_EQ(GetFilterNames(b.Build(), GRPC_SERVER_CHANNEL, ChannelArgs()),
-            std::vector<std::string>({"c", "b", "a", "terminal"}));
+  // The expected filter order, both old and new behavior should generate
+  // this output.
+  std::vector<std::string> expected_filters({"a", "b", "c", "d"});
+  // Legacy API behavior.
+  {
+    ChannelInit::Builder b;
+    b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("a")).BeforeAll();
+    b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("b"));
+    b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("c"));
+    b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("d")).Terminal();
+    EXPECT_EQ(GetFilterNames(b.Build(), GRPC_SERVER_CHANNEL, ChannelArgs()),
+              expected_filters);
+  }
+  // New API behavior with experiment `fix_v3_filter_stack_server_side_ordering`
+  // enabled.
+  {
+    ChannelInit::Builder b{/*fix_v3_filter_stack_server_side_ordering=*/true};
+    b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("a")).Terminal();
+    b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("b"));
+    b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("c"));
+    b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("d")).BeforeAll();
+    EXPECT_EQ(GetFilterNames(b.Build(), GRPC_SERVER_CHANNEL, ChannelArgs()),
+              expected_filters);
+  }
 }
 
 TEST(ChannelInitServerFilterTest, CanSinkToBottomOnce) {
