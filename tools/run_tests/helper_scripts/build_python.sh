@@ -107,8 +107,6 @@ PYTHON=${1:-python2.7}
 VENV=${2:-$(venv "$PYTHON")}
 VENV_RELATIVE_PYTHON=${3:-$(venv_relative_python)}
 
-exit 1
-
 if [ "$(is_msys)" ]; then
   echo "MSYS doesn't directly provide the right compiler(s);"
   echo "switch to a MinGW shell."
