@@ -263,21 +263,10 @@ TEST(ChannelInitServerFilterTest, ReversalDoesNotAffectClient) {
             std::vector<std::string>({"a", "b", "c", "terminator"}));
 }
 
-TEST(ChannelInitServerFilterTest, OrderingConstraintsAreSatisfied) {
-  ChannelInit::Builder b{/*fix_v3_filter_stack_server_side_ordering=*/true};
-  b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("a")).FloatToTop();
-  b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("b"));
-  b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("c")).SinkToBottom();
-  b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("terminator")).Terminal();
-  EXPECT_EQ(GetFilterNames(b.Build(), GRPC_SERVER_CHANNEL, ChannelArgs()),
-            std::vector<std::string>({"c", "b", "a", "terminator"}));
-}
-
-TEST(ChannelInitServerFilterTest, CanAddBeforeAllOnce) {
+TEST(ChannelInitServerFilterTest, BeforeAllBecomesSinkToBottom) {
   // The expected filter order, both old and new behavior should generate
   // this output.
   std::vector<std::string> expected_filters({"a", "b", "c", "terminator"});
-  // Legacy API behavior.
   {
     ChannelInit::Builder b1;
     b1.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("a")).BeforeAll();
@@ -288,8 +277,6 @@ TEST(ChannelInitServerFilterTest, CanAddBeforeAllOnce) {
     EXPECT_EQ(GetFilterNames(b1.Build(), GRPC_SERVER_CHANNEL, ChannelArgs()),
               expected_filters);
   }
-  // New API behavior with experiment `fix_v3_filter_stack_server_side_ordering`
-  // enabled.
   {
     ChannelInit::Builder b2{/*fix_v3_filter_stack_server_side_ordering=*/true};
     b2.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("a")).SinkToBottom();
@@ -299,6 +286,28 @@ TEST(ChannelInitServerFilterTest, CanAddBeforeAllOnce) {
         .Terminal();
     EXPECT_EQ(GetFilterNames(b2.Build(), GRPC_SERVER_CHANNEL, ChannelArgs()),
               expected_filters);
+  }
+}
+
+TEST(ChannelInitServerFilterTest, OrderingConstraintsAreSatisfied) {
+  std::vector<std::string> expected_filters({"c", "b", "a", "terminator"});
+  {
+    ChannelInit::Builder b1;
+    b1.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("a")).SinkToBottom();
+    b1.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("b"));
+    b1.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("c")).FloatToTop();
+    b1.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("terminator")).Terminal();
+    EXPECT_EQ(GetFilterNames(b1.Build(), GRPC_SERVER_CHANNEL, ChannelArgs()),
+        std::vector<std::string>({"c", "b", "a", "terminator"}));
+  }
+  {
+    ChannelInit::Builder b2{/*fix_v3_filter_stack_server_side_ordering=*/true};
+    b2.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("a")).FloatToTop();
+    b2.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("b"));
+    b2.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("c")).SinkToBottom();
+    b2.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("terminator")).Terminal();
+    EXPECT_EQ(GetFilterNames(b2.Build(), GRPC_SERVER_CHANNEL, ChannelArgs()),
+        std::vector<std::string>({"c", "b", "a", "terminator"}));
   }
 }
 
