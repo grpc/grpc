@@ -55,10 +55,11 @@ std::string generator_file_name;
 
 // Escapes a comment string so it is safe to embed within a Python triple-quoted
 // docstring. Replaces backslashes first, then triple-quote sequences.
-std::string EscapePythonDocstring(const std::string& input) {
+std::string EscapePythonDocstring(const std::string& input, size_t start_pos) {
   std::string result;
-  result.reserve(input.size());
-  for (size_t i = 0; i < input.size(); i++) {
+  if (start_pos >= input.size()) return result;
+  result.reserve(input.size() - start_pos);
+  for (size_t i = start_pos; i < input.size(); i++) {
     if (input[i] == '\\') {
       result += "\\\\";
     } else if (input[i] == '"' && i + 2 < input.size() && input[i + 1] == '"' &&
@@ -127,7 +128,7 @@ void PrivateGenerator::PrintAllComments(StringVector comments,
        ++it) {
     size_t start_pos = it->find_first_not_of(' ');
     if (start_pos != std::string::npos) {
-      std::string escaped = EscapePythonDocstring(it->substr(start_pos));
+      std::string escaped = EscapePythonDocstring(*it, start_pos);
       out->PrintRaw(escaped.c_str());
     }
     out->Print("\n");

@@ -79,6 +79,21 @@ TEST(EscapePythonDocstringTest, MaliciousInjection) {
   EXPECT_EQ(std::string::npos, escaped.find("\"\"\""));
 }
 
+TEST(EscapePythonDocstringTest, StartPosSkipsLeadingCharacters) {
+  // Escaping from start_pos matches escaping the equivalent substring, which
+  // is how PrintAllComments skips a comment's leading indentation.
+  std::string line = "   has \"\"\" quotes";
+  EXPECT_EQ("has \\\"\\\"\\\" quotes",
+            EscapePythonDocstring(line, line.find_first_not_of(' ')));
+}
+
+TEST(EscapePythonDocstringTest, StartPosPastEndReturnsEmpty) {
+  // A start_pos at or beyond the end yields an empty result rather than
+  // reading out of bounds.
+  EXPECT_EQ("", EscapePythonDocstring("abc", 3));
+  EXPECT_EQ("", EscapePythonDocstring("abc", 99));
+}
+
 }  // namespace
 }  // namespace grpc_python_generator
 
