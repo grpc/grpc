@@ -73,6 +73,9 @@ class ChannelInit {
     kV2,
     kV3,
   };
+
+  enum class LexicographicalOrder : uint8_t { kAscending, kDescending };
+
   static const char* VersionToString(Version version) {
     switch (version) {
       case Version::kAny:
@@ -416,6 +419,7 @@ class ChannelInit {
   using CreatedType =
       typename decltype(T::Create(ChannelArgs(), {}))::value_type;
 
+  template <LexicographicalOrder>
   class DependencyTracker;
 
   struct Filter {
@@ -460,7 +464,8 @@ class ChannelInit {
   SortFilterRegistrationsByDependencies(
       const std::vector<std::unique_ptr<FilterRegistration>>&
           filter_registrations,
-      grpc_channel_stack_type type, channelz::PropertyTable& filter_ordering);
+      grpc_channel_stack_type type, channelz::PropertyTable& filter_ordering,
+      bool fix_v3_filter_stack_server_side_ordering);
 
   static std::vector<Filter> SortFusedFilterRegistrations(
       const std::vector<std::unique_ptr<FilterRegistration>>&
@@ -482,13 +487,16 @@ class ChannelInit {
           filter_registrations,
       const std::vector<std::unique_ptr<FilterRegistration>>&
           fused_filter_registrations,
-      PostProcessor* post_processors, grpc_channel_stack_type type);
+      PostProcessor* post_processors, grpc_channel_stack_type type,
+      bool fix_v3_filter_stack_server_side_ordering);
 
+  template <LexicographicalOrder order>
   static void PrintChannelStackTrace(
       grpc_channel_stack_type type,
       const std::vector<std::unique_ptr<ChannelInit::FilterRegistration>>&
           registrations,
-      const DependencyTracker& dependencies, const std::vector<Filter>& filters,
+      const DependencyTracker<order>& dependencies,
+      const std::vector<Filter>& filters,
       const std::vector<Filter>& terminal_filters);
 };
 

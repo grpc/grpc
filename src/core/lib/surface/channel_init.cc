@@ -144,6 +144,7 @@ void ChannelInit::Builder::RegisterFusedFilter(
       name, filter, filter_adder, registration_source));
 }
 
+template <ChannelInit::LexicographicalOrder order>
 class ChannelInit::DependencyTracker {
  public:
   // Declare that a filter exists.
@@ -247,16 +248,24 @@ class ChannelInit::DependencyTracker {
     Ordering ordering() const { return registration->ordering_; }
     absl::string_view name() const { return registration->name_.name(); }
   };
+
   struct ReadyDependency {
     explicit ReadyDependency(Node* node) : node(node) {}
     Node* node;
+    static bool LexicalCompare(absl::string_view a, absl::string_view b) {
+      if constexpr (order == ChannelInit::LexicographicalOrder::kAscending) {
+        return a > b;
+      }
+      return a < b;
+    }
+
     bool operator<(const ReadyDependency& other) const {
       // Sort first on ordering, and then lexically on name.
       // The lexical sort means that the ordering is stable between builds
       // (UniqueTypeName ordering is not stable between builds).
       return node->ordering() > other.node->ordering() ||
              (node->ordering() == other.node->ordering() &&
-              node->name() > other.node->name());
+              LexicalCompare(node->name(), other.node->name()));
     }
   };
   absl::flat_hash_map<UniqueTypeName, Node> nodes_;
@@ -344,76 +353,92 @@ std::tuple<std::vector<ChannelInit::Filter>, std::vector<ChannelInit::Filter>>
 ChannelInit::SortFilterRegistrationsByDependencies(
     const std::vector<std::unique_ptr<ChannelInit::FilterRegistration>>&
         filter_registrations,
-    grpc_channel_stack_type type, channelz::PropertyTable& filter_ordering) {
+    grpc_channel_stack_type type, channelz::PropertyTable& filter_ordering,
+    bool fix_v3_filter_stack_server_side_ordering) {
   // Phase 1: Build a map from filter to the set of filters that must be
   // initialized before it.
   // We order this map (and the set of dependent filters) by filter name to
   // ensure algorithm ordering stability is deterministic for a given build.
   // We should not require this, but at the time of writing it's expected that
   // this will help overall stability.
-  DependencyTracker dependencies;
-  std::vector<Filter> terminal_filters;
-  for (const auto& registration : filter_registrations) {
-    if (registration->terminal_) {
-      GRPC_CHECK(registration->after_.empty());
-      GRPC_CHECK(registration->before_.empty());
-      GRPC_CHECK(!registration->before_all_);
-      GRPC_CHECK_EQ(registration->ordering_, Ordering::kDefault);
-      terminal_filters.emplace_back(
-          registration->name_, registration->filter_, nullptr,
-          std::move(registration->predicates_), registration->version_,
-          registration->ordering_, registration->registration_source_);
-    } else {
-      dependencies.Declare(registration.get());
-    }
-  }
-  for (const auto& registration : filter_registrations) {
-    if (registration->terminal_) continue;
-    for (UniqueTypeName after : registration->after_) {
-      dependencies.InsertEdge(after, registration->name_);
-    }
-    for (UniqueTypeName before : registration->before_) {
-      dependencies.InsertEdge(registration->name_, before);
-    }
-    if (registration->before_all_) {
-      for (const auto& other : filter_registrations) {
-        if (other.get() == registration.get()) continue;
-        if (other->terminal_) continue;
-        dependencies.InsertEdge(registration->name_, other->name_);
+
+  auto sort_helper =
+      [&](auto& dependencies) -> std::tuple<std::vector<ChannelInit::Filter>,
+                                            std::vector<ChannelInit::Filter>> {
+    // DependencyTracker dependencies;
+    std::vector<Filter> terminal_filters;
+    for (const auto& registration : filter_registrations) {
+      if (registration->terminal_) {
+        GRPC_CHECK(registration->after_.empty());
+        GRPC_CHECK(registration->before_.empty());
+        GRPC_CHECK(!registration->before_all_);
+        GRPC_CHECK_EQ(registration->ordering_, Ordering::kDefault);
+        terminal_filters.emplace_back(
+            registration->name_, registration->filter_, nullptr,
+            std::move(registration->predicates_), registration->version_,
+            registration->ordering_, registration->registration_source_);
+      } else {
+        dependencies.Declare(registration.get());
       }
     }
-  }
-  // Phase 2: Build a list of filters in dependency order.
-  // We can simply iterate through and add anything with no dependency.
-  // We then remove that filter from the dependency list of all other filters.
-  // We repeat until we have no more filters to add.
-  dependencies.FinishDependencyMap();
-  std::vector<Filter> filters;
-  while (auto registration = dependencies.Next()) {
-    filters.emplace_back(
-        registration->name_, registration->filter_, registration->filter_adder_,
-        std::move(registration->predicates_), registration->version_,
-        registration->ordering_, registration->registration_source_);
-  }
-
-  for (const auto& filter : filters) {
-    auto after = dependencies.DependenciesFor(filter.name);
-    std::string ordering_str;
-    if (!after.empty()) {
-      ordering_str = absl::StrCat("after ", absl::StrJoin(after, ", "));
+    for (const auto& registration : filter_registrations) {
+      if (registration->terminal_) continue;
+      for (UniqueTypeName after : registration->after_) {
+        dependencies.InsertEdge(after, registration->name_);
+      }
+      for (UniqueTypeName before : registration->before_) {
+        dependencies.InsertEdge(registration->name_, before);
+      }
+      if (registration->before_all_) {
+        for (const auto& other : filter_registrations) {
+          if (other.get() == registration.get()) continue;
+          if (other->terminal_) continue;
+          dependencies.InsertEdge(registration->name_, other->name_);
+        }
+      }
     }
-    absl::StrAppend(&ordering_str, " [", filter.ordering, "/", filter.version,
-                    "]");
-    filter_ordering.AppendRow(channelz::PropertyList()
-                                  .Set("name", filter.name.name())
-                                  .Set("ordering", ordering_str));
+    // Phase 2: Build a list of filters in dependency order.
+    // We can simply iterate through and add anything with no dependency.
+    // We then remove that filter from the dependency list of all other filters.
+    // We repeat until we have no more filters to add.
+    dependencies.FinishDependencyMap();
+    std::vector<Filter> filters;
+    while (auto registration = dependencies.Next()) {
+      filters.emplace_back(registration->name_, registration->filter_,
+                           registration->filter_adder_,
+                           std::move(registration->predicates_),
+                           registration->version_, registration->ordering_,
+                           registration->registration_source_);
+    }
+
+    for (const auto& filter : filters) {
+      auto after = dependencies.DependenciesFor(filter.name);
+      std::string ordering_str;
+      if (!after.empty()) {
+        ordering_str = absl::StrCat("after ", absl::StrJoin(after, ", "));
+      }
+      absl::StrAppend(&ordering_str, " [", filter.ordering, "/", filter.version,
+                      "]");
+      filter_ordering.AppendRow(channelz::PropertyList()
+                                    .Set("name", filter.name.name())
+                                    .Set("ordering", ordering_str));
+    }
+    // Log out the graph we built if that's been requested.
+    if (GRPC_TRACE_FLAG_ENABLED(channel_stack)) {
+      PrintChannelStackTrace(type, filter_registrations, dependencies, filters,
+                             terminal_filters);
+    }
+    return std::tuple(std::move(filters), std::move(terminal_filters));
+  };
+  if (fix_v3_filter_stack_server_side_ordering) {
+    DependencyTracker<ChannelInit::LexicographicalOrder::kDescending>
+        dependencies;
+    return sort_helper(dependencies);
+  } else {
+    DependencyTracker<ChannelInit::LexicographicalOrder::kAscending>
+        dependencies;
+    return sort_helper(dependencies);
   }
-  // Log out the graph we built if that's been requested.
-  if (GRPC_TRACE_FLAG_ENABLED(channel_stack)) {
-    PrintChannelStackTrace(type, filter_registrations, dependencies, filters,
-                           terminal_filters);
-  }
-  return std::tuple(std::move(filters), std::move(terminal_filters));
 }
 
 std::vector<ChannelInit::Filter> ChannelInit::SortFusedFilterRegistrations(
@@ -443,7 +468,8 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
         filter_registrations,
     const std::vector<std::unique_ptr<ChannelInit::FilterRegistration>>&
         fused_filter_registrations,
-    PostProcessor* post_processors, grpc_channel_stack_type type) {
+    PostProcessor* post_processors, grpc_channel_stack_type type,
+    bool fix_v3_filter_stack_server_side_ordering) {
   // Collect post processors that need to be applied.
   // We've already ensured the one-per-slot constraint, so now we can just
   // collect everything up into a vector and run it in order.
@@ -455,7 +481,8 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
   channelz::PropertyTable filter_ordering;
 
   auto sorted_filters = SortFilterRegistrationsByDependencies(
-      filter_registrations, type, filter_ordering);
+      filter_registrations, type, filter_ordering,
+      fix_v3_filter_stack_server_side_ordering);
   std::vector<Filter> filters = std::move(std::get<0>(sorted_filters));
   std::vector<Filter> terminal_filters = std::move(std::get<1>(sorted_filters));
 
@@ -482,11 +509,13 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
                      std::move(post_processor_functions), filter_ordering};
 };
 
+template <ChannelInit::LexicographicalOrder order>
 void ChannelInit::PrintChannelStackTrace(
     grpc_channel_stack_type type,
     const std::vector<std::unique_ptr<ChannelInit::FilterRegistration>>&
         registrations,
-    const DependencyTracker& dependencies, const std::vector<Filter>& filters,
+    const DependencyTracker<order>& dependencies,
+    const std::vector<Filter>& filters,
     const std::vector<Filter>& terminal_filters) {
   // It can happen that multiple threads attempt to construct a core config at
   // once.
@@ -579,7 +608,8 @@ ChannelInit ChannelInit::Builder::Build() {
   for (int i = 0; i < GRPC_NUM_CHANNEL_STACK_TYPES; i++) {
     result.stack_configs_[i] =
         BuildStackConfig(filters_[i], fused_filters_[i], post_processors_[i],
-                         static_cast<grpc_channel_stack_type>(i));
+                         static_cast<grpc_channel_stack_type>(i),
+                         fix_v3_filter_stack_server_side_ordering_);
   }
   return result;
 }
