@@ -39,7 +39,9 @@ std::string JoinHostPort(absl::string_view host, int port) {
 namespace {
 bool DoSplitHostPort(absl::string_view name, absl::string_view* host,
                      absl::string_view* port, bool* has_port) {
-  *has_port = false;
+  absl::string_view local_host;
+  absl::string_view local_port;
+  bool local_has_port = false;
   if (!name.empty() && name[0] == '[') {
     // Parse a bracketed host, typically an IPv6 literal.
     const size_t rbracket = name.find(']', 1);
@@ -49,20 +51,19 @@ bool DoSplitHostPort(absl::string_view name, absl::string_view* host,
     }
     if (rbracket == name.size() - 1) {
       // ]<end>
-      *port = absl::string_view();
+      local_port = absl::string_view();
     } else if (name[rbracket + 1] == ':') {
       // ]:<port?>
-      *port = name.substr(rbracket + 2, name.size() - rbracket - 2);
-      *has_port = true;
+      local_port = name.substr(rbracket + 2, name.size() - rbracket - 2);
+      local_has_port = true;
     } else {
       // ]<invalid>
       return false;
     }
-    *host = name.substr(1, rbracket - 1);
-    if (host->find(':') == absl::string_view::npos) {
+    local_host = name.substr(1, rbracket - 1);
+    if (local_host.find(':') == absl::string_view::npos) {
       // Require all bracketed hosts to contain a colon, because a hostname or
       // IPv4 address should never use brackets.
-      *host = absl::string_view();
       return false;
     }
   } else {
@@ -70,15 +71,18 @@ bool DoSplitHostPort(absl::string_view name, absl::string_view* host,
     if (colon != absl::string_view::npos &&
         name.find(':', colon + 1) == absl::string_view::npos) {
       // Exactly 1 colon.  Split into host:port.
-      *host = name.substr(0, colon);
-      *port = name.substr(colon + 1, name.size() - colon - 1);
-      *has_port = true;
+      local_host = name.substr(0, colon);
+      local_port = name.substr(colon + 1, name.size() - colon - 1);
+      local_has_port = true;
     } else {
-      // 0 or 2+ colons.  Bare hostname or IPv6 litearal.
-      *host = name;
-      *port = absl::string_view();
+      // 0 or 2+ colons.  Bare hostname or IPv6 literal.
+      local_host = name;
+      local_port = absl::string_view();
     }
   }
+  if (host != nullptr) *host = local_host;
+  if (port != nullptr) *port = local_port;
+  if (has_port != nullptr) *has_port = local_has_port;
   return true;
 }
 }  // namespace
@@ -86,7 +90,12 @@ bool DoSplitHostPort(absl::string_view name, absl::string_view* host,
 bool SplitHostPort(absl::string_view name, absl::string_view* host,
                    absl::string_view* port) {
   bool unused;
-  return DoSplitHostPort(name, host, port, &unused);
+  const bool ret = DoSplitHostPort(name, host, port, &unused);
+  if (!ret) {
+    if (host != nullptr) *host = absl::string_view();
+    if (port != nullptr) *port = absl::string_view();
+  }
+  return ret;
 }
 
 bool SplitHostPort(absl::string_view name, std::string* host,

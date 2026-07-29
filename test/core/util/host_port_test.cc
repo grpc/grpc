@@ -69,6 +69,33 @@ TEST(HostPortTest, SplitHostPortInvalid) {
   split_host_port_expect("[a:b]30", nullptr, nullptr, false);
 }
 
+TEST(HostPortTest, SplitHostPortStringView) {
+  absl::string_view host = "initial_host";
+  absl::string_view port = "initial_port";
+
+  // Valid inputs
+  EXPECT_TRUE(grpc_core::SplitHostPort("[a:b]:30", &host, &port));
+  EXPECT_EQ(host, "a:b");
+  EXPECT_EQ(port, "30");
+
+  EXPECT_TRUE(grpc_core::SplitHostPort("1.2.3.4:30", &host, &port));
+  EXPECT_EQ(host, "1.2.3.4");
+  EXPECT_EQ(port, "30");
+
+  // Invalid inputs should guarantee host and port are cleared
+  host = "initial_host";
+  port = "initial_port";
+  EXPECT_FALSE(grpc_core::SplitHostPort("[a:b", &host, &port));
+  EXPECT_TRUE(host.empty());
+  EXPECT_TRUE(port.empty());
+
+  host = "initial_host";
+  port = "initial_port";
+  EXPECT_FALSE(grpc_core::SplitHostPort("[ab]:30", &host, &port));
+  EXPECT_TRUE(host.empty());
+  EXPECT_TRUE(port.empty());
+}
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
