@@ -618,7 +618,7 @@ class _InterceptedStreamRequestMixin(
         self,
         request: Union[RequestType, _FINISH_ITERATOR_SENTINEL_T],
         call: _base_call.Call,
-    ):
+    ) -> None:
         if self._write_to_iterator_queue is None:
             raise cygrpc.UsageError(_API_STYLE_ERROR)
 
