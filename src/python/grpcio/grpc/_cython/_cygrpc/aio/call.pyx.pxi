@@ -186,6 +186,7 @@ cdef class _AioCall(GrpcCallWrapper):
 
         for callback in self._done_callbacks:
             callback()
+        self._done_callbacks = []
 
     cdef void _set_initial_metadata(self, tuple initial_metadata) except *:
         if self._initial_metadata is not None:
