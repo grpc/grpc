@@ -783,7 +783,7 @@ class InterceptedUnaryUnaryCall(
                 )
 
                 if _is_unary_unary_call(call_or_response):
-                    call_or_response
+                    return call_or_response
                 return UnaryUnaryCallResponse(call_or_response)
 
             registered_call_handle = _resolve_registered_call_handle(
