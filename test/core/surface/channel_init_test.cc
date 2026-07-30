@@ -313,6 +313,60 @@ TEST(ChannelInitServerFilterTest, OrderingConstraintsAreSatisfied) {
   }
 }
 
+TEST(ChannelInitServerFilterTest, AfterBecomesBefore) {
+  std::vector<std::string> expected_filters(
+      {"Filter2", "Filter1", "Filter3", "Terminator"});
+  {
+    ChannelInit::Builder b1;
+    b1.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("Filter2"));
+    b1.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("Filter1"))
+        .After({FilterNamed("Filter2")->name});
+    b1.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("Filter3"));
+    b1.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("Terminator"))
+        .Terminal();
+    EXPECT_EQ(GetFilterNames(b1.Build(), GRPC_SERVER_CHANNEL, ChannelArgs()),
+              expected_filters);
+  }
+  {
+    ChannelInit::Builder b2{/*fix_v3_filter_stack_server_side_ordering=*/true};
+    b2.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("Filter2"));
+    b2.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("Filter1"))
+        .Before({FilterNamed("Filter2")->name});
+    b2.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("Filter3"));
+    b2.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("Terminator"))
+        .Terminal();
+    EXPECT_EQ(GetFilterNames(b2.Build(), GRPC_SERVER_CHANNEL, ChannelArgs()),
+              expected_filters);
+  }
+}
+
+TEST(ChannelInitServerFilterTest, BeforeBecomesAfter) {
+  std::vector<std::string> expected_filters(
+      {"Filter2", "Filter1", "Filter3", "Terminator"});
+  {
+    ChannelInit::Builder b1;
+    b1.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("Filter2"))
+        .Before({FilterNamed("Filter1")->name});
+    b1.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("Filter1"));
+    b1.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("Filter3"));
+    b1.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("Terminator"))
+        .Terminal();
+    EXPECT_EQ(GetFilterNames(b1.Build(), GRPC_SERVER_CHANNEL, ChannelArgs()),
+              expected_filters);
+  }
+  {
+    ChannelInit::Builder b2{/*fix_v3_filter_stack_server_side_ordering=*/true};
+    b2.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("Filter2"))
+        .After({FilterNamed("Filter1")->name});
+    b2.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("Filter1"));
+    b2.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("Filter3"));
+    b2.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("Terminator"))
+        .Terminal();
+    EXPECT_EQ(GetFilterNames(b2.Build(), GRPC_SERVER_CHANNEL, ChannelArgs()),
+              expected_filters);
+  }
+}
+
 TEST(ChannelInitServerFilterTest, SinkToBottomBecomesFloatToTop) {
   std::vector<std::string> expected_filters({"b", "c", "a", "terminator"});
   {
@@ -334,7 +388,6 @@ TEST(ChannelInitServerFilterTest, SinkToBottomBecomesFloatToTop) {
         .Terminal();
     EXPECT_EQ(GetFilterNames(b2.Build(), GRPC_SERVER_CHANNEL, ChannelArgs()),
               expected_filters);
-    //    EXPECT_DEATH_IF_SUPPORTED(b2.Build(), "Some error");
   }
 }
 
