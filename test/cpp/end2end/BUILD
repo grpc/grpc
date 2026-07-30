@@ -1651,6 +1651,8 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:ca.pem",
         "//src/core/tsi/test_creds:client.key",
         "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:client_only_eku.key",
+        "//src/core/tsi/test_creds:client_only_eku.pem",
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
     ],

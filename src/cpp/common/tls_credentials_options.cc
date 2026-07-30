@@ -165,12 +165,11 @@ void TlsChannelCredentialsOptions::set_verify_server_certs(
                                                       verify_server_certs);
 }
 
-void TlsChannelCredentialsOptions::set_skip_server_auth_eku(
-    bool skip_server_auth_eku) {
+void TlsCredentialsOptions::set_verification_key_purpose(
+    grpc_tls_verification_key_purpose purpose) {
   grpc_tls_credentials_options* options = mutable_c_credentials_options();
   GRPC_CHECK_NE(options, nullptr);
-  grpc_tls_credentials_options_set_skip_server_auth_eku(options,
-                                                       skip_server_auth_eku);
+  grpc_tls_credentials_options_set_verification_key_purpose(options, purpose);
 }
 
 void TlsChannelCredentialsOptions::set_sni_override(

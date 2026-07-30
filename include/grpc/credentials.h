@@ -1080,11 +1080,24 @@ GRPCAPI void grpc_tls_credentials_options_set_verify_server_cert(
 /**
  * EXPERIMENTAL API - Subject to change
  *
- * UNSAFE: Sets the option of whether to skip the Server Auth EKU check (RFC 5280, https://datatracker.ietf.org/doc/html/rfc5280).
- * Passing in a non-zero value indicates skipping the check.
+ * Sets the key purpose for TLS verification.
+ *
+ * This option controls the EKU (Extended Key Usage) check during peer
+ * certificate verification, as defined in RFC 5280.
+ *
+ * Default behavior:
+ * - On the client side: defaults to verifying the server's certificate has the
+ *   Server Auth EKU.
+ * - On the server side: if client certificate verification is enabled, defaults to
+ *   verifying the client's certificate has the Client Auth EKU.
+ *
+ * Warning: Setting this to GRPC_TLS_VERIFICATION_KEY_PURPOSE_ALLOW_ANY is UNSAFE
+ * as it bypasses these EKU checks and should only be used if you know what you are
+ * doing.
  */
-GRPCAPI void grpc_tls_credentials_options_set_skip_server_auth_eku(
-    grpc_tls_credentials_options* options, int skip_server_auth_eku);
+GRPCAPI void grpc_tls_credentials_options_set_verification_key_purpose(
+    grpc_tls_credentials_options* options,
+    grpc_tls_verification_key_purpose purpose);
 
 /**
  * EXPERIMENTAL API - Subject to change

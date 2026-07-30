@@ -190,7 +190,7 @@ struct tsi_ssl_client_handshaker_options {
 
   // skip server certificate verification.
   bool skip_server_certificate_verification;
-  bool skip_server_auth_eku;
+  grpc_tls_verification_key_purpose verification_key_purpose;
 
   // The min and max TLS versions that will be negotiated by the handshaker.
   tsi_tls_version min_tls_version;
@@ -229,7 +229,7 @@ struct tsi_ssl_client_handshaker_options {
         session_cache(nullptr),
         key_logger(nullptr),
         skip_server_certificate_verification(false),
-        skip_server_auth_eku(false),
+        verification_key_purpose(GRPC_TLS_VERIFICATION_KEY_PURPOSE_DEFAULT),
         min_tls_version(tsi_tls_version::TSI_TLS1_2),
         max_tls_version(tsi_tls_version::TSI_TLS1_3),
         crl_directory(nullptr) {}
@@ -397,6 +397,9 @@ struct tsi_ssl_server_handshaker_options {
   // the handshaker, in order of preference.
   std::vector<grpc_tls_key_exchange_group> key_exchange_groups;
 
+  // The verification key purpose.
+  grpc_tls_verification_key_purpose verification_key_purpose;
+
   // TODO(gtcooke94) this ctor is not needed
   // https://github.com/grpc/grpc/pull/39708/files#r2143735662
   tsi_ssl_server_handshaker_options()
@@ -410,7 +413,8 @@ struct tsi_ssl_server_handshaker_options {
         max_tls_version(tsi_tls_version::TSI_TLS1_3),
         key_logger(nullptr),
         crl_directory(nullptr),
-        send_client_ca_list(true) {}
+        send_client_ca_list(true),
+        verification_key_purpose(GRPC_TLS_VERIFICATION_KEY_PURPOSE_DEFAULT) {}
 };
 
 // Creates a server handshaker factory.

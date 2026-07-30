@@ -61,10 +61,11 @@ void grpc_tls_credentials_options_set_verify_server_cert(
   options->set_verify_server_cert(verify_server_cert);
 }
 
-void grpc_tls_credentials_options_set_skip_server_auth_eku(
-    grpc_tls_credentials_options* options, int skip_server_auth_eku) {
+void grpc_tls_credentials_options_set_verification_key_purpose(
+    grpc_tls_credentials_options* options,
+    grpc_tls_verification_key_purpose purpose) {
   GRPC_CHECK_NE(options, nullptr);
-  options->set_skip_server_auth_eku(skip_server_auth_eku);
+  options->set_verification_key_purpose(purpose);
 }
 
 void grpc_tls_credentials_options_set_root_cert_name(
