@@ -603,8 +603,7 @@ class _InterceptedStreamRequestMixin(
         await self._interceptors_task
 
         if self._write_to_iterator_queue is None:
-            msg = "Write iterator queue is not initialized"
-            raise ValueError(msg)
+            raise cygrpc.UsageError(_API_STYLE_ERROR)
 
         while True:
             value = await self._write_to_iterator_queue.get()
