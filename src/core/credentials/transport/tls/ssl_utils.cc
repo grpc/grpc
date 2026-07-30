@@ -425,9 +425,10 @@ void grpc_shallow_peer_destruct(tsi_peer* peer) {
 grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     const grpc_core::PemKeyCertPair* pem_key_cert_pair,
     std::shared_ptr<tsi::RootCertInfo> root_cert_info,
-    bool skip_server_certificate_verification, bool skip_server_auth_eku,
-    tsi_tls_version min_tls_version,
-    tsi_tls_version max_tls_version, tsi_ssl_session_cache* ssl_session_cache,
+    bool skip_server_certificate_verification,
+    grpc_tls_verification_key_purpose verification_key_purpose,
+    tsi_tls_version min_tls_version, tsi_tls_version max_tls_version,
+    tsi_ssl_session_cache* ssl_session_cache,
     tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,
     const char* crl_directory,
     std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
@@ -467,7 +468,7 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
   options.key_logger = tls_session_key_logger;
   options.skip_server_certificate_verification =
       skip_server_certificate_verification;
-  options.skip_server_auth_eku = skip_server_auth_eku;
+  options.verification_key_purpose = verification_key_purpose;
   options.min_tls_version = min_tls_version;
   options.max_tls_version = max_tls_version;
   options.crl_directory = crl_directory;
@@ -493,6 +494,7 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
     tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,
     const char* crl_directory, bool send_client_ca_list,
     std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
+    grpc_tls_verification_key_purpose verification_key_purpose,
     const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups,
     tsi_ssl_server_handshaker_factory** handshaker_factory) {
   size_t num_alpn_protocols = 0;
@@ -508,6 +510,7 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
   options.min_tls_version = min_tls_version;
   options.max_tls_version = max_tls_version;
   options.key_logger = tls_session_key_logger;
+  options.verification_key_purpose = verification_key_purpose;
   options.crl_directory = crl_directory;
   options.crl_provider = std::move(crl_provider);
   options.send_client_ca_list = send_client_ca_list;

@@ -91,7 +91,8 @@ const char** ParseAlpnStringIntoArray(absl::string_view preferred_protocols,
 grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     const grpc_core::PemKeyCertPair* key_cert_pair,
     std::shared_ptr<tsi::RootCertInfo> root_cert_info,
-    bool skip_server_certificate_verification, bool skip_server_auth_eku,
+    bool skip_server_certificate_verification,
+    grpc_tls_verification_key_purpose verification_key_purpose,
     tsi_tls_version min_tls_version, tsi_tls_version max_tls_version,
     tsi_ssl_session_cache* ssl_session_cache,
     tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,
@@ -108,6 +109,7 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
     tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,
     const char* crl_directory, bool send_client_ca_list,
     std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
+    grpc_tls_verification_key_purpose verification_key_purpose,
     const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups,
     tsi_ssl_server_handshaker_factory** handshaker_factory);
 

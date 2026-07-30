@@ -576,7 +576,8 @@ TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
   bool use_default_roots = options_->root_certificate_distributor() == nullptr;
   return grpc_ssl_tsi_client_handshaker_factory_init(
       pem_key_cert_pair, use_default_roots ? nullptr : root_cert_info_,
-      skip_server_certificate_verification, options_->skip_server_auth_eku(),
+      skip_server_certificate_verification,
+      options_->verification_key_purpose(),
       grpc_get_tsi_tls_version(options_->min_tls_version()),
       grpc_get_tsi_tls_version(options_->max_tls_version()), ssl_session_cache_,
       tls_session_key_logger_.get(), options_->crl_directory().c_str(),
@@ -856,7 +857,8 @@ TlsServerSecurityConnector::UpdateHandshakerFactoryLocked() {
       grpc_get_tsi_tls_version(options_->max_tls_version()),
       tls_session_key_logger_.get(), options_->crl_directory().c_str(),
       options_->send_client_ca_list(), options_->crl_provider(),
-      options_->key_exchange_groups(), &server_handshaker_factory_);
+      options_->verification_key_purpose(), options_->key_exchange_groups(),
+      &server_handshaker_factory_);
 }
 
 }  // namespace grpc_core

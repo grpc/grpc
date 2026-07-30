@@ -72,12 +72,12 @@ _DATA_MEMBERS = [
         test_value_2="true",
     ),
     DataMember(
-        name="skip_server_auth_eku",
-        type="bool",
-        default_initializer="false",
-        test_name="DifferentSkipServerAuthEku",
-        test_value_1="false",
-        test_value_2="true",
+        name="verification_key_purpose",
+        type="grpc_tls_verification_key_purpose",
+        default_initializer="GRPC_TLS_VERIFICATION_KEY_PURPOSE_DEFAULT",
+        test_name="DifferentVerificationKeyPurpose",
+        test_value_1="GRPC_TLS_VERIFICATION_KEY_PURPOSE_DEFAULT",
+        test_value_2="GRPC_TLS_VERIFICATION_KEY_PURPOSE_ALLOW_ANY",
     ),
     DataMember(
         name="min_tls_version",

@@ -52,11 +52,11 @@ TEST(TlsCredentialsOptionsComparatorTest, DifferentVerifyServerCert) {
   delete options_1;
   delete options_2;
 }
-TEST(TlsCredentialsOptionsComparatorTest, DifferentSkipServerAuthEku) {
+TEST(TlsCredentialsOptionsComparatorTest, DifferentVerificationKeyPurpose) {
   auto* options_1 = grpc_tls_credentials_options_create();
   auto* options_2 = grpc_tls_credentials_options_create();
-  options_1->set_skip_server_auth_eku(false);
-  options_2->set_skip_server_auth_eku(true);
+  options_1->set_verification_key_purpose(GRPC_TLS_VERIFICATION_KEY_PURPOSE_DEFAULT);
+  options_2->set_verification_key_purpose(GRPC_TLS_VERIFICATION_KEY_PURPOSE_ALLOW_ANY);
   EXPECT_FALSE(*options_1 == *options_2);
   EXPECT_FALSE(*options_2 == *options_1);
   delete options_1;
