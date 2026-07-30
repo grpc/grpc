@@ -468,8 +468,7 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
 
     // Prepares the ProcessingRequest protobuf message for server response body
     // and sends it over the ext_proc stream.
-    static absl::AnyInvocable<Poll<absl::Status>()> SendServerMessageRequest(
-        RefCountedPtr<ExtProcFilter::ExtProcCall> call,
+    absl::AnyInvocable<Poll<absl::Status>()> SendServerMessageRequest(
         const MessageHandle& message);
 
     // Processes server-to-client messages on the backend-to-extproc path.
@@ -481,25 +480,22 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
 
    private:
     // Forwards server message to client without ext_proc processing.
-    static absl::AnyInvocable<Poll<absl::Status>()> NonProcessingMode(
-        RefCountedPtr<ExtProcFilter::ExtProcCall> call, MessageHandle message);
+    absl::AnyInvocable<Poll<absl::Status>()> NonProcessingMode(
+        MessageHandle message);
     // Handles server-to-client message in observability mode.
-    static absl::AnyInvocable<Poll<absl::Status>()> ObservabilityMode(
-        RefCountedPtr<ExtProcFilter::ExtProcCall> call, MessageHandle message);
+    absl::AnyInvocable<Poll<absl::Status>()> ObservabilityMode(
+        MessageHandle message);
     // Intercepts server-to-client message in normal mode.
-    static absl::AnyInvocable<Poll<absl::Status>()> NormalMode(
-        RefCountedPtr<ExtProcFilter::ExtProcCall> call, MessageHandle message);
+    absl::AnyInvocable<Poll<absl::Status>()> NormalMode(MessageHandle message);
 
     // Passes through server message directly to client if stream failure is
     // non-fatal, or returns error status if fatal.
-    static absl::Status PassThroughServerMessage(
-        RefCountedPtr<ExtProcFilter::ExtProcCall> call, MessageHandle message);
+    absl::Status PassThroughServerMessage(MessageHandle message);
 
     // Processes a server message by sending a request to ext_proc if stream is
     // open, and passing through the message to the client.
-    static absl::AnyInvocable<Poll<absl::Status>()> ProcessServerMessage(
-        RefCountedPtr<ExtProcFilter::ExtProcCall> call, MessageHandle message,
-        bool observability_mode);
+    absl::AnyInvocable<Poll<absl::Status>()> ProcessServerMessage(
+        MessageHandle message, bool observability_mode);
 
     RefCountedPtr<ExtProcFilter::ExtProcCall> call_;
   };
@@ -1624,10 +1620,8 @@ ExtProcFilter::ExtProcCall::ServerTrailingMetadataProcessor::TrailersOnly() {
       call_->initiator_.PullServerTrailingMetadata(),
       [self = Ref()](ServerMetadataHandle metadata) mutable
           -> absl::AnyInvocable<Poll<absl::Status>()> {
-        const bool send_headers =
-            self->call_->config().processing_mode->send_response_headers &&
-            !self->call_->IsStreamClosed();
-        if (!send_headers) {
+        if (!self->call_->config().processing_mode->send_response_headers ||
+            self->call_->IsStreamClosed()) {
           self->call_->server_trailing_metadata_latch_.Set(nullptr);
           return self->NonProcessingMode(std::move(metadata));
         } else if (self->call_->config().observability_mode) {
@@ -1639,7 +1633,7 @@ ExtProcFilter::ExtProcCall::ServerTrailingMetadataProcessor::TrailersOnly() {
               [self, metadata = std::move(metadata),
                start_time](absl::Status status) mutable
                   -> absl::AnyInvocable<Poll<absl::Status>()> {
-                if (!status.ok() && self->call_->IsStreamFailureFatal()) {
+                if (!status.ok() && self->call_->IsFailOpenAllowed()) {
                   return Immediate(status);
                 }
                 return self->TrailersOnlyObservabilityMode(std::move(metadata),
@@ -1653,10 +1647,7 @@ ExtProcFilter::ExtProcCall::ServerTrailingMetadataProcessor::TrailersOnly() {
                   self->call_, metadata,
                   /*end_of_stream=*/true);
           self->call_->server_trailing_metadata_latch_.Set(std::move(metadata));
-          return Seq(std::move(send_promise),
-                     [self](absl::Status status) mutable -> absl::Status {
-                       return status.ok() ? absl::OkStatus() : status;
-                     });
+          return send_promise;
         }
       });
 }
@@ -1672,12 +1663,8 @@ ExtProcFilter::ExtProcCall::ServerTrailingMetadataProcessor::NormalTrailers() {
               std::move(metadata));
           return Immediate(absl::OkStatus());
         }
-        const bool send_trailers =
-            self->call_->config().processing_mode->send_response_trailers &&
-            !self->call_->IsStreamClosed() &&
-            !self->call_->ext_proc_stream_half_closed_;
-        if (!send_trailers) {
-          self->call_->server_trailing_metadata_latch_.Set(nullptr);
+        if (!self->call_->config().processing_mode->send_response_trailers ||
+            self->call_->IsStreamClosed()) {
           return self->NonProcessingMode(std::move(metadata));
         } else if (self->call_->config().observability_mode) {
           Timestamp start_time = Timestamp::Now();
@@ -1685,7 +1672,9 @@ ExtProcFilter::ExtProcCall::ServerTrailingMetadataProcessor::NormalTrailers() {
                      [self, metadata = std::move(metadata),
                       start_time](absl::Status status) mutable
                          -> absl::AnyInvocable<Poll<absl::Status>()> {
-                       if (!status.ok()) return Immediate(status);
+                       if (!status.ok() && !self->call_->IsFailOpenAllowed()) {
+                         return Immediate(status);
+                       }
                        return self->ObservabilityMode(std::move(metadata),
                                                       start_time);
                      });
@@ -1717,66 +1706,53 @@ absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ExtProcCall::
         ServerMetadataHandle metadata) {
   auto send_promise = SendServerTrailingMetadataRequest(call_, metadata);
   call_->server_trailing_metadata_latch_.Set(std::move(metadata));
-  return Seq(std::move(send_promise),
-             [](absl::Status status) mutable -> absl::Status {
-               return status.ok() ? absl::OkStatus() : status;
-             });
+  return send_promise;
 }
 
 absl::AnyInvocable<Poll<absl::Status>()>
 ExtProcFilter::ExtProcCall::ServerTrailingMetadataProcessor::NonProcessingMode(
     ServerMetadataHandle metadata) {
-  return [call = call_, metadata = std::move(metadata)]() mutable {
-    if (call != nullptr && call->IsStreamClosed() &&
-        call->IsStreamFailureFatal()) {
-      return call->GetStreamStatus();
-    }
-    call->handler_.SpawnPushServerTrailingMetadata(std::move(metadata));
-    return absl::OkStatus();
-  };
+  if (call_->IsStreamFailureFatal()) {
+    return Immediate(call_->GetStreamStatus());
+  }
+  call_->handler_.SpawnPushServerTrailingMetadata(std::move(metadata));
+  return Immediate(absl::OkStatus());
 }
 
 absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ExtProcCall::
     ServerTrailingMetadataProcessor::TrailersOnlyObservabilityMode(
         ServerMetadataHandle metadata, Timestamp start_time) {
-  return [call = call_, metadata = std::move(metadata), start_time]() mutable {
-    call->ext_proc_filter_->RecordServerHeadersDuration(
-        (Timestamp::Now() - start_time).seconds());
-    call->handler_.SpawnPushServerTrailingMetadata(std::move(metadata));
-    return absl::OkStatus();
-  };
+  call_->ext_proc_filter_->RecordServerHeadersDuration(
+      (Timestamp::Now() - start_time).seconds());
+  call_->handler_.SpawnPushServerTrailingMetadata(std::move(metadata));
+  return Immediate(absl::OkStatus());
 }
 
 absl::AnyInvocable<Poll<absl::Status>()>
 ExtProcFilter::ExtProcCall::ServerTrailingMetadataProcessor::ObservabilityMode(
     ServerMetadataHandle metadata, Timestamp start_time) {
-  return [call = call_, metadata = std::move(metadata), start_time]() mutable {
-    call->ext_proc_filter_->RecordServerTrailersDuration(
-        (Timestamp::Now() - start_time).seconds());
-    call->handler_.SpawnPushServerTrailingMetadata(std::move(metadata));
-    return absl::OkStatus();
-  };
+  call_->ext_proc_filter_->RecordServerTrailersDuration(
+      (Timestamp::Now() - start_time).seconds());
+  call_->handler_.SpawnPushServerTrailingMetadata(std::move(metadata));
+  return Immediate(absl::OkStatus());
 }
 
 absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ExtProcCall::
     ServerTrailingMetadataProcessor::TrailersOnlyNormalMode(
         ServerMetadataHandle metadata, Timestamp start_time,
         absl::StatusOr<ExtProcResponse> response) {
+  if (!response.ok()) {
+    return Immediate(response.status());
+  }
   const auto& config = call_->config();
-  if (response.ok() &&
-      std::holds_alternative<ExtProcResponse::ImmediateResponse>(
-          response->response)) {
-    const auto& immediate =
-        std::get<ExtProcResponse::ImmediateResponse>(response->response);
+  if (const auto* immediate = std::get_if<ExtProcResponse::ImmediateResponse>(
+          &response->response)) {
     auto error_md = CancelledServerMetadataFromStatus(
-        static_cast<grpc_status_code>(immediate.status), immediate.details);
+        static_cast<grpc_status_code>(immediate->status), immediate->details);
     (void)ApplyHeaderMutations<ExtProcResponse::ImmediateResponse>(
         *response, config.mutation_rules, *error_md);
     call_->handler_.SpawnPushServerTrailingMetadata(std::move(error_md));
     return Immediate(absl::OkStatus());
-  }
-  if (!response.ok()) {
-    return Immediate(response.status());
   }
   if (auto status = ApplyHeaderMutations<ExtProcResponse::ResponseHeaders>(
           *response, config.mutation_rules, *metadata);
@@ -1796,29 +1772,22 @@ absl::AnyInvocable<Poll<absl::Status>()>
 ExtProcFilter::ExtProcCall::ServerTrailingMetadataProcessor::NormalMode(
     ServerMetadataHandle metadata, Timestamp start_time,
     absl::StatusOr<ExtProcResponse> response) {
-  const auto& config = call_->config();
-  if (response.ok() &&
-      std::holds_alternative<ExtProcResponse::ImmediateResponse>(
-          response->response)) {
-    const auto& immediate =
-        std::get<ExtProcResponse::ImmediateResponse>(response->response);
-    auto error_md = CancelledServerMetadataFromStatus(
-        static_cast<grpc_status_code>(immediate.status), immediate.details);
-    (void)ApplyHeaderMutations<ExtProcResponse::ImmediateResponse>(
-        *response, config.mutation_rules, *error_md);
-    call_->handler_.SpawnPushServerTrailingMetadata(std::move(error_md));
-    return Immediate(absl::OkStatus());
-  }
   if (!response.ok()) {
     return Immediate(response.status());
   }
+  if (const auto* immediate = std::get_if<ExtProcResponse::ImmediateResponse>(
+          &response->response)) {
+    auto error_md = CancelledServerMetadataFromStatus(
+        static_cast<grpc_status_code>(immediate->status), immediate->details);
+    (void)ApplyHeaderMutations<ExtProcResponse::ImmediateResponse>(
+        *response, call_->config().mutation_rules, *error_md);
+    call_->handler_.SpawnPushServerTrailingMetadata(std::move(error_md));
+    return Immediate(absl::OkStatus());
+  }
   if (auto status = ApplyHeaderMutations<ExtProcResponse::ResponseTrailers>(
-          *response, config.mutation_rules, *metadata);
+          *response, call_->config().mutation_rules, *metadata);
       !status.ok()) {
     return Immediate(status);
-  }
-  if (!call_->IsFailOpenAllowed() && call_->IsStreamClosed()) {
-    return Immediate(call_->GetStreamStatus());
   }
   call_->ext_proc_filter_->RecordServerTrailersDuration(
       (Timestamp::Now() - start_time).seconds());
@@ -1832,67 +1801,63 @@ ExtProcFilter::ExtProcCall::ServerTrailingMetadataProcessor::NormalMode(
 
 absl::Status
 ExtProcFilter::ExtProcCall::ServerMessageProcessor::PassThroughServerMessage(
-    RefCountedPtr<ExtProcFilter::ExtProcCall> call, MessageHandle message) {
-  if (call->IsStreamFailureFatal()) {
-    return call->GetStreamStatus();
+    MessageHandle message) {
+  if (call_->IsStreamFailureFatal()) {
+    return call_->GetStreamStatus();
   }
-  call->handler_.SpawnPushMessage(std::move(message));
+  call_->handler_.SpawnPushMessage(std::move(message));
   return absl::OkStatus();
 }
 
 absl::AnyInvocable<Poll<absl::Status>()>
 ExtProcFilter::ExtProcCall::ServerMessageProcessor::ProcessServerMessage(
-    RefCountedPtr<ExtProcFilter::ExtProcCall> call, MessageHandle message,
-    bool observability_mode) {
-  const bool send_message =
-      !call->IsStreamClosed() && !call->ext_proc_stream_half_closed_;
-  if (send_message) {
-    return Seq(SendServerMessageRequest(call, message),
-               [call, message = std::move(message), observability_mode](
+    MessageHandle message, bool observability_mode) {
+  if (!call_->IsStreamClosed() && !call_->ext_proc_stream_half_closed_) {
+    return Seq(SendServerMessageRequest(message),
+               [self = Ref(), message = std::move(message), observability_mode](
                    absl::Status status) mutable -> absl::Status {
-                 if (status.ok() && !call->IsStreamClosed()) {
+                 if (status.ok() && !self->call_->IsStreamClosed()) {
                    if (observability_mode) {
-                     call->handler_.SpawnPushMessage(std::move(message));
+                     self->call_->handler_.SpawnPushMessage(std::move(message));
                    }
                    return absl::OkStatus();
                  }
-                 return PassThroughServerMessage(call, std::move(message));
+                 return self->PassThroughServerMessage(std::move(message));
                });
   }
-  return Immediate(PassThroughServerMessage(call, std::move(message)));
+  return Immediate(PassThroughServerMessage(std::move(message)));
 }
 
 absl::AnyInvocable<Poll<absl::Status>()>
 ExtProcFilter::ExtProcCall::ServerMessageProcessor::SendServerMessageRequest(
-    RefCountedPtr<ExtProcFilter::ExtProcCall> call,
     const MessageHandle& message) {
-  if (!call->config().observability_mode) {
-    call->outstanding_s2c_messages_++;
+  if (!call_->config().observability_mode) {
+    call_->outstanding_s2c_messages_++;
   }
   std::string message_bytes;
   if (message != nullptr) {
     message_bytes = message->payload()->JoinIntoString();
   }
-  return Seq(call->SendMessageToSideStream([ext_proc_call = call,
-                                            message_bytes = std::move(
-                                                message_bytes)]() mutable {
-    GRPC_TRACE_LOG(ext_proc_filter, INFO)
-        << "ExtProc: ServerToClientMessages body message intercepted";
-    std::optional<ExtProcProcessingMode> processing_mode;
-    if (ext_proc_call->IsFirstMessageOnStream()) {
-      processing_mode = ext_proc_call->config().processing_mode;
-    }
-    upb::Arena arena;
-    return CreateExtProcServerBodyRequest(
-        arena.ptr(), message_bytes, /*attributes=*/nullptr,
-        ext_proc_call->config().observability_mode, processing_mode);
-  }),
-             [ext_proc_call = call](absl::Status status) {
-               if (status.ok()) {
-                 ext_proc_call->first_body_message_sent_ = true;
-               }
-               return status;
-             });
+  return Seq(
+      call_->SendMessageToSideStream(
+          [call = call_, message_bytes = std::move(message_bytes)]() mutable {
+            GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                << "ExtProc: ServerToClientMessages body message intercepted";
+            std::optional<ExtProcProcessingMode> processing_mode;
+            if (call->IsFirstMessageOnStream()) {
+              processing_mode = call->config().processing_mode;
+            }
+            upb::Arena arena;
+            return CreateExtProcServerBodyRequest(
+                arena.ptr(), message_bytes, /*attributes=*/nullptr,
+                call->config().observability_mode, processing_mode);
+          }),
+      [call = call_](absl::Status status) {
+        if (status.ok()) {
+          call->first_body_message_sent_ = true;
+        }
+        return status;
+      });
 }
 
 absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ExtProcCall::
@@ -1900,24 +1865,25 @@ absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ExtProcCall::
   if (call_->is_trailers_only_) {
     return Immediate(absl::OkStatus());
   }
-  return Seq(ForEach(MessagesFrom(call_->initiator_),
-                     [call = call_](MessageHandle message) mutable
-                         -> absl::AnyInvocable<Poll<absl::Status>()> {
-                       const bool send_body =
-                           call->config().processing_mode->send_response_body &&
-                           !call->IsStreamClosed();
-                       if (!send_body) {
-                         return NonProcessingMode(call, std::move(message));
-                       } else if (call->config().observability_mode) {
-                         return ObservabilityMode(call, std::move(message));
-                       } else {
-                         return NormalMode(call, std::move(message));
-                       }
-                     }),
-             [call = call_]() {
-               call->s2c_writes_done_ = true;
-               return absl::OkStatus();
-             });
+  return Seq(
+      ForEach(MessagesFrom(call_->initiator_),
+              [self = Ref()](MessageHandle message) mutable
+                  -> absl::AnyInvocable<Poll<absl::Status>()> {
+                const bool send_body =
+                    self->call_->config().processing_mode->send_response_body &&
+                    !self->call_->IsStreamClosed();
+                if (!send_body) {
+                  return self->NonProcessingMode(std::move(message));
+                } else if (self->call_->config().observability_mode) {
+                  return self->ObservabilityMode(std::move(message));
+                } else {
+                  return self->NormalMode(std::move(message));
+                }
+              }),
+      [call = call_]() {
+        call->s2c_writes_done_ = true;
+        return absl::OkStatus();
+      });
 }
 
 absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ExtProcCall::
@@ -1940,24 +1906,27 @@ absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ExtProcCall::
 
 absl::AnyInvocable<Poll<absl::Status>()>
 ExtProcFilter::ExtProcCall::ServerMessageProcessor::NonProcessingMode(
-    RefCountedPtr<ExtProcFilter::ExtProcCall> call, MessageHandle message) {
-  call->handler_.SpawnPushMessage(std::move(message));
+    MessageHandle message) {
+  if (call_->IsStreamFailureFatal()) {
+    return Immediate(call_->GetStreamStatus());
+  }
+  call_->handler_.SpawnPushMessage(std::move(message));
   return Immediate(absl::OkStatus());
 }
 
 absl::AnyInvocable<Poll<absl::Status>()>
 ExtProcFilter::ExtProcCall::ServerMessageProcessor::ObservabilityMode(
-    RefCountedPtr<ExtProcFilter::ExtProcCall> call, MessageHandle message) {
-  return ProcessServerMessage(call, std::move(message),
+    MessageHandle message) {
+  return ProcessServerMessage(std::move(message),
                               /*observability_mode=*/true);
 }
 
 absl::AnyInvocable<Poll<absl::Status>()>
 ExtProcFilter::ExtProcCall::ServerMessageProcessor::NormalMode(
-    RefCountedPtr<ExtProcFilter::ExtProcCall> call, MessageHandle message) {
-  if (call->drain_requested_) {
-    return Seq(call->WaitForStreamStatus(),
-               [call, message = std::move(message)](
+    MessageHandle message) {
+  if (call_->drain_requested_) {
+    return Seq(call_->WaitForStreamStatus(),
+               [call = call_, message = std::move(message)](
                    absl::Status status) mutable -> absl::Status {
                  if (call->IsStreamFailureFatal()) {
                    return status;
@@ -1966,7 +1935,7 @@ ExtProcFilter::ExtProcCall::ServerMessageProcessor::NormalMode(
                  return absl::OkStatus();
                });
   }
-  return ProcessServerMessage(call, std::move(message),
+  return ProcessServerMessage(std::move(message),
                               /*observability_mode=*/false);
 }
 
