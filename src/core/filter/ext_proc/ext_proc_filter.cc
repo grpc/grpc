@@ -1592,11 +1592,8 @@ absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ExtProcCall::
 
 absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ExtProcCall::
     ServerTrailingMetadataProcessor::ProcessFromServerToExtProcServer() {
-  if (call_->IsStreamClosed() || call_->ext_proc_stream_half_closed_) {
-    absl::Status error = call_->GetStreamStatus();
-    if (!error.ok() && !call_->IsFailOpenAllowed()) {
-      return Immediate(error);
-    }
+  if (call_->IsStreamFailureFatal()) {
+    return Immediate(call_->GetStreamStatus());
   }
   if (call_->is_trailers_only_) {
     return TrailersOnly();
@@ -1612,9 +1609,6 @@ absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ExtProcCall::
       [self = Ref(),
        response = std::move(response)](ServerMetadataHandle metadata) mutable
           -> absl::AnyInvocable<Poll<absl::Status>()> {
-        if (metadata == nullptr) {
-          return Immediate(absl::OkStatus());
-        }
         if (self->call_->is_trailers_only_) {
           return self->TrailersOnlyNormalMode(
               std::move(metadata), Timestamp::Now(), std::move(response));
@@ -1632,8 +1626,7 @@ ExtProcFilter::ExtProcCall::ServerTrailingMetadataProcessor::TrailersOnly() {
           -> absl::AnyInvocable<Poll<absl::Status>()> {
         const bool send_headers =
             self->call_->config().processing_mode->send_response_headers &&
-            !self->call_->IsStreamClosed() &&
-            !self->call_->ext_proc_stream_half_closed_;
+            !self->call_->IsStreamClosed();
         if (!send_headers) {
           self->call_->server_trailing_metadata_latch_.Set(nullptr);
           return self->NonProcessingMode(std::move(metadata));
