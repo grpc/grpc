@@ -71,19 +71,11 @@ struct Node {
   int next;
 };
 
-}  // namespace
+// Helper tags.
+struct ClientChannelStackType {};
+struct ServerChannelStackType {};
 
-// The ordering amongst filters with no ordering constraints otherwise.
-// This makes sorting stable between builds, users should not rely on this
-// behavior.
-enum class ChannelInit::LexicalOrdering : uint8_t {
-  // Used by client side filters.
-  kAscending,
-  // Used by server side filters. The ordering is reversed during dependency
-  // graph construction and then reversed again during stack creation, this
-  // ensures backward compatiblility so we don't have to change test code.
-  kDescending,
-};
+}  // namespace
 
 ChannelInit::FilterRegistration& ChannelInit::FilterRegistration::After(
     std::initializer_list<UniqueTypeName> filters) {
@@ -156,16 +148,9 @@ void ChannelInit::Builder::RegisterFusedFilter(
       name, filter, filter_adder, registration_source));
 }
 
-template <ChannelInit::LexicalOrdering lexical_ordering>
+template <typename ChannelStackTypeTag>
 class ChannelInit::DependencyTracker {
- public:
-  // Declare that a filter exists.
-  void Declare(FilterRegistration* registration) {
-    nodes_.emplace(registration->name_, registration);
-  }
-  // Insert an edge from a to b
-  // Both nodes must be declared.
-  void InsertEdge(UniqueTypeName a, UniqueTypeName b) {
+  void InsertEdgeImpl(UniqueTypeName a, UniqueTypeName b) {
     auto it_a = nodes_.find(a);
     auto it_b = nodes_.find(b);
     if (it_a == nodes_.end()) {
@@ -185,6 +170,26 @@ class ChannelInit::DependencyTracker {
     node_a.dependents.push_back(&node_b);
     node_b.all_dependencies.push_back(a);
     ++node_b.waiting_dependencies;
+  }
+  void InsertEdgeImpl(UniqueTypeName a, UniqueTypeName b,
+                      ClientChannelStackType) {
+    InsertEdgeImpl(a, b);
+  }
+  void InsertEdgeImpl(UniqueTypeName a, UniqueTypeName b,
+                      ServerChannelStackType) {
+    InsertEdgeImpl(b, a);
+  }
+
+ public:
+  // Declare that a filter exists.
+  void Declare(FilterRegistration* registration) {
+    nodes_.emplace(registration->name_, registration);
+  }
+  // Insert an edge from a to b
+  // Both nodes must be declared.
+
+  void InsertEdge(UniqueTypeName a, UniqueTypeName b) {
+    InsertEdgeImpl(a, b, ChannelStackTypeTag{});
   }
 
   // Finish the dependency graph and begin iteration.
@@ -264,21 +269,24 @@ class ChannelInit::DependencyTracker {
   struct ReadyDependency {
     explicit ReadyDependency(Node* node) : node(node) {}
     Node* node;
-    static bool LexicalCompare(absl::string_view a, absl::string_view b) {
-      if constexpr (lexical_ordering ==
-                    ChannelInit::LexicalOrdering::kAscending) {
-        return a > b;
-      }
-      return a < b;
+
+    // Sort first on ordering, and then lexically on name.
+    // The lexical sort means that the ordering is stable between builds
+    // (UniqueTypeName ordering is not stable between builds).
+    bool Compare(const ReadyDependency& other, ClientChannelStackType) const {
+      return node->ordering() > other.node->ordering() ||
+             (node->ordering() == other.node->ordering() &&
+              node->name() > other.node->name());
+    }
+
+    bool Compare(const ReadyDependency& other, ServerChannelStackType) const {
+      return node->ordering() < other.node->ordering() ||
+             (node->ordering() == other.node->ordering() &&
+              node->name() > other.node->name());
     }
 
     bool operator<(const ReadyDependency& other) const {
-      // Sort first on ordering, and then lexically on name.
-      // The lexical sort means that the ordering is stable between builds
-      // (UniqueTypeName ordering is not stable between builds).
-      return node->ordering() > other.node->ordering() ||
-             (node->ordering() == other.node->ordering() &&
-              LexicalCompare(node->name(), other.node->name()));
+      return Compare(other, ChannelStackTypeTag{});
     }
   };
   absl::flat_hash_map<UniqueTypeName, Node> nodes_;
@@ -288,28 +296,17 @@ class ChannelInit::DependencyTracker {
 
 template <bool is_terminal>
 std::vector<ChannelInit::FilterNode> ChannelInit::SelectFiltersByPredicate(
-    const std::vector<Filter>& filters, ChannelStackBuilder* builder,
-    bool fix_v3_filter_stack_server_side_ordering) {
+    const std::vector<Filter>& filters, ChannelStackBuilder* builder) {
   std::vector<FilterNode> filter_list;
   int i = 0;
   // Create an in-place linked list of individual filters
-  auto build_filter_list = [&](auto&& it_begin, auto&& it_end) {
-    for (auto it = it_begin; it != it_end; ++it) {
-      const Filter& filter = *it;
-      if (!is_terminal && SkipV2(filter.version)) continue;
-      if (!filter.CheckPredicates(builder->channel_args())) continue;
-      filter_list.push_back(FilterNode{&filter, ++i});
-    }
-    if (!filter_list.empty()) {
-      filter_list.back().next = -1;
-    }
-  };
-  if (!grpc_channel_stack_type_is_client(builder->channel_stack_type()) &&
-      fix_v3_filter_stack_server_side_ordering) {
-    // Reverse the filter order.
-    build_filter_list(filters.rbegin(), filters.rend());
-  } else {
-    build_filter_list(filters.begin(), filters.end());
+  for (const auto& filter : filters) {
+    if (!is_terminal && SkipV2(filter.version)) continue;
+    if (!filter.CheckPredicates(builder->channel_args())) continue;
+    filter_list.push_back(FilterNode{&filter, ++i});
+  }
+  if (!filter_list.empty()) {
+    filter_list.back().next = -1;
   }
   return filter_list;
 }
@@ -362,7 +359,7 @@ void ChannelInit::AppendFiltersToBuilder(
   };
 }
 
-template <ChannelInit::LexicalOrdering lexical_ordering>
+template <typename ChannelStackTypeTag>
 std::tuple<std::vector<ChannelInit::Filter>, std::vector<ChannelInit::Filter>>
 ChannelInit::SortFilterRegistrationsByDependencies(
     const std::vector<std::unique_ptr<ChannelInit::FilterRegistration>>&
@@ -374,7 +371,7 @@ ChannelInit::SortFilterRegistrationsByDependencies(
   // ensure algorithm ordering stability is deterministic for a given build.
   // We should not require this, but at the time of writing it's expected that
   // this will help overall stability.
-  DependencyTracker<lexical_ordering> dependencies;
+  DependencyTracker<ChannelStackTypeTag> dependencies;
   std::vector<Filter> terminal_filters;
   for (const auto& registration : filter_registrations) {
     if (registration->terminal_) {
@@ -447,13 +444,11 @@ ChannelInit::SortFilterRegistrationsByDependencies(
     bool fix_v3_filter_stack_server_side_ordering) {
   if (!grpc_channel_stack_type_is_client(type) &&
       fix_v3_filter_stack_server_side_ordering) {
-    return SortFilterRegistrationsByDependencies<
-        ChannelInit::LexicalOrdering::kDescending>(filter_registrations, type,
-                                                   filter_ordering);
+    return SortFilterRegistrationsByDependencies<ServerChannelStackType>(
+        filter_registrations, type, filter_ordering);
   } else {
-    return SortFilterRegistrationsByDependencies<
-        ChannelInit::LexicalOrdering::kAscending>(filter_registrations, type,
-                                                  filter_ordering);
+    return SortFilterRegistrationsByDependencies<ClientChannelStackType>(
+        filter_registrations, type, filter_ordering);
   }
 }
 
@@ -525,12 +520,12 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
                      std::move(post_processor_functions), filter_ordering};
 };
 
-template <ChannelInit::LexicalOrdering lexical_ordering>
+template <typename ChannelStackTypeTag>
 void ChannelInit::PrintChannelStackTrace(
     grpc_channel_stack_type type,
     const std::vector<std::unique_ptr<ChannelInit::FilterRegistration>>&
         registrations,
-    const DependencyTracker<lexical_ordering>& dependencies,
+    const DependencyTracker<ChannelStackTypeTag>& dependencies,
     const std::vector<Filter>& filters,
     const std::vector<Filter>& terminal_filters) {
   // It can happen that multiple threads attempt to construct a core config at
@@ -639,11 +634,10 @@ bool ChannelInit::Filter::CheckPredicates(const ChannelArgs& args) const {
 
 bool ChannelInit::CreateStack(ChannelStackBuilder* builder) const {
   const auto& stack_config = stack_configs_[builder->channel_stack_type()];
-  auto filter_list = SelectFiltersByPredicate<false>(
-      stack_config.filters, builder, fix_v3_filter_stack_server_side_ordering_);
+  auto filter_list =
+      SelectFiltersByPredicate<false>(stack_config.filters, builder);
   auto terminal_filter_list =
-      SelectFiltersByPredicate<true>(stack_config.terminators, builder,
-                                     fix_v3_filter_stack_server_side_ordering_);
+      SelectFiltersByPredicate<true>(stack_config.terminators, builder);
 
   if (terminal_filter_list.size() != 1) {
     int filter_count = terminal_filter_list.size();

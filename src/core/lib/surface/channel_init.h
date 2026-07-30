@@ -129,13 +129,6 @@ class ChannelInit {
     kCount
   };
 
-  // INTERNAL USE ONLY.
-  // TODO(weizheyuan): Maybe find a way to make it private.
-  //
-  // Made a public forward declaration so DependencyTracker can access its member,
-  // while still preventing misuse by users.
-  enum class LexicalOrdering : uint8_t;
-
   static const char* PostProcessorSlotName(PostProcessorSlot slot) {
     switch (slot) {
       case PostProcessorSlot::kAuthSubstitution:
@@ -425,7 +418,7 @@ class ChannelInit {
   using CreatedType =
       typename decltype(T::Create(ChannelArgs(), {}))::value_type;
 
-  template <LexicalOrdering>
+  template <typename ChannelStackTypeTag>
   class DependencyTracker;
 
   struct Filter {
@@ -466,7 +459,7 @@ class ChannelInit {
   StackConfig stack_configs_[GRPC_NUM_CHANNEL_STACK_TYPES];
   bool fix_v3_filter_stack_server_side_ordering_ = false;
 
-  template <LexicalOrdering>
+  template <typename ChannelStackTypeTag>
   static std::tuple<std::vector<Filter>, std::vector<Filter>>
   SortFilterRegistrationsByDependencies(
       const std::vector<std::unique_ptr<FilterRegistration>>&
@@ -486,8 +479,7 @@ class ChannelInit {
 
   template <bool is_terminal>
   static std::vector<ChannelInit::FilterNode> SelectFiltersByPredicate(
-      const std::vector<Filter>& filters, ChannelStackBuilder* builder,
-      bool fix_v3_filter_stack_server_side_ordering);
+      const std::vector<Filter>& filters, ChannelStackBuilder* builder);
 
   static void MergeFusedFilters(ChannelStackBuilder* builder,
                                 const std::vector<Filter>& fused_filters);
@@ -503,12 +495,12 @@ class ChannelInit {
       PostProcessor* post_processors, grpc_channel_stack_type type,
       bool fix_v3_filter_stack_server_side_ordering);
 
-  template <LexicalOrdering lexical_ordering>
+  template <typename ChannelStackTypeTag>
   static void PrintChannelStackTrace(
       grpc_channel_stack_type type,
       const std::vector<std::unique_ptr<ChannelInit::FilterRegistration>>&
           registrations,
-      const DependencyTracker<lexical_ordering>& dependencies,
+      const DependencyTracker<ChannelStackTypeTag>& dependencies,
       const std::vector<Filter>& filters,
       const std::vector<Filter>& terminal_filters);
 };
