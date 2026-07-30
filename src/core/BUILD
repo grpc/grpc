@@ -7485,6 +7485,31 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "streaming_call_promise_wrapper",
+    srcs = [
+        "xds/grpc/streaming_call_promise_wrapper.cc",
+    ],
+    hdrs = [
+        "xds/grpc/streaming_call_promise_wrapper.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/status",
+        "absl/strings",
+    ],
+    deps = [
+        "activity",
+        "dual_ref_counted",
+        "grpc_check",
+        "poll",
+        "status_flag",
+        "sync",
+        "//:orphanable",
+        "//:xds_client",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_transport_grpc",
     srcs = [
         "xds/grpc/xds_transport_grpc.cc",
