@@ -30,13 +30,15 @@ def _assert_in(env, item, container):
     )
 
 def _short_paths(files):
+    if files == None:
+        return []
     return sorted([file.short_path for file in files.to_list()])
 
 def _static_analysis_aspect_impl(target, ctx):
     py_info = target[PyInfo]
-    direct_files = py_info.direct_pyi_files
-    if not direct_files.to_list():
-        direct_files = py_info.direct_original_sources
+    direct_files = getattr(py_info, "direct_pyi_files", None)
+    if direct_files == None or not direct_files.to_list():
+        direct_files = getattr(py_info, "direct_original_sources", None)
 
     direct_files_by_target = {}
     for dep in getattr(ctx.rule.attr, "deps", []):

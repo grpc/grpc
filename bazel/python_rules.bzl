@@ -42,13 +42,18 @@ PyProtoInfo = provider(
     },
 )
 
+def _get_pyinfo_depset(py_info, field):
+    """Gets a PyInfo depset field with backwards compatibility."""
+    value = getattr(py_info, field, None)
+    return depset() if value == None else value
+
 def _merge_pyinfos(direct_pyinfo, transitive_pyinfos):
     pyinfos = [direct_pyinfo] + transitive_pyinfos
     return PyInfo(
-        direct_original_sources = direct_pyinfo.direct_original_sources,
-        direct_pyi_files = direct_pyinfo.direct_pyi_files,
-        transitive_original_sources = depset(transitive = [p.transitive_original_sources for p in pyinfos]),
-        transitive_pyi_files = depset(transitive = [p.transitive_pyi_files for p in pyinfos]),
+        direct_original_sources = _get_pyinfo_depset(direct_pyinfo, "direct_original_sources"),
+        direct_pyi_files = _get_pyinfo_depset(direct_pyinfo, "direct_pyi_files"),
+        transitive_original_sources = depset(transitive = [_get_pyinfo_depset(p, "transitive_original_sources") for p in pyinfos]),
+        transitive_pyi_files = depset(transitive = [_get_pyinfo_depset(p, "transitive_pyi_files") for p in pyinfos]),
         transitive_sources = depset(transitive = [p.transitive_sources for p in pyinfos]),
         imports = depset(transitive = [p.imports for p in pyinfos]),
     )
