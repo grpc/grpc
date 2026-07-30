@@ -697,7 +697,8 @@ OldSubchannel::OldSubchannel(SubchannelKey key,
                              const ChannelArgs& args)
     : key_(std::move(key)),
       created_from_endpoint_(args.Contains(GRPC_ARG_SUBCHANNEL_ENDPOINT)),
-      args_(args),
+      initial_args_(args),
+      args_(initial_args_),
       pollset_set_(grpc_pollset_set_create()),
       connector_(std::move(connector)),
       watcher_list_(this),
@@ -706,9 +707,10 @@ OldSubchannel::OldSubchannel(SubchannelKey key,
       event_engine_(args_.GetObjectRef<EventEngine>()),
       stats_plugin_group_(
           args_.GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>()),
-      target_(args_.GetString(GRPC_ARG_DEFAULT_AUTHORITY).value_or("")),
-      backend_service_(args_.GetString(GRPC_ARG_BACKEND_SERVICE).value_or("")),
-      locality_(args_.GetString(GRPC_ARG_LB_LOCALITY).value_or("")) {
+      target_(initial_args_.GetString(GRPC_ARG_DEFAULT_AUTHORITY).value_or("")),
+      backend_service_(
+          initial_args_.GetString(GRPC_ARG_BACKEND_SERVICE).value_or("")),
+      locality_(initial_args_.GetString(GRPC_ARG_LB_LOCALITY).value_or("")) {
   if (stats_plugin_group_ != nullptr) {
     attempts_storage_ = SubchannelMetricsDomainAttempts::GetStorage(
         stats_plugin_group_->GetCollectionScope(), target_, backend_service_,
@@ -1966,7 +1968,8 @@ NewSubchannel::NewSubchannel(SubchannelKey key,
                              const ChannelArgs& args)
     : key_(std::move(key)),
       created_from_endpoint_(args.Contains(GRPC_ARG_SUBCHANNEL_ENDPOINT)),
-      args_(args),
+      initial_args_(args),
+      args_(initial_args_),
       pollset_set_(grpc_pollset_set_create()),
       connector_(std::move(connector)),
       watcher_list_(this),
@@ -1975,9 +1978,10 @@ NewSubchannel::NewSubchannel(SubchannelKey key,
       event_engine_(args_.GetObjectRef<EventEngine>()),
       stats_plugin_group_(
           args_.GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>()),
-      target_(args_.GetString(GRPC_ARG_DEFAULT_AUTHORITY).value_or("")),
-      backend_service_(args_.GetString(GRPC_ARG_BACKEND_SERVICE).value_or("")),
-      locality_(args_.GetString(GRPC_ARG_LB_LOCALITY).value_or("")) {
+      target_(initial_args_.GetString(GRPC_ARG_DEFAULT_AUTHORITY).value_or("")),
+      backend_service_(
+          initial_args_.GetString(GRPC_ARG_BACKEND_SERVICE).value_or("")),
+      locality_(initial_args_.GetString(GRPC_ARG_LB_LOCALITY).value_or("")) {
   if (stats_plugin_group_ != nullptr) {
     attempts_storage_ = SubchannelMetricsDomainAttempts::GetStorage(
         stats_plugin_group_->GetCollectionScope(), target_, backend_service_,

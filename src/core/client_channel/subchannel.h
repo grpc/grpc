@@ -392,6 +392,8 @@ class OldSubchannel final : public Subchannel {
   // Actual address to connect to.  May be different than the address in
   // key_ if overridden by proxy mapper.
   grpc_resolved_address address_for_connect_;
+  // Initial channel args.
+  const ChannelArgs initial_args_;
   // Channel args.
   ChannelArgs args_;
   // pollset_set tracking who's interested in a connection being setup.
@@ -629,6 +631,8 @@ class NewSubchannel final : public Subchannel {
   // Actual address to connect to.  May be different than the address in
   // key_ if overridden by proxy mapper.
   grpc_resolved_address address_for_connect_;
+  // Initial channel args.
+  const ChannelArgs initial_args_;
   // Channel args.
   ChannelArgs args_;
   // pollset_set tracking who's interested in a connection being setup.
