@@ -381,8 +381,8 @@ class InterceptedCall:
                 )
                 call.add_done_callback(callback)
         else:
-            msg = "Call not available"
-            raise RuntimeError(msg)
+            err_msg = "Call not available"
+            raise RuntimeError(err_msg)
 
         self._pending_add_done_callbacks = []
 
