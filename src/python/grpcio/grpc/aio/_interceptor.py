@@ -73,7 +73,6 @@ class _FinishIteratorSentinel:
 
 
 _FINISH_ITERATOR_SENTINEL = _FinishIteratorSentinel()
-_FINISH_ITERATOR_SENTINEL_T: TypeAlias = _FinishIteratorSentinel
 
 
 class ServerInterceptor(metaclass=ABCMeta):
