@@ -1328,7 +1328,6 @@ class _StreamCallResponseIterator(Generic[RequestType, ResponseType]):
 class UnaryStreamCallResponseIterator(
     _StreamCallResponseIterator[RequestType, ResponseType],
     _base_call.UnaryStreamCall[RequestType, ResponseType],
-    Generic[RequestType, ResponseType],
 ):
     """UnaryStreamCall class which uses an alternative response iterator."""
 
@@ -1341,7 +1340,6 @@ class UnaryStreamCallResponseIterator(
 class StreamStreamCallResponseIterator(
     _StreamCallResponseIterator[RequestType, ResponseType],
     _base_call.StreamStreamCall[RequestType, ResponseType],
-    Generic[RequestType, ResponseType],
 ):
     """StreamStreamCall class which uses an alternative response iterator."""
 
