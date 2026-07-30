@@ -618,8 +618,7 @@ class _InterceptedStreamRequestMixin(
         call: _base_call.Call,
     ):
         if self._write_to_iterator_queue is None:
-            msg = "Write iterator queue is None"
-            raise ValueError(msg)
+            raise cygrpc.UsageError(_API_STYLE_ERROR)
 
         # Write the specified 'request' to the request iterator queue using the
         # specified 'call' to allow for interruption of the write in the case
