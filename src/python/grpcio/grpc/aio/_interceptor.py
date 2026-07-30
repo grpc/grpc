@@ -38,7 +38,6 @@ from typing import (
     Sequence,
     TypeAlias,
     Union,
-    cast,
 )
 
 import grpc
@@ -63,6 +62,8 @@ from ._typing import ResponseIterableType
 from ._typing import ResponseType
 from ._typing import SerializingFunction
 from ._utils import _timeout_to_deadline
+
+from typing_extensions import TypeIs
 
 _LOCAL_CANCELLATION_DETAILS = "Locally cancelled by application!"
 
@@ -694,6 +695,10 @@ def _resolve_registered_call_handle(
         )
     return resolved_registered_call_handle
 
+def _is_unary_unary_call(
+  val: Union[_base_call.UnaryUnaryCall[RequestType, ResponseType], ResponseType]
+) -> TypeIs[_base_call.UnaryUnaryCall[RequestType, ResponseType]]:
+    return isinstance(val, _base_call.UnaryUnaryCall)
 
 class InterceptedUnaryUnaryCall(
     InterceptedCall,
@@ -779,14 +784,8 @@ class InterceptedUnaryUnaryCall(
                     continuation, client_call_details, request
                 )
 
-                if isinstance(call_or_response, _base_call.UnaryUnaryCall):
-                    # Pyright loses the generic type arguments when doing
-                    # the isinstance check against the base class. We must
-                    # cast to restore them and avoid Unknown type errors.
-                    return cast(
-                        "_base_call.UnaryUnaryCall[RequestType, ResponseType]",
-                        call_or_response,
-                    )
+                if _is_unary_unary_call(call_or_response):
+                    call_or_response
                 return UnaryUnaryCallResponse(call_or_response)
 
             registered_call_handle = _resolve_registered_call_handle(
@@ -965,7 +964,6 @@ class InterceptedUnaryStreamCall(
 
 
 class InterceptedStreamUnaryCall(  # pylint: disable=too-many-ancestors
-class InterceptedStreamUnaryCall(
     InterceptedCall,
     _InterceptedStreamRequestMixin[RequestType],
     _InterceptedUnaryResponseMixin[ResponseType],
