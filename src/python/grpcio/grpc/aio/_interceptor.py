@@ -561,10 +561,7 @@ class _InterceptedStreamResponseMixin(
             self._response_aiter = (
                 self._wait_for_interceptor_task_response_iterator()
             )
-        try:
-            return await self._response_aiter.__anext__()
-        except StopAsyncIteration:
-            return cygrpc.EOF
+        return await anext(self._response_aiter, cygrpc.EOF)
 
 
 class _InterceptedStreamRequestMixinProtocol(Protocol):
