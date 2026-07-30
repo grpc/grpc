@@ -228,8 +228,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
       void OnServingStatusUpdate(std::string uri,
                                  ServingStatusUpdate update) override;
 
-      std::optional<absl::Status> GetNextStatus(
-          const std::string& uri, absl::Duration timeout = absl::Seconds(10));
+      std::optional<absl::Status> GetNextStatus(const std::string& uri,
+                                                absl::Time deadline);
 
      private:
       grpc_core::Mutex mu_;
@@ -253,13 +253,19 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     void Start();
     void Shutdown();
 
-    std::string target() const { return absl::StrCat("localhost:", port_); }
+    std::string target() const { return grpc_core::LocalIpAndPort(port_); }
 
     int port() const { return port_; }
 
+    std::optional<absl::Status> GetNextStatus(absl::Time deadline) {
+      return notifier_.GetNextStatus(grpc_core::LocalIpAndPort(port_),
+                                     deadline);
+    }
+
     std::optional<absl::Status> GetNextStatus(
         absl::Duration timeout = absl::Seconds(10)) {
-      return notifier_.GetNextStatus(grpc_core::LocalIpAndPort(port_), timeout);
+      return GetNextStatus(absl::Now() +
+                           (timeout * grpc_test_slowdown_factor()));
     }
 
     void set_allow_put_requests(bool allow_put_requests) {
