@@ -36,7 +36,6 @@ from typing import (
     Optional,
     Protocol,
     Sequence,
-    TypeAlias,
     Union,
 )
 
@@ -578,7 +577,7 @@ class _InterceptedStreamRequestMixin(
 ):
     _write_to_iterator_async_gen: Optional[AsyncIterable[RequestType]]
     _write_to_iterator_queue: Optional[
-        asyncio.Queue[Union[RequestType, _FINISH_ITERATOR_SENTINEL_T]]
+        asyncio.Queue[Union[RequestType, _FinishIteratorSentinel]]
     ]
     _status_code_task: Optional[asyncio.Task[grpc.StatusCode]]
 
@@ -615,7 +614,7 @@ class _InterceptedStreamRequestMixin(
 
     async def _write_to_iterator_queue_interruptible(
         self,
-        request: Union[RequestType, _FINISH_ITERATOR_SENTINEL_T],
+        request: Union[RequestType, _FinishIteratorSentinel],
         call: _base_call.Call,
     ) -> None:
         if self._write_to_iterator_queue is None:
