@@ -41,6 +41,7 @@ from typing import (
 
 import grpc
 from grpc._cython import cygrpc
+from typing_extensions import TypeIs
 
 from . import _base_call
 from ._call import AioRpcError
@@ -61,8 +62,6 @@ from ._typing import ResponseIterableType
 from ._typing import ResponseType
 from ._typing import SerializingFunction
 from ._utils import _timeout_to_deadline
-
-from typing_extensions import TypeIs
 
 _LOCAL_CANCELLATION_DETAILS = "Locally cancelled by application!"
 
@@ -692,10 +691,14 @@ def _resolve_registered_call_handle(
         )
     return resolved_registered_call_handle
 
+
 def _is_unary_unary_call(
-  val: Union[_base_call.UnaryUnaryCall[RequestType, ResponseType], ResponseType]
+    val: Union[
+        _base_call.UnaryUnaryCall[RequestType, ResponseType], ResponseType
+    ],
 ) -> TypeIs[_base_call.UnaryUnaryCall[RequestType, ResponseType]]:
     return isinstance(val, _base_call.UnaryUnaryCall)
+
 
 class InterceptedUnaryUnaryCall(
     InterceptedCall,
