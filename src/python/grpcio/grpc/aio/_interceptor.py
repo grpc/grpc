@@ -112,7 +112,7 @@ class ServerInterceptor(metaclass=ABCMeta):
 
 class ClientCallDetails(
     NamedTuple(
-        "ClientCallDetails",
+        "_ClientCallDetails",
         [
             ("method", bytes),
             ("timeout", Optional[float]),
