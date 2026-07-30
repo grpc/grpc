@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Interceptors implementation of gRPC Asyncio Python."""
+# This file has multiple pyright error reported related to reportPrivateUsage
+# hence suppressing it at file level. https://github.com/grpc/grpc/pull/42743
 # pyright: reportPrivateUsage = false
 
 from __future__ import annotations
