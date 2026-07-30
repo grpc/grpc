@@ -32,6 +32,8 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
+#if defined(OPENSSL_IS_BORINGSSL)
+
 namespace grpc {
 namespace testing {
 
@@ -103,4 +105,5 @@ class AsyncTestCertificateSelector : public grpc_core::CertificateSelector {
 }  // namespace testing
 }  // namespace grpc
 
+#endif  // OPENSSL_IS_BORINGSSL
 #endif  // GRPC_TEST_CPP_END2END_TLS_TEST_CERTIFICATE_SELECTOR_H

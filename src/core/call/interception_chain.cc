@@ -146,9 +146,11 @@ InterceptionChainBuilder::Build(FinalDestination final_destination) {
   }
   Interceptor* previous = top_interceptor_.get();
   while (previous->wrapped_destination_ != nullptr) {
+    previous->Init(args_);
     previous = DownCast<Interceptor*>(previous->wrapped_destination_.get());
   }
   previous->wrapped_destination_ = std::move(terminator);
+  previous->Init(args_);
   return std::move(top_interceptor_);
 }
 

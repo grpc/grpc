@@ -117,7 +117,7 @@ class AddHeaderFilter final : public ImplementChannelFilter<AddHeaderFilter> {
 };
 
 // xDS HTTP filter factory for AddHeaderFilter.
-class XdsHttpAddHeaderFilterFactory final : public XdsHttpFilterFactory {
+class XdsHttpAddHeaderFilterFactory : public XdsHttpFilterFactory {
  public:
   static constexpr absl::string_view kFilterName =
       "io.grpc.test.AddHeaderFilter";
@@ -152,6 +152,21 @@ class XdsHttpAddHeaderFilterFactory final : public XdsHttpFilterFactory {
   bool IsSupportedOnClients() const override { return true; }
   bool IsSupportedOnServers() const override { return false; }
   bool IsTerminalFilter() const override { return false; }
+};
+
+// A factory for the same filter that is supported on the server side.
+class XdsHttpServerAddHeaderFilterFactory final
+    : public XdsHttpAddHeaderFilterFactory {
+ public:
+  static constexpr absl::string_view kFilterName =
+      "io.grpc.test.ServerAddHeaderFilter";
+
+  absl::string_view ConfigProtoName() const override { return kFilterName; }
+  absl::string_view OverrideConfigProtoName() const override {
+    return kFilterName;
+  }
+  bool IsSupportedOnClients() const override { return false; }
+  bool IsSupportedOnServers() const override { return true; }
 };
 
 }  // namespace grpc_core

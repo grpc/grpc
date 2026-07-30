@@ -179,6 +179,8 @@ class XdsServerConfigFetcher::ListenerWatcher final
 
   const std::string& listening_address() const { return listening_address_; }
 
+  std::string ResourceName() const;
+
  private:
   class XdsConnectionManager;
 
@@ -452,17 +454,6 @@ XdsServerConfigFetcher::XdsServerConfigFetcher(
     : fetcher_state_(MakeRefCounted<FetcherState>(std::move(xds_client))),
       serving_status_notifier_(notifier) {}
 
-std::string ListenerResourceName(absl::string_view resource_name_template,
-                                 absl::string_view listening_address) {
-  std::string tmp;
-  if (absl::StartsWith(resource_name_template, "xdstp:")) {
-    tmp = URI::PercentEncodePath(listening_address);
-    listening_address = tmp;
-  }
-  return absl::StrReplaceAll(resource_name_template,
-                             {{"%s", listening_address}});
-}
-
 void XdsServerConfigFetcher::StartWatch(
     std::string listening_address,
     std::unique_ptr<ServerConfigFetcher::WatcherInterface> watcher) {
@@ -472,20 +463,16 @@ void XdsServerConfigFetcher::StartWatch(
        watcher = std::move(watcher)]()
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(
               &FetcherState::work_serializer) mutable {
-            std::string resource_name = ListenerResourceName(
-                DownCast<const GrpcXdsBootstrap&>(
-                    self->fetcher_state_->xds_client->bootstrap())
-                    .server_listener_resource_name_template(),
-                listening_address);
-            GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
-                << "[XdsServerConfigFetcher " << self.get()
-                << "]: starting watch for LDS resource " << resource_name;
             ServerConfigFetcher::WatcherInterface* watcher_ptr = watcher.get();
             auto listener_watcher = MakeRefCounted<ListenerWatcher>(
                 self->fetcher_state_.Ref(DEBUG_LOCATION, "ListenerWatcher"),
                 std::move(watcher), self->serving_status_notifier_,
                 listening_address);
             auto* listener_watcher_ptr = listener_watcher.get();
+            std::string resource_name = listener_watcher->ResourceName();
+            GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
+                << "[XdsServerConfigFetcher " << self.get()
+                << "]: starting watch for LDS resource " << resource_name;
             XdsListenerResourceType::StartWatch(
                 self->fetcher_state_->xds_client.get(), resource_name,
                 std::move(listener_watcher));
@@ -500,18 +487,13 @@ void XdsServerConfigFetcher::CancelWatch(
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&FetcherState::work_serializer) {
             auto it = self->listener_watchers_.find(watcher);
             if (it == self->listener_watchers_.end()) return;
-            std::string resource_name = ListenerResourceName(
-                DownCast<const GrpcXdsBootstrap&>(
-                    self->fetcher_state_->xds_client->bootstrap())
-                    .server_listener_resource_name_template(),
-                it->second->listening_address());
+            std::string resource_name = it->second->ResourceName();
             GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
                 << "[XdsServerConfigFetcher " << self.get()
                 << "]: cancelling watch for LDS resource " << resource_name;
             XdsListenerResourceType::CancelWatch(
                 self->fetcher_state_->xds_client.get(), resource_name,
-                it->second,
-                /*delay_unsubscription=*/false);
+                it->second, /*delay_unsubscription=*/false);
             self->listener_watchers_.erase(it);
           });
 }
@@ -545,9 +527,9 @@ void XdsServerConfigFetcher::ListenerWatcher::OnResourceChanged(
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(
               &FetcherState::work_serializer) mutable {
             if (!listener.ok()) {
-              self->OnFatalError(absl::Status(
-                  listener.status().code(),
-                  absl::StrCat("LDS resource: ", listener.status().message())));
+              self->OnFatalError(AddMessagePrefix(
+                  absl::StrCat("LDS resource ", self->ResourceName()),
+                  listener.status()));
               return;
             }
             GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
@@ -559,12 +541,14 @@ void XdsServerConfigFetcher::ListenerWatcher::OnResourceChanged(
                 &(*listener)->listener);
             if (tcp_listener == nullptr) {
               self->OnFatalError(absl::FailedPreconditionError(
-                  "LDS resource is not a TCP listener"));
+                  absl::StrCat("LDS resource ", self->ResourceName(),
+                               " is not a TCP listener")));
               return;
             }
             if (tcp_listener->address != self->listening_address_) {
               self->OnFatalError(absl::FailedPreconditionError(
-                  "Address in LDS update does not match listening address"));
+                  absl::StrCat("LDS resource ", self->ResourceName(),
+                               " address does not match listening address")));
               return;
             }
             if (self->connection_manager_ != nullptr &&
@@ -638,6 +622,20 @@ void XdsServerConfigFetcher::ListenerWatcher::MaybeUpdateConnectionManager(
                 << listening_address_;
     }
   }
+}
+
+std::string XdsServerConfigFetcher::ListenerWatcher::ResourceName() const {
+  absl::string_view resource_name_template =
+      DownCast<const GrpcXdsBootstrap&>(fetcher_state_->xds_client->bootstrap())
+          .server_listener_resource_name_template();
+  absl::string_view listening_address = listening_address_;
+  std::string tmp;
+  if (absl::StartsWith(resource_name_template, "xdstp:")) {
+    tmp = URI::PercentEncodePath(listening_address);
+    listening_address = tmp;
+  }
+  return absl::StrReplaceAll(resource_name_template,
+                             {{"%s", listening_address}});
 }
 
 //

@@ -517,7 +517,6 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   bool WriteWithTimestamps(struct msghdr* msg, size_t sending_length,
                            PosixErrorOr<int64_t>* sent_length, int* saved_errno,
                            int additional_flags);
-  absl::Status TcpAnnotateError(absl::Status src_error) const;
 #ifdef GRPC_LINUX_ERRQUEUE
   bool ProcessErrors();
   // Reads a cmsg to process zerocopy control messages.
@@ -531,6 +530,7 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   double target_length_;
   int min_read_chunk_size_;
   int max_read_chunk_size_;
+  int max_read_buffer_size_;
   int64_t set_rcvlowat_ = 0;
   double bytes_read_this_round_ = 0;
 
@@ -637,15 +637,14 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
   void Shutdown(absl::AnyInvocable<void(absl::StatusOr<int> release_fd)>
                     on_release_fd) override {
     if (!shutdown_.exchange(true, std::memory_order_acq_rel)) {
-      impl_->MaybeShutdown(absl::FailedPreconditionError("Endpoint closing"),
+      impl_->MaybeShutdown(absl::UnavailableError("Endpoint closing"),
                            std::move(on_release_fd));
     }
   }
 
   ~PosixEndpoint() override {
     if (!shutdown_.exchange(true, std::memory_order_acq_rel)) {
-      impl_->MaybeShutdown(absl::FailedPreconditionError("Endpoint closing"),
-                           nullptr);
+      impl_->MaybeShutdown(absl::UnavailableError("Endpoint closing"), nullptr);
     }
   }
 

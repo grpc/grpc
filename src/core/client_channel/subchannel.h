@@ -28,7 +28,6 @@
 
 #include "src/core/call/metadata_batch.h"
 #include "src/core/client_channel/connector.h"
-#include "src/core/client_channel/subchannel_metrics.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -44,7 +43,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/telemetry/metrics.h"
 #include "src/core/util/backoff.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/dual_ref_counted.h"
@@ -441,14 +439,6 @@ class OldSubchannel final : public Subchannel {
   std::map<UniqueTypeName, DataProducerInterface*> data_producer_map_
       ABSL_GUARDED_BY(mu_);
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
-
-  // Metrics and observability.
-  std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
-      stats_plugin_group_;
-  absl::string_view target_;
-  absl::string_view backend_service_;
-  absl::string_view locality_;
-  InstrumentStorageRefPtr<SubchannelMetricsDomainAttempts> attempts_storage_;
 };
 
 class NewSubchannel final : public Subchannel {
@@ -691,14 +681,6 @@ class NewSubchannel final : public Subchannel {
   // invalidated as entries are added or removed from the queue (i.e.,
   // std::vector<> would not work).
   std::deque<QueuedCall*> queued_calls_ ABSL_GUARDED_BY(mu_);
-
-  // Metrics and observability.
-  std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
-      stats_plugin_group_;
-  absl::string_view target_;
-  absl::string_view backend_service_;
-  absl::string_view locality_;
-  InstrumentStorageRefPtr<SubchannelMetricsDomainAttempts> attempts_storage_;
 };
 
 void TestOnlySetSubchannelAlwaysSendCallsToTransport(bool enabled);

@@ -219,7 +219,7 @@ absl::Status Http2ClientTransport::AckPing(uint64_t opaque_data) {
 
 void Http2ClientTransport::Orphan() {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::Orphan Begin";
-  // Accessing general_party here is not advisable. It may so happen that
+  // Accessing transport_party here is not advisable. It may so happen that
   // the party is already freed/may free up any time. The only guarantee here
   // is that the transport is still valid.
   SourceDestructing();
@@ -1245,10 +1245,10 @@ Http2ClientTransport::Http2ClientTransport(
       security_frame_handler_(MakeRefCounted<SecurityFrameHandler>()),
       ztrace_collector_(std::make_shared<PromiseHttp2ZTraceCollector>()) {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::Http2ClientTransport Begin";
-  // Initialize the general party and write party.
+  // Initialize the transport party and write party.
   RefCountedPtr<Arena> party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<EventEngine>(event_engine_.get());
-  general_party_ = Party::Make(std::move(party_arena));
+  transport_party_ = Party::Make(std::move(party_arena));
 
   InitLocalSettings(settings_->mutable_local(), /*is_client=*/kIsClient);
   TransportChannelArgs args;
@@ -1273,9 +1273,11 @@ Http2ClientTransport::Http2ClientTransport(
 void Http2ClientTransport::SpawnTransportLoops() {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::SpawnTransportLoops Begin";
   MaybeSpawnKeepaliveLoop();
-  SpawnGuardedTransportParty(
-      "FlowControlPeriodicUpdateLoop",
-      UntilTransportClosed(FlowControlPeriodicUpdateLoop()));
+  SpawnGuardedTransportParty("FlowControlPeriodicUpdateLoop",
+                             [self = RefAsSubclass<Http2ClientTransport>()]() {
+                               return self->UntilTransportClosed(
+                                   self->FlowControlPeriodicUpdateLoop());
+                             });
 
   if (!TriggerWriteCycleOrHandleError()) {
     return;
@@ -1283,8 +1285,12 @@ void Http2ClientTransport::SpawnTransportLoops() {
   // For Client, write happens before read. So MultiplexerLoop is spawned first.
   // ReadLoop is spawned after the first write.
   // For Server, read happens before write. So ReadLoop is spawned first.
-  SpawnGuardedTransportParty("MultiplexerLoop",
-                             UntilTransportClosed(MultiplexerLoop()));
+  SpawnGuardedTransportParty(
+      "MultiplexerLoop",
+
+      [self = RefAsSubclass<Http2ClientTransport>()]() {
+        return self->UntilTransportClosed(self->MultiplexerLoop());
+      });
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::SpawnTransportLoops End";
 }
 
@@ -1420,8 +1426,8 @@ void Http2ClientTransport::CloseTransport() {
   shutdown_tracker_.MarkShutdownComplete();
   settings_->HandleTransportShutdown(event_engine_.get());
 
-  // This is the only place where the general_party_ is reset.
-  general_party_.reset();
+  // This is the only place where the transport_party_ is reset.
+  transport_party_.reset();
 }
 
 void Http2ClientTransport::CloseAllActiveStreams(
@@ -1522,7 +1528,7 @@ void Http2ClientTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
 Http2ClientTransport::~Http2ClientTransport() {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::~Http2ClientTransport Begin";
   GRPC_DCHECK(stream_list_.empty());
-  GRPC_DCHECK(general_party_ == nullptr);
+  GRPC_DCHECK(transport_party_ == nullptr);
   memory_owner_.Reset();
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::~Http2ClientTransport End";
 }
@@ -1545,8 +1551,8 @@ void Http2ClientTransport::SpawnAddChannelzData(RefCountedPtr<Party> party,
                 .Set("settings", self->settings_->ChannelzProperties())
                 .Set("flow_control",
                      self->flow_control_.stats().ChannelzProperties()));
-        self->general_party_->ExportToChannelz("Http2ClientTransport Party",
-                                               sink);
+        self->transport_party_->ExportToChannelz("Http2ClientTransport Party",
+                                                 sink);
         GRPC_HTTP2_CLIENT_DLOG
             << "Http2ClientTransport::SpawnAddChannelzData End";
         return Empty{};
@@ -1563,8 +1569,8 @@ void Http2ClientTransport::AddData(channelz::DataSink sink) {
       MutexLock lock(&self->transport_mutex_);
       if (GPR_LIKELY(!self->shutdown_tracker_.IsShutdownInitiated(
               self->transport_mutex_))) {
-        GRPC_DCHECK(self->general_party_ != nullptr);
-        party = self->general_party_;
+        GRPC_DCHECK(self->transport_party_ != nullptr);
+        party = self->transport_party_;
       } else {
         GRPC_HTTP2_CLIENT_DLOG
             << "Http2ClientTransport::AddData Transport is closed.";
