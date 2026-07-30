@@ -171,14 +171,20 @@ class _OpenTelemetryPlugin:
 
     def activate_client_plugin_options(self, target: bytes) -> None:
         """Activate client plugin options based on option settings."""
-        target_str = target.decode("utf-8", "replace")
         if not self._enabled_client_plugin_options:
-            self._enabled_client_plugin_options = []
+            # Publish in a single assignment. Assigning the list empty and
+            # appending afterwards leaves a window where a concurrent caller
+            # finds it non-empty, skips activation, and builds exchange labels
+            # from a partial list. The AsyncIO tracer-setup path no longer
+            # serializes this behind _plugin_lock.
+            target_str = target.decode("utf-8", "replace")
+            enabled_client_plugin_options = []
             for plugin_option in self._plugin.plugin_options:
                 if hasattr(
                     plugin_option, "is_active_on_client_channel"
                 ) and plugin_option.is_active_on_client_channel(target_str):
-                    self._enabled_client_plugin_options.append(plugin_option)
+                    enabled_client_plugin_options.append(plugin_option)
+            self._enabled_client_plugin_options = enabled_client_plugin_options
 
     def activate_server_plugin_options(self, xds: bool) -> None:
         """Activate server plugin options based on option settings."""

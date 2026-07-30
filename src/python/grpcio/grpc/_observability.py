@@ -228,7 +228,7 @@ def get_plugin() -> Generator[Optional[ObservabilityPlugin], None, None]:
         yield _OBSERVABILITY_PLUGIN
 
 
-def get_plugin_ref() -> Optional[ObservabilityPlugin]:
+def get_plugin_unlocked() -> Optional[ObservabilityPlugin]:
     """Return the registered ObservabilityPlugin without acquiring _plugin_lock.
 
     Intended for latency-sensitive per-call paths that run on the AsyncIO event

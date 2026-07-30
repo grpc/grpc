@@ -149,9 +149,13 @@ cdef class _AioCall(GrpcCallWrapper):
         self._maybe_set_client_call_tracer_on_call(method)
 
     cdef void _maybe_save_registered_method(self, bytes method) except *:
-        with _observability.get_plugin() as plugin:
-            if plugin and plugin.observability_enabled:
-                plugin.save_registered_method(method)
+        # Runs on the event loop thread, and registered methods are the default
+        # for generated stubs, so this is on the hot path for every RPC. Read the
+        # plugin WITHOUT taking _observability._plugin_lock, for the same reason
+        # as _maybe_set_client_call_tracer_on_call below.
+        plugin = _observability.get_plugin_unlocked()
+        if plugin and plugin.observability_enabled:
+            plugin.save_registered_method(method)
 
     cdef void _maybe_set_client_call_tracer_on_call(self, bytes method) except *:
         # TODO(zgoda): use channel args to exclude those metrics.
@@ -162,7 +166,7 @@ cdef class _AioCall(GrpcCallWrapper):
         # WITHOUT taking _observability._plugin_lock: blocking on that global
         # lock here stalls the whole event loop whenever another thread holds it
         # (e.g. during a metrics export), freezing every coroutine on the loop.
-        plugin = _observability.get_plugin_ref()
+        plugin = _observability.get_plugin_unlocked()
         if not (plugin and plugin.observability_enabled):
             return
         try:

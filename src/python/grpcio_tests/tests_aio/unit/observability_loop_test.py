@@ -56,6 +56,9 @@ class _EnabledPlugin(_observability.ObservabilityPlugin):
     def record_rpc_latency(self, method, target, rpc_latency, status_code):
         pass
 
+    def save_registered_method(self, method_name):
+        pass
+
 
 class TestObservabilityDoesNotStallLoop(AioTestBase):
     def setUp(self):
@@ -66,7 +69,10 @@ class TestObservabilityDoesNotStallLoop(AioTestBase):
         _observability.set_plugin(None)
         logging.getLogger("grpc").setLevel(logging.NOTSET)
 
-    async def test_client_call_construction_does_not_block_on_plugin_lock(self):
+    async def _time_call_construction_under_held_lock(
+        self, registered_method: bool
+    ) -> float:
+        """Time constructing one client call while another thread holds the lock."""
         channel = aio.insecure_channel("127.0.0.1:1")  # nothing listening; fine
         try:
             # Warm the channel first: the first call on a fresh channel defers
@@ -95,7 +101,12 @@ class TestObservabilityDoesNotStallLoop(AioTestBase):
             # Construct a real client call on the event loop thread while the
             # lock is held. Pre-fix this runs get_plugin() and blocks until the
             # holder releases; with the fix it reads the plugin lock-free.
-            mc = channel.unary_unary("/test/Method", lambda x: x, lambda x: x)
+            mc = channel.unary_unary(
+                "/test/Method",
+                lambda x: x,
+                lambda x: x,
+                _registered_method=registered_method,
+            )
             start = time.monotonic()
             call = mc(b"payload")
             elapsed = time.monotonic() - start
@@ -103,13 +114,32 @@ class TestObservabilityDoesNotStallLoop(AioTestBase):
             holder.join(timeout=5.0)
         finally:
             await channel.close()
+        return elapsed
 
+    def _assert_did_not_stall(self, elapsed: float) -> None:
         self.assertLess(
             elapsed,
             _MAX_ACCEPTABLE_BLOCK_S,
             f"aio client call construction blocked for {elapsed:.2f}s -- the "
             "event loop was stalled acquiring _plugin_lock while another thread "
             "held it",
+        )
+
+    async def test_client_call_construction_does_not_block_on_plugin_lock(self):
+        # Exercises _maybe_set_client_call_tracer_on_call().
+        self._assert_did_not_stall(
+            await self._time_call_construction_under_held_lock(
+                registered_method=False
+            )
+        )
+
+    async def test_registered_method_call_does_not_block_on_plugin_lock(self):
+        # Exercises _maybe_save_registered_method(), which generated stubs reach
+        # on every RPC because registered methods are their default.
+        self._assert_did_not_stall(
+            await self._time_call_construction_under_held_lock(
+                registered_method=True
+            )
         )
 
 
