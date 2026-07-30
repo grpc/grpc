@@ -509,6 +509,8 @@ class InterceptedCall:
             return err.debug_error_string()
         except asyncio.CancelledError:
             return ""
+        # We suppress pyright[reportAttributeAccessIssue] below to avoid
+        # public API change for now.
         return await call.debug_error_string()  # type: ignore[reportAttributeAccessIssue]
 
     async def wait_for_connection(self) -> None:
