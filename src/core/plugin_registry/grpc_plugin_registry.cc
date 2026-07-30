@@ -90,7 +90,8 @@ void RegisterBuiltins(CoreConfiguration::Builder* builder) {
     builder->channel_init()
         ->RegisterFilter(GRPC_SERVER_CHANNEL, &Server::kServerTopFilter)
         .SkipV3()
-        .SinkToBottom();
+        .SinkToBottom()
+        .After({LegacyMaxAgeFilter::kFilter.name});
     builder->channel_init()
         ->RegisterFilter(GRPC_SERVER_VIRTUAL_CHANNEL, &Server::kServerTopFilter)
         .SkipV3()
