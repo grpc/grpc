@@ -24,7 +24,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <ruby/thread.h>
-#include <stdbool.h>
 
 #include "rb_grpc.h"
 #include "rb_grpc_imports.generated.h"
@@ -36,6 +35,7 @@ typedef struct next_call_stack {
   gpr_timespec timeout;
   void* tag;
   volatile int interrupted;
+  int* plucked_flag;
 } next_call_stack;
 
 /* Calls grpc_completion_queue_pluck without holding the ruby GIL */
@@ -47,7 +47,12 @@ static void* grpc_rb_completion_queue_pluck_no_gil(void* param) {
     deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), increment);
     next_call->event = grpc_completion_queue_pluck(
         next_call->cq, next_call->tag, deadline, NULL);
-    if (next_call->event.type != GRPC_QUEUE_TIMEOUT) break;
+    if (next_call->event.type != GRPC_QUEUE_TIMEOUT) {
+      if (next_call->plucked_flag) {
+        *next_call->plucked_flag = 1;
+      }
+      break;
+    }
     if (gpr_time_cmp(deadline, next_call->timeout) > 0) break;
     if (next_call->interrupted) break;
   }
@@ -71,15 +76,16 @@ static void unblock_func(void* param) {
 
 /* Does the same thing as grpc_completion_queue_pluck, while properly releasing
    the GVL and handling interrupts */
-grpc_event rb_completion_queue_pluck(grpc_completion_queue* queue, void* tag,
+grpc_event rb_completion_queue_pluck_track(grpc_completion_queue* queue, void* tag,
                                      gpr_timespec deadline,
-                                     const char* reason) {
+                                     const char* reason, int* plucked_flag) {
   next_call_stack next_call;
   MEMZERO(&next_call, next_call_stack, 1);
   next_call.cq = queue;
   next_call.timeout = deadline;
   next_call.tag = tag;
   next_call.event.type = GRPC_QUEUE_TIMEOUT;
+  next_call.plucked_flag = plucked_flag;
   /* Loop until we finish a pluck without an interruption. See
    * https://github.com/grpc/grpc/issues/38210 for an example of why
    * this is necessary. */
@@ -93,4 +99,10 @@ grpc_event rb_completion_queue_pluck(grpc_completion_queue* queue, void* tag,
   } while (next_call.interrupted);
   grpc_absl_log_str(GPR_DEBUG, "CQ pluck loop done: ", reason);
   return next_call.event;
+}
+
+grpc_event rb_completion_queue_pluck(grpc_completion_queue* queue, void* tag,
+                                     gpr_timespec deadline,
+                                     const char* reason) {
+  return rb_completion_queue_pluck_track(queue, tag, deadline, reason, NULL);
 }
