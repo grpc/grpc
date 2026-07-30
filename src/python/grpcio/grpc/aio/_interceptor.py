@@ -1370,9 +1370,7 @@ class StreamStreamCallResponseIterator(
     def _done_writing_flag(self) -> bool:
         if not isinstance(
             self._call,
-            StreamUnaryCall
-            | StreamStreamCall
-            | StreamStreamCallResponseIterator,
+            (StreamStreamCall, StreamStreamCallResponseIterator),
         ):
             err_msg = "Should not happen: expected client-streaming call"
             raise TypeError(err_msg)
