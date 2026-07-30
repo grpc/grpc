@@ -3563,8 +3563,6 @@ TEST_F(ConnectionScalingTest, SingleConnection) {
 
 TEST_F(ConnectionScalingTest, MultipleConnections) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
   constexpr char kServiceConfig[] =
       "{\n"
       "  \"connectionScaling\": {\n"
@@ -3608,8 +3606,6 @@ TEST_F(ConnectionScalingTest, MultipleConnections) {
 
 TEST_F(ConnectionScalingTest, HonorsMaxConnectionsPerSubchannel) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
   constexpr char kServiceConfig[] =
       "{\n"
       "  \"connectionScaling\": {\n"
@@ -3656,8 +3652,6 @@ TEST_F(ConnectionScalingTest, HonorsMaxConnectionsPerSubchannel) {
 TEST_F(ConnectionScalingTest,
        QueuedRpcsTriggerNewConnectionAttemptAfterBackoff) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
   constexpr char kServiceConfig[] =
       "{\n"
       "  \"connectionScaling\": {\n"
@@ -3714,8 +3708,6 @@ TEST_F(ConnectionScalingTest,
 
 TEST_F(ConnectionScalingTest, QueuedRpcCancelled) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
   constexpr char kServiceConfig[] =
       "{\n"
       "  \"connectionScaling\": {\n"
@@ -3772,8 +3764,6 @@ TEST_F(ConnectionScalingTest, QueuedRpcCancelled) {
 TEST_F(ConnectionScalingTest, QueuedRpcsFailWhenLastConnectionCloses) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
   constexpr char kServiceConfig[] =
       "{\n"
       "  \"connectionScaling\": {\n"
@@ -3842,8 +3832,6 @@ TEST_F(ConnectionScalingTest, QueuedRpcsFailWhenLastConnectionCloses) {
 TEST_F(ConnectionScalingTest,
        QueuedRpcsTransparentlyRetriedWhenLastConnectionCloses) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
   constexpr char kServiceConfig[] =
       "{\n"
       "  \"connectionScaling\": {\n"
@@ -3920,8 +3908,6 @@ TEST_F(ConnectionScalingTest,
 // that test again.
 TEST_F(ConnectionScalingTest, QueuedRpcsFailAtMaxConnectionsIfConfigured) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
   constexpr char kServiceConfig[] =
       "{\n"
       "  \"connectionScaling\": {\n"
@@ -3979,8 +3965,6 @@ TEST_F(ConnectionScalingTest, QueuedRpcsFailAtMaxConnectionsIfConfigured) {
 TEST_F(ConnectionScalingTest,
        MaxConnectionsPerSubchannelChangeTriggersConnectionAttempt) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
   constexpr char kServiceConfig1[] =
       "{\n"
       "  \"connectionScaling\": {\n"
@@ -4046,8 +4030,6 @@ TEST_F(ConnectionScalingTest,
 TEST_F(ConnectionScalingTest, IdleConnectionsClosed) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
   constexpr char kServiceConfig[] =
       "{\n"
       "  \"connectionScaling\": {\n"
