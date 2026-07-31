@@ -695,7 +695,6 @@ class InterceptedUnaryUnaryCall(
         response_deserializer: Optional[DeserializingFunction],
     ) -> Union[UnaryUnaryCall, UnaryUnaryCallResponse]:
         """Run the RPC call wrapped in interceptors"""
-
         client_call_details = ClientCallDetails(
             method, timeout, metadata, credentials, wait_for_ready
         )
@@ -818,7 +817,6 @@ class InterceptedUnaryStreamCall(
         response_deserializer: Optional[DeserializingFunction],
     ) -> Union[UnaryStreamCall, UnaryStreamCallResponseIterator]:
         """Run the RPC call wrapped in interceptors"""
-
         client_call_details = ClientCallDetails(
             method, timeout, metadata, credentials, wait_for_ready
         )
@@ -960,7 +958,6 @@ class InterceptedStreamUnaryCall(
         response_deserializer: Optional[DeserializingFunction],
     ) -> StreamUnaryCall:
         """Run the RPC call wrapped in interceptors"""
-
         client_call_details = ClientCallDetails(
             method, timeout, metadata, credentials, wait_for_ready
         )
@@ -1086,7 +1083,6 @@ class InterceptedStreamStreamCall(
         response_deserializer: Optional[DeserializingFunction],
     ) -> Union[StreamStreamCall, StreamStreamCallResponseIterator]:
         """Run the RPC call wrapped in interceptors"""
-
         client_call_details = ClientCallDetails(
             method, timeout, metadata, credentials, wait_for_ready
         )
