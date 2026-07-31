@@ -530,6 +530,7 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   double target_length_;
   int min_read_chunk_size_;
   int max_read_chunk_size_;
+  int max_read_buffer_size_;
   int64_t set_rcvlowat_ = 0;
   double bytes_read_this_round_ = 0;
 

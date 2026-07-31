@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_TEST_CORE_FILTERS_FILTER_TEST_H
-#define GRPC_TEST_CORE_FILTERS_FILTER_TEST_H
+#ifndef GRPC_TEST_CORE_FILTERS_FILTER_TEST_V2_H
+#define GRPC_TEST_CORE_FILTERS_FILTER_TEST_V2_H
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
@@ -37,7 +37,6 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
-#include "test/core/filters/filter_test.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
@@ -89,18 +88,18 @@ inline std::ostream& operator<<(std::ostream& os, const Message& msg) {
             << " payload:" << absl::CEscape(msg.payload()->JoinIntoString());
 }
 
-class FilterTestBase : public ::testing::Test {
+class FilterTestV2Base : public ::testing::Test {
  public:
   class Call;
 
   class Channel {
    private:
     struct Impl {
-      Impl(std::unique_ptr<ChannelFilter> filter, FilterTestBase* test)
+      Impl(std::unique_ptr<ChannelFilter> filter, FilterTestV2Base* test)
           : filter(std::move(filter)), test(test) {}
       RefCountedPtr<ArenaFactory> arena_factory = SimpleArenaAllocator();
       std::unique_ptr<ChannelFilter> filter;
-      FilterTestBase* const test;
+      FilterTestV2Base* const test;
     };
 
    public:
@@ -108,13 +107,13 @@ class FilterTestBase : public ::testing::Test {
 
    protected:
     explicit Channel(std::unique_ptr<ChannelFilter> filter,
-                     FilterTestBase* test)
+                     FilterTestV2Base* test)
         : impl_(std::make_shared<Impl>(std::move(filter), test)) {}
 
     ChannelFilter* filter_ptr() { return impl_->filter.get(); }
 
    private:
-    friend class FilterTestBase;
+    friend class FilterTestV2Base;
     friend class Call;
 
     std::shared_ptr<Impl> impl_;
@@ -192,8 +191,8 @@ class FilterTestBase : public ::testing::Test {
   ::testing::StrictMock<Events> events;
 
  protected:
-  FilterTestBase();
-  ~FilterTestBase() override;
+  FilterTestV2Base();
+  ~FilterTestV2Base() override;
 
   grpc_event_engine::experimental::EventEngine* event_engine() {
     return event_engine_.get();
@@ -207,15 +206,15 @@ class FilterTestBase : public ::testing::Test {
 };
 
 template <typename Filter>
-class FilterTest : public FilterTestBase {
+class FilterTestV2 : public FilterTestV2Base {
  public:
-  class Channel : public FilterTestBase::Channel {
+  class Channel : public FilterTestV2Base::Channel {
    public:
     Filter* filter() { return static_cast<Filter*>(filter_ptr()); }
 
    private:
-    friend class FilterTest<Filter>;
-    using FilterTestBase::Channel::Channel;
+    friend class FilterTestV2<Filter>;
+    using FilterTestV2Base::Channel::Channel;
   };
 
   absl::StatusOr<Channel> MakeChannel(
@@ -230,7 +229,8 @@ class FilterTest : public FilterTestBase {
 
 }  // namespace grpc_core
 
-// Expect one of the events corresponding to the methods in FilterTest::Events.
+// Expect one of the events corresponding to the methods in
+// FilterTestV2::Events.
 #define EXPECT_EVENT(event) EXPECT_CALL(events, event)
 
-#endif  // GRPC_TEST_CORE_FILTERS_FILTER_TEST_H
+#endif  // GRPC_TEST_CORE_FILTERS_FILTER_TEST_V2_H

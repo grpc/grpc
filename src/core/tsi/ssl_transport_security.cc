@@ -129,7 +129,7 @@ using SelectCertificateResult =
 using AsyncCertificateSelectionHandle =
     grpc_core::CertificateSelector::AsyncCertificateSelectionHandle;
 #endif
-using tsi::PrivateKey;
+using grpc_core::PrivateKey;
 using tsi::RootCertInfo;
 
 // --- Structure definitions. ---
@@ -1531,22 +1531,22 @@ static tsi_result ssl_ctx_load_verification_certs(SSL_CTX* context,
 // Populates the SSL context with a private key and a cert chain, and sets the
 // cipher list and the ephemeral ECDH key.
 static tsi_result populate_ssl_context(
-    SSL_CTX* context, const tsi_ssl_pem_key_cert_pair* key_cert_pair,
+    SSL_CTX* context, const grpc_core::PemKeyCertPair* key_cert_pair,
     const char* cipher_list,
     const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups) {
   tsi_result result = TSI_OK;
   if (key_cert_pair != nullptr) {
-    if (!key_cert_pair->cert_chain.empty()) {
+    if (!key_cert_pair->cert_chain().empty()) {
       result = ssl_ctx_use_certificate_chain(
-          context, key_cert_pair->cert_chain.c_str(),
-          key_cert_pair->cert_chain.length());
+          context, key_cert_pair->cert_chain().c_str(),
+          key_cert_pair->cert_chain().length());
       if (result != TSI_OK) {
         LOG(ERROR) << "Invalid cert chain file.";
         return result;
       }
     }
     result = grpc_core::Match(
-        key_cert_pair->private_key,
+        key_cert_pair->private_key(),
         [&](const std::string& pem_root_certs) {
           tsi_result result = TSI_OK;
           result = ssl_ctx_use_private_key(context, pem_root_certs.data(),
@@ -3258,7 +3258,7 @@ static tsi_ssl_handshaker_factory_vtable client_handshaker_factory_vtable = {
     tsi_ssl_client_handshaker_factory_destroy};
 
 tsi_result tsi_create_ssl_client_handshaker_factory(
-    const tsi_ssl_pem_key_cert_pair* pem_key_cert_pair,
+    const grpc_core::PemKeyCertPair* pem_key_cert_pair,
     const char* pem_root_certs, const char* cipher_suites,
     const char** alpn_protocols, uint16_t num_alpn_protocols,
     tsi_ssl_client_handshaker_factory** factory) {
@@ -3351,7 +3351,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
 #if defined(OPENSSL_IS_BORINGSSL)
     if (options->pem_key_cert_pair != nullptr) {
       grpc_core::Match(
-          options->pem_key_cert_pair->private_key, [](const std::string&) {},
+          options->pem_key_cert_pair->private_key(), [](const std::string&) {},
           [&](const std::shared_ptr<grpc_core::PrivateKeySigner>& key_signer) {
             // The Handshaker Factory will own a shared copy of the reference
             // passed through the options.
@@ -3462,25 +3462,25 @@ static tsi_ssl_handshaker_factory_vtable server_handshaker_factory_vtable = {
     tsi_ssl_server_handshaker_factory_destroy};
 
 tsi_result tsi_create_ssl_server_handshaker_factory(
-    tsi_ssl_key_cert_pairs pem_key_cert_pairs,
+    grpc_core::KeyCertPairsOrSelector key_cert_pairs_or_selector,
     const char* pem_client_root_certs, int force_client_auth,
     const char* cipher_suites, const char** alpn_protocols,
     uint16_t num_alpn_protocols, tsi_ssl_server_handshaker_factory** factory) {
   return tsi_create_ssl_server_handshaker_factory_ex(
-      std::move(pem_key_cert_pairs), pem_client_root_certs,
+      std::move(key_cert_pairs_or_selector), pem_client_root_certs,
       force_client_auth ? TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
                         : TSI_DONT_REQUEST_CLIENT_CERTIFICATE,
       cipher_suites, alpn_protocols, num_alpn_protocols, factory);
 }
 
 tsi_result tsi_create_ssl_server_handshaker_factory_ex(
-    tsi_ssl_key_cert_pairs pem_key_cert_pairs,
+    grpc_core::KeyCertPairsOrSelector key_cert_pairs_or_selector,
     const char* pem_client_root_certs,
     tsi_client_certificate_request_type client_certificate_request,
     const char* cipher_suites, const char** alpn_protocols,
     uint16_t num_alpn_protocols, tsi_ssl_server_handshaker_factory** factory) {
   tsi_ssl_server_handshaker_options options;
-  options.pem_key_cert_pairs = std::move(pem_key_cert_pairs);
+  options.key_cert_pairs_or_selector = std::move(key_cert_pairs_or_selector);
   if (pem_client_root_certs != nullptr) {
     options.root_cert_info =
         std::make_shared<tsi::RootCertInfo>(pem_client_root_certs);
@@ -3495,7 +3495,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_ex(
 
 tsi_result tsi_configure_server_ssl_context(
     const tsi_ssl_server_handshaker_options* options,
-    const tsi_ssl_pem_key_cert_pair* pem_key_cert_pair,
+    const grpc_core::PemKeyCertPair* pem_key_cert_pair,
     tsi_ssl_server_handshaker_factory* impl, SslContext& ssl_context) {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
   ssl_context.ssl_ctx = SSL_CTX_new(TLS_method());
@@ -3521,7 +3521,7 @@ tsi_result tsi_configure_server_ssl_context(
 #if defined(OPENSSL_IS_BORINGSSL)
   if (pem_key_cert_pair != nullptr) {
     grpc_core::Match(
-        pem_key_cert_pair->private_key, [](const std::string&) {},
+        pem_key_cert_pair->private_key(), [](const std::string&) {},
         [&](const std::shared_ptr<grpc_core::PrivateKeySigner>& key_signer) {
           ssl_context.key_signer = key_signer;
         });
@@ -3627,7 +3627,8 @@ tsi_result tsi_configure_server_ssl_context(
 
   if (pem_key_cert_pair != nullptr) {
     result = tsi_ssl_extract_x509_subject_names_from_pem_cert(
-        pem_key_cert_pair->cert_chain.c_str(), &ssl_context.x509_subject_name);
+        pem_key_cert_pair->cert_chain().c_str(),
+        &ssl_context.x509_subject_name);
     if (result != TSI_OK) return result;
   }
   // Always configure the callback because responding to SNI is required for
@@ -3674,8 +3675,8 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
   impl->base.vtable = &server_handshaker_factory_vtable;
 
   tsi_result result = grpc_core::Match(
-      options->pem_key_cert_pairs,
-      [&](const std::vector<tsi_ssl_pem_key_cert_pair>& pem_key_cert_pairs) {
+      options->key_cert_pairs_or_selector,
+      [&](const grpc_core::PemKeyCertPairList& pem_key_cert_pairs) {
         if (pem_key_cert_pairs.empty()) {
           return TSI_INVALID_ARGUMENT;
         }

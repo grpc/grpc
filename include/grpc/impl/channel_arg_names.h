@@ -286,6 +286,15 @@
   "grpc.experimental.tcp_min_read_chunk_size"
 #define GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE \
   "grpc.experimental.tcp_max_read_chunk_size"
+/** Channel arg (integer) setting an opt-in upper bound, in bytes, on the
+   adaptive read buffer size that a single TCP endpoint may preallocate for
+   reads. When unset (the default) the read buffer target grows as before,
+   preserving historical behavior. When set, the adaptive read target is
+   clamped to this value so occasional large reads do not leave a permanently
+   high read-buffer high-watermark. Unlike GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE,
+   this does not change per-socket slice sizing. **/
+#define GRPC_ARG_TCP_MAX_READ_BUFFER_SIZE \
+  "grpc.experimental.tcp_max_read_buffer_size"
 /* TCP TX Zerocopy enable state: zero is disabled, non-zero is enabled. By
    default, it is disabled. */
 #define GRPC_ARG_TCP_TX_ZEROCOPY_ENABLED \

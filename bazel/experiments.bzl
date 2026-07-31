@@ -31,6 +31,7 @@ EXPERIMENT_ENABLES = {
     "event_engine_callback_cq": "event_engine_callback_cq,event_engine_client,event_engine_listener",
     "event_engine_for_all_other_endpoints": "event_engine_client,event_engine_for_all_other_endpoints,event_engine_listener",
     "fail_recv_metadata_on_deadline_exceeded": "fail_recv_metadata_on_deadline_exceeded",
+    "fix_v3_filter_stack_server_side_ordering": "fix_v3_filter_stack_server_side_ordering",
     "free_large_allocator": "free_large_allocator",
     "fuse_filters": "fuse_filters",
     "h2_max_deallocating_streams_headroom": "h2_max_deallocating_streams_headroom",
@@ -95,6 +96,7 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
+                "fix_v3_filter_stack_server_side_ordering",
                 "pollset_alternative",
                 "use_call_event_engine_in_completion_queue",
             ],
@@ -122,6 +124,7 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
+                "fix_v3_filter_stack_server_side_ordering",
                 "pollset_alternative",
                 "use_call_event_engine_in_completion_queue",
             ],
@@ -150,6 +153,7 @@ EXPERIMENTS = {
         "off": {
             "core_end2end_test": [
                 "buffer_list_deletion_prep",
+                "fix_v3_filter_stack_server_side_ordering",
                 "local_connector_secure",
                 "otel_export_telemetry_domains",
                 "ph2_client",
