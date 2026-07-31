@@ -807,9 +807,6 @@ ExtProcFilter::ExtProcCall::PullMessagesFromSideStream() {
           MutexLock lock(&self->mu_);
           streaming_call = self->streaming_call_;
         }
-        if (streaming_call == nullptr) {
-          return Immediate(LoopCtl<absl::Status>(absl::OkStatus()));
-        }
         return Seq(
             streaming_call->PullMessage(),
             [self](std::optional<std::string> msg)
@@ -817,7 +814,7 @@ ExtProcFilter::ExtProcCall::PullMessagesFromSideStream() {
               if (!msg.has_value()) {
                 return Immediate(LoopCtl<absl::Status>(absl::OkStatus()));
               }
-              return Seq(self->ProcessSideStreamResponse(*msg),
+              return Seq(self->ProcessSideStreamResponse(std::move(*msg)),
                          [](absl::Status status) -> LoopCtl<absl::Status> {
                            if (!status.ok()) return status;
                            return Continue();
@@ -830,9 +827,6 @@ ExtProcFilter::ExtProcCall::PullMessagesFromSideStream() {
         {
           MutexLock lock(&self->mu_);
           streaming_call = self->streaming_call_;
-        }
-        if (streaming_call == nullptr) {
-          return Immediate(self->GetStreamClosedStatus(absl::OkStatus()));
         }
         return streaming_call->PullServerTrailingMetadata();
       },
