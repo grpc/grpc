@@ -66,6 +66,8 @@
 **/.coverage.*
 
 ## Build Artifacts & Packages
+/src/python/*/build/
+/tools/distrib/python/*/build/
 **/pyb/
 **/.eggs/
 **/*.egg
