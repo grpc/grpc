@@ -112,9 +112,7 @@ _build("bloat_diff_new")
 
 if args.diff_base:
     where_am_i = (
-        subprocess.check_output(["git", "rev-parse", "HEAD"])
-        .decode()
-        .strip()
+        subprocess.check_output(["git", "rev-parse", "HEAD"]).decode().strip()
     )
     try:
         # checkout the diff base (="old")
