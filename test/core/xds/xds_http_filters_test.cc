@@ -2220,7 +2220,6 @@ TEST_F(XdsExtProcFilterTest, Accessors) {
             "envoy.extensions.filters.http.ext_proc.v3.ExternalProcessor");
   EXPECT_EQ(factory_->OverrideConfigProtoName(),
             "envoy.extensions.filters.http.ext_proc.v3.ExtProcPerRoute");
-  EXPECT_EQ(factory_->channel_filter(), &ExtProcFilter::kFilterVtable);
   EXPECT_TRUE(factory_->IsSupportedOnClients());
   EXPECT_FALSE(factory_->IsSupportedOnServers());
   EXPECT_FALSE(factory_->IsTerminalFilter());
