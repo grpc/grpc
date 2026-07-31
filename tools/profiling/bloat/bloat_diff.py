@@ -25,6 +25,7 @@ import shutil
 import subprocess
 import sys
 import traceback
+from typing import TextIO
 
 sys.path.append(
     os.path.join(
@@ -53,7 +54,7 @@ LIBS = [
 ]
 
 
-def _print_banner(msg: str, file: object = sys.stdout) -> None:
+def _print_banner(msg: str, file: TextIO = sys.stdout) -> None:
     """Prints a prominent banner line to the specified stream."""
     sys.stdout.flush()
     sys.stderr.flush()
@@ -66,7 +67,7 @@ def _build(output_dir: str) -> None:
     """Perform the cmake build under the output_dir."""
     _print_banner(f"BUILD START: {output_dir}")
     shutil.rmtree(output_dir, ignore_errors=True)
-    subprocess.check_call("mkdir -p %s" % output_dir, shell=True, cwd=".")
+    os.makedirs(output_dir, exist_ok=True)
     try:
         subprocess.check_call(
             [
@@ -81,9 +82,7 @@ def _build(output_dir: str) -> None:
             ],
             cwd=output_dir,
         )
-        subprocess.check_call(
-            "make -j%d" % args.jobs, shell=True, cwd=output_dir
-        )
+        subprocess.check_call(["make", f"-j{args.jobs}"], cwd=output_dir)
     except Exception:
         _print_banner(f"BUILD END: {output_dir} FAILED", file=sys.stderr)
         raise
@@ -114,22 +113,26 @@ if args.diff_base:
         .strip()
     )
     try:
-        try:
-            # checkout the diff base (="old")
-            subprocess.check_call(["git", "checkout", args.diff_base])
-            subprocess.check_call(["git", "submodule", "update"])
-            _build("bloat_diff_old")
-        finally:
-            # restore the original revision (="new")
-            subprocess.check_call(["git", "checkout", where_am_i])
-            subprocess.check_call(["git", "submodule", "update"])
+        # checkout the diff base (="old")
+        subprocess.check_call(["git", "checkout", args.diff_base])
+        subprocess.check_call(["git", "submodule", "update"])
+        _build("bloat_diff_old")
     except Exception as e:
         sys.stdout.flush()
         traceback.print_exc()
         _print_banner(
             "MAIN BUILD SUCCEEDED, BUT DIFF BASE BUILD FAILED", file=sys.stderr
         )
-        sys.exit(getattr(e, "returncode", 1) or 1)
+        exit_code = (
+            e.returncode
+            if isinstance(e, subprocess.CalledProcessError) and e.returncode
+            else 1
+        )
+        sys.exit(exit_code)
+    finally:
+        # restore the original revision (="new")
+        subprocess.check_call(["git", "checkout", where_am_i])
+        subprocess.check_call(["git", "submodule", "update"])
 
 pathlib.Path("bloaty-build").mkdir(exist_ok=True)
 subprocess.check_call(
