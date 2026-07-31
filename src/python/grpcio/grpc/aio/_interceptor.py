@@ -1101,6 +1101,7 @@ class InterceptedStreamStreamCall(
             request_iterator,
         )
 
+    # pylint: disable=too-many-arguments
     async def _run_interceptor(
         self,
         interceptors: List[StreamStreamClientInterceptor],
