@@ -852,9 +852,7 @@ class InterceptedUnaryStreamCall(
 
             call_or_response_iterator = await interceptors[
                 0
-            ].intercept_unary_stream(
-                continuation, client_call_details, request
-            )
+            ].intercept_unary_stream(continuation, client_call_details, request)
 
             if isinstance(
                 call_or_response_iterator, _base_call.UnaryStreamCall
