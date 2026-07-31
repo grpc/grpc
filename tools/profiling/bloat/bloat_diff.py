@@ -54,15 +54,17 @@ LIBS = [
 ]
 
 
-def _print_banner(msg: str, file: Optional[TextIO] = None) -> None:
+def _print_banner(
+    msg: str, file: Optional[TextIO] = None, max_width: int = 120
+) -> None:
     """Prints a prominent banner line to the specified stream."""
     if file is None:
         file = sys.stdout
     sys.stdout.flush()
     sys.stderr.flush()
     padded_msg = f" ### {msg} ### "
-    width = max(100, len(padded_msg) + 20)
-    print(f"\n{padded_msg.center(width, '#')}", file=file, flush=True)
+    width = max(max_width, len(padded_msg) + 20)
+    print(f"\n{padded_msg:#^{width}}", file=file, flush=True)
 
 
 def _build(output_dir: str) -> None:
