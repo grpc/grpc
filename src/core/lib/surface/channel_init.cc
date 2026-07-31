@@ -150,36 +150,6 @@ void ChannelInit::Builder::RegisterFusedFilter(
 
 template <typename ChannelStackTypeTag>
 class ChannelInit::DependencyTracker {
-  void InsertEdgeImpl(UniqueTypeName a, UniqueTypeName b) {
-    auto it_a = nodes_.find(a);
-    auto it_b = nodes_.find(b);
-    if (it_a == nodes_.end()) {
-      GRPC_TRACE_LOG(channel_stack, INFO)
-          << "gRPC Filter " << a.name()
-          << " was not declared before adding an edge to " << b.name();
-      return;
-    }
-    if (it_b == nodes_.end()) {
-      GRPC_TRACE_LOG(channel_stack, INFO)
-          << "gRPC Filter " << b.name()
-          << " was not declared before adding an edge from " << a.name();
-      return;
-    }
-    auto& node_a = it_a->second;
-    auto& node_b = it_b->second;
-    node_a.dependents.push_back(&node_b);
-    node_b.all_dependencies.push_back(a);
-    ++node_b.waiting_dependencies;
-  }
-  void InsertEdgeImpl(UniqueTypeName a, UniqueTypeName b,
-                      ClientChannelStackType) {
-    InsertEdgeImpl(a, b);
-  }
-  void InsertEdgeImpl(UniqueTypeName a, UniqueTypeName b,
-                      ServerChannelStackType) {
-    InsertEdgeImpl(b, a);
-  }
-
  public:
   // Declare that a filter exists.
   void Declare(FilterRegistration* registration) {
@@ -289,6 +259,37 @@ class ChannelInit::DependencyTracker {
       return Compare(other, ChannelStackTypeTag{});
     }
   };
+
+  void InsertEdgeImpl(UniqueTypeName a, UniqueTypeName b) {
+    auto it_a = nodes_.find(a);
+    auto it_b = nodes_.find(b);
+    if (it_a == nodes_.end()) {
+      GRPC_TRACE_LOG(channel_stack, INFO)
+          << "gRPC Filter " << a.name()
+          << " was not declared before adding an edge to " << b.name();
+      return;
+    }
+    if (it_b == nodes_.end()) {
+      GRPC_TRACE_LOG(channel_stack, INFO)
+          << "gRPC Filter " << b.name()
+          << " was not declared before adding an edge from " << a.name();
+      return;
+    }
+    auto& node_a = it_a->second;
+    auto& node_b = it_b->second;
+    node_a.dependents.push_back(&node_b);
+    node_b.all_dependencies.push_back(a);
+    ++node_b.waiting_dependencies;
+  }
+  void InsertEdgeImpl(UniqueTypeName a, UniqueTypeName b,
+                      ClientChannelStackType) {
+    InsertEdgeImpl(a, b);
+  }
+  void InsertEdgeImpl(UniqueTypeName a, UniqueTypeName b,
+                      ServerChannelStackType) {
+    InsertEdgeImpl(b, a);
+  }
+
   absl::flat_hash_map<UniqueTypeName, Node> nodes_;
   std::priority_queue<ReadyDependency> ready_dependencies_;
   size_t nodes_taken_ = 0;
