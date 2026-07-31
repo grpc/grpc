@@ -1,16 +1,21 @@
-# Build artifacts & compilation outputs
-# Standard Bazel output symlinks
+# ==============================================================================
+# Build Artifacts, Compilation Outputs & Caches
+# ==============================================================================
+
+## Standard Bazel Output Symlinks
 **/bazel-bin/
 **/bazel-out/
 **/bazel-testlogs/
-# Workspace-specific symlinks (WORKSPACE & MODULE.bazel files)
+
+## Workspace-Specific Symlinks (WORKSPACE & MODULE.bazel files)
 **/bazel-grpc/
 **/bazel-cpp/
 **/bazel-python/
 **/bazel-python_second_test_repo/
 **/bazel-bzlmod_test/
 **/bazel-artifact_gen/
-# Root build outputs (/build/)
+
+## Root Build Outputs (/build/)
 /build/
 **/.build/
 **/bins/
@@ -19,22 +24,25 @@
 **/gens/
 **/out/
 **/dist/
-# CMake CLion / IDE build directories
+
+## CMake / CLion IDE Build Directories
 /cmake-build-*/
 **/DerivedData/
-# Generated build output packages (task_runner.py -f artifact -> /artifacts/)
+
+## Generated Build Output Packages (task_runner.py -f artifact -> /artifacts/)
 /artifacts/
 
-# System & generic cache
+## Toolchain & Build Caches (check_pytype.sh, clang_tidy_code.sh -> .cache/)
 **/.cache/
 
-# Git metadata
-**/.git
+# ==============================================================================
+# Python
+# ==============================================================================
 
-# Python virtual environments, build artifacts & bytecode
-**/pyb/
+## Virtual Environments
 # Standard venvs (.venv, .venv-pyright, .venv-ci-black, etc.)
 **/.venv*/
+
 # TODO(sergiitk): update all references below to produce standard `.venv-*`
 # User virtualenv dirs (src/python/CONTRIBUTING.md -> ~/.virtualenvs/)
 **/.virtualenv*/
@@ -44,42 +52,63 @@
 **/*_virtualenv/
 # Bazel format virtualenv (tools/distrib/format_bazel.sh -> bazel_format_virtual_environment/)
 **/*_virtual_environment/
+
+## Bytecode & Caches
 **/__pycache__/
 **/*.py[cod]
 **/.pytest_cache/
 **/.pytype/
-**/.coverage
-**/.coverage.*
 **/.mypy_cache/
 **/.ruff_cache/
+
+## Test Coverage Data
+**/.coverage
+**/.coverage.*
+
+## Build Artifacts & Packages
+**/pyb/
 **/.eggs/
 **/*.egg
 **/*.egg-info/
 
-# Node & Package Manager Dependencies
+# ==============================================================================
+# Git Metadata, Environment & Secrets Safeguards
+# ==============================================================================
+
+**/.git
+
+## Environment & Secrets Safeguards
+**/.env*
+!**/.env.example
+!**/.env.template
+
+# ==============================================================================
+# Editor, OS Metadata & Node Dependencies
+# ==============================================================================
+
+## Node & Package Manager Dependencies
 **/node_modules/
 **/Pods/
 
-# Editor & OS metadata
+## Editor & OS Metadata
 **/.DS_Store
 **/Thumbs.db
 **/._*
 **/.idea/
 **/.vscode/
 **/.history/
+
 # Vim swap files (*.sw?) and Emacs auto-save (/#*#) / lock files (/.#*)
 **/*.sw?
 **/#*#
 **/.#*
 **/*~
 
-# Logs & Debug outputs
+# ==============================================================================
+# Logs & Debug Outputs
+# ==============================================================================
+
 **/*.log
 **/gdb.txt
 **/portlog.txt
 **/perf.data*
-
-# Environment & Secrets safeguard
-**/.env*
-!**/.env.example
-!**/.env.template
