@@ -1113,7 +1113,9 @@ class OpenTelemetryObservabilityRegisteredMethodsTest(
             self.all_metrics, "test/StreamUnaryAlt"
         )
 
-    async def test_metrics_stream_stream_with_method_rerouting_interceptor(self):
+    async def test_metrics_stream_stream_with_method_rerouting_interceptor(
+        self,
+    ):
         self._server, self._port = await _test_server.start_server(
             register_method=True
         )

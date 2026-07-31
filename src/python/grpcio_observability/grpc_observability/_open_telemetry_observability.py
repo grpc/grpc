@@ -235,7 +235,8 @@ class _OpenTelemetryPlugin:
             # inheriting root behaviour (default delegates)
             has_default_delegates = (
                 sampler._remote_parent_sampled is sdk_sampling.ALWAYS_ON
-                and sampler._remote_parent_not_sampled is sdk_sampling.ALWAYS_OFF
+                and sampler._remote_parent_not_sampled
+                is sdk_sampling.ALWAYS_OFF
                 and sampler._local_parent_sampled is sdk_sampling.ALWAYS_ON
                 and sampler._local_parent_not_sampled is sdk_sampling.ALWAYS_OFF
             )
@@ -370,7 +371,7 @@ class _OpenTelemetryPlugin:
                 _LOGGER.warning(
                     "Invalid start_time '%s' for span, defaulting to current "
                     "time.",
-                    tracing_data.start_time
+                    tracing_data.start_time,
                 )
                 # For None tracing library auto-generates the current time
                 parsed_start_time = None
@@ -400,7 +401,7 @@ class _OpenTelemetryPlugin:
         except ValueError:
             _LOGGER.warning(
                 "Invalid end_time '%s' for span, defaulting to current time.",
-                tracing_data.end_time
+                tracing_data.end_time,
             )
             # For None tracing library auto-generates the current time
             parsed_end_time = None
