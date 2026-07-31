@@ -587,7 +587,9 @@ TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportPingAbusePolicy) {
   ExecCtx ctx;
 
   // Step 1: Initialize the transport with max_ping_strikes set to 1.
-  InitTransport(GetChannelArgs().Set(GRPC_ARG_HTTP2_MAX_PING_STRIKES, 1));
+  InitTransport(GetChannelArgs()
+                    .Set(GRPC_ARG_HTTP2_MAX_PING_STRIKES, 1)
+                    .Set(GRPC_ARG_HTTP2_BDP_PROBE, false));
   SpawnTransportLoopsAndExchangeSettings();
 
   // Step 2: Send 3 ping requests and expect GOAWAY in response.
@@ -623,7 +625,8 @@ TEST_F(Http2ServerTransportTest,
   InitTransport(
       GetChannelArgs()
           .Set(GRPC_ARG_HTTP2_MAX_PING_STRIKES, 1)
-          .Set(GRPC_ARG_KEEPALIVE_TIME_MS, std::numeric_limits<int>::max()));
+          .Set(GRPC_ARG_KEEPALIVE_TIME_MS, std::numeric_limits<int>::max())
+          .Set(GRPC_ARG_HTTP2_BDP_PROBE, false));
   SpawnTransportLoopsAndExchangeSettings();
 
   AddStream([&on_stream_closed](CallHandler call_handler) {
