@@ -16,11 +16,10 @@
 **/.cache/
 
 # Git metadata
-**/.git/
+**/.git
 
 # Python virtual environments, build artifacts & bytecode
 **/pyb/
-**/.venv*/
 **/*venv*/
 **/*virtualenv*/
 **/*virtual_environment*/
@@ -28,7 +27,8 @@
 **/*.py[cod]
 **/.pytest_cache/
 **/.pytype/
-**/.coverage*
+**/.coverage
+**/.coverage.*
 **/.mypy_cache/
 **/.ruff_cache/
 **/.eggs/
@@ -60,3 +60,5 @@
 
 # Environment & Secrets safeguard
 **/.env*
+!**/.env.example
+!**/.env.template
