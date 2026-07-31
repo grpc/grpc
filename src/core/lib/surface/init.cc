@@ -80,7 +80,7 @@ void RegisterSecurityFilters(CoreConfiguration::Builder* builder) {
   builder->channel_init()
       ->RegisterFilter<ServerAuthFilter>(GRPC_SERVER_CHANNEL)
       .IfHasChannelArg(GRPC_SERVER_CREDENTIALS_ARG);
-  FilterRegistration& authz_registration =
+  auto& authz_registration =
       builder->channel_init()
           ->RegisterFilter<GrpcServerAuthzFilter>(GRPC_SERVER_CHANNEL)
           .IfHasChannelArg(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER);

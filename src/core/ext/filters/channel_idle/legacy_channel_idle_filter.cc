@@ -304,7 +304,7 @@ void RegisterLegacyChannelIdleFilters(CoreConfiguration::Builder* builder) {
         return GetClientIdleTimeout(channel_args) != Duration::Infinity();
       });
 
-  FilterRegistration& max_age_registration =
+  auto& max_age_registration =
       builder->channel_init()
           ->RegisterV2Filter<LegacyMaxAgeFilter>(GRPC_SERVER_CHANNEL)
           .ExcludeFromMinimalStack()

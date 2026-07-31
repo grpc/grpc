@@ -87,12 +87,12 @@ void RegisterBuiltins(CoreConfiguration::Builder* builder) {
       ->RegisterV2Filter<LameClientFilter>(GRPC_CLIENT_LAME_CHANNEL)
       .Terminal();
 
-  FilterRegistration& top_filter_server_reg =
+  auto& top_filter_server_reg =
       builder->channel_init()
           ->RegisterFilter(GRPC_SERVER_CHANNEL, &Server::kServerTopFilter)
           .SkipV3();
 
-  FilterRegistration& top_filter_server_virtual_reg =
+  auto& top_filter_server_virtual_reg =
       builder->channel_init()
           ->RegisterFilter(GRPC_SERVER_VIRTUAL_CHANNEL,
                            &Server::kServerTopFilter)
@@ -108,7 +108,7 @@ void RegisterBuiltins(CoreConfiguration::Builder* builder) {
   }
 
   if (IsXdsServerFilterChainPerRouteEnabled()) {
-    FilterRegistration& server_config_selector_interceptor_reg =
+    auto& server_config_selector_interceptor_reg =
         builder->channel_init()
             ->RegisterFilter<ServerConfigSelectorInterceptor>(
                 GRPC_SERVER_CHANNEL)

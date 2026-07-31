@@ -61,11 +61,11 @@ void RegisterHttpFilters(CoreConfiguration::Builder* builder) {
       .If(IsBuildingHttpLikeTransport);
 
   // Server side filters.
-  FilterRegistration& compression_reg =
+  auto& compression_reg =
       builder->channel_init()
           ->RegisterFilter<ServerCompressionFilter>(GRPC_SERVER_CHANNEL)
           .If(IsBuildingHttpLikeTransport);
-  FilterRegistration& http_server_reg =
+  auto& http_server_reg =
       builder->channel_init()
           ->RegisterFilter<HttpServerFilter>(GRPC_SERVER_CHANNEL)
           .If(IsBuildingHttpLikeTransport);
