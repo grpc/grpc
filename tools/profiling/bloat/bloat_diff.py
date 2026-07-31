@@ -25,7 +25,7 @@ import shutil
 import subprocess
 import sys
 import traceback
-from typing import TextIO
+from typing import Optional, TextIO
 
 sys.path.append(
     os.path.join(
@@ -54,13 +54,15 @@ LIBS = [
 ]
 
 
-def _print_banner(msg: str, file: TextIO = sys.stdout) -> None:
+def _print_banner(msg: str, file: Optional[TextIO] = None) -> None:
     """Prints a prominent banner line to the specified stream."""
+    if file is None:
+        file = sys.stdout
     sys.stdout.flush()
     sys.stderr.flush()
     padded_msg = f" ### {msg} ### "
     width = max(100, len(padded_msg) + 20)
-    print(f"\n{padded_msg.center(width, '#')}\n", file=file, flush=True)
+    print(f"\n{padded_msg.center(width, '#')}", file=file, flush=True)
 
 
 def _build(output_dir: str) -> None:
@@ -129,10 +131,10 @@ if args.diff_base:
             subprocess.check_call(["git", "checkout", where_am_i])
             subprocess.check_call(["git", "submodule", "update"])
         except Exception as e:
+            traceback.print_exc()
             _print_banner(
                 "FAILED TO RESTORE ORIGINAL GIT REVISION", file=sys.stderr
             )
-            traceback.print_exc()
             sys.exit(getattr(e, "returncode", 1) or 1)
 
 pathlib.Path("bloaty-build").mkdir(exist_ok=True)
