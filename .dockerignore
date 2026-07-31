@@ -23,36 +23,36 @@ pyb
 **/*venv*/
 **/*virtual_environment*/
 **/__pycache__/
-*.py[cod]
-.pytest_cache/
-.pytype/
-.coverage*
-.mypy_cache/
-.ruff_cache/
-.eggs/
-*.egg-info/
+**/*.py[cod]
+**/.pytest_cache/
+**/.pytype/
+**/.coverage*
+**/.mypy_cache/
+**/.ruff_cache/
+**/.eggs/
+**/*.egg-info/
 
 # Node & Package Manager Dependencies
-node_modules/
-Pods/
-DerivedData/
+**/node_modules/
+**/Pods/
+**/DerivedData/
 
 # Editor & OS metadata
-.DS_Store
-Thumbs.db
-._*
+**/.DS_Store
+**/Thumbs.db
+**/._*
 .idea/
 .vscode/
 .history/
-*.swp
-*.swo
-*~
+**/*.swp
+**/*.swo
+**/*~
 
 # Logs & Debug outputs
-*.log
-gdb.txt
-portlog.txt
-perf.data*
+**/*.log
+**/gdb.txt
+**/portlog.txt
+**/perf.data*
 
 # Environment & Secrets safeguard
-.env*
+**/.env*
