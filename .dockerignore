@@ -1,6 +1,17 @@
 # Build artifacts & compilation outputs
-**/bazel-*
-**/build/
+# Standard Bazel output symlinks
+**/bazel-bin/
+**/bazel-out/
+**/bazel-testlogs/
+# Workspace-specific symlinks (WORKSPACE & MODULE.bazel files)
+**/bazel-grpc/
+**/bazel-cpp/
+**/bazel-python/
+**/bazel-python_second_test_repo/
+**/bazel-bzlmod_test/
+**/bazel-artifact_gen/
+# Root build outputs (/build/)
+/build/
 **/.build/
 **/bins/
 **/libs/
@@ -8,9 +19,11 @@
 **/gens/
 **/out/
 **/dist/
-**/cmake-build-*/
+# CMake CLion / IDE build directories
+/cmake-build-*/
 **/DerivedData/
-**/artifacts/
+# Generated build output packages (task_runner.py -f artifact -> /artifacts/)
+/artifacts/
 
 # System & generic cache
 **/.cache/
@@ -20,9 +33,17 @@
 
 # Python virtual environments, build artifacts & bytecode
 **/pyb/
-**/*venv*/
-**/*virtualenv*/
-**/*virtual_environment*/
+# Standard venvs (.venv, .venv-pyright, .venv-ci-black, etc.)
+**/.venv*/
+# TODO(sergiitk): update all references below to produce standard `.venv-*`
+# User virtualenv dirs (src/python/CONTRIBUTING.md -> ~/.virtualenvs/)
+**/.virtualenv*/
+# Legacy venv directory names (build_artifact_python.sh, build_python.sh -> venv/)
+**/venv/
+# Script virtualenvs (tools/distrib/python/docgen.py -> distrib_virtualenv/)
+**/*_virtualenv/
+# Bazel format virtualenv (tools/distrib/format_bazel.sh -> bazel_format_virtual_environment/)
+**/*_virtual_environment/
 **/__pycache__/
 **/*.py[cod]
 **/.pytest_cache/
