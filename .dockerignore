@@ -1,24 +1,25 @@
 # Build artifacts & compilation outputs
-bazel-*
-build
-.build/
-bins/
-libs/
-objs/
-gens/
-out/
-dist
-cmake-build-*/
-artifacts/
+**/bazel-*
+**/build/
+**/.build/
+**/bins/
+**/libs/
+**/objs/
+**/gens/
+**/out/
+**/dist/
+**/cmake-build-*/
+**/DerivedData/
+**/artifacts/
 
 # System & generic cache
-.cache
+**/.cache/
 
 # Git metadata
-.git
+**/.git/
 
 # Python virtual environments, build artifacts & bytecode
-pyb
+**/pyb/
 **/.venv*
 **/*venv*/
 **/*virtual_environment*/
@@ -35,15 +36,14 @@ pyb
 # Node & Package Manager Dependencies
 **/node_modules/
 **/Pods/
-**/DerivedData/
 
 # Editor & OS metadata
 **/.DS_Store
 **/Thumbs.db
 **/._*
-.idea/
-.vscode/
-.history/
+**/.idea/
+**/.vscode/
+**/.history/
 **/*.swp
 **/*.swo
 **/*~
