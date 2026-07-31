@@ -24,6 +24,7 @@ import pathlib
 import shutil
 import subprocess
 import sys
+import traceback
 
 sys.path.append(
     os.path.join(
@@ -52,24 +53,39 @@ LIBS = [
 ]
 
 
-def _build(output_dir):
+def _print_banner(msg: str, file: object = sys.stdout) -> None:
+    """Prints a prominent banner line to the specified stream."""
+    sys.stdout.flush()
+    sys.stderr.flush()
+    padded_msg = f" ### {msg} ### "
+    width = max(100, len(padded_msg) + 20)
+    print(f"\n{padded_msg.center(width, '#')}\n", file=file, flush=True)
+
+
+def _build(output_dir: str) -> None:
     """Perform the cmake build under the output_dir."""
+    _print_banner(f"BUILD START: {output_dir}")
     shutil.rmtree(output_dir, ignore_errors=True)
     subprocess.check_call("mkdir -p %s" % output_dir, shell=True, cwd=".")
-    subprocess.check_call(
-        [
-            "cmake",
-            "-DgRPC_BUILD_TESTS=OFF",
-            "-DCMAKE_CXX_STANDARD=17",
-            "-DBUILD_SHARED_LIBS=ON",
-            "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
-            '-DCMAKE_C_FLAGS="-gsplit-dwarf"',
-            '-DCMAKE_CXX_FLAGS="-gsplit-dwarf"',
-            "..",
-        ],
-        cwd=output_dir,
-    )
-    subprocess.check_call("make -j%d" % args.jobs, shell=True, cwd=output_dir)
+    try:
+        subprocess.check_call(
+            [
+                "cmake",
+                "-DgRPC_BUILD_TESTS=OFF",
+                "-DCMAKE_CXX_STANDARD=17",
+                "-DBUILD_SHARED_LIBS=ON",
+                "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
+                '-DCMAKE_C_FLAGS="-gsplit-dwarf"',
+                '-DCMAKE_CXX_FLAGS="-gsplit-dwarf"',
+                "..",
+            ],
+            cwd=output_dir,
+        )
+        subprocess.check_call("make -j%d" % args.jobs, shell=True, cwd=output_dir)
+    except Exception:
+        _print_banner(f"BUILD END: {output_dir} FAILED", file=sys.stderr)
+        raise
+    _print_banner(f"BUILD END: {output_dir} SUCCEEDED")
 
 
 def _rank_diff_bytes(diff_bytes):
@@ -95,15 +111,23 @@ if args.diff_base:
         .decode()
         .strip()
     )
-    # checkout the diff base (="old")
-    subprocess.check_call(["git", "checkout", args.diff_base])
-    subprocess.check_call(["git", "submodule", "update"])
     try:
-        _build("bloat_diff_old")
-    finally:
-        # restore the original revision (="new")
-        subprocess.check_call(["git", "checkout", where_am_i])
+        # checkout the diff base (="old")
+        subprocess.check_call(["git", "checkout", args.diff_base])
         subprocess.check_call(["git", "submodule", "update"])
+        try:
+            _build("bloat_diff_old")
+        finally:
+            # restore the original revision (="new")
+            subprocess.check_call(["git", "checkout", where_am_i])
+            subprocess.check_call(["git", "submodule", "update"])
+    except Exception as e:
+        sys.stdout.flush()
+        traceback.print_exc()
+        _print_banner(
+            "MAIN BUILD SUCCEEDED, BUT DIFF BASE BUILD FAILED", file=sys.stderr
+        )
+        sys.exit(getattr(e, "returncode", 1) or 1)
 
 pathlib.Path("bloaty-build").mkdir(exist_ok=True)
 subprocess.check_call(
