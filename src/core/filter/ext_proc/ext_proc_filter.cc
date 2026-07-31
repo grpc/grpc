@@ -31,9 +31,9 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/debug/trace_impl.h"
-#include "src/core/lib/promise/inter_activity_latch.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"
+#include "src/core/lib/promise/observable.h"
 #include "src/core/lib/promise/prioritized_race.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/status_flag.h"
@@ -602,14 +602,6 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
     return allow && !first_body_message_sent_;
   }
 
-  // Returns true if the stream closed with an error and fail-open mode is not
-  // permitted for this call (i.e. the stream error must fail the RPC).
-  bool IsStreamFailureFatal() const {
-    if (IsFailOpenAllowed()) return false;
-    MutexLock lock(&mu_);
-    return stream_status_value_.has_value() && !stream_status_value_->ok();
-  }
-
   bool DecrementOutstandingServerToClientMessages(bool* should_close) {
     if (outstanding_s2c_messages_ == 0) {
       return false;
@@ -629,22 +621,39 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
     return true;
   }
 
-  bool IsStreamClosed() const {
-    MutexLock lock(&mu_);
-    return stream_status_value_.has_value();
+  auto NextStreamStatus() const {
+    return stream_status_.NextWhen(
+        [](const std::optional<absl::Status>& status) {
+          return status.has_value();
+        });
   }
 
+  Poll<std::optional<absl::Status>> PollStreamStatus() const {
+    return NextStreamStatus()();
+  }
+
+  bool IsStreamClosed() const { return PollStreamStatus().ready(); }
+
   absl::Status GetStreamStatus() const {
-    MutexLock lock(&mu_);
-    return stream_status_value_.value_or(absl::OkStatus());
+    auto poll = PollStreamStatus();
+    if (poll.ready()) {
+      return poll.value().value_or(absl::OkStatus());
+    }
+    return absl::OkStatus();
   }
 
   void SetStreamStatus(absl::Status status) {
-    MutexLock lock(&mu_);
-    if (!stream_status_value_.has_value()) {
-      stream_status_value_ = status;
-      stream_status_.Set();
+    if (!IsStreamClosed()) {
+      stream_status_.Set(status);
     }
+  }
+
+  // Returns true if the stream closed with an error and fail-open mode is not
+  // permitted for this call (i.e. the stream error must fail the RPC).
+  bool IsStreamFailureFatal() const {
+    if (IsFailOpenAllowed()) return false;
+    auto poll = PollStreamStatus();
+    return poll.ready() && !poll.value()->ok();
   }
 
   // Evaluates the status to return when the external processor stream is
@@ -653,9 +662,9 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
   // when fail-open is permitted.
   absl::Status GetStreamClosedStatus(
       absl::Status default_error = absl::CancelledError("Stream closed")) {
-    MutexLock lock(&mu_);
-    if (stream_status_value_.has_value()) {
-      return *stream_status_value_;
+    auto poll = PollStreamStatus();
+    if (poll.ready()) {
+      return poll.value().value_or(absl::OkStatus());
     }
     if (IsFailOpenAllowed()) {
       return absl::OkStatus();
@@ -664,20 +673,9 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
   }
 
   auto WaitForStreamStatus() {
-    return [this]() -> Poll<absl::Status> {
-      {
-        MutexLock lock(&mu_);
-        if (stream_status_value_.has_value()) {
-          return *stream_status_value_;
-        }
-      }
-      auto poll = stream_status_.Wait()();
-      if (poll.ready()) {
-        MutexLock lock(&mu_);
-        return stream_status_value_.value_or(absl::OkStatus());
-      }
-      return Pending{};
-    };
+    return Map(NextStreamStatus(), [](std::optional<absl::Status> status) {
+      return status.value_or(absl::OkStatus());
+    });
   }
 
   void SetStreamError(absl::Status status) {
@@ -694,16 +692,14 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
   }
 
   void CloseStream() {
+    if (!IsStreamClosed()) {
+      stream_status_.Set(absl::OkStatus());
+    }
     RefCountedPtr<XdsStreamingCallPromiseWrapper> streaming_call;
     {
       MutexLock lock(&mu_);
-      if (!stream_status_value_.has_value()) {
-        stream_status_value_ = absl::OkStatus();
-        stream_status_.Set();
-      }
       streaming_call = std::move(streaming_call_);
     }
-    ext_proc_send_state_.store(SendState::kSendFailed);
     ext_proc_send_waker_.Wakeup();
     streaming_call.reset();
   }
@@ -754,8 +750,7 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
   // Indicates that the external processor stream has been half closed.
   bool ext_proc_stream_half_closed_ = false;
   bool child_call_started_ = false;
-  InterActivityLatch<void> stream_status_;
-  std::optional<absl::Status> stream_status_value_ ABSL_GUARDED_BY(mu_);
+  mutable Observable<std::optional<absl::Status>> stream_status_{std::nullopt};
 
   // Atomic send state for lock-free coordination between client-side and
   // server-side message senders.
@@ -1063,13 +1058,9 @@ void ExtProcFilter::ExtProcCall::HandleSideStreamStatus(absl::Status status) {
   }
   const bool should_propagate_error = !status.ok() && !IsFailOpenAllowed();
   bool already_closed = false;
-  {
-    MutexLock lock(&mu_);
-    already_closed = stream_status_value_.has_value();
-    if (!already_closed) {
-      stream_status_value_ = should_propagate_error ? status : absl::OkStatus();
-      stream_status_.Set();
-    }
+  already_closed = IsStreamClosed();
+  if (!already_closed) {
+    stream_status_.Set(should_propagate_error ? status : absl::OkStatus());
   }
   if (!already_closed) {
     if (should_propagate_error) {
@@ -1164,7 +1155,7 @@ ExtProcFilter::ExtProcCall::SendMessageToSideStream(
     // If the send failed, wait for the stream status from gRPC and evaluate
     // fail-open.
     if (!poll.value().ok()) {
-      if (ext_proc_call->stream_status_.Wait()().pending()) {
+      if (ext_proc_call->WaitForStreamStatus()().pending()) {
         return Pending{};
       }
       return ext_proc_call->GetStreamClosedStatus(
@@ -2173,7 +2164,7 @@ absl::StatusOr<RefCountedPtr<ExtProcFilter>> ExtProcFilter::Create(
 ExtProcFilter::ExtProcFilter(const ChannelArgs& args,
                              RefCountedPtr<const Config> config)
     : V3InterceptorToV2Bridge<ExtProcFilter>(args),
-    config_(std::move(config)),
+      config_(std::move(config)),
       event_engine_(
           args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
       default_authority_(Slice::FromCopiedString(
