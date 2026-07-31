@@ -106,6 +106,9 @@ combiner:
   debug_only: true
   default: false
   description: Combiner lock state.
+composite_filter:
+  default: false
+  description: xDS composite filter.
 compression:
   default: false
   description: Compression operations.
