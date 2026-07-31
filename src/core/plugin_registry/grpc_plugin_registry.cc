@@ -101,7 +101,7 @@ void RegisterBuiltins(CoreConfiguration::Builder* builder) {
   if (IsFixV3FilterStackServerSideOrderingEnabled()) {
     top_filter_server_reg.SinkToBottom().After(
         {LegacyMaxAgeFilter::kFilter.name});
-    top_filter_server_virtual_reg..SinkToBottom();
+    top_filter_server_virtual_reg.SinkToBottom();
   } else {
     top_filter_server_reg.BeforeAll();
     top_filter_server_virtual_reg.BeforeAll();
