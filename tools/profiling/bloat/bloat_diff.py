@@ -67,7 +67,7 @@ def _build(output_dir: str) -> None:
     """Perform the cmake build under the output_dir."""
     _print_banner(f"BUILD START: {output_dir}")
     shutil.rmtree(output_dir, ignore_errors=True)
-    os.makedirs(output_dir, exist_ok=True)
+    pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
     try:
         subprocess.check_call(
             [
@@ -123,16 +123,17 @@ if args.diff_base:
         _print_banner(
             "MAIN BUILD SUCCEEDED, BUT DIFF BASE BUILD FAILED", file=sys.stderr
         )
-        exit_code = (
-            e.returncode
-            if isinstance(e, subprocess.CalledProcessError) and e.returncode
-            else 1
-        )
-        sys.exit(exit_code)
+        sys.exit(getattr(e, "returncode", 1) or 1)
     finally:
         # restore the original revision (="new")
-        subprocess.check_call(["git", "checkout", where_am_i])
-        subprocess.check_call(["git", "submodule", "update"])
+        try:
+            subprocess.check_call(["git", "checkout", where_am_i])
+            subprocess.check_call(["git", "submodule", "update"])
+        except Exception:
+            _print_banner(
+                "FAILED TO RESTORE ORIGINAL GIT REVISION", file=sys.stderr
+            )
+            traceback.print_exc()
 
 pathlib.Path("bloaty-build").mkdir(exist_ok=True)
 subprocess.check_call(
