@@ -112,10 +112,10 @@ if args.diff_base:
         .strip()
     )
     try:
-        # checkout the diff base (="old")
-        subprocess.check_call(["git", "checkout", args.diff_base])
-        subprocess.check_call(["git", "submodule", "update"])
         try:
+            # checkout the diff base (="old")
+            subprocess.check_call(["git", "checkout", args.diff_base])
+            subprocess.check_call(["git", "submodule", "update"])
             _build("bloat_diff_old")
         finally:
             # restore the original revision (="new")
