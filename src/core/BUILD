@@ -7561,30 +7561,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_xds_channel_stack_modifier",
-    srcs = [
-        "server/xds_channel_stack_modifier.cc",
-    ],
-    hdrs = [
-        "server/xds_channel_stack_modifier.h",
-    ],
-    external_deps = ["absl/strings"],
-    deps = [
-        "channel_args",
-        "channel_fwd",
-        "channel_init",
-        "channel_stack_type",
-        "ref_counted",
-        "useful",
-        "//:channel_stack_builder",
-        "//:config",
-        "//:gpr_platform",
-        "//:grpc_base",
-        "//:ref_counted_ptr",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc_xds_server_config_fetcher",
     srcs = [
         "server/xds_server_config_fetcher.cc",
@@ -7608,7 +7584,6 @@ grpc_cc_library(
         "grpc_service_config",
         "grpc_sockaddr",
         "grpc_tls_credentials",
-        "grpc_xds_channel_stack_modifier",
         "grpc_xds_client",
         "iomgr_fwd",
         "match",

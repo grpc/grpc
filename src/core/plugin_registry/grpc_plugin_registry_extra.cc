@@ -21,8 +21,6 @@
 
 namespace grpc_core {
 #ifndef GRPC_NO_XDS
-extern void RegisterXdsChannelStackModifier(
-    CoreConfiguration::Builder* builder);
 extern void RegisterChannelDefaultCreds(CoreConfiguration::Builder* builder);
 extern void RegisterDefaultCallCreds(CoreConfiguration::Builder* builder);
 extern void RegisterXdsResolver(CoreConfiguration::Builder* builder);
@@ -42,7 +40,6 @@ void RegisterExtraFilters(CoreConfiguration::Builder* builder) {
   // Use builder to avoid unused-parameter warning.
   (void)builder;
 #ifndef GRPC_NO_XDS
-  RegisterXdsChannelStackModifier(builder);
   RegisterChannelDefaultCreds(builder);
   RegisterDefaultCallCreds(builder);
   RegisterXdsResolver(builder);

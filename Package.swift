@@ -1954,8 +1954,6 @@ let package = Package(
         "src/core/server/server_config_selector_filter.cc",
         "src/core/server/server_config_selector_filter.h",
         "src/core/server/server_interface.h",
-        "src/core/server/xds_channel_stack_modifier.cc",
-        "src/core/server/xds_channel_stack_modifier.h",
         "src/core/server/xds_server_config_fetcher.cc",
         "src/core/service_config/service_config.h",
         "src/core/service_config/service_config_call_data.h",

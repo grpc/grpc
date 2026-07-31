@@ -1938,8 +1938,6 @@
     <file baseinstalldir="/" name="src/core/server/server_config_selector_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/server/server_config_selector_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/server/server_interface.h" role="src" />
-    <file baseinstalldir="/" name="src/core/server/xds_channel_stack_modifier.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/server/xds_channel_stack_modifier.h" role="src" />
     <file baseinstalldir="/" name="src/core/server/xds_server_config_fetcher.cc" role="src" />
     <file baseinstalldir="/" name="src/core/service_config/service_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/service_config/service_config_call_data.h" role="src" />
