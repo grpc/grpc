@@ -83,7 +83,7 @@ def _build(output_dir: str) -> None:
             cwd=output_dir,
         )
         subprocess.check_call(["make", f"-j{args.jobs}"], cwd=output_dir)
-    except Exception:
+    except subprocess.CalledProcessError:
         _print_banner(f"BUILD END: {output_dir} FAILED", file=sys.stderr)
         raise
     _print_banner(f"BUILD END: {output_dir} SUCCEEDED")
@@ -108,7 +108,7 @@ _build("bloat_diff_new")
 
 if args.diff_base:
     where_am_i = (
-        subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"])
+        subprocess.check_output(["git", "rev-parse", "HEAD"])
         .decode()
         .strip()
     )
@@ -118,7 +118,6 @@ if args.diff_base:
         subprocess.check_call(["git", "submodule", "update"])
         _build("bloat_diff_old")
     except Exception as e:
-        sys.stdout.flush()
         traceback.print_exc()
         _print_banner(
             "MAIN BUILD SUCCEEDED, BUT DIFF BASE BUILD FAILED", file=sys.stderr
@@ -129,11 +128,12 @@ if args.diff_base:
         try:
             subprocess.check_call(["git", "checkout", where_am_i])
             subprocess.check_call(["git", "submodule", "update"])
-        except Exception:
+        except Exception as e:
             _print_banner(
                 "FAILED TO RESTORE ORIGINAL GIT REVISION", file=sys.stderr
             )
             traceback.print_exc()
+            sys.exit(getattr(e, "returncode", 1) or 1)
 
 pathlib.Path("bloaty-build").mkdir(exist_ok=True)
 subprocess.check_call(
