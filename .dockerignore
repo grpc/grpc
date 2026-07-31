@@ -20,8 +20,9 @@
 
 # Python virtual environments, build artifacts & bytecode
 **/pyb/
-**/.venv*
+**/.venv*/
 **/*venv*/
+**/*virtualenv*/
 **/*virtual_environment*/
 **/__pycache__/
 **/*.py[cod]
@@ -31,6 +32,7 @@
 **/.mypy_cache/
 **/.ruff_cache/
 **/.eggs/
+**/*.egg
 **/*.egg-info/
 
 # Node & Package Manager Dependencies
@@ -44,8 +46,10 @@
 **/.idea/
 **/.vscode/
 **/.history/
-**/*.swp
-**/*.swo
+# Vim swap files (*.sw?) and Emacs auto-save (/#*#) / lock files (/.#*)
+**/*.sw?
+**/#*#
+**/.#*
 **/*~
 
 # Logs & Debug outputs
