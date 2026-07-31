@@ -418,7 +418,6 @@ class ChannelInit {
   using CreatedType =
       typename decltype(T::Create(ChannelArgs(), {}))::value_type;
 
-  template <typename ChannelStackTypeTag>
   class DependencyTracker;
 
   struct Filter {
@@ -459,13 +458,6 @@ class ChannelInit {
   StackConfig stack_configs_[GRPC_NUM_CHANNEL_STACK_TYPES];
   bool fix_v3_filter_stack_server_side_ordering_ = false;
 
-  template <typename ChannelStackTypeTag>
-  static std::tuple<std::vector<Filter>, std::vector<Filter>>
-  SortFilterRegistrationsByDependencies(
-      const std::vector<std::unique_ptr<FilterRegistration>>&
-          filter_registrations,
-      grpc_channel_stack_type type, channelz::PropertyTable& filter_ordering);
-
   static std::tuple<std::vector<Filter>, std::vector<Filter>>
   SortFilterRegistrationsByDependencies(
       const std::vector<std::unique_ptr<FilterRegistration>>&
@@ -495,13 +487,11 @@ class ChannelInit {
       PostProcessor* post_processors, grpc_channel_stack_type type,
       bool fix_v3_filter_stack_server_side_ordering);
 
-  template <typename ChannelStackTypeTag>
   static void PrintChannelStackTrace(
       grpc_channel_stack_type type,
       const std::vector<std::unique_ptr<ChannelInit::FilterRegistration>>&
           registrations,
-      const DependencyTracker<ChannelStackTypeTag>& dependencies,
-      const std::vector<Filter>& filters,
+      const DependencyTracker& dependencies, const std::vector<Filter>& filters,
       const std::vector<Filter>& terminal_filters);
 };
 
