@@ -145,7 +145,7 @@ std::string ExtProcFilter::Config::ToString() const {
       [&](const RefCountedPtr<ExtProcChannel>& channel) {
         if (channel != nullptr) {
           StrAppend(result, "ext_proc_channel=");
-          StrAppend(result, channel->server()->Key());
+          StrAppend(result, channel->server().Key());
           is_first = false;
         }
       });
