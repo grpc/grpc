@@ -5,7 +5,5 @@ build
 dist
 pyb
 # python virtual environments
-.venv*
 **/.venv*
-*/.venv*
-*virtual_environment*
+*virtual_environment/
