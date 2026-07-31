@@ -3101,6 +3101,7 @@ add_library(grpc
   src/core/tsi/tls_telemetry.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
+  src/core/util/address_sorting_init.cc
   src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/event_log.cc
@@ -3896,6 +3897,7 @@ add_library(grpc_unsecure
   src/core/tsi/local_transport_security.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
+  src/core/util/address_sorting_init.cc
   src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/event_log.cc
@@ -6348,6 +6350,7 @@ add_library(grpc_authorization_provider
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
+  src/core/util/address_sorting_init.cc
   src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/event_log.cc
@@ -10477,6 +10480,7 @@ add_executable(call_utils_test
   src/core/telemetry/stats_data.cc
   src/core/telemetry/tcp_tracer.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  src/core/util/address_sorting_init.cc
   src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/event_log.cc
@@ -18546,6 +18550,7 @@ add_executable(filter_fusion_test
   src/core/telemetry/stats_data.cc
   src/core/telemetry/tcp_tracer.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  src/core/util/address_sorting_init.cc
   src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/event_log.cc
@@ -22909,6 +22914,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/telemetry/stats_data.cc
     src/core/telemetry/tcp_tracer.cc
     src/core/tsi/alts/handshaker/transport_security_common_api.cc
+    src/core/util/address_sorting_init.cc
     src/core/util/backoff.cc
     src/core/util/dump_args.cc
     src/core/util/event_log.cc
@@ -37757,6 +37763,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/telemetry/stats_data.cc
     src/core/telemetry/tcp_tracer.cc
     src/core/tsi/alts/handshaker/transport_security_common_api.cc
+    src/core/util/address_sorting_init.cc
     src/core/util/backoff.cc
     src/core/util/dump_args.cc
     src/core/util/event_log.cc
@@ -38886,6 +38893,7 @@ add_executable(v3_bridge_test
   src/core/telemetry/stats_data.cc
   src/core/telemetry/tcp_tracer.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  src/core/util/address_sorting_init.cc
   src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/event_log.cc
