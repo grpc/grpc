@@ -304,24 +304,18 @@ void RegisterLegacyChannelIdleFilters(CoreConfiguration::Builder* builder) {
         return GetClientIdleTimeout(channel_args) != Duration::Infinity();
       });
 
+  FilterRegistration& max_age_registration =
+      builder->channel_init()
+          ->RegisterV2Filter<LegacyMaxAgeFilter>(GRPC_SERVER_CHANNEL)
+          .ExcludeFromMinimalStack()
+          .If([](const ChannelArgs& channel_args) {
+            return LegacyMaxAgeFilter::Config::FromChannelArgs(channel_args)
+                .enable();
+          });
   if (IsFixV3FilterStackServerSideOrderingEnabled()) {
-    builder->channel_init()
-        ->RegisterV2Filter<LegacyMaxAgeFilter>(GRPC_SERVER_CHANNEL)
-        .SinkToBottom()
-        .ExcludeFromMinimalStack()
-        .If([](const ChannelArgs& channel_args) {
-          return LegacyMaxAgeFilter::Config::FromChannelArgs(channel_args)
-              .enable();
-        });
+    max_age_registration.SinkToBottom();
   } else {
-    builder->channel_init()
-        ->RegisterV2Filter<LegacyMaxAgeFilter>(GRPC_SERVER_CHANNEL)
-        .FloatToTop()
-        .ExcludeFromMinimalStack()
-        .If([](const ChannelArgs& channel_args) {
-          return LegacyMaxAgeFilter::Config::FromChannelArgs(channel_args)
-              .enable();
-        });
+    max_age_registration.FloatToTop();
   }
 }
 

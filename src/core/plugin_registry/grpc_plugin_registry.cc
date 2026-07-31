@@ -86,36 +86,40 @@ void RegisterBuiltins(CoreConfiguration::Builder* builder) {
   builder->channel_init()
       ->RegisterV2Filter<LameClientFilter>(GRPC_CLIENT_LAME_CHANNEL)
       .Terminal();
+
+  FilterRegistration& top_filter_server_reg =
+      builder->channel_init()
+          ->RegisterFilter(GRPC_SERVER_CHANNEL, &Server::kServerTopFilter)
+          .SkipV3();
+
+  FilterRegistration& top_filter_server_virtual_reg =
+      builder->channel_init()
+          ->RegisterFilter(GRPC_SERVER_VIRTUAL_CHANNEL,
+                           &Server::kServerTopFilter)
+          .SkipV3();
+
   if (IsFixV3FilterStackServerSideOrderingEnabled()) {
-    builder->channel_init()
-        ->RegisterFilter(GRPC_SERVER_CHANNEL, &Server::kServerTopFilter)
-        .SkipV3()
-        .SinkToBottom()
-        .After({LegacyMaxAgeFilter::kFilter.name});
-    builder->channel_init()
-        ->RegisterFilter(GRPC_SERVER_VIRTUAL_CHANNEL, &Server::kServerTopFilter)
-        .SkipV3()
-        .SinkToBottom();
-    if (IsXdsServerFilterChainPerRouteEnabled()) {
-      builder->channel_init()
-          ->RegisterFilter<ServerConfigSelectorInterceptor>(GRPC_SERVER_CHANNEL)
-          .IfHasChannelArg(ServerConfigSelectorProvider::ChannelArgName())
-          .Before({LegacyMaxAgeFilter::kFilter.name});
-    }
+    top_filter_server_reg.SinkToBottom().After(
+        {LegacyMaxAgeFilter::kFilter.name});
+    top_filter_server_virtual_reg..SinkToBottom();
   } else {
-    builder->channel_init()
-        ->RegisterFilter(GRPC_SERVER_CHANNEL, &Server::kServerTopFilter)
-        .SkipV3()
-        .BeforeAll();
-    builder->channel_init()
-        ->RegisterFilter(GRPC_SERVER_VIRTUAL_CHANNEL, &Server::kServerTopFilter)
-        .SkipV3()
-        .BeforeAll();
-    if (IsXdsServerFilterChainPerRouteEnabled()) {
-      builder->channel_init()
-          ->RegisterFilter<ServerConfigSelectorInterceptor>(GRPC_SERVER_CHANNEL)
-          .IfHasChannelArg(ServerConfigSelectorProvider::ChannelArgName())
-          .After({LegacyMaxAgeFilter::kFilter.name});
+    top_filter_server_reg.BeforeAll();
+    top_filter_server_virtual_reg.BeforeAll();
+  }
+
+  if (IsXdsServerFilterChainPerRouteEnabled()) {
+    FilterRegistration& server_config_selector_interceptor_reg =
+        builder->channel_init()
+            ->RegisterFilter<ServerConfigSelectorInterceptor>(
+                GRPC_SERVER_CHANNEL)
+            .IfHasChannelArg(ServerConfigSelectorProvider::ChannelArgName());
+
+    if (IsFixV3FilterStackServerSideOrderingEnabled()) {
+      server_config_selector_interceptor_reg.Before(
+          {LegacyMaxAgeFilter::kFilter.name});
+    } else {
+      server_config_selector_interceptor_reg.After(
+          {LegacyMaxAgeFilter::kFilter.name});
     }
   }
 }

@@ -59,32 +59,28 @@ void RegisterHttpFilters(CoreConfiguration::Builder* builder) {
   builder->channel_init()
       ->RegisterFilter<HttpClientFilter>(GRPC_CLIENT_VIRTUAL_CHANNEL)
       .If(IsBuildingHttpLikeTransport);
+
+  // Server side filters.
+  FilterRegistration& compression_reg =
+      builder->channel_init()
+          ->RegisterFilter<ServerCompressionFilter>(GRPC_SERVER_CHANNEL)
+          .If(IsBuildingHttpLikeTransport);
+  FilterRegistration& http_server_reg =
+      builder->channel_init()
+          ->RegisterFilter<HttpServerFilter>(GRPC_SERVER_CHANNEL)
+          .If(IsBuildingHttpLikeTransport);
+
+  builder->channel_init()
+      ->RegisterFilter<HttpServerFilter>(GRPC_SERVER_VIRTUAL_CHANNEL)
+      .If(IsBuildingHttpLikeTransport);
+
   if (IsFixV3FilterStackServerSideOrderingEnabled()) {
-    builder->channel_init()
-        ->RegisterFilter<ServerCompressionFilter>(GRPC_SERVER_CHANNEL)
-        .If(IsBuildingHttpLikeTransport)
-        .Before<HttpServerFilter>()
+    compression_reg.Before<HttpServerFilter>()
         .Before<ServerMessageSizeFilter>();
-    builder->channel_init()
-        ->RegisterFilter<HttpServerFilter>(GRPC_SERVER_CHANNEL)
-        .If(IsBuildingHttpLikeTransport)
-        .Before<ServerMessageSizeFilter>();
-    builder->channel_init()
-        ->RegisterFilter<HttpServerFilter>(GRPC_SERVER_VIRTUAL_CHANNEL)
-        .If(IsBuildingHttpLikeTransport);
+    http_server_reg.Before<ServerMessageSizeFilter>();
   } else {
-    builder->channel_init()
-        ->RegisterFilter<ServerCompressionFilter>(GRPC_SERVER_CHANNEL)
-        .If(IsBuildingHttpLikeTransport)
-        .After<HttpServerFilter>()
-        .After<ServerMessageSizeFilter>();
-    builder->channel_init()
-        ->RegisterFilter<HttpServerFilter>(GRPC_SERVER_CHANNEL)
-        .If(IsBuildingHttpLikeTransport)
-        .After<ServerMessageSizeFilter>();
-    builder->channel_init()
-        ->RegisterFilter<HttpServerFilter>(GRPC_SERVER_VIRTUAL_CHANNEL)
-        .If(IsBuildingHttpLikeTransport);
+    compression_reg.After<HttpServerFilter>().After<ServerMessageSizeFilter>();
+    http_server_reg.After<ServerMessageSizeFilter>();
   }
 }
 }  // namespace grpc_core
