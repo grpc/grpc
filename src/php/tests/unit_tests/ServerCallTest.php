@@ -56,6 +56,11 @@ class StringValue
     private $value = '';
 }
 
+class ServerCallTestHelper
+{
+    public function startBatch(array $batch) {}
+}
+
 class ServerCallTest extends \PHPUnit\Framework\TestCase
 {
     private $mockCall;
@@ -63,8 +68,8 @@ class ServerCallTest extends \PHPUnit\Framework\TestCase
 
     public function setUp(): void
     {
-        $this->mockCall = $this->getMockBuilder(stdClass::class)
-            ->setMethods(['startBatch'])
+        $this->mockCall = $this->getMockBuilder(ServerCallTestHelper::class)
+            ->onlyMethods(['startBatch'])
             ->getMock();
         $this->serverContext = new \Grpc\ServerContext($this->mockCall);
     }
@@ -292,26 +297,13 @@ class ServerCallTest extends \PHPUnit\Framework\TestCase
         $message1 = $this->newStringMessage();
         $message2 = $this->newStringMessage('another string');
 
+        $calls = [];
         $this->mockCall->expects($this->exactly(4))
-            ->method('startBatch')
-            ->withConsecutive(
-                [$this->identicalTo([
-                    \Grpc\OP_SEND_INITIAL_METADATA => $metadata,
-                ])],
-                [$this->identicalTo([
-                    \Grpc\OP_SEND_MESSAGE => ['message' => $message1->serializeToString()],
-                ])],
-                [$this->identicalTo([
-                    \Grpc\OP_SEND_MESSAGE => [
-                        'message' => $message2->serializeToString(),
-                        'flags' => 0x02,
-                    ]
-                ])],
-                [$this->identicalTo([
-                    \Grpc\OP_SEND_STATUS_FROM_SERVER => \Grpc\Status::ok(),
-                    \Grpc\OP_RECV_CLOSE_ON_SERVER => true,
-                ])]
-            );
+            ->method("startBatch")
+            ->willReturnCallback(function ($batch) use (&$calls) {
+                $calls[] = $batch;
+                return null;
+            });
 
         $serverCallWriter = new \Grpc\ServerCallWriter(
             $this->mockCall,
@@ -322,5 +314,23 @@ class ServerCallTest extends \PHPUnit\Framework\TestCase
         $serverCallWriter->write($message1, [], $metadata2 /* should not send */);
         $serverCallWriter->write($message2, ['flags' => 0x02]);
         $serverCallWriter->finish();
+
+        $this->assertCount(4, $calls);
+        $this->assertEquals([
+            \Grpc\OP_SEND_INITIAL_METADATA => $metadata,
+        ], $calls[0]);
+        $this->assertEquals([
+            \Grpc\OP_SEND_MESSAGE => ['message' => $message1->serializeToString()],
+        ], $calls[1]);
+        $this->assertEquals([
+            \Grpc\OP_SEND_MESSAGE => [
+                'message' => $message2->serializeToString(),
+                'flags' => 0x02,
+            ]
+        ], $calls[2]);
+        $this->assertEquals([
+            \Grpc\OP_SEND_STATUS_FROM_SERVER => \Grpc\Status::ok(),
+            \Grpc\OP_RECV_CLOSE_ON_SERVER => true,
+        ], $calls[3]);
     }
 }

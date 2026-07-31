@@ -318,7 +318,7 @@ class ChannelTest extends \PHPUnit\Framework\TestCase
         $this->channel2->close();
     }
 
-    public function persistentChannelSameChannelCredentialsProvider(): array
+    public static function persistentChannelSameChannelCredentialsProvider(): array
     {
         return [
             [
@@ -388,6 +388,7 @@ class ChannelTest extends \PHPUnit\Framework\TestCase
     /**
      * @dataProvider persistentChannelSameChannelCredentialsProvider
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('persistentChannelSameChannelCredentialsProvider')]
     public function testPersistentChannelSameChannelCredentials(
         $creds1,
         $creds2,
@@ -418,7 +419,7 @@ class ChannelTest extends \PHPUnit\Framework\TestCase
         $this->channel2->close();
     }
 
-    public function persistentChannelDifferentChannelCredentialsProvider(): array
+    public static function persistentChannelDifferentChannelCredentialsProvider(): array
     {
         return [
             [
@@ -475,6 +476,7 @@ class ChannelTest extends \PHPUnit\Framework\TestCase
     /**
      * @dataProvider persistentChannelDifferentChannelCredentialsProvider
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('persistentChannelDifferentChannelCredentialsProvider')]
     public function testPersistentChannelDifferentChannelCredentials(
         $creds1,
         $creds2,

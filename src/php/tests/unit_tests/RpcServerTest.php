@@ -23,6 +23,13 @@ require_once(dirname(__FILE__) . '/../../lib/Grpc/Status.php');
 require_once(dirname(__FILE__) . '/../../lib/Grpc/MethodDescriptor.php');
 require_once(dirname(__FILE__) . '/../../lib/Grpc/RpcServer.php');
 
+class RpcServerTestHelper
+{
+    public function getMethodDescriptors() {}
+    public function hello($var = null) {}
+    public function bye($var = null) {}
+}
+
 class RpcServerTest extends \PHPUnit\Framework\TestCase
 {
     private $server;
@@ -31,8 +38,8 @@ class RpcServerTest extends \PHPUnit\Framework\TestCase
     public function setUp(): void
     {
         $this->server = new \Grpc\RpcServer();
-        $this->mockService = $this->getMockBuilder(stdClass::class)
-            ->setMethods(['getMethodDescriptors', 'hello'])
+        $this->mockService = $this->getMockBuilder(RpcServerTestHelper::class)
+            ->onlyMethods(['getMethodDescriptors', 'hello'])
             ->getMock();
     }
 
@@ -47,17 +54,17 @@ class RpcServerTest extends \PHPUnit\Framework\TestCase
         $this->mockService->expects($this->once())
             ->method('getMethodDescriptors')
             ->with()
-            ->will($this->returnValue([
+            ->willReturn([
                 '/test/hello' => $helloMethodDescriptor
-            ]));
+            ]);
 
         $pathMap = $this->server->handle($this->mockService);
         $this->assertEquals($pathMap, [
             '/test/hello' => $helloMethodDescriptor
         ]);
 
-        $mockService2 = $this->getMockBuilder(stdClass::class)
-            ->setMethods(['getMethodDescriptors', 'hello', 'bye'])
+        $mockService2 = $this->getMockBuilder(RpcServerTestHelper::class)
+            ->onlyMethods(['getMethodDescriptors', 'hello', 'bye'])
             ->getMock();
         $helloMethodDescriptor2 = new \Grpc\MethodDescriptor(
             $this->mockService,
@@ -74,10 +81,10 @@ class RpcServerTest extends \PHPUnit\Framework\TestCase
         $mockService2->expects($this->once())
             ->method('getMethodDescriptors')
             ->with()
-            ->will($this->returnValue([
+            ->willReturn([
                 '/test/hello' => $helloMethodDescriptor2,
                 '/test/bye' => $byeMethodDescritor
-            ]));
+            ]);
 
         $pathMap = $this->server->handle($mockService2);
         $this->assertEquals($pathMap, [

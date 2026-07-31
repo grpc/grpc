@@ -48,7 +48,7 @@ class CallTest extends \PHPUnit\Framework\TestCase
     public function testConstructor()
     {
         $this->assertSame('Grpc\Call', get_class($this->call));
-        $this->assertObjectHasAttribute('channel', $this->call);
+        $this->assertTrue(property_exists($this->call, 'channel'));
     }
 
     public function testAddEmptyMetadata()
