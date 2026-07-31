@@ -73,12 +73,10 @@ BAZEL_PROTO_REFERENCE_LINK = [
     ),
 ]
 
-ABSL_INCLUDE = (os.path.join("third_party", "abseil-cpp"),)
+ABSL_INCLUDE = ("third_party/abseil-cpp",)
 
-UPB_GEN_INCLUDE = (os.path.join("grpc_root", "src", "core", "ext", "upb-gen"),)
-UPB_DEFS_GEN_INCLUDE = (
-    os.path.join("grpc_root", "src", "core", "ext", "upbdefs-gen"),
-)
+UPB_GEN_INCLUDE = ("grpc_root/src/core/ext/upb-gen",)
+UPB_DEFS_GEN_INCLUDE = ("grpc_root/src/core/ext/upbdefs-gen",)
 
 # Exclude conditional dependencies that are not needed by gRPC.
 # Required files can be found at third_party/protobuf/src/file_lists.cmake
@@ -87,9 +85,9 @@ UPB_EXCLUDE_CC_FILES_EXCEPTIONS = [
     "third_party/protobuf/upb/wire/decode_fast/select.c",
 ]
 
-PROTOBUF_INCLUDE = (os.path.join("third_party", "protobuf"),)
+PROTOBUF_INCLUDE = ("third_party/protobuf",)
 PROTOBUF_UTF8_RANGE_INCLUDE = (
-    os.path.join("third_party", "protobuf", "third_party", "utf8_range"),
+    "third_party/protobuf/third_party/utf8_range",
 )
 
 # will be added to include path when building grpcio_observability
@@ -139,7 +137,7 @@ BAZEL_DEPS = os.path.join(
     GRPC_ROOT, "tools", "distrib", "python", "bazel_deps.sh"
 )
 
-# Prefer running the existing shell wrapper through bash on Windows.
+# Run bazel directly on Windows instead of using the shell wrapper.
 BAZEL_QUERY_FALLBACK_CMD = ["bazel", "query"]
 
 # the bazel target to scrape to get list of sources for the build

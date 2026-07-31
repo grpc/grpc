@@ -405,14 +405,14 @@ PROTO_FILES=[
 ]
 
 CC_INCLUDES=[
-    'third_party\\abseil-cpp',
-    'third_party\\protobuf',
-    'third_party\\protobuf\\src',
-    'third_party\\protobuf\\upb_generator\\cmake',
-    'third_party\\protobuf\\upb',
-    'third_party\\protobuf\\upb\\reflection\\cmake',
-    'third_party\\protobuf\\third_party\\utf8_range'
+    'third_party/abseil-cpp',
+    'third_party/protobuf',
+    'third_party/protobuf/src',
+    'third_party/protobuf/upb_generator/cmake',
+    'third_party/protobuf/upb',
+    'third_party/protobuf/upb/reflection/cmake',
+    'third_party/protobuf/third_party/utf8_range'
 ]
-PROTO_INCLUDE='third_party\\protobuf'
+PROTO_INCLUDE='third_party/protobuf'
 
 PROTOBUF_SUBMODULE_VERSION="35cd01f9fe9afbeea38cc7b979a3b6bfcde82c03"

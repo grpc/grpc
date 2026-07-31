@@ -75,17 +75,17 @@ UPB_EXCLUDE_CC_FILES_EXCEPTIONS = [
 
 # will be added to include path when building grpcio_tools
 CC_INCLUDES = [
-    os.path.join("third_party", "abseil-cpp"),
-    os.path.join("third_party", "protobuf"),
-    os.path.join("third_party", "protobuf", "src"),
-    os.path.join("third_party", "protobuf", "upb_generator", "cmake"),
-    os.path.join("third_party", "protobuf", "upb"),
-    os.path.join("third_party", "protobuf", "upb", "reflection", "cmake"),
-    os.path.join("third_party", "protobuf", "third_party", "utf8_range"),
+    "third_party/abseil-cpp",
+    "third_party/protobuf",
+    "third_party/protobuf/src",
+    "third_party/protobuf/upb_generator/cmake",
+    "third_party/protobuf/upb",
+    "third_party/protobuf/upb/reflection/cmake",
+    "third_party/protobuf/third_party/utf8_range",
 ]
 
 # include path for .proto files
-PROTO_INCLUDE = os.path.join("third_party", "protobuf")
+PROTO_INCLUDE = "third_party/protobuf"
 
 # the target directory is relative to the grpcio_tools package root.
 GRPCIO_TOOLS_ROOT_PREFIX = "tools/distrib/python/grpcio_tools/"
