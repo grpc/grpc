@@ -145,7 +145,7 @@ std::string ExtProcFilter::Config::ToString() const {
       [&](const RefCountedPtr<ExtProcChannel>& channel) {
         if (channel != nullptr) {
           StrAppend(result, "ext_proc_channel=");
-          StrAppend(result, channel->server().Key());
+          StrAppend(result, channel->server()->Key());
           is_first = false;
         }
       });
@@ -2172,7 +2172,8 @@ absl::StatusOr<RefCountedPtr<ExtProcFilter>> ExtProcFilter::Create(
 
 ExtProcFilter::ExtProcFilter(const ChannelArgs& args,
                              RefCountedPtr<const Config> config)
-    : config_(std::move(config)),
+    : V3InterceptorToV2Bridge<ExtProcFilter>(args),
+    config_(std::move(config)),
       event_engine_(
           args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
       default_authority_(Slice::FromCopiedString(

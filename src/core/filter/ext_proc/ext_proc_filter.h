@@ -33,6 +33,7 @@
 #include "src/core/telemetry/metrics.h"
 #include "src/core/util/matchers.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/unique_type_name.h"
 #include "src/core/xds/grpc/blackboard.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_server_grpc.h"

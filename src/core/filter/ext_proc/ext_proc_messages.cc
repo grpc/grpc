@@ -239,8 +239,8 @@ absl::StatusOr<ExtProcResponse> ExtProcResponse::Parse(
       if (!mutation.ok()) return mutation.status();
       if (mutation->end_of_stream || mutation->end_of_stream_without_message) {
         return absl::InternalError(
-            "end_of_stream / end_of_stream_without_message "
-            "is not supported for response_body");
+            "end_of_stream / end_of_stream_without_message is not supported "
+            "for response_body");
       }
       ext_proc_response.response = ResponseBody{std::move(*mutation)};
       break;
@@ -368,7 +368,6 @@ class UpbHeaderMapEncoder {
   const std::vector<StringMatcher>& allowed_headers_;
   const std::vector<StringMatcher>& disallowed_headers_;
 };
-}  // namespace
 
 void PopulateMetadataBatchToHeaderMap(
     grpc_metadata_batch& batch,
@@ -492,8 +491,6 @@ envoy_service_ext_proc_v3_ProcessingRequest* CreateCommonRequest(
   }
   return request;
 }
-
-namespace {
 
 // An encoder class used with grpc_metadata_batch::Encode() to iterate over all
 // metadata entries in a batch and insert them as key-value pairs into a upb

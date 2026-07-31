@@ -51,29 +51,21 @@ class XdsStreamingCallPromiseWrapper final
 
   // Constructs a new streaming call wrapper for the given method on the
   // transport.
-  XdsStreamingCallPromiseWrapper(XdsTransport& transport, const char* method,
-                                 bool wait_for_ready = true);
+  XdsStreamingCallPromiseWrapper(XdsTransport& transport, const char* method);
 
   // Pushes a message on the stream.
   //
-  // Returns a promise that resolves to:
-  // - Success{} when the message has been successfully transmitted.
-  // - Failure{} if the stream has failed or closed.
+  // Returns a promise that resolves to StatusFlag, indicating whether the
+  // message was sent successfully.
   //
   // Contract: The caller MUST NOT call PushMessage() again until the promise
-  // from the previous PushMessage() resolves or if a previous send failed or
-  // closed.
+  // from the previous PushMessage() resolves.
   auto PushMessage(std::string msg) {
     SendState expected = SendState::kIdle;
-    if (send_state_.compare_exchange_strong(expected,
-                                            SendState::kSendMessageInFlight)) {
-      if (call_ != nullptr) {
-        call_->SendMessage(std::move(msg));
-      } else {
-        send_state_.store(SendState::kSendFailed);
-      }
-    }
+    GRPC_CHECK(send_state_.compare_exchange_strong(
+        expected, SendState::kSendMessageInFlight));
     send_message_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+    call_->SendMessage(std::move(msg));
     return [self = WeakRefAsSubclass<XdsStreamingCallPromiseWrapper>()]() {
       return self->PollPushMessage();
     };
@@ -81,9 +73,9 @@ class XdsStreamingCallPromiseWrapper final
 
   // Pulls an incoming message from the stream.
   //
-  // Returns a promise that resolves to:
-  // - std::optional<string>(msg) when a message is received.
-  // - std::nullopt when the stream closes (end of stream).
+  // Returns a promise that resolves to std::optional<std::string>.
+  // The value will be nullopt when the stream is closed without
+  // receiving a message.
   auto PullMessage() {
     RecvState recv_state = RecvState::kIdle;
     if (!recv_state_.compare_exchange_strong(recv_state,
@@ -92,8 +84,8 @@ class XdsStreamingCallPromiseWrapper final
       // Must be kReceivedStatus. Don't actually need to start the
       // recv_message op; we'll return nullopt on the first poll.
     } else {
-      if (call_ != nullptr) call_->StartRecvMessage();
       recv_message_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+      call_->StartRecvMessage();
     }
     return [self = WeakRefAsSubclass<XdsStreamingCallPromiseWrapper>()]() {
       return self->PollPullMessage();
@@ -102,9 +94,8 @@ class XdsStreamingCallPromiseWrapper final
 
   // Waits for server trailing metadata and stream termination.
   //
-  // Returns a promise that suspends until the server closes the stream,
-  // resolving to the final absl::Status received from the server (or a
-  // cancellation error if orphaned).
+  // Returns a promise that resolves to absl::Status, indicating
+  // the final status of the call.
   auto PullServerTrailingMetadata() {
     recv_status_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
     return [self = WeakRefAsSubclass<XdsStreamingCallPromiseWrapper>()]() {

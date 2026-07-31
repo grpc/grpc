@@ -54,11 +54,11 @@ class XdsStreamingCallPromiseWrapper::EventHandler final
 };
 
 XdsStreamingCallPromiseWrapper::XdsStreamingCallPromiseWrapper(
-    XdsTransport& transport, const char* method, bool wait_for_ready) {
+    XdsTransport& transport, const char* method) {
   auto internal_event_handler = std::make_unique<EventHandler>(
       WeakRefAsSubclass<XdsStreamingCallPromiseWrapper>());
-  call_ = transport.CreateStreamingCall(
-      method, std::move(internal_event_handler), wait_for_ready);
+  call_ =
+      transport.CreateStreamingCall(method, std::move(internal_event_handler));
 }
 
 Poll<StatusFlag> XdsStreamingCallPromiseWrapper::PollPushMessage() {
@@ -92,25 +92,20 @@ XdsStreamingCallPromiseWrapper::PollPullMessage() {
 Poll<absl::Status>
 XdsStreamingCallPromiseWrapper::PollPullServerTrailingMetadata() {
   if (recv_state_.load() != RecvState::kReceivedStatus) return Pending{};
-  return status_;
+  return std::move(status_);
 }
 
 void XdsStreamingCallPromiseWrapper::OnRequestSent(bool ok) {
-  bool send_half_close = false;
   if (!ok) {
     send_state_.store(SendState::kSendFailed);
   } else {
     SendState state = send_state_.load();
     if (state == SendState::kSendMessageInFlightAndHalfCloseRequested) {
       send_state_.store(SendState::kHalfCloseInFlight);
-      send_half_close = true;
+      call_->SendHalfClose();
     } else if (state == SendState::kSendMessageInFlight) {
       send_state_.store(SendState::kIdle);
     }
-  }
-  // Initiate half-close outside if requested while send was pending.
-  if (send_half_close && call_ != nullptr) {
-    call_->SendHalfClose();
   }
   // Wake any waiting send promise.
   send_message_waker_.Wakeup();
@@ -124,15 +119,12 @@ void XdsStreamingCallPromiseWrapper::OnRecvMessage(absl::string_view payload) {
 }
 
 void XdsStreamingCallPromiseWrapper::OnStatusReceived(absl::Status status) {
+  status_ = std::move(status);
   RecvState prev_state = recv_state_.exchange(RecvState::kReceivedStatus);
-  if (prev_state != RecvState::kReceivedStatus) {
-    status_ = std::move(status);
-    call_.reset();
-    if (prev_state == RecvState::kRecvMessageInFlight) {
-      recv_message_waker_.Wakeup();
-    }
-    recv_status_waker_.Wakeup();
+  if (prev_state == RecvState::kRecvMessageInFlight) {
+    recv_message_waker_.Wakeup();
   }
+  recv_status_waker_.Wakeup();
 }
 
 void XdsStreamingCallPromiseWrapper::SendHalfClose() {
@@ -146,16 +138,11 @@ void XdsStreamingCallPromiseWrapper::SendHalfClose() {
   expected = SendState::kIdle;
   if (send_state_.compare_exchange_strong(expected,
                                           SendState::kHalfCloseInFlight)) {
-    if (call_ != nullptr) call_->SendHalfClose();
+    call_->SendHalfClose();
   }
 }
 
 void XdsStreamingCallPromiseWrapper::Orphaned() {
-  send_state_.store(SendState::kSendFailed);
-  if (recv_state_.exchange(RecvState::kReceivedStatus) !=
-      RecvState::kReceivedStatus) {
-    status_ = absl::CancelledError("Stream closed");
-  }
   // Release the underlying streaming call.
   call_.reset();
 }

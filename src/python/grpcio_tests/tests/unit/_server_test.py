@@ -239,9 +239,15 @@ class ServerHandlerTest(unittest.TestCase):
         self._server = test_common.test_server()
         port = self._server.add_insecure_port("[::]:0")
         self._server.start()
-        self._server.add_registered_method_handlers(
-            _SERVICE_NAME, _REGISTERED_METHOD_HANDLERS
+        with self.assertLogs(level="WARNING") as cm:
+            self._server.add_registered_method_handlers(
+                _SERVICE_NAME, _REGISTERED_METHOD_HANDLERS
+            )
+        self.assertTrue(
+            any("Cannot register method handlers") in output
+            for output in cm.output
         )
+
         self._channel = grpc.insecure_channel("localhost:%d" % port)
 
         with self.assertRaises(grpc.RpcError) as exception_context:

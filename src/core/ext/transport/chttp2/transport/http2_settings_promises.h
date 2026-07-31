@@ -71,8 +71,7 @@ struct ApplySettingsResult {
   bool should_spawn_security_frame_loop = false;
 };
 
-// This class can only be used only from a promise based HTTP2 transports
-// general_party_ .
+// This class can only be used only from a promise based HTTP2 transports party.
 // This class is designed with the assumption that only 1 SETTINGS frame will be
 // in flight at a time. And we do not send a second SETTINGS frame till we
 // receive and process the SETTINGS ACK and resolve the ACK promise.

@@ -72,15 +72,15 @@ GrpcXdsBootstrapBuilder::Build(absl::string_view json_string) {
 namespace {
 
 Mutex* g_mu = new Mutex;
-NoDestruct<absl::AnyInvocable<std::unique_ptr<XdsHttpFilterFactory>()>>
-    g_http_filter_factory_factory ABSL_GUARDED_BY(*g_mu);
+NoDestruct<absl::AnyInvocable<void(XdsHttpFilterRegistry&)>>
+    g_http_filter_factory_test_init ABSL_GUARDED_BY(*g_mu);
 
 }  // namespace
 
-void GrpcXdsBootstrapBuilder::SetXdsHttpFilterFactoryForTest(
-    absl::AnyInvocable<std::unique_ptr<XdsHttpFilterFactory>()> factory) {
+void GrpcXdsBootstrapBuilder::SetXdsHttpFilterFactoryInitForTest(
+    absl::AnyInvocable<void(XdsHttpFilterRegistry&)> init) {
   MutexLock lock(g_mu);
-  *g_http_filter_factory_factory = std::move(factory);
+  *g_http_filter_factory_test_init = std::move(init);
 }
 
 XdsHttpFilterRegistry GrpcXdsBootstrapBuilder::CreateXdsHttpFilterRegistry(
@@ -101,8 +101,8 @@ XdsHttpFilterRegistry GrpcXdsBootstrapBuilder::CreateXdsHttpFilterRegistry(
       registry.RegisterFilter(std::make_unique<XdsHttpExtProcFilterFactory>());
     }
     MutexLock lock(g_mu);
-    if (*g_http_filter_factory_factory != nullptr) {
-      registry.RegisterFilter((*g_http_filter_factory_factory)());
+    if (*g_http_filter_factory_test_init != nullptr) {
+      (*g_http_filter_factory_test_init)(registry);
     }
   }
   return registry;

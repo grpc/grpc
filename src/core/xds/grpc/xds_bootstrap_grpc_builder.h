@@ -40,8 +40,8 @@ class GrpcXdsBootstrapBuilder final {
   static absl::StatusOr<std::unique_ptr<GrpcXdsBootstrap>> Build(
       absl::string_view json_string);
 
-  static void SetXdsHttpFilterFactoryForTest(
-      absl::AnyInvocable<std::unique_ptr<XdsHttpFilterFactory>()> factory);
+  static void SetXdsHttpFilterFactoryInitForTest(
+      absl::AnyInvocable<void(XdsHttpFilterRegistry&)> init);
 
   static XdsHttpFilterRegistry CreateXdsHttpFilterRegistry(
       bool register_builtins = true);

@@ -21,12 +21,9 @@
 
 #include <optional>
 #include <string>
-#include <utility>
 #include <variant>
 #include <vector>
 
-#include "envoy/config/core/v3/base.upb.h"
-#include "envoy/service/ext_proc/v3/external_processor.upb.h"
 #include "google/protobuf/struct.upb.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/util/matchers.h"
@@ -64,12 +61,6 @@ struct ExtProcProcessingMode {
 
   std::string ToString() const;
 };
-
-void PopulateMetadataBatchToHeaderMap(
-    grpc_metadata_batch& batch,
-    const std::vector<StringMatcher>& allowed_headers,
-    const std::vector<StringMatcher>& disallowed_headers, upb_Arena* arena,
-    envoy_config_core_v3_HeaderMap* header_map);
 
 // Creates a serialized envoy.service.ext_proc.v3.ProcessingRequest containing a
 // HttpHeaders message for client request headers.
