@@ -554,6 +554,9 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
     // A message send operation has been claimed and is currently in flight on
     // the underlying transport wrapper.
     kSendInFlight,
+    // A new message send attempt was requested while another message send was
+    // already in flight.
+    kSendMessageButMessageIsAlreadyInFlight,
     // The stream has been closed or terminated due to an error, preventing
     // subsequent sends.
     kSendFailed,
@@ -1103,59 +1106,55 @@ void ExtProcFilter::ExtProcCall::CompleteOutstandingProcessors(
 absl::AnyInvocable<Poll<absl::Status>()>
 ExtProcFilter::ExtProcCall::SendMessageToSideStream(
     absl::AnyInvocable<absl::StatusOr<std::string>()> payload_generator) {
-  return [this, ext_proc_call = Ref(),
-          payload_generator = std::move(payload_generator),
-          send_promise = absl::AnyInvocable<Poll<StatusFlag>()>()]() mutable
+  return [this, call = Ref(), payload_generator = std::move(payload_generator),
+          send_promise = absl::AnyInvocable<Poll<absl::Status>()>()]() mutable
              -> Poll<absl::Status> {
-    // On the initial poll, send_promise is nullptr. On subsequent polls while
-    // an inner send is in-flight on the underlying transport, send_promise is
-    // already initialized.
     if (send_promise == nullptr) {
-      SendState expected = SendState::kIdle;
-      if (!ext_proc_send_state_.compare_exchange_strong(
-              expected, SendState::kSendInFlight)) {
-        if (expected == SendState::kSendFailed) {
-          return GetStreamClosedStatus();
+      if (ext_proc_send_state_.load() == SendState::kSendFailed) {
+        return GetStreamClosedStatus();
+      }
+      if (ext_proc_send_state_.load() != SendState::kIdle) {
+        if (ext_proc_send_state_.load() == SendState::kSendInFlight) {
+          ext_proc_send_state_.store(
+              SendState::kSendMessageButMessageIsAlreadyInFlight);
         }
         ext_proc_send_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
         return Pending{};
       }
-      // Generate the protobuf payload.
-      auto payload = payload_generator();
-      if (!payload.ok()) {
-        ext_proc_send_state_.store(SendState::kIdle);
-        ext_proc_send_waker_.Wakeup();
-        return payload.status();
-      }
-      RefCountedPtr<XdsStreamingCallPromiseWrapper> streaming_call;
-      {
-        MutexLock lock(&mu_);
-        streaming_call = streaming_call_;
-      }
-      if (streaming_call == nullptr) {
-        ext_proc_send_state_.store(SendState::kIdle);
-        ext_proc_send_waker_.Wakeup();
-        return GetStreamClosedStatus();
-      }
-      // Start the send on the underlying transport wrapper.
-      send_promise = streaming_call->PushMessage(std::move(*payload));
+      ext_proc_send_state_.store(SendState::kSendInFlight);
+      send_promise = Seq(
+          [this, payload_generator = std::move(payload_generator),
+           streaming_call = RefCountedPtr<XdsStreamingCallPromiseWrapper>(),
+           push_promise = absl::AnyInvocable<Poll<StatusFlag>()>()]() mutable
+              -> Poll<StatusFlag> {
+            if (push_promise == nullptr) {
+              auto payload = payload_generator();
+              if (!payload.ok()) return StatusFlag(Failure());
+              {
+                MutexLock lock(&mu_);
+                streaming_call = streaming_call_;
+              }
+              if (streaming_call == nullptr) return StatusFlag(Failure());
+              push_promise = streaming_call->PushMessage(std::move(*payload));
+            }
+            return push_promise();
+          },
+          [this, call](StatusFlag status) -> ArenaPromise<absl::Status> {
+            if (status.ok()) {
+              ext_proc_send_state_.store(SendState::kIdle);
+              ext_proc_send_waker_.Wakeup();
+              return Immediate(absl::OkStatus());
+            }
+            ext_proc_send_state_.store(SendState::kSendFailed);
+            ext_proc_send_waker_.Wakeup();
+            return Seq(call->WaitForStreamStatus(),
+                       [call](absl::Status status) -> absl::Status {
+                         return call->GetStreamClosedStatus(
+                             absl::InternalError("Send failed"));
+                       });
+          });
     }
-    // Poll the in-flight send promise until it completes.
-    auto poll = send_promise();
-    if (poll.pending()) return Pending{};
-    // Send completed. Release the in-flight slot and wake any waiting sender.
-    ext_proc_send_state_.store(SendState::kIdle);
-    ext_proc_send_waker_.Wakeup();
-    // If the send failed, wait for the stream status from gRPC and evaluate
-    // fail-open.
-    if (!poll.value().ok()) {
-      if (ext_proc_call->WaitForStreamStatus()().pending()) {
-        return Pending{};
-      }
-      return ext_proc_call->GetStreamClosedStatus(
-          absl::InternalError("Send failed"));
-    }
-    return absl::OkStatus();
+    return send_promise();
   };
 }
 
