@@ -81,7 +81,9 @@ def _build(output_dir: str) -> None:
             ],
             cwd=output_dir,
         )
-        subprocess.check_call("make -j%d" % args.jobs, shell=True, cwd=output_dir)
+        subprocess.check_call(
+            "make -j%d" % args.jobs, shell=True, cwd=output_dir
+        )
     except Exception:
         _print_banner(f"BUILD END: {output_dir} FAILED", file=sys.stderr)
         raise
