@@ -637,14 +637,6 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
 
   bool IsStreamClosed() const { return PollStreamStatus().ready(); }
 
-  absl::Status GetStreamStatus() const {
-    auto poll = PollStreamStatus();
-    if (poll.ready()) {
-      return poll.value().value_or(absl::OkStatus());
-    }
-    return absl::OkStatus();
-  }
-
   void SetStreamStatus(absl::Status status) {
     if (!IsStreamClosed()) {
       stream_status_.Set(status);
@@ -691,7 +683,6 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
     }
     SetStreamStatus(status);
     CompleteOutstandingProcessors(status);
-    CloseStream();
   }
 
   void CloseStream() {
@@ -1224,7 +1215,6 @@ ExtProcFilter::ExtProcCall::ServerToClientCall() {
         if (self->child_call_started_) {
           self->initiator_.SpawnCancel();
         }
-        self->CloseStream();
       }
       return *status;
     }
@@ -1482,7 +1472,7 @@ absl::AnyInvocable<Poll<absl::Status>()>
 ExtProcFilter::ExtProcCall::ServerInitialMetadataProcessor::NonProcessingMode(
     ServerMetadataHandle metadata) {
   if (call_->IsStreamFailureFatal()) {
-    return Immediate(call_->GetStreamStatus());
+    return Immediate(call_->GetStreamClosedStatus());
   }
   GRPC_TRACE_LOG(ext_proc_filter, INFO)
       << "ExtProc: ServerInitialMetadataNonProcessingMode metadata: "
@@ -1513,7 +1503,7 @@ ExtProcFilter::ExtProcCall::ServerInitialMetadataProcessor::NormalMode(
     return Immediate(status);
   }
   if (!call_->IsFailOpenAllowed() && call_->IsStreamClosed()) {
-    return Immediate(call_->GetStreamStatus());
+    return Immediate(call_->GetStreamClosedStatus());
   }
   call_->ext_proc_filter_->RecordServerHeadersDuration(
       (Timestamp::Now() - start_time).seconds());
@@ -1571,7 +1561,7 @@ absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ExtProcCall::
 absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ExtProcCall::
     ServerTrailingMetadataProcessor::ProcessFromServerToExtProcServer() {
   if (call_->IsStreamFailureFatal()) {
-    return Immediate(call_->GetStreamStatus());
+    return Immediate(call_->GetStreamClosedStatus());
   }
   return ProcessTrailingMetadata(call_->is_trailers_only_);
 }
@@ -1752,7 +1742,7 @@ absl::Status
 ExtProcFilter::ExtProcCall::ServerMessageProcessor::PassThroughServerMessage(
     MessageHandle message) {
   if (call_->IsStreamFailureFatal()) {
-    return call_->GetStreamStatus();
+    return call_->GetStreamClosedStatus();
   }
   call_->handler_.SpawnPushMessage(std::move(message));
   return absl::OkStatus();
@@ -2121,7 +2111,7 @@ ExtProcFilter::ExtProcCall::ClientMessageProcessor::NormalModeSendOnly(
                [call, message = std::move(message)](
                    absl::Status status) mutable -> absl::Status {
                  if (!status.ok() && call->IsStreamFailureFatal()) {
-                   return call->GetStreamStatus();
+                   return call->GetStreamClosedStatus();
                  }
                  if (message != nullptr) {
                    call->initiator_.SpawnPushMessage(std::move(message));
