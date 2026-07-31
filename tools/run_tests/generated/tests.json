@@ -3562,7 +3562,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "filter_test_test",
+    "name": "filter_test_v2_test",
     "platforms": [
       "linux",
       "mac",

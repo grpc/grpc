@@ -1509,7 +1509,7 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_cxx file_watcher_certificate_provider_factory_test)
   add_dependencies(buildtests_cxx filter_fusion_test)
-  add_dependencies(buildtests_cxx filter_test_test)
+  add_dependencies(buildtests_cxx filter_test_v2_test)
   add_dependencies(buildtests_cxx flaky_network_test)
   add_dependencies(buildtests_cxx flow_control_manager_test)
   add_dependencies(buildtests_cxx flow_control_test)
@@ -12527,7 +12527,7 @@ add_executable(client_auth_filter_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/filters/client_auth_filter_test.cc
-  test/core/filters/filter_test.cc
+  test/core/filters/filter_test_v2.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -12577,7 +12577,7 @@ add_executable(client_authority_filter_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/filters/client_authority_filter_test.cc
-  test/core/filters/filter_test.cc
+  test/core/filters/filter_test_v2.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -18628,27 +18628,27 @@ target_link_libraries(filter_fusion_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(filter_test_test
+add_executable(filter_test_v2_test
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  test/core/filters/filter_test.cc
-  test/core/filters/filter_test_test.cc
+  test/core/filters/filter_test_v2.cc
+  test/core/filters/filter_test_v2_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
-    target_compile_definitions(filter_test_test
+    target_compile_definitions(filter_test_v2_test
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
     )
   endif()
 endif()
-target_compile_features(filter_test_test PUBLIC cxx_std_17)
-target_include_directories(filter_test_test
+target_compile_features(filter_test_v2_test PUBLIC cxx_std_17)
+target_include_directories(filter_test_v2_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -18667,7 +18667,7 @@ target_include_directories(filter_test_test
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(filter_test_test
+target_link_libraries(filter_test_v2_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_unsecure
@@ -19548,7 +19548,7 @@ add_executable(gcp_authentication_filter_test
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  test/core/filters/filter_test.cc
+  test/core/filters/filter_test_v2.cc
   test/core/filters/gcp_authentication_filter_test.cc
 )
 if(WIN32 AND MSVC)
