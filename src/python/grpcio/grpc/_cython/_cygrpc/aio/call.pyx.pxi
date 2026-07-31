@@ -184,9 +184,10 @@ cdef class _AioCall(GrpcCallWrapper):
                 waiter.set_result(None)
         self._waiters_status = []
 
-        for callback in self._done_callbacks:
-            callback()
+        callbacks = self._done_callbacks
         self._done_callbacks = []
+        for callback in callbacks:
+            callback()
 
     cdef void _set_initial_metadata(self, tuple initial_metadata) except *:
         if self._initial_metadata is not None:
