@@ -1,9 +1,58 @@
+# Build artifacts & compilation outputs
 bazel-*
 build
-.cache
-.git
+.build/
+bins/
+libs/
+objs/
+gens/
+out/
 dist
+cmake-build-*/
+artifacts/
+
+# System & generic cache
+.cache
+
+# Git metadata
+.git
+
+# Python virtual environments, build artifacts & bytecode
 pyb
-# python virtual environments
 **/.venv*
-*virtual_environment/
+**/*venv*/
+**/*virtual_environment*/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.pytype/
+.coverage*
+.mypy_cache/
+.ruff_cache/
+.eggs/
+*.egg-info/
+
+# Node & Package Manager Dependencies
+node_modules/
+Pods/
+DerivedData/
+
+# Editor & OS metadata
+.DS_Store
+Thumbs.db
+._*
+.idea/
+.vscode/
+.history/
+*.swp
+*.swo
+*~
+
+# Logs & Debug outputs
+*.log
+gdb.txt
+portlog.txt
+perf.data*
+
+# Environment & Secrets safeguard
+.env*
