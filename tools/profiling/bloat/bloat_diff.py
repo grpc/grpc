@@ -62,7 +62,7 @@ def _print_banner(
         file = sys.stdout
     sys.stdout.flush()
     sys.stderr.flush()
-    padded_msg = f" ### {msg} ### "
+    padded_msg = f" {msg} "
     width = max(max_width, len(padded_msg) + 20)
     print(f"\n{padded_msg:#^{width}}", file=file, flush=True)
 
