@@ -19,7 +19,7 @@ Adhere strictly to the [Google Python Style Guide](https://raw.githubusercontent
 
 *   **Mandatory Tool Execution**: Strictly execute configured formatters, linters, and type checkers (e.g., `black`, `ruff`, `pyright`, `isort`) on modified Python source files prior to committing or finalizing changes.
 *   **Line Limits & Indentation**: Enforce 80-character line length limit and use 4 spaces per indentation level.
-*   **Virtual Environment Tool Execution**: Prefer direct binary invocation (`./.venv/bin/<tool>`) over global paths or `npx`; avoid subshell chaining (`source .venv/bin/activate`).
+*   **Virtual Environment Tool Execution**: Prefer direct binary invocation (`./.venv/bin/<tool>`) over global paths; avoid subshell chaining (`source .venv/bin/activate`).
 *   **Package Management**: Prefer `uv pip` over `./.venv/bin/pip` if `uv` is used or available.
 *   **Tool Fallback Strategy**: Verify binary exists in `.venv/bin/` before execution; fallback to global `which <tool>` if absent.
 *   **Tool Installation**: Prompt user to install needed tools using `VIRTUAL_ENV=.venv uv pip install <tool>==<version>`.

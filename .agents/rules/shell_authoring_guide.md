@@ -21,7 +21,7 @@ Adhere strictly to the [Google Shell Style Guide](https://raw.githubusercontent.
 ## 2. Environment & Stream Redirection
 
 *   **Error Stream Routing**: Route error and status messages exclusively to `STDERR` (`err() { echo "[$(date +'%Y-%m-%dT%H:%M:%S%z')]: $*" >&2; }`).
-*   **Combined Redirection & Piping (`&>` and `|&`)**: Mandate `&>` over `> file 2>&1` or `> /dev/null 2>&1` (`cmd &> file`, `cmd &> /dev/null`) and `|&` over `2>&1 |` (`cmd1 |& cmd2`) when redirecting or piping stdout and stderr together in Bash scripts. Prohibit explicit fd duplication (`2>&1`). Single-stream redirections (e.g., `2>/dev/null`) remain unaffected.
+*   **Combined Redirection & Piping (`&>` and `|&`)**: Prefer `&>` over `> file 2>&1` or `> /dev/null 2>&1` (`cmd &> file`, `cmd &> /dev/null`) and `|&` over `2>&1 |` (`cmd1 |& cmd2`) when redirecting or piping stdout and stderr together in Bash scripts. Avoid explicit fd duplication (`2>&1`) unless required for specific ordering or command substitution capturing. Single-stream redirections (e.g., `2>/dev/null`) remain unaffected.
 *   **Quoted Here-Document Delimiters**: Enforce quoted here-doc delimiters (`<<'EOF'`) when emitting or generating scripts containing literal shell variables to prevent unintended expansion.
 
 ## 3. Code Formatting & Control Flow Syntax
@@ -41,7 +41,7 @@ Adhere strictly to the [Google Shell Style Guide](https://raw.githubusercontent.
 ## 5. Shell Features, Tests & `set -e` Traps
 
 *   **Mandatory ShellCheck**: Verify scripts with `shellcheck` to catch syntax defects, security risks, and portability warnings prior to finalizing changes.
-*   **`set -e` Arithmetic Safety**: Prohibit standalone post-increments (`(( i++ ))`) or zero-evaluating arithmetic expressions under `set -e`; use explicit assignment (`(( i += 1 ))` or `i=$(( i + 1 ))`).
+*   **`set -e` Arithmetic Safety**: Avoid standalone `(( ... ))` statements, especially with `set -e`; use standard assignment `i=$(( i + 1 ))` or append `|| true` to prevent zero-evaluation exits.
 *   **Conditional Evaluation & RHS Patterns**: Prefer `[[ ... ]]` over `[ ... ]` or `test`. Enforce explicit `-z` / `-n` string tests, `==` equality, and `(( ... ))` for numeric checks. Leave RHS unquoted for regex/glob matching (`[[ $v =~ ^[0-9]+$ ]]`, `[[ $v == f* ]]`); prohibit quoting RHS unless matching literal string.
 *   **Wildcard Filename Expansion**: Enforce explicit relative path prefixes (`./*`) during wildcard expansion to prevent hyphenated filenames from parsing as options.
 *   **Prohibit `eval` & Aliases**: Prohibit `eval` and script aliases; use functions and arrays exclusively.
