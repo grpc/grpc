@@ -48,11 +48,13 @@
 # TODO(sergiitk): update all references below to produce standard `.venv-*`
 # User virtualenv dirs (src/python/CONTRIBUTING.md -> ~/.virtualenvs/)
 **/.virtualenv*/
-# Legacy venv directory names (build_artifact_python.sh, build_python.sh -> venv/)
+# Legacy venv directory names
+# (build_artifact_python.sh, build_python.sh -> venv/)
 **/venv/
 # Script virtualenvs (tools/distrib/python/docgen.py -> distrib_virtualenv/)
 **/*_virtualenv/
-# Bazel format virtualenv (tools/distrib/format_bazel.sh -> bazel_format_virtual_environment/)
+# Bazel format virtualenv
+# (tools/distrib/format_bazel.sh -> bazel_format_virtual_environment/)
 **/*_virtual_environment/
 
 ## Bytecode & Caches
