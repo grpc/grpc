@@ -9,6 +9,8 @@ globs: "*.sh, *.bash"
 
 Adhere strictly to the [Google Shell Style Guide](https://raw.githubusercontent.com/google/styleguide/refs/heads/gh-pages/shellguide.md) when authoring or modifying shell script files (*.sh, *.bash); does NOT apply to inline terminal execution commands run directly by the agent:
 
+*   **Consistency**: Stay consistent with existing code style and conventions in the file being modified.
+
 ## 1. Executable Shells & Interpreter Invocation
 
 *   **Executable Interpreter**: Prefer `#!/usr/bin/env bash` over fixed path `#!/bin/bash` for new executable scripts; preserve existing shebangs in modified files. Set execution flags in-body (`set -euo pipefail`).
@@ -56,7 +58,7 @@ Adhere strictly to the [Google Shell Style Guide](https://raw.githubusercontent.
 ## 7. Naming Conventions & Functions
 
 *   **Naming Conventions**: Enforce snake_case for functions and variables (`my_func`, `my_var`); use `::` for package namespaces (`pkg::my_func`).
-*   **Function Syntax & Docstrings**: Place opening brace on declaration line without space (`func() {`). Write header comments documenting `Globals:`, `Arguments:`, `Outputs:`, and `Returns:`.
+*   **Function Syntax & Docstrings**: Place opening brace on declaration line without space (`func() {`). Write header comments explicitly documenting `Globals:`, `Arguments:`, `Outputs:`, and `Returns:`.
 *   **Script Main Entry Point**: Encapsulate executable script logic in a `main` function placed as the final function; conclude file with `main "$@"`.
 *   **Return Code Verification**: Verify command exit status (`if ! cmd; then`, `(( $? == 0 ))`). Inspect `PIPESTATUS` for pipeline stages (`return_codes=("${PIPESTATUS[@]}")`).
 
