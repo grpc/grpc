@@ -24,9 +24,11 @@
 **/gens/
 **/out/
 **/dist/
+**/obj/
+/src/csharp/**/bin/
 
 ## CMake / CLion IDE Build Directories
-/cmake-build-*/
+**/cmake-build-*/
 **/DerivedData/
 
 ## Generated Build Output Packages (task_runner.py -f artifact -> /artifacts/)
@@ -60,10 +62,12 @@
 **/.pytype/
 **/.mypy_cache/
 **/.ruff_cache/
+**/.tox/
 
 ## Test Coverage Data
 **/.coverage
 **/.coverage.*
+**/htmlcov/
 
 ## Build Artifacts & Packages
 /src/python/*/build/
@@ -78,6 +82,7 @@
 # ==============================================================================
 
 **/.git
+**/.github/
 
 ## Environment & Secrets Safeguards
 **/.env*
@@ -98,6 +103,7 @@
 **/._*
 **/.idea/
 **/.vscode/
+**/.vs/
 **/.history/
 
 # Vim swap files (*.sw?) and Emacs auto-save (/#*#) / lock files (/.#*)
