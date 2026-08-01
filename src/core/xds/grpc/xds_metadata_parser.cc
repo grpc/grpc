@@ -23,10 +23,10 @@
 #include "envoy/config/core/v3/address.upbdefs.h"
 #include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb.h"
 #include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.h"
+#include "src/core/config/experiment_env_var.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/validation_errors.h"
-#include "src/core/xds/grpc/xds_cluster_parser.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "upb/base/string_view.h"
@@ -38,6 +38,11 @@
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
+
+// TODO(roth): Remove this once the feature passes interop tests.
+bool XdsHttpConnectEnabled() {
+  return IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_HTTP_CONNECT");
+}
 
 namespace {
 

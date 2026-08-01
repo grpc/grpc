@@ -923,8 +923,7 @@ void OldSubchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
                   "remaining in TRANSIENT_FAILURE"
                 : ", backing off for " +
                       std::to_string(time_until_next_attempt.millis()) + " ms");
-    SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
-                               grpc_error_to_absl_status(error));
+    SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE, error);
     if (created_from_endpoint_) return;
     retry_timer_handle_ = event_engine_->RunAfter(
         time_until_next_attempt,
@@ -2190,7 +2189,7 @@ void NewSubchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
             }
           });
     }
-    SetLastFailureLocked(grpc_error_to_absl_status(error));
+    SetLastFailureLocked(error);
     MaybeUpdateConnectivityStateLocked();
   }
 }

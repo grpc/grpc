@@ -120,6 +120,22 @@
     before the request is cancelled */
 #define GRPC_ARG_SERVER_MAX_UNREQUESTED_TIME_IN_SERVER_SECONDS \
   "grpc.server_max_unrequested_time_in_server"
+/** The soft limit on the number of pending requests in the server. Int valued.
+ *  If the number of pending queued requests exceeds this soft limit, then the
+ *  server will start to probabilistically reject new incoming requests up until
+ *  the hard limit. Defaults to 1000.
+ *  Note: It is not recommended to change this value unless the operational
+ *  implications are fully understood.
+ */
+#define GRPC_ARG_SERVER_MAX_PENDING_REQUESTS "grpc.server.max_pending_requests"
+/** The hard limit on the number of pending requests in the server. Int valued.
+ *  If the number of pending queued requests reaches this hard limit, all new
+ *  incoming requests will be rejected. Defaults to 3000.
+ *  Note: It is not recommended to change this value unless the operational
+ *  implications are fully understood.
+ */
+#define GRPC_ARG_SERVER_MAX_PENDING_REQUESTS_HARD_LIMIT \
+  "grpc.server.max_pending_requests_hard_limit"
 /** Channel arg to override the http2 :scheme header. String valued. */
 #define GRPC_ARG_HTTP2_SCHEME "grpc.http2_scheme"
 /** How many pings can the client send before needing to send a data/header
@@ -270,6 +286,15 @@
   "grpc.experimental.tcp_min_read_chunk_size"
 #define GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE \
   "grpc.experimental.tcp_max_read_chunk_size"
+/** Channel arg (integer) setting an opt-in upper bound, in bytes, on the
+   adaptive read buffer size that a single TCP endpoint may preallocate for
+   reads. When unset (the default) the read buffer target grows as before,
+   preserving historical behavior. When set, the adaptive read target is
+   clamped to this value so occasional large reads do not leave a permanently
+   high read-buffer high-watermark. Unlike GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE,
+   this does not change per-socket slice sizing. **/
+#define GRPC_ARG_TCP_MAX_READ_BUFFER_SIZE \
+  "grpc.experimental.tcp_max_read_buffer_size"
 /* TCP TX Zerocopy enable state: zero is disabled, non-zero is enabled. By
    default, it is disabled. */
 #define GRPC_ARG_TCP_TX_ZEROCOPY_ENABLED \

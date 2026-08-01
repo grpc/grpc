@@ -55,7 +55,6 @@ void increment_time(const int seconds = 30) {
 class BdpEstimatorTest : public ::testing::Test {
  public:
   void AddSamples(int64_t* samples, size_t n) {
-    est.AddIncomingBytes(/*num_bytes=*/1234567);
     increment_time();
     est.SchedulePing();
     est.StartPing();
@@ -248,6 +247,7 @@ TEST_F(BdpEstimatorTest, InterPingDelayCap) {
   // Verify the final delay has not exceeded kMaxInterPingDelaySeconds + 200ms
   // jitter.
   const Duration delay = next_time - Timestamp::Now();
+  EXPECT_GE(delay, Duration::Seconds(kMaxInterPingDelaySeconds));
   EXPECT_LE(delay, Duration::Seconds(kMaxInterPingDelaySeconds) +
                        Duration::Milliseconds(200));
 }

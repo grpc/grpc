@@ -23,6 +23,7 @@
 #include <inttypes.h>
 #include <string.h>
 
+#include <cmath>
 #include <memory>
 #include <optional>
 #include <set>
@@ -32,6 +33,7 @@
 #include <vector>
 
 #include "src/core/config/core_configuration.h"
+#include "src/core/config/experiment_env_var.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -538,8 +540,33 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
       // Shuffle the list if needed.
       auto config = static_cast<PickFirstConfig*>(args.config.get());
       if (config->shuffle_addresses()) {
-        SharedBitGen g;
-        absl::c_shuffle(endpoints, g);
+        if (PfWeightedShufflingEnabled()) {
+          struct WeightedEndpoint {
+            EndpointAddresses endpoint;
+            double key;
+          };
+          std::vector<WeightedEndpoint> weighted_endpoints;
+          weighted_endpoints.reserve(endpoints.size());
+          SharedBitGen g;
+          for (auto& endpoint : endpoints) {
+            double e = absl::Exponential<double>(g);
+            int weight_arg =
+                endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
+            double weight = weight_arg <= 0 ? 1.0 : weight_arg;
+            double key = (weight == 1.0) ? e : (e / weight);
+            weighted_endpoints.push_back({std::move(endpoint), key});
+          }
+          std::sort(weighted_endpoints.begin(), weighted_endpoints.end(),
+                    [](const WeightedEndpoint& a, const WeightedEndpoint& b) {
+                      return a.key < b.key;
+                    });
+          for (size_t i = 0; i < weighted_endpoints.size(); ++i) {
+            endpoints[i] = std::move(weighted_endpoints[i].endpoint);
+          }
+        } else {
+          SharedBitGen g;
+          absl::c_shuffle(endpoints, g);
+        }
       }
       // Flatten the list so that we have one address per endpoint.
       // While we're iterating, also determine the desired address family
@@ -1158,6 +1185,10 @@ class PickFirstFactory final : public LoadBalancingPolicyFactory {
 };
 
 }  // namespace
+
+bool PfWeightedShufflingEnabled() {
+  return IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_PF_WEIGHTED_SHUFFLING");
+}
 
 void RegisterPickFirstLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(

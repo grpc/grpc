@@ -64,8 +64,16 @@ absl::StatusOr<RefCountedPtr<CompositeFilter>> CompositeFilter::Create(
     return absl::InternalError("composite filter config has wrong type");
   }
   auto config = filter_args.config().TakeAsSubclass<const Config>();
-  return MakeRefCounted<CompositeFilter>(args, std::move(config),
-                                         std::move(filter_args));
+  return MakeRefCounted<CompositeFilter>(args, std::move(config));
+}
+
+CompositeFilter::CompositeFilter(const ChannelArgs& args,
+                                 RefCountedPtr<const Config> config)
+    : V3InterceptorToV2Bridge<CompositeFilter>(args),
+      config_(std::move(config)) {
+  if (!args.GetBool(GRPC_ARG_USE_V3_STACK).value_or(false)) {
+    Init(args);
+  }
 }
 
 namespace {
@@ -92,12 +100,11 @@ class InterceptionChainBuilderWrapper final : public FilterChainBuilder {
 
 }  // namespace
 
-CompositeFilter::CompositeFilter(const ChannelArgs& args,
-                                 RefCountedPtr<const Config> config,
-                                 ChannelFilter::Args filter_args)
-    : config_(std::move(config)) {
+void CompositeFilter::Init(const ChannelArgs& args) {
   if (config_->matcher == nullptr) return;
   // Populate filter_chain_map_ from config_.
+  const bool is_server =
+      args.GetBool(GRPC_ARG_IS_SERVER_FILTER_STACK).value_or(false);
   config_->matcher->ForEachAction([&](const XdsMatcher::Action& action) {
     if (action.type() != ExecuteFilterAction::Type()) return;
     const auto& execute_filter_action =
@@ -110,31 +117,36 @@ CompositeFilter::CompositeFilter(const ChannelArgs& args,
     InterceptionChainBuilder builder(args);
     InterceptionChainBuilderWrapper builder_wrapper(builder);
     for (size_t i = 0; i < merged_configs.size(); ++i) {
-      const auto* filter_impl =
-          execute_filter_action.filter_chain()[i].filter_impl;
+      const auto* factory = execute_filter_action.filter_chain()[i].factory;
       const auto& filter_config = merged_configs[i];
-      // TODO(roth): Currently, this code assumes that it is always
-      // running on the client side, so we'll need to remove this
-      // assumption in order to make this filter work on the server
-      // side.  There are two ways we might do this:
-      // 1. If we finish the v3 migration before we need to support this
-      //    filter on the server side, then any filter impl will
-      //    automatically work fine on both the client and server side,
-      //    in which case this problem will go away, and we can remove
-      //    the IsSupportedOnClients() and IsSupportedOnServers()
-      //    methods from the xDS HTTP filter API.
-      // 2. If we need to support this filter on the server side before
-      //    we finish the v3 migration, then we'll need to add an
-      //    is_client parameter to the xDS HTTP filter AddFilter()
-      //    method, and use that to do this initialization differently
-      //    on client side vs. server side.
-      if (!filter_impl->IsSupportedOnClients()) {
-        filter_chain_map_[&execute_filter_action] = absl::UnavailableError(
-            absl::StrCat(filter_impl->ConfigProtoName(),
-                         " filter not supported on clients"));
-        return;
+      // If a filter is not supported on the client or server side
+      // (whichever one we're constructing a filter stack for), then we
+      // need to fail filter chain construction.  This means that any
+      // RPC that uses that filter chain will fail.
+      //
+      // Ideally, we would catch this case at xDS resource validation
+      // time, so that we can reject the invalid update instead of
+      // failing RPCs.  Unfortunately, the composite filter config can
+      // be overridden in an RDS resource, and we don't know at RDS
+      // resource validation time whether the RDS resource will be used
+      // on the client side or server side, so we can't always catch the
+      // problem at resource validation time.
+      if (is_server) {
+        if (!factory->IsSupportedOnServers()) {
+          filter_chain_map_[&execute_filter_action] = absl::UnavailableError(
+              absl::StrCat(factory->ConfigProtoName(),
+                           " filter not supported on servers"));
+          return;
+        }
+      } else {
+        if (!factory->IsSupportedOnClients()) {
+          filter_chain_map_[&execute_filter_action] = absl::UnavailableError(
+              absl::StrCat(factory->ConfigProtoName(),
+                           " filter not supported on clients"));
+          return;
+        }
       }
-      filter_impl->AddFilter(builder_wrapper, filter_config);
+      factory->AddFilter(builder_wrapper, filter_config);
     }
     filter_chain_map_[&execute_filter_action] =
         builder.Build(wrapped_destination());
@@ -152,7 +164,7 @@ void CompositeFilter::InterceptCall(
             handler.PullClientInitialMetadata(),
             [handler, self](ClientMetadataHandle metadata) {
               if (self->config_->matcher == nullptr) {
-                GRPC_TRACE_LOG(channel, INFO)
+                GRPC_TRACE_LOG(composite_filter, INFO)
                     << "[composite " << self.get()
                     << "]: no matcher configured, starting child call";
                 CallInitiator initiator = self->MakeChildCall(
@@ -177,7 +189,7 @@ void CompositeFilter::InterceptCall(
               // call to the next filter without sending it
               // through any child filter chain.
               if (action->type() == SkipFilterAction::Type()) {
-                GRPC_TRACE_LOG(channel, INFO)
+                GRPC_TRACE_LOG(composite_filter, INFO)
                     << "[composite " << self.get()
                     << "]: found SkipFilter, starting child call";
                 CallInitiator initiator = self->MakeChildCall(
@@ -201,7 +213,7 @@ void CompositeFilter::InterceptCall(
                 bool sampled =
                     random_value < execute_filter_action.sample_per_million();
                 if (!sampled) {
-                  GRPC_TRACE_LOG(channel, INFO)
+                  GRPC_TRACE_LOG(composite_filter, INFO)
                       << "[composite " << self.get()
                       << "]: not sampled, starting child call";
                   CallInitiator initiator = self->MakeChildCall(
@@ -215,7 +227,7 @@ void CompositeFilter::InterceptCall(
               if (it == self->filter_chain_map_.end()) {
                 return absl::InternalError("no filter chain found for action");
               }
-              GRPC_TRACE_LOG(channel, INFO)
+              GRPC_TRACE_LOG(composite_filter, INFO)
                   << "[composite " << self.get()
                   << "]: starting call on filter chain";
               auto& unstarted_destination = it->second;

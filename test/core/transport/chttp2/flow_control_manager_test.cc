@@ -120,7 +120,7 @@ TEST(FlowControlManagerTest, ActOnFlowControlActionSettingsNoAction) {
 
 TEST(FlowControlManagerTest, GetStreamFlowControlTokens) {
   chttp2::TransportFlowControl transport_flow_control(
-      /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
   chttp2::StreamFlowControl stream_flow_control(&transport_flow_control);
   Http2Settings peer_settings;
@@ -163,7 +163,7 @@ TEST(FlowControlManagerTest, GetStreamFlowControlTokens) {
 
 TEST(FlowControlManagerTest, GetMaxPermittedDequeue) {
   chttp2::TransportFlowControl transport_flow_control(
-      /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
   chttp2::StreamFlowControl stream_flow_control(&transport_flow_control);
   Http2Settings peer_settings;  // The defaults are fine for our tests.
