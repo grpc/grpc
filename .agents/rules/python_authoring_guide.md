@@ -18,7 +18,7 @@ Adhere strictly to the [Google Python Style Guide](https://raw.githubusercontent
 ## 2. Code Formatting, Linting & Static Analysis
 
 *   **Mandatory Tool Execution**: Strictly execute configured formatters, linters, and type checkers (e.g., `black`, `ruff`, `pyright`, `isort`) on modified Python source files prior to committing or finalizing changes.
-*   **Line Limits & Indentation**: Enforce 80-character line length limit and use 4 spaces per indentation level.
+*   **Line Limits & Indentation**: Enforce 80-character line length limit and use 4 spaces per indentation level. Exemptions include long import statements, URLs/paths in comments, and module-level constants.
 *   **Virtual Environment Tool Execution**: Prefer direct binary invocation (`./.venv/bin/<tool>`) over global paths; avoid subshell chaining (`source .venv/bin/activate`).
 *   **Package Management**: Prefer `uv pip` over `./.venv/bin/pip` if `uv` is used or available.
 *   **Tool Fallback Strategy**: Verify binary exists in `.venv/bin/` before execution; fallback to global `which <tool>` if absent.
@@ -34,7 +34,7 @@ Adhere strictly to the [Google Python Style Guide](https://raw.githubusercontent
 
 ## 4. Type Annotations & Parameter Defaults
 
-*   **Modern Specific Type Annotations**: Prefer native PEP 604 unions and built-in generic collections (`str | None`, `list[str]`, `dict[str, int]`) over generic `object` or legacy typing constructs (`Optional[str]`, `List[str]`).
+*   **Modern Specific Type Annotations**: Prefer native PEP 604 unions and built-in generic collections (`str | None`, `list[str]`, `dict[str, int]`) over generic `object` or legacy typing constructs (`Optional[str]`, `List[str]`). Prefer abstract container types (`Sequence`, `Iterable`, `Mapping`) over concrete ones (`list`, `dict`) for function parameters.
 *   **Immutable Static Defaults**: Prohibit binding mutable containers (`{}`, `[]`) as static parameter defaults; strictly assign `None` with lazy in-body initialization (`if items is None: items = []`).
 *   **Dynamic Runtime Stream Binding**: Prohibit binding system stream attributes (`sys.stdout`, `sys.stderr`) as static parameter defaults; strictly assign `None` and resolve stream objects dynamically inside function bodies.
 
