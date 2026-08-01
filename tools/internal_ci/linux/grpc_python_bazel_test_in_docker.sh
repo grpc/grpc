@@ -15,13 +15,13 @@
 
 # TODO(sergiitk): why are we not executing it on RBE?
 
-PS4='+ [$(date "+%H:%M:%S %Z") ${BASH_SOURCE[0]}]\011 '
+PS4='+ [\D{%H:%M:%S %Z} ${BASH_SOURCE[0]}]\011 '
 set -ex
 
 # Needed for upload_rbe_results.py big_query_utils called by bazel_report_helper.py
 # TODO(sergiitk): move to the main bazel image, similar to bazel_arm64
 if [[ "${UPLOAD_TEST_RESULTS}" == "true" ]]; then
-  python3 -m pip install --user google-api-python-client oauth2client
+  python3 -m pip install --user google-api-python-client==2.116.0 oauth2client==4.1.3
 fi
 
 RESULTSTORE_RESULTS_FLAG="--bazelrc=tools/remote_build/include/test_locally_with_resultstore_results.bazelrc"
