@@ -158,6 +158,7 @@ class CallState {
       case ClientToServerPullState::kTerminated:
         return "Terminated";
     }
+    GPR_UNREACHABLE_CODE(return "Unknown");
   }
   template <typename Sink>
   friend void AbslStringify(Sink& out, ClientToServerPullState state) {
@@ -188,6 +189,7 @@ class CallState {
       case ClientToServerPushState::kFinished:
         return "Finished";
     }
+    GPR_UNREACHABLE_CODE(return "Unknown");
   }
   template <typename Sink>
   friend void AbslStringify(Sink& out, ClientToServerPushState state) {
@@ -241,6 +243,7 @@ class CallState {
       case ServerToClientPullState::kTerminated:
         return "Terminated";
     }
+    GPR_UNREACHABLE_CODE(return "Unknown");
   }
   template <typename Sink>
   friend void AbslStringify(Sink& out, ServerToClientPullState state) {
@@ -281,6 +284,7 @@ class CallState {
       case ServerToClientPushState::kFinished:
         return "Finished";
     }
+    GPR_UNREACHABLE_CODE(return "Unknown");
   }
   template <typename Sink>
   friend void AbslStringify(Sink& out, ServerToClientPushState state) {
@@ -311,6 +315,7 @@ class CallState {
       case ServerTrailingMetadataState::kPulledCancel:
         return "PulledCancel";
     }
+    GPR_UNREACHABLE_CODE(return "Unknown");
   }
   template <typename Sink>
   friend void AbslStringify(Sink& out, ServerTrailingMetadataState state) {

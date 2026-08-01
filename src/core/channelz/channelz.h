@@ -183,6 +183,7 @@ class BaseNode : public DualRefCounted<BaseNode> {
       case EntityType::kMetricsDomainStorage:
         return "metrics_domain_storage";
     }
+    GPR_UNREACHABLE_CODE(return "unknown");
   }
 
   static std::optional<EntityType> KindToEntityType(absl::string_view kind) {

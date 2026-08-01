@@ -307,6 +307,7 @@ class InterActivityMutex {
         case State::kMovedFrom:
           LOG(FATAL) << "Mutex acquirer already moved from";
       }
+      GPR_UNREACHABLE_CODE(return Pending{});
     }
 
    private:
