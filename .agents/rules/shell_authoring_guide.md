@@ -29,7 +29,7 @@ Adhere strictly to the [Google Shell Style Guide](https://raw.githubusercontent.
 ## 3. Code Formatting & Control Flow Syntax
 
 *   **Indentation & Line Limits**: Indent 2 spaces with no tabs (except `<<-` here-docs). Enforce 80-character line length limit; use here-docs or embedded newlines for long strings.
-*   **Pipeline Splitting**: Fit short pipelines on one line; split long pipelines one segment per line with trailing line continuation `\` and 2-space indented pipes (`command1 \\\n  | command2`).
+*   **Pipeline Splitting**: Fit short pipelines on one line; split long pipelines one segment per line. Prefer placing operators (`|`, `||`, `&&`) at the end of the line (automatic continuation) over trailing backslash `\` continuation. Both styles are acceptable.
 *   **Control Flow Formatting**: Place `; then` and `; do` on the same line as header (`if`, `for`, `while`, `until`, `select`). Keep `else`, `fi`, and `done` on dedicated lines. Explicitly iterate positional parameters (`for arg in "$@"; do`).
 *   **Case Statement Formatting**: Indent patterns by 2 spaces and actions by 4 spaces. Prohibit leading pattern parenthesis `(` and fallthrough operators (`;&`, `;;&`).
 
