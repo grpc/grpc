@@ -20,7 +20,9 @@ set -ex
 
 # Needed for upload_rbe_results.py big_query_utils called by bazel_report_helper.py
 # TODO(sergiitk): move to the main bazel image, similar to bazel_arm64
-python3 -m pip install --user google-api-python-client oauth2client
+if [[ "${UPLOAD_TEST_RESULTS}" == "true" ]]; then
+  python3 -m pip install --user google-api-python-client oauth2client
+fi
 
 RESULTSTORE_RESULTS_FLAG="--bazelrc=tools/remote_build/include/test_locally_with_resultstore_results.bazelrc"
 TEST_TARGETS="//src/python/... //tools/distrib/python/grpcio_tools/... //examples/python/..."
