@@ -78,9 +78,12 @@ def get_server_credentials(use_tls):
         return grpc.alts_server_credentials()
 
 
-def _serve_internal(server):
+def _serve_internal(server, enable_otel=False):
     def _sig_handler(signum, frame):
         _LOGGER.info("Received signal %d, stopping server...", signum)
+        if enable_otel:
+            from tests.interop import otel_interop_helper
+            otel_interop_helper.flush_tracer_provider()
         server.stop(0)
 
     signal.signal(signal.SIGTERM, _sig_handler)
@@ -89,11 +92,25 @@ def _serve_internal(server):
     server.start()
     _LOGGER.info("Server serving.")
     server.wait_for_termination()
+    if enable_otel:
+        from tests.interop import otel_interop_helper
+        otel_interop_helper.flush_tracer_provider()
     _LOGGER.info("Server stopped; exiting.")
 
 
 def serve(args):
-    server = test_common.test_server()
+    if args.enable_opentelemetry:
+        from tests.interop import otel_interop_helper
+        provider, tracer = otel_interop_helper.init_tracer_provider()
+        interceptor = otel_interop_helper.OTelServerInterceptor(tracer)
+        server = grpc.server(
+            futures.ThreadPoolExecutor(max_workers=10),
+            options=(("grpc.so_reuseport", 0),),
+            interceptors=(interceptor,),
+        )
+    else:
+        server = test_common.test_server()
+
     test_pb2_grpc.add_TestServiceServicer_to_server(
         service.TestService(), server
     )
@@ -107,7 +124,7 @@ def serve(args):
         import grpc_observability
 
         with grpc_observability.OpenTelemetryPlugin():
-            _serve_internal(server)
+            _serve_internal(server, enable_otel=True)
     else:
         _serve_internal(server)
 

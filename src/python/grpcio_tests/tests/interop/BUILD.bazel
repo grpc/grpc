@@ -26,6 +26,21 @@ py_library(
 )
 
 py_library(
+    name = "otel_interop_helper",
+    srcs = ["otel_interop_helper.py"],
+    deps = [
+        "//src/proto/grpc/testing:py_test_proto",
+        "//src/python/grpcio/grpc:grpcio",
+        "@opentelemetry_proto//:common_proto_py",
+        "@opentelemetry_proto//:trace_proto_py",
+        "@opentelemetry_proto//:trace_service_grpc_py",
+        "@opentelemetry_proto//:trace_service_proto_py",
+        requirement("opentelemetry-api"),
+        requirement("opentelemetry-sdk"),
+    ],
+)
+
+py_library(
     name = "client_lib",
     srcs = ["client.py"],
     imports = [
@@ -34,6 +49,7 @@ py_library(
     ],
     deps = [
         ":methods",
+        ":otel_interop_helper",
         ":resources",
         "//src/proto/grpc/testing:py_test_proto",
         "//src/proto/grpc/testing:test_py_pb2_grpc",
@@ -42,6 +58,8 @@ py_library(
         "//src/python/grpcio_tests/tests:bazel_namespace_package_hack",
         requirement("absl-py"),
         requirement("google-auth"),
+        requirement("opentelemetry-api"),
+        requirement("opentelemetry-sdk"),
     ],
 )
 
@@ -109,6 +127,7 @@ py_library(
         "../../../../",
     ],
     deps = [
+        ":otel_interop_helper",
         ":resources",
         ":service",
         "//src/proto/grpc/testing:py_test_proto",
@@ -118,6 +137,8 @@ py_library(
         "//src/python/grpcio_tests/tests:bazel_namespace_package_hack",
         "//src/python/grpcio_tests/tests/unit:test_common",
         requirement("absl-py"),
+        requirement("opentelemetry-api"),
+        requirement("opentelemetry-sdk"),
     ],
 )
 

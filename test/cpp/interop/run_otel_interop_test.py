@@ -335,6 +335,7 @@ def main():
         env = {
             "GRPC_EXPERIMENTAL_ENABLE_OTEL_TRACING": "true",
             "OTEL_EXPORTER_OTLP_ENDPOINT": f"http://localhost:{collector_port}",
+            "OTEL_EXPORTER_OTLP_PROTOCOL": "grpc",
             "OTEL_TRACES_EXPORTER": "otlp",
             "OTEL_METRICS_EXPORTER": "none",
             "OTEL_LOGS_EXPORTER": "none",
@@ -372,7 +373,7 @@ def main():
                 env,
                 "Python Interop Server",
             )
-        time.sleep(2)  # wait for server to bind and start
+        time.sleep(3)  # wait for server to bind and start
 
         # Run Client
         print(f"Running {args.client.upper()} Client...")
