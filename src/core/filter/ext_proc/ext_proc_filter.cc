@@ -678,22 +678,9 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
     if (!IsStreamClosed()) {
       stream_status_.Set(absl::OkStatus());
     }
-    RefCountedPtr<XdsStreamingCallPromiseWrapper> streaming_call;
-    {
-      MutexLock lock(&mu_);
-      streaming_call = std::move(streaming_call_);
-    }
+    auto streaming_call = std::move(streaming_call_);
     ext_proc_send_waker_.Wakeup();
     streaming_call.reset();
-  }
-
-  // Acquire a strong reference under mu_ using RefIfNonZero(). This prevents
-  // race conditions with concurrent destruction/reset of streaming_call_,
-  // returning nullptr if the ref count has already dropped to zero.
-  RefCountedPtr<XdsStreamingCallPromiseWrapper> GetStreamingCall() const {
-    MutexLock lock(&mu_);
-    if (streaming_call_ == nullptr) return nullptr;
-    return streaming_call_->RefIfNonZero();
   }
 
   void Orphaned() override { CloseStream(); }
@@ -750,8 +737,6 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
   // Waker for queuing send promises when a send operation is already in flight.
   Waker ext_proc_send_waker_;
 
-  mutable Mutex mu_;
-
   RefCountedPtr<XdsTransportFactory::XdsTransport> transport_;
   CallHandler handler_;
   CallInitiator initiator_;
@@ -796,13 +781,12 @@ ExtProcFilter::ExtProcCall::PullMessagesFromSideStream() {
       // Loop reading response messages from the side-stream until end-of-stream
       // or error.
       Loop([self = Ref()]() -> Promise<LoopCtl<StatusFlag>> {
-        auto streaming_call = self->GetStreamingCall();
-        if (streaming_call == nullptr) {
+        if (self->streaming_call_ == nullptr) {
           return Immediate(LoopCtl<StatusFlag>(Success{}));
         }
         return Seq(
             // Pull the next response message from the streaming call.
-            streaming_call->PullMessage(),
+            self->streaming_call_->PullMessage(),
             // Process the message; stop loop if end-of-stream (nullopt) or
             // error.
             [self](std::optional<std::string> msg)
@@ -822,9 +806,10 @@ ExtProcFilter::ExtProcCall::PullMessagesFromSideStream() {
         if (!status.ok()) {
           return Immediate(absl::InternalError("Side stream failed"));
         }
-        auto streaming_call = self->GetStreamingCall();
-        if (streaming_call == nullptr) return Immediate(absl::OkStatus());
-        return streaming_call->PullServerTrailingMetadata();
+        if (self->streaming_call_ == nullptr) {
+          return Immediate(absl::OkStatus());
+        }
+        return self->streaming_call_->PullServerTrailingMetadata();
       },
       // Handle stream closure and resolve final status.
       [self = Ref()](absl::Status status) -> StatusFlag {
@@ -864,13 +849,10 @@ ExtProcFilter::ExtProcCall::ProcessSideStreamResponse(
         << "ExtProcCall " << this << " received request_drain=true";
     drain_requested_ = true;
     ext_proc_stream_half_closed_ = true;
-    {
-      MutexLock lock(&mu_);
-      if (streaming_call_ != nullptr) {
-        GRPC_TRACE_LOG(ext_proc_filter, INFO)
-            << "ExtProcCall " << this << " sending half-close";
-        streaming_call_->SendHalfClose();
-      }
+    if (streaming_call_ != nullptr) {
+      GRPC_TRACE_LOG(ext_proc_filter, INFO)
+          << "ExtProcCall " << this << " sending half-close";
+      streaming_call_->SendHalfClose();
     }
   }
   // Dispatch the parsed response to the appropriate processor based on the
@@ -1127,9 +1109,10 @@ ExtProcFilter::ExtProcCall::SendMessageToSideStream(
         if (!status.ok() || !payload.ok()) {
           return Immediate(StatusFlag(Failure{}));
         }
-        auto streaming_call = self->GetStreamingCall();
-        if (streaming_call == nullptr) return Immediate(StatusFlag(Failure{}));
-        return streaming_call->PushMessage(std::move(*payload));
+        if (self->streaming_call_ == nullptr) {
+          return Immediate(StatusFlag(Failure{}));
+        }
+        return self->streaming_call_->PushMessage(std::move(*payload));
       },
       // Reset send state and wake up any waiting senders.
       [self = Ref()](StatusFlag status) -> ArenaPromise<StatusFlag> {
