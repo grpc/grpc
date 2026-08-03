@@ -220,7 +220,9 @@ class _OTelClientInterceptor(grpc.UnaryUnaryClientInterceptor):
         sent_span_name = f"Sent.{full_method}"
         attempt_span_name = f"Attempt.{full_method}"
 
-        sent_span = self._tracer.start_span(sent_span_name, kind=trace.SpanKind.CLIENT)
+        sent_span = self._tracer.start_span(
+            sent_span_name, kind=trace.SpanKind.CLIENT
+        )
         sent_ctx = trace.set_span_in_context(sent_span)
         attempt_span = self._tracer.start_span(
             attempt_span_name, kind=trace.SpanKind.CLIENT, context=sent_ctx
@@ -271,8 +273,11 @@ def _create_channel(args):
 
     if args.enable_opentelemetry:
         from tests.interop import otel_interop_helper
+
         provider, tracer = otel_interop_helper.init_tracer_provider()
-        channel = grpc.intercept_channel(channel, _OTelClientInterceptor(tracer))
+        channel = grpc.intercept_channel(
+            channel, _OTelClientInterceptor(tracer)
+        )
 
     return channel
 

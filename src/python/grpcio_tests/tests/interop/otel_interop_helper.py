@@ -11,14 +11,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""OpenTelemetry Tracing Interop Helper for Python gRPC Interop Client/Server."""
+"""OpenTelemetry Tracing Interop Helper for Python gRPC Interop Client/Server
+"""
 
 import os
 from typing import Optional, Tuple
 
 import grpc
 from opentelemetry import trace
-from opentelemetry.proto.collector.trace.v1 import trace_service_pb2, trace_service_pb2_grpc
+from opentelemetry.proto.collector.trace.v1 import (
+    trace_service_pb2,
+    trace_service_pb2_grpc,
+)
 from opentelemetry.proto.common.v1 import common_pb2
 from opentelemetry.proto.trace.v1 import trace_pb2
 from opentelemetry.sdk.trace import ReadableSpan, TracerProvider
@@ -119,7 +123,9 @@ _GLOBAL_PROVIDER: Optional[TracerProvider] = None
 def init_tracer_provider() -> Tuple[TracerProvider, trace.Tracer]:
     global _GLOBAL_PROVIDER
     if _GLOBAL_PROVIDER is None:
-        endpoint = os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317")
+        endpoint = os.environ.get(
+            "OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317"
+        )
         exporter = OTLPSpanExporter(endpoint)
         processor = SimpleSpanProcessor(exporter)
         _GLOBAL_PROVIDER = TracerProvider()
@@ -141,7 +147,14 @@ def pack_grpc_trace_bin(
     trace_id_bytes = trace_id_int.to_bytes(16, "big")
     span_id_bytes = span_id_int.to_bytes(8, "big")
     options = 1 if is_sampled else 0
-    return b"\x00\x00" + trace_id_bytes + b"\x01" + span_id_bytes + b"\x02" + bytes([options])
+    return (
+        b"\x00\x00"
+        + trace_id_bytes
+        + b"\x01"
+        + span_id_bytes
+        + b"\x02"
+        + bytes([options])
+    )
 
 
 def unpack_grpc_trace_bin(
@@ -171,21 +184,26 @@ def parse_traceparent(
 
 
 class OTelServerInterceptor(grpc.ServerInterceptor):
-    """Server interceptor to extract trace context and create server Recv span."""
+    """Server interceptor to extract trace context and create Recv span."""
 
     def __init__(self, tracer: trace.Tracer):
         self._tracer = tracer
 
     def intercept_service(self, continuation, handler_call_details):
-        print(f"DEBUG_SERVER_METADATA: {handler_call_details.invocation_metadata}", flush=True)
         trace_bin_header = None
         traceparent_header = None
         for k, v in handler_call_details.invocation_metadata:
-            k_str = k.decode("ascii", errors="ignore") if isinstance(k, bytes) else str(k)
+            k_str = (
+                k.decode("ascii", errors="ignore")
+                if isinstance(k, bytes)
+                else str(k)
+            )
             if k_str.lower() == "grpc-trace-bin":
                 trace_bin_header = v
             elif k_str.lower() == "traceparent":
-                traceparent_header = v if isinstance(v, str) else v.decode("latin1")
+                traceparent_header = (
+                    v if isinstance(v, str) else v.decode("latin1")
+                )
 
         parent_ctx = None
         trace_id, parent_span_id, is_sampled = None, None, False
@@ -193,9 +211,17 @@ class OTelServerInterceptor(grpc.ServerInterceptor):
         if trace_bin_header:
             if isinstance(trace_bin_header, str):
                 trace_bin_header = trace_bin_header.encode("latin1")
-            trace_id, parent_span_id, is_sampled = unpack_grpc_trace_bin(trace_bin_header)
+            (
+                trace_id,
+                parent_span_id,
+                is_sampled,
+            ) = unpack_grpc_trace_bin(trace_bin_header)
         elif traceparent_header:
-            trace_id, parent_span_id, is_sampled = parse_traceparent(traceparent_header)
+            (
+                trace_id,
+                parent_span_id,
+                is_sampled,
+            ) = parse_traceparent(traceparent_header)
 
         if trace_id and parent_span_id:
             parent_ctx = trace.SpanContext(
