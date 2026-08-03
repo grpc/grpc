@@ -116,13 +116,14 @@ def _details(state: _RPCState[RequestType]) -> bytes:
     return b"" if state.details is None else state.details
 
 
-class _HandlerCallDetailsTuple(NamedTuple):
-    method: str
-    invocation_metadata: Optional[MetadataType]
-
-
 class _HandlerCallDetails(
-    _HandlerCallDetailsTuple,
+    NamedTuple(
+        "_HandlerCallDetailsTuple",
+        [
+            ("method", str),
+            ("invocation_metadata", Optional[MetadataType])
+        ]
+    ),
     grpc.HandlerCallDetails,
 ):
     pass
