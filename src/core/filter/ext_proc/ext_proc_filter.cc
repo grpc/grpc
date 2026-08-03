@@ -328,19 +328,17 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
    private:
     // Prepares the ProcessingRequest protobuf message for client initial
     // metadata.
-    absl::AnyInvocable<Poll<absl::Status>()> SendClientInitialMetadataRequest(
-        const ClientMetadataHandle& metadata,
-        absl::string_view default_authority);
+    auto SendClientInitialMetadataRequest(const ClientMetadataHandle& metadata,
+                                          absl::string_view default_authority);
     // Sends the client initial metadata request to the ext_proc server and
     // handles the result.
     absl::AnyInvocable<Poll<absl::Status>()> SendAndHandleClientInitialMetadata(
         const ClientMetadataHandle& metadata);
     // Initializes and starts the child call to the backend server, and spawns
     // the background task for the server-to-client response path.
-    absl::AnyInvocable<Poll<absl::Status>()> StartChildCall(
-        ClientMetadataHandle metadata,
-        ::google_protobuf_Struct* attributes = nullptr,
-        Timestamp start_time = Timestamp::InfPast());
+    auto StartChildCall(ClientMetadataHandle metadata,
+                        ::google_protobuf_Struct* attributes = nullptr,
+                        Timestamp start_time = Timestamp::InfPast());
     // Forwards client initial metadata to the backend server without sending to
     // ext_proc when request header processing is disabled. Prepares request
     // attributes if body processing is enabled.
@@ -1305,10 +1303,9 @@ absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ExtProcCall::
              });
 }
 
-absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ExtProcCall::
-    ClientInitialMetadataProcessor::SendClientInitialMetadataRequest(
-        const ClientMetadataHandle& metadata,
-        absl::string_view default_authority) {
+auto ExtProcFilter::ExtProcCall::ClientInitialMetadataProcessor::
+    SendClientInitialMetadataRequest(const ClientMetadataHandle& metadata,
+                                     absl::string_view default_authority) {
   GRPC_TRACE_LOG(ext_proc_filter, INFO)
       << "ExtProc: Sending client initial metadata request to side-stream";
   // Include processing mode in the request if this is the first message on the
@@ -1347,8 +1344,7 @@ absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ExtProcCall::
              });
 }
 
-absl::AnyInvocable<Poll<absl::Status>()>
-ExtProcFilter::ExtProcCall::ClientInitialMetadataProcessor::StartChildCall(
+auto ExtProcFilter::ExtProcCall::ClientInitialMetadataProcessor::StartChildCall(
     ClientMetadataHandle metadata, ::google_protobuf_Struct* attributes,
     Timestamp start_time) {
   GRPC_TRACE_LOG(ext_proc_filter, INFO)
@@ -2221,7 +2217,7 @@ ExtProcFilter::ExtProcCall::ClientMessageProcessor::SendClientHalfClose(
   }
   if (!call_->IsStreamClosed() && !call_->ext_proc_stream_half_closed_) {
     MessageHandle null_msg = nullptr;
-    return Seq(SendClientMessageRequest(std::move(null_msg),
+    return Seq(SendClientMessageRequest(null_msg,
                                         /*end_of_stream=*/false,
                                         /*end_of_stream_without_message=*/true),
                [self = Ref(), start_time, observability_mode](

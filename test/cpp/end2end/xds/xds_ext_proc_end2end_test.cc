@@ -220,7 +220,6 @@ class ExternalProcessorBuilder {
 };
 
 constexpr absl::string_view kFilterInstanceName = "ext_proc_instance";
-constexpr absl::string_view kExtProcClusterName = "ext_proc_cluster";
 
 constexpr char kRequestHeadersMutatedHeaderKey[] =
     "x-extproc-request-headers-mutated";
