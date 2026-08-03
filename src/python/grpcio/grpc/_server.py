@@ -119,10 +119,7 @@ def _details(state: _RPCState[RequestType]) -> bytes:
 class _HandlerCallDetails(
     NamedTuple(
         "_HandlerCallDetailsTuple",
-        [
-            ("method", str),
-            ("invocation_metadata", Optional[MetadataType])
-        ]
+        [("method", str), ("invocation_metadata", Optional[MetadataType])],
     ),
     grpc.HandlerCallDetails,
 ):
