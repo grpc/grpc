@@ -104,7 +104,7 @@ def serve(args):
     if args.enable_opentelemetry:
         from tests.interop import otel_interop_helper
 
-        provider, tracer = otel_interop_helper.init_tracer_provider()
+        _, tracer = otel_interop_helper.init_tracer_provider()
         interceptor = otel_interop_helper.OTelServerInterceptor(tracer)
         server = grpc.server(
             futures.ThreadPoolExecutor(max_workers=10),

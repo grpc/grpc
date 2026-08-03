@@ -136,7 +136,6 @@ def init_tracer_provider() -> Tuple[TracerProvider, trace.Tracer]:
 
 
 def flush_tracer_provider():
-    global _GLOBAL_PROVIDER
     if _GLOBAL_PROVIDER:
         _GLOBAL_PROVIDER.force_flush()
 

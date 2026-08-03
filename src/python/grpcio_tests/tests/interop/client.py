@@ -275,7 +275,7 @@ def _create_channel(args):
     if args.enable_opentelemetry:
         from tests.interop import otel_interop_helper
 
-        provider, tracer = otel_interop_helper.init_tracer_provider()
+        _, tracer = otel_interop_helper.init_tracer_provider()
         channel = grpc.intercept_channel(
             channel, _OTelClientInterceptor(tracer)
         )
