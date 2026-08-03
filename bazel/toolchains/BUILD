@@ -17,11 +17,11 @@ load("@com_google_protobuf//bazel/toolchains:proto_lang_toolchain.bzl", "proto_l
 # Used for `py_grpc_library`.
 proto_lang_toolchain(
     name = "grpc_python_toolchain",
-    plugin = "//src/compiler:grpc_python_plugin",
     command_line = "--grpc_python_out=$(OUT)",
+    mnemonic = "ProtocInvocation",
+    plugin = "//src/compiler:grpc_python_plugin",
     plugin_format_flag = "--plugin=protoc-gen-grpc_python=%s",
     progress_message = "Generating gRPC Python code for %{label}",
-    mnemonic = "ProtocInvocation",
     visibility = ["//visibility:public"],
 )
 
@@ -43,15 +43,15 @@ proto_lang_toolchain(
 proto_lang_toolchain(
     name = "grpc_cpp_toolchain",
     command_line = "--grpc_cpp_out=$(OUT)",
-    progress_message = "Generating gRPC C++ code for %{label}",
     mnemonic = "ProtocInvocation",
+    progress_message = "Generating gRPC C++ code for %{label}",
     visibility = ["//visibility:public"],
 )
 
 proto_lang_toolchain(
     name = "grpc_objective_c_toolchain",
     command_line = "--grpc_objective_c_out=$(OUT)",
-    progress_message = "Generating gRPC Objective-C code for %{label}",
     mnemonic = "ProtocInvocation",
+    progress_message = "Generating gRPC Objective-C code for %{label}",
     visibility = ["//visibility:public"],
 )
