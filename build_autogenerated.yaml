@@ -4250,6 +4250,7 @@ libs:
   - src/cpp/server/secure_server_credentials.h
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/core/client_channel/virtual_channel.cc
   - src/cpp/client/call_context_registry.cc
