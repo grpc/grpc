@@ -1102,52 +1102,45 @@ void ExtProcFilter::ExtProcCall::CompleteOutstandingProcessors(
 absl::AnyInvocable<Poll<absl::Status>()>
 ExtProcFilter::ExtProcCall::SendMessageToSideStream(
     absl::StatusOr<std::string> payload) {
-  return [this, call = Ref(), payload = std::move(payload),
-          send_promise = absl::AnyInvocable<Poll<absl::Status>()>()]() mutable
-             -> Poll<absl::Status> {
-    if (send_promise == nullptr) {
-      if (ext_proc_send_state_.load() == SendState::kSendFailed) {
-        return GetStreamClosedStatus();
-      }
-      if (ext_proc_send_state_.load() != SendState::kIdle) {
-        if (ext_proc_send_state_.load() == SendState::kSendInFlight) {
-          ext_proc_send_state_.store(
-              SendState::kSendMessageButMessageIsAlreadyInFlight);
+  return Seq(
+      // Wait until send state is kIdle, then mark kSendInFlight.
+      [self = Ref()]() -> Poll<absl::Status> {
+        if (self->ext_proc_send_state_.load() == SendState::kSendFailed) {
+          return self->GetStreamClosedStatus();
         }
-        ext_proc_send_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
-        return Pending{};
-      }
-      ext_proc_send_state_.store(SendState::kSendInFlight);
-      send_promise = Seq(
-          [this, payload = std::move(payload),
-           streaming_call = RefCountedPtr<XdsStreamingCallPromiseWrapper>(),
-           push_promise = absl::AnyInvocable<Poll<StatusFlag>()>()]() mutable
-              -> Poll<StatusFlag> {
-            if (push_promise == nullptr) {
-              if (!payload.ok()) return StatusFlag(Failure());
-              streaming_call = GetStreamingCall();
-              if (streaming_call == nullptr) return StatusFlag(Failure());
-              push_promise = streaming_call->PushMessage(std::move(*payload));
-            }
-            return push_promise();
-          },
-          [this, call](StatusFlag status) -> ArenaPromise<absl::Status> {
-            if (status.ok()) {
-              ext_proc_send_state_.store(SendState::kIdle);
-              ext_proc_send_waker_.Wakeup();
-              return Immediate(absl::OkStatus());
-            }
-            ext_proc_send_state_.store(SendState::kSendFailed);
-            ext_proc_send_waker_.Wakeup();
-            return Seq(call->WaitForStreamStatus(),
-                       [call](absl::Status status) -> absl::Status {
-                         return call->GetStreamClosedStatus(
-                             absl::InternalError("Send failed"));
-                       });
-          });
-    }
-    return send_promise();
-  };
+        if (self->ext_proc_send_state_.load() != SendState::kIdle) {
+          if (self->ext_proc_send_state_.load() == SendState::kSendInFlight) {
+            self->ext_proc_send_state_.store(
+                SendState::kSendMessageButMessageIsAlreadyInFlight);
+          }
+          self->ext_proc_send_waker_ =
+              GetContext<Activity>()->MakeNonOwningWaker();
+          return Pending{};
+        }
+        self->ext_proc_send_state_.store(SendState::kSendInFlight);
+        return absl::OkStatus();
+      },
+      // Safely acquire streaming_call_ and push the payload.
+      [self = Ref(), payload = std::move(payload)](
+          absl::Status status) mutable -> ArenaPromise<StatusFlag> {
+        if (!status.ok() || !payload.ok()) {
+          return Immediate(StatusFlag(Failure()));
+        }
+        auto streaming_call = self->GetStreamingCall();
+        if (streaming_call == nullptr) return Immediate(StatusFlag(Failure()));
+        return streaming_call->PushMessage(std::move(*payload));
+      },
+      // Reset send state and wake up any waiting senders.
+      [self = Ref()](StatusFlag status) -> ArenaPromise<absl::Status> {
+        if (status.ok()) {
+          self->ext_proc_send_state_.store(SendState::kIdle);
+          self->ext_proc_send_waker_.Wakeup();
+          return Immediate(absl::OkStatus());
+        }
+        self->ext_proc_send_state_.store(SendState::kSendFailed);
+        self->ext_proc_send_waker_.Wakeup();
+        return self->WaitForStreamStatus();
+      });
 }
 
 // Handles the response path (Server to Client).
