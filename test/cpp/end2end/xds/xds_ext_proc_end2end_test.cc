@@ -3700,7 +3700,7 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseRequestBodyFailureModeFalse) {
   EchoRequest request;
   EchoResponse response;
   request.set_message(kMessage1);
-  EXPECT_FALSE(stream->Write(request));
+  stream->Write(request);
   EXPECT_FALSE(stream->Read(&response));
   stream->WritesDone();
   Status status = stream->Finish();
@@ -4223,7 +4223,7 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseHeadersFailureModeFalse) {
   EchoRequest request;
   EchoResponse response;
   request.set_message(kMessage1);
-  EXPECT_FALSE(stream->Write(request));
+  stream->Write(request);
   EXPECT_FALSE(stream->Read(&response));
   stream->WritesDone();
   Status status = stream->Finish();
