@@ -146,9 +146,9 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
   op->reserved = nullptr;
   ++op;
   // Ref will be released in the callback
-  GRPC_CLOSURE_INIT(
-      &on_status_received_, OnStatusReceived,
-      this->Ref(DEBUG_LOCATION, "OnStatusReceived").release(), nullptr);
+  GRPC_CLOSURE_INIT(&on_status_received_, OnStatusReceived,
+                    this->Ref(DEBUG_LOCATION, "OnStatusReceived").release(),
+                    nullptr);
   call_error = grpc_call_start_batch_and_execute(
       call_, ops, static_cast<size_t>(op - ops), &on_status_received_);
   GRPC_CHECK_EQ(call_error, GRPC_CALL_OK);
