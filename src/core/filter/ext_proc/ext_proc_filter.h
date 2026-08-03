@@ -47,7 +47,7 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
     static UniqueTypeName Type() {
       return GRPC_UNIQUE_TYPE_NAME_HERE("ext_proc_channel");
     }
-    ExtProcChannel(std::shared_ptr<const XdsBootstrap::XdsServerTarget> server,
+    ExtProcChannel(std::unique_ptr<const XdsBootstrap::XdsServerTarget> server,
                    RefCountedPtr<XdsTransportFactory::XdsTransport> transport);
     ~ExtProcChannel() override;
     const XdsBootstrap::XdsServerTarget& server() const { return *server_; }
@@ -57,7 +57,7 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
     }
 
    private:
-    std::shared_ptr<const XdsBootstrap::XdsServerTarget> server_;
+    std::unique_ptr<const XdsBootstrap::XdsServerTarget> server_;
     RefCountedPtr<XdsTransportFactory::XdsTransport> transport_;
   };
 

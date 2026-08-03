@@ -403,14 +403,14 @@ RefCountedPtr<const FilterConfig> XdsHttpExtProcFilterFactory::MergeConfigs(
   if (const auto* target =
           std::get_if<GrpcXdsServerTarget>(&config->channel_info);
       target != nullptr) {
-    config->channel_info = blackboard.GetOrSet<ExtProcFilter::ExtProcChannel>(
-        target->Key(), [&]() {
-          auto target_shared = std::make_shared<GrpcXdsServerTarget>(*target);
+    config->channel_info =
+        blackboard.GetOrSet<ExtProcFilter::ExtProcChannel>(target->Key(), [&]() {
+          auto target_copy = std::make_unique<GrpcXdsServerTarget>(*target);
           absl::Status status;
           auto transport =
-              transport_factory.GetTransport(*target_shared, &status);
+              transport_factory.GetTransport(*target_copy, &status);
           return MakeRefCounted<ExtProcFilter::ExtProcChannel>(
-              std::move(target_shared), std::move(transport));
+              std::move(target_copy), std::move(transport));
         });
   }
   return config;

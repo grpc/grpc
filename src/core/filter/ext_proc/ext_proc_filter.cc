@@ -243,7 +243,7 @@ bool ExtProcFilter::Config::Equals(const FilterConfig& other) const {
 //
 
 ExtProcFilter::ExtProcChannel::ExtProcChannel(
-    std::shared_ptr<const XdsBootstrap::XdsServerTarget> server,
+    std::unique_ptr<const XdsBootstrap::XdsServerTarget> server,
     RefCountedPtr<XdsTransportFactory::XdsTransport> transport)
     : server_(std::move(server)), transport_(std::move(transport)) {
   GRPC_TRACE_LOG(ext_proc_filter, INFO)
