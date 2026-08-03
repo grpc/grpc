@@ -79,6 +79,10 @@ class ObservabilityPlugin(
     Any future methods added to this interface cannot have the
     @abc.abstractmethod annotation.
 
+    Plugin hooks on the client call path may be invoked concurrently from
+    multiple threads without external locking. Implementations must be
+    thread-safe.
+
     Attributes:
       _stats_enabled: A bool indicates whether tracing is enabled.
       _tracing_enabled: A bool indicates whether stats(metrics) is enabled.
@@ -197,6 +201,9 @@ class ObservabilityPlugin(
 
         When exporting metrics, method name for unregistered methods will be replaced
         with 'other' by default.
+
+        Might be called concurrently without external locking; implementations
+        must be atomic / thread-safe.
 
         Args:
           method_name: The method name in bytes.

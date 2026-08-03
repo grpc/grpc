@@ -60,14 +60,12 @@ class _EnabledPlugin(_observability.ObservabilityPlugin):
         pass
 
 
-class TestObservabilityDoesNotStallLoop(AioTestBase):
+class TestPluginLockDoesNotStallLoop(AioTestBase):
     def setUp(self):
-        logging.getLogger("grpc").setLevel(logging.CRITICAL)
         _observability.set_plugin(_EnabledPlugin())
 
     def tearDown(self):
         _observability.set_plugin(None)
-        logging.getLogger("grpc").setLevel(logging.NOTSET)
 
     async def _time_call_construction_under_held_lock(
         self, registered_method: bool
@@ -75,28 +73,33 @@ class TestObservabilityDoesNotStallLoop(AioTestBase):
         """Time constructing one client call while another thread holds the lock."""
         channel = aio.insecure_channel("127.0.0.1:1")  # nothing listening; fine
         try:
-            # Warm the channel first: the first call on a fresh channel defers
-            # grpc_call creation, so the tracer-setup path only runs
-            # synchronously at construction once the channel is ready.
+            # Warm the channel first, to flush one-time startup costs so they
+            # are not charged to the timed window below.
             try:
                 await asyncio.wait_for(
-                    channel.unary_unary("/warm/Warm", lambda x: x, lambda x: x)(b"x"),
+                    channel.unary_unary("/warm/Warm", lambda x: x, lambda x: x)(
+                        b"x"
+                    ),
                     0.05,
                 )
             except Exception:
                 pass
-            await asyncio.sleep(0.2)  # let the warm call settle so the channel is ready
+            # let the warm call settle so the channel is ready
+            await asyncio.sleep(0.2)
 
             acquired = threading.Event()
+            release = threading.Event()
 
             def hold_plugin_lock():
                 with _observability._plugin_lock:
                     acquired.set()
-                    time.sleep(_LOCK_HOLD_S)
+                    release.wait(_LOCK_HOLD_S)
 
             holder = threading.Thread(target=hold_plugin_lock, daemon=True)
             holder.start()
-            self.assertTrue(acquired.wait(timeout=5.0), "lock holder never started")
+            self.assertTrue(
+                acquired.wait(timeout=5.0), "lock holder never started"
+            )
 
             # Construct a real client call on the event loop thread while the
             # lock is held. Pre-fix this runs get_plugin() and blocks until the
@@ -111,7 +114,11 @@ class TestObservabilityDoesNotStallLoop(AioTestBase):
             call = mc(b"payload")
             elapsed = time.monotonic() - start
             call.cancel()
-            holder.join(timeout=5.0)
+            # Measurement is done; let the holder drop the lock instead of
+            # waiting out _LOCK_HOLD_S. join() blocks, so keep it off the loop.
+            release.set()
+            await self.loop.run_in_executor(None, holder.join, 5.0)
+            self.assertFalse(holder.is_alive(), "lock holder never finished")
         finally:
             await channel.close()
         return elapsed
