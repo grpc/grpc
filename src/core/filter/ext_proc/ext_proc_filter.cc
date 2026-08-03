@@ -2049,8 +2049,10 @@ ExtProcFilter::ExtProcCall::ClientMessageProcessor::SendClientMessageRequest(
     processing_mode = call_->config().processing_mode;
   }
   upb::Arena arena;
+  auto* attributes =
+      attributes_ != nullptr ? attributes_ : call_->request_attributes_;
   auto payload = CreateExtProcClientBodyRequest(
-      arena.ptr(), message_bytes, attributes_,
+      arena.ptr(), message_bytes, attributes,
       call_->config().observability_mode, processing_mode, end_of_stream,
       end_of_stream_without_message);
   return Map(call_->SendMessageToSideStream(std::move(payload)),
