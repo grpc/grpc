@@ -213,6 +213,7 @@ class _OTelClientInterceptor(grpc.UnaryUnaryClientInterceptor):
     def intercept_unary_unary(self, continuation, client_call_details, request):
         from grpc._interceptor import _ClientCallDetails
         from opentelemetry import trace
+
         from tests.interop import otel_interop_helper
 
         method = client_call_details.method
@@ -300,6 +301,7 @@ def _test_case_from_arg(test_case_arg):
 def test_interoperability(args):
     if args.enable_opentelemetry:
         import grpc_observability
+
         from tests.interop import otel_interop_helper
 
         with grpc_observability.OpenTelemetryPlugin():

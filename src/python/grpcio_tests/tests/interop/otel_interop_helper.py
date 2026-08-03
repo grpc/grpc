@@ -19,14 +19,14 @@ from typing import Optional, Tuple
 
 import grpc
 from opentelemetry import trace
-from opentelemetry.proto.collector.trace.v1 import (
-    trace_service_pb2,
-    trace_service_pb2_grpc,
-)
+from opentelemetry.proto.collector.trace.v1 import trace_service_pb2
+from opentelemetry.proto.collector.trace.v1 import trace_service_pb2_grpc
 from opentelemetry.proto.common.v1 import common_pb2
 from opentelemetry.proto.trace.v1 import trace_pb2
-from opentelemetry.sdk.trace import ReadableSpan, TracerProvider
-from opentelemetry.sdk.trace.export import SimpleSpanProcessor, SpanExporter
+from opentelemetry.sdk.trace import ReadableSpan
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.sdk.trace.export import SpanExporter
 
 
 class OTLPSpanExporter(SpanExporter):

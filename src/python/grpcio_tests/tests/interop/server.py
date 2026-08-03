@@ -83,6 +83,7 @@ def _serve_internal(server, enable_otel=False):
         _LOGGER.info("Received signal %d, stopping server...", signum)
         if enable_otel:
             from tests.interop import otel_interop_helper
+
             otel_interop_helper.flush_tracer_provider()
         server.stop(0)
 
@@ -94,6 +95,7 @@ def _serve_internal(server, enable_otel=False):
     server.wait_for_termination()
     if enable_otel:
         from tests.interop import otel_interop_helper
+
         otel_interop_helper.flush_tracer_provider()
     _LOGGER.info("Server stopped; exiting.")
 
@@ -101,6 +103,7 @@ def _serve_internal(server, enable_otel=False):
 def serve(args):
     if args.enable_opentelemetry:
         from tests.interop import otel_interop_helper
+
         provider, tracer = otel_interop_helper.init_tracer_provider()
         interceptor = otel_interop_helper.OTelServerInterceptor(tracer)
         server = grpc.server(
