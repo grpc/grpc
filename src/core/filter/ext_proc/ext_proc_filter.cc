@@ -413,13 +413,6 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
         RefCountedPtr<ExtProcFilter::ExtProcCall> call)
         : call_(std::move(call)) {}
 
-    // Prepares the ProcessingRequest protobuf message for server trailing
-    // metadata (trailers) and sends it over the ext_proc stream.
-    static absl::AnyInvocable<Poll<absl::Status>()>
-    SendServerTrailingMetadataRequest(
-        RefCountedPtr<ExtProcFilter::ExtProcCall> call,
-        const ServerMetadataHandle& metadata);
-
     // Processes server trailing metadata on the server-to-extproc path.
     absl::AnyInvocable<Poll<absl::Status>()> ProcessFromServerToExtProcServer();
     // Processes the ext_proc server response for server trailing metadata and
@@ -428,6 +421,13 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
         absl::StatusOr<ExtProcResponse> response);
 
    private:
+    // Prepares the ProcessingRequest protobuf message for server trailing
+    // metadata (trailers) and sends it over the ext_proc stream.
+    static absl::AnyInvocable<Poll<absl::Status>()>
+    SendServerTrailingMetadataRequest(
+        RefCountedPtr<ExtProcFilter::ExtProcCall> call,
+        const ServerMetadataHandle& metadata);
+
     // Helper to process server trailing metadata for both trailers-only and
     // normal trailers.
     absl::AnyInvocable<Poll<absl::Status>()> ProcessTrailingMetadata(
@@ -464,11 +464,6 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
         RefCountedPtr<ExtProcFilter::ExtProcCall> call)
         : call_(std::move(call)) {}
 
-    // Prepares the ProcessingRequest protobuf message for server response body
-    // and sends it over the ext_proc stream.
-    absl::AnyInvocable<Poll<absl::Status>()> SendServerMessageRequest(
-        const MessageHandle& message);
-
     // Processes server-to-client messages on the backend-to-extproc path.
     absl::AnyInvocable<Poll<absl::Status>()> ProcessFromServerToExtProcServer();
     // Processes the ext_proc server response for server-to-client body
@@ -477,6 +472,10 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
         absl::StatusOr<ExtProcResponse> response);
 
    private:
+    // Prepares the ProcessingRequest protobuf message for server response body
+    // and sends it over the ext_proc stream.
+    absl::AnyInvocable<Poll<absl::Status>()> SendServerMessageRequest(
+        const MessageHandle& message);
     // Forwards server message to client without ext_proc processing.
     absl::AnyInvocable<Poll<absl::Status>()> NonProcessingMode(
         MessageHandle message);
@@ -506,13 +505,6 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
                            ::google_protobuf_Struct* attributes)
         : call_(std::move(call)), attributes_(attributes) {}
 
-    // Prepares the ProcessingRequest protobuf message for client body messages.
-    static absl::AnyInvocable<Poll<absl::Status>()> SendClientMessageRequest(
-        RefCountedPtr<ExtProcFilter::ExtProcCall> call,
-        const MessageHandle& message, bool end_of_stream,
-        bool end_of_stream_without_message,
-        ::google_protobuf_Struct* attributes);
-
     // Processes client-to-server messages on the client-to-extproc path.
     absl::AnyInvocable<Poll<absl::Status>()> ProcessFromClientToExtProcServer();
     // Processes the ext_proc server response for client-to-server body messages
@@ -521,6 +513,13 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
         absl::StatusOr<ExtProcResponse> result);
 
    private:
+    // Prepares the ProcessingRequest protobuf message for client body messages.
+    static absl::AnyInvocable<Poll<absl::Status>()> SendClientMessageRequest(
+        RefCountedPtr<ExtProcFilter::ExtProcCall> call,
+        const MessageHandle& message, bool end_of_stream,
+        bool end_of_stream_without_message,
+        ::google_protobuf_Struct* attributes);
+
     // Intercepts client-to-server messages in non processing mode.
     absl::AnyInvocable<Poll<absl::Status>()> NonProcessingMode();
     // Handles client-to-server message in observability mode.
