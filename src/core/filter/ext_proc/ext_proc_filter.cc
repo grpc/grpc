@@ -698,6 +698,15 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
     streaming_call.reset();
   }
 
+  // Acquire a strong reference under mu_ using RefIfNonZero(). This prevents
+  // race conditions with concurrent destruction/reset of streaming_call_,
+  // returning nullptr if the ref count has already dropped to zero.
+  RefCountedPtr<XdsStreamingCallPromiseWrapper> GetStreamingCall() const {
+    MutexLock lock(&mu_);
+    if (streaming_call_ == nullptr) return nullptr;
+    return streaming_call_->RefIfNonZero();
+  }
+
   void Orphaned() override { CloseStream(); }
 
   void CompleteOutstandingProcessors(absl::StatusOr<ExtProcResponse> response);
@@ -796,10 +805,9 @@ absl::AnyInvocable<Poll<absl::Status>()>
 ExtProcFilter::ExtProcCall::PullMessagesFromSideStream() {
   return Seq(
       Loop([self = Ref()]() -> Promise<LoopCtl<absl::Status>> {
-        RefCountedPtr<XdsStreamingCallPromiseWrapper> streaming_call;
-        {
-          MutexLock lock(&self->mu_);
-          streaming_call = self->streaming_call_;
+        auto streaming_call = self->GetStreamingCall();
+        if (streaming_call == nullptr) {
+          return Immediate(LoopCtl<absl::Status>(absl::OkStatus()));
         }
         return Seq(
             streaming_call->PullMessage(),
@@ -817,11 +825,8 @@ ExtProcFilter::ExtProcCall::PullMessagesFromSideStream() {
       }),
       [self = Ref()](absl::Status status) -> Promise<absl::Status> {
         if (!status.ok()) return Immediate(status);
-        RefCountedPtr<XdsStreamingCallPromiseWrapper> streaming_call;
-        {
-          MutexLock lock(&self->mu_);
-          streaming_call = self->streaming_call_;
-        }
+        auto streaming_call = self->GetStreamingCall();
+        if (streaming_call == nullptr) return Immediate(status);
         return streaming_call->PullServerTrailingMetadata();
       },
       [self = Ref()](absl::Status status) -> absl::Status {
@@ -1121,10 +1126,7 @@ ExtProcFilter::ExtProcCall::SendMessageToSideStream(
             if (push_promise == nullptr) {
               auto payload = payload_generator();
               if (!payload.ok()) return StatusFlag(Failure());
-              {
-                MutexLock lock(&mu_);
-                streaming_call = streaming_call_;
-              }
+              streaming_call = GetStreamingCall();
               if (streaming_call == nullptr) return StatusFlag(Failure());
               push_promise = streaming_call->PushMessage(std::move(*payload));
             }
