@@ -474,7 +474,7 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
   template <typename ServiceType>
   class ExtProcServer : public ExtProcServerBase {
    public:
-    ExtProcServer(std::unique_ptr<ServiceType> service)
+    explicit ExtProcServer(std::unique_ptr<ServiceType> service)
         : service_(std::move(service)), port_(grpc_pick_unused_port_or_die()) {}
 
     void Start() override {
