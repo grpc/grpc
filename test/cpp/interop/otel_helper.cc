@@ -30,7 +30,12 @@
 #include "absl/flags/flag.h"
 #include "absl/log/log.h"
 
-#ifndef __ANDROID__
+#if __has_include(<grpcpp/ext/otel_plugin.h>) && \
+    __has_include("opentelemetry/exporters/otlp/otlp_grpc_exporter_factory.h")
+#define GRPC_HAS_OTEL_TRACING 1
+#endif
+
+#ifdef GRPC_HAS_OTEL_TRACING
 #include <grpcpp/ext/otel_plugin.h>
 
 #include "opentelemetry/exporters/otlp/otlp_grpc_exporter_factory.h"
@@ -45,14 +50,14 @@ namespace grpc {
 namespace testing {
 namespace interop {
 
-#ifndef __ANDROID__
+#ifdef GRPC_HAS_OTEL_TRACING
 static std::shared_ptr<opentelemetry::sdk::trace::TracerProvider>
     g_tracer_provider;
 static std::once_flag g_otel_init_once;
 #endif
 
 void MaybeRegisterOpenTelemetry() {
-#ifndef __ANDROID__
+#ifdef GRPC_HAS_OTEL_TRACING
   std::call_once(g_otel_init_once, []() {
     if (!absl::GetFlag(FLAGS_enable_opentelemetry)) {
       return;
@@ -95,7 +100,7 @@ void MaybeRegisterOpenTelemetry() {
 }
 
 void ForceFlushOpenTelemetry() {
-#ifndef __ANDROID__
+#ifdef GRPC_HAS_OTEL_TRACING
   auto provider = std::atomic_load(&g_tracer_provider);
   if (provider != nullptr) {
     provider->ForceFlush();
