@@ -116,13 +116,13 @@ def _create_call_credentials(args):
     from google.auth import jwt as google_auth_jwt
 
     if args.test_case == "oauth2_auth_token":
-        google_credentials, unused_project_id = google_auth.default(
+        google_credentials, _unused_project_id = google_auth.default(
             scopes=[args.oauth_scope]
         )
         google_credentials.refresh(google_auth.transport.requests.Request())
         return grpc.access_token_call_credentials(google_credentials.token)
     elif args.test_case == "compute_engine_creds":
-        google_credentials, unused_project_id = google_auth.default(
+        google_credentials, _unused_project_id = google_auth.default(
             scopes=[args.oauth_scope]
         )
         return grpc.metadata_call_credentials(
@@ -163,7 +163,7 @@ def get_secure_channel_parameters(args):
     if args.custom_credentials_type is not None:
         if args.custom_credentials_type == "compute_engine_channel_creds":
             assert call_credentials is None
-            google_credentials, unused_project_id = google_auth.default(
+            google_credentials, _unused_project_id = google_auth.default(
                 scopes=[args.oauth_scope]
             )
             call_creds = grpc.metadata_call_credentials(
