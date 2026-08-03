@@ -878,7 +878,7 @@ ExtProcFilter::ExtProcCall::ProcessSideStreamResponse(
   // Dispatch the parsed response to the appropriate processor based on the
   // response type.
   const auto& processing_mode = *config().processing_mode;
-  auto return_error = [this](absl::string_view message)
+  auto create_error = [this](absl::string_view message)
       -> absl::AnyInvocable<Poll<absl::Status>()> {
     auto error = absl::InternalError(message);
     SetStreamError(error);
@@ -889,7 +889,7 @@ ExtProcFilter::ExtProcCall::ProcessSideStreamResponse(
       [&](const ExtProcResponse::ImmediateResponse&)
           -> absl::AnyInvocable<Poll<absl::Status>()> {
         if (config().disable_immediate_response || !server_trailers_sent_) {
-          return return_error(
+          return create_error(
               config().disable_immediate_response
                   ? "unhandled immediate response due to config disabled it"
                   : "Immediate response received but trailers not sent to "
@@ -904,7 +904,7 @@ ExtProcFilter::ExtProcCall::ProcessSideStreamResponse(
       [&](const ExtProcResponse::RequestHeaders&)
           -> absl::AnyInvocable<Poll<absl::Status>()> {
         if (!processing_mode.send_request_headers) {
-          return return_error(
+          return create_error(
               "Received request headers response but request headers are "
               "disabled");
         }
@@ -917,7 +917,7 @@ ExtProcFilter::ExtProcCall::ProcessSideStreamResponse(
       [&](const ExtProcResponse::ResponseHeaders&)
           -> absl::AnyInvocable<Poll<absl::Status>()> {
         if (!processing_mode.send_response_headers) {
-          return return_error(
+          return create_error(
               "Received response headers response but response headers are "
               "disabled");
         }
@@ -934,24 +934,24 @@ ExtProcFilter::ExtProcCall::ProcessSideStreamResponse(
       [&](const ExtProcResponse::ResponseTrailers&)
           -> absl::AnyInvocable<Poll<absl::Status>()> {
         if (!processing_mode.send_response_trailers) {
-          return return_error(
+          return create_error(
               "Received response trailers response but response trailers are "
               "disabled");
         }
         if (is_trailers_only_) {
-          return return_error(
+          return create_error(
               "Received response trailers response in a Trailers-Only call");
         }
         if (processing_mode.send_response_headers &&
             !response_headers_received_) {
-          return return_error(
+          return create_error(
               "Received response trailers response before response headers "
               "response");
         }
         const bool s2c_body_outstanding =
             processing_mode.send_response_body && outstanding_s2c_messages_ > 0;
         if (s2c_body_outstanding) {
-          return return_error(
+          return create_error(
               "Received response trailers response before all outstanding "
               "response body responses were received");
         }
@@ -964,17 +964,17 @@ ExtProcFilter::ExtProcCall::ProcessSideStreamResponse(
       [&](const ExtProcResponse::RequestBody& request_body)
           -> absl::AnyInvocable<Poll<absl::Status>()> {
         if (!processing_mode.send_request_body) {
-          return return_error(
+          return create_error(
               "Received request body response but request body is disabled");
         }
         if (processing_mode.send_request_headers &&
             !request_headers_received_) {
-          return return_error(
+          return create_error(
               "Received request body response before request headers "
               "response");
         }
         if (!DecrementOutstandingClientToServerMessages()) {
-          return return_error(
+          return create_error(
               "Received unexpected request body response from external "
               "processor");
         }
@@ -984,7 +984,7 @@ ExtProcFilter::ExtProcCall::ProcessSideStreamResponse(
             << request_body.mutation.end_of_stream_without_message;
         if (request_body.mutation.end_of_stream_without_message) {
           if (!c2s_writes_done_) {
-            return return_error("Client sends closed by external processor");
+            return create_error("Client sends closed by external processor");
           }
           ext_proc_set_eos_ = true;
         } else if (request_body.mutation.end_of_stream) {
@@ -997,27 +997,27 @@ ExtProcFilter::ExtProcCall::ProcessSideStreamResponse(
       [&](const ExtProcResponse::ResponseBody&)
           -> absl::AnyInvocable<Poll<absl::Status>()> {
         if (!processing_mode.send_response_body) {
-          return return_error(
+          return create_error(
               "Received response body response but response body is disabled");
         }
         if (is_trailers_only_) {
-          return return_error(
+          return create_error(
               "Received response body response in a Trailers-Only call");
         }
         if (processing_mode.send_response_headers &&
             !response_headers_received_) {
-          return return_error(
+          return create_error(
               "Received response body response before response headers "
               "response");
         }
         if (processing_mode.send_response_trailers &&
             response_trailers_received_) {
-          return return_error(
+          return create_error(
               "Received response body response after response trailers "
               "response");
         }
         if (outstanding_s2c_messages_ == 0) {
-          return return_error(
+          return create_error(
               "Received unexpected response body response from external "
               "processor");
         }
