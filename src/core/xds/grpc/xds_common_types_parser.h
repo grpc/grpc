@@ -77,6 +77,11 @@ StringMatcher StringMatcherParse(
     const xds_type_matcher_v3_StringMatcher* matcher_proto,
     ValidationErrors* errors);
 
+std::vector<StringMatcher> XdsListStringMatcherParse(
+    const XdsResourceType::DecodeContext& context,
+    const envoy_type_matcher_v3_ListStringMatcher* list_matcher,
+    ValidationErrors* errors);
+
 HeaderMatcher ParseXdsHeaderMatcher(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_route_v3_HeaderMatcher* matcher,

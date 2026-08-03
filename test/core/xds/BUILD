@@ -190,6 +190,35 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "streaming_call_promise_wrapper_test",
+    srcs = ["streaming_call_promise_wrapper_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/status",
+    ],
+    tags = ["xds_test"],
+    uses_event_engine = True,
+    uses_polling = False,
+    deps = [
+        ":xds_transport_fake",
+        "//:grpc",
+        "//:grpc_base",
+        "//:iomgr_timer",
+        "//:ref_counted_ptr",
+        "//src/core:activity",
+        "//src/core:down_cast",
+        "//src/core:join",
+        "//src/core:map",
+        "//src/core:status_flag",
+        "//src/core:streaming_call_promise_wrapper",
+        "//src/core:wait_for_single_owner",
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/promise:test_wakeup_schedulers",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "xds_audit_logger_registry_test",
     srcs = ["xds_audit_logger_registry_test.cc"],
     external_deps = [
@@ -659,12 +688,14 @@ grpc_cc_test(
         "//:grpc_base",
         "//:grpc_public_hdrs",
         "//:grpc_trace",
+        "//:iomgr_timer",
         "//:ref_counted_ptr",
         "//:xds_client",
         "//src/core:composite_filter",
         "//src/core:error",
         "//src/core:gcp_authentication_filter",
         "//src/core:grpc_check",
+        "//src/core:grpc_ext_proc_filter",
         "//src/core:grpc_fault_injection_filter",
         "//src/core:grpc_rbac_filter",
         "//src/core:grpc_stateful_session_filter",
@@ -690,6 +721,7 @@ grpc_cc_test(
         "@envoy_api//envoy/extensions/filters/common/fault/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/common/matcher/action/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/composite/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/filters/http/ext_proc/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/fault/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/gcp_authn/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/rbac/v3:pkg_cc_proto",
