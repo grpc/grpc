@@ -571,7 +571,7 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
   // send is in-flight on streaming_call_ at a time, using a single Waker
   // without any queue or vector allocations.
   absl::AnyInvocable<Poll<absl::Status>()> SendMessageToSideStream(
-      absl::AnyInvocable<absl::StatusOr<std::string>()> payload_generator);
+      absl::StatusOr<std::string> payload);
 
   // Handles the request path (Client to Server).
   absl::AnyInvocable<Poll<absl::Status>()> ClientToServerCall();
@@ -1101,8 +1101,8 @@ void ExtProcFilter::ExtProcCall::CompleteOutstandingProcessors(
 // - Handle the failure mode allow
 absl::AnyInvocable<Poll<absl::Status>()>
 ExtProcFilter::ExtProcCall::SendMessageToSideStream(
-    absl::AnyInvocable<absl::StatusOr<std::string>()> payload_generator) {
-  return [this, call = Ref(), payload_generator = std::move(payload_generator),
+    absl::StatusOr<std::string> payload) {
+  return [this, call = Ref(), payload = std::move(payload),
           send_promise = absl::AnyInvocable<Poll<absl::Status>()>()]() mutable
              -> Poll<absl::Status> {
     if (send_promise == nullptr) {
@@ -1119,12 +1119,11 @@ ExtProcFilter::ExtProcCall::SendMessageToSideStream(
       }
       ext_proc_send_state_.store(SendState::kSendInFlight);
       send_promise = Seq(
-          [this, payload_generator = std::move(payload_generator),
+          [this, payload = std::move(payload),
            streaming_call = RefCountedPtr<XdsStreamingCallPromiseWrapper>(),
            push_promise = absl::AnyInvocable<Poll<StatusFlag>()>()]() mutable
               -> Poll<StatusFlag> {
             if (push_promise == nullptr) {
-              auto payload = payload_generator();
               if (!payload.ok()) return StatusFlag(Failure());
               streaming_call = GetStreamingCall();
               if (streaming_call == nullptr) return StatusFlag(Failure());
@@ -1296,22 +1295,19 @@ absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ExtProcCall::
     ClientInitialMetadataProcessor::SendClientInitialMetadataRequest(
         const ClientMetadataHandle& metadata,
         absl::string_view default_authority) {
-  return call_->SendMessageToSideStream(
-      [call = call_, metadata = metadata.get(),
-       default_authority = std::string(default_authority)]() mutable {
-        std::optional<ExtProcProcessingMode> processing_mode;
-        if (call->IsFirstMessageOnStream()) {
-          processing_mode = call->config().processing_mode;
-        }
-        upb::Arena arena;
-        auto* header_attributes = CreateExtProcAttributesProtoStruct(
-            arena.ptr(), call->config().request_attributes, *metadata,
-            default_authority);
-        return CreateExtProcClientHeadersRequest(
-            arena.ptr(), metadata, call->config().forwarding_allowed_headers,
-            call->config().forwarding_disallowed_headers, header_attributes,
-            call->config().observability_mode, processing_mode);
-      });
+  std::optional<ExtProcProcessingMode> processing_mode;
+  if (call_->IsFirstMessageOnStream()) {
+    processing_mode = call_->config().processing_mode;
+  }
+  upb::Arena arena;
+  auto* header_attributes = CreateExtProcAttributesProtoStruct(
+      arena.ptr(), call_->config().request_attributes, *metadata,
+      default_authority);
+  auto payload = CreateExtProcClientHeadersRequest(
+      arena.ptr(), metadata.get(), call_->config().forwarding_allowed_headers,
+      call_->config().forwarding_disallowed_headers, header_attributes,
+      call_->config().observability_mode, processing_mode);
+  return call_->SendMessageToSideStream(std::move(payload));
 }
 
 absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ExtProcCall::
@@ -1409,20 +1405,17 @@ absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ExtProcCall::
   if (call->IsStreamClosed() || call->ext_proc_stream_half_closed_) {
     return Immediate(absl::OkStatus());
   }
-  auto* metadata_ptr = metadata.get();
-  return call->SendMessageToSideStream([call, metadata_ptr,
-                                        end_of_stream]() mutable {
-    std::optional<ExtProcProcessingMode> processing_mode;
-    if (call->IsFirstMessageOnStream()) {
-      processing_mode = call->config().processing_mode;
-    }
-    upb::Arena arena;
-    return CreateExtProcServerHeadersRequest(
-        arena.ptr(), metadata_ptr, call->config().forwarding_allowed_headers,
-        call->config().forwarding_disallowed_headers,
-        /*attributes=*/nullptr, call->config().observability_mode,
-        processing_mode, end_of_stream);
-  });
+  std::optional<ExtProcProcessingMode> processing_mode;
+  if (call->IsFirstMessageOnStream()) {
+    processing_mode = call->config().processing_mode;
+  }
+  upb::Arena arena;
+  auto payload = CreateExtProcServerHeadersRequest(
+      arena.ptr(), metadata.get(), call->config().forwarding_allowed_headers,
+      call->config().forwarding_disallowed_headers,
+      /*attributes=*/nullptr, call->config().observability_mode,
+      processing_mode, end_of_stream);
+  return call->SendMessageToSideStream(std::move(payload));
 }
 
 absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ExtProcCall::
@@ -1539,19 +1532,17 @@ absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ExtProcCall::
   if (call->IsStreamClosed() || call->ext_proc_stream_half_closed_) {
     return Immediate(absl::OkStatus());
   }
-  auto* metadata_ptr = metadata.get();
-  return Map(call->SendMessageToSideStream([call, metadata_ptr]() mutable {
-    std::optional<ExtProcProcessingMode> processing_mode;
-    if (call->IsFirstMessageOnStream()) {
-      processing_mode = call->config().processing_mode;
-    }
-    upb::Arena arena;
-    return CreateExtProcServerTrailersRequest(
-        arena.ptr(), metadata_ptr, call->config().forwarding_allowed_headers,
-        call->config().forwarding_disallowed_headers,
-        /*attributes=*/nullptr, call->config().observability_mode,
-        processing_mode);
-  }),
+  std::optional<ExtProcProcessingMode> processing_mode;
+  if (call->IsFirstMessageOnStream()) {
+    processing_mode = call->config().processing_mode;
+  }
+  upb::Arena arena;
+  auto payload = CreateExtProcServerTrailersRequest(
+      arena.ptr(), metadata.get(), call->config().forwarding_allowed_headers,
+      call->config().forwarding_disallowed_headers,
+      /*attributes=*/nullptr, call->config().observability_mode,
+      processing_mode);
+  return Map(call->SendMessageToSideStream(std::move(payload)),
              [call](absl::Status status) {
                if (status.ok()) {
                  call->server_trailers_sent_ = true;
@@ -1779,26 +1770,23 @@ ExtProcFilter::ExtProcCall::ServerMessageProcessor::SendServerMessageRequest(
   if (message != nullptr) {
     message_bytes = message->payload()->JoinIntoString();
   }
-  return Seq(
-      call_->SendMessageToSideStream(
-          [call = call_, message_bytes = std::move(message_bytes)]() mutable {
-            GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                << "ExtProc: ServerToClientMessages body message intercepted";
-            std::optional<ExtProcProcessingMode> processing_mode;
-            if (call->IsFirstMessageOnStream()) {
-              processing_mode = call->config().processing_mode;
-            }
-            upb::Arena arena;
-            return CreateExtProcServerBodyRequest(
-                arena.ptr(), message_bytes, /*attributes=*/nullptr,
-                call->config().observability_mode, processing_mode);
-          }),
-      [call = call_](absl::Status status) {
-        if (status.ok()) {
-          call->first_body_message_sent_ = true;
-        }
-        return status;
-      });
+  GRPC_TRACE_LOG(ext_proc_filter, INFO)
+      << "ExtProc: ServerToClientMessages body message intercepted";
+  std::optional<ExtProcProcessingMode> processing_mode;
+  if (call_->IsFirstMessageOnStream()) {
+    processing_mode = call_->config().processing_mode;
+  }
+  upb::Arena arena;
+  auto payload = CreateExtProcServerBodyRequest(
+      arena.ptr(), message_bytes, /*attributes=*/nullptr,
+      call_->config().observability_mode, processing_mode);
+  return Seq(call_->SendMessageToSideStream(std::move(payload)),
+             [call = call_](absl::Status status) {
+               if (status.ok()) {
+                 call->first_body_message_sent_ = true;
+               }
+               return status;
+             });
 }
 
 absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ExtProcCall::
@@ -1896,32 +1884,27 @@ ExtProcFilter::ExtProcCall::ClientMessageProcessor::SendClientMessageRequest(
   if (end_of_stream_without_message) {
     call->half_close_initiated_ = true;
   }
-  return Map(
-      call->SendMessageToSideStream(
-          [ext_proc_call = call, message_bytes = std::move(message_bytes),
-           end_of_stream, end_of_stream_without_message, attributes]() mutable {
-            GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                << "ExtProc: ClientToServerMessages body message intercepted "
-                   "(observability mode)";
-            std::optional<ExtProcProcessingMode> processing_mode;
-            if (ext_proc_call->IsFirstMessageOnStream()) {
-              processing_mode = ext_proc_call->config().processing_mode;
-            }
-            upb::Arena arena;
-            if (attributes == nullptr) {
-              attributes = ext_proc_call->request_attributes_;
-            }
-            return CreateExtProcClientBodyRequest(
-                arena.ptr(), message_bytes, attributes,
-                ext_proc_call->config().observability_mode, processing_mode,
-                end_of_stream, end_of_stream_without_message);
-          }),
-      [ext_proc_call = call](absl::Status status) {
-        if (status.ok()) {
-          ext_proc_call->first_body_message_sent_ = true;
-        }
-        return status;
-      });
+  GRPC_TRACE_LOG(ext_proc_filter, INFO)
+      << "ExtProc: ClientToServerMessages body message intercepted "
+         "(observability mode)";
+  std::optional<ExtProcProcessingMode> processing_mode;
+  if (call->IsFirstMessageOnStream()) {
+    processing_mode = call->config().processing_mode;
+  }
+  upb::Arena arena;
+  if (attributes == nullptr) {
+    attributes = call->request_attributes_;
+  }
+  auto payload = CreateExtProcClientBodyRequest(
+      arena.ptr(), message_bytes, attributes, call->config().observability_mode,
+      processing_mode, end_of_stream, end_of_stream_without_message);
+  return Map(call->SendMessageToSideStream(std::move(payload)),
+             [ext_proc_call = call](absl::Status status) {
+               if (status.ok()) {
+                 ext_proc_call->first_body_message_sent_ = true;
+               }
+               return status;
+             });
 }
 
 absl::AnyInvocable<Poll<absl::Status>()> ExtProcFilter::ExtProcCall::
