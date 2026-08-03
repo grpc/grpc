@@ -56107,6 +56107,16 @@ function(generate_pkgconfig name description version requires requires_private
   set(PC_REQUIRES_PRIVATE "${requires_private}")
   set(PC_LIB "${libs}")
   set(PC_LIBS_PRIVATE "${libs_private}")
+  set(PC_CFLAGS "")
+  if(WIN32 AND BUILD_SHARED_LIBS)
+    if(name STREQUAL "gpr")
+      set(PC_CFLAGS "-DGPR_DLL_IMPORTS")
+    elseif(name STREQUAL "gRPC" OR name STREQUAL "gRPC unsecure")
+      set(PC_CFLAGS "-DGRPC_DLL_IMPORTS -DGPR_DLL_IMPORTS")
+    elseif(name MATCHES "^gRPC\\+\\+")
+      set(PC_CFLAGS "-DGRPCXX_DLL_IMPORTS -DGRPC_DLL_IMPORTS -DGPR_DLL_IMPORTS")
+    endif()
+  endif()
   set(output_filepath "${grpc_BINARY_DIR}/libs/opt/pkgconfig/${output_filename}")
   configure_file(
     "${grpc_SOURCE_DIR}/cmake/pkg-config-template.pc.in"

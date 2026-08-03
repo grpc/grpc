@@ -1122,6 +1122,16 @@
     set(PC_REQUIRES_PRIVATE "<%text>${requires_private}</%text>")
     set(PC_LIB "<%text>${libs}</%text>")
     set(PC_LIBS_PRIVATE "<%text>${libs_private}</%text>")
+    set(PC_CFLAGS "")
+    if(WIN32 AND BUILD_SHARED_LIBS)
+      if(name STREQUAL "gpr")
+        set(PC_CFLAGS "-DGPR_DLL_IMPORTS")
+      elseif(name STREQUAL "gRPC" OR name STREQUAL "gRPC unsecure")
+        set(PC_CFLAGS "-DGRPC_DLL_IMPORTS -DGPR_DLL_IMPORTS")
+      elseif(name MATCHES "^gRPC\\+\\+")
+        set(PC_CFLAGS "-DGRPCXX_DLL_IMPORTS -DGRPC_DLL_IMPORTS -DGPR_DLL_IMPORTS")
+      endif()
+    endif()
     set(output_filepath "<%text>${grpc_BINARY_DIR}/libs/opt/pkgconfig/${output_filename}</%text>")
     configure_file(
       "<%text>${grpc_SOURCE_DIR}/cmake/pkg-config-template.pc.in</%text>"
