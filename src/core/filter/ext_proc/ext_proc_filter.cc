@@ -776,15 +776,13 @@ ExtProcFilter::ExtProcCall::~ExtProcCall() {
       << "ExtProcCall " << this << " destroyed";
   if (config().deferred_close_timeout != Duration::Zero() &&
       config().observability_mode) {
-    if (ext_proc_filter_->event_engine_ != nullptr) {
-      ext_proc_filter_->event_engine_->RunAfter(
-          config().deferred_close_timeout,
-          [call = std::move(streaming_call_),
-           transport = std::move(transport_)]() mutable {
-            call.reset();
-            transport.reset();
-          });
-    }
+    ext_proc_filter_->event_engine_->RunAfter(
+        config().deferred_close_timeout,
+        [call = std::move(streaming_call_),
+         transport = std::move(transport_)]() mutable {
+          call.reset();
+          transport.reset();
+        });
   } else {
     streaming_call_.reset();
   }
@@ -2362,6 +2360,7 @@ void ExtProcFilter::InterceptCall(UnstartedCallHandler unstarted_call_handler) {
         GRPC_TRACE_LOG(ext_proc_filter, INFO)
             << "ExtProc: InterceptCall promise chain start";
         auto transport = ext_proc_filter->channel()->transport();
+        // This shouldn't ever happen; added as a defensive check.
         if (transport == nullptr) {
           return []() -> Poll<Empty> { return Empty{}; };
         }
