@@ -2145,6 +2145,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(gpr
     PRIVATE
       "GPR_DLL_EXPORTS"
+    INTERFACE
+      "GPR_DLL_IMPORTS"
     )
   endif()
   if(gRPC_INSTALL)
@@ -3182,6 +3184,8 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GRPC_DLL_EXPORTS"
       "GPR_DLL_IMPORTS"
+    INTERFACE
+      "GRPC_DLL_IMPORTS"
     )
   endif()
   if(gRPC_INSTALL)
@@ -3926,6 +3930,8 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GRPC_DLL_EXPORTS"
       "GPR_DLL_IMPORTS"
+    INTERFACE
+      "GRPC_DLL_IMPORTS"
     )
   endif()
   if(gRPC_INSTALL)
@@ -5038,6 +5044,8 @@ if(WIN32 AND MSVC)
       "GRPCXX_DLL_EXPORTS"
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+    INTERFACE
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
   if(gRPC_INSTALL)
@@ -5786,6 +5794,8 @@ if(WIN32 AND MSVC)
       "GRPCXX_DLL_EXPORTS"
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+    INTERFACE
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
   if(gRPC_INSTALL)
