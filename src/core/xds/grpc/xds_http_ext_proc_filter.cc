@@ -405,12 +405,10 @@ RefCountedPtr<const FilterConfig> XdsHttpExtProcFilterFactory::MergeConfigs(
       target != nullptr) {
     config->channel_info = blackboard.GetOrSet<ExtProcFilter::ExtProcChannel>(
         target->Key(), [&]() {
-          auto target_copy = std::make_unique<GrpcXdsServerTarget>(*target);
           absl::Status status;
-          auto transport =
-              transport_factory.GetTransport(*target_copy, &status);
+          auto transport = transport_factory.GetTransport(*target, &status);
           return MakeRefCounted<ExtProcFilter::ExtProcChannel>(
-              std::move(target_copy), std::move(transport));
+              *target, std::move(transport));
         });
   }
   return config;

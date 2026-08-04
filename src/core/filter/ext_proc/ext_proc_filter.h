@@ -47,17 +47,17 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
     static UniqueTypeName Type() {
       return GRPC_UNIQUE_TYPE_NAME_HERE("ext_proc_channel");
     }
-    ExtProcChannel(std::unique_ptr<const XdsBootstrap::XdsServerTarget> server,
+    ExtProcChannel(GrpcXdsServerTarget server,
                    RefCountedPtr<XdsTransportFactory::XdsTransport> transport);
     ~ExtProcChannel() override;
-    const XdsBootstrap::XdsServerTarget& server() const { return *server_; }
+    const GrpcXdsServerTarget& server() const { return server_; }
 
     RefCountedPtr<XdsTransportFactory::XdsTransport> transport() const {
       return transport_;
     }
 
    private:
-    std::unique_ptr<const XdsBootstrap::XdsServerTarget> server_;
+    GrpcXdsServerTarget server_;
     RefCountedPtr<XdsTransportFactory::XdsTransport> transport_;
   };
 
@@ -155,8 +155,6 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
     event_engine_.reset();
     config_.reset();
   }
-
-  bool StartTransportOp(grpc_transport_op* op) override;
 
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override;
 

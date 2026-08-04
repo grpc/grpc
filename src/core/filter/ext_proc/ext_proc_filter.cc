@@ -243,17 +243,17 @@ bool ExtProcFilter::Config::Equals(const FilterConfig& other) const {
 //
 
 ExtProcFilter::ExtProcChannel::ExtProcChannel(
-    std::unique_ptr<const XdsBootstrap::XdsServerTarget> server,
+    GrpcXdsServerTarget server,
     RefCountedPtr<XdsTransportFactory::XdsTransport> transport)
     : server_(std::move(server)), transport_(std::move(transport)) {
   GRPC_TRACE_LOG(ext_proc_filter, INFO)
-      << "creating channel " << this << " for server " << server_->server_uri();
+      << "creating channel " << this << " for server " << server_.server_uri();
 }
 
 ExtProcFilter::ExtProcChannel::~ExtProcChannel() {
   GRPC_TRACE_LOG(ext_proc_filter, INFO)
       << "destroying ext_proc channel " << this << " for server "
-      << server_->server_uri();
+      << server_.server_uri();
 }
 
 //
@@ -290,7 +290,8 @@ ExtProcFilter::ExtProcChannel::~ExtProcChannel() {
 //  |            ProcessServerTrailingMetadataFromServer()))                |
 //  +-----------------------------------------------------------------------+
 
-class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
+class ExtProcFilter::ExtProcCall final
+    : public InternallyRefCounted<ExtProcCall> {
  public:
   ExtProcCall(RefCountedPtr<ExtProcFilter> ext_proc_filter,
               RefCountedPtr<XdsTransportFactory::XdsTransport> transport,
@@ -336,8 +337,9 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
       absl::StatusOr<ExtProcResponse> response);
   // Prepares the ProcessingRequest protobuf message for client initial
   // metadata.
-  auto SendClientInitialMetadataRequest(const ClientMetadataHandle& metadata,
-                                        absl::string_view default_authority);
+  absl::AnyInvocable<Poll<StatusFlag>()> SendClientInitialMetadataRequest(
+      const ClientMetadataHandle& metadata,
+      absl::string_view default_authority);
   // Sends the client initial metadata request to the ext_proc server and
   // handles the result.
   absl::AnyInvocable<Poll<StatusFlag>()> SendAndHandleClientInitialMetadata(
@@ -487,9 +489,6 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
     // A message send operation has been claimed and is currently in flight on
     // the underlying transport wrapper.
     kSendInFlight,
-    // A new message send attempt was requested while another message send was
-    // already in flight.
-    kSendMessageButMessageIsAlreadyInFlight,
     // The stream has been closed or terminated due to an error, preventing
     // subsequent sends.
     kSendFailed,
@@ -500,7 +499,7 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
   // send is in-flight on streaming_call_ at a time, using a single Waker
   // without any queue or vector allocations.
   absl::AnyInvocable<Poll<StatusFlag>()> SendMessageToSideStream(
-      absl::StatusOr<std::string> payload);
+      std::string payload);
 
   // Parses and processes an incoming response message payload from the
   // side-stream.
@@ -611,7 +610,10 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
     streaming_call.reset();
   }
 
-  void Orphaned() override { CloseStream(); }
+  void Orphan() override {
+    CloseStream();
+    Unref();
+  }
 
   void CompleteOutstandingProcessors(absl::StatusOr<ExtProcResponse> response);
 
@@ -660,7 +662,7 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
 
   // Atomic send state for lock-free coordination between client-side and
   // server-side message senders.
-  std::atomic<SendState> ext_proc_send_state_{SendState::kIdle};
+  SendState ext_proc_send_state_ = SendState::kIdle;
   // Waker for queuing send promises when a send operation is already in flight.
   Waker ext_proc_send_waker_;
 
@@ -955,45 +957,43 @@ void ExtProcFilter::ExtProcCall::CompleteOutstandingProcessors(
 // get complete and then send the previous one if the stream is not closed
 // - Handle the failure mode allow
 absl::AnyInvocable<Poll<StatusFlag>()>
-ExtProcFilter::ExtProcCall::SendMessageToSideStream(
-    absl::StatusOr<std::string> payload) {
+ExtProcFilter::ExtProcCall::SendMessageToSideStream(std::string payload) {
   return Seq(
       // Wait until send state is kIdle, then mark kSendInFlight.
       [self = Ref()]() -> Poll<StatusFlag> {
-        if (self->ext_proc_send_state_.load() == SendState::kSendFailed) {
+        if (self->ext_proc_send_state_ == SendState::kSendFailed) {
           return Failure{};
         }
-        if (self->ext_proc_send_state_.load() != SendState::kIdle) {
-          if (self->ext_proc_send_state_.load() == SendState::kSendInFlight) {
-            self->ext_proc_send_state_.store(
-                SendState::kSendMessageButMessageIsAlreadyInFlight);
-          }
+        if (self->ext_proc_send_state_ != SendState::kIdle) {
           self->ext_proc_send_waker_ =
               GetContext<Activity>()->MakeNonOwningWaker();
           return Pending{};
         }
-        self->ext_proc_send_state_.store(SendState::kSendInFlight);
+        self->ext_proc_send_state_ = SendState::kSendInFlight;
         return Success{};
       },
       // Safely acquire streaming_call_ and push the payload.
       [self = Ref(), payload = std::move(payload)](
           StatusFlag status) mutable -> ArenaPromise<StatusFlag> {
-        if (!status.ok() || !payload.ok()) {
+        if (!status.ok()) {
           return Immediate(StatusFlag(Failure{}));
         }
+        // CloseStream() moves out and resets streaming_call_, so it may be
+        // null if the side-stream closed while this send was queued or
+        // executing.
         if (self->streaming_call_ == nullptr) {
           return Immediate(StatusFlag(Failure{}));
         }
-        return self->streaming_call_->PushMessage(std::move(*payload));
+        return self->streaming_call_->PushMessage(std::move(payload));
       },
       // Reset send state and wake up any waiting senders.
       [self = Ref()](StatusFlag status) -> ArenaPromise<StatusFlag> {
         if (status.ok()) {
-          self->ext_proc_send_state_.store(SendState::kIdle);
+          self->ext_proc_send_state_ = SendState::kIdle;
           self->ext_proc_send_waker_.Wakeup();
           return Immediate(StatusFlag(Success{}));
         }
-        self->ext_proc_send_state_.store(SendState::kSendFailed);
+        self->ext_proc_send_state_ = SendState::kSendFailed;
         self->ext_proc_send_waker_.Wakeup();
         return Immediate(StatusFlag(Failure{}));
       });
@@ -1189,7 +1189,8 @@ ExtProcFilter::ExtProcCall::ProcessClientInitialMetadataResponse(
                                          Timestamp::Now(), std::move(response));
 }
 
-auto ExtProcFilter::ExtProcCall::SendClientInitialMetadataRequest(
+absl::AnyInvocable<Poll<StatusFlag>()>
+ExtProcFilter::ExtProcCall::SendClientInitialMetadataRequest(
     const ClientMetadataHandle& metadata, absl::string_view default_authority) {
   GRPC_TRACE_LOG(ext_proc_filter, INFO)
       << "ExtProc: Sending client initial metadata request to side-stream";
@@ -1206,8 +1207,11 @@ auto ExtProcFilter::ExtProcCall::SendClientInitialMetadataRequest(
       arena.ptr(), metadata.get(), config().forwarding_allowed_headers,
       config().forwarding_disallowed_headers, header_attributes,
       config().observability_mode, processing_mode);
+  if (!payload.ok()) {
+    return Immediate(StatusFlag(Failure{}));
+  }
   // Send the serialized request payload over the side-stream.
-  return SendMessageToSideStream(std::move(payload));
+  return SendMessageToSideStream(std::move(*payload));
 }
 
 absl::AnyInvocable<Poll<StatusFlag>()>
@@ -1335,7 +1339,10 @@ ExtProcFilter::ExtProcCall::SendServerInitialMetadataRequest(
       config().forwarding_disallowed_headers,
       /*attributes=*/nullptr, config().observability_mode, processing_mode,
       end_of_stream);
-  return SendMessageToSideStream(std::move(payload));
+  if (!payload.ok()) {
+    return Immediate(StatusFlag(Failure{}));
+  }
+  return SendMessageToSideStream(std::move(*payload));
 }
 
 absl::AnyInvocable<Poll<StatusFlag>()>
@@ -1500,7 +1507,10 @@ ExtProcFilter::ExtProcCall::SendServerTrailingMetadataRequest(
       arena.ptr(), metadata.get(), config().forwarding_allowed_headers,
       config().forwarding_disallowed_headers,
       /*attributes=*/nullptr, config().observability_mode, processing_mode);
-  return Map(SendMessageToSideStream(std::move(payload)),
+  if (!payload.ok()) {
+    return Immediate(StatusFlag(Failure{}));
+  }
+  return Map(SendMessageToSideStream(std::move(*payload)),
              [self = Ref()](StatusFlag status) {
                if (status.ok()) {
                  self->server_trailers_sent_ = true;
@@ -1792,7 +1802,10 @@ ExtProcFilter::ExtProcCall::SendServerMessageRequest(
   auto payload = CreateExtProcServerBodyRequest(
       arena.ptr(), message_bytes, /*attributes=*/nullptr,
       config().observability_mode, processing_mode);
-  return Seq(SendMessageToSideStream(std::move(payload)),
+  if (!payload.ok()) {
+    return Immediate(StatusFlag(Failure{}));
+  }
+  return Seq(SendMessageToSideStream(std::move(*payload)),
              [self = Ref()](StatusFlag status) {
                if (status.ok()) {
                  self->first_body_message_sent_ = true;
@@ -1929,7 +1942,10 @@ ExtProcFilter::ExtProcCall::SendClientMessageRequest(
       arena.ptr(), message_bytes, request_attributes_,
       config().observability_mode, processing_mode, end_of_stream,
       end_of_stream_without_message);
-  return Map(SendMessageToSideStream(std::move(payload)),
+  if (!payload.ok()) {
+    return Immediate(StatusFlag(Failure{}));
+  }
+  return Map(SendMessageToSideStream(std::move(*payload)),
              [self = Ref()](StatusFlag status) {
                if (status.ok()) {
                  self->first_body_message_sent_ = true;
@@ -2190,18 +2206,6 @@ ExtProcFilter::ExtProcFilter(const ChannelArgs& args,
 ExtProcFilter::~ExtProcFilter() {
   GRPC_TRACE_LOG(ext_proc_filter, INFO)
       << "ExtProcFilter " << this << " destroyed";
-}
-
-bool ExtProcFilter::StartTransportOp(grpc_transport_op* op) {
-  if (!op->disconnect_with_error.ok()) {
-    GRPC_TRACE_LOG(ext_proc_filter, INFO)
-        << "ExtProcFilter " << this
-        << " StartTransportOp disconnect_with_error: "
-        << op->disconnect_with_error;
-    event_engine_.reset();
-    config_.reset();
-  }
-  return false;
 }
 
 void ExtProcFilter::RecordClientHeadersDuration(double duration_seconds) const {
