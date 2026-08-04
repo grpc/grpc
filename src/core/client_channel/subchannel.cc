@@ -34,6 +34,7 @@
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/buffered_call.h"
 #include "src/core/client_channel/client_channel_internal.h"
+#include "src/core/client_channel/subchannel_metrics.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
 #include "src/core/client_channel/subchannel_stream_limiter.h"
 #include "src/core/config/core_configuration.h"
@@ -57,6 +58,7 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
+#include "src/core/transport/auth_context.h"
 #include "src/core/util/alloc.h"
 #include "src/core/util/backoff.h"
 #include "src/core/util/debug_location.h"
@@ -96,6 +98,36 @@ using ::grpc_event_engine::experimental::EventEngine;
 // ConnectivityStateWatcherInterface and
 // Subchannel::ConnectivityStateWatcherInterface.
 using TransportConnectivityStateWatcher = ConnectivityStateWatcherInterface;
+
+namespace {
+
+constexpr absl::string_view kSecurityLevelUnknown = "unknown";
+constexpr absl::string_view kSecurityLevelNone = "none";
+constexpr absl::string_view kSecurityLevelIntegrityOnly = "integrity_only";
+constexpr absl::string_view kSecurityLevelPrivacyAndIntegrity =
+    "privacy_and_integrity";
+
+absl::string_view GetSecurityLevelFromArgs(const ChannelArgs& args) {
+  auto auth_context = args.GetObject<grpc_auth_context>();
+  if (auth_context != nullptr) {
+    grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
+        auth_context, GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME);
+    const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
+    if (prop != nullptr) {
+      absl::string_view tsi_level(prop->value, prop->value_length);
+      if (tsi_level == "TSI_SECURITY_NONE") {
+        return kSecurityLevelNone;
+      } else if (tsi_level == "TSI_INTEGRITY_ONLY") {
+        return kSecurityLevelIntegrityOnly;
+      } else if (tsi_level == "TSI_PRIVACY_AND_INTEGRITY") {
+        return kSecurityLevelPrivacyAndIntegrity;
+      }
+    }
+  }
+  return kSecurityLevelUnknown;
+}
+
+}  // namespace
 
 //
 // Subchannel::Call
@@ -140,6 +172,7 @@ class Subchannel::ConnectedSubchannel
                                          grpc_error_handle* error) = 0;
   virtual void Ping(grpc_closure* on_initiate, grpc_closure* on_ack) = 0;
 
+  absl::string_view security_level() const { return security_level_; }
   // Returns true if there is quota for another RPC to start on this
   // connection.
   GRPC_MUST_USE_RESULT bool SetMaxConcurrentStreams(
@@ -169,11 +202,13 @@ class Subchannel::ConnectedSubchannel
                                                          : nullptr),
         subchannel_(std::move(subchannel)),
         args_(args),
+        security_level_(GetSecurityLevelFromArgs(args)),
         stream_limiter_(max_concurrent_streams) {}
 
  private:
   WeakRefCountedPtr<Subchannel> subchannel_;
   ChannelArgs args_;
+  const absl::string_view security_level_;
   SubchannelStreamLimiter stream_limiter_;
 };
 
@@ -804,6 +839,50 @@ class Subchannel::ConnectionStateWatcher final
     }
     // Remove the connection from the subchannel's list of connections.
     subchannel->RemoveConnectionLocked(connected_subchannel_.get());
+    if (subchannel->stats_plugin_group_ != nullptr) {
+      // Determine disconnect reason from DisconnectInfo
+      std::string disconnect_reason;
+      if (subchannel->shutdown_) {
+        disconnect_reason = "subchannel shutdown";
+      } else {
+        switch (disconnect_info.reason) {
+          case DisconnectReason::kGoaway:
+            if (disconnect_info.http2_error_code.has_value()) {
+              disconnect_reason = absl::StrCat(
+                  "GOAWAY ", http2::Http2Status::DebugGetCode(
+                                 *disconnect_info.http2_error_code));
+            } else {
+              disconnect_reason = "GOAWAY UNKNOWN";
+            }
+            break;
+          case DisconnectReason::kConnectionReset:
+            disconnect_reason = "connection reset";
+            break;
+          case DisconnectReason::kConnectionTimedOut:
+            disconnect_reason = "connection timed out";
+            break;
+          case DisconnectReason::kConnectionAborted:
+            disconnect_reason = "connection aborted";
+            break;
+          case DisconnectReason::kSocketError:
+            disconnect_reason = "socket error";
+            break;
+          case DisconnectReason::kUnknown:
+            disconnect_reason = "unknown";
+            break;
+        }
+      }
+      auto scope = subchannel->stats_plugin_group_->GetCollectionScope();
+      SubchannelMetricsDomainDisconnections::GetStorage(
+          scope, subchannel->target_, subchannel->backend_service_,
+          subchannel->locality_, disconnect_reason)
+          ->Increment(SubchannelMetricsDomainDisconnections::kDisconnections);
+      SubchannelConnectionsDomainOpenConnections::GetStorage(
+          scope, subchannel->target_, connected_subchannel_->security_level(),
+          subchannel->backend_service_, subchannel->locality_)
+          ->Decrement(
+              SubchannelConnectionsDomainOpenConnections::kOpenConnections);
+    }
     // If this was the last connection, then fail all queued RPCs and
     // update the connectivity state.
     if (subchannel->connections_.empty()) {
@@ -942,7 +1021,17 @@ Subchannel::Subchannel(SubchannelKey key,
       watcher_list_(this),
       work_serializer_(args_.GetObjectRef<EventEngine>()),
       backoff_(ParseArgsForBackoffValues(args_, &min_connect_timeout_)),
-      event_engine_(args_.GetObjectRef<EventEngine>()) {
+      event_engine_(args_.GetObjectRef<EventEngine>()),
+      stats_plugin_group_(
+          args_.GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>()),
+      target_(args_.GetString(GRPC_ARG_DEFAULT_AUTHORITY).value_or("")),
+      backend_service_(args_.GetString(GRPC_ARG_BACKEND_SERVICE).value_or("")),
+      locality_(args_.GetString(GRPC_ARG_LB_LOCALITY).value_or("")) {
+  if (stats_plugin_group_ != nullptr) {
+    attempts_storage_ = SubchannelMetricsDomainAttempts::GetStorage(
+        stats_plugin_group_->GetCollectionScope(), target_, backend_service_,
+        locality_);
+  }
   GRPC_TRACE_LOG(subchannel, INFO)
       << "subchannel " << this << " " << key_.ToString() << ": created";
   // A grpc_init is added here to ensure that grpc_shutdown does not happen
@@ -1280,6 +1369,11 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
                   "remaining in TRANSIENT_FAILURE"
                 : ", backing off for " +
                       std::to_string(time_until_next_attempt.millis()) + " ms");
+    // Record failed connection attempt
+    if (attempts_storage_ != nullptr) {
+      attempts_storage_->Increment(
+          SubchannelMetricsDomainAttempts::kConnectionAttemptsFailed);
+    }
     if (!created_from_endpoint_) {
       retry_timer_handle_ = event_engine_->RunAfter(
           time_until_next_attempt,
@@ -1325,8 +1419,9 @@ bool Subchannel::PublishTransportLocked() {
       return false;
     }
     connected_subchannel = MakeRefCounted<LegacyConnectedSubchannel>(
-        WeakRef().TakeAsSubclass<Subchannel>(), std::move(*stack), args_,
-        channelz_node_, connecting_result_.max_concurrent_streams);
+        WeakRef().TakeAsSubclass<Subchannel>(), std::move(*stack),
+        connecting_result_.channel_args, channelz_node_,
+        connecting_result_.max_concurrent_streams);
   } else {
     OrphanablePtr<ClientTransport> transport(
         std::exchange(connecting_result_.transport, nullptr)
@@ -1366,7 +1461,7 @@ bool Subchannel::PublishTransportLocked() {
     }
     connected_subchannel = MakeRefCounted<NewConnectedSubchannel>(
         WeakRef().TakeAsSubclass<Subchannel>(), std::move(*call_destination),
-        std::move(transport_destination), args_,
+        std::move(transport_destination), connecting_result_.channel_args,
         connecting_result_.max_concurrent_streams);
   }
   connecting_result_.Reset();
@@ -1382,6 +1477,19 @@ bool Subchannel::PublishTransportLocked() {
     if (socket_node != nullptr) {
       socket_node->AddParent(channelz_node_.get());
     }
+  }
+  // Record successful connection attempt
+  if (attempts_storage_ != nullptr) {
+    attempts_storage_->Increment(
+        SubchannelMetricsDomainAttempts::kConnectionAttemptsSucceeded);
+  }
+  if (stats_plugin_group_ != nullptr) {
+    auto scope = stats_plugin_group_->GetCollectionScope();
+    SubchannelConnectionsDomainOpenConnections::GetStorage(
+        scope, target_, connected_subchannel->security_level(),
+        backend_service_, locality_)
+        ->Increment(
+            SubchannelConnectionsDomainOpenConnections::kOpenConnections);
   }
   transport->StartWatch(
       MakeRefCounted<ConnectionStateWatcher>(connected_subchannel->WeakRef()));
