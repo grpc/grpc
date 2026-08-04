@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM arm64v8/debian:12
+FROM --platform=linux/arm64/v8 arm64v8/debian:12
 
 #=================
 # Basic C core dependencies
