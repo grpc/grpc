@@ -86,10 +86,10 @@ class ServerInterceptor(metaclass=ABCMeta):
     async def intercept_service(
         self,
         continuation: Callable[
-            [grpc.HandlerCallDetails], Awaitable[grpc.RpcMethodHandler]
+            [grpc.HandlerCallDetails], Awaitable[grpc.RpcMethodHandler[Any, Any]]
         ],
         handler_call_details: grpc.HandlerCallDetails,
-    ) -> grpc.RpcMethodHandler:
+    ) -> grpc.RpcMethodHandler[Any, Any]:
         """Intercepts incoming RPCs before handing them over to a handler.
 
         State can be passed from an interceptor to downstream interceptors

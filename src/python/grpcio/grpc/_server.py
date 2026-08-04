@@ -947,19 +947,6 @@ def _get_response_serializer(
     )
 
 
-def _get_unary_unary(
-    method_handler: grpc.RpcMethodHandler[RequestType, ResponseType],
-) -> Optional[
-    Callable[[RequestType, _common.ServicerContext], ResponseType]
-]:
-    return cast(
-        Optional[
-            Callable[[RequestType, _common.ServicerContext], ResponseType]
-        ],
-        getattr(method_handler, "unary_unary", None),
-    )
-
-
 def _get_unary_stream(
     method_handler: grpc.RpcMethodHandler[RequestType, ResponseType],
 ) -> Optional[
@@ -1023,26 +1010,23 @@ def _handle_unary_unary(
     method_handler: grpc.RpcMethodHandler[RequestType, ResponseType],
     default_thread_pool: futures.ThreadPoolExecutor,
 ) -> futures.Future[None]:
-    unary_unary = _get_unary_unary(method_handler)
-    if unary_unary is None:
-        raise ValueError(_UNEXPECTED_NONE_METHOD_HANDLER_MSG)
-    request_deserializer = _get_request_deserializer(method_handler)
-    response_serializer = _get_response_serializer(method_handler)
     unary_request = _unary_request(
-        rpc_event, state, request_deserializer
+        rpc_event, state, method_handler.request_deserializer
     )
+    if method_handler.unary_unary is None:
+        raise ValueError(_UNEXPECTED_NONE_METHOD_HANDLER_MSG)
     thread_pool = _select_thread_pool_for_behavior(
-        unary_unary, default_thread_pool
+        method_handler.unary_unary, default_thread_pool
     )
     return thread_pool.submit(
         state.context.run,
         _unary_response_in_pool,
         rpc_event,
         state,
-        unary_unary,
+        method_handler.unary_unary,
         unary_request,
-        request_deserializer,
-        response_serializer,
+        method_handler.request_deserializer,
+        method_handler.response_serializer,
     )
 
 
