@@ -20,6 +20,10 @@ from typing import Optional
 import grpc
 from grpc.experimental import aio
 
+from tests import bazel_namespace_package_hack
+
+bazel_namespace_package_hack.sys_path_to_site_dir_hack()
+
 from src.proto.grpc.testing import empty_pb2
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc

@@ -23,6 +23,13 @@ import unittest
 
 from typeguard import install_import_hook
 
+try:
+    from tests import bazel_namespace_package_hack
+
+    bazel_namespace_package_hack.sys_path_to_site_dir_hack()
+except Exception:
+    pass
+
 
 # AIO
 install_import_hook('grpc.aio')

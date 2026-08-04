@@ -45,6 +45,7 @@ py_library(
         "//src/proto/grpc/testing:py_messages_proto",
         "//src/proto/grpc/testing:test_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_tests/tests:bazel_namespace_package_hack",
         "//src/python/grpcio_tests/tests/unit:resources",
     ],
 )
