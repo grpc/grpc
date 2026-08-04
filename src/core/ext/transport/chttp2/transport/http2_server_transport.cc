@@ -607,10 +607,6 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
   //             ? INT_MAX
   //             : keepalive_time_.millis() *
   //             KEEPALIVE_TIME_BACKOFF_MULTIPLIER;
-  //     if (!IsSubchannelConnectionScalingEnabled()) {
-  //       status.SetPayload(kKeepaliveThrottlingKey,
-  //                         absl::Cord(std::to_string(throttled_keepalive_time)));
-  //     }
   //     disconnect_info.keepalive_time =
   //         Duration::Milliseconds(throttled_keepalive_time);
   //   }
