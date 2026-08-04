@@ -93,6 +93,11 @@ class XdsTestType {
     return *this;
   }
 
+  XdsTestType& set_filter_on_server() {
+    filter_on_server_ = true;
+    return *this;
+  }
+
   XdsTestType& set_bootstrap_source(BootstrapSource bootstrap_source) {
     bootstrap_source_ = bootstrap_source;
     return *this;
@@ -116,6 +121,7 @@ class XdsTestType {
   HttpFilterConfigLocation filter_config_setup() const {
     return filter_config_setup_;
   }
+  bool filter_on_server() const { return filter_on_server_; }
   BootstrapSource bootstrap_source() const { return bootstrap_source_; }
   ::envoy::config::rbac::v3::RBAC_Action rbac_action() const {
     return rbac_action_;
@@ -133,6 +139,7 @@ class XdsTestType {
     if (filter_config_setup_ == kHttpFilterConfigInRoute) {
       retval += "FilterPerRouteOverride";
     }
+    if (filter_on_server_) retval += "FilterOnServer";
     if (bootstrap_source_ == kBootstrapFromFile) {
       retval += "BootstrapFromFile";
     } else if (bootstrap_source_ == kBootstrapFromEnvVar) {
@@ -164,6 +171,7 @@ class XdsTestType {
   bool enable_rds_testing_ = false;
   bool use_csds_streaming_ = false;
   HttpFilterConfigLocation filter_config_setup_ = kHttpFilterConfigInListener;
+  bool filter_on_server_ = false;
   BootstrapSource bootstrap_source_ = kBootstrapFromChannelArg;
   ::envoy::config::rbac::v3::RBAC_Action rbac_action_ =
       ::envoy::config::rbac::v3::RBAC_Action_LOG;
@@ -220,8 +228,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
       void OnServingStatusUpdate(std::string uri,
                                  ServingStatusUpdate update) override;
 
-      std::optional<absl::Status> GetNextStatus(
-          const std::string& uri, absl::Duration timeout = absl::Seconds(10));
+      std::optional<absl::Status> GetNextStatus(const std::string& uri,
+                                                absl::Time deadline);
 
      private:
       grpc_core::Mutex mu_;
@@ -245,13 +253,19 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     void Start();
     void Shutdown();
 
-    std::string target() const { return absl::StrCat("localhost:", port_); }
+    std::string target() const { return grpc_core::LocalIpAndPort(port_); }
 
     int port() const { return port_; }
 
+    std::optional<absl::Status> GetNextStatus(absl::Time deadline) {
+      return notifier_.GetNextStatus(grpc_core::LocalIpAndPort(port_),
+                                     deadline);
+    }
+
     std::optional<absl::Status> GetNextStatus(
         absl::Duration timeout = absl::Seconds(10)) {
-      return notifier_.GetNextStatus(grpc_core::LocalIpAndPort(port_), timeout);
+      return GetNextStatus(absl::Now() +
+                           (timeout * grpc_test_slowdown_factor()));
     }
 
     void set_allow_put_requests(bool allow_put_requests) {

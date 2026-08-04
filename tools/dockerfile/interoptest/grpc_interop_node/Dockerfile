@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:11
+FROM debian:12
 
 #=================
 # Install apt-get-install-retry wrapper script
@@ -134,7 +134,10 @@ RUN apt-get-install-retry \
  
 
 # use pinned version of pip to avoid sudden breakages
-RUN python3 -m pip install --upgrade pip==19.3.1
+# Some newer distros that have already implemented PEP 668. Use of
+# --break-system-packages is to workaround that. We should look into using
+# virtualenv in Dockerfile though.
+RUN python3 -m pip install --break-system-packages --upgrade pip==19.3.1
 
 # TODO(jtattermusch): currently six is needed for tools/run_tests scripts
 # but since our python2 usage is deprecated, we should get rid of it.

@@ -195,20 +195,6 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
       distributor_->SetKeyMaterials(cert_name, roots.ok() ? *roots : nullptr,
                                     pem_key_cert_pairs);
     }
-    grpc_error_handle root_cert_error;
-    grpc_error_handle identity_cert_error;
-    if (root_being_watched && (!roots.ok() || *roots == nullptr)) {
-      root_cert_error =
-          GRPC_ERROR_CREATE("Unable to get latest root certificates.");
-    }
-    if (identity_being_watched && !pem_key_cert_pairs.has_value()) {
-      identity_cert_error =
-          GRPC_ERROR_CREATE("Unable to get latest identity certificates.");
-    }
-    if (!root_cert_error.ok() || !identity_cert_error.ok()) {
-      distributor_->SetErrorForCert(cert_name, root_cert_error,
-                                    identity_cert_error);
-    }
   });
 }
 
@@ -442,20 +428,6 @@ InMemoryCertificateProvider::InMemoryCertificateProvider()
     if (roots != nullptr || key_cert_pairs_or_selector.has_value()) {
       distributor_->SetKeyMaterials(cert_name, roots,
                                     key_cert_pairs_or_selector);
-    }
-    grpc_error_handle root_cert_error;
-    grpc_error_handle identity_cert_error;
-    if (root_being_watched && roots == nullptr) {
-      root_cert_error =
-          GRPC_ERROR_CREATE("Unable to get latest root certificates.");
-    }
-    if (identity_being_watched && !key_cert_pairs_or_selector.has_value()) {
-      identity_cert_error =
-          GRPC_ERROR_CREATE("Unable to get latest identity certificates.");
-    }
-    if (!root_cert_error.ok() || !identity_cert_error.ok()) {
-      distributor_->SetErrorForCert(cert_name, root_cert_error,
-                                    identity_cert_error);
     }
   });
 }

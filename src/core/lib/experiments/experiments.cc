@@ -93,6 +93,10 @@ const char* const description_fail_recv_metadata_on_deadline_exceeded =
     "Fail recv initial metadata when the deadline is exceeded.";
 const char* const
     additional_constraints_fail_recv_metadata_on_deadline_exceeded = "{}";
+const char* const description_fix_v3_filter_stack_server_side_ordering =
+    "If set, reverse the server side ordering for v3 filter stack.";
+const char* const
+    additional_constraints_fix_v3_filter_stack_server_side_ordering = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
@@ -329,6 +333,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_fail_recv_metadata_on_deadline_exceeded,
      additional_constraints_fail_recv_metadata_on_deadline_exceeded, nullptr, 0,
      false, false},
+    {"fix_v3_filter_stack_server_side_ordering",
+     description_fix_v3_filter_stack_server_side_ordering,
+     additional_constraints_fix_v3_filter_stack_server_side_ordering, nullptr,
+     0, false, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"fuse_filters", description_fuse_filters,
@@ -547,6 +555,10 @@ const char* const description_fail_recv_metadata_on_deadline_exceeded =
     "Fail recv initial metadata when the deadline is exceeded.";
 const char* const
     additional_constraints_fail_recv_metadata_on_deadline_exceeded = "{}";
+const char* const description_fix_v3_filter_stack_server_side_ordering =
+    "If set, reverse the server side ordering for v3 filter stack.";
+const char* const
+    additional_constraints_fix_v3_filter_stack_server_side_ordering = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
@@ -783,6 +795,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_fail_recv_metadata_on_deadline_exceeded,
      additional_constraints_fail_recv_metadata_on_deadline_exceeded, nullptr, 0,
      false, false},
+    {"fix_v3_filter_stack_server_side_ordering",
+     description_fix_v3_filter_stack_server_side_ordering,
+     additional_constraints_fix_v3_filter_stack_server_side_ordering, nullptr,
+     0, false, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"fuse_filters", description_fuse_filters,
@@ -1001,6 +1017,10 @@ const char* const description_fail_recv_metadata_on_deadline_exceeded =
     "Fail recv initial metadata when the deadline is exceeded.";
 const char* const
     additional_constraints_fail_recv_metadata_on_deadline_exceeded = "{}";
+const char* const description_fix_v3_filter_stack_server_side_ordering =
+    "If set, reverse the server side ordering for v3 filter stack.";
+const char* const
+    additional_constraints_fix_v3_filter_stack_server_side_ordering = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
@@ -1237,6 +1257,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_fail_recv_metadata_on_deadline_exceeded,
      additional_constraints_fail_recv_metadata_on_deadline_exceeded, nullptr, 0,
      false, false},
+    {"fix_v3_filter_stack_server_side_ordering",
+     description_fix_v3_filter_stack_server_side_ordering,
+     additional_constraints_fix_v3_filter_stack_server_side_ordering, nullptr,
+     0, false, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"fuse_filters", description_fuse_filters,

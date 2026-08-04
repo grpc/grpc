@@ -1,1 +1,5 @@
+<<<<<<< HEAD
 us-docker.pkg.dev/grpc-testing/testing-images-public/grpc_interop_node:2aab69c5ce4fd71deec0305f6236b1e5f2f97b50@sha256:9bb25c6edb2dd89227a2aeb7ebbe3f42a0a7579831ac72a1107f7f8d5b8e7338
+=======
+us-docker.pkg.dev/grpc-testing/testing-images-public/grpc_interop_node:0f922605a2aa5da4833bb1c493f6bad06e9ffad3@sha256:ba96209607f776c556ea531f49e23b9995c004370b0c404e594de1572e98bc37
+>>>>>>> upstream/master
