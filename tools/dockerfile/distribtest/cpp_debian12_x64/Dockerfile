@@ -21,6 +21,7 @@ RUN apt-get update && apt-get install -y build-essential autoconf libtool pkg-co
 RUN apt-get update && apt-get install -y git cmake && apt-get clean
 
 RUN git config --global --add safe.directory /var/local/jenkins/grpc
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git
 RUN git config --global protocol.file.allow always
 
 
