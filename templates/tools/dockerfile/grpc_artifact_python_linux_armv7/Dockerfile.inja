@@ -25,7 +25,7 @@ FROM dockcross/linux-armv7
 {% include "../git_config.include" %}
 
 RUN apt-get-install-retry build-essential zlib1g-dev libncurses5-dev libgdbm-dev \
-                                 libnss3-dev libssl-dev libreadline-dev libffi-dev
+                                 libnss3-dev libssl-dev libreadline-dev libffi-dev && apt-get clean
 
 ADD install_python_for_wheel_crosscompilation.sh /scripts/install_python_for_wheel_crosscompilation.sh
 

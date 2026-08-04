@@ -18,7 +18,8 @@ FROM ubuntu:20.04
 #=================
 #  Create wrapper for apt-get
 
-COPY --chmod=+x <<-"EOF" /usr/local/bin/apt-get-install-retry
+RUN cat <<-"EOF" > /usr/local/bin/apt-get-install-retry && \
+    chmod +rx /usr/local/bin/apt-get-install-retry
 #!/usr/bin/env bash
 # Copyright 2026 The gRPC Authors
 #
@@ -35,7 +36,7 @@ COPY --chmod=+x <<-"EOF" /usr/local/bin/apt-get-install-retry
 # limitations under the License.
 
 
-# Ensure all tracking are registered
+# Ensure all tracking is registered
 
 PS4="+ \$(date +[%H:%M:%S_%Z]) "
 set -xeuo pipefail
@@ -52,11 +53,11 @@ MAX_RETRIES=4
 # Initial delay, will grow exponentially
 delay=3
 
-echo "Installing packages ${PACKAGES} using apt-get"
+echo "Installing packages ${PACKAGES[*]} using apt-get"
 
 for i in $(seq 1 $MAX_RETRIES); do
   echo "Running apt-get update and install (attempt ${i})..."
-  if apt-get update && apt-get install -y "${PACKAGES[@]}"; then
+    if apt-get update && apt-get install -y "${PACKAGES[@]}"; then
     echo "apt-get succeeded on attempt ${i}.";
     break;
   else
@@ -65,10 +66,11 @@ for i in $(seq 1 $MAX_RETRIES); do
       exit 1;
     fi
     
-    echo "apt-get failed on attempt ${i}. Waiting $(($delay**$i)) seconds before retrying..."
-    sleep $(($delay**$i));
+    echo "apt-get failed on attempt ${i}. Waiting $((delay**i)) seconds before retrying..."
+    sleep $((delay**i));
   fi
 done
+
 
 EOF
 
@@ -77,7 +79,7 @@ EOF
 # by setting timezone to "Etc/UTC" in advance.
 RUN echo "Etc/UTC" > /etc/timezone
 
-RUN apt-get-install-retry build-essential curl git time wget zip && apt-get clean
+RUN apt-get-install-retry build-essential curl git time wget zip
 
 #====================
 # run_tests.py python dependencies
@@ -89,7 +91,7 @@ RUN apt-get-install-retry \
   python3 \
   python3-pip \
   python3-setuptools \
-  python3-yaml
+  python3-yaml && apt-get clean
  
 
 # use pinned version of pip to avoid sudden breakages

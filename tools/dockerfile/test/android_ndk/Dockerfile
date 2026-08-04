@@ -19,60 +19,23 @@ FROM debian:11
 #=================
 #  Create wrapper for apt-get
 
-COPY --chmod=+x <<-"EOF" /usr/local/bin/apt-get-install-retry
-#!/usr/bin/env bash
-# Copyright 2026 The gRPC Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-
-# Ensure all tracking are registered
-
-PS4="+ \$(date +[%H:%M:%S_%Z]) "
-set -xeuo pipefail
-
-# Ensure package to install is provided
-if [ $# -eq 0 ]; then
-  echo "Error: No package name provided to install with apt-get." >&2
-  exit 1
-fi
-
-PACKAGES=("$@")
-
-MAX_RETRIES=4
-# Initial delay, will grow exponentially
-delay=3
-
-echo "Installing packages ${PACKAGES} using apt-get"
-
-for i in $(seq 1 $MAX_RETRIES); do
-  echo "Running apt-get update and install (attempt ${i})..."
-  if apt-get update && apt-get install -y "${PACKAGES[@]}"; then
-    echo "apt-get succeeded on attempt ${i}.";
-    break;
-  else
-    if [ "${i}" -eq "${MAX_RETRIES}" ]; then
-      echo "Max retries reached (${MAX_RETRIES}). apt-get failed permanently." >&2
-      exit 1;
-    fi
-    
-    echo "apt-get failed on attempt ${i}. Waiting $(($delay**$i)) seconds before retrying..."
-    sleep $(($delay**$i));
-  fi
-done
-
-EOF
-
+RUN /bin/bash -c 'echo -e "#!/usr/bin/env bash\n\
+# Copyright 2026 The gRPC Authors\n\
+\n\
+PS4=\"+ \$(date +[%H:%M:%S_%Z]) \"\n\
+set -xeuo pipefail\n\
+\n\
+MAX_RETRIES=4\n\
+delay=3\n\
+\n\
+for i in \$(seq 1 \$MAX_RETRIES); do\n\
+  if apt-get update && apt-get install -y \"\$@\"; then\n\
+    break\n\
+  fi\n\
+  sleep \$((delay**i))\n\
+done\n\
+" > /usr/local/bin/apt-get-install-retry'
+RUN chmod +x /usr/local/bin/apt-get-install-retry
 
 # Basic C core dependencies
 
@@ -81,21 +44,19 @@ RUN apt-get-install-retry \
   build-essential \
   autoconf \
   libtool \
-  pkg-config \
-  && apt-get clean
+  pkg-config
+  
 
 # GCC
 RUN apt-get-install-retry \
   gcc \
-  g++ \
-  && apt-get clean
+  g++ 
 
 # libc6
 RUN apt-get-install-retry \
   libc6 \
   libc6-dbg \
-  libc6-dev \
-  && apt-get clean
+  libc6-dev
 
 # Tools
 RUN apt-get-install-retry \
@@ -109,8 +70,7 @@ RUN apt-get-install-retry \
   time \
   unzip \
   wget \
-  zip \
-  && apt-get clean
+  zip
 
 #=================
 # Setup git to access working directory across docker boundary.
@@ -131,7 +91,7 @@ RUN apt-get-install-retry \
   python3 \
   python3-pip \
   python3-setuptools \
-  python3-yaml
+  python3-yaml && apt-get clean
  
 
 # use pinned version of pip to avoid sudden breakages
@@ -150,9 +110,7 @@ RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-clien
 # Install cmake from bullseye-backports
 # Note that this step should be only used for Debian 11 (bullseye) images.
 
-RUN echo "deb http://archive.debian.org/debian bullseye-backports main" > /etc/apt/sources.list.d/bullseye-backports.list && \
-    apt-get update && \
-    apt-get install -y -t bullseye-backports cmake
+RUN echo "deb http://archive.debian.org/debian bullseye-backports main" > /etc/apt/sources.list.d/bullseye-backports.list && apt-get-install-retry -t bullseye-backports cmake
 
 
 RUN mkdir /var/local/jenkins
@@ -160,7 +118,7 @@ RUN mkdir /var/local/jenkins
 RUN apt update && apt upgrade -y
 
 # Java
-RUN apt-get-install-retry openjdk-11-jdk
+RUN apt-get-install-retry openjdk-11-jdk && apt-get clean
 
 # Install Android SDK
 ENV ANDROID_HOME /opt/android-sdk

@@ -16,12 +16,12 @@ FROM debian:{{settings.php_version.php_debian_version}}
 
 {% include "../../../../tools/dockerfile/apt_get_install_with_retry.include" %}
 
-RUN apt-get -qq update && apt-get -qq -y upgrade
-RUN /usr/local/bin/apt-get-retry-install \
+RUN apt-get update && apt-get -y upgrade
+RUN apt-get-install-retry \
   autoconf bison build-essential git libtool \
   libcurl4-openssl-dev libedit-dev libonig-dev libsodium-dev \
   libsqlite3-dev libssl-dev libxml2-dev \
-  pkg-config re2c valgrind wget zlib1g-dev
+  pkg-config re2c valgrind wget zlib1g-dev && apt-get clean
 
 
 WORKDIR /tmp

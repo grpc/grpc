@@ -36,7 +36,7 @@ COPY <<-"EOF" /usr/local/bin/apt-get-install-retry
 # limitations under the License.
 
 
-# Ensure all tracking are registered
+# Ensure all tracking is registered
 
 PS4="+ \$(date +[%H:%M:%S_%Z]) "
 set -xeuo pipefail
@@ -53,11 +53,11 @@ MAX_RETRIES=4
 # Initial delay, will grow exponentially
 delay=3
 
-echo "Installing packages ${PACKAGES} using apt-get"
+echo "Installing packages ${PACKAGES[*]} using apt-get"
 
 for i in $(seq 1 $MAX_RETRIES); do
   echo "Running apt-get update and install (attempt ${i})..."
-  if apt-get update && apt-get install -y "${PACKAGES[@]}"; then
+  if apt-get update -qq && apt-get install -y "${PACKAGES[@]}"; then
     echo "apt-get succeeded on attempt ${i}.";
     break;
   else
@@ -66,8 +66,8 @@ for i in $(seq 1 $MAX_RETRIES); do
       exit 1;
     fi
     
-    echo "apt-get failed on attempt ${i}. Waiting $(($delay**$i)) seconds before retrying..."
-    sleep $(($delay**$i));
+    echo "apt-get failed on attempt ${i}. Waiting $((delay**i)) seconds before retrying..."
+    sleep $((delay**i));
   fi
 done
 
@@ -82,21 +82,17 @@ RUN /usr/local/bin/apt-get-install-retry \
   build-essential \
   autoconf \
   libtool \
-  pkg-config \
-  && apt-get clean
-
+  pkg-config
 # GCC
 RUN /usr/local/bin/apt-get-install-retry \
   gcc \
-  g++ \
-  && apt-get clean
+  g++
 
 # libc6
 RUN /usr/local/bin/apt-get-install-retry \
   libc6 \
   libc6-dbg \
-  libc6-dev \
-  && apt-get clean
+  libc6-dev
 
 # Tools
 RUN /usr/local/bin/apt-get-install-retry \
@@ -110,8 +106,7 @@ RUN /usr/local/bin/apt-get-install-retry \
   time \
   unzip \
   wget \
-  zip \
-  && apt-get clean
+  zip
 
 #=================
 # Setup git to access working directory across docker boundary.
@@ -126,12 +121,12 @@ RUN git config --global protocol.file.allow always
 # Ruby dependencies
 
 # Install rvm
-RUN apt-get update && apt-get install -y gnupg2 && apt-get clean
+RUN apt-get-install-retry get clean
 RUN for i in 0 1 2 3 4; do sleep "${i}"; gpg2 --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB && break; done
 RUN \curl -sSL https://get.rvm.io | bash -s stable
 
 # Install Ruby 3.1
-RUN apt-get update && apt-get install -y procps && apt-get clean
+
 RUN /bin/bash -l -c "rvm install ruby-3.1.3"
 RUN /bin/bash -l -c "rvm use --default ruby-3.1.3"
 RUN /bin/bash -l -c "echo 'gem: --no-document' > ~/.gemrc"

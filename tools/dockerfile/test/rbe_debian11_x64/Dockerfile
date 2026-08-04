@@ -36,7 +36,7 @@ COPY --chmod=+x <<-"EOF" /usr/local/bin/apt-get-install-retry
 # limitations under the License.
 
 
-# Ensure all tracking are registered
+# Ensure all tracking is registered
 
 PS4="+ \$(date +[%H:%M:%S_%Z]) "
 set -xeuo pipefail
@@ -53,11 +53,11 @@ MAX_RETRIES=4
 # Initial delay, will grow exponentially
 delay=3
 
-echo "Installing packages ${PACKAGES} using apt-get"
+echo "Installing packages ${PACKAGES[*]} using apt-get"
 
 for i in $(seq 1 $MAX_RETRIES); do
   echo "Running apt-get update and install (attempt ${i})..."
-  if apt-get -qq update && apt-get install -y "${PACKAGES[@]}"; then
+  if apt-get update && apt-get install -y "${PACKAGES[@]}"; then
     echo "apt-get succeeded on attempt ${i}.";
     break;
   else
@@ -66,8 +66,8 @@ for i in $(seq 1 $MAX_RETRIES); do
       exit 1;
     fi
     
-    echo "apt-get failed on attempt ${i}. Waiting $(($delay**$i)) seconds before retrying..."
-    sleep $(($delay**$i));
+    echo "apt-get failed on attempt ${i}. Waiting $((delay**i)) seconds before retrying..."
+    sleep $((delay**i));
   fi
 done
 
@@ -90,9 +90,7 @@ RUN apt-get-install-retry \
   python3 \
   python3-pip \
   python3-setuptools \
-  python3-yaml \
-  && apt-get clean
-
+  python3-yaml
 # use pinned version of pip to avoid sudden breakages
 RUN python3 -m pip install --upgrade pip==19.3.1
 

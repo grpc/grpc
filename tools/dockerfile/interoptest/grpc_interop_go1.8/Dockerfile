@@ -27,7 +27,7 @@ RUN apt-get-install-retry \
   python3 \
   python3-pip \
   python3-setuptools \
-  python3-yaml
+  python3-yaml && apt-get clean
  
 
 # use pinned version of pip to avoid sudden breakages

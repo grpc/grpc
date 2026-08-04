@@ -19,7 +19,8 @@ FROM --platform=linux/arm64/v8 arm64v8/debian:11
 #=================
 #  Create wrapper for apt-get
 
-COPY --chmod=+x <<-"EOF" /usr/local/bin/apt-get-install-retry
+RUN cat <<-"EOF" > /usr/local/bin/apt-get-install-retry && \
+    chmod +rx /usr/local/bin/apt-get-install-retry
 #!/usr/bin/env bash
 # Copyright 2026 The gRPC Authors
 #
@@ -36,7 +37,7 @@ COPY --chmod=+x <<-"EOF" /usr/local/bin/apt-get-install-retry
 # limitations under the License.
 
 
-# Ensure all tracking are registered
+# Ensure all tracking is registered
 
 PS4="+ \$(date +[%H:%M:%S_%Z]) "
 set -xeuo pipefail
@@ -53,11 +54,11 @@ MAX_RETRIES=4
 # Initial delay, will grow exponentially
 delay=3
 
-echo "Installing packages ${PACKAGES} using apt-get"
+echo "Installing packages ${PACKAGES[*]} using apt-get"
 
 for i in $(seq 1 $MAX_RETRIES); do
   echo "Running apt-get update and install (attempt ${i})..."
-  if apt-get update && apt-get install -y "${PACKAGES[@]}"; then
+    if apt-get update && apt-get install -y "${PACKAGES[@]}"; then
     echo "apt-get succeeded on attempt ${i}.";
     break;
   else
@@ -66,10 +67,11 @@ for i in $(seq 1 $MAX_RETRIES); do
       exit 1;
     fi
     
-    echo "apt-get failed on attempt ${i}. Waiting $(($delay**$i)) seconds before retrying..."
-    sleep $(($delay**$i));
+    echo "apt-get failed on attempt ${i}. Waiting $((delay**i)) seconds before retrying..."
+    sleep $((delay**i));
   fi
 done
+
 
 EOF
 
@@ -81,21 +83,19 @@ RUN apt-get-install-retry \
   build-essential \
   autoconf \
   libtool \
-  pkg-config \
-  && apt-get clean
+  pkg-config
+  
 
 # GCC
 RUN apt-get-install-retry \
   gcc \
-  g++ \
-  && apt-get clean
+  g++ 
 
 # libc6
 RUN apt-get-install-retry \
   libc6 \
   libc6-dbg \
-  libc6-dev \
-  && apt-get clean
+  libc6-dev
 
 # Tools
 RUN apt-get-install-retry \
@@ -109,8 +109,7 @@ RUN apt-get-install-retry \
   time \
   unzip \
   wget \
-  zip \
-  && apt-get clean
+  zip
 
 #=================
 # Setup git to access working directory across docker boundary.
@@ -127,7 +126,7 @@ RUN mkdir /var/local/jenkins
 
 # Python test coverage requires libsqlite3, and it have
 # to be installed before Python.
-RUN apt-get-install-retry libsqlite3-dev
+RUN apt-get-install-retry libsqlite3-dev && apt-get clean
 
 #=================
 # Compile CPython 3.10.3 from source
@@ -158,9 +157,7 @@ RUN python3.10 -m pip install --upgrade google-auth==1.23.0 google-api-python-cl
 # Install cmake from bullseye-backports
 # Note that this step should be only used for Debian 11 (bullseye) images.
 
-RUN echo "deb http://archive.debian.org/debian bullseye-backports main" > /etc/apt/sources.list.d/bullseye-backports.list && \
-    apt-get update && \
-    apt-get install -y -t bullseye-backports cmake
+RUN echo "deb http://archive.debian.org/debian bullseye-backports main" > /etc/apt/sources.list.d/bullseye-backports.list && apt-get-install-retry -t bullseye-backports cmake
 
 #=================
 # Install ccache

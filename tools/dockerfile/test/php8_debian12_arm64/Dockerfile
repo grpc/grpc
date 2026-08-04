@@ -19,7 +19,8 @@ FROM --platform=linux/arm64/v8 arm64v8/debian:12
 #=================
 #  Create wrapper for apt-get
 
-COPY --chmod=+x <<-"EOF" /usr/local/bin/apt-get-install-retry
+RUN cat <<-"EOF" > /usr/local/bin/apt-get-install-retry && \
+    chmod +rx /usr/local/bin/apt-get-install-retry
 #!/usr/bin/env bash
 # Copyright 2026 The gRPC Authors
 #
@@ -36,7 +37,7 @@ COPY --chmod=+x <<-"EOF" /usr/local/bin/apt-get-install-retry
 # limitations under the License.
 
 
-# Ensure all tracking are registered
+# Ensure all tracking is registered
 
 PS4="+ \$(date +[%H:%M:%S_%Z]) "
 set -xeuo pipefail
@@ -53,11 +54,11 @@ MAX_RETRIES=4
 # Initial delay, will grow exponentially
 delay=3
 
-echo "Installing packages ${PACKAGES} using apt-get"
+echo "Installing packages ${PACKAGES[*]} using apt-get"
 
 for i in $(seq 1 $MAX_RETRIES); do
   echo "Running apt-get update and install (attempt ${i})..."
-  if apt-get update && apt-get install -y "${PACKAGES[@]}"; then
+    if apt-get update && apt-get install -y "${PACKAGES[@]}"; then
     echo "apt-get succeeded on attempt ${i}.";
     break;
   else
@@ -66,10 +67,11 @@ for i in $(seq 1 $MAX_RETRIES); do
       exit 1;
     fi
     
-    echo "apt-get failed on attempt ${i}. Waiting $(($delay**$i)) seconds before retrying..."
-    sleep $(($delay**$i));
+    echo "apt-get failed on attempt ${i}. Waiting $((delay**i)) seconds before retrying..."
+    sleep $((delay**i));
   fi
 done
+
 
 EOF
 
@@ -81,21 +83,19 @@ RUN apt-get-install-retry \
   build-essential \
   autoconf \
   libtool \
-  pkg-config \
-  && apt-get clean
+  pkg-config
+  
 
 # GCC
 RUN apt-get-install-retry \
   gcc \
-  g++ \
-  && apt-get clean
+  g++ 
 
 # libc6
 RUN apt-get-install-retry \
   libc6 \
   libc6-dbg \
-  libc6-dev \
-  && apt-get clean
+  libc6-dev
 
 # Tools
 RUN apt-get-install-retry \
@@ -109,8 +109,7 @@ RUN apt-get-install-retry \
   time \
   unzip \
   wget \
-  zip \
-  && apt-get clean
+  zip
 
 #=================
 # Setup git to access working directory across docker boundary.
@@ -131,7 +130,7 @@ RUN apt-get-install-retry \
   python3 \
   python3-pip \
   python3-setuptools \
-  python3-yaml
+  python3-yaml && apt-get clean
  
 
 # use pinned version of pip to avoid sudden breakages
@@ -149,7 +148,7 @@ RUN python3 -m pip install six==1.16.0
 RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
 
-RUN apt-get-install-retry  php8.2 php8.2-dev php-pear
+RUN apt-get-install-retry php8.2 php8.2-dev php-pear
 #=================
 # PHP Test dependencies
 
@@ -162,7 +161,7 @@ RUN apt-get-install-retry  php8.2 php8.2-dev php-pear
 
 RUN apt-get-install-retry cmake
 
-RUN apt-get-install-retry  ccache
+RUN apt-get-install-retry ccache && apt-get clean
 
 RUN mkdir /var/local/jenkins
 

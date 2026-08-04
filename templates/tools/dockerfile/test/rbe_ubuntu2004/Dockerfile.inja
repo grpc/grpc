@@ -21,7 +21,7 @@ FROM ubuntu:20.04
 # by setting timezone to "Etc/UTC" in advance.
 RUN echo "Etc/UTC" > /etc/timezone
 
-RUN apt-get-install-retry build-essential curl git time wget zip && apt-get clean
+RUN apt-get-install-retry build-essential curl git time wget zip
 
 {% include "../../run_tests_python_deps.include" %}
 

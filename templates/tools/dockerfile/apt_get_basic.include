@@ -9,21 +9,19 @@ RUN apt-get-install-retry \
   build-essential \
   autoconf \
   libtool \
-  pkg-config \
-  && apt-get clean
+  pkg-config
+  
 
 # GCC
 RUN apt-get-install-retry \
   gcc \
-  g++ \
-  && apt-get clean
+  g++ 
 
 # libc6
 RUN apt-get-install-retry \
   libc6 \
   libc6-dbg \
-  libc6-dev \
-  && apt-get clean
+  libc6-dev
 
 # Tools
 RUN apt-get-install-retry \
@@ -37,7 +35,6 @@ RUN apt-get-install-retry \
   time \
   unzip \
   wget \
-  zip \
-  && apt-get clean
+  zip
 
 {% include "git_avoid_dubious_ownership_error.include" %}

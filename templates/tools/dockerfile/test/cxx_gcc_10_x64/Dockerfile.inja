@@ -25,7 +25,7 @@ RUN apt-get-install-retry curl git time zip
 {% include "../../cmake.include" %}
 
 # Install ccache 4.2 from official repo.
-RUN apt-get-install-retry ccache
+RUN apt-get-install-retry ccache && apt-get clean
 
 {% include "../../run_tests_addons.include" %}
 
