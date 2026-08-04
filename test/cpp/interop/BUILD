@@ -824,6 +824,7 @@ grpc_cc_binary(
         "protobuf_clib",
         "protobuf_headers",
     ],
+    tags = ["nobuilder"],
     deps = [
         "//:gpr",
         "//:grpc++",
