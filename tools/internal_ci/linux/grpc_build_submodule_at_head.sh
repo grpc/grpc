@@ -61,6 +61,8 @@ fi
 if [ "${SUBMODULE_NAME}" == "protobuf" ]
 then
   # update upb
+  sed -E -i 's/(WELL_KNOWN_PROTO_TARGETS = \[)/\1\n    "json_enumvalue_options",/' BUILD
+
   rm -rf third_party/upb/upb
   cp -r third_party/protobuf/upb third_party/upb
   # generate upb gen source codes
