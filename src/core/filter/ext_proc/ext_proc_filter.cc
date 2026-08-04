@@ -19,34 +19,27 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/channel_arg_names.h>
 
-#include <memory>
 #include <string>
 #include <utility>
 
 #include "src/core/call/call_spine.h"
-#include "src/core/call/message.h"
 #include "src/core/call/metadata.h"
 #include "src/core/client_channel/client_channel_args.h"
 #include "src/core/filter/ext_proc/ext_proc_messages.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/debug/trace_impl.h"
-#include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/observable.h"
-#include "src/core/lib/promise/prioritized_race.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/promise/try_seq.h"
-#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/util/down_cast.h"
-#include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "src/core/xds/grpc/streaming_call_promise_wrapper.h"
 #include "src/core/xds/grpc/xds_common_types.h"
-#include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_transport.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -314,7 +307,7 @@ class ExtProcFilter::ExtProcCall final
   // Main entry point for an external processor call. Spawns and manages the
   // concurrent request (client-to-server) and response (server-to-client)
   // processing pipelines alongside side-stream message pulling.
-  ArenaPromise<StatusFlag> Run();
+  ArenaPromise<absl::Status> Run();
 
  private:
   // Tracks the state of outgoing message sends on the ext_proc side-stream.
@@ -540,31 +533,13 @@ class ExtProcFilter::ExtProcCall final
     return true;
   }
 
-  auto NextStreamStatus() const {
-    return stream_status_.NextWhen(
-        [](const std::optional<absl::Status>& status) {
-          return status.has_value();
-        });
-  }
-
-  Poll<std::optional<absl::Status>> PollStreamStatus() const {
-    return NextStreamStatus()();
-  }
-
-  bool IsStreamClosed() const { return PollStreamStatus().ready(); }
-
-  void SetStreamStatus(absl::Status status) {
-    if (!IsStreamClosed()) {
-      stream_status_.Set(status);
-    }
-  }
+  bool IsStreamClosed() const { return stream_status_.has_value(); }
 
   // Returns true if the stream closed with an error and fail-open mode is not
   // permitted for this call (i.e. the stream error must fail the RPC).
   bool IsStreamFailureFatal() const {
     if (IsFailOpenAllowed()) return false;
-    auto poll = PollStreamStatus();
-    return poll.ready() && !poll.value()->ok();
+    return stream_status_.has_value() && !stream_status_->ok();
   }
 
   // Evaluates the status to return when the external processor stream is
@@ -573,9 +548,8 @@ class ExtProcFilter::ExtProcCall final
   // when fail-open is permitted.
   absl::Status GetStreamClosedStatus(
       absl::Status default_error = absl::CancelledError("Stream closed")) {
-    auto poll = PollStreamStatus();
-    if (poll.ready()) {
-      return poll.value().value_or(absl::OkStatus());
+    if (stream_status_.has_value()) {
+      return *stream_status_;
     }
     if (IsFailOpenAllowed()) {
       return absl::OkStatus();
@@ -584,9 +558,8 @@ class ExtProcFilter::ExtProcCall final
   }
 
   auto WaitForStreamStatus() {
-    return Map(NextStreamStatus(), [](std::optional<absl::Status> status) {
-      return status.value_or(absl::OkStatus());
-    });
+    return Map(drain_closed_.NextWhen([](bool closed) { return closed; }),
+               [self = Ref()](bool) { return self->GetStreamClosedStatus(); });
   }
 
   void SetStreamError(absl::Status status) {
@@ -597,13 +570,17 @@ class ExtProcFilter::ExtProcCall final
         initiator_.SpawnCancel();
       }
     }
-    SetStreamStatus(status);
+    if (!IsStreamClosed()) {
+      stream_status_ = status;
+      drain_closed_.Set(true);
+    }
     CompleteOutstandingProcessors(status);
   }
 
   void CloseStream() {
     if (!IsStreamClosed()) {
-      stream_status_.Set(absl::OkStatus());
+      stream_status_ = absl::OkStatus();
+      drain_closed_.Set(true);
     }
     auto streaming_call = std::move(streaming_call_);
     ext_proc_send_waker_.Wakeup();
@@ -657,7 +634,8 @@ class ExtProcFilter::ExtProcCall final
   bool ext_proc_set_eos_ = false;
   // Indicates that the external processor stream has been half closed.
   bool ext_proc_stream_half_closed_ = false;
-  mutable Observable<std::optional<absl::Status>> stream_status_{std::nullopt};
+  std::optional<absl::Status> stream_status_;
+  mutable Observable<bool> drain_closed_{false};
 
   // Atomic send state for lock-free coordination between client-side and
   // server-side message senders.
@@ -901,7 +879,8 @@ void ExtProcFilter::ExtProcCall::HandleSideStreamStatus(absl::Status status) {
   // Ensure stream status recording, error propagation, and teardown run
   // idempotently once.
   if (!IsStreamClosed()) {
-    stream_status_.Set(should_propagate_error ? status : absl::OkStatus());
+    stream_status_ = should_propagate_error ? status : absl::OkStatus();
+    drain_closed_.Set(true);
     if (should_propagate_error) {
       // On fatal error, push error trailing metadata and cancel child call.
       auto error_md = CancelledServerMetadataFromStatus(status);
@@ -982,15 +961,15 @@ ArenaPromise<StatusFlag> ExtProcFilter::ExtProcCall::SendMessageToSideStream(
 }
 
 // Handles the response path (Server to Client).
-ArenaPromise<StatusFlag> ExtProcFilter::ExtProcCall::Run() {
+ArenaPromise<absl::Status> ExtProcFilter::ExtProcCall::Run() {
   return Map(TryJoin<absl::StatusOr>(SpawnReadFromClientLoop(),
                                      SpawnReadFromSideStreamLoop()),
              [self = Ref()](
-                 absl::StatusOr<std::tuple<Empty, Empty>> res) -> StatusFlag {
+                 absl::StatusOr<std::tuple<Empty, Empty>> res) -> absl::Status {
                GRPC_TRACE_LOG(ext_proc_filter, INFO)
                    << "ExtProcCall " << self.get()
                    << " Run() finished with status: " << res.ok();
-               return StatusFlag(res.ok());
+               return self->GetStreamClosedStatus();
              });
 }
 
@@ -1053,11 +1032,10 @@ ExtProcFilter::ExtProcCall::SpawnReadFromSideStreamLoop() {
       // Handle stream closure and resolve final status.
       [self = Ref()](absl::Status status) -> StatusFlag {
         self->HandleSideStreamStatus(status);
-        status = self->GetStreamClosedStatus(status);
         GRPC_TRACE_LOG(ext_proc_filter, INFO)
             << "ExtProcCall " << self.get()
             << " SpawnReadFromSideStreamLoop finished with status: " << status;
-        return StatusFlag(status.ok());
+        return StatusFlag(status.ok() || self->IsFailOpenAllowed());
       });
 }
 
@@ -1071,46 +1049,9 @@ ExtProcFilter::ExtProcCall::SpawnReadFromSideStreamLoop() {
 ArenaPromise<StatusFlag> ExtProcFilter::ExtProcCall::SpawnReadFromServerLoop() {
   GRPC_TRACE_LOG(ext_proc_filter, INFO)
       << "ExtProcCall " << this << " SpawnReadFromServerLoop started";
-  auto response_pipeline = TrySeq(ProcessServerInitialMetadataFromServer(),
-                                  ProcessServerMessagesFromServer(),
-                                  ProcessServerTrailingMetadataFromServer());
-  // Monitor the ext_proc stream for errors.
-  // If the ext_proc stream fails and fail-open is NOT allowed, we abort the
-  // call.
-  auto watch_error = Seq(
-      WaitForStreamStatus(),
-      [self = Ref()](absl::Status status) -> ArenaPromise<StatusFlag> {
-        GRPC_TRACE_LOG(ext_proc_filter, INFO)
-            << "watch_error stream_status: " << status
-            << ", failure_mode_allow: "
-            << (self->config().failure_mode_allow.has_value()
-                    ? (*self->config().failure_mode_allow ? "true" : "false")
-                    : "unset");
-        if (!status.ok()) {
-          return Immediate(StatusFlag(Failure{}));
-        }
-        return []() -> Poll<StatusFlag> {
-          GRPC_TRACE_LOG(ext_proc_filter, INFO)
-              << "watch_error returning Pending";
-          return Pending{};
-        };
-      });
-  // Race the response pipeline against the error watcher.
-  // If watch_error returns an error, it will win the race and abort the
-  // pipeline.
-  auto run_pipeline =
-      PrioritizedRace(std::move(watch_error), std::move(response_pipeline));
-  return [self = Ref(),
-          promise = std::move(run_pipeline)]() mutable -> Poll<StatusFlag> {
-    auto p = promise();
-    if (auto* status = p.value_if_ready()) {
-      GRPC_TRACE_LOG(ext_proc_filter, INFO)
-          << "ExtProcCall " << self.get()
-          << " SpawnReadFromServerLoop finished. status=" << status->ok();
-      return *status;
-    }
-    return Pending{};
-  };
+  return TrySeq(ProcessServerInitialMetadataFromServer(),
+                ProcessServerMessagesFromServer(),
+                ProcessServerTrailingMetadataFromServer());
 }
 
 //
@@ -2092,7 +2033,7 @@ ExtProcFilter::ExtProcCall::ClientMessageNormalModeSendOnly(
     return Seq(WaitForStreamStatus(),
                [self = Ref(), message = std::move(message)](
                    absl::Status status) mutable -> StatusFlag {
-                 if (!status.ok() && self->IsStreamFailureFatal()) {
+                 if (!status.ok() && !self->IsFailOpenAllowed()) {
                    return Failure{};
                  }
                  if (message != nullptr) {
@@ -2197,22 +2138,23 @@ void ExtProcFilter::InterceptCall(UnstartedCallHandler unstarted_call_handler) {
     return;
   }
   CallHandler handler = Consume(std::move(unstarted_call_handler));
-  handler.SpawnInfallible(
+  handler.SpawnGuarded(
       "ext_proc_call",
       [handler, ext_proc_filter = RefAsSubclass<ExtProcFilter>()]() mutable
-          -> absl::AnyInvocable<Poll<Empty>()> {
+          -> ArenaPromise<absl::Status> {
         GRPC_TRACE_LOG(ext_proc_filter, INFO)
             << "ExtProc: InterceptCall promise chain start";
         auto transport = ext_proc_filter->channel()->transport();
         // This shouldn't ever happen; added as a defensive check.
         if (transport == nullptr) {
-          handler.PushServerInitialMetadata(ServerMetadataFromStatus(
-              absl::InternalError("External processor transport unavailable")));
-          return []() -> Poll<Empty> { return Empty{}; };
+          return ArenaPromise<absl::Status>([]() -> Poll<absl::Status> {
+            return absl::InternalError(
+                "External processor transport unavailable");
+          });
         }
         auto ext_proc_call = MakeRefCounted<ExtProcCall>(
             ext_proc_filter, std::move(transport), handler);
-        return Map(ext_proc_call->Run(), [](StatusFlag) { return Empty{}; });
+        return ext_proc_call->Run();
       });
 }
 

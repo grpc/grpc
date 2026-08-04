@@ -4748,9 +4748,8 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcClientHeadersDurationMetric) {
     return stats_plugin->GetHistogramValueByName(metric_name,
                                                  {expected_target});
   };
-  EXPECT_TRUE(
-      get_histogram("grpc.client_ext_proc.client_headers_duration")
-          .has_value());
+  EXPECT_TRUE(get_histogram("grpc.client_ext_proc.client_headers_duration")
+                  .has_value());
 }
 
 TEST_P(XdsExtProcEnd2endTest, ExtProcClientHalfCloseDurationMetric) {
@@ -4809,9 +4808,8 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcClientHalfCloseDurationMetric) {
     return stats_plugin->GetHistogramValueByName(metric_name,
                                                  {expected_target});
   };
-  EXPECT_TRUE(
-      get_histogram("grpc.client_ext_proc.client_half_close_duration")
-          .has_value());
+  EXPECT_TRUE(get_histogram("grpc.client_ext_proc.client_half_close_duration")
+                  .has_value());
 }
 
 TEST_P(XdsExtProcEnd2endTest, ExtProcServerHeadersDurationMetric) {
@@ -4861,9 +4859,8 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcServerHeadersDurationMetric) {
     return stats_plugin->GetHistogramValueByName(metric_name,
                                                  {expected_target});
   };
-  EXPECT_TRUE(
-      get_histogram("grpc.client_ext_proc.server_headers_duration")
-          .has_value());
+  EXPECT_TRUE(get_histogram("grpc.client_ext_proc.server_headers_duration")
+                  .has_value());
 }
 
 TEST_P(XdsExtProcEnd2endTest, ExtProcServerTrailersDurationMetric) {
@@ -4913,9 +4910,8 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcServerTrailersDurationMetric) {
     return stats_plugin->GetHistogramValueByName(metric_name,
                                                  {expected_target});
   };
-  EXPECT_TRUE(
-      get_histogram("grpc.client_ext_proc.server_trailers_duration")
-          .has_value());
+  EXPECT_TRUE(get_histogram("grpc.client_ext_proc.server_trailers_duration")
+                  .has_value());
 }
 
 }  // namespace
