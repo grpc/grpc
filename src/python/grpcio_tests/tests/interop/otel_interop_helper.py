@@ -192,12 +192,16 @@ class OTelServerInterceptor(grpc.ServerInterceptor):
         traceparent_header = None
         for k, v in handler_call_details.invocation_metadata:
             k_str = (
-                k.decode("ascii", errors="ignore") if isinstance(k, bytes) else str(k)
+                k.decode("ascii", errors="ignore")
+                if isinstance(k, bytes)
+                else str(k)
             )
             if k_str.lower() == "grpc-trace-bin":
                 trace_bin_header = v
             elif k_str.lower() == "traceparent":
-                traceparent_header = v if isinstance(v, str) else v.decode("latin1")
+                traceparent_header = (
+                    v if isinstance(v, str) else v.decode("latin1")
+                )
 
         parent_ctx = None
         trace_id, parent_span_id, is_sampled = None, None, False
@@ -235,7 +239,9 @@ class OTelServerInterceptor(grpc.ServerInterceptor):
                 span_name, kind=trace.SpanKind.SERVER, context=ctx
             )
         else:
-            server_span = self._tracer.start_span(span_name, kind=trace.SpanKind.SERVER)
+            server_span = self._tracer.start_span(
+                span_name, kind=trace.SpanKind.SERVER
+            )
 
         server_span.add_event("Inbound message")
 

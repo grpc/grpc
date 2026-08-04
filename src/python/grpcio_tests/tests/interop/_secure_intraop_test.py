@@ -74,7 +74,6 @@ class SecureIntraopTest(_intraop_test_case.IntraopTestCase, unittest.TestCase):
 class SecureInteropWithSyncPrivateKeyOffloadingTest(
     _intraop_test_case.IntraopTestCase, unittest.TestCase
 ):
-
     def setUp(self):
         self.server = test_common.test_server()
         test_pb2_grpc.add_TestServiceServicer_to_server(
@@ -119,7 +118,6 @@ class SecureInteropWithSyncPrivateKeyOffloadingTest(
 class SecureInteropWithAsyncPrivateKeyOffloadingTest(
     _intraop_test_case.IntraopTestCase, unittest.TestCase
 ):
-
     def setUp(self):
         self.server = test_common.test_server()
         test_pb2_grpc.add_TestServiceServicer_to_server(
