@@ -91,8 +91,12 @@ _INF_TIMEOUT = 1e9
 
 if TYPE_CHECKING:
     _GenericRPCHandlersType = Sequence[grpc.GenericRpcHandler[Any, Any]]
+    _GenericRpcHandlerType = grpc.GenericRpcHandler[Any, Any]
+    _RpcMethodHandlerType = grpc.RpcMethodHandler[Any, Any]
 else:
     _GenericRPCHandlersType = Sequence[Any]
+    _GenericRpcHandlerType = grpc.GenericRpcHandler
+    _RpcMethodHandlerType = grpc.RpcMethodHandler
 
 
 def _serialized_request(request_event: cygrpc.BaseEvent) -> bytes:
@@ -148,7 +152,9 @@ class _RegisteredMethod(_Method[RequestType, ResponseType]):
     def __init__(
         self,
         name: str,
-        registered_handler: Optional[grpc.RpcMethodHandler[RequestType, ResponseType]],
+        registered_handler: Optional[
+            grpc.RpcMethodHandler[RequestType, ResponseType]
+        ],
     ):
         self._name = name
         self._registered_handler = registered_handler
@@ -167,7 +173,9 @@ class _RegisteredMethod(_Method[RequestType, ResponseType]):
 class _GenericMethod(_Method[RequestType, ResponseType]):
     def __init__(
         self,
-        generic_handlers: List[grpc.GenericRpcHandler[RequestType, ResponseType]],
+        generic_handlers: List[
+            grpc.GenericRpcHandler[RequestType, ResponseType]
+        ],
     ):
         self._generic_handlers = generic_handlers
 
@@ -1184,8 +1192,8 @@ class _ServerState:
     lock: threading.RLock
     completion_queue: cygrpc.CompletionQueue
     server: cygrpc.Server
-    generic_handlers: List[grpc.GenericRpcHandler[Any, Any]]
-    registered_method_handlers: Dict[str, grpc.RpcMethodHandler[Any, Any]]
+    generic_handlers: List[_GenericRpcHandlerType]
+    registered_method_handlers: Dict[str, _RpcMethodHandlerType]
     interceptor_pipeline: Optional[_interceptor._ServicePipeline]
     thread_pool: futures.ThreadPoolExecutor
     stage: _ServerStage
@@ -1202,7 +1210,7 @@ class _ServerState:
         self,
         completion_queue: cygrpc.CompletionQueue,
         server: cygrpc.Server,
-        generic_handlers: Sequence[grpc.GenericRpcHandler[Any, Any]],
+        generic_handlers: Sequence[_GenericRpcHandlerType],
         interceptor_pipeline: Optional[_interceptor._ServicePipeline],
         thread_pool: futures.ThreadPoolExecutor,
         maximum_concurrent_rpcs: Optional[int],
@@ -1229,14 +1237,14 @@ class _ServerState:
 
 
 def _add_generic_handlers(
-    state: _ServerState, generic_handlers: Iterable[grpc.GenericRpcHandler[Any, Any]]
+    state: _ServerState, generic_handlers: Iterable[_GenericRpcHandlerType]
 ) -> None:
     with state.lock:
         state.generic_handlers.extend(generic_handlers)
 
 
 def _add_registered_method_handlers(
-    state: _ServerState, method_handlers: Dict[str, grpc.RpcMethodHandler[RequestType, ResponseType]]
+    state: _ServerState, method_handlers: Dict[str, _RpcMethodHandlerType]
 ) -> None:
     with state.lock:
         state.registered_method_handlers.update(method_handlers)
@@ -1429,7 +1437,7 @@ def _start(state: _ServerState) -> None:
 
 
 def _validate_generic_rpc_handlers(
-    generic_rpc_handlers: Iterable[grpc.GenericRpcHandler[Any, Any]],
+    generic_rpc_handlers: Iterable[_GenericRpcHandlerType],
 ) -> None:
     for generic_rpc_handler in generic_rpc_handlers:
         service_attribute = getattr(generic_rpc_handler, "service", None)
@@ -1464,7 +1472,7 @@ class _Server(grpc.Server):
     def __init__(
         self,
         thread_pool: futures.ThreadPoolExecutor,
-        generic_handlers: Sequence[grpc.GenericRpcHandler[Any, Any]],
+        generic_handlers: Sequence[_GenericRpcHandlerType],
         interceptors: Sequence[grpc.ServerInterceptor],
         options: Sequence[ChannelArgumentType],
         maximum_concurrent_rpcs: Optional[int],
@@ -1485,7 +1493,7 @@ class _Server(grpc.Server):
         self._cy_server = server
 
     def add_generic_rpc_handlers(
-        self, generic_rpc_handlers: Iterable[grpc.GenericRpcHandler[Any, Any]]
+        self, generic_rpc_handlers: Iterable[_GenericRpcHandlerType]
     ) -> None:
         _validate_generic_rpc_handlers(generic_rpc_handlers)
         _add_generic_handlers(self._state, generic_rpc_handlers)
@@ -1493,7 +1501,7 @@ class _Server(grpc.Server):
     def add_registered_method_handlers(
         self,
         service_name: str,
-        method_handlers: Dict[str, grpc.RpcMethodHandler[RequestType, ResponseType]],
+        method_handlers: Dict[str, _RpcMethodHandlerType],
     ) -> None:
         # Can't register method once server started.
         with self._state.lock:
