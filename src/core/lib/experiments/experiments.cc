@@ -239,9 +239,6 @@ const uint8_t required_experiments_secure_endpoint_read_coalescing[] = {
 const char* const description_skip_clear_peer_on_cancellation =
     "If set, skips clearing of peer string on call cancellation.";
 const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
-const char* const description_subchannel_connection_scaling =
-    "Subchannel connection scaling support.";
-const char* const additional_constraints_subchannel_connection_scaling = "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -443,9 +440,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"skip_clear_peer_on_cancellation",
      description_skip_clear_peer_on_cancellation,
      additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,
-     true},
-    {"subchannel_connection_scaling", description_subchannel_connection_scaling,
-     additional_constraints_subchannel_connection_scaling, nullptr, 0, true,
      true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
@@ -701,9 +695,6 @@ const uint8_t required_experiments_secure_endpoint_read_coalescing[] = {
 const char* const description_skip_clear_peer_on_cancellation =
     "If set, skips clearing of peer string on call cancellation.";
 const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
-const char* const description_subchannel_connection_scaling =
-    "Subchannel connection scaling support.";
-const char* const additional_constraints_subchannel_connection_scaling = "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -905,9 +896,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"skip_clear_peer_on_cancellation",
      description_skip_clear_peer_on_cancellation,
      additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,
-     true},
-    {"subchannel_connection_scaling", description_subchannel_connection_scaling,
-     additional_constraints_subchannel_connection_scaling, nullptr, 0, true,
      true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
@@ -1163,9 +1151,6 @@ const uint8_t required_experiments_secure_endpoint_read_coalescing[] = {
 const char* const description_skip_clear_peer_on_cancellation =
     "If set, skips clearing of peer string on call cancellation.";
 const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
-const char* const description_subchannel_connection_scaling =
-    "Subchannel connection scaling support.";
-const char* const additional_constraints_subchannel_connection_scaling = "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -1367,9 +1352,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"skip_clear_peer_on_cancellation",
      description_skip_clear_peer_on_cancellation,
      additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,
-     true},
-    {"subchannel_connection_scaling", description_subchannel_connection_scaling,
-     additional_constraints_subchannel_connection_scaling, nullptr, 0, true,
      true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
