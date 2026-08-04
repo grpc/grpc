@@ -120,6 +120,7 @@ _GLOBAL_PROVIDER: Optional[TracerProvider] = None
 
 
 def init_tracer_provider() -> Tuple[TracerProvider, trace.Tracer]:
+    # pylint: disable=global-statement
     global _GLOBAL_PROVIDER
     if _GLOBAL_PROVIDER is None:
         endpoint = os.environ.get(
