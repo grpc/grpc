@@ -25,6 +25,7 @@ from tests.unit.framework.common import test_constants
 from tests_aio.unit._test_base import AioTestBase
 
 _UNARY_UNARY_ABORT = "/test/UnaryUnaryAbort"
+_SYNC_UNARY_UNARY_ABORT = "/test/SyncUnaryUnaryAbort"
 _SUPPRESS_ABORT = "/test/SuppressAbort"
 _REPLACE_ABORT = "/test/ReplaceAbort"
 _ABORT_AFTER_REPLY = "/test/AbortAfterReply"
@@ -41,6 +42,11 @@ class _GenericHandler(grpc.GenericRpcHandler):
     @staticmethod
     async def _unary_unary_abort(unused_request, context):
         await context.abort(_ABORT_CODE, _ABORT_DETAILS)
+        raise RuntimeError("This line should not be executed")
+
+    @staticmethod
+    def _sync_unary_unary_abort(unused_request, context):
+        context.abort(_ABORT_CODE, _ABORT_DETAILS)
         raise RuntimeError("This line should not be executed")
 
     @staticmethod
@@ -69,6 +75,8 @@ class _GenericHandler(grpc.GenericRpcHandler):
     def service(self, handler_details):
         if handler_details.method == _UNARY_UNARY_ABORT:
             return grpc.unary_unary_rpc_method_handler(self._unary_unary_abort)
+        if handler_details.method == _SYNC_UNARY_UNARY_ABORT:
+            return grpc.unary_unary_rpc_method_handler(self._sync_unary_unary_abort)
         if handler_details.method == _SUPPRESS_ABORT:
             return grpc.unary_unary_rpc_method_handler(self._suppress_abort)
         if handler_details.method == _REPLACE_ABORT:
@@ -96,6 +104,20 @@ class TestAbort(AioTestBase):
 
     async def test_unary_unary_abort(self):
         method = self._channel.unary_unary(_UNARY_UNARY_ABORT)
+        call = method(_REQUEST)
+
+        self.assertEqual(_ABORT_CODE, await call.code())
+        self.assertEqual(_ABORT_DETAILS, await call.details())
+
+        with self.assertRaises(aio.AioRpcError) as exception_context:
+            await call
+
+        rpc_error = exception_context.exception
+        self.assertEqual(_ABORT_CODE, rpc_error.code())
+        self.assertEqual(_ABORT_DETAILS, rpc_error.details())
+
+    async def test_sync_unary_unary_abort(self):
+        method = self._channel.unary_unary(_SYNC_UNARY_UNARY_ABORT)
         call = method(_REQUEST)
 
         self.assertEqual(_ABORT_CODE, await call.code())
