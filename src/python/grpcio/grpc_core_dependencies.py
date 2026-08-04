@@ -853,6 +853,7 @@ CORE_SOURCE_FILES = [
     'src/core/tsi/tls_telemetry.cc',
     'src/core/tsi/transport_security.cc',
     'src/core/tsi/transport_security_grpc.cc',
+    'src/core/util/address_sorting_init.cc',
     'src/core/util/alloc.cc',
     'src/core/util/backoff.cc',
     'src/core/util/crash.cc',

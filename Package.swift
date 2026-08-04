@@ -2055,6 +2055,8 @@ let package = Package(
         "src/core/tsi/transport_security_grpc.cc",
         "src/core/tsi/transport_security_grpc.h",
         "src/core/tsi/transport_security_interface.h",
+        "src/core/util/address_sorting_init.cc",
+        "src/core/util/address_sorting_init.h",
         "src/core/util/alloc.cc",
         "src/core/util/alloc.h",
         "src/core/util/atomic_utils.h",
