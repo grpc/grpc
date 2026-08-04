@@ -33,23 +33,12 @@ class _ServicePipeline:
     def __init__(self, interceptors: Sequence[grpc.ServerInterceptor]):
         self.interceptors = tuple(interceptors)
 
-    def _continuation(
-        self,
-        thunk: Callable[
-            [grpc.HandlerCallDetails], Optional[grpc.RpcMethodHandler]
-        ],
-        index: int,
-    ) -> Callable[[grpc.HandlerCallDetails], Optional[grpc.RpcMethodHandler]]:
+    def _continuation(self, thunk: Callable, index: int) -> Callable:
         return lambda context: self._intercept_at(thunk, index, context)
 
     def _intercept_at(
-        self,
-        thunk: Callable[
-            [grpc.HandlerCallDetails], Optional[grpc.RpcMethodHandler]
-        ],
-        index: int,
-        context: grpc.HandlerCallDetails,
-    ) -> Optional[grpc.RpcMethodHandler]:
+        self, thunk: Callable, index: int, context: grpc.HandlerCallDetails
+    ) -> grpc.RpcMethodHandler:
         if index < len(self.interceptors):
             interceptor = self.interceptors[index]
             thunk = self._continuation(thunk, index + 1)
@@ -57,12 +46,8 @@ class _ServicePipeline:
         return thunk(context)
 
     def execute(
-        self,
-        thunk: Callable[
-            [grpc.HandlerCallDetails], Optional[grpc.RpcMethodHandler]
-        ],
-        context: grpc.HandlerCallDetails,
-    ) -> Optional[grpc.RpcMethodHandler]:
+        self, thunk: Callable, context: grpc.HandlerCallDetails
+    ) -> grpc.RpcMethodHandler:
         return self._intercept_at(thunk, 0, context)
 
 
