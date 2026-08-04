@@ -90,7 +90,6 @@ inline bool IsEventEngineCallbackCqEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FOR_ALL_OTHER_ENDPOINTS
 inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
 inline bool IsFailRecvMetadataOnDeadlineExceededEnabled() { return false; }
-inline bool IsFixV3FilterStackServerSideOrderingEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsFuseFiltersEnabled() { return false; }
 inline bool IsH2MaxDeallocatingStreamsHeadroomEnabled() { return false; }
@@ -184,7 +183,6 @@ inline bool IsEventEngineCallbackCqEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FOR_ALL_OTHER_ENDPOINTS
 inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
 inline bool IsFailRecvMetadataOnDeadlineExceededEnabled() { return false; }
-inline bool IsFixV3FilterStackServerSideOrderingEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsFuseFiltersEnabled() { return false; }
 inline bool IsH2MaxDeallocatingStreamsHeadroomEnabled() { return false; }
@@ -278,7 +276,6 @@ inline bool IsEventEngineCallbackCqEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FOR_ALL_OTHER_ENDPOINTS
 inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
 inline bool IsFailRecvMetadataOnDeadlineExceededEnabled() { return false; }
-inline bool IsFixV3FilterStackServerSideOrderingEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsFuseFiltersEnabled() { return false; }
 inline bool IsH2MaxDeallocatingStreamsHeadroomEnabled() { return false; }
@@ -357,7 +354,6 @@ enum ExperimentIds {
   kExperimentIdEventEngineCallbackCq,
   kExperimentIdEventEngineForAllOtherEndpoints,
   kExperimentIdFailRecvMetadataOnDeadlineExceeded,
-  kExperimentIdFixV3FilterStackServerSideOrdering,
   kExperimentIdFreeLargeAllocator,
   kExperimentIdFuseFilters,
   kExperimentIdH2MaxDeallocatingStreamsHeadroom,
@@ -473,10 +469,6 @@ inline bool IsEventEngineForAllOtherEndpointsEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_FAIL_RECV_METADATA_ON_DEADLINE_EXCEEDED
 inline bool IsFailRecvMetadataOnDeadlineExceededEnabled() {
   return IsExperimentEnabled<kExperimentIdFailRecvMetadataOnDeadlineExceeded>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_FIX_V3_FILTER_STACK_SERVER_SIDE_ORDERING
-inline bool IsFixV3FilterStackServerSideOrderingEnabled() {
-  return IsExperimentEnabled<kExperimentIdFixV3FilterStackServerSideOrdering>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_FREE_LARGE_ALLOCATOR
 inline bool IsFreeLargeAllocatorEnabled() {

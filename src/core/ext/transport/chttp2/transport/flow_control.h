@@ -24,7 +24,6 @@
 #include <stdint.h>
 
 #include <algorithm>
-#include <cstddef>
 #include <iosfwd>
 #include <optional>
 #include <string>
@@ -371,7 +370,6 @@ class TransportFlowControl final {
     int64_t bdp_accumulator;
     int64_t bdp_estimate;
     double bdp_bw_est;
-    bool bdp_ping_blocked;
 
     std::string ToString() const;
     channelz::PropertyList ChannelzProperties() const {
@@ -388,7 +386,6 @@ class TransportFlowControl final {
           .Set("announced_stream_total_over_incoming_window",
                announced_stream_total_over_incoming_window)
           .Set("bdp_accumulator", bdp_accumulator)
-          .Set("bdp_ping_blocked", bdp_ping_blocked)
           .Set("bdp_estimate", bdp_estimate)
           .Set("bdp_bw_est", bdp_bw_est);
     }
@@ -408,7 +405,6 @@ class TransportFlowControl final {
     stats.announced_stream_total_over_incoming_window =
         announced_stream_total_over_incoming_window();
     stats.bdp_accumulator = bdp_estimator_.accumulator();
-    stats.bdp_ping_blocked = bdp_ping_blocked_;
     stats.bdp_estimate = bdp_estimator_.EstimateBdp();
     stats.bdp_bw_est = bdp_estimator_.EstimateBandwidth();
     return stats;
@@ -421,67 +417,6 @@ class TransportFlowControl final {
     return std::exchange(window_update_list_, {});
   }
   size_t window_update_list_size() const { return window_update_list_.size(); }
-
-  //////////////////////////////////////////////////////////////////////////////
-  // BDP Ping related functions.
-
-  // The current implementation of BDP relies on the assumption that our
-  // transport will not send out a new ping till it has received an ACK for the
-  // previous ping.
-
-  // CHTTP2 reference : schedule_bdp_ping_locked
-  void ScheduleBdpPing() {
-    GRPC_DCHECK(enable_bdp_probe_);
-    bdp_estimator_.SchedulePing();
-  }
-
-  // CHTTP2 reference : start_bdp_ping_locked
-  void StartBdpPing() {
-    // TODO(tjagtap) : [PH2][P1] : Reset the keepalive ping timer
-    bdp_estimator_.StartPing();
-  }
-
-  // CHTTP2 reference : finish_bdp_ping_locked
-  Duration CompleteBdpPing() {
-    return bdp_estimator_.CompletePing() - Timestamp::Now();
-  }
-
-  // CHTTP2 reference : init_data_frame_parser
-  void OnReceiveDataFrame(const uint32_t bytes) {
-    if (enable_bdp_probe_) {
-      bdp_estimator_.AddIncomingBytes(bytes);
-      if (bdp_ping_blocked_ && (bytes > 0)) {
-        // Once we receive a data frame, we can start sending BDP pings again.
-        bdp_ping_blocked_ = false;
-        bdp_waker_.Wakeup();
-      }
-    }
-  }
-
-  // CHTTP2 reference : grpc_chttp2_transport::bdp_ping_blocked
-  bool IsBdpPingBlocked() const { return bdp_ping_blocked_; }
-
-  auto WaitForBdpActivation() {
-    GRPC_HTTP2_FLOW_CONTROL_DLOG
-        << "TransportFlowControl::WaitForBdpActivation Factory";
-    return [this]() -> Poll<absl::Status> {
-      GRPC_DCHECK(enable_bdp_probe_);
-      if (bdp_estimator_.accumulator() == 0) {
-        // Block BDP ping till we receive data in a DATA frame on the transport.
-        bdp_ping_blocked_ = true;
-      }
-      if (bdp_ping_blocked_) {
-        bdp_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
-        GRPC_HTTP2_FLOW_CONTROL_DLOG
-            << "TransportFlowControl::WaitForBdpActivation Pending";
-        return Pending{};
-      }
-      GRPC_HTTP2_FLOW_CONTROL_DLOG
-          << "TransportFlowControl::WaitForBdpActivation Resolved";
-      ScheduleBdpPing();
-      return absl::OkStatus();
-    };
-  }
 
  private:
   friend class StreamFlowControl;
@@ -526,12 +461,10 @@ class TransportFlowControl final {
   /// incoming_window = total_over - max(bdp - total_under, 0)
   int64_t announced_stream_total_over_incoming_window_ = 0;
 
-  //  Transport level channel argument GRPC_ARG_HTTP2_BDP_PROBE decides if we
-  //  should probe for bdp.
+  /// should we probe bdp?
   const bool enable_bdp_probe_;
-  // CHTTP2 reference : grpc_chttp2_transport::bdp_ping_blocked
-  bool bdp_ping_blocked_;
-  Waker bdp_waker_;
+
+  // bdp estimation
   BdpEstimator bdp_estimator_;
 
   int64_t remote_window_ = kDefaultWindow;

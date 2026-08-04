@@ -285,8 +285,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-gen/envoy/extensions/filters/common/fault/v3/fault.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/filters/http/composite/v3/composite.upb_minitable.c \
-    src/core/ext/upb-gen/envoy/extensions/filters/http/ext_proc/v3/ext_proc.upb_minitable.c \
-    src/core/ext/upb-gen/envoy/extensions/filters/http/ext_proc/v3/processing_mode.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/filters/http/rbac/v3/rbac.upb_minitable.c \
@@ -311,7 +309,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upb_minitable.c \
     src/core/ext/upb-gen/envoy/service/discovery/v3/ads.upb_minitable.c \
     src/core/ext/upb-gen/envoy/service/discovery/v3/discovery.upb_minitable.c \
-    src/core/ext/upb-gen/envoy/service/ext_proc/v3/external_processor.upb_minitable.c \
     src/core/ext/upb-gen/envoy/service/load_stats/v3/lrs.upb_minitable.c \
     src/core/ext/upb-gen/envoy/service/status/v3/csds.upb_minitable.c \
     src/core/ext/upb-gen/envoy/type/http/v3/cookie.upb_minitable.c \
@@ -470,8 +467,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upbdefs-gen/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/filters/http/composite/v3/composite.upbdefs.c \
-    src/core/ext/upbdefs-gen/envoy/extensions/filters/http/ext_proc/v3/ext_proc.upbdefs.c \
-    src/core/ext/upbdefs-gen/envoy/extensions/filters/http/ext_proc/v3/processing_mode.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.c \
@@ -567,8 +562,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/filter/auth/client_auth_filter.cc \
     src/core/filter/auth/server_auth_filter.cc \
     src/core/filter/composite/composite_filter.cc \
-    src/core/filter/ext_proc/ext_proc_filter.cc \
-    src/core/filter/ext_proc/ext_proc_messages.cc \
     src/core/filter/fused_filters.cc \
     src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc \
     src/core/handshaker/handshaker.cc \
@@ -882,7 +875,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/tsi/tls_telemetry.cc \
     src/core/tsi/transport_security.cc \
     src/core/tsi/transport_security_grpc.cc \
-    src/core/util/address_sorting_init.cc \
     src/core/util/alloc.cc \
     src/core/util/backoff.cc \
     src/core/util/crash.cc \
@@ -970,10 +962,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/xds/grpc/xds_common_types_parser.cc \
     src/core/xds/grpc/xds_endpoint.cc \
     src/core/xds/grpc/xds_endpoint_parser.cc \
-    src/core/xds/grpc/xds_grpc_service_parser.cc \
     src/core/xds/grpc/xds_health_status.cc \
     src/core/xds/grpc/xds_http_composite_filter.cc \
-    src/core/xds/grpc/xds_http_ext_proc_filter.cc \
     src/core/xds/grpc/xds_http_fault_filter.cc \
     src/core/xds/grpc/xds_http_filter.cc \
     src/core/xds/grpc/xds_http_filter_registry.cc \
@@ -1585,7 +1575,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/filters/common/fault/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/filters/common/matcher/action/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/filters/http/composite/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/filters/http/ext_proc/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/filters/http/gcp_authn/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/filters/http/rbac/v3)
@@ -1605,7 +1594,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/upstreams/http/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/service/discovery/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/service/ext_proc/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/service/load_stats/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/service/status/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/type/http/v3)
@@ -1654,7 +1642,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/extensions/filters/common/fault/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/extensions/filters/common/matcher/action/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/extensions/filters/http/composite/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/extensions/filters/http/ext_proc/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/extensions/filters/http/fault/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/extensions/filters/http/gcp_authn/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/extensions/filters/http/rbac/v3)
@@ -1689,7 +1676,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/filter)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/filter/auth)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/filter/composite)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/filter/ext_proc)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/handshaker)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/handshaker/endpoint_info)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/handshaker/http_connect)

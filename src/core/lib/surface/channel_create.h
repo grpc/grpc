@@ -26,6 +26,8 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "absl/status/statusor.h"
 
+#define GRPC_ARG_USE_V3_STACK "grpc.internal.use_v3_stack"
+
 namespace grpc_core {
 
 class Transport;

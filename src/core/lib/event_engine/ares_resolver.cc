@@ -60,7 +60,6 @@
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/util/address_sorting_init.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
@@ -81,8 +80,6 @@
 namespace grpc_event_engine::experimental {
 
 namespace {
-
-void AresOnceInit() { grpc_core::AddressSortingInitOnce(); }
 
 // A hard limit on the number of records (A/AAAA or SRV) we may get from a
 // single response. This is to be defensive to prevent a bad DNS response from
@@ -256,7 +253,6 @@ AresResolver::CreateAresResolver(
     std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
     std::shared_ptr<EventEngine> event_engine) {
   ares_channel channel;
-  AresOnceInit();
   absl::Status status =
       InitAresChannel(dns_server, *polled_fd_factory, &channel);
   if (!status.ok()) {
@@ -280,7 +276,6 @@ AresResolver::AresResolver(
 #endif  // GRPC_ENABLE_FORK_SUPPORT
       event_engine_(std::move(event_engine)) {
   (void)dns_server;  // Used whether or not compiled with fork support
-  AresOnceInit();
   polled_fd_factory_->Initialize(&mutex_, event_engine_.get());
 }
 

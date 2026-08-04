@@ -136,11 +136,10 @@ class CompositeFilter final : public V3InterceptorToV2Bridge<CompositeFilter> {
   static absl::StatusOr<RefCountedPtr<CompositeFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
-  CompositeFilter(const ChannelArgs& args, RefCountedPtr<const Config> config);
+  CompositeFilter(const ChannelArgs& args, RefCountedPtr<const Config> config,
+                  ChannelFilter::Args filter_args);
 
  private:
-  void Init(const ChannelArgs& args) override;
-
   void Orphaned() override {}
 
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override;

@@ -148,11 +148,11 @@ TEST_P(XdsFallbackTest, PrimarySecondaryNotAvailable) {
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
       absl::StrFormat(
           "empty address list \\(LDS resource server.example.com: "
-          "xDS channel for server %s: "
+          "xDS channel for server localhost:%d: "
           "xDS call failed with no responses received; "
           "status: RESOURCE_EXHAUSTED: test forced ADS stream failure "
           "\\(node ID:xds_end2end_test\\)\\)",
-          fallback_balancer_->target()));
+          fallback_balancer_->port()));
 }
 
 TEST_P(XdsFallbackTest, UsesCachedResourcesAfterFailure) {

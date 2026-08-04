@@ -65,27 +65,24 @@ using ::grpc::experimental::StaticDataCertificateProvider;
 
 void XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::
     OnServingStatusUpdate(std::string uri, ServingStatusUpdate update) {
-  absl::Status status(static_cast<absl::StatusCode>(
-                          static_cast<int>(update.status.error_code())),
-                      update.status.error_message());
   grpc_core::MutexLock lock(&mu_);
-  LOG(INFO) << "Received server status notification for " << uri << ": "
-            << status;
-  status_map_[uri].emplace_back(std::move(status));
+  status_map_[uri].emplace_back(static_cast<absl::StatusCode>(static_cast<int>(
+                                    update.status.error_code())),
+                                update.status.error_message());
   if (cond_ != nullptr) cond_->Signal();
 }
 
 std::optional<absl::Status>
 XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::GetNextStatus(
-    const std::string& uri, absl::Time deadline) {
-  LOG(INFO) << "Getting next server status notification for " << uri;
+    const std::string& uri, absl::Duration timeout) {
+  timeout *= grpc_test_slowdown_factor();
   grpc_core::MutexLock lock(&mu_);
   auto& queue = status_map_[uri];
   if (queue.empty()) {
     grpc_core::CondVar cv;
     cond_ = &cv;
     while (queue.empty()) {
-      if (cv.WaitWithDeadline(&mu_, deadline)) {
+      if (cv.WaitWithTimeout(&mu_, timeout)) {
         LOG(ERROR) << "timed out waiting for server status notification";
         cond_ = nullptr;
         return std::nullopt;
@@ -211,7 +208,7 @@ void XdsEnd2endTest::ServerThread::Serve(grpc_core::Mutex* mu,
   // We need to acquire the lock here in order to prevent the notify_one
   // below from firing before its corresponding wait is executed.
   grpc_core::MutexLock lock(mu);
-  std::string server_address = grpc_core::LocalIpAndPort(port_);
+  std::string server_address = absl::StrCat("localhost:", port_);
   if (use_xds_enabled_server_) {
     XdsServerBuilder builder;
     if (GetParam().bootstrap_source() ==

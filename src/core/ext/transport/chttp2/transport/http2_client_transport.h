@@ -410,7 +410,15 @@ class Http2ClientTransport final : public ClientTransport,
   // tokens are calculated based on the initial window size.
   absl::Status UpdateAllStreamsWritability();
 
-  auto BdpLoop();
+  auto FlowControlPeriodicUpdateLoop();
+
+  // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
+  void AddPeriodicUpdatePromiseWaker() {
+    periodic_updates_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+  }
+
+  // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
+  void WakeupPeriodicUpdatePromise() { periodic_updates_waker_.Wakeup(); }
 
   //////////////////////////////////////////////////////////////////////////////
   // Stream List Operations
@@ -719,6 +727,9 @@ class Http2ClientTransport final : public ClientTransport,
 
   RefCountedPtr<SecurityFrameHandler> security_frame_handler_;
   std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;
+
+  // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
+  Waker periodic_updates_waker_;
 };
 
 }  // namespace http2

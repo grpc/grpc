@@ -1,0 +1,3 @@
+# Workaround for rvm unable to find mkdir properly
+# https://stackoverflow.com/questions/64653051
+RUN ln -s /bin/mkdir /usr/bin/mkdir

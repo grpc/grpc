@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:12
+FROM debian:11
 
 #=================
 # Basic C core dependencies
@@ -76,10 +76,7 @@ RUN apt-get update && apt-get install -y \
   && apt-get clean
 
 # use pinned version of pip to avoid sudden breakages
-# Some newer distros that have already implemented PEP 668. Use of
-# --break-system-packages is to workaround that. We should look into using
-# virtualenv in Dockerfile though.
-RUN python3 -m pip install --break-system-packages --upgrade pip==19.3.1
+RUN python3 -m pip install --upgrade pip==19.3.1
 
 # TODO(jtattermusch): currently six is needed for tools/run_tests scripts
 # but since our python2 usage is deprecated, we should get rid of it.
@@ -107,11 +104,17 @@ RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
 RUN /bin/bash -l -c "echo 'rvm --default use ruby-3.2.11' >> ~/.bashrc"
 RUN /bin/bash -l -c "gem install bundler --no-document"
 
-#=================
-# Install cmake
-# Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
+# Workaround for rvm unable to find mkdir properly
+# https://stackoverflow.com/questions/64653051
+RUN ln -s /bin/mkdir /usr/bin/mkdir
 
-RUN apt-get update && apt-get install -y cmake && apt-get clean
+#=================
+# Install cmake from bullseye-backports
+# Note that this step should be only used for Debian 11 (bullseye) images.
+
+RUN echo "deb http://archive.debian.org/debian bullseye-backports main" > /etc/apt/sources.list.d/bullseye-backports.list && \
+    apt-get update && \
+    apt-get install -y -t bullseye-backports cmake
 
 #=================
 # Install ccache
