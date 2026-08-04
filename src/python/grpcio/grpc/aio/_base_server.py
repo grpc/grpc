@@ -14,7 +14,7 @@
 """Abstract base classes for server-side classes."""
 
 import abc
-from typing import Generic, Iterable, Mapping, NoReturn, Optional, Sequence
+from typing import Any, Generic, Iterable, Mapping, NoReturn, Optional, Sequence
 
 import grpc
 
@@ -29,7 +29,7 @@ class Server(abc.ABC):
 
     @abc.abstractmethod
     def add_generic_rpc_handlers(
-        self, generic_rpc_handlers: Sequence[grpc.GenericRpcHandler]
+        self, generic_rpc_handlers: Sequence[grpc.GenericRpcHandler[Any, Any]]
     ) -> None:
         """Registers GenericRpcHandlers with this Server.
 

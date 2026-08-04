@@ -47,7 +47,7 @@ class Server(_base_server.Server):
     def __init__(
         self,
         thread_pool: Optional[Executor],
-        generic_handlers: Optional[Sequence[grpc.GenericRpcHandler]],
+        generic_handlers: Optional[Sequence[grpc.GenericRpcHandler[Any, Any]]],
         interceptors: Optional[Sequence[Any]],
         options: ChannelArgumentType,
         maximum_concurrent_rpcs: Optional[int],
@@ -78,7 +78,7 @@ class Server(_base_server.Server):
         )
 
     def add_generic_rpc_handlers(
-        self, generic_rpc_handlers: Sequence[grpc.GenericRpcHandler]
+        self, generic_rpc_handlers: Sequence[grpc.GenericRpcHandler[Any, Any]]
     ) -> None:
         """Registers GenericRpcHandlers with this Server.
 
@@ -93,7 +93,7 @@ class Server(_base_server.Server):
     def add_registered_method_handlers(
         self,
         service_name: str,
-        method_handlers: Dict[str, grpc.RpcMethodHandler],
+        method_handlers: Dict[str, grpc.RpcMethodHandler[Any, Any]],
     ) -> None:
         """Registers method handlers for pre-registered methods.
 
@@ -224,7 +224,7 @@ class Server(_base_server.Server):
 
 def server(
     migration_thread_pool: Optional[Executor] = None,
-    handlers: Optional[Sequence[grpc.GenericRpcHandler]] = None,
+    handlers: Optional[Sequence[grpc.GenericRpcHandler[Any, Any]]] = None,
     interceptors: Optional[Sequence[Any]] = None,
     options: Optional[ChannelArgumentType] = None,
     maximum_concurrent_rpcs: Optional[int] = None,
