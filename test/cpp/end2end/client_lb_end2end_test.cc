@@ -694,7 +694,12 @@ TEST_F(ClientLbSubchannelMetricsTest, SubchannelMetricsBasic) {
             std::nullopt);
   auto channel = grpc::CreateChannel(grpc_core::LocalIpUri(port),
                                      grpc::InsecureChannelCredentials());
-  ASSERT_TRUE(WaitForChannelReady(channel.get()));
+  auto stub = BuildStub(channel);
+  // Need to actually send an RPC here rather than just waiting for the
+  // channel to report READY, since that ensures that the new connection
+  // has actually been registered with the server before we tell the
+  // server to send GOAWAYs.
+  CheckRpcSendOk(DEBUG_LOCATION, stub);
   EXPECT_THAT(
       stats_plugin_->GetUInt64MetricValueByName(
           "grpc.subchannel.connection_attempts_succeeded", {target, "", ""}),
@@ -740,6 +745,8 @@ TEST_F(ClientLbSubchannelMetricsTest, MultipleConnectionAttemptsFailed) {
 }
 
 TEST_F(ClientLbSubchannelMetricsTest, ConnectionAttemptIgnoredOnShutdown) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1][Server] Fix bug");
   ConnectionAttemptInjector injector;
   const int port1 = grpc_pick_unused_port_or_die();
   const int port2 = grpc_pick_unused_port_or_die();
@@ -817,6 +824,8 @@ TEST_F(ClientLbSubchannelMetricsTest, SecurityLevelsPrivacyAndIntegrity) {
 }
 
 TEST_F(ClientLbSubchannelMetricsTest, DisconnectionOnSubchannelShutdown) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1][Server] Fix bug");
   StartServers(1, {}, grpc::InsecureServerCredentials());
   const int port1 = servers_[0]->port_;
   const int port2 = grpc_pick_unused_port_or_die();

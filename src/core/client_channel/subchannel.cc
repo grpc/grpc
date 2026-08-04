@@ -829,7 +829,17 @@ class Subchannel::ConnectionStateWatcher final
     GRPC_TRACE_LOG(subchannel, INFO)
         << "subchannel " << subchannel << " " << subchannel->key_.ToString()
         << ": connected subchannel " << connected_subchannel_.get()
-        << " reports disconnection: " << status;
+        << " reports disconnection: " << status
+        << " (reason=" << disconnect_info.reason << ", http2_error_code="
+        << (disconnect_info.http2_error_code.has_value()
+                ? http2::Http2Status::DebugGetCode(
+                      *disconnect_info.http2_error_code)
+                : "<unset>")
+        << ", keepalive_time="
+        << (disconnect_info.keepalive_time.has_value()
+                ? disconnect_info.keepalive_time->ToString()
+                : "<unset>")
+        << ")";
     MutexLock lock(&subchannel->mu_);
     // Handle keepalive update.
     if (disconnect_info.keepalive_time.has_value()) {
