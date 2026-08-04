@@ -29,6 +29,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/debug/trace_impl.h"
+#include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/observable.h"
 #include "src/core/lib/promise/seq.h"
