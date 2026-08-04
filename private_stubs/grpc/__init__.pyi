@@ -50,7 +50,9 @@ from grpc._cython import cygrpc as _cygrpc
 from grpc._runtime_protos import protos as protos
 from grpc._runtime_protos import protos_and_services as protos_and_services
 from grpc._runtime_protos import services as services
-from grpc._typing import RequestType as RequestType, ResponseType as ResponseType
+
+RequestType = TypeVar("RequestType")
+ResponseType = TypeVar("ResponseType")
 
 __version__: str
 
