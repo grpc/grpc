@@ -140,6 +140,25 @@ use_repo(python, "python_3_11_aarch64-apple-darwin")
 
 register_toolchains("//:python_3_11_ios_sim_arm64_workaround")
 
+# Custom local free-threaded Python 3.14 build. Registered in the root module
+# so it takes precedence over the hermetic rules rules_python toolchains above.
+local_runtime_repo = use_repo_rule("@rules_python//python/local_toolchains:repos.bzl", "local_runtime_repo")
+
+local_runtime_repo(
+    name="local_python_3_14t",
+    interpreter_path="/opt/python3.14.6t/bin/python3.14td",
+    on_failure="fail",
+)
+
+local_runtime_toolchains_repo = use_repo_rule("@rules_python//python/local_toolchains:repos.bzl", "local_runtime_toolchains_repo")
+
+local_runtime_toolchains_repo(
+    name="local_python_toolchains",
+    runtimes=["local_python_3_14t"],
+)
+
+register_toolchains("@local_python_toolchains//:all")
+
 pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 
 [

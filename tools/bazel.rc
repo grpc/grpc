@@ -164,6 +164,7 @@ build:python_single_threaded_unary_stream --test_env="GRPC_SINGLE_THREADED_UNARY
 
 build:python --config=python-bzlmod
 build:python --copt=-DGRPC_PYTHON_BUILD
+build:python --@rules_python//python/config_settings:bootstrap_impl=script
 
 # Compile database generation config
 build:compdb --build_tag_filters=-nocompdb
