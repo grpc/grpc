@@ -50,6 +50,7 @@ from grpc._cython import cygrpc as _cygrpc
 from grpc._runtime_protos import protos as protos
 from grpc._runtime_protos import protos_and_services as protos_and_services
 from grpc._runtime_protos import services as services
+from grpc._typing import RequestType as RequestType, ResponseType as ResponseType
 
 __version__: str
 
@@ -402,28 +403,28 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
 
 #####################  Service-Side Handler Interfaces  ########################
 
-class RpcMethodHandler(abc.ABC):
+class RpcMethodHandler(abc.ABC, Generic[RequestType, ResponseType]):
     request_streaming: bool
     response_streaming: bool
-    request_deserializer: Optional[Callable[[bytes], Any]]
-    response_serializer: Optional[Callable[[Any], bytes]]
-    unary_unary: Optional[Callable[[Any, ServicerContext], Any]]
-    unary_stream: Optional[Callable[[Any, ServicerContext], Iterator[Any]]]
-    stream_unary: Optional[Callable[[Iterator[Any], ServicerContext], Any]]
-    stream_stream: Optional[Callable[[Iterator[Any], ServicerContext], Iterator[Any]]]
+    request_deserializer: Optional[Callable[[bytes], RequestType]]
+    response_serializer: Optional[Callable[[ResponseType], bytes]]
+    unary_unary: Optional[Callable[[RequestType, ServicerContext], ResponseType]]
+    unary_stream: Optional[Callable[[RequestType, ServicerContext], Iterator[ResponseType]]]
+    stream_unary: Optional[Callable[[Iterator[RequestType], ServicerContext], ResponseType]]
+    stream_stream: Optional[Callable[[Iterator[RequestType], ServicerContext], Iterator[ResponseType]]]
 
 @runtime_checkable
 class HandlerCallDetails(Protocol):
     method: str
     invocation_metadata: Any
 
-class GenericRpcHandler(abc.ABC):
+class GenericRpcHandler(abc.ABC, Generic[RequestType, ResponseType]):
     @abc.abstractmethod
     def service(
         self, handler_call_details: HandlerCallDetails
-    ) -> Optional[RpcMethodHandler]: ...
+    ) -> Optional[RpcMethodHandler[RequestType, ResponseType]]: ...
 
-class ServiceRpcHandler(GenericRpcHandler, metaclass=abc.ABCMeta):
+class ServiceRpcHandler(GenericRpcHandler[RequestType, ResponseType], metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def service_name(self) -> str: ...
 
@@ -462,28 +463,30 @@ class Server(abc.ABC):
 #################################  Functions    ################################
 
 def unary_unary_rpc_method_handler(
-    behavior: Callable[[Any, ServicerContext], Any],
-    request_deserializer: Optional[Callable[[bytes], Any]] = None,
-    response_serializer: Optional[Callable[[Any], bytes]] = None,
-) -> RpcMethodHandler: ...
+    behavior: Callable[[RequestType, ServicerContext], ResponseType],
+    request_deserializer: Optional[Callable[[bytes], RequestType]] = None,
+    response_serializer: Optional[Callable[[ResponseType], bytes]] = None,
+) -> RpcMethodHandler[RequestType, ResponseType]: ...
 def unary_stream_rpc_method_handler(
-    behavior: Callable[[Any, ServicerContext], Iterator[Any]],
-    request_deserializer: Optional[Callable[[bytes], Any]] = None,
-    response_serializer: Optional[Callable[[Any], bytes]] = None,
-) -> RpcMethodHandler: ...
+    behavior: Callable[[RequestType, ServicerContext], Iterator[ResponseType]],
+    request_deserializer: Optional[Callable[[bytes], RequestType]] = None,
+    response_serializer: Optional[Callable[[ResponseType], bytes]] = None,
+) -> RpcMethodHandler[RequestType, ResponseType]: ...
 def stream_unary_rpc_method_handler(
-    behavior: Callable[[Iterator[Any], ServicerContext], Any],
-    request_deserializer: Optional[Callable[[bytes], Any]] = None,
-    response_serializer: Optional[Callable[[Any], bytes]] = None,
-) -> RpcMethodHandler: ...
+    behavior: Callable[[Iterator[RequestType], ServicerContext], ResponseType],
+    request_deserializer: Optional[Callable[[bytes], RequestType]] = None,
+    response_serializer: Optional[Callable[[ResponseType], bytes]] = None,
+) -> RpcMethodHandler[RequestType, ResponseType]: ...
 def stream_stream_rpc_method_handler(
-    behavior: Callable[[Iterator[Any], ServicerContext], Iterator[Any]],
-    request_deserializer: Optional[Callable[[bytes], Any]] = None,
-    response_serializer: Optional[Callable[[Any], bytes]] = None,
-) -> RpcMethodHandler: ...
+    behavior: Callable[
+        [Iterator[RequestType], ServicerContext], Iterator[ResponseType]
+    ],
+    request_deserializer: Optional[Callable[[bytes], RequestType]] = None,
+    response_serializer: Optional[Callable[[ResponseType], bytes]] = None,
+) -> RpcMethodHandler[RequestType, ResponseType]: ...
 def method_handlers_generic_handler(
-    service: str, method_handlers: Mapping[str, RpcMethodHandler]
-) -> GenericRpcHandler: ...
+    service: str, method_handlers: Mapping[str, RpcMethodHandler[Any, Any]]
+) -> GenericRpcHandler[Any, Any]: ...
 def ssl_channel_credentials(
     root_certificates: Optional[bytes] = None,
     private_key: Optional[bytes] = None,
