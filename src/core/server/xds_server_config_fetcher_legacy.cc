@@ -161,6 +161,8 @@ class XdsServerConfigFetcher::ListenerWatcher final
 
   const std::string& listening_address() const { return listening_address_; }
 
+  std::string ResourceName() const;
+
  private:
   class FilterChainMatchManager;
 
@@ -521,17 +523,6 @@ XdsServerConfigFetcher::XdsServerConfigFetcher(
   GRPC_CHECK(xds_client_ != nullptr);
 }
 
-std::string ListenerResourceName(absl::string_view resource_name_template,
-                                 absl::string_view listening_address) {
-  std::string tmp;
-  if (absl::StartsWith(resource_name_template, "xdstp:")) {
-    tmp = URI::PercentEncodePath(listening_address);
-    listening_address = tmp;
-  }
-  return absl::StrReplaceAll(resource_name_template,
-                             {{"%s", listening_address}});
-}
-
 void XdsServerConfigFetcher::StartWatch(
     std::string listening_address,
     std::unique_ptr<ServerConfigFetcher::WatcherInterface> watcher) {
@@ -540,13 +531,9 @@ void XdsServerConfigFetcher::StartWatch(
       xds_client_.Ref(DEBUG_LOCATION, "ListenerWatcher"), std::move(watcher),
       serving_status_notifier_, listening_address);
   auto* listener_watcher_ptr = listener_watcher.get();
-  XdsListenerResourceType::StartWatch(
-      xds_client_.get(),
-      ListenerResourceName(
-          DownCast<const GrpcXdsBootstrap&>(xds_client_->bootstrap())
-              .server_listener_resource_name_template(),
-          listening_address),
-      std::move(listener_watcher));
+  XdsListenerResourceType::StartWatch(xds_client_.get(),
+                                      listener_watcher_ptr->ResourceName(),
+                                      std::move(listener_watcher));
   MutexLock lock(&mu_);
   listener_watchers_.emplace(watcher_ptr, listener_watcher_ptr);
 }
@@ -557,13 +544,9 @@ void XdsServerConfigFetcher::CancelWatch(
   auto it = listener_watchers_.find(watcher);
   if (it != listener_watchers_.end()) {
     // Cancel the watch on the listener before erasing
-    XdsListenerResourceType::CancelWatch(
-        xds_client_.get(),
-        ListenerResourceName(
-            DownCast<const GrpcXdsBootstrap&>(xds_client_->bootstrap())
-                .server_listener_resource_name_template(),
-            it->second->listening_address()),
-        it->second, false /* delay_unsubscription */);
+    XdsListenerResourceType::CancelWatch(xds_client_.get(),
+                                         it->second->ResourceName(), it->second,
+                                         false /* delay_unsubscription */);
     listener_watchers_.erase(it);
   }
 }
@@ -588,9 +571,8 @@ void XdsServerConfigFetcher::ListenerWatcher::OnResourceChanged(
     RefCountedPtr<ReadDelayHandle> /* read_delay_handle */) {
   if (!listener.ok()) {
     MutexLock lock(&mu_);
-    OnFatalError(absl::Status(
-        listener.status().code(),
-        absl::StrCat("LDS resource: ", listener.status().message())));
+    OnFatalError(AddMessagePrefix(absl::StrCat("LDS resource ", ResourceName()),
+                                  listener.status()));
     return;
   }
   GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
@@ -600,14 +582,15 @@ void XdsServerConfigFetcher::ListenerWatcher::OnResourceChanged(
       std::get_if<XdsListenerResource::TcpListener>(&(*listener)->listener);
   if (tcp_listener == nullptr) {
     MutexLock lock(&mu_);
-    OnFatalError(
-        absl::FailedPreconditionError("LDS resource is not a TCP listener"));
+    OnFatalError(absl::FailedPreconditionError(absl::StrCat(
+        "LDS resource ", ResourceName(), " is not a TCP listener")));
     return;
   }
   if (tcp_listener->address != listening_address_) {
     MutexLock lock(&mu_);
     OnFatalError(absl::FailedPreconditionError(
-        "Address in LDS update does not match listening address"));
+        absl::StrCat("LDS resource ", ResourceName(),
+                     " address does not match listening address")));
     return;
   }
   auto new_filter_chain_match_manager = MakeRefCounted<FilterChainMatchManager>(
@@ -652,6 +635,20 @@ void XdsServerConfigFetcher::ListenerWatcher::OnFatalError(
     LOG(ERROR) << "ListenerWatcher:" << this << " Encountered fatal error "
                << status << "; not serving on " << listening_address_;
   }
+}
+
+std::string XdsServerConfigFetcher::ListenerWatcher::ResourceName() const {
+  absl::string_view resource_name_template =
+      DownCast<const GrpcXdsBootstrap&>(xds_client_->bootstrap())
+          .server_listener_resource_name_template();
+  absl::string_view listening_address = listening_address_;
+  std::string tmp;
+  if (absl::StartsWith(resource_name_template, "xdstp:")) {
+    tmp = URI::PercentEncodePath(listening_address);
+    listening_address = tmp;
+  }
+  return absl::StrReplaceAll(resource_name_template,
+                             {{"%s", listening_address}});
 }
 
 void XdsServerConfigFetcher::ListenerWatcher::
