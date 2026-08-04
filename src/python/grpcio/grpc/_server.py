@@ -176,14 +176,9 @@ class _GenericMethod(_Method):
         # If the same method have both generic and registered handler,
         # registered handler will take precedence.
         for generic_handler in self._generic_handlers:
-            # Type is suppressed here because `service` lacks type annotations
-            # in the public API (__init__.py), which will be updated with gRFC.
-            # TODO(asheshvidyut): Fix with Typing Hints Public API changes
-            method_handler: Optional[grpc.RpcMethodHandler] = generic_handler.service(  # type: ignore[reportUnknownMemberType] # pylint: disable=line-too-long
-                handler_call_details
-            )
+            method_handler = generic_handler.service(handler_call_details)
             if method_handler is not None:
-                return method_handler  # type: ignore[reportUnknownVariableType]
+                return method_handler
         return None
 
 
@@ -618,15 +613,12 @@ def _call_behavior(
     request_deserializer: Optional[DeserializingFunction[RequestType]],
     send_response_callback: Optional[Callable[[ResponseType], None]] = None,
 ) -> Tuple[Union[ResponseType, Iterator[ResponseType], None], bool]:
-    # TODO(asheshvidyut): Fix with Typing Hints Public API changes
-    from grpc import (
-        _create_servicer_context,  # pyright: ignore[reportUnknownVariableType]
-    )
+    from grpc import _create_servicer_context
 
     # TODO(asheshvidyut): Fix with Typing Hints Public API changes
     with _create_servicer_context(
         rpc_event, state, request_deserializer
-    ) as context:  # pyright: ignore[reportUnknownVariableType]
+    ) as context:
         try:
             response_or_iterator: Optional[
                 Union[ResponseType, Iterator[ResponseType]]
