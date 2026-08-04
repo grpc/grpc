@@ -4736,24 +4736,21 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcClientHeadersDurationMetric) {
   // Retrieve the client headers duration histogram instrument and verify metric
   // recording.
   const std::string expected_target = absl::StrCat("xds:", kServerName);
-  auto handle = grpc_core::GlobalInstrumentsRegistryTestPeer::
-                    FindDoubleHistogramHandleByName(
-                        "grpc.client_ext_proc.client_headers_duration")
-                        .value();
-  auto get_histogram =
-      [&](grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle) {
-        auto deadline =
-            absl::Now() + absl::Seconds(10) * grpc_test_slowdown_factor();
-        while (absl::Now() < deadline) {
-          auto val = stats_plugin->GetDoubleHistogramValue(
-              handle, {expected_target}, {});
-          if (val.has_value()) return val;
-          absl::SleepFor(absl::Milliseconds(20));
-        }
-        return stats_plugin->GetDoubleHistogramValue(handle, {expected_target},
-                                                     {});
-      };
-  EXPECT_TRUE(get_histogram(handle).has_value());
+  auto get_histogram = [&](absl::string_view metric_name) {
+    auto deadline =
+        absl::Now() + absl::Seconds(10) * grpc_test_slowdown_factor();
+    while (absl::Now() < deadline) {
+      auto val =
+          stats_plugin->GetHistogramValueByName(metric_name, {expected_target});
+      if (val.has_value()) return val;
+      absl::SleepFor(absl::Milliseconds(20));
+    }
+    return stats_plugin->GetHistogramValueByName(metric_name,
+                                                 {expected_target});
+  };
+  EXPECT_TRUE(
+      get_histogram("grpc.client_ext_proc.client_headers_duration")
+          .has_value());
 }
 
 TEST_P(XdsExtProcEnd2endTest, ExtProcClientHalfCloseDurationMetric) {
@@ -4800,24 +4797,21 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcClientHalfCloseDurationMetric) {
   // Retrieve the client half-close duration histogram instrument and verify
   // metric recording.
   const std::string expected_target = absl::StrCat("xds:", kServerName);
-  auto handle = grpc_core::GlobalInstrumentsRegistryTestPeer::
-                    FindDoubleHistogramHandleByName(
-                        "grpc.client_ext_proc.client_half_close_duration")
-                        .value();
-  auto get_histogram =
-      [&](grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle) {
-        auto deadline =
-            absl::Now() + absl::Seconds(10) * grpc_test_slowdown_factor();
-        while (absl::Now() < deadline) {
-          auto val = stats_plugin->GetDoubleHistogramValue(
-              handle, {expected_target}, {});
-          if (val.has_value()) return val;
-          absl::SleepFor(absl::Milliseconds(20));
-        }
-        return stats_plugin->GetDoubleHistogramValue(handle, {expected_target},
-                                                     {});
-      };
-  EXPECT_TRUE(get_histogram(handle).has_value());
+  auto get_histogram = [&](absl::string_view metric_name) {
+    auto deadline =
+        absl::Now() + absl::Seconds(10) * grpc_test_slowdown_factor();
+    while (absl::Now() < deadline) {
+      auto val =
+          stats_plugin->GetHistogramValueByName(metric_name, {expected_target});
+      if (val.has_value()) return val;
+      absl::SleepFor(absl::Milliseconds(20));
+    }
+    return stats_plugin->GetHistogramValueByName(metric_name,
+                                                 {expected_target});
+  };
+  EXPECT_TRUE(
+      get_histogram("grpc.client_ext_proc.client_half_close_duration")
+          .has_value());
 }
 
 TEST_P(XdsExtProcEnd2endTest, ExtProcServerHeadersDurationMetric) {
@@ -4855,24 +4849,21 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcServerHeadersDurationMetric) {
   // Retrieve the server headers duration histogram instrument and verify metric
   // recording.
   const std::string expected_target = absl::StrCat("xds:", kServerName);
-  auto handle = grpc_core::GlobalInstrumentsRegistryTestPeer::
-                    FindDoubleHistogramHandleByName(
-                        "grpc.client_ext_proc.server_headers_duration")
-                        .value();
-  auto get_histogram =
-      [&](grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle) {
-        auto deadline =
-            absl::Now() + absl::Seconds(10) * grpc_test_slowdown_factor();
-        while (absl::Now() < deadline) {
-          auto val = stats_plugin->GetDoubleHistogramValue(
-              handle, {expected_target}, {});
-          if (val.has_value()) return val;
-          absl::SleepFor(absl::Milliseconds(20));
-        }
-        return stats_plugin->GetDoubleHistogramValue(handle, {expected_target},
-                                                     {});
-      };
-  EXPECT_TRUE(get_histogram(handle).has_value());
+  auto get_histogram = [&](absl::string_view metric_name) {
+    auto deadline =
+        absl::Now() + absl::Seconds(10) * grpc_test_slowdown_factor();
+    while (absl::Now() < deadline) {
+      auto val =
+          stats_plugin->GetHistogramValueByName(metric_name, {expected_target});
+      if (val.has_value()) return val;
+      absl::SleepFor(absl::Milliseconds(20));
+    }
+    return stats_plugin->GetHistogramValueByName(metric_name,
+                                                 {expected_target});
+  };
+  EXPECT_TRUE(
+      get_histogram("grpc.client_ext_proc.server_headers_duration")
+          .has_value());
 }
 
 TEST_P(XdsExtProcEnd2endTest, ExtProcServerTrailersDurationMetric) {
@@ -4910,24 +4901,21 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcServerTrailersDurationMetric) {
   // Retrieve the server trailers duration histogram instrument and verify
   // metric recording.
   const std::string expected_target = absl::StrCat("xds:", kServerName);
-  auto handle = grpc_core::GlobalInstrumentsRegistryTestPeer::
-                    FindDoubleHistogramHandleByName(
-                        "grpc.client_ext_proc.server_trailers_duration")
-                        .value();
-  auto get_histogram =
-      [&](grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle) {
-        auto deadline =
-            absl::Now() + absl::Seconds(10) * grpc_test_slowdown_factor();
-        while (absl::Now() < deadline) {
-          auto val = stats_plugin->GetDoubleHistogramValue(
-              handle, {expected_target}, {});
-          if (val.has_value()) return val;
-          absl::SleepFor(absl::Milliseconds(20));
-        }
-        return stats_plugin->GetDoubleHistogramValue(handle, {expected_target},
-                                                     {});
-      };
-  EXPECT_TRUE(get_histogram(handle).has_value());
+  auto get_histogram = [&](absl::string_view metric_name) {
+    auto deadline =
+        absl::Now() + absl::Seconds(10) * grpc_test_slowdown_factor();
+    while (absl::Now() < deadline) {
+      auto val =
+          stats_plugin->GetHistogramValueByName(metric_name, {expected_target});
+      if (val.has_value()) return val;
+      absl::SleepFor(absl::Milliseconds(20));
+    }
+    return stats_plugin->GetHistogramValueByName(metric_name,
+                                                 {expected_target});
+  };
+  EXPECT_TRUE(
+      get_histogram("grpc.client_ext_proc.server_trailers_duration")
+          .has_value());
 }
 
 }  // namespace

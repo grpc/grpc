@@ -30,7 +30,7 @@
 #include "src/core/filter/filter_args.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/telemetry/metrics.h"
+#include "src/core/telemetry/instrument.h"
 #include "src/core/util/matchers.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/unique_type_name.h"
@@ -162,8 +162,7 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   Slice default_authority_;
   std::string target_;
-  std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
-      stats_plugin_group_;
+  RefCountedPtr<CollectionScope> collection_scope_;
 };
 
 }  // namespace grpc_core

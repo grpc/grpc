@@ -55,42 +55,54 @@ namespace grpc_core {
 
 namespace {
 
-const auto kMetricClientExtProcClientHeadersDuration =
-    GlobalInstrumentsRegistry::RegisterDoubleHistogram(
-        "grpc.client_ext_proc.client_headers_duration",
-        "Time between when the ext_proc filter sees the client's headers and "
-        "when it allows those headers to continue on to the next filter.",
-        "s", false)
-        .Labels(kMetricLabelTarget)
-        .Build();
+class ExtProcTelemetryDomain final
+    : public InstrumentDomain<ExtProcTelemetryDomain> {
+ public:
+  using Backend = HighContentionBackend;
+  static constexpr absl::string_view kName = "client_ext_proc";
+  GRPC_INSTRUMENT_DOMAIN_LABELS("target");
 
-const auto kMetricClientExtProcClientHalfCloseDuration =
-    GlobalInstrumentsRegistry::RegisterDoubleHistogram(
-        "grpc.client_ext_proc.client_half_close_duration",
-        "Time between when the ext_proc filter sees the client's half-close "
-        "and when it allows that half-close to continue on to the next "
-        "filter.",
-        "s", false)
-        .Labels(kMetricLabelTarget)
-        .Build();
+  static HistogramHandle<ExponentialHistogramShape> kClientHeadersDuration;
+  static HistogramHandle<ExponentialHistogramShape> kClientHalfCloseDuration;
+  static HistogramHandle<ExponentialHistogramShape> kServerHeadersDuration;
+  static HistogramHandle<ExponentialHistogramShape> kServerTrailersDuration;
+};
 
-const auto kMetricClientExtProcServerHeadersDuration =
-    GlobalInstrumentsRegistry::RegisterDoubleHistogram(
-        "grpc.client_ext_proc.server_headers_duration",
-        "Time between when the ext_proc filter sees the server's headers and "
-        "when it allows those headers to continue on to the next filter.",
-        "s", false)
-        .Labels(kMetricLabelTarget)
-        .Build();
+ExtProcTelemetryDomain::HistogramHandle<ExponentialHistogramShape>
+    ExtProcTelemetryDomain::kClientHeadersDuration =
+        ExtProcTelemetryDomain::RegisterHistogram<ExponentialHistogramShape>(
+            "grpc.client_ext_proc.client_headers_duration",
+            "Time between when the ext_proc filter sees the client's headers "
+            "and when it allows those headers to continue on to the next "
+            "filter.",
+            "s", 60, 20);
 
-const auto kMetricClientExtProcServerTrailersDuration =
-    GlobalInstrumentsRegistry::RegisterDoubleHistogram(
-        "grpc.client_ext_proc.server_trailers_duration",
-        "Time between when the ext_proc filter sees the server's trailers and "
-        "when it allows those trailers to continue on to the next filter.",
-        "s", false)
-        .Labels(kMetricLabelTarget)
-        .Build();
+ExtProcTelemetryDomain::HistogramHandle<ExponentialHistogramShape>
+    ExtProcTelemetryDomain::kClientHalfCloseDuration =
+        ExtProcTelemetryDomain::RegisterHistogram<ExponentialHistogramShape>(
+            "grpc.client_ext_proc.client_half_close_duration",
+            "Time between when the ext_proc filter sees the client's "
+            "half-close and when it allows that half-close to continue on to "
+            "the next filter.",
+            "s", 60, 20);
+
+ExtProcTelemetryDomain::HistogramHandle<ExponentialHistogramShape>
+    ExtProcTelemetryDomain::kServerHeadersDuration =
+        ExtProcTelemetryDomain::RegisterHistogram<ExponentialHistogramShape>(
+            "grpc.client_ext_proc.server_headers_duration",
+            "Time between when the ext_proc filter sees the server's headers "
+            "and when it allows those headers to continue on to the next "
+            "filter.",
+            "s", 60, 20);
+
+ExtProcTelemetryDomain::HistogramHandle<ExponentialHistogramShape>
+    ExtProcTelemetryDomain::kServerTrailersDuration =
+        ExtProcTelemetryDomain::RegisterHistogram<ExponentialHistogramShape>(
+            "grpc.client_ext_proc.server_trailers_duration",
+            "Time between when the ext_proc filter sees the server's "
+            "trailers and when it allows those trailers to continue on to "
+            "the next filter.",
+            "s", 60, 20);
 
 bool IsProcessingEnabled(
     const std::optional<ExtProcFilter::ProcessingMode>& processing_mode) {
@@ -988,14 +1000,10 @@ ExtProcFilter::ExtProcCall::SendMessageToSideStream(std::string payload) {
       },
       // Reset send state and wake up any waiting senders.
       [self = Ref()](StatusFlag status) -> ArenaPromise<StatusFlag> {
-        if (status.ok()) {
-          self->ext_proc_send_state_ = SendState::kIdle;
-          self->ext_proc_send_waker_.Wakeup();
-          return Immediate(StatusFlag(Success{}));
-        }
-        self->ext_proc_send_state_ = SendState::kSendFailed;
+        self->ext_proc_send_state_ =
+            status.ok() ? SendState::kIdle : SendState::kSendFailed;
         self->ext_proc_send_waker_.Wakeup();
-        return Immediate(StatusFlag(Failure{}));
+        return Immediate(status);
       });
 }
 
@@ -2200,8 +2208,13 @@ ExtProcFilter::ExtProcFilter(const ChannelArgs& args,
                       .GetDefaultAuthority(
                           args.GetString(GRPC_ARG_SERVER_URI).value_or(""))))),
       target_(args.GetString(GRPC_ARG_SERVER_URI).value_or("")),
-      stats_plugin_group_(
-          args.GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>()) {}
+      collection_scope_([&] {
+        auto stats_plugin_group =
+            args.GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>();
+        return stats_plugin_group != nullptr
+                   ? stats_plugin_group->GetCollectionScope()
+                   : nullptr;
+      }()) {}
 
 ExtProcFilter::~ExtProcFilter() {
   GRPC_TRACE_LOG(ext_proc_filter, INFO)
@@ -2209,36 +2222,40 @@ ExtProcFilter::~ExtProcFilter() {
 }
 
 void ExtProcFilter::RecordClientHeadersDuration(double duration_seconds) const {
-  if (stats_plugin_group_ != nullptr) {
-    stats_plugin_group_->RecordHistogram(
-        kMetricClientExtProcClientHeadersDuration, duration_seconds, {target_},
-        {});
+  if (collection_scope_ != nullptr) {
+    auto storage =
+        ExtProcTelemetryDomain::GetStorage(collection_scope_, target_);
+    storage->Increment(ExtProcTelemetryDomain::kClientHeadersDuration,
+                       static_cast<int64_t>(duration_seconds));
   }
 }
 
 void ExtProcFilter::RecordClientHalfCloseDuration(
     double duration_seconds) const {
-  if (stats_plugin_group_ != nullptr) {
-    stats_plugin_group_->RecordHistogram(
-        kMetricClientExtProcClientHalfCloseDuration, duration_seconds,
-        {target_}, {});
+  if (collection_scope_ != nullptr) {
+    auto storage =
+        ExtProcTelemetryDomain::GetStorage(collection_scope_, target_);
+    storage->Increment(ExtProcTelemetryDomain::kClientHalfCloseDuration,
+                       static_cast<int64_t>(duration_seconds));
   }
 }
 
 void ExtProcFilter::RecordServerHeadersDuration(double duration_seconds) const {
-  if (stats_plugin_group_ != nullptr) {
-    stats_plugin_group_->RecordHistogram(
-        kMetricClientExtProcServerHeadersDuration, duration_seconds, {target_},
-        {});
+  if (collection_scope_ != nullptr) {
+    auto storage =
+        ExtProcTelemetryDomain::GetStorage(collection_scope_, target_);
+    storage->Increment(ExtProcTelemetryDomain::kServerHeadersDuration,
+                       static_cast<int64_t>(duration_seconds));
   }
 }
 
 void ExtProcFilter::RecordServerTrailersDuration(
     double duration_seconds) const {
-  if (stats_plugin_group_ != nullptr) {
-    stats_plugin_group_->RecordHistogram(
-        kMetricClientExtProcServerTrailersDuration, duration_seconds, {target_},
-        {});
+  if (collection_scope_ != nullptr) {
+    auto storage =
+        ExtProcTelemetryDomain::GetStorage(collection_scope_, target_);
+    storage->Increment(ExtProcTelemetryDomain::kServerTrailersDuration,
+                       static_cast<int64_t>(duration_seconds));
   }
 }
 
@@ -2257,12 +2274,13 @@ void ExtProcFilter::InterceptCall(UnstartedCallHandler unstarted_call_handler) {
         auto transport = ext_proc_filter->channel()->transport();
         // This shouldn't ever happen; added as a defensive check.
         if (transport == nullptr) {
+          handler.PushServerInitialMetadata(ServerMetadataFromStatus(
+              absl::InternalError("External processor transport unavailable")));
           return []() -> Poll<Empty> { return Empty{}; };
         }
         auto ext_proc_call = MakeRefCounted<ExtProcCall>(
             ext_proc_filter, std::move(transport), handler);
-        return Map(ArenaPromise<StatusFlag>(ext_proc_call->Run()),
-                   [](StatusFlag) { return Empty{}; });
+        return Map(ext_proc_call->Run(), [](StatusFlag) { return Empty{}; });
       });
 }
 

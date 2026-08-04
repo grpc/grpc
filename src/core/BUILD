@@ -5789,7 +5789,7 @@ grpc_cc_library(
         "message",
         "metadata",
         "metadata_batch",
-        "metrics",
+        "instrument",
         "observable",
         "pipe",
         "prioritized_race",
