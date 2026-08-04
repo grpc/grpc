@@ -3469,6 +3469,7 @@ grpc_cc_library(
         "cares",
     ],
     deps = [
+        "address_sorting_init",
         "common_event_engine_closures",
         "error",
         "event_engine_time_util",
@@ -7481,6 +7482,31 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:xds_client",
         "@com_google_protobuf//upb/base",
+    ],
+)
+
+grpc_cc_library(
+    name = "streaming_call_promise_wrapper",
+    srcs = [
+        "xds/grpc/streaming_call_promise_wrapper.cc",
+    ],
+    hdrs = [
+        "xds/grpc/streaming_call_promise_wrapper.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/status",
+        "absl/strings",
+    ],
+    deps = [
+        "activity",
+        "dual_ref_counted",
+        "grpc_check",
+        "poll",
+        "status_flag",
+        "sync",
+        "//:orphanable",
+        "//:xds_client",
     ],
 )
 
@@ -12493,6 +12519,22 @@ grpc_cc_library(
     ],
     deps = [
         "instrument",
+    ],
+)
+
+grpc_cc_library(
+    name = "address_sorting_init",
+    srcs = [
+        "util/address_sorting_init.cc",
+    ],
+    hdrs = [
+        "util/address_sorting_init.h",
+    ],
+    external_deps = [
+        "absl/base",
+    ],
+    deps = [
+        "//third_party/address_sorting",
     ],
 )
 
