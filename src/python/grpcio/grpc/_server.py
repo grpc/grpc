@@ -50,11 +50,13 @@ from grpc import _observability
 from grpc._cython import cygrpc
 from grpc._typing import ArityAgnosticMethodHandler
 from grpc._typing import ChannelArgumentType
+from grpc._typing import DeserializerOutputType_co
 from grpc._typing import DeserializingFunction
 from grpc._typing import MetadataType
 from grpc._typing import NullaryCallbackType
 from grpc._typing import RequestType
 from grpc._typing import ResponseType
+from grpc._typing import SerializerInputType_contra
 from grpc._typing import SerializingFunction
 from grpc._typing import ServerCallbackTag
 from grpc._typing import ServerTagCallbackType
@@ -176,9 +178,14 @@ class _GenericMethod(_Method[RequestType, ResponseType]):
         # If the same method have both generic and registered handler,
         # registered handler will take precedence.
         for generic_handler in self._generic_handlers:
-            method_handler = generic_handler.service(handler_call_details)
-            if method_handler is not None:
-                return method_handler
+            service_fn = getattr(generic_handler, "service", None)
+            if callable(service_fn):
+                method_handler = cast(
+                    Optional[grpc.RpcMethodHandler[RequestType, ResponseType]],
+                    service_fn(handler_call_details),
+                )
+                if method_handler is not None:
+                    return method_handler
         return None
 
 
@@ -918,29 +925,124 @@ def _select_thread_pool_for_behavior(
     return default_thread_pool
 
 
+def _get_request_deserializer(
+    method_handler: grpc.RpcMethodHandler[
+        RequestType, SerializerInputType_contra
+    ],
+) -> Optional[DeserializingFunction[RequestType]]:
+    return cast(
+        Optional[DeserializingFunction[RequestType]],
+        getattr(method_handler, "request_deserializer", None),
+    )
+
+
+def _get_response_serializer(
+    method_handler: grpc.RpcMethodHandler[
+        DeserializerOutputType_co, ResponseType
+    ],
+) -> Optional[SerializingFunction[ResponseType]]:
+    return cast(
+        Optional[SerializingFunction[ResponseType]],
+        getattr(method_handler, "response_serializer", None),
+    )
+
+
+def _get_unary_unary(
+    method_handler: grpc.RpcMethodHandler[RequestType, ResponseType],
+) -> Optional[
+    Callable[[RequestType, _common.ServicerContext], ResponseType]
+]:
+    return cast(
+        Optional[
+            Callable[[RequestType, _common.ServicerContext], ResponseType]
+        ],
+        getattr(method_handler, "unary_unary", None),
+    )
+
+
+def _get_unary_stream(
+    method_handler: grpc.RpcMethodHandler[RequestType, ResponseType],
+) -> Optional[
+    Callable[
+        [RequestType, _common.ServicerContext],
+        Iterator[ResponseType],
+    ]
+]:
+    return cast(
+        Optional[
+            Callable[
+                [RequestType, _common.ServicerContext],
+                Iterator[ResponseType],
+            ]
+        ],
+        getattr(method_handler, "unary_stream", None),
+    )
+
+
+def _get_stream_unary(
+    method_handler: grpc.RpcMethodHandler[RequestType, ResponseType],
+) -> Optional[
+    Callable[
+        [Iterator[RequestType], _common.ServicerContext],
+        ResponseType,
+    ]
+]:
+    return cast(
+        Optional[
+            Callable[
+                [Iterator[RequestType], _common.ServicerContext],
+                ResponseType,
+            ]
+        ],
+        getattr(method_handler, "stream_unary", None),
+    )
+
+
+def _get_stream_stream(
+    method_handler: grpc.RpcMethodHandler[RequestType, ResponseType],
+) -> Optional[
+    Callable[
+        [Iterator[RequestType], _common.ServicerContext],
+        Iterator[ResponseType],
+    ]
+]:
+    return cast(
+        Optional[
+            Callable[
+                [Iterator[RequestType], _common.ServicerContext],
+                Iterator[ResponseType],
+            ]
+        ],
+        getattr(method_handler, "stream_stream", None),
+    )
+
+
 def _handle_unary_unary(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState[RequestType],
     method_handler: grpc.RpcMethodHandler[RequestType, ResponseType],
     default_thread_pool: futures.ThreadPoolExecutor,
 ) -> futures.Future[None]:
-    if method_handler.unary_unary is None:
+    unary_unary = _get_unary_unary(method_handler)
+    if unary_unary is None:
         raise ValueError(_UNEXPECTED_NONE_METHOD_HANDLER_MSG)
+    request_deserializer = _get_request_deserializer(method_handler)
+    response_serializer = _get_response_serializer(method_handler)
     unary_request = _unary_request(
-        rpc_event, state, method_handler.request_deserializer
+        rpc_event, state, request_deserializer
     )
     thread_pool = _select_thread_pool_for_behavior(
-        method_handler.unary_unary, default_thread_pool
+        unary_unary, default_thread_pool
     )
     return thread_pool.submit(
         state.context.run,
         _unary_response_in_pool,
         rpc_event,
         state,
-        method_handler.unary_unary,
+        unary_unary,
         unary_request,
-        method_handler.request_deserializer,
-        method_handler.response_serializer,
+        request_deserializer,
+        response_serializer,
     )
 
 
@@ -950,23 +1052,26 @@ def _handle_unary_stream(
     method_handler: grpc.RpcMethodHandler[RequestType, ResponseType],
     default_thread_pool: futures.ThreadPoolExecutor,
 ) -> futures.Future[None]:
-    if method_handler.unary_stream is None:
+    unary_stream = _get_unary_stream(method_handler)
+    if unary_stream is None:
         raise ValueError(_UNEXPECTED_NONE_METHOD_HANDLER_MSG)
+    request_deserializer = _get_request_deserializer(method_handler)
+    response_serializer = _get_response_serializer(method_handler)
     unary_request = _unary_request(
-        rpc_event, state, method_handler.request_deserializer
+        rpc_event, state, request_deserializer
     )
     thread_pool = _select_thread_pool_for_behavior(
-        method_handler.unary_stream, default_thread_pool
+        unary_stream, default_thread_pool
     )
     return thread_pool.submit(
         state.context.run,
         _stream_response_in_pool,
         rpc_event,
         state,
-        method_handler.unary_stream,
+        unary_stream,
         unary_request,
-        method_handler.request_deserializer,
-        method_handler.response_serializer,
+        request_deserializer,
+        response_serializer,
     )
 
 
@@ -976,23 +1081,26 @@ def _handle_stream_unary(
     method_handler: grpc.RpcMethodHandler[RequestType, ResponseType],
     default_thread_pool: futures.ThreadPoolExecutor,
 ) -> futures.Future[None]:
-    if method_handler.stream_unary is None:
+    stream_unary = _get_stream_unary(method_handler)
+    if stream_unary is None:
         raise ValueError(_UNEXPECTED_NONE_METHOD_HANDLER_MSG)
+    request_deserializer = _get_request_deserializer(method_handler)
+    response_serializer = _get_response_serializer(method_handler)
     request_iterator = _RequestIterator(
-        state, rpc_event.call, method_handler.request_deserializer
+        state, rpc_event.call, request_deserializer
     )
     thread_pool = _select_thread_pool_for_behavior(
-        method_handler.stream_unary, default_thread_pool
+        stream_unary, default_thread_pool
     )
     return thread_pool.submit(
         state.context.run,
         _unary_response_in_pool,
         rpc_event,
         state,
-        method_handler.stream_unary,
+        stream_unary,
         lambda: request_iterator,
-        method_handler.request_deserializer,
-        method_handler.response_serializer,
+        request_deserializer,
+        response_serializer,
     )
 
 
@@ -1002,23 +1110,26 @@ def _handle_stream_stream(
     method_handler: grpc.RpcMethodHandler[RequestType, ResponseType],
     default_thread_pool: futures.ThreadPoolExecutor,
 ) -> futures.Future[None]:
-    if method_handler.stream_stream is None:
+    stream_stream = _get_stream_stream(method_handler)
+    if stream_stream is None:
         raise ValueError(_UNEXPECTED_NONE_METHOD_HANDLER_MSG)
+    request_deserializer = _get_request_deserializer(method_handler)
+    response_serializer = _get_response_serializer(method_handler)
     request_iterator = _RequestIterator(
-        state, rpc_event.call, method_handler.request_deserializer
+        state, rpc_event.call, request_deserializer
     )
     thread_pool = _select_thread_pool_for_behavior(
-        method_handler.stream_stream, default_thread_pool
+        stream_stream, default_thread_pool
     )
     return thread_pool.submit(
         state.context.run,
         _stream_response_in_pool,
         rpc_event,
         state,
-        method_handler.stream_stream,
+        stream_stream,
         lambda: request_iterator,
-        method_handler.request_deserializer,
-        method_handler.response_serializer,
+        request_deserializer,
+        response_serializer,
     )
 
 
