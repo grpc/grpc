@@ -657,6 +657,31 @@ TEST(ChannelzTextEncodeTest, BasicTraceEvent) {
   EXPECT_NE(encoded.length(), 0) << encoded;
 }
 
+// Regression test for a truncation bug in the >10240-byte fallback path:
+// the heap buffer was previously sized exactly `size` bytes and passed as
+// the capacity to upb_TextEncode, which is one byte short of what its
+// snprintf()-style contract needs (content + NUL terminator). That
+// silently replaced the final content byte with a NUL character.
+TEST(ChannelzTextEncodeTest, LargeTraceEventDoesNotTruncateLastByte) {
+  upb::Arena arena;
+  grpc_channelz_v2_TraceEvent* event =
+      grpc_channelz_v2_TraceEvent_new(arena.ptr());
+  // Long enough that the encoded text exceeds the 10240-byte stack buffer
+  // in TextEncode(), forcing the heap fallback path.
+  std::string long_description(20000, 'a');
+  grpc_channelz_v2_TraceEvent_set_description(
+      event, upb_StringView_FromString(long_description.c_str()));
+  std::string encoded =
+      channelz::TextEncode(reinterpret_cast<upb_Message*>(event),
+                           grpc_channelz_v2_TraceEvent_getmsgdef);
+  // Sanity check that we actually exercised the >10240-byte fallback path.
+  ASSERT_GT(encoded.size(), 10240u);
+  // The fallback path must not silently corrupt the final byte of the
+  // encoded text into a NUL character.
+  EXPECT_EQ(encoded.find('\0'), std::string::npos)
+      << "encoded text unexpectedly contains an embedded NUL byte";
+}
+
 }  // namespace testing
 }  // namespace channelz
 }  // namespace grpc_core
