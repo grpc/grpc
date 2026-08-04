@@ -106,8 +106,8 @@ class OTLPSpanExporter(SpanExporter):
 
         try:
             self._stub.Export(request, timeout=5)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"OTLPSpanExporter Export exception: {e}", flush=True)
 
     def shutdown(self) -> None:
         self._channel.close()

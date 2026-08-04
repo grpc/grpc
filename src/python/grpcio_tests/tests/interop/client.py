@@ -285,22 +285,14 @@ def _test_case_from_arg(test_case_arg):
 
 
 def test_interoperability(args):
+    channel = _create_channel(args)
+    stub = create_stub(channel, args)
+    test_case = _test_case_from_arg(args.test_case)
+    test_case.test_interoperability(stub, args)
     if args.enable_opentelemetry:
-        import grpc_observability
-
         from tests.interop import otel_interop_helper
 
-        with grpc_observability.OpenTelemetryPlugin():
-            channel = _create_channel(args)
-            stub = create_stub(channel, args)
-            test_case = _test_case_from_arg(args.test_case)
-            test_case.test_interoperability(stub, args)
-            otel_interop_helper.flush_tracer_provider()
-    else:
-        channel = _create_channel(args)
-        stub = create_stub(channel, args)
-        test_case = _test_case_from_arg(args.test_case)
-        test_case.test_interoperability(stub, args)
+        otel_interop_helper.flush_tracer_provider()
 
 
 if __name__ == "__main__":

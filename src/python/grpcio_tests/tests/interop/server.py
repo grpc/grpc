@@ -121,13 +121,7 @@ def serve(args):
     else:
         server.add_insecure_port("[::]:{}".format(args.port))
 
-    if args.enable_opentelemetry:
-        import grpc_observability
-
-        with grpc_observability.OpenTelemetryPlugin():
-            _serve_internal(server, enable_otel=True)
-    else:
-        _serve_internal(server)
+    _serve_internal(server, enable_otel=args.enable_opentelemetry)
 
 
 if __name__ == "__main__":

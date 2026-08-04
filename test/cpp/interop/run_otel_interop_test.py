@@ -35,6 +35,10 @@ def get_free_port():
 def run_cmd(args, desc, env=None, cwd=None):
     print(f"Executing: {' '.join(args)} ({desc})")
     proc_env = os.environ.copy()
+    if "CC" not in proc_env and os.path.exists("/usr/bin/gcc"):
+        proc_env["CC"] = "/usr/bin/gcc"
+    if "CXX" not in proc_env and os.path.exists("/usr/bin/g++"):
+        proc_env["CXX"] = "/usr/bin/g++"
     if env:
         proc_env.update(env)
     res = subprocess.run(
@@ -52,6 +56,10 @@ def start_proc(args, env, desc, cwd=None):
     print(f"Starting in background: {' '.join(args)} ({desc})")
     # Inherit system environment and merge with custom variables
     proc_env = os.environ.copy()
+    if "CC" not in proc_env and os.path.exists("/usr/bin/gcc"):
+        proc_env["CC"] = "/usr/bin/gcc"
+    if "CXX" not in proc_env and os.path.exists("/usr/bin/g++"):
+        proc_env["CXX"] = "/usr/bin/g++"
     proc_env.update(env)
     return subprocess.Popen(
         args,
@@ -294,6 +302,7 @@ def main():
                     ":grpc-interop-testing:installDist",
                     "-x",
                     "test",
+                    "-PskipCodegen=true",
                 ],
                 "Building Java interop targets",
                 cwd="../grpc-java",
@@ -331,9 +340,8 @@ def main():
         )
         time.sleep(1)  # wait for collector to start listening
 
-        # Start Server
-        env = {
-            "GRPC_EXPERIMENTAL_ENABLE_OTEL_TRACING": "true",
+        # Base env for OTLP exporter
+        base_env = {
             "OTEL_EXPORTER_OTLP_ENDPOINT": f"http://localhost:{collector_port}",
             "OTEL_EXPORTER_OTLP_PROTOCOL": "grpc",
             "OTEL_TRACES_EXPORTER": "otlp",
@@ -341,6 +349,11 @@ def main():
             "OTEL_LOGS_EXPORTER": "none",
             "GRPC_BAZEL_RUNTIME": "1",
         }
+
+        server_env = base_env.copy()
+        if args.server in ("c++", "java"):
+            server_env["GRPC_EXPERIMENTAL_ENABLE_OTEL_TRACING"] = "true"
+
         if args.server == "c++":
             server_proc = start_proc(
                 [
@@ -348,7 +361,7 @@ def main():
                     f"--port={server_port}",
                     "--enable_opentelemetry=true",
                 ],
-                env,
+                server_env,
                 "C++ Interop Server",
             )
         elif args.server == "java":
@@ -359,7 +372,7 @@ def main():
                     "--use_tls=false",
                     "--enable_opentelemetry=true",
                 ],
-                env,
+                server_env,
                 "Java Interop Server",
             )
         elif args.server == "python":
@@ -370,13 +383,17 @@ def main():
                     "--use_tls=false",
                     "--enable_opentelemetry=true",
                 ],
-                env,
+                server_env,
                 "Python Interop Server",
             )
         time.sleep(3)  # wait for server to bind and start
 
         # Run Client
         print(f"Running {args.client.upper()} Client...")
+        client_env = base_env.copy()
+        if args.client in ("c++", "java"):
+            client_env["GRPC_EXPERIMENTAL_ENABLE_OTEL_TRACING"] = "true"
+
         if args.client == "c++":
             client_res = run_cmd(
                 [
@@ -387,7 +404,7 @@ def main():
                     "--enable_opentelemetry=true",
                 ],
                 "Running C++ Interop Client",
-                env=env,
+                env=client_env,
             )
         elif args.client == "java":
             client_res = run_cmd(
@@ -400,7 +417,7 @@ def main():
                     "--enable_opentelemetry=true",
                 ],
                 "Running Java Interop Client",
-                env=env,
+                env=client_env,
             )
         elif args.client == "python":
             client_res = run_cmd(
@@ -413,7 +430,7 @@ def main():
                     "--enable_opentelemetry=true",
                 ],
                 "Running Python Interop Client",
-                env=env,
+                env=client_env,
             )
 
         print("Client finished. Waiting for spans to flush...")

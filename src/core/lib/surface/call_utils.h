@@ -112,6 +112,12 @@ class PublishToAppEncoder {
       if constexpr (std::is_same<XForwardedHostMetadata, Which>::value) {
         Append(Which::key(), value);
       }
+      if constexpr (std::is_same<GrpcTraceBinMetadata, Which>::value) {
+        Append(Which::key(), value);
+      }
+      if constexpr (std::is_same<GrpcTagsBinMetadata, Which>::value) {
+        Append(Which::key(), value);
+      }
     }
   }
 
