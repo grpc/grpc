@@ -27,7 +27,6 @@
 #include <mutex>
 #include <string>
 
-#include "src/core/util/env.h"
 #include "absl/flags/flag.h"
 #include "absl/log/log.h"
 
@@ -58,13 +57,14 @@ static std::once_flag g_otel_init_once;
 #endif
 
 void MaybeRegisterOpenTelemetry() {
-  if (!absl::GetFlag(FLAGS_enable_opentelemetry)) {
-    return;
-  }
 #ifdef GRPC_HAS_OTEL_TRACING
   std::call_once(g_otel_init_once, []() {
-    auto otel_traces_exporter = grpc_core::GetEnv("OTEL_TRACES_EXPORTER");
-    if (otel_traces_exporter.has_value() && *otel_traces_exporter == "none") {
+    if (!absl::GetFlag(FLAGS_enable_opentelemetry)) {
+      return;
+    }
+    const char* otel_traces_exporter = std::getenv("OTEL_TRACES_EXPORTER");
+    if (otel_traces_exporter != nullptr &&
+        std::string(otel_traces_exporter) == "none") {
       LOG(INFO) << "OTEL_TRACES_EXPORTER is set to none. Tracing is disabled.";
       return;
     }
@@ -76,8 +76,9 @@ void MaybeRegisterOpenTelemetry() {
     auto processor =
         opentelemetry::sdk::trace::SimpleSpanProcessorFactory::Create(
             std::move(exporter));
-    auto provider = std::make_shared<opentelemetry::sdk::trace::TracerProvider>(
-        std::move(processor));
+    auto provider =
+        std::make_shared<opentelemetry::sdk::trace::TracerProvider>(
+            std::move(processor));
     std::atomic_store(&g_tracer_provider, provider);
 
     auto status =

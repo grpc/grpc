@@ -222,15 +222,13 @@ int main(int argc, char** argv) {
             grpc::experimental::ClientInterceptorFactoryInterface>>
             factories;
         if (!additional_metadata->empty()) {
-          factories.emplace_back(
-              std::make_unique<
-                  grpc::testing::AdditionalMetadataInterceptorFactory>(
+          factories.emplace_back(std::make_unique<
+              grpc::testing::AdditionalMetadataInterceptorFactory>(
                   *additional_metadata));
         }
         if (absl::GetFlag(FLAGS_log_metadata_and_status)) {
-          factories.emplace_back(
-              std::make_unique<
-                  grpc::testing::MetadataAndStatusLoggerInterceptorFactory>());
+          factories.emplace_back(std::make_unique<
+              grpc::testing::MetadataAndStatusLoggerInterceptorFactory>());
         }
         std::string service_config_json =
             absl::GetFlag(FLAGS_service_config_json);
