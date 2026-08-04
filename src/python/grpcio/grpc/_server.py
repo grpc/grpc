@@ -136,7 +136,7 @@ class _HandlerCallDetails(
     pass
 
 
-class _Method(abc.ABC, Generic[RequestType, ResponseType]):
+class _Method(abc.ABC):
     @abc.abstractmethod
     def name(self) -> Optional[str]:
         raise NotImplementedError()
@@ -144,17 +144,15 @@ class _Method(abc.ABC, Generic[RequestType, ResponseType]):
     @abc.abstractmethod
     def handler(
         self, handler_call_details: grpc.HandlerCallDetails
-    ) -> Optional[grpc.RpcMethodHandler[RequestType, ResponseType]]:
+    ) -> Optional[_RpcMethodHandlerType]:
         raise NotImplementedError()
 
 
-class _RegisteredMethod(_Method[RequestType, ResponseType]):
+class _RegisteredMethod(_Method):
     def __init__(
         self,
         name: str,
-        registered_handler: Optional[
-            grpc.RpcMethodHandler[RequestType, ResponseType]
-        ],
+        registered_handler: Optional[_RpcMethodHandlerType],
     ):
         self._name = name
         self._registered_handler = registered_handler
@@ -166,16 +164,14 @@ class _RegisteredMethod(_Method[RequestType, ResponseType]):
     @override
     def handler(
         self, handler_call_details: grpc.HandlerCallDetails
-    ) -> Optional[grpc.RpcMethodHandler[RequestType, ResponseType]]:
+    ) -> Optional[_RpcMethodHandlerType]:
         return self._registered_handler
 
 
-class _GenericMethod(_Method[RequestType, ResponseType]):
+class _GenericMethod(_Method):
     def __init__(
         self,
-        generic_handlers: List[
-            grpc.GenericRpcHandler[RequestType, ResponseType]
-        ],
+        generic_handlers: List[_GenericRpcHandlerType],
     ):
         self._generic_handlers = generic_handlers
 
@@ -186,7 +182,7 @@ class _GenericMethod(_Method[RequestType, ResponseType]):
     @override
     def handler(
         self, handler_call_details: grpc.HandlerCallDetails
-    ) -> Optional[grpc.RpcMethodHandler[RequestType, ResponseType]]:
+    ) -> Optional[_RpcMethodHandlerType]:
         # If the same method have both generic and registered handler,
         # registered handler will take precedence.
         for generic_handler in self._generic_handlers:
@@ -935,7 +931,7 @@ def _select_thread_pool_for_behavior(
 def _handle_unary_unary(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState[RequestType],
-    method_handler: grpc.RpcMethodHandler[RequestType, ResponseType],
+    method_handler: _RpcMethodHandlerType,
     default_thread_pool: futures.ThreadPoolExecutor,
 ) -> futures.Future[None]:
     unary_request = _unary_request(
@@ -961,7 +957,7 @@ def _handle_unary_unary(
 def _handle_unary_stream(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState[RequestType],
-    method_handler: grpc.RpcMethodHandler[RequestType, ResponseType],
+    method_handler: _RpcMethodHandlerType,
     default_thread_pool: futures.ThreadPoolExecutor,
 ) -> futures.Future[None]:
     unary_request = _unary_request(
@@ -987,7 +983,7 @@ def _handle_unary_stream(
 def _handle_stream_unary(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState[RequestType],
-    method_handler: grpc.RpcMethodHandler[RequestType, ResponseType],
+    method_handler: _RpcMethodHandlerType,
     default_thread_pool: futures.ThreadPoolExecutor,
 ) -> futures.Future[None]:
     request_iterator = _RequestIterator(
@@ -1013,7 +1009,7 @@ def _handle_stream_unary(
 def _handle_stream_stream(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState[RequestType],
-    method_handler: grpc.RpcMethodHandler[RequestType, ResponseType],
+    method_handler: _RpcMethodHandlerType,
     default_thread_pool: futures.ThreadPoolExecutor,
 ) -> futures.Future[None]:
     request_iterator = _RequestIterator(
@@ -1039,12 +1035,12 @@ def _handle_stream_stream(
 def _find_method_handler(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState[RequestType],
-    method_with_handler: _Method[RequestType, ResponseType],
+    method_with_handler: _Method,
     interceptor_pipeline: Optional[_interceptor._ServicePipeline],
-) -> Optional[grpc.RpcMethodHandler[RequestType, ResponseType]]:
+) -> Optional[_RpcMethodHandlerType]:
     def query_handlers(
         handler_call_details: grpc.HandlerCallDetails,
-    ) -> Optional[grpc.RpcMethodHandler[RequestType, ResponseType]]:
+    ) -> Optional[_RpcMethodHandlerType]:
         return method_with_handler.handler(handler_call_details)
 
     method_name = method_with_handler.name()
@@ -1091,7 +1087,7 @@ def _reject_rpc(
 def _handle_with_method_handler(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState[RequestType],
-    method_handler: grpc.RpcMethodHandler[RequestType, ResponseType],
+    method_handler: _RpcMethodHandlerType,
     thread_pool: futures.ThreadPoolExecutor,
 ) -> futures.Future[None]:
     with state.condition:
@@ -1119,11 +1115,11 @@ def _handle_with_method_handler(
 
 def _handle_call(
     rpc_event: cygrpc.BaseEvent,
-    method_with_handler: _Method[RequestType, ResponseType],
+    method_with_handler: _Method,
     interceptor_pipeline: Optional[_interceptor._ServicePipeline],
     thread_pool: futures.ThreadPoolExecutor,
     concurrency_exceeded: bool,
-) -> Tuple[Optional[_RPCState[RequestType]], Optional[futures.Future[None]]]:
+) -> Tuple[Optional[_RPCState[Any]], Optional[futures.Future[None]]]:
     """Handles RPC based on provided handlers.
 
       When receiving a call event from Core, registered method will have its
@@ -1138,7 +1134,7 @@ def _handle_call(
     if not rpc_event.success:
         return None, None
     if rpc_event.call_details.method or method_with_handler.name():
-        rpc_state: _RPCState[RequestType] = _RPCState()
+        rpc_state: _RPCState[Any] = _RPCState()
         try:
             method_handler = _find_method_handler(
                 rpc_event,
