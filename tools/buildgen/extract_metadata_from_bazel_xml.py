@@ -828,7 +828,8 @@ def _patch_descriptor_upb_proto_library(bazel_rules):
         )
 
     bazel_rule = bazel_rules.get(
-        "@com_google_protobuf//upb/reflection:json_enumvalue_options_upb_proto", None
+        "@com_google_protobuf//upb/reflection:json_enumvalue_options_upb_proto",
+        None,
     )
     if bazel_rule:
         bazel_rule["srcs"].append(
@@ -843,7 +844,16 @@ def _generate_build_metadata(
     build_extra_metadata: BuildDict, bazel_rules: BuildDict
 ) -> BuildDict:
     """Generate build metadata in build.yaml-like format bazel build metadata and build.yaml-specific "extra metadata"."""
-    lib_names = list(build_extra_metadata.keys())
+    lib_names = []
+    for lib_name in build_extra_metadata.keys():
+        bazel_label = _get_bazel_label(lib_name)
+        if bazel_label in bazel_rules:
+            lib_names.append(lib_name)
+        else:
+            print(
+                f'Skipping pre-declared library "{lib_name}" since corresponding '
+                f'label "{bazel_label}" is undefined.'
+            )
     result = {}
 
     for lib_name in lib_names:
@@ -1276,6 +1286,10 @@ _BUILD_EXTRA_METADATA = {
         "build": "all",
         "_RENAME": "upb_descriptor_lib",
     },
+    # NOTE(weizheyuan): This target is only defined since
+    # https://github.com/protocolbuffers/protobuf/commit/8111a7473d97d5b199d074c275ef3d083ef5faa9
+    # and is required to build upb runtime. Preemptively declare it
+    # for forward compatibility.
     "@com_google_protobuf//upb/reflection:json_enumvalue_options_upb_proto": {
         "language": "c",
         "build": "all",
