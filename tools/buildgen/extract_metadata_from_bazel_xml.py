@@ -827,6 +827,17 @@ def _patch_descriptor_upb_proto_library(bazel_rules):
             ":src/core/ext/upb-gen/google/protobuf/descriptor.upb.h"
         )
 
+    bazel_rule = bazel_rules.get(
+        "@com_google_protobuf//upb/reflection:json_enumvalue_options_upb_proto", None
+    )
+    if bazel_rule:
+        bazel_rule["srcs"].append(
+            ":src/core/ext/upb-gen/google/protobuf/json_enumvalue_options.upb_minitable.c"
+        )
+        bazel_rule["hdrs"].append(
+            ":src/core/ext/upb-gen/google/protobuf/json_enumvalue_options.upb.h"
+        )
+
 
 def _generate_build_metadata(
     build_extra_metadata: BuildDict, bazel_rules: BuildDict
@@ -1264,6 +1275,11 @@ _BUILD_EXTRA_METADATA = {
         "language": "c",
         "build": "all",
         "_RENAME": "upb_descriptor_lib",
+    },
+    "@com_google_protobuf//upb/reflection:json_enumvalue_options_upb_proto": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_json_enumvalue_options_lib",
     },
     "@com_google_protobuf//upb/reflection:reflection": {
         "language": "c",
