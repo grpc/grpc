@@ -34,6 +34,7 @@ from typing import (
     Optional,
     Protocol,
     Sequence,
+    TYPE_CHECKING,
     TypeAlias,
     TypeVar,
     Union,
@@ -42,6 +43,11 @@ from typing import (
 
 import grpc
 from grpc._cython import cygrpc
+
+if TYPE_CHECKING:
+    _RpcMethodHandlerType = grpc.RpcMethodHandler[Any, Any]
+else:
+    _RpcMethodHandlerType = grpc.RpcMethodHandler
 
 from . import _base_call
 from ._call import AioRpcError
@@ -86,10 +92,10 @@ class ServerInterceptor(metaclass=ABCMeta):
     async def intercept_service(
         self,
         continuation: Callable[
-            [grpc.HandlerCallDetails], Awaitable[grpc.RpcMethodHandler[Any, Any]]
+            [grpc.HandlerCallDetails], Awaitable[_RpcMethodHandlerType]
         ],
         handler_call_details: grpc.HandlerCallDetails,
-    ) -> grpc.RpcMethodHandler[Any, Any]:
+    ) -> _RpcMethodHandlerType:
         """Intercepts incoming RPCs before handing them over to a handler.
 
         State can be passed from an interceptor to downstream interceptors

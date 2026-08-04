@@ -13,14 +13,23 @@
 # limitations under the License.
 """Server-side implementation of gRPC Asyncio Python."""
 
+from __future__ import annotations
+
 from concurrent.futures import Executor
-from typing import Any, Dict, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence
 
 import grpc
 from grpc import _common
 from grpc import _compression
 from grpc import _observability
 from grpc._cython import cygrpc
+
+if TYPE_CHECKING:
+    _GenericRpcHandlerType = grpc.GenericRpcHandler[Any, Any]
+    _RpcMethodHandlerType = grpc.RpcMethodHandler[Any, Any]
+else:
+    _GenericRpcHandlerType = grpc.GenericRpcHandler
+    _RpcMethodHandlerType = grpc.RpcMethodHandler
 
 from . import _base_server  # pyright: ignore[reportPrivateUsage]
 from ._interceptor import ServerInterceptor
@@ -47,7 +56,7 @@ class Server(_base_server.Server):
     def __init__(
         self,
         thread_pool: Optional[Executor],
-        generic_handlers: Optional[Sequence[grpc.GenericRpcHandler[Any, Any]]],
+        generic_handlers: Optional[Sequence[_GenericRpcHandlerType]],
         interceptors: Optional[Sequence[Any]],
         options: ChannelArgumentType,
         maximum_concurrent_rpcs: Optional[int],
@@ -78,7 +87,7 @@ class Server(_base_server.Server):
         )
 
     def add_generic_rpc_handlers(
-        self, generic_rpc_handlers: Sequence[grpc.GenericRpcHandler[Any, Any]]
+        self, generic_rpc_handlers: Sequence[_GenericRpcHandlerType]
     ) -> None:
         """Registers GenericRpcHandlers with this Server.
 
@@ -93,7 +102,7 @@ class Server(_base_server.Server):
     def add_registered_method_handlers(
         self,
         service_name: str,
-        method_handlers: Dict[str, grpc.RpcMethodHandler[Any, Any]],
+        method_handlers: Dict[str, _RpcMethodHandlerType],
     ) -> None:
         # TODO(xuanwn): Implement this for AsyncIO.
         pass
@@ -209,7 +218,7 @@ class Server(_base_server.Server):
 
 def server(
     migration_thread_pool: Optional[Executor] = None,
-    handlers: Optional[Sequence[grpc.GenericRpcHandler[Any, Any]]] = None,
+    handlers: Optional[Sequence[_GenericRpcHandlerType]] = None,
     interceptors: Optional[Sequence[Any]] = None,
     options: Optional[ChannelArgumentType] = None,
     maximum_concurrent_rpcs: Optional[int] = None,
