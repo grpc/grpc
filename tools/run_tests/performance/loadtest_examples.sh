@@ -78,6 +78,7 @@ scenarios=(
     "python_generic_sync_streaming_ping_pong"
     "python_asyncio_generic_async_streaming_ping_pong"
     "ruby_protobuf_sync_streaming_ping_pong"
+    "rust_protobuf_sync_streaming_ping_pong_secure"
 )
 
 psm_scenarios=(
