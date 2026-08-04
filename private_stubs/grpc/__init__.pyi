@@ -17,7 +17,6 @@
 
 import abc
 import enum
-from types import TracebackType
 from typing import (
     Any,
     Callable,
@@ -436,16 +435,16 @@ class ServerInterceptor(abc.ABC):
     @abc.abstractmethod
     def intercept_service(
         self,
-        continuation: Callable[[HandlerCallDetails], Optional[RpcMethodHandler]],
+        continuation: Callable[[HandlerCallDetails], Optional[RpcMethodHandler[Any, Any]]],
         handler_call_details: HandlerCallDetails,
-    ) -> Optional[RpcMethodHandler]: ...
+    ) -> Optional[RpcMethodHandler[Any, Any]]: ...
 
 #############################  Server Interface  ###############################
 
 class Server(abc.ABC):
     @abc.abstractmethod
     def add_generic_rpc_handlers(
-        self, generic_rpc_handlers: Iterable[GenericRpcHandler]
+        self, generic_rpc_handlers: Iterable[GenericRpcHandler[Any, Any]]
     ) -> None: ...
     def add_registered_method_handlers(
         self, service_name: str, method_handlers: Any
@@ -545,7 +544,7 @@ def alts_server_credentials() -> ServerCredentials: ...
 def compute_engine_channel_credentials(
     call_credentials: CallCredentials,
 ) -> ChannelCredentials: ...
-def channel_ready_future(channel: Channel) -> Future[None]: ...
+def channel_ready_future(channel: Channel) -> Any: ...
 def insecure_channel(
     target: str,
     options: Optional[Sequence[Tuple[str, Any]]] = None,
@@ -568,7 +567,7 @@ def intercept_channel(
 ) -> Channel: ...
 def server(
     thread_pool: Any,
-    handlers: Optional[Sequence[GenericRpcHandler]] = None,
+    handlers: Optional[Sequence[GenericRpcHandler[Any, Any]]] = None,
     interceptors: Optional[Sequence[ServerInterceptor]] = None,
     options: Optional[Sequence[Tuple[str, Any]]] = None,
     maximum_concurrent_rpcs: Optional[int] = None,
