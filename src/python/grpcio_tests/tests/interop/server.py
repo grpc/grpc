@@ -114,9 +114,7 @@ def serve(args):
     else:
         server = test_common.test_server()
 
-    test_pb2_grpc.add_TestServiceServicer_to_server(
-        service.TestService(), server
-    )
+    test_pb2_grpc.add_TestServiceServicer_to_server(service.TestService(), server)
     if args.use_tls or args.use_alts:
         credentials = get_server_credentials(args.use_tls)
         server.add_secure_port("[::]:{}".format(args.port), credentials)

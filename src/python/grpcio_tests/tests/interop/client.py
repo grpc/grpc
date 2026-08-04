@@ -84,9 +84,7 @@ def parse_interop_client_args(argv):
         type=str,
         help="the server host to which to claim to connect",
     )
-    parser.add_argument(
-        "--oauth_scope", type=str, help="scope for OAuth tokens"
-    )
+    parser.add_argument("--oauth_scope", type=str, help="scope for OAuth tokens")
     parser.add_argument(
         "--default_service_account",
         type=str,
@@ -172,14 +170,10 @@ def get_secure_channel_parameters(args):
                     request=google_auth.transport.requests.Request(),
                 )
             )
-            channel_credentials = grpc.compute_engine_channel_credentials(
-                call_creds
-            )
+            channel_credentials = grpc.compute_engine_channel_credentials(call_creds)
         else:
             raise ValueError(
-                "Unknown credentials type '{}'".format(
-                    args.custom_credentials_type
-                )
+                "Unknown credentials type '{}'".format(args.custom_credentials_type)
             )
     elif args.use_tls:
         if args.use_test_ca:
@@ -221,9 +215,7 @@ class _OTelClientInterceptor(grpc.UnaryUnaryClientInterceptor):
         sent_span_name = f"Sent.{full_method}"
         attempt_span_name = f"Attempt.{full_method}"
 
-        sent_span = self._tracer.start_span(
-            sent_span_name, kind=trace.SpanKind.CLIENT
-        )
+        sent_span = self._tracer.start_span(sent_span_name, kind=trace.SpanKind.CLIENT)
         sent_ctx = trace.set_span_in_context(sent_span)
         attempt_span = self._tracer.start_span(
             attempt_span_name, kind=trace.SpanKind.CLIENT, context=sent_ctx
@@ -262,11 +254,7 @@ class _OTelClientInterceptor(grpc.UnaryUnaryClientInterceptor):
 def _create_channel(args):
     target = "{}:{}".format(args.server_host, args.server_port)
 
-    if (
-        args.use_tls
-        or args.use_alts
-        or args.custom_credentials_type is not None
-    ):
+    if args.use_tls or args.use_alts or args.custom_credentials_type is not None:
         channel_credentials, options = get_secure_channel_parameters(args)
         channel = grpc.secure_channel(target, channel_credentials, options)
     else:
@@ -276,9 +264,7 @@ def _create_channel(args):
         from tests.interop import otel_interop_helper
 
         _, tracer = otel_interop_helper.init_tracer_provider()
-        channel = grpc.intercept_channel(
-            channel, _OTelClientInterceptor(tracer)
-        )
+        channel = grpc.intercept_channel(channel, _OTelClientInterceptor(tracer))
 
     return channel
 
@@ -319,4 +305,3 @@ def test_interoperability(args):
 
 if __name__ == "__main__":
     app.run(test_interoperability, flags_parser=parse_interop_client_args)
-

@@ -76,9 +76,8 @@ void MaybeRegisterOpenTelemetry() {
     auto processor =
         opentelemetry::sdk::trace::SimpleSpanProcessorFactory::Create(
             std::move(exporter));
-    auto provider =
-        std::make_shared<opentelemetry::sdk::trace::TracerProvider>(
-            std::move(processor));
+    auto provider = std::make_shared<opentelemetry::sdk::trace::TracerProvider>(
+        std::move(processor));
     std::atomic_store(&g_tracer_provider, provider);
 
     auto status =
