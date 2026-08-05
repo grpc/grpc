@@ -13,3 +13,9 @@
 // limitations under the License.
 
 #include "src/core/util/shared_bit_gen.h"
+
+namespace grpc_core {
+
+thread_local absl::BitGen SharedBitGen::bit_gen_;
+
+}  // namespace grpc_core
