@@ -180,7 +180,7 @@
   test_tags: []
 - name: inproc_cancel_stream
   description: If set, cancel inproc stream inside the transport mutex.
-  expiry: 2026/08/01
+  expiry: 2026/09/01
   owner: akshitpatel@google.com
   test_tags: []
 - name: keep_alive_ping_timer_batch
