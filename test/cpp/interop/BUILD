@@ -364,7 +364,6 @@ py_test(
     tags = ["no_windows"],
 )
 
-
 grpc_cc_library(
     name = "xds_stats_watcher",
     srcs = ["xds_stats_watcher.cc"],
@@ -847,9 +846,9 @@ grpc_cc_binary(
         "//:gpr",
         "//:grpc++",
         "//src/core:instrument",
-        "@opentelemetry_proto//:trace_service_grpc_cc",
-        "@opentelemetry_proto//:trace_service_proto_cc",
         "@opentelemetry_proto//:metrics_service_grpc_cc",
         "@opentelemetry_proto//:metrics_service_proto_cc",
+        "@opentelemetry_proto//:trace_service_grpc_cc",
+        "@opentelemetry_proto//:trace_service_proto_cc",
     ],
 )
