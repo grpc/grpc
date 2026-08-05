@@ -17,16 +17,12 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_CLIENT_GRPC_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_CLIENT_GRPC_H
 
-#include <grpc/grpc.h>
-#include <grpc/support/port_platform.h>
-
 #include <memory>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/telemetry/metrics.h"
-#include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/useful.h"
 #include "src/core/xds/grpc/certificate_provider_store.h"
@@ -112,6 +108,7 @@ class GrpcXdsClient final : public XdsClient {
 
 namespace internal {
 void SetXdsChannelArgsForTest(grpc_channel_args* args);
+void SetInhibitXdsClientMapRemovalForTest(bool inhibit);
 void UnsetGlobalXdsClientsForTest();
 // Sets bootstrap config to be used when no env var is set.
 // Does not take ownership of config.

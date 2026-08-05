@@ -25,7 +25,6 @@ require 'grpc'
 require 'optparse'
 require 'histogram'
 require 'etc'
-require 'facter'
 require 'client'
 require 'qps-common'
 require 'server'
@@ -33,7 +32,7 @@ require 'src/proto/grpc/testing/worker_service_services_pb'
 
 class WorkerServiceImpl < Grpc::Testing::WorkerService::Service
   def cpu_cores
-    Facter.value('processors')['count']
+    Etc.nprocessors
   end
   def run_server(reqs)
     q = EnumeratorQueue.new(self)

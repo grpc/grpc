@@ -27,6 +27,9 @@ from grpc_observability import _open_telemetry_measures
 from grpc_observability._open_telemetry_observability import (
     GRPC_OTHER_LABEL_VALUE,
 )
+from grpc_observability._open_telemetry_observability import (
+    _OpenTelemetryPlugin,
+)
 from grpc_observability._open_telemetry_observability import GRPC_METHOD_LABEL
 from grpc_observability._open_telemetry_observability import GRPC_TARGET_LABEL
 from opentelemetry.sdk.metrics import MeterProvider
@@ -271,7 +274,14 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         ):
             _test_server.unary_unary_call(port=port)
 
-        self._validate_metrics_exist(self.all_metrics)
+        self._validate_metrics_exist(
+            self.all_metrics,
+            expected_count=sum(
+                1
+                for m in _open_telemetry_measures.base_metrics()
+                if "grpc.client" in m.name
+            ),
+        )
         self._validate_client_metrics_names(self.all_metrics)
 
     def testNoRecordBeforeInit(self):
@@ -304,7 +314,9 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
 
         self.all_metrics = defaultdict(list)
         _test_server.unary_unary_call(port=self._port)
-        with self.assertRaisesRegex(AssertionError, "No metrics was exported"):
+        with self.assertRaisesRegex(
+            AssertionError, r"Expected at least \d+ metrics, got 0"
+        ):
             self._validate_metrics_exist(self.all_metrics)
 
     def testNoRecordAfterExitUseGlobal(self):
@@ -324,7 +336,9 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
 
         self.all_metrics = defaultdict(list)
         _test_server.unary_unary_call(port=self._port)
-        with self.assertRaisesRegex(AssertionError, "No metrics was exported"):
+        with self.assertRaisesRegex(
+            AssertionError, r"Expected at least \d+ metrics, got 0"
+        ):
             self._validate_metrics_exist(self.all_metrics)
 
     def testRecordUnaryStream(self):
@@ -378,7 +392,14 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             _test_server.unary_unary_call(port=main_port)
             _test_server.unary_unary_call(port=backup_port)
 
-        self._validate_metrics_exist(self.all_metrics)
+        self._validate_metrics_exist(
+            self.all_metrics,
+            expected_count=sum(
+                1
+                for m in _open_telemetry_measures.base_metrics()
+                if "grpc.client" in m.name
+            ),
+        )
         self._validate_client_metrics_names(self.all_metrics)
 
         target_values = set()
@@ -495,11 +516,19 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         else:
             self.fail(message() + " after " + str(timeout))
 
-    def _validate_metrics_exist(self, all_metrics: Dict[str, Any]) -> None:
-        # Sleep here to make sure we have at least one export from OTel MetricExporter.
+    def _validate_metrics_exist(
+        self,
+        all_metrics: dict[str, Any],
+        expected_count: int = len(_open_telemetry_measures.base_metrics()),
+    ) -> None:
+        # Sleep here to make sure we have at least expected number of metrics
+        # from OTel MetricExporter.
         self.assert_eventually(
-            lambda: len(all_metrics.keys()) > 1,
-            message=lambda: f"No metrics was exported",
+            lambda: len(all_metrics.keys()) >= expected_count,
+            message=lambda: (
+                f"Expected at least {expected_count} metrics, got "
+                f"{len(all_metrics.keys())}"
+            ),
         )
 
     def _validate_all_metrics_names(self, metric_names: Set[str]) -> None:
@@ -521,6 +550,45 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
                     base_metric.name in metric_names,
                     msg=f"metric {base_metric.name} not found in exported metrics: {metric_names}!",
                 )
+
+
+@unittest.skipIf(
+    os.name == "nt" or "darwin" in sys.platform,
+    "Observability is not supported in Windows and MacOS",
+)
+class DecodeLabelsTest(unittest.TestCase):
+    def testInvalidUtf8ValueDoesNotRaise(self):
+        key = "key"
+        invalid_value = b"\xffbad"
+        decoded = _OpenTelemetryPlugin.decode_labels({key: invalid_value})
+        self.assertIn(key, decoded)
+        self.assertIsInstance(decoded[key], str)
+
+    def testInvalidUtf8KeyDoesNotRaise(self):
+        invalid_key = b"\xffbad"
+        value = "value"
+        decoded = _OpenTelemetryPlugin.decode_labels({invalid_key: value})
+        self.assertNotIn(invalid_key, decoded)
+        self.assertEqual(len(decoded), 1)
+
+    def testBytesKeyAndBytesValueAreDecodedToStr(self):
+        key_as_bytes = b"my_key"
+        key_as_str = "my_key"
+        value_as_bytes = b"my_value"
+        decoded = _OpenTelemetryPlugin.decode_labels(
+            {key_as_bytes: value_as_bytes}
+        )
+        self.assertNotIn(key_as_bytes, decoded)
+        self.assertIn(key_as_str, decoded)
+        self.assertIsInstance(decoded[key_as_str], str)
+
+    def testStrKeyAndStrValuePassThroughUnchanged(self):
+        key = "key"
+        value = "value"
+        decoded = _OpenTelemetryPlugin.decode_labels({key: value})
+        self.assertIn(key, decoded)
+        self.assertEqual(decoded[key], value)
+        self.assertIsInstance(decoded[key], str)
 
 
 if __name__ == "__main__":

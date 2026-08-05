@@ -49,7 +49,7 @@ TokenFetcherCredentials::Token::Token(Slice token, Timestamp expiration)
       expiration_(expiration - kTokenExpirationAdjustmentDuration) {}
 
 void TokenFetcherCredentials::Token::AddTokenToClientInitialMetadata(
-    ClientMetadata& metadata) const {
+    ClientMetadata& metadata) {
   metadata.Append(GRPC_AUTHORIZATION_METADATA_KEY, token_.Ref(),
                   [](absl::string_view, const Slice&) { abort(); });
 }

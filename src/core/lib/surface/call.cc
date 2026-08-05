@@ -248,14 +248,6 @@ void Call::MaybeUnpublishFromParent() {
 }
 
 void Call::CancelWithStatus(grpc_status_code status, const char* description) {
-  if (!IsErrorFlattenEnabled()) {
-    CancelWithError(grpc_error_set_int(
-        grpc_error_set_str(
-            absl::Status(static_cast<absl::StatusCode>(status), description),
-            StatusStrProperty::kGrpcMessage, description),
-        StatusIntProperty::kRpcStatus, status));
-    return;
-  }
   if (status == GRPC_STATUS_OK) {
     VLOG(2) << "CancelWithStatus() called with OK status, using UNKNOWN";
     status = GRPC_STATUS_UNKNOWN;
@@ -364,11 +356,8 @@ void Call::HandleCompressionAlgorithmDisabled(
   std::string error_msg =
       absl::StrFormat("Compression algorithm '%s' is disabled.", algo_name);
   LOG(ERROR) << error_msg;
-  CancelWithError(grpc_error_set_int(
-      is_client() ? absl::InternalError(error_msg)
-                  : absl::UnimplementedError(error_msg),
-      StatusIntProperty::kRpcStatus,
-      is_client() ? GRPC_STATUS_INTERNAL : GRPC_STATUS_UNIMPLEMENTED));
+  CancelWithError(is_client() ? absl::InternalError(error_msg)
+                              : absl::UnimplementedError(error_msg));
 }
 
 grpc_error_handle Call::UpdateDeadline(Timestamp deadline) {
@@ -379,9 +368,7 @@ grpc_error_handle Call::UpdateDeadline(Timestamp deadline) {
   if (deadline >= deadline_) return absl::OkStatus();
   if (deadline < Timestamp::Now()) {
     lock.Release();
-    grpc_error_handle error = grpc_error_set_int(
-        absl::DeadlineExceededError("Deadline Exceeded"),
-        StatusIntProperty::kRpcStatus, GRPC_STATUS_DEADLINE_EXCEEDED);
+    grpc_error_handle error = absl::DeadlineExceededError("Deadline Exceeded");
     CancelWithError(error);
     return error;
   }
@@ -415,9 +402,7 @@ void Call::Run() {
   GRPC_TRACE_LOG(call, INFO)
       << "call deadline expired "
       << GRPC_DUMP_ARGS(Timestamp::Now(), send_deadline_);
-  CancelWithError(grpc_error_set_int(
-      absl::DeadlineExceededError("Deadline Exceeded"),
-      StatusIntProperty::kRpcStatus, GRPC_STATUS_DEADLINE_EXCEEDED));
+  CancelWithError(absl::DeadlineExceededError("Deadline Exceeded"));
   InternalUnref("deadline[run]");
 }
 

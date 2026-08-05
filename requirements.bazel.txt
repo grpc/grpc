@@ -19,7 +19,7 @@
 #   $ docker run -it --rm -v $(pwd):/grpc python:3.10 /bin/bash
 #   # cd grpc
 #   # pip install pip-tools
-#   # pip-compile --allow-unsafe requirements.bazel.txt -o requirements.bazel.lock
+#   # pip-compile --generate-hashes --no-emit-index-url --allow-unsafe requirements.bazel.txt -o requirements.bazel.lock
 #   # exit
 #   $ sudo chown $USER requirements.bazel.lock
 #
@@ -32,10 +32,10 @@
 #   $ pip install -r requirements.bazel.lock
 #
 #   Add the new package to requirements.bazel.txt
-#   $ pip-compile --no-upgrade --allow-unsafe requirements.bazel.txt -o requirements.bazel.lock
+#   $ pip-compile --generate-hashes --no-emit-index-url --no-upgrade --allow-unsafe requirements.bazel.txt -o requirements.bazel.lock
 #
 #   To update a single package, change its version spec requirements.bazel.txt
-#   $ pip-compile --no-upgrade --allow-unsafe requirements.bazel.txt -o requirements.bazel.lock -P package_name
+#   $ pip-compile --generate-hashes --no-emit-index-url --no-upgrade --allow-unsafe requirements.bazel.txt -o requirements.bazel.lock -P package_name
 
 absl-py
 certifi
@@ -44,7 +44,7 @@ gevent~=25.8
 google-auth
 cryptography~=45.0
 
-# Requires ~= 1.74 to support protobuf 34
+# Requires ~= 1.74 to support protobuf >= 34
 googleapis-common-protos~=1.74.0
 
 idna
@@ -53,11 +53,8 @@ opentelemetry-exporter-prometheus
 opentelemetry-resourcedetector-gcp
 opentelemetry-sdk
 
-# We're using 34.x to adopt a bugfix (https://github.com/grpc/grpc/issues/42236)
-# which isn't officially released yet.
-# This branch has compiler version number 7.34.3-dev which is larger than the latest
-# release of 7.34. Bump the runtime to at least 7.35.0 to pass version check.
-protobuf~=7.35.0
+# Use the same version as third_party/protobuf v35.0
+protobuf~=7.35.1
 
 pyyaml  # for DNS test
 requests

@@ -53,6 +53,7 @@
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
+#include "test/core/transport/util/mock_promise_endpoint.h"
 #include "gtest/gtest.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
@@ -67,7 +68,7 @@ class TestsNeedingStreamObjects : public ::testing::TestWithParam<bool> {
  protected:
   TestsNeedingStreamObjects()
       : transport_flow_control_(
-            /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+            /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
             /*memory_owner=*/nullptr),
         is_client_(GetParam()) {}
 
@@ -89,12 +90,10 @@ class TestsNeedingStreamObjects : public ::testing::TestWithParam<bool> {
                                             transport_flow_control_)
                    : MakeRefCounted<Stream>(
                          call_pair->initiator, transport_flow_control_,
-                         stream_id, /*allow_true_binary_metadata_peer=*/true,
-                         /*allow_true_binary_metadata_acked=*/true);
+                         stream_id, /*allow_true_binary_metadata_peer=*/true);
     if (is_client_) {
       stream->InitializeClientStream(stream_id,
-                                     /*allow_true_binary_metadata_peer=*/true,
-                                     /*allow_true_binary_metadata_acked=*/true);
+                                     /*allow_true_binary_metadata_peer=*/true);
     }
     GRPC_CHECK_EQ(stream->GetStreamId(), stream_id);
     stream_set_.push_back(std::move(stream));
@@ -171,7 +170,7 @@ TEST(Http2CommonTransportTest, TestReadChannelArgs) {
   // correctly.
   Http2Settings settings;
   chttp2::TransportFlowControl transport_flow_control(
-      /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
   ChannelArgs channel_args =
       ChannelArgs()
@@ -232,7 +231,7 @@ TEST(Http2CommonTransportTest, TestReadTransportChannelArgs) {
   // correctly into TransportChannelArgs.
   Http2Settings settings;
   chttp2::TransportFlowControl transport_flow_control(
-      /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
 
   {
@@ -246,7 +245,7 @@ TEST(Http2CommonTransportTest, TestReadTransportChannelArgs) {
     EXPECT_EQ(args.ping_timeout, Duration::Infinity());
     EXPECT_EQ(args.settings_timeout, Duration::Infinity());
     EXPECT_EQ(args.keepalive_permit_without_calls, false);
-    EXPECT_EQ(args.enable_preferred_rx_crypto_frame_advertisement, false);
+    EXPECT_EQ(transport_flow_control.ph2_enable_rx_crypto(), false);
     EXPECT_EQ(args.max_usable_hpack_table_size, -1);
     EXPECT_GE(args.max_header_list_size_soft_limit, 8192u);
   }
@@ -262,7 +261,7 @@ TEST(Http2CommonTransportTest, TestReadTransportChannelArgs) {
     EXPECT_EQ(args.ping_timeout, Duration::Minutes(1));
     EXPECT_EQ(args.settings_timeout, Duration::Minutes(1));
     EXPECT_EQ(args.keepalive_permit_without_calls, false);
-    EXPECT_EQ(args.enable_preferred_rx_crypto_frame_advertisement, false);
+    EXPECT_EQ(transport_flow_control.ph2_enable_rx_crypto(), false);
     EXPECT_EQ(args.max_usable_hpack_table_size, -1);
     EXPECT_GE(args.max_header_list_size_soft_limit, 8192u);
   }
@@ -289,7 +288,7 @@ TEST(Http2CommonTransportTest, TestReadTransportChannelArgs) {
     EXPECT_EQ(args.ping_timeout, Duration::Seconds(3));
     EXPECT_EQ(args.settings_timeout, Duration::Seconds(15));
     EXPECT_EQ(args.keepalive_permit_without_calls, true);
-    EXPECT_EQ(args.enable_preferred_rx_crypto_frame_advertisement, true);
+    EXPECT_EQ(transport_flow_control.ph2_enable_rx_crypto(), true);
     EXPECT_EQ(args.max_usable_hpack_table_size, 1024);
     EXPECT_EQ(args.max_header_list_size_soft_limit, 12345u);
   }
@@ -314,7 +313,7 @@ TEST(Http2CommonTransportTest, TestReadTransportChannelArgs) {
 
 TEST(Http2CommonTransportTest, ProcessOutgoingDataFrameFlowControlTest) {
   chttp2::TransportFlowControl transport_flow_control(
-      /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
   chttp2::StreamFlowControl stream_flow_control(&transport_flow_control);
   EXPECT_EQ(transport_flow_control.remote_window(), chttp2::kDefaultWindow);
@@ -337,7 +336,7 @@ TEST(Http2CommonTransportTest, ProcessOutgoingDataFrameFlowControlTest) {
 TEST(Http2CommonTransportTest, ProcessIncomingDataFrameFlowControlNullStream) {
   const uint32_t frame_payload_size = 20000;
   chttp2::TransportFlowControl flow_control(
-      /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
   Http2FrameHeader frame_header;
   frame_header.length = frame_payload_size;
@@ -390,7 +389,7 @@ TEST(Http2CommonTransportTest, ProcessIncomingDataFrameFlowControlNullStream) {
 TEST(Http2CommonTransportTest, ProcessIncomingDataFrameFlowControlNullStream1) {
   const uint32_t frame_payload_size = 60000;
   chttp2::TransportFlowControl flow_control(
-      /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
   Http2FrameHeader frame_header;
   frame_header.length = frame_payload_size;
@@ -607,7 +606,7 @@ TEST_P(TestsNeedingStreamObjects,
 TEST(Http2CommonTransportTest,
      ProcessIncomingWindowUpdateFrameFlowControlNullStream) {
   chttp2::TransportFlowControl flow_control(
-      /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
   EXPECT_EQ(flow_control.remote_window(), chttp2::kDefaultWindow);
 
@@ -812,7 +811,11 @@ TEST_F(Http2ReadContextTest, SetAndGetFrameHeader) {
   // Purpose: Verify that SetCurrentFrameHeader stores header attributes
   // correctly. Assertions: GetCurrentFrameHeader returns the exact frame header
   // that was set.
-  ReadContext context(Slice::FromCopiedString("peer"), true);
+  util::testing::MockPromiseEndpoint mock_endpoint(1234);
+  ReadContext context(/*max_new_streams_per_read_cycle=*/32u,
+                      mock_endpoint.promise_endpoint, true,
+                      GrpcErrors::kMaxSecurityFrameSize,
+                      /*ping_on_rst_stream_percent=*/1u);
   Http2FrameHeader header;
   header.length = 100u;
   header.type = 1u;
@@ -841,7 +844,11 @@ TEST_F(Http2ReadContextTest, ReadCycleFramesLimits) {
       "TestFramesLimits",
       [&was_pending_under_limit,
        &was_pending_at_limit]() -> Poll<absl::Status> {
-        ReadContext read_context(Slice::FromCopiedString("peer"), true);
+        util::testing::MockPromiseEndpoint mock_endpoint(1234);
+        ReadContext read_context(/*max_new_streams_per_read_cycle=*/32u,
+                                 mock_endpoint.promise_endpoint, true,
+                                 GrpcErrors::kMaxSecurityFrameSize,
+                                 /*ping_on_rst_stream_percent=*/1u);
         const Http2FrameHeader header = {
             0u,  // length
             0u,  // type

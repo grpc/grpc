@@ -36,6 +36,8 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
@@ -174,6 +176,109 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
   frame_transport->Read(MakeMessageFrame(1, "12345678"));
   frame_transport->Read(ClientEndOfStream(1));
   // Wait until ClientTransport's internal activities to finish.
+  event_engine()->TickUntilIdle();
+  transport.reset();
+  event_engine()->TickUntilIdle();
+  event_engine()->UnsetGlobalHooks();
+}
+
+class MockTcpCallTracer : public TcpCallTracer {
+ public:
+  MOCK_METHOD(void, RecordEvent,
+              (grpc_event_engine::experimental::internal::WriteEvent,
+               absl::Time, size_t, const std::vector<TcpEventMetric>&),
+              (override));
+};
+
+class MockCallTracerInterface : public CallTracerInterface {
+ public:
+  MOCK_METHOD(void, RecordSendInitialMetadata, (grpc_metadata_batch*),
+              (override));
+  MOCK_METHOD(void, MutateSendInitialMetadata, (grpc_metadata_batch*),
+              (override));
+  MOCK_METHOD(void, RecordSendTrailingMetadata, (grpc_metadata_batch*),
+              (override));
+  MOCK_METHOD(void, MutateSendTrailingMetadata, (grpc_metadata_batch*),
+              (override));
+  MOCK_METHOD(void, RecordSendMessage, (const Message&), (override));
+  MOCK_METHOD(void, RecordSendCompressedMessage, (const Message&), (override));
+  MOCK_METHOD(void, RecordReceivedInitialMetadata, (grpc_metadata_batch*),
+              (override));
+  MOCK_METHOD(void, RecordReceivedMessage, (const Message&), (override));
+  MOCK_METHOD(void, RecordReceivedDecompressedMessage, (const Message&),
+              (override));
+  MOCK_METHOD(void, RecordCancel, (grpc_error_handle), (override));
+  MOCK_METHOD(void, RecordIncomingBytes, (const TransportByteSize&),
+              (override));
+  MOCK_METHOD(void, RecordOutgoingBytes, (const TransportByteSize&),
+              (override));
+  MOCK_METHOD(std::shared_ptr<TcpCallTracer>, StartNewTcpTrace, (), (override));
+  MOCK_METHOD(void, RecordAnnotation, (absl::string_view), (override));
+  MOCK_METHOD(void, RecordAnnotation, (const Annotation&), (override));
+  MOCK_METHOD(std::string, TraceId, (), (override));
+  MOCK_METHOD(std::string, SpanId, (), (override));
+  MOCK_METHOD(bool, IsSampled, (), (override));
+};
+
+TEST_F(TransportTest, DeferTcpTracerInitialization) {
+  auto owned_frame_transport =
+      MakeOrphanable<MockFrameTransport>(event_engine());
+  auto* frame_transport = owned_frame_transport.get();
+  auto call_destination = MakeRefCounted<StrictMock<MockCallDestination>>();
+  EXPECT_CALL(*call_destination, Orphaned()).Times(1);
+  auto channel_args = MakeChannelArgs(event_engine());
+  auto transport = MakeOrphanable<ChaoticGoodServerTransport>(
+      channel_args, std::move(owned_frame_transport), MessageChunker(0, 1));
+
+  std::optional<CallHandler> call_handler;
+  EXPECT_CALL(*call_destination, StartCall(_))
+      .WillOnce(WithArgs<0>(
+          [&call_handler](UnstartedCallHandler unstarted_call_handler) {
+            call_handler.emplace(unstarted_call_handler.StartCall());
+          }));
+
+  transport->SetCallDestination(std::move(call_destination));
+
+  // Trigger call creation on server.
+  frame_transport->Read(MakeProtoFrame<ClientInitialMetadataFrame>(
+      1, "path: '/demo.Service/Step'"));
+
+  // Now call_handler should be populated.
+  ASSERT_TRUE(call_handler.has_value());
+
+  auto mock_tracer_impl =
+      std::make_unique<StrictMock<MockCallTracerInterface>>();
+  auto mock_tcp_tracer = std::make_shared<StrictMock<MockTcpCallTracer>>();
+
+  EXPECT_CALL(*mock_tracer_impl, IsSampled()).WillOnce(::testing::Return(true));
+  EXPECT_CALL(*mock_tracer_impl, StartNewTcpTrace())
+      .WillOnce(::testing::Return(mock_tcp_tracer));
+
+  auto* call_tracer =
+      call_handler->arena()->New<CallTracer>(mock_tracer_impl.get());
+
+  // Expect writes.
+  frame_transport->ExpectWrite(
+      MakeProtoFrame<ServerInitialMetadataFrame>(1, "message: \"hello\""));
+  frame_transport->ExpectWrite(
+      MakeProtoFrame<ServerTrailingMetadataFrame>(1, "status: 0"));
+
+  // Push server metadata to resolve the promise and trigger tracer usage.
+  // Set the context immediately before pushing metadata, simulating the timing
+  // of an inline filter that executes just prior to metadata transmission.
+  call_handler->SpawnInfallible(
+      "test-io", [handler = *call_handler, call_tracer]() mutable {
+        handler.arena()->SetContext<CallTracer>(call_tracer);
+        return Seq(
+            [handler]() mutable {
+              return handler.PushServerInitialMetadata(TestInitialMetadata());
+            },
+            [handler]() mutable {
+              handler.PushServerTrailingMetadata(TestTrailingMetadata());
+              return Empty{};
+            });
+      });
+
   event_engine()->TickUntilIdle();
   transport.reset();
   event_engine()->TickUntilIdle();

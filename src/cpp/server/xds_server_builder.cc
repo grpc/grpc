@@ -36,7 +36,12 @@ ChannelArguments XdsServerBuilder::BuildChannelArgs() {
   grpc_channel_args c_channel_args = args.c_channel_args();
   grpc_server_config_fetcher* fetcher = grpc_server_config_fetcher_xds_create(
       {OnServingStatusUpdate, notifier_}, &c_channel_args);
-  if (fetcher != nullptr) set_fetcher(fetcher);
+  if (fetcher != nullptr) {
+    args.SetPointerWithVtable(GRPC_ARG_SERVER_CONFIG_FETCHER, fetcher,
+                              grpc_server_config_fetcher_arg_vtable());
+    // SetPointerWithVtable() took its own ref, so release ours.
+    grpc_server_config_fetcher_unref(fetcher);
+  }
   return args;
 }
 

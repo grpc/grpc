@@ -48,6 +48,8 @@ cdef class _ChannelArg:
       self.c_argument.value.string = encoded_value
     elif isinstance(value, _GrpcArgWrapper):
       self.c_argument = (<_GrpcArgWrapper>value).arg
+    elif isinstance(value, tuple) and len(value) == 2 and value[0] == "grpc.python._cygrpc._GrpcArgWrapper":
+      self.c_argument = _unwrap_grpc_arg(value)
     elif hasattr(value, '__int__'):
       # Pointer objects must override __int__() to return
       # the underlying C address (Python ints are word size). The
