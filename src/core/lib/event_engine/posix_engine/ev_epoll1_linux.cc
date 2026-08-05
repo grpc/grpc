@@ -368,6 +368,21 @@ int Epoll1Poller::DoEpollWait(EventEngine::Duration timeout) {
                        grpc_event_engine::experimental::Milliseconds(timeout)));
   } while (r < 0 && errno == EINTR);
   if (r < 0) {
+    if (errno == EBADF || errno == EINVAL) {
+      GRPC_TRACE_LOG(event_engine_poller, ERROR)
+          << "(event_engine) Epoll1Poller:" << this
+          << " encountered epoll_wait error: " << grpc_core::StrError(errno)
+          << " (ignoring)";
+      auto timeout_ms = grpc_event_engine::experimental::Milliseconds(timeout);
+      if (timeout_ms < 0) {
+        absl::SleepFor(absl::InfiniteDuration());
+      } else if (timeout_ms > 0) {
+        absl::SleepFor(absl::Milliseconds(timeout_ms));
+      }
+      g_epoll_set_.num_events = 0;
+      g_epoll_set_.cursor = 0;
+      return 0;
+    }
     grpc_core::Crash(absl::StrFormat(
         "(event_engine) Epoll1Poller:%p encountered epoll_wait error: %s", this,
         grpc_core::StrError(errno).c_str()));
