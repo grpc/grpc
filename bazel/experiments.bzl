@@ -72,7 +72,6 @@ EXPERIMENT_ENABLES = {
     "secure_endpoint_offload_large_writes": "event_engine_client,event_engine_listener,secure_endpoint_offload_large_writes",
     "secure_endpoint_read_coalescing": "event_engine_client,event_engine_listener,secure_endpoint_read_coalescing",
     "skip_clear_peer_on_cancellation": "skip_clear_peer_on_cancellation",
-    "subchannel_connection_scaling": "subchannel_connection_scaling",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
     "tsi_frame_protector_without_locks": "tsi_frame_protector_without_locks",
@@ -225,9 +224,6 @@ EXPERIMENTS = {
             "cancel_ares_query_test": [
                 "event_engine_dns",
             ],
-            "chttp2_keepalive_tests": [
-                "subchannel_connection_scaling",
-            ],
             "core_end2end_test": [
                 "callv3_batch_validation",
                 "event_engine_client",
@@ -235,10 +231,6 @@ EXPERIMENTS = {
                 "event_engine_for_all_other_endpoints",
                 "event_engine_fork",
                 "event_engine_listener",
-                "subchannel_connection_scaling",
-            ],
-            "cpp_lb_end2end_test": [
-                "subchannel_connection_scaling",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
