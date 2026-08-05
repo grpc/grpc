@@ -175,8 +175,8 @@ absl::StatusOr<MessageHandle> ChannelCompression::DecompressMessage(
   }
   if ((message->flags() & GRPC_WRITE_INTERNAL_COMPRESS) &&
       args.algorithm == GRPC_COMPRESS_NONE) {
-    return absl::Status(absl::StatusCode::kInternal,
-                        "Compression bit set but no encoding configured");
+    return absl::InternalError(
+        "Compression bit set but no encoding configured");
   }
   // Check if decompression is enabled (if not, we can just pass the message
   // up).
