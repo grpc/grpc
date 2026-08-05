@@ -30,11 +30,10 @@ from setuptools.command import install
 from setuptools.command import test
 
 PYTHON_STEM = os.path.dirname(os.path.abspath(__file__))
-GRPC_STEM = os.path.abspath(PYTHON_STEM + "../../../../")
-PYTHON_REL_PATH = os.path.relpath(PYTHON_STEM, start=GRPC_STEM)
-GRPC_PROTO_STEM = os.path.join("src", "proto")
-PROTO_STEM = os.path.join(PYTHON_REL_PATH, "src", "proto")
-PYTHON_PROTO_TOP_LEVEL = os.path.join(PYTHON_REL_PATH, "src")
+GRPC_STEM = os.path.abspath(os.path.join(PYTHON_STEM, "../../../.."))
+GRPC_PROTO_STEM = os.path.join(GRPC_STEM, "src", "proto")
+PROTO_STEM = os.path.join(PYTHON_STEM, "src", "proto")
+PYTHON_PROTO_TOP_LEVEL = os.path.join(PYTHON_STEM, "src")
 
 
 class CommandError:
@@ -92,7 +91,7 @@ class BuildPackageProtos(setuptools.Command):
         from grpc_tools import command
 
         # find and build all protos in the current package
-        command.build_package_protos(PYTHON_REL_PATH)
+        command.build_package_protos(PYTHON_STEM)
 
 
 class TestLite(setuptools.Command):
