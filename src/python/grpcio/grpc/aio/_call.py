@@ -563,9 +563,16 @@ class UnaryUnaryCall(
         request_serializer: Optional[SerializingFunction[RequestType]],
         response_deserializer: Optional[DeserializingFunction[ResponseType]],
         loop: asyncio.AbstractEventLoop,
+        registered_call_handle: int = 0,
     ) -> None:
         super().__init__(
-            channel.call(method, deadline, credentials, wait_for_ready),
+            channel.call(
+                method,
+                deadline,
+                credentials,
+                wait_for_ready,
+                registered_call_handle,
+            ),
             metadata,
             request_serializer,
             response_deserializer,
@@ -630,9 +637,16 @@ class UnaryStreamCall(
         request_serializer: Optional[SerializingFunction[RequestType]],
         response_deserializer: Optional[DeserializingFunction[ResponseType]],
         loop: asyncio.AbstractEventLoop,
+        registered_call_handle: int = 0,
     ) -> None:
         super().__init__(
-            channel.call(method, deadline, credentials, wait_for_ready),
+            channel.call(
+                method,
+                deadline,
+                credentials,
+                wait_for_ready,
+                registered_call_handle,
+            ),
             metadata,
             request_serializer,
             response_deserializer,
@@ -688,9 +702,16 @@ class StreamUnaryCall(
         request_serializer: Optional[SerializingFunction[RequestType]],
         response_deserializer: Optional[DeserializingFunction[ResponseType]],
         loop: asyncio.AbstractEventLoop,
+        registered_call_handle: int = 0,
     ) -> None:
         super().__init__(
-            channel.call(method, deadline, credentials, wait_for_ready),
+            channel.call(
+                method,
+                deadline,
+                credentials,
+                wait_for_ready,
+                registered_call_handle,
+            ),
             metadata,
             request_serializer,
             response_deserializer,
@@ -743,9 +764,16 @@ class StreamStreamCall(
         request_serializer: Optional[SerializingFunction[RequestType]],
         response_deserializer: Optional[DeserializingFunction[ResponseType]],
         loop: asyncio.AbstractEventLoop,
+        registered_call_handle: int = 0,
     ) -> None:
         super().__init__(
-            channel.call(method, deadline, credentials, wait_for_ready),
+            channel.call(
+                method,
+                deadline,
+                credentials,
+                wait_for_ready,
+                registered_call_handle,
+            ),
             metadata,
             request_serializer,
             response_deserializer,
