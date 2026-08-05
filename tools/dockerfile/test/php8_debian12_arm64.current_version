@@ -1,5 +1,1 @@
-<<<<<<< HEAD
-us-docker.pkg.dev/grpc-testing/testing-images-public/php8_debian12_arm64:883f254dae24344dbef376091d40d9eac1c8369e@sha256:c52ace50943bbcd2a6bd8d34564211698eceba16173d3ae5a037c192f9fd57b0
-=======
-us-docker.pkg.dev/grpc-testing/testing-images-public/php8_debian12_arm64:f407a38b3d4e614295aac1a327b297dc02f96d59@sha256:33d501528555c376664a45e67128cbfca08f0030ab26224cf8069bf15eb0d54b
->>>>>>> upstream/master
+us-docker.pkg.dev/grpc-testing/testing-images-public/php8_debian12_arm64:2d79b2e1c31bbd5012d28cd140120819f409bf29@sha256:a5df4359344a0cb68b1a9cc5d7ca720c3b0702f15cf52691be20141548d40067

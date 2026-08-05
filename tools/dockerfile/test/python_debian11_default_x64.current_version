@@ -1,5 +1,1 @@
-<<<<<<< HEAD
-us-docker.pkg.dev/grpc-testing/testing-images-public/python_debian11_default_x64:9550463b8c501d971e8d0d75948184d877ae275c@sha256:09030ac34dee4e9be61e31dcfafaf3f1b9824cd643e3444321d4cc78bc4fb057
-=======
-us-docker.pkg.dev/grpc-testing/testing-images-public/python_debian11_default_x64:49ced721cd857d80ad3526a18f898394681c8b4c@sha256:6b820fcc444834908a86a6df235ba9f7ba07b98c37b1918c4f0c3c0f44d5f443
->>>>>>> upstream/master
+us-docker.pkg.dev/grpc-testing/testing-images-public/python_debian11_default_x64:81f6cbf044ee3888388401a7a5dc2e28c8d84375@sha256:e4a02ccc34acddcdbaf002dd9725134ce159f866937f360f987631edf5d0121d

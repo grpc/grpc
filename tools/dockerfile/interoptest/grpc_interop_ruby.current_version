@@ -1,5 +1,1 @@
-<<<<<<< HEAD
-us-docker.pkg.dev/grpc-testing/testing-images-public/grpc_interop_ruby:ddd730d3ed58082da7b32f3db54e0d8b457432a1@sha256:bd40fc7d81bec00dc2a39a393dd96eb412548cc8028d029c2511d1d2806710cb
-=======
-us-docker.pkg.dev/grpc-testing/testing-images-public/grpc_interop_ruby:7299f9edde641a1d058ba8b5daeb7278bd155898@sha256:b757853f92dddd1a2ab3c2018c5d105889e6557d5719e5d139d7b6e7247adc9d
->>>>>>> upstream/master
+us-docker.pkg.dev/grpc-testing/testing-images-public/grpc_interop_ruby:d2949ba0aeae303b09aefce1a1f1b1c4fe23c64f@sha256:10a400c747dbd22f40c7ae4936c8153a43ceb1b442a341dc6e3d941792b17109

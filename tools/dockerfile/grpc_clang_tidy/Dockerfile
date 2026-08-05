@@ -17,7 +17,24 @@ FROM silkeh/clang:19-bookworm
 #=================
 #  Create wrapper for apt-get
 
-COPY tools/internal_ci/helper_scripts/apt_get_install_with_retry.sh /usr/local/bin/apt-get-install-retry
+RUN /bin/bash -c 'echo -e "#!/usr/bin/env bash\n\
+# Copyright 2026 The gRPC Authors\n\
+\n\
+PS4=\"+ \$(date +[%H:%M:%S_%Z]) \"\n\
+set -xeuo pipefail\n\
+\n\
+MAX_RETRIES=4\n\
+delay=3\n\
+\n\
+for i in \$(seq 1 \$MAX_RETRIES); do\n\
+  if apt-get update && apt-get install -y \"\$@\"; then\n\
+    break\n\
+  fi\n\
+  sleep \$((delay**i))\n\
+done\n\
+" > /usr/local/bin/apt-get-install-retry'
+RUN chmod +x /usr/local/bin/apt-get-install-retry
+
 
 # Install prerequisites for the clang-tidy script
 RUN apt-get-install-retry python3 jq git

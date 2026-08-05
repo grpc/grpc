@@ -14,6 +14,30 @@
 
 FROM debian:12
 
+#=================
+# Install apt-get-install-retry wrapper script
+#=================
+#  Create wrapper for apt-get
+
+RUN /bin/bash -c 'echo -e "#!/usr/bin/env bash\n\
+# Copyright 2026 The gRPC Authors\n\
+\n\
+PS4=\"+ \$(date +[%H:%M:%S_%Z]) \"\n\
+set -xeuo pipefail\n\
+\n\
+MAX_RETRIES=4\n\
+delay=3\n\
+\n\
+for i in \$(seq 1 \$MAX_RETRIES); do\n\
+  if apt-get update && apt-get install -y \"\$@\"; then\n\
+    break\n\
+  fi\n\
+  sleep \$((delay**i))\n\
+done\n\
+" > /usr/local/bin/apt-get-install-retry'
+RUN chmod +x /usr/local/bin/apt-get-install-retry
+
+
 # gRPC C++ dependencies based on https://github.com/grpc/grpc/blob/master/BUILDING.md
 RUN apt-get-install-retry build-essential autoconf libtool pkg-config
 

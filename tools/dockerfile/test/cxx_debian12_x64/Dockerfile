@@ -19,61 +19,23 @@ FROM debian:12
 #=================
 #  Create wrapper for apt-get
 
-RUN cat <<-"EOF" > /usr/local/bin/apt-get-install-retry && \
-    chmod +rx /usr/local/bin/apt-get-install-retry
-#!/usr/bin/env bash
-# Copyright 2026 The gRPC Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-
-# Ensure all tracking is registered
-
-PS4="+ \$(date +[%H:%M:%S_%Z]) "
-set -xeuo pipefail
-
-# Ensure package to install is provided
-if [ $# -eq 0 ]; then
-  echo "Error: No package name provided to install with apt-get." >&2
-  exit 1
-fi
-
-PACKAGES=("$@")
-
-MAX_RETRIES=4
-# Initial delay, will grow exponentially
-delay=3
-
-echo "Installing packages ${PACKAGES[*]} using apt-get"
-
-for i in $(seq 1 $MAX_RETRIES); do
-  echo "Running apt-get update and install (attempt ${i})..."
-    if apt-get update && apt-get install -y "${PACKAGES[@]}"; then
-    echo "apt-get succeeded on attempt ${i}.";
-    break;
-  else
-    if [ "${i}" -eq "${MAX_RETRIES}" ]; then
-      echo "Max retries reached (${MAX_RETRIES}). apt-get failed permanently." >&2
-      exit 1;
-    fi
-    
-    echo "apt-get failed on attempt ${i}. Waiting $((delay**i)) seconds before retrying..."
-    sleep $((delay**i));
-  fi
-done
-
-
-EOF
+RUN /bin/bash -c 'echo -e "#!/usr/bin/env bash\n\
+# Copyright 2026 The gRPC Authors\n\
+\n\
+PS4=\"+ \$(date +[%H:%M:%S_%Z]) \"\n\
+set -xeuo pipefail\n\
+\n\
+MAX_RETRIES=4\n\
+delay=3\n\
+\n\
+for i in \$(seq 1 \$MAX_RETRIES); do\n\
+  if apt-get update && apt-get install -y \"\$@\"; then\n\
+    break\n\
+  fi\n\
+  sleep \$((delay**i))\n\
+done\n\
+" > /usr/local/bin/apt-get-install-retry'
+RUN chmod +x /usr/local/bin/apt-get-install-retry
 
 
 # Basic C core dependencies
@@ -159,7 +121,7 @@ RUN apt-get-install-retry libc++-dev clang
 # Install cmake
 # Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
 
-RUN apt-get update && apt-get install -y cmake && apt-get clean
+RUN apt-get-install-retry cmake
 
 #=================
 # Install ccache

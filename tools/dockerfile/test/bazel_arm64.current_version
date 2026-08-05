@@ -1,5 +1,1 @@
-<<<<<<< HEAD
-us-docker.pkg.dev/grpc-testing/testing-images-public/bazel_arm64:d62f8e2d94ee0edabca0f811467f2417139feb26@sha256:cef65eaba3fd399ca114b4df1e6bdcd7b3ef415ca07f0b1e366481f21ac39878
-=======
-us-docker.pkg.dev/grpc-testing/testing-images-public/bazel_arm64:8e727cce695fe2b8e2fa37a201c10aaa09dcb7fe@sha256:ae0c27fa26d25c3be1ed4459c2acb5ae1c8fc62b80b95d03d022e685bb6e6743
->>>>>>> upstream/master
+us-docker.pkg.dev/grpc-testing/testing-images-public/bazel_arm64:9676a97cece2f6cea16179f007f25d4f22528483@sha256:0965e540084874d0547adfd489eb426136f2733fe26a00dc3e75ec46828b5e75
