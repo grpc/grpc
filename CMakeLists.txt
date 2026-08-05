@@ -59,14 +59,6 @@ endif()
 set(gRPC_INSTALL ${gRPC_INSTALL_default} CACHE BOOL
     "Generate installation target")
 
-# We can install dependencies from submodules if we're running
-# CMake v3.13 or newer.
-if(CMAKE_VERSION VERSION_LESS 3.13)
-  set(_gRPC_INSTALL_SUPPORTED_FROM_MODULE OFF)
-else()
-  set(_gRPC_INSTALL_SUPPORTED_FROM_MODULE ON)
-endif()
-
 # Providers for third-party dependencies (gRPC_*_PROVIDER properties):
 # "module": build the dependency using sources from git submodule (under third_party)
 # "package": use cmake's find_package functionality to locate a pre-installed dependency
