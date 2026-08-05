@@ -32,6 +32,19 @@ def get_free_port():
     return port
 
 
+def resolve_binary(path):
+    if os.path.exists(path):
+        return path
+    clean_path = path.lstrip("./")
+    if os.path.exists(clean_path):
+        return clean_path
+    if clean_path.startswith("bazel-bin/"):
+        alt_path = clean_path[len("bazel-bin/"):]
+        if os.path.exists(alt_path):
+            return alt_path
+    return path
+
+
 def run_cmd(args, desc, env=None, cwd=None):
     print(f"Executing: {' '.join(args)} ({desc})")
     proc_env = os.environ.copy()
@@ -256,6 +269,113 @@ def verify_spans(spans_file):
     return True
 
 
+def verify_metrics(metrics_file, server_lang="c++"):
+    start_time = time.time()
+    collected_metrics = {}
+
+    expected_keywords = []
+    if server_lang == "c++":
+        expected_keywords = ["grpc.server", "grpc.tcp"]
+
+    print(f"Verifying metrics with polling (server={server_lang})...")
+    while time.time() - start_time < 5.0:
+        if not os.path.exists(metrics_file):
+            time.sleep(0.5)
+            continue
+        try:
+            with open(metrics_file, "r") as f:
+                requests = json.load(f)
+        except (json.JSONDecodeError, IOError):
+            time.sleep(0.5)
+            continue
+
+        collected_metrics = {}
+        for req in requests:
+            for resource_metrics in req.get("resource_metrics", []):
+                for scope_metrics in resource_metrics.get("scope_metrics", []):
+                    for metric in scope_metrics.get("metrics", []):
+                        metric_name = metric.get("name")
+                        if metric_name:
+                            if metric_name not in collected_metrics:
+                                collected_metrics[metric_name] = []
+                            collected_metrics[metric_name].append(metric)
+
+        if all(any(k in m for m in collected_metrics) for k in expected_keywords):
+            break
+        time.sleep(0.5)
+
+    print(f"Collected {len(collected_metrics)} metric names: {set(collected_metrics.keys())}")
+    if not collected_metrics:
+        if server_lang != "c++":
+            print(f"No metrics collected for non-C++ server ({server_lang}). TCP metrics only required for C++ servers. Metrics verification passed.")
+            return True
+        print("Assertion Failed: No metrics collected.")
+        return False
+
+    # 1. Assert domain presence
+    if server_lang == "c++":
+        found = all(any(k in m for m in collected_metrics) for k in expected_keywords)
+        if not found:
+            print(f"Assertion Failed: Not all of {expected_keywords} found in collected metrics.")
+            return False
+
+        expected_tcp_units = {
+            "grpc.tcp.min_rtt": "s",
+            "grpc.tcp.bytes_sent": "By",
+            "grpc.tcp.connections_created": "{connection}",
+            "grpc.tcp.connection_count": "{connection}",
+        }
+        required_tcp_metrics = {
+            "grpc.tcp.bytes_sent",
+            "grpc.tcp.connections_created",
+            "grpc.tcp.connection_count",
+        }
+        for mname, expected_unit in expected_tcp_units.items():
+            if mname not in collected_metrics:
+                if mname in required_tcp_metrics:
+                    print(f"Assertion Failed: Required TCP metric '{mname}' not found.")
+                    return False
+                continue
+            metrics_with_name = collected_metrics[mname]
+            actual_unit = metrics_with_name[0].get("unit", "")
+            if actual_unit != expected_unit:
+                print(f"Assertion Failed: Metric '{mname}' unit '{actual_unit}' != expected '{expected_unit}'")
+                return False
+
+        # 3. Assert TCP metric label keys
+        required_label_keys = {
+            "network.local.address",
+            "network.local.port",
+            "network.peer.address",
+            "network.peer.port",
+            "is_client",
+        }
+        found_tcp_label_keys = set()
+        for mname, metrics_list in collected_metrics.items():
+            if mname.startswith("grpc.tcp."):
+                for metric in metrics_list:
+                    for dp_type in ("gauge", "sum", "histogram", "exponential_histogram"):
+                        if dp_type in metric:
+                            data_points = metric[dp_type].get("data_points", [])
+                            for dp in data_points:
+                                for attr in dp.get("attributes", []):
+                                    if "key" in attr:
+                                        found_tcp_label_keys.add(attr["key"])
+
+        missing_keys = required_label_keys - found_tcp_label_keys
+        if missing_keys:
+            print(f"Assertion Failed: Missing TCP label keys: {missing_keys}. Found keys: {found_tcp_label_keys}")
+            return False
+    else:
+        # For non-C++ servers, check if any grpc metric was recorded
+        found_any = any(m.startswith("grpc.") for m in collected_metrics)
+        if not found_any and len(collected_metrics) > 0:
+            print("Warning: Metrics collected but none match 'grpc.*'")
+
+    print("All metric assertions passed successfully!")
+    return True
+
+
 def main():
     ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
     os.chdir(ROOT)
@@ -270,19 +390,28 @@ def main():
     )
     parser.add_argument(
         "--client",
-        choices=["c++", "java", "python"],
+        choices=["c++", "java", "python", "go"],
         default="c++",
-        help="Client language (c++, java, or python)",
+        help="Client language (c++, java, python, or go)",
     )
     parser.add_argument(
         "--server",
-        choices=["c++", "java", "python"],
+        choices=["c++", "java", "python", "go"],
         default="c++",
-        help="Server language (c++, java, or python)",
+        help="Server language (c++, java, python, or go)",
     )
     args = parser.parse_args()
 
     if not args.skip_build:
+        run_cmd(
+            [
+                "./tools/bazel",
+                "build",
+                "--macos_minimum_os=11.0",
+                "//test/cpp/interop:otlp_collector",
+            ],
+            "Building OTLP collector",
+        )
         if args.client == "c++" or args.server == "c++":
             run_cmd(
                 [
@@ -291,7 +420,6 @@ def main():
                     "--macos_minimum_os=11.0",
                     "//test/cpp/interop:interop_client",
                     "//test/cpp/interop:interop_server",
-                    "//test/cpp/interop:otlp_collector",
                 ],
                 "Building C++ interop targets",
             )
@@ -318,12 +446,38 @@ def main():
                 ],
                 "Building Python interop targets",
             )
+        if args.client == "go" or args.server == "go":
+            run_cmd(
+                [
+                    "go",
+                    "build",
+                    "-o",
+                    "interop/client/client",
+                    "./interop/client",
+                ],
+                "Building Go interop client",
+                cwd="../grpc-go",
+            )
+            run_cmd(
+                [
+                    "go",
+                    "build",
+                    "-o",
+                    "interop/server/server",
+                    "./interop/server",
+                ],
+                "Building Go interop server",
+                cwd="../grpc-go",
+            )
 
     collector_port = get_free_port()
     server_port = get_free_port()
-    spans_file = os.path.abspath("captured_spans.json")
+    spans_file = os.path.abspath(f"captured_spans_{args.client}_{args.server}.json")
+    metrics_file = os.path.abspath(f"captured_metrics_{args.client}_{args.server}.json")
     if os.path.exists(spans_file):
         os.remove(spans_file)
+    if os.path.exists(metrics_file):
+        os.remove(metrics_file)
 
     collector_proc = None
     server_proc = None
@@ -331,23 +485,25 @@ def main():
         # Start Collector
         collector_proc = start_proc(
             [
-                "./bazel-bin/test/cpp/interop/otlp_collector",
+                resolve_binary("./bazel-bin/test/cpp/interop/otlp_collector"),
                 f"--port={collector_port}",
                 f"--file={spans_file}",
+                f"--metrics_file={metrics_file}",
             ],
             {},
             "OTLP Collector",
         )
-        time.sleep(1)  # wait for collector to start listening
+        time.sleep(1.5)  # wait for collector to start listening
 
         # Base env for OTLP exporter
         base_env = {
             "OTEL_EXPORTER_OTLP_ENDPOINT": f"http://localhost:{collector_port}",
             "OTEL_EXPORTER_OTLP_PROTOCOL": "grpc",
             "OTEL_TRACES_EXPORTER": "otlp",
-            "OTEL_METRICS_EXPORTER": "none",
+            "OTEL_METRICS_EXPORTER": "otlp",
             "OTEL_LOGS_EXPORTER": "none",
             "GRPC_BAZEL_RUNTIME": "1",
+            "GRPC_EXPERIMENTS": "otel_export_telemetry_domains",
         }
 
         server_env = base_env.copy()
@@ -357,9 +513,10 @@ def main():
         if args.server == "c++":
             server_proc = start_proc(
                 [
-                    "./bazel-bin/test/cpp/interop/interop_server",
+                    resolve_binary("./bazel-bin/test/cpp/interop/interop_server"),
                     f"--port={server_port}",
                     "--enable_opentelemetry=true",
+                    "--enable_tcp_metrics=true",
                 ],
                 server_env,
                 "C++ Interop Server",
@@ -378,15 +535,27 @@ def main():
         elif args.server == "python":
             server_proc = start_proc(
                 [
-                    "./bazel-bin/src/python/grpcio_tests/tests/interop/server_bin",
+                    resolve_binary("./bazel-bin/src/python/grpcio_tests/tests/interop/server_bin"),
                     f"--port={server_port}",
                     "--use_tls=false",
                     "--enable_opentelemetry=true",
+                    "--enable_tcp_metrics=true",
                 ],
                 server_env,
                 "Python Interop Server",
             )
-        time.sleep(3)  # wait for server to bind and start
+        elif args.server == "go":
+            server_proc = start_proc(
+                [
+                    "../grpc-go/interop/server/server",
+                    f"--port={server_port}",
+                    "--enable_opentelemetry=true",
+                    "--enable_tcp_metrics=true",
+                ],
+                server_env,
+                "Go Interop Server",
+            )
+        time.sleep(3.5)  # wait for server to bind and start
 
         # Run Client
         print(f"Running {args.client.upper()} Client...")
@@ -397,11 +566,12 @@ def main():
         if args.client == "c++":
             client_res = run_cmd(
                 [
-                    "./bazel-bin/test/cpp/interop/interop_client",
+                    resolve_binary("./bazel-bin/test/cpp/interop/interop_client"),
                     "--server_host=localhost",
                     f"--server_port={server_port}",
                     "--test_case=empty_unary",
                     "--enable_opentelemetry=true",
+                    "--enable_tcp_metrics=true",
                 ],
                 "Running C++ Interop Client",
                 env=client_env,
@@ -422,35 +592,53 @@ def main():
         elif args.client == "python":
             client_res = run_cmd(
                 [
-                    "./bazel-bin/src/python/grpcio_tests/tests/interop/client",
+                    resolve_binary("./bazel-bin/src/python/grpcio_tests/tests/interop/client"),
                     "--server_host=localhost",
                     f"--server_port={server_port}",
                     "--test_case=empty_unary",
                     "--use_tls=false",
                     "--enable_opentelemetry=true",
+                    "--enable_tcp_metrics=true",
                 ],
                 "Running Python Interop Client",
                 env=client_env,
             )
+        elif args.client == "go":
+            client_res = run_cmd(
+                [
+                    "../grpc-go/interop/client/client",
+                    "--server_host=localhost",
+                    f"--server_port={server_port}",
+                    "--test_case=empty_unary",
+                    "--use_tls=false",
+                    "--enable_opentelemetry=true",
+                    "--enable_tcp_metrics=true",
+                ],
+                "Running Go Interop Client",
+                env=client_env,
+            )
 
-        print("Client finished. Waiting for spans to flush...")
-        time.sleep(2)
+        print("Client finished. Waiting for spans and metrics to flush...")
+        time.sleep(2.5)
 
     finally:
-        # Cleanup server and collector processes
         # Cleanup server and collector processes safely
         if server_proc:
             print("Terminating server...")
             try:
-                server_proc.terminate()
-                server_proc.wait(timeout=5)
-            except subprocess.TimeoutExpired:
+                import signal
+                server_proc.send_signal(signal.SIGINT)
+                server_proc.wait(timeout=4)
+            except Exception:
                 try:
-                    server_proc.kill()
+                    server_proc.terminate()
+                    server_proc.wait(timeout=2)
                 except Exception:
-                    pass
-            except Exception as e:
-                print(f"Error terminating server: {e}")
+                    try:
+                        server_proc.kill()
+                    except Exception:
+                        pass
+        time.sleep(1.5)
         if collector_proc:
             print("Terminating collector...")
             try:
@@ -464,9 +652,10 @@ def main():
             except Exception as e:
                 print(f"Error terminating collector: {e}")
 
-    # Perform Span Verifications
-    success = verify_spans(spans_file)
-    if success:
+    # Perform Span and Metric Verifications
+    spans_ok = verify_spans(spans_file)
+    metrics_ok = verify_metrics(metrics_file, server_lang=args.server)
+    if spans_ok and metrics_ok:
         print("Test Result: PASSED")
         sys.exit(0)
     else:

@@ -19,6 +19,15 @@
 #ifndef GRPC_TEST_CPP_INTEROP_OTEL_HELPER_H
 #define GRPC_TEST_CPP_INTEROP_OTEL_HELPER_H
 
+#include <string>
+
+#include "absl/flags/declare.h"
+
+ABSL_DECLARE_FLAG(bool, enable_opentelemetry);
+ABSL_DECLARE_FLAG(std::string, otel_exporter);
+ABSL_DECLARE_FLAG(std::string, otel_collector_address);
+ABSL_DECLARE_FLAG(bool, enable_tcp_metrics);
+
 namespace grpc {
 namespace testing {
 namespace interop {

@@ -108,6 +108,12 @@ def parse_interop_client_args(argv):
         type=resources.parse_bool,
         help="enable OpenTelemetry tracing/observability",
     )
+    parser.add_argument(
+        "--enable_tcp_metrics",
+        default=False,
+        type=resources.parse_bool,
+        help="enable TCP metrics",
+    )
     return parser.parse_args(argv[1:])
 
 
@@ -272,7 +278,7 @@ def _create_channel(args):
     else:
         channel = grpc.insecure_channel(target)
 
-    if args.enable_opentelemetry:
+    if args.enable_opentelemetry or args.enable_tcp_metrics:
         from tests.interop import otel_interop_helper
 
         _, tracer = otel_interop_helper.init_tracer_provider()
@@ -303,11 +309,13 @@ def test_interoperability(args):
     stub = create_stub(channel, args)
     test_case = _test_case_from_arg(args.test_case)
     test_case.test_interoperability(stub, args)
-    if args.enable_opentelemetry:
+    if args.enable_opentelemetry or args.enable_tcp_metrics:
         from tests.interop import otel_interop_helper
 
         otel_interop_helper.flush_tracer_provider()
+        otel_interop_helper.shutdown_tracer_provider()
 
 
 if __name__ == "__main__":
     app.run(test_interoperability, flags_parser=parse_interop_client_args)
+

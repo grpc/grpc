@@ -107,6 +107,8 @@ grpc_cc_library(
         "absl/log",
         "otel/api",
         "otel/exporters/otlp:otlp_grpc_exporter",
+        "otel/exporters/otlp:otlp_grpc_metric_exporter",
+        "otel/sdk/src/metrics",
         "otel/sdk/src/trace",
         "otel/sdk:headers",
     ],
@@ -346,6 +348,22 @@ sh_test(
     ],
     tags = ["no_windows"],
 )
+
+py_test(
+    name = "run_otel_interop_test",
+    srcs = ["run_otel_interop_test.py"],
+    args = ["--skip_build"],
+    data = [
+        ":interop_client",
+        ":interop_server",
+        ":otlp_collector",
+        "//src/python/grpcio_tests/tests/interop:client",
+        "//src/python/grpcio_tests/tests/interop:server_bin",
+    ],
+    python_version = "PY3",
+    tags = ["no_windows"],
+)
+
 
 grpc_cc_library(
     name = "xds_stats_watcher",
@@ -828,7 +846,10 @@ grpc_cc_binary(
     deps = [
         "//:gpr",
         "//:grpc++",
+        "//src/core:instrument",
         "@opentelemetry_proto//:trace_service_grpc_cc",
         "@opentelemetry_proto//:trace_service_proto_cc",
+        "@opentelemetry_proto//:metrics_service_grpc_cc",
+        "@opentelemetry_proto//:metrics_service_proto_cc",
     ],
 )

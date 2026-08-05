@@ -110,9 +110,13 @@ class OTLPSpanExporter(SpanExporter):
             print(f"OTLPSpanExporter Export exception: {e}", flush=True)
 
     def shutdown(self) -> None:
-        self._channel.close()
+        try:
+            self._channel.close()
+        except Exception:
+            pass
 
     def force_flush(self, timeout_millis: int = 30000) -> bool:
+        time.sleep(0.3)
         return True
 
 
@@ -135,9 +139,25 @@ def init_tracer_provider() -> Tuple[TracerProvider, trace.Tracer]:
     return _GLOBAL_PROVIDER, tracer
 
 
+import time
+
+
 def flush_tracer_provider():
     if _GLOBAL_PROVIDER:
         _GLOBAL_PROVIDER.force_flush()
+        time.sleep(0.5)
+
+
+def shutdown_tracer_provider():
+    global _GLOBAL_PROVIDER
+    if _GLOBAL_PROVIDER:
+        try:
+            _GLOBAL_PROVIDER.shutdown()
+        except Exception:
+            pass
+        _GLOBAL_PROVIDER = None
+        time.sleep(0.5)
+
 
 
 def pack_grpc_trace_bin(

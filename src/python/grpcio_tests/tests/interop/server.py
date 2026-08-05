@@ -66,6 +66,12 @@ def parse_interop_server_arguments(argv):
         type=resources.parse_bool,
         help="enable OpenTelemetry tracing/observability",
     )
+    parser.add_argument(
+        "--enable_tcp_metrics",
+        default=False,
+        type=resources.parse_bool,
+        help="enable TCP metrics",
+    )
     return parser.parse_args(argv[1:])
 
 
@@ -101,7 +107,8 @@ def _serve_internal(server, enable_otel=False):
 
 
 def serve(args):
-    if args.enable_opentelemetry:
+    enable_otel = args.enable_opentelemetry or args.enable_tcp_metrics
+    if enable_otel:
         from tests.interop import otel_interop_helper
 
         _, tracer = otel_interop_helper.init_tracer_provider()
@@ -123,7 +130,7 @@ def serve(args):
     else:
         server.add_insecure_port("[::]:{}".format(args.port))
 
-    _serve_internal(server, enable_otel=args.enable_opentelemetry)
+    _serve_internal(server, enable_otel=enable_otel)
 
 
 if __name__ == "__main__":
