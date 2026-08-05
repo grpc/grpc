@@ -1310,6 +1310,18 @@ TEST(SslTransportSecurityTest, TestClientHandshakerFactoryBadParams) {
   tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory);
 }
 
+TEST(SslTransportSecurityTest,
+     TestClientHandshakerFactorySkipServerVerificationNoRoots) {
+  tsi_ssl_client_handshaker_factory* client_handshaker_factory = nullptr;
+  tsi_ssl_client_handshaker_options options;
+  options.skip_server_certificate_verification = true;
+  EXPECT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
+                &options, &client_handshaker_factory),
+            TSI_OK);
+  tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory);
+}
+
+
 TEST(SslTransportSecurityTest, DuplicateRootCertificates) {
   std::string root_cert =
       GetFileContents(absl::StrCat(kSslTsiTestCredentialsDir, "ca.pem"));
