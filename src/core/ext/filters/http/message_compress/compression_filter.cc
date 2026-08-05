@@ -185,12 +185,15 @@ absl::StatusOr<MessageHandle> ChannelCompression::DecompressMessage(
     return std::move(message);
   }
   if (!enabled_compression_algorithms().IsSet(args.algorithm)) {
+    const char* algo_name = CompressionAlgorithmAsString(args.algorithm);
+    absl::string_view algo_name_view =
+        algo_name != nullptr ? algo_name : "unknown";
     return is_client ? absl::InternalError(absl::StrCat(
                            "Compression algorithm not supported: ",
-                           CompressionAlgorithmAsString(args.algorithm)))
+                           algo_name_view))
                      : absl::UnimplementedError(absl::StrCat(
                            "Compression algorithm not supported: ",
-                           CompressionAlgorithmAsString(args.algorithm)));
+                           algo_name_view));
   }
   // Try to decompress the payload.
   SliceBuffer decompressed_slices;
