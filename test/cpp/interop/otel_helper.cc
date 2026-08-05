@@ -54,6 +54,7 @@ namespace interop {
 static std::shared_ptr<opentelemetry::sdk::trace::TracerProvider>
     g_tracer_provider;
 static std::once_flag g_otel_init_once;
+static std::mutex g_tracer_provider_mu;
 #endif
 
 void MaybeRegisterOpenTelemetry() {
@@ -78,7 +79,10 @@ void MaybeRegisterOpenTelemetry() {
             std::move(exporter));
     auto provider = std::make_shared<opentelemetry::sdk::trace::TracerProvider>(
         std::move(processor));
-    std::atomic_store(&g_tracer_provider, provider);
+    {
+      std::lock_guard<std::mutex> lock(g_tracer_provider_mu);
+      g_tracer_provider = provider;
+    }
 
     auto status =
         grpc::OpenTelemetryPluginBuilder()
@@ -100,7 +104,11 @@ void MaybeRegisterOpenTelemetry() {
 
 void ForceFlushOpenTelemetry() {
 #ifdef GRPC_HAS_OTEL_TRACING
-  auto provider = std::atomic_load(&g_tracer_provider);
+  std::shared_ptr<opentelemetry::sdk::trace::TracerProvider> provider;
+  {
+    std::lock_guard<std::mutex> lock(g_tracer_provider_mu);
+    provider = g_tracer_provider;
+  }
   if (provider != nullptr) {
     provider->ForceFlush();
   }
