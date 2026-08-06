@@ -92,7 +92,7 @@ class StatusCode(enum.IntEnum):
     return str(self.value)
 
   def __repr__(self):
-    return str(self.value)
+    return self.value
 
 
 class CallError:
