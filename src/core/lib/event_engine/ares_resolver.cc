@@ -15,6 +15,11 @@
 
 #include <grpc/support/port_platform.h>
 
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 #include <cstddef>
 #include <string>
 #include <vector>
@@ -989,3 +994,7 @@ absl::Status AresInit() { return absl::OkStatus(); }
 void AresShutdown() {}
 
 #endif  // GRPC_ARES == 1
+
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
