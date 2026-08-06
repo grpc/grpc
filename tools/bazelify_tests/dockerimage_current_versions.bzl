@@ -19,15 +19,15 @@ accessible to bazel builds.
 """
 
 DOCKERIMAGE_CURRENT_VERSIONS = {
-    "third_party/rake-compiler-dock/rake_aarch64-linux-gnu.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_aarch64-linux-gnu@sha256:11b2d8391b0ca91234688cfeedfc3bedac1d267403aff76b1b66b33a885019b3",
-    "third_party/rake-compiler-dock/rake_aarch64-linux-musl.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_aarch64-linux-musl@sha256:ae1f6bdfb5d55e3ae18698796832292c3032a616cb62b46b74de61bfc2788e56",
-    "third_party/rake-compiler-dock/rake_arm64-darwin.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_arm64-darwin@sha256:d3536dd9e566693c316046a2bf1f0fcaa3cbfa2f76b0a4a91cd2540e571c6a6a",
-    "third_party/rake-compiler-dock/rake_x64-mingw-ucrt.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_x64-mingw-ucrt@sha256:bba64787cbc926f8786bdb300ad9617dfe186f8f5de01d1df3f881fc380e0ebd",
-    "third_party/rake-compiler-dock/rake_x86-linux-gnu.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_x86-linux-gnu@sha256:58f4dd01dad3ed83732ccae52f5c26218a16f6b2e68f55f9433fe89141651b1c",
+    "third_party/rake-compiler-dock/rake_aarch64-linux-gnu.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_aarch64-linux-gnu@sha256:e5cc04633d47df82ddef269753b4023058ee7dbb59b7f780060ec8779b19af77",
+    "third_party/rake-compiler-dock/rake_aarch64-linux-musl.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_aarch64-linux-musl:330993c50fbb357e4c5b0aaabccda45191c2e7c2",
+    "third_party/rake-compiler-dock/rake_arm64-darwin.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_arm64-darwin@sha256:57b04cda5a10f4ae09c0824a1b02f59cb4abdea393fdd20782208dc2e57ca750",
+    "third_party/rake-compiler-dock/rake_x64-mingw-ucrt.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_x64-mingw-ucrt@sha256:b0fa5fdfaedf469159085a5ef51e0512d04b040db677d1a41af776c5f29c9be2",
+    "third_party/rake-compiler-dock/rake_x86-linux-gnu.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_x86-linux-gnu@sha256:d467bc73fe20431b4f2884f024da2e4e69b7c6c2991617465b9471a97e590327",
     "third_party/rake-compiler-dock/rake_x86-linux-musl.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_x86-linux-musl@sha256:be6c0e6d86568fcd29d7cfdc5f5601898b8287faa6fbed2c2e393a45de4fbac8",
     "third_party/rake-compiler-dock/rake_x86-mingw32.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_x86-mingw32@sha256:61da9550c1794f3d89fa6c08318629b0594e90e5c72bc43b97ec6563e6da1dd4",
-    "third_party/rake-compiler-dock/rake_x86_64-darwin.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_x86_64-darwin@sha256:bd22562f43aebfccc869a9b563d247cf5eada6171cf2b03d489bd255e7b970d5",
-    "third_party/rake-compiler-dock/rake_x86_64-linux-gnu.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_x86_64-linux-gnu@sha256:0d04934d19b17d93d05287b1bcc86bd35e782c0188fb094a9f8546472632a1c2",
+    "third_party/rake-compiler-dock/rake_x86_64-darwin.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_x86_64-darwin@sha256:bf903e970f8a49033fa94765f35ee413c032c6b9c1f9b3798daa5e2b7f15f81f",
+    "third_party/rake-compiler-dock/rake_x86_64-linux-gnu.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_x86_64-linux-gnu@sha256:ab954f1cab34ec4f89fa752cb02139b3344f6892d28d06e06cd47baf57836c29",
     "third_party/rake-compiler-dock/rake_x86_64-linux-musl.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_x86_64-linux-musl@sha256:12dfcaea0f806c9e6fb3ef09f949db87f34bbd5cd95681411db88e7a25a65b23",
     "tools/dockerfile/distribtest/cpp_debian11_aarch64_cross_x64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/cpp_debian11_aarch64_cross_x64@sha256:d0ea28573c4cf592198451802940bdcf6b67e067e33d9637ddef2d04bca85d5d",
     "tools/dockerfile/distribtest/cpp_debian12_x64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/cpp_debian12_x64@sha256:b91b589d19b98c2e7ae055a066cb519fda5c18e13a9e43e7289f334c1ea6fe56",
