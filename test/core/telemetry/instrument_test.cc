@@ -63,6 +63,12 @@ class MockMetricsSink : public MetricsSink {
                absl::Span<const std::string> label, absl::string_view name,
                HistogramBuckets bounds, absl::Span<const uint64_t> counts),
               (override));
+  MOCK_METHOD(void, DoubleHistogram,
+              (InstrumentLabelList label_keys,
+               absl::Span<const std::string> label, absl::string_view name,
+               DoubleHistogramBuckets bounds,
+               absl::Span<const uint64_t> counts),
+              (override));
   MOCK_METHOD(void, DoubleGauge,
               (InstrumentLabelList label_keys,
                absl::Span<const std::string> labels, absl::string_view name,
@@ -141,6 +147,12 @@ class LowContentionDomain final : public InstrumentDomain<LowContentionDomain> {
   static inline const auto kExponentialHistogram =
       RegisterHistogram<ExponentialHistogramShape>("exponential_histogram",
                                                    "Desc", "unit", 1024, 20);
+  static inline const auto kLinearDoubleHistogram =
+      RegisterDoubleHistogram<LinearDoubleHistogramShape>(
+          "linear_double_histogram", "Desc", "unit", 0.0, 10.0, 10);
+  static inline const auto kExponentialDoubleHistogram =
+      RegisterDoubleHistogram<ExponentialDoubleHistogramShape>(
+          "exponential_double_histogram", "Desc", "unit", 1000.0, 10, 1.0);
   static inline const auto kDoubleGauge =
       RegisterDoubleGauge("double_gauge", "Desc", "unit");
   static inline const auto kIntGauge =
@@ -356,6 +368,43 @@ TEST_F(MetricsQueryTest, LowContentionHistogram) {
       .Times(1);
   MetricsQuery()
       .OnlyMetrics({"exponential_histogram"})
+      .WithLabelEq("grpc.target", "example.com")
+      .Run(scope, sink);
+  ::testing::Mock::VerifyAndClearExpectations(&sink);
+}
+
+TEST_F(MetricsQueryTest, LowContentionDoubleHistogram) {
+  auto scope = CreateCollectionScope({}, {"grpc.target"});
+  std::vector<uint64_t> value_before;
+  auto storage = LowContentionDomain::GetStorage(scope, "example.com");
+  ::testing::StrictMock<MockMetricsSink> sink;
+  std::vector<std::string> label_keys = {"grpc.target"};
+  std::vector<std::string> label = {"example.com"};
+  EXPECT_CALL(sink,
+              DoubleHistogram(InstrumentLabelListElementsAreArray(label_keys),
+                              ::testing::ElementsAreArray(label),
+                              "exponential_double_histogram", ::testing::_,
+                              ::testing::_))
+      .WillOnce([&value_before](auto, auto, auto, auto, auto counts) {
+        value_before.assign(counts.begin(), counts.end());
+      });
+  MetricsQuery()
+      .OnlyMetrics({"exponential_double_histogram"})
+      .WithLabelEq("grpc.target", "example.com")
+      .Run(scope, sink);
+  ::testing::Mock::VerifyAndClearExpectations(&sink);
+  ASSERT_FALSE(value_before.empty());
+  std::vector<uint64_t> expect_value = value_before;
+  expect_value[0] += 1;
+  storage->Increment(LowContentionDomain::kExponentialDoubleHistogram, 0.5);
+  EXPECT_CALL(sink,
+              DoubleHistogram(InstrumentLabelListElementsAreArray(label_keys),
+                              absl::MakeConstSpan(label),
+                              "exponential_double_histogram", ::testing::_,
+                              absl::MakeConstSpan(expect_value)))
+      .Times(1);
+  MetricsQuery()
+      .OnlyMetrics({"exponential_double_histogram"})
       .WithLabelEq("grpc.target", "example.com")
       .Run(scope, sink);
   ::testing::Mock::VerifyAndClearExpectations(&sink);
@@ -718,6 +767,11 @@ TEST_F(MetricsQueryTest, ThreadStress) {
                        absl::Span<const std::string> label,
                        absl::string_view name, HistogramBuckets bounds,
                        absl::Span<const uint64_t> counts) override {}
+        void DoubleHistogram(InstrumentLabelList label_keys,
+                             absl::Span<const std::string> label,
+                             absl::string_view name,
+                             DoubleHistogramBuckets bounds,
+                             absl::Span<const uint64_t> counts) override {}
         void DoubleGauge(InstrumentLabelList label_keys,
                          absl::Span<const std::string> labels,
                          absl::string_view name, double value) override {}
@@ -796,6 +850,44 @@ TEST_F(InstrumentTest, MultipleHistogramHooks) {
   EXPECT_CALL(hook2,
               Call(::testing::_, ::testing::ElementsAreArray(label), 10));
   storage->Increment(LowContentionDomain::kExponentialHistogram, 10);
+  ::testing::Mock::VerifyAndClearExpectations(&hook1);
+  ::testing::Mock::VerifyAndClearExpectations(&hook2);
+}
+
+TEST_F(InstrumentTest, DoubleHistogramHook) {
+  auto scope = CreateCollectionScope({}, {});
+  ::testing::MockFunction<void(
+      const InstrumentMetadata::Description* instrument,
+      absl::Span<const std::string> labels, double value)>
+      hook;
+  RegisterDoubleHistogramCollectionHook(hook.AsStdFunction());
+  auto storage = LowContentionDomain::GetStorage(scope, "example.com");
+  std::vector<std::string> label = {std::string(kOmittedLabel)};
+  EXPECT_CALL(hook,
+              Call(::testing::_, ::testing::ElementsAreArray(label), 10.5));
+  storage->Increment(LowContentionDomain::kExponentialDoubleHistogram, 10.5);
+  ::testing::Mock::VerifyAndClearExpectations(&hook);
+}
+
+TEST_F(InstrumentTest, MultipleDoubleHistogramHooks) {
+  auto scope = CreateCollectionScope({}, {});
+  ::testing::MockFunction<void(
+      const InstrumentMetadata::Description* instrument,
+      absl::Span<const std::string> labels, double value)>
+      hook1;
+  ::testing::MockFunction<void(
+      const InstrumentMetadata::Description* instrument,
+      absl::Span<const std::string> labels, double value)>
+      hook2;
+  RegisterDoubleHistogramCollectionHook(hook1.AsStdFunction());
+  RegisterDoubleHistogramCollectionHook(hook2.AsStdFunction());
+  auto storage = LowContentionDomain::GetStorage(scope, "example.com");
+  std::vector<std::string> label = {std::string(kOmittedLabel)};
+  EXPECT_CALL(hook1,
+              Call(::testing::_, ::testing::ElementsAreArray(label), 10.5));
+  EXPECT_CALL(hook2,
+              Call(::testing::_, ::testing::ElementsAreArray(label), 10.5));
+  storage->Increment(LowContentionDomain::kExponentialDoubleHistogram, 10.5);
   ::testing::Mock::VerifyAndClearExpectations(&hook1);
   ::testing::Mock::VerifyAndClearExpectations(&hook2);
 }
