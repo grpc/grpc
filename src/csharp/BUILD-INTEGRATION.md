@@ -270,7 +270,7 @@ Environment variables can be set to change the behavior of `Grpc.Tools` - settin
 |`PROTOBUF_PROTOC`    | Full path to the protocol buffers compiler                                    |
 |`GRPC_PROTOC_PLUGIN` | Full path to the grpc_csharp_plugin                                           |
 
-> **Note:** On macOS the tools are shipped as a single universal (x64 + arm64) binary, so `PROTOBUF_TOOLS_CPU` must be `universal`. The former `x64` and `arm64` values (used to force a specific slice) no longer resolve on macOS.
+> **Note:** On macOS the tools are shipped as a single universal (x64 + arm64) binary, so `PROTOBUF_TOOLS_CPU` resolves to `universal`. Setting it to `x64` or `arm64` on macOS is automatically mapped to `universal`, so existing settings continue to work. This mapping applies to the `PROTOBUF_TOOLS_CPU` environment variable and the `Protobuf_ToolsCpu` MSBuild property; a build that hard-codes a literal `tools/macosx_x64/...` path must be updated to `tools/macosx_universal/...`.
 
 For example, to use a custom built protoc compiler and grpc_csharp_plugin:
 ```bash

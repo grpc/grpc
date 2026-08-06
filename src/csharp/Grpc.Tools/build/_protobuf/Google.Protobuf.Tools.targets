@@ -76,6 +76,13 @@
       <!-- Next try OS and CPU resolved by ProtoToolsPlatform. -->
       <Protobuf_ToolsOs Condition=" '$(Protobuf_ToolsOs)' == '' ">$(_Protobuf_ToolsOs)</Protobuf_ToolsOs>
       <Protobuf_ToolsCpu Condition=" '$(Protobuf_ToolsCpu)' == '' ">$(_Protobuf_ToolsCpu)</Protobuf_ToolsCpu>
+
+      <!-- macOS ships a single universal (x64 + arm64) binary. Map the per-architecture
+           values onto it so an explicitly requested 'x64' or 'arm64' keeps resolving.
+           This runs before any tool path is composed below, so both protoc and
+           grpc_csharp_plugin (resolved in _Grpc.Tools.targets) pick up the mapping. -->
+      <Protobuf_ToolsCpu Condition=" '$(Protobuf_ToolsOs)' == 'macosx' and ( '$(Protobuf_ToolsCpu)' == 'x64' or '$(Protobuf_ToolsCpu)' == 'arm64' ) ">universal</Protobuf_ToolsCpu>
+
       <Protobuf_ProtocFullPath Condition=" '$(Protobuf_ProtocFullPath)' == '' and '$(Protobuf_ToolsOs)' == 'windows' "
            >$(Protobuf_PackagedToolsPath)\$(Protobuf_ToolsOs)_$(Protobuf_ToolsCpu)\protoc.exe</Protobuf_ProtocFullPath>
       <Protobuf_ProtocFullPath Condition=" '$(Protobuf_ProtocFullPath)' == '' "
