@@ -429,7 +429,10 @@ grpc_cc_binary(
     ],
     deps = [
         "//:channelz_cc_grpc",
+<<<<<<< HEAD
         "//:channelz_cc_proto",
+=======
+>>>>>>> master
         "//:gpr",
         "//:grpc",
         "//:grpc++",
@@ -437,6 +440,10 @@ grpc_cc_binary(
         "//src/core:grpc_check",
         "//src/core:json",
         "//src/core:json_writer",
+<<<<<<< HEAD
+=======
+        "//src/proto/grpc/channelz:channelz_proto_cc_proto",
+>>>>>>> master
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",

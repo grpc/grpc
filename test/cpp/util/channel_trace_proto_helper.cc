@@ -32,6 +32,7 @@
 #include "src/core/util/json/json_writer.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include <grpc/channelz/v1/channelz.pb.h>
 
 namespace grpc {
 

@@ -3390,6 +3390,7 @@ grpc_cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
+        "gpr_public_hdrs",
         "grpc++_public_hdrs",
     ],
 )
@@ -4117,6 +4118,7 @@ grpc_cc_library(
         "//src/core:client_channel/retry_filter.cc",
         "//src/core:client_channel/retry_filter_legacy_call_data.cc",
         "//src/core:client_channel/subchannel.cc",
+        "//src/core:client_channel/subchannel_metrics.cc",
         "//src/core:client_channel/subchannel_stream_client.cc",
         "//src/core:client_channel/subchannel_stream_limiter.cc",
     ],
@@ -4133,6 +4135,7 @@ grpc_cc_library(
         "//src/core:client_channel/retry_filter_legacy_call_data.h",
         "//src/core:client_channel/subchannel.h",
         "//src/core:client_channel/subchannel_interface_internal.h",
+        "//src/core:client_channel/subchannel_metrics.h",
         "//src/core:client_channel/subchannel_stream_client.h",
         "//src/core:client_channel/subchannel_stream_limiter.h",
     ],
@@ -4214,6 +4217,7 @@ grpc_cc_library(
         "//src/core:http2_client_transport",
         "//src/core:idle_filter_state",
         "//src/core:init_internally",
+        "//src/core:instrument",
         "//src/core:interception_chain",
         "//src/core:iomgr_fwd",
         "//src/core:json",
@@ -5585,6 +5589,16 @@ grpc_upb_proto_reflection_library(
 )
 
 grpc_upb_proto_library(
+    name = "envoy_extensions_filters_http_ext_proc_upb",
+    deps = ["@envoy_api//envoy/extensions/filters/http/ext_proc/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_filters_http_ext_proc_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/filters/http/ext_proc/v3:pkg"],
+)
+
+grpc_upb_proto_library(
     name = "envoy_extensions_grpc_service_call_credentials_access_token_upb",
     deps = ["@envoy_api//envoy/extensions/grpc_service/call_credentials/access_token/v3:pkg"],
 )
@@ -5637,6 +5651,11 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "envoy_service_discovery_upbdefs",
     deps = ["@envoy_api//envoy/service/discovery/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_service_ext_proc_upb",
+    deps = ["@envoy_api//envoy/service/ext_proc/v3:pkg"],
 )
 
 grpc_upb_proto_library(

@@ -304,6 +304,10 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
       grpc_auth_context_add_property(ctx.get(),
                                      GRPC_SSL_SESSION_REUSED_PROPERTY,
                                      prop->value.data, prop->value.length);
+    } else if (strcmp(prop->name, TSI_SSL_NEGOTIATED_KEY_EXCHANGE_GROUP) == 0) {
+      grpc_auth_context_add_property(
+          ctx.get(), GRPC_SSL_NEGOTIATED_KEY_EXCHANGE_GROUP_PROPERTY_NAME,
+          prop->value.data, prop->value.length);
     } else if (strcmp(prop->name, TSI_SECURITY_LEVEL_PEER_PROPERTY) == 0) {
       grpc_auth_context_add_property(
           ctx.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME,

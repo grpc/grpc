@@ -53,6 +53,8 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/memory/memory.h"
+#include <grpc/channelz/v1/channelz.grpc.pb.h>
+#include <grpc/channelz/v1/channelz.pb.h>
 
 using grpc::channelz::v1::Address;
 using grpc::channelz::v1::GetChannelRequest;
