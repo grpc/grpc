@@ -86,7 +86,14 @@ class StatusCode(enum.IntEnum):
   # `_cygrpc.StatusCode` values are pickled as pure integers. Test:
   # grpcio_tests.tests_aio.unit.aio_rpc_error_test.TestAioRpcError.test_pickle
   def __reduce_ex__(self, proto):
-     return (int, (self.value,))
+    return (int, (self.value,))
+
+  def __str__(self):
+    return str(self.value)
+
+  def __repr__(self):
+    return str(self.value)
+
 
 class CallError:
   ok = GRPC_CALL_OK
