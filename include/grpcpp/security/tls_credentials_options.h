@@ -27,6 +27,7 @@
 #include <grpcpp/security/tls_crl_provider.h>
 #include <grpcpp/support/config.h>
 
+#include <cstddef>
 #include <memory>
 #include <vector>
 
@@ -140,6 +141,10 @@ class TlsCredentialsOptions {
   // list will be used.
   void set_key_exchange_groups(
       const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups);
+  // Sets the label for extracting TLS Exported Keying Material.
+  void set_exported_keying_material_label(const std::string& label);
+  // Sets the length for extracting TLS Exported Keying Material.
+  void set_exported_keying_material_length(size_t length);
 
   // ----- Getters for member fields ----
   // Returns a deep copy of the internal c options. The caller takes ownership
