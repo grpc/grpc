@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <cstdint>
+#include <optional>
 #include <utility>
 
 #include "src/core/call/message.h"
@@ -78,7 +79,8 @@ class GrpcMessageAssembler {
   // Returns a valid MessageHandle if it has a complete message.
   // Returns a nullptr if it does not have a complete message.
   // Returns an error if an incomplete message is received and the stream ends.
-  ValueOrHttp2Status<MessageHandle> ExtractMessage() {
+  ValueOrHttp2Status<MessageHandle> ExtractMessage(
+      std::optional<uint32_t> max_receive_message_length) {
     const size_t current_len = message_buffer_.Length();
     if (current_len < kGrpcHeaderSizeInBytes) {
       return ReturnNullOrError();
@@ -89,6 +91,14 @@ class GrpcMessageAssembler {
       return header.TakeStatus(std::move(header));
     }
     const uint32_t header_length = header.value().length;
+
+    if (max_receive_message_length.has_value() &&
+        header_length > *max_receive_message_length) {
+      return Http2Status::Http2StreamError(
+          Http2ErrorCode::kEnhanceYourCalm,
+          absl::StrCat("Received message larger than max (", header_length,
+                       " vs. ", *max_receive_message_length, ")"));
+    }
 
     if constexpr (sizeof(size_t) == 4) {
       if (GPR_UNLIKELY(header_length > kOneGb)) {
