@@ -169,6 +169,23 @@ absl::StatusOr<ExtProcResponse> ExtProcResponse::Parse(
   // parse request_drain
   ext_proc_response.request_drain =
       envoy_service_ext_proc_v3_ProcessingResponse_request_drain(response);
+  // parse server_window_update
+  if (envoy_service_ext_proc_v3_ProcessingResponse_has_server_window_update(
+          response)) {
+    const auto* server_update =
+        envoy_service_ext_proc_v3_ProcessingResponse_server_window_update(
+            response);
+    if (server_update != nullptr) {
+      ExtProcServerWindowUpdate window_update;
+      window_update.window_increment_downstream_to_sidestream =
+          envoy_service_ext_proc_v3_ProcessingResponse_ServerWindowUpdate_window_increment_downstream_to_sidestream(
+              server_update);
+      window_update.window_increment_upstream_to_sidestream =
+          envoy_service_ext_proc_v3_ProcessingResponse_ServerWindowUpdate_window_increment_upstream_to_sidestream(
+              server_update);
+      ext_proc_response.server_window_update = window_update;
+    }
+  }
   switch (
       envoy_service_ext_proc_v3_ProcessingResponse_response_case(response)) {
     case envoy_service_ext_proc_v3_ProcessingResponse_response_request_headers: {
@@ -467,6 +484,18 @@ void SetExtProcProtocolConfig(
           : envoy_extensions_filters_http_ext_proc_v3_ProcessingMode_NONE);
 }
 
+void SetExtProcClientWindowUpdate(
+    upb_Arena* arena, const ExtProcClientWindowUpdate& update,
+    envoy_service_ext_proc_v3_ProcessingRequest* request) {
+  auto* update_msg =
+      envoy_service_ext_proc_v3_ProcessingRequest_mutable_client_window_update(
+          request, arena);
+  envoy_service_ext_proc_v3_ProcessingRequest_ClientWindowUpdate_set_window_increment_sidestream_to_upstream(
+      update_msg, update.window_increment_sidestream_to_upstream);
+  envoy_service_ext_proc_v3_ProcessingRequest_ClientWindowUpdate_set_window_increment_sidestream_to_downstream(
+      update_msg, update.window_increment_sidestream_to_downstream);
+}
+
 absl::StatusOr<std::string> SerializeExtProcMessage(
     envoy_service_ext_proc_v3_ProcessingRequest* request, upb_Arena* arena) {
   size_t size;
@@ -481,13 +510,29 @@ absl::StatusOr<std::string> SerializeExtProcMessage(
 envoy_service_ext_proc_v3_ProcessingRequest* CreateCommonRequest(
     upb_Arena* arena, ::google_protobuf_Struct* attributes,
     bool observability_mode,
-    std::optional<ExtProcProcessingMode> processing_mode) {
+    std::optional<ExtProcProcessingMode> processing_mode,
+    std::optional<ExtProcClientWindowUpdate> client_window_update) {
   auto* request = envoy_service_ext_proc_v3_ProcessingRequest_new(arena);
   SetExtProcAttributes(arena, attributes, request);
   envoy_service_ext_proc_v3_ProcessingRequest_set_observability_mode(
       request, observability_mode);
   if (processing_mode.has_value()) {
+    constexpr int64_t kInitialWindowSize = 65536;
+    auto* init_msg =
+        envoy_service_ext_proc_v3_ProcessingRequest_mutable_flow_control_init(
+            request, arena);
+    envoy_service_ext_proc_v3_ProcessingRequest_FlowControlInit_set_initial_window_downstream_to_sidestream(
+        init_msg, kInitialWindowSize);
+    envoy_service_ext_proc_v3_ProcessingRequest_FlowControlInit_set_initial_window_sidestream_to_upstream(
+        init_msg, kInitialWindowSize);
+    envoy_service_ext_proc_v3_ProcessingRequest_FlowControlInit_set_initial_window_upstream_to_sidestreama(
+        init_msg, kInitialWindowSize);
+    envoy_service_ext_proc_v3_ProcessingRequest_FlowControlInit_set_initial_window_sidestream_to_downstream(
+        init_msg, kInitialWindowSize);
     SetExtProcProtocolConfig(arena, *processing_mode, request);
+  }
+  if (client_window_update.has_value()) {
+    SetExtProcClientWindowUpdate(arena, *client_window_update, request);
   }
   return request;
 }
@@ -618,10 +663,11 @@ absl::StatusOr<std::string> CreateRequestAndSerialize(
     upb_Arena* arena, ::google_protobuf_Struct* attributes,
     bool observability_mode,
     std::optional<ExtProcProcessingMode> processing_mode,
+    std::optional<ExtProcClientWindowUpdate> client_window_update,
     absl::FunctionRef<void(envoy_service_ext_proc_v3_ProcessingRequest*)>
         populate_payload) {
   auto* request = CreateCommonRequest(arena, attributes, observability_mode,
-                                      processing_mode);
+                                      processing_mode, client_window_update);
   populate_payload(request);
   return SerializeExtProcMessage(request, arena);
 }
@@ -633,9 +679,11 @@ absl::StatusOr<std::string> CreateExtProcClientHeadersRequest(
     const std::vector<StringMatcher>& allowed_headers,
     const std::vector<StringMatcher>& disallowed_headers,
     ::google_protobuf_Struct* attributes, bool observability_mode,
-    std::optional<ExtProcProcessingMode> processing_mode) {
+    std::optional<ExtProcProcessingMode> processing_mode,
+    std::optional<ExtProcClientWindowUpdate> client_window_update) {
   return CreateRequestAndSerialize(
       arena, attributes, observability_mode, processing_mode,
+      client_window_update,
       [&](envoy_service_ext_proc_v3_ProcessingRequest* request) {
         auto* upb_headers = CreateUpbHeaderMap(
             arena, *metadata, allowed_headers, disallowed_headers);
@@ -648,9 +696,11 @@ absl::StatusOr<std::string> CreateExtProcServerHeadersRequest(
     const std::vector<StringMatcher>& allowed_headers,
     const std::vector<StringMatcher>& disallowed_headers,
     ::google_protobuf_Struct* attributes, bool observability_mode,
-    std::optional<ExtProcProcessingMode> processing_mode, bool end_of_stream) {
+    std::optional<ExtProcProcessingMode> processing_mode, bool end_of_stream,
+    std::optional<ExtProcClientWindowUpdate> client_window_update) {
   return CreateRequestAndSerialize(
       arena, attributes, observability_mode, processing_mode,
+      client_window_update,
       [&](envoy_service_ext_proc_v3_ProcessingRequest* request) {
         auto* upb_headers = CreateUpbHeaderMap(
             arena, *metadata, allowed_headers, disallowed_headers);
@@ -662,9 +712,11 @@ absl::StatusOr<std::string> CreateExtProcClientBodyRequest(
     upb_Arena* arena, absl::string_view body,
     ::google_protobuf_Struct* attributes, bool observability_mode,
     std::optional<ExtProcProcessingMode> processing_mode, bool end_of_stream,
-    bool end_of_stream_without_message) {
+    bool end_of_stream_without_message,
+    std::optional<ExtProcClientWindowUpdate> client_window_update) {
   return CreateRequestAndSerialize(
       arena, attributes, observability_mode, processing_mode,
+      client_window_update,
       [&](envoy_service_ext_proc_v3_ProcessingRequest* request) {
         SetExtProcRequestBody(
             arena, upb_StringView_FromDataAndSize(body.data(), body.size()),
@@ -675,9 +727,11 @@ absl::StatusOr<std::string> CreateExtProcClientBodyRequest(
 absl::StatusOr<std::string> CreateExtProcServerBodyRequest(
     upb_Arena* arena, absl::string_view body,
     ::google_protobuf_Struct* attributes, bool observability_mode,
-    std::optional<ExtProcProcessingMode> processing_mode) {
+    std::optional<ExtProcProcessingMode> processing_mode,
+    std::optional<ExtProcClientWindowUpdate> client_window_update) {
   return CreateRequestAndSerialize(
       arena, attributes, observability_mode, processing_mode,
+      client_window_update,
       [&](envoy_service_ext_proc_v3_ProcessingRequest* request) {
         SetExtProcResponseBody(
             arena, upb_StringView_FromDataAndSize(body.data(), body.size()),
@@ -690,9 +744,11 @@ absl::StatusOr<std::string> CreateExtProcServerTrailersRequest(
     const std::vector<StringMatcher>& allowed_headers,
     const std::vector<StringMatcher>& disallowed_headers,
     ::google_protobuf_Struct* attributes, bool observability_mode,
-    std::optional<ExtProcProcessingMode> processing_mode) {
+    std::optional<ExtProcProcessingMode> processing_mode,
+    std::optional<ExtProcClientWindowUpdate> client_window_update) {
   return CreateRequestAndSerialize(
       arena, attributes, observability_mode, processing_mode,
+      client_window_update,
       [&](envoy_service_ext_proc_v3_ProcessingRequest* request) {
         auto* upb_trailers = CreateUpbHeaderMap(
             arena, *trailers, allowed_headers, disallowed_headers);

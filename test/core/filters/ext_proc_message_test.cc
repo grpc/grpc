@@ -273,6 +273,53 @@ TEST_F(CreateExtProcRequestTest, RequestHeadersProtocolConfig) {
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::GRPC);
 }
 
+TEST_F(CreateExtProcRequestTest, RequestHeadersFlowControlInit) {
+  upb::Arena arena;
+  grpc_metadata_batch batch;
+  ExtProcProcessingMode processing_mode;
+  processing_mode.send_request_body = true;
+  processing_mode.send_response_body = true;
+  std::string serialized =
+      CreateExtProcClientHeadersRequest(arena.ptr(), &batch, {}, {}, {},
+                                        /*observability_mode=*/false,
+                                        /*processing_mode=*/processing_mode)
+          .value();
+  auto parsed = ParseRequest(serialized);
+  ASSERT_TRUE(parsed.has_flow_control_init());
+  EXPECT_EQ(
+      parsed.flow_control_init().initial_window_downstream_to_sidestream(),
+      65536);
+  EXPECT_EQ(parsed.flow_control_init().initial_window_sidestream_to_upstream(),
+            65536);
+  EXPECT_EQ(parsed.flow_control_init().initial_window_upstream_to_sidestreama(),
+            65536);
+  EXPECT_EQ(
+      parsed.flow_control_init().initial_window_sidestream_to_downstream(),
+      65536);
+}
+
+TEST_F(CreateExtProcRequestTest, WindowUpdateRequest) {
+  upb::Arena arena;
+  ExtProcClientWindowUpdate update;
+  update.window_increment_sidestream_to_upstream = 5000;
+  update.window_increment_sidestream_to_downstream = 6000;
+  std::string serialized =
+      CreateExtProcClientBodyRequest(
+          arena.ptr(), "test body", {}, /*observability_mode=*/false,
+          /*processing_mode=*/std::nullopt, /*end_of_stream=*/false,
+          /*end_of_stream_without_message=*/false,
+          /*client_window_update=*/update)
+          .value();
+  auto parsed = ParseRequest(serialized);
+  ASSERT_TRUE(parsed.has_client_window_update());
+  EXPECT_EQ(
+      parsed.client_window_update().window_increment_sidestream_to_upstream(),
+      5000);
+  EXPECT_EQ(
+      parsed.client_window_update().window_increment_sidestream_to_downstream(),
+      6000);
+}
+
 TEST_F(CreateExtProcRequestTest,
        ResponseHeadersNeitherAllowedNorDisallowedSet) {
   upb::Arena arena;
@@ -837,6 +884,23 @@ TEST_F(ParseExtProcResponseTest, RequestDrain) {
   auto parsed = ParseResponse(response);
   ASSERT_TRUE(parsed.ok()) << parsed.status();
   EXPECT_TRUE(parsed->request_drain);
+}
+
+TEST_F(ParseExtProcResponseTest, ServerWindowUpdate) {
+  upb::Arena arena;
+  envoy::service::ext_proc::v3::ProcessingResponse response;
+  auto* window_update = response.mutable_server_window_update();
+  window_update->set_window_increment_downstream_to_sidestream(10000);
+  window_update->set_window_increment_upstream_to_sidestream(20000);
+  auto parsed = ParseResponse(response);
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  ASSERT_TRUE(parsed->server_window_update.has_value());
+  EXPECT_EQ(
+      parsed->server_window_update->window_increment_downstream_to_sidestream,
+      10000);
+  EXPECT_EQ(
+      parsed->server_window_update->window_increment_upstream_to_sidestream,
+      20000);
 }
 
 TEST_F(ParseExtProcResponseTest, UnsupportedResponseCaseRequestTrailers) {
