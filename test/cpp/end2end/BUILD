@@ -525,6 +525,7 @@ grpc_cc_test(
         ":end2end_test_utils",
         ":test_service_impl",
         "//:channelz_cc_grpc",
+        "//:channelz_cc_proto",
         "//:gpr",
         "//:grpc",
         "//:grpc++",

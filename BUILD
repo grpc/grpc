@@ -19,7 +19,9 @@ load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_add_well_known_proto_upb_targets",
+    "grpc_cc_grpc_library",
     "grpc_cc_library",
+    "grpc_cc_proto_library",
     "grpc_clang_cl_settings",
     "grpc_filegroup",
     "grpc_generate_one_off_targets",
@@ -2898,6 +2900,38 @@ grpc_cc_library(
     visibility = ["//visibility:public"],
 )
 
+alias(
+    name = "reflection_v1_proto_only",
+    actual = "@grpc_proto//:reflection_proto",
+)
+
+grpc_cc_proto_library(
+    name = "reflection_v1_cc_proto",
+    deps = [":reflection_v1_proto_only"],
+)
+
+grpc_cc_grpc_library(
+    name = "reflection_v1_cc_grpc",
+    srcs = [":reflection_v1_proto_only"],
+    deps = [":reflection_v1_cc_proto"],
+)
+
+alias(
+    name = "reflection_v1alpha_proto_only",
+    actual = "@grpc_proto//:reflection_proto_deprecated",
+)
+
+grpc_cc_proto_library(
+    name = "reflection_v1alpha_cc_proto",
+    deps = [":reflection_v1alpha_proto_only"],
+)
+
+grpc_cc_grpc_library(
+    name = "reflection_v1alpha_cc_grpc",
+    srcs = [":reflection_v1alpha_proto_only"],
+    deps = [":reflection_v1alpha_cc_proto"],
+)
+
 grpc_cc_library(
     name = "grpc++_reflection",
     srcs = [
@@ -3003,6 +3037,22 @@ grpc_cc_library(
         "@com_google_protobuf//upb/mem",
     ],
     alwayslink = 1,
+)
+
+alias(
+    name = "channelz_proto_only",
+    actual = "@grpc_proto//:channelz_proto",
+)
+
+grpc_cc_proto_library(
+    name = "channelz_cc_proto",
+    deps = [":channelz_proto_only"],
+)
+
+grpc_cc_grpc_library(
+    name = "channelz_cc_grpc",
+    srcs = [":channelz_proto_only"],
+    deps = [":channelz_cc_proto"],
 )
 
 grpc_cc_library(
@@ -5750,12 +5800,12 @@ grpc_upb_proto_reflection_library(
 
 grpc_upb_proto_library(
     name = "channelz_v1_upb",
-    deps = ["@grpc_proto//:channelz_proto"],
+    deps = [":channelz_proto_only"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "channelz_v1_upbdefs",
-    deps = ["@grpc_proto//:channelz_proto"],
+    deps = [":channelz_proto_only"],
 )
 
 WELL_KNOWN_PROTO_TARGETS = [
