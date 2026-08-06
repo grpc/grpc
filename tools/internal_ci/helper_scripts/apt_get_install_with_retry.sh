@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Copyright 2026 The gRPC Authors
 #
+
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -35,7 +36,10 @@ echo "Installing packages ${PACKAGES[*]} using apt-get"
 
 for i in $(seq 1 $MAX_RETRIES); do
   echo "Running apt-get update and install (attempt ${i})..."
-    if apt-get update && apt-get install -y "${PACKAGES[@]}"; then
+  if DEBIAN_FRONTEND=noninteractive apt-get update -qq && \
+     DEBIAN_FRONTEND=noninteractive apt-get install -qq -y \
+     -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" \
+      "${PACKAGES[@]}"; then
     echo "apt-get succeeded on attempt ${i}.";
     break;
   else
