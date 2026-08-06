@@ -17,7 +17,7 @@ set -ex
 dir=$(dirname "${0}")
 cd "${dir}/../../.."
 
-MACOSX_DEPLOYMENT_TARGET=10.13 tools/bazel run --cxxopt='-std=c++17' --cxxopt='-faligned-allocation' tools/codegen/core:generate_trace_flags -- \
+MACOSX_DEPLOYMENT_TARGET=10.13 tools/bazel run --fetch --cxxopt='-std=c++17' --cxxopt='-faligned-allocation' tools/codegen/core:generate_trace_flags -- \
  --trace_flags_yaml=$(pwd)/src/core/lib/debug/trace_flags.yaml \
  --header_path=$(pwd)/src/core/lib/debug/trace_flags.h \
  --cpp_path=$(pwd)/src/core/lib/debug/trace_flags.cc \
