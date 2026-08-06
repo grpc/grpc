@@ -657,11 +657,8 @@ TEST(ChannelzTextEncodeTest, BasicTraceEvent) {
   EXPECT_NE(encoded.length(), 0) << encoded;
 }
 
-// Regression test for a truncation bug in the >10240-byte fallback path:
-// the heap buffer was previously sized exactly `size` bytes and passed as
-// the capacity to upb_TextEncode, which is one byte short of what its
-// snprintf()-style contract needs (content + NUL terminator). That
-// silently replaced the final content byte with a NUL character.
+// Verifies that large trace events exceeding the internal stack buffer
+// are encoded completely without truncating trailing characters.
 TEST(ChannelzTextEncodeTest, LargeTraceEventDoesNotTruncateLastByte) {
   upb::Arena arena;
   grpc_channelz_v2_TraceEvent* event =
