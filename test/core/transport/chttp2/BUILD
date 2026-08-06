@@ -1045,7 +1045,6 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_transport_chttp2",
         "//:orphanable",
-        "//:ref_counted_ptr",
         "//src/core:arena",
         "//src/core:call_destination",
         "//src/core:call_filters",
