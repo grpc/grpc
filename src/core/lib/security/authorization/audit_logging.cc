@@ -52,8 +52,8 @@ void AuditLoggerRegistry::RegisterFactory(
   GRPC_CHECK(factory != nullptr);
   MutexLock lock(mu);
   absl::string_view name = factory->name();
-  GRPC_CHECK(
-      registry->logger_factories_map_.emplace(name, std::move(factory)).second);
+  registry->logger_factories_map_.erase(name);
+  registry->logger_factories_map_.emplace(name, std::move(factory));
 }
 
 bool AuditLoggerRegistry::FactoryExists(absl::string_view name) {

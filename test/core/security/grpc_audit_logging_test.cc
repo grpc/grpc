@@ -74,6 +74,25 @@ class TestAuditLoggerFactory : public AuditLoggerFactory {
   }
 };
 
+class CustomTestAuditLoggerFactory : public AuditLoggerFactory {
+ public:
+  class CustomConfig : public Config {
+   public:
+    absl::string_view name() const override { return kName; }
+    std::string ToString() const override { return "custom_config"; }
+  };
+
+  absl::string_view name() const override { return kName; }
+  std::unique_ptr<AuditLogger> CreateAuditLogger(
+      std::shared_ptr<const AuditLoggerFactory::Config>) override {
+    return std::make_unique<TestAuditLogger>();
+  }
+  absl::StatusOr<std::shared_ptr<const Config>> ParseAuditLoggerConfig(
+      const Json&) override {
+    return std::make_shared<CustomConfig>();
+  }
+};
+
 class AuditLoggerRegistryTest : public ::testing::Test {
  protected:
   void SetUp() override {
@@ -106,6 +125,16 @@ TEST_F(AuditLoggerRegistryTest, UnknownLogger) {
 TEST_F(AuditLoggerRegistryTest, LoggerFactoryExistenceChecks) {
   EXPECT_TRUE(AuditLoggerRegistry::FactoryExists(kName));
   EXPECT_FALSE(AuditLoggerRegistry::FactoryExists("unknown_logger"));
+}
+
+TEST_F(AuditLoggerRegistryTest, DuplicateRegistrationReplacesFactory) {
+  auto result1 = AuditLoggerRegistry::ParseConfig(kName, Json());
+  ASSERT_TRUE(result1.ok());
+  EXPECT_EQ(result1.value()->ToString(), "test_config");
+  RegisterAuditLoggerFactory(std::make_unique<CustomTestAuditLoggerFactory>());
+  auto result2 = AuditLoggerRegistry::ParseConfig(kName, Json());
+  ASSERT_TRUE(result2.ok());
+  EXPECT_EQ(result2.value()->ToString(), "custom_config");
 }
 
 //
