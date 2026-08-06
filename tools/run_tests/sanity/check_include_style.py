@@ -67,11 +67,11 @@ def check_include_style(directory_root):
                         bad_lines.append(
                             (line_number + 1, original_line, text_line)
                         )
-        bad_files.append((path, bad_lines))
-        if fix:
-          with open(path, "w") as f:
-            f.write(text)
-  return bad_files
+                bad_files.append((path, bad_lines))
+                if fix:
+                    with open(path, "w") as f:
+                        f.write(text)
+    return bad_files
 
 
 all_bad_files = []

@@ -33,18 +33,16 @@
 #include "src/core/util/uri.h"
 #include "src/proto/grpc/channelz/v2/channelz.upb.h"
 #include "src/proto/grpc/channelz/v2/property_list.upb.h"
+#include "upb/base/status.h"
+#include "upb/json/encode.h"
+#include "upb/mem/arena.hpp"
+#include "upb/reflection/def.hpp"
 #include "absl/cleanup/cleanup.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
-#include "grpc/channelz/v1/channelz.upb.h"
-#include "grpc/channelz/v1/channelz.upbdefs.h"
-#include "upb/base/status.h"
-#include "upb/json/encode.h"
-#include "upb/mem/arena.hpp"
-#include "upb/reflection/def.hpp"
 
 namespace grpc_core {
 namespace channelz {
