@@ -359,6 +359,10 @@ void XdsEnd2endTest::RpcOptions::SetupRpc(ClientContext* context,
   if (skip_cancelled_check) {
     request->mutable_param()->set_skip_cancelled_check(true);
   }
+  if (server_expected_error != StatusCode::OK) {
+    request.mutable_param()->mutable_expected_error()->set_code(
+        server_expected_error);
+  }
   if (backend_metrics.has_value()) {
     *request->mutable_param()->mutable_backend_metrics() = *backend_metrics;
   }
@@ -616,10 +620,6 @@ Status XdsEnd2endTest::SendRpc(
   if (response == nullptr) response = &local_response;
   ClientContext context;
   EchoRequest request;
-  if (rpc_options.server_expected_error != StatusCode::OK) {
-    auto* error = request.mutable_param()->mutable_expected_error();
-    error->set_code(rpc_options.server_expected_error);
-  }
   rpc_options.SetupRpc(&context, &request);
   Status status;
   switch (rpc_options.service) {
