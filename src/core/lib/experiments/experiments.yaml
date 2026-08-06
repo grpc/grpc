@@ -84,8 +84,8 @@
   test_tags: []
 - name: custom_frame_check
   description: Adding checks to custom HTTP2 frame.
-  expiry: 2027/01/20
-  owner: tjagtap@google.com
+  expiry: 2026/10/05
+  owner: ritulb@google.com
   test_tags: []
   allow_in_fuzzing_config: false
 - name: event_engine_callback_cq
@@ -180,8 +180,8 @@
   test_tags: []
 - name: inproc_cancel_stream
   description: If set, cancel inproc stream inside the transport mutex.
-  expiry: 2026/08/01
-  owner: akshitpatel@google.com
+  expiry: 2026/10/05
+  owner: ritulb@google.com
   test_tags: []
 - name: keep_alive_ping_timer_batch
   description:
@@ -197,14 +197,14 @@
   test_tags: ["core_end2end_test"]
 - name: memory_optimization_01
   description: Memory Optimization
-  expiry: 2027/01/16
-  owner: akshitpatel@google.com
+  expiry: 2026/10/05
+  owner: tjagtap@google.com
   test_tags: []
   allow_in_fuzzing_config: false
 - name: memory_optimization_02
   description: Memory Optimization 02
-  expiry: 2027/01/16
-  owner: akshitpatel@google.com
+  expiry: 2026/10/05
+  owner: ritulb@google.com
   test_tags: []
   allow_in_fuzzing_config: false
 - name: message_size_refactoring
@@ -229,13 +229,13 @@
   test_tags: []
 - name: optimization_01
   description: Optimization
-  expiry: 2026/09/07
-  owner: tjagtap@google.com
+  expiry: 2026/10/05
+  owner: ritulb@google.com
   test_tags: []
 - name: optimization_02
   description: Optimization
-  expiry: 2026/09/07
-  owner: tjagtap@google.com
+  expiry: 2026/10/05
+  owner: ritulb@google.com
   test_tags: []
 - name: optimization_03
   description: Optimization
@@ -254,8 +254,8 @@
   test_tags: []
 - name: optimization_06
   description: Optimization
-  expiry: 2027/01/30
-  owner: tjagtap@google.com
+  expiry: 2026/10/05
+  owner: ritulb@google.com
   test_tags: []
 - name: otel_export_telemetry_domains
   description: Export telemetry domains in OpenTelemetry metrics.
@@ -283,8 +283,8 @@
   allow_in_fuzzing_config: true
 - name: ph2_perf_01
   description: Different performance experiments for PH2 Transport
-  expiry: 2026/08/22
-  owner: akshitpatel@google.com
+  expiry: 2026/10/05
+  owner: ritulb@google.com
   test_tags: []
 - name: ph2_server
   description:
