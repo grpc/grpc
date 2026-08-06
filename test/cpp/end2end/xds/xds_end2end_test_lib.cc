@@ -755,7 +755,9 @@ void XdsEnd2endTest::AsyncRpc::StartRpc(
     grpc::testing::EchoTestService::Stub* stub, const RpcOptions& rpc_options) {
   LOG(INFO) << "Starting async RPC...";
   rpc_options.SetupRpc(&context_, &request_);
+  start_time_ = NowFromCycleCounter();
   stub->async()->Echo(&context_, &request_, &response_, [this](Status status) {
+    elapsed_time_ = NowFromCycleCounter() - start_time_;
     grpc_core::MutexLock lock(&mu_);
     status_ = std::move(status);
     cv_.Signal();
@@ -783,47 +785,6 @@ XdsEnd2endTest::AsyncRpc::GetServerInitialMetadata() {
 std::multimap<std::string, std::string>
 XdsEnd2endTest::AsyncRpc::GetServerTrailingMetadata() {
   return ConvertMetadata(context_.GetServerTrailingMetadata());
-}
-
-std::vector<std::unique_ptr<XdsEnd2endTest::ConcurrentRpc>>
-XdsEnd2endTest::SendConcurrentRpcs(
-    const grpc_core::DebugLocation& debug_location,
-    grpc::testing::EchoTestService::Stub* stub, size_t num_rpcs,
-    const RpcOptions& rpc_options) {
-  // Variables for RPCs.
-  std::vector<std::unique_ptr<ConcurrentRpc>> rpcs;
-  rpcs.reserve(num_rpcs);
-  EchoRequest request;
-  // Variables for synchronization
-  grpc_core::Mutex mu;
-  grpc_core::CondVar cv;
-  size_t completed = 0;
-  // Set-off callback RPCs
-  for (size_t i = 0; i < num_rpcs; ++i) {
-    auto rpc = std::make_unique<ConcurrentRpc>();
-    rpc_options.SetupRpc(&rpc->context, &request);
-    grpc_core::Timestamp t0 = NowFromCycleCounter();
-    stub->async()->Echo(
-        &rpc->context, &request, &rpc->response,
-        [rpc = rpc.get(), &mu, &completed, &cv, num_rpcs, t0](Status s) {
-          rpc->status = s;
-          rpc->elapsed_time = NowFromCycleCounter() - t0;
-          bool done;
-          {
-            grpc_core::MutexLock lock(&mu);
-            done = (++completed) == num_rpcs;
-          }
-          if (done) cv.Signal();
-        });
-    rpcs.push_back(std::move(rpc));
-  }
-  {
-    grpc_core::MutexLock lock(&mu);
-    cv.Wait(&mu);
-  }
-  EXPECT_EQ(completed, num_rpcs)
-      << " at " << debug_location.file() << ":" << debug_location.line();
-  return rpcs;
 }
 
 size_t XdsEnd2endTest::WaitForAllBackends(
