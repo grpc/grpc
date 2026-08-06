@@ -114,12 +114,11 @@ class MetricsServiceServiceImpl final
   explicit MetricsServiceServiceImpl(std::string file_path)
       : file_path_(std::move(file_path)) {}
 
-  grpc::Status Export(
-      grpc::ServerContext* /*context*/,
-      const opentelemetry::proto::collector::metrics::v1::
-          ExportMetricsServiceRequest* request,
-      opentelemetry::proto::collector::metrics::v1::
-          ExportMetricsServiceResponse* /*response*/) override {
+  grpc::Status Export(grpc::ServerContext* /*context*/,
+                      const opentelemetry::proto::collector::metrics::v1::
+                          ExportMetricsServiceRequest* request,
+                      opentelemetry::proto::collector::metrics::v1::
+                          ExportMetricsServiceResponse* /*response*/) override {
     std::string json_string;
     google::protobuf::json::PrintOptions options;
     options.add_whitespace = true;
@@ -201,8 +200,7 @@ int main(int argc, char** argv) {
 
   std::unique_ptr<TraceServiceServiceImpl> trace_service;
   if (!trace_file_path.empty()) {
-    trace_service =
-        std::make_unique<TraceServiceServiceImpl>(trace_file_path);
+    trace_service = std::make_unique<TraceServiceServiceImpl>(trace_file_path);
     builder.RegisterService(trace_service.get());
   }
 
@@ -226,4 +224,3 @@ int main(int argc, char** argv) {
 
   return 0;
 }
-

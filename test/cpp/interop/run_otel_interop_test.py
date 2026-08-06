@@ -39,7 +39,7 @@ def resolve_binary(path):
     if os.path.exists(clean_path):
         return clean_path
     if clean_path.startswith("bazel-bin/"):
-        alt_path = clean_path[len("bazel-bin/"):]
+        alt_path = clean_path[len("bazel-bin/") :]
         if os.path.exists(alt_path):
             return alt_path
     return path
@@ -300,23 +300,33 @@ def verify_metrics(metrics_file, server_lang="c++"):
                                 collected_metrics[metric_name] = []
                             collected_metrics[metric_name].append(metric)
 
-        if all(any(k in m for m in collected_metrics) for k in expected_keywords):
+        if all(
+            any(k in m for m in collected_metrics) for k in expected_keywords
+        ):
             break
         time.sleep(0.5)
 
-    print(f"Collected {len(collected_metrics)} metric names: {set(collected_metrics.keys())}")
+    print(
+        f"Collected {len(collected_metrics)} metric names: {set(collected_metrics.keys())}"
+    )
     if not collected_metrics:
         if server_lang != "c++":
-            print(f"No metrics collected for non-C++ server ({server_lang}). TCP metrics only required for C++ servers. Metrics verification passed.")
+            print(
+                f"No metrics collected for non-C++ server ({server_lang}). TCP metrics only required for C++ servers. Metrics verification passed."
+            )
             return True
         print("Assertion Failed: No metrics collected.")
         return False
 
     # 1. Assert domain presence
     if server_lang == "c++":
-        found = all(any(k in m for m in collected_metrics) for k in expected_keywords)
+        found = all(
+            any(k in m for m in collected_metrics) for k in expected_keywords
+        )
         if not found:
-            print(f"Assertion Failed: Not all of {expected_keywords} found in collected metrics.")
+            print(
+                f"Assertion Failed: Not all of {expected_keywords} found in collected metrics."
+            )
             return False
 
         expected_tcp_units = {
@@ -333,13 +343,17 @@ def verify_metrics(metrics_file, server_lang="c++"):
         for mname, expected_unit in expected_tcp_units.items():
             if mname not in collected_metrics:
                 if mname in required_tcp_metrics:
-                    print(f"Assertion Failed: Required TCP metric '{mname}' not found.")
+                    print(
+                        f"Assertion Failed: Required TCP metric '{mname}' not found."
+                    )
                     return False
                 continue
             metrics_with_name = collected_metrics[mname]
             actual_unit = metrics_with_name[0].get("unit", "")
             if actual_unit != expected_unit:
-                print(f"Assertion Failed: Metric '{mname}' unit '{actual_unit}' != expected '{expected_unit}'")
+                print(
+                    f"Assertion Failed: Metric '{mname}' unit '{actual_unit}' != expected '{expected_unit}'"
+                )
                 return False
 
         # 3. Assert TCP metric label keys
@@ -354,7 +368,12 @@ def verify_metrics(metrics_file, server_lang="c++"):
         for mname, metrics_list in collected_metrics.items():
             if mname.startswith("grpc.tcp."):
                 for metric in metrics_list:
-                    for dp_type in ("gauge", "sum", "histogram", "exponential_histogram"):
+                    for dp_type in (
+                        "gauge",
+                        "sum",
+                        "histogram",
+                        "exponential_histogram",
+                    ):
                         if dp_type in metric:
                             data_points = metric[dp_type].get("data_points", [])
                             for dp in data_points:
@@ -364,7 +383,9 @@ def verify_metrics(metrics_file, server_lang="c++"):
 
         missing_keys = required_label_keys - found_tcp_label_keys
         if missing_keys:
-            print(f"Assertion Failed: Missing TCP label keys: {missing_keys}. Found keys: {found_tcp_label_keys}")
+            print(
+                f"Assertion Failed: Missing TCP label keys: {missing_keys}. Found keys: {found_tcp_label_keys}"
+            )
             return False
     else:
         # For non-C++ servers, check if any grpc metric was recorded
@@ -472,8 +493,12 @@ def main():
 
     collector_port = get_free_port()
     server_port = get_free_port()
-    spans_file = os.path.abspath(f"captured_spans_{args.client}_{args.server}.json")
-    metrics_file = os.path.abspath(f"captured_metrics_{args.client}_{args.server}.json")
+    spans_file = os.path.abspath(
+        f"captured_spans_{args.client}_{args.server}.json"
+    )
+    metrics_file = os.path.abspath(
+        f"captured_metrics_{args.client}_{args.server}.json"
+    )
     if os.path.exists(spans_file):
         os.remove(spans_file)
     if os.path.exists(metrics_file):
@@ -513,7 +538,9 @@ def main():
         if args.server == "c++":
             server_proc = start_proc(
                 [
-                    resolve_binary("./bazel-bin/test/cpp/interop/interop_server"),
+                    resolve_binary(
+                        "./bazel-bin/test/cpp/interop/interop_server"
+                    ),
                     f"--port={server_port}",
                     "--enable_opentelemetry=true",
                     "--enable_tcp_metrics=true",
@@ -535,7 +562,9 @@ def main():
         elif args.server == "python":
             server_proc = start_proc(
                 [
-                    resolve_binary("./bazel-bin/src/python/grpcio_tests/tests/interop/server_bin"),
+                    resolve_binary(
+                        "./bazel-bin/src/python/grpcio_tests/tests/interop/server_bin"
+                    ),
                     f"--port={server_port}",
                     "--use_tls=false",
                     "--enable_opentelemetry=true",
@@ -566,7 +595,9 @@ def main():
         if args.client == "c++":
             client_res = run_cmd(
                 [
-                    resolve_binary("./bazel-bin/test/cpp/interop/interop_client"),
+                    resolve_binary(
+                        "./bazel-bin/test/cpp/interop/interop_client"
+                    ),
                     "--server_host=localhost",
                     f"--server_port={server_port}",
                     "--test_case=empty_unary",
@@ -592,7 +623,9 @@ def main():
         elif args.client == "python":
             client_res = run_cmd(
                 [
-                    resolve_binary("./bazel-bin/src/python/grpcio_tests/tests/interop/client"),
+                    resolve_binary(
+                        "./bazel-bin/src/python/grpcio_tests/tests/interop/client"
+                    ),
                     "--server_host=localhost",
                     f"--server_port={server_port}",
                     "--test_case=empty_unary",
@@ -627,6 +660,7 @@ def main():
             print("Terminating server...")
             try:
                 import signal
+
                 server_proc.send_signal(signal.SIGINT)
                 server_proc.wait(timeout=4)
             except Exception:

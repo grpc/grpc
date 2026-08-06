@@ -140,8 +140,8 @@ void MaybeRegisterOpenTelemetry() {
       LOG(ERROR) << "Failed to register gRPC OpenTelemetry Plugin: "
                  << status.ToString();
     } else {
-      LOG(INFO)
-          << "Successfully registered gRPC OpenTelemetry Plugin for tracing and metrics.";
+      LOG(INFO) << "Successfully registered gRPC OpenTelemetry Plugin for "
+                   "tracing and metrics.";
     }
   });
 #endif

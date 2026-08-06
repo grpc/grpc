@@ -149,6 +149,7 @@ def flush_tracer_provider():
 
 
 def shutdown_tracer_provider():
+    # pylint: disable=global-statement
     global _GLOBAL_PROVIDER
     if _GLOBAL_PROVIDER:
         try:
@@ -157,7 +158,6 @@ def shutdown_tracer_provider():
             pass
         _GLOBAL_PROVIDER = None
         time.sleep(0.5)
-
 
 
 def pack_grpc_trace_bin(

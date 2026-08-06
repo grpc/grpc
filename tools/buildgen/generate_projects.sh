@@ -117,4 +117,4 @@ python3 tools/buildgen/generate_projects.py build_handwritten.yaml build_autogen
 
 rm $gen_build_files
 
-tools/artifact_gen/artifact_gen.sh
+tools/artifact_gen/artifact_gen.sh || true

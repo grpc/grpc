@@ -318,4 +318,3 @@ def test_interoperability(args):
 
 if __name__ == "__main__":
     app.run(test_interoperability, flags_parser=parse_interop_client_args)
-

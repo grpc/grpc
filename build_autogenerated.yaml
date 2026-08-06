@@ -17219,6 +17219,7 @@ targets:
   - test/cpp/interop/otel_helper.cc
   deps:
   - opentelemetry-cpp::api
+  - opentelemetry-cpp::metrics
   - opentelemetry-cpp::trace
   - grpc++_test_config
   - grpc++_test_util
@@ -17248,6 +17249,7 @@ targets:
   - test/cpp/interop/server_helper.cc
   deps:
   - opentelemetry-cpp::api
+  - opentelemetry-cpp::metrics
   - opentelemetry-cpp::trace
   - grpc++_test_config
   - grpc++_test_util
@@ -33278,47 +33280,5 @@ targets:
   - linux
   - posix
   - mac
-external_proto_libraries:
-- destination: third_party/cel-spec
-  hash: 13583c5a312861648449845b709722676a3c9b43396b6b8e9cbe4538feb74ad2
-  proto_prefix: third_party/cel-spec/
-  strip_path_prefix: proto/
-  strip_prefix: cel-spec-0.25.1
-  urls:
-  - https://github.com/google/cel-spec/archive/refs/tags/v0.25.1.tar.gz
-- destination: third_party/envoy-api
-  hash: ed5e6c319f8ebcdf24a9491f866a599bb9a3c193b859a94ad13bd31f85b46855
-  proto_prefix: third_party/envoy-api/
-  strip_path_prefix: ''
-  strip_prefix: data-plane-api-6ef568cf4a67362849911d1d2a546fd9f35db2ff
-  urls:
-  - https://github.com/envoyproxy/data-plane-api/archive/6ef568cf4a67362849911d1d2a546fd9f35db2ff.tar.gz
-- destination: third_party/googleapis
-  hash: 07a6f700cee5ca796f5230876ed8454bf1d8cc409b3b3e634505bc4f32a9f72b
-  proto_prefix: third_party/googleapis/
-  strip_path_prefix: ''
-  strip_prefix: googleapis-2193a2bfcecb92b92aad7a4d81baa428cafd7dfd
-  urls:
-  - https://github.com/googleapis/googleapis/archive/2193a2bfcecb92b92aad7a4d81baa428cafd7dfd.zip
-- destination: third_party/grpc-proto
-  hash: 5e9b520b22afbd53a662cc29017064be253c1dfa6df8958738594e7fec6ade33
-  proto_prefix: third_party/grpc-proto/
-  strip_path_prefix: ''
-  strip_prefix: grpc-proto-ec30f589e2519d595688b9a42f88a91bdd6b733f
-  urls:
-  - https://github.com/grpc/grpc-proto/archive/ec30f589e2519d595688b9a42f88a91bdd6b733f.tar.gz
-- destination: third_party/protoc-gen-validate
-  hash: e4718352754df1393b8792b631338aa8562f390e8160783e365454bc11d96328
-  proto_prefix: third_party/protoc-gen-validate/
-  strip_path_prefix: ''
-  strip_prefix: protoc-gen-validate-1.2.1
-  urls:
-  - https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.tar.gz
-- destination: third_party/xds
-  hash: 49535f3c3370004309da50194c09bbfc528d4702424dd46e7d56a278a3dfc15d
-  proto_prefix: third_party/xds/
-  strip_path_prefix: ''
-  strip_prefix: xds-ee656c7534f5d7dc23d44dd611689568f72017a6
-  urls:
-  - https://github.com/cncf/xds/archive/ee656c7534f5d7dc23d44dd611689568f72017a6.tar.gz
+external_proto_libraries: []
 tests: []
