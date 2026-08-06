@@ -26,12 +26,7 @@
 #include <string>
 #include <utility>
 
-#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-#include "src/core/ext/transport/chttp2/transport/frame_data.h"
-#include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/util/bitset.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
