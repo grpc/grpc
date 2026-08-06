@@ -20,6 +20,7 @@
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_TRANSPORT_H
 
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <type_traits>
 
@@ -133,6 +134,7 @@ struct TransportChannelArgs {
   uint32_t max_header_list_size_soft_limit;
   int max_usable_hpack_table_size;
   int initial_sequence_number;
+  std::optional<uint32_t> max_receive_message_length;
 
   std::string DebugString() const;
 };

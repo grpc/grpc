@@ -548,6 +548,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   grpc_chttp2_keepalive_state keepalive_state;
   // Soft limit on max header size.
   uint32_t max_header_list_size_soft_limit = 0;
+  std::optional<uint32_t> max_receive_message_length;
   grpc_core::ContextList* context_list = nullptr;
   grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> channelz_socket;
   std::unique_ptr<ChannelzDataSource> channelz_data_source;

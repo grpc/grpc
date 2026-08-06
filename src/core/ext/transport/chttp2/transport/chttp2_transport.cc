@@ -567,6 +567,12 @@ static void read_channel_args(grpc_chttp2_transport* t,
       channel_args.GetInt(GRPC_ARG_HTTP2_MAX_DEALLOCATING_STREAMS)
           .value_or(grpc_core::IsH2MaxDeallocatingStreamsHeadroomEnabled() ? 100
                                                                            : 0);
+
+  auto max_receive_message_length =
+      channel_args.GetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH);
+  if (max_receive_message_length.has_value()) {
+    t->max_receive_message_length = *max_receive_message_length;
+  }
 }
 
 static void init_keepalive_pings_if_enabled_locked(
