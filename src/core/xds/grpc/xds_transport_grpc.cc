@@ -501,20 +501,23 @@ GrpcXdsTransportFactory::GetTransport(
     auto channel_it = channels_.find(channel_key);
     RefCountedPtr<SharedChannel> channel;
     if (channel_it != channels_.end()) {
-      channel = channel_it->second->Ref();
-    } else {
+      GRPC_TRACE_LOG(xds_client, INFO) << "[GrpcXdsTransportFactory " << this
+                                       << "] found cached SharedChannel";
+      channel = channel_it->second->RefIfNonZero();
+    }
+    if (channel == nullptr) {
       RefCountedPtr<Channel> raw_channel =
           CreateXdsChannel(args_, *certificate_provider_store_, grpc_server);
       GRPC_CHECK(raw_channel != nullptr);
       channel = MakeRefCounted<SharedChannel>(
           channel_key, std::move(raw_channel),
           WeakRefAsSubclass<GrpcXdsTransportFactory>());
-      channels_.emplace(channel_key, channel.get());
+      channels_[channel_key] = channel.get();
     }
     transport = MakeRefCounted<GrpcXdsTransport>(
         WeakRefAsSubclass<GrpcXdsTransportFactory>(), std::move(channel),
         grpc_server, status);
-    transports_.emplace(std::move(key), transport.get());
+    transports_[std::move(key)] = transport.get();
   }
   return transport;
 }

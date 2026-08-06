@@ -268,6 +268,25 @@ StringMatcher StringMatcherParse(
   return StringMatcherParseInternal(proto_accessor, errors);
 }
 
+std::vector<StringMatcher> XdsListStringMatcherParse(
+    const XdsResourceType::DecodeContext& context,
+    const envoy_type_matcher_v3_ListStringMatcher* list_matcher,
+    ValidationErrors* errors) {
+  if (list_matcher == nullptr) return {};
+  std::vector<StringMatcher> matchers;
+  size_t patterns_size = 0;
+  const envoy_type_matcher_v3_StringMatcher* const* patterns =
+      envoy_type_matcher_v3_ListStringMatcher_patterns(list_matcher,
+                                                       &patterns_size);
+  matchers.reserve(patterns_size);
+  for (size_t i = 0; i < patterns_size; ++i) {
+    ValidationErrors::ScopedField field(errors,
+                                        absl::StrCat(".patterns[", i, "]"));
+    matchers.push_back(StringMatcherParse(context, patterns[i], errors));
+  }
+  return matchers;
+}
+
 //
 // ParseXdsHeaderMatcher()
 //

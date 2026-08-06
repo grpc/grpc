@@ -1239,10 +1239,18 @@ struct ArenaContextType<V3InterceptorToV2State> {
 // Note that this bridge does not support the full functionality of the
 // v3 interceptor API.  In particular, it assumes that the interceptor
 // will create exactly one child call.
+//
+// When not running in a v3 stack, the interceptor's Init() method will
+// not be called, but the wrapped destination will be set before the
+// ctor runs, so implementations must perform any necessary initialization
+// in their ctor instead.
 template <typename Derived>
 class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
  public:
-  V3InterceptorToV2Bridge() {
+  explicit V3InterceptorToV2Bridge(ChannelArgs args) {
+    // If running in a v3 stack, disable the bridge.  The interceptor
+    // will be used normally.
+    if (args.GetBool(GRPC_ARG_USE_V3_STACK).value_or(false)) return;
     // Insert CallDestinationToNextV2Filter as the wrapped destination in
     // Interceptor, so that we can route the server side of the
     // interceptor back into the v2 filter chain.
@@ -1526,11 +1534,6 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
             });
           }
         });
-  }
-
- protected:
-  RefCountedPtr<UnstartedCallDestination> wrapped_destination() const {
-    return wrapped_destination_;  // From Interceptor class.
   }
 
  private:

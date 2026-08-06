@@ -602,35 +602,6 @@ class ClientChannelFilter::SubchannelWrapper final
           << parent_.get() << " subchannel " << parent_->subchannel_.get()
           << " watcher=" << watcher_.get()
           << " state=" << ConnectivityStateName(state) << " status=" << status;
-      if (!IsSubchannelConnectionScalingEnabled()) {
-        auto keepalive_throttling = status.GetPayload(kKeepaliveThrottlingKey);
-        if (keepalive_throttling.has_value()) {
-          int new_keepalive_time_ms = -1;
-          if (absl::SimpleAtoi(std::string(keepalive_throttling.value()),
-                               &new_keepalive_time_ms)) {
-            Duration new_keepalive_time =
-                Duration::Milliseconds(new_keepalive_time_ms);
-            if (new_keepalive_time > parent_->chand_->keepalive_time_) {
-              parent_->chand_->keepalive_time_ = new_keepalive_time;
-              GRPC_TRACE_LOG(client_channel, INFO)
-                  << "chand=" << parent_->chand_
-                  << ": throttling keepalive time to "
-                  << parent_->chand_->keepalive_time_;
-              // Propagate the new keepalive time to all subchannels. This is
-              // so that new transports created by any subchannel (and not
-              // just the subchannel that received the GOAWAY), use the new
-              // keepalive time.
-              for (auto& [subchannel, _] : parent_->chand_->subchannel_map_) {
-                subchannel->ThrottleKeepaliveTime(new_keepalive_time);
-              }
-            }
-          } else {
-            LOG(ERROR) << "chand=" << parent_->chand_
-                       << ": Illegal keepalive throttling value "
-                       << std::string(keepalive_throttling.value());
-          }
-        }
-      }
       // Propagate status only in state TF.
       // We specifically want to avoid propagating the status for
       // state IDLE that the real subchannel gave us only for the
