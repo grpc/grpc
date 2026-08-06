@@ -312,6 +312,8 @@ TEST_F(HttpRequestTest, Post) {
             AbslDeadlineSeconds(60));
 }
 
+#if GRPC_ARES == 1
+
 int g_fake_non_responsive_dns_server_port;
 
 void InjectNonResponsiveDNSServer(ares_channel* channel) {
@@ -383,6 +385,8 @@ TEST_F(HttpRequestTest, CancelGetDuringDNSResolution) {
   }
   event_engine_grpc_ares_test_only_inject_config = prev_test_only_inject_config;
 }
+
+#endif  // GRPC_ARES == 1
 
 TEST_F(HttpRequestTest, CancelGetWhileReadingResponse) {
   // Start up a fake HTTP server which just accepts connections
