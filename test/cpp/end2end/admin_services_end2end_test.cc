@@ -16,6 +16,7 @@
 //
 //
 
+#include <grpc/reflection/v1alpha/reflection.grpc.pb.h>
 #include <grpcpp/ext/admin_services.h>
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/grpcpp.h>
@@ -25,7 +26,6 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/strings/str_cat.h"
-#include <grpc/reflection/v1alpha/reflection.grpc.pb.h>
 
 namespace grpc {
 namespace testing {

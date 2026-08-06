@@ -18,6 +18,7 @@
 #ifndef GRPC_TEST_CPP_UTIL_PROTO_REFLECTION_DESCRIPTOR_DATABASE_H
 #define GRPC_TEST_CPP_UTIL_PROTO_REFLECTION_DESCRIPTOR_DATABASE_H
 
+#include <grpc/reflection/v1alpha/reflection.grpc.pb.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
 
@@ -27,7 +28,6 @@
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
-#include <grpc/reflection/v1alpha/reflection.grpc.pb.h>
 
 namespace grpc {
 

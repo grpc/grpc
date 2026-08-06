@@ -120,6 +120,7 @@ grpc_cc_library(
     deps = [
         "//:channelz",
         "//:channelz_cc_grpc",
+        "//:channelz_cc_proto",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
@@ -428,6 +429,7 @@ grpc_cc_binary(
     ],
     deps = [
         "//:channelz_cc_grpc",
+        "//:channelz_cc_proto",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
@@ -435,7 +437,6 @@ grpc_cc_binary(
         "//src/core:grpc_check",
         "//src/core:json",
         "//src/core:json_writer",
-        "//src/proto/grpc/channelz:channelz_proto_cc_proto",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",

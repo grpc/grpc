@@ -17,6 +17,10 @@
 //
 
 #include <grpc/grpc.h>
+#include <grpc/reflection/v1/reflection.grpc.pb.h>
+#include <grpc/reflection/v1/reflection.pb.h>
+#include <grpc/reflection/v1alpha/reflection.grpc.pb.h>
+#include <grpc/reflection/v1alpha/reflection.pb.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -38,10 +42,6 @@
 #include "test/cpp/util/proto_reflection_descriptor_database.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include <grpc/reflection/v1/reflection.grpc.pb.h>
-#include <grpc/reflection/v1/reflection.pb.h>
-#include <grpc/reflection/v1alpha/reflection.grpc.pb.h>
-#include <grpc/reflection/v1alpha/reflection.pb.h>
 
 namespace grpc {
 namespace testing {
