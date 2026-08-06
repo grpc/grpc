@@ -4655,6 +4655,7 @@ grpc_cc_library(
         "slice",
         "sync",
         "time",
+        "tsi_ssl_init",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc_base",
@@ -5332,6 +5333,21 @@ grpc_cc_library(
         "//:tsi_base",
         "//:tsi_ssl_credentials",
     ],
+)
+
+grpc_cc_library(
+    name = "tsi_ssl_init",
+    srcs = [
+        "tsi/ssl_init.cc",
+    ],
+    hdrs = [
+        "tsi/ssl_init.h",
+    ],
+    external_deps = [
+        "libcrypto",
+        "libssl",
+    ],
+    deps = ["//:gpr"],
 )
 
 grpc_cc_library(
