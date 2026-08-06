@@ -110,7 +110,7 @@ bazel_dep(name = "yaml-cpp", version = "0.9.0", dev_dependency = True)
 # Python dependencies
 # ===================
 
-bazel_dep(name = "rules_python", version = "2.0.2")
+bazel_dep(name = "rules_python", version = "2.2.0")
 
 DEFAULT_PYTHON_VERSION = "3.11"
 
@@ -161,8 +161,27 @@ register_toolchains("@local_python_toolchains//:all")
 
 pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 
+# Force the default x86_64 linux platform to select free-threaded (cp314t)
+# wheels: the local toolchain is a free-threaded build, where abi3/cp314 wheels
+# segfault.
+pip.default(
+    arch_name="x86_64",
+    config_settings=[
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ],
+    os_name="linux",
+    platform="linux_x86_64",
+    whl_abi_tags=["cp{major}{minor}t"],
+    whl_platform_tags=[
+        "linux_x86_64",
+        "manylinux_*_x86_64",
+    ],
+)
+
 [
     pip.parse(
+        experimental_index_url="https://pypi.org/simple/",
         hub_name = "grpc_python_dependencies",
         python_version = python_version,
         requirements_lock = "//:requirements.bazel.lock",
