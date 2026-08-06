@@ -796,20 +796,21 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
       StatusCode expected_status, absl::string_view expected_message_prefix,
       const RpcOptions& rpc_options = RpcOptions());
 
-  // A class for running a long-running RPC using the callback API.
-  class LongRunningRpc {
+  // A class for running an RPC asynchronously using the callback API.
+  class AsyncRpc {
    public:
     // Starts the RPC.
     void StartRpc(grpc::testing::EchoTestService::Stub* stub,
-                  const RpcOptions& rpc_options =
-                      RpcOptions().set_timeout_ms(0).set_client_cancel_after_us(
-                          1 * 1000 * 1000));
+                  const RpcOptions& rpc_options = RpcOptions());
 
     // Cancels the RPC.
     void CancelRpc();
 
     // Gets the RPC's status.  Blocks if the RPC is not yet complete.
     Status GetStatus();
+
+    std::multimap<std::string, std::string> GetServerInitialMetadata();
+    std::multimap<std::string, std::string> GetServerTrailingMetadata();
 
    private:
     EchoRequest request_;
@@ -821,7 +822,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   };
 
   // Starts a set of concurrent RPCs.
-  // TODO(roth): Change this to use LongRunningRpc.
+  // TODO(roth): Change this to use AsyncRpc.
   struct ConcurrentRpc {
     ClientContext context;
     Status status;

@@ -609,6 +609,24 @@ std::shared_ptr<Channel> XdsEnd2endTest::CreateChannel(
   return grpc::CreateCustomChannel(uri, credentials, *args);
 }
 
+namespace {
+
+// Converts map keys and values from grpc::string_ref to std::string,
+// which is easier to deal with in tests.
+std::multimap<std::string, std::string> ConvertMetadata(
+    const std::multimap<grpc::string_ref, grpc::string_ref>& input) {
+  std::multimap<std::string, std::string> output;
+  for (const auto& [key, value] : input) {
+    std::string header(key.data(), key.size());
+    // Guard against implementation-specific header case - RFC 2616
+    absl::AsciiStrToLower(&header);
+    output.emplace(header, std::string(value.data(), value.size()));
+  }
+  return output;
+}
+
+}  // namespace
+
 Status XdsEnd2endTest::SendRpc(
     const RpcOptions& rpc_options, EchoResponse* response,
     std::multimap<std::string, std::string>* server_initial_metadata) {
@@ -637,13 +655,8 @@ Status XdsEnd2endTest::SendRpc(
       break;
   }
   if (server_initial_metadata != nullptr) {
-    for (const auto& [key, value] : context.GetServerInitialMetadata()) {
-      std::string header(key.data(), key.size());
-      // Guard against implementation-specific header case - RFC 2616
-      absl::AsciiStrToLower(&header);
-      server_initial_metadata->emplace(header,
-                                       std::string(value.data(), value.size()));
-    }
+    *server_initial_metadata =
+        ConvertMetadata(context.GetServerInitialMetadata());
   }
   return status;
 }
@@ -738,9 +751,9 @@ size_t XdsEnd2endTest::SendRpcsAndCountFailuresWithMessage(
   return num_failed;
 }
 
-void XdsEnd2endTest::LongRunningRpc::StartRpc(
+void XdsEnd2endTest::AsyncRpc::StartRpc(
     grpc::testing::EchoTestService::Stub* stub, const RpcOptions& rpc_options) {
-  LOG(INFO) << "Starting long-running RPC...";
+  LOG(INFO) << "Starting async RPC...";
   rpc_options.SetupRpc(&context_, &request_);
   stub->async()->Echo(&context_, &request_, &response_, [this](Status status) {
     grpc_core::MutexLock lock(&mu_);
@@ -749,17 +762,27 @@ void XdsEnd2endTest::LongRunningRpc::StartRpc(
   });
 }
 
-void XdsEnd2endTest::LongRunningRpc::CancelRpc() {
+void XdsEnd2endTest::AsyncRpc::CancelRpc() {
   context_.TryCancel();
   (void)GetStatus();
 }
 
-Status XdsEnd2endTest::LongRunningRpc::GetStatus() {
+Status XdsEnd2endTest::AsyncRpc::GetStatus() {
   grpc_core::MutexLock lock(&mu_);
   while (!status_.has_value()) {
     cv_.Wait(&mu_);
   }
   return *status_;
+}
+
+std::multimap<std::string, std::string>
+XdsEnd2endTest::AsyncRpc::GetServerInitialMetadata() {
+  return ConvertMetadata(context_.GetServerInitialMetadata());
+}
+
+std::multimap<std::string, std::string>
+XdsEnd2endTest::AsyncRpc::GetServerTrailingMetadata() {
+  return ConvertMetadata(context_.GetServerTrailingMetadata());
 }
 
 std::vector<std::unique_ptr<XdsEnd2endTest::ConcurrentRpc>>

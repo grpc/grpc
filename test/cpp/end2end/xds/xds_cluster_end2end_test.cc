@@ -208,8 +208,8 @@ TEST_P(CdsTest, CircuitBreaking) {
   threshold->set_priority(RoutingPriority::DEFAULT);
   threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
   balancer_->ads_service()->SetCdsResource(cluster);
-  // Send exactly max_concurrent_requests long RPCs.
-  LongRunningRpc rpcs[kMaxConcurrentRequests];
+  // Start exactly max_concurrent_requests RPCs.
+  AsyncRpc rpcs[kMaxConcurrentRequests];
   for (size_t i = 0; i < kMaxConcurrentRequests; ++i) {
     rpcs[i].StartRpc(stub_.get());
   }
@@ -253,9 +253,9 @@ TEST_P(CdsTest, CircuitBreakingMultipleChannelsShareCallCounter) {
   balancer_->ads_service()->SetCdsResource(cluster);
   auto channel2 = CreateChannel();
   auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
-  // Send exactly max_concurrent_requests long RPCs, alternating between
+  // Start exactly max_concurrent_requests RPCs, alternating between
   // the two channels.
-  LongRunningRpc rpcs[kMaxConcurrentRequests];
+  AsyncRpc rpcs[kMaxConcurrentRequests];
   for (size_t i = 0; i < kMaxConcurrentRequests; ++i) {
     rpcs[i].StartRpc(i % 2 == 0 ? stub_.get() : stub2.get());
   }
@@ -1432,8 +1432,8 @@ TEST_P(FailoverTest, ReportsConnectingDuringFailover) {
   auto hold = injector.AddHold(backends_[0]->port());
   // Start an RPC in the background, which should cause the channel to
   // try to connect.
-  LongRunningRpc rpc;
-  rpc.StartRpc(stub_.get(), RpcOptions());
+  AsyncRpc rpc;
+  rpc.StartRpc(stub_.get());
   // Wait for connection attempt to start to the backend.
   hold->Wait();
   // Channel state should be CONNECTING here, and any RPC should be
