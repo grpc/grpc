@@ -2920,8 +2920,8 @@ grpc_cc_library(
         "config_vars",
         "grpc++",
         "grpc++_config_proto",
-        "//src/proto/grpc/reflection/v1:reflection_proto",
-        "//src/proto/grpc/reflection/v1alpha:reflection_proto",
+        ":reflection_v1_cc_grpc",
+        ":reflection_v1alpha_cc_grpc",
     ],
     alwayslink = 1,
 )
@@ -3030,10 +3030,10 @@ grpc_cc_library(
         "grpc",
         "grpc++",
         "grpc++_config_proto",
+        ":channelz_cc_grpc",
         "//src/core:channelz_v2tov1_convert",
         "//src/core:experiments",
         "//src/core:notification",
-        "//src/proto/grpc/channelz:channelz_proto",
         "//src/proto/grpc/channelz/v2:service_cc_grpc",
     ],
     alwayslink = 1,
@@ -3340,6 +3340,7 @@ grpc_cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
+        "gpr_public_hdrs",
         "grpc++_public_hdrs",
     ],
 )
@@ -5749,12 +5750,12 @@ grpc_upb_proto_reflection_library(
 
 grpc_upb_proto_library(
     name = "channelz_v1_upb",
-    deps = ["//src/proto/grpc/channelz:channelz_proto_internal"],
+    deps = ["@grpc_proto//:channelz_proto"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "channelz_v1_upbdefs",
-    deps = ["//src/proto/grpc/channelz:channelz_proto_internal"],
+    deps = ["@grpc_proto//:channelz_proto"],
 )
 
 WELL_KNOWN_PROTO_TARGETS = [
