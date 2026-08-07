@@ -1,8 +1,124 @@
-bazel-bin
-bazel-grpc
-bazel-out
-build
-.cache
-.git
-# python virtual environments
-*/.venv*
+# ==============================================================================
+# Build Artifacts, Compilation Outputs & Caches
+# ==============================================================================
+
+## Standard Bazel Output Symlinks
+**/bazel-bin/
+**/bazel-out/
+**/bazel-testlogs/
+
+## Workspace-Specific Symlinks (WORKSPACE & MODULE.bazel files)
+**/bazel-grpc/
+**/bazel-cpp/
+**/bazel-python/
+**/bazel-python_second_test_repo/
+**/bazel-bzlmod_test/
+**/bazel-artifact_gen/
+
+## Root Build Outputs (/build/)
+/build/
+**/.build/
+**/bins/
+**/libs/
+**/objs/
+**/gens/
+**/out/
+**/dist/
+**/obj/
+/src/csharp/**/bin/
+
+## CMake / CLion IDE Build Directories
+**/cmake-build-*/
+**/DerivedData/
+
+## Generated Build Output Packages (task_runner.py -f artifact -> /artifacts/)
+/artifacts/
+
+## Toolchain & Build Caches (check_pytype.sh, clang_tidy_code.sh -> .cache/)
+**/.cache/
+
+# ==============================================================================
+# Python
+# ==============================================================================
+
+## Virtual Environments
+# Standard venvs (.venv, .venv-pyright, .venv-ci-black, etc.)
+**/.venv*/
+
+# TODO(sergiitk): update all references below to produce standard `.venv-*`
+# User virtualenv dirs (src/python/CONTRIBUTING.md -> ~/.virtualenvs/)
+**/.virtualenv*/
+# Legacy venv directory names
+# (build_artifact_python.sh, build_python.sh -> venv/)
+**/venv/
+# Script virtualenvs (tools/distrib/python/docgen.py -> distrib_virtualenv/)
+**/*_virtualenv/
+# Bazel format virtualenv
+# (tools/distrib/format_bazel.sh -> bazel_format_virtual_environment/)
+**/*_virtual_environment/
+
+## Bytecode & Caches
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/.pytype/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.tox/
+
+## Test Coverage Data
+**/.coverage
+**/.coverage.*
+**/htmlcov/
+
+## Build Artifacts & Packages
+/src/python/*/build/
+/tools/distrib/python/*/build/
+**/pyb/
+**/.eggs/
+**/*.egg
+**/*.egg-info/
+
+# ==============================================================================
+# Git Metadata, Environment & Secrets Safeguards
+# ==============================================================================
+
+**/.git
+**/.github/
+
+## Environment & Secrets Safeguards
+**/.env*
+!**/.env.example
+!**/.env.template
+
+# ==============================================================================
+# Editor, OS Metadata & Node Dependencies
+# ==============================================================================
+
+## Node & Package Manager Dependencies
+**/node_modules/
+**/Pods/
+
+## Editor & OS Metadata
+**/.DS_Store
+**/Thumbs.db
+**/._*
+**/.idea/
+**/.vscode/
+**/.vs/
+**/.history/
+
+# Vim swap files (*.sw?) and Emacs auto-save (/#*#) / lock files (/.#*)
+**/*.sw?
+**/#*#
+**/.#*
+**/*~
+
+# ==============================================================================
+# Logs & Debug Outputs
+# ==============================================================================
+
+**/*.log
+**/gdb.txt
+**/portlog.txt
+**/perf.data*
