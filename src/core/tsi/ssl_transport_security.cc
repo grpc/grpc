@@ -2083,8 +2083,8 @@ tsi_ssl_root_certs_store* tsi_ssl_root_certs_store_create(
     gpr_free(root_store);
     return nullptr;
   }
-  tsi_result result = x509_store_load_certs(
-      root_store->store, pem_roots.data(), pem_roots.size(), nullptr);
+  tsi_result result = x509_store_load_certs(root_store->store, pem_roots.data(),
+                                            pem_roots.size(), nullptr);
   if (result != TSI_OK) {
     LOG(ERROR) << "Could not load root certificates.";
     X509_STORE_free(root_store->store);
