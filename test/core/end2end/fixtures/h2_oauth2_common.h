@@ -139,15 +139,18 @@ class Oauth2Fixture : public SecureFixture {
         grpc_core::testing::GetFileContents(ServerKeyPath());
     grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key.c_str(),
                                                     server_cert.c_str()};
-    grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
-        nullptr, &pem_key_cert_pair, 1, 0, nullptr);
-    if (ssl_creds != nullptr) {
-      // Set the min and max TLS version.
-      grpc_ssl_server_credentials* creds =
-          reinterpret_cast<grpc_ssl_server_credentials*>(ssl_creds);
-      creds->set_min_tls_version(tls_version_);
-      creds->set_max_tls_version(tls_version_);
-    }
+    grpc_ssl_server_certificate_config* certificate_config =
+        grpc_ssl_server_certificate_config_create(nullptr, &pem_key_cert_pair,
+                                                  1);
+    grpc_ssl_server_credentials_options* options =
+        grpc_ssl_server_credentials_create_options_using_config(
+            GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, certificate_config);
+    grpc_ssl_server_credentials_options_set_min_tls_version(options,
+                                                           tls_version_);
+    grpc_ssl_server_credentials_options_set_max_tls_version(options,
+                                                           tls_version_);
+    grpc_server_credentials* ssl_creds =
+        grpc_ssl_server_credentials_create_with_options(options);
     grpc_server_credentials_set_auth_metadata_processor(
         ssl_creds,
         test_processor_create(args.Contains(FAIL_AUTH_CHECK_SERVER_ARG_NAME)));

@@ -68,15 +68,12 @@ class SslCredReloadFixture : public SecureFixture {
         grpc_ssl_server_credentials_create_options_using_config_fetcher(
             GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
             ssl_server_certificate_config_callback, this);
+    grpc_ssl_server_credentials_options_set_min_tls_version(options,
+                                                           tls_version_);
+    grpc_ssl_server_credentials_options_set_max_tls_version(options,
+                                                           tls_version_);
     grpc_server_credentials* ssl_creds =
         grpc_ssl_server_credentials_create_with_options(options);
-    if (ssl_creds != nullptr) {
-      // Set the min and max TLS version.
-      grpc_ssl_server_credentials* creds =
-          reinterpret_cast<grpc_ssl_server_credentials*>(ssl_creds);
-      creds->set_min_tls_version(tls_version_);
-      creds->set_max_tls_version(tls_version_);
-    }
     if (args.Contains(FAIL_AUTH_CHECK_SERVER_ARG_NAME)) {
       grpc_auth_metadata_processor processor = {process_auth_failure, nullptr,
                                                 nullptr};

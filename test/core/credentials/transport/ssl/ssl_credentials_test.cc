@@ -37,6 +37,24 @@
 using grpc_core::MakeRefCounted;
 using grpc_core::RefCountedPtr;
 
+namespace {
+
+grpc_ssl_server_credentials_options* CreateServerCredentialsOptions() {
+  grpc_ssl_pem_key_cert_pair key_cert_pair = {"private_key", "cert_chain"};
+  grpc_ssl_server_certificate_config* certificate_config =
+      grpc_ssl_server_certificate_config_create("root_certificates",
+                                                &key_cert_pair, 1);
+  return grpc_ssl_server_credentials_create_options_using_config(
+      GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, certificate_config);
+}
+
+grpc_ssl_certificate_config_reload_status UnusedCertificateConfigFetcher(
+    void* /*user_data*/, grpc_ssl_server_certificate_config** /*config*/) {
+  return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
+}
+
+}  // namespace
+
 TEST(SslCredentialsTest, ConvertGrpcToTsiCertPairs) {
   grpc_ssl_pem_key_cert_pair grpc_pairs[] = {{"private_key1", "cert_chain1"},
                                              {"private_key2", "cert_chain2"},
@@ -64,6 +82,85 @@ TEST(SslCredentialsTest, ConvertGrpcToTsiCertPairs) {
                 0);
     }
   }
+}
+
+TEST(SslCredentialsTest, ServerCredentialsOptionsUseDefaultTlsVersions) {
+  grpc_server_credentials* credentials =
+      grpc_ssl_server_credentials_create_with_options(
+          CreateServerCredentialsOptions());
+  ASSERT_NE(credentials, nullptr);
+  const auto* ssl_credentials =
+      static_cast<const grpc_ssl_server_credentials*>(credentials);
+  EXPECT_EQ(ssl_credentials->config().min_tls_version,
+            grpc_tls_version::TLS1_2);
+  EXPECT_EQ(ssl_credentials->config().max_tls_version,
+            grpc_tls_version::TLS1_3);
+  grpc_server_credentials_release(credentials);
+}
+
+TEST(SslCredentialsTest, ServerCredentialsOptionsSetMinimumTlsVersion) {
+  grpc_ssl_server_credentials_options* options =
+      CreateServerCredentialsOptions();
+  grpc_ssl_server_credentials_options_set_min_tls_version(
+      options, grpc_tls_version::TLS1_3);
+  grpc_server_credentials* credentials =
+      grpc_ssl_server_credentials_create_with_options(options);
+  ASSERT_NE(credentials, nullptr);
+  const auto* ssl_credentials =
+      static_cast<const grpc_ssl_server_credentials*>(credentials);
+  EXPECT_EQ(ssl_credentials->config().min_tls_version,
+            grpc_tls_version::TLS1_3);
+  EXPECT_EQ(ssl_credentials->config().max_tls_version,
+            grpc_tls_version::TLS1_3);
+  grpc_server_credentials_release(credentials);
+}
+
+TEST(SslCredentialsTest, ServerCredentialsOptionsSetMaximumTlsVersion) {
+  grpc_ssl_server_credentials_options* options =
+      CreateServerCredentialsOptions();
+  grpc_ssl_server_credentials_options_set_max_tls_version(
+      options, grpc_tls_version::TLS1_2);
+  grpc_server_credentials* credentials =
+      grpc_ssl_server_credentials_create_with_options(options);
+  ASSERT_NE(credentials, nullptr);
+  const auto* ssl_credentials =
+      static_cast<const grpc_ssl_server_credentials*>(credentials);
+  EXPECT_EQ(ssl_credentials->config().min_tls_version,
+            grpc_tls_version::TLS1_2);
+  EXPECT_EQ(ssl_credentials->config().max_tls_version,
+            grpc_tls_version::TLS1_2);
+  grpc_server_credentials_release(credentials);
+}
+
+TEST(SslCredentialsTest, ServerCredentialsOptionsRejectInvalidTlsVersionRange) {
+  grpc_ssl_server_credentials_options* options =
+      CreateServerCredentialsOptions();
+  grpc_ssl_server_credentials_options_set_min_tls_version(
+      options, grpc_tls_version::TLS1_3);
+  grpc_ssl_server_credentials_options_set_max_tls_version(
+      options, grpc_tls_version::TLS1_2);
+  EXPECT_EQ(grpc_ssl_server_credentials_create_with_options(options), nullptr);
+}
+
+TEST(SslCredentialsTest, ServerCredentialsFetcherOptionsSetTlsVersions) {
+  grpc_ssl_server_credentials_options* options =
+      grpc_ssl_server_credentials_create_options_using_config_fetcher(
+          GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
+          UnusedCertificateConfigFetcher, nullptr);
+  grpc_ssl_server_credentials_options_set_min_tls_version(
+      options, grpc_tls_version::TLS1_3);
+  grpc_ssl_server_credentials_options_set_max_tls_version(
+      options, grpc_tls_version::TLS1_3);
+  grpc_server_credentials* credentials =
+      grpc_ssl_server_credentials_create_with_options(options);
+  ASSERT_NE(credentials, nullptr);
+  const auto* ssl_credentials =
+      static_cast<const grpc_ssl_server_credentials*>(credentials);
+  EXPECT_EQ(ssl_credentials->config().min_tls_version,
+            grpc_tls_version::TLS1_3);
+  EXPECT_EQ(ssl_credentials->config().max_tls_version,
+            grpc_tls_version::TLS1_3);
+  grpc_server_credentials_release(credentials);
 }
 
 class SslLeafHashComparatorTest : public ::testing::Test {
