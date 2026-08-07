@@ -360,7 +360,7 @@ void XdsEnd2endTest::RpcOptions::SetupRpc(ClientContext* context,
     request->mutable_param()->set_skip_cancelled_check(true);
   }
   if (server_expected_error != StatusCode::OK) {
-    request.mutable_param()->mutable_expected_error()->set_code(
+    request->mutable_param()->mutable_expected_error()->set_code(
         server_expected_error);
   }
   if (backend_metrics.has_value()) {
