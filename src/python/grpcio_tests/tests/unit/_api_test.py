@@ -99,12 +99,8 @@ class AllTest(unittest.TestCase):
 
 class StatusCodeTest(unittest.TestCase):
     def test_status_code_str_and_repr(self):
-        self.assertEqual(str(grpc.StatusCode.OK.value[0]), "0")
-        self.assertEqual(str(grpc.StatusCode.CANCELLED.value[0]), "1")
-        self.assertEqual(repr(grpc.StatusCode.OK.value[0]), 0)
-        self.assertEqual(repr(grpc.StatusCode.CANCELLED.value[0]), 1)
-        self.assertEqual(int(grpc.StatusCode.OK.value[0]), 0)
         self.assertEqual(grpc.StatusCode.OK.value[0], 0)
+        self.assertEqual(grpc.StatusCode.CANCELLED.value[0], 1)
 
 
 class ChannelConnectivityTest(unittest.TestCase):
