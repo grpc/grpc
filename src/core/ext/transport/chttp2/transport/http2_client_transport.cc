@@ -289,7 +289,8 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
     GRPC_HTTP2_CLIENT_DLOG
         << "Http2ClientTransport::ProcessIncomingFrame(DataFrame) "
            "ExtractMessage";
-    ValueOrHttp2Status<MessageHandle> result = assembler.ExtractMessage();
+    ValueOrHttp2Status<MessageHandle> result =
+        assembler.ExtractMessage(max_receive_message_length_);
     if (!result.IsOk()) {
       GRPC_HTTP2_CLIENT_DLOG
           << "Http2ClientTransport::ProcessIncomingFrame(DataFrame) "
@@ -1278,6 +1279,7 @@ void Http2ClientTransport::ReadChannelArgs(const ChannelArgs& channel_args,
   read_context_.set_soft_limit(args.max_header_list_size_soft_limit);
   keepalive_permit_without_calls_ = args.keepalive_permit_without_calls;
   test_only_ack_pings_ = args.test_only_ack_pings;
+  max_receive_message_length_ = args.max_receive_message_length;
 
   if (args.initial_sequence_number > 0) {
     next_stream_id_ = args.initial_sequence_number;

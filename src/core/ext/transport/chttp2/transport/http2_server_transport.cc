@@ -337,7 +337,8 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
     GRPC_HTTP2_SERVER_DLOG
         << "Http2ServerTransport::ProcessIncomingFrame(DataFrame) "
            "ExtractMessage";
-    ValueOrHttp2Status<MessageHandle> result = assembler.ExtractMessage();
+    ValueOrHttp2Status<MessageHandle> result =
+        assembler.ExtractMessage(max_receive_message_length_);
     if (!result.IsOk()) {
       GRPC_HTTP2_SERVER_DLOG
           << "Http2ServerTransport::ProcessIncomingFrame(DataFrame) "
@@ -1744,6 +1745,7 @@ void Http2ServerTransport::ReadChannelArgs(const ChannelArgs& channel_args,
   read_context_.set_soft_limit(args.max_header_list_size_soft_limit);
   keepalive_permit_without_calls_ = args.keepalive_permit_without_calls;
   test_only_ack_pings_ = args.test_only_ack_pings;
+  max_receive_message_length_ = args.max_receive_message_length;
 
   settings_->SetSettingsTimeout(args.settings_timeout);
   if (args.max_usable_hpack_table_size >= 0) {

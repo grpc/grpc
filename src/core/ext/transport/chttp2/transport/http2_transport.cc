@@ -135,14 +135,19 @@ void InitLocalSettings(Http2Settings& settings, const bool is_client) {
 
 std::string TransportChannelArgs::DebugString() const {
   return absl::StrCat(
-      "keepalive_time: ", keepalive_time,
-      " keepalive_timeout: ", keepalive_timeout,
-      " ping_timeout: ", ping_timeout, " settings_timeout: ", settings_timeout,
+      "keepalive_time: ", keepalive_time.ToString(),
+      " keepalive_timeout: ", keepalive_timeout.ToString(),
+      " ping_timeout: ", ping_timeout.ToString(),
+      " settings_timeout: ", settings_timeout.ToString(),
       " keepalive_permit_without_calls: ", keepalive_permit_without_calls,
+      " test_only_ack_pings: ", test_only_ack_pings,
       " max_header_list_size_soft_limit: ", max_header_list_size_soft_limit,
       " max_usable_hpack_table_size: ", max_usable_hpack_table_size,
       " initial_sequence_number: ", initial_sequence_number,
-      " test_only_ack_pings: ", test_only_ack_pings);
+      " max_receive_message_length: ",
+      max_receive_message_length.has_value()
+          ? std::to_string(max_receive_message_length.value())
+          : "null");
 }
 
 void ReadChannelArgs(const ChannelArgs& channel_args,
@@ -191,6 +196,12 @@ void ReadChannelArgs(const ChannelArgs& channel_args,
 
   args.test_only_ack_pings =
       channel_args.GetBool("grpc.http2.ack_pings").value_or(kDefaultAckPings);
+
+  auto max_receive_message_length =
+      channel_args.GetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH);
+  if (max_receive_message_length.has_value()) {
+    args.max_receive_message_length = *max_receive_message_length;
+  }
 
   GRPC_HTTP2_COMMON_DLOG << "ChannelArgs: " << args.DebugString();
 }

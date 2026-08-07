@@ -710,6 +710,7 @@ class Http2ClientTransport final : public ClientTransport,
   std::optional<KeepaliveManager> keepalive_manager_;
 
   bool keepalive_permit_without_calls_;
+  std::optional<uint32_t> max_receive_message_length_;
 
   GoawayManager goaway_manager_;
 
