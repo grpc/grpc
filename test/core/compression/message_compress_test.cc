@@ -159,6 +159,60 @@ TEST(MessageCompressTest, TinyDataCompress) {
   grpc_slice_buffer_destroy(&output);
 }
 
+TEST(MessageCompressTest, DecompressionLimit) {
+  grpc_slice_buffer input;
+  grpc_slice_buffer compressed;
+  grpc_slice_buffer output;
+
+  grpc_slice_buffer_init(&input);
+  grpc_slice_buffer_init(&compressed);
+  grpc_slice_buffer_init(&output);
+  grpc_slice_buffer_add(&input, create_test_value(ONE_MB_A));
+
+  grpc_core::ExecCtx exec_ctx;
+  ASSERT_EQ(1, grpc_msg_compress(GRPC_COMPRESS_GZIP, &input, &compressed));
+  ASSERT_LT(compressed.length, 2048u);
+  grpc_slice_buffer_add(&output, create_test_value(ONE_A));
+
+  EXPECT_EQ(grpc_core::DecompressMessageWithLimit(GRPC_COMPRESS_GZIP,
+                                                  &compressed, &output, 2048),
+            grpc_core::MessageDecompressionResult::kTooLarge);
+  EXPECT_EQ(output.length, 1u);
+  grpc_slice_buffer_reset_and_unref(&output);
+
+  EXPECT_EQ(grpc_core::DecompressMessageWithLimit(
+                GRPC_COMPRESS_GZIP, &compressed, &output, 1024 * 1024),
+            grpc_core::MessageDecompressionResult::kOk);
+  EXPECT_EQ(output.length, 1024u * 1024u);
+
+  grpc_slice_buffer_destroy(&input);
+  grpc_slice_buffer_destroy(&compressed);
+  grpc_slice_buffer_destroy(&output);
+}
+
+TEST(MessageCompressTest, UncompressedInputHonorsDecompressionLimit) {
+  grpc_slice_buffer input;
+  grpc_slice_buffer output;
+
+  grpc_slice_buffer_init(&input);
+  grpc_slice_buffer_init(&output);
+  grpc_slice_buffer_add(&input, create_test_value(ONE_KB_A));
+
+  grpc_core::ExecCtx exec_ctx;
+  EXPECT_EQ(grpc_core::DecompressMessageWithLimit(GRPC_COMPRESS_NONE, &input,
+                                                  &output, 1023),
+            grpc_core::MessageDecompressionResult::kTooLarge);
+  EXPECT_EQ(output.length, 0u);
+
+  EXPECT_EQ(grpc_core::DecompressMessageWithLimit(GRPC_COMPRESS_NONE, &input,
+                                                  &output, 1024),
+            grpc_core::MessageDecompressionResult::kOk);
+  EXPECT_EQ(output.length, 1024u);
+
+  grpc_slice_buffer_destroy(&input);
+  grpc_slice_buffer_destroy(&output);
+}
+
 TEST(MessageCompressTest, BadDecompressionDataCrc) {
   grpc_slice_buffer input;
   grpc_slice_buffer corrupted;

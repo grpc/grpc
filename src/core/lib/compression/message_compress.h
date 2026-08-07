@@ -23,6 +23,9 @@
 #include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
 
+#include <cstdint>
+#include <optional>
+
 // compress 'input' to 'output' using 'algorithm'.
 // On success, appends compressed slices to output and returns 1.
 // On failure, appends uncompressed slices to output and returns 0.
@@ -34,5 +37,17 @@ int grpc_msg_compress(grpc_compression_algorithm algorithm,
 // On failure, output is unchanged, and returns 0.
 int grpc_msg_decompress(grpc_compression_algorithm algorithm,
                         grpc_slice_buffer* input, grpc_slice_buffer* output);
+
+namespace grpc_core {
+
+enum class MessageDecompressionResult { kOk, kError, kTooLarge };
+
+// Decompresses input while allowing at most max_output_size bytes of output.
+// On failure, output is unchanged.
+MessageDecompressionResult DecompressMessageWithLimit(
+    grpc_compression_algorithm algorithm, grpc_slice_buffer* input,
+    grpc_slice_buffer* output, std::optional<uint32_t> max_output_size);
+
+}  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LIB_COMPRESSION_MESSAGE_COMPRESS_H
