@@ -294,7 +294,9 @@ std::optional<grpc_resolved_address> HttpProxyMapper::MapAddress(
       !AddressIncluded(address, host_name, *enabled_addresses)) {
     return std::nullopt;
   }
-  *args = args->Set(GRPC_ARG_HTTP_CONNECT_SERVER, *address_string);
+  if (!args->Contains(GRPC_ARG_HTTP_CONNECT_SERVER)) {
+    *args = args->Set(GRPC_ARG_HTTP_CONNECT_SERVER, *address_string);
+  }
   return proxy_address;
 }
 
