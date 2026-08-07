@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
+#include <atomic>
 #include <memory>
 #include <string>
 #include <variant>
@@ -349,14 +350,25 @@ class CallTracer : public CallSpan {
   }
   void RecordIncomingBytes(
       const CallTracerInterface::TransportByteSize& transport_byte_size) {
+    incoming_bytes_.fetch_add(transport_byte_size.data_bytes,
+                              std::memory_order_relaxed);
     interface_->RecordIncomingBytes(transport_byte_size);
   }
   void RecordOutgoingBytes(
       const CallTracerInterface::TransportByteSize& transport_byte_size) {
+    outgoing_bytes_.fetch_add(transport_byte_size.data_bytes,
+                              std::memory_order_relaxed);
     interface_->RecordOutgoingBytes(transport_byte_size);
   }
   std::shared_ptr<TcpCallTracer> StartNewTcpTrace() {
     return interface_->StartNewTcpTrace();
+  }
+
+  uint64_t incoming_bytes() const {
+    return incoming_bytes_.load(std::memory_order_relaxed);
+  }
+  uint64_t outgoing_bytes() const {
+    return outgoing_bytes_.load(std::memory_order_relaxed);
   }
 
  protected:
@@ -364,6 +376,8 @@ class CallTracer : public CallSpan {
 
  private:
   CallTracerInterface* interface_;
+  std::atomic<uint64_t> incoming_bytes_{0};
+  std::atomic<uint64_t> outgoing_bytes_{0};
 };
 
 // Concrete class for a client call tracer.
