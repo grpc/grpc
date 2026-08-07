@@ -18,7 +18,9 @@
 
 #include <grpc/grpc.h>
 
+#include <memory>
 #include <utility>
+#include <vector>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/down_cast.h"
@@ -29,10 +31,20 @@
 #include "src/core/xds/grpc/xds_server_grpc.h"
 #include "test/core/test_util/test_config.h"
 #include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace testing {
 namespace {
+
+class FakeStreamingCallEventHandler
+    : public XdsTransportFactory::XdsTransport::StreamingCall::EventHandler {
+ public:
+  void OnRequestSent(bool /*ok*/) override {}
+  void OnRecvMessage(absl::string_view /*payload*/) override {}
+  void OnStatusReceived(absl::Status /*status*/) override {}
+};
 
 class GrpcXdsTransportTest : public ::testing::Test {
  protected:
@@ -173,6 +185,24 @@ TEST_F(GrpcXdsTransportTest, DifferingServerUriDoesNotShareChannel) {
   auto* grpc_transport2 =
       DownCast<GrpcXdsTransportFactory::GrpcXdsTransport*>(transport2.get());
   EXPECT_NE(grpc_transport1->channel(), grpc_transport2->channel());
+}
+
+TEST_F(GrpcXdsTransportTest, StreamingCallOrphan) {
+  ExecCtx exec_ctx;
+  GrpcXdsServerTarget target("localhost:1234", channel_creds_config_,
+                             /*call_creds_configs=*/{},
+                             /*initial_metadata=*/{}, Duration::Seconds(10));
+  absl::Status status;
+  auto transport = factory_->GetTransport(target, &status);
+  ASSERT_TRUE(status.ok()) << status.ToString();
+  auto call = transport->CreateStreamingCall(
+      "/test.Service/TestMethod",
+      std::make_unique<FakeStreamingCallEventHandler>());
+  ASSERT_NE(call, nullptr);
+  // Orphan the call while in flight. This invokes Orphan(), which cancels
+  // the underlying call and releases the initial reference. The cancellation
+  // triggers OnStatusReceived(), which releases its own reference.
+  call.reset();
 }
 
 class GrpcXdsServerTargetTest : public ::testing::Test {

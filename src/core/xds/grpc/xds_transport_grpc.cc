@@ -144,10 +144,10 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
   op->flags = 0;
   op->reserved = nullptr;
   ++op;
-  // This callback signals the end of the call, so it relies on the initial
-  // ref instead of a new ref. When it's invoked, it's the initial ref that is
-  // unreffed.
-  GRPC_CLOSURE_INIT(&on_status_received_, OnStatusReceived, this, nullptr);
+  // Ref will be released in the callback.
+  GRPC_CLOSURE_INIT(&on_status_received_, OnStatusReceived,
+                    this->Ref(DEBUG_LOCATION, "OnStatusReceived").release(),
+                    nullptr);
   call_error = grpc_call_start_batch_and_execute(
       call_, ops, static_cast<size_t>(op - ops), &on_status_received_);
   GRPC_CHECK_EQ(call_error, GRPC_CALL_OK);
@@ -175,8 +175,7 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::Orphan() {
   // Otherwise, we are here because xds_client has to orphan a failed call,
   // in which case the following cancellation will be a no-op.
   grpc_call_cancel_internal(call_);
-  // Note that the initial ref is held by OnStatusReceived(), so the
-  // corresponding unref happens there instead of here.
+  Unref(DEBUG_LOCATION, "Orphan");
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::SendMessage(
