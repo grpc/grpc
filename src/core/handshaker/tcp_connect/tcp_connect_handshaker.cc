@@ -69,7 +69,7 @@ class TCPConnectHandshaker : public Handshaker {
 
  private:
   ~TCPConnectHandshaker() override;
-  void FinishLocked(absl::Status error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void Finish(absl::Status error);
   static void Connected(void* arg, grpc_error_handle error);
 
   Mutex mu_;
@@ -101,18 +101,18 @@ TCPConnectHandshaker::TCPConnectHandshaker(grpc_pollset_set* pollset_set)
 void TCPConnectHandshaker::Shutdown(absl::Status /*error*/) {
   // TODO(anramach): After migration to EventEngine, cancel the in-progress
   // TCP connection attempt.
-  MutexLock lock(&mu_);
-  if (!shutdown_) {
-    shutdown_ = true;
-    // If we are shutting down while connecting, respond back with
-    // handshake done.
-    // The callback from grpc_tcp_client_connect will perform
-    // the necessary clean up.
-    if (on_handshake_done_ != nullptr) {
-      // TODO(roth): When we remove the legacy grpc_error APIs, propagate the
-      // status passed to shutdown as part of the message here.
-      FinishLocked(GRPC_ERROR_CREATE("tcp handshaker shutdown"));
+  bool call_finish = false;
+  {
+    MutexLock lock(&mu_);
+    if (!shutdown_) {
+      shutdown_ = true;
+      if (on_handshake_done_ != nullptr) {
+        call_finish = true;
+      }
     }
+  }
+  if (call_finish) {
+    Finish(GRPC_ERROR_CREATE("tcp handshaker shutdown"));
   }
 }
 
@@ -135,8 +135,7 @@ void TCPConnectHandshaker::DoHandshake(
       args->args.GetString(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS).value();
   absl::StatusOr<URI> uri = URI::Parse(resolved_address_text);
   if (!uri.ok() || !grpc_parse_uri(*uri, &addr_)) {
-    MutexLock lock(&mu_);
-    FinishLocked(GRPC_ERROR_CREATE(absl::StrCat(
+    Finish(GRPC_ERROR_CREATE(absl::StrCat(
         "Resolved address in invalid format: ", resolved_address_text)));
     return;
   }
@@ -166,6 +165,8 @@ void TCPConnectHandshaker::DoHandshake(
 void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
   RefCountedPtr<TCPConnectHandshaker> self(
       static_cast<TCPConnectHandshaker*>(arg));
+  absl::Status finish_status = absl::OkStatus();
+  bool call_finish = false;
   {
     MutexLock lock(&self->mu_);
     if (!error.ok() || self->shutdown_) {
@@ -178,21 +179,22 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
       }
       if (!self->shutdown_) {
         self->shutdown_ = true;
-        self->FinishLocked(std::move(error));
-      } else {
-        // The on_handshake_done_ callback was already invoked as part of
-        // shutdown when connecting, so nothing to be done here.
+        finish_status = std::move(error);
+        call_finish = true;
       }
-      return;
+    } else {
+      GRPC_CHECK_NE(self->endpoint_to_destroy_, nullptr);
+      self->args_->endpoint.reset(self->endpoint_to_destroy_);
+      self->endpoint_to_destroy_ = nullptr;
+      if (self->bind_endpoint_to_pollset_) {
+        grpc_endpoint_add_to_pollset_set(self->args_->endpoint.get(),
+                                         self->interested_parties_);
+      }
+      call_finish = true;
     }
-    GRPC_CHECK_NE(self->endpoint_to_destroy_, nullptr);
-    self->args_->endpoint.reset(self->endpoint_to_destroy_);
-    self->endpoint_to_destroy_ = nullptr;
-    if (self->bind_endpoint_to_pollset_) {
-      grpc_endpoint_add_to_pollset_set(self->args_->endpoint.get(),
-                                       self->interested_parties_);
-    }
-    self->FinishLocked(absl::OkStatus());
+  }
+  if (call_finish) {
+    self->Finish(std::move(finish_status));
   }
 }
 
@@ -203,11 +205,18 @@ TCPConnectHandshaker::~TCPConnectHandshaker() {
   grpc_pollset_set_destroy(interested_parties_);
 }
 
-void TCPConnectHandshaker::FinishLocked(absl::Status error) {
-  if (interested_parties_ != nullptr) {
-    grpc_polling_entity_del_from_pollset_set(&pollent_, interested_parties_);
+void TCPConnectHandshaker::Finish(absl::Status error) {
+  absl::AnyInvocable<void(absl::Status)> on_handshake_done;
+  {
+    MutexLock lock(&mu_);
+    on_handshake_done = std::move(on_handshake_done_);
   }
-  InvokeOnHandshakeDone(args_, std::move(on_handshake_done_), std::move(error));
+  if (on_handshake_done != nullptr) {
+    if (interested_parties_ != nullptr) {
+      grpc_polling_entity_del_from_pollset_set(&pollent_, interested_parties_);
+    }
+    InvokeOnHandshakeDone(args_, std::move(on_handshake_done), std::move(error));
+  }
 }
 
 //
