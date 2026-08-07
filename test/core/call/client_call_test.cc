@@ -19,6 +19,7 @@
 
 #include "src/core/call/metadata.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/surface/call.h"
 #include "src/core/util/debug_location.h"
 #include "test/core/call/batch_builder.h"
 #include "test/core/call/yodel/yodel_test.h"
@@ -121,6 +122,7 @@ class ClientCallTest : public YodelTest {
     ClientCallTest* const test_;
   };
 
+ protected:
   void InitTest() override {
     cq_ = grpc_completion_queue_create_for_next(nullptr);
     cq_verifier_ = absl::make_unique<CqVerifier>(
@@ -155,6 +157,30 @@ class ClientCallTest : public YodelTest {
 #define CLIENT_CALL_TEST(name) YODEL_TEST(ClientCallTest, name)
 
 CLIENT_CALL_TEST(NoOp) { InitCall(CallOptions()); }
+
+CLIENT_CALL_TEST(FirstErrorWins) {
+  InitCall(CallOptions());
+  EXPECT_EQ(grpc_call_get_final_error(call_), std::nullopt);
+  grpc_core::Call::FromC(call_)->SetFinalError(
+      absl::CancelledError("first error"));
+  grpc_core::Call::FromC(call_)->SetFinalError(
+      absl::UnavailableError("second error"));
+  auto final_error = grpc_call_get_final_error(call_);
+  ASSERT_TRUE(final_error.has_value());
+  EXPECT_EQ(final_error->code(), absl::StatusCode::kCancelled);
+  EXPECT_EQ(final_error->message(), "first error");
+}
+
+CLIENT_CALL_TEST(FinalErrorCapturedOnCancel) {
+  InitCall(CallOptions());
+  EXPECT_EQ(grpc_call_get_final_error(call_), std::nullopt);
+  grpc_call_cancel_with_status(call_, GRPC_STATUS_CANCELLED, "test cancel",
+                               nullptr);
+  auto final_error = grpc_call_get_final_error(call_);
+  ASSERT_TRUE(final_error.has_value());
+  EXPECT_EQ(final_error->code(), absl::StatusCode::kCancelled);
+  EXPECT_EQ(final_error->message(), "test cancel");
+}
 
 CLIENT_CALL_TEST(SendInitialMetadata) {
   InitCall(CallOptions());

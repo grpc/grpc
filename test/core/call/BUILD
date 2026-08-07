@@ -53,6 +53,17 @@ grpc_fuzz_test(
     ],
 )
 
+grpc_cc_test(
+    name = "filter_stack_call_test",
+    srcs = ["filter_stack_call_test.cc"],
+    external_deps = ["gtest"],
+    deps = [
+        "//:config_vars",
+        "//:grpc_base",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
 grpc_fuzz_test(
     name = "server_call_test",
     srcs = [

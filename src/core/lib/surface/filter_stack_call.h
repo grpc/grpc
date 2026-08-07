@@ -336,6 +336,7 @@ class FilterStackCall final : public Call {
     } server;
   } final_op_;
   AtomicError status_error_;
+  AtomicError cancel_error_;
 
   // recv_state can contain one of the following values:
   // RECV_NONE :                 :  no initial metadata and messages received

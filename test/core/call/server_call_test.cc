@@ -22,6 +22,7 @@
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/surface/call.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "test/core/call/batch_builder.h"
 #include "test/core/call/yodel/yodel_test.h"
@@ -109,6 +110,7 @@ class ServerCallTest : public YodelTest {
     ChannelArgs channel_args_;
   };
 
+ protected:
   void InitTest() override {
     cq_ = grpc_completion_queue_create_for_next(nullptr);
   }
@@ -135,6 +137,17 @@ class ServerCallTest : public YodelTest {
 #define SERVER_CALL_TEST(name) YODEL_TEST(ServerCallTest, name)
 
 SERVER_CALL_TEST(NoOp) { InitCall(MakeClientInitialMetadata({})); }
+
+SERVER_CALL_TEST(FinalErrorCapturedOnCancel) {
+  InitCall(MakeClientInitialMetadata({}));
+  EXPECT_EQ(grpc_call_get_final_error(call_), std::nullopt);
+  grpc_call_cancel_with_status(call_, GRPC_STATUS_CANCELLED, "test cancel",
+                               nullptr);
+  auto final_error = grpc_call_get_final_error(call_);
+  ASSERT_TRUE(final_error.has_value());
+  EXPECT_EQ(final_error->code(), absl::StatusCode::kCancelled);
+  EXPECT_EQ(final_error->message(), "test cancel");
+}
 
 SERVER_CALL_TEST(InitialMetadataPassedThrough) {
   InitCall(MakeClientInitialMetadata({{"foo", "bar"}}));
