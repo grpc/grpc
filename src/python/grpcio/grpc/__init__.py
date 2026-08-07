@@ -293,6 +293,19 @@ class StatusCode(enum.Enum):
     UNAUTHENTICATED = (_cygrpc.StatusCode.unauthenticated, "unauthenticated")
 
 
+@enum.unique
+class TLSVersion(enum.Enum):
+    """TLS protocol versions supported by gRPC.
+
+    Attributes:
+      TLS1_2: TLS 1.2.
+      TLS1_3: TLS 1.3.
+    """
+
+    TLS1_2 = _cygrpc.TLSVersion.tls1_2
+    TLS1_3 = _cygrpc.TLSVersion.tls1_3
+
+
 #############################  gRPC Status  ################################
 
 
@@ -1706,8 +1719,29 @@ def method_handlers_generic_handler(service, method_handlers):
     return _utilities.DictionaryGenericHandler(service, method_handlers)
 
 
+def _validate_tls_versions(minimum_tls_version, maximum_tls_version):
+    for name, version in (
+        ("minimum_tls_version", minimum_tls_version),
+        ("maximum_tls_version", maximum_tls_version),
+    ):
+        if version is not None and not isinstance(version, TLSVersion):
+            raise TypeError("{} must be a grpc.TLSVersion or None".format(name))
+    if (
+        minimum_tls_version is not None
+        and maximum_tls_version is not None
+        and minimum_tls_version.value > maximum_tls_version.value
+    ):
+        raise ValueError(
+            "minimum_tls_version cannot be greater than maximum_tls_version"
+        )
+
+
 def ssl_channel_credentials(
-    root_certificates=None, private_key=None, certificate_chain=None
+    root_certificates=None,
+    private_key=None,
+    certificate_chain=None,
+    minimum_tls_version=None,
+    maximum_tls_version=None,
 ):
     """Creates a ChannelCredentials for use with an SSL-enabled Channel.
 
@@ -1719,13 +1753,31 @@ def ssl_channel_credentials(
         private key should be used.
       certificate_chain: The PEM-encoded certificate chain as a byte string
         to use or None if no certificate chain should be used.
+      minimum_tls_version: The minimum TLS version that may be negotiated, or
+        None to use gRPC's default of TLS 1.2.
+      maximum_tls_version: The maximum TLS version that may be negotiated, or
+        None to use gRPC's default of TLS 1.3.
 
     Returns:
       A ChannelCredentials for use with an SSL-enabled Channel.
     """
+    _validate_tls_versions(minimum_tls_version, maximum_tls_version)
     return ChannelCredentials(
         _cygrpc.SSLChannelCredentials(
-            root_certificates, private_key, certificate_chain
+            root_certificates,
+            private_key,
+            certificate_chain,
+            None,
+            (
+                minimum_tls_version.value
+                if minimum_tls_version is not None
+                else None
+            ),
+            (
+                maximum_tls_version.value
+                if maximum_tls_version is not None
+                else None
+            ),
         )
     )
 
@@ -1830,6 +1882,8 @@ def ssl_server_credentials(
     private_key_certificate_chain_pairs,
     root_certificates=None,
     require_client_auth=False,
+    minimum_tls_version=None,
+    maximum_tls_version=None,
 ):
     """Creates a ServerCredentials for use with an SSL-enabled Server.
 
@@ -1842,6 +1896,10 @@ def ssl_server_credentials(
       require_client_auth: A boolean indicating whether or not to require
         clients to be authenticated. May only be True if root_certificates
         is not None.
+      minimum_tls_version: The minimum TLS version that may be negotiated, or
+        None to use gRPC's default of TLS 1.2.
+      maximum_tls_version: The maximum TLS version that may be negotiated, or
+        None to use gRPC's default of TLS 1.3.
 
     Returns:
       A ServerCredentials for use with an SSL-enabled Server. Typically, this
@@ -1855,6 +1913,7 @@ def ssl_server_credentials(
     if require_client_auth and root_certificates is None:
         error_msg = "Illegal to require client auth without providing root certificates!"
         raise ValueError(error_msg)
+    _validate_tls_versions(minimum_tls_version, maximum_tls_version)
     return ServerCredentials(
         _cygrpc.server_credentials_ssl(
             root_certificates,
@@ -1863,6 +1922,16 @@ def ssl_server_credentials(
                 for key, pem in private_key_certificate_chain_pairs
             ],
             require_client_auth,
+            (
+                minimum_tls_version.value
+                if minimum_tls_version is not None
+                else None
+            ),
+            (
+                maximum_tls_version.value
+                if maximum_tls_version is not None
+                else None
+            ),
         )
     )
 
@@ -2287,6 +2356,7 @@ __all__ = (
     "ServicerContext",
     "Status",
     "StatusCode",
+    "TLSVersion",
     "StreamStreamClientInterceptor",
     "StreamStreamMultiCallable",
     "StreamUnaryClientInterceptor",
