@@ -67,16 +67,16 @@ RUN echo '#!/usr/bin/env bash' > /usr/local/bin/apt-get-install-retry && \
     echo '     DEBIAN_FRONTEND=noninteractive apt-get install -qq -y \' >> /usr/local/bin/apt-get-install-retry && \
     echo '     -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" \' >> /usr/local/bin/apt-get-install-retry && \
     echo '      "${PACKAGES[@]}"; then' >> /usr/local/bin/apt-get-install-retry && \
-    echo '    echo "apt-get succeeded on attempt ${i}.";' >> /usr/local/bin/apt-get-install-retry && \
-    echo '    break;' >> /usr/local/bin/apt-get-install-retry && \
+    echo '    echo "apt-get succeeded on attempt ${i}."' >> /usr/local/bin/apt-get-install-retry && \
+    echo '    break' >> /usr/local/bin/apt-get-install-retry && \
     echo '  else' >> /usr/local/bin/apt-get-install-retry && \
     echo '    if [ "${i}" -eq "${MAX_RETRIES}" ]; then' >> /usr/local/bin/apt-get-install-retry && \
     echo '      echo "Max retries reached (${MAX_RETRIES}). apt-get failed permanently." >&2' >> /usr/local/bin/apt-get-install-retry && \
-    echo '      exit 1;' >> /usr/local/bin/apt-get-install-retry && \
+    echo '      exit 1' >> /usr/local/bin/apt-get-install-retry && \
     echo '    fi' >> /usr/local/bin/apt-get-install-retry && \
     echo '    ' >> /usr/local/bin/apt-get-install-retry && \
     echo '    echo "apt-get failed on attempt ${i}. Waiting $((delay**i)) seconds before retrying..."' >> /usr/local/bin/apt-get-install-retry && \
-    echo '    sleep $((delay**i));' >> /usr/local/bin/apt-get-install-retry && \
+    echo '    sleep $((delay**i))' >> /usr/local/bin/apt-get-install-retry && \
     echo '  fi' >> /usr/local/bin/apt-get-install-retry && \
     echo 'done' >> /usr/local/bin/apt-get-install-retry && \
     chmod +x /usr/local/bin/apt-get-install-retry

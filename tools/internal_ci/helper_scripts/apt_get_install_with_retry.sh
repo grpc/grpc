@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # Copyright 2026 The gRPC Authors
 #
-
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -40,16 +39,16 @@ for i in $(seq 1 $MAX_RETRIES); do
      DEBIAN_FRONTEND=noninteractive apt-get install -qq -y \
      -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" \
       "${PACKAGES[@]}"; then
-    echo "apt-get succeeded on attempt ${i}.";
-    break;
+    echo "apt-get succeeded on attempt ${i}."
+    break
   else
     if [ "${i}" -eq "${MAX_RETRIES}" ]; then
       echo "Max retries reached (${MAX_RETRIES}). apt-get failed permanently." >&2
-      exit 1;
+      exit 1
     fi
     
     echo "apt-get failed on attempt ${i}. Waiting $((delay**i)) seconds before retrying..."
-    sleep $((delay**i));
+    sleep $((delay**i))
   fi
 done
 
