@@ -17,7 +17,6 @@ from concurrent.futures import ThreadPoolExecutor
 import logging
 import os
 import queue
-import sys
 import time
 import unittest
 
@@ -57,9 +56,6 @@ _DUMMY_BOOTSTRAP_FILE = """
 """
 
 
-@unittest.skipIf(
-    sys.version_info[0] < 3, "ProtoBuf descriptor has moved on from Python2"
-)
 class TestCsds(unittest.TestCase):
     def setUp(self):
         os.environ["GRPC_XDS_BOOTSTRAP_CONFIG"] = _DUMMY_BOOTSTRAP_FILE
@@ -127,9 +123,6 @@ class TestCsds(unittest.TestCase):
         dummy_channel.close()
 
 
-@unittest.skipIf(
-    sys.version_info[0] < 3, "ProtoBuf descriptor has moved on from Python2"
-)
 class TestCsdsStream(TestCsds):
     def get_xds_config_dump(self):
         if not hasattr(self, "request_queue"):

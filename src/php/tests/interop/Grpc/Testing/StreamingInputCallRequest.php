@@ -6,8 +6,8 @@
 namespace Grpc\Testing;
 
 use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
+use Google\Protobuf\RepeatedField;
 
 /**
  * Client-streaming request.
@@ -80,9 +80,8 @@ class StreamingInputCallRequest extends \Google\Protobuf\Internal\Message
      * @param \Grpc\Testing\Payload $var
      * @return $this
      */
-    public function setPayload($var)
+    public function setPayload(\Grpc\Testing\Payload|null $var)
     {
-        GPBUtil::checkMessage($var, \Grpc\Testing\Payload::class);
         $this->payload = $var;
 
         return $this;
@@ -122,9 +121,8 @@ class StreamingInputCallRequest extends \Google\Protobuf\Internal\Message
      * @param \Grpc\Testing\BoolValue $var
      * @return $this
      */
-    public function setExpectCompressed($var)
+    public function setExpectCompressed(\Grpc\Testing\BoolValue|null $var)
     {
-        GPBUtil::checkMessage($var, \Grpc\Testing\BoolValue::class);
         $this->expect_compressed = $var;
 
         return $this;

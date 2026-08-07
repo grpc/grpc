@@ -14,30 +14,12 @@
 
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/dockerfile/grpc_artifact_python_musllinux_1_2_aarch64/Dockerfile.inja`!!!
 
-FROM quay.io/pypa/musllinux_1_2_aarch64:2025.07.27-1
+FROM quay.io/pypa/musllinux_1_2_aarch64:2026.06.03-1
 
-# TODO: simplify the list of third_party modules list
-# NOTE: git>=2.46 allows leading paths like third_party/* to include all subdirectories
-# current docker base images use git versions lower than 2.46 and hence require separate configs for each submodule
 RUN git config --global protocol.file.allow always && \
   git config --global --add safe.directory /var/local/jenkins/grpc && \
   git config --global --add safe.directory /var/local/jenkins/grpc/.git && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/abseil-cpp && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/benchmark && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/bloaty && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/boringssl-with-bazel && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/cares/cares && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/envoy-api && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/googleapis && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/googletest && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/opencensus-proto && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/opentelemetry && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/opentelemetry-cpp && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/protobuf && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/protoc-gen-validate && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/re2 && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/xds && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/zlib
+  git config --global --add safe.directory '/var/local/jenkins/grpc/.git/modules/third_party/*'
 
 
 # Preinstall zstd and hiredis for ccache to avoid *_FROM_INTERNET downloads.
@@ -46,12 +28,12 @@ RUN apk add openssl openssl-dev zstd zstd-dev hiredis-dev
 # For some reason, this specific build segfaults on ccache unless cython is intalled.
 #===================================
 # Install Python build requirements
-RUN /opt/python/cp39-cp39/bin/pip install --upgrade 'cython==3.1.1' && \
-  /opt/python/cp310-cp310/bin/pip install --upgrade 'cython==3.1.1' && \
+RUN /opt/python/cp310-cp310/bin/pip install --upgrade 'cython==3.1.1' && \
   /opt/python/cp311-cp311/bin/pip install --upgrade 'cython==3.1.1' && \
   /opt/python/cp312-cp312/bin/pip install --upgrade 'cython==3.1.1' && \
   /opt/python/cp313-cp313/bin/pip install --upgrade 'cython==3.1.1' && \
-  /opt/python/cp314-cp314/bin/pip install --upgrade 'cython==3.1.1'
+  /opt/python/cp314-cp314/bin/pip install --upgrade 'cython==3.1.1' && \
+  /opt/python/cp315-cp315/bin/pip install --upgrade 'cython==3.1.1'
 
 
 #=================
@@ -59,7 +41,7 @@ RUN /opt/python/cp39-cp39/bin/pip install --upgrade 'cython==3.1.1' && \
 
 # Install ccache from source since ccache 3.x packaged with most linux distributions
 # does not support Redis backend for caching.
-RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.11.3/ccache-4.11.3.tar.gz \
+RUN curl -sSL --fail --retry 5 -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.11.3/ccache-4.11.3.tar.gz \
     && tar -zxf ccache.tar.gz \
     && cd ccache-4.11.3 \
     && mkdir build && cd build \

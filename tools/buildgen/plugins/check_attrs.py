@@ -97,6 +97,7 @@ VALID_ATTRIBUTE_KEYS_MAP = {
     "external_proto_library": {
         "destination": anything(),
         "proto_prefix": anything(),
+        "strip_path_prefix": anything(),
         "urls": anything(),
         "hash": anything(),
         "strip_prefix": anything(),

@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+PS4='+ $(date "+[%H:%M:%S %Z]")\011 '
 set -ex
 
 cd "$(dirname "$0")/../../.."
@@ -26,6 +27,11 @@ cmake -DgRPC_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17 
 GRPC_PROTOC_BUILD_COMPILER_JOBS=${GRPC_PROTOC_BUILD_COMPILER_JOBS:-2}
 
 make protoc plugins "-j${GRPC_PROTOC_BUILD_COMPILER_JOBS}"
+
+if [ -x "$(command -v ccache)" ]
+then
+  ccache --show-stats || true
+fi
 
 popd
 

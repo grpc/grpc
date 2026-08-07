@@ -23,8 +23,11 @@
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/support/alloc.h>
+#include <stdbool.h>
 
 #include "rb_byte_buffer.h"
+/* TODO(nnepal): Include grpc/grpc_security.h for pure ruby call
+ * credentials after rb_call_credentials gets removed */
 #include "rb_call_credentials.h"
 #include "rb_completion_queue.h"
 #include "rb_grpc.h"

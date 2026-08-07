@@ -22,7 +22,7 @@ logging.basicConfig()
 _LOGGER = logging.getLogger(__name__)
 
 
-class Rpc(object):
+class Rpc:
     def __init__(self, handler, invocation_metadata):
         self._condition = threading.Condition()
         self._handler = handler

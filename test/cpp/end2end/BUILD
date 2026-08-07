@@ -139,11 +139,14 @@ grpc_cc_library(
     external_deps = [
         "absl/log",
         "absl/log:globals",
+        "absl/synchronization",
     ],
     deps = [
+        "//:generic_stub_session_hdrs",
         "//:grpc",
         "//:grpc++",
         "//src/core:experiments",
+        "//src/core:grpc_check",
     ],
 )
 
@@ -166,6 +169,7 @@ grpc_cc_test(
     ],
     deps = [
         ":end2end_test_utils",
+        ":test_service_impl",
         "//:config_vars",
         "//:debug_location",
         "//:gpr",
@@ -175,6 +179,7 @@ grpc_cc_test(
         "//:grpc_public_hdrs",
         "//:iomgr",
         "//src/core:client_channel_backup_poller",
+        "//src/core:experiments",
         "//src/core:grpc_check",
         "//src/core:iomgr_port",
         "//src/proto/grpc/health/v1:health_cc_grpc",
@@ -184,6 +189,36 @@ grpc_cc_test(
         "//test/core/test_util:build",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "session_end2end_test",
+    srcs = ["session_end2end_test.cc"],
+    external_deps = [
+        "absl/strings",
+        "absl/synchronization",
+        "absl/time",
+        "gtest",
+    ],
+    deps = [
+        ":end2end_test_utils",
+        "//:config",
+        "//:generic_stub_session_hdrs",
+        "//:grpc",
+        "//:grpc++_public_hdrs",
+        "//:grpc_base",
+        "//:grpc_public_hdrs",
+        "//src/core:call_filters",
+        "//src/core:channel_args",
+        "//src/core:channel_fwd",
+        "//src/core:channel_init",
+        "//src/core:channel_stack_type",
+        "//src/core:experiments",
+        "//src/proto/grpc/testing:echo_cc_grpc",
+        "//src/proto/grpc/testing:echo_cc_proto",
+        "//test/core/test_util:build",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -200,7 +235,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
         "no_test_android",  # android_cc_test doesn't work with data dependency.
         "no_test_ios",
         "no_windows",
@@ -342,12 +376,12 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         ":end2end_test_utils",
         ":interceptors_util",
         ":test_service_impl",
+        "//:generic_stub_session_hdrs",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
@@ -375,7 +409,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         ":test_service_impl",
@@ -403,7 +436,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         ":end2end_test_utils",
@@ -436,6 +468,7 @@ grpc_cc_library(
         "absl/memory",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/synchronization",
         "gtest",
     ],
     linkstatic = True,
@@ -444,6 +477,7 @@ grpc_cc_library(
         ":interceptors_util",
         ":test_service_impl",
         "//:config_vars",
+        "//:generic_stub_session_hdrs",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
@@ -593,7 +627,6 @@ grpc_cc_test(
     shard_count = 30,
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
         "no_test_ios",
     ],
     deps = [
@@ -635,7 +668,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         ":end2end_test_utils",
@@ -662,7 +694,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
         # Will fail as sync health check service is enabled by default internally, which is however
         # disabled in OSS:
         # b/117623310.
@@ -695,7 +726,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         ":end2end_test_utils",
@@ -727,7 +757,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         ":end2end_test_utils",
@@ -760,7 +789,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         ":end2end_test_utils",
@@ -789,7 +817,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         "//:gpr",
@@ -810,6 +837,13 @@ grpc_cc_test(
 grpc_cc_test(
     name = "client_lb_end2end_test",
     srcs = ["client_lb_end2end_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:client.key",
+        "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
     external_deps = [
         "absl/log:check",
         "absl/log:log",
@@ -831,6 +865,7 @@ grpc_cc_test(
         ":end2end_test_utils",
         ":test_service_impl",
         "//:backoff",
+        "//:channelz",
         "//:config_vars",
         "//:debug_location",
         "//:endpoint_addresses",
@@ -852,6 +887,7 @@ grpc_cc_test(
         "//:sockaddr_utils",
         "//src/core:channel_args",
         "//src/core:client_channel_backup_poller",
+        "//src/core:client_channel_internal_header",
         "//src/core:config_selector",
         "//src/core:connectivity_state",
         "//src/core:env",
@@ -860,14 +896,19 @@ grpc_cc_test(
         "//src/core:grpc_service_config",
         "//src/core:notification",
         "//src/core:time",
+        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
+        "//src/proto/grpc/channelz/v2:property_list_cc_proto",
         "//src/proto/grpc/health/v1:health_cc_grpc",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_cc_grpc",
+        "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
         "//test/core/test_util:postmortem",
+        "//test/core/test_util:scoped_env_var",
         "//test/core/test_util:test_lb_policies",
+        "//test/cpp/util:channelz_util",
         "//test/cpp/util:test_util",
         "@com_github_cncf_xds//xds/data/orca/v3:pkg_cc_proto",
     ],
@@ -886,11 +927,11 @@ grpc_cc_test(
     flaky = True,
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
         "no_test_ios",
     ],
     deps = [
         ":counted_service",
+        ":end2end_test_utils",
         ":rls_server",
         ":test_service_impl",
         "//:config_vars",
@@ -943,7 +984,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         ":test_service_impl",
@@ -1080,7 +1120,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         ":test_service_impl",
@@ -1162,7 +1201,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         ":end2end_test_utils",
@@ -1251,7 +1289,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         "//:gpr",
@@ -1305,7 +1342,6 @@ grpc_cc_test(
     shard_count = 5,
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
         "no_windows",
     ],  # TODO(jtattermusch): fix test on windows
     deps = [
@@ -1362,7 +1398,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
         # This test only works with the open source protobuf.
         "grpc:broken-internally",
     ],
@@ -1392,7 +1427,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         ":test_service_impl",
@@ -1420,7 +1454,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         ":test_service_impl",
@@ -1450,7 +1483,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         "//:grpc++",
@@ -1477,7 +1509,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         ":test_service_impl",
@@ -1515,13 +1546,15 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
+        ":end2end_test_utils",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//:grpc++_base",
+        "//:grpc++_public_hdrs",
+        "//:grpc_public_hdrs",
         "//src/core:grpc_check",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
@@ -1632,6 +1665,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
         "absl/log",
+        "absl/strings:string_view",
         "absl/synchronization",
     ],
     tags = ["tls_credentials_test"],
@@ -1720,6 +1754,148 @@ grpc_cc_test(
         "//:grpc++",
         "//:grpc++_base",
         "//:grpc_base",
+        "//src/proto/grpc/testing:echo_cc_grpc",
+        "//src/proto/grpc/testing:echo_messages_cc_proto",
+        "//test/core/test_util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_library(
+    name = "tls_test_private_key_signer",
+    testonly = True,
+    srcs = ["tls_test_private_key_signer.cc"],
+    hdrs = ["tls_test_private_key_signer.h"],
+    external_deps = [
+        "absl/log",
+        "absl/log:check",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/synchronization",
+        "absl/time:time",
+        "gtest",
+        "libcrypto",
+        "libssl",
+    ],
+    deps = [
+        "//:channel_arg_names",
+        "//:gpr",
+        "//:grpc++_base",
+        "//:grpc_base",
+        "//:tsi_ssl_credentials",
+        "//src/core:default_event_engine",
+        "//src/core:down_cast",
+        "//src/core:grpc_tls_credentials",
+        "//src/core:ssl_transport_security_utils",
+    ],
+)
+
+grpc_cc_test(
+    name = "tls_private_key_signer_end2end_test",
+    srcs = ["tls_private_key_signer_end2end_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:client.key",
+        "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:server0.key",
+        "//src/core/tsi/test_creds:server0.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/log:check",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/synchronization",
+        "absl/time:time",
+        "gtest",
+        "libcrypto",
+        "libssl",
+    ],
+    tags = ["tls_private_key_signer_test"],
+    deps = [
+        ":test_service_impl",
+        ":tls_test_private_key_signer",
+        "//:channel_arg_names",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc++_base",
+        "//:grpc_base",
+        "//:tsi_ssl_credentials",
+        "//src/core:default_event_engine",
+        "//src/core:grpc_tls_credentials",
+        "//src/core:ssl_transport_security_utils",
+        "//src/proto/grpc/testing:echo_cc_grpc",
+        "//src/proto/grpc/testing:echo_messages_cc_proto",
+        "//test/core/test_util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_library(
+    name = "tls_test_certificate_selector",
+    testonly = True,
+    srcs = ["tls_test_certificate_selector.cc"],
+    hdrs = ["tls_test_certificate_selector.h"],
+    external_deps = [
+        "absl/log",
+        "absl/log:check",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/synchronization",
+        "absl/time:time",
+        "gtest",
+        "libcrypto",
+        "libssl",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc++_base",
+        "//:grpc_base",
+        "//:tsi_ssl_credentials",
+        "//src/core:default_event_engine",
+        "//src/core:down_cast",
+        "//src/core:grpc_tls_certificate_selector",
+    ],
+)
+
+grpc_cc_test(
+    name = "tls_cert_selection_offload_end2end_test",
+    srcs = ["tls_cert_selection_offload_end2end_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/log:check",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/synchronization",
+        "absl/time:time",
+        "gtest",
+        "libcrypto",
+        "libssl",
+    ],
+    tags = ["tls_cert_selection_offload_end2end_test"],
+    deps = [
+        ":test_service_impl",
+        ":tls_test_certificate_selector",
+        ":tls_test_private_key_signer",
+        "//:channel_arg_names",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc++_base",
+        "//:grpc_base",
+        "//:tsi_ssl_credentials",
+        "//src/core:default_event_engine",
+        "//src/core:grpc_tls_certificate_selector",
+        "//src/core:grpc_tls_credentials",
+        "//src/core:ssl_transport_security_utils",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//test/core/test_util:grpc_test_util",

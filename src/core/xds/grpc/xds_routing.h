@@ -19,7 +19,6 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_ROUTING_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_ROUTING_H
 
-#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <map>
@@ -32,6 +31,7 @@
 #include "src/core/xds/grpc/xds_http_filter_registry.h"
 #include "src/core/xds/grpc/xds_listener.h"
 #include "src/core/xds/grpc/xds_route_config.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
@@ -80,12 +80,130 @@ class XdsRouting final {
       grpc_metadata_batch* initial_metadata, absl::string_view header_name,
       std::string* concatenated_value);
 
+  // Logic for building filter chains for each route within a
+  // RouteConfiguration.  Caching is done to avoid unnecessary work while
+  // iterating over the list of routes.
+  //
+  // TODO(roth): Currently, this class uses the xds_resolver tracer for
+  // logging.  When we change the server side to use the new filter
+  // config structure, add a new tracer and use that instead, so that it
+  // can be used on both the client and server side.
+  class RouteConfigFilterChainBuilder {
+   public:
+    // A slightly different interface than the normal FilterChainBuilder
+    // that passes in the XdsHttpFilterFactory.
+    class XdsFilterChainBuilder {
+     public:
+      virtual ~XdsFilterChainBuilder() = default;
+
+      virtual void AddFilter(const XdsHttpFilterFactory* factory,
+                             RefCountedPtr<const FilterConfig> config) = 0;
+
+      virtual absl::StatusOr<RefCountedPtr<FilterChain>> Build() = 0;
+    };
+
+    // Builds filter chains for each route within a VirtualHost.
+    class VirtualHostFilterChainBuilder {
+     public:
+      // Builds filter chains for each ClusterWeight within a route.
+      class WeightedClusterRouteFilterChainBuilder {
+       public:
+        WeightedClusterRouteFilterChainBuilder(
+            VirtualHostFilterChainBuilder& vhost_builder,
+            const XdsRouteConfigResource::Route& route)
+            : vhost_builder_(vhost_builder), route_(route) {}
+
+        // Builds a filter chain for a ClusterWeight.
+        absl::StatusOr<RefCountedPtr<const FilterChain>>
+        BuildFilterChainForClusterWeight(
+            const XdsRouteConfigResource::Route::RouteAction::ClusterWeight&
+                cluster_weight);
+
+       private:
+        absl::StatusOr<RefCountedPtr<const FilterChain>> GetRouteFilterChain();
+
+        VirtualHostFilterChainBuilder& vhost_builder_;
+        const XdsRouteConfigResource::Route& route_;
+
+        // Cached filter chain for the route, to be used for any ClusterWeight
+        // that does not have any filter config overrides.
+        absl::StatusOr<RefCountedPtr<const FilterChain>> route_filter_chain_ =
+            nullptr;
+      };
+
+      VirtualHostFilterChainBuilder(
+          RouteConfigFilterChainBuilder& route_config_builder,
+          const XdsRouteConfigResource::VirtualHost& vhost)
+          : route_config_builder_(route_config_builder), vhost_(vhost) {}
+
+      // Builds a filter chain for a route that has an individual cluster
+      // or a ClusterSpecifierPlugin.
+      absl::StatusOr<RefCountedPtr<const FilterChain>> BuildFilterChainForRoute(
+          const XdsRouteConfigResource::Route& route);
+
+      // Returns a filter chain builder for a given route that uses
+      // WeightedClusters.
+      WeightedClusterRouteFilterChainBuilder
+      MakeWeightedClusterRouteFilterChainBuilder(
+          const XdsRouteConfigResource::Route& route) {
+        return WeightedClusterRouteFilterChainBuilder(*this, route);
+      }
+
+     private:
+      absl::StatusOr<RefCountedPtr<const FilterChain>>
+      GetVirtualHostFilterChain();
+
+      RouteConfigFilterChainBuilder& route_config_builder_;
+      const XdsRouteConfigResource::VirtualHost& vhost_;
+
+      // Cached filter chain for the virtual host, to be used for any route
+      // that does not have any filter config overrides.
+      absl::StatusOr<RefCountedPtr<const FilterChain>> vhost_filter_chain_ =
+          nullptr;
+    };
+
+    // The add_last_filter() callback is called on the builder after
+    // adding all of the xDS HTTP filters and right before building the
+    // filter chain.  May be null if not needed.
+    RouteConfigFilterChainBuilder(
+        const std::vector<
+            XdsListenerResource::HttpConnectionManager::HttpFilter>&
+            hcm_filter_configs,
+        const XdsHttpFilterRegistry& http_filter_registry,
+        XdsFilterChainBuilder& builder, XdsTransportFactory& transport_factory,
+        Blackboard& blackboard);
+
+    // Returns a filter chain builder for a given virtual host.
+    VirtualHostFilterChainBuilder MakeVirtualHostFilterChainBuilder(
+        const XdsRouteConfigResource::VirtualHost& vhost) {
+      return VirtualHostFilterChainBuilder(*this, vhost);
+    }
+
+   private:
+    absl::StatusOr<RefCountedPtr<const FilterChain>> GetDefaultFilterChain();
+
+    const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
+        hcm_filter_configs_;
+    XdsFilterChainBuilder& builder_;
+    Blackboard& blackboard_;
+    XdsTransportFactory& transport_factory_;
+
+    // Same size as hcm_filter_configs_.
+    std::vector<const XdsHttpFilterFactory*> factories_;
+
+    // Cached default filter chain, to be used for any route that does
+    // not have any filter config overrides.
+    absl::StatusOr<RefCountedPtr<const FilterChain>> default_filter_chain_ =
+        nullptr;
+  };
+
+  // TODO(roth): Remove this struct and the following two methods when
+  // removing the xds_server_filter_chain_per_route experiment.
   struct GeneratePerHttpFilterConfigsResult {
     // Map of service config field name to list of elements for that field.
     std::map<std::string, std::vector<std::string>> per_filter_configs;
     ChannelArgs args;
   };
-
   // Generates per-HTTP filter configs for a method config.
   static absl::StatusOr<GeneratePerHttpFilterConfigsResult>
   GeneratePerHTTPFilterConfigsForMethodConfig(
@@ -97,7 +215,6 @@ class XdsRouting final {
       const XdsRouteConfigResource::Route::RouteAction::ClusterWeight*
           cluster_weight,
       const ChannelArgs& args);
-
   // Generates per-HTTP filter configs for the top-level service config.
   static absl::StatusOr<GeneratePerHttpFilterConfigsResult>
   GeneratePerHTTPFilterConfigsForServiceConfig(

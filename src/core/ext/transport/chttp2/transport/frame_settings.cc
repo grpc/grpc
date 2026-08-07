@@ -136,7 +136,10 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
                 []() { return grpc_core::H2SettingsTrace<false>{true, {}}; });
             *parser->target_settings = *parser->incoming_settings;
             t->MaybeNotifyStateWatcherOfPeerMaxConcurrentStreamsLocked();
-            t->num_pending_induced_frames++;
+            grpc_error_handle error =
+                grpc_chttp2_increase_num_pending_induced_frames(t);
+            if (GPR_UNLIKELY(!error.ok())) return error;
+
             grpc_slice_buffer_add(&t->qbuf, grpc_chttp2_settings_ack_create());
             grpc_chttp2_initiate_write(t,
                                        GRPC_CHTTP2_INITIATE_WRITE_SETTINGS_ACK);

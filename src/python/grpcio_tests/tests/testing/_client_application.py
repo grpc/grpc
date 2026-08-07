@@ -60,7 +60,7 @@ _SATISFACTORY_OUTCOME = Outcome(Outcome.Kind.SATISFACTORY, None, None)
 _UNSATISFACTORY_OUTCOME = Outcome(Outcome.Kind.UNSATISFACTORY, None, None)
 
 
-class _Pipe(object):
+class _Pipe:
     def __init__(self):
         self._condition = threading.Condition()
         self._values = []

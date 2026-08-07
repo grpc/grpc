@@ -34,6 +34,7 @@
 #include <vector>
 
 #include "src/core/config/config_vars.h"
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_selector.h"
 #include "src/core/credentials/transport/tls/load_system_roots.h"
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -43,6 +44,7 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/load_file.h"
+#include "src/core/util/match.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/useful.h"
 #include "absl/log/log.h"
@@ -150,16 +152,6 @@ grpc_error_handle grpc_ssl_check_peer_name(absl::string_view peer_name,
         absl::StrCat("Peer name ", peer_name, " is not in peer certificate"));
   }
   return absl::OkStatus();
-}
-
-void grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_ssl_pem_key_cert_pair* kp,
-                                             size_t num_key_cert_pairs) {
-  if (kp == nullptr) return;
-  for (size_t i = 0; i < num_key_cert_pairs; i++) {
-    gpr_free(const_cast<char*>(kp[i].private_key));
-    gpr_free(const_cast<char*>(kp[i].cert_chain));
-  }
-  gpr_free(kp);
 }
 
 namespace grpc_core {
@@ -312,6 +304,10 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
       grpc_auth_context_add_property(ctx.get(),
                                      GRPC_SSL_SESSION_REUSED_PROPERTY,
                                      prop->value.data, prop->value.length);
+    } else if (strcmp(prop->name, TSI_SSL_NEGOTIATED_KEY_EXCHANGE_GROUP) == 0) {
+      grpc_auth_context_add_property(
+          ctx.get(), GRPC_SSL_NEGOTIATED_KEY_EXCHANGE_GROUP_PROPERTY_NAME,
+          prop->value.data, prop->value.length);
     } else if (strcmp(prop->name, TSI_SECURITY_LEVEL_PEER_PROPERTY) == 0) {
       grpc_auth_context_add_property(
           ctx.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME,
@@ -427,13 +423,14 @@ void grpc_shallow_peer_destruct(tsi_peer* peer) {
 }
 
 grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
-    tsi_ssl_pem_key_cert_pair* pem_key_cert_pair,
-    std::shared_ptr<RootCertInfo> root_cert_info,
+    const grpc_core::PemKeyCertPair* pem_key_cert_pair,
+    std::shared_ptr<tsi::RootCertInfo> root_cert_info,
     bool skip_server_certificate_verification, tsi_tls_version min_tls_version,
     tsi_tls_version max_tls_version, tsi_ssl_session_cache* ssl_session_cache,
     tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,
     const char* crl_directory,
     std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
+    const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups,
     tsi_ssl_client_handshaker_factory** handshaker_factory) {
   absl::string_view root_certs;
   const tsi_ssl_root_certs_store* root_store = nullptr;
@@ -451,13 +448,14 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     }
     root_store = grpc_core::DefaultSslRootStore::GetRootStore();
     options.root_cert_info =
-        std::make_shared<RootCertInfo>(std::string(root_certs));
+        std::make_shared<tsi::RootCertInfo>(std::string(root_certs));
   } else {
     options.root_cert_info = std::move(root_cert_info);
   }
-  bool has_key_cert_pair = pem_key_cert_pair != nullptr &&
-                           pem_key_cert_pair->private_key != nullptr &&
-                           pem_key_cert_pair->cert_chain != nullptr;
+  bool has_key_cert_pair =
+      pem_key_cert_pair != nullptr &&
+      !grpc_core::IsPrivateKeyEmpty(pem_key_cert_pair->private_key()) &&
+      !pem_key_cert_pair->cert_chain().empty();
   options.root_store = root_store;
   options.alpn_protocols =
       grpc_fill_alpn_protocol_strings(&options.num_alpn_protocols);
@@ -473,6 +471,7 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
   options.max_tls_version = max_tls_version;
   options.crl_directory = crl_directory;
   options.crl_provider = std::move(crl_provider);
+  options.key_exchange_groups = key_exchange_groups;
   const tsi_result result =
       tsi_create_ssl_client_handshaker_factory_with_options(&options,
                                                             handshaker_factory);
@@ -486,20 +485,20 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
 }
 
 grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
-    tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs, size_t num_key_cert_pairs,
-    std::shared_ptr<RootCertInfo> root_cert_info,
+    grpc_core::KeyCertPairsOrSelector key_cert_pairs,
+    std::shared_ptr<tsi::RootCertInfo> root_cert_info,
     grpc_ssl_client_certificate_request_type client_certificate_request,
     tsi_tls_version min_tls_version, tsi_tls_version max_tls_version,
     tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,
     const char* crl_directory, bool send_client_ca_list,
     std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
+    const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups,
     tsi_ssl_server_handshaker_factory** handshaker_factory) {
   size_t num_alpn_protocols = 0;
   const char** alpn_protocol_strings =
       grpc_fill_alpn_protocol_strings(&num_alpn_protocols);
   tsi_ssl_server_handshaker_options options;
-  options.pem_key_cert_pairs = pem_key_cert_pairs;
-  options.num_key_cert_pairs = num_key_cert_pairs;
+  options.key_cert_pairs_or_selector = std::move(key_cert_pairs);
   options.client_certificate_request =
       grpc_get_tsi_client_certificate_request_type(client_certificate_request);
   options.cipher_suites = grpc_get_ssl_cipher_suites();
@@ -512,6 +511,7 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
   options.crl_provider = std::move(crl_provider);
   options.send_client_ca_list = send_client_ca_list;
   options.root_cert_info = std::move(root_cert_info);
+  options.key_exchange_groups = key_exchange_groups;
   const tsi_result result =
       tsi_create_ssl_server_handshaker_factory_with_options(&options,
                                                             handshaker_factory);
@@ -569,6 +569,15 @@ grpc_arg grpc_ssl_session_cache_create_channel_arg(
 // --- Default SSL root store implementation. ---
 
 namespace grpc_core {
+
+bool IsPrivateKeyEmpty(const PrivateKey& private_key) {
+  return Match(
+      private_key,
+      [&](const std::string& pem_root_certs) { return pem_root_certs.empty(); },
+      [&](const std::shared_ptr<PrivateKeySigner> key_signer) {
+        return key_signer == nullptr;
+      });
+}
 
 tsi_ssl_root_certs_store* DefaultSslRootStore::default_root_store_;
 grpc_slice DefaultSslRootStore::default_pem_root_certs_;
@@ -644,6 +653,18 @@ void DefaultSslRootStore::InitRootStoreOnce() {
     default_root_store_ = tsi_ssl_root_certs_store_create(
         StringViewFromSlice(default_pem_root_certs_));
   }
+}
+
+bool IsKeyCertPairsOrSelectorEmpty(
+    const KeyCertPairsOrSelector& key_cert_pairs_or_selector) {
+  return Match(
+      key_cert_pairs_or_selector,
+      [](const PemKeyCertPairList& pem_key_cert_pairs) {
+        return pem_key_cert_pairs.empty();
+      },
+      [](const std::shared_ptr<CertificateSelector>& selector) {
+        return selector == nullptr;
+      });
 }
 
 }  // namespace grpc_core

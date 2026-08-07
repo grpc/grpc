@@ -26,6 +26,7 @@
 #include <grpc/impl/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
+#include <stdbool.h>
 #include <string.h>
 
 #include "rb_byte_buffer.h"

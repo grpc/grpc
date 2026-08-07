@@ -25,6 +25,7 @@
 #include <utility>
 
 #include "src/core/channelz/property_list.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/ext/transport/chaotic_good/tcp_frame_header.h"
 #include "src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h"
 #include "src/core/ext/transport/chaotic_good/transport_context.h"
@@ -38,6 +39,7 @@
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/transport_framing_endpoint_extension.h"
 #include "src/core/telemetry/default_tcp_tracer.h"
+#include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/util/dump_args.h"
 #include "src/core/util/latent_see.h"
 #include "src/core/util/ref_counted.h"
@@ -46,7 +48,9 @@
 #include "absl/cleanup/cleanup.h"
 #include "absl/container/inlined_vector.h"
 #include "absl/log/log.h"
+#include "absl/status/status.h"
 #include "absl/strings/numbers.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/time/time.h"
 
@@ -57,7 +61,7 @@ namespace data_endpoints_detail {
 
 namespace {
 const uint64_t kSecurityFramePayloadTag = 0;
-}
+}  // namespace
 
 ///////////////////////////////////////////////////////////////////////////////
 // OutputBuffers
@@ -89,20 +93,24 @@ OutputBuffers::Reader::PollReadNext() {
   while (true) {
     GRPC_LATENT_SEE_SCOPE("OutputBuffers::PollReadNext::loop");
     if (frames_.empty()) {
+      bool call_wakeup = false;
       if (!reading_) {
         reading_ = true;
-        output_buffers_->WakeupScheduler();
+        call_wakeup = true;
       }
       waker_ = GetContext<Activity>()->MakeNonOwningWaker();
       mu_.Unlock();
+      if (call_wakeup) {
+        output_buffers_->WakeupScheduler();
+      }
       return Pending{};
     }
     DCHECK(!reading_);
     auto frames = std::move(frames_);
     frames_.clear();
     send_rate_.DequeueFromReader(output_buffers_->clock_->Now());
-    output_buffers_->WakeupScheduler(/*async=*/true);
     mu_.Unlock();
+    output_buffers_->WakeupScheduler(/*async=*/true);
     return std::move(frames);
   }
 }
@@ -291,9 +299,11 @@ void OutputBuffers::Schedule() {
         break;
       }
       ztrace_collector_->Append([this, message, selected_reader]() {
-        return WriteLargeFrameHeaderTrace{message->payload_tag,
-                                          WriteSizeForFrame(*message),
-                                          *selected_reader};
+        auto& frame =
+            absl::ConvertVariantTo<FrameInterface&>(message->frame->payload);
+        return WriteLargeFrameHeaderTrace{
+            message->payload_tag, WriteSizeForFrame(*message), *selected_reader,
+            frame.MakeHeader().stream_id};
       });
       SchedulingData& scheduling = scheduling_data[*selected_reader];
       scheduling.queued_bytes += WriteSizeForFrame(*message);
@@ -357,7 +367,7 @@ void SecureFrameQueue::Write(SliceBuffer buffer) {
   TcpDataFrameHeader{0, 0, frame_length}.Serialize(slice.data());
   if (header_padding != 0) {
     memset(slice.data() + TcpDataFrameHeader::kFrameHeaderSize, 0,
-           frame_padding);
+           header_padding);
   }
   all_frames_.Append(Slice(std::move(slice)));
   all_frames_.TakeAndAppend(buffer);
@@ -376,15 +386,19 @@ void SecureFrameQueue::Write(SliceBuffer buffer) {
 
 InputQueue::ReadTicket InputQueue::Read(uint64_t payload_tag) {
   MutexLock lock(&mu_);
+  if (!closed_error_.ok()) {
+    return ReadTicket(MakeRefCounted<Completion>(payload_tag, closed_error_),
+                      nullptr);
+  }
   if (read_requested_.Set(payload_tag)) {
     return ReadTicket(
         MakeRefCounted<Completion>(
             payload_tag, absl::UnavailableError("Duplicate read requested")),
-        nullptr);
+        Ref());
   }
   auto it = completions_.find(payload_tag);
   if (it != completions_.end()) {
-    return ReadTicket(it->second, nullptr);
+    return ReadTicket(it->second, Ref());
   }
   auto completion = MakeRefCounted<Completion>(payload_tag);
   completions_.emplace(payload_tag, completion);
@@ -455,6 +469,7 @@ void InputQueue::SetClosed(absl::Status status) {
   }
   if (status.ok()) status = absl::UnavailableError("transport closed");
   closed_error_ = std::move(status);
+  absl::Status error_to_propagate = closed_error_;
   auto completions = std::move(completions_);
   completions_.clear();
   Waker await_closed = std::move(await_closed_);
@@ -463,6 +478,8 @@ void InputQueue::SetClosed(absl::Status status) {
   for (auto& [tag, completion] : completions) {
     completion->mu.Lock();
     if (!completion->ready) {
+      completion->result = error_to_propagate;
+      completion->ready = true;
       auto waker = std::move(completion->waker);
       completion->mu.Unlock();
       waker.Wakeup();
@@ -508,21 +525,64 @@ class MetricsCollector
     delivery_rate_ = telemetry_info_->GetMetricKey("delivery_rate");
     rtt_ = telemetry_info_->GetMetricKey("net_rtt_usec");
     if (!rtt_.has_value()) rtt_ = telemetry_info_->GetMetricKey("srtt");
+    min_rtt_ = telemetry_info_->GetMetricKey("min_rtt");
     data_notsent_ = telemetry_info_->GetMetricKey("data_notsent");
     byte_offset_ = telemetry_info_->GetMetricKey("byte_offset");
-    absl::InlinedVector<size_t, 4> keys;
-    if (delivery_rate_.has_value()) {
-      keys.push_back(*delivery_rate_);
-    }
+    congestion_window_ = telemetry_info_->GetMetricKey("congestion_window");
+    snd_ssthresh_ = telemetry_info_->GetMetricKey("snd_ssthresh");
+    packet_retx_ = telemetry_info_->GetMetricKey("packet_retx");
+    packet_spurious_retx_ =
+        telemetry_info_->GetMetricKey("packet_spurious_retx");
+    packet_sent_ = telemetry_info_->GetMetricKey("packet_sent");
+    packet_delivered_ = telemetry_info_->GetMetricKey("packet_delivered");
+    packet_delivered_ce_ = telemetry_info_->GetMetricKey("packet_delivered_ce");
+    data_retx_ = telemetry_info_->GetMetricKey("data_retx");
+    data_sent_ = telemetry_info_->GetMetricKey("data_sent");
+    pacing_rate_ = telemetry_info_->GetMetricKey("pacing_rate");
+    reordering_ = telemetry_info_->GetMetricKey("reordering");
+    recurring_retrans_ = telemetry_info_->GetMetricKey("recurring_retrans");
+    busy_usec_ = telemetry_info_->GetMetricKey("busy_usec");
+    rwnd_limited_usec_ = telemetry_info_->GetMetricKey("rwnd_limited_usec");
+    sndbuf_limited_usec_ = telemetry_info_->GetMetricKey("sndbuf_limited_usec");
+    is_delivery_rate_app_limited_ =
+        telemetry_info_->GetMetricKey("is_delivery_rate_app_limited");
+
+    absl::InlinedVector<size_t, 24> keys;
+    if (delivery_rate_.has_value()) keys.push_back(*delivery_rate_);
     if (byte_offset_.has_value()) keys.push_back(*byte_offset_);
     if (rtt_.has_value()) keys.push_back(*rtt_);
+    if (min_rtt_.has_value()) keys.push_back(*min_rtt_);
     if (data_notsent_.has_value()) keys.push_back(*data_notsent_);
+    if (congestion_window_.has_value()) keys.push_back(*congestion_window_);
+    if (snd_ssthresh_.has_value()) keys.push_back(*snd_ssthresh_);
+    if (packet_retx_.has_value()) keys.push_back(*packet_retx_);
+    if (packet_spurious_retx_.has_value()) {
+      keys.push_back(*packet_spurious_retx_);
+    }
+    if (packet_sent_.has_value()) keys.push_back(*packet_sent_);
+    if (packet_delivered_.has_value()) keys.push_back(*packet_delivered_);
+    if (packet_delivered_ce_.has_value()) keys.push_back(*packet_delivered_ce_);
+    if (data_retx_.has_value()) keys.push_back(*data_retx_);
+    if (data_sent_.has_value()) keys.push_back(*data_sent_);
+    if (pacing_rate_.has_value()) keys.push_back(*pacing_rate_);
+    if (reordering_.has_value()) keys.push_back(*reordering_);
+    if (recurring_retrans_.has_value()) keys.push_back(*recurring_retrans_);
+    if (busy_usec_.has_value()) keys.push_back(*busy_usec_);
+    if (rwnd_limited_usec_.has_value()) keys.push_back(*rwnd_limited_usec_);
+    if (sndbuf_limited_usec_.has_value()) keys.push_back(*sndbuf_limited_usec_);
+    if (is_delivery_rate_app_limited_.has_value()) {
+      keys.push_back(*is_delivery_rate_app_limited_);
+    }
     requested_metrics_ = telemetry_info_->GetMetricsSet(keys);
   }
 
   bool HasAnyMetrics() const {
+    // Checking this subset of metrics is sufficient to determine if it has
+    // any metrics
     return delivery_rate_.has_value() || rtt_.has_value() ||
-           data_notsent_.has_value();
+           min_rtt_.has_value() || data_notsent_.has_value() ||
+           byte_offset_.has_value() || congestion_window_.has_value() ||
+           snd_ssthresh_.has_value() || packet_retx_.has_value();
   }
 
   std::shared_ptr<
@@ -570,29 +630,46 @@ class MetricsCollector
   grpc_event_engine::experimental::EventEngine::Endpoint::WriteEventSink
   MakeWriteEventSink(size_t write_size,
                      RefCountedPtr<OutputBuffers::Reader> reader,
+                     std::vector<std::shared_ptr<TcpCallTracer>> tracers,
                      std::shared_ptr<TcpZTraceCollector> ztrace_collector) {
     using grpc_event_engine::experimental::EventEngine;
     return EventEngine::Endpoint::WriteEventSink(
         requested_metrics(),
         {EventEngine::Endpoint::WriteEvent::kSendMsg,
+         EventEngine::Endpoint::WriteEvent::kScheduled,
          EventEngine::Endpoint::WriteEvent::kSent,
          EventEngine::Endpoint::WriteEvent::kAcked},
-        [reader, ztrace_collector, write_size, self = Ref()](
+        [reader, ztrace_collector, write_size, tracers = std::move(tracers),
+         self = Ref()](
             EventEngine::Endpoint::WriteEvent event, absl::Time timestamp,
             std::vector<EventEngine::Endpoint::WriteMetric> metrics) {
           GRPC_LATENT_SEE_SCOPE("MetricsCollector::WriteEventSink");
-          ztrace_collector->Append([event, timestamp, &metrics,
-                                    telemetry_info = self->telemetry_info_,
-                                    &reader]() {
-            EndpointWriteMetricsTrace trace{timestamp, event, {}, reader->id()};
-            trace.metrics.reserve(metrics.size());
-            for (const auto [id, value] : metrics) {
-              if (auto name = telemetry_info->GetMetricName(id);
-                  name.has_value()) {
-                trace.metrics.push_back({*name, value});
+          std::vector<std::pair<absl::string_view, int64_t>> ztrace_metrics;
+          std::vector<TcpCallTracer::TcpEventMetric> tcp_tracer_metrics;
+          ztrace_metrics.reserve(metrics.size());
+          if (!tracers.empty()) tcp_tracer_metrics.reserve(metrics.size());
+
+          for (const auto [id, value] : metrics) {
+            if (auto name = self->telemetry_info_->GetMetricName(id);
+                name.has_value()) {
+              ztrace_metrics.push_back({*name, value});
+              if (!tracers.empty()) {
+                tcp_tracer_metrics.push_back({*name, value});
               }
             }
-            return trace;
+          }
+
+          if (!tracers.empty()) {
+            for (const auto& tracer : tracers) {
+              tracer->RecordEvent(event, timestamp, 0, tcp_tracer_metrics);
+            }
+          }
+
+          ztrace_collector->Append([event, timestamp,
+                                    ztrace_metrics = std::move(ztrace_metrics),
+                                    reader_id = reader->id()]() mutable {
+            return EndpointWriteMetricsTrace{
+                timestamp, event, std::move(ztrace_metrics), reader_id};
           });
           auto [net_metrics, data_notsent] =
               self->GetNetworkMetrics(event, metrics, write_size);
@@ -612,8 +689,25 @@ class MetricsCollector
   Clock* const clock_;
   std::optional<size_t> delivery_rate_;
   std::optional<size_t> rtt_;
+  std::optional<size_t> min_rtt_;
   std::optional<size_t> data_notsent_;
   std::optional<size_t> byte_offset_;
+  std::optional<size_t> congestion_window_;
+  std::optional<size_t> snd_ssthresh_;
+  std::optional<size_t> packet_retx_;
+  std::optional<size_t> packet_spurious_retx_;
+  std::optional<size_t> packet_sent_;
+  std::optional<size_t> packet_delivered_;
+  std::optional<size_t> packet_delivered_ce_;
+  std::optional<size_t> data_retx_;
+  std::optional<size_t> data_sent_;
+  std::optional<size_t> pacing_rate_;
+  std::optional<size_t> reordering_;
+  std::optional<size_t> recurring_retrans_;
+  std::optional<size_t> busy_usec_;
+  std::optional<size_t> rwnd_limited_usec_;
+  std::optional<size_t> sndbuf_limited_usec_;
+  std::optional<size_t> is_delivery_rate_app_limited_;
   std::shared_ptr<
       grpc_event_engine::experimental::EventEngine::Endpoint::MetricsSet>
       requested_metrics_;
@@ -628,7 +722,8 @@ auto Endpoint::PullDataPayload(RefCountedPtr<EndpointContext> ctx) {
       ctx->reader->Next(),
       [ctx](
           ValueOrFailure<std::vector<OutputBuffers::QueuedFrame>> queued_frames)
-          -> ValueOrFailure<SliceBuffer> {
+          -> ValueOrFailure<std::pair<
+              SliceBuffer, std::vector<std::shared_ptr<TcpCallTracer>>>> {
         if (!queued_frames.ok()) return Failure{};
         GRPC_TRACE_LOG(chaotic_good, INFO)
             << "CHAOTIC_GOOD: " << ctx->reader.get() << " "
@@ -641,6 +736,8 @@ auto Endpoint::PullDataPayload(RefCountedPtr<EndpointContext> ctx) {
         GRPC_LATENT_SEE_SCOPE("SerializePayload");
         // Frame everything into a slice buffer.
         SliceBuffer buffer;
+        std::vector<std::shared_ptr<TcpCallTracer>> tracers;
+        tracers.reserve(queued_frames->size());
         const size_t header_padding = DataConnectionPadding(
             TcpDataFrameHeader::kFrameHeaderSize, ctx->encode_alignment);
         const size_t header_size =
@@ -653,6 +750,11 @@ auto Endpoint::PullDataPayload(RefCountedPtr<EndpointContext> ctx) {
         auto padding = Slice(std::move(padding_mut));
         for (size_t i = 0; i < queued_frames->size(); ++i) {
           auto& queued_frame = (*queued_frames)[i];
+          if (queued_frame.frame->call_tracer != nullptr) {
+            queued_frame.frame->call_tracer->RecordConnectionTuple(
+                ctx->local_addr, ctx->peer_addr);
+            tracers.push_back(queued_frame.frame->call_tracer);
+          }
           auto& frame = absl::ConvertVariantTo<FrameInterface&>(
               queued_frame.frame->payload);
           auto hdr = header_frames.TakeFirstNoInline(header_size);
@@ -670,16 +772,13 @@ auto Endpoint::PullDataPayload(RefCountedPtr<EndpointContext> ctx) {
             buffer.AppendIndexed(padding.RefSubSlice(0, frame_padding));
           }
         }
-        return std::move(buffer);
+        return std::pair{std::move(buffer), std::move(tracers)};
       });
 }
 
 auto Endpoint::WriteLoop(RefCountedPtr<EndpointContext> ctx) {
   auto metrics_collector = MakeRefCounted<MetricsCollector>(
       ctx->clock, *ctx->endpoint->GetEventEngineEndpoint());
-  if (!metrics_collector->HasAnyMetrics()) {
-    metrics_collector.reset();
-  }
   return Loop([ctx = std::move(ctx),
                metrics_collector = std::move(metrics_collector)]() {
     return TrySeq(
@@ -687,19 +786,33 @@ auto Endpoint::WriteLoop(RefCountedPtr<EndpointContext> ctx) {
             "DataEndpointPullPayload",
             Race(PullDataPayload(ctx),
                  Map(ctx->secure_frame_queue->Next(),
-                     [](auto x) -> ValueOrFailure<SliceBuffer> {
-                       return std::move(x);
+                     [](SliceBuffer x)
+                         -> ValueOrFailure<std::pair<
+                             SliceBuffer,
+                             std::vector<std::shared_ptr<TcpCallTracer>>>> {
+                       return std::pair{
+                           std::move(x),
+                           std::vector<std::shared_ptr<TcpCallTracer>>{}};
                      }))),
-        [ctx, metrics_collector](SliceBuffer buffer) {
+        [ctx, metrics_collector](
+            std::pair<SliceBuffer, std::vector<std::shared_ptr<TcpCallTracer>>>
+                result) {
+          SliceBuffer& buffer = result.first;
+          std::vector<std::shared_ptr<TcpCallTracer>> tracers =
+              std::move(result.second);
           ctx->ztrace_collector->Append(
               WriteBytesToEndpointTrace{buffer.Length(), ctx->id});
           PromiseEndpoint::WriteArgs write_args;
           auto now = Timestamp::Now();
+          static const Duration kMetricsUpdateInterval = Duration::Milliseconds(
+              ConfigVars::Get().ChaoticGoodMetricsUpdateIntervalMs());
           if (metrics_collector != nullptr &&
-              now - ctx->last_metrics_update > Duration::Milliseconds(100)) {
+              (!tracers.empty() ||
+               now - ctx->last_metrics_update > kMetricsUpdateInterval)) {
             ctx->last_metrics_update = now;
             write_args.set_metrics_sink(metrics_collector->MakeWriteEventSink(
-                buffer.Length(), ctx->reader, ctx->ztrace_collector));
+                buffer.Length(), ctx->reader, std::move(tracers),
+                ctx->ztrace_collector));
           }
           return Map(
               AddGeneratedErrorPrefix(
@@ -747,12 +860,24 @@ auto Endpoint::ReadLoop(RefCountedPtr<EndpointContext> ctx) {
                 TcpDataFrameHeader::kFrameHeaderSize +
                 DataConnectionPadding(TcpDataFrameHeader::kFrameHeaderSize,
                                       ctx->decode_alignment))),
-        [id = ctx->id](Slice frame_header) {
+        [id = ctx->id,
+         ctx](Slice frame_header) -> absl::StatusOr<TcpDataFrameHeader> {
           auto hdr = TcpDataFrameHeader::Parse(frame_header.data());
+          if (!hdr.ok()) return hdr.status();
+          if (hdr->payload_length > ctx->max_receive_message_length) {
+            return absl::ResourceExhaustedError(absl::StrCat(
+                "Received message larger than max (", hdr->payload_length,
+                " vs. ", ctx->max_receive_message_length, ")"));
+          }
+          uint32_t padding =
+              DataConnectionPadding(hdr->payload_length, ctx->decode_alignment);
+          if (hdr->payload_length >
+              std::numeric_limits<uint32_t>::max() - padding) {
+            return absl::InvalidArgumentError(
+                "Integer overflow in payload length plus padding");
+          }
           GRPC_TRACE_LOG(chaotic_good, INFO)
-              << "CHAOTIC_GOOD: Read "
-              << (hdr.ok() ? absl::StrCat(*hdr) : hdr.status().ToString())
-              << " on data connection #" << id;
+              << "CHAOTIC_GOOD: Read " << *hdr << " on data connection #" << id;
           return hdr;
         },
         [ctx](TcpDataFrameHeader frame_header) {
@@ -821,7 +946,8 @@ void Endpoint::AddData(channelz::DataSink sink) {
 }
 
 Endpoint::Endpoint(uint32_t id, uint32_t encode_alignment,
-                   uint32_t decode_alignment, Clock* clock,
+                   uint32_t decode_alignment,
+                   uint32_t max_receive_message_length, Clock* clock,
                    RefCountedPtr<OutputBuffers> output_buffers,
                    RefCountedPtr<InputQueue> input_queues,
                    PendingConnection pending_connection, bool enable_tracing,
@@ -832,6 +958,7 @@ Endpoint::Endpoint(uint32_t id, uint32_t encode_alignment,
   ep_ctx->id = id;
   ep_ctx->encode_alignment = encode_alignment;
   ep_ctx->decode_alignment = decode_alignment;
+  ep_ctx->max_receive_message_length = max_receive_message_length;
   ep_ctx->enable_tracing = enable_tracing;
   ep_ctx->output_buffers = std::move(output_buffers);
   ep_ctx->input_queues = std::move(input_queues);
@@ -848,6 +975,11 @@ Endpoint::Endpoint(uint32_t id, uint32_t encode_alignment,
         return TrySeq(
             pending_connection.Await(),
             [ep_ctx = std::move(ep_ctx)](PromiseEndpoint ep) mutable {
+              ep_ctx->local_addr =
+                  TcpCallTracer::ExtractResolvedAddress(ep.GetLocalAddress());
+              ep_ctx->peer_addr =
+                  TcpCallTracer::ExtractResolvedAddress(ep.GetPeerAddress());
+
               GRPC_TRACE_LOG(chaotic_good, INFO)
                   << "CHAOTIC_GOOD: data endpoint " << ep_ctx->id << " to "
                   << grpc_event_engine::experimental::ResolvedAddressToString(
@@ -869,11 +1001,11 @@ Endpoint::Endpoint(uint32_t id, uint32_t encode_alignment,
               }
               auto endpoint = std::make_shared<PromiseEndpoint>(std::move(ep));
               ep_ctx->endpoint = endpoint;
-              // Enable RxMemoryAlignment and RPC receive coalescing after the
-              // transport setup is complete. At this point all the settings
-              // frames should have been read.
+              // Enable RPC receive coalescing after the transport setup is
+              // complete. At this point all the settings frames should have
+              // been read.
               if (ep_ctx->decode_alignment != 1) {
-                endpoint->EnforceRxMemoryAlignmentAndCoalescing();
+                endpoint->EnableRpcReceiveCoalescing();
               }
               if (ep_ctx->enable_tracing) {
                 auto* epte = grpc_event_engine::experimental::QueryExtension<
@@ -884,7 +1016,8 @@ Endpoint::Endpoint(uint32_t id, uint32_t encode_alignment,
                   epte->EnableTcpTelemetry(
                       ep_ctx->transport_ctx->stats_plugin_group
                           ->GetCollectionScope(),
-                      /*is_control_endpoint=*/false);
+                      /*is_control_endpoint=*/false,
+                      ep_ctx->transport_ctx->trace_full_buffer);
                   epte->SetTcpTracer(std::make_shared<DefaultTcpTracer>(
                       ep_ctx->transport_ctx->stats_plugin_group));
                 }
@@ -929,6 +1062,7 @@ Endpoint::Endpoint(uint32_t id, uint32_t encode_alignment,
 DataEndpoints::DataEndpoints(
     std::vector<PendingConnection> endpoints_vec, TransportContextPtr ctx,
     uint32_t encode_alignment, uint32_t decode_alignment,
+    uint32_t max_receive_message_length,
     std::shared_ptr<TcpZTraceCollector> ztrace_collector, bool enable_tracing,
     std::string scheduler_config, data_endpoints_detail::Clock* clock)
     : channelz::DataSource(ctx->socket_node),
@@ -938,9 +1072,9 @@ DataEndpoints::DataEndpoints(
       input_queues_(MakeRefCounted<data_endpoints_detail::InputQueue>()) {
   for (size_t i = 0; i < endpoints_vec.size(); ++i) {
     endpoints_.emplace_back(std::make_unique<data_endpoints_detail::Endpoint>(
-        i, encode_alignment, decode_alignment, clock, output_buffers_,
-        input_queues_, std::move(endpoints_vec[i]), enable_tracing, ctx,
-        ztrace_collector));
+        i, encode_alignment, decode_alignment, max_receive_message_length,
+        clock, output_buffers_, input_queues_, std::move(endpoints_vec[i]),
+        enable_tracing, ctx, ztrace_collector));
   }
   SourceConstructed();
 }

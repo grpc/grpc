@@ -12,8 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/telemetry/context_list_entry.h"
 #include "absl/strings/str_cat.h"
 
@@ -76,6 +80,11 @@ bool operator!=(const EventEngine::ConnectionHandle& lhs,
 std::ostream& operator<<(std::ostream& out,
                          const EventEngine::ConnectionHandle& handle) {
   return printout(out, handle);
+}
+
+const grpc_arg_pointer_vtable* grpc_event_engine_arg_vtable() {
+  return grpc_core::ChannelArgTypeTraits<
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>>::VTable();
 }
 
 }  // namespace grpc_event_engine::experimental

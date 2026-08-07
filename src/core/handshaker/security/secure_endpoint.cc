@@ -31,6 +31,7 @@
 #include <algorithm>
 #include <atomic>
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <regex>
@@ -38,6 +39,8 @@
 #include <vector>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/extensions/receive_coalescing_extension.h"
+#include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -89,6 +92,13 @@ class FrameProtector : public RefCounted<FrameProtector> {
                           ->memory_quota()
                           ->CreateMemoryOwner()),
         self_reservation_(memory_owner_.MakeReservation(sizeof(*this))) {
+    auto* factory = args.GetPointer<
+        grpc_event_engine::experimental::MemoryAllocatorFactory>(
+        GRPC_ARG_EVENT_ENGINE_USE_MEMORY_ALLOCATOR_FACTORY);
+    if (factory != nullptr) {
+      user_facing_allocator_ = factory->CreateMemoryAllocator(
+          absl::StrFormat("secure_endpoint-%p", this));
+    }
     GRPC_TRACE_LOG(secure_endpoint, INFO)
         << "FrameProtector: " << this << " protector: " << protector_
         << " zero_copy_protector: " << zero_copy_protector_
@@ -100,15 +110,16 @@ class FrameProtector : public RefCounted<FrameProtector> {
       }
     }
     if (zero_copy_protector_ != nullptr) {
-      if (IsTrackZeroCopyAllocationsInResourceQuotaEnabled()) {
-        tsi_zero_copy_grpc_protector_set_allocator(zero_copy_protector_,
-                                                   &AllocSlice, &memory_owner_);
-      }
+      tsi_zero_copy_grpc_protector_set_allocator(zero_copy_protector_,
+                                                 &AllocSlice, &memory_owner_);
       read_staging_buffer_ = grpc_empty_slice();
       write_staging_buffer_ = grpc_empty_slice();
-    } else {
-      read_staging_buffer_ =
+    } else if (IsSecureEndpointReadCoalescingEnabled()) {
+      read_staging_buffer_ = grpc_empty_slice();
+      write_staging_buffer_ =
           memory_owner_.MakeSlice(MemoryRequest(STAGING_BUFFER_SIZE));
+    } else {
+      read_staging_buffer_ = AllocateReadBuffer(STAGING_BUFFER_SIZE);
       write_staging_buffer_ =
           memory_owner_.MakeSlice(MemoryRequest(STAGING_BUFFER_SIZE));
     }
@@ -147,6 +158,13 @@ class FrameProtector : public RefCounted<FrameProtector> {
     }
   }
 
+  grpc_slice AllocateReadBuffer(size_t size) {
+    if (user_facing_allocator_.has_value()) {
+      return user_facing_allocator_->MakeSlice(MemoryRequest(size));
+    }
+    return memory_owner_.MakeSlice(MemoryRequest(size));
+  }
+
   void MaybePostReclaimer() {
     if (!has_posted_reclaimer_.exchange(true, std::memory_order_relaxed)) {
       memory_owner_.PostReclaimer(
@@ -179,9 +197,16 @@ class FrameProtector : public RefCounted<FrameProtector> {
 
   void FlushReadStagingBuffer(uint8_t** cur, uint8_t** end)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(read_mu_) {
-    grpc_slice_buffer_add_indexed(read_buffer_, read_staging_buffer_);
-    read_staging_buffer_ =
-        memory_owner_.MakeSlice(MemoryRequest(STAGING_BUFFER_SIZE));
+    grpc_slice_buffer_add(read_buffer_, read_staging_buffer_);
+    if (required_read_bytes_ > 0) {
+      read_staging_buffer_ = grpc_empty_slice();
+
+      // If we had set a read hint, we must have read at least that many
+      // bytes when we do a FlushReadStagingBuffer.
+      GRPC_CHECK(read_buffer_->length >= required_read_bytes_);
+    } else {
+      read_staging_buffer_ = AllocateReadBuffer(STAGING_BUFFER_SIZE);
+    }
     *cur = GRPC_SLICE_START_PTR(read_staging_buffer_);
     *end = GRPC_SLICE_END_PTR(read_staging_buffer_);
   }
@@ -195,6 +220,85 @@ class FrameProtector : public RefCounted<FrameProtector> {
     read_buffer_ = nullptr;
   }
 
+  // Unprotects data from the protected buffer and drains the unprotected data
+  // into the read buffer. It exits early if the read hint is satisfied or if
+  // there's an error.
+  // protected_buffer: The ciphertext to unprotect.
+  // protected_buffer_size: The length of the protected buffer.
+  // cur: Pointer to the current position in the staging buffer.
+  // end: Pointer to the end of the staging buffer.
+  // encrypted_bytes_processed: The number of ciphertext bytes that were
+  // successfully unprotected.
+  // hint_satisfied: Set to true if the read hint was satisfied.
+  tsi_result UnprotectAndDrain(const uint8_t* protected_buffer,
+                               size_t protected_buffer_size, uint8_t** cur,
+                               uint8_t** end, size_t& encrypted_bytes_processed,
+                               bool& hint_satisfied)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(read_mu_) {
+    tsi_result result = TSI_OK;
+
+    // 1. If read_hint_bytes_ is 0, we need to keep looping until we have
+    // drained all the ciphertext bytes from the protector. We will exit
+    // from the inner loop if we have processed all the ciphertext bytes
+    // i.e, protected_buffer_size == 0 && unprotected_buffer_size_written == 0.
+    //
+    // 2. If read_hint_bytes_ is greater than 0, we will exit from the
+    // inner loop if we have satisfied the read hint or if we have
+    // processed all the ciphertext bytes. i.e,
+    //    a) read_buffer->length >= read_hint_bytes_ (hint_satisfied), or
+    //    b) protected_buffer_size == 0 && unprotected_buffer_size_written == 0.
+    //
+    // 3. We will also exit from the inner loop if the protector returns
+    // an error.
+    while (true) {
+      size_t unprotected_buffer_size_written = static_cast<size_t>(*end - *cur);
+      size_t processed_message_size = protected_buffer_size;
+
+      if (IsTsiFrameProtectorWithoutLocksEnabled()) {
+        result = tsi_frame_protector_unprotect(
+            protector_, protected_buffer, &processed_message_size, *cur,
+            &unprotected_buffer_size_written);
+      } else {
+        protector_mu_.Lock();
+        result = tsi_frame_protector_unprotect(
+            protector_, protected_buffer, &processed_message_size, *cur,
+            &unprotected_buffer_size_written);
+        protector_mu_.Unlock();
+      }
+      if (result != TSI_OK) {
+        LOG(ERROR) << "Decryption error: " << tsi_result_to_string(result);
+        break;
+      }
+      protected_buffer += processed_message_size;
+      protected_buffer_size -= processed_message_size;
+      encrypted_bytes_processed += processed_message_size;
+      *cur += unprotected_buffer_size_written;
+
+      // Staging buffer is full, flush it.
+      if (*cur == *end) {
+        FlushReadStagingBuffer(cur, end);
+      }
+
+      // If we have processed all the ciphertext bytes, and the protector
+      // is drained, exit the loop.
+      if (protected_buffer_size == 0 && unprotected_buffer_size_written == 0) {
+        break;
+      }
+
+      // If the read hint is satisfied, exit the loop early.
+      if (required_read_bytes_ > 0 &&
+          read_buffer_->length +
+                  (*cur - GRPC_SLICE_START_PTR(read_staging_buffer_)) >=
+              required_read_bytes_) {
+        // TODO(aananthv): Maybe change the above condition to ==.
+        GRPC_DCHECK(read_buffer_->length == required_read_bytes_);
+        hint_satisfied = true;
+        break;
+      }
+    }
+    return result;
+  }
+
   absl::Status Unprotect(absl::Status read_status)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(read_mu_) {
     GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("unprotect");
@@ -204,11 +308,7 @@ class FrameProtector : public RefCounted<FrameProtector> {
     }
 
     GRPC_TRACE_LOG(secure_endpoint, INFO) << "Starting unprotect for " << this;
-    bool keep_looping = false;
     tsi_result result = TSI_OK;
-
-    uint8_t* cur = GRPC_SLICE_START_PTR(read_staging_buffer_);
-    uint8_t* end = GRPC_SLICE_END_PTR(read_staging_buffer_);
 
     if (!read_status.ok()) {
       grpc_slice_buffer_reset_and_unref(read_buffer_);
@@ -229,52 +329,72 @@ class FrameProtector : public RefCounted<FrameProtector> {
       min_progress_size_ = result != TSI_OK ? 1 : min_progress_size;
     } else {
       // Use frame protector to unprotect.
-      // TODO(yangg) check error, maybe bail out early
-      for (size_t i = 0; i < source_buffer_.Count(); i++) {
-        grpc_slice encrypted = source_buffer_.c_slice_buffer()->slices[i];
-        uint8_t* message_bytes = GRPC_SLICE_START_PTR(encrypted);
-        size_t message_size = GRPC_SLICE_LENGTH(encrypted);
+      size_t read_buffer_len = read_buffer_ ? read_buffer_->length : 0;
+      bool hint_satisfied = false;
 
-        while (message_size > 0 || keep_looping) {
-          size_t unprotected_buffer_size_written =
-              static_cast<size_t>(end - cur);
-          size_t processed_message_size = message_size;
-          if (IsTsiFrameProtectorWithoutLocksEnabled()) {
-            result = tsi_frame_protector_unprotect(
-                protector_, message_bytes, &processed_message_size, cur,
-                &unprotected_buffer_size_written);
-          } else {
-            protector_mu_.Lock();
-            result = tsi_frame_protector_unprotect(
-                protector_, message_bytes, &processed_message_size, cur,
-                &unprotected_buffer_size_written);
-            protector_mu_.Unlock();
-          }
-          if (result != TSI_OK) {
-            LOG(ERROR) << "Decryption error: " << tsi_result_to_string(result);
+      if (required_read_bytes_ > 0) {
+        if (required_read_bytes_ >
+            read_buffer_len + GRPC_SLICE_LENGTH(read_staging_buffer_)) {
+          CSliceUnref(read_staging_buffer_);
+          size_t size_to_request = required_read_bytes_ - read_buffer_len;
+          read_staging_buffer_ = AllocateReadBuffer(size_to_request);
+        }
+      } else if (required_read_bytes_ == 0) {
+        if (GRPC_SLICE_IS_EMPTY(read_staging_buffer_)) {
+          CSliceUnref(read_staging_buffer_);
+          read_staging_buffer_ = AllocateReadBuffer(STAGING_BUFFER_SIZE);
+        }
+      }
+      uint8_t* cur = GRPC_SLICE_START_PTR(read_staging_buffer_);
+      uint8_t* end = GRPC_SLICE_END_PTR(read_staging_buffer_);
+
+      // Extract any buffered bytes in the protector before processing new
+      // slices. The frame_protector will decrypt one TLS record at a time. If
+      // we requested a read hint less than the size of a decrypted TLS record,
+      // the remaining bytes will be buffered in the frame protector.
+      uint8_t kEmptyBuffer[] = {0};
+      size_t encrypted_bytes_processed = 0;
+      result = UnprotectAndDrain(kEmptyBuffer, 0, &cur, &end,
+                                 encrypted_bytes_processed, hint_satisfied);
+      GRPC_DCHECK(encrypted_bytes_processed == 0);
+
+      // This is the main block where we call the protector to unprotect the
+      // newly read ciphertext bytes in the source buffer.
+      if (result == TSI_OK && !hint_satisfied && source_buffer_.Count() > 0) {
+        for (size_t i = 0; i < source_buffer_.Count(); i++) {
+          grpc_slice encrypted = source_buffer_.c_slice_buffer()->slices[i];
+          result = UnprotectAndDrain(GRPC_SLICE_START_PTR(encrypted),
+                                     GRPC_SLICE_LENGTH(encrypted), &cur, &end,
+                                     encrypted_bytes_processed, hint_satisfied);
+          if (result != TSI_OK || hint_satisfied) {
             break;
           }
-          message_bytes += processed_message_size;
-          message_size -= processed_message_size;
-          cur += unprotected_buffer_size_written;
-
-          if (cur == end) {
-            FlushReadStagingBuffer(&cur, &end);
-            // Force to enter the loop again to extract buffered bytes in
-            // protector. The bytes could be buffered because of running out
-            // of staging_buffer. If this happens at the end of all slices,
-            // doing another unprotect avoids leaving data in the protector.
-            keep_looping = true;
-          } else if (unprotected_buffer_size_written > 0) {
-            keep_looping = true;
-          } else {
-            keep_looping = false;
-          }
         }
-        if (result != TSI_OK) break;
       }
 
-      if (cur != GRPC_SLICE_START_PTR(read_staging_buffer_)) {
+      // If the read hint is satisfied, move the remaining encrypted bytes from
+      // the source buffer to the leftover bytes buffer.
+      if (result == TSI_OK &&
+          encrypted_bytes_processed < source_buffer_.Length()) {
+        GRPC_CHECK(hint_satisfied)
+            << "We should not be here unless the read hint is satisfied.";
+
+        if (leftover_bytes_ == nullptr) {
+          leftover_bytes_ = std::make_unique<SliceBuffer>();
+        }
+
+        grpc_event_engine::experimental::SliceBuffer temp;
+        source_buffer_.MoveFirstNBytesIntoSliceBuffer(encrypted_bytes_processed,
+                                                      temp);
+        temp.Clear();
+        grpc_slice_buffer_swap(source_buffer_.c_slice_buffer(),
+                               leftover_bytes_->c_slice_buffer());
+      }
+
+      // If the staging buffer is not flushed, move the unprotected bytes in the
+      // staging buffer to the read buffer.
+      if (result == TSI_OK &&
+          cur != GRPC_SLICE_START_PTR(read_staging_buffer_)) {
         grpc_slice_buffer_add(
             read_buffer_,
             grpc_slice_split_head(
@@ -282,6 +402,11 @@ class FrameProtector : public RefCounted<FrameProtector> {
                 static_cast<size_t>(
                     cur - GRPC_SLICE_START_PTR(read_staging_buffer_))));
       }
+      source_buffer_.Clear();
+    }
+
+    if (result != TSI_OK || !read_status.ok()) {
+      leftover_bytes_.reset();
     }
 
     if (read_status.ok() && result != TSI_OK) {
@@ -295,16 +420,17 @@ class FrameProtector : public RefCounted<FrameProtector> {
     return read_status;
   }
 
-  void BeginRead(grpc_slice_buffer* slices) {
+  void BeginRead(grpc_slice_buffer* slices, size_t required_read_bytes) {
     read_buffer_ = slices;
     grpc_slice_buffer_reset_and_unref(read_buffer_);
+    required_read_bytes_ = required_read_bytes;
   }
 
   bool IsZeroCopyProtector() const { return is_zero_copy_protector_; }
 
-  bool MaybeCompleteReadImmediately() {
+  bool ConsumeLeftovers() {
     GRPC_TRACE_LOG(secure_endpoint, INFO)
-        << "MaybeCompleteReadImmediately: " << this
+        << "ConsumeLeftovers: " << this
         << " leftover_bytes_: " << leftover_bytes_.get();
     if (leftover_bytes_ != nullptr) {
       grpc_slice_buffer_swap(leftover_bytes_->c_slice_buffer(),
@@ -446,6 +572,20 @@ class FrameProtector : public RefCounted<FrameProtector> {
   void Shutdown() {
     shutdown_ = true;
     memory_owner_.Reset();
+    if (user_facing_allocator_.has_value()) {
+      user_facing_allocator_->Reset();
+    }
+  }
+
+  // Resets the read staging buffer.
+  // Per the contract of EnableRpcReceiveCoalescing(), this is only
+  // called when there are no outstanding Read() operations on the endpoint.
+  // Therefore, any valid plaintext has already been fully delivered, and
+  // read_staging_buffer_ contains only unused, leftover memory capacity.
+  void ResetReadStagingBuffer() {
+    MutexLock lock(&read_mu_);
+    CSliceUnref(read_staging_buffer_);
+    read_staging_buffer_ = grpc_empty_slice();
   }
 
  private:
@@ -464,12 +604,16 @@ class FrameProtector : public RefCounted<FrameProtector> {
   grpc_slice write_staging_buffer_ ABSL_GUARDED_BY(write_mu_);
   grpc_event_engine::experimental::SliceBuffer output_buffer_;
   MemoryOwner memory_owner_;
+  // Allocator for memory that is eventually returned to the user (e.g. read
+  // buffers).
+  std::optional<MemoryAllocator> user_facing_allocator_ = std::nullopt;
   MemoryAllocator::Reservation self_reservation_;
   std::atomic<bool> has_posted_reclaimer_{false};
   int min_progress_size_ = 1;
   SliceBuffer protector_staging_buffer_;
   bool shutdown_ = false;
   bool is_zero_copy_protector_ = false;
+  size_t required_read_bytes_ = 0;
 };
 }  // namespace
 }  // namespace grpc_core
@@ -577,10 +721,10 @@ static void endpoint_read(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
                           int /*min_progress_size*/) {
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
   ep->read_cb = cb;
-  ep->frame_protector.BeginRead(slices);
+  ep->frame_protector.BeginRead(slices, /*required_read_bytes=*/0);
 
   SECURE_ENDPOINT_REF(ep, "read");
-  if (ep->frame_protector.MaybeCompleteReadImmediately()) {
+  if (ep->frame_protector.ConsumeLeftovers()) {
     on_read(ep, absl::OkStatus());
     return;
   }
@@ -690,7 +834,8 @@ static const grpc_endpoint_vtable vtable = {endpoint_read,
 namespace grpc_event_engine::experimental {
 namespace {
 
-class SecureEndpoint final : public EventEngine::Endpoint {
+class SecureEndpoint final : public EventEngine::Endpoint,
+                             public ReceiveCoalescingExtension {
  public:
   SecureEndpoint(
       std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
@@ -707,7 +852,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
 
   bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
             ReadArgs in_args) override {
-    return impl_->Read(std::move(on_read), buffer, std::move(in_args));
+    return impl_->Read(std::move(on_read), buffer, in_args);
   }
 
   bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
@@ -724,7 +869,18 @@ class SecureEndpoint final : public EventEngine::Endpoint {
   }
 
   void* QueryExtension(absl::string_view id) override {
+    if (id == ReceiveCoalescingExtension::EndpointExtensionName()) {
+      return static_cast<ReceiveCoalescingExtension*>(this);
+    }
     return impl_->QueryExtension(id);
+  }
+
+  void EnableRpcReceiveCoalescing() override {
+    impl_->EnableRpcReceiveCoalescing();
+  }
+
+  void DisableRpcReceiveCoalescing() override {
+    impl_->DisableRpcReceiveCoalescing();
   }
 
   std::shared_ptr<TelemetryInfo> GetTelemetryInfo() const override {
@@ -805,19 +961,47 @@ class SecureEndpoint final : public EventEngine::Endpoint {
     bool Read(absl::AnyInvocable<void(absl::Status)> on_read,
               SliceBuffer* buffer, ReadArgs args) {
       on_read_ = std::move(on_read);
-      frame_protector_.BeginRead(buffer->c_slice_buffer());
-      if (frame_protector_.MaybeCompleteReadImmediately()) {
+
+      // TODO(aananthv): Evaluate if we need to add a channel_arg to enable this
+      // selectively.
+      if (grpc_core::IsSecureEndpointReadCoalescingEnabled()) {
+        {
+          // This mutex should not have any contention since we can only have
+          // one outstanding Read() at a time.
+          grpc_core::MutexLock lock(&read_settings_mu_);
+          if (rpc_receive_coalescing_enabled_) {
+            // TODO(aananthv): Make required_read_bytes_ a separate field in
+            // ReadArgs to avoid confusion between min_progress_size and
+            // read_hint_bytes, especially if we enable coalescing by default.
+            required_read_bytes_ = std::max<int64_t>(0, args.read_hint_bytes());
+          } else {
+            required_read_bytes_ = 0;
+          }
+        }
+        read_buffer_ = buffer;
+        read_args_ = args;
+        frame_protector_.BeginRead(buffer->c_slice_buffer(),
+                                   required_read_bytes_);
+        frame_protector_.ConsumeLeftovers();
+        return ContinueRead(/*is_initial_call=*/true,
+                            /*status=*/absl::OkStatus());
+      }
+
+      frame_protector_.BeginRead(buffer->c_slice_buffer(),
+                                 /*required_read_bytes=*/0);
+      if (frame_protector_.ConsumeLeftovers()) {
         return MaybeFinishReadImmediately();
       }
-      if (frame_protector_.IsZeroCopyProtector()) {
-        args.set_read_hint_bytes(frame_protector_.min_progress_size());
-      }
+      // min_progress_size is always 1 for non-zero copy frame protectors. This
+      // effectively disables read coalescing, but this is necessary since it
+      // is not trivial to determine the encrypted payload size in advance.
+      args.set_read_hint_bytes(frame_protector_.min_progress_size());
       bool read_completed_immediately = wrapped_ep_->Read(
           [impl = Ref()](absl::Status status) mutable {
             grpc_core::ExecCtx exec_ctx;
             FinishAsyncRead(std::move(impl), std::move(status));
           },
-          frame_protector_.source_buffer(), std::move(args));
+          frame_protector_.source_buffer(), args);
       if (read_completed_immediately) return MaybeFinishReadImmediately();
       return false;
     }
@@ -902,6 +1086,24 @@ class SecureEndpoint final : public EventEngine::Endpoint {
       return wrapped_ep_->GetLocalAddress();
     }
 
+    void EnableRpcReceiveCoalescing() {
+      {
+        grpc_core::MutexLock lock(&read_settings_mu_);
+        rpc_receive_coalescing_enabled_ = true;
+      }
+      frame_protector_.ResetReadStagingBuffer();
+      // We do not need to enable this in the underlying endpoint since we only
+      // benefit from coalescing the user-facing buffer.
+      // TODO(aananthv): Should we disable it explicitly?
+    }
+
+    void DisableRpcReceiveCoalescing() {
+      {
+        grpc_core::MutexLock lock(&read_settings_mu_);
+        rpc_receive_coalescing_enabled_ = false;
+      }
+    }
+
     void* QueryExtension(absl::string_view id) {
       return wrapped_ep_->QueryExtension(id);
     }
@@ -971,6 +1173,88 @@ class SecureEndpoint final : public EventEngine::Endpoint {
       impl->frame_protector_.FinishRead(status.ok());
       impl.reset();
       on_read(status);
+    }
+
+    bool ContinueRead(bool is_initial_call, absl::Status status) {
+      while (true) {
+        if (is_initial_call && status.ok() &&
+            grpc_core::IsSecureEndpointOffloadLargeReadsEnabled() &&
+            frame_protector_.source_buffer()->Length() >
+                large_read_threshold_) {
+          event_engine_->Run([impl = Ref()]() mutable {
+            grpc_core::ExecCtx exec_ctx;
+            impl->ContinueRead(/*is_initial_call=*/false,
+                               /*status=*/absl::OkStatus());
+          });
+          return false;
+        }
+
+        bool had_source_data = false;
+        {
+          grpc_core::MutexLock lock(frame_protector_.read_mu());
+          if (status.ok() && wrapped_ep_ == nullptr) {
+            status = absl::CancelledError("secure endpoint shutdown");
+          } else {
+            had_source_data = frame_protector_.source_buffer()->Length() > 0;
+            if (had_source_data || is_initial_call) {
+              status = frame_protector_.Unprotect(status);
+            }
+          }
+        }
+
+        if (!status.ok()) {
+          // If status is not OK, abort the read.
+          auto on_read = std::move(on_read_);
+          frame_protector_.FinishRead(false);
+          if (is_initial_call) {
+            // Failures on the initial call are still async.
+            event_engine_->Run(
+                [impl = Ref(), status = std::move(status)]() mutable {
+                  auto on_read = std::move(impl->on_read_);
+                  impl.reset();
+                  on_read(status);
+                });
+            return false;
+          }
+          on_read(status);
+          return false;
+        }
+
+        // If status is OK and we are not in the initial call, we must have
+        // source data (since we would have returned above otherwise).
+        GRPC_DCHECK(had_source_data || is_initial_call);
+
+        // Do not perform an additional read if:
+        // 1. We are in coalescing mode and have accumulated sufficient data
+        //    (i.e. required_read_bytes_ bytes).
+        // 2. We are not in coalescing mode, and we have any some data in the
+        //    read buffer.
+        bool coalescing_active = required_read_bytes_ > 0;
+        if ((coalescing_active &&
+             read_buffer_->Length() >= required_read_bytes_) ||
+            (!coalescing_active && had_source_data)) {
+          frame_protector_.TraceOp(
+              is_initial_call ? "Read(Imm)" : "Read",
+              frame_protector_.source_buffer()->c_slice_buffer());
+          frame_protector_.FinishRead(true);
+          auto on_read = std::move(on_read_);
+          if (is_initial_call) return true;
+          on_read(absl::OkStatus());
+          return false;
+        }
+
+        // Otherwise, we need to read more data from the underlying endpoint.
+        ReadArgs args = read_args_;
+        args.set_read_hint_bytes(frame_protector_.min_progress_size());
+        bool read_completed_immediately = wrapped_ep_->Read(
+            [impl = Ref()](absl::Status status) mutable {
+              grpc_core::ExecCtx exec_ctx;
+              impl->ContinueRead(/*is_initial_call=*/false,
+                                 /*status=*/std::move(status));
+            },
+            frame_protector_.source_buffer(), args);
+        if (!read_completed_immediately) return false;
+      }
     }
 
     std::string WritingString() ABSL_EXCLUSIVE_LOCKS_REQUIRED(write_queue_mu_) {
@@ -1065,12 +1349,18 @@ class SecureEndpoint final : public EventEngine::Endpoint {
         ABSL_GUARDED_BY(write_queue_mu_);
     grpc_core::FrameProtector frame_protector_;
     absl::AnyInvocable<void(absl::Status)> on_read_;
+    SliceBuffer* read_buffer_ = nullptr;
+    size_t required_read_bytes_ = 0;
+    ReadArgs read_args_;
     absl::AnyInvocable<void(absl::Status)> on_write_;
     std::unique_ptr<EventEngine::Endpoint> wrapped_ep_;
     std::shared_ptr<EventEngine> event_engine_;
     const size_t large_read_threshold_;
     const size_t large_write_threshold_;
     const size_t max_buffered_writes_;
+    grpc_core::Mutex read_settings_mu_;
+    bool rpc_receive_coalescing_enabled_ ABSL_GUARDED_BY(read_settings_mu_) =
+        false;
   };
 
   grpc_core::RefCountedPtr<Impl> impl_;
@@ -1085,11 +1375,6 @@ grpc_core::OrphanablePtr<grpc_endpoint> grpc_secure_endpoint_create(
     grpc_core::OrphanablePtr<grpc_endpoint> to_wrap,
     grpc_slice* leftover_slices, size_t leftover_nslices,
     const grpc_core::ChannelArgs& channel_args) {
-  if (!grpc_core::IsEventEngineSecureEndpointEnabled()) {
-    return grpc_legacy_secure_endpoint_create(
-        protector, zero_copy_protector, std::move(to_wrap), leftover_slices,
-        channel_args.ToC().get(), leftover_nslices);
-  }
   if (grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint(
           to_wrap.get()) != nullptr) {
     std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>

@@ -1,4 +1,4 @@
-FROM ghcr.io/rake-compiler/rake-compiler-dock-image:1.9.1-mri-x86-linux-musl
+FROM ghcr.io/rake-compiler/rake-compiler-dock-image:1.11.1-mri-x86-linux-musl
 
 #=================
 # Install ccache

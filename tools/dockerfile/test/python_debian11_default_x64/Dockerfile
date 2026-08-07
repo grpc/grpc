@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:11
+FROM python:3.10-bullseye
 
 #=================
 # Basic C core dependencies
@@ -175,19 +175,37 @@ RUN cd /tmp && \
 RUN python3.14 -m ensurepip && \
     python3.14 -m pip install coverage
 
+#=================
+# Compile CPython 3.15.0b2 from source
+
+RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev libsqlite3-dev && apt-get clean
+RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
+
+RUN cd /tmp && \
+    wget -q https://www.python.org/ftp/python/3.15.0/Python-3.15.0b2.tgz && \
+    tar xzvf Python-3.15.0b2.tgz && \
+    cd Python-3.15.0b2 && \
+    ./configure && \
+    make -j4 && \
+    make install
+
+RUN cd /tmp && \
+    echo "69d75754b49b261165faf1faac9e670e  Python-3.15.0b2.tgz" > checksum.md5 && \
+    md5sum -c checksum.md5
+
+RUN python3.15 -m ensurepip && \
+    python3.15 -m pip install coverage
+
 
 # Python test coverage requires libsqlite3, and it have
 # to be installed before Python.
 RUN apt-get update && apt-get install -y libsqlite3-dev
 
-# 3.9 is the default python3 version on debian11
-RUN apt-get update && apt-get install -y python3.9 python3.9-dev python3-pip
-
 # for Python test coverage reporting
-RUN python3.9 -m pip install coverage
+RUN python3.10 -m pip install coverage
 
 # six is required by the run_tests.py test harness
-RUN python3.9 -m pip install six
+RUN python3.10 -m pip install six
 
 # Google Cloud Platform API libraries
 # These are needed for uploading test results to BigQuery (e.g. by tools/run_tests scripts)
@@ -195,17 +213,19 @@ RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-clien
 
 
 #=================
-# Install cmake
-# Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
+# Install cmake from bullseye-backports
+# Note that this step should be only used for Debian 11 (bullseye) images.
 
-RUN apt-get update && apt-get install -y cmake && apt-get clean
+RUN echo "deb http://archive.debian.org/debian bullseye-backports main" > /etc/apt/sources.list.d/bullseye-backports.list && \
+    apt-get update && \
+    apt-get install -y -t bullseye-backports cmake
 
 #=================
 # Install ccache
 
 # Install ccache from source since ccache 3.x packaged with most linux distributions
 # does not support Redis backend for caching.
-RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.11.3/ccache-4.11.3.tar.gz \
+RUN curl -sSL --fail --retry 5 -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.11.3/ccache-4.11.3.tar.gz \
     && tar -zxf ccache.tar.gz \
     && cd ccache-4.11.3 \
     && mkdir build && cd build \

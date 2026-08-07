@@ -547,7 +547,7 @@ describe GRPC::RpcServer do
         expect(one_failed_as_unavailable).to be(true)
       end
 
-      it 'should send a status UNKNOWN with a relevant message when the' \
+      it 'should send a status UNKNOWN with a relevant message when the ' \
         'servers response stream is not an enumerable' do
         @srv.handle(BidiService)
         t = Thread.new { @srv.run }
@@ -562,10 +562,9 @@ describe GRPC::RpcServer do
         end
         # Erroneous responses sent from the server handler should cause an
         # exception on the client with relevant info.
-        expected_details = 'NoMethodError: undefined method `each\' for '\
-          '"bad response. (not an enumerable, client sees an error)"'
+        expected_details = /NoMethodError: undefined method [`']each'/
 
-        expect(exception.inspect.include?(expected_details)).to be true
+        expect(exception.inspect).to match(expected_details)
         @srv.stop
         t.join
       end

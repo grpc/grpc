@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import absolute_import
-
 import collections
 import io
 import os
@@ -30,7 +28,7 @@ from tests import _loader
 from tests import _result
 
 
-class CaptureFile(object):
+class CaptureFile:
     """A context-managed file to redirect output to a byte array.
 
     Use by invoking `start` (`__enter__`) and at some point invoking `stop`
@@ -114,7 +112,7 @@ class AugmentedCase(collections.namedtuple("AugmentedCase", ["case", "id"])):
 
 # NOTE(lidiz) This complex wrapper is not triggering setUpClass nor
 # tearDownClass. Do not use those methods, or fix this wrapper!
-class Runner(object):
+class Runner:
     def __init__(self, dedicated_threads=False):
         """Constructs the Runner object.
 

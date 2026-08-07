@@ -115,7 +115,6 @@ void grpc_init(void) {
     }
     grpc_iomgr_init();
     if (grpc_core::IsEventEngineDnsEnabled()) {
-      address_sorting_init();
       auto status = AresInit();
       if (!status.ok()) {
         VLOG(2) << "AresInit failed: " << status.message();
@@ -139,7 +138,6 @@ void grpc_shutdown_internal_locked(void)
     grpc_iomgr_shutdown_background_closure();
     grpc_timer_manager_set_threading(false);  // shutdown timer_manager thread
     if (grpc_core::IsEventEngineDnsEnabled()) {
-      address_sorting_shutdown();
       AresShutdown();
     } else {
       grpc_resolver_dns_ares_shutdown();

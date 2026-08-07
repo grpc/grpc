@@ -28,8 +28,6 @@
 #include <sys/socket.h>
 #endif
 
-#define GRPC_MAX_SOCKADDR_SIZE 128
-
 struct grpc_resolved_address {
   char addr[GRPC_MAX_SOCKADDR_SIZE];
   socklen_t len;

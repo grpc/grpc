@@ -24,9 +24,9 @@
 #include <memory>
 #include <string>
 #include <utility>
-#include <vector>
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/write_cycle.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/promise/activity.h"
@@ -40,7 +40,6 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
-#include "absl/types/span.h"
 
 namespace grpc_core {
 
@@ -119,9 +118,18 @@ class SecurityFrameHandler final : public RefCounted<SecurityFrameHandler> {
   // Only run on the Transport Party
   void ProcessPayload(SliceBuffer&& payload) {
     GRPC_HTTP2_SECURITY_FRAME_DLOG << "SecurityFrameHandler::ProcessPayload";
-    if (endpoint_extension_ != nullptr) {
-      MutexLock lock(&mutex_);
-      if (!transport_closed_) {
+    if (endpoint_extension_ != nullptr && payload.Length() > 0) {
+      bool should_receive = false;
+      {
+        MutexLock lock(&mutex_);
+        should_receive = !transport_closed_;
+      }
+      // Since transport_closed_ is only changed from the transport party, we
+      // can safely assume that the value of transport_closed_ will not change
+      // between the above check and endpoint_extension_->ReceiveFrame.
+      if (should_receive) {
+        GRPC_HTTP2_SECURITY_FRAME_DLOG
+            << "SecurityFrameHandler::ProcessPayload ReceiveFrame";
         endpoint_extension_->ReceiveFrame(std::move(payload));
       }
     }
@@ -181,7 +189,7 @@ class SecurityFrameHandler final : public RefCounted<SecurityFrameHandler> {
   // TriggerWriteSecurityFrame by merging the two.
 
   // Only run on the Transport Party - From MultiplexerLoop Promise
-  void MaybeAppendSecurityFrame(SliceBuffer& outbuf) {
+  void MaybeAppendSecurityFrame(http2::FrameSender& frame_sender) {
     GRPC_DCHECK(sleep_state_ != SleepState::kWriteOneFrame);
     if (sleep_state_ == SleepState::kScheduledWrite &&
         endpoint_extension_ != nullptr) {
@@ -189,6 +197,7 @@ class SecurityFrameHandler final : public RefCounted<SecurityFrameHandler> {
       {
         MutexLock lock(&mutex_);
         GRPC_DCHECK(payload_.Length() != 0);
+        GRPC_DCHECK(payload_.Length() <= GrpcErrors::kMaxSecurityFrameSize);
         GRPC_HTTP2_SECURITY_FRAME_DLOG
             << "SecurityFrameHandler::MaybeAppendSecurityFrame Write Frame "
                "Length "
@@ -196,7 +205,7 @@ class SecurityFrameHandler final : public RefCounted<SecurityFrameHandler> {
         std::get<Http2SecurityFrame>(frame).payload.Swap(&payload_);
         GRPC_DCHECK(payload_.Length() == 0);
       }
-      Serialize(absl::Span<Http2Frame>(&frame, 1), outbuf);
+      frame_sender.AddRegularFrame(std::move(frame));
       sleep_state_ = SleepState::kWaitingForFrame;
     }
   }
@@ -236,7 +245,7 @@ class SecurityFrameHandler final : public RefCounted<SecurityFrameHandler> {
     // Do not ever LOG the payload. It has a security key.
     return absl::StrFormat(
         "SecurityFrameHandler{endpoint_extension_=%s, sleep_state_=%s, "
-        "payload_length=%d, transport_closed_=%s}",
+        "payload_length=%zu, transport_closed_=%s}",
         endpoint_extension_ == nullptr ? "null" : "non-null", sleep_state_str,
         payload_.Length(), transport_closed_ ? "true" : "false");
   }

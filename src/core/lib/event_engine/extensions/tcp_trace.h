@@ -24,9 +24,6 @@
 
 namespace grpc_event_engine::experimental {
 
-/** If non-zero, enable TCP tracing and stats collection. */
-#define GRPC_ARG_TCP_TRACING_ENABLED "grpc.tcp_tracing_enabled"
-
 class TcpTraceExtension {
  public:
   virtual ~TcpTraceExtension() = default;
@@ -39,7 +36,7 @@ class TcpTraceExtension {
   // Enable TCP telemetry collection using the Instrumentation API.
   virtual void EnableTcpTelemetry(
       grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope,
-      bool is_control_endpoint) = 0;
+      bool is_control_endpoint, bool trace_full_buffer) = 0;
 };
 
 }  // namespace grpc_event_engine::experimental

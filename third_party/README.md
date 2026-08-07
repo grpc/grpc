@@ -153,7 +153,7 @@ rm -rf third_party/utf8_range
 cp -r third_party/protobuf/third_party/utf8_range third_party/utf8_range/
 ```
 
-### Updating third_party/envoy-api
+### Updating third_party/envoy-api or third_party/xds or third_party/cel-spec
 
 Apart from the above steps, please run `tools/codegen/core/gen_upb_api.sh` to regenerate upb files.
 

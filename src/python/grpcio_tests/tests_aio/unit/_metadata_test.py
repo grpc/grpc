@@ -18,6 +18,7 @@ import unittest
 import grpc
 from grpc.experimental import aio
 from grpc.experimental.aio import Metadata
+import typeguard
 
 from tests_aio.unit import _common
 from tests_aio.unit._test_base import AioTestBase
@@ -196,15 +197,79 @@ class TestTypeMetadata(unittest.TestCase):
 
     def test_metadata_from_tuple(self):
         scenarios = (
-            (None, Metadata()),
-            (Metadata(), Metadata()),
             (self._DEFAULT_DATA, Metadata(*self._DEFAULT_DATA)),
             (self._MULTI_ENTRY_DATA, Metadata(*self._MULTI_ENTRY_DATA)),
-            (Metadata(*self._DEFAULT_DATA), Metadata(*self._DEFAULT_DATA)),
         )
         for source, expected in scenarios:
             with self.subTest(raw_metadata=source, expected=expected):
                 self.assertEqual(expected, Metadata.from_tuple(source))
+
+    @typeguard.suppress_type_checks
+    def test_metadata_from_tuple_non_tuple(self):
+        scenarios = (
+            (None, Metadata()),
+            (Metadata(), Metadata()),
+            (Metadata(*self._DEFAULT_DATA), Metadata(*self._DEFAULT_DATA)),
+        )
+        for source, expected in scenarios:
+            with self.subTest(raw_metadata=source, expected=expected):
+                self.assertEqual(expected, Metadata.from_tuple(source))  # type: ignore
+
+    @typeguard.suppress_type_checks
+    def test_create_invalid_type(self):
+        # raw_metadata is string
+        with self.assertRaises(ValueError) as container:
+            Metadata._create("test_string")  # type: ignore
+        self.assertEqual(
+            str(container.exception),
+            "not enough values to unpack (expected 2, got 1)",
+        )
+
+    def test_create(self):
+        # raw_metadata is None
+        self.assertEqual(Metadata._create(None), Metadata())
+
+        # raw_metadata is empty list
+        self.assertEqual(Metadata._create([]), Metadata())
+
+        # raw_metadata is empty tuple
+        self.assertEqual(Metadata._create(()), Metadata())
+
+        # raw_metadata is Metadata
+        m = Metadata(("key", "value"))
+        self.assertIs(Metadata._create(m), m)
+
+        # raw_metadata is tuple
+        t = (("key", "value"),)
+        self.assertEqual(Metadata._create(t), Metadata(("key", "value")))
+
+        # raw_metadata is list
+        l = [("key", "value")]
+        self.assertEqual(Metadata._create(l), Metadata(("key", "value")))
+
+        # raw_metadata is set
+        s = {("key", "value")}
+        self.assertEqual(Metadata._create(s), Metadata(("key", "value")))
+
+    def test_keys_values_items(self):
+        metadata = Metadata(*self._MULTI_ENTRY_DATA)
+        self.assertEqual(list(metadata.keys()), ["key1", "key2"])
+        self.assertEqual(
+            list(metadata.values()), [["value1", "other value 1"], ["value2"]]
+        )
+        self.assertEqual(
+            list(metadata.items()),
+            [
+                ("key1", ["value1", "other value 1"]),
+                ("key2", ["value2"]),
+            ],
+        )
+
+        # Test with empty metadata
+        empty_metadata = Metadata()
+        self.assertEqual(list(empty_metadata.keys()), [])
+        self.assertEqual(list(empty_metadata.values()), [])
+        self.assertEqual(list(empty_metadata.items()), [])
 
 
 class TestMetadataWithServer(AioTestBase):

@@ -90,8 +90,8 @@ struct SeqTraits {
   }
   template <typename Result, typename PriorResult, typename RunNext>
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Poll<Result>
-  CheckResultAndRunNext(PriorResult prior, RunNext run_next) {
-    return run_next(std::move(prior));
+  CheckResultAndRunNext(PriorResult&& prior, RunNext run_next) {
+    return run_next(std::forward<PriorResult>(prior));
   }
 };
 
@@ -128,113 +128,146 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline F Seq(F functor) {
 }
 
 template <typename F0, typename F1>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Seq<F0, F1> Seq(
-    F0 f0, F1 f1, DebugLocation whence = {}) {
-  return promise_detail::Seq<F0, F1>(std::move(f0), std::move(f1), whence);
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto Seq(
+    F0&& f0, F1&& f1, DebugLocation whence = {}) {
+  return promise_detail::Seq<std::decay_t<F0>, std::decay_t<F1>>(
+      std::forward<F0>(f0), std::forward<F1>(f1), whence);
 }
 
 template <typename F0, typename F1, typename F2>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Seq<F0, F1, F2> Seq(
-    F0 f0, F1 f1, F2 f2, DebugLocation whence = {}) {
-  return promise_detail::Seq<F0, F1, F2>(std::move(f0), std::move(f1),
-                                         std::move(f2), whence);
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto Seq(
+    F0&& f0, F1&& f1, F2&& f2, DebugLocation whence = {}) {
+  return promise_detail::Seq<std::decay_t<F0>, std::decay_t<F1>,
+                             std::decay_t<F2>>(
+      std::forward<F0>(f0), std::forward<F1>(f1), std::forward<F2>(f2), whence);
 }
 
 template <typename F0, typename F1, typename F2, typename F3>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Seq<F0, F1, F2, F3>
-Seq(F0 f0, F1 f1, F2 f2, F3 f3, DebugLocation whence = {}) {
-  return promise_detail::Seq<F0, F1, F2, F3>(
-      std::move(f0), std::move(f1), std::move(f2), std::move(f3), whence);
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto Seq(
+    F0&& f0, F1&& f1, F2&& f2, F3&& f3, DebugLocation whence = {}) {
+  return promise_detail::Seq<std::decay_t<F0>, std::decay_t<F1>,
+                             std::decay_t<F2>, std::decay_t<F3>>(
+      std::forward<F0>(f0), std::forward<F1>(f1), std::forward<F2>(f2),
+      std::forward<F3>(f3), whence);
 }
 
 template <typename F0, typename F1, typename F2, typename F3, typename F4>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Seq<F0, F1, F2, F3,
-                                                                F4>
-Seq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, DebugLocation whence = {}) {
-  return promise_detail::Seq<F0, F1, F2, F3, F4>(std::move(f0), std::move(f1),
-                                                 std::move(f2), std::move(f3),
-                                                 std::move(f4), whence);
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto Seq(
+    F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, DebugLocation whence = {}) {
+  return promise_detail::Seq<std::decay_t<F0>, std::decay_t<F1>,
+                             std::decay_t<F2>, std::decay_t<F3>,
+                             std::decay_t<F4>>(
+      std::forward<F0>(f0), std::forward<F1>(f1), std::forward<F2>(f2),
+      std::forward<F3>(f3), std::forward<F4>(f4), whence);
 }
 
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
           typename F5>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Seq<F0, F1, F2, F3,
-                                                                F4, F5>
-Seq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, DebugLocation whence = {}) {
-  return promise_detail::Seq<F0, F1, F2, F3, F4, F5>(
-      std::move(f0), std::move(f1), std::move(f2), std::move(f3), std::move(f4),
-      std::move(f5), whence);
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto Seq(
+    F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
+    DebugLocation whence = {}) {
+  return promise_detail::Seq<std::decay_t<F0>, std::decay_t<F1>,
+                             std::decay_t<F2>, std::decay_t<F3>,
+                             std::decay_t<F4>, std::decay_t<F5>>(
+      std::forward<F0>(f0), std::forward<F1>(f1), std::forward<F2>(f2),
+      std::forward<F3>(f3), std::forward<F4>(f4), std::forward<F5>(f5), whence);
 }
 
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
           typename F5, typename F6>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
-    promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6>
-    Seq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6,
-        DebugLocation whence = {}) {
-  return promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6>(
-      std::move(f0), std::move(f1), std::move(f2), std::move(f3), std::move(f4),
-      std::move(f5), std::move(f6), whence);
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto Seq(F0&& f0, F1&& f1, F2&& f2,
+                                              F3&& f3, F4&& f4, F5&& f5,
+                                              F6&& f6,
+                                              DebugLocation whence = {}) {
+  return promise_detail::Seq<
+      std::decay_t<F0>, std::decay_t<F1>, std::decay_t<F2>, std::decay_t<F3>,
+      std::decay_t<F4>, std::decay_t<F5>, std::decay_t<F6>>(
+      std::forward<F0>(f0), std::forward<F1>(f1), std::forward<F2>(f2),
+      std::forward<F3>(f3), std::forward<F4>(f4), std::forward<F5>(f5),
+      std::forward<F6>(f6), whence);
 }
 
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
           typename F5, typename F6, typename F7>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
-    promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6, F7>
-    Seq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7,
-        DebugLocation whence = {}) {
-  return promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6, F7>(
-      std::move(f0), std::move(f1), std::move(f2), std::move(f3), std::move(f4),
-      std::move(f5), std::move(f6), std::move(f7), whence);
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto Seq(F0&& f0, F1&& f1, F2&& f2,
+                                              F3&& f3, F4&& f4, F5&& f5,
+                                              F6&& f6, F7&& f7,
+                                              DebugLocation whence = {}) {
+  return promise_detail::Seq<
+      std::decay_t<F0>, std::decay_t<F1>, std::decay_t<F2>, std::decay_t<F3>,
+      std::decay_t<F4>, std::decay_t<F5>, std::decay_t<F6>, std::decay_t<F7>>(
+      std::forward<F0>(f0), std::forward<F1>(f1), std::forward<F2>(f2),
+      std::forward<F3>(f3), std::forward<F4>(f4), std::forward<F5>(f5),
+      std::forward<F6>(f6), std::forward<F7>(f7), whence);
 }
 
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
           typename F5, typename F6, typename F7, typename F8>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
-    promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6, F7, F8>
-    Seq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8,
-        DebugLocation whence = {}) {
-  return promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6, F7, F8>(
-      std::move(f0), std::move(f1), std::move(f2), std::move(f3), std::move(f4),
-      std::move(f5), std::move(f6), std::move(f7), std::move(f8), whence);
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto Seq(F0&& f0, F1&& f1, F2&& f2,
+                                              F3&& f3, F4&& f4, F5&& f5,
+                                              F6&& f6, F7&& f7, F8&& f8,
+                                              DebugLocation whence = {}) {
+  return promise_detail::Seq<
+      std::decay_t<F0>, std::decay_t<F1>, std::decay_t<F2>, std::decay_t<F3>,
+      std::decay_t<F4>, std::decay_t<F5>, std::decay_t<F6>, std::decay_t<F7>,
+      std::decay_t<F8>>(
+      std::forward<F0>(f0), std::forward<F1>(f1), std::forward<F2>(f2),
+      std::forward<F3>(f3), std::forward<F4>(f4), std::forward<F5>(f5),
+      std::forward<F6>(f6), std::forward<F7>(f7), std::forward<F8>(f8), whence);
 }
 
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
           typename F5, typename F6, typename F7, typename F8, typename F9>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
-    promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9>
-    Seq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
-        DebugLocation whence = {}) {
-  return promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9>(
-      std::move(f0), std::move(f1), std::move(f2), std::move(f3), std::move(f4),
-      std::move(f5), std::move(f6), std::move(f7), std::move(f8), std::move(f9),
-      whence);
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto Seq(F0&& f0, F1&& f1, F2&& f2,
+                                              F3&& f3, F4&& f4, F5&& f5,
+                                              F6&& f6, F7&& f7, F8&& f8,
+                                              F9&& f9,
+                                              DebugLocation whence = {}) {
+  return promise_detail::Seq<
+      std::decay_t<F0>, std::decay_t<F1>, std::decay_t<F2>, std::decay_t<F3>,
+      std::decay_t<F4>, std::decay_t<F5>, std::decay_t<F6>, std::decay_t<F7>,
+      std::decay_t<F8>, std::decay_t<F9>>(
+      std::forward<F0>(f0), std::forward<F1>(f1), std::forward<F2>(f2),
+      std::forward<F3>(f3), std::forward<F4>(f4), std::forward<F5>(f5),
+      std::forward<F6>(f6), std::forward<F7>(f7), std::forward<F8>(f8),
+      std::forward<F9>(f9), whence);
 }
 
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
           typename F5, typename F6, typename F7, typename F8, typename F9,
           typename F10>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
-    promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10>
-    Seq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
-        F10 f10, DebugLocation whence = {}) {
-  return promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10>(
-      std::move(f0), std::move(f1), std::move(f2), std::move(f3), std::move(f4),
-      std::move(f5), std::move(f6), std::move(f7), std::move(f8), std::move(f9),
-      std::move(f10), whence);
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto Seq(F0&& f0, F1&& f1, F2&& f2,
+                                              F3&& f3, F4&& f4, F5&& f5,
+                                              F6&& f6, F7&& f7, F8&& f8,
+                                              F9&& f9, F10&& f10,
+                                              DebugLocation whence = {}) {
+  return promise_detail::Seq<
+      std::decay_t<F0>, std::decay_t<F1>, std::decay_t<F2>, std::decay_t<F3>,
+      std::decay_t<F4>, std::decay_t<F5>, std::decay_t<F6>, std::decay_t<F7>,
+      std::decay_t<F8>, std::decay_t<F9>, std::decay_t<F10>>(
+      std::forward<F0>(f0), std::forward<F1>(f1), std::forward<F2>(f2),
+      std::forward<F3>(f3), std::forward<F4>(f4), std::forward<F5>(f5),
+      std::forward<F6>(f6), std::forward<F7>(f7), std::forward<F8>(f8),
+      std::forward<F9>(f9), std::forward<F10>(f10), whence);
 }
 
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
           typename F5, typename F6, typename F7, typename F8, typename F9,
           typename F10, typename F11>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
-    promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11>
-    Seq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
-        F10 f10, F11 f11, DebugLocation whence = {}) {
-  return promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11>(
-      std::move(f0), std::move(f1), std::move(f2), std::move(f3), std::move(f4),
-      std::move(f5), std::move(f6), std::move(f7), std::move(f8), std::move(f9),
-      std::move(f10), std::move(f11), whence);
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto Seq(F0&& f0, F1&& f1, F2&& f2,
+                                              F3&& f3, F4&& f4, F5&& f5,
+                                              F6&& f6, F7&& f7, F8&& f8,
+                                              F9&& f9, F10&& f10, F11&& f11,
+                                              DebugLocation whence = {}) {
+  return promise_detail::Seq<
+      std::decay_t<F0>, std::decay_t<F1>, std::decay_t<F2>, std::decay_t<F3>,
+      std::decay_t<F4>, std::decay_t<F5>, std::decay_t<F6>, std::decay_t<F7>,
+      std::decay_t<F8>, std::decay_t<F9>, std::decay_t<F10>, std::decay_t<F11>>(
+      std::forward<F0>(f0), std::forward<F1>(f1), std::forward<F2>(f2),
+      std::forward<F3>(f3), std::forward<F4>(f4), std::forward<F5>(f5),
+      std::forward<F6>(f6), std::forward<F7>(f7), std::forward<F8>(f8),
+      std::forward<F9>(f9), std::forward<F10>(f10), std::forward<F11>(f11),
+      whence);
 }
 
 // Execute a sequence of operations of unknown length.
@@ -245,10 +278,12 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
 //   return argument;
 template <typename Iter, typename Factory, typename Argument>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqIter(Iter begin, Iter end,
-                                                  Argument argument,
-                                                  Factory factory) {
-  return promise_detail::SeqIter<Iter, Factory, Argument>(
-      begin, end, std::move(factory), std::move(argument));
+                                                  Argument&& argument,
+                                                  Factory&& factory) {
+  return promise_detail::SeqIter<Iter, std::decay_t<Factory>,
+                                 std::decay_t<Argument>>(
+      begin, end, std::forward<Factory>(factory),
+      std::forward<Argument>(argument));
 }
 
 }  // namespace grpc_core

@@ -45,6 +45,11 @@
 #define GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL \
   "grpc.internal.max_connections_per_subchannel"
 
+// EXPERIMENTAL: Fail requests at the client if the client is over max
+// concurrent streams, so they may be retried elsewhere.
+#define GRPC_ARG_MAX_CONCURRENT_STREAMS_REJECT_ON_CLIENT \
+  "grpc.http.max_concurrent_streams_reject_on_client"
+
 namespace grpc_core {
 
 // Internal type for LB call state interface.  Provides an interface for

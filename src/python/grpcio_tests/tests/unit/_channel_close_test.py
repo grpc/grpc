@@ -64,7 +64,7 @@ _METHOD_HANDLERS = {
 }
 
 
-class _Pipe(object):
+class _Pipe:
     def __init__(self, values):
         self._condition = threading.Condition()
         self._values = list(values)

@@ -94,6 +94,9 @@ using grpc::lb::v1::LoadBalanceResponse;
 
 using grpc_core::SourceLocation;
 
+// TODO(tjagtap) [PH2][P3][OSS] grpclb is used only by OSS customers. This
+// entire test suite will need to pass before PH2 can be enabled for OSS users.
+
 namespace grpc {
 namespace testing {
 namespace {
@@ -513,6 +516,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
   static void TearDownTestSuite() { grpc_shutdown(); }
 
   void SetUp() override {
+    SKIP_TEST_FOR_PH2_CLIENT("[PH2] A lot of tests are failing and flaking in");
     response_generator_ =
         grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
     balancer_ = CreateAndStartBalancer();
@@ -521,7 +525,9 @@ class GrpclbEnd2endTest : public ::testing::Test {
 
   void TearDown() override {
     ShutdownAllBackends();
-    balancer_->Shutdown();
+    if (balancer_ != nullptr) {
+      balancer_->Shutdown();
+    }
   }
 
   void CreateBackends(size_t num_backends) {

@@ -5,7 +5,7 @@ import grpc
 from envoy.service.trace.v3 import trace_service_pb2 as envoy_dot_service_dot_trace_dot_v3_dot_trace__service__pb2
 
 
-class TraceServiceStub(object):
+class TraceServiceStub:
     """[#protodoc-title: Trace service]
 
     Service for streaming traces to server that consumes the trace data. It
@@ -25,7 +25,7 @@ class TraceServiceStub(object):
                 )
 
 
-class TraceServiceServicer(object):
+class TraceServiceServicer:
     """[#protodoc-title: Trace service]
 
     Service for streaming traces to server that consumes the trace data. It
@@ -56,7 +56,7 @@ def add_TraceServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class TraceService(object):
+class TraceService:
     """[#protodoc-title: Trace service]
 
     Service for streaming traces to server that consumes the trace data. It

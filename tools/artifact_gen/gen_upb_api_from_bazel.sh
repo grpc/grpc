@@ -15,11 +15,28 @@
 
 set -ex
 
+# TODO(weizheyuan): Make this script work with both gcc
+# and clang so developers can run it more easily on local
+# machines.
+export CC=`which gcc`
+export CXX=`which g++`
+
+_GCC_VERSION=$(gcc -dumpfullversion)
+
+if [[ "${_GCC_VERSION}" == 15.* ]]; then
+  echo "Detected gcc ${_GCC_VERSION}, applying '-Wa,--gsframe=no' to avoid linker error."
+  BAZEL_BUILD_ARTIFACT=(../../tools/bazel --bazelrc ../../tools/artifact_gen/fix_absl_g++15_linker_error_workaround.bazelrc build)
+  BAZEL_BUILD=(tools/bazel --bazelrc tools/artifact_gen/fix_absl_g++15_linker_error_workaround.bazelrc build)
+else
+  BAZEL_BUILD_ARTIFACT=(../../tools/bazel build)
+  BAZEL_BUILD=(tools/bazel build)
+fi
+
 # cd to repo root
 cd "$(dirname "$0")/../.."
 
 # Build the C++ generator. This must be done from within the sub-workspace.
-(cd tools/artifact_gen && ../../tools/bazel build //:gen_upb_api_from_bazel)
+(cd tools/artifact_gen && "${BAZEL_BUILD_ARTIFACT[@]}" //:gen_upb_api_from_bazel)
 
 # Now that the tool is built, we can move the executable to a temporary location
 # to avoid issues with the nested bazel workspaces.
@@ -59,7 +76,7 @@ BUILD_TARGETS=$(${TMP_DIR}/gen_upb_api_from_bazel \
 
 # Build the upb targets from the root.
 if [[ -n "${BUILD_TARGETS}" ]]; then
-  tools/bazel build ${BUILD_TARGETS}
+  "${BAZEL_BUILD[@]}" ${BUILD_TARGETS}
 fi
 
 # Run the C++ program to copy the generated files.
@@ -67,4 +84,4 @@ ${TMP_DIR}/gen_upb_api_from_bazel \
   --mode=generate_and_copy \
   --upb_rules_xml="${UPB_RULES_XML}" \
   --deps_xml="${DEPS_XML}" \
-  "$@" 
+  "$@"

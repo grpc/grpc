@@ -53,8 +53,10 @@ EXPORTS
     grpc_tls_identity_pairs_create
     grpc_tls_identity_pairs_add_pair
     grpc_tls_identity_pairs_destroy
-    grpc_tls_certificate_provider_static_data_create
     grpc_tls_certificate_provider_file_watcher_create
+    grpc_tls_certificate_provider_in_memory_create
+    grpc_tls_certificate_provider_in_memory_set_root_certificate
+    grpc_tls_certificate_provider_in_memory_set_identity_certificate
     grpc_tls_certificate_provider_release
     grpc_tls_credentials_options_create
     grpc_tls_credentials_options_set_min_tls_version
@@ -82,6 +84,7 @@ EXPORTS
     grpc_local_server_credentials_create
     grpc_tls_credentials_options_set_check_call_host
     grpc_tls_credentials_options_set_tls_session_key_log_file_path
+    grpc_tls_credentials_options_set_key_exchange_groups
     grpc_metadata_array_init
     grpc_metadata_array_destroy
     grpc_call_details_init
@@ -133,9 +136,9 @@ EXPORTS
     grpc_server_request_registered_call
     grpc_server_create
     grpc_server_register_completion_queue
+    grpc_server_config_fetcher_arg_vtable
     grpc_server_config_fetcher_xds_create
-    grpc_server_config_fetcher_destroy
-    grpc_server_set_config_fetcher
+    grpc_server_config_fetcher_unref
     grpc_server_add_http2_port
     grpc_server_start
     grpc_server_shutdown_and_notify

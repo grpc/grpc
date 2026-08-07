@@ -134,14 +134,10 @@ struct MockPromiseEndpoint {
       std::shared_ptr<MockTelemetryInfo> telemetry_info = nullptr) {
     if (telemetry_info == nullptr) {
       telemetry_info = std::make_shared<util::testing::MockTelemetryInfo>();
-      EXPECT_CALL(*telemetry_info, GetMetricKey("delivery_rate"))
-          .WillRepeatedly(::testing::Return(1));
-      EXPECT_CALL(*telemetry_info, GetMetricKey("net_rtt_usec"))
-          .WillRepeatedly(::testing::Return(2));
-      EXPECT_CALL(*telemetry_info, GetMetricKey("data_notsent"))
-          .WillRepeatedly(::testing::Return(3));
-      EXPECT_CALL(*telemetry_info, GetMetricKey("byte_offset"))
-          .WillRepeatedly(::testing::Return(4));
+      EXPECT_CALL(*telemetry_info, GetMetricKey(::testing::_))
+          .WillRepeatedly([key = std::make_shared<int>(0)](absl::string_view) {
+            return ++(*key);
+          });
     }
     EXPECT_CALL(*endpoint, GetTelemetryInfo())
         .WillRepeatedly(::testing::Return(telemetry_info));
@@ -194,6 +190,13 @@ struct MockPromiseEndpoint {
   void ExpectWrite(
       std::initializer_list<grpc_event_engine::experimental::Slice> slices,
       grpc_event_engine::experimental::EventEngine* schedule_on_event_engine,
+      DebugLocation whence = {});
+  void ExpectWriteAndRunMetricsSink(
+      std::initializer_list<grpc_event_engine::experimental::Slice> slices,
+      grpc_event_engine::experimental::EventEngine* schedule_on_event_engine,
+      std::vector<
+          grpc_event_engine::experimental::EventEngine::Endpoint::WriteMetric>
+          metrics = {},
       DebugLocation whence = {});
   void ExpectWriteWithCallback(
       std::initializer_list<grpc_event_engine::experimental::Slice> slices,

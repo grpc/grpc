@@ -1,0 +1,261 @@
+# Adopted from https://github.com/bazelbuild/bazel-central-registry/blob/c83ac4d4bac24aeebf1b99f8b8d21166e0886397/modules/libpfm/4.11.0.bcr.1/source.json
+diff --git a/BUILD.bazel b/BUILD.bazel
+new file mode 100644
+index 0000000..70a84e0
+--- /dev/null
++++ b/BUILD.bazel
+@@ -0,0 +1,240 @@
++load("@rules_cc//cc:defs.bzl", "cc_library")
++
++AARCH32_SRCS_COMMON = [
++    "lib/pfmlib_arm.c",
++    "lib/pfmlib_arm_armv7_pmuv1.c",
++    "lib/pfmlib_arm_armv6.c",
++    "lib/pfmlib_arm_armv8.c",
++    "lib/pfmlib_tx2_unc_perf_event.c",
++]
++
++AARCH32_SRCS_LINUX = [
++    "lib/pfmlib_arm_perf_event.c",
++]
++
++AARCH64_SRCS_COMMON = [
++    "lib/pfmlib_arm.c",
++    "lib/pfmlib_arm_armv8.c",
++    "lib/pfmlib_tx2_unc_perf_event.c",
++]
++
++AARCH64_SRCS_LINUX = [
++    "lib/pfmlib_arm_perf_event.c",
++]
++
++MIPS_SRCS_COMMON = [
++    "lib/pfmlib_mips.c",
++    "lib/pfmlib_mips_74k.c",
++]
++
++MIPS_SRCS_LINUX = [
++    "lib/pfmlib_mips_perf_event.c",
++]
++
++POWERPC_SRCS_COMMON = [
++    "lib/pfmlib_powerpc.c",
++    "lib/pfmlib_power4.c",
++    "lib/pfmlib_ppc970.c",
++    "lib/pfmlib_power5.c",
++    "lib/pfmlib_power6.c",
++    "lib/pfmlib_power7.c",
++    "lib/pfmlib_torrent.c",
++    "lib/pfmlib_power8.c",
++    "lib/pfmlib_power9.c",
++    "lib/pfmlib_powerpc_nest.c",
++]
++
++POWERPC_SRCS_LINUX = [
++    "lib/pfmlib_powerpc_perf_event.c",
++]
++
++S390X_SRCS_COMMON = [
++    "lib/pfmlib_s390x_cpumf.c",
++]
++
++S390X_SRCS_LINUX = [
++    "lib/pfmlib_s390x_perf_event.c",
++]
++
++X86_64_SRCS_COMMON = [
++    "lib/pfmlib_amd64.c",
++    "lib/pfmlib_intel_core.c",
++    "lib/pfmlib_intel_x86.c",
++    "lib/pfmlib_intel_x86_arch.c",
++    "lib/pfmlib_intel_atom.c",
++    "lib/pfmlib_intel_nhm_unc.c",
++    "lib/pfmlib_intel_nhm.c",
++    "lib/pfmlib_intel_wsm.c",
++    "lib/pfmlib_intel_snb.c",
++    "lib/pfmlib_intel_snb_unc.c",
++    "lib/pfmlib_intel_ivb.c",
++    "lib/pfmlib_intel_ivb_unc.c",
++    "lib/pfmlib_intel_hsw.c",
++    "lib/pfmlib_intel_bdw.c",
++    "lib/pfmlib_intel_skl.c",
++    "lib/pfmlib_intel_icl.c",
++    "lib/pfmlib_intel_rapl.c",
++    "lib/pfmlib_intel_snbep_unc.c",
++    "lib/pfmlib_intel_snbep_unc_cbo.c",
++    "lib/pfmlib_intel_snbep_unc_ha.c",
++    "lib/pfmlib_intel_snbep_unc_imc.c",
++    "lib/pfmlib_intel_snbep_unc_pcu.c",
++    "lib/pfmlib_intel_snbep_unc_qpi.c",
++    "lib/pfmlib_intel_snbep_unc_ubo.c",
++    "lib/pfmlib_intel_snbep_unc_r2pcie.c",
++    "lib/pfmlib_intel_snbep_unc_r3qpi.c",
++    "lib/pfmlib_intel_ivbep_unc_cbo.c",
++    "lib/pfmlib_intel_ivbep_unc_ha.c",
++    "lib/pfmlib_intel_ivbep_unc_imc.c",
++    "lib/pfmlib_intel_ivbep_unc_pcu.c",
++    "lib/pfmlib_intel_ivbep_unc_qpi.c",
++    "lib/pfmlib_intel_ivbep_unc_ubo.c",
++    "lib/pfmlib_intel_ivbep_unc_r2pcie.c",
++    "lib/pfmlib_intel_ivbep_unc_r3qpi.c",
++    "lib/pfmlib_intel_ivbep_unc_irp.c",
++    "lib/pfmlib_intel_hswep_unc_cbo.c",
++    "lib/pfmlib_intel_hswep_unc_ha.c",
++    "lib/pfmlib_intel_hswep_unc_imc.c",
++    "lib/pfmlib_intel_hswep_unc_pcu.c",
++    "lib/pfmlib_intel_hswep_unc_qpi.c",
++    "lib/pfmlib_intel_hswep_unc_ubo.c",
++    "lib/pfmlib_intel_hswep_unc_r2pcie.c",
++    "lib/pfmlib_intel_hswep_unc_r3qpi.c",
++    "lib/pfmlib_intel_hswep_unc_irp.c",
++    "lib/pfmlib_intel_hswep_unc_sbo.c",
++    "lib/pfmlib_intel_bdx_unc_cbo.c",
++    "lib/pfmlib_intel_bdx_unc_ubo.c",
++    "lib/pfmlib_intel_bdx_unc_sbo.c",
++    "lib/pfmlib_intel_bdx_unc_ha.c",
++    "lib/pfmlib_intel_bdx_unc_imc.c",
++    "lib/pfmlib_intel_bdx_unc_irp.c",
++    "lib/pfmlib_intel_bdx_unc_pcu.c",
++    "lib/pfmlib_intel_bdx_unc_qpi.c",
++    "lib/pfmlib_intel_bdx_unc_r2pcie.c",
++    "lib/pfmlib_intel_bdx_unc_r3qpi.c",
++    "lib/pfmlib_intel_skx_unc_cha.c",
++    "lib/pfmlib_intel_skx_unc_iio.c",
++    "lib/pfmlib_intel_skx_unc_imc.c",
++    "lib/pfmlib_intel_skx_unc_irp.c",
++    "lib/pfmlib_intel_skx_unc_m2m.c",
++    "lib/pfmlib_intel_skx_unc_m3upi.c",
++    "lib/pfmlib_intel_skx_unc_pcu.c",
++    "lib/pfmlib_intel_skx_unc_ubo.c",
++    "lib/pfmlib_intel_skx_unc_upi.c",
++    "lib/pfmlib_intel_knc.c",
++    "lib/pfmlib_intel_slm.c",
++    "lib/pfmlib_intel_tmt.c",
++    "lib/pfmlib_intel_knl.c",
++    "lib/pfmlib_intel_knl_unc_imc.c",
++    "lib/pfmlib_intel_knl_unc_edc.c",
++    "lib/pfmlib_intel_knl_unc_cha.c",
++    "lib/pfmlib_intel_knl_unc_m2pcie.c",
++    "lib/pfmlib_intel_glm.c",
++    "lib/pfmlib_intel_netburst.c",
++    "lib/pfmlib_amd64_k7.c",
++    "lib/pfmlib_amd64_k8.c",
++    "lib/pfmlib_amd64_fam10h.c",
++    "lib/pfmlib_amd64_fam11h.c",
++    "lib/pfmlib_amd64_fam12h.c",
++    "lib/pfmlib_amd64_fam14h.c",
++    "lib/pfmlib_amd64_fam15h.c",
++    "lib/pfmlib_amd64_fam17h.c",
++    "lib/pfmlib_amd64_fam16h.c",
++]
++
++X86_SRCS_COMMON = X86_64_SRCS_COMMON + [
++    "lib/pfmlib_intel_coreduo.c",
++    "lib/pfmlib_intel_p6.c",
++]
++
++filegroup(
++    name = "cpu_srcs",
++    srcs = select({
++        "@platforms//cpu:x86_32": X86_SRCS_COMMON,
++        "@platforms//cpu:x86_64": X86_64_SRCS_COMMON,
++        "@platforms//cpu:aarch32": AARCH32_SRCS_COMMON,
++        "@platforms//cpu:aarch64": AARCH64_SRCS_COMMON,
++        "@platforms//cpu:mips64": MIPS_SRCS_COMMON,
++        "@platforms//cpu:ppc32": POWERPC_SRCS_COMMON,
++        "@platforms//cpu:ppc64le": POWERPC_SRCS_COMMON,
++        "@platforms//cpu:ppc": POWERPC_SRCS_COMMON,
++        "@platforms//cpu:s390x": S390X_SRCS_COMMON,
++        "//conditions:default": [],
++    }),
++)
++
++filegroup(
++    name = "linux_srcs",
++    srcs = select({
++        "@platforms//cpu:aarch32": AARCH32_SRCS_LINUX,
++        "@platforms//cpu:aarch64": AARCH64_SRCS_LINUX,
++        "@platforms//cpu:mips64": MIPS_SRCS_LINUX,
++        "@platforms//cpu:ppc32": POWERPC_SRCS_LINUX,
++        "@platforms//cpu:ppc64le": POWERPC_SRCS_LINUX,
++        "@platforms//cpu:ppc": POWERPC_SRCS_LINUX,
++        "@platforms//cpu:s390x": S390X_SRCS_LINUX,
++        "//conditions:default": [],
++    }),
++)
++
++filegroup(
++    name = "srcs",
++    srcs = [
++        "lib/pfmlib_common.c",
++        "lib/pfmlib_perf_event.c",
++        "lib/pfmlib_perf_event_pmu.c",
++        "lib/pfmlib_perf_event_priv.h",
++        "lib/pfmlib_perf_event_raw.c",
++        "lib/pfmlib_torrent.c",
++        "lib/pfmlib_tx2_unc_perf_event.c",
++        ":cpu_srcs",
++    ] + select({
++        "@platforms//os:linux": [":linux_srcs"],
++        "//conditions:default": [],
++    }),
++)
++
++cc_library(
++    name = "pfm",
++    srcs = [
++        ":srcs",
++    ],
++    hdrs = glob([
++        "include/perfmon/*.h",
++    ]),
++    copts = [
++        "-Wno-format-truncation",
++        "-Wno-use-after-free",
++        "-fPIC",
++        "-D_REENTRANT",
++        "-fvisibility=hidden",
++    ] + select({
++        "@platforms//cpu:aarch32": ["-DCONFIG_PFMLIB_ARCH_ARM"],
++        "@platforms//cpu:aarch64": ["-DCONFIG_PFMLIB_ARCH_ARM64"],
++        "@platforms//cpu:mips64": ["-DCONFIG_PFMLIB_ARCH_MIPS"],
++        "@platforms//cpu:ppc32": ["-DCONFIG_PFMLIB_ARCH_POWERPC"],
++        "@platforms//cpu:ppc64le": ["-DCONFIG_PFMLIB_ARCH_POWERPC"],
++        "@platforms//cpu:ppc": ["-DCONFIG_PFMLIB_ARCH_POWERPC"],
++        "@platforms//cpu:s390x": ["-DCONFIG_PFMLIB_ARCH_S390X"],
++        "//conditions:default": [],
++    }),
++    includes = [
++        "include",
++        "lib",
++    ],
++    strip_include_prefix = "include",
++    textual_hdrs = glob([
++        "lib/**/*.h",
++    ]),
++    visibility = [
++        "//visibility:public",
++    ],
++)
++
++alias(
++    name = "libpfm",
++    actual = ":pfm",
++    visibility = [
++        "//visibility:public",
++    ],
++)
+diff --git a/MODULE.bazel b/MODULE.bazel
+new file mode 100644
+index 0000000..61f396b
+--- /dev/null
++++ b/MODULE.bazel
+@@ -0,0 +1,8 @@
++module(
++    name = "libpfm",
++    version = "4.11.0.bcr.1",
++    compatibility_level = 1,
++)
++
++bazel_dep(name = "platforms", version = "0.0.11")
++bazel_dep(name = "rules_cc", version = "0.0.17")

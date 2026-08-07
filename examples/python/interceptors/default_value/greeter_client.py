@@ -13,8 +13,6 @@
 # limitations under the License.
 """The Python implementation of the gRPC helloworld.Greeter client."""
 
-from __future__ import print_function
-
 import logging
 
 import default_value_client_interceptor

@@ -21,6 +21,7 @@
 
 #include <memory>
 
+#include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/time.h"
@@ -393,7 +394,11 @@ CORE_END2END_TEST(Http2SingleHopTests, ServerMaxConcurrentStreams) {
   // The third request MUST fail with RESOURCE_EXHAUSTED.
   EXPECT_EQ(server_status3.status(), GRPC_STATUS_RESOURCE_EXHAUSTED);
   EXPECT_THAT(server_status3.message(),
-              ::testing::HasSubstr("Too many streams"));
+              ::testing::AnyOf(
+                  ::testing::HasSubstr(
+                      "subchannel at max number of connections, but no quota "
+                      "to send RPC"),
+                  ::testing::HasSubstr("Too many streams")));
 }
 
 }  // namespace

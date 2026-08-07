@@ -28,18 +28,52 @@
 
 #include "src/core/ext/transport/chaotic_good/data_endpoints.h"
 
-#include <google/protobuf/text_format.h>
+#include <grpc/event_engine/slice.h>
 #include <grpc/grpc.h>
 
+#include <array>
 #include <cmath>
 #include <cstdint>
+#include <cstring>
+#include <limits>
+#include <memory>
+#include <string>
+#include <utility>
+#include <variant>
+#include <vector>
 
+#include "fuzztest/fuzztest.h"
+#include "src/core/call/message.h"
+#include "src/core/channelz/channelz.h"
+#include "src/core/ext/transport/chaotic_good/frame.h"
+#include "src/core/ext/transport/chaotic_good/frame_transport.h"
+#include "src/core/ext/transport/chaotic_good/pending_connection.h"
+#include "src/core/ext/transport/chaotic_good/send_rate.h"
+#include "src/core/ext/transport/chaotic_good/tcp_frame_header.h"
+#include "src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h"
+#include "src/core/ext/transport/chaotic_good/transport_context.h"
+#include "src/core/lib/promise/map.h"
+#include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/sleep.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/util/match.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 #include "test/core/call/yodel/yodel_test.h"
 #include "test/core/transport/util/mock_promise_endpoint.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 
 namespace grpc_core {
 
@@ -159,7 +193,9 @@ grpc_event_engine::experimental::Slice PaddingBytes(uint32_t padding) {
       buffer.data(), buffer.size());
 }
 
-MpscQueued<chaotic_good::OutgoingFrame> TestFrame(absl::string_view payload) {
+MpscQueued<chaotic_good::OutgoingFrame> TestFrame(
+    absl::string_view payload,
+    std::shared_ptr<TcpCallTracer> tracer = nullptr) {
   // We create an mpsc receiver that we can funnel frames through to get them
   // properly wrapped in an MpscQueued so that we don't need to special case
   // resource reclamation for DataEndpoints.
@@ -171,7 +207,7 @@ MpscQueued<chaotic_good::OutgoingFrame> TestFrame(absl::string_view payload) {
       1, Arena::MakePooled<Message>(
              SliceBuffer(Slice::FromCopiedString(payload)), 0));
   frames->MakeSender().UnbufferedImmediateSend(
-      chaotic_good::OutgoingFrame{std::move(frame), nullptr}, 1);
+      chaotic_good::OutgoingFrame{std::move(frame), std::move(tracer)}, 1);
   return std::move(*frames->Next()().value());
 }
 
@@ -187,14 +223,62 @@ DATA_ENDPOINTS_TEST(CanWrite) {
       Endpoints(std::move(ep.promise_endpoint)),
       MakeRefCounted<chaotic_good::TransportContext>(
           event_engine(), MakeTestChannelzSocketNode()),
-      64, 64, std::make_shared<chaotic_good::TcpZTraceCollector>(), false,
-      "rand", Time1Clock());
+      64, 64, std::numeric_limits<uint32_t>::max(),
+      std::make_shared<chaotic_good::TcpZTraceCollector>(), false, "rand",
+      Time1Clock());
   ep.ExpectWrite(
       {DataFrameHeader(64, 123, 1, 5),
        grpc_event_engine::experimental::Slice::FromCopiedString("hello"),
        PaddingBytes(64 - 5)},
       event_engine().get());
   data_endpoints.Write(123, TestFrame("hello"));
+  WaitForAllPendingWork();
+  close_ep();
+  WaitForAllPendingWork();
+}
+
+class MockTcpCallTracer : public TcpCallTracer {
+ public:
+  MOCK_METHOD(void, RecordEvent,
+              (grpc_event_engine::experimental::internal::WriteEvent event,
+               absl::Time time, size_t byte_offset,
+               const std::vector<TcpEventMetric>& metrics),
+              (override));
+};
+
+DATA_ENDPOINTS_TEST(WriteEventSinkWithTracer) {
+  auto telemetry_info = std::make_shared<util::testing::MockTelemetryInfo>();
+  EXPECT_CALL(*telemetry_info, GetMetricName(1))
+      .WillRepeatedly(::testing::Return("test_metric"));
+
+  util::testing::MockPromiseEndpoint ep(1234, 6148, telemetry_info);
+  auto close_ep = ep.ExpectDelayedReadClose(absl::UnavailableError("test done"),
+                                            event_engine().get());
+  chaotic_good::DataEndpoints data_endpoints(
+      Endpoints(std::move(ep.promise_endpoint)),
+      MakeRefCounted<chaotic_good::TransportContext>(
+          event_engine(), MakeTestChannelzSocketNode()),
+      64, 64, std::numeric_limits<uint32_t>::max(),
+      std::make_shared<chaotic_good::TcpZTraceCollector>(), false, "rand",
+      Time1Clock());
+
+  auto tracer = std::make_shared<::testing::StrictMock<MockTcpCallTracer>>();
+  EXPECT_CALL(
+      *tracer,
+      RecordEvent(
+          grpc_event_engine::experimental::internal::WriteEvent::kSendMsg,
+          ::testing::_, ::testing::_,
+          ::testing::ElementsAre(::testing::AllOf(
+              ::testing::Field(&TcpCallTracer::TcpEventMetric::key,
+                               "test_metric"),
+              ::testing::Field(&TcpCallTracer::TcpEventMetric::value, 42)))));
+
+  ep.ExpectWriteAndRunMetricsSink(
+      {DataFrameHeader(64, 123, 1, 5),
+       grpc_event_engine::experimental::Slice::FromCopiedString("hello"),
+       PaddingBytes(64 - 5)},
+      event_engine().get(), {{1, 42}});
+  data_endpoints.Write(123, TestFrame("hello", tracer));
   WaitForAllPendingWork();
   close_ep();
   WaitForAllPendingWork();
@@ -212,8 +296,9 @@ DATA_ENDPOINTS_TEST(CanMultiWrite) {
                 std::move(ep2.promise_endpoint)),
       MakeRefCounted<chaotic_good::TransportContext>(
           event_engine(), MakeTestChannelzSocketNode()),
-      64, 64, std::make_shared<chaotic_good::TcpZTraceCollector>(), false,
-      "spanrr", Time1Clock());
+      64, 64, std::numeric_limits<uint32_t>::max(),
+      std::make_shared<chaotic_good::TcpZTraceCollector>(), false, "spanrr",
+      Time1Clock());
   SliceBuffer writes;
   ep1.CaptureWrites(writes, event_engine().get());
   ep2.CaptureWrites(writes, event_engine().get());
@@ -259,8 +344,9 @@ DATA_ENDPOINTS_TEST(CanRead) {
       Endpoints(std::move(ep.promise_endpoint)),
       MakeRefCounted<chaotic_good::TransportContext>(
           event_engine(), MakeTestChannelzSocketNode()),
-      64, 64, std::make_shared<chaotic_good::TcpZTraceCollector>(), false,
-      "spanrr", Time1Clock());
+      64, 64, std::numeric_limits<uint32_t>::max(),
+      std::make_shared<chaotic_good::TcpZTraceCollector>(), false, "spanrr",
+      Time1Clock());
   SpawnTestSeqWithoutContext("read", data_endpoints.Read(5).Await(),
                              [](absl::StatusOr<SliceBuffer> result) {
                                EXPECT_TRUE(result.ok());
@@ -269,6 +355,46 @@ DATA_ENDPOINTS_TEST(CanRead) {
   WaitForAllPendingWork();
   close_ep();
   WaitForAllPendingWork();
+}
+
+DATA_ENDPOINTS_TEST(ReadFailsWhenClosed) {
+  util::testing::MockPromiseEndpoint ep(1234);
+  auto close_ep = ep.ExpectDelayedReadClose(
+      absl::AbortedError("connection lost"), event_engine().get());
+  chaotic_good::DataEndpoints data_endpoints(
+      Endpoints(std::move(ep.promise_endpoint)),
+      MakeRefCounted<chaotic_good::TransportContext>(
+          event_engine(), MakeTestChannelzSocketNode()),
+      64, 64, std::numeric_limits<uint32_t>::max(),
+      std::make_shared<chaotic_good::TcpZTraceCollector>(), false, "spanrr",
+      Time1Clock());
+  bool read_completed = false;
+  SpawnTestSeqWithoutContext(
+      "read", data_endpoints.Read(5).Await(),
+      [&read_completed](absl::StatusOr<SliceBuffer> result) {
+        EXPECT_FALSE(result.ok());
+        EXPECT_EQ(result.status().code(), absl::StatusCode::kAborted);
+        EXPECT_THAT(result.status().message(),
+                    ::testing::HasSubstr("connection lost"));
+        read_completed = true;
+      });
+  close_ep();
+  WaitForAllPendingWork();
+  EXPECT_TRUE(read_completed);
+
+  // Further reads will fail immediately since the transport is closed.
+  read_completed = false;
+  SpawnTestSeqWithoutContext(
+      "read", data_endpoints.Read(6).Await(),
+      [&read_completed](absl::StatusOr<SliceBuffer> result) {
+        EXPECT_FALSE(result.ok());
+        EXPECT_EQ(result.status().code(), absl::StatusCode::kAborted);
+        EXPECT_THAT(result.status().message(),
+                    ::testing::HasSubstr("connection lost"));
+        read_completed = true;
+      });
+  WaitForAllPendingWork();
+  EXPECT_TRUE(read_completed);
 }
 
 DATA_ENDPOINTS_TEST(CanWriteSecurityFrame) {
@@ -284,8 +410,9 @@ DATA_ENDPOINTS_TEST(CanWriteSecurityFrame) {
       Endpoints(std::move(ep.promise_endpoint)),
       MakeRefCounted<chaotic_good::TransportContext>(
           event_engine(), MakeTestChannelzSocketNode()),
-      64, 64, std::make_shared<chaotic_good::TcpZTraceCollector>(), false,
-      "rand", Time1Clock());
+      64, 64, std::numeric_limits<uint32_t>::max(),
+      std::make_shared<chaotic_good::TcpZTraceCollector>(), false, "rand",
+      Time1Clock());
   ::testing::Mock::VerifyAndClearExpectations(
       transport_framing_endpoint_extension);
   ep.ExpectWrite({DataFrameHeader(64, 0, 0, strlen("security_frame_bytes")),
@@ -324,13 +451,17 @@ DATA_ENDPOINTS_TEST(CanReadSecurityFrame) {
       Endpoints(std::move(ep.promise_endpoint)),
       MakeRefCounted<chaotic_good::TransportContext>(
           event_engine(), MakeTestChannelzSocketNode()),
-      64, 64, std::make_shared<chaotic_good::TcpZTraceCollector>(), false,
-      "rand", Time1Clock());
+      64, 64, std::numeric_limits<uint32_t>::max(),
+      std::make_shared<chaotic_good::TcpZTraceCollector>(), false, "rand",
+      Time1Clock());
   SpawnTestSeqWithoutContext(
       "read",
       [&data_endpoints]() {
         return Race(data_endpoints.Read(12345).Await(),
-                    Map(Sleep(Duration::Minutes(1)),
+                    // FuzzedEventEngine injects random delays up to 30 seconds
+                    // between tasks. Sleep for a long enough time to ensure all
+                    // background event engine tasks are completed.
+                    Map(Sleep(Duration::Hours(1)),
                         [](absl::Status status) -> absl::StatusOr<SliceBuffer> {
                           EXPECT_TRUE(status.ok()) << status;
                           return absl::CancelledError("test");
@@ -339,6 +470,27 @@ DATA_ENDPOINTS_TEST(CanReadSecurityFrame) {
       [](absl::StatusOr<SliceBuffer> result) { EXPECT_FALSE(result.ok()); });
   WaitForAllPendingWork();
   close_ep();
+  WaitForAllPendingWork();
+}
+
+DATA_ENDPOINTS_TEST(FailsOnLargeMessage) {
+  util::testing::MockPromiseEndpoint ep(1234);
+  ep.ExpectRead({DataFrameHeader(64, 5, 1, 10)}, event_engine().get());
+  chaotic_good::DataEndpoints data_endpoints(
+      Endpoints(std::move(ep.promise_endpoint)),
+      MakeRefCounted<chaotic_good::TransportContext>(
+          event_engine(), MakeTestChannelzSocketNode()),
+      64, 64, 5, std::make_shared<chaotic_good::TcpZTraceCollector>(), false,
+      "spanrr", Time1Clock());
+
+  SpawnTestSeqWithoutContext(
+      "read", data_endpoints.Read(5).Await(),
+      [](absl::StatusOr<SliceBuffer> result) {
+        EXPECT_FALSE(result.ok());
+        EXPECT_EQ(result.status().code(), absl::StatusCode::kResourceExhausted);
+        EXPECT_THAT(result.status().message(),
+                    ::testing::HasSubstr("Received message larger than max"));
+      });
   WaitForAllPendingWork();
 }
 
@@ -389,6 +541,29 @@ TEST(DataEndpointsTest, CanWriteRegression2) {
                                }
                                rng: 14323299152728827054
   )pb"));
+}
+
+DATA_ENDPOINTS_TEST(FailsOnOverflowingMessage) {
+  util::testing::MockPromiseEndpoint ep(1234);
+  ep.ExpectRead({DataFrameHeader(64, 5, 1, 0xFFFFFFF0)}, event_engine().get());
+  chaotic_good::DataEndpoints data_endpoints(
+      Endpoints(std::move(ep.promise_endpoint)),
+      MakeRefCounted<chaotic_good::TransportContext>(
+          event_engine(), MakeTestChannelzSocketNode()),
+      64, 64, std::numeric_limits<uint32_t>::max(),
+      std::make_shared<chaotic_good::TcpZTraceCollector>(), false, "spanrr",
+      Time1Clock());
+
+  SpawnTestSeqWithoutContext(
+      "read", data_endpoints.Read(5).Await(),
+      [](absl::StatusOr<SliceBuffer> result) {
+        EXPECT_FALSE(result.ok());
+        EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
+        EXPECT_THAT(result.status().message(),
+                    ::testing::HasSubstr(
+                        "Integer overflow in payload length plus padding"));
+      });
+  WaitForAllPendingWork();
 }
 
 }  // namespace grpc_core

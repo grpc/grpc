@@ -12,16 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Invocation-side implementation of gRPC Asyncio Python."""
+# pyright: reportPrivateUsage = false
 
 import asyncio
-import sys
-from typing import Any, Iterable, List, Optional, Sequence
+import types
+from typing import Any, Generic, List, Optional, Sequence, TypeVar
+import weakref
 
 import grpc
 from grpc import _common
 from grpc import _compression
 from grpc import _grpcio_metadata
 from grpc._cython import cygrpc
+from typing_extensions import Self
 
 from . import _base_call
 from . import _base_channel
@@ -48,28 +51,20 @@ from ._typing import ResponseType
 from ._typing import SerializingFunction
 from ._utils import _timeout_to_deadline
 
+ClientInterceptorT = TypeVar("ClientInterceptorT", bound=ClientInterceptor)
+
 _USER_AGENT = "grpc-python-asyncio/{}".format(_grpcio_metadata.__version__)
-
-if sys.version_info[1] < 7:
-
-    def _all_tasks() -> Iterable[asyncio.Task]:
-        return asyncio.Task.all_tasks()  # pylint: disable=no-member
-
-else:
-
-    def _all_tasks() -> Iterable[asyncio.Task]:
-        return asyncio.all_tasks()
 
 
 def _augment_channel_arguments(
     base_options: ChannelArgumentType, compression: Optional[grpc.Compression]
-):
+) -> ChannelArgumentType:
     compression_channel_argument = _compression.create_channel_option(
         compression
     )
     user_agent_channel_argument = (
         (
-            cygrpc.ChannelArgKey.primary_user_agent_string,
+            cygrpc.ChannelArgKey.primary_user_agent_string.decode(),
             _USER_AGENT,
         ),
     )
@@ -80,7 +75,9 @@ def _augment_channel_arguments(
     )
 
 
-class _BaseMultiCallable:
+class _BaseMultiCallable(
+    Generic[RequestType, ResponseType, ClientInterceptorT]
+):
     """Base class of all multi callable objects.
 
     Handles the initialization logic and stores common attributes.
@@ -89,22 +86,23 @@ class _BaseMultiCallable:
     _loop: asyncio.AbstractEventLoop
     _channel: cygrpc.AioChannel
     _method: bytes
-    _request_serializer: Optional[SerializingFunction]
-    _response_deserializer: Optional[DeserializingFunction]
-    _interceptors: Optional[Sequence[ClientInterceptor]]
+    _request_serializer: Optional[SerializingFunction[RequestType]]
+    _response_deserializer: Optional[DeserializingFunction[ResponseType]]
+    _interceptors: Optional[Sequence[ClientInterceptorT]]
     _references: List[Any]
-    _loop: asyncio.AbstractEventLoop
+    _registered_call_handle: int
 
     # pylint: disable=too-many-arguments
     def __init__(
         self,
         channel: cygrpc.AioChannel,
         method: bytes,
-        request_serializer: Optional[SerializingFunction],
-        response_deserializer: Optional[DeserializingFunction],
-        interceptors: Optional[Sequence[ClientInterceptor]],
+        request_serializer: Optional[SerializingFunction[RequestType]],
+        response_deserializer: Optional[DeserializingFunction[ResponseType]],
+        interceptors: Optional[Sequence[ClientInterceptorT]],
         references: List[Any],
         loop: asyncio.AbstractEventLoop,
+        _registered_call_handle: int = 0,
     ) -> None:
         self._loop = loop
         self._channel = channel
@@ -113,6 +111,22 @@ class _BaseMultiCallable:
         self._response_deserializer = response_deserializer
         self._interceptors = interceptors
         self._references = references
+        self._registered_call_handle = _registered_call_handle
+
+        if not self._references:
+            error_msg = (
+                "MultiCallable must be attached to a Channel, unexpectedly"
+                " found no references."
+            )
+            raise ValueError(error_msg)
+        if not isinstance(self._references[0], Channel):
+            error_msg = (
+                "Invalid reference type. MultiCallable must be attached to a"
+                " Channel."
+            )
+            raise TypeError(error_msg)
+
+        self._python_channel = self._references[0]
 
     @staticmethod
     def _init_metadata(
@@ -123,19 +137,24 @@ class _BaseMultiCallable:
         metadata, as it should be used for the current call.
         """
         metadata = metadata or Metadata()
-        if not isinstance(metadata, Metadata) and isinstance(
+        if not isinstance(
+            metadata, Metadata
+        ) and isinstance(  # pyright: ignore[reportUnnecessaryIsInstance]
             metadata, Sequence
         ):
             metadata = Metadata.from_tuple(tuple(metadata))
         if compression:
-            metadata = Metadata(
-                *_compression.augment_metadata(metadata, compression)
+            augmented_metadata = _compression.augment_metadata(
+                metadata, compression
             )
+            if augmented_metadata is not None:
+                metadata = Metadata(*augmented_metadata)
         return metadata
 
 
 class UnaryUnaryMultiCallable(
-    _BaseMultiCallable, _base_channel.UnaryUnaryMultiCallable
+    _BaseMultiCallable[RequestType, ResponseType, UnaryUnaryClientInterceptor],
+    _base_channel.UnaryUnaryMultiCallable[RequestType, ResponseType],
 ):
     def __call__(
         self,
@@ -160,6 +179,7 @@ class UnaryUnaryMultiCallable(
                 self._request_serializer,
                 self._response_deserializer,
                 self._loop,
+                self._registered_call_handle,
             )
         else:
             call = InterceptedUnaryUnaryCall(
@@ -174,13 +194,17 @@ class UnaryUnaryMultiCallable(
                 self._request_serializer,
                 self._response_deserializer,
                 self._loop,
+                self._registered_call_handle,
             )
+
+        self._python_channel._register_call(call)
 
         return call
 
 
 class UnaryStreamMultiCallable(
-    _BaseMultiCallable, _base_channel.UnaryStreamMultiCallable
+    _BaseMultiCallable[RequestType, ResponseType, UnaryStreamClientInterceptor],
+    _base_channel.UnaryStreamMultiCallable[RequestType, ResponseType],
 ):
     def __call__(
         self,
@@ -206,6 +230,7 @@ class UnaryStreamMultiCallable(
                 self._request_serializer,
                 self._response_deserializer,
                 self._loop,
+                self._registered_call_handle,
             )
         else:
             call = InterceptedUnaryStreamCall(
@@ -220,23 +245,27 @@ class UnaryStreamMultiCallable(
                 self._request_serializer,
                 self._response_deserializer,
                 self._loop,
+                self._registered_call_handle,
             )
+
+        self._python_channel._register_call(call)
 
         return call
 
 
 class StreamUnaryMultiCallable(
-    _BaseMultiCallable, _base_channel.StreamUnaryMultiCallable
+    _BaseMultiCallable[RequestType, ResponseType, StreamUnaryClientInterceptor],
+    _base_channel.StreamUnaryMultiCallable[RequestType, ResponseType],
 ):
     def __call__(
         self,
-        request_iterator: Optional[RequestIterableType] = None,
+        request_iterator: Optional[RequestIterableType[RequestType]] = None,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None,
-    ) -> _base_call.StreamUnaryCall:
+    ) -> _base_call.StreamUnaryCall[RequestType, ResponseType]:
         metadata = self._init_metadata(metadata, compression)
 
         if not self._interceptors:
@@ -251,6 +280,7 @@ class StreamUnaryMultiCallable(
                 self._request_serializer,
                 self._response_deserializer,
                 self._loop,
+                self._registered_call_handle,
             )
         else:
             call = InterceptedStreamUnaryCall(
@@ -265,23 +295,29 @@ class StreamUnaryMultiCallable(
                 self._request_serializer,
                 self._response_deserializer,
                 self._loop,
+                self._registered_call_handle,
             )
+
+        self._python_channel._register_call(call)
 
         return call
 
 
 class StreamStreamMultiCallable(
-    _BaseMultiCallable, _base_channel.StreamStreamMultiCallable
+    _BaseMultiCallable[
+        RequestType, ResponseType, StreamStreamClientInterceptor
+    ],
+    _base_channel.StreamStreamMultiCallable[RequestType, ResponseType],
 ):
     def __call__(
         self,
-        request_iterator: Optional[RequestIterableType] = None,
+        request_iterator: Optional[RequestIterableType[RequestType]] = None,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None,
-    ) -> _base_call.StreamStreamCall:
+    ) -> _base_call.StreamStreamCall[RequestType, ResponseType]:
         metadata = self._init_metadata(metadata, compression)
 
         if not self._interceptors:
@@ -296,6 +332,7 @@ class StreamStreamMultiCallable(
                 self._request_serializer,
                 self._response_deserializer,
                 self._loop,
+                self._registered_call_handle,
             )
         else:
             call = InterceptedStreamStreamCall(
@@ -310,7 +347,10 @@ class StreamStreamMultiCallable(
                 self._request_serializer,
                 self._response_deserializer,
                 self._loop,
+                self._registered_call_handle,
             )
+
+        self._python_channel._register_call(call)
 
         return call
 
@@ -322,12 +362,13 @@ class Channel(_base_channel.Channel):
     _unary_stream_interceptors: List[UnaryStreamClientInterceptor]
     _stream_unary_interceptors: List[StreamUnaryClientInterceptor]
     _stream_stream_interceptors: List[StreamStreamClientInterceptor]
+    _active_calls: weakref.WeakSet[_base_call.Call]
 
     def __init__(
         self,
         target: str,
         options: ChannelArgumentType,
-        credentials: Optional[grpc.ChannelCredentials],
+        credentials: Optional[cygrpc.ChannelCredentials],
         compression: Optional[grpc.Compression],
         interceptors: Optional[Sequence[ClientInterceptor]],
     ):
@@ -373,86 +414,68 @@ class Channel(_base_channel.Channel):
             credentials,
             self._loop,
         )
+        self._active_calls = weakref.WeakSet()
 
-    async def __aenter__(self):
+    def _register_call(self, call: _base_call.Call) -> None:
+        """Register a call to be tracked by the channel."""
+        self._active_calls.add(call)
+        call.add_done_callback(self._active_calls.discard)
+
+    async def __aenter__(self) -> Self:
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[types.TracebackType],
+    ) -> Optional[bool]:
         await self._close(None)
 
-    async def _close(self, grace):  # pylint: disable=too-many-branches
+    async def _close(
+        self, grace: Optional[float]
+    ) -> None:  # pylint: disable=too-many-branches
         if self._channel.closed():
             return
+
+        if grace and grace < 0:
+            error_msg = f"grace must be non-negative, got {grace}."
+            raise ValueError(error_msg)
 
         # No new calls will be accepted by the Cython channel.
         self._channel.closing()
 
-        # Iterate through running tasks
-        tasks = _all_tasks()
-        calls = []
-        call_tasks = []
-        for task in tasks:
+        async def _wait_for_call_to_complete(call: _base_call.Call) -> None:
             try:
-                stack = task.get_stack(limit=1)
-            except AttributeError as attribute_error:
-                # NOTE(lidiz) tl;dr: If the Task is created with a CPython
-                # object, it will trigger AttributeError.
-                #
-                # In the global finalizer, the event loop schedules
-                # a CPython PyAsyncGenAThrow object.
-                # https://github.com/python/cpython/blob/00e45877e33d32bb61aa13a2033e3bba370bda4d/Lib/asyncio/base_events.py#L484
-                #
-                # However, the PyAsyncGenAThrow object is written in C and
-                # failed to include the normal Python frame objects. Hence,
-                # this exception is a false negative, and it is safe to ignore
-                # the failure. It is fixed by https://github.com/python/cpython/pull/18669,
-                # but not available until 3.9 or 3.8.3. So, we have to keep it
-                # for a while.
-                # TODO(lidiz): drop this hack after 3.8 deprecation
-                if "frame" in str(attribute_error):
-                    continue
-                raise
+                await call.code()
+            except Exception:  # pylint: disable=broad-except
+                # Ignore exceptions here as true RPC errors bubble up via
+                # standard application paths. Silencing prevents channel close
+                # from failing and suppresses asyncio noise warnings.
+                pass
 
-            # If the Task is created by a C-extension, the stack will be empty.
-            if not stack:
-                continue
+        calls = list(self._active_calls)
 
-            # Locate ones created by `aio.Call`.
-            frame = stack[0]
-            candidate = frame.f_locals.get("self")
-            # Explicitly check for a non-null candidate instead of the more pythonic 'if candidate:'
-            # because doing 'if candidate:' assumes that the coroutine implements '__bool__' which
-            # might not always be the case.
-            if candidate is not None and isinstance(candidate, _base_call.Call):
-                if hasattr(candidate, "_channel"):
-                    # For intercepted Call object
-                    if candidate._channel is not self._channel:
-                        continue
-                elif hasattr(candidate, "_cython_call"):
-                    # For normal Call object
-                    if candidate._cython_call._channel is not self._channel:
-                        continue
-                else:
-                    # Unidentified Call object
-                    error_msg = f"Unrecognized call object: {candidate}"
-                    raise cygrpc.InternalError(error_msg)
-
-                calls.append(candidate)
-                call_tasks.append(task)
-
-        # If needed, try to wait for them to finish.
-        # Call objects are not always awaitables.
-        if grace and call_tasks:
-            await asyncio.wait(call_tasks, timeout=grace)
+        if grace:
+            call_tasks = [
+                self._loop.create_task(_wait_for_call_to_complete(call))
+                for call in calls
+                if not call.done()
+            ]
+            if call_tasks:
+                await asyncio.wait(call_tasks, timeout=grace)
 
         # Time to cancel existing calls.
         for call in calls:
             call.cancel()
 
+        calls.clear()
+        self._active_calls.clear()
+
         # Destroy the channel
         self._channel.close()
 
-    async def close(self, grace: Optional[float] = None):
+    async def close(self, grace: Optional[float] = None) -> None:
         await self._close(grace)
 
     def __del__(self):
@@ -469,9 +492,25 @@ class Channel(_base_channel.Channel):
         self,
         last_observed_state: grpc.ChannelConnectivity,
     ) -> None:
-        assert await self._channel.watch_connectivity_state(
+        # We raise a RuntimeError if watch_connectivity_state returns False.
+        #
+        # The watch_connectivity_state method returns True when it observes a state change
+        # and False when it times out (which shouldn't happen since no timeout is specified).
+        # A channel close triggers a transition to SHUTDOWN, which resolves all pending watch
+        # calls and makes them return True. Thus, watch_connectivity_state should only return
+        # True under normal operation; returning False indicates an implementation issue.
+        #
+        # We do not use an assert statement here because asserts
+        # can be optimized out under python -O.
+        # See https://github.com/grpc/grpc/issues/42393 for context.
+        resolved = await self._channel.watch_connectivity_state(
             last_observed_state.value[0], None
         )
+        if not resolved:
+            error_msg = (
+                "gRPC channel connectivity state watch failed unexpectedly."
+            )
+            raise RuntimeError(error_msg)
 
     async def channel_ready(self) -> None:
         state = self.get_state(try_to_connect=True)
@@ -479,21 +518,39 @@ class Channel(_base_channel.Channel):
             await self.wait_for_state_change(state)
             state = self.get_state(try_to_connect=True)
 
-    # TODO(xuanwn): Implement this method after we have
-    # observability for Asyncio.
-    def _get_registered_call_handle(self, method: str) -> int:
-        pass
+    def _get_registered_call_handle(
+        self, method: str, _registered_method: Optional[bool]
+    ) -> int:
+        """
+        Get the registered call handle for a registered method or None.
 
-    # TODO(xuanwn): Implement _registered_method after we have
-    # observability for Asyncio.
-    # pylint: disable=arguments-differ,unused-argument
+        This is a semi-private method. It is intended for use only by gRPC generated code.
+
+        This method is not thread-safe. It is acceptable since method is only called
+        during multicallable construction, not during RPC exeution. Moreover there
+        are no `await` suspension points, which can interleave.
+
+        Args:
+          method: Required, the method name for the RPC.
+
+        Returns:
+          The registered call handle pointer in the form of a Python Long.
+        """
+        if not _registered_method:
+            return 0
+
+        return self._channel.get_registered_call_handle(_common.encode(method))
+
+    # pylint: disable=arguments-differ
     def unary_unary(
         self,
         method: str,
-        request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None,
+        request_serializer: Optional[SerializingFunction[RequestType]] = None,
+        response_deserializer: Optional[
+            DeserializingFunction[ResponseType]
+        ] = None,
         _registered_method: Optional[bool] = False,
-    ) -> UnaryUnaryMultiCallable:
+    ) -> UnaryUnaryMultiCallable[RequestType, ResponseType]:
         return UnaryUnaryMultiCallable(
             self._channel,
             _common.encode(method),
@@ -502,18 +559,19 @@ class Channel(_base_channel.Channel):
             self._unary_unary_interceptors,
             [self],
             self._loop,
+            self._get_registered_call_handle(method, _registered_method),
         )
 
-    # TODO(xuanwn): Implement _registered_method after we have
-    # observability for Asyncio.
-    # pylint: disable=arguments-differ,unused-argument
+    # pylint: disable=arguments-differ
     def unary_stream(
         self,
         method: str,
-        request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None,
+        request_serializer: Optional[SerializingFunction[RequestType]] = None,
+        response_deserializer: Optional[
+            DeserializingFunction[ResponseType]
+        ] = None,
         _registered_method: Optional[bool] = False,
-    ) -> UnaryStreamMultiCallable:
+    ) -> UnaryStreamMultiCallable[RequestType, ResponseType]:
         return UnaryStreamMultiCallable(
             self._channel,
             _common.encode(method),
@@ -522,18 +580,19 @@ class Channel(_base_channel.Channel):
             self._unary_stream_interceptors,
             [self],
             self._loop,
+            self._get_registered_call_handle(method, _registered_method),
         )
 
-    # TODO(xuanwn): Implement _registered_method after we have
-    # observability for Asyncio.
-    # pylint: disable=arguments-differ,unused-argument
+    # pylint: disable=arguments-differ
     def stream_unary(
         self,
         method: str,
-        request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None,
+        request_serializer: Optional[SerializingFunction[RequestType]] = None,
+        response_deserializer: Optional[
+            DeserializingFunction[ResponseType]
+        ] = None,
         _registered_method: Optional[bool] = False,
-    ) -> StreamUnaryMultiCallable:
+    ) -> StreamUnaryMultiCallable[RequestType, ResponseType]:
         return StreamUnaryMultiCallable(
             self._channel,
             _common.encode(method),
@@ -542,18 +601,19 @@ class Channel(_base_channel.Channel):
             self._stream_unary_interceptors,
             [self],
             self._loop,
+            self._get_registered_call_handle(method, _registered_method),
         )
 
-    # TODO(xuanwn): Implement _registered_method after we have
-    # observability for Asyncio.
-    # pylint: disable=arguments-differ,unused-argument
+    # pylint: disable=arguments-differ
     def stream_stream(
         self,
         method: str,
-        request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None,
+        request_serializer: Optional[SerializingFunction[RequestType]] = None,
+        response_deserializer: Optional[
+            DeserializingFunction[ResponseType]
+        ] = None,
         _registered_method: Optional[bool] = False,
-    ) -> StreamStreamMultiCallable:
+    ) -> StreamStreamMultiCallable[RequestType, ResponseType]:
         return StreamStreamMultiCallable(
             self._channel,
             _common.encode(method),
@@ -562,6 +622,7 @@ class Channel(_base_channel.Channel):
             self._stream_stream_interceptors,
             [self],
             self._loop,
+            self._get_registered_call_handle(method, _registered_method),
         )
 
 
@@ -570,7 +631,7 @@ def insecure_channel(
     options: Optional[ChannelArgumentType] = None,
     compression: Optional[grpc.Compression] = None,
     interceptors: Optional[Sequence[ClientInterceptor]] = None,
-):
+) -> _base_channel.Channel:
     """Creates an insecure asynchronous Channel to a server.
 
     Args:
@@ -600,7 +661,7 @@ def secure_channel(
     options: Optional[ChannelArgumentType] = None,
     compression: Optional[grpc.Compression] = None,
     interceptors: Optional[Sequence[ClientInterceptor]] = None,
-):
+) -> _base_channel.Channel:
     """Creates a secure asynchronous Channel to a server.
 
     Args:
