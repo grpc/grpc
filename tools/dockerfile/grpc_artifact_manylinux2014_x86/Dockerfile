@@ -20,6 +20,7 @@
 
 FROM dockcross/manylinux2014-x86
 
+
 # Install essential packages.
 RUN yum -y install strace libyaml-devel && yum clean all
 

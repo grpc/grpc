@@ -14,6 +14,7 @@
 
 FROM mcr.microsoft.com/dotnet/core/sdk:2.1-alpine3.9
 
+
 RUN apk update && apk add bash
 RUN apk update && apk add unzip
 
