@@ -38,6 +38,7 @@
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 #include "src/core/xds/grpc/certificate_provider_store_interface.h"
+#include "src/core/xds/grpc/xds_server_grpc_interface.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_transport.h"
 #include "absl/container/flat_hash_map.h"
@@ -83,8 +84,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport final
 
   GrpcXdsTransport(WeakRefCountedPtr<GrpcXdsTransportFactory> factory,
                    RefCountedPtr<SharedChannel> channel,
-                   const XdsBootstrap::XdsServerTarget& server,
-                   absl::Status* status);
+                   const GrpcXdsServerInterface& server, absl::Status* status);
   ~GrpcXdsTransport() override;
 
   void Orphaned() override;
@@ -108,6 +108,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport final
   WeakRefCountedPtr<GrpcXdsTransportFactory> factory_;
   std::string key_;
   RefCountedPtr<SharedChannel> channel_;
+  RefCountedPtr<grpc_call_credentials> call_creds_;
   std::vector<std::pair<std::string, std::string>> initial_metadata_;
   Duration timeout_;
 
@@ -123,6 +124,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final
       WeakRefCountedPtr<GrpcXdsTransportFactory> factory, Channel* channel,
       const char* method,
       std::unique_ptr<StreamingCall::EventHandler> event_handler,
+      grpc_call_credentials* call_creds,
       const std::vector<std::pair<std::string, std::string>>& initial_metadata,
       Duration timeout);
   ~GrpcStreamingCall() override;

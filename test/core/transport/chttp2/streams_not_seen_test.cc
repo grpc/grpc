@@ -728,9 +728,7 @@ TEST_F(ZeroConcurrencyTest, StartStreamBeforeGoaway) {
   cqv_->Expect(Tag(101), true);
   cqv_->Verify();
   // Verify status and metadata
-  EXPECT_EQ(status, IsSubchannelConnectionScalingEnabled()
-                        ? GRPC_STATUS_RESOURCE_EXHAUSTED
-                        : GRPC_STATUS_UNAVAILABLE);
+  EXPECT_EQ(status, GRPC_STATUS_RESOURCE_EXHAUSTED);
   EXPECT_TRUE(TrailingMetadataRecordingFilter::trailing_metadata_available());
   EXPECT_EQ(TrailingMetadataRecordingFilter::stream_network_state(),
             GrpcStreamNetworkState::kNotSentOnWire);
@@ -793,9 +791,7 @@ TEST_F(ZeroConcurrencyTest, TransportDestroyed) {
   cqv_->Expect(Tag(101), true);
   cqv_->Verify();
   // Verify status and metadata
-  EXPECT_EQ(status, IsSubchannelConnectionScalingEnabled()
-                        ? GRPC_STATUS_RESOURCE_EXHAUSTED
-                        : GRPC_STATUS_UNAVAILABLE);
+  EXPECT_EQ(status, GRPC_STATUS_RESOURCE_EXHAUSTED);
   EXPECT_TRUE(TrailingMetadataRecordingFilter::trailing_metadata_available());
   EXPECT_EQ(TrailingMetadataRecordingFilter::stream_network_state(),
             GrpcStreamNetworkState::kNotSentOnWire);

@@ -34,7 +34,7 @@ def generate_run_tests_portability_tests(name):
     grpc_run_tests_harness_test(
         name = "runtests_c_linux_dbg_x86_build_only",
         args = ["-l c -c dbg --build_only"],
-        docker_image_version = "tools/dockerfile/test/cxx_debian11_x86.current_version",
+        docker_image_version = "tools/dockerfile/test/cxx_debian12_x86.current_version",
         size = "enormous",
     )
     test_names.append("runtests_c_linux_dbg_x86_build_only")
@@ -45,7 +45,7 @@ def generate_run_tests_portability_tests(name):
         grpc_run_tests_harness_test(
             name = test_name,
             args = ["-l %s --config noexcept --build_only" % language],
-            docker_image_version = "tools/dockerfile/test/cxx_debian11_x64.current_version",
+            docker_image_version = "tools/dockerfile/test/cxx_debian12_x64.current_version",
             size = "enormous",
         )
         test_names.append(test_name)

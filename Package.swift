@@ -1,7 +1,7 @@
+import Foundation
 // swift-tools-version:5.5
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 import PackageDescription
-import Foundation
 
 var basePath = FileManager.default.fileExists(atPath: "native") ? "native" : "."
 
@@ -11,19 +11,20 @@ let package = Package(
     .library(
       name: "gRPC-Core",
       targets: [
-        "gRPC-Core",
+        "gRPC-Core"
       ]
     ),
     .library(
       name: "gRPC-cpp",
       targets: [
-        "gRPC-cpp",
+        "gRPC-cpp"
       ]
-    )
+    ),
   ],
 
   dependencies: [
-    .package(url: "https://github.com/firebase/abseil-cpp-SwiftPM.git", "0.20250512.1"..<"0.20250512.2"),
+    .package(
+      url: "https://github.com/firebase/abseil-cpp-SwiftPM.git", "0.20250512.1"..<"0.20250512.2"),
     .package(url: "https://github.com/firebase/boringssl-SwiftPM.git", "0.41.0"..<"0.42.0"),
   ],
 
@@ -31,15 +32,15 @@ let package = Package(
     .target(
       name: "gRPC-Core",
       dependencies: [
-        .product(name:"abseil", package: "abseil-cpp-SwiftPM"),
-        .product(name:"openssl_grpc", package: "boringssl-SwiftPM"),
+        .product(name: "abseil", package: "abseil-cpp-SwiftPM"),
+        .product(name: "openssl_grpc", package: "boringssl-SwiftPM"),
       ],
       path: basePath,
       exclude: [
         "examples/",
         "src/objective-c/",
       ],
-    
+
       sources: [
         "include/grpc/byte_buffer.h",
         "include/grpc/byte_buffer_reader.h",
@@ -219,6 +220,8 @@ let package = Package(
         "src/core/client_channel/subchannel.cc",
         "src/core/client_channel/subchannel.h",
         "src/core/client_channel/subchannel_interface_internal.h",
+        "src/core/client_channel/subchannel_metrics.cc",
+        "src/core/client_channel/subchannel_metrics.h",
         "src/core/client_channel/subchannel_pool_interface.cc",
         "src/core/client_channel/subchannel_pool_interface.h",
         "src/core/client_channel/subchannel_stream_client.cc",
@@ -701,6 +704,12 @@ let package = Package(
         "src/core/ext/upb-gen/envoy/extensions/filters/http/composite/v3/composite.upb.h",
         "src/core/ext/upb-gen/envoy/extensions/filters/http/composite/v3/composite.upb_minitable.c",
         "src/core/ext/upb-gen/envoy/extensions/filters/http/composite/v3/composite.upb_minitable.h",
+        "src/core/ext/upb-gen/envoy/extensions/filters/http/ext_proc/v3/ext_proc.upb.h",
+        "src/core/ext/upb-gen/envoy/extensions/filters/http/ext_proc/v3/ext_proc.upb_minitable.c",
+        "src/core/ext/upb-gen/envoy/extensions/filters/http/ext_proc/v3/ext_proc.upb_minitable.h",
+        "src/core/ext/upb-gen/envoy/extensions/filters/http/ext_proc/v3/processing_mode.upb.h",
+        "src/core/ext/upb-gen/envoy/extensions/filters/http/ext_proc/v3/processing_mode.upb_minitable.c",
+        "src/core/ext/upb-gen/envoy/extensions/filters/http/ext_proc/v3/processing_mode.upb_minitable.h",
         "src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb.h",
         "src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb_minitable.c",
         "src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb_minitable.h",
@@ -773,6 +782,9 @@ let package = Package(
         "src/core/ext/upb-gen/envoy/service/discovery/v3/discovery.upb.h",
         "src/core/ext/upb-gen/envoy/service/discovery/v3/discovery.upb_minitable.c",
         "src/core/ext/upb-gen/envoy/service/discovery/v3/discovery.upb_minitable.h",
+        "src/core/ext/upb-gen/envoy/service/ext_proc/v3/external_processor.upb.h",
+        "src/core/ext/upb-gen/envoy/service/ext_proc/v3/external_processor.upb_minitable.c",
+        "src/core/ext/upb-gen/envoy/service/ext_proc/v3/external_processor.upb_minitable.h",
         "src/core/ext/upb-gen/envoy/service/load_stats/v3/lrs.upb.h",
         "src/core/ext/upb-gen/envoy/service/load_stats/v3/lrs.upb_minitable.c",
         "src/core/ext/upb-gen/envoy/service/load_stats/v3/lrs.upb_minitable.h",
@@ -893,9 +905,9 @@ let package = Package(
         "src/core/ext/upb-gen/google/rpc/status.upb.h",
         "src/core/ext/upb-gen/google/rpc/status.upb_minitable.c",
         "src/core/ext/upb-gen/google/rpc/status.upb_minitable.h",
-        "src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb.h",
-        "src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.c",
-        "src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.h",
+        "src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb.h",
+        "src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.c",
+        "src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.h",
         "src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h",
         "src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c",
         "src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h",
@@ -1173,6 +1185,10 @@ let package = Package(
         "src/core/ext/upbdefs-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upbdefs.h",
         "src/core/ext/upbdefs-gen/envoy/extensions/filters/http/composite/v3/composite.upbdefs.c",
         "src/core/ext/upbdefs-gen/envoy/extensions/filters/http/composite/v3/composite.upbdefs.h",
+        "src/core/ext/upbdefs-gen/envoy/extensions/filters/http/ext_proc/v3/ext_proc.upbdefs.c",
+        "src/core/ext/upbdefs-gen/envoy/extensions/filters/http/ext_proc/v3/ext_proc.upbdefs.h",
+        "src/core/ext/upbdefs-gen/envoy/extensions/filters/http/ext_proc/v3/processing_mode.upbdefs.c",
+        "src/core/ext/upbdefs-gen/envoy/extensions/filters/http/ext_proc/v3/processing_mode.upbdefs.h",
         "src/core/ext/upbdefs-gen/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c",
         "src/core/ext/upbdefs-gen/envoy/extensions/filters/http/fault/v3/fault.upbdefs.h",
         "src/core/ext/upbdefs-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.c",
@@ -1285,8 +1301,8 @@ let package = Package(
         "src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.h",
         "src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c",
         "src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.h",
-        "src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.c",
-        "src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.h",
+        "src/core/ext/upbdefs-gen/grpc/channelz/v1/channelz.upbdefs.c",
+        "src/core/ext/upbdefs-gen/grpc/channelz/v1/channelz.upbdefs.h",
         "src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c",
         "src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h",
         "src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c",
@@ -1362,6 +1378,10 @@ let package = Package(
         "src/core/filter/auth/server_auth_filter.cc",
         "src/core/filter/composite/composite_filter.cc",
         "src/core/filter/composite/composite_filter.h",
+        "src/core/filter/ext_proc/ext_proc_filter.cc",
+        "src/core/filter/ext_proc/ext_proc_filter.h",
+        "src/core/filter/ext_proc/ext_proc_messages.cc",
+        "src/core/filter/ext_proc/ext_proc_messages.h",
         "src/core/filter/filter_args.h",
         "src/core/filter/filter_chain.h",
         "src/core/filter/fused_filters.cc",
@@ -1970,6 +1990,7 @@ let package = Package(
         "src/core/telemetry/stats_data.h",
         "src/core/telemetry/tcp_tracer.cc",
         "src/core/telemetry/tcp_tracer.h",
+        "src/core/telemetry/telemetry_label.h",
         "src/core/transport/auth_context.cc",
         "src/core/transport/auth_context.h",
         "src/core/transport/auth_context_comparator_registry.h",
@@ -2035,11 +2056,15 @@ let package = Package(
         "src/core/tsi/ssl_transport_security_utils.cc",
         "src/core/tsi/ssl_transport_security_utils.h",
         "src/core/tsi/ssl_types.h",
+        "src/core/tsi/tls_telemetry.cc",
+        "src/core/tsi/tls_telemetry.h",
         "src/core/tsi/transport_security.cc",
         "src/core/tsi/transport_security.h",
         "src/core/tsi/transport_security_grpc.cc",
         "src/core/tsi/transport_security_grpc.h",
         "src/core/tsi/transport_security_interface.h",
+        "src/core/util/address_sorting_init.cc",
+        "src/core/util/address_sorting_init.h",
         "src/core/util/alloc.cc",
         "src/core/util/alloc.h",
         "src/core/util/atomic_utils.h",
@@ -2229,10 +2254,14 @@ let package = Package(
         "src/core/xds/grpc/xds_endpoint.h",
         "src/core/xds/grpc/xds_endpoint_parser.cc",
         "src/core/xds/grpc/xds_endpoint_parser.h",
+        "src/core/xds/grpc/xds_grpc_service_parser.cc",
+        "src/core/xds/grpc/xds_grpc_service_parser.h",
         "src/core/xds/grpc/xds_health_status.cc",
         "src/core/xds/grpc/xds_health_status.h",
         "src/core/xds/grpc/xds_http_composite_filter.cc",
         "src/core/xds/grpc/xds_http_composite_filter.h",
+        "src/core/xds/grpc/xds_http_ext_proc_filter.cc",
+        "src/core/xds/grpc/xds_http_ext_proc_filter.h",
         "src/core/xds/grpc/xds_http_fault_filter.cc",
         "src/core/xds/grpc/xds_http_fault_filter.h",
         "src/core/xds/grpc/xds_http_filter.cc",
@@ -2400,7 +2429,7 @@ let package = Package(
         "third_party/xxhash/xxhash.h",
       ],
       resources: [
-        .copy("src/objective-c/PrivacyInfo.xcprivacy"),
+        .copy("src/objective-c/PrivacyInfo.xcprivacy")
       ],
       publicHeadersPath: "spm-core-include",
       cSettings: [
@@ -2423,7 +2452,7 @@ let package = Package(
     .target(
       name: "gRPC-cpp",
       dependencies: [
-        .product(name:"abseil", package: "abseil-cpp-SwiftPM"),
+        .product(name: "abseil", package: "abseil-cpp-SwiftPM"),
         "gRPC-Core",
       ],
       path: basePath,
@@ -2446,10 +2475,10 @@ let package = Package(
         "src/objective-c/tests/",
       ],
       sources: [
-        "src/cpp/",
+        "src/cpp/"
       ],
       resources: [
-        .copy("src/objective-c/PrivacyInfo.xcprivacy"),
+        .copy("src/objective-c/PrivacyInfo.xcprivacy")
       ],
       publicHeadersPath: "spm-cpp-include",
       cSettings: [
@@ -2462,7 +2491,7 @@ let package = Package(
     .testTarget(
       name: "build-test",
       dependencies: [
-        "gRPC-cpp",
+        "gRPC-cpp"
       ],
       path: basePath + "/test/spm_build"
     ),

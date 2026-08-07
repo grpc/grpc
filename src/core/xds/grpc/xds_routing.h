@@ -90,6 +90,18 @@ class XdsRouting final {
   // can be used on both the client and server side.
   class RouteConfigFilterChainBuilder {
    public:
+    // A slightly different interface than the normal FilterChainBuilder
+    // that passes in the XdsHttpFilterFactory.
+    class XdsFilterChainBuilder {
+     public:
+      virtual ~XdsFilterChainBuilder() = default;
+
+      virtual void AddFilter(const XdsHttpFilterFactory* factory,
+                             RefCountedPtr<const FilterConfig> config) = 0;
+
+      virtual absl::StatusOr<RefCountedPtr<FilterChain>> Build() = 0;
+    };
+
     // Builds filter chains for each route within a VirtualHost.
     class VirtualHostFilterChainBuilder {
      public:
@@ -158,9 +170,8 @@ class XdsRouting final {
             XdsListenerResource::HttpConnectionManager::HttpFilter>&
             hcm_filter_configs,
         const XdsHttpFilterRegistry& http_filter_registry,
-        FilterChainBuilder& builder,
-        absl::AnyInvocable<void(FilterChainBuilder&)> add_last_filter,
-        XdsTransportFactory& transport_factory, Blackboard& blackboard);
+        XdsFilterChainBuilder& builder, XdsTransportFactory& transport_factory,
+        Blackboard& blackboard);
 
     // Returns a filter chain builder for a given virtual host.
     VirtualHostFilterChainBuilder MakeVirtualHostFilterChainBuilder(
@@ -173,13 +184,12 @@ class XdsRouting final {
 
     const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
         hcm_filter_configs_;
-    FilterChainBuilder& builder_;
-    absl::AnyInvocable<void(FilterChainBuilder&)> add_last_filter_;
+    XdsFilterChainBuilder& builder_;
     Blackboard& blackboard_;
     XdsTransportFactory& transport_factory_;
 
     // Same size as hcm_filter_configs_.
-    std::vector<const XdsHttpFilterImpl*> filter_impls_;
+    std::vector<const XdsHttpFilterFactory*> factories_;
 
     // Cached default filter chain, to be used for any route that does
     // not have any filter config overrides.
@@ -187,12 +197,13 @@ class XdsRouting final {
         nullptr;
   };
 
+  // TODO(roth): Remove this struct and the following two methods when
+  // removing the xds_server_filter_chain_per_route experiment.
   struct GeneratePerHttpFilterConfigsResult {
     // Map of service config field name to list of elements for that field.
     std::map<std::string, std::vector<std::string>> per_filter_configs;
     ChannelArgs args;
   };
-
   // Generates per-HTTP filter configs for a method config.
   static absl::StatusOr<GeneratePerHttpFilterConfigsResult>
   GeneratePerHTTPFilterConfigsForMethodConfig(
@@ -204,7 +215,6 @@ class XdsRouting final {
       const XdsRouteConfigResource::Route::RouteAction::ClusterWeight*
           cluster_weight,
       const ChannelArgs& args);
-
   // Generates per-HTTP filter configs for the top-level service config.
   static absl::StatusOr<GeneratePerHttpFilterConfigsResult>
   GeneratePerHTTPFilterConfigsForServiceConfig(

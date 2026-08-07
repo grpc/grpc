@@ -52,6 +52,9 @@ do
   "go")
     tools/run_tests/performance/build_performance_go.sh
     ;;
+  "rust")
+    tools/run_tests/performance/build_performance_rust.sh
+    ;;
   "php7"|"php7_protobuf_c")
     if [ -n "$PHP_ALREADY_BUILT" ]; then
       echo "Skipping PHP build as already built by $PHP_ALREADY_BUILT"

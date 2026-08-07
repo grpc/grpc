@@ -1239,10 +1239,18 @@ struct ArenaContextType<V3InterceptorToV2State> {
 // Note that this bridge does not support the full functionality of the
 // v3 interceptor API.  In particular, it assumes that the interceptor
 // will create exactly one child call.
+//
+// When not running in a v3 stack, the interceptor's Init() method will
+// not be called, but the wrapped destination will be set before the
+// ctor runs, so implementations must perform any necessary initialization
+// in their ctor instead.
 template <typename Derived>
 class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
  public:
-  V3InterceptorToV2Bridge() {
+  explicit V3InterceptorToV2Bridge(ChannelArgs args) {
+    // If running in a v3 stack, disable the bridge.  The interceptor
+    // will be used normally.
+    if (args.GetBool(GRPC_ARG_USE_V3_STACK).value_or(false)) return;
     // Insert CallDestinationToNextV2Filter as the wrapped destination in
     // Interceptor, so that we can route the server side of the
     // interceptor back into the v2 filter chain.
@@ -1486,12 +1494,28 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                         call_args.client_initial_metadata = std::move(metadata);
                         return Seq(
                             next_promise_factory(std::move(call_args)),
-                            [handler](ServerMetadataHandle metadata) mutable
-                                -> Poll<ServerMetadataHandle> {
+                            [handler](ServerMetadataHandle metadata) mutable {
                               handler.SpawnPushServerTrailingMetadata(
                                   std::move(metadata));
+                              // We return a lambda (promise) here instead of
+                              // returning `Pending{}` directly to make this
+                              // step safe for subsequent polls. During V2 call
+                              // teardown, cancellation of active streams
+                              // propagates through the V2 filter stack, which
+                              // wakes up this activity and triggers re-polls of
+                              // the bridge promise. If we returned `Pending{}`
+                              // directly, this factory lambda would be
+                              // re-evaluated on every poll, causing duplicate
+                              // calls to `SpawnPushServerTrailingMetadata` and
+                              // attempting to move from the already-moved
+                              // `metadata` parameter (leading to
+                              // crashes/undefined behavior). Returning the
+                              // inner lambda ensures that the side-effects in
+                              // this factory run exactly once, and subsequent
+                              // polls only execute the trivial,
+                              // side-effect-free inner lambda.
                               // We always lose the race.
-                              return Pending{};
+                              return Never<ServerMetadataHandle>();
                             });
                       });
                 })),
@@ -1510,11 +1534,6 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
             });
           }
         });
-  }
-
- protected:
-  RefCountedPtr<UnstartedCallDestination> wrapped_destination() const {
-    return wrapped_destination_;  // From Interceptor class.
   }
 
  private:
@@ -1867,7 +1886,14 @@ class BaseCallData : public Activity,
     // work.
     void WakeInsideCombiner(Flusher* flusher, bool allow_push_to_pipe);
     // Call is completed, we have trailing metadata. Close things out.
-    void Done(const ServerMetadata& metadata, Flusher* flusher);
+    // discard_buffered_message: the call is being torn down (the promise
+    // produced its own terminal metadata, an out-of-band cancellation, or a
+    // server-initiated non-OK termination) and the receiver has stopped
+    // reading, so drop any message buffered here instead of delivering it up
+    // the stack.
+    void Done(const ServerMetadata& metadata, Flusher* flusher,
+              bool discard_buffered_message = false);
+    bool IsIdle() const;
 
     channelz::PropertyList ChannelzProperties() {
       return channelz::PropertyList().Set("state", StateString(state_));
@@ -2026,6 +2052,9 @@ class ClientCallData : public BaseCallData {
     kQueued,
     // We've forwarded the op to the next filter.
     kForwarded,
+    // Trailing metadata is received, but we queue it until the in-progress
+    // receive message operation finishes.
+    kCompletedQueuedBehindReceiveMessage,
     // The op has completed from below, but we haven't yet forwarded it up
     // (the promise gets to interject and mutate it).
     kComplete,
@@ -2324,7 +2353,7 @@ struct ChannelFilterWithFlagsMethods {
                                       args->config));
     if (!status.ok()) {
       new (elem->channel_data) F*(nullptr);
-      return absl_status_to_grpc_error(status.status());
+      return status.status();
     }
     new (elem->channel_data) F*(status->release());
     return absl::OkStatus();

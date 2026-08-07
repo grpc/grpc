@@ -26,13 +26,11 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
-#include <iterator>
 #include <memory>
 #include <optional>
 #include <string>
 #include <type_traits>
 #include <utility>
-#include <variant>
 #include <vector>
 
 #include "src/core/call/call_destination.h"
@@ -47,7 +45,6 @@
 #include "src/core/ext/transport/chttp2/transport/goaway.h"
 #include "src/core/ext/transport/chttp2/transport/header_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
@@ -62,14 +59,12 @@
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/debug/trace_impl.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"
-#include "src/core/lib/promise/match_promise.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
@@ -95,10 +90,8 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
-#include "absl/strings/cord.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/span.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -136,9 +129,10 @@ void Http2ServerTransport::AddData(channelz::DataSink sink) {
     RefCountedPtr<Party> party = nullptr;
     {
       MutexLock lock(&self->transport_mutex_);
-      if (GPR_LIKELY(!self->is_transport_closed_)) {
-        GRPC_DCHECK(self->general_party_ != nullptr);
-        party = self->general_party_;
+      if (GPR_LIKELY(!self->shutdown_tracker_.IsShutdownInitiated(
+              self->transport_mutex_))) {
+        GRPC_DCHECK(self->transport_party_ != nullptr);
+        party = self->transport_party_;
       } else {
         GRPC_HTTP2_SERVER_DLOG
             << "Http2ServerTransport::AddData Transport is closed.";
@@ -171,8 +165,8 @@ void Http2ServerTransport::SpawnAddChannelzData(RefCountedPtr<Party> party,
                 .Set("settings", self->settings_->ChannelzProperties())
                 .Set("flow_control",
                      self->flow_control_.stats().ChannelzProperties()));
-        self->general_party_->ExportToChannelz("Http2ServerTransport Party",
-                                               sink);
+        self->transport_party_->ExportToChannelz("Http2ServerTransport Party",
+                                                 sink);
         GRPC_HTTP2_SERVER_DLOG
             << "Http2ServerTransport::SpawnAddChannelzData End";
         return Empty{};
@@ -186,7 +180,7 @@ void Http2ServerTransport::StartWatch(RefCountedPtr<StateWatcher> watcher) {
   MutexLock lock(&transport_mutex_);
   GRPC_CHECK(watcher_ == nullptr);
   watcher_ = std::move(watcher);
-  if (is_transport_closed_) {
+  if (shutdown_tracker_.IsShutdownInitiated(transport_mutex_)) {
     // TODO(tjagtap) : [PH2][P2] : Provide better status message and
     // disconnect info here.
     NotifyStateWatcherOnDisconnectLocked(
@@ -408,6 +402,12 @@ Http2Status Http2ServerTransport::ProcessIncomingMetadata(T&& frame) {
           std::move(frame.payload), frame.end_headers, Http2Status::Ok(),
           settings_->acked().max_header_list_size());
     }
+    // TODO(tjagtap) : [PH2][P1] : Move this check as needed.
+    if (GPR_UNLIKELY(is_goaway_received_)) {
+      return Http2Status::Http2ConnectionError(
+          Http2ErrorCode::kProtocolError,
+          std::string(RFC9113::kReceivedStreamAfterGoaway));
+    }
 
     Http2Status append_result =
         read_context_.header_assembler().AppendFrame(frame);
@@ -554,87 +554,27 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
          frame.error_code != static_cast<uint32_t>(Http2ErrorCode::kNoError))
       << "Received GOAWAY frame with error code: " << frame.error_code;
 
-  //   uint32_t last_stream_id = 0;
-  //   absl::Status status(ErrorCodeToAbslStatusCode(
-  //                           FrameErrorCodeToHttp2ErrorCode(frame.error_code)),
-  //                       frame.debug_data.empty()
-  //                           ? absl::string_view("GOAWAY received")
-  //                           : frame.debug_data.as_string_view());
-  //   if (GoawayManager::IsGracefulGoaway(frame)) {
-  //     const uint32_t next_stream_id = PeekNextStreamId();
-  //     last_stream_id = (next_stream_id > 1) ? next_stream_id - 2 : 0;
-  //   } else {
-  //     last_stream_id = frame.last_stream_id;
-  //   }
-  //   SetMaxAllowedStreamId(last_stream_id);
+  is_goaway_received_ = true;
 
-  //   bool close_transport = false;
-  //   {
-  //     MutexLock lock(&transport_mutex_);
-  //     if (CanCloseTransportLocked()) {
-  //       close_transport = true;
-  //       GRPC_HTTP2_SERVER_DLOG <<
-  //       "Http2ServerTransport::ProcessIncomingFrame("
-  //                                 "GoawayFrame) "
-  //                                 "stream_list_ is empty";
-  //     }
-  //   }
+  absl::Status status(ErrorCodeToAbslStatusCode(
+                          FrameErrorCodeToHttp2ErrorCode(frame.error_code)),
+                      frame.debug_data.empty()
+                          ? absl::string_view("GOAWAY received")
+                          : frame.debug_data.as_string_view());
 
-  //   StateWatcher::DisconnectInfo disconnect_info;
-  //   disconnect_info.reason = Transport::StateWatcher::kGoaway;
-  //   disconnect_info.http2_error_code =
-  //       static_cast<Http2ErrorCode>(frame.error_code);
+  StateWatcher::DisconnectInfo disconnect_info;
+  disconnect_info.reason = Transport::StateWatcher::kGoaway;
+  disconnect_info.http2_error_code =
+      FrameErrorCodeToHttp2ErrorCode(frame.error_code);
 
-  //   // Throttle keepalive time if the server sends a GOAWAY with error code
-  //   // ENHANCE_YOUR_CALM and debug data equal to "too_many_pings". This
-  //   will
-  //   // apply to any new transport created on by any subchannel of this
-  //   channel. if (GPR_UNLIKELY(frame.error_code == static_cast<uint32_t>(
-  //                                            Http2ErrorCode::kEnhanceYourCalm)
-  //                                            &&
-  //                    frame.debug_data == "too_many_pings")) {
-  //     LOG(ERROR) << ": Received a GOAWAY with error code ENHANCE_YOUR_CALM
-  //     and
-  //     "
-  //                   "debug data equal to \"too_many_pings\". Current
-  //                   keepalive " "time (before throttling): "
-  //                << keepalive_time_.ToString();
-  //     constexpr int max_keepalive_time_millis =
-  //         INT_MAX / KEEPALIVE_TIME_BACKOFF_MULTIPLIER;
-  //     uint64_t throttled_keepalive_time =
-  //         keepalive_time_.millis() > max_keepalive_time_millis
-  //             ? INT_MAX
-  //             : keepalive_time_.millis() *
-  //             KEEPALIVE_TIME_BACKOFF_MULTIPLIER;
-  //     if (!IsSubchannelConnectionScalingEnabled()) {
-  //       status.SetPayload(kKeepaliveThrottlingKey,
-  //                         absl::Cord(std::to_string(throttled_keepalive_time)));
-  //     }
-  //     disconnect_info.keepalive_time =
-  //         Duration::Milliseconds(throttled_keepalive_time);
-  //   }
-
-  //   if (close_transport) {
-  //     // TODO(akshitpatel) : [PH2][P3] : Ideally the error here should be
-  //     // kNoError. However, Http2Status does not support kNoError. We
-  //     should
-  //     // revisit this and update the error code.
-  //     MaybeSpawnCloseTransport(Http2Status::Http2ConnectionError(
-  //         FrameErrorCodeToHttp2ErrorCode((
-  //             frame.error_code ==
-  //                     Http2ErrorCodeToFrameErrorCode(Http2ErrorCode::kNoError)
-  //                 ?
-  //                 Http2ErrorCodeToFrameErrorCode(Http2ErrorCode::kInternalError)
-  //                 : frame.error_code)),
-  //         frame.debug_data.empty()
-  //             ? std::string("GOAWAY received")
-  //             : std::string(frame.debug_data.as_string_view())));
-  //   }
-
-  //   // lie: use transient failure from the transport to indicate goaway has
-  //   been
-  //   // received.
-  //   ReportDisconnection(status, disconnect_info, "got_goaway");
+  // We do not close the transport here. Instead we rely on the upper layers to
+  // call Orphan. Meanwhile, if the client closes the TCP connection, we will
+  // close transport anyway.
+  //
+  // lie: use transient failure from the transport to indicate goaway has
+  // been received.
+  ReportDisconnection(GRPC_CHANNEL_TRANSIENT_FAILURE, status, disconnect_info,
+                      "got_goaway");
   return Http2Status::Ok();
 }
 
@@ -1260,6 +1200,23 @@ void Http2ServerTransport::AddToStreamList(RefCountedPtr<Stream> stream) {
   }
 }
 
+void Http2ServerTransport::EnqueueResetStreamFromTransportParty(
+    RefCountedPtr<Stream> stream, const uint32_t reset_stream_error_code) {
+  const absl::StatusOr<StreamWritabilityUpdate> enqueue_result =
+      stream->EnqueueResetStream(reset_stream_error_code);
+  GRPC_HTTP2_SERVER_DLOG << "Enqueued ResetStream with error code="
+                         << reset_stream_error_code
+                         << " status=" << enqueue_result.status();
+  if (GPR_LIKELY(enqueue_result.ok())) {
+    GRPC_UNUSED absl::Status status = MaybeAddStreamToWritableStreamList(
+        std::move(stream), enqueue_result.value());
+  }
+  // This function could be hit multiple times for the same stream. So there is
+  // a chance that we may overcount induced frames.
+  // It is a bug, but not worth fixing for now.
+  read_context_.OnResetFrameEnqueued(reset_stream_error_code);
+}
+
 absl::Status Http2ServerTransport::MaybeAddStreamToWritableStreamList(
     RefCountedPtr<Stream> stream,
     const StreamDataQueue<ServerMetadataHandle>::StreamWritabilityUpdate
@@ -1394,9 +1351,14 @@ std::optional<RefCountedPtr<Stream>> Http2ServerTransport::MakeStream(
 
 Http2Status Http2ServerTransport::IncomingStream(
     ClientMetadataHandle&& metadata, const uint32_t stream_id) {
+  if (shutdown_tracker_.IsPartyShutdownInitiated()) {
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kRefusedStream,
+        "Transport shutdown initiated (party lockdown).");
+  }
   {
     MutexLock lock(&transport_mutex_);
-    if (is_transport_closed_) {
+    if (shutdown_tracker_.IsShutdownInitiated(transport_mutex_)) {
       return Http2Status::Http2ConnectionError(Http2ErrorCode::kRefusedStream,
                                                "Transport is closed.");
     }
@@ -1452,20 +1414,9 @@ void Http2ServerTransport::BeginCloseStream(
       << stream->GetStreamId() << " error_code=" << reset_stream_error_code
       << " Status=" << trailing_metadata_status << " location=" << whence.file()
       << ":" << whence.line();
-
-  // Enqueue RST_STREAM.
-  absl::StatusOr<StreamWritabilityUpdate> enqueue_result =
-      stream->EnqueueResetStream(reset_stream_error_code);
-  GRPC_HTTP2_SERVER_DLOG << "Enqueued ResetStream with error code="
-                         << reset_stream_error_code
-                         << " status=" << enqueue_result.status();
-  if (enqueue_result.ok()) {
-    GRPC_UNUSED absl::Status status =
-        MaybeAddStreamToWritableStreamList(stream, enqueue_result.value());
-  }
+  EnqueueResetStreamFromTransportParty(stream, reset_stream_error_code);
   HandleStreamStateChange(
       *stream, stream->OnInitiateReset(std::move(trailing_metadata_status)));
-  read_context_.OnResetFrameEnqueued(reset_stream_error_code);
 }
 
 void Http2ServerTransport::HandleStreamStateChange(Stream& stream,
@@ -1656,6 +1607,62 @@ absl::Status Http2ServerTransport::HandleError(RefCountedPtr<Stream> stream,
   GPR_UNREACHABLE_CODE(return absl::InternalError("Invalid error type"));
 }
 
+void Http2ServerTransport::CloseAllActiveStreams(
+    absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>>&& stream_list,
+    const Http2Status& http2_status, DebugLocation whence) {
+  // Close all the streams that are still active on the transport.
+  absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list_2;
+  {
+    MutexLock lock(&transport_mutex_);
+    stream_list_2 = std::move(stream_list_);
+    stream_list_.clear();
+  }
+
+  GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::CloseAllActiveStreams "
+                            "Cleaning up call stacks";
+
+  auto close_streams =
+      [&](const absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>>& list) {
+        for (const auto& pair : list) {
+          RefCountedPtr<Stream> stream = pair.second;
+          BeginCloseStream(std::move(stream),
+                           Http2ErrorCodeToFrameErrorCode(
+                               http2_status.GetConnectionErrorCode()),
+                           http2_status.GetAbslConnectionError(), whence);
+        }
+      };
+
+  close_streams(stream_list);    // Snapshot 1
+  close_streams(stream_list_2);  // Snapshot 2
+}
+
+auto Http2ServerTransport::CloseTransportFactory(
+    absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list,
+    Http2Status http2_status, DebugLocation whence) {
+  return [self = RefAsSubclass<Http2ServerTransport>(),
+          stream_list = std::move(stream_list),
+          http2_status = std::move(http2_status), whence]() mutable {
+    self->shutdown_tracker_.InitiatePartyShutdown();
+    self->security_frame_handler_->OnTransportClosed();
+
+    self->CloseAllActiveStreams(std::move(stream_list), http2_status, whence);
+
+    // Sleep for kGoawaySendTimeoutSeconds before closing the transport to
+    // let write buffers drain.
+    return Map(
+        Race(AssertResultType<absl::Status>(self->goaway_manager_.RequestGoaway(
+                 http2_status.GetConnectionErrorCode(),
+                 Slice::FromCopiedString(std::string(
+                     http2_status.GetAbslConnectionError().message())),
+                 self->last_incoming_stream_id_, /*immediate=*/true)),
+             Sleep(Duration::Seconds(kGoawaySendTimeoutSeconds))),
+        [self](auto) mutable {
+          self->CloseTransport();
+          return Empty{};
+        });
+  };
+}
+
 void Http2ServerTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
                                                     DebugLocation whence) {
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::MaybeSpawnCloseTransport "
@@ -1665,13 +1672,13 @@ void Http2ServerTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
                          << whence.line();
 
   ReleasableMutexLock lock(&transport_mutex_);
-  if (is_transport_closed_) {
+  if (shutdown_tracker_.IsShutdownInitiated(transport_mutex_)) {
     lock.Release();
     return;
   }
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::MaybeSpawnCloseTransport "
                             "Initiating transport close";
-  is_transport_closed_ = true;
+  shutdown_tracker_.InitiateShutdown(transport_mutex_);
   absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list =
       std::move(stream_list_);
   stream_list_.clear();
@@ -1681,44 +1688,14 @@ void Http2ServerTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
   lock.Release();
 
   SpawnInfallibleTransportParty(
-      "CloseTransport",
-      [self = RefAsSubclass<Http2ServerTransport>(),
-       stream_list = std::move(stream_list),
-       http2_status = std::move(http2_status), whence]() mutable {
-        self->security_frame_handler_->OnTransportClosed();
-        GRPC_HTTP2_SERVER_DLOG
-            << "Http2ServerTransport::MaybeSpawnCloseTransport "
-               "Cleaning up call stacks";
-        // Clean up the call stacks for all active streams.
-        for (const auto& pair : stream_list) {
-          RefCountedPtr<Stream> stream = pair.second;
-          self->BeginCloseStream(std::move(stream),
-                                 Http2ErrorCodeToFrameErrorCode(
-                                     http2_status.GetConnectionErrorCode()),
-                                 http2_status.GetAbslConnectionError(), whence);
-        }
-
-        // Sleep for kGoawaySendTimeoutSeconds before closing the transport to
-        // let write buffers drain.
-        return Map(
-            Race(AssertResultType<absl::Status>(
-                     self->goaway_manager_.RequestGoaway(
-                         http2_status.GetConnectionErrorCode(),
-                         Slice::FromCopiedString(std::string(
-                             http2_status.GetAbslConnectionError().message())),
-                         self->last_incoming_stream_id_, /*immediate=*/true)),
-                 Sleep(Duration::Seconds(kGoawaySendTimeoutSeconds))),
-            [self](auto) mutable {
-              self->CloseTransport();
-              return Empty{};
-            });
-      });
+      "CloseTransport", CloseTransportFactory(std::move(stream_list),
+                                              std::move(http2_status), whence));
 }
 
 void Http2ServerTransport::CloseTransport() {
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::CloseTransport";
 
-  transport_closed_latch_.Set();
+  shutdown_tracker_.MarkShutdownComplete();
   settings_->HandleTransportShutdown(event_engine_.get());
 
   if (on_close_callback_ != nullptr) {
@@ -1726,7 +1703,7 @@ void Http2ServerTransport::CloseTransport() {
     on_close_callback_ = nullptr;
   }
 
-  general_party_.reset();
+  transport_party_.reset();
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1755,58 +1732,6 @@ bool Http2ServerTransport::SetOnDone(RefCountedPtr<Stream> stream) {
       [self = RefAsSubclass<Http2ServerTransport>(),
        stream = std::move(stream)](GRPC_UNUSED bool cancelled) mutable {});
 }
-//   return call_handler.OnDone([self = RefAsSubclass<Http2ServerTransport>(),
-//                               stream =
-//                                   std::move(stream)](bool cancelled) mutable
-//                                   {
-//     GRPC_HTTP2_SERVER_DLOG << "PH2: Client call " << self.get()
-//                            << " id=" << stream->GetStreamId()
-//                            << " done: cancelled=" << cancelled;
-//     absl::StatusOr<StreamWritabilityUpdate> enqueue_result;
-//     GRPC_HTTP2_SERVER_DLOG << "PH2: Client call " << self.get()
-//                            << " id=" << stream->GetStreamId()
-//                            << " done: stream=" << stream.get()
-//                            << " cancelled=" << cancelled;
-
-//     // If the stream is already closed for writes, then we don't need to
-//     // enqueue the reset stream or the half closed frame.
-//     if (stream->IsClosedForWrites()) {
-//       GRPC_HTTP2_SERVER_DLOG << "PH2: Client call " << self.get()
-//                              << " id=" << stream->GetStreamId()
-//                              << " done: stream already closed for writes";
-//       return;
-//     }
-
-//     if (cancelled) {
-//       // In most of the cases, EnqueueResetStream would be a no-op as
-//       // BeginCloseStream would have already enqueued the reset stream.
-//       // Currently only Aborts from application will actually enqueue
-//       // the reset stream here.
-//       enqueue_result = stream->EnqueueResetStream(
-//           static_cast<uint32_t>(Http2ErrorCode::kCancel));
-//       GRPC_HTTP2_SERVER_DLOG << "Enqueued ResetStream with error code="
-//                              <<
-//                              static_cast<uint32_t>(Http2ErrorCode::kCancel)
-//                              << " status=" << enqueue_result.status();
-//     } else {
-//       enqueue_result = stream->EnqueueHalfClosed();
-//       GRPC_HTTP2_SERVER_DLOG << "Enqueued HalfClosed with result="
-//                              << enqueue_result.status();
-//     }
-
-//     if (GPR_LIKELY(enqueue_result.ok())) {
-//       GRPC_HTTP2_SERVER_DLOG
-//           << "Http2ServerTransport::SetOnDone "
-//              "MaybeAddStreamToWritableStreamList for stream= "
-//           << stream->GetStreamId() << " enqueue_result={became_writable="
-//           << enqueue_result.value().became_writable << ", priority="
-//           << static_cast<uint8_t>(enqueue_result.value().priority) << "}";
-//       GRPC_UNUSED absl::Status status =
-//           self->MaybeAddStreamToWritableStreamList(std::move(stream),
-//                                                    enqueue_result.value());
-//     }
-//   });
-// }
 
 void Http2ServerTransport::ReadChannelArgs(const ChannelArgs& channel_args,
                                            TransportChannelArgs& args) {
@@ -1920,6 +1845,7 @@ Http2ServerTransport::Http2ServerTransport(
       settings_(MakeRefCounted<SettingsPromiseManager>(
           kIsClient, std::move(on_receive_settings))),
       on_close_callback_(on_close_callback),
+      is_goaway_received_(false),
       should_reset_ping_clock_(false),
       read_context_(MaxNewStreamsPerRead(channel_args), endpoint_, kIsClient,
                     GetMaxSecurityFrameSize(channel_args),
@@ -1942,7 +1868,7 @@ Http2ServerTransport::Http2ServerTransport(
   // Initialize the general party and write party.
   RefCountedPtr<Arena> party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<EventEngine>(event_engine_.get());
-  general_party_ = Party::Make(std::move(party_arena));
+  transport_party_ = Party::Make(std::move(party_arena));
 
   InitLocalSettings(settings_->mutable_local(), /*is_client=*/kIsClient);
   TransportChannelArgs args;
@@ -1968,7 +1894,7 @@ Http2ServerTransport::Http2ServerTransport(
 Http2ServerTransport::~Http2ServerTransport() {
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport Destructor Begin";
   // GRPC_DCHECK(stream_list_.empty());
-  // GRPC_DCHECK(general_party_ == nullptr);
+  // GRPC_DCHECK(transport_party_ == nullptr);
   // memory_owner_.Reset();
 
   // TODO(akshitpatel) : [PH2][P0][Close] : Remove call to

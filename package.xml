@@ -207,6 +207,8 @@
     <file baseinstalldir="/" name="src/core/client_channel/subchannel.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/subchannel.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/subchannel_interface_internal.h" role="src" />
+    <file baseinstalldir="/" name="src/core/client_channel/subchannel_metrics.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/client_channel/subchannel_metrics.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/subchannel_pool_interface.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/subchannel_pool_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/subchannel_stream_client.cc" role="src" />
@@ -689,6 +691,12 @@
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/composite/v3/composite.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/composite/v3/composite.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/composite/v3/composite.upb_minitable.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/ext_proc/v3/ext_proc.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/ext_proc/v3/ext_proc.upb_minitable.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/ext_proc/v3/ext_proc.upb_minitable.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/ext_proc/v3/processing_mode.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/ext_proc/v3/processing_mode.upb_minitable.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/ext_proc/v3/processing_mode.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb_minitable.h" role="src" />
@@ -761,6 +769,9 @@
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/service/discovery/v3/discovery.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/service/discovery/v3/discovery.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/service/discovery/v3/discovery.upb_minitable.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/service/ext_proc/v3/external_processor.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/service/ext_proc/v3/external_processor.upb_minitable.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/service/ext_proc/v3/external_processor.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/service/load_stats/v3/lrs.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/service/load_stats/v3/lrs.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/service/load_stats/v3/lrs.upb_minitable.h" role="src" />
@@ -881,9 +892,9 @@
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/rpc/status.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/rpc/status.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/rpc/status.upb_minitable.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h" role="src" />
@@ -1161,6 +1172,10 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/http/composite/v3/composite.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/http/composite/v3/composite.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/http/ext_proc/v3/ext_proc.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/http/ext_proc/v3/ext_proc.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/http/ext_proc/v3/processing_mode.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/http/ext_proc/v3/processing_mode.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/http/fault/v3/fault.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.c" role="src" />
@@ -1273,8 +1288,8 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/grpc/channelz/v1/channelz.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/grpc/channelz/v1/channelz.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c" role="src" />
@@ -1350,6 +1365,10 @@
     <file baseinstalldir="/" name="src/core/filter/auth/server_auth_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/filter/composite/composite_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/filter/composite/composite_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/filter/ext_proc/ext_proc_filter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/filter/ext_proc/ext_proc_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/filter/ext_proc/ext_proc_messages.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/filter/ext_proc/ext_proc_messages.h" role="src" />
     <file baseinstalldir="/" name="src/core/filter/filter_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/filter/filter_chain.h" role="src" />
     <file baseinstalldir="/" name="src/core/filter/fused_filters.cc" role="src" />
@@ -1954,6 +1973,7 @@
     <file baseinstalldir="/" name="src/core/telemetry/stats_data.h" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/tcp_tracer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/tcp_tracer.h" role="src" />
+    <file baseinstalldir="/" name="src/core/telemetry/telemetry_label.h" role="src" />
     <file baseinstalldir="/" name="src/core/transport/auth_context.cc" role="src" />
     <file baseinstalldir="/" name="src/core/transport/auth_context.h" role="src" />
     <file baseinstalldir="/" name="src/core/transport/auth_context_comparator_registry.h" role="src" />
@@ -2019,11 +2039,15 @@
     <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security_utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_types.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/tls_telemetry.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/tls_telemetry.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security_grpc.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security_grpc.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security_interface.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/address_sorting_init.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/address_sorting_init.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/alloc.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/alloc.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/atomic_utils.h" role="src" />
@@ -2213,10 +2237,14 @@
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_endpoint_parser.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_endpoint_parser.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_grpc_service_parser.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_grpc_service_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_health_status.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_health_status.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_composite_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_composite_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_ext_proc_filter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_ext_proc_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_fault_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_fault_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_filter.cc" role="src" />

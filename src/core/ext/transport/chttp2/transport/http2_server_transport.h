@@ -161,7 +161,7 @@ class Http2ServerTransport final : public ServerTransport,
 
   template <typename Factory>
   void TestOnlySpawnPromise(absl::string_view name, Factory&& factory) {
-    SpawnInfallible(general_party_, name, std::forward<Factory>(factory));
+    SpawnInfallible(transport_party_, name, std::forward<Factory>(factory));
   }
 
   absl::Status TestOnlyTriggerWriteCycle() { return TriggerWriteCycle(); }
@@ -365,7 +365,7 @@ class Http2ServerTransport final : public ServerTransport,
                                             Poll<absl::Status>>,
                              bool> = true>
   auto UntilTransportClosed(Promise&& promise) {
-    return Race(Map(transport_closed_latch_.Wait(),
+    return Race(Map(shutdown_tracker_.WaitShutdownComplete(),
                     [self = RefAsSubclass<Http2ServerTransport>()](Empty) {
                       GRPC_HTTP2_SERVER_DLOG << "Transport closed";
                       return absl::CancelledError("Transport closed");
@@ -378,7 +378,7 @@ class Http2ServerTransport final : public ServerTransport,
                                             Poll<Empty>>,
                              bool> = true>
   auto UntilTransportClosed(Promise&& promise) {
-    return Race(Map(transport_closed_latch_.Wait(),
+    return Race(Map(shutdown_tracker_.WaitShutdownComplete(),
                     [self = RefAsSubclass<Http2ServerTransport>()](Empty) {
                       GRPC_HTTP2_SERVER_DLOG << "Transport closed";
                       return Empty{};
@@ -397,7 +397,7 @@ class Http2ServerTransport final : public ServerTransport,
   template <typename Factory>
   void SpawnInfallibleTransportParty(absl::string_view name,
                                      Factory&& factory) {
-    SpawnInfallible(general_party_, name, std::forward<Factory>(factory));
+    SpawnInfallible(transport_party_, name, std::forward<Factory>(factory));
   }
 
   // Spawns a promise on the transport party. If the promise returns a non-ok
@@ -405,7 +405,7 @@ class Http2ServerTransport final : public ServerTransport,
   // status.
   template <typename Factory>
   void SpawnGuardedTransportParty(absl::string_view name, Factory&& factory) {
-    general_party_->Spawn(
+    transport_party_->Spawn(
         name, std::forward<Factory>(factory),
         [self = RefAsSubclass<Http2ServerTransport>()](absl::Status status) {
           if (!status.ok()) {
@@ -418,8 +418,8 @@ class Http2ServerTransport final : public ServerTransport,
   template <typename Factory, typename OnDone>
   void SpawnWithOnDoneTransportParty(absl::string_view name, Factory&& factory,
                                      OnDone&& on_done) {
-    general_party_->Spawn(name, std::forward<Factory>(factory),
-                          std::forward<OnDone>(on_done));
+    transport_party_->Spawn(name, std::forward<Factory>(factory),
+                            std::forward<OnDone>(on_done));
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -472,6 +472,9 @@ class Http2ServerTransport final : public ServerTransport,
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(transport_mutex_) {
     return stream_list_.size();
   }
+
+  void EnqueueResetStreamFromTransportParty(RefCountedPtr<Stream> stream,
+                                            uint32_t reset_stream_error_code);
 
   //////////////////////////////////////////////////////////////////////////////
   // Stream Operations
@@ -529,9 +532,6 @@ class Http2ServerTransport final : public ServerTransport,
     if (goaway_manager_.IsGracefulGoawayInProgress()) {
       return Duration::Zero();
     }
-    if (IsMultipingEnabled()) {
-      return Duration::Seconds(1);
-    }
     return keepalive_time_ == Duration::Infinity() ? Duration::Seconds(20)
                                                    : keepalive_time_ / 2;
   }
@@ -548,6 +548,14 @@ class Http2ServerTransport final : public ServerTransport,
 
   void MaybeSpawnCloseTransport(Http2Status http2_status,
                                 DebugLocation whence = {});
+
+  auto CloseTransportFactory(
+      absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list,
+      Http2Status http2_status, DebugLocation whence = {});
+
+  void CloseAllActiveStreams(
+      absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>>&& stream_list,
+      const Http2Status& http2_status, DebugLocation whence);
 
   // bool CanCloseTransportLocked() const
   //     ABSL_EXCLUSIVE_LOCKS_REQUIRED(transport_mutex_);
@@ -678,7 +686,8 @@ class Http2ServerTransport final : public ServerTransport,
 
   RefCountedPtr<UnstartedCallDestination> call_destination_;
 
-  RefCountedPtr<Party> general_party_;  // Refer AGENTS.md for party slot usage
+  // Refer AGENTS.md for party slot usage
+  RefCountedPtr<Party> transport_party_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 
   PromiseEndpoint endpoint_;
@@ -690,14 +699,14 @@ class Http2ServerTransport final : public ServerTransport,
       ABSL_GUARDED_BY(transport_mutex_);
 
   HPackCompressor encoder_;
-  bool is_transport_closed_ ABSL_GUARDED_BY(transport_mutex_) = false;
-  Latch<void> transport_closed_latch_;
+  TransportShutdownTracker shutdown_tracker_;
   grpc_closure* on_close_callback_;
 
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(transport_mutex_){
       "http2_server", GRPC_CHANNEL_READY};
 
   RefCountedPtr<StateWatcher> watcher_ ABSL_GUARDED_BY(transport_mutex_);
+  bool is_goaway_received_;
 
   bool should_reset_ping_clock_;
   ReadContext read_context_;
