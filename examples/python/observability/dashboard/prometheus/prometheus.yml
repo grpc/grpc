@@ -1,0 +1,14 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  - job_name: "grpc-server"
+    static_configs:
+      - targets: ["grpc-server:9464"]
+    metrics_path: "/metrics"
+
+  - job_name: "grpc-client"
+    static_configs:
+      - targets: ["grpc-client:9465"]
+    metrics_path: "/metrics"
