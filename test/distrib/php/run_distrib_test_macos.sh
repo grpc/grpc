@@ -24,8 +24,49 @@ cp -r "$EXTERNAL_GIT_ROOT"/input_artifacts/grpc-*.tgz .
 # the exact version string in advance)
 GRPC_PEAR_PACKAGE_NAME=$(find . -regex '.*/grpc-[0-9].*.tgz' | sed 's|./||')
 
+PHP_VERSION="${1:-8.2}"
+# For PHP 8.5, the Homebrew formula is 'php' (unversioned) instead of 'php@8.5'
+FORMULA="php@${PHP_VERSION}"
+if [ "${PHP_VERSION}" == "8.5" ]; then
+  FORMULA="php"
+fi
+
+PHP_PATH=""
+for prefix in "/usr/local/opt" "/opt/homebrew/opt"; do
+  if [ -d "${prefix}/${FORMULA}" ]; then
+    PHP_PATH="${prefix}/${FORMULA}"
+    break
+  fi
+done
+
+if [ -d "${PHP_PATH}" ]; then
+  PECL_BIN="${PHP_PATH}/bin/pecl"
+  PHP_BIN="${PHP_PATH}/bin/php"
+  export PATH="${PHP_PATH}/bin:${PATH}"
+  export LDFLAGS="-L${PHP_PATH}/lib ${LDFLAGS}"
+  export CPPFLAGS="-I${PHP_PATH}/include ${CPPFLAGS}"
+else
+  PECL_BIN="pecl"
+  PHP_BIN="php"
+fi
+
+# Force PECL to use resolved, version-unique /private/tmp directory to avoid macOS symlink path mismatch
+# and race conditions when multiple PHP distribtests run concurrently (-j 4).
+PECL_TEMP_DIR="/private/tmp/pear/temp_${PHP_VERSION}_$$"
+sudo mkdir -p "${PECL_TEMP_DIR}"
+
+PEAR_CONF="${PECL_TEMP_DIR}/pear.conf"
+sudo "${PECL_BIN}" config-create "${PECL_TEMP_DIR}" "${PEAR_CONF}"
+
 # Use -j4 since higher parallelism can lead to "resource unavailable"
 # errors during the build. See b/257261061#comment4
-sudo MAKEFLAGS=-j4 pecl install "${GRPC_PEAR_PACKAGE_NAME}"
+sudo env PATH="$PATH" \
+  PHP_PEAR_SYSCONF_DIR="${PECL_TEMP_DIR}" \
+  PHP_PEAR_TEMP_DIR="${PECL_TEMP_DIR}" \
+  PHP_PEAR_DOWNLOAD_DIR="${PECL_TEMP_DIR}" \
+  PHP_PEAR_CACHE_DIR="${PECL_TEMP_DIR}" \
+  PHP_PEAR_BUILD_DIR="${PECL_TEMP_DIR}" \
+  MAKEFLAGS=-j4 "${PECL_BIN}" -c "${PEAR_CONF}" -d temp_dir="${PECL_TEMP_DIR}" -d download_dir="${PECL_TEMP_DIR}" -d cache_dir="${PECL_TEMP_DIR}" -d build_dir="${PECL_TEMP_DIR}" install "${GRPC_PEAR_PACKAGE_NAME}"
+sudo rm -rf "${PECL_TEMP_DIR}"
 
-php -d extension=grpc.so -d max_execution_time=300 distribtest.php
+"${PHP_BIN}" -d extension=grpc.so -d max_execution_time=300 distribtest.php

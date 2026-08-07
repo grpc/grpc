@@ -1,4 +1,4 @@
-# Copyright 2020 gRPC authors.
+# Copyright 2026 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:12
+FROM debian:13
 
-RUN apt-get update && apt-get install -y php8.2 php8.2-dev php-pear wget zlib1g-dev
+RUN apt-get update && apt-get install -y lsb-release apt-transport-https ca-certificates curl gnupg && \
+    curl -sSLo /usr/share/keyrings/deb.sury.org-php.gpg https://packages.sury.org/php/apt.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/deb.sury.org-php.gpg] https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list
 
-RUN wget https://phar.phpunit.de/phpunit-8.5.8.phar && \
-  mv phpunit-8.5.8.phar /usr/local/bin/phpunit && \
-  chmod +x /usr/local/bin/phpunit
+RUN apt-get update && apt-get install -y php8.5 php8.5-dev php8.5-xml php-pear wget zlib1g-dev && apt-get clean
