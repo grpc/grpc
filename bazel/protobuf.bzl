@@ -13,9 +13,6 @@
 # limitations under the License.
 """Utility functions for generating protobuf code."""
 
-load("@rules_proto//proto:defs.bzl", "ProtoInfo")
-load(":grpc_util.bzl", "strip_extension")
-
 _PROTO_EXTENSION = ".proto"
 _VIRTUAL_IMPORTS = "/_virtual_imports/"
 
@@ -185,57 +182,6 @@ def _make_prefix(label):
         return wsr + "/"
     else:
         return wsr + "/" + pkg + "/"
-
-def get_staged_proto_file(label, context, source_file):
-    """Copies a proto file to the appropriate location if necessary.
-
-    Args:
-      label: The label of the rule using the .proto file.
-      context: The ctx object for the rule or aspect.
-      source_file: The original .proto file.
-
-    Returns:
-      The original proto file OR a new file in the staged location.
-    """
-    source_package = strip_extension(source_file.short_path, sep = "/")
-    if source_package == label.package or is_in_virtual_imports(source_file):
-        # Current target and source_file are in same package
-        return source_file
-    else:
-        # Current target and source_file are in different packages (most
-        # probably even in different repositories)
-        prefix = _make_prefix(source_file.owner)
-        copied_proto = context.actions.declare_file(source_file.path[len(prefix):])
-        context.actions.run_shell(
-            inputs = [source_file],
-            outputs = [copied_proto],
-            command = "cp {} {}".format(source_file.path, copied_proto.path),
-            mnemonic = "CopySourceProto",
-        )
-        return copied_proto
-
-def protos_from_context(context):
-    """Copies proto files to the appropriate location.
-
-    Args:
-      context: The ctx object for the rule.
-
-    Returns:
-      A list of the protos.
-    """
-    protos = []
-    for src in context.attr.deps:
-        for file in src[ProtoInfo].direct_sources:
-            protos.append(get_staged_proto_file(context.label, context, file))
-    return protos
-
-def includes_from_deps(deps):
-    """Get includes from rule dependencies."""
-    return [
-        file
-        for src in deps
-        for file in src[ProtoInfo].transitive_sources.to_list()
-    ]
 
 def get_proto_arguments(protos, genfiles_dir_path):
     """Get the protoc arguments specifying which protos to compile.
