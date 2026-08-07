@@ -259,8 +259,10 @@ class CallbackStreamingPingPongReactor final
       : client_(client), ctx_(std::move(ctx)), messages_issued_(0) {}
 
   void StartNewRpc() {
-    ctx_->stub_->async()->StreamingCall(&(ctx_->context_), this);
+    is_final_message_ = false;
+    messages_issued_ = 0;
     write_time_ = UsageTimer::Now();
+    ctx_->stub_->async()->StreamingCall(&(ctx_->context_), this);
     StartWrite(client_->request());
     writes_done_started_.clear();
     StartCall();
@@ -278,11 +280,19 @@ class CallbackStreamingPingPongReactor final
   }
 
   void OnReadDone(bool ok) override {
-    client_->AddHistogramEntry(write_time_, ok, thread_ptr_);
+    bool is_last = client_->ThreadCompleted() || !ok ||
+                   (client_->messages_per_stream() != 0 &&
+                    ++messages_issued_ >= client_->messages_per_stream());
 
-    if (client_->ThreadCompleted() || !ok ||
-        (client_->messages_per_stream() != 0 &&
-         ++messages_issued_ >= client_->messages_per_stream())) {
+    if (!is_last) {
+      // Record latency normally for intermediate messages
+      client_->AddHistogramEntry(write_time_, ok, thread_ptr_);
+    } else {
+      // Store that we are waiting for OnDone to record the final latency
+      is_final_message_ = true;
+    }
+
+    if (is_last) {
       if (!ok) {
         LOG(ERROR) << "Error reading RPC";
       }
@@ -306,6 +316,10 @@ class CallbackStreamingPingPongReactor final
   }
 
   void OnDone(const Status& s) override {
+    if (is_final_message_) {
+      // Record the full lifecycle latency for the last message
+      client_->AddHistogramEntry(write_time_, s.ok(), thread_ptr_);
+    }
     if (client_->ThreadCompleted() || !s.ok()) {
       client_->NotifyMainThreadOfThreadCompletion();
       return;
@@ -337,6 +351,7 @@ class CallbackStreamingPingPongReactor final
   Client::Thread* thread_ptr_;  // Needed to update histogram entries
   double write_time_;           // Track ping-pong round start time
   int messages_issued_;         // Messages issued by this stream
+  bool is_final_message_ = false;
 };
 
 class CallbackStreamingPingPongClientImpl final
@@ -477,16 +492,14 @@ class CallbackStreamingFromServerReactor final
       : client_(client), ctx_(std::move(ctx)) {}
 
   void StartNewRpc() {
+    start_time_ = UsageTimer::Now();
     ctx_->stub_->async()->StreamingFromServer(&ctx_->context_,
                                               client_->request(), this);
-    read_time_ = UsageTimer::Now();
     StartRead(&ctx_->response_);
     StartCall();
   }
 
   void OnReadDone(bool ok) override {
-    client_->AddHistogramEntry(read_time_, ok, thread_ptr_);
-
     if (!ok) {
       return;
     }
@@ -494,11 +507,11 @@ class CallbackStreamingFromServerReactor final
       ctx_->context_.TryCancel();
       return;
     }
-    read_time_ = UsageTimer::Now();
     StartRead(&ctx_->response_);
   }
 
   void OnDone(const Status& s) override {
+    client_->AddHistogramEntry(start_time_, s.ok(), thread_ptr_);
     if (client_->ThreadCompleted() || !s.ok()) {
       client_->NotifyMainThreadOfThreadCompletion();
       return;
@@ -525,7 +538,7 @@ class CallbackStreamingFromServerReactor final
   CallbackStreamingClient* client_;
   std::unique_ptr<CallbackClientRpcContext> ctx_;
   Client::Thread* thread_ptr_;
-  double read_time_;
+  double start_time_;
 };
 
 class CallbackStreamingFromServerClientImpl final
