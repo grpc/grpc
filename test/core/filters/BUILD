@@ -48,7 +48,6 @@ grpc_cc_library(
     srcs = ["filter_test.cc"],
     hdrs = ["filter_test.h"],
     external_deps = [
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -153,8 +152,8 @@ grpc_fuzz_test(
         "gtest",
     ],
     deps = [
-        "filter_test",
         ":filter_matchers",
+        ":filter_test",
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc_base",
@@ -255,8 +254,8 @@ grpc_fuzz_test(
         "gtest",
     ],
     deps = [
-        "filter_test",
         ":filter_matchers",
+        ":filter_test",
         "//:channel_arg_names",
         "//:grpc_status",
         "//src/core:channel_args",
@@ -276,13 +275,12 @@ grpc_fuzz_test(
         "gtest",
     ],
     deps = [
-        "filter_test",
         ":filter_matchers",
+        ":filter_test",
         "//:channel_arg_names",
         "//:gpr",
         "//:grpc_service_config_impl",
         "//:grpc_status",
-        "//:ref_counted_ptr",
         "//src/core:arena",
         "//src/core:channel_args",
         "//src/core:grpc_message_size_filter",
@@ -304,14 +302,12 @@ grpc_fuzz_test(
         "gtest",
     ],
     deps = [
-        "filter_test",
         ":filter_matchers",
+        ":filter_test",
         "//:channel_arg_names",
         "//:gpr",
         "//:grpc_base",
         "//:grpc_http_filters",
-        "//:grpc_service_config_impl",
-        "//:ref_counted_ptr",
         "//src/core:arena",
         "//src/core:channel_args",
         "//src/core:grpc_check",
@@ -404,5 +400,27 @@ grpc_cc_benchmark(
         "//src/core:default_event_engine",
         "//src/core:metadata",
         "//test/core/call:call_spine_benchmarks",
+    ],
+)
+
+grpc_cc_test(
+    name = "ext_proc_message_test",
+    srcs = ["ext_proc_message_test.cc"],
+    external_deps = [
+        "@com_google_protobuf//upb/mem",
+        "gtest",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:envoy_config_core_upb",
+        "//:envoy_service_ext_proc_upb",
+        "//:grpc",
+        "//:grpc++",
+        "//src/core:ext_proc_messages",
+        "//src/core:upb_utils",
+        "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/filters/http/ext_proc/v3:pkg_cc_proto",
+        "@envoy_api//envoy/service/ext_proc/v3:pkg_cc_proto",
     ],
 )

@@ -15,7 +15,15 @@
 FROM debian:11
 
 # gRPC C++ dependencies based on https://github.com/grpc/grpc/blob/master/BUILDING.md
-RUN apt-get update && apt-get install -y build-essential autoconf cmake libtool pkg-config && apt-get clean
+RUN apt-get update && apt-get install -y build-essential autoconf libtool pkg-config && apt-get clean
+
+#=========================================================
+# Install cmake from bullseye-backports
+# Note that this step should be only used for Debian 11 (bullseye) images.
+
+RUN echo "deb http://archive.debian.org/debian bullseye-backports main" > /etc/apt/sources.list.d/bullseye-backports.list && \
+    apt-get update && \
+    apt-get install -y -t bullseye-backports cmake
 
 # C++ distribtests are setup in a way that requires git
 RUN apt-get update && apt-get install -y git && apt-get clean

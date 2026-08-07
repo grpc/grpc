@@ -27,6 +27,7 @@ processing requests via debug logs. Available tracers include:
   - client_channel_call - Client channel call activity related to name resolution.
   - client_channel_lb_call - Client channel call activity related to load balancing picking.
   - client_idle_filter - Client idleness filter.
+  - composite_filter - xDS composite filter.
   - compression - Compression operations.
   - connectivity_state - Connectivity state changes to channels.
   - dns_resolver - The active DNS resolver.
@@ -37,6 +38,7 @@ processing requests via debug logs. Available tracers include:
   - event_engine_endpoint - EventEngine Endpoint operations.
   - event_engine_endpoint_data - Detailed dump of EventEngine endpoint TCP data.
   - event_engine_poller - EventEngine Poller events.
+  - ext_proc_filter - External processing filter.
   - fault_injection_filter - Fault injection.
   - flowctl - Http2 flow control.
   - fork - Fork support.
