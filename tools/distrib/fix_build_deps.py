@@ -181,15 +181,9 @@ INTERNAL_DEPS = {
     "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h": (
         "//test/core/event_engine/fuzzing_event_engine"
     ),
-    "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h": (
-        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto"
-    ),
-    "test/core/experiments/test_experiments.h": (
-        "//test/core/experiments:test_experiments_lib"
-    ),
-    "google/api/expr/v1alpha1/syntax.upb.h": (
-        "google_api_expr_v1alpha1_syntax_upb"
-    ),
+    "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h": "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
+    "test/core/experiments/test_experiments.h": "//test/core/experiments:test_experiments_lib",
+    "google/api/expr/v1alpha1/syntax.upb.h": "google_api_expr_v1alpha1_syntax_upb",
     "google/rpc/status.upb.h": "google_rpc_status_upb",
     "google/protobuf/any.upb.h": "protobuf_any_upb",
     "google/protobuf/duration.upb.h": "protobuf_duration_upb",
@@ -197,19 +191,17 @@ INTERNAL_DEPS = {
     "google/protobuf/timestamp.upb.h": "protobuf_timestamp_upb",
     "google/protobuf/wrappers.upb.h": "protobuf_wrappers_upb",
     "grpc/status.h": "grpc_public_hdrs",
-    "grpc/channelz/v1/channelz.pb.h": "//:channelz_cc_grpc",
-    "grpc/channelz/v1/channelz.grpc.pb.h": "//:channelz_cc_grpc",
+    "src/proto/grpc/channelz/channelz.grpc.pb.h": (
+        "//src/proto/grpc/channelz:channelz_proto"
+    ),
     "src/proto/grpc/core/stats.pb.h": "//src/proto/grpc/core:stats_proto",
     "src/proto/grpc/health/v1/health.upb.h": "grpc_health_upb",
     "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h": (
         "//src/proto/grpc/lb/v1:load_reporter_proto"
     ),
     "src/proto/grpc/lb/v1/load_balancer.upb.h": "grpc_lb_upb",
-    "grpc/reflection/v1/reflection.pb.h": "//:reflection_v1_cc_grpc",
-    "grpc/reflection/v1/reflection.grpc.pb.h": "//:reflection_v1_cc_grpc",
-    "grpc/reflection/v1alpha/reflection.pb.h": "//:reflection_v1alpha_cc_grpc",
-    "grpc/reflection/v1alpha/reflection.grpc.pb.h": (
-        "//:reflection_v1alpha_cc_grpc"
+    "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h": (
+        "//src/proto/grpc/reflection/v1alpha:reflection_proto"
     ),
     "src/proto/grpc/gcp/transport_security_common.upb.h": "alts_upb",
     "src/proto/grpc/gcp/handshaker.upb.h": "alts_upb",

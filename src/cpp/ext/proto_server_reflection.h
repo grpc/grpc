@@ -31,8 +31,8 @@
 #include <utility>
 #include <vector>
 
-#include <grpc/reflection/v1/reflection.grpc.pb.h>
-#include <grpc/reflection/v1alpha/reflection.grpc.pb.h>
+#include "src/proto/grpc/reflection/v1/reflection.grpc.pb.h"
+#include "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h"
 
 namespace grpc {
 
