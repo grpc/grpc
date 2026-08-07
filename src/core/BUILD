@@ -3719,6 +3719,7 @@ grpc_cc_library(
         "channel_fwd",
         "channel_stack_type",
         "channelz_property_list",
+        "experiments",
         "grpc_check",
         "interception_chain",
         "sync",
