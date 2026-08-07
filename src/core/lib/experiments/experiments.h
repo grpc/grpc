@@ -77,10 +77,6 @@ inline bool IsChaoticGoodSendSupportedFeaturesEnabled() { return true; }
 inline bool IsCustomFrameCheckEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
-inline bool IsEventEngineDnsEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS_NON_CLIENT_CHANNEL
-inline bool IsEventEngineDnsNonClientChannelEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FORK
 inline bool IsEventEngineForkEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
@@ -169,10 +165,6 @@ inline bool IsChaoticGoodSendSupportedFeaturesEnabled() { return true; }
 inline bool IsCustomFrameCheckEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
-inline bool IsEventEngineDnsEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS_NON_CLIENT_CHANNEL
-inline bool IsEventEngineDnsNonClientChannelEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FORK
 inline bool IsEventEngineForkEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
@@ -261,10 +253,6 @@ inline bool IsChaoticGoodSendSupportedFeaturesEnabled() { return true; }
 inline bool IsCustomFrameCheckEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
-inline bool IsEventEngineDnsEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS_NON_CLIENT_CHANNEL
-inline bool IsEventEngineDnsNonClientChannelEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FORK
 inline bool IsEventEngineForkEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
@@ -344,8 +332,6 @@ enum ExperimentIds {
   kExperimentIdChaoticGoodSendSupportedFeatures,
   kExperimentIdCustomFrameCheck,
   kExperimentIdEventEngineClient,
-  kExperimentIdEventEngineDns,
-  kExperimentIdEventEngineDnsNonClientChannel,
   kExperimentIdEventEngineFork,
   kExperimentIdEventEngineListener,
   kExperimentIdEventEngineCallbackCq,
@@ -438,14 +424,6 @@ inline bool IsCustomFrameCheckEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() {
   return IsExperimentEnabled<kExperimentIdEventEngineClient>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
-inline bool IsEventEngineDnsEnabled() {
-  return IsExperimentEnabled<kExperimentIdEventEngineDns>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS_NON_CLIENT_CHANNEL
-inline bool IsEventEngineDnsNonClientChannelEnabled() {
-  return IsExperimentEnabled<kExperimentIdEventEngineDnsNonClientChannel>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FORK
 inline bool IsEventEngineForkEnabled() {

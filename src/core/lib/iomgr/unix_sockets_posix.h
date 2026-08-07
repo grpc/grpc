@@ -23,9 +23,11 @@
 #include <grpc/support/string_util.h>
 
 #include <string>
+#include <vector>
 
 #include "src/core/lib/iomgr/port.h"
-#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/resolved_address.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
 void grpc_create_socketpair_if_unix(int sv[2]);
