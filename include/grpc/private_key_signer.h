@@ -85,6 +85,9 @@ class PrivateKeySigner {
   // Cancels an in-flight async signing operation using a handle returned
   // from a previous call to Sign().
   virtual void Cancel(std::shared_ptr<AsyncSigningHandle> handle) = 0;
+
+  // Returns a string identifying the private key signer implementation.
+  virtual absl::string_view Name() const { return ""; }
 };
 }  // namespace grpc_core
 

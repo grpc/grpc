@@ -15,6 +15,7 @@
 #ifndef GRPC_SRC_CORE_TSI_TLS_TELEMETRY_H
 #define GRPC_SRC_CORE_TSI_TLS_TELEMETRY_H
 
+#include "src/core/telemetry/histogram.h"
 #include "src/core/telemetry/instrument.h"
 
 namespace grpc_core {
@@ -40,6 +41,31 @@ class TlsServerHandshakeTelemetryDomain final
   static constexpr absl::string_view kName = "tls_server_security_handshaker";
 
   static CounterHandle kHandshakes;
+};
+
+class TlsClientPrivateKeyOffloadTelemetryDomain final
+    : public InstrumentDomain<TlsClientPrivateKeyOffloadTelemetryDomain> {
+ public:
+  GRPC_INSTRUMENT_DOMAIN_LABELS("grpc.status", "grpc.target",
+                                "grpc.tls.private_key.offloader_name",
+                                "grpc.tls.private_key_algorithm",
+                                "grpc.lb.locality", "grpc.lb.backend_service");
+  using Backend = LowContentionBackend;
+  static constexpr absl::string_view kName = "tls_client_private_key_offload";
+
+  static HistogramHandle<ExplicitHistogramShape> kDuration;
+};
+
+class TlsServerPrivateKeyOffloadTelemetryDomain final
+    : public InstrumentDomain<TlsServerPrivateKeyOffloadTelemetryDomain> {
+ public:
+  GRPC_INSTRUMENT_DOMAIN_LABELS("grpc.status",
+                                "grpc.tls.private_key.offloader_name",
+                                "grpc.tls.private_key_algorithm");
+  using Backend = LowContentionBackend;
+  static constexpr absl::string_view kName = "tls_server_private_key_offload";
+
+  static HistogramHandle<ExplicitHistogramShape> kDuration;
 };
 
 }  // namespace grpc_core

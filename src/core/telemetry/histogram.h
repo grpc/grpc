@@ -15,6 +15,7 @@
 #ifndef GRPC_SRC_CORE_TELEMETRY_HISTOGRAM_H
 #define GRPC_SRC_CORE_TELEMETRY_HISTOGRAM_H
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -109,6 +110,30 @@ class ExponentialHistogramShape {
       delete;
   ExponentialHistogramShape(ExponentialHistogramShape&&) = default;
   ExponentialHistogramShape& operator=(ExponentialHistogramShape&&) = default;
+
+  size_t buckets() const { return bounds_.size(); }
+  size_t BucketFor(int64_t value) const {
+    return BucketInBoundsFor(bounds_, value);
+  }
+
+  HistogramBuckets bounds() const { return bounds_; }
+
+ private:
+  std::vector<int64_t> bounds_;
+};
+
+class ExplicitHistogramShape {
+ public:
+  explicit ExplicitHistogramShape(const std::vector<int64_t>& bounds)
+      : bounds_(bounds) {
+    GRPC_CHECK(!bounds_.empty());
+    GRPC_CHECK(std::is_sorted(bounds_.begin(), bounds_.end()));
+  }
+
+  ExplicitHistogramShape(const ExplicitHistogramShape&) = delete;
+  ExplicitHistogramShape& operator=(const ExplicitHistogramShape&) = delete;
+  ExplicitHistogramShape(ExplicitHistogramShape&&) = default;
+  ExplicitHistogramShape& operator=(ExplicitHistogramShape&&) = default;
 
   size_t buckets() const { return bounds_.size(); }
   size_t BucketFor(int64_t value) const {

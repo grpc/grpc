@@ -349,6 +349,7 @@ grpc_cc_test(
         "//src/core:wait_for_single_owner",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
+        "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",
     ],
 )

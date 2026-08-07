@@ -12518,6 +12518,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        "histogram",
         "instrument",
     ],
 )
