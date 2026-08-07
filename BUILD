@@ -634,12 +634,13 @@ grpc_cc_library(
     defines = ["GRPC_NO_XDS"],
     external_deps = [
         "absl/base:core_headers",
+        "absl/functional:any_invocable",
         "absl/log:log",
+        "absl/random",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
         "absl/time:time",
-        "absl/functional:any_invocable",
     ],
     public_hdrs = GRPC_PUBLIC_HDRS,
     tags = [
@@ -721,12 +722,13 @@ grpc_cc_library(
     }),
     external_deps = [
         "absl/base:core_headers",
+        "absl/functional:any_invocable",
         "absl/log:log",
+        "absl/random",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
         "absl/time:time",
-        "absl/functional:any_invocable",
     ],
     public_hdrs = GRPC_PUBLIC_HDRS,
     select_deps = [
