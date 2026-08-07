@@ -645,8 +645,6 @@ libs:
   - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/empty.upb.h
@@ -1708,7 +1706,6 @@ libs:
   - src/core/ext/upb-gen/google/api/http.upb_minitable.c
   - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
@@ -2651,8 +2648,6 @@ libs:
   - src/core/ext/upb-gen/google/api/http.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/empty.upb.h
@@ -3214,7 +3209,6 @@ libs:
   - src/core/ext/transport/inproc/legacy_inproc_transport.cc
   - src/core/ext/upb-gen/google/api/http.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
@@ -3716,6 +3710,7 @@ libs:
   public_headers: []
   headers:
   - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h
   - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
@@ -8482,8 +8477,6 @@ targets:
   - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/empty.upb.h
@@ -8621,7 +8614,6 @@ targets:
   - src/core/ext/upb-gen/google/api/http.upb_minitable.c
   - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
@@ -29583,8 +29575,6 @@ targets:
   - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/empty.upb.h
@@ -29779,7 +29769,6 @@ targets:
   - src/core/ext/upb-gen/google/api/http.upb_minitable.c
   - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
@@ -31620,8 +31609,6 @@ targets:
   - src/core/ext/upb-gen/google/api/http.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/empty.upb.h
@@ -31779,7 +31766,6 @@ targets:
   - src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.c
   - src/core/ext/upb-gen/google/api/http.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c

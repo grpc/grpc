@@ -2569,7 +2569,6 @@ add_library(grpc
   src/core/ext/upb-gen/google/api/http.upb_minitable.c
   src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
@@ -3606,7 +3605,6 @@ add_library(grpc_unsecure
   src/core/ext/transport/inproc/legacy_inproc_transport.cc
   src/core/ext/upb-gen/google/api/http.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
@@ -10856,7 +10854,6 @@ add_executable(cel_authorization_engine_test
   src/core/ext/upb-gen/google/api/http.upb_minitable.c
   src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
@@ -43031,7 +43028,6 @@ add_executable(xds_common_types_test
   src/core/ext/upb-gen/google/api/http.upb_minitable.c
   src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
@@ -49892,7 +49888,6 @@ add_executable(xds_matcher_parse_test
   src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.c
   src/core/ext/upb-gen/google/api/http.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
