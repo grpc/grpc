@@ -472,7 +472,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"xds_server_filter_chain_per_route",
      description_xds_server_filter_chain_per_route,
      additional_constraints_xds_server_filter_chain_per_route,
-     required_experiments_xds_server_filter_chain_per_route, 1, false, true},
+     required_experiments_xds_server_filter_chain_per_route, 1, true, true},
 };
 
 }  // namespace grpc_core
@@ -928,7 +928,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"xds_server_filter_chain_per_route",
      description_xds_server_filter_chain_per_route,
      additional_constraints_xds_server_filter_chain_per_route,
-     required_experiments_xds_server_filter_chain_per_route, 1, false, true},
+     required_experiments_xds_server_filter_chain_per_route, 1, true, true},
 };
 
 }  // namespace grpc_core
@@ -1384,7 +1384,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"xds_server_filter_chain_per_route",
      description_xds_server_filter_chain_per_route,
      additional_constraints_xds_server_filter_chain_per_route,
-     required_experiments_xds_server_filter_chain_per_route, 1, false, true},
+     required_experiments_xds_server_filter_chain_per_route, 1, true, true},
 };
 
 }  // namespace grpc_core
