@@ -706,7 +706,6 @@ class Http2ServerTransport final : public ServerTransport,
       "http2_server", GRPC_CHANNEL_READY};
 
   RefCountedPtr<StateWatcher> watcher_ ABSL_GUARDED_BY(transport_mutex_);
-  bool is_goaway_received_;
 
   bool should_reset_ping_clock_;
   ReadContext read_context_;
