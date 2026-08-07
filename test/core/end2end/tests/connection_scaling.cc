@@ -43,8 +43,6 @@ CORE_END2END_TEST(Http2FullstackSingleHopTests, SubchannelConnectionScaling) {
   if (!IsEventEngineClientEnabled()) {
     GTEST_SKIP() << "this test requires the event_engine_client experiment";
   }
-  testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
   InitServer(DefaultServerArgs().Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 3));
   constexpr char kServiceConfig[] =
       "{\n"
@@ -125,8 +123,6 @@ CORE_END2END_TEST(Http2FullstackSingleHopTests,
   if (!IsEventEngineClientEnabled()) {
     GTEST_SKIP() << "this test requires the event_engine_client experiment";
   }
-  testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
   InitServer(DefaultServerArgs().Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 2));
   constexpr char kServiceConfig[] =
       "{\n"
