@@ -111,7 +111,7 @@
   <!-- Do proto compilation by default in a C# project. In other types, the user invoke
        Protobuf_Compile directly where required. -->
   <Target Name="_Protobuf_Compile_BeforeCsCompile"
-          BeforeTargets="BeforeCompile"
+          BeforeTargets="CoreCompile"
           DependsOnTargets="Protobuf_Compile"
           Condition=" '$(Language)' == 'C#' " />
 
