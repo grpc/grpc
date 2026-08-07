@@ -92,7 +92,7 @@ def _application_code(code: grpc.StatusCode) -> cygrpc.StatusCode:
     return cygrpc.StatusCode.unknown if cygrpc_code is None else cygrpc_code
 
 
-def _completion_code(state: _RPCState) -> cygrpc.StatusCode:
+def _completion_code(state: _RPCState) -> int:
     if state.code is None:
         return cygrpc.StatusCode.ok
     return _application_code(state.code)
