@@ -236,6 +236,9 @@ const char* const additional_constraints_secure_endpoint_read_coalescing = "{}";
 const uint8_t required_experiments_secure_endpoint_read_coalescing[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+const char* const description_server_backlog_management =
+    "Reject requests when server backlog exceeds limit.";
+const char* const additional_constraints_server_backlog_management = "{}";
 const char* const description_skip_clear_peer_on_cancellation =
     "If set, skips clearing of peer string on call cancellation.";
 const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
@@ -437,6 +440,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_secure_endpoint_read_coalescing,
      additional_constraints_secure_endpoint_read_coalescing,
      required_experiments_secure_endpoint_read_coalescing, 2, false, true},
+    {"server_backlog_management", description_server_backlog_management,
+     additional_constraints_server_backlog_management, nullptr, 0, true, true},
     {"skip_clear_peer_on_cancellation",
      description_skip_clear_peer_on_cancellation,
      additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,
@@ -692,6 +697,9 @@ const char* const additional_constraints_secure_endpoint_read_coalescing = "{}";
 const uint8_t required_experiments_secure_endpoint_read_coalescing[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+const char* const description_server_backlog_management =
+    "Reject requests when server backlog exceeds limit.";
+const char* const additional_constraints_server_backlog_management = "{}";
 const char* const description_skip_clear_peer_on_cancellation =
     "If set, skips clearing of peer string on call cancellation.";
 const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
@@ -893,6 +901,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_secure_endpoint_read_coalescing,
      additional_constraints_secure_endpoint_read_coalescing,
      required_experiments_secure_endpoint_read_coalescing, 2, false, true},
+    {"server_backlog_management", description_server_backlog_management,
+     additional_constraints_server_backlog_management, nullptr, 0, true, true},
     {"skip_clear_peer_on_cancellation",
      description_skip_clear_peer_on_cancellation,
      additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,
@@ -1148,6 +1158,9 @@ const char* const additional_constraints_secure_endpoint_read_coalescing = "{}";
 const uint8_t required_experiments_secure_endpoint_read_coalescing[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+const char* const description_server_backlog_management =
+    "Reject requests when server backlog exceeds limit.";
+const char* const additional_constraints_server_backlog_management = "{}";
 const char* const description_skip_clear_peer_on_cancellation =
     "If set, skips clearing of peer string on call cancellation.";
 const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
@@ -1349,6 +1362,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_secure_endpoint_read_coalescing,
      additional_constraints_secure_endpoint_read_coalescing,
      required_experiments_secure_endpoint_read_coalescing, 2, false, true},
+    {"server_backlog_management", description_server_backlog_management,
+     additional_constraints_server_backlog_management, nullptr, 0, true, true},
     {"skip_clear_peer_on_cancellation",
      description_skip_clear_peer_on_cancellation,
      additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,

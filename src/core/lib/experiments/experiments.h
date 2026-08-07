@@ -137,6 +137,8 @@ inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsSecureEndpointReadCoalescingEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_BACKLOG_MANAGEMENT
+inline bool IsServerBacklogManagementEnabled() { return true; }
 inline bool IsSkipClearPeerOnCancellationEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
@@ -229,6 +231,8 @@ inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsSecureEndpointReadCoalescingEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_BACKLOG_MANAGEMENT
+inline bool IsServerBacklogManagementEnabled() { return true; }
 inline bool IsSkipClearPeerOnCancellationEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
@@ -321,6 +325,8 @@ inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsSecureEndpointReadCoalescingEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_BACKLOG_MANAGEMENT
+inline bool IsServerBacklogManagementEnabled() { return true; }
 inline bool IsSkipClearPeerOnCancellationEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
@@ -389,6 +395,7 @@ enum ExperimentIds {
   kExperimentIdSecureEndpointOffloadLargeReads,
   kExperimentIdSecureEndpointOffloadLargeWrites,
   kExperimentIdSecureEndpointReadCoalescing,
+  kExperimentIdServerBacklogManagement,
   kExperimentIdSkipClearPeerOnCancellation,
   kExperimentIdTcpFrameSizeTuning,
   kExperimentIdTcpRcvLowat,
@@ -618,6 +625,10 @@ inline bool IsSecureEndpointOffloadLargeWritesEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_SECURE_ENDPOINT_READ_COALESCING
 inline bool IsSecureEndpointReadCoalescingEnabled() {
   return IsExperimentEnabled<kExperimentIdSecureEndpointReadCoalescing>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_BACKLOG_MANAGEMENT
+inline bool IsServerBacklogManagementEnabled() {
+  return IsExperimentEnabled<kExperimentIdServerBacklogManagement>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SKIP_CLEAR_PEER_ON_CANCELLATION
 inline bool IsSkipClearPeerOnCancellationEnabled() {
