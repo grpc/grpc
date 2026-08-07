@@ -70,6 +70,7 @@
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
+#include "src/core/tsi/ssl_init.h"
 #include "src/core/tsi/ssl_telemetry_utils.h"
 #include "src/core/tsi/ssl_transport_security_utils.h"
 #include "src/core/tsi/ssl_types.h"
@@ -926,13 +927,7 @@ static void verified_root_cert_free(void* /*parent*/, void* ptr,
 }
 
 static void init_openssl(void) {
-#if OPENSSL_VERSION_NUMBER >= 0x10101000L
-  OPENSSL_init_ssl(OPENSSL_INIT_NO_ATEXIT, nullptr);
-#else
-  SSL_library_init();
-  SSL_load_error_strings();
-  OpenSSL_add_all_algorithms();
-#endif
+  tsi::InitOpenSslOnce();
 #if OPENSSL_VERSION_NUMBER < 0x10101000L
   if (!CRYPTO_get_locking_callback()) {
     int num_locks = CRYPTO_num_locks();
@@ -968,6 +963,7 @@ static void init_openssl(void) {
       SSL_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
   GRPC_CHECK_NE(g_ssl_ex_handshaker_index, -1);
 }
+
 // --- Ssl utils. ---
 
 // TODO(jboeuf): Remove when we are past the debugging phase with this code.
@@ -2067,6 +2063,9 @@ static tsi_result tsi_set_min_and_max_tls_versions(
 
 tsi_ssl_root_certs_store* tsi_ssl_root_certs_store_create(
     const char* pem_roots) {
+  // On the default client path this runs before any handshaker factory is
+  // created, so without this OpenSSL would be initialized implicitly here.
+  tsi::InitOpenSslOnce();
   if (pem_roots == nullptr) {
     LOG(ERROR) << "The root certificates are empty.";
     return nullptr;

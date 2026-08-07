@@ -36,6 +36,7 @@
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/tsi/ssl_init.h"
 #include "src/core/util/directory_reader.h"
 #include "src/core/util/load_file.h"
 #include "absl/container/flat_hash_map.h"
@@ -87,6 +88,7 @@ absl::StatusOr<std::shared_ptr<Crl>> ReadCrlFromFile(
 }  // namespace
 
 absl::StatusOr<std::unique_ptr<Crl>> Crl::Parse(absl::string_view crl_string) {
+  tsi::InitOpenSslOnce();
   if (crl_string.size() >= INT_MAX) {
     return absl::InvalidArgumentError("crl_string cannot be of size INT_MAX");
   }
