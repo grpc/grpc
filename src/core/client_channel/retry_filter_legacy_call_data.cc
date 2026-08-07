@@ -223,11 +223,35 @@ void RetryFilter::LegacyCallData::CallAttempt::MaybeSwitchToFastPath() {
   if (calld_->committed_call_ != nullptr) return;
   // If the perAttemptRecvTimeout timer is pending, we can't switch yet.
   if (per_attempt_recv_timer_handle_ != TaskHandle::kInvalid) return;
-  // If there are still send ops to replay, we can't switch yet.
-  if (HaveSendOpsToReplay()) return;
   // If we started an internal batch for recv_trailing_metadata but have not
   // yet seen that op from the surface, we can't switch yet.
   if (recv_trailing_metadata_internal_batch_ != nullptr) return;
+  if (calld_->seen_send_initial_metadata_ &&
+      !completed_send_initial_metadata_) {
+    return;
+  }
+  if (completed_send_message_count_ < calld_->send_messages_.size() ||
+      started_send_message_count_ > completed_send_message_count_ ||
+      calld_->pending_send_message_) {
+    return;
+  }
+  if (calld_->seen_send_trailing_metadata_ &&
+      !completed_send_trailing_metadata_) {
+    return;
+  }
+  if (calld_->pending_send_initial_metadata_ ||
+      calld_->pending_send_trailing_metadata_) {
+    return;
+  }
+  if (started_recv_initial_metadata_ && !completed_recv_initial_metadata_) {
+    return;
+  }
+  if (started_recv_message_count_ > completed_recv_message_count_) {
+    return;
+  }
+  if (started_recv_trailing_metadata_ && !completed_recv_trailing_metadata_) {
+    return;
+  }
   // Switch to fast path.
   GRPC_TRACE_LOG(retry, INFO)
       << "chand=" << calld_->chand_ << " calld=" << calld_
