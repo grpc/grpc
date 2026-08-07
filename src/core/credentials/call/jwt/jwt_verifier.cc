@@ -173,9 +173,8 @@ static jose_header* jose_header_from_json(Json json) {
   // Beware of this if we add HMAC support:
   // https://auth0.com/blog/2015/03/31/critical-vulnerabilities-in-json-web-token-libraries/
   //
-  alg_value = it->second.string().c_str();
-  if (it->second.type() != Json::Type::kString ||
-      strncmp(alg_value, "RS", 2) != 0 ||
+  alg_value = validate_string_field(it->second, "alg");
+  if (alg_value == nullptr || strncmp(alg_value, "RS", 2) != 0 ||
       evp_md_from_alg(alg_value) == nullptr) {
     LOG(ERROR) << "Invalid alg field";
     goto error;
@@ -443,6 +442,9 @@ static Json json_from_http(const grpc_http_response* response) {
 }
 
 static const Json* find_property_by_name(const Json& json, const char* name) {
+  if (json.type() != Json::Type::kObject) {
+    return nullptr;
+  }
   auto it = json.object().find(name);
   if (it == json.object().end()) {
     return nullptr;
@@ -610,7 +612,9 @@ static EVP_PKEY* find_verification_key(const Json& json, const char* header_alg,
     // { <kid1>: <x5091>, <kid2>: <x5092>, ... }
     const Json* cur = find_property_by_name(json, header_kid);
     if (cur == nullptr) return nullptr;
-    return extract_pkey_from_x509(cur->string().c_str());
+    const char* x509_str = validate_string_field(*cur, "x509");
+    if (x509_str == nullptr) return nullptr;
+    return extract_pkey_from_x509(x509_str);
   }
   if (jwt_keys->type() != Json::Type::kArray) {
     LOG(ERROR) << "Unexpected value type of keys property in jwks key set.";
