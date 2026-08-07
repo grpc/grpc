@@ -97,6 +97,7 @@ def _generate_objc_impl(ctx):
         arguments.append("-I{0}".format(f + "/../.."))
         well_known_proto_files = ctx.attr.well_known_protos.files.to_list()
     ctx.actions.run(
+        mnemonic = "GenerateObjc",
         inputs = protos + well_known_proto_files,
         tools = tools,
         outputs = out_files,
