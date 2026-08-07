@@ -22,7 +22,7 @@
 
 
 
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 set(PACKAGE_NAME          "grpc")
 set(PACKAGE_VERSION       "1.84.0-dev")
@@ -58,14 +58,6 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
 endif()
 set(gRPC_INSTALL ${gRPC_INSTALL_default} CACHE BOOL
     "Generate installation target")
-
-# We can install dependencies from submodules if we're running
-# CMake v3.13 or newer.
-if(CMAKE_VERSION VERSION_LESS 3.13)
-  set(_gRPC_INSTALL_SUPPORTED_FROM_MODULE OFF)
-else()
-  set(_gRPC_INSTALL_SUPPORTED_FROM_MODULE ON)
-endif()
 
 # Providers for third-party dependencies (gRPC_*_PROVIDER properties):
 # "module": build the dependency using sources from git submodule (under third_party)
