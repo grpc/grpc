@@ -1082,6 +1082,28 @@ GRPCAPI void grpc_tls_credentials_options_set_verify_server_cert(
 /**
  * EXPERIMENTAL API - Subject to change
  *
+ * Sets the key purpose for TLS verification.
+ *
+ * This option controls the EKU (Extended Key Usage) check during peer
+ * certificate verification, as defined in RFC 5280.
+ *
+ * Default behavior:
+ * - On the client side: defaults to verifying the server's certificate has the
+ *   Server Auth EKU.
+ * - On the server side: if client certificate verification is enabled, defaults to
+ *   verifying the client's certificate has the Client Auth EKU.
+ *
+ * Warning: Setting this to GRPC_TLS_VERIFICATION_KEY_PURPOSE_ALLOW_ANY is UNSAFE
+ * as it bypasses these EKU checks and should only be used if you know what you are
+ * doing.
+ */
+GRPCAPI void grpc_tls_credentials_options_set_verification_key_purpose(
+    grpc_tls_credentials_options* options,
+    grpc_tls_verification_key_purpose purpose);
+
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
  * Sets whether or not a TLS server should send a list of CA names in the
  * ServerHello. This list of CA names is read from the server's trust bundle, so
  * that the client can use this list as a hint to know which certificate it

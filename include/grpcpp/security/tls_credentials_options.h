@@ -141,6 +141,22 @@ class TlsCredentialsOptions {
   void set_key_exchange_groups(
       const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups);
 
+  // Sets the TLS verification key purpose.
+  //
+  // This option controls the EKU (Extended Key Usage) check during peer
+  // certificate verification, as defined in RFC 5280.
+  //
+  // Default behavior:
+  // - On the client side: defaults to verifying the server's certificate has the
+  //   Server Auth EKU.
+  // - On the server side: if client certificate verification is enabled, defaults to
+  //   verifying the client's certificate has the Client Auth EKU.
+  //
+  // Warning: Setting this to GRPC_TLS_VERIFICATION_KEY_PURPOSE_ALLOW_ANY is UNSAFE
+  // as it bypasses these EKU checks and should only be used if you know what you are
+  // doing.
+  void set_verification_key_purpose(grpc_tls_verification_key_purpose purpose);
+
   // ----- Getters for member fields ----
   // Returns a deep copy of the internal c options. The caller takes ownership
   // of the returned pointer. This function shall be used only internally.
@@ -174,6 +190,8 @@ class TlsChannelCredentialsOptions final : public TlsCredentialsOptions {
   // Sets the decision of whether to do a crypto check on the server certs.
   // The default is true.
   void set_verify_server_certs(bool verify_server_certs);
+
+
 
   // Overrides the SNI that the client sends in the TLS handshake. nullopt
   // indicates that SNI should not be overridden. An empty string value

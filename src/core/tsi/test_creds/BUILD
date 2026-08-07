@@ -31,6 +31,8 @@ exports_files([
     "client1.pem",
     "client-with-spiffe.key",
     "client-with-spiffe.pem",
+    "client_only_eku.key",
+    "client_only_eku.pem",
     "badserver.key",
     "badserver.pem",
     "badclient.key",

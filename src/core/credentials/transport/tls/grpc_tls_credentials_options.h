@@ -48,6 +48,7 @@ struct grpc_tls_credentials_options
   // Getters for member fields.
   grpc_ssl_client_certificate_request_type cert_request_type() const { return cert_request_type_; }
   bool verify_server_cert() const { return verify_server_cert_; }
+  grpc_tls_verification_key_purpose verification_key_purpose() const { return verification_key_purpose_; }
   grpc_tls_version min_tls_version() const { return min_tls_version_; }
   grpc_tls_version max_tls_version() const { return max_tls_version_; }
   grpc_tls_certificate_verifier* certificate_verifier() {
@@ -77,6 +78,7 @@ struct grpc_tls_credentials_options
   // Setters for member fields.
   void set_cert_request_type(grpc_ssl_client_certificate_request_type cert_request_type) { cert_request_type_ = cert_request_type; }
   void set_verify_server_cert(bool verify_server_cert) { verify_server_cert_ = verify_server_cert; }
+  void set_verification_key_purpose(grpc_tls_verification_key_purpose verification_key_purpose) { verification_key_purpose_ = verification_key_purpose; }
   void set_min_tls_version(grpc_tls_version min_tls_version) { min_tls_version_ = min_tls_version; }
   void set_max_tls_version(grpc_tls_version max_tls_version) { max_tls_version_ = max_tls_version; }
   void set_certificate_verifier(grpc_core::RefCountedPtr<grpc_tls_certificate_verifier> certificate_verifier) { certificate_verifier_ = std::move(certificate_verifier); }
@@ -99,6 +101,7 @@ struct grpc_tls_credentials_options
   bool operator==(const grpc_tls_credentials_options& other) const {
     return cert_request_type_ == other.cert_request_type_ &&
       verify_server_cert_ == other.verify_server_cert_ &&
+      verification_key_purpose_ == other.verification_key_purpose_ &&
       min_tls_version_ == other.min_tls_version_ &&
       max_tls_version_ == other.max_tls_version_ &&
       (certificate_verifier_ == other.certificate_verifier_ || (certificate_verifier_ != nullptr && other.certificate_verifier_ != nullptr && certificate_verifier_->Compare(other.certificate_verifier_.get()) == 0)) &&
@@ -118,6 +121,7 @@ struct grpc_tls_credentials_options
   grpc_tls_credentials_options(grpc_tls_credentials_options& other) :
       cert_request_type_(other.cert_request_type_),
       verify_server_cert_(other.verify_server_cert_),
+      verification_key_purpose_(other.verification_key_purpose_),
       min_tls_version_(other.min_tls_version_),
       max_tls_version_(other.max_tls_version_),
       certificate_verifier_(other.certificate_verifier_),
@@ -136,6 +140,7 @@ struct grpc_tls_credentials_options
  private:
   grpc_ssl_client_certificate_request_type cert_request_type_ = GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE;
   bool verify_server_cert_ = true;
+  grpc_tls_verification_key_purpose verification_key_purpose_ = GRPC_TLS_VERIFICATION_KEY_PURPOSE_DEFAULT;
   grpc_tls_version min_tls_version_ = grpc_tls_version::TLS1_2;
   grpc_tls_version max_tls_version_ = grpc_tls_version::TLS1_3;
   grpc_core::RefCountedPtr<grpc_tls_certificate_verifier> certificate_verifier_;

@@ -50,6 +50,8 @@ using ::grpc::experimental::TlsChannelCredentialsOptions;
 constexpr char kCaCertPath[] = "src/core/tsi/test_creds/ca.pem";
 constexpr char kServerCertPath[] = "src/core/tsi/test_creds/server1.pem";
 constexpr char kServerKeyPath[] = "src/core/tsi/test_creds/server1.key";
+constexpr char kClientOnlyEkuCertPath[] = "src/core/tsi/test_creds/client_only_eku.pem";
+constexpr char kClientOnlyEkuKeyPath[] = "src/core/tsi/test_creds/client_only_eku.key";
 constexpr char kMessage[] = "Hello";
 
 class NoOpCertificateVerifier : public ExternalCertificateVerifier {
@@ -103,11 +105,20 @@ class TlsCredentialsTest : public ::testing::Test {
   void RunServer(absl::Notification* notification,
                  const std::vector<grpc_tls_key_exchange_group>*
                      key_exchange_groups = nullptr) {
+    RunServerWithCerts(notification, kServerKeyPath, kServerCertPath,
+                       key_exchange_groups);
+  }
+
+  void RunServerWithCerts(absl::Notification* notification,
+                          const std::string& server_key_path,
+                          const std::string& server_cert_path,
+                          const std::vector<grpc_tls_key_exchange_group>*
+                              key_exchange_groups = nullptr) {
     std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
     std::string server_key =
-        grpc_core::testing::GetFileContents(kServerKeyPath);
+        grpc_core::testing::GetFileContents(server_key_path);
     std::string server_cert =
-        grpc_core::testing::GetFileContents(kServerCertPath);
+        grpc_core::testing::GetFileContents(server_cert_path);
     grpc::experimental::IdentityKeyCertPair key_cert_pair = {server_key,
                                                              server_cert};
     std::vector<grpc::experimental::IdentityKeyCertPair>
@@ -175,6 +186,32 @@ void DoRpc(const std::string& server_addr,
     ASSERT_EQ(properties.size(), 1u);
     EXPECT_EQ(expected_key_exchange_group,
               absl::string_view(properties[0].data(), properties[0].length()));
+  }
+}
+
+// NOLINTNEXTLINE(clang-diagnostic-unused-function)
+void DoRpcAndExpectFailure(const std::string& server_addr,
+                           const TlsChannelCredentialsOptions& tls_options,
+                           grpc::StatusCode expected_code,
+                           const std::string& expected_message_substr = "") {
+  std::shared_ptr<Channel> channel =
+      grpc::CreateChannel(server_addr, TlsCredentials(tls_options));
+
+  auto stub = grpc::testing::EchoTestService::NewStub(channel);
+  grpc::testing::EchoRequest request;
+  grpc::testing::EchoResponse response;
+  request.set_message(kMessage);
+  ClientContext context;
+  context.set_deadline(grpc_timeout_seconds_to_deadline(/*time_s=*/10));
+  grpc::Status result = stub->Echo(&context, request, &response);
+  EXPECT_EQ(result.error_code(), expected_code)
+      << "Expected failure with code " << expected_code << ", but got code "
+      << result.error_code() << ", message: " << result.error_message();
+  if (!expected_message_substr.empty()) {
+    EXPECT_NE(result.error_message().find(expected_message_substr),
+              std::string::npos)
+        << "Expected error message containing '" << expected_message_substr
+        << "', got: '" << result.error_message() << "'";
   }
 }
 
@@ -330,6 +367,53 @@ TEST_F(TlsCredentialsTest, KeyExchangeGroupMismatchFailsWithTestVerifier) {
       "Key exchange group mismatch: expected prime256v1, got X25519");
 }
 #endif  // OPENSSL_IS_BORINGSSL
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+TEST_F(TlsCredentialsTest, VerificationKeyPurposeBypass) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  // Run server using client certs (which should lack serverAuth EKU)
+  server_thread_ = new std::thread([&]() {
+    RunServerWithCerts(&notification, kClientOnlyEkuKeyPath,
+                       kClientOnlyEkuCertPath);
+  });
+  notification.WaitForNotification();
+
+  // 1. Try to connect with default options. It should fail because the server
+  // cert (client_only_eku.pem) does not have Server Auth EKU.
+  {
+    TlsChannelCredentialsOptions tls_options;
+    std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
+    auto client_certificate_provider =
+        std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
+            root_cert);
+    tls_options.set_root_certificate_provider(client_certificate_provider);
+    tls_options.set_check_call_host(false);
+    tls_options.set_certificate_verifier(
+        ExternalCertificateVerifier::Create<NoOpCertificateVerifier>());
+
+    DoRpcAndExpectFailure(server_addr_, tls_options, StatusCode::UNAVAILABLE);
+  }
+
+  // 2. Try to connect with ALLOW_ANY purpose. It should succeed.
+  {
+    TlsChannelCredentialsOptions tls_options;
+    std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
+    auto client_certificate_provider =
+        std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
+            root_cert);
+    tls_options.set_root_certificate_provider(client_certificate_provider);
+    tls_options.set_check_call_host(false);
+    tls_options.set_certificate_verifier(
+        ExternalCertificateVerifier::Create<NoOpCertificateVerifier>());
+    tls_options.set_verification_key_purpose(
+        GRPC_TLS_VERIFICATION_KEY_PURPOSE_ALLOW_ANY);
+
+    DoRpc(server_addr_, tls_options);
+  }
+}
+#endif  // OPENSSL_VERSION_NUMBER >= 0x10100000
 
 }  // namespace
 }  // namespace testing

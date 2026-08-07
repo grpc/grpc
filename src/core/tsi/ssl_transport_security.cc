@@ -3343,6 +3343,36 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   }
 
   do {
+    if (options->verification_key_purpose !=
+        GRPC_TLS_VERIFICATION_KEY_PURPOSE_DEFAULT) {
+      X509_VERIFY_PARAM* param = SSL_CTX_get0_param(ssl_context);
+      if (param == nullptr) {
+        LOG(ERROR) << "Failed to get X509_VERIFY_PARAM from SSL_CTX.";
+        result = TSI_INTERNAL_ERROR;
+        break;
+      }
+      int purpose = -1;
+      switch (options->verification_key_purpose) {
+        case GRPC_TLS_VERIFICATION_KEY_PURPOSE_ALLOW_ANY:
+          purpose = X509_PURPOSE_ANY;
+          break;
+        case GRPC_TLS_VERIFICATION_KEY_PURPOSE_REQUIRE_SERVER_AUTH:
+          purpose = X509_PURPOSE_SSL_SERVER;
+          break;
+        case GRPC_TLS_VERIFICATION_KEY_PURPOSE_REQUIRE_CLIENT_AUTH:
+          purpose = X509_PURPOSE_SSL_CLIENT;
+          break;
+        default:
+          break;
+      }
+      if (purpose != -1) {
+        if (X509_VERIFY_PARAM_set_purpose(param, purpose) != 1) {
+          LOG(ERROR) << "Failed to set verification key purpose.";
+          result = TSI_INVALID_ARGUMENT;
+          break;
+        }
+      }
+    }
     result = populate_ssl_context(ssl_context, options->pem_key_cert_pair,
                                   options->cipher_suites,
                                   options->key_exchange_groups);
@@ -3435,6 +3465,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     SSL_CTX_set_cert_verify_callback(ssl_context, CustomVerificationFunction,
                                      nullptr);
   }
+
 #if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
   if (options->crl_provider != nullptr) {
     SSL_CTX_set_ex_data(impl->ssl_context, g_ssl_ctx_ex_crl_provider_index,
@@ -3656,6 +3687,35 @@ tsi_result tsi_configure_server_ssl_context(
         ssl_keylogging_callback<tsi_ssl_server_handshaker_factory>);
   }
 #endif
+
+  if (options->verification_key_purpose !=
+      GRPC_TLS_VERIFICATION_KEY_PURPOSE_DEFAULT) {
+    X509_VERIFY_PARAM* param = SSL_CTX_get0_param(ssl_context.ssl_ctx);
+    if (param == nullptr) {
+      LOG(ERROR) << "Failed to get X509_VERIFY_PARAM from SSL_CTX.";
+      return TSI_INTERNAL_ERROR;
+    }
+    int purpose = -1;
+    switch (options->verification_key_purpose) {
+      case GRPC_TLS_VERIFICATION_KEY_PURPOSE_ALLOW_ANY:
+        purpose = X509_PURPOSE_ANY;
+        break;
+      case GRPC_TLS_VERIFICATION_KEY_PURPOSE_REQUIRE_SERVER_AUTH:
+        purpose = X509_PURPOSE_SSL_SERVER;
+        break;
+      case GRPC_TLS_VERIFICATION_KEY_PURPOSE_REQUIRE_CLIENT_AUTH:
+        purpose = X509_PURPOSE_SSL_CLIENT;
+        break;
+      default:
+        break;
+    }
+    if (purpose != -1) {
+      if (X509_VERIFY_PARAM_set_purpose(param, purpose) != 1) {
+        LOG(ERROR) << "Failed to set verification key purpose.";
+        return TSI_INVALID_ARGUMENT;
+      }
+    }
+  }
 
   return result;
 }
