@@ -102,7 +102,9 @@ class ClientCall final
 
   char* GetPeer() override;
 
-  bool Completed() final { Crash("unimplemented"); }
+  bool Completed() final {
+    return saw_trailing_metadata_.load(std::memory_order_relaxed);
+  }
   bool failed_before_recv_message() const final {
     return started_call_initiator_.WasCancelledPushed();
   }

@@ -187,6 +187,7 @@ void ClientCall::CancelWithError(grpc_error_handle error) {
                                                 std::memory_order_acq_rel,
                                                 std::memory_order_acquire)) {
           ResetDeadline();
+          PropagateCancellationToChildren();
           return;
         }
         break;
@@ -196,6 +197,7 @@ void ClientCall::CancelWithError(grpc_error_handle error) {
                                 error = std::move(error)]() mutable {
               self->started_call_initiator_.Cancel(std::move(error));
             });
+        PropagateCancellationToChildren();
         return;
       default:
         if (call_state_.compare_exchange_strong(cur_state, kCancelled,
@@ -208,6 +210,7 @@ void ClientCall::CancelWithError(grpc_error_handle error) {
             delete unordered_start;
             unordered_start = next;
           }
+          PropagateCancellationToChildren();
           return;
         }
     }
@@ -449,6 +452,7 @@ void ClientCall::OnReceivedStatus(ServerMetadataHandle server_trailing_metadata,
                                   grpc_metadata_array* out_trailing_metadata) {
   saw_trailing_metadata_.store(true, std::memory_order_relaxed);
   ResetDeadline();
+  PropagateCancellationToChildren();
   GRPC_TRACE_LOG(call, INFO) << DebugTag() << "RecvStatusOnClient "
                              << server_trailing_metadata->DebugString();
   const auto status = server_trailing_metadata->get(GrpcStatusMetadata())
