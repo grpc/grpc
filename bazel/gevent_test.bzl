@@ -75,7 +75,7 @@ def py_grpc_gevent_test(
         kwargs.pop("flaky")
     py_test(
         name = name + ".gevent",
-        args = [name],
+        args = [name, native.package_name()],
         data = data,
         deps = augmented_deps,
         srcs = [copied_main_filename],
