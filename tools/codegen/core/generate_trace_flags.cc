@@ -170,9 +170,9 @@ std::string GenerateCpp(const std::vector<std::string>& trace_flags_yaml,
       "tools/codegen/core/generate_trace_flags.cc\n"
       "//\n"
       "\n"
-      "#include \"%sabsl/container/flat_hash_map.h\"\n"
       "#include \"src/core/lib/debug/trace.h\"\n"
       "#include \"src/core/util/no_destruct.h\"\n"
+      "#include \"%sabsl/container/flat_hash_map.h\"\n"
       "\n"
       "namespace grpc_core {\n\n",
       header_prefix);
@@ -183,9 +183,24 @@ std::string GenerateCpp(const std::vector<std::string>& trace_flags_yaml,
       const std::string declaration =
           is_debug ? "DebugOnlyTraceFlag " : "TraceFlag ";
       const std::string flag_name_and_trace = flag.name + "_trace";
-      if (declaration.length() + flag_name_and_trace.length() + 10 > 80) {
-        absl::StrAppend(&result, declaration, flag_name_and_trace,
-                        "(false,\n    \"", flag.name, "\");\n");
+      const size_t full_len = declaration.length() +
+                              flag_name_and_trace.length() +
+                              flag.name.length() + 12;
+      if (full_len > 80) {
+        const size_t aligned_len = declaration.length() +
+                                   flag_name_and_trace.length() + 8 +
+                                   flag.name.length() + 3;
+        if (aligned_len > 80) {
+          absl::StrAppend(&result, declaration, flag_name_and_trace,
+                          "(\n    false, \"", flag.name, "\");\n");
+        } else {
+          absl::StrAppend(
+              &result, declaration, flag_name_and_trace, "(false,\n",
+              std::string(
+                  declaration.length() + flag_name_and_trace.length() + 1,
+                  ' '),
+              "\"", flag.name, "\");\n");
+        }
       } else {
         absl::StrAppend(&result, declaration, flag_name_and_trace, "(false, \"",
                         flag.name, "\");\n");
@@ -207,8 +222,15 @@ std::string GenerateCpp(const std::vector<std::string>& trace_flags_yaml,
     for (const auto& flag : flags) {
       if (!first) result += "\n";
       first = false;
-      absl::StrAppend(&result, "          {\"", flag.name, "\", &", flag.name,
-                      "_trace},");
+      const std::string flag_name_and_trace = flag.name + "_trace";
+      const size_t line_len = 18 + flag.name.length() + flag_name_and_trace.length();
+      if (line_len > 80) {
+        absl::StrAppend(&result, "          {\"", flag.name, "\",\n           &",
+                        flag_name_and_trace, "},");
+      } else {
+        absl::StrAppend(&result, "          {\"", flag.name, "\", &",
+                        flag_name_and_trace, "},");
+      }
     }
   };
   append_map_entries(non_debug_flags);

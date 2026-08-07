@@ -114,6 +114,8 @@ add_library(grpc-interop
   ${GRPC_SRC_DIR}/test/cpp/interop/backend_metrics_lb_policy.cc
   ${GRPC_SRC_DIR}/test/cpp/interop/interop_client.h
   ${GRPC_SRC_DIR}/test/cpp/interop/interop_client.cc
+  ${GRPC_SRC_DIR}/test/cpp/interop/otel_helper.h
+  ${GRPC_SRC_DIR}/test/cpp/interop/otel_helper.cc
   ${GRPC_SRC_DIR}/test/core/test_util/histogram.h
   ${GRPC_SRC_DIR}/test/core/test_util/histogram.cc
   ${GRPC_SRC_DIR}/test/core/test_util/test_lb_policies.h

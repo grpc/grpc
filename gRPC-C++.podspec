@@ -245,6 +245,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/base/prefetch', abseil_version
     ss.dependency 'abseil/cleanup/cleanup', abseil_version
     ss.dependency 'abseil/container/btree', abseil_version
+    ss.dependency 'abseil/container/fixed_array', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
@@ -255,6 +256,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/functional/any_invocable', abseil_version
     ss.dependency 'abseil/functional/bind_front', abseil_version
     ss.dependency 'abseil/functional/function_ref', abseil_version
+    ss.dependency 'abseil/functional/overload', abseil_version
     ss.dependency 'abseil/hash/hash', abseil_version
     ss.dependency 'abseil/log/absl_check', abseil_version
     ss.dependency 'abseil/log/absl_log', abseil_version
@@ -1729,6 +1731,7 @@ Pod::Spec.new do |s|
                       'third_party/utf8_range/utf8_range.h',
                       'third_party/utf8_range/utf8_range_neon.inc',
                       'third_party/utf8_range/utf8_range_sse.inc',
+                      'third_party/utf8_range/utf8_validity.h',
                       'third_party/xxhash/xxhash.h',
                       'third_party/zlib/crc32.h',
                       'third_party/zlib/deflate.h',
@@ -3138,6 +3141,7 @@ Pod::Spec.new do |s|
                               'third_party/utf8_range/utf8_range.h',
                               'third_party/utf8_range/utf8_range_neon.inc',
                               'third_party/utf8_range/utf8_range_sse.inc',
+                              'third_party/utf8_range/utf8_validity.h',
                               'third_party/xxhash/xxhash.h',
                               'third_party/zlib/crc32.h',
                               'third_party/zlib/deflate.h',

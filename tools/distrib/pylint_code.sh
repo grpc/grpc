@@ -35,7 +35,8 @@ TEST_DIRS=(
 )
 
 VIRTUALENV=".venv-ci-pylint"
-python3.11 -m venv "${VIRTUALENV}"
+PYTHON="${PYTHON:-$(command -v python3.11 || command -v python3)}"
+"${PYTHON}" -m venv "${VIRTUALENV}"
 source "${VIRTUALENV}/bin/activate"
 python -VV
 

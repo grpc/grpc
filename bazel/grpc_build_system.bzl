@@ -82,7 +82,7 @@ def _get_external_deps(external_deps):
         elif dep == "protobuf_clib":
             ret.extend(["@com_google_protobuf//src/google/protobuf/compiler:code_generator", "@com_google_protobuf//src/google/protobuf/compiler:importer"])
         elif dep == "protobuf_headers":
-            ret.extend(["@com_google_protobuf//:protobuf_headers", "@com_google_protobuf//src/google/protobuf/io", "@com_google_protobuf//src/google/protobuf/io:printer", "@com_google_protobuf//src/google/protobuf/io:tokenizer"])
+            ret.extend(["@com_google_protobuf//:protobuf_headers", "@com_google_protobuf//src/google/protobuf/io", "@com_google_protobuf//src/google/protobuf/io:printer", "@com_google_protobuf//src/google/protobuf/io:tokenizer", "@com_google_protobuf//src/google/protobuf/json:json"])
         elif dep.startswith("absl/"):
             ret.append("@com_google_absl//" + dep)
         elif dep.startswith("google/"):

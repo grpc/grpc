@@ -16,8 +16,8 @@
 
 set -e
 
-BAZEL_QUERY=(tools/bazel query --noimplicit_deps --output=xml --enable_bzlmod --noenable_workspace --)
-BAZEL_SHOW_REPO=(tools/bazel mod --enable_bzlmod show_repo --)
+BAZEL_QUERY=(tools/bazel query --fetch --noimplicit_deps --output=xml --enable_bzlmod --noenable_workspace --)
+BAZEL_SHOW_REPO=(tools/bazel mod --enable_bzlmod --fetch show_repo --)
 EXTERNAL_REPOS=(
     @@cel-spec+
     @@googleapis+
@@ -40,7 +40,11 @@ python3 tools/buildgen/parse_http_archives.py < tools/artifact_gen/external_http
 
 # PHASE 1: generate artifacts
 cd tools/artifact_gen
-../../tools/bazel build -c opt --cxxopt='-std=c++17' :artifact_gen 
+BAZEL_FLAGS=(-c opt --cxxopt='-std=c++17' --cxxopt='-faligned-allocation')
+if [ "$(uname -s)" = "Darwin" ]; then
+	BAZEL_FLAGS+=("--macos_minimum_os=10.15")
+fi
+../../tools/bazel build --fetch "${BAZEL_FLAGS[@]}" :artifact_gen
 bazel-bin/artifact_gen \
 	--target_query=`pwd`/test_deps.xml,`pwd`/root_all_deps.xml,`pwd`/compiler_deps.xml,`pwd`/third_party_alias_deps.xml,`pwd`/envoy_api_proto_deps.xml,`pwd`/upb_deps.xml \
 	--external_http_archive_query=`pwd`/external_http_archive_deps.json \
@@ -48,3 +52,4 @@ bazel-bin/artifact_gen \
 	--templates_dir=`pwd`/../../templates \
 	--output_dir=`pwd`/../.. \
 	--save_json=true
+

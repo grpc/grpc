@@ -1,4 +1,5 @@
-# Copyright 2021 The gRPC Authors
+#!/bin/bash
+# Copyright 2026 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,15 +12,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-load("@rules_python//python:defs.bzl", "py_library")
+set -ex
 
-py_library(
-    name = "bazel_namespace_package_hack",
-    srcs = ["bazel_namespace_package_hack.py"],
-    visibility = [
-        "//examples/python/errors:__subpackages__",
-        "//src/python/grpcio_tests/tests/interop:__subpackages__",
-        "//src/python/grpcio_tests/tests/status:__subpackages__",
-        "//src/python/grpcio_tests/tests_aio:__subpackages__",
-    ],
-)
+dir=$(dirname "${0}")
+cd "${dir}/../../.."
+
+MACOSX_DEPLOYMENT_TARGET=10.13 tools/bazel run --fetch --cxxopt='-std=c++17' --cxxopt='-faligned-allocation' tools/codegen/core:generate_trace_flags -- \
+ --trace_flags_yaml=$(pwd)/src/core/lib/debug/trace_flags.yaml \
+ --header_path=$(pwd)/src/core/lib/debug/trace_flags.h \
+ --cpp_path=$(pwd)/src/core/lib/debug/trace_flags.cc \
+ --markdown_path=$(pwd)/doc/trace_flags.md
