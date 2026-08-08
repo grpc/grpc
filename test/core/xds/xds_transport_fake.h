@@ -72,12 +72,15 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     bool IsOrphaned();
 
     void StartRecvMessage() override;
-
     void SendHalfClose() override;
 
     using StreamingCall::Ref;  // Make it public.
 
     bool HaveMessageFromClient();
+    bool half_closed() const {
+      MutexLock lock(&mu_);
+      return half_closed_;
+    }
     std::optional<std::string> WaitForMessageFromClient();
 
     // If FakeXdsTransportFactory::SetAutoCompleteMessagesFromClient()
@@ -91,11 +94,6 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     void MaybeSendStatusToClient(absl::Status status);
 
     bool WaitForReadsStarted(size_t expected);
-
-    bool half_closed() const {
-      MutexLock lock(&mu_);
-      return half_closed_;
-    }
 
    private:
     class RefCountedEventHandler : public RefCounted<RefCountedEventHandler> {
@@ -188,7 +186,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
                      bool auto_complete_messages_from_client,
                      bool abort_on_undrained_messages)
         : factory_(std::move(factory)),
-          server_(server),
+          server_key_(server.Key()),
+          server_uri_(server.server_uri()),
           auto_complete_messages_from_client_(
               auto_complete_messages_from_client),
           abort_on_undrained_messages_(abort_on_undrained_messages),
@@ -212,7 +211,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     FakeXdsTransportFactory* factory() const { return factory_.get(); }
 
-    const XdsBootstrap::XdsServerTarget* server() const { return &server_; }
+    const std::string& server_key() const { return server_key_; }
+    const std::string& server_uri() const { return server_uri_; }
 
    private:
     void StartConnectivityFailureWatch(
@@ -222,12 +222,14 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     OrphanablePtr<StreamingCall> CreateStreamingCall(
         const char* method,
-        std::unique_ptr<StreamingCall::EventHandler> event_handler) override;
+        std::unique_ptr<StreamingCall::EventHandler> event_handler,
+        bool wait_for_ready = true) override;
 
     void ResetBackoff() override {}
 
     WeakRefCountedPtr<FakeXdsTransportFactory> factory_;
-    const XdsBootstrap::XdsServerTarget& server_;
+    std::string server_key_;
+    std::string server_uri_;
     const bool auto_complete_messages_from_client_;
     const bool abort_on_undrained_messages_;
     std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>

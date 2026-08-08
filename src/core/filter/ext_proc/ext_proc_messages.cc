@@ -260,7 +260,7 @@ absl::StatusOr<ExtProcResponse> ExtProcResponse::Parse(
           envoy_service_ext_proc_v3_ImmediateResponse_headers(
               immediate_response));
       if (!header_mutation.ok()) return header_mutation.status();
-      immediate_response_value.header_mutation = std::move(*header_mutation);
+      immediate_response_value.mutation = std::move(*header_mutation);
       auto grpc_status =
           envoy_service_ext_proc_v3_ImmediateResponse_grpc_status(
               immediate_response);
@@ -409,8 +409,8 @@ void SetExtProcRequestBody(
   envoy_service_ext_proc_v3_HttpBody* body =
       envoy_service_ext_proc_v3_HttpBody_new(arena);
   envoy_service_ext_proc_v3_HttpBody_set_body(body, buf);
-  if (end_of_stream) {
-    envoy_service_ext_proc_v3_HttpBody_set_end_of_stream(body, end_of_stream);
+  if (end_of_stream || end_of_stream_without_message) {
+    envoy_service_ext_proc_v3_HttpBody_set_end_of_stream(body, true);
   }
   if (end_of_stream_without_message) {
     envoy_service_ext_proc_v3_HttpBody_set_end_of_stream_without_message(body,
@@ -541,7 +541,7 @@ class UpbStructHeadersEncoder {
 // https://github.com/grpc/proposal/blob/master/A103-xds-composite-filter.md#cel-attributes
 ::google_protobuf_Struct* CreateExtProcAttributesProtoStruct(
     upb_Arena* arena, const std::vector<std::string>& attributes,
-    const grpc_metadata_batch& metadata) {
+    const grpc_metadata_batch& metadata, absl::string_view default_authority) {
   if (attributes.empty()) return nullptr;
   ::google_protobuf_Struct* struct_msg = ::google_protobuf_Struct_new(arena);
   auto add_field = [&](absl::string_view name, absl::string_view value) {
@@ -562,6 +562,8 @@ class UpbStructHeadersEncoder {
         add_field(attr, auth->as_string_view());
       } else if (const Slice* host = metadata.get_pointer(HostMetadata())) {
         add_field(attr, host->as_string_view());
+      } else if (!default_authority.empty()) {
+        add_field(attr, default_authority);
       }
     } else if (attr == "request.method") {
       if (auto* method = metadata.get_pointer(HttpMethodMetadata())) {

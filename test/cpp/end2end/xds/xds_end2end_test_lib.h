@@ -648,6 +648,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     bool server_notify_client_when_started = false;
     bool echo_host_from_authority_header = false;
     bool echo_metadata_initially = false;
+    bool echo_metadata = false;
 
     RpcOptions() {}
 
@@ -726,6 +727,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
 
     RpcOptions& set_echo_metadata_initially(bool value) {
       echo_metadata_initially = value;
+      return *this;
+    }
+
+    RpcOptions& set_echo_metadata(bool value) {
+      echo_metadata = value;
       return *this;
     }
 

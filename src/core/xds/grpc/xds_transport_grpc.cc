@@ -79,8 +79,8 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
     const char* method,
     std::unique_ptr<StreamingCall::EventHandler> event_handler,
     grpc_call_credentials* call_creds,
-    const std::vector<std::pair<std::string, std::string>>& initial_metadata,
-    Duration timeout)
+    const std::vector<std::pair<std::string, std::string> >& initial_metadata,
+    Duration timeout, bool wait_for_ready)
     : factory_(std::move(factory)), event_handler_(std::move(event_handler)) {
   Timestamp deadline = (timeout == Duration::Infinity())
                            ? Timestamp::InfFuture()
@@ -113,12 +113,13 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
         grpc_slice_from_cpp_string(initial_metadata[i].second);
   }
   grpc_op* op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = send_initial_metadata_.size();
   op->data.send_initial_metadata.metadata =
       send_initial_metadata_.empty() ? nullptr : send_initial_metadata_.data();
-  op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY |
-              GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET;
+  op->flags = wait_for_ready
+                  ? (GRPC_INITIAL_METADATA_WAIT_FOR_READY |
+                     GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET)
+                  : 0;
   op->reserved = nullptr;
   ++op;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
@@ -144,10 +145,10 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
   op->flags = 0;
   op->reserved = nullptr;
   ++op;
-  // This callback signals the end of the call, so it relies on the initial
-  // ref instead of a new ref. When it's invoked, it's the initial ref that is
-  // unreffed.
-  GRPC_CLOSURE_INIT(&on_status_received_, OnStatusReceived, this, nullptr);
+  // Ref will be released in the callback
+  GRPC_CLOSURE_INIT(&on_status_received_, OnStatusReceived,
+                    this->Ref(DEBUG_LOCATION, "OnStatusReceived").release(),
+                    nullptr);
   call_error = grpc_call_start_batch_and_execute(
       call_, ops, static_cast<size_t>(op - ops), &on_status_received_);
   GRPC_CHECK_EQ(call_error, GRPC_CALL_OK);
@@ -175,8 +176,7 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::Orphan() {
   // Otherwise, we are here because xds_client has to orphan a failed call,
   // in which case the following cancellation will be a no-op.
   grpc_call_cancel_internal(call_);
-  // Note that the initial ref is held by OnStatusReceived(), so the
-  // corresponding unref happens there instead of here.
+  Unref(DEBUG_LOCATION, "Orphan");
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::SendMessage(
@@ -440,11 +440,12 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::StopConnectivityFailureWatch(
 OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall>
 GrpcXdsTransportFactory::GrpcXdsTransport::CreateStreamingCall(
     const char* method,
-    std::unique_ptr<StreamingCall::EventHandler> event_handler) {
+    std::unique_ptr<StreamingCall::EventHandler> event_handler,
+    bool wait_for_ready) {
   return MakeOrphanable<GrpcStreamingCall>(
       factory_.WeakRef(DEBUG_LOCATION, "StreamingCall"), channel_->channel(),
       method, std::move(event_handler), call_creds_.get(), initial_metadata_,
-      timeout_);
+      timeout_, wait_for_ready);
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::ResetBackoff() {
