@@ -60,6 +60,14 @@ grpc_service_account_jwt_access_credentials_create(const char* json_key,
 GRPCAPI grpc_call_credentials* grpc_external_account_credentials_create(
     const char* json_string, const char* scopes_string);
 
+/** Builds Google Distributed Cloud Hosting Service Account credentials.
+- json_string is the JSON string containing the service account key.
+- audience_string is the intended recipient or service.
+  This API is used for experimental purposes for now and may change in the
+ future. */
+GRPCAPI grpc_call_credentials* grpc_gdch_service_account_credentials_create(
+    const char* json_string, const char* audience_string);
+
 /** Creates an Oauth2 Refresh Token credentials object for connecting to Google.
    May return NULL if the input is invalid.
    WARNING: Do NOT use this credentials to connect to a non-google service as
