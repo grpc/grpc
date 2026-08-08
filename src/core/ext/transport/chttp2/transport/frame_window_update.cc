@@ -107,6 +107,11 @@ grpc_error_handle grpc_chttp2_window_update_parser_parse(
 
     if (t->incoming_stream_id != 0) {
       if (s != nullptr) {
+        if (GPR_UNLIKELY(s->flow_control.remote_window_delta() +
+                             t->settings.peer().initial_window_size() >
+                         grpc_core::chttp2::kMaxWindow - received_update)) {
+          return GRPC_ERROR_CREATE("FLOW_CONTROL_ERROR: window overflow");
+        }
         grpc_core::Timestamp now = grpc_core::Timestamp::Now();
         if (s->last_window_update_time != grpc_core::Timestamp::InfPast()) {
           t->http2_stats->IncrementHttp2StreamWindowUpdatePeriod(
@@ -124,6 +129,10 @@ grpc_error_handle grpc_chttp2_window_update_parser_parse(
         }
       }
     } else {
+      if (GPR_UNLIKELY(t->flow_control.remote_window() >
+                       grpc_core::chttp2::kMaxWindow - received_update)) {
+        return GRPC_ERROR_CREATE("FLOW_CONTROL_ERROR: window overflow");
+      }
       grpc_core::chttp2::TransportFlowControl::OutgoingUpdateContext upd(
           &t->flow_control);
       grpc_core::Timestamp now = grpc_core::Timestamp::Now();
