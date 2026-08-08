@@ -182,16 +182,22 @@ if sys.platform == "darwin":
 EXTRA_ENV_COMPILE_ARGS = os.environ.get("GRPC_PYTHON_CFLAGS", None)
 EXTRA_ENV_LINK_ARGS = os.environ.get("GRPC_PYTHON_LDFLAGS", None)
 if EXTRA_ENV_COMPILE_ARGS is None:
-    EXTRA_ENV_COMPILE_ARGS = "-std=c++17"
+    EXTRA_ENV_COMPILE_ARGS = ""
     if "win32" in sys.platform:
+        # MSVC defaults to an older C++ standard, so request C++17 explicitly.
+        EXTRA_ENV_COMPILE_ARGS += " /std:c++17"
         # We need to statically link the C++ Runtime, only the C runtime is
         # available dynamically
         EXTRA_ENV_COMPILE_ARGS += " /MT"
         # Required to build upb from protobuf 33.x
         # https://github.com/grpc/grpc/issues/41951
         EXTRA_ENV_COMPILE_ARGS += " /Zc:preprocessor"
-    elif "linux" in sys.platform or "darwin" in sys.platform:
-        EXTRA_ENV_COMPILE_ARGS += " -fno-wrapv -frtti -fvisibility=hidden"
+    else:
+        EXTRA_ENV_COMPILE_ARGS += " -std=c++17"
+        if "linux" in sys.platform or "darwin" in sys.platform:
+            EXTRA_ENV_COMPILE_ARGS += (
+                " -fno-wrapv -frtti -fvisibility=hidden"
+            )
 
 if EXTRA_ENV_LINK_ARGS is None:
     EXTRA_ENV_LINK_ARGS = ""
@@ -225,6 +231,15 @@ CC_INCLUDES = [
     os.path.normpath(include_dir)
     for include_dir in observability_lib_deps.CC_INCLUDES
 ]
+
+EXTENSION_LIBRARIES = ()
+if "win32" in sys.platform:
+    EXTENSION_LIBRARIES += (
+        "advapi32",
+        "bcrypt",
+        "dbghelp",
+        "ws2_32",
+    )
 
 DEFINE_MACROS = (("_WIN32_WINNT", 0x600),)
 
@@ -292,6 +307,7 @@ def extension_modules():
         name="grpc_observability._cyobservability",
         sources=plugin_sources,
         include_dirs=plugin_include,
+        libraries=list(EXTENSION_LIBRARIES),
         language="c++",
         define_macros=list(DEFINE_MACROS),
         extra_compile_args=list(EXTRA_COMPILE_ARGS),

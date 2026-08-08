@@ -33,15 +33,11 @@ XDS_PROTOS_GENCODE_GRPC_VERSION = "1.74.0"
 
 INSTALL_REQUIRES = [
     f"grpcio>={XDS_PROTOS_GENCODE_GRPC_VERSION}",
-    "protobuf>=6.31.1,<8.0.0",
-]
-SETUP_REQUIRES = INSTALL_REQUIRES + [
-    f"grpcio-tools>={XDS_PROTOS_GENCODE_GRPC_VERSION}"
+    f"protobuf>={grpc_version.PROTOBUF_VERSION},<8.0.0",
 ]
 
 if __name__ == "__main__":
     setuptools.setup(
         python_requires=f">={python_version.MIN_PYTHON_VERSION}",
         install_requires=INSTALL_REQUIRES,
-        setup_requires=SETUP_REQUIRES,
     )
