@@ -12,10 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import contextvars
 import logging
 import threading
 import time
-from typing import Any, AnyStr, Dict, Iterable, List, Optional, Set, Union
+from typing import (
+    Any,
+    AnyStr,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+)
 
 import grpc
 from grpc_observability import _cyobservability
@@ -25,9 +36,17 @@ from grpc_observability._cyobservability import MetricsName
 from grpc_observability._cyobservability import PLUGIN_IDENTIFIER_SEP
 from grpc_observability._observability import OptionalLabelType
 from grpc_observability._observability import StatsData
+from grpc_observability._observability import TracingData
+from opentelemetry import context as otel_context
+from opentelemetry import trace
 from opentelemetry.metrics import Counter
 from opentelemetry.metrics import Histogram
 from opentelemetry.metrics import Meter
+from opentelemetry.sdk import trace as sdk_trace
+from opentelemetry.sdk.trace import sampling as sdk_sampling
+from opentelemetry.trace.propagation.tracecontext import (
+    TraceContextTextMapPropagator,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -41,6 +60,7 @@ OpenTelemetryPluginOption = (
     Any  # _open_telemetry_plugin.py imports this module.
 )
 
+GRPC_PYTHON_STR = "grpc-python"
 GRPC_METHOD_LABEL = "grpc.method"
 GRPC_TARGET_LABEL = "grpc.target"
 GRPC_CLIENT_METRIC_PREFIX = "grpc.client"
@@ -69,9 +89,45 @@ GRPC_STATUS_CODE_TO_STRING = {
 }
 
 
+class _GrpcIdGenerator(sdk_trace.IdGenerator):
+    """Implements IdGenerator interface to handle correctly span ID propagation.
+
+    Span IDs are generated in C context anyway. In Python we just need to use those.
+    """
+
+    def __init__(self, trace_id: str, span_id: str):
+        if not trace_id:
+            self._trace_id = 0
+        else:
+            try:
+                self._trace_id = int(trace_id, 16)
+            except ValueError:
+                _LOGGER.warning("Failed to parse trace_id: '%s'", trace_id)
+                self._trace_id = 0
+
+        if not span_id:
+            self._span_id = 0
+        else:
+            try:
+                self._span_id = int(span_id, 16)
+            except ValueError:
+                _LOGGER.warning("Failed to parse span_id: '%s'", span_id)
+                self._span_id = 0
+
+    def generate_span_id(self) -> int:
+        return self._span_id
+
+    def generate_trace_id(self) -> int:
+        return self._trace_id
+
+
 class _OpenTelemetryPlugin:
     _plugin: OpenTelemetryPlugin
     _metric_to_recorder: Dict[MetricsName, Union[Counter, Histogram]]
+    _tracer: Optional[sdk_trace.Tracer]
+    _tracer_lock: threading.Lock
+    _trace_ctx_var: contextvars.ContextVar
+    _text_map_propagator: Optional[TraceContextTextMapPropagator]
     _enabled_client_plugin_options: Optional[List[OpenTelemetryPluginOption]]
     _enabled_server_plugin_options: Optional[List[OpenTelemetryPluginOption]]
     identifier: str
@@ -79,17 +135,40 @@ class _OpenTelemetryPlugin:
     def __init__(self, plugin: OpenTelemetryPlugin):
         self._plugin = plugin
         self._metric_to_recorder = {}
+        self._tracer = None
+        self._tracer_lock = threading.Lock()
+        self._trace_ctx_var = contextvars.ContextVar(
+            "grpc_trace_ctx", default=None
+        )
+        self._text_map_propagator = None
         self.identifier = str(id(self))
         self._enabled_client_plugin_options = None
         self._enabled_server_plugin_options = None
 
         meter_provider = self._plugin.meter_provider
         if meter_provider:
-            meter = meter_provider.get_meter("grpc-python", grpc.__version__)
+            meter = meter_provider.get_meter(GRPC_PYTHON_STR, grpc.__version__)
             enabled_metrics = _open_telemetry_measures.base_metrics()
             self._metric_to_recorder = self._register_metrics(
                 meter, enabled_metrics
             )
+
+        tracer_provider = self._plugin.tracer_provider
+        text_map_propagator = self._plugin.text_map_propagator
+        if tracer_provider:
+            id_generator_type = type(tracer_provider.id_generator)
+            if id_generator_type is not sdk_trace.RandomIdGenerator:
+                error_msg = (
+                    f"User-defined IdGenerators are not allowed. "
+                    f"Detected type: {id_generator_type.__name__}"
+                )
+                raise ValueError(error_msg)
+
+            self._tracer = tracer_provider.get_tracer(
+                GRPC_PYTHON_STR, grpc.__version__
+            )
+            if text_map_propagator:
+                self._text_map_propagator = text_map_propagator
 
     def _should_record(self, stats_data: StatsData) -> bool:
         # Decide if this plugin should record the stats_data.
@@ -144,6 +223,194 @@ class _OpenTelemetryPlugin:
         # Records stats data to MeterProvider.
         if self._should_record(stats_data):
             self._record_stats_data(stats_data)
+
+    def is_tracing_configured(self) -> bool:
+        return self._tracer is not None
+
+    def _extract_sample_rate(self, sampler) -> float:
+        if isinstance(sampler, sdk_sampling.ParentBased):
+            # we have to compress whole ParentBased decision table into one
+            # scalar. That "compression" is only possible when the decision
+            # about sampling is made at root span level with children
+            # inheriting root behaviour (default delegates)
+            has_default_delegates = (
+                sampler._remote_parent_sampled is sdk_sampling.ALWAYS_ON
+                and sampler._remote_parent_not_sampled
+                is sdk_sampling.ALWAYS_OFF
+                and sampler._local_parent_sampled is sdk_sampling.ALWAYS_ON
+                and sampler._local_parent_not_sampled is sdk_sampling.ALWAYS_OFF
+            )
+            if not has_default_delegates:
+                return 1.0
+            return self._extract_sample_rate(sampler._root)
+        if isinstance(sampler, sdk_sampling.StaticSampler):
+            if sampler._decision is sdk_sampling.Decision.DROP:
+                return 0.0
+            return 1.0
+        if isinstance(sampler, sdk_sampling.TraceIdRatioBased):
+            return sampler.rate
+        # Custom sampler; buffer everything
+        return 1.0
+
+    def get_effective_sampling_rate(self) -> float:
+        """Best effort extraction of the sampling rate from a TracerProvider.
+
+        Returns the probability with which the provider's sampler will sample
+        a root span, or 1.0 whenever the sampler cannot be introspected (non-SDK
+        providers, custom samplers, customized ParentBased delegates). 1.0 is
+        always safe: every span is created at C++ layer and the provider's
+        sampler still makes the final decision at export time.
+        """
+        sampler = getattr(self._plugin.tracer_provider, "sampler", None)
+        if sampler is None:
+            # Probably not an SDK TracerProvider. We have to buffer every span
+            # from C++ layer. Final decision will be made at export time.
+            return 1.0
+
+        try:
+            return self._extract_sample_rate(sampler)
+        except AttributeError:
+            msg = (
+                f"Could not introspect sampler {sampler};"
+                "using sampling rate 1.0"
+            )
+            _LOGGER.warning(msg)
+            return 1.0
+
+    def get_trace_context(self) -> Optional[otel_context.Context]:
+        return self._trace_ctx_var.get()
+
+    def _build_context(
+        self,
+        trace_id: str,
+        span_id: str,
+        is_sampled: bool,
+        context: Optional[otel_context.Context] = None,
+    ) -> otel_context.Context:
+        """Builds new Otel context from trace_id, span_id and sampling flag."""
+        if not trace_id:
+            parsed_trace_id = 0
+        else:
+            try:
+                parsed_trace_id = int(trace_id, 16)
+            except ValueError:
+                _LOGGER.warning("Failed to parse trace_id: '%s'", trace_id)
+                parsed_trace_id = 0
+
+        if not span_id:
+            parsed_span_id = 0
+        else:
+            try:
+                parsed_span_id = int(span_id, 16)
+            except ValueError:
+                _LOGGER.warning("Failed to parse span_id: '%s'", span_id)
+                parsed_span_id = 0
+
+        span_context = trace.SpanContext(
+            trace_id=parsed_trace_id,
+            span_id=parsed_span_id,
+            is_remote=True,
+            trace_flags=trace.TraceFlags(
+                trace.TraceFlags.SAMPLED
+                if is_sampled
+                else trace.TraceFlags.DEFAULT
+            ),
+        )
+        parent_span = trace.NonRecordingSpan(span_context)
+        return trace.set_span_in_context(parent_span, context)
+
+    def save_trace_context(
+        self, trace_id: str, span_id: str, is_sampled: bool
+    ) -> None:
+        if not self.is_tracing_configured():
+            return
+
+        self._trace_ctx_var.set(
+            self._build_context(
+                trace_id=trace_id,
+                span_id=span_id,
+                is_sampled=is_sampled,
+                context=self._trace_ctx_var.get(),
+            )
+        )
+
+    def _status_to_otel_status(self, status: str) -> trace.Status:
+        if status == "OK":
+            return trace.Status(status_code=trace.StatusCode.OK)
+        return trace.Status(
+            status_code=trace.StatusCode.ERROR, description=status
+        )
+
+    def _record_tracing_data(self, tracing_data: TracingData) -> None:
+        """Exports tracing data gathered in core library in batches.
+
+        We need to transpose from `TracingData` object to `trace.ReadableSpan`
+        object here. However, instantiating objects of `trace.ReadableSpan` type
+        is restricted in OpenTelemetry framework. Therefore, we need to manually
+        create spans and take care of parent-to-child relationships using custom
+        `trace.IdGenerator`. With this approach IDs are propagated correctly to
+        configured exporter instance.
+        """
+        # Build parent context locally to avoid race conditions when
+        # concurrent RPCs are collecting traces
+        local_ctx = self._build_context(
+            trace_id=tracing_data.trace_id,
+            span_id=tracing_data.parent_span_id,
+            is_sampled=tracing_data.should_sample,
+        )
+
+        # to prevent concurrent RPCs from overwriting shared state
+        with self._tracer_lock:
+            # this step is needed to propagate span ID correctly
+            self._tracer.id_generator = _GrpcIdGenerator(
+                trace_id=tracing_data.trace_id, span_id=tracing_data.span_id
+            )
+            try:
+                parsed_start_time = int(tracing_data.start_time)
+            except ValueError:
+                _LOGGER.warning(
+                    "Invalid start_time '%s' for span, defaulting to current "
+                    "time.",
+                    tracing_data.start_time,
+                )
+                # For None tracing library auto-generates the current time
+                parsed_start_time = None
+            span = self._tracer.start_span(
+                name=tracing_data.name,
+                context=local_ctx,
+                kind=trace.SpanKind.INTERNAL,
+                attributes=tracing_data.span_labels,
+                links=None,
+                start_time=parsed_start_time,
+            )
+
+        for event in tracing_data.span_events:
+            try:
+                span.add_event(
+                    name=event["name"],
+                    attributes=event["attributes"],
+                    timestamp=int(event["time_stamp"]),
+                )
+            except ValueError:
+                # Gracefully log the issue and move to the next event
+                _LOGGER.warning("Skipping malformed span event: %s", event)
+                continue
+        span.set_status(self._status_to_otel_status(tracing_data.status))
+        try:
+            parsed_end_time = int(tracing_data.end_time)
+        except ValueError:
+            _LOGGER.warning(
+                "Invalid end_time '%s' for span, defaulting to current time.",
+                tracing_data.end_time,
+            )
+            # For None tracing library auto-generates the current time
+            parsed_end_time = None
+        span.end(end_time=parsed_end_time)
+
+    def maybe_record_tracing_data(self, tracing_data: TracingData) -> None:
+        """Records tracing data to SpanExporter configured for given TracerProvider."""
+        if self.is_tracing_configured():
+            self._record_tracing_data(tracing_data)
 
     def get_client_exchange_labels(self) -> Dict[str, AnyStr]:
         """Get labels used for client side Metadata Exchange."""
@@ -322,7 +589,9 @@ class _OpenTelemetryExporterDelegator(_observability.Exporter):
     def export_tracing_data(
         self, tracing_data: List[_observability.TracingData]
     ) -> None:
-        pass
+        for data in tracing_data:
+            for plugin in self._plugins:
+                plugin.maybe_record_tracing_data(data)
 
 
 # pylint: disable=no-self-use
@@ -360,6 +629,16 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
             error_msg = f"Activate observability metrics failed with: {e}"
             raise ValueError(error_msg)
 
+        if self._should_enable_tracing():
+            try:
+                _cyobservability.activate_tracing(
+                    self._get_tracing_sample_rate()
+                )
+                self.set_tracing(True)
+            except Exception as e:  # pylint: disable=broad-except
+                error_msg = f"Activate observability tracing failed with: {e}"
+                raise ValueError(error_msg)
+
         try:
             _cyobservability.cyobservability_init(self._exporter)
         # TODO(xuanwn): Use specific exceptions
@@ -383,10 +662,42 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
         _cyobservability.observability_deinit()
         grpc._observability.observability_deinit()
 
+    def _generate_ids(self) -> Tuple[bytes, bytes]:
+        """Generates trace ID and parent span ID
+
+        If there is an active OpenTelemetry span in the current context (e.g.
+        nested RPC), its trace ID and span ID are propagated.
+
+        If there is no active span (e.g. new RPC) and the tracing is enabled,
+        a new trace ID is generated, leaving the parent span ID empty.
+
+        If tracing is disabled, returns a dummy trace ID and an empty parent
+        span ID.
+
+        Returns:
+            A tuple of (trace ID, parent span ID).
+        """
+        # current span is used to track the trace ID. Since it is preserved across different RPCs,
+        # we can safely use just the context of the first plugin.
+        current_span = trace.get_current_span(
+            context=self._plugins[0].get_trace_context()
+        ).get_span_context()
+        if current_span.is_valid:
+            trace_id = f"{current_span.trace_id:032x}".encode()
+            parent_span_id = f"{current_span.span_id:016x}".encode()
+        elif self._should_enable_tracing():
+            generator = sdk_trace.RandomIdGenerator()
+            trace_id = f"{generator.generate_trace_id():032x}".encode()
+            parent_span_id = b""
+        else:
+            trace_id = b"TRACE_ID"
+            parent_span_id = b""
+        return (trace_id, parent_span_id)
+
     def create_client_call_tracer(
         self, method_name: bytes, target: bytes
     ) -> ClientCallTracerCapsule:
-        trace_id = b"TRACE_ID"
+        trace_id, parent_span_id = self._generate_ids()
         self._maybe_activate_client_plugin_options(target)
         exchange_labels = self._get_client_exchange_labels()
         enabled_optional_labels = set()
@@ -401,6 +712,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
             exchange_labels,
             enabled_optional_labels,
             method_name in self._registered_methods,
+            parent_span_id,
         )
         return capsule
 
@@ -420,7 +732,8 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
     def save_trace_context(
         self, trace_id: str, span_id: str, is_sampled: bool
     ) -> None:
-        pass
+        for _plugin in self._plugins:
+            _plugin.save_trace_context(trace_id, span_id, is_sampled)
 
     def record_rpc_latency(
         self,
@@ -472,6 +785,20 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
         return PLUGIN_IDENTIFIER_SEP.join(
             _plugin.identifier for _plugin in self._plugins
         )
+
+    def _should_enable_tracing(self) -> bool:
+        return any(_plugin.is_tracing_configured() for _plugin in self._plugins)
+
+    def _get_tracing_sample_rate(self) -> float:
+        # There is a single sampler object shared by all plugins, so buffer
+        # the highest rate any plugin needs; each plugin's own SDK sampler
+        # still makes the final (per span) decision at export time
+        rates = [
+            _plugin.get_effective_sampling_rate()
+            for _plugin in self._plugins
+            if _plugin.is_tracing_configured()
+        ]
+        return max(rates)
 
     def get_enabled_optional_labels(self) -> List[OptionalLabelType]:
         return []

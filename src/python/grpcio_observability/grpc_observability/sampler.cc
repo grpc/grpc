@@ -27,23 +27,22 @@ namespace {
 uint64_t CalculateThreshold(double probability) {
   if (probability <= 0.0) return 0;
   if (probability >= 1.0) return UINT64_MAX;
-  // We can't directly return probability * UINT64_MAX.
-  //
-  // UINT64_MAX is (2^64)-1, but as a double rounds up to 2^64.
-  // For probabilities >= 1-(2^-54), the product wraps to zero!
-  // Instead, calculate the high and low 32 bits separately.
-  const double product = UINT32_MAX * probability;
-  double hi_bits, lo_bits = ldexp(modf(product, &hi_bits), 32) + product;
-  return (static_cast<uint64_t>(hi_bits) << 32) +
-         static_cast<uint64_t>(lo_bits);
+
+  // for the probabilities in range (0.0, 1.0) the result is at most 2^64 - 2^11
+  // which fits uint64_t type. Note: the largest double below 1.0 is 1 - 2^(-53)
+  return static_cast<uint64_t>(nearbyint(ldexp(probability, 64)));
 }
 
+// Reads the lowest 8 bytes of the decoded trace ID as a big-endian integer,
+// matching OpenTelemtry SDK's implementation, where the trace ID is parsed
+// from its big endian hex representation.
 uint64_t CalculateThresholdFromBuffer(const std::string& trace_id) {
   const std::string trace_id_bytes = absl::HexStringToBytes(trace_id);
+  if (trace_id_bytes.size() < 16U) return UINT64_MAX;
   const uint8_t* buf = reinterpret_cast<const uint8_t*>(trace_id_bytes.c_str());
   uint64_t res = 0;
-  for (int i = 0; i < 8; ++i) {
-    res |= (static_cast<uint64_t>(buf[i]) << (i * 8));
+  for (int i = 8; i < 16; ++i) {
+    res = (res << 8) | (static_cast<uint64_t>(buf[i]));
   }
   return res;
 }
@@ -61,9 +60,10 @@ void ProbabilitySampler::SetThreshold(double probability) {
 
 bool ProbabilitySampler::ShouldSample(const std::string& trace_id) {
   if (threshold_ == 0 || trace_id.length() < 32) return false;
+  if (threshold_ == UINT64_MAX) return true;
   // All Spans within the same Trace will get the same sampling decision, so
   // full trees of Spans will be sampled.
-  return CalculateThresholdFromBuffer(trace_id) <= threshold_;
+  return CalculateThresholdFromBuffer(trace_id) < threshold_;
 }
 
 }  // namespace grpc_observability
