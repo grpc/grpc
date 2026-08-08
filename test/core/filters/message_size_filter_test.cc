@@ -17,193 +17,204 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
-#include "src/core/call/metadata.h"
+#include <string>
+
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/slice/slice.h"
-#include "src/core/service_config/service_config.h"
-#include "src/core/service_config/service_config_call_data.h"
-#include "src/core/service_config/service_config_impl.h"
-#include "src/core/util/ref_counted_ptr.h"
 #include "test/core/filters/filter_matchers.h"
 #include "test/core/filters/filter_test.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
-namespace {
-const absl::string_view kTestPath = "/test_method";
-}  // namespace
+enum class LimitConfig {
+  kClientChannelArgs,
+  kClientServiceConfig,
+  kServerChannelArgs,
+};
 
 class MessageSizeFilterTest : public FilterTest {
  protected:
   using FilterTest::FilterTest;
 
-  absl::Status InitServerWithMaxRecvSize(int max_recv_size) {
-    return CreateFilterChain<ServerMessageSizeFilter>(
-        ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, max_recv_size));
+  // Builds a stack per `config` with `limit` on the given direction.
+  void InitLimitConfig(LimitConfig config, bool client_to_server, int limit,
+                       absl::string_view service_config_field) {
+    switch (config) {
+      case LimitConfig::kClientChannelArgs:
+        ASSERT_TRUE(
+            CreateFilterChain<ClientMessageSizeFilter>(
+                ChannelArgs().Set(client_to_server
+                                      ? GRPC_ARG_MAX_SEND_MESSAGE_LENGTH
+                                      : GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH,
+                                  limit))
+                .ok());
+        StartCallForFilter(NewClientMetadata());
+        break;
+      case LimitConfig::kClientServiceConfig:
+        ASSERT_TRUE(CreateFilterChain<ClientMessageSizeFilter>().ok());
+        SetServiceConfig(service_config_field);
+        StartCallForFilter(NewServiceConfigClientMetadata());
+        break;
+      case LimitConfig::kServerChannelArgs:
+        ASSERT_TRUE(
+            CreateFilterChain<ServerMessageSizeFilter>(
+                ChannelArgs().Set(client_to_server
+                                      ? GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH
+                                      : GRPC_ARG_MAX_SEND_MESSAGE_LENGTH,
+                                  limit))
+                .ok());
+        StartCallForFilter(NewClientMetadata());
+        break;
+    }
   }
 
-  absl::Status InitClientWithMaxSendSize(int max_send_size) {
-    return CreateFilterChain<ClientMessageSizeFilter>(
-        ChannelArgs().Set(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, max_send_size));
+  // Asserts a `limit`+1 byte message in the given direction is rejected with
+  // RESOURCE_EXHAUSTED.
+  void ExpectLimitEnforced(LimitConfig config, bool client_to_server, int limit,
+                           absl::string_view service_config_field) {
+    InitLimitConfig(config, client_to_server, limit, service_config_field);
+
+    const std::string oversized_payload(limit + 1, 'x');
+    if (client_to_server) {
+      PushClientMessage(NewMessage(oversized_payload));
+      PushClientHalfClose();
+      ASSERT_TRUE(PullClientInitialMetadata().ok());
+      // The filter rejected the message, so the pull fails rather than
+      // delivering.
+      EXPECT_FALSE(PullClientMessage().ok());
+    } else {
+      PushClientHalfClose();
+      ASSERT_TRUE(PullClientInitialMetadata().ok());
+      PushServerInitialMetadata(NewServerMetadata());
+      PushServerMessage(NewMessage(oversized_payload));
+      ASSERT_TRUE(PullServerInitialMetadata().ok());
+      EXPECT_FALSE(PullServerMessage().ok());
+    }
+
+    EXPECT_EQ(PullServerTrailingStatus().code(),
+              absl::StatusCode::kResourceExhausted);
+
+    WaitForAllPendingWork();
   }
 
-  absl::Status InitClientWithMaxRecvSize(int max_recv_size) {
-    return CreateFilterChain<ClientMessageSizeFilter>(
-        ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, max_recv_size));
+  void ExpectClientToServerLimitEnforced(LimitConfig config) {
+    ExpectLimitEnforced(config, /*client_to_server=*/true, /*limit=*/4,
+                        R"("maxRequestMessageBytes": 4)");
   }
 
-  // Make every call carry a service config with the given method config fields,
-  // so we exercise the service-config path rather than channel args.
-  void SetMessageSizeServiceConfig(absl::string_view fields) {
-    absl::StatusOr<RefCountedPtr<ServiceConfig>> service_config =
-        ServiceConfigImpl::Create(
-            ChannelArgs(),
-            absl::StrCat(R"({"methodConfig":[{"name":[{}],)", fields, "}]}"));
-    ASSERT_TRUE(service_config.ok()) << service_config.status();
-    service_config_ = std::move(*service_config);
-    method_configs_ = service_config_->GetMethodParsedConfigVector(
-        Slice::FromCopiedString(kTestPath).c_slice());
+  void ExpectServerToClientLimitEnforced(LimitConfig config) {
+    ExpectLimitEnforced(config, /*client_to_server=*/false, /*limit=*/4,
+                        R"("maxResponseMessageBytes": 4)");
   }
 
-  ClientMetadataHandle MakeClientInitialMetadata() {
-    ClientMetadataHandle md = NewClientMetadata();
-    md->Set(HttpPathMetadata(), Slice::FromCopiedString(kTestPath));
-    return md;
+  // Asserts a `payload_size`-byte message in the given direction under
+  // `config` with `limit` arrives intact and the call completes OK.
+  void ExpectMessageAccepted(LimitConfig config, bool client_to_server,
+                             int limit, absl::string_view service_config_field,
+                             int payload_size) {
+    InitLimitConfig(config, client_to_server, limit, service_config_field);
+
+    const std::string payload(payload_size, 'x');
+    if (client_to_server) {
+      PushClientMessage(NewMessage(payload));
+      PushClientHalfClose();
+      ASSERT_TRUE(PullClientInitialMetadata().ok());
+      ClientToServerNextMessage message = PullClientMessage();
+      ASSERT_TRUE(message.ok());
+      ASSERT_TRUE(message.has_value());
+      EXPECT_THAT(message.value(), HasMessagePayload(payload));
+      EXPECT_TRUE(PullClientHalfClose());
+    } else {
+      PushClientHalfClose();
+      ASSERT_TRUE(PullClientInitialMetadata().ok());
+      PushServerInitialMetadata(NewServerMetadata());
+      PushServerMessage(NewMessage(payload));
+      ASSERT_TRUE(PullServerInitialMetadata().ok());
+      ServerToClientNextMessage message = PullServerMessage();
+      ASSERT_TRUE(message.ok());
+      ASSERT_TRUE(message.has_value());
+      EXPECT_THAT(message.value(), HasMessagePayload(payload));
+    }
+
+    PushServerTrailingMetadata(ServerMetadataFromStatus(GRPC_STATUS_OK));
+    EXPECT_TRUE(PullServerTrailingStatus().ok());
+
+    WaitForAllPendingWork();
   }
 
-  void InitAfterCallArena(Arena* arena) override {
-    if (service_config_ == nullptr) return;
-    arena->New<ServiceConfigCallData>(arena)->SetServiceConfig(service_config_,
-                                                               method_configs_);
+  // The limit is inclusive: a `limit`-byte message under `config` passes.
+  void ExpectClientToServerAtLimitPasses(LimitConfig config) {
+    ExpectMessageAccepted(config, /*client_to_server=*/true, /*limit=*/4,
+                          R"("maxRequestMessageBytes": 4)",
+                          /*payload_size=*/4);
   }
 
- private:
-  RefCountedPtr<ServiceConfig> service_config_;
-  const ServiceConfigParser::ParsedConfigVector* method_configs_ = nullptr;
+  void ExpectServerToClientAtLimitPasses(LimitConfig config) {
+    ExpectMessageAccepted(config, /*client_to_server=*/false, /*limit=*/4,
+                          R"("maxResponseMessageBytes": 4)",
+                          /*payload_size=*/4);
+  }
 };
 
 // A message within the limit passes through and the call completes normally.
 FILTER_TEST(MessageSizeFilterTest, WithinLimitPasses) {
-  ASSERT_TRUE(InitServerWithMaxRecvSize(1024).ok());
-  StartCallForFilter(NewClientMetadata());
-
-  PushClientMessage(NewMessage("small"));
-  PushClientHalfClose();
-
-  ASSERT_TRUE(PullClientInitialMetadata().ok());
-  ClientToServerNextMessage message = PullClientMessage();
-  ASSERT_TRUE(message.ok());
-  ASSERT_TRUE(message.has_value());
-  EXPECT_THAT(message.value(), HasMessagePayload("small"));
-  EXPECT_TRUE(PullClientHalfClose());
-
-  PushServerTrailingMetadata(ServerMetadataFromStatus(GRPC_STATUS_OK));
-  EXPECT_TRUE(PullServerTrailingStatus().ok());
-
-  WaitForAllPendingWork();
+  ExpectMessageAccepted(LimitConfig::kServerChannelArgs,
+                        /*client_to_server=*/true, /*limit=*/1024, "",
+                        /*payload_size=*/5);
 }
 
-// The limit is inclusive: a message of exactly the limit is delivered.
-FILTER_TEST(MessageSizeFilterTest, AtLimitPasses) {
-  ASSERT_TRUE(InitServerWithMaxRecvSize(5).ok());
-  StartCallForFilter(NewClientMetadata());
-
-  PushClientMessage(NewMessage("exact"));
-  PushClientHalfClose();
-
-  ASSERT_TRUE(PullClientInitialMetadata().ok());
-  ClientToServerNextMessage message = PullClientMessage();
-  ASSERT_TRUE(message.ok());
-  ASSERT_TRUE(message.has_value());
-  EXPECT_THAT(message.value(), HasMessagePayload("exact"));
-  EXPECT_TRUE(PullClientHalfClose());
-
-  PushServerTrailingMetadata(ServerMetadataFromStatus(GRPC_STATUS_OK));
-  EXPECT_TRUE(PullServerTrailingStatus().ok());
-
-  WaitForAllPendingWork();
+// The limit is inclusive: a message of exactly the limit is delivered,
+// regardless of which end configures it or how.
+FILTER_TEST(MessageSizeFilterTest, ClientSendAtLimitPasses) {
+  ExpectClientToServerAtLimitPasses(LimitConfig::kClientChannelArgs);
 }
 
-// The server filter enforces the receive limit on client->server messages: an
-// oversized message is rejected, and the client sees RESOURCE_EXHAUSTED.
-FILTER_TEST(MessageSizeFilterTest, ServerRecvExceedsLimitRejected) {
-  ASSERT_TRUE(InitServerWithMaxRecvSize(4).ok());
-  StartCallForFilter(NewClientMetadata());
-
-  PushClientMessage(NewMessage("much too big"));
-  PushClientHalfClose();
-
-  ASSERT_TRUE(PullClientInitialMetadata().ok());
-  // The filter rejected the message, so the pull fails rather than delivering.
-  EXPECT_FALSE(PullClientMessage().ok());
-
-  EXPECT_EQ(PullServerTrailingStatus().code(),
-            absl::StatusCode::kResourceExhausted);
-
-  WaitForAllPendingWork();
+FILTER_TEST(MessageSizeFilterTest, ClientSendAtLimitFromServiceConfigPasses) {
+  ExpectClientToServerAtLimitPasses(LimitConfig::kClientServiceConfig);
 }
 
-// The client filter enforces the send limit: an oversized message is rejected
-// before it reaches the server.
+FILTER_TEST(MessageSizeFilterTest, ServerRecvAtLimitPasses) {
+  ExpectClientToServerAtLimitPasses(LimitConfig::kServerChannelArgs);
+}
+
 FILTER_TEST(MessageSizeFilterTest, ClientSendExceedsLimitRejected) {
-  ASSERT_TRUE(InitClientWithMaxSendSize(4).ok());
-  StartCallForFilter(NewClientMetadata());
-
-  PushClientMessage(NewMessage("much too big"));
-  PushClientHalfClose();
-
-  ASSERT_TRUE(PullClientInitialMetadata().ok());
-  EXPECT_FALSE(PullClientMessage().ok());
-
-  EXPECT_EQ(PullServerTrailingStatus().code(),
-            absl::StatusCode::kResourceExhausted);
-
-  WaitForAllPendingWork();
+  ExpectClientToServerLimitEnforced(LimitConfig::kClientChannelArgs);
 }
 
-// The client filter enforces the receive limit on server->client messages: an
-// oversized response is rejected and the client sees RESOURCE_EXHAUSTED.
-FILTER_TEST(MessageSizeFilterTest, ClientRecvExceedsLimitRejected) {
-  ASSERT_TRUE(InitClientWithMaxRecvSize(4).ok());
-  StartCallForFilter(NewClientMetadata());
-
-  PushClientHalfClose();
-  ASSERT_TRUE(PullClientInitialMetadata().ok());
-  PushServerInitialMetadata(NewServerMetadata());
-  PushServerMessage(NewMessage("much too big"));
-
-  ASSERT_TRUE(PullServerInitialMetadata().ok());
-  EXPECT_FALSE(PullServerMessage().ok());
-
-  EXPECT_EQ(PullServerTrailingStatus().code(),
-            absl::StatusCode::kResourceExhausted);
-
-  WaitForAllPendingWork();
-}
-
-// The client filter also honors the send limit configured via the service
-// config (maxRequestMessageBytes), not just channel args.
 FILTER_TEST(MessageSizeFilterTest, ClientSendLimitFromServiceConfig) {
-  ASSERT_TRUE(CreateFilterChain<ClientMessageSizeFilter>().ok());
-  SetMessageSizeServiceConfig(R"("maxRequestMessageBytes": 4)");
-  StartCallForFilter(MakeClientInitialMetadata());
+  ExpectClientToServerLimitEnforced(LimitConfig::kClientServiceConfig);
+}
 
-  PushClientMessage(NewMessage("much too big"));
-  PushClientHalfClose();
+FILTER_TEST(MessageSizeFilterTest, ServerRecvExceedsLimitRejected) {
+  ExpectClientToServerLimitEnforced(LimitConfig::kServerChannelArgs);
+}
 
-  ASSERT_TRUE(PullClientInitialMetadata().ok());
-  EXPECT_FALSE(PullClientMessage().ok());
+// The limit is inclusive: a message of exactly the limit is delivered,
+// regardless of which end configures it or how.
+FILTER_TEST(MessageSizeFilterTest, ClientRecvAtLimitPasses) {
+  ExpectServerToClientAtLimitPasses(LimitConfig::kClientChannelArgs);
+}
 
-  EXPECT_EQ(PullServerTrailingStatus().code(),
-            absl::StatusCode::kResourceExhausted);
+FILTER_TEST(MessageSizeFilterTest, ClientRecvAtLimitFromServiceConfigPasses) {
+  ExpectServerToClientAtLimitPasses(LimitConfig::kClientServiceConfig);
+}
 
-  WaitForAllPendingWork();
+FILTER_TEST(MessageSizeFilterTest, ServerSendAtLimitPasses) {
+  ExpectServerToClientAtLimitPasses(LimitConfig::kServerChannelArgs);
+}
+
+FILTER_TEST(MessageSizeFilterTest, ClientRecvExceedsLimitRejected) {
+  ExpectServerToClientLimitEnforced(LimitConfig::kClientChannelArgs);
+}
+
+FILTER_TEST(MessageSizeFilterTest, ClientRecvLimitFromServiceConfig) {
+  ExpectServerToClientLimitEnforced(LimitConfig::kClientServiceConfig);
+}
+
+FILTER_TEST(MessageSizeFilterTest, ServerSendExceedsLimitRejected) {
+  ExpectServerToClientLimitEnforced(LimitConfig::kServerChannelArgs);
 }
 
 }  // namespace grpc_core

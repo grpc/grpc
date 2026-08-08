@@ -31,6 +31,7 @@
 #include "src/core/filter/filter_args.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/promise/status_flag.h"
+#include "src/core/service_config/service_config.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "test/core/call/yodel/yodel_test.h"
 #include "gmock/gmock.h"
@@ -125,13 +126,33 @@ class FilterTest : public YodelTest {
   //
   // Pull*() is synchronous and ticks the event engine until the value arrives.
   //
-  // Client-side operations act on the implicit initiator. Handler-side
-  // operations either take a handler explicitly (needed when there is more than
-  // one child call) or act on the implicit handler.
+  // Every method comes in two forms: one that takes the initiator or handler
+  // explicitly (needed when there is more than one child call, e.g. testing an
+  // interceptor that retries) and one that acts on the implicit initiator or
+  // handler set by StartCall()/StartCallForFilter()/GetNextHandler().
 
-  // client -> server
+  // Initiator operations: push the client's request, pull the server's
+  // response.
+  void PushClientMessage(CallInitiator initiator, MessageHandle message);
   void PushClientMessage(MessageHandle message);
+  void PushClientHalfClose(CallInitiator initiator);
   void PushClientHalfClose();
+  // nullopt for the trailers-only case (no separate initial metadata).
+  ValueOrFailure<std::optional<ServerMetadataHandle>> PullServerInitialMetadata(
+      CallInitiator initiator);
+  ValueOrFailure<std::optional<ServerMetadataHandle>>
+  PullServerInitialMetadata();
+  ServerToClientNextMessage PullServerMessage(CallInitiator initiator);
+  ServerToClientNextMessage PullServerMessage();
+  ValueOrFailure<ServerMetadataHandle> PullServerTrailingMetadata(
+      CallInitiator initiator);
+  ValueOrFailure<ServerMetadataHandle> PullServerTrailingMetadata();
+  // As above, but returns the call's status, for tests that only care about it.
+  absl::Status PullServerTrailingStatus(CallInitiator initiator);
+  absl::Status PullServerTrailingStatus();
+
+  // Handler operations: pull the client's request, push the server's
+  // response.
   ValueOrFailure<ClientMetadataHandle> PullClientInitialMetadata(
       CallHandler handler);
   ValueOrFailure<ClientMetadataHandle> PullClientInitialMetadata();
@@ -142,21 +163,12 @@ class FilterTest : public YodelTest {
   // message arrived instead, and returns false.
   bool PullClientHalfClose(CallHandler handler);
   bool PullClientHalfClose();
-
-  // server -> client
   void PushServerInitialMetadata(CallHandler handler, ServerMetadataHandle md);
   void PushServerInitialMetadata(ServerMetadataHandle md);
   void PushServerMessage(CallHandler handler, MessageHandle message);
   void PushServerMessage(MessageHandle message);
   void PushServerTrailingMetadata(CallHandler handler, ServerMetadataHandle md);
   void PushServerTrailingMetadata(ServerMetadataHandle md);
-  // nullopt for the trailers-only case (no separate initial metadata).
-  ValueOrFailure<std::optional<ServerMetadataHandle>>
-  PullServerInitialMetadata();
-  ServerToClientNextMessage PullServerMessage();
-  ValueOrFailure<ServerMetadataHandle> PullServerTrailingMetadata();
-  // As above, but returns the call's status, for tests that only care about it.
-  absl::Status PullServerTrailingStatus();
 
   // Constructing the things that flow through a call
 
@@ -169,14 +181,22 @@ class FilterTest : public YodelTest {
   MessageHandle NewMessage(absl::string_view payload = "", uint32_t flags = 0);
 
   // Called with the call's arena immediately after the call is created and
-  // before it is started. Override to install call context objects (for
-  // example ServiceConfigCallData) that the filter under test requires.
-  virtual void InitAfterCallArena(Arena* arena) {}
+  // before it is started. Installs the SetServiceConfig() config, if any;
+  // override (chaining to the base) to install other call context objects.
+  virtual void InitAfterCallArena(Arena* arena);
+
+  // Gives every call started with NewServiceConfigClientMetadata() a service
+  // config with `method_config_fields` merged into its method config, e.g.
+  // R"("maxRequestMessageBytes": 4)". Call before StartCall().
+  void SetServiceConfig(absl::string_view method_config_fields);
+
+  // Client initial metadata that a service config set via SetServiceConfig()
+  // applies to.
+  ClientMetadataHandle NewServiceConfigClientMetadata();
 
  private:
-  // The implicit initiator/handler used by the no-argument operation helpers.
-  CallInitiator initiator();
-  CallHandler handler();
+  // Shared by SetServiceConfig() and NewServiceConfigClientMetadata().
+  static constexpr absl::string_view kTestPath = "/test_method";
 
   // The bottom of the chain under test: stands in for the transport (or for
   // whatever the next interceptor down would be), and records the handler for
@@ -233,6 +253,10 @@ class FilterTest : public YodelTest {
   RefCountedPtr<UnstartedCallDestination> chain_;
   std::optional<CallInitiator> initiator_;
   std::optional<CallHandler> handler_;
+
+  // Set by SetServiceConfig(), installed by the default InitAfterCallArena().
+  RefCountedPtr<ServiceConfig> service_config_;
+  const ServiceConfigParser::ParsedConfigVector* method_configs_ = nullptr;
 };
 
 }  // namespace grpc_core

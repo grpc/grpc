@@ -27,30 +27,22 @@
 
 #include <string>
 
-#include "src/core/call/metadata.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/compression/message_compress.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/service_config/service_config.h"
-#include "src/core/service_config/service_config_call_data.h"
-#include "src/core/service_config/service_config_impl.h"
 #include "src/core/util/grpc_check.h"
-#include "src/core/util/ref_counted_ptr.h"
 #include "test/core/filters/filter_matchers.h"
 #include "test/core/filters/filter_test.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
 namespace {
-const absl::string_view kTestPath = "/test_method";
-
 // A highly compressible payload: 1000 identical bytes always shrinks under
 // gzip, so grpc_msg_compress() reports a real compression win (and thus sets
 // the INTERNAL_COMPRESS flag).
@@ -78,35 +70,6 @@ class CompressionFilterTest : public FilterTest {
     return Arena::MakePooled<Message>(std::move(output),
                                       GRPC_WRITE_INTERNAL_COMPRESS);
   }
-
-  // Make every call carry a service config with the given method config fields,
-  // so we exercise the service-config path rather than channel args.
-  void SetMessageSizeServiceConfig(absl::string_view fields) {
-    absl::StatusOr<RefCountedPtr<ServiceConfig>> service_config =
-        ServiceConfigImpl::Create(
-            ChannelArgs(),
-            absl::StrCat(R"({"methodConfig":[{"name":[{}],)", fields, "}]}"));
-    ASSERT_TRUE(service_config.ok()) << service_config.status();
-    service_config_ = std::move(*service_config);
-    method_configs_ = service_config_->GetMethodParsedConfigVector(
-        Slice::FromCopiedString(kTestPath).c_slice());
-  }
-
-  ClientMetadataHandle MakeClientInitialMetadata() {
-    ClientMetadataHandle md = NewClientMetadata();
-    md->Set(HttpPathMetadata(), Slice::FromCopiedString(kTestPath));
-    return md;
-  }
-
-  void InitAfterCallArena(Arena* arena) override {
-    if (service_config_ == nullptr) return;
-    arena->New<ServiceConfigCallData>(arena)->SetServiceConfig(service_config_,
-                                                               method_configs_);
-  }
-
- private:
-  RefCountedPtr<ServiceConfig> service_config_;
-  const ServiceConfigParser::ParsedConfigVector* method_configs_ = nullptr;
 };
 
 // The client filter compresses client->server messages: the payload arrives at
@@ -283,13 +246,36 @@ FILTER_TEST(CompressionFilterTest, ServerFilterRejectsOversizeMessage) {
   WaitForAllPendingWork();
 }
 
+// The client filter enforces the receive message size limit set via channel
+// args on the post-decompression payload.
+FILTER_TEST(CompressionFilterTest, ClientFilterRejectsOversizeResponse) {
+  ASSERT_TRUE(CreateFilterChain<ClientCompressionFilter>(
+                  GzipArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, 10))
+                  .ok());
+  StartCallForFilter(NewClientMetadata());
+
+  PushClientHalfClose();
+  ASSERT_TRUE(PullClientInitialMetadata().ok());
+  PushServerInitialMetadata(NewServerMetadata({{"grpc-encoding", "gzip"}}));
+  PushServerMessage(GzipCompressedMessage(CompressiblePayload()));
+
+  ASSERT_TRUE(PullServerInitialMetadata().ok());
+  // The decompressed payload (1000 bytes) exceeds the 10-byte limit.
+  EXPECT_FALSE(PullServerMessage().ok());
+
+  EXPECT_EQ(PullServerTrailingStatus().code(),
+            absl::StatusCode::kResourceExhausted);
+
+  WaitForAllPendingWork();
+}
+
 // The client filter enforces the receive message size limit set via the service
 // config (maxResponseMessageBytes) on the post-decompression payload.
 FILTER_TEST(CompressionFilterTest,
             ClientFilterRejectsOversizeResponseFromServiceConfig) {
   ASSERT_TRUE(CreateFilterChain<ClientCompressionFilter>(GzipArgs()).ok());
-  SetMessageSizeServiceConfig(R"("maxResponseMessageBytes": 10)");
-  StartCallForFilter(MakeClientInitialMetadata());
+  SetServiceConfig(R"("maxResponseMessageBytes": 10)");
+  StartCallForFilter(NewServiceConfigClientMetadata());
 
   PushClientHalfClose();
   ASSERT_TRUE(PullClientInitialMetadata().ok());

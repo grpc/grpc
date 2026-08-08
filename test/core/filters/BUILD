@@ -24,7 +24,6 @@ grpc_package(
         "layering_check",
         "parse_headers",
     ],
-    visibility = "tests",
 )
 
 grpc_cc_library(
@@ -35,6 +34,7 @@ grpc_cc_library(
         "absl/strings",
         "gtest",
     ],
+    visibility = ["//test:__subpackages__"],
     deps = [
         "//src/core:message",
         "//src/core:metadata",
@@ -56,12 +56,14 @@ grpc_cc_library(
         "gtest",
     ],
     tags = ["nofixdeps"],  # until event engine tests are under fixbuilddeps
+    visibility = ["//test:__subpackages__"],
     deps = [
         ":filter_matchers",
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc",
         "//:grpc_base",
+        "//:grpc_service_config_impl",
         "//:iomgr_timer",
         "//:ref_counted_ptr",
         "//src/core:activity",
@@ -75,6 +77,7 @@ grpc_cc_library(
         "//src/core:default_event_engine",
         "//src/core:filter_args",
         "//src/core:grpc_check",
+        "//src/core:grpc_service_config",
         "//src/core:interception_chain",
         "//src/core:map",
         "//src/core:memory_quota",
@@ -279,15 +282,9 @@ grpc_fuzz_test(
         ":filter_test",
         "//:channel_arg_names",
         "//:gpr",
-        "//:grpc_service_config_impl",
         "//:grpc_status",
-        "//src/core:arena",
         "//src/core:channel_args",
         "//src/core:grpc_message_size_filter",
-        "//src/core:grpc_service_config",
-        "//src/core:metadata",
-        "//src/core:resource_quota",
-        "//src/core:slice",
     ],
 )
 
@@ -311,8 +308,6 @@ grpc_fuzz_test(
         "//src/core:arena",
         "//src/core:channel_args",
         "//src/core:grpc_check",
-        "//src/core:grpc_service_config",
-        "//src/core:metadata",
         "//src/core:resource_quota",
         "//src/core:slice",
         "//src/core:slice_buffer",

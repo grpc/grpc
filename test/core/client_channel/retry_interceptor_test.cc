@@ -17,16 +17,7 @@
 #include <grpc/grpc.h>
 #include <grpc/status.h>
 
-#include <utility>
-
-#include "src/core/call/metadata.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/slice/slice.h"
-#include "src/core/service_config/service_config.h"
-#include "src/core/service_config/service_config_call_data.h"
-#include "src/core/service_config/service_config_impl.h"
-#include "src/core/util/ref_counted_ptr.h"
 #include "test/core/filters/filter_matchers.h"
 #include "test/core/filters/filter_test.h"
 #include "gmock/gmock.h"
@@ -36,10 +27,6 @@
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
-
-namespace {
-const absl::string_view kTestPath = "/test_method";
-}  // namespace
 
 // The retry interceptor is the reason the harness hands out handlers one at a
 // time rather than returning one alongside the initiator: a single call from
@@ -52,36 +39,12 @@ class RetryInterceptorTest : public FilterTest {
     return CreateFilterChain<RetryInterceptor>(args);
   }
 
-  ClientMetadataHandle MakeClientInitialMetadata() {
-    ClientMetadataHandle md = NewClientMetadata();
-    md->Set(HttpPathMetadata(), Slice::FromCopiedString(kTestPath));
-    return md;
-  }
-
   // Arrange for every call to carry a service config with `retry_policy_json`
   // as its retry policy. Without this the interceptor sees no policy and never
   // retries, so exactly one child call is created.
   void SetRetryPolicy(absl::string_view retry_policy_json) {
-    absl::StatusOr<RefCountedPtr<ServiceConfig>> service_config =
-        ServiceConfigImpl::Create(
-            ChannelArgs(),
-            absl::StrCat(R"({"methodConfig":[{"name":[{}],"retryPolicy":)",
-                         retry_policy_json, "}]}"));
-    ASSERT_TRUE(service_config.ok()) << service_config.status();
-    service_config_ = std::move(*service_config);
-    method_configs_ = service_config_->GetMethodParsedConfigVector(
-        Slice::FromCopiedString(kTestPath).c_slice());
+    SetServiceConfig(absl::StrCat(R"("retryPolicy":)", retry_policy_json));
   }
-
-  void InitAfterCallArena(Arena* arena) override {
-    if (service_config_ == nullptr) return;
-    arena->New<ServiceConfigCallData>(arena)->SetServiceConfig(service_config_,
-                                                               method_configs_);
-  }
-
- private:
-  RefCountedPtr<ServiceConfig> service_config_;
-  const ServiceConfigParser::ParsedConfigVector* method_configs_ = nullptr;
 };
 
 FILTER_TEST(RetryInterceptorTest, NoOp) { ASSERT_TRUE(Init().ok()); }
@@ -90,7 +53,7 @@ FILTER_TEST(RetryInterceptorTest, NoOp) { ASSERT_TRUE(Init().ok()); }
 // call in, one child call out.
 FILTER_TEST(RetryInterceptorTest, SingleAttemptSucceeds) {
   ASSERT_TRUE(Init().ok());
-  StartCallForFilter(MakeClientInitialMetadata());
+  StartCallForFilter(NewServiceConfigClientMetadata());
 
   PushClientMessage(NewMessage("hello"));
   PushClientHalfClose();
@@ -120,7 +83,7 @@ FILTER_TEST(RetryInterceptorTest, RetriesOnRetryableStatus) {
     "backoffMultiplier": 1,
     "retryableStatusCodes": ["UNAVAILABLE"]
   })");
-  StartCall(MakeClientInitialMetadata());
+  StartCall(NewServiceConfigClientMetadata());
   PushClientMessage(NewMessage("hello"));
   PushClientHalfClose();
 
@@ -165,7 +128,7 @@ FILTER_TEST(RetryInterceptorTest, GivesUpAfterMaxAttempts) {
     "backoffMultiplier": 1,
     "retryableStatusCodes": ["UNAVAILABLE"]
   })");
-  StartCall(MakeClientInitialMetadata());
+  StartCall(NewServiceConfigClientMetadata());
   PushClientMessage(NewMessage("hello"));
   PushClientHalfClose();
 
