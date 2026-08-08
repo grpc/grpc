@@ -1528,6 +1528,11 @@ class TestMetricsSink final : public MetricsSink {
                  absl::Span<const std::string> /*label*/,
                  absl::string_view /*name*/, HistogramBuckets /*bounds*/,
                  absl::Span<const uint64_t> /*counts*/) override {}
+  void DoubleHistogram(InstrumentLabelList /*label_keys*/,
+                       absl::Span<const std::string> /*label*/,
+                       absl::string_view /*name*/,
+                       DoubleHistogramBuckets /*bounds*/,
+                       absl::Span<const uint64_t> /*counts*/) override {}
   void DoubleGauge(InstrumentLabelList /*label_keys*/,
                    absl::Span<const std::string> /*labels*/,
                    absl::string_view /*name*/, double /*value*/) override {}

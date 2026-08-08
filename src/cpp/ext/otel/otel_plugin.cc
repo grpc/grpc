@@ -548,6 +548,12 @@ class OpenTelemetryPluginImpl::CounterExporter final {
                    absl::Span<const uint64_t>) override {
       LOG(FATAL) << "Expected a counter, got a histogram";
     }
+    void DoubleHistogram(grpc_core::InstrumentLabelList,
+                         absl::Span<const std::string>, absl::string_view,
+                         grpc_core::DoubleHistogramBuckets,
+                         absl::Span<const uint64_t>) override {
+      LOG(FATAL) << "Expected a counter, got a double histogram";
+    }
     void DoubleGauge(grpc_core::InstrumentLabelList,
                      absl::Span<const std::string>, absl::string_view,
                      double) override {
@@ -774,6 +780,9 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
                 },
                 [&](grpc_core::InstrumentMetadata::HistogramShape) {
                   LOG(FATAL) << "Histogram shape is not supported yet";
+                },
+                [&](grpc_core::InstrumentMetadata::DoubleHistogramShape) {
+                  LOG(FATAL) << "Double histogram shape is not supported yet";
                 });
           });
       grpc_core::InstrumentLabelSet label_set;

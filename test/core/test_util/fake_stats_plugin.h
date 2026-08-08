@@ -488,6 +488,8 @@ class FakeStatsPlugin : public StatsPlugin {
       absl::string_view name, absl::Span<const absl::string_view> labels = {});
   std::optional<std::vector<uint64_t>> GetHistogramValueByName(
       absl::string_view name, absl::Span<const absl::string_view> labels = {});
+  std::optional<std::vector<uint64_t>> GetDoubleHistogramValueByName(
+      absl::string_view name, absl::Span<const absl::string_view> labels = {});
 
  private:
   template <typename T>
@@ -522,6 +524,16 @@ class FakeStatsPlugin : public StatsPlugin {
                    absl::Span<const std::string> label_values,
                    absl::string_view name, HistogramBuckets /*bounds*/,
                    absl::Span<const uint64_t> counts) override {
+      if constexpr (std::is_same_v<T, std::vector<uint64_t>>) {
+        RecordValue(label_keys, label_values, name,
+                    std::vector<uint64_t>(counts.begin(), counts.end()));
+      }
+    }
+    void DoubleHistogram(InstrumentLabelList label_keys,
+                         absl::Span<const std::string> label_values,
+                         absl::string_view name,
+                         DoubleHistogramBuckets /*bounds*/,
+                         absl::Span<const uint64_t> counts) override {
       if constexpr (std::is_same_v<T, std::vector<uint64_t>>) {
         RecordValue(label_keys, label_values, name,
                     std::vector<uint64_t>(counts.begin(), counts.end()));
