@@ -50,9 +50,9 @@
 //
 
 grpc_ssl_credentials::grpc_ssl_credentials(
-    const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
+    std::string pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
     const grpc_ssl_verify_peer_options* verify_options) {
-  build_config(pem_root_certs, pem_key_cert_pair, verify_options);
+  build_config(std::move(pem_root_certs), pem_key_cert_pair, verify_options);
   // Use default (e.g. OS) root certificates if the user did not pass any root
   // certificates.
   if (config_.pem_root_certs.empty()) {
@@ -144,9 +144,9 @@ grpc_core::UniqueTypeName grpc_ssl_credentials::Type() {
 }
 
 void grpc_ssl_credentials::build_config(
-    const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
+    std::string pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
     const grpc_ssl_verify_peer_options* verify_options) {
-  config_.pem_root_certs = pem_root_certs;
+  config_.pem_root_certs = std::move(pem_root_certs);
   if (pem_key_cert_pair != nullptr) {
     GRPC_CHECK_NE(pem_key_cert_pair->private_key, nullptr);
     GRPC_CHECK_NE(pem_key_cert_pair->cert_chain, nullptr);
@@ -228,6 +228,7 @@ grpc_channel_credentials* grpc_ssl_credentials_create(
       << ")";
   GRPC_CHECK_EQ(reserved, nullptr);
 
+  if (pem_root_certs == nullptr) pem_root_certs = "";
   return new grpc_ssl_credentials(
       pem_root_certs, pem_key_cert_pair,
       reinterpret_cast<const grpc_ssl_verify_peer_options*>(verify_options));
@@ -243,6 +244,7 @@ grpc_channel_credentials* grpc_ssl_credentials_create_ex(
       << ")";
   GRPC_CHECK_EQ(reserved, nullptr);
 
+  if (pem_root_certs == nullptr) pem_root_certs = "";
   return new grpc_ssl_credentials(pem_root_certs, pem_key_cert_pair,
                                   verify_options);
 }
@@ -270,9 +272,6 @@ grpc_ssl_server_credentials::grpc_ssl_server_credentials(
   }
 }
 
-grpc_ssl_server_credentials::~grpc_ssl_server_credentials() {
-  gpr_free(config_.pem_root_certs);
-}
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_ssl_server_credentials::create_security_connector(
     const grpc_core::ChannelArgs& args) {
@@ -301,11 +300,11 @@ grpc_core::PemKeyCertPairList grpc_convert_grpc_to_key_cert_pairs(
 }
 
 void grpc_ssl_server_credentials::build_config(
-    const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs,
-    size_t num_key_cert_pairs,
+    std::string pem_root_certs,
+    grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs, size_t num_key_cert_pairs,
     grpc_ssl_client_certificate_request_type client_certificate_request) {
   config_.client_certificate_request = client_certificate_request;
-  config_.pem_root_certs = gpr_strdup(pem_root_certs);
+  config_.pem_root_certs = std::move(pem_root_certs);
   config_.pem_key_cert_pairs = grpc_convert_grpc_to_key_cert_pairs(
       pem_key_cert_pairs, num_key_cert_pairs);
 }
@@ -327,7 +326,7 @@ grpc_ssl_server_certificate_config* grpc_ssl_server_certificate_config_create(
   grpc_ssl_server_certificate_config* config =
       static_cast<grpc_ssl_server_certificate_config*>(
           gpr_zalloc(sizeof(grpc_ssl_server_certificate_config)));
-  config->pem_root_certs = gpr_strdup(pem_root_certs);
+  if (pem_root_certs != nullptr) config->pem_root_certs = pem_root_certs;
   if (num_key_cert_pairs > 0) {
     GRPC_CHECK_NE(pem_key_cert_pairs, nullptr);
     config->pem_key_cert_pairs = static_cast<grpc_ssl_pem_key_cert_pair*>(
@@ -353,7 +352,6 @@ void grpc_ssl_server_certificate_config_destroy(
     gpr_free(const_cast<char*>(config->pem_key_cert_pairs[i].cert_chain));
   }
   gpr_free(config->pem_key_cert_pairs);
-  gpr_free(config->pem_root_certs);
   gpr_free(config);
 }
 
@@ -422,6 +420,7 @@ grpc_server_credentials* grpc_ssl_server_credentials_create_ex(
       << ", reserved=" << reserved << ")";
   GRPC_CHECK_EQ(reserved, nullptr);
 
+  if (pem_root_certs == nullptr) pem_root_certs = "";
   grpc_ssl_server_certificate_config* cert_config =
       grpc_ssl_server_certificate_config_create(
           pem_root_certs, pem_key_cert_pairs, num_key_cert_pairs);

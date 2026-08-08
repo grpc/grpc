@@ -63,7 +63,7 @@ grpc_ssl_channel_security_connector_create(
 // Config for ssl servers.
 struct grpc_ssl_server_config {
   grpc_core::PemKeyCertPairList pem_key_cert_pairs;
-  char* pem_root_certs = nullptr;
+  std::string pem_root_certs;
   grpc_ssl_client_certificate_request_type client_certificate_request =
       GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE;
   grpc_tls_version min_tls_version = grpc_tls_version::TLS1_2;
