@@ -139,7 +139,7 @@ grpc::Status StsCredentialsOptionsFromJson(const std::string& json_string,
                         "options cannot be nullptr.");
   }
   ClearStsCredentialsOptions(options);
-  auto json = grpc_core::JsonParse(json_string.c_str());
+  auto json = grpc_core::JsonParse(json_string);
   if (!json.ok() || json->type() != grpc_core::Json::Type::kObject) {
     return grpc::Status(
         grpc::StatusCode::INVALID_ARGUMENT,
@@ -200,13 +200,13 @@ grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options) {
                         "STS_CREDENTIALS environment variable not set.");
   }
   auto json_slice =
-      grpc_core::LoadFile(*sts_creds_path, /*add_null_terminator=*/true);
+      grpc_core::LoadFile(*sts_creds_path, /*add_null_terminator=*/false);
   if (!json_slice.ok()) {
     return grpc::Status(grpc::StatusCode::NOT_FOUND,
                         json_slice.status().ToString());
   }
-  return StsCredentialsOptionsFromJson(json_slice->as_string_view().data(),
-                                       options);
+  return StsCredentialsOptionsFromJson(
+      std::string(json_slice->as_string_view()), options);
 }
 
 // C++ to Core STS Credentials options.
