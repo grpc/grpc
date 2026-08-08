@@ -1627,17 +1627,26 @@ constexpr bool MethodHasChannelAccess<R (T::*)(A, C)> = true;
 template <typename... Ts>
 constexpr bool AnyMethodHasChannelAccess = (MethodHasChannelAccess<Ts> || ...);
 
+// Helper for CallHasChannelAccess() that accepts method pointers as function
+// arguments to avoid MSVC C3539 errors when methods have deduced return types
+// (e.g. for FusedFilter types whose Call methods have auto return types).
+template <typename T1, typename T2, typename T3, typename T4, typename T5,
+          typename T6>
+inline constexpr bool CallHasChannelAccessHelper(T1, T2, T3, T4, T5, T6) {
+  return AnyMethodHasChannelAccess<T1, T2, T3, T4, T5, T6>;
+}
+
 // Composite for a given channel type to determine if any of its interceptors
 // fall into this category: later code should use this.
 template <typename Derived>
 inline constexpr bool CallHasChannelAccess() {
-  return AnyMethodHasChannelAccess<
-      decltype(&Derived::Call::OnClientInitialMetadata),
-      decltype(&Derived::Call::OnClientToServerMessage),
-      decltype(&Derived::Call::OnServerInitialMetadata),
-      decltype(&Derived::Call::OnServerToClientMessage),
-      decltype(&Derived::Call::OnServerTrailingMetadata),
-      decltype(&Derived::Call::OnFinalize)>;
+  return CallHasChannelAccessHelper(
+      &Derived::Call::OnClientInitialMetadata,
+      &Derived::Call::OnClientToServerMessage,
+      &Derived::Call::OnServerInitialMetadata,
+      &Derived::Call::OnServerToClientMessage,
+      &Derived::Call::OnServerTrailingMetadata,
+      &Derived::Call::OnFinalize);
 }
 }  // namespace filters_detail
 
