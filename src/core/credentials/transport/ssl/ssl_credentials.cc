@@ -300,8 +300,8 @@ grpc_core::PemKeyCertPairList grpc_convert_grpc_to_key_cert_pairs(
 }
 
 void grpc_ssl_server_credentials::build_config(
-    std::string pem_root_certs,
-    grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs, size_t num_key_cert_pairs,
+    std::string pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs,
+    size_t num_key_cert_pairs,
     grpc_ssl_client_certificate_request_type client_certificate_request) {
   config_.client_certificate_request = client_certificate_request;
   config_.pem_root_certs = std::move(pem_root_certs);
