@@ -1045,10 +1045,6 @@ class ArtifactGen {
     if (absl::StartsWith(test, "test/core/promise/benchmark:")) return false;
     // we have trouble with census dependency outside of bazel
     if (absl::StartsWith(test, "test/cpp/ext/filters/census:")) return false;
-    if (absl::StartsWith(test,
-                         "test/core/server:xds_channel_stack_modifier_test")) {
-      return false;
-    }
     if (absl::StartsWith(test, "test/cpp/ext/gcp:")) return false;
     if (absl::StartsWith(test, "test/cpp/ext/filters/logging:")) return false;
     if (absl::StartsWith(test, "test/cpp/interop:observability_interop")) {

@@ -94,12 +94,10 @@ void RegisterBuiltins(CoreConfiguration::Builder* builder) {
       ->RegisterFilter(GRPC_SERVER_VIRTUAL_CHANNEL, &Server::kServerTopFilter)
       .SkipV3()
       .BeforeAll();
-  if (IsXdsServerFilterChainPerRouteEnabled()) {
-    builder->channel_init()
-        ->RegisterFilter<ServerConfigSelectorInterceptor>(GRPC_SERVER_CHANNEL)
-        .IfHasChannelArg(ServerConfigSelectorProvider::ChannelArgName())
-        .After({LegacyMaxAgeFilter::kFilter.name});
-  }
+  builder->channel_init()
+      ->RegisterFilter<ServerConfigSelectorInterceptor>(GRPC_SERVER_CHANNEL)
+      .IfHasChannelArg(ServerConfigSelectorProvider::ChannelArgName())
+      .After({LegacyMaxAgeFilter::kFilter.name});
 }
 
 }  // namespace

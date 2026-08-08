@@ -64,10 +64,6 @@ void XdsHttpExtProcFilterFactory::AddFilter(
   builder.AddFilter<ExtProcFilter>(std::move(config));
 }
 
-const grpc_channel_filter* XdsHttpExtProcFilterFactory::channel_filter() const {
-  return &ExtProcFilter::kFilterVtable;
-}
-
 namespace {
 
 bool ParseHeaderProcessingMode(int32_t value, ValidationErrors* errors) {

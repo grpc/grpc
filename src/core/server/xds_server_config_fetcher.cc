@@ -54,7 +54,6 @@
 #include "src/core/server/server.h"
 #include "src/core/server/server_config_selector.h"
 #include "src/core/server/server_config_selector_filter.h"
-#include "src/core/server/xds_channel_stack_modifier.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_impl.h"
 #include "src/core/util/debug_location.h"
@@ -381,7 +380,7 @@ class XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::
   std::unique_ptr<ConnectionState> BuildFilterChains(
       FilterChainBuilder& builder) override;
 
-  absl::StatusOr<CallConfig> GetCallConfig(
+  absl::StatusOr<RefCountedPtr<const FilterChain>> GetCallConfig(
       const ConnectionState* state, grpc_metadata_batch* metadata) override;
 
  private:
@@ -951,8 +950,7 @@ class XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::
     }
   }
 
-  absl::StatusOr<RefCountedPtr<ServerConfigSelector>> Watch(
-      std::shared_ptr<ServerConfigSelectorWatcher> watcher) override {
+  void Watch(std::shared_ptr<ServerConfigSelectorWatcher> watcher) override {
     fetcher_state_->work_serializer.Run(
         [self = WeakRefAsSubclass<XdsServerConfigSelectorProvider>(),
          watcher = std::move(watcher)]()
@@ -961,7 +959,6 @@ class XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::
               watcher->OnServerConfigSelectorUpdate(self->config_selector_);
               self->watchers_.insert(std::move(watcher));
             });
-    return nullptr;
   }
 
   void CancelWatch(
@@ -1273,11 +1270,10 @@ XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::L4FilterChain::
   return connection_state;
 }
 
-absl::StatusOr<ServerConfigSelector::CallConfig>
+absl::StatusOr<RefCountedPtr<const FilterChain>>
 XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::L4FilterChain::
     XdsServerConfigSelector::GetCallConfig(const ConnectionState* state,
                                            grpc_metadata_batch* metadata) {
-  CallConfig call_config;
   if (metadata->get_pointer(HttpPathMetadata()) == nullptr) {
     return absl::InternalError("no path found");
   }
@@ -1312,25 +1308,16 @@ XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::L4FilterChain::
   auto it = filter_chains.find(&route);
   if (it == filter_chains.end()) {
     // Should never happen.
-    call_config.filter_chain =
-        absl::InternalError("no filter chain found for route");
-  } else {
-    call_config.filter_chain = it->second;
+    return absl::InternalError("no filter chain found for route");
   }
-  return call_config;
+  return it->second;
 }
 
 }  // namespace
 }  // namespace grpc_core
 
-grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create_legacy(
-    grpc_server_xds_status_notifier notifier, const grpc_channel_args* args);
-
 grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
     grpc_server_xds_status_notifier notifier, const grpc_channel_args* args) {
-  if (!grpc_core::IsXdsServerFilterChainPerRouteEnabled()) {
-    return grpc_server_config_fetcher_xds_create_legacy(notifier, args);
-  }
   grpc_core::ExecCtx exec_ctx;
   grpc_core::ChannelArgs channel_args = grpc_core::CoreConfiguration::Get()
                                             .channel_args_preconditioning()
