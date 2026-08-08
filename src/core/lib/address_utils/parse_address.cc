@@ -55,6 +55,25 @@
 
 // IWYU pragma: no_include <arpa/inet.h>
 
+namespace {
+
+constexpr uint32_t kMaxPort = 65535;
+
+bool ParseNumericPort(absl::string_view port, uint16_t* out) {
+  if (port.empty()) return false;
+  uint32_t value = 0;
+  for (char c : port) {
+    if (c < '0' || c > '9') return false;
+    const uint32_t digit = static_cast<uint32_t>(c - '0');
+    if (value > (kMaxPort - digit) / 10) return false;
+    value = value * 10 + digit;
+  }
+  *out = static_cast<uint16_t>(value);
+  return true;
+}
+
+}  // namespace
+
 #ifdef GRPC_HAVE_UNIX_SOCKET
 
 bool grpc_parse_unix(const grpc_core::URI& uri,
@@ -235,13 +254,12 @@ bool grpc_parse_ipv4_hostport(absl::string_view hostport,
     if (log_errors) LOG(ERROR) << "no port given for ipv4 scheme";
     goto done;
   }
-  int port_num;
-  if (sscanf(port.c_str(), "%d", &port_num) != 1 || port_num < 0 ||
-      port_num > 65535) {
+  uint16_t port_num;
+  if (!ParseNumericPort(port, &port_num)) {
     if (log_errors) LOG(ERROR) << "invalid ipv4 port: '" << port << "'";
     goto done;
   }
-  in->sin_port = grpc_htons(static_cast<uint16_t>(port_num));
+  in->sin_port = grpc_htons(port_num);
   success = true;
 done:
   return success;
@@ -324,13 +342,12 @@ bool grpc_parse_ipv6_hostport(absl::string_view hostport,
     if (log_errors) LOG(ERROR) << "no port given for ipv6 scheme";
     goto done;
   }
-  int port_num;
-  if (sscanf(port.c_str(), "%d", &port_num) != 1 || port_num < 0 ||
-      port_num > 65535) {
+  uint16_t port_num;
+  if (!ParseNumericPort(port, &port_num)) {
     if (log_errors) LOG(ERROR) << "invalid ipv6 port: '" << port << "'";
     goto done;
   }
-  in6->sin6_port = grpc_htons(static_cast<uint16_t>(port_num));
+  in6->sin6_port = grpc_htons(port_num);
   success = true;
 done:
   return success;
@@ -368,12 +385,19 @@ bool grpc_parse_uri(const grpc_core::URI& uri,
 }
 
 uint16_t grpc_strhtons(const char* port) {
+  if (port == nullptr) {
+    return htons(0);
+  }
   if (strcmp(port, "http") == 0) {
     return htons(80);
   } else if (strcmp(port, "https") == 0) {
     return htons(443);
   }
-  return htons(static_cast<unsigned short>(atoi(port)));
+  uint16_t port_num;
+  if (!ParseNumericPort(port, &port_num)) {
+    return htons(0);
+  }
+  return htons(port_num);
 }
 
 namespace grpc_core {
