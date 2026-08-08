@@ -33,6 +33,12 @@ namespace grpc_core {
 // brackets will not be added.
 std::string JoinHostPort(absl::string_view host, int port);
 
+// Overload that keeps the port as a string rather than an int. Useful when the
+// caller wants the original (possibly invalid) port text preserved so that a
+// downstream parser can validate it, instead of being silently normalised by an
+// integer conversion.
+std::string JoinHostPort(absl::string_view host, absl::string_view port);
+
 /// Given a name in the form "host:port" or "[ho:st]:port", split into hostname
 /// and port number.
 
