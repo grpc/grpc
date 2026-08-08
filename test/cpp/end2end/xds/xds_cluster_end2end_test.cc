@@ -211,7 +211,9 @@ TEST_P(CdsTest, CircuitBreaking) {
   // Start exactly max_concurrent_requests RPCs.
   AsyncRpc rpcs[kMaxConcurrentRequests];
   for (size_t i = 0; i < kMaxConcurrentRequests; ++i) {
-    rpcs[i].StartRpc(stub_.get());
+    rpcs[i].StartRpc(stub_.get(),
+                     RpcOptions().set_timeout_ms(0).set_client_cancel_after_us(
+                         1 * 1000 * 1000));
   }
   // Wait for all RPCs to be in flight.
   while (backends_[0]->backend_service()->RpcsWaitingForClientCancel() <
@@ -257,7 +259,9 @@ TEST_P(CdsTest, CircuitBreakingMultipleChannelsShareCallCounter) {
   // the two channels.
   AsyncRpc rpcs[kMaxConcurrentRequests];
   for (size_t i = 0; i < kMaxConcurrentRequests; ++i) {
-    rpcs[i].StartRpc(i % 2 == 0 ? stub_.get() : stub2.get());
+    rpcs[i].StartRpc(i % 2 == 0 ? stub_.get() : stub2.get(),
+                     RpcOptions().set_timeout_ms(0).set_client_cancel_after_us(
+                         1 * 1000 * 1000));
   }
   // Wait for all RPCs to be in flight.
   while (backends_[0]->backend_service()->RpcsWaitingForClientCancel() <
