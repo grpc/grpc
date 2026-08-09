@@ -116,14 +116,14 @@ std::string CaptureSslErrors() {
 
 absl::Status DERToRawSignature(const unsigned char* der_sig, size_t der_len,
                                int coord_size, std::vector<uint8_t>& raw_sig) {
-  if (!der_sig || der_len == 0) {
+  if (der_sig == nullptr || der_len == 0) {
     return GRPC_ERROR_CREATE("Input DER signature is empty");
   }
 
   std::unique_ptr<ECDSA_SIG, OpenSslDeleter> ecdsa_sig(
       d2i_ECDSA_SIG(nullptr, &der_sig, der_len));
 
-  if (!ecdsa_sig) {
+  if (ecdsa_sig == nullptr) {
     char err_buf[256];
     ERR_error_string_n(ERR_get_error(), err_buf, sizeof(err_buf));
     return GRPC_ERROR_CREATE(
@@ -134,7 +134,7 @@ absl::Status DERToRawSignature(const unsigned char* der_sig, size_t der_len,
   const BIGNUM* s;
   ECDSA_SIG_get0(ecdsa_sig.get(), &r, &s);
 
-  if (!r || !s) {
+  if (r == nullptr || s == nullptr) {
     return GRPC_ERROR_CREATE("Error: Could not get r or s from ECDSA_SIG");
   }
 
@@ -175,7 +175,7 @@ GDCHServiceAccountCredentials::SignUsingSha256(const std::string& str,
   ERR_clear_error();
   std::unique_ptr<BIO, OpenSslDeleter> pem_buffer(BIO_new_mem_buf(
       pem_contents.data(), static_cast<int>(pem_contents.length())));
-  if (!pem_buffer) {
+  if (pem_buffer == nullptr) {
     return GRPC_ERROR_CREATE(absl::StrCat(
         "Invalid ServiceAccountCredentials could not create PEM buffer: ",
         CaptureSslErrors()));
@@ -189,7 +189,7 @@ GDCHServiceAccountCredentials::SignUsingSha256(const std::string& str,
       // applicable for formats such as PKCS12 (.p12 files) that use
       // a password, which we don't currently support.
       nullptr));
-  if (!private_key) {
+  if (private_key == nullptr) {
     return GRPC_ERROR_CREATE(
         absl::StrCat("Invalid ServiceAccountCredentials could not parse PEM to "
                      "get private key: ",
@@ -197,7 +197,7 @@ GDCHServiceAccountCredentials::SignUsingSha256(const std::string& str,
   }
 
   std::unique_ptr<EVP_MD_CTX, OpenSslDeleter> digest_ctx = GetDigestCtx();
-  if (!digest_ctx) {
+  if (digest_ctx == nullptr) {
     return GRPC_ERROR_CREATE(
         absl::StrCat("Invalid ServiceAccountCredentials could not create "
                      "context for OpenSSL digest: ",
