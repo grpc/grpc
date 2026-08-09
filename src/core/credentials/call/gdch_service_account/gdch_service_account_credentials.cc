@@ -51,6 +51,7 @@
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
+#include "src/core/util/string.h"
 #include "src/core/util/time.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/uri.h"
@@ -97,7 +98,7 @@ std::unique_ptr<EVP_MD_CTX, OpenSslDeleter> GetDigestCtx() {
 
 std::string CaptureSslErrors() {
   std::string msg;
-  const char* sep = "";
+  absl::string_view sep = "";
   while (auto code = ERR_get_error()) {
     // OpenSSL guarantees that 256 bytes is enough:
     //   https://www.openssl.org/docs/man1.1.1/man3/ERR_error_string_n.html
@@ -106,8 +107,8 @@ std::string CaptureSslErrors() {
     constexpr auto kMaxOpenSslErrorLength = 256;
     std::array<char, kMaxOpenSslErrorLength> buf{};
     ERR_error_string_n(code, buf.data(), buf.size());
-    msg += sep;
-    msg += buf.data();
+    StrAppend(msg, sep);
+    StrAppend(msg, buf.data());
     sep = ", ";
   }
   return msg;
@@ -387,12 +388,12 @@ GDCHServiceAccountCredentials::AssertionComponentsFromInfo(
 absl::StatusOr<std::string> GDCHServiceAccountCredentials::MakeJWTAssertion(
     const std::string& header, const std::string& claim,
     const std::string& pem_contents, SignatureFormat format) {
-  const auto body = absl::WebSafeBase64Escape(header) + '.' +
-                    absl::WebSafeBase64Escape(claim);
+  const auto body = absl::StrCat(absl::WebSafeBase64Escape(header), ".",
+                                 absl::WebSafeBase64Escape(claim));
   auto pem_signature = SignUsingSha256(body, pem_contents, format);
   if (!pem_signature.ok()) return std::move(pem_signature).status();
   std::string sig_str{pem_signature->begin(), pem_signature->end()};
-  return body + '.' + absl::WebSafeBase64Escape(sig_str);
+  return absl::StrCat(body, ".", absl::WebSafeBase64Escape(sig_str));
 }
 
 absl::StatusOr<std::string> GDCHServiceAccountCredentials::CreateRequestBody(
