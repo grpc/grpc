@@ -82,7 +82,9 @@ class GDCHServiceAccountCredentials final : public HttpTokenFetcherCredentials {
 
   GDCHServiceAccountCredentials(Info info, std::string audience);
 
-  const std::optional<std::string>& ca_cert_path() const { return info_.ca_cert_path; }
+  const std::optional<std::string>& ca_cert_path() const {
+    return info_.ca_cert_path;
+  }
 
   std::string debug_string() override;
 

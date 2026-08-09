@@ -5357,7 +5357,7 @@ int gdch_service_account_creds_httpcli_post_success(
   EXPECT_EQ(absl::string_view(request->hdrs[0].key), "content-type");
   EXPECT_EQ(absl::string_view(request->hdrs[0].value), "application/json");
 
-  auto parsed_body = JsonParse(body);
+  absl::StatusOr<Json> parsed_body = JsonParse(body);
   EXPECT_TRUE(parsed_body.ok()) << parsed_body.status().ToString();
   EXPECT_EQ(parsed_body->object().at("grant_type").string(),
             "urn:ietf:params:oauth:token-type:token-exchange");
@@ -5399,7 +5399,8 @@ TEST_F(CredentialsTest, TestGDCHServiceAccountCredsSuccess) {
   // Check security level.
   EXPECT_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   // First request: http post should be called.
-  auto state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
+  RefCountedPtr<RequestMetadataState> state =
+      RequestMetadataState::NewInstance(absl::OkStatus(), emd);
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            gdch_service_account_creds_httpcli_post_success,
                            httpcli_put_should_not_be_called);
@@ -5423,7 +5424,7 @@ TEST_F(CredentialsTest, TestGDCHServiceAccountCredsFailure) {
   ExecCtx exec_ctx;
   const char expected_creds_debug_string[] =
       "GDCHServiceAccountCredentials{Audience:https://my-audience.com}";
-  auto state = RequestMetadataState::NewInstance(
+  RefCountedPtr<RequestMetadataState> state = RequestMetadataState::NewInstance(
       absl::UnauthenticatedError("HTTP token fetch failed with status 403"),
       {});
   std::string json = CreateGdchValidJsonString();
@@ -5478,12 +5479,13 @@ TEST_F(GDCHServiceAccountCredentialsTest, Basic) {
       {"token_uri", Json::FromString("https://test-token-uri.com/token")},
   };
 
-  auto creds = GDCHServiceAccountCredentials::Create(Json::FromObject(obj),
-                                                     "https://my-audience.com");
+  absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> creds =
+      GDCHServiceAccountCredentials::Create(Json::FromObject(obj),
+                                            "https://my-audience.com");
   ASSERT_TRUE(creds.ok()) << creds.status().ToString();
   ASSERT_NE(*creds, nullptr);
   EXPECT_EQ((*creds)->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
-  auto state = RequestMetadataState::NewInstance(
+  RefCountedPtr<RequestMetadataState> state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer my-exchanged-gdch-token");
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            gdch_service_account_creds_httpcli_post_success,
@@ -5503,15 +5505,15 @@ MATCHER(AccessTokenIsSTSBearer, "access token is STS Bearer") {
 // the presence of the input environment variables to enable.
 TEST_F(GDCHServiceAccountCredentialsTest,
        RetrievesBearerTokenInAdhocEnvironemnt) {
-  auto key_file_env = GetEnv("GRPC_TEST_GDCH_KEY_FILE");
-  auto audience_env = GetEnv("GRPC_TEST_GDCH_AUDIENCE");
+  std::optional<std::string> key_file_env = GetEnv("GRPC_TEST_GDCH_KEY_FILE");
+  std::optional<std::string> audience_env = GetEnv("GRPC_TEST_GDCH_AUDIENCE");
   if (!key_file_env.has_value() || !audience_env.has_value()) GTEST_SKIP();
 
   std::ifstream is(*key_file_env);
-  auto contents = std::string{std::istreambuf_iterator<char>{is}, {}};
+  std::string contents = std::string{std::istreambuf_iterator<char>{is}, {}};
   ASSERT_THAT(contents, Not(::testing::IsEmpty()));
 
-  auto creds = grpc_gdch_service_account_credentials_create(
+  grpc_call_credentials* creds = grpc_gdch_service_account_credentials_create(
       contents.c_str(), audience_env->c_str());
   ASSERT_THAT(creds, ::testing::NotNull());
 
