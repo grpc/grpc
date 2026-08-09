@@ -76,8 +76,6 @@ GDCHServiceAccountCredentials::Info CreateValidInfo() {
 }  // namespace
 
 class GDCHServiceAccountCredentialsTest : public ::testing::Test {
-  friend class GDCHServiceAccountCredentials;
-
  protected:
   using SignatureFormat = GDCHServiceAccountCredentials::SignatureFormat;
   using AssertionComponents =
