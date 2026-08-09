@@ -50,8 +50,8 @@
 namespace grpc_core {
 namespace {
 
-auto constexpr kExpectedFormatVersion = "1";
-auto constexpr kTokenLifetime = std::chrono::seconds(3600);
+constexpr auto kExpectedFormatVersion = "1";
+constexpr auto kTokenLifetime = std::chrono::seconds(3600);
 
 struct OpenSslDeleter {
   void operator()(EVP_MD_CTX* ptr) {
@@ -79,13 +79,13 @@ std::unique_ptr<EVP_MD_CTX, OpenSslDeleter> GetDigestCtx() {
 
 std::string CaptureSslErrors() {
   std::string msg;
-  char const* sep = "";
+  const char* sep = "";
   while (auto code = ERR_get_error()) {
     // OpenSSL guarantees that 256 bytes is enough:
     //   https://www.openssl.org/docs/man1.1.1/man3/ERR_error_string_n.html
     //   https://www.openssl.org/docs/man1.0.2/man3/ERR_error_string_n.html
     // we could not find a macro or constant to replace the 256 literal.
-    auto constexpr kMaxOpenSslErrorLength = 256;
+    constexpr auto kMaxOpenSslErrorLength = 256;
     std::array<char, kMaxOpenSslErrorLength> buf{};
     ERR_error_string_n(code, buf.data(), buf.size());
     msg += sep;
@@ -95,7 +95,7 @@ std::string CaptureSslErrors() {
   return msg;
 }
 
-absl::Status DERToRawSignature(unsigned char const* der_sig, size_t der_len,
+absl::Status DERToRawSignature(const unsigned char* der_sig, size_t der_len,
                                int coord_size, std::vector<uint8_t>& raw_sig) {
   if (!der_sig || der_len == 0) {
     return GRPC_ERROR_CREATE("Input DER signature is empty");
@@ -122,7 +122,7 @@ absl::Status DERToRawSignature(unsigned char const* der_sig, size_t der_len,
   raw_sig.resize(2 * coord_size);
   unsigned char* raw_sig_ptr = raw_sig.data();
 
-  auto constexpr kErrorMessage =
+  constexpr auto kErrorMessage =
       R"""(Error converting %s to binary (expected %d bytes, got %d): %s)""";
   // Convert r to binary, padded to coord_size.
   int r_len = BN_bn2binpad(r, &raw_sig_ptr[0], coord_size);
@@ -150,8 +150,8 @@ absl::Status DERToRawSignature(unsigned char const* der_sig, size_t der_len,
 }  // namespace
 
 absl::StatusOr<std::vector<std::uint8_t>>
-GDCHServiceAccountCredentials::SignUsingSha256(std::string const& str,
-                                               std::string const& pem_contents,
+GDCHServiceAccountCredentials::SignUsingSha256(const std::string& str,
+                                               const std::string& pem_contents,
                                                SignatureFormat format) {
   ERR_clear_error();
   auto pem_buffer = std::unique_ptr<BIO, OpenSslDeleter>(BIO_new_mem_buf(
@@ -186,7 +186,7 @@ GDCHServiceAccountCredentials::SignUsingSha256(std::string const& str,
         CaptureSslErrors());
   }
 
-  auto constexpr kOpenSslSuccess = 1;
+  constexpr auto kOpenSslSuccess = 1;
   if (EVP_DigestSignInit(digest_ctx.get(), nullptr, EVP_sha256(), nullptr,
                          private_key.get()) != kOpenSslSuccess) {
     return GRPC_ERROR_CREATE(
@@ -235,26 +235,26 @@ GDCHServiceAccountCredentials::SignUsingSha256(std::string const& str,
 }
 
 absl::StatusOr<GDCHServiceAccountCredentials::Info>
-GDCHServiceAccountCredentials::ParseServiceAccountJson(Json const& json) {
+GDCHServiceAccountCredentials::ParseServiceAccountJson(const Json& json) {
   if (json.type() != Json::Type::kObject) {
     return GRPC_ERROR_CREATE("Invalid json to construct credentials info.");
   }
   using iterator_type = Json::Object::const_iterator;
   using Validator =
-      std::function<absl::Status(absl::string_view name, iterator_type const&,
+      std::function<absl::Status(absl::string_view name, const iterator_type&,
                                  std::optional<std::string>)>;
-  using Store = std::function<void(Info&, iterator_type const&)>;
+  using Store = std::function<void(Info&, const iterator_type&)>;
 
-  auto optional_field = [&](absl::string_view name, iterator_type const& l,
-                            std::optional<std::string> const&) {
+  auto optional_field = [&](absl::string_view name, const iterator_type& l,
+                            const std::optional<std::string>&) {
     if (l == json.object().end()) return absl::OkStatus();
     if (l->second.string().empty()) {
       return GRPC_ERROR_CREATE(absl::StrCat(name, " field must not be empty"));
     }
     return absl::OkStatus();
   };
-  auto required_field = [&](absl::string_view name, iterator_type const& l,
-                            std::optional<std::string> const& value) {
+  auto required_field = [&](absl::string_view name, const iterator_type& l,
+                            const std::optional<std::string>& value) {
     if (l == json.object().end()) {
       return GRPC_ERROR_CREATE(absl::StrCat(name, " field not present"));
     }
@@ -275,37 +275,37 @@ GDCHServiceAccountCredentials::ParseServiceAccountJson(Json const& json) {
   };
   std::vector<Field> fields{
       {"type", required_field,
-       [](Info& info, iterator_type const& l) {
+       [](Info& info, const iterator_type& l) {
          info.type = l->second.string();
        },
        GRPC_AUTH_JSON_TYPE_GDCH_SERVICE_ACCOUNT},
       {"format_version", required_field,
-       [](Info& info, iterator_type const& l) {
+       [](Info& info, const iterator_type& l) {
          info.format_version = l->second.string();
        },
        kExpectedFormatVersion},
       {"project", required_field,
-       [](Info& info, iterator_type const& l) {
+       [](Info& info, const iterator_type& l) {
          info.project_id = l->second.string();
        }},
       {"private_key_id", required_field,
-       [&](Info& info, iterator_type const& l) {
+       [&](Info& info, const iterator_type& l) {
          info.private_key_id = l->second.string();
        }},
       {"private_key", required_field,
-       [](Info& info, iterator_type const& l) {
+       [](Info& info, const iterator_type& l) {
          info.private_key = l->second.string();
        }},
       {"name", required_field,
-       [&](Info& info, iterator_type const& l) {
+       [&](Info& info, const iterator_type& l) {
          info.service_identity_name = l->second.string();
        }},
       {"ca_cert_path", optional_field,
-       [&](Info& info, iterator_type const& l) {
+       [&](Info& info, const iterator_type& l) {
          if (l == json.object().end()) return;
          info.ca_cert_path = l->second.string();
        }},
-      {"token_uri", required_field, [&](Info& info, iterator_type const& l) {
+      {"token_uri", required_field, [&](Info& info, const iterator_type& l) {
          info.token_uri = l->second.string();
        }}};
 
@@ -325,7 +325,7 @@ GDCHServiceAccountCredentials::ParseServiceAccountJson(Json const& json) {
 
 absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>>
 GDCHServiceAccountCredentials::Create(
-    Json const& key_file_contents, std::string audience,
+    const Json& key_file_contents, std::string audience,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine>
         event_engine) {
   auto info = ParseServiceAccountJson(key_file_contents);
@@ -345,7 +345,7 @@ GDCHServiceAccountCredentials::GDCHServiceAccountCredentials(
 
 GDCHServiceAccountCredentials::AssertionComponents
 GDCHServiceAccountCredentials::AssertionComponentsFromInfo(
-    Info const& info, std::chrono::system_clock::time_point now) {
+    const Info& info, std::chrono::system_clock::time_point now) {
   Json header = Json::FromObject({
       {"alg", Json::FromString("ES256")},
       {"typ", Json::FromString("JWT")},
@@ -353,9 +353,9 @@ GDCHServiceAccountCredentials::AssertionComponentsFromInfo(
   });
 
   auto expiration = now + kTokenLifetime;
-  auto const now_from_epoch =
+  const auto now_from_epoch =
       static_cast<std::intmax_t>(std::chrono::system_clock::to_time_t(now));
-  auto const expiration_from_epoch = static_cast<std::intmax_t>(
+  const auto expiration_from_epoch = static_cast<std::intmax_t>(
       std::chrono::system_clock::to_time_t(expiration));
   auto iss_sub_value = absl::StrCat("system:serviceaccount:", info.project_id,
                                     ":", info.service_identity_name);
@@ -372,9 +372,9 @@ GDCHServiceAccountCredentials::AssertionComponentsFromInfo(
 }
 
 absl::StatusOr<std::string> GDCHServiceAccountCredentials::MakeJWTAssertion(
-    std::string const& header, std::string const& claim,
-    std::string const& pem_contents, SignatureFormat format) {
-  auto const body = absl::WebSafeBase64Escape(header) + '.' +
+    const std::string& header, const std::string& claim,
+    const std::string& pem_contents, SignatureFormat format) {
+  const auto body = absl::WebSafeBase64Escape(header) + '.' +
                     absl::WebSafeBase64Escape(claim);
   auto pem_signature = SignUsingSha256(body, pem_contents, format);
   if (!pem_signature.ok()) return std::move(pem_signature).status();
@@ -383,7 +383,7 @@ absl::StatusOr<std::string> GDCHServiceAccountCredentials::MakeJWTAssertion(
 }
 
 absl::StatusOr<std::string> GDCHServiceAccountCredentials::CreateRequestBody(
-    Info const& info, std::string const& audience) {
+    const Info& info, const std::string& audience) {
   auto [header, claim] =
       AssertionComponentsFromInfo(info, std::chrono::system_clock::now());
   auto jwt =
@@ -411,8 +411,8 @@ void GDCHServiceAccountCredentials::GrpcDeleter::operator()(
 }
 
 absl::StatusOr<GDCHServiceAccountCredentials::GrpcHttpRequestUniquePtr>
-GDCHServiceAccountCredentials::FormatHttpRequest(Info const& info,
-                                                 std::string const& audience) {
+GDCHServiceAccountCredentials::FormatHttpRequest(const Info& info,
+                                                 const std::string& audience) {
   auto body = CreateRequestBody(info, audience);
   if (!body.ok()) return body.status();
 
@@ -422,8 +422,8 @@ GDCHServiceAccountCredentials::FormatHttpRequest(Info const& info,
   if (!url.ok()) return url.status();
   request->path = gpr_strdup(url->path().empty() ? "/" : url->path().c_str());
   request->hdr_count = 1;
-  request->hdrs = static_cast<grpc_http_header*>(
-      gpr_malloc(sizeof(grpc_http_header)));
+  request->hdrs =
+      static_cast<grpc_http_header*>(gpr_malloc(sizeof(grpc_http_header)));
   request->hdrs[0].key = gpr_strdup("content-type");
   request->hdrs[0].value = gpr_strdup("application/json");
 
@@ -433,7 +433,7 @@ GDCHServiceAccountCredentials::FormatHttpRequest(Info const& info,
 }
 
 absl::StatusOr<std::string> GDCHServiceAccountCredentials::ParseHttpResponse(
-    std::string const& response_body) {
+    const std::string& response_body) {
   auto response_json = JsonParse(response_body);
   if (!response_json.ok() || response_json->type() != Json::Type::kObject) {
     return GRPC_ERROR_CREATE(

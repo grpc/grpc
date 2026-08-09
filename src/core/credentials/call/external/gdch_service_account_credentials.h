@@ -68,12 +68,12 @@ class GDCHServiceAccountCredentials final : public ExternalAccountCredentials {
     std::string private_key_id;
     std::string private_key;
     std::string service_identity_name;
-    std::optional<std::string> ca_cert_path = std::nullopt;
+    std::optional<std::string> ca_cert_path;
     std::string token_uri;
   };
 
   static absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> Create(
-      Json const& key_file_contents, std::string audience,
+      const Json& key_file_contents, std::string audience,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine = nullptr);
 
@@ -113,27 +113,26 @@ class GDCHServiceAccountCredentials final : public ExternalAccountCredentials {
   //
   // @return the signature as an *unencoded* byte array.
   static absl::StatusOr<std::vector<std::uint8_t>> SignUsingSha256(
-      std::string const& str, std::string const& pem_contents,
+      const std::string& str, const std::string& pem_contents,
       SignatureFormat format);
 
-  static absl::StatusOr<Info> ParseServiceAccountJson(Json const& json);
-
+  static absl::StatusOr<Info> ParseServiceAccountJson(const Json& json);
 
   static AssertionComponents AssertionComponentsFromInfo(
-      Info const& info, std::chrono::system_clock::time_point now);
+      const Info& info, std::chrono::system_clock::time_point now);
 
   static absl::StatusOr<std::string> MakeJWTAssertion(
-      std::string const& header, std::string const& payload,
-      std::string const& pem_contents, SignatureFormat format);
+      const std::string& header, const std::string& payload,
+      const std::string& pem_contents, SignatureFormat format);
 
   static absl::StatusOr<std::string> CreateRequestBody(
-      Info const& info, std::string const& audience);
+      const Info& info, const std::string& audience);
 
   static absl::StatusOr<GrpcHttpRequestUniquePtr> FormatHttpRequest(
-      Info const& info, std::string const& audience);
+      const Info& info, const std::string& audience);
 
   static absl::StatusOr<std::string> ParseHttpResponse(
-      std::string const& response_body);
+      const std::string& response_body);
 
   static UniqueTypeName Type();
 
