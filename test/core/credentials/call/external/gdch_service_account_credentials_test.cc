@@ -67,6 +67,7 @@ GDCHServiceAccountCredentials::Info CreateValidInfo() {
 
 class GDCHServiceAccountCredentialsTest : public ::testing::Test {
   friend class GDCHServiceAccountCredentials;
+
  protected:
   using SignatureFormat = GDCHServiceAccountCredentials::SignatureFormat;
   using AssertionComponents =
@@ -116,8 +117,6 @@ class GDCHServiceAccountCredentialsTest : public ::testing::Test {
       const std::string& response_body) {
     return GDCHServiceAccountCredentials::ParseHttpResponse(response_body);
   }
-
-  static UniqueTypeName Type() { return GDCHServiceAccountCredentials::Type(); }
 };
 
 namespace {
@@ -268,6 +267,7 @@ TEST_F(GDCHServiceAccountCredentialsTest, CreateSuccess) {
   ASSERT_NE(*creds, nullptr);
   EXPECT_EQ((*creds)->debug_string(),
             "GDCHServiceAccountCredentials{Audience:}");
+  EXPECT_EQ((*creds)->type().name(), "GDCHServiceAccountCredentials");
 }
 
 TEST_F(GDCHServiceAccountCredentialsTest, CreateFailureInvalidJson) {
@@ -431,12 +431,6 @@ TEST_F(GDCHServiceAccountCredentialsTest,
        ParseHttpResponseFailureTokenNotString) {
   auto token = ParseHttpResponse("{\"access_token\": 123}");
   EXPECT_FALSE(token.ok());
-}
-
-// --- Tests for Type ---
-
-TEST_F(GDCHServiceAccountCredentialsTest, TypeSuccess) {
-  EXPECT_EQ(Type().name(), "GDCHServiceAccountCredentials");
 }
 
 }  // namespace

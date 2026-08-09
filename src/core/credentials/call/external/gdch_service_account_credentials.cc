@@ -449,7 +449,7 @@ absl::StatusOr<std::string> GDCHServiceAccountCredentials::ParseHttpResponse(
   return response_it->second.string();
 }
 
-UniqueTypeName GDCHServiceAccountCredentials::Type() {
+UniqueTypeName GDCHServiceAccountCredentials::type() const {
   static UniqueTypeName::Factory kFactory("GDCHServiceAccountCredentials");
   return kFactory.Create();
 }

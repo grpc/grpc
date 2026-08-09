@@ -86,7 +86,7 @@ class GDCHServiceAccountCredentials final : public ExternalAccountCredentials {
 
   std::string debug_string() override;
 
-  UniqueTypeName type() const override { return Type(); }
+  UniqueTypeName type() const override;
 
  private:
   friend class GDCHServiceAccountCredentialsTest;
@@ -133,8 +133,6 @@ class GDCHServiceAccountCredentials final : public ExternalAccountCredentials {
 
   static absl::StatusOr<std::string> ParseHttpResponse(
       const std::string& response_body);
-
-  static UniqueTypeName Type();
 
   OrphanablePtr<FetchRequest> FetchToken(
       Timestamp deadline,
