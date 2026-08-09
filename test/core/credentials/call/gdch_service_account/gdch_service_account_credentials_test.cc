@@ -14,19 +14,29 @@
 // limitations under the License.
 //
 
-#include "src/core/credentials/call/external/gdch_service_account_credentials.h"
+#include "src/core/credentials/call/gdch_service_account/gdch_service_account_credentials.h"
 
+#include <chrono>
+#include <memory>
 #include <string>
 #include <vector>
 
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/util/http_client/httpcli.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
 #include "test/core/test_util/test_config.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace {
@@ -114,7 +124,7 @@ class GDCHServiceAccountCredentialsTest : public ::testing::Test {
   }
 
   static absl::StatusOr<std::string> ParseHttpResponse(
-      const std::string& response_body) {
+      absl::string_view response_body) {
     return GDCHServiceAccountCredentials::ParseHttpResponse(response_body);
   }
 };
@@ -266,7 +276,7 @@ TEST_F(GDCHServiceAccountCredentialsTest, CreateSuccess) {
   ASSERT_TRUE(creds.ok()) << creds.status().ToString();
   ASSERT_NE(*creds, nullptr);
   EXPECT_EQ((*creds)->debug_string(),
-            "GDCHServiceAccountCredentials{Audience:}");
+            "GDCHServiceAccountCredentials{Audience:https://my-audience.com}");
   EXPECT_EQ((*creds)->type().name(), "GDCHServiceAccountCredentials");
 }
 
@@ -430,6 +440,42 @@ TEST_F(GDCHServiceAccountCredentialsTest,
 TEST_F(GDCHServiceAccountCredentialsTest,
        ParseHttpResponseFailureTokenNotString) {
   auto token = ParseHttpResponse("{\"access_token\": 123}");
+  EXPECT_FALSE(token.ok());
+}
+
+// --- Tests for ExtractToken ---
+
+TEST_F(GDCHServiceAccountCredentialsTest, ExtractTokenSuccess) {
+  Json::Object obj = CreateValidServiceAccountObject();
+  auto creds = GDCHServiceAccountCredentials::Create(Json::FromObject(obj),
+                                                     "https://my-audience.com");
+  ASSERT_TRUE(creds.ok()) << creds.status().ToString();
+
+  std::string body = "{\"access_token\": \"test-access-token\"}";
+  grpc_http_response response = {};
+  response.status = 200;
+  response.body = const_cast<char*>(body.data());
+  response.body_length = body.size();
+
+  auto token = (*creds)->ExtractToken(response);
+  ASSERT_TRUE(token.ok()) << token.status().ToString();
+  ASSERT_NE(*token, nullptr);
+  EXPECT_GT((*token)->ExpirationTime(), Timestamp::Now());
+}
+
+TEST_F(GDCHServiceAccountCredentialsTest, ExtractTokenFailureInvalidJson) {
+  Json::Object obj = CreateValidServiceAccountObject();
+  auto creds = GDCHServiceAccountCredentials::Create(Json::FromObject(obj),
+                                                     "https://my-audience.com");
+  ASSERT_TRUE(creds.ok()) << creds.status().ToString();
+
+  std::string body = "not-a-json";
+  grpc_http_response response = {};
+  response.status = 200;
+  response.body = const_cast<char*>(body.data());
+  response.body_length = body.size();
+
+  auto token = (*creds)->ExtractToken(response);
   EXPECT_FALSE(token.ok());
 }
 

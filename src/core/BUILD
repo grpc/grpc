@@ -5238,13 +5238,53 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "gdch_service_account_credentials",
+    srcs = [
+        "credentials/call/gdch_service_account/gdch_service_account_credentials.cc",
+    ],
+    hdrs = [
+        "credentials/call/gdch_service_account/gdch_service_account_credentials.h",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/log",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+        "libcrypto",
+    ],
+    deps = [
+        "closure",
+        "error",
+        "error_utils",
+        "httpcli_ssl_credentials",
+        "json",
+        "json_reader",
+        "slice",
+        "status_helper",
+        "time",
+        "token_fetcher_credentials",
+        "unique_type_name",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_core_credentials_header",
+        "//:grpc_security_base",
+        "//:httpcli",
+        "//:orphanable",
+        "//:ref_counted_ptr",
+        "//:uri",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_external_account_credentials",
     srcs = [
         "credentials/call/external/aws_external_account_credentials.cc",
         "credentials/call/external/aws_request_signer.cc",
         "credentials/call/external/external_account_credentials.cc",
         "credentials/call/external/file_external_account_credentials.cc",
-        "credentials/call/external/gdch_service_account_credentials.cc",
         "credentials/call/external/url_external_account_credentials.cc",
     ],
     hdrs = [
@@ -5252,7 +5292,6 @@ grpc_cc_library(
         "credentials/call/external/aws_request_signer.h",
         "credentials/call/external/external_account_credentials.h",
         "credentials/call/external/file_external_account_credentials.h",
-        "credentials/call/external/gdch_service_account_credentials.h",
         "credentials/call/external/url_external_account_credentials.h",
     ],
     external_deps = [
@@ -5840,6 +5879,7 @@ grpc_cc_library(
         "channel_fwd",
         "context",
         "gcp_service_account_identity_credentials",
+        "gdch_service_account_credentials",
         "grpc_check",
         "grpc_resolver_xds_attributes",
         "grpc_service_config",

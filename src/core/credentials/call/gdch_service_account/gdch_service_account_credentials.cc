@@ -13,7 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-#include "src/core/credentials/call/external/gdch_service_account_credentials.h"
+
+#include "src/core/credentials/call/gdch_service_account/gdch_service_account_credentials.h"
 
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
@@ -26,22 +27,38 @@
 #include <openssl/pem.h>
 #include <string.h>
 
+#include <array>
+#include <chrono>
+#include <cstdint>
+#include <functional>
 #include <memory>
+#include <optional>
+#include <string>
 #include <utility>
+#include <vector>
 
 #include "src/core/credentials/call/call_credentials.h"
-#include "src/core/credentials/call/json_util.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/util/http_client/httpcli.h"
 #include "src/core/util/http_client/httpcli_ssl_credentials.h"
 #include "src/core/util/http_client/parser.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
-#include "src/core/util/sync.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/time.h"
+#include "src/core/util/unique_type_name.h"
+#include "src/core/util/uri.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
@@ -50,6 +67,7 @@
 namespace grpc_core {
 namespace {
 
+constexpr auto kExpectedType = "gdch_service_account";
 constexpr auto kExpectedFormatVersion = "1";
 constexpr auto kTokenLifetime = std::chrono::seconds(3600);
 
@@ -278,7 +296,7 @@ GDCHServiceAccountCredentials::ParseServiceAccountJson(const Json& json) {
        [](Info& info, const iterator_type& l) {
          info.type = l->second.string();
        },
-       GRPC_AUTH_JSON_TYPE_GDCH_SERVICE_ACCOUNT},
+       kExpectedType},
       {"format_version", required_field,
        [](Info& info, const iterator_type& l) {
          info.format_version = l->second.string();
@@ -339,7 +357,7 @@ GDCHServiceAccountCredentials::Create(
 GDCHServiceAccountCredentials::GDCHServiceAccountCredentials(
     Info info, std::string audience,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
-    : ExternalAccountCredentials({}, {}, std::move(event_engine)),
+    : HttpTokenFetcherCredentials(std::move(event_engine)),
       info_(std::move(info)),
       audience_(std::move(audience)) {}
 
@@ -433,7 +451,7 @@ GDCHServiceAccountCredentials::FormatHttpRequest(const Info& info,
 }
 
 absl::StatusOr<std::string> GDCHServiceAccountCredentials::ParseHttpResponse(
-    const std::string& response_body) {
+    absl::string_view response_body) {
   auto response_json = JsonParse(response_body);
   if (!response_json.ok() || response_json->type() != Json::Type::kObject) {
     return GRPC_ERROR_CREATE(
@@ -455,111 +473,46 @@ UniqueTypeName GDCHServiceAccountCredentials::type() const {
 }
 
 std::string GDCHServiceAccountCredentials::debug_string() {
-  return absl::StrCat("GDCHServiceAccountCredentials{Audience:", audience(),
+  return absl::StrCat("GDCHServiceAccountCredentials{Audience:", audience_,
                       "}");
 }
 
-class GDCHServiceAccountCredentials::GDCHFetchRequest final
-    : public TokenFetcherCredentials::FetchRequest {
- public:
-  GDCHFetchRequest(
-      GDCHServiceAccountCredentials* creds, Timestamp deadline,
-      absl::AnyInvocable<
-          void(absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
-          on_done)
-      : creds_(creds), on_done_(std::move(on_done)) {
-    fetch_body_ = creds_->RetrieveSubjectToken(
-        deadline, [this](absl::StatusOr<std::string> result) {
-          OnSubjectToken(std::move(result));
-        });
-  }
-
-  void Orphan() override {
-    {
-      MutexLock lock(&mu_);
-      fetch_body_.reset();
-    }
-    Unref();
-  }
-
- private:
-  void OnSubjectToken(absl::StatusOr<std::string> result) {
-    absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>> token;
-    if (!result.ok()) {
-      token = result.status();
-    } else {
-      token = MakeRefCounted<TokenFetcherCredentials::Token>(
-          Slice::FromCopiedString(absl::StrCat("Bearer ", *result)),
-          Timestamp::Now() + Duration::Seconds(3600));
-    }
-    creds_->event_engine().Run([on_done = std::exchange(on_done_, nullptr),
-                                token = std::move(token)]() mutable {
-      ExecCtx exec_ctx;
-      std::exchange(on_done, nullptr)(std::move(token));
-    });
-  }
-
-  GDCHServiceAccountCredentials* creds_;
-  absl::AnyInvocable<void(
-      absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
-      on_done_;
-  Mutex mu_;
-  OrphanablePtr<FetchBody> fetch_body_ ABSL_GUARDED_BY(&mu_);
-};
-
-OrphanablePtr<TokenFetcherCredentials::FetchRequest>
-GDCHServiceAccountCredentials::FetchToken(
-    Timestamp deadline,
-    absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)> on_done) {
-  return MakeOrphanable<GDCHFetchRequest>(this, deadline, std::move(on_done));
-}
-
-OrphanablePtr<ExternalAccountCredentials::FetchBody>
-GDCHServiceAccountCredentials::RetrieveSubjectToken(
-    Timestamp deadline,
-    absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done) {
-  absl::StatusOr<URI> url = URI::Parse(info_.token_uri);
+OrphanablePtr<HttpRequest> GDCHServiceAccountCredentials::StartHttpRequest(
+    grpc_polling_entity* pollent, Timestamp deadline,
+    grpc_http_response* response, grpc_closure* on_complete) {
+  auto url = URI::Parse(info_.token_uri);
   if (!url.ok()) {
-    return MakeOrphanable<NoOpFetchBody>(
-        event_engine(), std::move(on_done),
-        absl_status_to_grpc_error(url.status()));
+    ExecCtx::Run(DEBUG_LOCATION, on_complete, url.status());
+    return nullptr;
   }
   auto request = FormatHttpRequest(info_, audience_);
   if (!request.ok()) {
-    return MakeOrphanable<NoOpFetchBody>(
-        event_engine(), std::move(on_done),
-        absl_status_to_grpc_error(request.status()));
+    ExecCtx::Run(DEBUG_LOCATION, on_complete, request.status());
+    return nullptr;
   }
-
-  return MakeOrphanable<HttpFetchBody>(
-      [this, deadline, url = std::move(url), request = std::move(request)](
-          grpc_http_response* response, grpc_closure* on_http_response) {
-        RefCountedPtr<grpc_channel_credentials> http_request_creds;
-        if (url->scheme() == "http") {
-          http_request_creds = RefCountedPtr<grpc_channel_credentials>(
-              grpc_insecure_credentials_create());
-        } else {
-          http_request_creds = CreateHttpRequestSSLCredentials();
-        }
-        auto http_request =
-            HttpRequest::Post(std::move(*url), /*args=*/nullptr, pollent(),
-                              request->get(), deadline, on_http_response,
-                              response, std::move(http_request_creds));
-        http_request->Start();
-        return http_request;
-      },
-      [on_done = std::move(on_done)](
-          absl::StatusOr<std::string> response_body) mutable {
-        if (!response_body.ok()) {
-          on_done(std::move(response_body));
-          return;
-        }
-        on_done(ParseHttpResponse(*response_body));
-      });
+  RefCountedPtr<grpc_channel_credentials> http_request_creds;
+  if (url->scheme() == "http") {
+    http_request_creds = RefCountedPtr<grpc_channel_credentials>(
+        grpc_insecure_credentials_create());
+  } else {
+    http_request_creds = CreateHttpRequestSSLCredentials();
+  }
+  auto http_request = HttpRequest::Post(
+      std::move(*url), /*args=*/nullptr, pollent, request->get(), deadline,
+      on_complete, response, std::move(http_request_creds));
+  http_request->Start();
+  return http_request;
 }
 
-absl::string_view GDCHServiceAccountCredentials::CredentialSourceType() {
-  return "gdch";
+absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>
+GDCHServiceAccountCredentials::ExtractToken(
+    const grpc_http_response& response) {
+  absl::string_view response_body(response.body, response.body_length);
+  auto token_str = ParseHttpResponse(response_body);
+  if (!token_str.ok()) return token_str.status();
+  return MakeRefCounted<Token>(
+      Slice::FromCopiedString(absl::StrCat("Bearer ", *token_str)),
+      Timestamp::Now() + Duration::Seconds(3600));
 }
 
 }  // namespace grpc_core

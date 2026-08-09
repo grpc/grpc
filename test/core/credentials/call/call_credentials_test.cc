@@ -36,9 +36,9 @@
 #include "src/core/credentials/call/external/aws_external_account_credentials.h"
 #include "src/core/credentials/call/external/external_account_credentials.h"
 #include "src/core/credentials/call/external/file_external_account_credentials.h"
-#include "src/core/credentials/call/external/gdch_service_account_credentials.h"
 #include "src/core/credentials/call/external/url_external_account_credentials.h"
 #include "src/core/credentials/call/gcp_service_account_identity/gcp_service_account_identity_credentials.h"
+#include "src/core/credentials/call/gdch_service_account/gdch_service_account_credentials.h"
 #include "src/core/credentials/call/iam/iam_credentials.h"
 #include "src/core/credentials/call/jwt/jwt_credentials.h"
 #include "src/core/credentials/call/jwt_token_file/jwt_token_file_call_credentials.h"
@@ -5370,7 +5370,27 @@ int gdch_service_account_creds_httpcli_post_success(
   return 1;
 }
 
-TEST_F(ExternalAccountCredentialsTest, GDCHServiceAccountCredsSuccess) {
+class GDCHServiceAccountCredentialsTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    event_engine_ = std::make_shared<FuzzingEventEngine>(
+        FuzzingEventEngine::Options(), fuzzing_event_engine::Actions());
+    grpc_timer_manager_set_start_threaded(false);
+    grpc_init();
+  }
+
+  void TearDown() override {
+    event_engine_->FuzzingDone();
+    event_engine_->TickUntilIdle();
+    event_engine_->UnsetGlobalHooks();
+    WaitForSingleOwner(std::move(event_engine_));
+    grpc_shutdown_blocking();
+  }
+
+  std::shared_ptr<FuzzingEventEngine> event_engine_;
+};
+
+TEST_F(GDCHServiceAccountCredentialsTest, Basic) {
   ExecCtx exec_ctx;
   Json::Object obj = Json::Object{
       {"type", Json::FromString("gdch_service_account")},
@@ -5396,75 +5416,6 @@ TEST_F(ExternalAccountCredentialsTest, GDCHServiceAccountCredsSuccess) {
                                 kTestPath);
   ExecCtx::Get()->Flush();
   event_engine_->TickUntilIdle();
-  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
-}
-
-class GDCHServiceAccountCredentialsTest : public ::testing::Test {
- public:
-  static OrphanablePtr<GDCHServiceAccountCredentials::FetchBody>
-  CallRetrieveSubjectToken(
-      GDCHServiceAccountCredentials* creds, Timestamp deadline,
-      absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done) {
-    return creds->RetrieveSubjectToken(deadline, std::move(on_done));
-  }
-
- protected:
-  void SetUp() override {
-    event_engine_ = std::make_shared<FuzzingEventEngine>(
-        FuzzingEventEngine::Options(), fuzzing_event_engine::Actions());
-    grpc_timer_manager_set_start_threaded(false);
-    grpc_init();
-  }
-
-  void TearDown() override {
-    event_engine_->FuzzingDone();
-    event_engine_->TickUntilIdle();
-    event_engine_->UnsetGlobalHooks();
-    WaitForSingleOwner(std::move(event_engine_));
-    grpc_shutdown_blocking();
-  }
-
-  std::shared_ptr<FuzzingEventEngine> event_engine_;
-};
-
-TEST_F(GDCHServiceAccountCredentialsTest, BasicRetrieveSubjectToken) {
-  Json::Object obj = Json::Object{
-      {"type", Json::FromString("gdch_service_account")},
-      {"format_version", Json::FromString("1")},
-      {"project", Json::FromString("test-project")},
-      {"private_key_id", Json::FromString("test-private-key-id")},
-      {"private_key", Json::FromString(kGdchTestPrivateKeyPem)},
-      {"name", Json::FromString("test-name")},
-      {"token_uri", Json::FromString("https://test-token-uri.com/token")},
-  };
-
-  auto creds = GDCHServiceAccountCredentials::Create(
-      Json::FromObject(obj), "https://my-audience.com", event_engine_);
-  ASSERT_TRUE(creds.ok()) << creds.status().ToString();
-  ASSERT_NE(*creds, nullptr);
-  EXPECT_EQ((*creds)->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
-
-  ExecCtx exec_ctx;
-  HttpRequest::SetOverride(httpcli_get_should_not_be_called,
-                           gdch_service_account_creds_httpcli_post_success,
-                           httpcli_put_should_not_be_called);
-
-  absl::StatusOr<std::string> fetched_token;
-  bool done = false;
-  auto fetch_body = GDCHServiceAccountCredentialsTest::CallRetrieveSubjectToken(
-      creds->get(), Timestamp::Now() + Duration::Seconds(5),
-      [&](absl::StatusOr<std::string> result) {
-        fetched_token = std::move(result);
-        done = true;
-      });
-
-  event_engine_->TickUntilIdle();
-  ExecCtx::Get()->Flush();
-
-  EXPECT_TRUE(done);
-  ASSERT_TRUE(fetched_token.ok()) << fetched_token.status().ToString();
-  EXPECT_EQ(*fetched_token, "my-exchanged-gdch-token");
-
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 

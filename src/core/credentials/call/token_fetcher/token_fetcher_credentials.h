@@ -186,6 +186,8 @@ class TokenFetcherCredentials : public grpc_call_credentials {
 // Subclasses must implement StartHttpRequest() and ExtractToken().
 class HttpTokenFetcherCredentials : public TokenFetcherCredentials {
  public:
+  using TokenFetcherCredentials::TokenFetcherCredentials;
+
   // Starts an HTTP request.
   virtual OrphanablePtr<HttpRequest> StartHttpRequest(
       grpc_polling_entity* pollent, Timestamp deadline,

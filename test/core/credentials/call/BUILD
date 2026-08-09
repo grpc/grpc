@@ -52,6 +52,7 @@ grpc_cc_test(
         "//src/core:error_utils",
         "//src/core:exec_ctx_wakeup_scheduler",
         "//src/core:gcp_service_account_identity_credentials",
+        "//src/core:gdch_service_account_credentials",
         "//src/core:grpc_check",
         "//src/core:grpc_external_account_credentials",
         "//src/core:grpc_fake_credentials",

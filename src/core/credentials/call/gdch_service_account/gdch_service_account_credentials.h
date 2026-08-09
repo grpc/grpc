@@ -14,19 +14,24 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_CREDENTIALS_CALL_EXTERNAL_GDCH_SERVICE_ACCOUNT_CREDENTIALS_H
-#define GRPC_SRC_CORE_CREDENTIALS_CALL_EXTERNAL_GDCH_SERVICE_ACCOUNT_CREDENTIALS_H
+#ifndef GRPC_SRC_CORE_CREDENTIALS_CALL_GDCH_SERVICE_ACCOUNT_GDCH_SERVICE_ACCOUNT_CREDENTIALS_H
+#define GRPC_SRC_CORE_CREDENTIALS_CALL_GDCH_SERVICE_ACCOUNT_GDCH_SERVICE_ACCOUNT_CREDENTIALS_H
 
 #include <grpc/support/port_platform.h>
 
 #include <chrono>
+#include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
-#include "src/core/credentials/call/external/external_account_credentials.h"
+#include "src/core/credentials/call/token_fetcher/token_fetcher_credentials.h"
 #include "src/core/util/http_client/httpcli.h"
+#include "src/core/util/json/json.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/unique_type_name.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -59,7 +64,7 @@ namespace grpc_core {
 //     "token_uri"
 //   ]
 // }
-class GDCHServiceAccountCredentials final : public ExternalAccountCredentials {
+class GDCHServiceAccountCredentials final : public HttpTokenFetcherCredentials {
  public:
   struct Info {
     std::string type;
@@ -88,9 +93,15 @@ class GDCHServiceAccountCredentials final : public ExternalAccountCredentials {
 
   UniqueTypeName type() const override;
 
+  OrphanablePtr<HttpRequest> StartHttpRequest(
+      grpc_polling_entity* pollent, Timestamp deadline,
+      grpc_http_response* response, grpc_closure* on_complete) override;
+
+  absl::StatusOr<RefCountedPtr<Token>> ExtractToken(
+      const grpc_http_response& response) override;
+
  private:
   friend class GDCHServiceAccountCredentialsTest;
-  friend class ExternalAccountCredentialsTest;
   friend grpc_call_credentials* ::grpc_gdch_service_account_credentials_create(
       const char* json_string, const char* audience_string);
 
@@ -132,20 +143,7 @@ class GDCHServiceAccountCredentials final : public ExternalAccountCredentials {
       const Info& info, const std::string& audience);
 
   static absl::StatusOr<std::string> ParseHttpResponse(
-      const std::string& response_body);
-
-  OrphanablePtr<FetchRequest> FetchToken(
-      Timestamp deadline,
-      absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)> on_done)
-      override;
-
-  OrphanablePtr<FetchBody> RetrieveSubjectToken(
-      Timestamp deadline,
-      absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done) override;
-
-  absl::string_view CredentialSourceType() override;
-
-  class GDCHFetchRequest;
+      absl::string_view response_body);
 
   Info info_;
   std::string audience_;
@@ -153,4 +151,4 @@ class GDCHServiceAccountCredentials final : public ExternalAccountCredentials {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_CREDENTIALS_CALL_EXTERNAL_GDCH_SERVICE_ACCOUNT_CREDENTIALS_H
+#endif  // GRPC_SRC_CORE_CREDENTIALS_CALL_GDCH_SERVICE_ACCOUNT_GDCH_SERVICE_ACCOUNT_CREDENTIALS_H
