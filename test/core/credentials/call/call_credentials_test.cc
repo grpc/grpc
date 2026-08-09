@@ -5402,8 +5402,8 @@ TEST_F(GDCHServiceAccountCredentialsTest, Basic) {
       {"token_uri", Json::FromString("https://test-token-uri.com/token")},
   };
 
-  auto creds = GDCHServiceAccountCredentials::Create(
-      Json::FromObject(obj), "https://my-audience.com", event_engine_);
+  auto creds = GDCHServiceAccountCredentials::Create(Json::FromObject(obj),
+                                                     "https://my-audience.com");
   ASSERT_TRUE(creds.ok()) << creds.status().ToString();
   ASSERT_NE(*creds, nullptr);
   EXPECT_EQ((*creds)->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);

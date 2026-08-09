@@ -342,24 +342,19 @@ GDCHServiceAccountCredentials::ParseServiceAccountJson(const Json& json) {
 }
 
 absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>>
-GDCHServiceAccountCredentials::Create(
-    const Json& key_file_contents, std::string audience,
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-        event_engine) {
+GDCHServiceAccountCredentials::Create(const Json& key_file_contents,
+                                      std::string audience) {
   auto info = ParseServiceAccountJson(key_file_contents);
   if (!info.ok()) return info.status();
 
   auto creds = MakeRefCounted<GDCHServiceAccountCredentials>(
-      *std::move(info), std::move(audience), std::move(event_engine));
+      *std::move(info), std::move(audience));
   return creds;
 }
 
 GDCHServiceAccountCredentials::GDCHServiceAccountCredentials(
-    Info info, std::string audience,
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
-    : HttpTokenFetcherCredentials(std::move(event_engine)),
-      info_(std::move(info)),
-      audience_(std::move(audience)) {}
+    Info info, std::string audience)
+    : info_(std::move(info)), audience_(std::move(audience)) {}
 
 GDCHServiceAccountCredentials::AssertionComponents
 GDCHServiceAccountCredentials::AssertionComponentsFromInfo(

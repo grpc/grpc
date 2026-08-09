@@ -78,14 +78,9 @@ class GDCHServiceAccountCredentials final : public HttpTokenFetcherCredentials {
   };
 
   static absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> Create(
-      const Json& key_file_contents, std::string audience,
-      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-          event_engine = nullptr);
+      const Json& key_file_contents, std::string audience);
 
-  GDCHServiceAccountCredentials(
-      Info info, std::string audience,
-      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-          event_engine);
+  GDCHServiceAccountCredentials(Info info, std::string audience);
 
   std::optional<std::string> ca_cert_path() const { return info_.ca_cert_path; }
 
