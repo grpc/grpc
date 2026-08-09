@@ -5325,11 +5325,6 @@ TEST_F(CredentialsTest, TestComputeEngineCredsWithAltsFailure) {
   creds->Unref();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
-}  // namespace
-
-//
-// GDCHServiceAccountCredentials tests
-//
 
 // This JSON key was generated with the GDCH console and immediately revoked.
 // The identifiers have been changed as well.
@@ -5339,6 +5334,19 @@ const char kGdchTestPrivateKeyPem[] =
     "5aXWVn2g4vGR4/WVxautYTHClUehRANCAAQ8TwEYxDnaovfS6UEHo6eNykUBlC2L\n"
     "GZ6rVuvkS+5Kw8k7IOVjrzE/lvVY1lDpKmIw2w7IgRxSIdDdyN6TbxNT\n"
     "-----END PRIVATE KEY-----\n";
+
+std::string CreateGdchValidJsonString() {
+  Json::Object obj = Json::Object{
+      {"type", Json::FromString("gdch_service_account")},
+      {"format_version", Json::FromString("1")},
+      {"project", Json::FromString("test-project")},
+      {"private_key_id", Json::FromString("test-private-key-id")},
+      {"private_key", Json::FromString(kGdchTestPrivateKeyPem)},
+      {"name", Json::FromString("test-name")},
+      {"token_uri", Json::FromString("https://test-token-uri.com/token")},
+  };
+  return JsonDump(Json::FromObject(obj));
+}
 
 int gdch_service_account_creds_httpcli_post_success(
     const grpc_http_request* request, const URI& uri, absl::string_view body,
@@ -5369,6 +5377,74 @@ int gdch_service_account_creds_httpcli_post_success(
   ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
 }
+
+int gdch_service_account_creds_httpcli_post_failure(
+    const grpc_http_request* /*request*/, const URI& /*uri*/,
+    absl::string_view /*body*/, Timestamp /*deadline*/, grpc_closure* on_done,
+    grpc_http_response* response) {
+  *response = http_response(403, "Not Authorized.");
+  ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
+  return 1;
+}
+
+TEST_F(CredentialsTest, TestGDCHServiceAccountCredsSuccess) {
+  ExecCtx exec_ctx;
+  std::string emd = "authorization: Bearer my-exchanged-gdch-token";
+  const char expected_creds_debug_string[] =
+      "GDCHServiceAccountCredentials{Audience:https://my-audience.com}";
+  std::string json = CreateGdchValidJsonString();
+  grpc_call_credentials* creds = grpc_gdch_service_account_credentials_create(
+      json.c_str(), "https://my-audience.com");
+  ASSERT_NE(creds, nullptr);
+  // Check security level.
+  EXPECT_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  // First request: http post should be called.
+  auto state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
+  HttpRequest::SetOverride(httpcli_get_should_not_be_called,
+                           gdch_service_account_creds_httpcli_post_success,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  // Second request: the cached token should be served directly.
+  state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
+  HttpRequest::SetOverride(httpcli_get_should_not_be_called,
+                           httpcli_post_should_not_be_called,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  EXPECT_EQ(creds->debug_string(), expected_creds_debug_string);
+  creds->Unref();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+}
+
+TEST_F(CredentialsTest, TestGDCHServiceAccountCredsFailure) {
+  ExecCtx exec_ctx;
+  const char expected_creds_debug_string[] =
+      "GDCHServiceAccountCredentials{Audience:https://my-audience.com}";
+  auto state = RequestMetadataState::NewInstance(
+      absl::UnauthenticatedError("HTTP token fetch failed with status 403"),
+      {});
+  std::string json = CreateGdchValidJsonString();
+  grpc_call_credentials* creds = grpc_gdch_service_account_credentials_create(
+      json.c_str(), "https://my-audience.com");
+  ASSERT_NE(creds, nullptr);
+  HttpRequest::SetOverride(httpcli_get_should_not_be_called,
+                           gdch_service_account_creds_httpcli_post_failure,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  EXPECT_EQ(creds->debug_string(), expected_creds_debug_string);
+  creds->Unref();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+}
+}  // namespace
+
+//
+// GDCHServiceAccountCredentials tests
+//
 
 class GDCHServiceAccountCredentialsTest : public ::testing::Test {
  protected:
