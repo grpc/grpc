@@ -98,13 +98,24 @@ class AllTest(unittest.TestCase):
 
 
 class StatusCodeTest(unittest.TestCase):
-    def test_status_code_str_and_repr(self):
-        self.assertEqual(str(grpc.StatusCode.OK.value[0]), "0")
-        self.assertEqual(str(grpc.StatusCode.CANCELLED.value[0]), "1")
-        self.assertEqual(repr(grpc.StatusCode.OK.value[0]), 0)
-        self.assertEqual(repr(grpc.StatusCode.CANCELLED.value[0]), 1)
-        self.assertEqual(int(grpc.StatusCode.OK.value[0]), 0)
+    def test_status_code_values(self):
         self.assertEqual(grpc.StatusCode.OK.value[0], 0)
+        self.assertEqual(grpc.StatusCode.CANCELLED.value[0], 1)
+        self.assertEqual(grpc.StatusCode.UNKNOWN.value[0], 2)
+        self.assertEqual(grpc.StatusCode.INVALID_ARGUMENT.value[0], 3)
+        self.assertEqual(grpc.StatusCode.DEADLINE_EXCEEDED.value[0], 4)
+        self.assertEqual(grpc.StatusCode.NOT_FOUND.value[0], 5)
+        self.assertEqual(grpc.StatusCode.ALREADY_EXISTS.value[0], 6)
+        self.assertEqual(grpc.StatusCode.PERMISSION_DENIED.value[0], 7)
+        self.assertEqual(grpc.StatusCode.RESOURCE_EXHAUSTED.value[0], 8)
+        self.assertEqual(grpc.StatusCode.FAILED_PRECONDITION.value[0], 9)
+        self.assertEqual(grpc.StatusCode.ABORTED.value[0], 10)
+        self.assertEqual(grpc.StatusCode.OUT_OF_RANGE.value[0], 11)
+        self.assertEqual(grpc.StatusCode.UNIMPLEMENTED.value[0], 12)
+        self.assertEqual(grpc.StatusCode.INTERNAL.value[0], 13)
+        self.assertEqual(grpc.StatusCode.UNAVAILABLE.value[0], 14)
+        self.assertEqual(grpc.StatusCode.DATA_LOSS.value[0], 15)
+        self.assertEqual(grpc.StatusCode.UNAUTHENTICATED.value[0], 16)
 
 
 class ChannelConnectivityTest(unittest.TestCase):
