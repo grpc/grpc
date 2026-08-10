@@ -485,8 +485,7 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
         },
         ExecCtxWakeupScheduler(),
         [self](absl::Status status) mutable {
-          self->CheckRequestMetadata(
-              absl_status_to_grpc_error(std::move(status)));
+          self->CheckRequestMetadata(std::move(status));
           self.reset();
         },
         arena_.get(), &pollent_);

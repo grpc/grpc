@@ -522,7 +522,7 @@ class AresDNSResolver final : public DNSResolver {
       GRPC_TRACE_VLOG(cares_resolver, 2)
           << "(c-ares resolver) AresHostnameRequest:" << this << " OnComplete";
       if (!error.ok()) {
-        on_resolve_address_done_(grpc_error_to_absl_status(error));
+        on_resolve_address_done_(error);
         return;
       }
       std::vector<grpc_resolved_address> resolved_addresses;
@@ -575,7 +575,7 @@ class AresDNSResolver final : public DNSResolver {
       GRPC_TRACE_VLOG(cares_resolver, 2)
           << "(c-ares resolver) AresSRVRequest:" << this << " OnComplete";
       if (!error.ok()) {
-        on_resolve_address_done_(grpc_error_to_absl_status(error));
+        on_resolve_address_done_(error);
         return;
       }
       std::vector<grpc_resolved_address> resolved_addresses;
@@ -626,7 +626,7 @@ class AresDNSResolver final : public DNSResolver {
       GRPC_TRACE_VLOG(cares_resolver, 2)
           << "(c-ares resolver) AresSRVRequest:" << this << " OnComplete";
       if (!error.ok()) {
-        on_resolved_(grpc_error_to_absl_status(error));
+        on_resolved_(error);
         return;
       }
       on_resolved_(service_config_json_);

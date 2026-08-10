@@ -58,11 +58,11 @@ class CompositeFilter final : public V3InterceptorToV2Bridge<CompositeFilter> {
   class ExecuteFilterAction final : public XdsMatcher::Action {
    public:
     struct Filter {
-      const XdsHttpFilterImpl* filter_impl;
+      const XdsHttpFilterFactory* factory;
       RefCountedPtr<const FilterConfig> filter_config;
 
       bool operator==(const Filter& other) const {
-        if (filter_impl != other.filter_impl) return false;
+        if (factory != other.factory) return false;
         if (filter_config == nullptr) return other.filter_config == nullptr;
         if (other.filter_config == nullptr) return false;
         return *filter_config == *other.filter_config;
@@ -136,10 +136,11 @@ class CompositeFilter final : public V3InterceptorToV2Bridge<CompositeFilter> {
   static absl::StatusOr<RefCountedPtr<CompositeFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
-  CompositeFilter(const ChannelArgs& args, RefCountedPtr<const Config> config,
-                  ChannelFilter::Args filter_args);
+  CompositeFilter(const ChannelArgs& args, RefCountedPtr<const Config> config);
 
  private:
+  void Init(const ChannelArgs& args) override;
+
   void Orphaned() override {}
 
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override;

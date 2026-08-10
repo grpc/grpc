@@ -31,7 +31,6 @@ grpc_cc_test(
     external_deps = [
         "absl/log:check",
         "gtest",
-        "@com_google_protobuf//upb/mem",
     ],
     deps = [
         "//:gpr",
@@ -45,5 +44,6 @@ grpc_cc_test(
         "//src/proto/grpc/lb/v1:load_balancer_cc_proto",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
+        "@com_google_protobuf//upb/mem",
     ],
 )

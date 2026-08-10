@@ -75,10 +75,8 @@ absl::Status StatusFromMetadata(const ServerMetadata& md) {
     return absl::OkStatus();
   }
   const auto* message = md.get_pointer(GrpcMessageMetadata());
-  return grpc_error_set_int(
-      absl::Status(static_cast<absl::StatusCode>(status_code),
-                   message == nullptr ? "" : message->as_string_view()),
-      StatusIntProperty::kRpcStatus, status_code);
+  return absl::Status(static_cast<absl::StatusCode>(status_code),
+                      message == nullptr ? "" : message->as_string_view());
 }
 }  // namespace
 

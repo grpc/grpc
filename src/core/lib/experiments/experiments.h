@@ -90,6 +90,7 @@ inline bool IsEventEngineCallbackCqEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FOR_ALL_OTHER_ENDPOINTS
 inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
 inline bool IsFailRecvMetadataOnDeadlineExceededEnabled() { return false; }
+inline bool IsFixV3FilterStackServerSideOrderingEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsFuseFiltersEnabled() { return false; }
 inline bool IsH2MaxDeallocatingStreamsHeadroomEnabled() { return false; }
@@ -104,7 +105,6 @@ inline bool IsMetadataOutstandingTokenRefactorEnabled() { return false; }
 inline bool IsMetadataPublishToAppTagEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
-inline bool IsMultipingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_01
 inline bool IsOptimization01Enabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_02
@@ -184,6 +184,7 @@ inline bool IsEventEngineCallbackCqEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FOR_ALL_OTHER_ENDPOINTS
 inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
 inline bool IsFailRecvMetadataOnDeadlineExceededEnabled() { return false; }
+inline bool IsFixV3FilterStackServerSideOrderingEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsFuseFiltersEnabled() { return false; }
 inline bool IsH2MaxDeallocatingStreamsHeadroomEnabled() { return false; }
@@ -198,7 +199,6 @@ inline bool IsMetadataOutstandingTokenRefactorEnabled() { return false; }
 inline bool IsMetadataPublishToAppTagEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
-inline bool IsMultipingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_01
 inline bool IsOptimization01Enabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_02
@@ -278,6 +278,7 @@ inline bool IsEventEngineCallbackCqEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FOR_ALL_OTHER_ENDPOINTS
 inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
 inline bool IsFailRecvMetadataOnDeadlineExceededEnabled() { return false; }
+inline bool IsFixV3FilterStackServerSideOrderingEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsFuseFiltersEnabled() { return false; }
 inline bool IsH2MaxDeallocatingStreamsHeadroomEnabled() { return false; }
@@ -292,7 +293,6 @@ inline bool IsMetadataOutstandingTokenRefactorEnabled() { return false; }
 inline bool IsMetadataPublishToAppTagEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
-inline bool IsMultipingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_01
 inline bool IsOptimization01Enabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_02
@@ -357,6 +357,7 @@ enum ExperimentIds {
   kExperimentIdEventEngineCallbackCq,
   kExperimentIdEventEngineForAllOtherEndpoints,
   kExperimentIdFailRecvMetadataOnDeadlineExceeded,
+  kExperimentIdFixV3FilterStackServerSideOrdering,
   kExperimentIdFreeLargeAllocator,
   kExperimentIdFuseFilters,
   kExperimentIdH2MaxDeallocatingStreamsHeadroom,
@@ -369,7 +370,6 @@ enum ExperimentIds {
   kExperimentIdMetadataOutstandingTokenRefactor,
   kExperimentIdMetadataPublishToAppTag,
   kExperimentIdMonitoringExperiment,
-  kExperimentIdMultiping,
   kExperimentIdOptimization01,
   kExperimentIdOptimization02,
   kExperimentIdOptimization03,
@@ -474,6 +474,10 @@ inline bool IsEventEngineForAllOtherEndpointsEnabled() {
 inline bool IsFailRecvMetadataOnDeadlineExceededEnabled() {
   return IsExperimentEnabled<kExperimentIdFailRecvMetadataOnDeadlineExceeded>();
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_FIX_V3_FILTER_STACK_SERVER_SIDE_ORDERING
+inline bool IsFixV3FilterStackServerSideOrderingEnabled() {
+  return IsExperimentEnabled<kExperimentIdFixV3FilterStackServerSideOrdering>();
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_FREE_LARGE_ALLOCATOR
 inline bool IsFreeLargeAllocatorEnabled() {
   return IsExperimentEnabled<kExperimentIdFreeLargeAllocator>();
@@ -521,10 +525,6 @@ inline bool IsMetadataPublishToAppTagEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() {
   return IsExperimentEnabled<kExperimentIdMonitoringExperiment>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_MULTIPING
-inline bool IsMultipingEnabled() {
-  return IsExperimentEnabled<kExperimentIdMultiping>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_01
 inline bool IsOptimization01Enabled() {
