@@ -265,7 +265,10 @@ class StatusCode(enum.Enum):
     OK = (int(_cygrpc.StatusCode.ok), "ok")
     CANCELLED = (int(_cygrpc.StatusCode.cancelled), "cancelled")
     UNKNOWN = (int(_cygrpc.StatusCode.unknown), "unknown")
-    INVALID_ARGUMENT = (int(_cygrpc.StatusCode.invalid_argument), "invalid argument")
+    INVALID_ARGUMENT = (
+        int(_cygrpc.StatusCode.invalid_argument),
+        "invalid argument",
+    )
     DEADLINE_EXCEEDED = (
         int(_cygrpc.StatusCode.deadline_exceeded),
         "deadline exceeded",
@@ -290,7 +293,10 @@ class StatusCode(enum.Enum):
     INTERNAL = (int(_cygrpc.StatusCode.internal), "internal")
     UNAVAILABLE = (int(_cygrpc.StatusCode.unavailable), "unavailable")
     DATA_LOSS = (int(_cygrpc.StatusCode.data_loss), "data loss")
-    UNAUTHENTICATED = (int(_cygrpc.StatusCode.unauthenticated), "unauthenticated")
+    UNAUTHENTICATED = (
+        int(_cygrpc.StatusCode.unauthenticated),
+        "unauthenticated",
+    )
 
 
 #############################  gRPC Status  ################################
