@@ -708,6 +708,7 @@ LIBGRPC_SRC = \
     src/core/client_channel/retry_service_config.cc \
     src/core/client_channel/retry_throttle.cc \
     src/core/client_channel/subchannel.cc \
+    src/core/client_channel/subchannel_metrics.cc \
     src/core/client_channel/subchannel_pool_interface.cc \
     src/core/client_channel/subchannel_stream_client.cc \
     src/core/client_channel/subchannel_stream_limiter.cc \
@@ -1507,6 +1508,7 @@ LIBGRPC_SRC = \
     src/core/tsi/tls_telemetry.cc \
     src/core/tsi/transport_security.cc \
     src/core/tsi/transport_security_grpc.cc \
+    src/core/util/address_sorting_init.cc \
     src/core/util/alloc.cc \
     src/core/util/backoff.cc \
     src/core/util/crash.cc \

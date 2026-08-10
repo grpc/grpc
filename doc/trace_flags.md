@@ -27,6 +27,7 @@ processing requests via debug logs. Available tracers include:
   - client_channel_call - Client channel call activity related to name resolution.
   - client_channel_lb_call - Client channel call activity related to load balancing picking.
   - client_idle_filter - Client idleness filter.
+  - composite_filter - xDS composite filter.
   - compression - Compression operations.
   - connectivity_state - Connectivity state changes to channels.
   - dns_resolver - The active DNS resolver.
