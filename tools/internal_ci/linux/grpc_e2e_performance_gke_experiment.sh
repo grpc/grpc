@@ -31,6 +31,8 @@ GRPC_JAVA_REPO=grpc/grpc-java
 GRPC_JAVA_GITREF=master
 GRPC_NODE_REPO=grpc/grpc-node
 GRPC_NODE_GITREF=master
+GRPC_RUST_REPO=grpc/grpc-rust
+GRPC_RUST_GITREF=master
 TEST_INFRA_REPO=grpc/test-infra
 TEST_INFRA_GITREF=master
 
@@ -60,6 +62,7 @@ GRPC_DOTNET_COMMIT="$(git ls-remote "https://github.com/${GRPC_DOTNET_REPO}.git"
 GRPC_GO_COMMIT="$(git ls-remote "https://github.com/${GRPC_GO_REPO}.git" "${GRPC_GO_GITREF}" | cut -f1)"
 GRPC_JAVA_COMMIT="$(git ls-remote "https://github.com/${GRPC_JAVA_REPO}.git" "${GRPC_JAVA_GITREF}" | cut -f1)"
 GRPC_NODE_COMMIT="$(git ls-remote "https://github.com/${GRPC_NODE_REPO}.git" "${GRPC_NODE_GITREF}" | cut -f1)"
+GRPC_RUST_COMMIT="$(git ls-remote "https://github.com/${GRPC_RUST_REPO}.git" "${GRPC_RUST_GITREF}" | cut -f1)"
 # Kokoro jobs run on dedicated pools.
 DRIVER_POOL=drivers-ci
 WORKER_POOL_8CORE=workers-c2-8core-ci
@@ -107,6 +110,7 @@ buildConfigs() {
     -a ci_gitCommit_dotnet="${GRPC_DOTNET_COMMIT}" \
     -a ci_gitCommit_go="${GRPC_GO_COMMIT}" \
     -a ci_gitCommit_java="${GRPC_JAVA_COMMIT}" \
+    -a ci_gitCommit_rust="${GRPC_RUST_COMMIT}" \
     -a ci_gitActualCommit="${KOKORO_GIT_COMMIT}" \
     --prefix="${LOAD_TEST_PREFIX}" -u "${UNIQUE_IDENTIFIER}" -u "${pool}" \
     -a pool="${pool}" --category=scalable \
@@ -143,6 +147,7 @@ declare -A useLanguage=(
   [node]=1
   [python]=1
   [ruby]=1
+  [rust]=1
 )
 
 # Disable specific languages.
@@ -202,6 +207,13 @@ fi
 if [[ -v "useLanguage[ruby]" ]]; then
   configLangArgs8core+=(-l ruby) # 8-core only.
   runnerLangArgs+=(-l "ruby:${GRPC_CORE_REPO}:${GRPC_CORE_COMMIT}")
+fi
+
+# rust
+if [[ -v "useLanguage[rust]" ]]; then
+  configLangArgs8core+=(-l rust)
+  configLangArgs32core+=(-l rust)
+  runnerLangArgs+=(-l "rust:${GRPC_RUST_REPO}:${GRPC_RUST_COMMIT}")
 fi
 
 # Disable broken tests by regex.
