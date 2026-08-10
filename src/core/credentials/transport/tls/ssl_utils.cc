@@ -419,7 +419,7 @@ void grpc_shallow_peer_destruct(tsi_peer* peer) {
 }
 
 grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
-    tsi_ssl_pem_key_cert_pair* pem_key_cert_pair,
+    tsi_ssl_key_cert_pairs key_cert_pairs,
     std::shared_ptr<tsi::RootCertInfo> root_cert_info,
     bool skip_server_certificate_verification, tsi_tls_version min_tls_version,
     tsi_tls_version max_tls_version, tsi_ssl_session_cache* ssl_session_cache,
@@ -447,16 +447,10 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
   } else {
     options.root_cert_info = std::move(root_cert_info);
   }
-  bool has_key_cert_pair =
-      pem_key_cert_pair != nullptr &&
-      !grpc_core::IsPrivateKeyEmpty(pem_key_cert_pair->private_key) &&
-      !pem_key_cert_pair->cert_chain.empty();
   options.root_store = root_store;
   options.alpn_protocols =
       grpc_fill_alpn_protocol_strings(&options.num_alpn_protocols);
-  if (has_key_cert_pair) {
-    options.pem_key_cert_pair = pem_key_cert_pair;
-  }
+  options.pem_key_cert_pairs = std::move(key_cert_pairs);
   options.cipher_suites = grpc_get_ssl_cipher_suites();
   options.session_cache = ssl_session_cache;
   options.key_logger = tls_session_key_logger;

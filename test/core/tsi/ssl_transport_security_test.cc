@@ -367,10 +367,11 @@ class SslTransportSecurityTest
             std::make_shared<tsi::RootCertInfo>(key_cert_lib->root_cert);
       }
       if (ssl_fixture->force_client_auth_) {
-        client_options.pem_key_cert_pair =
-            key_cert_lib->use_bad_client_cert
-                ? &key_cert_lib->bad_client_pem_key_cert_pair
-                : &key_cert_lib->client_pem_key_cert_pair;
+        client_options.pem_key_cert_pairs =
+            std::vector<tsi_ssl_pem_key_cert_pair>{
+                key_cert_lib->use_bad_client_cert
+                    ? key_cert_lib->bad_client_pem_key_cert_pair
+                    : key_cert_lib->client_pem_key_cert_pair};
       }
       if (alpn_lib->alpn_mode == ALPN_CLIENT_NO_SERVER ||
           alpn_lib->alpn_mode == ALPN_CLIENT_SERVER_OK ||
@@ -1313,6 +1314,32 @@ TEST(SslTransportSecurityTest, TestClientHandshakerFactoryBadParams) {
   ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
                 &options, &client_handshaker_factory),
             TSI_INVALID_ARGUMENT);
+  tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory);
+}
+
+TEST(SslTransportSecurityTest, TestClientHandshakerFactoryMultipleCerts) {
+  std::string root_cert =
+      GetFileContents(absl::StrCat(kSslTsiTestCredentialsDir, "ca.pem"));
+  tsi_ssl_pem_key_cert_pair cert_pair_0;
+  cert_pair_0.cert_chain = GetFileContents(
+      absl::StrCat(kSslTsiTestCredentialsDir, "client.pem"));
+  cert_pair_0.private_key = GetFileContents(
+      absl::StrCat(kSslTsiTestCredentialsDir, "client.key"));
+  tsi_ssl_pem_key_cert_pair cert_pair_1;
+  cert_pair_1.cert_chain = GetFileContents(
+      absl::StrCat(kSslTsiTestCredentialsDir, "server0.pem"));
+  cert_pair_1.private_key = GetFileContents(
+      absl::StrCat(kSslTsiTestCredentialsDir, "server0.key"));
+
+  tsi_ssl_client_handshaker_factory* client_handshaker_factory;
+  tsi_ssl_client_handshaker_options options;
+  options.root_cert_info = std::make_shared<tsi::RootCertInfo>(root_cert);
+  options.pem_key_cert_pairs =
+      std::vector<tsi_ssl_pem_key_cert_pair>{cert_pair_0, cert_pair_1};
+  ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
+                &options, &client_handshaker_factory),
+            TSI_OK);
+  EXPECT_NE(client_handshaker_factory, nullptr);
   tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory);
 }
 

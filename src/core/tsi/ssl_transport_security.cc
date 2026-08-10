@@ -3263,7 +3263,10 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
     const char** alpn_protocols, uint16_t num_alpn_protocols,
     tsi_ssl_client_handshaker_factory** factory) {
   tsi_ssl_client_handshaker_options options;
-  options.pem_key_cert_pair = pem_key_cert_pair;
+  if (pem_key_cert_pair != nullptr) {
+    options.pem_key_cert_pairs =
+        std::vector<tsi_ssl_pem_key_cert_pair>{*pem_key_cert_pair};
+  }
   if (pem_root_certs != nullptr) {
     options.root_cert_info =
         std::make_shared<tsi::RootCertInfo>(pem_root_certs);
@@ -3343,22 +3346,39 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   }
 
   do {
-    result = populate_ssl_context(ssl_context, options->pem_key_cert_pair,
-                                  options->cipher_suites,
-                                  options->key_exchange_groups);
-    if (result != TSI_OK) break;
-
+    result = grpc_core::Match(
+        options->pem_key_cert_pairs,
+        [&](const std::vector<tsi_ssl_pem_key_cert_pair>& pem_key_cert_pairs) {
+          if (pem_key_cert_pairs.empty()) {
+            return populate_ssl_context(ssl_context, nullptr,
+                                        options->cipher_suites,
+                                        options->key_exchange_groups);
+          }
+          for (const auto& pair : pem_key_cert_pairs) {
+            tsi_result res = populate_ssl_context(
+                ssl_context, &pair, options->cipher_suites,
+                options->key_exchange_groups);
+            if (res != TSI_OK) return res;
 #if defined(OPENSSL_IS_BORINGSSL)
-    if (options->pem_key_cert_pair != nullptr) {
-      grpc_core::Match(
-          options->pem_key_cert_pair->private_key, [](const std::string&) {},
-          [&](const std::shared_ptr<grpc_core::PrivateKeySigner>& key_signer) {
-            // The Handshaker Factory will own a shared copy of the reference
-            // passed through the options.
-            impl->key_signer = key_signer;
-          });
-    }
+            grpc_core::Match(
+                pair.private_key, [](const std::string&) {},
+                [&](const std::shared_ptr<grpc_core::PrivateKeySigner>&
+                        key_signer) {
+                  // The Handshaker Factory will own a shared copy of the reference
+                  // passed through the options.
+                  impl->key_signer = key_signer;
+                });
 #endif
+          }
+          return TSI_OK;
+        },
+        [&](const std::shared_ptr<grpc_core::CertificateSelector>&
+                /*cert_selector*/) {
+          return populate_ssl_context(ssl_context, nullptr,
+                                      options->cipher_suites,
+                                      options->key_exchange_groups);
+        });
+    if (result != TSI_OK) break;
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
     // X509_STORE_up_ref is only available since OpenSSL 1.1.
@@ -3680,10 +3700,10 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
           return TSI_INVALID_ARGUMENT;
         }
         impl->ssl_contexts.reserve(pem_key_cert_pairs.size());
-        for (size_t i = 0; i < pem_key_cert_pairs.size(); ++i) {
+        for (const auto& pair : pem_key_cert_pairs) {
           SslContext& ssl_context = impl->ssl_contexts.emplace_back();
           tsi_result result = tsi_configure_server_ssl_context(
-              options, &pem_key_cert_pairs[i], impl, ssl_context);
+              options, &pair, impl, ssl_context);
           if (result != TSI_OK) {
             return result;
           }
