@@ -76,7 +76,9 @@ class _GenericHandler(grpc.GenericRpcHandler):
         if handler_details.method == _UNARY_UNARY_ABORT:
             return grpc.unary_unary_rpc_method_handler(self._unary_unary_abort)
         if handler_details.method == _SYNC_UNARY_UNARY_ABORT:
-            return grpc.unary_unary_rpc_method_handler(self._sync_unary_unary_abort)
+            return grpc.unary_unary_rpc_method_handler(
+                self._sync_unary_unary_abort
+            )
         if handler_details.method == _SUPPRESS_ABORT:
             return grpc.unary_unary_rpc_method_handler(self._suppress_abort)
         if handler_details.method == _REPLACE_ABORT:
