@@ -38,8 +38,10 @@
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_server_grpc.h"
 #include "src/core/xds/xds_client/xds_transport.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
+
 class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
  public:
   class ExtProcChannel final : public Blackboard::Entry {
@@ -142,6 +144,18 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
  private:
   class ExtProcCall;
 
+  class TelemetryDomain final : public InstrumentDomain<TelemetryDomain> {
+   public:
+    using Backend = HighContentionBackend;
+    static constexpr absl::string_view kName = "client_ext_proc";
+    GRPC_INSTRUMENT_DOMAIN_LABELS("target");
+
+    static HistogramHandle<ExponentialHistogramShape> kClientHeadersDuration;
+    static HistogramHandle<ExponentialHistogramShape> kClientHalfCloseDuration;
+    static HistogramHandle<ExponentialHistogramShape> kServerHeadersDuration;
+    static HistogramHandle<ExponentialHistogramShape> kServerTrailersDuration;
+  };
+
   RefCountedPtr<ExtProcChannel> channel() const { return config_->channel(); }
 
   void RecordClientHeadersDuration(double duration_seconds) const;
@@ -154,6 +168,7 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
         << "ExtProcFilter " << this << " Orphaned()";
     event_engine_.reset();
     config_.reset();
+    telemetry_storage_.reset();
   }
 
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override;
@@ -161,8 +176,7 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
   RefCountedPtr<const Config> config_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   Slice default_authority_;
-  std::string target_;
-  RefCountedPtr<CollectionScope> collection_scope_;
+  InstrumentStorageRefPtr<TelemetryDomain> telemetry_storage_;
 };
 
 }  // namespace grpc_core

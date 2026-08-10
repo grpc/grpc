@@ -257,7 +257,7 @@ class MockExternalProcessorService : public MockExternalProcessorBase {
           ::envoy::service::ext_proc::v3::ProcessingRequest>* stream) override {
     {
       absl::MutexLock lock(&mu_);
-      num_calls_++;
+      ++num_calls_;
     }
     ::envoy::service::ext_proc::v3::ProcessingRequest request;
     while (stream->Read(&request)) {
@@ -265,7 +265,7 @@ class MockExternalProcessorService : public MockExternalProcessorBase {
       {
         absl::MutexLock lock(&mu_);
         if (request.has_request_headers()) {
-          counts_.request_headers++;
+          ++counts_.request_headers;
           auto* mutation = response.mutable_request_headers()
                                ->mutable_response()
                                ->mutable_header_mutation();
@@ -273,7 +273,7 @@ class MockExternalProcessorService : public MockExternalProcessorBase {
           header->mutable_header()->set_key(kRequestHeadersMutatedHeaderKey);
           header->mutable_header()->set_value(kHeaderMutatedValue);
         } else if (request.has_response_headers()) {
-          counts_.response_headers++;
+          ++counts_.response_headers;
           auto* mutation = response.mutable_response_headers()
                                ->mutable_response()
                                ->mutable_header_mutation();
@@ -281,7 +281,7 @@ class MockExternalProcessorService : public MockExternalProcessorBase {
           header->mutable_header()->set_key(kResponseHeadersMutatedHeaderKey);
           header->mutable_header()->set_value(kHeaderMutatedValue);
         } else if (request.has_request_body()) {
-          counts_.request_body++;
+          ++counts_.request_body;
           auto* body_mutation = response.mutable_request_body()
                                     ->mutable_response()
                                     ->mutable_body_mutation();
@@ -297,7 +297,7 @@ class MockExternalProcessorService : public MockExternalProcessorBase {
                 request.request_body().body());
           }
         } else if (request.has_response_body()) {
-          counts_.response_body++;
+          ++counts_.response_body;
           auto* body_mutation = response.mutable_response_body()
                                     ->mutable_response()
                                     ->mutable_body_mutation();
@@ -313,7 +313,7 @@ class MockExternalProcessorService : public MockExternalProcessorBase {
                 request.response_body().body());
           }
         } else if (request.has_response_trailers()) {
-          counts_.response_trailers++;
+          ++counts_.response_trailers;
           auto* mutation =
               response.mutable_response_trailers()->mutable_header_mutation();
           auto* header = mutation->add_set_headers();
@@ -1189,8 +1189,12 @@ TEST_P(XdsExtProcEnd2endTest,
           SetDefaultEmptyResponse(request, response);
         } else if (request.has_request_body()) {
           absl::MutexLock lock(&mu);
-          path_received = GetExtProcAttribute(request, "request.path");
-          method_received = GetExtProcAttribute(request, "request.method");
+          if (path_received.empty()) {
+            path_received = GetExtProcAttribute(request, "request.path");
+          }
+          if (method_received.empty()) {
+            method_received = GetExtProcAttribute(request, "request.method");
+          }
           SetDefaultEmptyResponse(request, response);
         } else {
           SetDefaultEmptyResponse(request, response);
@@ -1640,7 +1644,7 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamNormalHalfCloseSuccess) {
         SetDefaultEmptyResponse(request, response);
         if (request.has_request_body()) {
           absl::MutexLock lock(&claims->mu);
-          claims->body_chunks++;
+          ++claims->body_chunks;
           const auto& body_req = request.request_body();
           if (claims->body_chunks <= 3) {
             EXPECT_FALSE(body_req.end_of_stream());
@@ -1773,7 +1777,8 @@ TEST_P(XdsExtProcEnd2endTest,
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
                       MakeConnectionFailureRegex(
                           "failed to connect to all addresses; last error: ",
-                          /*resolution_note=*/""));
+                          /*resolution_note=*/""),
+                      RpcOptions().set_skip_cancelled_check(true));
 }
 
 TEST_P(XdsExtProcEnd2endTest,
@@ -2304,7 +2309,8 @@ TEST_P(XdsExtProcEnd2endTest,
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
                       MakeConnectionFailureRegex(
                           "failed to connect to all addresses; last error: ",
-                          /*resolution_note=*/""));
+                          /*resolution_note=*/""),
+                      RpcOptions().set_skip_cancelled_check(true));
 }
 
 TEST_P(XdsExtProcEnd2endTest,
@@ -4065,7 +4071,7 @@ TEST_P(XdsExtProcEnd2endTest,
         int response_body_count = 0;
         while (stream->Read(&request)) {
           if (request.has_response_body()) {
-            response_body_count++;
+            ++response_body_count;
             if (response_body_count == 2) {
               return grpc::Status::OK;
             }
@@ -4130,7 +4136,7 @@ TEST_P(XdsExtProcEnd2endTest,
         int response_body_count = 0;
         while (stream->Read(&request)) {
           if (request.has_response_body()) {
-            response_body_count++;
+            ++response_body_count;
             if (response_body_count == 2) {
               return grpc::Status::OK;
             }
@@ -4557,7 +4563,7 @@ TEST_P(XdsExtProcEnd2endTest,
         int response_body_count = 0;
         while (stream->Read(&request)) {
           if (request.has_response_body()) {
-            response_body_count++;
+            ++response_body_count;
             if (response_body_count == 2) {
               return grpc::Status::OK;
             }
