@@ -406,7 +406,7 @@ class SslCertSelectorTsiTestFixture {
     server_options.min_tls_version = tls_version_;
     server_options.max_tls_version = tls_version_;
     ASSERT_NE(cert_selector_, nullptr);
-    server_options.pem_key_cert_pairs = cert_selector_;
+    server_options.key_cert_pairs_or_selector = cert_selector_;
     ASSERT_EQ(tsi_create_ssl_server_handshaker_factory_with_options(
                   &server_options, &server_handshaker_factory_),
               TSI_OK);

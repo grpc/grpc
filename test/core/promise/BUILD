@@ -228,13 +228,17 @@ grpc_cc_test(
     name = "if_test",
     srcs = ["if_test.cc"],
     external_deps = [
-        "gtest",
+        "absl/status:statusor",
         "absl/strings",
+        "gtest",
     ],
     tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
-    deps = ["//src/core:if"],
+    deps = [
+        "//src/core:if",
+        "//src/core:poll",
+    ],
 )
 
 grpc_cc_test(
@@ -349,7 +353,14 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "poll_matcher",
+        "//src/core:for_each",
+        "//src/core:if",
         "//src/core:json_writer",
+        "//src/core:loop",
+        "//src/core:map",
+        "//src/core:race",
+        "//src/core:seq",
+        "//src/core:sleep",
         "//src/core:try_seq",
         "//src/proto/grpc/channelz/v2:promise_upb_proto",
         "@com_google_protobuf//upb/mem",

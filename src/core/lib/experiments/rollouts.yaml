@@ -120,8 +120,6 @@
   default: false
 - name: skip_clear_peer_on_cancellation
   default: false
-- name: subchannel_connection_scaling
-  default: true
 - name: tcp_frame_size_tuning
   default: false
 - name: tcp_rcv_lowat

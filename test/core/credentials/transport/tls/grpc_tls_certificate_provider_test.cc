@@ -354,22 +354,19 @@ TEST_F(GrpcTlsCertificateProviderTest,
   // Watcher watching both root and identity certs.
   WatcherState* watcher_state_1 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
-  EXPECT_THAT(watcher_state_1->GetErrorQueue(),
-              ::testing::ElementsAre(ErrorInfo(kRootError, kIdentityError)));
+  EXPECT_THAT(watcher_state_1->GetErrorQueue(), ::testing::IsEmpty());
   EXPECT_THAT(watcher_state_1->GetCredentialQueue(), ::testing::ElementsAre());
   CancelWatch(watcher_state_1);
   // Watcher watching only root certs.
   WatcherState* watcher_state_2 =
       MakeWatcher(provider.distributor(), kCertName, std::nullopt);
-  EXPECT_THAT(watcher_state_2->GetErrorQueue(),
-              ::testing::ElementsAre(ErrorInfo(kRootError, "")));
+  EXPECT_THAT(watcher_state_2->GetErrorQueue(), ::testing::IsEmpty());
   EXPECT_THAT(watcher_state_2->GetCredentialQueue(), ::testing::ElementsAre());
   CancelWatch(watcher_state_2);
   // Watcher watching only identity certs.
   WatcherState* watcher_state_3 =
       MakeWatcher(provider.distributor(), std::nullopt, kCertName);
-  EXPECT_THAT(watcher_state_3->GetErrorQueue(),
-              ::testing::ElementsAre(ErrorInfo("", kIdentityError)));
+  EXPECT_THAT(watcher_state_3->GetErrorQueue(), ::testing::IsEmpty());
   EXPECT_THAT(watcher_state_3->GetCredentialQueue(), ::testing::ElementsAre());
   CancelWatch(watcher_state_3);
 }
