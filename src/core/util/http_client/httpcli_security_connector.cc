@@ -95,7 +95,8 @@ class grpc_httpcli_ssl_channel_security_connector final
           handshaker_factory_, secure_peer_name_, /*network_bio_buf_size=*/0,
           /*ssl_bio_buf_size=*/0,
           args.GetOwnedString(GRPC_ARG_TRANSPORT_PROTOCOLS),
-          /*collection_scope=*/nullptr, &handshaker);
+          /*collection_scope=*/nullptr, /*target=*/secure_peer_name_,
+          /*locality=*/"", /*backend_service=*/"", &handshaker);
       if (result != TSI_OK) {
         LOG(ERROR) << "Handshaker creation failed with error "
                    << tsi_result_to_string(result);

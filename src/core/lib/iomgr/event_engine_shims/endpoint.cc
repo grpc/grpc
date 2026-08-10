@@ -464,8 +464,7 @@ void grpc_event_engine_endpoint_destroy_and_release_fd(
           if (release_fd.ok()) {
             *fd = *release_fd;
           }
-          RunEventEngineClosure(on_release_fd,
-                                absl_status_to_grpc_error(release_fd.status()));
+          RunEventEngineClosure(on_release_fd, release_fd.status());
         });
   }
   eeep->wrapper->Unref();

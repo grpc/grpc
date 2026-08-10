@@ -31,7 +31,7 @@
 
 namespace grpc_core {
 
-class XdsHttpRbacFilter final : public XdsHttpFilterImpl {
+class XdsHttpRbacFilterFactory final : public XdsHttpFilterFactory {
  public:
   absl::string_view ConfigProtoName() const override;
   absl::string_view OverrideConfigProtoName() const override;

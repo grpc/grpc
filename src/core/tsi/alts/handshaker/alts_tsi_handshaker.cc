@@ -652,7 +652,7 @@ static tsi_result handshaker_next_dedicated(
                          user_data, error);
 }
 
-static void handshaker_shutdown(tsi_handshaker* self) {
+static void handshaker_shutdown(tsi_handshaker* self, bool /*peer_closed*/) {
   GRPC_CHECK_NE(self, nullptr);
   alts_tsi_handshaker* handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(self);
