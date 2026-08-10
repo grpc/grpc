@@ -58,7 +58,7 @@ class WriteFlag:
   no_compress = GRPC_WRITE_NO_COMPRESS
 
 
-class StatusCode:
+class StatusCode(enum.IntEnum):
   ok = GRPC_STATUS_OK
   cancelled = GRPC_STATUS_CANCELLED
   unknown = GRPC_STATUS_UNKNOWN
@@ -76,6 +76,23 @@ class StatusCode:
   internal = GRPC_STATUS_INTERNAL
   unavailable = GRPC_STATUS_UNAVAILABLE
   data_loss = GRPC_STATUS_DATA_LOSS
+
+  # Typeguard cannot identify `_cygrpc.StatusCode` values as integers unless
+  # the class inherits from `enum.IntEnum`. However, doing so breaks the
+  # pickling of `grpc.StatusCode` because it then embeds instances of
+  # `_cygrpc.StatusCode` instead of plain integers. This leads to a
+  # PicklingError: Can't pickle : import of module '_cython.cygrpc' failed.
+  # To resolve this, we implement the pickling interface and ensure
+  # `_cygrpc.StatusCode` values are pickled as pure integers. Test:
+  # grpcio_tests.tests_aio.unit.aio_rpc_error_test.TestAioRpcError.test_pickle
+  def __reduce_ex__(self, proto):
+    return (int, (self.value,))
+
+  def __str__(self):
+    return str(self.value)
+
+  def __repr__(self):
+    return self.value
 
 
 class CallError:
