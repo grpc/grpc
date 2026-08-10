@@ -740,8 +740,10 @@ class TestServer(AioTestBase):
                 "test", registered_handlers
             )
         self.assertTrue(
-            any("Cannot register method handlers") in output
-            for output in cm.output
+            any(
+                "Cannot register method handlers" in output
+                for output in cm.output
+            )
         )
 
         call = self._channel.unary_unary(
