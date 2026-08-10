@@ -488,6 +488,7 @@ class ArtifactGen {
         {"@@protoc-gen-validate+", "@com_envoyproxy_protoc_gen_validate"},
         {"@@opencensus-proto+", "opencensus_proto"},
         {"@@envoy_api+", "@envoy_api"},
+        {"@@grpc-proto+", "@grpc_proto"},
     };
     const std::map<std::string, std::string> kExternalLinks{
         {"@com_google_protobuf//", "src/"},
@@ -497,6 +498,7 @@ class ArtifactGen {
         {"@dev_cel//", "proto/"},
         {"@envoy_api//", ""},
         {"@opencensus_proto//", ""},
+        {"@grpc_proto//", ""},
     };
     for (auto& [name, bazel_rule] : rules_) {
       if (bazel_rule.generator_function != "grpc_upb_proto_library" &&
@@ -1238,6 +1240,13 @@ class ArtifactGen {
            {
                "third_party/opencensus-proto/src",
                "third_party/opencensus-proto/src/",
+           },
+       },
+       {
+           "grpc_proto",
+           {
+               "third_party/grpc-proto",
+               "third_party/grpc-proto/",
            },
        }};
 };

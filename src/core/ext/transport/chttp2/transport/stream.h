@@ -33,7 +33,6 @@
 #include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
-#include "src/core/ext/transport/chttp2/transport/header_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
@@ -44,6 +43,7 @@
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "absl/log/log.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -54,13 +54,159 @@ namespace http2 {
 constexpr uint32_t kStreamQueueSize = /*1 MB*/ 1024u * 1024u;
 constexpr uint32_t kInvalidStreamId = 0u;
 
-enum class HttpStreamState : uint8_t {
-  // https://www.rfc-editor.org/rfc/rfc9113.html#name-stream-states
-  kIdle,
-  kOpen,
-  kHalfClosedLocal,
-  kHalfClosedRemote,
-  kClosed,
+struct StreamStateChange {
+  bool reads_became_closed = false;
+  bool stream_became_closed = false;
+  std::string DebugString() const {
+    return absl::StrCat("reads_became_closed: ", reads_became_closed,
+                        " stream_became_closed: ", stream_became_closed);
+  }
+};
+
+class StreamState {
+ public:
+  explicit StreamState(const bool started) : started_(started) {}
+  ~StreamState() = default;
+
+  // StreamState is neither movable nor copyable.
+  StreamState(const StreamState&) = delete;
+  StreamState& operator=(const StreamState&) = delete;
+  StreamState(StreamState&&) = delete;
+  StreamState& operator=(StreamState&&) = delete;
+
+  // State queries
+  bool started() const { return started_; }
+  bool reads_closed() const { return reads_closed_; }
+  bool half_closed_local() const { return half_closed_local_; }
+  bool writes_closed() const {
+    return writes_closed_.load(std::memory_order_relaxed);
+  }
+
+  // A stream is closed when both reads and writes are closed.
+  bool IsClosed() const { return reads_closed() && writes_closed(); }
+
+  // A stream is idle if it has not started yet and has not been closed.
+  // Note: HTTP/2 does not allow direct transitions from Idle to Half-Closed
+  // states (it must go through Open first, which sets `started_` to true).
+  // The only transition from Idle for an unstarted stream is to Closed
+  // (e.g., via local cancellation). Thus, checking `!started() && !IsClosed()`
+  // is sufficient to identify the Idle state.
+  bool IsIdle() const { return !started() && !IsClosed(); }
+
+  bool IsOpen() const {
+    return started() && !reads_closed() && !writes_closed() &&
+           !half_closed_local();
+  }
+
+  bool IsHalfClosedRemote() const { return reads_closed() && !writes_closed(); }
+
+  bool IsHalfClosedLocal() const {
+    return !reads_closed() && half_closed_local();
+  }
+
+  bool IsHalfClosedLocalSent() const { return half_closed_local(); }
+
+  std::string DebugString() const {
+    return absl::StrCat(
+        "started:", started_, " reads_closed:", reads_closed_,
+        " half_closed_local:", half_closed_local_,
+        " writes_closed:", writes_closed_.load(std::memory_order_relaxed));
+  }
+
+  // Semantic state transitions
+  void OnInitialMetadataSent() {
+    GRPC_DCHECK(!started_);
+    started_ = true;
+  }
+
+  StreamStateChange OnHalfCloseSent() {
+    return RunTransition([this]() {
+      half_closed_local_ = true;
+      MaybeUpdateWritesClosed();
+    });
+  }
+
+  StreamStateChange OnTrailingMetadataReceived() {
+    return RunTransition([this]() {
+      reads_closed_ = true;
+      MaybeUpdateWritesClosed();
+    });
+  }
+
+  StreamStateChange OnHalfCloseReceived() {
+    return RunTransition([this]() { reads_closed_ = true; });
+  }
+
+  StreamStateChange OnResetReceived() {
+    return RunTransition([this]() {
+      reads_closed_ = true;
+      half_closed_local_ = true;
+      writes_closed_.store(true, std::memory_order_relaxed);
+    });
+  }
+
+  StreamStateChange OnResetSent() {
+    return RunTransition([this]() {
+      reads_closed_ = true;
+      half_closed_local_ = true;
+      writes_closed_.store(true, std::memory_order_relaxed);
+    });
+  }
+
+  StreamStateChange OnInitiateReset() {
+    return RunTransition([this]() { reads_closed_ = true; });
+  }
+
+  // Force setters for fallback/init errors
+  StreamStateChange ForceClose() {
+    return RunTransition([this]() {
+      reads_closed_ = true;
+      half_closed_local_ = true;
+      writes_closed_.store(true, std::memory_order_relaxed);
+    });
+  }
+
+ private:
+  template <typename F>
+  StreamStateChange RunTransition(F&& transition_func) {
+    const bool was_read_closed = reads_closed_;
+    const bool was_closed = IsClosed();
+
+    transition_func();
+    GRPC_HTTP2_STREAM_LOG << "StreamState transition from "
+                          << "{reads_closed: " << was_read_closed
+                          << ", closed: " << was_closed << "}"
+                          << " to " << DebugString();
+    return {/*reads_became_closed=*/!was_read_closed && reads_closed(),
+            /*stream_became_closed=*/!was_closed && IsClosed()};
+  }
+
+  void MaybeUpdateWritesClosed() {
+    // Client: if we sent half close and peer closed reads, writes are closed.
+    // Server: half_closed_local_ is never explicitly set, so this function is
+    // mostly a no-op.
+    if (reads_closed_ && half_closed_local_) {
+      writes_closed_.store(true, std::memory_order_relaxed);
+    }
+  }
+
+  // Started is set to true when initial metadata has been sent on the wire.
+  // For client, this is when initial metadata has been sent on the wire. For
+  // server, this is when initial metadata has been received from the wire.
+  bool started_ = false;
+
+  // Has peer sent a frame notifying that no more frames will be sent (trailing
+  // metadata or RST or half close).
+  bool reads_closed_ = false;
+
+  // Has the transport sent a frame notifying peer that no more data frames will
+  // be sent (half close). Note: Client can still send RST after this point
+  // until writes are fully closed.
+  bool half_closed_local_ = false;
+
+  // Absolutely nothing can be sent for this stream now (after RST or after both
+  // half_close and reads_closed for client).
+  std::atomic<bool> writes_closed_{false};
 };
 
 // Managing the streams
@@ -70,12 +216,12 @@ class Stream : public RefCounted<Stream> {
                   chttp2::TransportFlowControl& transport_flow_control)
       : flow_control_(&transport_flow_control),
         call_(std::move(call_handler)),
-        is_write_closed_(false),
+        state_(/*started=*/false),
         stream_id_(kInvalidStreamId),
-        stream_state_(HttpStreamState::kIdle),
         did_receive_initial_metadata_(false),
         did_receive_trailing_metadata_(false),
         did_push_server_trailing_metadata_(false),
+        did_cancel_(false),
         data_queue_(MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
             std::get<CallHandler>(call_).arena(), /*is_client*/ true,
             /*queue_size*/ kStreamQueueSize)) {}
@@ -86,12 +232,12 @@ class Stream : public RefCounted<Stream> {
                   const bool allow_true_binary_metadata_peer)
       : flow_control_(&transport_flow_control),
         call_(std::move(call_initiator)),
-        is_write_closed_(false),
+        state_(/*started=*/true),
         stream_id_(stream_id),
-        stream_state_(HttpStreamState::kIdle),
         did_receive_initial_metadata_(false),
         did_receive_trailing_metadata_(false),
         did_push_server_trailing_metadata_(false),
+        did_cancel_(false),
         data_queue_(MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
             std::get<CallInitiator>(call_).arena(), /*is_client*/ false,
             /*queue_size*/ kStreamQueueSize)) {
@@ -103,15 +249,9 @@ class Stream : public RefCounted<Stream> {
   Stream& operator=(const Stream&) = delete;
   Stream& operator=(Stream&&) = delete;
 
-  // TODO(akshitpatel) : [PH2][P4] : SetStreamId can be avoided if we pass the
-  // stream id as a parameter to the dequeue function. The only downside here
-  // is that we will be creating two new disassemblers for every dequeue call.
-  // The upside is that we save 8 bytes per call. Decide based on benchmark
-  // results.
   void InitializeClientStream(const uint32_t stream_id,
                               const bool allow_true_binary_metadata_peer) {
-    GRPC_DCHECK(std::holds_alternative<CallHandler>(call_))
-        << "Client Only Function";
+    GRPC_DCHECK(is_client()) << "Client Only Function";
     GRPC_DCHECK_NE(stream_id, 0u);
     GRPC_DCHECK_EQ(this->stream_id_, 0u);
     GRPC_HTTP2_STREAM_LOG << "Stream::InitializeClientStream stream_id="
@@ -148,7 +288,7 @@ class Stream : public RefCounted<Stream> {
   }
 
   auto EnqueueHalfClosed() {
-    GRPC_DCHECK(std::holds_alternative<CallHandler>(call_));
+    GRPC_DCHECK(is_client());
     GRPC_HTTP2_STREAM_LOG << "Stream::EnqueueHalfClosed";
     return data_queue_->EnqueueHalfClosed();
   }
@@ -164,14 +304,12 @@ class Stream : public RefCounted<Stream> {
                      const uint32_t stream_flow_control_tokens,
                      const uint32_t max_frame_length, HPackCompressor& encoder,
                      FrameSender& frame_sender) {
-    HttpStreamState state = stream_state_;
     // Reset stream MUST not be sent if the stream is idle or closed.
     return data_queue_->DequeueFrames(tokens, max_frame_length,
                                       stream_flow_control_tokens, encoder,
                                       frame_sender,
                                       /*can_send_reset_stream=*/
-                                      !(state == HttpStreamState::kIdle ||
-                                        state == HttpStreamState::kClosed));
+                                      !(IsStreamIdle() || IsStreamClosed()));
   }
 
   auto UpdateStreamWritability(const int64_t stream_fc_tokens) {
@@ -180,105 +318,91 @@ class Stream : public RefCounted<Stream> {
 
   ////////////////////////////////////////////////////////////////////////////
   // Stream State Management
-  // All state management helpers MUST be called from the transport party.
+  // All state management helpers, MUST be called from the transport party.
 
-  // Modify the stream state
-  // The possible stream transitions are as follows:
-  // kIdle -> kOpen
-  // kOpen -> kClosed/kHalfClosedLocal/kHalfClosedRemote
-  // kHalfClosedLocal/kHalfClosedRemote -> kClosed
-  // kClosed -> kClosed
-  void SentInitialMetadata() {
-    GRPC_DCHECK(stream_state_ == HttpStreamState::kIdle);
-    stream_state_ = HttpStreamState::kOpen;
-  }
-  void SentTrailingMetadata() {
-    GRPC_DCHECK(stream_state_ != HttpStreamState::kClosed ||
-                stream_state_ != HttpStreamState::kHalfClosedLocal)
-        << "Cannot send trailing metadata in closed or half closed local state";
-    stream_state_ = HttpStreamState::kClosed;
+  // HTTP/2 stream states
+  bool IsStreamIdle() const { return state_.IsIdle(); }
+  bool IsOpen() const { return state_.IsOpen(); }
+  bool IsStreamClosed() const { return state_.IsClosed(); }
+  bool IsStreamHalfClosedRemote() const { return state_.IsHalfClosedRemote(); }
+  bool IsHalfClosedLocal() const { return state_.IsHalfClosedLocal(); }
+  bool IsHalfClosedLocalSent() const { return state_.IsHalfClosedLocalSent(); }
+
+  // gRPC stream state
+  bool IsClosedForReads() const { return state_.reads_closed(); }
+  bool IsClosedForWrites() const { return state_.writes_closed(); }
+
+  // Semantic state transitions
+  void OnInitialMetadataSent() {
+    GRPC_DCHECK(is_client());
+    state_.OnInitialMetadataSent();
   }
 
-  void MarkHalfClosedLocal() {
-    switch (stream_state_) {
-      case HttpStreamState::kIdle:
-        GRPC_DCHECK(false) << "MarkHalfClosedLocal called for an idle stream";
-        break;
-      case HttpStreamState::kOpen:
-        GRPC_HTTP2_STREAM_LOG
-            << "Stream::MarkHalfClosedLocal stream_id=" << stream_id_
-            << " transitioning to kHalfClosedLocal";
-        stream_state_ = HttpStreamState::kHalfClosedLocal;
-        break;
-      case HttpStreamState::kHalfClosedRemote:
-        GRPC_HTTP2_STREAM_LOG
-            << "Stream::MarkHalfClosedLocal stream_id=" << stream_id_
-            << " transitioning to kClosed";
-        stream_state_ = HttpStreamState::kClosed;
-        break;
-      case HttpStreamState::kHalfClosedLocal:
-        break;
-      case HttpStreamState::kClosed:
-        GRPC_HTTP2_STREAM_LOG
-            << "Stream::MarkHalfClosedLocal stream_id=" << stream_id_
-            << " already closed";
-        break;
+  StreamStateChange OnHalfCloseSent() {
+    GRPC_DCHECK(is_client());
+    return state_.OnHalfCloseSent();
+  }
+
+  StreamStateChange OnTrailingMetadataReceived(ServerMetadataHandle metadata) {
+    SetTrailingMetadataReceived();
+    const StreamStateChange change = state_.OnTrailingMetadataReceived();
+    if (is_client()) {
+      MaybePushServerTrailingMetadata(std::move(metadata));
+    } else {
+      // Server: custom HTTP2 implementations might send trailing metadata.
+      // We just close reads and do nothing else (upper layers discard client
+      // trailers).
+      GRPC_HTTP2_STREAM_LOG << "Stream::OnTrailingMetadataReceived Server "
+                               "stream_id="
+                            << stream_id_
+                            << " StreamStateChange=" << change.DebugString();
+      if (change.reads_became_closed) {
+        GetCallInitiator().SpawnFinishSends();
+      }
     }
+    return change;
   }
 
-  void MarkHalfClosedRemote() {
-    switch (stream_state_) {
-      case HttpStreamState::kIdle:
-        GRPC_DCHECK(false) << "MarkHalfClosedRemote called for an idle stream";
-        break;
-      case HttpStreamState::kOpen:
-        GRPC_HTTP2_STREAM_LOG
-            << "Stream::MarkHalfClosedRemote stream_id=" << stream_id_
-            << " transitioning to kHalfClosedRemote";
-        stream_state_ = HttpStreamState::kHalfClosedRemote;
-        break;
-      case HttpStreamState::kHalfClosedLocal:
-        GRPC_HTTP2_STREAM_LOG
-            << "Stream::MarkHalfClosedRemote stream_id=" << stream_id_
-            << " transitioning to kClosed";
-        stream_state_ = HttpStreamState::kClosed;
-        break;
-      case HttpStreamState::kHalfClosedRemote:
-        break;
-      case HttpStreamState::kClosed:
-        GRPC_HTTP2_STREAM_LOG
-            << "Stream::MarkHalfClosedRemote stream_id=" << stream_id_
-            << " already closed";
-        break;
+  StreamStateChange OnHalfCloseReceived() {
+    GRPC_DCHECK(is_server());
+    const StreamStateChange change = state_.OnHalfCloseReceived();
+    if (change.reads_became_closed) {
+      GetCallInitiator().SpawnFinishSends();
     }
+    return change;
   }
 
-  inline bool IsStreamIdle() const {
-    return stream_state_ == HttpStreamState::kIdle;
+  StreamStateChange OnResetReceived(absl::Status status) {
+    const StreamStateChange change = state_.OnResetReceived();
+    CancelCall(std::move(status));
+    return change;
   }
-  inline bool IsStreamHalfClosedRemote() const {
-    return stream_state_ == HttpStreamState::kHalfClosedRemote;
+
+  StreamStateChange OnResetSent() {
+    const StreamStateChange change = state_.OnResetSent();
+
+    // Fallback cancel. Safe even for normal completion as CallSpine would have
+    // already processed trailing metadata, making Cancel a no-op.
+    CancelCall(absl::CancelledError("RST stream sent"));
+    return change;
   }
-  inline bool IsHalfClosedLocal() const {
-    return stream_state_ == HttpStreamState::kHalfClosedLocal;
+
+  StreamStateChange OnInitiateReset(absl::Status status) {
+    const StreamStateChange change = state_.OnInitiateReset();
+    CancelCall(std::move(status));
+    return change;
   }
-  inline bool IsStreamClosed() const {
-    return stream_state_ == HttpStreamState::kClosed;
+
+  StreamStateChange ForceClose(absl::Status status) {
+    const StreamStateChange change = state_.ForceClose();
+    CancelCall(std::move(status));
+    return change;
   }
 
   inline uint32_t GetStreamId() const { return stream_id_; }
 
-  inline bool IsClosedForWrites() const {
-    return is_write_closed_.load(std::memory_order_relaxed);
-  }
-
-  inline void SetWriteClosed() {
-    is_write_closed_.store(true, std::memory_order_relaxed);
-  }
-
   inline bool CanSendWindowUpdateFrames() const {
-    return stream_state_ == HttpStreamState::kOpen ||
-           stream_state_ == HttpStreamState::kHalfClosedLocal;
+    return IsOpen() || IsHalfClosedLocal();
   }
 
   inline Http2Status CanStreamReceiveDataFrames() const {
@@ -296,7 +420,7 @@ class Stream : public RefCounted<Stream> {
   }
 
   void MaybePushServerTrailingMetadata(ServerMetadataHandle&& metadata) {
-    GRPC_DCHECK(std::holds_alternative<CallHandler>(call_));
+    GRPC_DCHECK(is_client());
     GRPC_HTTP2_STREAM_LOG << "Stream::MaybePushServerTrailingMetadata "
                              "stream_id="
                           << stream_id_
@@ -330,7 +454,17 @@ class Stream : public RefCounted<Stream> {
     return std::get<CallHandler>(call_);
   }
 
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION const CallHandler& GetCallHandler()
+      const {
+    return std::get<CallHandler>(call_);
+  }
+
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION CallInitiator& GetCallInitiator() {
+    return std::get<CallInitiator>(call_);
+  }
+
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION const CallInitiator& GetCallInitiator()
+      const {
     return std::get<CallInitiator>(call_);
   }
 
@@ -339,9 +473,24 @@ class Stream : public RefCounted<Stream> {
     return assembler_;
   }
 
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION const GrpcMessageAssembler&
+  GetGrpcMessageAssembler() const {
+    return assembler_;
+  }
+
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION chttp2::StreamFlowControl&
   GetStreamFlowControl() {
     return flow_control_;
+  }
+
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION const chttp2::StreamFlowControl&
+  GetStreamFlowControl() const {
+    return flow_control_;
+  }
+
+  bool is_client() const { return std::holds_alternative<CallHandler>(call_); }
+  bool is_server() const {
+    return std::holds_alternative<CallInitiator>(call_);
   }
 
  private:
@@ -356,21 +505,23 @@ class Stream : public RefCounted<Stream> {
   chttp2::StreamFlowControl flow_control_;
   std::variant<CallInitiator, CallHandler> call_;
 
-  // This flag is kept separate from the stream_state as the stream_state
-  // is inline with the HTTP2 spec, whereas this flag is an implementation
-  // detail of the PH2 transport. As far as PH2 is concerned, if a stream is
-  // closed for writes, it will not send any more frames on that stream.
-  // Similarly if a stream is closed for reads(this is achieved by removing the
-  // stream from the transport map), then all the frames read on that stream
-  // will be dropped.
-  std::atomic<bool> is_write_closed_;
-  uint32_t stream_id_;
+  // This function is idempotent.
+  void CancelCall(absl::Status&& status) {
+    if (std::exchange(did_cancel_, true)) return;
+    if (is_client()) {
+      MaybePushServerTrailingMetadata(
+          CancelledServerMetadataFromStatus(status));
+    } else {
+      GetCallInitiator().SpawnCancel(std::forward<absl::Status>(status));
+    }
+  }
 
-  // This MUST be accessed from the transport party.
-  HttpStreamState stream_state_;
+  StreamState state_;
+  uint32_t stream_id_;
   bool did_receive_initial_metadata_;
   bool did_receive_trailing_metadata_;
   bool did_push_server_trailing_metadata_;
+  bool did_cancel_;
   // Change this if ClientMetadataHandle and ServerMetadataHandle are changed
   // to different types.
   RefCountedPtr<StreamDataQueue<Arena::PoolPtr<grpc_metadata_batch>>>

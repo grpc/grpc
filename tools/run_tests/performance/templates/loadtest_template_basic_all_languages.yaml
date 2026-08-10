@@ -236,6 +236,30 @@ spec:
       command:
       - bash
       name: main
+  - build:
+      args:
+      - build
+      - -p
+      - grpc-benchmark
+      - --release
+      - --bin
+      - worker
+      command:
+      - cargo
+    clone:
+      gitRef: master
+      repo: https://github.com/grpc/grpc-rust.git
+    language: rust
+    pool: ${client_pool}
+    run:
+    - args:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /src/workspace/target/release/worker --driver_port="${DRIVER_PORT}"
+      command:
+      - bash
+      name: main
   driver:
     language: cxx
     run: []
@@ -425,6 +449,30 @@ spec:
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" ruby \
             src/ruby/qps/worker.rb --driver_port="${DRIVER_PORT}"
+      command:
+      - bash
+      name: main
+  - build:
+      args:
+      - build
+      - -p
+      - grpc-benchmark
+      - --release
+      - --bin
+      - worker
+      command:
+      - cargo
+    clone:
+      gitRef: master
+      repo: https://github.com/grpc/grpc-rust.git
+    language: rust
+    pool: ${server_pool}
+    run:
+    - args:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /src/workspace/target/release/worker --driver_port="${DRIVER_PORT}"
       command:
       - bash
       name: main

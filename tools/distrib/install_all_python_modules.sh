@@ -23,6 +23,8 @@ cd "$BASEDIR";
 
 # unit-tests setup starts from here
 function maybe_run_command () {
+  local dir="$1"
+  local cmd="$2"
   # TODO(ssreenithi): find pyproject.toml/nox equivalent
   if python3 -m nox --list | grep "$1" &>/dev/null; then
     python3 -m nox -s "$1";

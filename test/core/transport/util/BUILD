@@ -31,8 +31,11 @@ grpc_cc_library(
     srcs = ["mock_promise_endpoint.cc"],
     hdrs = ["mock_promise_endpoint.h"],
     external_deps = [
+        "absl/functional:any_invocable",
         "absl/log:log",
+        "absl/status",
         "absl/strings",
+        "absl/time",
         "absl/types:span",
         "gtest",
     ],

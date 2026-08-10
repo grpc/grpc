@@ -48,6 +48,7 @@ class TcpTelemetryDomain final : public InstrumentDomain<TcpTelemetryDomain> {
   static HistogramHandle<ExponentialHistogramShape> kTransferLatency64k;
   static HistogramHandle<ExponentialHistogramShape> kTransferLatency256k;
   static HistogramHandle<ExponentialHistogramShape> kTransferLatency2m;
+  static HistogramHandle<ExponentialHistogramShape> kTransferLatency8m;
 };
 
 };  // namespace grpc_core

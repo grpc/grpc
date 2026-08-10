@@ -133,8 +133,25 @@ if [ "${PREPARE_BUILD_INSTALL_DEPS_OBJC}" == "true" ]
 then
   # cocoapods
   export LANG=en_US.UTF-8
-  # use "sudo" to avoid permission error on kokoro monterey image
-  time sudo gem install cocoapods --version 1.15.2 --no-document --user-install
+
+# 1. Install the latest stable Ruby via Homebrew
+brew install ruby
+
+# 2. Add the Homebrew-installed Ruby to the PATH
+# Homebrew usually installs the latest Ruby to /usr/local/opt/ruby/bin
+export PATH="/usr/local/opt/ruby/bin:$PATH"
+
+# 3. Ensure the gem command points to the new Ruby
+# This installs CocoaPods into the user's gem directory to avoid permission issues
+gem install cocoapods -v 1.15.2 --no-document --user-install
+
+# 4. Add the gem binary directory to PATH
+export PATH="$(ruby -e 'puts Gem.user_dir')/bin:$PATH"
+  
+  # 2. Verify the installation
+  ruby --version
+  pod --version
+  
   # pre-fetch cocoapods master repo's most recent commit only
   mkdir -p ~/.cocoapods/repos
   time git clone --depth 1 https://github.com/CocoaPods/Specs.git ~/.cocoapods/repos/master
@@ -201,6 +218,14 @@ then
     echo "05b17ddad5a7c3641d0ecfe5ccf3a97f89c1757e  python-3.14.0rc1-macos11.pkg" > /tmp/python_installer_checksum.sha256
     shasum -c /tmp/python_installer_checksum.sha256
     time sudo installer -pkg ./python-3.14.0rc1-macos11.pkg -target /
+  fi
+
+  # Install Python 3.15 if it doesn't exist
+  if [ ! -f "/usr/local/bin/python3.15" ]; then
+    time curl -O https://www.python.org/ftp/python/3.15.0/python-3.15.0b2-macos11.pkg
+    echo "29b5c95f255f846f77e1c119146836445f929de1392a3ae9ef24f559e1345418  python-3.15.0b2-macos11.pkg" > /tmp/python_installer_checksum.sha256
+    shasum -a 256 -c /tmp/python_installer_checksum.sha256
+    time sudo installer -pkg ./python-3.15.0b2-macos11.pkg -target /
   fi
 fi
 

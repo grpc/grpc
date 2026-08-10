@@ -42,11 +42,13 @@ struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
     absl::string_view config_proto_type;
     Json config;
     RefCountedPtr<const FilterConfig> filter_config;
+    bool disabled = false;
 
     bool operator==(const FilterConfigOverride& other) const {
       if (config_proto_type != other.config_proto_type) return false;
       if (config != other.config) return false;
-      if (filter_config == nullptr) return other.filter_config != nullptr;
+      if (disabled != other.disabled) return false;
+      if (filter_config == nullptr) return other.filter_config == nullptr;
       if (other.filter_config == nullptr) return false;
       return *filter_config == *other.filter_config;
     }

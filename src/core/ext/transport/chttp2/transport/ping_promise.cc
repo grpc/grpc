@@ -115,7 +115,7 @@ std::optional<Duration> PingManager::MaybeGetSerializedPingFrames(
                       << " next_allowed_ping_interval: "
                       << next_allowed_ping_interval;
   GRPC_DCHECK(!opaque_data_.has_value());
-  frame_sender.ReserveRegularFrames(pending_ping_acks_.size() + 1);
+  frame_sender.ReserveRegularFrames(pending_ping_acks_.size());
 
   // Get the serialized ping acks if needed.
   for (uint64_t opaque_data : pending_ping_acks_) {
