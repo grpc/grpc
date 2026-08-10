@@ -3575,7 +3575,8 @@ tsi_result tsi_configure_server_ssl_context(
           STACK_OF(X509_NAME)* root_names = nullptr;
           result = ssl_ctx_load_verification_certs(
               ssl_context.ssl_ctx, pem_root_certs.c_str(),
-              pem_root_certs.size(), nullptr);
+              pem_root_certs.size(),
+              options->send_client_ca_list ? &root_names : nullptr);
           if (result != TSI_OK) {
             LOG(ERROR) << "Invalid verification certs.";
           }
