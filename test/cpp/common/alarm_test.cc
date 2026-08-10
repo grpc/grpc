@@ -47,6 +47,51 @@ TEST(AlarmTest, RegularExpiry) {
   EXPECT_EQ(junk, output_tag);
 }
 
+// Regression test for https://github.com/grpc/grpc/issues/41950.
+// An alarm set with an already-expired deadline (gpr_now) must take the
+// EventEngine's immediate fast path, which runs the callback on the executor
+// without inserting a positive-duration timer into the timer heap. The bug
+// rounded the deadline up to the next millisecond, turning "now" into a ~1ms
+// future timer and adding ~1ms of latency to every immediate alarm.
+//
+// A single immediate alarm's delivery involves an executor thread-pool hop, so
+// we cannot assert on one synchronous reap without being flaky. Instead we
+// fire many immediate alarms and assert on the *average* round-trip latency:
+// the timer-heap path has a floor of ~1ms per alarm (the round-up), while the
+// fast path is orders of magnitude cheaper. The threshold below is set far
+// above the fast-path cost (~tens of microseconds) and far below the ~1ms
+// timer-path floor, so the test is robust on loaded machines.
+TEST(AlarmTest, ImmediateExpiryUsesFastPath) {
+  constexpr int kNumAlarms = 200;
+  // Generous threshold: fast path averages ~10us; the timer-heap regression
+  // averages ~1000us. 500us cleanly separates the two with wide margin.
+  constexpr int64_t kMaxAvgMicros = 500;
+
+  CompletionQueue cq;
+  const gpr_timespec start = gpr_now(GPR_CLOCK_MONOTONIC);
+  for (int i = 0; i < kNumAlarms; i++) {
+    Alarm alarm;
+    alarm.Set(&cq, gpr_now(GPR_CLOCK_REALTIME), reinterpret_cast<void*>(i));
+    void* output_tag;
+    bool ok;
+    // Block until each alarm is delivered; correctness is asserted here.
+    const CompletionQueue::NextStatus status =
+        cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
+    ASSERT_EQ(status, CompletionQueue::GOT_EVENT);
+    ASSERT_TRUE(ok);
+  }
+  const gpr_timespec end = gpr_now(GPR_CLOCK_MONOTONIC);
+  const int64_t total_micros =
+      static_cast<int64_t>(gpr_timespec_to_micros(gpr_time_sub(end, start)));
+  const int64_t avg_micros = total_micros / kNumAlarms;
+  EXPECT_LT(avg_micros, kMaxAvgMicros)
+      << "immediate alarms averaged " << avg_micros
+      << "us; expected the EventEngine immediate fast path (well under "
+      << kMaxAvgMicros << "us), suggesting they are going through the timer "
+         "heap (~1ms each)";
+  cq.Shutdown();
+}
+
 TEST(AlarmTest, RegularExpiryMultiSet) {
   CompletionQueue cq;
   void* junk = reinterpret_cast<void*>(1618033);
