@@ -46,5 +46,4 @@ if __name__ == "__main__":
         classifiers=CLASSIFIERS,
         python_requires=f">={python_version.MIN_PYTHON_VERSION}",
         install_requires=INSTALL_REQUIRES,
-        setup_requires=SETUP_REQUIRES,
     )

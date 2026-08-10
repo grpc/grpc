@@ -58,21 +58,9 @@ INSTALL_REQUIRES = (
     "grpcio>={version}".format(version=grpc_version.VERSION),
 )
 
-try:
-    import channelz_commands as _channelz_commands
-
-    # we are in the build environment, otherwise the above import fails
-    SETUP_REQUIRES = (
-        "grpcio-tools=={version}".format(version=grpc_version.VERSION),
-    )
-except ImportError:
-    SETUP_REQUIRES = ()
-
-
 if __name__ == "__main__":
     setuptools.setup(
         classifiers=CLASSIFIERS,
         python_requires=f">={python_version.MIN_PYTHON_VERSION}",
         install_requires=INSTALL_REQUIRES,
-        setup_requires=SETUP_REQUIRES,
     )
