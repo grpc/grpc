@@ -23,8 +23,7 @@ PYTHON="$(pwd)/${1:-py310/bin/python}"
 
 ROOT=$(pwd)
 
-# TODO(ssreenithi): find pyproject.toml/pytest equivalent
-$PYTHON "$ROOT/src/python/grpcio_tests/setup.py" "$2"
+$PYTHON -m nox -s "$2" -f "$ROOT/src/python/grpcio_tests/noxfile.py"
 
 mkdir -p "$ROOT/reports"
 rm -rf "$ROOT/reports/python-coverage"
