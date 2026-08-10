@@ -11842,6 +11842,7 @@ grpc_cc_library(
     external_deps = [
         "absl/log",
         "absl/status",
+        "absl/strings",
         "absl/functional:any_invocable",
         "absl/types:span",
     ],
