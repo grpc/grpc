@@ -88,12 +88,6 @@ class StatusCode(enum.IntEnum):
   def __reduce_ex__(self, proto):
     return (int, (self.value,))
 
-  def __str__(self):
-    return str(self.value)
-
-  def __repr__(self):
-    return self.value
-
 
 class CallError:
   ok = GRPC_CALL_OK
