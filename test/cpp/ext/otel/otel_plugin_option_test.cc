@@ -90,18 +90,22 @@ class CustomLabelInjector : public grpc::internal::LabelsInjector {
       grpc::internal::LabelsIterable* /*labels_from_incoming_metadata*/)
       const override {}
 
-  bool AddOptionalLabels(bool /*is_client*/,
-                         absl::Span<const grpc_core::RefCountedStringValue>
-                         /*optional_labels*/,
-                         opentelemetry::nostd::function_ref<
-                             bool(opentelemetry::nostd::string_view,
-                                  opentelemetry::common::AttributeValue)>
-                         /*callback*/) const override {
+  bool AddOptionalLabels(
+      bool /*is_client*/,
+      absl::Span<const std::variant<grpc_core::RefCountedStringValue,
+                                    absl::string_view>>
+      /*optional_labels*/,
+      opentelemetry::nostd::function_ref<
+          bool(opentelemetry::nostd::string_view,
+               opentelemetry::common::AttributeValue)>
+      /*callback*/) const override {
     return true;
   }
 
   size_t GetOptionalLabelsSize(
-      bool /*is_client*/, absl::Span<const grpc_core::RefCountedStringValue>
+      bool /*is_client*/,
+      absl::Span<const std::variant<grpc_core::RefCountedStringValue,
+                                    absl::string_view>>
       /*optional_labels_span*/) const override {
     return 0;
   }

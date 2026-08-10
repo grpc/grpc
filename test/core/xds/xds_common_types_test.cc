@@ -53,7 +53,12 @@
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
+#include "src/core/xds/grpc/xds_grpc_service_parser.h"
+#include "src/core/xds/grpc/xds_server_grpc.h"
+#include "src/core/xds/grpc/xds_tls_context.h"
+#include "src/core/xds/grpc/xds_tls_context_parser.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
@@ -91,7 +96,7 @@ class XdsCommonTypesTest : public ::testing::Test {
   static RefCountedPtr<XdsClient> MakeXdsClient(
       absl::string_view extra_bootstrap_text = "",
       bool trusted_xds_server = false) {
-    auto bootstrap = GrpcXdsBootstrap::Create(
+    auto bootstrap = GrpcXdsBootstrapBuilder::Build(
         absl::StrCat("{\n"
                      "  \"xds_servers\": [\n"
                      "    {\n"
@@ -1014,7 +1019,7 @@ class ParseXdsGrpcServiceTest : public XdsCommonTypesTest {
   // For convenience, tests build protos using the protobuf API, and
   // we convert it to a upb object, which is then passed to
   // ParseXdsGrpcService() for testing.
-  absl::StatusOr<XdsGrpcService> Parse(const GrpcService& proto) {
+  absl::StatusOr<GrpcXdsServerTarget> Parse(const GrpcService& proto) {
     // Serialize the protobuf proto.
     std::string serialized_proto;
     if (!proto.SerializeToString(&serialized_proto)) {
@@ -1028,13 +1033,13 @@ class ParseXdsGrpcServiceTest : public XdsCommonTypesTest {
     }
     // Now parse the upb proto.
     ValidationErrors errors;
-    XdsGrpcService xds_grpc_service =
+    GrpcXdsServerTarget target =
         ParseXdsGrpcService(MakeDecodeContext(), upb_proto, &errors);
     if (!errors.ok()) {
       return errors.status(absl::StatusCode::kInvalidArgument,
                            "validation failed");
     }
-    return xds_grpc_service;
+    return target;
   }
 };
 
@@ -1064,13 +1069,10 @@ TEST_F(ParseXdsGrpcServiceTest,
   google_grpc->add_call_credentials_plugin()->PackFrom(call_creds);
   auto xds_grpc_service = Parse(grpc_service);
   ASSERT_TRUE(xds_grpc_service.ok()) << xds_grpc_service.status();
-  ASSERT_NE(xds_grpc_service->server_target, nullptr);
-  EXPECT_EQ(xds_grpc_service->server_target->server_uri(),
-            "dns:server.example.com");
-  ASSERT_NE(xds_grpc_service->server_target->channel_creds_config(), nullptr);
-  EXPECT_EQ(xds_grpc_service->server_target->channel_creds_config()->type(),
-            "insecure");
-  EXPECT_THAT(xds_grpc_service->server_target->call_creds_configs(),
+  EXPECT_EQ(xds_grpc_service->server_uri(), "dns:server.example.com");
+  ASSERT_NE(xds_grpc_service->channel_creds_config(), nullptr);
+  EXPECT_EQ(xds_grpc_service->channel_creds_config()->type(), "insecure");
+  EXPECT_THAT(xds_grpc_service->call_creds_configs(),
               ::testing::ElementsAre(EqCredsConfig(
                   "jwt_token_file", "", "{path=\"/path/to/file\"}")));
 }
@@ -1113,13 +1115,10 @@ TEST_F(ParseXdsGrpcServiceTest, TrustedXdsServerWithCredentials) {
   google_grpc->add_call_credentials_plugin()->PackFrom(call_creds);
   auto xds_grpc_service = Parse(grpc_service);
   ASSERT_TRUE(xds_grpc_service.ok()) << xds_grpc_service.status();
-  ASSERT_NE(xds_grpc_service->server_target, nullptr);
-  EXPECT_EQ(xds_grpc_service->server_target->server_uri(),
-            "dns:server.example.com");
-  ASSERT_NE(xds_grpc_service->server_target->channel_creds_config(), nullptr);
-  EXPECT_EQ(xds_grpc_service->server_target->channel_creds_config()->type(),
-            "google_default");
-  EXPECT_THAT(xds_grpc_service->server_target->call_creds_configs(),
+  EXPECT_EQ(xds_grpc_service->server_uri(), "dns:server.example.com");
+  ASSERT_NE(xds_grpc_service->channel_creds_config(), nullptr);
+  EXPECT_EQ(xds_grpc_service->channel_creds_config()->type(), "google_default");
+  EXPECT_THAT(xds_grpc_service->call_creds_configs(),
               ::testing::ElementsAre(
                   EqCredsConfig("",
                                 "envoy.extensions.grpc_service.call_credentials"
@@ -1130,8 +1129,8 @@ TEST_F(ParseXdsGrpcServiceTest, TrustedXdsServerWithCredentials) {
                                 ".access_token.v3.AccessTokenCredentials",
                                 "{token=\"bar\"}")));
   // Unset fields have default values.
-  EXPECT_EQ(xds_grpc_service->timeout, Duration::Zero());
-  EXPECT_THAT(xds_grpc_service->initial_metadata, ::testing::ElementsAre());
+  EXPECT_EQ(xds_grpc_service->timeout(), Duration::Zero());
+  EXPECT_THAT(xds_grpc_service->initial_metadata(), ::testing::ElementsAre());
 }
 
 TEST_F(ParseXdsGrpcServiceTest, TrustedXdsServerWithChannelCredsUnset) {
@@ -1172,7 +1171,7 @@ TEST_F(ParseXdsGrpcServiceTest, Timeout) {
           InsecureCredentials());
   auto xds_grpc_service = Parse(grpc_service);
   ASSERT_TRUE(xds_grpc_service.ok()) << xds_grpc_service.status();
-  EXPECT_EQ(xds_grpc_service->timeout, Duration::Seconds(5));
+  EXPECT_EQ(xds_grpc_service->timeout(), Duration::Seconds(5));
 }
 
 TEST_F(ParseXdsGrpcServiceTest, InvalidTimeout) {
@@ -1204,7 +1203,7 @@ TEST_F(ParseXdsGrpcServiceTest, HeaderValueForNonBinaryHeader) {
           GoogleDefaultCredentials());
   auto xds_grpc_service = Parse(grpc_service);
   ASSERT_TRUE(xds_grpc_service.ok()) << xds_grpc_service.status();
-  EXPECT_THAT(xds_grpc_service->initial_metadata,
+  EXPECT_THAT(xds_grpc_service->initial_metadata(),
               ::testing::ElementsAre(::testing::Pair("foo", "bar")));
 }
 

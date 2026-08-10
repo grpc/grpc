@@ -39,6 +39,7 @@
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/transport_framing_endpoint_extension.h"
 #include "src/core/telemetry/default_tcp_tracer.h"
+#include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/util/dump_args.h"
 #include "src/core/util/latent_see.h"
 #include "src/core/util/ref_counted.h"
@@ -629,6 +630,7 @@ class MetricsCollector
   grpc_event_engine::experimental::EventEngine::Endpoint::WriteEventSink
   MakeWriteEventSink(size_t write_size,
                      RefCountedPtr<OutputBuffers::Reader> reader,
+                     std::vector<std::shared_ptr<TcpCallTracer>> tracers,
                      std::shared_ptr<TcpZTraceCollector> ztrace_collector) {
     using grpc_event_engine::experimental::EventEngine;
     return EventEngine::Endpoint::WriteEventSink(
@@ -637,22 +639,37 @@ class MetricsCollector
          EventEngine::Endpoint::WriteEvent::kScheduled,
          EventEngine::Endpoint::WriteEvent::kSent,
          EventEngine::Endpoint::WriteEvent::kAcked},
-        [reader, ztrace_collector, write_size, self = Ref()](
+        [reader, ztrace_collector, write_size, tracers = std::move(tracers),
+         self = Ref()](
             EventEngine::Endpoint::WriteEvent event, absl::Time timestamp,
             std::vector<EventEngine::Endpoint::WriteMetric> metrics) {
           GRPC_LATENT_SEE_SCOPE("MetricsCollector::WriteEventSink");
-          ztrace_collector->Append([event, timestamp, &metrics,
-                                    telemetry_info = self->telemetry_info_,
-                                    reader]() {
-            EndpointWriteMetricsTrace trace{timestamp, event, {}, reader->id()};
-            trace.metrics.reserve(metrics.size());
-            for (const auto [id, value] : metrics) {
-              if (auto name = telemetry_info->GetMetricName(id);
-                  name.has_value()) {
-                trace.metrics.push_back({*name, value});
+          std::vector<std::pair<absl::string_view, int64_t>> ztrace_metrics;
+          std::vector<TcpCallTracer::TcpEventMetric> tcp_tracer_metrics;
+          ztrace_metrics.reserve(metrics.size());
+          if (!tracers.empty()) tcp_tracer_metrics.reserve(metrics.size());
+
+          for (const auto [id, value] : metrics) {
+            if (auto name = self->telemetry_info_->GetMetricName(id);
+                name.has_value()) {
+              ztrace_metrics.push_back({*name, value});
+              if (!tracers.empty()) {
+                tcp_tracer_metrics.push_back({*name, value});
               }
             }
-            return trace;
+          }
+
+          if (!tracers.empty()) {
+            for (const auto& tracer : tracers) {
+              tracer->RecordEvent(event, timestamp, 0, tcp_tracer_metrics);
+            }
+          }
+
+          ztrace_collector->Append([event, timestamp,
+                                    ztrace_metrics = std::move(ztrace_metrics),
+                                    reader_id = reader->id()]() mutable {
+            return EndpointWriteMetricsTrace{
+                timestamp, event, std::move(ztrace_metrics), reader_id};
           });
           auto [net_metrics, data_notsent] =
               self->GetNetworkMetrics(event, metrics, write_size);
@@ -705,7 +722,8 @@ auto Endpoint::PullDataPayload(RefCountedPtr<EndpointContext> ctx) {
       ctx->reader->Next(),
       [ctx](
           ValueOrFailure<std::vector<OutputBuffers::QueuedFrame>> queued_frames)
-          -> ValueOrFailure<std::pair<SliceBuffer, bool>> {
+          -> ValueOrFailure<std::pair<
+              SliceBuffer, std::vector<std::shared_ptr<TcpCallTracer>>>> {
         if (!queued_frames.ok()) return Failure{};
         GRPC_TRACE_LOG(chaotic_good, INFO)
             << "CHAOTIC_GOOD: " << ctx->reader.get() << " "
@@ -718,7 +736,8 @@ auto Endpoint::PullDataPayload(RefCountedPtr<EndpointContext> ctx) {
         GRPC_LATENT_SEE_SCOPE("SerializePayload");
         // Frame everything into a slice buffer.
         SliceBuffer buffer;
-        bool tcp_tracer_enabled = false;
+        std::vector<std::shared_ptr<TcpCallTracer>> tracers;
+        tracers.reserve(queued_frames->size());
         const size_t header_padding = DataConnectionPadding(
             TcpDataFrameHeader::kFrameHeaderSize, ctx->encode_alignment);
         const size_t header_size =
@@ -732,7 +751,9 @@ auto Endpoint::PullDataPayload(RefCountedPtr<EndpointContext> ctx) {
         for (size_t i = 0; i < queued_frames->size(); ++i) {
           auto& queued_frame = (*queued_frames)[i];
           if (queued_frame.frame->call_tracer != nullptr) {
-            tcp_tracer_enabled = true;
+            queued_frame.frame->call_tracer->RecordConnectionTuple(
+                ctx->local_addr, ctx->peer_addr);
+            tracers.push_back(queued_frame.frame->call_tracer);
           }
           auto& frame = absl::ConvertVariantTo<FrameInterface&>(
               queued_frame.frame->payload);
@@ -751,18 +772,13 @@ auto Endpoint::PullDataPayload(RefCountedPtr<EndpointContext> ctx) {
             buffer.AppendIndexed(padding.RefSubSlice(0, frame_padding));
           }
         }
-        // TODO(pragunsaxena): consider returning tcp tracer instead of this
-        // boolean to keep parity with the chttp2 transport.
-        return std::pair{std::move(buffer), tcp_tracer_enabled};
+        return std::pair{std::move(buffer), std::move(tracers)};
       });
 }
 
 auto Endpoint::WriteLoop(RefCountedPtr<EndpointContext> ctx) {
   auto metrics_collector = MakeRefCounted<MetricsCollector>(
       ctx->clock, *ctx->endpoint->GetEventEngineEndpoint());
-  if (!metrics_collector->HasAnyMetrics()) {
-    metrics_collector.reset();
-  }
   return Loop([ctx = std::move(ctx),
                metrics_collector = std::move(metrics_collector)]() {
     return TrySeq(
@@ -771,12 +787,19 @@ auto Endpoint::WriteLoop(RefCountedPtr<EndpointContext> ctx) {
             Race(PullDataPayload(ctx),
                  Map(ctx->secure_frame_queue->Next(),
                      [](SliceBuffer x)
-                         -> ValueOrFailure<std::pair<SliceBuffer, bool>> {
-                       return std::pair{std::move(x), false};
+                         -> ValueOrFailure<std::pair<
+                             SliceBuffer,
+                             std::vector<std::shared_ptr<TcpCallTracer>>>> {
+                       return std::pair{
+                           std::move(x),
+                           std::vector<std::shared_ptr<TcpCallTracer>>{}};
                      }))),
-        [ctx, metrics_collector](std::pair<SliceBuffer, bool> result) {
+        [ctx, metrics_collector](
+            std::pair<SliceBuffer, std::vector<std::shared_ptr<TcpCallTracer>>>
+                result) {
           SliceBuffer& buffer = result.first;
-          bool tcp_tracer_enabled = result.second;
+          std::vector<std::shared_ptr<TcpCallTracer>> tracers =
+              std::move(result.second);
           ctx->ztrace_collector->Append(
               WriteBytesToEndpointTrace{buffer.Length(), ctx->id});
           PromiseEndpoint::WriteArgs write_args;
@@ -784,11 +807,12 @@ auto Endpoint::WriteLoop(RefCountedPtr<EndpointContext> ctx) {
           static const Duration kMetricsUpdateInterval = Duration::Milliseconds(
               ConfigVars::Get().ChaoticGoodMetricsUpdateIntervalMs());
           if (metrics_collector != nullptr &&
-              (tcp_tracer_enabled ||
+              (!tracers.empty() ||
                now - ctx->last_metrics_update > kMetricsUpdateInterval)) {
             ctx->last_metrics_update = now;
             write_args.set_metrics_sink(metrics_collector->MakeWriteEventSink(
-                buffer.Length(), ctx->reader, ctx->ztrace_collector));
+                buffer.Length(), ctx->reader, std::move(tracers),
+                ctx->ztrace_collector));
           }
           return Map(
               AddGeneratedErrorPrefix(
@@ -951,6 +975,11 @@ Endpoint::Endpoint(uint32_t id, uint32_t encode_alignment,
         return TrySeq(
             pending_connection.Await(),
             [ep_ctx = std::move(ep_ctx)](PromiseEndpoint ep) mutable {
+              ep_ctx->local_addr =
+                  TcpCallTracer::ExtractResolvedAddress(ep.GetLocalAddress());
+              ep_ctx->peer_addr =
+                  TcpCallTracer::ExtractResolvedAddress(ep.GetPeerAddress());
+
               GRPC_TRACE_LOG(chaotic_good, INFO)
                   << "CHAOTIC_GOOD: data endpoint " << ep_ctx->id << " to "
                   << grpc_event_engine::experimental::ResolvedAddressToString(
@@ -972,11 +1001,11 @@ Endpoint::Endpoint(uint32_t id, uint32_t encode_alignment,
               }
               auto endpoint = std::make_shared<PromiseEndpoint>(std::move(ep));
               ep_ctx->endpoint = endpoint;
-              // Enable RxMemoryAlignment and RPC receive coalescing after the
-              // transport setup is complete. At this point all the settings
-              // frames should have been read.
+              // Enable RPC receive coalescing after the transport setup is
+              // complete. At this point all the settings frames should have
+              // been read.
               if (ep_ctx->decode_alignment != 1) {
-                endpoint->EnforceRxMemoryAlignmentAndCoalescing();
+                endpoint->EnableRpcReceiveCoalescing();
               }
               if (ep_ctx->enable_tracing) {
                 auto* epte = grpc_event_engine::experimental::QueryExtension<
@@ -987,7 +1016,8 @@ Endpoint::Endpoint(uint32_t id, uint32_t encode_alignment,
                   epte->EnableTcpTelemetry(
                       ep_ctx->transport_ctx->stats_plugin_group
                           ->GetCollectionScope(),
-                      /*is_control_endpoint=*/false);
+                      /*is_control_endpoint=*/false,
+                      ep_ctx->transport_ctx->trace_full_buffer);
                   epte->SetTcpTracer(std::make_shared<DefaultTcpTracer>(
                       ep_ctx->transport_ctx->stats_plugin_group));
                 }

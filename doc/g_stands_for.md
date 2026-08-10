@@ -80,4 +80,5 @@
 - 1.80 'g' stands for ['glimmering'](https://github.com/grpc/grpc/tree/v1.80.x)
 - 1.81 'g' stands for ['graphic'](https://github.com/grpc/grpc/tree/v1.81.x)
 - 1.82 'g' stands for ['glacier'](https://github.com/grpc/grpc/tree/v1.82.x)
-- 1.83 'g' stands for ['garden'](https://github.com/grpc/grpc/tree/master)
+- 1.83 'g' stands for ['garden'](https://github.com/grpc/grpc/tree/v1.83.x)
+- 1.84 'g' stands for ['gimbal'](https://github.com/grpc/grpc/tree/master)

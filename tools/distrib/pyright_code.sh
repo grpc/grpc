@@ -20,7 +20,7 @@ set -ex
 cd "$(dirname "$0")/../.."
 
 VIRTUALENV=".venv-pyright"
-python3 -m virtualenv "${VIRTUALENV}"
+python3 -m venv "${VIRTUALENV}"
 source "${VIRTUALENV}/bin/activate"
 python3 -VV
 

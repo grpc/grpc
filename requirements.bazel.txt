@@ -19,7 +19,7 @@
 #   $ docker run -it --rm -v $(pwd):/grpc python:3.10 /bin/bash
 #   # cd grpc
 #   # pip install pip-tools
-#   # pip-compile --generate-hashes --allow-unsafe requirements.bazel.txt -o requirements.bazel.lock
+#   # pip-compile --generate-hashes --no-emit-index-url --allow-unsafe requirements.bazel.txt -o requirements.bazel.lock
 #   # exit
 #   $ sudo chown $USER requirements.bazel.lock
 #
@@ -32,10 +32,10 @@
 #   $ pip install -r requirements.bazel.lock
 #
 #   Add the new package to requirements.bazel.txt
-#   $ pip-compile --generate-hashes --no-upgrade --allow-unsafe requirements.bazel.txt -o requirements.bazel.lock
+#   $ pip-compile --generate-hashes --no-emit-index-url --no-upgrade --allow-unsafe requirements.bazel.txt -o requirements.bazel.lock
 #
 #   To update a single package, change its version spec requirements.bazel.txt
-#   $ pip-compile --generate-hashes --no-upgrade --allow-unsafe requirements.bazel.txt -o requirements.bazel.lock -P package_name
+#   $ pip-compile --generate-hashes --no-emit-index-url --no-upgrade --allow-unsafe requirements.bazel.txt -o requirements.bazel.lock -P package_name
 
 absl-py
 certifi
@@ -54,7 +54,7 @@ opentelemetry-resourcedetector-gcp
 opentelemetry-sdk
 
 # Use the same version as third_party/protobuf v35.0
-protobuf~=7.35.0
+protobuf~=7.35.1
 
 pyyaml  # for DNS test
 requests

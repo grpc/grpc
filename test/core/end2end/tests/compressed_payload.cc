@@ -172,7 +172,7 @@ class TestConfigurator {
     test_.Expect(104, true);
     test_.Step();
     EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
-    EXPECT_EQ(server_status.message(), IsErrorFlattenEnabled() ? "" : "xyz");
+    EXPECT_EQ(server_status.message(), "");
     EXPECT_EQ(s.method(), "/foo");
     EXPECT_FALSE(client_close.was_cancelled());
   }
@@ -225,7 +225,7 @@ class TestConfigurator {
     test_.Expect(104, true);
     test_.Step();
     EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
-    EXPECT_EQ(server_status.message(), IsErrorFlattenEnabled() ? "" : "xyz");
+    EXPECT_EQ(server_status.message(), "");
     EXPECT_EQ(s.method(), "/foo");
     EXPECT_FALSE(client_close.was_cancelled());
   }
@@ -275,7 +275,7 @@ class TestConfigurator {
     test_.Expect(104, true);
     test_.Step();
     EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
-    EXPECT_EQ(server_status.message(), IsErrorFlattenEnabled() ? "" : "xyz");
+    EXPECT_EQ(server_status.message(), "");
     EXPECT_EQ(s.method(), "/foo");
     EXPECT_FALSE(client_close.was_cancelled());
   }

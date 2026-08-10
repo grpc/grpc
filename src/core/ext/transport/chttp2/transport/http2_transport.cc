@@ -49,9 +49,13 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
+#include "src/core/util/useful.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+
+#define GRPC_ARG_HTTP2_PING_ON_RST_STREAM_PERCENT \
+  "grpc.http2.ping_on_rst_stream_percent"
 
 namespace grpc_core {
 namespace http2 {
@@ -279,6 +283,14 @@ uint32_t GetMaxSecurityFrameSize(const ChannelArgs& channel_args) {
             static_cast<int>(GrpcErrors::kMaxSecurityFrameSize)));
 }
 
+uint8_t GetPingOnRstStreamPercent(const ChannelArgs& channel_args,
+                                  const bool is_client) {
+  if (is_client) return 0;
+  return Clamp(channel_args.GetInt(GRPC_ARG_HTTP2_PING_ON_RST_STREAM_PERCENT)
+                   .value_or(1),
+               0, 100);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // ChannelZ helpers
 
@@ -324,6 +336,7 @@ ProcessIncomingDataFrameFlowControl(const Http2FrameHeader& frame_header,
                                     Stream* stream) {
   GRPC_DCHECK_EQ(frame_header.type, 0u);
   if (frame_header.length > 0) {
+    flow_control.OnReceiveDataFrame(frame_header.length);
     if (stream == nullptr) {
       // This flow control bookkeeping needs to happen even though the stream is
       // gone because otherwise we will go out-of-sync with the peer.
@@ -409,6 +422,22 @@ bool ProcessIncomingWindowUpdateFrameFlowControl(
 
 void MaybeAddTransportWindowUpdateFrame(
     chttp2::TransportFlowControl& flow_control, FrameSender& frame_sender) {
+  // Known Limitation:
+  // 1. writing_anyway is set to true always. This might cause the write cycle
+  // to just write 1 window update frame in one entire iteration of the
+  // Multiplexer Loop, making it wasteful. In most of the scenarios this is fine
+  // as TriggerWriteCycle is only invoked from code points that want to write
+  // frames on the wire.
+  // 2. This is because we write control frames before we write HEADER and DATA
+  // frames. So we don't know if we are going to write or not when we call
+  // this function.
+  // 3. Setting writing_anyway to false always might be a problem, because we
+  // would rather send a WINDOW_UPDATE frame with a small increment, than not
+  // send it at all.
+  // 4. In the future if we want to fix this, we need to call
+  // MaybeAddTransportWindowUpdateFrame once while writing control frames, and
+  // once after all the DATA and HEADER frames are written for the current write
+  // cycle.
   uint32_t window_size =
       flow_control.DesiredAnnounceSize(/*writing_anyway=*/true);
   if (window_size > 0) {
