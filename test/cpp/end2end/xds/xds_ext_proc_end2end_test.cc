@@ -528,53 +528,6 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
     return listener;
   }
 
-  Status SendRpcGetTrailers(
-      const RpcOptions& rpc_options, EchoResponse* response,
-      std::multimap<std::string, std::string>* server_initial_metadata,
-      std::multimap<std::string, std::string>* server_trailing_metadata) {
-    EchoResponse local_response;
-    if (response == nullptr) response = &local_response;
-    ClientContext context;
-    EchoRequest request;
-    if (rpc_options.server_expected_error != StatusCode::OK) {
-      auto* error = request.mutable_param()->mutable_expected_error();
-      error->set_code(rpc_options.server_expected_error);
-    }
-    rpc_options.SetupRpc(&context, &request);
-    Status status;
-    switch (rpc_options.service) {
-      case SERVICE_ECHO:
-        status = SendRpcMethod(stub_.get(), rpc_options, &context, request,
-                               response);
-        break;
-      case SERVICE_ECHO1:
-        status = SendRpcMethod(stub1_.get(), rpc_options, &context, request,
-                               response);
-        break;
-      case SERVICE_ECHO2:
-        status = SendRpcMethod(stub2_.get(), rpc_options, &context, request,
-                               response);
-        break;
-    }
-    if (server_initial_metadata != nullptr) {
-      for (const auto& [key, value] : context.GetServerInitialMetadata()) {
-        std::string header(key.data(), key.size());
-        absl::AsciiStrToLower(&header);
-        server_initial_metadata->emplace(
-            header, std::string(value.data(), value.size()));
-      }
-    }
-    if (server_trailing_metadata != nullptr) {
-      for (const auto& [key, value] : context.GetServerTrailingMetadata()) {
-        std::string header(key.data(), key.size());
-        absl::AsciiStrToLower(&header);
-        server_trailing_metadata->emplace(
-            header, std::string(value.data(), value.size()));
-      }
-    }
-    return status;
-  }
-
   grpc_core::testing::ScopedExperimentalEnvVar env_var_{
       "GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT"};
   std::unique_ptr<ExtProcServerThread<FakeExternalProcessorService>>
@@ -613,9 +566,8 @@ TEST_P(XdsExtProcEnd2endTest, ProcessingModeAllDisabledSuccess) {
   EchoResponse response;
   std::multimap<std::string, std::string> server_initial_metadata;
   std::multimap<std::string, std::string> server_trailing_metadata;
-  Status status =
-      SendRpcGetTrailers(rpc_options, &response, &server_initial_metadata,
-                         &server_trailing_metadata);
+  Status status = SendRpc(rpc_options, &response, &server_initial_metadata,
+                          &server_trailing_metadata);
   EXPECT_TRUE(status.ok()) << "RPC failed: " << status.error_message();
   // Wait for expected counts (all 0)
   FakeExternalProcessorService::RequestCounts expected_counts;
@@ -667,9 +619,8 @@ TEST_P(XdsExtProcEnd2endTest, ProcessingModeAllEnabledSuccess) {
   EchoResponse response;
   std::multimap<std::string, std::string> server_initial_metadata;
   std::multimap<std::string, std::string> server_trailing_metadata;
-  Status status =
-      SendRpcGetTrailers(rpc_options, &response, &server_initial_metadata,
-                         &server_trailing_metadata);
+  Status status = SendRpc(rpc_options, &response, &server_initial_metadata,
+                          &server_trailing_metadata);
   EXPECT_TRUE(status.ok()) << "RPC failed: " << status.error_message();
   // Wait for expected counts
   FakeExternalProcessorService::RequestCounts expected_counts;
@@ -730,9 +681,8 @@ TEST_P(XdsExtProcEnd2endTest,
   EchoResponse response;
   std::multimap<std::string, std::string> server_initial_metadata;
   std::multimap<std::string, std::string> server_trailing_metadata;
-  Status status =
-      SendRpcGetTrailers(rpc_options, &response, &server_initial_metadata,
-                         &server_trailing_metadata);
+  Status status = SendRpc(rpc_options, &response, &server_initial_metadata,
+                          &server_trailing_metadata);
   EXPECT_TRUE(status.ok()) << "RPC failed: " << status.error_message();
   // Wait for expected counts
   FakeExternalProcessorService::RequestCounts expected_counts;
@@ -789,9 +739,8 @@ TEST_P(XdsExtProcEnd2endTest, TrailersOnlyProcessingModeAllEnabled) {
   EchoResponse response;
   std::multimap<std::string, std::string> server_initial_metadata;
   std::multimap<std::string, std::string> server_trailing_metadata;
-  Status status =
-      SendRpcGetTrailers(rpc_options, &response, &server_initial_metadata,
-                         &server_trailing_metadata);
+  Status status = SendRpc(rpc_options, &response, &server_initial_metadata,
+                          &server_trailing_metadata);
   EXPECT_THAT(status.error_code(),
               ::testing::AnyOf(StatusCode::UNAVAILABLE,
                                StatusCode::FAILED_PRECONDITION))
@@ -839,9 +788,8 @@ TEST_P(XdsExtProcEnd2endTest,
   EchoResponse response;
   std::multimap<std::string, std::string> server_initial_metadata;
   std::multimap<std::string, std::string> server_trailing_metadata;
-  Status status =
-      SendRpcGetTrailers(rpc_options, &response, &server_initial_metadata,
-                         &server_trailing_metadata);
+  Status status = SendRpc(rpc_options, &response, &server_initial_metadata,
+                          &server_trailing_metadata);
   EXPECT_THAT(status.error_code(),
               ::testing::AnyOf(StatusCode::UNAVAILABLE,
                                StatusCode::FAILED_PRECONDITION))
@@ -957,7 +905,7 @@ TEST_P(XdsExtProcEnd2endTest,
   })));
   RpcOptions rpc_options;
   EchoResponse response;
-  Status status = SendRpcGetTrailers(rpc_options, &response, nullptr, nullptr);
+  Status status = SendRpc(rpc_options, &response, nullptr, nullptr);
   EXPECT_TRUE(status.ok()) << status.error_message();
 }
 
@@ -1059,7 +1007,7 @@ TEST_P(XdsExtProcEnd2endTest,
   })));
   RpcOptions rpc_options;
   EchoResponse response;
-  Status status = SendRpcGetTrailers(rpc_options, &response, nullptr, nullptr);
+  Status status = SendRpc(rpc_options, &response, nullptr, nullptr);
   EXPECT_TRUE(status.ok()) << status.error_message();
 }
 
@@ -1106,7 +1054,7 @@ TEST_P(XdsExtProcEnd2endTest, RequestHeadersRequestAttributesSent) {
   })));
   RpcOptions rpc_options;
   EchoResponse response;
-  Status status = SendRpcGetTrailers(rpc_options, &response, nullptr, nullptr);
+  Status status = SendRpc(rpc_options, &response, nullptr, nullptr);
   EXPECT_TRUE(status.ok()) << status.error_message();
   EXPECT_EQ(path_received, "/grpc.testing.EchoTestService/Echo");
   EXPECT_EQ(method_received, "POST");
@@ -1163,7 +1111,7 @@ TEST_P(XdsExtProcEnd2endTest,
   })));
   RpcOptions rpc_options;
   EchoResponse response;
-  Status status = SendRpcGetTrailers(rpc_options, &response, nullptr, nullptr);
+  Status status = SendRpc(rpc_options, &response, nullptr, nullptr);
   EXPECT_TRUE(status.ok()) << status.error_message();
   alternative_ext_proc_server_->Shutdown();
   EXPECT_FALSE(headers_received);
@@ -1211,7 +1159,7 @@ TEST_P(XdsExtProcEnd2endTest, RequestBodyContinueAndReplace) {
   })));
   RpcOptions rpc_options;
   EchoResponse response;
-  Status status = SendRpcGetTrailers(rpc_options, &response, nullptr, nullptr);
+  Status status = SendRpc(rpc_options, &response, nullptr, nullptr);
   // Even though failure_mode_allow is true (fail-open), the RPC must still fail
   // because the external processor returned an unsupported response (protocol
   // error), not a connection error.
@@ -1292,7 +1240,7 @@ TEST_P(XdsExtProcEnd2endTest,
   })));
   RpcOptions rpc_options;
   EchoResponse response;
-  Status status = SendRpcGetTrailers(rpc_options, &response, nullptr, nullptr);
+  Status status = SendRpc(rpc_options, &response, nullptr, nullptr);
   // NOTE: Even though failure_mode_allow is true (fail-open), because the
   // stream failed AFTER the first body message was sent to ext_proc, the filter
   // must fail the RPC to avoid message loss or inconsistent state.
@@ -1336,7 +1284,7 @@ TEST_P(XdsExtProcEnd2endTest, RequestBodyGrpcMessageCompressed) {
   })));
   RpcOptions rpc_options;
   EchoResponse response;
-  Status status = SendRpcGetTrailers(rpc_options, &response, nullptr, nullptr);
+  Status status = SendRpc(rpc_options, &response, nullptr, nullptr);
   // Even though failure_mode_allow is true (fail-open), the RPC must still fail
   // because the external processor returned an unsupported response (protocol
   // error), not a connection error.
@@ -1418,7 +1366,7 @@ TEST_P(XdsExtProcEnd2endTest,
   })));
   RpcOptions rpc_options;
   EchoResponse response;
-  Status status = SendRpcGetTrailers(rpc_options, &response, nullptr, nullptr);
+  Status status = SendRpc(rpc_options, &response, nullptr, nullptr);
   EXPECT_TRUE(status.ok()) << "Expected OK, got: " << status.error_message();
 }
 
@@ -1727,7 +1675,7 @@ TEST_P(XdsExtProcEnd2endTest,
   })));
   RpcOptions rpc_options;
   EchoResponse response;
-  Status status = SendRpcGetTrailers(rpc_options, &response, nullptr, nullptr);
+  Status status = SendRpc(rpc_options, &response, nullptr, nullptr);
   EXPECT_TRUE(status.ok()) << status.error_message();
 }
 
@@ -1825,7 +1773,7 @@ TEST_P(XdsExtProcEnd2endTest,
   })));
   RpcOptions rpc_options;
   EchoResponse response;
-  Status status = SendRpcGetTrailers(rpc_options, &response, nullptr, nullptr);
+  Status status = SendRpc(rpc_options, &response, nullptr, nullptr);
   EXPECT_TRUE(status.ok()) << status.error_message();
 }
 
@@ -1980,7 +1928,7 @@ TEST_P(XdsExtProcEnd2endTest, ResponseBodyGrpcMessageCompressed) {
   })));
   RpcOptions rpc_options;
   EchoResponse response;
-  Status status = SendRpcGetTrailers(rpc_options, &response, nullptr, nullptr);
+  Status status = SendRpc(rpc_options, &response, nullptr, nullptr);
   // Even though failure_mode_allow is true (fail-open), the RPC must still fail
   // because the external processor returned an unsupported response (protocol
   // error), not a connection error.
@@ -2151,7 +2099,7 @@ TEST_P(XdsExtProcEnd2endTest,
   })));
   RpcOptions rpc_options;
   EchoResponse response;
-  Status status = SendRpcGetTrailers(rpc_options, &response, nullptr, nullptr);
+  Status status = SendRpc(rpc_options, &response, nullptr, nullptr);
   EXPECT_TRUE(status.ok()) << status.error_message();
 }
 
@@ -2245,7 +2193,7 @@ TEST_P(XdsExtProcEnd2endTest,
   })));
   RpcOptions rpc_options;
   EchoResponse response;
-  Status status = SendRpcGetTrailers(rpc_options, &response, nullptr, nullptr);
+  Status status = SendRpc(rpc_options, &response, nullptr, nullptr);
   EXPECT_TRUE(status.ok()) << status.error_message();
 }
 
@@ -2299,9 +2247,8 @@ TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponseForRequestBody) {
   EchoResponse response;
   std::multimap<std::string, std::string> server_initial_metadata;
   std::multimap<std::string, std::string> server_trailing_metadata;
-  Status status =
-      SendRpcGetTrailers(rpc_options, &response, &server_initial_metadata,
-                         &server_trailing_metadata);
+  Status status = SendRpc(rpc_options, &response, &server_initial_metadata,
+                          &server_trailing_metadata);
   EXPECT_THAT(
       status,
       GrpcStatusIs(StatusCode::INTERNAL,
@@ -2354,9 +2301,8 @@ TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponseForRequestHeaders) {
   EchoResponse response;
   std::multimap<std::string, std::string> server_initial_metadata;
   std::multimap<std::string, std::string> server_trailing_metadata;
-  Status status =
-      SendRpcGetTrailers(rpc_options, &response, &server_initial_metadata,
-                         &server_trailing_metadata);
+  Status status = SendRpc(rpc_options, &response, &server_initial_metadata,
+                          &server_trailing_metadata);
   EXPECT_THAT(
       status,
       GrpcStatusIs(StatusCode::INTERNAL,
@@ -2408,9 +2354,8 @@ TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponseForResponseBody) {
   EchoResponse response;
   std::multimap<std::string, std::string> server_initial_metadata;
   std::multimap<std::string, std::string> server_trailing_metadata;
-  Status status =
-      SendRpcGetTrailers(rpc_options, &response, &server_initial_metadata,
-                         &server_trailing_metadata);
+  Status status = SendRpc(rpc_options, &response, &server_initial_metadata,
+                          &server_trailing_metadata);
   EXPECT_THAT(
       status,
       GrpcStatusIs(StatusCode::INTERNAL,
@@ -2463,9 +2408,8 @@ TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponseForResponseHeaders) {
   EchoResponse response;
   std::multimap<std::string, std::string> server_initial_metadata;
   std::multimap<std::string, std::string> server_trailing_metadata;
-  Status status =
-      SendRpcGetTrailers(rpc_options, &response, &server_initial_metadata,
-                         &server_trailing_metadata);
+  Status status = SendRpc(rpc_options, &response, &server_initial_metadata,
+                          &server_trailing_metadata);
   EXPECT_THAT(
       status,
       GrpcStatusIs(StatusCode::INTERNAL,
@@ -2519,9 +2463,8 @@ TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponseForResponseTrailers) {
   EchoResponse response;
   std::multimap<std::string, std::string> server_initial_metadata;
   std::multimap<std::string, std::string> server_trailing_metadata;
-  Status status =
-      SendRpcGetTrailers(rpc_options, &response, &server_initial_metadata,
-                         &server_trailing_metadata);
+  Status status = SendRpc(rpc_options, &response, &server_initial_metadata,
+                          &server_trailing_metadata);
   EXPECT_THAT(
       status,
       GrpcStatusIs(StatusCode::INTERNAL,
@@ -2576,9 +2519,8 @@ TEST_P(XdsExtProcEnd2endTest, ImmediateResponseForRequestBody) {
   EchoResponse response;
   std::multimap<std::string, std::string> server_initial_metadata;
   std::multimap<std::string, std::string> server_trailing_metadata;
-  Status status =
-      SendRpcGetTrailers(rpc_options, &response, &server_initial_metadata,
-                         &server_trailing_metadata);
+  Status status = SendRpc(rpc_options, &response, &server_initial_metadata,
+                          &server_trailing_metadata);
   EXPECT_THAT(
       status,
       GrpcStatusIs(
@@ -2630,9 +2572,8 @@ TEST_P(XdsExtProcEnd2endTest, ImmediateResponseForRequestHeaders) {
   EchoResponse response;
   std::multimap<std::string, std::string> server_initial_metadata;
   std::multimap<std::string, std::string> server_trailing_metadata;
-  Status status =
-      SendRpcGetTrailers(rpc_options, &response, &server_initial_metadata,
-                         &server_trailing_metadata);
+  Status status = SendRpc(rpc_options, &response, &server_initial_metadata,
+                          &server_trailing_metadata);
   EXPECT_THAT(
       status,
       GrpcStatusIs(
@@ -2683,9 +2624,8 @@ TEST_P(XdsExtProcEnd2endTest, ImmediateResponseForResponseBody) {
   EchoResponse response;
   std::multimap<std::string, std::string> server_initial_metadata;
   std::multimap<std::string, std::string> server_trailing_metadata;
-  Status status =
-      SendRpcGetTrailers(rpc_options, &response, &server_initial_metadata,
-                         &server_trailing_metadata);
+  Status status = SendRpc(rpc_options, &response, &server_initial_metadata,
+                          &server_trailing_metadata);
   EXPECT_THAT(
       status,
       GrpcStatusIs(
@@ -2737,9 +2677,8 @@ TEST_P(XdsExtProcEnd2endTest, ImmediateResponseForResponseHeaders) {
   EchoResponse response;
   std::multimap<std::string, std::string> server_initial_metadata;
   std::multimap<std::string, std::string> server_trailing_metadata;
-  Status status =
-      SendRpcGetTrailers(rpc_options, &response, &server_initial_metadata,
-                         &server_trailing_metadata);
+  Status status = SendRpc(rpc_options, &response, &server_initial_metadata,
+                          &server_trailing_metadata);
   EXPECT_THAT(
       status,
       GrpcStatusIs(
@@ -2792,9 +2731,8 @@ TEST_P(XdsExtProcEnd2endTest, ImmediateResponseForResponseTrailers) {
   EchoResponse response;
   std::multimap<std::string, std::string> server_initial_metadata;
   std::multimap<std::string, std::string> server_trailing_metadata;
-  Status status =
-      SendRpcGetTrailers(rpc_options, &response, &server_initial_metadata,
-                         &server_trailing_metadata);
+  Status status = SendRpc(rpc_options, &response, &server_initial_metadata,
+                          &server_trailing_metadata);
   EXPECT_THAT(status,
               GrpcStatusIs(StatusCode::PERMISSION_DENIED,
                            "Access Denied by ExtProc (Response Trailers)"));
@@ -4622,7 +4560,7 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcClientHeadersDurationMetric) {
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
   EchoResponse response;
-  Status status = SendRpcGetTrailers(rpc_options, &response, nullptr, nullptr);
+  Status status = SendRpc(rpc_options, &response, nullptr, nullptr);
   EXPECT_TRUE(status.ok()) << status.error_message();
   // Wait for ext_proc server to receive request headers processing request.
   FakeExternalProcessorService::RequestCounts expected_counts;
@@ -4678,7 +4616,7 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcClientHalfCloseDurationMetric) {
   rpc_options.set_echo_metadata_initially(true);
   rpc_options.set_echo_metadata(true);
   EchoResponse response;
-  Status status = SendRpcGetTrailers(rpc_options, &response, nullptr, nullptr);
+  Status status = SendRpc(rpc_options, &response, nullptr, nullptr);
   EXPECT_TRUE(status.ok()) << status.error_message();
   // Wait for all ext_proc stream messages to be processed.
   FakeExternalProcessorService::RequestCounts expected_counts;
@@ -4733,7 +4671,7 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcServerHeadersDurationMetric) {
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
   EchoResponse response;
-  Status status = SendRpcGetTrailers(rpc_options, &response, nullptr, nullptr);
+  Status status = SendRpc(rpc_options, &response, nullptr, nullptr);
   EXPECT_TRUE(status.ok()) << status.error_message();
   // Wait for ext_proc server to receive response headers processing request.
   FakeExternalProcessorService::RequestCounts expected_counts;
@@ -4784,7 +4722,7 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcServerTrailersDurationMetric) {
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata(true);
   EchoResponse response;
-  Status status = SendRpcGetTrailers(rpc_options, &response, nullptr, nullptr);
+  Status status = SendRpc(rpc_options, &response, nullptr, nullptr);
   EXPECT_TRUE(status.ok()) << status.error_message();
   // Wait for ext_proc server to receive response trailers processing request.
   FakeExternalProcessorService::RequestCounts expected_counts;

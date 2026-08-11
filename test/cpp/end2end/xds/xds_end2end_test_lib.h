@@ -750,7 +750,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   Status SendRpc(const RpcOptions& rpc_options = RpcOptions(),
                  EchoResponse* response = nullptr,
                  std::multimap<std::string, std::string>*
-                     server_initial_metadata = nullptr);
+                     server_initial_metadata = nullptr,
+                 std::multimap<std::string, std::string>*
+                     server_trailing_metadata = nullptr);
 
   // Internal helper function for SendRpc().
   template <typename Stub>

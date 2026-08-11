@@ -636,7 +636,8 @@ std::multimap<std::string, std::string> ConvertMetadata(
 
 Status XdsEnd2endTest::SendRpc(
     const RpcOptions& rpc_options, EchoResponse* response,
-    std::multimap<std::string, std::string>* server_initial_metadata) {
+    std::multimap<std::string, std::string>* server_initial_metadata,
+    std::multimap<std::string, std::string>* server_trailing_metadata) {
   EchoResponse local_response;
   if (response == nullptr) response = &local_response;
   ClientContext context;
@@ -660,6 +661,10 @@ Status XdsEnd2endTest::SendRpc(
   if (server_initial_metadata != nullptr) {
     *server_initial_metadata =
         ConvertMetadata(context.GetServerInitialMetadata());
+  }
+  if (server_trailing_metadata != nullptr) {
+    *server_trailing_metadata =
+        ConvertMetadata(context.GetServerTrailingMetadata());
   }
   return status;
 }
