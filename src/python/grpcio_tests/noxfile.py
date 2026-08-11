@@ -115,7 +115,7 @@ def build_package_protos(session: nox.Session):
     command.build_package_protos(PYTHON_STEM, args.strict_mode)
 
 
-@nox.session
+@nox.session(venv_params=["--system-site-packages"])
 def test_lite(session: nox.Session):
     """Command to run tests without fetching or building anything."""
     session.log("Running test_lite for grpcio-tools...")
@@ -138,7 +138,7 @@ def test_lite(session: nox.Session):
     )
 
 
-@nox.session
+@nox.session(venv_params=["--system-site-packages"])
 def test_py3_only(session: nox.Session):
     """Command to run tests for Python 3+ features.
 
@@ -163,7 +163,7 @@ def test_py3_only(session: nox.Session):
     )
 
 
-@nox.session
+@nox.session(venv_params=["--system-site-packages"])
 def test_aio(session: nox.Session):
     """Command to run aio tests without fetching or building anything."""
 
@@ -187,7 +187,7 @@ def test_aio(session: nox.Session):
     )
 
 
-@nox.session
+@nox.session(venv_params=["--system-site-packages"])
 def run_interop(session: nox.Session):
     """Run interop test client/server."""
     session.log("Running run_interop for grpcio-tests...")
@@ -266,7 +266,7 @@ def run_interop(session: nox.Session):
             )
 
 
-@nox.session
+@nox.session(venv_params=["--system-site-packages"])
 def run_fork(session: nox.Session):
     """Command to run fork test client."""
 
