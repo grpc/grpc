@@ -135,6 +135,7 @@ def test_lite(session: nox.Session):
         "runner = tests.Runner(dedicated_threads=True); "
         "result = runner.run(loader.suite); "
         "sys.exit(0 if result.wasSuccessful() else 'Test failure')",
+        external=True,
     )
 
 
@@ -160,6 +161,7 @@ def test_py3_only(session: nox.Session):
         "runner = tests.Runner(); "
         "result = runner.run(loader.suite); "
         "sys.exit(0 if result.wasSuccessful() else 'Test failure')",
+        external=True,
     )
 
 
@@ -184,6 +186,7 @@ def test_aio(session: nox.Session):
         "runner = tests.Runner(dedicated_threads=False); "
         "result = runner.run(loader.suite); "
         "sys.exit(0 if result.wasSuccessful() else 'Test failure')",
+        external=True,
     )
 
 
