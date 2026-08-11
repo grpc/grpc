@@ -124,13 +124,18 @@ class TestCsds(unittest.TestCase):
 
 
 class TestCsdsStream(TestCsds):
+    def setUp(self):
+        super().setUp()
+        self.request_queue = None
+        self.response_iterator = None
+
     def tearDown(self):
-        if hasattr(self, "request_queue"):
+        if self.request_queue is not None:
             self.request_queue.put(None)
         super().tearDown()
 
     def get_xds_config_dump(self):
-        if not hasattr(self, "request_queue"):
+        if self.request_queue is None:
             self.request_queue = queue.Queue()
             self.response_iterator = self._stub.StreamClientStatus(
                 iter(self.request_queue.get, None)
