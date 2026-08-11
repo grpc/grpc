@@ -206,6 +206,11 @@ class XdsTestType {
 // xDS-enabled, at the discretion of the test.
 class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
                        public XdsResourceUtils {
+ public:
+  // Sets duration_proto to duration times grpc_test_slowdown_factor().
+  static void SetProtoDuration(grpc_core::Duration duration,
+                               google::protobuf::Duration* duration_proto);
+
  protected:
   // TLS certificate paths.
   static const char kCaCertPath[];
@@ -982,10 +987,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     return grpc_core::Timestamp::FromTimespecRoundDown(
         gpr_now(GPR_CLOCK_MONOTONIC));
   }
-
-  // Sets duration_proto to duration times grpc_test_slowdown_factor().
-  static void SetProtoDuration(grpc_core::Duration duration,
-                               google::protobuf::Duration* duration_proto);
 
   // Returns the number of RPCs needed to pass error_tolerance at 99.99994%
   // chance. Rolling dices in drop/fault-injection generates a binomial
