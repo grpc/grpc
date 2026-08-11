@@ -23,6 +23,9 @@ PYTHON="$(pwd)/${1:-py310/bin/python}"
 
 ROOT=$(pwd)
 
+# Purge legacy broken .pth files in host site-packages if present
+rm -f /usr/local/lib/python3.15/site-packages/*.pth 2>/dev/null || true
+
 $PYTHON -m nox -s "$2" -f "$ROOT/src/python/grpcio_tests/noxfile.py"
 
 mkdir -p "$ROOT/reports"
