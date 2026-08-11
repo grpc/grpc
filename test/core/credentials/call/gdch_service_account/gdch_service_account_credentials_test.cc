@@ -122,7 +122,10 @@ class GDCHServiceAccountCredentialsTest : public ::testing::Test {
   static absl::StatusOr<GrpcHttpRequestUniquePtr> FormatHttpRequest(
       const GDCHServiceAccountCredentials::Info& info,
       const std::string& audience) {
-    return GDCHServiceAccountCredentials::FormatHttpRequest(info, audience);
+    absl::StatusOr<URI> token_url = URI::Parse(info.token_uri);
+    if (!token_url.ok()) return token_url.status();
+    return GDCHServiceAccountCredentials::FormatHttpRequest(info, audience,
+                                                            *token_url);
   }
 
   static absl::StatusOr<std::string> ParseHttpResponse(

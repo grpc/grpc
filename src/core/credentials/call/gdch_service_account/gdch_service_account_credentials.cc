@@ -43,7 +43,6 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/transport/error_utils.h"
 #include "src/core/util/http_client/httpcli.h"
 #include "src/core/util/http_client/httpcli_ssl_credentials.h"
 #include "src/core/util/http_client/parser.h"
@@ -301,6 +300,12 @@ void GDCHServiceAccountCredentials::Info::JsonPostLoad(
   if (token_uri.empty()) {
     ValidationErrors::ScopedField field(errors, ".token_uri");
     errors->AddError("field must not be empty");
+  } else {
+    absl::StatusOr<URI> uri = URI::Parse(token_uri);
+    if (!uri.ok()) {
+      ValidationErrors::ScopedField field(errors, ".token_uri");
+      errors->AddError(absl::StrCat("invalid URI: ", uri.status().message()));
+    }
   }
 }
 
@@ -309,13 +314,17 @@ GDCHServiceAccountCredentials::Create(const Json& key_file_contents,
                                       std::string audience) {
   absl::StatusOr<Info> info = LoadFromJson<Info>(key_file_contents);
   if (!info.ok()) return info.status();
-  return MakeRefCounted<GDCHServiceAccountCredentials>(*std::move(info),
-                                                       std::move(audience));
+  absl::StatusOr<URI> token_url = URI::Parse(info->token_uri);
+  if (!token_url.ok()) return token_url.status();
+  return MakeRefCounted<GDCHServiceAccountCredentials>(
+      *std::move(info), std::move(audience), *std::move(token_url));
 }
 
 GDCHServiceAccountCredentials::GDCHServiceAccountCredentials(
-    Info info, std::string audience)
-    : info_(std::move(info)), audience_(std::move(audience)) {}
+    Info info, std::string audience, URI token_url)
+    : info_(std::move(info)),
+      audience_(std::move(audience)),
+      token_url_(std::move(token_url)) {}
 
 GDCHServiceAccountCredentials::AssertionComponents
 GDCHServiceAccountCredentials::AssertionComponentsFromInfo(
@@ -389,15 +398,15 @@ void GDCHServiceAccountCredentials::GrpcDeleter::operator()(
 
 absl::StatusOr<GDCHServiceAccountCredentials::GrpcHttpRequestUniquePtr>
 GDCHServiceAccountCredentials::FormatHttpRequest(const Info& info,
-                                                 const std::string& audience) {
+                                                 const std::string& audience,
+                                                 const URI& token_url) {
   absl::StatusOr<std::string> body = CreateRequestBody(info, audience);
   if (!body.ok()) return body.status();
 
   GrpcHttpRequestUniquePtr request(new grpc_http_request);
   memset(request.get(), 0, sizeof(grpc_http_request));
-  absl::StatusOr<URI> url = URI::Parse(info.token_uri);
-  if (!url.ok()) return url.status();
-  request->path = gpr_strdup(url->path().empty() ? "/" : url->path().c_str());
+  request->path =
+      gpr_strdup(token_url.path().empty() ? "/" : token_url.path().c_str());
   request->hdr_count = 1;
   request->hdrs =
       static_cast<grpc_http_header*>(gpr_malloc(sizeof(grpc_http_header)));
@@ -428,8 +437,7 @@ absl::StatusOr<std::string> GDCHServiceAccountCredentials::ParseHttpResponse(
 }
 
 UniqueTypeName GDCHServiceAccountCredentials::type() const {
-  static UniqueTypeName::Factory kFactory("GDCHServiceAccountCredentials");
-  return kFactory.Create();
+  return GRPC_UNIQUE_TYPE_NAME_HERE("GDCHServiceAccountCredentials");
 }
 
 std::string GDCHServiceAccountCredentials::debug_string() {
@@ -440,26 +448,21 @@ std::string GDCHServiceAccountCredentials::debug_string() {
 OrphanablePtr<HttpRequest> GDCHServiceAccountCredentials::StartHttpRequest(
     grpc_polling_entity* pollent, Timestamp deadline,
     grpc_http_response* response, grpc_closure* on_complete) {
-  absl::StatusOr<URI> url = URI::Parse(info_.token_uri);
-  if (!url.ok()) {
-    ExecCtx::Run(DEBUG_LOCATION, on_complete, url.status());
-    return nullptr;
-  }
   absl::StatusOr<GrpcHttpRequestUniquePtr> request =
-      FormatHttpRequest(info_, audience_);
+      FormatHttpRequest(info_, audience_, token_url_);
   if (!request.ok()) {
     ExecCtx::Run(DEBUG_LOCATION, on_complete, request.status());
     return nullptr;
   }
   RefCountedPtr<grpc_channel_credentials> http_request_creds;
-  if (url->scheme() == "http") {
+  if (token_url_.scheme() == "http") {
     http_request_creds = RefCountedPtr<grpc_channel_credentials>(
         grpc_insecure_credentials_create());
   } else {
     http_request_creds = CreateHttpRequestSSLCredentials();
   }
   OrphanablePtr<HttpRequest> http_request = HttpRequest::Post(
-      std::move(*url), /*args=*/nullptr, pollent, request->get(), deadline,
+      token_url_, /*args=*/nullptr, pollent, request->get(), deadline,
       on_complete, response, std::move(http_request_creds));
   http_request->Start();
   return http_request;

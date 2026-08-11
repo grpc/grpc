@@ -5257,7 +5257,6 @@ grpc_cc_library(
     deps = [
         "closure",
         "error",
-        "error_utils",
         "httpcli_ssl_credentials",
         "json",
         "json_object_loader",

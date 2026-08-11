@@ -32,6 +32,7 @@
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/unique_type_name.h"
+#include "src/core/util/uri.h"
 #include "src/core/util/validation_errors.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -100,7 +101,7 @@ class GDCHServiceAccountCredentials final : public HttpTokenFetcherCredentials {
   static absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> Create(
       const Json& key_file_contents, std::string audience);
 
-  GDCHServiceAccountCredentials(Info info, std::string audience);
+  GDCHServiceAccountCredentials(Info info, std::string audience, URI token_url);
 
   const std::optional<std::string>& ca_cert_path() const {
     return info_.ca_cert_path;
@@ -155,13 +156,14 @@ class GDCHServiceAccountCredentials final : public HttpTokenFetcherCredentials {
       const Info& info, const std::string& audience);
 
   static absl::StatusOr<GrpcHttpRequestUniquePtr> FormatHttpRequest(
-      const Info& info, const std::string& audience);
+      const Info& info, const std::string& audience, const URI& token_url);
 
   static absl::StatusOr<std::string> ParseHttpResponse(
       absl::string_view response_body);
 
   Info info_;
   std::string audience_;
+  URI token_url_;
 };
 
 }  // namespace grpc_core
