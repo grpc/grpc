@@ -501,10 +501,6 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
         keepalive_time_.millis() > max_keepalive_time_millis
             ? INT_MAX
             : keepalive_time_.millis() * KEEPALIVE_TIME_BACKOFF_MULTIPLIER;
-    if (!IsSubchannelConnectionScalingEnabled()) {
-      status.SetPayload(kKeepaliveThrottlingKey,
-                        absl::Cord(std::to_string(throttled_keepalive_time)));
-    }
     disconnect_info.keepalive_time =
         Duration::Milliseconds(throttled_keepalive_time);
   }
@@ -1230,7 +1226,7 @@ Http2ClientTransport::Http2ClientTransport(
   TransportChannelArgs args;
   ReadChannelArgs(channel_args, args);
 
-  ping_manager_.emplace(channel_args, args.ping_timeout,
+  ping_manager_.emplace(channel_args, kIsClient, args.ping_timeout,
                         PingSystemInterfaceImpl::Make(this), event_engine_);
 
   // The keepalive loop is only spawned if the keepalive time is not infinity.

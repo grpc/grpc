@@ -1,4 +1,5 @@
-# Copyright 2020 The gRPC Authors
+#!/bin/bash
+# Copyright 2026 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,16 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:12
+set -ex
 
-# gRPC C++ dependencies based on https://github.com/grpc/grpc/blob/master/BUILDING.md
-RUN apt-get update && apt-get install -y build-essential autoconf libtool pkg-config && apt-get clean
+cd "$(dirname "$0")/../../.."
 
-# C++ distribtests are setup in a way that requires git
-RUN apt-get update && apt-get install -y git cmake && apt-get clean
+# Set up workspace for grpc-rust.
+RUST_WORKSPACE=$(pwd)/../rust_workspace
+rm -rf "$RUST_WORKSPACE"
 
-RUN git config --global --add safe.directory '*'
-RUN git config --global protocol.file.allow always
+# Clone the sibling grpc-rust repo to avoid dirtying it.
+git clone ../grpc-rust "$RUST_WORKSPACE"
 
+# Build the worker.
+(cd "$RUST_WORKSPACE" && cargo build -p grpc-benchmark --release --bin worker)
 
-CMD ["bash"]
+# Copy the binary to a clean location.
+mkdir -p ../rust_bin
+cp "$RUST_WORKSPACE/target/release/worker" ../rust_bin/worker

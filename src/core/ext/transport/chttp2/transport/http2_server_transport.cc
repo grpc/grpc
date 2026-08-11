@@ -26,13 +26,11 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
-#include <iterator>
 #include <memory>
 #include <optional>
 #include <string>
 #include <type_traits>
 #include <utility>
-#include <variant>
 #include <vector>
 
 #include "src/core/call/call_destination.h"
@@ -47,7 +45,6 @@
 #include "src/core/ext/transport/chttp2/transport/goaway.h"
 #include "src/core/ext/transport/chttp2/transport/header_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
@@ -62,14 +59,12 @@
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/debug/trace_impl.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"
-#include "src/core/lib/promise/match_promise.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
@@ -95,10 +90,8 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
-#include "absl/strings/cord.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/span.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -409,6 +402,12 @@ Http2Status Http2ServerTransport::ProcessIncomingMetadata(T&& frame) {
           std::move(frame.payload), frame.end_headers, Http2Status::Ok(),
           settings_->acked().max_header_list_size());
     }
+    // TODO(tjagtap) : [PH2][P1] : Move this check as needed.
+    if (GPR_UNLIKELY(is_goaway_received_)) {
+      return Http2Status::Http2ConnectionError(
+          Http2ErrorCode::kProtocolError,
+          std::string(RFC9113::kReceivedStreamAfterGoaway));
+    }
 
     Http2Status append_result =
         read_context_.header_assembler().AppendFrame(frame);
@@ -527,11 +526,18 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(Http2PingFrame&& frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-ping
   GRPC_HTTP2_SERVER_DLOG
       << "Http2ServerTransport::ProcessIncomingFrame(PingFrame) { ack="
-      << frame.ack << ", opaque=" << frame.opaque << " }";
+      << frame.ack << ", opaque=" << frame.opaque << " }, "
+      << ping_manager_->GetDebugString(!IsPingWithoutCallsAllowed() &&
+                                       IsTransportIdle());
   if (frame.ack) {
     return ToHttpOkOrConnError(AckPing(frame.opaque));
   } else {
     read_context_.OnPingFrameReceived();
+    if (GPR_UNLIKELY(ping_manager_->NotifyPingAbusePolicy(
+            !IsPingWithoutCallsAllowed() && IsTransportIdle()))) {
+      return Http2Status::Http2ConnectionError(Http2ErrorCode::kEnhanceYourCalm,
+                                               "too_many_pings");
+    }
     if (test_only_ack_pings_) {
       ping_manager_->AddPendingPingAck(frame.opaque);
       return ToHttpOkOrConnError(TriggerWriteCycle());
@@ -555,87 +561,27 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
          frame.error_code != static_cast<uint32_t>(Http2ErrorCode::kNoError))
       << "Received GOAWAY frame with error code: " << frame.error_code;
 
-  //   uint32_t last_stream_id = 0;
-  //   absl::Status status(ErrorCodeToAbslStatusCode(
-  //                           FrameErrorCodeToHttp2ErrorCode(frame.error_code)),
-  //                       frame.debug_data.empty()
-  //                           ? absl::string_view("GOAWAY received")
-  //                           : frame.debug_data.as_string_view());
-  //   if (GoawayManager::IsGracefulGoaway(frame)) {
-  //     const uint32_t next_stream_id = PeekNextStreamId();
-  //     last_stream_id = (next_stream_id > 1) ? next_stream_id - 2 : 0;
-  //   } else {
-  //     last_stream_id = frame.last_stream_id;
-  //   }
-  //   SetMaxAllowedStreamId(last_stream_id);
+  is_goaway_received_ = true;
 
-  //   bool close_transport = false;
-  //   {
-  //     MutexLock lock(&transport_mutex_);
-  //     if (CanCloseTransportLocked()) {
-  //       close_transport = true;
-  //       GRPC_HTTP2_SERVER_DLOG <<
-  //       "Http2ServerTransport::ProcessIncomingFrame("
-  //                                 "GoawayFrame) "
-  //                                 "stream_list_ is empty";
-  //     }
-  //   }
+  absl::Status status(ErrorCodeToAbslStatusCode(
+                          FrameErrorCodeToHttp2ErrorCode(frame.error_code)),
+                      frame.debug_data.empty()
+                          ? absl::string_view("GOAWAY received")
+                          : frame.debug_data.as_string_view());
 
-  //   StateWatcher::DisconnectInfo disconnect_info;
-  //   disconnect_info.reason = Transport::StateWatcher::kGoaway;
-  //   disconnect_info.http2_error_code =
-  //       static_cast<Http2ErrorCode>(frame.error_code);
+  StateWatcher::DisconnectInfo disconnect_info;
+  disconnect_info.reason = Transport::StateWatcher::kGoaway;
+  disconnect_info.http2_error_code =
+      FrameErrorCodeToHttp2ErrorCode(frame.error_code);
 
-  //   // Throttle keepalive time if the server sends a GOAWAY with error code
-  //   // ENHANCE_YOUR_CALM and debug data equal to "too_many_pings". This
-  //   will
-  //   // apply to any new transport created on by any subchannel of this
-  //   channel. if (GPR_UNLIKELY(frame.error_code == static_cast<uint32_t>(
-  //                                            Http2ErrorCode::kEnhanceYourCalm)
-  //                                            &&
-  //                    frame.debug_data == "too_many_pings")) {
-  //     LOG(ERROR) << ": Received a GOAWAY with error code ENHANCE_YOUR_CALM
-  //     and
-  //     "
-  //                   "debug data equal to \"too_many_pings\". Current
-  //                   keepalive " "time (before throttling): "
-  //                << keepalive_time_.ToString();
-  //     constexpr int max_keepalive_time_millis =
-  //         INT_MAX / KEEPALIVE_TIME_BACKOFF_MULTIPLIER;
-  //     uint64_t throttled_keepalive_time =
-  //         keepalive_time_.millis() > max_keepalive_time_millis
-  //             ? INT_MAX
-  //             : keepalive_time_.millis() *
-  //             KEEPALIVE_TIME_BACKOFF_MULTIPLIER;
-  //     if (!IsSubchannelConnectionScalingEnabled()) {
-  //       status.SetPayload(kKeepaliveThrottlingKey,
-  //                         absl::Cord(std::to_string(throttled_keepalive_time)));
-  //     }
-  //     disconnect_info.keepalive_time =
-  //         Duration::Milliseconds(throttled_keepalive_time);
-  //   }
-
-  //   if (close_transport) {
-  //     // TODO(akshitpatel) : [PH2][P3] : Ideally the error here should be
-  //     // kNoError. However, Http2Status does not support kNoError. We
-  //     should
-  //     // revisit this and update the error code.
-  //     MaybeSpawnCloseTransport(Http2Status::Http2ConnectionError(
-  //         FrameErrorCodeToHttp2ErrorCode((
-  //             frame.error_code ==
-  //                     Http2ErrorCodeToFrameErrorCode(Http2ErrorCode::kNoError)
-  //                 ?
-  //                 Http2ErrorCodeToFrameErrorCode(Http2ErrorCode::kInternalError)
-  //                 : frame.error_code)),
-  //         frame.debug_data.empty()
-  //             ? std::string("GOAWAY received")
-  //             : std::string(frame.debug_data.as_string_view())));
-  //   }
-
-  //   // lie: use transient failure from the transport to indicate goaway has
-  //   been
-  //   // received.
-  //   ReportDisconnection(status, disconnect_info, "got_goaway");
+  // We do not close the transport here. Instead we rely on the upper layers to
+  // call Orphan. Meanwhile, if the client closes the TCP connection, we will
+  // close transport anyway.
+  //
+  // lie: use transient failure from the transport to indicate goaway has
+  // been received.
+  ReportDisconnection(GRPC_CHANNEL_TRANSIENT_FAILURE, status, disconnect_info,
+                      "got_goaway");
   return Http2Status::Ok();
 }
 
@@ -1049,7 +995,7 @@ auto Http2ServerTransport::MultiplexerLoop() {
                   writable_stream_list_.ImmediateNext(
                       AreTransportFlowControlTokensAvailable());
               if (!optional_stream.has_value()) {
-                GRPC_HTTP2_CLIENT_DLOG
+                GRPC_HTTP2_SERVER_DLOG
                     << "Http2ServerTransport::MultiplexerLoop "
                        "No writable streams available ";
                 break;
@@ -1094,8 +1040,8 @@ auto Http2ServerTransport::MultiplexerLoop() {
         },
         [this]() -> LoopCtl<absl::Status> {
           if (should_reset_ping_clock_) {
-            GRPC_HTTP2_CLIENT_DLOG
-                << "Http2ClientTransport::MultiplexerLoop ResetPingClock";
+            GRPC_HTTP2_SERVER_DLOG
+                << "Http2ServerTransport::MultiplexerLoop ResetPingClock";
             ping_manager_->ResetPingClock(/*is_client=*/kIsClient);
             should_reset_ping_clock_ = false;
           }
@@ -1906,6 +1852,7 @@ Http2ServerTransport::Http2ServerTransport(
       settings_(MakeRefCounted<SettingsPromiseManager>(
           kIsClient, std::move(on_receive_settings))),
       on_close_callback_(on_close_callback),
+      is_goaway_received_(false),
       should_reset_ping_clock_(false),
       read_context_(MaxNewStreamsPerRead(channel_args), endpoint_, kIsClient,
                     GetMaxSecurityFrameSize(channel_args),
@@ -1934,7 +1881,7 @@ Http2ServerTransport::Http2ServerTransport(
   TransportChannelArgs args;
   ReadChannelArgs(channel_args, args);
 
-  ping_manager_.emplace(channel_args, args.ping_timeout,
+  ping_manager_.emplace(channel_args, kIsClient, args.ping_timeout,
                         PingSystemInterfaceImpl::Make(this), event_engine_);
 
   // The keepalive loop is only spawned if the keepalive time is not infinity.

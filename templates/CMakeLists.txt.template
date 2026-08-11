@@ -877,27 +877,39 @@
     set_target_properties(${lib.name} PROPERTIES COMPILE_PDB_NAME "${lib.name}"
       COMPILE_PDB_OUTPUT_DIRECTORY <%text>"${CMAKE_BINARY_DIR}</%text>"
     )<%
-    dll_annotations = []
+    private_dll_annotations = []
+    interface_dll_annotations = []
     if lib.name in gpr_libs:
-      dll_annotations.append("GPR_DLL_EXPORTS")
+      private_dll_annotations.append("GPR_DLL_EXPORTS")
+      interface_dll_annotations.append("GPR_DLL_IMPORTS")
     if lib.name in grpc_libs:
-      dll_annotations.append("GRPC_DLL_EXPORTS")
+      private_dll_annotations.append("GRPC_DLL_EXPORTS")
+      interface_dll_annotations.append("GRPC_DLL_IMPORTS")
     if lib.name in grpcxx_libs:
-      dll_annotations.append("GRPCXX_DLL_EXPORTS")
+      private_dll_annotations.append("GRPCXX_DLL_EXPORTS")
+      interface_dll_annotations.append("GRPCXX_DLL_IMPORTS")
     if set(gpr_libs) & set(lib.transitive_deps):
-      dll_annotations.append("GPR_DLL_IMPORTS")
+      private_dll_annotations.append("GPR_DLL_IMPORTS")
     if set(grpc_libs) & set(lib.transitive_deps):
-      dll_annotations.append("GRPC_DLL_IMPORTS")
+      private_dll_annotations.append("GRPC_DLL_IMPORTS")
     if set(grpcxx_libs) & set(lib.transitive_deps):
-      dll_annotations.append("GRPCXX_DLL_IMPORTS")
+      private_dll_annotations.append("GRPCXX_DLL_IMPORTS")
     %>
-    % if dll_annotations:
+    % if private_dll_annotations or interface_dll_annotations:
     if(BUILD_SHARED_LIBS)
       target_compile_definitions(${lib.name}
+    % if private_dll_annotations:
       PRIVATE
-    % for definition in dll_annotations:
+    % for definition in private_dll_annotations:
         "${definition}"
     % endfor
+    % endif
+    % if interface_dll_annotations:
+      INTERFACE
+    % for definition in interface_dll_annotations:
+        "${definition}"
+    % endfor
+    % endif
       )
     endif()
     % endif
@@ -1110,6 +1122,16 @@
     set(PC_REQUIRES_PRIVATE "<%text>${requires_private}</%text>")
     set(PC_LIB "<%text>${libs}</%text>")
     set(PC_LIBS_PRIVATE "<%text>${libs_private}</%text>")
+    set(PC_CFLAGS "")
+    if(WIN32 AND BUILD_SHARED_LIBS)
+      if(name STREQUAL "gpr")
+        set(PC_CFLAGS "-DGPR_DLL_IMPORTS")
+      elseif(name STREQUAL "gRPC" OR name STREQUAL "gRPC unsecure")
+        set(PC_CFLAGS "-DGRPC_DLL_IMPORTS -DGPR_DLL_IMPORTS")
+      elseif(name MATCHES "^gRPC\\+\\+")
+        set(PC_CFLAGS "-DGRPCXX_DLL_IMPORTS -DGRPC_DLL_IMPORTS -DGPR_DLL_IMPORTS")
+      endif()
+    endif()
     set(output_filepath "<%text>${grpc_BINARY_DIR}/libs/opt/pkgconfig/${output_filename}</%text>")
     configure_file(
       "<%text>${grpc_SOURCE_DIR}/cmake/pkg-config-template.pc.in</%text>"

@@ -154,6 +154,19 @@ spec:
       - bash
       image: ${prebuilt_image_prefix}/ruby:${prebuilt_image_tag}
       name: main
+  - language: rust
+    pool: ${client_pool}
+    run:
+    - args:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /executable/bin/worker \
+            --driver_port="${DRIVER_PORT}"
+      command:
+      - bash
+      image: ${prebuilt_image_prefix}/rust:${prebuilt_image_tag}
+      name: main
   driver:
     language: cxx
     pool: ${driver_pool}
@@ -277,6 +290,19 @@ spec:
       command:
       - bash
       image: ${prebuilt_image_prefix}/ruby:${prebuilt_image_tag}
+      name: main
+  - language: rust
+    pool: ${server_pool}
+    run:
+    - args:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /executable/bin/worker \
+            --driver_port="${DRIVER_PORT}"
+      command:
+      - bash
+      image: ${prebuilt_image_prefix}/rust:${prebuilt_image_tag}
       name: main
   timeoutSeconds: ${timeout_seconds}
   ttlSeconds: 86400
