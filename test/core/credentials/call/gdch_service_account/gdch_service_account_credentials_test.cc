@@ -87,7 +87,7 @@ class GDCHServiceAccountCredentialsTest : public ::testing::Test {
   using GrpcHttpRequestUniquePtr =
       GDCHServiceAccountCredentials::GrpcHttpRequestUniquePtr;
 
-  static absl::StatusOr<std::vector<std::uint8_t>> SignUsingSha256(
+  static absl::StatusOr<std::string> SignUsingSha256(
       const std::string& str, const std::string& pem_contents,
       SignatureFormat format) {
     return GDCHServiceAccountCredentials::SignUsingSha256(str, pem_contents,
@@ -140,7 +140,7 @@ namespace {
 
 TEST_F(GDCHServiceAccountCredentialsTest, SignUsingSha256DERSuccess) {
   std::string payload = "hello world";
-  absl::StatusOr<std::vector<std::uint8_t>> sig =
+  absl::StatusOr<std::string> sig =
       SignUsingSha256(payload, kTestPrivateKeyPem, SignatureFormat::kDER);
   ASSERT_TRUE(sig.ok()) << sig.status().ToString();
   EXPECT_FALSE(sig->empty());
@@ -148,7 +148,7 @@ TEST_F(GDCHServiceAccountCredentialsTest, SignUsingSha256DERSuccess) {
 
 TEST_F(GDCHServiceAccountCredentialsTest, SignUsingSha256RawSuccess) {
   std::string payload = "hello world";
-  absl::StatusOr<std::vector<std::uint8_t>> sig =
+  absl::StatusOr<std::string> sig =
       SignUsingSha256(payload, kTestPrivateKeyPem, SignatureFormat::kRaw);
   ASSERT_TRUE(sig.ok()) << sig.status().ToString();
   // For ECDSA ES256 (P-256), raw signature coordinates r and s are 32 bytes
@@ -158,7 +158,7 @@ TEST_F(GDCHServiceAccountCredentialsTest, SignUsingSha256RawSuccess) {
 
 TEST_F(GDCHServiceAccountCredentialsTest, SignUsingSha256FailureInvalidKey) {
   std::string payload = "hello world";
-  absl::StatusOr<std::vector<std::uint8_t>> sig =
+  absl::StatusOr<std::string> sig =
       SignUsingSha256(payload, "invalid pem content", SignatureFormat::kRaw);
   EXPECT_FALSE(sig.ok());
 }

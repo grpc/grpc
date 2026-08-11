@@ -115,8 +115,8 @@ std::string CaptureSslErrors() {
   return msg;
 }
 
-absl::Status DERToRawSignature(const unsigned char* der_sig, size_t der_len,
-                               int coord_size, std::vector<uint8_t>& raw_sig) {
+absl::StatusOr<std::string> DERToRawSignature(const unsigned char* der_sig,
+                                              size_t der_len, int coord_size) {
   if (der_sig == nullptr || der_len == 0) {
     return absl::InternalError("Input DER signature is empty");
   }
@@ -139,8 +139,8 @@ absl::Status DERToRawSignature(const unsigned char* der_sig, size_t der_len,
     return absl::InternalError("Error: Could not get r or s from ECDSA_SIG");
   }
 
-  raw_sig.resize(2 * coord_size);
-  unsigned char* raw_sig_ptr = raw_sig.data();
+  std::string raw_sig(2 * coord_size, '\0');
+  unsigned char* raw_sig_ptr = reinterpret_cast<unsigned char*>(raw_sig.data());
 
   constexpr const char* kErrorMessage =
       R"""(Error converting %s to binary (expected %d bytes, got %d): %s)""";
@@ -164,15 +164,14 @@ absl::Status DERToRawSignature(const unsigned char* der_sig, size_t der_len,
     return absl::InternalError(err_msg);
   }
 
-  return {};
+  return raw_sig;
 }
 
 }  // namespace
 
-absl::StatusOr<std::vector<std::uint8_t>>
-GDCHServiceAccountCredentials::SignUsingSha256(const std::string& str,
-                                               const std::string& pem_contents,
-                                               SignatureFormat format) {
+absl::StatusOr<std::string> GDCHServiceAccountCredentials::SignUsingSha256(
+    const std::string& str, const std::string& pem_contents,
+    SignatureFormat format) {
   ERR_clear_error();
   std::unique_ptr<BIO, OpenSslDeleter> pem_buffer(BIO_new_mem_buf(
       pem_contents.data(), static_cast<int>(pem_contents.length())));
@@ -233,25 +232,22 @@ GDCHServiceAccountCredentials::SignUsingSha256(const std::string& str,
 
   // Then compute the actual signed digest. Note that OpenSSL requires a
   // `unsigned char*` buffer, so we feed it that.
-  std::vector<unsigned char> buffer(actual_len);
-  if (EVP_DigestSignFinal(digest_ctx.get(), buffer.data(), &actual_len) !=
-      kOpenSslSuccess) {
+  std::string buffer(actual_len, '\0');
+  if (EVP_DigestSignFinal(digest_ctx.get(),
+                          reinterpret_cast<unsigned char*>(buffer.data()),
+                          &actual_len) != kOpenSslSuccess) {
     return absl::InternalError(absl::StrCat(
         "Invalid ServiceAccountCredentials - could not sign blob: ",
         CaptureSslErrors()));
   }
+  buffer.resize(actual_len);
 
-  std::vector<std::uint8_t> der_sig{buffer.begin(),
-                                    std::next(buffer.begin(), actual_len)};
   if (format == SignatureFormat::kDER) {
-    return der_sig;
+    return buffer;
   }
 
-  std::vector<std::uint8_t> raw_sig;
-  absl::Status status =
-      DERToRawSignature(der_sig.data(), der_sig.size(), 32, raw_sig);
-  if (!status.ok()) return status;
-  return raw_sig;
+  return DERToRawSignature(
+      reinterpret_cast<const unsigned char*>(buffer.data()), buffer.size(), 32);
 }
 
 void GDCHServiceAccountCredentials::Info::JsonPostLoad(
@@ -360,11 +356,10 @@ absl::StatusOr<std::string> GDCHServiceAccountCredentials::MakeJWTAssertion(
     const std::string& pem_contents, SignatureFormat format) {
   const std::string body = absl::StrCat(absl::WebSafeBase64Escape(header), ".",
                                         absl::WebSafeBase64Escape(claim));
-  absl::StatusOr<std::vector<std::uint8_t>> pem_signature =
+  absl::StatusOr<std::string> signature =
       SignUsingSha256(body, pem_contents, format);
-  if (!pem_signature.ok()) return std::move(pem_signature).status();
-  std::string sig_str{pem_signature->begin(), pem_signature->end()};
-  return absl::StrCat(body, ".", absl::WebSafeBase64Escape(sig_str));
+  if (!signature.ok()) return signature.status();
+  return absl::StrCat(body, ".", absl::WebSafeBase64Escape(*signature));
 }
 
 absl::StatusOr<std::string> GDCHServiceAccountCredentials::CreateRequestBody(

@@ -140,8 +140,8 @@ class GDCHServiceAccountCredentials final : public HttpTokenFetcherCredentials {
 
   // Signs a string with the private key from a PEM container.
   //
-  // @return the signature as an *unencoded* byte array.
-  static absl::StatusOr<std::vector<std::uint8_t>> SignUsingSha256(
+  // @return the signature as an *unencoded* string.
+  static absl::StatusOr<std::string> SignUsingSha256(
       const std::string& str, const std::string& pem_contents,
       SignatureFormat format);
 
