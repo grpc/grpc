@@ -117,7 +117,7 @@ std::string CaptureSslErrors() {
 absl::Status DERToRawSignature(const unsigned char* der_sig, size_t der_len,
                                int coord_size, std::vector<uint8_t>& raw_sig) {
   if (der_sig == nullptr || der_len == 0) {
-    return GRPC_ERROR_CREATE("Input DER signature is empty");
+    return absl::InternalError("Input DER signature is empty");
   }
 
   std::unique_ptr<ECDSA_SIG, OpenSslDeleter> ecdsa_sig(
@@ -126,7 +126,7 @@ absl::Status DERToRawSignature(const unsigned char* der_sig, size_t der_len,
   if (ecdsa_sig == nullptr) {
     char err_buf[256];
     ERR_error_string_n(ERR_get_error(), err_buf, sizeof(err_buf));
-    return GRPC_ERROR_CREATE(
+    return absl::InternalError(
         absl::StrCat("Error parsing DER signature: ", err_buf));
   }
 
@@ -135,7 +135,7 @@ absl::Status DERToRawSignature(const unsigned char* der_sig, size_t der_len,
   ECDSA_SIG_get0(ecdsa_sig.get(), &r, &s);
 
   if (r == nullptr || s == nullptr) {
-    return GRPC_ERROR_CREATE("Error: Could not get r or s from ECDSA_SIG");
+    return absl::InternalError("Error: Could not get r or s from ECDSA_SIG");
   }
 
   raw_sig.resize(2 * coord_size);
@@ -150,7 +150,7 @@ absl::Status DERToRawSignature(const unsigned char* der_sig, size_t der_len,
     ERR_error_string_n(ERR_get_error(), err_buf, sizeof(err_buf));
     std::string err_msg =
         absl::StrFormat(kErrorMessage, "r", coord_size, r_len, err_buf);
-    return GRPC_ERROR_CREATE(err_msg);
+    return absl::InternalError(err_msg);
   }
 
   // Convert s to binary, padded to coord_size.
@@ -160,7 +160,7 @@ absl::Status DERToRawSignature(const unsigned char* der_sig, size_t der_len,
     ERR_error_string_n(ERR_get_error(), err_buf, sizeof(err_buf));
     std::string err_msg =
         absl::StrFormat(kErrorMessage, "s", coord_size, s_len, err_buf);
-    return GRPC_ERROR_CREATE(err_msg);
+    return absl::InternalError(err_msg);
   }
 
   return {};
@@ -176,7 +176,7 @@ GDCHServiceAccountCredentials::SignUsingSha256(const std::string& str,
   std::unique_ptr<BIO, OpenSslDeleter> pem_buffer(BIO_new_mem_buf(
       pem_contents.data(), static_cast<int>(pem_contents.length())));
   if (pem_buffer == nullptr) {
-    return GRPC_ERROR_CREATE(absl::StrCat(
+    return absl::InternalError(absl::StrCat(
         "Invalid ServiceAccountCredentials could not create PEM buffer: ",
         CaptureSslErrors()));
   }
@@ -190,7 +190,7 @@ GDCHServiceAccountCredentials::SignUsingSha256(const std::string& str,
       // a password, which we don't currently support.
       nullptr));
   if (private_key == nullptr) {
-    return GRPC_ERROR_CREATE(
+    return absl::InternalError(
         absl::StrCat("Invalid ServiceAccountCredentials could not parse PEM to "
                      "get private key: ",
                      CaptureSslErrors()));
@@ -198,7 +198,7 @@ GDCHServiceAccountCredentials::SignUsingSha256(const std::string& str,
 
   std::unique_ptr<EVP_MD_CTX, OpenSslDeleter> digest_ctx = GetDigestCtx();
   if (digest_ctx == nullptr) {
-    return GRPC_ERROR_CREATE(
+    return absl::InternalError(
         absl::StrCat("Invalid ServiceAccountCredentials could not create "
                      "context for OpenSSL digest: ",
                      CaptureSslErrors()));
@@ -207,7 +207,7 @@ GDCHServiceAccountCredentials::SignUsingSha256(const std::string& str,
   constexpr int kOpenSslSuccess = 1;
   if (EVP_DigestSignInit(digest_ctx.get(), nullptr, EVP_sha256(), nullptr,
                          private_key.get()) != kOpenSslSuccess) {
-    return GRPC_ERROR_CREATE(
+    return absl::InternalError(
         absl::StrCat("Invalid ServiceAccountCredentials - could not initialize "
                      "signing digest: ",
                      CaptureSslErrors()));
@@ -215,7 +215,7 @@ GDCHServiceAccountCredentials::SignUsingSha256(const std::string& str,
 
   if (EVP_DigestSignUpdate(digest_ctx.get(), str.data(), str.size()) !=
       kOpenSslSuccess) {
-    return GRPC_ERROR_CREATE(absl::StrCat(
+    return absl::InternalError(absl::StrCat(
         "Invalid ServiceAccountCredentials - could not sign blob: ",
         CaptureSslErrors()));
   }
@@ -225,7 +225,7 @@ GDCHServiceAccountCredentials::SignUsingSha256(const std::string& str,
   std::size_t actual_len = 0;
   if (EVP_DigestSignFinal(digest_ctx.get(), nullptr, &actual_len) !=
       kOpenSslSuccess) {
-    return GRPC_ERROR_CREATE(absl::StrCat(
+    return absl::InternalError(absl::StrCat(
         "Invalid ServiceAccountCredentials - could not sign blob: ",
         CaptureSslErrors()));
   }
@@ -235,7 +235,7 @@ GDCHServiceAccountCredentials::SignUsingSha256(const std::string& str,
   std::vector<unsigned char> buffer(actual_len);
   if (EVP_DigestSignFinal(digest_ctx.get(), buffer.data(), &actual_len) !=
       kOpenSslSuccess) {
-    return GRPC_ERROR_CREATE(absl::StrCat(
+    return absl::InternalError(absl::StrCat(
         "Invalid ServiceAccountCredentials - could not sign blob: ",
         CaptureSslErrors()));
   }
@@ -256,7 +256,7 @@ GDCHServiceAccountCredentials::SignUsingSha256(const std::string& str,
 absl::StatusOr<GDCHServiceAccountCredentials::Info>
 GDCHServiceAccountCredentials::ParseServiceAccountJson(const Json& json) {
   if (json.type() != Json::Type::kObject) {
-    return GRPC_ERROR_CREATE("Invalid json to construct credentials info.");
+    return absl::InternalError("Invalid json to construct credentials info.");
   }
   using iterator_type = Json::Object::const_iterator;
   using Validator =
@@ -269,7 +269,8 @@ GDCHServiceAccountCredentials::ParseServiceAccountJson(const Json& json) {
           const std::optional<std::string>&) -> absl::Status {
     if (l == json.object().end()) return absl::OkStatus();
     if (l->second.string().empty()) {
-      return GRPC_ERROR_CREATE(absl::StrCat(name, " field must not be empty"));
+      return absl::InternalError(
+          absl::StrCat(name, " field must not be empty"));
     }
     return absl::OkStatus();
   };
@@ -277,13 +278,14 @@ GDCHServiceAccountCredentials::ParseServiceAccountJson(const Json& json) {
       [&](absl::string_view name, const iterator_type& l,
           const std::optional<std::string>& value) -> absl::Status {
     if (l == json.object().end()) {
-      return GRPC_ERROR_CREATE(absl::StrCat(name, " field not present"));
+      return absl::InternalError(absl::StrCat(name, " field not present"));
     }
     if (l->second.string().empty()) {
-      return GRPC_ERROR_CREATE(absl::StrCat(name, " field must not be empty"));
+      return absl::InternalError(
+          absl::StrCat(name, " field must not be empty"));
     }
     if (value.has_value() && l->second.string() != *value) {
-      return GRPC_ERROR_CREATE(absl::StrCat(name, " field must be ", *value));
+      return absl::InternalError(absl::StrCat(name, " field must be ", *value));
     }
     return absl::OkStatus();
   };
@@ -334,7 +336,8 @@ GDCHServiceAccountCredentials::ParseServiceAccountJson(const Json& json) {
   for (Field& f : fields) {
     Json::Object::const_iterator l = json.object().find(f.name);
     if (l != json.object().end() && l->second.type() != Json::Type::kString) {
-      return GRPC_ERROR_CREATE(absl::StrCat(f.name, " field must be a string"));
+      return absl::InternalError(
+          absl::StrCat(f.name, " field must be a string"));
     }
     absl::Status status = f.validator(f.name, l, f.value);
     if (!status.ok()) return status;
@@ -456,16 +459,16 @@ absl::StatusOr<std::string> GDCHServiceAccountCredentials::ParseHttpResponse(
     absl::string_view response_body) {
   absl::StatusOr<Json> response_json = JsonParse(response_body);
   if (!response_json.ok() || response_json->type() != Json::Type::kObject) {
-    return GRPC_ERROR_CREATE(
+    return absl::InternalError(
         "The format of response is not a valid json object.");
   }
   Json::Object::const_iterator response_it =
       response_json->object().find("access_token");
   if (response_it == response_json->object().end()) {
-    return GRPC_ERROR_CREATE("access_token field not present.");
+    return absl::InternalError("access_token field not present.");
   }
   if (response_it->second.type() != Json::Type::kString) {
-    return GRPC_ERROR_CREATE("access_token field must be a string.");
+    return absl::InternalError("access_token field must be a string.");
   }
   return response_it->second.string();
 }
