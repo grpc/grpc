@@ -120,9 +120,8 @@ def test_lite(session: nox.Session):
     """Command to run tests without fetching or building anything."""
     session.log("Running test_lite for grpcio-tools...")
 
-    session.install("--index-url", "https://pypi.org/simple", "coverage")
-    # Install the current package locally without trying to satisfy dependencies
-    session.install("--no-build-isolation", "--no-deps", ".")
+    session.install("--index-url", "https://pypi.org/simple", "coverage",
+    "--no-build-isolation", "--no-deps", ".")
 
     # Run the python interpreter inside the virtual environment ot execute the tests
     session.run(
@@ -148,8 +147,8 @@ def test_py3_only(session: nox.Session):
     """
     session.log("Running test_py3_only for grpcio-tools...")
 
-    session.install("--index-url", "https://pypi.org/simple", "coverage")
-    session.install("--no-build-isolation", "--no-deps", ".")
+    session.install("--index-url", "https://pypi.org/simple", "coverage",
+    "--no-build-isolation", "--no-deps", ".")
 
     session.run(
         "python",
@@ -169,9 +168,9 @@ def test_py3_only(session: nox.Session):
 def test_aio(session: nox.Session):
     """Command to run aio tests without fetching or building anything."""
 
-    session.log("Running test_ail for grpcio-tools...")
-    session.install("--index-url", "https://pypi.org/simple", "coverage")
-    session.install("--no-build-isolation", "--no-deps", ".")
+    session.log("Running test_aio for grpcio-tools...")
+    session.install("--index-url", "https://pypi.org/simple", "coverage",
+    "--no-build-isolation", "--no-deps", ".")
 
     session.run(
         "python",
