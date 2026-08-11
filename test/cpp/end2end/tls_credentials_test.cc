@@ -50,6 +50,10 @@ using ::grpc::experimental::TlsChannelCredentialsOptions;
 constexpr char kCaCertPath[] = "src/core/tsi/test_creds/ca.pem";
 constexpr char kServerCertPath[] = "src/core/tsi/test_creds/server1.pem";
 constexpr char kServerKeyPath[] = "src/core/tsi/test_creds/server1.key";
+constexpr char kServerEcdsaCertPath[] =
+    "src/core/tsi/test_creds/server_ecdsa.pem";
+constexpr char kServerEcdsaKeyPath[] =
+    "src/core/tsi/test_creds/server_ecdsa.key";
 constexpr char kClientCertPath[] = "src/core/tsi/test_creds/client.pem";
 constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
 constexpr char kClientEcdsaCertPath[] =
@@ -167,7 +171,9 @@ class TlsCredentialsTest : public ::testing::Test {
   void RunServerWithMultipleCerts(
       absl::Notification* notification,
       const std::vector<grpc::experimental::IdentityKeyOrSignerCertPair>&
-          identity_pairs) {
+          identity_pairs,
+      grpc_ssl_client_certificate_request_type cert_request_type =
+          GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE) {
     std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
     auto certificate_provider =
         std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
@@ -181,6 +187,8 @@ class TlsCredentialsTest : public ::testing::Test {
     grpc::experimental::TlsServerCredentialsOptions server_options =
         *std::move(server_options_or);
     server_options.set_root_certificate_provider(certificate_provider);
+    server_options.set_cert_request_type(cert_request_type);
+    server_options.set_send_client_ca_list(true);
     grpc::ServerBuilder builder;
     builder.AddListeningPort(
         server_addr_, grpc::experimental::TlsServerCredentials(server_options));
@@ -585,7 +593,7 @@ TEST_F(TlsCredentialsTest, ClientSingleBadCertFails) {
 }
 
 TEST_F(TlsCredentialsTest,
-       ClientMultipleCerts_BadRsaFirst_ValidEcdsaSecond_Passes) {
+       ClientMultipleCerts_ValidEcdsaFirst_BadRsaSecond_Passes) {
   server_addr_ = absl::StrCat("localhost:",
                               std::to_string(grpc_pick_unused_port_or_die()));
   absl::Notification notification;
@@ -611,10 +619,10 @@ TEST_F(TlsCredentialsTest,
   ASSERT_TRUE(
       client_certificate_provider
           ->UpdateIdentityKeyCertPair(
-              {grpc::experimental::IdentityKeyOrSignerCertPair{bad_rsa_key,
-                                                               bad_rsa_cert},
+              {grpc::experimental::IdentityKeyOrSignerCertPair{valid_ecdsa_key,
+                                                               valid_ecdsa_cert},
                grpc::experimental::IdentityKeyOrSignerCertPair{
-                   valid_ecdsa_key, valid_ecdsa_cert}})
+                   bad_rsa_key, bad_rsa_cert}})
           .ok());
 
   TlsChannelCredentialsOptions tls_options;
@@ -673,6 +681,94 @@ TEST_F(TlsCredentialsTest, ClientMultipleCertsAllInvalidFails) {
 
   grpc::Status status = SendRpc(server_addr_, tls_options);
   EXPECT_FALSE(status.ok()) << "Expected RPC to fail with all invalid certs";
+}
+
+TEST_F(TlsCredentialsTest,
+       ServerMultipleCerts_RsaAndEcdsa_ConnectWithRsaClientAndEcdsaClient) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  std::string server_rsa_key =
+      grpc_core::testing::GetFileContents(kServerKeyPath);
+  std::string server_rsa_cert =
+      grpc_core::testing::GetFileContents(kServerCertPath);
+  std::string server_ecdsa_key =
+      grpc_core::testing::GetFileContents(kServerEcdsaKeyPath);
+  std::string server_ecdsa_cert =
+      grpc_core::testing::GetFileContents(kServerEcdsaCertPath);
+
+  server_thread_ = new std::thread([&]() {
+    RunServerWithMultipleCerts(
+        &notification,
+        {grpc::experimental::IdentityKeyOrSignerCertPair{server_rsa_key,
+                                                         server_rsa_cert},
+         grpc::experimental::IdentityKeyOrSignerCertPair{server_ecdsa_key,
+                                                         server_ecdsa_cert}},
+        GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
+  });
+  notification.WaitForNotification();
+
+  std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
+
+  // 1. Connect with client containing ONLY an RSA cert.
+  {
+    std::string client_rsa_key =
+        grpc_core::testing::GetFileContents(kClientKeyPath);
+    std::string client_rsa_cert =
+        grpc_core::testing::GetFileContents(kClientCertPath);
+    auto rsa_client_cert_provider =
+        std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
+    ASSERT_TRUE(rsa_client_cert_provider->UpdateRoot(root_cert).ok());
+    ASSERT_TRUE(
+        rsa_client_cert_provider
+            ->UpdateIdentityKeyCertPair(
+                {grpc::experimental::IdentityKeyOrSignerCertPair{
+                    client_rsa_key, client_rsa_cert}})
+            .ok());
+
+    TlsChannelCredentialsOptions tls_options;
+    tls_options.set_certificate_verifier(
+        ExternalCertificateVerifier::Create<NoOpCertificateVerifier>());
+    tls_options.set_check_call_host(false);
+    tls_options.set_root_certificate_provider(rsa_client_cert_provider);
+    tls_options.set_identity_certificate_provider(rsa_client_cert_provider);
+    tls_options.set_sni_override("foo.test.google.fr");
+
+    grpc::Status status = SendRpc(server_addr_, tls_options);
+    EXPECT_TRUE(status.ok())
+        << "Expected RPC to succeed with RSA client cert: "
+        << status.error_code() << ", " << status.error_message();
+  }
+
+  // 2. Connect with client containing ONLY an ECDSA cert.
+  {
+    std::string client_ecdsa_key =
+        grpc_core::testing::GetFileContents(kClientEcdsaKeyPath);
+    std::string client_ecdsa_cert =
+        grpc_core::testing::GetFileContents(kClientEcdsaCertPath);
+    auto ecdsa_client_cert_provider =
+        std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
+    ASSERT_TRUE(ecdsa_client_cert_provider->UpdateRoot(root_cert).ok());
+    ASSERT_TRUE(
+        ecdsa_client_cert_provider
+            ->UpdateIdentityKeyCertPair(
+                {grpc::experimental::IdentityKeyOrSignerCertPair{
+                    client_ecdsa_key, client_ecdsa_cert}})
+            .ok());
+
+    TlsChannelCredentialsOptions tls_options;
+    tls_options.set_certificate_verifier(
+        ExternalCertificateVerifier::Create<NoOpCertificateVerifier>());
+    tls_options.set_check_call_host(false);
+    tls_options.set_root_certificate_provider(ecdsa_client_cert_provider);
+    tls_options.set_identity_certificate_provider(ecdsa_client_cert_provider);
+    tls_options.set_sni_override("foo.test.google.fr");
+
+    grpc::Status status = SendRpc(server_addr_, tls_options);
+    EXPECT_TRUE(status.ok())
+        << "Expected RPC to succeed with ECDSA client cert: "
+        << status.error_code() << ", " << status.error_message();
+  }
 }
 #endif  // OPENSSL_IS_BORINGSSL
 

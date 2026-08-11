@@ -51,6 +51,10 @@
 #include <openssl/crypto.h>  // For OPENSSL_free
 #include <openssl/engine.h>
 #include <openssl/err.h>
+#include <openssl/pem.h>
+#if defined(OPENSSL_IS_BORINGSSL)
+#include <openssl/pool.h>
+#endif
 #include <openssl/ssl.h>
 #include <openssl/tls1.h>
 #include <openssl/x509.h>
@@ -1284,56 +1288,88 @@ static tsi_result peer_from_x509(X509* cert, int include_certificate_type,
   return result;
 }
 
-// Loads an in-memory PEM certificate chain into the SSL context.
-static tsi_result ssl_ctx_use_certificate_chain(SSL_CTX* context,
-                                                const char* pem_cert_chain,
-                                                size_t pem_cert_chain_size) {
-  tsi_result result = TSI_OK;
-  X509* certificate = nullptr;
-  BIO* pem;
-  GRPC_CHECK_LE(pem_cert_chain_size, static_cast<size_t>(INT_MAX));
-  pem = BIO_new_mem_buf(pem_cert_chain, static_cast<int>(pem_cert_chain_size));
+#if defined(OPENSSL_IS_BORINGSSL)
+static tsi_result ssl_ctx_add_boringssl_credential(
+    SSL_CTX* context, const grpc_core::PemKeyCertPair* key_cert_pair) {
+  if (key_cert_pair->cert_chain().empty()) {
+    LOG(ERROR) << "The cert chain is empty.";
+    return TSI_INVALID_ARGUMENT;
+  }
+  GRPC_CHECK_LE(key_cert_pair->cert_chain().size(),
+                static_cast<size_t>(INT_MAX));
+  bssl::UniquePtr<BIO> pem(BIO_new_mem_buf(
+      key_cert_pair->cert_chain().data(),
+      static_cast<int>(key_cert_pair->cert_chain().size())));
   if (pem == nullptr) return TSI_OUT_OF_RESOURCES;
+  std::vector<bssl::UniquePtr<CRYPTO_BUFFER>> raw_cert_chain;
+  uint8_t* cert_data = nullptr;
+  long cert_len = 0;
+  while (PEM_bytes_read_bio(&cert_data, &cert_len, nullptr, PEM_STRING_X509,
+                            pem.get(), nullptr, nullptr)) {
+    raw_cert_chain.push_back(bssl::UniquePtr<CRYPTO_BUFFER>(
+        CRYPTO_BUFFER_new(cert_data, cert_len, nullptr)));
+    OPENSSL_free(cert_data);
+  }
+  if (raw_cert_chain.empty()) {
+    LOG(ERROR) << "Invalid cert chain file.";
+    return TSI_INVALID_ARGUMENT;
+  }
+  std::vector<CRYPTO_BUFFER*> cert_chain;
+  cert_chain.reserve(raw_cert_chain.size());
+  for (const auto& raw_cert : raw_cert_chain) {
+    cert_chain.push_back(raw_cert.get());
+  }
 
-  do {
-    certificate =
-        PEM_read_bio_X509_AUX(pem, nullptr, nullptr, const_cast<char*>(""));
-    if (certificate == nullptr) {
-      result = TSI_INVALID_ARGUMENT;
-      break;
-    }
-    if (!SSL_CTX_use_certificate(context, certificate)) {
-      result = TSI_INVALID_ARGUMENT;
-      break;
-    }
-    while (true) {
-      X509* certificate_authority =
-          PEM_read_bio_X509(pem, nullptr, nullptr, const_cast<char*>(""));
-      if (certificate_authority == nullptr) {
-        ERR_clear_error();
-        break;  // Done reading.
-      }
-      if (!SSL_CTX_add_extra_chain_cert(context, certificate_authority)) {
-        X509_free(certificate_authority);
-        result = TSI_INVALID_ARGUMENT;
-        break;
-      }
-      // We don't need to free certificate_authority as its ownership has been
-      // transferred to the context. That is not the case for certificate
-      // though.
-      //
-    }
-  } while (false);
+  bssl::UniquePtr<SSL_CREDENTIAL> cred(SSL_CREDENTIAL_new_x509());
+  if (cred == nullptr) return TSI_OUT_OF_RESOURCES;
+  if (!SSL_CREDENTIAL_set1_cert_chain(cred.get(), cert_chain.data(),
+                                      cert_chain.size())) {
+    LOG(ERROR) << "Failed to set cert chain on credential.";
+    return TSI_INVALID_ARGUMENT;
+  }
 
-  if (certificate != nullptr) X509_free(certificate);
-  BIO_free(pem);
-  return result;
+  tsi_result result = grpc_core::Match(
+      key_cert_pair->private_key(),
+      [&](const std::string& pem_key) {
+        GRPC_CHECK_LE(pem_key.size(), static_cast<size_t>(INT_MAX));
+        bssl::UniquePtr<BIO> bio_key(
+            BIO_new_mem_buf(pem_key.data(), static_cast<int>(pem_key.size())));
+        if (bio_key == nullptr) return TSI_OUT_OF_RESOURCES;
+        bssl::UniquePtr<EVP_PKEY> pkey(PEM_read_bio_PrivateKey(
+            bio_key.get(), nullptr, nullptr, const_cast<char*>("")));
+        if (pkey == nullptr) {
+          LOG(ERROR) << "Invalid private key.";
+          return TSI_INVALID_ARGUMENT;
+        }
+        if (!SSL_CREDENTIAL_set1_private_key(cred.get(), pkey.get())) {
+          LOG(ERROR) << "Failed to set private key on credential.";
+          return TSI_INVALID_ARGUMENT;
+        }
+        return TSI_OK;
+      },
+      [&](const std::shared_ptr<grpc_core::PrivateKeySigner>& key_signer) {
+        if (key_signer != nullptr) {
+          if (!SSL_CREDENTIAL_set_private_key_method(
+                  cred.get(), &TlsOffloadPrivateKeyMethod)) {
+            LOG(ERROR) << "Failed to set private key method on credential.";
+            return TSI_INVALID_ARGUMENT;
+          }
+        }
+        return TSI_OK;
+      });
+  if (result != TSI_OK) return result;
+
+  if (!SSL_CTX_add1_credential(context, cred.get())) {
+    LOG(ERROR) << "Failed to add credential to SSL_CTX.";
+    return TSI_INVALID_ARGUMENT;
+  }
+  return TSI_OK;
 }
+#else  // !defined(OPENSSL_IS_BORINGSSL)
 
-#if !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ENGINE)
-static tsi_result ssl_ctx_use_engine_private_key(SSL_CTX* context,
-                                                 const char* pem_key,
-                                                 size_t pem_key_size) {
+#if !defined(OPENSSL_NO_ENGINE)
+static tsi_result parse_engine_private_key(const char* pem_key,
+                                           EVP_PKEY** out_key) {
   tsi_result result = TSI_OK;
   EVP_PKEY* private_key = nullptr;
   ENGINE* engine = nullptr;
@@ -1392,57 +1428,133 @@ static tsi_result ssl_ctx_use_engine_private_key(SSL_CTX* context,
       result = TSI_INVALID_ARGUMENT;
       break;
     }
-    if (!SSL_CTX_use_PrivateKey(context, private_key)) {
-      LOG(ERROR) << "SSL_CTX_use_PrivateKey failed";
-      result = TSI_INVALID_ARGUMENT;
-      break;
-    }
+    *out_key = private_key;
   } while (0);
   if (engine != nullptr) ENGINE_free(engine);
-  if (private_key != nullptr) EVP_PKEY_free(private_key);
   if (engine_name != nullptr) gpr_free(engine_name);
   return result;
 }
-#endif  // !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ENGINE)
+#endif  // !defined(OPENSSL_NO_ENGINE)
 
-static tsi_result ssl_ctx_use_pem_private_key(SSL_CTX* context,
-                                              const char* pem_key,
-                                              size_t pem_key_size) {
-  tsi_result result = TSI_OK;
-  EVP_PKEY* private_key = nullptr;
-  BIO* pem;
+static tsi_result parse_private_key(const char* pem_key, size_t pem_key_size,
+                                    EVP_PKEY** out_key) {
+#if !defined(OPENSSL_NO_ENGINE)
+  if (strncmp(pem_key, kSslEnginePrefix, strlen(kSslEnginePrefix)) == 0) {
+    return parse_engine_private_key(pem_key, out_key);
+  }
+#endif  // !defined(OPENSSL_NO_ENGINE)
   GRPC_CHECK_LE(pem_key_size, static_cast<size_t>(INT_MAX));
-  pem = BIO_new_mem_buf(pem_key, static_cast<int>(pem_key_size));
+  BIO* pem = BIO_new_mem_buf(pem_key, static_cast<int>(pem_key_size));
   if (pem == nullptr) return TSI_OUT_OF_RESOURCES;
-  do {
-    private_key =
-        PEM_read_bio_PrivateKey(pem, nullptr, nullptr, const_cast<char*>(""));
-    if (private_key == nullptr) {
-      result = TSI_INVALID_ARGUMENT;
-      break;
-    }
-    if (!SSL_CTX_use_PrivateKey(context, private_key)) {
-      result = TSI_INVALID_ARGUMENT;
-      break;
-    }
-  } while (false);
-  if (private_key != nullptr) EVP_PKEY_free(private_key);
+  EVP_PKEY* private_key =
+      PEM_read_bio_PrivateKey(pem, nullptr, nullptr, const_cast<char*>(""));
   BIO_free(pem);
-  return result;
+  if (private_key == nullptr) {
+    return TSI_INVALID_ARGUMENT;
+  }
+  *out_key = private_key;
+  return TSI_OK;
 }
 
-// Loads an in-memory PEM private key into the SSL context.
-static tsi_result ssl_ctx_use_private_key(SSL_CTX* context, const char* pem_key,
-                                          size_t pem_key_size) {
-// BoringSSL does not have ENGINE support
-#if !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ENGINE)
-  if (strncmp(pem_key, kSslEnginePrefix, strlen(kSslEnginePrefix)) == 0) {
-    return ssl_ctx_use_engine_private_key(context, pem_key, pem_key_size);
-  } else
-#endif  // !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ENGINE)
-  {
-    return ssl_ctx_use_pem_private_key(context, pem_key, pem_key_size);
+static tsi_result ssl_ctx_add_openssl_key_cert_pair(
+    SSL_CTX* context, const grpc_core::PemKeyCertPair* key_cert_pair) {
+  if (key_cert_pair->cert_chain().empty()) {
+    LOG(ERROR) << "The cert chain is empty.";
+    return TSI_INVALID_ARGUMENT;
   }
+  GRPC_CHECK_LE(key_cert_pair->cert_chain().size(),
+                static_cast<size_t>(INT_MAX));
+  BIO* pem = BIO_new_mem_buf(
+      key_cert_pair->cert_chain().data(),
+      static_cast<int>(key_cert_pair->cert_chain().size()));
+  if (pem == nullptr) return TSI_OUT_OF_RESOURCES;
+
+  X509* certificate =
+      PEM_read_bio_X509_AUX(pem, nullptr, nullptr, const_cast<char*>(""));
+  if (certificate == nullptr) {
+    BIO_free(pem);
+    LOG(ERROR) << "Invalid cert chain file.";
+    return TSI_INVALID_ARGUMENT;
+  }
+
+  STACK_OF(X509)* intermediate_chain = sk_X509_new_null();
+  if (intermediate_chain == nullptr) {
+    X509_free(certificate);
+    BIO_free(pem);
+    return TSI_OUT_OF_RESOURCES;
+  }
+  while (true) {
+    X509* ca_cert =
+        PEM_read_bio_X509(pem, nullptr, nullptr, const_cast<char*>(""));
+    if (ca_cert == nullptr) {
+      ERR_clear_error();
+      break;
+    }
+    sk_X509_push(intermediate_chain, ca_cert);
+  }
+  BIO_free(pem);
+
+  EVP_PKEY* pkey = nullptr;
+  tsi_result result = grpc_core::Match(
+      key_cert_pair->private_key(),
+      [&](const std::string& pem_key) {
+        return parse_private_key(pem_key.data(), pem_key.length(), &pkey);
+      },
+      [&](const std::shared_ptr<grpc_core::PrivateKeySigner>&) {
+        return TSI_UNIMPLEMENTED;
+      });
+  if (result != TSI_OK || pkey == nullptr) {
+    X509_free(certificate);
+    sk_X509_pop_free(intermediate_chain, X509_free);
+    if (pkey != nullptr) EVP_PKEY_free(pkey);
+    LOG(ERROR) << "Invalid private key.";
+    return result != TSI_OK ? result : TSI_INVALID_ARGUMENT;
+  }
+
+#if OPENSSL_VERSION_NUMBER >= 0x10101000 && !defined(LIBRESSL_VERSION_NUMBER)
+  int ok = SSL_CTX_use_cert_and_key(context, certificate, pkey,
+                                    intermediate_chain, /*override=*/0);
+  X509_free(certificate);
+  sk_X509_pop_free(intermediate_chain, X509_free);
+  EVP_PKEY_free(pkey);
+  if (!ok) {
+    LOG(ERROR) << "SSL_CTX_use_cert_and_key failed.";
+    return TSI_INVALID_ARGUMENT;
+  }
+#else
+  if (!SSL_CTX_use_certificate(context, certificate)) {
+    X509_free(certificate);
+    sk_X509_pop_free(intermediate_chain, X509_free);
+    EVP_PKEY_free(pkey);
+    return TSI_INVALID_ARGUMENT;
+  }
+  X509_free(certificate);
+  if (!SSL_CTX_use_PrivateKey(context, pkey)) {
+    sk_X509_pop_free(intermediate_chain, X509_free);
+    EVP_PKEY_free(pkey);
+    return TSI_INVALID_ARGUMENT;
+  }
+  EVP_PKEY_free(pkey);
+  for (size_t i = 0; i < sk_X509_num(intermediate_chain); ++i) {
+    if (!SSL_CTX_add_extra_chain_cert(context,
+                                      sk_X509_value(intermediate_chain, i))) {
+      sk_X509_pop_free(intermediate_chain, X509_free);
+      return TSI_INVALID_ARGUMENT;
+    }
+  }
+  sk_X509_free(intermediate_chain);
+#endif
+  return TSI_OK;
+}
+#endif  // !defined(OPENSSL_IS_BORINGSSL)
+
+static tsi_result ssl_ctx_use_key_cert_pair(
+    SSL_CTX* context, const grpc_core::PemKeyCertPair* key_cert_pair) {
+#if defined(OPENSSL_IS_BORINGSSL)
+  return ssl_ctx_add_boringssl_credential(context, key_cert_pair);
+#else
+  return ssl_ctx_add_openssl_key_cert_pair(context, key_cert_pair);
+#endif
 }
 
 // Loads in-memory PEM verification certs into the SSL context and optionally
@@ -1536,38 +1648,7 @@ static tsi_result populate_ssl_context(
     const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups) {
   tsi_result result = TSI_OK;
   if (key_cert_pair != nullptr) {
-    if (!key_cert_pair->cert_chain().empty()) {
-      result = ssl_ctx_use_certificate_chain(
-          context, key_cert_pair->cert_chain().c_str(),
-          key_cert_pair->cert_chain().length());
-      if (result != TSI_OK) {
-        LOG(ERROR) << "Invalid cert chain file.";
-        return result;
-      }
-    }
-    result = grpc_core::Match(
-        key_cert_pair->private_key(),
-        [&](const std::string& pem_root_certs) {
-          tsi_result result = TSI_OK;
-          result = ssl_ctx_use_private_key(context, pem_root_certs.data(),
-                                           pem_root_certs.length());
-          if (result != TSI_OK || !SSL_CTX_check_private_key(context)) {
-            LOG(ERROR) << "Invalid private key.";
-            return result != TSI_OK ? result : TSI_INVALID_ARGUMENT;
-          }
-          return result;
-        },
-        [&](const std::shared_ptr<grpc_core::PrivateKeySigner>& key_signer) {
-#if defined(OPENSSL_IS_BORINGSSL)
-          if (key_signer != nullptr) {
-            SSL_CTX_set_private_key_method(context,
-                                           &TlsOffloadPrivateKeyMethod);
-          }
-          return TSI_OK;
-#else
-          return TSI_UNIMPLEMENTED;
-#endif  // defined(OPENSSL_IS_BORINGSSL)
-        });
+    result = ssl_ctx_use_key_cert_pair(context, key_cert_pair);
     if (result != TSI_OK) {
       return result;
     }

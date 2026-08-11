@@ -16,8 +16,10 @@
 # This file generates the following in this test_creds directory:
 # badclient_ecdsa.key
 # badclient_ecdsa.pem
-# client_ecdsa.pem
 # client_ecdsa.key
+# client_ecdsa.pem
+# server_ecdsa.key
+# server_ecdsa.pem
 set -e
 
 cd "$(dirname "$0")"
@@ -33,5 +35,13 @@ openssl req -new -key client_ecdsa.key -out client_ecdsa.csr \
   -subj "/CN=client_ecdsa"
 openssl x509 -req -in client_ecdsa.csr -CA ca.pem -CAkey ca.key -CAcreateserial \
   -out client_ecdsa.pem -days 3650 -sha256
+
+# Generate valid ECDSA server key and cert signed by test CA (ca.pem / ca.key)
+openssl ecparam -name prime256v1 -genkey -noout -out server_ecdsa.key
+openssl req -new -key server_ecdsa.key -out server_ecdsa.csr \
+  -config server1-openssl.cnf -subj "/CN=*.test.google.fr"
+openssl x509 -req -in server_ecdsa.csr -CA ca.pem -CAkey ca.key -CAcreateserial \
+  -extfile server1-openssl.cnf -extensions v3_req \
+  -out server_ecdsa.pem -days 3650 -sha256
 
 rm -f ./*.csr ./*.srl

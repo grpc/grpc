@@ -23,6 +23,8 @@ exports_files([
     "ca.pem",
     "server1.key",
     "server1.pem",
+    "server_ecdsa.key",
+    "server_ecdsa.pem",
     "server0.key",
     "server0.pem",
     "client.key",
