@@ -180,7 +180,7 @@
   test_tags: []
 - name: header_data_frame
   description: Managing header and data memory better
-  expiry: 2026/12/05
+  expiry: 2026/10/31
   owner: ritulb@google.com
   test_tags: []
 - name: inproc_cancel_stream
