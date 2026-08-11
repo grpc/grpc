@@ -62,9 +62,7 @@ ENVOY_API_PROTO_ROOT = os.path.join("third_party", "envoy-api")
 XDS_PROTO_ROOT = os.path.join("third_party", "xds")
 GOOGLEAPIS_ROOT = os.path.join("third_party", "googleapis")
 VALIDATE_ROOT = os.path.join("third_party", "protoc-gen-validate")
-OPENCENSUS_PROTO_ROOT = os.path.join(
-    "third_party", "opencensus-proto", "src"
-)
+OPENCENSUS_PROTO_ROOT = os.path.join("third_party", "opencensus-proto", "src")
 OPENTELEMETRY_PROTO_ROOT = os.path.join("third_party", "opentelemetry")
 WELL_KNOWN_PROTOS_INCLUDE = _get_resource_file_name("grpc_tools", "_proto")
 
@@ -81,7 +79,9 @@ PKGUTIL_STYLE_INIT = (
 NAMESPACE_PACKAGES = ["google"]
 
 
-def add_test_import(proto_package_path: str, file_name: str, service: bool = False):
+def add_test_import(
+    proto_package_path: str, file_name: str, service: bool = False
+):
     TEST_IMPORTS.append(
         "from %s import %s\n"
         % (
@@ -138,7 +138,9 @@ def compile_protos(proto_root: str, sub_dir: str = ".") -> None:
                     return_code = protoc.main(
                         COMPILE_PROTO_ONLY + [os.path.join(root, file_name)]
                     )
-                    add_test_import(proto_package_path, file_name, service=False)
+                    add_test_import(
+                        proto_package_path, file_name, service=False
+                    )
                 if return_code != 0:
                     raise Exception("error: {} failed".format(COMPILE_BOTH))
     # Ensure a deterministic order.

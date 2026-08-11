@@ -42,6 +42,7 @@ def preprocess(session: nox.Session):
         path = os.path.join(root, "__init__.py")
         open(path, "a").close()
 
+
 @nox.session(venv_params=["--system-site-packages"])
 def build_py(session: nox.Session):
     "Session to for project custom build command"
@@ -49,6 +50,7 @@ def build_py(session: nox.Session):
     session.log("Running build_py for grpcio-tools")
 
     from grpc_tools import command
+
     try:
         # Compiles all protos found inside PYTHON_STEM
         command.build_package_protos(PYTHON_STEM, False)
@@ -74,11 +76,16 @@ def build_py(session: nox.Session):
             shutil.rmtree(build_dir)
 
         def ignore_patterns(path, names):
-            return [name for name in names if name =="__pycache__" or name.endswith(".pyc")]
-        
+            return [
+                name
+                for name in names
+                if name == "__pycache__" or name.endswith(".pyc")
+            ]
+
         shutil.copytree(src_dir, build_dir, ignore=ignore_patterns)
 
     session.log(f"Successfully copied test packages to {build_lib_root}")
+
 
 @nox.session(venv_params=["--system-site-packages"])
 def build_package_protos(session: nox.Session):
@@ -107,6 +114,7 @@ def build_package_protos(session: nox.Session):
 
     command.build_package_protos(PYTHON_STEM, args.strict_mode)
 
+
 @nox.session(venv_params=["--system-site-packages"])
 def test_lite(session: nox.Session):
     """Command to run tests without fetching or building anything."""
@@ -128,6 +136,7 @@ def test_lite(session: nox.Session):
         "result = runner.run(loader.suite); "
         "sys.exit(0 if result.wasSuccessful() else 'Test failure')",
     )
+
 
 @nox.session(venv_params=["--system-site-packages"])
 def test_py3_only(session: nox.Session):
@@ -153,6 +162,7 @@ def test_py3_only(session: nox.Session):
         "sys.exit(0 if result.wasSuccessful() else 'Test failure')",
     )
 
+
 @nox.session(venv_params=["--system-site-packages"])
 def test_aio(session: nox.Session):
     """Command to run aio tests without fetching or building anything."""
@@ -175,6 +185,7 @@ def test_aio(session: nox.Session):
         "result = runner.run(loader.suite); "
         "sys.exit(0 if result.wasSuccessful() else 'Test failure')",
     )
+
 
 @nox.session(venv_params=["--system-site-packages"])
 def run_interop(session: nox.Session):
@@ -254,6 +265,7 @@ def run_interop(session: nox.Session):
                 *unknown,
             )
 
+
 @nox.session(venv_params=["--system-site-packages"])
 def run_fork(session: nox.Session):
     """Command to run fork test client."""
@@ -265,12 +277,11 @@ def run_fork(session: nox.Session):
     session.run(
         "python",
         "-c",
-        "import sys; "
-        "from tests.fork import client; "
-        "client.test_fork()",
+        "import sys; " "from tests.fork import client; " "client.test_fork()",
         *session.posargs,
         env={"GRPC_ENABLE_FORK_SUPPORT": "true"},
     )
+
 
 @nox.session
 def clean(session: nox.Session):

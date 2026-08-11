@@ -26,6 +26,7 @@ GRPC_ROOT = os.path.relpath(GRPC_STEM, start=GRPC_STEM)
 PYTHON_REL_PATH = os.path.relpath(PYTHON_STEM, start=GRPC_STEM)
 CYTHON_STEM = os.path.join(PYTHON_REL_PATH, "grpc", "_cython")
 
+
 class CommandError(Exception):
     """Simple exception class for GRPC custom commands."""
 
@@ -78,13 +79,15 @@ def clean(session: nox.Session):
             else:
                 shutil.rmtree(str(path))
 
+
 @nox.session
 def build_project_metadata(session: nox.Session):
     """Session to generate project metadata in a module."""
-    
+
     session.log("Running build_project_metadata for grpcio")
 
     import sys
+
     sys.path.insert(0, PYTHON_STEM)
     import grpc_version
 
@@ -98,8 +101,11 @@ def build_project_metadata(session: nox.Session):
         "GRPC_PYTHON_BUILD_SKIP_METADATA_ON_VERSION_MATCH", "0"
     )
 
-    if skip_metadata_update_on_match == "1" and os.path.exists(module_file_path):
+    if skip_metadata_update_on_match == "1" and os.path.exists(
+        module_file_path
+    ):
         import ast
+
         try:
             with open(module_file_path, "r") as module_file:
                 tree = ast.parse(module_file.read())
@@ -107,11 +113,16 @@ def build_project_metadata(session: nox.Session):
             for node in ast.walk(tree):
                 if isinstance(node, ast.Assign):
                     for target in node.targets:
-                        if isinstance(target, ast.Name) and target.id == "__version__":
+                        if (
+                            isinstance(target, ast.Name)
+                            and target.id == "__version__"
+                        ):
                             if isinstance(node.value, ast.Constant):
                                 current_version = node.value.value
             if current_version == version:
-                session.log(f"Version match in _grpcio_metadata.py: {version}, skipping the update")
+                session.log(
+                    f"Version match in _grpcio_metadata.py: {version}, skipping the update"
+                )
                 return
         except Exception as e:
             session.log(f"Error checking existing metadata file: {e}")
@@ -148,6 +159,7 @@ def build_py(session: nox.Session):
     shutil.copytree(src_dir, build_dir, ignore=ignore_patterns)
     session.log(f"Successfully copied pure Python packages to {build_dir}")
 
+
 @nox.session
 def build_ext(session: nox.Session):
     """Session to custom build_ext command to enable compiler-specific flags."""
@@ -155,8 +167,10 @@ def build_ext(session: nox.Session):
     session.log("Custom build_ext command to enable compiler-specific flags.")
 
     import sys
+
     sys.path.insert(0, GRPC_STEM)
     import os
+
     os.chdir(GRPC_STEM)
     import setup
     import Cython.Build
@@ -176,7 +190,7 @@ def build_ext(session: nox.Session):
         ]
         + [CYTHON_STEM],
         compiler_directives=cython_compiler_directives,
-    )    
+    )
 
     from setuptools.command.build_ext import build_ext as _build_ext
 
@@ -219,7 +233,6 @@ def build_ext(session: nox.Session):
                 self.build_temp = tempfile.mkdtemp(dir="pyb")
                 print(f"Using temp build directory: {self.build_temp}")
 
-
             def new_compile(obj, src, ext, cc_args, extra_postargs, pp_opts):
                 # NOTE: keep in sync with setup.py EXTRA_ENV_COMPILE_ARGS.
                 cpp_specific_args = {"-std=c++17", "-stdlib=libc++"}
@@ -235,17 +248,23 @@ def build_ext(session: nox.Session):
 
                 if args_to_remove:
                     extra_postargs = [
-                        arg for arg in extra_postargs if arg not in args_to_remove
+                        arg
+                        for arg in extra_postargs
+                        if arg not in args_to_remove
                     ]
 
-                return old_compile(obj, src, ext, cc_args, extra_postargs, pp_opts)
+                return old_compile(
+                    obj, src, ext, cc_args, extra_postargs, pp_opts
+                )
 
             self.compiler._compile = new_compile
 
             compiler = self.compiler.compiler_type
             if compiler in self.C_OPTIONS:
                 for extension in self.extensions:
-                    extension.extra_compile_args += list(self.C_OPTIONS[compiler])
+                    extension.extra_compile_args += list(
+                        self.C_OPTIONS[compiler]
+                    )
 
             if compiler in self.LINK_OPTIONS:
                 for extension in self.extensions:
@@ -257,16 +276,17 @@ def build_ext(session: nox.Session):
                 _build_ext.build_extensions(self)
             except Exception as error:
                 formatted_exception = traceback.format_exc()
-                support.diagnose_build_ext_error(self, error, formatted_exception)
+                support.diagnose_build_ext_error(
+                    self, error, formatted_exception
+                )
                 raise CommandError(
                     f"Failed `build_ext` step:\n{formatted_exception}"
                 )
 
     from setuptools.dist import Distribution
     from setuptools.command import build_ext
-    
-    dist = Distribution({"ext_modules": extensions})     
+
+    dist = Distribution({"ext_modules": extensions})
     cmd = NoxBuildExt(dist)
     cmd.ensure_finalized()
     cmd.run()
-
