@@ -48,6 +48,7 @@
 #include "src/core/util/http_client/httpcli_ssl_credentials.h"
 #include "src/core/util/http_client/parser.h"
 #include "src/core/util/json/json.h"
+#include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
@@ -55,6 +56,7 @@
 #include "src/core/util/time.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/uri.h"
+#include "src/core/util/validation_errors.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
@@ -253,110 +255,62 @@ GDCHServiceAccountCredentials::SignUsingSha256(const std::string& str,
   return raw_sig;
 }
 
-absl::StatusOr<GDCHServiceAccountCredentials::Info>
-GDCHServiceAccountCredentials::ParseServiceAccountJson(const Json& json) {
-  if (json.type() != Json::Type::kObject) {
-    return absl::InternalError("Invalid json to construct credentials info.");
-  }
-  using iterator_type = Json::Object::const_iterator;
-  using Validator =
-      std::function<absl::Status(absl::string_view name, const iterator_type&,
-                                 std::optional<std::string>)>;
-  using Store = std::function<void(Info&, const iterator_type&)>;
-
-  Validator optional_field =
-      [&](absl::string_view name, const iterator_type& l,
-          const std::optional<std::string>&) -> absl::Status {
-    if (l == json.object().end()) return absl::OkStatus();
-    if (l->second.string().empty()) {
-      return absl::InternalError(
-          absl::StrCat(name, " field must not be empty"));
-    }
-    return absl::OkStatus();
-  };
-  Validator required_field =
-      [&](absl::string_view name, const iterator_type& l,
-          const std::optional<std::string>& value) -> absl::Status {
-    if (l == json.object().end()) {
-      return absl::InternalError(absl::StrCat(name, " field not present"));
-    }
-    if (l->second.string().empty()) {
-      return absl::InternalError(
-          absl::StrCat(name, " field must not be empty"));
-    }
-    if (value.has_value() && l->second.string() != *value) {
-      return absl::InternalError(absl::StrCat(name, " field must be ", *value));
-    }
-    return absl::OkStatus();
-  };
-
-  struct Field {
-    std::string name;
-    Validator validator;
-    Store store;
-    std::optional<std::string> value = std::nullopt;
-  };
-  std::vector<Field> fields{
-      {"type", required_field,
-       [](Info& info, const iterator_type& l) {
-         info.type = l->second.string();
-       },
-       kExpectedType},
-      {"format_version", required_field,
-       [](Info& info, const iterator_type& l) {
-         info.format_version = l->second.string();
-       },
-       kExpectedFormatVersion},
-      {"project", required_field,
-       [](Info& info, const iterator_type& l) {
-         info.project_id = l->second.string();
-       }},
-      {"private_key_id", required_field,
-       [&](Info& info, const iterator_type& l) {
-         info.private_key_id = l->second.string();
-       }},
-      {"private_key", required_field,
-       [](Info& info, const iterator_type& l) {
-         info.private_key = l->second.string();
-       }},
-      {"name", required_field,
-       [&](Info& info, const iterator_type& l) {
-         info.service_identity_name = l->second.string();
-       }},
-      {"ca_cert_path", optional_field,
-       [&](Info& info, const iterator_type& l) {
-         if (l == json.object().end()) return;
-         info.ca_cert_path = l->second.string();
-       }},
-      {"token_uri", required_field, [&](Info& info, const iterator_type& l) {
-         info.token_uri = l->second.string();
-       }}};
-
-  Info info;
-  for (Field& f : fields) {
-    Json::Object::const_iterator l = json.object().find(f.name);
-    if (l != json.object().end() && l->second.type() != Json::Type::kString) {
-      return absl::InternalError(
-          absl::StrCat(f.name, " field must be a string"));
-    }
-    absl::Status status = f.validator(f.name, l, f.value);
-    if (!status.ok()) return status;
-    f.store(info, l);
+void GDCHServiceAccountCredentials::Info::JsonPostLoad(
+    const Json&, const JsonArgs&, ValidationErrors* errors) {
+  if (type.empty()) {
+    ValidationErrors::ScopedField field(errors, ".type");
+    errors->AddError("field must not be empty");
+  } else if (type != kExpectedType) {
+    ValidationErrors::ScopedField field(errors, ".type");
+    errors->AddError(absl::StrCat("field must be ", kExpectedType));
   }
 
-  return info;
+  if (format_version.empty()) {
+    ValidationErrors::ScopedField field(errors, ".format_version");
+    errors->AddError("field must not be empty");
+  } else if (format_version != kExpectedFormatVersion) {
+    ValidationErrors::ScopedField field(errors, ".format_version");
+    errors->AddError(absl::StrCat("field must be ", kExpectedFormatVersion));
+  }
+
+  if (project_id.empty()) {
+    ValidationErrors::ScopedField field(errors, ".project");
+    errors->AddError("field must not be empty");
+  }
+
+  if (private_key_id.empty()) {
+    ValidationErrors::ScopedField field(errors, ".private_key_id");
+    errors->AddError("field must not be empty");
+  }
+
+  if (private_key.empty()) {
+    ValidationErrors::ScopedField field(errors, ".private_key");
+    errors->AddError("field must not be empty");
+  }
+
+  if (service_identity_name.empty()) {
+    ValidationErrors::ScopedField field(errors, ".name");
+    errors->AddError("field must not be empty");
+  }
+
+  if (ca_cert_path.has_value() && ca_cert_path->empty()) {
+    ValidationErrors::ScopedField field(errors, ".ca_cert_path");
+    errors->AddError("field must not be empty");
+  }
+
+  if (token_uri.empty()) {
+    ValidationErrors::ScopedField field(errors, ".token_uri");
+    errors->AddError("field must not be empty");
+  }
 }
 
 absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>>
 GDCHServiceAccountCredentials::Create(const Json& key_file_contents,
                                       std::string audience) {
-  absl::StatusOr<Info> info = ParseServiceAccountJson(key_file_contents);
+  absl::StatusOr<Info> info = LoadFromJson<Info>(key_file_contents);
   if (!info.ok()) return info.status();
-
-  RefCountedPtr<GDCHServiceAccountCredentials> creds =
-      MakeRefCounted<GDCHServiceAccountCredentials>(*std::move(info),
-                                                    std::move(audience));
-  return creds;
+  return MakeRefCounted<GDCHServiceAccountCredentials>(*std::move(info),
+                                                       std::move(audience));
 }
 
 GDCHServiceAccountCredentials::GDCHServiceAccountCredentials(

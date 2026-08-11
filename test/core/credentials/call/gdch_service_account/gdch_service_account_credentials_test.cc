@@ -96,7 +96,7 @@ class GDCHServiceAccountCredentialsTest : public ::testing::Test {
 
   static absl::StatusOr<GDCHServiceAccountCredentials::Info>
   ParseServiceAccountJson(const Json& json) {
-    return GDCHServiceAccountCredentials::ParseServiceAccountJson(json);
+    return LoadFromJson<GDCHServiceAccountCredentials::Info>(json);
   }
 
   static AssertionComponents AssertionComponentsFromInfo(

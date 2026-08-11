@@ -28,9 +28,11 @@
 #include "src/core/credentials/call/token_fetcher/token_fetcher_credentials.h"
 #include "src/core/util/http_client/httpcli.h"
 #include "src/core/util/json/json.h"
+#include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/unique_type_name.h"
+#include "src/core/util/validation_errors.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
@@ -67,6 +69,24 @@ namespace grpc_core {
 class GDCHServiceAccountCredentials final : public HttpTokenFetcherCredentials {
  public:
   struct Info {
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
+      static const auto* loader =
+          JsonObjectLoader<Info>()
+              .Field("type", &Info::type)
+              .Field("format_version", &Info::format_version)
+              .Field("project", &Info::project_id)
+              .Field("private_key_id", &Info::private_key_id)
+              .Field("private_key", &Info::private_key)
+              .Field("name", &Info::service_identity_name)
+              .OptionalField("ca_cert_path", &Info::ca_cert_path)
+              .Field("token_uri", &Info::token_uri)
+              .Finish();
+      return loader;
+    }
+
+    void JsonPostLoad(const Json& source, const JsonArgs& args,
+                      ValidationErrors* errors);
+
     std::string type;
     std::string format_version;
     std::string project_id;
@@ -123,8 +143,6 @@ class GDCHServiceAccountCredentials final : public HttpTokenFetcherCredentials {
   static absl::StatusOr<std::vector<std::uint8_t>> SignUsingSha256(
       const std::string& str, const std::string& pem_contents,
       SignatureFormat format);
-
-  static absl::StatusOr<Info> ParseServiceAccountJson(const Json& json);
 
   static AssertionComponents AssertionComponentsFromInfo(
       const Info& info, std::chrono::system_clock::time_point now);
