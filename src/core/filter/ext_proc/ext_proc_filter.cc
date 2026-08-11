@@ -441,6 +441,16 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
     return side_stream_status_.has_value() && !side_stream_status_->ok();
   }
 
+  // Evaluates a side-stream operation's status. If the operation failed and
+  // the side-stream failure is fatal (fail-open is disabled), returns
+  // Failure{}; otherwise returns Success{}.
+  StatusFlag EvaluateSideStreamStatus(StatusFlag status = Failure{}) const {
+    if (!status.ok() && IsSideStreamFailureFatal()) {
+      return Failure{};
+    }
+    return Success{};
+  }
+
   // Evaluates the final status of the side-stream to return for the filter.
   // Respects IsFailOpenAllowed() by returning OkStatus() when fail-open is
   // permitted even if the side-stream failed.
@@ -464,10 +474,7 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
   auto WaitForSideStreamClosed() {
     return Seq(side_stream_closed_latch_.Wait(),
                [self = WeakRef()](Empty) -> StatusFlag {
-                 if (self->IsSideStreamFailureFatal()) {
-                   return Failure{};
-                 }
-                 return Success{};
+                 return self->EvaluateSideStreamStatus();
                });
   }
 
@@ -476,8 +483,8 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
   // 2. Cancels any active upstream child call.
   // 3. Records the error status on the side-stream and marks it closed.
   void CancelCallWithError(absl::Status status) {
-    MutexLock lock(&side_stream_mu_);
     if (!IsSideStreamClosed()) {
+      MutexLock lock(&side_stream_mu_);
       if (!status.ok()) {
         auto error_md = CancelledServerMetadataFromStatus(status);
         handler_.SpawnPushServerTrailingMetadata(std::move(error_md));
@@ -488,6 +495,9 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
       side_stream_status_ = status;
       side_stream_closed_latch_.Set();
     }
+    MutexLock lock(&ext_proc_send_mu_);
+    ext_proc_send_state_ = SendState::kSendFailed;
+    ext_proc_send_waiters_.WakeupAsync();
   }
 
   // Idempotently closes the out-of-band side-stream to the external processor.
@@ -754,7 +764,7 @@ auto ExtProcFilter::ExtProcCall::SendMessageToSideStream(std::string payload) {
       [self = WeakRef()]() -> Poll<StatusFlag> {
         MutexLock lock(&self->ext_proc_send_mu_);
         if (self->ext_proc_send_state_ == SendState::kSendFailed) {
-          return Failure{};
+          return self->EvaluateSideStreamStatus();
         }
         if (self->ext_proc_send_state_ != SendState::kIdle) {
           self->ext_proc_send_waiters_.AddPending(
@@ -774,17 +784,17 @@ auto ExtProcFilter::ExtProcCall::SendMessageToSideStream(std::string payload) {
         // null if the side-stream closed while this send was queued or
         // executing.
         if (self->streaming_call_ == nullptr) {
-          return Immediate(StatusFlag(Failure{}));
+          return Immediate(self->EvaluateSideStreamStatus());
         }
         return self->streaming_call_->PushMessage(std::move(payload));
       },
       // Reset send state and wake up any waiting senders.
-      [self = WeakRef()](StatusFlag status) {
+      [self = WeakRef()](StatusFlag status) -> StatusFlag {
         MutexLock lock(&self->ext_proc_send_mu_);
         self->ext_proc_send_state_ =
             status.ok() ? SendState::kIdle : SendState::kSendFailed;
         self->ext_proc_send_waiters_.WakeupAsync();
-        return Success{};
+        return self->EvaluateSideStreamStatus(status);
       });
 }
 
@@ -1163,7 +1173,10 @@ ArenaPromise<StatusFlag> ExtProcFilter::ExtProcCall::HandleMessageFromServer(
         !side_stream_half_closed_.load(std::memory_order_acquire)) {
       return Seq(SendServerMessageRequest(message),
                  [self = WeakRef(), message = std::move(message)](
-                     StatusFlag) mutable -> StatusFlag {
+                     StatusFlag status) mutable -> StatusFlag {
+                   if (!status.ok()) {
+                     return Failure{};
+                   }
                    self->handler_.SpawnPushMessage(std::move(message));
                    return Success{};
                  });
@@ -1272,8 +1285,11 @@ ArenaPromise<StatusFlag> ExtProcFilter::ExtProcCall::HandleMessageFromClient(
           SendClientMessageRequest(message,
                                    /*end_of_stream=*/false,
                                    /*end_of_stream_without_message=*/false),
-          [self = WeakRef(),
-           message = std::move(message)](StatusFlag) mutable -> StatusFlag {
+          [self = WeakRef(), message = std::move(message)](
+              StatusFlag status) mutable -> StatusFlag {
+            if (!status.ok()) {
+              return Failure{};
+            }
             self->initiator_.SpawnPushMessage(std::move(message));
             return Success{};
           });
@@ -1353,7 +1369,7 @@ ExtProcFilter::ExtProcCall::HandleHalfCloseFromClient() {
                                  /*end_of_stream=*/false,
                                  /*end_of_stream_without_message=*/true),
         [self = WeakRef()](StatusFlag status) mutable -> StatusFlag {
-          if (!status.ok() && self->IsSideStreamFailureFatal()) {
+          if (!self->EvaluateSideStreamStatus(status).ok()) {
             return Failure{};
           }
           if (!status.ok() || self->IsSideStreamClosed() ||
