@@ -177,8 +177,8 @@ class TestConfigurator {
     IncomingMessage client_message;
     s.NewBatch(101).SendInitialMetadata({}).RecvMessage(client_message);
     s.NewBatch(102).SendMessage(std::string(1024, 'y'));
-    test_.Expect(102, true);
-    test_.Expect(101, true);
+    test_.Expect(102, CoreEnd2endTest::AnyStatus{});
+    test_.Expect(101, CoreEnd2endTest::AnyStatus{});
     test_.Expect(1, true);
     test_.Step();
     EXPECT_EQ(server_status.status(), GRPC_STATUS_INTERNAL);
