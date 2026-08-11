@@ -83,9 +83,9 @@ sys.path.insert(0, os.path.abspath(PYTHON_STEM))
 
 import _parallel_compile_patch
 import _spawn_patch
+import commands
 import grpc_core_dependencies
 
-import commands
 import grpc_version
 import python_version
 

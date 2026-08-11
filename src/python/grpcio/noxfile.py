@@ -172,12 +172,14 @@ def build_ext(session: nox.Session):
     import os
 
     os.chdir(GRPC_STEM)
-    import setup
-    import Cython.Build
     import sysconfig
     import tempfile
     import traceback
+
+    import Cython.Build
     import support
+
+    import setup
 
     cython_compiler_directives = {}
 
@@ -283,8 +285,8 @@ def build_ext(session: nox.Session):
                     f"Failed `build_ext` step:\n{formatted_exception}"
                 )
 
-    from setuptools.dist import Distribution
     from setuptools.command import build_ext
+    from setuptools.dist import Distribution
 
     dist = Distribution({"ext_modules": extensions})
     cmd = NoxBuildExt(dist)
