@@ -115,14 +115,16 @@ std::string CaptureSslErrors() {
   return msg;
 }
 
-absl::StatusOr<std::string> DERToRawSignature(const unsigned char* der_sig,
-                                              size_t der_len, int coord_size) {
-  if (der_sig == nullptr || der_len == 0) {
+absl::StatusOr<std::string> DERToRawSignature(const std::string& der_sig,
+                                              int coord_size) {
+  if (der_sig.empty()) {
     return absl::InternalError("Input DER signature is empty");
   }
 
+  const unsigned char* der_sig_ptr =
+      reinterpret_cast<const unsigned char*>(der_sig.data());
   std::unique_ptr<ECDSA_SIG, OpenSslDeleter> ecdsa_sig(
-      d2i_ECDSA_SIG(nullptr, &der_sig, der_len));
+      d2i_ECDSA_SIG(nullptr, &der_sig_ptr, der_sig.size()));
 
   if (ecdsa_sig == nullptr) {
     char err_buf[256];
@@ -246,8 +248,7 @@ absl::StatusOr<std::string> GDCHServiceAccountCredentials::SignUsingSha256(
     return buffer;
   }
 
-  return DERToRawSignature(
-      reinterpret_cast<const unsigned char*>(buffer.data()), buffer.size(), 32);
+  return DERToRawSignature(buffer, 32);
 }
 
 void GDCHServiceAccountCredentials::Info::JsonPostLoad(
