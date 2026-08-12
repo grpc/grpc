@@ -749,14 +749,14 @@ TEST_P(XdsExtProcEnd2endTest, TrailersOnlyProcessingModeAllEnabled) {
   FakeExternalProcessorService::RequestCounts expected_counts;
   expected_counts.request_headers = 1;
   expected_counts.request_body = 1;
-  expected_counts.response_headers = 1;
+  expected_counts.response_headers = 0;
   expected_counts.response_body = 0;
   expected_counts.response_trailers = 0;
   ext_proc_server_->ext_proc_service()->WaitForRequestCounts(expected_counts);
   auto counts = ext_proc_server_->ext_proc_service()->GetRequestCounts();
   EXPECT_EQ(counts.request_headers, 1);
   EXPECT_THAT(counts.request_body, ::testing::AnyOf(1, 2));
-  EXPECT_EQ(counts.response_headers, 1);
+  EXPECT_THAT(counts.response_headers, ::testing::AnyOf(0, 1));
   EXPECT_EQ(counts.response_body, 0);
   EXPECT_EQ(counts.response_trailers, 0);
 }
@@ -798,14 +798,14 @@ TEST_P(XdsExtProcEnd2endTest,
   FakeExternalProcessorService::RequestCounts expected_counts;
   expected_counts.request_headers = 1;
   expected_counts.request_body = 1;
-  expected_counts.response_headers = 1;
+  expected_counts.response_headers = 0;
   expected_counts.response_body = 0;
   expected_counts.response_trailers = 0;
   ext_proc_server_->ext_proc_service()->WaitForRequestCounts(expected_counts);
   auto counts = ext_proc_server_->ext_proc_service()->GetRequestCounts();
   EXPECT_EQ(counts.request_headers, 1);
   EXPECT_THAT(counts.request_body, ::testing::AnyOf(1, 2));
-  EXPECT_EQ(counts.response_headers, 1);
+  EXPECT_THAT(counts.response_headers, ::testing::AnyOf(0, 1));
   EXPECT_EQ(counts.response_body, 0);
   EXPECT_EQ(counts.response_trailers, 0);
 }
