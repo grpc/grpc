@@ -18,10 +18,14 @@
 
 #include <memory>
 
+#include "src/core/client_channel/client_channel_service_config.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/load_balancing/weighted_round_robin/weighted_round_robin.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_impl.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
@@ -93,6 +97,83 @@ TEST(WeightedRoundRobinConfigTest, InvalidValues) {
           "errors validating service config: [field:loadBalancingConfig "
           "error:errors validating weighted_round_robin LB policy config: ["
           "field:errorUtilizationPenalty error:must be non-negative]]"));
+}
+
+TEST(WeightedRoundRobinConfigTest, UnsupportedMetricNames) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
+  const char* service_config_json =
+      "{\n"
+      "  \"loadBalancingConfig\":[{\n"
+      "    \"weighted_round_robin\":{\n"
+      "      \"metricNamesForComputingUtilization\": [\"invalid_metric\"]\n"
+      "    }\n"
+      "  }]\n"
+      "}\n";
+  auto service_config =
+      ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
+  ASSERT_FALSE(service_config.ok());
+  EXPECT_EQ(
+      service_config.status(),
+      absl::InvalidArgumentError(
+          "errors validating service config: [field:loadBalancingConfig "
+          "error:errors validating weighted_round_robin LB policy config: ["
+          "field:metricNamesForComputingUtilization[0] error:unsupported "
+          "metric name \"invalid_metric\"]]"));
+}
+
+TEST(WeightedRoundRobinConfigTest, ValidMetricNamesEnabled) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
+  const char* service_config_json =
+      "{\n"
+      "  \"loadBalancingConfig\":[{\n"
+      "    \"weighted_round_robin\":{\n"
+      "      \"metricNamesForComputingUtilization\": [\"cpu_utilization\"]\n"
+      "    }\n"
+      "  }]\n"
+      "}\n";
+  auto service_config =
+      ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
+  ASSERT_TRUE(service_config.ok()) << service_config.status();
+  EXPECT_NE(*service_config, nullptr);
+  auto global_config = DownCast<internal::ClientChannelGlobalParsedConfig*>(
+      (*service_config)
+          ->GetGlobalParsedConfig(
+              internal::ClientChannelServiceConfigParser::ParserIndex()));
+  ASSERT_NE(global_config, nullptr);
+  auto lb_config = global_config->parsed_lb_config();
+  ASSERT_NE(lb_config, nullptr);
+  ASSERT_EQ(lb_config->name(), "weighted_round_robin");
+  auto* wrr_config = DownCast<WeightedRoundRobinConfig*>(lb_config.get());
+  const auto& custom_metrics = wrr_config->parsed_custom_metrics();
+  ASSERT_EQ(custom_metrics.size(), 1);
+  EXPECT_EQ(custom_metrics[0].type,
+            WeightedRoundRobinConfig::ParsedMetric::Type::kCpu);
+  EXPECT_EQ(custom_metrics[0].name, "");
+}
+
+TEST(WeightedRoundRobinConfigTest, MetricNamesDisabled) {
+  const char* service_config_json =
+      "{\n"
+      "  \"loadBalancingConfig\":[{\n"
+      "    \"weighted_round_robin\":{\n"
+      "      \"metricNamesForComputingUtilization\": [\"cpu_utilization\"]\n"
+      "    }\n"
+      "  }]\n"
+      "}\n";
+  auto service_config =
+      ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
+  ASSERT_TRUE(service_config.ok()) << service_config.status();
+  EXPECT_NE(*service_config, nullptr);
+  auto global_config = DownCast<internal::ClientChannelGlobalParsedConfig*>(
+      (*service_config)
+          ->GetGlobalParsedConfig(
+              internal::ClientChannelServiceConfigParser::ParserIndex()));
+  ASSERT_NE(global_config, nullptr);
+  auto lb_config = global_config->parsed_lb_config();
+  ASSERT_NE(lb_config, nullptr);
+  ASSERT_EQ(lb_config->name(), "weighted_round_robin");
+  auto* wrr_config = DownCast<WeightedRoundRobinConfig*>(lb_config.get());
+  EXPECT_TRUE(wrr_config->parsed_custom_metrics().empty());
 }
 
 }  // namespace

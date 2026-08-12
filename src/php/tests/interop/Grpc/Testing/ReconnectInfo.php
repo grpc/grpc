@@ -56,9 +56,8 @@ class ReconnectInfo extends \Google\Protobuf\Internal\Message
      * @param bool $var
      * @return $this
      */
-    public function setPassed($var)
+    public function setPassed(bool $var)
     {
-        GPBUtil::checkBool($var);
         $this->passed = $var;
 
         return $this;
@@ -78,7 +77,7 @@ class ReconnectInfo extends \Google\Protobuf\Internal\Message
      * @param int[] $var
      * @return $this
      */
-    public function setBackoffMs($var)
+    public function setBackoffMs(array|RepeatedField $var)
     {
         $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::INT32);
         $this->backoff_ms = $arr;

@@ -35,14 +35,14 @@ For Visual Studio integration - these files provide the properties pages:
 
 DLLs containing the custom tasks are in:
 
-* `build\_protobuf\netstandard1.3`
+* `build\_protobuf\netstandard2.0`
 * `build\_protobuf\net45`
 
 ## Protobuf compiler and C# gRPC plugin binaries
 
 Native binary executables for the protobuf compiler (_protoc_) and C# gRPC plugin (_grpc_csharp_plugin_) are
 included in the NuGet package. Included are binaries for various OSes (Windows, Linux, macOS) and
-CPU architectures (x86, x64, arm64).
+CPU architectures (x86, x64, arm64). On macOS a single universal (x64 + arm64) binary is shipped.
 
 The build determines which executables to use for the particular machine that the it is being run on.
 These can be overridden by specifying MSBuild properties or environment variables to give the paths to custom executables:

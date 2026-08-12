@@ -16,14 +16,12 @@
 
 #include "src/core/client_channel/client_channel_service_config.h"
 
-#include <grpc/support/port_platform.h>
-
 #include <map>
 #include <optional>
 #include <utility>
 
+#include "src/core/config/experiment_env_var.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
-#include "src/core/util/env.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/ascii.h"
@@ -34,27 +32,6 @@
 
 namespace grpc_core {
 namespace internal {
-
-namespace {
-
-bool ConnectionScalingEnabled() {
-  auto value =
-      GetEnv("GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
-  if (!value.has_value()) return false;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
-}
-
-class ConnectionScalingJsonArgs final : public JsonArgs {
- public:
-  bool IsEnabled(absl::string_view key) const override {
-    if (key == "connection_scaling") return ConnectionScalingEnabled();
-    return true;
-  }
-};
-
-}  // namespace
 
 //
 // ClientChannelGlobalParsedConfig::HealthCheckConfig
@@ -101,8 +78,7 @@ const JsonLoaderInterface* ClientChannelGlobalParsedConfig::JsonLoader(
           .OptionalField("healthCheckConfig",
                          &ClientChannelGlobalParsedConfig::health_check_config_)
           .OptionalField("connectionScaling",
-                         &ClientChannelGlobalParsedConfig::connection_scaling_,
-                         "connection_scaling")
+                         &ClientChannelGlobalParsedConfig::connection_scaling_)
           .Finish();
   return loader;
 }
@@ -178,14 +154,14 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
                                                     const Json& json,
                                                     ValidationErrors* errors) {
   return LoadFromJson<std::unique_ptr<ClientChannelGlobalParsedConfig>>(
-      json, ConnectionScalingJsonArgs(), errors);
+      json, JsonArgs(), errors);
 }
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
 ClientChannelServiceConfigParser::ParsePerMethodParams(
     const ChannelArgs& /*args*/, const Json& json, ValidationErrors* errors) {
   return LoadFromJson<std::unique_ptr<ClientChannelMethodParsedConfig>>(
-      json, ConnectionScalingJsonArgs(), errors);
+      json, JsonArgs(), errors);
 }
 
 }  // namespace internal

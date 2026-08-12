@@ -53,6 +53,7 @@ grpc_cc_test(
     tags = [
         "grpc:fails-internally",
         "no_mac",
+        "no_test_ios",
         "no_windows",
         "requires-net:ipv4",
         "requires-net:loopback",
@@ -82,6 +83,7 @@ grpc_cc_test(
     ],
     tags = [
         "no_mac",
+        "no_test_ios",
         "no_windows",
     ],
     uses_event_engine = True,
@@ -132,6 +134,7 @@ grpc_cc_test(
         "bazel_only",
         "no_linux",
         "no_mac",
+        "no_test_ios",
     ],
     uses_polling = False,
     deps = [

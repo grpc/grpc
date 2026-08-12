@@ -58,11 +58,11 @@ class CompositeFilter final : public V3InterceptorToV2Bridge<CompositeFilter> {
   class ExecuteFilterAction final : public XdsMatcher::Action {
    public:
     struct Filter {
-      const XdsHttpFilterImpl* filter_impl;
+      const XdsHttpFilterFactory* factory;
       RefCountedPtr<const FilterConfig> filter_config;
 
       bool operator==(const Filter& other) const {
-        if (filter_impl != other.filter_impl) return false;
+        if (factory != other.factory) return false;
         if (filter_config == nullptr) return other.filter_config == nullptr;
         if (other.filter_config == nullptr) return false;
         return *filter_config == *other.filter_config;
@@ -116,7 +116,17 @@ class CompositeFilter final : public V3InterceptorToV2Bridge<CompositeFilter> {
       return matcher->ToString();
     }
 
-    std::unique_ptr<XdsMatcher> matcher;
+    std::shared_ptr<const XdsMatcher> matcher;
+
+    // For each action, contains the list of merged filter configs to
+    // use.  This is basically the same as the filter configs in the
+    // matcher actions, except that the configs may include fields set
+    // from the blackboard.
+    // Note: This is not actually part of the identity of the config
+    // (i.e., does not matter for Equals()).
+    absl::flat_hash_map<const XdsMatcher::Action*,
+                        std::vector<RefCountedPtr<const FilterConfig>>>
+        merged_config_map;
   };
 
   static const grpc_channel_filter kFilterVtable;
@@ -126,10 +136,11 @@ class CompositeFilter final : public V3InterceptorToV2Bridge<CompositeFilter> {
   static absl::StatusOr<RefCountedPtr<CompositeFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
-  CompositeFilter(const ChannelArgs& args, RefCountedPtr<const Config> config,
-                  ChannelFilter::Args filter_args);
+  CompositeFilter(const ChannelArgs& args, RefCountedPtr<const Config> config);
 
  private:
+  void Init(const ChannelArgs& args) override;
+
   void Orphaned() override {}
 
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override;

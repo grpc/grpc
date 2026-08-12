@@ -44,6 +44,7 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/fork.h"
 #include "src/core/util/grpc_check.h"
+#include "src/core/util/strerror.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/useful.h"
 #include "absl/base/no_destructor.h"
@@ -74,14 +75,6 @@ using namespace std::chrono_literals;
 namespace grpc_event_engine::experimental {
 
 namespace {
-
-bool ShouldUsePosixPoller() {
-#if defined(GRPC_PYTHON_BUILD)
-  return grpc_core::IsEventEnginePollerForPythonEnabled();
-#else
-  return true;
-#endif
-}
 
 #if GRPC_ENABLE_FORK_SUPPORT && GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
 
@@ -255,7 +248,7 @@ void AsyncConnect::Start(EventEngine::Duration timeout) {
   fd_->NotifyOnWrite(on_writable_);
 }
 
-AsyncConnect ::~AsyncConnect() { delete on_writable_; }
+AsyncConnect::~AsyncConnect() { delete on_writable_; }
 
 void AsyncConnect::OnTimeoutExpired(absl::Status status) {
   bool done = false;
@@ -383,13 +376,13 @@ void AsyncConnect::OnWritable(absl::Status status)
       return;
     case ECONNREFUSED:
       // This error shouldn't happen for anything other than connect().
-      status = absl::FailedPreconditionError(std::strerror(so_error));
+      status = absl::FailedPreconditionError(grpc_core::StrError(so_error));
       break;
     default:
       // We don't really know which syscall triggered the problem here, so
       // punt by reporting getsockopt().
-      status = absl::FailedPreconditionError(
-          absl::StrCat("getsockopt(SO_ERROR): ", std::strerror(so_error)));
+      status = absl::FailedPreconditionError(absl::StrCat(
+          "getsockopt(SO_ERROR): ", grpc_core::StrError(so_error)));
       break;
   }
 }
@@ -433,10 +426,8 @@ PosixEventEngine::PosixEventEngine(const Options& options)
     : connection_shards_(options.connection_shards),
       executor_(MakeThreadPool(options.reserve_threads)),
       timer_manager_(std::make_shared<TimerManager>(executor_)) {
-  if (ShouldUsePosixPoller()) {
-    poller_ = grpc_event_engine::experimental::MakeDefaultPoller(executor_);
-    SchedulePoller();
-  }
+  poller_ = grpc_event_engine::experimental::MakeDefaultPoller(executor_);
+  SchedulePoller();
 }
 
 #endif  // GRPC_POSIX_SOCKET_TCP
@@ -475,13 +466,17 @@ void PosixEventEngine::CancelAllPendingTimers() {
 PosixEventEngine::~PosixEventEngine() {
   {
     grpc_core::MutexLock lock(&mu_);
-    if (GRPC_TRACE_FLAG_ENABLED(event_engine)) {
-      for (auto handle : known_handles_) {
+    auto pending_handles = known_handles_;
+    for (auto handle : pending_handles) {
+      if (GRPC_TRACE_FLAG_ENABLED(event_engine)) {
         LOG(ERROR) << "(event_engine) PosixEventEngine:" << this
                    << " uncleared TaskHandle at shutdown:"
                    << HandleToString(handle);
       }
+      CancelInternal(handle);
     }
+    // Prevent new timers from being scheduled on this EventEngine.
+    disallow_new_timers_ = true;
     GRPC_CHECK(GPR_LIKELY(known_handles_.empty()));
   }
 #if defined(GRPC_POSIX_SOCKET_TCP)
@@ -807,7 +802,7 @@ PosixEventEngine::CreateEndpointFromUnconnectedFdInternal(
     Run([on_connect = std::move(on_connect),
          ep = absl::FailedPreconditionError(absl::StrCat(
              "connect failed: ", "addr: ", addr_uri.value(),
-             " error: ", std::strerror(connect_errno)))]() mutable {
+             " error: ", grpc_core::StrError(connect_errno)))]() mutable {
       on_connect(std::move(ep));
     });
     return EventEngine::ConnectionHandle::kInvalid;
@@ -834,7 +829,7 @@ absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>>
 PosixEventEngine::CreatePosixEndpointFromFd(int fd,
                                             const EndpointConfig& config,
                                             MemoryAllocator memory_allocator) {
-  GRPC_DCHECK_GT(fd, 0);
+  GRPC_DCHECK_GE(fd, 0);
   if (poller_ == nullptr) {
     return absl::FailedPreconditionError("polling is not enabled");
   }

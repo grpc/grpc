@@ -224,7 +224,7 @@ class PythonDistribTest:
                 "test/distrib/python/run_binary_distrib_test.sh",
                 copy_rel_path="test/distrib",
                 # TODO(sergiitk): consider decreasing this, they seem to take
-                # only around 5 mintues.
+                # only around 5 minutes.
                 timeout_seconds=datetime.timedelta(minutes=45).total_seconds(),
             )
 
@@ -425,26 +425,26 @@ def targets():
         # C++
         # The "dummy" C++ distribtest so that the set of tasks to run isn't empty
         # when grpc_distribtest_standalone runs on PRs.
-        CppDistribTest("linux", "x64", "debian11", "dummy", presubmit=True),
-        CppDistribTest("linux", "x64", "debian11", "cmake", presubmit=False),
+        CppDistribTest("linux", "x64", "debian12", "dummy", presubmit=True),
+        CppDistribTest("linux", "x64", "debian12", "cmake", presubmit=False),
         CppDistribTest(
-            "linux", "x64", "debian11", "cmake_as_submodule", presubmit=False
+            "linux", "x64", "debian12", "cmake_as_submodule", presubmit=False
         ),
         CppDistribTest(
             "linux",
             "x64",
-            "debian11",
+            "debian12",
             "cmake_as_externalproject",
             presubmit=False,
         ),
         CppDistribTest(
-            "linux", "x64", "debian11", "cmake_fetchcontent", presubmit=False
+            "linux", "x64", "debian12", "cmake_fetchcontent", presubmit=False
         ),
         CppDistribTest(
-            "linux", "x64", "debian11", "cmake_module_install", presubmit=False
+            "linux", "x64", "debian12", "cmake_module_install", presubmit=False
         ),
         CppDistribTest(
-            "linux", "x64", "debian11", "cmake_pkgconfig", presubmit=False
+            "linux", "x64", "debian12", "cmake_pkgconfig", presubmit=False
         ),
         CppDistribTest(
             "linux",
@@ -491,7 +491,7 @@ def targets():
         PythonDistribTest("linux", "x64", "alpine"),
         PythonDistribTest("linux", "x64", "ubuntu2404"),
         PythonDistribTest(
-            "linux", "aarch64", "python39_buster", presubmit=True
+            "linux", "aarch64", "python310_bullseye", presubmit=True
         ),
         PythonDistribTest("linux", "aarch64", "alpine", presubmit=True),
         PythonDistribTest(
@@ -510,58 +510,44 @@ def targets():
         RubyDistribTest(
             "linux-gnu",
             "x64",
-            "debian11",
+            "debian12",
             ruby_version="ruby_3_2",
             source=True,
         ),
         RubyDistribTest(
             "linux-gnu",
             "x64",
-            "debian11",
-            ruby_version="ruby_3_1",
-            presubmit=True,
-        ),
-        RubyDistribTest(
-            "linux-gnu",
-            "x64",
-            "debian11",
+            "debian12",
             ruby_version="ruby_3_2",
         ),
         RubyDistribTest(
             "linux-gnu",
             "x64",
-            "debian11",
+            "debian12",
             ruby_version="ruby_3_3",
         ),
         RubyDistribTest(
             "linux-gnu",
             "x64",
-            "debian11",
+            "debian12",
             ruby_version="ruby_3_3",
             protobuf_version="3.25",
         ),
         RubyDistribTest(
             "linux-gnu",
             "x64",
-            "debian11",
+            "debian12",
             ruby_version="ruby_3_4",
         ),
         RubyDistribTest(
             "linux-gnu",
             "x64",
-            "debian11",
+            "debian12",
             ruby_version="ruby_4_0",
             presubmit=True,
         ),
         RubyDistribTest("linux-gnu", "x64", "ubuntu2204", presubmit=True),
         RubyDistribTest("linux-gnu", "x64", "ubuntu2404", presubmit=True),
-        RubyDistribTest(
-            "linux-musl",
-            "x64",
-            "alpine",
-            ruby_version="ruby_3_1",
-            presubmit=True,
-        ),
         RubyDistribTest(
             "linux-musl",
             "x64",

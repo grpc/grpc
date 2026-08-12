@@ -48,6 +48,11 @@ void MaybeEchoDeadline(ServerContextBase* context, const EchoRequest* request,
     if (context->deadline() != system_clock::time_point::max()) {
       Timepoint2Timespec(context->deadline(), &deadline);
     }
+    LOG(INFO) << "MaybeEchoDeadline context->deadline(): " << deadline.tv_sec
+              << "." << deadline.tv_nsec;
+    const gpr_timespec raw_deadline = context->raw_deadline();
+    LOG(INFO) << "MaybeEchoDeadline context->raw_deadline(): "
+              << raw_deadline.tv_sec << "." << raw_deadline.tv_nsec;
     response->mutable_param()->set_request_deadline(deadline.tv_sec);
   }
 }

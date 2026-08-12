@@ -40,6 +40,7 @@
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -68,6 +69,7 @@
 namespace {
 struct inproc_stream;
 bool cancel_stream_locked(inproc_stream* s, grpc_error_handle error);
+bool cancel_stream(inproc_stream* s, grpc_error_handle error);
 void maybe_process_ops_locked(inproc_stream* s, grpc_error_handle error);
 void op_state_machine_locked(inproc_stream* s, grpc_error_handle error);
 void log_metadata(const grpc_metadata_batch* md_batch, bool is_client,
@@ -195,8 +197,12 @@ struct inproc_stream {
       other_side = nullptr;  // will get filled in soon
       inproc_transport* st = t->other_side;
       if (st->accept_stream_cb == nullptr) {
-        cancel_stream_locked(this,
-                             absl::UnavailableError("inproc server closed"));
+        if (grpc_core::IsInprocCancelStreamEnabled()) {
+          cancel_stream(this, absl::UnavailableError("inproc server closed"));
+        } else {
+          cancel_stream_locked(this,
+                               absl::UnavailableError("inproc server closed"));
+        }
       } else {
         st->ref();
         // Pass the client-side stream address to the server-side for a ref
@@ -952,6 +958,14 @@ bool cancel_stream_locked(inproc_stream* s, grpc_error_handle error) {
   return ret;
 }
 
+bool cancel_stream(inproc_stream* s, grpc_error_handle error) {
+  inproc_transport* t = s->t;
+  gpr_mu_lock(&t->mu->mu);
+  bool ret = cancel_stream_locked(s, std::move(error));
+  gpr_mu_unlock(&t->mu->mu);
+  return ret;
+}
+
 void inproc_transport::PerformStreamOp(grpc_stream* gs,
                                        grpc_transport_stream_op_batch* op) {
   GRPC_TRACE_LOG(inproc, INFO)
@@ -1142,11 +1156,8 @@ void close_transport_locked(inproc_transport* t) {
     // Also end all streams on this transport
     while (t->stream_list != nullptr) {
       // cancel_stream_locked also adjusts stream list
-      cancel_stream_locked(
-          t->stream_list,
-          grpc_error_set_int(GRPC_ERROR_CREATE("Transport closed"),
-                             grpc_core::StatusIntProperty::kRpcStatus,
-                             GRPC_STATUS_UNAVAILABLE));
+      cancel_stream_locked(t->stream_list,
+                           absl::UnavailableError("Transport closed"));
     }
   }
 }
@@ -1281,12 +1292,7 @@ grpc_channel* grpc_legacy_inproc_channel_create(grpc_server* server,
       GRPC_CHECK(!channel);
       LOG(ERROR) << "Failed to create client channel: "
                  << grpc_core::StatusToString(error);
-      intptr_t integer;
-      grpc_status_code status = GRPC_STATUS_INTERNAL;
-      if (grpc_error_get_int(error, grpc_core::StatusIntProperty::kRpcStatus,
-                             &integer)) {
-        status = static_cast<grpc_status_code>(integer);
-      }
+      grpc_status_code status = static_cast<grpc_status_code>(error.code());
       // client_transport was destroyed when grpc_channel_create_internal saw an
       // error.
       server_transport->Orphan();
@@ -1299,12 +1305,7 @@ grpc_channel* grpc_legacy_inproc_channel_create(grpc_server* server,
     GRPC_CHECK(!channel);
     LOG(ERROR) << "Failed to create server channel: "
                << grpc_core::StatusToString(error);
-    intptr_t integer;
-    grpc_status_code status = GRPC_STATUS_INTERNAL;
-    if (grpc_error_get_int(error, grpc_core::StatusIntProperty::kRpcStatus,
-                           &integer)) {
-      status = static_cast<grpc_status_code>(integer);
-    }
+    grpc_status_code status = static_cast<grpc_status_code>(error.code());
     client_transport->Orphan();
     server_transport->Orphan();
     channel = grpc_lame_client_channel_create(

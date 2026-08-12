@@ -33,6 +33,7 @@
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/prioritized_race.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/util/dual_ref_counted.h"
@@ -223,10 +224,9 @@ class CallSpine final : public Party, public channelz::DataSource {
   template <typename Promise>
   auto UntilCallCompletes(Promise&& promise) {
     using Result = PromiseResult<std::decay_t<Promise>>;
-    return PrioritizedRace(std::forward<Promise>(promise),
-                           Map(WasCancelled(), [](bool) {
-                             return FailureStatusCast<Result>(Failure{});
-                           }));
+    return Race(Map(WasCancelled(),
+                    [](bool) { return FailureStatusCast<Result>(Failure{}); }),
+                std::forward<Promise>(promise));
   }
 
   template <typename PromiseFactory>

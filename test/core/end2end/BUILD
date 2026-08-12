@@ -601,6 +601,25 @@ grpc_core_end2end_test_suite(
 )
 
 grpc_core_end2end_test_suite(
+    name = "end2end_vrpc",
+    config_src = "end2end_vrpc_config.cc",
+    tags = [
+        "grpc:no-internal-poller",
+    ],
+    deps = [
+        "//:iomgr",
+        "//src/core:arena",
+        "//src/core:context",
+        "//src/core:metrics",
+        "//src/core:resource_quota",
+        "//src/core:session_endpoint",
+        "//src/core:slice_buffer",
+        "//src/core:sync",
+        "//src/core:virtual_channel",
+    ],
+)
+
+grpc_core_end2end_test_suite(
     name = "end2end_http2_security",
     config_src = "end2end_http2_security_config.cc",
     flaky = True,

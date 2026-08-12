@@ -176,10 +176,7 @@ HttpRequest::HttpRequest(
       pollent_(pollent),
       pollset_set_(grpc_pollset_set_create()),
       test_only_generate_response_(std::move(test_only_generate_response)),
-      use_event_engine_dns_resolver_(
-          IsEventEngineDnsNonClientChannelEnabled() &&
-          !grpc_event_engine::experimental::
-              EventEngineExperimentDisabledForPython()),
+      use_event_engine_dns_resolver_(IsEventEngineDnsNonClientChannelEnabled()),
       resolver_(!use_event_engine_dns_resolver_ ? GetDNSResolver() : nullptr),
       ee_resolver_(
           use_event_engine_dns_resolver_
@@ -423,7 +420,7 @@ void HttpRequest::OnResolved(
     return;
   }
   if (!addresses_or.ok()) {
-    Finish(absl_status_to_grpc_error(addresses_or.status()));
+    Finish(addresses_or.status());
     return;
   }
   addresses_ = std::move(*addresses_or);

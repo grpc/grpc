@@ -330,7 +330,7 @@ ServerBuilder& ServerBuilder::SetEventEngine(
 std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   ChannelArguments args = BuildChannelArgs();
 
-  // == Determine if the server has any syncrhonous methods ==
+  // == Determine if the server has any synchronous methods ==
   bool has_sync_methods = false;
   for (const auto& value : services_) {
     if (value->service->has_synchronous_methods()) {
@@ -413,8 +413,8 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   std::unique_ptr<grpc::Server> server(new grpc::Server(
       &args, sync_server_cqs, sync_server_settings_.min_pollers,
       sync_server_settings_.max_pollers, sync_server_settings_.cq_timeout_msec,
-      std::move(acceptors_), server_config_fetcher_, resource_quota_,
-      std::move(interceptor_creators_), server_metric_recorder_));
+      std::move(acceptors_), resource_quota_, std::move(interceptor_creators_),
+      server_metric_recorder_));
 
   ServerInitializer* initializer = server->initializer();
 

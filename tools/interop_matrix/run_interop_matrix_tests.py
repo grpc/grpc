@@ -14,8 +14,6 @@
 # limitations under the License.
 """Run tests using docker images in Google Container Registry per matrix."""
 
-from __future__ import print_function
-
 import argparse
 import atexit
 import json

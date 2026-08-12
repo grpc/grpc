@@ -42,6 +42,8 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
+#include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
@@ -79,8 +81,8 @@ absl::StatusOr<std::string> ConvertXdsPolicy(
       serialized_policy.data(), serialized_policy.size(), arena.ptr());
   ValidationErrors errors;
   ValidationErrors::ScopedField field(&errors, ".load_balancing_policy");
-  auto config = XdsLbPolicyRegistry().ConvertXdsLbPolicyConfig(
-      context, upb_policy, &errors);
+  auto registry = GrpcXdsBootstrapBuilder::CreateXdsLbPolicyRegistry();
+  auto config = registry.ConvertXdsLbPolicyConfig(context, upb_policy, &errors);
   if (!errors.ok()) {
     return errors.status(absl::StatusCode::kInvalidArgument,
                          "validation errors");
@@ -145,6 +147,7 @@ TEST(ClientSideWeightedRoundRobinTest, FieldsExplicitlySet) {
   wrr.mutable_weight_expiration_period()->set_seconds(3);
   wrr.mutable_weight_update_period()->set_seconds(4);
   wrr.mutable_error_utilization_penalty()->set_value(5.0);
+  wrr.add_metric_names_for_computing_utilization("cpu_usage");
   LoadBalancingPolicyProto policy;
   policy.add_policies()
       ->mutable_typed_extension_config()
@@ -161,6 +164,36 @@ TEST(ClientSideWeightedRoundRobinTest, FieldsExplicitlySet) {
             "\"weightExpirationPeriod\":\"3.000000000s\","
             "\"weightUpdatePeriod\":\"4.000000000s\""
             "}}");
+}
+
+TEST(ClientSideWeightedRoundRobinTest, WrrCustomMetricsEnabled) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
+  ClientSideWeightedRoundRobin wrr;
+  wrr.add_metric_names_for_computing_utilization("cpu_usage");
+  LoadBalancingPolicyProto policy;
+  policy.add_policies()
+      ->mutable_typed_extension_config()
+      ->mutable_typed_config()
+      ->PackFrom(wrr);
+  auto result = ConvertXdsPolicy(policy);
+  ASSERT_TRUE(result.ok()) << result.status();
+  EXPECT_EQ(*result,
+            "{\"weighted_round_robin\":{"
+            "\"metricNamesForComputingUtilization\":[\"cpu_usage\"]"
+            "}}");
+}
+
+TEST(ClientSideWeightedRoundRobinTest, WrrCustomMetricsDisabled) {
+  ClientSideWeightedRoundRobin wrr;
+  wrr.add_metric_names_for_computing_utilization("cpu_usage");
+  LoadBalancingPolicyProto policy;
+  policy.add_policies()
+      ->mutable_typed_extension_config()
+      ->mutable_typed_config()
+      ->PackFrom(wrr);
+  auto result = ConvertXdsPolicy(policy);
+  ASSERT_TRUE(result.ok()) << result.status();
+  EXPECT_EQ(*result, "{\"weighted_round_robin\":{}}");
 }
 
 TEST(ClientSideWeightedRoundRobinTest, InvalidValues) {

@@ -123,7 +123,7 @@ class OutputBuffers : public RefCounted<OutputBuffers> {
 class InputQueues : public RefCounted<InputQueues> {
  public:
   // One outstanding read.
-  // ReadTickets get filed by read requests, and all tickets are fullfilled
+  // ReadTickets get filed by read requests, and all tickets are fulfilled
   // by an endpoint.
   // A call may Await a ticket to get the bytes back later (or it may skip that
   // step - in which case the bytes are thrown away after reading).

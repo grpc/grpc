@@ -41,7 +41,7 @@ grpc_slice grpc_chttp2_rst_stream_create(
 // Adds RST_STREAM frame to t->qbuf (buffer for the next write). Should be
 // called when we want to add RST_STREAM and we are not in
 // write_action_begin_locked.
-void grpc_chttp2_add_rst_stream_to_next_write(
+grpc_error_handle grpc_chttp2_add_rst_stream_to_next_write(
     grpc_chttp2_transport* t, uint32_t id, uint32_t code,
     grpc_core::CallTracerInterface* call_tracer);
 

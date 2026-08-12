@@ -16,18 +16,42 @@
 echo "!TIME!: prepare_build_windows.bat started"
 
 @rem make sure msys binaries are preferred over cygwin binaries
-@rem set path to python3.9
+@rem set path to python3.10
 @rem set path to CMake
-set PATH=C:\tools\msys64\usr\bin;C:\Python39;C:\Program Files\CMake\bin;%PATH%
+set PATH=C:\tools\msys64\usr\bin;C:\Python310;C:\Program Files\CMake\bin;%PATH%
 
 @rem Print image ID of the windows kokoro image being used.
 cat C:\image_id.txt
 
-@rem install python 3.9 with retry in case of network errors
-bash "tools/internal_ci/helper_scripts/choco_install_with_retry.sh" python --no-progress --version=3.9.13 || goto :error
+@rem install python 3.10 if not already present in either location
+set "PYTHON_DIR="
+if exist "C:\Program Files\Python310\python.exe" (
+  set "PYTHON_DIR=C:\Program Files\Python310"
+) else if exist "C:\Python310\python.exe" (
+  set "PYTHON_DIR=C:\Python310"
+)
+
+if "%PYTHON_DIR%"=="" (
+  bash "tools/internal_ci/helper_scripts/choco_install_with_retry.sh" python310 --no-progress || goto :error
+
+  @rem After install, check where it went
+  if exist "C:\Program Files\Python310\python.exe" (
+    set "PYTHON_DIR=C:\Program Files\Python310"
+  ) else if exist "C:\Python310\python.exe" (
+    set "PYTHON_DIR=C:\Python310"
+  ) else (
+    echo "Python 3.10 not found after installation."
+    goto :error
+  )
+)
+
+@rem Add to path to ensure it's preferred
+set "PATH=%PYTHON_DIR%;%PATH%"
 
 @rem create "python3" link that normally doesn't exist
-mklink C:\Python39\python3.exe C:\Python39\python.exe
+if not exist "%PYTHON_DIR%\python3.exe" (
+  mklink "%PYTHON_DIR%\python3.exe" "%PYTHON_DIR%\python.exe"
+)
 
 python --version
 python3 --version
@@ -57,7 +81,7 @@ nasm
 
 @rem Install ccache
 mkdir C:\ccache
-curl -sSL --fail -o C:\ccache\ccache.exe https://storage.googleapis.com/grpc-build-helper/ccache-4.8-windows-64/ccache.exe || goto :error
+curl -sSL --fail -o C:\ccache\ccache.exe https://storage.googleapis.com/grpc-build-helper/ccache-4.13.4-windows-x86_64/ccache.exe || goto :error
 set PATH=C:\ccache;%PATH%
 ccache --version
 

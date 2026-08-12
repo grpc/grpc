@@ -15,47 +15,50 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal envoy_type_http_v3_PathTransformation__submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__type__http__v3__PathTransformation__Operation_msg_init_ptr},
-};
+extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
+typedef struct {
+  upb_MiniTableField fields[1];
+  upb_MiniTableSubInternal subs[1];
+} envoy__type__http__v3__PathTransformation_msg_init_Fields;
 
-static const upb_MiniTableField envoy_type_http_v3_PathTransformation__fields[1] = {
-  {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+static const envoy__type__http__v3__PathTransformation_msg_init_Fields envoy_type_http_v3_PathTransformation__fields = {{
+  {1, 8, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &envoy__type__http__v3__PathTransformation__Operation_msg_init},
+}};
 
 const upb_MiniTable envoy__type__http__v3__PathTransformation_msg_init = {
-  &envoy_type_http_v3_PathTransformation__submsgs[0],
-  &envoy_type_http_v3_PathTransformation__fields[0],
+  &envoy_type_http_v3_PathTransformation__fields.fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.type.http.v3.PathTransformation",
 #endif
 };
 
-const upb_MiniTable* envoy__type__http__v3__PathTransformation_msg_init_ptr = &envoy__type__http__v3__PathTransformation_msg_init;
-static const upb_MiniTableSubInternal envoy_type_http_v3_PathTransformation_Operation__submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &envoy__type__http__v3__PathTransformation__Operation__NormalizePathRFC3986_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &envoy__type__http__v3__PathTransformation__Operation__MergeSlashes_msg_init_ptr},
-};
+typedef struct {
+  upb_MiniTableField fields[2];
+  upb_MiniTableSubInternal subs[2];
+} envoy__type__http__v3__PathTransformation__Operation_msg_init_Fields;
 
-static const upb_MiniTableField envoy_type_http_v3_PathTransformation_Operation__fields[2] = {
-  {2, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(12, 16), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+static const envoy__type__http__v3__PathTransformation__Operation_msg_init_Fields envoy_type_http_v3_PathTransformation_Operation__fields = {{
+  {2, UPB_SIZE(12, 16), -9, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(12, 16), -9, UPB_SIZE(4, 5), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &envoy__type__http__v3__PathTransformation__Operation__NormalizePathRFC3986_msg_init},
+  {.UPB_PRIVATE(submsg) = &envoy__type__http__v3__PathTransformation__Operation__MergeSlashes_msg_init},
+}};
 
 const upb_MiniTable envoy__type__http__v3__PathTransformation__Operation_msg_init = {
-  &envoy_type_http_v3_PathTransformation_Operation__submsgs[0],
-  &envoy_type_http_v3_PathTransformation_Operation__fields[0],
+  &envoy_type_http_v3_PathTransformation_Operation__fields.fields[0],
   UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.type.http.v3.PathTransformation.Operation",
 #endif
 };
 
-const upb_MiniTable* envoy__type__http__v3__PathTransformation__Operation_msg_init_ptr = &envoy__type__http__v3__PathTransformation__Operation_msg_init;
 const upb_MiniTable envoy__type__http__v3__PathTransformation__Operation__NormalizePathRFC3986_msg_init = {
-  NULL,
   NULL,
   8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -63,9 +66,7 @@ const upb_MiniTable envoy__type__http__v3__PathTransformation__Operation__Normal
 #endif
 };
 
-const upb_MiniTable* envoy__type__http__v3__PathTransformation__Operation__NormalizePathRFC3986_msg_init_ptr = &envoy__type__http__v3__PathTransformation__Operation__NormalizePathRFC3986_msg_init;
 const upb_MiniTable envoy__type__http__v3__PathTransformation__Operation__MergeSlashes_msg_init = {
-  NULL,
   NULL,
   8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -73,7 +74,6 @@ const upb_MiniTable envoy__type__http__v3__PathTransformation__Operation__MergeS
 #endif
 };
 
-const upb_MiniTable* envoy__type__http__v3__PathTransformation__Operation__MergeSlashes_msg_init_ptr = &envoy__type__http__v3__PathTransformation__Operation__MergeSlashes_msg_init;
 static const upb_MiniTable *messages_layout[4] = {
   &envoy__type__http__v3__PathTransformation_msg_init,
   &envoy__type__http__v3__PathTransformation__Operation_msg_init,

@@ -594,6 +594,14 @@ struct GrpcStreamNetworkState {
   static std::string DisplayValue(ValueType x);
 };
 
+// Annotation added to indicate that the LB policy dropped the call.
+struct LbPolicyDrop {
+  static absl::string_view DebugKey() { return "LbPolicyDrop"; }
+  static constexpr bool kRepeatable = false;
+  using ValueType = bool;
+  static absl::string_view DisplayValue(bool x) { return x ? "true" : "false"; }
+};
+
 // Annotation added by a server transport to note the peer making a request.
 struct PeerString {
   static absl::string_view DebugKey() { return "PeerString"; }
@@ -706,7 +714,7 @@ struct IsEncodableTrait {
 };
 
 template <typename Trait>
-struct IsEncodableTrait<Trait, absl::void_t<decltype(Trait::key())>> {
+struct IsEncodableTrait<Trait, std::void_t<decltype(Trait::key())>> {
   static const bool value = true;
 };
 
@@ -883,6 +891,22 @@ class GetStringValueHelper {
     const auto* value = container_->get_pointer(Trait());
     if (value == nullptr) return std::nullopt;
     return value->as_string_view();
+  }
+
+  template <typename Trait>
+  GPR_ATTRIBUTE_NOINLINE absl::enable_if_t<
+      Trait::kRepeatable == true &&
+          std::is_same<Slice, typename Trait::ValueType>::value,
+      std::optional<absl::string_view>>
+  Found(Trait) {
+    const auto* value = container_->get_pointer(Trait());
+    if (value == nullptr) return std::nullopt;
+    backing_->clear();
+    for (const auto& v : *value) {
+      if (!backing_->empty()) backing_->push_back(',');
+      backing_->append(v.as_string_view());
+    }
+    return *backing_;
   }
 
   template <typename Trait>
@@ -1736,11 +1760,11 @@ using grpc_metadata_batch_base = grpc_core::MetadataMap<
     grpc_core::XEnvoyPeerMetadata, grpc_core::XForwardedForMetadata,
     grpc_core::XForwardedHostMetadata, grpc_core::W3CTraceParentMetadata,
     // Non-encodable things
-    grpc_core::GrpcStreamNetworkState, grpc_core::PeerString,
-    grpc_core::GrpcStatusContext, grpc_core::GrpcStatusFromWire,
-    grpc_core::GrpcCallWasCancelled, grpc_core::WaitForReady,
-    grpc_core::IsTransparentRetry, grpc_core::GrpcTrailersOnly,
-    grpc_core::GrpcTarPit,
+    grpc_core::GrpcStreamNetworkState, grpc_core::LbPolicyDrop,
+    grpc_core::PeerString, grpc_core::GrpcStatusContext,
+    grpc_core::GrpcStatusFromWire, grpc_core::GrpcCallWasCancelled,
+    grpc_core::WaitForReady, grpc_core::IsTransparentRetry,
+    grpc_core::GrpcTrailersOnly, grpc_core::GrpcTarPit,
     grpc_core::GrpcRegisteredMethod GRPC_CUSTOM_CLIENT_METADATA
         GRPC_CUSTOM_SERVER_METADATA>;
 

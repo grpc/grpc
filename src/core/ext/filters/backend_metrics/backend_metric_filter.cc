@@ -45,6 +45,7 @@
 namespace grpc_core {
 
 namespace {
+
 std::optional<std::string> MaybeSerializeBackendMetrics(
     BackendMetricProvider* provider) {
   if (provider == nullptr) return std::nullopt;
@@ -103,8 +104,13 @@ std::optional<std::string> MaybeSerializeBackendMetrics(
   size_t len;
   char* buf =
       xds_data_orca_v3_OrcaLoadReport_serialize(response, arena.ptr(), &len);
+  if (buf == nullptr) {
+    LOG_EVERY_N_SEC(ERROR, 10) << "Failed to serialize ORCA load report";
+    return std::nullopt;
+  }
   return std::string(buf, len);
 }
+
 }  // namespace
 
 const grpc_channel_filter BackendMetricFilter::kFilter =

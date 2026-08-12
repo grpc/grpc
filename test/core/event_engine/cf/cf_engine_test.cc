@@ -32,6 +32,8 @@
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 using namespace std::chrono_literals;
 
@@ -125,6 +127,7 @@ absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> LookupWithRetry(
     if (result.ok() || result.status().code() != absl::StatusCode::kNotFound) {
       break;
     }
+    absl::SleepFor(absl::Seconds(1));
   }
   return result;
 }

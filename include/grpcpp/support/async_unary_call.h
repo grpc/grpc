@@ -316,7 +316,7 @@ class ServerAsyncResponseWriter final
     if (ctx_->compression_level_set()) {
       meta_buf_.set_compression_level(ctx_->compression_level());
     }
-    ctx_->sent_initial_metadata_ = true;
+    ctx_->MarkInitialMetadataSent();
     meta_buf_.FillOps(&call_);
   }
 
@@ -348,7 +348,7 @@ class ServerAsyncResponseWriter final
       if (ctx_->compression_level_set()) {
         finish_buf_.set_compression_level(ctx_->compression_level());
       }
-      ctx_->sent_initial_metadata_ = true;
+      ctx_->MarkInitialMetadataSent();
     }
     // The response is dropped if the status is not OK.
     if (status.ok()) {
@@ -386,7 +386,7 @@ class ServerAsyncResponseWriter final
       if (ctx_->compression_level_set()) {
         finish_buf_.set_compression_level(ctx_->compression_level());
       }
-      ctx_->sent_initial_metadata_ = true;
+      ctx_->MarkInitialMetadataSent();
     }
     finish_buf_.ServerSendStatus(&ctx_->trailing_metadata_, status);
     finish_buf_.FillOps(&call_);
