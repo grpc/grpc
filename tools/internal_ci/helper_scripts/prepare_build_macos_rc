@@ -57,6 +57,13 @@ fi
 # Disable HOMEBREW update to avoid new updates which potentially have problems.
 # Brew packages installed when Kokoro image was built tend to have less conflict.
 export HOMEBREW_NO_AUTO_UPDATE=1
+# A temporary fix for ca-certificates brew install:
+# ==> Pouring ca-certificates--2026-05-14.all.bottle.tar.gz
+# Error: undefined method '[]' for nil
+# TODO(sergiitk): consider undoing once ca-certificates is installable.
+# See:
+# - https://github.com/grpc/grpc/pull/43193 - Initial ca-certificates fix.
+# - https://github.com/grpc/grpc/pull/43217 - Workaround for gnupg ftp down.
 export HOMEBREW_NO_INSTALL_FROM_API=1
 
 # Dump the brew configuration for debugging just in case. Check "Core tap HEAD" field
@@ -65,12 +72,6 @@ export HOMEBREW_NO_INSTALL_FROM_API=1
 brew config
 
 if $is_sonoma; then
-  # A temporary fix for ca-certificates brew install:
-  # ==> Pouring ca-certificates--2026-05-14.all.bottle.tar.gz
-  # Error: undefined method '[]' for nil
-  # TODO(sergiitk): undo PR #42403 once ca-certificates is installable
-  brew install --build-from-source gnupg
-
   brew install cmake
   brew install gnupg
   brew install ccache
