@@ -170,7 +170,7 @@ struct tsi_ssl_client_handshaker_factory {
 // corresponds to a particular SNI.
 struct SslContext {
   SSL_CTX* ssl_ctx = nullptr;
-  tsi_peer x509_subject_name;
+  std::vector<std::string> subject_names;
 #if defined(OPENSSL_IS_BORINGSSL)
   std::shared_ptr<grpc_core::PrivateKeySigner> key_signer;
 #endif
@@ -178,7 +178,6 @@ struct SslContext {
   ~SslContext() {
     if (ssl_ctx != nullptr) {
       SSL_CTX_free(ssl_ctx);
-      tsi_peer_destruct(&x509_subject_name);
     }
   }
 };
@@ -1513,6 +1512,12 @@ static tsi_result ssl_ctx_add_openssl_key_cert_pair(
   }
 
 #if OPENSSL_VERSION_NUMBER >= 0x10101000 && !defined(LIBRESSL_VERSION_NUMBER)
+  // If the override argument is 0, the function fails if a certificate of the
+  // same public key type has already been set. If override is non-0, any
+  // previously set certificate, private key, and chain of the same type are
+  // replaced.
+  // So, this will store multiple certs and keys on the same SSL_CTX as long as
+  // they have different public key types.
   int ok = SSL_CTX_use_cert_and_key(context, certificate, pkey,
                                     intermediate_chain, /*override=*/0);
   X509_free(certificate);
@@ -1549,7 +1554,7 @@ static tsi_result ssl_ctx_add_openssl_key_cert_pair(
 }
 #endif  // !defined(OPENSSL_IS_BORINGSSL)
 
-static tsi_result ssl_ctx_use_key_cert_pair(
+static tsi_result ssl_ctx_add_key_cert_pair(
     SSL_CTX* context, const grpc_core::PemKeyCertPair* key_cert_pair) {
 #if defined(OPENSSL_IS_BORINGSSL)
   return ssl_ctx_add_boringssl_credential(context, key_cert_pair);
@@ -1649,7 +1654,7 @@ static tsi_result populate_ssl_context(
     const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups) {
   tsi_result result = TSI_OK;
   if (key_cert_pair != nullptr) {
-    result = ssl_ctx_use_key_cert_pair(context, key_cert_pair);
+    result = ssl_ctx_add_key_cert_pair(context, key_cert_pair);
     if (result != TSI_OK) {
       return result;
     }
@@ -3256,6 +3261,19 @@ static int does_entry_match_name(absl::string_view entry,
   return !entry.empty() && absl::EqualsIgnoreCase(name_subdomain, entry);
 }
 
+static bool ssl_context_matches_servername(const SslContext& ssl_context,
+                                          absl::string_view servername) {
+  int like_ip = looks_like_ip_address(servername);
+  for (const auto& name : ssl_context.subject_names) {
+    if (!like_ip && does_entry_match_name(name, servername)) {
+      return true;
+    } else if (like_ip && servername == name) {
+      return true;
+    }
+  }
+  return false;
+}
+
 static int ssl_server_handshaker_factory_servername_callback(SSL* ssl,
                                                              int* /*ap*/,
                                                              void* arg)
@@ -3274,7 +3292,7 @@ static int ssl_server_handshaker_factory_servername_callback(SSL* ssl,
 #endif
 
   for (const auto& ssl_context : impl->ssl_contexts) {
-    if (tsi_ssl_peer_matches_name(&ssl_context.x509_subject_name, servername)) {
+    if (ssl_context_matches_servername(ssl_context, servername)) {
       SSL_set_SSL_CTX(ssl, ssl_context.ssl_ctx);
 #if defined(OPENSSL_IS_BORINGSSL)
       if (ssl_context.key_signer != nullptr) {
@@ -3753,12 +3771,6 @@ static tsi_result tsi_configure_server_ssl_context(
   }
 #endif
 
-  if (!pem_key_cert_pairs.empty() && pem_key_cert_pairs[0] != nullptr) {
-    result = tsi_ssl_extract_x509_subject_names_from_pem_cert(
-        pem_key_cert_pairs[0]->cert_chain().c_str(),
-        &ssl_context.x509_subject_name);
-    if (result != TSI_OK) return result;
-  }
   // Always configure the callback because responding to SNI is required for
   // ClientHello in TLS 1.3, and we need to respond to that.
   SSL_CTX_set_tlsext_servername_callback(
@@ -3838,8 +3850,9 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
           }
         }
         impl->ssl_contexts.reserve(groups.size());
-        for (const auto& group : groups) {
+        for (auto& group : groups) {
           SslContext& ssl_context = impl->ssl_contexts.emplace_back();
+          ssl_context.subject_names = std::move(group.names);
           tsi_result result = tsi_configure_server_ssl_context(
               options, group.pairs, impl, ssl_context);
           if (result != TSI_OK) {
@@ -3856,7 +3869,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
         }
         SslContext& ssl_context = impl->ssl_contexts.emplace_back();
         tsi_result result = tsi_configure_server_ssl_context(
-            options, {}, impl, ssl_context);
+            options, /*pem_key_cert_pairs=*/{}, impl, ssl_context);
         if (result != TSI_OK) {
           return result;
         }
