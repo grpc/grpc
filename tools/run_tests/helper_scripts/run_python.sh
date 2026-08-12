@@ -26,6 +26,9 @@ ROOT=$(pwd)
 # Purge legacy broken .pth files in host site-packages if present
 rm -f /usr/local/lib/python3.*/site-packages/*.pth 2>/dev/null || true
 
+# Avoid virtualenv app-data seed race conditions and OverlayFS bugs in CI
+export VIRTUALENV_SEEDER=pip
+
 $PYTHON -m nox --reuse-venv no -s "$2" -f "$ROOT/src/python/grpcio_tests/noxfile.py"
 
 mkdir -p "$ROOT/reports"
