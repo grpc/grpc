@@ -83,6 +83,11 @@ void UnaryRunHandlerHelper(const MethodHandler::HandlerParameter& param,
 template <class RequestType>
 void* UnaryDeserializeHelper(grpc_byte_buffer* req, grpc::Status* status,
                              RequestType* request) {
+  if (req == nullptr) {
+    *status = grpc::Status(grpc::StatusCode::UNIMPLEMENTED,
+                           "No request message received for unary method");
+    return nullptr;
+  }
   grpc::ByteBuffer buf;
   buf.set_buffer(req);
   *status = grpc::Deserialize(&buf, static_cast<RequestType*>(request));
@@ -234,6 +239,11 @@ class ServerStreamingHandler : public grpc::internal::MethodHandler {
 
   void* Deserialize(grpc_call* call, grpc_byte_buffer* req,
                     grpc::Status* status, void** /*handler_data*/) final {
+    if (req == nullptr) {
+      *status = grpc::Status(grpc::StatusCode::UNIMPLEMENTED,
+                             "No request message received for server-streaming method");
+      return nullptr;
+    }
     grpc::ByteBuffer buf;
     buf.set_buffer(req);
     auto* request =

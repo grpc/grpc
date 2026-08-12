@@ -89,6 +89,11 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
 
   void* Deserialize(grpc_call* call, grpc_byte_buffer* req,
                     grpc::Status* status, void** handler_data) final {
+    if (req == nullptr) {
+      *status = grpc::Status(grpc::StatusCode::UNIMPLEMENTED,
+                             "No request message received for unary method");
+      return nullptr;
+    }
     grpc::ByteBuffer buf;
     buf.set_buffer(req);
     RequestType* request = nullptr;
@@ -507,6 +512,11 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
 
   void* Deserialize(grpc_call* call, grpc_byte_buffer* req,
                     grpc::Status* status, void** /*handler_data*/) final {
+    if (req == nullptr) {
+      *status = grpc::Status(grpc::StatusCode::UNIMPLEMENTED,
+                             "No request message received for server-streaming method");
+      return nullptr;
+    }
     grpc::ByteBuffer buf;
     buf.set_buffer(req);
     auto* request =
@@ -980,6 +990,11 @@ class CallbackSessionHandler : public grpc::internal::MethodHandler {
 
   void* Deserialize(grpc_call* call, grpc_byte_buffer* req,
                     grpc::Status* status, void** handler_data) final {
+    if (req == nullptr) {
+      *status = grpc::Status(grpc::StatusCode::UNIMPLEMENTED,
+                             "No request message received for method");
+      return nullptr;
+    }
     grpc::ByteBuffer buf;
     buf.set_buffer(req);
     RequestType* request = nullptr;
