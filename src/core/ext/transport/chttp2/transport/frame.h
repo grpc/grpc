@@ -398,6 +398,8 @@ inline constexpr absl::string_view kSettingsTimeout =
     "timeout. Connection will be closed";
 inline constexpr absl::string_view kLastStreamClosed =
     "Closing last stream and cannot create any more streams.";
+inline constexpr absl::string_view kReceivedStreamAfterGoaway =
+    "Received new stream after GOAWAY was received.";
 inline constexpr absl::string_view kFirstSettingsFrameClient =
     "RFC9113: The server connection preface consists of a potentially empty "
     "SETTINGS frame that MUST be the first frame the server sends in the "

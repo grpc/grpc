@@ -246,6 +246,7 @@ libs:
   - src/core/client_channel/retry_throttle.h
   - src/core/client_channel/subchannel.h
   - src/core/client_channel/subchannel_interface_internal.h
+  - src/core/client_channel/subchannel_metrics.h
   - src/core/client_channel/subchannel_pool_interface.h
   - src/core/client_channel/subchannel_stream_client.h
   - src/core/client_channel/subchannel_stream_limiter.h
@@ -1228,6 +1229,7 @@ libs:
   - src/core/server/server_config_selector_filter.h
   - src/core/server/server_interface.h
   - src/core/server/xds_channel_stack_modifier.h
+  - src/core/server/xds_server_config_fetcher.h
   - src/core/service_config/service_config.h
   - src/core/service_config/service_config_call_data.h
   - src/core/service_config/service_config_channel_arg_filter.h
@@ -1281,6 +1283,7 @@ libs:
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_grpc.h
   - src/core/tsi/transport_security_interface.h
+  - src/core/util/address_sorting_init.h
   - src/core/util/atomic_utils.h
   - src/core/util/avl.h
   - src/core/util/backoff.h
@@ -1446,6 +1449,7 @@ libs:
   - src/core/client_channel/retry_service_config.cc
   - src/core/client_channel/retry_throttle.cc
   - src/core/client_channel/subchannel.cc
+  - src/core/client_channel/subchannel_metrics.cc
   - src/core/client_channel/subchannel_pool_interface.cc
   - src/core/client_channel/subchannel_stream_client.cc
   - src/core/client_channel/subchannel_stream_limiter.cc
@@ -2241,6 +2245,7 @@ libs:
   - src/core/tsi/tls_telemetry.cc
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
+  - src/core/util/address_sorting_init.cc
   - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/event_log.cc
@@ -2550,6 +2555,7 @@ libs:
   - src/core/client_channel/retry_throttle.h
   - src/core/client_channel/subchannel.h
   - src/core/client_channel/subchannel_interface_internal.h
+  - src/core/client_channel/subchannel_metrics.h
   - src/core/client_channel/subchannel_pool_interface.h
   - src/core/client_channel/subchannel_stream_client.h
   - src/core/client_channel/subchannel_stream_limiter.h
@@ -3020,6 +3026,7 @@ libs:
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_grpc.h
   - src/core/tsi/transport_security_interface.h
+  - src/core/util/address_sorting_init.h
   - src/core/util/atomic_utils.h
   - src/core/util/avl.h
   - src/core/util/backoff.h
@@ -3122,6 +3129,7 @@ libs:
   - src/core/client_channel/retry_service_config.cc
   - src/core/client_channel/retry_throttle.cc
   - src/core/client_channel/subchannel.cc
+  - src/core/client_channel/subchannel_metrics.cc
   - src/core/client_channel/subchannel_pool_interface.cc
   - src/core/client_channel/subchannel_stream_client.cc
   - src/core/client_channel/subchannel_stream_limiter.cc
@@ -3505,6 +3513,7 @@ libs:
   - src/core/tsi/local_transport_security.cc
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
+  - src/core/util/address_sorting_init.cc
   - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/event_log.cc
@@ -5105,6 +5114,7 @@ libs:
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_grpc.h
   - src/core/tsi/transport_security_interface.h
+  - src/core/util/address_sorting_init.h
   - src/core/util/atomic_utils.h
   - src/core/util/avl.h
   - src/core/util/backoff.h
@@ -5435,6 +5445,7 @@ libs:
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
+  - src/core/util/address_sorting_init.cc
   - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/event_log.cc
@@ -7755,6 +7766,7 @@ targets:
   - src/core/transport/auth_context_comparator_registry.h
   - src/core/transport/endpoint_transport.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
+  - src/core/util/address_sorting_init.h
   - src/core/util/atomic_utils.h
   - src/core/util/avl.h
   - src/core/util/backoff.h
@@ -8051,6 +8063,7 @@ targets:
   - src/core/telemetry/stats_data.cc
   - src/core/telemetry/tcp_tracer.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  - src/core/util/address_sorting_init.cc
   - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/event_log.cc
@@ -9416,13 +9429,13 @@ targets:
   headers:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
-  - test/core/filters/filter_test.h
+  - test/core/filters/filter_test_v2.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/filters/client_auth_filter_test.cc
-  - test/core/filters/filter_test.cc
+  - test/core/filters/filter_test_v2.cc
   deps:
   - gtest
   - protobuf
@@ -9434,13 +9447,13 @@ targets:
   headers:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
-  - test/core/filters/filter_test.h
+  - test/core/filters/filter_test_v2.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/filters/client_authority_filter_test.cc
-  - test/core/filters/filter_test.cc
+  - test/core/filters/filter_test_v2.cc
   deps:
   - gtest
   - protobuf
@@ -9553,6 +9566,7 @@ targets:
   headers:
   - src/core/util/json/json_util.h
   - src/cpp/server/orca/orca_service.h
+  - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_lb_policies.h
@@ -9576,6 +9590,7 @@ targets:
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - src/core/util/json/json_util.cc
   - src/cpp/server/orca/orca_service.cc
+  - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/test_lb_policies.cc
   - test/cpp/end2end/client_lb_end2end_test.cc
   - test/cpp/end2end/connection_attempt_injector.cc
@@ -13776,6 +13791,7 @@ targets:
   - src/core/transport/auth_context_comparator_registry.h
   - src/core/transport/endpoint_transport.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
+  - src/core/util/address_sorting_init.h
   - src/core/util/atomic_utils.h
   - src/core/util/avl.h
   - src/core/util/backoff.h
@@ -14072,6 +14088,7 @@ targets:
   - src/core/telemetry/stats_data.cc
   - src/core/telemetry/tcp_tracer.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  - src/core/util/address_sorting_init.cc
   - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/event_log.cc
@@ -14118,20 +14135,20 @@ targets:
   - cares
   - gpr
   - address_sorting
-- name: filter_test_test
+- name: filter_test_v2_test
   gtest: true
   build: test
   language: c++
   headers:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
-  - test/core/filters/filter_test.h
+  - test/core/filters/filter_test_v2.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  - test/core/filters/filter_test.cc
-  - test/core/filters/filter_test_test.cc
+  - test/core/filters/filter_test_v2.cc
+  - test/core/filters/filter_test_v2_test.cc
   deps:
   - gtest
   - grpc_unsecure
@@ -15173,12 +15190,12 @@ targets:
   headers:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
-  - test/core/filters/filter_test.h
+  - test/core/filters/filter_test_v2.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  - test/core/filters/filter_test.cc
+  - test/core/filters/filter_test_v2.cc
   - test/core/filters/gcp_authentication_filter_test.cc
   deps:
   - gtest
@@ -16668,6 +16685,7 @@ targets:
   - src/core/transport/auth_context_comparator_registry.h
   - src/core/transport/endpoint_transport.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
+  - src/core/util/address_sorting_init.h
   - src/core/util/atomic_utils.h
   - src/core/util/avl.h
   - src/core/util/backoff.h
@@ -16967,6 +16985,7 @@ targets:
   - src/core/telemetry/stats_data.cc
   - src/core/telemetry/tcp_tracer.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  - src/core/util/address_sorting_init.cc
   - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/event_log.cc
@@ -24776,6 +24795,16 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: subchannel_metrics_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/subchannel_metrics_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: subchannel_stream_limiter_test
   gtest: true
   build: test
@@ -26386,6 +26415,7 @@ targets:
   - src/core/transport/auth_context_comparator_registry.h
   - src/core/transport/endpoint_transport.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
+  - src/core/util/address_sorting_init.h
   - src/core/util/atomic_utils.h
   - src/core/util/avl.h
   - src/core/util/backoff.h
@@ -26684,6 +26714,7 @@ targets:
   - src/core/telemetry/stats_data.cc
   - src/core/telemetry/tcp_tracer.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  - src/core/util/address_sorting_init.cc
   - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/event_log.cc
@@ -27771,6 +27802,7 @@ targets:
   - src/core/transport/auth_context_comparator_registry.h
   - src/core/transport/endpoint_transport.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
+  - src/core/util/address_sorting_init.h
   - src/core/util/atomic_utils.h
   - src/core/util/avl.h
   - src/core/util/backoff.h
@@ -28068,6 +28100,7 @@ targets:
   - src/core/telemetry/stats_data.cc
   - src/core/telemetry/tcp_tracer.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  - src/core/util/address_sorting_init.cc
   - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/event_log.cc
