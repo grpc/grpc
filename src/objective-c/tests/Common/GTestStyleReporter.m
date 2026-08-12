@@ -29,8 +29,7 @@
 + (void)load {
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
-    [[XCTestObservationCenter sharedTestObservationCenter]
-        addTestObserver:[[self alloc] init]];
+    [[XCTestObservationCenter sharedTestObservationCenter] addTestObserver:[[self alloc] init]];
   });
 }
 
@@ -57,9 +56,7 @@
 - (void)testCase:(XCTestCase *)testCase didRecordIssue:(XCTIssue *)issue {
   NSString *filePath = issue.sourceCodeContext.location.fileURL.path ?: @"unknown";
   NSUInteger lineNumber = issue.sourceCodeContext.location.lineNumber;
-  printf("%s:%lu: Failure\n%s\n",
-         filePath.UTF8String,
-         (unsigned long)lineNumber,
+  printf("%s:%lu: Failure\n%s\n", filePath.UTF8String, (unsigned long)lineNumber,
          issue.compactDescription.UTF8String);
   fflush(stdout);
 }
@@ -69,10 +66,8 @@
     didFailWithDescription:(NSString *)description
                     inFile:(nullable NSString *)filePath
                     atLine:(NSUInteger)lineNumber {
-  printf("%s:%lu: Failure\n%s\n",
-         filePath ? filePath.UTF8String : "unknown",
-         (unsigned long)lineNumber,
-         description.UTF8String);
+  printf("%s:%lu: Failure\n%s\n", filePath ? filePath.UTF8String : "unknown",
+         (unsigned long)lineNumber, description.UTF8String);
   fflush(stdout);
 }
 
@@ -93,18 +88,17 @@
   NSUInteger failedCount = _failedTestNames.count;
   NSUInteger passedCount = _totalTests >= failedCount ? (_totalTests - failedCount) : 0;
 
-  printf("[==========] %lu tests ran. (%.0f ms total)\n",
-         (unsigned long)_totalTests, totalDurationMs);
+  printf("[==========] %lu tests ran. (%.0f ms total)\n", (unsigned long)_totalTests,
+         totalDurationMs);
   printf("[  PASSED  ] %lu tests.\n", (unsigned long)passedCount);
 
   if (failedCount > 0) {
-    printf("[  FAILED  ] %lu test%s, listed below:\n",
-           (unsigned long)failedCount, failedCount == 1 ? "" : "s");
+    printf("[  FAILED  ] %lu test%s, listed below:\n", (unsigned long)failedCount,
+           failedCount == 1 ? "" : "s");
     for (NSString *failedTest in _failedTestNames) {
       printf("[  FAILED  ] %s\n", failedTest.UTF8String);
     }
-    printf("\n %lu FAILED TEST%s\n",
-           (unsigned long)failedCount, failedCount == 1 ? "" : "S");
+    printf("\n %lu FAILED TEST%s\n", (unsigned long)failedCount, failedCount == 1 ? "" : "S");
   }
   fflush(stdout);
 }
