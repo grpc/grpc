@@ -19,6 +19,16 @@ accessible to bazel builds.
 """
 
 DOCKERIMAGE_CURRENT_VERSIONS = {
+    "third_party/rake-compiler-dock/base-images/rake_aarch64-linux-gnu.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_aarch64-linux-gnu:50645a43607820e7bf14d3aa013740313db6ac6d",
+    "third_party/rake-compiler-dock/base-images/rake_aarch64-linux-musl.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_aarch64-linux-musl:1c81550fcc29b0e940eb656901c6e16863d9e2d9",
+    "third_party/rake-compiler-dock/base-images/rake_arm64-darwin.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_arm64-darwin:81b58604d6272e0d378e2c89121803d93d349b80",
+    "third_party/rake-compiler-dock/base-images/rake_x64-mingw-ucrt.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_x64-mingw-ucrt:89020101890eb4000f96d4001de01dca18a28ce7",
+    "third_party/rake-compiler-dock/base-images/rake_x86-linux-gnu.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_x86-linux-gnu:2810c21e08c7a9cf1df5b2d83bbe65dfc201f56c",
+    "third_party/rake-compiler-dock/base-images/rake_x86-linux-musl.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_x86-linux-musl:e4d9b76d8d348ad6f2986f494911d08b8e20ef3c",
+    "third_party/rake-compiler-dock/base-images/rake_x86-mingw32.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_x86-mingw32:8bdaa700cd4d5f576ed18a84802359d0e69ea7a9",
+    "third_party/rake-compiler-dock/base-images/rake_x86_64-darwin.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_x86_64-darwin:48a25bfae6dd2de6967fc0ab3fed47c94c27ab59",
+    "third_party/rake-compiler-dock/base-images/rake_x86_64-linux-gnu.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_x86_64-linux-gnu:41e86e72447b4c4dec07c6c547c160e4be7bb83a",
+    "third_party/rake-compiler-dock/base-images/rake_x86_64-linux-musl.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_x86_64-linux-musl:ab25a4ab7d5e75888bc29c6b564960d4135da0f3",
     "third_party/rake-compiler-dock/rake_aarch64-linux-gnu.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_aarch64-linux-gnu@sha256:e5cc04633d47df82ddef269753b4023058ee7dbb59b7f780060ec8779b19af77",
     "third_party/rake-compiler-dock/rake_aarch64-linux-musl.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_aarch64-linux-musl@sha256:75fc70cf5662d49636f46807e33a779db1812a1ad39ca0c147507554cba91fc4",
     "third_party/rake-compiler-dock/rake_arm64-darwin.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_arm64-darwin@sha256:57b04cda5a10f4ae09c0824a1b02f59cb4abdea393fdd20782208dc2e57ca750",
