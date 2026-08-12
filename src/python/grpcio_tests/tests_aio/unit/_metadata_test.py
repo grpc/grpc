@@ -195,29 +195,33 @@ class TestTypeMetadata(unittest.TestCase):
         with self.assertRaises(KeyError):
             del metadata["other key"]
 
-    def test_delitem_removes_key_when_last_value_deleted(self):
-        # Deleting the last value for a key must remove it entirely so that
-        # __contains__ and __getitem__ stay consistent (Python container protocol).
-        metadata = Metadata(("foo", "bar"))
-        del metadata["foo"]
-        self.assertNotIn("foo", metadata)
-        self.assertIsNone(metadata.get("foo"))
+    def test_delitem_key_cleanup(self):
+        # Deleting a key's last remaining value must remove it entirely so
+        # that __contains__ and __getitem__ stay consistent (Python
+        # container protocol).
+        metadata = Metadata(*self._MULTI_ENTRY_DATA)
+
+        # key2 has a single value: one delete removes it outright.
+        del metadata["key2"]
+        self.assertNotIn("key2", metadata)
+        self.assertIsNone(metadata.get("key2"))
+
+        # key1 has two values: first delete leaves it present with the
+        # remaining value, second delete removes it.
+        del metadata["key1"]
+        self.assertIn("key1", metadata)
+        self.assertEqual(metadata["key1"], "other value 1")
+        del metadata["key1"]
+        self.assertNotIn("key1", metadata)
+
         self.assertEqual(list(metadata), [])
 
-        # Multi-value: intermediate deletes keep the key; final delete removes it.
-        metadata = Metadata(("foo", "bar"), ("foo", "baz"))
-        del metadata["foo"]
-        self.assertIn("foo", metadata)
-        self.assertEqual(metadata["foo"], "baz")
-        del metadata["foo"]
-        self.assertNotIn("foo", metadata)
-
         # del and delete_all must leave __contains__ in the same state.
-        md1 = Metadata(("foo", "bar"))
-        del md1["foo"]
-        md2 = Metadata(("foo", "bar"))
-        md2.delete_all("foo")
-        self.assertEqual("foo" in md1, "foo" in md2)
+        md1 = Metadata(*self._DEFAULT_DATA)
+        del md1["key1"]
+        md2 = Metadata(*self._DEFAULT_DATA)
+        md2.delete_all("key1")
+        self.assertEqual("key1" in md1, "key1" in md2)
 
     def test_metadata_from_tuple(self):
         scenarios = (
