@@ -206,6 +206,72 @@ grpc_objc_ios_unit_test(
 )
 
 macos_unit_test(
+    name = "APIv2Tests",
+    minimum_os_version = "11.0",
+    deps = [":APIv2Tests-lib"],
+)
+
+macos_unit_test(
+    name = "ChannelPoolTest",
+    minimum_os_version = "11.0",
+    deps = [":ChannelPoolTest-lib"],
+)
+
+macos_unit_test(
+    name = "ChannelTests",
+    minimum_os_version = "11.0",
+    deps = [":ChannelTests-lib"],
+)
+
+macos_unit_test(
+    name = "GRPCBasicUnitTests",
+    minimum_os_version = "11.0",
+    deps = [":GRPCBasicUnitTests-lib"],
+)
+
+macos_unit_test(
+    name = "GRPCClientTests",
+    minimum_os_version = "11.0",
+    deps = [":GRPCClientTests-lib"],
+)
+
+macos_unit_test(
+    name = "NSErrorUnitTests",
+    minimum_os_version = "11.0",
+    deps = [":NSErrorUnitTests-lib"],
+)
+
+macos_unit_test(
+    name = "RxLibraryUnitTests",
+    minimum_os_version = "11.0",
+    deps = [":RxLibraryUnitTests-lib"],
+)
+
+macos_unit_test(
+    name = "MacStressTests",
+    minimum_os_version = "11.0",
+    deps = [":MacStressTests-lib"],
+)
+
+macos_unit_test(
+    name = "MacInteropTestsLocalCleartext",
+    minimum_os_version = "11.0",
+    deps = [":InteropTestsLocalCleartext-lib"],
+)
+
+macos_unit_test(
+    name = "MacInteropTestsLocalSSL",
+    minimum_os_version = "11.0",
+    deps = [":InteropTestsLocalSSL-lib"],
+)
+
+macos_unit_test(
+    name = "MacInteropTestsRemote",
+    minimum_os_version = "11.0",
+    deps = [":InteropTestsRemote-lib"],
+)
+
+macos_unit_test(
     name = "MacTests",
     minimum_os_version = "11.0",
     deps = [
