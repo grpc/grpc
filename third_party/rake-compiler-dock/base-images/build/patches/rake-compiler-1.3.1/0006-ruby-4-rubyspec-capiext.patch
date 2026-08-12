@@ -1,0 +1,16 @@
+diff --git a/tasks/bin/cross-ruby.rake b/tasks/bin/cross-ruby.rake
+index 3d23eed6..904c12e0 100644
+--- a/tasks/bin/cross-ruby.rake
++++ b/tasks/bin/cross-ruby.rake
+@@ -150,6 +150,11 @@
+ 
+     # make
+     file "#{build_dir}/ruby.exe" => ["#{build_dir}/Makefile"] do |t|
++      if ruby_cc_version.start_with?("ruby-4.0")
++        # https://bugs.ruby-lang.org/issues/21792 - hopefully will be fixed by 4.0.0 final
++        FileUtils.rm_f("#{USER_HOME}/sources/#{ruby_cc_version}/spec/ruby/optional/capi/ext/digest_spec.c")
++      end
++
+       if ruby_cc_version.start_with?("ruby-3.1") && mingw_target =~ /darwin/
+         # for later 3.1.x releases, we need to explicitly build miniruby
+         # see https://bugs.ruby-lang.org/issues/19239
