@@ -1,38 +1,42 @@
-# Building gRPC's own rake compiler docker images
+# Building gRPC's Custom Rake Compiler Docker Images
 
-** INTERNAL ONLY **
+**INTERNAL ONLY**
 
-This doc explains how to build rake compiler docker images based on https://github.com/rake-compiler/rake-compiler-dock.
+This document describes how to build custom `rake-compiler-dock` Docker images for gRPC, based on the upstream [rake-compiler-dock repository](https://github.com/rake-compiler/rake-compiler-dock).
 
-1. Setup environment variables
+## Prerequisites
 
-```
-$ export GEM_ROOT=<path to clone rake-compiler-dock repo>
-$ export GRPC_ROOT=<path to your grpc git repo>
-```
+Set up the required environment variables:
 
-1. Generate docker files for base images.
-
-```
-$ third_party/rake-compiler-dock/base-images/helpers.sh install_docker_files
+```bash
+export GEM_ROOT=<path_to_clone_rake_compiler_dock_repo>
+export GRPC_ROOT=<path_to_your_grpc_git_repo>
 ```
 
-1. Build base images
+## Step-by-Step Instructions
 
-```
-$ tools/dockerfile/push_testing_images.sh
-```
+1. **Generate Dockerfiles for the base images:**
 
-This rewrites the `.current_version` files under `third_party/rake-compiler-dock/base-images/`
+   ```bash
+   "${GRPC_ROOT}/third_party/rake-compiler-dock/base-images/helpers.sh" install_docker_files
+   ```
 
-1. Rewrite references to base images in grpc's docker overlays.
+2. **Build and publish the base images:**
 
-```
-$ third_party/rake-compiler-dock/base-images/helpers.sh rewrite_base_images_references
-```
+   ```bash
+   "${GRPC_ROOT}/tools/dockerfile/push_testing_images.sh"
+   ```
 
-1. Build the gRPC CI images again
+   *Note: This process automatically rewrites the `.current_version` files located under `third_party/rake-compiler-dock/base-images/`.*
 
-```
-$ tools/dockerfile/push_testing_images.sh
-```
+3. **Rewrite base image references in gRPC's Docker overlays:**
+
+   ```bash
+   "${GRPC_ROOT}/third_party/rake-compiler-dock/base-images/helpers.sh" rewrite_base_images_references
+   ```
+
+4. **Rebuild the gRPC CI images:**
+
+   ```bash
+   "${GRPC_ROOT}/tools/dockerfile/push_testing_images.sh"
+   ```
