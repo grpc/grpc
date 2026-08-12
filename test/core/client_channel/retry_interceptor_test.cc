@@ -82,9 +82,9 @@ FILTER_TEST(RetryInterceptorTest, RetriesOnRetryableStatus) {
     "backoffMultiplier": 1,
     "retryableStatusCodes": ["UNAVAILABLE"]
   })");
-  StartCall(NewClientMetadata());
-  PushClientMessage(NewMessage("hello"));
-  PushClientHalfClose();
+  CallInitiator initiator = StartCall(NewClientMetadata());
+  PushClientMessage(initiator, NewMessage("hello"));
+  PushClientHalfClose(initiator);
 
   // First attempt: fails with a retryable status. The interceptor buffers the
   // client message and replays it onto each attempt.
@@ -108,7 +108,7 @@ FILTER_TEST(RetryInterceptorTest, RetriesOnRetryableStatus) {
   PushServerTrailingMetadata(*second_attempt,
                              ServerMetadataFromStatus(GRPC_STATUS_OK));
 
-  EXPECT_TRUE(PullServerTrailingStatus().ok());
+  EXPECT_TRUE(PullServerTrailingStatus(initiator).ok());
 
   // One retry, so the interceptor made exactly two child calls.
   EXPECT_EQ(GetNextHandler(), std::nullopt);
@@ -127,9 +127,9 @@ FILTER_TEST(RetryInterceptorTest, GivesUpAfterMaxAttempts) {
     "backoffMultiplier": 1,
     "retryableStatusCodes": ["UNAVAILABLE"]
   })");
-  StartCall(NewClientMetadata());
-  PushClientMessage(NewMessage("hello"));
-  PushClientHalfClose();
+  CallInitiator initiator = StartCall(NewClientMetadata());
+  PushClientMessage(initiator, NewMessage("hello"));
+  PushClientHalfClose(initiator);
 
   // Fail each attempt in turn, releasing its handler as a transport would once
   // the call has failed.
@@ -145,7 +145,8 @@ FILTER_TEST(RetryInterceptorTest, GivesUpAfterMaxAttempts) {
         ServerMetadataFromStatus(GRPC_STATUS_UNAVAILABLE, "try again"));
   }
 
-  EXPECT_EQ(PullServerTrailingStatus(), absl::UnavailableError("try again"));
+  EXPECT_EQ(PullServerTrailingStatus(initiator),
+            absl::UnavailableError("try again"));
 
   // maxAttempts is 2, so the interceptor stopped after two child calls.
   EXPECT_EQ(GetNextHandler(), std::nullopt);

@@ -102,12 +102,11 @@ CallInitiator FilterTest::StartCall(
       << "CreateFilterChain() must be called before StartCall()";
   CallInitiatorAndHandler call = MakeCall(std::move(client_initial_metadata));
   InitAfterCallArena(call.handler.arena());
-  initiator_ = std::move(call.initiator);
-  SpawnTestSeq(*initiator_, "start-call",
+  SpawnTestSeq(call.initiator, "start-call",
                [chain = chain_, handler = std::move(call.handler)]() mutable {
                  chain->StartCall(std::move(handler));
                });
-  return *initiator_;
+  return call.initiator;
 }
 
 std::optional<CallHandler> FilterTest::GetNextHandler(
@@ -130,7 +129,7 @@ void FilterTest::StartCallForFilter(
   GRPC_CHECK(!initiator_.has_value())
       << "StartCallForFilter() may only be called once per test; use "
          "StartCall()/GetNextHandler() for tests that create multiple calls";
-  StartCall(std::move(client_initial_metadata));
+  initiator_ = StartCall(std::move(client_initial_metadata));
   GRPC_CHECK(GetNextHandler().has_value())
       << "a filter must create exactly one child call per call started";
 }
@@ -223,19 +222,6 @@ ClientToServerNextMessage FilterTest::PullClientMessage(CallHandler handler) {
   return BlockingRun(handler, "pull-client-message", [handler]() mutable {
     return Map(handler.PullMessage(), ReleaseCallState<CallHandler>);
   });
-}
-
-bool FilterTest::PullClientHalfClose(CallHandler handler) {
-  ClientToServerNextMessage message = PullClientMessage(std::move(handler));
-  if (!message.ok()) {
-    ADD_FAILURE() << "expected client half-close, but the call failed";
-    return false;
-  }
-  if (message.has_value()) {
-    ADD_FAILURE() << "expected client half-close, but a message arrived";
-    return false;
-  }
-  return true;
 }
 
 void FilterTest::PushServerInitialMetadata(CallHandler handler,

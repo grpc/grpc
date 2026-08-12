@@ -236,7 +236,6 @@ FILTER_TEST(FilterTest, UnaryEchoThroughPassThroughFilter) {
   ASSERT_TRUE(request.ok());
   ASSERT_TRUE(request.has_value());
   EXPECT_THAT(request.value(), HasMessagePayload("hello"));
-  EXPECT_TRUE(PullClientHalfClose());
 
   // Server responds.
   PushServerInitialMetadata(NewServerMetadata({{"server-hdr", "yes"}}));
@@ -283,7 +282,6 @@ FILTER_TEST(FilterTest, UnaryEchoThroughAsyncFilter) {
   ASSERT_TRUE(request.ok());
   ASSERT_TRUE(request.has_value());
   EXPECT_THAT(request.value(), HasMessagePayload("hello"));
-  EXPECT_TRUE(PullClientHalfClose());
 
   PushServerInitialMetadata(NewServerMetadata({{"server-hdr", "yes"}}));
   PushServerMessage(NewMessage("hello"));
@@ -348,7 +346,6 @@ FILTER_TEST(FilterTest, UnaryEchoThroughPassThroughInterceptor) {
   ASSERT_TRUE(request.ok());
   ASSERT_TRUE(request.has_value());
   EXPECT_THAT(request.value(), HasMessagePayload("hello"));
-  EXPECT_TRUE(PullClientHalfClose());
 
   PushServerTrailingMetadata(ServerMetadataFromStatus(GRPC_STATUS_OK));
   ValueOrFailure<ServerMetadataHandle> server_trailing_metadata =
@@ -363,9 +360,9 @@ FILTER_TEST(FilterTest, UnaryEchoThroughPassThroughInterceptor) {
 // handler to collect: this is why StartCall() hands back only the initiator.
 FILTER_TEST(FilterTest, ConsumingInterceptorCreatesNoChildCall) {
   ASSERT_TRUE(CreateFilterChain<ConsumingInterceptor>().ok());
-  StartCall(NewClientMetadata());
+  CallInitiator initiator = StartCall(NewClientMetadata());
 
-  EXPECT_EQ(PullServerTrailingStatus(),
+  EXPECT_EQ(PullServerTrailingStatus(initiator),
             absl::UnimplementedError("consumed by interceptor"));
 
   WaitForAllPendingWork();

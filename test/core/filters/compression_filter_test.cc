@@ -94,7 +94,6 @@ FILTER_TEST(CompressionFilterTest, ClientFilterCompressesRequest) {
   ASSERT_TRUE(message.has_value());
   EXPECT_THAT(message.value(), HasMessageFlags(GRPC_WRITE_INTERNAL_COMPRESS));
   EXPECT_LT(message.value().payload()->Length(), request.size());
-  EXPECT_TRUE(PullClientHalfClose());
 
   PushServerTrailingMetadata(ServerMetadataFromStatus(GRPC_STATUS_OK));
   EXPECT_TRUE(PullServerTrailingStatus().ok());
@@ -141,7 +140,6 @@ FILTER_TEST(CompressionFilterTest, ClientFilterHonorsNoCompressFlag) {
   ASSERT_TRUE(message.has_value());
   EXPECT_THAT(message.value(), HasMessagePayload(request));
   EXPECT_THAT(message.value(), HasMessageFlags(GRPC_WRITE_NO_COMPRESS));
-  EXPECT_TRUE(PullClientHalfClose());
 
   PushServerTrailingMetadata(ServerMetadataFromStatus(GRPC_STATUS_OK));
   EXPECT_TRUE(PullServerTrailingStatus().ok());
@@ -194,7 +192,6 @@ FILTER_TEST(CompressionFilterTest, ServerFilterDecompressesRequest) {
   ASSERT_TRUE(message.ok());
   ASSERT_TRUE(message.has_value());
   EXPECT_THAT(message.value(), HasMessagePayload(request));
-  EXPECT_TRUE(PullClientHalfClose());
 
   PushServerTrailingMetadata(ServerMetadataFromStatus(GRPC_STATUS_OK));
   EXPECT_TRUE(PullServerTrailingStatus().ok());

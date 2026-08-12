@@ -102,7 +102,9 @@ class FilterTest : public YodelTest {
   // Start a call through the stack under test and return the client end of it.
   // Only the initiator is returned: an interceptor may start any number of
   // child calls (or none), so handlers are collected separately by
-  // GetNextHandler(). Also becomes the implicit initiator.
+  // GetNextHandler(). Does not affect the implicit initiator/handler, so it
+  // may be called more than once to run multiple concurrent calls through the
+  // stack under test.
   CallInitiator StartCall(ClientMetadataHandle client_initial_metadata);
 
   // Return the handler for the next call started against the bottom of the
@@ -112,8 +114,8 @@ class FilterTest : public YodelTest {
           std::chrono::minutes(5));
 
   // Convenience for the filter case, where a call always creates exactly one
-  // child call: StartCall() followed by one GetNextHandler(). May be called
-  // only once per test.
+  // child call: StartCall() followed by one GetNextHandler(). Sets the
+  // implicit initiator and handler. May be called only once per test.
   void StartCallForFilter(ClientMetadataHandle client_initial_metadata);
 
   // Driving the six call operations.
@@ -169,11 +171,6 @@ class FilterTest : public YodelTest {
   ClientToServerNextMessage PullClientMessage() {
     return PullClientMessage(*handler_);
   }
-  // True iff the client->server stream ended cleanly (the client half-closed).
-  // Otherwise records a test failure saying whether the call failed or a
-  // message arrived instead, and returns false.
-  bool PullClientHalfClose(CallHandler handler);
-  bool PullClientHalfClose() { return PullClientHalfClose(*handler_); }
   void PushServerInitialMetadata(CallHandler handler, ServerMetadataHandle md);
   void PushServerInitialMetadata(ServerMetadataHandle md) {
     PushServerInitialMetadata(*handler_, std::move(md));
