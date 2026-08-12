@@ -31,7 +31,7 @@ class CommandError(Exception):
     """Simple exception class for GRPC custom commands."""
 
 
-@nox.session
+@nox.session(venv_params=["--system-site-packages"])
 def doc(session: nox.Session):
     """Session to generate documentation via sphinx."""
 
@@ -81,7 +81,7 @@ def clean(session: nox.Session):
 
 
 @nox.session
-def build_project_metadata(session: nox.Session):
+def _build_project_metadata(session: nox.Session):
     """Session to generate project metadata in a module."""
 
     session.log("Running build_project_metadata for grpcio")
@@ -132,6 +132,12 @@ def build_project_metadata(session: nox.Session):
         module_file.write(f'__version__ = """{version}"""\n')
 
 
+@nox.session
+def build_project_metadata(session: nox.Session):
+    """Session to generate project metadata in a module."""
+    _build_project_metadata(session)
+
+
 @nox.session(venv_params=["--system-site-packages"])
 def build_py(session: nox.Session):
     """Session for custom project build command"""
@@ -160,7 +166,7 @@ def build_py(session: nox.Session):
     session.log(f"Successfully copied pure Python packages to {build_dir}")
 
 
-@nox.session
+@nox.session(venv_params=["--system-site-packages"])
 def build_ext(session: nox.Session):
     """Session to custom build_ext command to enable compiler-specific flags."""
 

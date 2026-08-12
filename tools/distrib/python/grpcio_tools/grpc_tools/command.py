@@ -43,9 +43,7 @@ def _get_resource_file_name(
 
 def build_package_protos(package_root, strict_mode=False):
     proto_files = []
-    inclusion_root = os.path.abspath(package_root)
-    project_root = os.path.abspath(os.path.join("../../.."))
-    relative_path = os.path.relpath(inclusion_root, start=project_root)
+    relative_path = os.path.relpath(package_root)
 
     for root, _, files in os.walk(relative_path):
         for filename in files:
