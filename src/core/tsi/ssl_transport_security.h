@@ -31,8 +31,6 @@
 #include <variant>
 #include <vector>
 
-#include "absl/strings/string_view.h"
-
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_selector.h"
 #include "src/core/credentials/transport/tls/spiffe_utils.h"
 #include "src/core/telemetry/metrics.h"
@@ -40,6 +38,7 @@
 #include "src/core/tsi/ssl_transport_security_utils.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/strings/string_view.h"
 
 // Value for the TSI_CERTIFICATE_TYPE_PEER_PROPERTY property for X509 certs.
 #define TSI_X509_CERTIFICATE_TYPE "X509"
@@ -313,7 +312,6 @@ void tsi_ssl_client_handshaker_factory_unref(
 
 typedef struct tsi_ssl_server_handshaker_factory
     tsi_ssl_server_handshaker_factory;
-
 
 // TO BE DEPRECATED.
 // Creates a server handshaker factory.

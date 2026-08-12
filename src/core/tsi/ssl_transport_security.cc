@@ -1297,9 +1297,9 @@ static tsi_result ssl_ctx_add_boringssl_credential(
   }
   GRPC_CHECK_LE(key_cert_pair->cert_chain().size(),
                 static_cast<size_t>(INT_MAX));
-  bssl::UniquePtr<BIO> pem(BIO_new_mem_buf(
-      key_cert_pair->cert_chain().data(),
-      static_cast<int>(key_cert_pair->cert_chain().size())));
+  bssl::UniquePtr<BIO> pem(
+      BIO_new_mem_buf(key_cert_pair->cert_chain().data(),
+                      static_cast<int>(key_cert_pair->cert_chain().size())));
   if (pem == nullptr) return TSI_OUT_OF_RESOURCES;
   std::vector<bssl::UniquePtr<CRYPTO_BUFFER>> raw_cert_chain;
   uint8_t* cert_data = nullptr;
@@ -1464,9 +1464,9 @@ static tsi_result ssl_ctx_add_openssl_key_cert_pair(
   }
   GRPC_CHECK_LE(key_cert_pair->cert_chain().size(),
                 static_cast<size_t>(INT_MAX));
-  BIO* pem = BIO_new_mem_buf(
-      key_cert_pair->cert_chain().data(),
-      static_cast<int>(key_cert_pair->cert_chain().size()));
+  BIO* pem =
+      BIO_new_mem_buf(key_cert_pair->cert_chain().data(),
+                      static_cast<int>(key_cert_pair->cert_chain().size()));
   if (pem == nullptr) return TSI_OUT_OF_RESOURCES;
 
   X509* certificate =
@@ -3262,7 +3262,7 @@ static int does_entry_match_name(absl::string_view entry,
 }
 
 static bool ssl_context_matches_servername(const SslContext& ssl_context,
-                                          absl::string_view servername) {
+                                           absl::string_view servername) {
   int like_ip = looks_like_ip_address(servername);
   for (const auto& name : ssl_context.subject_names) {
     if (!like_ip && does_entry_match_name(name, servername)) {
@@ -3447,14 +3447,14 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
 
   do {
     if (options->pem_key_cert_pairs.empty()) {
-      result = populate_ssl_context(ssl_context, nullptr,
-                                    options->cipher_suites,
-                                    options->key_exchange_groups);
+      result =
+          populate_ssl_context(ssl_context, nullptr, options->cipher_suites,
+                               options->key_exchange_groups);
     } else {
       for (const auto& pair : options->pem_key_cert_pairs) {
-        result = populate_ssl_context(ssl_context, &pair,
-                                      options->cipher_suites,
-                                      options->key_exchange_groups);
+        result =
+            populate_ssl_context(ssl_context, &pair, options->cipher_suites,
+                                 options->key_exchange_groups);
         if (result != TSI_OK) break;
 #if defined(OPENSSL_IS_BORINGSSL)
         grpc_core::Match(
@@ -3622,8 +3622,8 @@ static std::vector<std::string> extract_subject_alt_names_or_cn(
         0) {
       names.push_back(normalize_subject_name(
           absl::string_view(prop->value.data, prop->value.length)));
-    } else if (strcmp(prop->name,
-                      TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY) == 0) {
+    } else if (strcmp(prop->name, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY) ==
+               0) {
       cn_property = prop;
     }
   }
@@ -3659,9 +3659,9 @@ static tsi_result tsi_configure_server_ssl_context(
   if (result != TSI_OK) return result;
 
   for (const auto* pair : pem_key_cert_pairs) {
-    result = populate_ssl_context(ssl_context.ssl_ctx, pair,
-                                  options->cipher_suites,
-                                  options->key_exchange_groups);
+    result =
+        populate_ssl_context(ssl_context.ssl_ctx, pair, options->cipher_suites,
+                             options->key_exchange_groups);
     if (result != TSI_OK) return result;
 #if defined(OPENSSL_IS_BORINGSSL)
     if (pair != nullptr) {

@@ -365,10 +365,9 @@ class SslTransportSecurityTest
       }
       if (ssl_fixture->force_client_auth_) {
         client_options.pem_key_cert_pairs =
-            PemKeyCertPairList{
-                key_cert_lib->use_bad_client_cert
-                    ? key_cert_lib->bad_client_pem_key_cert_pair
-                    : key_cert_lib->client_pem_key_cert_pair};
+            PemKeyCertPairList{key_cert_lib->use_bad_client_cert
+                                   ? key_cert_lib->bad_client_pem_key_cert_pair
+                                   : key_cert_lib->client_pem_key_cert_pair};
       }
       if (alpn_lib->alpn_mode == ALPN_CLIENT_NO_SERVER ||
           alpn_lib->alpn_mode == ALPN_CLIENT_SERVER_OK ||
@@ -1324,8 +1323,7 @@ TEST(SslTransportSecurityTest, TestClientHandshakerFactoryMultipleCerts) {
   tsi_ssl_client_handshaker_factory* client_handshaker_factory;
   tsi_ssl_client_handshaker_options options;
   options.root_cert_info = std::make_shared<tsi::RootCertInfo>(root_cert);
-  options.pem_key_cert_pairs =
-      PemKeyCertPairList{cert_pair_0, cert_pair_1};
+  options.pem_key_cert_pairs = PemKeyCertPairList{cert_pair_0, cert_pair_1};
   ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
                 &options, &client_handshaker_factory),
             TSI_OK);
@@ -1333,7 +1331,8 @@ TEST(SslTransportSecurityTest, TestClientHandshakerFactoryMultipleCerts) {
   tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory);
 }
 
-TEST(SslTransportSecurityTest, TestServerHandshakerFactoryMultipleCertsSameSan) {
+TEST(SslTransportSecurityTest,
+     TestServerHandshakerFactoryMultipleCertsSameSan) {
   std::string root_cert =
       GetFileContents(absl::StrCat(kSslTsiTestCredentialsDir, "ca.pem"));
   PemKeyCertPair cert_pair_rsa(

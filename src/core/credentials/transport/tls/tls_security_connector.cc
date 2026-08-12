@@ -567,7 +567,7 @@ TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
   if (client_handshaker_factory_ != nullptr) {
     tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
   }
-  grpc_core::PemKeyCertPairList pem_key_cert_pairs;
+  PemKeyCertPairList pem_key_cert_pairs;
   if (pem_key_cert_pairs_.has_value()) {
     pem_key_cert_pairs = *pem_key_cert_pairs_;
   }
