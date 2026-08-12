@@ -183,32 +183,46 @@ class TokenFetcherCredentials : public grpc_call_credentials {
 };
 
 // A base class for fetching tokens via an HTTP request.
+// Subclasses must implement StartHttpRequest() and ExtractToken().
 class HttpTokenFetcherCredentials : public TokenFetcherCredentials {
  public:
+  // Starts an HTTP request.
   virtual OrphanablePtr<HttpRequest> StartHttpRequest(
       grpc_polling_entity* pollent, Timestamp deadline,
       grpc_http_response* response, grpc_closure* on_complete) = 0;
 
- protected:
+  // Extracts a token from the HTTP response.
+  // This will be called only if the HTTP status code was 200 (OK).
+  virtual absl::StatusOr<RefCountedPtr<Token>> ExtractToken(
+      const grpc_http_response& response) = 0;
+
+ private:
   // State held for a pending HTTP request.
   class HttpFetchRequest : public TokenFetcherCredentials::FetchRequest {
    public:
-    // The given callback should assume the http response status has already
-    // been checked and handle the token parsing.
     HttpFetchRequest(
-        HttpTokenFetcherCredentials* creds, Timestamp deadline,
-        absl::AnyInvocable<void(absl::StatusOr<grpc_http_response>)> on_done);
+        WeakRefCountedPtr<HttpTokenFetcherCredentials> creds,
+        Timestamp deadline,
+        absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)> on_done);
+
     ~HttpFetchRequest() override { grpc_http_response_destroy(&response_); }
 
     void Orphan() override;
 
    private:
     static void OnHttpResponse(void* arg, grpc_error_handle error);
-    OrphanablePtr<HttpRequest> http_request_;
+
+    WeakRefCountedPtr<HttpTokenFetcherCredentials> creds_;
+    absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)> on_done_;
     grpc_closure on_http_response_;
+    OrphanablePtr<HttpRequest> http_request_;
     grpc_http_response response_;
-    absl::AnyInvocable<void(absl::StatusOr<grpc_http_response>)> on_done_;
   };
+
+  OrphanablePtr<FetchRequest> FetchToken(
+      Timestamp deadline,
+      absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)> on_done)
+      final;
 };
 
 }  // namespace grpc_core

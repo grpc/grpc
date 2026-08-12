@@ -7600,6 +7600,7 @@ grpc_cc_library(
         "server/xds_server_config_fetcher.cc",
         "server/xds_server_config_fetcher_legacy.cc",
     ],
+    hdrs = ["server/xds_server_config_fetcher.h"],
     external_deps = [
         "absl/base:core_headers",
         "absl/log",
@@ -7624,10 +7625,12 @@ grpc_cc_library(
         "iomgr_fwd",
         "match",
         "metadata_batch",
+        "ref_counted",
         "resolved_address",
         "slice_refcount",
         "sync",
         "unique_type_name",
+        "useful",
         "xds_bootstrap_grpc",
         "xds_certificate_provider",
         "xds_certificate_provider_store",
@@ -11842,6 +11845,7 @@ grpc_cc_library(
     external_deps = [
         "absl/log",
         "absl/status",
+        "absl/strings",
         "absl/functional:any_invocable",
         "absl/types:span",
     ],
