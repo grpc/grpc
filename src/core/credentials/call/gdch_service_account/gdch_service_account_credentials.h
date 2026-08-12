@@ -17,13 +17,9 @@
 #ifndef GRPC_SRC_CORE_CREDENTIALS_CALL_GDCH_SERVICE_ACCOUNT_GDCH_SERVICE_ACCOUNT_CREDENTIALS_H
 #define GRPC_SRC_CORE_CREDENTIALS_CALL_GDCH_SERVICE_ACCOUNT_GDCH_SERVICE_ACCOUNT_CREDENTIALS_H
 
-#include <grpc/support/port_platform.h>
-
-#include <chrono>
 #include <memory>
 #include <optional>
 #include <string>
-#include <vector>
 
 #include "src/core/credentials/call/token_fetcher/token_fetcher_credentials.h"
 #include "src/core/util/http_client/httpcli.h"
@@ -31,6 +27,7 @@
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/uri.h"
 #include "src/core/util/validation_errors.h"
@@ -143,8 +140,8 @@ class GDCHServiceAccountCredentials final : public HttpTokenFetcherCredentials {
       const std::string& str, const std::string& pem_contents,
       SignatureFormat format);
 
-  static AssertionComponents AssertionComponentsFromInfo(
-      const Info& info, std::chrono::system_clock::time_point now);
+  static AssertionComponents AssertionComponentsFromInfo(const Info& info,
+                                                         Timestamp now);
 
   static absl::StatusOr<std::string> MakeJWTAssertion(
       const std::string& header, const std::string& payload,

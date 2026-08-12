@@ -71,7 +71,7 @@ namespace {
 
 constexpr const char* kExpectedType = "gdch_service_account";
 constexpr const char* kExpectedFormatVersion = "1";
-constexpr std::chrono::seconds kTokenLifetime = std::chrono::seconds(3600);
+constexpr Duration kTokenLifetime = Duration::Hours(1);
 
 struct OpenSslDeleter {
   void operator()(EVP_MD_CTX* ptr) {
@@ -324,19 +324,18 @@ GDCHServiceAccountCredentials::GDCHServiceAccountCredentials(
       token_url_(std::move(token_url)) {}
 
 GDCHServiceAccountCredentials::AssertionComponents
-GDCHServiceAccountCredentials::AssertionComponentsFromInfo(
-    const Info& info, std::chrono::system_clock::time_point now) {
+GDCHServiceAccountCredentials::AssertionComponentsFromInfo(const Info& info,
+                                                           Timestamp now) {
   Json header = Json::FromObject({
       {"alg", Json::FromString("ES256")},
       {"typ", Json::FromString("JWT")},
       {"kid", Json::FromString(info.private_key_id)},
   });
 
-  std::chrono::system_clock::time_point expiration = now + kTokenLifetime;
-  const std::intmax_t now_from_epoch =
-      static_cast<std::intmax_t>(std::chrono::system_clock::to_time_t(now));
-  const std::intmax_t expiration_from_epoch = static_cast<std::intmax_t>(
-      std::chrono::system_clock::to_time_t(expiration));
+  Timestamp expiration = now + kTokenLifetime;
+  const int64_t now_from_epoch = now.milliseconds_after_process_epoch() / 1000;
+  const int64_t expiration_from_epoch =
+      expiration.milliseconds_after_process_epoch() / 1000;
   std::string iss_sub_value =
       absl::StrCat("system:serviceaccount:", info.project_id, ":",
                    info.service_identity_name);
@@ -366,7 +365,7 @@ absl::StatusOr<std::string> GDCHServiceAccountCredentials::MakeJWTAssertion(
 absl::StatusOr<std::string> GDCHServiceAccountCredentials::CreateRequestBody(
     const Info& info, const std::string& audience) {
   AssertionComponents components =
-      AssertionComponentsFromInfo(info, std::chrono::system_clock::now());
+      AssertionComponentsFromInfo(info, Timestamp::Now());
   absl::StatusOr<std::string> jwt =
       MakeJWTAssertion(components.header, components.claim, info.private_key,
                        SignatureFormat::kRaw);
@@ -472,7 +471,7 @@ GDCHServiceAccountCredentials::ExtractToken(
   if (!token_str.ok()) return token_str.status();
   return MakeRefCounted<Token>(
       Slice::FromCopiedString(absl::StrCat("Bearer ", *token_str)),
-      Timestamp::Now() + Duration::Seconds(3600));
+      Timestamp::Now() + kTokenLifetime);
 }
 
 }  // namespace grpc_core

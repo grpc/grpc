@@ -100,8 +100,7 @@ class GDCHServiceAccountCredentialsTest : public ::testing::Test {
   }
 
   static AssertionComponents AssertionComponentsFromInfo(
-      const GDCHServiceAccountCredentials::Info& info,
-      std::chrono::system_clock::time_point now) {
+      const GDCHServiceAccountCredentials::Info& info, Timestamp now) {
     return GDCHServiceAccountCredentials::AssertionComponentsFromInfo(info,
                                                                       now);
   }
@@ -306,8 +305,7 @@ TEST_F(GDCHServiceAccountCredentialsTest, CreateFailureInvalidJson) {
 
 TEST_F(GDCHServiceAccountCredentialsTest, AssertionComponentsFromInfoSuccess) {
   GDCHServiceAccountCredentials::Info info = CreateValidInfo();
-  std::chrono::system_clock::time_point now =
-      std::chrono::system_clock::from_time_t(12345678);
+  Timestamp now = Timestamp::FromMillisecondsAfterProcessEpoch(12345678000LL);
 
   AssertionComponents components = AssertionComponentsFromInfo(info, now);
 
