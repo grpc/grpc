@@ -1,4 +1,4 @@
-FROM us-docker.pkg.dev/grpc-testing/testing-images-public/rake-compiler-dock-image:1.12.0-mri-x86-linux-gnu
+FROM us-docker.pkg.dev/grpc-testing/testing-images-public/rake_x86-linux-gnu:2810c21e08c7a9cf1df5b2d83bbe65dfc201f56c@sha256:321891a86015a8a944a2173f04523746eb34f531cee38f7f135b55e2d3ee6afe
 
 #=================
 # Install ccache
