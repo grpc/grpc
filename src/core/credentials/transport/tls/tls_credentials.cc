@@ -148,13 +148,13 @@ TlsCredentials::GetOrCreateCachedClientHandshakerFactory(
 
   // Phase 2: build the factory with no lock held so unrelated callers are
   // not serialized.
-  std::vector<tsi_ssl_pem_key_cert_pair> pem_pairs;
-  if (identity_certs.has_value()) {
-    pem_pairs = grpc_core::ConvertToTsiPemKeyCertPair(*identity_certs);
+  const grpc_core::PemKeyCertPair* pem_key_cert_pair = nullptr;
+  if (identity_certs.has_value() && !identity_certs->empty()) {
+    pem_key_cert_pair = &(*identity_certs)[0];
   }
   tsi_ssl_client_handshaker_factory* new_factory = nullptr;
   grpc_security_status status = grpc_ssl_tsi_client_handshaker_factory_init(
-      pem_pairs.empty() ? nullptr : &pem_pairs[0], root_cert_info,
+      pem_key_cert_pair, root_cert_info,
       !options_->verify_server_cert(),
       grpc_get_tsi_tls_version(options_->min_tls_version()),
       grpc_get_tsi_tls_version(options_->max_tls_version()), ssl_session_cache,
