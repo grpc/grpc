@@ -69,7 +69,7 @@ if $is_sonoma; then
   # ==> Pouring ca-certificates--2026-05-14.all.bottle.tar.gz
   # Error: undefined method '[]' for nil
   # TODO(sergiitk): undo PR #42403 once ca-certificates is installable
-  brew install --cache --build-from-source gnupg
+  brew --cache --build-from-source gnupg
 
   brew install cmake
   brew install gnupg
