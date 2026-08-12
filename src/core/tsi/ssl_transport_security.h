@@ -194,8 +194,8 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
 
 struct tsi_ssl_client_handshaker_options {
   // pem_key_cert_pairs is an array of private key / certificate chains of the
-  // client, or a certificate selector.
-  grpc_core::KeyCertPairsOrSelector pem_key_cert_pairs;
+  // client.
+  grpc_core::PemKeyCertPairList pem_key_cert_pairs;
   // root_store is a pointer to the ssl_root_certs_store object. If root_store
   // is not nullptr and SSL implementation permits, root_store will be used as
   // root certificates. Otherwise, pem_roots_cert will be used to load server

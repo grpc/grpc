@@ -471,8 +471,12 @@ void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
     security_connector_->root_cert_info_ = std::move(root_certs);
   }
   if (key_cert_pairs_or_selector.has_value()) {
-    security_connector_->key_cert_pairs_or_selector_ =
-        std::move(key_cert_pairs_or_selector);
+    if (const auto* pairs =
+            std::get_if<PemKeyCertPairList>(&*key_cert_pairs_or_selector)) {
+      security_connector_->pem_key_cert_pairs_ = *pairs;
+    } else {
+      LOG(ERROR) << "CertificateSelector is not supported on the client.";
+    }
   }
   const bool root_ready =
       security_connector_->options_->root_certificate_distributor() ==
@@ -481,7 +485,7 @@ void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
   const bool identity_ready =
       security_connector_->options_->identity_certificate_distributor() ==
           nullptr ||
-      security_connector_->key_cert_pairs_or_selector_.has_value();
+      security_connector_->pem_key_cert_pairs_.has_value();
   if (root_ready && identity_ready) {
     if (security_connector_->UpdateHandshakerFactoryLocked() !=
         GRPC_SECURITY_OK) {
@@ -563,13 +567,14 @@ TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
   if (client_handshaker_factory_ != nullptr) {
     tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
   }
-  grpc_core::KeyCertPairsOrSelector key_cert_pairs;
-  if (key_cert_pairs_or_selector_.has_value()) {
-    key_cert_pairs = *key_cert_pairs_or_selector_;
+  grpc_core::PemKeyCertPairList pem_key_cert_pairs;
+  if (pem_key_cert_pairs_.has_value()) {
+    pem_key_cert_pairs = *pem_key_cert_pairs_;
   }
   bool use_default_roots = options_->root_certificate_distributor() == nullptr;
   return grpc_ssl_tsi_client_handshaker_factory_init(
-      std::move(key_cert_pairs), use_default_roots ? nullptr : root_cert_info_,
+      std::move(pem_key_cert_pairs),
+      use_default_roots ? nullptr : root_cert_info_,
       skip_server_certificate_verification,
       grpc_get_tsi_tls_version(options_->min_tls_version()),
       grpc_get_tsi_tls_version(options_->max_tls_version()), ssl_session_cache_,

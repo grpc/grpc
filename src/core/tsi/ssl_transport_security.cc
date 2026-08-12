@@ -92,6 +92,7 @@
 #include "absl/functional/bind_front.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/strings/ascii.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -3427,38 +3428,28 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   }
 
   do {
-    result = grpc_core::Match(
-        options->pem_key_cert_pairs,
-        [&](const grpc_core::PemKeyCertPairList& pem_key_cert_pairs) {
-          if (pem_key_cert_pairs.empty()) {
-            return populate_ssl_context(ssl_context, nullptr,
-                                        options->cipher_suites,
-                                        options->key_exchange_groups);
-          }
-          for (const auto& pair : pem_key_cert_pairs) {
-            tsi_result res = populate_ssl_context(
-                ssl_context, &pair, options->cipher_suites,
-                options->key_exchange_groups);
-            if (res != TSI_OK) return res;
-#if defined(OPENSSL_IS_BORINGSSL)
-            grpc_core::Match(
-                pair.private_key(), [](const std::string&) {},
-                [&](const std::shared_ptr<grpc_core::PrivateKeySigner>&
-                        key_signer) {
-                  // The Handshaker Factory will own a shared copy of the reference
-                  // passed through the options.
-                  impl->key_signer = key_signer;
-                });
-#endif
-          }
-          return TSI_OK;
-        },
-        [&](const std::shared_ptr<grpc_core::CertificateSelector>&
-                /*cert_selector*/) {
-          return populate_ssl_context(ssl_context, nullptr,
+    if (options->pem_key_cert_pairs.empty()) {
+      result = populate_ssl_context(ssl_context, nullptr,
+                                    options->cipher_suites,
+                                    options->key_exchange_groups);
+    } else {
+      for (const auto& pair : options->pem_key_cert_pairs) {
+        result = populate_ssl_context(ssl_context, &pair,
                                       options->cipher_suites,
                                       options->key_exchange_groups);
-        });
+        if (result != TSI_OK) break;
+#if defined(OPENSSL_IS_BORINGSSL)
+        grpc_core::Match(
+            pair.private_key(), [](const std::string&) {},
+            [&](const std::shared_ptr<grpc_core::PrivateKeySigner>&
+                    key_signer) {
+              // The Handshaker Factory will own a shared copy of the reference
+              // passed through the options.
+              impl->key_signer = key_signer;
+            });
+#endif
+      }
+    }
     if (result != TSI_OK) break;
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
@@ -3594,9 +3585,42 @@ tsi_result tsi_create_ssl_server_handshaker_factory_ex(
                                                                factory);
 }
 
-tsi_result tsi_configure_server_ssl_context(
+static std::string normalize_subject_name(absl::string_view name) {
+  if (name.empty()) return "";
+  if (name.back() == '.') {
+    name.remove_suffix(1);
+  }
+  return absl::AsciiStrToLower(name);
+}
+
+static std::vector<std::string> extract_subject_alt_names_or_cn(
+    const tsi_peer& peer) {
+  std::vector<std::string> names;
+  const tsi_peer_property* cn_property = nullptr;
+  for (size_t i = 0; i < peer.property_count; ++i) {
+    const tsi_peer_property* prop = &peer.properties[i];
+    if (prop->name == nullptr) continue;
+    if (strcmp(prop->name, TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY) ==
+        0) {
+      names.push_back(normalize_subject_name(
+          absl::string_view(prop->value.data, prop->value.length)));
+    } else if (strcmp(prop->name,
+                      TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY) == 0) {
+      cn_property = prop;
+    }
+  }
+  if (names.empty() && cn_property != nullptr) {
+    names.push_back(normalize_subject_name(
+        absl::string_view(cn_property->value.data, cn_property->value.length)));
+  }
+  std::sort(names.begin(), names.end());
+  names.erase(std::unique(names.begin(), names.end()), names.end());
+  return names;
+}
+
+static tsi_result tsi_configure_server_ssl_context(
     const tsi_ssl_server_handshaker_options* options,
-    const grpc_core::PemKeyCertPair* pem_key_cert_pair,
+    const std::vector<const grpc_core::PemKeyCertPair*>& pem_key_cert_pairs,
     tsi_ssl_server_handshaker_factory* impl, SslContext& ssl_context) {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
   ssl_context.ssl_ctx = SSL_CTX_new(TLS_method());
@@ -3616,19 +3640,21 @@ tsi_result tsi_configure_server_ssl_context(
       ssl_context.ssl_ctx, options->min_tls_version, options->max_tls_version);
   if (result != TSI_OK) return result;
 
-  result = populate_ssl_context(ssl_context.ssl_ctx, pem_key_cert_pair,
-                                options->cipher_suites,
-                                options->key_exchange_groups);
+  for (const auto* pair : pem_key_cert_pairs) {
+    result = populate_ssl_context(ssl_context.ssl_ctx, pair,
+                                  options->cipher_suites,
+                                  options->key_exchange_groups);
+    if (result != TSI_OK) return result;
 #if defined(OPENSSL_IS_BORINGSSL)
-  if (pem_key_cert_pair != nullptr) {
-    grpc_core::Match(
-        pem_key_cert_pair->private_key(), [](const std::string&) {},
-        [&](const std::shared_ptr<grpc_core::PrivateKeySigner>& key_signer) {
-          ssl_context.key_signer = key_signer;
-        });
-  }
+    if (pair != nullptr) {
+      grpc_core::Match(
+          pair->private_key(), [](const std::string&) {},
+          [&](const std::shared_ptr<grpc_core::PrivateKeySigner>& key_signer) {
+            ssl_context.key_signer = key_signer;
+          });
+    }
 #endif
-  if (result != TSI_OK) return result;
+  }
 
   // TODO(elessar): Provide ability to disable session ticket keys.
 
@@ -3727,9 +3753,9 @@ tsi_result tsi_configure_server_ssl_context(
   }
 #endif
 
-  if (pem_key_cert_pair != nullptr) {
+  if (!pem_key_cert_pairs.empty() && pem_key_cert_pairs[0] != nullptr) {
     result = tsi_ssl_extract_x509_subject_names_from_pem_cert(
-        pem_key_cert_pair->cert_chain().c_str(),
+        pem_key_cert_pairs[0]->cert_chain().c_str(),
         &ssl_context.x509_subject_name);
     if (result != TSI_OK) return result;
   }
@@ -3782,11 +3808,40 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
         if (pem_key_cert_pairs.empty()) {
           return TSI_INVALID_ARGUMENT;
         }
-        impl->ssl_contexts.reserve(pem_key_cert_pairs.size());
+        // Group certificate pairs by subject names (SANs / CN).
+        struct CertGroup {
+          std::vector<std::string> names;
+          std::vector<const grpc_core::PemKeyCertPair*> pairs;
+        };
+        std::vector<CertGroup> groups;
         for (const auto& pair : pem_key_cert_pairs) {
+          tsi_peer peer;
+          tsi_result result = tsi_ssl_extract_x509_subject_names_from_pem_cert(
+              pair.cert_chain().c_str(), &peer);
+          if (result != TSI_OK) {
+            return result;
+          }
+          std::vector<std::string> names =
+              extract_subject_alt_names_or_cn(peer);
+          tsi_peer_destruct(&peer);
+
+          bool found = false;
+          for (auto& group : groups) {
+            if (group.names == names) {
+              group.pairs.push_back(&pair);
+              found = true;
+              break;
+            }
+          }
+          if (!found) {
+            groups.push_back({std::move(names), {&pair}});
+          }
+        }
+        impl->ssl_contexts.reserve(groups.size());
+        for (const auto& group : groups) {
           SslContext& ssl_context = impl->ssl_contexts.emplace_back();
           tsi_result result = tsi_configure_server_ssl_context(
-              options, &pair, impl, ssl_context);
+              options, group.pairs, impl, ssl_context);
           if (result != TSI_OK) {
             return result;
           }
@@ -3801,7 +3856,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
         }
         SslContext& ssl_context = impl->ssl_contexts.emplace_back();
         tsi_result result = tsi_configure_server_ssl_context(
-            options, /*pem_key_cert_pair=*/nullptr, impl, ssl_context);
+            options, {}, impl, ssl_context);
         if (result != TSI_OK) {
           return result;
         }
