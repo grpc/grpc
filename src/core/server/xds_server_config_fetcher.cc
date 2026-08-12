@@ -121,6 +121,24 @@ struct FetcherState final : public RefCounted<FetcherState> {
   }
 };
 
+std::string GenerateListenerResourceName(const FetcherState& fetcher_state,
+                                         absl::string_view listening_address) {
+  if (fetcher_state.resource_name_generator != nullptr) {
+    return fetcher_state.resource_name_generator->GetResourceName(
+        listening_address);
+  }
+  absl::string_view resource_name_template =
+      DownCast<const GrpcXdsBootstrap&>(fetcher_state.xds_client->bootstrap())
+          .server_listener_resource_name_template();
+  std::string encoded_listening_address;
+  if (absl::StartsWith(resource_name_template, "xdstp:")) {
+    encoded_listening_address = URI::PercentEncodePath(listening_address);
+    listening_address = encoded_listening_address;
+  }
+  return absl::StrReplaceAll(resource_name_template,
+                             {{"%s", listening_address}});
+}
+
 // A server config fetcher that fetches the information for configuring server
 // listeners from the xDS control plane.
 class XdsServerConfigFetcher final : public ServerConfigFetcher {
@@ -187,7 +205,7 @@ class XdsServerConfigFetcher::ListenerWatcher final
 
   const std::string& listening_address() const { return listening_address_; }
 
-  std::string ResourceName() const;
+  const std::string& ResourceName() const { return resource_name_; }
 
  private:
   class XdsConnectionManager;
@@ -207,6 +225,7 @@ class XdsServerConfigFetcher::ListenerWatcher final
       server_config_watcher_;
   const grpc_server_xds_status_notifier serving_status_notifier_;
   const std::string listening_address_;
+  const std::string resource_name_;
 
   RefCountedPtr<XdsConnectionManager> connection_manager_
       ABSL_GUARDED_BY(&FetcherState::work_serializer);
@@ -522,6 +541,8 @@ XdsServerConfigFetcher::ListenerWatcher::ListenerWatcher(
       server_config_watcher_(std::move(server_config_watcher)),
       serving_status_notifier_(serving_status_notifier),
       listening_address_(std::move(listening_address)),
+      resource_name_(
+          GenerateListenerResourceName(*fetcher_state_, listening_address_)),
       blackboard_(MakeRefCounted<Blackboard>()) {
   GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
       << "[ListenerWatcher " << this << "]: created for address "
@@ -632,24 +653,6 @@ void XdsServerConfigFetcher::ListenerWatcher::MaybeUpdateConnectionManager(
                 << listening_address_;
     }
   }
-}
-
-std::string XdsServerConfigFetcher::ListenerWatcher::ResourceName() const {
-  if (fetcher_state_->resource_name_generator != nullptr) {
-    return fetcher_state_->resource_name_generator->GetResourceName(
-        listening_address_);
-  }
-  absl::string_view resource_name_template =
-      DownCast<const GrpcXdsBootstrap&>(fetcher_state_->xds_client->bootstrap())
-          .server_listener_resource_name_template();
-  absl::string_view listening_address = listening_address_;
-  std::string tmp;
-  if (absl::StartsWith(resource_name_template, "xdstp:")) {
-    tmp = URI::PercentEncodePath(listening_address);
-    listening_address = tmp;
-  }
-  return absl::StrReplaceAll(resource_name_template,
-                             {{"%s", listening_address}});
 }
 
 //

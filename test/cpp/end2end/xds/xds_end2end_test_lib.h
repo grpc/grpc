@@ -37,6 +37,7 @@
 #include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/server/xds_server_config_fetcher.h"
 #include "src/core/util/grpc_check.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/testing/echo.pb.h"
@@ -538,6 +539,12 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   //
   // Backend management
   //
+
+  void SetServerResourceNameGenerator(
+      grpc_core::RefCountedPtr<grpc_core::XdsResourceNameGenerator>
+          resource_name_generator) {
+    server_resource_name_generator_ = std::move(resource_name_generator);
+  }
 
   // Creates num_backends backends and stores them in backends_, but does
   // not actually start them.  If xds_enabled is true, the backends are
@@ -1077,6 +1084,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   char* bootstrap_file_ = nullptr;
   absl::InlinedVector<grpc_arg, 3> xds_channel_args_to_add_;
   grpc_channel_args xds_channel_args_;
+  grpc_core::RefCountedPtr<grpc_core::XdsResourceNameGenerator>
+      server_resource_name_generator_;
 };
 
 }  // namespace testing

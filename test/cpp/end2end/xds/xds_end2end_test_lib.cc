@@ -28,6 +28,7 @@
 
 #include "envoy/extensions/filters/http/router/v3/router.pb.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/server/server.h"
 #include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
@@ -127,15 +128,27 @@ const grpc_arg_pointer_vtable kChannelArgsArgVtable = {
 class XdsEnd2endTest::ServerThread::XdsChannelArgsServerBuilderOption
     : public grpc::ServerBuilderOption {
  public:
-  explicit XdsChannelArgsServerBuilderOption(XdsEnd2endTest* test_obj)
-      : test_obj_(test_obj) {}
+  XdsChannelArgsServerBuilderOption(XdsEnd2endTest* test_obj,
+                                    bool set_bootstrap_channel_args)
+      : test_obj_(test_obj),
+        set_bootstrap_channel_args_(set_bootstrap_channel_args) {}
 
   void UpdateArguments(grpc::ChannelArguments* args) override {
-    args->SetString(GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_BOOTSTRAP_CONFIG,
-                    test_obj_->bootstrap_);
-    args->SetPointerWithVtable(
-        GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_CLIENT_CHANNEL_ARGS,
-        &test_obj_->xds_channel_args_, &kChannelArgsArgVtable);
+    if (set_bootstrap_channel_args_) {
+      args->SetString(
+          GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_BOOTSTRAP_CONFIG,
+          test_obj_->bootstrap_);
+      args->SetPointerWithVtable(
+          GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_CLIENT_CHANNEL_ARGS,
+          &test_obj_->xds_channel_args_, &kChannelArgsArgVtable);
+    }
+    if (test_obj_->server_resource_name_generator_ != nullptr) {
+      args->SetPointerWithVtable(
+          std::string(grpc_core::XdsResourceNameGenerator::ChannelArgName()),
+          test_obj_->server_resource_name_generator_.get(),
+          grpc_core::ChannelArgTypeTraits<
+              grpc_core::XdsResourceNameGenerator>::VTable());
+    }
   }
 
   void UpdatePlugins(
@@ -144,6 +157,7 @@ class XdsEnd2endTest::ServerThread::XdsChannelArgsServerBuilderOption
 
  private:
   XdsEnd2endTest* test_obj_;
+  const bool set_bootstrap_channel_args_;
 };
 
 //
@@ -214,10 +228,12 @@ void XdsEnd2endTest::ServerThread::Serve(grpc_core::Mutex* mu,
   std::string server_address = grpc_core::LocalIpAndPort(port_);
   if (use_xds_enabled_server_) {
     XdsServerBuilder builder;
-    if (GetParam().bootstrap_source() ==
-        XdsTestType::kBootstrapFromChannelArg) {
-      builder.SetOption(
-          std::make_unique<XdsChannelArgsServerBuilderOption>(test_obj_));
+    const bool set_bootstrap_channel_args =
+        GetParam().bootstrap_source() == XdsTestType::kBootstrapFromChannelArg;
+    if (set_bootstrap_channel_args ||
+        test_obj_->server_resource_name_generator_ != nullptr) {
+      builder.SetOption(std::make_unique<XdsChannelArgsServerBuilderOption>(
+          test_obj_, set_bootstrap_channel_args));
     }
     builder.set_status_notifier(&notifier_);
     builder.experimental().set_drain_grace_time(

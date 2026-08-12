@@ -23,6 +23,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/xds_server_builder.h>
 
+#include <atomic>
 #include <memory>
 #include <optional>
 
@@ -30,6 +31,7 @@
 #include "envoy/config/route/v3/route.pb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
 #include "src/core/config/config_vars.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/util/env.h"
 #include "src/core/util/time.h"
 #include "src/proto/grpc/testing/echo.pb.h"
@@ -48,6 +50,24 @@ namespace testing {
 namespace {
 
 using ::envoy::config::listener::v3::FilterChainMatch;
+
+class ChangingResourceNameGenerator final
+    : public grpc_core::XdsResourceNameGenerator {
+ public:
+  std::string GetResourceName(absl::string_view listening_address) override {
+    const int call = calls_.fetch_add(1, std::memory_order_relaxed);
+    if (call == 0) {
+      return absl::StrCat("grpc/server?xds.resource.listening_address=",
+                          listening_address);
+    }
+    return absl::StrCat("changed/", listening_address);
+  }
+
+  int calls() const { return calls_.load(std::memory_order_relaxed); }
+
+ private:
+  std::atomic<int> calls_{0};
+};
 
 //
 // Basic xDS-enabled server tests
@@ -86,6 +106,22 @@ TEST_P(XdsEnabledServerTest, Basic) {
   StartBackend(0);
   ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
   WaitForBackend(DEBUG_LOCATION, 0);
+}
+
+TEST_P(XdsEnabledServerTest, ResourceNameGeneratedOncePerWatch) {
+  if (!grpc_core::IsXdsServerFilterChainPerRouteEnabled()) {
+    GTEST_SKIP() << "test requires xds_server_filter_chain_per_route";
+  }
+  DoSetUp(MakeBootstrapBuilder().SetServerListenerResourceNameTemplate(""));
+  auto generator = grpc_core::MakeRefCounted<ChangingResourceNameGenerator>();
+  SetServerResourceNameGenerator(
+      generator.Ref(DEBUG_LOCATION, "server resource name generator"));
+  StartBackend(0);
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
+  WaitForBackend(DEBUG_LOCATION, 0);
+  EXPECT_EQ(generator->calls(), 1);
+  ShutdownBackend(0);
+  EXPECT_EQ(generator->calls(), 1);
 }
 
 TEST_P(XdsEnabledServerTest, ListenerDeletionFailsByDefault) {
