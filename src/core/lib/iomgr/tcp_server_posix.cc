@@ -212,7 +212,7 @@ static grpc_error_handle CreateEventEngineListener(
         std::move(accept_cb),
         [s, shutdown_complete](absl::Status status) {
           grpc_event_engine::experimental::RunEventEngineClosure(
-              shutdown_complete, absl_status_to_grpc_error(status));
+              shutdown_complete, status);
           finish_shutdown(s);
         },
         config,
@@ -240,7 +240,7 @@ static grpc_error_handle CreateEventEngineListener(
         [s, ee = keeper, shutdown_complete](absl::Status status) {
           GRPC_CHECK_EQ(gpr_atm_no_barrier_load(&s->refs.count), 0);
           grpc_event_engine::experimental::RunEventEngineClosure(
-              shutdown_complete, absl_status_to_grpc_error(status));
+              shutdown_complete, status);
           finish_shutdown(s);
         },
         config,

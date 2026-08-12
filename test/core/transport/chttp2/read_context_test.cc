@@ -18,6 +18,8 @@
 
 #include "src/core/ext/transport/chttp2/transport/read_context.h"
 
+#include <optional>
+
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/util/grpc_check.h"
@@ -33,191 +35,220 @@ namespace testing {
 ///////////////////////////////////////////////////////////////////////////////
 // ReadContextTest
 
-class ReadContextTest : public ::testing::TestWithParam<bool> {};
+class ReadContextTest : public ::testing::TestWithParam<bool> {
+ protected:
+  void SetUp() override {
+    mock_endpoint.emplace(1234);
+    tracker.emplace(
+        /*max_new_streams_per_read_cycle=*/32u, mock_endpoint->promise_endpoint,
+        /*is_client=*/GetParam(), GrpcErrors::kMaxSecurityFrameSize,
+        /*ping_on_rst_stream_percent=*/0u);
+  }
+
+  std::optional<util::testing::MockPromiseEndpoint> mock_endpoint;
+  std::optional<ReadContext> tracker;
+};
 
 TEST_P(ReadContextTest, InitialState) {
   // Verifies that a newly created tracker is not waiting for continuation
   // frames.
-  ReadContext tracker(Slice::FromCopiedString("test"),
-                      /*is_client=*/GetParam());
-  EXPECT_FALSE(tracker.IsWaitingForContinuationFrame());
+  EXPECT_FALSE(tracker->IsWaitingForContinuationFrame());
 }
 
 TEST_P(ReadContextTest, HeaderWithEndHeaders) {
   // Verifies state after receiving a HEADERS frame with END_HEADERS=true.
-  ReadContext tracker(Slice::FromCopiedString("test"),
-                      /*is_client=*/GetParam());
   Http2HeaderFrame header = GenerateHeaderFrame(
       "", /*stream_id=*/1, /*end_headers=*/true, /*end_stream=*/false);
-  tracker.UpdateState(header);
-  EXPECT_FALSE(tracker.IsWaitingForContinuationFrame());
-  EXPECT_FALSE(tracker.HeaderHasEndStream());
-  EXPECT_EQ(tracker.GetStreamId(), 1);
+  tracker->UpdateState(header, /*is_existing_stream=*/true);
+  EXPECT_FALSE(tracker->IsWaitingForContinuationFrame());
+  EXPECT_FALSE(tracker->HeaderHasEndStream());
+  EXPECT_EQ(tracker->GetStreamId(), 1);
 }
 
 TEST_P(ReadContextTest, HeaderWithEndHeadersAndEndStream) {
   // Verifies state after receiving a HEADERS frame with END_HEADERS=true and
   // END_STREAM=true.
-  ReadContext tracker(Slice::FromCopiedString("test"),
-                      /*is_client=*/GetParam());
   Http2HeaderFrame header = GenerateHeaderFrame(
       "", /*stream_id=*/1, /*end_headers=*/true, /*end_stream=*/true);
-  tracker.UpdateState(header);
-  EXPECT_FALSE(tracker.IsWaitingForContinuationFrame());
-  EXPECT_TRUE(tracker.HeaderHasEndStream());
-  EXPECT_EQ(tracker.GetStreamId(), 1);
+  tracker->UpdateState(header, /*is_existing_stream=*/true);
+  EXPECT_FALSE(tracker->IsWaitingForContinuationFrame());
+  EXPECT_TRUE(tracker->HeaderHasEndStream());
+  EXPECT_EQ(tracker->GetStreamId(), 1);
 }
 
 TEST_P(ReadContextTest, HeaderWithoutEndHeaders) {
   // Verifies state after receiving a HEADERS frame with END_HEADERS=false.
-  ReadContext tracker(Slice::FromCopiedString("test"),
-                      /*is_client=*/GetParam());
   Http2HeaderFrame header = GenerateHeaderFrame(
       "", /*stream_id=*/3, /*end_headers=*/false, /*end_stream=*/false);
-  tracker.UpdateState(header);
-  EXPECT_TRUE(tracker.IsWaitingForContinuationFrame());
-  EXPECT_FALSE(tracker.HeaderHasEndStream());
-  EXPECT_EQ(tracker.GetStreamId(), 3);
+  tracker->UpdateState(header, /*is_existing_stream=*/true);
+  EXPECT_TRUE(tracker->IsWaitingForContinuationFrame());
+  EXPECT_FALSE(tracker->HeaderHasEndStream());
+  EXPECT_EQ(tracker->GetStreamId(), 3);
 }
 
 TEST_P(ReadContextTest, HeaderWithoutEndHeadersWithEndStream) {
   // Verifies state after receiving a HEADERS frame with END_HEADERS=false and
   // END_STREAM=true.
-  ReadContext tracker(Slice::FromCopiedString("test"),
-                      /*is_client=*/GetParam());
   Http2HeaderFrame header = GenerateHeaderFrame(
       "", /*stream_id=*/3, /*end_headers=*/false, /*end_stream=*/true);
-  tracker.UpdateState(header);
-  EXPECT_TRUE(tracker.IsWaitingForContinuationFrame());
-  EXPECT_TRUE(tracker.HeaderHasEndStream());
-  EXPECT_EQ(tracker.GetStreamId(), 3);
+  tracker->UpdateState(header, /*is_existing_stream=*/true);
+  EXPECT_TRUE(tracker->IsWaitingForContinuationFrame());
+  EXPECT_TRUE(tracker->HeaderHasEndStream());
+  EXPECT_EQ(tracker->GetStreamId(), 3);
 }
 
 TEST_P(ReadContextTest, HeaderThenContinuationWithEndHeaders) {
   // Verifies state transition from HEADERS(END_HEADERS=false) to
   // CONTINUATION(END_HEADERS=true).
-  ReadContext tracker(Slice::FromCopiedString("test"),
-                      /*is_client=*/GetParam());
   Http2HeaderFrame header = GenerateHeaderFrame(
       "", /*stream_id=*/5, /*end_headers=*/false, /*end_stream=*/false);
-  tracker.UpdateState(header);
-  EXPECT_TRUE(tracker.IsWaitingForContinuationFrame());
-  EXPECT_FALSE(tracker.HeaderHasEndStream());
-  EXPECT_EQ(tracker.GetStreamId(), 5);
+  tracker->UpdateState(header, /*is_existing_stream=*/true);
+  EXPECT_TRUE(tracker->IsWaitingForContinuationFrame());
+  EXPECT_FALSE(tracker->HeaderHasEndStream());
+  EXPECT_EQ(tracker->GetStreamId(), 5);
 
   Http2ContinuationFrame continuation =
       GenerateContinuationFrame("", /*stream_id=*/5, /*end_headers=*/true);
-  tracker.UpdateState(continuation);
-  EXPECT_FALSE(tracker.IsWaitingForContinuationFrame());
+  tracker->UpdateState(continuation, /*is_existing_stream=*/true);
+  EXPECT_FALSE(tracker->IsWaitingForContinuationFrame());
 }
 
 TEST_P(ReadContextTest, HeaderThenContinuationWithoutEndHeaders) {
   // Verifies state remains in-progress when CONTINUATION has END_HEADERS=false.
-  ReadContext tracker(Slice::FromCopiedString("test"),
-                      /*is_client=*/GetParam());
   Http2HeaderFrame header = GenerateHeaderFrame(
       "", /*stream_id=*/7, /*end_headers=*/false, /*end_stream=*/false);
-  tracker.UpdateState(header);
-  EXPECT_TRUE(tracker.IsWaitingForContinuationFrame());
-  EXPECT_EQ(tracker.GetStreamId(), 7);
+  tracker->UpdateState(header, /*is_existing_stream=*/true);
+  EXPECT_TRUE(tracker->IsWaitingForContinuationFrame());
+  EXPECT_EQ(tracker->GetStreamId(), 7);
 
   Http2ContinuationFrame continuation =
       GenerateContinuationFrame("", /*stream_id=*/7, /*end_headers=*/false);
-  tracker.UpdateState(continuation);
-  EXPECT_TRUE(tracker.IsWaitingForContinuationFrame());
+  tracker->UpdateState(continuation, /*is_existing_stream=*/true);
+  EXPECT_TRUE(tracker->IsWaitingForContinuationFrame());
 }
 
 TEST_P(ReadContextTest, HeaderThenTwoContinuationsWithEndHeadersAtEnd) {
   // Verifies state transition over HEADERS -> CONTINUATION ->
   // CONTINUATION(END_HEADERS=true).
-  ReadContext tracker(Slice::FromCopiedString("test"),
-                      /*is_client=*/GetParam());
   Http2HeaderFrame header = GenerateHeaderFrame(
       "", /*stream_id=*/9, /*end_headers=*/false, /*end_stream=*/false);
-  tracker.UpdateState(header);
-  EXPECT_TRUE(tracker.IsWaitingForContinuationFrame());
-  EXPECT_EQ(tracker.GetStreamId(), 9);
+  tracker->UpdateState(header, /*is_existing_stream=*/true);
+  EXPECT_TRUE(tracker->IsWaitingForContinuationFrame());
+  EXPECT_EQ(tracker->GetStreamId(), 9);
 
   Http2ContinuationFrame continuation1 =
       GenerateContinuationFrame("", /*stream_id=*/9, /*end_headers=*/false);
-  tracker.UpdateState(continuation1);
-  EXPECT_TRUE(tracker.IsWaitingForContinuationFrame());
+  tracker->UpdateState(continuation1, /*is_existing_stream=*/true);
+  EXPECT_TRUE(tracker->IsWaitingForContinuationFrame());
 
   Http2ContinuationFrame continuation2 =
       GenerateContinuationFrame("", /*stream_id=*/9, /*end_headers=*/true);
-  tracker.UpdateState(continuation2);
-  EXPECT_FALSE(tracker.IsWaitingForContinuationFrame());
+  tracker->UpdateState(continuation2, /*is_existing_stream=*/true);
+  EXPECT_FALSE(tracker->IsWaitingForContinuationFrame());
 }
 
 TEST_P(ReadContextTest, NewHeaderFrameAfterContinuationSequence) {
   // Verifies that after a sequence of HEADERS and CONTINUATION frames,
   // processing of a new HEADERS frame resets the tracker state.
-  ReadContext tracker(Slice::FromCopiedString("test"),
-                      /*is_client=*/GetParam());
   Http2HeaderFrame header = GenerateHeaderFrame(
       "", /*stream_id=*/9, /*end_headers=*/false, /*end_stream=*/false);
-  tracker.UpdateState(header);
-  EXPECT_TRUE(tracker.IsWaitingForContinuationFrame());
-  EXPECT_EQ(tracker.GetStreamId(), 9);
+  tracker->UpdateState(header, /*is_existing_stream=*/true);
+  EXPECT_TRUE(tracker->IsWaitingForContinuationFrame());
+  EXPECT_EQ(tracker->GetStreamId(), 9);
 
   Http2ContinuationFrame continuation1 =
       GenerateContinuationFrame("", /*stream_id=*/9, /*end_headers=*/false);
-  tracker.UpdateState(continuation1);
-  EXPECT_TRUE(tracker.IsWaitingForContinuationFrame());
+  tracker->UpdateState(continuation1, /*is_existing_stream=*/true);
+  EXPECT_TRUE(tracker->IsWaitingForContinuationFrame());
 
   Http2ContinuationFrame continuation2 =
       GenerateContinuationFrame("", /*stream_id=*/9, /*end_headers=*/true);
-  tracker.UpdateState(continuation2);
-  EXPECT_FALSE(tracker.IsWaitingForContinuationFrame());
+  tracker->UpdateState(continuation2, /*is_existing_stream=*/true);
+  EXPECT_FALSE(tracker->IsWaitingForContinuationFrame());
 
   Http2HeaderFrame header2 = GenerateHeaderFrame(
       "", /*stream_id=*/11, /*end_headers=*/true, /*end_stream=*/true);
-  tracker.UpdateState(header2);
-  EXPECT_FALSE(tracker.IsWaitingForContinuationFrame());
-  EXPECT_EQ(tracker.GetStreamId(), 11);
+  tracker->UpdateState(header2, /*is_existing_stream=*/true);
+  EXPECT_FALSE(tracker->IsWaitingForContinuationFrame());
+  EXPECT_EQ(tracker->GetStreamId(), 11);
 }
 
 TEST_P(ReadContextTest, DidReceiveDuplicateMetadataChecks) {
-  ReadContext tracker(Slice::FromCopiedString("test"),
-                      /*is_client=*/GetParam());
-
   // Scenario 1: Initial metadata frame (end_stream=false)
   Http2HeaderFrame header_initial = GenerateHeaderFrame(
       "", /*stream_id=*/1, /*end_headers=*/true, /*end_stream=*/false);
-  tracker.UpdateState(header_initial);
+  tracker->UpdateState(header_initial, /*is_existing_stream=*/true);
   // If we haven't pushed initial metadata, it's not a duplicate.
-  EXPECT_FALSE(tracker.DidReceiveDuplicateMetadata(
+  EXPECT_FALSE(tracker->DidReceiveDuplicateMetadata(
       /*did_receive_initial_metadata=*/false,
       /*did_receive_trailing_metadata=*/false));
   // If we have pushed initial metadata, it's a duplicate.
-  EXPECT_TRUE(tracker.DidReceiveDuplicateMetadata(
+  EXPECT_TRUE(tracker->DidReceiveDuplicateMetadata(
       /*did_receive_initial_metadata=*/true,
       /*did_receive_trailing_metadata=*/false));
 
   // Scenario 2: Trailing metadata frame (end_stream=true)
   Http2HeaderFrame header_trailing = GenerateHeaderFrame(
       "", /*stream_id=*/1, /*end_headers=*/true, /*end_stream=*/true);
-  tracker.UpdateState(header_trailing);
+  tracker->UpdateState(header_trailing, /*is_existing_stream=*/true);
   // If we haven't pushed trailing metadata, it's not a duplicate.
-  EXPECT_FALSE(tracker.DidReceiveDuplicateMetadata(
+  EXPECT_FALSE(tracker->DidReceiveDuplicateMetadata(
       /*did_receive_initial_metadata=*/true,
       /*did_receive_trailing_metadata=*/false));
   // If we have pushed trailing metadata, it's a duplicate.
-  EXPECT_TRUE(tracker.DidReceiveDuplicateMetadata(
+  EXPECT_TRUE(tracker->DidReceiveDuplicateMetadata(
       /*did_receive_initial_metadata=*/true,
       /*did_receive_trailing_metadata=*/true));
 }
 
 TEST(GetPeerStringTest, GetPeerString) {
   util::testing::MockPromiseEndpoint mock_endpoint(1234);
-  EXPECT_EQ(ReadContext::GetPeerString(mock_endpoint.promise_endpoint),
+  ReadContext tracker(/*max_new_streams_per_read_cycle=*/32u,
+                      mock_endpoint.promise_endpoint,
+                      /*is_client=*/true, GrpcErrors::kMaxSecurityFrameSize,
+                      /*ping_on_rst_stream_percent=*/0u);
+  EXPECT_EQ(tracker.peer_string(),
             Slice::FromCopiedString("ipv4:127.0.0.1:1234"));
 }
 
 TEST_P(ReadContextTest, PeerString) {
-  ReadContext tracker(Slice::FromCopiedString("test"),
-                      /*is_client=*/GetParam());
-  EXPECT_EQ(tracker.peer_string(), Slice::FromCopiedString("test"));
+  EXPECT_EQ(tracker->peer_string(),
+            Slice::FromCopiedString("ipv4:127.0.0.1:1234"));
+}
+
+TEST(ShouldSendPingOnRstStreamTest, AdequateRangeAndRandomness) {
+  // Test 0% rate gives 0% true results.
+  const uint32_t kNumTrials = 1000u;
+  uint32_t true_count_0 = 0u;
+  for (uint32_t i = 0u; i < kNumTrials; ++i) {
+    if (ShouldSendPingOnRstStream(0u)) {
+      true_count_0++;
+    }
+  }
+  EXPECT_EQ(true_count_0, 0u);
+
+  // Test 100% rate gives 100% true results.
+  uint32_t true_count_100 = 0u;
+  for (uint32_t i = 0u; i < kNumTrials; ++i) {
+    if (ShouldSendPingOnRstStream(100u)) {
+      true_count_100++;
+    }
+  }
+  EXPECT_EQ(true_count_100, kNumTrials);
+
+  // Test 50% rate gives approximately 50% true results.
+  uint32_t true_count_50 = 0u;
+  for (uint32_t i = 0u; i < kNumTrials; ++i) {
+    if (ShouldSendPingOnRstStream(50u)) {
+      true_count_50++;
+    }
+  }
+  // This is a binomial distribution. Mean is 500.
+  // One standard deviations is 15.8.
+  // So this range is (200/15.8 = 12.7) standard deviations.
+  // The probability of this failing is in the order of (10^-35)
+  EXPECT_GE(true_count_50, 300u);
+  EXPECT_LE(true_count_50, 700u);
 }
 
 INSTANTIATE_TEST_SUITE_P(ReadContext, ReadContextTest, ::testing::Bool());

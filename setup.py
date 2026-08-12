@@ -292,11 +292,20 @@ if EXTRA_ENV_LINK_ARGS is None:
             EXTRA_ENV_LINK_ARGS += " -latomic"
     if "linux" in sys.platform:
         EXTRA_ENV_LINK_ARGS += " -static-libgcc"
+        _version_script = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "src",
+            "python",
+            "grpcio",
+            "cygrpc_exports.lds",
+        )
+        EXTRA_ENV_LINK_ARGS += f' -Wl,--version-script="{_version_script}"'
 
 # Explicitly link Core Foundation framework for MacOS to ensure no symbol is
 # missing when compiled using package managers like Conda.
 if "darwin" in sys.platform:
     EXTRA_ENV_LINK_ARGS += " -framework CoreFoundation"
+    EXTRA_ENV_LINK_ARGS += " -Wl,-exported_symbol,_PyInit_cygrpc"
 
 EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
@@ -467,10 +476,6 @@ else:
         ("HAVE_CONFIG_H", 1),
         ("GRPC_ENABLE_FORK_SUPPORT", 1),
     )
-
-# Fix for multiprocessing support on Apple devices.
-# TODO(vigneshbabu): Remove this once the poll poller gets fork support.
-DEFINE_MACROS += (("GRPC_PYTHON_BUILD", 1),)
 
 # Fix for Cython build issue in aarch64.
 # It's required to define this macro before include <inttypes.h>.

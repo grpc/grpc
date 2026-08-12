@@ -266,28 +266,26 @@ class Fuzzer {
       class WatcherWrapper : public AsyncConnectivityStateWatcherInterface {
        public:
         WatcherWrapper(
-            Fuzzer* fuzzer, std::shared_ptr<WorkSerializer> work_serializer,
+            SubchannelState* state,
             std::unique_ptr<
                 SubchannelInterface::ConnectivityStateWatcherInterface>
                 watcher)
-            : AsyncConnectivityStateWatcherInterface(
-                  std::move(work_serializer)),
-              fuzzer_(fuzzer),
+            : AsyncConnectivityStateWatcherInterface(state->work_serializer()),
+              state_(state),
               watcher_(std::move(watcher)) {}
 
         WatcherWrapper(
-            Fuzzer* fuzzer, std::shared_ptr<WorkSerializer> work_serializer,
+            SubchannelState* state,
             std::shared_ptr<
                 SubchannelInterface::ConnectivityStateWatcherInterface>
                 watcher)
-            : AsyncConnectivityStateWatcherInterface(
-                  std::move(work_serializer)),
-              fuzzer_(fuzzer),
+            : AsyncConnectivityStateWatcherInterface(state->work_serializer()),
+              state_(state),
               watcher_(std::move(watcher)) {}
 
         ~WatcherWrapper() override {
           if (current_state_ == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-            --fuzzer_->num_subchannels_transient_failure_;
+            --state_->fuzzer_->num_subchannels_transient_failure_;
           }
         }
 
@@ -296,16 +294,19 @@ class Fuzzer {
           LOG(INFO) << "notifying watcher: state="
                     << ConnectivityStateName(new_state) << " status=" << status;
           if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-            ++fuzzer_->num_subchannels_transient_failure_;
+            ++state_->fuzzer_->num_subchannels_transient_failure_;
           } else if (current_state_ == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-            --fuzzer_->num_subchannels_transient_failure_;
+            --state_->fuzzer_->num_subchannels_transient_failure_;
+          } else if (!current_state_.has_value() &&
+                     new_state == GRPC_CHANNEL_CONNECTING) {
+            state_->ConnectionRequested();
           }
           current_state_ = new_state;
           watcher_->OnConnectivityStateChange(new_state, status);
         }
 
        private:
-        Fuzzer* fuzzer_;
+        SubchannelState* state_;
         std::shared_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
             watcher_;
         std::optional<grpc_connectivity_state> current_state_;
@@ -318,8 +319,8 @@ class Fuzzer {
               SubchannelInterface::ConnectivityStateWatcherInterface>
               watcher) override {
         auto* watcher_ptr = watcher.get();
-        auto watcher_wrapper = MakeOrphanable<WatcherWrapper>(
-            state_->fuzzer_, state_->work_serializer(), std::move(watcher));
+        auto watcher_wrapper =
+            MakeOrphanable<WatcherWrapper>(state_, std::move(watcher));
         watcher_map_[watcher_ptr] = watcher_wrapper.get();
         state_->state_tracker_.AddWatcher(GRPC_CHANNEL_SHUTDOWN,
                                           std::move(watcher_wrapper));
@@ -348,8 +349,7 @@ class Fuzzer {
           auto connectivity_watcher = health_watcher_->TakeWatcher();
           auto* connectivity_watcher_ptr = connectivity_watcher.get();
           auto watcher_wrapper = MakeOrphanable<WatcherWrapper>(
-              state_->fuzzer_, state_->work_serializer(),
-              std::move(connectivity_watcher));
+              state_, std::move(connectivity_watcher));
           health_watcher_wrapper_ = watcher_wrapper.get();
           state_->state_tracker_.AddWatcher(GRPC_CHANNEL_SHUTDOWN,
                                             std::move(watcher_wrapper));
@@ -691,6 +691,9 @@ class Fuzzer {
   }
 
   static absl::Status ToAbslStatus(const pick_first_fuzzer::Status& status) {
+    if (status.code() > 16 || status.code() < 0) {
+      return absl::UnknownError(status.message());
+    }
     return absl::Status(static_cast<absl::StatusCode>(status.code()),
                         status.message());
   }
@@ -1011,6 +1014,25 @@ TEST(PickFirstFuzzer, LbPolicyHasNotYetSeenConnectingToTfUpdate) {
         address { localhost_port: 0 }
         state: TRANSIENT_FAILURE
       }
+    }
+  )pb"));
+}
+
+TEST(PickFirstFuzzer,
+     SubchannelStartsInConnectingWhenPolicyIsInTransientFailure) {
+  Fuzz(ParseTestProto(R"pb(
+    actions { create_lb_policy {} }
+    actions {
+      update { endpoint_error { code: -300870593 message: "\350\250\227" } }
+    }
+    actions {
+      subchannel_connectivity_notification {
+        address { localhost_port: 1 }
+        state: CONNECTING
+      }
+    }
+    actions {
+      update { endpoint_list { endpoints { addresses { localhost_port: 1 } } } }
     }
   )pb"));
 }

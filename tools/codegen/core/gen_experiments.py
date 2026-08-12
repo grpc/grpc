@@ -20,8 +20,6 @@ Invoke as: tools/codegen/core/gen_experiments.py
 Experiment definitions are in src/core/lib/experiments/experiments.yaml
 """
 
-from __future__ import print_function
-
 import argparse
 import os
 import sys
@@ -160,8 +158,7 @@ def _GenerateExperimentFiles(args, mode):
             sys.exit(1)
 
     if len(experiment_annotation) > 2000:
-        print("comma-delimited string of experiments is too long")
-        sys.exit(1)
+        print("Warning: comma-delimited string of experiments is too long")
 
     for rollout_attr in rollouts:
         if not compiler.AddRolloutSpecification(rollout_attr):

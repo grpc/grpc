@@ -38,7 +38,7 @@
 namespace grpc_core {
 
 // Tracks a list of maps of T -> optional<T> via promises.
-// When Run, runs each transformation in order, and resolves to the ulimate
+// When Run, runs each transformation in order, and resolves to the ultimate
 // result.
 // If a map resolves to nullopt, the chain is terminated and the result is
 // nullopt.

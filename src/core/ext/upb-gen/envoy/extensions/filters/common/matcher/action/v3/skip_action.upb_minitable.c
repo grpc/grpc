@@ -14,9 +14,8 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
 const upb_MiniTable envoy__extensions__filters__common__matcher__action__v3__SkipFilter_msg_init = {
-  NULL,
   NULL,
   8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -24,7 +23,6 @@ const upb_MiniTable envoy__extensions__filters__common__matcher__action__v3__Ski
 #endif
 };
 
-const upb_MiniTable* envoy__extensions__filters__common__matcher__action__v3__SkipFilter_msg_init_ptr = &envoy__extensions__filters__common__matcher__action__v3__SkipFilter_msg_init;
 static const upb_MiniTable *messages_layout[1] = {
   &envoy__extensions__filters__common__matcher__action__v3__SkipFilter_msg_init,
 };

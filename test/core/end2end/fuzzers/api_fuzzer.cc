@@ -599,9 +599,40 @@ TEST(MyTestSuite, RunApiFuzzerRegression3) {
            actions { queue_batch { operations { receive_message {} } } }
            actions { create_channel { inproc: true } }
            config_vars {
-             experiments: "-subchannel_connection_scaling,promise_based_http2_client_transport"
+             experiments: "-subchannel_connection_scaling,ph2_client"
            }
       )pb"));
+}
+
+TEST(MyTestSuite, FuzzerBugRegressionInvalidEnumValues) {
+  RunApiFuzzer(ParseTestProto(
+      R"pb(actions {
+             create_channel {
+               target: "server"
+               channel_args {
+                 args {
+                   key: "grpc.default_compression_algorithm"
+                   i: 3149005166793163139
+                 }
+               }
+             }
+           }
+           actions {
+             create_channel {
+               target: "server"
+               channel_args {
+                 args { key: "grpc.default_compression_algorithm" i: -1 }
+               }
+             }
+           }
+           actions {
+             create_channel {
+               target: "server"
+               channel_args {
+                 args { key: "grpc.default_compression_algorithm" i: 4 }
+               }
+             }
+           })pb"));
 }
 
 }  // namespace testing

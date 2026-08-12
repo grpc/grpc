@@ -19,7 +19,6 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__extensions__grpc_0service__channel_0credentials__tls__v3__TlsCredentials_msg_init;
-extern const upb_MiniTable* envoy__extensions__grpc_0service__channel_0credentials__tls__v3__TlsCredentials_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_extensions_grpc_service_channel_credentials_tls_v3_tls_credentials_proto_upb_file_layout;
 

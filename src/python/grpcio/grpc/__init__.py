@@ -18,6 +18,8 @@ import contextlib
 import enum
 import logging
 import sys
+import typing
+from typing import Any, Protocol
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
@@ -583,6 +585,8 @@ class ChannelCredentials:
     example, ssl_channel_credentials returns an instance of this class and
     secure_channel requires an instance of this class.
     """
+
+    _credentials: _cygrpc.ChannelCredentials
 
     def __init__(self, credentials):
         self._credentials = credentials
@@ -1358,13 +1362,17 @@ class RpcMethodHandler(abc.ABC):
     """
 
 
-class HandlerCallDetails(abc.ABC):
+@typing.runtime_checkable
+class HandlerCallDetails(Protocol):
     """Describes an RPC that has just arrived for service.
 
     Attributes:
       method: The method name of the RPC.
       invocation_metadata: The :term:`metadata` sent by the client.
     """
+
+    method: str
+    invocation_metadata: Any
 
 
 class GenericRpcHandler(abc.ABC):
