@@ -16,19 +16,11 @@
 
 #include "src/core/credentials/call/gdch_service_account/gdch_service_account_credentials.h"
 
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/port_platform.h>
 #include <gtest/gtest.h>
 
-#include <chrono>
-#include <cstdint>
-#include <memory>
 #include <string>
 #include <vector>
 
-#include "src/core/util/http_client/httpcli.h"
 #include "src/core/util/http_client/parser.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"

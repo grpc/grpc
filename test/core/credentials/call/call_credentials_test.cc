@@ -29,7 +29,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <fstream>
 #include <string>
 
 #include "src/core/credentials/call/composite/composite_call_credentials.h"
@@ -38,7 +37,6 @@
 #include "src/core/credentials/call/external/file_external_account_credentials.h"
 #include "src/core/credentials/call/external/url_external_account_credentials.h"
 #include "src/core/credentials/call/gcp_service_account_identity/gcp_service_account_identity_credentials.h"
-#include "src/core/credentials/call/gdch_service_account/gdch_service_account_credentials.h"
 #include "src/core/credentials/call/iam/iam_credentials.h"
 #include "src/core/credentials/call/jwt/jwt_credentials.h"
 #include "src/core/credentials/call/jwt_token_file/jwt_token_file_call_credentials.h"
@@ -72,7 +70,6 @@
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/uri.h"
 #include "src/core/util/wait_for_single_owner.h"
-#include "test/core/credentials/call/oauth2/oauth2_utils.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/test_util/test_call_creds.h"

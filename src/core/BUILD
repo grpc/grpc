@@ -5246,7 +5246,6 @@ grpc_cc_library(
         "credentials/call/gdch_service_account/gdch_service_account_credentials.h",
     ],
     external_deps = [
-        "absl/functional:any_invocable",
         "absl/log",
         "absl/status",
         "absl/status:statusor",
@@ -5256,7 +5255,6 @@ grpc_cc_library(
     ],
     deps = [
         "closure",
-        "error",
         "httpcli_ssl_credentials",
         "json",
         "json_object_loader",
@@ -5321,7 +5319,6 @@ grpc_cc_library(
         "slice",
         "status_conversion",
         "status_helper",
-        "sync",
         "time",
         "token_fetcher_credentials",
         "//:gpr",
@@ -5880,7 +5877,6 @@ grpc_cc_library(
         "channel_fwd",
         "context",
         "gcp_service_account_identity_credentials",
-        "gdch_service_account_credentials",
         "grpc_check",
         "grpc_resolver_xds_attributes",
         "grpc_service_config",

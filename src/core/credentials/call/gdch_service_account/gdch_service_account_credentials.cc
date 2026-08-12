@@ -19,8 +19,6 @@
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <openssl/bio.h>
 #include <openssl/evp.h>
@@ -28,19 +26,13 @@
 #include <string.h>
 
 #include <array>
-#include <chrono>
-#include <cstdint>
-#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
 #include <utility>
-#include <vector>
 
-#include "src/core/credentials/call/call_credentials.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/util/http_client/httpcli.h"
@@ -56,14 +48,12 @@
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/uri.h"
 #include "src/core/util/validation_errors.h"
-#include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-#include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {

@@ -40,4 +40,3 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util_base",
     ],
 )
-

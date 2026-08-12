@@ -34,11 +34,7 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
-        "//:exec_ctx",
-        "//:gpr",
-        "//:grpc",
         "//:httpcli",
-        "//:orphanable",
         "//:ref_counted_ptr",
         "//src/core:gdch_service_account_credentials",
         "//src/core:json",
