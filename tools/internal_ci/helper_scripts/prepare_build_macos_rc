@@ -59,6 +59,7 @@ fi
 export HOMEBREW_NO_AUTO_UPDATE=1
 export HOMEBREW_NO_INSTALL_FROM_API=1
 export HOMEBREW_ARTIFACT_DOMAIN="https://storage.googleapis.com/grpc-build-helper/homebrew"
+export HOMEBREW_ARTIFACT_DOMAIN_NO_FALLBACK=0
 
 # Dump the brew configuration for debugging just in case. Check "Core tap HEAD" field
 # because it should be the same as below unless it's been updated.
