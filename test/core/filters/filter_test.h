@@ -21,6 +21,7 @@
 #include <stdint.h>
 
 #include <initializer_list>
+#include <optional>
 #include <utility>
 
 #include "src/core/call/call_destination.h"
@@ -105,19 +106,15 @@ class FilterTest : public YodelTest {
   CallInitiator StartCall(ClientMetadataHandle client_initial_metadata);
 
   // Return the handler for the next call started against the bottom of the
-  // stack, ticking the event engine until one appears. Call once per child call
-  // the filter or interceptor is expected to create. Also becomes the implicit
-  // handler.
-  CallHandler GetNextHandler();
+  // stack, or std::nullopt if none shows up.
+  std::optional<CallHandler> GetNextHandler(
+      grpc_event_engine::experimental::EventEngine::Duration timeout =
+          std::chrono::minutes(5));
 
   // Convenience for the filter case, where a call always creates exactly one
   // child call: StartCall() followed by one GetNextHandler(). May be called
   // only once per test.
   void StartCallForFilter(ClientMetadataHandle client_initial_metadata);
-
-  // Number of child calls started against the bottom of the stack, whether or
-  // not they were collected via GetNextHandler().
-  int ChildCallsStarted() const;
 
   // Driving the six call operations.
   //
@@ -134,47 +131,68 @@ class FilterTest : public YodelTest {
   // Initiator operations: push the client's request, pull the server's
   // response.
   void PushClientMessage(CallInitiator initiator, MessageHandle message);
-  void PushClientMessage(MessageHandle message);
+  void PushClientMessage(MessageHandle message) {
+    PushClientMessage(*initiator_, std::move(message));
+  }
   void PushClientHalfClose(CallInitiator initiator);
-  void PushClientHalfClose();
+  void PushClientHalfClose() { PushClientHalfClose(*initiator_); }
   // nullopt for the trailers-only case (no separate initial metadata).
   ValueOrFailure<std::optional<ServerMetadataHandle>> PullServerInitialMetadata(
       CallInitiator initiator);
   ValueOrFailure<std::optional<ServerMetadataHandle>>
-  PullServerInitialMetadata();
+  PullServerInitialMetadata() {
+    return PullServerInitialMetadata(*initiator_);
+  }
   ServerToClientNextMessage PullServerMessage(CallInitiator initiator);
-  ServerToClientNextMessage PullServerMessage();
+  ServerToClientNextMessage PullServerMessage() {
+    return PullServerMessage(*initiator_);
+  }
   ValueOrFailure<ServerMetadataHandle> PullServerTrailingMetadata(
       CallInitiator initiator);
-  ValueOrFailure<ServerMetadataHandle> PullServerTrailingMetadata();
+  ValueOrFailure<ServerMetadataHandle> PullServerTrailingMetadata() {
+    return PullServerTrailingMetadata(*initiator_);
+  }
   // As above, but returns the call's status, for tests that only care about it.
   absl::Status PullServerTrailingStatus(CallInitiator initiator);
-  absl::Status PullServerTrailingStatus();
+  absl::Status PullServerTrailingStatus() {
+    return PullServerTrailingStatus(*initiator_);
+  }
 
   // Handler operations: pull the client's request, push the server's
   // response.
   ValueOrFailure<ClientMetadataHandle> PullClientInitialMetadata(
       CallHandler handler);
-  ValueOrFailure<ClientMetadataHandle> PullClientInitialMetadata();
+  ValueOrFailure<ClientMetadataHandle> PullClientInitialMetadata() {
+    return PullClientInitialMetadata(*handler_);
+  }
   ClientToServerNextMessage PullClientMessage(CallHandler handler);
-  ClientToServerNextMessage PullClientMessage();
+  ClientToServerNextMessage PullClientMessage() {
+    return PullClientMessage(*handler_);
+  }
   // True iff the client->server stream ended cleanly (the client half-closed).
   // Otherwise records a test failure saying whether the call failed or a
   // message arrived instead, and returns false.
   bool PullClientHalfClose(CallHandler handler);
-  bool PullClientHalfClose();
+  bool PullClientHalfClose() { return PullClientHalfClose(*handler_); }
   void PushServerInitialMetadata(CallHandler handler, ServerMetadataHandle md);
-  void PushServerInitialMetadata(ServerMetadataHandle md);
+  void PushServerInitialMetadata(ServerMetadataHandle md) {
+    PushServerInitialMetadata(*handler_, std::move(md));
+  }
   void PushServerMessage(CallHandler handler, MessageHandle message);
-  void PushServerMessage(MessageHandle message);
+  void PushServerMessage(MessageHandle message) {
+    PushServerMessage(*handler_, std::move(message));
+  }
   void PushServerTrailingMetadata(CallHandler handler, ServerMetadataHandle md);
-  void PushServerTrailingMetadata(ServerMetadataHandle md);
+  void PushServerTrailingMetadata(ServerMetadataHandle md) {
+    PushServerTrailingMetadata(*handler_, std::move(md));
+  }
 
   // Constructing the things that flow through a call
 
   ClientMetadataHandle NewClientMetadata(
       std::initializer_list<std::pair<absl::string_view, absl::string_view>>
-          init = {});
+          init = {},
+      absl::string_view path = kTestPath);
   ServerMetadataHandle NewServerMetadata(
       std::initializer_list<std::pair<absl::string_view, absl::string_view>>
           init = {});
@@ -185,17 +203,12 @@ class FilterTest : public YodelTest {
   // override (chaining to the base) to install other call context objects.
   virtual void InitAfterCallArena(Arena* arena);
 
-  // Gives every call started with NewServiceConfigClientMetadata() a service
+  // Gives every call started with NewClientMetadata() a service
   // config with `method_config_fields` merged into its method config, e.g.
   // R"("maxRequestMessageBytes": 4)". Call before StartCall().
   void SetServiceConfig(absl::string_view method_config_fields);
 
-  // Client initial metadata that a service config set via SetServiceConfig()
-  // applies to.
-  ClientMetadataHandle NewServiceConfigClientMetadata();
-
  private:
-  // Shared by SetServiceConfig() and NewServiceConfigClientMetadata().
   static constexpr absl::string_view kTestPath = "/test_method";
 
   // The bottom of the chain under test: stands in for the transport (or for
@@ -212,12 +225,8 @@ class FilterTest : public YodelTest {
 
     std::optional<CallHandler> PopHandler();
 
-    // Total number of calls ever started against this destination.
-    int calls_started() const { return calls_started_; }
-
    private:
     std::queue<CallHandler> handlers_;
-    int calls_started_ = 0;
   };
 
   // Run `factory` to completion on `half`'s party, ticking the event engine
@@ -256,7 +265,6 @@ class FilterTest : public YodelTest {
 
   // Set by SetServiceConfig(), installed by the default InitAfterCallArena().
   RefCountedPtr<ServiceConfig> service_config_;
-  const ServiceConfigParser::ParsedConfigVector* method_configs_ = nullptr;
 };
 
 }  // namespace grpc_core

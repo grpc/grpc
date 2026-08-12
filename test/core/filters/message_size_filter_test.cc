@@ -55,7 +55,7 @@ class MessageSizeFilterTest : public FilterTest {
       case LimitConfig::kClientServiceConfig:
         ASSERT_TRUE(CreateFilterChain<ClientMessageSizeFilter>().ok());
         SetServiceConfig(service_config_field);
-        StartCallForFilter(NewServiceConfigClientMetadata());
+        StartCallForFilter(NewClientMetadata());
         break;
       case LimitConfig::kServerChannelArgs:
         ASSERT_TRUE(

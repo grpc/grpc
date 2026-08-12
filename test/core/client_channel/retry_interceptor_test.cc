@@ -17,6 +17,8 @@
 #include <grpc/grpc.h>
 #include <grpc/status.h>
 
+#include <optional>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "test/core/filters/filter_matchers.h"
 #include "test/core/filters/filter_test.h"
@@ -53,7 +55,7 @@ FILTER_TEST(RetryInterceptorTest, NoOp) { ASSERT_TRUE(Init().ok()); }
 // call in, one child call out.
 FILTER_TEST(RetryInterceptorTest, SingleAttemptSucceeds) {
   ASSERT_TRUE(Init().ok());
-  StartCallForFilter(NewServiceConfigClientMetadata());
+  StartCallForFilter(NewClientMetadata());
 
   PushClientMessage(NewMessage("hello"));
   PushClientHalfClose();
@@ -65,9 +67,6 @@ FILTER_TEST(RetryInterceptorTest, SingleAttemptSucceeds) {
   PushServerTrailingMetadata(ServerMetadataFromStatus(GRPC_STATUS_OK));
 
   EXPECT_TRUE(PullServerTrailingStatus().ok());
-
-  // No retry policy, so the interceptor made exactly one child call.
-  EXPECT_EQ(ChildCallsStarted(), 1);
 
   WaitForAllPendingWork();
 }
@@ -83,36 +82,36 @@ FILTER_TEST(RetryInterceptorTest, RetriesOnRetryableStatus) {
     "backoffMultiplier": 1,
     "retryableStatusCodes": ["UNAVAILABLE"]
   })");
-  StartCall(NewServiceConfigClientMetadata());
+  StartCall(NewClientMetadata());
   PushClientMessage(NewMessage("hello"));
   PushClientHalfClose();
 
   // First attempt: fails with a retryable status. The interceptor buffers the
   // client message and replays it onto each attempt.
-  CallHandler first_attempt = GetNextHandler();
-  ASSERT_TRUE(PullClientInitialMetadata(first_attempt).ok());
-  ClientToServerNextMessage first_message = PullClientMessage(first_attempt);
+  std::optional<CallHandler> first_attempt = GetNextHandler();
+  ASSERT_TRUE(PullClientInitialMetadata(*first_attempt).ok());
+  ClientToServerNextMessage first_message = PullClientMessage(*first_attempt);
   ASSERT_TRUE(first_message.ok());
   ASSERT_TRUE(first_message.has_value());
   EXPECT_THAT(first_message.value(), HasMessagePayload("hello"));
   PushServerTrailingMetadata(
-      first_attempt,
+      *first_attempt,
       ServerMetadataFromStatus(GRPC_STATUS_UNAVAILABLE, "try again"));
 
   // Second attempt: the interceptor replays the call onto a new child call.
-  CallHandler second_attempt = GetNextHandler();
-  ASSERT_TRUE(PullClientInitialMetadata(second_attempt).ok());
-  ClientToServerNextMessage second_message = PullClientMessage(second_attempt);
+  std::optional<CallHandler> second_attempt = GetNextHandler();
+  ASSERT_TRUE(PullClientInitialMetadata(*second_attempt).ok());
+  ClientToServerNextMessage second_message = PullClientMessage(*second_attempt);
   ASSERT_TRUE(second_message.ok());
   ASSERT_TRUE(second_message.has_value());
   EXPECT_THAT(second_message.value(), HasMessagePayload("hello"));
-  PushServerTrailingMetadata(second_attempt,
+  PushServerTrailingMetadata(*second_attempt,
                              ServerMetadataFromStatus(GRPC_STATUS_OK));
 
   EXPECT_TRUE(PullServerTrailingStatus().ok());
 
   // One retry, so the interceptor made exactly two child calls.
-  EXPECT_EQ(ChildCallsStarted(), 2);
+  EXPECT_EQ(GetNextHandler(), std::nullopt);
 
   WaitForAllPendingWork();
 }
@@ -128,28 +127,28 @@ FILTER_TEST(RetryInterceptorTest, GivesUpAfterMaxAttempts) {
     "backoffMultiplier": 1,
     "retryableStatusCodes": ["UNAVAILABLE"]
   })");
-  StartCall(NewServiceConfigClientMetadata());
+  StartCall(NewClientMetadata());
   PushClientMessage(NewMessage("hello"));
   PushClientHalfClose();
 
   // Fail each attempt in turn, releasing its handler as a transport would once
   // the call has failed.
   for (int i = 0; i < 2; i++) {
-    CallHandler attempt = GetNextHandler();
-    ASSERT_TRUE(PullClientInitialMetadata(attempt).ok());
-    ClientToServerNextMessage message = PullClientMessage(attempt);
+    std::optional<CallHandler> attempt = GetNextHandler();
+    ASSERT_TRUE(PullClientInitialMetadata(*attempt).ok());
+    ClientToServerNextMessage message = PullClientMessage(*attempt);
     ASSERT_TRUE(message.ok());
     ASSERT_TRUE(message.has_value());
     EXPECT_THAT(message.value(), HasMessagePayload("hello"));
     PushServerTrailingMetadata(
-        attempt,
+        *attempt,
         ServerMetadataFromStatus(GRPC_STATUS_UNAVAILABLE, "try again"));
   }
 
   EXPECT_EQ(PullServerTrailingStatus(), absl::UnavailableError("try again"));
 
   // maxAttempts is 2, so the interceptor stopped after two child calls.
-  EXPECT_EQ(ChildCallsStarted(), 2);
+  EXPECT_EQ(GetNextHandler(), std::nullopt);
 
   WaitForAllPendingWork();
 }

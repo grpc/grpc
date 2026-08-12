@@ -239,9 +239,9 @@ FILTER_TEST(CompressionFilterTest, ServerFilterRejectsOversizeMessage) {
   ASSERT_TRUE(PullClientInitialMetadata().ok());
   // The filter rejected the message, so the pull fails rather than delivering.
   EXPECT_FALSE(PullClientMessage().ok());
-
-  EXPECT_EQ(PullServerTrailingStatus().code(),
-            absl::StatusCode::kResourceExhausted);
+  EXPECT_EQ(PullServerTrailingStatus(),
+            absl::ResourceExhaustedError(
+                "SERVER: Received message larger than max (1000 vs. 10)"));
 
   WaitForAllPendingWork();
 }
@@ -260,11 +260,10 @@ FILTER_TEST(CompressionFilterTest, ClientFilterRejectsOversizeResponse) {
   PushServerMessage(GzipCompressedMessage(CompressiblePayload()));
 
   ASSERT_TRUE(PullServerInitialMetadata().ok());
-  // The decompressed payload (1000 bytes) exceeds the 10-byte limit.
   EXPECT_FALSE(PullServerMessage().ok());
-
-  EXPECT_EQ(PullServerTrailingStatus().code(),
-            absl::StatusCode::kResourceExhausted);
+  EXPECT_EQ(PullServerTrailingStatus(),
+            absl::ResourceExhaustedError(
+                "CLIENT: Received message larger than max (29 vs. 10)"));
 
   WaitForAllPendingWork();
 }
@@ -275,7 +274,7 @@ FILTER_TEST(CompressionFilterTest,
             ClientFilterRejectsOversizeResponseFromServiceConfig) {
   ASSERT_TRUE(CreateFilterChain<ClientCompressionFilter>(GzipArgs()).ok());
   SetServiceConfig(R"("maxResponseMessageBytes": 10)");
-  StartCallForFilter(NewServiceConfigClientMetadata());
+  StartCallForFilter(NewClientMetadata());
 
   PushClientHalfClose();
   ASSERT_TRUE(PullClientInitialMetadata().ok());
@@ -285,9 +284,9 @@ FILTER_TEST(CompressionFilterTest,
   ASSERT_TRUE(PullServerInitialMetadata().ok());
   // The decompressed payload (1000 bytes) exceeds the 10-byte limit.
   EXPECT_FALSE(PullServerMessage().ok());
-
-  EXPECT_EQ(PullServerTrailingStatus().code(),
-            absl::StatusCode::kResourceExhausted);
+  EXPECT_EQ(PullServerTrailingStatus(),
+            absl::ResourceExhaustedError(
+                "CLIENT: Received message larger than max (29 vs. 10)"));
 
   WaitForAllPendingWork();
 }

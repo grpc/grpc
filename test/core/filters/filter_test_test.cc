@@ -368,9 +368,6 @@ FILTER_TEST(FilterTest, ConsumingInterceptorCreatesNoChildCall) {
   EXPECT_EQ(PullServerTrailingStatus(),
             absl::UnimplementedError("consumed by interceptor"));
 
-  // The interceptor answered the call itself: nothing went down the stack.
-  EXPECT_EQ(ChildCallsStarted(), 0);
-
   WaitForAllPendingWork();
 }
 

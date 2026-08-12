@@ -50,10 +50,6 @@ namespace grpc_core {
 
 void FilterTest::TestCallDestination::StartCall(
     UnstartedCallHandler unstarted_call_handler) {
-  // Start the call here rather than in GetNextHandler(): this is what a
-  // transport does, and it means the handler is started on the party that
-  // created it.
-  ++calls_started_;
   handlers_.push(unstarted_call_handler.StartCall());
 }
 
@@ -114,14 +110,19 @@ CallInitiator FilterTest::StartCall(
   return *initiator_;
 }
 
-CallHandler FilterTest::GetNextHandler() {
+std::optional<CallHandler> FilterTest::GetNextHandler(
+    grpc_event_engine::experimental::EventEngine::Duration timeout) {
   auto poll = [this]() -> Poll<CallHandler> {
     std::optional<CallHandler> handler = destination_->PopHandler();
     if (handler.has_value()) return std::move(*handler);
     return Pending();
   };
-  handler_ = TickUntil(absl::FunctionRef<Poll<CallHandler>()>(poll));
-  return *handler_;
+  std::optional<CallHandler> handler = TryTickUntil<CallHandler>(
+      timeout, absl::FunctionRef<Poll<CallHandler>()>(poll));
+  if (handler.has_value()) {
+    handler_ = *handler;
+  }
+  return handler;
 }
 
 void FilterTest::StartCallForFilter(
@@ -130,17 +131,17 @@ void FilterTest::StartCallForFilter(
       << "StartCallForFilter() may only be called once per test; use "
          "StartCall()/GetNextHandler() for tests that create multiple calls";
   StartCall(std::move(client_initial_metadata));
-  GetNextHandler();
-}
-
-int FilterTest::ChildCallsStarted() const {
-  return destination_->calls_started();
+  GRPC_CHECK(GetNextHandler().has_value())
+      << "a filter must create exactly one child call per call started";
 }
 
 void FilterTest::InitAfterCallArena(Arena* arena) {
   if (service_config_ == nullptr) return;
+  const ServiceConfigParser::ParsedConfigVector* method_configs =
+      service_config_->GetMethodParsedConfigVector(
+          Slice::FromCopiedString(kTestPath).c_slice());
   arena->New<ServiceConfigCallData>(arena)->SetServiceConfig(service_config_,
-                                                             method_configs_);
+                                                             method_configs);
 }
 
 void FilterTest::SetServiceConfig(absl::string_view method_config_fields) {
@@ -150,14 +151,6 @@ void FilterTest::SetServiceConfig(absl::string_view method_config_fields) {
                                       method_config_fields, "}]}"));
   ASSERT_TRUE(service_config.ok()) << service_config.status();
   service_config_ = std::move(*service_config);
-  method_configs_ = service_config_->GetMethodParsedConfigVector(
-      Slice::FromCopiedString(kTestPath).c_slice());
-}
-
-ClientMetadataHandle FilterTest::NewServiceConfigClientMetadata() {
-  ClientMetadataHandle md = NewClientMetadata();
-  md->Set(HttpPathMetadata(), Slice::FromCopiedString(kTestPath));
-  return md;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -182,26 +175,15 @@ void FilterTest::PushClientMessage(CallInitiator initiator,
   initiator.SpawnPushMessage(std::move(message));
 }
 
-void FilterTest::PushClientMessage(MessageHandle message) {
-  PushClientMessage(*initiator_, std::move(message));
-}
-
 void FilterTest::PushClientHalfClose(CallInitiator initiator) {
   initiator.SpawnFinishSends();
 }
-
-void FilterTest::PushClientHalfClose() { PushClientHalfClose(*initiator_); }
 
 ValueOrFailure<std::optional<ServerMetadataHandle>>
 FilterTest::PullServerInitialMetadata(CallInitiator initiator) {
   return BlockingRun(
       initiator, "pull-server-initial-metadata",
       [initiator]() mutable { return initiator.PullServerInitialMetadata(); });
-}
-
-ValueOrFailure<std::optional<ServerMetadataHandle>>
-FilterTest::PullServerInitialMetadata() {
-  return PullServerInitialMetadata(*initiator_);
 }
 
 ServerToClientNextMessage FilterTest::PullServerMessage(
@@ -211,19 +193,11 @@ ServerToClientNextMessage FilterTest::PullServerMessage(
   });
 }
 
-ServerToClientNextMessage FilterTest::PullServerMessage() {
-  return PullServerMessage(*initiator_);
-}
-
 ValueOrFailure<ServerMetadataHandle> FilterTest::PullServerTrailingMetadata(
     CallInitiator initiator) {
   return BlockingRun(
       initiator, "pull-server-trailing-metadata",
       [initiator]() mutable { return initiator.PullServerTrailingMetadata(); });
-}
-
-ValueOrFailure<ServerMetadataHandle> FilterTest::PullServerTrailingMetadata() {
-  return PullServerTrailingMetadata(*initiator_);
 }
 
 absl::Status FilterTest::PullServerTrailingStatus(CallInitiator initiator) {
@@ -233,10 +207,6 @@ absl::Status FilterTest::PullServerTrailingStatus(CallInitiator initiator) {
     return absl::InternalError("failed to pull server trailing metadata");
   }
   return ServerMetadataToStatus(**md);
-}
-
-absl::Status FilterTest::PullServerTrailingStatus() {
-  return PullServerTrailingStatus(*initiator_);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -249,18 +219,10 @@ ValueOrFailure<ClientMetadataHandle> FilterTest::PullClientInitialMetadata(
       [handler]() mutable { return handler.PullClientInitialMetadata(); });
 }
 
-ValueOrFailure<ClientMetadataHandle> FilterTest::PullClientInitialMetadata() {
-  return PullClientInitialMetadata(*handler_);
-}
-
 ClientToServerNextMessage FilterTest::PullClientMessage(CallHandler handler) {
   return BlockingRun(handler, "pull-client-message", [handler]() mutable {
     return Map(handler.PullMessage(), ReleaseCallState<CallHandler>);
   });
-}
-
-ClientToServerNextMessage FilterTest::PullClientMessage() {
-  return PullClientMessage(*handler_);
 }
 
 bool FilterTest::PullClientHalfClose(CallHandler handler) {
@@ -276,34 +238,18 @@ bool FilterTest::PullClientHalfClose(CallHandler handler) {
   return true;
 }
 
-bool FilterTest::PullClientHalfClose() {
-  return PullClientHalfClose(*handler_);
-}
-
 void FilterTest::PushServerInitialMetadata(CallHandler handler,
                                            ServerMetadataHandle md) {
   handler.SpawnPushServerInitialMetadata(std::move(md));
-}
-
-void FilterTest::PushServerInitialMetadata(ServerMetadataHandle md) {
-  PushServerInitialMetadata(*handler_, std::move(md));
 }
 
 void FilterTest::PushServerMessage(CallHandler handler, MessageHandle message) {
   handler.SpawnPushMessage(std::move(message));
 }
 
-void FilterTest::PushServerMessage(MessageHandle message) {
-  PushServerMessage(*handler_, std::move(message));
-}
-
 void FilterTest::PushServerTrailingMetadata(CallHandler handler,
                                             ServerMetadataHandle md) {
   handler.SpawnPushServerTrailingMetadata(std::move(md));
-}
-
-void FilterTest::PushServerTrailingMetadata(ServerMetadataHandle md) {
-  PushServerTrailingMetadata(*handler_, std::move(md));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -330,9 +276,11 @@ Arena::PoolPtr<Metadata> NewMetadata(
 }  // namespace
 
 ClientMetadataHandle FilterTest::NewClientMetadata(
-    std::initializer_list<std::pair<absl::string_view, absl::string_view>>
-        init) {
-  return NewMetadata<ClientMetadata>(init);
+    std::initializer_list<std::pair<absl::string_view, absl::string_view>> init,
+    absl::string_view path) {
+  auto md = NewMetadata<ClientMetadata>(init);
+  md->Set(HttpPathMetadata(), Slice::FromCopiedString(path));
+  return md;
 }
 
 ServerMetadataHandle FilterTest::NewServerMetadata(
