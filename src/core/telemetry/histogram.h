@@ -36,7 +36,7 @@ namespace grpc_core {
 // bounds.size() - 1 includes all values greater than bounds.back().
 //
 // The bucket layout must be sorted in ascending order.
-using HistogramBuckets = absl::Span<const int64_t>;
+using Int64HistogramBuckets = absl::Span<const int64_t>;
 using DoubleHistogramBuckets = absl::Span<const double>;
 
 // Returns the bucket index for the given value in the given bounds.
@@ -57,9 +57,9 @@ size_t BucketInBoundsFor(absl::Span<const T> bounds, T value) {
   return static_cast<size_t>(std::distance(bounds.begin(), it));
 }
 
-class LinearHistogramShape {
+class LinearInt64HistogramShape {
  public:
-  LinearHistogramShape(int64_t min, int64_t max) : min_(min), max_(max) {}
+  LinearInt64HistogramShape(int64_t min, int64_t max) : min_(min), max_(max) {}
 
   size_t buckets() const { return max_ - min_ + 1; }
   size_t BucketFor(int64_t value) const {
@@ -103,9 +103,9 @@ class LinearDoubleHistogramShape {
   std::vector<double> bounds_;
 };
 
-class ExponentialHistogramShape {
+class ExponentialInt64HistogramShape {
  public:
-  ExponentialHistogramShape(int64_t max, size_t buckets) {
+  ExponentialInt64HistogramShape(int64_t max, size_t buckets) {
     GRPC_CHECK_GT(max, 0);
     // Increase if needed. As of June 2026, the maximum we are using is 100.
     // Note that the BucketFor has to do a binary search, so it's better to
@@ -139,18 +139,18 @@ class ExponentialHistogramShape {
     GRPC_CHECK_EQ(bounds_.size(), buckets);
   }
 
-  ExponentialHistogramShape(const ExponentialHistogramShape&) = delete;
-  ExponentialHistogramShape& operator=(const ExponentialHistogramShape&) =
+  ExponentialInt64HistogramShape(const ExponentialInt64HistogramShape&) = delete;
+  ExponentialInt64HistogramShape& operator=(const ExponentialInt64HistogramShape&) =
       delete;
-  ExponentialHistogramShape(ExponentialHistogramShape&&) = default;
-  ExponentialHistogramShape& operator=(ExponentialHistogramShape&&) = default;
+  ExponentialInt64HistogramShape(ExponentialInt64HistogramShape&&) = default;
+  ExponentialInt64HistogramShape& operator=(ExponentialInt64HistogramShape&&) = default;
 
   size_t buckets() const { return bounds_.size(); }
   size_t BucketFor(int64_t value) const {
     return BucketInBoundsFor(absl::MakeConstSpan(bounds_), value);
   }
 
-  HistogramBuckets bounds() const { return bounds_; }
+  Int64HistogramBuckets bounds() const { return bounds_; }
 
  private:
   std::vector<int64_t> bounds_;

@@ -520,9 +520,9 @@ class FakeStatsPlugin : public StatsPlugin {
         RecordValue(label_keys, label_values, name, value);
       }
     }
-    void Histogram(InstrumentLabelList label_keys,
+    void Int64Histogram(InstrumentLabelList label_keys,
                    absl::Span<const std::string> label_values,
-                   absl::string_view name, HistogramBuckets /*bounds*/,
+                   absl::string_view name, Int64HistogramBuckets /*bounds*/,
                    absl::Span<const uint64_t> counts) override {
       if constexpr (std::is_same_v<T, std::vector<uint64_t>>) {
         RecordValue(label_keys, label_values, name,

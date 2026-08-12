@@ -58,10 +58,10 @@ class MockMetricsSink : public MetricsSink {
                absl::Span<const std::string> label, absl::string_view name,
                uint64_t value),
               (override));
-  MOCK_METHOD(void, Histogram,
+  MOCK_METHOD(void, Int64Histogram,
               (InstrumentLabelList label_keys,
                absl::Span<const std::string> label, absl::string_view name,
-               HistogramBuckets bounds, absl::Span<const uint64_t> counts),
+               Int64HistogramBuckets bounds, absl::Span<const uint64_t> counts),
               (override));
   MOCK_METHOD(void, DoubleHistogram,
               (InstrumentLabelList label_keys,
@@ -145,7 +145,7 @@ class LowContentionDomain final : public InstrumentDomain<LowContentionDomain> {
   static inline const auto kCounter =
       RegisterCounter("low_contention", "Desc", "unit");
   static inline const auto kExponentialHistogram =
-      RegisterHistogram<ExponentialHistogramShape>("exponential_histogram",
+      RegisterInt64Histogram<ExponentialInt64HistogramShape>("exponential_histogram",
                                                    "Desc", "unit", 1024, 20);
   static inline const auto kLinearDoubleHistogram =
       RegisterDoubleHistogram<LinearDoubleHistogramShape>(
@@ -346,7 +346,7 @@ TEST_F(MetricsQueryTest, LowContentionHistogram) {
   std::vector<std::string> label_keys = {"grpc.target"};
   std::vector<std::string> label = {"example.com"};
   EXPECT_CALL(sink,
-              Histogram(InstrumentLabelListElementsAreArray(label_keys),
+              Int64Histogram(InstrumentLabelListElementsAreArray(label_keys),
                         ::testing::ElementsAreArray(label),
                         "exponential_histogram", ::testing::_, ::testing::_))
       .WillOnce([&value_before](auto, auto, auto, auto, auto counts) {
@@ -362,7 +362,7 @@ TEST_F(MetricsQueryTest, LowContentionHistogram) {
   expect_value[0] += 1;
   storage->Increment(LowContentionDomain::kExponentialHistogram, 0);
   EXPECT_CALL(sink,
-              Histogram(InstrumentLabelListElementsAreArray(label_keys),
+              Int64Histogram(InstrumentLabelListElementsAreArray(label_keys),
                         absl::MakeConstSpan(label), "exponential_histogram",
                         ::testing::_, absl::MakeConstSpan(expect_value)))
       .Times(1);
@@ -763,9 +763,9 @@ TEST_F(MetricsQueryTest, ThreadStress) {
         void UpDownCounter(InstrumentLabelList label_keys,
                            absl::Span<const std::string> label,
                            absl::string_view name, uint64_t value) override {}
-        void Histogram(InstrumentLabelList label_keys,
+        void Int64Histogram(InstrumentLabelList label_keys,
                        absl::Span<const std::string> label,
-                       absl::string_view name, HistogramBuckets bounds,
+                       absl::string_view name, Int64HistogramBuckets bounds,
                        absl::Span<const uint64_t> counts) override {}
         void DoubleHistogram(InstrumentLabelList label_keys,
                              absl::Span<const std::string> label,
@@ -821,7 +821,7 @@ TEST_F(InstrumentTest, HistogramHook) {
       const InstrumentMetadata::Description* instrument,
       absl::Span<const std::string> labels, int64_t value)>
       hook;
-  RegisterHistogramCollectionHook(hook.AsStdFunction());
+  RegisterInt64HistogramCollectionHook(hook.AsStdFunction());
   auto storage = LowContentionDomain::GetStorage(scope, "example.com");
   std::vector<std::string> label = {std::string(kOmittedLabel)};
   EXPECT_CALL(hook, Call(::testing::_, ::testing::ElementsAreArray(label), 10));
@@ -841,8 +841,8 @@ TEST_F(InstrumentTest, MultipleHistogramHooks) {
       const InstrumentMetadata::Description* instrument,
       absl::Span<const std::string> labels, int64_t value)>
       hook2;
-  RegisterHistogramCollectionHook(hook1.AsStdFunction());
-  RegisterHistogramCollectionHook(hook2.AsStdFunction());
+  RegisterInt64HistogramCollectionHook(hook1.AsStdFunction());
+  RegisterInt64HistogramCollectionHook(hook2.AsStdFunction());
   auto storage = LowContentionDomain::GetStorage(scope, "example.com");
   std::vector<std::string> label = {std::string(kOmittedLabel)};
   EXPECT_CALL(hook1,

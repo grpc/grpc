@@ -694,7 +694,7 @@ class TestDomain final : public InstrumentDomain<TestDomain> {
   static inline const auto kCounter =
       RegisterCounter("test_counter", "A test counter.", "unit");
   static inline const auto kHistogram =
-      RegisterHistogram<ExponentialHistogramShape>(
+      RegisterInt64Histogram<ExponentialInt64HistogramShape>(
           "test_histogram", "A test histogram.", "unit", 100, 5);
   static inline const auto kDoubleHistogram =
       RegisterDoubleHistogram<LinearDoubleHistogramShape>(
