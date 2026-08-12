@@ -125,9 +125,8 @@ inline bool IsPrioritizeFinishedRequestsEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BATCH_CLEANUP_ON_CANCEL
 inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_FILTER_SEND_CANCEL_METADATA
-inline bool IsPromiseFilterSendCancelMetadataEnabled() { return true; }
-inline bool IsPythonMemoryviewEnabled() { return false; }
+inline bool IsPromiseFilterSendCancelMetadataEnabled() { return false; }
+inline bool IsPythonZeroCopyEnabled() { return false; }
 inline bool IsRecvMessageFilterBypassFixEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_RETURN_PREEXISTING_ERRORS
@@ -216,9 +215,8 @@ inline bool IsPrioritizeFinishedRequestsEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BATCH_CLEANUP_ON_CANCEL
 inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_FILTER_SEND_CANCEL_METADATA
-inline bool IsPromiseFilterSendCancelMetadataEnabled() { return true; }
-inline bool IsPythonMemoryviewEnabled() { return false; }
+inline bool IsPromiseFilterSendCancelMetadataEnabled() { return false; }
+inline bool IsPythonZeroCopyEnabled() { return false; }
 inline bool IsRecvMessageFilterBypassFixEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_RETURN_PREEXISTING_ERRORS
@@ -307,9 +305,8 @@ inline bool IsPrioritizeFinishedRequestsEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BATCH_CLEANUP_ON_CANCEL
 inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_FILTER_SEND_CANCEL_METADATA
-inline bool IsPromiseFilterSendCancelMetadataEnabled() { return true; }
-inline bool IsPythonMemoryviewEnabled() { return false; }
+inline bool IsPromiseFilterSendCancelMetadataEnabled() { return false; }
+inline bool IsPythonZeroCopyEnabled() { return false; }
 inline bool IsRecvMessageFilterBypassFixEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_RETURN_PREEXISTING_ERRORS
@@ -380,7 +377,7 @@ enum ExperimentIds {
   kExperimentIdPromiseBasedInprocTransport,
   kExperimentIdPromiseBatchCleanupOnCancel,
   kExperimentIdPromiseFilterSendCancelMetadata,
-  kExperimentIdPythonMemoryview,
+  kExperimentIdPythonZeroCopy,
   kExperimentIdRecvMessageFilterBypassFix,
   kExperimentIdRetryInCallv3,
   kExperimentIdReturnPreexistingErrors,
@@ -496,8 +493,8 @@ inline bool IsPromiseBasedInprocTransportEnabled() { return IsExperimentEnabled<
 inline bool IsPromiseBatchCleanupOnCancelEnabled() { return IsExperimentEnabled<kExperimentIdPromiseBatchCleanupOnCancel>(); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_FILTER_SEND_CANCEL_METADATA
 inline bool IsPromiseFilterSendCancelMetadataEnabled() { return IsExperimentEnabled<kExperimentIdPromiseFilterSendCancelMetadata>(); }
-#define GRPC_EXPERIMENT_IS_INCLUDED_PYTHON_MEMORYVIEW
-inline bool IsPythonMemoryviewEnabled() { return IsExperimentEnabled<kExperimentIdPythonMemoryview>(); }
+#define GRPC_EXPERIMENT_IS_INCLUDED_PYTHON_ZERO_COPY
+inline bool IsPythonZeroCopyEnabled() { return IsExperimentEnabled<kExperimentIdPythonZeroCopy>(); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_RECV_MESSAGE_FILTER_BYPASS_FIX
 inline bool IsRecvMessageFilterBypassFixEnabled() { return IsExperimentEnabled<kExperimentIdRecvMessageFilterBypassFix>(); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_RETRY_IN_CALLV3

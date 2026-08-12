@@ -124,8 +124,8 @@ const char* const description_promise_batch_cleanup_on_cancel = "Fix completion 
 const char* const additional_constraints_promise_batch_cleanup_on_cancel = "{}";
 const char* const description_promise_filter_send_cancel_metadata = "Enables sending all trailing metadata fields from server side promise-based filters upon stream cancellation.";
 const char* const additional_constraints_promise_filter_send_cancel_metadata = "{}";
-const char* const description_python_memoryview = "Enable returning memoryview from ReceiveMessageOperation and zero-copy buffer sending from SendMessageOperation in gRPC Python";
-const char* const additional_constraints_python_memoryview = "{}";
+const char* const description_python_zero_copy = "Enable zero-copy buffer sending from SendMessageOperation and optimized byte allocation in ReceiveMessageOperation in gRPC Python";
+const char* const additional_constraints_python_zero_copy = "{}";
 const char* const description_recv_message_filter_bypass_fix = "Receive message bypass happen if trailing metadata is received while Server Initial Metadata is getting processed.";
 const char* const additional_constraints_recv_message_filter_bypass_fix = "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
@@ -216,8 +216,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
   {"prioritize_finished_requests", description_prioritize_finished_requests, additional_constraints_prioritize_finished_requests, nullptr, 0, false, true},
   {"promise_based_inproc_transport", description_promise_based_inproc_transport, additional_constraints_promise_based_inproc_transport, nullptr, 0, false, false},
   {"promise_batch_cleanup_on_cancel", description_promise_batch_cleanup_on_cancel, additional_constraints_promise_batch_cleanup_on_cancel, nullptr, 0, true, true},
-  {"promise_filter_send_cancel_metadata", description_promise_filter_send_cancel_metadata, additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0, true, true},
-  {"python_memoryview", description_python_memoryview, additional_constraints_python_memoryview, nullptr, 0, false, true},
+  {"promise_filter_send_cancel_metadata", description_promise_filter_send_cancel_metadata, additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0, false, true},
+  {"python_zero_copy", description_python_zero_copy, additional_constraints_python_zero_copy, nullptr, 0, false, true},
   {"recv_message_filter_bypass_fix", description_recv_message_filter_bypass_fix, additional_constraints_recv_message_filter_bypass_fix, nullptr, 0, false, true},
   {"retry_in_callv3", description_retry_in_callv3, additional_constraints_retry_in_callv3, nullptr, 0, false, true},
   {"return_preexisting_errors", description_return_preexisting_errors, additional_constraints_return_preexisting_errors, nullptr, 0, true, true},
@@ -341,8 +341,8 @@ const char* const description_promise_batch_cleanup_on_cancel = "Fix completion 
 const char* const additional_constraints_promise_batch_cleanup_on_cancel = "{}";
 const char* const description_promise_filter_send_cancel_metadata = "Enables sending all trailing metadata fields from server side promise-based filters upon stream cancellation.";
 const char* const additional_constraints_promise_filter_send_cancel_metadata = "{}";
-const char* const description_python_memoryview = "Enable returning memoryview from ReceiveMessageOperation and zero-copy buffer sending from SendMessageOperation in gRPC Python";
-const char* const additional_constraints_python_memoryview = "{}";
+const char* const description_python_zero_copy = "Enable zero-copy buffer sending from SendMessageOperation and optimized byte allocation in ReceiveMessageOperation in gRPC Python";
+const char* const additional_constraints_python_zero_copy = "{}";
 const char* const description_recv_message_filter_bypass_fix = "Receive message bypass happen if trailing metadata is received while Server Initial Metadata is getting processed.";
 const char* const additional_constraints_recv_message_filter_bypass_fix = "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
@@ -433,8 +433,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
   {"prioritize_finished_requests", description_prioritize_finished_requests, additional_constraints_prioritize_finished_requests, nullptr, 0, false, true},
   {"promise_based_inproc_transport", description_promise_based_inproc_transport, additional_constraints_promise_based_inproc_transport, nullptr, 0, false, false},
   {"promise_batch_cleanup_on_cancel", description_promise_batch_cleanup_on_cancel, additional_constraints_promise_batch_cleanup_on_cancel, nullptr, 0, true, true},
-  {"promise_filter_send_cancel_metadata", description_promise_filter_send_cancel_metadata, additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0, true, true},
-  {"python_memoryview", description_python_memoryview, additional_constraints_python_memoryview, nullptr, 0, false, true},
+  {"promise_filter_send_cancel_metadata", description_promise_filter_send_cancel_metadata, additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0, false, true},
+  {"python_zero_copy", description_python_zero_copy, additional_constraints_python_zero_copy, nullptr, 0, false, true},
   {"recv_message_filter_bypass_fix", description_recv_message_filter_bypass_fix, additional_constraints_recv_message_filter_bypass_fix, nullptr, 0, false, true},
   {"retry_in_callv3", description_retry_in_callv3, additional_constraints_retry_in_callv3, nullptr, 0, false, true},
   {"return_preexisting_errors", description_return_preexisting_errors, additional_constraints_return_preexisting_errors, nullptr, 0, true, true},
@@ -558,8 +558,8 @@ const char* const description_promise_batch_cleanup_on_cancel = "Fix completion 
 const char* const additional_constraints_promise_batch_cleanup_on_cancel = "{}";
 const char* const description_promise_filter_send_cancel_metadata = "Enables sending all trailing metadata fields from server side promise-based filters upon stream cancellation.";
 const char* const additional_constraints_promise_filter_send_cancel_metadata = "{}";
-const char* const description_python_memoryview = "Enable returning memoryview from ReceiveMessageOperation and zero-copy buffer sending from SendMessageOperation in gRPC Python";
-const char* const additional_constraints_python_memoryview = "{}";
+const char* const description_python_zero_copy = "Enable zero-copy buffer sending from SendMessageOperation and optimized byte allocation in ReceiveMessageOperation in gRPC Python";
+const char* const additional_constraints_python_zero_copy = "{}";
 const char* const description_recv_message_filter_bypass_fix = "Receive message bypass happen if trailing metadata is received while Server Initial Metadata is getting processed.";
 const char* const additional_constraints_recv_message_filter_bypass_fix = "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
@@ -650,8 +650,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
   {"prioritize_finished_requests", description_prioritize_finished_requests, additional_constraints_prioritize_finished_requests, nullptr, 0, false, true},
   {"promise_based_inproc_transport", description_promise_based_inproc_transport, additional_constraints_promise_based_inproc_transport, nullptr, 0, false, false},
   {"promise_batch_cleanup_on_cancel", description_promise_batch_cleanup_on_cancel, additional_constraints_promise_batch_cleanup_on_cancel, nullptr, 0, true, true},
-  {"promise_filter_send_cancel_metadata", description_promise_filter_send_cancel_metadata, additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0, true, true},
-  {"python_memoryview", description_python_memoryview, additional_constraints_python_memoryview, nullptr, 0, false, true},
+  {"promise_filter_send_cancel_metadata", description_promise_filter_send_cancel_metadata, additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0, false, true},
+  {"python_zero_copy", description_python_zero_copy, additional_constraints_python_zero_copy, nullptr, 0, false, true},
   {"recv_message_filter_bypass_fix", description_recv_message_filter_bypass_fix, additional_constraints_recv_message_filter_bypass_fix, nullptr, 0, false, true},
   {"retry_in_callv3", description_retry_in_callv3, additional_constraints_retry_in_callv3, nullptr, 0, false, true},
   {"return_preexisting_errors", description_return_preexisting_errors, additional_constraints_return_preexisting_errors, nullptr, 0, true, true},

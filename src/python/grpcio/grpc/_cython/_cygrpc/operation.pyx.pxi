@@ -13,6 +13,8 @@
 # limitations under the License.
 
 from cpython.ref cimport Py_INCREF, Py_DECREF
+from libc.string cimport memcpy
+from cpython.bytes cimport PyBytes_FromStringAndSize
 
 cdef void py_decref_destroy(void* user_data) noexcept with gil:
     Py_DECREF(<object>user_data)
@@ -68,30 +70,21 @@ cdef class SendMessageOperation(Operation):
     self.c_op.flags = self._flags
     
     cdef grpc_slice message_slice
-    cdef object message_obj
-    cdef const unsigned char[::1] view
     cdef bytes message_bytes
 
-    if IsPythonMemoryviewEnabled():
-      if isinstance(self._message, list):
-        self._message = b''.join(self._message)
+    if isinstance(self._message, bytes):
+      message_bytes = self._message
+    else:
+      message_bytes = bytes(self._message)
 
-      view = self._message
-      message_obj = self._message
-      if view.shape[0] > 0:
-        Py_INCREF(message_obj)
+    if IsPythonZeroCopyEnabled():
+      if len(message_bytes) > 0:
+        Py_INCREF(message_bytes)
         message_slice = grpc_slice_new_with_user_data(
-            <void*>&view[0], view.shape[0], py_decref_destroy, <void*>message_obj)
+            <void*><char*>message_bytes, len(message_bytes), py_decref_destroy, <void*>message_bytes)
       else:
         message_slice = grpc_empty_slice()
     else:
-      if isinstance(self._message, list):
-        message_bytes = b''.join(self._message)
-      elif isinstance(self._message, bytes):
-        message_bytes = self._message
-      else:
-        message_bytes = bytes(self._message)
-      
       message_slice = grpc_slice_from_copied_buffer(
           <const char *>message_bytes, len(message_bytes))
       
@@ -194,50 +187,37 @@ cdef class ReceiveMessageOperation(Operation):
     cdef grpc_slice message_slice
     cdef size_t message_slice_length
     cdef list chunks = []
-    cdef grpc_slice first_slice
-    cdef bint has_next
-    cdef GrpcSliceView view
+    cdef size_t total_length
+    cdef size_t offset
+    cdef char *dest
+    cdef bytes result
 
     if self._c_message_byte_buffer != NULL:
       message_reader_status = grpc_byte_buffer_reader_init(
           &message_reader, self._c_message_byte_buffer)
       if message_reader_status:
-        if IsPythonMemoryviewEnabled():
-          # Peek-ahead pattern: read the first slice, then check if there's a
-          # second. Most gRPC messages fit in a single slice, so this avoids
-          # list.append() / len() / indexing overhead on the hot path by
-          # assigning the memoryview directly to self._message.
-          has_next = grpc_byte_buffer_reader_next(&message_reader, &message_slice)
-          if has_next:
-            first_slice = message_slice
-            has_next = grpc_byte_buffer_reader_next(&message_reader, &message_slice)
-            if not has_next:
-              message_slice_length = grpc_slice_length(first_slice)
+        if IsPythonZeroCopyEnabled():
+          # When the zero-copy bazel experiment is enabled, copy all slices into 
+          # a single bytes object. This bounds Python objects to O(1) and copies
+          # the payload only once.
+          total_length = grpc_byte_buffer_length(self._c_message_byte_buffer)
+          if total_length > 0:
+            result = PyBytes_FromStringAndSize(NULL, total_length)
+            dest = result
+            offset = 0
+            while grpc_byte_buffer_reader_next(&message_reader, &message_slice):
+              message_slice_length = grpc_slice_length(message_slice)
               if message_slice_length > 0:
-                view = GrpcSliceView()
-                view.set_slice(first_slice)
-                self._message = memoryview(view)
-              else:
-                self._message = b''
-              grpc_slice_unref(first_slice)
-            else:
-              view = GrpcSliceView()
-              view.set_slice(first_slice)
-              chunks.append(memoryview(view))
-              grpc_slice_unref(first_slice)
-              
-              view = GrpcSliceView()
-              view.set_slice(message_slice)
-              chunks.append(memoryview(view))
+                if offset + message_slice_length > total_length:
+                  raise RuntimeError("Byte buffer length mismatch")
+                memcpy(dest + offset,
+                       grpc_slice_start_ptr(message_slice),
+                       message_slice_length)
+                offset += message_slice_length
               grpc_slice_unref(message_slice)
-              
-              while grpc_byte_buffer_reader_next(&message_reader, &message_slice):
-                view = GrpcSliceView()
-                view.set_slice(message_slice)
-                chunks.append(memoryview(view))
-                grpc_slice_unref(message_slice)
-              
-              self._message = chunks
+            if offset < total_length:
+              result = result[:offset]
+            self._message = result
           else:
             self._message = b''
         else:
@@ -325,5 +305,5 @@ cdef class ReceiveCloseOnServerOperation(Operation):
     return self._cancelled
 
 
-def python_memoryview_enabled():
-  return IsPythonMemoryviewEnabled()
+def python_zero_copy_enabled():
+  return IsPythonZeroCopyEnabled()

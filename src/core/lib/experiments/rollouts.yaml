@@ -115,8 +115,6 @@
 - name: promise_batch_cleanup_on_cancel
   default: true
 - name: promise_filter_send_cancel_metadata
-  default: true
-- name: python_memoryview
   default: false
 - name: return_preexisting_errors
   default: true
