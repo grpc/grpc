@@ -74,7 +74,7 @@ class MessageSizeFilterTest : public FilterTest {
 // The limit is inclusive: a message of exactly the limit is delivered,
 // regardless of which end configures it or how.
 FILTER_TEST(MessageSizeFilterTest,
-           ClientMessageLimitFromClientChannelArgsBelowLimitIsAllowed) {
+            ClientMessageLimitFromClientChannelArgsBelowLimitIsAllowed) {
   InitLimitConfig(LimitConfig::kClientChannelArgs, /*client_to_server=*/true,
                   /*limit=*/4, R"("maxRequestMessageBytes": 4)");
 
@@ -94,7 +94,7 @@ FILTER_TEST(MessageSizeFilterTest,
 }
 
 FILTER_TEST(MessageSizeFilterTest,
-           ClientMessageLimitFromServiceConfigBelowLimitIsAllowed) {
+            ClientMessageLimitFromServiceConfigBelowLimitIsAllowed) {
   InitLimitConfig(LimitConfig::kClientServiceConfig, /*client_to_server=*/true,
                   /*limit=*/4, R"("maxRequestMessageBytes": 4)");
 
@@ -114,7 +114,7 @@ FILTER_TEST(MessageSizeFilterTest,
 }
 
 FILTER_TEST(MessageSizeFilterTest,
-           ClientMessageLimitFromServerChannelArgsBelowLimitIsAllowed) {
+            ClientMessageLimitFromServerChannelArgsBelowLimitIsAllowed) {
   InitLimitConfig(LimitConfig::kServerChannelArgs, /*client_to_server=*/true,
                   /*limit=*/4, R"("maxRequestMessageBytes": 4)");
 
@@ -134,7 +134,7 @@ FILTER_TEST(MessageSizeFilterTest,
 }
 
 FILTER_TEST(MessageSizeFilterTest,
-           ClientMessageLimitFromClientChannelArgsTooLargeFails) {
+            ClientMessageLimitFromClientChannelArgsTooLargeFails) {
   InitLimitConfig(LimitConfig::kClientChannelArgs, /*client_to_server=*/true,
                   /*limit=*/4, R"("maxRequestMessageBytes": 4)");
 
@@ -153,7 +153,7 @@ FILTER_TEST(MessageSizeFilterTest,
 }
 
 FILTER_TEST(MessageSizeFilterTest,
-           ClientMessageLimitFromServiceConfigTooLargeFails) {
+            ClientMessageLimitFromServiceConfigTooLargeFails) {
   InitLimitConfig(LimitConfig::kClientServiceConfig, /*client_to_server=*/true,
                   /*limit=*/4, R"("maxRequestMessageBytes": 4)");
 
@@ -172,7 +172,7 @@ FILTER_TEST(MessageSizeFilterTest,
 }
 
 FILTER_TEST(MessageSizeFilterTest,
-           ClientMessageLimitFromServerChannelArgsTooLargeFails) {
+            ClientMessageLimitFromServerChannelArgsTooLargeFails) {
   InitLimitConfig(LimitConfig::kServerChannelArgs, /*client_to_server=*/true,
                   /*limit=*/4, R"("maxRequestMessageBytes": 4)");
 
@@ -193,7 +193,7 @@ FILTER_TEST(MessageSizeFilterTest,
 // The limit is inclusive: a message of exactly the limit is delivered,
 // regardless of which end configures it or how.
 FILTER_TEST(MessageSizeFilterTest,
-           ServerMessageLimitFromClientChannelArgsBelowLimitIsAllowed) {
+            ServerMessageLimitFromClientChannelArgsBelowLimitIsAllowed) {
   InitLimitConfig(LimitConfig::kClientChannelArgs, /*client_to_server=*/false,
                   /*limit=*/4, R"("maxResponseMessageBytes": 4)");
 
@@ -215,7 +215,7 @@ FILTER_TEST(MessageSizeFilterTest,
 }
 
 FILTER_TEST(MessageSizeFilterTest,
-           ServerMessageLimitFromServiceConfigBelowLimitIsAllowed) {
+            ServerMessageLimitFromServiceConfigBelowLimitIsAllowed) {
   InitLimitConfig(LimitConfig::kClientServiceConfig, /*client_to_server=*/false,
                   /*limit=*/4, R"("maxResponseMessageBytes": 4)");
 
@@ -237,7 +237,7 @@ FILTER_TEST(MessageSizeFilterTest,
 }
 
 FILTER_TEST(MessageSizeFilterTest,
-           ServerMessageLimitFromServerChannelArgsBelowLimitIsAllowed) {
+            ServerMessageLimitFromServerChannelArgsBelowLimitIsAllowed) {
   InitLimitConfig(LimitConfig::kServerChannelArgs, /*client_to_server=*/false,
                   /*limit=*/4, R"("maxResponseMessageBytes": 4)");
 
@@ -259,7 +259,7 @@ FILTER_TEST(MessageSizeFilterTest,
 }
 
 FILTER_TEST(MessageSizeFilterTest,
-           ServerMessageLimitFromClientChannelArgsTooLargeFails) {
+            ServerMessageLimitFromClientChannelArgsTooLargeFails) {
   InitLimitConfig(LimitConfig::kClientChannelArgs, /*client_to_server=*/false,
                   /*limit=*/4, R"("maxResponseMessageBytes": 4)");
 
@@ -278,7 +278,7 @@ FILTER_TEST(MessageSizeFilterTest,
 }
 
 FILTER_TEST(MessageSizeFilterTest,
-           ServerMessageLimitFromServiceConfigTooLargeFails) {
+            ServerMessageLimitFromServiceConfigTooLargeFails) {
   InitLimitConfig(LimitConfig::kClientServiceConfig, /*client_to_server=*/false,
                   /*limit=*/4, R"("maxResponseMessageBytes": 4)");
 
@@ -297,7 +297,7 @@ FILTER_TEST(MessageSizeFilterTest,
 }
 
 FILTER_TEST(MessageSizeFilterTest,
-           ServerMessageLimitFromServerChannelArgsTooLargeFails) {
+            ServerMessageLimitFromServerChannelArgsTooLargeFails) {
   InitLimitConfig(LimitConfig::kServerChannelArgs, /*client_to_server=*/false,
                   /*limit=*/4, R"("maxResponseMessageBytes": 4)");
 
