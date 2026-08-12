@@ -58,6 +58,7 @@ fi
 # Brew packages installed when Kokoro image was built tend to have less conflict.
 export HOMEBREW_NO_AUTO_UPDATE=1
 export HOMEBREW_NO_INSTALL_FROM_API=1
+export HOMEBREW_ARTIFACT_DOMAIN="https://storage.googleapis.com/grpc-build-helper/homebrew"
 
 # Dump the brew configuration for debugging just in case. Check "Core tap HEAD" field
 # because it should be the same as below unless it's been updated.
@@ -147,11 +148,11 @@ gem install cocoapods -v 1.15.2 --no-document --user-install
 
 # 4. Add the gem binary directory to PATH
 export PATH="$(ruby -e 'puts Gem.user_dir')/bin:$PATH"
-  
+
   # 2. Verify the installation
   ruby --version
   pod --version
-  
+
   # pre-fetch cocoapods master repo's most recent commit only
   mkdir -p ~/.cocoapods/repos
   time git clone --depth 1 https://github.com/CocoaPods/Specs.git ~/.cocoapods/repos/master
