@@ -776,6 +776,7 @@ class CallOpClientRecvStatus {
         debug_error_string_(nullptr) {}
 
   void SetCheckCardinalityViolation(const bool* got_message_ptr) {
+    ABSL_DCHECK(got_message_ptr != nullptr);
     check_cardinality_ = true;
     got_message_ptr_ = got_message_ptr;
   }
