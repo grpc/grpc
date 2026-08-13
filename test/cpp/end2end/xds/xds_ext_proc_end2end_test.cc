@@ -36,7 +36,6 @@
 #include "envoy/service/ext_proc/v3/external_processor.grpc.pb.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/experiments/config.h"
-#include "src/core/util/env.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
@@ -44,7 +43,6 @@
 #include "test/cpp/end2end/xds/xds_utils.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/synchronization/mutex.h"
 #include "absl/time/clock.h"
@@ -214,13 +212,15 @@ MakeResponseTrailersMutationResponse(
   return response;
 }
 
-//
-// FakeExtProcService
-//
-
+// A stream-based fake external processor service that provides fine-grained,
+// sequential control over incoming ext_proc stream requests and outgoing
+// responses/statuses for test assertions.
 class FakeExtProcService final
     : public ::envoy::service::ext_proc::v3::ExternalProcessor::Service {
  public:
+  // Represents a single bidirectional stream between the client ext_proc filter
+  // and this service. It acts as a synchronized communication channel between
+  // the test thread and the serving thread.
   class Stream final {
    public:
     // Action commanded by the test thread for the serving thread to perform on
@@ -428,7 +428,13 @@ class FakeExtProcService final
 
  private:
   absl::Mutex mu_;
+  // FIFO queue of newly arrived streams waiting to be consumed by the test
+  // thread via GetStream(). Once popped by GetStream(), the stream is no longer
+  // in this queue.
   std::queue<std::shared_ptr<Stream>> streams_ ABSL_GUARDED_BY(mu_);
+  // Lifetime registry of all streams created during the test. Used during
+  // Shutdown() to mark all active and previously consumed streams as closed,
+  // preventing serving threads from hanging on blocked reads or actions.
   std::vector<std::shared_ptr<Stream>> active_streams_ ABSL_GUARDED_BY(mu_);
   size_t total_stream_count_ ABSL_GUARDED_BY(mu_) = 0;
   bool is_shutdown_ ABSL_GUARDED_BY(mu_) = false;
@@ -608,11 +614,55 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
   class AsyncBidiStream
       : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
    public:
+    // Represents the lifecycle state of an individual asynchronous stream
+    // operation (write or read).
+    //
+    // State transitions:
+    //   kIdle -> kInFlight: Initiated when StartWrite() or StartReadMessage()
+    //   is called.
+    //                       Precondition: stream must not be done (if done,
+    //                       transitions directly to kFailed).
+    //   kInFlight -> kSuccess: Transitioned in OnWriteDone(true) or
+    //   OnReadDone(true) callback.
+    //   kInFlight -> kFailed: Transitioned in OnWriteDone(false) or
+    //   OnReadDone(false) callback.
+    //   kSuccess/kFailed -> kInFlight: When the next operation (StartWrite /
+    //   StartReadMessage) begins.
+    enum class OpState : uint8_t {
+      // No active operation in progress.
+      kIdle,
+      // Operation was started and waiting for the completion callback
+      // (OnWriteDone / OnReadDone).
+      kInFlight,
+      // Operation completed successfully (callback received ok == true).
+      kSuccess,
+      // Operation failed (callback received ok == false, or stream already
+      // done).
+      kFailed,
+    };
+
+    // Represents the receipt state of initial metadata for the RPC.
+    //
+    // State transitions:
+    //   kPending -> kSuccess: Transitioned in OnReadInitialMetadataDone(true)
+    //   callback.
+    //   kPending -> kFailed: Transitioned in OnReadInitialMetadataDone(false)
+    //   callback.
+    enum class MetadataState : uint8_t {
+      // Initial metadata has not yet been received from the server.
+      kPending,
+      // Initial metadata received successfully (ok == true).
+      kSuccess,
+      // Initial metadata failed / was not received cleanly (ok == false).
+      kFailed,
+    };
+
     AsyncBidiStream() = default;
 
     void Start(grpc::testing::EchoTestService::Stub* stub,
                const RpcOptions& rpc_options = RpcOptions()) {
-      rpc_options.SetupRpc(&context_, &request_);
+      EchoRequest request;
+      rpc_options.SetupRpc(&context_, &request);
       stub->async()->BidiStream(&context_, this);
       StartCall();
     }
@@ -620,48 +670,40 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
     void StartWrite(const EchoRequest& request) {
       absl::MutexLock lock(&mu_);
       write_msg_ = request;
-      write_done_ = false;
-      write_ok_ = false;
-      if (done_) {
-        write_done_ = true;
-        write_ok_ = false;
-        write_in_flight_ = false;
+      if (status_.has_value()) {
+        write_state_ = OpState::kFailed;
         return;
       }
-      write_in_flight_ = true;
+      write_state_ = OpState::kInFlight;
       ClientBidiReactor::StartWrite(&write_msg_);
     }
 
     bool WaitForWriteDone(absl::Duration timeout = absl::Seconds(10)) {
       absl::MutexLock lock(&mu_);
       auto cond = [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-        return write_done_ || done_;
+        return write_state_ == OpState::kSuccess ||
+               write_state_ == OpState::kFailed || status_.has_value();
       };
       if (!mu_.AwaitWithTimeout(absl::Condition(&cond), timeout)) {
         return false;
       }
-      return write_ok_;
+      return write_state_ == OpState::kSuccess;
     }
 
     void StartWritesDone() {
       absl::MutexLock lock(&mu_);
-      if (done_) return;
-      writes_done_called_ = true;
+      if (status_.has_value()) return;
       ClientBidiReactor::StartWritesDone();
     }
 
     void StartReadMessage() {
       absl::MutexLock lock(&mu_);
       read_msg_.Clear();
-      read_done_ = false;
-      read_ok_ = false;
-      if (done_) {
-        read_done_ = true;
-        read_ok_ = false;
-        read_in_flight_ = false;
+      if (status_.has_value()) {
+        read_state_ = OpState::kFailed;
         return;
       }
-      read_in_flight_ = true;
+      read_state_ = OpState::kInFlight;
       StartRead(&read_msg_);
     }
 
@@ -669,12 +711,13 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
                          absl::Duration timeout = absl::Seconds(10)) {
       absl::MutexLock lock(&mu_);
       auto cond = [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-        return read_done_ || done_;
+        return read_state_ == OpState::kSuccess ||
+               read_state_ == OpState::kFailed || status_.has_value();
       };
       if (!mu_.AwaitWithTimeout(absl::Condition(&cond), timeout)) {
         return false;
       }
-      if (read_done_ && read_ok_) {
+      if (read_state_ == OpState::kSuccess) {
         *response = read_msg_;
         return true;
       }
@@ -689,66 +732,60 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
 
     Status Finish(absl::Duration timeout = absl::Seconds(10)) {
       absl::MutexLock lock(&mu_);
-      auto cond = [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) { return done_; };
-      mu_.AwaitWithTimeout(absl::Condition(&cond), timeout);
-      return status_;
+      auto cond = [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+        return status_.has_value();
+      };
+      if (!mu_.AwaitWithTimeout(absl::Condition(&cond), timeout)) {
+        return Status(StatusCode::DEADLINE_EXCEEDED, "Finish timeout");
+      }
+      return *status_;
     }
 
     bool WaitForInitialMetadata(absl::Duration timeout = absl::Seconds(10)) {
       absl::MutexLock lock(&mu_);
       auto cond = [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-        return initial_metadata_received_ || done_;
+        return initial_metadata_state_ != MetadataState::kPending ||
+               status_.has_value();
       };
       if (!mu_.AwaitWithTimeout(absl::Condition(&cond), timeout)) {
         return false;
       }
-      return initial_metadata_ok_;
+      return initial_metadata_state_ == MetadataState::kSuccess;
     }
 
     void OnReadInitialMetadataDone(bool ok) override {
       absl::MutexLock lock(&mu_);
-      initial_metadata_received_ = true;
-      initial_metadata_ok_ = ok;
+      initial_metadata_state_ =
+          ok ? MetadataState::kSuccess : MetadataState::kFailed;
     }
 
     void OnWriteDone(bool ok) override {
       absl::MutexLock lock(&mu_);
-      write_ok_ = ok;
-      write_done_ = true;
-      write_in_flight_ = false;
+      write_state_ = ok ? OpState::kSuccess : OpState::kFailed;
     }
 
     void OnReadDone(bool ok) override {
       absl::MutexLock lock(&mu_);
-      read_ok_ = ok;
-      read_done_ = true;
-      read_in_flight_ = false;
+      read_state_ = ok ? OpState::kSuccess : OpState::kFailed;
     }
 
     void OnDone(const Status& s) override {
       absl::MutexLock lock(&mu_);
       status_ = s;
-      done_ = true;
     }
 
    private:
     ClientContext context_;
-    EchoRequest request_;
     EchoRequest write_msg_;
     EchoResponse read_msg_;
     absl::Mutex mu_;
-    bool initial_metadata_received_ ABSL_GUARDED_BY(mu_) = false;
-    bool initial_metadata_ok_ ABSL_GUARDED_BY(mu_) = false;
-    bool write_in_flight_ ABSL_GUARDED_BY(mu_) = false;
-    bool write_done_ ABSL_GUARDED_BY(mu_) = false;
-    bool write_ok_ ABSL_GUARDED_BY(mu_) = false;
-    bool read_in_flight_ ABSL_GUARDED_BY(mu_) = false;
-    bool read_done_ ABSL_GUARDED_BY(mu_) = false;
-    bool read_ok_ ABSL_GUARDED_BY(mu_) = false;
-    bool writes_done_called_ ABSL_GUARDED_BY(mu_) = false;
-    bool done_ ABSL_GUARDED_BY(mu_) = false;
-    Status status_ ABSL_GUARDED_BY(mu_);
+    MetadataState initial_metadata_state_ ABSL_GUARDED_BY(mu_) =
+        MetadataState::kPending;
+    OpState write_state_ ABSL_GUARDED_BY(mu_) = OpState::kIdle;
+    OpState read_state_ ABSL_GUARDED_BY(mu_) = OpState::kIdle;
+    std::optional<Status> status_ ABSL_GUARDED_BY(mu_);
   };
+
   class ExtProcServerThread : public ServerThread {
    public:
     ExtProcServerThread(XdsEnd2endTest* test_obj,
