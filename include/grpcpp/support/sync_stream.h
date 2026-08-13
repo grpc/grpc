@@ -366,7 +366,7 @@ class ClientWriter : public ClientWriterInterface<W> {
       finish_ops_.RecvInitialMetadata(context_);
     }
     finish_ops_.FillOps(&call_);
-    cq_.Pluck(&finish_ops_);
+    ABSL_CHECK(cq_.Pluck(&finish_ops_));
     grpc::internal::CallOpSet<grpc::internal::CallOpGenericRecvMessage,
                               grpc::internal::CallOpClientRecvStatus>
         check_ops;

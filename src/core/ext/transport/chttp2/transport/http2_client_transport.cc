@@ -800,6 +800,7 @@ auto Http2ClientTransport::EndpointWrite(SliceBuffer&& output_buf) {
         GRPC_HTTP2_CLIENT_DLOG
             << "Http2ClientTransport::EndpointWrite: transport closed";
         goaway_manager_.NotifyTransportClosed();
+        transport_write_context_.GetWriteCycle().EndWrite(false);
         return absl::CancelledError("Transport closed");
       },
       [this, output_buf = std::move(output_buf)]() mutable {
