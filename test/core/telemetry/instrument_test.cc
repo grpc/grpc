@@ -145,8 +145,8 @@ class LowContentionDomain final : public InstrumentDomain<LowContentionDomain> {
   static inline const auto kCounter =
       RegisterCounter("low_contention", "Desc", "unit");
   static inline const auto kExponentialHistogram =
-      RegisterInt64Histogram<ExponentialInt64HistogramShape>("exponential_histogram",
-                                                   "Desc", "unit", 1024, 20);
+      RegisterInt64Histogram<ExponentialInt64HistogramShape>(
+          "exponential_histogram", "Desc", "unit", 1024, 20);
   static inline const auto kLinearDoubleHistogram =
       RegisterDoubleHistogram<LinearDoubleHistogramShape>(
           "linear_double_histogram", "Desc", "unit", 0.0, 10.0, 10);
@@ -345,10 +345,10 @@ TEST_F(MetricsQueryTest, LowContentionHistogram) {
   ::testing::StrictMock<MockMetricsSink> sink;
   std::vector<std::string> label_keys = {"grpc.target"};
   std::vector<std::string> label = {"example.com"};
-  EXPECT_CALL(sink,
-              Int64Histogram(InstrumentLabelListElementsAreArray(label_keys),
-                        ::testing::ElementsAreArray(label),
-                        "exponential_histogram", ::testing::_, ::testing::_))
+  EXPECT_CALL(
+      sink, Int64Histogram(InstrumentLabelListElementsAreArray(label_keys),
+                           ::testing::ElementsAreArray(label),
+                           "exponential_histogram", ::testing::_, ::testing::_))
       .WillOnce([&value_before](auto, auto, auto, auto, auto counts) {
         value_before.assign(counts.begin(), counts.end());
       });
@@ -361,10 +361,10 @@ TEST_F(MetricsQueryTest, LowContentionHistogram) {
   std::vector<uint64_t> expect_value = value_before;
   expect_value[0] += 1;
   storage->Increment(LowContentionDomain::kExponentialHistogram, 0);
-  EXPECT_CALL(sink,
-              Int64Histogram(InstrumentLabelListElementsAreArray(label_keys),
-                        absl::MakeConstSpan(label), "exponential_histogram",
-                        ::testing::_, absl::MakeConstSpan(expect_value)))
+  EXPECT_CALL(
+      sink, Int64Histogram(InstrumentLabelListElementsAreArray(label_keys),
+                           absl::MakeConstSpan(label), "exponential_histogram",
+                           ::testing::_, absl::MakeConstSpan(expect_value)))
       .Times(1);
   MetricsQuery()
       .OnlyMetrics({"exponential_histogram"})
@@ -764,9 +764,10 @@ TEST_F(MetricsQueryTest, ThreadStress) {
                            absl::Span<const std::string> label,
                            absl::string_view name, uint64_t value) override {}
         void Int64Histogram(InstrumentLabelList label_keys,
-                       absl::Span<const std::string> label,
-                       absl::string_view name, Int64HistogramBuckets bounds,
-                       absl::Span<const uint64_t> counts) override {}
+                            absl::Span<const std::string> label,
+                            absl::string_view name,
+                            Int64HistogramBuckets bounds,
+                            absl::Span<const uint64_t> counts) override {}
         void DoubleHistogram(InstrumentLabelList label_keys,
                              absl::Span<const std::string> label,
                              absl::string_view name,

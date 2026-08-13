@@ -543,9 +543,9 @@ class OpenTelemetryPluginImpl::CounterExporter final {
       observer_->Observe(value, labels_iterable);
     }
     void Int64Histogram(grpc_core::InstrumentLabelList,
-                   absl::Span<const std::string>, absl::string_view,
-                   grpc_core::Int64HistogramBuckets,
-                   absl::Span<const uint64_t>) override {
+                        absl::Span<const std::string>, absl::string_view,
+                        grpc_core::Int64HistogramBuckets,
+                        absl::Span<const uint64_t>) override {
       LOG(FATAL) << "Expected a counter, got a histogram";
     }
     void DoubleHistogram(grpc_core::InstrumentLabelList,

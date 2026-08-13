@@ -521,9 +521,10 @@ class FakeStatsPlugin : public StatsPlugin {
       }
     }
     void Int64Histogram(InstrumentLabelList label_keys,
-                   absl::Span<const std::string> label_values,
-                   absl::string_view name, Int64HistogramBuckets /*bounds*/,
-                   absl::Span<const uint64_t> counts) override {
+                        absl::Span<const std::string> label_values,
+                        absl::string_view name,
+                        Int64HistogramBuckets /*bounds*/,
+                        absl::Span<const uint64_t> counts) override {
       if constexpr (std::is_same_v<T, std::vector<uint64_t>>) {
         RecordValue(label_keys, label_values, name,
                     std::vector<uint64_t>(counts.begin(), counts.end()));

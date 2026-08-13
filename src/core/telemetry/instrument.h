@@ -55,7 +55,8 @@
 // *   **Histogram:** Tracks the distribution of values. Uses
 //     *   `DoubleHistogram`: for double values.
 //     *   `Int64Histogram`: for int64_t values.
-//     Uses `RegisterInt64Histogram`, `RegisterDoubleHistogram` and `Storage::Increment`.
+//     Uses `RegisterInt64Histogram`, `RegisterDoubleHistogram` and
+//     `Storage::Increment`.
 // *   **Gauges:** Metrics that can go up or down, representing a current value.
 //     *   `DoubleGauge`: for double values.
 //     *   `IntGauge`: for int64_t values.
@@ -398,9 +399,9 @@ class InstrumentMetadata {
   using Int64HistogramShape = Int64HistogramBuckets;
   using DoubleHistogramShape = DoubleHistogramBuckets;
 
-  using Shape = std::variant<CounterShape, UpDownCounterShape, Int64HistogramShape,
-                             DoubleHistogramShape, DoubleGaugeShape,
-                             IntGaugeShape, UintGaugeShape>;
+  using Shape = std::variant<CounterShape, UpDownCounterShape,
+                             Int64HistogramShape, DoubleHistogramShape,
+                             DoubleGaugeShape, IntGaugeShape, UintGaugeShape>;
 
   // A description of a metric.
   struct Description {
@@ -851,9 +852,10 @@ class MetricsSink {
                              absl::Span<const std::string> label_values,
                              absl::string_view name, uint64_t value) = 0;
   virtual void Int64Histogram(InstrumentLabelList label_keys,
-                         absl::Span<const std::string> label_values,
-                         absl::string_view name, Int64HistogramBuckets bounds,
-                         absl::Span<const uint64_t> counts) = 0;
+                              absl::Span<const std::string> label_values,
+                              absl::string_view name,
+                              Int64HistogramBuckets bounds,
+                              absl::Span<const uint64_t> counts) = 0;
   virtual void DoubleHistogram(InstrumentLabelList label_keys,
                                absl::Span<const std::string> label_values,
                                absl::string_view name,
@@ -1036,7 +1038,7 @@ class InstrumentDomainImpl final : public QueryableDomain {
                                            static_cast<double>(value));
       } else {
         CallInt64HistogramCollectionHooks(handle.description_, label(),
-                                     static_cast<int64_t>(value));
+                                          static_cast<int64_t>(value));
       }
       backend_.Add(handle.offset_ + handle.shape_->BucketFor(value), 1);
     }
@@ -1106,9 +1108,9 @@ class InstrumentDomainImpl final : public QueryableDomain {
 
   template <typename Shape, typename... Args>
   HistogramHandle<Shape> RegisterInt64Histogram(absl::string_view name,
-                                           absl::string_view description,
-                                           absl::string_view unit,
-                                           Args&&... args) {
+                                                absl::string_view description,
+                                                absl::string_view unit,
+                                                Args&&... args) {
     auto* shape = GetMemoizedShape<Shape>(std::forward<Args>(args)...);
     const auto* desc =
         AllocateInt64Histogram(name, description, unit, shape->bounds());
@@ -1116,9 +1118,10 @@ class InstrumentDomainImpl final : public QueryableDomain {
   }
 
   template <typename Shape, typename... Args>
-  HistogramHandle<Shape> RegisterDoubleHistogram(
-      absl::string_view name, absl::string_view description,
-      absl::string_view unit, Args&&... args) {
+  HistogramHandle<Shape> RegisterDoubleHistogram(absl::string_view name,
+                                                 absl::string_view description,
+                                                 absl::string_view unit,
+                                                 Args&&... args) {
     auto* shape = GetMemoizedShape<Shape>(std::forward<Args>(args)...);
     const auto* desc =
         AllocateDoubleHistogram(name, description, unit, shape->bounds());
@@ -1253,8 +1256,8 @@ class InstrumentDomain {
 
   template <typename Shape, typename... Args>
   static auto RegisterInt64Histogram(absl::string_view name,
-                                absl::string_view description,
-                                absl::string_view unit, Args&&... args) {
+                                     absl::string_view description,
+                                     absl::string_view unit, Args&&... args) {
     return Domain()->template RegisterInt64Histogram<Shape>(
         name, description, unit, std::forward<Args>(args)...);
   }

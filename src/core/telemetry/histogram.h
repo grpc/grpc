@@ -46,7 +46,12 @@ template <typename T>
 size_t BucketInBoundsFor(absl::Span<const T> bounds, T value) {
   GRPC_CHECK(!bounds.empty());
   if constexpr (std::is_floating_point_v<T>) {
-    if (std::isnan(value)) return bounds.size() - 1;
+    if (std::isnan(value)) {
+      LOG_EVERY_N_SEC(WARNING, 1)
+          << "Attempted to add a NaN value in a DoubleHistogram. Adding it to "
+             "the last bucket.";
+      return bounds.size() - 1;
+    }
   }
   if (value < bounds[0]) return 0;
   if (value > bounds.back()) return bounds.size() - 1;
@@ -139,11 +144,13 @@ class ExponentialInt64HistogramShape {
     GRPC_CHECK_EQ(bounds_.size(), buckets);
   }
 
-  ExponentialInt64HistogramShape(const ExponentialInt64HistogramShape&) = delete;
-  ExponentialInt64HistogramShape& operator=(const ExponentialInt64HistogramShape&) =
+  ExponentialInt64HistogramShape(const ExponentialInt64HistogramShape&) =
       delete;
+  ExponentialInt64HistogramShape& operator=(
+      const ExponentialInt64HistogramShape&) = delete;
   ExponentialInt64HistogramShape(ExponentialInt64HistogramShape&&) = default;
-  ExponentialInt64HistogramShape& operator=(ExponentialInt64HistogramShape&&) = default;
+  ExponentialInt64HistogramShape& operator=(ExponentialInt64HistogramShape&&) =
+      default;
 
   size_t buckets() const { return bounds_.size(); }
   size_t BucketFor(int64_t value) const {

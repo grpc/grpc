@@ -24,14 +24,15 @@ namespace grpc_core {
 // Telemetry domain static handle definitions and registrations (Dynamic on
 // Load)
 TcpTelemetryDomain::HistogramHandle<ExponentialInt64HistogramShape>
-    TcpTelemetryDomain::kMinRtt =
-        TcpTelemetryDomain::RegisterInt64Histogram<ExponentialInt64HistogramShape>(
-            "grpc.tcp.min_rtt",
-            "Minimum round trip time of a connection in microseconds", "{us}",
-            1 << 24, 100);  // Max bucket is 16 seconds.
+    TcpTelemetryDomain::kMinRtt = TcpTelemetryDomain::RegisterInt64Histogram<
+        ExponentialInt64HistogramShape>(
+        "grpc.tcp.min_rtt",
+        "Minimum round trip time of a connection in microseconds", "{us}",
+        1 << 24, 100);  // Max bucket is 16 seconds.
 TcpTelemetryDomain::HistogramHandle<ExponentialInt64HistogramShape>
     TcpTelemetryDomain::kDeliveryRate =
-        TcpTelemetryDomain::RegisterInt64Histogram<ExponentialInt64HistogramShape>(
+        TcpTelemetryDomain::RegisterInt64Histogram<
+            ExponentialInt64HistogramShape>(
             "grpc.tcp.delivery_rate",
             "TCP's most recent measure of the connection's "
             "\"non-app-limited\" throughput.",
@@ -82,11 +83,11 @@ TcpTelemetryDomain::CounterHandle TcpTelemetryDomain::kSyscallWrites =
         "wrote data to the TCP socket.",
         "{syscall}");
 TcpTelemetryDomain::HistogramHandle<ExponentialInt64HistogramShape>
-    TcpTelemetryDomain::kWriteSize =
-        TcpTelemetryDomain::RegisterInt64Histogram<ExponentialInt64HistogramShape>(
-            "grpc.tcp.write_size",
-            "The number of bytes offered to each syscall_write.", "By", 8 << 20,
-            20);
+    TcpTelemetryDomain::kWriteSize = TcpTelemetryDomain::RegisterInt64Histogram<
+        ExponentialInt64HistogramShape>(
+        "grpc.tcp.write_size",
+        "The number of bytes offered to each syscall_write.", "By", 8 << 20,
+        20);
 TcpTelemetryDomain::CounterHandle TcpTelemetryDomain::kSyscallReads =
     TcpTelemetryDomain::RegisterCounter(
         "grpc.tcp.syscall_reads",
@@ -94,51 +95,58 @@ TcpTelemetryDomain::CounterHandle TcpTelemetryDomain::kSyscallReads =
         "getsockopt) syscall and read data from the TCP socket.",
         "{syscall}");
 TcpTelemetryDomain::HistogramHandle<ExponentialInt64HistogramShape>
-    TcpTelemetryDomain::kReadSize =
-        TcpTelemetryDomain::RegisterInt64Histogram<ExponentialInt64HistogramShape>(
-            "grpc.tcp.read_size",
-            "The number of bytes received by each syscall_read.", "By", 8 << 20,
-            20);
+    TcpTelemetryDomain::kReadSize = TcpTelemetryDomain::RegisterInt64Histogram<
+        ExponentialInt64HistogramShape>(
+        "grpc.tcp.read_size",
+        "The number of bytes received by each syscall_read.", "By", 8 << 20,
+        20);
 TcpTelemetryDomain::HistogramHandle<ExponentialInt64HistogramShape>
     TcpTelemetryDomain::kSenderLatency =
-        TcpTelemetryDomain::RegisterInt64Histogram<ExponentialInt64HistogramShape>(
+        TcpTelemetryDomain::RegisterInt64Histogram<
+            ExponentialInt64HistogramShape>(
             "grpc.tcp.sender_latency",
             "Time taken by the TCP socket to write the first byte of a write "
             "onto the NIC.",
             "us", 1e6, 20);
 TcpTelemetryDomain::HistogramHandle<ExponentialInt64HistogramShape>
     TcpTelemetryDomain::kTransferLatency1k =
-        TcpTelemetryDomain::RegisterInt64Histogram<ExponentialInt64HistogramShape>(
+        TcpTelemetryDomain::RegisterInt64Histogram<
+            ExponentialInt64HistogramShape>(
             "grpc.tcp.transfer_latency_1k",
             "Time taken to transmit the first 1024 bytes of a write.", "us",
             1e6, 20);
 TcpTelemetryDomain::HistogramHandle<ExponentialInt64HistogramShape>
     TcpTelemetryDomain::kTransferLatency8k =
-        TcpTelemetryDomain::RegisterInt64Histogram<ExponentialInt64HistogramShape>(
+        TcpTelemetryDomain::RegisterInt64Histogram<
+            ExponentialInt64HistogramShape>(
             "grpc.tcp.transfer_latency_8k",
             "Time taken to transmit the first 8196 bytes of a write.", "us",
             1e6, 20);
 TcpTelemetryDomain::HistogramHandle<ExponentialInt64HistogramShape>
     TcpTelemetryDomain::kTransferLatency64k =
-        TcpTelemetryDomain::RegisterInt64Histogram<ExponentialInt64HistogramShape>(
+        TcpTelemetryDomain::RegisterInt64Histogram<
+            ExponentialInt64HistogramShape>(
             "grpc.tcp.transfer_latency_64k",
             "Time taken to transmit the first 65536 bytes of a write.", "us",
             1e6, 20);
 TcpTelemetryDomain::HistogramHandle<ExponentialInt64HistogramShape>
     TcpTelemetryDomain::kTransferLatency256k =
-        TcpTelemetryDomain::RegisterInt64Histogram<ExponentialInt64HistogramShape>(
+        TcpTelemetryDomain::RegisterInt64Histogram<
+            ExponentialInt64HistogramShape>(
             "grpc.tcp.transfer_latency_256k",
             "Time taken to transmit the first 262144 bytes of a write.", "us",
             1e6, 20);
 TcpTelemetryDomain::HistogramHandle<ExponentialInt64HistogramShape>
     TcpTelemetryDomain::kTransferLatency2m =
-        TcpTelemetryDomain::RegisterInt64Histogram<ExponentialInt64HistogramShape>(
+        TcpTelemetryDomain::RegisterInt64Histogram<
+            ExponentialInt64HistogramShape>(
             "grpc.tcp.transfer_latency_2m",
             "Time taken to transmit the first 2097152 bytes of a write.", "us",
             1e6, 20);
 TcpTelemetryDomain::HistogramHandle<ExponentialInt64HistogramShape>
     TcpTelemetryDomain::kTransferLatency8m =
-        TcpTelemetryDomain::RegisterInt64Histogram<ExponentialInt64HistogramShape>(
+        TcpTelemetryDomain::RegisterInt64Histogram<
+            ExponentialInt64HistogramShape>(
             "grpc.tcp.transfer_latency_8m",
             "Time taken to transmit the first 8388608 bytes of a write.", "us",
             1e6, 20);
