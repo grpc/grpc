@@ -89,7 +89,7 @@ std::unique_ptr<EVP_MD_CTX, OpenSslDeleter> GetDigestCtx() {
 
 std::string CaptureSslErrors() {
   std::string msg;
-  absl::string_view sep = "";
+  bool is_first = true;
   while (unsigned long code = ERR_get_error()) {
     // OpenSSL guarantees that 256 bytes is enough:
     //   https://www.openssl.org/docs/man1.1.1/man3/ERR_error_string_n.html
@@ -98,9 +98,9 @@ std::string CaptureSslErrors() {
     constexpr size_t kMaxOpenSslErrorLength = 256;
     std::array<char, kMaxOpenSslErrorLength> buf{};
     ERR_error_string_n(code, buf.data(), buf.size());
-    StrAppend(msg, sep);
+    if (!is_first) StrAppend(msg, ", ");
     StrAppend(msg, buf.data());
-    sep = ", ";
+    is_first = false;
   }
   return msg;
 }
@@ -158,6 +158,17 @@ absl::StatusOr<std::string> DERToRawSignature(const std::string& der_sig,
 
   return raw_sig;
 }
+
+struct Response {
+  std::string access_token;
+    
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
+    static const auto* loader = JsonObjectLoader<Response>()
+        .Field("access_token", &Response::access_token)
+        .Finish();
+    return loader;
+  }
+};
 
 }  // namespace
 
@@ -323,9 +334,10 @@ GDCHServiceAccountCredentials::AssertionComponentsFromInfo(const Info& info,
   });
 
   Timestamp expiration = now + kTokenLifetime;
-  const int64_t now_from_epoch = now.milliseconds_after_process_epoch() / 1000;
+
+  const int64_t now_from_epoch = now.as_timespec(GPR_CLOCK_REALTIME).tv_sec;
   const int64_t expiration_from_epoch =
-      expiration.milliseconds_after_process_epoch() / 1000;
+      expiration.as_timespec(GPR_CLOCK_REALTIME).tv_sec;
   std::string iss_sub_value =
       absl::StrCat("system:serviceaccount:", info.project_id, ":",
                    info.service_identity_name);
@@ -406,19 +418,13 @@ GDCHServiceAccountCredentials::FormatHttpRequest(const Info& info,
 absl::StatusOr<std::string> GDCHServiceAccountCredentials::ParseHttpResponse(
     absl::string_view response_body) {
   absl::StatusOr<Json> response_json = JsonParse(response_body);
-  if (!response_json.ok() || response_json->type() != Json::Type::kObject) {
+  if (!response_json.ok()) {
     return absl::InternalError(
         "The format of response is not a valid json object.");
   }
-  Json::Object::const_iterator response_it =
-      response_json->object().find("access_token");
-  if (response_it == response_json->object().end()) {
-    return absl::InternalError("access_token field not present.");
-  }
-  if (response_it->second.type() != Json::Type::kString) {
-    return absl::InternalError("access_token field must be a string.");
-  }
-  return response_it->second.string();
+  auto response = LoadFromJson<Response>(*response_json);
+  if (!response.ok()) return response.status();
+  return std::move(response->access_token);
 }
 
 UniqueTypeName GDCHServiceAccountCredentials::type() const {

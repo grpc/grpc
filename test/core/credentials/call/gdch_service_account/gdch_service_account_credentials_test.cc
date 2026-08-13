@@ -297,7 +297,8 @@ TEST_F(GDCHServiceAccountCredentialsTest, CreateFailureInvalidJson) {
 
 TEST_F(GDCHServiceAccountCredentialsTest, AssertionComponentsFromInfoSuccess) {
   GDCHServiceAccountCredentials::Info info = CreateValidInfo();
-  Timestamp now = Timestamp::FromMillisecondsAfterProcessEpoch(12345678000LL);
+  Timestamp now = Timestamp::FromTimespecRoundDown(
+      gpr_timespec{12345678, 0, GPR_CLOCK_REALTIME});
 
   AssertionComponents components = AssertionComponentsFromInfo(info, now);
 

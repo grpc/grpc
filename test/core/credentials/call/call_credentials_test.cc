@@ -2979,8 +2979,6 @@ TEST_F(CredentialsTest,
                       grpc_version_string()));
 }
 
-}  // namespace
-
 class ExternalAccountCredentialsTest : public ::testing::Test {
  protected:
   void SetUp() override {
@@ -3000,8 +2998,6 @@ class ExternalAccountCredentialsTest : public ::testing::Test {
 
   std::shared_ptr<FuzzingEventEngine> event_engine_;
 };
-
-namespace {
 
 TEST_F(ExternalAccountCredentialsTest, Success) {
   ExecCtx exec_ctx;
