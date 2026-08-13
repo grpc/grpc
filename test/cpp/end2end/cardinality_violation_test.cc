@@ -16,8 +16,6 @@
 //
 //
 
-#include "absl/strings/match.h"
-
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -35,6 +33,7 @@
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
 #include "gtest/gtest.h"
+#include "absl/strings/match.h"
 
 namespace grpc {
 namespace testing {

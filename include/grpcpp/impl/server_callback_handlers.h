@@ -513,8 +513,9 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
   void* Deserialize(grpc_call* call, grpc_byte_buffer* req,
                     grpc::Status* status, void** /*handler_data*/) final {
     if (req == nullptr) {
-      *status = grpc::Status(grpc::StatusCode::UNIMPLEMENTED,
-                             "No request message received for server-streaming method");
+      *status = grpc::Status(
+          grpc::StatusCode::UNIMPLEMENTED,
+          "No request message received for server-streaming method");
       return nullptr;
     }
     grpc::ByteBuffer buf;
