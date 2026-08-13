@@ -1156,11 +1156,8 @@ void close_transport_locked(inproc_transport* t) {
     // Also end all streams on this transport
     while (t->stream_list != nullptr) {
       // cancel_stream_locked also adjusts stream list
-      cancel_stream_locked(
-          t->stream_list,
-          grpc_error_set_int(GRPC_ERROR_CREATE("Transport closed"),
-                             grpc_core::StatusIntProperty::kRpcStatus,
-                             GRPC_STATUS_UNAVAILABLE));
+      cancel_stream_locked(t->stream_list,
+                           absl::UnavailableError("Transport closed"));
     }
   }
 }
@@ -1295,12 +1292,7 @@ grpc_channel* grpc_legacy_inproc_channel_create(grpc_server* server,
       GRPC_CHECK(!channel);
       LOG(ERROR) << "Failed to create client channel: "
                  << grpc_core::StatusToString(error);
-      intptr_t integer;
-      grpc_status_code status = GRPC_STATUS_INTERNAL;
-      if (grpc_error_get_int(error, grpc_core::StatusIntProperty::kRpcStatus,
-                             &integer)) {
-        status = static_cast<grpc_status_code>(integer);
-      }
+      grpc_status_code status = static_cast<grpc_status_code>(error.code());
       // client_transport was destroyed when grpc_channel_create_internal saw an
       // error.
       server_transport->Orphan();
@@ -1313,12 +1305,7 @@ grpc_channel* grpc_legacy_inproc_channel_create(grpc_server* server,
     GRPC_CHECK(!channel);
     LOG(ERROR) << "Failed to create server channel: "
                << grpc_core::StatusToString(error);
-    intptr_t integer;
-    grpc_status_code status = GRPC_STATUS_INTERNAL;
-    if (grpc_error_get_int(error, grpc_core::StatusIntProperty::kRpcStatus,
-                           &integer)) {
-      status = static_cast<grpc_status_code>(integer);
-    }
+    grpc_status_code status = static_cast<grpc_status_code>(error.code());
     client_transport->Orphan();
     server_transport->Orphan();
     channel = grpc_lame_client_channel_create(

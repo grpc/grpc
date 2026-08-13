@@ -18,7 +18,7 @@
 
 namespace grpc_core {
 
-RefCountedPtr<const FilterConfig> XdsHttpFilterImpl::MergeConfigs(
+RefCountedPtr<const FilterConfig> XdsHttpFilterFactory::MergeConfigs(
     RefCountedPtr<const FilterConfig> top_level_config,
     RefCountedPtr<const FilterConfig> virtual_host_override_config,
     RefCountedPtr<const FilterConfig> route_override_config,

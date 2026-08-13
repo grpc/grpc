@@ -135,9 +135,12 @@ class Server(abc.ABC):
           A bool indicates if the operation times out.
         """
 
+    # Suppressing pyright[reportUnknownParameterType, reportMissingParameterType]
+    # for type annotation of service_name and method_handlers as it will be
+    # taken up along with the sync stack changes.
     def add_registered_method_handlers(  # noqa: B027
-        self, service_name, method_handlers
-    ):
+        self, service_name, method_handlers  # pyright: ignore # noqa: PGH003
+    ) -> None:
         """Registers GenericRpcHandlers with this Server.
 
         This method is only safe to call before the server is started.
@@ -344,7 +347,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         """
         raise NotImplementedError()
 
-    def trailing_metadata(self):
+    def trailing_metadata(self) -> MetadataType:
         """Access value to be used as trailing metadata upon RPC completion.
 
         This is an EXPERIMENTAL API.
@@ -354,7 +357,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         """
         raise NotImplementedError()
 
-    def code(self):
+    def code(self) -> grpc.StatusCode:
         """Accesses the value to be used as status code upon RPC completion.
 
         This is an EXPERIMENTAL API.
@@ -364,7 +367,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         """
         raise NotImplementedError()
 
-    def details(self):
+    def details(self):  # pyright: ignore[reportUnknownParameterType]
         """Accesses the value to be used as detail string upon RPC completion.
 
         This is an EXPERIMENTAL API.
