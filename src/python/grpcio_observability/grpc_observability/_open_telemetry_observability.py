@@ -494,7 +494,7 @@ def _end_open_telemetry_observability() -> None:
     global _OPEN_TELEMETRY_OBSERVABILITY  # pylint: disable=global-statement # noqa: PLW0603
     with _observability_lock:
         if not _OPEN_TELEMETRY_OBSERVABILITY:
-            error_msg = "Trying to end gRPC Python observability without initialize first!"
+            error_msg = "Trying to end gRPC Python observability without initializing first!"
             raise RuntimeError(error_msg)
         _OPEN_TELEMETRY_OBSERVABILITY.observability_deinit()
         _OPEN_TELEMETRY_OBSERVABILITY = None
