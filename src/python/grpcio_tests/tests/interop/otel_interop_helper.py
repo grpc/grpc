@@ -14,6 +14,7 @@
 """OpenTelemetry Tracing Interop Helper for Python gRPC Interop Client/Server"""
 
 import os
+import time
 from typing import Optional, Tuple
 
 import grpc
@@ -26,6 +27,14 @@ from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export import SpanExporter
+
+_SPAN_KIND_MAP = {
+    trace.SpanKind.CLIENT: trace_pb2.Span.SpanKind.SPAN_KIND_CLIENT,
+    trace.SpanKind.SERVER: trace_pb2.Span.SpanKind.SPAN_KIND_SERVER,
+    trace.SpanKind.INTERNAL: trace_pb2.Span.SpanKind.SPAN_KIND_INTERNAL,
+    trace.SpanKind.PRODUCER: trace_pb2.Span.SpanKind.SPAN_KIND_PRODUCER,
+    trace.SpanKind.CONSUMER: trace_pb2.Span.SpanKind.SPAN_KIND_CONSUMER,
+}
 
 
 class OTLPSpanExporter(SpanExporter):
@@ -79,10 +88,8 @@ class OTLPSpanExporter(SpanExporter):
                     )
                     proto_events.append(e)
 
-            kind = (
-                trace_pb2.Span.SpanKind.SPAN_KIND_CLIENT
-                if span.kind == trace.SpanKind.CLIENT
-                else trace_pb2.Span.SpanKind.SPAN_KIND_SERVER
+            kind = _SPAN_KIND_MAP.get(
+                span.kind, trace_pb2.Span.SpanKind.SPAN_KIND_UNSPECIFIED
             )
 
             proto_span = trace_pb2.Span(
@@ -139,9 +146,6 @@ def init_tracer_provider() -> Tuple[TracerProvider, trace.Tracer]:
     return _GLOBAL_PROVIDER, tracer
 
 
-import time
-
-
 def flush_tracer_provider():
     if _GLOBAL_PROVIDER:
         _GLOBAL_PROVIDER.force_flush()
@@ -179,10 +183,45 @@ def pack_grpc_trace_bin(
 def unpack_grpc_trace_bin(
     header_bytes: bytes,
 ) -> Tuple[Optional[int], Optional[int], bool]:
-    if len(header_bytes) >= 29 and header_bytes[0] == 0:
-        trace_id_int = int.from_bytes(header_bytes[2:18], "big")
-        span_id_int = int.from_bytes(header_bytes[19:27], "big")
-        is_sampled = bool(header_bytes[28] & 1)
+    if not isinstance(header_bytes, (bytes, bytearray, memoryview)):
+        return None, None, False
+    raw = bytes(header_bytes)
+
+    if len(raw) < 29 or raw[0] != 0:
+        return None, None, False
+
+    trace_id_int = None
+    span_id_int = None
+    is_sampled = False
+
+    pos = 1
+    while pos < len(raw):
+        field_id = raw[pos]
+        pos += 1
+        if field_id == 0:
+            if pos + 16 > len(raw):
+                break
+            trace_id_int = int.from_bytes(raw[pos : pos + 16], "big")
+            pos += 16
+        elif field_id == 1:
+            if pos + 8 > len(raw):
+                break
+            span_id_int = int.from_bytes(raw[pos : pos + 8], "big")
+            pos += 8
+        elif field_id == 2:
+            if pos + 1 > len(raw):
+                break
+            is_sampled = bool(raw[pos] & 1)
+            pos += 1
+        else:
+            break
+
+    if (
+        trace_id_int is not None
+        and span_id_int is not None
+        and trace_id_int != 0
+        and span_id_int != 0
+    ):
         return trace_id_int, span_id_int, is_sampled
     return None, None, False
 
@@ -227,20 +266,19 @@ class OTelServerInterceptor(grpc.ServerInterceptor):
         parent_ctx = None
         trace_id, parent_span_id, is_sampled = None, None, False
 
-        if trace_bin_header:
-            if isinstance(trace_bin_header, str):
-                trace_bin_header = trace_bin_header.encode("latin1")
-            (
-                trace_id,
-                parent_span_id,
-                is_sampled,
-            ) = unpack_grpc_trace_bin(trace_bin_header)
-        elif traceparent_header:
+        if traceparent_header:
             (
                 trace_id,
                 parent_span_id,
                 is_sampled,
             ) = parse_traceparent(traceparent_header)
+
+        if not (trace_id and parent_span_id) and trace_bin_header:
+            (
+                trace_id,
+                parent_span_id,
+                is_sampled,
+            ) = unpack_grpc_trace_bin(trace_bin_header)
 
         if trace_id and parent_span_id:
             parent_ctx = trace.SpanContext(

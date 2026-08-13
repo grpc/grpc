@@ -16,12 +16,6 @@
 //
 //
 
-// clang-format off
-#include "absl/flags/flag.h"
-#include "absl/flags/parse.h"
-#include "absl/log/log.h"
-// clang-format on
-
 #include <google/protobuf/json/json.h>
 #include <grpcpp/grpcpp.h>
 
@@ -37,6 +31,9 @@
 
 #include "opentelemetry/proto/collector/metrics/v1/metrics_service.grpc.pb.h"
 #include "opentelemetry/proto/collector/trace/v1/trace_service.grpc.pb.h"
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
+#include "absl/log/log.h"
 
 ABSL_FLAG(int, port, 0, "Port to listen on");
 ABSL_FLAG(std::string, file, "", "File to write JSON spans to");

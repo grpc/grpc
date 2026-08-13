@@ -18,10 +18,6 @@
 
 #include "test/cpp/interop/otel_helper.h"
 
-#ifndef HAVE_ABSEIL
-#define HAVE_ABSEIL
-#endif
-
 #include <chrono>
 #include <cstdlib>
 #include <memory>

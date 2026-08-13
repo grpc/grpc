@@ -326,7 +326,7 @@ struct GrpcTraceBinMetadata : public SimpleSliceBasedMetadata {
 
 // grpc-tags-bin metadata trait.
 struct GrpcTagsBinMetadata : public SimpleSliceBasedMetadata {
-  static constexpr bool kPublishToApp = true;
+  static constexpr bool kPublishToApp = false;
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = FrequentKeyWithNoValueCompressionCompressor;

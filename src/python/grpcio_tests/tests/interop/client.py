@@ -238,12 +238,17 @@ class _OTelClientInterceptor(grpc.UnaryUnaryClientInterceptor):
         attempt_span.set_attribute("transparent-retry", False)
         attempt_span.add_event("Outbound message")
 
+        trace_id_hex = f"{attempt_span.get_span_context().trace_id:032x}"
+        span_id_hex = f"{attempt_span.get_span_context().span_id:016x}"
+        traceparent = f"00-{trace_id_hex}-{span_id_hex}-01"
+
         trace_bin_bytes = otel_interop_helper.pack_grpc_trace_bin(
             attempt_span.get_span_context().trace_id,
             attempt_span.get_span_context().span_id,
         )
 
         metadata = list(client_call_details.metadata or [])
+        metadata.append(("traceparent", traceparent))
         metadata.append(("grpc-trace-bin", trace_bin_bytes))
 
         new_details = _ClientCallDetails(

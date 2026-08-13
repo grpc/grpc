@@ -1963,7 +1963,7 @@ try:
                 if args.test_case and test_case != args.test_case:
                     continue
                 if test_case == "test_unary_rpc_tracing_export":
-                    allowed_tracing_languages = ["c++", "java", "python"]
+                    allowed_tracing_languages = ["c++", "java", "python", "go"]
                     if (
                         str(language) not in allowed_tracing_languages
                         or server_name not in allowed_tracing_languages

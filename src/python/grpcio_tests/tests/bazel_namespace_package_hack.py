@@ -47,8 +47,6 @@ def sys_path_to_site_dir_hack():
     except Exception:
         pass
     try:
-        import pkgutil
-
         import src
 
         src.__path__ = pkgutil.extend_path(src.__path__, src.__name__)
