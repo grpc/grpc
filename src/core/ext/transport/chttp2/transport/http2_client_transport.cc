@@ -791,30 +791,15 @@ auto Http2ClientTransport::EndpointWrite(SliceBuffer&& output_buf) {
                          << output_buf_length;
 
   transport_write_context_.GetWriteCycle().BeginWrite(output_buf_length);
-  return If(
-      [this]() {
-        MutexLock lock(&transport_mutex_);
-        return shutdown_tracker_.IsShutdownInitiated(transport_mutex_);
-      },
-      [this]() -> Poll<absl::Status> {
+  return Map(
+      endpoint_.Write(std::forward<SliceBuffer>(output_buf),
+                      TransportWriteContext::GetWriteArgs(settings_->peer())),
+      [this](absl::Status status) {
         GRPC_HTTP2_CLIENT_DLOG
-            << "Http2ClientTransport::EndpointWrite: transport closed";
-        goaway_manager_.NotifyTransportClosed();
-        transport_write_context_.GetWriteCycle().EndWrite(false);
-        return absl::CancelledError("Transport closed");
-      },
-      [this, output_buf = std::move(output_buf)]() mutable {
-        return Map(
-            endpoint_.Write(
-                std::move(output_buf),
-                TransportWriteContext::GetWriteArgs(settings_->peer())),
-            [this](absl::Status status) {
-              GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::EndpointWrite "
-                                        "complete with status = "
-                                     << status;
-              transport_write_context_.GetWriteCycle().EndWrite(status.ok());
-              return status;
-            });
+            << "Http2ClientTransport::EndpointWrite complete with status = "
+            << status;
+        transport_write_context_.GetWriteCycle().EndWrite(status.ok());
+        return status;
       });
 }
 
