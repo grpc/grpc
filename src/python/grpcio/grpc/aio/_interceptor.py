@@ -508,8 +508,9 @@ class InterceptedCall:
             return err.debug_error_string()
         except asyncio.CancelledError:
             return ""
-        # We suppress pyright[reportAttributeAccessIssue] below to avoid
-        # public API change for now.
+        # debug_error_string is implemented on concrete calls but not yet
+        # declared on _base_call.Call. We suppress pyright[reportAttributeAccessIssue]
+        # to avoid public API changes for now.
         return await call.debug_error_string()  # type: ignore[reportAttributeAccessIssue]
 
     async def wait_for_connection(self) -> None:
@@ -1164,7 +1165,7 @@ class InterceptedStreamStreamCall(  # pylint: disable=too-many-ancestors
                     self._last_returned_call_from_interceptors = StreamStreamCallResponseIterator[
                         RequestType, ResponseType
                     ](
-                        self._last_returned_call_from_interceptors,  # pright: ignore[reportArgumentType]
+                        self._last_returned_call_from_interceptors,  # pyright: ignore[reportArgumentType]
                         call_or_response_iterator,
                     )
                 return self._last_returned_call_from_interceptors
@@ -1300,6 +1301,9 @@ class _StreamCallResponseIterator(Generic[RequestType, ResponseType]):
         return await self._call.details()
 
     async def debug_error_string(self) -> Optional[str]:
+        # debug_error_string is implemented on concrete calls but not yet
+        # declared on _base_call.Call. We suppress pyright[reportAttributeAccessIssue]
+        # to avoid public API changes for now.
         return await self._call.debug_error_string()  # type: ignore[reportAttributeAccessIssue]
 
     def __aiter__(self):
