@@ -914,11 +914,14 @@ class InterceptedUnaryStreamCall(
                         call_or_response_iterator
                     )
                 else:
-                    self._last_returned_call_from_interceptors = UnaryStreamCallResponseIterator[
-                        RequestType, ResponseType
-                    ](
-                        self._last_returned_call_from_interceptors,  # pyright: ignore[reportArgumentType]
-                        call_or_response_iterator,
+                    last_call = self._last_returned_call_from_interceptors
+                    self._last_returned_call_from_interceptors = (
+                        UnaryStreamCallResponseIterator[
+                            RequestType, ResponseType
+                        ](
+                            last_call,  # pyright: ignore[reportArgumentType]
+                            call_or_response_iterator,
+                        )
                     )
                 return self._last_returned_call_from_interceptors
 
@@ -1162,11 +1165,14 @@ class InterceptedStreamStreamCall(  # pylint: disable=too-many-ancestors
                         call_or_response_iterator
                     )
                 else:
-                    self._last_returned_call_from_interceptors = StreamStreamCallResponseIterator[
-                        RequestType, ResponseType
-                    ](
-                        self._last_returned_call_from_interceptors,  # pyright: ignore[reportArgumentType]
-                        call_or_response_iterator,
+                    last_call = self._last_returned_call_from_interceptors
+                    self._last_returned_call_from_interceptors = (
+                        StreamStreamCallResponseIterator[
+                            RequestType, ResponseType
+                        ](
+                            last_call,  # pyright: ignore[reportArgumentType]
+                            call_or_response_iterator,
+                        )
                     )
                 return self._last_returned_call_from_interceptors
 
