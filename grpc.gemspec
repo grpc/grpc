@@ -1964,6 +1964,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/server/xds_channel_stack_modifier.cc )
   s.files += %w( src/core/server/xds_channel_stack_modifier.h )
   s.files += %w( src/core/server/xds_server_config_fetcher.cc )
+  s.files += %w( src/core/server/xds_server_config_fetcher.h )
   s.files += %w( src/core/server/xds_server_config_fetcher_legacy.cc )
   s.files += %w( src/core/service_config/service_config.h )
   s.files += %w( src/core/service_config/service_config_call_data.h )

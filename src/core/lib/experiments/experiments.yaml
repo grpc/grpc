@@ -178,6 +178,11 @@
   expiry: 2026/09/01
   owner: snohria@google.com
   test_tags: []
+- name: header_data_frame
+  description: Managing header and data memory better
+  expiry: 2026/10/31
+  owner: ritulb@google.com
+  test_tags: []
 - name: inproc_cancel_stream
   description: If set, cancel inproc stream inside the transport mutex.
   expiry: 2026/10/05
