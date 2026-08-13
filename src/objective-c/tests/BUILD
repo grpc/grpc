@@ -171,19 +171,6 @@ grpc_objc_testing_library(
     hdrs = ["MacTests/StressTests.h"],
 )
 
-grpc_objc_testing_library(
-    name = "UnitTests",
-    deps = [
-        ":APIv2Tests-lib",
-        ":ChannelPoolTest-lib",
-        ":ChannelTests-lib",
-        ":GRPCBasicUnitTests-lib",
-        ":GRPCClientTests-lib",
-        ":NSErrorUnitTests-lib",
-        ":RxLibraryUnitTests-lib",
-    ],
-)
-
 grpc_objc_ios_unit_test(
     name = "InteropTestsLocalCleartext",
     deps = [
@@ -269,20 +256,6 @@ macos_unit_test(
     name = "MacInteropTestsRemote",
     minimum_os_version = "11.0",
     deps = [":InteropTestsRemote-lib"],
-)
-
-macos_unit_test(
-    name = "MacTests",
-    minimum_os_version = "11.0",
-    deps = [
-        ":APIv2Tests-lib",
-        ":InteropTestsLocalCleartext-lib",
-        ":InteropTestsLocalSSL-lib",
-        ":InteropTestsRemote-lib",
-        ":MacStressTests-lib",
-        ":NSErrorUnitTests-lib",
-        ":RxLibraryUnitTests-lib",
-    ],
 )
 
 grpc_objc_testing_library(
