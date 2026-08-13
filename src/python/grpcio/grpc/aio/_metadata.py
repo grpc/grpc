@@ -107,13 +107,11 @@ class Metadata(Collection):  # noqa: PLW1641
 
     def __delitem__(self, key: MetadataKey) -> None:
         """``del metadata[<key>]`` deletes the first mapping for <key>."""
-        current_values = self.get_all(key)
-        if not current_values:
+        values = self.get_all(key)
+        if not values:
             raise KeyError(repr(key))
-        remaining = current_values[1:]
-        if remaining:
-            self._metadata[key] = remaining
-        else:
+        del values[0]
+        if not values:
             del self._metadata[key]
 
     def delete_all(self, key: MetadataKey) -> None:
