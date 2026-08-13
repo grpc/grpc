@@ -307,13 +307,13 @@ TokenFetcherCredentials::GetRequestMetadata(
 //
 
 HttpTokenFetcherCredentials::HttpFetchRequest::HttpFetchRequest(
-    HttpTokenFetcherCredentials* creds, Timestamp deadline,
-    absl::AnyInvocable<void(absl::StatusOr<grpc_http_response>)> on_done)
-    : on_done_(std::move(on_done)) {
+    WeakRefCountedPtr<HttpTokenFetcherCredentials> creds, Timestamp deadline,
+    absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)> on_done)
+    : creds_(std::move(creds)), on_done_(std::move(on_done)) {
   GRPC_CLOSURE_INIT(&on_http_response_, OnHttpResponse, this, nullptr);
   Ref().release();  // Ref held by HTTP request callback.
-  http_request_ = creds->StartHttpRequest(creds->pollent(), deadline,
-                                          &response_, &on_http_response_);
+  http_request_ = creds_->StartHttpRequest(creds_->pollent(), deadline,
+                                           &response_, &on_http_response_);
 }
 
 void HttpTokenFetcherCredentials::HttpFetchRequest::Orphan() {
@@ -332,6 +332,7 @@ void HttpTokenFetcherCredentials::HttpFetchRequest::OnHttpResponse(
     self->on_done_(absl::UnavailableError(StatusToString(error)));
     return;
   }
+  // Check HTTP status code.
   if (self->response_.status != 200) {
     grpc_status_code status_code =
         grpc_http2_status_to_grpc_status(self->response_.status);
@@ -344,7 +345,18 @@ void HttpTokenFetcherCredentials::HttpFetchRequest::OnHttpResponse(
                                   self->response_.status)));
     return;
   }
-  self->on_done_(self->response_);
+  // Extract token and return result.
+  auto token = self->creds_->ExtractToken(self->response_);
+  self->on_done_(std::move(token));
+}
+
+OrphanablePtr<TokenFetcherCredentials::FetchRequest>
+HttpTokenFetcherCredentials::FetchToken(
+    Timestamp deadline,
+    absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)> on_done) {
+  return MakeOrphanable<HttpFetchRequest>(
+      WeakRefAsSubclass<HttpTokenFetcherCredentials>(), deadline,
+      std::move(on_done));
 }
 
 }  // namespace grpc_core
