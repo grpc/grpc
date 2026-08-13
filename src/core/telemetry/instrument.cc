@@ -112,51 +112,32 @@ std::string InstrumentLabelList::DebugString() const {
 }
 
 namespace {
-struct Int64Hook {
-  Int64HistogramCollectionHook hook;
-  Int64Hook* next;
-};
-struct DoubleHook {
-  DoubleHistogramCollectionHook hook;
-  DoubleHook* next;
+template <typename T>
+struct Hook {
+  InstrumentCollectionHook<T> hook;
+  Hook<T>* next;
 };
 
-std::atomic<Int64Hook*> int64_hooks = nullptr;
-std::atomic<DoubleHook*> double_hooks = nullptr;
+template <typename T>
+std::atomic<Hook<T>*> hooks = nullptr;
 }  // namespace
 
-void RegisterInt64HistogramCollectionHook(Int64HistogramCollectionHook hook) {
-  Int64Hook* new_hook = new Int64Hook{
-      std::move(hook), int64_hooks.load(std::memory_order_acquire)};
-  while (!int64_hooks.compare_exchange_weak(new_hook->next, new_hook,
-                                            std::memory_order_acq_rel)) {
-  }
-}
-
-void RegisterDoubleHistogramCollectionHook(DoubleHistogramCollectionHook hook) {
-  DoubleHook* new_hook = new DoubleHook{
-      std::move(hook), double_hooks.load(std::memory_order_acquire)};
-  while (!double_hooks.compare_exchange_weak(new_hook->next, new_hook,
-                                             std::memory_order_acq_rel)) {
+template <typename T>
+void RegisterInstrumentCollectionHook(InstrumentCollectionHook<T> hook) {
+  auto* new_hook =
+      new Hook<T>{std::move(hook), hooks<T>.load(std::memory_order_acquire)};
+  while (!hooks<T>.compare_exchange_weak(new_hook->next, new_hook,
+                                         std::memory_order_acq_rel)) {
   }
 }
 
 namespace instrument_detail {
 
-void CallInt64HistogramCollectionHooks(
+template <typename T>
+void CallInstrumentCollectionHooks(
     const InstrumentMetadata::Description* instrument,
-    absl::Span<const std::string> labels, int64_t value) {
-  Int64Hook* hook = int64_hooks.load(std::memory_order_acquire);
-  while (GPR_UNLIKELY(hook != nullptr)) {
-    hook->hook(instrument, labels, value);
-    hook = hook->next;
-  }
-}
-
-void CallDoubleHistogramCollectionHooks(
-    const InstrumentMetadata::Description* instrument,
-    absl::Span<const std::string> labels, double value) {
-  DoubleHook* hook = double_hooks.load(std::memory_order_acquire);
+    absl::Span<const std::string> labels, T value) {
+  Hook<T>* hook = hooks<T>.load(std::memory_order_acquire);
   while (GPR_UNLIKELY(hook != nullptr)) {
     hook->hook(instrument, labels, value);
     hook = hook->next;
@@ -1152,22 +1133,34 @@ RefCountedPtr<CollectionScope> GlobalCollectionScope() {
 }
 
 void TestOnlyResetInstruments() {
-  Int64Hook* hook = int64_hooks.load(std::memory_order_acquire);
-  while (hook != nullptr) {
-    Int64Hook* next = hook->next;
-    delete hook;
-    hook = next;
+  Hook<int64_t>* int64_hook = hooks<int64_t>.load(std::memory_order_acquire);
+  while (int64_hook != nullptr) {
+    Hook<int64_t>* next = int64_hook->next;
+    delete int64_hook;
+    int64_hook = next;
   }
-  int64_hooks.store(nullptr, std::memory_order_release);
-  DoubleHook* double_hook = double_hooks.load(std::memory_order_acquire);
+  hooks<int64_t>.store(nullptr, std::memory_order_release);
+  Hook<double>* double_hook = hooks<double>.load(std::memory_order_acquire);
   while (double_hook != nullptr) {
-    DoubleHook* next = double_hook->next;
+    Hook<double>* next = double_hook->next;
     delete double_hook;
     double_hook = next;
   }
-  double_hooks.store(nullptr, std::memory_order_release);
+  hooks<double>.store(nullptr, std::memory_order_release);
   instrument_detail::QueryableDomain::TestOnlyResetAll();
   GlobalCollectionScopeManager::Get().TestOnlyReset();
 }
 
+template void RegisterInstrumentCollectionHook<int64_t>(
+    InstrumentCollectionHook<int64_t> hook);
+template void RegisterInstrumentCollectionHook<double>(
+    InstrumentCollectionHook<double> hook);
+namespace instrument_detail {
+template void CallInstrumentCollectionHooks<int64_t>(
+    const InstrumentMetadata::Description* instrument,
+    absl::Span<const std::string> labels, int64_t value);
+template void CallInstrumentCollectionHooks<double>(
+    const InstrumentMetadata::Description* instrument,
+    absl::Span<const std::string> labels, double value);
+}  // namespace instrument_detail
 }  // namespace grpc_core

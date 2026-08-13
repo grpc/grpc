@@ -433,14 +433,13 @@ class MetricsSink;
 // to be called when histogram data is collected.
 // This comes with a relatively sever performance penalty. We'd like to be able
 // to remove this in the future.
-using Int64HistogramCollectionHook = absl::AnyInvocable<void(
-    const InstrumentMetadata::Description* instrument,
-    absl::Span<const std::string> labels, int64_t value)>;
-void RegisterInt64HistogramCollectionHook(Int64HistogramCollectionHook hook);
-using DoubleHistogramCollectionHook = absl::AnyInvocable<void(
-    const InstrumentMetadata::Description* instrument,
-    absl::Span<const std::string> labels, double value)>;
-void RegisterDoubleHistogramCollectionHook(DoubleHistogramCollectionHook hook);
+template <typename T>
+using InstrumentCollectionHook =
+    absl::AnyInvocable<void(const InstrumentMetadata::Description* instrument,
+                            absl::Span<const std::string> labels, T value)>;
+
+template <typename T>
+void RegisterInstrumentCollectionHook(InstrumentCollectionHook<T> hook);
 
 // Defines a scope for collecting metrics, identified by a set of labels of
 // interest. Metric collection via GetStorage+Increment will be filtered
@@ -500,12 +499,10 @@ class CollectionScope : public RefCounted<CollectionScope> {
 
 namespace instrument_detail {
 
-void CallInt64HistogramCollectionHooks(
+template <typename T>
+void CallInstrumentCollectionHooks(
     const InstrumentMetadata::Description* instrument,
-    absl::Span<const std::string> labels, int64_t value);
-void CallDoubleHistogramCollectionHooks(
-    const InstrumentMetadata::Description* instrument,
-    absl::Span<const std::string> labels, double value);
+    absl::Span<const std::string> labels, T value);
 
 class GaugeStorage {
  public:
@@ -1034,11 +1031,11 @@ class InstrumentDomainImpl final : public QueryableDomain {
       GRPC_DCHECK_EQ(handle.instrument_domain_, domain());
       if constexpr (std::is_same_v<Shape, LinearDoubleHistogramShape> ||
                     std::is_same_v<Shape, ExponentialDoubleHistogramShape>) {
-        CallDoubleHistogramCollectionHooks(handle.description_, label(),
-                                           static_cast<double>(value));
+        CallInstrumentCollectionHooks<double>(handle.description_, label(),
+                                              static_cast<double>(value));
       } else {
-        CallInt64HistogramCollectionHooks(handle.description_, label(),
-                                          static_cast<int64_t>(value));
+        CallInstrumentCollectionHooks<int64_t>(handle.description_, label(),
+                                               static_cast<int64_t>(value));
       }
       backend_.Add(handle.offset_ + handle.shape_->BucketFor(value), 1);
     }

@@ -822,7 +822,7 @@ TEST_F(InstrumentTest, HistogramHook) {
       const InstrumentMetadata::Description* instrument,
       absl::Span<const std::string> labels, int64_t value)>
       hook;
-  RegisterInt64HistogramCollectionHook(hook.AsStdFunction());
+  RegisterInstrumentCollectionHook<int64_t>(hook.AsStdFunction());
   auto storage = LowContentionDomain::GetStorage(scope, "example.com");
   std::vector<std::string> label = {std::string(kOmittedLabel)};
   EXPECT_CALL(hook, Call(::testing::_, ::testing::ElementsAreArray(label), 10));
@@ -842,8 +842,8 @@ TEST_F(InstrumentTest, MultipleHistogramHooks) {
       const InstrumentMetadata::Description* instrument,
       absl::Span<const std::string> labels, int64_t value)>
       hook2;
-  RegisterInt64HistogramCollectionHook(hook1.AsStdFunction());
-  RegisterInt64HistogramCollectionHook(hook2.AsStdFunction());
+  RegisterInstrumentCollectionHook<int64_t>(hook1.AsStdFunction());
+  RegisterInstrumentCollectionHook<int64_t>(hook2.AsStdFunction());
   auto storage = LowContentionDomain::GetStorage(scope, "example.com");
   std::vector<std::string> label = {std::string(kOmittedLabel)};
   EXPECT_CALL(hook1,
@@ -861,7 +861,7 @@ TEST_F(InstrumentTest, DoubleHistogramHook) {
       const InstrumentMetadata::Description* instrument,
       absl::Span<const std::string> labels, double value)>
       hook;
-  RegisterDoubleHistogramCollectionHook(hook.AsStdFunction());
+  RegisterInstrumentCollectionHook<double>(hook.AsStdFunction());
   auto storage = LowContentionDomain::GetStorage(scope, "example.com");
   std::vector<std::string> label = {std::string(kOmittedLabel)};
   EXPECT_CALL(hook,
@@ -880,8 +880,8 @@ TEST_F(InstrumentTest, MultipleDoubleHistogramHooks) {
       const InstrumentMetadata::Description* instrument,
       absl::Span<const std::string> labels, double value)>
       hook2;
-  RegisterDoubleHistogramCollectionHook(hook1.AsStdFunction());
-  RegisterDoubleHistogramCollectionHook(hook2.AsStdFunction());
+  RegisterInstrumentCollectionHook<double>(hook1.AsStdFunction());
+  RegisterInstrumentCollectionHook<double>(hook2.AsStdFunction());
   auto storage = LowContentionDomain::GetStorage(scope, "example.com");
   std::vector<std::string> label = {std::string(kOmittedLabel)};
   EXPECT_CALL(hook1,
