@@ -192,6 +192,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/flags:parse",
         "absl/log",
     ],
     deps = [
