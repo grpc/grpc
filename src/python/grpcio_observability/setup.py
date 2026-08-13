@@ -195,9 +195,7 @@ if EXTRA_ENV_COMPILE_ARGS is None:
     else:
         EXTRA_ENV_COMPILE_ARGS += " -std=c++17"
         if "linux" in sys.platform or "darwin" in sys.platform:
-            EXTRA_ENV_COMPILE_ARGS += (
-                " -fno-wrapv -frtti -fvisibility=hidden"
-            )
+            EXTRA_ENV_COMPILE_ARGS += " -fno-wrapv -frtti -fvisibility=hidden"
 
 if EXTRA_ENV_LINK_ARGS is None:
     EXTRA_ENV_LINK_ARGS = ""

@@ -86,9 +86,7 @@ UPB_EXCLUDE_CC_FILES_EXCEPTIONS = [
 ]
 
 PROTOBUF_INCLUDE = ("third_party/protobuf",)
-PROTOBUF_UTF8_RANGE_INCLUDE = (
-    "third_party/protobuf/third_party/utf8_range",
-)
+PROTOBUF_UTF8_RANGE_INCLUDE = ("third_party/protobuf/third_party/utf8_range",)
 
 # will be added to include path when building grpcio_observability
 EXTENSION_INCLUDE_DIRECTORIES = (
@@ -207,7 +205,11 @@ def _removeprefix(input: str, prefix: str, /) -> str:
 
 def _bazel_proto_name_to_file_paths(proto_target: str):
     """Transform bazel proto target to local generated source file names."""
-    for bazel_prefix, upb_gen_path, upbdefs_gen_path in BAZEL_PROTO_REFERENCE_LINK:
+    for (
+        bazel_prefix,
+        upb_gen_path,
+        upbdefs_gen_path,
+    ) in BAZEL_PROTO_REFERENCE_LINK:
         if proto_target.startswith(bazel_prefix):
             normalized_name = (
                 _removeprefix(proto_target, bazel_prefix)
