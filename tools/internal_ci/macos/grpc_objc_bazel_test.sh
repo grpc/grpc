@@ -120,10 +120,7 @@ OBJC_TEST_ENV_ARGS=(
 
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path objc_bazel_tests
 
-# NOTE: When using bazel to run the tests, test env variables like GRPC_VERBOSITY or GRPC_TRACE
-# seem to be correctly applied to the test environment even when running tests on a simulator.
-# The below configuration runs all the tests with --test_env=GRPC_VERBOSITY=debug, which makes
-# the test logs much more useful.
+# Silence internal debug traces and simulator activity logs to keep test logs focused on results.
 objc_bazel_tests/bazel_wrapper \
   --bazelrc=tools/remote_build/include/test_locally_with_resultstore_results.bazelrc \
   test \
@@ -131,7 +128,8 @@ objc_bazel_tests/bazel_wrapper \
   "${BAZEL_REMOTE_CACHE_ARGS[@]}" \
   $BAZEL_FLAGS \
   --cxxopt=-DGRPC_IOS_EVENT_ENGINE_CLIENT=0 \
-  --test_env=GRPC_VERBOSITY=debug --test_env=GRPC_TRACE=event_engine*,api \
+  --test_env=GRPC_VERBOSITY=error \
+  --test_env=OS_ACTIVITY_MODE=disable \
   "${OBJC_TEST_ENV_ARGS[@]}" \
   -- \
   "${EXAMPLE_TARGETS[@]}" \
@@ -168,7 +166,8 @@ objc_event_engine_bazel_tests/bazel_wrapper \
   "${BAZEL_REMOTE_CACHE_ARGS[@]}" \
   $BAZEL_FLAGS \
   --test_env=GRPC_EXPERIMENTS=event_engine_client \
-  --test_env=GRPC_VERBOSITY=debug --test_env=GRPC_TRACE=event_engine*,api \
+  --test_env=GRPC_VERBOSITY=error \
+  --test_env=OS_ACTIVITY_MODE=disable \
   "${OBJC_TEST_ENV_ARGS[@]}" \
   -- \
   "${EXAMPLE_TARGETS[@]}" \
