@@ -152,6 +152,8 @@ grpc_cc_test(
     external_deps = [
         "absl/functional:any_invocable",
         "absl/log",
+        "absl/status",
+        "absl/strings",
         "gtest",
     ],
     tags = ["promise_test"],
@@ -185,7 +187,11 @@ grpc_cc_test(
 grpc_cc_test(
     name = "race_test",
     srcs = ["race_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/status",
+        "absl/strings",
+    ],
     tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
@@ -228,13 +234,17 @@ grpc_cc_test(
     name = "if_test",
     srcs = ["if_test.cc"],
     external_deps = [
-        "gtest",
+        "absl/status:statusor",
         "absl/strings",
+        "gtest",
     ],
     tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
-    deps = ["//src/core:if"],
+    deps = [
+        "//src/core:if",
+        "//src/core:poll",
+    ],
 )
 
 grpc_cc_test(

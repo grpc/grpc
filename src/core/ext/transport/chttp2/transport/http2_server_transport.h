@@ -473,6 +473,15 @@ class Http2ServerTransport final : public ServerTransport,
     return stream_list_.size();
   }
 
+  bool IsPingWithoutCallsAllowed() const {
+    return keepalive_permit_without_calls_;
+  }
+
+  bool IsTransportIdle() {
+    MutexLock lock(&transport_mutex_);
+    return GetActiveStreamCountLocked() == 0;
+  }
+
   void EnqueueResetStreamFromTransportParty(RefCountedPtr<Stream> stream,
                                             uint32_t reset_stream_error_code);
 

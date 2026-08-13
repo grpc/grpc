@@ -42,16 +42,13 @@ namespace grpc_core {
 // Subclasses must implement StartHttpRequest().
 class JwtTokenFetcherCallCredentials : public HttpTokenFetcherCredentials {
  public:
-  OrphanablePtr<FetchRequest> FetchToken(
-      Timestamp deadline,
-      absl::AnyInvocable<
-          void(absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
-          on_done) final;
+  absl::StatusOr<RefCountedPtr<Token>> ExtractToken(
+      const grpc_http_response& response) final;
 };
 
 // GCP service account identity call credentials.
 // See gRFC A83 (https://github.com/grpc/proposal/pull/438).
-class GcpServiceAccountIdentityCallCredentials
+class GcpServiceAccountIdentityCallCredentials final
     : public JwtTokenFetcherCallCredentials {
  public:
   explicit GcpServiceAccountIdentityCallCredentials(absl::string_view audience)

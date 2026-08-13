@@ -72,6 +72,8 @@
   default: false
 - name: fuse_filters
   default: false
+- name : header_data_frame
+  default : true
 - name: inproc_cancel_stream
   default: true
 - name: keep_alive_ping_timer_batch
