@@ -402,11 +402,15 @@ def verify_metrics(metrics_file, server_lang="c++"):
                             "exponential_histogram",
                         ):
                             if dp_type in metric:
-                                data_points = metric[dp_type].get("data_points", [])
+                                data_points = metric[dp_type].get(
+                                    "data_points", []
+                                )
                                 for dp in data_points:
                                     for attr in dp.get("attributes", []):
                                         if "key" in attr:
-                                            found_tcp_label_keys.add(attr["key"])
+                                            found_tcp_label_keys.add(
+                                                attr["key"]
+                                            )
 
             missing_keys = required_label_keys - found_tcp_label_keys
             if missing_keys:
@@ -654,7 +658,9 @@ def main():
         start_wait = time.time()
         while time.time() - start_wait < 10.0:
             try:
-                with socket.create_connection(("localhost", server_port), timeout=0.5):
+                with socket.create_connection(
+                    ("localhost", server_port), timeout=0.5
+                ):
                     server_ready = True
                     break
             except (ConnectionRefusedError, OSError):
