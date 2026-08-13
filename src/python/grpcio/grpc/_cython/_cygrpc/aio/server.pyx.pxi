@@ -45,7 +45,6 @@ class _ServerStoppedError(BaseError):
 cdef class RPCState:
 
     def __cinit__(self, AioServer server):
-        init_grpc_aio()
         self.call = NULL
         self.server = server
         grpc_metadata_array_init(&self.request_metadata)
@@ -109,7 +108,6 @@ cdef class RPCState:
         grpc_metadata_array_destroy(&self.request_metadata)
         if self.call:
             grpc_call_unref(self.call)
-        shutdown_grpc_aio()
 
 
 cdef class _ServicerContext:

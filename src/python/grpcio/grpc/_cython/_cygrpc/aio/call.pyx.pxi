@@ -47,7 +47,6 @@ cdef class _AioCall(GrpcCallWrapper):
 
     def __cinit__(self, AioChannel channel, object deadline,
                   bytes method, CallCredentials call_credentials, object wait_for_ready):
-        init_grpc_aio()
         self.call = NULL
         self._channel = channel
         self._loop = channel.loop
@@ -66,7 +65,6 @@ cdef class _AioCall(GrpcCallWrapper):
     def __dealloc__(self):
         if self.call:
             grpc_call_unref(self.call)
-        shutdown_grpc_aio()
 
     def _repr(self) -> str:
         """Assembles the RPC representation string."""
@@ -135,6 +133,8 @@ cdef class _AioCall(GrpcCallWrapper):
         self._maybe_set_client_call_tracer_on_call(method)
 
     cdef void _maybe_set_client_call_tracer_on_call(self, bytes method) except *:
+        if _observability._OBSERVABILITY_PLUGIN is None:
+            return
         # TODO(zgoda): use channel args to exclude those metrics.
         for exclude_prefix in _observability._SERVICES_TO_EXCLUDE:
             if exclude_prefix in method:
