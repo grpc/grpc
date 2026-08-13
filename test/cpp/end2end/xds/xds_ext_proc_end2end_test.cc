@@ -3528,6 +3528,13 @@ TEST_P(XdsExtProcEnd2endTest,
       next_req->request_body().end_of_stream()));
   auto resp_body_req = ext_proc_stream->GetNextRequest();
   ASSERT_TRUE(resp_body_req.has_value());
+  if (resp_body_req->has_request_body()) {
+    ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
+        resp_body_req->request_body().body(),
+        resp_body_req->request_body().end_of_stream()));
+    resp_body_req = ext_proc_stream->GetNextRequest();
+    ASSERT_TRUE(resp_body_req.has_value());
+  }
   EXPECT_TRUE(resp_body_req->has_response_body());
   ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse({}));
   Status status = rpc.GetStatus();
