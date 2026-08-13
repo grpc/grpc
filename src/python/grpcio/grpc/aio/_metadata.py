@@ -107,6 +107,8 @@ class Metadata(Collection):  # noqa: PLW1641
 
     def __delitem__(self, key: MetadataKey) -> None:
         """``del metadata[<key>]`` deletes the first mapping for <key>."""
+        # get_all() returns the live list stored in _metadata, not a copy,
+        # so mutating it in place here also updates _metadata directly.
         values = self.get_all(key)
         if not values:
             raise KeyError(repr(key))
