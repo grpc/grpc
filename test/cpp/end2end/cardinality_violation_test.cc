@@ -28,12 +28,11 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
+#include "src/core/lib/experiments/experiments.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
 #include "gtest/gtest.h"
-#include "absl/strings/match.h"
 
 namespace grpc {
 namespace testing {
@@ -88,9 +87,8 @@ class CardinalityViolationTest : public ::testing::Test {
 };
 
 TEST_F(CardinalityViolationTest, UnaryZeroRequests) {
-  const char* experiments = std::getenv("GRPC_EXPERIMENTS");
-  if (experiments != nullptr &&
-      absl::StrContains(experiments, "promise_based_http2_client_transport")) {
+  if (grpc_core::IsPh2ClientEnabled() ||
+      grpc_core::IsPh2ClientServerEnabled()) {
     GTEST_SKIP() << "Skipping due to promise based transport limitation";
   }
   ClientContext context;
@@ -121,9 +119,8 @@ TEST_F(CardinalityViolationTest, UnaryZeroRequests) {
 }
 
 TEST_F(CardinalityViolationTest, ServerStreamingZeroRequests) {
-  const char* experiments = std::getenv("GRPC_EXPERIMENTS");
-  if (experiments != nullptr &&
-      absl::StrContains(experiments, "promise_based_http2_client_transport")) {
+  if (grpc_core::IsPh2ClientEnabled() ||
+      grpc_core::IsPh2ClientServerEnabled()) {
     GTEST_SKIP() << "Skipping due to promise based transport limitation";
   }
   ClientContext context;
