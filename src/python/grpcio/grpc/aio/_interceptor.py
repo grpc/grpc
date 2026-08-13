@@ -913,19 +913,11 @@ class InterceptedUnaryStreamCall(
                         call_or_response_iterator
                     )
                 else:
-                    if self._last_returned_call_from_interceptors is None:
-                        err_msg = (
-                            "Interceptor returned an AsyncIterable but did not "
-                            "call continuation"
-                        )
-                        raise RuntimeError(err_msg)
-                    self._last_returned_call_from_interceptors = (
-                        UnaryStreamCallResponseIterator[
-                            RequestType, ResponseType
-                        ](
-                            self._last_returned_call_from_interceptors,
-                            call_or_response_iterator,
-                        )
+                    self._last_returned_call_from_interceptors = UnaryStreamCallResponseIterator[
+                        RequestType, ResponseType
+                    ](
+                        self._last_returned_call_from_interceptors,  # pyright: ignore[reportArgumentType]
+                        call_or_response_iterator,
                     )
                 return self._last_returned_call_from_interceptors
 
@@ -1074,8 +1066,7 @@ class InterceptedStreamUnaryCall(  # pylint: disable=too-many-ancestors
         raise NotImplementedError()
 
 
-# pylint: disable=too-many-ancestors
-class InterceptedStreamStreamCall(
+class InterceptedStreamStreamCall(  # pylint: disable=too-many-ancestors
     InterceptedCall,
     _InterceptedStreamRequestMixin[RequestType],
     _InterceptedStreamResponseMixin[ResponseType],
@@ -1170,19 +1161,11 @@ class InterceptedStreamStreamCall(
                         call_or_response_iterator
                     )
                 else:
-                    if self._last_returned_call_from_interceptors is None:
-                        err_msg = (
-                            "Interceptor returned an AsyncIterable but did not "
-                            "call continuation"
-                        )
-                        raise RuntimeError(err_msg)
-                    self._last_returned_call_from_interceptors = (
-                        StreamStreamCallResponseIterator[
-                            RequestType, ResponseType
-                        ](
-                            self._last_returned_call_from_interceptors,
-                            call_or_response_iterator,
-                        )
+                    self._last_returned_call_from_interceptors = StreamStreamCallResponseIterator[
+                        RequestType, ResponseType
+                    ](
+                        self._last_returned_call_from_interceptors,  # pright: ignore[reportArgumentType]
+                        call_or_response_iterator,
                     )
                 return self._last_returned_call_from_interceptors
 
@@ -1260,7 +1243,7 @@ class UnaryUnaryCallResponse(
     async def debug_error_string(self) -> Optional[str]:
         return None
 
-    def __await__(self):
+    def __await__(self) -> Generator[Any, None, ResponseType]:
         if False:  # pylint: disable=using-constant-test
             # This code path is never used, but a yield statement is needed
             # for telling the interpreter that __await__ is a generator.
@@ -1305,12 +1288,10 @@ class _StreamCallResponseIterator(Generic[RequestType, ResponseType]):
         return self._call.time_remaining()
 
     async def initial_metadata(self) -> Metadata:
-        md = await self._call.initial_metadata()
-        return md if md is not None else Metadata()
+        return await self._call.initial_metadata()
 
     async def trailing_metadata(self) -> Metadata:
-        md = await self._call.trailing_metadata()
-        return md if md is not None else Metadata()
+        return await self._call.trailing_metadata()
 
     async def code(self) -> grpc.StatusCode:
         return await self._call.code()
