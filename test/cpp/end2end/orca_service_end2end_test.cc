@@ -250,7 +250,7 @@ TEST_F(OrcaServiceEnd2endTest, ClientClosesBeforeSendingMessage) {
   reactor.Prepare();
   reactor.StartWritesDone();
   reactor.StartCall();
-  EXPECT_EQ(reactor.Await().error_code(), grpc::StatusCode::INTERNAL);
+  EXPECT_EQ(reactor.Await().error_code(), grpc::StatusCode::UNIMPLEMENTED);
 }
 
 }  // namespace
