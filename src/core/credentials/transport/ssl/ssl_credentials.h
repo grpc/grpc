@@ -89,11 +89,13 @@ struct grpc_ssl_server_certificate_config {
   grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs = nullptr;
   size_t num_key_cert_pairs = 0;
   std::string pem_root_certs;
+
+  ~grpc_ssl_server_certificate_config();
 };
 
 struct grpc_ssl_server_certificate_config_fetcher {
   grpc_ssl_server_certificate_config_callback cb = nullptr;
-  void* user_data;
+  void* user_data = nullptr;
 };
 
 class grpc_ssl_server_credentials final : public grpc_server_credentials {
