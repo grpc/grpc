@@ -22,7 +22,7 @@
 
 
 
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 set(PACKAGE_NAME          "grpc")
 set(PACKAGE_VERSION       "1.84.0-dev")
@@ -58,14 +58,6 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
 endif()
 set(gRPC_INSTALL ${gRPC_INSTALL_default} CACHE BOOL
     "Generate installation target")
-
-# We can install dependencies from submodules if we're running
-# CMake v3.13 or newer.
-if(CMAKE_VERSION VERSION_LESS 3.13)
-  set(_gRPC_INSTALL_SUPPORTED_FROM_MODULE OFF)
-else()
-  set(_gRPC_INSTALL_SUPPORTED_FROM_MODULE ON)
-endif()
 
 # Providers for third-party dependencies (gRPC_*_PROVIDER properties):
 # "module": build the dependency using sources from git submodule (under third_party)
@@ -2157,6 +2149,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(gpr
     PRIVATE
       "GPR_DLL_EXPORTS"
+    INTERFACE
+      "GPR_DLL_IMPORTS"
     )
   endif()
   if(gRPC_INSTALL)
@@ -3205,6 +3199,8 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GRPC_DLL_EXPORTS"
       "GPR_DLL_IMPORTS"
+    INTERFACE
+      "GRPC_DLL_IMPORTS"
     )
   endif()
   if(gRPC_INSTALL)
@@ -3951,6 +3947,8 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GRPC_DLL_EXPORTS"
       "GPR_DLL_IMPORTS"
+    INTERFACE
+      "GRPC_DLL_IMPORTS"
     )
   endif()
   if(gRPC_INSTALL)
@@ -5063,6 +5061,8 @@ if(WIN32 AND MSVC)
       "GRPCXX_DLL_EXPORTS"
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+    INTERFACE
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
   if(gRPC_INSTALL)
@@ -5811,6 +5811,8 @@ if(WIN32 AND MSVC)
       "GRPCXX_DLL_EXPORTS"
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+    INTERFACE
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
   if(gRPC_INSTALL)
@@ -56637,6 +56639,16 @@ function(generate_pkgconfig name description version requires requires_private
   set(PC_REQUIRES_PRIVATE "${requires_private}")
   set(PC_LIB "${libs}")
   set(PC_LIBS_PRIVATE "${libs_private}")
+  set(PC_CFLAGS "")
+  if(WIN32 AND BUILD_SHARED_LIBS)
+    if(name STREQUAL "gpr")
+      set(PC_CFLAGS "-DGPR_DLL_IMPORTS")
+    elseif(name STREQUAL "gRPC" OR name STREQUAL "gRPC unsecure")
+      set(PC_CFLAGS "-DGRPC_DLL_IMPORTS -DGPR_DLL_IMPORTS")
+    elseif(name MATCHES "^gRPC\\+\\+")
+      set(PC_CFLAGS "-DGRPCXX_DLL_IMPORTS -DGRPC_DLL_IMPORTS -DGPR_DLL_IMPORTS")
+    endif()
+  endif()
   set(output_filepath "${grpc_BINARY_DIR}/libs/opt/pkgconfig/${output_filename}")
   configure_file(
     "${grpc_SOURCE_DIR}/cmake/pkg-config-template.pc.in"

@@ -526,11 +526,18 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(Http2PingFrame&& frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-ping
   GRPC_HTTP2_SERVER_DLOG
       << "Http2ServerTransport::ProcessIncomingFrame(PingFrame) { ack="
-      << frame.ack << ", opaque=" << frame.opaque << " }";
+      << frame.ack << ", opaque=" << frame.opaque << " }, "
+      << ping_manager_->GetDebugString(!IsPingWithoutCallsAllowed() &&
+                                       IsTransportIdle());
   if (frame.ack) {
     return ToHttpOkOrConnError(AckPing(frame.opaque));
   } else {
     read_context_.OnPingFrameReceived();
+    if (GPR_UNLIKELY(ping_manager_->NotifyPingAbusePolicy(
+            !IsPingWithoutCallsAllowed() && IsTransportIdle()))) {
+      return Http2Status::Http2ConnectionError(Http2ErrorCode::kEnhanceYourCalm,
+                                               "too_many_pings");
+    }
     if (test_only_ack_pings_) {
       ping_manager_->AddPendingPingAck(frame.opaque);
       return ToHttpOkOrConnError(TriggerWriteCycle());
@@ -988,7 +995,7 @@ auto Http2ServerTransport::MultiplexerLoop() {
                   writable_stream_list_.ImmediateNext(
                       AreTransportFlowControlTokensAvailable());
               if (!optional_stream.has_value()) {
-                GRPC_HTTP2_CLIENT_DLOG
+                GRPC_HTTP2_SERVER_DLOG
                     << "Http2ServerTransport::MultiplexerLoop "
                        "No writable streams available ";
                 break;
@@ -1033,8 +1040,8 @@ auto Http2ServerTransport::MultiplexerLoop() {
         },
         [this]() -> LoopCtl<absl::Status> {
           if (should_reset_ping_clock_) {
-            GRPC_HTTP2_CLIENT_DLOG
-                << "Http2ClientTransport::MultiplexerLoop ResetPingClock";
+            GRPC_HTTP2_SERVER_DLOG
+                << "Http2ServerTransport::MultiplexerLoop ResetPingClock";
             ping_manager_->ResetPingClock(/*is_client=*/kIsClient);
             should_reset_ping_clock_ = false;
           }
@@ -1874,7 +1881,7 @@ Http2ServerTransport::Http2ServerTransport(
   TransportChannelArgs args;
   ReadChannelArgs(channel_args, args);
 
-  ping_manager_.emplace(channel_args, args.ping_timeout,
+  ping_manager_.emplace(channel_args, kIsClient, args.ping_timeout,
                         PingSystemInterfaceImpl::Make(this), event_engine_);
 
   // The keepalive loop is only spawned if the keepalive time is not infinity.

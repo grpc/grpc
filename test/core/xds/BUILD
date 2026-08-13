@@ -343,6 +343,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
         "absl/status",
+        "absl/strings",
         "absl/synchronization",
     ],
     tags = ["xds_test"],

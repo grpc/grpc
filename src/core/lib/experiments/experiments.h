@@ -94,6 +94,8 @@ inline bool IsFixV3FilterStackServerSideOrderingEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsFuseFiltersEnabled() { return false; }
 inline bool IsH2MaxDeallocatingStreamsHeadroomEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_HEADER_DATA_FRAME
+inline bool IsHeaderDataFrameEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_INPROC_CANCEL_STREAM
 inline bool IsInprocCancelStreamEnabled() { return true; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
@@ -186,6 +188,8 @@ inline bool IsFixV3FilterStackServerSideOrderingEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsFuseFiltersEnabled() { return false; }
 inline bool IsH2MaxDeallocatingStreamsHeadroomEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_HEADER_DATA_FRAME
+inline bool IsHeaderDataFrameEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_INPROC_CANCEL_STREAM
 inline bool IsInprocCancelStreamEnabled() { return true; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
@@ -278,6 +282,8 @@ inline bool IsFixV3FilterStackServerSideOrderingEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsFuseFiltersEnabled() { return false; }
 inline bool IsH2MaxDeallocatingStreamsHeadroomEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_HEADER_DATA_FRAME
+inline bool IsHeaderDataFrameEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_INPROC_CANCEL_STREAM
 inline bool IsInprocCancelStreamEnabled() { return true; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
@@ -355,6 +361,7 @@ enum ExperimentIds {
   kExperimentIdFreeLargeAllocator,
   kExperimentIdFuseFilters,
   kExperimentIdH2MaxDeallocatingStreamsHeadroom,
+  kExperimentIdHeaderDataFrame,
   kExperimentIdInprocCancelStream,
   kExperimentIdKeepAlivePingTimerBatch,
   kExperimentIdLocalConnectorSecure,
@@ -482,6 +489,10 @@ inline bool IsFuseFiltersEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_H2_MAX_DEALLOCATING_STREAMS_HEADROOM
 inline bool IsH2MaxDeallocatingStreamsHeadroomEnabled() {
   return IsExperimentEnabled<kExperimentIdH2MaxDeallocatingStreamsHeadroom>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_HEADER_DATA_FRAME
+inline bool IsHeaderDataFrameEnabled() {
+  return IsExperimentEnabled<kExperimentIdHeaderDataFrame>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_INPROC_CANCEL_STREAM
 inline bool IsInprocCancelStreamEnabled() {
