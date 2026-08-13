@@ -723,6 +723,9 @@ auto ExtProcFilter::ExtProcCall::SendMessageToSideStream(std::string payload) {
                   !status.ok(),
                   []() { return Immediate(StatusFlag(Failure{})); },
                   [self, payload_ptr]() mutable {
+                    // CloseSideStream() moves out and resets streaming_call_,
+                    // so it may be null if the side-stream closed while this
+                    // send was queued or executing.
                     return If(
                         self->streaming_call_ == nullptr ||
                             self->IsSideStreamClosed() ||
@@ -739,8 +742,9 @@ auto ExtProcFilter::ExtProcCall::SendMessageToSideStream(std::string payload) {
             // Reset send state and wake up any waiting senders.
             [self](StatusFlag status) -> StatusFlag {
               self->ext_proc_send_state_ =
-                  status.ok() ? SideStreamSendState::kIdle
-                              : SideStreamSendState::kSendFailed;
+                  status.ok() && !self->IsSideStreamClosed()
+                      ? SideStreamSendState::kIdle
+                      : SideStreamSendState::kSendFailed;
               self->ext_proc_send_waiters_.TakeWakeupSet().Wakeup();
               return self->EvaluateSideStreamStatus(status);
             });
@@ -1417,7 +1421,8 @@ auto ExtProcFilter::ExtProcCall::HandleHalfCloseFromClient() {
                     }
                     upb::Arena arena;
                     auto payload = CreateExtProcClientBodyRequest(
-                        arena.ptr(), /*body=*/"", self->request_attributes_,
+                        arena.ptr(), /*message_bytes=*/"",
+                        self->request_attributes_,
                         self->config().observability_mode, processing_mode,
                         /*end_of_stream=*/false,
                         /*end_of_stream_without_message=*/true);
@@ -1494,6 +1499,8 @@ auto ExtProcFilter::ExtProcCall::HandleInitialMetadataFromServer(
               return Immediate(StatusFlag(Success{}));
             },
             [self, md]() mutable {
+              // Include processing mode if this is the first message on the
+              // stream.
               std::optional<ExtProcProcessingMode> processing_mode;
               if (self->IsFirstMessageOnSideStream()) {
                 processing_mode = self->config().processing_mode;
@@ -1649,6 +1656,10 @@ auto ExtProcFilter::ExtProcCall::HandleTrailingMetadataFromServer(
             });
       });
 }
+
+//
+// ExtProcFilter::ExtProcCall Server Message Processing
+//
 
 auto ExtProcFilter::ExtProcCall::HandleMessageFromServer(
     MessageHandle message) {
@@ -2004,6 +2015,7 @@ void ExtProcFilter::InterceptCall(UnstartedCallHandler unstarted_call_handler) {
             << " ext_proc_filter=" << ext_proc_filter.get()
             << "] InterceptCall promise chain start";
         auto transport = ext_proc_filter->channel()->transport();
+        // This shouldn't ever happen; added as a defensive check.
         return If(
             transport == nullptr,
             []() {
