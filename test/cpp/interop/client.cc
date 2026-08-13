@@ -16,6 +16,12 @@
 //
 //
 
+// clang-format off
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
+#include "absl/log/log.h"
+// clang-format on
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpcpp/channel.h>
@@ -30,9 +36,8 @@
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/interop/client_helper.h"
 #include "test/cpp/interop/interop_client.h"
+#include "test/cpp/interop/otel_helper.h"
 #include "test/cpp/util/test_config.h"
-#include "absl/flags/flag.h"
-#include "absl/log/log.h"
 
 ABSL_FLAG(bool, use_alts, false,
           "Whether to use alts. Enable alts will disable tls.");
@@ -204,6 +209,7 @@ ParseAdditionalMetadataFlag(const std::string& flag) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
+  grpc::testing::interop::MaybeRegisterOpenTelemetry();
   LOG(INFO) << "Testing these cases: " << absl::GetFlag(FLAGS_test_case);
   int ret = 0;
 
@@ -221,12 +227,14 @@ int main(int argc, char** argv) {
             factories;
         if (!additional_metadata->empty()) {
           factories.emplace_back(
-              new grpc::testing::AdditionalMetadataInterceptorFactory(
+              std::make_unique<
+                  grpc::testing::AdditionalMetadataInterceptorFactory>(
                   *additional_metadata));
         }
         if (absl::GetFlag(FLAGS_log_metadata_and_status)) {
           factories.emplace_back(
-              new grpc::testing::MetadataAndStatusLoggerInterceptorFactory());
+              std::make_unique<
+                  grpc::testing::MetadataAndStatusLoggerInterceptorFactory>());
         }
         std::string service_config_json =
             absl::GetFlag(FLAGS_service_config_json);
@@ -357,5 +365,6 @@ int main(int argc, char** argv) {
     ret = 1;
   }
 
+  grpc::testing::interop::ForceFlushOpenTelemetry();
   return ret;
 }

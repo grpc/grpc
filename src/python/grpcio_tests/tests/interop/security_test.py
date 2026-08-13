@@ -15,12 +15,21 @@
 import faulthandler
 from functools import partial
 import gc
+import os
 import queue
 import sys
 import threading
 import time
 import unittest
 import weakref
+
+os.environ["GRPC_BAZEL_RUNTIME"] = "1"
+try:
+    from tests import bazel_namespace_package_hack
+
+    bazel_namespace_package_hack.sys_path_to_site_dir_hack()
+except ImportError:
+    pass
 
 import grpc
 import grpc.experimental

@@ -15,15 +15,24 @@
 
 import os
 
+os.environ["GRPC_BAZEL_RUNTIME"] = "1"
+try:
+    from tests import bazel_namespace_package_hack
+
+    bazel_namespace_package_hack.sys_path_to_site_dir_hack()
+except ImportError:
+    pass
+
+# pylint: disable=wrong-import-position
 from absl import app
 from absl.flags import argparse_flags
-from google import auth as google_auth
-from google.auth import jwt as google_auth_jwt
 import grpc
 
 from src.proto.grpc.testing import test_pb2_grpc
 from tests.interop import methods
 from tests.interop import resources
+
+# pylint: enable=wrong-import-position
 
 
 def parse_interop_client_args(argv):
@@ -93,18 +102,33 @@ def parse_interop_client_args(argv):
             " round_robin " + "or pick_first)."
         ),
     )
+    parser.add_argument(
+        "--enable_opentelemetry",
+        default=False,
+        type=resources.parse_bool,
+        help="enable OpenTelemetry tracing/observability",
+    )
+    parser.add_argument(
+        "--enable_tcp_metrics",
+        default=False,
+        type=resources.parse_bool,
+        help="enable TCP metrics",
+    )
     return parser.parse_args(argv[1:])
 
 
 def _create_call_credentials(args):
+    from google import auth as google_auth
+    from google.auth import jwt as google_auth_jwt
+
     if args.test_case == "oauth2_auth_token":
-        google_credentials, unused_project_id = google_auth.default(
+        google_credentials, _unused_project_id = google_auth.default(
             scopes=[args.oauth_scope]
         )
         google_credentials.refresh(google_auth.transport.requests.Request())
         return grpc.access_token_call_credentials(google_credentials.token)
     elif args.test_case == "compute_engine_creds":
-        google_credentials, unused_project_id = google_auth.default(
+        google_credentials, _unused_project_id = google_auth.default(
             scopes=[args.oauth_scope]
         )
         return grpc.metadata_call_credentials(
@@ -129,6 +153,8 @@ def _create_call_credentials(args):
 
 
 def get_secure_channel_parameters(args):
+    from google import auth as google_auth
+
     call_credentials = _create_call_credentials(args)
 
     channel_opts = ()
@@ -143,7 +169,7 @@ def get_secure_channel_parameters(args):
     if args.custom_credentials_type is not None:
         if args.custom_credentials_type == "compute_engine_channel_creds":
             assert call_credentials is None
-            google_credentials, unused_project_id = google_auth.default(
+            google_credentials, _unused_project_id = google_auth.default(
                 scopes=[args.oauth_scope]
             )
             call_creds = grpc.metadata_call_credentials(
@@ -186,6 +212,59 @@ def get_secure_channel_parameters(args):
     return channel_credentials, channel_opts
 
 
+class _OTelClientInterceptor(grpc.UnaryUnaryClientInterceptor):
+    def __init__(self, tracer):
+        self._tracer = tracer
+
+    def intercept_unary_unary(self, continuation, client_call_details, request):
+        from grpc._interceptor import _ClientCallDetails
+        from opentelemetry import trace
+
+        from tests.interop import otel_interop_helper
+
+        method = client_call_details.method
+        full_method = method.lstrip("/")
+        sent_span_name = f"Sent.{full_method}"
+        attempt_span_name = f"Attempt.{full_method}"
+
+        sent_span = self._tracer.start_span(
+            sent_span_name, kind=trace.SpanKind.CLIENT
+        )
+        sent_ctx = trace.set_span_in_context(sent_span)
+        attempt_span = self._tracer.start_span(
+            attempt_span_name, kind=trace.SpanKind.CLIENT, context=sent_ctx
+        )
+        attempt_span.set_attribute("previous-rpc-attempts", 0)
+        attempt_span.set_attribute("transparent-retry", False)
+        attempt_span.add_event("Outbound message")
+
+        trace_bin_bytes = otel_interop_helper.pack_grpc_trace_bin(
+            attempt_span.get_span_context().trace_id,
+            attempt_span.get_span_context().span_id,
+        )
+
+        metadata = list(client_call_details.metadata or [])
+        metadata.append(("grpc-trace-bin", trace_bin_bytes))
+
+        new_details = _ClientCallDetails(
+            method=client_call_details.method,
+            timeout=client_call_details.timeout,
+            metadata=metadata,
+            credentials=client_call_details.credentials,
+            wait_for_ready=client_call_details.wait_for_ready,
+            compression=client_call_details.compression,
+        )
+
+        try:
+            response = continuation(new_details, request)
+            attempt_span.add_event("Inbound message")
+            return response
+        finally:
+            attempt_span.end()
+            sent_span.end()
+            otel_interop_helper.flush_tracer_provider()
+
+
 def _create_channel(args):
     target = "{}:{}".format(args.server_host, args.server_port)
 
@@ -195,9 +274,19 @@ def _create_channel(args):
         or args.custom_credentials_type is not None
     ):
         channel_credentials, options = get_secure_channel_parameters(args)
-        return grpc.secure_channel(target, channel_credentials, options)
+        channel = grpc.secure_channel(target, channel_credentials, options)
     else:
-        return grpc.insecure_channel(target)
+        channel = grpc.insecure_channel(target)
+
+    if args.enable_opentelemetry or args.enable_tcp_metrics:
+        from tests.interop import otel_interop_helper
+
+        _, tracer = otel_interop_helper.init_tracer_provider()
+        channel = grpc.intercept_channel(
+            channel, _OTelClientInterceptor(tracer)
+        )
+
+    return channel
 
 
 def create_stub(channel, args):
@@ -220,6 +309,11 @@ def test_interoperability(args):
     stub = create_stub(channel, args)
     test_case = _test_case_from_arg(args.test_case)
     test_case.test_interoperability(stub, args)
+    if args.enable_opentelemetry or args.enable_tcp_metrics:
+        from tests.interop import otel_interop_helper
+
+        otel_interop_helper.flush_tracer_provider()
+        otel_interop_helper.shutdown_tracer_provider()
 
 
 if __name__ == "__main__":

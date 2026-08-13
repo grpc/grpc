@@ -95,6 +95,30 @@ grpc_cc_binary(
 )
 
 grpc_cc_library(
+    name = "otel_helper_lib",
+    srcs = [
+        "otel_helper.cc",
+    ],
+    hdrs = [
+        "otel_helper.h",
+    ],
+    external_deps = [
+        "absl/flags:flag",
+        "absl/log",
+        "otel/api",
+        "otel/exporters/otlp:otlp_grpc_exporter",
+        "otel/exporters/otlp:otlp_grpc_metric_exporter",
+        "otel/sdk/src/metrics",
+        "otel/sdk/src/trace",
+        "otel/sdk:headers",
+    ],
+    deps = [
+        "//:grpc++",
+        "//src/cpp/ext/otel:otel_plugin",
+    ],
+)
+
+grpc_cc_library(
     name = "interop_server_lib",
     srcs = [
         "interop_server.cc",
@@ -105,6 +129,7 @@ grpc_cc_library(
         "absl/log:check",
     ],
     deps = [
+        ":otel_helper_lib",
         ":server_helper_lib",
         "//:gpr",
         "//:grpc",
@@ -171,6 +196,7 @@ grpc_cc_library(
     ],
     deps = [
         ":client_helper_lib",
+        ":otel_helper_lib",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
@@ -320,6 +346,21 @@ sh_test(
     data = [
         ":interop_test",
     ],
+    tags = ["no_windows"],
+)
+
+py_test(
+    name = "run_otel_interop_test",
+    srcs = ["run_otel_interop_test.py"],
+    args = ["--skip_build"],
+    data = [
+        ":interop_client",
+        ":interop_server",
+        ":otlp_collector",
+        "//src/python/grpcio_tests/tests/interop:client",
+        "//src/python/grpcio_tests/tests/interop:server_bin",
+    ],
+    python_version = "PY3",
     tags = ["no_windows"],
 )
 
@@ -784,5 +825,30 @@ grpc_cc_library(
         "//src/core:json_args",
         "//src/core:json_object_loader",
         "//src/core:pollset_set",
+    ],
+)
+
+grpc_cc_binary(
+    name = "otlp_collector",
+    srcs = [
+        "otlp_collector.cc",
+    ],
+    external_deps = [
+        "absl/flags:flag",
+        "absl/flags:parse",
+        "absl/log",
+        "protobuf",
+        "protobuf_clib",
+        "protobuf_headers",
+    ],
+    tags = ["nobuilder"],
+    deps = [
+        "//:gpr",
+        "//:grpc++",
+        "//src/core:instrument",
+        "@opentelemetry_proto//:metrics_service_grpc_cc",
+        "@opentelemetry_proto//:metrics_service_proto_cc",
+        "@opentelemetry_proto//:trace_service_grpc_cc",
+        "@opentelemetry_proto//:trace_service_proto_cc",
     ],
 )
