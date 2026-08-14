@@ -1690,6 +1690,7 @@ TEST_P(XdsExtProcEnd2endTest, RequestBodyGrpcMessageCompressed) {
 TEST_P(XdsExtProcEnd2endTest,
        RequestBodyObservabilityExtProcConnectionErrorFailureModeFalse) {
   CreateAndStartBackends(1);
+  ResetStubWithUniqueArg();
   auto ext_proc_config = ExtProcFilterConfigBuilder()
                              .SetTargetUri(ext_proc_server_->target())
                              .SetInsecureChannelCredentials()
@@ -1708,21 +1709,25 @@ TEST_P(XdsExtProcEnd2endTest,
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   })));
+  AsyncBidiStream stream;
   RpcOptions rpc_options;
-  AsyncRpc rpc;
-  rpc.StartRpc(stub_.get(), rpc_options);
+  stream.Start(stub_.get(), rpc_options);
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
   ASSERT_TRUE(req.has_value());
   EXPECT_TRUE(req->has_request_headers());
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
+  EchoRequest request;
+  request.set_message(kMessage1);
+  stream.StartWrite(request);
+  EXPECT_TRUE(stream.WaitForWriteDone());
   auto next_req = ext_proc_stream->GetNextRequest();
   ASSERT_TRUE(next_req.has_value());
   EXPECT_TRUE(next_req->has_request_body());
   ext_proc_stream->SendStatus(absl::ResourceExhaustedError(
       "Call closed by ext_proc server on request body"));
-  Status status = rpc.GetStatus();
+  Status status = stream.Finish();
   EXPECT_THAT(
       status,
       GrpcStatusIs(StatusCode::RESOURCE_EXHAUSTED,
@@ -1734,6 +1739,7 @@ TEST_P(XdsExtProcEnd2endTest,
 TEST_P(XdsExtProcEnd2endTest,
        RequestBodyObservabilityExtProcConnectionErrorFailureModeTrue) {
   CreateAndStartBackends(1);
+  ResetStubWithUniqueArg();
   auto ext_proc_config = ExtProcFilterConfigBuilder()
                              .SetTargetUri(ext_proc_server_->target())
                              .SetInsecureChannelCredentials()
@@ -1752,21 +1758,29 @@ TEST_P(XdsExtProcEnd2endTest,
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   })));
+  AsyncBidiStream stream;
   RpcOptions rpc_options;
-  AsyncRpc rpc;
-  rpc.StartRpc(stub_.get(), rpc_options);
+  stream.Start(stub_.get(), rpc_options);
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
   ASSERT_TRUE(req.has_value());
   EXPECT_TRUE(req->has_request_headers());
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
+  EchoRequest request;
+  request.set_message(kMessage1);
+  stream.StartWrite(request);
+  EXPECT_TRUE(stream.WaitForWriteDone());
   auto next_req = ext_proc_stream->GetNextRequest();
   ASSERT_TRUE(next_req.has_value());
   EXPECT_TRUE(next_req->has_request_body());
   ext_proc_stream->SendStatus(absl::ResourceExhaustedError(
       "Call closed by ext_proc server on request body"));
-  Status status = rpc.GetStatus();
+  EchoResponse response;
+  EXPECT_TRUE(stream.ReadMessage(&response));
+  EXPECT_EQ(response.message(), kMessage1);
+  stream.StartWritesDone();
+  Status status = stream.Finish();
   EXPECT_TRUE(status.ok()) << "Expected OK, got: " << status.error_message();
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
