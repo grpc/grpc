@@ -257,6 +257,15 @@ TEST_F(GDCHServiceAccountCredentialsTest, CreateFailureNonStringFields) {
   }
 }
 
+TEST_F(GDCHServiceAccountCredentialsTest, CreateFailureInvalidTokenUri) {
+  Json::Object obj = CreateValidServiceAccountObject();
+  obj["token_uri"] = Json::FromString(":no_scheme");
+  absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> creds =
+      GDCHServiceAccountCredentials::Create(JsonDump(Json::FromObject(obj)),
+                                            "https://my-audience.com");
+  EXPECT_FALSE(creds.ok());
+}
+
 // --- Tests for CreateAssertionComponents ---
 
 TEST_F(GDCHServiceAccountCredentialsTest, CreateAssertionComponentsSuccess) {

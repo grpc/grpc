@@ -199,58 +199,42 @@ struct Info {
   std::string token_uri;
 };
 
-void Info::JsonPostLoad(const Json& /*source*/, const JsonArgs& /*args*/,
+void Info::JsonPostLoad(const Json& json, const JsonArgs& /*args*/,
                         ValidationErrors* errors) {
-  if (type.empty()) {
-    ValidationErrors::ScopedField field(errors, ".type");
-    errors->AddError("field must not be empty");
-  } else if (type != kExpectedType) {
-    ValidationErrors::ScopedField field(errors, ".type");
-    errors->AddError(absl::StrCat("field must be ", kExpectedType));
-  }
-
-  if (format_version.empty()) {
-    ValidationErrors::ScopedField field(errors, ".format_version");
-    errors->AddError("field must not be empty");
-  } else if (format_version != kExpectedFormatVersion) {
-    ValidationErrors::ScopedField field(errors, ".format_version");
-    errors->AddError(absl::StrCat("field must be ", kExpectedFormatVersion));
-  }
-
-  if (project_id.empty()) {
-    ValidationErrors::ScopedField field(errors, ".project");
-    errors->AddError("field must not be empty");
-  }
-
-  if (private_key_id.empty()) {
-    ValidationErrors::ScopedField field(errors, ".private_key_id");
-    errors->AddError("field must not be empty");
-  }
-
-  if (private_key.empty()) {
-    ValidationErrors::ScopedField field(errors, ".private_key");
-    errors->AddError("field must not be empty");
-  }
-
-  if (service_identity_name.empty()) {
-    ValidationErrors::ScopedField field(errors, ".name");
-    errors->AddError("field must not be empty");
-  }
-
-  if (ca_cert_path.has_value() && ca_cert_path->empty()) {
-    ValidationErrors::ScopedField field(errors, ".ca_cert_path");
-    errors->AddError("field must not be empty");
-  }
-
-  if (token_uri.empty()) {
-    ValidationErrors::ScopedField field(errors, ".token_uri");
-    errors->AddError("field must not be empty");
-  } else {
-    absl::StatusOr<URI> uri = URI::Parse(token_uri);
-    if (!uri.ok()) {
-      ValidationErrors::ScopedField field(errors, ".token_uri");
-      errors->AddError(absl::StrCat("invalid URI: ", uri.status().message()));
+  auto check_non_empty = [&](absl::string_view field_name,
+                             absl::string_view field_value) {
+    bool present =
+        json.object().find(std::string(field_name)) != json.object().end();
+    if (present && field_value.empty()) {
+      ValidationErrors::ScopedField field(errors,
+                                          absl::StrCat(".", field_name));
+      errors->AddError("field must not be empty");
     }
+    return present && !field_value.empty();
+  };
+
+  auto check_expected_value = [&](absl::string_view field_name,
+                                  absl::string_view field_value,
+                                  absl::string_view expected_value) {
+    if (check_non_empty(field_name, field_value) &&
+        field_value != expected_value) {
+      ValidationErrors::ScopedField field(errors,
+                                          absl::StrCat(".", field_name));
+      errors->AddError(absl::StrCat("field must be ", expected_value));
+    }
+  };
+
+  check_expected_value("type", type, kExpectedType);
+  check_expected_value("format_version", format_version,
+                       kExpectedFormatVersion);
+  check_non_empty("project", project_id);
+  check_non_empty("private_key_id", private_key_id);
+  check_non_empty("private_key", private_key);
+  check_non_empty("name", service_identity_name);
+  check_non_empty("token_uri", token_uri);
+
+  if (ca_cert_path.has_value()) {
+    check_non_empty("ca_cert_path", *ca_cert_path);
   }
 }
 
