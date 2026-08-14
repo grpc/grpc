@@ -46,6 +46,7 @@
 #include "src/core/util/thd.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/log/log.h"
+#include "absl/random/random.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 
@@ -102,6 +103,9 @@ static void do_basic_init(void) {
   grpc_fork_handlers_auto_register();
   grpc_tracer_init();
   grpc_client_channel_global_init_backup_polling();
+  // Pre-warm Abseil random entropy pool while file descriptors are available,
+  // preventing late-runtime SeedGenException crashes under FD exhaustion.
+  (void)absl::InsecureBitGen()();
 }
 
 void grpc_init(void) {
