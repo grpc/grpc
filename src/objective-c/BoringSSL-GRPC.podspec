@@ -129,8 +129,7 @@ Pod::Spec.new do |s|
       s.module_name => 'PrivacyInfo.xcprivacy'
     }
 
-    ss.source_files = 'PrivacyInfo.xcprivacy',
-                      'ssl/*.{h,c,cc}',
+    ss.source_files = 'ssl/*.{h,c,cc}',
                       'ssl/**/*.{h,c,cc}',
                       'crypto/*.{h,c,cc}',
                       'crypto/**/*.{h,c,cc,inc}',
