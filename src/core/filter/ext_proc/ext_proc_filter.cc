@@ -1403,8 +1403,7 @@ auto ExtProcFilter::ExtProcCall::HandleHalfCloseFromClient() {
                     }
                     upb::Arena arena;
                     auto payload = CreateExtProcClientBodyRequest(
-                        arena.ptr(), /*message_bytes=*/"",
-                        self->request_attributes_,
+                        arena.ptr(), /*body=*/"", self->request_attributes_,
                         self->config().observability_mode, processing_mode,
                         /*end_of_stream=*/false,
                         /*end_of_stream_without_message=*/true);
@@ -1996,20 +1995,9 @@ void ExtProcFilter::InterceptCall(UnstartedCallHandler unstarted_call_handler) {
             << "[" << Activity::current()->DebugTag()
             << " ext_proc_filter=" << ext_proc_filter.get()
             << "] InterceptCall promise chain start";
-        auto transport = ext_proc_filter->channel()->transport();
-        // This shouldn't ever happen; added as a defensive check.
-        return If(
-            transport == nullptr,
-            []() {
-              return Immediate(absl::InternalError(
-                  "External processor transport unavailable"));
-            },
-            [handler, ext_proc_filter,
-             transport = std::move(transport)]() mutable {
-              auto ext_proc_call = MakeRefCounted<ExtProcCall>(
-                  ext_proc_filter, std::move(transport), handler);
-              return ext_proc_call->Run();
-            });
+        auto ext_proc_call = MakeRefCounted<ExtProcCall>(
+            ext_proc_filter, ext_proc_filter->channel()->transport(), handler);
+        return ext_proc_call->Run();
       });
 }
 
