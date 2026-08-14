@@ -185,3 +185,6 @@ fuzz-*.log
 # bazel module files
 third_party/**/MODULE.bazel
 MODULE.bazel.lock
+
+# helper scripts needed to build rake-compiler-dock
+!third_party/rake-compiler-dock/base-images/build

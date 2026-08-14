@@ -1,0 +1,38 @@
+diff --git a/tasks/bin/cross-ruby.rake b/tasks/bin/cross-ruby.rake
+index d37ab97b..4623896a 100644
+--- a/tasks/bin/cross-ruby.rake
++++ b/tasks/bin/cross-ruby.rake
+@@ -116,11 +116,32 @@
+         "--host=#{mingw_host}",
+         "--target=#{mingw_target}",
+         "--build=#{RUBY_BUILD}",
+-        '--enable-shared',
++        '--enable-install-static-library',
++        '--disable-jit-support',
++        '--disable-rpath',
++        'ac_cv_lib_z_uncompress=no',
++        'ac_cv_lib_crypt_crypt=no',
++        'ac_cv_func_crypt_r=no',
++        'extra_warnflags=-Wno-shorten-64-to-32 -Wno-dll-attribute-on-redeclaration',
+         '--disable-install-doc',
+         '--with-ext=',
+       ]
+ 
++      if mingw_host =~ /darwin/
++        options += [
++          '--enable-static',
++          '--disable-shared',
++        ]
++      else
++        options += [
++          '--enable-static',
++          '--enable-shared',
++        ]
++      end
++
++      # https://github.com/docker-library/ruby/issues/308
++      options << "--with-coroutine=arm32" if major == "2.7" && mingw_target =~ /arm-linux-musl/
++
+       # Force Winsock2 for Ruby 1.8, 1.9 defaults to it
+       options << "--with-winsock2" if major == "1.8"
+       options << "--prefix=#{install_dir}"

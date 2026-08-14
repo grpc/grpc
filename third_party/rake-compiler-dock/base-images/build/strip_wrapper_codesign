@@ -1,0 +1,17 @@
+#!/usr/bin/env ruby
+
+# Stripping a signed Mach-O binary will invalidate the signature. To mimic what strip does on native
+# Darwin, we install this wrapper to re-sign the binary after stripping it.
+
+files = ARGV.reject { |f| f=~/^-/ }
+
+strip = "#{File.basename($0)}.bin"
+strip_options = ARGV.select{|f| f=~/^-/ }
+strip_arguments = [strip] + strip_options + files
+
+codesign = "codesign" # installed into /usr/bin by mk_osxcross.sh
+codesign_options = ["-f", "-s-"]
+codesign_arguments = [codesign] + codesign_options + files
+
+system(*strip_arguments, exception: true)
+system(*codesign_arguments, exception: true)

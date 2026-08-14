@@ -68,15 +68,23 @@ ALL_DOCKERFILE_DIRS=(
   tools/dockerfile/interoptest/*
   tools/dockerfile/distribtest/*
   third_party/rake-compiler-dock/*
+  third_party/rake-compiler-dock/base-images/*
 )
 
-# These Docker directories contain obsolete images that cannot be built.
-# They are excluded from build processes, but the Dockerfiles are retained for archival purposes.
+CONTEXT_DIRS=(
+  third_party/rake-compiler-dock/base-images/build
+)
+
 EXCLUDE_DIRS=(
+  # These Docker directories contain obsolete images that cannot be built.
+  # They are excluded from build processes, but the Dockerfiles are retained for archival purposes.
   tools/dockerfile/distribtest/csharp_dotnet31_x64
   tools/dockerfile/distribtest/csharp_dotnet5_x64
   tools/dockerfile/interoptest/grpc_interop_go1.8
   tools/dockerfile/interoptest/grpc_interop_go1.11
+
+  # This folder itself doesn't contain Dockerfile, only its subfolders do.
+  third_party/rake-compiler-dock/base-images
 )
 
 # a list of docker directories that are based on ARM64 base images
@@ -114,6 +122,21 @@ fi
 mkdir -p reports
 
 FAILED_DIR=$(mktemp -d)
+
+DOCKER_BUILD_DIR=$(mktemp -d)
+
+cleanup() {
+  rm -rf "${FAILED_DIR}" "${DOCKER_BUILD_DIR}"
+}
+trap cleanup EXIT
+
+
+setup_build_context() {
+  for dir in "${CONTEXT_DIRS[@]}"; do
+    cp -a "$dir" "$DOCKER_BUILD_DIR"
+  done
+}
+setup_build_context
 
 # Function to build and push a single Docker image
 process_dockerfile() {
@@ -223,11 +246,16 @@ process_dockerfile() {
   # - one for image identification based on Dockerfile hash
   # - one to exclude it from the GCP Vulnerability Scanner
   local docker_exit_code=0
+
+  # Copy the dockerfile to a build context that has all the needed files.
+  local docker_file="${DOCKERFILE_DIR}/Dockerfile"
+  cp -f "$docker_file" "$DOCKER_BUILD_DIR"
+
   docker build \
     ${ALWAYS_BUILD:+--no-cache --pull} \
     -t ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} \
     -t ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:infrastructure-public-image-${DOCKER_IMAGE_TAG} \
-    ${DOCKERFILE_DIR} || docker_exit_code=$?
+    ${DOCKER_BUILD_DIR} || docker_exit_code=$?
   if [ "${docker_exit_code}" -ne 0 ]; then
     if [ -z "${KEEP_GOING}" ]; then
       touch "${FAILED_DIR}/STOP"

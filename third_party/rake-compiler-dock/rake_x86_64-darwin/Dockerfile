@@ -1,1 +1,1 @@
-FROM ghcr.io/rake-compiler/rake-compiler-dock-image:1.11.1-mri-x86_64-darwin
+FROM us-docker.pkg.dev/grpc-testing/testing-images-public/rake_x86_64-darwin:48a25bfae6dd2de6967fc0ab3fed47c94c27ab59@sha256:0f37e2c155559e7434e92637b60563fed8bc4ee6bca3823d4812f467caf366bc
