@@ -16,7 +16,9 @@
 
 #include "src/core/credentials/call/gdch_service_account/gdch_service_account_credentials.h"
 
+#include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <gtest/gtest.h>
@@ -33,6 +35,7 @@
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
+#include "src/core/util/uri.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
@@ -59,18 +62,6 @@ Json::Object CreateValidServiceAccountObject() {
   };
 }
 
-GDCHServiceAccountCredentials::Info CreateValidInfo() {
-  GDCHServiceAccountCredentials::Info info;
-  info.type = "gdch_service_account";
-  info.format_version = "1";
-  info.project_id = "test-project";
-  info.private_key_id = "test-private-key-id";
-  info.private_key = kTestPrivateKeyPem;
-  info.service_identity_name = "test-name";
-  info.token_uri = "https://test-token-uri.com/token";
-  return info;
-}
-
 }  // namespace
 
 class GDCHServiceAccountCredentialsTest : public ::testing::Test {
@@ -88,15 +79,9 @@ class GDCHServiceAccountCredentialsTest : public ::testing::Test {
                                                           format);
   }
 
-  static absl::StatusOr<GDCHServiceAccountCredentials::Info>
-  ParseServiceAccountJson(const Json& json) {
-    return LoadFromJson<GDCHServiceAccountCredentials::Info>(json);
-  }
-
-  static AssertionComponents AssertionComponentsFromInfo(
-      const GDCHServiceAccountCredentials::Info& info, Timestamp now) {
-    return GDCHServiceAccountCredentials::AssertionComponentsFromInfo(info,
-                                                                      now);
+  static AssertionComponents CreateAssertionComponents(
+      const GDCHServiceAccountCredentials& creds, Timestamp now) {
+    return creds.CreateAssertionComponents(now);
   }
 
   static absl::StatusOr<std::string> MakeJWTAssertion(
@@ -107,18 +92,13 @@ class GDCHServiceAccountCredentialsTest : public ::testing::Test {
   }
 
   static absl::StatusOr<std::string> CreateRequestBody(
-      const GDCHServiceAccountCredentials::Info& info,
-      const std::string& audience) {
-    return GDCHServiceAccountCredentials::CreateRequestBody(info, audience);
+      const GDCHServiceAccountCredentials& creds) {
+    return creds.CreateRequestBody();
   }
 
   static absl::StatusOr<GrpcHttpRequestUniquePtr> FormatHttpRequest(
-      const GDCHServiceAccountCredentials::Info& info,
-      const std::string& audience) {
-    absl::StatusOr<URI> token_url = URI::Parse(info.token_uri);
-    if (!token_url.ok()) return token_url.status();
-    return GDCHServiceAccountCredentials::FormatHttpRequest(info, audience,
-                                                            *token_url);
+      const GDCHServiceAccountCredentials& creds) {
+    return creds.FormatHttpRequest();
   }
 
   static absl::StatusOr<std::string> ParseHttpResponse(
@@ -156,125 +136,7 @@ TEST_F(GDCHServiceAccountCredentialsTest, SignUsingSha256FailureInvalidKey) {
   EXPECT_FALSE(sig.ok());
 }
 
-// --- Tests for ParseServiceAccountJson ---
-
-TEST_F(GDCHServiceAccountCredentialsTest, ParseServiceAccountJsonSuccess) {
-  Json::Object obj = CreateValidServiceAccountObject();
-  absl::StatusOr<GDCHServiceAccountCredentials::Info> info =
-      ParseServiceAccountJson(Json::FromObject(obj));
-  ASSERT_TRUE(info.ok()) << info.status().ToString();
-  EXPECT_EQ(info->type, "gdch_service_account");
-  EXPECT_EQ(info->format_version, "1");
-  EXPECT_EQ(info->project_id, "test-project");
-  EXPECT_EQ(info->private_key_id, "test-private-key-id");
-  EXPECT_EQ(info->private_key, kTestPrivateKeyPem);
-  EXPECT_EQ(info->service_identity_name, "test-name");
-  EXPECT_FALSE(info->ca_cert_path.has_value());
-  EXPECT_EQ(info->token_uri, "https://test-token-uri.com/token");
-}
-
-TEST_F(GDCHServiceAccountCredentialsTest,
-       ParseServiceAccountJsonWithCaCertPathSuccess) {
-  Json::Object obj = CreateValidServiceAccountObject();
-  obj["ca_cert_path"] = Json::FromString("/etc/ssl/certs/ca-certificates.crt");
-  absl::StatusOr<GDCHServiceAccountCredentials::Info> info =
-      ParseServiceAccountJson(Json::FromObject(obj));
-  ASSERT_TRUE(info.ok()) << info.status().ToString();
-  EXPECT_EQ(info->type, "gdch_service_account");
-  EXPECT_EQ(info->format_version, "1");
-  EXPECT_EQ(info->project_id, "test-project");
-  EXPECT_EQ(info->private_key_id, "test-private-key-id");
-  EXPECT_EQ(info->private_key, kTestPrivateKeyPem);
-  EXPECT_EQ(info->service_identity_name, "test-name");
-  ASSERT_TRUE(info->ca_cert_path.has_value());
-  EXPECT_EQ(*info->ca_cert_path, "/etc/ssl/certs/ca-certificates.crt");
-  EXPECT_EQ(info->token_uri, "https://test-token-uri.com/token");
-}
-
-TEST_F(GDCHServiceAccountCredentialsTest,
-       ParseServiceAccountJsonFailureNotAnObject) {
-  absl::StatusOr<GDCHServiceAccountCredentials::Info> info =
-      ParseServiceAccountJson(Json::FromString("not-an-object"));
-  EXPECT_FALSE(info.ok());
-}
-
-TEST_F(GDCHServiceAccountCredentialsTest,
-       ParseServiceAccountJsonFailureMissingRequiredFields) {
-  const std::vector<std::string> required_fields = {
-      "type",        "format_version", "project",  "private_key_id",
-      "private_key", "name",           "token_uri"};
-
-  for (const std::string& field : required_fields) {
-    Json::Object obj = CreateValidServiceAccountObject();
-    obj.erase(field);
-    absl::StatusOr<GDCHServiceAccountCredentials::Info> info =
-        ParseServiceAccountJson(Json::FromObject(obj));
-    EXPECT_FALSE(info.ok())
-        << "Expected failure when missing required field: " << field;
-  }
-}
-
-TEST_F(GDCHServiceAccountCredentialsTest,
-       ParseServiceAccountJsonFailureEmptyRequiredFields) {
-  const std::vector<std::string> required_fields = {
-      "type",        "format_version", "project",  "private_key_id",
-      "private_key", "name",           "token_uri"};
-
-  for (const std::string& field : required_fields) {
-    Json::Object obj = CreateValidServiceAccountObject();
-    obj[field] = Json::FromString("");
-    absl::StatusOr<GDCHServiceAccountCredentials::Info> info =
-        ParseServiceAccountJson(Json::FromObject(obj));
-    EXPECT_FALSE(info.ok())
-        << "Expected failure when required field is empty: " << field;
-  }
-}
-
-TEST_F(GDCHServiceAccountCredentialsTest,
-       ParseServiceAccountJsonFailureEmptyOptionalField) {
-  Json::Object obj = CreateValidServiceAccountObject();
-  obj["ca_cert_path"] = Json::FromString("");
-  absl::StatusOr<GDCHServiceAccountCredentials::Info> info =
-      ParseServiceAccountJson(Json::FromObject(obj));
-  EXPECT_FALSE(info.ok())
-      << "Expected failure when optional field ca_cert_path is empty";
-}
-
-TEST_F(GDCHServiceAccountCredentialsTest,
-       ParseServiceAccountJsonFailureInvalidType) {
-  Json::Object obj = CreateValidServiceAccountObject();
-  obj["type"] = Json::FromString("invalid_type");
-  absl::StatusOr<GDCHServiceAccountCredentials::Info> info =
-      ParseServiceAccountJson(Json::FromObject(obj));
-  EXPECT_FALSE(info.ok());
-}
-
-TEST_F(GDCHServiceAccountCredentialsTest,
-       ParseServiceAccountJsonFailureInvalidFormatVersion) {
-  Json::Object obj = CreateValidServiceAccountObject();
-  obj["format_version"] = Json::FromString("2");
-  absl::StatusOr<GDCHServiceAccountCredentials::Info> info =
-      ParseServiceAccountJson(Json::FromObject(obj));
-  EXPECT_FALSE(info.ok());
-}
-
-TEST_F(GDCHServiceAccountCredentialsTest,
-       ParseServiceAccountJsonFailureNonStringFields) {
-  const std::vector<std::string> all_fields = {
-      "type",        "format_version", "project",      "private_key_id",
-      "private_key", "name",           "ca_cert_path", "token_uri"};
-
-  for (const std::string& field : all_fields) {
-    Json::Object obj = CreateValidServiceAccountObject();
-    obj[field] = Json::FromBool(true);
-    absl::StatusOr<GDCHServiceAccountCredentials::Info> info =
-        ParseServiceAccountJson(Json::FromObject(obj));
-    EXPECT_FALSE(info.ok())
-        << "Expected failure when field has non-string type: " << field;
-  }
-}
-
-// --- Tests for Create ---
+// --- Tests for Create (JSON Validation) ---
 
 TEST_F(GDCHServiceAccountCredentialsTest, CreateSuccess) {
   Json::Object obj = CreateValidServiceAccountObject();
@@ -283,9 +145,22 @@ TEST_F(GDCHServiceAccountCredentialsTest, CreateSuccess) {
                                             "https://my-audience.com");
   ASSERT_TRUE(creds.ok()) << creds.status().ToString();
   ASSERT_NE(*creds, nullptr);
+  EXPECT_FALSE((*creds)->ca_cert_path().has_value());
   EXPECT_EQ((*creds)->debug_string(),
             "GDCHServiceAccountCredentials{Audience:https://my-audience.com}");
   EXPECT_EQ((*creds)->type().name(), "GDCHServiceAccountCredentials");
+}
+
+TEST_F(GDCHServiceAccountCredentialsTest, CreateWithCaCertPathSuccess) {
+  Json::Object obj = CreateValidServiceAccountObject();
+  obj["ca_cert_path"] = Json::FromString("/etc/ssl/certs/ca-certificates.crt");
+  absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> creds =
+      GDCHServiceAccountCredentials::Create(JsonDump(Json::FromObject(obj)),
+                                            "https://my-audience.com");
+  ASSERT_TRUE(creds.ok()) << creds.status().ToString();
+  ASSERT_NE(*creds, nullptr);
+  ASSERT_TRUE((*creds)->ca_cert_path().has_value());
+  EXPECT_EQ(*(*creds)->ca_cert_path(), "/etc/ssl/certs/ca-certificates.crt");
 }
 
 TEST_F(GDCHServiceAccountCredentialsTest, CreateFailureInvalidJson) {
@@ -295,21 +170,112 @@ TEST_F(GDCHServiceAccountCredentialsTest, CreateFailureInvalidJson) {
   EXPECT_FALSE(creds.ok());
 }
 
-// --- Tests for AssertionComponentsFromInfo ---
+TEST_F(GDCHServiceAccountCredentialsTest, CreateFailureNotAnObject) {
+  absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> creds =
+      GDCHServiceAccountCredentials::Create("\"not-an-object\"",
+                                            "https://my-audience.com");
+  EXPECT_FALSE(creds.ok());
+}
 
-TEST_F(GDCHServiceAccountCredentialsTest, AssertionComponentsFromInfoSuccess) {
-  GDCHServiceAccountCredentials::Info info = CreateValidInfo();
+TEST_F(GDCHServiceAccountCredentialsTest,
+       CreateFailureMissingRequiredFields) {
+  const std::vector<std::string> required_fields = {
+      "type",        "format_version", "project",  "private_key_id",
+      "private_key", "name",           "token_uri"};
+
+  for (const std::string& field : required_fields) {
+    Json::Object obj = CreateValidServiceAccountObject();
+    obj.erase(field);
+    absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> creds =
+        GDCHServiceAccountCredentials::Create(JsonDump(Json::FromObject(obj)),
+                                              "https://my-audience.com");
+    EXPECT_FALSE(creds.ok())
+        << "Expected failure when missing required field: " << field;
+  }
+}
+
+TEST_F(GDCHServiceAccountCredentialsTest,
+       CreateFailureEmptyRequiredFields) {
+  const std::vector<std::string> required_fields = {
+      "type",        "format_version", "project",  "private_key_id",
+      "private_key", "name",           "token_uri"};
+
+  for (const std::string& field : required_fields) {
+    Json::Object obj = CreateValidServiceAccountObject();
+    obj[field] = Json::FromString("");
+    absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> creds =
+        GDCHServiceAccountCredentials::Create(JsonDump(Json::FromObject(obj)),
+                                              "https://my-audience.com");
+    EXPECT_FALSE(creds.ok())
+        << "Expected failure when required field is empty: " << field;
+  }
+}
+
+TEST_F(GDCHServiceAccountCredentialsTest,
+       CreateFailureEmptyOptionalField) {
+  Json::Object obj = CreateValidServiceAccountObject();
+  obj["ca_cert_path"] = Json::FromString("");
+  absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> creds =
+      GDCHServiceAccountCredentials::Create(JsonDump(Json::FromObject(obj)),
+                                            "https://my-audience.com");
+  EXPECT_FALSE(creds.ok())
+      << "Expected failure when optional field ca_cert_path is empty";
+}
+
+TEST_F(GDCHServiceAccountCredentialsTest, CreateFailureInvalidType) {
+  Json::Object obj = CreateValidServiceAccountObject();
+  obj["type"] = Json::FromString("invalid_type");
+  absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> creds =
+      GDCHServiceAccountCredentials::Create(JsonDump(Json::FromObject(obj)),
+                                            "https://my-audience.com");
+  EXPECT_FALSE(creds.ok());
+}
+
+TEST_F(GDCHServiceAccountCredentialsTest,
+       CreateFailureInvalidFormatVersion) {
+  Json::Object obj = CreateValidServiceAccountObject();
+  obj["format_version"] = Json::FromString("2");
+  absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> creds =
+      GDCHServiceAccountCredentials::Create(JsonDump(Json::FromObject(obj)),
+                                            "https://my-audience.com");
+  EXPECT_FALSE(creds.ok());
+}
+
+TEST_F(GDCHServiceAccountCredentialsTest, CreateFailureNonStringFields) {
+  const std::vector<std::string> all_fields = {
+      "type",        "format_version", "project",      "private_key_id",
+      "private_key", "name",           "ca_cert_path", "token_uri"};
+
+  for (const std::string& field : all_fields) {
+    Json::Object obj = CreateValidServiceAccountObject();
+    obj[field] = Json::FromBool(true);
+    absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> creds =
+        GDCHServiceAccountCredentials::Create(JsonDump(Json::FromObject(obj)),
+                                              "https://my-audience.com");
+    EXPECT_FALSE(creds.ok())
+        << "Expected failure when field has non-string type: " << field;
+  }
+}
+
+// --- Tests for CreateAssertionComponents ---
+
+TEST_F(GDCHServiceAccountCredentialsTest, CreateAssertionComponentsSuccess) {
+  Json::Object obj = CreateValidServiceAccountObject();
+  absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> creds =
+      GDCHServiceAccountCredentials::Create(JsonDump(Json::FromObject(obj)),
+                                            "https://my-audience.com");
+  ASSERT_TRUE(creds.ok()) << creds.status().ToString();
   Timestamp now = Timestamp::FromTimespecRoundDown(
       gpr_timespec{12345678, 0, GPR_CLOCK_REALTIME});
 
-  AssertionComponents components = AssertionComponentsFromInfo(info, now);
+  AssertionComponents components = CreateAssertionComponents(**creds, now);
 
   absl::StatusOr<Json> parsed_header = JsonParse(components.header);
   ASSERT_TRUE(parsed_header.ok());
   ASSERT_EQ(parsed_header->type(), Json::Type::kObject);
   EXPECT_EQ(parsed_header->object().at("alg").string(), "ES256");
   EXPECT_EQ(parsed_header->object().at("typ").string(), "JWT");
-  EXPECT_EQ(parsed_header->object().at("kid").string(), info.private_key_id);
+  EXPECT_EQ(parsed_header->object().at("kid").string(), "test-private-key-id");
 
   absl::StatusOr<Json> parsed_claim = JsonParse(components.claim);
   ASSERT_TRUE(parsed_claim.ok());
@@ -318,7 +284,8 @@ TEST_F(GDCHServiceAccountCredentialsTest, AssertionComponentsFromInfoSuccess) {
             "system:serviceaccount:test-project:test-name");
   EXPECT_EQ(parsed_claim->object().at("sub").string(),
             "system:serviceaccount:test-project:test-name");
-  EXPECT_EQ(parsed_claim->object().at("aud").string(), info.token_uri);
+  EXPECT_EQ(parsed_claim->object().at("aud").string(),
+            "https://test-token-uri.com/token");
   EXPECT_EQ(parsed_claim->object().at("iat").string(), "12345678");
   // Lifetime is 3600 seconds
   EXPECT_EQ(parsed_claim->object().at("exp").string(), "12349278");
@@ -367,10 +334,13 @@ TEST_F(GDCHServiceAccountCredentialsTest, MakeJWTAssertionFailureInvalidKey) {
 // --- Tests for CreateRequestBody ---
 
 TEST_F(GDCHServiceAccountCredentialsTest, CreateRequestBodySuccess) {
-  GDCHServiceAccountCredentials::Info info = CreateValidInfo();
-  std::string audience = "https://my-audience.com";
+  Json::Object obj = CreateValidServiceAccountObject();
+  absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> creds =
+      GDCHServiceAccountCredentials::Create(JsonDump(Json::FromObject(obj)),
+                                            "https://my-audience.com");
+  ASSERT_TRUE(creds.ok()) << creds.status().ToString();
 
-  absl::StatusOr<std::string> body = CreateRequestBody(info, audience);
+  absl::StatusOr<std::string> body = CreateRequestBody(**creds);
   ASSERT_TRUE(body.ok()) << body.status().ToString();
 
   absl::StatusOr<Json> parsed_body = JsonParse(*body);
@@ -379,7 +349,8 @@ TEST_F(GDCHServiceAccountCredentialsTest, CreateRequestBodySuccess) {
 
   EXPECT_EQ(parsed_body->object().at("grant_type").string(),
             "urn:ietf:params:oauth:token-type:token-exchange");
-  EXPECT_EQ(parsed_body->object().at("audience").string(), audience);
+  EXPECT_EQ(parsed_body->object().at("audience").string(),
+            "https://my-audience.com");
   EXPECT_EQ(parsed_body->object().at("requested_token_type").string(),
             "urn:ietf:params:oauth:token-type:access_token");
   EXPECT_EQ(parsed_body->object().at("subject_token_type").string(),
@@ -391,22 +362,29 @@ TEST_F(GDCHServiceAccountCredentialsTest, CreateRequestBodySuccess) {
 }
 
 TEST_F(GDCHServiceAccountCredentialsTest, CreateRequestBodyFailureInvalidKey) {
-  GDCHServiceAccountCredentials::Info info = CreateValidInfo();
-  info.private_key = "invalid key pem";
-  std::string audience = "https://my-audience.com";
-
-  absl::StatusOr<std::string> body = CreateRequestBody(info, audience);
+  absl::StatusOr<URI> token_url =
+      URI::Parse("https://test-token-uri.com/token");
+  ASSERT_TRUE(token_url.ok());
+  GDCHServiceAccountCredentials creds(
+      "test-private-key-id", "invalid key pem",
+      "system:serviceaccount:test-project:test-name",
+      /*ca_cert_path=*/std::nullopt, *std::move(token_url),
+      "https://my-audience.com");
+  absl::StatusOr<std::string> body = CreateRequestBody(creds);
   EXPECT_FALSE(body.ok());
 }
 
 // --- Tests for FormatHttpRequest ---
 
 TEST_F(GDCHServiceAccountCredentialsTest, FormatHttpRequestSuccess) {
-  GDCHServiceAccountCredentials::Info info = CreateValidInfo();
-  std::string audience = "https://my-audience.com";
+  Json::Object obj = CreateValidServiceAccountObject();
+  absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> creds =
+      GDCHServiceAccountCredentials::Create(JsonDump(Json::FromObject(obj)),
+                                            "https://my-audience.com");
+  ASSERT_TRUE(creds.ok()) << creds.status().ToString();
 
   absl::StatusOr<GDCHServiceAccountCredentialsTest::GrpcHttpRequestUniquePtr>
-      request = FormatHttpRequest(info, audience);
+      request = FormatHttpRequest(**creds);
   ASSERT_TRUE(request.ok()) << request.status().ToString();
   ASSERT_NE(request->get(), nullptr);
 
@@ -420,12 +398,16 @@ TEST_F(GDCHServiceAccountCredentialsTest, FormatHttpRequestSuccess) {
 }
 
 TEST_F(GDCHServiceAccountCredentialsTest, FormatHttpRequestFailureInvalidKey) {
-  GDCHServiceAccountCredentials::Info info = CreateValidInfo();
-  info.private_key = "invalid key pem";
-  std::string audience = "https://my-audience.com";
-
+  absl::StatusOr<URI> token_url =
+      URI::Parse("https://test-token-uri.com/token");
+  ASSERT_TRUE(token_url.ok());
+  GDCHServiceAccountCredentials creds(
+      "test-private-key-id", "invalid key pem",
+      "system:serviceaccount:test-project:test-name",
+      /*ca_cert_path=*/std::nullopt, *std::move(token_url),
+      "https://my-audience.com");
   absl::StatusOr<GDCHServiceAccountCredentialsTest::GrpcHttpRequestUniquePtr>
-      request = FormatHttpRequest(info, audience);
+      request = FormatHttpRequest(creds);
   EXPECT_FALSE(request.ok());
 }
 

@@ -26,14 +26,11 @@
 
 #include "src/core/credentials/call/token_fetcher/token_fetcher_credentials.h"
 #include "src/core/util/http_client/httpcli.h"
-#include "src/core/util/json/json.h"
-#include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/uri.h"
-#include "src/core/util/validation_errors.h"
 
 namespace grpc_core {
 
@@ -67,42 +64,17 @@ namespace grpc_core {
 // }
 class GDCHServiceAccountCredentials final : public HttpTokenFetcherCredentials {
  public:
-  struct Info {
-    static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
-      static const auto* loader =
-          JsonObjectLoader<Info>()
-              .Field("type", &Info::type)
-              .Field("format_version", &Info::format_version)
-              .Field("project", &Info::project_id)
-              .Field("private_key_id", &Info::private_key_id)
-              .Field("private_key", &Info::private_key)
-              .Field("name", &Info::service_identity_name)
-              .OptionalField("ca_cert_path", &Info::ca_cert_path)
-              .Field("token_uri", &Info::token_uri)
-              .Finish();
-      return loader;
-    }
-
-    void JsonPostLoad(const Json& source, const JsonArgs& args,
-                      ValidationErrors* errors);
-
-    std::string type;
-    std::string format_version;
-    std::string project_id;
-    std::string private_key_id;
-    std::string private_key;
-    std::string service_identity_name;
-    std::optional<std::string> ca_cert_path;
-    std::string token_uri;
-  };
-
   static absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> Create(
       absl::string_view key_file_contents, std::string audience);
 
-  GDCHServiceAccountCredentials(Info info, std::string audience, URI token_url);
+  GDCHServiceAccountCredentials(
+      std::string private_key_id, std::string private_key,
+      std::string service_account_identity,
+      std::optional<std::string> ca_cert_path, URI token_url,
+      std::string audience);
 
   const std::optional<std::string>& ca_cert_path() const {
-    return info_.ca_cert_path;
+    return ca_cert_path_;
   }
 
   std::string debug_string() override;
@@ -141,25 +113,25 @@ class GDCHServiceAccountCredentials final : public HttpTokenFetcherCredentials {
       const std::string& str, const std::string& pem_contents,
       SignatureFormat format);
 
-  static AssertionComponents AssertionComponentsFromInfo(const Info& info,
-                                                         Timestamp now);
+  AssertionComponents CreateAssertionComponents(Timestamp now) const;
 
   static absl::StatusOr<std::string> MakeJWTAssertion(
       const std::string& header, const std::string& payload,
       const std::string& pem_contents, SignatureFormat format);
 
-  static absl::StatusOr<std::string> CreateRequestBody(
-      const Info& info, const std::string& audience);
+  absl::StatusOr<std::string> CreateRequestBody() const;
 
-  static absl::StatusOr<GrpcHttpRequestUniquePtr> FormatHttpRequest(
-      const Info& info, const std::string& audience, const URI& token_url);
+  absl::StatusOr<GrpcHttpRequestUniquePtr> FormatHttpRequest() const;
 
   static absl::StatusOr<std::string> ParseHttpResponse(
       absl::string_view response_body);
 
-  Info info_;
-  std::string audience_;
+  std::string private_key_id_;
+  std::string private_key_;
+  std::string service_account_identity_;
+  std::optional<std::string> ca_cert_path_;
   URI token_url_;
+  std::string audience_;
 };
 
 }  // namespace grpc_core

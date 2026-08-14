@@ -171,6 +171,89 @@ struct Response {
   }
 };
 
+struct Info {
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
+    static const auto* loader =
+        JsonObjectLoader<Info>()
+            .Field("type", &Info::type)
+            .Field("format_version", &Info::format_version)
+            .Field("project", &Info::project_id)
+            .Field("private_key_id", &Info::private_key_id)
+            .Field("private_key", &Info::private_key)
+            .Field("name", &Info::service_identity_name)
+            .OptionalField("ca_cert_path", &Info::ca_cert_path)
+            .Field("token_uri", &Info::token_uri)
+            .Finish();
+    return loader;
+  }
+
+  void JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors* errors);
+
+  std::string type;
+  std::string format_version;
+  std::string project_id;
+  std::string private_key_id;
+  std::string private_key;
+  std::string service_identity_name;
+  std::optional<std::string> ca_cert_path;
+  std::string token_uri;
+};
+
+void Info::JsonPostLoad(const Json& /*source*/, const JsonArgs& /*args*/,
+                        ValidationErrors* errors) {
+  if (type.empty()) {
+    ValidationErrors::ScopedField field(errors, ".type");
+    errors->AddError("field must not be empty");
+  } else if (type != kExpectedType) {
+    ValidationErrors::ScopedField field(errors, ".type");
+    errors->AddError(absl::StrCat("field must be ", kExpectedType));
+  }
+
+  if (format_version.empty()) {
+    ValidationErrors::ScopedField field(errors, ".format_version");
+    errors->AddError("field must not be empty");
+  } else if (format_version != kExpectedFormatVersion) {
+    ValidationErrors::ScopedField field(errors, ".format_version");
+    errors->AddError(absl::StrCat("field must be ", kExpectedFormatVersion));
+  }
+
+  if (project_id.empty()) {
+    ValidationErrors::ScopedField field(errors, ".project");
+    errors->AddError("field must not be empty");
+  }
+
+  if (private_key_id.empty()) {
+    ValidationErrors::ScopedField field(errors, ".private_key_id");
+    errors->AddError("field must not be empty");
+  }
+
+  if (private_key.empty()) {
+    ValidationErrors::ScopedField field(errors, ".private_key");
+    errors->AddError("field must not be empty");
+  }
+
+  if (service_identity_name.empty()) {
+    ValidationErrors::ScopedField field(errors, ".name");
+    errors->AddError("field must not be empty");
+  }
+
+  if (ca_cert_path.has_value() && ca_cert_path->empty()) {
+    ValidationErrors::ScopedField field(errors, ".ca_cert_path");
+    errors->AddError("field must not be empty");
+  }
+
+  if (token_uri.empty()) {
+    ValidationErrors::ScopedField field(errors, ".token_uri");
+    errors->AddError("field must not be empty");
+  } else {
+    absl::StatusOr<URI> uri = URI::Parse(token_uri);
+    if (!uri.ok()) {
+      ValidationErrors::ScopedField field(errors, ".token_uri");
+      errors->AddError(absl::StrCat("invalid URI: ", uri.status().message()));
+    }
+  }
+}
+
 }  // namespace
 
 absl::StatusOr<std::string> GDCHServiceAccountCredentials::SignUsingSha256(
@@ -253,61 +336,6 @@ absl::StatusOr<std::string> GDCHServiceAccountCredentials::SignUsingSha256(
   return DERToRawSignature(buffer, 32);
 }
 
-void GDCHServiceAccountCredentials::Info::JsonPostLoad(
-    const Json&, const JsonArgs&, ValidationErrors* errors) {
-  if (type.empty()) {
-    ValidationErrors::ScopedField field(errors, ".type");
-    errors->AddError("field must not be empty");
-  } else if (type != kExpectedType) {
-    ValidationErrors::ScopedField field(errors, ".type");
-    errors->AddError(absl::StrCat("field must be ", kExpectedType));
-  }
-
-  if (format_version.empty()) {
-    ValidationErrors::ScopedField field(errors, ".format_version");
-    errors->AddError("field must not be empty");
-  } else if (format_version != kExpectedFormatVersion) {
-    ValidationErrors::ScopedField field(errors, ".format_version");
-    errors->AddError(absl::StrCat("field must be ", kExpectedFormatVersion));
-  }
-
-  if (project_id.empty()) {
-    ValidationErrors::ScopedField field(errors, ".project");
-    errors->AddError("field must not be empty");
-  }
-
-  if (private_key_id.empty()) {
-    ValidationErrors::ScopedField field(errors, ".private_key_id");
-    errors->AddError("field must not be empty");
-  }
-
-  if (private_key.empty()) {
-    ValidationErrors::ScopedField field(errors, ".private_key");
-    errors->AddError("field must not be empty");
-  }
-
-  if (service_identity_name.empty()) {
-    ValidationErrors::ScopedField field(errors, ".name");
-    errors->AddError("field must not be empty");
-  }
-
-  if (ca_cert_path.has_value() && ca_cert_path->empty()) {
-    ValidationErrors::ScopedField field(errors, ".ca_cert_path");
-    errors->AddError("field must not be empty");
-  }
-
-  if (token_uri.empty()) {
-    ValidationErrors::ScopedField field(errors, ".token_uri");
-    errors->AddError("field must not be empty");
-  } else {
-    absl::StatusOr<URI> uri = URI::Parse(token_uri);
-    if (!uri.ok()) {
-      ValidationErrors::ScopedField field(errors, ".token_uri");
-      errors->AddError(absl::StrCat("invalid URI: ", uri.status().message()));
-    }
-  }
-}
-
 absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>>
 GDCHServiceAccountCredentials::Create(absl::string_view key_file_contents,
                                       std::string audience) {
@@ -317,23 +345,33 @@ GDCHServiceAccountCredentials::Create(absl::string_view key_file_contents,
   if (!info.ok()) return info.status();
   absl::StatusOr<URI> token_url = URI::Parse(info->token_uri);
   if (!token_url.ok()) return token_url.status();
+  std::string service_account_identity =
+      absl::StrCat("system:serviceaccount:", info->project_id, ":",
+                   info->service_identity_name);
   return MakeRefCounted<GDCHServiceAccountCredentials>(
-      *std::move(info), std::move(audience), *std::move(token_url));
+      std::move(info->private_key_id), std::move(info->private_key),
+      std::move(service_account_identity), std::move(info->ca_cert_path),
+      *std::move(token_url), std::move(audience));
 }
 
 GDCHServiceAccountCredentials::GDCHServiceAccountCredentials(
-    Info info, std::string audience, URI token_url)
-    : info_(std::move(info)),
-      audience_(std::move(audience)),
-      token_url_(std::move(token_url)) {}
+    std::string private_key_id, std::string private_key,
+    std::string service_account_identity,
+    std::optional<std::string> ca_cert_path, URI token_url,
+    std::string audience)
+    : private_key_id_(std::move(private_key_id)),
+      private_key_(std::move(private_key)),
+      service_account_identity_(std::move(service_account_identity)),
+      ca_cert_path_(std::move(ca_cert_path)),
+      token_url_(std::move(token_url)),
+      audience_(std::move(audience)) {}
 
 GDCHServiceAccountCredentials::AssertionComponents
-GDCHServiceAccountCredentials::AssertionComponentsFromInfo(const Info& info,
-                                                           Timestamp now) {
+GDCHServiceAccountCredentials::CreateAssertionComponents(Timestamp now) const {
   Json header = Json::FromObject({
       {"alg", Json::FromString("ES256")},
       {"typ", Json::FromString("JWT")},
-      {"kid", Json::FromString(info.private_key_id)},
+      {"kid", Json::FromString(private_key_id_)},
   });
 
   Timestamp expiration = now + kTokenLifetime;
@@ -341,14 +379,11 @@ GDCHServiceAccountCredentials::AssertionComponentsFromInfo(const Info& info,
   const int64_t now_from_epoch = now.as_timespec(GPR_CLOCK_REALTIME).tv_sec;
   const int64_t expiration_from_epoch =
       expiration.as_timespec(GPR_CLOCK_REALTIME).tv_sec;
-  std::string iss_sub_value =
-      absl::StrCat("system:serviceaccount:", info.project_id, ":",
-                   info.service_identity_name);
 
   Json claim = Json::FromObject({
-      {"iss", Json::FromString(iss_sub_value)},
-      {"sub", Json::FromString(iss_sub_value)},
-      {"aud", Json::FromString(info.token_uri)},
+      {"iss", Json::FromString(service_account_identity_)},
+      {"sub", Json::FromString(service_account_identity_)},
+      {"aud", Json::FromString(token_url_.ToString())},
       {"iat", Json::FromNumber(now_from_epoch)},
       {"exp", Json::FromNumber(expiration_from_epoch)},
   });
@@ -367,19 +402,18 @@ absl::StatusOr<std::string> GDCHServiceAccountCredentials::MakeJWTAssertion(
   return absl::StrCat(body, ".", absl::WebSafeBase64Escape(*signature));
 }
 
-absl::StatusOr<std::string> GDCHServiceAccountCredentials::CreateRequestBody(
-    const Info& info, const std::string& audience) {
-  AssertionComponents components =
-      AssertionComponentsFromInfo(info, Timestamp::Now());
+absl::StatusOr<std::string>
+GDCHServiceAccountCredentials::CreateRequestBody() const {
+  AssertionComponents components = CreateAssertionComponents(Timestamp::Now());
   absl::StatusOr<std::string> jwt =
-      MakeJWTAssertion(components.header, components.claim, info.private_key,
+      MakeJWTAssertion(components.header, components.claim, private_key_,
                        SignatureFormat::kRaw);
   if (!jwt.ok()) return jwt.status();
 
   Json payload = Json::FromObject({
       {"grant_type",
        Json::FromString("urn:ietf:params:oauth:token-type:token-exchange")},
-      {"audience", Json::FromString(audience)},
+      {"audience", Json::FromString(audience_)},
       {"requested_token_type",
        Json::FromString("urn:ietf:params:oauth:token-type:access_token")},
       {"subject_token", Json::FromString(std::move(*jwt))},
@@ -397,16 +431,14 @@ void GDCHServiceAccountCredentials::GrpcDeleter::operator()(
 }
 
 absl::StatusOr<GDCHServiceAccountCredentials::GrpcHttpRequestUniquePtr>
-GDCHServiceAccountCredentials::FormatHttpRequest(const Info& info,
-                                                 const std::string& audience,
-                                                 const URI& token_url) {
-  absl::StatusOr<std::string> body = CreateRequestBody(info, audience);
+GDCHServiceAccountCredentials::FormatHttpRequest() const {
+  absl::StatusOr<std::string> body = CreateRequestBody();
   if (!body.ok()) return body.status();
 
   GrpcHttpRequestUniquePtr request(new grpc_http_request);
   memset(request.get(), 0, sizeof(grpc_http_request));
   request->path =
-      gpr_strdup(token_url.path().empty() ? "/" : token_url.path().c_str());
+      gpr_strdup(token_url_.path().empty() ? "/" : token_url_.path().c_str());
   request->hdr_count = 1;
   request->hdrs =
       static_cast<grpc_http_header*>(gpr_malloc(sizeof(grpc_http_header)));
@@ -442,8 +474,7 @@ std::string GDCHServiceAccountCredentials::debug_string() {
 OrphanablePtr<HttpRequest> GDCHServiceAccountCredentials::StartHttpRequest(
     grpc_polling_entity* pollent, Timestamp deadline,
     grpc_http_response* response, grpc_closure* on_complete) {
-  absl::StatusOr<GrpcHttpRequestUniquePtr> request =
-      FormatHttpRequest(info_, audience_, token_url_);
+  absl::StatusOr<GrpcHttpRequestUniquePtr> request = FormatHttpRequest();
   if (!request.ok()) {
     ExecCtx::Run(DEBUG_LOCATION, on_complete, request.status());
     return nullptr;
