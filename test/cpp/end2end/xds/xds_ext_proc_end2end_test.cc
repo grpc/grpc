@@ -522,13 +522,6 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
       return *this;
     }
 
-    ExtProcFilterConfigBuilder& SetProcessingMode(
-        const envoy::extensions::filters::http::ext_proc::v3::ProcessingMode&
-            mode) {
-      *ext_proc_.mutable_processing_mode() = mode;
-      return *this;
-    }
-
     ExtProcFilterConfigBuilder& SetRequestHeaderMode() {
       ext_proc_.mutable_processing_mode()->set_request_header_mode(
           envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SEND);
