@@ -36,6 +36,7 @@
 #include "envoy/service/ext_proc/v3/external_processor.grpc.pb.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/experiments/config.h"
+#include "src/core/util/sync.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
@@ -44,7 +45,6 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
-#include "absl/synchronization/mutex.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 
@@ -246,12 +246,13 @@ class FakeExtProcService final
     // if no request received within timeout or stream finished.
     std::optional<::envoy::service::ext_proc::v3::ProcessingRequest>
     GetNextRequest(absl::Duration timeout = absl::Seconds(10)) {
-      absl::MutexLock lock(&mu_);
-      auto condition = [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-        return !requests_.empty() || is_closed_;
-      };
-      if (!mu_.AwaitWithTimeout(absl::Condition(&condition), timeout)) {
-        return std::nullopt;
+      grpc_core::MutexLock lock(&mu_);
+      const absl::Time deadline =
+          absl::Now() + timeout * grpc_test_slowdown_factor();
+      while (requests_.empty() && !is_closed_) {
+        if (cv_.WaitWithDeadline(&mu_, deadline)) {
+          return std::nullopt;
+        }
       }
       if (requests_.empty()) {
         return std::nullopt;
@@ -264,81 +265,84 @@ class FakeExtProcService final
     // Sends a response on the stream.
     void SendResponse(
         ::envoy::service::ext_proc::v3::ProcessingResponse response) {
-      absl::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(&mu_);
       response_to_send_ = std::move(response);
       action_ = Action::kSendResponse;
-      auto done_condition = [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-        return action_ == Action::kNone || is_closed_;
-      };
-      mu_.Await(absl::Condition(&done_condition));
+      cv_.SignalAll();
+      while (action_ != Action::kNone && !is_closed_) {
+        cv_.Wait(&mu_);
+      }
     }
 
     // Closes the stream with the specified status.
     void SendStatus(absl::Status status) {
-      absl::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(&mu_);
       status_to_send_ = status;
       action_ = Action::kSendStatus;
-      auto done_condition = [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-        return is_closed_;
-      };
-      mu_.Await(absl::Condition(&done_condition));
+      cv_.SignalAll();
+      while (!is_closed_) {
+        cv_.Wait(&mu_);
+      }
     }
 
     // Sends a response and immediately closes the stream with status.
     void SendResponseAndStatus(
         ::envoy::service::ext_proc::v3::ProcessingResponse response,
         absl::Status status) {
-      absl::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(&mu_);
       response_to_send_ = std::move(response);
       status_to_send_ = status;
       action_ = Action::kSendResponseAndStatus;
-      auto done_condition = [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-        return is_closed_;
-      };
-      mu_.Await(absl::Condition(&done_condition));
+      cv_.SignalAll();
+      while (!is_closed_) {
+        cv_.Wait(&mu_);
+      }
     }
 
     void PushRequest(::envoy::service::ext_proc::v3::ProcessingRequest req) {
-      absl::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(&mu_);
       requests_.push(std::move(req));
+      cv_.SignalAll();
     }
 
     void MarkClosed() {
-      absl::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(&mu_);
       is_closed_ = true;
+      cv_.SignalAll();
     }
 
     bool is_closed() {
-      absl::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(&mu_);
       return is_closed_;
     }
 
     Action WaitForAction() {
-      absl::MutexLock lock(&mu_);
-      auto condition = [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-        return action_ != Action::kNone || is_closed_;
-      };
-      mu_.Await(absl::Condition(&condition));
+      grpc_core::MutexLock lock(&mu_);
+      while (action_ == Action::kNone && !is_closed_) {
+        cv_.Wait(&mu_);
+      }
       return action_;
     }
 
     ::envoy::service::ext_proc::v3::ProcessingResponse GetResponseToSend() {
-      absl::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(&mu_);
       return response_to_send_;
     }
 
     absl::Status GetStatusToSend() {
-      absl::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(&mu_);
       return status_to_send_.value_or(absl::OkStatus());
     }
 
     void CompleteAction() {
-      absl::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(&mu_);
       action_ = Action::kNone;
+      cv_.SignalAll();
     }
 
    private:
-    absl::Mutex mu_;
+    grpc_core::Mutex mu_;
+    grpc_core::CondVar cv_;
     std::queue<::envoy::service::ext_proc::v3::ProcessingRequest> requests_
         ABSL_GUARDED_BY(mu_);
     Action action_ ABSL_GUARDED_BY(mu_) = Action::kNone;
@@ -352,12 +356,13 @@ class FakeExtProcService final
   // timeout.
   std::shared_ptr<Stream> GetStream(
       absl::Duration timeout = absl::Seconds(10)) {
-    absl::MutexLock lock(&mu_);
-    auto condition = [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-      return !streams_.empty() || is_shutdown_;
-    };
-    if (!mu_.AwaitWithTimeout(absl::Condition(&condition), timeout)) {
-      return nullptr;
+    grpc_core::MutexLock lock(&mu_);
+    const absl::Time deadline =
+        absl::Now() + timeout * grpc_test_slowdown_factor();
+    while (streams_.empty() && !is_shutdown_) {
+      if (cv_.WaitWithDeadline(&mu_, deadline)) {
+        return nullptr;
+      }
     }
     if (streams_.empty()) {
       return nullptr;
@@ -368,16 +373,17 @@ class FakeExtProcService final
   }
 
   size_t stream_count() {
-    absl::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     return total_stream_count_;
   }
 
   void Shutdown() {
-    absl::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     is_shutdown_ = true;
     for (auto& s : active_streams_) {
       s->MarkClosed();
     }
+    cv_.SignalAll();
   }
 
   grpc::Status Process(
@@ -387,13 +393,14 @@ class FakeExtProcService final
           ::envoy::service::ext_proc::v3::ProcessingRequest>* stream) override {
     auto stream_obj = std::make_shared<Stream>();
     {
-      absl::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(&mu_);
       if (is_shutdown_) {
         return grpc::Status(grpc::StatusCode::UNAVAILABLE, "Server shutdown");
       }
       ++total_stream_count_;
       streams_.push(stream_obj);
       active_streams_.push_back(stream_obj);
+      cv_.SignalAll();
     }
 
     ::envoy::service::ext_proc::v3::ProcessingRequest request;
@@ -427,7 +434,8 @@ class FakeExtProcService final
   }
 
  private:
-  absl::Mutex mu_;
+  grpc_core::Mutex mu_;
+  grpc_core::CondVar cv_;
   // FIFO queue of newly arrived streams waiting to be consumed by the test
   // thread via GetStream(). Once popped by GetStream(), the stream is no longer
   // in this queue.
@@ -661,10 +669,11 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
     }
 
     void StartWrite(const EchoRequest& request) {
-      absl::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(&mu_);
       write_msg_ = request;
       if (status_.has_value()) {
         write_state_ = OpState::kFailed;
+        cv_.SignalAll();
         return;
       }
       write_state_ = OpState::kInFlight;
@@ -672,28 +681,30 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
     }
 
     bool WaitForWriteDone(absl::Duration timeout = absl::Seconds(10)) {
-      absl::MutexLock lock(&mu_);
-      auto cond = [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-        return write_state_ == OpState::kSuccess ||
-               write_state_ == OpState::kFailed || status_.has_value();
-      };
-      if (!mu_.AwaitWithTimeout(absl::Condition(&cond), timeout)) {
-        return false;
+      grpc_core::MutexLock lock(&mu_);
+      const absl::Time deadline =
+          absl::Now() + timeout * grpc_test_slowdown_factor();
+      while (write_state_ != OpState::kSuccess &&
+             write_state_ != OpState::kFailed && !status_.has_value()) {
+        if (cv_.WaitWithDeadline(&mu_, deadline)) {
+          return false;
+        }
       }
       return write_state_ == OpState::kSuccess;
     }
 
     void StartWritesDone() {
-      absl::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(&mu_);
       if (status_.has_value()) return;
       ClientBidiReactor::StartWritesDone();
     }
 
     void StartReadMessage() {
-      absl::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(&mu_);
       read_msg_.Clear();
       if (status_.has_value()) {
         read_state_ = OpState::kFailed;
+        cv_.SignalAll();
         return;
       }
       read_state_ = OpState::kInFlight;
@@ -702,13 +713,14 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
 
     bool WaitForReadDone(EchoResponse* response,
                          absl::Duration timeout = absl::Seconds(10)) {
-      absl::MutexLock lock(&mu_);
-      auto cond = [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-        return read_state_ == OpState::kSuccess ||
-               read_state_ == OpState::kFailed || status_.has_value();
-      };
-      if (!mu_.AwaitWithTimeout(absl::Condition(&cond), timeout)) {
-        return false;
+      grpc_core::MutexLock lock(&mu_);
+      const absl::Time deadline =
+          absl::Now() + timeout * grpc_test_slowdown_factor();
+      while (read_state_ != OpState::kSuccess &&
+             read_state_ != OpState::kFailed && !status_.has_value()) {
+        if (cv_.WaitWithDeadline(&mu_, deadline)) {
+          return false;
+        }
       }
       if (read_state_ == OpState::kSuccess) {
         *response = read_msg_;
@@ -724,54 +736,61 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
     }
 
     Status Finish(absl::Duration timeout = absl::Seconds(10)) {
-      absl::MutexLock lock(&mu_);
-      auto cond = [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-        return status_.has_value();
-      };
-      if (!mu_.AwaitWithTimeout(absl::Condition(&cond), timeout)) {
-        return Status(StatusCode::DEADLINE_EXCEEDED, "Finish timeout");
+      grpc_core::MutexLock lock(&mu_);
+      const absl::Time deadline =
+          absl::Now() + timeout * grpc_test_slowdown_factor();
+      while (!status_.has_value()) {
+        if (cv_.WaitWithDeadline(&mu_, deadline)) {
+          return Status(StatusCode::DEADLINE_EXCEEDED, "Finish timeout");
+        }
       }
       return *status_;
     }
 
     bool WaitForInitialMetadata(absl::Duration timeout = absl::Seconds(10)) {
-      absl::MutexLock lock(&mu_);
-      auto cond = [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-        return initial_metadata_state_ != MetadataState::kPending ||
-               status_.has_value();
-      };
-      if (!mu_.AwaitWithTimeout(absl::Condition(&cond), timeout)) {
-        return false;
+      grpc_core::MutexLock lock(&mu_);
+      const absl::Time deadline =
+          absl::Now() + timeout * grpc_test_slowdown_factor();
+      while (initial_metadata_state_ == MetadataState::kPending &&
+             !status_.has_value()) {
+        if (cv_.WaitWithDeadline(&mu_, deadline)) {
+          return false;
+        }
       }
       return initial_metadata_state_ == MetadataState::kSuccess;
     }
 
     void OnReadInitialMetadataDone(bool ok) override {
-      absl::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(&mu_);
       initial_metadata_state_ =
           ok ? MetadataState::kSuccess : MetadataState::kFailed;
+      cv_.SignalAll();
     }
 
     void OnWriteDone(bool ok) override {
-      absl::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(&mu_);
       write_state_ = ok ? OpState::kSuccess : OpState::kFailed;
+      cv_.SignalAll();
     }
 
     void OnReadDone(bool ok) override {
-      absl::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(&mu_);
       read_state_ = ok ? OpState::kSuccess : OpState::kFailed;
+      cv_.SignalAll();
     }
 
     void OnDone(const Status& s) override {
-      absl::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(&mu_);
       status_ = s;
+      cv_.SignalAll();
     }
 
    private:
     ClientContext context_;
     EchoRequest write_msg_;
     EchoResponse read_msg_;
-    absl::Mutex mu_;
+    grpc_core::Mutex mu_;
+    grpc_core::CondVar cv_;
     MetadataState initial_metadata_state_ ABSL_GUARDED_BY(mu_) =
         MetadataState::kPending;
     OpState write_state_ ABSL_GUARDED_BY(mu_) = OpState::kIdle;
