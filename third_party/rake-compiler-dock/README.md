@@ -49,5 +49,5 @@ docker image ls --filter "reference=ghcr.io/rake-compiler/rake-compiler-dock-ima
 Push the newly tagged images to the remote Google Artifact Registry repository.
 
 ```bash
-docker image ls --filter "reference=ghcr.io/rake-compiler/rake-compiler-dock-image" --format "{{.Repository}}:{{.Tag}}" | grep '1\.12\.0' | sed -E 's@^[^:]+:@@' | xargs -r -n1 -I{} docker push us-docker.pkg.dev/grpc-testing/testing-images-public/rake-compiler-dock-image:{}
+docker image ls --filter "reference=ghcr.io/rake-compiler/rake-compiler-dock-image" --format "{{.Tag}}" | grep '1\.12\.0' | xargs -r -n1 -I{} docker push us-docker.pkg.dev/grpc-testing/testing-images-public/rake-compiler-dock-image:{}
 ```
