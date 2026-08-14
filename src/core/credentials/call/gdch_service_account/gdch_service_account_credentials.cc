@@ -35,7 +35,6 @@
 #include "absl/strings/string_view.h"
 
 #include <grpc/credentials.h>
-#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
@@ -49,9 +48,9 @@
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/json/json_reader.h"
+#include "src/core/util/json/json_writer.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
-#include "src/core/util/string.h"
 #include "src/core/util/time.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/uri.h"
@@ -161,14 +160,15 @@ absl::StatusOr<std::string> DERToRawSignature(const std::string& der_sig,
 }
 
 struct Response {
-  std::string access_token;
-    
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
-    static const auto* loader = JsonObjectLoader<Response>()
-        .Field("access_token", &Response::access_token)
-        .Finish();
+    static const auto* loader =
+        JsonObjectLoader<Response>()
+            .Field("access_token", &Response::access_token)
+            .Finish();
     return loader;
   }
+
+  std::string access_token;
 };
 
 struct Info {

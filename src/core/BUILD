@@ -5259,6 +5259,7 @@ grpc_cc_library(
         "json",
         "json_object_loader",
         "json_reader",
+        "json_writer",
         "slice",
         "status_helper",
         "time",

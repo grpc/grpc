@@ -31,7 +31,6 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 
-#include "src/core/util/http_client/parser.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
