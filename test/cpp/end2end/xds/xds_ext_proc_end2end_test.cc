@@ -1522,7 +1522,8 @@ TEST_P(XdsExtProcEnd2endTest,
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
                       MakeConnectionFailureRegex(
                           "failed to connect to all addresses; last error: ",
-                          /*resolution_note=*/""));
+                          /*resolution_note=*/""),
+                      RpcOptions().set_skip_cancelled_check(true));
 }
 
 TEST_P(XdsExtProcEnd2endTest,
@@ -1719,6 +1720,7 @@ TEST_P(XdsExtProcEnd2endTest,
       {"locality0", CreateEndpointsForBackends(0, 1)},
   })));
   RpcOptions rpc_options;
+  rpc_options.set_skip_cancelled_check(true);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
   auto ext_proc_stream = ext_proc_service_->GetStream();
@@ -2183,6 +2185,7 @@ TEST_P(XdsExtProcEnd2endTest,
       {"locality0", CreateEndpointsForBackends(0, 1)},
   })));
   RpcOptions rpc_options;
+  rpc_options.set_skip_cancelled_check(true);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
   Status status = rpc.GetStatus();
@@ -2295,7 +2298,8 @@ TEST_P(XdsExtProcEnd2endTest,
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
                       MakeConnectionFailureRegex(
                           "failed to connect to all addresses; last error: ",
-                          /*resolution_note=*/""));
+                          /*resolution_note=*/""),
+                      RpcOptions().set_skip_cancelled_check(true));
 }
 
 TEST_P(XdsExtProcEnd2endTest,
@@ -2389,6 +2393,7 @@ TEST_P(XdsExtProcEnd2endTest,
       {"locality0", CreateEndpointsForBackends(0, 1)},
   })));
   RpcOptions rpc_options;
+  rpc_options.set_skip_cancelled_check(true);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
   auto ext_proc_stream = ext_proc_service_->GetStream();
@@ -2619,6 +2624,7 @@ TEST_P(XdsExtProcEnd2endTest,
       {"locality0", CreateEndpointsForBackends(0, 1)},
   })));
   RpcOptions rpc_options;
+  rpc_options.set_skip_cancelled_check(true);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
   Status status = rpc.GetStatus();
@@ -2728,7 +2734,8 @@ TEST_P(XdsExtProcEnd2endTest,
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
                       MakeConnectionFailureRegex(
                           "failed to connect to all addresses; last error: ",
-                          /*resolution_note=*/""));
+                          /*resolution_note=*/""),
+                      RpcOptions().set_skip_cancelled_check(true));
 }
 
 TEST_P(XdsExtProcEnd2endTest,
@@ -2778,6 +2785,7 @@ TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponseForRequestBody) {
       {"locality0", CreateEndpointsForBackends(0, 1)},
   })));
   RpcOptions rpc_options;
+  rpc_options.set_skip_cancelled_check(true);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
   auto ext_proc_stream = ext_proc_service_->GetStream();
@@ -2867,6 +2875,7 @@ TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponseForResponseBody) {
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
   rpc_options.set_echo_metadata(true);
+  rpc_options.set_skip_cancelled_check(true);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
   auto ext_proc_stream = ext_proc_service_->GetStream();
@@ -2924,6 +2933,7 @@ TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponseForResponseHeaders) {
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
   rpc_options.set_echo_metadata(true);
+  rpc_options.set_skip_cancelled_check(true);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
   auto ext_proc_stream = ext_proc_service_->GetStream();
@@ -2979,6 +2989,7 @@ TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponseForResponseTrailers) {
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
   rpc_options.set_echo_metadata(true);
+  rpc_options.set_skip_cancelled_check(true);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
   auto ext_proc_stream = ext_proc_service_->GetStream();
