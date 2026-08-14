@@ -747,6 +747,26 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
       return initial_metadata_state_ == MetadataState::kSuccess;
     }
 
+    std::multimap<std::string, std::string> GetServerInitialMetadata() {
+      std::multimap<std::string, std::string> output;
+      for (const auto& [key, value] : context_.GetServerInitialMetadata()) {
+        std::string header(key.data(), key.size());
+        absl::AsciiStrToLower(&header);
+        output.emplace(header, std::string(value.data(), value.size()));
+      }
+      return output;
+    }
+
+    std::multimap<std::string, std::string> GetServerTrailingMetadata() {
+      std::multimap<std::string, std::string> output;
+      for (const auto& [key, value] : context_.GetServerTrailingMetadata()) {
+        std::string header(key.data(), key.size());
+        absl::AsciiStrToLower(&header);
+        output.emplace(header, std::string(value.data(), value.size()));
+      }
+      return output;
+    }
+
     void OnReadInitialMetadataDone(bool ok) override {
       absl::MutexLock lock(&mu_);
       initial_metadata_state_ =
@@ -1085,6 +1105,7 @@ TEST_P(XdsExtProcEnd2endTest, ProcessingModeAllEnabledSuccess) {
 TEST_P(XdsExtProcEnd2endTest,
        ProcessingModeAllEnabledWithObservabilityModeSuccess) {
   CreateAndStartBackends(1);
+  ResetStubWithUniqueArg();
   auto ext_proc_config =
       ExtProcFilterConfigBuilder()
           .SetTargetUri(ext_proc_server_->target())
@@ -1104,11 +1125,17 @@ TEST_P(XdsExtProcEnd2endTest,
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   })));
+  AsyncBidiStream stream;
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
   rpc_options.set_echo_metadata(true);
-  AsyncRpc rpc;
-  rpc.StartRpc(stub_.get(), rpc_options);
+  stream.Start(stub_.get(), rpc_options);
+  EchoRequest request;
+  request.set_message(kRequestMessage);
+  stream.StartWrite(request);
+  EXPECT_TRUE(stream.WaitForWriteDone());
+  stream.StartWritesDone();
+  stream.StartReadMessage();
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   bool saw_request_headers = false;
@@ -1168,10 +1195,12 @@ TEST_P(XdsExtProcEnd2endTest,
   EXPECT_TRUE(saw_response_headers);
   EXPECT_TRUE(saw_response_body);
   EXPECT_TRUE(saw_response_trailers);
-  Status status = rpc.GetStatus();
+  EchoResponse response;
+  EXPECT_TRUE(stream.WaitForReadDone(&response));
+  Status status = stream.Finish();
   EXPECT_TRUE(status.ok()) << "RPC failed: " << status.error_message();
-  auto server_initial_metadata = rpc.GetServerInitialMetadata();
-  auto server_trailing_metadata = rpc.GetServerTrailingMetadata();
+  auto server_initial_metadata = stream.GetServerInitialMetadata();
+  auto server_trailing_metadata = stream.GetServerTrailingMetadata();
   // In observability mode, mutations should NOT be applied.
   auto it = server_initial_metadata.find(kRequestHeadersMutatedHeaderKey);
   EXPECT_EQ(it, server_initial_metadata.end());
@@ -1179,7 +1208,7 @@ TEST_P(XdsExtProcEnd2endTest,
   EXPECT_EQ(it, server_initial_metadata.end());
   it = server_trailing_metadata.find(kResponseTrailersMutatedHeaderKey);
   EXPECT_EQ(it, server_trailing_metadata.end());
-  EXPECT_EQ(rpc.response().message(), kRequestMessage);
+  EXPECT_EQ(response.message(), kRequestMessage);
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
