@@ -849,8 +849,9 @@ StatusFlag ExtProcFilter::ExtProcCall::HandleClientMessageFromSidestream(
       << DebugTag() << "Parsed request body response, eos: "
       << response.mutation.end_of_stream << ", eos_without_msg: "
       << response.mutation.end_of_stream_without_message;
-  if (response.mutation.end_of_stream_without_message) {
-    if (!c2s_writes_done_) {
+  if (response.mutation.end_of_stream) {
+    ext_proc_closed_client_sends_ = true;
+    if (response.mutation.end_of_stream_without_message && !c2s_writes_done_) {
       // TODO(rishesh): If the client is still sending messages on the data
       // plane (!c2s_writes_done_) when the external processor closes client
       // sends without a message (end_of_stream_without_message), future client
@@ -862,11 +863,6 @@ StatusFlag ExtProcFilter::ExtProcCall::HandleClientMessageFromSidestream(
           absl::InternalError("Client sends closed by external processor"));
       return Failure{};
     }
-    request_event_state_ = SideStreamRequestEventState::kHalfCloseReceived;
-    ext_proc_closed_client_sends_ = true;
-  } else if (response.mutation.end_of_stream) {
-    request_event_state_ = SideStreamRequestEventState::kHalfCloseReceived;
-    ext_proc_closed_client_sends_ = true;
   }
   const bool send_request_body =
       processing_mode().send_request_body && !IsSideStreamClosed();
@@ -1424,12 +1420,8 @@ auto ExtProcFilter::ExtProcCall::HandleHalfCloseFromClient() {
                           return Seq(
                               self->SendMessageToSideStream(std::move(payload)),
                               [self](StatusFlag status) mutable -> StatusFlag {
-                                if (!self->EvaluateSideStreamStatus(status)
-                                         .ok()) {
-                                  return Failure{};
-                                }
-                                if (!status.ok() ||
-                                    self->IsSideStreamClosed() ||
+                                if (!status.ok()) return Failure{};
+                                if (self->IsSideStreamClosed() ||
                                     self->config().observability_mode) {
                                   if (!self->config().observability_mode &&
                                       self->client_half_close_start_time_ !=
@@ -1900,6 +1892,10 @@ auto ExtProcFilter::ExtProcCall::Run() {
       TryJoin<absl::StatusOr>(HandleReadFromClientLoop(),
                               HandleReadFromServerLoop(),
                               HandleReadFromSideStreamLoop()),
+      // Holds a strong reference to keep ExtProcCall alive throughout the
+      // duration of the promise chain until all loops complete. Once all loops
+      // join and this callback finishes, the strong ref count drops to 0,
+      // triggering Orphaned() to close the side stream.
       [self = Ref()](
           absl::StatusOr<std::tuple<Empty, Empty, Empty>> res) -> absl::Status {
         GRPC_TRACE_LOG(ext_proc_filter, INFO)
