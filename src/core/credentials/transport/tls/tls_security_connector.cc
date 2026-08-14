@@ -47,6 +47,7 @@
 #include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
+#include "src/core/util/match.h"
 #include "src/core/util/status_helper.h"
 #include "absl/functional/bind_front.h"
 #include "absl/log/log.h"
@@ -471,12 +472,15 @@ void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
     security_connector_->root_cert_info_ = std::move(root_certs);
   }
   if (key_cert_pairs_or_selector.has_value()) {
-    if (const auto* pairs =
-            std::get_if<PemKeyCertPairList>(&*key_cert_pairs_or_selector)) {
-      security_connector_->pem_key_cert_pairs_ = *pairs;
-    } else {
-      LOG(ERROR) << "CertificateSelector is not supported on the client.";
-    }
+    security_connector_->pem_key_cert_pairs_ = Match(
+        *key_cert_pairs_or_selector,
+        [](const PemKeyCertPairList& pairs)
+            -> std::optional<PemKeyCertPairList> { return pairs; },
+        [](const std::shared_ptr<CertificateSelector>&)
+            -> std::optional<PemKeyCertPairList> {
+          LOG(ERROR) << "CertificateSelector is not supported on the client.";
+          return std::nullopt;
+        });
   }
   const bool root_ready =
       security_connector_->options_->root_certificate_distributor() ==
