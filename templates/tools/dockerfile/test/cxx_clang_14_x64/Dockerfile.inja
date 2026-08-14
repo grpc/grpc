@@ -26,6 +26,7 @@ RUN apt update && apt -y upgrade && apt install -y \
 {% include "../../run_tests_python_deps.include" %}
 {% include "../../cxx_test_deps.include" %}
 {% include "../../run_tests_addons.include" %}
+{% include "../../cmake_bullseye_backports.include" %}
 
 # Define the default command.
 CMD ["bash"]

@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM arm64v8/debian:11
+FROM --platform=linux/arm64/v8 arm64v8/debian:11
 
 {% include "../../apt_get_basic.include" %}
 {% include "../../run_tests_python_deps.include" %}
+{% include "../../cmake_bullseye_backports.include" %}
 {% include "../../csharp_deps.include" %}
 {% include "../../csharp_dotnetcli_deps.include" %}
 {% include "../../ccache.include" %}

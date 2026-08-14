@@ -43,7 +43,7 @@ if(gRPC_SSL_PROVIDER STREQUAL "module")
     if(TARGET ssl)
       set(_gRPC_SSL_LIBRARIES ssl crypto)
       set(_gRPC_SSL_INCLUDE_DIR ${BORINGSSL_ROOT_DIR}/include)
-      if(gRPC_INSTALL AND _gRPC_INSTALL_SUPPORTED_FROM_MODULE)
+      if(gRPC_INSTALL)
         install(TARGETS ssl crypto EXPORT gRPCTargets
           RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
           LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -52,10 +52,6 @@ if(gRPC_SSL_PROVIDER STREQUAL "module")
     endif()
   else()
     message(WARNING "gRPC_SSL_PROVIDER is \"module\" but BORINGSSL_ROOT_DIR is wrong")
-  endif()
-  if(gRPC_INSTALL AND NOT _gRPC_INSTALL_SUPPORTED_FROM_MODULE)
-    message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_SSL_PROVIDER is \"module\" and CMake version (${CMAKE_VERSION}) is less than 3.13.")
-    set(gRPC_INSTALL FALSE)
   endif()
 elseif(gRPC_SSL_PROVIDER STREQUAL "package")
   # OpenSSL installation directory can be configured by setting OPENSSL_ROOT_DIR
