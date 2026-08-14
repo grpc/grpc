@@ -13,16 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This file generates the following in this test_creds directory:
+# This file generates the following ECDSA test credentials:
 # badclient_ecdsa.key
 # badclient_ecdsa.pem
 # client_ecdsa.key
 # client_ecdsa.pem
 # server_ecdsa.key
 # server_ecdsa.pem
+
 set -e
 
 cd "$(dirname "$0")"
+
+CA_DIR="../../../../../src/core/tsi/test_creds"
 
 # Generate bad (self-signed) ECDSA client key and cert
 openssl ecparam -name prime256v1 -genkey -noout -out badclient_ecdsa.key
@@ -33,15 +36,15 @@ openssl req -new -x509 -key badclient_ecdsa.key -out badclient_ecdsa.pem \
 openssl ecparam -name prime256v1 -genkey -noout -out client_ecdsa.key
 openssl req -new -key client_ecdsa.key -out client_ecdsa.csr \
   -subj "/CN=client_ecdsa"
-openssl x509 -req -in client_ecdsa.csr -CA ca.pem -CAkey ca.key -CAcreateserial \
+openssl x509 -req -in client_ecdsa.csr -CA "${CA_DIR}/ca.pem" -CAkey "${CA_DIR}/ca.key" -CAcreateserial \
   -out client_ecdsa.pem -days 3650 -sha256
 
 # Generate valid ECDSA server key and cert signed by test CA (ca.pem / ca.key)
 openssl ecparam -name prime256v1 -genkey -noout -out server_ecdsa.key
 openssl req -new -key server_ecdsa.key -out server_ecdsa.csr \
-  -config server1-openssl.cnf -subj "/CN=*.test.google.fr"
-openssl x509 -req -in server_ecdsa.csr -CA ca.pem -CAkey ca.key -CAcreateserial \
-  -extfile server1-openssl.cnf -extensions v3_req \
+  -config "${CA_DIR}/server1-openssl.cnf" -subj "/CN=*.test.google.fr"
+openssl x509 -req -in server_ecdsa.csr -CA "${CA_DIR}/ca.pem" -CAkey "${CA_DIR}/ca.key" -CAcreateserial \
+  -extfile "${CA_DIR}/server1-openssl.cnf" -extensions v3_req \
   -out server_ecdsa.pem -days 3650 -sha256
 
 rm -f ./*.csr ./*.srl

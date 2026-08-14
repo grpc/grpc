@@ -1,4 +1,4 @@
-# Copyright 2017 gRPC authors.
+# Copyright 2026 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,31 +20,11 @@ package(features = [
 licenses(["notice"])
 
 exports_files([
-    "ca.pem",
-    "server1.key",
-    "server1.pem",
-    "server0.key",
-    "server0.pem",
-    "client.key",
-    "client.pem",
-    "client1.key",
-    "client1.pem",
-    "client-with-spiffe.key",
-    "client-with-spiffe.pem",
-    "badserver.key",
-    "badserver.pem",
-    "badclient.key",
-    "badclient.pem",
-    "multi-domain.key",
-    "multi-domain.pem",
-    "leaf_signed_by_intermediate.key",
-    "leaf_and_intermediate_chain.pem",
-    "malformed-cert.pem",
-    "malformed-key.pem",
-    "sni1.key",
-    "sni1.pem",
-    "sni2.key",
-    "sni2.pem",
-    "sni3.key",
-    "sni3.pem",
+    "badclient_ecdsa.key",
+    "badclient_ecdsa.pem",
+    "client_ecdsa.key",
+    "client_ecdsa.pem",
+    "generate_ecdsa_creds.sh",
+    "server_ecdsa.key",
+    "server_ecdsa.pem",
 ])

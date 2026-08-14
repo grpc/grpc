@@ -51,21 +51,21 @@ constexpr char kCaCertPath[] = "src/core/tsi/test_creds/ca.pem";
 constexpr char kServerCertPath[] = "src/core/tsi/test_creds/server1.pem";
 constexpr char kServerKeyPath[] = "src/core/tsi/test_creds/server1.key";
 constexpr char kServerEcdsaCertPath[] =
-    "src/core/tsi/test_creds/server_ecdsa.pem";
+    "test/core/tsi/test_creds/ecdsa/server_ecdsa.pem";
 constexpr char kServerEcdsaKeyPath[] =
-    "src/core/tsi/test_creds/server_ecdsa.key";
+    "test/core/tsi/test_creds/ecdsa/server_ecdsa.key";
 constexpr char kClientCertPath[] = "src/core/tsi/test_creds/client.pem";
 constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
 constexpr char kClientEcdsaCertPath[] =
-    "src/core/tsi/test_creds/client_ecdsa.pem";
+    "test/core/tsi/test_creds/ecdsa/client_ecdsa.pem";
 constexpr char kClientEcdsaKeyPath[] =
-    "src/core/tsi/test_creds/client_ecdsa.key";
+    "test/core/tsi/test_creds/ecdsa/client_ecdsa.key";
 constexpr char kBadClientCertPath[] = "src/core/tsi/test_creds/badclient.pem";
 constexpr char kBadClientKeyPath[] = "src/core/tsi/test_creds/badclient.key";
 constexpr char kBadClientEcdsaCertPath[] =
-    "src/core/tsi/test_creds/badclient_ecdsa.pem";
+    "test/core/tsi/test_creds/ecdsa/badclient_ecdsa.pem";
 constexpr char kBadClientEcdsaKeyPath[] =
-    "src/core/tsi/test_creds/badclient_ecdsa.key";
+    "test/core/tsi/test_creds/ecdsa/badclient_ecdsa.key";
 constexpr char kSni1CertPath[] = "src/core/tsi/test_creds/sni1.pem";
 constexpr char kSni1KeyPath[] = "src/core/tsi/test_creds/sni1.key";
 constexpr char kSni2CertPath[] = "src/core/tsi/test_creds/sni2.pem";

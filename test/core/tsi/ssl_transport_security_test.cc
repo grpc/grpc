@@ -67,6 +67,8 @@ constexpr size_t kSslTsiTestBadServerKeyCertPairsNum = 1;
 constexpr size_t kSslTsiTestLeafSignedByIntermediateKeyCertPairsNum = 1;
 constexpr absl::string_view kSslTsiTestCredentialsDir =
     "src/core/tsi/test_creds/";
+constexpr absl::string_view kSslTsiEcdsaTestCredentialsDir =
+    "test/core/tsi/test_creds/ecdsa/";
 constexpr absl::string_view kSslTsiTestWrongSni = "test.google.cn";
 constexpr absl::string_view kSslTsiTestInvalidSni = "1.2.3.4";
 constexpr size_t kTls13FrameOverhead = 22;
@@ -1340,9 +1342,9 @@ TEST(SslTransportSecurityTest,
       GetFileContents(absl::StrCat(kSslTsiTestCredentialsDir, "server1.pem")));
   PemKeyCertPair cert_pair_ecdsa(
       GetFileContents(
-          absl::StrCat(kSslTsiTestCredentialsDir, "server_ecdsa.key")),
+          absl::StrCat(kSslTsiEcdsaTestCredentialsDir, "server_ecdsa.key")),
       GetFileContents(
-          absl::StrCat(kSslTsiTestCredentialsDir, "server_ecdsa.pem")));
+          absl::StrCat(kSslTsiEcdsaTestCredentialsDir, "server_ecdsa.pem")));
 
   tsi_ssl_server_handshaker_factory* server_handshaker_factory = nullptr;
   tsi_ssl_server_handshaker_options options;
