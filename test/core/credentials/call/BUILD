@@ -147,3 +147,26 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "gdch_service_account_credentials_test",
+    srcs = ["gdch_service_account_credentials_test.cc"],
+    external_deps = [
+        "absl/status",
+        "absl/status:status_matchers",
+        "absl/status:statusor",
+        "absl/strings",
+        "gtest",
+    ],
+    deps = [
+        "//:httpcli",
+        "//:ref_counted_ptr",
+        "//src/core:gdch_service_account_credentials",
+        "//src/core:json",
+        "//src/core:json_reader",
+        "//src/core:time",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
+    ],
+)
+
