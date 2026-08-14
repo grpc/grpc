@@ -696,58 +696,48 @@ ExtProcFilter::ExtProcCall::~ExtProcCall() {
 // - Handle the failure mode allow
 auto ExtProcFilter::ExtProcCall::SendMessageToSideStream(std::string payload) {
   auto payload_ptr = std::make_shared<std::string>(std::move(payload));
-  return If(
-      streaming_call_ == nullptr || IsSideStreamClosed() || drain_requested_,
-      [self = WeakRef()]() {
-        return Immediate(self->EvaluateSideStreamStatus());
+  return Seq(
+      // Wait until send state is kIdle, then mark kSendInFlight.
+      [self = WeakRef()]() -> Poll<StatusFlag> {
+        if (self->streaming_call_ == nullptr ||
+            self->ext_proc_send_state_ == SideStreamSendState::kSendFailed ||
+            self->IsSideStreamClosed() || self->drain_requested_) {
+          return self->EvaluateSideStreamStatus();
+        }
+        if (self->ext_proc_send_state_ != SideStreamSendState::kIdle) {
+          return self->ext_proc_send_waiters_.AddPending(
+              GetContext<Activity>()->MakeNonOwningWaker());
+        }
+        self->ext_proc_send_state_ = SideStreamSendState::kSendInFlight;
+        return Success{};
       },
-      [self = WeakRef(), payload_ptr]() mutable {
-        return Seq(
-            // Wait until send state is kIdle, then mark kSendInFlight.
-            [self]() -> Poll<StatusFlag> {
-              if (self->ext_proc_send_state_ ==
-                      SideStreamSendState::kSendFailed ||
-                  self->IsSideStreamClosed() || self->drain_requested_) {
-                return self->EvaluateSideStreamStatus();
-              }
-              if (self->ext_proc_send_state_ != SideStreamSendState::kIdle) {
-                return self->ext_proc_send_waiters_.AddPending(
-                    GetContext<Activity>()->MakeNonOwningWaker());
-              }
-              self->ext_proc_send_state_ = SideStreamSendState::kSendInFlight;
-              return Success{};
-            },
-            // Safely acquire streaming_call_ and push the payload.
-            [self, payload_ptr](StatusFlag status) mutable {
+      // Safely acquire streaming_call_ and push the payload.
+      [self = WeakRef(), payload_ptr](StatusFlag status) mutable {
+        return If(
+            !status.ok(), []() { return Immediate(StatusFlag(Failure{})); },
+            [self, payload_ptr]() mutable {
+              // CloseSideStream() moves out and resets streaming_call_,
+              // so it may be null if the side-stream closed while this
+              // send was queued or executing.
               return If(
-                  !status.ok(),
-                  []() { return Immediate(StatusFlag(Failure{})); },
+                  self->streaming_call_ == nullptr ||
+                      self->IsSideStreamClosed() || self->drain_requested_,
+                  [self]() {
+                    return Immediate(self->EvaluateSideStreamStatus());
+                  },
                   [self, payload_ptr]() mutable {
-                    // CloseSideStream() moves out and resets streaming_call_,
-                    // so it may be null if the side-stream closed while this
-                    // send was queued or executing.
-                    return If(
-                        self->streaming_call_ == nullptr ||
-                            self->IsSideStreamClosed() ||
-                            self->drain_requested_,
-                        [self]() {
-                          return Immediate(self->EvaluateSideStreamStatus());
-                        },
-                        [self, payload_ptr]() mutable {
-                          return self->streaming_call_->PushMessage(
-                              std::move(*payload_ptr));
-                        });
+                    return self->streaming_call_->PushMessage(
+                        std::move(*payload_ptr));
                   });
-            },
-            // Reset send state and wake up any waiting senders.
-            [self](StatusFlag status) -> StatusFlag {
-              self->ext_proc_send_state_ =
-                  status.ok() && !self->IsSideStreamClosed()
-                      ? SideStreamSendState::kIdle
-                      : SideStreamSendState::kSendFailed;
-              self->ext_proc_send_waiters_.TakeWakeupSet().Wakeup();
-              return self->EvaluateSideStreamStatus(status);
             });
+      },
+      // Reset send state and wake up any waiting senders.
+      [self = WeakRef()](StatusFlag status) -> StatusFlag {
+        self->ext_proc_send_state_ = status.ok() && !self->IsSideStreamClosed()
+                                         ? SideStreamSendState::kIdle
+                                         : SideStreamSendState::kSendFailed;
+        self->ext_proc_send_waiters_.TakeWakeupSet().Wakeup();
+        return self->EvaluateSideStreamStatus(status);
       });
 }
 
