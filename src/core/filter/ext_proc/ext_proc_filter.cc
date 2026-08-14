@@ -17,6 +17,8 @@
 #include "src/core/filter/ext_proc/ext_proc_filter.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
 #include <grpc/impl/channel_arg_names.h>
 
 #include <cstdint>
@@ -26,8 +28,10 @@
 
 #include "src/core/call/call_spine.h"
 #include "src/core/call/metadata.h"
+#include "src/core/call/security_context.h"
 #include "src/core/client_channel/client_channel_args.h"
 #include "src/core/filter/ext_proc/ext_proc_messages.h"
+#include "src/core/handshaker/endpoint_info/endpoint_info_handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/debug/trace_impl.h"
@@ -48,14 +52,17 @@
 #include "src/core/telemetry/metrics.h"
 #include "src/core/util/down_cast.h"
 #include "src/core/util/dual_ref_counted.h"
+#include "src/core/util/host_port.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/string.h"
 #include "src/core/util/time.h"
+#include "src/core/util/uri.h"
 #include "src/core/xds/grpc/streaming_call_promise_wrapper.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/xds_client/xds_transport.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
@@ -611,6 +618,34 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
     ext_proc_send_state_ = SideStreamSendState::kSendFailed;
     ext_proc_send_waiters_.TakeWakeupSet().Wakeup();
     streaming_call.reset();
+  }
+
+  // Extracts connection attributes (such as source address/port and TLS
+  // security properties) for server-side CEL attributes in A103.
+  ExtProcConnectionAttributes* GetConnectionAttributes(
+      ExtProcConnectionAttributes* storage) const {
+    if (!ext_proc_filter_->is_server()) return nullptr;
+    storage->source_address = std::string(ext_proc_filter_->source_address());
+    storage->source_port = ext_proc_filter_->source_port();
+    auto* sec_ctx = MaybeGetContext<grpc_server_security_context>();
+    if (sec_ctx != nullptr && sec_ctx->auth_context != nullptr) {
+      auto get_auth_prop = [&](const char* prop_name) -> std::string {
+        grpc_auth_property_iterator it =
+            grpc_auth_context_find_properties_by_name(
+                sec_ctx->auth_context.get(), prop_name);
+        const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
+        if (prop != nullptr) {
+          return std::string(prop->value, prop->value_length);
+        }
+        return "";
+      };
+      storage->requested_server_name =
+          get_auth_prop(GRPC_SSL_SERVER_NAME_PROPERTY_NAME);
+      storage->tls_version = get_auth_prop(GRPC_SSL_TLS_VERSION_PROPERTY_NAME);
+      storage->sha256_peer_certificate_digest =
+          get_auth_prop(GRPC_SSL_PEER_SHA256_PROPERTY_NAME);
+    }
+    return storage;
   }
 
   void Orphaned() override { CloseSideStream(); }
@@ -1252,10 +1287,12 @@ auto ExtProcFilter::ExtProcCall::HandleInitialMetadataFromClient(
         // configured, extract initial attributes from client metadata.
         if (self->processing_mode().send_request_body &&
             !self->config().request_attributes.empty()) {
+          ExtProcConnectionAttributes conn_attrs;
           self->request_attributes_ = CreateExtProcAttributesProtoStruct(
               self->request_attributes_arena_.ptr(),
               self->config().request_attributes, **md,
-              self->ext_proc_filter_->default_authority_.as_string_view());
+              self->ext_proc_filter_->default_authority_.as_string_view(),
+              self->GetConnectionAttributes(&conn_attrs));
         }
         // Directly start downstream child call with unmodified client metadata.
         self->StartChildCall(std::move(*md));
@@ -1270,9 +1307,11 @@ auto ExtProcFilter::ExtProcCall::HandleInitialMetadataFromClient(
           processing_mode = self->config().processing_mode;
         }
         upb::Arena arena;
+        ExtProcConnectionAttributes conn_attrs;
         auto* header_attributes = CreateExtProcAttributesProtoStruct(
             arena.ptr(), self->config().request_attributes, **md,
-            self->ext_proc_filter_->default_authority_.as_string_view());
+            self->ext_proc_filter_->default_authority_.as_string_view(),
+            self->GetConnectionAttributes(&conn_attrs));
         auto payload = CreateExtProcClientHeadersRequest(
             arena.ptr(), (*md).get(), self->config().forwarding_allowed_headers,
             self->config().forwarding_disallowed_headers, header_attributes,
@@ -1975,12 +2014,9 @@ ExtProcFilter::ExtProcFilter(const ChannelArgs& args,
       event_engine_(
           args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
       default_authority_(Slice::FromCopiedString(
-          args.GetString(GRPC_ARG_DEFAULT_AUTHORITY)
-              .value_or(
-                  CoreConfiguration::Get()
-                      .resolver_registry()
-                      .GetDefaultAuthority(
-                          args.GetString(GRPC_ARG_SERVER_URI).value_or(""))))),
+          args.GetString(is_server_ ? GRPC_ARG_SERVER_URI
+                                    : GRPC_ARG_DEFAULT_AUTHORITY)
+              .value_or(""))),
       telemetry_storage_([&]() -> TelemetryStorage {
         auto stats_plugin_group =
             args.GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>();
@@ -1992,7 +2028,28 @@ ExtProcFilter::ExtProcFilter(const ChannelArgs& args,
         }
         return ClientTelemetryDomain::GetStorage(
             std::move(scope), args.GetString(GRPC_ARG_SERVER_URI).value_or(""));
-      }()) {}
+      }()) {
+  if (is_server_) {
+    std::optional<absl::string_view> peer_uri =
+        args.GetString(GRPC_ARG_ENDPOINT_PEER_ADDRESS);
+    if (peer_uri.has_value()) {
+      auto uri = URI::Parse(*peer_uri);
+      if (uri.ok()) {
+        absl::string_view host_view;
+        absl::string_view port_view;
+        if (SplitHostPort(uri->path(), &host_view, &port_view)) {
+          source_address_ = std::string(host_view);
+          int port = 0;
+          if (absl::SimpleAtoi(port_view, &port)) {
+            source_port_ = port;
+          }
+        } else {
+          source_address_ = uri->path();
+        }
+      }
+    }
+  }
+}
 
 ExtProcFilter::~ExtProcFilter() {
   GRPC_TRACE_LOG(ext_proc_filter, INFO)

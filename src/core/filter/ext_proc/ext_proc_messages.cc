@@ -532,19 +532,22 @@ class UpbStructHeadersEncoder {
 // CreateExtProcAttributesProtoStruct()
 //
 
-// TODO(rishesh): Support CEL attributes from A103 (except
-// xds.cluster_metadata.filter_metadata) when adding support for ext_proc on
-// the server side. See
-// https://github.com/grpc/proposal/blob/master/A103-xds-composite-filter.md#cel-attributes
 ::google_protobuf_Struct* CreateExtProcAttributesProtoStruct(
     upb_Arena* arena, const std::vector<std::string>& attributes,
-    const grpc_metadata_batch& metadata, absl::string_view default_authority) {
+    const grpc_metadata_batch& metadata, absl::string_view default_authority,
+    const ExtProcConnectionAttributes* connection_attributes) {
   if (attributes.empty()) return nullptr;
   ::google_protobuf_Struct* struct_msg = ::google_protobuf_Struct_new(arena);
   auto add_field = [&](absl::string_view name, absl::string_view value) {
     ::google_protobuf_Value* val_msg = ::google_protobuf_Value_new(arena);
     ::google_protobuf_Value_set_string_value(
         val_msg, CopyStdStringToUpbString(value, arena));
+    ::google_protobuf_Struct_fields_set(
+        struct_msg, CopyStdStringToUpbString(name, arena), val_msg, arena);
+  };
+  auto add_number_field = [&](absl::string_view name, double value) {
+    ::google_protobuf_Value* val_msg = ::google_protobuf_Value_new(arena);
+    ::google_protobuf_Value_set_number_value(val_msg, value);
     ::google_protobuf_Struct_fields_set(
         struct_msg, CopyStdStringToUpbString(name, arena), val_msg, arena);
   };
@@ -592,6 +595,31 @@ class UpbStructHeadersEncoder {
       if (val.has_value()) add_field(attr, *val);
     } else if (attr == "request.query") {
       add_field(attr, "");
+    } else if (attr == "source.address") {
+      if (connection_attributes != nullptr &&
+          !connection_attributes->source_address.empty()) {
+        add_field(attr, connection_attributes->source_address);
+      }
+    } else if (attr == "source.port") {
+      if (connection_attributes != nullptr &&
+          connection_attributes->source_port > 0) {
+        add_number_field(attr, connection_attributes->source_port);
+      }
+    } else if (attr == "connection.requested_server_name") {
+      if (connection_attributes != nullptr &&
+          !connection_attributes->requested_server_name.empty()) {
+        add_field(attr, connection_attributes->requested_server_name);
+      }
+    } else if (attr == "connection.tls_version") {
+      if (connection_attributes != nullptr &&
+          !connection_attributes->tls_version.empty()) {
+        add_field(attr, connection_attributes->tls_version);
+      }
+    } else if (attr == "connection.sha256_peer_certificate_digest") {
+      if (connection_attributes != nullptr &&
+          !connection_attributes->sha256_peer_certificate_digest.empty()) {
+        add_field(attr, connection_attributes->sha256_peer_certificate_digest);
+      }
     }
   }
   return struct_msg;

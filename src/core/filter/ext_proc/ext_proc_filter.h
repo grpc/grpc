@@ -142,6 +142,8 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
   ~ExtProcFilter() override;
 
   bool is_server() const { return is_server_; }
+  absl::string_view source_address() const { return source_address_; }
+  int source_port() const { return source_port_; }
 
  private:
   class ExtProcCall;
@@ -202,6 +204,8 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override;
 
   const bool is_server_;
+  std::string source_address_;
+  int source_port_ = 0;
   RefCountedPtr<const Config> config_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   Slice default_authority_;
