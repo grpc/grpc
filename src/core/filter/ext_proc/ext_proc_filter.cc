@@ -62,12 +62,12 @@
 namespace grpc_core {
 
 //
-// ExtProcFilter::TelemetryDomain
+// ExtProcFilter::ClientTelemetryDomain
 //
 
-ExtProcFilter::TelemetryDomain::HistogramHandle<ExponentialHistogramShape>
-    ExtProcFilter::TelemetryDomain::kClientHeadersDuration =
-        ExtProcFilter::TelemetryDomain::RegisterHistogram<
+ExtProcFilter::ClientTelemetryDomain::HistogramHandle<ExponentialHistogramShape>
+    ExtProcFilter::ClientTelemetryDomain::kClientHeadersDuration =
+        ExtProcFilter::ClientTelemetryDomain::RegisterHistogram<
             ExponentialHistogramShape>(
             "grpc.client_ext_proc.client_headers_duration",
             "Time between when the ext_proc filter sees the client's headers "
@@ -75,9 +75,9 @@ ExtProcFilter::TelemetryDomain::HistogramHandle<ExponentialHistogramShape>
             "filter.",
             "s", 60, 20);
 
-ExtProcFilter::TelemetryDomain::HistogramHandle<ExponentialHistogramShape>
-    ExtProcFilter::TelemetryDomain::kClientHalfCloseDuration =
-        ExtProcFilter::TelemetryDomain::RegisterHistogram<
+ExtProcFilter::ClientTelemetryDomain::HistogramHandle<ExponentialHistogramShape>
+    ExtProcFilter::ClientTelemetryDomain::kClientHalfCloseDuration =
+        ExtProcFilter::ClientTelemetryDomain::RegisterHistogram<
             ExponentialHistogramShape>(
             "grpc.client_ext_proc.client_half_close_duration",
             "Time between when the ext_proc filter sees the client's "
@@ -85,9 +85,9 @@ ExtProcFilter::TelemetryDomain::HistogramHandle<ExponentialHistogramShape>
             "the next filter.",
             "s", 60, 20);
 
-ExtProcFilter::TelemetryDomain::HistogramHandle<ExponentialHistogramShape>
-    ExtProcFilter::TelemetryDomain::kServerHeadersDuration =
-        ExtProcFilter::TelemetryDomain::RegisterHistogram<
+ExtProcFilter::ClientTelemetryDomain::HistogramHandle<ExponentialHistogramShape>
+    ExtProcFilter::ClientTelemetryDomain::kServerHeadersDuration =
+        ExtProcFilter::ClientTelemetryDomain::RegisterHistogram<
             ExponentialHistogramShape>(
             "grpc.client_ext_proc.server_headers_duration",
             "Time between when the ext_proc filter sees the server's headers "
@@ -95,11 +95,55 @@ ExtProcFilter::TelemetryDomain::HistogramHandle<ExponentialHistogramShape>
             "filter.",
             "s", 60, 20);
 
-ExtProcFilter::TelemetryDomain::HistogramHandle<ExponentialHistogramShape>
-    ExtProcFilter::TelemetryDomain::kServerTrailersDuration =
-        ExtProcFilter::TelemetryDomain::RegisterHistogram<
+ExtProcFilter::ClientTelemetryDomain::HistogramHandle<ExponentialHistogramShape>
+    ExtProcFilter::ClientTelemetryDomain::kServerTrailersDuration =
+        ExtProcFilter::ClientTelemetryDomain::RegisterHistogram<
             ExponentialHistogramShape>(
             "grpc.client_ext_proc.server_trailers_duration",
+            "Time between when the ext_proc filter sees the server's "
+            "trailers and when it allows those trailers to continue on to "
+            "the next filter.",
+            "s", 60, 20);
+
+//
+// ExtProcFilter::ServerTelemetryDomain
+//
+
+ExtProcFilter::ServerTelemetryDomain::HistogramHandle<ExponentialHistogramShape>
+    ExtProcFilter::ServerTelemetryDomain::kClientHeadersDuration =
+        ExtProcFilter::ServerTelemetryDomain::RegisterHistogram<
+            ExponentialHistogramShape>(
+            "grpc.server_ext_proc.client_headers_duration",
+            "Time between when the ext_proc filter sees the client's headers "
+            "and when it allows those headers to continue on to the next "
+            "filter.",
+            "s", 60, 20);
+
+ExtProcFilter::ServerTelemetryDomain::HistogramHandle<ExponentialHistogramShape>
+    ExtProcFilter::ServerTelemetryDomain::kClientHalfCloseDuration =
+        ExtProcFilter::ServerTelemetryDomain::RegisterHistogram<
+            ExponentialHistogramShape>(
+            "grpc.server_ext_proc.client_half_close_duration",
+            "Time between when the ext_proc filter sees the client's "
+            "half-close and when it allows that half-close to continue on to "
+            "the next filter.",
+            "s", 60, 20);
+
+ExtProcFilter::ServerTelemetryDomain::HistogramHandle<ExponentialHistogramShape>
+    ExtProcFilter::ServerTelemetryDomain::kServerHeadersDuration =
+        ExtProcFilter::ServerTelemetryDomain::RegisterHistogram<
+            ExponentialHistogramShape>(
+            "grpc.server_ext_proc.server_headers_duration",
+            "Time between when the ext_proc filter sees the server's headers "
+            "and when it allows those headers to continue on to the next "
+            "filter.",
+            "s", 60, 20);
+
+ExtProcFilter::ServerTelemetryDomain::HistogramHandle<ExponentialHistogramShape>
+    ExtProcFilter::ServerTelemetryDomain::kServerTrailersDuration =
+        ExtProcFilter::ServerTelemetryDomain::RegisterHistogram<
+            ExponentialHistogramShape>(
+            "grpc.server_ext_proc.server_trailers_duration",
             "Time between when the ext_proc filter sees the server's "
             "trailers and when it allows those trailers to continue on to "
             "the next filter.",
@@ -1937,13 +1981,16 @@ ExtProcFilter::ExtProcFilter(const ChannelArgs& args,
                       .resolver_registry()
                       .GetDefaultAuthority(
                           args.GetString(GRPC_ARG_SERVER_URI).value_or(""))))),
-      telemetry_storage_([&]() -> InstrumentStorageRefPtr<TelemetryDomain> {
+      telemetry_storage_([&]() -> TelemetryStorage {
         auto stats_plugin_group =
             args.GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>();
-        if (stats_plugin_group == nullptr) return nullptr;
+        if (stats_plugin_group == nullptr) return std::monostate{};
         auto scope = stats_plugin_group->GetCollectionScope();
-        if (scope == nullptr) return nullptr;
-        return TelemetryDomain::GetStorage(
+        if (scope == nullptr) return std::monostate{};
+        if (is_server_) {
+          return ServerTelemetryDomain::GetStorage(std::move(scope));
+        }
+        return ClientTelemetryDomain::GetStorage(
             std::move(scope), args.GetString(GRPC_ARG_SERVER_URI).value_or(""));
       }()) {}
 
@@ -1952,34 +1999,52 @@ ExtProcFilter::~ExtProcFilter() {
       << "ExtProcFilter " << this << " destroyed";
 }
 
+void ExtProcFilter::RecordDuration(
+    ClientTelemetryDomain::HistogramHandle<ExponentialHistogramShape>
+        client_metric,
+    ServerTelemetryDomain::HistogramHandle<ExponentialHistogramShape>
+        server_metric,
+    double duration_seconds) const {
+  Match(
+      telemetry_storage_, [](const std::monostate&) {},
+      [duration_seconds,
+       client_metric](const InstrumentStorageRefPtr<ClientTelemetryDomain>& s) {
+        if (s != nullptr) {
+          s->Increment(client_metric, static_cast<int64_t>(duration_seconds));
+        }
+      },
+      [duration_seconds,
+       server_metric](const InstrumentStorageRefPtr<ServerTelemetryDomain>& s) {
+        if (s != nullptr) {
+          s->Increment(server_metric, static_cast<int64_t>(duration_seconds));
+        }
+      });
+}
+
 void ExtProcFilter::RecordClientHeadersDuration(double duration_seconds) const {
-  if (telemetry_storage_ != nullptr) {
-    telemetry_storage_->Increment(TelemetryDomain::kClientHeadersDuration,
-                                  static_cast<int64_t>(duration_seconds));
-  }
+  RecordDuration(ClientTelemetryDomain::kClientHeadersDuration,
+                 ServerTelemetryDomain::kClientHeadersDuration,
+                 duration_seconds);
 }
 
 void ExtProcFilter::RecordClientHalfCloseDuration(
     double duration_seconds) const {
-  if (telemetry_storage_ != nullptr) {
-    telemetry_storage_->Increment(TelemetryDomain::kClientHalfCloseDuration,
-                                  static_cast<int64_t>(duration_seconds));
-  }
+  RecordDuration(ClientTelemetryDomain::kClientHalfCloseDuration,
+                 ServerTelemetryDomain::kClientHalfCloseDuration,
+                 duration_seconds);
 }
 
 void ExtProcFilter::RecordServerHeadersDuration(double duration_seconds) const {
-  if (telemetry_storage_ != nullptr) {
-    telemetry_storage_->Increment(TelemetryDomain::kServerHeadersDuration,
-                                  static_cast<int64_t>(duration_seconds));
-  }
+  RecordDuration(ClientTelemetryDomain::kServerHeadersDuration,
+                 ServerTelemetryDomain::kServerHeadersDuration,
+                 duration_seconds);
 }
 
 void ExtProcFilter::RecordServerTrailersDuration(
     double duration_seconds) const {
-  if (telemetry_storage_ != nullptr) {
-    telemetry_storage_->Increment(TelemetryDomain::kServerTrailersDuration,
-                                  static_cast<int64_t>(duration_seconds));
-  }
+  RecordDuration(ClientTelemetryDomain::kServerTrailersDuration,
+                 ServerTelemetryDomain::kServerTrailersDuration,
+                 duration_seconds);
 }
 
 void ExtProcFilter::InterceptCall(UnstartedCallHandler unstarted_call_handler) {

@@ -146,7 +146,8 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
  private:
   class ExtProcCall;
 
-  class TelemetryDomain final : public InstrumentDomain<TelemetryDomain> {
+  class ClientTelemetryDomain final
+      : public InstrumentDomain<ClientTelemetryDomain> {
    public:
     using Backend = HighContentionBackend;
     static constexpr absl::string_view kName = "client_ext_proc";
@@ -158,7 +159,32 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
     static HistogramHandle<ExponentialHistogramShape> kServerTrailersDuration;
   };
 
+  class ServerTelemetryDomain final
+      : public InstrumentDomain<ServerTelemetryDomain> {
+   public:
+    using Backend = HighContentionBackend;
+    static constexpr absl::string_view kName = "server_ext_proc";
+    GRPC_EMPTY_INSTRUMENT_DOMAIN_LABELS();
+
+    static HistogramHandle<ExponentialHistogramShape> kClientHeadersDuration;
+    static HistogramHandle<ExponentialHistogramShape> kClientHalfCloseDuration;
+    static HistogramHandle<ExponentialHistogramShape> kServerHeadersDuration;
+    static HistogramHandle<ExponentialHistogramShape> kServerTrailersDuration;
+  };
+
+  using TelemetryStorage =
+      std::variant<std::monostate,
+                   InstrumentStorageRefPtr<ClientTelemetryDomain>,
+                   InstrumentStorageRefPtr<ServerTelemetryDomain>>;
+
   RefCountedPtr<ExtProcChannel> channel() const { return config_->channel(); }
+
+  void RecordDuration(
+      ClientTelemetryDomain::HistogramHandle<ExponentialHistogramShape>
+          client_metric,
+      ServerTelemetryDomain::HistogramHandle<ExponentialHistogramShape>
+          server_metric,
+      double duration_seconds) const;
 
   void RecordClientHeadersDuration(double duration_seconds) const;
   void RecordClientHalfCloseDuration(double duration_seconds) const;
@@ -170,7 +196,7 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
         << "ExtProcFilter " << this << " Orphaned()";
     event_engine_.reset();
     config_.reset();
-    telemetry_storage_.reset();
+    telemetry_storage_ = std::monostate{};
   }
 
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override;
@@ -179,7 +205,7 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
   RefCountedPtr<const Config> config_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   Slice default_authority_;
-  InstrumentStorageRefPtr<TelemetryDomain> telemetry_storage_;
+  TelemetryStorage telemetry_storage_;
 };
 
 }  // namespace grpc_core

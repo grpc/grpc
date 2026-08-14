@@ -4937,22 +4937,26 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcClientHeadersDurationMetric) {
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
   Status status = rpc.GetStatus();
   EXPECT_TRUE(status.ok()) << status.error_message();
-  const std::string expected_target =
-      GetParam().filter_on_server() ? "" : absl::StrCat("xds:", kServerName);
-  auto get_histogram = [&](absl::string_view metric_name) {
+  const std::string expected_target = absl::StrCat("xds:", kServerName);
+  const std::string metric_name =
+      GetParam().filter_on_server()
+          ? "grpc.server_ext_proc.client_headers_duration"
+          : "grpc.client_ext_proc.client_headers_duration";
+  const std::vector<absl::string_view> labels =
+      GetParam().filter_on_server()
+          ? std::vector<absl::string_view>{}
+          : std::vector<absl::string_view>{expected_target};
+  auto get_histogram = [&](absl::string_view name) {
     auto deadline =
         absl::Now() + absl::Seconds(10) * grpc_test_slowdown_factor();
     while (absl::Now() < deadline) {
-      auto val =
-          stats_plugin->GetHistogramValueByName(metric_name, {expected_target});
+      auto val = stats_plugin->GetHistogramValueByName(name, labels);
       if (val.has_value()) return val;
       absl::SleepFor(absl::Milliseconds(20));
     }
-    return stats_plugin->GetHistogramValueByName(metric_name,
-                                                 {expected_target});
+    return stats_plugin->GetHistogramValueByName(name, labels);
   };
-  EXPECT_TRUE(get_histogram("grpc.client_ext_proc.client_headers_duration")
-                  .has_value());
+  EXPECT_TRUE(get_histogram(metric_name).has_value());
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -5008,22 +5012,26 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcClientHalfCloseDurationMetric) {
   }
   Status status = rpc.GetStatus();
   EXPECT_TRUE(status.ok()) << status.error_message();
-  const std::string expected_target =
-      GetParam().filter_on_server() ? "" : absl::StrCat("xds:", kServerName);
-  auto get_histogram = [&](absl::string_view metric_name) {
+  const std::string expected_target = absl::StrCat("xds:", kServerName);
+  const std::string metric_name =
+      GetParam().filter_on_server()
+          ? "grpc.server_ext_proc.client_half_close_duration"
+          : "grpc.client_ext_proc.client_half_close_duration";
+  const std::vector<absl::string_view> labels =
+      GetParam().filter_on_server()
+          ? std::vector<absl::string_view>{}
+          : std::vector<absl::string_view>{expected_target};
+  auto get_histogram = [&](absl::string_view name) {
     auto deadline =
         absl::Now() + absl::Seconds(10) * grpc_test_slowdown_factor();
     while (absl::Now() < deadline) {
-      auto val =
-          stats_plugin->GetHistogramValueByName(metric_name, {expected_target});
+      auto val = stats_plugin->GetHistogramValueByName(name, labels);
       if (val.has_value()) return val;
       absl::SleepFor(absl::Milliseconds(20));
     }
-    return stats_plugin->GetHistogramValueByName(metric_name,
-                                                 {expected_target});
+    return stats_plugin->GetHistogramValueByName(name, labels);
   };
-  EXPECT_TRUE(get_histogram("grpc.client_ext_proc.client_half_close_duration")
-                  .has_value());
+  EXPECT_TRUE(get_histogram(metric_name).has_value());
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -5058,22 +5066,26 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcServerHeadersDurationMetric) {
   ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse({}));
   Status status = rpc.GetStatus();
   EXPECT_TRUE(status.ok()) << status.error_message();
-  const std::string expected_target =
-      GetParam().filter_on_server() ? "" : absl::StrCat("xds:", kServerName);
-  auto get_histogram = [&](absl::string_view metric_name) {
+  const std::string expected_target = absl::StrCat("xds:", kServerName);
+  const std::string metric_name =
+      GetParam().filter_on_server()
+          ? "grpc.server_ext_proc.server_headers_duration"
+          : "grpc.client_ext_proc.server_headers_duration";
+  const std::vector<absl::string_view> labels =
+      GetParam().filter_on_server()
+          ? std::vector<absl::string_view>{}
+          : std::vector<absl::string_view>{expected_target};
+  auto get_histogram = [&](absl::string_view name) {
     auto deadline =
         absl::Now() + absl::Seconds(10) * grpc_test_slowdown_factor();
     while (absl::Now() < deadline) {
-      auto val =
-          stats_plugin->GetHistogramValueByName(metric_name, {expected_target});
+      auto val = stats_plugin->GetHistogramValueByName(name, labels);
       if (val.has_value()) return val;
       absl::SleepFor(absl::Milliseconds(20));
     }
-    return stats_plugin->GetHistogramValueByName(metric_name,
-                                                 {expected_target});
+    return stats_plugin->GetHistogramValueByName(name, labels);
   };
-  EXPECT_TRUE(get_histogram("grpc.client_ext_proc.server_headers_duration")
-                  .has_value());
+  EXPECT_TRUE(get_histogram(metric_name).has_value());
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -5108,22 +5120,26 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcServerTrailersDurationMetric) {
   ext_proc_stream->SendResponse(MakeResponseTrailersMutationResponse({}));
   Status status = rpc.GetStatus();
   EXPECT_TRUE(status.ok()) << status.error_message();
-  const std::string expected_target =
-      GetParam().filter_on_server() ? "" : absl::StrCat("xds:", kServerName);
-  auto get_histogram = [&](absl::string_view metric_name) {
+  const std::string expected_target = absl::StrCat("xds:", kServerName);
+  const std::string metric_name =
+      GetParam().filter_on_server()
+          ? "grpc.server_ext_proc.server_trailers_duration"
+          : "grpc.client_ext_proc.server_trailers_duration";
+  const std::vector<absl::string_view> labels =
+      GetParam().filter_on_server()
+          ? std::vector<absl::string_view>{}
+          : std::vector<absl::string_view>{expected_target};
+  auto get_histogram = [&](absl::string_view name) {
     auto deadline =
         absl::Now() + absl::Seconds(10) * grpc_test_slowdown_factor();
     while (absl::Now() < deadline) {
-      auto val =
-          stats_plugin->GetHistogramValueByName(metric_name, {expected_target});
+      auto val = stats_plugin->GetHistogramValueByName(name, labels);
       if (val.has_value()) return val;
       absl::SleepFor(absl::Milliseconds(20));
     }
-    return stats_plugin->GetHistogramValueByName(metric_name,
-                                                 {expected_target});
+    return stats_plugin->GetHistogramValueByName(name, labels);
   };
-  EXPECT_TRUE(get_histogram("grpc.client_ext_proc.server_trailers_duration")
-                  .has_value());
+  EXPECT_TRUE(get_histogram(metric_name).has_value());
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
