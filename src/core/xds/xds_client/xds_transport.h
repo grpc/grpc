@@ -87,7 +87,7 @@ class XdsTransportFactory : public DualRefCounted<XdsTransportFactory> {
     virtual OrphanablePtr<StreamingCall> CreateStreamingCall(
         const char* method,
         std::unique_ptr<StreamingCall::EventHandler> event_handler,
-        bool wait_for_ready = true) = 0;
+        bool wait_for_ready) = 0;
 
     // Resets connection backoff for the transport.
     virtual void ResetBackoff() = 0;
