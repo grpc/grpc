@@ -1062,13 +1062,9 @@ ExtProcFilter::ExtProcCall::HandleServerTrailingMetadataFromSidestream(
 
 StatusFlag ExtProcFilter::ExtProcCall::HandleImmediateResponseFromSidestream(
     const ExtProcResponse::ImmediateResponse& response) {
-  if (config().disable_immediate_response ||
-      !server_trailers_sent_to_side_stream_) {
+  if (config().disable_immediate_response) {
     CancelCallWithError(absl::InternalError(
-        config().disable_immediate_response
-            ? "unhandled immediate response due to config disabled it"
-            : "Immediate response received but trailers not sent to "
-              "ext_proc"));
+        "unhandled immediate response due to config disabled it"));
     return Failure{};
   }
   if (processing_mode().send_response_trailers) {

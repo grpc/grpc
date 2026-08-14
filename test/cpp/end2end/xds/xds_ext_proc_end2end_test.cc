@@ -2903,10 +2903,14 @@ TEST_P(XdsExtProcEnd2endTest, ImmediateResponseForRequestBody) {
       "Access Denied by ExtProc (Request Body)",
       {{kImmediateResponseHeaderKey, kHeaderMutatedValue}}));
   Status status = rpc.GetStatus();
-  EXPECT_THAT(status, GrpcStatusIs(StatusCode::INTERNAL,
-                                   ::testing::HasSubstr(
-                                       "Immediate response received but "
-                                       "trailers not sent to ext_proc")));
+  EXPECT_THAT(status,
+              GrpcStatusIs(StatusCode::PERMISSION_DENIED,
+                           ::testing::HasSubstr(
+                               "Access Denied by ExtProc (Request Body)")));
+  auto server_trailing_metadata = rpc.GetServerTrailingMetadata();
+  auto it = server_trailing_metadata.find(kImmediateResponseHeaderKey);
+  EXPECT_NE(it, server_trailing_metadata.end());
+  EXPECT_EQ(it->second, kHeaderMutatedValue);
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -2943,10 +2947,10 @@ TEST_P(XdsExtProcEnd2endTest, ImmediateResponseForRequestHeaders) {
       "Access Denied by ExtProc (Request Headers)",
       {{kImmediateResponseHeaderKey, kHeaderMutatedValue}}));
   Status status = rpc.GetStatus();
-  EXPECT_THAT(status, GrpcStatusIs(StatusCode::INTERNAL,
-                                   ::testing::HasSubstr(
-                                       "Immediate response received but "
-                                       "trailers not sent to ext_proc")));
+  EXPECT_THAT(status,
+              GrpcStatusIs(StatusCode::PERMISSION_DENIED,
+                           ::testing::HasSubstr(
+                               "Access Denied by ExtProc (Request Headers)")));
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -2995,10 +2999,14 @@ TEST_P(XdsExtProcEnd2endTest, ImmediateResponseForResponseBody) {
     }
   }
   Status status = rpc.GetStatus();
-  EXPECT_THAT(status, GrpcStatusIs(StatusCode::INTERNAL,
-                                   ::testing::HasSubstr(
-                                       "Immediate response received but "
-                                       "trailers not sent to ext_proc")));
+  EXPECT_THAT(status,
+              GrpcStatusIs(StatusCode::PERMISSION_DENIED,
+                           ::testing::HasSubstr(
+                               "Access Denied by ExtProc (Response Body)")));
+  auto server_trailing_metadata = rpc.GetServerTrailingMetadata();
+  auto it = server_trailing_metadata.find(kImmediateResponseHeaderKey);
+  EXPECT_NE(it, server_trailing_metadata.end());
+  EXPECT_EQ(it->second, kHeaderMutatedValue);
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -3046,10 +3054,14 @@ TEST_P(XdsExtProcEnd2endTest, ImmediateResponseForResponseHeaders) {
     }
   }
   Status status = rpc.GetStatus();
-  EXPECT_THAT(status, GrpcStatusIs(StatusCode::INTERNAL,
-                                   ::testing::HasSubstr(
-                                       "Immediate response received but "
-                                       "trailers not sent to ext_proc")));
+  EXPECT_THAT(status,
+              GrpcStatusIs(StatusCode::PERMISSION_DENIED,
+                           ::testing::HasSubstr(
+                               "Access Denied by ExtProc (Response Headers)")));
+  auto server_trailing_metadata = rpc.GetServerTrailingMetadata();
+  auto it = server_trailing_metadata.find(kImmediateResponseHeaderKey);
+  EXPECT_NE(it, server_trailing_metadata.end());
+  EXPECT_EQ(it->second, kHeaderMutatedValue);
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
