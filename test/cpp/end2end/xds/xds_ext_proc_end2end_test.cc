@@ -4293,6 +4293,7 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseHeadersFailureModeFalse) {
   EchoRequest request;
   request.set_message(kMessage1);
   stream.StartWrite(request);
+  EXPECT_FALSE(stream.WaitForWriteDone());
   EchoResponse response;
   EXPECT_FALSE(stream.ReadMessage(&response));
   stream.StartWritesDone();
