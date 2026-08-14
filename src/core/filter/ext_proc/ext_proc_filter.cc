@@ -714,7 +714,7 @@ auto ExtProcFilter::ExtProcCall::SendMessageToSideStream(std::string payload) {
         if (self->streaming_call_ == nullptr ||
             self->ext_proc_send_state_ == SideStreamSendState::kSendFailed ||
             self->IsSideStreamClosed() || self->drain_requested_) {
-          return self->EvaluateSideStreamStatus();
+          return Failure{};
         }
         if (self->ext_proc_send_state_ != SideStreamSendState::kIdle) {
           return self->ext_proc_send_waiters_.AddPending(
@@ -726,21 +726,14 @@ auto ExtProcFilter::ExtProcCall::SendMessageToSideStream(std::string payload) {
       // Safely acquire streaming_call_ and push the payload.
       [self = WeakRef(), payload_ptr](StatusFlag status) mutable {
         return If(
-            !status.ok(), []() { return Immediate(StatusFlag(Failure{})); },
+            !status.ok() || self->streaming_call_ == nullptr ||
+                self->ext_proc_send_state_ ==
+                    SideStreamSendState::kSendFailed ||
+                self->IsSideStreamClosed() || self->drain_requested_,
+            [self]() { return Immediate(self->EvaluateSideStreamStatus()); },
             [self, payload_ptr]() mutable {
-              // CloseSideStream() moves out and resets streaming_call_,
-              // so it may be null if the side-stream closed while this
-              // send was queued or executing.
-              return If(
-                  self->streaming_call_ == nullptr ||
-                      self->IsSideStreamClosed() || self->drain_requested_,
-                  [self]() {
-                    return Immediate(self->EvaluateSideStreamStatus());
-                  },
-                  [self, payload_ptr]() mutable {
-                    return self->streaming_call_->PushMessage(
-                        std::move(*payload_ptr));
-                  });
+              return self->streaming_call_->PushMessage(
+                  std::move(*payload_ptr));
             });
       },
       // Reset send state and wake up any waiting senders.
@@ -1340,37 +1333,31 @@ auto ExtProcFilter::ExtProcCall::HandleMessageFromClient(
                         },
                         [self, payload = std::move(*payload), msg]() mutable {
                           self->first_body_message_sent_ = true;
-                          // Send to the sidestream.
-                          // In observability mode, also send to the child call
-                          // in parallel. Note that for flow control reasons,
-                          // this promise must not complete until the send has
-                          // completed to both the sidestream and child call.
-                          return Map(
-                              TryJoin<ValueOrFailure>(
-                                  self->SendMessageToSideStream(
-                                      std::move(payload)),
-                                  If(
-                                      self->config().observability_mode,
-                                      [self, msg]() mutable {
-                                        GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                                            << self->DebugTag()
-                                            << "Client message observability "
-                                               "mode";
-                                        // TODO(rishesh, roth): Spawning this
-                                        // push into the handler's activity
-                                        // means that we don't have flow control
-                                        // feedback here due to a limitation of
-                                        // the v3-to-v1 adaptor layers.
-                                        self->initiator_.SpawnPushMessage(
-                                            std::move(*msg));
-                                        return Immediate(StatusFlag(Success{}));
-                                      },
-                                      []() {
-                                        return Immediate(StatusFlag(Success{}));
-                                      })),
-                              [](auto result) -> StatusFlag {
-                                return result.status();
-                              });
+                          if (self->config().observability_mode) {
+                            GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                                << self->DebugTag()
+                                << "Client message observability mode";
+                            // TODO(rishesh, roth): In observability mode, we
+                            // ideally want to wait for both the message write
+                            // to the child call and message send to the
+                            // ext_proc side stream to complete before fetching
+                            // the next message for proper flow control.
+                            // However, returning a direct
+                            // initiator_.PushMessage() promise here causes a
+                            // deadlock due to a limitation of the v3-to-v1
+                            // adaptor layers, where the parent call batch
+                            // completion is blocked by the handler promise
+                            // execution. If we do not make them sequential and
+                            // spawn the push instead, some tests become flaky
+                            // in observability cases. Therefore, we spawn the
+                            // push into the initiator activity and
+                            // sequentially send to the sidestream. We need to
+                            // check and revisit this once the adaptor layers
+                            // support full Call v3 flow control.
+                            self->initiator_.SpawnPushMessage(std::move(*msg));
+                          }
+                          return self->SendMessageToSideStream(
+                              std::move(payload));
                         });
                   });
             });
@@ -1709,35 +1696,28 @@ auto ExtProcFilter::ExtProcCall::HandleMessageFromServer(
                   },
                   [self, payload = std::move(*payload), msg]() mutable {
                     self->first_body_message_sent_ = true;
-                    // Send to the sidestream.
-                    // In observability mode, also send to the child call in
-                    // parallel. Note that for flow control reasons, this
-                    // promise must not complete until the send has completed
-                    // to both the sidestream and child call.
-                    return Map(
-                        TryJoin<ValueOrFailure>(
-                            self->SendMessageToSideStream(std::move(payload)),
-                            If(
-                                self->config().observability_mode,
-                                [self, msg]() mutable {
-                                  GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                                      << self->DebugTag()
-                                      << "Server message observability mode";
-                                  // TODO(rishesh, roth): Spawning this push
-                                  // into the handler's activity means that we
-                                  // don't have flow control feedback here due
-                                  // to a limitation of the v3-to-v1 adaptor
-                                  // layers.
-                                  self->handler_.SpawnPushMessage(
-                                      std::move(*msg));
-                                  return Immediate(StatusFlag(Success{}));
-                                },
-                                []() {
-                                  return Immediate(StatusFlag(Success{}));
-                                })),
-                        [](auto result) -> StatusFlag {
-                          return result.status();
-                        });
+                    if (self->config().observability_mode) {
+                      GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                          << self->DebugTag()
+                          << "Server message observability mode";
+                      // TODO(rishesh, roth): In observability mode, we ideally
+                      // want to wait for both the message write to the client
+                      // (handler) and message send to the ext_proc side stream
+                      // to complete before fetching the next message for proper
+                      // flow control.
+                      // However, returning a direct handler_.PushMessage()
+                      // promise here causes a deadlock due to a limitation of
+                      // the v3-to-v1 adaptor layers, where batch completion is
+                      // blocked by the promise execution. If we do not make
+                      // them sequential and spawn the push instead, some tests
+                      // become flaky in observability cases. Therefore, we
+                      // spawn the push into the handler activity and
+                      // sequentially send to the sidestream. We need to check
+                      // and revisit this once the adaptor layers support full
+                      // Call v3 flow control.
+                      self->handler_.SpawnPushMessage(std::move(*msg));
+                    }
+                    return self->SendMessageToSideStream(std::move(payload));
                   });
             });
       });
