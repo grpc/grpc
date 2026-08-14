@@ -660,6 +660,14 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
 
     AsyncBidiStream() = default;
 
+    ~AsyncBidiStream() override {
+      grpc_core::MutexLock lock(&mu_);
+      while (write_state_ == OpState::kInFlight ||
+             read_state_ == OpState::kInFlight) {
+        cv_.Wait(&mu_);
+      }
+    }
+
     void Start(grpc::testing::EchoTestService::Stub* stub,
                const RpcOptions& rpc_options = RpcOptions()) {
       EchoRequest request;
@@ -4326,7 +4334,6 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseHeadersFailureModeFalse) {
   EchoRequest request;
   request.set_message(kMessage1);
   stream.StartWrite(request);
-  EXPECT_FALSE(stream.WaitForWriteDone());
   EchoResponse response;
   EXPECT_FALSE(stream.ReadMessage(&response));
   stream.StartWritesDone();

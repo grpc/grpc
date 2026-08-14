@@ -356,11 +356,11 @@ class UpbHeaderMapEncoder {
     auto* value_msg =
         envoy_config_core_v3_HeaderMap_add_headers(header_map_, arena_);
     envoy_config_core_v3_HeaderValue_set_key(
-        value_msg, upb_StringView_FromDataAndSize(key.data(), key.size()));
+        value_msg, CopyStdStringToUpbString(key, arena_));
     // Per gRFC A102, when writing, we always set the raw_value field and never
     // the value field.
     envoy_config_core_v3_HeaderValue_set_raw_value(
-        value_msg, upb_StringView_FromDataAndSize(value.data(), value.size()));
+        value_msg, CopyStdStringToUpbString(value, arena_));
   }
 
   envoy_config_core_v3_HeaderMap* header_map_;
@@ -519,10 +519,9 @@ class UpbStructHeadersEncoder {
                                       absl::string_view value) {
     ::google_protobuf_Value* val_msg = ::google_protobuf_Value_new(arena_);
     ::google_protobuf_Value_set_string_value(
-        val_msg, upb_StringView_FromDataAndSize(value.data(), value.size()));
+        val_msg, CopyStdStringToUpbString(value, arena_));
     ::google_protobuf_Struct_fields_set(
-        struct_msg_, upb_StringView_FromDataAndSize(key.data(), key.size()),
-        val_msg, arena_);
+        struct_msg_, CopyStdStringToUpbString(key, arena_), val_msg, arena_);
   }
 
   ::google_protobuf_Struct* struct_msg_;
@@ -547,10 +546,9 @@ class UpbStructHeadersEncoder {
   auto add_field = [&](absl::string_view name, absl::string_view value) {
     ::google_protobuf_Value* val_msg = ::google_protobuf_Value_new(arena);
     ::google_protobuf_Value_set_string_value(
-        val_msg, upb_StringView_FromDataAndSize(value.data(), value.size()));
+        val_msg, CopyStdStringToUpbString(value, arena));
     ::google_protobuf_Struct_fields_set(
-        struct_msg, upb_StringView_FromDataAndSize(name.data(), name.size()),
-        val_msg, arena);
+        struct_msg, CopyStdStringToUpbString(name, arena), val_msg, arena);
   };
   for (const auto& attr : attributes) {
     if (attr == "request.path" || attr == "request.url_path") {
@@ -579,8 +577,7 @@ class UpbStructHeadersEncoder {
       ::google_protobuf_Value* val_msg = ::google_protobuf_Value_new(arena);
       ::google_protobuf_Value_set_struct_value(val_msg, headers_struct);
       ::google_protobuf_Struct_fields_set(
-          struct_msg, upb_StringView_FromDataAndSize(attr.data(), attr.size()),
-          val_msg, arena);
+          struct_msg, CopyStdStringToUpbString(attr, arena), val_msg, arena);
     } else if (attr == "request.referer" || attr == "request.useragent" ||
                attr == "request.id") {
       absl::string_view key;
