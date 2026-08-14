@@ -33,8 +33,8 @@ GRPC_NODE_REPO=grpc/grpc-node
 GRPC_NODE_GITREF=master
 GRPC_RUST_REPO=grpc/grpc-rust
 GRPC_RUST_GITREF=master
-TEST_INFRA_REPO=grpc/test-infra
-TEST_INFRA_GITREF=master
+TEST_INFRA_REPO=arjan-bal/test-infra
+TEST_INFRA_GITREF=bump-php
 
 # Set up environment variables.
 LOAD_TEST_PREFIX="${KOKORO_BUILD_INITIATOR}"
@@ -146,13 +146,13 @@ disableTestsRegex() {
 # List all languages.
 declare -A useLanguage=(
   [c++]=1
-  [dotnet]=1
-  [go]=1
-  [java]=1
-  [node]=1
-  [python]=1
-  [ruby]=1
-  [rust]=1
+  # [dotnet]=1
+  # [go]=1
+  # [java]=1
+  # [node]=1
+  # [python]=1
+  # [ruby]=1
+  # [rust]=1
   [php8]=1
 )
 
@@ -246,7 +246,7 @@ regexArgs8core=(-r "$(disableTestsRegex "${disabledTests8core[@]}")")
 regexArgs32core=(-r "$(disableTestsRegex "${disabledTests32core[@]}")")
 
 buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" "${configLangArgs8core[@]}" "${regexArgs8core[@]}"
-buildConfigs "${WORKER_POOL_32CORE}" "${BIGQUERY_TABLE_32CORE}" "${configLangArgs32core[@]}" "${regexArgs32core[@]}"
+# buildConfigs "${WORKER_POOL_32CORE}" "${BIGQUERY_TABLE_32CORE}" "${configLangArgs32core[@]}" "${regexArgs32core[@]}"
 
 # Delete prebuilt images on exit.
 deleteImages() {
@@ -266,9 +266,8 @@ time ../test-infra/bin/prepare_prebuilt_workers "${runnerLangArgs[@]}" \
 # Run tests.
 time ../test-infra/bin/runner \
   -i "loadtest_with_prebuilt_workers_${WORKER_POOL_8CORE}.yaml" \
-  -i "loadtest_with_prebuilt_workers_${WORKER_POOL_32CORE}.yaml" \
   -log-url-prefix "${LOG_URL_PREFIX}" \
   -polling-interval 5s \
   -delete-successful-tests \
-  -c "${WORKER_POOL_8CORE}:2" -c "${WORKER_POOL_32CORE}:2" \
+  -c "${WORKER_POOL_8CORE}:2" \
   -o "runner/sponge_log.xml"
