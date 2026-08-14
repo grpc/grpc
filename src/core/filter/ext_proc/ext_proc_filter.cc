@@ -288,13 +288,21 @@ ExtProcFilter::ExtProcChannel::~ExtProcChannel() {
 //                                     ||
 //  LOOP 2: Read-From-Server Pipeline Loop [HandleReadFromServerLoop()]
 //  +-----------------------------------------------------------------------+
-//  | TrySeq(                                                               |
-//  |     server_initial_metadata_latch_.Wait()                             |
-//  |       -> HandleInitialMetadataFromServer(),                           |
-//  |     ForEach(server_to_client_messages_.receiver)                      |
-//  |       -> HandleMessageFromServer(),                                   |
-//  |     server_trailing_metadata_latch_.Wait()                            |
-//  |       -> HandleTrailingMetadataFromServer())                          |
+//  | Race(                                                                 |
+//  |     // Branch 1: Trailing metadata (early arrival or after messages)  |
+//  |     Seq(                                                              |
+//  |         server_trailing_metadata_latch_.Wait(),                       |
+//  |         If(is_early,                                                  |
+//  |            HandleTrailingMetadataFromServer(),                        |
+//  |            Seq(WaitFor(kMessagesComplete),                            |
+//  |                HandleTrailingMetadataFromServer()))),                 |
+//  |     // Branch 2: Initial metadata and message pipeline                |
+//  |     TrySeq(                                                           |
+//  |         server_initial_metadata_latch_.Wait()                         |
+//  |           -> HandleInitialMetadataFromServer(),                       |
+//  |         ForEach(server_to_client_messages_.receiver)                  |
+//  |           -> HandleMessageFromServer(),                               |
+//  |         Signal(kMessagesComplete)))                                   |
 //  +-----------------------------------------------------------------------+
 //                                     ||
 //                     Joined via TryJoin() in Run()
@@ -313,14 +321,18 @@ ExtProcFilter::ExtProcChannel::~ExtProcChannel() {
 //  LOOP 4: Downstream Server Event Forwarding Loop
 //  [SpawnReadFromServerLoop()]
 //  +-----------------------------------------------------------------------+
-//  | Seq(                                                                  |
-//  |     initiator_.PullServerInitialMetadata()                            |
-//  |       -> server_initial_metadata_latch_.Set(),                        |
-//  |     ForEach(MessagesFrom(initiator_))                                 |
-//  |       -> server_to_client_messages_.sender.Push(),                    |
-//  |     server_to_client_messages_.sender.MarkClosed(),                   |
-//  |     initiator_.PullServerTrailingMetadata()                           |
-//  |       -> server_trailing_metadata_latch_.Set())                       |
+//  | Race(                                                                 |
+//  |     // Branch 1: Trailing metadata / early cancellation               |
+//  |     Seq(                                                              |
+//  |         initiator_.PullServerTrailingMetadata(),                      |
+//  |         server_to_client_messages_.sender.MarkClosed(),               |
+//  |         server_trailing_metadata_latch_.Set()),                       |
+//  |     // Branch 2: Initial metadata and streaming messages              |
+//  |     TrySeq(                                                           |
+//  |         initiator_.PullServerInitialMetadata()                        |
+//  |           -> server_initial_metadata_latch_.Set(),                    |
+//  |         ForEach(MessagesFrom(initiator_))                             |
+//  |           -> server_to_client_messages_.sender.Push()))               |
 //  +-----------------------------------------------------------------------+
 
 class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {

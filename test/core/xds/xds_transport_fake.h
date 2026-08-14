@@ -187,7 +187,6 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
                      bool abort_on_undrained_messages)
         : factory_(std::move(factory)),
           server_key_(server.Key()),
-          server_uri_(server.server_uri()),
           auto_complete_messages_from_client_(
               auto_complete_messages_from_client),
           abort_on_undrained_messages_(abort_on_undrained_messages),
@@ -212,7 +211,6 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     FakeXdsTransportFactory* factory() const { return factory_.get(); }
 
     const std::string& server_key() const { return server_key_; }
-    const std::string& server_uri() const { return server_uri_; }
 
    private:
     void StartConnectivityFailureWatch(
@@ -229,7 +227,6 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     WeakRefCountedPtr<FakeXdsTransportFactory> factory_;
     std::string server_key_;
-    std::string server_uri_;
     const bool auto_complete_messages_from_client_;
     const bool abort_on_undrained_messages_;
     std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
