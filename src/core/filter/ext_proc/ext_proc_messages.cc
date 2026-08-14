@@ -443,10 +443,8 @@ void SetExtProcAttributes(
   if (attributes == nullptr) return;
   constexpr absl::string_view kAttributeKey = "envoy.filters.http.ext_proc";
   envoy_service_ext_proc_v3_ProcessingRequest_attributes_set(
-      request,
-      upb_StringView_FromDataAndSize(kAttributeKey.data(),
-                                     kAttributeKey.size()),
-      attributes, arena);
+      request, CopyStdStringToUpbString(kAttributeKey, arena), attributes,
+      arena);
 }
 
 void SetExtProcProtocolConfig(
@@ -663,9 +661,9 @@ absl::StatusOr<std::string> CreateExtProcClientBodyRequest(
   return CreateRequestAndSerialize(
       arena, attributes, observability_mode, processing_mode,
       [&](envoy_service_ext_proc_v3_ProcessingRequest* request) {
-        SetExtProcRequestBody(
-            arena, upb_StringView_FromDataAndSize(body.data(), body.size()),
-            end_of_stream, end_of_stream_without_message, request);
+        SetExtProcRequestBody(arena, CopyStdStringToUpbString(body, arena),
+                              end_of_stream, end_of_stream_without_message,
+                              request);
       });
 }
 
@@ -676,9 +674,8 @@ absl::StatusOr<std::string> CreateExtProcServerBodyRequest(
   return CreateRequestAndSerialize(
       arena, attributes, observability_mode, processing_mode,
       [&](envoy_service_ext_proc_v3_ProcessingRequest* request) {
-        SetExtProcResponseBody(
-            arena, upb_StringView_FromDataAndSize(body.data(), body.size()),
-            request);
+        SetExtProcResponseBody(arena, CopyStdStringToUpbString(body, arena),
+                               request);
       });
 }
 

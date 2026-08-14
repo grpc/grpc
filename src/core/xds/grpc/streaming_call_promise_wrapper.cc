@@ -100,12 +100,12 @@ void XdsStreamingCallPromiseWrapper::OnRequestSent(bool ok) {
   if (!ok) {
     send_state_.store(SendState::kSendFailed);
   } else {
-    SendState state = send_state_.load();
-    if (state == SendState::kSendMessageInFlightAndHalfCloseRequested) {
-      send_state_.store(SendState::kHalfCloseInFlight);
-      call_->SendHalfClose();
-    } else if (state == SendState::kSendMessageInFlight) {
-      send_state_.store(SendState::kIdle);
+    SendState state = SendState::kSendMessageInFlight;
+    if (!send_state_.compare_exchange_strong(state, SendState::kIdle)) {
+      if (state == SendState::kSendMessageInFlightAndHalfCloseRequested) {
+        send_state_.store(SendState::kHalfCloseInFlight);
+        call_->SendHalfClose();
+      }
     }
   }
   // Wake any waiting send promise.
