@@ -753,34 +753,35 @@ auto ExtProcFilter::ExtProcCall::SendMessageToSideStream(std::string payload) {
 // downstream and immediately forwards them across inter-activity mechanisms
 // to the handler_ activity.
 void ExtProcFilter::ExtProcCall::SpawnReadFromServerLoop() {
+  initiator_.SpawnGuarded("pull_server_trailing_metadata", [self =
+                                                                WeakRef()]() {
+    return Seq(self->initiator_.PullServerTrailingMetadata(),
+               [self](ServerMetadataHandle metadata) -> StatusFlag {
+                 self->server_to_client_messages_.sender.MarkClosed();
+                 self->server_trailing_metadata_latch_.Set(std::move(metadata));
+                 return Success{};
+               });
+  });
   initiator_.SpawnGuarded("read_from_server", [self = WeakRef()]() {
     GRPC_TRACE_LOG(ext_proc_filter, INFO)
         << self->DebugTag() << "read_from_server task started";
-    return Race(
-        Seq(self->initiator_.PullServerTrailingMetadata(),
-            [self](ServerMetadataHandle metadata) -> StatusFlag {
-              self->server_to_client_messages_.sender.MarkClosed();
-              self->server_trailing_metadata_latch_.Set(std::move(metadata));
-              return Success{};
-            }),
-        TrySeq(self->initiator_.PullServerInitialMetadata(),
-               [self](std::optional<ServerMetadataHandle> metadata) {
-                 self->server_initial_metadata_latch_.Set(std::move(metadata));
-                 return Seq(
-                     ForEach(MessagesFrom(self->initiator_),
-                             [self](MessageHandle message) {
-                               return Map(
-                                   self->server_to_client_messages_.sender.Push(
+    return TrySeq(
+        self->initiator_.PullServerInitialMetadata(),
+        [self](std::optional<ServerMetadataHandle> metadata) {
+          self->server_initial_metadata_latch_.Set(std::move(metadata));
+          return Seq(
+              ForEach(MessagesFrom(self->initiator_),
+                      [self](MessageHandle message) {
+                        return Map(self->server_to_client_messages_.sender.Push(
                                        std::move(message)),
                                    [](bool x) { return StatusFlag(x); });
-                             }),
-                     [](StatusFlag status) {
-                       return If(
-                           !status.ok(),
-                           [status]() { return Immediate(status); },
-                           []() { return Never<StatusFlag>(); });
-                     });
-               }));
+                      }),
+              [](StatusFlag status) {
+                return If(
+                    !status.ok(), [status]() { return Immediate(status); },
+                    []() { return Never<StatusFlag>(); });
+              });
+        });
   });
 }
 
@@ -1593,10 +1594,16 @@ auto ExtProcFilter::ExtProcCall::HandleTrailingMetadataFromServer(
                                     << self->DebugTag()
                                     << "Sending server trailing metadata "
                                        "(observability mode)";
-                                self->handler_.SpawnPushServerTrailingMetadata(
-                                    std::move(*md));
-                                return self->SendMessageToSideStream(
-                                    std::move(*payload_ptr));
+                                return Seq(
+                                    self->SendMessageToSideStream(
+                                        std::move(*payload_ptr)),
+                                    [self,
+                                     md](StatusFlag) mutable -> StatusFlag {
+                                      self->handler_
+                                          .SpawnPushServerTrailingMetadata(
+                                              std::move(*md));
+                                      return Success{};
+                                    });
                               },
                               [self, payload_ptr, md]() mutable {
                                 return If(
@@ -1920,6 +1927,7 @@ absl::StatusOr<RefCountedPtr<ExtProcFilter>> ExtProcFilter::Create(
 ExtProcFilter::ExtProcFilter(const ChannelArgs& args,
                              RefCountedPtr<const Config> config)
     : V3InterceptorToV2Bridge<ExtProcFilter>(args),
+      is_server_(args.GetBool(GRPC_ARG_IS_SERVER_FILTER_STACK).value_or(false)),
       config_(std::move(config)),
       event_engine_(
           args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
