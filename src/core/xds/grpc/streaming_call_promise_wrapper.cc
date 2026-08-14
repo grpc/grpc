@@ -24,6 +24,7 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/status_flag.h"
+#include "src/core/util/orphanable.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
@@ -108,23 +109,23 @@ void XdsStreamingCallPromiseWrapper::OnRequestSent(bool ok) {
     }
   }
   // Wake any waiting send promise.
-  send_message_waker_.Wakeup();
+  TakeSendMessageWaker().Wakeup();
 }
 
 void XdsStreamingCallPromiseWrapper::OnRecvMessage(absl::string_view payload) {
   recv_message_ = std::string(payload);
   RecvState expected = RecvState::kRecvMessageInFlight;
   recv_state_.compare_exchange_strong(expected, RecvState::kIdle);
-  recv_message_waker_.Wakeup();
+  TakeRecvMessageWaker().Wakeup();
 }
 
 void XdsStreamingCallPromiseWrapper::OnStatusReceived(absl::Status status) {
   status_ = std::move(status);
   RecvState prev_state = recv_state_.exchange(RecvState::kReceivedStatus);
   if (prev_state == RecvState::kRecvMessageInFlight) {
-    recv_message_waker_.Wakeup();
+    TakeRecvMessageWaker().Wakeup();
   }
-  recv_status_waker_.Wakeup();
+  TakeRecvStatusWaker().Wakeup();
 }
 
 void XdsStreamingCallPromiseWrapper::SendHalfClose() {
