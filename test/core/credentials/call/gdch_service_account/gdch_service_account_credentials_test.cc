@@ -16,22 +16,24 @@
 
 #include "src/core/credentials/call/gdch_service_account/gdch_service_account_credentials.h"
 
-#include <gtest/gtest.h>
-
 #include <string>
 #include <vector>
 
-#include "src/core/util/http_client/parser.h"
-#include "src/core/util/json/json.h"
-#include "src/core/util/json/json_reader.h"
-#include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/time.h"
-#include "test/core/test_util/test_config.h"
+#include <gtest/gtest.h>
+
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
+
+#include "src/core/util/http_client/parser.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_reader.h"
+#include "src/core/util/json/json_writer.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace {
@@ -277,7 +279,7 @@ TEST_F(GDCHServiceAccountCredentialsTest,
 TEST_F(GDCHServiceAccountCredentialsTest, CreateSuccess) {
   Json::Object obj = CreateValidServiceAccountObject();
   absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> creds =
-      GDCHServiceAccountCredentials::Create(Json::FromObject(obj),
+      GDCHServiceAccountCredentials::Create(JsonDump(Json::FromObject(obj)),
                                             "https://my-audience.com");
   ASSERT_TRUE(creds.ok()) << creds.status().ToString();
   ASSERT_NE(*creds, nullptr);
@@ -288,7 +290,7 @@ TEST_F(GDCHServiceAccountCredentialsTest, CreateSuccess) {
 
 TEST_F(GDCHServiceAccountCredentialsTest, CreateFailureInvalidJson) {
   absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> creds =
-      GDCHServiceAccountCredentials::Create(Json::FromString("not-an-object"),
+      GDCHServiceAccountCredentials::Create("not-a-valid-json",
                                             "https://my-audience.com");
   EXPECT_FALSE(creds.ok());
 }
@@ -460,7 +462,7 @@ TEST_F(GDCHServiceAccountCredentialsTest,
 TEST_F(GDCHServiceAccountCredentialsTest, ExtractTokenSuccess) {
   Json::Object obj = CreateValidServiceAccountObject();
   absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> creds =
-      GDCHServiceAccountCredentials::Create(Json::FromObject(obj),
+      GDCHServiceAccountCredentials::Create(JsonDump(Json::FromObject(obj)),
                                             "https://my-audience.com");
   ASSERT_TRUE(creds.ok()) << creds.status().ToString();
 
@@ -480,7 +482,7 @@ TEST_F(GDCHServiceAccountCredentialsTest, ExtractTokenSuccess) {
 TEST_F(GDCHServiceAccountCredentialsTest, ExtractTokenFailureInvalidJson) {
   Json::Object obj = CreateValidServiceAccountObject();
   absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> creds =
-      GDCHServiceAccountCredentials::Create(Json::FromObject(obj),
+      GDCHServiceAccountCredentials::Create(JsonDump(Json::FromObject(obj)),
                                             "https://my-audience.com");
   ASSERT_TRUE(creds.ok()) << creds.status().ToString();
 

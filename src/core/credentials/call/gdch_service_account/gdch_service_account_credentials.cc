@@ -16,20 +16,28 @@
 
 #include "src/core/credentials/call/gdch_service_account/gdch_service_account_credentials.h"
 
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
 #include <openssl/bio.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
-#include <string.h>
 
 #include <array>
 #include <memory>
 #include <optional>
 #include <string>
 #include <utility>
+
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/escaping.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
 
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -48,13 +56,6 @@
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/uri.h"
 #include "src/core/util/validation_errors.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/escaping.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace {
@@ -308,9 +309,11 @@ void GDCHServiceAccountCredentials::Info::JsonPostLoad(
 }
 
 absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>>
-GDCHServiceAccountCredentials::Create(const Json& key_file_contents,
+GDCHServiceAccountCredentials::Create(absl::string_view key_file_contents,
                                       std::string audience) {
-  absl::StatusOr<Info> info = LoadFromJson<Info>(key_file_contents);
+  absl::StatusOr<Json> json = JsonParse(key_file_contents);
+  if (!json.ok()) return json.status();
+  absl::StatusOr<Info> info = LoadFromJson<Info>(*json);
   if (!info.ok()) return info.status();
   absl::StatusOr<URI> token_url = URI::Parse(info->token_uri);
   if (!token_url.ok()) return token_url.status();
@@ -474,15 +477,14 @@ GDCHServiceAccountCredentials::ExtractToken(
 
 grpc_call_credentials* grpc_gdch_service_account_credentials_create(
     const char* json_string, const char* audience_string) {
-  absl::StatusOr<grpc_core::Json> json = grpc_core::JsonParse(json_string);
-  if (!json.ok()) {
-    LOG(ERROR) << "GDCH service account credentials creation failed. Error: "
-               << json.status();
+  if (json_string == nullptr || audience_string == nullptr) {
+    LOG(ERROR) << "GDCH service account credentials creation failed: "
+               << "json_string or audience_string is null.";
     return nullptr;
   }
   absl::StatusOr<
       grpc_core::RefCountedPtr<grpc_core::GDCHServiceAccountCredentials>>
-      creds = grpc_core::GDCHServiceAccountCredentials::Create(*json,
+      creds = grpc_core::GDCHServiceAccountCredentials::Create(json_string,
                                                                audience_string);
   if (!creds.ok()) {
     LOG(ERROR) << "GDCH service account credentials creation failed. Error: "
