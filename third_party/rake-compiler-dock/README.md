@@ -41,7 +41,7 @@ bundle exec rake build:images
 Tag the locally built images from the upstream reference prefix (`ghcr.io/rake-compiler/rake-compiler-dock-image`) to the gRPC public testing images repository prefix (`us-docker.pkg.dev/grpc-testing/testing-images-public/rake-compiler-dock-image`).
 
 ```bash
-docker image ls --filter "reference=ghcr.io/rake-compiler/rake-compiler-dock-image" --format "{{.Repository}}:{{.Tag}}" | grep '1\.12\.0' | sed -E 's@^[^:]+:@@' | xargs -r -n1 -I{} docker tag ghcr.io/rake-compiler/rake-compiler-dock-image:{} us-docker.pkg.dev/grpc-testing/testing-images-public/rake-compiler-dock-image:{}
+docker image ls --filter "reference=ghcr.io/rake-compiler/rake-compiler-dock-image" --format "{{.Tag}}" | grep '1\.12\.0' | xargs -r -n1 -I{} docker tag ghcr.io/rake-compiler/rake-compiler-dock-image:{} us-docker.pkg.dev/grpc-testing/testing-images-public/rake-compiler-dock-image:{}
 ```
 
 ### 4. Upload customized images
