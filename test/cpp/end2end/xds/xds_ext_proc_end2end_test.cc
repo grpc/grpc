@@ -663,8 +663,10 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
 
     ~AsyncBidiStream() override {
       grpc_core::MutexLock lock(&mu_);
-      while (write_state_ == OpState::kInFlight ||
-             read_state_ == OpState::kInFlight) {
+      while (!status_.has_value() &&
+             (write_state_ == OpState::kInFlight ||
+              read_state_ == OpState::kInFlight ||
+              writes_done_state_ == OpState::kInFlight)) {
         cv_.Wait(&mu_);
       }
     }
@@ -705,6 +707,7 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
     void StartWritesDone() {
       grpc_core::MutexLock lock(&mu_);
       if (status_.has_value()) return;
+      writes_done_state_ = OpState::kInFlight;
       ClientBidiReactor::StartWritesDone();
     }
 
@@ -811,6 +814,15 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
     void OnDone(const Status& s) override {
       grpc_core::MutexLock lock(&mu_);
       status_ = s;
+      if (write_state_ == OpState::kInFlight) {
+        write_state_ = OpState::kFailed;
+      }
+      if (read_state_ == OpState::kInFlight) {
+        read_state_ = OpState::kFailed;
+      }
+      if (writes_done_state_ == OpState::kInFlight) {
+        writes_done_state_ = OpState::kFailed;
+      }
       cv_.SignalAll();
     }
 
@@ -824,6 +836,7 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
         MetadataState::kPending;
     OpState write_state_ ABSL_GUARDED_BY(mu_) = OpState::kIdle;
     OpState read_state_ ABSL_GUARDED_BY(mu_) = OpState::kIdle;
+    OpState writes_done_state_ ABSL_GUARDED_BY(mu_) = OpState::kIdle;
     std::optional<Status> status_ ABSL_GUARDED_BY(mu_);
   };
 
@@ -1241,6 +1254,7 @@ TEST_P(XdsExtProcEnd2endTest,
 
 TEST_P(XdsExtProcEnd2endTest, TrailersOnlyProcessingModeAllEnabled) {
   CreateAndStartBackends(1);
+  ResetStubWithUniqueArg();
   auto ext_proc_config = ExtProcFilterConfigBuilder()
                              .SetTargetUri(ext_proc_server_->target())
                              .SetInsecureChannelCredentials()
@@ -1282,6 +1296,7 @@ TEST_P(XdsExtProcEnd2endTest, TrailersOnlyProcessingModeAllEnabled) {
     } else if (req->has_response_headers()) {
       ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse(
           {{kResponseHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
+      break;
     } else {
       FAIL() << "Unexpected request type: " << req->DebugString();
     }
@@ -1297,6 +1312,7 @@ TEST_P(XdsExtProcEnd2endTest, TrailersOnlyProcessingModeAllEnabled) {
 TEST_P(XdsExtProcEnd2endTest,
        TrailersOnlyProcessingModeAllEnabledWithObservabilityMode) {
   CreateAndStartBackends(1);
+  ResetStubWithUniqueArg();
   auto ext_proc_config = ExtProcFilterConfigBuilder()
                              .SetTargetUri(ext_proc_server_->target())
                              .SetInsecureChannelCredentials()
@@ -1850,6 +1866,8 @@ TEST_P(XdsExtProcEnd2endTest,
   EXPECT_TRUE(next_req->has_request_body());
   ext_proc_stream->SendStatus(absl::ResourceExhaustedError(
       "Call closed by ext_proc server on request body"));
+  EchoResponse response;
+  stream.ReadMessage(&response);
   Status status = stream.Finish();
   EXPECT_THAT(
       status,
@@ -1962,6 +1980,7 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamEarlyHalfCloseWithMessageFailure) {
   EXPECT_EQ(response.message(), kMessage1Mutated);
   request.set_message(kMessage2);
   stream.StartWrite(request);
+  (void)stream.WaitForWriteDone();
   EXPECT_FALSE(stream.ReadMessage(&response));
   Status status = stream.Finish();
   EXPECT_THAT(status,
@@ -2020,6 +2039,7 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamEarlyHalfCloseWithoutMessageFailure) {
   EchoResponse response;
   request.set_message(kMessage2);
   stream.StartWrite(request);
+  (void)stream.WaitForWriteDone();
   EXPECT_FALSE(stream.ReadMessage(&response));
   Status status = stream.Finish();
   EXPECT_THAT(status,
@@ -3985,9 +4005,9 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseRequestBodyFailureModeFalse) {
   EchoRequest request;
   request.set_message(kMessage1);
   stream.StartWrite(request);
+  (void)stream.WaitForWriteDone();
   EchoResponse response;
   EXPECT_FALSE(stream.ReadMessage(&response));
-  stream.StartWritesDone();
   Status status = stream.Finish();
   EXPECT_THAT(status, GrpcStatusIs(StatusCode::INTERNAL,
                                    ::testing::HasSubstr(
@@ -4074,7 +4094,7 @@ TEST_P(XdsExtProcEnd2endTest,
   ext_proc_stream->SendResponseAndStatus(
       MakeRequestBodyMutationResponse(req2->request_body().body()),
       absl::OkStatus());
-  stream.StartWritesDone();
+  (void)stream.WaitForWriteDone();
   Status status = stream.Finish();
   EXPECT_THAT(status, GrpcStatusIs(StatusCode::INTERNAL,
                                    ::testing::HasSubstr(
@@ -4117,7 +4137,7 @@ TEST_P(XdsExtProcEnd2endTest,
   ASSERT_TRUE(req2.has_value());
   EXPECT_TRUE(req2->has_request_body());
   ext_proc_stream->SendStatus(absl::OkStatus());
-  stream.StartWritesDone();
+  (void)stream.WaitForWriteDone();
   Status status = stream.Finish();
   EXPECT_THAT(status, GrpcStatusIs(StatusCode::INTERNAL,
                                    ::testing::HasSubstr(
@@ -4241,9 +4261,9 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseBodyFailureModeFalse) {
   EXPECT_TRUE(req2->has_response_headers());
   ext_proc_stream->SendResponseAndStatus(
       MakeResponseHeadersMutationResponse({}), absl::OkStatus());
+  (void)stream.WaitForWriteDone();
   EchoResponse response;
   EXPECT_FALSE(stream.ReadMessage(&response));
-  stream.StartWritesDone();
   Status status = stream.Finish();
   EXPECT_THAT(status, GrpcStatusIs(StatusCode::INTERNAL,
                                    ::testing::HasSubstr(
@@ -4354,6 +4374,7 @@ TEST_P(XdsExtProcEnd2endTest,
   stream.StartReadMessage();
   request.set_message(kMessage2);
   stream.StartWrite(request);
+  (void)stream.WaitForWriteDone();
   auto req3 = ext_proc_stream->GetNextRequest();
   ASSERT_TRUE(req3.has_value());
   EXPECT_TRUE(req3->has_response_body());
@@ -4410,6 +4431,7 @@ TEST_P(XdsExtProcEnd2endTest,
   stream.StartReadMessage();
   request.set_message(kMessage2);
   stream.StartWrite(request);
+  (void)stream.WaitForWriteDone();
   auto req3 = ext_proc_stream->GetNextRequest();
   ASSERT_TRUE(req3.has_value());
   EXPECT_TRUE(req3->has_response_body());
@@ -4454,16 +4476,9 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseHeadersFailureModeFalse) {
   EchoRequest request;
   request.set_message(kMessage1);
   stream.StartWrite(request);
-  if (GetParam().filter_on_server()) {
-    EXPECT_TRUE(stream.WaitForWriteDone());
-  } else {
-    EXPECT_FALSE(stream.WaitForWriteDone());
-  }
+  (void)stream.WaitForWriteDone();
   EchoResponse response;
   EXPECT_FALSE(stream.ReadMessage(&response));
-  if (!GetParam().filter_on_server()) {
-    stream.StartWritesDone();
-  }
   Status status = stream.Finish();
   EXPECT_THAT(status, GrpcStatusIs(StatusCode::INTERNAL,
                                    ::testing::HasSubstr(

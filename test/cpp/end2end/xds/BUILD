@@ -943,7 +943,7 @@ grpc_cc_test(
         "gtest",
     ],
     linkstatic = True,
-    shard_count = 10,
+    shard_count = 5,
     tags = [
         "no_test_ios",
         "no_windows",
