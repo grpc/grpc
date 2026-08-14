@@ -36,6 +36,7 @@
 #include "envoy/service/ext_proc/v3/external_processor.grpc.pb.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/experiments/config.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
@@ -3066,10 +3067,15 @@ TEST_P(XdsExtProcEnd2endTest, ImmediateResponseForResponseBody) {
               GrpcStatusIs(StatusCode::PERMISSION_DENIED,
                            ::testing::HasSubstr(
                                "Access Denied by ExtProc (Response Body)")));
-  auto server_trailing_metadata = rpc.GetServerTrailingMetadata();
-  auto it = server_trailing_metadata.find(kImmediateResponseHeaderKey);
-  EXPECT_NE(it, server_trailing_metadata.end());
-  EXPECT_EQ(it->second, kHeaderMutatedValue);
+  // On the gRPC client side, an ImmediateResponse will set the status and
+  // trailing metadata. On the gRPC server side, it will cause the server to
+  // immediately send trailers with the specified status.
+  if (!GetParam().filter_on_server()) {
+    auto server_trailing_metadata = rpc.GetServerTrailingMetadata();
+    auto it = server_trailing_metadata.find(kImmediateResponseHeaderKey);
+    EXPECT_NE(it, server_trailing_metadata.end());
+    EXPECT_EQ(it->second, kHeaderMutatedValue);
+  }
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -3121,10 +3127,15 @@ TEST_P(XdsExtProcEnd2endTest, ImmediateResponseForResponseHeaders) {
               GrpcStatusIs(StatusCode::PERMISSION_DENIED,
                            ::testing::HasSubstr(
                                "Access Denied by ExtProc (Response Headers)")));
-  auto server_trailing_metadata = rpc.GetServerTrailingMetadata();
-  auto it = server_trailing_metadata.find(kImmediateResponseHeaderKey);
-  EXPECT_NE(it, server_trailing_metadata.end());
-  EXPECT_EQ(it->second, kHeaderMutatedValue);
+  // On the gRPC client side, an ImmediateResponse will set the status and
+  // trailing metadata. On the gRPC server side, it will cause the server to
+  // immediately send trailers with the specified status.
+  if (!GetParam().filter_on_server()) {
+    auto server_trailing_metadata = rpc.GetServerTrailingMetadata();
+    auto it = server_trailing_metadata.find(kImmediateResponseHeaderKey);
+    EXPECT_NE(it, server_trailing_metadata.end());
+    EXPECT_EQ(it->second, kHeaderMutatedValue);
+  }
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -3181,10 +3192,15 @@ TEST_P(XdsExtProcEnd2endTest, ImmediateResponseForResponseTrailers) {
                           StatusCode::PERMISSION_DENIED,
                           ::testing::HasSubstr(
                               "Access Denied by ExtProc (Response Trailers)")));
-  auto server_trailing_metadata = rpc.GetServerTrailingMetadata();
-  auto it = server_trailing_metadata.find(kImmediateResponseHeaderKey);
-  EXPECT_NE(it, server_trailing_metadata.end());
-  EXPECT_EQ(it->second, kHeaderMutatedValue);
+  // On the gRPC client side, an ImmediateResponse will set the status and
+  // trailing metadata. On the gRPC server side, it will cause the server to
+  // immediately send trailers with the specified status.
+  if (!GetParam().filter_on_server()) {
+    auto server_trailing_metadata = rpc.GetServerTrailingMetadata();
+    auto it = server_trailing_metadata.find(kImmediateResponseHeaderKey);
+    EXPECT_NE(it, server_trailing_metadata.end());
+    EXPECT_EQ(it->second, kHeaderMutatedValue);
+  }
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -4169,7 +4185,6 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseBodyFailureModeTrue) {
   auto custom_backend_service = std::make_shared<CustomBidiStreamServiceImpl>();
   auto custom_backend_server =
       std::make_unique<CustomBackendServerThread>(this, custom_backend_service);
-  custom_backend_server->Start();
   ResetStubWithUniqueArg();
   auto ext_proc_config = ExtProcFilterConfigBuilder()
                              .SetTargetUri(ext_proc_server_->target())
@@ -4182,7 +4197,13 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseBodyFailureModeTrue) {
                              .Build();
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
-  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config,
+                                   custom_backend_server->port());
+  custom_backend_server->Start();
+  if (GetParam().filter_on_server()) {
+    EXPECT_THAT(custom_backend_server->GetNextStatus(),
+                ::testing::Optional(absl::OkStatus()));
+  }
   balancer_->ads_service()->SetCdsResource(default_cluster_);
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
       {"locality0", {EdsResourceArgs::Endpoint(custom_backend_server->port())}},
@@ -4363,10 +4384,16 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseHeadersFailureModeFalse) {
   EchoRequest request;
   request.set_message(kMessage1);
   stream.StartWrite(request);
-  EXPECT_FALSE(stream.WaitForWriteDone());
+  if (GetParam().filter_on_server()) {
+    EXPECT_TRUE(stream.WaitForWriteDone());
+  } else {
+    EXPECT_FALSE(stream.WaitForWriteDone());
+  }
   EchoResponse response;
   EXPECT_FALSE(stream.ReadMessage(&response));
-  stream.StartWritesDone();
+  if (!GetParam().filter_on_server()) {
+    stream.StartWritesDone();
+  }
   Status status = stream.Finish();
   EXPECT_THAT(status, GrpcStatusIs(StatusCode::INTERNAL,
                                    ::testing::HasSubstr(
@@ -4782,9 +4809,17 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseTrailersObservability) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   })));
+  AsyncBidiStream stream;
   RpcOptions rpc_options;
-  AsyncRpc rpc;
-  rpc.StartRpc(stub_.get(), rpc_options);
+  stream.Start(stub_.get(), rpc_options);
+  EchoRequest request;
+  request.set_message(kMessage1);
+  stream.StartWrite(request);
+  EXPECT_TRUE(stream.WaitForWriteDone());
+  EchoResponse response;
+  EXPECT_TRUE(stream.ReadMessage(&response));
+  EXPECT_EQ(response.message(), kMessage1);
+  stream.StartWritesDone();
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
@@ -4792,9 +4827,8 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseTrailersObservability) {
   EXPECT_TRUE(req->has_response_trailers());
   ext_proc_stream->SendResponseAndStatus(
       MakeResponseTrailersMutationResponse({}), absl::OkStatus());
-  Status status = rpc.GetStatus();
+  Status status = stream.Finish();
   EXPECT_TRUE(status.ok()) << status.error_message();
-  EXPECT_EQ(rpc.response().message(), kRequestMessage);
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
