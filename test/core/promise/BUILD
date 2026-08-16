@@ -152,6 +152,8 @@ grpc_cc_test(
     external_deps = [
         "absl/functional:any_invocable",
         "absl/log",
+        "absl/status",
+        "absl/strings",
         "gtest",
     ],
     tags = ["promise_test"],
@@ -185,7 +187,11 @@ grpc_cc_test(
 grpc_cc_test(
     name = "race_test",
     srcs = ["race_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/status",
+        "absl/strings",
+    ],
     tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
@@ -228,13 +234,17 @@ grpc_cc_test(
     name = "if_test",
     srcs = ["if_test.cc"],
     external_deps = [
-        "gtest",
+        "absl/status:statusor",
         "absl/strings",
+        "gtest",
     ],
     tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
-    deps = ["//src/core:if"],
+    deps = [
+        "//src/core:if",
+        "//src/core:poll",
+    ],
 )
 
 grpc_cc_test(
@@ -273,10 +283,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "join_test",
     srcs = ["join_test.cc"],
-    external_deps = [
-        "gtest",
-        "@com_google_protobuf//upb/mem",
-    ],
+    external_deps = ["gtest"],
     tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
@@ -286,6 +293,7 @@ grpc_cc_test(
         "//src/core:poll",
         "//src/core:status_flag",
         "//src/proto/grpc/channelz/v2:promise_upb_proto",
+        "@com_google_protobuf//upb/mem",
     ],
 )
 
@@ -295,7 +303,6 @@ grpc_cc_test(
     external_deps = [
         "absl/utility",
         "gtest",
-        "@com_google_protobuf//upb/mem",
     ],
     tags = ["promise_test"],
     uses_event_engine = False,
@@ -303,6 +310,7 @@ grpc_cc_test(
     deps = [
         "//src/core:try_join",
         "//src/proto/grpc/channelz/v2:promise_upb_proto",
+        "@com_google_protobuf//upb/mem",
     ],
 )
 
@@ -312,7 +320,6 @@ grpc_cc_test(
     external_deps = [
         "absl/utility",
         "gtest",
-        "@com_google_protobuf//upb/mem",
     ],
     tags = ["promise_test"],
     uses_event_engine = False,
@@ -321,6 +328,7 @@ grpc_cc_test(
         "//:promise",
         "//src/core:all_ok",
         "//src/proto/grpc/channelz/v2:promise_upb_proto",
+        "@com_google_protobuf//upb/mem",
     ],
 )
 
@@ -330,7 +338,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
         "absl/strings",
-        "@com_google_protobuf//upb/mem",
     ],
     tags = ["promise_test"],
     uses_event_engine = False,
@@ -339,24 +346,30 @@ grpc_cc_test(
         "//:promise_upb",
         "//src/core:json_writer",
         "//src/core:seq",
+        "@com_google_protobuf//upb/mem",
     ],
 )
 
 grpc_cc_test(
     name = "try_seq_test",
     srcs = ["try_seq_test.cc"],
-    external_deps = [
-        "gtest",
-        "@com_google_protobuf//upb/mem",
-    ],
+    external_deps = ["gtest"],
     tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "poll_matcher",
+        "//src/core:for_each",
+        "//src/core:if",
         "//src/core:json_writer",
+        "//src/core:loop",
+        "//src/core:map",
+        "//src/core:race",
+        "//src/core:seq",
+        "//src/core:sleep",
         "//src/core:try_seq",
         "//src/proto/grpc/channelz/v2:promise_upb_proto",
+        "@com_google_protobuf//upb/mem",
     ],
 )
 
@@ -421,10 +434,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "for_each_test",
     srcs = ["for_each_test.cc"],
-    external_deps = [
-        "gtest",
-        "@com_google_protobuf//upb/mem",
-    ],
+    external_deps = ["gtest"],
     tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
@@ -444,6 +454,7 @@ grpc_cc_test(
         "//src/core:seq",
         "//src/core:try_seq",
         "//src/proto/grpc/channelz/v2:promise_upb_proto",
+        "@com_google_protobuf//upb/mem",
     ],
 )
 

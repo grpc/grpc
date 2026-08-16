@@ -50,6 +50,7 @@ ABSL_FLAG(std::string, custom_credentials_type, "",
           "User provided credentials type.");
 ABSL_FLAG(int32_t, port, 0, "Server port.");
 ABSL_FLAG(int32_t, max_send_message_size, -1, "The maximum send message size.");
+ABSL_FLAG(bool, ack_pings, true, "Whether to acknowledge HTTP/2 pings.");
 
 using grpc::Server;
 using grpc::ServerContext;
@@ -440,6 +441,9 @@ void grpc::testing::interop::RunServer(
   }
   if (absl::GetFlag(FLAGS_max_send_message_size) >= 0) {
     builder.SetMaxSendMessageSize(absl::GetFlag(FLAGS_max_send_message_size));
+  }
+  if (!absl::GetFlag(FLAGS_ack_pings)) {
+    builder.AddChannelArgument("grpc.http2.ack_pings", 0);
   }
   grpc::ServerBuilder::experimental_type(&builder).EnableCallMetricRecording(
       nullptr);

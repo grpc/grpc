@@ -360,6 +360,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        ":lb_policy_test_lib",
         "//:gpr",
         "//:grpc",
         "//:grpc_base",
@@ -367,6 +368,7 @@ grpc_cc_test(
         "//src/core:grpc_lb_policy_cds",
         "//src/core:xds_config",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
     ],
 )
 

@@ -379,9 +379,7 @@ static void unref_by(grpc_fd* fd, int n) {
 }
 
 static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
-  if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled() &&
-      !grpc_event_engine::experimental::
-          EventEngineExperimentDisabledForPython()) {
+  if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled()) {
     GRPC_TRACE_LOG(event_engine, ERROR)
         << "Creating a wrapped EventEngine grpc_fd with fd:" << fd;
     grpc_fd* new_fd = static_cast<grpc_fd*>(gpr_malloc(sizeof(grpc_fd)));
@@ -480,9 +478,7 @@ static int fd_wrapped_fd(grpc_fd* fd) {
 
 static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
                       const char* reason) {
-  if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled() &&
-      !grpc_event_engine::experimental::
-          EventEngineExperimentDisabledForPython()) {
+  if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled()) {
     GRPC_CHECK_NE(release_fd, nullptr);
     GRPC_CHECK_EQ(on_done, nullptr);
     *release_fd = fd->fd;
@@ -526,21 +522,17 @@ static void fd_unref(grpc_fd* fd) { unref_by(fd, 2); }
 static grpc_error_handle fd_shutdown_error(grpc_fd* fd) {
   if (!fd->shutdown) {
     return absl::OkStatus();
-  } else {
-    return grpc_error_set_int(
-        GRPC_ERROR_CREATE_REFERENCING("FD shutdown", &fd->shutdown_error, 1),
-        grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
   }
+  absl::Status status = absl::UnavailableError("FD shutdown");
+  grpc_core::StatusAddChild(&status, fd->shutdown_error);
+  return status;
 }
 
 static void notify_on_locked(grpc_fd* fd, grpc_closure** st,
                              grpc_closure* closure) {
   if (fd->shutdown || gpr_atm_no_barrier_load(&fd->pollhup)) {
-    grpc_core::ExecCtx::Run(
-        DEBUG_LOCATION, closure,
-        grpc_error_set_int(GRPC_ERROR_CREATE("FD shutdown"),
-                           grpc_core::StatusIntProperty::kRpcStatus,
-                           GRPC_STATUS_UNAVAILABLE));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure,
+                            absl::UnavailableError("FD shutdown"));
   } else if (*st == CLOSURE_NOT_READY) {
     // not ready ==> switch to a waiting state by setting the closure
     *st = closure;

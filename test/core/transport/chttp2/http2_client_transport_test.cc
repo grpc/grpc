@@ -230,7 +230,6 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromCall) {
                                                      /*stream_id=*/1,
                                                      /*end_stream=*/true)});
 
-  step->ThenExpectWrite([](SliceBuffer& buffer) {});
   step->ThenPerformRead({helper_.SerializedHeaderFrame(
       std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
       /*stream_id=*/1,
@@ -1502,7 +1501,7 @@ TEST_F(Http2ClientTransportTest, TestActiveStreamAllowedToDrainAfterGoaway) {
   step3->Wait();
 }
 
-// TODO(tjagtap) : [PH2][P2] Write tests similar to
+// TODO(tjagtap) : [PH2][P3] Write tests similar to
 // TestHeaderDataHeaderFrameOrder for Continuation frame read.
 
 // TODO(tjagtap) : [PH2][P4] Write tests

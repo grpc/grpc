@@ -275,39 +275,6 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
         << subchannel_wrapper_->subchannel_.get()
         << " watcher=" << watcher_.get()
         << " state=" << ConnectivityStateName(state) << " status=" << status;
-    if (!IsSubchannelConnectionScalingEnabled()) {
-      auto keepalive_throttling = status.GetPayload(kKeepaliveThrottlingKey);
-      if (keepalive_throttling.has_value()) {
-        int new_keepalive_time_ms = -1;
-        if (absl::SimpleAtoi(std::string(keepalive_throttling.value()),
-                             &new_keepalive_time_ms)) {
-          Duration new_keepalive_time =
-              Duration::Milliseconds(new_keepalive_time_ms);
-          if (new_keepalive_time >
-              subchannel_wrapper_->client_channel_->keepalive_time_) {
-            subchannel_wrapper_->client_channel_->keepalive_time_ =
-                new_keepalive_time;
-            GRPC_TRACE_LOG(client_channel, INFO)
-                << "client_channel="
-                << subchannel_wrapper_->client_channel_.get()
-                << ": throttling keepalive time to "
-                << subchannel_wrapper_->client_channel_->keepalive_time_;
-            // Propagate the new keepalive time to all subchannels. This is so
-            // that new transports created by any subchannel (and not just the
-            // subchannel that received the GOAWAY), use the new keepalive time.
-            for (auto& [subchannel, _] :
-                 subchannel_wrapper_->client_channel_->subchannel_map_) {
-              subchannel->ThrottleKeepaliveTime(new_keepalive_time);
-            }
-          }
-        } else {
-          LOG(ERROR) << "client_channel="
-                     << subchannel_wrapper_->client_channel_.get()
-                     << ": Illegal keepalive throttling value "
-                     << std::string(keepalive_throttling.value());
-        }
-      }
-    }
     // Propagate status only in state TF.
     // We specifically want to avoid propagating the status for
     // state IDLE that the real subchannel gave us only for the
@@ -585,6 +552,12 @@ absl::StatusOr<RefCountedPtr<Channel>> ClientChannel::Create(
   // Get URI to resolve, using proxy mapper if needed.
   if (target.empty()) {
     return absl::InternalError("target URI is empty in client channel");
+  }
+  auto channel_args_mutator =
+      grpc_channel_args_get_client_channel_creation_mutator();
+  if (channel_args_mutator != nullptr) {
+    channel_args =
+        channel_args_mutator(target.c_str(), channel_args, GRPC_CLIENT_CHANNEL);
   }
   std::string uri_to_resolve = CoreConfiguration::Get()
                                    .proxy_mapper_registry()

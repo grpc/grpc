@@ -81,7 +81,7 @@ PemKeyCertPairList MakeCertKeyPairs(absl::string_view private_key,
   if (private_key.empty() && certs.empty()) {
     return {};
   }
-  return PemKeyCertPairList{PemKeyCertPair(std::string(private_key), certs)};
+  return {{std::string(private_key), certs}};
 }
 
 std::string GetFileContents(const std::string& path) {

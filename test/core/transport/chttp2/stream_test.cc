@@ -471,7 +471,8 @@ TEST_F(StreamIntegrationTest, ServerInitiateResetOpen) {
 
 TEST(StreamTest, Minimal) {
   ExecCtx exec_ctx;
-  chttp2::TransportFlowControl tfc(/*name=*/"test", /*enable_bdp_probe=*/false,
+  chttp2::TransportFlowControl tfc(/*peer_name=*/"test",
+                                   /*enable_bdp_probe=*/false,
                                    /*memory_owner=*/nullptr);
   RefCountedPtr<Arena> arena = SimpleArenaAllocator()->MakeArena();
   arena->SetContext<EventEngine>(
