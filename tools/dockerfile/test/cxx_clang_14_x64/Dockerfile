@@ -61,6 +61,14 @@ RUN python3 -m pip install twisted
 
 RUN mkdir /var/local/jenkins
 
+#=================
+# Install cmake from bullseye-backports
+# Note that this step should be only used for Debian 11 (bullseye) images.
+
+RUN echo "deb http://archive.debian.org/debian bullseye-backports main" > /etc/apt/sources.list.d/bullseye-backports.list && \
+    apt-get update && \
+    apt-get install -y -t bullseye-backports cmake
+
 
 # Define the default command.
 CMD ["bash"]

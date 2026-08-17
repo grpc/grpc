@@ -40,6 +40,7 @@
   "tests.unit._api_test.AllTest",
   "tests.unit._api_test.ChannelConnectivityTest",
   "tests.unit._api_test.ChannelTest",
+  "tests.unit._api_test.StatusCodeTest",
   "tests.unit._auth_context_test.AuthContextTest",
   "tests.unit._auth_test.AccessTokenAuthMetadataPluginTest",
   "tests.unit._auth_test.GoogleCallCredentialsTest",
