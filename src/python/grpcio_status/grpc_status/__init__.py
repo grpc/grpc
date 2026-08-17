@@ -18,6 +18,6 @@ from ._common import StatusDetailsMetadataDecodeError
 from ._common import StatusDetailsMetadataValueError
 
 __all__ = [
-    "StatusDetailsMetadataValueError",
     "StatusDetailsMetadataDecodeError",
+    "StatusDetailsMetadataValueError",
 ]

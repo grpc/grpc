@@ -17,8 +17,8 @@ import logging
 import traceback
 import unittest
 
-import google.protobuf.message
 from google.protobuf import any_pb2
+import google.protobuf.message
 from google.rpc import code_pb2
 from google.rpc import error_details_pb2
 from google.rpc import status_pb2

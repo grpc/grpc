@@ -90,7 +90,9 @@ async def from_call(call: aio.Call):
             try:
                 rich_status = status_pb2.Status.FromString(value)
             except google.protobuf.message.DecodeError as decode_err:
-                raise StatusDetailsMetadataDecodeError(decode_err) from decode_err
+                raise StatusDetailsMetadataDecodeError(
+                    decode_err
+                ) from decode_err
             if code.value[0] != rich_status.code:
                 raise StatusDetailsMetadataValueError(
                     "Code in Status proto (%s) doesn't match status code (%s)"
