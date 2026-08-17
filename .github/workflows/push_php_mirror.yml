@@ -26,9 +26,9 @@ jobs:
           path: mirror
           token: ${{ secrets.PHP_EXT_TOKEN }}
 
-      - name: Clean Mirror Repo (except .git & .gitignore)
+      - name: Clean Mirror Repo (except .git & .gitignore & .github)
         run: |
-          find mirror -maxdepth 1 ! -name '.git' ! -name '.gitignore' ! -name 'mirror' -exec rm -rf {} +
+          find mirror -maxdepth 1 ! -name '.git' ! -name '.gitignore' ! -name '.github' ! -name 'mirror' -exec rm -rf {} +
 
       - name: Sync Files to Mirror
         run: |
