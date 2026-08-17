@@ -29,12 +29,6 @@
 
 #include "opentelemetry/context/context.h"
 #include "opentelemetry/metrics/sync_instruments.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
-#include "absl/types/span.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/call/status_util.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -50,6 +44,12 @@
 #include "src/core/util/grpc_check.h"
 #include "src/cpp/ext/otel/key_value_iterable.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
+#include "absl/types/span.h"
 
 namespace grpc {
 namespace internal {

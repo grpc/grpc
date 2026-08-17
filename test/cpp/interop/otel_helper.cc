@@ -124,11 +124,12 @@ void MaybeRegisterOpenTelemetry() {
     grpc::OpenTelemetryPluginBuilder builder;
     builder.SetTracerProvider(tracer_provider);
     builder.SetMeterProvider(meter_provider);
-    std::vector<std::unique_ptr<
-        opentelemetry::context::propagation::TextMapPropagator>>
+    std::vector<
+        std::unique_ptr<opentelemetry::context::propagation::TextMapPropagator>>
         propagators;
     propagators.push_back(
-        std::make_unique<opentelemetry::trace::propagation::HttpTraceContext>());
+        std::make_unique<
+            opentelemetry::trace::propagation::HttpTraceContext>());
     propagators.push_back(
         grpc::OpenTelemetryPluginBuilder::MakeGrpcTraceBinTextMapPropagator());
     builder.SetTextMapPropagator(

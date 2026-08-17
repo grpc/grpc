@@ -23,12 +23,12 @@
 #include "opentelemetry/sdk/trace/simple_processor_factory.h"
 #include "opentelemetry/sdk/trace/tracer.h"
 #include "opentelemetry/sdk/trace/tracer_provider.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-#include "absl/synchronization/notification.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/synchronization/notification.h"
 #ifdef GRPC_POSIX_SOCKET_TCP
 #include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
 #endif  // GRPC_POSIX_SOCKET_TCP

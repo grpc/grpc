@@ -37,16 +37,16 @@
 #include "opentelemetry/metrics/sync_instruments.h"
 #include "opentelemetry/nostd/shared_ptr.h"
 #include "opentelemetry/trace/tracer.h"
-#include "absl/container/flat_hash_map.h"
-#include "absl/container/flat_hash_set.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/telemetry/instrument.h"
 #include "src/core/telemetry/metrics.h"
 #include "src/core/util/down_cast.h"
 #include "src/core/util/match.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc {
 namespace internal {
