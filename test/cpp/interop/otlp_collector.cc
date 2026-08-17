@@ -16,8 +16,8 @@
 //
 //
 
-#include <google/protobuf/util/json_util.h>
 #include <grpcpp/grpcpp.h>
+#include <grpcpp/impl/codegen/config_protobuf.h>
 
 #include <atomic>
 #include <chrono>
