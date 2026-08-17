@@ -16,7 +16,7 @@
 //
 //
 
-#include <google/protobuf/json/json.h>
+#include <google/protobuf/util/json_util.h>
 #include <grpcpp/grpcpp.h>
 
 #include <atomic>
@@ -52,11 +52,11 @@ class TraceServiceServiceImpl final
       opentelemetry::proto::collector::trace::v1::ExportTraceServiceResponse*
       /*response*/) override {
     std::string json_string;
-    google::protobuf::json::PrintOptions options;
+    google::protobuf::util::JsonPrintOptions options;
     options.add_whitespace = true;
     options.always_print_fields_with_no_presence = true;
     options.preserve_proto_field_names = true;
-    auto status = google::protobuf::json::MessageToJsonString(
+    auto status = google::protobuf::util::MessageToJsonString(
         *request, &json_string, options);
     if (!status.ok()) {
       LOG(ERROR) << "Failed to serialize ExportTraceServiceRequest to JSON: "
@@ -120,11 +120,11 @@ class MetricsServiceServiceImpl final
                       opentelemetry::proto::collector::metrics::v1::
                           ExportMetricsServiceResponse* /*response*/) override {
     std::string json_string;
-    google::protobuf::json::PrintOptions options;
+    google::protobuf::util::JsonPrintOptions options;
     options.add_whitespace = true;
     options.always_print_fields_with_no_presence = true;
     options.preserve_proto_field_names = true;
-    auto status = google::protobuf::json::MessageToJsonString(
+    auto status = google::protobuf::util::MessageToJsonString(
         *request, &json_string, options);
     if (!status.ok()) {
       LOG(ERROR) << "Failed to serialize ExportMetricsServiceRequest to JSON: "
