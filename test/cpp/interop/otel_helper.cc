@@ -36,6 +36,7 @@
 #ifdef GRPC_HAS_OTEL_TRACING
 #include <grpcpp/ext/otel_plugin.h>
 
+#include "opentelemetry/context/propagation/composite_propagator.h"
 #include "opentelemetry/exporters/otlp/otlp_grpc_exporter_factory.h"
 #include "opentelemetry/exporters/otlp/otlp_grpc_metric_exporter_factory.h"
 #include "opentelemetry/sdk/metrics/export/periodic_exporting_metric_reader_factory.h"
@@ -123,8 +124,17 @@ void MaybeRegisterOpenTelemetry() {
     grpc::OpenTelemetryPluginBuilder builder;
     builder.SetTracerProvider(tracer_provider);
     builder.SetMeterProvider(meter_provider);
-    builder.SetTextMapPropagator(
+    std::vector<std::unique_ptr<
+        opentelemetry::context::propagation::TextMapPropagator>>
+        propagators;
+    propagators.push_back(
         std::make_unique<opentelemetry::trace::propagation::HttpTraceContext>());
+    propagators.push_back(
+        grpc::OpenTelemetryPluginBuilder::MakeGrpcTraceBinTextMapPropagator());
+    builder.SetTextMapPropagator(
+        std::make_unique<
+            opentelemetry::context::propagation::CompositePropagator>(
+            std::move(propagators)));
     builder.EnableMetrics({
         "grpc.tcp.*",
         "grpc.client.*",
