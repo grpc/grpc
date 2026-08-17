@@ -238,8 +238,3 @@ py_test(
         "//src/python/grpcio_tests/tests/unit:test_common",
     ],
 )
-
-test_suite(
-    name = "security_test",
-    tests = [":_security_tests"],
-)
