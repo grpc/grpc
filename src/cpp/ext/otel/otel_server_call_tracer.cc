@@ -18,6 +18,7 @@
 
 #include "src/cpp/ext/otel/otel_server_call_tracer.h"
 
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include <array>

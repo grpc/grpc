@@ -46,7 +46,6 @@
 #include "src/cpp/ext/otel/key_value_iterable.h"
 #include "src/cpp/ext/otel/otel_client_call_tracer.h"
 #include "src/cpp/ext/otel/otel_server_call_tracer.h"
-#include "absl/log/log.h"
 #include "absl/strings/escaping.h"
 
 using opentelemetry::context::propagation::TextMapPropagator;

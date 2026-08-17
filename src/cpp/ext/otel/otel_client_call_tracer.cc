@@ -20,6 +20,7 @@
 
 #include <grpc/context_types.h>
 #include <grpc/status.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 #include <stdint.h>
@@ -165,7 +166,7 @@ OpenTelemetryPluginImpl::ClientCallTracerInterface::
 
 template <typename UnrefBehavior>
 OpenTelemetryPluginImpl::ClientCallTracerInterface::CallAttemptTracer<
-    UnrefBehavior>::~CallAttemptTracer() {
+    UnrefBehavior>::~CallAttemptTracer<UnrefBehavior>() {
   if (span_ != nullptr) {
     span_->End();
   }
