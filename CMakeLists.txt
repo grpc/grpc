@@ -402,7 +402,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 endif()
 
 option(gRPC_BUILD_GRPCPP_OTEL_PLUGIN "Build grpcpp_otel_plugin" OFF)
-if(gRPC_BUILD_GRPCPP_OTEL_PLUGIN)
+if(gRPC_BUILD_GRPCPP_OTEL_PLUGIN OR gRPC_BUILD_TESTS)
   include(cmake/opentelemetry-cpp.cmake)
 endif()
 
