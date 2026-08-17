@@ -99,11 +99,7 @@ TlsCredentials::TlsCredentials(
     grpc_core::RefCountedPtr<grpc_tls_credentials_options> options)
     : options_(std::move(options)) {}
 
-TlsCredentials::~TlsCredentials() {
-  if (cached_factory_ != nullptr) {
-    tsi_ssl_client_handshaker_factory_unref(cached_factory_);
-  }
-}
+TlsCredentials::~TlsCredentials() = default;
 
 bool TlsCredentials::CacheMatchesLocked(
     const std::shared_ptr<tsi::RootCertInfo>& root_cert_info,
@@ -125,23 +121,29 @@ TlsCredentials::GetOrCreateCachedClientHandshakerFactory(
     const std::optional<grpc_core::PemKeyCertPairList>& identity_certs,
     tsi_ssl_session_cache* ssl_session_cache,
     tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* key_logger) {
-  // Phase 1: under the lock, return on cache hit or claim creator role.
+  // Phase 1: under the lock, return on a cache hit. Otherwise claim the
+  // creator role by setting factory_creation_in_progress_ to true, which
+  // makes every other caller wait below until this one publishes or rolls
+  // back in phase 3.
   {
     grpc_core::MutexLock lock(&factory_cache_mu_);
     while (factory_creation_in_progress_) {
-      factory_cache_cv_.Wait(&factory_cache_mu_);
+      factory_creation_done_cv_.Wait(&factory_cache_mu_);
       if (CacheMatchesLocked(root_cert_info, identity_certs,
                              ssl_session_cache)) {
         GRPC_DCHECK_EQ(cached_key_logger_, key_logger);
-        return {GRPC_SECURITY_OK,
-                tsi_ssl_client_handshaker_factory_ref(cached_factory_)};
+        return {
+            GRPC_SECURITY_OK,
+            TsiSslClientHandshakerFactoryPtr(
+                tsi_ssl_client_handshaker_factory_ref(cached_factory_.get()))};
       }
     }
-    if (CacheMatchesLocked(root_cert_info, identity_certs,
-                           ssl_session_cache)) {
+    if (CacheMatchesLocked(root_cert_info, identity_certs, ssl_session_cache)) {
       GRPC_DCHECK_EQ(cached_key_logger_, key_logger);
-      return {GRPC_SECURITY_OK,
-              tsi_ssl_client_handshaker_factory_ref(cached_factory_)};
+      return {
+          GRPC_SECURITY_OK,
+          TsiSslClientHandshakerFactoryPtr(
+              tsi_ssl_client_handshaker_factory_ref(cached_factory_.get()))};
     }
     factory_creation_in_progress_ = true;
   }
@@ -154,8 +156,7 @@ TlsCredentials::GetOrCreateCachedClientHandshakerFactory(
   }
   tsi_ssl_client_handshaker_factory* new_factory = nullptr;
   grpc_security_status status = grpc_ssl_tsi_client_handshaker_factory_init(
-      pem_key_cert_pair, root_cert_info,
-      !options_->verify_server_cert(),
+      pem_key_cert_pair, root_cert_info, !options_->verify_server_cert(),
       grpc_get_tsi_tls_version(options_->min_tls_version()),
       grpc_get_tsi_tls_version(options_->max_tls_version()), ssl_session_cache,
       key_logger, options_->crl_directory().c_str(), options_->crl_provider(),
@@ -169,19 +170,19 @@ TlsCredentials::GetOrCreateCachedClientHandshakerFactory(
   // factory_creation_in_progress_ under the lock; only one waiter claims
   // the role at a time.
   if (status == GRPC_SECURITY_OK && new_factory != nullptr) {
-    if (cached_factory_ != nullptr) {
-      tsi_ssl_client_handshaker_factory_unref(cached_factory_);
-    }
-    cached_factory_ = new_factory;  // credential takes ownership of 1 ref.
+    // The credential takes ownership of 1 ref; reset() releases the ref on
+    // any factory this replaces.
+    cached_factory_.reset(new_factory);
     cached_root_cert_info_ = root_cert_info;
     cached_identity_certs_ = identity_certs;
     cached_session_cache_ = ssl_session_cache;
     cached_key_logger_ = key_logger;
-    factory_cache_cv_.SignalAll();
+    factory_creation_done_cv_.SignalAll();
     return {GRPC_SECURITY_OK,
-            tsi_ssl_client_handshaker_factory_ref(cached_factory_)};
+            TsiSslClientHandshakerFactoryPtr(
+                tsi_ssl_client_handshaker_factory_ref(cached_factory_.get()))};
   }
-  factory_cache_cv_.SignalAll();
+  factory_creation_done_cv_.SignalAll();
   return {status, nullptr};
 }
 

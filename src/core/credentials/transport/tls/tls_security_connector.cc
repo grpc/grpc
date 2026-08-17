@@ -578,7 +578,9 @@ TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
   auto [status, factory] = tls_creds->GetOrCreateCachedClientHandshakerFactory(
       use_default_roots ? nullptr : root_cert_info_, identity_certs,
       ssl_session_cache_, tls_session_key_logger_.get());
-  client_handshaker_factory_ = factory;
+  // The connector member is a raw pointer, so take the ref out of the
+  // returned owner. It is released in the destructor and above on update.
+  client_handshaker_factory_ = factory.release();
   return status;
 }
 
