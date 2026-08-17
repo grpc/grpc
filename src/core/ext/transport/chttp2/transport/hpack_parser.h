@@ -101,8 +101,9 @@ class HPackParser {
                   uint32_t metadata_size_soft_limit,
                   uint32_t metadata_size_hard_limit, Boundary boundary,
                   Priority priority, LogInfo log_info,
-                  MitigationEngine* mitigation_engine,
-                  absl::string_view peer_address = "");
+                  MitigationEngine* mitigation_engine = nullptr,
+                  absl::string_view peer_address = "",
+                  grpc_auth_context* auth_context = nullptr);
   // Start throwing away any received headers after parsing them.
   void StopBufferingFrame() { metadata_buffer_ = nullptr; }
   // Parse one slice worth of data
@@ -257,6 +258,7 @@ class HPackParser {
     ParseState parse_state = ParseState::kTop;
     MitigationEngine* mitigation_engine = nullptr;
     absl::string_view peer_address;
+    grpc_auth_context* auth_context = nullptr;
     std::variant<const HPackTable::Memento*, Slice> key;
   };
 
