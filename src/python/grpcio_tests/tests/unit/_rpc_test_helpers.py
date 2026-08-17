@@ -40,7 +40,7 @@ _STREAM_STREAM_NON_BLOCKING = "StreamStreamNonBlocking"
 TIMEOUT_SHORT = datetime.timedelta(seconds=4).total_seconds()
 
 
-class Callback(object):
+class Callback:
     def __init__(self):
         self._condition = threading.Condition()
         self._value = None
@@ -59,7 +59,7 @@ class Callback(object):
             return self._value
 
 
-class _Handler(object):
+class _Handler:
     def __init__(self, control, thread_pool):
         self._control = control
         self._thread_pool = thread_pool
@@ -394,7 +394,7 @@ def stream_stream_non_blocking_multi_callable(channel):
     )
 
 
-class BaseRPCTest(object):
+class BaseRPCTest:
     def setUp(self):
         self._control = test_control.PauseFailControl()
         self._thread_pool = thread_pool.RecordingThreadPool(max_workers=None)

@@ -191,6 +191,13 @@ struct MockPromiseEndpoint {
       std::initializer_list<grpc_event_engine::experimental::Slice> slices,
       grpc_event_engine::experimental::EventEngine* schedule_on_event_engine,
       DebugLocation whence = {});
+  void ExpectWriteAndRunMetricsSink(
+      std::initializer_list<grpc_event_engine::experimental::Slice> slices,
+      grpc_event_engine::experimental::EventEngine* schedule_on_event_engine,
+      std::vector<
+          grpc_event_engine::experimental::EventEngine::Endpoint::WriteMetric>
+          metrics = {},
+      DebugLocation whence = {});
   void ExpectWriteWithCallback(
       std::initializer_list<grpc_event_engine::experimental::Slice> slices,
       grpc_event_engine::experimental::EventEngine* schedule_on_event_engine,

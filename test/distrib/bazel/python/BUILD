@@ -196,3 +196,39 @@ py_test(
         ":helloworld_py_pb2_grpc_library_changed",
     ],
 )
+
+# Test that we can compile a Protobuf file that was generated dynamically via `genrule`.
+
+genrule(
+    name = "gen_echo_proto",
+    srcs = ["echo.proto"],
+    outs = ["gen_echo.proto"],
+    cmd = "cp $(location echo.proto) $(location gen_echo.proto)",
+)
+
+proto_library(
+    name = "gen_echo_proto_lib",
+    srcs = [":gen_echo_proto"],
+)
+
+py_proto_library(
+    name = "gen_echo_py_pb2",
+    deps = [":gen_echo_proto_lib"],
+)
+
+py_grpc_library(
+    name = "gen_echo_py_pb2_grpc",
+    srcs = [":gen_echo_proto_lib"],
+    deps = [":gen_echo_py_pb2"],
+)
+
+py_test(
+    name = "import_generated_proto_test",
+    srcs = ["import_generated_proto.py"],
+    main = "import_generated_proto.py",
+    python_version = "PY3",
+    deps = [
+        ":gen_echo_py_pb2",
+        ":gen_echo_py_pb2_grpc",
+    ],
+)

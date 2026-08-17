@@ -16,88 +16,163 @@
 
 #include "src/core/xds/grpc/xds_common_types.h"
 
-#include "src/core/util/match.h"
+#include <string>
+#include <utility>
+
+#include "src/core/call/metadata_batch.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/util/string.h"
+#include "absl/status/status.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
 //
-// CommonTlsContext::CertificateProviderPluginInstance
+// HeaderMutationRules
 //
 
-std::string CommonTlsContext::CertificateProviderPluginInstance::ToString()
-    const {
-  std::vector<std::string> contents;
-  if (!instance_name.empty()) {
-    contents.push_back(absl::StrFormat("instance_name=%s", instance_name));
+bool HeaderMutationRules::IsMutationAllowed(
+    const std::string& header_name) const {
+  // Regardless of the mutation rules, we never allow certain headers.
+  if (absl::StartsWith(header_name, ":") ||
+      absl::StartsWith(header_name, "grpc-") || header_name == "host") {
+    return false;
   }
-  if (!certificate_name.empty()) {
-    contents.push_back(
-        absl::StrFormat("certificate_name=%s", certificate_name));
+  // If true, all header mutations are disallowed, regardless of any other
+  // setting.
+  if (disallow_all) {
+    return false;
   }
-  return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
+  // If a header name matches this regex, then it will be disallowed
+  if (disallow_expression != nullptr &&
+      RE2::FullMatch(header_name, *disallow_expression)) {
+    return false;
+  }
+  // If a header name matches this regex and does not match disallow_expression,
+  // it will be allowed. If unset, then all headers not matching
+  // disallow_expression are allowed
+  if (allow_expression == nullptr ||
+      RE2::FullMatch(header_name, *allow_expression)) {
+    return true;
+  }
+  return false;
 }
 
-bool CommonTlsContext::CertificateProviderPluginInstance::Empty() const {
-  return instance_name.empty() && certificate_name.empty();
+std::string HeaderMutationRules::ToString() const {
+  std::string result = "{";
+  bool is_first = true;
+  if (disallow_all) {
+    StrAppend(result, "disallow_all=true");
+    is_first = false;
+  }
+  if (disallow_is_error) {
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "disallow_is_error=true");
+    is_first = false;
+  }
+  if (allow_expression != nullptr) {
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "allow_expression=");
+    StrAppend(result, allow_expression->pattern());
+    is_first = false;
+  }
+  if (disallow_expression != nullptr) {
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "disallow_expression=");
+    StrAppend(result, disallow_expression->pattern());
+  }
+  StrAppend(result, "}");
+  return result;
 }
 
 //
-// CommonTlsContext::CertificateValidationContext
+// XdsHeaderValueOption
 //
 
-std::string CommonTlsContext::CertificateValidationContext::ToString() const {
-  std::vector<std::string> contents;
-  Match(
-      ca_certs, [](const std::monostate&) {},
-      [&](const CertificateProviderPluginInstance& cert_provider) {
-        contents.push_back(
-            absl::StrCat("ca_certs=cert_provider", cert_provider.ToString()));
-      },
-      [&](const SystemRootCerts&) {
-        contents.push_back("ca_certs=system_root_certs{}");
-      });
-  if (!match_subject_alt_names.empty()) {
-    std::vector<std::string> san_matchers;
-    san_matchers.reserve(match_subject_alt_names.size());
-    for (const auto& match : match_subject_alt_names) {
-      san_matchers.push_back(match.ToString());
+namespace {
+
+void ApplyHeaderValueOptionMutation(const XdsHeaderValueOption& header,
+                                    grpc_metadata_batch& md) {
+  auto& [header_key, header_value] = header.header;
+  std::string buffer;
+  auto existing_value = md.GetStringValue(header_key, &buffer);
+  switch (header.append_action) {
+    case XdsHeaderValueOption::AppendAction::kAppendIfExistsOrAdd: {
+      if (!existing_value.has_value()) {
+        md.Append(header_key, Slice::FromCopiedString(header_value),
+                  [](absl::string_view, const Slice&) {});
+      } else if (!header_value.empty()) {
+        std::string concatenated_val =
+            absl::StrCat(*existing_value, ",", header_value);
+        md.Remove(absl::string_view(header_key));
+        md.Append(header_key,
+                  Slice::FromCopiedString(std::move(concatenated_val)),
+                  [](absl::string_view, const Slice&) {});
+      }
+      break;
     }
-    contents.push_back(absl::StrCat("match_subject_alt_names=[",
-                                    absl::StrJoin(san_matchers, ", "), "]"));
+    case XdsHeaderValueOption::AppendAction::kAddIfAbsent: {
+      if (!existing_value.has_value()) {
+        md.Append(header_key, Slice::FromCopiedString(header_value),
+                  [](absl::string_view, const Slice&) {});
+      }
+      break;
+    }
+    case XdsHeaderValueOption::AppendAction::kOverwriteIfExists: {
+      if (existing_value.has_value()) {
+        md.Remove(absl::string_view(header_key));
+        md.Append(header_key, Slice::FromCopiedString(header_value),
+                  [](absl::string_view, const Slice&) {});
+      }
+      break;
+    }
+    case XdsHeaderValueOption::AppendAction::kOverwriteIfExistsOrAdd: {
+      md.Remove(absl::string_view(header_key));
+      md.Append(header_key, Slice::FromCopiedString(header_value),
+                [](absl::string_view, const Slice&) {});
+      break;
+    }
   }
-  return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
 }
 
-bool CommonTlsContext::CertificateValidationContext::Empty() const {
-  return std::holds_alternative<std::monostate>(ca_certs) &&
-         match_subject_alt_names.empty();
+}  // namespace
+
+absl::Status ApplyXdsHeaderMutationsRemoval(absl::string_view remove_header,
+                                            const HeaderMutationRules* rules,
+                                            grpc_metadata_batch& md) {
+  bool allowed = true;
+  bool disallow_is_error = false;
+  if (rules != nullptr) {
+    allowed = rules->IsMutationAllowed(std::string(remove_header));
+    disallow_is_error = rules->disallow_is_error;
+  }
+  if (allowed) {
+    md.Remove(absl::string_view(remove_header));
+  } else if (disallow_is_error) {
+    return absl::InternalError(
+        absl::StrCat("Forbidden header removal: ", remove_header));
+  }
+  return absl::OkStatus();
 }
 
-//
-// CommonTlsContext
-//
-
-std::string CommonTlsContext::ToString() const {
-  std::vector<std::string> contents;
-  if (!tls_certificate_provider_instance.Empty()) {
-    contents.push_back(
-        absl::StrFormat("tls_certificate_provider_instance=%s",
-                        tls_certificate_provider_instance.ToString()));
+absl::Status ApplyXdsHeaderMutationsAddition(
+    const XdsHeaderValueOption& set_header, const HeaderMutationRules* rules,
+    grpc_metadata_batch& md) {
+  bool allowed = true;
+  bool disallow_is_error = false;
+  if (rules != nullptr) {
+    allowed = rules->IsMutationAllowed(std::string(set_header.header.first));
+    disallow_is_error = rules->disallow_is_error;
   }
-  if (!certificate_validation_context.Empty()) {
-    contents.push_back(
-        absl::StrFormat("certificate_validation_context=%s",
-                        certificate_validation_context.ToString()));
+  if (allowed) {
+    ApplyHeaderValueOptionMutation(set_header, md);
+  } else if (disallow_is_error) {
+    return absl::InternalError(
+        absl::StrCat("Forbidden header mutation: ", set_header.header.first));
   }
-  return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
-}
-
-bool CommonTlsContext::Empty() const {
-  return tls_certificate_provider_instance.Empty() &&
-         certificate_validation_context.Empty();
+  return absl::OkStatus();
 }
 
 }  // namespace grpc_core

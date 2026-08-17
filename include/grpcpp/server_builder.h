@@ -224,6 +224,10 @@ class ServerBuilder {
   /// Set the attached buffer pool for this server
   ServerBuilder& SetResourceQuota(const grpc::ResourceQuota& resource_quota);
 
+  ServerBuilder& SetEventEngine(
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine);
+
   ServerBuilder& SetOption(std::unique_ptr<grpc::ServerBuilderOption> option);
 
   /// Options for synchronous servers.
@@ -370,11 +374,6 @@ class ServerBuilder {
   }
 
   /// Experimental API, subject to change.
-  void set_fetcher(grpc_server_config_fetcher* server_config_fetcher) {
-    server_config_fetcher_ = server_config_fetcher;
-  }
-
-  /// Experimental API, subject to change.
   virtual ChannelArguments BuildChannelArgs();
 
  private:
@@ -428,6 +427,8 @@ class ServerBuilder {
   grpc::AsyncGenericService* generic_service_{nullptr};
   std::unique_ptr<ContextAllocator> context_allocator_;
   grpc::CallbackGenericService* callback_generic_service_{nullptr};
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
+      nullptr;
 
   struct {
     bool is_set;
@@ -443,7 +444,6 @@ class ServerBuilder {
       interceptor_creators_;
   std::vector<std::shared_ptr<grpc::internal::ExternalConnectionAcceptorImpl>>
       acceptors_;
-  grpc_server_config_fetcher* server_config_fetcher_ = nullptr;
   std::shared_ptr<experimental::AuthorizationPolicyProviderInterface>
       authorization_provider_;
   experimental::ServerMetricRecorder* server_metric_recorder_ = nullptr;

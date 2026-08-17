@@ -32,7 +32,7 @@ def _last_connectivity_is_not_ready(connectivities):
     return connectivities[-1] is not grpc.ChannelConnectivity.READY
 
 
-class _Callback(object):
+class _Callback:
     def __init__(self):
         self._condition = threading.Condition()
         self._connectivities = []

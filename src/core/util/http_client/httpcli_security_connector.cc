@@ -78,7 +78,8 @@ class grpc_httpcli_ssl_channel_security_connector final
                                    const tsi_ssl_root_certs_store* root_store) {
     tsi_ssl_client_handshaker_options options;
     if (pem_root_certs != nullptr) {
-      options.root_cert_info = std::make_shared<RootCertInfo>(pem_root_certs);
+      options.root_cert_info =
+          std::make_shared<tsi::RootCertInfo>(pem_root_certs);
     }
     options.root_store = root_store;
     return tsi_create_ssl_client_handshaker_factory_with_options(
@@ -93,7 +94,9 @@ class grpc_httpcli_ssl_channel_security_connector final
       tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
           handshaker_factory_, secure_peer_name_, /*network_bio_buf_size=*/0,
           /*ssl_bio_buf_size=*/0,
-          args.GetOwnedString(GRPC_ARG_TRANSPORT_PROTOCOLS), &handshaker);
+          args.GetOwnedString(GRPC_ARG_TRANSPORT_PROTOCOLS),
+          /*collection_scope=*/nullptr, /*target=*/secure_peer_name_,
+          /*locality=*/"", /*backend_service=*/"", &handshaker);
       if (result != TSI_OK) {
         LOG(ERROR) << "Handshaker creation failed with error "
                    << tsi_result_to_string(result);
@@ -135,6 +138,10 @@ class grpc_httpcli_ssl_channel_security_connector final
   ArenaPromise<absl::Status> CheckCallHost(absl::string_view,
                                            grpc_auth_context*) override {
     return ImmediateOkStatus();
+  }
+
+  UniqueTypeName type() const override {
+    return GRPC_UNIQUE_TYPE_NAME_HERE("httpcli_ssl");
   }
 
   const char* secure_peer_name() const { return secure_peer_name_; }

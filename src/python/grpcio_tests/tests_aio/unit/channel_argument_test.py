@@ -48,7 +48,7 @@ _MAX_MESSAGE_LENGTH = 1024
 _ADDRESS_TOKEN_ERRNO = errno.EADDRINUSE, errno.ENOSR
 
 
-class _TestPointerWrapper(object):
+class _TestPointerWrapper:
     def __int__(self):
         return 123456
 

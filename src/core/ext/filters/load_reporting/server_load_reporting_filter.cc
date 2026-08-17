@@ -131,7 +131,11 @@ std::string GetCensusSafeClientIpString(
     }
     return client_ip;
   } else {
-    GPR_UNREACHABLE_CODE(abort());
+    LOG(INFO) << "Unsupported address family for load reporting: "
+              << addr->sa_family << ". Using empty client IP.";
+    // Return empty string for unsupported address families (e.g. UDS, VSOCK).
+    // The caller handles empty strings gracefully.
+    return "";
   }
 }
 

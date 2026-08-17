@@ -16,6 +16,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "src/proto/grpc/channelz/v2/promise.upb.h"
@@ -161,7 +162,8 @@ TEST(SeqTest, ThreeTypedPendingThens) {
     };
   };
 
-  auto seq_combinator = Seq(initial, next1, next2, next3);
+  auto seq_combinator = Seq(std::move(initial), std::move(next1),
+                            std::move(next2), std::move(next3));
 
   auto retval = seq_combinator();
   EXPECT_TRUE(retval.pending());
@@ -207,7 +209,8 @@ TEST(SeqTest, TwoThens) {
   auto initial = [] { return std::string("a"); };
   auto next1 = [](std::string i) { return [i]() { return i + "b"; }; };
   auto next2 = [](std::string i) { return [i]() { return i + "c"; }; };
-  EXPECT_EQ(Seq(initial, next1, next2)(), Poll<std::string>("abc"));
+  EXPECT_EQ(Seq(std::move(initial), std::move(next1), std::move(next2))(),
+            Poll<std::string>("abc"));
 }
 
 TEST(SeqTest, ThreeThens) {
@@ -306,6 +309,50 @@ TEST(SeqIterTest, Accumulate) {
                       return [cur, next]() { return cur + next; };
                     })(),
             Poll<int>(15));
+}
+
+TEST(SeqTest, NestedSeqWithPending) {
+  std::string execution_order;
+  bool pending = true;
+
+  auto nested_seq = Seq(
+      [&execution_order]() {
+        absl::StrAppend(&execution_order, "1");
+        return 10;
+      },
+      [&execution_order, &pending](int outer_val) {
+        return Seq(
+            [&execution_order, outer_val]() {
+              absl::StrAppend(&execution_order, "2");
+              return outer_val * 2;  // Passes 20 to the next step
+            },
+            [&execution_order, &pending](int inner_val) -> Poll<int> {
+              if (pending) {
+                absl::StrAppend(&execution_order, "P");
+                return Pending{};
+              }
+              absl::StrAppend(&execution_order, "3");
+              return inner_val + 5;  // Passes 25 when pending is set to false
+            });
+      },
+      [&execution_order](int nested_result) {
+        absl::StrAppend(&execution_order, "4");
+        return nested_result * 2;  // Returns 50 finally
+      });
+
+  // First poll: Hits the inner pending state
+  auto result1 = nested_seq();
+  EXPECT_TRUE(result1.pending());
+  EXPECT_STREQ(execution_order.c_str(), "12P");
+
+  execution_order.clear();
+  pending = false;
+
+  // Second poll: Resumes from inner Step 2
+  auto result2 = nested_seq();
+  EXPECT_TRUE(result2.ready());
+  EXPECT_STREQ(execution_order.c_str(), "34");
+  EXPECT_EQ(result2.value(), 50);
 }
 
 }  // namespace grpc_core

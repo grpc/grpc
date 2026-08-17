@@ -20,7 +20,7 @@ import unittest
 import grpc
 
 
-class TestPointerWrapper(object):
+class TestPointerWrapper:
     def __int__(self):
         return 123456
 

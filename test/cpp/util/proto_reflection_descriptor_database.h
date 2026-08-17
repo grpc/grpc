@@ -22,6 +22,7 @@
 #include <grpcpp/impl/codegen/config_protobuf.h>
 
 #include <mutex>
+#include <type_traits>
 #include <vector>
 
 #include "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h"
@@ -30,11 +31,30 @@
 
 namespace grpc {
 
+namespace proto_reflection_detail {
+
+// TODO(weizheyuan): Delete this intermediate adaptor once we drop support for
+// protobuf < 34.
+//
+// This adaptor class allow us a transition period for testing and fixing
+// bugs that manifests on protobuf 34 and ensure the code is still buildable
+// on older versions.
+static inline constexpr bool kIsProtobuf34OrLater =
+    std::is_invocable_v<decltype(&protobuf::DescriptorDatabase::FindFileByName),
+                        protobuf::DescriptorDatabase*, absl::string_view,
+                        protobuf::FileDescriptorProto*>;
+using StringArg = std::conditional_t<kIsProtobuf34OrLater, absl::string_view,
+                                     const std::string&>;
+
+}  // namespace proto_reflection_detail
+
 // ProtoReflectionDescriptorDatabase takes a stub of ServerReflection and
 // provides the methods defined by DescriptorDatabase interfaces. It can be used
 // to feed a DescriptorPool instance.
-class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
+class ProtoReflectionDescriptorDatabase final
+    : public protobuf::DescriptorDatabase {
  public:
+  using StringArg = proto_reflection_detail::StringArg;
   explicit ProtoReflectionDescriptorDatabase(
       std::unique_ptr<reflection::v1alpha::ServerReflection::Stub> stub);
 
@@ -47,13 +67,13 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
   //
   // Find a file by file name.  Fills in *output and returns true if found.
   // Otherwise, returns false, leaving the contents of *output undefined.
-  bool FindFileByName(const string& filename,
+  bool FindFileByName(StringArg filename,
                       protobuf::FileDescriptorProto* output) override;
 
   // Find the file that declares the given fully-qualified symbol name.
   // If found, fills in *output and returns true, otherwise returns false
   // and leaves *output undefined.
-  bool FindFileContainingSymbol(const string& symbol_name,
+  bool FindFileContainingSymbol(StringArg symbol_name,
                                 protobuf::FileDescriptorProto* output) override;
 
   // Find the file which defines an extension extending the given message type
@@ -61,7 +81,7 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
   // otherwise returns false and leaves *output undefined.  containing_type
   // must be a fully-qualified type name.
   bool FindFileContainingExtension(
-      const string& containing_type, int field_number,
+      StringArg containing_type, int field_number,
       protobuf::FileDescriptorProto* output) override;
 
   // Finds the tag numbers used by all known extensions of
@@ -71,7 +91,7 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
   // FindFileContainingExtension will return true on all of the found
   // numbers. Returns true if the search was successful, otherwise
   // returns false and leaves output unchanged.
-  bool FindAllExtensionNumbers(const string& extendee_type,
+  bool FindAllExtensionNumbers(StringArg extendee_type,
                                std::vector<int>* output) override;
 
   // Provide a list of full names of registered services

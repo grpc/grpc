@@ -28,6 +28,7 @@
 #include <string>
 #include <vector>
 
+#include "pugixml.hpp"
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/log/log.h"
@@ -35,7 +36,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
-#include "pugixml.hpp"
 
 // Command-line flags
 ABSL_FLAG(bool, verbose, false, "Enable verbose output.");
@@ -60,6 +60,16 @@ struct Rule {
   std::vector<std::string> proto_files;
 };
 
+struct ExternalRepoPrefix {
+  // Repo name in file path, can be apparent or canonical
+  std::string repo;
+  // Canonical name is the actual folder name under bazel-out/.
+  std::string canonical_repo;
+  // Used by GetBazelBinRootPath() for lookup.
+  std::string apparent_repo;
+  std::string source_dir;
+};
+
 std::string ReadFile(const std::string& path) {
   std::ifstream file(path);
   if (!file.is_open()) {
@@ -80,7 +90,8 @@ std::map<std::string, Rule> ParseBazelRules(
 
   for (pugi::xml_node rule_node : doc.child("query").children("rule")) {
     std::string rule_class = rule_node.attribute("class").as_string();
-    if (!rule_types.empty() && rule_types.find(rule_class) == rule_types.end()) {
+    if (!rule_types.empty() &&
+        rule_types.find(rule_class) == rule_types.end()) {
       continue;
     }
 
@@ -167,50 +178,78 @@ std::string GetUpbPath(std::string proto_path, const std::string& ext) {
   return absl::StrReplaceAll(proto_path, {{".proto", ext}});
 }
 
-std::pair<std::string, std::string> GetExternalLink(const std::string& file) {
-  const std::vector<std::pair<std::string, std::string>> kExternalLinks = {
-      {"@com_google_protobuf//", "src/"},
-      {"@com_google_googleapis//", ""},
-      {"@com_github_cncf_xds//", ""},
-      {"@com_envoyproxy_protoc_gen_validate//", ""},
-      {"@dev_cel//", "proto/"},
-      {"@envoy_api//", ""},
-      {"@opencensus_proto//", ""},
+ExternalRepoPrefix GetExternalRepoPrefix(const std::string& file) {
+  struct ExternalLink {
+    std::string canonical_repo;
+    std::string apparent_repo;
+    std::string source_dir;
   };
-  for (const auto& link : kExternalLinks) {
-    if (absl::StartsWith(file, link.first)) {
-      return link;
+
+  const std::vector<ExternalLink> kExternalLinks = {
+      {"@@protobuf+//", "@com_google_protobuf//", "src/"},
+      {"@@googleapis+//", "@com_google_googleapis//", ""},
+      {"@@xds+//", "@com_github_cncf_xds//", ""},
+      {"@@protoc-gen-validate+//", "@com_envoyproxy_protoc_gen_validate//", ""},
+      {"@@cel-spec+//", "@dev_cel//", "proto/"},
+      {"@@envoy_api+//", "@envoy_api//", ""},
+      {"@@opencensus-proto+//", "@opencensus_proto//", ""},
+      {"@@grpc-proto+//:", "@grpc_proto//:", ""},
+  };
+  for (const auto& elink : kExternalLinks) {
+    if (absl::StartsWith(file, elink.canonical_repo)) {
+      return ExternalRepoPrefix{
+          .repo = elink.canonical_repo,
+          .canonical_repo = elink.canonical_repo,
+          .apparent_repo = elink.apparent_repo,
+          .source_dir = elink.source_dir,
+      };
+    }
+    if (absl::StartsWith(file, elink.apparent_repo)) {
+      return ExternalRepoPrefix{
+          .repo = elink.apparent_repo,
+          .canonical_repo = elink.canonical_repo,
+          .apparent_repo = elink.apparent_repo,
+          .source_dir = elink.source_dir,
+      };
     }
   }
-  return {"//", ""};
+  return ExternalRepoPrefix{
+      .repo = "//",
+      .canonical_repo = "",
+      .apparent_repo = "",
+      .source_dir = "",
+  };
 }
 
-std::string GetBazelBinRootPath(
-    const std::pair<std::string, std::string>& elink, const std::string& file) {
+std::string GetBazelBinRootPath(const ExternalRepoPrefix& external_repo_prefix,
+                                const std::string& file) {
   const std::string kBazelBinRoot = "bazel-bin/";
-  if (elink.first == "@com_google_protobuf//") {
+  const std::string& source_dir = external_repo_prefix.source_dir;
+  const std::string& canonical_repo = external_repo_prefix.canonical_repo;
+  const std::string& apparent_repo = external_repo_prefix.apparent_repo;
+  if (apparent_repo == "@com_google_protobuf//") {
     std::string name_part = std::filesystem::path(file).stem().string();
     // For upb generated files, we need to strip two extensions.
     name_part = std::filesystem::path(name_part).stem().string();
     return absl::StrCat(
         kBazelBinRoot, "external/",
-        absl::StrReplaceAll(elink.first, {{"@", ""}, {"//", ""}}),
+        absl::StrReplaceAll(canonical_repo, {{"@", ""}, {"//", ""}, {":", ""}}),
         "/src/google/protobuf/_virtual_imports/", name_part, "_proto/", file);
   }
-  if (elink.first == "@dev_cel//") {
+  if (apparent_repo == "@dev_cel//") {
     std::string name_part = std::filesystem::path(file).stem().string();
     // For upb generated files, we need to strip two extensions.
     name_part = std::filesystem::path(name_part).stem().string();
     return absl::StrCat(
         kBazelBinRoot, "external/",
-        absl::StrReplaceAll(elink.first, {{"@", ""}, {"//", ""}}),
+        absl::StrReplaceAll(canonical_repo, {{"@", ""}, {"//", ""}, {":", ""}}),
         "/proto/cel/expr/_virtual_imports/", name_part, "_proto/", file);
   }
-  if (absl::StartsWith(elink.first, "@")) {
+  if (absl::StartsWith(apparent_repo, "@")) {
     return absl::StrCat(
         kBazelBinRoot, "external/",
-        absl::StrReplaceAll(elink.first, {{"@", ""}, {"//", ""}}), "/",
-        elink.second, file);
+        absl::StrReplaceAll(canonical_repo, {{"@", ""}, {"//", ""}, {":", ""}}),
+        "/", source_dir, file);
   } else {
     return absl::StrCat(kBazelBinRoot, file);
   }
@@ -227,24 +266,26 @@ void CopyFile(const std::string& src, const std::string& dest) {
       exit(1);
     }
   }
-  
-  // Copy file content without preserving permissions (like Python's shutil.copyfile)
+
+  // Copy file content without preserving permissions (like Python's
+  // shutil.copyfile)
   std::ifstream src_file(src, std::ios::binary);
   if (!src_file) {
     std::cerr << "Error: Cannot open source file: " << src << std::endl;
     exit(1);
   }
-  
+
   std::ofstream dest_file(dest_path, std::ios::binary);
   if (!dest_file) {
     std::cerr << "Error: Cannot open destination file: " << dest << std::endl;
     exit(1);
   }
-  
+
   dest_file << src_file.rdbuf();
-  
+
   if (!dest_file.good() || !src_file.good()) {
-    std::cerr << "Error: Failed to copy file content from " << src << " to " << dest << std::endl;
+    std::cerr << "Error: Failed to copy file content from " << src << " to "
+              << dest << std::endl;
     exit(1);
   }
 }
@@ -264,15 +305,17 @@ void CopyUpbGeneratedFiles(std::vector<Rule>& rules, bool verbose,
 
   std::map<std::string, std::string> files_to_copy;
   for (const auto& rule : rules) {
-    const auto& extensions = (rule.type == "upb_c_proto_library")
-                                 ? std::vector<std::string>{".upb.h", ".upb_minitable.h",
-                                                    ".upb_minitable.c"}
-                                 : std::vector<std::string>{".upbdefs.h", ".upbdefs.c"};
+    const auto& extensions =
+        (rule.type == "upb_c_proto_library")
+            ? std::vector<std::string>{".upb.h", ".upb_minitable.h",
+                                       ".upb_minitable.c"}
+            : std::vector<std::string>{".upbdefs.h", ".upbdefs.c"};
     const auto& output_dir =
         (rule.type == "upb_c_proto_library") ? upb_out : upbdefs_out;
     for (const auto& proto_file_raw : rule.proto_files) {
-      auto elink = GetExternalLink(proto_file_raw);
-      std::string prefix_to_strip = elink.first + elink.second;
+      auto external_repo_prefix = GetExternalRepoPrefix(proto_file_raw);
+      const std::string prefix_to_strip =
+          external_repo_prefix.repo + external_repo_prefix.source_dir;
       if (!absl::StartsWith(proto_file_raw, prefix_to_strip)) {
         std::cerr << "Source file \"" << proto_file_raw
                   << "\" does not have the expected prefix \""
@@ -282,7 +325,7 @@ void CopyUpbGeneratedFiles(std::vector<Rule>& rules, bool verbose,
       std::string proto_file = proto_file_raw.substr(prefix_to_strip.length());
       for (const auto& ext : extensions) {
         std::string file = GetUpbPath(proto_file, ext);
-        std::string src = GetBazelBinRootPath(elink, file);
+        std::string src = GetBazelBinRootPath(external_repo_prefix, file);
         std::string dest = output_dir + "/" + file;
         files_to_copy[src] = dest;
       }

@@ -17,6 +17,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <cstddef>
 #include <type_traits>
 
 #include "src/core/util/type_list.h"
@@ -25,63 +26,87 @@ namespace grpc_core {
 
 namespace sorted_pack_detail {
 
-// Find the smallest element of Args, and the rest of the elements
-template <template <typename, typename> class Cmp, typename Args>
-struct Smallest;
+constexpr bool IsValidAlignment(size_t a) {
+  return a == 64 || a == 32 || a == 16 || a == 8 || a == 4 || a == 2 || a == 1;
+}
 
-template <template <typename, typename> class Cmp, typename Arg,
-          typename... Args>
-struct Smallest<Cmp, Typelist<Arg, Args...>> {
-  using SmallestRest = Smallest<Cmp, Typelist<Args...>>;
-  using PrevSmallest = typename SmallestRest::Result;
-  using PrevRest = typename SmallestRest::Rest;
-  static constexpr bool kCmpResult = Cmp<Arg, PrevSmallest>::kValue;
-  using Result = typename std::conditional<kCmpResult, Arg, PrevSmallest>::type;
-  using Prefix = typename std::conditional<kCmpResult, PrevSmallest, Arg>::type;
-  using Rest = typename PrevRest::template PushFront<Prefix>;
+template <typename... Ts>
+constexpr bool ValidateAlignments() {
+  return (IsValidAlignment(alignof(Ts)) && ...);
+}
+
+template <typename L1, typename L2>
+struct Concat;
+
+template <typename... T1s, typename... T2s>
+struct Concat<Typelist<T1s...>, Typelist<T2s...>> {
+  using Result = Typelist<T1s..., T2s...>;
 };
 
-template <template <typename, typename> class Cmp, typename Arg>
-struct Smallest<Cmp, Typelist<Arg>> {
-  using Result = Arg;
-  using Rest = Typelist<>;
+// Single-pass MultiPartition minimizes template instantiations to exactly O(N).
+template <typename L64, typename L32, typename L16, typename L8, typename L4,
+          typename L2, typename L1, typename... Ts>
+struct MultiPartition;
+
+template <typename L64, typename L32, typename L16, typename L8, typename L4,
+          typename L2, typename L1, typename T, typename... Rest>
+struct MultiPartition<L64, L32, L16, L8, L4, L2, L1, T, Rest...> {
+  using NextL64 =
+      typename std::conditional<alignof(T) == 64,
+                                typename L64::template PushBack<T>, L64>::type;
+  using NextL32 =
+      typename std::conditional<alignof(T) == 32,
+                                typename L32::template PushBack<T>, L32>::type;
+  using NextL16 =
+      typename std::conditional<alignof(T) == 16,
+                                typename L16::template PushBack<T>, L16>::type;
+  using NextL8 =
+      typename std::conditional<alignof(T) == 8,
+                                typename L8::template PushBack<T>, L8>::type;
+  using NextL4 =
+      typename std::conditional<alignof(T) == 4,
+                                typename L4::template PushBack<T>, L4>::type;
+  using NextL2 =
+      typename std::conditional<alignof(T) == 2,
+                                typename L2::template PushBack<T>, L2>::type;
+  using NextL1 =
+      typename std::conditional<alignof(T) == 1,
+                                typename L1::template PushBack<T>, L1>::type;
+
+  using Result =
+      typename MultiPartition<NextL64, NextL32, NextL16, NextL8, NextL4, NextL2,
+                              NextL1, Rest...>::Result;
 };
 
-// Sort a list of types into a typelist
-template <template <typename, typename> class Cmp, typename Args>
-struct Sorted;
-
-template <template <typename, typename> class Cmp, typename... Args>
-struct Sorted<Cmp, Typelist<Args...>> {
-  using SmallestResult = Smallest<Cmp, Typelist<Args...>>;
-  using SmallestType = typename SmallestResult::Result;
-  using RestOfTypes = typename SmallestResult::Rest;
-  using SortedRestOfTypes = typename Sorted<Cmp, RestOfTypes>::Result;
-  using Result = typename SortedRestOfTypes::template PushFront<SmallestType>;
-};
-
-template <template <typename, typename> class Cmp, typename Arg>
-struct Sorted<Cmp, Typelist<Arg>> {
-  using Result = Typelist<Arg>;
-};
-
-template <template <typename, typename> class Cmp>
-struct Sorted<Cmp, Typelist<>> {
-  using Result = Typelist<>;
+template <typename L64, typename L32, typename L16, typename L8, typename L4,
+          typename L2, typename L1>
+struct MultiPartition<L64, L32, L16, L8, L4, L2, L1> {
+  using Result = typename Concat<
+      L64,
+      typename Concat<
+          L32,
+          typename Concat<
+              L16,
+              typename Concat<
+                  L8, typename Concat<L4, typename Concat<L2, L1>::Result>::
+                          Result>::Result>::Result>::Result>::Result;
 };
 
 }  // namespace sorted_pack_detail
 
-// Given a type T<A...>, and a type comparator Cmp<P,Q>, and some set of types
-// Args...:
-// Sort Args... using Cmp into SortedArgs..., then instantiate T<SortedArgs...>
-// as Type.
-// Cmp<P,Q> should have a single constant `kValue` that is true if P < Q.
+// WithSortedPack: A single-pass, exact-alignment bucket sort.
 template <template <typename...> class T,
           template <typename, typename> class Cmp, typename... Args>
 struct WithSortedPack {
-  using Type = typename sorted_pack_detail::Sorted<
-      Cmp, Typelist<Args...>>::Result::template Instantiate<T>;
+  static_assert(sizeof...(Args) == 0 ||
+                    sorted_pack_detail::ValidateAlignments<Args...>(),
+                "Unsupported alignment in WithSortedPack");
+
+  using SortedList = typename sorted_pack_detail::MultiPartition<
+      Typelist<>, Typelist<>, Typelist<>, Typelist<>, Typelist<>, Typelist<>,
+      Typelist<>, Args...>::Result;
+
+  using Type = typename SortedList::template Instantiate<T>;
 };
 
 }  // namespace grpc_core

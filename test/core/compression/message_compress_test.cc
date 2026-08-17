@@ -140,164 +140,141 @@ static grpc_slice create_test_value(test_value id) {
 }
 
 TEST(MessageCompressTest, TinyDataCompress) {
-  grpc_slice_buffer input;
-  grpc_slice_buffer output;
+  grpc_core::SliceBuffer input;
 
-  grpc_slice_buffer_init(&input);
-  grpc_slice_buffer_init(&output);
-  grpc_slice_buffer_add(&input, create_test_value(ONE_A));
+  input.Append(grpc_core::Slice(create_test_value(ONE_A)));
 
   for (int i = 0; i < GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {
     if (i == GRPC_COMPRESS_NONE) continue;
     grpc_core::ExecCtx exec_ctx;
-    ASSERT_EQ(0, grpc_msg_compress(static_cast<grpc_compression_algorithm>(i),
-                                   &input, &output));
-    ASSERT_EQ(1, output.count);
+    auto res = grpc_core::MessageCompress(
+        static_cast<grpc_compression_algorithm>(i), input);
+    ASSERT_FALSE(res.has_value());
   }
+}
 
-  grpc_slice_buffer_destroy(&input);
-  grpc_slice_buffer_destroy(&output);
+TEST(MessageCompressTest, MaxOutputSizeExceeded) {
+  grpc_core::SliceBuffer input;
+
+  input.Append(grpc_core::Slice(create_test_value(ONE_KB_A)));
+
+  grpc_core::ExecCtx exec_ctx;
+
+  auto compressed = grpc_core::MessageCompress(GRPC_COMPRESS_GZIP, input);
+  ASSERT_TRUE(compressed.has_value());
+
+  // The allowed max output size is only 10 bytes which is not enough to hold
+  // the decompressed data. So we expect a ResourceExhausted error.
+  auto decompressed =
+      grpc_core::MessageDecompress(GRPC_COMPRESS_GZIP, *compressed, 10);
+  EXPECT_EQ(decompressed.status(), absl::ResourceExhaustedError(
+                                       "Decompressed message larger than max"));
 }
 
 TEST(MessageCompressTest, BadDecompressionDataCrc) {
-  grpc_slice_buffer input;
-  grpc_slice_buffer corrupted;
-  grpc_slice_buffer output;
+  grpc_core::SliceBuffer input;
   size_t idx;
   const uint32_t bad = 0xdeadbeef;
 
-  grpc_slice_buffer_init(&input);
-  grpc_slice_buffer_init(&corrupted);
-  grpc_slice_buffer_init(&output);
-  grpc_slice_buffer_add(&input, create_test_value(ONE_MB_A));
+  input.Append(grpc_core::Slice(create_test_value(ONE_MB_A)));
 
   grpc_core::ExecCtx exec_ctx;
   // compress it
-  grpc_msg_compress(GRPC_COMPRESS_GZIP, &input, &corrupted);
+  auto compressed = grpc_core::MessageCompress(GRPC_COMPRESS_GZIP, input);
+  ASSERT_TRUE(compressed.has_value());
   // corrupt the output by smashing the CRC
-  ASSERT_GT(corrupted.count, 1);
-  ASSERT_GT(GRPC_SLICE_LENGTH(corrupted.slices[1]), 8);
-  idx = GRPC_SLICE_LENGTH(corrupted.slices[1]) - 8;
-  memcpy(GRPC_SLICE_START_PTR(corrupted.slices[1]) + idx, &bad, 4);
+  ASSERT_GT(compressed->Count(), 1);
+  ASSERT_GT((*compressed)[1].size(), 8);
+  idx = (*compressed)[1].size() - 8;
+  memcpy(const_cast<uint8_t*>((*compressed)[1].data() + idx), &bad, 4);
 
   // try (and fail) to decompress the corrupted compressed buffer
-  ASSERT_EQ(0, grpc_msg_decompress(GRPC_COMPRESS_GZIP, &corrupted, &output));
-
-  grpc_slice_buffer_destroy(&input);
-  grpc_slice_buffer_destroy(&corrupted);
-  grpc_slice_buffer_destroy(&output);
+  auto decompressed = grpc_core::MessageDecompress(GRPC_COMPRESS_GZIP,
+                                                   *compressed, std::nullopt);
+  EXPECT_EQ(decompressed.status(),
+            absl::InternalError("Decompression failed due to zlib error"));
 }
 
 TEST(MessageCompressTest, BadDecompressionDataMissingTrailer) {
-  grpc_slice_buffer input;
-  grpc_slice_buffer decompressed;
-  grpc_slice_buffer garbage;
-  grpc_slice_buffer output;
+  grpc_core::SliceBuffer input;
+  grpc_core::SliceBuffer garbage;
 
-  grpc_slice_buffer_init(&input);
-  grpc_slice_buffer_init(&decompressed);
-  grpc_slice_buffer_init(&garbage);
-  grpc_slice_buffer_init(&output);
-  grpc_slice_buffer_add(&input, create_test_value(ONE_MB_A));
+  input.Append(grpc_core::Slice(create_test_value(ONE_MB_A)));
 
   grpc_core::ExecCtx exec_ctx;
   // compress it
-  grpc_msg_compress(GRPC_COMPRESS_GZIP, &input, &decompressed);
-  ASSERT_GT(decompressed.length, 8);
-  // Remove the footer from the decompressed message
-  grpc_slice_buffer_trim_end(&decompressed, 8, &garbage);
+  auto compressed = grpc_core::MessageCompress(GRPC_COMPRESS_GZIP, input);
+  ASSERT_TRUE(compressed.has_value());
+  ASSERT_GT(compressed->Length(), 8);
+  // Remove the footer from the compressed message
+  compressed->MoveLastNBytesIntoSliceBuffer(8, garbage);
   // try (and fail) to decompress the compressed buffer without the footer
-  ASSERT_EQ(0, grpc_msg_decompress(GRPC_COMPRESS_GZIP, &decompressed, &output));
-
-  grpc_slice_buffer_destroy(&input);
-  grpc_slice_buffer_destroy(&decompressed);
-  grpc_slice_buffer_destroy(&garbage);
-  grpc_slice_buffer_destroy(&output);
+  auto decompressed = grpc_core::MessageDecompress(GRPC_COMPRESS_GZIP,
+                                                   *compressed, std::nullopt);
+  EXPECT_EQ(decompressed.status(),
+            absl::InternalError("Decompression failed due to data error"));
 }
 
 TEST(MessageCompressTest, BadDecompressionDataTrailingGarbage) {
-  grpc_slice_buffer input;
-  grpc_slice_buffer output;
+  grpc_core::SliceBuffer input;
 
-  grpc_slice_buffer_init(&input);
-  grpc_slice_buffer_init(&output);
-  // append 0x99 to the end of an otherwise valid stream
-  grpc_slice_buffer_add(
-      &input, grpc_slice_from_copied_buffer(
-                  "\x78\xda\x63\x60\x60\x60\x00\x00\x00\x04\x00\x01\x99", 13));
+  input.Append(grpc_core::Slice::FromCopiedBuffer(
+      "\x78\xda\x63\x60\x60\x60\x00\x00\x00\x04\x00\x01\x99", 13));
 
-  // try (and fail) to decompress the invalid compressed buffer
   grpc_core::ExecCtx exec_ctx;
-  ASSERT_EQ(0, grpc_msg_decompress(GRPC_COMPRESS_DEFLATE, &input, &output));
-
-  grpc_slice_buffer_destroy(&input);
-  grpc_slice_buffer_destroy(&output);
+  auto decompressed =
+      grpc_core::MessageDecompress(GRPC_COMPRESS_DEFLATE, input, std::nullopt);
+  EXPECT_EQ(decompressed.status(),
+            absl::InternalError("Decompression failed due to not all input "
+                                "consumed"));
 }
 
 TEST(MessageCompressTest, BadDecompressionDataStream) {
-  grpc_slice_buffer input;
-  grpc_slice_buffer output;
+  grpc_core::SliceBuffer input;
 
-  grpc_slice_buffer_init(&input);
-  grpc_slice_buffer_init(&output);
-  grpc_slice_buffer_add(&input,
-                        grpc_slice_from_copied_buffer("\x78\xda\xff\xff", 4));
+  input.Append(grpc_core::Slice::FromCopiedBuffer("\x78\xda\xff\xff", 4));
 
-  // try (and fail) to decompress the invalid compressed buffer
   grpc_core::ExecCtx exec_ctx;
-  ASSERT_EQ(0, grpc_msg_decompress(GRPC_COMPRESS_DEFLATE, &input, &output));
-
-  grpc_slice_buffer_destroy(&input);
-  grpc_slice_buffer_destroy(&output);
+  auto decompressed =
+      grpc_core::MessageDecompress(GRPC_COMPRESS_DEFLATE, input, std::nullopt);
+  EXPECT_EQ(decompressed.status(),
+            absl::InternalError("Decompression failed due to zlib error"));
 }
 
 TEST(MessageCompressTest, BadCompressionAlgorithm) {
-  grpc_slice_buffer input;
-  grpc_slice_buffer output;
-  int was_compressed;
+  grpc_core::SliceBuffer input;
 
-  grpc_slice_buffer_init(&input);
-  grpc_slice_buffer_init(&output);
-  grpc_slice_buffer_add(
-      &input, grpc_slice_from_copied_string("Never gonna give you up"));
+  input.Append(grpc_core::Slice::FromCopiedString("Never gonna give you up"));
 
   grpc_core::ExecCtx exec_ctx;
-  was_compressed =
-      grpc_msg_compress(GRPC_COMPRESS_ALGORITHMS_COUNT, &input, &output);
-  ASSERT_EQ(0, was_compressed);
+  ASSERT_FALSE(grpc_core::MessageCompress(GRPC_COMPRESS_ALGORITHMS_COUNT, input)
+                   .has_value());
 
-  was_compressed = grpc_msg_compress(static_cast<grpc_compression_algorithm>(
-                                         GRPC_COMPRESS_ALGORITHMS_COUNT + 123),
-                                     &input, &output);
-  ASSERT_EQ(0, was_compressed);
-
-  grpc_slice_buffer_destroy(&input);
-  grpc_slice_buffer_destroy(&output);
+  ASSERT_FALSE(
+      grpc_core::MessageCompress(static_cast<grpc_compression_algorithm>(
+                                     GRPC_COMPRESS_ALGORITHMS_COUNT + 123),
+                                 input)
+          .has_value());
 }
 
 TEST(MessageCompressTest, BadDecompressionAlgorithm) {
-  grpc_slice_buffer input;
-  grpc_slice_buffer output;
-  int was_decompressed;
+  grpc_core::SliceBuffer input;
 
-  grpc_slice_buffer_init(&input);
-  grpc_slice_buffer_init(&output);
-  grpc_slice_buffer_add(&input,
-                        grpc_slice_from_copied_string(
-                            "I'm not really compressed but it doesn't matter"));
+  input.Append(grpc_core::Slice::FromCopiedString(
+      "I'm not really compressed but it doesn't matter"));
+
   grpc_core::ExecCtx exec_ctx;
-  was_decompressed =
-      grpc_msg_decompress(GRPC_COMPRESS_ALGORITHMS_COUNT, &input, &output);
-  ASSERT_EQ(0, was_decompressed);
+  auto decompressed1 = grpc_core::MessageDecompress(
+      GRPC_COMPRESS_ALGORITHMS_COUNT, input, std::nullopt);
+  EXPECT_EQ(decompressed1.status(),
+            absl::InternalError("Invalid compression algorithm"));
 
-  was_decompressed =
-      grpc_msg_decompress(static_cast<grpc_compression_algorithm>(
-                              GRPC_COMPRESS_ALGORITHMS_COUNT + 123),
-                          &input, &output);
-  ASSERT_EQ(0, was_decompressed);
-
-  grpc_slice_buffer_destroy(&input);
-  grpc_slice_buffer_destroy(&output);
+  auto decompressed2 =
+      grpc_core::MessageDecompress(static_cast<grpc_compression_algorithm>(
+                                       GRPC_COMPRESS_ALGORITHMS_COUNT + 123),
+                                   input, std::nullopt);
+  EXPECT_EQ(decompressed2.status(),
+            absl::InternalError("Invalid compression algorithm"));
 }
 
 int main(int argc, char** argv) {

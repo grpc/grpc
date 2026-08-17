@@ -19,7 +19,9 @@
 
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/status_flag.h"
+#include "src/proto/grpc/channelz/v2/promise.upb.h"
 #include "test/core/promise/poll_matcher.h"
+#include "upb/mem/arena.hpp"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -107,6 +109,61 @@ TEST(JoinTest, JoinPendingFailure) {
   EXPECT_STREQ(std::get<2>(tuple).c_str(), "Hello World");
 
   EXPECT_STREQ(execution_order.c_str(), "12303");
+}
+
+TEST(JoinTest, ToProto) {
+  auto promise = Join([]() -> Poll<int> { return 1; },
+                      []() -> Poll<int> { return Pending{}; });
+
+  upb::Arena arena;
+  grpc_channelz_v2_Promise* proto = grpc_channelz_v2_Promise_new(arena.ptr());
+  promise.ToProto(proto, arena.ptr());
+
+  const auto* join = grpc_channelz_v2_Promise_join_promise(proto);
+  ASSERT_NE(join, nullptr);
+  EXPECT_EQ(grpc_channelz_v2_Promise_Join_kind(join),
+            grpc_channelz_v2_Promise_NORMAL);
+
+  size_t num_branches = 0;
+  const auto* const* branches =
+      grpc_channelz_v2_Promise_Join_branches(join, &num_branches);
+  ASSERT_EQ(num_branches, 2);
+
+  // Branch 0 is not polled yet, so it should be pending (or just have factory).
+  // Since we haven't polled, the inner promises are fresh.
+  // The lambda doesn't have ToProto, so it might just have factory name if
+  // available. We just check it exists.
+  EXPECT_NE(branches[0], nullptr);
+  EXPECT_NE(branches[1], nullptr);
+
+  // Poll once.
+  promise();
+
+  // Re-generate proto.
+  proto = grpc_channelz_v2_Promise_new(arena.ptr());
+  promise.ToProto(proto, arena.ptr());
+  join = grpc_channelz_v2_Promise_join_promise(proto);
+  branches = grpc_channelz_v2_Promise_Join_branches(join, &num_branches);
+
+  // Branch 0 should be ready (returned 1).
+  // Branch 1 should be pending.
+
+  // Note: JoinState might not store the result string "ready" if it just stores
+  // the result value? JoinState stores `Option<Result>`. ToProto checks
+  // `is_ready()`. If ready, it sets result to "ready".
+
+  // Branch 0
+
+  upb_StringView result_view0 =
+      grpc_channelz_v2_Promise_JoinBranch_result(branches[0]);
+  EXPECT_TRUE(
+      upb_StringView_IsEqual(result_view0, upb_StringView_FromString("ready")));
+
+  // Branch 1
+  // Should NOT be ready.
+  upb_StringView result_view1 =
+      grpc_channelz_v2_Promise_JoinBranch_result(branches[1]);
+  EXPECT_EQ(result_view1.size, 0);  // Empty/missing result means pending.
 }
 
 }  // namespace grpc_core

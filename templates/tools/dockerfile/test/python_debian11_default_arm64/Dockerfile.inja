@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM arm64v8/debian:11
+FROM --platform=linux/arm64/v8 arm64v8/debian:11
 
 {% include "../../apt_get_basic.include" %}
 {% include "../../run_tests_addons.include" %}
@@ -21,17 +21,11 @@ FROM arm64v8/debian:11
 # to be installed before Python.
 RUN apt-get update && apt-get install -y libsqlite3-dev
 
-# 3.9 is the default python3 version on debian11
-RUN apt-get update && apt-get install -y python3.9 python3.9-dev python3-pip
+{% include "../../compile_python_310.include" %}
 
-# for Python test coverage reporting
-RUN python3.9 -m pip install coverage
+# TODO(sergiitk):  Should we updating gcp_api_libraries.include instead?
+RUN python3.10 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
-# six is required by the run_tests.py test harness
-RUN python3.9 -m pip install six
-
-{% include "../../gcp_api_libraries.include" %}
-
-{% include "../../cmake.include" %}
+{% include "../../cmake_bullseye_backports.include" %}
 {% include "../../ccache.include" %}
 

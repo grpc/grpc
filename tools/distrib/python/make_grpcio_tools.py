@@ -14,8 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import print_function
-
 import argparse
 import errno
 import filecmp
@@ -67,6 +65,13 @@ EXTERNAL_LINKS = [
 ]
 
 PROTOBUF_PROTO_PREFIX = "@com_google_protobuf//"
+
+# Exclude conditional dependencies that are not needed by gRPC.
+# Required files can be found at third_party/protobuf/src/file_lists.cmake
+UPB_EXCLUDE_CC_FILES_PATTERN = "third_party/protobuf/upb/wire/decode_fast"
+UPB_EXCLUDE_CC_FILES_EXCEPTIONS = [
+    "third_party/protobuf/upb/wire/decode_fast/select.c",
+]
 
 # will be added to include path when building grpcio_tools
 CC_INCLUDES = [
@@ -225,6 +230,17 @@ def _generate_deps_file_content():
             filepath = _bazel_name_to_file_path(name)
             if filepath:
                 cc_files.append(filepath)
+
+    # Exclude certain conditional dependencies that don't build properly
+    # from upb.
+    def _should_include(cc_file):
+        if UPB_EXCLUDE_CC_FILES_PATTERN not in cc_file:
+            return True
+        if cc_file in UPB_EXCLUDE_CC_FILES_EXCEPTIONS:
+            return True
+        return False
+
+    cc_files = [f for f in cc_files if _should_include(f)]
 
     # Collect list of .proto files that will be bundled in the grpcio_tools package.
     raw_proto_files = []

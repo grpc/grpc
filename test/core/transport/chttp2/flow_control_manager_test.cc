@@ -51,11 +51,12 @@ TEST_P(FlowControlManagerTest, ActOnFlowControlActionSettings) {
   action.test_only_set_send_initial_window_update(urgency,
                                                   initial_window_size + 10);
   action.test_only_set_send_max_frame_size_update(urgency, max_frame_size + 10);
-  action.test_only_set_preferred_rx_crypto_frame_size_update(urgency,
-                                                             kTestMaxFrameSize);
+  action.test_only_set_preferred_rx_crypto_frame_size_update(
+      enable_preferred_rx_crypto_frame_advertisement ? urgency
+                                                     : kNoActionNeeded,
+      kTestMaxFrameSize);
 
-  ActOnFlowControlActionSettings(
-      action, settings, enable_preferred_rx_crypto_frame_advertisement);
+  ActOnFlowControlActionSettings(action, settings);
 
   EXPECT_EQ(settings.initial_window_size(), initial_window_size + 10);
   EXPECT_EQ(settings.max_frame_size(), max_frame_size + 10);
@@ -92,9 +93,7 @@ TEST(FlowControlManagerTest, ActOnFlowControlActionSettingsNoActionNeeded) {
   action.test_only_set_preferred_rx_crypto_frame_size_update(
       kNoActionNeeded, preferred_receive_crypto_message_size + 10);
 
-  ActOnFlowControlActionSettings(
-      action, settings,
-      /*enable_preferred_rx_crypto_frame_advertisement=*/true);
+  ActOnFlowControlActionSettings(action, settings);
 
   EXPECT_EQ(settings.initial_window_size(), initial_window_size);
   EXPECT_EQ(settings.max_frame_size(), max_frame_size);
@@ -111,9 +110,7 @@ TEST(FlowControlManagerTest, ActOnFlowControlActionSettingsNoAction) {
   const uint32_t preferred_receive_crypto_message_size =
       settings.preferred_receive_crypto_message_size();
 
-  ActOnFlowControlActionSettings(
-      action, settings,
-      /*enable_preferred_rx_crypto_frame_advertisement=*/true);
+  ActOnFlowControlActionSettings(action, settings);
 
   EXPECT_EQ(settings.initial_window_size(), initial_window_size);
   EXPECT_EQ(settings.max_frame_size(), max_frame_size);
@@ -123,7 +120,7 @@ TEST(FlowControlManagerTest, ActOnFlowControlActionSettingsNoAction) {
 
 TEST(FlowControlManagerTest, GetStreamFlowControlTokens) {
   chttp2::TransportFlowControl transport_flow_control(
-      /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
   chttp2::StreamFlowControl stream_flow_control(&transport_flow_control);
   Http2Settings peer_settings;
@@ -166,7 +163,7 @@ TEST(FlowControlManagerTest, GetStreamFlowControlTokens) {
 
 TEST(FlowControlManagerTest, GetMaxPermittedDequeue) {
   chttp2::TransportFlowControl transport_flow_control(
-      /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
   chttp2::StreamFlowControl stream_flow_control(&transport_flow_control);
   Http2Settings peer_settings;  // The defaults are fine for our tests.

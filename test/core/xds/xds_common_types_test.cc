@@ -21,10 +21,14 @@
 #include <grpc/grpc.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "envoy/config/common/mutation_rules/v3/mutation_rules.pb.h"
+#include "envoy/config/core/v3/base.pb.h"
+#include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/core/v3/grpc_service.pb.h"
 #include "envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.pb.h"
 #include "envoy/extensions/grpc_service/channel_credentials/google_default/v3/google_default_credentials.pb.h"
@@ -33,11 +37,14 @@
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/type/matcher/v3/regex.pb.h"
 #include "envoy/type/matcher/v3/string.pb.h"
+#include "envoy/type/v3/percent.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "re2/re2.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/matchers.h"
@@ -46,7 +53,12 @@
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
+#include "src/core/xds/grpc/xds_grpc_service_parser.h"
+#include "src/core/xds/grpc/xds_server_grpc.h"
+#include "src/core/xds/grpc/xds_tls_context.h"
+#include "src/core/xds/grpc/xds_tls_context_parser.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
@@ -62,11 +74,16 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 
 using envoy::config::core::v3::GrpcService;
 using CommonTlsContextProto =
     envoy::extensions::transport_sockets::tls::v3::CommonTlsContext;
 using xds::type::v3::TypedStruct;
+using HeaderMutationRulesProto =
+    envoy::config::common::mutation_rules::v3::HeaderMutationRules;
+using HeaderValueOptionProto = envoy::config::core::v3::HeaderValueOption;
+using HeaderValueProto = envoy::config::core::v3::HeaderValue;
 
 namespace grpc_core {
 namespace testing {
@@ -79,7 +96,7 @@ class XdsCommonTypesTest : public ::testing::Test {
   static RefCountedPtr<XdsClient> MakeXdsClient(
       absl::string_view extra_bootstrap_text = "",
       bool trusted_xds_server = false) {
-    auto bootstrap = GrpcXdsBootstrap::Create(
+    auto bootstrap = GrpcXdsBootstrapBuilder::Build(
         absl::StrCat("{\n"
                      "  \"xds_servers\": [\n"
                      "    {\n"
@@ -173,6 +190,52 @@ TEST_F(DurationTest, ValuesTooHigh) {
             "field:nanos error:value must be in the range [0, 999999999]; "
             "field:seconds error:value must be in the range [0, 315576000000]]")
       << status;
+}
+
+//
+// ParseFractionalPercent() tests
+//
+
+using FractionalPercentTest = XdsCommonTypesTest;
+
+TEST_F(FractionalPercentTest, AlwaysIfUnset) {
+  EXPECT_EQ(1000000, ParseFractionalPercent(nullptr));
+}
+
+TEST_F(FractionalPercentTest, PerHundred) {
+  envoy_type_v3_FractionalPercent* proto =
+      envoy_type_v3_FractionalPercent_new(upb_arena_.ptr());
+  envoy_type_v3_FractionalPercent_set_numerator(proto, 30);
+  envoy_type_v3_FractionalPercent_set_denominator(
+      proto, envoy_type_v3_FractionalPercent_HUNDRED);
+  EXPECT_EQ(300000, ParseFractionalPercent(proto));
+}
+
+TEST_F(FractionalPercentTest, PerTenThousand) {
+  envoy_type_v3_FractionalPercent* proto =
+      envoy_type_v3_FractionalPercent_new(upb_arena_.ptr());
+  envoy_type_v3_FractionalPercent_set_numerator(proto, 30);
+  envoy_type_v3_FractionalPercent_set_denominator(
+      proto, envoy_type_v3_FractionalPercent_TEN_THOUSAND);
+  EXPECT_EQ(3000, ParseFractionalPercent(proto));
+}
+
+TEST_F(FractionalPercentTest, PerMillion) {
+  envoy_type_v3_FractionalPercent* proto =
+      envoy_type_v3_FractionalPercent_new(upb_arena_.ptr());
+  envoy_type_v3_FractionalPercent_set_numerator(proto, 30);
+  envoy_type_v3_FractionalPercent_set_denominator(
+      proto, envoy_type_v3_FractionalPercent_MILLION);
+  EXPECT_EQ(30, ParseFractionalPercent(proto));
+}
+
+TEST_F(FractionalPercentTest, ClampsValue) {
+  envoy_type_v3_FractionalPercent* proto =
+      envoy_type_v3_FractionalPercent_new(upb_arena_.ptr());
+  envoy_type_v3_FractionalPercent_set_numerator(proto, 105);
+  envoy_type_v3_FractionalPercent_set_denominator(
+      proto, envoy_type_v3_FractionalPercent_HUNDRED);
+  EXPECT_EQ(1000000, ParseFractionalPercent(proto));
 }
 
 //
@@ -956,7 +1019,7 @@ class ParseXdsGrpcServiceTest : public XdsCommonTypesTest {
   // For convenience, tests build protos using the protobuf API, and
   // we convert it to a upb object, which is then passed to
   // ParseXdsGrpcService() for testing.
-  absl::StatusOr<XdsGrpcService> Parse(const GrpcService& proto) {
+  absl::StatusOr<GrpcXdsServerTarget> Parse(const GrpcService& proto) {
     // Serialize the protobuf proto.
     std::string serialized_proto;
     if (!proto.SerializeToString(&serialized_proto)) {
@@ -970,13 +1033,13 @@ class ParseXdsGrpcServiceTest : public XdsCommonTypesTest {
     }
     // Now parse the upb proto.
     ValidationErrors errors;
-    XdsGrpcService xds_grpc_service =
+    GrpcXdsServerTarget target =
         ParseXdsGrpcService(MakeDecodeContext(), upb_proto, &errors);
     if (!errors.ok()) {
       return errors.status(absl::StatusCode::kInvalidArgument,
                            "validation failed");
     }
-    return xds_grpc_service;
+    return target;
   }
 };
 
@@ -1006,13 +1069,10 @@ TEST_F(ParseXdsGrpcServiceTest,
   google_grpc->add_call_credentials_plugin()->PackFrom(call_creds);
   auto xds_grpc_service = Parse(grpc_service);
   ASSERT_TRUE(xds_grpc_service.ok()) << xds_grpc_service.status();
-  ASSERT_NE(xds_grpc_service->server_target, nullptr);
-  EXPECT_EQ(xds_grpc_service->server_target->server_uri(),
-            "dns:server.example.com");
-  ASSERT_NE(xds_grpc_service->server_target->channel_creds_config(), nullptr);
-  EXPECT_EQ(xds_grpc_service->server_target->channel_creds_config()->type(),
-            "insecure");
-  EXPECT_THAT(xds_grpc_service->server_target->call_creds_configs(),
+  EXPECT_EQ(xds_grpc_service->server_uri(), "dns:server.example.com");
+  ASSERT_NE(xds_grpc_service->channel_creds_config(), nullptr);
+  EXPECT_EQ(xds_grpc_service->channel_creds_config()->type(), "insecure");
+  EXPECT_THAT(xds_grpc_service->call_creds_configs(),
               ::testing::ElementsAre(EqCredsConfig(
                   "jwt_token_file", "", "{path=\"/path/to/file\"}")));
 }
@@ -1055,13 +1115,10 @@ TEST_F(ParseXdsGrpcServiceTest, TrustedXdsServerWithCredentials) {
   google_grpc->add_call_credentials_plugin()->PackFrom(call_creds);
   auto xds_grpc_service = Parse(grpc_service);
   ASSERT_TRUE(xds_grpc_service.ok()) << xds_grpc_service.status();
-  ASSERT_NE(xds_grpc_service->server_target, nullptr);
-  EXPECT_EQ(xds_grpc_service->server_target->server_uri(),
-            "dns:server.example.com");
-  ASSERT_NE(xds_grpc_service->server_target->channel_creds_config(), nullptr);
-  EXPECT_EQ(xds_grpc_service->server_target->channel_creds_config()->type(),
-            "google_default");
-  EXPECT_THAT(xds_grpc_service->server_target->call_creds_configs(),
+  EXPECT_EQ(xds_grpc_service->server_uri(), "dns:server.example.com");
+  ASSERT_NE(xds_grpc_service->channel_creds_config(), nullptr);
+  EXPECT_EQ(xds_grpc_service->channel_creds_config()->type(), "google_default");
+  EXPECT_THAT(xds_grpc_service->call_creds_configs(),
               ::testing::ElementsAre(
                   EqCredsConfig("",
                                 "envoy.extensions.grpc_service.call_credentials"
@@ -1072,8 +1129,8 @@ TEST_F(ParseXdsGrpcServiceTest, TrustedXdsServerWithCredentials) {
                                 ".access_token.v3.AccessTokenCredentials",
                                 "{token=\"bar\"}")));
   // Unset fields have default values.
-  EXPECT_EQ(xds_grpc_service->timeout, Duration::Zero());
-  EXPECT_THAT(xds_grpc_service->initial_metadata, ::testing::ElementsAre());
+  EXPECT_EQ(xds_grpc_service->timeout(), Duration::Zero());
+  EXPECT_THAT(xds_grpc_service->initial_metadata(), ::testing::ElementsAre());
 }
 
 TEST_F(ParseXdsGrpcServiceTest, TrustedXdsServerWithChannelCredsUnset) {
@@ -1114,7 +1171,7 @@ TEST_F(ParseXdsGrpcServiceTest, Timeout) {
           InsecureCredentials());
   auto xds_grpc_service = Parse(grpc_service);
   ASSERT_TRUE(xds_grpc_service.ok()) << xds_grpc_service.status();
-  EXPECT_EQ(xds_grpc_service->timeout, Duration::Seconds(5));
+  EXPECT_EQ(xds_grpc_service->timeout(), Duration::Seconds(5));
 }
 
 TEST_F(ParseXdsGrpcServiceTest, InvalidTimeout) {
@@ -1133,7 +1190,7 @@ TEST_F(ParseXdsGrpcServiceTest, InvalidTimeout) {
                 "field:timeout error:duration must be positive]"));
 }
 
-TEST_F(ParseXdsGrpcServiceTest, BasicHeader) {
+TEST_F(ParseXdsGrpcServiceTest, HeaderValueForNonBinaryHeader) {
   xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
   GrpcService grpc_service;
   auto* header_value = grpc_service.add_initial_metadata();
@@ -1146,73 +1203,18 @@ TEST_F(ParseXdsGrpcServiceTest, BasicHeader) {
           GoogleDefaultCredentials());
   auto xds_grpc_service = Parse(grpc_service);
   ASSERT_TRUE(xds_grpc_service.ok()) << xds_grpc_service.status();
-  EXPECT_THAT(xds_grpc_service->initial_metadata,
+  EXPECT_THAT(xds_grpc_service->initial_metadata(),
               ::testing::ElementsAre(::testing::Pair("foo", "bar")));
 }
 
-TEST_F(ParseXdsGrpcServiceTest, InvalidHeaderKeyAndValue) {
-  xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
-  GrpcService grpc_service;
-  auto* header_value = grpc_service.add_initial_metadata();
-  header_value->set_key("Foo");
-  header_value->set_value("\x1f");
-  auto* google_grpc = grpc_service.mutable_google_grpc();
-  google_grpc->set_target_uri("dns:server.example.com");
-  google_grpc->add_channel_credentials_plugin()->PackFrom(
-      envoy::extensions::grpc_service::channel_credentials::insecure::v3::
-          InsecureCredentials());
-  auto xds_grpc_service = Parse(grpc_service);
-  EXPECT_EQ(xds_grpc_service.status(),
-            absl::InvalidArgumentError("validation failed: ["
-                                       "field:initial_metadata[0].key "
-                                       "error:Illegal header key; "
-                                       "field:initial_metadata[0].value "
-                                       "error:Illegal header value]"));
-}
-
-TEST_F(ParseXdsGrpcServiceTest, RawHeaderValueForBinaryHeader) {
-  xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
-  GrpcService grpc_service;
-  auto* header_value = grpc_service.add_initial_metadata();
-  header_value->set_key("foo-bin");
-  header_value->set_raw_value("\x1f");
-  auto* google_grpc = grpc_service.mutable_google_grpc();
-  google_grpc->set_target_uri("dns:server.example.com");
-  google_grpc->add_channel_credentials_plugin()->PackFrom(
-      envoy::extensions::grpc_service::channel_credentials::google_default::v3::
-          GoogleDefaultCredentials());
-  auto xds_grpc_service = Parse(grpc_service);
-  ASSERT_TRUE(xds_grpc_service.ok()) << xds_grpc_service.status();
-  EXPECT_THAT(xds_grpc_service->initial_metadata,
-              ::testing::ElementsAre(::testing::Pair("foo-bin", "\x1f")));
-  ASSERT_NE(xds_grpc_service->server_target, nullptr);
-  EXPECT_EQ(xds_grpc_service->server_target->server_uri(),
-            "dns:server.example.com");
-}
-
-TEST_F(ParseXdsGrpcServiceTest, RawHeaderValueForNonBinaryHeader) {
+// Note: This shows that we include validation errors from ParseXdsHeader()
+// itself.  We don't need to test every possible matcher validation failure
+// case here, because those are covered in the tests for ParseXdsHeader().
+TEST_F(ParseXdsGrpcServiceTest, NoHeaderValueSet) {
   xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
   GrpcService grpc_service;
   auto* header_value = grpc_service.add_initial_metadata();
   header_value->set_key("foo");
-  header_value->set_raw_value("\x1f");
-  auto* google_grpc = grpc_service.mutable_google_grpc();
-  google_grpc->set_target_uri("dns:server.example.com");
-  google_grpc->add_channel_credentials_plugin()->PackFrom(
-      envoy::extensions::grpc_service::channel_credentials::google_default::v3::
-          GoogleDefaultCredentials());
-  auto xds_grpc_service = Parse(grpc_service);
-  EXPECT_EQ(xds_grpc_service.status(),
-            absl::InvalidArgumentError("validation failed: ["
-                                       "field:initial_metadata[0].value "
-                                       "error:field not set]"));
-}
-
-TEST_F(ParseXdsGrpcServiceTest, NoHeaderValueSetForBinaryHeader) {
-  xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
-  GrpcService grpc_service;
-  auto* header_value = grpc_service.add_initial_metadata();
-  header_value->set_key("foo-bin");
   auto* google_grpc = grpc_service.mutable_google_grpc();
   google_grpc->set_target_uri("dns:server.example.com");
   google_grpc->add_channel_credentials_plugin()->PackFrom(
@@ -1224,23 +1226,6 @@ TEST_F(ParseXdsGrpcServiceTest, NoHeaderValueSetForBinaryHeader) {
                 "validation failed: ["
                 "field:initial_metadata[0] "
                 "error:either value or raw_value must be set]"));
-}
-
-TEST_F(ParseXdsGrpcServiceTest, NoHeaderValueSetForNonBinaryHeader) {
-  xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
-  GrpcService grpc_service;
-  auto* header_value = grpc_service.add_initial_metadata();
-  header_value->set_key("foo");
-  auto* google_grpc = grpc_service.mutable_google_grpc();
-  google_grpc->set_target_uri("dns:server.example.com");
-  google_grpc->add_channel_credentials_plugin()->PackFrom(
-      envoy::extensions::grpc_service::channel_credentials::google_default::v3::
-          GoogleDefaultCredentials());
-  auto xds_grpc_service = Parse(grpc_service);
-  EXPECT_EQ(xds_grpc_service.status(),
-            absl::InvalidArgumentError("validation failed: ["
-                                       "field:initial_metadata[0].value "
-                                       "error:field not set]"));
 }
 
 TEST_F(ParseXdsGrpcServiceTest, GoogleGrpcNotSet) {
@@ -1271,6 +1256,824 @@ TEST_F(ParseXdsGrpcServiceTest, InvalidTargetUri) {
             absl::InvalidArgumentError(
                 "validation failed: ["
                 "field:google_grpc.target_uri error:invalid target URI]"));
+}
+
+//
+// ParseHeaderMutationRules() tests
+//
+
+class ParseHeaderMutationRulesTest : public XdsCommonTypesTest {
+ protected:
+  const envoy_config_common_mutation_rules_v3_HeaderMutationRules* ConvertToUpb(
+      const HeaderMutationRulesProto& proto) {
+    std::string serialized_proto;
+    if (!proto.SerializeToString(&serialized_proto)) {
+      EXPECT_TRUE(false) << "protobuf serialization failed";
+      return nullptr;
+    }
+    const auto* upb_proto =
+        envoy_config_common_mutation_rules_v3_HeaderMutationRules_parse(
+            serialized_proto.data(), serialized_proto.size(), upb_arena_.ptr());
+    if (upb_proto == nullptr) {
+      EXPECT_TRUE(false) << "upb parsing failed";
+      return nullptr;
+    }
+    return upb_proto;
+  }
+
+  HeaderMutationRules Parse(
+      const envoy_config_common_mutation_rules_v3_HeaderMutationRules*
+          upb_proto,
+      ValidationErrors* errors) {
+    return ParseHeaderMutationRules(upb_proto, errors);
+  }
+};
+
+TEST_F(ParseHeaderMutationRulesTest, Empty) {
+  HeaderMutationRulesProto proto;
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  auto rules = Parse(upb_proto, &errors);
+  EXPECT_TRUE(errors.ok()) << errors.status(absl::StatusCode::kInvalidArgument,
+                                            "unexpected errors");
+  EXPECT_FALSE(rules.disallow_all);
+  EXPECT_FALSE(rules.disallow_is_error);
+  EXPECT_EQ(rules.allow_expression, nullptr);
+  EXPECT_EQ(rules.disallow_expression, nullptr);
+}
+
+TEST_F(ParseHeaderMutationRulesTest, Basic) {
+  HeaderMutationRulesProto proto;
+  proto.mutable_allow_expression()->set_regex("allow");
+  proto.mutable_disallow_expression()->set_regex("disallow");
+  proto.mutable_disallow_all()->set_value(true);
+  proto.mutable_disallow_is_error()->set_value(true);
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  auto rules = Parse(upb_proto, &errors);
+  EXPECT_TRUE(errors.ok()) << errors.status(absl::StatusCode::kInvalidArgument,
+                                            "unexpected errors");
+  EXPECT_TRUE(rules.disallow_all);
+  EXPECT_TRUE(rules.disallow_is_error);
+  ASSERT_NE(rules.allow_expression, nullptr);
+  EXPECT_EQ(rules.allow_expression->pattern(), "allow");
+  ASSERT_NE(rules.disallow_expression, nullptr);
+  EXPECT_EQ(rules.disallow_expression->pattern(), "disallow");
+}
+
+TEST_F(ParseHeaderMutationRulesTest, ExplicitFalse) {
+  HeaderMutationRulesProto proto;
+  proto.mutable_disallow_all()->set_value(false);
+  proto.mutable_disallow_is_error()->set_value(false);
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  auto rules = Parse(upb_proto, &errors);
+  EXPECT_TRUE(errors.ok());
+  EXPECT_FALSE(rules.disallow_all);
+  EXPECT_FALSE(rules.disallow_is_error);
+}
+
+TEST_F(ParseHeaderMutationRulesTest, InvalidRegex) {
+  HeaderMutationRulesProto proto;
+  proto.mutable_allow_expression()->set_regex("[");
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  Parse(upb_proto, &errors);
+  EXPECT_FALSE(errors.ok());
+  EXPECT_EQ(
+      errors.status(absl::StatusCode::kInvalidArgument, "validation failed")
+          .message(),
+      "validation failed: [field:header_mutation_rules.allow_expression "
+      "error:Invalid regex string specified in matcher: missing ]: []");
+}
+
+TEST(HeaderMutationRulesTest, DefaultAllowsAll) {
+  HeaderMutationRules rules;
+  EXPECT_TRUE(rules.IsMutationAllowed("foo"));
+  EXPECT_TRUE(rules.IsMutationAllowed("bar"));
+}
+
+TEST(HeaderMutationRulesTest, DisallowAll) {
+  HeaderMutationRules rules;
+  rules.disallow_all = true;
+  rules.allow_expression = std::make_unique<RE2>(".*header");
+  EXPECT_FALSE(rules.IsMutationAllowed("allow_header"));
+}
+
+TEST(HeaderMutationRulesTest, DisallowExpression) {
+  HeaderMutationRules rules;
+  rules.disallow_expression = std::make_unique<RE2>("disallowed.*");
+  EXPECT_FALSE(rules.IsMutationAllowed("disallowed_header"));
+  EXPECT_TRUE(rules.IsMutationAllowed("allowed_header"));
+}
+
+TEST(HeaderMutationRulesTest, AllowExpression) {
+  HeaderMutationRules rules;
+  rules.allow_expression = std::make_unique<RE2>("allowed.*");
+  // "allowed_header" matches allow_expression
+  EXPECT_TRUE(rules.IsMutationAllowed("allowed_header"));
+  // "other" does not match allow_expression
+  EXPECT_FALSE(rules.IsMutationAllowed("other"));
+}
+
+TEST(HeaderMutationRulesTest, DisallowExpressionOverridesAllowExpression) {
+  HeaderMutationRules rules;
+  rules.disallow_expression = std::make_unique<RE2>("common.*");
+  rules.allow_expression = std::make_unique<RE2>(".*header");
+  // "common_header" matches both. Should be disallowed.
+  EXPECT_FALSE(rules.IsMutationAllowed("common_header"));
+  // "unique_header" matches only allow. Should be allowed.
+  EXPECT_TRUE(rules.IsMutationAllowed("unique_header"));
+  // "common_stuff" matches only disallow. Should be disallowed.
+  EXPECT_FALSE(rules.IsMutationAllowed("common_stuff"));
+  // "stuff" matches neither. Should be disallowed (because allow_expression is
+  // set).
+  EXPECT_FALSE(rules.IsMutationAllowed("stuff"));
+}
+
+TEST(HeaderMutationRulesTest, SomeHeadersNeverAllowed) {
+  HeaderMutationRules rules;
+  rules.allow_expression = std::make_unique<RE2>(".*");
+  EXPECT_TRUE(rules.IsMutationAllowed("foo"));
+  EXPECT_TRUE(rules.IsMutationAllowed("bar"));
+  // Still does not allow certain headers.
+  EXPECT_FALSE(rules.IsMutationAllowed("host"));
+  EXPECT_FALSE(rules.IsMutationAllowed(":path"));
+  EXPECT_FALSE(rules.IsMutationAllowed("grpc-foo"));
+}
+
+//
+// ParseHeader() tests
+//
+
+class ParseHeaderTest : public XdsCommonTypesTest {
+ protected:
+  const envoy_config_core_v3_HeaderValue* ConvertToUpb(
+      const HeaderValueProto& proto) {
+    std::string serialized_proto;
+    if (!proto.SerializeToString(&serialized_proto)) {
+      EXPECT_TRUE(false) << "protobuf serialization failed";
+      return nullptr;
+    }
+    const auto* upb_proto = envoy_config_core_v3_HeaderValue_parse(
+        serialized_proto.data(), serialized_proto.size(), upb_arena_.ptr());
+    if (upb_proto == nullptr) {
+      EXPECT_TRUE(false) << "upb parsing failed";
+      return nullptr;
+    }
+    return upb_proto;
+  }
+};
+
+TEST_F(ParseHeaderTest, HeaderValueForNonBinaryHeader) {
+  HeaderValueProto proto;
+  proto.set_key("foo");
+  proto.set_value("bar");
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  auto header = ParseXdsHeader(upb_proto, &errors);
+  EXPECT_TRUE(errors.ok()) << errors.status(absl::StatusCode::kInvalidArgument,
+                                            "unexpected errors");
+  EXPECT_EQ(header.first, "foo");
+  EXPECT_EQ(header.second, "bar");
+}
+
+TEST_F(ParseHeaderTest, HeaderValueForBinaryHeader) {
+  HeaderValueProto proto;
+  proto.set_key("foo-bin");
+  proto.set_value("YmFy");  // "bar" in base64
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  auto header = ParseXdsHeader(upb_proto, &errors);
+  EXPECT_TRUE(errors.ok()) << errors.status(absl::StatusCode::kInvalidArgument,
+                                            "unexpected errors");
+  EXPECT_EQ(header.first, "foo-bin");
+  EXPECT_EQ(header.second, "bar");
+}
+
+TEST_F(ParseHeaderTest, RawHeaderTakesPrecedenceForBinaryHeader) {
+  HeaderValueProto proto;
+  proto.set_key("foo-bin");
+  proto.set_raw_value("Hw==");
+  proto.set_value("ignored_value");
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  auto header = ParseXdsHeader(upb_proto, &errors);
+  EXPECT_TRUE(errors.ok()) << errors.status(absl::StatusCode::kInvalidArgument,
+                                            "unexpected errors");
+  EXPECT_EQ(header.first, "foo-bin");
+  EXPECT_EQ(header.second, "\x1f");
+}
+
+TEST_F(ParseHeaderTest, RawHeaderValueInvalidBase64ForBinaryHeader) {
+  HeaderValueProto proto;
+  proto.set_key("foo-bin");
+  proto.set_raw_value("invalid_base64!");
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  ParseXdsHeader(upb_proto, &errors);
+  EXPECT_FALSE(errors.ok());
+  EXPECT_EQ(
+      errors.status(absl::StatusCode::kInvalidArgument, "validation failed")
+          .message(),
+      "validation failed: [field:raw_value error:invalid base64]");
+}
+
+TEST_F(ParseHeaderTest, HeaderValueInvalidBase64ForBinaryHeader) {
+  HeaderValueProto proto;
+  proto.set_key("foo-bin");
+  proto.set_value("invalid_base64!");
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  ParseXdsHeader(upb_proto, &errors);
+  EXPECT_FALSE(errors.ok());
+  EXPECT_EQ(
+      errors.status(absl::StatusCode::kInvalidArgument, "validation failed")
+          .message(),
+      "validation failed: [field:value error:invalid base64]");
+}
+
+TEST_F(ParseHeaderTest, RawHeaderValueValidationForNonBinaryHeader) {
+  HeaderValueProto proto;
+  proto.set_key("foo");
+  proto.set_raw_value("\x1f");
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  ParseXdsHeader(upb_proto, &errors);
+  EXPECT_FALSE(errors.ok());
+  EXPECT_EQ(
+      errors.status(absl::StatusCode::kInvalidArgument, "validation failed")
+          .message(),
+      "validation failed: [field:raw_value error:Illegal header value]");
+}
+
+TEST_F(ParseHeaderTest, NoHeaderValueSet) {
+  HeaderValueProto proto;
+  proto.set_key("foo");
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  ParseXdsHeader(upb_proto, &errors);
+  EXPECT_FALSE(errors.ok());
+  EXPECT_EQ(
+      errors.status(absl::StatusCode::kInvalidArgument, "validation failed")
+          .message(),
+      "validation failed: [field: error:either value or raw_value must be "
+      "set]");
+}
+
+TEST_F(ParseHeaderTest, InvalidHeaderKeyAndValue) {
+  HeaderValueProto proto;
+  proto.set_key("Foo");
+  proto.set_value("\x1f");
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  ParseXdsHeader(upb_proto, &errors);
+  EXPECT_FALSE(errors.ok());
+  EXPECT_EQ(
+      errors.status(absl::StatusCode::kInvalidArgument, "validation failed")
+          .message(),
+      "validation failed: [field:key error:Illegal header key; "
+      "field:value error:Illegal header value]");
+}
+
+TEST_F(ParseHeaderTest, HeaderKeyHostNotAllowed) {
+  HeaderValueProto proto;
+  proto.set_key("host");
+  proto.set_value("x");
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  ParseXdsHeader(upb_proto, &errors);
+  EXPECT_FALSE(errors.ok());
+  EXPECT_EQ(
+      errors.status(absl::StatusCode::kInvalidArgument, "validation failed")
+          .message(),
+      "validation failed: [field:key error:header \"host\" not allowed]");
+}
+
+TEST_F(ParseHeaderTest, HeaderKeyStartingWithColonNotAllowed) {
+  HeaderValueProto proto;
+  proto.set_key(":path");
+  proto.set_value("x");
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  ParseXdsHeader(upb_proto, &errors);
+  EXPECT_FALSE(errors.ok());
+  EXPECT_EQ(
+      errors.status(absl::StatusCode::kInvalidArgument, "validation failed")
+          .message(),
+      "validation failed: [field:key error:header \":path\" not allowed]");
+}
+
+TEST_F(ParseHeaderTest, HeaderKeyStartingWithGrpcNotAllowed) {
+  HeaderValueProto proto;
+  proto.set_key("grpc-foo");
+  proto.set_value("x");
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  ParseXdsHeader(upb_proto, &errors);
+  EXPECT_FALSE(errors.ok());
+  EXPECT_EQ(
+      errors.status(absl::StatusCode::kInvalidArgument, "validation failed")
+          .message(),
+      "validation failed: [field:key error:header \"grpc-foo\" not allowed]");
+}
+
+//
+// ParseHeaderValueOption() tests
+//
+
+class ParseHeaderValueOptionTest : public XdsCommonTypesTest {
+ protected:
+  const envoy_config_core_v3_HeaderValueOption* ConvertToUpb(
+      const HeaderValueOptionProto& proto) {
+    std::string serialized_proto;
+    if (!proto.SerializeToString(&serialized_proto)) {
+      EXPECT_TRUE(false) << "protobuf serialization failed";
+      return nullptr;
+    }
+    const auto* upb_proto = envoy_config_core_v3_HeaderValueOption_parse(
+        serialized_proto.data(), serialized_proto.size(), upb_arena_.ptr());
+    if (upb_proto == nullptr) {
+      EXPECT_TRUE(false) << "upb parsing failed";
+      return nullptr;
+    }
+    return upb_proto;
+  }
+};
+
+TEST_F(ParseHeaderValueOptionTest, ReturnsErrorWhenProtoIsNull) {
+  ValidationErrors errors;
+  ParseXdsHeaderValueOption(nullptr, &errors);
+  EXPECT_FALSE(errors.ok());
+  EXPECT_EQ(
+      errors.status(absl::StatusCode::kInvalidArgument, "validation failed")
+          .message(),
+      "validation failed: [field: error:field is not present]");
+}
+
+TEST_F(ParseHeaderValueOptionTest, ReturnsErrorWhenHeaderFieldNotSet) {
+  HeaderValueOptionProto proto;
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  auto header_value_option = ParseXdsHeaderValueOption(upb_proto, &errors);
+  EXPECT_FALSE(errors.ok());
+  EXPECT_EQ(
+      errors.status(absl::StatusCode::kInvalidArgument, "validation failed")
+          .message(),
+      "validation failed: [field:header error:field not set]");
+}
+
+TEST_F(ParseHeaderValueOptionTest, SuccessfullyParsesAppendIfExistsOrAdd) {
+  HeaderValueOptionProto proto;
+  proto.mutable_header()->set_key("foo");
+  proto.mutable_header()->set_value("bar");
+  proto.set_append_action(HeaderValueOptionProto::APPEND_IF_EXISTS_OR_ADD);
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  auto header_value_option = ParseXdsHeaderValueOption(upb_proto, &errors);
+  EXPECT_TRUE(errors.ok()) << errors.status(absl::StatusCode::kInvalidArgument,
+                                            "unexpected errors");
+  EXPECT_EQ(header_value_option.header.first, "foo");
+  EXPECT_EQ(header_value_option.header.second, "bar");
+  EXPECT_EQ(header_value_option.append_action,
+            XdsHeaderValueOption::AppendAction::kAppendIfExistsOrAdd);
+}
+
+TEST_F(ParseHeaderValueOptionTest, SuccessfullyParsesAddIfAbsent) {
+  HeaderValueOptionProto proto;
+  proto.mutable_header()->set_key("foo");
+  proto.mutable_header()->set_value("bar");
+  proto.set_append_action(HeaderValueOptionProto::ADD_IF_ABSENT);
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  auto header_value_option = ParseXdsHeaderValueOption(upb_proto, &errors);
+  EXPECT_TRUE(errors.ok()) << errors.status(absl::StatusCode::kInvalidArgument,
+                                            "unexpected errors");
+  EXPECT_EQ(header_value_option.header.first, "foo");
+  EXPECT_EQ(header_value_option.header.second, "bar");
+  EXPECT_EQ(header_value_option.append_action,
+            XdsHeaderValueOption::AppendAction::kAddIfAbsent);
+}
+
+TEST_F(ParseHeaderValueOptionTest, SuccessfullyParsesOverwriteIfExistsOrAdd) {
+  HeaderValueOptionProto proto;
+  proto.mutable_header()->set_key("foo");
+  proto.mutable_header()->set_value("bar");
+  proto.set_append_action(HeaderValueOptionProto::OVERWRITE_IF_EXISTS_OR_ADD);
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  auto header_value_option = ParseXdsHeaderValueOption(upb_proto, &errors);
+  EXPECT_TRUE(errors.ok()) << errors.status(absl::StatusCode::kInvalidArgument,
+                                            "unexpected errors");
+  EXPECT_EQ(header_value_option.header.first, "foo");
+  EXPECT_EQ(header_value_option.header.second, "bar");
+  EXPECT_EQ(header_value_option.append_action,
+            XdsHeaderValueOption::AppendAction::kOverwriteIfExistsOrAdd);
+}
+
+TEST_F(ParseHeaderValueOptionTest, SuccessfullyParsesOverwriteIfExists) {
+  HeaderValueOptionProto proto;
+  proto.mutable_header()->set_key("foo");
+  proto.mutable_header()->set_value("bar");
+  proto.set_append_action(HeaderValueOptionProto::OVERWRITE_IF_EXISTS);
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  auto header_value_option = ParseXdsHeaderValueOption(upb_proto, &errors);
+  EXPECT_TRUE(errors.ok()) << errors.status(absl::StatusCode::kInvalidArgument,
+                                            "unexpected errors");
+  EXPECT_EQ(header_value_option.header.first, "foo");
+  EXPECT_EQ(header_value_option.header.second, "bar");
+  EXPECT_EQ(header_value_option.append_action,
+            XdsHeaderValueOption::AppendAction::kOverwriteIfExists);
+}
+
+TEST_F(ParseHeaderValueOptionTest, ReturnsErrorWhenAppendActionIsInvalid) {
+  HeaderValueOptionProto proto;
+  proto.mutable_header()->set_key("foo");
+  proto.mutable_header()->set_value("bar");
+  proto.set_append_action(
+      static_cast<HeaderValueOptionProto::HeaderAppendAction>(999));
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  ParseXdsHeaderValueOption(upb_proto, &errors);
+  EXPECT_FALSE(errors.ok());
+  EXPECT_EQ(
+      errors.status(absl::StatusCode::kInvalidArgument, "validation failed")
+          .message(),
+      "validation failed: [field:append_action error:unsupported append "
+      "action]");
+}
+
+// Note: This shows that we include validation errors from ParseXdsHeader()
+// itself.  We don't need to test every possible matcher validation failure
+// case here, because those are covered in the tests for ParseXdsHeader().
+TEST_F(ParseHeaderValueOptionTest, NoHeaderValueSet) {
+  HeaderValueOptionProto proto;
+  proto.mutable_header()->set_key("foo");
+  proto.set_append_action(HeaderValueOptionProto::APPEND_IF_EXISTS_OR_ADD);
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  ParseXdsHeaderValueOption(upb_proto, &errors);
+  EXPECT_FALSE(errors.ok());
+  EXPECT_EQ(
+      errors.status(absl::StatusCode::kInvalidArgument, "validation failed")
+          .message(),
+      "validation failed: [field:header error:either value or raw_value must "
+      "be set]");
+}
+
+//
+// ApplyXdsHeaderMutationsRemoval() tests
+//
+
+TEST(ApplyXdsHeaderMutationsRemovalTest, RemovesHeaderWhenAllowed) {
+  grpc_metadata_batch metadata;
+  metadata.Append("x-target-1", Slice::FromCopiedString("foo"),
+                  [](absl::string_view, const Slice&) {});
+  metadata.Append("x-target-2", Slice::FromCopiedString("bar"),
+                  [](absl::string_view, const Slice&) {});
+  HeaderMutationRules rules;
+  rules.disallow_is_error = true;
+  rules.allow_expression = std::make_unique<RE2>("x-.*");
+  absl::Status status =
+      ApplyXdsHeaderMutationsRemoval("x-target-1", &rules, metadata);
+  EXPECT_TRUE(status.ok()) << status;
+  std::string val;
+  EXPECT_FALSE(metadata.GetStringValue("x-target-1", &val).has_value());
+  EXPECT_EQ(metadata.GetStringValue("x-target-2", &val), "bar");
+}
+
+TEST(ApplyXdsHeaderMutationsRemovalTest, SucceedsWhenHeaderIsAbsent) {
+  grpc_metadata_batch metadata;
+  metadata.Append("x-target-1", Slice::FromCopiedString("val"),
+                  [](absl::string_view, const Slice&) {});
+  HeaderMutationRules rules;
+  rules.disallow_is_error = true;
+  rules.allow_expression = std::make_unique<RE2>(".+");
+  absl::Status status =
+      ApplyXdsHeaderMutationsRemoval("x-target-2", &rules, metadata);
+  EXPECT_TRUE(status.ok()) << status;
+  std::string val;
+  EXPECT_EQ(metadata.GetStringValue("x-target-1", &val), "val");
+  EXPECT_FALSE(metadata.GetStringValue("x-target-2", &val).has_value());
+}
+
+TEST(ApplyXdsHeaderMutationsRemovalTest, DisallowIsErrorReturnsNonOkStatus) {
+  grpc_metadata_batch metadata;
+  metadata.Append("x-target-1", Slice::FromCopiedString("secret"),
+                  [](absl::string_view, const Slice&) {});
+  HeaderMutationRules rules;
+  rules.disallow_is_error = true;
+  rules.disallow_expression = std::make_unique<RE2>("x-target-1");
+  absl::Status status =
+      ApplyXdsHeaderMutationsRemoval("x-target-1", &rules, metadata);
+  EXPECT_EQ(status,
+            absl::InternalError("Forbidden header removal: x-target-1"));
+}
+
+TEST(ApplyXdsHeaderMutationsRemovalTest, DoesNotRemoveHeaderWhenNotAllowed) {
+  grpc_metadata_batch metadata;
+  metadata.Append("x-target-1", Slice::FromCopiedString("secret"),
+                  [](absl::string_view, const Slice&) {});
+  HeaderMutationRules rules;
+  rules.disallow_is_error = false;
+  rules.disallow_expression = std::make_unique<RE2>("x-target-1");
+  absl::Status status =
+      ApplyXdsHeaderMutationsRemoval("x-target-1", &rules, metadata);
+  EXPECT_TRUE(status.ok()) << status;
+  std::string val;
+  EXPECT_EQ(metadata.GetStringValue("x-target-1", &val), "secret");
+}
+
+TEST(ApplyXdsHeaderMutationsRemovalTest,
+     RemovesHeaderWhenMutationRulesPointerIsNotSet) {
+  grpc_metadata_batch metadata;
+  metadata.Append("x-target-1", Slice::FromCopiedString("foo"),
+                  [](absl::string_view, const Slice&) {});
+  metadata.Append("x-target-2", Slice::FromCopiedString("bar"),
+                  [](absl::string_view, const Slice&) {});
+  absl::Status status =
+      ApplyXdsHeaderMutationsRemoval("x-target-1", /*rules=*/nullptr, metadata);
+  EXPECT_TRUE(status.ok()) << status;
+  std::string val;
+  EXPECT_FALSE(metadata.GetStringValue("x-target-1", &val).has_value());
+  EXPECT_EQ(metadata.GetStringValue("x-target-2", &val), "bar");
+}
+
+//
+// ApplyXdsHeaderMutationsAddition() tests
+//
+
+TEST(ApplyHeaderMutationsAdditionTest,
+     AddsHeaderWhenNotPresentWithAppendIfExistsOrAdd) {
+  grpc_metadata_batch metadata;
+  XdsHeaderValueOption opt;
+  opt.header.first = "x-target-1";
+  opt.header.second = "val";
+  opt.append_action = XdsHeaderValueOption::AppendAction::kAppendIfExistsOrAdd;
+  HeaderMutationRules rules;
+  rules.disallow_is_error = true;
+  rules.allow_expression = std::make_unique<RE2>("x-.*");
+  absl::Status status = ApplyXdsHeaderMutationsAddition(opt, &rules, metadata);
+  EXPECT_TRUE(status.ok()) << status;
+  std::string val;
+  EXPECT_EQ(metadata.GetStringValue("x-target-1", &val), "val");
+}
+
+TEST(ApplyHeaderMutationsAdditionTest,
+     AddHeaderWhenPresentWithAppendIfExistsOrAdd) {
+  grpc_metadata_batch metadata;
+  metadata.Append("x-target-1", Slice::FromCopiedString("orig"),
+                  [](absl::string_view, const Slice&) {});
+  XdsHeaderValueOption opt;
+  opt.header.first = "x-target-1";
+  opt.header.second = "new";
+  opt.append_action = XdsHeaderValueOption::AppendAction::kAppendIfExistsOrAdd;
+  HeaderMutationRules rules;
+  rules.disallow_is_error = true;
+  rules.allow_expression = std::make_unique<RE2>("x-.*");
+  absl::Status status = ApplyXdsHeaderMutationsAddition(opt, &rules, metadata);
+  EXPECT_TRUE(status.ok()) << status;
+  std::string val;
+  EXPECT_EQ(metadata.GetStringValue("x-target-1", &val), "orig,new");
+}
+
+TEST(ApplyHeaderMutationsAdditionTest,
+     AddEmptyHeaderWhenNotPresentWithAppendIfExistsOrAdd) {
+  grpc_metadata_batch metadata;
+  XdsHeaderValueOption opt;
+  opt.header.first = "x-target-1";
+  opt.header.second = "";
+  opt.append_action = XdsHeaderValueOption::AppendAction::kAppendIfExistsOrAdd;
+  HeaderMutationRules rules;
+  rules.disallow_is_error = true;
+  rules.allow_expression = std::make_unique<RE2>("x-.*");
+  absl::Status status = ApplyXdsHeaderMutationsAddition(opt, &rules, metadata);
+  EXPECT_TRUE(status.ok()) << status;
+  std::string val;
+  EXPECT_EQ(metadata.GetStringValue("x-target-1", &val), "");
+}
+
+TEST(ApplyHeaderMutationsAdditionTest, AddHeaderWhenNotPresentWithAddIfAbsent) {
+  grpc_metadata_batch metadata;
+  XdsHeaderValueOption opt;
+  opt.header.first = "x-target-1";
+  opt.header.second = "val";
+  opt.append_action = XdsHeaderValueOption::AppendAction::kAddIfAbsent;
+  HeaderMutationRules rules;
+  rules.disallow_is_error = true;
+  rules.allow_expression = std::make_unique<RE2>("x-.*");
+  absl::Status status = ApplyXdsHeaderMutationsAddition(opt, &rules, metadata);
+  EXPECT_TRUE(status.ok()) << status;
+  std::string val;
+  EXPECT_EQ(metadata.GetStringValue("x-target-1", &val), "val");
+}
+
+TEST(ApplyHeaderMutationsAdditionTest,
+     DoesNotAddHeaderWhenPresentWithAddIfAbsent) {
+  grpc_metadata_batch metadata;
+  metadata.Append("x-target-1", Slice::FromCopiedString("orig"),
+                  [](absl::string_view, const Slice&) {});
+  XdsHeaderValueOption opt;
+  opt.header.first = "x-target-1";
+  opt.header.second = "new";
+  opt.append_action = XdsHeaderValueOption::AppendAction::kAddIfAbsent;
+  HeaderMutationRules rules;
+  rules.disallow_is_error = true;
+  rules.allow_expression = std::make_unique<RE2>("x-.*");
+  absl::Status status = ApplyXdsHeaderMutationsAddition(opt, &rules, metadata);
+  EXPECT_TRUE(status.ok()) << status;
+  std::string val;
+  EXPECT_EQ(metadata.GetStringValue("x-target-1", &val), "orig");
+}
+
+TEST(ApplyHeaderMutationsAdditionTest,
+     AddEmptyHeaderWhenNotPresentWithAddIfAbsent) {
+  grpc_metadata_batch metadata;
+  XdsHeaderValueOption opt;
+  opt.header.first = "x-target-1";
+  opt.header.second = "";
+  opt.append_action = XdsHeaderValueOption::AppendAction::kAddIfAbsent;
+  HeaderMutationRules rules;
+  rules.disallow_is_error = true;
+  rules.allow_expression = std::make_unique<RE2>("x-.*");
+  absl::Status status = ApplyXdsHeaderMutationsAddition(opt, &rules, metadata);
+  EXPECT_TRUE(status.ok()) << status;
+  std::string val;
+  EXPECT_EQ(metadata.GetStringValue("x-target-1", &val), "");
+}
+
+TEST(ApplyHeaderMutationsAdditionTest,
+     DoesNotAddHeaderWhenNotPresentWithOverwriteIfExists) {
+  grpc_metadata_batch metadata;
+  XdsHeaderValueOption opt;
+  opt.header.first = "x-target-1";
+  opt.header.second = "new";
+  opt.append_action = XdsHeaderValueOption::AppendAction::kOverwriteIfExists;
+  HeaderMutationRules rules;
+  rules.disallow_is_error = true;
+  rules.allow_expression = std::make_unique<RE2>("x-.*");
+  absl::Status status = ApplyXdsHeaderMutationsAddition(opt, &rules, metadata);
+  EXPECT_TRUE(status.ok()) << status;
+  std::string val;
+  EXPECT_FALSE(metadata.GetStringValue("x-target-1", &val).has_value());
+}
+
+TEST(ApplyHeaderMutationsAdditionTest,
+     OverwriteHeaderWhenPresentWithOverwriteIfExists) {
+  grpc_metadata_batch metadata;
+  metadata.Append("x-target-1", Slice::FromCopiedString("orig"),
+                  [](absl::string_view, const Slice&) {});
+  XdsHeaderValueOption opt;
+  opt.header.first = "x-target-1";
+  opt.header.second = "new";
+  opt.append_action = XdsHeaderValueOption::AppendAction::kOverwriteIfExists;
+  HeaderMutationRules rules;
+  rules.disallow_is_error = true;
+  rules.allow_expression = std::make_unique<RE2>("x-.*");
+  absl::Status status = ApplyXdsHeaderMutationsAddition(opt, &rules, metadata);
+  EXPECT_TRUE(status.ok()) << status;
+  std::string val;
+  EXPECT_EQ(metadata.GetStringValue("x-target-1", &val), "new");
+}
+
+TEST(ApplyHeaderMutationsAdditionTest,
+     OverwriteEmptyHeaderWhenPresentWithOverwriteIfExists) {
+  grpc_metadata_batch metadata;
+  metadata.Append("x-target-1", Slice::FromCopiedString("orig"),
+                  [](absl::string_view, const Slice&) {});
+  XdsHeaderValueOption opt;
+  opt.header.first = "x-target-1";
+  opt.header.second = "";
+  opt.append_action = XdsHeaderValueOption::AppendAction::kOverwriteIfExists;
+  HeaderMutationRules rules;
+  rules.disallow_is_error = true;
+  rules.allow_expression = std::make_unique<RE2>("x-.*");
+  absl::Status status = ApplyXdsHeaderMutationsAddition(opt, &rules, metadata);
+  EXPECT_TRUE(status.ok()) << status;
+  std::string val;
+  EXPECT_EQ(metadata.GetStringValue("x-target-1", &val), "");
+}
+
+TEST(ApplyHeaderMutationsAdditionTest,
+     AddHeaderWhenNotPresentWithOverwriteIfExistsOrAdd) {
+  grpc_metadata_batch metadata;
+  XdsHeaderValueOption opt;
+  opt.header.first = "x-target-1";
+  opt.header.second = "new";
+  opt.append_action =
+      XdsHeaderValueOption::AppendAction::kOverwriteIfExistsOrAdd;
+  HeaderMutationRules rules;
+  rules.disallow_is_error = true;
+  rules.allow_expression = std::make_unique<RE2>("x-.*");
+  absl::Status status = ApplyXdsHeaderMutationsAddition(opt, &rules, metadata);
+  EXPECT_TRUE(status.ok()) << status;
+  std::string val;
+  EXPECT_EQ(metadata.GetStringValue("x-target-1", &val), "new");
+}
+
+TEST(ApplyHeaderMutationsAdditionTest,
+     OverwriteHeaderWhenPresentWithOverwriteIfExistsOrAdd) {
+  grpc_metadata_batch metadata;
+  metadata.Append("x-target-1", Slice::FromCopiedString("orig"),
+                  [](absl::string_view, const Slice&) {});
+  XdsHeaderValueOption opt;
+  opt.header.first = "x-target-1";
+  opt.header.second = "new";
+  opt.append_action =
+      XdsHeaderValueOption::AppendAction::kOverwriteIfExistsOrAdd;
+  HeaderMutationRules rules;
+  rules.disallow_is_error = true;
+  rules.allow_expression = std::make_unique<RE2>("x-.*");
+  absl::Status status = ApplyXdsHeaderMutationsAddition(opt, &rules, metadata);
+  EXPECT_TRUE(status.ok()) << status;
+  std::string val;
+  EXPECT_EQ(metadata.GetStringValue("x-target-1", &val), "new");
+}
+
+TEST(ApplyHeaderMutationsAdditionTest,
+     AddEmptyHeaderWhenNotPresentWithOverwriteIfExistsOrAdd) {
+  grpc_metadata_batch metadata;
+  XdsHeaderValueOption opt;
+  opt.header.first = "x-target-1";
+  opt.header.second = "";
+  opt.append_action =
+      XdsHeaderValueOption::AppendAction::kOverwriteIfExistsOrAdd;
+  HeaderMutationRules rules;
+  rules.disallow_is_error = true;
+  rules.allow_expression = std::make_unique<RE2>("x-.*");
+  absl::Status status = ApplyXdsHeaderMutationsAddition(opt, &rules, metadata);
+  EXPECT_TRUE(status.ok()) << status;
+  std::string val;
+  EXPECT_EQ(metadata.GetStringValue("x-target-1", &val), "");
+}
+
+TEST(ApplyHeaderMutationsAdditionTest, DisallowIsErrorReturnsNonOkStatus) {
+  grpc_metadata_batch metadata;
+  XdsHeaderValueOption opt;
+  opt.header.first = "x-target-1";
+  opt.header.second = "val";
+  opt.append_action = XdsHeaderValueOption::AppendAction::kAddIfAbsent;
+  HeaderMutationRules rules;
+  rules.disallow_is_error = true;
+  rules.disallow_expression = std::make_unique<RE2>("x-target-1");
+  absl::Status status = ApplyXdsHeaderMutationsAddition(opt, &rules, metadata);
+  EXPECT_EQ(status,
+            absl::InternalError("Forbidden header mutation: x-target-1"));
+}
+
+TEST(ApplyHeaderMutationsAdditionTest, DoesNotAddHeaderWhenNotAllowed) {
+  grpc_metadata_batch metadata;
+  XdsHeaderValueOption opt;
+  opt.header.first = "x-target-1";
+  opt.header.second = "val";
+  opt.append_action = XdsHeaderValueOption::AppendAction::kAddIfAbsent;
+  HeaderMutationRules rules;
+  rules.disallow_is_error = false;
+  rules.disallow_expression = std::make_unique<RE2>("x-target-1");
+  absl::Status status = ApplyXdsHeaderMutationsAddition(opt, &rules, metadata);
+  EXPECT_TRUE(status.ok()) << status;
+  std::string val;
+  EXPECT_FALSE(metadata.GetStringValue("x-target-1", &val).has_value());
+}
+
+TEST(ApplyHeaderMutationsAdditionTest,
+     AddHeaderWhenMutationRulesPointerIsNotSet) {
+  grpc_metadata_batch metadata;
+  metadata.Append("x-target-1", Slice::FromCopiedString("orig"),
+                  [](absl::string_view, const Slice&) {});
+  XdsHeaderValueOption opt;
+  opt.header.first = "x-target-1";
+  opt.header.second = "new";
+  opt.append_action =
+      XdsHeaderValueOption::AppendAction::kOverwriteIfExistsOrAdd;
+  absl::Status status =
+      ApplyXdsHeaderMutationsAddition(opt, /*rules=*/nullptr, metadata);
+  EXPECT_TRUE(status.ok()) << status;
+  std::string val;
+  EXPECT_EQ(metadata.GetStringValue("x-target-1", &val), "new");
 }
 
 }  // namespace

@@ -16,10 +16,15 @@
 //
 //
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/support/channel_arguments.h>
 
+#include <memory>
+
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/net/socket_mutator.h"
 #include "src/core/util/useful.h"
@@ -250,6 +255,24 @@ TEST_F(ChannelArgumentsTest, SetUserAgentPrefix) {
     }
   }
   EXPECT_TRUE(found);
+}
+
+TEST_F(ChannelArgumentsTest, SetEventEngine) {
+  VerifyDefaultChannelArgs();
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine;
+
+  channel_args_.SetPointerWithVtable(
+      GRPC_ARG_EVENT_ENGINE, &engine,
+      grpc_event_engine::experimental::grpc_event_engine_arg_vtable());
+
+  grpc_channel_args args;
+  channel_args_.SetChannelArgs(&args);
+
+  grpc_core::ChannelArgs channel_args = grpc_core::ChannelArgs::FromC(args);
+
+  EXPECT_TRUE(
+      channel_args
+          .ContainsObject<grpc_event_engine::experimental::EventEngine>());
 }
 
 }  // namespace testing

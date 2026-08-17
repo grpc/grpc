@@ -68,3 +68,40 @@ where = ["src/python/grpcio"]
     "*.pxd",
     "*.pxi",
 ]
+
+[tool.pyright]
+
+typeCheckingMode = "strict"
+
+reportUnnecessaryComparison = "none"
+reportConstantRedefinition = "none"
+reportUnusedFunction = "none"
+reportUnusedVariable = "none"
+reportIncompleteStub = "none"
+reportUnusedClass = "none"
+
+include = [
+    "src/python/grpcio/grpc/aio/_channel.py",
+    "src/python/grpcio/grpc/aio/_base_channel.py",
+    "src/python/grpcio/grpc/aio/_call.py",
+    "src/python/grpcio/grpc/aio/_metadata.py",
+    "src/python/grpcio/grpc/aio/_base_server.py"
+]
+
+exclude = [
+    "**/third_party",
+    "**/build",
+    "**/grpc_root",
+    "**/__pycache__",
+    "**/.git",
+    "**/bazel-*",
+    "src/python/grpcio/commands.py",
+    "src/python/grpcio/_spawn_patch.py"
+]
+
+[[tool.pyright.executionEnvironments]]
+root = "src/python/grpcio"
+
+[[tool.pyright.executionEnvironments]]
+root = "src/python/grpcio_tests"
+extraPaths = ["src/python/grpcio"]

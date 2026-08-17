@@ -13,8 +13,6 @@
 # limitations under the License.
 """A client that makes both Greeter and RouteGuide RPCs."""
 
-from __future__ import print_function
-
 import logging
 import random
 import time

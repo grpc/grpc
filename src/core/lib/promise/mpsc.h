@@ -264,8 +264,8 @@ template <typename T>
 class Center : public RefCounted<Center<T>, NonPolymorphicRefCount> {
  private:
   struct Node final : public Mpsc::Node {
-    explicit Node(uint32_t tokens, T value)
-        : Mpsc::Node(tokens), value(std::move(value)) {}
+    explicit Node(uint32_t tokens, T&& value)
+        : Mpsc::Node(tokens), value(std::forward<T>(value)) {}
     T value;
   };
 
@@ -316,12 +316,13 @@ class Center : public RefCounted<Center<T>, NonPolymorphicRefCount> {
     RefCountedPtr<Center<T>> center_;
   };
 
-  auto Send(T value, uint32_t tokens) {
-    return mpsc_.Send(new Node(tokens, std::move(value)));
+  auto Send(T&& value, uint32_t tokens) {
+    return mpsc_.Send(new Node(tokens, std::forward<T>(value)));
   }
 
-  StatusFlag UnbufferedImmediateSend(T value, uint32_t tokens) {
-    return mpsc_.UnbufferedImmediateSend(new Node(tokens, std::move(value)));
+  StatusFlag UnbufferedImmediateSend(T&& value, uint32_t tokens) {
+    return mpsc_.UnbufferedImmediateSend(
+        new Node(tokens, std::forward<T>(value)));
   }
 
   auto Next() {
@@ -392,13 +393,13 @@ class MpscSender {
   // The promise returned is thread safe. We can use multiple send calls
   // in parallel to generate multiple such send promises and these promises can
   // be run in parallel in a thread safe way.
-  auto Send(T t, uint32_t tokens) {
-    return Map(center_->Send(std::move(t), tokens),
+  auto Send(T&& t, uint32_t tokens) {
+    return Map(center_->Send(std::forward<T>(t), tokens),
                [c = center_](auto x) { return x; });
   }
 
-  StatusFlag UnbufferedImmediateSend(T t, uint32_t tokens) {
-    return center_->UnbufferedImmediateSend(std::move(t), tokens);
+  StatusFlag UnbufferedImmediateSend(T&& t, uint32_t tokens) {
+    return center_->UnbufferedImmediateSend(std::forward<T>(t), tokens);
   }
 
  private:

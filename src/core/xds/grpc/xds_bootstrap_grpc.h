@@ -17,8 +17,6 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_BOOTSTRAP_GRPC_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_BOOTSTRAP_GRPC_H
 
-#include <grpc/support/port_platform.h>
-
 #include <map>
 #include <memory>
 #include <optional>
@@ -44,6 +42,8 @@ namespace grpc_core {
 
 bool XdsExtProcOnClientEnabled();
 
+class GrpcXdsBootstrapBuilder;
+
 class GrpcXdsBootstrap final : public XdsBootstrap {
  public:
   class GrpcNode final : public Node {
@@ -59,6 +59,8 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
     }
     const Json::Object& metadata() const override { return metadata_; }
 
+    std::string ToString() const;
+
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
 
    private:
@@ -66,6 +68,12 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
       std::string region;
       std::string zone;
       std::string sub_zone;
+
+      bool Empty() const {
+        return region.empty() && zone.empty() && sub_zone.empty();
+      }
+
+      std::string ToString() const;
 
       static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
     };
@@ -95,6 +103,8 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
       return client_listener_resource_name_template_;
     }
 
+    std::string ToString() const;
+
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
 
    private:
@@ -107,14 +117,12 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
     RefCountedPtr<const ChannelCredsConfig> channel_creds_config;
     std::vector<RefCountedPtr<const CallCredsConfig>> call_creds_configs;
 
+    std::string ToString() const;
+
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
     void JsonPostLoad(const Json& json, const JsonArgs& args,
                       ValidationErrors* errors);
   };
-
-  // Creates bootstrap object from json_string.
-  static absl::StatusOr<std::unique_ptr<GrpcXdsBootstrap>> Create(
-      absl::string_view json_string);
 
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
   void JsonPostLoad(const Json& json, const JsonArgs& args,
@@ -175,6 +183,12 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
   }
 
  private:
+  friend class GrpcXdsBootstrapBuilder;
+
+  // External callers should use GrpcXdsBootstrapBuilder::Build() instead.
+  static absl::StatusOr<std::unique_ptr<GrpcXdsBootstrap>> Create(
+      absl::string_view json_string);
+
   std::vector<GrpcXdsServer> servers_;
   std::optional<GrpcNode> node_;
   std::string client_default_listener_resource_name_template_;

@@ -742,27 +742,31 @@ struct Counter {
 
 // An InstrumentHandle is a handle to a single metric in an
 // instrument domain. It has a Shape (how the metric behaves).
-template <typename Shape, typename Domain>
+template <typename Shape, typename DomainTag>
 class InstrumentHandle {
  public:
+  constexpr InstrumentHandle() = default;
+
+  constexpr InstrumentHandle(
+      instrument_detail::QueryableDomain* instrument_domain,
+      const InstrumentMetadata::Description* description, Shape shape)
+      : instrument_domain_(instrument_domain),
+        offset_(description ? description->offset : 0),
+        shape_(std::move(shape)),
+        description_(description) {}
+
   absl::string_view name() const { return description_->name; }
   absl::string_view description() const { return description_->description; }
   absl::string_view unit() const { return description_->unit; }
   uint64_t offset() const { return offset_; }
 
  private:
-  friend Domain;
+  friend class instrument_detail::QueryableDomain;
+  template <typename B, size_t N, typename T>
+  friend class instrument_detail::InstrumentDomainImpl;
 
-  InstrumentHandle(Domain* instrument_domain,
-                   const InstrumentMetadata::Description* description,
-                   Shape shape)
-      : instrument_domain_(instrument_domain),
-        offset_(description->offset),
-        shape_(std::move(shape)),
-        description_(description) {}
-
-  Domain* instrument_domain_;
-  uint64_t offset_;
+  instrument_detail::QueryableDomain* instrument_domain_ = nullptr;
+  uint64_t offset_ = 0;
   GPR_NO_UNIQUE_ADDRESS Shape shape_;
   const InstrumentMetadata::Description* description_ = nullptr;
 };
@@ -917,34 +921,27 @@ template <typename Backend, size_t N, typename Tag>
 class InstrumentDomainImpl final : public QueryableDomain {
  public:
   using Self = InstrumentDomainImpl<Backend, N, Tag>;
-  using CounterHandle = InstrumentHandle<Counter, Self>;
+  using CounterHandle = InstrumentHandle<Counter, Tag>;
   using UpDownCounterHandle =
-      InstrumentHandle<InstrumentMetadata::UpDownCounterShape, Self>;
+      InstrumentHandle<InstrumentMetadata::UpDownCounterShape, Tag>;
   using DoubleGaugeHandle =
-      InstrumentHandle<InstrumentMetadata::DoubleGaugeShape, Self>;
+      InstrumentHandle<InstrumentMetadata::DoubleGaugeShape, Tag>;
   using IntGaugeHandle =
-      InstrumentHandle<InstrumentMetadata::IntGaugeShape, Self>;
+      InstrumentHandle<InstrumentMetadata::IntGaugeShape, Tag>;
   using UintGaugeHandle =
-      InstrumentHandle<InstrumentMetadata::UintGaugeShape, Self>;
+      InstrumentHandle<InstrumentMetadata::UintGaugeShape, Tag>;
   template <typename Shape>
-  using HistogramHandle = InstrumentHandle<const Shape*, Self>;
+  using HistogramHandle = InstrumentHandle<const Shape*, Tag>;
 
   class GaugeSink {
    public:
     explicit GaugeSink(GaugeStorage& storage) : storage_(storage) {}
 
-    void Set(InstrumentHandle<InstrumentMetadata::DoubleGaugeShape, Self> g,
-             double x) {
+    void Set(DoubleGaugeHandle g, double x) {
       storage_.SetDouble(g.offset_, x);
     }
-    void Set(InstrumentHandle<InstrumentMetadata::IntGaugeShape, Self> g,
-             int64_t x) {
-      storage_.SetInt(g.offset_, x);
-    }
-    void Set(InstrumentHandle<InstrumentMetadata::UintGaugeShape, Self> g,
-             uint64_t x) {
-      storage_.SetUint(g.offset_, x);
-    }
+    void Set(IntGaugeHandle g, int64_t x) { storage_.SetInt(g.offset_, x); }
+    void Set(UintGaugeHandle g, uint64_t x) { storage_.SetUint(g.offset_, x); }
 
    private:
     GaugeStorage& storage_;
@@ -1139,6 +1136,23 @@ class InstrumentDomainImpl final : public QueryableDomain {
 template <class Derived>
 class InstrumentDomain {
  public:
+  using CounterHandle =
+      instrument_detail::InstrumentHandle<instrument_detail::Counter, Derived>;
+  using UpDownCounterHandle = instrument_detail::InstrumentHandle<
+      InstrumentMetadata::UpDownCounterShape, Derived>;
+  using DoubleGaugeHandle =
+      instrument_detail::InstrumentHandle<InstrumentMetadata::DoubleGaugeShape,
+                                          Derived>;
+  using IntGaugeHandle =
+      instrument_detail::InstrumentHandle<InstrumentMetadata::IntGaugeShape,
+                                          Derived>;
+  using UintGaugeHandle =
+      instrument_detail::InstrumentHandle<InstrumentMetadata::UintGaugeShape,
+                                          Derived>;
+  template <typename Shape>
+  using HistogramHandle =
+      instrument_detail::InstrumentHandle<const Shape*, Derived>;
+
   static auto* Domain() {
     static const auto labels = Derived::Labels();
     static auto* domain =

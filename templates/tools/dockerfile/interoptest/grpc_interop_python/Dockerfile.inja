@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:11
+FROM python:3.10-bullseye
 
 {% include "../../apt_get_basic.include" %}
 {% include "../../run_tests_addons.include" %}
@@ -22,5 +22,5 @@ RUN ln -s $(which python3) /usr/bin/python
 
 {% include "../../gcp_api_libraries.include" %}
 
-{% include "../../cmake.include" %}
+{% include "../../cmake_bullseye_backports.include" %}
 {% include "../../ccache.include" %}

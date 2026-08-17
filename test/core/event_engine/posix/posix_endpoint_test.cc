@@ -14,12 +14,21 @@
 
 #include "src/core/lib/event_engine/posix_engine/posix_endpoint.h"
 
+#include <fcntl.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <poll.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include <algorithm>
 #include <chrono>
+#include <cstddef>
 #include <list>
 #include <memory>
 #include <string>
@@ -52,15 +61,19 @@
 #include "test/core/event_engine/posix/posix_engine_test_utils.h"
 #include "test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h"
 #include "test/core/test_util/port.h"
+#include "test/core/test_util/test_memory_allocator.h"
 #include "gtest/gtest.h"
 #include "absl/log/log.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_event_engine {
 namespace experimental {
+
+using ::grpc_core::testing::TestMemoryAllocatorFactory;
 
 namespace {
 
@@ -277,6 +290,7 @@ TEST_P(PosixEndpointTest, ConnectExchangeBidiDataTransferTest) {
   }
   worker->Wait();
 }
+// TODO(ayerbea): Rcv lowat
 
 // Create  N connections and exchange and verify random number of messages over
 // each connection in parallel.
@@ -337,6 +351,33 @@ TEST_P(PosixEndpointTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
   worker->Wait();
 }
 
+TEST_P(PosixEndpointTest, LargeReadHintTest) {
+  if (PosixPoller() == nullptr) {
+    return;
+  }
+  Worker* worker = new Worker(GetPosixEE(), PosixPoller());
+  worker->Start();
+  {
+    auto connections = CreateConnectedEndpoints(*PosixPoller(), GetParam(), 1,
+                                                GetPosixEE(), GetOracleEE());
+    auto it = connections.begin();
+    auto client_endpoint = std::move((*it).client_endpoint);
+    auto server_endpoint = std::move((*it).server_endpoint);
+    EXPECT_NE(client_endpoint, nullptr);
+    EXPECT_NE(server_endpoint, nullptr);
+    connections.erase(it);
+
+    // 10MB message is larger than 64 * 64KB = 4MB, so it has count >
+    // MAX_READ_IOVEC. If tcp_frame_size_tuning is enabled, we pass a large read
+    // hint.
+    std::string large_msg(10 * 1024 * 1024, 'a');
+    ASSERT_TRUE(SendValidatePayload(large_msg, client_endpoint.get(),
+                                    server_endpoint.get(), large_msg.size())
+                    .ok());
+  }
+  worker->Wait();
+}
+
 // Test with zero copy enabled and disabled.
 INSTANTIATE_TEST_SUITE_P(PosixEndpoint, PosixEndpointTest,
                          ::testing::ValuesIn({false, true}), &TestScenarioName);
@@ -367,26 +408,34 @@ class PosixSecureEndpointTest
   }
 
   void TearDown() override {
-    if (GetParam().use_zero_copy_protector) {
+    if (GetParam().use_zero_copy_protector || test_skipped_) {
       tsi_frame_protector_destroy(client_protector_);
       tsi_frame_protector_destroy(server_protector_);
-    } else {
+    }
+    if (!GetParam().use_zero_copy_protector || test_skipped_) {
       tsi_zero_copy_grpc_protector_destroy(client_zero_copy_protector_);
       tsi_zero_copy_grpc_protector_destroy(server_zero_copy_protector_);
     }
     grpc_slice_unref(encrypted_leftover_data_);
+    if (test_skipped_) {
+      // Manually clear slices in leftover data.
+      // TODO(aananthv): Why do we need to do this?
+      for (int i = 0; i < leftover_data_.Count(); i++) {
+        grpc_slice_unref(leftover_data_.c_slice_at(i));
+      }
+    }
     leftover_data_.Clear();
     PosixEndpointTestBase::TearDown();
   }
 
   grpc_core::OrphanablePtr<grpc_endpoint> CreateSecureEndpoint(
       std::unique_ptr<EventEngine::Endpoint> endpoint, bool leftover,
-      bool use_zero_copy_protector, bool is_client) {
+      bool use_zero_copy_protector, bool is_client,
+      grpc_core::ChannelArgs args) {
     if (leftover) {
       EncryptLeftoverBytes(&leftover_data_, server_protector_,
                            &encrypted_leftover_data_);
     }
-    grpc_core::ChannelArgs args;
     auto quota = grpc_core::ResourceQuota::Default();
     args = args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
     return grpc_secure_endpoint_create(
@@ -404,7 +453,7 @@ class PosixSecureEndpointTest
 
   std::string GetLeftoverDataStr() { return leftover_data_str_; }
 
- private:
+ protected:
   void EncryptLeftoverBytes(grpc_core::SliceBuffer* leftover_data,
                             tsi_frame_protector* protector,
                             grpc_slice* encrypted_leftover_data) {
@@ -455,6 +504,7 @@ class PosixSecureEndpointTest
   grpc_core::SliceBuffer leftover_data_;
   grpc_slice encrypted_leftover_data_ = grpc_empty_slice();
   std::string leftover_data_str_ = "hello world 12345678900987654321";
+  bool test_skipped_ = false;
 };
 
 TEST_P(PosixSecureEndpointTest, ConnectExchangeBidiDataTransferTest) {
@@ -471,15 +521,17 @@ TEST_P(PosixSecureEndpointTest, ConnectExchangeBidiDataTransferTest) {
     auto server_endpoint = std::move((*it).server_endpoint);
     EXPECT_NE(client_endpoint, nullptr);
     EXPECT_NE(server_endpoint, nullptr);
+    grpc_core::ChannelArgs args;
     auto client_secure_endpoint = CreateSecureEndpoint(
         std::move(client_endpoint),
         /*leftover=*/GetParam().has_leftover_bytes,
         /*use_zero_copy_protector=*/GetParam().use_zero_copy_protector,
-        /*is_client=*/true);
+        /*is_client=*/true, args);
+    grpc_core::ChannelArgs server_args;
     auto server_secure_endpoint = CreateSecureEndpoint(
         std::move(server_endpoint), /*leftover=*/false,
         /*use_zero_copy_protector=*/GetParam().use_zero_copy_protector,
-        /*is_client=*/false);
+        /*is_client=*/false, server_args);
     connections.erase(it);
 
     if (GetParam().has_leftover_bytes) {
@@ -518,7 +570,7 @@ TEST_P(PosixSecureEndpointTest, ConnectExchangeBidiDataTransferTest) {
               grpc_get_wrapped_event_engine_endpoint(
                   server_secure_endpoint.get()),
               /*read_hint_bytes=*/
-              (GetParam().use_zero_copy_protector ? -1 : client_msg.size() + 4))
+              (GetParam().use_zero_copy_protector ? -1 : client_msg.size()))
               .ok());
       // Send from server to client and verify data read at the client.
       server_msg = GetNextSendMessage();
@@ -530,8 +582,96 @@ TEST_P(PosixSecureEndpointTest, ConnectExchangeBidiDataTransferTest) {
               grpc_get_wrapped_event_engine_endpoint(
                   client_secure_endpoint.get()),
               /*read_hint_bytes=*/
-              (GetParam().use_zero_copy_protector ? -1 : server_msg.size() + 4))
+              (GetParam().use_zero_copy_protector ? -1 : server_msg.size()))
               .ok());
+    }
+  }
+  worker->Wait();
+}
+
+TEST_P(PosixSecureEndpointTest, UsesMemoryAllocatorFactoryIfProvided) {
+  if (grpc_core::IsPipelinedReadSecureEndpointEnabled()) {
+    // TODO(alishananda): Implement this for pipelined read secure endpoint.
+    test_skipped_ = true;
+    return;
+  }
+  if (PosixPoller() == nullptr) {
+    return;
+  }
+  Worker* worker = new Worker(GetPosixEE(), PosixPoller());
+  worker->Start();
+  {
+    auto connections = CreateConnectedEndpoints(*PosixPoller(), true, 1,
+                                                GetPosixEE(), GetOracleEE());
+    auto it = connections.begin();
+    auto client_endpoint = std::move((*it).client_endpoint);
+    auto server_endpoint = std::move((*it).server_endpoint);
+    EXPECT_NE(client_endpoint, nullptr);
+    EXPECT_NE(server_endpoint, nullptr);
+
+    TestMemoryAllocatorFactory test_factory;
+    grpc_core::ChannelArgs args = grpc_core::ChannelArgs().Set(
+        GRPC_ARG_EVENT_ENGINE_USE_MEMORY_ALLOCATOR_FACTORY,
+        grpc_core::ChannelArgs::Pointer(
+            &test_factory, grpc_core::ChannelArgTypeTraits<
+                               TestMemoryAllocatorFactory>::VTable()));
+
+    auto client_secure_endpoint_grpc = CreateSecureEndpoint(
+        std::move(client_endpoint), /*leftover=*/GetParam().has_leftover_bytes,
+        /*use_zero_copy_protector=*/GetParam().use_zero_copy_protector,
+        /*is_client=*/true, args);
+    auto client_secure_endpoint = grpc_get_wrapped_event_engine_endpoint(
+        client_secure_endpoint_grpc.get());
+
+    EXPECT_TRUE(test_factory.create_called());
+    EXPECT_TRUE(absl::StartsWith(test_factory.last_requested_name(),
+                                 "secure_endpoint-"));
+
+    grpc_core::ChannelArgs server_args = args;
+    auto server_secure_endpoint_grpc = CreateSecureEndpoint(
+        std::move(server_endpoint), /*leftover=*/false,
+        /*use_zero_copy_protector=*/GetParam().use_zero_copy_protector,
+        /*is_client=*/false, server_args);
+    auto server_secure_endpoint = grpc_get_wrapped_event_engine_endpoint(
+        server_secure_endpoint_grpc.get());
+
+    if (GetParam().has_leftover_bytes) {
+      grpc_core::Notification read_done;
+      SliceBuffer read_buffer;
+      if (client_secure_endpoint->Read(
+              [&](absl::Status status) {
+                CHECK_OK(status) << "Failed to read leftover data from "
+                                    "client secure endpoint";
+                read_done.Notify();
+              },
+              &read_buffer, {})) {
+        read_done.Notify();
+      }
+      read_done.WaitForNotification();
+      EXPECT_EQ(read_buffer.Count(), 1);
+      EXPECT_EQ(read_buffer.TakeFirst().as_string_view(), GetLeftoverDataStr());
+    }
+
+    // Exchange one message to trigger read coalescing buffer allocation.
+    std::string server_msg = "hello world";
+    ASSERT_TRUE(
+        SendValidatePayload(
+            server_msg, server_secure_endpoint, client_secure_endpoint,
+            /*read_hint_bytes=*/
+            (GetParam().use_zero_copy_protector ? -1 : server_msg.size()))
+            .ok());
+    EXPECT_NE(test_factory.last_created_impl(), nullptr);
+
+    if (GetParam().use_zero_copy_protector) {
+      // Memory allocator is not currently used for zero copy protector.
+      EXPECT_EQ(test_factory.last_created_impl()->total_bytes_reserved(), 0);
+    } else {
+      size_t expected_bytes_reserved = server_msg.size();
+      if (GetParam().has_leftover_bytes) {
+        expected_bytes_reserved += GetLeftoverDataStr().size();
+      }
+      EXPECT_GE(test_factory.last_created_impl()->total_bytes_reserved(),
+                expected_bytes_reserved);
     }
   }
   worker->Wait();
@@ -558,10 +698,366 @@ INSTANTIATE_TEST_SUITE_P(
                                        .use_zero_copy_protector = true}}),
     &SecureEndpointTestScenarioName);
 
+namespace {
+constexpr int kRcvLowatThreshold = 16 * 1024;
+constexpr int kMinRcvLowatTarget = 32 * 1024;
+
+void MakeNonBlocking(int fd) {
+  int flags = fcntl(fd, F_GETFL, 0);
+  ASSERT_GE(flags, 0);
+  ASSERT_EQ(fcntl(fd, F_SETFL, flags | O_NONBLOCK), 0);
+}
+
+void CreateTcpSocketPair(int fds[2]) {
+  int listener_fd = socket(AF_INET, SOCK_STREAM, 0);
+  ASSERT_GE(listener_fd, 0);
+
+  struct sockaddr_in addr;
+  memset(&addr, 0, sizeof(addr));
+  addr.sin_family = AF_INET;
+  addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+  addr.sin_port = 0;  // Choose ephemeral port
+
+  ASSERT_EQ(bind(listener_fd, (struct sockaddr*)&addr, sizeof(addr)), 0);
+  socklen_t addrlen = sizeof(addr);
+  ASSERT_EQ(getsockname(listener_fd, (struct sockaddr*)&addr, &addrlen), 0);
+  ASSERT_EQ(listen(listener_fd, 1), 0);
+
+  int client_fd = socket(AF_INET, SOCK_STREAM, 0);
+  ASSERT_GE(client_fd, 0);
+  MakeNonBlocking(client_fd);
+
+  int ret = connect(client_fd, (struct sockaddr*)&addr, sizeof(addr));
+  if (ret < 0) {
+    ASSERT_EQ(errno, EINPROGRESS);
+  }
+
+  int server_fd = accept(listener_fd, nullptr, nullptr);
+  ASSERT_GE(server_fd, 0);
+  MakeNonBlocking(server_fd);
+
+  int one = 1;
+  ASSERT_EQ(setsockopt(client_fd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one)),
+            0);
+  ASSERT_EQ(setsockopt(server_fd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one)),
+            0);
+
+  close(listener_fd);
+
+  fds[0] = client_fd;
+  fds[1] = server_fd;
+}
+
+class FakePosixEventPoller : public PosixEventPoller {
+ public:
+  explicit FakePosixEventPoller(bool track_errors)
+      : track_errors_(track_errors) {}
+
+  EventHandle* CreateHandle(FileDescriptor /*fd*/, absl::string_view /*name*/,
+                            bool /*track_err*/) override {
+    return nullptr;
+  }
+
+  bool CanTrackErrors() const override { return track_errors_; }
+  std::string Name() override { return "fake_poller"; }
+
+#ifdef GRPC_ENABLE_FORK_SUPPORT
+  void HandleForkInChild() override {}
+#endif
+
+  void ResetKickState() override {}
+
+  WorkResult Work(EventEngine::Duration /*timeout*/,
+                  absl::FunctionRef<void()> /*kick_callback*/) override {
+    return WorkResult::kOk;
+  }
+
+  void Kick() override {}
+
+ private:
+  bool track_errors_;
+};
+
+class FakeEventHandle : public EventHandle {
+ public:
+  FakeEventHandle(int fd, PosixEventPoller* poller)
+      : fd_(fd), poller_(poller), on_read_(nullptr), on_error_(nullptr) {}
+
+  FileDescriptor WrappedFd() override { return FileDescriptor(fd_, 0); }
+
+  void OrphanHandle(PosixEngineClosure* on_done, FileDescriptor* release_fd,
+                    absl::string_view /*reason*/) override {
+    if (release_fd != nullptr) {
+      *release_fd = FileDescriptor(fd_, 0);
+    }
+    if (on_done != nullptr) {
+      on_done->Run();
+    }
+  }
+
+  void ShutdownHandle(absl::Status why) override {
+    if (on_read_ != nullptr) {
+      on_read_->SetStatus(why);
+      PosixEngineClosure* cb = on_read_;
+      on_read_ = nullptr;
+      cb->Run();
+    }
+  }
+  void NotifyOnRead(PosixEngineClosure* on_read) override {
+    on_read_ = on_read;
+  }
+  void NotifyOnWrite(PosixEngineClosure* /*on_write*/) override {}
+
+  void NotifyOnError(PosixEngineClosure* on_error) override {
+    on_error_ = on_error;
+  }
+
+  void SetReadable() override {}
+  void SetWritable() override {}
+
+  void SetHasError() override {
+    if (on_error_ != nullptr) {
+      on_error_->SetStatus(absl::CancelledError("shutdown"));
+      on_error_->Run();
+      on_error_ = nullptr;
+    }
+  }
+
+  bool IsHandleShutdown() override { return false; }
+  PosixEventPoller* Poller() override { return poller_; }
+
+  void TriggerRead() {
+    if (on_read_ != nullptr) {
+      PosixEngineClosure* cb = on_read_;
+      on_read_ = nullptr;
+      cb->Run();
+    }
+  }
+
+ private:
+  int fd_;
+  PosixEventPoller* poller_;
+  PosixEngineClosure* on_read_;
+  PosixEngineClosure* on_error_;
+};
+
+}  // namespace
+
+TEST(PosixEndpointTest, RcvLowatTuningTest) {
+  ASSERT_TRUE(grpc_core::IsTcpRcvLowatEnabled());
+
+  int fds[2];
+  CreateTcpSocketPair(fds);
+  int client_fd = fds[0];
+  int server_fd = fds[1];
+
+  FakePosixEventPoller poller(/*track_errors=*/false);
+  FakeEventHandle handle(client_fd, &poller);
+
+  PosixTcpOptions options;
+  options.resource_quota = grpc_core::ResourceQuota::Default();
+
+  auto memory_quota = grpc_core::MakeMemoryQuota(
+      grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>(
+          "test"));
+  auto allocator = memory_quota->CreateMemoryAllocator("test");
+
+  auto endpoint = CreatePosixEndpoint(&handle, nullptr, nullptr,
+                                      std::move(allocator), options);
+
+  int hint_bytes = 64 * 1024;
+  EventEngine::Endpoint::ReadArgs read_args;
+  read_args.set_read_hint_bytes(hint_bytes);
+
+  SliceBuffer read_buffer;
+  bool read_callback_called = false;
+  auto read_cb = [&](absl::Status status) { read_callback_called = true; };
+
+  grpc_core::ExecCtx exec_ctx;
+
+  bool read_immediate = endpoint->Read(read_cb, &read_buffer, read_args);
+  EXPECT_FALSE(read_immediate);
+
+  handle.TriggerRead();
+
+  int optval;
+  socklen_t optlen = sizeof(optval);
+  ASSERT_EQ(getsockopt(client_fd, SOL_SOCKET, SO_RCVLOWAT, &optval, &optlen),
+            0);
+
+  int expected_lowat = hint_bytes - kRcvLowatThreshold;
+  EXPECT_EQ(optval, expected_lowat);
+
+  endpoint.reset();
+  close(client_fd);
+  close(server_fd);
+}
+
+TEST(PosixEndpointTest, RcvLowatCappedByRxBufferTest) {
+  ASSERT_TRUE(grpc_core::IsTcpRcvLowatEnabled());
+  int fds[2];
+  CreateTcpSocketPair(fds);
+  int client_fd = fds[0];
+  int server_fd = fds[1];
+
+  int target_rcvbuf = 256 * 1024;
+  ASSERT_EQ(setsockopt(client_fd, SOL_SOCKET, SO_RCVBUF, &target_rcvbuf,
+                       sizeof(target_rcvbuf)),
+            0);
+
+  int actual_rcvbuf = 0;
+  socklen_t optlen = sizeof(actual_rcvbuf);
+  ASSERT_EQ(
+      getsockopt(client_fd, SOL_SOCKET, SO_RCVBUF, &actual_rcvbuf, &optlen), 0);
+
+  ASSERT_LT(actual_rcvbuf, 1024 * 1024);
+
+  FakePosixEventPoller poller(/*track_errors=*/false);
+  FakeEventHandle handle(client_fd, &poller);
+
+  PosixTcpOptions options;
+  options.resource_quota = grpc_core::ResourceQuota::Default();
+
+  auto memory_quota = grpc_core::MakeMemoryQuota(
+      grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>(
+          "test"));
+  auto allocator = memory_quota->CreateMemoryAllocator("test");
+
+  auto endpoint = CreatePosixEndpoint(&handle, nullptr, nullptr,
+                                      std::move(allocator), options);
+
+  int hint_bytes = 1024 * 1024;
+  EventEngine::Endpoint::ReadArgs read_args;
+  read_args.set_read_hint_bytes(hint_bytes);
+
+  SliceBuffer read_buffer;
+  bool read_callback_called = false;
+  auto read_cb = [&](absl::Status status) { read_callback_called = true; };
+
+  grpc_core::ExecCtx exec_ctx;
+
+  bool read_immediate = endpoint->Read(read_cb, &read_buffer, read_args);
+  EXPECT_FALSE(read_immediate);
+
+  handle.TriggerRead();
+
+  int optval;
+  optlen = sizeof(optval);
+  ASSERT_EQ(getsockopt(client_fd, SOL_SOCKET, SO_RCVLOWAT, &optval, &optlen),
+            0);
+
+  int expected_lowat = (actual_rcvbuf / 2) - kRcvLowatThreshold;
+
+  if (expected_lowat < kMinRcvLowatTarget) {
+    expected_lowat = 0;
+  }
+
+  EXPECT_EQ(optval, expected_lowat);
+  EXPECT_LT(optval, actual_rcvbuf);
+
+  endpoint.reset();
+  close(client_fd);
+  close(server_fd);
+}
+
+#ifndef GPR_APPLE
+TEST(PosixEndpointTest, RcvLowatWakeupBehaviorTest) {
+  ASSERT_TRUE(grpc_core::IsTcpRcvLowatEnabled());
+  int fds[2];
+  CreateTcpSocketPair(fds);
+  int client_fd = fds[0];
+  int server_fd = fds[1];
+
+  FakePosixEventPoller poller(/*track_errors=*/false);
+  FakeEventHandle handle(client_fd, &poller);
+
+  PosixTcpOptions options;
+  options.resource_quota = grpc_core::ResourceQuota::Default();
+
+  auto memory_quota = grpc_core::MakeMemoryQuota(
+      grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>(
+          "test"));
+  auto allocator = memory_quota->CreateMemoryAllocator("test");
+
+  auto endpoint = CreatePosixEndpoint(&handle, nullptr, nullptr,
+                                      std::move(allocator), options);
+
+  // Determine the capped rcv_lowat_max for this socket.
+  int rcvbuf = 0;
+  socklen_t optlen = sizeof(rcvbuf);
+  ASSERT_EQ(getsockopt(client_fd, SOL_SOCKET, SO_RCVBUF, &rcvbuf, &optlen), 0);
+  int rcv_lowat_max = rcvbuf / 2;
+
+  // We want to read 3 * rcv_lowat_max.
+  int total_bytes_to_read = 3 * rcv_lowat_max;
+  EventEngine::Endpoint::ReadArgs read_args;
+  read_args.set_read_hint_bytes(total_bytes_to_read);
+
+  SliceBuffer read_buffer;
+  auto read_cb = [&](absl::Status status) {};
+
+  grpc_core::ExecCtx exec_ctx;
+
+  // 1. Start the read (registers interest, doesn't read yet).
+  bool read_immediate = endpoint->Read(read_cb, &read_buffer, read_args);
+  EXPECT_FALSE(read_immediate);
+
+  // 2. Write first chunk (rcv_lowat_max) to trigger SO_RCVLOWAT calculation.
+  std::string chunk(rcv_lowat_max, 'a');
+  ASSERT_EQ(write(server_fd, chunk.data(), chunk.size()), chunk.size());
+  handle.TriggerRead();
+
+  // The endpoint should have set SO_RCVLOWAT to (remaining - 16KB).
+  int expected_lowat = rcv_lowat_max - kRcvLowatThreshold;
+  if (expected_lowat < kMinRcvLowatTarget) {
+    expected_lowat = 0;
+  }
+
+  // Verify the value was set.
+  int optval = 0;
+  optlen = sizeof(optval);
+  ASSERT_EQ(getsockopt(client_fd, SOL_SOCKET, SO_RCVLOWAT, &optval, &optlen),
+            0);
+  EXPECT_EQ(optval, expected_lowat);
+
+  if (expected_lowat > 0) {
+    // 3. Write less than lowat threshold and verify socket is not readable.
+    int partial_write = expected_lowat - 1;
+    std::string partial_chunk(partial_write, 'b');
+    ASSERT_EQ(write(server_fd, partial_chunk.data(), partial_chunk.size()),
+              partial_chunk.size());
+
+    struct pollfd pfd;
+    pfd.fd = client_fd;
+    pfd.events = POLLIN;
+    EXPECT_EQ(poll(&pfd, 1, 0), 0);  // 0 timeout -> Should not be readable.
+
+    // 4. Write the 1 missing byte and verify socket IS readable now.
+    ASSERT_EQ(write(server_fd, "c", 1), 1);
+    EXPECT_EQ(poll(&pfd, 1, 0), 1);  // Should BE readable.
+    EXPECT_TRUE(pfd.revents & POLLIN);
+
+    // 5. Call TriggerRead to consume the data. Since remaining is still
+    // rcv_lowat_max + 16KB, the lowat value should still be expected_lowat.
+    handle.TriggerRead();
+    optval = 0;
+    optlen = sizeof(optval);
+    ASSERT_EQ(getsockopt(client_fd, SOL_SOCKET, SO_RCVLOWAT, &optval, &optlen),
+              0);
+    EXPECT_EQ(optval, expected_lowat);
+  }
+
+  endpoint.reset();
+  close(client_fd);
+  close(server_fd);
+}
+#endif  // GPR_APPLE
+
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
 int main(int argc, char** argv) {
+  setenv("GRPC_EXPERIMENTS", "tcp_rcv_lowat,tcp_frame_size_tuning", 1);
   ::testing::InitGoogleTest(&argc, argv);
   auto poll_strategy = grpc_core::ConfigVars::Get().PollStrategy();
   auto strings = absl::StrSplit(poll_strategy, ',');

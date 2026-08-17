@@ -89,7 +89,7 @@ def _create_client_stub(channel, expect_success):
     return services_pb2_grpc.FirstServiceStub(channel)
 
 
-class CertConfigFetcher(object):
+class CertConfigFetcher:
     def __init__(self):
         self._lock = threading.Lock()
         self._calls = []

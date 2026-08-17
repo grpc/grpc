@@ -199,9 +199,11 @@ grpc_cc_test(
         "//src/core:grpc_lb_xds_channel_args",
         "//src/core:grpc_tls_credentials",
         "//src/core:sync",
+        "//src/core:tls_telemetry",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//test/core/test_util:audit_logging_utils",
+        "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
         "//test/core/test_util:scoped_env_var",
@@ -526,6 +528,51 @@ grpc_cc_test(
         "@envoy_api//envoy/extensions/filters/http/gcp_authn/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/router/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg_cc_proto",
+    ],
+)
+
+grpc_cc_test(
+    name = "xds_composite_filter_end2end_test",
+    size = "large",
+    srcs = ["xds_composite_filter_end2end_test.cc"],
+    external_deps = [
+        "absl/strings",
+        "gtest",
+    ],
+    flaky = True,
+    linkstatic = True,  # Fixes dyld error on MacOS
+    tags = [
+        "no_test_ios",
+        "no_windows",
+        "xds_end2end_test",
+    ],  # TODO(jtattermusch): fix test on windows
+    deps = [
+        ":xds_end2end_test_lib",
+        "//:config_vars",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc_base",
+        "//:httpcli",
+        "//src/core:client_channel_backup_poller",
+        "//src/core:experiments",
+        "//src/core:grpc_xds_client",
+        "//src/core:json_object_loader",
+        "//src/core:xds_bootstrap_grpc_builder",
+        "//src/core:xds_http_filter",
+        "//src/core:xds_http_filter_registry",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
+        "//test/core/test_util:xds_http_add_header_filter",
+        "@com_github_cncf_xds//xds/type/matcher/v3:pkg_cc_proto",
+        "@com_github_cncf_xds//xds/type/v3:pkg_cc_proto",
+        "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/common/matching/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/filters/common/matcher/action/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/filters/http/composite/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/filters/http/router/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg_cc_proto",
+        "@envoy_api//envoy/type/matcher/v3:pkg_cc_proto",
     ],
 )
 

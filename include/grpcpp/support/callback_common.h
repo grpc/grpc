@@ -116,6 +116,9 @@ class CallbackWithStatusTag : public grpc_completion_queue_functor {
     static_cast<CallbackWithStatusTag*>(cb)->Run(static_cast<bool>(ok));
   }
   void Run(bool ok) {
+    grpc_call_run_cq_cb(call_, [this, ok]() { Proceed(ok); });
+  }
+  void Proceed(bool ok) {
     void* ignored = ops_;
 
     if (!ops_->FinalizeResult(&ignored, &ok)) {
@@ -129,23 +132,18 @@ class CallbackWithStatusTag : public grpc_completion_queue_functor {
     auto status = std::move(status_);
     func_ = nullptr;     // reset to clear this out for sure
     status_ = Status();  // reset to clear this out for sure
-    auto callback = [call = call_, func = std::move(func),
-                     status = std::move(status)]() {
-      GetGlobalCallbackHook()->RunCallback(call, [func, status]() {
+    GetGlobalCallbackHook()->RunCallback(call_, [func, status]() {
 #if GRPC_ALLOW_EXCEPTIONS
-        try {
-          func(status);
-        } catch (...) {
-          // nothing to return or change here, just don't crash the library
-        }
-#else   // GRPC_ALLOW_EXCEPTIONS
+      try {
         func(status);
+      } catch (...) {
+        // nothing to return or change here, just don't crash the library
+      }
+#else   // GRPC_ALLOW_EXCEPTIONS
+      func(status);
 #endif  // GRPC_ALLOW_EXCEPTIONS
-      });
-      grpc_call_unref(call);
-    };
-
-    grpc_call_run_cq_cb(call_, std::move(callback));
+    });
+    grpc_call_unref(call_);
   }
 };
 
@@ -219,6 +217,9 @@ class CallbackWithSuccessTag : public grpc_completion_queue_functor {
     static_cast<CallbackWithSuccessTag*>(cb)->Run(static_cast<bool>(ok));
   }
   void Run(bool ok) {
+    grpc_call_run_cq_cb(call_, [this, ok]() { Proceed(ok); });
+  }
+  void Proceed(bool ok) {
     void* ignored = ops_;
     // Allow a "false" return value from FinalizeResult to silence the
     // callback, just as it silences a CQ tag in the async cases
@@ -231,21 +232,22 @@ class CallbackWithSuccessTag : public grpc_completion_queue_functor {
 #endif
 
     if (do_callback) {
-      auto callback = [call = call_, func = func_, ok]() {
-        GetGlobalCallbackHook()->RunCallback(call, [func, ok]() {
-#if GRPC_ALLOW_EXCEPTIONS
-          try {
-            func(ok);
-          } catch (...) {
-            // nothing to return or change here, just don't crash the library
-          }
-#else   // GRPC_ALLOW_EXCEPTIONS
-          func(ok);
-#endif  // GRPC_ALLOW_EXCEPTIONS
-        });
-      };
+      auto func = func_;
 
-      grpc_call_run_cq_cb(call_, std::move(callback));
+      // TODO(aananthv): Determine if call_ can be null here. It is
+      // theoretically possible? But I am not sure if the call can be deleted
+      // before this callback is invoked.
+      GetGlobalCallbackHook()->RunCallback(call_, [func, ok]() {
+#if GRPC_ALLOW_EXCEPTIONS
+        try {
+          func(ok);
+        } catch (...) {
+          // nothing to return or change here, just don't crash the library
+        }
+#else   // GRPC_ALLOW_EXCEPTIONS
+        func(ok);
+#endif  // GRPC_ALLOW_EXCEPTIONS
+      });
     }
   }
 };

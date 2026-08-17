@@ -33,4 +33,10 @@
 #define GRPC_ARG_INTERNAL_PICK_FIRST_OMIT_STATUS_MESSAGE_PREFIX \
   GRPC_ARG_NO_SUBCHANNEL_PREFIX "pick_first_omit_status_message_prefix"
 
+namespace grpc_core {
+
+bool PfWeightedShufflingEnabled();
+
+}  // namespace grpc_core
+
 #endif  // GRPC_SRC_CORE_LOAD_BALANCING_PICK_FIRST_PICK_FIRST_H

@@ -118,7 +118,7 @@ def _unknown_code_details(
     )
 
 
-class _RPCState(object):
+class _RPCState:
     condition: threading.Condition
     due: Set[cygrpc.OperationType]
     initial_metadata: Optional[MetadataType]
@@ -380,6 +380,15 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
     _state: _RPCState
 
     def __init__(self, state: _RPCState):
+        if not isinstance(state, _RPCState):
+            # Handles exception wrapping edge-cases.
+            # See https://github.com/grpc/grpc/issues/38713 and
+            # https://github.com/pytorch/pytorch/issues/34130.
+            msg = "Inactive RPC Error: Invalid RPC state type."
+            if isinstance(state, str):
+                msg = f"{msg} Details: {state}"
+            state = _RPCState((), (), (), grpc.StatusCode.INTERNAL, msg)
+
         with state.condition:
             self._state = _RPCState(
                 (),
@@ -959,7 +968,7 @@ class _MultiThreadedRendezvous(
 def _start_unary_request(
     request: Any,
     timeout: Optional[float],
-    request_serializer: SerializingFunction,
+    request_serializer: Optional[SerializingFunction],
 ) -> Tuple[Optional[float], Optional[bytes], Optional[grpc.RpcError]]:
     deadline = _deadline(timeout)
     serialized_request = _common.serialize(request, request_serializer)
@@ -1686,7 +1695,7 @@ class _InitialMetadataFlags(int):
         return self
 
 
-class _ChannelCallState(object):
+class _ChannelCallState:
     channel: cygrpc.Channel
     managed_calls: int
     threading: bool
@@ -1792,9 +1801,9 @@ def _channel_managed_call_management(state: _ChannelCallState):
     return create
 
 
-class _ChannelConnectivityState(object):
+class _ChannelConnectivityState:
     lock: threading.RLock
-    channel: grpc.Channel
+    channel: cygrpc.Channel
     polling: bool
     connectivity: grpc.ChannelConnectivity
     try_to_connect: bool
@@ -1809,7 +1818,7 @@ class _ChannelConnectivityState(object):
     ]
     delivering: bool
 
-    def __init__(self, channel: grpc.Channel):
+    def __init__(self, channel: cygrpc.Channel):
         self.lock = threading.RLock()
         self.channel = channel
         self.polling = False
@@ -1821,8 +1830,6 @@ class _ChannelConnectivityState(object):
     def reset_postfork_child(self) -> None:
         self.polling = False
         self.connectivity = None
-        self.try_to_connect = False
-        self.callbacks_and_connectivities = []
         self.delivering = False
 
 
@@ -1847,13 +1854,13 @@ def _deliver(
     callbacks = initial_callbacks
     while True:
         for callback in callbacks:
-            cygrpc.block_if_fork_in_progress(state)
             try:
                 callback(connectivity)
             except Exception:  # pylint: disable=broad-except
                 _LOGGER.exception(
                     _CHANNEL_SUBSCRIPTION_CALLBACK_ERROR_LOG_MESSAGE
                 )
+        cygrpc.block_if_fork_in_progress(state)
         with state.lock:
             callbacks = _deliveries(state)
             if callbacks:
@@ -1867,6 +1874,10 @@ def _spawn_delivery(
     state: _ChannelConnectivityState,
     callbacks: Sequence[Callable[[grpc.ChannelConnectivity], None]],
 ) -> None:
+    """Spawn a thread running the _deliver function.
+
+    Should only be called while holding state.lock.
+    """
     delivering_thread = cygrpc.ForkManagedThread(
         target=_deliver,
         args=(
@@ -1930,6 +1941,22 @@ def _poll_connectivity(
                         _spawn_delivery(state, callbacks)
 
 
+def _spawn_poll_connectivity(
+    state: _ChannelConnectivityState, try_to_connect: bool
+) -> None:
+    """Spawn a thread running the _poll_connectivity function.
+
+    Should only be called while holding state.lock.
+    """
+    polling_thread = cygrpc.ForkManagedThread(
+        target=_poll_connectivity,
+        args=(state, state.channel, bool(try_to_connect)),
+    )
+    polling_thread.setDaemon(True)
+    polling_thread.start()
+    state.polling = True
+
+
 def _subscribe(
     state: _ChannelConnectivityState,
     callback: Callable[[grpc.ChannelConnectivity], None],
@@ -1937,13 +1964,7 @@ def _subscribe(
 ) -> None:
     with state.lock:
         if not state.callbacks_and_connectivities and not state.polling:
-            polling_thread = cygrpc.ForkManagedThread(
-                target=_poll_connectivity,
-                args=(state, state.channel, bool(try_to_connect)),
-            )
-            polling_thread.setDaemon(True)
-            polling_thread.start()
-            state.polling = True
+            _spawn_poll_connectivity(state, try_to_connect)
             state.callbacks_and_connectivities.append([callback, None])
         elif not state.delivering and state.connectivity is not None:
             _spawn_delivery(state, (callback,))
@@ -1979,7 +2000,7 @@ def _augment_options(
         + compression_option
         + (
             (
-                cygrpc.ChannelArgKey.primary_user_agent_string,
+                cygrpc.ChannelArgKey.primary_user_agent_string.decode(),
                 _USER_AGENT,
             ),
         )
@@ -2001,6 +2022,14 @@ def _separate_channel_options(
         else:
             core_options.append(pair)
     return python_options, core_options
+
+
+def _maybe_spawn_poll_connectivity_postfork(
+    state: _ChannelConnectivityState,
+) -> None:
+    with state.lock:
+        if state.callbacks_and_connectivities and not state.polling:
+            _spawn_poll_connectivity(state, state.try_to_connect)
 
 
 class Channel(grpc.Channel):
@@ -2195,11 +2224,11 @@ class Channel(grpc.Channel):
         if cygrpc.g_gevent_activated:
             cygrpc.gevent_decrement_channel_count()
 
-    def _close_on_fork(self) -> None:
-        self._unsubscribe_all()
-        self._channel.close_on_fork(
-            cygrpc.StatusCode.cancelled, "Channel closed due to fork"
+    def _postfork_child(self) -> None:
+        self._channel.cancel_calls_on_fork(
+            cygrpc.StatusCode.cancelled, "Call cancelled in fork child"
         )
+        _maybe_spawn_poll_connectivity_postfork(self._connectivity_state)
 
     def __enter__(self):
         return self

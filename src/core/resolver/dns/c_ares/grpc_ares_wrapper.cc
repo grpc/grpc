@@ -818,7 +818,7 @@ static void on_txt_done_locked(void* arg, int status, int /*timeouts*/,
   if (status != ARES_SUCCESS) goto fail;
   // Find service config in TXT record.
   for (result = reply; result != nullptr; result = result->next) {
-    if (result->record_start &&
+    if (result->record_start && result->length >= prefix_len &&
         memcmp(result->txt, g_service_config_attribute_prefix, prefix_len) ==
             0) {
       break;

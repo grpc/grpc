@@ -20,10 +20,12 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
+#include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
 #include <memory>
+#include <string>
 
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/postmortem.h"
@@ -91,6 +93,7 @@ void DoRpc(const std::string& server_addr,
   ChannelArguments channel_args;
   channel_args.SetPointer(std::string(GRPC_SSL_SESSION_CACHE_ARG), cache);
   channel_args.SetSslTargetNameOverride("foo.test.google.fr");
+  channel_args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, 1);
 
   std::shared_ptr<Channel> channel = grpc::CreateCustomChannel(
       server_addr, grpc::SslCredentials(ssl_options), channel_args);
@@ -118,8 +121,26 @@ void DoRpc(const std::string& server_addr,
   }
 }
 
+TEST_F(SslCredentialsTest, InvalidServerCredentials) {
+  std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
+  grpc::SslServerCredentialsOptions::PemKeyCertPair key_cert_pair = {
+      grpc_core::testing::GetFileContents(kServerKeyPath), "invalid"};
+  grpc::SslServerCredentialsOptions ssl_options;
+  ssl_options.pem_key_cert_pairs.push_back(key_cert_pair);
+  ssl_options.pem_root_certs = root_cert;
+  ssl_options.force_client_auth = true;
+
+  grpc::ServerBuilder builder;
+  TestServiceImpl service_;
+
+  builder.AddListeningPort(server_addr_,
+                           grpc::SslServerCredentials(ssl_options));
+  builder.RegisterService("foo.test.google.fr", &service_);
+  EXPECT_EQ(builder.BuildAndStart(), nullptr);
+}
+
 TEST_F(SslCredentialsTest, SequentialResumption) {
-  server_addr_ = absl::StrCat("localhost:",
+  server_addr_ = absl::StrCat("127.0.0.1:",
                               std::to_string(grpc_pick_unused_port_or_die()));
   absl::Notification notification;
   server_thread_ = new std::thread([&]() { RunServer(&notification); });
@@ -145,7 +166,7 @@ TEST_F(SslCredentialsTest, SequentialResumption) {
 }
 
 TEST_F(SslCredentialsTest, ConcurrentResumption) {
-  server_addr_ = absl::StrCat("localhost:",
+  server_addr_ = absl::StrCat("127.0.0.1:",
                               std::to_string(grpc_pick_unused_port_or_die()));
   absl::Notification notification;
   server_thread_ = new std::thread([&]() { RunServer(&notification); });
@@ -178,7 +199,7 @@ TEST_F(SslCredentialsTest, ConcurrentResumption) {
 }
 
 TEST_F(SslCredentialsTest, ResumptionFailsDueToNoCapacityInCache) {
-  server_addr_ = absl::StrCat("localhost:",
+  server_addr_ = absl::StrCat("127.0.0.1:",
                               std::to_string(grpc_pick_unused_port_or_die()));
   absl::Notification notification;
   server_thread_ = new std::thread([&]() { RunServer(&notification); });

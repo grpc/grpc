@@ -77,6 +77,7 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call_test_only.h"
+#include "src/core/lib/surface/call_utils.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/validate_metadata.h"
@@ -172,6 +173,11 @@ Call::ParentCall* Call::parent_call() {
 }
 
 absl::Status Call::InitParent(Call* parent, uint32_t propagation_mask) {
+  // Virtual RPCs: Provide a link back to the parent session arena to fetch
+  // context.
+  auto* parent_ctx = arena()->New<ParentCallContext>();
+  parent_ctx->arena = parent->arena()->Ref();
+  arena()->SetContext<ParentCallContext>(parent_ctx);
   child_ = arena()->New<ChildCall>(parent);
 
   parent->InternalRef("child");
@@ -242,14 +248,6 @@ void Call::MaybeUnpublishFromParent() {
 }
 
 void Call::CancelWithStatus(grpc_status_code status, const char* description) {
-  if (!IsErrorFlattenEnabled()) {
-    CancelWithError(grpc_error_set_int(
-        grpc_error_set_str(
-            absl::Status(static_cast<absl::StatusCode>(status), description),
-            StatusStrProperty::kGrpcMessage, description),
-        StatusIntProperty::kRpcStatus, status));
-    return;
-  }
   if (status == GRPC_STATUS_OK) {
     VLOG(2) << "CancelWithStatus() called with OK status, using UNKNOWN";
     status = GRPC_STATUS_UNKNOWN;
@@ -358,9 +356,7 @@ void Call::HandleCompressionAlgorithmDisabled(
   std::string error_msg =
       absl::StrFormat("Compression algorithm '%s' is disabled.", algo_name);
   LOG(ERROR) << error_msg;
-  CancelWithError(grpc_error_set_int(absl::UnimplementedError(error_msg),
-                                     StatusIntProperty::kRpcStatus,
-                                     GRPC_STATUS_UNIMPLEMENTED));
+  CancelWithError(absl::UnimplementedError(error_msg));
 }
 
 grpc_error_handle Call::UpdateDeadline(Timestamp deadline) {
@@ -371,9 +367,7 @@ grpc_error_handle Call::UpdateDeadline(Timestamp deadline) {
   if (deadline >= deadline_) return absl::OkStatus();
   if (deadline < Timestamp::Now()) {
     lock.Release();
-    grpc_error_handle error = grpc_error_set_int(
-        absl::DeadlineExceededError("Deadline Exceeded"),
-        StatusIntProperty::kRpcStatus, GRPC_STATUS_DEADLINE_EXCEEDED);
+    grpc_error_handle error = absl::DeadlineExceededError("Deadline Exceeded");
     CancelWithError(error);
     return error;
   }
@@ -407,9 +401,7 @@ void Call::Run() {
   GRPC_TRACE_LOG(call, INFO)
       << "call deadline expired "
       << GRPC_DUMP_ARGS(Timestamp::Now(), send_deadline_);
-  CancelWithError(grpc_error_set_int(
-      absl::DeadlineExceededError("Deadline Exceeded"),
-      StatusIntProperty::kRpcStatus, GRPC_STATUS_DEADLINE_EXCEEDED));
+  CancelWithError(absl::DeadlineExceededError("Deadline Exceeded"));
   InternalUnref("deadline[run]");
 }
 
@@ -507,7 +499,27 @@ grpc_call_error grpc_call_start_batch(grpc_call* call, const grpc_op* ops,
     return GRPC_CALL_ERROR;
   } else {
     grpc_core::ExecCtx exec_ctx;
-    return grpc_core::Call::FromC(call)->StartBatch(ops, nops, tag, false);
+    grpc_core::Call* call_obj = grpc_core::Call::FromC(call);
+    grpc_call_error err = call_obj->StartBatch(ops, nops, tag, false);
+    // Capturing invalid metadata error and cancelling RPC rather than failing
+    // the batch which causes crash.
+    if (err == GRPC_CALL_ERROR_INVALID_METADATA) {
+      // Convert the validation error into a failed RPC
+      call_obj->CancelWithStatus(GRPC_STATUS_INTERNAL, "Invalid metadata");
+      // Pre-fill receive op output buffers to safe error-state values.
+      // done_with_error rolled back all state so these ops were never
+      // registered with the transport — CancelWithStatus will not fill them.
+      // Needed because language wrappers (e.g. Python) read output fields
+      // regardless of the success flag in the CQ completion.
+      grpc_core::PreFillReceiveOpsForInvalidMetadata(ops, nops);
+      // Post a failed completion directly via the proper API — does not go
+      // through StartBatch so does not depend on nops==0 handling, and
+      // correctly surfaces success=false to the application.
+      call_obj->FailBatchImmediately(tag, false,
+                                     GRPC_ERROR_CREATE("Invalid metadata"));
+      return GRPC_CALL_OK;
+    }
+    return err;
   }
 }
 
@@ -515,7 +527,18 @@ grpc_call_error grpc_call_start_batch_and_execute(grpc_call* call,
                                                   const grpc_op* ops,
                                                   size_t nops,
                                                   grpc_closure* closure) {
-  return grpc_core::Call::FromC(call)->StartBatch(ops, nops, closure, true);
+  grpc_core::Call* call_obj = grpc_core::Call::FromC(call);
+  grpc_call_error err = call_obj->StartBatch(ops, nops, closure, true);
+  if (err == GRPC_CALL_ERROR_INVALID_METADATA) {
+    call_obj->CancelWithStatus(GRPC_STATUS_INTERNAL, "Invalid metadata");
+    // No output buffer pre-fill here: internal callers using this function
+    // handle errors via the closure's error parameter, not by reading op
+    // output fields directly.
+    call_obj->FailBatchImmediately(closure, true,
+                                   GRPC_ERROR_CREATE("Invalid metadata"));
+    return GRPC_CALL_OK;
+  }
+  return err;
 }
 
 void grpc_call_tracer_set(grpc_call* call,
@@ -597,15 +620,20 @@ const char* grpc_call_error_to_string(grpc_call_error error) {
     case GRPC_CALL_OK:
       return "GRPC_CALL_OK";
   }
-  GPR_UNREACHABLE_CODE(return "GRPC_CALL_ERROR_UNKNOW");
+  GPR_UNREACHABLE_CODE(return "GRPC_CALL_ERROR_UNKNOWN");
 }
 
 void grpc_call_run_in_event_engine(const grpc_call* call,
                                    absl::AnyInvocable<void()> cb) {
-  grpc_core::Call::FromC(call)
-      ->arena()
-      ->GetContext<grpc_event_engine::experimental::EventEngine>()
-      ->Run(std::move(cb));
+  if (call == nullptr) {
+    grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
+        std::move(cb));
+  } else {
+    grpc_core::Call::FromC(call)
+        ->arena()
+        ->GetContext<grpc_event_engine::experimental::EventEngine>()
+        ->Run(std::move(cb));
+  }
 }
 
 void grpc_call_run_cq_cb(const grpc_call* call,

@@ -21,6 +21,7 @@
 #include <set>
 #include <vector>
 
+#include "utils.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/escaping.h"
@@ -29,7 +30,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
 #include "absl/strings/str_split.h"
-#include "utils.h"
 
 namespace {
 void AddCApis(nlohmann::json& config) {
@@ -240,13 +240,13 @@ void ExpandVersion(nlohmann::json& config) {
 
 void AddBoringSslMetadata(nlohmann::json& metadata) {
   std::ifstream sources_in(
-      "../../third_party/boringssl-with-bazel/sources.json");
+      "../../third_party/boringssl-with-bazel/gen/sources.json");
   auto sources = nlohmann::json::parse(sources_in);
-  auto file_list = [&sources](std::initializer_list<std::string> sections) {
+  auto file_list = [&sources](std::initializer_list<std::string> paths) {
     std::vector<std::string> ret;
-    for (const auto& section : sections) {
-      const auto& files = sources[section];
-      for (const auto& file : files) {
+    for (const std::string& p : paths) {
+      nlohmann::json::json_pointer ptr{p};
+      for (const auto& file : sources[ptr]) {
         std::string file_str = file;
         ret.push_back(
             absl::StrCat("third_party/boringssl-with-bazel/", file_str));
@@ -255,26 +255,27 @@ void AddBoringSslMetadata(nlohmann::json& metadata) {
     std::sort(ret.begin(), ret.end());
     return ret;
   };
-  std::vector<std::string> asm_outputs;
-  for (auto it = sources.begin(); it != sources.end(); ++it) {
-    for (const auto& file : it.value()) {
-      std::string file_str = file;
-      if (absl::EndsWith(file_str, ".S") || absl::EndsWith(file_str, ".asm")) {
-        asm_outputs.push_back(file);
+  std::vector<std::string> asm_srcs;
+  for (auto kv : sources.items()) {
+    const auto& lib = kv.value();
+    if (auto asm_it = lib.find("asm"); asm_it != lib.end()) {
+      for (const auto& file : asm_it.value().items()) {
+        asm_srcs.push_back(file.value());
       }
     }
   }
+  std::sort(asm_srcs.begin(), asm_srcs.end());
+
   metadata["raw_boringssl_build_output_for_debugging"]["files"] = sources;
   metadata["libs"].push_back(
       {{"name", "boringssl"},
        {"build", "private"},
        {"language", "c"},
        {"secure", false},
-       {"src", file_list({"ssl", "crypto"})},
-       {"asm_src", file_list({"asm"})},
-       {"headers",
-        file_list({"ssl_headers", "ssl_internal_headers", "crypto_headers",
-                   "crypto_internal_headers", "fips_fragments"})},
+       {"src", file_list({"/ssl/srcs", "/crypto/srcs", "/bcm/srcs"})},
+       {"asm_src", asm_srcs},
+       {"headers", file_list({"/ssl/hdrs", "/ssl/internal_hdrs", "/crypto/hdrs",
+                              "/crypto/internal_hdrs", "/bcm/internal_hdrs"})},
        {"boringssl", true},
        {"defaults", "boringssl"}});
   metadata["libs"].push_back({{"name", "boringssl_test_util"},
@@ -283,8 +284,8 @@ void AddBoringSslMetadata(nlohmann::json& metadata) {
                               {"secure", false},
                               {"boringssl", true},
                               {"defaults", "boringssl"},
-                              {"src", file_list({"test_support"})}});
-  for (const auto& test : {"ssl_test", "crypto_test"}) {
+                              {"src", file_list({"/test_support/srcs"})}});
+  for (const auto& test : {"/ssl_test/srcs", "/crypto_test/srcs"}) {
     metadata["targets"].push_back(
         {{"name", absl::StrCat("boringssl_", test)},
          {"build", "test"},

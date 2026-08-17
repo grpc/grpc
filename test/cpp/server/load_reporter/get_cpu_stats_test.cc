@@ -20,6 +20,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
@@ -35,16 +36,46 @@ TEST(GetCpuStatsTest, BusyNoLargerThanTotal) {
   auto p = grpc::load_reporter::GetCpuStatsImpl();
   uint64_t busy = p.first;
   uint64_t total = p.second;
-  ASSERT_LE(busy, total);
+  ASSERT_LE(busy, total) << "Busy time " << busy
+                         << " is larger than total time " << total;
 }
 
 TEST(GetCpuStatsTest, Ascending) {
+  /*
+      May 2026 Notes : This test flaked. Since the flake is extremely rare, not
+      fixing it right now. The fix may create more problems than it solves.
+      Failed 2 times in 30 days.
+      Adding notes here for future reference.
+      Platform: Test flakes on Windows only.
+      File : src/cpp/server/load_reporter/get_cpu_stats_windows.cc
+      Failure : Busy time decreased at run 82: 48600468750 -> 48600312500
+      Geminis Notes :
+      GetSystemTimes does not capture kernel and idle times atomically.
+      In Docker containers, virtualized CPU scheduling causes timer skew.
+      Updated before means idle receives the new clock tick first.
+      During an idle tick, both idle and kernel must increase.
+      When idle increments first, its value in memory advances immediately.
+      At that exact moment, kernel has not yet been incremented.
+      Therefore, idle is temporarily larger (inflated) relative to kernel.
+      Busy time in GetCpuStatsImpl is (kernel + user - idle).
+      Subtracting the advanced idle from the lagging kernel reduces busy time.
+      If kernel updated first, idle would be lagging (deflated).
+      A deflated idle would cause busy time to increase, not decrease.
+      The test log proves busy time decreased by exactly one tick.
+      Thus, idle was updated first and was temporarily inflated.
+  */
   const size_t kRuns = 100;
   auto prev = grpc::load_reporter::GetCpuStatsImpl();
   for (size_t i = 0; i < kRuns; ++i) {
+    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                 gpr_time_from_millis(1, GPR_TIMESPAN)));
     auto cur = grpc::load_reporter::GetCpuStatsImpl();
-    ASSERT_LE(prev.first, cur.first);
-    ASSERT_LE(prev.second, cur.second);
+    ASSERT_LE(prev.first, cur.first)
+        << "Busy time decreased at run " << i << ": " << prev.first << " -> "
+        << cur.first;
+    ASSERT_LE(prev.second, cur.second)
+        << "Total time decreased at run " << i << ": " << prev.second << " -> "
+        << cur.second;
     prev = cur;
   }
 }
