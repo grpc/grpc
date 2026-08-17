@@ -42,6 +42,7 @@
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 #include "opentelemetry/sdk/trace/simple_processor_factory.h"
 #include "opentelemetry/sdk/trace/tracer_provider.h"
+#include "opentelemetry/trace/propagation/http_trace_context.h"
 #endif
 
 ABSL_FLAG(bool, enable_opentelemetry, false,
@@ -123,7 +124,7 @@ void MaybeRegisterOpenTelemetry() {
     builder.SetTracerProvider(tracer_provider);
     builder.SetMeterProvider(meter_provider);
     builder.SetTextMapPropagator(
-        grpc::OpenTelemetryPluginBuilder::MakeGrpcTraceBinTextMapPropagator());
+        std::make_unique<opentelemetry::trace::propagation::HttpTraceContext>());
     builder.EnableMetrics({
         "grpc.tcp.*",
         "grpc.client.*",
