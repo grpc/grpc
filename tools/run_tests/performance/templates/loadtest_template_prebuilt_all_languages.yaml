@@ -91,7 +91,7 @@ spec:
       - bash
       image: ${prebuilt_image_prefix}/node:${prebuilt_image_tag}
       name: main
-  - language: php7
+  - language: php8
     pool: ${client_pool}
     run:
     - args:
@@ -101,9 +101,9 @@ spec:
         /run_scripts/run_worker.sh
       command:
       - bash
-      image: ${prebuilt_image_prefix}/php7:${prebuilt_image_tag}
+      image: ${prebuilt_image_prefix}/php8:${prebuilt_image_tag}
       name: main
-  - language: php7_protobuf_c
+  - language: php8_protobuf_c
     pool: ${client_pool}
     run:
     - args:
@@ -113,7 +113,7 @@ spec:
         /run_scripts/run_protobuf_c_worker.sh
       command:
       - bash
-      image: ${prebuilt_image_prefix}/php7:${prebuilt_image_tag}
+      image: ${prebuilt_image_prefix}/php8:${prebuilt_image_tag}
       name: main
   - language: python
     pool: ${client_pool}
