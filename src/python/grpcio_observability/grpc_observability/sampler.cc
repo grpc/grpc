@@ -54,16 +54,16 @@ ProbabilitySampler& ProbabilitySampler::Get() {
 }
 
 void ProbabilitySampler::SetThreshold(double probability) {
-  uint64_t threshold = CalculateThreshold(probability);
-  threshold_ = threshold;
+  threshold_.store(CalculateThreshold(probability), std::memory_order_relaxed);
 }
 
 bool ProbabilitySampler::ShouldSample(const std::string& trace_id) {
-  if (threshold_ == 0 || trace_id.length() < 32) return false;
-  if (threshold_ == UINT64_MAX) return true;
+  const uint64_t threshold = threshold_.load(std::memory_order_relaxed);
+  if (threshold == 0 || trace_id.length() < 32) return false;
+  if (threshold == UINT64_MAX) return true;
   // All Spans within the same Trace will get the same sampling decision, so
   // full trees of Spans will be sampled.
-  return CalculateThresholdFromBuffer(trace_id) < threshold_;
+  return CalculateThresholdFromBuffer(trace_id) < threshold;
 }
 
 }  // namespace grpc_observability
