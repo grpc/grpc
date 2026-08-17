@@ -37,7 +37,18 @@ def clear_server_call_tracer_factory() -> None:
 
 
 def maybe_save_server_trace_context(RequestCallEvent event) -> None:
-  pass
+  cdef CallSpan* server_call_tracer
+  with _observability.get_plugin() as plugin:
+    if not (plugin and plugin.tracing_enabled):
+      return
+    server_call_tracer = static_cast['CallSpan*'](_get_call_tracer(event.call.c_call))
+    if server_call_tracer == NULL:
+      return
+    # TraceId and SpanId is hex string, need to convert to str
+    trace_id = _decode(codecs.decode(server_call_tracer.TraceId(), 'hex_codec'))
+    span_id = _decode(codecs.decode(server_call_tracer.SpanId(), 'hex_codec'))
+    is_sampled = server_call_tracer.IsSampled()
+    plugin.save_trace_context(trace_id, span_id, is_sampled)
 
 
 cdef void _set_call_tracer(grpc_call* call, void* capsule_ptr):
