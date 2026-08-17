@@ -121,12 +121,50 @@ class _GrpcIdGenerator(sdk_trace.IdGenerator):
         return self._trace_id
 
 
+def _build_context(
+    trace_id: str,
+    span_id: str,
+    is_sampled: bool,
+    context: Optional[otel_context.Context] = None,
+) -> otel_context.Context:
+    """Builds new Otel context from trace_id, span_id and sampling flag."""
+    if not trace_id:
+        parsed_trace_id = 0
+    else:
+        try:
+            parsed_trace_id = int(trace_id, 16)
+        except ValueError:
+            _LOGGER.warning("Failed to parse trace_id: '%s'", trace_id)
+            parsed_trace_id = 0
+
+    if not span_id:
+        parsed_span_id = 0
+    else:
+        try:
+            parsed_span_id = int(span_id, 16)
+        except ValueError:
+            _LOGGER.warning("Failed to parse span_id: '%s'", span_id)
+            parsed_span_id = 0
+
+    span_context = trace.SpanContext(
+        trace_id=parsed_trace_id,
+        span_id=parsed_span_id,
+        is_remote=True,
+        trace_flags=trace.TraceFlags(
+            trace.TraceFlags.SAMPLED
+            if is_sampled
+            else trace.TraceFlags.DEFAULT
+        ),
+    )
+    parent_span = trace.NonRecordingSpan(span_context)
+    return trace.set_span_in_context(parent_span, context)
+
+
 class _OpenTelemetryPlugin:
     _plugin: OpenTelemetryPlugin
     _metric_to_recorder: Dict[MetricsName, Union[Counter, Histogram]]
     _tracer: Optional[sdk_trace.Tracer]
-    _tracer_lock: threading.Lock
-    _trace_ctx_var: contextvars.ContextVar
+    _tracer_lock: threading.Lock = threading.Lock()
     _text_map_propagator: Optional[TraceContextTextMapPropagator]
     _enabled_client_plugin_options: Optional[List[OpenTelemetryPluginOption]]
     _enabled_server_plugin_options: Optional[List[OpenTelemetryPluginOption]]
@@ -136,10 +174,6 @@ class _OpenTelemetryPlugin:
         self._plugin = plugin
         self._metric_to_recorder = {}
         self._tracer = None
-        self._tracer_lock = threading.Lock()
-        self._trace_ctx_var = contextvars.ContextVar(
-            "grpc_trace_ctx", default=None
-        )
         self._text_map_propagator = None
         self.identifier = str(id(self))
         self._enabled_client_plugin_options = None
@@ -287,63 +321,6 @@ class _OpenTelemetryPlugin:
             _LOGGER.warning(msg)
             return 1.0
 
-    def get_trace_context(self) -> Optional[otel_context.Context]:
-        return self._trace_ctx_var.get()
-
-    def _build_context(
-        self,
-        trace_id: str,
-        span_id: str,
-        is_sampled: bool,
-        context: Optional[otel_context.Context] = None,
-    ) -> otel_context.Context:
-        """Builds new Otel context from trace_id, span_id and sampling flag."""
-        if not trace_id:
-            parsed_trace_id = 0
-        else:
-            try:
-                parsed_trace_id = int(trace_id, 16)
-            except ValueError:
-                _LOGGER.warning("Failed to parse trace_id: '%s'", trace_id)
-                parsed_trace_id = 0
-
-        if not span_id:
-            parsed_span_id = 0
-        else:
-            try:
-                parsed_span_id = int(span_id, 16)
-            except ValueError:
-                _LOGGER.warning("Failed to parse span_id: '%s'", span_id)
-                parsed_span_id = 0
-
-        span_context = trace.SpanContext(
-            trace_id=parsed_trace_id,
-            span_id=parsed_span_id,
-            is_remote=True,
-            trace_flags=trace.TraceFlags(
-                trace.TraceFlags.SAMPLED
-                if is_sampled
-                else trace.TraceFlags.DEFAULT
-            ),
-        )
-        parent_span = trace.NonRecordingSpan(span_context)
-        return trace.set_span_in_context(parent_span, context)
-
-    def save_trace_context(
-        self, trace_id: str, span_id: str, is_sampled: bool
-    ) -> None:
-        if not self.is_tracing_configured():
-            return
-
-        self._trace_ctx_var.set(
-            self._build_context(
-                trace_id=trace_id,
-                span_id=span_id,
-                is_sampled=is_sampled,
-                context=self._trace_ctx_var.get(),
-            )
-        )
-
     def _status_to_otel_status(self, status: str) -> trace.Status:
         if status == "OK":
             return trace.Status(status_code=trace.StatusCode.OK)
@@ -363,7 +340,7 @@ class _OpenTelemetryPlugin:
         """
         # Build parent context locally to avoid race conditions when
         # concurrent RPCs are collecting traces
-        local_ctx = self._build_context(
+        local_ctx = _build_context(
             trace_id=tracing_data.trace_id,
             span_id=tracing_data.parent_span_id,
             is_sampled=tracing_data.should_sample,
@@ -619,6 +596,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
     _registered_methods: Set[bytes]
     _client_option_activated: bool
     _server_option_activated: bool
+    _trace_ctx_var: contextvars.ContextVar
 
     def __init__(
         self,
@@ -630,6 +608,9 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
         self._plugins = list(plugins)
         self._client_option_activated = False
         self._server_option_activated = False
+        self._trace_ctx_var = contextvars.ContextVar(
+            "grpc_trace_ctx", default=None
+        )
 
     def observability_init(self):
         try:
@@ -687,10 +668,8 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
         Returns:
             A tuple of (trace ID, parent span ID).
         """
-        # current span is used to track the trace ID. Since it is preserved across different RPCs,
-        # we can safely use just the context of the first plugin.
         current_span = trace.get_current_span(
-            context=self._plugins[0].get_trace_context()
+            context=self._trace_ctx_var.get()
         ).get_span_context()
         if current_span.is_valid:
             trace_id = f"{current_span.trace_id:032x}".encode()
@@ -742,8 +721,17 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
     def save_trace_context(
         self, trace_id: str, span_id: str, is_sampled: bool
     ) -> None:
-        for _plugin in self._plugins:
-            _plugin.save_trace_context(trace_id, span_id, is_sampled)
+        if not self._should_enable_tracing:
+            return
+
+        self._trace_ctx_var.set(
+            _build_context(
+                trace_id=trace_id,
+                span_id=span_id,
+                is_sampled=is_sampled,
+                context=self._trace_ctx_var.get(),
+            )
+        )
 
     def record_rpc_latency(
         self,
