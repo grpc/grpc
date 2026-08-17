@@ -4280,7 +4280,6 @@ libs:
   - src/cpp/server/secure_server_credentials.h
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
-  - third_party/utf8_range/utf8_validity.h
   src:
   - src/core/client_channel/virtual_channel.cc
   - src/cpp/client/call_context_registry.cc
@@ -4337,9 +4336,7 @@ libs:
   deps:
   - absl/base:dynamic_annotations
   - absl/base:prefetch
-  - absl/container:fixed_array
   - absl/container:layout
-  - absl/functional:overload
   - absl/log:absl_check
   - absl/log:absl_log
   - absl/strings:charset
@@ -4666,7 +4663,6 @@ libs:
   - src/cpp/server/health/default_health_check_service.h
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
-  - third_party/utf8_range/utf8_validity.h
   src:
   - src/core/client_channel/virtual_channel.cc
   - src/cpp/client/call_context_registry.cc
@@ -4713,9 +4709,7 @@ libs:
   deps:
   - absl/base:dynamic_annotations
   - absl/base:prefetch
-  - absl/container:fixed_array
   - absl/container:layout
-  - absl/functional:overload
   - absl/log:absl_check
   - absl/log:absl_log
   - absl/strings:charset
@@ -9054,6 +9048,7 @@ targets:
   - test/cpp/util/proto_file_parser.h
   - test/cpp/util/proto_reflection_descriptor_database.h
   - test/cpp/util/service_describer.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
   - src/proto/grpc/channelz/v2/latent_see.proto
@@ -9109,6 +9104,8 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/container:fixed_array
+  - absl/functional:overload
   - grpcpp_channelz
   - protoc
   - grpc_test_util
@@ -9402,6 +9399,7 @@ targets:
   - test/cpp/util/proto_file_parser.h
   - test/cpp/util/proto_reflection_descriptor_database.h
   - test/cpp/util/service_describer.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
   - src/proto/grpc/testing/echo.proto
@@ -9420,6 +9418,8 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - gtest
+  - absl/container:fixed_array
+  - absl/functional:overload
   - protoc
   - grpc++_test_util
 - name: client_auth_filter_test
@@ -15377,6 +15377,7 @@ targets:
   - test/cpp/util/proto_file_parser.h
   - test/cpp/util/proto_reflection_descriptor_database.h
   - test/cpp/util/service_describer.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
   - test/cpp/util/cli_call.cc
@@ -15387,6 +15388,8 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.cc
   - test/cpp/util/service_describer.cc
   deps:
+  - absl/container:fixed_array
+  - absl/functional:overload
   - grpc++
   - protoc
   - grpc++_test_config
@@ -15578,6 +15581,7 @@ targets:
   - test/cpp/util/proto_file_parser.h
   - test/cpp/util/proto_reflection_descriptor_database.h
   - test/cpp/util/service_describer.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
@@ -15595,6 +15599,8 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - gtest
+  - absl/container:fixed_array
+  - absl/functional:overload
   - grpc++_reflection
   - protoc
   - grpc++_test_config
@@ -17543,32 +17549,20 @@ targets:
   run: false
   language: c++
   headers:
-  - src/cpp/ext/otel/key_value_iterable.h
-  - src/cpp/ext/otel/otel_client_call_tracer.h
-  - src/cpp/ext/otel/otel_plugin.h
-  - src/cpp/ext/otel/otel_server_call_tracer.h
   - test/core/credentials/call/oauth2/oauth2_utils.h
   - test/cpp/interop/backend_metrics_lb_policy.h
   - test/cpp/interop/client_helper.h
   - test/cpp/interop/interop_client.h
-  - test/cpp/interop/otel_helper.h
   src:
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/test.proto
-  - src/cpp/ext/otel/otel_client_call_tracer.cc
-  - src/cpp/ext/otel/otel_plugin.cc
-  - src/cpp/ext/otel/otel_server_call_tracer.cc
   - test/core/credentials/call/oauth2/oauth2_utils.cc
   - test/cpp/interop/backend_metrics_lb_policy.cc
   - test/cpp/interop/client.cc
   - test/cpp/interop/client_helper.cc
   - test/cpp/interop/interop_client.cc
-  - test/cpp/interop/otel_helper.cc
   deps:
-  - opentelemetry-cpp::api
-  - opentelemetry-cpp::metrics
-  - opentelemetry-cpp::trace
   - grpc++_test_config
   - grpc++_test_util
 - name: interop_server
@@ -17576,29 +17570,17 @@ targets:
   run: false
   language: c++
   headers:
-  - src/cpp/ext/otel/key_value_iterable.h
-  - src/cpp/ext/otel/otel_client_call_tracer.h
-  - src/cpp/ext/otel/otel_plugin.h
-  - src/cpp/ext/otel/otel_server_call_tracer.h
   - src/cpp/server/orca/orca_service.h
-  - test/cpp/interop/otel_helper.h
   - test/cpp/interop/server_helper.h
   src:
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/test.proto
-  - src/cpp/ext/otel/otel_client_call_tracer.cc
-  - src/cpp/ext/otel/otel_plugin.cc
-  - src/cpp/ext/otel/otel_server_call_tracer.cc
   - src/cpp/server/orca/orca_service.cc
   - test/cpp/interop/interop_server.cc
   - test/cpp/interop/interop_server_bootstrap.cc
-  - test/cpp/interop/otel_helper.cc
   - test/cpp/interop/server_helper.cc
   deps:
-  - opentelemetry-cpp::api
-  - opentelemetry-cpp::metrics
-  - opentelemetry-cpp::trace
   - grpc++_test_config
   - grpc++_test_util
 - name: invalid_call_argument_test
@@ -18421,6 +18403,7 @@ targets:
   - test/cpp/util/proto_file_parser.h
   - test/cpp/util/proto_reflection_descriptor_database.h
   - test/cpp/util/service_describer.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
   - src/proto/grpc/channelz/v2/channelz.proto
@@ -18473,6 +18456,8 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/container:fixed_array
+  - absl/functional:overload
   - grpc++
   - protoc
   - grpc_test_util
@@ -24628,8 +24613,7 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - third_party/utf8_range/utf8_validity.h
+  headers: []
   src:
   - third_party/googleapis/google/rpc/status.proto
   - src/cpp/client/global_callback_hook.cc
@@ -24639,9 +24623,7 @@ targets:
   - gtest
   - absl/base:dynamic_annotations
   - absl/base:prefetch
-  - absl/container:fixed_array
   - absl/container:layout
-  - absl/functional:overload
   - absl/log:absl_check
   - absl/log:absl_log
   - absl/strings:charset
@@ -28741,6 +28723,7 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.h
   - test/cpp/util/service_describer.h
   - third_party/protoc-gen-validate/validate/validate.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
   - third_party/cel-spec/proto/cel/expr/checked.proto
@@ -28840,6 +28823,8 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - gtest
+  - absl/container:fixed_array
+  - absl/functional:overload
   - grpc++
   - protoc
   - grpc_test_util
@@ -28886,7 +28871,6 @@ targets:
   - test/core/xds/xds_client_test_peer.h
   - test/core/xds/xds_transport_fake.h
   - third_party/protoc-gen-validate/validate/validate.h
-  - third_party/utf8_range/utf8_validity.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - third_party/cel-spec/proto/cel/expr/checked.proto
@@ -29034,9 +29018,7 @@ targets:
   - gtest
   - absl/base:dynamic_annotations
   - absl/base:prefetch
-  - absl/container:fixed_array
   - absl/container:layout
-  - absl/functional:overload
   - absl/log:absl_check
   - absl/log:absl_log
   - absl/strings:charset
@@ -29205,7 +29187,6 @@ targets:
   headers:
   - test/core/test_util/scoped_env_var.h
   - third_party/protoc-gen-validate/validate/validate.h
-  - third_party/utf8_range/utf8_validity.h
   src:
   - third_party/cel-spec/proto/cel/expr/checked.proto
   - third_party/cel-spec/proto/cel/expr/syntax.proto
@@ -29335,9 +29316,7 @@ targets:
   - gtest
   - absl/base:dynamic_annotations
   - absl/base:prefetch
-  - absl/container:fixed_array
   - absl/container:layout
-  - absl/functional:overload
   - absl/log:absl_check
   - absl/log:absl_log
   - absl/strings:charset
@@ -29665,6 +29644,7 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.h
   - test/cpp/util/service_describer.h
   - third_party/protoc-gen-validate/validate/validate.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
   - third_party/cel-spec/proto/cel/expr/checked.proto
@@ -29834,6 +29814,8 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - gtest
+  - absl/container:fixed_array
+  - absl/functional:overload
   - grpc++
   - protoc
   - grpc_test_util
@@ -30509,7 +30491,6 @@ targets:
   headers:
   - test/core/test_util/scoped_env_var.h
   - third_party/protoc-gen-validate/validate/validate.h
-  - third_party/utf8_range/utf8_validity.h
   src:
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
@@ -30586,9 +30567,7 @@ targets:
   - gtest
   - absl/base:dynamic_annotations
   - absl/base:prefetch
-  - absl/container:fixed_array
   - absl/container:layout
-  - absl/functional:overload
   - absl/log:absl_check
   - absl/log:absl_log
   - absl/strings:charset
@@ -31218,6 +31197,7 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.h
   - test/cpp/util/service_describer.h
   - third_party/protoc-gen-validate/validate/validate.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
@@ -31347,6 +31327,8 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - gtest
+  - absl/container:fixed_array
+  - absl/functional:overload
   - grpc++
   - protoc
   - grpc_test_util
@@ -31363,6 +31345,7 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.h
   - test/cpp/util/service_describer.h
   - third_party/protoc-gen-validate/validate/validate.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
   - third_party/cel-spec/proto/cel/expr/checked.proto
@@ -31472,6 +31455,8 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - gtest
+  - absl/container:fixed_array
+  - absl/functional:overload
   - grpc++
   - protoc
   - grpc_test_util
@@ -31487,6 +31472,7 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.h
   - test/cpp/util/service_describer.h
   - third_party/protoc-gen-validate/validate/validate.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
   - third_party/cel-spec/proto/cel/expr/checked.proto
@@ -31613,6 +31599,8 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - gtest
+  - absl/container:fixed_array
+  - absl/functional:overload
   - grpc++
   - protoc
   - grpc_test_util
@@ -32726,6 +32714,7 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.h
   - test/cpp/util/service_describer.h
   - third_party/protoc-gen-validate/validate/validate.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/proto/grpc/lookup/v1/rls_config.proto
   - src/proto/grpc/reflection/v1alpha/reflection.proto
@@ -32827,6 +32816,8 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - gtest
+  - absl/container:fixed_array
+  - absl/functional:overload
   - grpc++
   - protoc
   - grpc_test_util
