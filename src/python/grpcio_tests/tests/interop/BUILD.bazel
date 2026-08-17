@@ -19,10 +19,7 @@ package(default_visibility = ["//visibility:public"])
 py_library(
     name = "_intraop_test_case",
     srcs = ["_intraop_test_case.py"],
-    imports = [
-        "../../",
-        "../../../../../",
-    ],
+    imports = ["../../"],
     deps = [
         ":methods",
     ],
@@ -46,10 +43,7 @@ py_library(
 py_library(
     name = "client_lib",
     srcs = ["client.py"],
-    imports = [
-        "../../",
-        "../../../../../",
-    ],
+    imports = ["../../"],
     deps = [
         ":methods",
         ":otel_interop_helper",
@@ -57,7 +51,6 @@ py_library(
         "//src/proto/grpc/testing:py_test_proto",
         "//src/proto/grpc/testing:test_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
-        "//src/python/grpcio_observability/grpc_observability:pyobservability",
         "//src/python/grpcio_tests/tests:bazel_namespace_package_hack",
         requirement("absl-py"),
         requirement("google-auth"),
@@ -76,10 +69,7 @@ py_binary(
 py_library(
     name = "methods",
     srcs = ["methods.py"],
-    imports = [
-        "../../",
-        "../../../../../",
-    ],
+    imports = ["../../"],
     deps = [
         "//src/proto/grpc/testing:empty_py_pb2",
         "//src/proto/grpc/testing:py_messages_proto",
@@ -110,10 +100,7 @@ py_library(
 py_library(
     name = "service",
     srcs = ["service.py"],
-    imports = [
-        "../../",
-        "../../../../../",
-    ],
+    imports = ["../../"],
     deps = [
         "//src/proto/grpc/testing:empty_py_pb2",
         "//src/proto/grpc/testing:py_messages_proto",
@@ -125,10 +112,7 @@ py_library(
 py_library(
     name = "server",
     srcs = ["server.py"],
-    imports = [
-        "../../",
-        "../../../../../",
-    ],
+    imports = ["../../"],
     deps = [
         ":otel_interop_helper",
         ":resources",
@@ -136,7 +120,6 @@ py_library(
         "//src/proto/grpc/testing:py_test_proto",
         "//src/proto/grpc/testing:test_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
-        "//src/python/grpcio_observability/grpc_observability:pyobservability",
         "//src/python/grpcio_tests/tests:bazel_namespace_package_hack",
         "//src/python/grpcio_tests/tests/unit:test_common",
         requirement("absl-py"),
@@ -174,7 +157,6 @@ py_test(
     python_version = "PY3",
     deps = [
         ":_intraop_test_case",
-        ":otel_interop_helper",
         ":server",
         ":service",
         "//src/proto/grpc/testing:empty_py_pb2",

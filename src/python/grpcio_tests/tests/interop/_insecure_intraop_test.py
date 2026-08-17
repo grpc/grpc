@@ -13,6 +13,15 @@
 # limitations under the License.
 """Insecure client-server interoperability as a unit test."""
 
+# NOTE(lidiz) This module only exists in Bazel BUILD file, for more details
+# please refer to comments in the "bazel_namespace_package_hack" module.
+try:
+    from tests import bazel_namespace_package_hack
+
+    bazel_namespace_package_hack.sys_path_to_site_dir_hack()
+except ImportError:
+    pass
+
 import unittest
 
 import grpc
