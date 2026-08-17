@@ -28,6 +28,7 @@ import signal
 from absl import app
 from absl.flags import argparse_flags
 import grpc
+import grpc_observability
 
 from src.proto.grpc.testing import test_pb2_grpc
 from tests.interop import otel_interop_helper
@@ -94,13 +95,16 @@ def _serve_internal(server, enable_otel=False):
 
 def serve(args):
     enable_otel = args.enable_opentelemetry
+    plugin = None
     if enable_otel:
-        _, tracer = otel_interop_helper.init_tracer_provider()
-        interceptor = otel_interop_helper.OTelServerInterceptor(tracer)
+        tracer_provider, _ = otel_interop_helper.init_tracer_provider()
+        plugin = grpc_observability.OpenTelemetryPlugin(
+            tracer_provider=tracer_provider
+        )
+        plugin.register_global()
         server = grpc.server(
             futures.ThreadPoolExecutor(max_workers=10),
             options=(("grpc.so_reuseport", 0),),
-            interceptors=(interceptor,),
         )
     else:
         server = test_common.test_server()
@@ -114,7 +118,11 @@ def serve(args):
     else:
         server.add_insecure_port("[::]:{}".format(args.port))
 
-    _serve_internal(server, enable_otel=enable_otel)
+    try:
+        _serve_internal(server, enable_otel=enable_otel)
+    finally:
+        if plugin:
+            plugin.deregister_global()
 
 
 if __name__ == "__main__":

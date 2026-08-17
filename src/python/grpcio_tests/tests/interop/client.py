@@ -28,8 +28,7 @@ from absl.flags import argparse_flags
 from google import auth as google_auth
 from google.auth import jwt as google_auth_jwt
 import grpc
-from grpc._interceptor import _ClientCallDetails
-from opentelemetry import trace
+import grpc_observability
 
 from src.proto.grpc.testing import test_pb2_grpc
 from tests.interop import methods
@@ -204,63 +203,6 @@ def get_secure_channel_parameters(args):
     return channel_credentials, channel_opts
 
 
-class _OTelClientInterceptor(grpc.UnaryUnaryClientInterceptor):
-    def __init__(self, tracer):
-        self._tracer = tracer
-
-    def intercept_unary_unary(self, continuation, client_call_details, request):
-        method = client_call_details.method
-        full_method = method.lstrip("/")
-        sent_span_name = f"Sent.{full_method}"
-        attempt_span_name = f"Attempt.{full_method}"
-
-        sent_span = self._tracer.start_span(
-            sent_span_name, kind=trace.SpanKind.CLIENT
-        )
-        sent_ctx = trace.set_span_in_context(sent_span)
-        attempt_span = self._tracer.start_span(
-            attempt_span_name, kind=trace.SpanKind.CLIENT, context=sent_ctx
-        )
-        attempt_span.set_attribute("previous-rpc-attempts", 0)
-        attempt_span.set_attribute("transparent-retry", False)
-        attempt_span.add_event("Outbound message")
-
-        trace_ctx = attempt_span.get_span_context()
-        traceparent = otel_interop_helper.format_traceparent(
-            trace_ctx.trace_id,
-            trace_ctx.span_id,
-            is_sampled=True,
-        )
-
-        trace_bin_bytes = otel_interop_helper.pack_grpc_trace_bin(
-            trace_ctx.trace_id,
-            trace_ctx.span_id,
-            is_sampled=True,
-        )
-
-        metadata = list(client_call_details.metadata or [])
-        metadata.append(("traceparent", traceparent))
-        metadata.append(("grpc-trace-bin", trace_bin_bytes))
-
-        new_details = _ClientCallDetails(
-            method=client_call_details.method,
-            timeout=client_call_details.timeout,
-            metadata=metadata,
-            credentials=client_call_details.credentials,
-            wait_for_ready=client_call_details.wait_for_ready,
-            compression=client_call_details.compression,
-        )
-
-        try:
-            response = continuation(new_details, request)
-            attempt_span.add_event("Inbound message")
-            return response
-        finally:
-            attempt_span.end()
-            sent_span.end()
-            otel_interop_helper.flush_tracer_provider()
-
-
 def _create_channel(args):
     target = "{}:{}".format(args.server_host, args.server_port)
 
@@ -273,12 +215,6 @@ def _create_channel(args):
         channel = grpc.secure_channel(target, channel_credentials, options)
     else:
         channel = grpc.insecure_channel(target)
-
-    if args.enable_opentelemetry:
-        _, tracer = otel_interop_helper.init_tracer_provider()
-        channel = grpc.intercept_channel(
-            channel, _OTelClientInterceptor(tracer)
-        )
 
     return channel
 
@@ -299,13 +235,25 @@ def _test_case_from_arg(test_case_arg):
 
 
 def test_interoperability(args):
-    channel = _create_channel(args)
-    stub = create_stub(channel, args)
-    test_case = _test_case_from_arg(args.test_case)
-    test_case.test_interoperability(stub, args)
+    plugin = None
     if args.enable_opentelemetry:
-        otel_interop_helper.flush_tracer_provider()
-        otel_interop_helper.shutdown_tracer_provider()
+        tracer_provider, _ = otel_interop_helper.init_tracer_provider()
+        plugin = grpc_observability.OpenTelemetryPlugin(
+            tracer_provider=tracer_provider
+        )
+        plugin.register_global()
+
+    try:
+        channel = _create_channel(args)
+        stub = create_stub(channel, args)
+        test_case = _test_case_from_arg(args.test_case)
+        test_case.test_interoperability(stub, args)
+    finally:
+        if args.enable_opentelemetry:
+            otel_interop_helper.flush_tracer_provider()
+            otel_interop_helper.shutdown_tracer_provider()
+            if plugin:
+                plugin.deregister_global()
 
 
 if __name__ == "__main__":
