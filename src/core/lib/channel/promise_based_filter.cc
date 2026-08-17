@@ -2698,11 +2698,13 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
              });
 
       if (auto* nr = p.value_if_ready()) {
-        ServerMetadataHandle md = std::move(nr->value());
-        if (send_initial_metadata_->batch->payload->send_initial_metadata
-                .send_initial_metadata != md.get()) {
-          *send_initial_metadata_->batch->payload->send_initial_metadata
-               .send_initial_metadata = std::move(*md);
+        if (nr->has_value()) {
+          ServerMetadataHandle md = std::move(nr->value());
+          if (send_initial_metadata_->batch->payload->send_initial_metadata
+                  .send_initial_metadata != md.get()) {
+            *send_initial_metadata_->batch->payload->send_initial_metadata
+                 .send_initial_metadata = std::move(*md);
+          }
         }
         send_initial_metadata_->state = SendInitialMetadata::kForwarded;
         poll_ctx.Repoll();

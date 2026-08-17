@@ -145,7 +145,7 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
   op->flags = 0;
   op->reserved = nullptr;
   ++op;
-  // Ref will be released in the callback
+  // Ref will be released in the callback.
   GRPC_CLOSURE_INIT(&on_status_received_, OnStatusReceived,
                     this->Ref(DEBUG_LOCATION, "OnStatusReceived").release(),
                     nullptr);

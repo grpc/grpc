@@ -239,6 +239,27 @@ absl::StatusOr<std::string> CreateExtProcServerTrailersRequest(
     std::optional<ExtProcClientWindowUpdate> client_window_update =
         std::nullopt);
 
+// Connection-level attributes extracted for server-side CEL attributes in A103.
+// These attributes describe the downstream client connection and TLS
+// properties. See:
+// https://github.com/grpc/proposal/blob/master/A103-xds-composite-filter.md#cel-attributes
+struct ExtProcConnectionAttributes {
+  // Downstream remote IP address or socket path (CEL: "source.address").
+  std::string source_address;
+  // Downstream remote port number (CEL: "source.port").
+  int source_port = 0;
+  // Requested server name (SNI) from the downstream TLS handshake (CEL:
+  // "connection.requested_server_name").
+  std::string requested_server_name;
+  // Negotiated TLS protocol version, e.g. "TLSv1.3" or "TLSv1.2" (CEL:
+  // "connection.tls_version").
+  std::string tls_version;
+  // SHA-256 fingerprint of the downstream peer certificate formatted as 64
+  // lowercase hex characters (CEL:
+  // "connection.sha256_peer_certificate_digest").
+  std::string sha256_peer_certificate_digest;
+};
+
 // Creates a protobuf Struct message (::google_protobuf_Struct*) containing
 // connection and request metadata attributes requested by the external
 // processor configuration.
@@ -247,16 +268,22 @@ absl::StatusOr<std::string> CreateExtProcServerTrailersRequest(
 //  - arena: The upb arena used for allocating the Struct message and its
 //  fields.
 //  - requested_attributes: A list of attribute names (e.g., "request.path",
-//  "request.method", "request.host") to extract and populate.
+//  "request.method", "request.host", "source.address", "source.port",
+//  "connection.requested_server_name", "connection.tls_version",
+//  "connection.sha256_peer_certificate_digest") to extract and populate.
 //  - metadata: The gRPC metadata batch from which attribute values (like
 //  authority, method, path, or headers) are extracted.
+//  - default_authority: Default authority fallback for request.host.
+//  - connection_attributes: Connection-level attributes (e.g. peer IP/port,
+//  TLS security properties) on server side.
 //
 // Returns:
 //  A pointer to the newly created ::google_protobuf_Struct message on the
 //  arena, or nullptr if no requested attributes were matched or populated.
 ::google_protobuf_Struct* CreateExtProcAttributesProtoStruct(
     upb_Arena* arena, const std::vector<std::string>& requested_attributes,
-    const grpc_metadata_batch& metadata, absl::string_view default_authority);
+    const grpc_metadata_batch& metadata, absl::string_view default_authority,
+    const ExtProcConnectionAttributes* connection_attributes = nullptr);
 
 // Represents the parsed response from an external processor, corresponding to
 // envoy.service.ext_proc.v3.ProcessingResponse in gRFC A93.

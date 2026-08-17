@@ -473,6 +473,15 @@ class Http2ServerTransport final : public ServerTransport,
     return stream_list_.size();
   }
 
+  bool IsPingWithoutCallsAllowed() const {
+    return keepalive_permit_without_calls_;
+  }
+
+  bool IsTransportIdle() {
+    MutexLock lock(&transport_mutex_);
+    return GetActiveStreamCountLocked() == 0;
+  }
+
   void EnqueueResetStreamFromTransportParty(RefCountedPtr<Stream> stream,
                                             uint32_t reset_stream_error_code);
 
@@ -706,6 +715,7 @@ class Http2ServerTransport final : public ServerTransport,
       "http2_server", GRPC_CHANNEL_READY};
 
   RefCountedPtr<StateWatcher> watcher_ ABSL_GUARDED_BY(transport_mutex_);
+  bool is_goaway_received_;
 
   bool should_reset_ping_clock_;
   ReadContext read_context_;

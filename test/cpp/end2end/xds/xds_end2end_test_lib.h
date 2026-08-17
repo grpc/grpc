@@ -742,10 +742,13 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // Sends an RPC with the specified options.
   // If response is non-null, it will be populated with the response.
   // Returns the status of the RPC.
-  Status SendRpc(const RpcOptions& rpc_options = RpcOptions(),
-                 EchoResponse* response = nullptr,
-                 std::multimap<std::string, std::string>*
-                     server_initial_metadata = nullptr);
+  Status SendRpc(
+      const RpcOptions& rpc_options = RpcOptions(),
+      EchoResponse* response = nullptr,
+      std::multimap<std::string, std::string>* server_initial_metadata =
+          nullptr,
+      std::multimap<std::string, std::string>* server_trailing_metadata =
+          nullptr);
 
   // Internal helper function for SendRpc().
   template <typename Stub>
@@ -802,20 +805,25 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
       StatusCode expected_status, absl::string_view expected_message_prefix,
       const RpcOptions& rpc_options = RpcOptions());
 
-  // A class for running a long-running RPC using the callback API.
-  class LongRunningRpc {
+  // A class for running an RPC asynchronously using the callback API.
+  class AsyncRpc {
    public:
     // Starts the RPC.
     void StartRpc(grpc::testing::EchoTestService::Stub* stub,
-                  const RpcOptions& rpc_options =
-                      RpcOptions().set_timeout_ms(0).set_client_cancel_after_us(
-                          1 * 1000 * 1000));
+                  const RpcOptions& rpc_options = RpcOptions());
 
     // Cancels the RPC.
     void CancelRpc();
 
     // Gets the RPC's status.  Blocks if the RPC is not yet complete.
     Status GetStatus();
+
+    std::multimap<std::string, std::string> GetServerInitialMetadata();
+    std::multimap<std::string, std::string> GetServerTrailingMetadata();
+
+    // Not safe to call until after GetStatus() returns.
+    grpc_core::Duration elapsed_time() const { return elapsed_time_; }
+    const EchoResponse& response() const { return response_; }
 
    private:
     EchoRequest request_;
@@ -824,20 +832,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     grpc_core::Mutex mu_;
     grpc_core::CondVar cv_;
     std::optional<Status> status_ ABSL_GUARDED_BY(&mu_);
+    grpc_core::Timestamp start_time_;
+    grpc_core::Duration elapsed_time_;
   };
-
-  // Starts a set of concurrent RPCs.
-  // TODO(roth): Change this to use LongRunningRpc.
-  struct ConcurrentRpc {
-    ClientContext context;
-    Status status;
-    grpc_core::Duration elapsed_time;
-    EchoResponse response;
-  };
-  std::vector<std::unique_ptr<ConcurrentRpc>> SendConcurrentRpcs(
-      const grpc_core::DebugLocation& debug_location,
-      grpc::testing::EchoTestService::Stub* stub, size_t num_rpcs,
-      const RpcOptions& rpc_options);
 
   //
   // Waiting for individual backends to be seen by the client

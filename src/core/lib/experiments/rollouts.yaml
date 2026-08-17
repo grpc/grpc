@@ -72,6 +72,8 @@
   default: false
 - name: fuse_filters
   default: false
+- name : header_data_frame
+  default : true
 - name: inproc_cancel_stream
   default: true
 - name: keep_alive_ping_timer_batch
@@ -120,8 +122,6 @@
   default: false
 - name: skip_clear_peer_on_cancellation
   default: false
-- name: subchannel_connection_scaling
-  default: true
 - name: tcp_frame_size_tuning
   default: false
 - name: tcp_rcv_lowat

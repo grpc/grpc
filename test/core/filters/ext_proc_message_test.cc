@@ -856,6 +856,73 @@ TEST_F(CreateExtProcAttributesProtoStructTest, AttributesRequestHeaders) {
   EXPECT_EQ(headers_struct.fields().at("x-custom2").string_value(), kVal2);
 }
 
+TEST_F(CreateExtProcAttributesProtoStructTest,
+       AttributesServerSideSourceAddressAndPort) {
+  upb::Arena arena;
+  grpc_metadata_batch batch;
+  ExtProcConnectionAttributes conn_attrs;
+  conn_attrs.source_address = "192.168.1.100";
+  conn_attrs.source_port = 54321;
+
+  std::vector<std::string> requested = {"source.address", "source.port"};
+  auto* upb_struct = CreateExtProcAttributesProtoStruct(arena.ptr(), requested,
+                                                        batch, "", &conn_attrs);
+  ASSERT_NE(upb_struct, nullptr);
+  auto proto = ConvertToProto(upb_struct, arena.ptr());
+  EXPECT_EQ(proto.fields().at("source.address").string_value(),
+            "192.168.1.100");
+  EXPECT_DOUBLE_EQ(proto.fields().at("source.port").number_value(), 54321.0);
+}
+
+TEST_F(CreateExtProcAttributesProtoStructTest,
+       AttributesServerSideTlsConnectionAttributes) {
+  upb::Arena arena;
+  grpc_metadata_batch batch;
+  ExtProcConnectionAttributes conn_attrs;
+  conn_attrs.requested_server_name = "service.example.com";
+  conn_attrs.tls_version = "TLSv1.3";
+  conn_attrs.sha256_peer_certificate_digest =
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+  std::vector<std::string> requested = {
+      "connection.requested_server_name", "connection.tls_version",
+      "connection.sha256_peer_certificate_digest"};
+  auto* upb_struct = CreateExtProcAttributesProtoStruct(arena.ptr(), requested,
+                                                        batch, "", &conn_attrs);
+  ASSERT_NE(upb_struct, nullptr);
+  auto proto = ConvertToProto(upb_struct, arena.ptr());
+  EXPECT_EQ(
+      proto.fields().at("connection.requested_server_name").string_value(),
+      "service.example.com");
+  EXPECT_EQ(proto.fields().at("connection.tls_version").string_value(),
+            "TLSv1.3");
+  EXPECT_EQ(proto.fields()
+                .at("connection.sha256_peer_certificate_digest")
+                .string_value(),
+            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+}
+
+TEST_F(CreateExtProcAttributesProtoStructTest,
+       AttributesServerSideMissingOrClientSide) {
+  upb::Arena arena;
+  grpc_metadata_batch batch;
+  std::vector<std::string> requested = {
+      "source.address", "source.port", "connection.requested_server_name",
+      "connection.tls_version", "connection.sha256_peer_certificate_digest"};
+  // 1. connection_attributes is nullptr (client side)
+  auto* upb_struct1 = CreateExtProcAttributesProtoStruct(arena.ptr(), requested,
+                                                         batch, "", nullptr);
+  ASSERT_NE(upb_struct1, nullptr);
+  auto proto1 = ConvertToProto(upb_struct1, arena.ptr());
+  EXPECT_TRUE(proto1.fields().empty());
+  // 2. connection_attributes has empty/default values
+  ExtProcConnectionAttributes empty_attrs;
+  auto* upb_struct2 = CreateExtProcAttributesProtoStruct(
+      arena.ptr(), requested, batch, "", &empty_attrs);
+  ASSERT_NE(upb_struct2, nullptr);
+  auto proto2 = ConvertToProto(upb_struct2, arena.ptr());
+  EXPECT_TRUE(proto2.fields().empty());
+}
+
 //
 // ExtProcResponse::Parse() tests
 //

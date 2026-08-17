@@ -46,7 +46,7 @@ FakeXdsTransportFactory::FakeStreamingCall::~FakeStreamingCall() {
     MutexLock lock(&mu_);
     if (transport_->abort_on_undrained_messages()) {
       for (const auto& message : from_client_messages_) {
-        LOG(ERROR) << "[" << transport_->server_uri() << "] " << this
+        LOG(ERROR) << "[" << transport_->server_key() << "] " << this
                    << " From client message left in queue: " << message;
       }
       GRPC_CHECK(from_client_messages_.empty());

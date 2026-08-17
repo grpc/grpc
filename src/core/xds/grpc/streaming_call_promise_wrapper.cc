@@ -24,6 +24,7 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/status_flag.h"
+#include "src/core/util/orphanable.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
@@ -99,32 +100,32 @@ void XdsStreamingCallPromiseWrapper::OnRequestSent(bool ok) {
   if (!ok) {
     send_state_.store(SendState::kSendFailed);
   } else {
-    SendState state = send_state_.load();
-    if (state == SendState::kSendMessageInFlightAndHalfCloseRequested) {
-      send_state_.store(SendState::kHalfCloseInFlight);
-      call_->SendHalfClose();
-    } else if (state == SendState::kSendMessageInFlight) {
-      send_state_.store(SendState::kIdle);
+    SendState state = SendState::kSendMessageInFlight;
+    if (!send_state_.compare_exchange_strong(state, SendState::kIdle)) {
+      if (state == SendState::kSendMessageInFlightAndHalfCloseRequested) {
+        send_state_.store(SendState::kHalfCloseInFlight);
+        call_->SendHalfClose();
+      }
     }
   }
   // Wake any waiting send promise.
-  send_message_waker_.Wakeup();
+  TakeSendMessageWaker().Wakeup();
 }
 
 void XdsStreamingCallPromiseWrapper::OnRecvMessage(absl::string_view payload) {
   recv_message_ = std::string(payload);
   RecvState expected = RecvState::kRecvMessageInFlight;
   recv_state_.compare_exchange_strong(expected, RecvState::kIdle);
-  recv_message_waker_.Wakeup();
+  TakeRecvMessageWaker().Wakeup();
 }
 
 void XdsStreamingCallPromiseWrapper::OnStatusReceived(absl::Status status) {
   status_ = std::move(status);
   RecvState prev_state = recv_state_.exchange(RecvState::kReceivedStatus);
   if (prev_state == RecvState::kRecvMessageInFlight) {
-    recv_message_waker_.Wakeup();
+    TakeRecvMessageWaker().Wakeup();
   }
-  recv_status_waker_.Wakeup();
+  TakeRecvStatusWaker().Wakeup();
 }
 
 void XdsStreamingCallPromiseWrapper::SendHalfClose() {

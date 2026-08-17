@@ -88,6 +88,7 @@
 #include "absl/functional/bind_front.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -1225,7 +1226,7 @@ static tsi_result peer_from_x509(X509* cert, int include_certificate_type,
   tsi_result result;
   GRPC_CHECK_GE(subject_alt_name_count, 0);
   property_count = (include_certificate_type ? size_t{1} : 0) +
-                   3 /* subject, common name, certificate */ +
+                   4 /* subject, common name, certificate, sha256 */ +
                    static_cast<size_t>(subject_alt_name_count);
   for (int i = 0; i < subject_alt_name_count; i++) {
     GENERAL_NAME* subject_alt_name =
@@ -1264,6 +1265,22 @@ static tsi_result peer_from_x509(X509* cert, int include_certificate_type,
     result =
         add_pem_certificate(cert, &peer->properties[current_insert_index++]);
     if (result != TSI_OK) break;
+
+    unsigned char md[EVP_MAX_MD_SIZE];
+    unsigned int md_len = 0;
+    if (X509_digest(cert, EVP_sha256(), md, &md_len) == 1) {
+      std::string sha256_hex = absl::BytesToHexString(
+          absl::string_view(reinterpret_cast<const char*>(md), md_len));
+      result = tsi_construct_string_peer_property_from_cstring(
+          TSI_SSL_PEER_SHA256_PEER_PROPERTY, sha256_hex.c_str(),
+          &peer->properties[current_insert_index++]);
+      if (result != TSI_OK) break;
+    } else {
+      result = tsi_construct_string_peer_property_from_cstring(
+          TSI_SSL_PEER_SHA256_PEER_PROPERTY, "",
+          &peer->properties[current_insert_index++]);
+      if (result != TSI_OK) break;
+    }
 
     if (subject_alt_name_count != 0) {
       result = add_subject_alt_names_properties_to_peer(
@@ -2278,6 +2295,10 @@ static tsi_result ssl_handshaker_result_extract_peer(
   // the peer's certificate is not present in the stack
   STACK_OF(X509)* peer_chain = SSL_get_peer_cert_chain(impl->ssl);
 
+  const char* server_name =
+      SSL_get_servername(impl->ssl, TLSEXT_NAMETYPE_host_name);
+  const char* tls_version = SSL_get_version(impl->ssl);
+
   X509* verified_root_cert = static_cast<X509*>(
       SSL_get_ex_data(impl->ssl, g_ssl_ex_verified_root_cert_index));
   // 1 is for session reused property.
@@ -2285,6 +2306,8 @@ static tsi_result ssl_handshaker_result_extract_peer(
   if (alpn_selected != nullptr) new_property_count++;
   if (peer_chain != nullptr) new_property_count++;
   if (verified_root_cert != nullptr) new_property_count++;
+  if (server_name != nullptr) new_property_count++;
+  if (tls_version != nullptr) new_property_count++;
 #if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30000000L
   int nid = SSL_get_negotiated_group(impl->ssl);
   const char* negotiated_group_name =
@@ -2326,6 +2349,22 @@ static tsi_result ssl_handshaker_result_extract_peer(
       &peer->properties[peer->property_count]);
   if (result != TSI_OK) return result;
   peer->property_count++;
+
+  if (server_name != nullptr) {
+    result = tsi_construct_string_peer_property_from_cstring(
+        TSI_SSL_SERVER_NAME_PEER_PROPERTY, server_name,
+        &peer->properties[peer->property_count]);
+    if (result != TSI_OK) return result;
+    peer->property_count++;
+  }
+
+  if (tls_version != nullptr) {
+    result = tsi_construct_string_peer_property_from_cstring(
+        TSI_SSL_TLS_VERSION_PEER_PROPERTY, tls_version,
+        &peer->properties[peer->property_count]);
+    if (result != TSI_OK) return result;
+    peer->property_count++;
+  }
 
   if (verified_root_cert != nullptr) {
     result = peer_property_from_x509_subject(

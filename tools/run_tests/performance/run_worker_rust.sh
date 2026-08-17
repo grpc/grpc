@@ -1,4 +1,5 @@
-# Copyright 2021 gRPC authors.
+#!/bin/bash
+# Copyright 2026 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,16 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM silkeh/clang:7-buster
+set -ex
 
-RUN apt update && apt -y upgrade && apt install -y build-essential curl git time wget zip && apt clean
-{% include "../../git_avoid_dubious_ownership_error.include" %}
-{% include "../../run_tests_python_deps.include" %}
-{% include "../../cxx_test_deps.include" %}
-{% include "../../cxx_deps.include" %}
-{% include "../../cmake_from_install_script.include" %}
-{% include "../../ccache.include" %}
-{% include "../../run_tests_addons.include" %}
+cd "$(dirname "$0")/../../.."
 
-# Define the default command.
-CMD ["bash"]
+exec ../rust_bin/worker "$@"
