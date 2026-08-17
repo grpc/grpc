@@ -290,7 +290,7 @@ absl::Status OpenTelemetryPluginBuilderImpl::BuildAndRegisterGlobal() {
   return absl::OkStatus();
 }
 
-absl::StatusOr<std::shared_ptr<grpc::OpenTelemetryPlugin>>
+absl::StatusOr<std::shared_ptr<grpc::experimental::OpenTelemetryPlugin>>
 OpenTelemetryPluginBuilderImpl::Build() {
   if (meter_provider_ == nullptr && tracer_provider_ == nullptr) {
     return absl::InvalidArgumentError(
@@ -1635,7 +1635,7 @@ absl::Status OpenTelemetryPluginBuilder::BuildAndRegisterGlobal() {
   return impl_->BuildAndRegisterGlobal();
 }
 
-absl::StatusOr<std::shared_ptr<grpc::OpenTelemetryPlugin>>
+absl::StatusOr<std::shared_ptr<grpc::experimental::OpenTelemetryPlugin>>
 OpenTelemetryPluginBuilder::Build() {
   return impl_->Build();
 }

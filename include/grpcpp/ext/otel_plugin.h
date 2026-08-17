@@ -46,15 +46,20 @@ class OpenTelemetryPluginOption {
   virtual ~OpenTelemetryPluginOption() = default;
 };
 
+namespace experimental {
+/// EXPERIMENTAL API
 class OpenTelemetryPlugin {
  public:
   virtual ~OpenTelemetryPlugin() = default;
+  /// EXPERIMENTAL API
   /// Adds this OpenTelemetryPlugin to the channel args \a args.
   virtual void AddToChannelArguments(grpc::ChannelArguments* args) = 0;
+  /// EXPERIMENTAL API
   /// Adds this OpenTelemetryPlugin to the channel arguments that will be used
   /// to create the server through \a builder.
   virtual void AddToServerBuilder(grpc::ServerBuilder* builder) = 0;
 };
+}  // namespace experimental
 
 /// The most common way to use this API is -
 ///
@@ -159,14 +164,17 @@ class OpenTelemetryPluginBuilder {
   /// Records \a optional_label_key on all metrics that provide it.
   OpenTelemetryPluginBuilder& AddOptionalLabel(
       absl::string_view optional_label_key);
+  /// EXPERIMENTAL API
   /// If `SetTracerProvider()` is not called, no traces are collected.
   OpenTelemetryPluginBuilder& SetTracerProvider(
       std::shared_ptr<opentelemetry::trace::TracerProvider> tracer_provider);
+  /// EXPERIMENTAL API
   /// Set one or multiple text map propagators for span context propagation,
   /// e.g. the community standard ones like W3C, etc.
   OpenTelemetryPluginBuilder& SetTextMapPropagator(
       std::unique_ptr<opentelemetry::context::propagation::TextMapPropagator>
           text_map_propagator);
+  /// EXPERIMENTAL API
   /// Returns a TextMapPropagator that uses gRPC's "grpc-trace-bin" metadata to
   /// propagate span contexts.
   static std::unique_ptr<opentelemetry::context::propagation::TextMapPropagator>
@@ -180,11 +188,12 @@ class OpenTelemetryPluginBuilder {
   /// running on the process. Must be called no more than once and must not be
   /// called if Build() is called.
   absl::Status BuildAndRegisterGlobal();
+  /// EXPERIMENTAL API
   /// Builds an open telemetry plugin, returns the plugin object when succeeded
   /// or an error status when failed. Must be called no more than once and must
   /// not be called if BuildAndRegisterGlobal() is called.
   GRPC_MUST_USE_RESULT
-  absl::StatusOr<std::shared_ptr<grpc::OpenTelemetryPlugin>> Build();
+  absl::StatusOr<std::shared_ptr<experimental::OpenTelemetryPlugin>> Build();
 
  private:
   std::unique_ptr<internal::OpenTelemetryPluginBuilderImpl> impl_;
@@ -196,10 +205,6 @@ GRPC_DEPRECATED(
     "Use grpc::OpenTelemetryPluginBuilder instead. The experimental version "
     "will be deleted after the 1.62 release.")
 typedef grpc::OpenTelemetryPluginBuilder OpenTelemetryPluginBuilder;
-GRPC_DEPRECATED(
-    "Use grpc::OpenTelemetryPlugin instead. The experimental version "
-    "will be deleted after the 1.62 release.")
-typedef grpc::OpenTelemetryPlugin OpenTelemetryPlugin;
 }  // namespace experimental
 
 }  // namespace grpc
