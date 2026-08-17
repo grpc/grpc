@@ -308,9 +308,25 @@ tsi_ssl_client_handshaker_factory* tsi_ssl_client_handshaker_factory_ref(
 void tsi_ssl_client_handshaker_factory_unref(
     tsi_ssl_client_handshaker_factory* factory);
 
+// Releases one reference on destruction. See
+// TsiSslClientHandshakerFactoryPtr.
+struct TsiSslClientHandshakerFactoryDeleter {
+  void operator()(tsi_ssl_client_handshaker_factory* factory) const {
+    tsi_ssl_client_handshaker_factory_unref(factory);
+  }
+};
+
+// Owns exactly one reference on a tsi_ssl_client_handshaker_factory. The
+// factory itself stays refcounted and shared; this only makes the release of
+// a single reference automatic. Take an additional reference with
+// tsi_ssl_client_handshaker_factory_ref to hand out another owner.
+using TsiSslClientHandshakerFactoryPtr =
+    std::unique_ptr<tsi_ssl_client_handshaker_factory,
+                    TsiSslClientHandshakerFactoryDeleter>;
+
 // Returns the SSL_CTX from the factory. For testing only -- used to assert
 // that two factories share (or do not share) the underlying SSL_CTX.
-SSL_CTX* tsi_ssl_client_handshaker_factory_get_ssl_ctx(
+SSL_CTX* tsi_ssl_client_handshaker_factory_get_ssl_ctx_for_testing(
     tsi_ssl_client_handshaker_factory* factory);
 
 // --- tsi_ssl_server_handshaker_factory object ---

@@ -42,9 +42,9 @@
 #include "test/core/test_util/test_call_creds.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
-#include "absl/synchronization/barrier.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "absl/synchronization/barrier.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define CLIENT_CERT_PATH "src/core/tsi/test_creds/multi-domain.pem"
@@ -1314,8 +1314,8 @@ TEST_F(TlsSecurityConnectorTest,
   ASSERT_NE(f1, nullptr);
   ASSERT_NE(f2, nullptr);
   EXPECT_EQ(f1, f2);
-  EXPECT_EQ(tsi_ssl_client_handshaker_factory_get_ssl_ctx(f1),
-            tsi_ssl_client_handshaker_factory_get_ssl_ctx(f2));
+  EXPECT_EQ(tsi_ssl_client_handshaker_factory_get_ssl_ctx_for_testing(f1),
+            tsi_ssl_client_handshaker_factory_get_ssl_ctx_for_testing(f2));
   EXPECT_TRUE(credential->HasCachedClientHandshakerFactoryForTesting());
 }
 

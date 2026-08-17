@@ -57,7 +57,7 @@ class TlsCredentials final : public grpc_channel_credentials {
 
   struct HandshakerFactoryResult {
     grpc_security_status status;
-    tsi_ssl_client_handshaker_factory* factory;
+    TsiSslClientHandshakerFactoryPtr factory;
   };
 
   // Returns a refcounted tsi_ssl_client_handshaker_factory keyed by
@@ -67,8 +67,19 @@ class TlsCredentials final : public grpc_channel_credentials {
   // because they are derivable from options_ and therefore invariant across
   // all connectors built from this credential. If a future change introduces
   // a per-connector override for any of them, it must be added to the key
-  // (or the cache scope narrowed). cached_key_logger_ exists only to DCHECK
-  // this invariant on cache hits.
+  // (or the cache scope narrowed).
+  //
+  // cached_key_logger_ exists only to DCHECK that invariant for the key
+  // logger, which holds for three reasons:
+  //   1. A connector derives its logger solely from
+  //      options_->tls_session_key_log_file_path(), and every connector built
+  //      from this credential shares options_, so the path is identical.
+  //   2. TlsSessionKeyLoggerCache::Get() returns one shared instance per
+  //      path, so an identical path yields an identical pointer.
+  //   3. The factory takes its own ref on the logger, so while
+  //      cached_factory_ is alive the logger -- and therefore its entry in
+  //      that path-keyed cache -- stays alive. The pointer cannot be
+  //      recycled underneath a cache hit.
   //
   // Thread-safe. Releases the lock during factory construction so unrelated
   // callers are not serialized on a slow build. Lock ordering: callers that
@@ -101,12 +112,14 @@ class TlsCredentials final : public grpc_channel_credentials {
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> options_;
 
   grpc_core::Mutex factory_cache_mu_;
-  grpc_core::CondVar factory_cache_cv_;
+  // Signalled when factory_creation_in_progress_ goes back to false, i.e.
+  // when the current creator has published its result or rolled back.
+  grpc_core::CondVar factory_creation_done_cv_;
   bool factory_creation_in_progress_ ABSL_GUARDED_BY(factory_cache_mu_) = false;
   // The credential holds exactly one ref while non-null. Callers receive a
   // separately-incremented ref.
-  tsi_ssl_client_handshaker_factory* cached_factory_
-      ABSL_GUARDED_BY(factory_cache_mu_) = nullptr;
+  TsiSslClientHandshakerFactoryPtr cached_factory_
+      ABSL_GUARDED_BY(factory_cache_mu_);
   std::shared_ptr<tsi::RootCertInfo> cached_root_cert_info_
       ABSL_GUARDED_BY(factory_cache_mu_);
   std::optional<grpc_core::PemKeyCertPairList> cached_identity_certs_
