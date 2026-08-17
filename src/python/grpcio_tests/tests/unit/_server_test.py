@@ -313,7 +313,25 @@ class ServerHandlerTest(unittest.TestCase):
 class ServerHandlerBackgroundThreadTest(unittest.TestCase):
     class _Handler(grpc.GenericRpcHandler):
         def __init__(self, fail_fn):
-            def fail_handler(request_iterator, servicer_context):
+            def fail_unary_handler(request, servicer_context):
+                nonlocal fail_fn
+                failer = threading.Thread(
+                    target=fail_fn, args=(servicer_context,)
+                )
+                failer.start()
+                failer.join()
+                return _RESPONSE
+
+            def fail_unary_stream_handler(request, servicer_context):
+                nonlocal fail_fn
+                failer = threading.Thread(
+                    target=fail_fn, args=(servicer_context,)
+                )
+                failer.start()
+                failer.join()
+                yield _RESPONSE
+
+            def fail_stream_handler(request_iterator, servicer_context):
                 nonlocal fail_fn
                 # fail in the background
                 failer = threading.Thread(
@@ -326,11 +344,27 @@ class ServerHandlerBackgroundThreadTest(unittest.TestCase):
                 finally:
                     failer.join()
 
-            self._fail_handler = fail_handler
+            self._fail_unary_handler = fail_unary_handler
+            self._fail_unary_stream_handler = fail_unary_stream_handler
+            self._fail_stream_handler = fail_stream_handler
 
         def service(self, handler_call_details):
-            if handler_call_details.method == _STREAM_STREAM:
-                return grpc.stream_stream_rpc_method_handler(self._fail_handler)
+            if handler_call_details.method == _UNARY_UNARY:
+                return grpc.unary_unary_rpc_method_handler(
+                    self._fail_unary_handler
+                )
+            elif handler_call_details.method == _UNARY_STREAM:
+                return grpc.unary_stream_rpc_method_handler(
+                    self._fail_unary_stream_handler
+                )
+            elif handler_call_details.method == _STREAM_UNARY:
+                return grpc.stream_unary_rpc_method_handler(
+                    self._fail_stream_handler
+                )
+            elif handler_call_details.method == _STREAM_STREAM:
+                return grpc.stream_stream_rpc_method_handler(
+                    self._fail_stream_handler
+                )
             else:
                 return None
 
@@ -355,6 +389,30 @@ class ServerHandlerBackgroundThreadTest(unittest.TestCase):
         port = self._server.add_insecure_port("[::]:0")
         self._server.start()
         self._channel = grpc.insecure_channel("localhost:%d" % port)
+
+        with self.assertRaises(grpc.RpcError):
+            self._channel.unary_unary(
+                _UNARY_UNARY,
+                _registered_method=True,
+            )(_REQUEST)
+
+        with self.assertRaises(grpc.RpcError):
+            list(
+                self._channel.unary_stream(
+                    _UNARY_STREAM,
+                    _registered_method=True,
+                )(_REQUEST)
+            )
+
+        done = threading.Event()
+        try:
+            with self.assertRaises(grpc.RpcError):
+                self._channel.stream_unary(
+                    _STREAM_UNARY,
+                    _registered_method=True,
+                )(self._BlockingRequestIterator(done))
+        finally:
+            done.set()
 
         done = threading.Event()
         try:
