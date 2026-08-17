@@ -116,15 +116,17 @@ def build_package_protos(session: nox.Session):
 
 
 @nox.session(venv_params=["--system-site-packages"])
-def test_lite(session: nox.Session):
+def test_lite(venv_backend="venv", session: nox.Session):
     """Command to run tests without fetching or building anything."""
     session.log("Running test_lite for grpcio-tools...")
 
     session.install(
+        "--no-deps",
         "--index-url",
         "https://pypi.org/simple",
+        "pip",
         "coverage",
-        "setuptools",
+        "setuptools==77.0.1",
         "wheel",
     )
     session.install("--no-build-isolation", "--no-deps", ".")
@@ -154,10 +156,12 @@ def test_py3_only(session: nox.Session):
     session.log("Running test_py3_only for grpcio-tools...")
 
     session.install(
+        "--no-deps",
         "--index-url",
         "https://pypi.org/simple",
+        "pip",
         "coverage",
-        "setuptools",
+        "setuptools==77.0.1",
         "wheel",
     )
     session.install("--no-build-isolation", "--no-deps", ".")
@@ -182,10 +186,12 @@ def test_aio(session: nox.Session):
 
     session.log("Running test_aio for grpcio-tools...")
     session.install(
+        "--no-deps",
         "--index-url",
         "https://pypi.org/simple",
+        "pip",
         "coverage",
-        "setuptools",
+        "setuptools==77.0.1",
         "wheel",
     )
     session.install("--no-build-isolation", "--no-deps", ".")
