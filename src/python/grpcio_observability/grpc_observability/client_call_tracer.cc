@@ -212,11 +212,17 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
     RecordSendMessage(const grpc_core::Message& /*send_message*/) {
+  if (parent_->tracing_enabled_) {
+    context_.AddSpanAnnotation("Outbound message");
+  }
   ++sent_message_count_;
 }
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
     RecordReceivedMessage(const grpc_core::Message& /*recv_message*/) {
+  if (parent_->tracing_enabled_) {
+    context_.AddSpanAnnotation("Inbound message");
+  }
   ++recv_message_count_;
 }
 

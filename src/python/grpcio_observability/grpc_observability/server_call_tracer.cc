@@ -155,31 +155,33 @@ void PythonOpenCensusServerCallTracer::MutateSendTrailingMetadata(
 }
 
 void PythonOpenCensusServerCallTracer::RecordSendMessage(
-    const grpc_core::Message& send_message) {
-  RecordAnnotation(absl::StrFormat("Send message: %ld bytes",
-                                   send_message.payload()->Length()));
+    const grpc_core::Message& /*send_message*/) {
+  if (PythonCensusTracingEnabled()) {
+    RecordAnnotation("Outbound message");
+  }
   ++sent_message_count_;
 }
 
 void PythonOpenCensusServerCallTracer::RecordSendCompressedMessage(
-    const grpc_core::Message& send_compressed_message) {
-  RecordAnnotation(
-      absl::StrFormat("Send compressed message: %ld bytes",
-                      send_compressed_message.payload()->Length()));
+    const grpc_core::Message& /*send_compressed_message*/) {
+  if (PythonCensusTracingEnabled()) {
+    RecordAnnotation("Outbound message compressed");
+  }
 }
 
 void PythonOpenCensusServerCallTracer::RecordReceivedMessage(
-    const grpc_core::Message& recv_message) {
-  RecordAnnotation(absl::StrFormat("Received message: %ld bytes",
-                                   recv_message.payload()->Length()));
+    const grpc_core::Message& /*recv_message*/) {
+  if (PythonCensusTracingEnabled()) {
+    RecordAnnotation("Inbound message");
+  }
   ++recv_message_count_;
 }
 
 void PythonOpenCensusServerCallTracer::RecordReceivedDecompressedMessage(
-    const grpc_core::Message& recv_decompressed_message) {
-  RecordAnnotation(
-      absl::StrFormat("Received decompressed message: %ld bytes",
-                      recv_decompressed_message.payload()->Length()));
+    const grpc_core::Message& /*recv_decompressed_message*/) {
+  if (PythonCensusTracingEnabled()) {
+    RecordAnnotation("Inbound decompressed message");
+  }
 }
 
 void PythonOpenCensusServerCallTracer::RecordCancel(

@@ -29,6 +29,7 @@ from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export import SpanExporter
+from opentelemetry.sdk.trace.export import SpanExportResult
 
 _SPAN_KIND_MAP = {
     trace.SpanKind.CLIENT: trace_pb2.Span.SpanKind.SPAN_KIND_CLIENT,
@@ -71,7 +72,28 @@ class OTLPSpanExporter(SpanExporter):
             if span.attributes:
                 for k, v in span.attributes.items():
                     kv = common_pb2.KeyValue(key=k)
-                    if isinstance(v, bool):
+                    if k == "previous-rpc-attempts":
+                        try:
+                            kv.value.int_value = int(v)
+                        except (ValueError, TypeError):
+                            kv.value.int_value = 0
+                    elif k == "transparent-retry":
+                        if isinstance(v, (str, bytes)):
+                            v_str = (
+                                v.decode("utf-8", errors="ignore")
+                                if isinstance(v, bytes)
+                                else v
+                            )
+                            kv.value.bool_value = v_str.lower() in (
+                                "true",
+                                "1",
+                                "t",
+                                "yes",
+                                "y",
+                            )
+                        else:
+                            kv.value.bool_value = bool(v)
+                    elif isinstance(v, bool):
                         kv.value.bool_value = v
                     elif isinstance(v, int):
                         kv.value.int_value = v
@@ -115,17 +137,20 @@ class OTLPSpanExporter(SpanExporter):
 
         try:
             self._stub.Export(request, timeout=5)
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             print(f"OTLPSpanExporter Export exception: {e}", flush=True)
+            return SpanExportResult.FAILURE
+        return SpanExportResult.SUCCESS
 
     def shutdown(self) -> None:
+        time.sleep(0.5)
         try:
             self._channel.close()
         except Exception:
             pass
 
     def force_flush(self, timeout_millis: int = 30000) -> bool:
-        time.sleep(0.3)
+        time.sleep(0.5)
         return True
 
 

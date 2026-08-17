@@ -24,6 +24,7 @@ except ImportError:
 from concurrent import futures
 import logging
 import signal
+import threading
 
 from absl import app
 from absl.flags import argparse_flags
@@ -76,20 +77,21 @@ def get_server_credentials(use_tls):
 
 
 def _serve_internal(server, enable_otel=False):
+    stop_event = threading.Event()
+
     def _sig_handler(signum, frame):
         _LOGGER.info("Received signal %d, stopping server...", signum)
-        if enable_otel:
-            otel_interop_helper.flush_tracer_provider()
-        server.stop(0)
+        ev = server.stop(0)
+        if ev:
+            ev.wait(timeout=2)
+        stop_event.set()
 
     signal.signal(signal.SIGTERM, _sig_handler)
     signal.signal(signal.SIGINT, _sig_handler)
 
     server.start()
     _LOGGER.info("Server serving.")
-    server.wait_for_termination()
-    if enable_otel:
-        otel_interop_helper.flush_tracer_provider()
+    stop_event.wait()
     _LOGGER.info("Server stopped; exiting.")
 
 
@@ -102,12 +104,8 @@ def serve(args):
             tracer_provider=tracer_provider
         )
         plugin.register_global()
-        server = grpc.server(
-            futures.ThreadPoolExecutor(max_workers=10),
-            options=(("grpc.so_reuseport", 0),),
-        )
-    else:
-        server = test_common.test_server()
+
+    server = test_common.test_server()
 
     test_pb2_grpc.add_TestServiceServicer_to_server(
         service.TestService(), server
@@ -123,6 +121,9 @@ def serve(args):
     finally:
         if plugin:
             plugin.deregister_global()
+        if enable_otel:
+            otel_interop_helper.flush_tracer_provider()
+            otel_interop_helper.shutdown_tracer_provider()
 
 
 if __name__ == "__main__":

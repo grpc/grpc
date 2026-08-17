@@ -46,6 +46,9 @@ _OBSERVABILITY_PLUGIN: Optional["ObservabilityPlugin"] = None
 _SERVICES_TO_EXCLUDE: List[bytes] = [
     b"google.monitoring.v3.MetricService",
     b"google.devtools.cloudtrace.v2.TraceService",
+    b"opentelemetry.proto.collector.trace.v1.TraceService",
+    b"opentelemetry.proto.collector.metrics.v1.MetricsService",
+    b"opentelemetry.proto.collector.logs.v1.LogsService",
 ]
 
 
@@ -299,7 +302,7 @@ def create_server_call_tracer_factory_option(
     xds: bool,
 ) -> Union[Tuple[ChannelArgumentType], Tuple[()]]:
     with get_plugin() as plugin:
-        if plugin and plugin.stats_enabled:
+        if plugin and (plugin.stats_enabled or plugin.tracing_enabled):
             server_call_tracer_factory_address = (
                 _cygrpc.get_server_call_tracer_factory_address(plugin, xds)
             )

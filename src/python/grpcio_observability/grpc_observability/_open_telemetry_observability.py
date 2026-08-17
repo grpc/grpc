@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from datetime import datetime
 import logging
 import threading
 import time
@@ -152,6 +153,37 @@ class _OpenTelemetryPlugin:
         # Records stats data to MeterProvider.
         if self._should_record(stats_data):
             self._record_stats_data(stats_data)
+
+    def maybe_record_tracing_data(
+        self, tracing_data: List[_observability.TracingData]
+    ) -> None:
+        print(
+            f"[DEBUG] maybe_record_tracing_data: tracer_provider={self.tracer_provider}",
+            flush=True,
+        )
+        if not self.tracer_provider:
+            return
+        processor = getattr(
+            self.tracer_provider, "_active_span_processor", None
+        )
+        print(
+            f"[DEBUG] maybe_record_tracing_data: processor={processor}",
+            flush=True,
+        )
+        for data in tracing_data:
+            span = _tracing_data_to_readable_span(data)
+            print(
+                f"[DEBUG] maybe_record_tracing_data: converted span={span}",
+                flush=True,
+            )
+            if span and processor:
+                try:
+                    processor.on_end(span)
+                except Exception as e:  # pylint: disable=broad-except
+                    print(
+                        f"[DEBUG] processor.on_end exception: {e}", flush=True
+                    )
+                    _LOGGER.debug("Failed to export span: %s", e)
 
     def get_client_exchange_labels(self) -> Dict[str, AnyStr]:
         """Get labels used for client side Metadata Exchange."""
@@ -300,6 +332,131 @@ class _OpenTelemetryPlugin:
         }
 
 
+def _iso_to_nanos(time_str: str) -> int:
+    if not time_str:
+        return int(time.time() * 1e9)
+    try:
+        dt = datetime.fromisoformat(time_str.replace("Z", "+00:00"))
+        return int(dt.timestamp() * 1e9)
+    except Exception:  # pylint: disable=broad-except
+        return int(time.time() * 1e9)
+
+
+def _tracing_data_to_readable_span(
+    data: _observability.TracingData,
+) -> Optional[Any]:
+    try:
+        from opentelemetry.sdk.resources import Resource
+        from opentelemetry.sdk.trace import Event, ReadableSpan
+        from opentelemetry.trace import (
+            SpanContext,
+            SpanKind,
+            Status,
+            StatusCode,
+            TraceFlags,
+        )
+
+        trace_id_int = int(data.trace_id, 16) if data.trace_id else 0
+        span_id_int = int(data.span_id, 16) if data.span_id else 0
+        parent_span_id_int = (
+            int(data.parent_span_id, 16) if data.parent_span_id else None
+        )
+
+        ctx = SpanContext(
+            trace_id=trace_id_int,
+            span_id=span_id_int,
+            is_remote=False,
+            trace_flags=TraceFlags(
+                TraceFlags.SAMPLED
+                if data.should_sample or data.should_sample is None
+                else TraceFlags.SAMPLED
+            ),
+        )
+        parent_ctx = None
+        if parent_span_id_int:
+            parent_ctx = SpanContext(
+                trace_id=trace_id_int,
+                span_id=parent_span_id_int,
+                is_remote=True,
+                trace_flags=TraceFlags(TraceFlags.SAMPLED),
+            )
+
+        if data.name.startswith("Sent.") or data.name.startswith("Attempt."):
+            kind = SpanKind.CLIENT
+        elif data.name.startswith("Recv."):
+            kind = SpanKind.SERVER
+        else:
+            kind = SpanKind.INTERNAL
+
+        events = []
+        for ts_str, desc in data.span_annotations:
+            events.append(Event(name=desc, timestamp=_iso_to_nanos(ts_str)))
+
+        attributes = {}
+        if data.span_labels:
+            for k, v in data.span_labels.items():
+                if k == "previous-rpc-attempts":
+                    try:
+                        attributes[k] = int(v)
+                    except (ValueError, TypeError):
+                        attributes[k] = 0
+                elif k == "transparent-retry":
+                    if isinstance(v, (str, bytes)):
+                        v_str = (
+                            v.decode("utf-8", errors="ignore")
+                            if isinstance(v, bytes)
+                            else v
+                        )
+                        attributes[k] = v_str.lower() in (
+                            "true",
+                            "1",
+                            "t",
+                            "yes",
+                            "y",
+                        )
+                    else:
+                        attributes[k] = bool(v)
+                else:
+                    if isinstance(v, bytes):
+                        try:
+                            attributes[k] = v.decode("utf-8")
+                        except UnicodeDecodeError:
+                            attributes[k] = v
+                    else:
+                        attributes[k] = v
+        if data.name.startswith("Attempt."):
+            attributes.setdefault("previous-rpc-attempts", 0)
+            attributes.setdefault("transparent-retry", False)
+
+        start_nanos = _iso_to_nanos(data.start_time)
+        end_nanos = _iso_to_nanos(data.end_time)
+
+        status_code = (
+            StatusCode.OK if data.status == "OK" else StatusCode.ERROR
+        )
+        span_status = Status(status_code=status_code, description=data.status)
+
+        return ReadableSpan(
+            name=data.name,
+            context=ctx,
+            parent=parent_ctx,
+            resource=Resource.create({}),
+            attributes=attributes,
+            events=events,
+            kind=kind,
+            status=span_status,
+            start_time=start_nanos,
+            end_time=end_nanos,
+        )
+    except Exception as e:  # pylint: disable=broad-except
+        print(
+            f"[DEBUG] Failed to convert TracingData to ReadableSpan: {e}",
+            flush=True,
+        )
+        _LOGGER.debug("Failed to convert TracingData to ReadableSpan: %s", e)
+        return None
+
+
 def start_open_telemetry_observability(
     *,
     plugins: Iterable[_OpenTelemetryPlugin],
@@ -330,7 +487,8 @@ class _OpenTelemetryExporterDelegator(_observability.Exporter):
     def export_tracing_data(
         self, tracing_data: List[_observability.TracingData]
     ) -> None:
-        pass
+        for plugin in self._plugins:
+            plugin.maybe_record_tracing_data(tracing_data)
 
 
 # pylint: disable=no-self-use
@@ -368,6 +526,16 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
             error_msg = f"Activate observability metrics failed with: {e}"
             raise ValueError(error_msg)
 
+        has_tracing = any(p.tracer_provider is not None for p in self._plugins)
+        if has_tracing:
+            try:
+                _cyobservability.activate_tracing()
+                self.set_tracing(True)
+            except Exception as e:  # pylint: disable=broad-except
+                _LOGGER.exception(
+                    "Activate observability tracing failed with: %s", e
+                )
+
         try:
             _cyobservability.cyobservability_init(self._exporter)
         # TODO(xuanwn): Use specific exceptions
@@ -394,7 +562,19 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
     def create_client_call_tracer(
         self, method_name: bytes, target: bytes
     ) -> ClientCallTracerCapsule:
-        trace_id = b"TRACE_ID"
+        trace_id = b""
+        parent_span_id = b""
+        try:
+            from opentelemetry import trace
+            current_span = trace.get_current_span()
+            if current_span:
+                span_ctx = current_span.get_span_context()
+                if span_ctx and span_ctx.is_valid:
+                    trace_id = f"{span_ctx.trace_id:032x}".encode("utf-8")
+                    parent_span_id = f"{span_ctx.span_id:016x}".encode("utf-8")
+        except Exception:  # pylint: disable=broad-except
+            pass
+
         self._maybe_activate_client_plugin_options(target)
         exchange_labels = self._get_client_exchange_labels()
         enabled_optional_labels = set()
@@ -409,6 +589,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
             exchange_labels,
             enabled_optional_labels,
             method_name in self._registered_methods,
+            parent_span_id,
         )
         return capsule
 

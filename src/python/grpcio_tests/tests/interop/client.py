@@ -13,7 +13,9 @@
 # limitations under the License.
 """The Python implementation of the GRPC interoperability test client."""
 
+import gc
 import os
+import time
 
 os.environ["GRPC_BAZEL_RUNTIME"] = "1"
 try:
@@ -234,6 +236,11 @@ def _test_case_from_arg(test_case_arg):
         raise ValueError('No test case "%s"!' % test_case_arg)
 
 
+def _run_test_case(stub, args):
+    test_case = _test_case_from_arg(args.test_case)
+    test_case.test_interoperability(stub, args)
+
+
 def test_interoperability(args):
     plugin = None
     if args.enable_opentelemetry:
@@ -246,14 +253,20 @@ def test_interoperability(args):
     try:
         channel = _create_channel(args)
         stub = create_stub(channel, args)
-        test_case = _test_case_from_arg(args.test_case)
-        test_case.test_interoperability(stub, args)
+        _run_test_case(stub, args)
+        del stub
+        channel.close()
+        del channel
     finally:
+        import gc
+        gc.collect()
+        gc.collect()
+        time.sleep(0.5)
         if args.enable_opentelemetry:
-            otel_interop_helper.flush_tracer_provider()
-            otel_interop_helper.shutdown_tracer_provider()
             if plugin:
                 plugin.deregister_global()
+            otel_interop_helper.flush_tracer_provider()
+            otel_interop_helper.shutdown_tracer_provider()
 
 
 if __name__ == "__main__":
