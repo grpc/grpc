@@ -38,7 +38,9 @@ from opentelemetry.sdk.metrics.export import MetricExportResult
 from opentelemetry.sdk.metrics.export import MetricExporter
 from opentelemetry.sdk.metrics.export import MetricsData
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+from opentelemetry.sdk.trace import TracerProvider
 
+from tests.interop import otel_interop_helper
 from tests.observability import _test_server
 
 logger = logging.getLogger(__name__)
@@ -589,6 +591,152 @@ class DecodeLabelsTest(unittest.TestCase):
         self.assertIn(key, decoded)
         self.assertEqual(decoded[key], value)
         self.assertIsInstance(decoded[key], str)
+
+
+class OpenTelemetryTracingPluginTest(unittest.TestCase):
+    def test_plugin_initialization_with_tracer_provider(self):
+        tracer_provider = TracerProvider()
+        plugin = grpc_observability.OpenTelemetryPlugin(
+            tracer_provider=tracer_provider
+        )
+        self.assertIs(plugin.tracer_provider, tracer_provider)
+        self.assertIsNone(plugin.text_map_propagator)
+        self.assertEqual(len(plugin._plugins), 1)
+        self.assertIs(plugin._plugins[0].tracer_provider, tracer_provider)
+
+    def test_plugin_default_tracer_provider_is_none(self):
+        plugin = grpc_observability.OpenTelemetryPlugin()
+        self.assertIsNone(plugin.tracer_provider)
+        self.assertIsNone(plugin.text_map_propagator)
+        self.assertIsNone(plugin._plugins[0].tracer_provider)
+        self.assertIsNone(plugin._plugins[0].text_map_propagator)
+
+
+class BinaryAndW3CContextPropagationTest(unittest.TestCase):
+    def test_pack_unpack_grpc_trace_bin_roundtrip_sampled(self):
+        trace_id = 0x4BF92F3577B34DA6A3CE929D0E0E4736
+        span_id = 0x00F067AA0BA902B7
+        packed = otel_interop_helper.pack_grpc_trace_bin(
+            trace_id, span_id, is_sampled=True
+        )
+        self.assertEqual(len(packed), 29)
+        self.assertEqual(packed[0], 0x00)  # version
+        self.assertEqual(packed[1], 0x00)  # trace ID field
+        self.assertEqual(packed[18], 0x01)  # span ID field
+        self.assertEqual(packed[27], 0x02)  # trace options field
+        self.assertEqual(packed[28], 0x01)  # sampled flag
+
+        unpacked_trace_id, unpacked_span_id, is_sampled = (
+            otel_interop_helper.unpack_grpc_trace_bin(packed)
+        )
+        self.assertEqual(unpacked_trace_id, trace_id)
+        self.assertEqual(unpacked_span_id, span_id)
+        self.assertTrue(is_sampled)
+
+    def test_pack_unpack_grpc_trace_bin_roundtrip_unsampled(self):
+        trace_id = 0x1234567890ABCDEF1234567890ABCDEF
+        span_id = 0x1234567890ABCDEF
+        packed = otel_interop_helper.pack_grpc_trace_bin(
+            trace_id, span_id, is_sampled=False
+        )
+        self.assertEqual(len(packed), 29)
+        self.assertEqual(packed[28], 0x00)  # unsampled
+
+        unpacked_trace_id, unpacked_span_id, is_sampled = (
+            otel_interop_helper.unpack_grpc_trace_bin(packed)
+        )
+        self.assertEqual(unpacked_trace_id, trace_id)
+        self.assertEqual(unpacked_span_id, span_id)
+        self.assertFalse(is_sampled)
+
+    def test_pack_unpack_grpc_trace_bin_hex_strings(self):
+        trace_id_hex = "4bf92f3577b34da6a3ce929d0e0e4736"
+        span_id_hex = "00f067aa0ba902b7"
+        packed = otel_interop_helper.pack_grpc_trace_bin(
+            trace_id_hex, span_id_hex, is_sampled=True
+        )
+        unpacked_trace_id, unpacked_span_id, is_sampled = (
+            otel_interop_helper.unpack_grpc_trace_bin(packed)
+        )
+        self.assertEqual(unpacked_trace_id, int(trace_id_hex, 16))
+        self.assertEqual(unpacked_span_id, int(span_id_hex, 16))
+        self.assertTrue(is_sampled)
+
+    def test_unpack_grpc_trace_bin_invalid_inputs(self):
+        self.assertEqual(
+            otel_interop_helper.unpack_grpc_trace_bin(b""), (None, None, False)
+        )
+        self.assertEqual(
+            otel_interop_helper.unpack_grpc_trace_bin(b"\x00" * 28),
+            (None, None, False),
+        )
+        self.assertEqual(
+            otel_interop_helper.unpack_grpc_trace_bin(b"\x01" + b"\x00" * 28),
+            (None, None, False),
+        )
+        self.assertEqual(
+            otel_interop_helper.unpack_grpc_trace_bin(b"\x00" * 29),
+            (None, None, False),
+        )
+        self.assertEqual(
+            otel_interop_helper.unpack_grpc_trace_bin(12345),
+            (None, None, False),
+        )
+
+    def test_format_and_parse_traceparent_sampled(self):
+        trace_id = 0x4BF92F3577B34DA6A3CE929D0E0E4736
+        span_id = 0x00F067AA0BA902B7
+        header = otel_interop_helper.format_traceparent(
+            trace_id, span_id, is_sampled=True
+        )
+        self.assertEqual(
+            header, "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
+        )
+
+        unpacked_trace_id, unpacked_span_id, is_sampled = (
+            otel_interop_helper.parse_traceparent(header)
+        )
+        self.assertEqual(unpacked_trace_id, trace_id)
+        self.assertEqual(unpacked_span_id, span_id)
+        self.assertTrue(is_sampled)
+
+    def test_format_and_parse_traceparent_unsampled(self):
+        trace_id_hex = "4bf92f3577b34da6a3ce929d0e0e4736"
+        span_id_hex = "00f067aa0ba902b7"
+        header = otel_interop_helper.format_traceparent(
+            trace_id_hex, span_id_hex, is_sampled=False
+        )
+        self.assertEqual(
+            header, "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-00"
+        )
+
+        unpacked_trace_id, unpacked_span_id, is_sampled = (
+            otel_interop_helper.parse_traceparent(header.encode("ascii"))
+        )
+        self.assertEqual(unpacked_trace_id, int(trace_id_hex, 16))
+        self.assertEqual(unpacked_span_id, int(span_id_hex, 16))
+        self.assertFalse(is_sampled)
+
+    def test_parse_traceparent_invalid(self):
+        self.assertEqual(
+            otel_interop_helper.parse_traceparent("invalid"),
+            (None, None, False),
+        )
+        self.assertEqual(
+            otel_interop_helper.parse_traceparent(
+                "01-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
+            ),
+            (None, None, False),
+        )
+        self.assertEqual(
+            otel_interop_helper.parse_traceparent(
+                "00-00000000000000000000000000000000-0000000000000000-01"
+            ),
+            (None, None, False),
+        )
+        self.assertEqual(
+            otel_interop_helper.parse_traceparent(12345), (None, None, False)
+        )
 
 
 if __name__ == "__main__":

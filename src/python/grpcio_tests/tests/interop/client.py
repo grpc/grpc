@@ -23,16 +23,19 @@ try:
 except ImportError:
     pass
 
-# pylint: disable=wrong-import-position
 from absl import app
 from absl.flags import argparse_flags
+from google import auth as google_auth
+from google.auth import jwt as google_auth_jwt
 import grpc
+from grpc._interceptor import _ClientCallDetails
+from opentelemetry import trace
 
 from src.proto.grpc.testing import test_pb2_grpc
 from tests.interop import methods
+from tests.interop import otel_interop_helper
 from tests.interop import resources
 
-# pylint: enable=wrong-import-position
 
 
 def parse_interop_client_args(argv):
@@ -118,9 +121,6 @@ def parse_interop_client_args(argv):
 
 
 def _create_call_credentials(args):
-    from google import auth as google_auth
-    from google.auth import jwt as google_auth_jwt
-
     if args.test_case == "oauth2_auth_token":
         google_credentials, _unused_project_id = google_auth.default(
             scopes=[args.oauth_scope]
@@ -153,8 +153,6 @@ def _create_call_credentials(args):
 
 
 def get_secure_channel_parameters(args):
-    from google import auth as google_auth
-
     call_credentials = _create_call_credentials(args)
 
     channel_opts = ()
@@ -217,11 +215,6 @@ class _OTelClientInterceptor(grpc.UnaryUnaryClientInterceptor):
         self._tracer = tracer
 
     def intercept_unary_unary(self, continuation, client_call_details, request):
-        from grpc._interceptor import _ClientCallDetails
-        from opentelemetry import trace
-
-        from tests.interop import otel_interop_helper
-
         method = client_call_details.method
         full_method = method.lstrip("/")
         sent_span_name = f"Sent.{full_method}"
@@ -238,13 +231,17 @@ class _OTelClientInterceptor(grpc.UnaryUnaryClientInterceptor):
         attempt_span.set_attribute("transparent-retry", False)
         attempt_span.add_event("Outbound message")
 
-        trace_id_hex = f"{attempt_span.get_span_context().trace_id:032x}"
-        span_id_hex = f"{attempt_span.get_span_context().span_id:016x}"
-        traceparent = f"00-{trace_id_hex}-{span_id_hex}-01"
+        trace_ctx = attempt_span.get_span_context()
+        traceparent = otel_interop_helper.format_traceparent(
+            trace_ctx.trace_id,
+            trace_ctx.span_id,
+            is_sampled=True,
+        )
 
         trace_bin_bytes = otel_interop_helper.pack_grpc_trace_bin(
-            attempt_span.get_span_context().trace_id,
-            attempt_span.get_span_context().span_id,
+            trace_ctx.trace_id,
+            trace_ctx.span_id,
+            is_sampled=True,
         )
 
         metadata = list(client_call_details.metadata or [])
@@ -284,8 +281,6 @@ def _create_channel(args):
         channel = grpc.insecure_channel(target)
 
     if args.enable_opentelemetry or args.enable_tcp_metrics:
-        from tests.interop import otel_interop_helper
-
         _, tracer = otel_interop_helper.init_tracer_provider()
         channel = grpc.intercept_channel(
             channel, _OTelClientInterceptor(tracer)
@@ -315,8 +310,6 @@ def test_interoperability(args):
     test_case = _test_case_from_arg(args.test_case)
     test_case.test_interoperability(stub, args)
     if args.enable_opentelemetry or args.enable_tcp_metrics:
-        from tests.interop import otel_interop_helper
-
         otel_interop_helper.flush_tracer_provider()
         otel_interop_helper.shutdown_tracer_provider()
 

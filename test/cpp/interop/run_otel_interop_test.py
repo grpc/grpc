@@ -34,6 +34,17 @@ def get_free_port():
     return port
 
 
+def wait_for_port(port, host="localhost", timeout=10.0):
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        try:
+            with socket.create_connection((host, port), timeout=0.2):
+                return True
+        except (ConnectionRefusedError, OSError):
+            time.sleep(0.05)
+    return False
+
+
 ROOT_DIR = os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
@@ -576,7 +587,10 @@ def main():
             {},
             "OTLP Collector",
         )
-        time.sleep(1.5)  # wait for collector to start listening
+        if not wait_for_port(collector_port, timeout=10.0):
+            print(
+                f"Warning: Collector port {collector_port} did not respond within timeout, proceeding anyway..."
+            )
 
         # Base env for OTLP exporter
         base_env = {
@@ -654,23 +668,10 @@ def main():
                 "Go Interop Server",
             )
         # Wait for server to bind and start listening
-        server_ready = False
-        start_wait = time.time()
-        while time.time() - start_wait < 10.0:
-            try:
-                with socket.create_connection(
-                    ("localhost", server_port), timeout=0.5
-                ):
-                    server_ready = True
-                    break
-            except (ConnectionRefusedError, OSError):
-                time.sleep(0.2)
-        if not server_ready:
+        if not wait_for_port(server_port, timeout=10.0):
             print(
                 f"Warning: Server port {server_port} did not respond within timeout, proceeding anyway..."
             )
-        else:
-            time.sleep(0.5)
 
         # Run Client
         print(f"Running {args.client.upper()} Client...")
@@ -748,8 +749,7 @@ def main():
                 env=client_env,
             )
 
-        print("Client finished. Waiting for spans and metrics to flush...")
-        time.sleep(2.5)
+        print("Client finished.")
 
     finally:
         # Cleanup server and collector processes safely
@@ -767,7 +767,6 @@ def main():
                         server_proc.kill()
                     except Exception:
                         pass
-        time.sleep(1.5)
         if collector_proc:
             print("Terminating collector...")
             try:

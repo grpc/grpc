@@ -16,9 +16,6 @@
 //
 //
 
-#include <google/protobuf/json/json.h>
-#include <grpcpp/grpcpp.h>
-
 #include <atomic>
 #include <chrono>
 #include <csignal>
@@ -29,11 +26,15 @@
 #include <thread>
 #include <vector>
 
-#include "opentelemetry/proto/collector/metrics/v1/metrics_service.grpc.pb.h"
-#include "opentelemetry/proto/collector/trace/v1/trace_service.grpc.pb.h"
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/log/log.h"
+#include <google/protobuf/json/json.h>
+
+#include <grpcpp/grpcpp.h>
+
+#include "opentelemetry/proto/collector/metrics/v1/metrics_service.grpc.pb.h"
+#include "opentelemetry/proto/collector/trace/v1/trace_service.grpc.pb.h"
 
 ABSL_FLAG(int, port, 0, "Port to listen on");
 ABSL_FLAG(std::string, file, "", "File to write JSON spans to");

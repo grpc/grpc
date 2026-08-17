@@ -37,16 +37,16 @@
 #include "opentelemetry/metrics/sync_instruments.h"
 #include "opentelemetry/nostd/shared_ptr.h"
 #include "opentelemetry/trace/tracer.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/telemetry/instrument.h"
 #include "src/core/telemetry/metrics.h"
 #include "src/core/util/down_cast.h"
 #include "src/core/util/match.h"
-#include "absl/container/flat_hash_map.h"
-#include "absl/container/flat_hash_set.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/strings/string_view.h"
 
 namespace grpc {
 namespace internal {
@@ -193,8 +193,7 @@ class OpenTelemetryPluginBuilderImpl {
           bool(const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
           channel_scope_filter);
   absl::Status BuildAndRegisterGlobal();
-  absl::StatusOr<std::shared_ptr<grpc::experimental::OpenTelemetryPlugin>>
-  Build();
+  absl::StatusOr<std::shared_ptr<grpc::OpenTelemetryPlugin>> Build();
 
   const absl::flat_hash_set<std::string>& TestOnlyEnabledMetrics() {
     return metrics_;
@@ -223,7 +222,7 @@ class OpenTelemetryPluginBuilderImpl {
 };
 
 class OpenTelemetryPluginImpl
-    : public grpc::experimental::OpenTelemetryPlugin,
+    : public grpc::OpenTelemetryPlugin,
       public grpc_core::StatsPlugin,
       public std::enable_shared_from_this<OpenTelemetryPluginImpl> {
  public:

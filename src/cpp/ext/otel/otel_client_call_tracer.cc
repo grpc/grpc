@@ -20,7 +20,6 @@
 
 #include <grpc/context_types.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 #include <stdint.h>
@@ -38,6 +37,14 @@
 #include "opentelemetry/metrics/sync_instruments.h"
 #include "opentelemetry/trace/context.h"
 #include "opentelemetry/trace/tracer.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
+#include "absl/types/span.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/call/status_util.h"
 #include "src/core/client_channel/client_channel_filter.h"
@@ -56,14 +63,6 @@
 #include "src/core/util/sync.h"
 #include "src/cpp/ext/otel/key_value_iterable.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
-#include "absl/strings/strip.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
-#include "absl/types/span.h"
 
 namespace grpc {
 namespace internal {
@@ -166,7 +165,7 @@ OpenTelemetryPluginImpl::ClientCallTracerInterface::
 
 template <typename UnrefBehavior>
 OpenTelemetryPluginImpl::ClientCallTracerInterface::CallAttemptTracer<
-    UnrefBehavior>::~CallAttemptTracer<UnrefBehavior>() {
+    UnrefBehavior>::~CallAttemptTracer() {
   if (span_ != nullptr) {
     span_->End();
   }

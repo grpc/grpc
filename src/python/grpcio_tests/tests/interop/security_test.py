@@ -15,7 +15,7 @@
 import faulthandler
 from functools import partial
 import gc
-import os
+import pkgutil
 import queue
 import sys
 import threading
@@ -23,7 +23,8 @@ import time
 import unittest
 import weakref
 
-os.environ["GRPC_BAZEL_RUNTIME"] = "1"
+# NOTE(lidiz) This module only exists in Bazel BUILD file, for more details
+# please refer to comments in the "bazel_namespace_package_hack" module.
 try:
     from tests import bazel_namespace_package_hack
 

@@ -11,8 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""The Python implementation of the GRPC interoperability test server."""
-
 import os
 
 os.environ["GRPC_BAZEL_RUNTIME"] = "1"
@@ -23,7 +21,6 @@ try:
 except ImportError:
     pass
 
-# pylint: disable=wrong-import-position
 from concurrent import futures
 import logging
 import signal
@@ -33,11 +30,10 @@ from absl.flags import argparse_flags
 import grpc
 
 from src.proto.grpc.testing import test_pb2_grpc
+from tests.interop import otel_interop_helper
 from tests.interop import resources
 from tests.interop import service
 from tests.unit import test_common
-
-# pylint: enable=wrong-import-position
 
 logging.basicConfig()
 _LOGGER = logging.getLogger(__name__)
@@ -88,8 +84,6 @@ def _serve_internal(server, enable_otel=False):
     def _sig_handler(signum, frame):
         _LOGGER.info("Received signal %d, stopping server...", signum)
         if enable_otel:
-            from tests.interop import otel_interop_helper
-
             otel_interop_helper.flush_tracer_provider()
         server.stop(0)
 
@@ -100,8 +94,6 @@ def _serve_internal(server, enable_otel=False):
     _LOGGER.info("Server serving.")
     server.wait_for_termination()
     if enable_otel:
-        from tests.interop import otel_interop_helper
-
         otel_interop_helper.flush_tracer_provider()
     _LOGGER.info("Server stopped; exiting.")
 
@@ -109,8 +101,6 @@ def _serve_internal(server, enable_otel=False):
 def serve(args):
     enable_otel = args.enable_opentelemetry or args.enable_tcp_metrics
     if enable_otel:
-        from tests.interop import otel_interop_helper
-
         _, tracer = otel_interop_helper.init_tracer_provider()
         interceptor = otel_interop_helper.OTelServerInterceptor(tracer)
         server = grpc.server(

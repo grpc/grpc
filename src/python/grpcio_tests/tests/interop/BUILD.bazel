@@ -19,7 +19,10 @@ package(default_visibility = ["//visibility:public"])
 py_library(
     name = "_intraop_test_case",
     srcs = ["_intraop_test_case.py"],
-    imports = ["../../"],
+    imports = [
+        "../../",
+        "../../../../../",
+    ],
     deps = [
         ":methods",
     ],
@@ -45,7 +48,7 @@ py_library(
     srcs = ["client.py"],
     imports = [
         "../../",
-        "../../../../",
+        "../../../../../",
     ],
     deps = [
         ":methods",
@@ -75,7 +78,7 @@ py_library(
     srcs = ["methods.py"],
     imports = [
         "../../",
-        "../../../../",
+        "../../../../../",
     ],
     deps = [
         "//src/proto/grpc/testing:empty_py_pb2",
@@ -109,7 +112,7 @@ py_library(
     srcs = ["service.py"],
     imports = [
         "../../",
-        "../../../../",
+        "../../../../../",
     ],
     deps = [
         "//src/proto/grpc/testing:empty_py_pb2",
@@ -124,7 +127,7 @@ py_library(
     srcs = ["server.py"],
     imports = [
         "../../",
-        "../../../../",
+        "../../../../../",
     ],
     deps = [
         ":otel_interop_helper",
@@ -161,15 +164,25 @@ py_test(
     data = [
         "//src/python/grpcio_tests/tests/unit/credentials",
     ],
-    imports = ["../../"],
+    env = {
+        "GRPC_BAZEL_RUNTIME": "1",
+    },
+    imports = [
+        "../../",
+    ],
     main = "_insecure_intraop_test.py",
     python_version = "PY3",
     deps = [
         ":_intraop_test_case",
+        ":otel_interop_helper",
         ":server",
         ":service",
+        "//src/proto/grpc/testing:empty_py_pb2",
+        "//src/proto/grpc/testing:py_messages_proto",
         "//src/proto/grpc/testing:py_test_proto",
+        "//src/proto/grpc/testing:test_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_tests/tests:bazel_namespace_package_hack",
         "//src/python/grpcio_tests/tests/unit:test_common",
     ],
 )
@@ -178,15 +191,24 @@ py_test(
     name = "_secure_intraop_test",
     size = "small",
     srcs = ["_secure_intraop_test.py"],
-    imports = ["../../"],
+    env = {
+        "GRPC_BAZEL_RUNTIME": "1",
+    },
+    imports = [
+        "../../",
+    ],
     main = "_secure_intraop_test.py",
     python_version = "PY3",
     deps = [
         ":_intraop_test_case",
         ":server",
         ":service",
+        "//src/proto/grpc/testing:empty_py_pb2",
+        "//src/proto/grpc/testing:py_messages_proto",
         "//src/proto/grpc/testing:py_test_proto",
+        "//src/proto/grpc/testing:test_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_tests/tests:bazel_namespace_package_hack",
         "//src/python/grpcio_tests/tests/unit:test_common",
     ],
 )
@@ -195,15 +217,24 @@ py_test(
     name = "_security_tests",
     size = "small",
     srcs = ["security_test.py"],
-    imports = ["../../"],
+    env = {
+        "GRPC_BAZEL_RUNTIME": "1",
+    },
+    imports = [
+        "../../",
+    ],
     main = "security_test.py",
     python_version = "PY3",
     deps = [
         ":_intraop_test_case",
         ":server",
         ":service",
+        "//src/proto/grpc/testing:empty_py_pb2",
+        "//src/proto/grpc/testing:py_messages_proto",
         "//src/proto/grpc/testing:py_test_proto",
+        "//src/proto/grpc/testing:test_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_tests/tests:bazel_namespace_package_hack",
         "//src/python/grpcio_tests/tests/unit:test_common",
     ],
 )

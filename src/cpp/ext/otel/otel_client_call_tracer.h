@@ -27,6 +27,10 @@
 #include <string>
 
 #include "opentelemetry/trace/span.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -37,10 +41,6 @@
 #include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/util/sync.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
-#include "absl/base/thread_annotations.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/time.h"
 
 namespace grpc {
 namespace internal {

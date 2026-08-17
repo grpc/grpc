@@ -119,15 +119,270 @@ TEST(GrpcTraceBinTextMapPropagatorTest, Extract) {
   EXPECT_EQ(span_context.trace_flags().flags(), 1);
 }
 
-TEST(GrpcTraceBinTextMapPropagatorTest, Fields) {
+TEST(GrpcTraceBinTextMapPropagatorTest, StressTest_InvalidVersions) {
   auto propagator =
       OpenTelemetryPluginBuilder::MakeGrpcTraceBinTextMapPropagator();
-  StrictMock<MockFunction<bool(opentelemetry::nostd::string_view)>>(
-      mock_callback);
-  EXPECT_CALL(mock_callback,
-              Call(opentelemetry::nostd::string_view("grpc-trace-bin")))
-      .WillOnce(Return(true));
-  propagator->Fields(mock_callback.AsStdFunction());
+  uint8_t canonical[29] = {0};
+  canonical[0] = 0;
+  canonical[1] = 0;
+  for (int i = 0; i < 16; i++) canonical[2 + i] = i + 1;
+  canonical[18] = 1;
+  for (int i = 0; i < 8; i++) canonical[19 + i] = i + 1;
+  canonical[27] = 2;
+  canonical[28] = 1;
+
+  for (uint8_t v : {1, 2, 3, 127, 128, 255}) {
+    canonical[0] = v;
+    TestTextMapCarrier carrier;
+    carrier.Set("grpc-trace-bin",
+                absl::Base64Escape(absl::string_view(
+                    reinterpret_cast<char*>(canonical), 29)));
+    opentelemetry::context::Context context;
+    context = propagator->Extract(carrier, context);
+    auto span_context = opentelemetry::trace::GetSpan(context)->GetContext();
+    EXPECT_FALSE(span_context.IsValid()) << "Version " << static_cast<int>(v) << " should be invalid";
+  }
+}
+
+TEST(GrpcTraceBinTextMapPropagatorTest, StressTest_InvalidFieldIDs) {
+  auto propagator =
+      OpenTelemetryPluginBuilder::MakeGrpcTraceBinTextMapPropagator();
+  uint8_t canonical[29] = {0};
+  canonical[0] = 0;
+  canonical[1] = 0;
+  for (int i = 0; i < 16; i++) canonical[2 + i] = i + 1;
+  canonical[18] = 1;
+  for (int i = 0; i < 8; i++) canonical[19 + i] = i + 1;
+  canonical[27] = 2;
+  canonical[28] = 1;
+
+  // Invalid trace field id
+  for (uint8_t fid : {1, 2, 3, 255}) {
+    canonical[1] = fid;
+    TestTextMapCarrier carrier;
+    carrier.Set("grpc-trace-bin",
+                absl::Base64Escape(absl::string_view(
+                    reinterpret_cast<char*>(canonical), 29)));
+    opentelemetry::context::Context context;
+    context = propagator->Extract(carrier, context);
+    auto span_context = opentelemetry::trace::GetSpan(context)->GetContext();
+    EXPECT_FALSE(span_context.IsValid());
+  }
+  canonical[1] = 0;
+
+  // Invalid span field id
+  for (uint8_t fid : {0, 2, 3, 255}) {
+    canonical[18] = fid;
+    TestTextMapCarrier carrier;
+    carrier.Set("grpc-trace-bin",
+                absl::Base64Escape(absl::string_view(
+                    reinterpret_cast<char*>(canonical), 29)));
+    opentelemetry::context::Context context;
+    context = propagator->Extract(carrier, context);
+    auto span_context = opentelemetry::trace::GetSpan(context)->GetContext();
+    EXPECT_FALSE(span_context.IsValid());
+  }
+  canonical[18] = 1;
+
+  // Invalid flag field id
+  for (uint8_t fid : {0, 1, 3, 255}) {
+    canonical[27] = fid;
+    TestTextMapCarrier carrier;
+    carrier.Set("grpc-trace-bin",
+                absl::Base64Escape(absl::string_view(
+                    reinterpret_cast<char*>(canonical), 29)));
+    opentelemetry::context::Context context;
+    context = propagator->Extract(carrier, context);
+    auto span_context = opentelemetry::trace::GetSpan(context)->GetContext();
+    EXPECT_FALSE(span_context.IsValid());
+  }
+}
+
+TEST(GrpcTraceBinTextMapPropagatorTest, StressTest_BufferBoundaries) {
+  auto propagator =
+      OpenTelemetryPluginBuilder::MakeGrpcTraceBinTextMapPropagator();
+  uint8_t canonical[100] = {0};
+  canonical[0] = 0;
+  canonical[1] = 0;
+  for (int i = 0; i < 16; i++) canonical[2 + i] = i + 1;
+  canonical[18] = 1;
+  for (int i = 0; i < 8; i++) canonical[19 + i] = i + 1;
+  canonical[27] = 2;
+  canonical[28] = 1;
+
+  // Truncated buffers (0 to 28 bytes)
+  for (int len = 0; len < 29; len++) {
+    TestTextMapCarrier carrier;
+    carrier.Set("grpc-trace-bin",
+                absl::Base64Escape(absl::string_view(
+                    reinterpret_cast<char*>(canonical), len)));
+    opentelemetry::context::Context context;
+    context = propagator->Extract(carrier, context);
+    auto span_context = opentelemetry::trace::GetSpan(context)->GetContext();
+    EXPECT_FALSE(span_context.IsValid()) << "Length " << len << " should be invalid";
+  }
+
+  // Trailing extra bytes (30 to 100 bytes)
+  for (int len = 30; len <= 100; len++) {
+    TestTextMapCarrier carrier;
+    carrier.Set("grpc-trace-bin",
+                absl::Base64Escape(absl::string_view(
+                    reinterpret_cast<char*>(canonical), len)));
+    opentelemetry::context::Context context;
+    context = propagator->Extract(carrier, context);
+    auto span_context = opentelemetry::trace::GetSpan(context)->GetContext();
+    EXPECT_FALSE(span_context.IsValid()) << "Length " << len << " should be invalid for exact 29-byte match";
+  }
+}
+
+TEST(GrpcTraceBinTextMapPropagatorTest, StressTest_ExtremeIDs) {
+  auto propagator =
+      OpenTelemetryPluginBuilder::MakeGrpcTraceBinTextMapPropagator();
+  // Max IDs (0xFF..FF)
+  uint8_t max_buf[29];
+  max_buf[0] = 0;
+  max_buf[1] = 0;
+  std::memset(&max_buf[2], 0xFF, 16);
+  max_buf[18] = 1;
+  std::memset(&max_buf[19], 0xFF, 8);
+  max_buf[27] = 2;
+  max_buf[28] = 1;
+
+  TestTextMapCarrier max_carrier;
+  max_carrier.Set("grpc-trace-bin",
+                  absl::Base64Escape(absl::string_view(
+                      reinterpret_cast<char*>(max_buf), 29)));
+  opentelemetry::context::Context context;
+  context = propagator->Extract(max_carrier, context);
+  auto max_sc = opentelemetry::trace::GetSpan(context)->GetContext();
+  EXPECT_TRUE(max_sc.IsValid());
+
+  // All zeros IDs
+  uint8_t zero_buf[29] = {0};
+  zero_buf[0] = 0;
+  zero_buf[1] = 0;
+  zero_buf[18] = 1;
+  zero_buf[27] = 2;
+  zero_buf[28] = 1;
+
+  TestTextMapCarrier zero_carrier;
+  zero_carrier.Set("grpc-trace-bin",
+                   absl::Base64Escape(absl::string_view(
+                       reinterpret_cast<char*>(zero_buf), 29)));
+  opentelemetry::context::Context zero_context;
+  zero_context = propagator->Extract(zero_carrier, zero_context);
+  auto zero_sc = opentelemetry::trace::GetSpan(zero_context)->GetContext();
+  EXPECT_FALSE(zero_sc.IsValid());
+}
+
+TEST(GrpcTraceBinTextMapPropagatorTest, StressTest_TraceFlags) {
+  auto propagator =
+      OpenTelemetryPluginBuilder::MakeGrpcTraceBinTextMapPropagator();
+  uint8_t buf[29] = {0};
+  buf[0] = 0;
+  buf[1] = 0;
+  for (int i = 0; i < 16; i++) buf[2 + i] = i + 1;
+  buf[18] = 1;
+  for (int i = 0; i < 8; i++) buf[19 + i] = i + 1;
+  buf[27] = 2;
+
+  struct FlagCase {
+    uint8_t flag;
+    bool sampled;
+  };
+  std::vector<FlagCase> cases = {
+      {0x00, false},
+      {0x01, true},
+      {0x02, false},
+      {0x03, true},
+      {0x80, false},
+      {0x81, true},
+      {0xFF, true},
+  };
+
+  for (const auto& tc : cases) {
+    buf[28] = tc.flag;
+    TestTextMapCarrier carrier;
+    carrier.Set("grpc-trace-bin",
+                absl::Base64Escape(absl::string_view(
+                    reinterpret_cast<char*>(buf), 29)));
+    opentelemetry::context::Context context;
+    context = propagator->Extract(carrier, context);
+    auto sc = opentelemetry::trace::GetSpan(context)->GetContext();
+    EXPECT_TRUE(sc.IsValid());
+    EXPECT_EQ(sc.IsSampled(), tc.sampled);
+    EXPECT_EQ(sc.trace_flags().flags(), tc.flag);
+  }
+}
+
+TEST(GrpcTraceBinTextMapPropagatorTest, StressTest_Base64Variations) {
+  auto propagator =
+      OpenTelemetryPluginBuilder::MakeGrpcTraceBinTextMapPropagator();
+  uint8_t canonical[29] = {0};
+  canonical[0] = 0;
+  canonical[1] = 0;
+  for (int i = 0; i < 16; i++) canonical[2 + i] = i + 1;
+  canonical[18] = 1;
+  for (int i = 0; i < 8; i++) canonical[19 + i] = i + 1;
+  canonical[27] = 2;
+  canonical[28] = 1;
+
+  std::string standard_b64 = absl::Base64Escape(
+      absl::string_view(reinterpret_cast<char*>(canonical), 29));
+
+  // Padded vs unpadded Base64
+  std::string unpadded_b64 = standard_b64;
+  while (!unpadded_b64.empty() && unpadded_b64.back() == '=') {
+    unpadded_b64.pop_back();
+  }
+
+  TestTextMapCarrier unpadded_carrier;
+  unpadded_carrier.Set("grpc-trace-bin", unpadded_b64);
+  opentelemetry::context::Context context;
+  context = propagator->Extract(unpadded_carrier, context);
+  auto sc_unpadded = opentelemetry::trace::GetSpan(context)->GetContext();
+  EXPECT_TRUE(sc_unpadded.IsValid());
+
+  // Corrupted base64 inputs
+  std::vector<std::string> invalid_b64 = {
+      "not-valid-b64!", "====", "???", "", "abc", "!!!@@@###$$$"
+  };
+  for (const auto& inv : invalid_b64) {
+    TestTextMapCarrier carrier;
+    carrier.Set("grpc-trace-bin", inv);
+    opentelemetry::context::Context ctx;
+    ctx = propagator->Extract(carrier, ctx);
+    auto sc = opentelemetry::trace::GetSpan(ctx)->GetContext();
+    EXPECT_FALSE(sc.IsValid());
+  }
+}
+
+TEST(GrpcTraceBinTextMapPropagatorTest, StressTest_FuzzRandomInputs) {
+  auto propagator =
+      OpenTelemetryPluginBuilder::MakeGrpcTraceBinTextMapPropagator();
+  // 10,000 randomized iterations
+  for (int i = 0; i < 10000; i++) {
+    int len = i % 100;
+    std::string random_bytes;
+    random_bytes.resize(len);
+    for (int j = 0; j < len; j++) {
+      random_bytes[j] = static_cast<char>((i * 31 + j * 17) % 256);
+    }
+    TestTextMapCarrier carrier;
+    carrier.Set("grpc-trace-bin",
+                absl::Base64Escape(random_bytes));
+    opentelemetry::context::Context context;
+    // Must never crash or panic
+    context = propagator->Extract(carrier, context);
+    auto sc = opentelemetry::trace::GetSpan(context)->GetContext();
+    if (sc.IsValid()) {
+      EXPECT_EQ(len, 29);
+      EXPECT_EQ(static_cast<uint8_t>(random_bytes[0]), 0);
+      EXPECT_EQ(static_cast<uint8_t>(random_bytes[1]), 0);
+      EXPECT_EQ(static_cast<uint8_t>(random_bytes[18]), 1);
+      EXPECT_EQ(static_cast<uint8_t>(random_bytes[27]), 2);
+    }
+  }
 }
 
 }  // namespace

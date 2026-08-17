@@ -13,9 +13,11 @@
 # limitations under the License.
 """OpenTelemetry Tracing Interop Helper for Python gRPC Interop Client/Server"""
 
+import base64
 import os
+import struct
 import time
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 import grpc
 from opentelemetry import trace
@@ -164,28 +166,85 @@ def shutdown_tracer_provider():
         time.sleep(0.5)
 
 
+def format_traceparent(
+    trace_id: Union[int, str],
+    span_id: Union[int, str],
+    is_sampled: bool = True,
+) -> str:
+    """Format W3C traceparent header string (00-{trace_id_32_hex}-{span_id_16_hex}-{flags_2_hex})."""
+    if isinstance(trace_id, str):
+        trace_id_int = int(trace_id, 16)
+    else:
+        trace_id_int = int(trace_id)
+    if isinstance(span_id, str):
+        span_id_int = int(span_id, 16)
+    else:
+        span_id_int = int(span_id)
+    flags = "01" if is_sampled else "00"
+    return f"00-{trace_id_int:032x}-{span_id_int:016x}-{flags}"
+
+
 def pack_grpc_trace_bin(
-    trace_id_int: int, span_id_int: int, is_sampled: bool = True
+    trace_id: Union[int, str, bytes],
+    span_id: Union[int, str, bytes],
+    is_sampled: bool = True,
 ) -> bytes:
-    trace_id_bytes = trace_id_int.to_bytes(16, "big")
-    span_id_bytes = span_id_int.to_bytes(8, "big")
-    options = 1 if is_sampled else 0
-    return (
-        b"\x00\x00"
-        + trace_id_bytes
-        + b"\x01"
-        + span_id_bytes
-        + b"\x02"
-        + bytes([options])
+    """Packs trace_id and span_id into standard 29-byte grpc-trace-bin TLV format."""
+    if isinstance(trace_id, str):
+        trace_id_bytes = int(trace_id, 16).to_bytes(16, byteorder="big")
+    elif isinstance(trace_id, int):
+        trace_id_bytes = trace_id.to_bytes(16, byteorder="big")
+    elif isinstance(trace_id, (bytes, bytearray, memoryview)):
+        trace_id_bytes = bytes(trace_id).rjust(16, b"\x00")
+    else:
+        raise TypeError(f"Unsupported trace_id type: {type(trace_id)}")
+
+    if isinstance(span_id, str):
+        span_id_bytes = int(span_id, 16).to_bytes(8, byteorder="big")
+    elif isinstance(span_id, int):
+        span_id_bytes = span_id.to_bytes(8, byteorder="big")
+    elif isinstance(span_id, (bytes, bytearray, memoryview)):
+        span_id_bytes = bytes(span_id).rjust(8, b"\x00")
+    else:
+        raise TypeError(f"Unsupported span_id type: {type(span_id)}")
+
+    trace_options = 1 if is_sampled else 0
+    return struct.pack(
+        ">BB16sB8sBB",
+        0,
+        0,
+        trace_id_bytes,
+        1,
+        span_id_bytes,
+        2,
+        trace_options,
     )
 
 
 def unpack_grpc_trace_bin(
-    header_bytes: bytes,
+    header_bytes: Union[bytes, bytearray, memoryview, str],
 ) -> Tuple[Optional[int], Optional[int], bool]:
-    if not isinstance(header_bytes, (bytes, bytearray, memoryview)):
+    """Unpacks a 29-byte grpc-trace-bin TLV header into (trace_id, span_id, is_sampled)."""
+    if isinstance(header_bytes, str):
+        try:
+            s = header_bytes.strip()
+            s += "=" * (-len(s) % 4)
+            raw = base64.b64decode(s)
+        except Exception:
+            raw = header_bytes.encode("latin1")
+    elif isinstance(header_bytes, (bytes, bytearray, memoryview)):
+        raw = bytes(header_bytes)
+        if len(raw) != 29 and len(raw) >= 38:
+            try:
+                b = raw.strip()
+                b += b"=" * (-len(b) % 4)
+                decoded = base64.b64decode(b)
+                if len(decoded) >= 29 and decoded[0] == 0:
+                    raw = decoded
+            except Exception:
+                pass
+    else:
         return None, None, False
-    raw = bytes(header_bytes)
 
     if len(raw) < 29 or raw[0] != 0:
         return None, None, False
@@ -226,19 +285,51 @@ def unpack_grpc_trace_bin(
     return None, None, False
 
 
+_HEX_DIGITS = frozenset("0123456789abcdefABCDEF")
+
+
 def parse_traceparent(
-    header_str: str,
+    header: Union[str, bytes],
 ) -> Tuple[Optional[int], Optional[int], bool]:
+    """Parses W3C traceparent header string into (trace_id, span_id, is_sampled)."""
+    if isinstance(header, (bytes, bytearray, memoryview)):
+        header_str = bytes(header).decode("ascii", errors="ignore").strip()
+    elif isinstance(header, str):
+        header_str = header.strip()
+    else:
+        return None, None, False
+
+    if len(header_str) != 55:
+        return None, None, False
+
     parts = header_str.split("-")
-    if len(parts) >= 4 and parts[0] == "00":
-        try:
-            trace_id_int = int(parts[1], 16)
-            span_id_int = int(parts[2], 16)
-            is_sampled = (int(parts[3], 16) & 1) != 0
-            return trace_id_int, span_id_int, is_sampled
-        except ValueError:
-            pass
-    return None, None, False
+    if len(parts) != 4:
+        return None, None, False
+
+    version, trace_id_hex, span_id_hex, flags_hex = parts
+    if version != "00":
+        return None, None, False
+
+    if len(trace_id_hex) != 32 or len(span_id_hex) != 16 or len(flags_hex) != 2:
+        return None, None, False
+
+    if not all(c in _HEX_DIGITS for c in trace_id_hex):
+        return None, None, False
+    if not all(c in _HEX_DIGITS for c in span_id_hex):
+        return None, None, False
+    if not all(c in _HEX_DIGITS for c in flags_hex):
+        return None, None, False
+
+    try:
+        trace_id_int = int(trace_id_hex, 16)
+        span_id_int = int(span_id_hex, 16)
+        flags_int = int(flags_hex, 16)
+        if trace_id_int == 0 or span_id_int == 0:
+            return None, None, False
+        is_sampled = bool(flags_int & 1)
+        return trace_id_int, span_id_int, is_sampled
+    except ValueError:
+        return None, None, False
 
 
 class OTelServerInterceptor(grpc.ServerInterceptor):

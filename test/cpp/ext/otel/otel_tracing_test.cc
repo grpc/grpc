@@ -23,12 +23,12 @@
 #include "opentelemetry/sdk/trace/simple_processor_factory.h"
 #include "opentelemetry/sdk/trace/tracer.h"
 #include "opentelemetry/sdk/trace/tracer_provider.h"
-#include "src/core/config/core_configuration.h"
-#include "src/core/ext/transport/chttp2/transport/internal.h"
-#include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/synchronization/notification.h"
+#include "src/core/config/core_configuration.h"
+#include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #ifdef GRPC_POSIX_SOCKET_TCP
 #include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
 #endif  // GRPC_POSIX_SOCKET_TCP
@@ -929,7 +929,7 @@ TEST_F(OTelTracingTestForTransparentRetries, TransparentRetries) {
   EXPECT_THAT(attempt_attributes[0], FieldsAre(/*previous-rpc-attempts=*/0,
                                                /*transparent-retry=*/false))
       << attempt_attributes[0].PrettyPrint();
-  for (int i = 1; i < attempt_attributes.size(); ++i) {
+  for (size_t i = 1; i < attempt_attributes.size(); ++i) {
     EXPECT_THAT(attempt_attributes[i], FieldsAre(/*previous-rpc-attempts=*/0,
                                                  /*transparent-retry=*/true))
         << attempt_attributes[i].PrettyPrint();

@@ -48,6 +48,7 @@ grpc_cc_library(
         "absl/container:flat_hash_map",
         "absl/container:flat_hash_set",
         "absl/functional:any_invocable",
+        "absl/log:log",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",

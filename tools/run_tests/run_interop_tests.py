@@ -29,6 +29,8 @@ import time
 import uuid
 
 _collector_port = None
+_collector_spans_file = None
+_collector_metrics_file = None
 
 
 def get_free_port():
@@ -37,6 +39,17 @@ def get_free_port():
     port = s.getsockname()[1]
     s.close()
     return port
+
+
+def wait_for_port(port, host="localhost", timeout=5.0):
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        try:
+            with socket.create_connection((host, port), timeout=0.2):
+                return True
+        except (ConnectionRefusedError, OSError):
+            time.sleep(0.05)
+    return False
 
 
 def verify_tracing_spans(spans_file):
@@ -206,6 +219,38 @@ atexit.register(lambda: subprocess.call(["stty", "echo"]))
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), "../.."))
 os.chdir(ROOT)
+
+
+def resolve_binary(path):
+    if not path:
+        return path
+    candidates = [
+        path,
+        path[2:] if path.startswith("./") else path,
+        os.path.abspath(path),
+        os.path.join(ROOT, path),
+        (
+            os.path.join(ROOT, path[2:])
+            if path.startswith("./")
+            else os.path.join(ROOT, path)
+        ),
+    ]
+    if path.startswith("./bazel-bin/"):
+        candidates.append(path[len("./bazel-bin/") :])
+        candidates.append(os.path.join(ROOT, path[len("./bazel-bin/") :]))
+        candidates.append(
+            os.path.join(ROOT, "bazel-bin", path[len("./bazel-bin/") :])
+        )
+    elif path.startswith("bazel-bin/"):
+        candidates.append(path[len("bazel-bin/") :])
+        candidates.append(os.path.join(ROOT, path[len("bazel-bin/") :]))
+        candidates.append(
+            os.path.join(ROOT, "bazel-bin", path[len("bazel-bin/") :])
+        )
+    for p in candidates:
+        if os.path.exists(p):
+            return os.path.abspath(p)
+    return path
 
 _DEFAULT_SERVER_PORT = 8080
 
@@ -1229,11 +1274,9 @@ def cloud_to_cloud_jobspec(
         add_env["OTEL_METRICS_EXPORTER"] = "none"
         add_env["OTEL_LOGS_EXPORTER"] = "none"
         if _collector_port:
-            collector_host = (
-                "host.docker.internal" if docker_image else "localhost"
-            )
+            # Client containers use --net=host, so localhost connects directly to host.
             add_env["OTEL_EXPORTER_OTLP_ENDPOINT"] = (
-                f"http://{collector_host}:{_collector_port}"
+                f"http://localhost:{_collector_port}"
             )
     if test_case in _HTTP2_SERVER_TEST_CASES_THAT_USE_GRPC_CLIENTS:
         client_test_case = _GRPC_CLIENT_TEST_CASES_FOR_HTTP2_SERVER_TEST_CASES[
@@ -1329,7 +1372,7 @@ def server_jobspec(
     )
     server_cmd = ["--port=%s" % _DEFAULT_SERVER_PORT]
     environ = language.global_env()
-    if _collector_port and language.safename in ["cxx", "java", "python"]:
+    if _collector_port and language.safename in ["cxx", "java", "python", "go"]:
         server_cmd += ["--enable_opentelemetry=true"]
         environ = environ.copy()
         environ["GRPC_EXPERIMENTAL_ENABLE_OTEL_TRACING"] = "true"
@@ -1772,20 +1815,42 @@ server_addresses = {}
 collector_proc = None
 try:
     if not args.manual_run:
-        has_cxx = ("c++" in args.language or "all" in args.language) or (
-            "c++" in servers
+        tracing_test_enabled = (not args.test_case) or (
+            args.test_case == "test_unary_rpc_tracing_export"
         )
-        if has_cxx:
+        allowed_tracing_languages = {"c++", "java", "python", "go"}
+        has_tracing_client = bool(
+            allowed_tracing_languages.intersection(args.language)
+            or "all" in args.language
+        )
+        has_tracing_server = bool(
+            allowed_tracing_languages.intersection(servers)
+            or "all" in servers
+            or bool(args.override_server)
+        )
+        has_tracing = (
+            tracing_test_enabled and has_tracing_client and has_tracing_server
+        )
+        if has_tracing:
             _collector_port = get_free_port()
-            spans_file = os.path.join(
-                tempfile.gettempdir(), "captured_spans.json"
+            pid = os.getpid()
+            timestamp = int(time.time() * 1000)
+            _collector_spans_file = os.path.join(
+                tempfile.gettempdir(), f"captured_spans_{pid}_{timestamp}.json"
             )
-            if os.path.exists(spans_file):
-                os.remove(spans_file)
+            _collector_metrics_file = os.path.join(
+                tempfile.gettempdir(),
+                f"captured_metrics_{pid}_{timestamp}.json",
+            )
+            if os.path.exists(_collector_spans_file):
+                os.remove(_collector_spans_file)
+            if os.path.exists(_collector_metrics_file):
+                os.remove(_collector_metrics_file)
             collector_cmd = [
-                "./bazel-bin/test/cpp/interop/otlp_collector",
+                resolve_binary("./bazel-bin/test/cpp/interop/otlp_collector"),
                 f"--port={_collector_port}",
-                f"--file={spans_file}",
+                f"--file={_collector_spans_file}",
+                f"--metrics_file={_collector_metrics_file}",
             ]
             print(f"Starting OTLP collector on port {_collector_port}...")
             collector_proc = subprocess.Popen(
@@ -1793,7 +1858,10 @@ try:
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
-            time.sleep(1)
+            if not wait_for_port(_collector_port, timeout=5.0):
+                print(
+                    f"Warning: OTLP collector on port {_collector_port} did not respond within timeout."
+                )
     for s in servers:
         lang = str(s)
         spec = server_jobspec(
@@ -2119,11 +2187,8 @@ try:
             job.shortname.find("test_unary_rpc_tracing_export") != -1
             for job in jobs
         )
-        if has_tracing_test:
-            spans_file = os.path.join(
-                tempfile.gettempdir(), "captured_spans.json"
-            )
-            if not verify_tracing_spans(spans_file):
+        if has_tracing_test and _collector_spans_file:
+            if not verify_tracing_spans(_collector_spans_file):
                 num_failures = 1
     if args.bq_result_table and resultset:
         upload_interop_results_to_bq(resultset, args.bq_result_table)
@@ -2162,6 +2227,16 @@ finally:
                 pass
         except Exception as e:
             print(f"Error terminating OTLP collector: {e}")
+    if _collector_spans_file and os.path.exists(_collector_spans_file):
+        try:
+            os.remove(_collector_spans_file)
+        except OSError:
+            pass
+    if _collector_metrics_file and os.path.exists(_collector_metrics_file):
+        try:
+            os.remove(_collector_metrics_file)
+        except OSError:
+            pass
     # Check if servers are still running.
     for server, job in list(server_jobs.items()):
         if not job.is_running():

@@ -35,6 +35,8 @@
 #include "opentelemetry/nostd/variant.h"
 #include "opentelemetry/trace/context.h"
 #include "opentelemetry/trace/span_context.h"
+#include "absl/log/log.h"
+#include "absl/strings/escaping.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -46,7 +48,6 @@
 #include "src/cpp/ext/otel/key_value_iterable.h"
 #include "src/cpp/ext/otel/otel_client_call_tracer.h"
 #include "src/cpp/ext/otel/otel_server_call_tracer.h"
-#include "absl/strings/escaping.h"
 
 using opentelemetry::context::propagation::TextMapPropagator;
 using opentelemetry::trace::SpanContext;
@@ -289,7 +290,7 @@ absl::Status OpenTelemetryPluginBuilderImpl::BuildAndRegisterGlobal() {
   return absl::OkStatus();
 }
 
-absl::StatusOr<std::shared_ptr<grpc::experimental::OpenTelemetryPlugin>>
+absl::StatusOr<std::shared_ptr<grpc::OpenTelemetryPlugin>>
 OpenTelemetryPluginBuilderImpl::Build() {
   if (meter_provider_ == nullptr && tracer_provider_ == nullptr) {
     return absl::InvalidArgumentError(
@@ -1634,7 +1635,7 @@ absl::Status OpenTelemetryPluginBuilder::BuildAndRegisterGlobal() {
   return impl_->BuildAndRegisterGlobal();
 }
 
-absl::StatusOr<std::shared_ptr<grpc::experimental::OpenTelemetryPlugin>>
+absl::StatusOr<std::shared_ptr<grpc::OpenTelemetryPlugin>>
 OpenTelemetryPluginBuilder::Build() {
   return impl_->Build();
 }

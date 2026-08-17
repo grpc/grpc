@@ -91,6 +91,14 @@ class _OpenTelemetryPlugin:
                 meter, enabled_metrics
             )
 
+    @property
+    def tracer_provider(self) -> Optional[Any]:
+        return getattr(self._plugin, "tracer_provider", None)
+
+    @property
+    def text_map_propagator(self) -> Optional[Any]:
+        return getattr(self._plugin, "text_map_propagator", None)
+
     def _should_record(self, stats_data: StatsData) -> bool:
         # Decide if this plugin should record the stats_data.
         return stats_data.name in self._metric_to_recorder
