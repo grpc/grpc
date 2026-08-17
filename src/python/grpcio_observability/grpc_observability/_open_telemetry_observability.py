@@ -449,10 +449,6 @@ def _tracing_data_to_readable_span(
             end_time=end_nanos,
         )
     except Exception as e:  # pylint: disable=broad-except
-        print(
-            f"[DEBUG] Failed to convert TracingData to ReadableSpan: {e}",
-            flush=True,
-        )
         _LOGGER.debug("Failed to convert TracingData to ReadableSpan: %s", e)
         return None
 
