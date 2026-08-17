@@ -11,3 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+"""Reference implementation for status mapping in gRPC Python."""
+
+from ._common import StatusDetailsMetadataDecodeError
+from ._common import StatusDetailsMetadataValueError
+
+__all__ = [
+    "StatusDetailsMetadataValueError",
+    "StatusDetailsMetadataDecodeError",
+]
