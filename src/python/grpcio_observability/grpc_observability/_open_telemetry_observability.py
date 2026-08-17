@@ -156,11 +156,21 @@ class _OpenTelemetryPlugin:
         tracer_provider = self._plugin.tracer_provider
         text_map_propagator = self._plugin.text_map_propagator
         if tracer_provider:
-            id_generator_type = type(tracer_provider.id_generator)
-            if id_generator_type is not sdk_trace.RandomIdGenerator:
+            if not isinstance(tracer_provider, sdk_trace.TracerProvider):
+                error_msg = (
+                    f"tracer_provider must be an instance of "
+                    f"opentelemetry.sdk.trace.TracerProvider, "
+                    f"got: {type(tracer_provider).__name__}"
+                )
+                raise ValueError(error_msg)
+
+            id_gen = getattr(tracer_provider, "id_generator", None)
+            if id_gen is not None and not isinstance(
+                id_gen, sdk_trace.RandomIdGenerator
+            ):
                 error_msg = (
                     f"User-defined IdGenerators are not allowed. "
-                    f"Detected type: {id_generator_type.__name__}"
+                    f"Detected type: {type(id_gen).__name__}"
                 )
                 raise ValueError(error_msg)
 
