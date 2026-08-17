@@ -52,7 +52,6 @@ ABSL_FLAG(std::string, otel_exporter, "",
           "OpenTelemetry exporter type (otlp, none)");
 ABSL_FLAG(std::string, otel_collector_address, "",
           "OpenTelemetry collector address");
-ABSL_FLAG(bool, enable_tcp_metrics, false, "Whether to enable TCP metrics");
 
 namespace grpc {
 namespace testing {
@@ -71,15 +70,13 @@ void MaybeRegisterOpenTelemetry() {
 #ifdef GRPC_HAS_OTEL_TRACING
   std::call_once(g_otel_init_once, []() {
     bool enabled = absl::GetFlag(FLAGS_enable_opentelemetry) ||
-                   absl::GetFlag(FLAGS_otel_exporter) == "otlp" ||
-                   absl::GetFlag(FLAGS_enable_tcp_metrics);
+                   absl::GetFlag(FLAGS_otel_exporter) == "otlp";
     if (!enabled) {
       return;
     }
     const char* otel_traces_exporter = std::getenv("OTEL_TRACES_EXPORTER");
     if (otel_traces_exporter != nullptr &&
-        std::string(otel_traces_exporter) == "none" &&
-        !absl::GetFlag(FLAGS_enable_tcp_metrics)) {
+        std::string(otel_traces_exporter) == "none") {
       LOG(INFO) << "OTEL_TRACES_EXPORTER is set to none. Tracing is disabled.";
       return;
     }
