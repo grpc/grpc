@@ -17,6 +17,7 @@ import datetime
 import logging
 import os
 import sys
+import threading
 import time
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple
 import unittest
@@ -30,6 +31,7 @@ from grpc_observability._open_telemetry_observability import (
 from grpc_observability._open_telemetry_observability import (
     _OpenTelemetryPlugin,
 )
+from grpc_observability._observability import TracingData
 from grpc_observability._open_telemetry_observability import GRPC_METHOD_LABEL
 from grpc_observability._open_telemetry_observability import GRPC_TARGET_LABEL
 from opentelemetry.sdk import metrics as otel_metrics
@@ -1368,6 +1370,87 @@ class DecodeLabelsTest(unittest.TestCase):
         self.assertIn(key, decoded)
         self.assertEqual(decoded[key], value)
         self.assertIsInstance(decoded[key], str)
+
+
+@unittest.skipIf(
+    os.name == "nt" or "darwin" in sys.platform,
+    "Observability is not supported in Windows and MacOS",
+)
+class SharedTracerProviderTest(unittest.TestCase):
+    _SPANS_PER_PLUGIN = 200
+
+    def setUp(self):
+        provider = otel_trace.TracerProvider()
+        self._span_exporter = in_memory_span_exporter.InMemorySpanExporter()
+        span_processor = otel_trace_export.SimpleSpanProcessor(
+            self._span_exporter
+        )
+        provider.add_span_processor(span_processor)
+        self._plugin_a = _OpenTelemetryPlugin(
+            grpc_observability.OpenTelemetryPlugin(tracer_provider=provider)
+        )
+        self._plugin_b = _OpenTelemetryPlugin(
+            grpc_observability.OpenTelemetryPlugin(tracer_provider=provider)
+        )
+        # force frequent GIL switches so concurrent recording threads interleave
+        # inside the id_generator swap
+        self._old_interval = sys.getswitchinterval()
+        sys.setswitchinterval(1e-6)
+
+    def tearDown(self):
+        sys.setswitchinterval(self._old_interval)
+
+    @staticmethod
+    def _tracing_data(seq: int) -> TracingData:
+        return TracingData(
+            name=f"span-{seq}",
+            start_time="1696258883000000000",
+            end_time="1696258884000000000",
+            trace_id=f"{seq:032x}",
+            span_id=f"{seq:016x}",
+            parent_span_id="0" * 16,
+            status="OK",
+            should_sample=True,
+            child_span_count=0,
+            span_labels={},
+            span_events=[],
+        )
+
+    def _record_spans(self, plugin, first_seq):
+        for offset in range(self._SPANS_PER_PLUGIN):
+            plugin._record_tracing_data(self._tracing_data(first_seq + offset))
+
+    def test_concurrent_span_recording_keep_span_identity(self):
+        threads = [
+            threading.Thread(
+                target=self._record_spans, args=(self._plugin_a, 1)
+            ),
+            threading.Thread(
+                target=self._record_spans,
+                args=(self._plugin_b, self._SPANS_PER_PLUGIN + 1)
+            ),
+        ]
+
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+
+        spans = self._span_exporter.get_finished_spans()
+        self.assertEqual(len(spans), 2 * self._SPANS_PER_PLUGIN)
+
+        for span in spans:
+            seq = span.name.split("-")[1]
+            self.assertEqual(
+                str(span.context.trace_id),
+                seq,
+                f"{span.name} was exported with incorrect TraceID",
+            )
+            self.assertEqual(
+                str(span.context.span_id),
+                seq,
+                f"{span.name} was exported with incorrect SpanID",
+            )
 
 
 if __name__ == "__main__":
