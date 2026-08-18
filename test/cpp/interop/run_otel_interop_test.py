@@ -306,139 +306,6 @@ def verify_spans(spans_file):
     return True
 
 
-def verify_metrics(metrics_file, server_lang="c++"):
-    start_time = time.time()
-    collected_metrics = {}
-
-    expected_keywords = []
-    if server_lang == "c++":
-        expected_keywords = ["grpc.server"]
-
-    print(f"Verifying metrics with polling (server={server_lang})...")
-    while time.time() - start_time < 5.0:
-        if not os.path.exists(metrics_file):
-            time.sleep(0.5)
-            continue
-        try:
-            with open(metrics_file, "r") as f:
-                requests = json.load(f)
-        except (json.JSONDecodeError, IOError):
-            time.sleep(0.5)
-            continue
-
-        collected_metrics = {}
-        for req in requests:
-            for resource_metrics in req.get("resource_metrics", []):
-                for scope_metrics in resource_metrics.get("scope_metrics", []):
-                    for metric in scope_metrics.get("metrics", []):
-                        metric_name = metric.get("name")
-                        if metric_name:
-                            if metric_name not in collected_metrics:
-                                collected_metrics[metric_name] = []
-                            collected_metrics[metric_name].append(metric)
-
-        if all(
-            any(k in m for m in collected_metrics) for k in expected_keywords
-        ):
-            break
-        time.sleep(0.5)
-
-    print(
-        f"Collected {len(collected_metrics)} metric names: {set(collected_metrics.keys())}"
-    )
-    if not collected_metrics:
-        if server_lang != "c++":
-            print(
-                f"No metrics collected for non-C++ server ({server_lang}). Metrics verification passed."
-            )
-            return True
-        print("Assertion Failed: No metrics collected.")
-        return False
-
-    # 1. Assert domain presence
-    if server_lang == "c++":
-        found = all(
-            any(k in m for m in collected_metrics) for k in expected_keywords
-        )
-        if not found:
-            print(
-                f"Assertion Failed: Not all of {expected_keywords} found in collected metrics."
-            )
-            return False
-
-        if any(m.startswith("grpc.tcp.") for m in collected_metrics):
-            expected_tcp_units = {
-                "grpc.tcp.min_rtt": "s",
-                "grpc.tcp.bytes_sent": "By",
-                "grpc.tcp.connections_created": "{connection}",
-                "grpc.tcp.connection_count": "{connection}",
-            }
-            required_tcp_metrics = {
-                "grpc.tcp.bytes_sent",
-                "grpc.tcp.connections_created",
-                "grpc.tcp.connection_count",
-            }
-            for mname, expected_unit in expected_tcp_units.items():
-                if mname not in collected_metrics:
-                    if mname in required_tcp_metrics:
-                        print(
-                            f"Assertion Failed: Required TCP metric '{mname}' not found."
-                        )
-                        return False
-                    continue
-                metrics_with_name = collected_metrics[mname]
-                actual_unit = metrics_with_name[0].get("unit", "")
-                if actual_unit != expected_unit:
-                    print(
-                        f"Assertion Failed: Metric '{mname}' unit '{actual_unit}' != expected '{expected_unit}'"
-                    )
-                    return False
-
-            # 3. Assert TCP metric label keys
-            required_label_keys = {
-                "network.local.address",
-                "network.local.port",
-                "network.peer.address",
-                "network.peer.port",
-                "is_client",
-            }
-            found_tcp_label_keys = set()
-            for mname, metrics_list in collected_metrics.items():
-                if mname.startswith("grpc.tcp."):
-                    for metric in metrics_list:
-                        for dp_type in (
-                            "gauge",
-                            "sum",
-                            "histogram",
-                            "exponential_histogram",
-                        ):
-                            if dp_type in metric:
-                                data_points = metric[dp_type].get(
-                                    "data_points", []
-                                )
-                                for dp in data_points:
-                                    for attr in dp.get("attributes", []):
-                                        if "key" in attr:
-                                            found_tcp_label_keys.add(
-                                                attr["key"]
-                                            )
-
-            missing_keys = required_label_keys - found_tcp_label_keys
-            if missing_keys:
-                print(
-                    f"Assertion Failed: Missing TCP label keys: {missing_keys}. Found keys: {found_tcp_label_keys}"
-                )
-                return False
-    else:
-        # For non-C++ servers, check if any grpc metric was recorded
-        found_any = any(m.startswith("grpc.") for m in collected_metrics)
-        if not found_any and len(collected_metrics) > 0:
-            print("Warning: Metrics collected but none match 'grpc.*'")
-
-    print("All metric assertions passed successfully!")
-    return True
-
-
 def main():
     ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
     os.chdir(ROOT)
@@ -549,14 +416,8 @@ def main():
         tempfile.gettempdir(),
         f"captured_spans_{args.client}_{args.server}_{pid}.json",
     )
-    metrics_file = os.path.join(
-        tempfile.gettempdir(),
-        f"captured_metrics_{args.client}_{args.server}_{pid}.json",
-    )
     if os.path.exists(spans_file):
         os.remove(spans_file)
-    if os.path.exists(metrics_file):
-        os.remove(metrics_file)
 
     collector_proc = None
     server_proc = None
@@ -571,7 +432,6 @@ def main():
                 resolve_binary(collector_bin),
                 f"--port={collector_port}",
                 f"--file={spans_file}",
-                f"--metrics_file={metrics_file}",
             ],
             {},
             "OTLP Collector",
@@ -731,10 +591,9 @@ def main():
             except Exception as e:
                 print(f"Error terminating collector: {e}")
 
-    # Perform Span and Metric Verifications
+    # Perform Span Verifications
     spans_ok = verify_spans(spans_file)
-    metrics_ok = verify_metrics(metrics_file, server_lang=args.server)
-    if spans_ok and metrics_ok:
+    if spans_ok:
         print("Test Result: PASSED")
         sys.exit(0)
     else:

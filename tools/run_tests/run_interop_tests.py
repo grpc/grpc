@@ -30,7 +30,6 @@ import uuid
 
 _collector_port = None
 _collector_spans_file = None
-_collector_metrics_file = None
 
 
 def get_free_port():
@@ -1838,19 +1837,12 @@ try:
             _collector_spans_file = os.path.join(
                 tempfile.gettempdir(), f"captured_spans_{pid}_{timestamp}.json"
             )
-            _collector_metrics_file = os.path.join(
-                tempfile.gettempdir(),
-                f"captured_metrics_{pid}_{timestamp}.json",
-            )
             if os.path.exists(_collector_spans_file):
                 os.remove(_collector_spans_file)
-            if os.path.exists(_collector_metrics_file):
-                os.remove(_collector_metrics_file)
             collector_cmd = [
                 resolve_binary("./bazel-bin/test/cpp/interop/otlp_collector"),
                 f"--port={_collector_port}",
                 f"--file={_collector_spans_file}",
-                f"--metrics_file={_collector_metrics_file}",
             ]
             print(f"Starting OTLP collector on port {_collector_port}...")
             collector_proc = subprocess.Popen(
@@ -2226,11 +2218,6 @@ finally:
     if _collector_spans_file and os.path.exists(_collector_spans_file):
         try:
             os.remove(_collector_spans_file)
-        except OSError:
-            pass
-    if _collector_metrics_file and os.path.exists(_collector_metrics_file):
-        try:
-            os.remove(_collector_metrics_file)
         except OSError:
             pass
     # Check if servers are still running.

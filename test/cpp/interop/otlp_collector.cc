@@ -29,7 +29,6 @@
 #include <thread>
 #include <vector>
 
-#include "opentelemetry/proto/collector/metrics/v1/metrics_service.grpc.pb.h"
 #include "opentelemetry/proto/collector/trace/v1/trace_service.grpc.pb.h"
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
@@ -37,7 +36,6 @@
 
 ABSL_FLAG(int, port, 0, "Port to listen on");
 ABSL_FLAG(std::string, file, "", "File to write JSON spans to");
-ABSL_FLAG(std::string, metrics_file, "", "File to write JSON metrics to");
 
 class TraceServiceServiceImpl final
     : public opentelemetry::proto::collector::trace::v1::TraceService::Service {
@@ -107,72 +105,6 @@ class TraceServiceServiceImpl final
   std::mutex mu_;
 };
 
-class MetricsServiceServiceImpl final
-    : public opentelemetry::proto::collector::metrics::v1::MetricsService::
-          Service {
- public:
-  explicit MetricsServiceServiceImpl(std::string file_path)
-      : file_path_(std::move(file_path)) {}
-
-  grpc::Status Export(grpc::ServerContext* /*context*/,
-                      const opentelemetry::proto::collector::metrics::v1::
-                          ExportMetricsServiceRequest* request,
-                      opentelemetry::proto::collector::metrics::v1::
-                          ExportMetricsServiceResponse* /*response*/) override {
-    std::string json_string;
-    google::protobuf::util::JsonPrintOptions options;
-    options.add_whitespace = true;
-    options.always_print_fields_with_no_presence = true;
-    options.preserve_proto_field_names = true;
-    auto status = google::protobuf::util::MessageToJsonString(
-        *request, &json_string, options);
-    if (!status.ok()) {
-      LOG(ERROR) << "Failed to serialize ExportMetricsServiceRequest to JSON: "
-                 << status.ToString();
-      return grpc::Status(grpc::StatusCode::INTERNAL,
-                          "Failed to serialize to JSON");
-    }
-
-    std::lock_guard<std::mutex> lock(mu_);
-    requests_json_.push_back(json_string);
-
-    std::string tmp_file = file_path_ + ".tmp";
-    std::ofstream out(tmp_file, std::ios::trunc);
-    if (!out) {
-      LOG(ERROR) << "Failed to open file for writing: " << tmp_file;
-      return grpc::Status(grpc::StatusCode::INTERNAL, "Failed to open file");
-    }
-    out << "[\n";
-    for (size_t i = 0; i < requests_json_.size(); ++i) {
-      out << requests_json_[i];
-      if (i + 1 < requests_json_.size()) {
-        out << ",\n";
-      }
-    }
-    out << "\n]\n";
-    if (out.fail() || out.bad()) {
-      LOG(ERROR) << "Failed to write JSON metrics to file: " << tmp_file;
-      return grpc::Status(grpc::StatusCode::INTERNAL,
-                          "Failed to write metrics output");
-    }
-    out.close();
-
-    if (std::rename(tmp_file.c_str(), file_path_.c_str()) != 0) {
-      LOG(ERROR) << "Failed to rename temporary file " << tmp_file << " to "
-                 << file_path_;
-      return grpc::Status(grpc::StatusCode::INTERNAL,
-                          "Failed to update metrics output file");
-    }
-
-    return grpc::Status::OK;
-  }
-
- private:
-  std::string file_path_;
-  std::vector<std::string> requests_json_;
-  std::mutex mu_;
-};
-
 static std::atomic<bool> g_got_sigint{false};
 
 static void sig_handler(int /*sig*/) {
@@ -183,14 +115,13 @@ int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
   int port = absl::GetFlag(FLAGS_port);
   std::string trace_file_path = absl::GetFlag(FLAGS_file);
-  std::string metrics_file_path = absl::GetFlag(FLAGS_metrics_file);
 
   if (port == 0) {
     LOG(ERROR) << "--port is required";
     return 1;
   }
-  if (trace_file_path.empty() && metrics_file_path.empty()) {
-    LOG(ERROR) << "At least one of --file or --metrics_file is required";
+  if (trace_file_path.empty()) {
+    LOG(ERROR) << "--file is required";
     return 1;
   }
 
@@ -198,18 +129,8 @@ int main(int argc, char** argv) {
   builder.AddListeningPort("0.0.0.0:" + std::to_string(port),
                            grpc::InsecureServerCredentials());
 
-  std::unique_ptr<TraceServiceServiceImpl> trace_service;
-  if (!trace_file_path.empty()) {
-    trace_service = std::make_unique<TraceServiceServiceImpl>(trace_file_path);
-    builder.RegisterService(trace_service.get());
-  }
-
-  std::unique_ptr<MetricsServiceServiceImpl> metrics_service;
-  if (!metrics_file_path.empty()) {
-    metrics_service =
-        std::make_unique<MetricsServiceServiceImpl>(metrics_file_path);
-    builder.RegisterService(metrics_service.get());
-  }
+  TraceServiceServiceImpl trace_service(trace_file_path);
+  builder.RegisterService(&trace_service);
 
   signal(SIGINT, sig_handler);
   signal(SIGTERM, sig_handler);

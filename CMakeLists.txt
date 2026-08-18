@@ -23642,7 +23642,6 @@ target_include_directories(interop_client
 target_link_libraries(interop_client
   ${_gRPC_ALLTARGETS_LIBRARIES}
   opentelemetry-cpp::api
-  opentelemetry-cpp::metrics
   opentelemetry-cpp::trace
   grpc++_test_config
   grpc++_test_util
@@ -23703,7 +23702,6 @@ target_include_directories(interop_server
 target_link_libraries(interop_server
   ${_gRPC_ALLTARGETS_LIBRARIES}
   opentelemetry-cpp::api
-  opentelemetry-cpp::metrics
   opentelemetry-cpp::trace
   grpc++_test_config
   grpc++_test_util

@@ -38,16 +38,13 @@
 
 #include "opentelemetry/context/propagation/composite_propagator.h"
 #include "opentelemetry/exporters/otlp/otlp_grpc_exporter_factory.h"
-#include "opentelemetry/exporters/otlp/otlp_grpc_metric_exporter_factory.h"
-#include "opentelemetry/sdk/metrics/export/periodic_exporting_metric_reader_factory.h"
-#include "opentelemetry/sdk/metrics/meter_provider.h"
 #include "opentelemetry/sdk/trace/simple_processor_factory.h"
 #include "opentelemetry/sdk/trace/tracer_provider.h"
 #include "opentelemetry/trace/propagation/http_trace_context.h"
 #endif
 
 ABSL_FLAG(bool, enable_opentelemetry, false,
-          "Whether to enable OpenTelemetry Tracing and Metrics");
+          "Whether to enable OpenTelemetry Tracing");
 ABSL_FLAG(std::string, otel_exporter, "",
           "OpenTelemetry exporter type (otlp, none)");
 ABSL_FLAG(std::string, otel_collector_address, "",
@@ -60,8 +57,6 @@ namespace interop {
 #ifdef GRPC_HAS_OTEL_TRACING
 static std::shared_ptr<opentelemetry::sdk::trace::TracerProvider>
     g_tracer_provider;
-static std::shared_ptr<opentelemetry::sdk::metrics::MeterProvider>
-    g_meter_provider;
 static std::once_flag g_otel_init_once;
 static std::mutex g_tracer_provider_mu;
 #endif
@@ -81,12 +76,10 @@ void MaybeRegisterOpenTelemetry() {
       return;
     }
 
-    // Create OTLP Grpc Exporters
+    // Create OTLP Grpc Exporter
     opentelemetry::exporter::otlp::OtlpGrpcExporterOptions trace_opts;
-    opentelemetry::exporter::otlp::OtlpGrpcMetricExporterOptions metric_opts;
     if (!absl::GetFlag(FLAGS_otel_collector_address).empty()) {
       trace_opts.endpoint = absl::GetFlag(FLAGS_otel_collector_address);
-      metric_opts.endpoint = absl::GetFlag(FLAGS_otel_collector_address);
     }
 
     auto trace_exporter =
@@ -99,28 +92,13 @@ void MaybeRegisterOpenTelemetry() {
         std::make_shared<opentelemetry::sdk::trace::TracerProvider>(
             std::move(processor));
 
-    auto metric_exporter =
-        opentelemetry::exporter::otlp::OtlpGrpcMetricExporterFactory::Create(
-            metric_opts);
-    opentelemetry::sdk::metrics::PeriodicExportingMetricReaderOptions
-        reader_opts;
-    reader_opts.export_interval_millis = std::chrono::milliseconds(100);
-    auto metric_reader =
-        opentelemetry::sdk::metrics::PeriodicExportingMetricReaderFactory::
-            Create(std::move(metric_exporter), reader_opts);
-    auto meter_provider =
-        std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
-    meter_provider->AddMetricReader(std::move(metric_reader));
-
     {
       std::lock_guard<std::mutex> lock(g_tracer_provider_mu);
       g_tracer_provider = tracer_provider;
-      g_meter_provider = meter_provider;
     }
 
     grpc::OpenTelemetryPluginBuilder builder;
     builder.SetTracerProvider(tracer_provider);
-    builder.SetMeterProvider(meter_provider);
     std::vector<
         std::unique_ptr<opentelemetry::context::propagation::TextMapPropagator>>
         propagators;
@@ -133,11 +111,6 @@ void MaybeRegisterOpenTelemetry() {
         std::make_unique<
             opentelemetry::context::propagation::CompositePropagator>(
             std::move(propagators)));
-    builder.EnableMetrics({
-        "grpc.tcp.*",
-        "grpc.client.*",
-        "grpc.server.*",
-    });
 
     auto status = builder.BuildAndRegisterGlobal();
 
@@ -146,7 +119,7 @@ void MaybeRegisterOpenTelemetry() {
                  << status.ToString();
     } else {
       LOG(INFO) << "Successfully registered gRPC OpenTelemetry Plugin for "
-                   "tracing and metrics.";
+                   "tracing.";
     }
   });
 #endif
@@ -155,17 +128,12 @@ void MaybeRegisterOpenTelemetry() {
 void ForceFlushOpenTelemetry() {
 #ifdef GRPC_HAS_OTEL_TRACING
   std::shared_ptr<opentelemetry::sdk::trace::TracerProvider> tracer_provider;
-  std::shared_ptr<opentelemetry::sdk::metrics::MeterProvider> meter_provider;
   {
     std::lock_guard<std::mutex> lock(g_tracer_provider_mu);
     tracer_provider = g_tracer_provider;
-    meter_provider = g_meter_provider;
   }
   if (tracer_provider != nullptr) {
     tracer_provider->ForceFlush();
-  }
-  if (meter_provider != nullptr) {
-    meter_provider->ForceFlush();
   }
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
 #endif
