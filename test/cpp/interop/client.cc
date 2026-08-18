@@ -33,7 +33,6 @@
 #include "test/cpp/interop/otel_helper.h"
 #include "test/cpp/util/test_config.h"
 #include "absl/flags/flag.h"
-#include "absl/flags/parse.h"
 #include "absl/log/log.h"
 
 ABSL_FLAG(bool, use_alts, false,
@@ -224,14 +223,12 @@ int main(int argc, char** argv) {
             factories;
         if (!additional_metadata->empty()) {
           factories.emplace_back(
-              std::make_unique<
-                  grpc::testing::AdditionalMetadataInterceptorFactory>(
+              new grpc::testing::AdditionalMetadataInterceptorFactory(
                   *additional_metadata));
         }
         if (absl::GetFlag(FLAGS_log_metadata_and_status)) {
           factories.emplace_back(
-              std::make_unique<
-                  grpc::testing::MetadataAndStatusLoggerInterceptorFactory>());
+              new grpc::testing::MetadataAndStatusLoggerInterceptorFactory());
         }
         std::string service_config_json =
             absl::GetFlag(FLAGS_service_config_json);
