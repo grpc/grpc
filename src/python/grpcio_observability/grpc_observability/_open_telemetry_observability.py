@@ -732,7 +732,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
     def clear_trace_context(self):
         token = self._trace_ctx_token_var.get()
         if token is not None:
-            otel_context.detach(ctx)
+            otel_context.detach(token)
             self._trace_ctx_token_var.set(None)
 
     def record_rpc_latency(
