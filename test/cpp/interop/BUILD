@@ -356,8 +356,6 @@ py_test(
         ":interop_client",
         ":interop_server",
         ":otlp_collector",
-        "//src/python/grpcio_tests/tests/interop:client",
-        "//src/python/grpcio_tests/tests/interop:server_bin",
     ],
     python_version = "PY3",
     tags = ["no_windows"],
