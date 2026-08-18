@@ -68,6 +68,7 @@ TraceFlag client_channel_trace(false, "client_channel");
 TraceFlag client_channel_call_trace(false, "client_channel_call");
 TraceFlag client_channel_lb_call_trace(false, "client_channel_lb_call");
 TraceFlag client_idle_filter_trace(false, "client_idle_filter");
+TraceFlag composite_filter_trace(false, "composite_filter");
 TraceFlag compression_trace(false, "compression");
 TraceFlag connectivity_state_trace(false, "connectivity_state");
 TraceFlag dns_resolver_trace(false, "dns_resolver");
@@ -154,6 +155,7 @@ const absl::flat_hash_map<std::string, TraceFlag*>& GetAllTraceFlags() {
           {"client_channel_call", &client_channel_call_trace},
           {"client_channel_lb_call", &client_channel_lb_call_trace},
           {"client_idle_filter", &client_idle_filter_trace},
+          {"composite_filter", &composite_filter_trace},
           {"compression", &compression_trace},
           {"connectivity_state", &connectivity_state_trace},
           {"dns_resolver", &dns_resolver_trace},

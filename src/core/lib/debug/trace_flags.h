@@ -67,6 +67,7 @@ extern TraceFlag client_channel_trace;
 extern TraceFlag client_channel_call_trace;
 extern TraceFlag client_channel_lb_call_trace;
 extern TraceFlag client_idle_filter_trace;
+extern TraceFlag composite_filter_trace;
 extern TraceFlag compression_trace;
 extern TraceFlag connectivity_state_trace;
 extern TraceFlag dns_resolver_trace;

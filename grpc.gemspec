@@ -40,7 +40,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'simplecov',          '~> 0.22'
   s.add_development_dependency 'rake',               '~> 13.0'
   s.add_development_dependency 'rake-compiler',      '~> 1.3.1'
-  s.add_development_dependency 'rake-compiler-dock', '~> 1.11.1'
+  s.add_development_dependency 'rake-compiler-dock', '~> 1.12.0'
   s.add_development_dependency 'rspec',              '~> 3.6'
   s.add_development_dependency 'rubocop',            '~> 1.82.0'
   s.add_development_dependency 'signet',             '~> 0.7'
@@ -226,6 +226,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/client_channel/subchannel.cc )
   s.files += %w( src/core/client_channel/subchannel.h )
   s.files += %w( src/core/client_channel/subchannel_interface_internal.h )
+  s.files += %w( src/core/client_channel/subchannel_metrics.cc )
+  s.files += %w( src/core/client_channel/subchannel_metrics.h )
   s.files += %w( src/core/client_channel/subchannel_pool_interface.cc )
   s.files += %w( src/core/client_channel/subchannel_pool_interface.h )
   s.files += %w( src/core/client_channel/subchannel_stream_client.cc )
@@ -1962,6 +1964,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/server/xds_channel_stack_modifier.cc )
   s.files += %w( src/core/server/xds_channel_stack_modifier.h )
   s.files += %w( src/core/server/xds_server_config_fetcher.cc )
+  s.files += %w( src/core/server/xds_server_config_fetcher.h )
   s.files += %w( src/core/server/xds_server_config_fetcher_legacy.cc )
   s.files += %w( src/core/service_config/service_config.h )
   s.files += %w( src/core/service_config/service_config_call_data.h )
@@ -2063,6 +2066,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/tsi/transport_security_grpc.cc )
   s.files += %w( src/core/tsi/transport_security_grpc.h )
   s.files += %w( src/core/tsi/transport_security_interface.h )
+  s.files += %w( src/core/util/address_sorting_init.cc )
+  s.files += %w( src/core/util/address_sorting_init.h )
   s.files += %w( src/core/util/alloc.cc )
   s.files += %w( src/core/util/alloc.h )
   s.files += %w( src/core/util/atomic_utils.h )

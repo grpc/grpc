@@ -46,6 +46,7 @@
 #include "src/core/util/thd.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/log/log.h"
+#include "absl/random/random.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 
@@ -107,6 +108,9 @@ static void do_basic_init(void) {
   grpc_fork_handlers_auto_register();
   grpc_tracer_init();
   grpc_client_channel_global_init_backup_polling();
+  // Pre-warm Abseil random entropy pool while file descriptors are available,
+  // preventing late-runtime SeedGenException crashes under FD exhaustion.
+  (void)absl::InsecureBitGen()();
 }
 
 void grpc_init(void) {
@@ -120,7 +124,6 @@ void grpc_init(void) {
     }
     grpc_iomgr_init();
     if (grpc_core::IsEventEngineDnsEnabled()) {
-      address_sorting_init();
       auto status = AresInit();
       if (!status.ok()) {
         VLOG(2) << "AresInit failed: " << status.message();
@@ -144,7 +147,6 @@ void grpc_shutdown_internal_locked(void)
     grpc_iomgr_shutdown_background_closure();
     grpc_timer_manager_set_threading(false);  // shutdown timer_manager thread
     if (grpc_core::IsEventEngineDnsEnabled()) {
-      address_sorting_shutdown();
       AresShutdown();
     } else {
       grpc_resolver_dns_ares_shutdown();
