@@ -51,3 +51,18 @@ Push the newly tagged images to the remote Google Artifact Registry repository.
 ```bash
 docker image ls --filter "reference=ghcr.io/rake-compiler/rake-compiler-dock-image" --format "{{.Repository}}:{{.Tag}}" | grep '1\.12\.0' | sed -E 's@^[^:]+:@@' | xargs -r -n1 -I{} docker push us-docker.pkg.dev/grpc-testing/testing-images-public/rake-compiler-dock-image:{}
 ```
+
+### 5. Rewrite downstream gRPC rake-compiler-docker Dockerfile's
+
+```bash
+cd "$GRPC_ROOT"
+docker image ls --format "{{.Tag}} {{.Repository}}:{{.Tag}}@{{.Digest}}" \
+    us-docker.pkg.dev/grpc-testing/testing-images-public/rake-compiler-dock-image \
+    | rg '^1.12.0-mri' \
+    | while read -r tag image; do
+local dockerfile="${IMAGE_DIR}/rake_${tag#1.12.0-mri-}/Dockerfile"
+if [[ -f "$dockerfile" ]]; then
+    sed -E -i "s|^FROM [^ ]+\$|FROM ${image}|" "$dockerfile"
+fi
+done
+```
