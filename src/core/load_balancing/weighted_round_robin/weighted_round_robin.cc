@@ -80,10 +80,6 @@
 
 namespace grpc_core {
 
-bool WrrCustomMetricsEnabled() {
-  return IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
-}
-
 namespace {
 
 constexpr absl::string_view kWeightedRoundRobin = "weighted_round_robin";
@@ -216,41 +212,40 @@ void WeightedRoundRobinConfig::JsonPostLoad(const Json& json,
     ValidationErrors::ScopedField field(errors, ".errorUtilizationPenalty");
     errors->AddError("must be non-negative");
   }
-  if (WrrCustomMetricsEnabled()) {
-    std::optional<std::vector<std::string>>
-        metric_names_for_computing_utilization =
-            LoadJsonObjectField<std::vector<std::string>>(
-                json.object(), args, "metricNamesForComputingUtilization",
-                errors, /*required=*/false);
-    if (metric_names_for_computing_utilization.has_value()) {
-      size_t i = 0;
-      for (const auto& metric_name : *metric_names_for_computing_utilization) {
-        if (metric_name == "cpu_utilization") {
-          parsed_custom_metrics_.push_back(
-              {WeightedRoundRobinConfig::ParsedMetric::Type::kCpu, ""});
-        } else if (metric_name == "mem_utilization") {
-          parsed_custom_metrics_.push_back(
-              {WeightedRoundRobinConfig::ParsedMetric::Type::kMem, ""});
-        } else if (metric_name == "application_utilization") {
-          parsed_custom_metrics_.push_back(
-              {WeightedRoundRobinConfig::ParsedMetric::Type::kApplication, ""});
-        } else if (absl::StartsWith(metric_name, "named_metrics.")) {
-          parsed_custom_metrics_.push_back(
-              {WeightedRoundRobinConfig::ParsedMetric::Type::kNamedMetric,
-               std::string(absl::StripPrefix(metric_name, "named_metrics."))});
-        } else if (absl::StartsWith(metric_name, "utilization.")) {
-          parsed_custom_metrics_.push_back(
-              {WeightedRoundRobinConfig::ParsedMetric::Type::kUtilization,
-               std::string(absl::StripPrefix(metric_name, "utilization."))});
-        } else {
-          ValidationErrors::ScopedField field(
-              errors,
-              absl::StrCat(".metricNamesForComputingUtilization[", i, "]"));
-          errors->AddError(
-              absl::StrCat("unsupported metric name \"", metric_name, "\""));
-        }
-        ++i;
+  // Handle metricNamesForComputingUtilization.
+  std::optional<std::vector<std::string>>
+      metric_names_for_computing_utilization =
+          LoadJsonObjectField<std::vector<std::string>>(
+              json.object(), args, "metricNamesForComputingUtilization", errors,
+              /*required=*/false);
+  if (metric_names_for_computing_utilization.has_value()) {
+    size_t i = 0;
+    for (const auto& metric_name : *metric_names_for_computing_utilization) {
+      if (metric_name == "cpu_utilization") {
+        parsed_custom_metrics_.push_back(
+            {WeightedRoundRobinConfig::ParsedMetric::Type::kCpu, ""});
+      } else if (metric_name == "mem_utilization") {
+        parsed_custom_metrics_.push_back(
+            {WeightedRoundRobinConfig::ParsedMetric::Type::kMem, ""});
+      } else if (metric_name == "application_utilization") {
+        parsed_custom_metrics_.push_back(
+            {WeightedRoundRobinConfig::ParsedMetric::Type::kApplication, ""});
+      } else if (absl::StartsWith(metric_name, "named_metrics.")) {
+        parsed_custom_metrics_.push_back(
+            {WeightedRoundRobinConfig::ParsedMetric::Type::kNamedMetric,
+             std::string(absl::StripPrefix(metric_name, "named_metrics."))});
+      } else if (absl::StartsWith(metric_name, "utilization.")) {
+        parsed_custom_metrics_.push_back(
+            {WeightedRoundRobinConfig::ParsedMetric::Type::kUtilization,
+             std::string(absl::StripPrefix(metric_name, "utilization."))});
+      } else {
+        ValidationErrors::ScopedField field(
+            errors,
+            absl::StrCat(".metricNamesForComputingUtilization[", i, "]"));
+        errors->AddError(
+            absl::StrCat("unsupported metric name \"", metric_name, "\""));
       }
+      ++i;
     }
   }
 }
