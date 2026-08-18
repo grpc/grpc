@@ -31,6 +31,9 @@ auth_context_refcount:
   debug_only: true
   default: false
   description: Auth context refcounting.
+autosharding_lb:
+  default: false
+  description: AutoSharding load balancing policy.
 backend_metric:
   default: false
   description: C++ backend metric recorder APIs.
