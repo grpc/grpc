@@ -203,20 +203,20 @@ void Info::JsonPostLoad(const Json& json, const JsonArgs& /*args*/,
                         ValidationErrors* errors) {
   auto check_non_empty = [&](absl::string_view field_name,
                              absl::string_view field_value) {
-    bool present =
-        json.object().find(std::string(field_name)) != json.object().end();
-    if (present && field_value.empty()) {
+    auto it = json.object().find(std::string(field_name));
+    if (it != json.object().end() && it->second.type() == Json::Type::kString &&
+        field_value.empty()) {
       ValidationErrors::ScopedField field(errors,
                                           absl::StrCat(".", field_name));
       errors->AddError("field must not be empty");
     }
-    return present && !field_value.empty();
   };
 
   auto check_expected_value = [&](absl::string_view field_name,
                                   absl::string_view field_value,
                                   absl::string_view expected_value) {
-    if (check_non_empty(field_name, field_value) &&
+    auto it = json.object().find(std::string(field_name));
+    if (it != json.object().end() && it->second.type() == Json::Type::kString &&
         field_value != expected_value) {
       ValidationErrors::ScopedField field(errors,
                                           absl::StrCat(".", field_name));
