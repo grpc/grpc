@@ -68,6 +68,7 @@ TraceFlag client_channel_trace(false, "client_channel");
 TraceFlag client_channel_call_trace(false, "client_channel_call");
 TraceFlag client_channel_lb_call_trace(false, "client_channel_lb_call");
 TraceFlag client_idle_filter_trace(false, "client_idle_filter");
+TraceFlag composite_filter_trace(false, "composite_filter");
 TraceFlag compression_trace(false, "compression");
 TraceFlag connectivity_state_trace(false, "connectivity_state");
 TraceFlag dns_resolver_trace(false, "dns_resolver");
@@ -79,6 +80,7 @@ TraceFlag event_engine_dns_trace(false, "event_engine_dns");
 TraceFlag event_engine_endpoint_trace(false, "event_engine_endpoint");
 TraceFlag event_engine_endpoint_data_trace(false, "event_engine_endpoint_data");
 TraceFlag event_engine_poller_trace(false, "event_engine_poller");
+TraceFlag ext_proc_filter_trace(false, "ext_proc_filter");
 TraceFlag fault_injection_filter_trace(false, "fault_injection_filter");
 TraceFlag flowctl_trace(false, "flowctl");
 TraceFlag fork_trace(false, "fork");
@@ -109,6 +111,8 @@ TraceFlag rls_lb_trace(false, "rls_lb");
 TraceFlag round_robin_trace(false, "round_robin");
 TraceFlag secure_endpoint_trace(false, "secure_endpoint");
 TraceFlag server_channel_trace(false, "server_channel");
+TraceFlag server_config_selector_interceptor_trace(
+    false, "server_config_selector_interceptor");
 TraceFlag stateful_session_filter_trace(false, "stateful_session_filter");
 TraceFlag subchannel_trace(false, "subchannel");
 TraceFlag subchannel_call_trace(false, "subchannel_call");
@@ -151,6 +155,7 @@ const absl::flat_hash_map<std::string, TraceFlag*>& GetAllTraceFlags() {
           {"client_channel_call", &client_channel_call_trace},
           {"client_channel_lb_call", &client_channel_lb_call_trace},
           {"client_idle_filter", &client_idle_filter_trace},
+          {"composite_filter", &composite_filter_trace},
           {"compression", &compression_trace},
           {"connectivity_state", &connectivity_state_trace},
           {"dns_resolver", &dns_resolver_trace},
@@ -162,6 +167,7 @@ const absl::flat_hash_map<std::string, TraceFlag*>& GetAllTraceFlags() {
           {"event_engine_endpoint", &event_engine_endpoint_trace},
           {"event_engine_endpoint_data", &event_engine_endpoint_data_trace},
           {"event_engine_poller", &event_engine_poller_trace},
+          {"ext_proc_filter", &ext_proc_filter_trace},
           {"fault_injection_filter", &fault_injection_filter_trace},
           {"flowctl", &flowctl_trace},
           {"fork", &fork_trace},
@@ -192,6 +198,8 @@ const absl::flat_hash_map<std::string, TraceFlag*>& GetAllTraceFlags() {
           {"round_robin", &round_robin_trace},
           {"secure_endpoint", &secure_endpoint_trace},
           {"server_channel", &server_channel_trace},
+          {"server_config_selector_interceptor",
+           &server_config_selector_interceptor_trace},
           {"stateful_session_filter", &stateful_session_filter_trace},
           {"subchannel", &subchannel_trace},
           {"subchannel_call", &subchannel_call_trace},

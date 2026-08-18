@@ -49,7 +49,7 @@ void RunEventEngineClosure(grpc_closure* closure, grpc_error_handle error) {
 absl::AnyInvocable<void(absl::Status)> GrpcClosureToStatusCallback(
     grpc_closure* closure) {
   return [closure](absl::Status status) {
-    RunEventEngineClosure(closure, absl_status_to_grpc_error(status));
+    RunEventEngineClosure(closure, status);
   };
 }
 

@@ -56,8 +56,8 @@ RegionalAccessBoundaryFetcher::Create(
     std::optional<BackOff::Options> backoff_options) {
   auto uri = URI::Parse(lookup_url);
   if (!uri.ok()) {
-    LOG(WARNING) << "Invalid RegionalAccessBoundary lookup URI \"" << lookup_url
-                 << "\" (" << uri.status() << "); RAB data will not be fetched";
+    LOG(INFO) << "Invalid RegionalAccessBoundary lookup URI \"" << lookup_url
+              << "\" (" << uri.status() << "); RAB data will not be fetched";
     return nullptr;
   }
   return MakeRefCounted<RegionalAccessBoundaryFetcher>(
@@ -103,7 +103,7 @@ void RegionalAccessBoundaryFetcher::OnFetchFailure(
   if (response_body.data() != nullptr) {
     absl::StrAppend(&log_message, ", Body: ", response_body);
   }
-  LOG(WARNING) << log_message;
+  LOG(INFO) << log_message;
   next_fetch_time_ = Timestamp::Now() + backoff_.NextAttemptDelay();
   pending_request_.reset();
 }
@@ -380,9 +380,9 @@ void EmailFetcher::OnEmailFetchComplete(absl::string_view email) {
 void EmailFetcher::OnEmailFetchError(grpc_error_handle error) {
   MutexLock lock(&mu_);
   if (std::holds_alternative<OrphanablePtr<EmailRequest>>(state_)) {
-    LOG_EVERY_N_SEC(ERROR, 60) << "Regional Access Boundary fetch skipped due "
-                                  "to service account email fetch failure: "
-                               << StatusToString(error);
+    LOG_EVERY_N_SEC(INFO, 60) << "Regional Access Boundary fetch skipped due "
+                                 "to service account email fetch failure: "
+                              << StatusToString(error);
     state_ = OrphanablePtr<EmailRequest>(
         nullptr);  // Reset to allow retry on next invocation.
     next_fetch_earliest_time_ = Timestamp::Now() + backoff_.NextAttemptDelay();

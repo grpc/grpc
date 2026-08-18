@@ -145,6 +145,97 @@ TEST(LoopTest, NTimes) {
   EXPECT_EQ(execution_order, "012");
 }
 
+TEST(LoopTest, YieldAndResume) {
+  std::string execution_order;
+  int poll_count = 0;
+  int i = 0;
+  auto loop = Loop([&execution_order, &poll_count, &i]() {
+    absl::StrAppend(&execution_order, "F");  // Factory called
+    return [&execution_order, &poll_count, &i]() -> Poll<LoopCtl<int>> {
+      poll_count++;
+      // Yield `Pending` on every odd poll.
+      if (poll_count % 2 != 0) {
+        absl::StrAppend(&execution_order, "P");
+        return Pending{};
+      }
+      // On even polls, complete the iteration
+      i++;
+      if (i < 3) {
+        absl::StrAppend(&execution_order, i);
+        return Continue();
+      }
+      absl::StrAppend(&execution_order, i);
+      return i;  // Break and return 3
+    };
+  });
+
+  // 1st Poll: Pending
+  EXPECT_TRUE(loop().pending());
+  // 2nd Poll: Continues(i = 1)
+  // triggers next factory call which returns Pending.
+  EXPECT_TRUE(loop().pending());
+  // 3rd Poll: Continues, triggers next factory call, again returns Pending.
+  EXPECT_TRUE(loop().pending());
+
+  // 4th Poll: Breaks and returns (poll_count = 6, i = 3)
+  Poll<int> result = loop();
+  EXPECT_TRUE(result.ready());
+  EXPECT_EQ(result.value(), 3);
+  EXPECT_EQ(poll_count, 6);
+  EXPECT_EQ(execution_order, "FP1FP2FP3");
+}
+
+TEST(LoopTest, BailOnError) {
+  int i = 0;
+  auto loop = Loop([&i]() {
+    return [&i]() -> LoopCtl<absl::StatusOr<int>> {
+      i++;
+      if (i == 3) {
+        // Simulating a failure during the 3rd iteration
+        return absl::InternalError("Failed on iteration 3");
+      }
+      if (i < 5) {
+        return Continue();
+      }
+      return i;  // Would return 5 if it succeeded
+    };
+  });
+
+  auto result = loop();
+  EXPECT_TRUE(result.ready());
+  EXPECT_EQ(result.value().status().code(), absl::StatusCode::kInternal);
+  EXPECT_EQ(result.value().status().message(), "Failed on iteration 3");
+  EXPECT_EQ(i, 3);
+}
+
+TEST(LoopTest, NestedSequenceOfLoops) {
+  int outer_sum = 0;
+  int total_inner_count = 0;
+  auto loop = Loop([&outer_sum, &total_inner_count]() {
+    return Seq(
+        // Inner Loop: Breaks every 3 iterations
+        Loop([&]() {
+          return [&]() -> LoopCtl<int> {
+            total_inner_count++;
+            if (total_inner_count % 3 != 0) return Continue();
+            return 10;  // Used to increment outer_sum to test seq working.
+          };
+        }),
+        // Outer Loop Evaluation: Gives 1 on 3rd iteration, continues otherwise.
+        [&](int inner_result) -> LoopCtl<int> {
+          outer_sum += inner_result;
+          if (outer_sum < 30) return Continue();
+          return 1;  // Break outer loop
+        });
+  });
+
+  auto result = loop();
+  EXPECT_TRUE(result.ready());
+  EXPECT_EQ(result.value(), 1);
+  EXPECT_EQ(outer_sum, 30);
+  EXPECT_EQ(total_inner_count, 9);  // 3 outer * 3 inner
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {

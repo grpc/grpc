@@ -16,7 +16,7 @@
 set -eux
 
 VIRTUALENV=".venv-ci-pytype"
-python3.11 -m virtualenv "${VIRTUALENV}"
+python3.11 -m venv "${VIRTUALENV}"
 source "${VIRTUALENV}/bin/activate"
 python -VV
 

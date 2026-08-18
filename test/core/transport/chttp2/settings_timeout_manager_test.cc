@@ -332,7 +332,7 @@ TEST_P(SettingsPromiseManagerTest, MaybeGetSettingsAndSettingsAckFramesIdle) {
   // MaybeGetSettingsAndSettingsAckFrames sends initial settings, and second
   // call does nothing.
   chttp2::TransportFlowControl transport_flow_control(
-      /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
   RefCountedPtr<SettingsPromiseManager> timeout_manager =
       MakeRefCountedManager();
@@ -374,7 +374,7 @@ TEST_P(SettingsPromiseManagerTest,
        MaybeGetSettingsAndSettingsAckFramesMultipleAcks) {
   // If multiple settings frames are received then multiple ACKs should be sent.
   chttp2::TransportFlowControl transport_flow_control(
-      /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
   RefCountedPtr<SettingsPromiseManager> timeout_manager =
       MakeRefCountedManager();
@@ -423,7 +423,7 @@ TEST_P(SettingsPromiseManagerTest,
   // Tests that after initial settings are sent and ACKed, no frame is sent. If
   // settings are changed, a new SETTINGS frame with diff is sent.
   chttp2::TransportFlowControl transport_flow_control(
-      /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
   RefCountedPtr<SettingsPromiseManager> timeout_manager =
       MakeRefCountedManager();
@@ -520,7 +520,7 @@ TEST_P(SettingsPromiseManagerTest,
   // Tests that if we need to send initial settings and also ACK received
   // settings, both frames are sent.
   chttp2::TransportFlowControl transport_flow_control(
-      /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
   RefCountedPtr<SettingsPromiseManager> timeout_manager =
       MakeRefCountedManager();
