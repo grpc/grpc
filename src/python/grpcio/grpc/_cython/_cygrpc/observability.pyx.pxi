@@ -36,11 +36,15 @@ def clear_server_call_tracer_factory() -> None:
 
 
 cdef void save_server_trace_context(grpc_call* call) except *:
+  cdef void* call_tracer_ptr
   cdef CallSpan* server_call_tracer
   with _observability.get_plugin() as plugin:
     if not (plugin and plugin.tracing_enabled):
       return
-    server_call_tracer = static_cast['CallSpan*'](_get_call_tracer(call))
+    call_tracer_ptr = _get_call_tracer(call)
+    if call_tracer_ptr == NULL:
+      return
+    server_call_tracer = static_cast['CallSpan*'](call_tracer_ptr)
     # TraceId and SpanId is hex string, need to convert to str
     trace_id = _decode(codecs.decode(server_call_tracer.TraceId(), 'hex_codec'))
     span_id = _decode(codecs.decode(server_call_tracer.SpanId(), 'hex_codec'))

@@ -719,7 +719,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
     def save_trace_context(
         self, trace_id: str, span_id: str, is_sampled: bool
     ) -> None:
-        if not self._should_enable_tracing:
+        if not self._should_enable_tracing():
             return
 
         self._trace_ctx_var.set(
