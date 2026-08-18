@@ -125,7 +125,6 @@ def _build_context(
     trace_id: str,
     span_id: str,
     is_sampled: bool,
-    context: Optional[otel_context.Context] = None,
 ) -> otel_context.Context:
     """Builds new Otel context from trace_id, span_id and sampling flag."""
     if not trace_id:
@@ -155,7 +154,7 @@ def _build_context(
         ),
     )
     parent_span = trace.NonRecordingSpan(span_context)
-    return trace.set_span_in_context(parent_span, context)
+    return trace.set_span_in_context(parent_span)
 
 
 class _OpenTelemetryPlugin:
@@ -320,6 +319,8 @@ class _OpenTelemetryPlugin:
             return 1.0
 
     def _status_to_otel_status(self, status: str) -> trace.Status:
+        if not status:
+            return trace.Status(status_code=trace.StatusCode.UNSET)
         if status == "OK":
             return trace.Status(status_code=trace.StatusCode.OK)
         return trace.Status(
@@ -594,7 +595,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
     _registered_methods: Set[bytes]
     _client_option_activated: bool
     _server_option_activated: bool
-    _trace_ctx_var: contextvars.ContextVar
+    _trace_ctx_token_var: contextvars.ContextVar
 
     def __init__(
         self,
@@ -606,8 +607,8 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
         self._plugins = list(plugins)
         self._client_option_activated = False
         self._server_option_activated = False
-        self._trace_ctx_var = contextvars.ContextVar(
-            "grpc_trace_ctx", default=None
+        self._trace_ctx_token_var = contextvars.ContextVar(
+            "grpc_trace_ctx_token", default=None
         )
         self._generator = sdk_trace.RandomIdGenerator()
 
@@ -667,9 +668,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
         Returns:
             A tuple of (trace ID, parent span ID).
         """
-        current_span = trace.get_current_span(
-            context=self._trace_ctx_var.get()
-        ).get_span_context()
+        current_span = trace.get_current_span().get_span_context()
         if current_span.is_valid:
             trace_id = f"{current_span.trace_id:032x}".encode()
             parent_span_id = f"{current_span.span_id:016x}".encode()
@@ -722,17 +721,19 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
         if not self._should_enable_tracing():
             return
 
-        self._trace_ctx_var.set(
-            _build_context(
-                trace_id=trace_id,
-                span_id=span_id,
-                is_sampled=is_sampled,
-                context=self._trace_ctx_var.get(),
-            )
+        ctx = _build_context(
+            trace_id=trace_id,
+            span_id=span_id,
+            is_sampled=is_sampled,
         )
+        token = otel_context.attach(ctx)
+        self._trace_ctx_token_var.set(token)
 
     def clear_trace_context(self):
-        self._trace_ctx_var.set(None)
+        token = self._trace_ctx_token_var.get()
+        if token is not None:
+            otel_context.detach(ctx)
+            self._trace_ctx_token_var.set(None)
 
     def record_rpc_latency(
         self,

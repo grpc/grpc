@@ -1190,6 +1190,154 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         )
         self.assertIsNotNone(server_span, "Server span not found")
 
+    def testTracesForClientSideApplicationContext(self):
+        tracer = self._tracer_provider.get_tracer(
+            _test_server.APPLICATION_SPAN_NAME
+        )
+        with grpc_observability.OpenTelemetryPlugin(
+            tracer_provider=self._tracer_provider,
+            text_map_propagator=TraceContextTextMapPropagator(),
+        ):
+            server, port = _test_server.start_server()
+            self._server = server
+            with tracer.start_as_current_span("TestSpan"):
+                _test_server.unary_unary_call(port=port)
+
+        # TestSpan + 1 x client span + 1 x attempt span + 1 x server span
+        self._validate_spans_exist(self._span_exporter, expected_count=4)
+        spans = self._span_exporter.get_finished_spans()
+
+        test_span = next(
+            (span for span in spans if span.name.startswith("TestSpan")), None
+        )
+        self.assertIsNotNone(test_span)
+
+        client_span = next(
+            (span for span in spans if span.name.startswith("Sent.")), None
+        )
+        self.assertIsNotNone(client_span)
+
+        self.assertEqual(
+            test_span.get_span_context().trace_id,
+            client_span.get_span_context().trace_id,
+        )
+        self.assertEqual(
+            client_span.parent.span_id, test_span.get_span_context().span_id
+        )
+
+    def testTracesForServerSideApplicationContext(self):
+        with grpc_observability.OpenTelemetryPlugin(
+            tracer_provider=self._tracer_provider,
+            text_map_propagator=TraceContextTextMapPropagator(),
+        ):
+            server, port = _test_server.start_server(
+                tracer=self._tracer_provider.get_tracer(
+                    _test_server.APPLICATION_SPAN_NAME
+                )
+            )
+            self._server = server
+            # Trigger nested RPC to a new server; tracer is called before
+            # propagation to second server
+            _test_server.unary_unary_call(
+                port=port,
+                metadata=[
+                    _test_server.TRIGGER_RPC_METADATA,
+                    _test_server.TRIGGER_RPC_TO_NEW_SERVER_METADATA,
+                ],
+            )
+
+        # Expect 7 spans: Sent/Attempt/Recv for original RPC + TestApp +
+        # Sent/Attempt/Recv for the nested RPC to the second server
+        self._validate_spans_exist(self._span_exporter, expected_count=7)
+        spans = self._span_exporter.get_finished_spans()
+
+        # Expect 7 spans: Sent/Attempt/Recv for original RPC + TestApp +
+        # Sent/Attempt/Recv for the nested RPC to the second server
+        self.assertEqual(
+            len(spans), 7, msg=f"Expected 7 spans, got: {len(spans)}"
+        )
+
+        # All spans must share the same trace ID
+        trace_ids = {span.get_span_context().trace_id for span in spans}
+        self.assertEqual(
+            len(trace_ids),
+            1,
+            msg=(
+                f"Expected all spans to share one trace ID, ",
+                f"got {len(trace_ids)} distinct trace IDs",
+            ),
+        )
+
+        root_client_span = next(
+            s for s in spans if s.name.startswith("Sent.") and not s.parent
+        )
+        self.assertIsNotNone(root_client_span, "Root client span not found")
+
+        attempt_span = next(
+            s
+            for s in spans
+            if s.name.startswith("Attempt.")
+            and (
+                s.parent.span_id == root_client_span.get_span_context().span_id
+            )
+        )
+        self.assertIsNotNone(attempt_span, "Attempt span not found")
+
+        propagating_server_span = next(
+            s
+            for s in spans
+            if s.name.startswith("Recv.")
+            and (s.parent.span_id == attempt_span.get_span_context().span_id)
+        )
+        self.assertIsNotNone(
+            propagating_server_span, "Propagating server span not found"
+        )
+
+        application_span = next(
+            s
+            for s in spans
+            if s.name.startswith(_test_server.APPLICATION_SPAN_NAME)
+            and (
+                s.parent.span_id
+                == propagating_server_span.get_span_context().span_id
+            )
+        )
+        self.assertIsNotNone(application_span, "Application span not found")
+
+        propagating_client_span = next(
+            s
+            for s in spans
+            if s.name.startswith("Sent.")
+            and s.parent.span_id == application_span.get_span_context().span_id
+        )
+        self.assertIsNotNone(
+            propagating_client_span, "Propagating client span not found"
+        )
+
+        propagating_attempt_span = next(
+            s
+            for s in spans
+            if s.name.startswith("Attempt.")
+            and (
+                s.parent.span_id
+                == propagating_client_span.get_span_context().span_id
+            )
+        )
+        self.assertIsNotNone(
+            propagating_attempt_span, "Propagating attempt span not found"
+        )
+
+        server_span = next(
+            s
+            for s in spans
+            if s.name.startswith("Recv.")
+            and (
+                s.parent.span_id
+                == propagating_attempt_span.get_span_context().span_id
+            )
+        )
+        self.assertIsNotNone(server_span, "Server span not found")
+
     def assert_eventually(
         self,
         predicate: Callable[[], bool],
