@@ -1817,7 +1817,7 @@ try:
         tracing_test_enabled = (not args.test_case) or (
             args.test_case == "test_unary_rpc_tracing_export"
         )
-        allowed_tracing_languages = {"c++", "java", "python", "go"}
+        allowed_tracing_languages = {"c++", "java", "go"}
         has_tracing_client = bool(
             allowed_tracing_languages.intersection(args.language)
             or "all" in args.language
@@ -2023,7 +2023,7 @@ try:
                 if args.test_case and test_case != args.test_case:
                     continue
                 if test_case == "test_unary_rpc_tracing_export":
-                    allowed_tracing_languages = ["c++", "java", "python", "go"]
+                    allowed_tracing_languages = ["c++", "java", "go"]
                     if (
                         str(language) not in allowed_tracing_languages
                         or server_name not in allowed_tracing_languages
