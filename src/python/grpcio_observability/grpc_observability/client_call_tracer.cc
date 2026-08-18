@@ -351,23 +351,23 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
       outgoing_bytes = transport_stream_stats->outgoing.data_bytes;
     }
     RecordDoubleMetric(kRpcClientSentBytesPerRpcMeasureName,
-                      static_cast<double>(outgoing_bytes), context_.Labels(),
-                      parent_->identifier_, parent_->registered_method_,
-                      /*include_exchange_labels=*/true);
+                       static_cast<double>(outgoing_bytes), context_.Labels(),
+                       parent_->identifier_, parent_->registered_method_,
+                       /*include_exchange_labels=*/true);
     RecordDoubleMetric(kRpcClientReceivedBytesPerRpcMeasureName,
-                      static_cast<double>(incoming_bytes), context_.Labels(),
-                      parent_->identifier_, parent_->registered_method_,
-                      /*include_exchange_labels=*/true);
+                       static_cast<double>(incoming_bytes), context_.Labels(),
+                       parent_->identifier_, parent_->registered_method_,
+                       /*include_exchange_labels=*/true);
     RecordDoubleMetric(kRpcClientServerLatencyMeasureName,
-                      absl::ToDoubleSeconds(absl::Nanoseconds(elapsed_time)),
-                      context_.Labels(), parent_->identifier_,
-                      parent_->registered_method_,
-                      /*include_exchange_labels=*/true);
+                       absl::ToDoubleSeconds(absl::Nanoseconds(elapsed_time)),
+                       context_.Labels(), parent_->identifier_,
+                       parent_->registered_method_,
+                       /*include_exchange_labels=*/true);
     RecordDoubleMetric(kRpcClientRoundtripLatencyMeasureName,
-                      absl::ToDoubleSeconds(absl::Now() - start_time_),
-                      context_.Labels(), parent_->identifier_,
-                      parent_->registered_method_,
-                      /*include_exchange_labels=*/true);
+                       absl::ToDoubleSeconds(absl::Now() - start_time_),
+                       context_.Labels(), parent_->identifier_,
+                       parent_->registered_method_,
+                       /*include_exchange_labels=*/true);
     RecordIntMetric(kRpcClientCompletedRpcMeasureName, 1, context_.Labels(),
                     parent_->identifier_, parent_->registered_method_,
                     /*include_exchange_labels=*/true);

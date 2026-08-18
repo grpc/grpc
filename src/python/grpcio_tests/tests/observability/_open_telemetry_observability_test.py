@@ -25,13 +25,13 @@ import unittest
 import grpc
 import grpc_observability
 from grpc_observability import _open_telemetry_measures
+from grpc_observability._observability import TracingData
 from grpc_observability._open_telemetry_observability import (
     GRPC_OTHER_LABEL_VALUE,
 )
 from grpc_observability._open_telemetry_observability import (
     _OpenTelemetryPlugin,
 )
-from grpc_observability._observability import TracingData
 from grpc_observability._open_telemetry_observability import GRPC_METHOD_LABEL
 from grpc_observability._open_telemetry_observability import GRPC_TARGET_LABEL
 from opentelemetry.sdk import metrics as otel_metrics
