@@ -157,32 +157,17 @@ class _OpenTelemetryPlugin:
     def maybe_record_tracing_data(
         self, tracing_data: List[_observability.TracingData]
     ) -> None:
-        print(
-            f"[DEBUG] maybe_record_tracing_data: tracer_provider={self.tracer_provider}",
-            flush=True,
-        )
         if not self.tracer_provider:
             return
         processor = getattr(
             self.tracer_provider, "_active_span_processor", None
         )
-        print(
-            f"[DEBUG] maybe_record_tracing_data: processor={processor}",
-            flush=True,
-        )
         for data in tracing_data:
             span = _tracing_data_to_readable_span(data)
-            print(
-                f"[DEBUG] maybe_record_tracing_data: converted span={span}",
-                flush=True,
-            )
             if span and processor:
                 try:
                     processor.on_end(span)
                 except Exception as e:  # pylint: disable=broad-except
-                    print(
-                        f"[DEBUG] processor.on_end exception: {e}", flush=True
-                    )
                     _LOGGER.debug("Failed to export span: %s", e)
 
     def get_client_exchange_labels(self) -> Dict[str, AnyStr]:
