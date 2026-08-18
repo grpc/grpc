@@ -35,7 +35,7 @@ dynamic = [
 Homepage = "https://grpc.io"
 
 [tool.setuptools.packages.find]
-where = "."
+where = ["."]
 include = ["tests*"]
 exclude = [".nox*", "build*"]
 
