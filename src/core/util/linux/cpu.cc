@@ -38,14 +38,6 @@
 static int ncpus = 0;
 
 static void init_num_cpus() {
-#ifndef GPR_MUSL_LIBC_COMPAT
-  if (sched_getcpu() < 0) {
-    LOG(ERROR) << "Error determining current CPU: "
-               << grpc_core::StrError(errno) << "\n";
-    ncpus = 1;
-    return;
-  }
-#endif
   // This must be signed. sysconf returns -1 when the number cannot be
   // determined
   ncpus = static_cast<int>(sysconf(_SC_NPROCESSORS_ONLN));
