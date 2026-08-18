@@ -20,6 +20,7 @@
 #include <memory>
 #include <optional>
 
+#include "absl/log/log.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/grpc_check.h"
 
@@ -46,8 +47,8 @@ GlobalInstrumentsRegistry::RegisterInstrument(
   auto& instruments = GetInstrumentList();
   for (const auto& descriptor : instruments) {
     if (descriptor.name == name) {
-      Crash(
-          absl::StrFormat("Metric name %s has already been registered.", name));
+      LOG(ERROR) << "Metric name " << name << " has already been registered.";
+      return descriptor.index;
     }
   }
   InstrumentID index = instruments.size();
