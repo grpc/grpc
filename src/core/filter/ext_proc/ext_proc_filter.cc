@@ -586,6 +586,21 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
                });
   }
 
+  // Returns a promise that resolves once the downstream_to_sidestream_window_
+  // is positive or the stream is closed.
+  auto WaitForClientSendWindow();
+  // Returns a promise that resolves once the upstream_to_sidestream_window_
+  // is positive or the stream is closed.
+  auto WaitForServerSendWindow();
+
+  // Returns pending accumulated client window increments to piggyback on an
+  // outbound request.
+  std::optional<ExtProcClientWindowUpdate> MaybeGetClientWindowUpdate();
+
+  // Dispatches a standalone ClientWindowUpdate if pending increments cross the
+  // threshold or if send windows are exhausted with pending increments.
+  void MaybeSendStandaloneWindowUpdate();
+
   // Fails the intercepted data plane RPC with the given error status:
   // 1. Pushes error trailing metadata downstream to the client.
   // 2. Cancels any active upstream child call.
@@ -604,6 +619,8 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
     }
     ext_proc_send_state_ = SideStreamSendState::kSendFailed;
     ext_proc_send_waiters_.TakeWakeupSet().Wakeup();
+    downstream_to_sidestream_waiters_.TakeWakeupSet().Wakeup();
+    upstream_to_sidestream_waiters_.TakeWakeupSet().Wakeup();
   }
 
   // Idempotently closes the out-of-band side-stream to the external processor.
@@ -617,6 +634,8 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
     auto streaming_call = std::move(streaming_call_);
     ext_proc_send_state_ = SideStreamSendState::kSendFailed;
     ext_proc_send_waiters_.TakeWakeupSet().Wakeup();
+    downstream_to_sidestream_waiters_.TakeWakeupSet().Wakeup();
+    upstream_to_sidestream_waiters_.TakeWakeupSet().Wakeup();
     streaming_call.reset();
   }
 
@@ -720,6 +739,15 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
   // Latch signaled when the side-stream is closed or drained.
   Latch<void> side_stream_closed_latch_;
 
+  // Flow control windows and pending client window updates. Synchronized by the
+  // handler_ activity.
+  int64_t downstream_to_sidestream_window_ = kExtProcInitialWindowSize;
+  int64_t upstream_to_sidestream_window_ = kExtProcInitialWindowSize;
+  int64_t pending_increment_sidestream_to_upstream_ = 0;
+  int64_t pending_increment_sidestream_to_downstream_ = 0;
+  WaitSet downstream_to_sidestream_waiters_;
+  WaitSet upstream_to_sidestream_waiters_;
+
   // Send state and waiters for coordinating message sends on the side-stream
   // within the handler_ activity.
   SideStreamSendState ext_proc_send_state_ = SideStreamSendState::kIdle;
@@ -817,12 +845,103 @@ auto ExtProcFilter::ExtProcCall::SendMessageToSideStream(std::string payload) {
       },
       // Reset send state and wake up any waiting senders.
       [self = WeakRef()](StatusFlag status) -> StatusFlag {
-        self->ext_proc_send_state_ = status.ok() && !self->IsSideStreamClosed()
+        self->ext_proc_send_state_ = status.ok() &&
+                                             !self->IsSideStreamClosed() &&
+                                             !self->drain_requested_
                                          ? SideStreamSendState::kIdle
                                          : SideStreamSendState::kSendFailed;
         self->ext_proc_send_waiters_.TakeWakeupSet().Wakeup();
         return self->EvaluateSideStreamStatus(status);
       });
+}
+
+auto ExtProcFilter::ExtProcCall::WaitForClientSendWindow() {
+  return [self = WeakRef()]() -> Poll<StatusFlag> {
+    if (self->config().observability_mode || self->IsSideStreamClosed() ||
+        self->drain_requested_ ||
+        self->ext_proc_send_state_ == SideStreamSendState::kSendFailed) {
+      return Success{};
+    }
+    if (self->downstream_to_sidestream_window_ > 0) {
+      return Success{};
+    }
+    return self->downstream_to_sidestream_waiters_.AddPending(
+        GetContext<Activity>()->MakeNonOwningWaker());
+  };
+}
+
+auto ExtProcFilter::ExtProcCall::WaitForServerSendWindow() {
+  return [self = WeakRef()]() -> Poll<StatusFlag> {
+    if (self->config().observability_mode || self->IsSideStreamClosed() ||
+        self->drain_requested_ ||
+        self->ext_proc_send_state_ == SideStreamSendState::kSendFailed) {
+      return Success{};
+    }
+    if (self->upstream_to_sidestream_window_ > 0) {
+      return Success{};
+    }
+    return self->upstream_to_sidestream_waiters_.AddPending(
+        GetContext<Activity>()->MakeNonOwningWaker());
+  };
+}
+
+std::optional<ExtProcClientWindowUpdate>
+ExtProcFilter::ExtProcCall::MaybeGetClientWindowUpdate() {
+  if (config().observability_mode) return std::nullopt;
+  if (pending_increment_sidestream_to_upstream_ == 0 &&
+      pending_increment_sidestream_to_downstream_ == 0) {
+    return std::nullopt;
+  }
+  ExtProcClientWindowUpdate update;
+  update.window_increment_sidestream_to_upstream =
+      std::exchange(pending_increment_sidestream_to_upstream_, 0);
+  update.window_increment_sidestream_to_downstream =
+      std::exchange(pending_increment_sidestream_to_downstream_, 0);
+  return update;
+}
+
+void ExtProcFilter::ExtProcCall::MaybeSendStandaloneWindowUpdate() {
+  if (config().observability_mode || IsSideStreamClosed() || drain_requested_ ||
+      ext_proc_send_state_ == SideStreamSendState::kSendFailed) {
+    return;
+  }
+  const bool threshold_reached = pending_increment_sidestream_to_upstream_ >=
+                                     kExtProcWindowUpdateThreshold ||
+                                 pending_increment_sidestream_to_downstream_ >=
+                                     kExtProcWindowUpdateThreshold;
+  const bool window_negative_with_pending =
+      (pending_increment_sidestream_to_upstream_ > 0 ||
+       pending_increment_sidestream_to_downstream_ > 0) &&
+      (downstream_to_sidestream_window_ <= 0 ||
+       upstream_to_sidestream_window_ <= 0);
+  if (!threshold_reached && !window_negative_with_pending) {
+    return;
+  }
+  ExtProcClientWindowUpdate update;
+  update.window_increment_sidestream_to_upstream =
+      std::exchange(pending_increment_sidestream_to_upstream_, 0);
+  update.window_increment_sidestream_to_downstream =
+      std::exchange(pending_increment_sidestream_to_downstream_, 0);
+  if (update.window_increment_sidestream_to_upstream == 0 &&
+      update.window_increment_sidestream_to_downstream == 0) {
+    return;
+  }
+  upb::Arena arena;
+  auto payload = CreateExtProcClientWindowUpdateRequest(arena.ptr(), update);
+  if (!payload.ok()) {
+    CancelCallWithError(payload.status());
+    return;
+  }
+  GRPC_TRACE_LOG(ext_proc_filter, INFO)
+      << DebugTag()
+      << "Sending standalone ClientWindowUpdate: sidestream_to_upstream="
+      << update.window_increment_sidestream_to_upstream
+      << ", sidestream_to_downstream="
+      << update.window_increment_sidestream_to_downstream;
+  handler_.SpawnGuarded("send_client_window_update",
+                        [self = WeakRef(), payload = std::move(*payload)]() {
+                          return self->SendMessageToSideStream(payload);
+                        });
 }
 
 // Spawns the read-from-server loop on initiator_.
@@ -957,6 +1076,8 @@ StatusFlag ExtProcFilter::ExtProcCall::HandleClientMessageFromSidestream(
   GRPC_TRACE_LOG(ext_proc_filter, INFO)
       << DebugTag() << "Processing external processor response for client body";
   if (!response.mutation.end_of_stream_without_message) {
+    pending_increment_sidestream_to_upstream_ += response.mutation.body.size();
+    MaybeSendStandaloneWindowUpdate();
     auto slice = Slice::FromCopiedString(response.mutation.body);
     auto new_msg = initiator_.arena()->MakePooled<Message>(
         SliceBuffer(std::move(slice)), /*flags=*/0);
@@ -981,6 +1102,9 @@ StatusFlag ExtProcFilter::ExtProcCall::HandleClientMessageFromSidestream(
 StatusFlag
 ExtProcFilter::ExtProcCall::HandleServerInitialMetadataFromSidestream(
     const ExtProcResponse::ResponseHeaders& response) {
+  if (config().observability_mode) {
+    return Success{};
+  }
   if (!processing_mode().send_response_headers) {
     CancelCallWithError(absl::InternalError(
         "Received response headers response but response headers are "
@@ -1076,6 +1200,8 @@ StatusFlag ExtProcFilter::ExtProcCall::HandleServerMessageFromSidestream(
     return Failure{};
   }
   --outstanding_s2c_messages_;
+  pending_increment_sidestream_to_downstream_ += response.mutation.body.size();
+  MaybeSendStandaloneWindowUpdate();
   GRPC_TRACE_LOG(ext_proc_filter, INFO)
       << DebugTag() << "Processing external processor response for server body";
   auto slice = Slice::FromCopiedString(response.mutation.body);
@@ -1091,6 +1217,9 @@ StatusFlag ExtProcFilter::ExtProcCall::HandleServerMessageFromSidestream(
 StatusFlag
 ExtProcFilter::ExtProcCall::HandleServerTrailingMetadataFromSidestream(
     const ExtProcResponse::ResponseTrailers& response) {
+  if (config().observability_mode) {
+    return Success{};
+  }
   if (!processing_mode().send_response_trailers) {
     CancelCallWithError(absl::InternalError(
         "Received response trailers response but response trailers are "
@@ -1180,6 +1309,33 @@ auto ExtProcFilter::ExtProcCall::ProcessSideStreamResponse(
     CancelCallWithError(parsed_response.status());
     return Immediate(StatusFlag(Failure{}));
   }
+  // Parse server_window_update if present.
+  if (parsed_response->server_window_update.has_value()) {
+    const auto& update = *parsed_response->server_window_update;
+    GRPC_TRACE_LOG(ext_proc_filter, INFO)
+        << DebugTag()
+        << "Processing ServerWindowUpdate: downstream_to_sidestream="
+        << update.window_increment_downstream_to_sidestream
+        << ", upstream_to_sidestream="
+        << update.window_increment_upstream_to_sidestream;
+    if (update.window_increment_downstream_to_sidestream < 0 ||
+        update.window_increment_upstream_to_sidestream < 0) {
+      CancelCallWithError(absl::InternalError(
+          "Received negative window increment in ServerWindowUpdate"));
+      return Immediate(StatusFlag(Failure{}));
+    }
+    if (update.window_increment_downstream_to_sidestream > 0) {
+      downstream_to_sidestream_window_ +=
+          update.window_increment_downstream_to_sidestream;
+      downstream_to_sidestream_waiters_.TakeWakeupSet().Wakeup();
+    }
+    if (update.window_increment_upstream_to_sidestream > 0) {
+      upstream_to_sidestream_window_ +=
+          update.window_increment_upstream_to_sidestream;
+      upstream_to_sidestream_waiters_.TakeWakeupSet().Wakeup();
+    }
+    MaybeSendStandaloneWindowUpdate();
+  }
   // If the server requests a drain, we half-close the stream to signal
   // we are done sending requests.
   if (parsed_response->request_drain) {
@@ -1191,6 +1347,9 @@ auto ExtProcFilter::ExtProcCall::ProcessSideStreamResponse(
           << DebugTag() << "sending half-close";
       streaming_call_->SendHalfClose();
     }
+    ext_proc_send_waiters_.TakeWakeupSet().Wakeup();
+    downstream_to_sidestream_waiters_.TakeWakeupSet().Wakeup();
+    upstream_to_sidestream_waiters_.TakeWakeupSet().Wakeup();
   }
   // Dispatch the parsed response to the appropriate processor based on the
   // response type.
@@ -1315,7 +1474,8 @@ auto ExtProcFilter::ExtProcCall::HandleInitialMetadataFromClient(
         auto payload = CreateExtProcClientHeadersRequest(
             arena.ptr(), (*md).get(), self->config().forwarding_allowed_headers,
             self->config().forwarding_disallowed_headers, header_attributes,
-            self->config().observability_mode, processing_mode);
+            self->config().observability_mode, processing_mode,
+            self->MaybeGetClientWindowUpdate());
         return If(
             !payload.ok(),
             [self, status = payload.status()]() {
@@ -1390,58 +1550,93 @@ auto ExtProcFilter::ExtProcCall::HandleMessageFromClient(
                         });
                   },
                   [self, msg]() mutable {
-                    // Construct message for sidestream.
-                    std::string message_bytes;
-                    if (*msg != nullptr) {
-                      message_bytes = (*msg)->payload()->JoinIntoString();
-                    }
-                    if (!self->config().observability_mode) {
-                      ++self->outstanding_c2s_messages_;
-                    }
-                    std::optional<ExtProcProcessingMode> processing_mode;
-                    if (self->IsFirstMessageOnSideStream()) {
-                      processing_mode = self->config().processing_mode;
-                    }
-                    upb::Arena arena;
-                    auto payload = CreateExtProcClientBodyRequest(
-                        arena.ptr(), message_bytes, self->request_attributes_,
-                        self->config().observability_mode, processing_mode,
-                        /*end_of_stream=*/false,
-                        /*end_of_stream_without_message=*/false);
-                    self->request_attributes_ = nullptr;
-                    return If(
-                        !payload.ok(),
-                        [self, status = payload.status()]() {
-                          self->CancelCallWithError(status);
-                          return Immediate(StatusFlag(Failure{}));
-                        },
-                        [self, payload = std::move(*payload), msg]() mutable {
-                          self->first_body_message_sent_ = true;
-                          if (self->config().observability_mode) {
-                            GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                                << self->DebugTag()
-                                << "Client message observability mode";
-                            // TODO(rishesh, roth): In observability mode, we
-                            // ideally want to wait for both the message write
-                            // to the child call and message send to the
-                            // ext_proc side stream to complete before fetching
-                            // the next message for proper flow control.
-                            // However, returning a direct
-                            // initiator_.PushMessage() promise here causes a
-                            // deadlock due to a limitation of the v3-to-v1
-                            // adaptor layers, where the parent call batch
-                            // completion is blocked by the handler promise
-                            // execution. If we do not make them sequential and
-                            // spawn the push instead, some tests become flaky
-                            // in observability cases. Therefore, we spawn the
-                            // push into the initiator activity and
-                            // sequentially send to the sidestream. We need to
-                            // check and revisit this once the adaptor layers
-                            // support full Call v3 flow control.
-                            self->initiator_.SpawnPushMessage(std::move(*msg));
-                          }
-                          return self->SendMessageToSideStream(
-                              std::move(payload));
+                    return TrySeq(
+                        self->WaitForClientSendWindow(), [self, msg]() mutable {
+                          return If(
+                              self->IsSideStreamClosed(),
+                              [self, msg]() mutable {
+                                if (self->IsSideStreamFailureFatal()) {
+                                  return Immediate(StatusFlag(Failure{}));
+                                }
+                                self->initiator_.SpawnPushMessage(
+                                    std::move(*msg));
+                                return Immediate(StatusFlag(Success{}));
+                              },
+                              [self, msg]() mutable {
+                                // Construct message for sidestream.
+                                std::string message_bytes;
+                                if (*msg != nullptr) {
+                                  message_bytes =
+                                      (*msg)->payload()->JoinIntoString();
+                                }
+                                if (!self->config().observability_mode) {
+                                  ++self->outstanding_c2s_messages_;
+                                  self->downstream_to_sidestream_window_ -=
+                                      message_bytes.size();
+                                  if (self->downstream_to_sidestream_window_ <=
+                                      0) {
+                                    self->MaybeSendStandaloneWindowUpdate();
+                                  }
+                                }
+                                std::optional<ExtProcProcessingMode>
+                                    processing_mode;
+                                if (self->IsFirstMessageOnSideStream()) {
+                                  processing_mode =
+                                      self->config().processing_mode;
+                                }
+                                upb::Arena arena;
+                                auto payload = CreateExtProcClientBodyRequest(
+                                    arena.ptr(), message_bytes,
+                                    self->request_attributes_,
+                                    self->config().observability_mode,
+                                    processing_mode,
+                                    /*end_of_stream=*/false,
+                                    /*end_of_stream_without_message=*/false,
+                                    self->MaybeGetClientWindowUpdate());
+                                self->request_attributes_ = nullptr;
+                                return If(
+                                    !payload.ok(),
+                                    [self, status = payload.status()]() {
+                                      self->CancelCallWithError(status);
+                                      return Immediate(StatusFlag(Failure{}));
+                                    },
+                                    [self, payload = std::move(*payload),
+                                     msg]() mutable {
+                                      self->first_body_message_sent_ = true;
+                                      if (self->config().observability_mode) {
+                                        GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                                            << self->DebugTag()
+                                            << "Client message observability "
+                                               "mode";
+                                        // TODO(rishesh, roth): In observability
+                                        // mode, we ideally want to wait for
+                                        // both the message write to the child
+                                        // call and message send to the
+                                        // ext_proc side stream to complete
+                                        // before fetching the next message for
+                                        // proper flow control.
+                                        // However, returning a direct
+                                        // initiator_.PushMessage() promise
+                                        // here causes a deadlock due to a
+                                        // limitation of the v3-to-v1 adaptor
+                                        // layers, where the parent call batch
+                                        // completion is blocked by the handler
+                                        // promise execution. If we do not make
+                                        // them sequential and spawn the push
+                                        // instead, some tests become flaky in
+                                        // observability cases. Therefore, we
+                                        // spawn the push into the initiator
+                                        // activity and sequentially send to the
+                                        // sidestream. We need to check and
+                                        // revisit this once the adaptor layers
+                                        // support full Call v3 flow control.
+                                        self->initiator_.SpawnPushMessage(
+                                            std::move(*msg));
+                                      }
+                                      return self->SendMessageToSideStream(
+                                          std::move(payload));
+                                    });
+                              });
                         });
                   });
             });
@@ -1489,7 +1684,8 @@ auto ExtProcFilter::ExtProcCall::HandleHalfCloseFromClient() {
                         arena.ptr(), /*body=*/"", self->request_attributes_,
                         self->config().observability_mode, processing_mode,
                         /*end_of_stream=*/false,
-                        /*end_of_stream_without_message=*/true);
+                        /*end_of_stream_without_message=*/true,
+                        self->MaybeGetClientWindowUpdate());
                     self->request_attributes_ = nullptr;
                     return If(
                         !payload.ok(),
@@ -1572,7 +1768,7 @@ auto ExtProcFilter::ExtProcCall::HandleInitialMetadataFromServer(
                   self->config().forwarding_disallowed_headers,
                   /*attributes=*/nullptr, self->config().observability_mode,
                   processing_mode,
-                  /*end_of_stream=*/false);
+                  /*end_of_stream=*/false, self->MaybeGetClientWindowUpdate());
               return If(
                   !payload.ok(),
                   [self, status = payload.status()]() {
@@ -1650,14 +1846,16 @@ auto ExtProcFilter::ExtProcCall::HandleTrailingMetadataFromServer(
                                   self->config().forwarding_disallowed_headers,
                                   /*attributes=*/nullptr,
                                   self->config().observability_mode,
-                                  processing_mode, /*end_of_stream=*/true)
+                                  processing_mode, /*end_of_stream=*/true,
+                                  self->MaybeGetClientWindowUpdate())
                             : CreateExtProcServerTrailersRequest(
                                   arena.ptr(), (*md).get(),
                                   self->config().forwarding_allowed_headers,
                                   self->config().forwarding_disallowed_headers,
                                   /*attributes=*/nullptr,
                                   self->config().observability_mode,
-                                  processing_mode);
+                                  processing_mode,
+                                  self->MaybeGetClientWindowUpdate());
                     return If(
                         !payload.ok(),
                         [self, status = payload.status()]() {
@@ -1761,53 +1959,79 @@ auto ExtProcFilter::ExtProcCall::HandleMessageFromServer(
                             });
             },
             [self, msg]() mutable {
-              // Construct message for sidestream.
-              std::string message_bytes;
-              if (*msg != nullptr) {
-                message_bytes = (*msg)->payload()->JoinIntoString();
-              }
-              if (!self->config().observability_mode) {
-                ++self->outstanding_s2c_messages_;
-              }
-              std::optional<ExtProcProcessingMode> processing_mode;
-              if (self->IsFirstMessageOnSideStream()) {
-                processing_mode = self->config().processing_mode;
-              }
-              upb::Arena arena;
-              auto payload = CreateExtProcServerBodyRequest(
-                  arena.ptr(), message_bytes, /*attributes=*/nullptr,
-                  self->config().observability_mode, processing_mode);
-              return If(
-                  !payload.ok(),
-                  [self, status = payload.status()]() {
-                    self->CancelCallWithError(status);
-                    return Immediate(StatusFlag(Failure{}));
-                  },
-                  [self, payload = std::move(*payload), msg]() mutable {
-                    self->first_body_message_sent_ = true;
-                    if (self->config().observability_mode) {
-                      GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                          << self->DebugTag()
-                          << "Server message observability mode";
-                      // TODO(rishesh, roth): In observability mode, we ideally
-                      // want to wait for both the message write to the client
-                      // (handler) and message send to the ext_proc side stream
-                      // to complete before fetching the next message for proper
-                      // flow control.
-                      // However, returning a direct handler_.PushMessage()
-                      // promise here causes a deadlock due to a limitation of
-                      // the v3-to-v1 adaptor layers, where batch completion is
-                      // blocked by the promise execution. If we do not make
-                      // them sequential and spawn the push instead, some tests
-                      // become flaky in observability cases. Therefore, we
-                      // spawn the push into the handler activity and
-                      // sequentially send to the sidestream. We need to check
-                      // and revisit this once the adaptor layers support full
-                      // Call v3 flow control.
+              return TrySeq(self->WaitForServerSendWindow(), [self,
+                                                              msg]() mutable {
+                return If(
+                    self->IsSideStreamClosed(),
+                    [self, msg]() mutable {
+                      if (self->IsSideStreamFailureFatal()) {
+                        return Immediate(StatusFlag(Failure{}));
+                      }
                       self->handler_.SpawnPushMessage(std::move(*msg));
-                    }
-                    return self->SendMessageToSideStream(std::move(payload));
-                  });
+                      return Immediate(StatusFlag(Success{}));
+                    },
+                    [self, msg]() mutable {
+                      // Construct message for sidestream.
+                      std::string message_bytes;
+                      if (*msg != nullptr) {
+                        message_bytes = (*msg)->payload()->JoinIntoString();
+                      }
+                      if (!self->config().observability_mode) {
+                        ++self->outstanding_s2c_messages_;
+                        self->upstream_to_sidestream_window_ -=
+                            message_bytes.size();
+                        if (self->upstream_to_sidestream_window_ <= 0) {
+                          self->MaybeSendStandaloneWindowUpdate();
+                        }
+                      }
+                      std::optional<ExtProcProcessingMode> processing_mode;
+                      if (self->IsFirstMessageOnSideStream()) {
+                        processing_mode = self->config().processing_mode;
+                      }
+                      upb::Arena arena;
+                      auto payload = CreateExtProcServerBodyRequest(
+                          arena.ptr(), message_bytes,
+                          /*attributes=*/nullptr,
+                          self->config().observability_mode, processing_mode,
+                          self->MaybeGetClientWindowUpdate());
+                      return If(
+                          !payload.ok(),
+                          [self, status = payload.status()]() {
+                            self->CancelCallWithError(status);
+                            return Immediate(StatusFlag(Failure{}));
+                          },
+                          [self, payload = std::move(*payload), msg]() mutable {
+                            self->first_body_message_sent_ = true;
+                            if (self->config().observability_mode) {
+                              GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                                  << self->DebugTag()
+                                  << "Server message observability mode";
+                              // TODO(rishesh, roth): In observability mode,
+                              // we ideally want to wait for both the
+                              // message write to the client (handler) and
+                              // message send to the ext_proc side stream to
+                              // complete before fetching the next message
+                              // for proper flow control.
+                              // However, returning a direct
+                              // handler_.PushMessage() promise here causes
+                              // a deadlock due to a limitation of the
+                              // v3-to-v1 adaptor layers, where batch
+                              // completion is blocked by the promise
+                              // execution. If we do not make them
+                              // sequential and spawn the push instead, some
+                              // tests become flaky in observability cases.
+                              // Therefore, we spawn the push into the
+                              // handler activity and sequentially send to
+                              // the sidestream. We need to check and
+                              // revisit this once the adaptor layers
+                              // support full Call v3 flow control.
+                              self->handler_.SpawnPushMessage(std::move(*msg));
+                            }
+                            return self->SendMessageToSideStream(
+                                std::move(payload));
+                          });
+                    });
+              });
             });
       });
 }

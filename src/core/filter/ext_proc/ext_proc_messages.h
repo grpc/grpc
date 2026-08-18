@@ -88,6 +88,12 @@ struct ExtProcServerWindowUpdate {
   }
 };
 
+// Default initial window size and update threshold for ext_proc flow control.
+// TODO(user): It's better if we can make this configurable.
+inline constexpr int64_t kExtProcInitialWindowSize = 65536;
+inline constexpr int64_t kExtProcWindowUpdateThreshold =
+    kExtProcInitialWindowSize / 2;
+
 // Creates a serialized envoy.service.ext_proc.v3.ProcessingRequest containing a
 // HttpHeaders message for client request headers.
 //
@@ -238,6 +244,17 @@ absl::StatusOr<std::string> CreateExtProcServerTrailersRequest(
     std::optional<ExtProcProcessingMode> processing_mode,
     std::optional<ExtProcClientWindowUpdate> client_window_update =
         std::nullopt);
+
+// Creates a serialized envoy.service.ext_proc.v3.ProcessingRequest containing
+// only a ClientWindowUpdate message.
+//
+// Parameters:
+//  - arena: The upb arena used for memory allocation during proto creation and
+//  serialization.
+//  - client_window_update: Populates client_window_update in the request
+//  message.
+absl::StatusOr<std::string> CreateExtProcClientWindowUpdateRequest(
+    upb_Arena* arena, const ExtProcClientWindowUpdate& client_window_update);
 
 // Connection-level attributes extracted for server-side CEL attributes in A103.
 // These attributes describe the downstream client connection and TLS

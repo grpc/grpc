@@ -515,18 +515,19 @@ envoy_service_ext_proc_v3_ProcessingRequest* CreateCommonRequest(
   envoy_service_ext_proc_v3_ProcessingRequest_set_observability_mode(
       request, observability_mode);
   if (processing_mode.has_value()) {
-    constexpr int64_t kInitialWindowSize = 65536;
-    auto* init_msg =
-        envoy_service_ext_proc_v3_ProcessingRequest_mutable_flow_control_init(
-            request, arena);
-    envoy_service_ext_proc_v3_ProcessingRequest_FlowControlInit_set_initial_window_downstream_to_sidestream(
-        init_msg, kInitialWindowSize);
-    envoy_service_ext_proc_v3_ProcessingRequest_FlowControlInit_set_initial_window_sidestream_to_upstream(
-        init_msg, kInitialWindowSize);
-    envoy_service_ext_proc_v3_ProcessingRequest_FlowControlInit_set_initial_window_upstream_to_sidestreama(
-        init_msg, kInitialWindowSize);
-    envoy_service_ext_proc_v3_ProcessingRequest_FlowControlInit_set_initial_window_sidestream_to_downstream(
-        init_msg, kInitialWindowSize);
+    if (!observability_mode) {
+      auto* init_msg =
+          envoy_service_ext_proc_v3_ProcessingRequest_mutable_flow_control_init(
+              request, arena);
+      envoy_service_ext_proc_v3_ProcessingRequest_FlowControlInit_set_initial_window_downstream_to_sidestream(
+          init_msg, kExtProcInitialWindowSize);
+      envoy_service_ext_proc_v3_ProcessingRequest_FlowControlInit_set_initial_window_sidestream_to_upstream(
+          init_msg, kExtProcInitialWindowSize);
+      envoy_service_ext_proc_v3_ProcessingRequest_FlowControlInit_set_initial_window_upstream_to_sidestreama(
+          init_msg, kExtProcInitialWindowSize);
+      envoy_service_ext_proc_v3_ProcessingRequest_FlowControlInit_set_initial_window_sidestream_to_downstream(
+          init_msg, kExtProcInitialWindowSize);
+    }
     SetExtProcProtocolConfig(arena, *processing_mode, request);
   }
   if (client_window_update.has_value()) {
@@ -776,6 +777,14 @@ absl::StatusOr<std::string> CreateExtProcServerTrailersRequest(
             arena, *trailers, allowed_headers, disallowed_headers);
         SetExtProcResponseTrailers(arena, upb_trailers, request);
       });
+}
+
+absl::StatusOr<std::string> CreateExtProcClientWindowUpdateRequest(
+    upb_Arena* arena, const ExtProcClientWindowUpdate& client_window_update) {
+  return CreateRequestAndSerialize(
+      arena, /*attributes=*/nullptr, /*observability_mode=*/false,
+      /*processing_mode=*/std::nullopt, client_window_update,
+      [](envoy_service_ext_proc_v3_ProcessingRequest*) {});
 }
 
 }  // namespace grpc_core
