@@ -1377,7 +1377,7 @@ class DecodeLabelsTest(unittest.TestCase):
     "Observability is not supported in Windows and MacOS",
 )
 class SharedTracerProviderTest(unittest.TestCase):
-    _SPANS_PER_PLUGIN = 200
+    _SPANS_PER_PLUGIN: int = 200
 
     def setUp(self):
         provider = otel_trace.TracerProvider()
@@ -1416,7 +1416,7 @@ class SharedTracerProviderTest(unittest.TestCase):
             span_events=[],
         )
 
-    def _record_spans(self, plugin, first_seq):
+    def _record_spans(self, plugin: _OpenTelemetryPlugin, first_seq: int):
         for offset in range(self._SPANS_PER_PLUGIN):
             plugin._record_tracing_data(self._tracing_data(first_seq + offset))
 
@@ -1427,7 +1427,7 @@ class SharedTracerProviderTest(unittest.TestCase):
             ),
             threading.Thread(
                 target=self._record_spans,
-                args=(self._plugin_b, self._SPANS_PER_PLUGIN + 1)
+                args=(self._plugin_b, self._SPANS_PER_PLUGIN + 1),
             ),
         ]
 

@@ -151,9 +151,7 @@ def _build_context(
         span_id=parsed_span_id,
         is_remote=True,
         trace_flags=trace.TraceFlags(
-            trace.TraceFlags.SAMPLED
-            if is_sampled
-            else trace.TraceFlags.DEFAULT
+            trace.TraceFlags.SAMPLED if is_sampled else trace.TraceFlags.DEFAULT
         ),
     )
     parent_span = trace.NonRecordingSpan(span_context)
