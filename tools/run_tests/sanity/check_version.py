@@ -73,7 +73,7 @@ if not check_version(top_version):
 for tag, value in list(settings.items()):
     if re.match(r"^[a-z]+_version$", tag):
         value = Version(value)
-        if tag not in ("core_version", "protobuf_version"):
+        if tag != "core_version":
             if value.major != top_version.major:
                 errors += 1
                 print(
@@ -86,8 +86,8 @@ for tag, value in list(settings.items()):
                     "minor version mismatch on %s: %d vs %d"
                     % (tag, value.minor, top_version.minor)
                 )
-            if not check_version(value):
-                errors += 1
-                print((warning % (tag, value)))
+        if not check_version(value):
+            errors += 1
+            print((warning % (tag, value)))
 
 sys.exit(errors)
