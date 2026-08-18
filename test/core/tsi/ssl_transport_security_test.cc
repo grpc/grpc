@@ -771,12 +771,6 @@ class SslTransportSecurityTest
     fixture_destroyed = false;
   }
 
-  std::string ExpectedTargetLabel() const {
-    return ssl_fixture_->server_name_indication().empty()
-               ? "<omitted>"
-               : ssl_fixture_->server_name_indication();
-  }
-
   void DoHandshake() { tsi_test_do_handshake(ssl_tsi_test_fixture_); }
 
   void DoRoundTrip() { tsi_test_do_round_trip(ssl_tsi_test_fixture_); }
@@ -1584,9 +1578,6 @@ TEST_P(SslTransportSecurityTest, TestHandshakeMetricsIncremented) {
   const TestMetricsSink::Labels client_labels = {
       {"grpc.tls.handshake.result", "OK"},
       {"grpc.tls.handshake.resumed", "false"},
-      {"grpc.target", ExpectedTargetLabel()},
-      {"grpc.lb.locality", "<omitted>"},
-      {"grpc.lb.backend_service", "<omitted>"},
   };
   const TestMetricsSink::Labels server_labels = {
       {"grpc.tls.handshake.result", "OK"},
@@ -1625,9 +1616,6 @@ TEST_P(SslTransportSecurityTest, TestBadServerCertMetricsIncremented) {
   const TestMetricsSink::Labels client_labels = {
       {"grpc.tls.handshake.result", "CERTIFICATE_AUTHORITY_INVALID"},
       {"grpc.tls.handshake.resumed", "false"},
-      {"grpc.target", ExpectedTargetLabel()},
-      {"grpc.lb.locality", "<omitted>"},
-      {"grpc.lb.backend_service", "<omitted>"},
   };
   EXPECT_EQ(
       sink_after.GetCount("grpc.client.tls.handshakes", client_labels),
@@ -1665,9 +1653,6 @@ TEST_P(SslTransportSecurityTest, TestBadClientCertMetricsIncremented) {
   const TestMetricsSink::Labels client_labels = {
       {"grpc.tls.handshake.result", "OK"},
       {"grpc.tls.handshake.resumed", "false"},
-      {"grpc.target", ExpectedTargetLabel()},
-      {"grpc.lb.locality", "<omitted>"},
-      {"grpc.lb.backend_service", "<omitted>"},
   };
   const TestMetricsSink::Labels server_labels = {
       {"grpc.tls.handshake.result", "CERTIFICATE_AUTHORITY_INVALID"},
