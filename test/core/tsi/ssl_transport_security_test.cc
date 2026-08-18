@@ -1321,7 +1321,6 @@ TEST(SslTransportSecurityTest,
   tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory);
 }
 
-
 TEST(SslTransportSecurityTest, DuplicateRootCertificates) {
   std::string root_cert =
       GetFileContents(absl::StrCat(kSslTsiTestCredentialsDir, "ca.pem"));
