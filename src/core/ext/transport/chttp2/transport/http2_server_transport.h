@@ -174,9 +174,7 @@ class Http2ServerTransport final : public ServerTransport,
   int64_t TestOnlyTransportFlowControlWindow();
   int64_t TestOnlyGetStreamFlowControlWindow(uint32_t stream_id);
 
-  uint32_t TestOnlyLastIncomingStreamId() const {
-    return last_incoming_stream_id_;
-  }
+  uint32_t TestOnlyLastIncomingStreamId() const { return GetLastStreamId(); }
 
   Duration TestOnlyNextAllowedPingInterval() {
     return NextAllowedPingInterval();
@@ -473,6 +471,9 @@ class Http2ServerTransport final : public ServerTransport,
     return stream_list_.size();
   }
 
+  // Returns the last stream Id received by the transport.
+  uint32_t GetLastStreamId() const { return last_incoming_stream_id_; }
+
   bool IsPingWithoutCallsAllowed() const {
     return keepalive_permit_without_calls_;
   }
@@ -751,7 +752,6 @@ class Http2ServerTransport final : public ServerTransport,
   std::optional<KeepaliveManager> keepalive_manager_;
 
   bool keepalive_permit_without_calls_;
-
   GoawayManager goaway_manager_;
 
   MemoryOwner memory_owner_;
