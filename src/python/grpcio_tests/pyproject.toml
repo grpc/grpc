@@ -43,9 +43,6 @@ exclude = [".nox*", "build*"]
 version = {attr = "grpc_version.VERSION"}
 
 
-[tool.setuptools.package-dir]
-"" = "."
-
 [tool.setuptools.package-data]
 "tests.interop" = [
     "credentials/ca.pem",
