@@ -2,14 +2,13 @@
 # Install clang 14 and gcc 10 for better C++17 support.
 
 diff --git a/Dockerfile.mri.erb b/Dockerfile.mri.erb
-index 1bf488e..9d5c9ca 100644
+index 1bf488e..8e2b075 100644
 --- a/Dockerfile.mri.erb
 +++ b/Dockerfile.mri.erb
-@@ -108,18 +108,58 @@ EOF
- COPY build/mk_musl_cross.sh /tmp
+@@ -109,17 +109,60 @@ COPY build/mk_musl_cross.sh /tmp
  RUN /tmp/mk_musl_cross.sh <%= target %>
  
-+<% else %>
+ <% else %>
 +<% if platform =~ /darwin/ %>
 +RUN apt-get -y update && \
 +    apt-get install -y wget && \
@@ -21,14 +20,18 @@ index 1bf488e..9d5c9ca 100644
 +    update-alternatives --install /usr/bin/clang clang /usr/bin/clang-14 100 && \
 +    update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-14 100 && \
 +    rm -rf /var/lib/apt/lists/*
- <% else %>
++<% else %>
++<% if platform =~ /mingw32/ %>
++RUN echo "deb [trusted=yes] http://deb.debian.org/debian bullseye main" > /etc/apt/sources.list.d/bullseye.list
++<% end %>
  RUN apt-get -y update && \
-     apt-get install -y <%
+-    apt-get install -y <%
 -if platform =~ /darwin/            %> clang python lzma-dev libxml2-dev libssl-dev libc++-10-dev <% end %><%
 -if platform =~ /aarch64-linux-gnu/ %> gcc-aarch64-linux-gnu g++-aarch64-linux-gnu <% end %><%
 -if platform =~ /arm-linux-gnu/     %> gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf <% end %><%
 -if platform =~ /x86-linux-gnu/     %> gcc-i686-linux-gnu g++-i686-linux-gnu <% end %><%
 -if platform =~ /x86_64-linux-gnu/  %> gcc-x86-64-linux-gnu g++-x86-64-linux-gnu <% end %><%
++    apt-get install -y <% if platform =~ /mingw32/ %>--allow-unauthenticated -t bullseye <% end %><%
 +if platform =~ /arm-linux-gnu/     %> gcc-10-arm-linux-gnueabihf g++-10-arm-linux-gnueabihf <% end %><%
 +if platform =~ /x86-linux-gnu/     %> gcc-10-i686-linux-gnu g++-10-i686-linux-gnu <% end %><%
  if platform =~ /x86-mingw32/       %> gcc-mingw-w64-i686 g++-mingw-w64-i686 <% end %><%
