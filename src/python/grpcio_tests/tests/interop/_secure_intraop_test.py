@@ -13,15 +13,6 @@
 # limitations under the License.
 """Secure client-server interoperability as a unit test."""
 
-# NOTE(lidiz) This module only exists in Bazel BUILD file, for more details
-# please refer to comments in the "bazel_namespace_package_hack" module.
-try:
-    from tests import bazel_namespace_package_hack
-
-    bazel_namespace_package_hack.sys_path_to_site_dir_hack()
-except ImportError:
-    pass
-
 import unittest
 
 import grpc
@@ -74,6 +65,7 @@ class SecureIntraopTest(_intraop_test_case.IntraopTestCase, unittest.TestCase):
 class SecureInteropWithSyncPrivateKeyOffloadingTest(
     _intraop_test_case.IntraopTestCase, unittest.TestCase
 ):
+
     def setUp(self):
         self.server = test_common.test_server()
         test_pb2_grpc.add_TestServiceServicer_to_server(
@@ -118,6 +110,7 @@ class SecureInteropWithSyncPrivateKeyOffloadingTest(
 class SecureInteropWithAsyncPrivateKeyOffloadingTest(
     _intraop_test_case.IntraopTestCase, unittest.TestCase
 ):
+
     def setUp(self):
         self.server = test_common.test_server()
         test_pb2_grpc.add_TestServiceServicer_to_server(

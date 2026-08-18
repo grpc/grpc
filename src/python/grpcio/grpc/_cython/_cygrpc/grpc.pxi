@@ -71,11 +71,6 @@ cdef extern from "src/core/telemetry/call_tracer.h" namespace "grpc_core":
         string SpanId() nogil
         bint IsSampled() nogil
 
-    cdef cppclass CallSpan:
-        string TraceId() nogil
-        string SpanId() nogil
-        bint IsSampled() nogil
-
     cdef cppclass ServerCallTracerFactory:
         @staticmethod
         void RegisterGlobal(ServerCallTracerFactory* factory) nogil

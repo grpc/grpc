@@ -1372,7 +1372,7 @@ def server_jobspec(
     )
     server_cmd = ["--port=%s" % _DEFAULT_SERVER_PORT]
     environ = language.global_env()
-    if _collector_port and language.safename in ["cxx", "java", "python", "go"]:
+    if _collector_port and language.safename in ["cxx", "java", "go"]:
         server_cmd += ["--enable_opentelemetry=true"]
         environ = environ.copy()
         environ["GRPC_EXPERIMENTAL_ENABLE_OTEL_TRACING"] = "true"

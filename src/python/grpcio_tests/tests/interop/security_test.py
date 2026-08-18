@@ -15,22 +15,12 @@
 import faulthandler
 from functools import partial
 import gc
-import pkgutil
 import queue
 import sys
 import threading
 import time
 import unittest
 import weakref
-
-# NOTE(lidiz) This module only exists in Bazel BUILD file, for more details
-# please refer to comments in the "bazel_namespace_package_hack" module.
-try:
-    from tests import bazel_namespace_package_hack
-
-    bazel_namespace_package_hack.sys_path_to_site_dir_hack()
-except ImportError:
-    pass
 
 import grpc
 import grpc.experimental

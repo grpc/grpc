@@ -455,15 +455,15 @@ def main():
     )
     parser.add_argument(
         "--client",
-        choices=["c++", "java", "python", "go"],
+        choices=["c++", "java", "go"],
         default="c++",
-        help="Client language (c++, java, python, or go)",
+        help="Client language (c++, java, or go)",
     )
     parser.add_argument(
         "--server",
-        choices=["c++", "java", "python", "go"],
+        choices=["c++", "java", "go"],
         default="c++",
-        help="Server language (c++, java, python, or go)",
+        help="Server language (c++, java, or go)",
     )
     parser.add_argument(
         "--collector_bin_path",
@@ -517,17 +517,6 @@ def main():
                 ],
                 "Building Java interop targets",
                 cwd="../grpc-java",
-            )
-        if args.client == "python" or args.server == "python":
-            run_cmd(
-                [
-                    "./tools/bazel",
-                    "build",
-                    "--macos_minimum_os=11.0",
-                    "//src/python/grpcio_tests/tests/interop:client",
-                    "//src/python/grpcio_tests/tests/interop:server_bin",
-                ],
-                "Building Python interop targets",
             )
         if args.client == "go" or args.server == "go":
             run_cmd(
@@ -636,21 +625,6 @@ def main():
                 server_env,
                 "Java Interop Server",
             )
-        elif args.server == "python":
-            server_bin = (
-                args.server_bin_path
-                or "./bazel-bin/src/python/grpcio_tests/tests/interop/server_bin"
-            )
-            server_proc = start_proc(
-                [
-                    resolve_binary(server_bin),
-                    f"--port={server_port}",
-                    "--use_tls=false",
-                    "--enable_opentelemetry=true",
-                ],
-                server_env,
-                "Python Interop Server",
-            )
         elif args.server == "go":
             server_bin = (
                 args.server_bin_path or "../grpc-go/interop/server/server"
@@ -707,23 +681,6 @@ def main():
                     "--enable_opentelemetry=true",
                 ],
                 "Running Java Interop Client",
-                env=client_env,
-            )
-        elif args.client == "python":
-            client_bin = (
-                args.client_bin_path
-                or "./bazel-bin/src/python/grpcio_tests/tests/interop/client"
-            )
-            client_res = run_cmd(
-                [
-                    resolve_binary(client_bin),
-                    "--server_host=localhost",
-                    f"--server_port={server_port}",
-                    "--test_case=empty_unary",
-                    "--use_tls=false",
-                    "--enable_opentelemetry=true",
-                ],
-                "Running Python Interop Client",
                 env=client_env,
             )
         elif args.client == "go":

@@ -26,37 +26,16 @@ py_library(
 )
 
 py_library(
-    name = "otel_interop_helper",
-    srcs = ["otel_interop_helper.py"],
-    deps = [
-        "//src/proto/grpc/testing:py_test_proto",
-        "//src/python/grpcio/grpc:grpcio",
-        "@opentelemetry_proto//:common_proto_py",
-        "@opentelemetry_proto//:trace_proto_py",
-        "@opentelemetry_proto//:trace_service_grpc_py",
-        "@opentelemetry_proto//:trace_service_proto_py",
-        requirement("opentelemetry-api"),
-        requirement("opentelemetry-sdk"),
-    ],
-)
-
-py_library(
     name = "client_lib",
     srcs = ["client.py"],
     imports = ["../../"],
     deps = [
         ":methods",
-        ":otel_interop_helper",
         ":resources",
         "//src/proto/grpc/testing:py_test_proto",
-        "//src/proto/grpc/testing:test_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
-        "//src/python/grpcio_observability/grpc_observability:pyobservability",
-        "//src/python/grpcio_tests/tests:bazel_namespace_package_hack",
         requirement("absl-py"),
         requirement("google-auth"),
-        requirement("opentelemetry-api"),
-        requirement("opentelemetry-sdk"),
     ],
 )
 
@@ -115,18 +94,12 @@ py_library(
     srcs = ["server.py"],
     imports = ["../../"],
     deps = [
-        ":otel_interop_helper",
         ":resources",
         ":service",
         "//src/proto/grpc/testing:py_test_proto",
-        "//src/proto/grpc/testing:test_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
-        "//src/python/grpcio_observability/grpc_observability:pyobservability",
-        "//src/python/grpcio_tests/tests:bazel_namespace_package_hack",
         "//src/python/grpcio_tests/tests/unit:test_common",
         requirement("absl-py"),
-        requirement("opentelemetry-api"),
-        requirement("opentelemetry-sdk"),
     ],
 )
 
@@ -149,24 +122,15 @@ py_test(
     data = [
         "//src/python/grpcio_tests/tests/unit/credentials",
     ],
-    env = {
-        "GRPC_BAZEL_RUNTIME": "1",
-    },
-    imports = [
-        "../../",
-    ],
+    imports = ["../../"],
     main = "_insecure_intraop_test.py",
     python_version = "PY3",
     deps = [
         ":_intraop_test_case",
         ":server",
         ":service",
-        "//src/proto/grpc/testing:empty_py_pb2",
-        "//src/proto/grpc/testing:py_messages_proto",
         "//src/proto/grpc/testing:py_test_proto",
-        "//src/proto/grpc/testing:test_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
-        "//src/python/grpcio_tests/tests:bazel_namespace_package_hack",
         "//src/python/grpcio_tests/tests/unit:test_common",
     ],
 )
@@ -175,24 +139,15 @@ py_test(
     name = "_secure_intraop_test",
     size = "small",
     srcs = ["_secure_intraop_test.py"],
-    env = {
-        "GRPC_BAZEL_RUNTIME": "1",
-    },
-    imports = [
-        "../../",
-    ],
+    imports = ["../../"],
     main = "_secure_intraop_test.py",
     python_version = "PY3",
     deps = [
         ":_intraop_test_case",
         ":server",
         ":service",
-        "//src/proto/grpc/testing:empty_py_pb2",
-        "//src/proto/grpc/testing:py_messages_proto",
         "//src/proto/grpc/testing:py_test_proto",
-        "//src/proto/grpc/testing:test_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
-        "//src/python/grpcio_tests/tests:bazel_namespace_package_hack",
         "//src/python/grpcio_tests/tests/unit:test_common",
     ],
 )
@@ -201,24 +156,15 @@ py_test(
     name = "_security_tests",
     size = "small",
     srcs = ["security_test.py"],
-    env = {
-        "GRPC_BAZEL_RUNTIME": "1",
-    },
-    imports = [
-        "../../",
-    ],
+    imports = ["../../"],
     main = "security_test.py",
     python_version = "PY3",
     deps = [
         ":_intraop_test_case",
         ":server",
         ":service",
-        "//src/proto/grpc/testing:empty_py_pb2",
-        "//src/proto/grpc/testing:py_messages_proto",
         "//src/proto/grpc/testing:py_test_proto",
-        "//src/proto/grpc/testing:test_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
-        "//src/python/grpcio_tests/tests:bazel_namespace_package_hack",
         "//src/python/grpcio_tests/tests/unit:test_common",
     ],
 )

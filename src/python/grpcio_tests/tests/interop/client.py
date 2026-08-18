@@ -13,30 +13,17 @@
 # limitations under the License.
 """The Python implementation of the GRPC interoperability test client."""
 
-import gc
 import os
-import time
-
-os.environ["GRPC_BAZEL_RUNTIME"] = "1"
-try:
-    from tests import bazel_namespace_package_hack
-
-    bazel_namespace_package_hack.sys_path_to_site_dir_hack()
-except ImportError:
-    pass
 
 from absl import app
 from absl.flags import argparse_flags
 from google import auth as google_auth
 from google.auth import jwt as google_auth_jwt
 import grpc
-import grpc_observability
 
 from src.proto.grpc.testing import test_pb2_grpc
 from tests.interop import methods
-from tests.interop import otel_interop_helper
 from tests.interop import resources
-
 
 
 def parse_interop_client_args(argv):
@@ -106,24 +93,18 @@ def parse_interop_client_args(argv):
             " round_robin " + "or pick_first)."
         ),
     )
-    parser.add_argument(
-        "--enable_opentelemetry",
-        default=False,
-        type=resources.parse_bool,
-        help="enable OpenTelemetry tracing/observability",
-    )
     return parser.parse_args(argv[1:])
 
 
 def _create_call_credentials(args):
     if args.test_case == "oauth2_auth_token":
-        google_credentials, _unused_project_id = google_auth.default(
+        google_credentials, unused_project_id = google_auth.default(
             scopes=[args.oauth_scope]
         )
         google_credentials.refresh(google_auth.transport.requests.Request())
         return grpc.access_token_call_credentials(google_credentials.token)
     elif args.test_case == "compute_engine_creds":
-        google_credentials, _unused_project_id = google_auth.default(
+        google_credentials, unused_project_id = google_auth.default(
             scopes=[args.oauth_scope]
         )
         return grpc.metadata_call_credentials(
@@ -162,7 +143,7 @@ def get_secure_channel_parameters(args):
     if args.custom_credentials_type is not None:
         if args.custom_credentials_type == "compute_engine_channel_creds":
             assert call_credentials is None
-            google_credentials, _unused_project_id = google_auth.default(
+            google_credentials, unused_project_id = google_auth.default(
                 scopes=[args.oauth_scope]
             )
             call_creds = grpc.metadata_call_credentials(
@@ -214,11 +195,9 @@ def _create_channel(args):
         or args.custom_credentials_type is not None
     ):
         channel_credentials, options = get_secure_channel_parameters(args)
-        channel = grpc.secure_channel(target, channel_credentials, options)
+        return grpc.secure_channel(target, channel_credentials, options)
     else:
-        channel = grpc.insecure_channel(target)
-
-    return channel
+        return grpc.insecure_channel(target)
 
 
 def create_stub(channel, args):
@@ -236,37 +215,11 @@ def _test_case_from_arg(test_case_arg):
         raise ValueError('No test case "%s"!' % test_case_arg)
 
 
-def _run_test_case(stub, args):
+def test_interoperability(args):
+    channel = _create_channel(args)
+    stub = create_stub(channel, args)
     test_case = _test_case_from_arg(args.test_case)
     test_case.test_interoperability(stub, args)
-
-
-def test_interoperability(args):
-    plugin = None
-    if args.enable_opentelemetry:
-        tracer_provider, _ = otel_interop_helper.init_tracer_provider()
-        plugin = grpc_observability.OpenTelemetryPlugin(
-            tracer_provider=tracer_provider
-        )
-        plugin.register_global()
-
-    try:
-        channel = _create_channel(args)
-        stub = create_stub(channel, args)
-        _run_test_case(stub, args)
-        del stub
-        channel.close()
-        del channel
-    finally:
-        import gc
-        gc.collect()
-        gc.collect()
-        time.sleep(0.5)
-        if args.enable_opentelemetry:
-            if plugin:
-                plugin.deregister_global()
-            otel_interop_helper.flush_tracer_provider()
-            otel_interop_helper.shutdown_tracer_provider()
 
 
 if __name__ == "__main__":

@@ -107,18 +107,11 @@ void ToGrpcTraceBinHeader(const PythonCensusContext& ctx, uint8_t* out) {
 }
 
 SpanContext FromGrpcTraceBinHeader(absl::string_view header) {
-  std::string decoded;
-  if (!header.empty() && static_cast<uint8_t>(header[kVersionOfs]) != kVersionId) {
-    if (absl::Base64Unescape(header, &decoded)) {
-      header = decoded;
-    }
-  }
-
   if (header.size() < kGrpcTraceBinHeaderLen ||
-      static_cast<uint8_t>(header[kVersionOfs]) != kVersionId ||
-      static_cast<uint8_t>(header[kTraceIdOfs]) != kTraceIdField ||
-      static_cast<uint8_t>(header[kSpanIdOfs]) != kSpanIdField ||
-      static_cast<uint8_t>(header[kTraceOptionsOfs]) != kTraceOptionsField) {
+      header[kVersionOfs] != kVersionId ||
+      header[kTraceIdOfs] != kTraceIdField ||
+      header[kSpanIdOfs] != kSpanIdField ||
+      header[kTraceOptionsOfs] != kTraceOptionsField) {
     return SpanContext();  // Invalid.
   }
 
@@ -241,10 +234,8 @@ Span Span::StartSpan(absl::string_view name,
 Span Span::StartSpan(absl::string_view name, absl::string_view trace_id) {
   std::string span_id = GenerateSpanId();
   auto start_time = absl::Now();
-  std::string final_trace_id =
-      trace_id.empty() ? GenerateTraceId() : std::string(trace_id);
-  bool should_sample = ShouldSample(final_trace_id);
-  SpanContext context(final_trace_id, span_id, should_sample);
+  bool should_sample = ShouldSample(std::string(trace_id));
+  SpanContext context(std::string(trace_id), span_id, should_sample);
   return Span(std::string(name), "", start_time, context);
 }
 
