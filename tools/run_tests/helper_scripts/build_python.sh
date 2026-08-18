@@ -247,7 +247,7 @@ pip_install_dir "$ROOT/src/python/grpcio_testing"
 pip_install "coverage>=7.9.0" oauth2client==4.1.0 \
             "google-auth>=1.35.0" requests==2.31.0 \
             rsa==4.0 absl-py==1.4.0 \
-            opentelemetry-sdk==1.21.0
+            "opentelemetry-sdk>=1.25.0"
 
 $VENV_PYTHON -m nox -s preprocess -f \
  "$ROOT/src/python/grpcio_tests/noxfile.py"
