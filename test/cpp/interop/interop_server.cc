@@ -461,7 +461,7 @@ void grpc::testing::interop::RunServer(
 
   while (!gpr_atm_no_barrier_load(&g_got_sigint)) {
     gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                 gpr_time_from_millis(50, GPR_TIMESPAN)));
+                                 gpr_time_from_seconds(5, GPR_TIMESPAN)));
   }
   server->Shutdown();
   server.reset();
