@@ -584,8 +584,8 @@ Poller::WorkResult PollPoller::Work(
             pfds[pfd_count].events = head->BeginPollLocked(POLLIN, POLLOUT);
             pfd_count++;
           } else {
-            LOG_EVERY_N_SEC(INFO, 10) << "FD from fork parent still in poll list: "
-                                      << head->WrappedFd();
+            LOG(INFO) << "FD from fork parent still in poll list: "
+                      << head->WrappedFd();
           }
         }
       }
