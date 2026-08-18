@@ -121,6 +121,7 @@ def test_lite(session: nox.Session):
     session.log("Running test_lite for grpcio-tools...")
 
     session.install(
+        "-I",
         "--no-deps",
         "--index-url",
         "https://pypi.org/simple",
@@ -156,6 +157,7 @@ def test_py3_only(session: nox.Session):
     session.log("Running test_py3_only for grpcio-tools...")
 
     session.install(
+        "-I",
         "--no-deps",
         "--index-url",
         "https://pypi.org/simple",
@@ -186,6 +188,7 @@ def test_aio(session: nox.Session):
 
     session.log("Running test_aio for grpcio-tools...")
     session.install(
+        "-I",
         "--no-deps",
         "--index-url",
         "https://pypi.org/simple",
