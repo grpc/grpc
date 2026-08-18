@@ -49,6 +49,8 @@ ABSL_FLAG(std::string, otel_exporter, "",
           "OpenTelemetry exporter type (otlp, none)");
 ABSL_FLAG(std::string, otel_collector_address, "",
           "OpenTelemetry collector address");
+ABSL_FLAG(std::string, otel_propagator, "both",
+          "OpenTelemetry context propagator: both, w3c, or grpc_trace_bin");
 
 namespace grpc {
 namespace testing {
@@ -99,18 +101,27 @@ void MaybeRegisterOpenTelemetry() {
 
     grpc::OpenTelemetryPluginBuilder builder;
     builder.SetTracerProvider(tracer_provider);
+    std::string prop_flag = absl::GetFlag(FLAGS_otel_propagator);
     std::vector<
         std::unique_ptr<opentelemetry::context::propagation::TextMapPropagator>>
         propagators;
-    propagators.push_back(
-        std::make_unique<
-            opentelemetry::trace::propagation::HttpTraceContext>());
-    propagators.push_back(
-        grpc::OpenTelemetryPluginBuilder::MakeGrpcTraceBinTextMapPropagator());
-    builder.SetTextMapPropagator(
-        std::make_unique<
-            opentelemetry::context::propagation::CompositePropagator>(
-            std::move(propagators)));
+    if (prop_flag == "both" || prop_flag == "w3c") {
+      propagators.push_back(
+          std::make_unique<
+              opentelemetry::trace::propagation::HttpTraceContext>());
+    }
+    if (prop_flag == "both" || prop_flag == "grpc_trace_bin") {
+      propagators.push_back(
+          grpc::OpenTelemetryPluginBuilder::MakeGrpcTraceBinTextMapPropagator());
+    }
+    if (propagators.size() == 1) {
+      builder.SetTextMapPropagator(std::move(propagators[0]));
+    } else {
+      builder.SetTextMapPropagator(
+          std::make_unique<
+              opentelemetry::context::propagation::CompositePropagator>(
+              std::move(propagators)));
+    }
 
     auto status = builder.BuildAndRegisterGlobal();
 

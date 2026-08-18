@@ -350,6 +350,18 @@ def main():
         default=None,
         help="Path to server binary",
     )
+    parser.add_argument(
+        "--client_propagator",
+        choices=["both", "w3c", "grpc_trace_bin"],
+        default="both",
+        help="Propagator for client (both, w3c, or grpc_trace_bin)",
+    )
+    parser.add_argument(
+        "--server_propagator",
+        choices=["both", "w3c", "grpc_trace_bin"],
+        default="both",
+        help="Propagator for server (both, w3c, or grpc_trace_bin)",
+    )
     args = parser.parse_args()
 
     if not args.skip_build:
@@ -466,6 +478,7 @@ def main():
                     resolve_binary(server_bin),
                     f"--port={server_port}",
                     "--enable_opentelemetry=true",
+                    f"--otel_propagator={args.server_propagator}",
                 ],
                 server_env,
                 "C++ Interop Server",
@@ -481,6 +494,7 @@ def main():
                     f"--port={server_port}",
                     "--use_tls=false",
                     "--enable_opentelemetry=true",
+                    f"--otel_propagator={args.server_propagator}",
                 ],
                 server_env,
                 "Java Interop Server",
@@ -494,6 +508,7 @@ def main():
                     resolve_binary(server_bin),
                     f"--port={server_port}",
                     "--enable_opentelemetry=true",
+                    f"--otel_propagator={args.server_propagator}",
                 ],
                 server_env,
                 "Go Interop Server",
@@ -522,6 +537,7 @@ def main():
                     f"--server_port={server_port}",
                     "--test_case=empty_unary",
                     "--enable_opentelemetry=true",
+                    f"--otel_propagator={args.client_propagator}",
                 ],
                 "Running C++ Interop Client",
                 env=client_env,
@@ -539,6 +555,7 @@ def main():
                     "--test_case=empty_unary",
                     "--use_tls=false",
                     "--enable_opentelemetry=true",
+                    f"--otel_propagator={args.client_propagator}",
                 ],
                 "Running Java Interop Client",
                 env=client_env,
@@ -555,6 +572,7 @@ def main():
                     "--test_case=empty_unary",
                     "--use_tls=false",
                     "--enable_opentelemetry=true",
+                    f"--otel_propagator={args.client_propagator}",
                 ],
                 "Running Go Interop Client",
                 env=client_env,
