@@ -386,7 +386,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
                 otel_plugin.register_global()
             except RuntimeError as exp:
                 self.assertIn(
-                    "gPRC Python observability was already initialized",
+                    "gRPC Python observability was already initialized",
                     str(exp),
                 )
 
@@ -420,7 +420,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
                     pass
             except RuntimeError as exp:
                 self.assertIn(
-                    "gPRC Python observability was already initialized",
+                    "gRPC Python observability was already initialized",
                     str(exp),
                 )
 

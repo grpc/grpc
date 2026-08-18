@@ -501,10 +501,6 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
         keepalive_time_.millis() > max_keepalive_time_millis
             ? INT_MAX
             : keepalive_time_.millis() * KEEPALIVE_TIME_BACKOFF_MULTIPLIER;
-    if (!IsSubchannelConnectionScalingEnabled()) {
-      status.SetPayload(kKeepaliveThrottlingKey,
-                        absl::Cord(std::to_string(throttled_keepalive_time)));
-    }
     disconnect_info.keepalive_time =
         Duration::Milliseconds(throttled_keepalive_time);
   }
@@ -701,39 +697,25 @@ auto Http2ClientTransport::ReadLoop() {
 ///////////////////////////////////////////////////////////////////////////////
 // Flow Control for the Transport
 
-auto Http2ClientTransport::FlowControlPeriodicUpdateLoop() {
-  GRPC_HTTP2_CLIENT_DLOG
-      << "Http2ClientTransport::FlowControlPeriodicUpdateLoop Factory";
-  return AssertResultType<absl::Status>(
-      Loop([this]() {
-        GRPC_HTTP2_CLIENT_DLOG
-            << "Http2ClientTransport::FlowControlPeriodicUpdateLoop Loop";
-        return TrySeq(
-            // TODO(tjagtap) [PH2][P2][BDP] Remove this static sleep when the
-            // BDP code is done.
-            Sleep(chttp2::kFlowControlPeriodicUpdateTimer),
-            [this]() -> Poll<absl::Status> {
-              GRPC_HTTP2_CLIENT_DLOG
-                  << "Http2ClientTransport::FlowControlPeriodicUpdateLoop "
-                     "PeriodicUpdate()";
-              chttp2::FlowControlAction action = flow_control_.PeriodicUpdate();
-              bool is_action_empty = action == chttp2::FlowControlAction();
-              // This may trigger a write cycle
-              ActOnFlowControlAction(action, nullptr);
-              if (is_action_empty) {
-                // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is
-                // done. We must continue to do PeriodicUpdate once BDP is in
-                // place.
-                MutexLock lock(&transport_mutex_);
-                if (GetActiveStreamCountLocked() == 0) {
-                  AddPeriodicUpdatePromiseWaker();
-                  return Pending{};
-                }
-              }
-              return absl::OkStatus();
-            },
-            []() -> LoopCtl<absl::Status> { return Continue{}; });
-      }));
+auto Http2ClientTransport::BdpLoop() {
+  return AssertResultType<absl::Status>(Loop([this]() {
+    return TrySeq(
+        flow_control_.WaitForBdpActivation(),
+        [this]() {
+          // TODO(akshitpatel) : [PH2][P1] : Reset the keepalive ping timer
+          // when a BDP ping is sent, similar to CHTTP2's start_bdp_ping_locked.
+          return ping_manager_->RequestPing(
+              [this] { flow_control_.StartBdpPing(); },
+              /*important=*/false);
+        },
+        [this]() {
+          Duration sleep_duration = flow_control_.CompleteBdpPing();
+          chttp2::FlowControlAction action = flow_control_.PeriodicUpdate();
+          ActOnFlowControlAction(action, nullptr);
+          return Sleep(sleep_duration);
+        },
+        []() -> LoopCtl<absl::Status> { return Continue{}; });
+  }));
 }
 
 // Equivalent to grpc_chttp2_act_on_flowctl_action in chttp2_transport.cc
@@ -1150,7 +1132,6 @@ absl::Status Http2ClientTransport::InitializeStream(Stream& stream) {
 }
 
 void Http2ClientTransport::AddToStreamList(RefCountedPtr<Stream> stream) {
-  bool should_wake_periodic_updates = false;
   {
     MutexLock lock(&transport_mutex_);
     GRPC_DCHECK(stream != nullptr) << "stream is null";
@@ -1160,15 +1141,6 @@ void Http2ClientTransport::AddToStreamList(RefCountedPtr<Stream> stream) {
         << stream->GetStreamId();
     const uint32_t stream_id = stream->GetStreamId();
     stream_list_.emplace(stream_id, std::move(stream));
-    // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
-    if (GetActiveStreamCountLocked() == 1) {
-      should_wake_periodic_updates = true;
-    }
-  }
-  // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
-  if (should_wake_periodic_updates) {
-    // Release the lock before you wake up another promise on the party.
-    WakeupPeriodicUpdatePromise();
   }
 }
 
@@ -1254,7 +1226,7 @@ Http2ClientTransport::Http2ClientTransport(
   TransportChannelArgs args;
   ReadChannelArgs(channel_args, args);
 
-  ping_manager_.emplace(channel_args, args.ping_timeout,
+  ping_manager_.emplace(channel_args, kIsClient, args.ping_timeout,
                         PingSystemInterfaceImpl::Make(this), event_engine_);
 
   // The keepalive loop is only spawned if the keepalive time is not infinity.
@@ -1273,12 +1245,6 @@ Http2ClientTransport::Http2ClientTransport(
 void Http2ClientTransport::SpawnTransportLoops() {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::SpawnTransportLoops Begin";
   MaybeSpawnKeepaliveLoop();
-  SpawnGuardedTransportParty("FlowControlPeriodicUpdateLoop",
-                             [self = RefAsSubclass<Http2ClientTransport>()]() {
-                               return self->UntilTransportClosed(
-                                   self->FlowControlPeriodicUpdateLoop());
-                             });
-
   if (!TriggerWriteCycleOrHandleError()) {
     return;
   }
@@ -1291,6 +1257,13 @@ void Http2ClientTransport::SpawnTransportLoops() {
       [self = RefAsSubclass<Http2ClientTransport>()]() {
         return self->UntilTransportClosed(self->MultiplexerLoop());
       });
+  if (flow_control_.bdp_probe()) {
+    SpawnGuardedTransportParty(
+        "BdpLoop", [self = RefAsSubclass<Http2ClientTransport>()]() {
+          return self->UntilTransportClosed(self->BdpLoop());
+        });
+  }
+
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::SpawnTransportLoops End";
 }
 

@@ -25,5 +25,5 @@ cd "$(dirname "$0")/../../.."
 # This is especially important when --compiler/--arch params are
 # use, since they usually influence with docker image will be used
 # by run_tests.py
-export DOCKERFILE_DIR=tools/dockerfile/test/cxx_debian11_x64
+export DOCKERFILE_DIR=tools/dockerfile/test/cxx_debian12_x64
 tools/docker_runners/run_in_docker.sh tools/run_tests/run_tests.py -l c -c dbg
