@@ -23,7 +23,9 @@ def install_context_from_request_call_event_aio(GrpcCallWrapper event):
   save_server_trace_context(event.call)
 
 def uninstall_context():
-  pass
+  with _observability.get_plugin() as plugin:
+    if plugin and plugin.tracing_enabled:
+      plugin.clear_trace_context()
 
 def build_census_context():
   pass

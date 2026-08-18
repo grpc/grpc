@@ -101,7 +101,7 @@ class _GrpcIdGenerator(sdk_trace.IdGenerator):
         else:
             try:
                 self._trace_id = int(trace_id, 16)
-            except ValueError:
+            except (ValueError, TypeError):
                 _LOGGER.warning("Failed to parse trace_id: '%s'", trace_id)
                 self._trace_id = 0
 
@@ -110,7 +110,7 @@ class _GrpcIdGenerator(sdk_trace.IdGenerator):
         else:
             try:
                 self._span_id = int(span_id, 16)
-            except ValueError:
+            except (ValueError, TypeError):
                 _LOGGER.warning("Failed to parse span_id: '%s'", span_id)
                 self._span_id = 0
 
@@ -133,7 +133,7 @@ def _build_context(
     else:
         try:
             parsed_trace_id = int(trace_id, 16)
-        except ValueError:
+        except (ValueError, TypeError):
             _LOGGER.warning("Failed to parse trace_id: '%s'", trace_id)
             parsed_trace_id = 0
 
@@ -142,7 +142,7 @@ def _build_context(
     else:
         try:
             parsed_span_id = int(span_id, 16)
-        except ValueError:
+        except (ValueError, TypeError):
             _LOGGER.warning("Failed to parse span_id: '%s'", span_id)
             parsed_span_id = 0
 
@@ -352,7 +352,7 @@ class _OpenTelemetryPlugin:
             )
             try:
                 parsed_start_time = int(tracing_data.start_time)
-            except ValueError:
+            except (ValueError, TypeError):
                 _LOGGER.warning(
                     "Invalid start_time '%s' for span, defaulting to current "
                     "time.",
@@ -376,14 +376,14 @@ class _OpenTelemetryPlugin:
                     attributes=event["attributes"],
                     timestamp=int(event["time_stamp"]),
                 )
-            except ValueError:
+            except (ValueError, TypeError, KeyError):
                 # Gracefully log the issue and move to the next event
                 _LOGGER.warning("Skipping malformed span event: %s", event)
                 continue
         span.set_status(self._status_to_otel_status(tracing_data.status))
         try:
             parsed_end_time = int(tracing_data.end_time)
-        except ValueError:
+        except (ValueError, TypeError):
             _LOGGER.warning(
                 "Invalid end_time '%s' for span, defaulting to current time.",
                 tracing_data.end_time,
@@ -609,6 +609,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
         self._trace_ctx_var = contextvars.ContextVar(
             "grpc_trace_ctx", default=None
         )
+        self._generator = sdk_trace.RandomIdGenerator()
 
     def observability_init(self):
         try:
@@ -673,8 +674,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
             trace_id = f"{current_span.trace_id:032x}".encode()
             parent_span_id = f"{current_span.span_id:016x}".encode()
         elif self._should_enable_tracing():
-            generator = sdk_trace.RandomIdGenerator()
-            trace_id = f"{generator.generate_trace_id():032x}".encode()
+            trace_id = f"{self._generator.generate_trace_id():032x}".encode()
             parent_span_id = b""
         else:
             trace_id = b"TRACE_ID"
@@ -730,6 +730,9 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
                 context=self._trace_ctx_var.get(),
             )
         )
+
+    def clear_trace_context(self):
+        self._trace_ctx_var.set(None)
 
     def record_rpc_latency(
         self,

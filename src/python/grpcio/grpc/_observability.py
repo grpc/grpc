@@ -134,6 +134,15 @@ class ObservabilityPlugin(
         raise NotImplementedError()
 
     @abc.abstractmethod
+    def clear_trace_context(self) -> None:
+        """Clears any trace context saved by `save_trace_context`
+
+        Called when the server finishes handling an RPC, so state saved for
+        the call does not outlive it on reused thread.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
     def create_server_call_tracer_factory(
         self,
         *,

@@ -30,7 +30,7 @@ uint64_t CalculateThreshold(double probability) {
 
   // for the probabilities in range (0.0, 1.0) the result is at most 2^64 - 2^11
   // which fits uint64_t type. Note: the largest double below 1.0 is 1 - 2^(-53)
-  return static_cast<uint64_t>(nearbyint(ldexp(probability, 64)));
+  return static_cast<uint64_t>(std::nearbyint(std::ldexp(probability, 64)));
 }
 
 // Reads the lowest 8 bytes of the decoded trace ID as a big-endian integer,
