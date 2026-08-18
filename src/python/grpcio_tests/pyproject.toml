@@ -34,8 +34,10 @@ dynamic = [
 [project.urls]
 Homepage = "https://grpc.io"
 
-[tool.setuptools.packages]
-find = {}
+[tool.setuptools.packages.find]
+where = "."
+include = ["tests*"]
+exclude = [".nox*", "build*"]
 
 [tool.setuptools.dynamic]
 version = {attr = "grpc_version.VERSION"}
