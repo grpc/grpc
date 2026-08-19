@@ -23608,6 +23608,7 @@ add_executable(interop_client
   test/cpp/interop/client.cc
   test/cpp/interop/client_helper.cc
   test/cpp/interop/interop_client.cc
+  test/cpp/interop/otel_helper.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -23661,6 +23662,7 @@ add_executable(interop_server
   src/cpp/server/orca/orca_service.cc
   test/cpp/interop/interop_server.cc
   test/cpp/interop/interop_server_bootstrap.cc
+  test/cpp/interop/otel_helper.cc
   test/cpp/interop/server_helper.cc
 )
 if(WIN32 AND MSVC)
