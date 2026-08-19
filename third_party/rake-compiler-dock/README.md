@@ -51,3 +51,25 @@ Push the newly tagged images to the remote Google Artifact Registry repository.
 ```bash
 docker image ls --filter "reference=ghcr.io/rake-compiler/rake-compiler-dock-image" --format "{{.Repository}}:{{.Tag}}" | grep '1\.12\.0' | sed -E 's@^[^:]+:@@' | xargs -r -n1 -I{} docker push us-docker.pkg.dev/grpc-testing/testing-images-public/rake-compiler-dock-image:{}
 ```
+
+### 5. Rebuild CI docker images
+
+Once the images are pushed to upstream, docker will genearte a sha256 digest for each image, include it into Dockerfile's to pick up the new base images.
+
+```base
+docker image ls --format "{{.Tag}} {{.Repository}}:{{.Tag}}@{{.Digest}}" \
+    us-docker.pkg.dev/grpc-testing/testing-images-public/rake-compiler-dock-image \
+    | rg '^1.12.0-mri' \
+    | while read -r tag image; do
+local dockerfile="${GIT_ROOT}/third_party/rake-compiler-dock/rake_${tag#1.12.0-mri-}/Dockerfile"
+if [[ -f "$dockerfile" ]]; then
+    sed -E -i "s|^FROM [^ ]+\$|FROM ${image}|" "$dockerfile"
+fi
+done
+```
+
+Finally run `push_testing_images.sh` to push new images.
+
+```bash
+tools/dockerfile/push_testing_images.sh
+```
