@@ -16,6 +16,9 @@
 
 #include "src/core/credentials/call/gdch_service_account/gdch_service_account_credentials.h"
 
+#include <grpc/credentials.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
 #include <openssl/bio.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
@@ -25,18 +28,6 @@
 #include <optional>
 #include <string>
 #include <utility>
-
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/escaping.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
-
-#include <grpc/credentials.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -55,6 +46,13 @@
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/uri.h"
 #include "src/core/util/validation_errors.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/escaping.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace {
@@ -386,12 +384,11 @@ absl::StatusOr<std::string> GDCHServiceAccountCredentials::MakeJWTAssertion(
   return absl::StrCat(body, ".", absl::WebSafeBase64Escape(*signature));
 }
 
-absl::StatusOr<std::string>
-GDCHServiceAccountCredentials::CreateRequestBody() const {
+absl::StatusOr<std::string> GDCHServiceAccountCredentials::CreateRequestBody()
+    const {
   AssertionComponents components = CreateAssertionComponents(Timestamp::Now());
-  absl::StatusOr<std::string> jwt =
-      MakeJWTAssertion(components.header, components.claim, private_key_,
-                       SignatureFormat::kRaw);
+  absl::StatusOr<std::string> jwt = MakeJWTAssertion(
+      components.header, components.claim, private_key_, SignatureFormat::kRaw);
   if (!jwt.ok()) return jwt.status();
 
   Json payload = Json::FromObject({

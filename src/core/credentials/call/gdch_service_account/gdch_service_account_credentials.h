@@ -21,9 +21,6 @@
 #include <optional>
 #include <string>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
-
 #include "src/core/credentials/call/token_fetcher/token_fetcher_credentials.h"
 #include "src/core/util/http_client/httpcli.h"
 #include "src/core/util/orphanable.h"
@@ -31,6 +28,8 @@
 #include "src/core/util/time.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/uri.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -67,11 +66,11 @@ class GDCHServiceAccountCredentials final : public HttpTokenFetcherCredentials {
   static absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> Create(
       absl::string_view key_file_contents, std::string audience);
 
-  GDCHServiceAccountCredentials(
-      std::string private_key_id, std::string private_key,
-      std::string service_account_identity,
-      std::optional<std::string> ca_cert_path, URI token_url,
-      std::string audience);
+  GDCHServiceAccountCredentials(std::string private_key_id,
+                                std::string private_key,
+                                std::string service_account_identity,
+                                std::optional<std::string> ca_cert_path,
+                                URI token_url, std::string audience);
 
   const std::optional<std::string>& ca_cert_path() const {
     return ca_cert_path_;
@@ -116,7 +115,7 @@ class GDCHServiceAccountCredentials final : public HttpTokenFetcherCredentials {
   AssertionComponents CreateAssertionComponents(Timestamp now) const;
 
   static absl::StatusOr<std::string> MakeJWTAssertion(
-      const std::string& header, const std::string& payload,
+      const std::string& header, const std::string& claim,
       const std::string& pem_contents, SignatureFormat format);
 
   absl::StatusOr<std::string> CreateRequestBody() const;

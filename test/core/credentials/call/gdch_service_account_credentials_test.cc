@@ -21,16 +21,6 @@
 #include <utility>
 #include <vector>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include "absl/status/status.h"
-#include "absl/status/status_matchers.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/escaping.h"
-#include "absl/strings/str_split.h"
-#include "absl/strings/string_view.h"
-
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
@@ -38,6 +28,14 @@
 #include "src/core/util/time.h"
 #include "src/core/util/uri.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/status_matchers.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/escaping.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace {
