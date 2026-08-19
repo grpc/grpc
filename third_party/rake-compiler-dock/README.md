@@ -61,7 +61,7 @@ docker image ls --format "{{.Tag}} {{.Repository}}:{{.Tag}}@{{.Digest}}" \
     us-docker.pkg.dev/grpc-testing/testing-images-public/rake-compiler-dock-image \
     | rg '^1.12.0-mri' \
     | while read -r tag image; do
-local dockerfile="${GIT_ROOT}/third_party/rake-compiler-dock/rake_${tag#1.12.0-mri-}/Dockerfile"
+dockerfile="${GIT_ROOT}/third_party/rake-compiler-dock/rake_${tag#1.12.0-mri-}/Dockerfile"
 if [[ -f "$dockerfile" ]]; then
     sed -E -i "s|^FROM [^ ]+\$|FROM ${image}|" "$dockerfile"
 fi
