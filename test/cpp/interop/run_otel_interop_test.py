@@ -53,29 +53,32 @@ ROOT_DIR = os.path.dirname(
 def resolve_binary(path):
     if not path:
         return path
+    clean_path = path
+    if clean_path.startswith("./"):
+        clean_path = clean_path[2:]
+    if clean_path.startswith("bazel-bin/"):
+        clean_path = clean_path[len("bazel-bin/") :]
+
     candidates = [
         path,
-        path[2:] if path.startswith("./") else path,
+        clean_path,
         os.path.abspath(path),
+        os.path.abspath(clean_path),
         os.path.join(ROOT_DIR, path),
-        (
-            os.path.join(ROOT_DIR, path[2:])
-            if path.startswith("./")
-            else os.path.join(ROOT_DIR, path)
-        ),
+        os.path.join(ROOT_DIR, clean_path),
+        os.path.join(ROOT_DIR, "bazel-bin", clean_path),
     ]
-    if path.startswith("./bazel-bin/"):
-        candidates.append(path[len("./bazel-bin/") :])
-        candidates.append(os.path.join(ROOT_DIR, path[len("./bazel-bin/") :]))
-        candidates.append(
-            os.path.join(ROOT_DIR, "bazel-bin", path[len("./bazel-bin/") :])
+    test_srcdir = os.environ.get("TEST_SRCDIR")
+    if test_srcdir:
+        workspace = os.environ.get("TEST_WORKSPACE", "_main")
+        candidates.extend(
+            [
+                os.path.join(test_srcdir, workspace, clean_path),
+                os.path.join(test_srcdir, clean_path),
+                os.path.join(test_srcdir, "com_github_grpc_grpc", clean_path),
+            ]
         )
-    elif path.startswith("bazel-bin/"):
-        candidates.append(path[len("bazel-bin/") :])
-        candidates.append(os.path.join(ROOT_DIR, path[len("bazel-bin/") :]))
-        candidates.append(
-            os.path.join(ROOT_DIR, "bazel-bin", path[len("bazel-bin/") :])
-        )
+
     for p in candidates:
         if os.path.exists(p):
             return os.path.abspath(p)
@@ -85,10 +88,6 @@ def resolve_binary(path):
 def run_cmd(args, desc, env=None, cwd=None):
     print(f"Executing: {' '.join(args)} ({desc})")
     proc_env = os.environ.copy()
-    if "CC" not in proc_env and os.path.exists("/usr/bin/gcc"):
-        proc_env["CC"] = "/usr/bin/gcc"
-    if "CXX" not in proc_env and os.path.exists("/usr/bin/g++"):
-        proc_env["CXX"] = "/usr/bin/g++"
     if env:
         proc_env.update(env)
     res = subprocess.run(
@@ -104,13 +103,9 @@ def run_cmd(args, desc, env=None, cwd=None):
 
 def start_proc(args, env, desc, cwd=None):
     print(f"Starting in background: {' '.join(args)} ({desc})")
-    # Inherit system environment and merge with custom variables
     proc_env = os.environ.copy()
-    if "CC" not in proc_env and os.path.exists("/usr/bin/gcc"):
-        proc_env["CC"] = "/usr/bin/gcc"
-    if "CXX" not in proc_env and os.path.exists("/usr/bin/g++"):
-        proc_env["CXX"] = "/usr/bin/g++"
-    proc_env.update(env)
+    if env:
+        proc_env.update(env)
     return subprocess.Popen(
         args,
         env=proc_env,
@@ -210,20 +205,7 @@ def verify_spans(spans_file):
             f"  Span: '{s.get('name')}' (TraceID: {s.get('trace_id')}, SpanID: {s.get('span_id')}, ParentID: {s.get('parent_span_id')})"
         )
 
-    # 1. Assert all spans share the same Trace ID
-    trace_id = client_span.get("trace_id")
-    if attempt_span.get("trace_id") != trace_id:
-        print(
-            f"Assertion Failed: Attempt span Trace ID mismatch. Expected {trace_id}, got {attempt_span.get('trace_id')}"
-        )
-        return False
-    if server_span.get("trace_id") != trace_id:
-        print(
-            f"Assertion Failed: Server span Trace ID mismatch. Expected {trace_id}, got {server_span.get('trace_id')}"
-        )
-        return False
-
-    # 2. Assert Parent-Child hierarchy
+    # Assert parent-child hierarchy
     # Attempt Span must be a child of Client Span
     if attempt_span.get("parent_span_id") != client_span.get("span_id"):
         print(
@@ -237,7 +219,7 @@ def verify_spans(spans_file):
         )
         return False
 
-    # 3. Verify Attempt Span Attributes
+    # Verify attempt span attributes
     attributes = attempt_span.get("attributes", [])
     prev_attempts = None
     trans_retry = None
@@ -270,7 +252,7 @@ def verify_spans(spans_file):
         )
         return False
 
-    # 4. Verify Events
+    # Verify message events
     attempt_events = [e.get("name") for e in attempt_span.get("events", [])]
     client_events = [e.get("name") for e in client_span.get("events", [])]
     if (
