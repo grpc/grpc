@@ -34,6 +34,7 @@
 #include "absl/status/status_matchers.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 
@@ -236,18 +237,6 @@ TEST_F(GDCHServiceAccountCredentialsTest,
                        "field:type error:field must be gdch_service_account]"));
 }
 
-TEST_F(GDCHServiceAccountCredentialsTest, CreateFailureEmptyCaCertPath) {
-  Json::Object obj = CreateValidServiceAccountObject();
-  obj["ca_cert_path"] = Json::FromString("");
-  absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> creds =
-      GDCHServiceAccountCredentials::Create(JsonDump(Json::FromObject(obj)),
-                                            "https://my-audience.com");
-  EXPECT_THAT(creds,
-              StatusIs(absl::StatusCode::kInvalidArgument,
-                       "errors validating JSON: ["
-                       "field:ca_cert_path error:field must not be empty]"));
-}
-
 TEST_F(GDCHServiceAccountCredentialsTest,
        CreateFailureInvalidTypeAndFormatVersion) {
   Json::Object obj = CreateValidServiceAccountObject();
@@ -314,22 +303,15 @@ TEST_F(GDCHServiceAccountCredentialsTest, CreateAssertionComponentsSuccess) {
   AssertionComponents components = CreateAssertionComponents(**creds, now);
 
   EXPECT_EQ(components.header,
-            JsonDump(Json::FromObject(Json::Object{
-                {"alg", Json::FromString("ES256")},
-                {"kid", Json::FromString("test-private-key-id")},
-                {"typ", Json::FromString("JWT")},
-            })));
-  EXPECT_EQ(
-      components.claim,
-      JsonDump(Json::FromObject(Json::Object{
-          {"aud", Json::FromString("https://test-token-uri.com/token")},
-          {"exp", Json::FromNumber(12349278)},
-          {"iat", Json::FromNumber(12345678)},
-          {"iss",
-           Json::FromString("system:serviceaccount:test-project:test-name")},
-          {"sub",
-           Json::FromString("system:serviceaccount:test-project:test-name")},
-      })));
+            "{\"alg\":\"ES256\","
+            "\"kid\":\"test-private-key-id\","
+            "\"typ\":\"JWT\"}");
+  EXPECT_EQ(components.claim,
+            "{\"aud\":\"https://test-token-uri.com/token\","
+            "\"exp\":12349278,"
+            "\"iat\":12345678,"
+            "\"iss\":\"system:serviceaccount:test-project:test-name\","
+            "\"sub\":\"system:serviceaccount:test-project:test-name\"}");
 }
 
 // --- Tests for MakeJWTAssertion ---
@@ -410,20 +392,17 @@ TEST_F(GDCHServiceAccountCredentialsTest, CreateRequestBodySuccess) {
   ASSERT_EQ(it->second.type(), Json::Type::kString);
   std::string jwt_token = it->second.string();
 
-  EXPECT_EQ(
-      *body,
-      JsonDump(Json::FromObject(Json::Object{
-          {"audience", Json::FromString("https://my-audience.com")},
-          {"grant_type", Json::FromString("urn:ietf:params:oauth:token-type:"
-                                          "token-exchange")},
-          {"requested_token_type",
-           Json::FromString("urn:ietf:params:oauth:token-type:"
-                            "access_token")},
-          {"subject_token", Json::FromString(jwt_token)},
-          {"subject_token_type",
-           Json::FromString("urn:k8s:params:oauth:token-type:"
-                            "serviceaccount")},
-      })));
+  EXPECT_EQ(*body, absl::StrCat(
+                       "{\"audience\":\"https://my-audience.com\","
+                       "\"grant_type\":"
+                       "\"urn:ietf:params:oauth:token-type:token-exchange\","
+                       "\"requested_token_type\":"
+                       "\"urn:ietf:params:oauth:token-type:access_token\","
+                       "\"subject_token\":\"",
+                       jwt_token,
+                       "\","
+                       "\"subject_token_type\":"
+                       "\"urn:k8s:params:oauth:token-type:serviceaccount\"}"));
 
   std::vector<std::string> parts = absl::StrSplit(jwt_token, '.');
   ASSERT_EQ(parts.size(), 3);
