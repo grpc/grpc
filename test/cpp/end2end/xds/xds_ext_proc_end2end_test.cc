@@ -683,7 +683,8 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
     void StartWrite(const EchoRequest& request) {
       grpc_core::MutexLock lock(&mu_);
       write_msg_ = request;
-      if (status_.has_value()) {
+      if (status_.has_value() || write_state_ == OpState::kFailed ||
+          read_state_ == OpState::kFailed) {
         write_state_ = OpState::kFailed;
         cv_.SignalAll();
         return;
@@ -707,14 +708,18 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
 
     void StartWritesDone() {
       grpc_core::MutexLock lock(&mu_);
-      if (status_.has_value()) return;
+      if (status_.has_value() || write_state_ == OpState::kFailed ||
+          read_state_ == OpState::kFailed) {
+        return;
+      }
       ClientBidiReactor::StartWritesDone();
     }
 
     void StartReadMessage() {
       grpc_core::MutexLock lock(&mu_);
       read_msg_.Clear();
-      if (status_.has_value()) {
+      if (status_.has_value() || write_state_ == OpState::kFailed ||
+          read_state_ == OpState::kFailed) {
         read_state_ = OpState::kFailed;
         cv_.SignalAll();
         return;
@@ -1879,7 +1884,6 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamEarlyHalfCloseWithMessageFailure) {
   request.set_message(kMessage2);
   stream.StartWrite(request);
   (void)stream.WaitForWriteDone();
-  EXPECT_FALSE(stream.ReadMessage(&response));
   Status status = stream.Finish();
   EXPECT_THAT(status,
               GrpcStatusIs(StatusCode::INTERNAL,
@@ -1930,11 +1934,9 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamEarlyHalfCloseWithoutMessageFailure) {
   streamed_response->set_end_of_stream_without_message(true);
   ext_proc_stream->SendResponse(proc_response);
   (void)stream.WaitForWriteDone();
-  EchoResponse response;
   request.set_message(kMessage2);
   stream.StartWrite(request);
   (void)stream.WaitForWriteDone();
-  EXPECT_FALSE(stream.ReadMessage(&response));
   Status status = stream.Finish();
   EXPECT_THAT(status,
               GrpcStatusIs(StatusCode::INTERNAL,
@@ -2609,6 +2611,7 @@ TEST_P(XdsExtProcEnd2endTest,
   int port = grpc_pick_unused_port_or_die();
   std::string target = absl::StrCat("localhost:", port);
   CreateAndStartBackends(1);
+  ResetStubWithUniqueArg();
   auto ext_proc_config = ExtProcFilterConfigBuilder()
                              .SetTargetUri(target)
                              .SetInsecureChannelCredentials()
@@ -2635,6 +2638,7 @@ TEST_P(XdsExtProcEnd2endTest,
   int port = grpc_pick_unused_port_or_die();
   std::string target = absl::StrCat("localhost:", port);
   CreateAndStartBackends(1);
+  ResetStubWithUniqueArg();
   auto ext_proc_config = ExtProcFilterConfigBuilder()
                              .SetTargetUri(target)
                              .SetInsecureChannelCredentials()

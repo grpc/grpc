@@ -1592,10 +1592,15 @@ auto ExtProcFilter::ExtProcCall::HandleTrailingMetadataFromServer(
                                     << self->DebugTag()
                                     << "Sending server trailing metadata "
                                        "(observability mode)";
-                                self->handler_.SpawnPushServerTrailingMetadata(
-                                    std::move(*md));
-                                return self->SendMessageToSideStream(
-                                    std::move(*payload_ptr));
+                                return TrySeq(
+                                    self->SendMessageToSideStream(
+                                        std::move(*payload_ptr)),
+                                    [self, md]() mutable -> StatusFlag {
+                                      self->handler_
+                                          .SpawnPushServerTrailingMetadata(
+                                              std::move(*md));
+                                      return Success{};
+                                    });
                               },
                               [self, payload_ptr, md]() mutable {
                                 return If(
