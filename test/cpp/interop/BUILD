@@ -834,35 +834,3 @@ grpc_cc_binary(
     ],
 )
 
-grpc_cc_test(
-    name = "otlp_collector_stress_test",
-    srcs = [
-        "otlp_collector_stress_test.cc",
-    ],
-    data = [
-        ":otlp_collector",
-    ],
-    external_deps = [
-        "absl/flags:flag",
-        "absl/log:check",
-        "absl/log:log",
-        "absl/strings",
-        "absl/strings:str_format",
-        "absl/time",
-        "gtest",
-        "protobuf",
-        "protobuf_headers",
-    ],
-    tags = ["nobuilder"],
-    deps = [
-        ":otel_helper_lib",
-        "//:gpr",
-        "//:grpc++",
-        "//:grpc++_config_proto",
-        "//test/core/test_util:grpc_test_util",
-        "//test/cpp/util:test_config",
-        "@opentelemetry_proto//:trace_service_grpc_cc",
-        "@opentelemetry_proto//:trace_service_proto_cc",
-    ],
-)
-

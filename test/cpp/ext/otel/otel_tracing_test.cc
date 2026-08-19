@@ -929,7 +929,7 @@ TEST_F(OTelTracingTestForTransparentRetries, TransparentRetries) {
   EXPECT_THAT(attempt_attributes[0], FieldsAre(/*previous-rpc-attempts=*/0,
                                                /*transparent-retry=*/false))
       << attempt_attributes[0].PrettyPrint();
-  for (size_t i = 1; i < attempt_attributes.size(); ++i) {
+  for (int i = 1; i < attempt_attributes.size(); ++i) {
     EXPECT_THAT(attempt_attributes[i], FieldsAre(/*previous-rpc-attempts=*/0,
                                                  /*transparent-retry=*/true))
         << attempt_attributes[i].PrettyPrint();
