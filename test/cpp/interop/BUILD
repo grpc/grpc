@@ -348,18 +348,6 @@ sh_test(
     tags = ["no_windows"],
 )
 
-py_test(
-    name = "run_otel_interop_test",
-    srcs = ["run_otel_interop_test.py"],
-    data = [
-        ":interop_client",
-        ":interop_server",
-        ":otlp_collector",
-    ],
-    python_version = "PY3",
-    tags = ["no_windows"],
-)
-
 grpc_cc_library(
     name = "xds_stats_watcher",
     srcs = ["xds_stats_watcher.cc"],
