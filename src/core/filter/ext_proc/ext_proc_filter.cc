@@ -859,10 +859,8 @@ auto ExtProcFilter::ExtProcCall::WaitForClientSendWindow() {
   return [self = WeakRef()]() -> Poll<StatusFlag> {
     if (self->config().observability_mode || self->IsSideStreamClosed() ||
         self->drain_requested_ ||
-        self->ext_proc_send_state_ == SideStreamSendState::kSendFailed) {
-      return Success{};
-    }
-    if (self->downstream_to_sidestream_window_ > 0) {
+        self->ext_proc_send_state_ == SideStreamSendState::kSendFailed ||
+        self->downstream_to_sidestream_window_ > 0) {
       return Success{};
     }
     return self->downstream_to_sidestream_waiters_.AddPending(
@@ -874,10 +872,8 @@ auto ExtProcFilter::ExtProcCall::WaitForServerSendWindow() {
   return [self = WeakRef()]() -> Poll<StatusFlag> {
     if (self->config().observability_mode || self->IsSideStreamClosed() ||
         self->drain_requested_ ||
-        self->ext_proc_send_state_ == SideStreamSendState::kSendFailed) {
-      return Success{};
-    }
-    if (self->upstream_to_sidestream_window_ > 0) {
+        self->ext_proc_send_state_ == SideStreamSendState::kSendFailed ||
+        self->upstream_to_sidestream_window_ > 0) {
       return Success{};
     }
     return self->upstream_to_sidestream_waiters_.AddPending(
@@ -1101,9 +1097,6 @@ StatusFlag ExtProcFilter::ExtProcCall::HandleClientMessageFromSidestream(
 StatusFlag
 ExtProcFilter::ExtProcCall::HandleServerInitialMetadataFromSidestream(
     const ExtProcResponse::ResponseHeaders& response) {
-  if (config().observability_mode) {
-    return Success{};
-  }
   if (!processing_mode().send_response_headers) {
     CancelCallWithError(absl::InternalError(
         "Received response headers response but response headers are "
@@ -1346,9 +1339,6 @@ auto ExtProcFilter::ExtProcCall::ProcessSideStreamResponse(
           << DebugTag() << "sending half-close";
       streaming_call_->SendHalfClose();
     }
-    ext_proc_send_waiters_.TakeWakeupSet().Wakeup();
-    downstream_to_sidestream_waiters_.TakeWakeupSet().Wakeup();
-    upstream_to_sidestream_waiters_.TakeWakeupSet().Wakeup();
   }
   // Dispatch the parsed response to the appropriate processor based on the
   // response type.

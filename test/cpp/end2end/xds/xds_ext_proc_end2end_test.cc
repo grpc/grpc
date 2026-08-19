@@ -507,12 +507,6 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
       timeout->set_nanos(0);
     }
 
-    ExtProcFilterConfigBuilder& SetTimeout(grpc_core::Duration timeout) {
-      SetProtoDuration(timeout,
-                       ext_proc_.mutable_grpc_service()->mutable_timeout());
-      return *this;
-    }
-
     ExtProcFilterConfigBuilder& SetTargetUri(const std::string& target_uri) {
       auto* google_grpc =
           ext_proc_.mutable_grpc_service()->mutable_google_grpc();
@@ -1277,7 +1271,6 @@ TEST_P(XdsExtProcEnd2endTest,
 
 TEST_P(XdsExtProcEnd2endTest, TrailersOnlyProcessingModeAllEnabled) {
   CreateAndStartBackends(1);
-  ResetStubWithUniqueArg();
   auto ext_proc_config = ExtProcFilterConfigBuilder()
                              .SetTargetUri(ext_proc_server_->target())
                              .SetInsecureChannelCredentials()
@@ -1295,6 +1288,7 @@ TEST_P(XdsExtProcEnd2endTest, TrailersOnlyProcessingModeAllEnabled) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   })));
+  ResetStubWithUniqueArg();
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
   rpc_options.set_echo_metadata(true);
@@ -1334,7 +1328,6 @@ TEST_P(XdsExtProcEnd2endTest, TrailersOnlyProcessingModeAllEnabled) {
 TEST_P(XdsExtProcEnd2endTest,
        TrailersOnlyProcessingModeAllEnabledWithObservabilityMode) {
   CreateAndStartBackends(1);
-  ResetStubWithUniqueArg();
   auto ext_proc_config = ExtProcFilterConfigBuilder()
                              .SetTargetUri(ext_proc_server_->target())
                              .SetInsecureChannelCredentials()
@@ -1352,6 +1345,7 @@ TEST_P(XdsExtProcEnd2endTest,
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   })));
+  ResetStubWithUniqueArg();
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
   rpc_options.set_echo_metadata(true);
@@ -1376,7 +1370,6 @@ TEST_P(XdsExtProcEnd2endTest,
     } else if (req->has_response_headers()) {
       ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse(
           {{kResponseHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
-      break;
     } else {
       FAIL() << "Unexpected request type: " << req->DebugString();
     }
