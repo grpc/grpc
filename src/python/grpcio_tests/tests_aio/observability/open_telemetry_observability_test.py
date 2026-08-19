@@ -41,6 +41,10 @@ logger = logging.getLogger(__name__)
 
 STREAM_LENGTH = 5
 OTEL_EXPORT_INTERVAL_S = 0.5
+_RETRY_METRIC_NAMES = [
+    metric.name for metric in _open_telemetry_measures.retry_metrics()
+]
+_NUM_FAILED_ATTEMPTS = 2
 
 
 class OTelMetricExporter(otel_metrics_export.MetricExporter):
@@ -505,6 +509,61 @@ class OpenTelemetryObservabilityRegisteredMethodsTest(
         self._validate_all_metrics_names(self.all_metrics.keys())
         self._validate_all_method_labels(
             self.all_metrics, "test/StreamStreamAlt"
+        )
+
+
+@unittest.skipIf(
+    os.name == "nt" or "darwin" in sys.platform,
+    "Observability is not supported in Windows and MacOS",
+)
+class OpenTelemetryObservabilityRetryTest(OpenTelemetryObservabilityBase):
+    """Validates that the per-call retry metrics are recorded for the AsyncIO
+    stack, which uses the same call tracer as the sync stack."""
+
+    async def setUp(self):
+        # Same setup as the base class, except that the plugin also records
+        # the per-call retry metrics, which are not enabled by default.
+        self.all_metrics = collections.defaultdict(list)
+        otel_exporter = OTelMetricExporter(self.all_metrics)
+        reader = otel_metrics_export.PeriodicExportingMetricReader(
+            exporter=otel_exporter,
+            export_interval_millis=OTEL_EXPORT_INTERVAL_S * 1000,
+        )
+        self._provider = otel_metrics.MeterProvider(metric_readers=(reader,))
+        self._otel_plugin = grpc_observability.OpenTelemetryPlugin(
+            meter_provider=self._provider,
+            additional_metrics=_RETRY_METRIC_NAMES,
+        )
+        self._otel_plugin.register_global()
+        self._server, self._port = await _test_server.start_flaky_server(
+            num_failed_attempts=_NUM_FAILED_ATTEMPTS
+        )
+
+    async def test_record_retry_metrics(self):
+        await _test_server.unary_unary_call_with_retries(port=self._port)
+
+        # Base metrics plus grpc.client.call.retries and
+        # grpc.client.call.retry_delay. Transparent retries stay at 0 and are
+        # therefore not reported.
+        await self._validate_metrics_exist(
+            self.all_metrics,
+            expected_count=len(_open_telemetry_measures.base_metrics()) + 2,
+        )
+        for metric in (
+            _open_telemetry_measures.CLIENT_CALL_RETRIES,
+            _open_telemetry_measures.CLIENT_CALL_RETRY_DELAY,
+        ):
+            self.assertTrue(
+                metric.name in self.all_metrics,
+                msg=(
+                    f"metric {metric.name} not found"
+                    f"in exported metrics: {self.all_metrics.keys()}!"
+                ),
+            )
+        # No transparent retry happened, so 0 should not be reported.
+        self.assertNotIn(
+            _open_telemetry_measures.CLIENT_CALL_TRANSPARENT_RETRIES.name,
+            self.all_metrics,
         )
 
 
