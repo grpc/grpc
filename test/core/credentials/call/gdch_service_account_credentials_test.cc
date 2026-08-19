@@ -317,18 +317,16 @@ TEST_F(GDCHServiceAccountCredentialsTest, CreateAssertionComponentsSuccess) {
 // --- Tests for MakeJWTAssertion ---
 
 TEST_F(GDCHServiceAccountCredentialsTest, MakeJWTAssertionSuccess) {
-  std::string header = JsonDump(Json::FromObject(Json::Object{
-      {"alg", Json::FromString("ES256")},
-      {"typ", Json::FromString("JWT")},
-      {"kid", Json::FromString("key-id")},
-  }));
-  std::string payload = JsonDump(Json::FromObject(Json::Object{
-      {"iss", Json::FromString("me")},
-      {"sub", Json::FromString("me")},
-      {"aud", Json::FromString("here")},
-      {"iat", Json::FromString("100")},
-      {"exp", Json::FromString("3700")},
-  }));
+  std::string header =
+      "{\"alg\":\"ES256\","
+      "\"kid\":\"key-id\","
+      "\"typ\":\"JWT\"}";
+  std::string payload =
+      "{\"aud\":\"here\","
+      "\"exp\":\"3700\","
+      "\"iat\":\"100\","
+      "\"iss\":\"me\","
+      "\"sub\":\"me\"}";
 
   absl::StatusOr<std::string> jwt = MakeJWTAssertion(
       header, payload, kTestPrivateKeyPem, SignatureFormat::kRaw);
@@ -352,18 +350,16 @@ TEST_F(GDCHServiceAccountCredentialsTest, MakeJWTAssertionSuccess) {
 }
 
 TEST_F(GDCHServiceAccountCredentialsTest, MakeJWTAssertionFailureInvalidKey) {
-  std::string header = JsonDump(Json::FromObject(Json::Object{
-      {"alg", Json::FromString("ES256")},
-      {"typ", Json::FromString("JWT")},
-      {"kid", Json::FromString("key-id")},
-  }));
-  std::string payload = JsonDump(Json::FromObject(Json::Object{
-      {"iss", Json::FromString("me")},
-      {"sub", Json::FromString("me")},
-      {"aud", Json::FromString("here")},
-      {"iat", Json::FromString("100")},
-      {"exp", Json::FromString("3700")},
-  }));
+  std::string header =
+      "{\"alg\":\"ES256\","
+      "\"kid\":\"key-id\","
+      "\"typ\":\"JWT\"}";
+  std::string payload =
+      "{\"aud\":\"here\","
+      "\"exp\":\"3700\","
+      "\"iat\":\"100\","
+      "\"iss\":\"me\","
+      "\"sub\":\"me\"}";
 
   absl::StatusOr<std::string> jwt = MakeJWTAssertion(
       header, payload, "invalid key pem", SignatureFormat::kRaw);
@@ -466,9 +462,7 @@ TEST_F(GDCHServiceAccountCredentialsTest, FormatHttpRequestFailureInvalidKey) {
 // --- Tests for ParseHttpResponse ---
 
 TEST_F(GDCHServiceAccountCredentialsTest, ParseHttpResponseSuccess) {
-  std::string response_body = JsonDump(Json::FromObject(Json::Object{
-      {"access_token", Json::FromString("test-access-token")},
-  }));
+  std::string response_body = "{\"access_token\":\"test-access-token\"}";
   absl::StatusOr<std::string> token = ParseHttpResponse(response_body);
   ASSERT_THAT(token, IsOkAndHolds("test-access-token"));
 }
@@ -482,9 +476,7 @@ TEST_F(GDCHServiceAccountCredentialsTest, ParseHttpResponseFailureNotObject) {
 
 TEST_F(GDCHServiceAccountCredentialsTest,
        ParseHttpResponseFailureMissingToken) {
-  std::string response_body = JsonDump(Json::FromObject(Json::Object{
-      {"other_field", Json::FromString("value")},
-  }));
+  std::string response_body = "{\"other_field\":\"value\"}";
   absl::StatusOr<std::string> token = ParseHttpResponse(response_body);
   EXPECT_THAT(token, StatusIs(absl::StatusCode::kInvalidArgument,
                               "errors validating JSON: ["
@@ -493,9 +485,7 @@ TEST_F(GDCHServiceAccountCredentialsTest,
 
 TEST_F(GDCHServiceAccountCredentialsTest,
        ParseHttpResponseFailureTokenNotString) {
-  std::string response_body = JsonDump(Json::FromObject(Json::Object{
-      {"access_token", Json::FromNumber(123)},
-  }));
+  std::string response_body = "{\"access_token\":123}";
   absl::StatusOr<std::string> token = ParseHttpResponse(response_body);
   EXPECT_THAT(token, StatusIs(absl::StatusCode::kInvalidArgument,
                               "errors validating JSON: ["
@@ -511,9 +501,7 @@ TEST_F(GDCHServiceAccountCredentialsTest, ExtractTokenSuccess) {
                                             "https://my-audience.com");
   ASSERT_THAT(creds, IsOk());
 
-  std::string body = JsonDump(Json::FromObject(Json::Object{
-      {"access_token", Json::FromString("test-access-token")},
-  }));
+  std::string body = "{\"access_token\":\"test-access-token\"}";
   grpc_http_response response = {};
   response.status = 200;
   response.body = const_cast<char*>(body.data());
