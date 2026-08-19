@@ -19647,7 +19647,6 @@ target_include_directories(gdch_service_account_credentials_test
 target_link_libraries(gdch_service_account_credentials_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::status_matchers
   grpc_test_util
 )
 

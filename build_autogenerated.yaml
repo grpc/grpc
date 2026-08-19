@@ -15211,7 +15211,6 @@ targets:
   - test/core/credentials/call/gdch_service_account_credentials_test.cc
   deps:
   - gtest
-  - absl/status:status_matchers
   - grpc_test_util
 - name: generic_end2end_test
   gtest: true

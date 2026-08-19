@@ -153,7 +153,6 @@ grpc_cc_test(
     srcs = ["gdch_service_account_credentials_test.cc"],
     external_deps = [
         "absl/status",
-        "absl/status:status_matchers",
         "absl/status:statusor",
         "absl/strings",
         "gtest",

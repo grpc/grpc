@@ -31,7 +31,6 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
-#include "absl/status/status_matchers.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
@@ -41,11 +40,7 @@
 namespace grpc_core {
 namespace {
 
-using ::absl_testing::IsOk;
-using ::absl_testing::IsOkAndHolds;
-using ::absl_testing::StatusIs;
 using ::testing::HasSubstr;
-using ::testing::NotNull;
 
 // This JSON key was generated with the GDCH console and immediately revoked.
 // The identifiers have been changed as well.
@@ -121,7 +116,7 @@ TEST_F(GDCHServiceAccountCredentialsTest, SignUsingSha256DERSuccess) {
   std::string payload = "hello world";
   absl::StatusOr<std::string> sig =
       SignUsingSha256(payload, kTestPrivateKeyPem, SignatureFormat::kDER);
-  ASSERT_THAT(sig, IsOk());
+  ASSERT_TRUE(sig.ok()) << sig.status();
   EXPECT_FALSE(sig->empty());
 }
 
@@ -129,7 +124,7 @@ TEST_F(GDCHServiceAccountCredentialsTest, SignUsingSha256RawSuccess) {
   std::string payload = "hello world";
   absl::StatusOr<std::string> sig =
       SignUsingSha256(payload, kTestPrivateKeyPem, SignatureFormat::kRaw);
-  ASSERT_THAT(sig, IsOk());
+  ASSERT_TRUE(sig.ok()) << sig.status();
   // For ECDSA ES256 (P-256), raw signature coordinates r and s are 32 bytes
   // each.
   EXPECT_EQ(sig->size(), 64);
@@ -139,9 +134,10 @@ TEST_F(GDCHServiceAccountCredentialsTest, SignUsingSha256FailureInvalidKey) {
   std::string payload = "hello world";
   absl::StatusOr<std::string> sig =
       SignUsingSha256(payload, "invalid pem content", SignatureFormat::kRaw);
-  EXPECT_THAT(sig, StatusIs(absl::StatusCode::kInternal,
-                            HasSubstr("Invalid ServiceAccountCredentials could "
-                                      "not parse PEM to get private key:")));
+  EXPECT_EQ(sig.status().code(), absl::StatusCode::kInternal);
+  EXPECT_THAT(sig.status().message(),
+              HasSubstr("Invalid ServiceAccountCredentials could "
+                        "not parse PEM to get private key:"));
 }
 
 // --- Tests for Create (JSON Validation) ---
@@ -151,7 +147,8 @@ TEST_F(GDCHServiceAccountCredentialsTest, CreateSuccess) {
   absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> creds =
       GDCHServiceAccountCredentials::Create(JsonDump(Json::FromObject(obj)),
                                             "https://my-audience.com");
-  ASSERT_THAT(creds, IsOkAndHolds(NotNull()));
+  ASSERT_TRUE(creds.ok()) << creds.status();
+  ASSERT_NE(*creds, nullptr);
   EXPECT_FALSE((*creds)->ca_cert_path().has_value());
   EXPECT_EQ((*creds)->debug_string(),
             "GDCHServiceAccountCredentials{Audience:https://my-audience.com}");
@@ -164,7 +161,8 @@ TEST_F(GDCHServiceAccountCredentialsTest, CreateWithCaCertPathSuccess) {
   absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> creds =
       GDCHServiceAccountCredentials::Create(JsonDump(Json::FromObject(obj)),
                                             "https://my-audience.com");
-  ASSERT_THAT(creds, IsOkAndHolds(NotNull()));
+  ASSERT_TRUE(creds.ok()) << creds.status();
+  ASSERT_NE(*creds, nullptr);
   ASSERT_TRUE((*creds)->ca_cert_path().has_value());
   EXPECT_EQ(*(*creds)->ca_cert_path(), "/etc/ssl/certs/ca-certificates.crt");
 }
@@ -173,33 +171,33 @@ TEST_F(GDCHServiceAccountCredentialsTest, CreateFailureInvalidJson) {
   absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> creds =
       GDCHServiceAccountCredentials::Create("not-a-valid-json",
                                             "https://my-audience.com");
-  EXPECT_THAT(creds,
-              StatusIs(absl::StatusCode::kInvalidArgument,
-                       "JSON parsing failed: [JSON parse error at index 1]"));
+  EXPECT_EQ(creds.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(creds.status().message(),
+            "JSON parsing failed: [JSON parse error at index 1]");
 }
 
 TEST_F(GDCHServiceAccountCredentialsTest, CreateFailureNotAnObject) {
   absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> creds =
       GDCHServiceAccountCredentials::Create("\"not-an-object\"",
                                             "https://my-audience.com");
-  EXPECT_THAT(
-      creds,
-      StatusIs(absl::StatusCode::kInvalidArgument,
-               "errors validating JSON: [field: error:is not an object]"));
+  EXPECT_EQ(creds.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(creds.status().message(),
+            "errors validating JSON: [field: error:is not an object]");
 }
 
 TEST_F(GDCHServiceAccountCredentialsTest, CreateFailureMissingRequiredFields) {
   absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> creds =
       GDCHServiceAccountCredentials::Create("{}", "https://my-audience.com");
-  EXPECT_THAT(creds, StatusIs(absl::StatusCode::kInvalidArgument,
-                              "errors validating JSON: ["
-                              "field:format_version error:field not present; "
-                              "field:name error:field not present; "
-                              "field:private_key error:field not present; "
-                              "field:private_key_id error:field not present; "
-                              "field:project error:field not present; "
-                              "field:token_uri error:field not present; "
-                              "field:type error:field not present]"));
+  EXPECT_EQ(creds.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(creds.status().message(),
+            "errors validating JSON: ["
+            "field:format_version error:field not present; "
+            "field:name error:field not present; "
+            "field:private_key error:field not present; "
+            "field:private_key_id error:field not present; "
+            "field:project error:field not present; "
+            "field:token_uri error:field not present; "
+            "field:type error:field not present]");
 }
 
 TEST_F(GDCHServiceAccountCredentialsTest, CreateFailureEmptyRequiredFields) {
@@ -212,14 +210,14 @@ TEST_F(GDCHServiceAccountCredentialsTest, CreateFailureEmptyRequiredFields) {
   absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> creds =
       GDCHServiceAccountCredentials::Create(JsonDump(Json::FromObject(obj)),
                                             "https://my-audience.com");
-  EXPECT_THAT(creds,
-              StatusIs(absl::StatusCode::kInvalidArgument,
-                       "errors validating JSON: ["
-                       "field:name error:field must not be empty; "
-                       "field:private_key error:field must not be empty; "
-                       "field:private_key_id error:field must not be empty; "
-                       "field:project error:field must not be empty; "
-                       "field:token_uri error:field must not be empty]"));
+  EXPECT_EQ(creds.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(creds.status().message(),
+            "errors validating JSON: ["
+            "field:name error:field must not be empty; "
+            "field:private_key error:field must not be empty; "
+            "field:private_key_id error:field must not be empty; "
+            "field:project error:field must not be empty; "
+            "field:token_uri error:field must not be empty]");
 }
 
 TEST_F(GDCHServiceAccountCredentialsTest,
@@ -230,11 +228,11 @@ TEST_F(GDCHServiceAccountCredentialsTest,
   absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> creds =
       GDCHServiceAccountCredentials::Create(JsonDump(Json::FromObject(obj)),
                                             "https://my-audience.com");
-  EXPECT_THAT(creds,
-              StatusIs(absl::StatusCode::kInvalidArgument,
-                       "errors validating JSON: ["
-                       "field:format_version error:field must be 1; "
-                       "field:type error:field must be gdch_service_account]"));
+  EXPECT_EQ(creds.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(creds.status().message(),
+            "errors validating JSON: ["
+            "field:format_version error:field must be 1; "
+            "field:type error:field must be gdch_service_account]");
 }
 
 TEST_F(GDCHServiceAccountCredentialsTest,
@@ -245,11 +243,11 @@ TEST_F(GDCHServiceAccountCredentialsTest,
   absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> creds =
       GDCHServiceAccountCredentials::Create(JsonDump(Json::FromObject(obj)),
                                             "https://my-audience.com");
-  EXPECT_THAT(creds,
-              StatusIs(absl::StatusCode::kInvalidArgument,
-                       "errors validating JSON: ["
-                       "field:format_version error:field must be 1; "
-                       "field:type error:field must be gdch_service_account]"));
+  EXPECT_EQ(creds.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(creds.status().message(),
+            "errors validating JSON: ["
+            "field:format_version error:field must be 1; "
+            "field:type error:field must be gdch_service_account]");
 }
 
 TEST_F(GDCHServiceAccountCredentialsTest, CreateFailureNonStringFields) {
@@ -266,16 +264,17 @@ TEST_F(GDCHServiceAccountCredentialsTest, CreateFailureNonStringFields) {
   absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> creds =
       GDCHServiceAccountCredentials::Create(JsonDump(Json::FromObject(obj)),
                                             "https://my-audience.com");
-  EXPECT_THAT(creds, StatusIs(absl::StatusCode::kInvalidArgument,
-                              "errors validating JSON: ["
-                              "field:ca_cert_path error:is not a string; "
-                              "field:format_version error:is not a string; "
-                              "field:name error:is not a string; "
-                              "field:private_key error:is not a string; "
-                              "field:private_key_id error:is not a string; "
-                              "field:project error:is not a string; "
-                              "field:token_uri error:is not a string; "
-                              "field:type error:is not a string]"));
+  EXPECT_EQ(creds.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(creds.status().message(),
+            "errors validating JSON: ["
+            "field:ca_cert_path error:is not a string; "
+            "field:format_version error:is not a string; "
+            "field:name error:is not a string; "
+            "field:private_key error:is not a string; "
+            "field:private_key_id error:is not a string; "
+            "field:project error:is not a string; "
+            "field:token_uri error:is not a string; "
+            "field:type error:is not a string]");
 }
 
 TEST_F(GDCHServiceAccountCredentialsTest, CreateFailureInvalidTokenUri) {
@@ -284,9 +283,10 @@ TEST_F(GDCHServiceAccountCredentialsTest, CreateFailureInvalidTokenUri) {
   absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> creds =
       GDCHServiceAccountCredentials::Create(JsonDump(Json::FromObject(obj)),
                                             "https://my-audience.com");
-  EXPECT_THAT(creds, StatusIs(absl::StatusCode::kInvalidArgument,
-                              "Could not parse 'scheme' from uri ':no_scheme'. "
-                              "Scheme not found."));
+  EXPECT_EQ(creds.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(creds.status().message(),
+            "Could not parse 'scheme' from uri ':no_scheme'. "
+            "Scheme not found.");
 }
 
 // --- Tests for CreateAssertionComponents ---
@@ -296,7 +296,7 @@ TEST_F(GDCHServiceAccountCredentialsTest, CreateAssertionComponentsSuccess) {
   absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> creds =
       GDCHServiceAccountCredentials::Create(JsonDump(Json::FromObject(obj)),
                                             "https://my-audience.com");
-  ASSERT_THAT(creds, IsOk());
+  ASSERT_TRUE(creds.ok()) << creds.status();
   Timestamp now = Timestamp::FromTimespecRoundDown(
       gpr_timespec{12345678, 0, GPR_CLOCK_REALTIME});
 
@@ -330,7 +330,7 @@ TEST_F(GDCHServiceAccountCredentialsTest, MakeJWTAssertionSuccess) {
 
   absl::StatusOr<std::string> jwt = MakeJWTAssertion(
       header, payload, kTestPrivateKeyPem, SignatureFormat::kRaw);
-  ASSERT_THAT(jwt, IsOk());
+  ASSERT_TRUE(jwt.ok()) << jwt.status();
 
   // JWT consists of three parts separated by dots.
   std::vector<std::string> parts = absl::StrSplit(*jwt, '.');
@@ -363,9 +363,10 @@ TEST_F(GDCHServiceAccountCredentialsTest, MakeJWTAssertionFailureInvalidKey) {
 
   absl::StatusOr<std::string> jwt = MakeJWTAssertion(
       header, payload, "invalid key pem", SignatureFormat::kRaw);
-  EXPECT_THAT(jwt, StatusIs(absl::StatusCode::kInternal,
-                            HasSubstr("Invalid ServiceAccountCredentials could "
-                                      "not parse PEM to get private key:")));
+  EXPECT_EQ(jwt.status().code(), absl::StatusCode::kInternal);
+  EXPECT_THAT(jwt.status().message(),
+              HasSubstr("Invalid ServiceAccountCredentials could "
+                        "not parse PEM to get private key:"));
 }
 
 // --- Tests for CreateRequestBody ---
@@ -375,13 +376,13 @@ TEST_F(GDCHServiceAccountCredentialsTest, CreateRequestBodySuccess) {
   absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> creds =
       GDCHServiceAccountCredentials::Create(JsonDump(Json::FromObject(obj)),
                                             "https://my-audience.com");
-  ASSERT_THAT(creds, IsOk());
+  ASSERT_TRUE(creds.ok()) << creds.status();
 
   absl::StatusOr<std::string> body = CreateRequestBody(**creds);
-  ASSERT_THAT(body, IsOk());
+  ASSERT_TRUE(body.ok()) << body.status();
 
   absl::StatusOr<Json> parsed_body = JsonParse(*body);
-  ASSERT_THAT(parsed_body, IsOk());
+  ASSERT_TRUE(parsed_body.ok()) << parsed_body.status();
   ASSERT_EQ(parsed_body->type(), Json::Type::kObject);
   auto it = parsed_body->object().find("subject_token");
   ASSERT_NE(it, parsed_body->object().end());
@@ -407,17 +408,17 @@ TEST_F(GDCHServiceAccountCredentialsTest, CreateRequestBodySuccess) {
 TEST_F(GDCHServiceAccountCredentialsTest, CreateRequestBodyFailureInvalidKey) {
   absl::StatusOr<URI> token_url =
       URI::Parse("https://test-token-uri.com/token");
-  ASSERT_THAT(token_url, IsOk());
+  ASSERT_TRUE(token_url.ok()) << token_url.status();
   GDCHServiceAccountCredentials creds(
       "test-private-key-id", "invalid key pem",
       "system:serviceaccount:test-project:test-name",
       /*ca_cert_path=*/std::nullopt, *std::move(token_url),
       "https://my-audience.com");
   absl::StatusOr<std::string> body = CreateRequestBody(creds);
-  EXPECT_THAT(body,
-              StatusIs(absl::StatusCode::kInternal,
-                       HasSubstr("Invalid ServiceAccountCredentials could not "
-                                 "parse PEM to get private key:")));
+  EXPECT_EQ(body.status().code(), absl::StatusCode::kInternal);
+  EXPECT_THAT(body.status().message(),
+              HasSubstr("Invalid ServiceAccountCredentials could not "
+                        "parse PEM to get private key:"));
 }
 
 // --- Tests for FormatHttpRequest ---
@@ -427,11 +428,12 @@ TEST_F(GDCHServiceAccountCredentialsTest, FormatHttpRequestSuccess) {
   absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> creds =
       GDCHServiceAccountCredentials::Create(JsonDump(Json::FromObject(obj)),
                                             "https://my-audience.com");
-  ASSERT_THAT(creds, IsOk());
+  ASSERT_TRUE(creds.ok()) << creds.status();
 
   absl::StatusOr<GDCHServiceAccountCredentialsTest::GrpcHttpRequestUniquePtr>
       request = FormatHttpRequest(**creds);
-  ASSERT_THAT(request, IsOkAndHolds(NotNull()));
+  ASSERT_TRUE(request.ok()) << request.status();
+  ASSERT_NE((*request).get(), nullptr);
 
   EXPECT_STREQ((*request)->path, "/token");
   EXPECT_EQ((*request)->hdr_count, 1);
@@ -445,7 +447,7 @@ TEST_F(GDCHServiceAccountCredentialsTest, FormatHttpRequestSuccess) {
 TEST_F(GDCHServiceAccountCredentialsTest, FormatHttpRequestFailureInvalidKey) {
   absl::StatusOr<URI> token_url =
       URI::Parse("https://test-token-uri.com/token");
-  ASSERT_THAT(token_url, IsOk());
+  ASSERT_TRUE(token_url.ok()) << token_url.status();
   GDCHServiceAccountCredentials creds(
       "test-private-key-id", "invalid key pem",
       "system:serviceaccount:test-project:test-name",
@@ -453,10 +455,10 @@ TEST_F(GDCHServiceAccountCredentialsTest, FormatHttpRequestFailureInvalidKey) {
       "https://my-audience.com");
   absl::StatusOr<GDCHServiceAccountCredentialsTest::GrpcHttpRequestUniquePtr>
       request = FormatHttpRequest(creds);
-  EXPECT_THAT(request,
-              StatusIs(absl::StatusCode::kInternal,
-                       HasSubstr("Invalid ServiceAccountCredentials could not "
-                                 "parse PEM to get private key:")));
+  EXPECT_EQ(request.status().code(), absl::StatusCode::kInternal);
+  EXPECT_THAT(request.status().message(),
+              HasSubstr("Invalid ServiceAccountCredentials could not "
+                        "parse PEM to get private key:"));
 }
 
 // --- Tests for ParseHttpResponse ---
@@ -464,32 +466,35 @@ TEST_F(GDCHServiceAccountCredentialsTest, FormatHttpRequestFailureInvalidKey) {
 TEST_F(GDCHServiceAccountCredentialsTest, ParseHttpResponseSuccess) {
   std::string response_body = "{\"access_token\":\"test-access-token\"}";
   absl::StatusOr<std::string> token = ParseHttpResponse(response_body);
-  ASSERT_THAT(token, IsOkAndHolds("test-access-token"));
+  ASSERT_TRUE(token.ok()) << token.status();
+  EXPECT_EQ(*token, "test-access-token");
 }
 
 TEST_F(GDCHServiceAccountCredentialsTest, ParseHttpResponseFailureNotObject) {
   absl::StatusOr<std::string> token = ParseHttpResponse("not-a-json");
-  EXPECT_THAT(token,
-              StatusIs(absl::StatusCode::kInternal,
-                       "The format of response is not a valid json object."));
+  EXPECT_EQ(token.status().code(), absl::StatusCode::kInternal);
+  EXPECT_EQ(token.status().message(),
+            "The format of response is not a valid json object.");
 }
 
 TEST_F(GDCHServiceAccountCredentialsTest,
        ParseHttpResponseFailureMissingToken) {
   std::string response_body = "{\"other_field\":\"value\"}";
   absl::StatusOr<std::string> token = ParseHttpResponse(response_body);
-  EXPECT_THAT(token, StatusIs(absl::StatusCode::kInvalidArgument,
-                              "errors validating JSON: ["
-                              "field:access_token error:field not present]"));
+  EXPECT_EQ(token.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(token.status().message(),
+            "errors validating JSON: ["
+            "field:access_token error:field not present]");
 }
 
 TEST_F(GDCHServiceAccountCredentialsTest,
        ParseHttpResponseFailureTokenNotString) {
   std::string response_body = "{\"access_token\":123}";
   absl::StatusOr<std::string> token = ParseHttpResponse(response_body);
-  EXPECT_THAT(token, StatusIs(absl::StatusCode::kInvalidArgument,
-                              "errors validating JSON: ["
-                              "field:access_token error:is not a string]"));
+  EXPECT_EQ(token.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(token.status().message(),
+            "errors validating JSON: ["
+            "field:access_token error:is not a string]");
 }
 
 // --- Tests for ExtractToken ---
@@ -499,7 +504,7 @@ TEST_F(GDCHServiceAccountCredentialsTest, ExtractTokenSuccess) {
   absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> creds =
       GDCHServiceAccountCredentials::Create(JsonDump(Json::FromObject(obj)),
                                             "https://my-audience.com");
-  ASSERT_THAT(creds, IsOk());
+  ASSERT_TRUE(creds.ok()) << creds.status();
 
   std::string body = "{\"access_token\":\"test-access-token\"}";
   grpc_http_response response = {};
@@ -509,7 +514,8 @@ TEST_F(GDCHServiceAccountCredentialsTest, ExtractTokenSuccess) {
 
   absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>> token =
       (*creds)->ExtractToken(response);
-  ASSERT_THAT(token, IsOkAndHolds(NotNull()));
+  ASSERT_TRUE(token.ok()) << token.status();
+  ASSERT_NE(*token, nullptr);
   EXPECT_GT((*token)->ExpirationTime(), Timestamp::Now());
 }
 
@@ -518,7 +524,7 @@ TEST_F(GDCHServiceAccountCredentialsTest, ExtractTokenFailureInvalidJson) {
   absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> creds =
       GDCHServiceAccountCredentials::Create(JsonDump(Json::FromObject(obj)),
                                             "https://my-audience.com");
-  ASSERT_THAT(creds, IsOk());
+  ASSERT_TRUE(creds.ok()) << creds.status();
 
   std::string body = "not-a-json";
   grpc_http_response response = {};
@@ -528,9 +534,9 @@ TEST_F(GDCHServiceAccountCredentialsTest, ExtractTokenFailureInvalidJson) {
 
   absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>> token =
       (*creds)->ExtractToken(response);
-  EXPECT_THAT(token,
-              StatusIs(absl::StatusCode::kInternal,
-                       "The format of response is not a valid json object."));
+  EXPECT_EQ(token.status().code(), absl::StatusCode::kInternal);
+  EXPECT_EQ(token.status().message(),
+            "The format of response is not a valid json object.");
 }
 
 }  // namespace
