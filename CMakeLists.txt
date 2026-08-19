@@ -394,7 +394,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 endif()
 
 option(gRPC_BUILD_GRPCPP_OTEL_PLUGIN "Build grpcpp_otel_plugin" OFF)
-if(gRPC_BUILD_GRPCPP_OTEL_PLUGIN OR gRPC_BUILD_TESTS)
+if(gRPC_BUILD_GRPCPP_OTEL_PLUGIN)
   include(cmake/opentelemetry-cpp.cmake)
 endif()
 
@@ -23603,15 +23603,11 @@ add_executable(interop_client
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.h
-  src/cpp/ext/otel/otel_client_call_tracer.cc
-  src/cpp/ext/otel/otel_plugin.cc
-  src/cpp/ext/otel/otel_server_call_tracer.cc
   test/core/credentials/call/oauth2/oauth2_utils.cc
   test/cpp/interop/backend_metrics_lb_policy.cc
   test/cpp/interop/client.cc
   test/cpp/interop/client_helper.cc
   test/cpp/interop/interop_client.cc
-  test/cpp/interop/otel_helper.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -23641,8 +23637,6 @@ target_include_directories(interop_client
 
 target_link_libraries(interop_client
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  opentelemetry-cpp::api
-  opentelemetry-cpp::trace
   grpc++_test_config
   grpc++_test_util
 )
@@ -23664,13 +23658,9 @@ add_executable(interop_server
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.h
-  src/cpp/ext/otel/otel_client_call_tracer.cc
-  src/cpp/ext/otel/otel_plugin.cc
-  src/cpp/ext/otel/otel_server_call_tracer.cc
   src/cpp/server/orca/orca_service.cc
   test/cpp/interop/interop_server.cc
   test/cpp/interop/interop_server_bootstrap.cc
-  test/cpp/interop/otel_helper.cc
   test/cpp/interop/server_helper.cc
 )
 if(WIN32 AND MSVC)
@@ -23701,8 +23691,6 @@ target_include_directories(interop_server
 
 target_link_libraries(interop_server
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  opentelemetry-cpp::api
-  opentelemetry-cpp::trace
   grpc++_test_config
   grpc++_test_util
 )
