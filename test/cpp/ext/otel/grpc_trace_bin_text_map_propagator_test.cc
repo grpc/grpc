@@ -82,7 +82,7 @@ TEST(GrpcTraceBinTextMapPropagatorTest, Inject) {
       internal::NoStdStringViewToAbslStringView(carrier.Get("grpc-trace-bin")),
       &unescaped_val);
   EXPECT_EQ(unescaped_val[0], 0);
-  EXPECT_EQ(unescaped_val[0], 0);
+  EXPECT_EQ(unescaped_val[1], 0);
   EXPECT_EQ(absl::string_view(unescaped_val).substr(2, 16), trace_id);
   EXPECT_EQ(unescaped_val[18], 1);
   EXPECT_EQ(absl::string_view(unescaped_val).substr(19, 8), span_id);
@@ -122,8 +122,8 @@ TEST(GrpcTraceBinTextMapPropagatorTest, Extract) {
 TEST(GrpcTraceBinTextMapPropagatorTest, Fields) {
   auto propagator =
       OpenTelemetryPluginBuilder::MakeGrpcTraceBinTextMapPropagator();
-  StrictMock<MockFunction<bool(opentelemetry::nostd::string_view)>>(
-      mock_callback);
+  StrictMock<MockFunction<bool(opentelemetry::nostd::string_view)>>
+      mock_callback;
   EXPECT_CALL(mock_callback,
               Call(opentelemetry::nostd::string_view("grpc-trace-bin")))
       .WillOnce(Return(true));

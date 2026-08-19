@@ -29,8 +29,8 @@
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/log/log.h"
+#include <google/protobuf/util/json_util.h>
 #include <grpcpp/grpcpp.h>
-#include <grpcpp/impl/codegen/config_protobuf.h>
 
 #include "opentelemetry/proto/collector/trace/v1/trace_service.grpc.pb.h"
 

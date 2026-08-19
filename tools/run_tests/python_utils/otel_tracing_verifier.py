@@ -26,7 +26,7 @@ def verify_tracing_spans(spans_file):
     server_span = None
 
     print("Verifying tracing spans with polling...")
-    while time.time() - start_time < 5.0:
+    while time.time() - start_time < 15.0:
         if not os.path.exists(spans_file):
             time.sleep(0.5)
             continue

@@ -1940,7 +1940,10 @@ try:
                     )
                     jobs.append(test_job)
 
-    if "java" in servers:
+    if "java" in servers and (
+        not args.test_case
+        or args.test_case == "max_concurrent_streams_connection_scaling"
+    ):
         languages_for_mcs_cs = set(
             _LANGUAGES[l]
             for l in _LANGUAGES_FOR_MCS_TEST_CASE
