@@ -622,11 +622,11 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
 
   // Extracts connection attributes (such as source address/port and TLS
   // security properties) for server-side CEL attributes in A103.
-  ExtProcConnectionAttributes* GetConnectionAttributes(
-      ExtProcConnectionAttributes* storage) const {
-    if (!ext_proc_filter_->is_server()) return nullptr;
-    storage->source_address = std::string(ext_proc_filter_->source_address());
-    storage->source_port = ext_proc_filter_->source_port();
+  std::optional<ExtProcConnectionAttributes> GetConnectionAttributes() const {
+    if (!ext_proc_filter_->is_server()) return std::nullopt;
+    ExtProcConnectionAttributes attributes;
+    attributes.source_address = std::string(ext_proc_filter_->source_address());
+    attributes.source_port = ext_proc_filter_->source_port();
     auto* sec_ctx = MaybeGetContext<grpc_server_security_context>();
     if (sec_ctx != nullptr && sec_ctx->auth_context != nullptr) {
       auto get_auth_prop = [&](const char* prop_name) -> std::string {
@@ -639,13 +639,14 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
         }
         return "";
       };
-      storage->requested_server_name =
+      attributes.requested_server_name =
           get_auth_prop(GRPC_SSL_SERVER_NAME_PROPERTY_NAME);
-      storage->tls_version = get_auth_prop(GRPC_SSL_TLS_VERSION_PROPERTY_NAME);
-      storage->sha256_peer_certificate_digest =
+      attributes.tls_version =
+          get_auth_prop(GRPC_SSL_TLS_VERSION_PROPERTY_NAME);
+      attributes.sha256_peer_certificate_digest =
           get_auth_prop(GRPC_SSL_PEER_SHA256_PROPERTY_NAME);
     }
-    return storage;
+    return attributes;
   }
 
   void Orphaned() override { CloseSideStream(); }
@@ -1286,12 +1287,11 @@ auto ExtProcFilter::ExtProcCall::HandleInitialMetadataFromClient(
         // configured, extract initial attributes from client metadata.
         if (self->processing_mode().send_request_body &&
             !self->config().request_attributes.empty()) {
-          ExtProcConnectionAttributes conn_attrs;
           self->request_attributes_ = CreateExtProcAttributesProtoStruct(
               self->request_attributes_arena_.ptr(),
               self->config().request_attributes, **md,
               self->ext_proc_filter_->default_authority_.as_string_view(),
-              self->GetConnectionAttributes(&conn_attrs));
+              self->GetConnectionAttributes());
         }
         // Directly start downstream child call with unmodified client metadata.
         self->StartChildCall(std::move(*md));
@@ -1306,11 +1306,10 @@ auto ExtProcFilter::ExtProcCall::HandleInitialMetadataFromClient(
           processing_mode = self->config().processing_mode;
         }
         upb::Arena arena;
-        ExtProcConnectionAttributes conn_attrs;
         auto* header_attributes = CreateExtProcAttributesProtoStruct(
             arena.ptr(), self->config().request_attributes, **md,
             self->ext_proc_filter_->default_authority_.as_string_view(),
-            self->GetConnectionAttributes(&conn_attrs));
+            self->GetConnectionAttributes());
         auto payload = CreateExtProcClientHeadersRequest(
             arena.ptr(), (*md).get(), self->config().forwarding_allowed_headers,
             self->config().forwarding_disallowed_headers, header_attributes,

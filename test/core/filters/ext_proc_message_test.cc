@@ -722,8 +722,8 @@ class CreateExtProcAttributesProtoStructTest : public ::testing::Test {
 TEST_F(CreateExtProcAttributesProtoStructTest, AttributesEmptyRequested) {
   upb::Arena arena;
   grpc_metadata_batch batch;
-  auto* upb_struct =
-      CreateExtProcAttributesProtoStruct(arena.ptr(), {}, batch, "");
+  auto* upb_struct = CreateExtProcAttributesProtoStruct(arena.ptr(), {}, batch,
+                                                        "", std::nullopt);
   EXPECT_EQ(upb_struct, nullptr);
 }
 
@@ -745,8 +745,8 @@ TEST_F(CreateExtProcAttributesProtoStructTest, AttributesAllRecognizedFields) {
       "request.scheme",    "request.method",   "request.referer",
       "request.useragent", "request.time",     "request.id",
       "request.protocol",  "request.query"};
-  auto* upb_struct =
-      CreateExtProcAttributesProtoStruct(arena.ptr(), requested, batch, "");
+  auto* upb_struct = CreateExtProcAttributesProtoStruct(
+      arena.ptr(), requested, batch, "", std::nullopt);
   ASSERT_NE(upb_struct, nullptr);
   auto proto = ConvertToProto(upb_struct, arena.ptr());
   EXPECT_EQ(proto.fields().at("request.path").string_value(), "/foo/bar");
@@ -773,7 +773,7 @@ TEST_F(CreateExtProcAttributesProtoStructTest,
   // No HttpAuthorityMetadata, but has HostMetadata
   batch.Set(HostMetadata(), Slice::FromCopiedString("fallback.host.com"));
   auto* upb_struct = CreateExtProcAttributesProtoStruct(
-      arena.ptr(), {"request.host"}, batch, "");
+      arena.ptr(), {"request.host"}, batch, "", std::nullopt);
   ASSERT_NE(upb_struct, nullptr);
   auto proto = ConvertToProto(upb_struct, arena.ptr());
   EXPECT_EQ(proto.fields().at("request.host").string_value(),
@@ -785,7 +785,7 @@ TEST_F(CreateExtProcAttributesProtoStructTest, AttributesMethodFallbackToPost) {
   grpc_metadata_batch batch;
   // No HttpMethodMetadata
   auto* upb_struct = CreateExtProcAttributesProtoStruct(
-      arena.ptr(), {"request.method"}, batch, "");
+      arena.ptr(), {"request.method"}, batch, "", std::nullopt);
   ASSERT_NE(upb_struct, nullptr);
   auto proto = ConvertToProto(upb_struct, arena.ptr());
   EXPECT_EQ(proto.fields().at("request.method").string_value(), "POST");
@@ -799,7 +799,7 @@ TEST_F(CreateExtProcAttributesProtoStructTest, AttributesRequestHeaders) {
   batch.Append("x-custom2", Slice::FromCopiedString(kVal2),
                [](absl::string_view, const Slice&) {});
   auto* upb_struct = CreateExtProcAttributesProtoStruct(
-      arena.ptr(), {"request.headers"}, batch, "");
+      arena.ptr(), {"request.headers"}, batch, "", std::nullopt);
   ASSERT_NE(upb_struct, nullptr);
   auto proto = ConvertToProto(upb_struct, arena.ptr());
   ASSERT_NE(proto.fields().find("request.headers"), proto.fields().end());
@@ -819,7 +819,7 @@ TEST_F(CreateExtProcAttributesProtoStructTest,
 
   std::vector<std::string> requested = {"source.address", "source.port"};
   auto* upb_struct = CreateExtProcAttributesProtoStruct(arena.ptr(), requested,
-                                                        batch, "", &conn_attrs);
+                                                        batch, "", conn_attrs);
   ASSERT_NE(upb_struct, nullptr);
   auto proto = ConvertToProto(upb_struct, arena.ptr());
   EXPECT_EQ(proto.fields().at("source.address").string_value(),
@@ -840,7 +840,7 @@ TEST_F(CreateExtProcAttributesProtoStructTest,
       "connection.requested_server_name", "connection.tls_version",
       "connection.sha256_peer_certificate_digest"};
   auto* upb_struct = CreateExtProcAttributesProtoStruct(arena.ptr(), requested,
-                                                        batch, "", &conn_attrs);
+                                                        batch, "", conn_attrs);
   ASSERT_NE(upb_struct, nullptr);
   auto proto = ConvertToProto(upb_struct, arena.ptr());
   EXPECT_EQ(
@@ -861,16 +861,16 @@ TEST_F(CreateExtProcAttributesProtoStructTest,
   std::vector<std::string> requested = {
       "source.address", "source.port", "connection.requested_server_name",
       "connection.tls_version", "connection.sha256_peer_certificate_digest"};
-  // 1. connection_attributes is nullptr (client side)
-  auto* upb_struct1 = CreateExtProcAttributesProtoStruct(arena.ptr(), requested,
-                                                         batch, "", nullptr);
+  // 1. connection_attributes is std::nullopt (client side)
+  auto* upb_struct1 = CreateExtProcAttributesProtoStruct(
+      arena.ptr(), requested, batch, "", std::nullopt);
   ASSERT_NE(upb_struct1, nullptr);
   auto proto1 = ConvertToProto(upb_struct1, arena.ptr());
   EXPECT_TRUE(proto1.fields().empty());
   // 2. connection_attributes has empty/default values
   ExtProcConnectionAttributes empty_attrs;
   auto* upb_struct2 = CreateExtProcAttributesProtoStruct(
-      arena.ptr(), requested, batch, "", &empty_attrs);
+      arena.ptr(), requested, batch, "", empty_attrs);
   ASSERT_NE(upb_struct2, nullptr);
   auto proto2 = ConvertToProto(upb_struct2, arena.ptr());
   EXPECT_TRUE(proto2.fields().empty());

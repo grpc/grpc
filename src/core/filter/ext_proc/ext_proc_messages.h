@@ -237,7 +237,7 @@ struct ExtProcConnectionAttributes {
 ::google_protobuf_Struct* CreateExtProcAttributesProtoStruct(
     upb_Arena* arena, const std::vector<std::string>& requested_attributes,
     const grpc_metadata_batch& metadata, absl::string_view default_authority,
-    const ExtProcConnectionAttributes* connection_attributes = nullptr);
+    const std::optional<ExtProcConnectionAttributes>& connection_attributes);
 
 // Represents the parsed response from an external processor, corresponding to
 // envoy.service.ext_proc.v3.ProcessingResponse in gRFC A93.
