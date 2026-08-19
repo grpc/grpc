@@ -1068,6 +1068,56 @@ cdef class AioServer:
             self._registered_method_handlers
         )
 
+        if not self._registered_method_handlers:
+            while True:
+                # When shutdown begins, no more new connections.
+                if self._status != AIO_SERVER_STATUS_RUNNING:
+                    break
+
+                concurrency_exceeded = False
+                if self._limiter is not None:
+                    self._limiter.check_before_request_call()
+                    concurrency_exceeded = self._limiter.limiter_concurrency_exceeded
+
+                try:
+                    rpc_state = await self._request_call()
+                except _RequestCallError:
+                    continue
+
+                method_name = rpc_state.method().decode()
+
+                # Creates the dedicated RPC coroutine. If we schedule it right now,
+                # there is no guarantee if the cancellation listening coroutine is
+                # ready or not. So, we should control the ordering by scheduling
+                # the coroutine onto event loop inside of the cancellation
+                # coroutine.
+                rpc_coro = _handle_rpc(method_name,
+                                       method_resolver,
+                                       self._interceptors,
+                                       rpc_state,
+                                       self._loop,
+                                       concurrency_exceeded)
+
+                # Fires off a task that listens on the cancellation from client.
+                rpc_task = self._loop.create_task(
+                    _schedule_rpc_coro(
+                        rpc_coro,
+                        rpc_state,
+                        self._loop,
+                        method_name,
+                    ),
+                    name="rpc_task",
+                )
+
+                # loop.create_task only holds a weakref to the task.
+                # Maintain reference to tasks to avoid garbage collection.
+                rpc_tasks.add(rpc_task)
+                rpc_task.add_done_callback(rpc_tasks.discard)
+
+                if self._limiter is not None and not concurrency_exceeded:
+                    self._limiter.decrease_once_finished(rpc_task)
+            return
+
         pending_futures = {}
 
         for method in self._registered_method_handlers:
