@@ -217,6 +217,9 @@ process_dockerfile() {
     return 1
   fi
 
+  echo "Copying tools/internal_ci/helper_scripts/apt_get_install_with_retry.sh into ${DOCKERFILE_DIR}"
+  cp -av tools/internal_ci/helper_scripts/apt_get_install_with_retry.sh ${DOCKERFILE_DIR}/apt_get_install_with_retry.sh
+
   echo "Running 'docker build' for ${DOCKER_IMAGE_NAME}"
   echo "=========="
   # Building a docker image with two tags;
@@ -239,6 +242,8 @@ process_dockerfile() {
     fi
   fi
   echo "=========="
+  echo "Removing temporary script from ${DOCKERFILE_DIR}/apt_get_install_with_retry.sh"
+  rm -f "${DOCKERFILE_DIR}/apt_get_install_with_retry.sh"
 
   # After building the docker image locally, we don't know the image's RepoDigest (which is distinct from image's "Id" digest) yet
   # so we can only update the .current_version file with the image tag (which will be enough for running tests under docker locally).

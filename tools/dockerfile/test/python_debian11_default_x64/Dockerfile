@@ -15,31 +15,37 @@
 FROM python:3.10-bullseye
 
 #=================
+# Install apt-get-install-retry wrapper script
+#=================
+#  Create wrapper for apt-get
+
+ADD apt_get_install_with_retry.sh /usr/local/bin/apt-get-install-retry
+RUN chmod +rx /usr/local/bin/apt-get-install-retry
+
+
 # Basic C core dependencies
 
 # C/C++ dependencies according to https://github.com/grpc/grpc/blob/master/BUILDING.md
-RUN apt-get update && apt-get install -y \
+RUN apt-get-install-retry \
   build-essential \
   autoconf \
   libtool \
-  pkg-config \
-  && apt-get clean
+  pkg-config
+  
 
 # GCC
-RUN apt-get update && apt-get install -y \
+RUN apt-get-install-retry \
   gcc \
-  g++ \
-  && apt-get clean
+  g++ 
 
 # libc6
-RUN apt-get update && apt-get install -y \
+RUN apt-get-install-retry \
   libc6 \
   libc6-dbg \
-  libc6-dev \
-  && apt-get clean
+  libc6-dev
 
 # Tools
-RUN apt-get update && apt-get install -y \
+RUN apt-get-install-retry \
   bzip2 \
   curl \
   dnsutils \
@@ -50,8 +56,7 @@ RUN apt-get update && apt-get install -y \
   time \
   unzip \
   wget \
-  zip \
-  && apt-get clean
+  zip
 
 #=================
 # Setup git to access working directory across docker boundary.
@@ -69,8 +74,8 @@ RUN mkdir /var/local/jenkins
 #=================
 # Compile CPython 3.10.3 from source
 
-RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev libsqlite3-dev && apt-get clean
-RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
+RUN apt-get-install-retry zlib1g-dev libssl-dev libsqlite3-dev
+RUN apt-get-install-retry jq build-essential libffi-dev
 
 RUN cd /tmp && \
     wget -q https://www.python.org/ftp/python/3.10.3/Python-3.10.3.tgz && \
@@ -90,8 +95,8 @@ RUN python3.10 -m ensurepip && \
 #=================
 # Compile CPython 3.11.4 from source
 
-RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev libsqlite3-dev && apt-get clean
-RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
+RUN apt-get-install-retry zlib1g-dev libssl-dev libsqlite3-dev
+RUN apt-get-install-retry jq build-essential libffi-dev
 
 RUN cd /tmp && \
     wget -q https://www.python.org/ftp/python/3.11.4/Python-3.11.4.tgz && \
@@ -112,8 +117,8 @@ RUN python3.11 -m ensurepip && \
 #=================
 # Compile CPython 3.12.0 from source
 
-RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev libsqlite3-dev && apt-get clean
-RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
+RUN apt-get-install-retry zlib1g-dev libssl-dev libsqlite3-dev
+RUN apt-get-install-retry jq build-essential libffi-dev
 
 RUN cd /tmp && \
     wget -q https://www.python.org/ftp/python/3.12.0/Python-3.12.0.tgz && \
@@ -134,8 +139,8 @@ RUN python3.12 -m ensurepip && \
 #=================
 # Compile CPython 3.13.0rc2 from source
 
-RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev libsqlite3-dev && apt-get clean
-RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
+RUN apt-get-install-retry zlib1g-dev libssl-dev libsqlite3-dev
+RUN apt-get-install-retry jq build-essential libffi-dev
 
 RUN cd /tmp && \
     wget -q https://www.python.org/ftp/python/3.13.0/Python-3.13.0rc2.tgz && \
@@ -156,8 +161,8 @@ RUN python3.13 -m ensurepip && \
 #=================
 # Compile CPython 3.14.0rc1 from source
 
-RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev libsqlite3-dev && apt-get clean
-RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
+RUN apt-get-install-retry zlib1g-dev libssl-dev libsqlite3-dev
+RUN apt-get-install-retry jq build-essential libffi-dev
 
 RUN cd /tmp && \
     wget -q https://www.python.org/ftp/python/3.14.0/Python-3.14.0rc1.tgz && \
@@ -178,8 +183,8 @@ RUN python3.14 -m ensurepip && \
 #=================
 # Compile CPython 3.15.0b2 from source
 
-RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev libsqlite3-dev && apt-get clean
-RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
+RUN apt-get-install-retry zlib1g-dev libssl-dev libsqlite3-dev
+RUN apt-get-install-retry jq build-essential libffi-dev
 
 RUN cd /tmp && \
     wget -q https://www.python.org/ftp/python/3.15.0/Python-3.15.0b2.tgz && \
@@ -199,7 +204,8 @@ RUN python3.15 -m ensurepip && \
 
 # Python test coverage requires libsqlite3, and it have
 # to be installed before Python.
-RUN apt-get update && apt-get install -y libsqlite3-dev
+RUN apt-get-install-retry libsqlite3-dev
+
 
 # for Python test coverage reporting
 RUN python3.10 -m pip install coverage
@@ -216,9 +222,7 @@ RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-clien
 # Install cmake from bullseye-backports
 # Note that this step should be only used for Debian 11 (bullseye) images.
 
-RUN echo "deb http://archive.debian.org/debian bullseye-backports main" > /etc/apt/sources.list.d/bullseye-backports.list && \
-    apt-get update && \
-    apt-get install -y -t bullseye-backports cmake
+RUN echo "deb http://archive.debian.org/debian bullseye-backports main" > /etc/apt/sources.list.d/bullseye-backports.list && apt-get-install-retry -t bullseye-backports cmake
 
 #=================
 # Install ccache

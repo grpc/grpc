@@ -23,9 +23,16 @@ FROM gcr.io/oss-fuzz-base/base-builder@sha256:4f3ca10accd14292556601d70e457fa85a
 # https://github.com/google/oss-fuzz/blob/master/projects/grpc/Dockerfile
 # accordingly.
 # -------------------------------------------------------------------------
+# Install apt-get-install-retry wrapper script
+#=================
+#  Create wrapper for apt-get
+
+ADD apt_get_install_with_retry.sh /usr/local/bin/apt-get-install-retry
+RUN chmod +rx /usr/local/bin/apt-get-install-retry
+
 
 # Install basic packages
-RUN apt-get update && apt-get -y install \
+RUN apt-get-install-retry \
   autoconf \
   build-essential \
   curl \
@@ -33,6 +40,7 @@ RUN apt-get update && apt-get -y install \
   make \
   vim \
   wget
+
 
 #========================
 # Bazel installation
@@ -77,7 +85,7 @@ RUN git config --system --add safe.directory '*'
 RUN git config --system protocol.file.allow always
 
 
-RUN apt-get install -y gdb
+RUN apt-get-install-retry gdb && apt-get clean
 
 RUN mkdir -p /var/local/jenkins
 

@@ -14,11 +14,18 @@
 
 FROM silkeh/clang:19-bookworm
 
+#=================
+#  Create wrapper for apt-get
+
+ADD apt_get_install_with_retry.sh /usr/local/bin/apt-get-install-retry
+RUN chmod +rx /usr/local/bin/apt-get-install-retry
+
+
 # Install prerequisites for the clang-tidy script
-RUN apt-get update && apt-get install -y python3 jq git && apt-get clean
+RUN apt-get-install-retry python3 jq git
 
 # otherwise clang-tidy will report missing <gtest/gtest.h> header
-RUN apt-get update && apt-get install -y libgtest-dev && apt-get clean
+RUN apt-get-install-retry libgtest-dev && apt-get clean
 
 ADD clang_tidy_all_the_things.sh /
 
@@ -27,5 +34,4 @@ ADD clang_tidy_all_the_things.sh /
 RUN chmod a+rx /clang_tidy_all_the_things.sh
 
 CMD ["echo 'Run with tools/distrib/clang_tidy_code.sh'"]
-
 
