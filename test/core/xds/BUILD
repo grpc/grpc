@@ -961,31 +961,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "xds_transport_grpc_test",
-    srcs = ["xds_transport_grpc_test.cc"],
-    external_deps = [
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-        "gtest",
-    ],
-    tags = ["xds_test"],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//:grpc++",
-        "//:ref_counted_ptr",
-        "//src/core:channel_args",
-        "//src/core:grpc_xds_client",
-        "//src/core:json",
-        "//src/core:xds_server_grpc",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "xds_transport_fake_test",
     srcs = ["xds_transport_fake_test.cc"],
     external_deps = [

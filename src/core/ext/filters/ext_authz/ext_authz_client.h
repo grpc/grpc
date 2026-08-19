@@ -42,14 +42,14 @@ class ExtAuthzClient : public DualRefCounted<ExtAuthzClient> {
 
   struct ExtAuthzResponse {
     struct OkResponse {
-      std::vector<HeaderValueOption> headers;
+      std::vector<XdsHeaderValueOption> headers;
       std::vector<std::string> headers_to_remove;
-      std::vector<HeaderValueOption> response_headers_to_add;
+      std::vector<XdsHeaderValueOption> response_headers_to_add;
     };
 
     struct DeniedResponse {
       grpc_status_code status;
-      std::vector<HeaderValueOption> headers;
+      std::vector<XdsHeaderValueOption> headers;
     };
 
     grpc_status_code status_code;

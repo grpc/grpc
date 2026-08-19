@@ -940,6 +940,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:validation_errors",
+        "//src/core:xds_common_types_parser",
         "//src/core:xds_utils",
         "//test/core/test_util:grpc_test_util",
     ],

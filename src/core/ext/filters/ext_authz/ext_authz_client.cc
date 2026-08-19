@@ -37,10 +37,11 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/status_helper.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/xds_utils.h"
-#include "src/core/util/status_helper.h"
+#include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/xds_client/xds_transport.h"
 #include "upb/base/string_view.h"
 #include "absl/base/thread_annotations.h"
@@ -243,7 +244,7 @@ ExtAuthzClient::ParseExtAuthzResponse(absl::string_view encoded_response) {
     const auto* const* headers =
         envoy_service_auth_v3_OkHttpResponse_headers(ok_resp, &size);
     for (size_t i = 0; i < size; ++i) {
-      ok_struct.headers.push_back(ParseHeaderValueOption(headers[i], &errors));
+      ok_struct.headers.push_back(ParseXdsHeaderValueOption(headers[i], &errors));
     }
 
     // Headers to remove
@@ -260,7 +261,7 @@ ExtAuthzClient::ParseExtAuthzResponse(absl::string_view encoded_response) {
                                                                      &size);
     for (size_t i = 0; i < size; ++i) {
       ok_struct.response_headers_to_add.push_back(
-          ParseHeaderValueOption(resp_headers[i], &errors));
+          ParseXdsHeaderValueOption(resp_headers[i], &errors));
     }
 
     result.ok_response = std::move(ok_struct);
@@ -282,7 +283,7 @@ ExtAuthzClient::ParseExtAuthzResponse(absl::string_view encoded_response) {
           envoy_service_auth_v3_DeniedHttpResponse_headers(denied, &size);
       for (size_t i = 0; i < size; ++i) {
         denied_struct.headers.push_back(
-            ParseHeaderValueOption(headers[i], &errors));
+            ParseXdsHeaderValueOption(headers[i], &errors));
       }
       result.denied_response = std::move(denied_struct);
     }

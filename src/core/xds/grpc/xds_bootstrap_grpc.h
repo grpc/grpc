@@ -41,6 +41,7 @@
 namespace grpc_core {
 
 bool XdsExtProcOnClientEnabled();
+bool XdsExtAuthzOnClientEnabled();
 
 class GrpcXdsBootstrapBuilder;
 

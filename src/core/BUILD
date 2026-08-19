@@ -5773,6 +5773,7 @@ grpc_cc_library(
         "sync",
         "upb_utils",
         "xds_common_types",
+        "xds_common_types_parser",
         "xds_utils",
         "//:backoff",
         "//:debug_location",
@@ -5786,6 +5787,8 @@ grpc_cc_library(
         "//:grpc_trace",
         "//:orphanable",
         "//:protobuf_timestamp_upb",
+        "//:ref_counted_ptr",
+        "//:xds_client",
     ],
 )
 
@@ -6484,17 +6487,12 @@ grpc_cc_library(
         "util/xds_utils.h",
     ],
     external_deps = [
-        "absl/status",
-        "absl/status:statusor",
         "absl/strings",
-        "absl/strings:str_format",
         "@com_google_protobuf//upb/mem",
     ],
     deps = [
         "envoy_config_core_upb",
         "upb_utils",
-        "xds_common_types",
-        "//:gpr",
         "//:grpc_base",
     ],
 )

@@ -282,7 +282,7 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcUnaryCall::GrpcUnaryCall(
       /*parent_call=*/nullptr, GRPC_PROPAGATE_DEFAULTS, /*cq=*/cq_,
       /*pollset_set_alternative=*/nullptr, Slice::FromStaticString(method),
       /*authority=*/std::nullopt, Timestamp::InfFuture(),
-      /*registered_method=*/true);
+      /*registered_method=*/true, /*arena_init_function=*/std::nullopt);
   GRPC_CHECK_NE(call_, nullptr);
 }
 
@@ -569,7 +569,8 @@ GrpcXdsTransportFactory::GrpcXdsTransport::CreateStreamingCall(
 OrphanablePtr<XdsTransportFactory::XdsTransport::UnaryCall>
 GrpcXdsTransportFactory::GrpcXdsTransport::CreateUnaryCall(const char* method) {
   return MakeOrphanable<GrpcUnaryCall>(
-      factory_.WeakRef(DEBUG_LOCATION, "UnaryCall"), channel_.get(), method);
+      factory_.WeakRef(DEBUG_LOCATION, "UnaryCall"), channel_->channel(),
+      method);
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::ResetBackoff() {

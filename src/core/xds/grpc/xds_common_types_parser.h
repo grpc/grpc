@@ -115,12 +115,6 @@ std::pair<std::string, std::string> ParseXdsHeader(
     const envoy_config_core_v3_HeaderValue* header_value,
     ValidationErrors* errors);
 
-HeaderMutationRules ParseHeaderMutationRules(
-    const XdsResourceType::DecodeContext& context,
-    const envoy_config_common_mutation_rules_v3_HeaderMutationRules*
-        header_mutation_rules,
-    ValidationErrors* errors);
-
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_XDS_GRPC_XDS_COMMON_TYPES_PARSER_H

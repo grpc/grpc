@@ -326,8 +326,8 @@ RefCountedPtr<const FilterConfig> XdsHttpExtAuthzFilter::ParseTopLevelConfig(
         envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_decoder_header_mutation_rules(
             ext_authz);
     if (header_mutation_rules_proto != nullptr) {
-      ext_authz_obj->decoder_header_mutation_rules = ParseHeaderMutationRules(
-          context, header_mutation_rules_proto, errors);
+      ext_authz_obj->decoder_header_mutation_rules =
+          ParseHeaderMutationRules(header_mutation_rules_proto, errors);
     }
   }
 

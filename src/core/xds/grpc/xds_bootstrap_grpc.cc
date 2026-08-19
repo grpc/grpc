@@ -38,6 +38,11 @@ bool XdsExtProcOnClientEnabled() {
   return IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT");
 }
 
+// TODO(rishesh): Remove this once the feature passes interop tests.
+bool XdsExtAuthzOnClientEnabled() {
+  return IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_EXT_AUTHZ_ON_CLIENT");
+}
+
 //
 // GrpcXdsBootstrap::GrpcNode::Locality
 //
