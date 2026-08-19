@@ -53,10 +53,7 @@ def wait_for_port(port, host="localhost", timeout=5.0):
 
 import python_utils.dockerjob as dockerjob
 import python_utils.jobset as jobset
-from python_utils.otel_tracing_verifier import (
-    resolve_binary,
-    verify_tracing_spans,
-)
+from python_utils.otel_tracing_verifier import verify_tracing_spans
 import python_utils.report_utils as report_utils
 
 # It's ok to not import because this is only necessary to upload results to BQ.
@@ -1659,8 +1656,14 @@ try:
             )
             if os.path.exists(_collector_spans_file):
                 os.remove(_collector_spans_file)
+            collector_bin = os.path.abspath(
+                os.path.join(
+                    os.path.dirname(__file__),
+                    "../../bazel-bin/test/cpp/interop/otlp_collector",
+                )
+            )
             collector_cmd = [
-                resolve_binary("./bazel-bin/test/cpp/interop/otlp_collector"),
+                collector_bin,
                 f"--port={_collector_port}",
                 f"--file={_collector_spans_file}",
             ]

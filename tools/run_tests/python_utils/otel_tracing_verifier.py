@@ -17,45 +17,6 @@ import json
 import os
 import time
 
-ROOT_DIR = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "../../..")
-)
-
-
-def resolve_binary(path):
-    if not path:
-        return path
-    clean_path = path
-    if clean_path.startswith("./"):
-        clean_path = clean_path[2:]
-    if clean_path.startswith("bazel-bin/"):
-        clean_path = clean_path[len("bazel-bin/") :]
-
-    candidates = [
-        path,
-        clean_path,
-        os.path.abspath(path),
-        os.path.abspath(clean_path),
-        os.path.join(ROOT_DIR, path),
-        os.path.join(ROOT_DIR, clean_path),
-        os.path.join(ROOT_DIR, "bazel-bin", clean_path),
-    ]
-    test_srcdir = os.environ.get("TEST_SRCDIR")
-    if test_srcdir:
-        workspace = os.environ.get("TEST_WORKSPACE", "_main")
-        candidates.extend(
-            [
-                os.path.join(test_srcdir, workspace, clean_path),
-                os.path.join(test_srcdir, clean_path),
-                os.path.join(test_srcdir, "com_github_grpc_grpc", clean_path),
-            ]
-        )
-
-    for p in candidates:
-        if os.path.exists(p):
-            return os.path.abspath(p)
-    return path
-
 
 def verify_tracing_spans(spans_file):
     start_time = time.time()
