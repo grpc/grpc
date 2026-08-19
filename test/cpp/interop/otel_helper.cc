@@ -19,7 +19,6 @@
 #include "test/cpp/interop/otel_helper.h"
 
 #include <chrono>
-#include <cstdlib>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -57,7 +56,6 @@ namespace interop {
 static std::shared_ptr<opentelemetry::sdk::trace::TracerProvider>
     g_tracer_provider;
 static std::once_flag g_otel_init_once;
-static std::mutex g_tracer_provider_mu;
 #endif
 
 void MaybeRegisterOpenTelemetry() {
@@ -65,13 +63,7 @@ void MaybeRegisterOpenTelemetry() {
   std::call_once(g_otel_init_once, []() {
     bool enabled = absl::GetFlag(FLAGS_enable_opentelemetry) ||
                    absl::GetFlag(FLAGS_otel_exporter) == "otlp";
-    if (!enabled) {
-      return;
-    }
-    const char* otel_traces_exporter = std::getenv("OTEL_TRACES_EXPORTER");
-    if (otel_traces_exporter != nullptr &&
-        std::string(otel_traces_exporter) == "none") {
-      LOG(INFO) << "OTEL_TRACES_EXPORTER is set to none. Tracing is disabled.";
+    if (!enabled || absl::GetFlag(FLAGS_otel_exporter) == "none") {
       return;
     }
 
@@ -87,17 +79,12 @@ void MaybeRegisterOpenTelemetry() {
     auto processor =
         opentelemetry::sdk::trace::SimpleSpanProcessorFactory::Create(
             std::move(trace_exporter));
-    auto tracer_provider =
+    g_tracer_provider =
         std::make_shared<opentelemetry::sdk::trace::TracerProvider>(
             std::move(processor));
 
-    {
-      std::lock_guard<std::mutex> lock(g_tracer_provider_mu);
-      g_tracer_provider = tracer_provider;
-    }
-
     grpc::OpenTelemetryPluginBuilder builder;
-    builder.SetTracerProvider(tracer_provider);
+    builder.SetTracerProvider(g_tracer_provider);
     builder.SetTextMapPropagator(
         std::make_unique<
             opentelemetry::trace::propagation::HttpTraceContext>());
@@ -117,13 +104,8 @@ void MaybeRegisterOpenTelemetry() {
 
 void ForceFlushOpenTelemetry() {
 #ifdef GRPC_HAS_OTEL_TRACING
-  std::shared_ptr<opentelemetry::sdk::trace::TracerProvider> tracer_provider;
-  {
-    std::lock_guard<std::mutex> lock(g_tracer_provider_mu);
-    tracer_provider = g_tracer_provider;
-  }
-  if (tracer_provider != nullptr) {
-    tracer_provider->ForceFlush();
+  if (g_tracer_provider != nullptr) {
+    g_tracer_provider->ForceFlush();
   }
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
 #endif
