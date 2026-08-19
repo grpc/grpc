@@ -550,9 +550,9 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
       }
       side_stream_status_ = status;
       side_stream_closed_latch_.Set();
+      ext_proc_send_state_ = SideStreamSendState::kSendFailed;
+      ext_proc_send_waiters_.TakeWakeupSet().Wakeup();
     }
-    ext_proc_send_state_ = SideStreamSendState::kSendFailed;
-    ext_proc_send_waiters_.TakeWakeupSet().Wakeup();
   }
 
   // Idempotently closes the out-of-band side-stream to the external processor.
@@ -562,11 +562,11 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
     if (!IsSideStreamClosed()) {
       side_stream_status_ = absl::OkStatus();
       side_stream_closed_latch_.Set();
+      auto streaming_call = std::move(streaming_call_);
+      ext_proc_send_state_ = SideStreamSendState::kSendFailed;
+      ext_proc_send_waiters_.TakeWakeupSet().Wakeup();
+      streaming_call.reset();
     }
-    auto streaming_call = std::move(streaming_call_);
-    ext_proc_send_state_ = SideStreamSendState::kSendFailed;
-    ext_proc_send_waiters_.TakeWakeupSet().Wakeup();
-    streaming_call.reset();
   }
 
   void Orphaned() override { CloseSideStream(); }
