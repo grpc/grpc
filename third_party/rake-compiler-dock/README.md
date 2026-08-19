@@ -56,7 +56,7 @@ docker image ls --filter "reference=ghcr.io/rake-compiler/rake-compiler-dock-ima
 
 Once the images are pushed to upstream, docker will genearte a sha256 digest for each image, include it into Dockerfile's to pick up the new base images.
 
-```base
+```bash
 docker image ls --format "{{.Tag}} {{.Repository}}:{{.Tag}}@{{.Digest}}" \
     us-docker.pkg.dev/grpc-testing/testing-images-public/rake-compiler-dock-image \
     | rg '^1.12.0-mri' \
