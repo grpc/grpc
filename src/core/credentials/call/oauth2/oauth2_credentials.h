@@ -35,7 +35,6 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/transport.h"
@@ -96,11 +95,8 @@ class Oauth2TokenFetcherCredentials : public HttpTokenFetcherCredentials {
 
   UniqueTypeName type() const override;
 
-  OrphanablePtr<FetchRequest> FetchToken(
-      Timestamp deadline,
-      absl::AnyInvocable<
-          void(absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
-          on_done) final;
+  absl::StatusOr<RefCountedPtr<Token>> ExtractToken(
+      const grpc_http_response& response) final;
 
  private:
   int cmp_impl(const grpc_call_credentials* other) const override {

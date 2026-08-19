@@ -15,25 +15,27 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal envoy_extensions_grpc_service_channel_credentials_xds_v3_XdsCredentials__submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init_ptr},
-};
+extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
+typedef struct {
+  upb_MiniTableField fields[1];
+  upb_MiniTableSubInternal subs[1];
+} envoy__extensions__grpc_0service__channel_0credentials__xds__v3__XdsCredentials_msg_init_Fields;
 
-static const upb_MiniTableField envoy_extensions_grpc_service_channel_credentials_xds_v3_XdsCredentials__fields[1] = {
-  {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+static const envoy__extensions__grpc_0service__channel_0credentials__xds__v3__XdsCredentials_msg_init_Fields envoy_extensions_grpc_service_channel_credentials_xds_v3_XdsCredentials__fields = {{
+  {1, UPB_SIZE(12, 16), 64, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init},
+}};
 
 const upb_MiniTable envoy__extensions__grpc_0service__channel_0credentials__xds__v3__XdsCredentials_msg_init = {
-  &envoy_extensions_grpc_service_channel_credentials_xds_v3_XdsCredentials__submsgs[0],
-  &envoy_extensions_grpc_service_channel_credentials_xds_v3_XdsCredentials__fields[0],
+  &envoy_extensions_grpc_service_channel_credentials_xds_v3_XdsCredentials__fields.fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.grpc_service.channel_credentials.xds.v3.XdsCredentials",
 #endif
 };
 
-const upb_MiniTable* envoy__extensions__grpc_0service__channel_0credentials__xds__v3__XdsCredentials_msg_init_ptr = &envoy__extensions__grpc_0service__channel_0credentials__xds__v3__XdsCredentials_msg_init;
 static const upb_MiniTable *messages_layout[1] = {
   &envoy__extensions__grpc_0service__channel_0credentials__xds__v3__XdsCredentials_msg_init,
 };

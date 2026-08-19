@@ -41,6 +41,7 @@
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -49,8 +50,10 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/pipe.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/call_final_info.h"
@@ -114,20 +117,44 @@ class ClientInitialMetadataOutstandingToken {
       : latch_(std::exchange(other.latch_, nullptr)) {}
   ClientInitialMetadataOutstandingToken& operator=(
       ClientInitialMetadataOutstandingToken&& other) noexcept {
+    if (IsMetadataOutstandingTokenRefactorEnabled()) {
+      MaybeSet(false);
+    }
     latch_ = std::exchange(other.latch_, nullptr);
     return *this;
   }
   ~ClientInitialMetadataOutstandingToken() {
-    if (latch_ != nullptr) latch_->Set(false);
+    if (IsMetadataOutstandingTokenRefactorEnabled()) {
+      MaybeSet(false);
+    } else {
+      if (latch_ != nullptr) latch_->Set(false);
+    }
   }
-  void Complete(bool success) { std::exchange(latch_, nullptr)->Set(success); }
+  void Complete(bool success) {
+    if (IsMetadataOutstandingTokenRefactorEnabled()) {
+      MaybeSet(success);
+    } else {
+      if (latch_ != nullptr) std::exchange(latch_, nullptr)->Set(success);
+    }
+  }
 
   // Returns a promise that will resolve when this object (or its moved-from
-  // ancestor) is dropped.
-  auto Wait() { return latch_->Wait(); }
+  // ancestor) is dropped. If the token is Empty(), the promise resolves to
+  // false immediately (when the refactor experiment is enabled).
+  auto Wait() {
+    return If(
+        latch_ != nullptr, [latch = latch_]() { return latch->Wait(); },
+        []() { return Immediate(false); });
+  }
 
  private:
   ClientInitialMetadataOutstandingToken() = default;
+
+  void MaybeSet(bool status) {
+    if (latch_ != nullptr && !latch_->is_set()) {
+      latch_->Set(status);
+    }
+  }
 
   Latch<bool>* latch_ = nullptr;
 };
@@ -390,11 +417,10 @@ struct grpc_transport_stream_op_batch_payload {
 
   /// Forcefully close this stream.
   /// The HTTP2 semantics should be:
-  /// - server side: if cancel_error has
-  /// grpc_core::StatusIntProperty::kRpcStatus, and trailing metadata has not
-  /// been sent, send trailing metadata with status and message from
-  /// cancel_error (use grpc_error_get_status) followed by a RST_STREAM with
-  /// error=GRPC_CHTTP2_NO_ERROR to force a full close
+  /// - server side: if cancel_error is not UNKNOWN and trailing
+  ///   metadata has not been sent, send trailing metadata with status and
+  //    message from cancel_error (use grpc_error_get_status) followed by a
+  //    RST_STREAM with error=GRPC_CHTTP2_NO_ERROR to force a full close
   /// - at all other times: use grpc_error_get_status to get a status code, and
   ///   convert to a HTTP2 error code using
   ///   grpc_chttp2_grpc_status_to_http2_error. Send a RST_STREAM with this
@@ -428,6 +454,9 @@ typedef struct grpc_transport_op {
       nullptr;
   /// should the transport be disconnected
   grpc_error_handle disconnect_with_error;
+  /// should the transport go IDLE
+  /// (used only by client channel, only if disconnect_with_error is set)
+  bool go_idle = false;
   /// Start a graceful goaway with the specified error message. (The error code
   /// is ignored since graceful GOAWAYs use a NO_ERROR error code.) Use
   /// disconnect_with_error if graceful shutdown is not needed.

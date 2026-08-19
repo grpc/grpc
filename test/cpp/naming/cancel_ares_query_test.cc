@@ -68,6 +68,8 @@
 #define BAD_SOCKET_RETURN_VAL (-1)
 #endif
 
+#if GRPC_ARES == 1
+
 namespace {
 
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
@@ -531,3 +533,13 @@ int main(int argc, char** argv) {
   auto result = RUN_ALL_TESTS();
   return result;
 }
+
+#else  // GRPC_ARES
+
+int main(int argc, char** argv) {
+  InitGoogle(argv[0], &argc, &argv, true);
+  LOG(INFO) << "Skipping test because GRPC_ARES is not defined";
+  return 0;
+}
+
+#endif  // GRPC_ARES

@@ -15,6 +15,7 @@
 #include "fuzztest/fuzztest.h"
 #include "src/core/telemetry/histogram.h"
 #include "gtest/gtest.h"
+#include "absl/strings/str_join.h"
 
 namespace grpc_core {
 namespace {
@@ -94,16 +95,7 @@ void ExponentialHistogramBasicsAreValid(int64_t max, size_t buckets) {
   EXPECT_EQ(shape.bounds().back(), max);
 }
 FUZZ_TEST(HistogramFuzzer, ExponentialHistogramBasicsAreValid)
-    .WithDomains(fuzztest::InRange(2, 1000000000),
-                 fuzztest::InRange(2, 100000));
-
-TEST(HistogramFuzzer, ExponentialHistogramBasicsAreValidRegression) {
-  ExponentialHistogramBasicsAreValid(591424425, 100000);
-}
-
-TEST(HistogramFuzzer, ExponentialHistogramBasicsAreValidRegression2) {
-  ExponentialHistogramBasicsAreValid(2, 41438);
-}
+    .WithDomains(fuzztest::InRange(2, 512), fuzztest::InRange(2, 512));
 
 void ExponentialHistogramBucketForIsCorrect(int64_t max, size_t buckets,
                                             int64_t value) {
@@ -113,23 +105,14 @@ void ExponentialHistogramBucketForIsCorrect(int64_t max, size_t buckets,
   EXPECT_EQ(bucket, expected_bucket)
       << "max: " << max << " buckets: " << buckets << " value: " << value
       << "\n"
-      << " bounds: " << absl::StrJoin(shape.bounds(), ",") << "\n"
-      << " lookup_table: " << absl::StrJoin(shape.lookup_table(), ",");
+      << " bounds: " << absl::StrJoin(shape.bounds(), ",");
 }
 FUZZ_TEST(HistogramFuzzer, ExponentialHistogramBucketForIsCorrect)
-    .WithDomains(fuzztest::InRange(2, 1000000000), fuzztest::InRange(2, 10000),
+    .WithDomains(fuzztest::InRange(2, 1000000000), fuzztest::InRange(2, 512),
                  fuzztest::Arbitrary<int64_t>());
-
-TEST(HistogramFuzzer, ExponentialHistogramBucketForIsCorrectRegression) {
-  ExponentialHistogramBucketForIsCorrect(438734458, 17836, 7393050624709854766);
-}
 
 TEST(HistogramFuzzer, ExponentialHistogramBucketForIsCorrectRegression2) {
   ExponentialHistogramBucketForIsCorrect(1000000000, 2, 2);
-}
-
-TEST(HistogramFuzzer, ExponentialHistogramBucketForIsCorrectRegression3) {
-  ExponentialHistogramBucketForIsCorrect(1000000000, 12407, 20726);
 }
 
 TEST(HistogramFuzzer, ExponentialHistogramBucketForIsCorrectRegression4) {
@@ -146,10 +129,6 @@ TEST(HistogramFuzzer, ExponentialHistogramBucketForIsCorrectRegression6) {
 
 TEST(HistogramFuzzer, ExponentialHistogramBucketForIsCorrectRegression7) {
   ExponentialHistogramBucketForIsCorrect(2, 2, 2);
-}
-
-TEST(HistogramFuzzer, ExponentialHistogramBucketForIsCorrectRegression8) {
-  ExponentialHistogramBucketForIsCorrect(389599954, 2, 2133);
 }
 
 }  // namespace

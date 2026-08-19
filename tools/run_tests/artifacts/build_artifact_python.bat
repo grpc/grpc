@@ -19,7 +19,7 @@ set PATH=C:\%1;C:\%1\scripts;%PATH%
 set PATH=C:\msys64\mingw%2\bin;C:\tools\msys64\mingw%2\bin;%PATH%
 :end_mingw64_installation
 
-python -m pip install --upgrade pip==25.2 six
+python -m pip install --upgrade pip six
 @rem Ping to a single version to make sure we're building the same artifacts
 python -m pip install setuptools==77.0.1 wheel==0.43.0
 python -m pip install --upgrade "cython==3.1.1"
@@ -27,6 +27,8 @@ python -m pip install -r requirements.txt --user
 
 @rem set GRPC_PYTHON_OVERRIDE_CYGWIN_DETECTION_FOR_27=1
 set GRPC_PYTHON_BUILD_WITH_CYTHON=1
+set CCACHE_NOHASHDIR=true
+set CCACHE_LOGFILE=T:\src\github\grpc\reports\ccache_%1_%2.log
 
 @rem Allow build_ext to build C/C++ files in parallel
 @rem by enabling a monkeypatch. It speeds up the build a lot.
@@ -44,18 +46,23 @@ set ARTIFACT_DIR=%cd%\%ARTIFACTS_OUT%
 set "GRPC_PYTHON_BUILD_USE_SHORT_TEMP_DIR_NAME=1"
 
 @rem Build gRPC Python distribution
-python -m build || goto :error
+python -m build --no-isolation --sdist || goto :error
+python -m build --no-isolation --wheel || goto :error
 
 @rem Set up gRPC Python tools
 python tools\distrib\python\make_grpcio_tools.py
 
 @rem Build grpcio-tools Python distribution
 pushd tools\distrib\python\grpcio_tools
-python -m build || goto :error
+python -m build --no-isolation --sdist || goto :error
+python -m build --no-isolation --wheel || goto :error
 popd
 
 @rem Ensure the generate artifacts are valid.
-python -m pip install packaging==21.3 twine==5.0.0
+@rem Use --user so the install also works on Kokoro VMs whose system
+@rem site-packages dir has restricted permissions (see e.g. Permission denied
+@rem on zipp-*-dist-info/INSTALLER when installing twine without --user).
+python -m pip install --user packaging==21.3 twine==5.0.0
 python -m twine check dist\* tools\distrib\python\grpcio_tools\dist\* || goto :error
 
 xcopy /Y /I /S dist\* %ARTIFACT_DIR% || goto :error

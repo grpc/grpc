@@ -23,20 +23,18 @@
 
 #include <atomic>
 
-#include "src/core/filter/blackboard.h"
+#include "src/core/service_config/service_config.h"
+#include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
-namespace internal {
 
-/// Tracks retry throttling data for an individual server name.
-class RetryThrottler final : public Blackboard::Entry {
+/// Tracks retry throttling data for a channel.
+class RetryThrottler final : public RefCounted<RetryThrottler> {
  public:
   static RefCountedPtr<RetryThrottler> Create(
       uintptr_t max_milli_tokens, uintptr_t milli_token_ratio,
       RefCountedPtr<RetryThrottler> previous);
-
-  static UniqueTypeName Type();
 
   // Do not instantiate directly -- use Create() instead.
   RetryThrottler(uintptr_t max_milli_tokens, uintptr_t milli_token_ratio,
@@ -56,6 +54,14 @@ class RetryThrottler final : public Blackboard::Entry {
     return milli_tokens_.load(std::memory_order_relaxed);
   }
 
+  static absl::string_view ChannelArgName() {
+    return "grpc.internal.retry_throttler";
+  }
+  static int ChannelArgsCompare(const RetryThrottler* a,
+                                const RetryThrottler* b) {
+    return QsortCompare(a, b);
+  }
+
  private:
   void SetReplacement(RefCountedPtr<RetryThrottler> replacement);
 
@@ -70,7 +76,18 @@ class RetryThrottler final : public Blackboard::Entry {
   std::atomic<RetryThrottler*> replacement_{nullptr};
 };
 
-}  // namespace internal
+// Tracks retry throttler state across service config updates and
+// handles adding the current throttler to channel args.
+class RetryThrottlerChannelArgsUpdater final {
+ public:
+  // Applies the latest service config update and adds the current
+  // throttler to channel args if needed.
+  void Update(const ServiceConfig& service_config, ChannelArgs& args);
+
+ private:
+  RefCountedPtr<RetryThrottler> throttler_;
+};
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_CLIENT_CHANNEL_RETRY_THROTTLE_H

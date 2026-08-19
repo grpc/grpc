@@ -32,6 +32,9 @@ UPB_API upb_Array* upb_Array_New(upb_Arena* a, upb_CType type);
 // Returns the number of elements in the array.
 UPB_API_INLINE size_t upb_Array_Size(const upb_Array* arr);
 
+// Returns the number of elements in the array.
+UPB_API_INLINE size_t upb_Array_Capacity(const upb_Array* arr);
+
 // Returns the given element, which must be within the array's current size.
 UPB_API upb_MessageValue upb_Array_Get(const upb_Array* arr, size_t i);
 
@@ -45,6 +48,16 @@ UPB_API void upb_Array_Set(upb_Array* arr, size_t i, upb_MessageValue val);
 // Appends an element to the array. Returns false on allocation failure.
 UPB_API bool upb_Array_Append(upb_Array* array, upb_MessageValue val,
                               upb_Arena* arena);
+
+// Copies elements from |src| to |dst|, resizing |dst| to match |src| size.
+// Returns false on allocation failure.
+UPB_API bool upb_Array_Copy(upb_Array* dst, const upb_Array* src,
+                            upb_Arena* arena);
+
+// Appends all elements from |src| to the end of |dst|.
+// Returns false on allocation failure.
+UPB_API bool upb_Array_AppendAll(upb_Array* dst, const upb_Array* src,
+                                 upb_Arena* arena);
 
 // Moves elements within the array using memmove().
 // Like memmove(), the source and destination elements may be overlapping.

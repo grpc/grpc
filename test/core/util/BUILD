@@ -67,6 +67,8 @@ grpc_cc_benchmark(
     name = "bm_latent_see",
     srcs = ["bm_latent_see.cc"],
     external_deps = [
+        "absl/log:globals",
+        "absl/base:log_severity",
     ],
     monitoring = HISTORY,
     deps = [
@@ -349,7 +351,6 @@ grpc_cc_test(
         "absl/status",
         "absl/strings",
         "absl/time",
-        "@com_google_protobuf//upb/mem",
     ],
     tags = ["error_tests"],
     uses_event_engine = False,
@@ -360,6 +361,7 @@ grpc_cc_test(
         "//src/core:experiments",
         "//src/core:status_helper",
         "//test/core/test_util:grpc_test_util",
+        "@com_google_protobuf//upb/mem",
     ],
 )
 

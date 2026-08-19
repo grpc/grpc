@@ -269,11 +269,11 @@ static grpc_error_handle create_default_creds_from_path(
   auto creds_data =
       grpc_core::LoadFile(creds_path, /*add_null_terminator=*/false);
   if (!creds_data.ok()) {
-    return absl_status_to_grpc_error(creds_data.status());
+    return creds_data.status();
   }
   auto json = grpc_core::JsonParse(creds_data->as_string_view());
   if (!json.ok()) {
-    return absl_status_to_grpc_error(json.status());
+    return json.status();
   }
   if (json->type() != Json::Type::kObject) {
     return GRPC_ERROR_CREATE(absl::StrCat("Failed to parse JSON \"",

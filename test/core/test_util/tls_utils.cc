@@ -28,6 +28,8 @@
 #include "src/core/util/tmpfile.h"
 #include "test/core/test_util/test_config.h"
 #include "absl/strings/str_cat.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 namespace grpc_core {
 
@@ -38,7 +40,13 @@ TmpFile::TmpFile(absl::string_view data) {
   GRPC_CHECK(!name_.empty());
 }
 
-TmpFile::~TmpFile() { GRPC_CHECK_EQ(remove(name_.c_str()), 0); }
+TmpFile::~TmpFile() {
+  int max_attempts = 20;
+  while (remove(name_.c_str()) != 0 && --max_attempts > 0) {
+    absl::SleepFor(absl::Seconds(1));
+  }
+  GRPC_CHECK(max_attempts >= 0) << "Failed to delete file " << name_;
+}
 
 void TmpFile::RewriteFile(absl::string_view data) {
   // Create a new file containing new data.
@@ -73,7 +81,7 @@ PemKeyCertPairList MakeCertKeyPairs(absl::string_view private_key,
   if (private_key.empty() && certs.empty()) {
     return {};
   }
-  return PemKeyCertPairList{PemKeyCertPair(private_key, certs)};
+  return {{std::string(private_key), certs}};
 }
 
 std::string GetFileContents(const std::string& path) {

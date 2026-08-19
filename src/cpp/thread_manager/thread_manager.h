@@ -25,6 +25,7 @@
 #include "src/core/lib/resource_quota/thread_quota.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/thd.h"
+#include "absl/base/thread_annotations.h"
 
 namespace grpc {
 
@@ -143,7 +144,7 @@ class ThreadManager {
   // max_active_threads_sofar_
   grpc_core::Mutex mu_;
 
-  bool shutdown_;
+  bool shutdown_ ABSL_GUARDED_BY(mu_);
   grpc_core::CondVar shutdown_cv_;
 
   // The resource user object to use when requesting quota to create threads
@@ -155,7 +156,7 @@ class ThreadManager {
   grpc_core::ThreadQuotaPtr thread_quota_;
 
   // Number of threads doing polling
-  int num_pollers_;
+  int num_pollers_ ABSL_GUARDED_BY(mu_);
 
   // The minimum and maximum number of threads that should be doing polling
   int min_pollers_;
@@ -163,15 +164,15 @@ class ThreadManager {
 
   // The total number of threads currently active (includes threads includes the
   // threads that are currently polling i.e num_pollers_)
-  int num_threads_;
+  int num_threads_ ABSL_GUARDED_BY(mu_);
 
   // See GetMaxActiveThreadsSoFar()'s description.
   // To be more specific, this variable tracks the max value num_threads_ was
   // ever set so far
-  int max_active_threads_sofar_;
+  int max_active_threads_sofar_ ABSL_GUARDED_BY(mu_);
 
   grpc_core::Mutex list_mu_;
-  std::list<WorkerThread*> completed_threads_;
+  std::list<WorkerThread*> completed_threads_ ABSL_GUARDED_BY(list_mu_);
 };
 
 }  // namespace grpc

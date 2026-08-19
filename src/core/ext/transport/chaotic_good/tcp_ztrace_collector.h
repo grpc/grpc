@@ -23,6 +23,7 @@
 #include "src/core/channelz/ztrace_collector.h"
 #include "src/core/ext/transport/chaotic_good/tcp_frame_header.h"
 #include "src/core/lib/event_engine/utils.h"
+#include "absl/strings/str_join.h"
 
 namespace grpc_core::chaotic_good {
 namespace tcp_ztrace_collector_detail {
@@ -154,13 +155,15 @@ struct WriteLargeFrameHeaderTrace {
   uint64_t payload_tag;
   uint64_t payload_size;
   uint32_t chosen_endpoint;
+  uint32_t stream_id;
 
   channelz::PropertyList ChannelzProperties() const {
     return channelz::PropertyList()
         .Set("metadata_type", "WRITE_LARGE_HEADER")
         .Set("payload_tag", payload_tag)
         .Set("payload_size", payload_size)
-        .Set("chosen_endpoint", chosen_endpoint);
+        .Set("chosen_endpoint", chosen_endpoint)
+        .Set("stream_id", stream_id);
   }
 };
 

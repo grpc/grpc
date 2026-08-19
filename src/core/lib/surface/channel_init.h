@@ -224,10 +224,10 @@ class ChannelInit {
     FilterRegistration& IfNot(InclusionPredicate predicate);
     // Add a predicate that only includes this filter if a channel arg is
     // present.
-    FilterRegistration& IfHasChannelArg(const char* arg);
+    FilterRegistration& IfHasChannelArg(absl::string_view arg);
     // Add a predicate that only includes this filter if a boolean channel arg
     // is true (with default_value being used if the argument is not present).
-    FilterRegistration& IfChannelArg(const char* arg, bool default_value);
+    FilterRegistration& IfChannelArg(absl::string_view arg, bool default_value);
     // Mark this filter as being terminal.
     // Exactly one terminal filter will be added at the end of each filter
     // stack.

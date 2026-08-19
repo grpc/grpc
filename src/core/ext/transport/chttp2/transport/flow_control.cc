@@ -119,12 +119,13 @@ std::string FlowControlAction::ImmediateUpdateReasons() const {
   return result;
 }
 
-TransportFlowControl::TransportFlowControl(absl::string_view name,
+TransportFlowControl::TransportFlowControl(absl::string_view peer_name,
                                            bool enable_bdp_probe,
                                            MemoryOwner* memory_owner)
     : memory_owner_(memory_owner),
       enable_bdp_probe_(enable_bdp_probe),
-      bdp_estimator_(name) {}
+      bdp_ping_blocked_(true),
+      bdp_estimator_(peer_name) {}
 
 uint32_t TransportFlowControl::DesiredAnnounceSize(bool writing_anyway) const {
   const uint32_t target_announced_window =
@@ -315,7 +316,7 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
                         Http2Settings::max_max_frame_size()),
                   &action, &FlowControlAction::set_send_max_frame_size_update);
 
-    if (IsTcpFrameSizeTuningEnabled()) {
+    if (IsTcpFrameSizeTuningEnabled() && ph2_enable_rx_crypto_) {
       // Advertise PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE to peer. By advertising
       // PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE to the peer, we are informing the
       // peer that we have tcp frame size tuning enabled and we inform it of our
@@ -348,6 +349,7 @@ std::string TransportFlowControl::Stats::ToString() const {
                       " announced_stream_total_over_incoming_window: ",
                       announced_stream_total_over_incoming_window,
                       " bdp_accumulator: ", bdp_accumulator,
+                      " bdp_ping_blocked: ", bdp_ping_blocked,
                       " bdp_estimate: ", bdp_estimate,
                       " bdp_bw_est: ", bdp_bw_est);
 }

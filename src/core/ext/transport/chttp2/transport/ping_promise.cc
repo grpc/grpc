@@ -25,6 +25,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
+#include "src/core/ext/transport/chttp2/transport/write_cycle.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/map.h"
@@ -60,12 +61,13 @@ Promise<absl::Status> PingManager::PingPromiseCallbacks::WaitForPingAck() {
 }
 
 // Ping System implementation
-PingManager::PingManager(const ChannelArgs& channel_args, Duration ping_timeout,
+PingManager::PingManager(const ChannelArgs& channel_args, const bool is_client,
+                         Duration ping_timeout,
                          std::unique_ptr<PingInterface> ping_interface,
                          std::shared_ptr<EventEngine> event_engine)
     : ping_callbacks_(event_engine),
       ping_abuse_policy_(channel_args),
-      ping_rate_policy_(channel_args, /*is_client=*/true),
+      ping_rate_policy_(channel_args, is_client),
       ping_interface_(std::move(ping_interface)),
       ping_timeout_(ping_timeout) {}
 
@@ -107,19 +109,18 @@ PingManager::TriggerPingArgs PingManager::NeedToPing(
 }
 
 std::optional<Duration> PingManager::MaybeGetSerializedPingFrames(
-    SliceBuffer& output_buffer, const Duration next_allowed_ping_interval) {
+    FrameSender& frame_sender, Duration next_allowed_ping_interval) {
   GRPC_HTTP2_PING_LOG << "PingManager MaybeGetSerializedPingFrames "
                          "pending_ping_acks_ size: "
                       << pending_ping_acks_.size()
                       << " next_allowed_ping_interval: "
                       << next_allowed_ping_interval;
   GRPC_DCHECK(!opaque_data_.has_value());
-  std::vector<Http2Frame> frames;
-  frames.reserve(pending_ping_acks_.size() + 1);  // +1 for the ping frame.
+  frame_sender.ReserveRegularFrames(pending_ping_acks_.size());
 
   // Get the serialized ping acks if needed.
   for (uint64_t opaque_data : pending_ping_acks_) {
-    frames.emplace_back(GetHttp2PingFrame(/*ack=*/true, opaque_data));
+    frame_sender.AddRegularFrame(GetHttp2PingFrame(/*ack=*/true, opaque_data));
   }
   pending_ping_acks_.clear();
 
@@ -127,14 +128,9 @@ std::optional<Duration> PingManager::MaybeGetSerializedPingFrames(
   TriggerPingArgs trigger_ping_args = NeedToPing(next_allowed_ping_interval);
   if (trigger_ping_args.need_to_ping) {
     const uint64_t opaque_data = ping_callbacks_.StartPing();
-    frames.emplace_back(GetHttp2PingFrame(/*ack=*/false, opaque_data));
+    frame_sender.AddRegularFrame(GetHttp2PingFrame(/*ack=*/false, opaque_data));
     opaque_data_ = opaque_data;
     GRPC_HTTP2_PING_LOG << "Created ping frame for id= " << opaque_data;
-  }
-
-  // Serialize the frames if any.
-  if (!frames.empty()) {
-    Serialize(absl::Span<Http2Frame>(frames), output_buffer);
   }
 
   return trigger_ping_args.delayed_ping_wait;

@@ -24,8 +24,8 @@
 #include <vector>
 
 #include "src/core/config/core_configuration.h"
+#include "src/core/config/experiment_env_var.h"
 #include "src/core/util/down_cast.h"
-#include "src/core/util/env.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
 #include "absl/strings/str_cat.h"
@@ -97,16 +97,6 @@ struct ChannelOrCallCreds {
   }
 };
 
-// TODO(roth): Remove this guard once we have reports from OSS Istio
-// users that this works properly.
-bool XdsBootstrapCallCredsEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_BOOTSTRAP_CALL_CREDS");
-  if (!value.has_value()) return false;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
-}
-
 }  // namespace
 
 RefCountedPtr<const ChannelCredsConfig> ParseXdsBootstrapChannelCreds(
@@ -169,7 +159,9 @@ void GrpcXdsServer::JsonPostLoad(const Json& json, const JsonArgs& args,
       ParseXdsBootstrapChannelCreds(json, args, errors);
   // Parse "call_creds".
   std::vector<RefCountedPtr<const CallCredsConfig>> call_creds_configs;
-  if (XdsBootstrapCallCredsEnabled()) {
+  // TODO(roth): Remove this guard once we have reports from OSS Istio
+  // users that this works properly.
+  if (IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_BOOTSTRAP_CALL_CREDS")) {
     call_creds_configs = ParseXdsBootstrapCallCreds(json, args, errors);
   }
   // Parse "server_features".
@@ -204,33 +196,57 @@ void GrpcXdsServer::JsonPostLoad(const Json& json, const JsonArgs& args,
 }
 
 std::string GrpcXdsServer::Key() const {
-  std::vector<std::string> parts;
-  parts.push_back("{");
-  parts.push_back(absl::StrCat("target=", server_target_->Key()));
+  std::string result = "{target=";
+  StrAppend(result, server_target_->Key());
   if (!server_features_.empty()) {
-    parts.push_back(absl::StrCat("server_features=[",
-                                 absl::StrJoin(server_features_, ","), "]"));
+    StrAppend(result, ", server_features=[");
+    bool is_first = true;
+    for (const auto& feature : server_features_) {
+      if (!is_first) StrAppend(result, ", ");
+      StrAppend(result, feature);
+      is_first = false;
+    }
+    StrAppend(result, "]");
   }
-  parts.push_back("}");
-  return absl::StrJoin(parts, ",");
+  StrAppend(result, "}");
+  return result;
 }
 
 std::string GrpcXdsServerTarget::Key() const {
-  std::vector<std::string> parts;
-  parts.push_back("{");
-  parts.push_back(absl::StrCat("server_uri=", server_uri_));
+  std::string result = "{server_uri=";
+  StrAppend(result, server_uri_);
   if (channel_creds_config_ != nullptr) {
-    parts.push_back(
-        absl::StrCat("channel_creds={type=", channel_creds_config_->type(),
-                     ", config=", channel_creds_config_->ToString(), "}"));
+    StrAppend(result, ", channel_creds={type=");
+    StrAppend(result, channel_creds_config_->type());
+    StrAppend(result, ", config=");
+    StrAppend(result, channel_creds_config_->ToString());
+    StrAppend(result, "}");
   }
   for (const auto& call_creds_config : call_creds_configs_) {
-    parts.push_back(absl::StrCat("call_creds={type=", call_creds_config->type(),
-                                 ", config=", call_creds_config->ToString(),
-                                 "}"));
+    StrAppend(result, ", call_creds={type=");
+    StrAppend(result, call_creds_config->type());
+    StrAppend(result, ", config=");
+    StrAppend(result, call_creds_config->ToString());
+    StrAppend(result, "}");
   }
-  parts.push_back("}");
-  return absl::StrJoin(parts, ",");
+  if (!initial_metadata_.empty()) {
+    StrAppend(result, ", initial_metadata=[");
+    bool is_first = true;
+    for (const auto& metadata : initial_metadata_) {
+      if (!is_first) StrAppend(result, ", ");
+      StrAppend(result, metadata.first);
+      StrAppend(result, "=");
+      StrAppend(result, metadata.second);
+      is_first = false;
+    }
+    StrAppend(result, "]");
+  }
+  if (timeout_ != Duration::Zero()) {
+    StrAppend(result, ", timeout=");
+    StrAppend(result, timeout_.ToString());
+  }
+  StrAppend(result, "}");
+  return result;
 }
 
 bool GrpcXdsServerTarget::Equals(const XdsServerTarget& other) const {
@@ -249,6 +265,8 @@ bool GrpcXdsServerTarget::Equals(const XdsServerTarget& other) const {
       return false;
     }
   }
+  if (initial_metadata_ != o.initial_metadata_) return false;
+  if (timeout_ != o.timeout_) return false;
   return true;
 }
 

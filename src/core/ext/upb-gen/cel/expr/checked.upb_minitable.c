@@ -16,25 +16,28 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal cel_expr_CheckedExpr__submsgs[4] = {
-  {.UPB_PRIVATE(submsg) = &cel__expr__CheckedExpr__ReferenceMapEntry_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &cel__expr__CheckedExpr__TypeMapEntry_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &cel__expr__Expr_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &cel__expr__SourceInfo_msg_init_ptr},
-};
+extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
+typedef struct {
+  upb_MiniTableField fields[5];
+  upb_MiniTableSubInternal subs[4];
+} cel__expr__CheckedExpr_msg_init_Fields;
 
-static const upb_MiniTableField cel_expr_CheckedExpr__fields[5] = {
-  {2, UPB_SIZE(12, 32), 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(16, 40), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {4, UPB_SIZE(20, 48), 64, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {5, UPB_SIZE(24, 56), 65, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+static const cel__expr__CheckedExpr_msg_init_Fields cel_expr_CheckedExpr__fields = {{
+  {2, UPB_SIZE(12, 32), 0, UPB_SIZE(15, 16), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(16, 40), 0, UPB_SIZE(13, 15), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(20, 48), 64, UPB_SIZE(11, 14), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(24, 56), 65, UPB_SIZE(9, 13), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {6, UPB_SIZE(28, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-};
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &cel__expr__CheckedExpr__ReferenceMapEntry_msg_init},
+  {.UPB_PRIVATE(submsg) = &cel__expr__CheckedExpr__TypeMapEntry_msg_init},
+  {.UPB_PRIVATE(submsg) = &cel__expr__Expr_msg_init},
+  {.UPB_PRIVATE(submsg) = &cel__expr__SourceInfo_msg_init},
+}};
 
 const upb_MiniTable cel__expr__CheckedExpr_msg_init = {
-  &cel_expr_CheckedExpr__submsgs[0],
-  &cel_expr_CheckedExpr__fields[0],
+  &cel_expr_CheckedExpr__fields.fields[0],
   UPB_SIZE(40, 64), 5, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "cel.expr.CheckedExpr",
@@ -46,242 +49,250 @@ const upb_MiniTable cel__expr__CheckedExpr_msg_init = {
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f000032, &upb_pss_1bt},
+    {0x001000003f000032, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
-const upb_MiniTable* cel__expr__CheckedExpr_msg_init_ptr = &cel__expr__CheckedExpr_msg_init;
-static const upb_MiniTableSubInternal cel_expr_CheckedExpr_ReferenceMapEntry__submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &cel__expr__Reference_msg_init_ptr},
-};
+typedef struct {
+  upb_MiniTableField fields[2];
+  upb_MiniTableSubInternal subs[1];
+} cel__expr__CheckedExpr__ReferenceMapEntry_msg_init_Fields;
 
-static const upb_MiniTableField cel_expr_CheckedExpr_ReferenceMapEntry__fields[2] = {
+static const cel__expr__CheckedExpr__ReferenceMapEntry_msg_init_Fields cel_expr_CheckedExpr_ReferenceMapEntry__fields = {{
   {1, 16, 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
-  {2, 32, 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+  {2, 32, 64, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &cel__expr__Reference_msg_init},
+}};
 
 const upb_MiniTable cel__expr__CheckedExpr__ReferenceMapEntry_msg_init = {
-  &cel_expr_CheckedExpr_ReferenceMapEntry__submsgs[0],
-  &cel_expr_CheckedExpr_ReferenceMapEntry__fields[0],
+  &cel_expr_CheckedExpr_ReferenceMapEntry__fields.fields[0],
   48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "cel.expr.CheckedExpr.ReferenceMapEntry",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f000008, &upb_psv8_1bt},
+    {0x001000003f000008, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
   })
 };
 
-const upb_MiniTable* cel__expr__CheckedExpr__ReferenceMapEntry_msg_init_ptr = &cel__expr__CheckedExpr__ReferenceMapEntry_msg_init;
-static const upb_MiniTableSubInternal cel_expr_CheckedExpr_TypeMapEntry__submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &cel__expr__Type_msg_init_ptr},
-};
+typedef struct {
+  upb_MiniTableField fields[2];
+  upb_MiniTableSubInternal subs[1];
+} cel__expr__CheckedExpr__TypeMapEntry_msg_init_Fields;
 
-static const upb_MiniTableField cel_expr_CheckedExpr_TypeMapEntry__fields[2] = {
+static const cel__expr__CheckedExpr__TypeMapEntry_msg_init_Fields cel_expr_CheckedExpr_TypeMapEntry__fields = {{
   {1, 16, 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
-  {2, 32, 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+  {2, 32, 64, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &cel__expr__Type_msg_init},
+}};
 
 const upb_MiniTable cel__expr__CheckedExpr__TypeMapEntry_msg_init = {
-  &cel_expr_CheckedExpr_TypeMapEntry__submsgs[0],
-  &cel_expr_CheckedExpr_TypeMapEntry__fields[0],
+  &cel_expr_CheckedExpr_TypeMapEntry__fields.fields[0],
   48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "cel.expr.CheckedExpr.TypeMapEntry",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f000008, &upb_psv8_1bt},
+    {0x001000003f000008, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
   })
 };
 
-const upb_MiniTable* cel__expr__CheckedExpr__TypeMapEntry_msg_init_ptr = &cel__expr__CheckedExpr__TypeMapEntry_msg_init;
-static const upb_MiniTableSubInternal cel_expr_Type__submsgs[7] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Empty_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &cel__expr__Type__ListType_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &cel__expr__Type__MapType_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &cel__expr__Type__FunctionType_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &cel__expr__Type_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Empty_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &cel__expr__Type__AbstractType_msg_init_ptr},
-};
+typedef struct {
+  upb_MiniTableField fields[13];
+  upb_MiniTableSubInternal subs[7];
+} cel__expr__Type_msg_init_Fields;
 
-static const upb_MiniTableField cel_expr_Type__fields[13] = {
-  {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+static const cel__expr__Type_msg_init_Fields cel_expr_Type__fields = {{
+  {1, UPB_SIZE(12, 16), -9, UPB_SIZE(39, 40), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(12, 16), -9, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(12, 16), -9, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {4, UPB_SIZE(12, 16), -9, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {5, UPB_SIZE(12, 16), -9, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
-  {6, UPB_SIZE(12, 16), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {7, UPB_SIZE(12, 16), -9, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {8, UPB_SIZE(12, 16), -9, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(12, 16), -9, UPB_SIZE(25, 27), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {7, UPB_SIZE(12, 16), -9, UPB_SIZE(23, 26), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {8, UPB_SIZE(12, 16), -9, UPB_SIZE(21, 25), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {9, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {10, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {11, UPB_SIZE(12, 16), -9, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {12, UPB_SIZE(12, 16), -9, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {14, UPB_SIZE(12, 16), -9, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+  {11, UPB_SIZE(12, 16), -9, UPB_SIZE(13, 18), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {12, UPB_SIZE(12, 16), -9, UPB_SIZE(11, 17), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {14, UPB_SIZE(12, 16), -9, UPB_SIZE(9, 16), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Empty_msg_init},
+  {.UPB_PRIVATE(submsg) = &cel__expr__Type__ListType_msg_init},
+  {.UPB_PRIVATE(submsg) = &cel__expr__Type__MapType_msg_init},
+  {.UPB_PRIVATE(submsg) = &cel__expr__Type__FunctionType_msg_init},
+  {.UPB_PRIVATE(submsg) = &cel__expr__Type_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Empty_msg_init},
+  {.UPB_PRIVATE(submsg) = &cel__expr__Type__AbstractType_msg_init},
+}};
 
 const upb_MiniTable cel__expr__Type_msg_init = {
-  &cel_expr_Type__submsgs[0],
-  &cel_expr_Type__fields[0],
+  &cel_expr_Type__fields.fields[0],
   UPB_SIZE(24, 32), 13, kUpb_ExtMode_NonExtendable, 12, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
   "cel.expr.Type",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000080100000a, &upb_pom_1bt_maxmaxb},
-    {0x0010000802000010, &upb_pov4_1bt},
-    {0x0010000803000018, &upb_pov4_1bt},
-    {0x0010000804000020, &upb_pov4_1bt},
-    {0x0010000805000028, &upb_pov4_1bt},
-    {0x0010000806010032, &upb_pom_1bt_max64b},
-    {0x001000080702003a, &upb_pom_1bt_max64b},
-    {0x0010000808030042, &upb_pom_1bt_max64b},
-    {0x001000080900004a, &upb_pos_1bt},
-    {0x001000080a000052, &upb_pos_1bt},
-    {0x001000080b04005a, &upb_pom_1bt_max64b},
-    {0x001000080c050062, &upb_pom_1bt_maxmaxb},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000080e060072, &upb_pom_1bt_max64b},
+    {0x0010000802000010, &upb_DecodeFast_Varint32_Oneof_Tag1Byte},
+    {0x0010000803000018, &upb_DecodeFast_Varint32_Oneof_Tag1Byte},
+    {0x0010000804000020, &upb_DecodeFast_Varint32_Oneof_Tag1Byte},
+    {0x0010000805000028, &upb_DecodeFast_Varint32_Oneof_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x001000080900004a, &upb_DecodeFast_String_Oneof_Tag1Byte},
+    {0x001000080a000052, &upb_DecodeFast_String_Oneof_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
-const upb_MiniTable* cel__expr__Type_msg_init_ptr = &cel__expr__Type_msg_init;
-static const upb_MiniTableSubInternal cel_expr_Type_ListType__submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &cel__expr__Type_msg_init_ptr},
-};
+typedef struct {
+  upb_MiniTableField fields[1];
+  upb_MiniTableSubInternal subs[1];
+} cel__expr__Type__ListType_msg_init_Fields;
 
-static const upb_MiniTableField cel_expr_Type_ListType__fields[1] = {
-  {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+static const cel__expr__Type__ListType_msg_init_Fields cel_expr_Type_ListType__fields = {{
+  {1, UPB_SIZE(12, 16), 64, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &cel__expr__Type_msg_init},
+}};
 
 const upb_MiniTable cel__expr__Type__ListType_msg_init = {
-  &cel_expr_Type_ListType__submsgs[0],
-  &cel_expr_Type_ListType__fields[0],
+  &cel_expr_Type_ListType__fields.fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "cel.expr.Type.ListType",
 #endif
 };
 
-const upb_MiniTable* cel__expr__Type__ListType_msg_init_ptr = &cel__expr__Type__ListType_msg_init;
-static const upb_MiniTableSubInternal cel_expr_Type_MapType__submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &cel__expr__Type_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &cel__expr__Type_msg_init_ptr},
-};
+typedef struct {
+  upb_MiniTableField fields[2];
+  upb_MiniTableSubInternal subs[2];
+} cel__expr__Type__MapType_msg_init_Fields;
 
-static const upb_MiniTableField cel_expr_Type_MapType__fields[2] = {
-  {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+static const cel__expr__Type__MapType_msg_init_Fields cel_expr_Type_MapType__fields = {{
+  {1, UPB_SIZE(12, 16), 64, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(16, 24), 65, UPB_SIZE(4, 5), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &cel__expr__Type_msg_init},
+  {.UPB_PRIVATE(submsg) = &cel__expr__Type_msg_init},
+}};
 
 const upb_MiniTable cel__expr__Type__MapType_msg_init = {
-  &cel_expr_Type_MapType__submsgs[0],
-  &cel_expr_Type_MapType__fields[0],
+  &cel_expr_Type_MapType__fields.fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "cel.expr.Type.MapType",
 #endif
 };
 
-const upb_MiniTable* cel__expr__Type__MapType_msg_init_ptr = &cel__expr__Type__MapType_msg_init;
-static const upb_MiniTableSubInternal cel_expr_Type_FunctionType__submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &cel__expr__Type_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &cel__expr__Type_msg_init_ptr},
-};
+typedef struct {
+  upb_MiniTableField fields[2];
+  upb_MiniTableSubInternal subs[2];
+} cel__expr__Type__FunctionType_msg_init_Fields;
 
-static const upb_MiniTableField cel_expr_Type_FunctionType__fields[2] = {
-  {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(16, 24), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+static const cel__expr__Type__FunctionType_msg_init_Fields cel_expr_Type_FunctionType__fields = {{
+  {1, UPB_SIZE(12, 16), 64, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(16, 24), 0, UPB_SIZE(4, 5), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &cel__expr__Type_msg_init},
+  {.UPB_PRIVATE(submsg) = &cel__expr__Type_msg_init},
+}};
 
 const upb_MiniTable cel__expr__Type__FunctionType_msg_init = {
-  &cel_expr_Type_FunctionType__submsgs[0],
-  &cel_expr_Type_FunctionType__fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  &cel_expr_Type_FunctionType__fields.fields[0],
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "cel.expr.Type.FunctionType",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001800003f010012, &upb_prm_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
-const upb_MiniTable* cel__expr__Type__FunctionType_msg_init_ptr = &cel__expr__Type__FunctionType_msg_init;
-static const upb_MiniTableSubInternal cel_expr_Type_AbstractType__submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &cel__expr__Type_msg_init_ptr},
-};
+typedef struct {
+  upb_MiniTableField fields[2];
+  upb_MiniTableSubInternal subs[1];
+} cel__expr__Type__AbstractType_msg_init_Fields;
 
-static const upb_MiniTableField cel_expr_Type_AbstractType__fields[2] = {
+static const cel__expr__Type__AbstractType_msg_init_Fields cel_expr_Type_AbstractType__fields = {{
   {1, UPB_SIZE(12, 8), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(8, 24), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+  {2, UPB_SIZE(8, 24), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &cel__expr__Type_msg_init},
+}};
 
 const upb_MiniTable cel__expr__Type__AbstractType_msg_init = {
-  &cel_expr_Type_AbstractType__submsgs[0],
-  &cel_expr_Type_AbstractType__fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  &cel_expr_Type_AbstractType__fields.fields[0],
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "cel.expr.Type.AbstractType",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_pss_1bt},
-    {0x001800003f000012, &upb_prm_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000800003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
   })
 };
 
-const upb_MiniTable* cel__expr__Type__AbstractType_msg_init_ptr = &cel__expr__Type__AbstractType_msg_init;
-static const upb_MiniTableSubInternal cel_expr_Decl__submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &cel__expr__Decl__IdentDecl_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &cel__expr__Decl__FunctionDecl_msg_init_ptr},
-};
+typedef struct {
+  upb_MiniTableField fields[3];
+  upb_MiniTableSubInternal subs[2];
+} cel__expr__Decl_msg_init_Fields;
 
-static const upb_MiniTableField cel_expr_Decl__fields[3] = {
+static const cel__expr__Decl_msg_init_Fields cel_expr_Decl__fields = {{
   {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(12, 32), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+  {2, UPB_SIZE(12, 32), -9, UPB_SIZE(6, 7), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(12, 32), -9, UPB_SIZE(4, 6), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &cel__expr__Decl__IdentDecl_msg_init},
+  {.UPB_PRIVATE(submsg) = &cel__expr__Decl__FunctionDecl_msg_init},
+}};
 
 const upb_MiniTable cel__expr__Decl_msg_init = {
-  &cel_expr_Decl__submsgs[0],
-  &cel_expr_Decl__fields[0],
-  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  &cel_expr_Decl__fields.fields[0],
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "cel.expr.Decl",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-    {0x0020000802000012, &upb_pom_1bt_max64b},
-    {0x002000080301001a, &upb_pom_1bt_max64b},
+    {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
   })
 };
 
-const upb_MiniTable* cel__expr__Decl_msg_init_ptr = &cel__expr__Decl_msg_init;
-static const upb_MiniTableSubInternal cel_expr_Decl_IdentDecl__submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &cel__expr__Type_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &cel__expr__Constant_msg_init_ptr},
-};
+typedef struct {
+  upb_MiniTableField fields[3];
+  upb_MiniTableSubInternal subs[2];
+} cel__expr__Decl__IdentDecl_msg_init_Fields;
 
-static const upb_MiniTableField cel_expr_Decl_IdentDecl__fields[3] = {
-  {1, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(16, 40), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+static const cel__expr__Decl__IdentDecl_msg_init_Fields cel_expr_Decl_IdentDecl__fields = {{
+  {1, UPB_SIZE(12, 32), 64, UPB_SIZE(9, 10), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(16, 40), 65, UPB_SIZE(7, 9), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(20, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-};
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &cel__expr__Type_msg_init},
+  {.UPB_PRIVATE(submsg) = &cel__expr__Constant_msg_init},
+}};
 
 const upb_MiniTable cel__expr__Decl__IdentDecl_msg_init = {
-  &cel_expr_Decl_IdentDecl__submsgs[0],
-  &cel_expr_Decl_IdentDecl__fields[0],
+  &cel_expr_Decl_IdentDecl__fields.fields[0],
   UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "cel.expr.Decl.IdentDecl",
@@ -290,96 +301,101 @@ const upb_MiniTable cel__expr__Decl__IdentDecl_msg_init = {
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00001a, &upb_pss_1bt},
+    {0x001000003f00001a, &upb_DecodeFast_String_Scalar_Tag1Byte},
   })
 };
 
-const upb_MiniTable* cel__expr__Decl__IdentDecl_msg_init_ptr = &cel__expr__Decl__IdentDecl_msg_init;
-static const upb_MiniTableSubInternal cel_expr_Decl_FunctionDecl__submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &cel__expr__Decl__FunctionDecl__Overload_msg_init_ptr},
-};
+typedef struct {
+  upb_MiniTableField fields[2];
+  upb_MiniTableSubInternal subs[1];
+} cel__expr__Decl__FunctionDecl_msg_init_Fields;
 
-static const upb_MiniTableField cel_expr_Decl_FunctionDecl__fields[2] = {
-  {1, UPB_SIZE(8, 24), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+static const cel__expr__Decl__FunctionDecl_msg_init_Fields cel_expr_Decl_FunctionDecl__fields = {{
+  {1, UPB_SIZE(8, 24), 0, 6, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(12, 8), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-};
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &cel__expr__Decl__FunctionDecl__Overload_msg_init},
+}};
 
 const upb_MiniTable cel__expr__Decl__FunctionDecl_msg_init = {
-  &cel_expr_Decl_FunctionDecl__submsgs[0],
-  &cel_expr_Decl_FunctionDecl__fields[0],
+  &cel_expr_Decl_FunctionDecl__fields.fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "cel.expr.Decl.FunctionDecl",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001800003f00000a, &upb_prm_1bt_max128b},
-    {0x000800003f000012, &upb_pss_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000800003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
-const upb_MiniTable* cel__expr__Decl__FunctionDecl_msg_init_ptr = &cel__expr__Decl__FunctionDecl_msg_init;
-static const upb_MiniTableSubInternal cel_expr_Decl_FunctionDecl_Overload__submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &cel__expr__Type_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &cel__expr__Type_msg_init_ptr},
-};
+typedef struct {
+  upb_MiniTableField fields[6];
+  upb_MiniTableSubInternal subs[2];
+} cel__expr__Decl__FunctionDecl__Overload_msg_init_Fields;
 
-static const upb_MiniTableField cel_expr_Decl_FunctionDecl_Overload__fields[6] = {
+static const cel__expr__Decl__FunctionDecl__Overload_msg_init_Fields cel_expr_Decl_FunctionDecl_Overload__fields = {{
   {1, UPB_SIZE(24, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(12, 48), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(12, 48), 0, 15, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(16, 56), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {4, UPB_SIZE(20, 64), 64, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(20, 64), 64, UPB_SIZE(10, 11), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {5, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {6, 32, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-};
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &cel__expr__Type_msg_init},
+  {.UPB_PRIVATE(submsg) = &cel__expr__Type_msg_init},
+}};
 
 const upb_MiniTable cel__expr__Decl__FunctionDecl__Overload_msg_init = {
-  &cel_expr_Decl_FunctionDecl_Overload__submsgs[0],
-  &cel_expr_Decl_FunctionDecl_Overload__fields[0],
+  &cel_expr_Decl_FunctionDecl_Overload__fields.fields[0],
   UPB_SIZE(40, 72), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "cel.expr.Decl.FunctionDecl.Overload",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-    {0x003000003f000012, &upb_prm_1bt_max64b},
-    {0x003800003f00001a, &upb_prs_1bt},
+    {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000900003f000028, &upb_psb1_1bt},
-    {0x002000003f000032, &upb_pss_1bt},
+    {0x003800003f00001a, &upb_DecodeFast_String_Repeated_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000900003f000028, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
+    {0x002000003f000032, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
-const upb_MiniTable* cel__expr__Decl__FunctionDecl__Overload_msg_init_ptr = &cel__expr__Decl__FunctionDecl__Overload_msg_init;
-static const upb_MiniTableSubInternal cel_expr_Reference__submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &cel__expr__Constant_msg_init_ptr},
-};
+typedef struct {
+  upb_MiniTableField fields[3];
+  upb_MiniTableSubInternal subs[1];
+} cel__expr__Reference_msg_init_Fields;
 
-static const upb_MiniTableField cel_expr_Reference__fields[3] = {
+static const cel__expr__Reference_msg_init_Fields cel_expr_Reference__fields = {{
   {1, UPB_SIZE(20, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(12, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {4, UPB_SIZE(16, 40), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+  {4, UPB_SIZE(16, 40), 64, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &cel__expr__Constant_msg_init},
+}};
 
 const upb_MiniTable cel__expr__Reference_msg_init = {
-  &cel_expr_Reference__submsgs[0],
-  &cel_expr_Reference__fields[0],
+  &cel_expr_Reference__fields.fields[0],
   UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "cel.expr.Reference",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
+    {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x002000003f00001a, &upb_prs_1bt},
+    {0x002000003f00001a, &upb_DecodeFast_String_Repeated_Tag1Byte},
   })
 };
 
-const upb_MiniTable* cel__expr__Reference_msg_init_ptr = &cel__expr__Reference_msg_init;
 static const upb_MiniTable *messages_layout[13] = {
   &cel__expr__CheckedExpr_msg_init,
   &cel__expr__CheckedExpr__ReferenceMapEntry_msg_init,

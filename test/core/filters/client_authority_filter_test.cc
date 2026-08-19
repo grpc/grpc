@@ -18,7 +18,7 @@
 
 #include <memory>
 
-#include "test/core/filters/filter_test.h"
+#include "test/core/filters/filter_test_v2.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
@@ -29,7 +29,7 @@ using ::testing::StrictMock;
 namespace grpc_core {
 namespace {
 
-using ClientAuthorityFilterTest = FilterTest<ClientAuthorityFilter>;
+using ClientAuthorityFilterTest = FilterTestV2<ClientAuthorityFilter>;
 
 ChannelArgs TestChannelArgs(absl::string_view default_authority) {
   return ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY, default_authority);
@@ -50,7 +50,7 @@ TEST_F(ClientAuthorityFilterTest, NonStringArgFails) {
 }
 
 TEST_F(ClientAuthorityFilterTest, PromiseCompletesImmediatelyAndSetsAuthority) {
-  StrictMock<FilterTest::Call> call(
+  StrictMock<FilterTestV2::Call> call(
       MakeChannel(TestChannelArgs("foo.test.google.au")).value());
   EXPECT_EVENT(
       Started(&call, HasMetadataKeyValue(":authority", "foo.test.google.au")));
@@ -59,7 +59,7 @@ TEST_F(ClientAuthorityFilterTest, PromiseCompletesImmediatelyAndSetsAuthority) {
 
 TEST_F(ClientAuthorityFilterTest,
        PromiseCompletesImmediatelyAndDoesNotSetAuthority) {
-  StrictMock<FilterTest::Call> call(
+  StrictMock<FilterTestV2::Call> call(
       MakeChannel(TestChannelArgs("foo.test.google.au")).value());
   EXPECT_EVENT(
       Started(&call, HasMetadataKeyValue(":authority", "bar.test.google.au")));

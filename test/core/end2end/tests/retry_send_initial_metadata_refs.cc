@@ -116,7 +116,7 @@ CORE_END2END_TEST(RetryTests, RetrySendInitialMetadataRefs) {
   Expect(2, true);
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
-  EXPECT_EQ(server_status.message(), IsErrorFlattenEnabled() ? "" : "xyz");
+  EXPECT_EQ(server_status.message(), "");
   EXPECT_EQ(s.method(), "/service/method");
   EXPECT_FALSE(client_close.was_cancelled());
 }

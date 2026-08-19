@@ -159,6 +159,10 @@ class ChaoticGoodClientTransport final : public ClientTransport,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   };
 
+  auto SendCallInitialMetadataAndBody(
+      uint32_t stream_id, CallHandler call_handler,
+      std::shared_ptr<TcpCallTracer> call_tracer, ClientMetadataHandle md);
+
   auto CallOutboundLoop(uint32_t stream_id, CallHandler call_handler);
 
   const TransportContextPtr ctx_;

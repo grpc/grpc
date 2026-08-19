@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+PS4='+ $(date "+[%H:%M:%S %Z]")\011 '
 set -ex
 
 "$(dirname "$0")/test_packages.sh" binary

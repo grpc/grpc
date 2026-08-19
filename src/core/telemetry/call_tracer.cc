@@ -18,6 +18,9 @@
 
 #include "src/core/telemetry/call_tracer.h"
 
+#include <grpc/event_engine/internal/write_event.h>
+
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <utility>
@@ -37,6 +40,7 @@
 #include "absl/functional/function_ref.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 #include "absl/types/span.h"
 
 namespace grpc_core {
@@ -90,6 +94,31 @@ ServerCallTracerFactory* g_server_call_tracer_factory_ = nullptr;
 
 const char* kServerCallTracerFactoryChannelArgName =
     "grpc.experimental.server_call_tracer_factory";
+
+class DelegatingTcpCallTracer final : public TcpCallTracer {
+ public:
+  explicit DelegatingTcpCallTracer(
+      std::vector<std::shared_ptr<TcpCallTracer>> tracers)
+      : tracers_(std::move(tracers)) {}
+
+  void RecordConnectionTuple(const IpAddress& local_addr,
+                             const IpAddress& peer_addr) override {
+    for (const auto& tracer : tracers_) {
+      tracer->RecordConnectionTuple(local_addr, peer_addr);
+    }
+  }
+
+  void RecordEvent(grpc_event_engine::experimental::internal::WriteEvent event,
+                   absl::Time time, size_t byte_offset,
+                   const std::vector<TcpEventMetric>& metrics) override {
+    for (const auto& tracer : tracers_) {
+      tracer->RecordEvent(event, time, byte_offset, metrics);
+    }
+  }
+
+ private:
+  const std::vector<std::shared_ptr<TcpCallTracer>> tracers_;
+};
 
 }  // namespace
 
@@ -223,7 +252,15 @@ class DelegatingClientCallTracer : public ClientCallTracerInterface {
       }
     }
     std::shared_ptr<TcpCallTracer> StartNewTcpTrace() override {
-      return nullptr;
+      std::vector<std::shared_ptr<TcpCallTracer>> tcp_tracers;
+      for (auto* tracer : tracers_) {
+        if (auto tcp_tracer = tracer->StartNewTcpTrace()) {
+          tcp_tracers.push_back(std::move(tcp_tracer));
+        }
+      }
+      if (tcp_tracers.empty()) return nullptr;
+      if (tcp_tracers.size() == 1) return tcp_tracers[0];
+      return std::make_shared<DelegatingTcpCallTracer>(std::move(tcp_tracers));
     }
     void SetOptionalLabel(OptionalLabelKey key,
                           RefCountedStringValue value) override {
@@ -386,7 +423,17 @@ class DelegatingServerCallTracer : public ServerCallTracerInterface {
       tracer->RecordAnnotation(annotation);
     }
   }
-  std::shared_ptr<TcpCallTracer> StartNewTcpTrace() override { return nullptr; }
+  std::shared_ptr<TcpCallTracer> StartNewTcpTrace() override {
+    std::vector<std::shared_ptr<TcpCallTracer>> tcp_tracers;
+    for (auto* tracer : tracers_) {
+      if (auto tcp_tracer = tracer->StartNewTcpTrace()) {
+        tcp_tracers.push_back(std::move(tcp_tracer));
+      }
+    }
+    if (tcp_tracers.empty()) return nullptr;
+    if (tcp_tracers.size() == 1) return tcp_tracers[0];
+    return std::make_shared<DelegatingTcpCallTracer>(std::move(tcp_tracers));
+  }
   std::string TraceId() override { return tracers_[0]->TraceId(); }
   std::string SpanId() override { return tracers_[0]->SpanId(); }
   bool IsSampled() override { return tracers_[0]->IsSampled(); }

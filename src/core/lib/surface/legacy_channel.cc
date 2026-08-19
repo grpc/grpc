@@ -63,7 +63,7 @@ namespace grpc_core {
 
 absl::StatusOr<RefCountedPtr<Channel>> LegacyChannel::Create(
     std::string target, ChannelArgs args,
-    grpc_channel_stack_type channel_stack_type, const Blackboard* blackboard) {
+    grpc_channel_stack_type channel_stack_type) {
   if (grpc_channel_stack_type_is_client(channel_stack_type)) {
     auto channel_args_mutator =
         grpc_channel_args_get_client_channel_creation_mutator();
@@ -76,16 +76,6 @@ absl::StatusOr<RefCountedPtr<Channel>> LegacyChannel::Create(
   if (channel_stack_type == GRPC_SERVER_CHANNEL) {
     stats_plugin_group =
         GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
-    // Add per-server stats plugins.
-    auto* stats_plugin_list = args.GetPointer<
-        std::shared_ptr<std::vector<std::shared_ptr<StatsPlugin>>>>(
-        GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS);
-    if (stats_plugin_list != nullptr) {
-      for (const auto& plugin : **stats_plugin_list) {
-        stats_plugin_group->AddStatsPlugin(plugin,
-                                           plugin->GetServerScopeConfig(args));
-      }
-    }
   } else {
     std::string authority = args.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY)
                                 .value_or(CoreConfiguration::Get()
@@ -97,23 +87,12 @@ absl::StatusOr<RefCountedPtr<Channel>> LegacyChannel::Create(
                                                 endpoint_config);
     stats_plugin_group =
         GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
-    // Add per-channel stats plugins.
-    auto* stats_plugin_list = args.GetPointer<
-        std::shared_ptr<std::vector<std::shared_ptr<StatsPlugin>>>>(
-        GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS);
-    if (stats_plugin_list != nullptr) {
-      for (const auto& plugin : **stats_plugin_list) {
-        stats_plugin_group->AddStatsPlugin(
-            plugin, plugin->GetChannelScopeConfig(scope));
-      }
-    }
   }
   args = args.SetObject(stats_plugin_group);
   ChannelStackBuilderImpl builder(
       grpc_channel_stack_type_string(channel_stack_type), channel_stack_type,
       args);
   builder.SetTarget(target.c_str());
-  builder.SetBlackboard(blackboard);
   if (!CoreConfiguration::Get().channel_init().CreateStack(&builder)) {
     return nullptr;
   }
@@ -181,13 +160,12 @@ bool LegacyChannel::IsLame() const {
   return elem->filter == &LameClientFilter::kFilter;
 }
 
-grpc_call* LegacyChannel::CreateCall(grpc_call* parent_call,
-                                     uint32_t propagation_mask,
-                                     grpc_completion_queue* cq,
-                                     grpc_pollset_set* pollset_set_alternative,
-                                     Slice path, std::optional<Slice> authority,
-                                     Timestamp deadline,
-                                     bool registered_method) {
+grpc_call* LegacyChannel::CreateCall(
+    grpc_call* parent_call, uint32_t propagation_mask,
+    grpc_completion_queue* cq, grpc_pollset_set* pollset_set_alternative,
+    Slice path, std::optional<Slice> authority, Timestamp deadline,
+    bool registered_method,
+    std::optional<absl::FunctionRef<void(Arena*)>> arena_init_function) {
   GRPC_CHECK(is_client_);
   GRPC_CHECK(!(cq != nullptr && pollset_set_alternative != nullptr));
   grpc_call_create_args args;
@@ -202,6 +180,9 @@ grpc_call* LegacyChannel::CreateCall(grpc_call* parent_call,
   args.authority = std::move(authority);
   args.send_deadline = deadline;
   args.registered_method = registered_method;
+  if (arena_init_function.has_value()) {
+    args.arena_init_function.emplace(*arena_init_function);
+  }
   grpc_call* call;
   GRPC_LOG_IF_ERROR("call_create", grpc_call_create(&args, &call));
   return call;

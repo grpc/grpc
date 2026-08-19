@@ -32,12 +32,19 @@
   grpcxx_libs = ['grpc++', 'grpc++_unsecure']
   protoc_libs = ['benchmark_helpers', 'grpc++_reflection', 'grpcpp_channelz']
 
+
+  def _remove_prefix(string, prefix):
+    # TODO(sergiitk): delete and use str.removeprefix once CI VMs off of py 3.8
+    if string.startswith(prefix):
+      return string[len(prefix):]
+    return string
+
   def third_party_proto_import_path(path):
     """Removes third_party prefix to match ProtoBuf's relative import path."""
     for lib in external_proto_libraries:
       if path.startswith(lib.proto_prefix):
-        path = path[len(lib.proto_prefix):]
-        path = path.removeprefix(lib.strip_path_prefix)
+        path = _remove_prefix(path, lib.proto_prefix)
+        path = _remove_prefix(path, lib.strip_path_prefix)
         break
     return path
 
@@ -275,7 +282,7 @@
         protobuf_gen_files.add(src)
   %>
 
-  cmake_minimum_required(VERSION 3.16)
+  cmake_minimum_required(VERSION 3.22)
 
   set(PACKAGE_NAME          "grpc")
   set(PACKAGE_VERSION       "${settings.cpp_version}")
@@ -311,14 +318,6 @@
   endif()
   set(gRPC_INSTALL <%text>${gRPC_INSTALL_default}</%text> CACHE BOOL
       "Generate installation target")
-
-  # We can install dependencies from submodules if we're running
-  # CMake v3.13 or newer.
-  if(CMAKE_VERSION VERSION_LESS 3.13)
-    set(_gRPC_INSTALL_SUPPORTED_FROM_MODULE OFF)
-  else()
-    set(_gRPC_INSTALL_SUPPORTED_FROM_MODULE ON)
-  endif()
 
   # Providers for third-party dependencies (gRPC_*_PROVIDER properties):
   # "module": build the dependency using sources from git submodule (under third_party)
@@ -421,14 +420,14 @@
     set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /wd4267")
     # TODO(jtattermusch): needed to build boringssl with VS2017, revisit later
     set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /wd4987 /wd4774 /wd4819 /wd4996 /wd4619")
-    # Silences thousands of trucation warnings
+    # Silences thousands of truncation warnings
     set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /wd4503")
     # Tell MSVC to build grpc using utf-8
     set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /utf-8")
     # Inconsistent object sizes can cause stack corruption and should be treated as an error
     set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /we4789")
     # To decrease the size of PDB files
-    set(CMAKE_EXE_LINKER_FLAGS "/opt:ref /opt:icf /pdbcompress")
+    set(CMAKE_EXE_LINKER_FLAGS "<%text>${CMAKE_EXE_LINKER_FLAGS}</%text> /opt:ref /opt:icf /pdbcompress")
   endif()
   if (MINGW)
     add_definitions(-D_WIN32_WINNT=0x600)
@@ -516,6 +515,7 @@
     # Download the archive via HTTP, validate the checksum, and extract to ${external_proto_library.destination}.
     download_archive(
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/${external_proto_library.destination}
+      https://storage.googleapis.com/grpc-bazel-mirror/${_remove_prefix(download_url, "https://")}
       ${download_url}
       ${external_proto_library.hash}
       ${external_proto_library.strip_prefix}
@@ -528,7 +528,7 @@
     set(_gRPC_ALLTARGETS_LIBRARIES <%text>${_gRPC_ALLTARGETS_LIBRARIES}</%text> ws2_32 crypt32)
     set(_gRPC_STATIC_WIN32 STATIC)
   endif()
-    
+
   if(BUILD_SHARED_LIBS AND WIN32)
 
   # Currently for shared lib on Windows (i.e. a DLL) certain bits of source code
@@ -869,29 +869,47 @@
     set_target_properties(${lib.name} PROPERTIES COMPILE_PDB_NAME "${lib.name}"
       COMPILE_PDB_OUTPUT_DIRECTORY <%text>"${CMAKE_BINARY_DIR}</%text>"
     )<%
-    dll_annotations = []
+    private_dll_annotations = []
+    interface_dll_annotations = []
     if lib.name in gpr_libs:
-      dll_annotations.append("GPR_DLL_EXPORTS")
+      private_dll_annotations.append("GPR_DLL_EXPORTS")
+      interface_dll_annotations.append("GPR_DLL_IMPORTS")
     if lib.name in grpc_libs:
-      dll_annotations.append("GRPC_DLL_EXPORTS")
+      private_dll_annotations.append("GRPC_DLL_EXPORTS")
+      interface_dll_annotations.append("GRPC_DLL_IMPORTS")
     if lib.name in grpcxx_libs:
-      dll_annotations.append("GRPCXX_DLL_EXPORTS")
+      private_dll_annotations.append("GRPCXX_DLL_EXPORTS")
+      interface_dll_annotations.append("GRPCXX_DLL_IMPORTS")
     if set(gpr_libs) & set(lib.transitive_deps):
-      dll_annotations.append("GPR_DLL_IMPORTS")
+      private_dll_annotations.append("GPR_DLL_IMPORTS")
     if set(grpc_libs) & set(lib.transitive_deps):
-      dll_annotations.append("GRPC_DLL_IMPORTS")
+      private_dll_annotations.append("GRPC_DLL_IMPORTS")
     if set(grpcxx_libs) & set(lib.transitive_deps):
-      dll_annotations.append("GRPCXX_DLL_IMPORTS")
+      private_dll_annotations.append("GRPCXX_DLL_IMPORTS")
     %>
-    % if dll_annotations:
+    % if private_dll_annotations or interface_dll_annotations:
     if(BUILD_SHARED_LIBS)
       target_compile_definitions(${lib.name}
+    % if private_dll_annotations:
       PRIVATE
-    % for definition in dll_annotations:
+    % for definition in private_dll_annotations:
         "${definition}"
     % endfor
+    % endif
+    % if interface_dll_annotations:
+      INTERFACE
+    % for definition in interface_dll_annotations:
+        "${definition}"
+    % endfor
+    % endif
       )
     endif()
+    % endif
+    ## upb from protobuf 33.x requires this flag to compile. See https://github.com/grpc/grpc/issues/41951
+    % if 'upb_' in lib.name:
+    target_compile_options(${lib.name} PRIVATE
+      /Zc:preprocessor
+    )
     % endif
     if(gRPC_INSTALL)
       install(FILES <%text>${CMAKE_CURRENT_BINARY_DIR}/</%text>${lib.name}.pdb
@@ -1096,6 +1114,16 @@
     set(PC_REQUIRES_PRIVATE "<%text>${requires_private}</%text>")
     set(PC_LIB "<%text>${libs}</%text>")
     set(PC_LIBS_PRIVATE "<%text>${libs_private}</%text>")
+    set(PC_CFLAGS "")
+    if(WIN32 AND BUILD_SHARED_LIBS)
+      if(name STREQUAL "gpr")
+        set(PC_CFLAGS "-DGPR_DLL_IMPORTS")
+      elseif(name STREQUAL "gRPC" OR name STREQUAL "gRPC unsecure")
+        set(PC_CFLAGS "-DGRPC_DLL_IMPORTS -DGPR_DLL_IMPORTS")
+      elseif(name MATCHES "^gRPC\\+\\+")
+        set(PC_CFLAGS "-DGRPCXX_DLL_IMPORTS -DGRPC_DLL_IMPORTS -DGPR_DLL_IMPORTS")
+      endif()
+    endif()
     set(output_filepath "<%text>${grpc_BINARY_DIR}/libs/opt/pkgconfig/${output_filename}</%text>")
     configure_file(
       "<%text>${grpc_SOURCE_DIR}/cmake/pkg-config-template.pc.in</%text>"

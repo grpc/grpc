@@ -51,7 +51,8 @@ void EncodeTimeouts(std::vector<uint32_t> timeouts) {
     parser.BeginFrame(
         &b, kMetadataSizeLimit, kMetadataSizeLimit, HPackParser::Boundary::None,
         HPackParser::Priority::None,
-        HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false});
+        HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false},
+        nullptr);
     for (size_t j = 0; j < encoded.Count(); j++) {
       EXPECT_TRUE(parser
                       .Parse(encoded.c_slice_at(j), j == encoded.Count() - 1,

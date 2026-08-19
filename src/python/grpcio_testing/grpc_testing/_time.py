@@ -41,7 +41,7 @@ def _call_in_thread(behaviors):
     calling.join()
 
 
-class _State(object):
+class _State:
     def __init__(self):
         self.condition = threading.Condition()
         self.times_to_behaviors = collections.defaultdict(list)

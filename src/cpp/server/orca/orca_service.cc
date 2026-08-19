@@ -175,11 +175,12 @@ OrcaService::OrcaService(ServerMetricRecorder* const server_metric_recorder,
     : server_metric_recorder_(server_metric_recorder),
       min_report_duration_(options.min_report_duration) {
   GRPC_CHECK_NE(server_metric_recorder_, nullptr);
-  AddMethod(new internal::RpcServiceMethod(
+  AddMethod(new grpc::internal::RpcServiceMethod(
       "/xds.service.orca.v3.OpenRcaService/StreamCoreMetrics",
-      internal::RpcMethod::SERVER_STREAMING, /*handler=*/nullptr));
+      grpc::internal::RpcMethod::SERVER_STREAMING, /*handler=*/nullptr));
   MarkMethodCallback(
-      0, new internal::CallbackServerStreamingHandler<ByteBuffer, ByteBuffer>(
+      0, new grpc::internal::CallbackServerStreamingHandler<ByteBuffer,
+                                                            ByteBuffer>(
              [this](CallbackServerContext* ctx, const ByteBuffer* request) {
                return new Reactor(this, ctx->peer(), request, nullptr);
              }));

@@ -42,6 +42,11 @@ UPB_INLINE const upb_MessageDef *grpc_channelz_v2_Promise_Loop_getmsgdef(upb_Def
   return upb_DefPool_FindMessageByName(s, "grpc.channelz.v2.Promise.Loop");
 }
 
+UPB_INLINE const upb_MessageDef *grpc_channelz_v2_Promise_ForEach_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &src_proto_grpc_channelz_v2_promise_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "grpc.channelz.v2.Promise.ForEach");
+}
+
 UPB_INLINE const upb_MessageDef *grpc_channelz_v2_Promise_Race_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &src_proto_grpc_channelz_v2_promise_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "grpc.channelz.v2.Promise.Race");

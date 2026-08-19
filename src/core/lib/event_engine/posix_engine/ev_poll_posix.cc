@@ -263,11 +263,7 @@ void PollEventHandle::OrphanHandle(PosixEngineClosure* on_done,
     // Perform shutdown operations if not already done so.
     if (!is_shutdown_) {
       is_shutdown_ = true;
-      shutdown_error_ =
-          absl::Status(absl::StatusCode::kInternal, "FD Orphaned");
-      grpc_core::StatusSetInt(&shutdown_error_,
-                              grpc_core::StatusIntProperty::kRpcStatus,
-                              GRPC_STATUS_UNAVAILABLE);
+      shutdown_error_ = absl::UnavailableError("FD Orphaned");
       SetReadyLocked(&read_closure_);
       SetReadyLocked(&write_closure_);
     }
@@ -341,11 +337,9 @@ void PollEventHandle::ShutdownHandle(absl::Status why) {
     // only shutdown once
     if (!is_shutdown_) {
       is_shutdown_ = true;
-      shutdown_error_ = std::move(why);
-      grpc_core::StatusSetInt(
-          &shutdown_error_, grpc_core::StatusIntProperty::kRpcStatus,
-          absl::IsCancelled(shutdown_error_) ? GRPC_STATUS_CANCELLED
-                                             : GRPC_STATUS_UNAVAILABLE);
+      shutdown_error_ = absl::IsCancelled(why)
+                            ? std::move(why)
+                            : absl::UnavailableError(why.message());
       SetReadyLocked(&read_closure_);
       SetReadyLocked(&write_closure_);
     }
@@ -590,8 +584,8 @@ Poller::WorkResult PollPoller::Work(
             pfds[pfd_count].events = head->BeginPollLocked(POLLIN, POLLOUT);
             pfd_count++;
           } else {
-            LOG(ERROR) << "Polling FD from a wrong generation: "
-                       << head->WrappedFd();
+            LOG(INFO) << "FD from fork parent still in poll list: "
+                      << head->WrappedFd();
           }
         }
       }

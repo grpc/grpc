@@ -125,6 +125,18 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "test_memory_allocator",
+    testonly = 1,
+    hdrs = ["test_memory_allocator.h"],
+    external_deps = [
+        "absl/strings",
+    ],
+    deps = [
+        "//:grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_test_util",
     srcs = TEST_UTILS_THAT_USE_GRPC_H_SOURCES + ["tls_utils.cc"],
     hdrs = TEST_UTILS_THAT_USE_GRPC_H_HEADERS + ["tls_utils.h"],
@@ -139,6 +151,7 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/time",
     ],
     deps = [
         "build",
@@ -587,6 +600,7 @@ grpc_cc_library(
         "//:grpc_base",
         "//src/core:examine_stack",
         "//src/core:grpc_check",
+        "//src/core:instrument",
         "//src/core:metrics",
         "//src/core:ref_counted",
         "//src/core:tcp_tracer",
@@ -654,6 +668,23 @@ grpc_cc_library(
     ],
     deps = [
         "//src/core:postmortem",
+    ],
+)
+
+grpc_cc_library(
+    name = "xds_http_add_header_filter",
+    testonly = 1,
+    srcs = ["xds_http_add_header_filter.cc"],
+    hdrs = ["xds_http_add_header_filter.h"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "//:grpc_base",
+        "//src/core:json_object_loader",
+        "//src/core:xds_http_filter",
     ],
 )
 

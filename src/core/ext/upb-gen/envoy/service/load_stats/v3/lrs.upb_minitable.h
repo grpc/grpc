@@ -19,9 +19,7 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__service__load_0stats__v3__LoadStatsRequest_msg_init;
-extern const upb_MiniTable* envoy__service__load_0stats__v3__LoadStatsRequest_msg_init_ptr;
 extern const upb_MiniTable envoy__service__load_0stats__v3__LoadStatsResponse_msg_init;
-extern const upb_MiniTable* envoy__service__load_0stats__v3__LoadStatsResponse_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_service_load_stats_v3_lrs_proto_upb_file_layout;
 

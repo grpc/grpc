@@ -1145,8 +1145,7 @@ TEST_P(XdsFederationTest, FederationServer) {
   // Start backends and wait for them to start serving.
   StartAllBackends();
   for (const auto& backend : backends_) {
-    ASSERT_TRUE(backend->notifier()->WaitOnServingStatusChange(
-        grpc_core::LocalIpAndPort(backend->port()), grpc::StatusCode::OK));
+    ASSERT_EQ(backend->GetNextStatus(), absl::OkStatus());
   }
   // Make sure everything works.
   WaitForAllBackends(DEBUG_LOCATION);
@@ -1379,6 +1378,35 @@ TEST_P(XdsMetricsTest, MetricValues) {
                     kMetricConnected, {target, kXdsServer}, {}),
                 ::testing::Optional(0));
   }
+}
+
+TEST_P(XdsMetricsTest, SubchannelMetricsHaveLocalityAndBackendServiceLabels) {
+  const std::string target = kServerName;
+  CreateAndStartBackends(2, /*xds_enabled=*/true);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)},
+                        {"locality1", CreateEndpointsForBackends(1, 2)}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForAllBackends(DEBUG_LOCATION);
+  EXPECT_THAT(
+      stats_plugin_->GetUInt64MetricValueByName(
+          "grpc.subchannel.connection_attempts_succeeded",
+          {target, kDefaultClusterName, LocalityNameString("locality0")}),
+      ::testing::Optional(::testing::Gt(0)));
+  EXPECT_THAT(
+      stats_plugin_->GetUInt64MetricValueByName(
+          "grpc.subchannel.connection_attempts_succeeded",
+          {target, kDefaultClusterName, LocalityNameString("locality1")}),
+      ::testing::Optional(::testing::Gt(0)));
+  EXPECT_THAT(stats_plugin_->GetInt64MetricValueByName(
+                  "grpc.subchannel.open_connections",
+                  {target, "none", kDefaultClusterName,
+                   LocalityNameString("locality0")}),
+              ::testing::Optional(::testing::Gt(0)));
+  EXPECT_THAT(stats_plugin_->GetInt64MetricValueByName(
+                  "grpc.subchannel.open_connections",
+                  {target, "none", kDefaultClusterName,
+                   LocalityNameString("locality1")}),
+              ::testing::Optional(::testing::Gt(0)));
 }
 
 //

@@ -115,13 +115,16 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
             << "CLIENT[" << t << "]: received ping " << p->opaque_8bytes;
       }
       if (t->ack_pings) {
+        grpc_error_handle error =
+            grpc_chttp2_increase_num_pending_induced_frames(t);
+        if (GPR_UNLIKELY(!error.ok())) return error;
+
         if (t->ping_ack_count == t->ping_ack_capacity) {
           t->ping_ack_capacity =
               std::max(t->ping_ack_capacity * 3 / 2, size_t{3});
           t->ping_acks = static_cast<uint64_t*>(gpr_realloc(
               t->ping_acks, t->ping_ack_capacity * sizeof(*t->ping_acks)));
         }
-        t->num_pending_induced_frames++;
         t->ping_acks[t->ping_ack_count++] = p->opaque_8bytes;
         grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_PING_RESPONSE);
       }

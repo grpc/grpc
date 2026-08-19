@@ -22,6 +22,25 @@ require_relative 'grpc/notifier'
 require_relative 'grpc/version'
 require_relative 'grpc/core/status_codes'
 require_relative 'grpc/core/time_consts'
+
+# Feature toggle: set GRPC_EXPERIMENTS=pure_ruby_call_credentials to enable.
+# Default (false): uses C extension path for backward compatibility.
+# NOTE: must be set before `require 'grpc'` — evaluated once at load time.
+module GRPC
+  PURE_RUBY_CALL_CREDENTIALS_ENABLED =
+    ENV.fetch('GRPC_EXPERIMENTS', '')
+       .split(',')
+       .map(&:strip)
+       .include?('pure_ruby_call_credentials')
+       .freeze
+end
+
+if GRPC::PURE_RUBY_CALL_CREDENTIALS_ENABLED
+  require_relative 'grpc/core/call_credentials'
+  require_relative 'grpc/core/channel_credentials'
+  require_relative 'grpc/core/credentials_helper'
+end
+
 require_relative 'grpc/generic/active_call'
 require_relative 'grpc/generic/client_stub'
 require_relative 'grpc/generic/service'
@@ -34,4 +53,10 @@ begin
   GRPC::Core::ChannelCredentials.set_default_roots_pem roots
 ensure
   file.close
+end
+
+# Prepend CompositeCredentialsHandler if pure Ruby credentials are enabled.
+# This must happen after all credential classes are loaded.
+if GRPC::PURE_RUBY_CALL_CREDENTIALS_ENABLED
+  GRPC::ClientStub.class_eval { prepend GRPC::Core::CompositeCredentialsHandler }
 end

@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC PHP"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.79.0-dev
+PROJECT_NUMBER         = 1.84.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -804,6 +804,7 @@ doc/workarounds.md \
 doc/xds-test-descriptions.md \
 src/php/README.md \
 src/php/docker/README.md \
+src/php/ext/grpc/README.md \
 src/php/lib/Grpc/AbstractCall.php \
 src/php/lib/Grpc/BaseStub.php \
 src/php/lib/Grpc/BidiStreamingCall.php \

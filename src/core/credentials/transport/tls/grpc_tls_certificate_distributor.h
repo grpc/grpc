@@ -61,8 +61,9 @@ struct grpc_tls_certificate_distributor
     // @param key_cert_pairs the contents of the reloaded identity key-cert
     // pairs.
     virtual void OnCertificatesChanged(
-        std::shared_ptr<RootCertInfo> roots,
-        std::optional<grpc_core::PemKeyCertPairList> key_cert_pairs) = 0;
+        std::shared_ptr<tsi::RootCertInfo> roots,
+        std::optional<grpc_core::KeyCertPairsOrSelector>
+            key_cert_pairs_or_selector) = 0;
 
     // Handles an error that occurs while attempting to fetch certificate data.
     // Note that if a watcher sees an error, it simply means the Provider is
@@ -88,9 +89,10 @@ struct grpc_tls_certificate_distributor
   // @param roots The content of the roots, either the pem root certificates or
   // the SpiffeBundleMap.
   // @param pem_key_cert_pairs The content of identity key-cert pairs.
-  void SetKeyMaterials(
-      const std::string& cert_name, std::shared_ptr<RootCertInfo> roots,
-      std::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs);
+  void SetKeyMaterials(const std::string& cert_name,
+                       std::shared_ptr<tsi::RootCertInfo> roots,
+                       std::optional<grpc_core::KeyCertPairsOrSelector>
+                           key_cert_pairs_or_selector);
 
   bool HasRootCerts(const std::string& root_cert_name);
 
@@ -176,9 +178,10 @@ struct grpc_tls_certificate_distributor
   // root certs, while pem_root_certs still contains the valid old data.
   struct CertificateInfo {
     // The contents of the root certificates.
-    std::shared_ptr<RootCertInfo> roots;
-    // The contents of the identity key-certificate pairs.
-    grpc_core::PemKeyCertPairList pem_key_cert_pairs;
+    std::shared_ptr<tsi::RootCertInfo> roots;
+    // The contents of the identity key-certificate pairs or a certificate
+    // selector.
+    grpc_core::KeyCertPairsOrSelector key_cert_pairs_or_selector;
     // TODO(gtcooke94) Swap to using absl::StatusOr<>
     // https://github.com/grpc/grpc/pull/39708/files#r2144014200 The root cert
     // reloading error propagated by the caller.

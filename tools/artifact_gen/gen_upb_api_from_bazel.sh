@@ -15,18 +15,22 @@
 
 set -ex
 
+# TODO(weizheyuan): Make this script work with both gcc
+# and clang so developers can run it more easily on local
+# machines.
 export CC=`which gcc`
 export CXX=`which g++`
-GCC_VERSION=$(g++ --version | grep -Eo '[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,2}' | head -n 1)
 
-if [[ ${GCC_VERSION} > "15.0.0" ]]; then
+_GCC_VERSION=$(gcc -dumpfullversion)
+
+if [[ "${_GCC_VERSION}" == 15.* ]]; then
+  echo "Detected gcc ${_GCC_VERSION}, applying '-Wa,--gsframe=no' to avoid linker error."
   BAZEL_BUILD_ARTIFACT=(../../tools/bazel --bazelrc ../../tools/artifact_gen/fix_absl_g++15_linker_error_workaround.bazelrc build)
   BAZEL_BUILD=(tools/bazel --bazelrc tools/artifact_gen/fix_absl_g++15_linker_error_workaround.bazelrc build)
 else
   BAZEL_BUILD_ARTIFACT=(../../tools/bazel build)
   BAZEL_BUILD=(tools/bazel build)
 fi
-
 
 # cd to repo root
 cd "$(dirname "$0")/../.."

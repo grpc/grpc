@@ -153,3 +153,7 @@
     The threshold for the memory quota pressure controller. \
     This is a value between 0 and 1, and must always be greater than the target pressure."
   fuzz: true
+- name: chaotic_good_metrics_update_interval_ms
+  type: int
+  default: 100
+  description: "Interval in milliseconds for updating metrics in chaotic good."

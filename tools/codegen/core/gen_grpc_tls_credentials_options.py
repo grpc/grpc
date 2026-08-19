@@ -17,8 +17,6 @@
 # Generator script for src/core/credentials/transport/tls/grpc_tls_credentials_options.h and test/core/credentials/transport/tls/grpc_tls_credentials_options_comparator_test.cc
 # Should be executed from grpc's root directory.
 
-from __future__ import print_function
-
 import collections
 from dataclasses import dataclass
 import difflib
@@ -244,6 +242,14 @@ _DATA_MEMBERS = [
         test_value_2='"sni_override_2"',
         special_getter_return_type="const std::optional<std::string>&",
     ),
+    DataMember(
+        name="key_exchange_groups",
+        type="std::vector<grpc_tls_key_exchange_group>",
+        setter_move_semantics=True,
+        test_name="DifferentKeyExchangeGroups",
+        test_value_1="{grpc_tls_key_exchange_group::GRPC_TLS_GROUP_X25519}",
+        test_value_2="{grpc_tls_key_exchange_group::GRPC_TLS_GROUP_X25519_MLKEM768}",
+    ),
 ]
 
 
@@ -308,6 +314,8 @@ print(
 #define GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_GRPC_TLS_CREDENTIALS_OPTIONS_H
 
 #include <grpc/support/port_platform.h>
+
+#include <vector>
 
 #include "absl/container/inlined_vector.h"
 

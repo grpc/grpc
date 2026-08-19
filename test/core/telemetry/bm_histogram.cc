@@ -36,7 +36,7 @@ void BM_BucketForExponentialHistogram(benchmark::State& state) {
     ++i;
   }
 }
-BENCHMARK(BM_BucketForExponentialHistogram)->Range(2, 32768);
+BENCHMARK(BM_BucketForExponentialHistogram)->RangeMultiplier(2)->Range(2, 512);
 
 void BM_BucketForLinearHistogram(benchmark::State& state) {
   const int64_t kMax = state.range(0);

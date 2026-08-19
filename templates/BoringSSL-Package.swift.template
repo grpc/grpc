@@ -44,7 +44,7 @@
           resources: [
             .copy(privacyInfoPath),
           ],
-          publicHeadersPath: "src/include",
+          publicHeadersPath: "include",
 
           cSettings: [
             .define("OPENSSL_NO_ASM", to: "1"),
@@ -60,5 +60,5 @@
           path: testPath
         ),
       ],
-      cxxLanguageStandard: .cxx14
+      cxxLanguageStandard: .cxx17
     )

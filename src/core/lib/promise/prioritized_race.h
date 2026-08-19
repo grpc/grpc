@@ -28,8 +28,8 @@ class TwoPartyPrioritizedRace {
  public:
   using Result = decltype(std::declval<A>()());
 
-  explicit TwoPartyPrioritizedRace(A a, B b)
-      : a_(std::move(a)), b_(std::move(b)) {}
+  explicit TwoPartyPrioritizedRace(A&& a, B&& b)
+      : a_(std::forward<A>(a)), b_(std::forward<B>(b)) {}
 
   Result operator()() {
     // Check the priority promise.
@@ -63,17 +63,20 @@ class PrioritizedRace<Promise, Promises...>
     : public TwoPartyPrioritizedRace<Promise, PrioritizedRace<Promises...>> {
  public:
   using Result = decltype(std::declval<Promise>()());
-  explicit PrioritizedRace(Promise promise, Promises... promises)
-      : TwoPartyPrioritizedRace<Promise, PrioritizedRace<Promises...>>(
-            std::move(promise),
-            PrioritizedRace<Promises...>(std::move(promises)...)) {}
+  explicit PrioritizedRace(Promise&& promise, Promises&&... promises)
+      : TwoPartyPrioritizedRace<std::decay_t<Promise>,
+                                std::decay_t<PrioritizedRace<Promises...>>>(
+            std::forward<Promise>(promise),
+            PrioritizedRace<std::decay_t<Promises>...>(
+                std::forward<Promises>(promises)...)) {}
 };
 
 template <typename Promise>
 class PrioritizedRace<Promise> {
  public:
   using Result = decltype(std::declval<Promise>()());
-  explicit PrioritizedRace(Promise promise) : promise_(std::move(promise)) {}
+  explicit PrioritizedRace(Promise&& promise)
+      : promise_(std::forward<Promise>(promise)) {}
   Result operator()() { return promise_(); }
 
  private:

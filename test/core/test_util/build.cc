@@ -91,3 +91,11 @@ bool BuiltUnderUbsan() {
   return false;
 #endif
 }
+
+bool BuiltUnderDebug() {
+#ifdef NDEBUG
+  return false;
+#else
+  return true;
+#endif
+}

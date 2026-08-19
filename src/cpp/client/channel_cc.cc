@@ -26,6 +26,7 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/call.h>
+#include <grpcpp/impl/call_context_registry.h>
 #include <grpcpp/impl/call_op_set_interface.h>
 #include <grpcpp/impl/completion_queue_tag.h>
 #include <grpcpp/impl/rpc_method.h>
@@ -41,6 +42,7 @@
 #include <vector>
 
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/util/grpc_check.h"
 
@@ -126,10 +128,19 @@ grpc::internal::Call Channel::CreateCallInternal(
   const bool kRegistered = method.channel_tag() && context->authority().empty();
   grpc_call* c_call = nullptr;
   if (kRegistered) {
-    c_call = grpc_channel_create_registered_call(
+    auto* rc =
+        static_cast<grpc_core::Channel::RegisteredCall*>(method.channel_tag());
+    c_call = grpc_channel_create_call_with_arena_init(
         c_channel_, context->propagate_from_call_,
-        context->propagation_options_.c_bitmask(), cq->cq(),
-        method.channel_tag(), context->raw_deadline(), nullptr);
+        context->propagation_options_.c_bitmask(), cq->cq(), rc->path.Ref(),
+        rc->authority.has_value()
+            ? std::optional<grpc_core::Slice>(rc->authority->Ref())
+            : std::nullopt,
+        context->raw_deadline(),
+        /*registered_method=*/true, [context](grpc_core::Arena* arena) {
+          impl::CallContextRegistry::Propagate(context->context_elements_,
+                                               arena);
+        });
   } else {
     const ::std::string* host_str = nullptr;
     if (!context->authority_.empty()) {
@@ -143,11 +154,18 @@ grpc::internal::Call Channel::CreateCallInternal(
     if (host_str != nullptr) {
       host_slice = grpc::SliceFromCopiedString(*host_str);
     }
-    c_call = grpc_channel_create_call(
+    c_call = grpc_channel_create_call_with_arena_init(
         c_channel_, context->propagate_from_call_,
-        context->propagation_options_.c_bitmask(), cq->cq(), method_slice,
-        host_str == nullptr ? nullptr : &host_slice, context->raw_deadline(),
-        nullptr);
+        context->propagation_options_.c_bitmask(), cq->cq(),
+        grpc_core::Slice(grpc_core::CSliceRef(method_slice)),
+        host_str == nullptr
+            ? std::nullopt
+            : std::optional<grpc_core::Slice>(grpc_core::CSliceRef(host_slice)),
+        context->raw_deadline(),
+        /*registered_method=*/false, [context](grpc_core::Arena* arena) {
+          impl::CallContextRegistry::Propagate(context->context_elements_,
+                                               arena);
+        });
     grpc_slice_unref(method_slice);
     if (host_str != nullptr) {
       grpc_slice_unref(host_slice);

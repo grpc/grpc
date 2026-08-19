@@ -19,7 +19,6 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__service__discovery__v3__AdsDummy_msg_init;
-extern const upb_MiniTable* envoy__service__discovery__v3__AdsDummy_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_service_discovery_v3_ads_proto_upb_file_layout;
 

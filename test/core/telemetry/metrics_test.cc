@@ -15,9 +15,11 @@
 #include "src/core/telemetry/metrics.h"
 
 #include <memory>
+#include <numeric>
 #include <thread>
 
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/telemetry/instrument.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/test_config.h"
 #include "gmock/gmock.h"
@@ -681,6 +683,39 @@ TEST_F(MetricsTest, ParallelStatsPluginRegistrationAndLookup) {
   EXPECT_THAT(GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
                   StatsPluginChannelScope("", "", endpoint_config_)),
               ::testing::Pointee(::testing::SizeIs(10000)));
+}
+
+class TestDomain final : public InstrumentDomain<TestDomain> {
+ public:
+  using Backend = LowContentionBackend;
+  static constexpr absl::string_view kName = "test_domain";
+  GRPC_EMPTY_INSTRUMENT_DOMAIN_LABELS();
+
+  static inline const auto kCounter =
+      RegisterCounter("test_counter", "A test counter.", "unit");
+  static inline const auto kHistogram =
+      RegisterHistogram<ExponentialHistogramShape>(
+          "test_histogram", "A test histogram.", "unit", 100, 5);
+};
+
+TEST_F(MetricsTest, InstrumentDomainHistogramAndCounterQuery) {
+  constexpr absl::string_view kTarget = "test.target";
+  auto plugin = MakeStatsPluginForTarget(kTarget);
+  auto storage = TestDomain::GetStorage(plugin->GetCollectionScope());
+  storage->Increment(TestDomain::kCounter, 42);
+  storage->Increment(TestDomain::kHistogram, 10);
+  storage->Increment(TestDomain::kHistogram, 10);
+  storage->Increment(TestDomain::kHistogram, 10000);
+  auto counter_val =
+      plugin->GetUInt64MetricValueByName(TestDomain::kCounter.name());
+  EXPECT_THAT(counter_val, ::testing::Optional(42));
+  auto hist_val =
+      plugin->GetHistogramValueByName(TestDomain::kHistogram.name());
+  ASSERT_TRUE(hist_val.has_value());
+  ASSERT_EQ(hist_val->size(), 5);
+  uint64_t total_count =
+      std::accumulate(hist_val->begin(), hist_val->end(), uint64_t{});
+  EXPECT_EQ(total_count, 3);
 }
 
 using MetricsDeathTest = MetricsTest;

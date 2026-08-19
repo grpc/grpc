@@ -1,0 +1,122 @@
+# Adopted from https://github.com/rake-compiler/rake-compiler-dock/pull/201.
+# Install clang 14 and gcc 10 for better C++17 support.
+
+diff --git a/Dockerfile.mri.erb b/Dockerfile.mri.erb
+index 1bf488e..9d5c9ca 100644
+--- a/Dockerfile.mri.erb
++++ b/Dockerfile.mri.erb
+@@ -108,18 +108,58 @@ EOF
+ COPY build/mk_musl_cross.sh /tmp
+ RUN /tmp/mk_musl_cross.sh <%= target %>
+ 
++<% else %>
++<% if platform =~ /darwin/ %>
++RUN apt-get -y update && \
++    apt-get install -y wget && \
++    wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor > /usr/share/keyrings/llvm-snapshot.gpg && \
++    echo "deb [signed-by=/usr/share/keyrings/llvm-snapshot.gpg] http://apt.llvm.org/focal/ llvm-toolchain-focal-14 main" \
++        > /etc/apt/sources.list.d/llvm14.list && \
++    apt-get update && \
++    apt-get install -y clang-14 llvm-14-dev libc++-14-dev libc++abi-14-dev python3 lzma-dev libxml2-dev libssl-dev && \
++    update-alternatives --install /usr/bin/clang clang /usr/bin/clang-14 100 && \
++    update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-14 100 && \
++    rm -rf /var/lib/apt/lists/*
+ <% else %>
+ RUN apt-get -y update && \
+     apt-get install -y <%
+-if platform =~ /darwin/            %> clang python lzma-dev libxml2-dev libssl-dev libc++-10-dev <% end %><%
+-if platform =~ /aarch64-linux-gnu/ %> gcc-aarch64-linux-gnu g++-aarch64-linux-gnu <% end %><%
+-if platform =~ /arm-linux-gnu/     %> gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf <% end %><%
+-if platform =~ /x86-linux-gnu/     %> gcc-i686-linux-gnu g++-i686-linux-gnu <% end %><%
+-if platform =~ /x86_64-linux-gnu/  %> gcc-x86-64-linux-gnu g++-x86-64-linux-gnu <% end %><%
++if platform =~ /arm-linux-gnu/     %> gcc-10-arm-linux-gnueabihf g++-10-arm-linux-gnueabihf <% end %><%
++if platform =~ /x86-linux-gnu/     %> gcc-10-i686-linux-gnu g++-10-i686-linux-gnu <% end %><%
+ if platform =~ /x86-mingw32/       %> gcc-mingw-w64-i686 g++-mingw-w64-i686 <% end %><%
+ if platform =~ /x64-mingw32/       %> gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 <% end %> && \
++<% if platform =~ /aarch64-linux-gnu/ %>
++    if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
++        apt-get install -y gcc-10 g++-10 && \
++        update-alternatives --install /usr/bin/aarch64-linux-gnu-gcc aarch64-linux-gnu-gcc /usr/bin/gcc-10 100 && \
++        update-alternatives --install /usr/bin/aarch64-linux-gnu-g++ aarch64-linux-gnu-g++ /usr/bin/g++-10 100 ; \
++    else \
++        apt-get install -y gcc-10-aarch64-linux-gnu g++-10-aarch64-linux-gnu && \
++        update-alternatives --install /usr/bin/aarch64-linux-gnu-gcc aarch64-linux-gnu-gcc /usr/bin/aarch64-linux-gnu-gcc-10 100 && \
++        update-alternatives --install /usr/bin/aarch64-linux-gnu-g++ aarch64-linux-gnu-g++ /usr/bin/aarch64-linux-gnu-g++-10 100 ; \
++    fi && \
++<% end %>
++<% if platform =~ /arm-linux-gnu/ %>
++    update-alternatives --install /usr/bin/arm-linux-gnueabihf-gcc arm-linux-gnueabihf-gcc /usr/bin/arm-linux-gnueabihf-gcc-10 100 && \
++    update-alternatives --install /usr/bin/arm-linux-gnueabihf-g++ arm-linux-gnueabihf-g++ /usr/bin/arm-linux-gnueabihf-g++-10 100 && \
++<% end %>
++<% if platform =~ /x86-linux-gnu/ %>
++    update-alternatives --install /usr/bin/i686-linux-gnu-gcc i686-linux-gnu-gcc /usr/bin/i686-linux-gnu-gcc-10 100 && \
++    update-alternatives --install /usr/bin/i686-linux-gnu-g++ i686-linux-gnu-g++ /usr/bin/i686-linux-gnu-g++-10 100 && \
++<% end %>
++<% if platform =~ /x86_64-linux-gnu/ %>
++    if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
++        apt-get install -y gcc-10 g++-10 && \
++        update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100 && \
++        update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 100 && \
++        update-alternatives --install /usr/bin/x86_64-linux-gnu-gcc x86_64-linux-gnu-gcc /usr/bin/gcc-10 100 && \
++        update-alternatives --install /usr/bin/x86_64-linux-gnu-g++ x86_64-linux-gnu-g++ /usr/bin/g++-10 100 ; \
++    else \
++        apt-get install -y gcc-x86-64-linux-gnu g++-x86-64-linux-gnu ; \
++    fi && \
++<% end %>
+     rm -rf /var/lib/apt/lists/*
+ <% end %>
++<% end %>
+ 
+ <% if platform =~ /darwin/ %>
+ COPY build/mk_osxcross.sh /tmp
+diff --git a/build/mk_musl_cross.sh b/build/mk_musl_cross.sh
+index e2dfce9..4e6e2e7 100755
+--- a/build/mk_musl_cross.sh
++++ b/build/mk_musl_cross.sh
+@@ -19,6 +19,12 @@ TARGET = $TARGET
+ 
+ DL_CMD = wget -c --no-verbose -O
+ 
++# Use GCC 10.3.0. Binutils 2.33.1 is the newest version that still has a
++# verified hash in musl-cross-make and works with GCC 10 - newer versions
++# (like 2.44, the current default) break the GCC 10 build.
++GCC_VER = 10.3.0
++BINUTILS_VER = 2.33.1
++
+ # to match the location of the apt-installed cross-compiler packages
+ OUTPUT = /usr
+ 
+diff --git a/build/mk_osxcross.sh b/build/mk_osxcross.sh
+index b1964f7..c407022 100755
+--- a/build/mk_osxcross.sh
++++ b/build/mk_osxcross.sh
+@@ -12,15 +12,15 @@ cd /opt/osxcross/tarballs
+ set -x
+ curl -L -o MacOSX11.1.sdk.tar.xz https://github.com/larskanis/MacOSX-SDKs/releases/download/11.1/MacOSX11.1.sdk.tar.xz
+ tar -xf MacOSX11.1.sdk.tar.xz -C .
+-cp -rf /usr/lib/llvm-10/include/c++ MacOSX11.1.sdk/usr/include/c++
+-cp -rf /usr/include/*-linux-gnu/c++/9/bits/ MacOSX11.1.sdk/usr/include/c++/v1/bits
++cp -rf /usr/lib/llvm-14/include/c++ MacOSX11.1.sdk/usr/include/c++
++cp -rf /usr/include/*-linux-gnu/c++/*/bits/ MacOSX11.1.sdk/usr/include/c++/v1/bits
+ tar -cJf MacOSX11.1.sdk.tar.xz MacOSX11.1.sdk
+ 
+ set +x
+ cd /opt/osxcross
+ set -x
+ UNATTENDED=1 SDK_VERSION=11.1 OSX_VERSION_MIN=10.13 USE_CLANG_AS=1 ./build.sh
+-ln -s /usr/bin/llvm-config-10 /usr/bin/llvm-config
++ln -s /usr/bin/llvm-config-14 /usr/bin/llvm-config
+ ENABLE_COMPILER_RT_INSTALL=1 SDK_VERSION=11.1 ./build_compiler_rt.sh
+ rm -rf *~ build tarballs/*
+ 
+@@ -36,8 +36,8 @@ rm -f /opt/osxcross/target/bin/*-apple-darwin-*
+ find /opt/osxcross/target/bin/ -name '*-apple-darwin[0-9]*' | sort | while read f ; do d=`echo $f | sed s/darwin[0-9\.]*/darwin/`; echo $f '"$@"' | tee $d && chmod +x $d ; done
+ 
+ # There's no objdump in osxcross but we can use llvm's
+-ln -s /usr/lib/llvm-10/bin/llvm-objdump /opt/osxcross/target/bin/x86_64-apple-darwin-objdump
+-ln -s /usr/lib/llvm-10/bin/llvm-objdump /opt/osxcross/target/bin/aarch64-apple-darwin-objdump
++ln -s /usr/lib/llvm-14/bin/llvm-objdump /opt/osxcross/target/bin/x86_64-apple-darwin-objdump
++ln -s /usr/lib/llvm-14/bin/llvm-objdump /opt/osxcross/target/bin/aarch64-apple-darwin-objdump
+ 
+ # install /usr/bin/codesign and make a symlink for codesign_allocate (the architecture doesn't matter)
+ git clone -q --depth=1 https://github.com/flavorjones/sigtool --branch flavorjones-fix-link-line-library-order

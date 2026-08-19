@@ -51,6 +51,8 @@ namespace {
 
 CORE_END2END_TEST(Http2Tests, MaxAgeForciblyClose) {
   SKIP_IF_MINSTACK();
+  // TODO(snohria): Do we need to support this for virtual channel?
+  SKIP_IF_VIRTUAL();
   InitClient(ChannelArgs());
   InitServer(DefaultServerArgs()
                  .Set(GRPC_ARG_MAX_CONNECTION_AGE_MS, MAX_CONNECTION_AGE_MS)

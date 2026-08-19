@@ -14,6 +14,7 @@
 """Tests of grpc_channelz.v1.channelz."""
 
 import asyncio
+import ipaddress
 import logging
 import unittest
 
@@ -427,8 +428,49 @@ class ChannelzServicerTest(AioTestBase):
                 server_id=resp.ref.server_id, start_socket_id=0
             )
         )
-        # If the RPC call failed, it will raise a grpc.RpcError
-        # So, if there is no exception raised, considered pass
+
+        self.assertEqual(len(gss_resp.socket_ref), 1)
+
+        gs_resp: channelz_pb2.GetSocketResponse = (
+            await self._channelz_stub.GetSocket(
+                channelz_pb2.GetSocketRequest(
+                    socket_id=gss_resp.socket_ref[0].socket_id
+                )
+            )
+        )
+
+        # Verify the client socket contains valid TCP/IP addresses.
+        client_socket: channelz_pb2.Socket = gs_resp.socket
+
+        # Verify server's local address is a valid TCP/IP addresses.
+        local_address: channelz_pb2.Address = client_socket.local
+        self.assertEqual(
+            local_address.WhichOneof("address"),
+            "tcpip_address",
+            msg="Expected the socket to contain local TCP/IP address",
+        )
+        address_str = self.tcpip_address_to_str(local_address.tcpip_address)
+        self.assertNotIn(
+            address_str,
+            ("", ":"),
+            msg="Server address string must not be empty",
+        )
+
+        # Verify server's remote address (to the client) is
+        # a valid TCP/IP addresses.
+        remote_address: channelz_pb2.Address = client_socket.remote
+        self.assertEqual(
+            remote_address.WhichOneof("address"),
+            "tcpip_address",
+            msg="Expected the socket to contain remote TCP/IP address",
+        )
+        address_str = self.tcpip_address_to_str(remote_address.tcpip_address)
+        self.assertNotIn(
+            address_str,
+            ("", ":"),
+            msg="Client address string must not be empty",
+        )
+
         await _destroy_channel_server_pairs(pairs)
 
     async def test_server_listen_sockets(self):
@@ -437,14 +479,44 @@ class ChannelzServicerTest(AioTestBase):
         resp = await self._get_server_by_ref_id(pairs[0].server_ref_id)
         self.assertEqual(len(resp.listen_socket), 1)
 
-        gs_resp = await self._channelz_stub.GetSocket(
-            channelz_pb2.GetSocketRequest(
-                socket_id=resp.listen_socket[0].socket_id
+        gs_resp: channelz_pb2.GetSocketResponse = (
+            await self._channelz_stub.GetSocket(
+                channelz_pb2.GetSocketRequest(
+                    socket_id=resp.listen_socket[0].socket_id
+                )
             )
         )
-        # If the RPC call failed, it will raise a grpc.RpcError
-        # So, if there is no exception raised, considered pass
+
+        # Verify the listen socket contains a valid TCP/IP address.
+        listen_address: channelz_pb2.Address = gs_resp.socket.local
+        self.assertEqual(
+            listen_address.WhichOneof("address"),
+            "tcpip_address",
+            msg="Expected the server listen socket to contain a TCP/IP address",
+        )
+        address_str = self.tcpip_address_to_str(listen_address.tcpip_address)
+        self.assertNotIn(
+            address_str, ("", ":"), msg="Address string must not be empty"
+        )
+
         await _destroy_channel_server_pairs(pairs)
+
+    @staticmethod
+    def is_ipv4(tcpip_address: channelz_pb2.Address.TcpIpAddress):
+        # According to proto, tcpip_address.ip_address is either IPv4 or IPv6.
+        # Correspondingly, it's either 4 bytes or 16 bytes in length.
+        return len(tcpip_address.ip_address) == 4
+
+    @classmethod
+    def tcpip_address_to_str(
+        cls, tcpip_address: channelz_pb2.Address.TcpIpAddress
+    ):
+        # This will throw AddressValueError when the address is invalid.
+        if cls.is_ipv4(tcpip_address):
+            ip = ipaddress.IPv4Address(tcpip_address.ip_address)
+        else:
+            ip = ipaddress.IPv6Address(tcpip_address.ip_address)
+        return f"{ip}:{tcpip_address.port}"
 
     async def test_invalid_query_get_server(self):
         with self.assertRaises(aio.AioRpcError) as exception_context:

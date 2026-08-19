@@ -63,6 +63,10 @@ bool IsMetricEnabledByDefault(absl::string_view) { return false; }
 bool IsOpenTelemetryLabelOptional(absl::string_view label_key) {
   // TODO(ctiller): register other optional labels here with
   // `if (label_key =="xyz") return true;` checks.
+  if (label_key == grpc_core::kMetricLabelLocality ||
+      label_key == grpc_core::kMetricLabelBackendService) {
+    return true;
+  }
   return absl::StartsWith(label_key, "test_optional.");
 }
 
@@ -71,6 +75,10 @@ absl::string_view OpenTelemetryMethodKey() { return "grpc.method"; }
 absl::string_view OpenTelemetryStatusKey() { return "grpc.status"; }
 
 absl::string_view OpenTelemetryTargetKey() { return "grpc.target"; }
+
+absl::string_view OpenTelemetryCustomLabelKey() {
+  return grpc_core::kMetricLabelTelemetry;
+}
 
 namespace {
 absl::flat_hash_set<std::string> BaseMetrics() {
@@ -499,45 +507,59 @@ class OpenTelemetryPluginImpl::CounterExporter final {
                       observer,
                   grpc_core::InstrumentMetadata::Shape shape)
         : observer_(std::move(observer)), shape_(shape) {}
-    void Counter(absl::Span<const std::string> label_keys,
+    void Counter(grpc_core::InstrumentLabelList label_keys,
                  absl::Span<const std::string> label_values, absl::string_view,
                  uint64_t value) override {
       GRPC_DCHECK(
           std::holds_alternative<grpc_core::InstrumentMetadata::CounterShape>(
               shape_));
+      std::vector<std::string> label_key_strings;
+      label_key_strings.reserve(label_keys.size());
+      for (const auto& label : label_keys) {
+        label_key_strings.push_back(std::string(label.label()));
+      }
       LOG(ERROR) << "Counter: " << value
-                 << " label_keys: " << absl::StrJoin(label_keys, ",")
+                 << " label_keys: " << absl::StrJoin(label_key_strings, ",")
                  << " label_values: " << absl::StrJoin(label_values, ",");
-      ExportedMetricKeyValueIterable labels_iterable(label_keys, label_values);
+      ExportedMetricKeyValueIterable labels_iterable(label_key_strings,
+                                                     label_values);
       observer_->Observe(value, labels_iterable);
     }
-    void UpDownCounter(absl::Span<const std::string> label_keys,
+    void UpDownCounter(grpc_core::InstrumentLabelList label_keys,
                        absl::Span<const std::string> label_values,
                        absl::string_view, uint64_t value) override {
       GRPC_DCHECK(std::holds_alternative<
                   grpc_core::InstrumentMetadata::UpDownCounterShape>(shape_));
+      std::vector<std::string> label_key_strings;
+      label_key_strings.reserve(label_keys.size());
+      for (const auto& label : label_keys) {
+        label_key_strings.push_back(std::string(label.label()));
+      }
       LOG(ERROR) << "UpDownCounter: " << value
-                 << " label_keys: " << absl::StrJoin(label_keys, ",")
+                 << " label_keys: " << absl::StrJoin(label_key_strings, ",")
                  << " label_values: " << absl::StrJoin(label_values, ",");
-      ExportedMetricKeyValueIterable labels_iterable(label_keys, label_values);
+      ExportedMetricKeyValueIterable labels_iterable(label_key_strings,
+                                                     label_values);
       observer_->Observe(value, labels_iterable);
     }
-    void Histogram(absl::Span<const std::string>, absl::Span<const std::string>,
-                   absl::string_view, grpc_core::HistogramBuckets,
+    void Histogram(grpc_core::InstrumentLabelList,
+                   absl::Span<const std::string>, absl::string_view,
+                   grpc_core::HistogramBuckets,
                    absl::Span<const uint64_t>) override {
       LOG(FATAL) << "Expected a counter, got a histogram";
     }
-    void DoubleGauge(absl::Span<const std::string>,
+    void DoubleGauge(grpc_core::InstrumentLabelList,
                      absl::Span<const std::string>, absl::string_view,
                      double) override {
       LOG(FATAL) << "Expected a counter, got a double gauge";
     }
-    void IntGauge(absl::Span<const std::string>, absl::Span<const std::string>,
+    void IntGauge(grpc_core::InstrumentLabelList, absl::Span<const std::string>,
                   absl::string_view, int64_t) override {
       LOG(FATAL) << "Expected a counter, got an int gauge";
     }
-    void UintGauge(absl::Span<const std::string>, absl::Span<const std::string>,
-                   absl::string_view, uint64_t) override {
+    void UintGauge(grpc_core::InstrumentLabelList,
+                   absl::Span<const std::string>, absl::string_view,
+                   uint64_t) override {
       LOG(FATAL) << "Expected a counter, got a uint gauge";
     }
 
@@ -556,7 +578,6 @@ void OpenTelemetryPluginImpl::QueryMetrics(
     absl::Span<const absl::string_view> metrics, grpc_core::MetricsSink& sink) {
   grpc_core::MetricsQuery()
       .OnlyMetrics(std::vector<std::string>(metrics.begin(), metrics.end()))
-      .CollapseLabels(collapse_labels_)
       .Run(collection_scope_, sink);
 }
 
@@ -716,10 +737,10 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
           [&](const grpc_core::InstrumentMetadata::Description* description) {
             if (!metrics.contains(description->name)) return;
             for (const auto& label : description->domain->label_names()) {
-              if (!internal::IsOpenTelemetryLabelOptional(label) ||
-                  optional_label_keys.find(label) !=
+              if (!internal::IsOpenTelemetryLabelOptional(label.label()) ||
+                  optional_label_keys.find(label.label()) !=
                       optional_label_keys.end()) {
-                labels.insert(label);
+                labels.insert(std::string(label.label()));
               }
             }
             grpc_core::Match(
@@ -755,8 +776,11 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
                   LOG(FATAL) << "Histogram shape is not supported yet";
                 });
           });
-      std::vector<std::string> labels_vec(labels.begin(), labels.end());
-      collection_scope_ = grpc_core::CreateCollectionScope({}, labels_vec);
+      grpc_core::InstrumentLabelSet label_set;
+      for (const auto& label : labels) {
+        label_set.Set(grpc_core::InstrumentLabel(label));
+      }
+      collection_scope_ = grpc_core::CreateCollectionScope({}, label_set);
     }
     // Non-per-call metrics.
     grpc_core::GlobalInstrumentsRegistry::ForEach(
@@ -899,21 +923,19 @@ OpenTelemetryPluginImpl::~OpenTelemetryPluginImpl() {
   }
 }
 
-namespace {
-constexpr absl::string_view kLocality = "grpc.lb.locality";
-constexpr absl::string_view kBackendService = "grpc.lb.backend_service";
-}  // namespace
-
 absl::string_view OpenTelemetryPluginImpl::OptionalLabelKeyToString(
     grpc_core::ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey
         key) {
   switch (key) {
     case grpc_core::ClientCallTracerInterface::CallAttemptTracer::
         OptionalLabelKey::kLocality:
-      return kLocality;
+      return grpc_core::kMetricLabelLocality;
     case grpc_core::ClientCallTracerInterface::CallAttemptTracer::
         OptionalLabelKey::kBackendService:
-      return kBackendService;
+      return grpc_core::kMetricLabelBackendService;
+    case grpc_core::ClientCallTracerInterface::CallAttemptTracer::
+        OptionalLabelKey::kTelemetryLabel:
+      return OpenTelemetryCustomLabelKey();
     default:
       grpc_core::Crash("Illegal OptionalLabelKey index");
   }
@@ -922,12 +944,15 @@ absl::string_view OpenTelemetryPluginImpl::OptionalLabelKeyToString(
 std::optional<
     grpc_core::ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey>
 OpenTelemetryPluginImpl::OptionalLabelStringToKey(absl::string_view key) {
-  if (key == kLocality) {
+  if (key == grpc_core::kMetricLabelLocality) {
     return grpc_core::ClientCallTracerInterface::CallAttemptTracer::
         OptionalLabelKey::kLocality;
-  } else if (key == kBackendService) {
+  } else if (key == grpc_core::kMetricLabelBackendService) {
     return grpc_core::ClientCallTracerInterface::CallAttemptTracer::
         OptionalLabelKey::kBackendService;
+  } else if (key == OpenTelemetryCustomLabelKey()) {
+    return grpc_core::ClientCallTracerInterface::CallAttemptTracer::
+        OptionalLabelKey::kTelemetryLabel;
   }
   return std::nullopt;
 }

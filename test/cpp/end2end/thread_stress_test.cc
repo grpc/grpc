@@ -133,6 +133,9 @@ class CommonStressTestSyncServer : public BaseClass {
  public:
   void SetUp() override {
     ServerBuilder builder;
+    ResourceQuota quota;
+    quota.SetMaxThreads(500);
+    builder.SetResourceQuota(quota);
     this->SetUpStart(&builder, &service_);
     this->SetUpEnd(&builder);
   }

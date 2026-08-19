@@ -22,7 +22,6 @@
 
 #include "src/core/lib/event_engine/cf_engine/cf_engine.h"
 #include "test/core/event_engine/test_suite/event_engine_test_framework.h"
-#include "test/core/event_engine/test_suite/tests/dns_test.h"
 #include "test/core/event_engine/test_suite/tests/timer_test.h"
 #include "test/core/test_util/test_config.h"
 
@@ -48,7 +47,6 @@
   };
   SetEventEngineFactories(factory, nullptr);
   grpc_event_engine::experimental::InitTimerTests();
-  grpc_event_engine::experimental::InitDNSTests();
   // TODO(ctiller): EventEngine temporarily needs grpc to be initialized first
   // until we clear out the iomgr shutdown code.
   grpc_init();

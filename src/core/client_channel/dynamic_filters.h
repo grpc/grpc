@@ -23,7 +23,6 @@
 #include <utility>
 #include <vector>
 
-#include "src/core/filter/blackboard.h"
 #include "src/core/filter/filter_chain.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -90,8 +89,7 @@ class DynamicFilters final : public FilterChain {
   };
 
   static RefCountedPtr<DynamicFilters> Create(
-      const ChannelArgs& args, std::vector<FilterAndConfig> filters,
-      const Blackboard* blackboard);
+      const ChannelArgs& args, std::vector<FilterAndConfig> filters);
 
   explicit DynamicFilters(RefCountedPtr<grpc_channel_stack> channel_stack)
       : channel_stack_(std::move(channel_stack)) {}

@@ -25,6 +25,8 @@
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/authorization/evaluate_args.h"
+#include "src/core/lib/security/authorization/grpc_authorization_engine.h"
+#include "src/core/lib/security/authorization/rbac_policy.h"
 #include "src/core/lib/transport/transport.h"
 #include "absl/status/statusor.h"
 
@@ -34,6 +36,20 @@ namespace grpc_core {
 // HTTP RBAC filter. Also serves as the type for channel data for the filter.
 class RbacFilter : public ImplementChannelFilter<RbacFilter> {
  public:
+  struct Config final : public FilterConfig {
+    static UniqueTypeName Type() {
+      return GRPC_UNIQUE_TYPE_NAME_HERE("rbac_filter_config");
+    }
+    UniqueTypeName type() const override { return Type(); }
+
+    bool Equals(const FilterConfig& other) const override {
+      return rbac == DownCast<const Config&>(other).rbac;
+    }
+    std::string ToString() const override { return rbac.ToString(); }
+
+    Rbac rbac;
+  };
+
   // This channel filter is intended to be used by connections on xDS enabled
   // servers configured with RBAC. The RBAC filter fetches the RBAC policy from
   // the method config of service config returned by the ServerConfigSelector,
@@ -45,7 +61,7 @@ class RbacFilter : public ImplementChannelFilter<RbacFilter> {
   static absl::StatusOr<std::unique_ptr<RbacFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
-  RbacFilter(size_t index,
+  RbacFilter(size_t index, const Rbac& rbac,
              EvaluateArgs::PerChannelArgs per_channel_evaluate_args);
 
   class Call {
@@ -64,10 +80,12 @@ class RbacFilter : public ImplementChannelFilter<RbacFilter> {
   };
 
  private:
-  // The index of this filter instance among instances of the same filter.
+  // TODO(roth): Remove these fields as part of removing the
+  // xds_server_filter_chain_per_route experiment.
   size_t index_;
-  // Assigned index for service config data from the parser.
   const size_t service_config_parser_index_;
+
+  GrpcAuthorizationEngine authorization_engine_;
   // Per channel args used for authorization.
   EvaluateArgs::PerChannelArgs per_channel_evaluate_args_;
 };

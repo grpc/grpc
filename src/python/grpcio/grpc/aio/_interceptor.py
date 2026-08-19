@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Interceptors implementation of gRPC Asyncio Python."""
+
 from __future__ import annotations
 
 from abc import ABCMeta
@@ -329,12 +330,15 @@ class InterceptedCall:
 
         call_completed = False
 
-        try:
+        if interceptors_task.cancelled() or (
+            interceptors_task.done()
+            and interceptors_task.exception() is not None
+        ):
+            call_completed = True
+        else:
             call = interceptors_task.result()
             if call.done():
                 call_completed = True
-        except (AioRpcError, asyncio.CancelledError):
-            call_completed = True
 
         if call_completed:
             for callback in self._pending_add_done_callbacks:
@@ -354,42 +358,47 @@ class InterceptedCall:
         callback(self)
 
     def cancel(self) -> bool:
+        if self._interceptors_task.cancelled():
+            return False
+
         if not self._interceptors_task.done():
             # There is no yet the intercepted call available,
             # Trying to cancel it by using the generic Asyncio
             # cancellation method.
             return self._interceptors_task.cancel()
 
-        try:
-            call = self._interceptors_task.result()
-        except AioRpcError:
+        if self._interceptors_task.exception() is not None:
             return False
-        except asyncio.CancelledError:
-            return False
+
+        call = self._interceptors_task.result()
 
         return call.cancel()
 
     def cancelled(self) -> bool:
+        if self._interceptors_task.cancelled():
+            return True
         if not self._interceptors_task.done():
             return False
 
-        try:
-            call = self._interceptors_task.result()
-        except AioRpcError as err:
-            return err.code() == grpc.StatusCode.CANCELLED
-        except asyncio.CancelledError:
-            return True
+        exc = self._interceptors_task.exception()
+        if exc is not None:
+            if isinstance(exc, AioRpcError):
+                return exc.code() == grpc.StatusCode.CANCELLED
+            return False
+
+        call = self._interceptors_task.result()
 
         return call.cancelled()
 
     def done(self) -> bool:
+        if self._interceptors_task.cancelled():
+            return True
         if not self._interceptors_task.done():
             return False
-
-        try:
-            call = self._interceptors_task.result()
-        except (AioRpcError, asyncio.CancelledError):
+        if self._interceptors_task.exception() is not None:
             return True
+
+        call = self._interceptors_task.result()
 
         return call.done()
 
@@ -398,11 +407,14 @@ class InterceptedCall:
             self._pending_add_done_callbacks.append(callback)
             return
 
-        try:
-            call = self._interceptors_task.result()
-        except (AioRpcError, asyncio.CancelledError):
+        if (
+            self._interceptors_task.cancelled()
+            or self._interceptors_task.exception() is not None
+        ):
             callback(self)
             return
+
+        call = self._interceptors_task.result()
 
         if call.done():
             callback(self)
@@ -608,6 +620,21 @@ class _InterceptedStreamRequestMixin:
         )
 
 
+def _resolve_registered_call_handle(
+    channel: cygrpc.AioChannel,
+    original_method: bytes,
+    new_method: bytes,
+    registered_call_handle: int,
+) -> int:
+    """Returns the registered call handle matching the outgoing method."""
+    resolved_registered_call_handle = registered_call_handle
+    if new_method != original_method and registered_call_handle != 0:
+        resolved_registered_call_handle = channel.get_registered_call_handle(
+            new_method,
+        )
+    return resolved_registered_call_handle
+
+
 class InterceptedUnaryUnaryCall(
     _InterceptedUnaryResponseMixin, InterceptedCall, _base_call.UnaryUnaryCall
 ):
@@ -634,9 +661,11 @@ class InterceptedUnaryUnaryCall(
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
+        registered_call_handle: int = 0,
     ) -> None:
         self._loop = loop
         self._channel = channel
+        self._registered_call_handle = registered_call_handle
         interceptors_task = loop.create_task(
             self._invoke(
                 interceptors,
@@ -684,6 +713,13 @@ class InterceptedUnaryUnaryCall(
                     return call_or_response
                 return UnaryUnaryCallResponse(call_or_response)
 
+            registered_call_handle = _resolve_registered_call_handle(
+                self._channel,
+                method,
+                client_call_details.method,
+                self._registered_call_handle,
+            )
+
             return UnaryUnaryCall(
                 request,
                 _timeout_to_deadline(client_call_details.timeout),
@@ -695,6 +731,7 @@ class InterceptedUnaryUnaryCall(
                 request_serializer,
                 response_deserializer,
                 self._loop,
+                registered_call_handle,
             )
 
         client_call_details = ClientCallDetails(
@@ -731,9 +768,11 @@ class InterceptedUnaryStreamCall(
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
+        registered_call_handle: int = 0,
     ) -> None:
         self._loop = loop
         self._channel = channel
+        self._registered_call_handle = registered_call_handle
         self._init_stream_response_mixin()
         self._last_returned_call_from_interceptors = None
         interceptors_task = loop.create_task(
@@ -796,6 +835,14 @@ class InterceptedUnaryStreamCall(
                         )
                     )
                 return self._last_returned_call_from_interceptors
+
+            registered_call_handle = _resolve_registered_call_handle(
+                self._channel,
+                method,
+                client_call_details.method,
+                self._registered_call_handle,
+            )
+
             self._last_returned_call_from_interceptors = UnaryStreamCall(
                 request,
                 _timeout_to_deadline(client_call_details.timeout),
@@ -807,6 +854,7 @@ class InterceptedUnaryStreamCall(
                 request_serializer,
                 response_deserializer,
                 self._loop,
+                registered_call_handle,
             )
 
             return self._last_returned_call_from_interceptors
@@ -851,9 +899,11 @@ class InterceptedStreamUnaryCall(
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
+        registered_call_handle: int = 0,
     ) -> None:
         self._loop = loop
         self._channel = channel
+        self._registered_call_handle = registered_call_handle
         request_iterator = self._init_stream_request_mixin(request_iterator)
         interceptors_task = loop.create_task(
             self._invoke(
@@ -898,6 +948,14 @@ class InterceptedStreamUnaryCall(
                 return await interceptors[0].intercept_stream_unary(
                     continuation, client_call_details, request_iterator
                 )
+
+            registered_call_handle = _resolve_registered_call_handle(
+                self._channel,
+                method,
+                client_call_details.method,
+                self._registered_call_handle,
+            )
+
             return StreamUnaryCall(
                 request_iterator,
                 _timeout_to_deadline(client_call_details.timeout),
@@ -909,6 +967,7 @@ class InterceptedStreamUnaryCall(
                 request_serializer,
                 response_deserializer,
                 self._loop,
+                registered_call_handle,
             )
 
         client_call_details = ClientCallDetails(
@@ -950,9 +1009,11 @@ class InterceptedStreamStreamCall(
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
+        registered_call_handle: int = 0,
     ) -> None:
         self._loop = loop
         self._channel = channel
+        self._registered_call_handle = registered_call_handle
         self._init_stream_response_mixin()
         request_iterator = self._init_stream_request_mixin(request_iterator)
         self._last_returned_call_from_interceptors = None
@@ -1016,6 +1077,14 @@ class InterceptedStreamStreamCall(
                         )
                     )
                 return self._last_returned_call_from_interceptors
+
+            registered_call_handle = _resolve_registered_call_handle(
+                self._channel,
+                method,
+                client_call_details.method,
+                self._registered_call_handle,
+            )
+
             self._last_returned_call_from_interceptors = StreamStreamCall(
                 request_iterator,
                 _timeout_to_deadline(client_call_details.timeout),
@@ -1027,6 +1096,7 @@ class InterceptedStreamStreamCall(
                 request_serializer,
                 response_deserializer,
                 self._loop,
+                registered_call_handle,
             )
             return self._last_returned_call_from_interceptors
 

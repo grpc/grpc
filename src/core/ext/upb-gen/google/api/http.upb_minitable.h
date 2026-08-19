@@ -19,11 +19,8 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable google__api__Http_msg_init;
-extern const upb_MiniTable* google__api__Http_msg_init_ptr;
 extern const upb_MiniTable google__api__HttpRule_msg_init;
-extern const upb_MiniTable* google__api__HttpRule_msg_init_ptr;
 extern const upb_MiniTable google__api__CustomHttpPattern_msg_init;
-extern const upb_MiniTable* google__api__CustomHttpPattern_msg_init_ptr;
 
 extern const upb_MiniTableFile google_api_http_proto_upb_file_layout;
 

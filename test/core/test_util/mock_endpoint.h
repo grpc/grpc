@@ -29,25 +29,40 @@
 namespace grpc_event_engine {
 namespace experimental {
 
+class BaseMockEndpointController {
+ public:
+  virtual ~BaseMockEndpointController() = default;
+  virtual bool Read(absl::AnyInvocable<void(absl::Status)> on_read,
+                    SliceBuffer* buffer,
+                    EventEngine::Endpoint::ReadArgs args) = 0;
+  virtual bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
+                     SliceBuffer* data,
+                     EventEngine::Endpoint::WriteArgs args) = 0;
+};
+
 // Internal controller object for mock endpoint operations.
 //
 // This helps avoid shared ownership issues. The endpoint itself may destroyed
 // while a fuzzer is still attempting to use it (e.g., the transport is closed,
 // and a fuzzer still wants to schedule reads).
 class MockEndpointController
-    : public std::enable_shared_from_this<MockEndpointController> {
+    : public BaseMockEndpointController,
+      public std::enable_shared_from_this<MockEndpointController> {
  public:
   // Factory method ensures this class is always a shared_ptr.
   static std::shared_ptr<MockEndpointController> Create(
       std::shared_ptr<EventEngine> engine);
 
-  ~MockEndpointController();
+  ~MockEndpointController() override;
 
   // ---- mock methods ----
   void TriggerReadEvent(Slice read_data);
   void NoMoreReads();
-  void Read(absl::AnyInvocable<void(absl::Status)> on_read,
-            SliceBuffer* buffer);
+  bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
+            EventEngine::Endpoint::ReadArgs /*args*/) override;
+  bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
+             SliceBuffer* data,
+             EventEngine::Endpoint::WriteArgs /*args*/) override;
   // Takes ownership of the grpc_endpoint object from the controller.
   grpc_endpoint* TakeCEndpoint();
 
@@ -56,6 +71,7 @@ class MockEndpointController
 
  private:
   explicit MockEndpointController(std::shared_ptr<EventEngine> engine);
+  void InitMockGrpcEndpoint();
 
   std::shared_ptr<EventEngine> engine_;
   grpc_core::Mutex mu_;
@@ -68,13 +84,9 @@ class MockEndpointController
 
 class MockEndpoint : public EventEngine::Endpoint {
  public:
-  MockEndpoint();
+  explicit MockEndpoint(
+      std::shared_ptr<BaseMockEndpointController> endpoint_control);
   ~MockEndpoint() override = default;
-
-  // ---- mock methods ----
-  void SetController(std::shared_ptr<MockEndpointController> endpoint_control) {
-    endpoint_control_ = std::move(endpoint_control);
-  }
 
   // ---- overrides ----
   bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
@@ -89,7 +101,7 @@ class MockEndpoint : public EventEngine::Endpoint {
   }
 
  private:
-  std::shared_ptr<MockEndpointController> endpoint_control_;
+  std::shared_ptr<BaseMockEndpointController> endpoint_control_;
   EventEngine::ResolvedAddress peer_addr_;
   EventEngine::ResolvedAddress local_addr_;
 };

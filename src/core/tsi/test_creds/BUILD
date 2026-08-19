@@ -27,6 +27,8 @@ exports_files([
     "server0.pem",
     "client.key",
     "client.pem",
+    "client1.key",
+    "client1.pem",
     "client-with-spiffe.key",
     "client-with-spiffe.pem",
     "badserver.key",

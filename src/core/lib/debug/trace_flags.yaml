@@ -106,6 +106,9 @@ combiner:
   debug_only: true
   default: false
   description: Combiner lock state.
+composite_filter:
+  default: false
+  description: xDS composite filter.
 compression:
   default: false
   description: Compression operations.
@@ -144,6 +147,9 @@ event_engine_endpoint_data:
 event_engine_poller:
   default: false
   description: EventEngine Poller events.
+ext_proc_filter:
+  default: false
+  description: External processing filter.
 fault_injection_filter:
   default: false
   description: Fault injection.
@@ -280,6 +286,9 @@ security_connector_refcount:
 server_channel:
   default: false
   description: Lightweight trace of significant server channel events.
+server_config_selector_interceptor:
+  default: false
+  description: Traces calls in the server config selector interceptor.
 slice_refcount:
   debug_only: true
   default: false

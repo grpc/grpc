@@ -36,6 +36,7 @@ class GPR_DLL ConfigVars {
   struct Overrides {
     absl::optional<int32_t> client_channel_backup_poll_interval_ms;
     absl::optional<int32_t> channelz_max_orphaned_nodes;
+    absl::optional<int32_t> chaotic_good_metrics_update_interval_ms;
     absl::optional<double> experimental_target_memory_pressure;
     absl::optional<double> experimental_memory_pressure_threshold;
     absl::optional<bool> enable_fork_support;
@@ -133,6 +134,10 @@ class GPR_DLL ConfigVars {
   double ExperimentalMemoryPressureThreshold() const {
     return experimental_memory_pressure_threshold_;
   }
+  // Interval in milliseconds for updating metrics in chaotic good.
+  int32_t ChaoticGoodMetricsUpdateIntervalMs() const {
+    return chaotic_good_metrics_update_interval_ms_;
+  }
 
  private:
   explicit ConfigVars(const Overrides& overrides);
@@ -140,6 +145,7 @@ class GPR_DLL ConfigVars {
   static std::atomic<ConfigVars*> config_vars_;
   int32_t client_channel_backup_poll_interval_ms_;
   int32_t channelz_max_orphaned_nodes_;
+  int32_t chaotic_good_metrics_update_interval_ms_;
   double experimental_target_memory_pressure_;
   double experimental_memory_pressure_threshold_;
   bool enable_fork_support_;

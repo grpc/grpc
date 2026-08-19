@@ -19,6 +19,7 @@
 #include <grpc/grpc.h>
 #include <sys/resource.h>
 
+#include "src/core/lib/experiments/config.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/util/crash.h"
@@ -31,6 +32,13 @@ int main(int argc, char** argv) {
   struct rlimit rlim;
   grpc_endpoint_pair p;
 
+  // Force disable EE experiments here. A separate EE equivalent of this test
+  // exists elsewhare. Enabling the EE experiments for this test causes
+  // flakiness because EE needs asynchronous cleanup of fds. This test purely
+  // uses the iomgr implementation where the fds are cleaned up synchronously
+  // upon endpoint deletion.
+  grpc_core::ForceEnableExperiment("event_engine_client", false);
+  grpc_core::ForceEnableExperiment("event_engine_listener", false);
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();

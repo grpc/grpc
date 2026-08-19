@@ -36,6 +36,7 @@ GRPCIO_TESTS_UNIT = [
     # TODO(https://github.com/grpc/grpc/issues/20385) enable this test
     # "_exit_test.py",
     "_grpc_shutdown_test.py",
+    "_absl_log_test.py",
     "_interceptor_test.py",
     "_invalid_metadata_test.py",
     "_invocation_defects_test.py",

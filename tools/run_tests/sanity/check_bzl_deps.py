@@ -39,11 +39,11 @@ DEP_MAPS = {
     "googleapis": "googleapis",
     "googletest": "googletest",
     "opentelemetry-cpp": "opentelemetry-cpp",
-    "protobuf": "protobuf",
     "protoc-gen-validate": "protoc-gen-validate",
     # "re2": "re2",                                      # third_party/re2 cannot be upgraded due to their cmake issue.
     # "xds": "xds",                                      # This can be resolved with https://github.com/grpc/grpc/pull/39908.
     # "zlib": "zlib",                                    # This can be resolved when zlib has a new release later than 1.3.1. (https://github.com/grpc/grpc/pull/40165)
+    # "protobuf": "protobuf",                            # Protobuf requires archive_override
 }
 
 GITHUB_TOKEN = None
@@ -68,6 +68,9 @@ def get_submodule_map():
     return dict((s.split()[1], s.split()[0].strip("-")) for s in git_submodules)
 
 
+# TODO(weizheyuan): rewrite this entire function with a better parser other than
+# regex, such that it understands version overrides better and stop giving False
+# alarm
 def get_bzlmod_deps():
     """Return a map of name and version of bzlmod dependencies."""
     with open("MODULE.bazel") as f:

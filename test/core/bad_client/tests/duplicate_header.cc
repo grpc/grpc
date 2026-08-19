@@ -134,17 +134,24 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   grpc_call_unref(s);
 }
 
+TEST(DuplicateHeaderTest, TwoHeaders) {
+  /* Verify that sending multiple headers doesn't segfault */
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
+                           PFX_STR HEADER_STR HEADER_STR PAYLOAD_STR, 0);
+}
+
+TEST(DuplicateHeaderTest, ThreeHeaders) {
+  /* Verify that sending multiple headers doesn't segfault */
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
+                           PFX_STR HEADER_STR HEADER_STR HEADER_STR PAYLOAD_STR,
+                           0);
+}
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
-
-  /* Verify that sending multiple headers doesn't segfault */
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
-                           PFX_STR HEADER_STR HEADER_STR PAYLOAD_STR, 0);
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
-                           PFX_STR HEADER_STR HEADER_STR HEADER_STR PAYLOAD_STR,
-                           0);
+  int result = RUN_ALL_TESTS();
   grpc_shutdown();
-  return 0;
+  return result;
 }

@@ -97,6 +97,8 @@ ABSL_FLAG(absl::optional<double>, grpc_experimental_memory_pressure_threshold,
           "EXPERIMENTAL: The threshold for the memory quota pressure "
           "controller. This is a value between 0 and 1, and must always be "
           "greater than the target pressure.");
+ABSL_FLAG(absl::optional<int32_t>, grpc_chaotic_good_metrics_update_interval_ms,
+          {}, "Interval in milliseconds for updating metrics in chaotic good.");
 
 namespace grpc_core {
 
@@ -109,6 +111,10 @@ ConfigVars::ConfigVars(const Overrides& overrides)
           LoadConfig(FLAGS_grpc_channelz_max_orphaned_nodes,
                      "GRPC_CHANNELZ_MAX_ORPHANED_NODES",
                      overrides.channelz_max_orphaned_nodes, 0)),
+      chaotic_good_metrics_update_interval_ms_(
+          LoadConfig(FLAGS_grpc_chaotic_good_metrics_update_interval_ms,
+                     "GRPC_CHAOTIC_GOOD_METRICS_UPDATE_INTERVAL_MS",
+                     overrides.chaotic_good_metrics_update_interval_ms, 100)),
       experimental_target_memory_pressure_(
           LoadConfig(FLAGS_grpc_experimental_target_memory_pressure,
                      "GRPC_EXPERIMENTAL_TARGET_MEMORY_PRESSURE",
@@ -194,6 +200,8 @@ std::string ConfigVars::ToString() const {
       ", experimental_target_memory_pressure: ",
       ExperimentalTargetMemoryPressure(),
       ", experimental_memory_pressure_threshold: ",
-      ExperimentalMemoryPressureThreshold());
+      ExperimentalMemoryPressureThreshold(),
+      ", chaotic_good_metrics_update_interval_ms: ",
+      ChaoticGoodMetricsUpdateIntervalMs());
 }
 }  // namespace grpc_core

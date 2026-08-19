@@ -1,0 +1,9 @@
+common --enable_bzlmod
+common --enable_workspace=false
+# TODO(weizheyuan): Maybe use RBE execution cache to speed up this test.
+common --repository_cache=
+common --lockfile_mode=off
+common --check_visibility=false
+build --verbose_failures
+
+common --downloader_config=../../../bazel/downloader.cfg

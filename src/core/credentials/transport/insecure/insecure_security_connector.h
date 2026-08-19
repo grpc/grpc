@@ -45,7 +45,7 @@ namespace grpc_core {
 extern const char kInsecureTransportSecurityType[];
 
 // Exposed for testing purposes only.
-// Create an auth context which is necessary to pass the santiy check in
+// Create an auth context which is necessary to pass the sanity check in
 // client_auth_filter that verifies if the peer's auth context is obtained
 // during handshakes.
 RefCountedPtr<grpc_auth_context> TestOnlyMakeInsecureAuthContext();

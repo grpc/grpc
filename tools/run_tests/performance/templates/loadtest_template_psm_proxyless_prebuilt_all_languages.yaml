@@ -133,7 +133,7 @@ spec:
         tcpSocket:
           port: 10000
       name: xds-server
-  - language: php7
+  - language: php8
     pool: ${client_pool}
     run:
     - args:
@@ -146,7 +146,7 @@ spec:
       env:
       - name: GRPC_XDS_BOOTSTRAP
         value: /bootstrap/bootstrap.json
-      image: ${prebuilt_image_prefix}/php7:${prebuilt_image_tag}
+      image: ${prebuilt_image_prefix}/php8:${prebuilt_image_tag}
       name: main
     - args:
       - -default-config-path
@@ -162,7 +162,7 @@ spec:
         tcpSocket:
           port: 10000
       name: xds-server
-  - language: php7_protobuf_c
+  - language: php8_protobuf_c
     pool: ${client_pool}
     run:
     - args:
@@ -175,7 +175,7 @@ spec:
       env:
       - name: GRPC_XDS_BOOTSTRAP
         value: /bootstrap/bootstrap.json
-      image: ${prebuilt_image_prefix}/php7:${prebuilt_image_tag}
+      image: ${prebuilt_image_prefix}/php8:${prebuilt_image_tag}
       name: main
     - args:
       - -default-config-path

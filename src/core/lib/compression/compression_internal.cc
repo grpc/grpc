@@ -250,15 +250,14 @@ grpc_compression_options CompressionOptionsFromChannelArgs(
             Clamp(*default_level, static_cast<int>(GRPC_COMPRESS_LEVEL_NONE),
                   static_cast<int>(GRPC_COMPRESS_LEVEL_COUNT - 1)));
   }
-  auto default_algorithm =
+  std::optional<int> default_algorithm =
       args.GetInt(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM);
   if (default_algorithm.has_value()) {
     compression_options.default_algorithm.is_set = true;
     compression_options.default_algorithm.algorithm =
-        Clamp(static_cast<grpc_compression_algorithm>(*default_algorithm),
-              GRPC_COMPRESS_NONE,
-              static_cast<grpc_compression_algorithm>(
-                  GRPC_COMPRESS_ALGORITHMS_COUNT - 1));
+        static_cast<grpc_compression_algorithm>(
+            Clamp(*default_algorithm, static_cast<int>(GRPC_COMPRESS_NONE),
+                  static_cast<int>(GRPC_COMPRESS_ALGORITHMS_COUNT - 1)));
   }
   auto enabled_algorithms_bitset =
       args.GetInt(GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET);

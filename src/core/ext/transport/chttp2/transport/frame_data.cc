@@ -123,6 +123,23 @@ grpc_core::Poll<grpc_error_handle> grpc_deframe_unprocessed_incoming_frames(
                   (static_cast<uint32_t>(header[3]) << 8) |
                   static_cast<uint32_t>(header[4]);
 
+  if (grpc_core::IsMessageSizeRefactoringEnabled()) {
+    if (s->max_recv_message_length.has_value() &&
+        length > *(s->max_recv_message_length)) {
+      error = GRPC_ERROR_CREATE(
+          absl::StrFormat("%s: Received message larger than max (%d vs. %u)",
+                          s->t->is_client ? "CLIENT" : "SERVER", length,
+                          *(s->max_recv_message_length)));
+      error = grpc_error_set_int(error, grpc_core::StatusIntProperty::kStreamId,
+                                 static_cast<intptr_t>(s->id));
+      // Attach the explicit gRPC status code to fail the RPC correctly
+      error = grpc_core::ReplaceStatusCode(
+          error, absl::StatusCode::kResourceExhausted);
+      s->message_size_limit_exceeded = true;
+      return error;
+    }
+  }
+
   if (slices->length < length + GRPC_HEADER_SIZE_IN_BYTES) {
     if (min_progress_size != nullptr) {
       *min_progress_size = length + GRPC_HEADER_SIZE_IN_BYTES - slices->length;

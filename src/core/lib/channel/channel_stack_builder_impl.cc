@@ -70,13 +70,12 @@ ChannelStackBuilderImpl::Build() {
         grpc_channel_stack_destroy(stk);
         gpr_free(stk);
       },
-      channel_stack, stack, channel_args(), name(), channel_stack, blackboard_);
+      channel_stack, stack, channel_args(), name(), channel_stack);
 
   if (!error.ok()) {
     grpc_channel_stack_destroy(channel_stack);
     gpr_free(channel_stack);
-    auto status = grpc_error_to_absl_status(error);
-    return status;
+    return error;
   }
 
   // run post-initialization functions

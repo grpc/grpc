@@ -22,7 +22,7 @@ if(gRPC_SSL_PROVIDER STREQUAL "module")
   endif()
 
   if(EXISTS "${BORINGSSL_ROOT_DIR}/CMakeLists.txt")
-    if(CMAKE_GENERATOR MATCHES "Visual Studio")
+    if(CMAKE_GENERATOR MATCHES "Visual Studio" OR CMAKE_GENERATOR MATCHES "Ninja")
       if(CMAKE_VERSION VERSION_LESS 3.13)
         # Visual Studio build with assembly optimizations is broken for older
         # version of CMake (< 3.13).
@@ -39,12 +39,11 @@ if(gRPC_SSL_PROVIDER STREQUAL "module")
         endif()
       endif()
     endif()
-
     add_subdirectory(${BORINGSSL_ROOT_DIR} third_party/boringssl-with-bazel)
     if(TARGET ssl)
       set(_gRPC_SSL_LIBRARIES ssl crypto)
-      set(_gRPC_SSL_INCLUDE_DIR ${BORINGSSL_ROOT_DIR}/src/include)
-      if(gRPC_INSTALL AND _gRPC_INSTALL_SUPPORTED_FROM_MODULE)
+      set(_gRPC_SSL_INCLUDE_DIR ${BORINGSSL_ROOT_DIR}/include)
+      if(gRPC_INSTALL)
         install(TARGETS ssl crypto EXPORT gRPCTargets
           RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
           LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -53,10 +52,6 @@ if(gRPC_SSL_PROVIDER STREQUAL "module")
     endif()
   else()
     message(WARNING "gRPC_SSL_PROVIDER is \"module\" but BORINGSSL_ROOT_DIR is wrong")
-  endif()
-  if(gRPC_INSTALL AND NOT _gRPC_INSTALL_SUPPORTED_FROM_MODULE)
-    message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_SSL_PROVIDER is \"module\" and CMake version (${CMAKE_VERSION}) is less than 3.13.")
-    set(gRPC_INSTALL FALSE)
   endif()
 elseif(gRPC_SSL_PROVIDER STREQUAL "package")
   # OpenSSL installation directory can be configured by setting OPENSSL_ROOT_DIR

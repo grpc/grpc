@@ -14,10 +14,11 @@
 // limitations under the License.
 //
 
+#include "src/core/load_balancing/xds/cds.h"
+
 #include <grpc/grpc_security.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
 
 #include <algorithm>
 #include <map>
@@ -32,6 +33,7 @@
 
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/config/core_configuration.h"
+#include "src/core/config/experiment_env_var.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -41,10 +43,10 @@
 #include "src/core/load_balancing/lb_policy_factory.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/load_balancing/outlier_detection/outlier_detection.h"
+#include "src/core/load_balancing/pick_first/pick_first.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/xds/xds_dependency_manager.h"
 #include "src/core/util/debug_location.h"
-#include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
@@ -69,13 +71,102 @@ namespace grpc_core {
 
 namespace {
 
+// We need at least one priority for each discovery mechanism, just so that we
+// have a child in which to create the xds_cluster_impl policy.  This ensures
+// that we properly handle the case of a discovery mechanism dropping 100% of
+// calls, the OnError() case, and the OnResourceDoesNotExist() case.
+const XdsEndpointResource::PriorityList& GetUpdatePriorityList(
+    const XdsEndpointResource* update) {
+  static const NoDestruct<XdsEndpointResource::PriorityList>
+      kPriorityListWithEmptyPriority(1);
+  if (update == nullptr || update->priorities.empty()) {
+    return *kPriorityListWithEmptyPriority;
+  }
+  return update->priorities;
+}
+
+}  // namespace
+
+void CdsChildNameState::Update(
+    const XdsConfig::ClusterConfig* old_cluster,
+    const XdsConfig::ClusterConfig::EndpointConfig& endpoint_config) {
+  // First, build some maps from locality to child number and the reverse
+  // from old_cluster and current state.
+  std::map<XdsLocalityName*, size_t /*child_number*/, XdsLocalityName::Less>
+      locality_child_map;
+  std::map<size_t, std::set<XdsLocalityName*, XdsLocalityName::Less>>
+      child_locality_map;
+  if (old_cluster != nullptr) {
+    auto* old_endpoint_config =
+        std::get_if<XdsConfig::ClusterConfig::EndpointConfig>(
+            &old_cluster->children);
+    if (old_endpoint_config != nullptr) {
+      const auto& prev_priority_list =
+          GetUpdatePriorityList(old_endpoint_config->endpoints.get());
+      for (size_t priority = 0; priority < prev_priority_list.size();
+           ++priority) {
+        size_t child_number = priority_child_numbers_[priority];
+        const auto& localities = prev_priority_list[priority].localities;
+        for (const auto& [locality_name, _] : localities) {
+          locality_child_map[locality_name] = child_number;
+          child_locality_map[child_number].insert(locality_name);
+        }
+      }
+    }
+  }
+  // Now construct new priority child numbers for the new cluster based on
+  // the maps constructed above.
+  std::vector<size_t> new_priority_child_numbers;
+  const XdsEndpointResource::PriorityList& priority_list =
+      GetUpdatePriorityList(endpoint_config.endpoints.get());
+  for (size_t priority = 0; priority < priority_list.size(); ++priority) {
+    const auto& localities = priority_list[priority].localities;
+    std::optional<size_t> child_number;
+    // If one of the localities in this priority already existed, reuse its
+    // child number.
+    for (const auto& [locality_name, _] : localities) {
+      if (!child_number.has_value()) {
+        auto it = locality_child_map.find(locality_name);
+        if (it != locality_child_map.end()) {
+          child_number = it->second;
+          locality_child_map.erase(it);
+          // Remove localities that *used* to be in this child number, so
+          // that we don't incorrectly reuse this child number for a
+          // subsequent priority.
+          for (XdsLocalityName* old_locality :
+               child_locality_map[*child_number]) {
+            locality_child_map.erase(old_locality);
+          }
+        }
+      } else {
+        // Remove all localities that are now in this child number, so
+        // that we don't accidentally reuse this child number for a
+        // subsequent priority.
+        locality_child_map.erase(locality_name);
+      }
+    }
+    // If we didn't find an existing child number, assign a new one.
+    if (!child_number.has_value()) {
+      for (child_number = next_available_child_number_;
+           child_locality_map.find(*child_number) != child_locality_map.end();
+           ++(*child_number)) {
+      }
+      next_available_child_number_ = *child_number + 1;
+      // Add entry so we know that the child number is in use.
+      // (Don't need to add the list of localities, since we won't use them.)
+      child_locality_map[*child_number];
+    }
+    new_priority_child_numbers.push_back(*child_number);
+  }
+  priority_child_numbers_ = std::move(new_priority_child_numbers);
+}
+
+namespace {
+
 // TODO(roth): Remove this after the 1.63 release.
 bool XdsAggregateClusterBackwardCompatibilityEnabled() {
-  auto value = GetEnv("GRPC_XDS_AGGREGATE_CLUSTER_BACKWARD_COMPAT");
-  if (!value.has_value()) return false;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
+  return IsExperimentEnvVarEnabled(
+      "GRPC_XDS_AGGREGATE_CLUSTER_BACKWARD_COMPAT");
 }
 
 constexpr absl::string_view kCds = "cds_experimental";
@@ -160,30 +251,9 @@ class CdsLb final : public LoadBalancingPolicy {
     }
   };
 
-  // State used to retain child policy names for the priority policy.
-  struct ChildNameState {
-    std::vector<size_t /*child_number*/> priority_child_numbers;
-    size_t next_available_child_number = 0;
-
-    void Reset() {
-      priority_child_numbers.clear();
-      next_available_child_number = 0;
-    }
-  };
-
   ~CdsLb() override;
 
   void ShutdownLocked() override;
-
-  // Computes child numbers for new_cluster, reusing child numbers
-  // from old_cluster and child_name_state_ in an intelligent
-  // way to avoid unnecessary churn.
-  ChildNameState ComputeChildNames(
-      const XdsConfig::ClusterConfig* old_cluster,
-      const XdsConfig::ClusterConfig& new_cluster,
-      const XdsConfig::ClusterConfig::EndpointConfig& endpoint_config) const;
-
-  std::string GetChildPolicyName(const std::string& cluster, size_t priority);
 
   Json CreateChildPolicyConfigForLeafCluster(
       const XdsConfig::ClusterConfig& new_cluster,
@@ -202,7 +272,7 @@ class CdsLb final : public LoadBalancingPolicy {
   // Cluster subscription, for dynamic clusters (e.g., RLS).
   RefCountedPtr<XdsDependencyManager::ClusterSubscription> subscription_;
 
-  ChildNameState child_name_state_;
+  CdsChildNameState child_name_state_;
 
   // Child LB policy.
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
@@ -238,73 +308,11 @@ void CdsLb::ExitIdleLocked() {
   if (child_policy_ != nullptr) child_policy_->ExitIdleLocked();
 }
 
-// We need at least one priority for each discovery mechanism, just so that we
-// have a child in which to create the xds_cluster_impl policy.  This ensures
-// that we properly handle the case of a discovery mechanism dropping 100% of
-// calls, the OnError() case, and the OnResourceDoesNotExist() case.
-const XdsEndpointResource::PriorityList& GetUpdatePriorityList(
-    const XdsEndpointResource* update) {
-  static const NoDestruct<XdsEndpointResource::PriorityList>
-      kPriorityListWithEmptyPriority(1);
-  if (update == nullptr || update->priorities.empty()) {
-    return *kPriorityListWithEmptyPriority;
-  }
-  return update->priorities;
-}
-
 std::string MakeChildPolicyName(absl::string_view cluster,
                                 size_t child_number) {
   return absl::StrCat("{cluster=", cluster, ", child_number=", child_number,
                       "}");
 }
-
-class PriorityEndpointIterator final : public EndpointAddressesIterator {
- public:
-  PriorityEndpointIterator(
-      RefCountedStringValue cluster_name, bool use_http_connect,
-      std::shared_ptr<const XdsEndpointResource> endpoints,
-      std::vector<size_t /*child_number*/> priority_child_numbers)
-      : cluster_name_(std::move(cluster_name)),
-        use_http_connect_(use_http_connect),
-        endpoints_(std::move(endpoints)),
-        priority_child_numbers_(std::move(priority_child_numbers)) {}
-
-  void ForEach(absl::FunctionRef<void(const EndpointAddresses&)> callback)
-      const override {
-    const auto& priority_list = GetUpdatePriorityList(endpoints_.get());
-    for (size_t priority = 0; priority < priority_list.size(); ++priority) {
-      const auto& priority_entry = priority_list[priority];
-      std::string priority_child_name = MakeChildPolicyName(
-          cluster_name_.as_string_view(), priority_child_numbers_[priority]);
-      for (const auto& [locality_name, locality] : priority_entry.localities) {
-        std::vector<RefCountedStringValue> hierarchical_path = {
-            RefCountedStringValue(priority_child_name),
-            locality_name->human_readable_string()};
-        auto hierarchical_path_attr =
-            MakeRefCounted<HierarchicalPathArg>(std::move(hierarchical_path));
-        for (const auto& endpoint : locality.endpoints) {
-          uint32_t endpoint_weight =
-              locality.lb_weight *
-              endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
-          ChannelArgs args =
-              endpoint.args()
-                  .SetObject(hierarchical_path_attr)
-                  .Set(GRPC_ARG_ADDRESS_WEIGHT, endpoint_weight)
-                  .SetObject(locality_name->Ref())
-                  .Set(GRPC_ARG_XDS_LOCALITY_WEIGHT, locality.lb_weight);
-          if (!use_http_connect_) args = args.Remove(GRPC_ARG_XDS_HTTP_PROXY);
-          callback(EndpointAddresses(endpoint.addresses(), args));
-        }
-      }
-    }
-  }
-
- private:
-  RefCountedStringValue cluster_name_;
-  bool use_http_connect_;
-  std::shared_ptr<const XdsEndpointResource> endpoints_;
-  std::vector<size_t /*child_number*/> priority_child_numbers_;
-};
 
 absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
   // Get new config.
@@ -430,13 +438,12 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
       // Leaf cluster.
       [&](const XdsConfig::ClusterConfig::EndpointConfig& endpoint_config) {
         // Compute new child numbers.
-        child_name_state_ = ComputeChildNames(
-            old_cluster_config, *new_cluster_config, endpoint_config);
+        child_name_state_.Update(old_cluster_config, endpoint_config);
         // Populate addresses and resolution_note for child policy.
-        update_args.addresses = std::make_shared<PriorityEndpointIterator>(
+        update_args.addresses = std::make_shared<CdsPriorityEndpointIterator>(
             cluster_name_, new_cluster_config->cluster->use_http_connect,
             endpoint_config.endpoints,
-            child_name_state_.priority_child_numbers);
+            child_name_state_.priority_child_numbers());
         std::vector<absl::string_view> resolution_notes;
         if (!args.resolution_note.empty()) {
           resolution_notes.emplace_back(args.resolution_note);
@@ -504,86 +511,6 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
   return child_policy_->UpdateLocked(std::move(update_args));
 }
 
-CdsLb::ChildNameState CdsLb::ComputeChildNames(
-    const XdsConfig::ClusterConfig* old_cluster,
-    const XdsConfig::ClusterConfig& new_cluster,
-    const XdsConfig::ClusterConfig::EndpointConfig& endpoint_config) const {
-  GRPC_CHECK(!std::holds_alternative<XdsConfig::ClusterConfig::AggregateConfig>(
-      new_cluster.children));
-  // First, build some maps from locality to child number and the reverse
-  // from old_cluster and child_name_state_.
-  std::map<XdsLocalityName*, size_t /*child_number*/, XdsLocalityName::Less>
-      locality_child_map;
-  std::map<size_t, std::set<XdsLocalityName*, XdsLocalityName::Less>>
-      child_locality_map;
-  if (old_cluster != nullptr) {
-    auto* old_endpoint_config =
-        std::get_if<XdsConfig::ClusterConfig::EndpointConfig>(
-            &old_cluster->children);
-    if (old_endpoint_config != nullptr) {
-      const auto& prev_priority_list =
-          GetUpdatePriorityList(old_endpoint_config->endpoints.get());
-      for (size_t priority = 0; priority < prev_priority_list.size();
-           ++priority) {
-        size_t child_number =
-            child_name_state_.priority_child_numbers[priority];
-        const auto& localities = prev_priority_list[priority].localities;
-        for (const auto& [locality_name, _] : localities) {
-          locality_child_map[locality_name] = child_number;
-          child_locality_map[child_number].insert(locality_name);
-        }
-      }
-    }
-  }
-  // Now construct new state containing priority child numbers for the new
-  // cluster based on the maps constructed above.
-  ChildNameState new_child_name_state;
-  new_child_name_state.next_available_child_number =
-      child_name_state_.next_available_child_number;
-  const XdsEndpointResource::PriorityList& priority_list =
-      GetUpdatePriorityList(endpoint_config.endpoints.get());
-  for (size_t priority = 0; priority < priority_list.size(); ++priority) {
-    const auto& localities = priority_list[priority].localities;
-    std::optional<size_t> child_number;
-    // If one of the localities in this priority already existed, reuse its
-    // child number.
-    for (const auto& [locality_name, _] : localities) {
-      if (!child_number.has_value()) {
-        auto it = locality_child_map.find(locality_name);
-        if (it != locality_child_map.end()) {
-          child_number = it->second;
-          locality_child_map.erase(it);
-          // Remove localities that *used* to be in this child number, so
-          // that we don't incorrectly reuse this child number for a
-          // subsequent priority.
-          for (XdsLocalityName* old_locality :
-               child_locality_map[*child_number]) {
-            locality_child_map.erase(old_locality);
-          }
-        }
-      } else {
-        // Remove all localities that are now in this child number, so
-        // that we don't accidentally reuse this child number for a
-        // subsequent priority.
-        locality_child_map.erase(locality_name);
-      }
-    }
-    // If we didn't find an existing child number, assign a new one.
-    if (!child_number.has_value()) {
-      for (child_number = new_child_name_state.next_available_child_number;
-           child_locality_map.find(*child_number) != child_locality_map.end();
-           ++(*child_number)) {
-      }
-      new_child_name_state.next_available_child_number = *child_number + 1;
-      // Add entry so we know that the child number is in use.
-      // (Don't need to add the list of localities, since we won't use them.)
-      child_locality_map[*child_number];
-    }
-    new_child_name_state.priority_child_numbers.push_back(*child_number);
-  }
-  return new_child_name_state;
-}
-
 Json CdsLb::CreateChildPolicyConfigForLeafCluster(
     const XdsConfig::ClusterConfig& new_cluster,
     const XdsConfig::ClusterConfig::EndpointConfig& endpoint_config,
@@ -609,9 +536,9 @@ Json CdsLb::CreateChildPolicyConfigForLeafCluster(
       GetUpdatePriorityList(endpoint_config.endpoints.get());
   for (size_t priority = 0; priority < priority_list.size(); ++priority) {
     // Add priority entry, with the appropriate child name.
-    std::string child_name =
-        MakeChildPolicyName(cluster_name_.as_string_view(),
-                            child_name_state_.priority_child_numbers[priority]);
+    std::string child_name = MakeChildPolicyName(
+        cluster_name_.as_string_view(),
+        child_name_state_.priority_child_numbers()[priority]);
     priority_priorities.emplace_back(Json::FromString(child_name));
     Json::Object child_config = {{"config", xds_lb_policy}};
     if (!is_logical_dns) {
@@ -773,6 +700,83 @@ class CdsLbFactory final : public LoadBalancingPolicyFactory {
 };
 
 }  // namespace
+
+CdsPriorityEndpointIterator::CdsPriorityEndpointIterator(
+    RefCountedStringValue cluster_name, bool use_http_connect,
+    std::shared_ptr<const XdsEndpointResource> endpoints,
+    std::vector<size_t /*child_number*/> priority_child_numbers)
+    : cluster_name_(std::move(cluster_name)),
+      use_http_connect_(use_http_connect),
+      endpoints_(std::move(endpoints)),
+      priority_child_numbers_(std::move(priority_child_numbers)) {}
+
+void CdsPriorityEndpointIterator::ForEach(
+    absl::FunctionRef<void(const EndpointAddresses&)> callback) const {
+  const auto& priority_list = GetUpdatePriorityList(endpoints_.get());
+  bool weighted_shuffling_enabled = PfWeightedShufflingEnabled();
+  for (size_t priority = 0; priority < priority_list.size(); ++priority) {
+    const auto& priority_entry = priority_list[priority];
+    std::string priority_child_name = MakeChildPolicyName(
+        cluster_name_.as_string_view(), priority_child_numbers_[priority]);
+    uint64_t locality_weight_sum = 0;
+    if (weighted_shuffling_enabled) {
+      for (const auto& [_, locality] : priority_entry.localities) {
+        locality_weight_sum += locality.lb_weight;
+      }
+      // This should never happen because the resource parsing code will strip
+      // out any localities with weight 0. However, we check this defensively.
+      if (locality_weight_sum == 0) locality_weight_sum = 1;
+    }
+    for (const auto& [locality_name, locality] : priority_entry.localities) {
+      uint32_t normalized_locality_weight = 1;
+      uint64_t endpoint_weight_sum = 0;
+      if (weighted_shuffling_enabled) {
+        normalized_locality_weight =
+            (locality.lb_weight * (uint64_t(1) << 31)) / locality_weight_sum;
+        for (const auto& endpoint : locality.endpoints) {
+          int weight =
+              endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
+          endpoint_weight_sum += weight <= 0 ? 1 : weight;
+        }
+        // This should never happen because the resource validation code will
+        // reject the resource if any endpoint has weight 0. However, we check
+        // this defensively.
+        if (endpoint_weight_sum == 0) endpoint_weight_sum = 1;
+      }
+      std::vector<RefCountedStringValue> hierarchical_path = {
+          RefCountedStringValue(priority_child_name),
+          locality_name->human_readable_string()};
+      auto hierarchical_path_attr =
+          MakeRefCounted<HierarchicalPathArg>(std::move(hierarchical_path));
+      for (const auto& endpoint : locality.endpoints) {
+        int weight_arg =
+            endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
+        uint32_t raw_endpoint_weight = weight_arg <= 0 ? 1 : weight_arg;
+        uint32_t endpoint_weight;
+        if (weighted_shuffling_enabled) {
+          uint32_t normalized_endpoint_weight =
+              (raw_endpoint_weight * (uint64_t(1) << 31)) / endpoint_weight_sum;
+          endpoint_weight = (uint64_t(normalized_locality_weight) *
+                             normalized_endpoint_weight) >>
+                            31;
+          if (endpoint_weight == 0) endpoint_weight = 1;
+        } else {
+          endpoint_weight = locality.lb_weight * raw_endpoint_weight;
+        }
+        ChannelArgs args =
+            endpoint.args()
+                .SetObject(hierarchical_path_attr)
+                .Set(GRPC_ARG_ADDRESS_WEIGHT, endpoint_weight)
+                .SetObject(locality_name->Ref())
+                .Set(GRPC_ARG_XDS_LOCALITY_WEIGHT, locality.lb_weight)
+                .Set(GRPC_ARG_LB_LOCALITY,
+                     locality_name->human_readable_string().as_string_view());
+        if (!use_http_connect_) args = args.Remove(GRPC_ARG_XDS_HTTP_PROXY);
+        callback(EndpointAddresses(endpoint.addresses(), args));
+      }
+    }
+  }
+}
 
 void RegisterCdsLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(

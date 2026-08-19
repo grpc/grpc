@@ -25,6 +25,11 @@ grpc_package(
     ],
 )
 
+config_setting(
+    name = "grpc_running_in_pr",
+    values = {"define": "grpc_running_in_pr=true"},
+)
+
 # grpc_core_end2end_test_suite() currently needs to consume the source for tests directly.
 exports_files(
     glob(["tests/**"]),
@@ -182,7 +187,11 @@ grpc_cc_library(
         ],
         defines =
             (["GRPC_END2END_TEST_INCLUDE_FUZZER"] if fuzz else []) +
-            ([] if gtest else ["GRPC_END2END_TEST_NO_GTEST"]),
+            ([] if gtest else ["GRPC_END2END_TEST_NO_GTEST"]) +
+            select({
+                ":grpc_running_in_pr": ["GRPC_RUNNING_IN_PR"],
+                "//conditions:default": [],
+            }),
         external_deps = [
             "absl/functional:any_invocable",
             "absl/log:check",
@@ -458,6 +467,7 @@ grpc_cc_test(
         "absl/log:log",
         "absl/memory",
         "absl/meta:type_traits",
+        "absl/random",
         "absl/strings",
         "gtest",
     ],
@@ -587,6 +597,25 @@ grpc_core_end2end_test_suite(
         "//src/core:metrics",
         "//src/core:slice_buffer",
         "//src/core:sync",
+    ],
+)
+
+grpc_core_end2end_test_suite(
+    name = "end2end_vrpc",
+    config_src = "end2end_vrpc_config.cc",
+    tags = [
+        "grpc:no-internal-poller",
+    ],
+    deps = [
+        "//:iomgr",
+        "//src/core:arena",
+        "//src/core:context",
+        "//src/core:metrics",
+        "//src/core:resource_quota",
+        "//src/core:session_endpoint",
+        "//src/core:slice_buffer",
+        "//src/core:sync",
+        "//src/core:virtual_channel",
     ],
 )
 

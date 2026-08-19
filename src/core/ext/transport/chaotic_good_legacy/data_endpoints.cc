@@ -302,10 +302,10 @@ Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
                   grpc_event_engine::experimental::ChannelzExtension>(
                   endpoint->GetEventEngineEndpoint().get());
               if (epte != nullptr) epte->SetSocketNode(socket_node);
-              // Enable RxMemoryAlignment and RPC receive coalescing after the
-              // transport setup is complete. At this point all the settings
-              // frames should have been read.
-              endpoint->EnforceRxMemoryAlignmentAndCoalescing();
+              // Enable RPC receive coalescing after the transport setup is
+              // complete. At this point all the settings frames should have
+              // been read.
+              endpoint->EnableRpcReceiveCoalescing();
               if (enable_tracing) {
                 auto* epte = grpc_event_engine::experimental::QueryExtension<
                     grpc_event_engine::experimental::TcpTraceExtension>(
@@ -313,7 +313,8 @@ Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
                 if (epte != nullptr && stats_plugin_group != nullptr) {
                   epte->EnableTcpTelemetry(
                       stats_plugin_group->GetCollectionScope(),
-                      /*is_control_endpoint=*/false);
+                      /*is_control_endpoint=*/false,
+                      /*trace_full_buffer=*/false);
                   epte->SetTcpTracer(std::make_shared<DefaultTcpTracer>(
                       std::move(stats_plugin_group)));
                 }

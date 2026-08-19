@@ -21,6 +21,7 @@
 #include <grpc/support/port_platform.h>
 #include <inttypes.h>
 
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -44,6 +45,7 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/transport/message_size_service_config.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/latent_see.h"
 #include "absl/status/status.h"
@@ -75,8 +77,6 @@ ServerCompressionFilter::Create(const ChannelArgs& args, ChannelFilter::Args) {
 
 ChannelCompression::ChannelCompression(const ChannelArgs& args)
     : max_recv_size_(GetMaxRecvSizeFromChannelArgs(args)),
-      message_size_service_config_parser_index_(
-          MessageSizeParser::ParserIndex()),
       default_compression_algorithm_(
           DefaultCompressionAlgorithmFromChannelArgs(args).value_or(
               GRPC_COMPRESS_NONE)),
@@ -118,26 +118,25 @@ MessageHandle ChannelCompression::CompressMessage(
     return message;
   }
   // Try to compress the payload.
-  SliceBuffer tmp;
-  SliceBuffer* payload = message->payload();
-  bool did_compress = grpc_msg_compress(algorithm, payload->c_slice_buffer(),
-                                        tmp.c_slice_buffer());
+  std::optional<SliceBuffer> compressed =
+      MessageCompress(algorithm, *message->payload());
+
   // If we achieved compression send it as compressed, otherwise send it as (to
   // avoid spending cycles on the receiver decompressing).
-  if (did_compress) {
+  if (compressed.has_value()) {
     if (GRPC_TRACE_FLAG_ENABLED(compression)) {
       const char* algo_name;
-      const size_t before_size = payload->Length();
-      const size_t after_size = tmp.Length();
+      GRPC_CHECK(grpc_compression_algorithm_name(algorithm, &algo_name));
+      const size_t before_size = message->payload()->Length();
+      const size_t after_size = compressed->Length();
       const float savings_ratio = 1.0f - (static_cast<float>(after_size) /
                                           static_cast<float>(before_size));
-      GRPC_CHECK(grpc_compression_algorithm_name(algorithm, &algo_name));
       LOG(INFO) << absl::StrFormat(
           "Compressed[%s] %" PRIuPTR " bytes vs. %" PRIuPTR
           " bytes (%.2f%% savings)",
           algo_name, before_size, after_size, 100 * savings_ratio);
     }
-    tmp.Swap(payload);
+    *message->payload() = std::move(*compressed);
     flags |= GRPC_WRITE_INTERNAL_COMPRESS;
     if (call_tracer != nullptr) {
       call_tracer->RecordSendCompressedMessage(*message);
@@ -148,7 +147,7 @@ MessageHandle ChannelCompression::CompressMessage(
       GRPC_CHECK(grpc_compression_algorithm_name(algorithm, &algo_name));
       LOG(INFO) << "Algorithm '" << algo_name
                 << "' enabled but decided not to compress. Input size: "
-                << payload->Length();
+                << message->payload()->Length();
     }
   }
   return message;
@@ -180,15 +179,17 @@ absl::StatusOr<MessageHandle> ChannelCompression::DecompressMessage(
     return std::move(message);
   }
   // Try to decompress the payload.
-  SliceBuffer decompressed_slices;
-  if (grpc_msg_decompress(args.algorithm, message->payload()->c_slice_buffer(),
-                          decompressed_slices.c_slice_buffer()) == 0) {
-    return absl::InternalError(
-        absl::StrCat("Unexpected error decompressing data for algorithm ",
-                     CompressionAlgorithmAsString(args.algorithm)));
+  std::optional<uint32_t> max_output_size = IsMessageSizeRefactoringEnabled()
+                                                ? args.max_recv_message_length
+                                                : std::nullopt;
+  absl::StatusOr<SliceBuffer> decompressed_slices =
+      MessageDecompress(args.algorithm, *message->payload(), max_output_size);
+  if (!decompressed_slices.ok()) {
+    return decompressed_slices.status();
   }
-  // Swap the decompressed slices into the message.
-  message->payload()->Swap(&decompressed_slices);
+
+  // Move the decompressed slices into the message.
+  *message->payload() = std::move(*decompressed_slices);
   message->mutable_flags() &= ~GRPC_WRITE_INTERNAL_COMPRESS;
   message->mutable_flags() |= GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED;
   if (call_tracer != nullptr) {
@@ -213,18 +214,10 @@ grpc_compression_algorithm ChannelCompression::HandleOutgoingMetadata(
 ChannelCompression::DecompressArgs ChannelCompression::HandleIncomingMetadata(
     const grpc_metadata_batch& incoming_metadata) {
   // Configure max receive size.
-  auto max_recv_message_length = max_recv_size_;
-  const MessageSizeParsedConfig* limits =
-      MessageSizeParsedConfig::GetFromCallContext(
-          GetContext<Arena>(), message_size_service_config_parser_index_);
-  if (limits != nullptr && limits->max_recv_size().has_value() &&
-      (!max_recv_message_length.has_value() ||
-       *limits->max_recv_size() < *max_recv_message_length)) {
-    max_recv_message_length = limits->max_recv_size();
-  }
-  return DecompressArgs{incoming_metadata.get(GrpcEncodingMetadata())
-                            .value_or(GRPC_COMPRESS_NONE),
-                        max_recv_message_length};
+  return DecompressArgs{
+      incoming_metadata.get(GrpcEncodingMetadata())
+          .value_or(GRPC_COMPRESS_NONE),
+      GetMaxRecvSizeFromCallContext(GetContext<Arena>(), max_recv_size_)};
 }
 
 void ClientCompressionFilter::Call::OnClientInitialMetadata(

@@ -76,10 +76,14 @@ int64_t grpc_test_sanitizer_slowdown_factor() {
     sanitizer_multiplier = 4;
   } else if (BuiltUnderUbsan()) {
     sanitizer_multiplier = 5;
+  } else if (BuiltUnderDebug()) {
+    sanitizer_multiplier = 2;
   }
   return sanitizer_multiplier;
 }
 
+// WARNING: Hardcoded values used to support different sanitizers and
+// scenarios will make this inherently flaky in some environments.
 int64_t grpc_test_slowdown_factor() {
   return grpc_test_sanitizer_slowdown_factor() * g_fixture_slowdown_factor *
          g_poller_slowdown_factor;

@@ -46,6 +46,21 @@ namespace {
 
 constexpr size_t kHeadersFrameHeaderSize = 9;
 
+std::optional<size_t> CheckIndexSize(size_t key_len, size_t value_len) {
+  constexpr size_t max_size = HPackEncoderTable::MaxEntrySize();
+
+  if (key_len > max_size - hpack_constants::kEntryOverhead) {
+    // Too large to index or overflow.
+    return std::nullopt;
+  }
+  size_t sum = key_len + hpack_constants::kEntryOverhead;
+  if (value_len > max_size - sum) {
+    // Too large to index or overflow.
+    return std::nullopt;
+  }
+  return sum + value_len;
+}
+
 }  // namespace
 
 // fills p (which is expected to be kHeadersFrameHeaderSize bytes long)
@@ -254,6 +269,21 @@ uint32_t HPackWriter::EmitLitHdrWithNonBinaryStringKeyIncIdx(
     HPackEncoderTable& table) {
   auto key_len = key_slice.length();
   auto value_len = value_slice.length();
+
+  size_t size_to_allocate;
+  if (IsOptimization03Enabled()) {
+    auto size = CheckIndexSize(key_len, value_len);
+    if (!size.has_value()) {
+      // Fall back to not indexing.
+      EmitLitHdrWithNonBinaryStringKeyNotIdx(std::move(key_slice),
+                                             std::move(value_slice), output);
+      return 0;
+    }
+    size_to_allocate = *size;
+  } else {
+    size_to_allocate = key_len + value_len + hpack_constants::kEntryOverhead;
+  }
+
   StringKey key(std::move(key_slice));
   key.WritePrefix(0x40, output.AddTiny(key.prefix_length()));
   output.Append(key.key());
@@ -261,8 +291,7 @@ uint32_t HPackWriter::EmitLitHdrWithNonBinaryStringKeyIncIdx(
   emit.WritePrefix(output.AddTiny(emit.prefix_length()));
   // Allocate an index in the hpack table for this newly emitted entry.
   // (we do so here because we know the length of the key and value)
-  uint32_t index = table.AllocateIndex(key_len + value_len +
-                                       hpack_constants::kEntryOverhead);
+  uint32_t index = table.AllocateIndex(size_to_allocate);
   output.Append(emit.data());
   return index;
 }
@@ -282,15 +311,34 @@ uint32_t HPackWriter::EmitLitHdrWithBinaryStringKeyIncIdx(
     Slice key_slice, Slice value_slice, SliceBuffer& output,
     HPackEncoderTable& table, bool use_true_binary_metadata) {
   auto key_len = key_slice.length();
+  BinaryStringValue emit(std::move(value_slice), use_true_binary_metadata);
+
+  size_t size_to_allocate;
+
+  if (IsOptimization03Enabled()) {
+    auto size = CheckIndexSize(key_len, emit.hpack_length());
+    if (!size.has_value()) {
+      // Fall back to not indexing.
+      StringKey key(std::move(key_slice));
+      key.WritePrefix(0x00, output.AddTiny(key.prefix_length()));
+      output.Append(key.key());
+      emit.WritePrefix(output.AddTiny(emit.prefix_length()));
+      output.Append(emit.data());
+      return 0;
+    }
+    size_to_allocate = *size;
+  } else {
+    size_to_allocate =
+        key_len + emit.hpack_length() + hpack_constants::kEntryOverhead;
+  }
+
   StringKey key(std::move(key_slice));
   key.WritePrefix(0x40, output.AddTiny(key.prefix_length()));
   output.Append(key.key());
-  BinaryStringValue emit(std::move(value_slice), use_true_binary_metadata);
   emit.WritePrefix(output.AddTiny(emit.prefix_length()));
   // Allocate an index in the hpack table for this newly emitted entry.
   // (we do so here because we know the length of the key and value)
-  uint32_t index = table.AllocateIndex(key_len + emit.hpack_length() +
-                                       hpack_constants::kEntryOverhead);
+  uint32_t index = table.AllocateIndex(size_to_allocate);
   output.Append(emit.data());
   return index;
 }

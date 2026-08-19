@@ -118,6 +118,21 @@ class AuthContextTest(unittest.TestCase):
         server.stop(None)
 
         auth_data = pickle.loads(response)
+        # The group here will depend on the underlying Open/BoringSSL version.
+        auth_ctx = auth_data[_AUTH_CTX]
+        self.assertIn("ssl_negotiated_key_exchange_group", auth_ctx)
+        key_exchange_group = auth_ctx.pop("ssl_negotiated_key_exchange_group")
+        self.assertEqual(len(key_exchange_group), 1)
+        self.assertIn(
+            key_exchange_group[0],
+            [
+                b"X25519MLKEM768",
+                b"X25519",
+                b"prime256v1",
+                b"P-256",
+                b"secp384r1",
+            ],
+        )
         self.assertIsNone(auth_data[_ID])
         self.assertIsNone(auth_data[_ID_KEY])
         self.assertDictEqual(
@@ -126,7 +141,7 @@ class AuthContextTest(unittest.TestCase):
                 "transport_security_type": [b"ssl"],
                 "ssl_session_reused": [b"false"],
             },
-            auth_data[_AUTH_CTX],
+            auth_ctx,
         )
 
     def testSecureClientCert(self):

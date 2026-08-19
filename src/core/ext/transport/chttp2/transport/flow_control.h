@@ -24,6 +24,7 @@
 #include <stdint.h>
 
 #include <algorithm>
+#include <cstddef>
 #include <iosfwd>
 #include <optional>
 #include <string>
@@ -201,11 +202,16 @@ std::ostream& operator<<(std::ostream& out, const FlowControlAction& action);
 // This class manages the flow control at a connection level.
 class TransportFlowControl final {
  public:
-  explicit TransportFlowControl(absl::string_view name, bool enable_bdp_probe,
+  explicit TransportFlowControl(absl::string_view peer_name,
+                                bool enable_bdp_probe,
                                 MemoryOwner* memory_owner);
   ~TransportFlowControl() {}
 
   bool bdp_probe() const { return enable_bdp_probe_; }
+  bool ph2_enable_rx_crypto() const { return ph2_enable_rx_crypto_; }
+  void set_ph2_enable_rx_crypto(const bool enable) {
+    ph2_enable_rx_crypto_ = enable;
+  }
 
   // Returns a non-zero announce if we should send a transport update to our
   // peer, else returns zero; writing_anyway indicates if a write would happen
@@ -314,7 +320,7 @@ class TransportFlowControl final {
   // Call periodically (at a low-ish rate, 100ms - 10s makes sense)
   // to perform more complex flow control calculations and return an action
   // to let the transport change its parameters.
-  // TODO(tjagtap) [PH2][P2] Plumb with PH2 flow control.
+  // TODO(tjagtap) [PH2][P2][FCV3] Plumb with PH2 flow control.
   FlowControlAction PeriodicUpdate();
 
   int64_t test_only_target_window() const { return target_window(); }
@@ -365,6 +371,7 @@ class TransportFlowControl final {
     int64_t bdp_accumulator;
     int64_t bdp_estimate;
     double bdp_bw_est;
+    bool bdp_ping_blocked;
 
     std::string ToString() const;
     channelz::PropertyList ChannelzProperties() const {
@@ -381,6 +388,7 @@ class TransportFlowControl final {
           .Set("announced_stream_total_over_incoming_window",
                announced_stream_total_over_incoming_window)
           .Set("bdp_accumulator", bdp_accumulator)
+          .Set("bdp_ping_blocked", bdp_ping_blocked)
           .Set("bdp_estimate", bdp_estimate)
           .Set("bdp_bw_est", bdp_bw_est);
     }
@@ -400,6 +408,7 @@ class TransportFlowControl final {
     stats.announced_stream_total_over_incoming_window =
         announced_stream_total_over_incoming_window();
     stats.bdp_accumulator = bdp_estimator_.accumulator();
+    stats.bdp_ping_blocked = bdp_ping_blocked_;
     stats.bdp_estimate = bdp_estimator_.EstimateBdp();
     stats.bdp_bw_est = bdp_estimator_.EstimateBandwidth();
     return stats;
@@ -412,6 +421,67 @@ class TransportFlowControl final {
     return std::exchange(window_update_list_, {});
   }
   size_t window_update_list_size() const { return window_update_list_.size(); }
+
+  //////////////////////////////////////////////////////////////////////////////
+  // BDP Ping related functions.
+
+  // The current implementation of BDP relies on the assumption that our
+  // transport will not send out a new ping till it has received an ACK for the
+  // previous ping.
+
+  // CHTTP2 reference : schedule_bdp_ping_locked
+  void ScheduleBdpPing() {
+    GRPC_DCHECK(enable_bdp_probe_);
+    bdp_estimator_.SchedulePing();
+  }
+
+  // CHTTP2 reference : start_bdp_ping_locked
+  void StartBdpPing() {
+    // TODO(tjagtap) : [PH2][P1] : Reset the keepalive ping timer
+    bdp_estimator_.StartPing();
+  }
+
+  // CHTTP2 reference : finish_bdp_ping_locked
+  Duration CompleteBdpPing() {
+    return bdp_estimator_.CompletePing() - Timestamp::Now();
+  }
+
+  // CHTTP2 reference : init_data_frame_parser
+  void OnReceiveDataFrame(const uint32_t bytes) {
+    if (enable_bdp_probe_) {
+      bdp_estimator_.AddIncomingBytes(bytes);
+      if (bdp_ping_blocked_ && (bytes > 0)) {
+        // Once we receive a data frame, we can start sending BDP pings again.
+        bdp_ping_blocked_ = false;
+        bdp_waker_.Wakeup();
+      }
+    }
+  }
+
+  // CHTTP2 reference : grpc_chttp2_transport::bdp_ping_blocked
+  bool IsBdpPingBlocked() const { return bdp_ping_blocked_; }
+
+  auto WaitForBdpActivation() {
+    GRPC_HTTP2_FLOW_CONTROL_DLOG
+        << "TransportFlowControl::WaitForBdpActivation Factory";
+    return [this]() -> Poll<absl::Status> {
+      GRPC_DCHECK(enable_bdp_probe_);
+      if (bdp_estimator_.accumulator() == 0) {
+        // Block BDP ping till we receive data in a DATA frame on the transport.
+        bdp_ping_blocked_ = true;
+      }
+      if (bdp_ping_blocked_) {
+        bdp_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+        GRPC_HTTP2_FLOW_CONTROL_DLOG
+            << "TransportFlowControl::WaitForBdpActivation Pending";
+        return Pending{};
+      }
+      GRPC_HTTP2_FLOW_CONTROL_DLOG
+          << "TransportFlowControl::WaitForBdpActivation Resolved";
+      ScheduleBdpPing();
+      return absl::OkStatus();
+    };
+  }
 
  private:
   friend class StreamFlowControl;
@@ -456,10 +526,12 @@ class TransportFlowControl final {
   /// incoming_window = total_over - max(bdp - total_under, 0)
   int64_t announced_stream_total_over_incoming_window_ = 0;
 
-  /// should we probe bdp?
+  //  Transport level channel argument GRPC_ARG_HTTP2_BDP_PROBE decides if we
+  //  should probe for bdp.
   const bool enable_bdp_probe_;
-
-  // bdp estimation
+  // CHTTP2 reference : grpc_chttp2_transport::bdp_ping_blocked
+  bool bdp_ping_blocked_;
+  Waker bdp_waker_;
   BdpEstimator bdp_estimator_;
 
   int64_t remote_window_ = kDefaultWindow;
@@ -471,6 +543,13 @@ class TransportFlowControl final {
   uint32_t acked_init_window_ = kDefaultWindow;
   uint32_t sent_init_window_ = kDefaultWindow;
   absl::flat_hash_set<uint32_t> window_update_list_;
+
+  // Preferred_rx_crypto_frame_sizes are advertised to the peer
+  // For CHTTP2, this is always true.
+  // For PH2, this is set by the transport based on the channel arg
+  // GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE.
+  // TODO(tjagtap) [PH2][CHTTP2] Edit comment when CHTTP2 is getting deleted.
+  bool ph2_enable_rx_crypto_ = true;
 };
 
 // Implementation of flow control that abides to HTTP/2 spec and attempts
@@ -514,7 +593,7 @@ class StreamFlowControl final {
     // `min_progress_size` bytes to make progress on reading the current stream.
     // An example usage of this would be, say we receive the first 1000 bytes of
     // a 2000 byte gRPC message, we can call SetMinProgressSize(1000)
-    // TODO(tjagtap) [PH2][P2] Plumb with PH2 flow control.
+    // TODO(tjagtap) [PH2][P2][FCV3] Plumb with PH2 flow control.
     void SetMinProgressSize(int64_t min_progress_size) {
       sfc_->min_progress_size_ = min_progress_size;
     }
@@ -609,7 +688,7 @@ class StreamFlowControl final {
     return stats;
   }
 
-  void ReportIfStalled(bool is_client, uint32_t stream_id,
+  void ReportIfStalled(const bool is_client, const uint32_t stream_id,
                        const Http2Settings& peer_settings) const {
     if (remote_window_delta() + peer_settings.initial_window_size() <= 0 ||
         tfc_->remote_window_ == 0) {

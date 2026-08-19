@@ -50,6 +50,7 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
 #include "src/core/xds/grpc/xds_cluster.h"
 #include "src/core/xds/grpc/xds_cluster_parser.h"
 #include "src/core/xds/grpc/xds_common_types.h"
@@ -93,7 +94,7 @@ class XdsClusterTest : public ::testing::Test {
 
   static RefCountedPtr<XdsClient> MakeXdsClient() {
     grpc_error_handle error;
-    auto bootstrap = GrpcXdsBootstrap::Create(
+    auto bootstrap = GrpcXdsBootstrapBuilder::Build(
         "{\n"
         "  \"xds_servers\": [\n"
         "    {\n"
@@ -1514,7 +1515,9 @@ TEST_F(LrsTest, NotSelfConfigSource) {
       << decode_result.resource.status();
 }
 
-TEST_F(LrsTest, IgnoresPropagationWithoutEnvVar) {
+TEST_F(LrsTest, IgnoresPropagationWithEnvVarDisabled) {
+  testing::ScopedEnvVar env_var("GRPC_EXPERIMENTAL_XDS_ORCA_LRS_PROPAGATION",
+                                "false");
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);
@@ -1540,8 +1543,6 @@ TEST_F(LrsTest, IgnoresPropagationWithoutEnvVar) {
 }
 
 TEST_F(LrsTest, Propagation) {
-  ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_XDS_ORCA_LRS_PROPAGATION");
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);
@@ -1573,8 +1574,6 @@ TEST_F(LrsTest, Propagation) {
 }
 
 TEST_F(LrsTest, PropagationNamedMetricsAll) {
-  ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_XDS_ORCA_LRS_PROPAGATION");
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);

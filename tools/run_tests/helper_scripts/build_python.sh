@@ -134,11 +134,7 @@ source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
 if [[ "$(inside_venv)" ]]; then
   VENV_PYTHON="$PYTHON"
 else
-  # Instantiate the virtualenv from the Python version passed in.
-  $PYTHON -m pip install --user virtualenv==20.25.0
-  # Skip wheel and setuptools and manually install later. Otherwise we might
-  # not find cython module while building grpcio.
-  $PYTHON -m virtualenv --no-wheel --no-setuptools "$VENV"
+  $PYTHON -m venv "$VENV"
   VENV_PYTHON="$(pwd)/$VENV/$VENV_RELATIVE_PYTHON"
 fi
 
@@ -146,7 +142,7 @@ pip_install() {
   $VENV_PYTHON -m pip install "$@"
 }
 
-pip_install --upgrade pip==25.2
+pip_install --upgrade pip
 pip_install --upgrade wheel
 pip_install --upgrade setuptools==77.0.1
 
@@ -171,7 +167,7 @@ pip_install_dir_and_deps() {
 pip_install -U gevent
 
 pip_install --upgrade 'cython==3.1.1'
-pip_install --upgrade six 'protobuf>=6.31.1,<7.0.0'
+pip_install --upgrade six 'protobuf>=7.35.1,<8.0.0'
 
 if [ "$("$VENV_PYTHON" -c "import sys; print(sys.version_info[0])")" == "2" ]
 then
