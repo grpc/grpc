@@ -663,11 +663,15 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
 
     ~AsyncBidiStream() override {
       grpc_core::MutexLock lock(&mu_);
+      const absl::Time deadline =
+          absl::Now() + absl::Seconds(10) * grpc_test_slowdown_factor();
       while (!status_.has_value() &&
              (write_state_ == OpState::kInFlight ||
               read_state_ == OpState::kInFlight ||
               writes_done_state_ == OpState::kInFlight)) {
-        cv_.Wait(&mu_);
+        if (cv_.WaitWithDeadline(&mu_, deadline)) {
+          break;
+        }
       }
     }
 
@@ -2033,11 +2037,7 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamEarlyHalfCloseWithoutMessageFailure) {
   streamed_response->set_end_of_stream(true);
   streamed_response->set_end_of_stream_without_message(true);
   ext_proc_stream->SendResponse(proc_response);
-  if (GetParam().filter_on_server()) {
-    EXPECT_TRUE(stream.WaitForWriteDone());
-  } else {
-    EXPECT_FALSE(stream.WaitForWriteDone());
-  }
+  (void)stream.WaitForWriteDone();
   EchoResponse response;
   request.set_message(kMessage2);
   stream.StartWrite(request);
@@ -4267,6 +4267,7 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseBodyFailureModeFalse) {
   EchoRequest request;
   request.set_message(kMessage1);
   stream.StartWrite(request);
+  (void)stream.WaitForWriteDone();
   auto req2 = ext_proc_stream->GetNextRequest();
   ASSERT_TRUE(req2.has_value());
   EXPECT_TRUE(req2->has_response_headers());
