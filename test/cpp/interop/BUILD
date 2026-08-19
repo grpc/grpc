@@ -833,7 +833,7 @@ grpc_cc_binary(
     external_deps = [
         "absl/flags:flag",
         "absl/flags:parse",
-        "absl/log",
+        "absl/log:log",
         "protobuf",
         "protobuf_headers",
     ],

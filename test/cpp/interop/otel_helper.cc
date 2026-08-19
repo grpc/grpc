@@ -44,13 +44,9 @@
 
 ABSL_FLAG(bool, enable_opentelemetry, false,
           "Whether to enable OpenTelemetry Tracing");
-ABSL_FLAG(bool, enable_otel_tracing, false,
-          "Whether to enable OpenTelemetry Tracing");
 ABSL_FLAG(std::string, otel_exporter, "",
           "OpenTelemetry exporter type (otlp, none)");
 ABSL_FLAG(std::string, otel_collector_address, "",
-          "OpenTelemetry collector address");
-ABSL_FLAG(std::string, otlp_collector_address, "",
           "OpenTelemetry collector address");
 
 namespace grpc {
@@ -68,7 +64,6 @@ void MaybeRegisterOpenTelemetry() {
 #ifdef GRPC_HAS_OTEL_TRACING
   std::call_once(g_otel_init_once, []() {
     bool enabled = absl::GetFlag(FLAGS_enable_opentelemetry) ||
-                   absl::GetFlag(FLAGS_enable_otel_tracing) ||
                    absl::GetFlag(FLAGS_otel_exporter) == "otlp";
     if (!enabled) {
       return;
@@ -82,12 +77,8 @@ void MaybeRegisterOpenTelemetry() {
 
     // Create OTLP Grpc Exporter
     opentelemetry::exporter::otlp::OtlpGrpcExporterOptions trace_opts;
-    std::string collector_addr = absl::GetFlag(FLAGS_otel_collector_address);
-    if (collector_addr.empty()) {
-      collector_addr = absl::GetFlag(FLAGS_otlp_collector_address);
-    }
-    if (!collector_addr.empty()) {
-      trace_opts.endpoint = collector_addr;
+    if (!absl::GetFlag(FLAGS_otel_collector_address).empty()) {
+      trace_opts.endpoint = absl::GetFlag(FLAGS_otel_collector_address);
     }
 
     auto trace_exporter =
