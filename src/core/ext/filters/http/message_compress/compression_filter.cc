@@ -179,11 +179,8 @@ absl::StatusOr<MessageHandle> ChannelCompression::DecompressMessage(
     return std::move(message);
   }
   // Try to decompress the payload.
-  std::optional<uint32_t> max_output_size = IsMessageSizeRefactoringEnabled()
-                                                ? args.max_recv_message_length
-                                                : std::nullopt;
-  absl::StatusOr<SliceBuffer> decompressed_slices =
-      MessageDecompress(args.algorithm, *message->payload(), max_output_size);
+  absl::StatusOr<SliceBuffer> decompressed_slices = MessageDecompress(
+      args.algorithm, *message->payload(), args.max_recv_message_length);
   if (!decompressed_slices.ok()) {
     return decompressed_slices.status();
   }
