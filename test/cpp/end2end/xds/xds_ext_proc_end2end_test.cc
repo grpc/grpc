@@ -832,12 +832,6 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
       cv_.SignalAll();
     }
 
-    void OnWritesDoneDone(bool ok) override {
-      grpc_core::MutexLock lock(&mu_);
-      writes_done_state_ = ok ? OpState::kSuccess : OpState::kFailed;
-      cv_.SignalAll();
-    }
-
     void OnReadDone(bool ok) override {
       grpc_core::MutexLock lock(&mu_);
       read_state_ = ok ? OpState::kSuccess : OpState::kFailed;

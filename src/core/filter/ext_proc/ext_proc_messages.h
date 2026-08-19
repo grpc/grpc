@@ -62,7 +62,7 @@ struct ExtProcProcessingMode {
   std::string ToString() const;
 };
 
-// Flow control window increments sent by client to external processor.
+// Flow control window increments sent by client/server to external processor.
 struct ExtProcClientWindowUpdate {
   int64_t window_increment_sidestream_to_upstream = 0;
   int64_t window_increment_sidestream_to_downstream = 0;
@@ -88,8 +88,9 @@ struct ExtProcServerWindowUpdate {
   }
 };
 
-// Default initial window size and update threshold for ext_proc flow control.
-// TODO(user): It's better if we can make this configurable.
+// Default initial window size and update threshold in bytes for ext_proc flow
+// control.
+// TODO(rishesh): It's better if we can make this configurable.
 inline constexpr int64_t kExtProcInitialWindowSize = 65536;
 inline constexpr int64_t kExtProcWindowUpdateThreshold =
     kExtProcInitialWindowSize / 2;

@@ -740,8 +740,7 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
   // Latch signaled when the side-stream is closed or drained.
   Latch<void> side_stream_closed_latch_;
 
-  // Flow control windows and pending client window updates. Synchronized by the
-  // handler_ activity.
+  // Flow control windows and pending client window updates in bytes.
   int64_t downstream_to_sidestream_window_ = kExtProcInitialWindowSize;
   int64_t upstream_to_sidestream_window_ = kExtProcInitialWindowSize;
   int64_t pending_increment_sidestream_to_upstream_ = 0;

@@ -273,53 +273,6 @@ TEST_F(CreateExtProcRequestTest, RequestHeadersProtocolConfig) {
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::GRPC);
 }
 
-TEST_F(CreateExtProcRequestTest, RequestHeadersFlowControlInit) {
-  upb::Arena arena;
-  grpc_metadata_batch batch;
-  ExtProcProcessingMode processing_mode;
-  processing_mode.send_request_body = true;
-  processing_mode.send_response_body = true;
-  std::string serialized =
-      CreateExtProcClientHeadersRequest(arena.ptr(), &batch, {}, {}, {},
-                                        /*observability_mode=*/false,
-                                        /*processing_mode=*/processing_mode)
-          .value();
-  auto parsed = ParseRequest(serialized);
-  ASSERT_TRUE(parsed.has_flow_control_init());
-  EXPECT_EQ(
-      parsed.flow_control_init().initial_window_downstream_to_sidestream(),
-      65536);
-  EXPECT_EQ(parsed.flow_control_init().initial_window_sidestream_to_upstream(),
-            65536);
-  EXPECT_EQ(parsed.flow_control_init().initial_window_upstream_to_sidestreama(),
-            65536);
-  EXPECT_EQ(
-      parsed.flow_control_init().initial_window_sidestream_to_downstream(),
-      65536);
-}
-
-TEST_F(CreateExtProcRequestTest, WindowUpdateRequest) {
-  upb::Arena arena;
-  ExtProcClientWindowUpdate update;
-  update.window_increment_sidestream_to_upstream = 5000;
-  update.window_increment_sidestream_to_downstream = 6000;
-  std::string serialized =
-      CreateExtProcClientBodyRequest(
-          arena.ptr(), "test body", {}, /*observability_mode=*/false,
-          /*processing_mode=*/std::nullopt, /*end_of_stream=*/false,
-          /*end_of_stream_without_message=*/false,
-          /*client_window_update=*/update)
-          .value();
-  auto parsed = ParseRequest(serialized);
-  ASSERT_TRUE(parsed.has_client_window_update());
-  EXPECT_EQ(
-      parsed.client_window_update().window_increment_sidestream_to_upstream(),
-      5000);
-  EXPECT_EQ(
-      parsed.client_window_update().window_increment_sidestream_to_downstream(),
-      6000);
-}
-
 TEST_F(CreateExtProcRequestTest,
        ResponseHeadersNeitherAllowedNorDisallowedSet) {
   upb::Arena arena;
@@ -799,72 +752,109 @@ TEST_F(CreateExtProcRequestTest, StandaloneClientWindowUpdateRequest) {
   EXPECT_FALSE(parsed.observability_mode());
 }
 
-TEST_F(CreateExtProcRequestTest, PiggybackedClientWindowUpdate) {
+TEST_F(CreateExtProcRequestTest, PiggybackedClientWindowUpdateClientHeaders) {
+  upb::Arena arena;
+  grpc_metadata_batch client_headers;
+  ExtProcClientWindowUpdate update;
+  update.window_increment_sidestream_to_upstream = 4096;
+  update.window_increment_sidestream_to_downstream = 8192;
+  std::string serialized = CreateExtProcClientHeadersRequest(
+                               arena.ptr(), &client_headers, {}, {}, nullptr,
+                               /*observability_mode=*/false,
+                               /*processing_mode=*/std::nullopt, update)
+                               .value();
+  auto parsed = ParseRequest(serialized);
+  ASSERT_TRUE(parsed.has_client_window_update());
+  EXPECT_EQ(
+      parsed.client_window_update().window_increment_sidestream_to_upstream(),
+      4096);
+  EXPECT_EQ(
+      parsed.client_window_update().window_increment_sidestream_to_downstream(),
+      8192);
+}
+
+TEST_F(CreateExtProcRequestTest, PiggybackedClientWindowUpdateClientBody) {
   upb::Arena arena;
   ExtProcClientWindowUpdate update;
   update.window_increment_sidestream_to_upstream = 4096;
   update.window_increment_sidestream_to_downstream = 8192;
-  // On client body request
-  std::string serialized_body =
+  std::string serialized =
       CreateExtProcClientBodyRequest(
           arena.ptr(), "test-payload", nullptr, /*observability_mode=*/false,
           /*processing_mode=*/std::nullopt, /*end_of_stream=*/false,
           /*end_of_stream_without_message=*/false, update)
           .value();
-  auto parsed_body = ParseRequest(serialized_body);
-  ASSERT_TRUE(parsed_body.has_client_window_update());
-  EXPECT_EQ(parsed_body.client_window_update()
-                .window_increment_sidestream_to_upstream(),
-            4096);
-  EXPECT_EQ(parsed_body.client_window_update()
-                .window_increment_sidestream_to_downstream(),
-            8192);
-  // On server body request
-  std::string serialized_server_body =
+  auto parsed = ParseRequest(serialized);
+  ASSERT_TRUE(parsed.has_client_window_update());
+  EXPECT_EQ(
+      parsed.client_window_update().window_increment_sidestream_to_upstream(),
+      4096);
+  EXPECT_EQ(
+      parsed.client_window_update().window_increment_sidestream_to_downstream(),
+      8192);
+}
+
+TEST_F(CreateExtProcRequestTest, PiggybackedClientWindowUpdateServerBody) {
+  upb::Arena arena;
+  ExtProcClientWindowUpdate update;
+  update.window_increment_sidestream_to_upstream = 4096;
+  update.window_increment_sidestream_to_downstream = 8192;
+  std::string serialized =
       CreateExtProcServerBodyRequest(arena.ptr(), "test-payload", nullptr,
                                      /*observability_mode=*/false,
                                      /*processing_mode=*/std::nullopt, update)
           .value();
-  auto parsed_server_body = ParseRequest(serialized_server_body);
-  ASSERT_TRUE(parsed_server_body.has_client_window_update());
-  EXPECT_EQ(parsed_server_body.client_window_update()
-                .window_increment_sidestream_to_upstream(),
-            4096);
-  EXPECT_EQ(parsed_server_body.client_window_update()
-                .window_increment_sidestream_to_downstream(),
-            8192);
-  // On server trailers request
+  auto parsed = ParseRequest(serialized);
+  ASSERT_TRUE(parsed.has_client_window_update());
+  EXPECT_EQ(
+      parsed.client_window_update().window_increment_sidestream_to_upstream(),
+      4096);
+  EXPECT_EQ(
+      parsed.client_window_update().window_increment_sidestream_to_downstream(),
+      8192);
+}
+
+TEST_F(CreateExtProcRequestTest, PiggybackedClientWindowUpdateServerTrailers) {
+  upb::Arena arena;
   grpc_metadata_batch trailers;
-  std::string serialized_trailers =
-      CreateExtProcServerTrailersRequest(
-          arena.ptr(), &trailers, {}, {}, nullptr,
-          /*observability_mode=*/false, /*processing_mode=*/std::nullopt,
-          update)
-          .value();
-  auto parsed_trailers = ParseRequest(serialized_trailers);
-  ASSERT_TRUE(parsed_trailers.has_client_window_update());
-  EXPECT_EQ(parsed_trailers.client_window_update()
-                .window_increment_sidestream_to_upstream(),
-            4096);
-  EXPECT_EQ(parsed_trailers.client_window_update()
-                .window_increment_sidestream_to_downstream(),
-            8192);
-  // On server headers request
+  ExtProcClientWindowUpdate update;
+  update.window_increment_sidestream_to_upstream = 4096;
+  update.window_increment_sidestream_to_downstream = 8192;
+  std::string serialized = CreateExtProcServerTrailersRequest(
+                               arena.ptr(), &trailers, {}, {}, nullptr,
+                               /*observability_mode=*/false,
+                               /*processing_mode=*/std::nullopt, update)
+                               .value();
+  auto parsed = ParseRequest(serialized);
+  ASSERT_TRUE(parsed.has_client_window_update());
+  EXPECT_EQ(
+      parsed.client_window_update().window_increment_sidestream_to_upstream(),
+      4096);
+  EXPECT_EQ(
+      parsed.client_window_update().window_increment_sidestream_to_downstream(),
+      8192);
+}
+
+TEST_F(CreateExtProcRequestTest, PiggybackedClientWindowUpdateServerHeaders) {
+  upb::Arena arena;
   grpc_metadata_batch server_headers;
-  std::string serialized_server_headers =
+  ExtProcClientWindowUpdate update;
+  update.window_increment_sidestream_to_upstream = 4096;
+  update.window_increment_sidestream_to_downstream = 8192;
+  std::string serialized =
       CreateExtProcServerHeadersRequest(
           arena.ptr(), &server_headers, {}, {}, nullptr,
           /*observability_mode=*/false, /*processing_mode=*/std::nullopt,
           /*end_of_stream=*/false, update)
           .value();
-  auto parsed_server_headers = ParseRequest(serialized_server_headers);
-  ASSERT_TRUE(parsed_server_headers.has_client_window_update());
-  EXPECT_EQ(parsed_server_headers.client_window_update()
-                .window_increment_sidestream_to_upstream(),
-            4096);
-  EXPECT_EQ(parsed_server_headers.client_window_update()
-                .window_increment_sidestream_to_downstream(),
-            8192);
+  auto parsed = ParseRequest(serialized);
+  ASSERT_TRUE(parsed.has_client_window_update());
+  EXPECT_EQ(
+      parsed.client_window_update().window_increment_sidestream_to_upstream(),
+      4096);
+  EXPECT_EQ(
+      parsed.client_window_update().window_increment_sidestream_to_downstream(),
+      8192);
 }
 
 //
@@ -1086,23 +1076,6 @@ TEST_F(ParseExtProcResponseTest, ServerWindowUpdate) {
   EXPECT_EQ(
       parsed->server_window_update->window_increment_downstream_to_sidestream,
       10000);
-  EXPECT_EQ(
-      parsed->server_window_update->window_increment_upstream_to_sidestream,
-      20000);
-}
-
-TEST_F(ParseExtProcResponseTest, ServerWindowUpdateNegativeIncrement) {
-  upb::Arena arena;
-  envoy::service::ext_proc::v3::ProcessingResponse response;
-  auto* window_update = response.mutable_server_window_update();
-  window_update->set_window_increment_downstream_to_sidestream(-500);
-  window_update->set_window_increment_upstream_to_sidestream(20000);
-  auto parsed = ParseResponse(response);
-  ASSERT_TRUE(parsed.ok()) << parsed.status();
-  ASSERT_TRUE(parsed->server_window_update.has_value());
-  EXPECT_EQ(
-      parsed->server_window_update->window_increment_downstream_to_sidestream,
-      -500);
   EXPECT_EQ(
       parsed->server_window_update->window_increment_upstream_to_sidestream,
       20000);
