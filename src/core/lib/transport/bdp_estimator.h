@@ -60,8 +60,8 @@ class BdpEstimator {
     accumulator_ = 0;
   }
 
-  // Start a ping: call after calling grpc_bdp_estimator_schedule_ping and
-  // once the ping is on the wire.
+  // Start a ping: call after calling SchedulePing() and
+  // once the ping is written to the endpoint.
   void StartPing() {
     GRPC_TRACE_LOG(bdp_estimator, INFO)
         << "bdp[" << peer_name_ << "]:start acc=" << accumulator_
