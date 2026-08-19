@@ -58,6 +58,7 @@ using ::envoy::extensions::filters::http::ext_proc::v3::ExternalProcessor;
 using ::envoy::extensions::filters::network::http_connection_manager::v3::
     HttpFilter;
 using grpc_core::kExtProcInitialWindowSize;
+using grpc_core::kExtProcWindowUpdateThreshold;
 
 MATCHER_P2(GrpcStatusIs, code, message_matcher, "") {
   return ::testing::ExplainMatchResult(code, arg.error_code(),
@@ -5673,6 +5674,89 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcFlowControlMultiMessageBidiStreaming) {
   Status status = stream.Finish();
   EXPECT_TRUE(status.ok()) << status.error_message();
   EXPECT_EQ(request_body_count, 2);
+}
+
+TEST_P(XdsExtProcEnd2endTest, ExtProcFlowControlWindowUpdateThreshold) {
+  CreateAndStartBackends(1);
+  auto ext_proc_config = ExtProcFilterConfigBuilder()
+                             .SetTargetUri(ext_proc_server_->target())
+                             .SetInsecureChannelCredentials()
+                             .SetFailureModeAllow(false)
+                             .SetRequestHeaderMode()
+                             .SetRequestBodyMode()
+                             .SetResponseHeaderMode()
+                             .SetResponseTrailerMode()
+                             .Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+  ResetStubWithUniqueArg();
+  AsyncBidiStream stream;
+  RpcOptions rpc_options;
+  stream.Start(stub_.get(), rpc_options);
+  auto ext_proc_stream = ext_proc_service_->GetStream();
+  ASSERT_NE(ext_proc_stream, nullptr);
+  bool saw_response_trailers = false;
+  bool saw_client_window_update = false;
+  std::string large_message(40000, 'x');
+  EchoRequest request;
+  request.set_message(large_message);
+  stream.StartWrite(request);
+  std::thread reader([&]() {
+    EchoResponse response;
+    EXPECT_TRUE(stream.ReadMessage(&response));
+    EXPECT_EQ(response.message(), large_message);
+  });
+  while (!saw_response_trailers) {
+    auto req = ext_proc_stream->GetNextRequest();
+    ASSERT_TRUE(req.has_value());
+    if (req->has_request_headers()) {
+      if (req->has_flow_control_init()) {
+        EXPECT_EQ(
+            req->flow_control_init().initial_window_downstream_to_sidestream(),
+            kExtProcInitialWindowSize);
+      }
+      ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
+    } else if (req->has_request_body()) {
+      if (!req->request_body().body().empty()) {
+        auto resp = MakeRequestBodyMutationResponse(
+            req->request_body().body(), req->request_body().end_of_stream());
+        resp.mutable_server_window_update()
+            ->set_window_increment_downstream_to_sidestream(40000);
+        resp.mutable_server_window_update()
+            ->set_window_increment_upstream_to_sidestream(40000);
+        ext_proc_stream->SendResponse(resp);
+        EXPECT_TRUE(stream.WaitForWriteDone());
+        stream.StartWritesDone();
+      } else {
+        auto resp = MakeRequestBodyMutationResponse(
+            "", req->request_body().end_of_stream(),
+            /*request_drain=*/false,
+            req->request_body().end_of_stream_without_message());
+        ext_proc_stream->SendResponse(resp);
+      }
+    } else if (req->has_client_window_update()) {
+      saw_client_window_update = true;
+      EXPECT_GE(
+          req->client_window_update().window_increment_sidestream_to_upstream(),
+          kExtProcWindowUpdateThreshold);
+      ext_proc_stream->NoResponse();
+    } else if (req->has_response_headers()) {
+      ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse({}));
+    } else if (req->has_response_trailers()) {
+      ext_proc_stream->SendResponse(MakeResponseTrailersMutationResponse({}));
+      saw_response_trailers = true;
+    }
+  }
+  reader.join();
+  EXPECT_TRUE(saw_client_window_update);
+  Status status = stream.Finish();
+  EXPECT_TRUE(status.ok()) << status.error_message();
+  EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
 TEST_P(XdsExtProcEnd2endTest, ExtProcFlowControlBlockedSenderFailOpen) {
