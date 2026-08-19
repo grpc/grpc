@@ -1378,23 +1378,14 @@ class GrpcTraceBinTextMapPropagator : public TextMapPropagator {
       opentelemetry::context::Context& context) noexcept override {
     opentelemetry::nostd::string_view grpc_trace_bin_val =
         carrier.Get("grpc-trace-bin");
-    if (grpc_trace_bin_val.empty()) {
-      return context;
-    }
     std::string base64_unescaped_val;
-    if (!absl::Base64Unescape(NoStdStringViewToAbslStringView(grpc_trace_bin_val),
-                             &base64_unescaped_val)) {
-      return context;
-    }
-    auto span_context = GrpcTraceBinHeaderToSpanContext(base64_unescaped_val);
-    if (!span_context.IsValid()) {
-      return context;
-    }
+    absl::Base64Unescape(NoStdStringViewToAbslStringView(grpc_trace_bin_val),
+                         &base64_unescaped_val);
     return opentelemetry::trace::SetSpan(
         context,
         std::shared_ptr<opentelemetry::trace::Span>(
             new (std::nothrow) opentelemetry::trace::DefaultSpan(
-                std::move(span_context))));
+                GrpcTraceBinHeaderToSpanContext(base64_unescaped_val))));
   }
 
   void Inject(
