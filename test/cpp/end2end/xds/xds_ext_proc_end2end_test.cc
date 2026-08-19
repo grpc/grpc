@@ -5182,15 +5182,200 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcServerTrailersDurationMetric) {
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
-TEST_P(XdsExtProcEnd2endTest, ExtProcFlowControlInitAndWindowUpdate) {
+TEST_P(XdsExtProcEnd2endTest,
+       ExtProcFlowControlInitAndWindowUpdateRequestHeaders) {
   CreateAndStartBackends(1);
   auto ext_proc_config = ExtProcFilterConfigBuilder()
                              .SetTargetUri(ext_proc_server_->target())
                              .SetInsecureChannelCredentials()
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode()
+                             .Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+  ResetStubWithUniqueArg();
+  RpcOptions rpc_options;
+  rpc_options.set_echo_metadata_initially(true);
+  rpc_options.set_echo_metadata(true);
+  AsyncRpc rpc;
+  rpc.StartRpc(stub_.get(), rpc_options);
+  auto ext_proc_stream = ext_proc_service_->GetStream();
+  ASSERT_NE(ext_proc_stream, nullptr);
+  bool saw_flow_control_init = false;
+  while (true) {
+    auto req = ext_proc_stream->GetNextRequest(absl::Milliseconds(500));
+    if (!req.has_value()) break;
+    if (req->has_request_headers()) {
+      if (req->has_flow_control_init()) {
+        saw_flow_control_init = true;
+        EXPECT_EQ(
+            req->flow_control_init().initial_window_downstream_to_sidestream(),
+            kExtProcInitialWindowSize);
+        EXPECT_EQ(
+            req->flow_control_init().initial_window_sidestream_to_upstream(),
+            kExtProcInitialWindowSize);
+        EXPECT_EQ(
+            req->flow_control_init().initial_window_upstream_to_sidestreama(),
+            kExtProcInitialWindowSize);
+        EXPECT_EQ(
+            req->flow_control_init().initial_window_sidestream_to_downstream(),
+            kExtProcInitialWindowSize);
+      }
+      auto resp = MakeRequestHeadersMutationResponse({});
+      resp.mutable_server_window_update()
+          ->set_window_increment_downstream_to_sidestream(32768);
+      resp.mutable_server_window_update()
+          ->set_window_increment_upstream_to_sidestream(32768);
+      ext_proc_stream->SendResponse(resp);
+    } else if (req->has_client_window_update()) {
+      ext_proc_stream->NoResponse();
+    } else {
+      FAIL() << "Unexpected request type: " << req->DebugString();
+    }
+  }
+  EXPECT_TRUE(saw_flow_control_init);
+  Status status = rpc.GetStatus();
+  EXPECT_TRUE(status.ok()) << status.error_message();
+  EXPECT_EQ(ext_proc_service_->stream_count(), 1);
+}
+
+TEST_P(XdsExtProcEnd2endTest,
+       ExtProcFlowControlInitAndWindowUpdateRequestBody) {
+  CreateAndStartBackends(1);
+  auto ext_proc_config = ExtProcFilterConfigBuilder()
+                             .SetTargetUri(ext_proc_server_->target())
+                             .SetInsecureChannelCredentials()
+                             .SetFailureModeAllow(false)
                              .SetRequestBodyMode()
+                             .Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+  ResetStubWithUniqueArg();
+  RpcOptions rpc_options;
+  rpc_options.set_echo_metadata_initially(true);
+  rpc_options.set_echo_metadata(true);
+  AsyncRpc rpc;
+  rpc.StartRpc(stub_.get(), rpc_options);
+  auto ext_proc_stream = ext_proc_service_->GetStream();
+  ASSERT_NE(ext_proc_stream, nullptr);
+  bool saw_flow_control_init = false;
+  while (true) {
+    auto req = ext_proc_stream->GetNextRequest(absl::Milliseconds(500));
+    if (!req.has_value()) break;
+    if (req->has_request_body()) {
+      if (req->has_flow_control_init()) {
+        saw_flow_control_init = true;
+        EXPECT_EQ(
+            req->flow_control_init().initial_window_downstream_to_sidestream(),
+            kExtProcInitialWindowSize);
+        EXPECT_EQ(
+            req->flow_control_init().initial_window_sidestream_to_upstream(),
+            kExtProcInitialWindowSize);
+        EXPECT_EQ(
+            req->flow_control_init().initial_window_upstream_to_sidestreama(),
+            kExtProcInitialWindowSize);
+        EXPECT_EQ(
+            req->flow_control_init().initial_window_sidestream_to_downstream(),
+            kExtProcInitialWindowSize);
+      }
+      auto resp = MakeRequestBodyMutationResponse(
+          req->request_body().body(), req->request_body().end_of_stream());
+      resp.mutable_server_window_update()
+          ->set_window_increment_downstream_to_sidestream(32768);
+      resp.mutable_server_window_update()
+          ->set_window_increment_upstream_to_sidestream(32768);
+      ext_proc_stream->SendResponse(resp);
+    } else if (req->has_client_window_update()) {
+      ext_proc_stream->NoResponse();
+    } else {
+      FAIL() << "Unexpected request type: " << req->DebugString();
+    }
+  }
+  EXPECT_TRUE(saw_flow_control_init);
+  Status status = rpc.GetStatus();
+  EXPECT_TRUE(status.ok()) << status.error_message();
+  EXPECT_EQ(ext_proc_service_->stream_count(), 1);
+}
+
+TEST_P(XdsExtProcEnd2endTest,
+       ExtProcFlowControlInitAndWindowUpdateResponseHeaders) {
+  CreateAndStartBackends(1);
+  auto ext_proc_config = ExtProcFilterConfigBuilder()
+                             .SetTargetUri(ext_proc_server_->target())
+                             .SetInsecureChannelCredentials()
+                             .SetFailureModeAllow(false)
                              .SetResponseHeaderMode()
+                             .Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+  ResetStubWithUniqueArg();
+  RpcOptions rpc_options;
+  rpc_options.set_echo_metadata_initially(true);
+  rpc_options.set_echo_metadata(true);
+  AsyncRpc rpc;
+  rpc.StartRpc(stub_.get(), rpc_options);
+  auto ext_proc_stream = ext_proc_service_->GetStream();
+  ASSERT_NE(ext_proc_stream, nullptr);
+  bool saw_flow_control_init = false;
+  while (true) {
+    auto req = ext_proc_stream->GetNextRequest(absl::Milliseconds(500));
+    if (!req.has_value()) break;
+    if (req->has_response_headers()) {
+      if (req->has_flow_control_init()) {
+        saw_flow_control_init = true;
+        EXPECT_EQ(
+            req->flow_control_init().initial_window_downstream_to_sidestream(),
+            kExtProcInitialWindowSize);
+        EXPECT_EQ(
+            req->flow_control_init().initial_window_sidestream_to_upstream(),
+            kExtProcInitialWindowSize);
+        EXPECT_EQ(
+            req->flow_control_init().initial_window_upstream_to_sidestreama(),
+            kExtProcInitialWindowSize);
+        EXPECT_EQ(
+            req->flow_control_init().initial_window_sidestream_to_downstream(),
+            kExtProcInitialWindowSize);
+      }
+      auto resp = MakeResponseHeadersMutationResponse({});
+      resp.mutable_server_window_update()
+          ->set_window_increment_downstream_to_sidestream(32768);
+      resp.mutable_server_window_update()
+          ->set_window_increment_upstream_to_sidestream(32768);
+      ext_proc_stream->SendResponse(resp);
+    } else if (req->has_client_window_update()) {
+      ext_proc_stream->NoResponse();
+    } else {
+      FAIL() << "Unexpected request type: " << req->DebugString();
+    }
+  }
+  EXPECT_TRUE(saw_flow_control_init);
+  Status status = rpc.GetStatus();
+  EXPECT_TRUE(status.ok()) << status.error_message();
+  EXPECT_EQ(ext_proc_service_->stream_count(), 1);
+}
+
+TEST_P(XdsExtProcEnd2endTest,
+       ExtProcFlowControlInitAndWindowUpdateResponseBody) {
+  CreateAndStartBackends(1);
+  auto ext_proc_config = ExtProcFilterConfigBuilder()
+                             .SetTargetUri(ext_proc_server_->target())
+                             .SetInsecureChannelCredentials()
+                             .SetFailureModeAllow(false)
                              .SetResponseBodyMode()
                              .SetResponseTrailerMode()
                              .Build();
@@ -5201,6 +5386,7 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcFlowControlInitAndWindowUpdate) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   })));
+  ResetStubWithUniqueArg();
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
   rpc_options.set_echo_metadata(true);
@@ -5210,31 +5396,24 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcFlowControlInitAndWindowUpdate) {
   ASSERT_NE(ext_proc_stream, nullptr);
   bool saw_flow_control_init = false;
   while (true) {
-    auto req = ext_proc_stream->GetNextRequest();
-    ASSERT_TRUE(req.has_value());
-    if (req->has_request_headers()) {
+    auto req = ext_proc_stream->GetNextRequest(absl::Milliseconds(500));
+    if (!req.has_value()) break;
+    if (req->has_response_body()) {
       if (req->has_flow_control_init()) {
         saw_flow_control_init = true;
         EXPECT_EQ(
             req->flow_control_init().initial_window_downstream_to_sidestream(),
-            65536);
+            kExtProcInitialWindowSize);
         EXPECT_EQ(
             req->flow_control_init().initial_window_sidestream_to_upstream(),
-            65536);
+            kExtProcInitialWindowSize);
         EXPECT_EQ(
             req->flow_control_init().initial_window_upstream_to_sidestreama(),
-            65536);
+            kExtProcInitialWindowSize);
         EXPECT_EQ(
             req->flow_control_init().initial_window_sidestream_to_downstream(),
-            65536);
+            kExtProcInitialWindowSize);
       }
-      ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
-    } else if (req->has_request_body()) {
-      ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
-          req->request_body().body(), req->request_body().end_of_stream()));
-    } else if (req->has_response_headers()) {
-      ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse({}));
-    } else if (req->has_response_body()) {
       auto resp = MakeResponseBodyMutationResponse(
           req->response_body().body(), req->response_body().end_of_stream());
       resp.mutable_server_window_update()
@@ -5246,7 +5425,69 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcFlowControlInitAndWindowUpdate) {
       ext_proc_stream->SendResponse(MakeResponseTrailersMutationResponse({}));
       break;
     } else if (req->has_client_window_update()) {
-      // client window update
+      ext_proc_stream->NoResponse();
+    } else {
+      FAIL() << "Unexpected request type: " << req->DebugString();
+    }
+  }
+  EXPECT_TRUE(saw_flow_control_init);
+  Status status = rpc.GetStatus();
+  EXPECT_TRUE(status.ok()) << status.error_message();
+  EXPECT_EQ(ext_proc_service_->stream_count(), 1);
+}
+
+TEST_P(XdsExtProcEnd2endTest,
+       ExtProcFlowControlInitAndWindowUpdateResponseTrailers) {
+  CreateAndStartBackends(1);
+  auto ext_proc_config = ExtProcFilterConfigBuilder()
+                             .SetTargetUri(ext_proc_server_->target())
+                             .SetInsecureChannelCredentials()
+                             .SetFailureModeAllow(false)
+                             .SetResponseTrailerMode()
+                             .Build();
+  Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
+  RouteConfiguration route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+  ResetStubWithUniqueArg();
+  RpcOptions rpc_options;
+  rpc_options.set_echo_metadata_initially(true);
+  rpc_options.set_echo_metadata(true);
+  AsyncRpc rpc;
+  rpc.StartRpc(stub_.get(), rpc_options);
+  auto ext_proc_stream = ext_proc_service_->GetStream();
+  ASSERT_NE(ext_proc_stream, nullptr);
+  bool saw_flow_control_init = false;
+  while (true) {
+    auto req = ext_proc_stream->GetNextRequest(absl::Milliseconds(500));
+    if (!req.has_value()) break;
+    if (req->has_response_trailers()) {
+      if (req->has_flow_control_init()) {
+        saw_flow_control_init = true;
+        EXPECT_EQ(
+            req->flow_control_init().initial_window_downstream_to_sidestream(),
+            kExtProcInitialWindowSize);
+        EXPECT_EQ(
+            req->flow_control_init().initial_window_sidestream_to_upstream(),
+            kExtProcInitialWindowSize);
+        EXPECT_EQ(
+            req->flow_control_init().initial_window_upstream_to_sidestreama(),
+            kExtProcInitialWindowSize);
+        EXPECT_EQ(
+            req->flow_control_init().initial_window_sidestream_to_downstream(),
+            kExtProcInitialWindowSize);
+      }
+      auto resp = MakeResponseTrailersMutationResponse({});
+      resp.mutable_server_window_update()
+          ->set_window_increment_downstream_to_sidestream(32768);
+      resp.mutable_server_window_update()
+          ->set_window_increment_upstream_to_sidestream(32768);
+      ext_proc_stream->SendResponse(resp);
+    } else if (req->has_client_window_update()) {
+      ext_proc_stream->NoResponse();
     } else {
       FAIL() << "Unexpected request type: " << req->DebugString();
     }
