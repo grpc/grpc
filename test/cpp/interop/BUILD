@@ -351,7 +351,6 @@ sh_test(
 py_test(
     name = "run_otel_interop_test",
     srcs = ["run_otel_interop_test.py"],
-    args = ["--skip_build"],
     data = [
         ":interop_client",
         ":interop_server",

@@ -352,7 +352,11 @@ def main():
     )
     args = parser.parse_args()
 
-    if not args.skip_build:
+    is_bazel_sandbox = bool(
+        os.environ.get("TEST_SRCDIR") or os.environ.get("TEST_TARGET")
+    )
+
+    if not args.skip_build and not is_bazel_sandbox:
         run_cmd(
             [
                 "./tools/bazel",
