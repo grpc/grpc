@@ -153,6 +153,7 @@ declare -A useLanguage=(
   [python]=1
   [ruby]=1
   [rust]=1
+  [php8]=1
 )
 
 # Disable specific languages.
@@ -219,6 +220,14 @@ if [[ -v "useLanguage[rust]" ]]; then
   configLangArgs8core+=(-l rust)
   configLangArgs32core+=(-l rust)
   runnerLangArgs+=(-l "rust:${GRPC_RUST_REPO}:${GRPC_RUST_COMMIT}")
+fi
+
+# php8
+if [[ -v "useLanguage[php8]" ]]; then
+  configLangArgs8core+=(-l php8) # 8-core only.
+  runnerLangArgs+=(-l "php8:${GRPC_CORE_REPO}:${GRPC_CORE_COMMIT}")
+  configLangArgs8core+=(-l php8_protobuf_c) # 8-core only.
+  runnerLangArgs+=(-l "php8_protobuf_c:${GRPC_CORE_REPO}:${GRPC_CORE_COMMIT}")
 fi
 
 # Disable broken tests by regex.

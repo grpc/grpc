@@ -3848,6 +3848,9 @@ grpc_cc_library(
 grpc_cc_library(
     name = "resolved_address",
     hdrs = ["lib/iomgr/resolved_address.h"],
+    visibility = [
+        "//bazel:alt_grpc_base_legacy",
+    ],
     deps = [
         "iomgr_port",
         "//:gpr_platform",

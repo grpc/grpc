@@ -92,11 +92,14 @@ RUN python3 -m pip install six==1.16.0
 RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
 
+#=================
+# Install cmake from bullseye-backports
+# Note that this step should be only used for Debian 11 (bullseye) images.
+
+RUN echo "deb http://archive.debian.org/debian bullseye-backports main" > /etc/apt/sources.list.d/bullseye-backports.list && apt-get-install-retry -t bullseye-backports cmake
+
 #================
 # C# dependencies
-
-# cmake >=3.6 needed to build grpc_csharp_ext
-RUN apt-get-install-retry cmake
 
 # Install mono
 RUN apt-get-install-retry apt-transport-https dirmngr

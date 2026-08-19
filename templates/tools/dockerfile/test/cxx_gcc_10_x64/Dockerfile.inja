@@ -22,7 +22,7 @@ RUN apt-get-install-retry curl git time zip
 {% include "../../git_avoid_dubious_ownership_error.include" %}
 {% include "../../run_tests_python_deps.include" %}
 {% include "../../cxx_test_deps.include" %}
-{% include "../../cmake.include" %}
+{% include "../../cmake_bullseye_backports.include" %}
 
 # Install ccache 4.2 from official repo.
 RUN apt-get-install-retry ccache && apt-get clean
