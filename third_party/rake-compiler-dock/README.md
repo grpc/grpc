@@ -54,7 +54,7 @@ docker image ls --filter "reference=ghcr.io/rake-compiler/rake-compiler-dock-ima
 
 ### 5. Rebuild CI docker images
 
-Once the images are pushed to upstream, docker will genearte a sha256 digest for each image, include it into Dockerfile's to pick up the new base images.
+Once the images are pushed to upstream, docker will generate a sha256 digest for each image, include it into Dockerfiles to pick up the new base images.
 
 ```bash
 docker image ls --format "{{.Tag}} {{.Repository}}:{{.Tag}}@{{.Digest}}" \
