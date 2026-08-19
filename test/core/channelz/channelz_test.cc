@@ -64,6 +64,19 @@
 using grpc_event_engine::experimental::GetDefaultEventEngine;
 
 namespace grpc_core {
+namespace testing {
+class ServerTestPeer {
+ public:
+  explicit ServerTestPeer(Server* server) : server_(server) {}
+  RefCountedPtr<Server> TakeRef() { return server_->Ref(); }
+
+ private:
+  Server* server_;
+};
+}
+}
+
+namespace grpc_core {
 namespace channelz {
 namespace testing {
 
@@ -655,6 +668,34 @@ TEST(ChannelzTextEncodeTest, BasicTraceEvent) {
       channelz::TextEncode(reinterpret_cast<upb_Message*>(event),
                            grpc_channelz_v2_TraceEvent_getmsgdef);
   EXPECT_NE(encoded.length(), 0) << encoded;
+}
+
+TEST(ServerDeregistrationTest, DestroyedServerNotListedWhileRefsRemain) {
+  ExecCtx ctx;
+  RefCountedPtr<Server> draining_ref;
+  intptr_t uuid;
+  {
+    ServerFixture server;
+    Server* core_server = Server::FromC(server.server());
+
+    ServerNode* node = core_server->channelz_node();
+    ASSERT_NE(node, nullptr);
+
+    uuid = node->uuid();
+    draining_ref = grpc_core::testing::ServerTestPeer(core_server).TakeRef();
+  }  // ~ServerFixture() will call grpc_server_destroy
+
+  char* json_str = grpc_channelz_get_servers(0);
+  ASSERT_NE(json_str, nullptr);
+
+  const std::string key_value_pair =
+      "\"serverId\":\"" + std::to_string(uuid) + "\"";
+  EXPECT_FALSE(absl::StrContains(json_str, key_value_pair))
+      << "destroyed server " << uuid
+      << " still listed by GetServers(): " << json_str;
+
+  gpr_free(json_str);
+  draining_ref.reset();
 }
 
 }  // namespace testing

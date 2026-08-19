@@ -1607,6 +1607,8 @@ void Server::Orphan() {
     GRPC_CHECK(listeners_destroyed_ == listener_states_.size());
   }
   listener_states_.clear();
+  SourceDestructing();
+  channelz_node_.reset();
   Unref();
 }
 
