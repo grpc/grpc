@@ -581,7 +581,7 @@ class UpbStructHeadersEncoder {
 ::google_protobuf_Struct* CreateExtProcAttributesProtoStruct(
     upb_Arena* arena, const std::vector<std::string>& attributes,
     const grpc_metadata_batch& metadata, absl::string_view default_authority,
-    const ExtProcConnectionAttributes* connection_attributes) {
+    const std::optional<ExtProcConnectionAttributes>& connection_attributes) {
   if (attributes.empty()) return nullptr;
   ::google_protobuf_Struct* struct_msg = ::google_protobuf_Struct_new(arena);
   auto add_field = [&](absl::string_view name, absl::string_view value) {
@@ -641,30 +641,23 @@ class UpbStructHeadersEncoder {
       if (val.has_value()) add_field(attr, *val);
     } else if (attr == "request.query") {
       add_field(attr, "");
-    } else if (attr == "source.address") {
-      if (connection_attributes != nullptr &&
-          !connection_attributes->source_address.empty()) {
-        add_field(attr, connection_attributes->source_address);
-      }
-    } else if (attr == "source.port") {
-      if (connection_attributes != nullptr &&
-          connection_attributes->source_port > 0) {
-        add_number_field(attr, connection_attributes->source_port);
-      }
-    } else if (attr == "connection.requested_server_name") {
-      if (connection_attributes != nullptr &&
-          !connection_attributes->requested_server_name.empty()) {
-        add_field(attr, connection_attributes->requested_server_name);
-      }
-    } else if (attr == "connection.tls_version") {
-      if (connection_attributes != nullptr &&
-          !connection_attributes->tls_version.empty()) {
-        add_field(attr, connection_attributes->tls_version);
-      }
-    } else if (attr == "connection.sha256_peer_certificate_digest") {
-      if (connection_attributes != nullptr &&
-          !connection_attributes->sha256_peer_certificate_digest.empty()) {
-        add_field(attr, connection_attributes->sha256_peer_certificate_digest);
+    } else if (connection_attributes.has_value()) {
+      if (attr == "source.port") {
+        if (connection_attributes->source_port > 0) {
+          add_number_field(attr, connection_attributes->source_port);
+        }
+      } else {
+        absl::string_view val;
+        if (attr == "source.address") {
+          val = connection_attributes->source_address;
+        } else if (attr == "connection.requested_server_name") {
+          val = connection_attributes->requested_server_name;
+        } else if (attr == "connection.tls_version") {
+          val = connection_attributes->tls_version;
+        } else if (attr == "connection.sha256_peer_certificate_digest") {
+          val = connection_attributes->sha256_peer_certificate_digest;
+        }
+        if (!val.empty()) add_field(attr, val);
       }
     }
   }

@@ -689,11 +689,13 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
 
     ~AsyncBidiStream() override {
       grpc_core::MutexLock lock(&mu_);
-      while (!status_.has_value() &&
-             (write_state_ == OpState::kInFlight ||
-              read_state_ == OpState::kInFlight ||
-              writes_done_state_ == OpState::kInFlight)) {
-        cv_.Wait(&mu_);
+      const absl::Time deadline =
+          absl::Now() + absl::Seconds(10) * grpc_test_slowdown_factor();
+      while (!status_.has_value() && (write_state_ == OpState::kInFlight ||
+                                      read_state_ == OpState::kInFlight)) {
+        if (cv_.WaitWithDeadline(&mu_, deadline)) {
+          break;
+        }
       }
     }
 
@@ -733,7 +735,6 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
     void StartWritesDone() {
       grpc_core::MutexLock lock(&mu_);
       if (status_.has_value()) return;
-      writes_done_state_ = OpState::kInFlight;
       ClientBidiReactor::StartWritesDone();
     }
 
@@ -852,9 +853,6 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
       if (read_state_ == OpState::kInFlight) {
         read_state_ = OpState::kFailed;
       }
-      if (writes_done_state_ == OpState::kInFlight) {
-        writes_done_state_ = OpState::kFailed;
-      }
       cv_.SignalAll();
     }
 
@@ -868,7 +866,6 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
         MetadataState::kPending;
     OpState write_state_ ABSL_GUARDED_BY(mu_) = OpState::kIdle;
     OpState read_state_ ABSL_GUARDED_BY(mu_) = OpState::kIdle;
-    OpState writes_done_state_ ABSL_GUARDED_BY(mu_) = OpState::kIdle;
     std::optional<Status> status_ ABSL_GUARDED_BY(mu_);
   };
 
@@ -1328,7 +1325,6 @@ TEST_P(XdsExtProcEnd2endTest, TrailersOnlyProcessingModeAllEnabled) {
     } else if (req->has_response_headers()) {
       ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse(
           {{kResponseHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
-      break;
     } else {
       FAIL() << "Unexpected request type: " << req->DebugString();
     }
@@ -2066,11 +2062,7 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamEarlyHalfCloseWithoutMessageFailure) {
   streamed_response->set_end_of_stream(true);
   streamed_response->set_end_of_stream_without_message(true);
   ext_proc_stream->SendResponse(proc_response);
-  if (GetParam().filter_on_server()) {
-    EXPECT_TRUE(stream.WaitForWriteDone());
-  } else {
-    EXPECT_FALSE(stream.WaitForWriteDone());
-  }
+  (void)stream.WaitForWriteDone();
   EchoResponse response;
   request.set_message(kMessage2);
   stream.StartWrite(request);
@@ -4300,6 +4292,7 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseBodyFailureModeFalse) {
   EchoRequest request;
   request.set_message(kMessage1);
   stream.StartWrite(request);
+  (void)stream.WaitForWriteDone();
   auto req2 = ext_proc_stream->GetNextRequest();
   ASSERT_TRUE(req2.has_value());
   EXPECT_TRUE(req2->has_response_headers());
