@@ -201,11 +201,8 @@ void Info::JsonPostLoad(const Json& json, const JsonArgs& /*args*/,
                         ValidationErrors* errors) {
   auto check_non_empty = [&](absl::string_view field_name,
                              absl::string_view field_value) {
-    auto it = json.object().find(std::string(field_name));
-    if (it != json.object().end() && it->second.type() == Json::Type::kString &&
-        field_value.empty()) {
-      ValidationErrors::ScopedField field(errors,
-                                          absl::StrCat(".", field_name));
+    ValidationErrors::ScopedField field(errors, absl::StrCat(".", field_name));
+    if (!errors->FieldHasErrors() && field_value.empty()) {
       errors->AddError("field must not be empty");
     }
   };
@@ -213,11 +210,8 @@ void Info::JsonPostLoad(const Json& json, const JsonArgs& /*args*/,
   auto check_expected_value = [&](absl::string_view field_name,
                                   absl::string_view field_value,
                                   absl::string_view expected_value) {
-    auto it = json.object().find(std::string(field_name));
-    if (it != json.object().end() && it->second.type() == Json::Type::kString &&
-        field_value != expected_value) {
-      ValidationErrors::ScopedField field(errors,
-                                          absl::StrCat(".", field_name));
+    ValidationErrors::ScopedField field(errors, absl::StrCat(".", field_name));
+    if (!errors->FieldHasErrors() && field_value != expected_value) {
       errors->AddError(absl::StrCat("field must be ", expected_value));
     }
   };
