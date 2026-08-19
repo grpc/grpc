@@ -665,10 +665,8 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
       grpc_core::MutexLock lock(&mu_);
       const absl::Time deadline =
           absl::Now() + absl::Seconds(10) * grpc_test_slowdown_factor();
-      while (!status_.has_value() &&
-             (write_state_ == OpState::kInFlight ||
-              read_state_ == OpState::kInFlight ||
-              writes_done_state_ == OpState::kInFlight)) {
+      while (!status_.has_value() && (write_state_ == OpState::kInFlight ||
+                                      read_state_ == OpState::kInFlight)) {
         if (cv_.WaitWithDeadline(&mu_, deadline)) {
           break;
         }
@@ -711,7 +709,6 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
     void StartWritesDone() {
       grpc_core::MutexLock lock(&mu_);
       if (status_.has_value()) return;
-      writes_done_state_ = OpState::kInFlight;
       ClientBidiReactor::StartWritesDone();
     }
 
@@ -824,9 +821,6 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
       if (read_state_ == OpState::kInFlight) {
         read_state_ = OpState::kFailed;
       }
-      if (writes_done_state_ == OpState::kInFlight) {
-        writes_done_state_ = OpState::kFailed;
-      }
       cv_.SignalAll();
     }
 
@@ -840,7 +834,6 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
         MetadataState::kPending;
     OpState write_state_ ABSL_GUARDED_BY(mu_) = OpState::kIdle;
     OpState read_state_ ABSL_GUARDED_BY(mu_) = OpState::kIdle;
-    OpState writes_done_state_ ABSL_GUARDED_BY(mu_) = OpState::kIdle;
     std::optional<Status> status_ ABSL_GUARDED_BY(mu_);
   };
 
@@ -1300,7 +1293,6 @@ TEST_P(XdsExtProcEnd2endTest, TrailersOnlyProcessingModeAllEnabled) {
     } else if (req->has_response_headers()) {
       ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse(
           {{kResponseHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
-      break;
     } else {
       FAIL() << "Unexpected request type: " << req->DebugString();
     }
@@ -1334,7 +1326,6 @@ TEST_P(XdsExtProcEnd2endTest,
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   })));
-  ResetStub();
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
   rpc_options.set_echo_metadata(true);
