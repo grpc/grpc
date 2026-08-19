@@ -73,7 +73,7 @@ static void alts_test_do_round_trip_check_frames(
                                                 /*is_client=*/true);
   // Verify if the generated frame is the same as the expected.
   ASSERT_EQ(channel->bytes_written_to_server_channel, client_frame_size);
-  ASSERT_EQ(memcmp(client_expected_frames, channel->server_channel,
+  ASSERT_EQ(memcmp(client_expected_frames, channel->server_channel.data(),
                    client_frame_size),
             0);
   unsigned char* server_received_message =
@@ -95,7 +95,7 @@ static void alts_test_do_round_trip_check_frames(
                                                 /*is_client=*/false);
   // Verify if the generated frame is the same as the expected.
   ASSERT_EQ(channel->bytes_written_to_client_channel, server_frame_size);
-  ASSERT_EQ(memcmp(server_expected_frames, channel->client_channel,
+  ASSERT_EQ(memcmp(server_expected_frames, channel->client_channel.data(),
                    server_frame_size),
             0);
   unsigned char* client_received_message =
