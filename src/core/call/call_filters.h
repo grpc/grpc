@@ -1983,7 +1983,8 @@ class CallFilters {
     return flag;
   }
   // Client: Fetch server initial metadata
-  // Returns a promise that resolves to ValueOrFailure<ServerMetadataHandle>
+  // Returns a promise that resolves to
+  // ValueOrFailure<std::optional<ServerMetadataHandle>>
   GRPC_MUST_USE_RESULT auto PullServerInitialMetadata() {
     return Seq(
         [this]() {
