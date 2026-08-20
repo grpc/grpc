@@ -14,7 +14,16 @@
 
 FROM gcc:10
 
-RUN apt-get update && apt-get install -y curl git time zip && apt-get clean
+# Install apt-get-install-retry wrapper script
+#=================
+#  Create wrapper for apt-get
+
+ADD apt_get_install_with_retry.sh /usr/local/bin/apt-get-install-retry
+RUN chmod +rx /usr/local/bin/apt-get-install-retry
+
+
+RUN apt-get-install-retry curl git time zip
+
 #=================
 # Setup git to access working directory across docker boundary.
 # This avoids the "fatal: detected dubious ownership in repository XYZ"
@@ -29,12 +38,12 @@ RUN git config --global protocol.file.allow always
 # Basic python dependencies to be able to run tools/run_tests python scripts
 # These dependencies are not sufficient to build gRPC Python, gRPC Python
 # deps are defined elsewhere (e.g. python_deps.include)
-RUN apt-get update && apt-get install -y \
+RUN apt-get-install-retry \
   python3 \
   python3-pip \
   python3-setuptools \
-  python3-yaml \
-  && apt-get clean
+  python3-yaml && apt-get clean
+ 
 
 # use pinned version of pip to avoid sudden breakages
 RUN python3 -m pip install --upgrade pip==19.3.1
@@ -55,13 +64,12 @@ RUN python3 -m pip install twisted
 # Install cmake from bullseye-backports
 # Note that this step should be only used for Debian 11 (bullseye) images.
 
-RUN echo "deb http://archive.debian.org/debian bullseye-backports main" > /etc/apt/sources.list.d/bullseye-backports.list && \
-    apt-get update && \
-    apt-get install -y -t bullseye-backports cmake
+RUN echo "deb http://archive.debian.org/debian bullseye-backports main" > /etc/apt/sources.list.d/bullseye-backports.list && apt-get-install-retry -t bullseye-backports cmake
 
 
 # Install ccache 4.2 from official repo.
-RUN apt-get install -y ccache
+RUN apt-get-install-retry ccache && apt-get clean
+
 
 RUN mkdir /var/local/jenkins
 
