@@ -85,7 +85,7 @@
 - name: memory_optimization_02
   default: false
 - name: message_size_refactoring
-  default: false
+  default: true
 - name: metadata_outstanding_token_refactor
   default: false
 - name: metadata_publish_to_app_tag
@@ -105,7 +105,7 @@
 - name: ph2_client_server
   default: false
 - name: ph2_perf_01
-  default: false
+  default: true
 - name: ph2_server
   default: false
 - name: pollset_alternative
