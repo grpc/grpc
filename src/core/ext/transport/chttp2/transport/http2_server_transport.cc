@@ -1416,6 +1416,10 @@ void Http2ServerTransport::BeginCloseStream(
     return;
   }
 
+  // Eagerly retire flow control delta on the Transport Party so that late
+  // stream destruction on the Call Party does not mutate TransportFlowControl.
+  stream->GetStreamFlowControl().OnStreamClosed();
+
   GRPC_HTTP2_SERVER_DLOG
       << "Http2ServerTransport::BeginCloseStream for stream id: "
       << stream->GetStreamId() << " error_code=" << reset_stream_error_code
@@ -1455,6 +1459,7 @@ void Http2ServerTransport::HandleStreamStateChange(Stream& stream,
 }
 
 void Http2ServerTransport::CleanupStream(Stream& stream) {
+  stream.GetStreamFlowControl().OnStreamClosed();
   bool should_close = false;
   {
     MutexLock lock(&transport_mutex_);
