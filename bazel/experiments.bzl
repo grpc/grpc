@@ -65,6 +65,7 @@ EXPERIMENT_ENABLES = {
     "promise_based_inproc_transport": "promise_based_inproc_transport",
     "promise_batch_cleanup_on_cancel": "promise_batch_cleanup_on_cancel",
     "promise_filter_send_cancel_metadata": "promise_filter_send_cancel_metadata",
+    "python_zero_copy": "python_zero_copy",
     "recv_message_filter_bypass_fix": "recv_message_filter_bypass_fix",
     "retry_in_callv3": "retry_in_callv3",
     "return_preexisting_errors": "return_preexisting_errors",
