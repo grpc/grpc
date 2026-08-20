@@ -26,8 +26,8 @@ function maybe_run_command () {
   local dir="$1"
   local cmd="$2"
   # TODO(ssreenithi): find pyproject.toml/nox equivalent
-  if python3 "${dir}/setup.py" --help-commands | grep "${cmd}" &>/dev/null; then
-    python3 "${dir}/setup.py" "${cmd}";
+  if python3 -m nox --list | grep "$1" &>/dev/null; then
+    python3 -m nox -s "$1";
   fi
 }
 
@@ -52,13 +52,13 @@ pushd py_xds_protos;
 popd;
 
 # Build and install individual gRPC packages
-for PACKAGE in ${PACKAGES}; do
-  PACKAGE_PATH="src/python/${PACKAGE}"
-
-  maybe_run_command "${PACKAGE_PATH}" preprocess
-  maybe_run_command "${PACKAGE_PATH}" build_package_protos
-
-  pushd "${PACKAGE_PATH}"
-    python3 -m pip install --no-build-isolation .
-  popd
-done
+pushd src/python;
+  for PACKAGE in ${PACKAGES}; do
+    pushd "${PACKAGE}";
+      python3 -m nox -s clean;
+      maybe_run_command preprocess
+      maybe_run_command build_package_protos
+      python3 -m pip install .;
+    popd;
+  done
+popd;

@@ -86,34 +86,6 @@ def _get_grpc_custom_bdist(decorated_basename, target_bdist_basename):
     return bdist_path
 
 
-class SphinxDocumentation(setuptools.Command):
-    """Command to generate documentation via sphinx."""
-
-    description = "generate sphinx documentation"
-    user_options = []
-
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        # We import here to ensure that setup.py has had a chance to install the
-        # relevant package eggs first.
-        import sphinx.cmd.build
-
-        source_dir = os.path.join(GRPC_ROOT, "doc", "python", "sphinx")
-        target_dir = os.path.join(GRPC_ROOT, "doc", "build")
-        exit_code = sphinx.cmd.build.build_main(
-            ["-b", "html", "-W", "--keep-going", source_dir, target_dir]
-        )
-        if exit_code != 0:
-            raise CommandError(
-                "Documentation generation has warnings or errors"
-            )
-
-
 class BuildProjectMetadata(setuptools.Command):
     """Command to generate project metadata in a module."""
 
@@ -353,65 +325,65 @@ class BuildExt(build_ext.build_ext):
             )
 
 
-class Gather(setuptools.Command):
-    """Command to gather project dependencies."""
+# class Gather(setuptools.Command):
+#     """Command to gather project dependencies."""
 
-    description = "gather dependencies for grpcio"
-    user_options = [
-        ("test", "t", "flag indicating to gather test dependencies"),
-        ("install", "i", "flag indicating to gather install dependencies"),
-    ]
+#     description = "gather dependencies for grpcio"
+#     user_options = [
+#         ("test", "t", "flag indicating to gather test dependencies"),
+#         ("install", "i", "flag indicating to gather install dependencies"),
+#     ]
 
-    def initialize_options(self):
-        self.test = False
-        self.install = False
+#     def initialize_options(self):
+#         self.test = False
+#         self.install = False
 
-    def finalize_options(self):
-        # distutils requires this override.
-        pass
+#     def finalize_options(self):
+#         # distutils requires this override.
+#         pass
 
-    def run(self):
-        pass
+#     def run(self):
+#         pass
 
 
-class Clean(setuptools.Command):
-    """Command to clean build artifacts."""
+# class Clean(setuptools.Command):
+#     """Command to clean build artifacts."""
 
-    description = "Clean build artifacts."
-    user_options = [
-        ("all", "a", "a phony flag to allow our script to continue"),
-    ]
+#     description = "Clean build artifacts."
+#     user_options = [
+#         ("all", "a", "a phony flag to allow our script to continue"),
+#     ]
 
-    _FILE_PATTERNS = (
-        "pyb",
-        "src/python/grpcio/__pycache__/",
-        "src/python/grpcio/grpc/_cython/cygrpc.cpp",
-        "src/python/grpcio/grpc/_cython/*.so",
-        "src/python/grpcio/grpcio.egg-info/",
-    )
-    _CURRENT_DIRECTORY = os.path.normpath(
-        os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../..")
-    )
+#     _FILE_PATTERNS = (
+#         "pyb",
+#         "src/python/grpcio/__pycache__/",
+#         "src/python/grpcio/grpc/_cython/cygrpc.cpp",
+#         "src/python/grpcio/grpc/_cython/*.so",
+#         "src/python/grpcio/grpcio.egg-info/",
+#     )
+#     _CURRENT_DIRECTORY = os.path.normpath(
+#         os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../..")
+#     )
 
-    def initialize_options(self):
-        self.all = False
+#     def initialize_options(self):
+#         self.all = False
 
-    def finalize_options(self):
-        pass
+#     def finalize_options(self):
+#         pass
 
-    def run(self):
-        for path_spec in self._FILE_PATTERNS:
-            this_glob = os.path.normpath(
-                os.path.join(Clean._CURRENT_DIRECTORY, path_spec)
-            )
-            abs_paths = glob.glob(this_glob)
-            for path in abs_paths:
-                if not str(path).startswith(Clean._CURRENT_DIRECTORY):
-                    raise ValueError(
-                        "Cowardly refusing to delete {}.".format(path)
-                    )
-                print("Removing {}".format(os.path.relpath(path)))
-                if os.path.isfile(path):
-                    os.remove(str(path))
-                else:
-                    shutil.rmtree(str(path))
+#     def run(self):
+#         for path_spec in self._FILE_PATTERNS:
+#             this_glob = os.path.normpath(
+#                 os.path.join(Clean._CURRENT_DIRECTORY, path_spec)
+#             )
+#             abs_paths = glob.glob(this_glob)
+#             for path in abs_paths:
+#                 if not str(path).startswith(Clean._CURRENT_DIRECTORY):
+#                     raise ValueError(
+#                         "Cowardly refusing to delete {}.".format(path)
+#                     )
+#                 print("Removing {}".format(os.path.relpath(path)))
+#                 if os.path.isfile(path):
+#                     os.remove(str(path))
+#                 else:
+#                     shutil.rmtree(str(path))
