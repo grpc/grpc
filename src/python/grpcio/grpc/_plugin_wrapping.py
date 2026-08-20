@@ -12,10 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import collections
 import logging
 import threading
-from typing import Callable, Optional, Type, Union
+from typing import Callable, NamedTuple, Optional, Union
 
 import grpc
 from grpc import _common
@@ -25,36 +24,39 @@ from grpc._typing import MetadataType
 _LOGGER = logging.getLogger(__name__)
 
 
-class _AuthMetadataContext(
-    collections.namedtuple(
-        "AuthMetadataContext",
-        (
-            "service_url",
-            "method_name",
-        ),
-    ),
-    grpc.AuthMetadataContext,
-):
+class _AuthMetadataContextTuple(NamedTuple):
+    service_url: str
+    method_name: str
+
+
+class _AuthMetadataContext(_AuthMetadataContextTuple, grpc.AuthMetadataContext):
     pass
 
 
 class _CallbackState:
+    exception: Optional[Exception]
+
     def __init__(self):
         self.lock = threading.Lock()
         self.called = False
         self.exception = None
 
 
+_WrappedCallback = Callable[
+    [Optional[MetadataType], cygrpc.StatusCode, Optional[bytes]], None
+]
+
+
 class _AuthMetadataPluginCallback(grpc.AuthMetadataPluginCallback):
     _state: _CallbackState
-    _callback: Callable
+    _callback: _WrappedCallback
 
-    def __init__(self, state: _CallbackState, callback: Callable):
+    def __init__(self, state: _CallbackState, callback: _WrappedCallback):
         self._state = state
         self._callback = callback
 
     def __call__(
-        self, metadata: MetadataType, error: Optional[Type[BaseException]]
+        self, metadata: MetadataType, error: Optional[Exception]
     ) -> None:
         with self._state.lock:
             if self._state.exception is None:
@@ -100,7 +102,7 @@ class _Plugin:
         self,
         service_url: Union[str, bytes],
         method_name: Union[str, bytes],
-        callback: Callable,
+        callback: _WrappedCallback,
     ) -> None:
         context = _AuthMetadataContext(
             _common.decode(service_url), _common.decode(method_name)
@@ -139,3 +141,4 @@ def metadata_plugin_call_credentials(
             _Plugin(metadata_plugin), _common.encode(effective_name)
         )
     )
+
