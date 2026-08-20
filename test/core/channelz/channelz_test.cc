@@ -76,6 +76,8 @@ class ServerTestPeer {
 }  // namespace testing
 }  // namespace grpc_core
 
+using grpc_core::testing::ServerTestPeer;
+
 namespace grpc_core {
 namespace channelz {
 namespace testing {
@@ -704,8 +706,7 @@ TEST(ServerDeregistrationTest, DestroyedServerNotListedWhileRefsRemain) {
     ASSERT_NE(node, nullptr);
 
     uuid = node->uuid();
-    // NOLINTNEXTLINE - false detection of redundant namespace qualifier
-    draining_ref = grpc_core::testing::ServerTestPeer(core_server).TakeRef();
+    draining_ref = ServerTestPeer(core_server).TakeRef();
   }  // ~ServerFixture() will call grpc_server_destroy
 
   char* json_str = grpc_channelz_get_servers(0);
