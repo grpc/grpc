@@ -1,11 +1,50 @@
 # Adopted from https://github.com/rake-compiler/rake-compiler-dock/pull/201.
-# Install clang 14 and gcc 10 for better C++17 support.
+# Upgrade cross-compilers across all platforms for full C++17 and Abseil support:
+# - Darwin: Clang 14.0.6
+# - Linux GNU: GCC 10.5.0
+# - Linux Musl: GCC 10.3.0
+# - MinGW (x86-mingw32 & x64-mingw-ucrt): llvm-mingw (Clang 19.1.7, POSIX threads, MSVCRT/UCRT)
 
 diff --git a/Dockerfile.mri.erb b/Dockerfile.mri.erb
-index 1bf488e..9d5c9ca 100644
+index 1bf488e..046483e 100644
 --- a/Dockerfile.mri.erb
 +++ b/Dockerfile.mri.erb
-@@ -108,18 +108,58 @@ EOF
+@@ -75,18 +75,7 @@ USER root
+ ##
+ ## Install cross compilers
+ ##
+-<% if platform =~ /x64-mingw-ucrt/ %>
+-COPY --from=larskanis/mingw64-ucrt:20.04 \
+-    /build/binutils-mingw-w64-x86-64_*.deb \
+-    /build/g++-mingw-w64-x86-64_*.deb \
+-    /build/gcc-mingw-w64-base_*.deb \
+-    /build/gcc-mingw-w64-x86-64_*.deb \
+-    /build/mingw-w64-common_*.deb \
+-    /build/mingw-w64-x86-64-dev_*.deb \
+-    /debs/
+-RUN dpkg -i /debs/*.deb
+-
+-<% elsif platform =~ /aarch64-mingw-ucrt/ %>
++<% if platform =~ /mingw/ %>
+ 
+ RUN <<EOF
+     if [ "$TARGETPLATFORM" = "linux/amd64" ]; then
+@@ -97,29 +86,69 @@ RUN <<EOF
+         echo "Unsupported platform $TARGETPLATFORM";
+         exit 1;
+     fi &&
+-    wget https://github.com/mstorsjo/llvm-mingw/releases/download/20250114/llvm-mingw-20250114-ucrt-ubuntu-20.04-$DOWNLOAD_PLATFORM.tar.xz &&
++    CRT="<%= platform =~ /ucrt/ ? 'ucrt' : 'msvcrt' %>" &&
++    wget https://github.com/mstorsjo/llvm-mingw/releases/download/20250114/llvm-mingw-20250114-${CRT}-ubuntu-20.04-$DOWNLOAD_PLATFORM.tar.xz &&
+     tar xf llvm-mingw*.tar.xz &&
+     mv `ls -d llvm-mingw-*/` /llvm-mingw &&
+     echo "export PATH=/llvm-mingw/bin:\$PATH" >> /etc/rubybashrc &&
+-    rm -r /llvm-mingw/bin/i686-w64* /llvm-mingw/bin/armv7-w64* /llvm-mingw/bin/x86_64-w64* /llvm-mingw/i686-w64* /llvm-mingw/armv7-w64* /llvm-mingw/x86_64-w64*
++    ln -sf /llvm-mingw/bin/* /usr/bin/ &&
++    rm llvm-mingw*.tar.xz
+ EOF
+ 
+ <% elsif platform =~ /linux-musl/ %>
  COPY build/mk_musl_cross.sh /tmp
  RUN /tmp/mk_musl_cross.sh <%= target %>
  
@@ -29,10 +68,10 @@ index 1bf488e..9d5c9ca 100644
 -if platform =~ /arm-linux-gnu/     %> gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf <% end %><%
 -if platform =~ /x86-linux-gnu/     %> gcc-i686-linux-gnu g++-i686-linux-gnu <% end %><%
 -if platform =~ /x86_64-linux-gnu/  %> gcc-x86-64-linux-gnu g++-x86-64-linux-gnu <% end %><%
+-if platform =~ /x86-mingw32/       %> gcc-mingw-w64-i686 g++-mingw-w64-i686 <% end %><%
+-if platform =~ /x64-mingw32/       %> gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 <% end %> && \
 +if platform =~ /arm-linux-gnu/     %> gcc-10-arm-linux-gnueabihf g++-10-arm-linux-gnueabihf <% end %><%
-+if platform =~ /x86-linux-gnu/     %> gcc-10-i686-linux-gnu g++-10-i686-linux-gnu <% end %><%
- if platform =~ /x86-mingw32/       %> gcc-mingw-w64-i686 g++-mingw-w64-i686 <% end %><%
- if platform =~ /x64-mingw32/       %> gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 <% end %> && \
++if platform =~ /x86-linux-gnu/     %> gcc-10-i686-linux-gnu g++-10-i686-linux-gnu <% end %> && \
 +<% if platform =~ /aarch64-linux-gnu/ %>
 +    if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
 +        apt-get install -y gcc-10 g++-10 && \
@@ -69,6 +108,19 @@ index 1bf488e..9d5c9ca 100644
  
  <% if platform =~ /darwin/ %>
  COPY build/mk_osxcross.sh /tmp
+@@ -233,12 +262,6 @@ USER root
+ COPY build/strip_wrapper_vbox /root/
+ RUN mv /usr/bin/<%= target %>-strip /usr/bin/<%= target %>-strip.bin && \
+     ln /root/strip_wrapper_vbox /usr/bin/<%= target %>-strip
+-
+-# Use posix pthread for mingw so that C++ standard library for thread could be
+-# available such as std::thread, std::mutex, so on.
+-# https://sourceware.org/pthreads-win32/
+-RUN printf "1\n" | update-alternatives --config <%= target %>-gcc && \
+-    printf "1\n" | update-alternatives --config <%= target %>-g++
+ <% end %>
+ 
+ <% if platform =~ /aarch64-mingw/ %>
 diff --git a/build/mk_musl_cross.sh b/build/mk_musl_cross.sh
 index e2dfce9..4e6e2e7 100755
 --- a/build/mk_musl_cross.sh
