@@ -73,8 +73,8 @@ class ServerTestPeer {
  private:
   Server* server_;
 };
-}
-}
+}  // namespace testing
+}  // namespace grpc_core
 
 namespace grpc_core {
 namespace channelz {
