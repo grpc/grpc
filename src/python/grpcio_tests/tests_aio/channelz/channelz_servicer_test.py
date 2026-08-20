@@ -291,6 +291,12 @@ class ChannelzServicerTest(AioTestBase):
         for i in range(k_failed):
             await self._send_failed_unary_unary(pairs[0])
 
+        while True:
+            if (
+                resp.data.calls_started ==
+                resp.data.calls_succeeded + resp.data.calls_failed
+            ):
+                break
         resp = await self._get_server_by_ref_id(pairs[0].server_ref_id)
         self.assertEqual(resp.data.calls_started, k_success + k_failed)
         self.assertEqual(resp.data.calls_succeeded, k_success)
@@ -418,7 +424,13 @@ class ChannelzServicerTest(AioTestBase):
         await self._send_successful_unary_unary(pairs[0])
         await self._send_failed_unary_unary(pairs[0])
 
-        resp = await self._get_server_by_ref_id(pairs[0].server_ref_id)
+        while True:
+            resp = await self._get_server_by_ref_id(pairs[0].server_ref_id)
+            if (
+                resp.data.calls_started ==
+                resp.data.calls_succeeded + resp.data.calls_failed
+            ):
+                break
         self.assertEqual(resp.data.calls_started, 2)
         self.assertEqual(resp.data.calls_succeeded, 1)
         self.assertEqual(resp.data.calls_failed, 1)

@@ -295,9 +295,17 @@ class ChannelzServicerTest(unittest.TestCase):
         for i in range(k_failed):
             self._send_failed_unary_unary(0)
 
-        resp = self._channelz_stub.GetServers(
-            channelz_pb2.GetServersRequest(start_server_id=0)
-        )
+        while True:
+            resp = self._channelz_stub.GetServers(
+                channelz_pb2.GetServersRequest(start_server_id=0)
+            )
+            if (
+                resp.server[0].calls_started
+                == resp.server[0].data.calls_succeeded
+                + resp.server[0].data.calls_failed
+
+            ):
+                break
         self.assertEqual(len(resp.server), 1)
         self.assertEqual(
             resp.server[0].data.calls_started, k_success + k_failed
@@ -435,9 +443,16 @@ class ChannelzServicerTest(unittest.TestCase):
         self._send_successful_unary_unary(0)
         self._send_failed_unary_unary(0)
 
-        gs_resp = self._channelz_stub.GetServers(
-            channelz_pb2.GetServersRequest(start_server_id=0)
-        )
+        while True:
+            gs_resp = self._channelz_stub.GetServers(
+                channelz_pb2.GetServersRequest(start_server_id=0)
+            )
+            if (
+                gs_resp.server[0].data.calls_started
+                == gs_resp.server[0].data.calls_succeeded
+                + gs_resp.server[0].data.calls_failed
+            ):
+                break
         self.assertEqual(len(gs_resp.server), 1)
         self.assertEqual(gs_resp.server[0].data.calls_started, 2)
         self.assertEqual(gs_resp.server[0].data.calls_succeeded, 1)
