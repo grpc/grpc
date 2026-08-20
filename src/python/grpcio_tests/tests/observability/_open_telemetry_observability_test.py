@@ -1210,7 +1210,6 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         spans = self._span_exporter.get_finished_spans()
         self.assertEqual(len(spans), 0)
 
-
     def testTracesForClientSideApplicationContext(self):
         tracer = self._tracer_provider.get_tracer(
             _test_server.APPLICATION_SPAN_NAME
