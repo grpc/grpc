@@ -682,6 +682,7 @@ TEST(ServerDeregistrationTest, DestroyedServerNotListedWhileRefsRemain) {
     ASSERT_NE(node, nullptr);
 
     uuid = node->uuid();
+    // NOLINTNEXTLINE - false detection of redundant namespace qualifier
     draining_ref = grpc_core::testing::ServerTestPeer(core_server).TakeRef();
   }  // ~ServerFixture() will call grpc_server_destroy
 
