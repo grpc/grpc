@@ -17,5 +17,8 @@ def dump_xds_configs():
     cdef grpc_slice client_config_in_slice
     with nogil:
         client_config_in_slice = grpc_dump_xds_configs()
-    cdef bytes result = _slice_bytes(client_config_in_slice)
-    return result
+    try:
+        return _slice_bytes(client_config_in_slice)
+    finally:
+        with nogil:
+            grpc_slice_unref(client_config_in_slice)
