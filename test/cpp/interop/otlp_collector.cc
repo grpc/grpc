@@ -16,6 +16,9 @@
 //
 //
 
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/impl/codegen/config_protobuf.h>
+
 #include <atomic>
 #include <chrono>
 #include <csignal>
@@ -26,13 +29,10 @@
 #include <thread>
 #include <vector>
 
+#include "opentelemetry/proto/collector/trace/v1/trace_service.grpc.pb.h"
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/log/log.h"
-#include <google/protobuf/util/json_util.h>
-#include <grpcpp/grpcpp.h>
-
-#include "opentelemetry/proto/collector/trace/v1/trace_service.grpc.pb.h"
 
 ABSL_FLAG(int, port, 0, "Port to listen on");
 ABSL_FLAG(std::string, file, "", "File to write JSON spans to");
@@ -50,11 +50,11 @@ class TraceServiceServiceImpl final
       opentelemetry::proto::collector::trace::v1::ExportTraceServiceResponse*
       /*response*/) override {
     std::string json_string;
-    google::protobuf::util::JsonPrintOptions options;
+    grpc::protobuf::json::JsonPrintOptions options;
     options.add_whitespace = true;
     options.always_print_fields_with_no_presence = true;
     options.preserve_proto_field_names = true;
-    auto status = google::protobuf::util::MessageToJsonString(
+    auto status = grpc::protobuf::json::MessageToJsonString(
         *request, &json_string, options);
     if (!status.ok()) {
       LOG(ERROR) << "Failed to serialize ExportTraceServiceRequest to JSON: "

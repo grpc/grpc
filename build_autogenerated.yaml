@@ -17549,10 +17549,6 @@ targets:
   run: false
   language: c++
   headers:
-  - src/cpp/ext/otel/key_value_iterable.h
-  - src/cpp/ext/otel/otel_client_call_tracer.h
-  - src/cpp/ext/otel/otel_plugin.h
-  - src/cpp/ext/otel/otel_server_call_tracer.h
   - test/core/credentials/call/oauth2/oauth2_utils.h
   - test/cpp/interop/backend_metrics_lb_policy.h
   - test/cpp/interop/client_helper.h
@@ -17562,9 +17558,6 @@ targets:
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/test.proto
-  - src/cpp/ext/otel/otel_client_call_tracer.cc
-  - src/cpp/ext/otel/otel_plugin.cc
-  - src/cpp/ext/otel/otel_server_call_tracer.cc
   - test/core/credentials/call/oauth2/oauth2_utils.cc
   - test/cpp/interop/backend_metrics_lb_policy.cc
   - test/cpp/interop/client.cc
@@ -17572,8 +17565,6 @@ targets:
   - test/cpp/interop/interop_client.cc
   - test/cpp/interop/otel_helper.cc
   deps:
-  - opentelemetry-cpp::api
-  - opentelemetry-cpp::trace
   - grpc++_test_config
   - grpc++_test_util
 - name: interop_server
@@ -17581,10 +17572,6 @@ targets:
   run: false
   language: c++
   headers:
-  - src/cpp/ext/otel/key_value_iterable.h
-  - src/cpp/ext/otel/otel_client_call_tracer.h
-  - src/cpp/ext/otel/otel_plugin.h
-  - src/cpp/ext/otel/otel_server_call_tracer.h
   - src/cpp/server/orca/orca_service.h
   - test/cpp/interop/otel_helper.h
   - test/cpp/interop/server_helper.h
@@ -17592,17 +17579,12 @@ targets:
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/test.proto
-  - src/cpp/ext/otel/otel_client_call_tracer.cc
-  - src/cpp/ext/otel/otel_plugin.cc
-  - src/cpp/ext/otel/otel_server_call_tracer.cc
   - src/cpp/server/orca/orca_service.cc
   - test/cpp/interop/interop_server.cc
   - test/cpp/interop/interop_server_bootstrap.cc
   - test/cpp/interop/otel_helper.cc
   - test/cpp/interop/server_helper.cc
   deps:
-  - opentelemetry-cpp::api
-  - opentelemetry-cpp::trace
   - grpc++_test_config
   - grpc++_test_util
 - name: invalid_call_argument_test

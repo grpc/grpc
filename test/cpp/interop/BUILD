@@ -833,4 +833,3 @@ grpc_cc_binary(
         "@opentelemetry_proto//:trace_service_proto_cc",
     ],
 )
-
