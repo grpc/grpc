@@ -21,7 +21,7 @@ import shutil
 import nox
 
 PYTHON_STEM = os.path.dirname(os.path.abspath(__file__))
-GRPC_STEM = os.path.abspath(PYTHON_STEM + "../../../../")
+GRPC_STEM = os.path.abspath(os.path.join(PYTHON_STEM, "../../.."))
 GRPC_ROOT = os.path.relpath(GRPC_STEM, start=GRPC_STEM)
 PYTHON_REL_PATH = os.path.relpath(PYTHON_STEM, start=GRPC_STEM)
 CYTHON_STEM = os.path.join(PYTHON_REL_PATH, "grpc", "_cython")
@@ -41,8 +41,8 @@ def doc(session: nox.Session):
 
     session.log("Running doc gen via sphinx...")
 
-    source_dir = os.path.join(GRPC_ROOT, "doc", "python", "sphinx")
-    target_dir = os.path.join(GRPC_ROOT, "doc", "build")
+    source_dir = os.path.join(GRPC_STEM, "doc", "python", "sphinx")
+    target_dir = os.path.join(GRPC_STEM, "doc", "build")
     exit_code = sphinx.cmd.build.build_main(
         ["-b", "html", "-W", "--keep-going", source_dir, target_dir]
     )

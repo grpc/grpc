@@ -115,23 +115,12 @@ def build_package_protos(session: nox.Session):
     command.build_package_protos(PYTHON_STEM, args.strict_mode)
 
 
-@nox.session(venv_params=["--system-site-packages", "--without-pip", "--copies"])
+@nox.session(venv_backend="none")
 def test_lite(session: nox.Session):
     """Command to run tests without fetching or building anything."""
     session.log("Running test_lite for grpcio-tools...")
 
-    session.install(
-        "-I",
-        "--no-deps",
-        "--index-url",
-        "https://pypi.org/simple",
-        "coverage",
-        "setuptools==77.0.1",
-        "wheel",
-    )
-    session.install("--no-build-isolation", "--no-deps", ".")
-
-    # Run the python interpreter inside the virtual environment ot execute the tests
+    # Run the python interpreter inside the virtual environment to execute the tests
     session.run(
         "python",
         "-c",
@@ -142,29 +131,17 @@ def test_lite(session: nox.Session):
         "runner = tests.Runner(dedicated_threads=True); "
         "result = runner.run(loader.suite); "
         "sys.exit(0 if result.wasSuccessful() else 'Test failure')",
-        external=True,
     )
 
 
-@nox.session(venv_params=["--system-site-packages", "--without-pip", "--copies"])
+@nox.session(venv_backend="none")
 def test_py3_only(session: nox.Session):
     """Command to run tests for Python 3+ features.
 
     This does not include asyncio tests, which are housed in a separate
     directory.
     """
-    session.log("Running test_py3_only for grpcio-tools...")
-
-    session.install(
-        "-I",
-        "--no-deps",
-        "--index-url",
-        "https://pypi.org/simple",
-        "coverage",
-        "setuptools==77.0.1",
-        "wheel",
-    )
-    session.install("--no-build-isolation", "--no-deps", ".")
+    session.log("Running test_py3_only for grpcio-tools...")    
 
     session.run(
         "python",
@@ -176,26 +153,15 @@ def test_py3_only(session: nox.Session):
         "runner = tests.Runner(); "
         "result = runner.run(loader.suite); "
         "sys.exit(0 if result.wasSuccessful() else 'Test failure')",
-        external=True,
     )
 
 
-@nox.session(venv_params=["--system-site-packages", "--without-pip", "--copies"])
+@nox.session(venv_backend="none")
 def test_aio(session: nox.Session):
     """Command to run aio tests without fetching or building anything."""
 
     session.log("Running test_aio for grpcio-tools...")
-    session.install(
-        "-I",
-        "--no-deps",
-        "--index-url",
-        "https://pypi.org/simple",
-        "coverage",
-        "setuptools==77.0.1",
-        "wheel",
-    )
-    session.install("--no-build-isolation", "--no-deps", ".")
-
+    
     session.run(
         "python",
         "-c",
@@ -209,7 +175,6 @@ def test_aio(session: nox.Session):
         "runner = tests.Runner(dedicated_threads=False); "
         "result = runner.run(loader.suite); "
         "sys.exit(0 if result.wasSuccessful() else 'Test failure')",
-        external=True,
     )
 
 
@@ -300,10 +265,40 @@ def run_fork(session: nox.Session):
     session.install("--index-url", "https://pypi.org/simple", "coverage")
     session.install("--no-build-isolation", "--no-deps", ".")
 
+    # Note: We use exit_on_error=False to play nice with Nox
+    parser = argparse.ArgumentParser(exit_on_error=False)
+    parser.add_argument(
+        "--server_host",
+        default="localhost",
+        type=str,
+        help="the host to which to connect",
+    )
+    parser.add_argument(
+        "--server_port",
+        type=int,
+        default=None,
+        help="the port to which to connect",
+    )
+    parser.add_argument(
+        "--test_case",
+        default="large_unary",
+        type=str,
+        help="the test case to execute",
+    )
+    parser.add_argument(
+        "--use_tls",
+        default=False,
+        type=str,
+        help="require a secure connection (true/false)",
+    )
+    # Any unknown/additional args will be passed along safely
+    args, unknown = parser.parse_known_args(session.posargs)
     session.run(
         "python",
         "-c",
-        "import sys; " "from tests.fork import client; " "client.test_fork()",
+        "import sys; "
+        "from tests.fork import client; "
+        "client.test_fork()",
         *session.posargs,
         env={"GRPC_ENABLE_FORK_SUPPORT": "true"},
     )

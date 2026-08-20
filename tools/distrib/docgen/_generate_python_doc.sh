@@ -36,4 +36,4 @@ tools/run_tests/run_tests.py -c opt -l python --compiler python3.10 --newline_on
 # # Use direct sphinx-build CLI command instead of `python setup.py doc`
 # sphinx-build -b html -W --keep-going "$SOURCE_DIR" "$TARGET_DIR"
 
-nox -s doc
+python3 -m nox -s doc -f src/python/grpcio/noxfile.py

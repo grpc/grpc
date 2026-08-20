@@ -33,14 +33,18 @@ def preprocess(session: nox.Session):
     """
     session.log("Running preprocess for grpcio-channelz...")
     session.log(f"Current working directory: {os.path.abspath(os.curdir)}")
+
+    session.cd(GRPC_ROOT_ABS_PATH)
+    target_proto_dir = os.path.join(ROOT_DIR, "grpc_channelz", "v1")
+    os.makedirs(target_proto_dir, exist_ok=True)
     # TODO: Can skip copy proto part.
     if os.path.isfile(CHANNELZ_PROTO):
         shutil.copyfile(
             CHANNELZ_PROTO,
-            os.path.join(ROOT_REL_DIR, "grpc_channelz/v1/channelz.proto"),
+            os.path.join(target_proto_dir, "channelz.proto"),
         )
     if os.path.isfile(LICENSE):
-        shutil.copyfile(LICENSE, os.path.join(ROOT_REL_DIR, "LICENSE"))
+        shutil.copyfile(LICENSE, os.path.join(ROOT_DIR, "LICENSE"))
 
 
 # use this flag to use the pre-installed grpc_tools in the environment

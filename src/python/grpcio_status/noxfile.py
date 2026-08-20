@@ -32,19 +32,18 @@ def preprocess(session: nox.Session):
     Session to copy the root LICENSE and status.proto files into the package source.
     """
     session.log("Running preprocess for grpcio-status...")
-    package_status_proto_rel_path = os.path.join(
-        ROOT_REL_DIR, PACKAGE_STATUS_PROTO_PATH
-    )
+
+    session.cd(GRPC_ROOT_ABS_PATH)
+    target_proto_dir = os.path.join(ROOT_DIR, "grpc_status", "google", "rpc")
+    os.makedirs(target_proto_dir, exist_ok=True)
 
     if os.path.isfile(STATUS_PROTO):
-        if not os.path.isdir(package_status_proto_rel_path):
-            os.makedirs(package_status_proto_rel_path)
         shutil.copyfile(
             STATUS_PROTO,
-            os.path.join(package_status_proto_rel_path, "status.proto"),
+            os.path.join(target_proto_dir, "status.proto"),
         )
     if os.path.isfile(LICENSE):
-        shutil.copyfile(LICENSE, os.path.join(ROOT_REL_DIR, "LICENSE"))
+        shutil.copyfile(LICENSE, os.path.join(ROOT_DIR, "LICENSE"))
 
 
 @nox.session

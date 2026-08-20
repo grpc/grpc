@@ -32,14 +32,18 @@ def preprocess(session: nox.Session):
     the root directory
     """
     session.log("Running preprocess for grpcio-health-checking...")
+
+    session.cd(GRPC_ROOT_ABS_PATH)
+    target_proto_dir = os.path.join(ROOT_DIR, "grpc_health", "v1")
+    os.makedirs(target_proto_dir, exist_ok=True)
     # TODO: Can skip copy proto part.
     if os.path.isfile(HEALTH_PROTO):
         shutil.copyfile(
             HEALTH_PROTO,
-            os.path.join(ROOT_REL_DIR, "grpc_health/v1/health.proto"),
+            os.path.join(target_proto_dir, "health.proto"),
         )
     if os.path.isfile(LICENSE):
-        shutil.copyfile(LICENSE, os.path.join(ROOT_REL_DIR, "LICENSE"))
+        shutil.copyfile(LICENSE, os.path.join(ROOT_DIR, "LICENSE"))
 
 
 # use this flag to use the pre-installed grpc_tools in the environment
@@ -53,4 +57,4 @@ def build_package_protos(session: nox.Session):
     # there).
     from grpc_tools import command
 
-    command.build_package_protos(ROOT_REL_DIR)
+    command.build_package_protos(ROOT_DIR)
