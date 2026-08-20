@@ -199,7 +199,8 @@ grpc_security_status grpc_ssl_credentials::InitializeClientHandshakerFactory(
   options.alpn_protocols =
       grpc_fill_alpn_protocol_strings(&options.num_alpn_protocols);
   if (has_key_cert_pair) {
-    options.pem_key_cert_pair = &config->pem_key_cert_pair;
+    options.pem_key_cert_pairs =
+        grpc_core::PemKeyCertPairList{config->pem_key_cert_pair};
   }
   options.cipher_suites = grpc_get_ssl_cipher_suites();
   options.session_cache = ssl_session_cache;

@@ -67,6 +67,8 @@ constexpr size_t kSslTsiTestBadServerKeyCertPairsNum = 1;
 constexpr size_t kSslTsiTestLeafSignedByIntermediateKeyCertPairsNum = 1;
 constexpr absl::string_view kSslTsiTestCredentialsDir =
     "src/core/tsi/test_creds/";
+constexpr absl::string_view kSslTsiEcdsaTestCredentialsDir =
+    "test/core/tsi/test_creds/ecdsa/";
 constexpr absl::string_view kSslTsiTestWrongSni = "test.google.cn";
 constexpr absl::string_view kSslTsiTestInvalidSni = "1.2.3.4";
 constexpr size_t kTls13FrameOverhead = 22;
@@ -364,10 +366,10 @@ class SslTransportSecurityTest
             std::make_shared<tsi::RootCertInfo>(key_cert_lib->root_cert);
       }
       if (ssl_fixture->force_client_auth_) {
-        client_options.pem_key_cert_pair =
-            key_cert_lib->use_bad_client_cert
-                ? &key_cert_lib->bad_client_pem_key_cert_pair
-                : &key_cert_lib->client_pem_key_cert_pair;
+        client_options.pem_key_cert_pairs =
+            PemKeyCertPairList{key_cert_lib->use_bad_client_cert
+                                   ? key_cert_lib->bad_client_pem_key_cert_pair
+                                   : key_cert_lib->client_pem_key_cert_pair};
       }
       if (alpn_lib->alpn_mode == ALPN_CLIENT_NO_SERVER ||
           alpn_lib->alpn_mode == ALPN_CLIENT_SERVER_OK ||
@@ -1308,6 +1310,52 @@ TEST(SslTransportSecurityTest, TestClientHandshakerFactoryBadParams) {
                 &options, &client_handshaker_factory),
             TSI_INVALID_ARGUMENT);
   tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory);
+}
+
+TEST(SslTransportSecurityTest, TestClientHandshakerFactoryMultipleCerts) {
+  std::string root_cert =
+      GetFileContents(absl::StrCat(kSslTsiTestCredentialsDir, "ca.pem"));
+  PemKeyCertPair cert_pair_0(
+      GetFileContents(absl::StrCat(kSslTsiTestCredentialsDir, "client.key")),
+      GetFileContents(absl::StrCat(kSslTsiTestCredentialsDir, "client.pem")));
+  PemKeyCertPair cert_pair_1(
+      GetFileContents(absl::StrCat(kSslTsiTestCredentialsDir, "server0.key")),
+      GetFileContents(absl::StrCat(kSslTsiTestCredentialsDir, "server0.pem")));
+
+  tsi_ssl_client_handshaker_factory* client_handshaker_factory;
+  tsi_ssl_client_handshaker_options options;
+  options.root_cert_info = std::make_shared<tsi::RootCertInfo>(root_cert);
+  options.pem_key_cert_pairs = PemKeyCertPairList{cert_pair_0, cert_pair_1};
+  ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
+                &options, &client_handshaker_factory),
+            TSI_OK);
+  EXPECT_NE(client_handshaker_factory, nullptr);
+  tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory);
+}
+
+TEST(SslTransportSecurityTest,
+     TestServerHandshakerFactoryMultipleCertsSameSan) {
+  std::string root_cert =
+      GetFileContents(absl::StrCat(kSslTsiTestCredentialsDir, "ca.pem"));
+  PemKeyCertPair cert_pair_rsa(
+      GetFileContents(absl::StrCat(kSslTsiTestCredentialsDir, "server1.key")),
+      GetFileContents(absl::StrCat(kSslTsiTestCredentialsDir, "server1.pem")));
+  PemKeyCertPair cert_pair_ecdsa(
+      GetFileContents(
+          absl::StrCat(kSslTsiEcdsaTestCredentialsDir, "server_ecdsa.key")),
+      GetFileContents(
+          absl::StrCat(kSslTsiEcdsaTestCredentialsDir, "server_ecdsa.pem")));
+
+  tsi_ssl_server_handshaker_factory* server_handshaker_factory = nullptr;
+  tsi_ssl_server_handshaker_options options;
+  options.root_cert_info = std::make_shared<tsi::RootCertInfo>(root_cert);
+  options.key_cert_pairs_or_selector =
+      PemKeyCertPairList{cert_pair_rsa, cert_pair_ecdsa};
+  ASSERT_EQ(tsi_create_ssl_server_handshaker_factory_with_options(
+                &options, &server_handshaker_factory),
+            TSI_OK);
+  EXPECT_NE(server_handshaker_factory, nullptr);
+  tsi_ssl_server_handshaker_factory_unref(server_handshaker_factory);
 }
 
 TEST(SslTransportSecurityTest, DuplicateRootCertificates) {
