@@ -125,7 +125,8 @@ def activate_tracing(double sampling_rate=1.0) -> None:
 
 def create_client_call_tracer(bytes method_name, bytes target, bytes trace_id, str identifier,
                               dict exchange_labels, object enabled_optional_labels,
-                              bint registered_method, bytes parent_span_id=b'') -> cpython.PyObject:
+                              bint registered_method, bytes parent_span_id=b'',
+                              object parent_span_sampled=None) -> cpython.PyObject:
   """Create a ClientCallTracer and save to PyCapsule.
 
   Returns: A grpc_observability._observability.ClientCallTracerCapsule object.
@@ -134,6 +135,9 @@ def create_client_call_tracer(bytes method_name, bytes target, bytes trace_id, s
   cdef char* c_target = cpython.PyBytes_AsString(target)
   cdef char* c_trace_id = cpython.PyBytes_AsString(trace_id)
   cdef char* c_parent_span_id = cpython.PyBytes_AsString(parent_span_id)
+  cdef optional[cbool] c_parent_span_sampled
+  if parent_span_sampled is not None:
+    c_parent_span_sampled = optional[cbool](<cbool>parent_span_sampled)
   identifier_bytes = _encode(identifier)
   cdef char* c_identifier = cpython.PyBytes_AsString(identifier_bytes)
   cdef vector[Label] c_labels = _labels_to_c_labels(exchange_labels)
@@ -144,8 +148,8 @@ def create_client_call_tracer(bytes method_name, bytes target, bytes trace_id, s
       add_csm_optional_labels = True
 
   cdef void* call_tracer = CreateClientCallTracer(c_method, c_target, c_trace_id, c_parent_span_id,
-                                                  c_identifier, c_labels, add_csm_optional_labels,
-                                                  registered_method)
+                                                  c_parent_span_sampled, c_identifier, c_labels,
+                                                  add_csm_optional_labels, registered_method)
   capsule = cpython.PyCapsule_New(call_tracer, CLIENT_CALL_TRACER, NULL)
   return capsule
 

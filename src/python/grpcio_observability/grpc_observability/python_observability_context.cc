@@ -46,6 +46,7 @@ bool PythonCensusTracingEnabled() {
 
 void GenerateClientContext(absl::string_view method, absl::string_view trace_id,
                            absl::string_view parent_span_id,
+                           const std::optional<bool> parent_span_sampled,
                            PythonCensusContext* context) {
   // Destruct the current CensusContext to free the Span memory before
   // overwriting it below.
@@ -54,11 +55,10 @@ void GenerateClientContext(absl::string_view method, absl::string_view trace_id,
     new (context) PythonCensusContext();
     return;
   }
-  if (!parent_span_id.empty()) {
-    // Note that parent_span_id exist also means it was marked as sampled at
-    // Python OC, we'll respect that decision.
+  if (!parent_span_id.empty() && parent_span_sampled.has_value()) {
     SpanContext parent_context =
-        SpanContext(std::string(trace_id), std::string(parent_span_id), true);
+        SpanContext(std::string(trace_id), std::string(parent_span_id),
+                    parent_span_sampled.value());
     new (context) PythonCensusContext(method, parent_context);
     return;
   }
@@ -221,11 +221,6 @@ Span Span::StartSpan(absl::string_view name,
   std::string parent_span_id = parent_context.SpanId();
   std::string span_id = GenerateSpanId();
   bool should_sample = parent_context.IsSampled();
-  if (!should_sample) {
-    // Resampling here so that it's possible to collect trace on server side
-    // if client tracing is not enabled.
-    should_sample = ShouldSample(std::string(trace_id));
-  }
   auto start_time = absl::Now();
   SpanContext context(trace_id, span_id, should_sample);
   return Span(std::string(name), parent_span_id, start_time, context);

@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from libcpp cimport bool as cbool
+from libcpp.optional cimport optional
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 
@@ -82,6 +84,7 @@ cdef extern from "observability_util.h" namespace "grpc_observability":
                                     const char* target,
                                     const char* trace_id,
                                     const char* parent_span_id,
+                                    optional[cbool] parent_span_sampled,
                                     const char* identifier,
                                     const vector[Label] exchange_labels,
                                     bint add_csm_optional_labels,

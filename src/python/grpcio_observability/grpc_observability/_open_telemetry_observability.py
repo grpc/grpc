@@ -663,11 +663,11 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
         _cyobservability.observability_deinit()
         grpc._observability.observability_deinit()
 
-    def _generate_ids(self) -> Tuple[bytes, bytes]:
-        """Generates trace ID and parent span ID
+    def _generate_span_context(self) -> Tuple[bytes, bytes, Optional[bool]]:
+        """Generates trace ID, parent span ID and parent sampled flag.
 
         If there is an active OpenTelemetry span in the current context (e.g.
-        nested RPC), its trace ID and span ID are propagated.
+        nested RPC), its trace ID, span ID and sampling decision are propagated.
 
         If there is no active span (e.g. new RPC) and the tracing is enabled,
         a new trace ID is generated, leaving the parent span ID empty.
@@ -676,24 +676,32 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
         span ID.
 
         Returns:
-            A tuple of (trace ID, parent span ID).
+            A tuple of (trace ID, parent span ID, parent sampled flag). The
+            parent sampled flag carries the parent span's sampling decision
+            or None when no parent span exists (root spans will make their
+            own sampling decision by utilizing `ProbabilitySampler`)
         """
         current_span = trace.get_current_span().get_span_context()
         if current_span.is_valid:
             trace_id = f"{current_span.trace_id:032x}".encode()
             parent_span_id = f"{current_span.span_id:016x}".encode()
+            parent_span_sampled = current_span.trace_flags.sampled
         elif self._should_enable_tracing():
             trace_id = f"{self._generator.generate_trace_id():032x}".encode()
             parent_span_id = b""
+            parent_span_sampled = None
         else:
             trace_id = b"TRACE_ID"
             parent_span_id = b""
-        return (trace_id, parent_span_id)
+            parent_span_sampled = None
+        return (trace_id, parent_span_id, parent_span_sampled)
 
     def create_client_call_tracer(
         self, method_name: bytes, target: bytes
     ) -> ClientCallTracerCapsule:
-        trace_id, parent_span_id = self._generate_ids()
+        trace_id, parent_span_id, parent_span_sampled = (
+            self._generate_span_context()
+        )
         self._maybe_activate_client_plugin_options(target)
         exchange_labels = self._get_client_exchange_labels()
         enabled_optional_labels = set()
@@ -709,6 +717,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
             enabled_optional_labels,
             method_name in self._registered_methods,
             parent_span_id,
+            parent_span_sampled,
         )
         return capsule
 

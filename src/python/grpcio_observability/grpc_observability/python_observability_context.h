@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <atomic>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -283,6 +284,7 @@ class PythonCensusContext {
 // blank CensusContext as it overwrites it.
 void GenerateClientContext(absl::string_view method, absl::string_view trace_id,
                            absl::string_view parent_span_id,
+                           const std::optional<bool> parent_span_sampled,
                            PythonCensusContext* context);
 
 // Deserialize the incoming SpanContext and generate a new server context based

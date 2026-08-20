@@ -45,9 +45,9 @@ constexpr uint32_t
 
 PythonOpenCensusCallTracer::PythonOpenCensusCallTracer(
     const char* method, const char* target, const char* trace_id,
-    const char* parent_span_id, const char* identifier,
-    const std::vector<Label>& exchange_labels, bool tracing_enabled,
-    bool add_csm_optional_labels, bool registered_method)
+    const char* parent_span_id, const std::optional<bool> parent_span_sampled,
+    const char* identifier, const std::vector<Label>& exchange_labels,
+    bool tracing_enabled, bool add_csm_optional_labels, bool registered_method)
     : method_(GetMethod(method)),
       target_(GetTarget(target)),
       tracing_enabled_(tracing_enabled),
@@ -55,9 +55,9 @@ PythonOpenCensusCallTracer::PythonOpenCensusCallTracer(
       labels_injector_(exchange_labels),
       identifier_(identifier),
       registered_method_(registered_method) {
-  GenerateClientContext(absl::StrCat("Sent.", method_),
-                        absl::string_view(trace_id),
-                        absl::string_view(parent_span_id), &context_);
+  GenerateClientContext(
+      absl::StrCat("Sent.", method_), absl::string_view(trace_id),
+      absl::string_view(parent_span_id), parent_span_sampled, &context_);
 }
 
 void PythonOpenCensusCallTracer::GenerateContext() {}

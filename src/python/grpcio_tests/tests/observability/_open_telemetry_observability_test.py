@@ -39,6 +39,7 @@ from opentelemetry.sdk import trace as otel_trace
 from opentelemetry.sdk.metrics import export as otel_metrics_export
 from opentelemetry.sdk.metrics import view as otel_metrics_view
 from opentelemetry.sdk.trace import export as otel_trace_export
+from opentelemetry.sdk.trace import sampling as otel_sampling
 from opentelemetry.sdk.trace.export import in_memory_span_exporter
 from opentelemetry.trace.propagation.tracecontext import (
     TraceContextTextMapPropagator,
@@ -1189,6 +1190,26 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             )
         )
         self.assertIsNotNone(server_span, "Server span not found")
+
+    def testNoSpansExportedWhenParentSpanNotSampled(self):
+        unsampled_provider = otel_trace.TracerProvider(
+            sampler=otel_sampling.ALWAYS_OFF
+        )
+        app_tracer = unsampled_provider.get_tracer(
+            _test_server.APPLICATION_SPAN_NAME
+        )
+        with grpc_observability.OpenTelemetryPlugin(
+            tracer_provider=self._tracer_provider,
+            text_map_propagator=TraceContextTextMapPropagator(),
+        ):
+            server, port = _test_server.start_server()
+            self._server = server
+            with app_tracer.start_as_current_span("UnsampledAppSpan"):
+                _test_server.unary_unary_call(port=port)
+
+        spans = self._span_exporter.get_finished_spans()
+        self.assertEqual(len(spans), 0)
+
 
     def testTracesForClientSideApplicationContext(self):
         tracer = self._tracer_provider.get_tracer(

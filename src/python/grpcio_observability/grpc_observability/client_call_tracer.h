@@ -19,6 +19,7 @@
 #include <stdint.h>
 
 #include <atomic>
+#include <optional>
 #include <string>
 
 #include "metadata_exchange.h"
@@ -117,9 +118,10 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracerInterface {
 
   explicit PythonOpenCensusCallTracer(
       const char* method, const char* target, const char* trace_id,
-      const char* parent_span_id, const char* identifier,
-      const std::vector<Label>& exchange_labels, bool tracing_enabled,
-      bool add_csm_optional_labels, bool registered_method);
+      const char* parent_span_id, const std::optional<bool> parent_span_sampled,
+      const char* identifier, const std::vector<Label>& exchange_labels,
+      bool tracing_enabled, bool add_csm_optional_labels,
+      bool registered_method);
   ~PythonOpenCensusCallTracer() override;
 
   std::string TraceId() override {
