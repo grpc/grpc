@@ -893,8 +893,8 @@ StatusFlag ExtProcFilter::ExtProcCall::HandleServerMessageFromSidestream(
   // ext_proc server cannot change the number of messages on the stream.
   // However, once that restriction is removed, this check will no longer be
   // correct: even if the server sends a trailers-only response, the ext_proc
-  // server should still be allowed to insert its own headers and messages before
-  // sending status.
+  // server should still be allowed to insert its own headers and messages
+  // before sending status.
   if (is_trailers_only_) {
     CancelCallWithError(absl::InternalError(
         "Received response body response in a Trailers-Only call"));
