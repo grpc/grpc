@@ -17545,7 +17545,8 @@ targets:
   - absl/utility:utility
   - gpr
 - name: interop_client
-  build: test
+  build: plugin_test
+  plugin_option: gRPC_BUILD_GRPCPP_OTEL_PLUGIN
   run: false
   language: c++
   headers:
@@ -17577,7 +17578,8 @@ targets:
   - grpc++_test_config
   - grpc++_test_util
 - name: interop_server
-  build: test
+  build: plugin_test
+  plugin_option: gRPC_BUILD_GRPCPP_OTEL_PLUGIN
   run: false
   language: c++
   headers:

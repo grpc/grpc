@@ -23588,7 +23588,7 @@ target_link_libraries(interceptor_list_test
 
 
 endif()
-if(gRPC_BUILD_TESTS)
+if(gRPC_BUILD_TESTS AND gRPC_BUILD_GRPCPP_OTEL_PLUGIN)
 
 add_executable(interop_client
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.cc
@@ -23649,7 +23649,7 @@ target_link_libraries(interop_client
 
 
 endif()
-if(gRPC_BUILD_TESTS)
+if(gRPC_BUILD_TESTS AND gRPC_BUILD_GRPCPP_OTEL_PLUGIN)
 
 add_executable(interop_server
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.cc

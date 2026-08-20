@@ -1465,14 +1465,16 @@ _BUILD_EXTRA_METADATA = {
     },
     "test/cpp/interop:interop_client": {
         "language": "c++",
-        "build": "test",
+        "build": "plugin_test",
+        "plugin_option": "gRPC_BUILD_GRPCPP_OTEL_PLUGIN",
         "run": False,
         "_TYPE": "target",
         "_RENAME": "interop_client",
     },
     "test/cpp/interop:interop_server": {
         "language": "c++",
-        "build": "test",
+        "build": "plugin_test",
+        "plugin_option": "gRPC_BUILD_GRPCPP_OTEL_PLUGIN",
         "run": False,
         "_TYPE": "target",
         "_RENAME": "interop_server",
