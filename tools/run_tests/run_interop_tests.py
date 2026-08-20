@@ -1696,6 +1696,10 @@ try:
             # don't run the server, set server port to a placeholder value
             server_addresses[lang] = ("localhost", "${SERVER_PORT}")
 
+    if not args.manual_run and "java" in server_jobs:
+        # Because the gRPC Java server takes some time to come up
+        time.sleep(5)
+
     http2_server_job = None
     if args.http2_server_interop:
         # launch a HTTP2 server emulator that creates edge cases
