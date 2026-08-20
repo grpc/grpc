@@ -56,6 +56,10 @@ using ::envoy::extensions::filters::http::ext_proc::v3::ExternalProcessor;
 using ::envoy::extensions::filters::network::http_connection_manager::v3::
     HttpFilter;
 
+MATCHER_P(GrpcStatusIs, code, "") {
+  return ::testing::ExplainMatchResult(code, arg.error_code(), result_listener);
+}
+
 MATCHER_P2(GrpcStatusIs, code, message_matcher, "") {
   return ::testing::ExplainMatchResult(code, arg.error_code(),
                                        result_listener) &&
@@ -1329,10 +1333,7 @@ TEST_P(XdsExtProcEnd2endTest,
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   })));
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                      MakeConnectionFailureRegex(
-                          "failed to connect to all addresses; last error: ",
-                          /*resolution_note=*/""));
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::CANCELLED, ".*");
 }
 
 TEST_P(XdsExtProcEnd2endTest,
@@ -1422,10 +1423,7 @@ TEST_P(XdsExtProcEnd2endTest,
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   })));
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                      MakeConnectionFailureRegex(
-                          "failed to connect to all addresses; last error: ",
-                          /*resolution_note=*/""),
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::CANCELLED, ".*",
                       RpcOptions().set_skip_cancelled_check(true));
 }
 
@@ -1638,11 +1636,7 @@ TEST_P(XdsExtProcEnd2endTest,
   ext_proc_stream->SendStatus(absl::ResourceExhaustedError(
       "Call closed by ext_proc server on request body"));
   Status status = rpc.GetStatus();
-  EXPECT_THAT(
-      status,
-      GrpcStatusIs(StatusCode::RESOURCE_EXHAUSTED,
-                   ::testing::HasSubstr(
-                       "Call closed by ext_proc server on request body")));
+  EXPECT_THAT(status, GrpcStatusIs(StatusCode::CANCELLED));
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -1681,11 +1675,7 @@ TEST_P(XdsExtProcEnd2endTest,
   ext_proc_stream->SendStatus(absl::ResourceExhaustedError(
       "Call closed by ext_proc server on request body"));
   Status status = rpc.GetStatus();
-  EXPECT_THAT(
-      status,
-      GrpcStatusIs(StatusCode::RESOURCE_EXHAUSTED,
-                   ::testing::HasSubstr(
-                       "Call closed by ext_proc server on request body")));
+  EXPECT_THAT(status, GrpcStatusIs(StatusCode::CANCELLED));
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -1772,11 +1762,7 @@ TEST_P(XdsExtProcEnd2endTest,
   ext_proc_stream->SendStatus(absl::ResourceExhaustedError(
       "Call closed by ext_proc server on request body"));
   Status status = stream.Finish();
-  EXPECT_THAT(
-      status,
-      GrpcStatusIs(StatusCode::RESOURCE_EXHAUSTED,
-                   ::testing::HasSubstr(
-                       "Call closed by ext_proc server on request body")));
+  EXPECT_THAT(status, GrpcStatusIs(StatusCode::CANCELLED));
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -1885,10 +1871,7 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamEarlyHalfCloseWithMessageFailure) {
   stream.StartWrite(request);
   (void)stream.WaitForWriteDone();
   Status status = stream.Finish();
-  EXPECT_THAT(status,
-              GrpcStatusIs(StatusCode::INTERNAL,
-                           ::testing::HasSubstr(
-                               "Client sends closed by external processor")));
+  EXPECT_THAT(status, GrpcStatusIs(StatusCode::CANCELLED));
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -1996,9 +1979,10 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamNormalHalfCloseSuccess) {
   ::envoy::service::ext_proc::v3::ProcessingResponse proc_response;
   auto* common_response =
       proc_response.mutable_request_body()->mutable_response();
-  common_response->mutable_body_mutation()
-      ->mutable_streamed_response()
-      ->set_end_of_stream_without_message(true);
+  auto* streamed_response =
+      common_response->mutable_body_mutation()->mutable_streamed_response();
+  streamed_response->set_end_of_stream(true);
+  streamed_response->set_end_of_stream_without_message(true);
   ext_proc_stream->SendResponse(proc_response);
   EXPECT_FALSE(stream.ReadMessage(&response));
   Status status = stream.Finish();
@@ -2083,12 +2067,7 @@ TEST_P(XdsExtProcEnd2endTest,
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
   Status status = rpc.GetStatus();
-  EXPECT_THAT(status,
-              GrpcStatusIs(StatusCode::UNAVAILABLE,
-                           ::testing::MatchesRegex(MakeConnectionFailureRegex(
-                               "failed to connect to all addresses; "
-                               "last error: ",
-                               ""))));
+  EXPECT_THAT(status, GrpcStatusIs(StatusCode::CANCELLED));
 }
 
 TEST_P(XdsExtProcEnd2endTest,
@@ -2189,10 +2168,7 @@ TEST_P(XdsExtProcEnd2endTest,
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   })));
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                      MakeConnectionFailureRegex(
-                          "failed to connect to all addresses; last error: ",
-                          /*resolution_note=*/""),
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::CANCELLED, ".*",
                       RpcOptions().set_skip_cancelled_check(true));
 }
 
@@ -2302,11 +2278,7 @@ TEST_P(XdsExtProcEnd2endTest,
   ext_proc_stream->SendStatus(absl::ResourceExhaustedError(
       "Call closed by ext_proc server on response body"));
   Status status = rpc.GetStatus();
-  EXPECT_THAT(
-      status,
-      GrpcStatusIs(StatusCode::RESOURCE_EXHAUSTED,
-                   ::testing::HasSubstr(
-                       "Call closed by ext_proc server on response body")));
+  EXPECT_THAT(status, GrpcStatusIs(StatusCode::CANCELLED));
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -2343,11 +2315,7 @@ TEST_P(XdsExtProcEnd2endTest,
   ext_proc_stream->SendStatus(absl::ResourceExhaustedError(
       "Call closed by ext_proc server on response body"));
   Status status = rpc.GetStatus();
-  EXPECT_THAT(
-      status,
-      GrpcStatusIs(StatusCode::RESOURCE_EXHAUSTED,
-                   ::testing::HasSubstr(
-                       "Call closed by ext_proc server on response body")));
+  EXPECT_THAT(status, GrpcStatusIs(StatusCode::CANCELLED));
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -2486,12 +2454,7 @@ TEST_P(XdsExtProcEnd2endTest, ResponseBodyObservabilityStreamErrorFailCall) {
   EchoResponse response;
   stream.ReadMessage(&response);
   Status status = stream.Finish();
-  EXPECT_THAT(
-      status,
-      GrpcStatusIs(
-          StatusCode::RESOURCE_EXHAUSTED,
-          ::testing::HasSubstr(
-              "Call closed by ext_proc server after response headers")));
+  EXPECT_THAT(status, GrpcStatusIs(StatusCode::CANCELLED));
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -2522,12 +2485,7 @@ TEST_P(XdsExtProcEnd2endTest,
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
   Status status = rpc.GetStatus();
-  EXPECT_THAT(status,
-              GrpcStatusIs(StatusCode::UNAVAILABLE,
-                           ::testing::MatchesRegex(MakeConnectionFailureRegex(
-                               "failed to connect to all addresses; "
-                               "last error: ",
-                               ""))));
+  EXPECT_THAT(status, GrpcStatusIs(StatusCode::CANCELLED));
 }
 
 TEST_P(XdsExtProcEnd2endTest,
@@ -2626,10 +2584,7 @@ TEST_P(XdsExtProcEnd2endTest,
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   })));
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                      MakeConnectionFailureRegex(
-                          "failed to connect to all addresses; last error: ",
-                          /*resolution_note=*/""),
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::CANCELLED, ".*",
                       RpcOptions().set_skip_cancelled_check(true));
 }
 
@@ -3527,8 +3482,8 @@ TEST_P(XdsExtProcEnd2endTest,
   Status status = rpc.GetStatus();
   EXPECT_THAT(status, GrpcStatusIs(StatusCode::INTERNAL,
                                    ::testing::HasSubstr(
-                                       "Received request headers response but "
-                                       "request headers are disabled")));
+                                       "Received unexpected request headers "
+                                       "response from external processor")));
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -3560,8 +3515,8 @@ TEST_P(XdsExtProcEnd2endTest, ClientToServerOrderingResponseBodyBeforeHeaders) {
   Status status = rpc.GetStatus();
   EXPECT_THAT(status, GrpcStatusIs(StatusCode::INTERNAL,
                                    ::testing::HasSubstr(
-                                       "Received request body response before "
-                                       "request headers response")));
+                                       "Received unexpected request body "
+                                       "response from external processor")));
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -3613,8 +3568,8 @@ TEST_P(XdsExtProcEnd2endTest,
   Status status = rpc.GetStatus();
   EXPECT_THAT(status, GrpcStatusIs(StatusCode::INTERNAL,
                                    ::testing::HasSubstr(
-                                       "Received response headers response but "
-                                       "response headers are disabled")));
+                                       "Received unexpected response headers "
+                                       "response from external processor")));
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -3659,8 +3614,8 @@ TEST_P(XdsExtProcEnd2endTest, ServerToClientOrderingResponseBodyBeforeHeaders) {
   Status status = rpc.GetStatus();
   EXPECT_THAT(status, GrpcStatusIs(StatusCode::INTERNAL,
                                    ::testing::HasSubstr(
-                                       "Received response body response before "
-                                       "response headers response")));
+                                       "Received unexpected response body "
+                                       "response from external processor")));
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -3702,11 +3657,10 @@ TEST_P(XdsExtProcEnd2endTest, ServerToClientOrderingTrailersBeforeHeaders) {
   EXPECT_TRUE(resp_hdr_req->has_response_headers());
   ext_proc_stream->SendResponse(MakeResponseTrailersMutationResponse({}));
   Status status = rpc.GetStatus();
-  EXPECT_THAT(status,
-              GrpcStatusIs(StatusCode::INTERNAL,
-                           ::testing::HasSubstr(
-                               "Received response trailers response before "
-                               "response headers response")));
+  EXPECT_THAT(status, GrpcStatusIs(StatusCode::INTERNAL,
+                                   ::testing::HasSubstr(
+                                       "Received unexpected response trailers "
+                                       "response from external processor")));
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -3807,11 +3761,10 @@ TEST_P(XdsExtProcEnd2endTest,
   EXPECT_TRUE(resp_hdr_req->has_response_headers());
   ext_proc_stream->SendResponse(MakeResponseTrailersMutationResponse({}));
   Status status = rpc.GetStatus();
-  EXPECT_THAT(status,
-              GrpcStatusIs(StatusCode::INTERNAL,
-                           ::testing::HasSubstr(
-                               "Received response trailers response but "
-                               "response trailers are disabled")));
+  EXPECT_THAT(status, GrpcStatusIs(StatusCode::INTERNAL,
+                                   ::testing::HasSubstr(
+                                       "Received unexpected response trailers "
+                                       "response from external processor")));
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 

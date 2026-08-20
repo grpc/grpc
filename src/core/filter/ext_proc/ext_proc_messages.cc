@@ -150,6 +150,7 @@ absl::StatusOr<ExtProcResponse::BodyMutation> ParseExtProcBodyMutation(
       envoy_service_ext_proc_v3_StreamedBodyResponse_end_of_stream(
           streamed_response);
   bool end_of_stream_without_message =
+      end_of_stream &&
       envoy_service_ext_proc_v3_StreamedBodyResponse_end_of_stream_without_message(
           streamed_response);
   return ExtProcResponse::BodyMutation{
@@ -355,12 +356,12 @@ class UpbHeaderMapEncoder {
     }
     auto* value_msg =
         envoy_config_core_v3_HeaderMap_add_headers(header_map_, arena_);
-    envoy_config_core_v3_HeaderValue_set_key(
-        value_msg, CopyStdStringToUpbString(key, arena_));
+    envoy_config_core_v3_HeaderValue_set_key(value_msg,
+                                             StdStringToUpbString(key));
     // Per gRFC A102, when writing, we always set the raw_value field and never
     // the value field.
-    envoy_config_core_v3_HeaderValue_set_raw_value(
-        value_msg, CopyStdStringToUpbString(value, arena_));
+    envoy_config_core_v3_HeaderValue_set_raw_value(value_msg,
+                                                   StdStringToUpbString(value));
   }
 
   envoy_config_core_v3_HeaderMap* header_map_;
@@ -409,12 +410,12 @@ void SetExtProcRequestBody(
   envoy_service_ext_proc_v3_HttpBody* body =
       envoy_service_ext_proc_v3_HttpBody_new(arena);
   envoy_service_ext_proc_v3_HttpBody_set_body(body, buf);
-  if (end_of_stream || end_of_stream_without_message) {
+  if (end_of_stream) {
     envoy_service_ext_proc_v3_HttpBody_set_end_of_stream(body, true);
-  }
-  if (end_of_stream_without_message) {
-    envoy_service_ext_proc_v3_HttpBody_set_end_of_stream_without_message(body,
-                                                                         true);
+    if (end_of_stream_without_message) {
+      envoy_service_ext_proc_v3_HttpBody_set_end_of_stream_without_message(
+          body, true);
+    }
   }
   envoy_service_ext_proc_v3_ProcessingRequest_set_request_body(request, body);
 }
@@ -443,8 +444,7 @@ void SetExtProcAttributes(
   if (attributes == nullptr) return;
   constexpr absl::string_view kAttributeKey = "envoy.filters.http.ext_proc";
   envoy_service_ext_proc_v3_ProcessingRequest_attributes_set(
-      request, CopyStdStringToUpbString(kAttributeKey, arena), attributes,
-      arena);
+      request, StdStringToUpbString(kAttributeKey), attributes, arena);
 }
 
 void SetExtProcProtocolConfig(
@@ -661,9 +661,8 @@ absl::StatusOr<std::string> CreateExtProcClientBodyRequest(
   return CreateRequestAndSerialize(
       arena, attributes, observability_mode, processing_mode,
       [&](envoy_service_ext_proc_v3_ProcessingRequest* request) {
-        SetExtProcRequestBody(arena, CopyStdStringToUpbString(body, arena),
-                              end_of_stream, end_of_stream_without_message,
-                              request);
+        SetExtProcRequestBody(arena, StdStringToUpbString(body), end_of_stream,
+                              end_of_stream_without_message, request);
       });
 }
 
@@ -674,8 +673,7 @@ absl::StatusOr<std::string> CreateExtProcServerBodyRequest(
   return CreateRequestAndSerialize(
       arena, attributes, observability_mode, processing_mode,
       [&](envoy_service_ext_proc_v3_ProcessingRequest* request) {
-        SetExtProcResponseBody(arena, CopyStdStringToUpbString(body, arena),
-                               request);
+        SetExtProcResponseBody(arena, StdStringToUpbString(body), request);
       });
 }
 

@@ -5806,7 +5806,6 @@ grpc_cc_library(
         "try_join",
         "try_seq",
         "unique_type_name",
-        "wait_set",
         "xds_common_types",
         "xds_server_grpc",
         "//:channel_arg_names",
