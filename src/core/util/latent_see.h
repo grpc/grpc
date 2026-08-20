@@ -23,6 +23,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <deque>
 #include <iterator>
 #include <memory>
 #include <string>
@@ -31,8 +32,10 @@
 #include "src/core/channelz/property_list.h"
 #include "src/core/util/alloc.h"
 #include "src/core/util/function_signature.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/mpscq.h"
 #include "src/core/util/notification.h"
+#include "src/core/util/sync.h"
 #include "src/core/util/thd.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/strings/string_view.h"
@@ -235,7 +238,8 @@ class Sink {
   friend void Collect(Notification*, absl::Duration, size_t, Output*);
 
   void Gather();
-  void Record(std::unique_ptr<Bin> bin);
+  // Records a bin into the event dump. Caller must hold mu_.
+  void RecordLocked(std::unique_ptr<Bin> bin) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   void Start(size_t max_bins);
   std::unique_ptr<EventDump> Stop();
@@ -243,8 +247,10 @@ class Sink {
   MultiProducerSingleConsumerQueue appending_;
   Thread gatherer_;
   Mutex mu_;
+  CondVar cv_ ABSL_GUARDED_BY(mu_);
   std::unique_ptr<EventDump> events_ ABSL_GUARDED_BY(mu_);
   size_t max_bins_ ABSL_GUARDED_BY(mu_);
+  bool draining_ ABSL_GUARDED_BY(mu_) = false;
 };
 
 class Appender {
@@ -261,8 +267,8 @@ class Appender {
   }
   void Append(const Metadata* metadata, int64_t timestamp_begin,
               int64_t timestamp_end) {
-    DCHECK(Enabled());
-    DCHECK_NE(metadata, nullptr);
+    GRPC_DCHECK(Enabled());
+    GRPC_DCHECK_NE(metadata, nullptr);
     Bin::AppendResult result;
     do {
       if (GPR_UNLIKELY(bin_ == nullptr)) bin_ = std::make_unique<Bin>();
@@ -281,8 +287,8 @@ class Appender {
   template <typename X>
   void Append(const Metadata* metadata, int64_t timestamp_begin,
               int64_t timestamp_end, const X& x) {
-    DCHECK(Enabled());
-    DCHECK_NE(metadata, nullptr);
+    GRPC_DCHECK(Enabled());
+    GRPC_DCHECK_NE(metadata, nullptr);
     Bin::AppendResult result;
     do {
       if (GPR_UNLIKELY(bin_ == nullptr)) bin_ = std::make_unique<Bin>();
@@ -347,7 +353,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static inline void Mark(
     const Metadata* metadata) {
   Appender appender;
   if (GPR_LIKELY(!appender.Enabled())) return;
-  const auto ts = absl::GetCurrentTimeNanos();
+  const int64_t ts = absl::GetCurrentTimeNanos();
   appender.Append(metadata, ts, ts);
 }
 
@@ -356,7 +362,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static inline void MarkExtraEvent(
     const Metadata* metadata, const X& x) {
   Appender appender;
   if (GPR_LIKELY(!appender.Enabled())) return;
-  const auto ts = absl::GetCurrentTimeNanos();
+  const int64_t ts = absl::GetCurrentTimeNanos();
   appender.Append(metadata, ts, ts, x);
 }
 
@@ -410,7 +416,7 @@ class Flow {
     AppendBegin(appender);
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void Begin() {
-    DCHECK(metadata_ != nullptr);
+    GRPC_DCHECK_NE(metadata_, nullptr);
     Begin(metadata_);
   }
 
@@ -420,7 +426,7 @@ class Flow {
     appender.Append(metadata_, -id_, absl::GetCurrentTimeNanos());
   }
   void AppendEnd(Appender& appender) {
-    DCHECK_NE(id_, 0);
+    GRPC_DCHECK_NE(id_, 0);
     appender.Append(metadata_, -id_, -absl::GetCurrentTimeNanos());
     id_ = 0;
   }
