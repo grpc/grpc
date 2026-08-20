@@ -13,10 +13,26 @@
 # limitations under the License.
 """Abstract base classes for server-side classes."""
 
+from __future__ import annotations
+
 import abc
-from typing import Generic, Iterable, Mapping, NoReturn, Optional, Sequence
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Generic,
+    Iterable,
+    Mapping,
+    NoReturn,
+    Optional,
+    Sequence,
+)
 
 import grpc
+
+if TYPE_CHECKING:
+    _GenericRpcHandlerType = grpc.GenericRpcHandler[Any, Any]
+else:
+    _GenericRpcHandlerType = grpc.GenericRpcHandler
 
 from ._typing import DoneCallbackType
 from ._typing import MetadataType
@@ -29,7 +45,7 @@ class Server(abc.ABC):
 
     @abc.abstractmethod
     def add_generic_rpc_handlers(
-        self, generic_rpc_handlers: Sequence[grpc.GenericRpcHandler]
+        self, generic_rpc_handlers: Sequence[_GenericRpcHandlerType]
     ) -> None:
         """Registers GenericRpcHandlers with this Server.
 
