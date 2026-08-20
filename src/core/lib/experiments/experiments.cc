@@ -57,14 +57,6 @@ const char* const additional_constraints_custom_frame_check = "{}";
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
-const char* const description_event_engine_dns =
-    "If set, use EventEngine DNSResolver for client channel resolution";
-const char* const additional_constraints_event_engine_dns = "{}";
-const char* const description_event_engine_dns_non_client_channel =
-    "If set, use EventEngine DNSResolver in other places besides client "
-    "channel.";
-const char* const additional_constraints_event_engine_dns_non_client_channel =
-    "{}";
 const char* const description_event_engine_fork =
     "Enables event engine fork handling, including onfork events and file "
     "descriptor generations";
@@ -85,9 +77,6 @@ const char* const additional_constraints_event_engine_for_all_other_endpoints =
     "{}";
 const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineDns),
-    static_cast<uint8_t>(
-        grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_fail_recv_metadata_on_deadline_exceeded =
     "Fail recv initial metadata when the deadline is exceeded.";
@@ -312,12 +301,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_custom_frame_check, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
-    {"event_engine_dns", description_event_engine_dns,
-     additional_constraints_event_engine_dns, nullptr, 0, true, false},
-    {"event_engine_dns_non_client_channel",
-     description_event_engine_dns_non_client_channel,
-     additional_constraints_event_engine_dns_non_client_channel, nullptr, 0,
-     true, false},
     {"event_engine_fork", description_event_engine_fork,
      additional_constraints_event_engine_fork, nullptr, 0, true, false},
     {"event_engine_listener", description_event_engine_listener,
@@ -328,7 +311,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"event_engine_for_all_other_endpoints",
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
-     required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
+     required_experiments_event_engine_for_all_other_endpoints, 2, true, false},
     {"fail_recv_metadata_on_deadline_exceeded",
      description_fail_recv_metadata_on_deadline_exceeded,
      additional_constraints_fail_recv_metadata_on_deadline_exceeded, nullptr, 0,
@@ -518,14 +501,6 @@ const char* const additional_constraints_custom_frame_check = "{}";
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
-const char* const description_event_engine_dns =
-    "If set, use EventEngine DNSResolver for client channel resolution";
-const char* const additional_constraints_event_engine_dns = "{}";
-const char* const description_event_engine_dns_non_client_channel =
-    "If set, use EventEngine DNSResolver in other places besides client "
-    "channel.";
-const char* const additional_constraints_event_engine_dns_non_client_channel =
-    "{}";
 const char* const description_event_engine_fork =
     "Enables event engine fork handling, including onfork events and file "
     "descriptor generations";
@@ -546,9 +521,6 @@ const char* const additional_constraints_event_engine_for_all_other_endpoints =
     "{}";
 const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineDns),
-    static_cast<uint8_t>(
-        grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_fail_recv_metadata_on_deadline_exceeded =
     "Fail recv initial metadata when the deadline is exceeded.";
@@ -773,12 +745,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_custom_frame_check, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
-    {"event_engine_dns", description_event_engine_dns,
-     additional_constraints_event_engine_dns, nullptr, 0, true, false},
-    {"event_engine_dns_non_client_channel",
-     description_event_engine_dns_non_client_channel,
-     additional_constraints_event_engine_dns_non_client_channel, nullptr, 0,
-     true, false},
     {"event_engine_fork", description_event_engine_fork,
      additional_constraints_event_engine_fork, nullptr, 0, true, false},
     {"event_engine_listener", description_event_engine_listener,
@@ -789,7 +755,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"event_engine_for_all_other_endpoints",
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
-     required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
+     required_experiments_event_engine_for_all_other_endpoints, 2, true, false},
     {"fail_recv_metadata_on_deadline_exceeded",
      description_fail_recv_metadata_on_deadline_exceeded,
      additional_constraints_fail_recv_metadata_on_deadline_exceeded, nullptr, 0,
@@ -979,14 +945,6 @@ const char* const additional_constraints_custom_frame_check = "{}";
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
-const char* const description_event_engine_dns =
-    "If set, use EventEngine DNSResolver for client channel resolution";
-const char* const additional_constraints_event_engine_dns = "{}";
-const char* const description_event_engine_dns_non_client_channel =
-    "If set, use EventEngine DNSResolver in other places besides client "
-    "channel.";
-const char* const additional_constraints_event_engine_dns_non_client_channel =
-    "{}";
 const char* const description_event_engine_fork =
     "Enables event engine fork handling, including onfork events and file "
     "descriptor generations";
@@ -1007,9 +965,6 @@ const char* const additional_constraints_event_engine_for_all_other_endpoints =
     "{}";
 const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineDns),
-    static_cast<uint8_t>(
-        grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_fail_recv_metadata_on_deadline_exceeded =
     "Fail recv initial metadata when the deadline is exceeded.";
@@ -1234,12 +1189,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_custom_frame_check, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
-    {"event_engine_dns", description_event_engine_dns,
-     additional_constraints_event_engine_dns, nullptr, 0, true, false},
-    {"event_engine_dns_non_client_channel",
-     description_event_engine_dns_non_client_channel,
-     additional_constraints_event_engine_dns_non_client_channel, nullptr, 0,
-     true, false},
     {"event_engine_fork", description_event_engine_fork,
      additional_constraints_event_engine_fork, nullptr, 0, true, false},
     {"event_engine_listener", description_event_engine_listener,
@@ -1250,7 +1199,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"event_engine_for_all_other_endpoints",
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
-     required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
+     required_experiments_event_engine_for_all_other_endpoints, 2, true, false},
     {"fail_recv_metadata_on_deadline_exceeded",
      description_fail_recv_metadata_on_deadline_exceeded,
      additional_constraints_fail_recv_metadata_on_deadline_exceeded, nullptr, 0,

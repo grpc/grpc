@@ -1,6 +1,4 @@
-//
-//
-// Copyright 2016 gRPC authors.
+// Copyright 2023 The gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,23 +11,22 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-//
+
+#ifndef GRPC_SRC_CORE_RESOLVER_DNS_SERVICE_CONFIG_HELPER_H
+#define GRPC_SRC_CORE_RESOLVER_DNS_SERVICE_CONFIG_HELPER_H
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
+#include <string>
 
-#if GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
-#include <grpc/support/string_util.h>
+namespace grpc_core {
 
-#include "src/core/lib/address_utils/parse_address.h"
-#include "src/core/lib/iomgr/socket_windows.h"
-#include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
-#include "src/core/resolver/endpoint_addresses.h"
-#include "src/core/util/string.h"
+absl::StatusOr<std::string> ChooseServiceConfig(
+    absl::string_view service_config_json);
 
-bool grpc_ares_query_ipv6() { return grpc_ipv6_loopback_available(); }
+}  // namespace grpc_core
 
-#endif  // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
+#endif  // GRPC_SRC_CORE_RESOLVER_DNS_SERVICE_CONFIG_HELPER_H
