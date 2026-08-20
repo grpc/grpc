@@ -106,6 +106,7 @@
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/transport/auth_context.h"
+#include "src/core/transport/message_size_service_config.h"
 #include "src/core/util/bitset.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
@@ -816,6 +817,7 @@ grpc_chttp2_transport::grpc_chttp2_transport(
           Ref(), &init_keepalive_ping_locked),
       absl::OkStatus());
 
+  // TODO(tjagtap) : [PH2][P0] : Do this for PH2.
   if (flow_control.bdp_probe()) {
     bdp_ping_blocked = true;
     grpc_chttp2_act_on_flowctl_action(flow_control.PeriodicUpdate(), this,
@@ -859,6 +861,9 @@ grpc_chttp2_transport::grpc_chttp2_transport(
       epte->SetSocketNode(channelz_socket);
     }
   }
+
+  max_recv_message_length =
+      grpc_core::GetMaxRecvSizeFromChannelArgs(channel_args);
 }
 
 static void destroy_transport_locked(void* tp, grpc_error_handle /*error*/) {
@@ -879,6 +884,10 @@ static void close_transport_locked(grpc_chttp2_transport* t,
                                    grpc_error_handle error) {
   end_all_the_calls(t, error);
   cancel_pings(t, error);
+  if (t->transport_framing_endpoint_extension != nullptr) {
+    t->transport_framing_endpoint_extension->SetSendFrameCallback(nullptr);
+    t->transport_framing_endpoint_extension = nullptr;
+  }
   if (t->closed_with_error.ok()) {
     if (!grpc_error_has_clear_grpc_status(error)) {
       error =
@@ -1507,7 +1516,8 @@ static grpc_closure* add_closure_barrier(grpc_closure* closure) {
   return closure;
 }
 
-static void null_then_sched_closure(grpc_closure** closure) {
+static void null_then_sched_closure_with_error(grpc_closure** closure,
+                                               grpc_error_handle error) {
   grpc_closure* c = *closure;
   *closure = nullptr;
   // null_then_schedule_closure might be run during a start_batch which might
@@ -1516,7 +1526,11 @@ static void null_then_sched_closure(grpc_closure** closure) {
   // completion, have the application see it, and make a new operation on the
   // call which recycles the batch BEFORE the call to start_batch completes,
   // forcing a race.
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, c, absl::OkStatus());
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, c, error);
+}
+
+static void null_then_sched_closure(grpc_closure** closure) {
+  null_then_sched_closure_with_error(closure, absl::OkStatus());
 }
 
 void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
@@ -2343,6 +2357,8 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_chttp2_transport* t,
       t->registered_method_matcher_cb(t->accept_stream_cb_user_data,
                                       s->recv_initial_metadata);
     }
+    s->max_recv_message_length =
+        GetMaxRecvSizeFromCallContext(s->arena, t->max_recv_message_length);
     null_then_sched_closure(&s->recv_initial_metadata_ready);
   }
 }
@@ -2415,7 +2431,36 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
         *s->call_failed_before_recv_message =
             (s->published_metadata[1] != GRPC_METADATA_PUBLISHED_AT_CLOSE);
       }
-      null_then_sched_closure(&s->recv_message_ready);
+      if (s->seen_error && s->message_size_limit_exceeded) {
+        null_then_sched_closure_with_error(&s->recv_message_ready, error);
+      } else {
+        null_then_sched_closure(&s->recv_message_ready);
+      }
+    } else if (s->seen_error && s->message_size_limit_exceeded) {
+      null_then_sched_closure_with_error(&s->recv_message_ready, error);
+    }
+
+    if (grpc_core::IsMessageSizeRefactoringEnabled() && s->seen_error &&
+        s->message_size_limit_exceeded) {
+      s->message_size_limit_exceeded = false;
+      // Explicitly cancel the stream to fail the RPC immediately.
+      // We delay the cancellation until the recv_message_ready closure is
+      // executed to prevent re-entrancy issues. When the HTTP/2 frame deframer
+      // in `grpc_deframe_unprocessed_incoming_frames`
+      // returns a size violation error, invoking `grpc_chttp2_cancel_stream`
+      // immediately triggers `grpc_chttp2_mark_stream_closed`. This in turn
+      // synchronously re-enters `grpc_chttp2_maybe_complete_recv_message` while
+      // the original deframing loop is still active on the call stack.
+      //
+      // Because the re-entrant invocation observes that the incoming frame
+      // storage has been cleared but `s->recv_message_ready` is still non-null,
+      // it preemptively schedules the closure as a standard/non-error stream
+      // termination (i.e., via `null_then_sched_closure(...,
+      // absl::OkStatus())`). By the time control returns to the initial (outer)
+      // deframing loop to execute `null_then_sched_closure_with_error`, the
+      // closure pointer is already null, causing the original error context to
+      // be discarded.
+      grpc_chttp2_cancel_stream(t, s, error, true, nullptr);
     }
   }();
 
