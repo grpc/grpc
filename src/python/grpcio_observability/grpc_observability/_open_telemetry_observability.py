@@ -570,14 +570,24 @@ class _OpenTelemetryExporterDelegator(_observability.Exporter):
         # Records stats data to MeterProvider.
         for data in stats_data:
             for plugin in self._plugins:
-                plugin.maybe_record_stats_data(data)
+                try:
+                    plugin.maybe_record_stats_data(data)
+                except Exception:  # pylint: disable=broad-except
+                    _LOGGER.exception(
+                        f"Failed to record stats data {data.name}"
+                    )
 
     def export_tracing_data(
         self, tracing_data: List[_observability.TracingData]
     ) -> None:
         for data in tracing_data:
             for plugin in self._plugins:
-                plugin.maybe_record_tracing_data(data)
+                try:
+                    plugin.maybe_record_tracing_data(data)
+                except Exception:  # pylint: disable=broad-except
+                    _LOGGER.exception(
+                        f"Failed to record tracing data for span {data.name}"
+                    )
 
 
 # pylint: disable=no-self-use
