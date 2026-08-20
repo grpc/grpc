@@ -325,7 +325,6 @@ class ChannelzServicerTest(unittest.TestCase):
             if (
                 resp.data.calls_started
                 == resp.data.calls_succeeded + resp.data.calls_failed
-
             ):
                 break
         self.assertEqual(resp.data.calls_started, k_success + k_failed)

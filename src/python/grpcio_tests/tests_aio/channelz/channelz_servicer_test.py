@@ -295,8 +295,8 @@ class ChannelzServicerTest(AioTestBase):
         while True:
             resp = await self._get_server_by_ref_id(pairs[0].server_ref_id)
             if (
-                resp.data.calls_started ==
-                resp.data.calls_succeeded + resp.data.calls_failed
+                resp.data.calls_started
+                == resp.data.calls_succeeded + resp.data.calls_failed
             ):
                 break
         resp = await self._get_server_by_ref_id(pairs[0].server_ref_id)
@@ -429,8 +429,8 @@ class ChannelzServicerTest(AioTestBase):
         while True:
             resp = await self._get_server_by_ref_id(pairs[0].server_ref_id)
             if (
-                resp.data.calls_started ==
-                resp.data.calls_succeeded + resp.data.calls_failed
+                resp.data.calls_started
+                == resp.data.calls_succeeded + resp.data.calls_failed
             ):
                 break
         self.assertEqual(resp.data.calls_started, 2)
