@@ -132,11 +132,6 @@ GRPC_PYTHON_PROTOC_LIB_DEPS = os.path.join(
     "protoc_lib_deps.py",
 )
 
-# the script to run for getting dependencies
-BAZEL_DEPS = os.path.join(
-    GRPC_ROOT, "tools", "distrib", "python", "bazel_deps.sh"
-)
-
 # the bazel target to scrape to get list of sources for the build
 BAZEL_DEPS_PROTOC_LIB_QUERY = "@com_google_protobuf//:protoc_lib"
 

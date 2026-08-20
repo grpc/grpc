@@ -163,7 +163,7 @@ def _bazel_query(query):
     """Runs 'bazel query' to collect source file info."""
     effective_query = _source_file_query(query)
     print('Running "bazel query %s"' % effective_query)
-    if os.name == "nt":
+    if sys.platform == "win32":
         # On Windows, invoking a .sh wrapper through bash can fail when bash is
         # provided by WSL and receives a Windows path. Use bazel directly.
         output = subprocess.check_output(
