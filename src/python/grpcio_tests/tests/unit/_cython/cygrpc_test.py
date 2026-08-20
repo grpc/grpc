@@ -13,6 +13,8 @@
 # limitations under the License.
 
 import platform
+import sys
+import sysconfig
 import threading
 import time
 import unittest
@@ -43,6 +45,13 @@ def _metadata_plugin(context, callback):
 
 
 class TypeSmokeTest(unittest.TestCase):
+    @unittest.skipUnless(
+        sysconfig.get_config_var("Py_GIL_DISABLED") == 1,
+        "requires a free-threaded Python build",
+    )
+    def testFreeThreadedImportDoesNotEnableGil(self):
+        self.assertFalse(sys._is_gil_enabled())
+
     def testCompletionQueueUpDown(self):
         completion_queue = cygrpc.CompletionQueue()
         del completion_queue
