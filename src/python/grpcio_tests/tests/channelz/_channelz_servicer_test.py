@@ -80,10 +80,23 @@ class _ChannelServerPair:
         self.channel = grpc.insecure_channel(
             "localhost:%d" % port, _ENABLE_CHANNELZ
         )
+        self.server_ref_id = None
+
+    def bind_channelz(self, channelz_stub):
+        resp = channelz_stub.GetServers(
+            channelz_pb2.GetServersRequest(start_server_id=0)
+        )
+        self.server_ref_id = resp.server[-1].ref.server_id
 
 
-def _generate_channel_server_pairs(n):
-    return [_ChannelServerPair() for i in range(n)]
+def _generate_channel_server_pairs(n, channelz_stub=None):
+    pairs = []
+    for _ in range(n):
+        pair = _ChannelServerPair()
+        if channelz_stub is not None:
+            pair.bind_channelz(channelz_stub)
+        pairs.append(pair)
+    return pairs
 
 
 def _close_channel_server_pairs(pairs):
@@ -160,6 +173,15 @@ class ChannelzServicerTest(unittest.TestCase):
         self._server.stop(None)
         self._channel.close()
         _close_channel_server_pairs(self._pairs)
+
+    def _get_server_by_ref_id(self, ref_id):
+        """Server id may not be consecutive"""
+        resp = self._channelz_stub.GetServers(
+            channelz_pb2.GetServersRequest(start_server_id=ref_id)
+        )
+        self.assertEqual(len(resp.server), 1)
+        self.assertEqual(ref_id, resp.server[0].ref.server_id)
+        return resp.server[0]
 
     def test_get_top_channels_basic(self):
         self._pairs = _generate_channel_server_pairs(1)
@@ -265,16 +287,19 @@ class ChannelzServicerTest(unittest.TestCase):
             )
 
     def test_server_basic(self):
-        self._pairs = _generate_channel_server_pairs(1)
+        self._pairs = _generate_channel_server_pairs(1, self._channelz_stub)
+        server_id = self._pairs[0].server_ref_id
         resp = self._channelz_stub.GetServers(
-            channelz_pb2.GetServersRequest(start_server_id=0)
+            channelz_pb2.GetServersRequest(start_server_id=server_id)
         )
         self.assertEqual(len(resp.server), 1)
+        self.assertEqual(resp.server[0].ref.server_id, server_id)
 
     def test_get_one_server(self):
-        self._pairs = _generate_channel_server_pairs(1)
+        self._pairs = _generate_channel_server_pairs(1, self._channelz_stub)
+        server_id = self._pairs[0].server_ref_id
         gss_resp = self._channelz_stub.GetServers(
-            channelz_pb2.GetServersRequest(start_server_id=0)
+            channelz_pb2.GetServersRequest(start_server_id=server_id)
         )
         self.assertEqual(len(gss_resp.server), 1)
         gs_resp = self._channelz_stub.GetServer(
@@ -287,7 +312,7 @@ class ChannelzServicerTest(unittest.TestCase):
         )
 
     def test_server_call(self):
-        self._pairs = _generate_channel_server_pairs(1)
+        self._pairs = _generate_channel_server_pairs(1, self._channelz_stub)
         k_success = 23
         k_failed = 29
         for i in range(k_success):
@@ -296,22 +321,16 @@ class ChannelzServicerTest(unittest.TestCase):
             self._send_failed_unary_unary(0)
 
         while True:
-            resp = self._channelz_stub.GetServers(
-                channelz_pb2.GetServersRequest(start_server_id=0)
-            )
+            resp = self._get_server_by_ref_id(self._pairs[0].server_ref_id)
             if (
-                resp.server[0].calls_started
-                == resp.server[0].data.calls_succeeded
-                + resp.server[0].data.calls_failed
+                resp.data.calls_started
+                == resp.data.calls_succeeded + resp.data.calls_failed
 
             ):
                 break
-        self.assertEqual(len(resp.server), 1)
-        self.assertEqual(
-            resp.server[0].data.calls_started, k_success + k_failed
-        )
-        self.assertEqual(resp.server[0].data.calls_succeeded, k_success)
-        self.assertEqual(resp.server[0].data.calls_failed, k_failed)
+        self.assertEqual(resp.data.calls_started, k_success + k_failed)
+        self.assertEqual(resp.data.calls_succeeded, k_success)
+        self.assertEqual(resp.data.calls_failed, k_failed)
 
     def test_many_subchannels_and_sockets(self):
         k_channels = 4
@@ -439,28 +458,24 @@ class ChannelzServicerTest(unittest.TestCase):
         )
 
     def test_server_sockets(self):
-        self._pairs = _generate_channel_server_pairs(1)
+        self._pairs = _generate_channel_server_pairs(1, self._channelz_stub)
         self._send_successful_unary_unary(0)
         self._send_failed_unary_unary(0)
 
         while True:
-            gs_resp = self._channelz_stub.GetServers(
-                channelz_pb2.GetServersRequest(start_server_id=0)
-            )
+            gs_resp = self._get_server_by_ref_id(self._pairs[0].server_ref_id)
             if (
-                gs_resp.server[0].data.calls_started
-                == gs_resp.server[0].data.calls_succeeded
-                + gs_resp.server[0].data.calls_failed
+                gs_resp.data.calls_started
+                == gs_resp.data.calls_succeeded + gs_resp.data.calls_failed
             ):
                 break
-        self.assertEqual(len(gs_resp.server), 1)
-        self.assertEqual(gs_resp.server[0].data.calls_started, 2)
-        self.assertEqual(gs_resp.server[0].data.calls_succeeded, 1)
-        self.assertEqual(gs_resp.server[0].data.calls_failed, 1)
+        self.assertEqual(gs_resp.data.calls_started, 2)
+        self.assertEqual(gs_resp.data.calls_succeeded, 1)
+        self.assertEqual(gs_resp.data.calls_failed, 1)
 
         gss_resp = self._channelz_stub.GetServerSockets(
             channelz_pb2.GetServerSocketsRequest(
-                server_id=gs_resp.server[0].ref.server_id, start_socket_id=0
+                server_id=gs_resp.ref.server_id, start_socket_id=0
             )
         )
 
@@ -505,17 +520,13 @@ class ChannelzServicerTest(unittest.TestCase):
         )
 
     def test_server_listen_sockets(self):
-        self._pairs = _generate_channel_server_pairs(1)
-
-        gss_resp = self._channelz_stub.GetServers(
-            channelz_pb2.GetServersRequest(start_server_id=0)
-        )
-        self.assertEqual(len(gss_resp.server), 1)
-        self.assertEqual(len(gss_resp.server[0].listen_socket), 1)
+        self._pairs = _generate_channel_server_pairs(1, self._channelz_stub)
+        resp = self._get_server_by_ref_id(self._pairs[0].server_ref_id)
+        self.assertEqual(len(resp.listen_socket), 1)
 
         gs_resp: channelz_pb2.GetSocketResponse = self._channelz_stub.GetSocket(
             channelz_pb2.GetSocketRequest(
-                socket_id=gss_resp.server[0].listen_socket[0].socket_id
+                socket_id=resp.listen_socket[0].socket_id
             )
         )
 

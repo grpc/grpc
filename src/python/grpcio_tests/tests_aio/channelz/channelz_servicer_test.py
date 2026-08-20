@@ -150,6 +150,7 @@ class ChannelzServicerTest(AioTestBase):
         resp = await self._channelz_stub.GetServers(
             channelz_pb2.GetServersRequest(start_server_id=ref_id)
         )
+        self.assertEqual(len(resp.server), 1)
         self.assertEqual(ref_id, resp.server[0].ref.server_id)
         return resp.server[0]
 
@@ -292,6 +293,7 @@ class ChannelzServicerTest(AioTestBase):
             await self._send_failed_unary_unary(pairs[0])
 
         while True:
+            resp = await self._get_server_by_ref_id(pairs[0].server_ref_id)
             if (
                 resp.data.calls_started ==
                 resp.data.calls_succeeded + resp.data.calls_failed
