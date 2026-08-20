@@ -20,6 +20,10 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 #include <openssl/bio.h>
+#include <openssl/bn.h>
+#include <openssl/crypto.h>
+#include <openssl/ecdsa.h>
+#include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
 
