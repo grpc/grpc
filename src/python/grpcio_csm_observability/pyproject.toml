@@ -46,3 +46,6 @@ find = {}
 
 [tool.setuptools.package-dir]
 "" = "."
+
+[tool.setuptools.package-data]
+"grpc_csm_observability" = ["py.typed"]
