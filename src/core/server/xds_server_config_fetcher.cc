@@ -344,8 +344,6 @@ class XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::
       ABSL_GUARDED_BY(&FetcherState::work_serializer);
 };
 
-namespace {
-
 using FilterInstance =
     std::pair<const XdsHttpFilterFactory*, RefCountedPtr<const FilterConfig>>;
 
@@ -369,8 +367,6 @@ class FilterListBuilder final
 
   RefCountedPtr<FilterList> filters_;
 };
-
-}  // namespace
 
 // An implementation of ServerConfigSelector that stores parsed xDS filter
 // configs for each route, constructs filter chains for each, and
@@ -528,6 +524,25 @@ XdsServerConfigFetcher::ListenerWatcher::ListenerWatcher(
       << listening_address_;
 }
 
+// Returns true if the listener address matches the address that the
+// server is actually listening on.
+bool ListenerAddressMatches(absl::string_view listener_address,
+                            absl::string_view server_address) {
+  if (listener_address == server_address) return true;
+  absl::string_view listener_host;
+  absl::string_view listener_port;
+  if (!SplitHostPort(listener_address, &listener_host, &listener_port)) {
+    return false;
+  }
+  absl::string_view server_host;
+  absl::string_view server_port;
+  if (!SplitHostPort(server_address, &server_host, &server_port)) {
+    return false;
+  }
+  if (listener_host != server_host) return false;
+  return listener_port == "0" || listener_port == server_port;
+}
+
 void XdsServerConfigFetcher::ListenerWatcher::OnResourceChanged(
     absl::StatusOr<std::shared_ptr<const XdsListenerResource>> listener,
     RefCountedPtr<ReadDelayHandle> read_delay_handle) {
@@ -555,7 +570,8 @@ void XdsServerConfigFetcher::ListenerWatcher::OnResourceChanged(
                                " is not a TCP listener")));
               return;
             }
-            if (tcp_listener->address != self->listening_address_) {
+            if (!ListenerAddressMatches(tcp_listener->address,
+                                        self->listening_address_)) {
               self->OnFatalError(absl::FailedPreconditionError(
                   absl::StrCat("LDS resource ", self->ResourceName(),
                                " address does not match listening address")));
