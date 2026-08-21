@@ -88,7 +88,8 @@ def _resolve_additional_metrics(
         metric.name for metric in _open_telemetry_measures.base_metrics()
     }
     additional_metrics = []
-    for name in additional_metric_names:
+    # Deduplicate while preserving order, so a repeated name is resolved once.
+    for name in dict.fromkeys(additional_metric_names):
         if name in optional_metrics:
             additional_metrics.append(optional_metrics[name])
         elif name not in default_metric_names:

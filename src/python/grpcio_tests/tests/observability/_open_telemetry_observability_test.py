@@ -566,6 +566,20 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
                 additional_metrics=["grpc.client.call.no_such_metric"],
             )
 
+    def testDuplicateAdditionalMetricsAreDeduplicated(self):
+        retries_metric = _open_telemetry_measures.CLIENT_CALL_RETRIES
+        plugin = grpc_observability.OpenTelemetryPlugin(
+            meter_provider=self._provider,
+            additional_metrics=[retries_metric.name, retries_metric.name],
+        )
+        # pylint: disable=protected-access
+        metric_to_recorder = plugin._plugins[0]._metric_to_recorder
+        self.assertEqual(
+            len(metric_to_recorder),
+            len(_open_telemetry_measures.base_metrics()) + 1,
+        )
+        self.assertIn(retries_metric.cyname, metric_to_recorder)
+
     def testEnablingDefaultMetricIsNoOp(self):
         default_metric = _open_telemetry_measures.CLIENT_ATTEMPT_STARTED.name
         with grpc_observability.OpenTelemetryPlugin(
