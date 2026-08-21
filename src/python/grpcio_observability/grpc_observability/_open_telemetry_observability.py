@@ -573,9 +573,8 @@ class _OpenTelemetryExporterDelegator(_observability.Exporter):
                 try:
                     plugin.maybe_record_stats_data(data)
                 except Exception:  # pylint: disable=broad-except
-                    _LOGGER.exception(
-                        f"Failed to record stats data {data.name}"
-                    )
+                    error_msg = f"Failed to record stats data {data.name}"
+                    _LOGGER.exception(error_msg)
 
     def export_tracing_data(
         self, tracing_data: List[_observability.TracingData]
@@ -585,9 +584,10 @@ class _OpenTelemetryExporterDelegator(_observability.Exporter):
                 try:
                     plugin.maybe_record_tracing_data(data)
                 except Exception:  # pylint: disable=broad-except
-                    _LOGGER.exception(
+                    error_msg = (
                         f"Failed to record tracing data for span {data.name}"
                     )
+                    _LOGGER.exception(error_msg)
 
 
 # pylint: disable=no-self-use
