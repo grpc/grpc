@@ -23,6 +23,7 @@
 #include "src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h"
 #include "src/core/handshaker/endpoint_info/endpoint_info_handshaker.h"
 #include "src/core/handshaker/http_connect/http_connect_client_handshaker.h"
+#include "src/core/handshaker/http_connect/https_proxy_tls_handshaker.h"
 #include "src/core/handshaker/tcp_connect/tcp_connect_handshaker.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/surface/channel_stack_type.h"
@@ -112,6 +113,7 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   // to the start of the handshaker list.
   RegisterEndpointInfoHandshaker(builder);
   RegisterHttpConnectClientHandshaker(builder);
+  RegisterHttpsProxyTlsHandshaker(builder);
   RegisterTCPConnectHandshaker(builder);
   RegisterChttp2Transport(builder);
 #ifndef GRPC_MINIMAL_LB_POLICY
