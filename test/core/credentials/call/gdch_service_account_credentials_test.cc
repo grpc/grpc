@@ -45,6 +45,23 @@ extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 namespace grpc_core {
 namespace {
 
+// Original gpr_now_impl function pointer saved before TestGrpcScope starts
+// background threads (such as the timer manager thread).
+gpr_timespec (*g_orig_gpr_now_impl)(gpr_clock_type clock_type) = nullptr;
+
+// Thread-local mock time state. Using thread_local ensures that only the test
+// thread sees the mocked time, avoiding data races and clock perturbation with
+// background threads (like the iomgr timer manager) that also call gpr_now().
+thread_local bool g_mock_time_enabled = false;
+thread_local gpr_timespec g_mock_time;
+
+gpr_timespec MockNowImpl(gpr_clock_type clock_type) {
+  if (g_mock_time_enabled) {
+    return gpr_timespec{g_mock_time.tv_sec, g_mock_time.tv_nsec, clock_type};
+  }
+  return g_orig_gpr_now_impl(clock_type);
+}
+
 using ::testing::HasSubstr;
 
 // This JSON key was generated with the GDCH console and immediately revoked.
@@ -303,11 +320,13 @@ TEST_F(GDCHServiceAccountCredentialsTest, CreateAssertionComponentsSuccess) {
   // monotonic timer (e.g. on Windows) can introduce sub-second jitter during
   // the round-trip conversion, causing second-truncated values (tv_sec) to be
   // off by one.
-  gpr_timespec (*orig_gpr_now_impl)(gpr_clock_type) = gpr_now_impl;
-  gpr_now_impl = [](gpr_clock_type clock_type) {
-    return gpr_timespec{12345678, 0, clock_type};
-  };
-  absl::Cleanup cleanup = [&]() { gpr_now_impl = orig_gpr_now_impl; };
+  //
+  // Setting g_mock_time_enabled on this thread causes MockNowImpl (hooked in
+  // main()) to return g_mock_time only for this thread, avoiding data races
+  // with background threads (such as the iomgr timer manager thread).
+  g_mock_time = gpr_timespec{12345678, 0, GPR_CLOCK_REALTIME};
+  g_mock_time_enabled = true;
+  absl::Cleanup cleanup = []() { g_mock_time_enabled = false; };
 
   Json::Object obj = CreateValidServiceAccountObject();
   absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> creds =
@@ -560,6 +579,12 @@ TEST_F(GDCHServiceAccountCredentialsTest, ExtractTokenFailureInvalidJson) {
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
+  // Hook gpr_now_impl once before TestGrpcScope initializes gRPC and spawns
+  // background threads (like the iomgr timer manager thread). This avoids data
+  // races on gpr_now_impl during tests.
+  grpc_core::g_orig_gpr_now_impl = gpr_now_impl;
+  gpr_now_impl = grpc_core::MockNowImpl;
+
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestGrpcScope grpc_scope;
