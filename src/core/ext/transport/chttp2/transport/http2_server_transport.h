@@ -174,9 +174,7 @@ class Http2ServerTransport final : public ServerTransport,
   int64_t TestOnlyTransportFlowControlWindow();
   int64_t TestOnlyGetStreamFlowControlWindow(const uint32_t stream_id);
 
-  uint32_t TestOnlyLastIncomingStreamId() const {
-    return last_incoming_stream_id_;
-  }
+  uint32_t TestOnlyLastIncomingStreamId() const { return GetLastStreamId(); }
 
   Duration TestOnlyNextAllowedPingInterval() {
     return NextAllowedPingInterval();
@@ -473,6 +471,9 @@ class Http2ServerTransport final : public ServerTransport,
     return stream_list_.size();
   }
 
+  // Returns the last stream Id received by the transport.
+  uint32_t GetLastStreamId() const { return last_incoming_stream_id_; }
+
   bool IsPingWithoutCallsAllowed() const {
     return keepalive_permit_without_calls_;
   }
@@ -496,7 +497,8 @@ class Http2ServerTransport final : public ServerTransport,
 
   Http2Status IncomingStream(ClientMetadataHandle&& metadata,
                              uint32_t stream_id);
-
+  
+  
   // Call this when a stream needs to be closed and we must notify the client by
   // sending a RST_STREAM frame (e.g., due to local stream error, cancellation).
   // This enqueues the RST_STREAM frame and immediately closes the stream for
@@ -737,7 +739,6 @@ class Http2ServerTransport final : public ServerTransport,
   std::optional<KeepaliveManager> keepalive_manager_;
 
   bool keepalive_permit_without_calls_;
-
   GoawayManager goaway_manager_;
 
   MemoryOwner memory_owner_;
