@@ -89,9 +89,6 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
 
   void* Deserialize(grpc_call* call, grpc_byte_buffer* req,
                     grpc::Status* status, void** handler_data) final {
-    grpc::ByteBuffer buf;
-    buf.set_buffer(req);
-    RequestType* request = nullptr;
     MessageHolder<RequestType, ResponseType>* allocator_state;
     if (allocator_ != nullptr) {
       allocator_state = allocator_->AllocateMessages();
@@ -101,7 +98,14 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
           DefaultMessageHolder<RequestType, ResponseType>();
     }
     *handler_data = allocator_state;
-    request = allocator_state->request();
+    if (req == nullptr) {
+      *status = grpc::Status(grpc::StatusCode::UNIMPLEMENTED,
+                             "No request message received for unary method");
+      return nullptr;
+    }
+    grpc::ByteBuffer buf;
+    buf.set_buffer(req);
+    RequestType* request = allocator_state->request();
     *status = grpc::Deserialize(&buf, request);
     buf.Release();
     if (status->ok()) {
@@ -507,6 +511,12 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
 
   void* Deserialize(grpc_call* call, grpc_byte_buffer* req,
                     grpc::Status* status, void** /*handler_data*/) final {
+    if (req == nullptr) {
+      *status = grpc::Status(
+          grpc::StatusCode::UNIMPLEMENTED,
+          "No request message received for server-streaming method");
+      return nullptr;
+    }
     grpc::ByteBuffer buf;
     buf.set_buffer(req);
     auto* request =
@@ -980,16 +990,20 @@ class CallbackSessionHandler : public grpc::internal::MethodHandler {
 
   void* Deserialize(grpc_call* call, grpc_byte_buffer* req,
                     grpc::Status* status, void** handler_data) final {
-    grpc::ByteBuffer buf;
-    buf.set_buffer(req);
-    RequestType* request = nullptr;
     MessageHolder<RequestType, grpc::ByteBuffer>* allocator_state;
     allocator_state = new (grpc_call_arena_alloc(
         call, sizeof(grpc::internal::DefaultMessageHolder<RequestType,
                                                           grpc::ByteBuffer>)))
         grpc::internal::DefaultMessageHolder<RequestType, grpc::ByteBuffer>();
     *handler_data = allocator_state;
-    request = allocator_state->request();
+    if (req == nullptr) {
+      *status = grpc::Status(grpc::StatusCode::UNIMPLEMENTED,
+                             "No request message received for method");
+      return nullptr;
+    }
+    grpc::ByteBuffer buf;
+    buf.set_buffer(req);
+    RequestType* request = allocator_state->request();
     *status = grpc::Deserialize(&buf, request);
     buf.Release();
     if (status->ok()) {

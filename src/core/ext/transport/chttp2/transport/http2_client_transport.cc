@@ -1398,6 +1398,7 @@ void Http2ClientTransport::CloseTransport() {
 
   shutdown_tracker_.MarkShutdownComplete();
   settings_->HandleTransportShutdown(event_engine_.get());
+  goaway_manager_.NotifyTransportClosed();
 
   // This is the only place where the transport_party_ is reset.
   transport_party_.reset();
@@ -1572,6 +1573,10 @@ RefCountedPtr<channelz::SocketNode> Http2ClientTransport::GetSocketNode()
 // Stream Related Operations
 
 absl::StatusOr<uint32_t> Http2ClientTransport::NextStreamId() {
+  MutexLock lock(&transport_mutex_);
+  if (shutdown_tracker_.IsShutdownInitiated(transport_mutex_)) {
+    return absl::UnavailableError("Transport is closed");
+  }
   if (next_stream_id_ > GetMaxAllowedStreamId()) {
     // TODO(tjagtap) : [PH2][P2] : Handle case if transport runs out of stream
     // ids. Similar check is there in the same function. Check what to do.
@@ -1592,7 +1597,6 @@ absl::StatusOr<uint32_t> Http2ClientTransport::NextStreamId() {
     // this for incoming streams only. If a server receives more
     // streams from a client than is allowed by the clients settings,
     // whether or not we should fail is debatable.
-    MutexLock lock(&transport_mutex_);
     if (GetActiveStreamCountLocked() >=
         settings_->peer().max_concurrent_streams()) {
       return absl::ResourceExhaustedError("Reached max concurrent streams");
@@ -1603,7 +1607,7 @@ absl::StatusOr<uint32_t> Http2ClientTransport::NextStreamId() {
   // identifiers.
   uint32_t new_stream_id = std::exchange(next_stream_id_, next_stream_id_ + 2);
   if (GPR_UNLIKELY(next_stream_id_ > GetMaxAllowedStreamId())) {
-    ReportDisconnection(
+    ReportDisconnectionLocked(
         absl::ResourceExhaustedError("Transport Stream IDs exhausted"),
         {},  // TODO(tjagtap) : [PH2][P2] : Report better disconnect info.
         "no_more_stream_ids");
