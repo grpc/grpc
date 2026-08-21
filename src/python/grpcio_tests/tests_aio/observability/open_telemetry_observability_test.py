@@ -542,24 +542,24 @@ class OpenTelemetryObservabilityRetryTest(OpenTelemetryObservabilityBase):
     async def test_record_retry_metrics(self):
         await _test_server.unary_unary_call_with_retries(port=self._port)
 
-        # Base metrics plus grpc.client.call.retries and
-        # grpc.client.call.retry_delay. Transparent retries stay at 0 and are
-        # therefore not reported.
-        await self._validate_metrics_exist(
-            self.all_metrics,
-            expected_count=len(_open_telemetry_measures.base_metrics()) + 2,
-        )
-        for metric in (
+        # The per-call retry metrics are recorded when the client call tracer
+        # is destroyed, which happens after the attempt tracers have reported,
+        # so they can arrive in a later export batch than the base metrics.
+        retry_metrics = (
             _open_telemetry_measures.CLIENT_CALL_RETRIES,
             _open_telemetry_measures.CLIENT_CALL_RETRY_DELAY,
-        ):
-            self.assertTrue(
-                metric.name in self.all_metrics,
-                msg=(
-                    f"metric {metric.name} not found"
-                    f"in exported metrics: {self.all_metrics.keys()}!"
-                ),
-            )
+        )
+
+        await self.assert_eventually(
+            lambda: all(
+                metric.name in self.all_metrics for metric in retry_metrics
+            ),
+            timeout=datetime.timedelta(seconds=10),
+            message=lambda: (
+                "retry metrics not found in exported metrics: "
+                f"{self.all_metrics.keys()}!"
+            ),
+        )
         # No transparent retry happened, so 0 should not be reported.
         self.assertNotIn(
             _open_telemetry_measures.CLIENT_CALL_TRANSPARENT_RETRIES.name,
