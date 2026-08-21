@@ -17,11 +17,13 @@ import datetime
 import logging
 import os
 import sys
+import threading
 import time
 from typing import Any, AnyStr, Callable, Dict, List, Optional, Set
 import unittest
 
 from google.protobuf import struct_pb2
+from grpc import _observability
 import grpc_observability
 from grpc_observability import _open_telemetry_measures
 from grpc_observability._open_telemetry_plugin import OpenTelemetryLabelInjector
@@ -40,6 +42,9 @@ logger = logging.getLogger(__name__)
 STREAM_LENGTH = 5
 OTEL_EXPORT_INTERVAL_S = 0.5
 CSM_METADATA_EXCHANGE_LABEL_KEY = "exchange_labels_key"
+# Generous: these waits only elapse in full if the test is already failing.
+_PLUGIN_LOCK_HOLD_TIMEOUT_S = 10.0
+_MAX_UNLOCKED_READ_S = 0.5
 
 # The following metrics should have optional labels when optional
 # labels is enabled through OpenTelemetryPlugin.
@@ -356,6 +361,85 @@ class ObservabilityPluginTest(unittest.TestCase):
                     label in metric_label,
                     msg=f"found unexpected label with key {label} in metric {metric_name}, found label list: {metric_label}",
                 )
+
+
+class _NoopPlugin(_observability.ObservabilityPlugin):
+    def create_client_call_tracer(self, method_name, target):
+        return None
+
+    def save_trace_context(self, trace_id, span_id, is_sampled):
+        pass
+
+    def create_server_call_tracer_factory(self, *, xds=False):
+        return None
+
+    def record_rpc_latency(self, method, target, rpc_latency, status_code):
+        pass
+
+
+@unittest.skipIf(
+    os.name == "nt" or "darwin" in sys.platform,
+    "Observability is not supported in Windows and MacOS",
+)
+class GetPluginUnlockedTest(unittest.TestCase):
+    """Tests for _observability.get_plugin_unlocked()."""
+
+    def tearDown(self):
+        if _observability.get_plugin_unlocked() is not None:
+            _observability.set_plugin(None)
+
+    def testReturnsNoneWhenNoPluginRegistered(self):
+        self.assertIsNone(_observability.get_plugin_unlocked())
+
+    def testReturnsRegisteredPluginAndNoneAfterDeregistration(self):
+        plugin = _NoopPlugin()
+        _observability.set_plugin(plugin)
+        self.assertIs(_observability.get_plugin_unlocked(), plugin)
+        _observability.set_plugin(None)
+        self.assertIsNone(_observability.get_plugin_unlocked())
+
+    def testAgreesWithGetPlugin(self):
+        plugin = _NoopPlugin()
+        _observability.set_plugin(plugin)
+        with _observability.get_plugin() as locked_plugin:
+            pass
+        self.assertIs(_observability.get_plugin_unlocked(), locked_plugin)
+
+    def testDoesNotBlockWhilePluginLockIsHeld(self):
+        # The whole point of the API: unlike get_plugin(), it must return even
+        # while another thread holds _plugin_lock. A regression here re-freezes
+        # the AsyncIO event loop for the duration of the hold.
+        plugin = _NoopPlugin()
+        _observability.set_plugin(plugin)
+        acquired = threading.Event()
+        release = threading.Event()
+
+        def hold_plugin_lock():
+            with _observability._plugin_lock:
+                acquired.set()
+                release.wait(_PLUGIN_LOCK_HOLD_TIMEOUT_S)
+
+        holder = threading.Thread(target=hold_plugin_lock, daemon=True)
+        holder.start()
+        try:
+            self.assertTrue(
+                acquired.wait(_PLUGIN_LOCK_HOLD_TIMEOUT_S),
+                "lock holder never started",
+            )
+            start = time.monotonic()
+            observed = _observability.get_plugin_unlocked()
+            elapsed = time.monotonic() - start
+        finally:
+            release.set()
+            holder.join(_PLUGIN_LOCK_HOLD_TIMEOUT_S)
+
+        self.assertIs(observed, plugin)
+        self.assertLess(
+            elapsed,
+            _MAX_UNLOCKED_READ_S,
+            f"get_plugin_unlocked() took {elapsed:.2f}s while another thread "
+            "held _plugin_lock; it must not acquire the lock",
+        )
 
 
 if __name__ == "__main__":
