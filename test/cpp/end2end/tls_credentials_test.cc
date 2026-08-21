@@ -50,6 +50,14 @@ using ::grpc::experimental::TlsChannelCredentialsOptions;
 constexpr char kCaCertPath[] = "src/core/tsi/test_creds/ca.pem";
 constexpr char kServerCertPath[] = "src/core/tsi/test_creds/server1.pem";
 constexpr char kServerKeyPath[] = "src/core/tsi/test_creds/server1.key";
+constexpr char kClientOnlyEkuCertPath[] =
+    "test/core/tsi/test_creds/eku_test_creds/client_only_eku.pem";
+constexpr char kClientOnlyEkuKeyPath[] =
+    "test/core/tsi/test_creds/eku_test_creds/client_only_eku.key";
+constexpr char kServerOnlyEkuCertPath[] =
+    "test/core/tsi/test_creds/eku_test_creds/server_only_eku.pem";
+constexpr char kServerOnlyEkuKeyPath[] =
+    "test/core/tsi/test_creds/eku_test_creds/server_only_eku.key";
 constexpr char kMessage[] = "Hello";
 
 class NoOpCertificateVerifier : public ExternalCertificateVerifier {
@@ -100,22 +108,30 @@ class KeyExchangeGroupCheckingVerifier : public ExternalCertificateVerifier {
 
 class TlsCredentialsTest : public ::testing::Test {
  protected:
-  void RunServer(absl::Notification* notification,
-                 const std::vector<grpc_tls_key_exchange_group>*
-                     key_exchange_groups = nullptr) {
+  void RunServer(
+      absl::Notification* notification,
+      const std::vector<grpc_tls_key_exchange_group>* key_exchange_groups =
+          nullptr,
+      const std::string& server_key_path = kServerKeyPath,
+      const std::string& server_cert_path = kServerCertPath,
+      grpc_ssl_client_certificate_request_type client_certificate_request =
+          GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
+      grpc_tls_verification_key_purpose verification_key_purpose =
+          GRPC_TLS_VERIFICATION_KEY_PURPOSE_DEFAULT) {
     std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
     std::string server_key =
-        grpc_core::testing::GetFileContents(kServerKeyPath);
+        grpc_core::testing::GetFileContents(server_key_path);
     std::string server_cert =
-        grpc_core::testing::GetFileContents(kServerCertPath);
+        grpc_core::testing::GetFileContents(server_cert_path);
     grpc::experimental::IdentityKeyCertPair key_cert_pair = {server_key,
                                                              server_cert};
     std::vector<grpc::experimental::IdentityKeyCertPair>
         identity_key_cert_pairs;
     identity_key_cert_pairs.push_back(key_cert_pair);
     auto certificate_provider =
-        std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
-            root_cert, identity_key_cert_pairs);
+        std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
+    certificate_provider->UpdateRoot(root_cert);
+    certificate_provider->UpdateIdentityKeyCertPair(identity_key_cert_pairs);
     auto server_options_or =
         grpc::experimental::TlsServerCredentialsOptions::Create(
             certificate_provider);
@@ -123,6 +139,8 @@ class TlsCredentialsTest : public ::testing::Test {
     grpc::experimental::TlsServerCredentialsOptions server_options =
         *std::move(server_options_or);
     server_options.set_root_certificate_provider(certificate_provider);
+    server_options.set_cert_request_type(client_certificate_request);
+    server_options.set_verification_key_purpose(verification_key_purpose);
     if (key_exchange_groups != nullptr) {
       server_options.set_key_exchange_groups(*key_exchange_groups);
     }
@@ -138,6 +156,8 @@ class TlsCredentialsTest : public ::testing::Test {
   void TearDown() override {
     if (server_ != nullptr) {
       server_->Shutdown();
+    }
+    if (server_thread_ != nullptr) {
       server_thread_->join();
       delete server_thread_;
     }
@@ -246,8 +266,8 @@ TEST_F(TlsCredentialsTest, KeyExchangeGroupMlkem) {
   tls_options.set_key_exchange_groups({GRPC_TLS_GROUP_X25519_MLKEM768});
   std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
   auto client_certificate_provider =
-      std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
-          root_cert);
+      std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
+  client_certificate_provider->UpdateRoot(root_cert);
   tls_options.set_root_certificate_provider(client_certificate_provider);
   tls_options.set_sni_override("foo.test.google.fr");
   DoRpc(server_addr_, tls_options,
@@ -271,8 +291,8 @@ TEST_F(TlsCredentialsTest, KeyExchangeGroupX25519) {
   tls_options.set_key_exchange_groups({GRPC_TLS_GROUP_X25519});
   std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
   auto client_certificate_provider =
-      std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
-          root_cert);
+      std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
+  client_certificate_provider->UpdateRoot(root_cert);
   tls_options.set_root_certificate_provider(client_certificate_provider);
   tls_options.set_sni_override("foo.test.google.fr");
   DoRpc(server_addr_, tls_options, /*expected_key_exchange_group=*/"X25519");
@@ -295,8 +315,8 @@ TEST_F(TlsCredentialsTest, KeyExchangeGroupSECP256R1) {
   tls_options.set_key_exchange_groups({GRPC_TLS_GROUP_SECP256R1});
   std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
   auto client_certificate_provider =
-      std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
-          root_cert);
+      std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
+  client_certificate_provider->UpdateRoot(root_cert);
   tls_options.set_root_certificate_provider(client_certificate_provider);
   tls_options.set_sni_override("foo.test.google.fr");
   DoRpc(server_addr_, tls_options,
@@ -330,6 +350,128 @@ TEST_F(TlsCredentialsTest, KeyExchangeGroupMismatchFailsWithTestVerifier) {
       "Key exchange group mismatch: expected prime256v1, got X25519");
 }
 #endif  // OPENSSL_IS_BORINGSSL
+
+TEST_F(TlsCredentialsTest, VerificationKeyPurposeBypassServerWithClientOnlyCert) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  server_thread_ = new std::thread([&]() {
+    RunServer(&notification, /*key_exchange_groups=*/nullptr,
+              kClientOnlyEkuKeyPath, kClientOnlyEkuCertPath);
+  });
+  notification.WaitForNotification();
+
+  // 1. Try to connect with default options. It should fail because the server
+  // cert (client_only_eku.pem) does not have Server Auth EKU.
+  {
+    TlsChannelCredentialsOptions tls_options;
+    std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
+    auto client_certificate_provider =
+        std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
+    client_certificate_provider->UpdateRoot(root_cert);
+    tls_options.set_root_certificate_provider(client_certificate_provider);
+    tls_options.set_certificate_verifier(
+        ExternalCertificateVerifier::Create<NoOpCertificateVerifier>());
+    tls_options.set_check_call_host(false);
+
+    DoRpcAndExpectFailure(server_addr_, tls_options,
+                          grpc::StatusCode::UNAVAILABLE);
+  }
+
+  // 2. Try to connect with verification_key_purpose set to ALLOW_ANY.
+  // It should succeed because EKU checks are bypassed.
+  {
+    TlsChannelCredentialsOptions tls_options;
+    std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
+    auto client_certificate_provider =
+        std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
+    client_certificate_provider->UpdateRoot(root_cert);
+    tls_options.set_root_certificate_provider(client_certificate_provider);
+    tls_options.set_certificate_verifier(
+        ExternalCertificateVerifier::Create<NoOpCertificateVerifier>());
+    tls_options.set_check_call_host(false);
+    tls_options.set_verification_key_purpose(
+        GRPC_TLS_VERIFICATION_KEY_PURPOSE_ALLOW_ANY);
+
+    DoRpc(server_addr_, tls_options);
+  }
+}
+
+TEST_F(TlsCredentialsTest, VerificationKeyPurposeBypassMtlsFail) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  // Run server requiring client certs (mTLS)
+  server_thread_ = new std::thread([&]() {
+    RunServer(&notification, /*key_exchange_groups=*/nullptr, kServerKeyPath,
+              kServerCertPath,
+              GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
+  });
+  notification.WaitForNotification();
+
+  // Client connects with server_only_eku cert (lacks clientAuth EKU).
+  // Server should reject it by default, causing connection failure.
+  {
+    TlsChannelCredentialsOptions tls_options;
+    std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
+    std::string client_key =
+        grpc_core::testing::GetFileContents(kServerOnlyEkuKeyPath);
+    std::string client_cert =
+        grpc_core::testing::GetFileContents(kServerOnlyEkuCertPath);
+    grpc::experimental::IdentityKeyCertPair key_cert_pair = {client_key,
+                                                             client_cert};
+    auto client_certificate_provider =
+        std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
+    client_certificate_provider->UpdateRoot(root_cert);
+    client_certificate_provider->UpdateIdentityKeyCertPair({key_cert_pair});
+    tls_options.set_root_certificate_provider(client_certificate_provider);
+    tls_options.set_identity_certificate_provider(client_certificate_provider);
+    tls_options.set_certificate_verifier(
+        ExternalCertificateVerifier::Create<NoOpCertificateVerifier>());
+    tls_options.set_check_call_host(false);
+
+    DoRpcAndExpectFailure(server_addr_, tls_options,
+                          grpc::StatusCode::UNAVAILABLE);
+  }
+}
+
+TEST_F(TlsCredentialsTest, VerificationKeyPurposeBypassMtlsPass) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  // Run server requiring client certs, and set purpose to ALLOW_ANY to bypass EKU check.
+  server_thread_ = new std::thread([&]() {
+    RunServer(&notification, /*key_exchange_groups=*/nullptr, kServerKeyPath,
+              kServerCertPath,
+              GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+              GRPC_TLS_VERIFICATION_KEY_PURPOSE_ALLOW_ANY);
+  });
+  notification.WaitForNotification();
+
+  // Client connects with same server_only_eku cert.
+  // It should succeed because server bypasses client's EKU check.
+  {
+    TlsChannelCredentialsOptions tls_options;
+    std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
+    std::string client_key =
+        grpc_core::testing::GetFileContents(kServerOnlyEkuKeyPath);
+    std::string client_cert =
+        grpc_core::testing::GetFileContents(kServerOnlyEkuCertPath);
+    grpc::experimental::IdentityKeyCertPair key_cert_pair = {client_key,
+                                                             client_cert};
+    auto client_certificate_provider =
+        std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
+    client_certificate_provider->UpdateRoot(root_cert);
+    client_certificate_provider->UpdateIdentityKeyCertPair({key_cert_pair});
+    tls_options.set_root_certificate_provider(client_certificate_provider);
+    tls_options.set_identity_certificate_provider(client_certificate_provider);
+    tls_options.set_certificate_verifier(
+        ExternalCertificateVerifier::Create<NoOpCertificateVerifier>());
+    tls_options.set_check_call_host(false);
+
+    DoRpc(server_addr_, tls_options);
+  }
+}
 
 }  // namespace
 }  // namespace testing
