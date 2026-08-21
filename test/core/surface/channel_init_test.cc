@@ -139,18 +139,6 @@ const grpc_channel_filter V3FilterC::kFilter =
     grpc_core::MakePromiseBasedFilter<V3FilterC,
                                       grpc_core::FilterEndpoint::kServer>();
 
-class V3FilterD : public ImplementChannelFilter<V3FilterD>,
-                  public OrderTrackingV3Filter<V3FilterD> {
- public:
-  using Call = NoOpCall;
-  static const grpc_channel_filter kFilter;
-  static absl::string_view TypeName() { return "D"; }
-};
-
-const grpc_channel_filter V3FilterD::kFilter =
-    grpc_core::MakePromiseBasedFilter<V3FilterD,
-                                      grpc_core::FilterEndpoint::kServer>();
-
 TEST(ChannelInitTest, Empty) {
   ChannelInit::Builder b;
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("terminator")).Terminal();
@@ -499,7 +487,6 @@ TEST(ChannelInitServerV3FilterTest, SinkToBottomBecomesFloatToTop) {
         b.RegisterFilter<V3FilterA>(GRPC_SERVER_CHANNEL).FloatToTop();
         b.RegisterFilter<V3FilterB>(GRPC_SERVER_CHANNEL);
         b.RegisterFilter<V3FilterC>(GRPC_SERVER_CHANNEL).SinkToBottom();
-        b.RegisterFilter<V3FilterD>(GRPC_SERVER_CHANNEL).BeforeAll();
         auto init = b.Build();
         std::vector<std::string> order;
         ChannelArgs args = ChannelArgs().Set(
@@ -511,11 +498,36 @@ TEST(ChannelInitServerV3FilterTest, SinkToBottomBecomesFloatToTop) {
 
   EXPECT_EQ(get_registration_order(
                 /*fix_v3_filter_stack_server_side_ordering=*/false),
-            std::vector<std::string>({"D", "A", "B", "C"}));
+            std::vector<std::string>({"A", "B", "C"}));
 
   EXPECT_EQ(
       get_registration_order(/*fix_v3_filter_stack_server_side_ordering=*/true),
-      std::vector<std::string>({"C", "B", "A", "D"}));
+      std::vector<std::string>({"C", "B", "A"}));
+}
+
+TEST(ChannelInitServerV3FilterTest, BeforeAllBecomesTheLast) {
+  auto get_registration_order =
+      [](bool fix_v3_filter_stack_server_side_ordering) {
+        ChannelInit::Builder b{fix_v3_filter_stack_server_side_ordering};
+        b.RegisterFilter<V3FilterA>(GRPC_SERVER_CHANNEL).BeforeAll();
+        b.RegisterFilter<V3FilterB>(GRPC_SERVER_CHANNEL);
+        b.RegisterFilter<V3FilterC>(GRPC_SERVER_CHANNEL);
+        auto init = b.Build();
+        std::vector<std::string> order;
+        ChannelArgs args = ChannelArgs().Set(
+            "ordering_tracker", ChannelArgs::UnownedPointer(&order));
+        InterceptionChainBuilder chain_builder{args};
+        init.AddToInterceptionChainBuilder(GRPC_SERVER_CHANNEL, chain_builder);
+        return order;
+      };
+
+  EXPECT_EQ(get_registration_order(
+                /*fix_v3_filter_stack_server_side_ordering=*/false),
+            std::vector<std::string>({"A", "B", "C"}));
+
+  EXPECT_EQ(
+      get_registration_order(/*fix_v3_filter_stack_server_side_ordering=*/true),
+      std::vector<std::string>({"B", "C", "A"}));
 }
 
 TEST(ChannelInitServerV3FilterTest, BeforeBecomesAfter) {
