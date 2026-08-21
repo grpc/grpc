@@ -1662,6 +1662,15 @@ try:
                     "../../bazel-bin/test/cpp/interop/otlp_collector",
                 )
             )
+            if not os.path.exists(collector_bin):
+                grpc_root = os.path.abspath(
+                    os.path.join(os.path.dirname(__file__), "../..")
+                )
+                print(f"Building OTLP collector binary...")
+                subprocess.check_call(
+                    ["tools/bazel", "build", "//test/cpp/interop:otlp_collector"],
+                    cwd=grpc_root,
+                )
             collector_cmd = [
                 collector_bin,
                 f"--port={_collector_port}",
