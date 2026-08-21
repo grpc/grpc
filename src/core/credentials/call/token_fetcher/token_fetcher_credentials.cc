@@ -189,12 +189,12 @@ void TokenFetcherCredentials::FetchState::ResumeQueuedCalls(
     absl::StatusOr<RefCountedPtr<Token>> token) {
   // Invoke callbacks for all pending requests.
   for (auto& queued_call : queued_calls_) {
-    queued_call->result = token;
-    queued_call->done.store(true, std::memory_order_release);
-    queued_call->waker.Wakeup();
     grpc_polling_entity_del_from_pollset_set(
         queued_call->pollent,
         grpc_polling_entity_pollset_set(&creds_->pollent_));
+    queued_call->result = token;
+    queued_call->done.store(true, std::memory_order_release);
+    queued_call->waker.Wakeup();
   }
   queued_calls_.clear();
 }
