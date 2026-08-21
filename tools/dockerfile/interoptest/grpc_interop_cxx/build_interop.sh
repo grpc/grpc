@@ -38,3 +38,7 @@ cd cmake/build
 cmake -DgRPC_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17 ../..
 make interop_client interop_server -j4
 make http2_client -j4
+
+cd /var/local/git/grpc
+tools/bazel build //test/cpp/interop:otlp_collector
+

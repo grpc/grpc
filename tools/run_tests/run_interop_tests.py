@@ -1629,6 +1629,7 @@ client_manual_cmd_log = [] if args.manual_run else None
 server_jobs = {}
 server_addresses = {}
 collector_proc = None
+collector_container_name = None
 try:
     if not args.manual_run:
         tracing_test_enabled = (not args.test_case) or (
@@ -1656,33 +1657,50 @@ try:
             )
             if os.path.exists(_collector_spans_file):
                 os.remove(_collector_spans_file)
-            collector_bin = os.path.abspath(
-                os.path.join(
-                    os.path.dirname(__file__),
-                    "../../bazel-bin/test/cpp/interop/otlp_collector",
+            if args.use_docker:
+                collector_container_name = f"otlp_collector_{pid}_{timestamp}"
+                collector_cmd = [
+                    "docker",
+                    "run",
+                    "--rm",
+                    "--name",
+                    collector_container_name,
+                    "--net=host",
+                    "-v",
+                    f"{tempfile.gettempdir()}:{tempfile.gettempdir()}",
+                    docker_images.get("c++"),
+                    "/var/local/git/grpc/bazel-bin/test/cpp/interop/otlp_collector",
+                    f"--port={_collector_port}",
+                    f"--file={_collector_spans_file}",
+                ]
+            else:
+                collector_bin = os.path.abspath(
+                    os.path.join(
+                        os.path.dirname(__file__),
+                        "../../bazel-bin/test/cpp/interop/otlp_collector",
+                    )
                 )
-            )
-            if not os.path.exists(collector_bin):
-                grpc_root = os.path.abspath(
-                    os.path.join(os.path.dirname(__file__), "../..")
-                )
-                print(f"Building OTLP collector binary...")
-                subprocess.check_call(
-                    ["tools/bazel", "build", "//test/cpp/interop:otlp_collector"],
-                    cwd=grpc_root,
-                )
-            collector_cmd = [
-                collector_bin,
-                f"--port={_collector_port}",
-                f"--file={_collector_spans_file}",
-            ]
+                if not os.path.exists(collector_bin):
+                    grpc_root = os.path.abspath(
+                        os.path.join(os.path.dirname(__file__), "../..")
+                    )
+                    print(f"Building OTLP collector binary...")
+                    subprocess.check_call(
+                        ["tools/bazel", "build", "//test/cpp/interop:otlp_collector"],
+                        cwd=grpc_root,
+                    )
+                collector_cmd = [
+                    collector_bin,
+                    f"--port={_collector_port}",
+                    f"--file={_collector_spans_file}",
+                ]
             print(f"Starting OTLP collector on port {_collector_port}...")
             collector_proc = subprocess.Popen(
                 collector_cmd,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
-            if not wait_for_port(_collector_port, timeout=5.0):
+            if not wait_for_port(_collector_port, timeout=10.0):
                 print(
                     f"Warning: OTLP collector on port {_collector_port} did not respond within timeout."
                 )
@@ -2042,6 +2060,15 @@ try:
     else:
         sys.exit(0)
 finally:
+    if collector_container_name:
+        try:
+            subprocess.run(
+                ["docker", "kill", collector_container_name],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        except Exception:
+            pass
     if collector_proc:
         print("Terminating OTLP collector...")
         try:
