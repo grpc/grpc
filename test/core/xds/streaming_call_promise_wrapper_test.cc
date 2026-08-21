@@ -90,8 +90,8 @@ class XdsStreamingCallPromiseWrapperTest : public ::testing::Test {
     transport_ = transport_factory_->GetTransport(*target_, &status);
     ASSERT_TRUE(status.ok()) << status;
     ASSERT_NE(transport_, nullptr);
-    wrapper_ =
-        MakeRefCounted<XdsStreamingCallPromiseWrapper>(*transport_, kMethod);
+    wrapper_ = MakeRefCounted<XdsStreamingCallPromiseWrapper>(
+        *transport_, kMethod, /*wait_for_ready=*/false);
     stream_ = transport_factory_->WaitForStream(*target_, kMethod);
     ASSERT_NE(stream_, nullptr);
   }

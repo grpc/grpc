@@ -2210,6 +2210,8 @@ let package = Package(
         "src/core/xds/grpc/certificate_provider_store_interface.h",
         "src/core/xds/grpc/file_watcher_certificate_provider_factory.cc",
         "src/core/xds/grpc/file_watcher_certificate_provider_factory.h",
+        "src/core/xds/grpc/streaming_call_promise_wrapper.cc",
+        "src/core/xds/grpc/streaming_call_promise_wrapper.h",
         "src/core/xds/grpc/xds_audit_logger_registry.cc",
         "src/core/xds/grpc/xds_audit_logger_registry.h",
         "src/core/xds/grpc/xds_bootstrap_grpc.cc",
