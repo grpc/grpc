@@ -1,11 +1,68 @@
 # Adopted from https://github.com/rake-compiler/rake-compiler-dock/pull/201.
-# Install clang 14 and gcc 10 for better C++17 support.
+# Upgrade cross-compilers across all platforms for full C++17 and Abseil support:
+# - Darwin (arm64-darwin, x86_64-darwin): Clang 14.0.6
+# - Linux GNU (x86_64-linux-gnu, aarch64-linux-gnu, x86-linux-gnu): GCC 10.5.0
+# - Linux Musl (x86_64-linux-musl, aarch64-linux-musl, x86-linux-musl): GCC 10.3.0
+# - MinGW (x86-mingw32, x64-mingw-ucrt): GCC 10.2.1 (POSIX thread model)
 
 diff --git a/Dockerfile.mri.erb b/Dockerfile.mri.erb
-index 1bf488e..9d5c9ca 100644
+index 1bf488e..5f08c11 100644
 --- a/Dockerfile.mri.erb
 +++ b/Dockerfile.mri.erb
-@@ -108,18 +108,58 @@ EOF
+@@ -75,51 +75,81 @@ USER root
+ ##
+ ## Install cross compilers
+ ##
+-<% if platform =~ /x64-mingw-ucrt/ %>
+-COPY --from=larskanis/mingw64-ucrt:20.04 \
+-    /build/binutils-mingw-w64-x86-64_*.deb \
+-    /build/g++-mingw-w64-x86-64_*.deb \
+-    /build/gcc-mingw-w64-base_*.deb \
+-    /build/gcc-mingw-w64-x86-64_*.deb \
+-    /build/mingw-w64-common_*.deb \
+-    /build/mingw-w64-x86-64-dev_*.deb \
+-    /debs/
+-RUN dpkg -i /debs/*.deb
+-
+-<% elsif platform =~ /aarch64-mingw-ucrt/ %>
+-
+-RUN <<EOF
+-    if [ "$TARGETPLATFORM" = "linux/amd64" ]; then
+-        DOWNLOAD_PLATFORM="x86_64";
+-    elif [ "$TARGETPLATFORM" = "linux/arm64" ]; then
+-        DOWNLOAD_PLATFORM="aarch64";
+-    else
+-        echo "Unsupported platform $TARGETPLATFORM";
+-        exit 1;
+-    fi &&
+-    wget https://github.com/mstorsjo/llvm-mingw/releases/download/20250114/llvm-mingw-20250114-ucrt-ubuntu-20.04-$DOWNLOAD_PLATFORM.tar.xz &&
+-    tar xf llvm-mingw*.tar.xz &&
+-    mv `ls -d llvm-mingw-*/` /llvm-mingw &&
+-    echo "export PATH=/llvm-mingw/bin:\$PATH" >> /etc/rubybashrc &&
+-    rm -r /llvm-mingw/bin/i686-w64* /llvm-mingw/bin/armv7-w64* /llvm-mingw/bin/x86_64-w64* /llvm-mingw/i686-w64* /llvm-mingw/armv7-w64* /llvm-mingw/x86_64-w64*
+-EOF
++<% if platform =~ /mingw/ %>
++
++RUN echo "Package: *\nPin: release n=bullseye\nPin-Priority: 100" > /etc/apt/preferences.d/bullseye.pref && \
++    echo "deb [trusted=yes] http://deb.debian.org/debian bullseye main" > /etc/apt/sources.list.d/bullseye.list && \
++    apt-get -y update && \
++    apt-get install -y -t bullseye \
++        gcc-mingw-w64-i686-posix \
++        g++-mingw-w64-i686-posix \
++        gcc-mingw-w64-x86-64-posix \
++        g++-mingw-w64-x86-64-posix \
++        binutils-mingw-w64-i686 \
++        binutils-mingw-w64-x86-64 \
++        mingw-w64-common \
++        mingw-w64-i686-dev \
++        mingw-w64-x86-64-dev && \
++    update-alternatives --set i686-w64-mingw32-gcc /usr/bin/i686-w64-mingw32-gcc-posix && \
++    update-alternatives --set i686-w64-mingw32-g++ /usr/bin/i686-w64-mingw32-g++-posix && \
++    update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix && \
++    update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix && \
++    rm -rf /var/lib/apt/lists/*
+ 
+ <% elsif platform =~ /linux-musl/ %>
  COPY build/mk_musl_cross.sh /tmp
  RUN /tmp/mk_musl_cross.sh <%= target %>
  
@@ -29,10 +86,10 @@ index 1bf488e..9d5c9ca 100644
 -if platform =~ /arm-linux-gnu/     %> gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf <% end %><%
 -if platform =~ /x86-linux-gnu/     %> gcc-i686-linux-gnu g++-i686-linux-gnu <% end %><%
 -if platform =~ /x86_64-linux-gnu/  %> gcc-x86-64-linux-gnu g++-x86-64-linux-gnu <% end %><%
+-if platform =~ /x86-mingw32/       %> gcc-mingw-w64-i686 g++-mingw-w64-i686 <% end %><%
+-if platform =~ /x64-mingw32/       %> gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 <% end %> && \
 +if platform =~ /arm-linux-gnu/     %> gcc-10-arm-linux-gnueabihf g++-10-arm-linux-gnueabihf <% end %><%
-+if platform =~ /x86-linux-gnu/     %> gcc-10-i686-linux-gnu g++-10-i686-linux-gnu <% end %><%
- if platform =~ /x86-mingw32/       %> gcc-mingw-w64-i686 g++-mingw-w64-i686 <% end %><%
- if platform =~ /x64-mingw32/       %> gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 <% end %> && \
++if platform =~ /x86-linux-gnu/     %> gcc-10-i686-linux-gnu g++-10-i686-linux-gnu <% end %> && \
 +<% if platform =~ /aarch64-linux-gnu/ %>
 +    if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
 +        apt-get install -y gcc-10 g++-10 && \
@@ -69,6 +126,17 @@ index 1bf488e..9d5c9ca 100644
  
  <% if platform =~ /darwin/ %>
  COPY build/mk_osxcross.sh /tmp
+@@ -237,8 +267,8 @@ RUN mv /usr/bin/<%= target %>-strip /usr/bin/<%= target %>-strip.bin && \
+ # Use posix pthread for mingw so that C++ standard library for thread could be
+ # available such as std::thread, std::mutex, so on.
+ # https://sourceware.org/pthreads-win32/
+-RUN printf "1\n" | update-alternatives --config <%= target %>-gcc && \
+-    printf "1\n" | update-alternatives --config <%= target %>-g++
++RUN update-alternatives --set <%= target %>-gcc /usr/bin/<%= target %>-gcc-posix && \
++    update-alternatives --set <%= target %>-g++ /usr/bin/<%= target %>-g++-posix
+ <% end %>
+ 
+ <% if platform =~ /aarch64-mingw/ %>
 diff --git a/build/mk_musl_cross.sh b/build/mk_musl_cross.sh
 index e2dfce9..4e6e2e7 100755
 --- a/build/mk_musl_cross.sh
