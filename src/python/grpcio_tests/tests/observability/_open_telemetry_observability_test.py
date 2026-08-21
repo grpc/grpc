@@ -25,11 +25,12 @@ import unittest
 import grpc
 import grpc_observability
 from grpc_observability import _open_telemetry_measures
-from grpc_observability._observability import TracingData
+from grpc_observability._observability import StatsData, TracingData
 from grpc_observability._open_telemetry_observability import (
     GRPC_OTHER_LABEL_VALUE,
 )
 from grpc_observability._open_telemetry_observability import (
+    _OpenTelemetryExporterDelegator,
     _OpenTelemetryPlugin,
 )
 from grpc_observability._open_telemetry_observability import GRPC_METHOD_LABEL
@@ -1619,6 +1620,73 @@ class SharedTracerProviderTest(unittest.TestCase):
                 seq,
                 f"{span.name} was exported with incorrect SpanID",
             )
+
+
+@unittest.skipIf(
+    os.name == "nt" or "darwin" in sys.platform,
+    "Observability is not supported in Windows and MacOS",
+)
+class ExporterRobustnessTest(unittest.TestCase):
+    class _RecordingPlugin:
+        def __init__(self):
+            self.metrics_data = []
+            self.tracing_data = []
+
+        def maybe_record_stats_data(self, data):
+            self.metrics_data.append(data)
+
+        def maybe_record_tracing_data(self, data):
+            self.tracing_data.append(data)
+
+    class _RaisingPlugin:
+        def maybe_record_stats_data(self, data):
+            raise RuntimeError("Metrics kaboom")
+
+        def maybe_record_tracing_data(self, data):
+            raise RuntimeError("Tracing kaboom")
+
+    @staticmethod
+    def _tracing_data() -> TracingData:
+        return TracingData(
+            name=f"span-name",
+            start_time="1696258883000000000",
+            end_time="1696258884000000000",
+            trace_id="0" * 32,
+            span_id="0" * 16,
+            parent_span_id="0" * 16,
+            status="OK",
+            should_sample=True,
+            child_span_count=0,
+            span_labels={},
+            span_events=[],
+        )
+
+    @staticmethod
+    def _stats_data() -> StatsData:
+        return StatsData(
+            name="grpc.client.attempt.started",
+            measure_double=False,
+            value_int=0,
+            value_float=0.0,
+            include_exchange_labels=False,
+            labels={},
+            identifiers=set(),
+            registered_method=False,
+        )
+
+    def testExportContinuesWhenPluginRaised(self):
+        raising_plugin = self._RaisingPlugin()
+        recording_plugin = self._RecordingPlugin()
+
+        delegator = _OpenTelemetryExporterDelegator(
+            [raising_plugin, recording_plugin]
+        )
+
+        delegator.export_stats_data([self._stats_data()])
+        self.assertEqual(len(recording_plugin.metrics_data), 1)
+
+        delegator.export_tracing_data([self._tracing_data()])
+        self.assertEqual(len(recording_plugin.tracing_data), 1)
 
 
 if __name__ == "__main__":
