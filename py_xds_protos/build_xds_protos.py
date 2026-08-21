@@ -81,6 +81,12 @@ PKGUTIL_STYLE_INIT = (
 )
 NAMESPACE_PACKAGES = ["google"]
 
+# Directories shared with googleapis-common-protos. These must use implicit
+# namespace packages (no __init__.py) so that uninstalling xds-protos does
+# not break the google namespace for other packages.
+IMPLICIT_NAMESPACE_DIRS = {"google", os.path.join("google", "api"),
+                           os.path.join("google", "logging")}
+
 
 def add_test_import(proto_package_path: str, file_name: str, service: bool = False):
     TEST_IMPORTS.append(
@@ -154,6 +160,8 @@ def compile_protos(proto_root: str, sub_dir: str = ".") -> None:
 
 
 def create_init_file(path: str, package_path: str = "") -> None:
+    if package_path in IMPLICIT_NAMESPACE_DIRS:
+        return
     with open(os.path.join(path, "__init__.py"), "w") as f:
         # Apply the pkgutil-style namespace packaging, which is compatible for 2
         # and 3. Here is the full table of namespace compatibility:
@@ -166,12 +174,22 @@ def main():
     # Compile xDS protos
     compile_protos(ENVOY_API_PROTO_ROOT)
     compile_protos(XDS_PROTO_ROOT)
-    # We don't want to compile the entire GCP surface API, just the essential ones
-    compile_protos(GOOGLEAPIS_ROOT, os.path.join("google", "api"))
-    compile_protos(GOOGLEAPIS_ROOT, os.path.join("google", "rpc"))
-    compile_protos(GOOGLEAPIS_ROOT, os.path.join("google", "longrunning"))
-    compile_protos(GOOGLEAPIS_ROOT, os.path.join("google", "logging"))
-    compile_protos(GOOGLEAPIS_ROOT, os.path.join("google", "type"))
+    # Core google.api, google.rpc, google.type, google.longrunning, and
+    # google.logging.type protos are provided by googleapis-common-protos.
+    # Only compile the sub-packages not covered by that dependency.
+    compile_protos(GOOGLEAPIS_ROOT, os.path.join("google", "api", "apikeys"))
+    compile_protos(GOOGLEAPIS_ROOT, os.path.join("google", "api", "cloudquotas"))
+    compile_protos(GOOGLEAPIS_ROOT, os.path.join("google", "api", "expr"))
+    compile_protos(
+        GOOGLEAPIS_ROOT, os.path.join("google", "api", "servicecontrol")
+    )
+    compile_protos(
+        GOOGLEAPIS_ROOT, os.path.join("google", "api", "servicemanagement")
+    )
+    compile_protos(
+        GOOGLEAPIS_ROOT, os.path.join("google", "api", "serviceusage")
+    )
+    compile_protos(GOOGLEAPIS_ROOT, os.path.join("google", "logging", "v2"))
     compile_protos(VALIDATE_ROOT, "validate")
     compile_protos(OPENCENSUS_PROTO_ROOT)
     compile_protos(OPENTELEMETRY_PROTO_ROOT)
