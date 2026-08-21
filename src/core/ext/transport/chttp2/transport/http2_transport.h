@@ -278,8 +278,8 @@ class TransportShutdownTracker {
 class TarpitEntry {
  public:
   struct OutgoingResetPayload {
-    uint32_t http2_error_code = 0;
     absl::Status trailing_metadata_status;
+    uint32_t http2_error_code = 0;
   };
 
   struct OutgoingTrailingMetadataPayload {
@@ -301,11 +301,10 @@ class TarpitEntry {
                                          const uint32_t http2_error_code,
                                          absl::Status trailing_metadata_status,
                                          const Timestamp expire_time) {
-    return TarpitEntry(
-        stream_id,
-        OutgoingResetPayload{http2_error_code,
-                             std::move(trailing_metadata_status)},
-        expire_time);
+    return TarpitEntry(stream_id,
+                       OutgoingResetPayload{std::move(trailing_metadata_status),
+                                            http2_error_code},
+                       expire_time);
   }
   static TarpitEntry CreateOutgoingTrailingMetadata(
       const uint32_t stream_id, ServerMetadataHandle metadata,
