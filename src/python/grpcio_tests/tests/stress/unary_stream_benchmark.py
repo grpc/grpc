@@ -26,8 +26,7 @@ _PORT = 5741
 _MESSAGE_SIZE = 4
 _RESPONSE_COUNT = 32 * 1024
 
-_SERVER_CODE = (
-    """
+_SERVER_CODE = """
 import datetime
 import threading
 import grpc
@@ -48,9 +47,7 @@ server.add_insecure_port('[::]:%d')
 unary_stream_benchmark_pb2_grpc.add_UnaryStreamBenchmarkServiceServicer_to_server(Handler(), server)
 server.start()
 server.wait_for_termination()
-"""
-    % _PORT
-)
+""" % _PORT
 
 try:
     from src.python.grpcio_tests.tests.stress import (

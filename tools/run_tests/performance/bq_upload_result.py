@@ -36,7 +36,7 @@ def _upload_netperf_latency_csv_to_bigquery(
     project_id, dataset_id, table_id, result_file
 ):
     with open(result_file, "r") as f:
-        (col1, col2, col3) = f.read().split(",")
+        col1, col2, col3 = f.read().split(",")
         latency50 = float(col1.strip()) * 1000
         latency90 = float(col2.strip()) * 1000
         latency99 = float(col3.strip()) * 1000
