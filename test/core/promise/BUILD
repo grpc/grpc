@@ -338,13 +338,17 @@ grpc_cc_test(
     external_deps = [
         "gtest",
         "absl/strings",
+        "absl/status",
     ],
     tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:promise_upb",
+        "//src/core:if",
         "//src/core:json_writer",
+        "//src/core:map",
+        "//src/core:race",
         "//src/core:seq",
         "@com_google_protobuf//upb/mem",
     ],
