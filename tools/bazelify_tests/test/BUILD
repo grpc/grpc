@@ -217,9 +217,9 @@ test_suite(
 generate_strict_tests()
 
 grpc_run_simple_command_test(
-    name = "bazel_build_with_bzlmod_linux",
+    name = "bazel_build_with_bazel_9_linux",
     size = "enormous",
-    args = ["tools/bazelify_tests/test/bazel_build_with_bzlmod_linux.sh"],
+    args = ["tools/bazelify_tests/test/bazel_build_with_bazel_9_linux.sh"],
     docker_image_version = "tools/dockerfile/test/bazel.current_version",
 )
 
@@ -248,7 +248,7 @@ test_suite(
     name = "bazel_build_tests_linux",
     tests = [
         ":bazel_build_out_of_tree_with_bzlmod_linux",
-        ":bazel_build_with_bzlmod_linux",
+        ":bazel_build_with_bazel_9_linux",
         ":bazel_build_with_grpc_no_xds_linux",
         ":bazel_build_with_grpc_no_xds_negative_test_linux",
         ":bazel_build_with_strict_warnings_linux",
