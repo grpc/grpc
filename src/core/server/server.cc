@@ -2279,3 +2279,14 @@ const grpc_arg_pointer_vtable* grpc_server_config_fetcher_arg_vtable(void) {
   return grpc_core::ChannelArgTypeTraits<
       grpc_core::ServerConfigFetcher>::VTable();
 }
+
+__attribute__((weak)) grpc_server_config_fetcher*
+grpc_server_config_fetcher_xds_create(
+    grpc_server_xds_status_notifier /*notifier*/,
+    const grpc_channel_args* /*args*/) {
+  return nullptr;
+}
+
+__attribute__((weak)) grpc_slice grpc_dump_xds_configs(void) {
+  return grpc_empty_slice();
+}
