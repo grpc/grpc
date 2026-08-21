@@ -15,6 +15,7 @@
 
 from concurrent import futures
 import ipaddress
+import time
 import unittest
 
 import grpc
@@ -320,13 +321,15 @@ class ChannelzServicerTest(unittest.TestCase):
         for i in range(k_failed):
             self._send_failed_unary_unary(0)
 
-        while True:
+        for _ in range(100):
             resp = self._get_server_by_ref_id(self._pairs[0].server_ref_id)
             if (
                 resp.data.calls_started
                 == resp.data.calls_succeeded + resp.data.calls_failed
             ):
                 break
+            time.sleep(0.01)
+
         self.assertEqual(resp.data.calls_started, k_success + k_failed)
         self.assertEqual(resp.data.calls_succeeded, k_success)
         self.assertEqual(resp.data.calls_failed, k_failed)
@@ -414,7 +417,7 @@ class ChannelzServicerTest(unittest.TestCase):
         # Subchannel exists
         self.assertGreater(len(gc_resp.channel.subchannel_ref), 0)
 
-        while True:
+        for _ in range(100):
             gsc_resp = self._channelz_stub.GetSubchannel(
                 channelz_pb2.GetSubchannelRequest(
                     subchannel_id=gc_resp.channel.subchannel_ref[
@@ -428,13 +431,15 @@ class ChannelzServicerTest(unittest.TestCase):
                 + gsc_resp.subchannel.data.calls_failed
             ):
                 break
+            time.sleep(0.01)
+
         self.assertEqual(gsc_resp.subchannel.data.calls_started, 1)
         self.assertEqual(gsc_resp.subchannel.data.calls_failed, 0)
         self.assertEqual(gsc_resp.subchannel.data.calls_succeeded, 1)
         # Socket exists
         self.assertEqual(len(gsc_resp.subchannel.socket_ref), 1)
 
-        while True:
+        for _ in range(100):
             gs_resp = self._channelz_stub.GetSocket(
                 channelz_pb2.GetSocketRequest(
                     socket_id=gsc_resp.subchannel.socket_ref[0].socket_id
@@ -446,6 +451,8 @@ class ChannelzServicerTest(unittest.TestCase):
                 + gs_resp.socket.data.streams_failed
             ):
                 break
+            time.sleep(0.01)
+
         self.assertEqual(gs_resp.socket.data.streams_started, 1)
         self.assertEqual(gs_resp.socket.data.streams_succeeded, 1)
         self.assertEqual(gs_resp.socket.data.streams_failed, 0)
@@ -461,13 +468,15 @@ class ChannelzServicerTest(unittest.TestCase):
         self._send_successful_unary_unary(0)
         self._send_failed_unary_unary(0)
 
-        while True:
+        for _ in range(100):
             gs_resp = self._get_server_by_ref_id(self._pairs[0].server_ref_id)
             if (
                 gs_resp.data.calls_started
                 == gs_resp.data.calls_succeeded + gs_resp.data.calls_failed
             ):
                 break
+            time.sleep(0.01)
+
         self.assertEqual(gs_resp.data.calls_started, 2)
         self.assertEqual(gs_resp.data.calls_succeeded, 1)
         self.assertEqual(gs_resp.data.calls_failed, 1)
