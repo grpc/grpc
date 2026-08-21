@@ -262,6 +262,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/credentials/call/external/url_external_account_credentials.h )
   s.files += %w( src/core/credentials/call/gcp_service_account_identity/gcp_service_account_identity_credentials.cc )
   s.files += %w( src/core/credentials/call/gcp_service_account_identity/gcp_service_account_identity_credentials.h )
+  s.files += %w( src/core/credentials/call/gdch_service_account/gdch_service_account_credentials.cc )
+  s.files += %w( src/core/credentials/call/gdch_service_account/gdch_service_account_credentials.h )
   s.files += %w( src/core/credentials/call/iam/iam_credentials.cc )
   s.files += %w( src/core/credentials/call/iam/iam_credentials.h )
   s.files += %w( src/core/credentials/call/json_util.cc )
