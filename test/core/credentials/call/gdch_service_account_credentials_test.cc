@@ -16,6 +16,8 @@
 
 #include "src/core/credentials/call/gdch_service_account/gdch_service_account_credentials.h"
 
+#include <grpc/support/time.h>
+
 #include <optional>
 #include <string>
 #include <utility>
@@ -30,12 +32,15 @@
 #include "test/core/test_util/test_config.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "absl/cleanup/cleanup.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
+
+extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 
 namespace grpc_core {
 namespace {
@@ -292,6 +297,18 @@ TEST_F(GDCHServiceAccountCredentialsTest, CreateFailureInvalidTokenUri) {
 // --- Tests for CreateAssertionComponents ---
 
 TEST_F(GDCHServiceAccountCredentialsTest, CreateAssertionComponentsSuccess) {
+  // Mock gpr_now_impl so that conversions between GPR_CLOCK_REALTIME and
+  // GPR_CLOCK_MONOTONIC are deterministic across platforms. Without mocking,
+  // differences in clock resolution between the system realtime clock and the
+  // monotonic timer (e.g. on Windows) can introduce sub-second jitter during
+  // the round-trip conversion, causing second-truncated values (tv_sec) to be
+  // off by one.
+  gpr_timespec (*orig_gpr_now_impl)(gpr_clock_type) = gpr_now_impl;
+  gpr_now_impl = [](gpr_clock_type clock_type) {
+    return gpr_timespec{12345678, 0, clock_type};
+  };
+  absl::Cleanup cleanup = [&]() { gpr_now_impl = orig_gpr_now_impl; };
+
   Json::Object obj = CreateValidServiceAccountObject();
   absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> creds =
       GDCHServiceAccountCredentials::Create(JsonDump(Json::FromObject(obj)),

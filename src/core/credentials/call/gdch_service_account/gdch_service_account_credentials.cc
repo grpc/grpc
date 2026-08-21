@@ -107,6 +107,26 @@ std::string CaptureSslErrors() {
   return msg;
 }
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+void ECDSA_SIG_get0(const ECDSA_SIG* sig, const BIGNUM** pr,
+                    const BIGNUM** ps) {
+  if (pr != nullptr) *pr = sig->r;
+  if (ps != nullptr) *ps = sig->s;
+}
+
+int BN_bn2binpad(const BIGNUM* a, unsigned char* to, int len) {
+  int n = BN_num_bytes(a);
+  if (n > len) {
+    return -1;  // Buffer too small
+  }
+  // Zero out the padding area
+  memset(to, 0, len - n);
+  // Write the number at the end of the buffer
+  BN_bn2bin(a, to + (len - n));
+  return len;
+}
+#endif
+
 absl::StatusOr<std::string> DERToRawSignature(const std::string& der_sig,
                                               int coord_size) {
   if (der_sig.empty()) {
