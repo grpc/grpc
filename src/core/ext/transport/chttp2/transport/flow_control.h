@@ -557,8 +557,19 @@ class TransportFlowControl final {
 class StreamFlowControl final {
  public:
   explicit StreamFlowControl(TransportFlowControl* tfc);
+  // TODO(ritulb) [PH2][CHTTP2] When CHTTP2 is removed, delete this
+  // destructor(no-op). In PH2, stream flow control delta is retired exclusively
+  // on the Transport Party via OnStreamClosed(), avoiding cross-party data
+  // races.
   ~StreamFlowControl() {
     tfc_->RemoveAnnouncedWindowDelta(announced_window_delta_);
+  }
+
+  // Called from the transport party when a stream is closed to retire any
+  // positive announced window delta from the transport flow control window.
+  void OnStreamClosed() {
+    tfc_->RemoveAnnouncedWindowDelta(announced_window_delta_);
+    announced_window_delta_ = 0;
   }
 
   // Track an update to the incoming flow control counters - that is how many
