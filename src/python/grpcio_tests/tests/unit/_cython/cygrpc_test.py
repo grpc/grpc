@@ -42,6 +42,10 @@ def _metadata_plugin(context, callback):
     )
 
 
+def _private_key_signer(data, algorithm, on_complete):
+    return b"signature"
+
+
 class TypeSmokeTest(unittest.TestCase):
     def testCompletionQueueUpDown(self):
         completion_queue = cygrpc.CompletionQueue()
@@ -69,6 +73,13 @@ class TypeSmokeTest(unittest.TestCase):
         cygrpc.MetadataPluginCallCredentials(
             _metadata_plugin, b"test plugin name!"
         )
+
+    def test_ssl_channel_credentials_reject_signer_without_cert(self):
+        with self.assertRaisesRegex(
+            ValueError,
+            "certificate_chain must be provided when private_key_signer is specified",
+        ):
+            cygrpc.SSLChannelCredentials(None, None, None, _private_key_signer)
 
     def testServerStartNoExplicitShutdown(self):
         server = cygrpc.Server(

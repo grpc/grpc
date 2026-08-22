@@ -17,6 +17,11 @@ import logging
 import unittest
 
 import grpc
+import grpc.experimental
+
+
+def _private_key_signer(data, algorithm, on_complete):
+    return b"signature"
 
 
 class CredentialsTest(unittest.TestCase):
@@ -26,9 +31,7 @@ class CredentialsTest(unittest.TestCase):
         third = grpc.access_token_call_credentials("ghi")
 
         first_and_second = grpc.composite_call_credentials(first, second)
-        first_second_and_third = grpc.composite_call_credentials(
-            first, second, third
-        )
+        first_second_and_third = grpc.composite_call_credentials(first, second, third)
 
         self.assertIsInstance(first_and_second, grpc.CallCredentials)
         self.assertIsInstance(first_second_and_third, grpc.CallCredentials)
@@ -54,9 +57,7 @@ class CredentialsTest(unittest.TestCase):
 
         self.assertIsInstance(channel_and_first, grpc.ChannelCredentials)
         self.assertIsInstance(channel_first_and_second, grpc.ChannelCredentials)
-        self.assertIsInstance(
-            channel_first_second_and_third, grpc.ChannelCredentials
-        )
+        self.assertIsInstance(channel_first_second_and_third, grpc.ChannelCredentials)
 
     def test_invalid_string_certificate(self):
         self.assertRaises(
@@ -66,6 +67,87 @@ class CredentialsTest(unittest.TestCase):
             private_key=None,
             certificate_chain=None,
         )
+
+    def test_with_cert_but_no_key(self):
+        with self.assertRaisesRegex(
+            ValueError,
+            "private_key or private_key_signer must be provided",
+        ):
+            grpc.ssl_channel_credentials(certificate_chain=b"cert")
+
+    def test_with_key_but_no_cert(self):
+        with self.assertRaisesRegex(ValueError, "certificate_chain must be provided"):
+            grpc.ssl_channel_credentials(private_key=b"key")
+
+    def test_with_key_and_empty_cert(self):
+        creds = grpc.ssl_channel_credentials(certificate_chain=b"", private_key=b"key")
+        self.assertIsInstance(creds, grpc.ChannelCredentials)
+
+    def test_with_cert_and_empty_key(self):
+        creds = grpc.ssl_channel_credentials(certificate_chain=b"cert", private_key=b"")
+        self.assertIsInstance(creds, grpc.ChannelCredentials)
+
+    def test_with_signer_but_no_cert(self):
+        with self.assertRaisesRegex(
+            ValueError,
+            "certificate_chain must be provided when private_key_signer is specified",
+        ):
+            grpc.experimental.ssl_channel_credentials_with_custom_signer(
+                private_key_sign_fn=_private_key_signer,
+                certificate_chain=None,
+            )
+
+    def test_with_signer_and_empty_cert(self):
+        creds = grpc.experimental.ssl_channel_credentials_with_custom_signer(
+            private_key_sign_fn=_private_key_signer,
+            certificate_chain=b"",
+        )
+        self.assertIsInstance(creds, grpc.ChannelCredentials)
+
+    def test_default_none_credentials(self):
+        creds = grpc.ssl_channel_credentials()
+        self.assertIsInstance(creds, grpc.ChannelCredentials)
+
+    def test_empty_key_and_cert(self):
+        creds = grpc.ssl_channel_credentials(certificate_chain=b"", private_key=b"")
+        self.assertIsInstance(creds, grpc.ChannelCredentials)
+
+    def test_empty_cert_and_none_key(self):
+        with self.assertRaisesRegex(
+            ValueError,
+            "private_key or private_key_signer must be provided",
+        ):
+            grpc.ssl_channel_credentials(certificate_chain=b"", private_key=None)
+
+    def test_none_cert_and_empty_key(self):
+        with self.assertRaisesRegex(ValueError, "certificate_chain must be provided"):
+            grpc.ssl_channel_credentials(certificate_chain=None, private_key=b"")
+
+    def test_provided_key_and_cert(self):
+        creds = grpc.ssl_channel_credentials(
+            private_key=b"fake_private_key",
+            certificate_chain=b"fake_certificate_chain",
+        )
+        self.assertIsInstance(creds, grpc.ChannelCredentials)
+
+    def test_provided_signer_and_cert(self):
+        creds = grpc.experimental.ssl_channel_credentials_with_custom_signer(
+            private_key_sign_fn=_private_key_signer,
+            certificate_chain=b"fake_certificate_chain",
+        )
+        self.assertIsInstance(creds, grpc.ChannelCredentials)
+
+    def test_only_root_certificates(self):
+        creds = grpc.ssl_channel_credentials(root_certificates=b"fake_root_certs")
+        self.assertIsInstance(creds, grpc.ChannelCredentials)
+
+    def test_all_parameters_provided(self):
+        creds = grpc.ssl_channel_credentials(
+            root_certificates=b"fake_root_certs",
+            private_key=b"fake_private_key",
+            certificate_chain=b"fake_certificate_chain",
+        )
+        self.assertIsInstance(creds, grpc.ChannelCredentials)
 
 
 if __name__ == "__main__":
