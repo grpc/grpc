@@ -29,6 +29,8 @@ AFFECTS_C_CPP=`python3 -c 'import os; \
 
 if [ $AFFECTS_C_CPP == "False" ] ; then
   echo "This pull request does not affect C/C++. Tests do not need to be run."
+  echo "[2026 Infra Fixit] run_tests_matrix.py: SKIPPING THE SKIP"
+  $@
 else
   $@
 fi
