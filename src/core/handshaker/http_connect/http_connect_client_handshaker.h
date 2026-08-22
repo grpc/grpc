@@ -19,18 +19,10 @@
 #ifndef GRPC_SRC_CORE_HANDSHAKER_HTTP_CONNECT_HTTP_CONNECT_CLIENT_HANDSHAKER_H
 #define GRPC_SRC_CORE_HANDSHAKER_HTTP_CONNECT_HTTP_CONNECT_CLIENT_HANDSHAKER_H
 
+#include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/config/core_configuration.h"
-
-/// Channel arg indicating the server in HTTP CONNECT request (string).
-/// The presence of this arg triggers the use of HTTP CONNECT.
-#define GRPC_ARG_HTTP_CONNECT_SERVER "grpc.http_connect_server"
-
-/// Channel arg indicating HTTP CONNECT headers (string).
-/// Multiple headers are separated by newlines.  Key/value pairs are
-/// separated by colons.
-#define GRPC_ARG_HTTP_CONNECT_HEADERS "grpc.http_connect_headers"
 
 namespace grpc_core {
 
