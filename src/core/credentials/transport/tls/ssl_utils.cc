@@ -580,7 +580,7 @@ bool IsPrivateKeyEmpty(const PrivateKey& private_key) {
 }
 
 tsi_ssl_root_certs_store* DefaultSslRootStore::default_root_store_;
-grpc_slice DefaultSslRootStore::default_pem_root_certs_;
+Slice DefaultSslRootStore::default_pem_root_certs_;
 
 const tsi_ssl_root_certs_store* DefaultSslRootStore::GetRootStore() {
   InitRootStore();
@@ -589,10 +589,10 @@ const tsi_ssl_root_certs_store* DefaultSslRootStore::GetRootStore() {
 
 absl::string_view DefaultSslRootStore::GetPemRootCerts() {
   InitRootStore();
-  return StringViewFromSlice(default_pem_root_certs_);
+  return default_pem_root_certs_.as_string_view();
 }
 
-grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
+Slice DefaultSslRootStore::ComputePemRootCerts() {
   Slice result;
   // First try to load the roots from the configuration.
   std::string default_root_certs_path =
@@ -610,7 +610,7 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
   // Try loading roots from OS trust store if preferred over callback.
   if (result.empty() &&
       ConfigVars::Get().UseSystemRootsOverLanguageCallback()) {
-    result = Slice(LoadSystemRootCerts());
+    result = LoadSystemRootCerts();
   }
   // Try overridden roots if needed.
   grpc_ssl_roots_override_result ovrd_res = GRPC_SSL_ROOTS_OVERRIDE_FAIL;
@@ -619,15 +619,13 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
     ovrd_res = ssl_roots_override_cb(&pem_root_certs);
     if (ovrd_res == GRPC_SSL_ROOTS_OVERRIDE_OK) {
       GRPC_CHECK_NE(pem_root_certs, nullptr);
-      result = Slice::FromCopiedBuffer(
-          pem_root_certs,
-          strlen(pem_root_certs) + 1);  // nullptr terminator.
+      result = Slice::FromCopiedBuffer(pem_root_certs, strlen(pem_root_certs));
     }
     gpr_free(pem_root_certs);
   }
   // Try loading roots from OS trust store if flag is enabled.
   if (result.empty() && !ConfigVars::Get().NotUseSystemSslRoots()) {
-    result = Slice(LoadSystemRootCerts());
+    result = LoadSystemRootCerts();
   }
   // Fallback to roots manually shipped with gRPC.
   if (result.empty() && ovrd_res != GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY) {
@@ -639,7 +637,7 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
       result = std::move(*slice);
     }
   }
-  return result.TakeCSlice();
+  return result;
 }
 
 void DefaultSslRootStore::InitRootStore() {
@@ -649,9 +647,9 @@ void DefaultSslRootStore::InitRootStore() {
 
 void DefaultSslRootStore::InitRootStoreOnce() {
   default_pem_root_certs_ = ComputePemRootCerts();
-  if (!GRPC_SLICE_IS_EMPTY(default_pem_root_certs_)) {
+  if (!default_pem_root_certs_.empty()) {
     default_root_store_ = tsi_ssl_root_certs_store_create(
-        StringViewFromSlice(default_pem_root_certs_));
+        default_pem_root_certs_.as_string_view());
   }
 }
 
