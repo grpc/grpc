@@ -176,8 +176,8 @@ namespace {
 class TestMitigationEngine : public MitigationEngine {
  public:
   std::optional<Action> EvaluateIncomingConnection(
-      absl::string_view peer_address) override {
-    if (peer_address == "ipv4:127.0.0.1:12345") {
+      const EvaluateArgs& args) override {
+    if (args.peer_address == "ipv4:127.0.0.1:12345") {
       return Action::kCloseConnection;
     }
     return std::nullopt;
@@ -185,12 +185,12 @@ class TestMitigationEngine : public MitigationEngine {
 
   std::optional<Action> EvaluateIncomingMetadata(
       absl::string_view, absl::string_view,
-      absl::string_view /*peer_address*/) override {
+      const EvaluateArgs& /*args*/) override {
     return std::nullopt;
   }
 
   std::optional<Action> EvaluateAllIncomingMetadata(
-      const grpc_metadata_batch&, absl::string_view /*peer_address*/) override {
+      const grpc_metadata_batch&, const EvaluateArgs& /*args*/) override {
     return std::nullopt;
   }
 };
