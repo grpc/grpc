@@ -81,7 +81,7 @@ TEST(HistogramFuzzer, BucketInBoundsForIsCorrect) {
 }
 
 void ExponentialHistogramBasicsAreValid(int64_t max, size_t buckets) {
-  ExponentialHistogramShape shape(max, buckets);
+  ExponentialInt64HistogramShape shape(max, buckets);
   if (max <= buckets) {
     EXPECT_EQ(shape.buckets(), max);
   } else {
@@ -99,7 +99,7 @@ FUZZ_TEST(HistogramFuzzer, ExponentialHistogramBasicsAreValid)
 
 void ExponentialHistogramBucketForIsCorrect(int64_t max, size_t buckets,
                                             int64_t value) {
-  ExponentialHistogramShape shape(max, buckets);
+  ExponentialInt64HistogramShape shape(max, buckets);
   size_t bucket = shape.BucketFor(value);
   size_t expected_bucket = BucketInBoundsFor(shape.bounds(), value);
   EXPECT_EQ(bucket, expected_bucket)
