@@ -53,21 +53,30 @@ BAZEL_REFERENCE_LINK = [
     ("//src", "grpc_root/src"),
 ]
 
-# maps bazel reference to a proto to actual path
+# maps bazel proto references to local source roots for generated files.
+# for each proto we include both the minitable and upbdefs C sources when present.
 BAZEL_PROTO_REFERENCE_LINK = [
-    ("//src/proto/", "grpc_root/src/core/ext/upb-gen/src/proto/"),
+    (
+        "//src/proto/",
+        "grpc_root/src/core/ext/upb-gen/src/proto/",
+        "grpc_root/src/core/ext/upbdefs-gen/src/proto/",
+    ),
     (
         "@com_google_protobuf//src/google/",
         "grpc_root/src/core/ext/upb-gen/google/",
+        "grpc_root/src/core/ext/upbdefs-gen/google/",
+    ),
+    (
+        "@com_google_googleapis//google/",
+        "grpc_root/src/core/ext/upb-gen/google/",
+        "grpc_root/src/core/ext/upbdefs-gen/google/",
     ),
 ]
 
-ABSL_INCLUDE = (os.path.join("third_party", "abseil-cpp"),)
+ABSL_INCLUDE = ("third_party/abseil-cpp",)
 
-UPB_GEN_INCLUDE = (os.path.join("grpc_root", "src", "core", "ext", "upb-gen"),)
-UPB_DEFS_GEN_INCLUDE = (
-    os.path.join("grpc_root", "src", "core", "ext", "upbdefs-gen"),
-)
+UPB_GEN_INCLUDE = ("grpc_root/src/core/ext/upb-gen",)
+UPB_DEFS_GEN_INCLUDE = ("grpc_root/src/core/ext/upbdefs-gen",)
 
 # Exclude conditional dependencies that are not needed by gRPC.
 # Required files can be found at third_party/protobuf/src/file_lists.cmake
@@ -76,10 +85,8 @@ UPB_EXCLUDE_CC_FILES_EXCEPTIONS = [
     "third_party/protobuf/upb/wire/decode_fast/select.c",
 ]
 
-PROTOBUF_INCLUDE = (os.path.join("third_party", "protobuf"),)
-PROTOBUF_UTF8_RANGE_INCLUDE = (
-    os.path.join("third_party", "protobuf", "third_party", "utf8_range"),
-)
+PROTOBUF_INCLUDE = ("third_party/protobuf",)
+PROTOBUF_UTF8_RANGE_INCLUDE = ("third_party/protobuf/third_party/utf8_range",)
 
 # will be added to include path when building grpcio_observability
 EXTENSION_INCLUDE_DIRECTORIES = (
@@ -128,19 +135,42 @@ BAZEL_DEPS = os.path.join(
     GRPC_ROOT, "tools", "distrib", "python", "bazel_deps.sh"
 )
 
+# Run bazel directly on Windows instead of using the shell wrapper.
+BAZEL_QUERY_FALLBACK_CMD = ["bazel", "query"]
+
 # the bazel target to scrape to get list of sources for the build
 BAZEL_DEPS_QUERIES = [
     "//src/core:experiments",
     "//src/core:slice",
     "//src/core:ref_counted_string",
     "//src/core:instrument",
+    "//src/core:activity",
+    "//:google_rpc_status_upb",
+    "//:google_rpc_status_upbdefs",
+    "//:channelz_upbdefs",
+    "//:channelz_service_upbdefs",
+    "//:channelz_property_list_upbdefs",
+    "//:promise_upb",
+    "//:promise_upbdefs",
 ]
+
+
+def _source_file_query(query):
+    return "kind('source file', deps(%s))" % query
 
 
 def _bazel_query(query):
     """Runs 'bazel query' to collect source file info."""
-    print('Running "bazel query %s"' % query)
-    output = subprocess.check_output([BAZEL_DEPS, query])
+    effective_query = _source_file_query(query)
+    print('Running "bazel query %s"' % effective_query)
+    if sys.platform == "win32":
+        # On Windows, invoking a .sh wrapper through bash can fail when bash is
+        # provided by WSL and receives a Windows path. Use bazel directly.
+        output = subprocess.check_output(
+            BAZEL_QUERY_FALLBACK_CMD + [effective_query]
+        )
+    else:
+        output = subprocess.check_output([BAZEL_DEPS, effective_query])
     return output.decode("ascii").splitlines()
 
 
@@ -173,18 +203,28 @@ def _removeprefix(input: str, prefix: str, /) -> str:
         return input[:]
 
 
-def _bazel_proto_name_to_file_path(proto_target: str):
-    """Transform bazel proto target to local file name."""
-    for bazel_prefix, local_path in BAZEL_PROTO_REFERENCE_LINK:
+def _bazel_proto_name_to_file_paths(proto_target: str):
+    """Transform bazel proto target to local generated source file names."""
+    for (
+        bazel_prefix,
+        upb_gen_path,
+        upbdefs_gen_path,
+    ) in BAZEL_PROTO_REFERENCE_LINK:
         if proto_target.startswith(bazel_prefix):
             normalized_name = (
                 _removeprefix(proto_target, bazel_prefix)
                 .lstrip("/")
                 .replace(":", "/")
             )
-            new_name = normalized_name.replace(".proto", ".upb_minitable.c")
-            return f"{local_path.rstrip('/')}/{new_name}"
-    return None
+            minitable_name = normalized_name.replace(
+                ".proto", ".upb_minitable.c"
+            )
+            upbdefs_name = normalized_name.replace(".proto", ".upbdefs.c")
+            return [
+                f"{upb_gen_path.rstrip('/')}/{minitable_name}",
+                f"{upbdefs_gen_path.rstrip('/')}/{upbdefs_name}",
+            ]
+    return []
 
 
 def _generate_deps_file_content():
@@ -197,11 +237,10 @@ def _generate_deps_file_content():
     cc_files = set()
     for name in cc_files_output:
         if name.endswith(".proto"):
-            filepath = _bazel_proto_name_to_file_path(name)
-            if filepath and os.path.exists(
-                _removeprefix(filepath, "grpc_root/")
-            ):
-                cc_files.add(filepath)
+            filepaths = _bazel_proto_name_to_file_paths(name)
+            for filepath in filepaths:
+                if os.path.exists(_removeprefix(filepath, "grpc_root/")):
+                    cc_files.add(filepath)
         if name.endswith(".cc") or (
             name.endswith(".c")
             and not name.endswith((".upb.c", ".upb_minitable.c"))
