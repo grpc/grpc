@@ -67,12 +67,10 @@ TEST(AbsoluteFilePathTest, ConcatenatesCorrectly) {
 TEST(CreateRootCertsBundleTest, ReturnsEmpty) {
   // Test that CreateRootCertsBundle returns an empty slice for null or
   // nonexistent cert directories.
-  grpc_slice result_slice = grpc_core::CreateRootCertsBundle(nullptr);
-  EXPECT_TRUE(GRPC_SLICE_IS_EMPTY(result_slice));
-  grpc_slice_unref(result_slice);
+  grpc_core::Slice result_slice = grpc_core::CreateRootCertsBundle(nullptr);
+  EXPECT_TRUE(result_slice.empty());
   result_slice = grpc_core::CreateRootCertsBundle("does/not/exist");
-  EXPECT_TRUE(GRPC_SLICE_IS_EMPTY(result_slice));
-  grpc_slice_unref(result_slice);
+  EXPECT_TRUE(result_slice.empty());
 }
 
 TEST(CreateRootCertsBundleTest, BundlesCorrectly) {
