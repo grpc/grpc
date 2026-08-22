@@ -256,12 +256,16 @@ struct grpc_ssl_server_credentials_options {
   grpc_ssl_client_certificate_request_type client_certificate_request;
   grpc_ssl_server_certificate_config* certificate_config;
   grpc_ssl_server_certificate_config_fetcher* certificate_config_fetcher;
+  grpc_tls_version min_tls_version;
+  grpc_tls_version max_tls_version;
 };
 
 grpc_ssl_server_credentials::grpc_ssl_server_credentials(
     const grpc_ssl_server_credentials_options& options) {
+  config_.client_certificate_request = options.client_certificate_request;
+  config_.min_tls_version = options.min_tls_version;
+  config_.max_tls_version = options.max_tls_version;
   if (options.certificate_config_fetcher != nullptr) {
-    config_.client_certificate_request = options.client_certificate_request;
     certificate_config_fetcher_ = *options.certificate_config_fetcher;
   } else {
     build_config(options.certificate_config->pem_root_certs,
@@ -309,16 +313,6 @@ void grpc_ssl_server_credentials::build_config(
   config_.pem_root_certs = gpr_strdup(pem_root_certs);
   config_.pem_key_cert_pairs = grpc_convert_grpc_to_key_cert_pairs(
       pem_key_cert_pairs, num_key_cert_pairs);
-}
-
-void grpc_ssl_server_credentials::set_min_tls_version(
-    grpc_tls_version min_tls_version) {
-  config_.min_tls_version = min_tls_version;
-}
-
-void grpc_ssl_server_credentials::set_max_tls_version(
-    grpc_tls_version max_tls_version) {
-  config_.max_tls_version = max_tls_version;
 }
 
 grpc_ssl_server_certificate_config* grpc_ssl_server_certificate_config_create(
@@ -371,6 +365,8 @@ grpc_ssl_server_credentials_create_options_using_config(
       gpr_zalloc(sizeof(grpc_ssl_server_credentials_options)));
   options->client_certificate_request = client_certificate_request;
   options->certificate_config = config;
+  options->min_tls_version = grpc_tls_version::TLS1_2;
+  options->max_tls_version = grpc_tls_version::TLS1_3;
 done:
   return options;
 }
@@ -395,8 +391,24 @@ grpc_ssl_server_credentials_create_options_using_config_fetcher(
           gpr_zalloc(sizeof(grpc_ssl_server_credentials_options)));
   options->client_certificate_request = client_certificate_request;
   options->certificate_config_fetcher = fetcher;
+  options->min_tls_version = grpc_tls_version::TLS1_2;
+  options->max_tls_version = grpc_tls_version::TLS1_3;
 
   return options;
+}
+
+void grpc_ssl_server_credentials_options_set_min_tls_version(
+    grpc_ssl_server_credentials_options* options,
+    grpc_tls_version min_tls_version) {
+  GRPC_CHECK_NE(options, nullptr);
+  options->min_tls_version = min_tls_version;
+}
+
+void grpc_ssl_server_credentials_options_set_max_tls_version(
+    grpc_ssl_server_credentials_options* options,
+    grpc_tls_version max_tls_version) {
+  GRPC_CHECK_NE(options, nullptr);
+  options->max_tls_version = max_tls_version;
 }
 
 grpc_server_credentials* grpc_ssl_server_credentials_create(
@@ -450,6 +462,11 @@ grpc_server_credentials* grpc_ssl_server_credentials_create_with_options(
   } else if (options->certificate_config_fetcher != nullptr &&
              options->certificate_config_fetcher->cb == nullptr) {
     LOG(ERROR) << "Certificate config fetcher callback must not be NULL.";
+    goto done;
+  }
+
+  if (options->min_tls_version > options->max_tls_version) {
+    LOG(ERROR) << "Minimum TLS version cannot exceed maximum TLS version.";
     goto done;
   }
 
