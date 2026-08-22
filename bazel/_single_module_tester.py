@@ -20,13 +20,13 @@ import pkgutil
 import importlib.util
 
 class SingleLoader:
-    def __init__(self, pattern: str, unittest_path: str):
+    def __init__(self, target_module: str, unittest_path: str):
         loader = unittest.TestLoader()
         self.suite = unittest.TestSuite()
         tests = []
 
         for importer, module_name, is_package in pkgutil.walk_packages([unittest_path]):
-            if pattern in module_name:
+            if target_module in module_name:
                 try:
                     spec = importer.find_spec(module_name)
                     if spec is not None:
@@ -46,7 +46,7 @@ class SingleLoader:
 if __name__ == "__main__":
 
     if len(sys.argv) != 3:
-        print(f"USAGE: {sys.argv[0]} TARGET_MODULE", file=sys.stderr)
+        print(f"USAGE: {sys.argv[0]} TARGET_MODULE UNITTEST_PATH", file=sys.stderr)
         sys.exit(1)
 
 
