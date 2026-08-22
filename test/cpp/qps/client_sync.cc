@@ -174,10 +174,14 @@ class SynchronousStreamingClient : public SynchronousClient {
   const int messages_per_stream_;
   std::vector<int> messages_issued_;
 
-  void FinishStream(HistogramEntry* entry, size_t thread_idx) {
+  Status FinishStream(HistogramEntry* entry, size_t thread_idx) {
     Status s = stream_[thread_idx]->Finish();
     // don't set the value since the stream is failed and shouldn't be timed
     entry->set_status(s.error_code());
+    return s;
+  }
+
+  void LogErrorAndResetContext(const Status& s, size_t thread_idx) {
     if (!s.ok()) {
       std::lock_guard<std::mutex> l(stream_mu_[thread_idx]);
       if (!shutdown_[thread_idx].val) {
@@ -258,7 +262,8 @@ class SynchronousStreamingPingPongClient final
       }
     }
     stream_[thread_idx]->WritesDone();
-    FinishStream(entry, thread_idx);
+    Status s = FinishStream(entry, thread_idx);
+    LogErrorAndResetContext(s, thread_idx);
     auto* stub = channels_[thread_idx % channels_.size()].get_stub();
     std::lock_guard<std::mutex> l(stream_mu_[thread_idx]);
     if (!shutdown_[thread_idx].val) {
@@ -310,7 +315,8 @@ class SynchronousStreamingFromClientClient final
       return true;
     }
     stream_[thread_idx]->WritesDone();
-    FinishStream(entry, thread_idx);
+    Status s = FinishStream(entry, thread_idx);
+    LogErrorAndResetContext(s, thread_idx);
     auto* stub = channels_[thread_idx % channels_.size()].get_stub();
     std::lock_guard<std::mutex> l(stream_mu_[thread_idx]);
     if (!shutdown_[thread_idx].val) {
@@ -328,36 +334,41 @@ class SynchronousStreamingFromServerClient final
     : public SynchronousStreamingClient<grpc::ClientReader<SimpleResponse>> {
  public:
   explicit SynchronousStreamingFromServerClient(const ClientConfig& config)
-      : SynchronousStreamingClient(config), last_recv_(num_threads_) {}
+      : SynchronousStreamingClient(config), start_time_(num_threads_) {}
   ~SynchronousStreamingFromServerClient() override {}
 
  private:
-  std::vector<double> last_recv_;
+  std::vector<double> start_time_;
 
   bool InitThreadFuncImpl(size_t thread_idx) override {
     auto* stub = channels_[thread_idx % channels_.size()].get_stub();
     std::lock_guard<std::mutex> l(stream_mu_[thread_idx]);
     if (!shutdown_[thread_idx].val) {
+      start_time_[thread_idx] = UsageTimer::Now();
       stream_[thread_idx] =
           stub->StreamingFromServer(&context_[thread_idx], request_);
     } else {
       return false;
     }
-    last_recv_[thread_idx] = UsageTimer::Now();
     return true;
   }
 
   bool ThreadFuncImpl(HistogramEntry* entry, size_t thread_idx) override {
     if (stream_[thread_idx]->Read(&responses_[thread_idx])) {
-      double now = UsageTimer::Now();
-      entry->set_value((now - last_recv_[thread_idx]) * 1e9);
-      last_recv_[thread_idx] = now;
       return true;
     }
-    FinishStream(entry, thread_idx);
+    Status s = FinishStream(entry, thread_idx);
+    if (s.ok()) {
+      entry->set_value((UsageTimer::Now() - start_time_[thread_idx]) * 1e9);
+    }
+    LogErrorAndResetContext(s, thread_idx);
+    if (!WaitToIssue(thread_idx)) {
+      return true;
+    }
     auto* stub = channels_[thread_idx % channels_.size()].get_stub();
     std::lock_guard<std::mutex> l(stream_mu_[thread_idx]);
     if (!shutdown_[thread_idx].val) {
+      start_time_[thread_idx] = UsageTimer::Now();
       stream_[thread_idx] =
           stub->StreamingFromServer(&context_[thread_idx], request_);
     } else {

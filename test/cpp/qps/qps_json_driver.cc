@@ -16,6 +16,7 @@
 //
 //
 
+#include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
 
 #include <fstream>
