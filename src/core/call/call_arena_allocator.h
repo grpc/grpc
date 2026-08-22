@@ -72,18 +72,30 @@ class CallArenaAllocator final : public ArenaFactory {
  public:
   CallArenaAllocator(MemoryAllocator allocator, size_t initial_size)
       : ArenaFactory(std::move(allocator)),
-        call_size_estimator_(initial_size) {}
+        call_size_estimator_(initial_size),
+        pooled_size_(0) {}
 
   RefCountedPtr<Arena> MakeArena() override {
-    return Arena::Create(call_size_estimator_.CallSizeEstimate(), Ref());
+    const size_t size =
+        Arena::RoundedInitialSize(call_size_estimator_.CallSizeEstimate());
+    if (pooled_size_.load(std::memory_order_relaxed) == size) {
+      void* block = pool_.TryPop();
+      if (block != nullptr) {
+        return Arena::CreateAt(block, size, Ref());
+      }
+    }
+    return Arena::Create(size, Ref());
   }
 
-  void FinalizeArena(Arena* arena) override;
+  void FinalizeArena(Arena* arena, size_t initial_zone_size,
+                     size_t total_used) override;
 
   size_t CallSizeEstimate() { return call_size_estimator_.CallSizeEstimate(); }
 
  private:
   CallSizeEstimator call_size_estimator_;
+  ArenaBlockPool pool_;
+  std::atomic<size_t> pooled_size_;
 };
 
 }  // namespace grpc_core
