@@ -29,6 +29,7 @@ def cc_grpc_library(
         allow_deprecated = False,
         use_external = False,  # @unused
         grpc_only = False,
+        plugin_flags = [],
         **kwargs):
     """Generates C++ grpc classes for services defined in a proto file.
 
@@ -64,6 +65,7 @@ def cc_grpc_library(
         grpc_only (bool): if True, generate only grpc library, expecting
           protobuf messages library (cc_proto_library target) to be passed as
           deps. False by default (will become True by default eventually).
+        plugin_flags (list): A list of flags to pass to the gRPC plugin.
         **kwargs: rest of arguments, e.g., compatible_with and visibility
     """
     if len(srcs) > 1:
@@ -110,6 +112,7 @@ def cc_grpc_library(
             well_known_protos = well_known_protos,
             generate_mocks = generate_mocks,
             allow_deprecated = allow_deprecated,
+            flags = plugin_flags,
             **kwargs
         )
 
