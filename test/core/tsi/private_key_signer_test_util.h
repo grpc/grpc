@@ -51,6 +51,8 @@ class SyncTestPrivateKeySigner final : public PrivateKeySigner {
 
   void Cancel(std::shared_ptr<AsyncSigningHandle> /*handle*/) override;
 
+  absl::string_view Name() const override { return "SyncTestPrivateKeySigner"; }
+
  private:
   bssl::UniquePtr<EVP_PKEY> pkey_;
   Mode mode_;
@@ -73,6 +75,8 @@ class AsyncTestPrivateKeySigner final
        OnSignComplete on_sign_complete) override;
 
   void Cancel(std::shared_ptr<AsyncSigningHandle> /*handle*/) override;
+
+  absl::string_view Name() const override { return "AsyncTestPrivateKeySigner"; }
 
   bool WasCancelled();
 
