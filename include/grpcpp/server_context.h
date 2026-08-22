@@ -189,6 +189,13 @@ class CallbackSessionHandler;
 }  // namespace internal
 }  // namespace experimental
 
+#ifndef METADATA_MAP_REF_DEFINED
+#define METADATA_MAP_REF_DEFINED
+struct MetadataMapRef {
+  const std::multimap<grpc::string_ref, grpc::string_ref>& metadata;
+};
+#endif  // METADATA_MAP_REF_DEFINED
+
 /// Base class of ServerContext.
 class ServerContextBase {
  public:
@@ -296,9 +303,8 @@ class ServerContextBase {
   /// safe to access as soon as the call has begun on the server side.
   ///
   /// \return A multimap of initial metadata key-value pairs from the server.
-  const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata()
-      const {
-    return *client_metadata_.map();
+  MetadataMapRef client_metadata() const {
+    return MetadataMapRef{.metadata = *client_metadata_.map()};
   }
 
   /// Return the compression algorithm to be used by the server call.
