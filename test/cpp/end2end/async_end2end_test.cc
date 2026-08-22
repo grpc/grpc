@@ -311,6 +311,16 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
  protected:
   AsyncEnd2endTest() { GetParam().Log(); }
 
+  // TODO(tjagtap) : [PH2][P3] : Remove once all the PH2 E2E tests are fixed.
+  void EnableLoggingForPH2Tests() {
+    grpc_tracer_set_enabled("http2_ph2_transport", 1);
+    absl::SetGlobalVLogLevel(2);
+  }
+  void DisableLoggingForPH2Tests() {
+    grpc_tracer_set_enabled("http2_ph2_transport", 0);
+    absl::SetGlobalVLogLevel(-1);
+  }
+
   void SetUp() override {
     port_ = grpc_pick_unused_port_or_die();
     server_address_ << "localhost:" << port_;
@@ -525,7 +535,9 @@ TEST_P(AsyncEnd2endTest, ReconnectChannel) {
 
 // We do not need to protect notify because the use is synchronized.
 void ServerWait(Server* server, int* notify) {
+  LOG(ERROR) << "TJ_DEBUG: Before server->Wait() in ServerWait";
   server->Wait();
+  LOG(ERROR) << "TJ_DEBUG: After server->Wait() in ServerWait";
   *notify = 1;
 }
 TEST_P(AsyncEnd2endTest, WaitAndShutdownTest) {
@@ -543,7 +555,9 @@ TEST_P(AsyncEnd2endTest, ShutdownThenWait) {
   ResetStub();
   SendRpc(1);
   std::thread t([this]() { ServerShutdown(); });
+  LOG(ERROR) << "TJ_DEBUG: Before server_->Wait() in ShutdownThenWait";
   server_->Wait();
+  LOG(ERROR) << "TJ_DEBUG: After server_->Wait() in ShutdownThenWait";
   t.join();
 }
 
