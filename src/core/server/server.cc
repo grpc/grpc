@@ -1331,7 +1331,8 @@ grpc_error_handle Server::SetupTransport(
     }
     t->StartConnectivityWatch(MakeOrphanable<TransportConnectivityWatcher>(
         t->RefAsSubclass<ServerTransport>(), Ref()));
-    if (auto socket_node = transport->GetSocketNode(); socket_node != nullptr) {
+    if (auto socket_node = transport->GetSocketNode();
+        socket_node != nullptr && channelz_node_ != nullptr) {
       socket_node->AddParent(channelz_node_.get());
     }
     GRPC_TRACE_LOG(server_channel, INFO) << "Adding connection";
@@ -1360,17 +1361,17 @@ grpc_error_handle Server::SetupTransport(
       // Completion queue not found.  Pick a random one to publish new calls to.
       cq_idx = static_cast<size_t>(rand()) % std::max<size_t>(1, cqs_.size());
     }
-    intptr_t channelz_socket_uuid = 0;
     if (auto socket_node = transport->GetSocketNode(); socket_node != nullptr) {
-      channelz_socket_uuid = socket_node->uuid();
-      socket_node->AddParent(channelz_node_.get());
+      MutexLock lock(&mu_global_);
+      if (channelz_node_ != nullptr) {
+        socket_node->AddParent(channelz_node_.get());
+      }
     }
 
     // Keep a local reference to the channel alive during setup to prevent
     // premature destruction if the transport fails concurrently.
     RefCountedPtr<Channel> channel_keep_alive = *channel;
-    chand->InitTransport(Ref(), std::move(*channel), cq_idx, transport,
-                         channelz_socket_uuid);
+    chand->InitTransport(Ref(), std::move(*channel), cq_idx, transport);
 
     auto* parent_arena =
         args.GetPointer<Arena>(GRPC_ARG_SERVER_INTERNAL_PARENT_CALL_ARENA);
@@ -1607,6 +1608,14 @@ void Server::Orphan() {
     GRPC_CHECK(listeners_destroyed_ == listener_states_.size());
   }
   listener_states_.clear();
+  SourceDestructing();
+  // channelz node reset needs to be done without keeping the mutex
+  RefCountedPtr<channelz::ServerNode> channelz_node_to_release;
+  {
+    MutexLock lock(&mu_global_);
+    channelz_node_to_release = std::move(channelz_node_);
+  }
+  channelz_node_to_release.reset();
   Unref();
 }
 
@@ -1740,12 +1749,10 @@ Server::ChannelData::~ChannelData() {
 
 void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
                                         RefCountedPtr<Channel> channel,
-                                        size_t cq_idx, Transport* transport,
-                                        intptr_t channelz_socket_uuid) {
+                                        size_t cq_idx, Transport* transport) {
   server_ = std::move(server);
   channel_ = std::move(channel);
   cq_idx_ = cq_idx;
-  channelz_socket_uuid_ = channelz_socket_uuid;
   // Publish channel.
   {
     MutexLock lock(&server_->mu_global_);
