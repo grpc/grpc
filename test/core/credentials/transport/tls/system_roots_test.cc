@@ -93,9 +93,8 @@ TEST(CreateRootCertsBundleTest, BundlesCorrectly) {
 
 #if defined(GPR_WINDOWS)
 TEST(LoadSystemRootCertsTest, Success) {
-  grpc_slice roots_slice = grpc_core::LoadSystemRootCerts();
-  EXPECT_FALSE(GRPC_SLICE_IS_EMPTY(roots_slice));
-  grpc_slice_unref(roots_slice);
+  Slice roots_slice = grpc_core::LoadSystemRootCerts();
+  EXPECT_FALSE(roots_slice.empty());
 }
 #endif  // GPR_WINDOWS
 
