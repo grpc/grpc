@@ -70,7 +70,7 @@ const char* kCertDirectories[] = {""};
 Slice GetSystemRootCerts() {
   size_t num_cert_files_ = GPR_ARRAY_SIZE(kCertFiles);
   for (size_t i = 0; i < num_cert_files_; i++) {
-    auto slice = LoadFile(kCertFiles[i], /*add_null_terminator=*/false);
+    auto slice = LoadFile(kCertFiles[i]);
     if (slice.ok()) return std::move(*slice);
   }
   return Slice();

@@ -81,8 +81,7 @@ TEST(CreateRootCertsBundleTest, BundlesCorrectly) {
       "test/core/credentials/transport/tls/test_data/";
   absl::string_view roots_bundle_str;
   auto roots_bundle =
-      grpc_core::LoadFile(absl::StrCat(kTestPathPrefix, "bundle.pem"),
-                          /*add_null_terminator=*/false);
+      grpc_core::LoadFile(absl::StrCat(kTestPathPrefix, "bundle.pem"));
   if (roots_bundle.ok()) roots_bundle_str = roots_bundle->as_string_view();
   // result_slice should have the same content as roots_bundle.
   grpc_core::Slice result_slice(grpc_core::CreateRootCertsBundle(

@@ -598,8 +598,7 @@ Slice DefaultSslRootStore::ComputePemRootCerts() {
   std::string default_root_certs_path =
       ConfigVars::Get().DefaultSslRootsFilePath();
   if (!default_root_certs_path.empty()) {
-    auto slice =
-        LoadFile(default_root_certs_path, /*add_null_terminator=*/false);
+    auto slice = LoadFile(default_root_certs_path);
     if (!slice.ok()) {
       LOG(ERROR) << "error loading file " << default_root_certs_path << ": "
                  << slice.status();
@@ -629,7 +628,7 @@ Slice DefaultSslRootStore::ComputePemRootCerts() {
   }
   // Fallback to roots manually shipped with gRPC.
   if (result.empty() && ovrd_res != GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY) {
-    auto slice = LoadFile(installed_roots_path, /*add_null_terminator=*/false);
+    auto slice = LoadFile(installed_roots_path);
     if (!slice.ok()) {
       LOG(ERROR) << "error loading file " << installed_roots_path << ": "
                  << slice.status();

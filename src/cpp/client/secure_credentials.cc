@@ -199,8 +199,7 @@ grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options) {
     return grpc::Status(grpc::StatusCode::NOT_FOUND,
                         "STS_CREDENTIALS environment variable not set.");
   }
-  auto json_slice =
-      grpc_core::LoadFile(*sts_creds_path, /*add_null_terminator=*/false);
+  auto json_slice = grpc_core::LoadFile(*sts_creds_path);
   if (!json_slice.ok()) {
     return grpc::Status(grpc::StatusCode::NOT_FOUND,
                         json_slice.status().ToString());

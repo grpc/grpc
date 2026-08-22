@@ -450,7 +450,7 @@ void MaybeAddToBody(absl::string_view field_name, absl::string_view field,
 }
 
 absl::StatusOr<Slice> LoadTokenFile(const char* path) {
-  auto slice = LoadFile(path, /*add_null_terminator=*/false);
+  auto slice = LoadFile(path);
   if (!slice.ok()) return slice.status();
   if (slice->empty()) {
     LOG(ERROR) << "Token file " << path << " is empty";
