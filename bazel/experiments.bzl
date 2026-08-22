@@ -167,7 +167,6 @@ EXPERIMENTS = {
                 "secure_endpoint_offload_large_writes",
                 "secure_endpoint_read_coalescing",
                 "use_call_event_engine_in_completion_queue",
-                "v2_non_owning_waker_implementation",
                 "wildcard_ip_expansion_restriction",
             ],
             "cpp_end2end_test": [
@@ -210,6 +209,7 @@ EXPERIMENTS = {
                 "event_engine_for_all_other_endpoints",
                 "event_engine_fork",
                 "event_engine_listener",
+                "v2_non_owning_waker_implementation",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
