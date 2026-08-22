@@ -37,6 +37,7 @@ def _generate_copied_files_impl(ctx):
         out_file = ctx.actions.declare_file(destination_path)
         outs.append(out_file)
         ctx.actions.run_shell(
+            mnemonic = "GenerateCopiedFiles",
             inputs = [f],
             outputs = [out_file],
             command = "mkdir -p {0} && cp {1} {2}".format(
