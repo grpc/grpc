@@ -382,6 +382,8 @@ class CallInitiator {
     GRPC_DCHECK_NE(spine_.get(), nullptr);
   }
 
+  bool is_set() const { return spine_ != nullptr; }
+
   // Wrap a promise so that if it returns failure it automatically cancels
   // the rest of the call.
   // The resulting (returned) promise will resolve to Empty.

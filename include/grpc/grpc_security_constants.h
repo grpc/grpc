@@ -46,6 +46,9 @@ extern "C" {
 #define GRPC_SSL_SESSION_REUSED_PROPERTY "ssl_session_reused"
 #define GRPC_SSL_NEGOTIATED_KEY_EXCHANGE_GROUP_PROPERTY_NAME \
   "ssl_negotiated_key_exchange_group"
+#define GRPC_SSL_SERVER_NAME_PROPERTY_NAME "ssl_server_name"
+#define GRPC_SSL_TLS_VERSION_PROPERTY_NAME "ssl_tls_version"
+#define GRPC_SSL_PEER_SHA256_PROPERTY_NAME "ssl_peer_sha256"
 #define GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME "security_level"
 #define GRPC_PEER_DNS_PROPERTY_NAME "peer_dns"
 #define GRPC_PEER_SPIFFE_ID_PROPERTY_NAME "peer_spiffe_id"
