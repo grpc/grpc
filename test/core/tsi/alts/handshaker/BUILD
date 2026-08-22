@@ -125,6 +125,7 @@ grpc_cc_test(
         "//:grpc_alts_credentials",
         "//:grpc_core_credentials_header",
         "//:grpc_security_base",
+        "//src/core:env",
         "//src/core:error",
         "//src/core:grpc_check",
         "//src/core:slice",
