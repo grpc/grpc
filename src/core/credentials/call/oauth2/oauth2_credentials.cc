@@ -220,33 +220,20 @@ UniqueTypeName Oauth2TokenFetcherCredentials::type() const {
   return kFactory.Create();
 }
 
-OrphanablePtr<TokenFetcherCredentials::FetchRequest>
-Oauth2TokenFetcherCredentials::FetchToken(
-    Timestamp deadline,
-    absl::AnyInvocable<
-        void(absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
-        on_done) {
-  return MakeOrphanable<HttpTokenFetcherCredentials::HttpFetchRequest>(
-      this, deadline,
-      [on_done = std::move(on_done)](
-          absl::StatusOr<grpc_http_response> response) mutable {
-        if (!response.ok()) {
-          on_done(response.status());
-          return;
-        }
-        // Parse oauth2 token.
-        std::optional<Slice> access_token_value;
-        Duration token_lifetime;
-        grpc_credentials_status status =
-            grpc_oauth2_token_fetcher_credentials_parse_server_response(
-                &(*response), &access_token_value, &token_lifetime);
-        if (status != GRPC_CREDENTIALS_OK) {
-          on_done(absl::UnavailableError("error parsing oauth2 token"));
-          return;
-        }
-        on_done(MakeRefCounted<Token>(std::move(*access_token_value),
-                                      Timestamp::Now() + token_lifetime));
-      });
+absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>
+Oauth2TokenFetcherCredentials::ExtractToken(
+    const grpc_http_response& response) {
+  // Parse oauth2 token.
+  std::optional<Slice> access_token_value;
+  Duration token_lifetime;
+  grpc_credentials_status status =
+      grpc_oauth2_token_fetcher_credentials_parse_server_response(
+          &response, &access_token_value, &token_lifetime);
+  if (status != GRPC_CREDENTIALS_OK) {
+    return absl::UnavailableError("error parsing oauth2 token");
+  }
+  return MakeRefCounted<Token>(std::move(*access_token_value),
+                               Timestamp::Now() + token_lifetime);
 }
 
 }  // namespace grpc_core
@@ -298,6 +285,7 @@ class grpc_compute_engine_token_fetcher_credentials
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> StartHttpRequest(
       grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
       grpc_http_response* response, grpc_closure* on_complete) override {
+    email_fetcher_->StartEmailFetch();
     memset(response, 0, sizeof(*response));
     grpc_http_header header = {const_cast<char*>("Metadata-Flavor"),
                                const_cast<char*>("Google")};
@@ -322,39 +310,25 @@ class grpc_compute_engine_token_fetcher_credentials
     return http_request;
   }
 
-  grpc_core::OrphanablePtr<FetchRequest> FetchToken(
-      grpc_core::Timestamp deadline,
-      absl::AnyInvocable<void(absl::StatusOr<grpc_core::RefCountedPtr<
-                                  TokenFetcherCredentials::Token>>)>
-          on_done) override {
-    email_fetcher_->StartEmailFetch();
-    return grpc_core::MakeOrphanable<HttpFetchRequest>(
-        this, deadline,
-        [email_fetcher = email_fetcher_, on_done = std::move(on_done)](
-            absl::StatusOr<grpc_http_response> response) mutable {
-          if (!response.ok()) {
-            on_done(response.status());
-            return;
-          }
-          std::optional<grpc_core::Slice> access_token_value;
-          grpc_core::Duration token_lifetime;
-          grpc_credentials_status status =
-              grpc_oauth2_token_fetcher_credentials_parse_server_response(
-                  &(*response), &access_token_value, &token_lifetime);
-          if (status != GRPC_CREDENTIALS_OK) {
-            on_done(absl::UnavailableError("error parsing oauth2 token"));
-            return;
-          }
-          on_done(grpc_core::MakeRefCounted<TokenWithEmail>(
-              std::move(*access_token_value),
-              grpc_core::Timestamp::Now() + token_lifetime,
-              std::move(email_fetcher)));
-        });
+  absl::StatusOr<grpc_core::RefCountedPtr<Token>> ExtractToken(
+      const grpc_http_response& response) final {
+    std::optional<grpc_core::Slice> access_token_value;
+    grpc_core::Duration token_lifetime;
+    grpc_credentials_status status =
+        grpc_oauth2_token_fetcher_credentials_parse_server_response(
+            &response, &access_token_value, &token_lifetime);
+    if (status != GRPC_CREDENTIALS_OK) {
+      return absl::UnavailableError("error parsing oauth2 token");
+    }
+    return grpc_core::MakeRefCounted<TokenWithEmail>(
+        std::move(*access_token_value),
+        grpc_core::Timestamp::Now() + token_lifetime, email_fetcher_);
   }
 
   grpc_core::RefCountedPtr<grpc_core::EmailFetcher> email_fetcher_;
   std::vector<grpc_core::URI::QueryParam> query_params_;
 };
+
 }  // namespace
 
 grpc_call_credentials* grpc_google_compute_engine_credentials_create(

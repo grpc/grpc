@@ -27,7 +27,6 @@
 #endif
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/systemd_utils.h"
 

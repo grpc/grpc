@@ -1598,10 +1598,13 @@ static dispatch_once_t initGlobalInterceptorFactory;
   });
 }
 
-// TODO(b/268379869): This test has a race and is flaky in any configurations. One possible way to
-// deflake this test is to find a way to disable ping ack on the interop server for this test case.
 - (void)testKeepaliveWithV2API {
-  return;
+  // Skipping this test when test case is running with ping ack is true.
+#ifndef GRPC_RUN_KEEPALIVE_TEST
+  if (getenv("GRPC_RUN_KEEPALIVE_TEST") == NULL) {
+    return;
+  }
+#endif
 
   GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
@@ -1620,6 +1623,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
     options.hostNameOverride = [[self class] hostNameOverride];
     options.keepaliveInterval = 1.5;
     options.keepaliveTimeout = 0;
+    options.additionalChannelArgs = @{@"grpc.http2.ping_timeout_ms" : @200};
 
     __weak RMTTestService *weakService = service;
     GRPCStreamingProtoCall *call = [service

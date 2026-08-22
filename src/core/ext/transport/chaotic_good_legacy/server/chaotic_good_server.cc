@@ -489,36 +489,20 @@ absl::StatusOr<int> AddLegacyChaoticGoodPort(Server* server, std::string addr,
   const std::string parsed_addr = URI::PercentDecode(addr);
   absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> results =
       std::vector<EventEngine::ResolvedAddress>();
-  if (IsEventEngineDnsNonClientChannelEnabled()) {
-    absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>> ee_resolver =
-        args.GetObjectRef<EventEngine>()->GetDNSResolver(
-            EventEngine::DNSResolver::ResolverOptions());
-    if (!ee_resolver.ok()) {
-      LOG(ERROR) << "Failed to resolve " << addr << ": "
-                 << ee_resolver.status().ToString();
-      return ee_resolver.status();
-    }
-    results = grpc_event_engine::experimental::LookupHostnameBlocking(
-        ee_resolver->get(), parsed_addr, absl::StrCat(0xd20));
-    if (!results.ok()) {
-      LOG(ERROR) << "Failed to resolve " << addr << ": "
-                 << results.status().ToString();
-      return results.status();
-    }
-  } else {
-    // TODO(yijiem): Remove this after event_engine_dns_non_client_channel
-    // is fully enabled.
-    const auto resolved_or = GetDNSResolver()->LookupHostnameBlocking(
-        parsed_addr, absl::StrCat(0xd20));
-    if (!resolved_or.ok()) {
-      LOG(ERROR) << "Failed to resolve " << addr << ": "
-                 << resolved_or.status().ToString();
-      return resolved_or.status();
-    }
-    for (const auto& addr : *resolved_or) {
-      results->push_back(
-          grpc_event_engine::experimental::CreateResolvedAddress(addr));
-    }
+  absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>> ee_resolver =
+      args.GetObjectRef<EventEngine>()->GetDNSResolver(
+          EventEngine::DNSResolver::ResolverOptions());
+  if (!ee_resolver.ok()) {
+    LOG(ERROR) << "Failed to resolve " << addr << ": "
+               << ee_resolver.status().ToString();
+    return ee_resolver.status();
+  }
+  results = grpc_event_engine::experimental::LookupHostnameBlocking(
+      ee_resolver->get(), parsed_addr, absl::StrCat(0xd20));
+  if (!results.ok()) {
+    LOG(ERROR) << "Failed to resolve " << addr << ": "
+               << results.status().ToString();
+    return results.status();
   }
   int port_num = 0;
   std::vector<std::pair<std::string, absl::Status>> error_list;

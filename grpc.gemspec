@@ -40,7 +40,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'simplecov',          '~> 0.22'
   s.add_development_dependency 'rake',               '~> 13.0'
   s.add_development_dependency 'rake-compiler',      '~> 1.3.1'
-  s.add_development_dependency 'rake-compiler-dock', '~> 1.11.1'
+  s.add_development_dependency 'rake-compiler-dock', '~> 1.12.0'
   s.add_development_dependency 'rspec',              '~> 3.6'
   s.add_development_dependency 'rubocop',            '~> 1.82.0'
   s.add_development_dependency 'signet',             '~> 0.7'
@@ -1642,13 +1642,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/pollset_windows.cc )
   s.files += %w( src/core/lib/iomgr/pollset_windows.h )
   s.files += %w( src/core/lib/iomgr/port.h )
-  s.files += %w( src/core/lib/iomgr/resolve_address.cc )
-  s.files += %w( src/core/lib/iomgr/resolve_address.h )
-  s.files += %w( src/core/lib/iomgr/resolve_address_impl.h )
-  s.files += %w( src/core/lib/iomgr/resolve_address_posix.cc )
-  s.files += %w( src/core/lib/iomgr/resolve_address_posix.h )
-  s.files += %w( src/core/lib/iomgr/resolve_address_windows.cc )
-  s.files += %w( src/core/lib/iomgr/resolve_address_windows.h )
   s.files += %w( src/core/lib/iomgr/resolved_address.h )
   s.files += %w( src/core/lib/iomgr/sockaddr.h )
   s.files += %w( src/core/lib/iomgr/sockaddr_posix.h )
@@ -1915,23 +1908,10 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/net/socket_mutator.h )
   s.files += %w( src/core/plugin_registry/grpc_plugin_registry.cc )
   s.files += %w( src/core/plugin_registry/grpc_plugin_registry_extra.cc )
-  s.files += %w( src/core/resolver/dns/c_ares/dns_resolver_ares.cc )
-  s.files += %w( src/core/resolver/dns/c_ares/dns_resolver_ares.h )
-  s.files += %w( src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h )
-  s.files += %w( src/core/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc )
-  s.files += %w( src/core/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc )
-  s.files += %w( src/core/resolver/dns/c_ares/grpc_ares_wrapper.cc )
-  s.files += %w( src/core/resolver/dns/c_ares/grpc_ares_wrapper.h )
-  s.files += %w( src/core/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc )
-  s.files += %w( src/core/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc )
-  s.files += %w( src/core/resolver/dns/dns_resolver_plugin.cc )
-  s.files += %w( src/core/resolver/dns/dns_resolver_plugin.h )
-  s.files += %w( src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.cc )
-  s.files += %w( src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.h )
-  s.files += %w( src/core/resolver/dns/event_engine/service_config_helper.cc )
-  s.files += %w( src/core/resolver/dns/event_engine/service_config_helper.h )
-  s.files += %w( src/core/resolver/dns/native/dns_resolver.cc )
-  s.files += %w( src/core/resolver/dns/native/dns_resolver.h )
+  s.files += %w( src/core/resolver/dns/dns_resolver.cc )
+  s.files += %w( src/core/resolver/dns/dns_resolver.h )
+  s.files += %w( src/core/resolver/dns/service_config_helper.cc )
+  s.files += %w( src/core/resolver/dns/service_config_helper.h )
   s.files += %w( src/core/resolver/endpoint_addresses.cc )
   s.files += %w( src/core/resolver/endpoint_addresses.h )
   s.files += %w( src/core/resolver/fake/fake_resolver.cc )
@@ -1964,6 +1944,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/server/xds_channel_stack_modifier.cc )
   s.files += %w( src/core/server/xds_channel_stack_modifier.h )
   s.files += %w( src/core/server/xds_server_config_fetcher.cc )
+  s.files += %w( src/core/server/xds_server_config_fetcher.h )
   s.files += %w( src/core/server/xds_server_config_fetcher_legacy.cc )
   s.files += %w( src/core/service_config/service_config.h )
   s.files += %w( src/core/service_config/service_config_call_data.h )
