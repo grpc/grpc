@@ -97,7 +97,7 @@
 #include "src/core/util/uuid_v4.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/util/work_serializer.h"
-#include "src/proto/grpc/lookup/v1/rls.upb.h"
+#include <grpc/lookup/v1/rls.upb.h>
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.hpp"
 #include "absl/base/thread_annotations.h"

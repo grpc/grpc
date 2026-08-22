@@ -29,7 +29,7 @@
 #include <vector>
 
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
-#include "src/proto/grpc/gcp/altscontext.upb.h"
+#include <grpc/gcp/altscontext.upb.h>
 #include "upb/mem/arena.hpp"
 #include "absl/log/log.h"
 
