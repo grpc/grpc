@@ -156,3 +156,14 @@ grpc_server_credentials* grpc_find_server_credentials_in_args(
   }
   return nullptr;
 }
+
+__attribute__((weak)) grpc_channel_credentials* grpc_xds_credentials_create(
+    grpc_channel_credentials* /*fallback_credentials*/) {
+  return nullptr;
+}
+
+__attribute__((weak)) grpc_server_credentials*
+grpc_xds_server_credentials_create(
+    grpc_server_credentials* /*fallback_credentials*/) {
+  return nullptr;
+}
