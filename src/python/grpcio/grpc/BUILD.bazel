@@ -130,3 +130,8 @@ py_library(
         "//src/python/grpcio/grpc/framework",
     ],
 )
+
+py_binary(
+    name="py_ver",
+    srcs=["py_ver.py"],
+)

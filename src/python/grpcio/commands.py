@@ -27,6 +27,7 @@ import sysconfig
 import tempfile
 import traceback
 
+from packaging.version import Version
 from setuptools.command import build_ext
 from setuptools.command import build_py
 import support
@@ -254,6 +255,8 @@ def try_cythonize(extensions, linetracing=False, mandatory=True):
     if linetracing:
         additional_define_macros = [("CYTHON_TRACE_NOGIL", "1")]
         cython_compiler_directives["linetrace"] = True
+    if Version(Cython.__version__) >= Version("3.1.0"):
+        cython_compiler_directives["freethreading_compatible"] = True
     return Cython.Build.cythonize(
         extensions,
         include_path=[

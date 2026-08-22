@@ -63,7 +63,7 @@ def pyx_library(name, deps = [], py_deps = [], srcs = [], **kwargs):
             # Optionally use PYTHON_BIN_PATH on Linux platforms so that python 3
             # works. Windows has issues with cython_binary so skip PYTHON_BIN_PATH.
             cmd =
-                "PYTHONHASHSEED=0 $(location @cython//:cython_binary) --cplus $(SRCS) --output-file $(OUTS)",
+                "PYTHONHASHSEED=0 $(location @cython//:cython_binary) --cplus -X freethreading_compatible=True $(SRCS) --output-file $(OUTS)",
             tools = ["@cython//:cython_binary"] + pxd_srcs,
         )
 
