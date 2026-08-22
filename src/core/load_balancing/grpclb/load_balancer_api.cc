@@ -27,7 +27,7 @@
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/timestamp.upb.h"
 #include "src/core/util/memory.h"
-#include "src/proto/grpc/lb/v1/load_balancer.upb.h"
+#include <grpc/lb/v1/load_balancer.upb.h>
 #include "upb/base/string_view.h"
 #include "absl/log/log.h"
 
