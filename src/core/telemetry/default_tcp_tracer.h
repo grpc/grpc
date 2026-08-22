@@ -34,9 +34,13 @@ class DefaultTcpTracer final : public TcpConnectionTracer {
   // Records per-connection metrics.
   void RecordConnectionMetrics(TcpConnectionMetrics metrics) override;
 
+  // Periodically records latency metrics for a connection.
+  void RecordLatency(Latency latency) override;
+
  private:
   Mutex mu_;
   TcpConnectionMetrics connection_metrics_ ABSL_GUARDED_BY(mu_);
+  Latency last_latency_ ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace grpc_core
