@@ -20,6 +20,7 @@
 #define GRPC_INTERNAL_COMPILER_PYTHON_GENERATOR_H
 
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -83,7 +84,7 @@ class PythonGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
 // docstring. Escaping starts at start_pos, which avoids copying a substring
 // when only the trailing portion of the input needs escaping.
 // Exposed for testing.
-std::string EscapePythonDocstring(const std::string& input,
+std::string EscapePythonDocstring(std::string_view input,
                                   size_t start_pos = 0);
 
 }  // namespace grpc_python_generator

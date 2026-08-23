@@ -29,6 +29,7 @@
 #include <ostream>
 #include <set>
 #include <sstream>
+#include <string_view>
 #include <tuple>
 #include <vector>
 
@@ -55,11 +56,12 @@ std::string generator_file_name;
 
 // Escapes a comment string so it is safe to embed within a Python triple-quoted
 // docstring. Replaces backslashes first, then triple-quote sequences.
-std::string EscapePythonDocstring(const std::string& input, size_t start_pos) {
+std::string EscapePythonDocstring(std::string_view input, size_t start_pos) {
   std::string result;
   if (start_pos >= input.size()) return result;
   result.reserve(input.size() - start_pos);
-  for (size_t i = start_pos; i < input.size(); i++) {
+  size_t i = start_pos;
+  while (i < input.size()) {
     if (input[i] == '\\') {
       result += "\\\\";
     } else if (input[i] == '"' && i + 2 < input.size() && input[i + 1] == '"' &&
@@ -69,6 +71,7 @@ std::string EscapePythonDocstring(const std::string& input, size_t start_pos) {
     } else {
       result += input[i];
     }
+    i++;
   }
   return result;
 }
