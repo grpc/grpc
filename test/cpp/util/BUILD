@@ -120,7 +120,6 @@ grpc_cc_library(
     deps = [
         "//:channelz",
         "//:channelz_cc_grpc",
-        "//:channelz_cc_proto",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
@@ -428,7 +427,6 @@ grpc_cc_binary(
         "no_windows",  # unistd.h
     ],
     deps = [
-        "//:channelz_cc_grpc",
         "//:channelz_cc_proto",
         "//:gpr",
         "//:grpc",

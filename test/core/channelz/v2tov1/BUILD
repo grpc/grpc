@@ -65,7 +65,6 @@ grpc_fuzz_test(
         "fuzztest_main",
     ],
     deps = [
-        "//:channelz_cc_grpc",
         "//:channelz_cc_proto",
         "//:channelz_upb",
         "//:channelz_upbdefs",
