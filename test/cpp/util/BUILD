@@ -120,6 +120,7 @@ grpc_cc_library(
     deps = [
         "//:channelz",
         "//:channelz_cc_grpc",
+        "//:channelz_cc_proto",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
