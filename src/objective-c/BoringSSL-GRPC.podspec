@@ -145,7 +145,8 @@ Pod::Spec.new do |s|
                               'crypto/**/*.{h,inc}',
                               'gen/*.inc',
                               'third_party/fiat/*.{h,inc}'
-    ss.exclude_files = '**/*_test.*',
+    ss.exclude_files = 'include/openssl/pki/**',
+                       '**/*_test.*',
                        '**/test_*.*',
                        '**/test/*.*'
 
