@@ -144,6 +144,9 @@ pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 
 [
     pip.parse(
+        environment = {
+            "PYYAML_FORCE_CYTHON": "0",
+        },
         hub_name = "grpc_python_dependencies",
         python_version = python_version,
         requirements_lock = "//:requirements.bazel.lock",
