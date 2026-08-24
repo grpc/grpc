@@ -430,6 +430,14 @@ static grpc_error_handle init_frame_parser(grpc_chttp2_transport* t,
         t->incoming_frame_type));
   }
   t->is_first_frame = false;
+
+  if (grpc_core::IsPh2Perf01Enabled() &&
+      t->incoming_frame_size > t->settings.acked().max_frame_size()) {
+    return GRPC_ERROR_CREATE(absl::StrFormat(
+        "Frame size %d is larger than max frame size %d",
+        t->incoming_frame_size, t->settings.acked().max_frame_size()));
+  }
+
   if (t->expect_continuation_stream_id != 0) {
     if (t->incoming_frame_type != GRPC_CHTTP2_FRAME_CONTINUATION) {
       return GRPC_ERROR_CREATE(
