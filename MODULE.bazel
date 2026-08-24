@@ -144,19 +144,17 @@ pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 
 [
     pip.parse(
-        environment = {
-            "PYYAML_FORCE_CYTHON": "0",
-        },
         hub_name = "grpc_python_dependencies",
         python_version = python_version,
         requirements_lock = "//:requirements.bazel.lock",
+        extra_pip_args = ["--no-build-isolation"],
     )
     for python_version in PYTHON_VERSIONS
 ]
 
 use_repo(pip, "grpc_python_dependencies")
 
-bazel_dep(name = "cython", version = "3.0.11-1")
+bazel_dep(name = "cython", version = "3.2.8")
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
