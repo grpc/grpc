@@ -1686,7 +1686,11 @@ try:
                     )
                     print(f"Building OTLP collector binary...")
                     subprocess.check_call(
-                        ["tools/bazel", "build", "//test/cpp/interop:otlp_collector"],
+                        [
+                            "tools/bazel",
+                            "build",
+                            "//test/cpp/interop:otlp_collector",
+                        ],
                         cwd=grpc_root,
                     )
                 collector_cmd = [
