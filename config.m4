@@ -101,6 +101,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/credentials/call/external/file_external_account_credentials.cc \
     src/core/credentials/call/external/url_external_account_credentials.cc \
     src/core/credentials/call/gcp_service_account_identity/gcp_service_account_identity_credentials.cc \
+    src/core/credentials/call/gdch_service_account/gdch_service_account_credentials.cc \
     src/core/credentials/call/iam/iam_credentials.cc \
     src/core/credentials/call/json_util.cc \
     src/core/credentials/call/jwt/json_token.cc \
@@ -1518,6 +1519,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/composite)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/external)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/gcp_service_account_identity)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/gdch_service_account)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/iam)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/jwt)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/jwt_token_file)

@@ -779,6 +779,7 @@ grpc_cc_library(
         "//src/core:endpoint_info_handshaker",
         "//src/core:experiments",
         "//src/core:fused_filters",
+        "//src/core:gdch_service_account_credentials",
         "//src/core:grpc_authorization_base",
         "//src/core:grpc_channel_idle_filter",
         "//src/core:grpc_external_account_credentials",
