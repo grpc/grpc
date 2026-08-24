@@ -120,7 +120,7 @@ class BuildProjectMetadata(setuptools.Command):
                     return
 
         with open(module_file_path, "w") as module_file:
-            module_file.write(f'__version__ = """{version}"""')
+            module_file.write(f'__version__ = """{version}"""\n')
 
     def _get_version_in_grpcio_metadata(self, module_file):
         try:

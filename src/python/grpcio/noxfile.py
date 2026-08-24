@@ -169,12 +169,14 @@ def build_py(session: nox.Session):
 @nox.session(venv_params=["--system-site-packages"])
 def build_ext(session: nox.Session):
     """Session to custom build_ext command to enable compiler-specific flags."""
+    session.install("cython==3.1.1", "setuptools>=77.0.1", "wheel")
 
     session.log("Custom build_ext command to enable compiler-specific flags.")
 
     import sys
 
     sys.path.insert(0, GRPC_STEM)
+    sys.path.insert(0, PYTHON_STEM)
     import os
 
     os.chdir(GRPC_STEM)

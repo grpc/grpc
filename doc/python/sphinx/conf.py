@@ -80,7 +80,6 @@ extensions = [
     "sphinx.ext.todo",
     "sphinx.ext.napoleon",
     "sphinx.ext.coverage",
-    "sphinx.ext.autodoc.typehints",
 ]
 
 napoleon_google_docstring = True
@@ -93,6 +92,8 @@ autodoc_default_options = {
 
 autodoc_mock_imports = [
     "envoy",
+    "_cyobservability",
+    "grpc_observability._cyobservability",
 ]
 
 autodoc_typehints = "description"
