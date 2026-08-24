@@ -803,10 +803,11 @@
   % if hasattr(lib, 'src_windows') and lib.src_windows:
   ifeq ($(SYSTEM),MINGW32)
   LIB${lib.name.upper()}_SRC += \\
+
   % for src in sorted(lib.src_windows):
       ${src} \\
-  % endfor
 
+  % endfor
   endif
   % endif
 
