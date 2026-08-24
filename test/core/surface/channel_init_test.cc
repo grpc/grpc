@@ -112,8 +112,7 @@ class V3FilterA : public ImplementChannelFilter<V3FilterA>,
 };
 
 const grpc_channel_filter V3FilterA::kFilter =
-    grpc_core::MakePromiseBasedFilter<V3FilterA,
-                                      grpc_core::FilterEndpoint::kServer>();
+    MakePromiseBasedFilter<V3FilterA, FilterEndpoint::kServer>();
 
 class V3FilterB : public ImplementChannelFilter<V3FilterB>,
                   public OrderTrackingV3Filter<V3FilterB> {
@@ -124,8 +123,7 @@ class V3FilterB : public ImplementChannelFilter<V3FilterB>,
 };
 
 const grpc_channel_filter V3FilterB::kFilter =
-    grpc_core::MakePromiseBasedFilter<V3FilterB,
-                                      grpc_core::FilterEndpoint::kServer>();
+    MakePromiseBasedFilter<V3FilterB, FilterEndpoint::kServer>();
 
 class V3FilterC : public ImplementChannelFilter<V3FilterC>,
                   public OrderTrackingV3Filter<V3FilterC> {
@@ -136,8 +134,7 @@ class V3FilterC : public ImplementChannelFilter<V3FilterC>,
 };
 
 const grpc_channel_filter V3FilterC::kFilter =
-    grpc_core::MakePromiseBasedFilter<V3FilterC,
-                                      grpc_core::FilterEndpoint::kServer>();
+    MakePromiseBasedFilter<V3FilterC, FilterEndpoint::kServer>();
 
 TEST(ChannelInitTest, Empty) {
   ChannelInit::Builder b;
