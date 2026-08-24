@@ -16,15 +16,27 @@
 set -ex
 
 cd "$(dirname "$0")/../../.."
+root="$(pwd)"
 CONFIG=${CONFIG:-opt}
-python tools/run_tests/run_tests.py -l php7 -c "$CONFIG" --build_only -j 8
+python tools/run_tests/run_tests.py -l php8 -c "$CONFIG" --build_only -j 8
 
 # Set up all dependencies needed for PHP QPS test
 cd src/php/tests/qps
 composer install
 # Install protobuf C-extension for php
-cd ../../../../third_party/protobuf/php/ext/google/protobuf
+cd "${root}/third_party/protobuf/php/ext/google/protobuf"
+
+# The PHP extension's build configuration (config.m4) expects 'utf8_range' 
+# to exist locally within the extension tree rather than the repository root.
+# Copy the dependency from the Protobuf third_party submodule to satisfy this.
+mkdir -p third_party/utf8_range
+cp -r "${root}/third_party/utf8_range/"* third_party/utf8_range/
+
 phpize
 ./configure
-make
+make -j8
+
+# Prepare for ruby proxy workers
+cd "${root}"
+python tools/run_tests/run_tests.py -l ruby -c "$CONFIG" --build_only -j 8
 
