@@ -491,6 +491,8 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
         arena_.get(), &pollent_);
   }
 
+  void Cancel() { activity_.reset(); }
+
  private:
   // No-op security connector, exists only to inject url_scheme.
   class BogusSecurityConnector : public grpc_channel_security_connector {
@@ -2840,6 +2842,31 @@ TEST_F(TokenFetcherCredentialsTest, Backoff) {
   // The backoff time should be longer now.
   EXPECT_EQ(run_after_duration, std::chrono::milliseconds(2560))
       << "actual: " << run_after_duration->count();
+}
+
+TEST_F(TokenFetcherCredentialsTest, CallCancelledWhileQueued) {
+  ExecCtx exec_ctx;
+  // Queue a token result for the background fetcher.
+  creds_->AddResult(MakeToken("foo"));
+  // Send first request, which will trigger a fetch that hasn't completed yet.
+  LOG(INFO) << "Sending first RPC.";
+  auto state = RequestMetadataState::NewInstance(absl::CancelledError(), "",
+                                                 /*expect_delay=*/true);
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  EXPECT_EQ(creds_->num_fetches(), 1);
+  // Abruptly cancel the request before resolving the fetch.
+  // This triggers the OnCancel wrapper in GetRequestMetadata dropping its
+  // Promise Activity.
+  LOG(INFO) << "Canceling first RPC.";
+  state->Cancel();
+  state.reset();
+  // Now resolve the fetch in the background.
+  // Before our fix, this would crash doing
+  // grpc_polling_entity_del_from_pollset_set because the polling_entity struct
+  // memory inside the QueueCall pointer was dynamically deallocated!
+  LOG(INFO) << "Resolving fetch.";
+  event_engine_->TickUntilIdle();
 }
 
 TEST_F(TokenFetcherCredentialsTest, ShutdownWhileBackoffTimerPending) {

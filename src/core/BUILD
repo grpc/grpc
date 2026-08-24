@@ -5081,6 +5081,7 @@ grpc_cc_library(
     visibility = ["//bazel:core_credentials"],
     deps = [
         "arena_promise",
+        "cancel_callback",
         "context",
         "default_event_engine",
         "metadata",
