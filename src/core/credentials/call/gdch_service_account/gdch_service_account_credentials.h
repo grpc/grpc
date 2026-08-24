@@ -109,7 +109,7 @@ class GDCHServiceAccountCredentials final : public HttpTokenFetcherCredentials {
   //
   // @return the signature as an *unencoded* string.
   static absl::StatusOr<std::string> SignUsingSha256(
-      const std::string& str, const std::string& pem_contents,
+      absl::string_view str, absl::string_view pem_contents,
       SignatureFormat format);
 
   AssertionComponents CreateAssertionComponents(Timestamp now) const;

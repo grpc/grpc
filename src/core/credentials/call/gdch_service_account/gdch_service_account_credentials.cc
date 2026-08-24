@@ -127,7 +127,7 @@ int BN_bn2binpad(const BIGNUM* a, unsigned char* to, int len) {
 }
 #endif
 
-absl::StatusOr<std::string> DERToRawSignature(const std::string& der_sig,
+absl::StatusOr<std::string> DERToRawSignature(absl::string_view der_sig,
                                               int coord_size) {
   if (der_sig.empty()) {
     return absl::InternalError("Input DER signature is empty");
@@ -257,7 +257,7 @@ void Info::JsonPostLoad(const Json& json, const JsonArgs& /*args*/,
 }  // namespace
 
 absl::StatusOr<std::string> GDCHServiceAccountCredentials::SignUsingSha256(
-    const std::string& str, const std::string& pem_contents,
+    absl::string_view str, absl::string_view pem_contents,
     SignatureFormat format) {
   ERR_clear_error();
   std::unique_ptr<BIO, OpenSslDeleter> pem_buffer(BIO_new_mem_buf(
