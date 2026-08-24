@@ -392,8 +392,8 @@ GDCHServiceAccountCredentials::CreateAssertionComponents(Timestamp now) const {
 }
 
 absl::StatusOr<std::string> GDCHServiceAccountCredentials::MakeJWTAssertion(
-    const std::string& header, const std::string& claim,
-    const std::string& pem_contents, SignatureFormat format) {
+    absl::string_view header, absl::string_view claim,
+    absl::string_view pem_contents, SignatureFormat format) {
   const std::string body = absl::StrCat(absl::WebSafeBase64Escape(header), ".",
                                         absl::WebSafeBase64Escape(claim));
   absl::StatusOr<std::string> signature =

@@ -115,8 +115,8 @@ class GDCHServiceAccountCredentials final : public HttpTokenFetcherCredentials {
   AssertionComponents CreateAssertionComponents(Timestamp now) const;
 
   static absl::StatusOr<std::string> MakeJWTAssertion(
-      const std::string& header, const std::string& claim,
-      const std::string& pem_contents, SignatureFormat format);
+      absl::string_view header, absl::string_view claim,
+      absl::string_view pem_contents, SignatureFormat format);
 
   absl::StatusOr<std::string> CreateRequestBody() const;
 
