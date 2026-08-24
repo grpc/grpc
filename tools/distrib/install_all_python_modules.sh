@@ -25,9 +25,8 @@ cd "$BASEDIR";
 function maybe_run_command () {
   local dir="$1"
   local cmd="$2"
-  # TODO(ssreenithi): find pyproject.toml/nox equivalent
-  if python3 "${dir}/setup.py" --help-commands | grep "${cmd}" &>/dev/null; then
-    python3 "${dir}/setup.py" "${cmd}";
+  if [ -f "${dir}/noxfile.py" ] && python3 -m nox --list -f "${dir}/noxfile.py" 2>/dev/null | grep -E "^\* ${cmd}(\(|$)" &>/dev/null; then
+    python3 -m nox --no-venv -s "${cmd}" -f "${dir}/noxfile.py"
   fi
 }
 

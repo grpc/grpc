@@ -83,9 +83,9 @@ sys.path.insert(0, os.path.abspath(PYTHON_STEM))
 
 import _parallel_compile_patch
 import _spawn_patch
+import commands
 import grpc_core_dependencies
 
-import commands
 import grpc_version
 import python_version
 
@@ -582,12 +582,12 @@ except ImportError:
         SETUP_REQUIRES += ("cython==3.1.1",)
 
 COMMAND_CLASS = {
-    "doc": commands.SphinxDocumentation,
+    # "doc": commands.SphinxDocumentation,
     "build_project_metadata": commands.BuildProjectMetadata,
     "build_py": commands.BuildPy,
     "build_ext": commands.BuildExt,
-    "gather": commands.Gather,
-    "clean": commands.Clean,
+    # "gather": commands.Gather,
+    # "clean": commands.Clean,
 }
 
 # Ensure that package data is copied over before any commands have been run:
