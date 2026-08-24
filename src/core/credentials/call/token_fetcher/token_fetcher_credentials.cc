@@ -304,10 +304,10 @@ TokenFetcherCredentials::GetRequestMetadata(
             ->AddTokenToClientInitialMetadata(*queued_call->md);
         return std::move(queued_call->md);
       },
-      [self = WeakRefAsSubclass<TokenFetcherCredentials>()]() {
+      [self = WeakRefAsSubclass<TokenFetcherCredentials>(),
+       pollent = GetContext<grpc_polling_entity>()]() {
         grpc_polling_entity_del_from_pollset_set(
-            GetContext<grpc_polling_entity>(),
-            grpc_polling_entity_pollset_set(&self->pollent_));
+            pollent, grpc_polling_entity_pollset_set(&self->pollent_));
       });
 }
 
