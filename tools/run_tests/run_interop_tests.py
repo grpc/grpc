@@ -1090,6 +1090,7 @@ def cloud_to_cloud_jobspec(
         add_env = add_env.copy()
         add_env["GRPC_EXPERIMENTAL_ENABLE_OTEL_TRACING"] = "true"
         add_env["OTEL_TRACES_EXPORTER"] = "otlp"
+        add_env["OTEL_EXPORTER_OTLP_PROTOCOL"] = "grpc"
         add_env["OTEL_METRICS_EXPORTER"] = "none"
         add_env["OTEL_LOGS_EXPORTER"] = "none"
         if _collector_port:
@@ -1192,6 +1193,7 @@ def server_jobspec(
         environ = environ.copy()
         environ["GRPC_EXPERIMENTAL_ENABLE_OTEL_TRACING"] = "true"
         environ["OTEL_TRACES_EXPORTER"] = "otlp"
+        environ["OTEL_EXPORTER_OTLP_PROTOCOL"] = "grpc"
         environ["OTEL_METRICS_EXPORTER"] = "none"
         environ["OTEL_LOGS_EXPORTER"] = "none"
         environ["OTEL_EXPORTER_OTLP_ENDPOINT"] = (

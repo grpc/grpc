@@ -112,6 +112,15 @@ def verify_tracing_spans(spans_file, expected_runs_count=1, poll_timeout=30.0):
         print(
             f"Assertion Failed: Timed out waiting for {expected_runs_count} complete trace(s)."
         )
+        print(f"Collected {len(all_spans)} total span(s):")
+        for s in all_spans:
+            print(
+                f"  Span: '{s.get('name')}' (TraceID: {s.get('trace_id')}, SpanID: {s.get('span_id')}, ParentID: {s.get('parent_span_id')})"
+            )
+        print(f"Grouped into {len(spans_by_trace)} trace(s):")
+        for tid, s_list in spans_by_trace.items():
+            names = [s.get("name") for s in s_list]
+            print(f"  Trace {tid}: {names}")
         return False
 
     print(
