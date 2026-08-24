@@ -88,6 +88,84 @@ $PROTOC \
     echo >&2 "grpc system files should be imported with full paths."    
 }
 
+# Verify the "named_framework_to_proto_path_mappings_path" option
+MAPPING_FILE=./framework_mappings.txt
+cat <<EOF > ${MAPPING_FILE}
+# Comment line
+TestFramework: src/objective-c/tests/RemoteTestClient/test.proto
+MessagesFramework: src/objective-c/tests/RemoteTestClient/messages.proto
+EOF
+
+PROTO_FRAMEWORK_OUT=./proto_framework_out
+rm -rf ${PROTO_FRAMEWORK_OUT}
+mkdir -p ${PROTO_FRAMEWORK_OUT}
+
+$PROTOC \
+    --plugin=protoc-gen-grpc="$PLUGIN" \
+    --objc_out=${PROTO_FRAMEWORK_OUT} \
+    --grpc_out=named_framework_to_proto_path_mappings_path=${MAPPING_FILE}:${PROTO_FRAMEWORK_OUT} \
+    -I . \
+    -I ${WELL_KNOWN_PROTOS_PATH} \
+    src/objective-c/tests/RemoteTestClient/*.proto
+
+# Verify mapped framework imports in header
+[ "`cat ${PROTO_FRAMEWORK_OUT}/src/objective-c/tests/RemoteTestClient/Test.pbrpc.h |
+    grep '#import <TestFramework/Test\.pbobjc\.h>'`" ] || {
+    echo >&2 "Test.pbrpc.h missing TestFramework import for Test.pbobjc.h"
+    exit 1
+}
+[ "`cat ${PROTO_FRAMEWORK_OUT}/src/objective-c/tests/RemoteTestClient/Test.pbrpc.h |
+    grep '#import <MessagesFramework/Messages\.pbobjc\.h>'`" ] || {
+    echo >&2 "Test.pbrpc.h missing MessagesFramework import for Messages.pbobjc.h"
+    exit 1
+}
+
+# Verify mapped framework imports in source
+[ "`cat ${PROTO_FRAMEWORK_OUT}/src/objective-c/tests/RemoteTestClient/Test.pbrpc.m |
+    grep '#import <TestFramework/Test\.pbrpc\.h>'`" ] || {
+    echo >&2 "Test.pbrpc.m missing TestFramework import for Test.pbrpc.h"
+    exit 1
+}
+[ "`cat ${PROTO_FRAMEWORK_OUT}/src/objective-c/tests/RemoteTestClient/Test.pbrpc.m |
+    grep '#import <TestFramework/Test\.pbobjc\.h>'`" ] || {
+    echo >&2 "Test.pbrpc.m missing TestFramework import for Test.pbobjc.h"
+    exit 1
+}
+[ "`cat ${PROTO_FRAMEWORK_OUT}/src/objective-c/tests/RemoteTestClient/Test.pbrpc.m |
+    grep '#import <MessagesFramework/Messages\.pbobjc\.h>'`" ] || {
+    echo >&2 "Test.pbrpc.m missing MessagesFramework import for Messages.pbobjc.h"
+    exit 1
+}
+
+# Verify fallback with generate_for_named_framework
+MAPPING_FALLBACK_FILE=./framework_mappings_fallback.txt
+cat <<EOF > ${MAPPING_FALLBACK_FILE}
+MessagesFramework: src/objective-c/tests/RemoteTestClient/messages.proto
+EOF
+
+PROTO_FALLBACK_OUT=./proto_fallback_out
+rm -rf ${PROTO_FALLBACK_OUT}
+mkdir -p ${PROTO_FALLBACK_OUT}
+
+$PROTOC \
+    --plugin=protoc-gen-grpc="$PLUGIN" \
+    --objc_out=${PROTO_FALLBACK_OUT} \
+    --grpc_out=named_framework_to_proto_path_mappings_path=${MAPPING_FALLBACK_FILE},generate_for_named_framework=DefaultFramework:${PROTO_FALLBACK_OUT} \
+    -I . \
+    -I ${WELL_KNOWN_PROTOS_PATH} \
+    src/objective-c/tests/RemoteTestClient/*.proto
+
+[ "`cat ${PROTO_FALLBACK_OUT}/src/objective-c/tests/RemoteTestClient/Test.pbrpc.h |
+    grep '#import <DefaultFramework/Test\.pbobjc\.h>'`" ] || {
+    echo >&2 "Test.pbrpc.h missing DefaultFramework fallback import for Test.pbobjc.h"
+    exit 1
+}
+[ "`cat ${PROTO_FALLBACK_OUT}/src/objective-c/tests/RemoteTestClient/Test.pbrpc.h |
+    grep '#import <MessagesFramework/Messages\.pbobjc\.h>'`" ] || {
+    echo >&2 "Test.pbrpc.h missing MessagesFramework import for Messages.pbobjc.h"
+    exit 1
+}
+
 # Run one extra command to clear $? before exiting the script to prevent
 # failing even when tests pass.
 echo "Plugin option tests passed."
