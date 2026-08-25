@@ -4,7 +4,7 @@
 # - Linux Musl (x86_64-linux-musl, aarch64-linux-musl, x86-linux-musl): GCC 10.3.0
 # - MinGW (x86-mingw32, x64-mingw-ucrt): GCC 10.2.1 (POSIX thread model)
 diff --git a/Dockerfile.mri.erb b/Dockerfile.mri.erb
-index 1bf488e..c575700 100644
+index 1bf488e..aed2eab 100644
 --- a/Dockerfile.mri.erb
 +++ b/Dockerfile.mri.erb
 @@ -75,51 +75,89 @@ USER root
@@ -14,7 +14,7 @@ index 1bf488e..c575700 100644
 +<% if platform =~ /mingw/ %>
 +
 +RUN echo "Package: *\nPin: release n=bullseye\nPin-Priority: 100" > /etc/apt/preferences.d/bullseye.pref && \
-+    echo "deb [trusted=yes] http://deb.debian.org/debian bullseye main" > /etc/apt/sources.list.d/bullseye.list && \
++    echo "deb [trusted=yes] https://deb.debian.org/debian bullseye main" > /etc/apt/sources.list.d/bullseye.list && \
 +    apt-get -y update && \
 +    apt-get install -y -t bullseye \
 +        gcc-mingw-w64-i686-posix \
