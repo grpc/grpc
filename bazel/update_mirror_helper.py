@@ -47,11 +47,22 @@ _SUPPORTED_RULE_KINDS = [
 ]
 _LOGGED_FIELDS = ["repoRuleName", "name", "canonicalName", "apparentName"]
 
-_BAZEL_URLS = [
+_EXTRA_URLS = [
+    # Bazel binaries
     "https://github.com/bazelbuild/bazel/releases/download/8.7.0/bazel-8.7.0-linux-arm64",
     "https://github.com/bazelbuild/bazel/releases/download/8.7.0/bazel-8.7.0-linux-x86_64",
     "https://github.com/bazelbuild/bazel/releases/download/8.7.0/bazel-8.7.0-darwin-x86_64",
     "https://github.com/bazelbuild/bazel/releases/download/8.7.0/bazel-8.7.0-windows-x86_64.exe",
+
+    # MacOS CI setup.
+    "https://www.python.org/ftp/python/3.10.5/python-3.10.5-macos11.pkg",
+    "https://www.python.org/ftp/python/3.11.0/python-3.11.0rc1-macos11.pkg",
+    "https://www.python.org/ftp/python/3.12.0/python-3.12.0rc2-macos11.pkg",
+    "https://www.python.org/ftp/python/3.13.0/python-3.13.0rc2-macos11.pkg",
+    "https://www.python.org/ftp/python/3.14.0/python-3.14.0rc1-macos11.pkg",
+    "https://www.python.org/ftp/python/3.15.0/python-3.15.0b2-macos11.pkg",
+    "https://download.visualstudio.microsoft.com/download/pr/e0fe8c99-e33c-4d75-bd4e-2478ed3ee35a/ff06e47afc7c13bdbbaa50a9713ac772/dotnet-sdk-3.1.415-osx-x64.pkg",
+    "https://download.visualstudio.microsoft.com/download/pr/14a45451-4cc9-48e1-af69-0aff75891d09/ff6e83986a2a9a535015fb3104a90a1b/dotnet-sdk-6.0.100-osx-x64.pkg",
 ]
 
 logger = logging.getLogger(__name__)
@@ -140,7 +151,7 @@ def main():
     args = parser.parse_args()
     urls = set(
         itertools.chain(
-            _BAZEL_URLS,
+            _EXTRA_URLS,
             parse_cmake_urls(),
             parse_workspace_urls(),
             parse_bzlmod_urls(args.bzlmod_deps_file),
