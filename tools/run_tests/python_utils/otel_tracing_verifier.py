@@ -124,12 +124,8 @@ def verify_tracing_spans(spans_file, expected_runs_count=1, poll_timeout=30.0):
         return False
 
     print(
-        f"Collected {len(all_spans)} total spans across {len(client_spans)} client run(s):"
+        f"Collected {len(all_spans)} total span(s) in collector. Verifying {len(client_spans)} client trace(s):"
     )
-    for s in all_spans:
-        print(
-            f"  Span: '{s.get('name')}' (TraceID: {s.get('trace_id')}, SpanID: {s.get('span_id')}, ParentID: {s.get('parent_span_id')})"
-        )
 
     # Thoroughly validate each trace group
     for idx, client_span in enumerate(client_spans, 1):
@@ -155,7 +151,20 @@ def verify_tracing_spans(spans_file, expected_runs_count=1, poll_timeout=30.0):
             )
         )
 
+        client_events = [e.get("name") for e in client_span.get("events", [])]
+        attempt_events = [e.get("name") for e in attempt_span.get("events", [])]
+        server_events = [e.get("name") for e in server_span.get("events", [])]
+
         print(f"Verifying Trace {idx}/{len(client_spans)} (TraceID: {trace_id}):")
+        print(
+            f"  Client:  '{client_span.get('name')}' (SpanID: {client_span.get('span_id')}, Events: {client_events})"
+        )
+        print(
+            f"  Attempt: '{attempt_span.get('name')}' (SpanID: {attempt_span.get('span_id')}, ParentID: {attempt_span.get('parent_span_id')}, Events: {attempt_events})"
+        )
+        print(
+            f"  Server:  '{server_span.get('name')}' (SpanID: {server_span.get('span_id')}, ParentID: {server_span.get('parent_span_id')}, Events: {server_events})"
+        )
 
         # 1. Assert parent-child hierarchy
         if attempt_span.get("parent_span_id") != client_span.get("span_id"):
@@ -205,8 +214,6 @@ def verify_tracing_spans(spans_file, expected_runs_count=1, poll_timeout=30.0):
             return False
 
         # 3. Verify message events
-        attempt_events = [e.get("name") for e in attempt_span.get("events", [])]
-        client_events = [e.get("name") for e in client_span.get("events", [])]
         if (
             "Outbound message" not in attempt_events
             and "Outbound message" not in client_events
@@ -224,7 +231,6 @@ def verify_tracing_spans(spans_file, expected_runs_count=1, poll_timeout=30.0):
             )
             return False
 
-        server_events = [e.get("name") for e in server_span.get("events", [])]
         if "Inbound message" not in server_events:
             print(
                 f"Assertion Failed in Trace {trace_id}: Event 'Inbound message' not found on Server span."
