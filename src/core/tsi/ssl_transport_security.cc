@@ -3367,9 +3367,9 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
       SSL_CTX_set_cert_store(ssl_context, options->root_store->store);
     }
 #endif
-    if (OPENSSL_VERSION_NUMBER < 0x10100000 ||
-        (options->root_store == nullptr &&
-         options->root_cert_info != nullptr)) {
+    if (options->root_cert_info != nullptr &&
+        (OPENSSL_VERSION_NUMBER < 0x10100000 ||
+         options->root_store == nullptr)) {
       Match(
           *options->root_cert_info,
           [&](const std::string& pem_root_certs) {
