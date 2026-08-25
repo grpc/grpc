@@ -32,13 +32,10 @@ cd /var/local/git/grpc
 mkdir -p /usr/local/share/grpc
 cp etc/roots.pem /usr/local/share/grpc/roots.pem
 
-# build C++ interop client, interop server and http2 interop client
+# build C++ interop client, interop server, http2 interop client and otlp collector
+tools/bazel build //test/cpp/interop:interop_client //test/cpp/interop:interop_server //test/cpp/interop:http2_client //test/cpp/interop:otlp_collector
 mkdir -p cmake/build
-cd cmake/build
-cmake -DgRPC_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17 ../..
-make interop_client interop_server -j4
-make http2_client -j4
-
-cd /var/local/git/grpc
-tools/bazel build //test/cpp/interop:otlp_collector
+cp -f bazel-bin/test/cpp/interop/interop_client cmake/build/interop_client
+cp -f bazel-bin/test/cpp/interop/interop_server cmake/build/interop_server
+cp -f bazel-bin/test/cpp/interop/http2_client cmake/build/http2_client
 
