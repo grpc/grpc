@@ -430,6 +430,14 @@ static grpc_error_handle init_frame_parser(grpc_chttp2_transport* t,
         t->incoming_frame_type));
   }
   t->is_first_frame = false;
+
+  if (grpc_core::IsPh2Perf01Enabled() &&
+      t->incoming_frame_size > t->settings.acked().max_frame_size()) {
+    return GRPC_ERROR_CREATE(absl::StrFormat(
+        "Frame size %d is larger than max frame size %d",
+        t->incoming_frame_size, t->settings.acked().max_frame_size()));
+  }
+
   if (t->expect_continuation_stream_id != 0) {
     if (t->incoming_frame_type != GRPC_CHTTP2_FRAME_CONTINUATION) {
       return GRPC_ERROR_CREATE(
@@ -536,7 +544,7 @@ static grpc_error_handle init_header_skip_frame_parser(
       t->settings.acked().max_header_list_size(),
       hpack_boundary_type(t, is_eoh), priority_type,
       hpack_parser_log_info(t, HPackParser::LogInfo::kDontKnow),
-      t->mitigation_engine.get());
+      t->mitigation_engine.get(), t->peer_string.as_string_view());
   return absl::OkStatus();
 }
 
@@ -623,8 +631,7 @@ error_handler:
     return absl::OkStatus();
   } else if (s != nullptr) {
     // handle stream errors by closing the stream
-    grpc_chttp2_mark_stream_closed(t, s, true, false,
-                                   absl_status_to_grpc_error(status));
+    grpc_chttp2_mark_stream_closed(t, s, true, false, status);
     grpc_error_handle rst_error = grpc_chttp2_add_rst_stream_to_next_write(
         t, t->incoming_stream_id,
         static_cast<uint32_t>(Http2ErrorCode::kProtocolError),
@@ -632,7 +639,7 @@ error_handler:
     if (GPR_UNLIKELY(!rst_error.ok())) return rst_error;
     return init_non_header_skip_frame_parser(t);
   } else {
-    return absl_status_to_grpc_error(status);
+    return status;
   }
 }
 
@@ -887,7 +894,8 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
                              t->settings.acked().max_header_list_size(),
                              hpack_boundary_type(t, is_eoh), priority_type,
                              hpack_parser_log_info(t, frame_type),
-                             t->mitigation_engine.get());
+                             t->mitigation_engine.get(),
+                             t->peer_string.as_string_view());
   return absl::OkStatus();
 }
 

@@ -1,4 +1,4 @@
-FROM ghcr.io/rake-compiler/rake-compiler-dock-image:1.11.1-mri-x86-linux-musl
+FROM us-docker.pkg.dev/grpc-testing/testing-images-public/rake-compiler-dock-image:1.12.0-mri-x86-linux-musl@sha256:264329d387ac0df939eef1e000b38eb7a08c6d9cda0a5bd767504ca35692c0c9
 
 #=================
 # Install ccache

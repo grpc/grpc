@@ -161,7 +161,7 @@ class Http2ServerTransport final : public ServerTransport,
 
   template <typename Factory>
   void TestOnlySpawnPromise(absl::string_view name, Factory&& factory) {
-    SpawnInfallible(general_party_, name, std::forward<Factory>(factory));
+    SpawnInfallible(transport_party_, name, std::forward<Factory>(factory));
   }
 
   absl::Status TestOnlyTriggerWriteCycle() { return TriggerWriteCycle(); }
@@ -172,7 +172,7 @@ class Http2ServerTransport final : public ServerTransport,
   }
 
   int64_t TestOnlyTransportFlowControlWindow();
-  int64_t TestOnlyGetStreamFlowControlWindow(const uint32_t stream_id);
+  int64_t TestOnlyGetStreamFlowControlWindow(uint32_t stream_id);
 
   uint32_t TestOnlyLastIncomingStreamId() const {
     return last_incoming_stream_id_;
@@ -397,7 +397,7 @@ class Http2ServerTransport final : public ServerTransport,
   template <typename Factory>
   void SpawnInfallibleTransportParty(absl::string_view name,
                                      Factory&& factory) {
-    SpawnInfallible(general_party_, name, std::forward<Factory>(factory));
+    SpawnInfallible(transport_party_, name, std::forward<Factory>(factory));
   }
 
   // Spawns a promise on the transport party. If the promise returns a non-ok
@@ -405,7 +405,7 @@ class Http2ServerTransport final : public ServerTransport,
   // status.
   template <typename Factory>
   void SpawnGuardedTransportParty(absl::string_view name, Factory&& factory) {
-    general_party_->Spawn(
+    transport_party_->Spawn(
         name, std::forward<Factory>(factory),
         [self = RefAsSubclass<Http2ServerTransport>()](absl::Status status) {
           if (!status.ok()) {
@@ -418,8 +418,8 @@ class Http2ServerTransport final : public ServerTransport,
   template <typename Factory, typename OnDone>
   void SpawnWithOnDoneTransportParty(absl::string_view name, Factory&& factory,
                                      OnDone&& on_done) {
-    general_party_->Spawn(name, std::forward<Factory>(factory),
-                          std::forward<OnDone>(on_done));
+    transport_party_->Spawn(name, std::forward<Factory>(factory),
+                            std::forward<OnDone>(on_done));
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -473,6 +473,15 @@ class Http2ServerTransport final : public ServerTransport,
     return stream_list_.size();
   }
 
+  bool IsPingWithoutCallsAllowed() const {
+    return keepalive_permit_without_calls_;
+  }
+
+  bool IsTransportIdle() {
+    MutexLock lock(&transport_mutex_);
+    return GetActiveStreamCountLocked() == 0;
+  }
+
   void EnqueueResetStreamFromTransportParty(RefCountedPtr<Stream> stream,
                                             uint32_t reset_stream_error_code);
 
@@ -483,7 +492,7 @@ class Http2ServerTransport final : public ServerTransport,
 
   // Runs on the call party.
   std::optional<RefCountedPtr<Stream>> MakeStream(
-      CallInitiator&& call_initiator, const uint32_t stream_id);
+      CallInitiator&& call_initiator, uint32_t stream_id);
 
   Http2Status IncomingStream(ClientMetadataHandle&& metadata,
                              uint32_t stream_id);
@@ -494,15 +503,24 @@ class Http2ServerTransport final : public ServerTransport,
   // reads. Writes will be closed by the write loop after the RST_STREAM frame
   // is written to the wire.
   // Prefer calling HandleError over this API.
+  // Note: Use override_tarpit with caution. This would bypass the TarpitManager
+  // and would result in immediate stream closure. Currently the use of this
+  // parameter is limited to two places:
+  // 1. Transport closure path.
+  // 2. Stream reset triggered by reclaimer.
   // Parameters:
   //   stream: The stream to close.
   //   reset_stream_error_code: The error code to use for the RST_STREAM frame.
   //   trailing_metadata_status: The failure status to propagate to the
   //                             application.
+  //   tarpit: Whether stream closure should be delayed via TarpitManager.
+  //   override_tarpit: When true, bypasses any ongoing tarpit delay or check
+  //                    and forces immediate reset frame emission and cleanup.
   //   whence: The location of the caller.
   void BeginCloseStream(RefCountedPtr<Stream> stream,
                         uint32_t reset_stream_error_code,
-                        absl::Status trailing_metadata_status,
+                        absl::Status trailing_metadata_status, bool tarpit,
+                        bool override_tarpit = false,
                         DebugLocation whence = {});
 
   // Handles stream state changes by discarding pending header parsing if reads
@@ -532,9 +550,6 @@ class Http2ServerTransport final : public ServerTransport,
     if (goaway_manager_.IsGracefulGoawayInProgress()) {
       return Duration::Zero();
     }
-    if (IsMultipingEnabled()) {
-      return Duration::Seconds(1);
-    }
     return keepalive_time_ == Duration::Infinity() ? Duration::Seconds(20)
                                                    : keepalive_time_ / 2;
   }
@@ -542,9 +557,6 @@ class Http2ServerTransport final : public ServerTransport,
   absl::Status AckPing(uint64_t opaque_data);
 
   void MaybeSpawnKeepaliveLoop();
-
-  // uint32_t GetMaxAllowedStreamId() const;
-  // void SetMaxAllowedStreamId(uint32_t max_allowed_stream_id);
 
   //////////////////////////////////////////////////////////////////////////////
   // Error Path and Close Path
@@ -600,8 +612,6 @@ class Http2ServerTransport final : public ServerTransport,
                                  const char* reason)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&transport_mutex_);
 
-  bool SetOnDone(RefCountedPtr<Stream> stream);
-
   void ReadChannelArgs(const ChannelArgs& channel_args,
                        TransportChannelArgs& args);
 
@@ -624,6 +634,19 @@ class Http2ServerTransport final : public ServerTransport,
   }
 
   auto SpawnGracefulGoawayPromise(Slice&& debug_data);
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Tarpit
+
+  // Returns a promise running the tarpit drain loop which receives incoming
+  // tarpit entries and enqueues them into TarpitManager.
+  auto MakeTarpitDrainLoop();
+  // Returns a promise running the tarpit timer loop which waits for timer
+  // expiration and performs final actions on expired tarpit entries.
+  auto MakeTarpitTimerLoop();
+  // Performs final actions on expired tarpit entries (sending reset, trailing
+  // metadata, or cleaning up stream state).
+  void ActOnTarpitEntries(std::vector<TarpitEntry>&& entries);
 
   //////////////////////////////////////////////////////////////////////////////
   // Inner Classes and Structs
@@ -689,7 +712,8 @@ class Http2ServerTransport final : public ServerTransport,
 
   RefCountedPtr<UnstartedCallDestination> call_destination_;
 
-  RefCountedPtr<Party> general_party_;  // Refer AGENTS.md for party slot usage
+  // Refer AGENTS.md for party slot usage
+  RefCountedPtr<Party> transport_party_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 
   PromiseEndpoint endpoint_;
@@ -708,6 +732,7 @@ class Http2ServerTransport final : public ServerTransport,
       "http2_server", GRPC_CHANNEL_READY};
 
   RefCountedPtr<StateWatcher> watcher_ ABSL_GUARDED_BY(transport_mutex_);
+  bool is_goaway_received_;
 
   bool should_reset_ping_clock_;
   ReadContext read_context_;
@@ -716,11 +741,8 @@ class Http2ServerTransport final : public ServerTransport,
   // transport during write cycles.
   TransportWriteContext transport_write_context_;
 
-  // Tracks the max allowed stream id. Currently this is only set on receiving a
-  // graceful GOAWAY frame.
-  GRPC_UNUSED uint32_t max_allowed_stream_id_ = RFC9113::kMaxStreamId31Bit;
   // Tracks last stream id received by the transport.
-  uint32_t last_incoming_stream_id_ = 0;
+  uint32_t last_incoming_stream_id_;
 
   // Duration between two consecutive keepalive pings.
   Duration keepalive_time_;
@@ -741,6 +763,7 @@ class Http2ServerTransport final : public ServerTransport,
 
   // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
   Waker periodic_updates_waker_;
+  TarpitManager tarpit_manager_;
 };
 
 // TODO(tjagtap) : [PH2][P1] : Handle the case where a Server receives two

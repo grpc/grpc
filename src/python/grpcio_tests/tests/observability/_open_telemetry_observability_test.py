@@ -165,7 +165,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             otel_plugin.register_global()
         except RuntimeError as exp:
             self.assertIn(
-                "gPRC Python observability was already initialized", str(exp)
+                "gRPC Python observability was already initialized", str(exp)
             )
 
         otel_plugin.deregister_global()
@@ -181,7 +181,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
                 otel_plugin.register_global()
             except RuntimeError as exp:
                 self.assertIn(
-                    "gPRC Python observability was already initialized",
+                    "gRPC Python observability was already initialized",
                     str(exp),
                 )
 
@@ -197,7 +197,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
                 pass
         except RuntimeError as exp:
             self.assertIn(
-                "gPRC Python observability was already initialized", str(exp)
+                "gRPC Python observability was already initialized", str(exp)
             )
         otel_plugin.deregister_global()
 
@@ -212,7 +212,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
                     pass
             except RuntimeError as exp:
                 self.assertIn(
-                    "gPRC Python observability was already initialized",
+                    "gRPC Python observability was already initialized",
                     str(exp),
                 )
 
@@ -274,7 +274,14 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         ):
             _test_server.unary_unary_call(port=port)
 
-        self._validate_metrics_exist(self.all_metrics)
+        self._validate_metrics_exist(
+            self.all_metrics,
+            expected_count=sum(
+                1
+                for m in _open_telemetry_measures.base_metrics()
+                if "grpc.client" in m.name
+            ),
+        )
         self._validate_client_metrics_names(self.all_metrics)
 
     def testNoRecordBeforeInit(self):
@@ -307,7 +314,9 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
 
         self.all_metrics = defaultdict(list)
         _test_server.unary_unary_call(port=self._port)
-        with self.assertRaisesRegex(AssertionError, "No metrics was exported"):
+        with self.assertRaisesRegex(
+            AssertionError, r"Expected at least \d+ metrics, got 0"
+        ):
             self._validate_metrics_exist(self.all_metrics)
 
     def testNoRecordAfterExitUseGlobal(self):
@@ -327,7 +336,9 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
 
         self.all_metrics = defaultdict(list)
         _test_server.unary_unary_call(port=self._port)
-        with self.assertRaisesRegex(AssertionError, "No metrics was exported"):
+        with self.assertRaisesRegex(
+            AssertionError, r"Expected at least \d+ metrics, got 0"
+        ):
             self._validate_metrics_exist(self.all_metrics)
 
     def testRecordUnaryStream(self):
@@ -381,7 +392,14 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             _test_server.unary_unary_call(port=main_port)
             _test_server.unary_unary_call(port=backup_port)
 
-        self._validate_metrics_exist(self.all_metrics)
+        self._validate_metrics_exist(
+            self.all_metrics,
+            expected_count=sum(
+                1
+                for m in _open_telemetry_measures.base_metrics()
+                if "grpc.client" in m.name
+            ),
+        )
         self._validate_client_metrics_names(self.all_metrics)
 
         target_values = set()
@@ -498,11 +516,19 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         else:
             self.fail(message() + " after " + str(timeout))
 
-    def _validate_metrics_exist(self, all_metrics: Dict[str, Any]) -> None:
-        # Sleep here to make sure we have at least one export from OTel MetricExporter.
+    def _validate_metrics_exist(
+        self,
+        all_metrics: dict[str, Any],
+        expected_count: int = len(_open_telemetry_measures.base_metrics()),
+    ) -> None:
+        # Sleep here to make sure we have at least expected number of metrics
+        # from OTel MetricExporter.
         self.assert_eventually(
-            lambda: len(all_metrics.keys()) > 1,
-            message=lambda: f"No metrics was exported",
+            lambda: len(all_metrics.keys()) >= expected_count,
+            message=lambda: (
+                f"Expected at least {expected_count} metrics, got "
+                f"{len(all_metrics.keys())}"
+            ),
         )
 
     def _validate_all_metrics_names(self, metric_names: Set[str]) -> None:

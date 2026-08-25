@@ -80,7 +80,7 @@ class XdsHttpCompositeFilterFactory final : public XdsHttpFilterFactory {
       XdsTransportFactory& transport_factory,
       Blackboard& blackboard) const override;
   bool IsSupportedOnClients() const override { return true; }
-  bool IsSupportedOnServers() const override { return false; }
+  bool IsSupportedOnServers() const override { return true; }
 };
 
 }  // namespace grpc_core

@@ -44,8 +44,8 @@ class ClientStreamingInterface {
   ///   * the calling code (client-side) has no more message to send
   ///     (this can be declared implicitly by calling this method, or
   ///     explicitly through an earlier call to <i>WritesDone</i> method of the
-  ///     class in use, e.g. \a ClientWriterInterface::WritesDone or
-  ///     \a ClientReaderWriterInterface::WritesDone).
+  ///     class in use, e.g. ClientWriterInterface::WritesDone or
+  ///     ClientReaderWriterInterface::WritesDone).
   ///   * there are no more messages to be received from the server (which can
   ///     be known implicitly, or explicitly from an earlier call to \a
   ///     ReaderInterface::Read that returned "false").
@@ -108,7 +108,7 @@ class WriterInterface {
   virtual ~WriterInterface() {}
 
   /// Block to write \a msg to the stream with WriteOptions \a options.
-  /// This is thread-safe with respect to \a ReaderInterface::Read
+  /// This is thread-safe with respect to ReaderInterface::Read
   ///
   /// \param msg The message to be written to the stream.
   /// \param options The WriteOptions affecting the write operation.
@@ -117,7 +117,7 @@ class WriterInterface {
   virtual bool Write(const W& msg, grpc::WriteOptions options) = 0;
 
   /// Block to write \a msg to the stream with default write options.
-  /// This is thread-safe with respect to \a ReaderInterface::Read
+  /// This is thread-safe with respect to ReaderInterface::Read
   ///
   /// \param msg The message to be written to the stream.
   ///
@@ -177,7 +177,7 @@ class ClientReaderFactory {
 template <class R>
 class ClientReader final : public ClientReaderInterface<R> {
  public:
-  /// See the \a ClientStreamingInterface.WaitForInitialMetadata method for
+  /// See the ClientStreamingInterface::WaitForInitialMetadata method for
   /// semantics.
   ///
   //  Side effect:
@@ -199,7 +199,7 @@ class ClientReader final : public ClientReaderInterface<R> {
     return true;
   }
 
-  /// See the \a ReaderInterface.Read method for semantics.
+  /// See the ReaderInterface::Read method for semantics.
   /// Side effect:
   ///   This also receives initial metadata from the server, if not
   ///   already received (if initial metadata is received, it can be then
@@ -216,7 +216,7 @@ class ClientReader final : public ClientReaderInterface<R> {
     return cq_.Pluck(&ops) && ops.got_message;
   }
 
-  /// See the \a ClientStreamingInterface.Finish method for semantics.
+  /// See the ClientStreamingInterface::Finish method for semantics.
   ///
   /// Side effect:
   ///   The \a ClientContext associated with this call is updated with
@@ -275,7 +275,7 @@ class ClientWriterInterface : public internal::ClientStreamingInterface,
   /// Half close writing from the client. (signal that the stream of messages
   /// coming from the client is complete).
   /// Blocks until currently-pending writes are completed.
-  /// Thread safe with respect to \a ReaderInterface::Read operations only
+  /// Thread safe with respect to ReaderInterface::Read operations only
   ///
   /// \return Whether the writes were successful.
   virtual bool WritesDone() = 0;
@@ -300,7 +300,7 @@ class ClientWriterFactory {
 template <class W>
 class ClientWriter : public ClientWriterInterface<W> {
  public:
-  /// See the \a ClientStreamingInterface.WaitForInitialMetadata method for
+  /// See the ClientStreamingInterface::WaitForInitialMetadata method for
   /// semantics.
   ///
   //  Side effect:
@@ -315,7 +315,7 @@ class ClientWriter : public ClientWriterInterface<W> {
     cq_.Pluck(&ops);  // status ignored
   }
 
-  /// See the WriterInterface.Write(const W& msg, WriteOptions options) method
+  /// See the WriterInterface::Write(const W& msg, WriteOptions options) method
   /// for semantics.
   ///
   /// Side effect:
@@ -352,7 +352,7 @@ class ClientWriter : public ClientWriterInterface<W> {
     return cq_.Pluck(&ops);
   }
 
-  /// See the ClientStreamingInterface.Finish method for semantics.
+  /// See the ClientStreamingInterface::Finish method for semantics.
   /// Side effects:
   ///   - Also receives initial metadata if not already received.
   ///   - Attempts to fill in the \a response parameter passed
@@ -426,7 +426,7 @@ class ClientReaderWriterInterface : public internal::ClientStreamingInterface,
   /// Half close writing from the client. (signal that the stream of messages
   /// coming from the client is complete).
   /// Blocks until currently-pending writes are completed.
-  /// Thread-safe with respect to \a ReaderInterface::Read
+  /// Thread-safe with respect to ReaderInterface::Read
   ///
   /// \return Whether the writes were successful.
   virtual bool WritesDone() = 0;
@@ -472,7 +472,7 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
     return true;
   }
 
-  /// See the \a ReaderInterface.Read method for semantics.
+  /// See the ReaderInterface::Read method for semantics.
   /// Side effect:
   ///   Also receives initial metadata if not already received (updates the \a
   ///   ClientContext associated with this call in that case).
@@ -488,7 +488,7 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
     return cq_.Pluck(&ops) && ops.got_message;
   }
 
-  /// See the \a WriterInterface.Write method for semantics.
+  /// See the WriterInterface::Write method for semantics.
   ///
   /// Side effect:
   ///   Also sends initial metadata if not already sent (using the
@@ -524,7 +524,7 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
     return cq_.Pluck(&ops);
   }
 
-  /// See the ClientStreamingInterface.Finish method for semantics.
+  /// See the ClientStreamingInterface::Finish method for semantics.
   ///
   /// Side effect:
   ///   - the \a ClientContext associated with this call is updated with
@@ -584,7 +584,7 @@ class ServerReaderInterface : public internal::ServerStreamingInterface,
 template <class R>
 class ServerReader final : public ServerReaderInterface<R> {
  public:
-  /// See the \a ServerStreamingInterface.SendInitialMetadata method
+  /// See the ServerStreamingInterface::SendInitialMetadata method
   /// for semantics. Note that initial metadata will be affected by the
   /// \a ServerContext associated with this call.
   void SendInitialMetadata() override {
@@ -640,7 +640,7 @@ class ServerWriterInterface : public internal::ServerStreamingInterface,
 template <class W>
 class ServerWriter final : public ServerWriterInterface<W> {
  public:
-  /// See the \a ServerStreamingInterface.SendInitialMetadata method
+  /// See the ServerStreamingInterface::SendInitialMetadata method
   /// for semantics.
   /// Note that initial metadata will be affected by the
   /// \a ServerContext associated with this call.
@@ -658,7 +658,7 @@ class ServerWriter final : public ServerWriterInterface<W> {
     call_->cq()->Pluck(&ops);
   }
 
-  /// See the \a WriterInterface.Write method for semantics.
+  /// See the WriterInterface::Write method for semantics.
   ///
   /// Side effect:
   ///   Also sends initial metadata if not already sent (using the
@@ -793,7 +793,7 @@ class ServerReaderWriterBody final {
 template <class W, class R>
 class ServerReaderWriter final : public ServerReaderWriterInterface<W, R> {
  public:
-  /// See the \a ServerStreamingInterface.SendInitialMetadata method
+  /// See the ServerStreamingInterface::SendInitialMetadata method
   /// for semantics. Note that initial metadata will be affected by the
   /// \a ServerContext associated with this call.
   void SendInitialMetadata() override { body_.SendInitialMetadata(); }
@@ -804,7 +804,7 @@ class ServerReaderWriter final : public ServerReaderWriterInterface<W, R> {
 
   bool Read(R* msg) override { return body_.Read(msg); }
 
-  /// See the \a WriterInterface.Write(const W& msg, WriteOptions options)
+  /// See the WriterInterface::Write(const W& msg, WriteOptions options)
   /// method for semantics.
   /// Side effect:
   ///   Also sends initial metadata if not already sent (using the \a
@@ -851,7 +851,7 @@ class ServerUnaryStreamer final
   /// This is thread-safe with respect to \a Write or \a WritesDone methods. It
   /// should not be called concurrently with other streaming APIs
   /// on the same stream. It is not meaningful to call it concurrently
-  /// with another \a ReaderInterface::Read on the same stream since reads on
+  /// with another ReaderInterface::Read on the same stream since reads on
   /// the same stream are delivered in order.
   ///
   /// \param[out] msg Where to eventually store the read message.
@@ -865,7 +865,7 @@ class ServerUnaryStreamer final
   }
 
   /// Block to write \a msg to the stream with WriteOptions \a options.
-  /// This is thread-safe with respect to \a ReaderInterface::Read
+  /// This is thread-safe with respect to ReaderInterface::Read
   ///
   /// \param msg The message to be written to the stream.
   /// \param options The WriteOptions affecting the write operation.
@@ -917,7 +917,7 @@ class ServerSplitStreamer final
   /// This is thread-safe with respect to \a Write or \a WritesDone methods. It
   /// should not be called concurrently with other streaming APIs
   /// on the same stream. It is not meaningful to call it concurrently
-  /// with another \a ReaderInterface::Read on the same stream since reads on
+  /// with another ReaderInterface::Read on the same stream since reads on
   /// the same stream are delivered in order.
   ///
   /// \param[out] msg Where to eventually store the read message.
@@ -931,7 +931,7 @@ class ServerSplitStreamer final
   }
 
   /// Block to write \a msg to the stream with WriteOptions \a options.
-  /// This is thread-safe with respect to \a ReaderInterface::Read
+  /// This is thread-safe with respect to ReaderInterface::Read
   ///
   /// \param msg The message to be written to the stream.
   /// \param options The WriteOptions affecting the write operation.

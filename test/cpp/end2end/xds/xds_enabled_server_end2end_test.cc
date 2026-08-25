@@ -57,17 +57,13 @@ class XdsEnabledServerTest : public XdsEnd2endTest {
  protected:
   void SetUp() override {}  // No-op -- individual tests do this themselves.
 
-  void DoSetUp(
-      const std::optional<XdsBootstrapBuilder>& builder = std::nullopt) {
+  void DoSetUp(const std::optional<XdsBootstrapBuilder>& builder = std::nullopt,
+               int xds_resource_does_not_exist_timeout_ms = 0) {
     // We use insecure creds here as a convenience to be able to easily
     // create new channels in some of the tests below.  None of the
     // tests here actually depend on the channel creds anyway.
     InitClient(builder, /*lb_expected_authority=*/"",
-               // Using a low timeout to quickly end negative tests.
-               // Prefer using WaitOnServingStatusChange() or a similar
-               // loop on the client side to wait on status changes
-               // instead of increasing this timeout.
-               /*xds_resource_does_not_exist_timeout_ms=*/500,
+               xds_resource_does_not_exist_timeout_ms,
                /*balancer_authority_override=*/"", /*args=*/nullptr,
                InsecureChannelCredentials());
     CreateBackends(1, /*xds_enabled=*/true, InsecureServerCredentials());
@@ -88,14 +84,14 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, XdsEnabledServerTest,
 TEST_P(XdsEnabledServerTest, Basic) {
   DoSetUp();
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
   WaitForBackend(DEBUG_LOCATION, 0);
 }
 
 TEST_P(XdsEnabledServerTest, ListenerDeletionFailsByDefault) {
   DoSetUp();
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
   WaitForBackend(DEBUG_LOCATION, 0);
   // Check that we ACKed.
   // TODO(roth): There may be multiple entries in the resource state response
@@ -116,14 +112,16 @@ TEST_P(XdsEnabledServerTest, ListenerDeletionFailsByDefault) {
   balancer_->ads_service()->UnsetResource(
       kLdsTypeUrl, GetServerListenerName(backends_[0]->port()));
   // Server should stop serving.
-  ASSERT_TRUE(
-      backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::NOT_FOUND));
+  EXPECT_EQ(backends_[0]->GetNextStatus(),
+            absl::NotFoundError(absl::StrCat(
+                "LDS resource ", GetServerListenerName(backends_[0]->port()),
+                ": does not exist (node ID:xds_end2end_test)")));
 }
 
 TEST_P(XdsEnabledServerTest, ListenerDeletionIgnoredIfConfigured) {
   DoSetUp(MakeBootstrapBuilder().SetIgnoreResourceDeletion());
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
   WaitForBackend(DEBUG_LOCATION, 0);
   // Check that we ACKed.
   // TODO(roth): There may be multiple entries in the resource state response
@@ -166,7 +164,7 @@ TEST_P(XdsEnabledServerTest,
       "GRPC_EXPERIMENTAL_XDS_DATA_ERROR_HANDLING");
   DoSetUp(MakeBootstrapBuilder().SetFailOnDataErrors());
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
   WaitForBackend(DEBUG_LOCATION, 0);
   // Check that we ACKed.
   // TODO(roth): There may be multiple entries in the resource state response
@@ -187,8 +185,10 @@ TEST_P(XdsEnabledServerTest,
   balancer_->ads_service()->UnsetResource(
       kLdsTypeUrl, GetServerListenerName(backends_[0]->port()));
   // Server should stop serving.
-  ASSERT_TRUE(
-      backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::NOT_FOUND));
+  EXPECT_EQ(backends_[0]->GetNextStatus(),
+            absl::NotFoundError(absl::StrCat(
+                "LDS resource ", GetServerListenerName(backends_[0]->port()),
+                ": does not exist (node ID:xds_end2end_test)")));
 }
 
 TEST_P(XdsEnabledServerTest,
@@ -197,7 +197,7 @@ TEST_P(XdsEnabledServerTest,
       "GRPC_EXPERIMENTAL_XDS_DATA_ERROR_HANDLING");
   DoSetUp();
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
   WaitForBackend(DEBUG_LOCATION, 0);
   // Check that we ACKed.
   // TODO(roth): There may be multiple entries in the resource state response
@@ -265,8 +265,10 @@ TEST_P(XdsEnabledServerTest, NonTcpListener) {
   ClientHcmAccessor().Pack(hcm, &listener);
   balancer_->ads_service()->SetLdsResource(listener);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(
-      grpc::StatusCode::FAILED_PRECONDITION));
+  EXPECT_EQ(backends_[0]->GetNextStatus(),
+            absl::FailedPreconditionError(absl::StrCat(
+                "LDS resource ", GetServerListenerName(backends_[0]->port()),
+                " is not a TCP listener")));
 }
 
 // Verify that a mismatch of listening address results in "not serving"
@@ -281,8 +283,26 @@ TEST_P(XdsEnabledServerTest, ListenerAddressMismatch) {
                                              backends_[0]->port(),
                                              default_server_route_config_);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(
-      grpc::StatusCode::FAILED_PRECONDITION));
+  EXPECT_EQ(backends_[0]->GetNextStatus(),
+            absl::FailedPreconditionError(absl::StrCat(
+                "LDS resource ", GetServerListenerName(backends_[0]->port()),
+                " address does not match listening address")));
+}
+
+TEST_P(XdsEnabledServerTest, ListenerMatchWithWildcardPort) {
+  if (!grpc_core::IsXdsServerFilterChainPerRouteEnabled()) {
+    GTEST_SKIP() << "requires xds_server_filter_chain_per_route experiment";
+  }
+  DoSetUp();
+  Listener listener = default_server_listener_;
+  listener.set_name(GetServerListenerName(backends_[0]->port()));
+  listener.mutable_address()->mutable_socket_address()->set_port_value(0);
+  SetListenerAndRouteConfiguration(balancer_.get(), listener,
+                                   default_server_route_config_,
+                                   ServerHcmAccessor());
+  StartBackend(0);
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
+  WaitForBackend(DEBUG_LOCATION, 0);
 }
 
 //
@@ -316,7 +336,7 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, XdsEnabledServerStatusNotificationTest,
 TEST_P(XdsEnabledServerStatusNotificationTest, ServingStatus) {
   DoSetUp();
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
   CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_wait_for_ready(true));
 }
 
@@ -324,8 +344,11 @@ TEST_P(XdsEnabledServerStatusNotificationTest, NotServingStatus) {
   DoSetUp();
   SetInvalidLdsUpdate();
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(
-      grpc::StatusCode::INVALID_ARGUMENT));
+  EXPECT_EQ(backends_[0]->GetNextStatus(),
+            absl::InvalidArgumentError(absl::StrCat(
+                "LDS resource ", GetServerListenerName(backends_[0]->port()),
+                ": invalid resource: Listener has neither "
+                "address nor ApiListener (node ID:xds_end2end_test)")));
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
                       MakeConnectionFailureRegex(
                           "connections to all backends failing; last error: "));
@@ -334,7 +357,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest, NotServingStatus) {
 TEST_P(XdsEnabledServerStatusNotificationTest, ErrorUpdateWhenAlreadyServing) {
   DoSetUp();
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
   CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_wait_for_ready(true));
   // Invalid update does not lead to a change in the serving status.
   SetInvalidLdsUpdate();
@@ -346,7 +369,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ErrorUpdateWhenAlreadyServing) {
                   GetServerListenerName(backends_[0]->port()),
                   ": INVALID_ARGUMENT: Listener has neither address nor "
                   "ApiListener]")));
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+  EXPECT_EQ(backends_[0]->GetNextStatus(), std::nullopt);
   CheckRpcSendOk(DEBUG_LOCATION);
 }
 
@@ -355,14 +378,17 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
   DoSetUp();
   SetInvalidLdsUpdate();
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(
-      grpc::StatusCode::INVALID_ARGUMENT));
+  ASSERT_EQ(backends_[0]->GetNextStatus(),
+            absl::InvalidArgumentError(absl::StrCat(
+                "LDS resource ", GetServerListenerName(backends_[0]->port()),
+                ": invalid resource: Listener has neither "
+                "address nor ApiListener (node ID:xds_end2end_test)")));
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
                       MakeConnectionFailureRegex(
                           "connections to all backends failing; last error: "));
   // Send a valid LDS update to change to serving status
   SetValidLdsUpdate();
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
   CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_wait_for_ready(true));
 }
 
@@ -373,12 +399,14 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
   DoSetUp(MakeBootstrapBuilder().SetFailOnDataErrors());
   SetValidLdsUpdate();
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
   CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_wait_for_ready(true));
   // Deleting the resource should result in a non-serving status.
   UnsetLdsUpdate();
-  ASSERT_TRUE(
-      backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::NOT_FOUND));
+  ASSERT_EQ(backends_[0]->GetNextStatus(),
+            absl::NotFoundError(absl::StrCat(
+                "LDS resource ", GetServerListenerName(backends_[0]->port()),
+                ": does not exist (node ID:xds_end2end_test)")));
   SendRpcsUntilFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
       MakeConnectionFailureRegex(
@@ -391,12 +419,14 @@ TEST_P(XdsEnabledServerStatusNotificationTest, RepeatedServingStatusChanges) {
   for (int i = 0; i < 5; ++i) {
     // Send a valid LDS update to get the server to start listening
     SetValidLdsUpdate();
-    ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+    ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
     CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_wait_for_ready(true));
     // Deleting the resource will make the server start rejecting connections
     UnsetLdsUpdate();
-    ASSERT_TRUE(
-        backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::NOT_FOUND));
+    ASSERT_EQ(backends_[0]->GetNextStatus(),
+              absl::NotFoundError(absl::StrCat(
+                  "LDS resource ", GetServerListenerName(backends_[0]->port()),
+                  ": does not exist (node ID:xds_end2end_test)")));
     SendRpcsUntilFailure(
         DEBUG_LOCATION, StatusCode::UNAVAILABLE,
         MakeConnectionFailureRegex(
@@ -407,7 +437,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest, RepeatedServingStatusChanges) {
 TEST_P(XdsEnabledServerStatusNotificationTest, ExistingRpcsOnResourceDeletion) {
   DoSetUp(MakeBootstrapBuilder().SetFailOnDataErrors());
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
   constexpr int kNumChannels = 10;
   struct StreamingRpc {
     std::shared_ptr<Channel> channel;
@@ -435,8 +465,10 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ExistingRpcsOnResourceDeletion) {
   }
   // Deleting the resource will make the server start rejecting connections
   UnsetLdsUpdate();
-  ASSERT_TRUE(
-      backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::NOT_FOUND));
+  ASSERT_EQ(backends_[0]->GetNextStatus(),
+            absl::NotFoundError(absl::StrCat(
+                "LDS resource ", GetServerListenerName(backends_[0]->port()),
+                ": does not exist (node ID:xds_end2end_test)")));
   SendRpcsUntilFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
       MakeConnectionFailureRegex(
@@ -464,7 +496,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
   constexpr int kDrainGraceTimeMs = 100;
   xds_drain_grace_time_ms_ = kDrainGraceTimeMs;
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
   constexpr int kNumChannels = 3;
   struct StreamingRpc {
     std::shared_ptr<Channel> channel;
@@ -548,7 +580,7 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, XdsServerFilterChainMatchTest,
 TEST_P(XdsServerFilterChainMatchTest,
        DefaultFilterChainUsedWhenNoFilterChainMentioned) {
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
   CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_wait_for_ready(true));
 }
 
@@ -566,7 +598,7 @@ TEST_P(XdsServerFilterChainMatchTest,
                                              backends_[0]->port(),
                                              default_server_route_config_);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
   CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_wait_for_ready(true));
 }
 
@@ -584,7 +616,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   balancer_->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
   // RPC should fail since no matching filter chain was found and no default
   // filter chain is configured.
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
@@ -603,7 +635,7 @@ TEST_P(XdsServerFilterChainMatchTest, FilterChainsWithServerNamesDontMatch) {
   balancer_->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
   // RPC should fail since no matching filter chain was found and no default
   // filter chain is configured.
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
@@ -623,7 +655,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   balancer_->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
   // RPC should fail since no matching filter chain was found and no default
   // filter chain is configured.
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
@@ -643,7 +675,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   balancer_->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
   // RPC should fail since no matching filter chain was found and no default
   // filter chain is configured.
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
@@ -670,7 +702,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   balancer_->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
   // A successful RPC proves that filter chains that mention "raw_buffer" as
   // the transport protocol are chosen as the best match in the round.
   CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_wait_for_ready(true));
@@ -725,7 +757,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   balancer_->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
   // A successful RPC proves that the filter chain with the longest matching
   // prefix range was the best match.
   CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_wait_for_ready(true));
@@ -760,7 +792,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   balancer_->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
   // A successful RPC proves that the filter chain with the longest matching
   // prefix range was the best match.
   CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_wait_for_ready(true));
@@ -821,7 +853,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   balancer_->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
   // A successful RPC proves that the filter chain with the longest matching
   // source prefix range was the best match.
   CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_wait_for_ready(true));
@@ -851,7 +883,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   balancer_->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
   // A successful RPC proves that the filter chain with matching source port
   // was chosen.
   CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_wait_for_ready(true));
@@ -861,10 +893,7 @@ TEST_P(XdsServerFilterChainMatchTest,
 // server-side RDS tests
 //
 
-class XdsServerRdsTest : public XdsEnabledServerTest {
- public:
-  void SetUp() override { DoSetUp(); }
-};
+using XdsServerRdsTest = XdsEnabledServerTest;
 
 // Test both with and without RDS.
 // Run with bootstrap from env var so that we use one XdsClient.
@@ -878,18 +907,20 @@ INSTANTIATE_TEST_SUITE_P(
     &XdsTestType::Name);
 
 TEST_P(XdsServerRdsTest, Basic) {
+  DoSetUp();
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
   CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_wait_for_ready(true));
 }
 
 TEST_P(XdsServerRdsTest, FailsRouteMatchesOtherThanNonForwardingAction) {
+  DoSetUp();
   SetServerListenerNameAndRouteConfiguration(
       balancer_.get(), default_server_listener_, backends_[0]->port(),
       default_route_config_ /* inappropriate route config for servers */);
   StartBackend(0);
   // The server should be ready to serve but RPCs should fail.
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
                       "UNAVAILABLE:matching route has unsupported action",
                       RpcOptions().set_wait_for_ready(true));
@@ -899,6 +930,7 @@ TEST_P(XdsServerRdsTest, FailsRouteMatchesOtherThanNonForwardingAction) {
 // chains
 TEST_P(XdsServerRdsTest, NonInlineRouteConfigurationNonDefaultFilterChain) {
   if (!GetParam().enable_rds_testing()) return;
+  DoSetUp();
   Listener listener = default_server_listener_;
   auto* filter_chain = listener.add_filter_chains();
   HttpConnectionManager http_connection_manager =
@@ -912,12 +944,14 @@ TEST_P(XdsServerRdsTest, NonInlineRouteConfigurationNonDefaultFilterChain) {
                                              backends_[0]->port(),
                                              default_server_route_config_);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
   CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_wait_for_ready(true));
 }
 
 TEST_P(XdsServerRdsTest, NonInlineRouteConfigurationNotAvailable) {
   if (!GetParam().enable_rds_testing()) return;
+  DoSetUp(/*builder=*/std::nullopt,
+          /*xds_resource_does_not_exist_timeout_ms=*/500);
   Listener listener = default_server_listener_;
   HttpConnectionManager http_connection_manager =
       ServerHcmAccessor().Unpack(listener);
@@ -930,7 +964,14 @@ TEST_P(XdsServerRdsTest, NonInlineRouteConfigurationNotAvailable) {
                                              backends_[0]->port(),
                                              default_server_route_config_);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+  const absl::Time deadline =
+      absl::Now() + (absl::Seconds(10) * grpc_test_slowdown_factor());
+  while (true) {
+    auto status = backends_[0]->GetNextStatus(deadline);
+    ASSERT_TRUE(status.has_value()) << "timed out waiting for server status";
+    if (status->ok()) break;
+    LOG(INFO) << "waiting for OK server status, got: " << *status;
+  }
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
                       "RDS resource unknown_server_route_config: "
                       "does not exist \\(node ID:xds_end2end_test\\)",
@@ -941,6 +982,7 @@ TEST_P(XdsServerRdsTest, NonInlineRouteConfigurationNotAvailable) {
 // should add tests that make sure that different route configs are used for
 // incoming connections with a different match.
 TEST_P(XdsServerRdsTest, MultipleRouteConfigurations) {
+  DoSetUp();
   Listener listener = default_server_listener_;
   // Set a filter chain with a new route config name
   auto new_route_config = default_server_route_config_;
@@ -983,7 +1025,7 @@ TEST_P(XdsServerRdsTest, MultipleRouteConfigurations) {
                                              backends_[0]->port(),
                                              default_server_route_config_);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
   CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_wait_for_ready(true));
 }
 
@@ -998,9 +1040,6 @@ int main(int argc, char** argv) {
   // updates from all the subchannels's FDs.
   grpc_core::ConfigVars::Overrides overrides;
   overrides.client_channel_backup_poll_interval_ms = 1;
-  overrides.trace =
-      "call,channel,client_channel,client_channel_call,client_channel_lb_call,"
-      "handshaker";
   grpc_core::ConfigVars::SetOverrides(overrides);
   grpc_init();
   const auto result = RUN_ALL_TESTS();

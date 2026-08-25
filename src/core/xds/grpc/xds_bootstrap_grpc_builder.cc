@@ -44,6 +44,7 @@
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/grpc/xds_http_composite_filter.h"
+#include "src/core/xds/grpc/xds_http_ext_proc_filter.h"
 #include "src/core/xds/grpc/xds_http_fault_filter.h"
 #include "src/core/xds/grpc/xds_http_gcp_authn_filter.h"
 #include "src/core/xds/grpc/xds_http_rbac_filter.h"
@@ -71,15 +72,15 @@ GrpcXdsBootstrapBuilder::Build(absl::string_view json_string) {
 namespace {
 
 Mutex* g_mu = new Mutex;
-NoDestruct<absl::AnyInvocable<std::unique_ptr<XdsHttpFilterFactory>()>>
-    g_http_filter_factory_factory ABSL_GUARDED_BY(*g_mu);
+NoDestruct<absl::AnyInvocable<void(XdsHttpFilterRegistry&)>>
+    g_http_filter_factory_test_init ABSL_GUARDED_BY(*g_mu);
 
 }  // namespace
 
-void GrpcXdsBootstrapBuilder::SetXdsHttpFilterFactoryForTest(
-    absl::AnyInvocable<std::unique_ptr<XdsHttpFilterFactory>()> factory) {
+void GrpcXdsBootstrapBuilder::SetXdsHttpFilterFactoryInitForTest(
+    absl::AnyInvocable<void(XdsHttpFilterRegistry&)> init) {
   MutexLock lock(g_mu);
-  *g_http_filter_factory_factory = std::move(factory);
+  *g_http_filter_factory_test_init = std::move(init);
 }
 
 XdsHttpFilterRegistry GrpcXdsBootstrapBuilder::CreateXdsHttpFilterRegistry(
@@ -96,9 +97,12 @@ XdsHttpFilterRegistry GrpcXdsBootstrapBuilder::CreateXdsHttpFilterRegistry(
       registry.RegisterFilter(
           std::make_unique<XdsHttpCompositeFilterFactory>());
     }
+    if (IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT")) {
+      registry.RegisterFilter(std::make_unique<XdsHttpExtProcFilterFactory>());
+    }
     MutexLock lock(g_mu);
-    if (*g_http_filter_factory_factory != nullptr) {
-      registry.RegisterFilter((*g_http_filter_factory_factory)());
+    if (*g_http_filter_factory_test_init != nullptr) {
+      (*g_http_filter_factory_test_init)(registry);
     }
   }
   return registry;
@@ -202,20 +206,18 @@ class ClientSideWeightedRoundRobinLbPolicyConfigFactory final
       config["errorUtilizationPenalty"] = Json::FromNumber(value);
     }
     // metric_names_for_computing_utilization
-    if (WrrCustomMetricsEnabled()) {
-      size_t size;
-      auto metric_names_for_computing_utilization =
-          envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_metric_names_for_computing_utilization(
-              resource, &size);
-      if (metric_names_for_computing_utilization != nullptr && size != 0) {
-        Json::Array metric_names;
-        for (size_t i = 0; i < size; ++i) {
-          metric_names.emplace_back(Json::FromString(
-              UpbStringToStdString(metric_names_for_computing_utilization[i])));
-        }
-        config["metricNamesForComputingUtilization"] =
-            Json::FromArray(std::move(metric_names));
+    size_t size;
+    auto metric_names_for_computing_utilization =
+        envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_metric_names_for_computing_utilization(
+            resource, &size);
+    if (metric_names_for_computing_utilization != nullptr && size != 0) {
+      Json::Array metric_names;
+      for (size_t i = 0; i < size; ++i) {
+        metric_names.emplace_back(Json::FromString(
+            UpbStringToStdString(metric_names_for_computing_utilization[i])));
       }
+      config["metricNamesForComputingUtilization"] =
+          Json::FromArray(std::move(metric_names));
     }
     return Json::Object{
         {"weighted_round_robin", Json::FromObject(std::move(config))}};
