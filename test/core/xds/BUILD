@@ -999,8 +999,12 @@ grpc_cc_test(
         "//:ref_counted_ptr",
         "//:xds_client",
         "//src/core:ext_authz_client",
+        "//src/core:ext_authz_messages",
+        "//src/core:grpc_matchers",
+        "//src/core:time",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/test_util:grpc_test_util",
+        "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
         "@envoy_api//envoy/service/auth/v3:pkg_cc_proto",
     ],
 )

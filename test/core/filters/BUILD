@@ -243,3 +243,30 @@ grpc_cc_test(
         "@envoy_api//envoy/service/ext_proc/v3:pkg_cc_proto",
     ],
 )
+
+grpc_cc_test(
+    name = "ext_authz_message_test",
+    srcs = ["ext_authz_message_test.cc"],
+    external_deps = [
+        "@com_google_protobuf//upb/mem",
+        "gtest",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:envoy_config_core_upb",
+        "//:envoy_service_auth_upb",
+        "//:envoy_type_upb",
+        "//:google_rpc_status_upb",
+        "//:grpc",
+        "//:grpc++",
+        "//src/core:ext_authz_messages",
+        "//src/core:grpc_matchers",
+        "//src/core:time",
+        "//src/core:upb_utils",
+        "//test/core/test_util:grpc_test_util",
+        "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
+        "@envoy_api//envoy/service/auth/v3:pkg_cc_proto",
+        "@envoy_api//envoy/type/v3:pkg_cc_proto",
+    ],
+)

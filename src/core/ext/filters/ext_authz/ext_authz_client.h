@@ -17,20 +17,25 @@
 #ifndef GRPC_SRC_CORE_EXT_FILTERS_EXT_AUTHZ_EXT_AUTHZ_CLIENT_H
 #define GRPC_SRC_CORE_EXT_FILTERS_EXT_AUTHZ_EXT_AUTHZ_CLIENT_H
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/status.h>
-#include <grpc/support/port_platform.h>
 
+#include <memory>
+#include <string>
+
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "src/core/ext/filters/ext_authz/ext_authz_messages.h"
 #include "src/core/util/dual_ref_counted.h"
-#include "src/core/util/sync.h"
-#include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_transport.h"
-#include "upb/reflection/def.hpp"
+
 namespace grpc_core {
 
 class ExtAuthzClient : public DualRefCounted<ExtAuthzClient> {
  public:
+  using ExtAuthzResponse = grpc_core::ExtAuthzResponse;
+  using ExtAuthzRequestParams = grpc_core::ExtAuthzRequestParams;
+
   ExtAuthzClient(RefCountedPtr<XdsTransportFactory> transport_factory,
                  std::unique_ptr<const XdsBootstrap::XdsServerTarget> server);
   ~ExtAuthzClient() override;
@@ -39,29 +44,6 @@ class ExtAuthzClient : public DualRefCounted<ExtAuthzClient> {
   void ResetBackoff();
 
   std::string server_uri() const;
-
-  struct ExtAuthzResponse {
-    struct OkResponse {
-      std::vector<XdsHeaderValueOption> headers;
-      std::vector<std::string> headers_to_remove;
-      std::vector<XdsHeaderValueOption> response_headers_to_add;
-    };
-
-    struct DeniedResponse {
-      grpc_status_code status;
-      std::vector<XdsHeaderValueOption> headers;
-    };
-
-    grpc_status_code status_code;
-    OkResponse ok_response;
-    DeniedResponse denied_response;
-  };
-
-  struct ExtAuthzRequestParams {
-    bool is_client_call;
-    std::vector<std::pair<std::string, std::string>> headers;
-    std::string path;
-  };
 
   absl::StatusOr<ExtAuthzResponse> Check(const ExtAuthzRequestParams& params);
 
@@ -80,9 +62,6 @@ class ExtAuthzClient : public DualRefCounted<ExtAuthzClient> {
   RefCountedPtr<XdsTransportFactory> transport_factory_;
   std::unique_ptr<const XdsBootstrap::XdsServerTarget> server_;
   RefCountedPtr<XdsTransportFactory::XdsTransport> transport_;
-
-  Mutex mu_;
-  upb::DefPool def_pool_ ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace grpc_core
