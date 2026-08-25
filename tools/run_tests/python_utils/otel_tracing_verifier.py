@@ -155,7 +155,9 @@ def verify_tracing_spans(spans_file, expected_runs_count=1, poll_timeout=30.0):
         attempt_events = [e.get("name") for e in attempt_span.get("events", [])]
         server_events = [e.get("name") for e in server_span.get("events", [])]
 
-        print(f"Verifying Trace {idx}/{len(client_spans)} (TraceID: {trace_id}):")
+        print(
+            f"Verifying Trace {idx}/{len(client_spans)} (TraceID: {trace_id}):"
+        )
         print(
             f"  Client:  '{client_span.get('name')}' (SpanID: {client_span.get('span_id')}, Events: {client_events})"
         )
