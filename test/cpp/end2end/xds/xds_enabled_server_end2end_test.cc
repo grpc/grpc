@@ -289,6 +289,22 @@ TEST_P(XdsEnabledServerTest, ListenerAddressMismatch) {
                 " address does not match listening address")));
 }
 
+TEST_P(XdsEnabledServerTest, ListenerMatchWithWildcardPort) {
+  if (!grpc_core::IsXdsServerFilterChainPerRouteEnabled()) {
+    GTEST_SKIP() << "requires xds_server_filter_chain_per_route experiment";
+  }
+  DoSetUp();
+  Listener listener = default_server_listener_;
+  listener.set_name(GetServerListenerName(backends_[0]->port()));
+  listener.mutable_address()->mutable_socket_address()->set_port_value(0);
+  SetListenerAndRouteConfiguration(balancer_.get(), listener,
+                                   default_server_route_config_,
+                                   ServerHcmAccessor());
+  StartBackend(0);
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
+  WaitForBackend(DEBUG_LOCATION, 0);
+}
+
 //
 // server status notification tests
 //
