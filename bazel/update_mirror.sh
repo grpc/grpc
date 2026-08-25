@@ -84,7 +84,7 @@ function upload_deps {
   local existing_archives_file=${tmpdir}/existing_archives.txt
 
   tools/bazel mod show_repo --all_repos --output=streamed_jsonproto > ${bzlmod_deps_file} || true
-  gcloud storage objects list '--format=json(name, md5_hash)' 'gs://grpc-build-helper/**' | jq '.[] | "https://" + .name ' -r > ${existing_archives_file}
+  gcloud storage objects list '--format=json(name, md5_hash)' 'gs://grpc-bazel-mirror/**' | jq '.[] | "https://" + .name ' -r > ${existing_archives_file}
 
   python3 \
     bazel/update_mirror_helper.py \
