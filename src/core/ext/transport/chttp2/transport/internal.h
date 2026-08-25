@@ -720,6 +720,7 @@ struct grpc_chttp2_stream {
   grpc_metadata_batch trailing_metadata_buffer;
 
   grpc_slice_buffer frame_storage;  // protected by t combiner
+  size_t num_frames = 0;            // protected by t combiner
 
   grpc_core::Timestamp deadline = grpc_core::Timestamp::InfFuture();
 

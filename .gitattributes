@@ -46,4 +46,3 @@ src/core/ext/upb-gen/** linguist-generated=true
 src/core/ext/upbdefs-gen/** linguist-generated=true
 third_party/upb/upb/** linguist-generated=true
 third_party/utf8_range/** linguist-generated=true
-**/python_version.py linguist-generated=true
