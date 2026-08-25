@@ -629,6 +629,8 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
 
   GPR_NO_UNIQUE_ADDRESS grpc_core::latent_see::Flow write_flow;
 
+  std::optional<uint32_t> max_recv_message_length;
+
   // Current mitigation engine, retrieved once per connection.
   grpc_core::RefCountedPtr<grpc_core::MitigationEngine> mitigation_engine;
 };
@@ -718,6 +720,7 @@ struct grpc_chttp2_stream {
   grpc_metadata_batch trailing_metadata_buffer;
 
   grpc_slice_buffer frame_storage;  // protected by t combiner
+  size_t num_frames = 0;            // protected by t combiner
 
   grpc_core::Timestamp deadline = grpc_core::Timestamp::InfFuture();
 
@@ -777,6 +780,9 @@ struct grpc_chttp2_stream {
   // The last time a stream window update was received.
   grpc_core::Timestamp last_window_update_time =
       grpc_core::Timestamp::InfPast();
+
+  bool message_size_limit_exceeded = false;
+  std::optional<uint32_t> max_recv_message_length;
 };
 
 /// Transport writing call flow:

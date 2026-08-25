@@ -22,7 +22,7 @@
 
 
 
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 set(PACKAGE_NAME          "grpc")
 set(PACKAGE_VERSION       "1.84.0-dev")
@@ -58,14 +58,6 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
 endif()
 set(gRPC_INSTALL ${gRPC_INSTALL_default} CACHE BOOL
     "Generate installation target")
-
-# We can install dependencies from submodules if we're running
-# CMake v3.13 or newer.
-if(CMAKE_VERSION VERSION_LESS 3.13)
-  set(_gRPC_INSTALL_SUPPORTED_FROM_MODULE OFF)
-else()
-  set(_gRPC_INSTALL_SUPPORTED_FROM_MODULE ON)
-endif()
 
 # Providers for third-party dependencies (gRPC_*_PROVIDER properties):
 # "module": build the dependency using sources from git submodule (under third_party)
@@ -1447,7 +1439,6 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx dns_fork_test)
   endif()
-  add_dependencies(buildtests_cxx dns_resolver_cooldown_test)
   add_dependencies(buildtests_cxx dns_resolver_test)
   add_dependencies(buildtests_cxx down_cast_test)
   add_dependencies(buildtests_cxx dual_ref_counted_test)
@@ -1526,6 +1517,7 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_cxx fuzzing_event_engine_unittest)
   add_dependencies(buildtests_cxx gcp_authentication_filter_test)
+  add_dependencies(buildtests_cxx gdch_service_account_credentials_test)
   add_dependencies(buildtests_cxx generic_end2end_test)
   add_dependencies(buildtests_cxx glob_test)
   add_dependencies(buildtests_cxx goaway_server_test)
@@ -1748,14 +1740,6 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_cxx remove_stream_from_stalled_lists_test)
   endif()
   add_dependencies(buildtests_cxx request_buffer_test)
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx resolve_address_using_ares_resolver_posix_test)
-  endif()
-  add_dependencies(buildtests_cxx resolve_address_using_ares_resolver_test)
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx resolve_address_using_native_resolver_posix_test)
-  endif()
-  add_dependencies(buildtests_cxx resolve_address_using_native_resolver_test)
   add_dependencies(buildtests_cxx resource_quota_end2end_stress_test)
   add_dependencies(buildtests_cxx resource_quota_test)
   add_dependencies(buildtests_cxx resource_tracker_test)
@@ -1847,6 +1831,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx string_ref_test)
   add_dependencies(buildtests_cxx string_test)
   add_dependencies(buildtests_cxx subchannel_args_test)
+  add_dependencies(buildtests_cxx subchannel_metrics_test)
   add_dependencies(buildtests_cxx subchannel_stream_limiter_test)
   add_dependencies(buildtests_cxx switch_test)
   add_dependencies(buildtests_cxx sync_test)
@@ -2155,6 +2140,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(gpr
     PRIVATE
       "GPR_DLL_EXPORTS"
+    INTERFACE
+      "GPR_DLL_IMPORTS"
     )
   endif()
   if(gRPC_INSTALL)
@@ -2305,6 +2292,7 @@ add_library(grpc
   src/core/client_channel/retry_service_config.cc
   src/core/client_channel/retry_throttle.cc
   src/core/client_channel/subchannel.cc
+  src/core/client_channel/subchannel_metrics.cc
   src/core/client_channel/subchannel_pool_interface.cc
   src/core/client_channel/subchannel_stream_client.cc
   src/core/client_channel/subchannel_stream_limiter.cc
@@ -2319,6 +2307,7 @@ add_library(grpc
   src/core/credentials/call/external/file_external_account_credentials.cc
   src/core/credentials/call/external/url_external_account_credentials.cc
   src/core/credentials/call/gcp_service_account_identity/gcp_service_account_identity_credentials.cc
+  src/core/credentials/call/gdch_service_account/gdch_service_account_credentials.cc
   src/core/credentials/call/iam/iam_credentials.cc
   src/core/credentials/call/json_util.cc
   src/core/credentials/call/jwt/json_token.cc
@@ -2902,9 +2891,6 @@ add_library(grpc
   src/core/lib/iomgr/pollset_set.cc
   src/core/lib/iomgr/pollset_set_windows.cc
   src/core/lib/iomgr/pollset_windows.cc
-  src/core/lib/iomgr/resolve_address.cc
-  src/core/lib/iomgr/resolve_address_posix.cc
-  src/core/lib/iomgr/resolve_address_windows.cc
   src/core/lib/iomgr/sockaddr_utils_posix.cc
   src/core/lib/iomgr/socket_factory_posix.cc
   src/core/lib/iomgr/socket_mutator.cc
@@ -3025,16 +3011,8 @@ add_library(grpc
   src/core/net/socket_mutator.cc
   src/core/plugin_registry/grpc_plugin_registry.cc
   src/core/plugin_registry/grpc_plugin_registry_extra.cc
-  src/core/resolver/dns/c_ares/dns_resolver_ares.cc
-  src/core/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc
-  src/core/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc
-  src/core/resolver/dns/c_ares/grpc_ares_wrapper.cc
-  src/core/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc
-  src/core/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc
-  src/core/resolver/dns/dns_resolver_plugin.cc
-  src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.cc
-  src/core/resolver/dns/event_engine/service_config_helper.cc
-  src/core/resolver/dns/native/dns_resolver.cc
+  src/core/resolver/dns/dns_resolver.cc
+  src/core/resolver/dns/service_config_helper.cc
   src/core/resolver/endpoint_addresses.cc
   src/core/resolver/fake/fake_resolver.cc
   src/core/resolver/google_c2p/google_c2p_resolver.cc
@@ -3199,6 +3177,8 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GRPC_DLL_EXPORTS"
       "GPR_DLL_IMPORTS"
+    INTERFACE
+      "GRPC_DLL_IMPORTS"
     )
   endif()
   if(gRPC_INSTALL)
@@ -3510,6 +3490,7 @@ add_library(grpc_unsecure
   src/core/client_channel/retry_service_config.cc
   src/core/client_channel/retry_throttle.cc
   src/core/client_channel/subchannel.cc
+  src/core/client_channel/subchannel_metrics.cc
   src/core/client_channel/subchannel_pool_interface.cc
   src/core/client_channel/subchannel_stream_client.cc
   src/core/client_channel/subchannel_stream_limiter.cc
@@ -3739,9 +3720,6 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/pollset_set.cc
   src/core/lib/iomgr/pollset_set_windows.cc
   src/core/lib/iomgr/pollset_windows.cc
-  src/core/lib/iomgr/resolve_address.cc
-  src/core/lib/iomgr/resolve_address_posix.cc
-  src/core/lib/iomgr/resolve_address_windows.cc
   src/core/lib/iomgr/sockaddr_utils_posix.cc
   src/core/lib/iomgr/socket_factory_posix.cc
   src/core/lib/iomgr/socket_mutator.cc
@@ -3852,16 +3830,8 @@ add_library(grpc_unsecure
   src/core/net/socket_mutator.cc
   src/core/plugin_registry/grpc_plugin_registry.cc
   src/core/plugin_registry/grpc_plugin_registry_noextra.cc
-  src/core/resolver/dns/c_ares/dns_resolver_ares.cc
-  src/core/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc
-  src/core/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc
-  src/core/resolver/dns/c_ares/grpc_ares_wrapper.cc
-  src/core/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc
-  src/core/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc
-  src/core/resolver/dns/dns_resolver_plugin.cc
-  src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.cc
-  src/core/resolver/dns/event_engine/service_config_helper.cc
-  src/core/resolver/dns/native/dns_resolver.cc
+  src/core/resolver/dns/dns_resolver.cc
+  src/core/resolver/dns/service_config_helper.cc
   src/core/resolver/endpoint_addresses.cc
   src/core/resolver/fake/fake_resolver.cc
   src/core/resolver/polling_resolver.cc
@@ -3944,6 +3914,8 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GRPC_DLL_EXPORTS"
       "GPR_DLL_IMPORTS"
+    INTERFACE
+      "GRPC_DLL_IMPORTS"
     )
   endif()
   if(gRPC_INSTALL)
@@ -5056,6 +5028,8 @@ if(WIN32 AND MSVC)
       "GRPCXX_DLL_EXPORTS"
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+    INTERFACE
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
   if(gRPC_INSTALL)
@@ -5804,6 +5778,8 @@ if(WIN32 AND MSVC)
       "GRPCXX_DLL_EXPORTS"
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+    INTERFACE
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
   if(gRPC_INSTALL)
@@ -6240,9 +6216,6 @@ add_library(grpc_authorization_provider
   src/core/lib/iomgr/pollset_set.cc
   src/core/lib/iomgr/pollset_set_windows.cc
   src/core/lib/iomgr/pollset_windows.cc
-  src/core/lib/iomgr/resolve_address.cc
-  src/core/lib/iomgr/resolve_address_posix.cc
-  src/core/lib/iomgr/resolve_address_windows.cc
   src/core/lib/iomgr/sockaddr_utils_posix.cc
   src/core/lib/iomgr/socket_factory_posix.cc
   src/core/lib/iomgr/socket_mutator.cc
@@ -10384,9 +10357,6 @@ add_executable(call_utils_test
   src/core/lib/iomgr/pollset_set.cc
   src/core/lib/iomgr/pollset_set_windows.cc
   src/core/lib/iomgr/pollset_windows.cc
-  src/core/lib/iomgr/resolve_address.cc
-  src/core/lib/iomgr/resolve_address_posix.cc
-  src/core/lib/iomgr/resolve_address_windows.cc
   src/core/lib/iomgr/sockaddr_utils_posix.cc
   src/core/lib/iomgr/socket_factory_posix.cc
   src/core/lib/iomgr/socket_mutator.cc
@@ -13023,6 +12993,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.h
     src/core/util/json/json_util.cc
     src/cpp/server/orca/orca_service.cc
+    test/core/test_util/fake_stats_plugin.cc
     test/core/test_util/test_lb_policies.cc
     test/cpp/end2end/client_lb_end2end_test.cc
     test/cpp/end2end/connection_attempt_injector.cc
@@ -14353,48 +14324,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 
 endif()
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(dns_resolver_cooldown_test
-  test/core/resolver/dns_resolver_cooldown_test.cc
-)
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(dns_resolver_cooldown_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-      "GRPC_DLL_IMPORTS"
-    )
-  endif()
-endif()
-target_compile_features(dns_resolver_cooldown_test PUBLIC cxx_std_17)
-target_include_directories(dns_resolver_cooldown_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(dns_resolver_cooldown_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
-  grpc_test_util
-)
-
-
 endif()
 if(gRPC_BUILD_TESTS)
 
@@ -18454,9 +18383,6 @@ add_executable(filter_fusion_test
   src/core/lib/iomgr/pollset_set.cc
   src/core/lib/iomgr/pollset_set_windows.cc
   src/core/lib/iomgr/pollset_windows.cc
-  src/core/lib/iomgr/resolve_address.cc
-  src/core/lib/iomgr/resolve_address_posix.cc
-  src/core/lib/iomgr/resolve_address_windows.cc
   src/core/lib/iomgr/sockaddr_utils_posix.cc
   src/core/lib/iomgr/socket_factory_posix.cc
   src/core/lib/iomgr/socket_mutator.cc
@@ -19585,6 +19511,48 @@ target_link_libraries(gcp_authentication_filter_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   ${_gRPC_PROTOBUF_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(gdch_service_account_credentials_test
+  test/core/credentials/call/gdch_service_account_credentials_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(gdch_service_account_credentials_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(gdch_service_account_credentials_test PUBLIC cxx_std_17)
+target_include_directories(gdch_service_account_credentials_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(gdch_service_account_credentials_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
   grpc_test_util
 )
 
@@ -22818,9 +22786,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/lib/iomgr/pollset_set.cc
     src/core/lib/iomgr/pollset_set_windows.cc
     src/core/lib/iomgr/pollset_windows.cc
-    src/core/lib/iomgr/resolve_address.cc
-    src/core/lib/iomgr/resolve_address_posix.cc
-    src/core/lib/iomgr/resolve_address_windows.cc
     src/core/lib/iomgr/sockaddr_utils_posix.cc
     src/core/lib/iomgr/socket_factory_posix.cc
     src/core/lib/iomgr/socket_mutator.cc
@@ -31167,182 +31132,6 @@ target_link_libraries(request_buffer_test
 
 endif()
 if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
-  add_executable(resolve_address_using_ares_resolver_posix_test
-    test/core/iomgr/resolve_address_posix_test.cc
-  )
-  if(WIN32 AND MSVC)
-    if(BUILD_SHARED_LIBS)
-      target_compile_definitions(resolve_address_using_ares_resolver_posix_test
-      PRIVATE
-        "GPR_DLL_IMPORTS"
-        "GRPC_DLL_IMPORTS"
-      )
-    endif()
-  endif()
-  target_compile_features(resolve_address_using_ares_resolver_posix_test PUBLIC cxx_std_17)
-  target_include_directories(resolve_address_using_ares_resolver_posix_test
-    PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/include
-      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-      ${_gRPC_RE2_INCLUDE_DIR}
-      ${_gRPC_SSL_INCLUDE_DIR}
-      ${_gRPC_UPB_GENERATED_DIR}
-      ${_gRPC_UPB_GRPC_GENERATED_DIR}
-      ${_gRPC_UPB_INCLUDE_DIR}
-      ${_gRPC_XXHASH_INCLUDE_DIR}
-      ${_gRPC_ZLIB_INCLUDE_DIR}
-      third_party/googletest/googletest/include
-      third_party/googletest/googletest
-      third_party/googletest/googlemock/include
-      third_party/googletest/googlemock
-      ${_gRPC_PROTO_GENS_DIR}
-  )
-
-  target_link_libraries(resolve_address_using_ares_resolver_posix_test
-    ${_gRPC_ALLTARGETS_LIBRARIES}
-    gtest
-    grpc_test_util
-  )
-
-
-endif()
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(resolve_address_using_ares_resolver_test
-  test/core/iomgr/resolve_address_test.cc
-  test/core/test_util/fake_udp_and_tcp_server.cc
-)
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(resolve_address_using_ares_resolver_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-      "GRPC_DLL_IMPORTS"
-    )
-  endif()
-endif()
-target_compile_features(resolve_address_using_ares_resolver_test PUBLIC cxx_std_17)
-target_include_directories(resolve_address_using_ares_resolver_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(resolve_address_using_ares_resolver_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
-  grpc_test_util
-  grpc++_test_config
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
-  add_executable(resolve_address_using_native_resolver_posix_test
-    test/core/iomgr/resolve_address_posix_test.cc
-  )
-  if(WIN32 AND MSVC)
-    if(BUILD_SHARED_LIBS)
-      target_compile_definitions(resolve_address_using_native_resolver_posix_test
-      PRIVATE
-        "GPR_DLL_IMPORTS"
-        "GRPC_DLL_IMPORTS"
-      )
-    endif()
-  endif()
-  target_compile_features(resolve_address_using_native_resolver_posix_test PUBLIC cxx_std_17)
-  target_include_directories(resolve_address_using_native_resolver_posix_test
-    PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/include
-      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-      ${_gRPC_RE2_INCLUDE_DIR}
-      ${_gRPC_SSL_INCLUDE_DIR}
-      ${_gRPC_UPB_GENERATED_DIR}
-      ${_gRPC_UPB_GRPC_GENERATED_DIR}
-      ${_gRPC_UPB_INCLUDE_DIR}
-      ${_gRPC_XXHASH_INCLUDE_DIR}
-      ${_gRPC_ZLIB_INCLUDE_DIR}
-      third_party/googletest/googletest/include
-      third_party/googletest/googletest
-      third_party/googletest/googlemock/include
-      third_party/googletest/googlemock
-      ${_gRPC_PROTO_GENS_DIR}
-  )
-
-  target_link_libraries(resolve_address_using_native_resolver_posix_test
-    ${_gRPC_ALLTARGETS_LIBRARIES}
-    gtest
-    grpc_test_util
-  )
-
-
-endif()
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(resolve_address_using_native_resolver_test
-  test/core/iomgr/resolve_address_test.cc
-  test/core/test_util/fake_udp_and_tcp_server.cc
-)
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(resolve_address_using_native_resolver_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-      "GRPC_DLL_IMPORTS"
-    )
-  endif()
-endif()
-target_compile_features(resolve_address_using_native_resolver_test PUBLIC cxx_std_17)
-target_include_directories(resolve_address_using_native_resolver_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(resolve_address_using_native_resolver_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
-  grpc_test_util
-  grpc++_test_config
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
 
 add_executable(resource_quota_end2end_stress_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
@@ -35052,6 +34841,48 @@ target_link_libraries(subchannel_args_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(subchannel_metrics_test
+  test/core/client_channel/subchannel_metrics_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(subchannel_metrics_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(subchannel_metrics_test PUBLIC cxx_std_17)
+target_include_directories(subchannel_metrics_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(subchannel_metrics_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(subchannel_stream_limiter_test
   test/core/client_channel/subchannel_stream_limiter_test.cc
 )
@@ -37625,9 +37456,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/lib/iomgr/pollset_set.cc
     src/core/lib/iomgr/pollset_set_windows.cc
     src/core/lib/iomgr/pollset_windows.cc
-    src/core/lib/iomgr/resolve_address.cc
-    src/core/lib/iomgr/resolve_address_posix.cc
-    src/core/lib/iomgr/resolve_address_windows.cc
     src/core/lib/iomgr/sockaddr_utils_posix.cc
     src/core/lib/iomgr/socket_factory_posix.cc
     src/core/lib/iomgr/socket_mutator.cc
@@ -38755,9 +38583,6 @@ add_executable(v3_bridge_test
   src/core/lib/iomgr/pollset_set.cc
   src/core/lib/iomgr/pollset_set_windows.cc
   src/core/lib/iomgr/pollset_windows.cc
-  src/core/lib/iomgr/resolve_address.cc
-  src/core/lib/iomgr/resolve_address_posix.cc
-  src/core/lib/iomgr/resolve_address_windows.cc
   src/core/lib/iomgr/sockaddr_utils_posix.cc
   src/core/lib/iomgr/socket_factory_posix.cc
   src/core/lib/iomgr/socket_mutator.cc
@@ -56545,6 +56370,16 @@ function(generate_pkgconfig name description version requires requires_private
   set(PC_REQUIRES_PRIVATE "${requires_private}")
   set(PC_LIB "${libs}")
   set(PC_LIBS_PRIVATE "${libs_private}")
+  set(PC_CFLAGS "")
+  if(WIN32 AND BUILD_SHARED_LIBS)
+    if(name STREQUAL "gpr")
+      set(PC_CFLAGS "-DGPR_DLL_IMPORTS")
+    elseif(name STREQUAL "gRPC" OR name STREQUAL "gRPC unsecure")
+      set(PC_CFLAGS "-DGRPC_DLL_IMPORTS -DGPR_DLL_IMPORTS")
+    elseif(name MATCHES "^gRPC\\+\\+")
+      set(PC_CFLAGS "-DGRPCXX_DLL_IMPORTS -DGRPC_DLL_IMPORTS -DGPR_DLL_IMPORTS")
+    endif()
+  endif()
   set(output_filepath "${grpc_BINARY_DIR}/libs/opt/pkgconfig/${output_filename}")
   configure_file(
     "${grpc_SOURCE_DIR}/cmake/pkg-config-template.pc.in"

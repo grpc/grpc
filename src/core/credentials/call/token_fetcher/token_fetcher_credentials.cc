@@ -21,6 +21,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
@@ -192,9 +193,6 @@ void TokenFetcherCredentials::FetchState::ResumeQueuedCalls(
     queued_call->result = token;
     queued_call->done.store(true, std::memory_order_release);
     queued_call->waker.Wakeup();
-    grpc_polling_entity_del_from_pollset_set(
-        queued_call->pollent,
-        grpc_polling_entity_pollset_set(&creds_->pollent_));
   }
   queued_calls_.clear();
 }
@@ -204,9 +202,6 @@ TokenFetcherCredentials::FetchState::QueueCall(
     ClientMetadataHandle initial_metadata) {
   auto queued_call = MakeRefCounted<QueuedCall>();
   queued_call->waker = GetContext<Activity>()->MakeNonOwningWaker();
-  queued_call->pollent = GetContext<grpc_polling_entity>();
-  grpc_polling_entity_add_to_pollset_set(
-      queued_call->pollent, grpc_polling_entity_pollset_set(&creds_->pollent_));
   queued_call->md = std::move(initial_metadata);
   queued_calls_.insert(queued_call);
   // If backoff has expired since the last attempt, trigger a new one.
@@ -281,25 +276,39 @@ TokenFetcherCredentials::GetRequestMetadata(
         << " no cached token; queuing call";
     queued_call = fetch_state_->QueueCall(std::move(initial_metadata));
   }
-  return [this, queued_call = std::move(queued_call)]()
-             -> Poll<absl::StatusOr<ClientMetadataHandle>> {
-    if (!queued_call->done.load(std::memory_order_acquire)) {
-      return Pending{};
-    }
-    if (!queued_call->result.ok()) {
-      GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
-          << "[TokenFetcherCredentials " << this
-          << "]: " << GetContext<Activity>()->DebugTag()
-          << " token fetch failed; failing call";
-      return queued_call->result.status();
-    }
-    GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
-        << "[TokenFetcherCredentials " << this
-        << "]: " << GetContext<Activity>()->DebugTag()
-        << " token fetch complete; resuming call";
-    (*queued_call->result)->AddTokenToClientInitialMetadata(*queued_call->md);
-    return std::move(queued_call->md);
-  };
+  grpc_polling_entity_add_to_pollset_set(
+      GetContext<grpc_polling_entity>(),
+      grpc_polling_entity_pollset_set(&pollent_));
+  return OnCancel(
+      [self = WeakRefAsSubclass<TokenFetcherCredentials>(),
+       queued_call = std::move(
+           queued_call)]() -> Poll<absl::StatusOr<ClientMetadataHandle>> {
+        if (!queued_call->done.load(std::memory_order_acquire)) {
+          return Pending{};
+        }
+        grpc_polling_entity_del_from_pollset_set(
+            GetContext<grpc_polling_entity>(),
+            grpc_polling_entity_pollset_set(&self->pollent_));
+        if (!queued_call->result.ok()) {
+          GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
+              << "[TokenFetcherCredentials " << self.get()
+              << "]: " << GetContext<Activity>()->DebugTag()
+              << " token fetch failed; failing call";
+          return queued_call->result.status();
+        }
+        GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
+            << "[TokenFetcherCredentials " << self.get()
+            << "]: " << GetContext<Activity>()->DebugTag()
+            << " token fetch complete; resuming call";
+        (*queued_call->result)
+            ->AddTokenToClientInitialMetadata(*queued_call->md);
+        return std::move(queued_call->md);
+      },
+      [self = WeakRefAsSubclass<TokenFetcherCredentials>(),
+       pollent = GetContext<grpc_polling_entity>()]() {
+        grpc_polling_entity_del_from_pollset_set(
+            pollent, grpc_polling_entity_pollset_set(&self->pollent_));
+      });
 }
 
 //
@@ -307,13 +316,13 @@ TokenFetcherCredentials::GetRequestMetadata(
 //
 
 HttpTokenFetcherCredentials::HttpFetchRequest::HttpFetchRequest(
-    HttpTokenFetcherCredentials* creds, Timestamp deadline,
-    absl::AnyInvocable<void(absl::StatusOr<grpc_http_response>)> on_done)
-    : on_done_(std::move(on_done)) {
+    WeakRefCountedPtr<HttpTokenFetcherCredentials> creds, Timestamp deadline,
+    absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)> on_done)
+    : creds_(std::move(creds)), on_done_(std::move(on_done)) {
   GRPC_CLOSURE_INIT(&on_http_response_, OnHttpResponse, this, nullptr);
   Ref().release();  // Ref held by HTTP request callback.
-  http_request_ = creds->StartHttpRequest(creds->pollent(), deadline,
-                                          &response_, &on_http_response_);
+  http_request_ = creds_->StartHttpRequest(creds_->pollent(), deadline,
+                                           &response_, &on_http_response_);
 }
 
 void HttpTokenFetcherCredentials::HttpFetchRequest::Orphan() {
@@ -332,6 +341,7 @@ void HttpTokenFetcherCredentials::HttpFetchRequest::OnHttpResponse(
     self->on_done_(absl::UnavailableError(StatusToString(error)));
     return;
   }
+  // Check HTTP status code.
   if (self->response_.status != 200) {
     grpc_status_code status_code =
         grpc_http2_status_to_grpc_status(self->response_.status);
@@ -344,7 +354,18 @@ void HttpTokenFetcherCredentials::HttpFetchRequest::OnHttpResponse(
                                   self->response_.status)));
     return;
   }
-  self->on_done_(self->response_);
+  // Extract token and return result.
+  auto token = self->creds_->ExtractToken(self->response_);
+  self->on_done_(std::move(token));
+}
+
+OrphanablePtr<TokenFetcherCredentials::FetchRequest>
+HttpTokenFetcherCredentials::FetchToken(
+    Timestamp deadline,
+    absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)> on_done) {
+  return MakeOrphanable<HttpFetchRequest>(
+      WeakRefAsSubclass<HttpTokenFetcherCredentials>(), deadline,
+      std::move(on_done));
 }
 
 }  // namespace grpc_core

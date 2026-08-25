@@ -25,15 +25,20 @@
 #include <grpc/slice.h>
 
 #include <cstdint>
+#include <limits>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "src/core/call/call_destination.h"
+#include "src/core/call/call_filters.h"
 #include "src/core/call/call_spine.h"
 #include "src/core/call/message.h"
 #include "src/core/call/metadata.h"
+#include "src/core/call/metadata_batch.h"
+#include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -46,6 +51,7 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "test/core/transport/chttp2/http2_common_test_inputs.h"
 #include "test/core/transport/chttp2/http2_frame_test_helper.h"
 #include "test/core/transport/util/transport_test.h"
@@ -73,6 +79,9 @@ const std::vector<uint8_t> kGrpcStatusCancelled = {
     0x40, 0x0b, 0x67, 0x72, 0x70, 0x63, 0x2d, 0x73, 0x74, 0x61,
     0x74, 0x75, 0x73, 0x01, 0x31, 0x00, 0x0c, 0x67, 0x72, 0x70,
     0x63, 0x2d, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x00};
+const std::vector<uint8_t> kGrpcStatusCancelledOnly = {
+    0x40, 0x0b, 'g', 'r', 'p', 'c',  '-', 's',
+    't',  'a',  't', 'u', 's', 0x01, '1'};
 
 class Http2ServerTransportTest : public Http2TransportTest {
  public:
@@ -154,7 +163,8 @@ class Http2ServerTransportTest : public Http2TransportTest {
   template <typename PromiseFactoryFactory>
   struct StreamData : public StreamDataBase {
     explicit StreamData(PromiseFactoryFactory&& promise_factory_factory)
-        : promise_factory_factory(std::move(promise_factory_factory)) {}
+        : promise_factory_factory(
+              std::forward<PromiseFactoryFactory>(promise_factory_factory)) {}
 
     void StartCall(UnstartedCallHandler unstarted_call_handler) override {
       LOG(INFO) << "StreamData::StartCall";
@@ -176,7 +186,7 @@ class Http2ServerTransportTest : public Http2TransportTest {
   }
 
   void AddTransportCloseExpectations(EventSequenceEndpoint::Step* step,
-                                     uint32_t last_stream_id = 0) {
+                                     const uint32_t last_stream_id = 0) {
     step->ThenFailRead(absl::UnavailableError(kConnectionClosed));
     step->ThenExpectWrite({
         helper_.SerializedGoawayFrame(
@@ -272,7 +282,7 @@ TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportWriteFromCall) {
 }
 
 TEST_F(Http2ServerTransportTest, ClientInitiatedCancellationTest) {
-  InitTransport(GetChannelArgs());
+  InitTransport(GetChannelArgs().Set(GRPC_ARG_HTTP_ALLOW_TARPIT, false));
   SpawnTransportLoopsAndExchangeSettings();
   StrictMock<MockFunction<void(bool)>> on_done;
   EXPECT_CALL(on_done, Call(true));
@@ -578,6 +588,180 @@ TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportPingTimeout) {
   step->Wait();
 }
 
+TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportPingAbusePolicy) {
+  ExecCtx ctx;
+
+  // Step 1: Initialize the transport with max_ping_strikes set to 1.
+  InitTransport(GetChannelArgs().Set(GRPC_ARG_HTTP2_MAX_PING_STRIKES, 1));
+  SpawnTransportLoopsAndExchangeSettings();
+
+  // Step 2: Send 3 ping requests and expect GOAWAY in response.
+  // - Ping 1 (opaque 100): 0 strikes (sets last ping receive time).
+  // - Ping 2 (opaque 101): Strike 1 (<= max_ping_strikes).
+  // - Ping 3 (opaque 102): Strike 2 (> max_ping_strikes), triggering GOAWAY.
+  std::shared_ptr<EventSequenceEndpoint::Step> step1 = endpoint()->NewStep();
+  step1->ThenPerformRead({
+      helper_.SerializedPingFrame(/*ack=*/false, /*opaque=*/100),
+      helper_.SerializedPingFrame(/*ack=*/false, /*opaque=*/101),
+      helper_.SerializedPingFrame(/*ack=*/false, /*opaque=*/102),
+  });
+  step1->ThenExpectWrite({
+      helper_.SerializedPingFrame(/*ack=*/true, /*opaque=*/100),
+      helper_.SerializedPingFrame(/*ack=*/true, /*opaque=*/101),
+  });
+  step1->ThenExpectWrite({
+      helper_.SerializedGoawayFrame(
+          /*debug_data=*/"too_many_pings", /*last_stream_id=*/0,
+          /*error_code=*/
+          static_cast<uint32_t>(Http2ErrorCode::kEnhanceYourCalm)),
+  });
+  step1->Wait();
+}
+
+TEST_F(Http2ServerTransportTest,
+       TestHttp2ServerTransportPingAbusePolicyWithActiveStream) {
+  ExecCtx ctx;
+  StrictMock<MockFunction<void()>> on_stream_closed;
+  EXPECT_CALL(on_stream_closed, Call());
+
+  // Step 1: Initialize the transport with max_ping_strikes set to 1.
+  InitTransport(
+      GetChannelArgs()
+          .Set(GRPC_ARG_HTTP2_MAX_PING_STRIKES, 1)
+          .Set(GRPC_ARG_KEEPALIVE_TIME_MS, std::numeric_limits<int>::max()));
+  SpawnTransportLoopsAndExchangeSettings();
+
+  AddStream([&on_stream_closed](CallHandler call_handler) {
+    return [call_handler, &on_stream_closed]() mutable {
+      return TrySeq(
+          call_handler.PullClientInitialMetadata(),
+          [call_handler](ClientMetadataHandle) mutable {
+            return call_handler.PushServerInitialMetadata(
+                ServerMetadataFromStatus(absl::OkStatus()));
+          },
+          [call_handler]() mutable {
+            return Map(call_handler.PullMessage(),
+                       [](ClientToServerNextMessage next_msg)
+                           -> absl::StatusOr<MessageHandle> {
+                         if (!next_msg.ok() || !next_msg.has_value()) {
+                           return absl::InternalError("Failed to pull message");
+                         }
+                         return next_msg.TakeValue();
+                       });
+          },
+          [call_handler](MessageHandle) mutable {
+            MessageHandle msg = Arena::MakePooled<Message>(
+                SliceBuffer(Slice::FromExternalString(kString1)), 0);
+            return call_handler.PushMessage(std::move(msg));
+          },
+          [call_handler]() mutable {
+            return Map(call_handler.PullMessage(),
+                       [](ClientToServerNextMessage next_msg)
+                           -> absl::StatusOr<MessageHandle> {
+                         if (!next_msg.ok() || !next_msg.has_value()) {
+                           return absl::InternalError("Failed to pull message");
+                         }
+                         return next_msg.TakeValue();
+                       });
+          },
+          [call_handler](MessageHandle) mutable {
+            MessageHandle msg = Arena::MakePooled<Message>(
+                SliceBuffer(Slice::FromExternalString(kString1)), 0);
+            return call_handler.PushMessage(std::move(msg));
+          },
+          [call_handler, &on_stream_closed]() mutable {
+            return Map(call_handler.WasCancelled(),
+                       [&on_stream_closed](bool cancelled) {
+                         EXPECT_TRUE(cancelled);
+                         on_stream_closed.Call();
+                         return absl::OkStatus();
+                       });
+          });
+    };
+  });
+
+  // Step 2: Client sends a HEADER frame (stream 1), a DATA frame (stream 1),
+  // and 2 PING frames (opaque 100 and 101). Because the server sends initial
+  // metadata and a DATA frame in response, ping strikes are reset to 0, so both
+  // pings are ACKed without GOAWAY.
+  std::shared_ptr<EventSequenceEndpoint::Step> step1 = endpoint()->NewStep();
+  step1->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1, /*end_headers=*/true, /*end_stream=*/false),
+      helper_.SerializedDataFrame(std::string(kString1.begin(), kString1.end()),
+                                  /*stream_id=*/1, /*end_stream=*/false),
+      helper_.SerializedPingFrame(/*ack=*/false, /*opaque=*/100),
+      helper_.SerializedPingFrame(/*ack=*/false, /*opaque=*/101),
+  });
+  step1->ThenExpectWrite({
+      helper_.SerializedPingFrame(/*ack=*/true, /*opaque=*/100),
+      helper_.SerializedPingFrame(/*ack=*/true, /*opaque=*/101),
+      helper_.SerializedWindowUpdateFrame(/*stream_id=*/0, /*increment=*/21),
+  });
+  step1->ThenExpectWrite({
+      helper_.SerializedHeaderFrame(
+          std::string(kGrpcStatusOK.begin(), kGrpcStatusOK.end()),
+          /*stream_id=*/1, /*end_headers=*/true, /*end_stream=*/false),
+      helper_.SerializedDataFrame(std::string(kString1.begin(), kString1.end()),
+                                  /*stream_id=*/1, /*end_stream=*/false),
+  });
+  step1->Wait();
+
+  // Step 3: Client sends a second DATA frame (stream 1) and 2 more PING frames
+  // (opaque 102 and 103). Again, the server sends a DATA frame in response,
+  // resetting ping strikes to 0, so both pings are ACKed without GOAWAY.
+  std::shared_ptr<EventSequenceEndpoint::Step> step2 = endpoint()->NewStep();
+  step2->ThenPerformRead({
+      helper_.SerializedDataFrame(std::string(kString1.begin(), kString1.end()),
+                                  /*stream_id=*/1, /*end_stream=*/false),
+      helper_.SerializedPingFrame(/*ack=*/false, /*opaque=*/102),
+      helper_.SerializedPingFrame(/*ack=*/false, /*opaque=*/103),
+  });
+  step2->ThenExpectWrite({
+      helper_.SerializedPingFrame(/*ack=*/true, /*opaque=*/102),
+      helper_.SerializedPingFrame(/*ack=*/true, /*opaque=*/103),
+      helper_.SerializedWindowUpdateFrame(/*stream_id=*/0, /*increment=*/21),
+  });
+  step2->ThenExpectWrite({
+      helper_.SerializedDataFrame(std::string(kString1.begin(), kString1.end()),
+                                  /*stream_id=*/1, /*end_stream=*/false),
+  });
+  step2->Wait();
+
+  // Step 4: Client sends 3 PING frames (opaque 104, 105, 106) without any DATA
+  // frame sent since Ping 103.
+  // - Ping 104: 0 strikes (first ping after data reset).
+  // - Ping 105: Strike 1 (<= max_ping_strikes) -> ACKed.
+  // - Ping 106: Strike 2 (> max_ping_strikes), triggering GOAWAY
+  // ("too_many_pings", last_stream_id = 1), cancelling stream 1 and invoking
+  // on_stream_closed.Call().
+  std::shared_ptr<EventSequenceEndpoint::Step> step3 = endpoint()->NewStep();
+  step3->ThenPerformRead({
+      helper_.SerializedPingFrame(/*ack=*/false, /*opaque=*/104),
+      helper_.SerializedPingFrame(/*ack=*/false, /*opaque=*/105),
+      helper_.SerializedPingFrame(/*ack=*/false, /*opaque=*/106),
+  });
+  step3->ThenExpectWrite({
+      helper_.SerializedPingFrame(/*ack=*/true, /*opaque=*/104),
+      helper_.SerializedPingFrame(/*ack=*/true, /*opaque=*/105),
+  });
+  step3->ThenExpectWrite({
+      helper_.SerializedGoawayFrame(
+          /*debug_data=*/"too_many_pings", /*last_stream_id=*/1,
+          /*error_code=*/
+          static_cast<uint32_t>(Http2ErrorCode::kEnhanceYourCalm)),
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/1,
+          /*error_code=*/
+          static_cast<uint32_t>(Http2ErrorCode::kEnhanceYourCalm)),
+  });
+  step3->Wait();
+  // Tick to allow the server transport to process stream cancellation and
+  // invoke on_stream_closed.
+  event_engine()->Tick();
+}
+
 TEST_F(Http2ServerTransportTest, TestServerInitiatedGoAway) {
   ExecCtx ctx;
   // 1. Initialize the transport and exchange settings.
@@ -643,7 +827,9 @@ TEST_F(Http2ServerTransportTest, TestKeepAliveTimeout) {
 
 TEST_F(Http2ServerTransportTest, TestServerGracefulGoAway) {
   ExecCtx ctx;
-  InitTransport(GetChannelArgs());
+  // Disable tarpitting to ensure RST_STREAM immediately closes streams for
+  // graceful GOAWAY validation without tarpit delays.
+  InitTransport(GetChannelArgs().Set(GRPC_ARG_HTTP_ALLOW_TARPIT, false));
   SpawnTransportLoopsAndExchangeSettings();
 
   // Step 1: Client initiates stream 1.
@@ -780,7 +966,7 @@ TEST_F(Http2ServerTransportTest, TestServerGracefulGoAway) {
   event_engine()->Tick();
 
   // Step 7: Close stream 3. Verify connection closes when both are closed.
-  auto step7 = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step7 = endpoint()->NewStep();
   step7->ThenPerformRead({
       helper_.SerializedResetStreamFrame(
           /*stream_id=*/3,
@@ -792,6 +978,10 @@ TEST_F(Http2ServerTransportTest, TestServerGracefulGoAway) {
 
 TEST_F(Http2ServerTransportTest, PingOnRstStreamTest) {
   InitTransport(GetChannelArgs()
+                    // Disable tarpitting to ensure RST_STREAM immediately
+                    // closes streams for ping on RST stream validation without
+                    // tarpit delays.
+                    .Set(GRPC_ARG_HTTP_ALLOW_TARPIT, false)
                     .Set("grpc.http2.ping_on_rst_stream_percent", 100)
                     // Disable all sources of pings except for RST streams.
                     .Set(GRPC_ARG_KEEPALIVE_TIME_MS, INT_MAX)
@@ -840,7 +1030,6 @@ TEST_F(Http2ServerTransportTest, PingOnRstStreamTest) {
   });
 
   step->Wait();
-  event_engine()->Tick();
 
   // Teardown the transport.
   std::shared_ptr<EventSequenceEndpoint::Step> step2 = endpoint()->NewStep();
@@ -925,6 +1114,355 @@ TEST_F(Http2ServerTransportTest, TestNextAllowedPingIntervalGracefulGoaway) {
   step2->Wait();
 }
 
+class MockStateWatcher : public Transport::StateWatcher {
+ public:
+  MOCK_METHOD(void, OnDisconnect,
+              (absl::Status status,
+               Transport::StateWatcher::DisconnectInfo disconnect_info),
+              (override));
+  void OnPeerMaxConcurrentStreamsUpdate(
+      uint32_t /*max_concurrent_streams*/,
+      std::unique_ptr<MaxConcurrentStreamsUpdateDoneHandle> /*on_done*/)
+      override {}
+  grpc_pollset_set* interested_parties() const override { return nullptr; }
+};
+
+TEST_F(Http2ServerTransportTest, ReadGoaway) {
+  // Test to verify receiving a GOAWAY frame on Http2ServerTransport completes
+  // successfully without closing the transport prematurely.
+  ExecCtx ctx;
+
+  // Step 1: Initialize the transport and exchange settings.
+  InitTransport(GetChannelArgs());
+  SpawnTransportLoopsAndExchangeSettings();
+
+  // Step 2: Client sends a GOAWAY frame to the server indicating connection
+  // teardown / client stopping.
+  std::shared_ptr<EventSequenceEndpoint::Step> read_goaway_step =
+      endpoint()->NewStep();
+  read_goaway_step->ThenPerformRead({
+      helper_.SerializedGoawayFrame(
+          "Client stopping", /*last_stream_id=*/0u,
+          /*error_code=*/
+          Http2ErrorCodeToFrameErrorCode(Http2ErrorCode::kNoError)),
+  });
+  read_goaway_step->Wait();
+
+  // Step 3: Advance the event engine clock so the transport read loop processes
+  // the incoming GOAWAY frame.
+  event_engine()->Tick();
+
+  // Step 4: Verify that the transport is not prematurely closed upon GOAWAY
+  // receipt and closes cleanly.
+  std::shared_ptr<EventSequenceEndpoint::Step> close_transport_step =
+      endpoint()->NewStep();
+  AddTransportCloseExpectations(close_transport_step.get(),
+                                /*last_stream_id=*/0u);
+  close_transport_step->Wait();
+}
+
+TEST_F(Http2ServerTransportTest, ReadGoawayWithActiveStream) {
+  // Purpose: Verifies that receiving a GOAWAY frame when an active stream
+  // exists allows the active stream to continue processing normally without
+  // being aborted.
+  ExecCtx ctx;
+
+  // Step 1: Initialize the transport and exchange settings.
+  InitTransport(GetChannelArgs());
+  SpawnTransportLoopsAndExchangeSettings();
+
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
+
+  // Step 2: Configure a stream handler that responds to client requests with
+  // initial metadata, a data frame, and trailing metadata.
+  auto factory_factory = [](CallHandler call_handler) {
+    return [call_handler]() mutable {
+      return TrySeq(
+          call_handler.PullClientInitialMetadata(),
+          [call_handler](ClientMetadataHandle metadata) mutable {
+            EXPECT_EQ(
+                metadata->get_pointer(HttpPathMetadata())->as_string_view(),
+                "/demo.Service/Step");
+            return call_handler.PushServerInitialMetadata(
+                ServerMetadataFromStatus(absl::OkStatus()));
+          },
+          [call_handler]() mutable {
+            MessageHandle message = Arena::MakePooled<Message>(
+                SliceBuffer(Slice::FromExternalString(kString1)), 0);
+            return call_handler.PushMessage(std::move(message));
+          },
+          [call_handler]() mutable {
+            return call_handler.PushServerTrailingMetadata(
+                ServerMetadataFromStatus(absl::CancelledError()));
+          });
+    };
+  };
+  AddStream(std::move(factory_factory));
+
+  // Step 3: Client sends a HEADERS frame to start stream 1, followed by a
+  // GOAWAY frame.
+  step->ThenPerformRead({
+      helper_.SerializedHeaderFrame(std::string(kPathDemoServiceStep.begin(),
+                                                kPathDemoServiceStep.end())),
+      helper_.SerializedGoawayFrame(
+          "Client stopping", /*last_stream_id=*/1u,
+          /*error_code=*/
+          Http2ErrorCodeToFrameErrorCode(Http2ErrorCode::kNoError)),
+  });
+
+  // Step 4: Expect the server to send response headers, data, trailing
+  // metadata, and RST_STREAM for stream 1, proving the active stream was
+  // not aborted by the GOAWAY frame.
+  step->ThenExpectWrite(
+      {helper_.SerializedHeaderFrame(
+           std::string(kGrpcStatusOK.begin(), kGrpcStatusOK.end()),
+           /*stream_id=*/1u, /*end_headers=*/true, /*end_stream=*/false),
+       helper_.SerializedDataFrame(
+           std::string(kString1.begin(), kString1.end()),
+           /*stream_id=*/1u, /*end_stream=*/false),
+       helper_.SerializedHeaderFrame(std::string(kGrpcStatusCancelled.begin(),
+                                                 kGrpcStatusCancelled.end()),
+                                     /*stream_id=*/1u, /*end_headers=*/true,
+                                     /*end_stream=*/true),
+       helper_.SerializedResetStreamFrame(
+           /*stream_id=*/1u,
+           /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kNoError))});
+
+  step->Wait();
+
+  // Step 5: Verify that the transport closes cleanly with last_stream_id equal
+  // to 1.
+  std::shared_ptr<EventSequenceEndpoint::Step> close_transport_step =
+      endpoint()->NewStep();
+  AddTransportCloseExpectations(close_transport_step.get(),
+                                /*last_stream_id=*/1u);
+  close_transport_step->Wait();
+}
+
+TEST_F(Http2ServerTransportTest, ReadGoawayNotifiesStateWatcher) {
+  // Purpose: Verifies that a registered StateWatcher::OnDisconnect is invoked
+  // with disconnect_info.reason == Transport::StateWatcher::kGoaway and the
+  // correct HTTP/2 error code when a GOAWAY frame is received.
+  ExecCtx ctx;
+
+  // Step 1: Initialize the transport and exchange settings.
+  InitTransport(GetChannelArgs());
+  SpawnTransportLoopsAndExchangeSettings();
+
+  // Step 2: Register a MockStateWatcher to observe transport disconnections.
+  RefCountedPtr<MockStateWatcher> watcher =
+      MakeRefCounted<StrictMock<MockStateWatcher>>();
+  EXPECT_CALL(*watcher, OnDisconnect(::testing::_, ::testing::_))
+      .WillOnce([](absl::Status status,
+                   Transport::StateWatcher::DisconnectInfo disconnect_info) {
+        EXPECT_EQ(status.code(), absl::StatusCode::kInternal);
+        EXPECT_EQ(status.message(), "Client error");
+        EXPECT_EQ(disconnect_info.reason, Transport::StateWatcher::kGoaway);
+        EXPECT_TRUE(disconnect_info.http2_error_code.has_value());
+        EXPECT_EQ(disconnect_info.http2_error_code.value(),
+                  Http2ErrorCode::kInternalError);
+      });
+  server_transport()->StartWatch(watcher);
+
+  // Step 3: Client sends a GOAWAY frame to the server indicating an error.
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
+  step->ThenPerformRead({
+      helper_.SerializedGoawayFrame(
+          "Client error", /*last_stream_id=*/0u,
+          /*error_code=*/
+          Http2ErrorCodeToFrameErrorCode(Http2ErrorCode::kInternalError)),
+  });
+  step->Wait();
+
+  // Step 4: Advance the event engine so the transport processes the GOAWAY
+  // frame and notifies the state watcher.
+  event_engine()->Tick();
+
+  // Step 5: Verify that the transport closes cleanly.
+  std::shared_ptr<EventSequenceEndpoint::Step> close_transport_step =
+      endpoint()->NewStep();
+  AddTransportCloseExpectations(close_transport_step.get(),
+                                /*last_stream_id=*/0u);
+  close_transport_step->Wait();
+}
+
+TEST_F(Http2ServerTransportTest,
+       ReadGoawayRejectsNewStreamAndClosesConnection) {
+  // Purpose: Verifies that if a client sends a new HEADERS frame after
+  // sending a GOAWAY frame, the server rejects it with
+  // Http2ErrorCode::kProtocolError and immediately closes the connection.
+  ExecCtx ctx;
+
+  // Step 1: Initialize the transport and exchange settings.
+  InitTransport(GetChannelArgs());
+  SpawnTransportLoopsAndExchangeSettings();
+
+  // Step 2: Client sends a GOAWAY frame followed by a HEADERS frame to start
+  // a new stream (stream 1).
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
+  step->ThenPerformRead({
+      helper_.SerializedGoawayFrame(
+          "Client stopping", /*last_stream_id=*/0u,
+          /*error_code=*/
+          Http2ErrorCodeToFrameErrorCode(Http2ErrorCode::kNoError)),
+      helper_.SerializedHeaderFrame(std::string(kPathDemoServiceStep.begin(),
+                                                kPathDemoServiceStep.end())),
+  });
+
+  // Step 3: Server should respond with a GOAWAY frame indicating protocol
+  // error because a client must not initiate new streams after sending GOAWAY,
+  // and close the connection immediately.
+  step->ThenExpectWrite({
+      helper_.SerializedGoawayFrame(
+          std::string(RFC9113::kReceivedStreamAfterGoaway),
+          /*last_stream_id=*/1u,
+          /*error_code=*/
+          Http2ErrorCodeToFrameErrorCode(Http2ErrorCode::kProtocolError)),
+  });
+
+  step->Wait();
+  event_engine()->Tick();
+}
+
+// Verifies that when server application sends trailing metadata annotated with
+// GrpcTarPit, the transport intercepts the trailers via TarpitManager and
+// delays sending the response until tarpit duration expires, at which point
+// trailing metadata headers and RST_STREAM frames are emitted to the peer.
+TEST_F(Http2ServerTransportTest, ServerTrailingMetadataTarpitTest) {
+  ExecCtx ctx;
+  InitTransport(GetChannelArgs());
+
+  // Step 2: Set up call handler callback to pull client initial metadata and
+  // push server trailing metadata annotated with GrpcTarPit.
+  auto factory_factory = [](CallHandler call_handler) {
+    return [call_handler]() mutable {
+      return TrySeq(
+          call_handler.PullClientInitialMetadata(),
+          [call_handler](ClientMetadataHandle /*metadata*/) mutable {
+            Arena::PoolPtr<ServerMetadata> trailers =
+                Arena::MakePooledForOverwrite<ServerMetadata>();
+            trailers->Set(GrpcStatusMetadata(), GRPC_STATUS_CANCELLED);
+            trailers->Set(GrpcTarPit(), Empty());
+            return call_handler.PushServerTrailingMetadata(std::move(trailers));
+          });
+    };
+  };
+  AddStream(std::move(factory_factory));
+
+  // Step 3: Start transport loops and exchange SETTINGS frames.
+  SpawnTransportLoopsAndExchangeSettings();
+
+  // Step 4: Simulate client sending initial HEADERS frame and expect server
+  // write of trailing metadata HEADERS frame followed by RST_STREAM(NO_ERROR).
+  const std::shared_ptr<EventSequenceEndpoint::Step> request_step =
+      endpoint()->NewStep();
+  request_step->ThenPerformRead({
+      helper_.SerializedHeaderFrame(std::string(kPathDemoServiceStep.begin(),
+                                                kPathDemoServiceStep.end())),
+  });
+
+  request_step->ThenExpectWrite(
+      {helper_.SerializedHeaderFrame(
+           std::string(kGrpcStatusCancelledOnly.begin(),
+                       kGrpcStatusCancelledOnly.end()),
+           /*stream_id=*/1, /*end_headers=*/true,
+           /*end_stream=*/true),
+       helper_.SerializedResetStreamFrame(
+           /*stream_id=*/1,
+           /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kNoError))});
+
+  request_step->Wait();
+
+  // Step 5: Gracefully teardown the transport connection.
+  const std::shared_ptr<EventSequenceEndpoint::Step> teardown_step =
+      endpoint()->NewStep();
+  AddTransportCloseExpectations(teardown_step.get(), /*last_stream_id=*/1);
+  teardown_step->Wait();
+}
+
+// TODO(tjagtap): [PH2][P2] Re-enable this test once incoming stream validation
+// for MAX_CONCURRENT_STREAMS is implemented on the server.
+// Verifies that tarpit manager delays closing a stream when the client
+// sends a RST_STREAM frame.
+TEST_F(Http2ServerTransportTest,
+       DISABLED_TarpitRejectsNewStreamWhenMaxConcurrentStreamsExceeded) {
+  ExecCtx ctx;
+  InitTransport(GetChannelArgs().Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1));
+
+  const std::shared_ptr<EventSequenceEndpoint::Step> handshake_step =
+      endpoint()->NewStep();
+  server_transport()->SetCallDestination(
+      MakeRefCounted<TestCallDestination>(this));
+  handshake_step->ThenPerformRead({
+      EventEngineSlice(
+          grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
+      helper_.SerializedDefaultClientSettingsFrame(),
+  });
+  const std::vector<Http2SettingsFrame::Setting> server_settings = {
+      {Http2Settings::kMaxConcurrentStreamsWireId, 1u},
+      {Http2Settings::kInitialWindowSizeWireId, 65535u},
+      {Http2Settings::kMaxHeaderListSizeWireId, DEFAULT_MAX_HEADER_LIST_SIZE},
+      {Http2Settings::kGrpcAllowTrueBinaryMetadataWireId, true},
+  };
+  handshake_step->ThenExpectWrite({
+      helper_.SerializedSettingsFrame(server_settings),
+      helper_.SerializedSettingsFrameAck(),
+  });
+  handshake_step->ThenPerformRead({
+      helper_.SerializedSettingsFrameAck(),
+  });
+  handshake_step->Wait();
+  event_engine()->Tick();
+
+  const auto factory_factory = [](CallHandler call_handler) {
+    return [call_handler]() mutable {
+      return TrySeq(call_handler.PullClientInitialMetadata(),
+                    [call_handler](ClientMetadataHandle /*metadata*/) mutable {
+                      return Map(call_handler.WasCancelled(),
+                                 [](const bool /*cancelled*/) -> absl::Status {
+                                   return absl::OkStatus();
+                                 });
+                    });
+    };
+  };
+  AddStream(factory_factory);
+
+  // Client sends HEADERS (Stream 1), RST_STREAM (Stream 1), and HEADERS (Stream
+  // 3) in a single read. With tarpitting enabled, the server transport
+  // intercepts the reset via TarpitManager and delays stream closure. As stream
+  // 1 remains active in stream_list_ for some tarpit duration, the server
+  // rejects the new stream 3.
+  const std::shared_ptr<EventSequenceEndpoint::Step> client_frames_step =
+      endpoint()->NewStep();
+  client_frames_step->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1,
+          /*end_headers=*/true,
+          /*end_stream=*/false),
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/1,
+          /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kCancel)),
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/3,
+          /*end_headers=*/true,
+          /*end_stream=*/false),
+  });
+  client_frames_step->ThenExpectWrite({
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/3,
+          /*error_code=*/
+          static_cast<uint32_t>(Http2ErrorCode::kRefusedStream)),
+  });
+  client_frames_step->Wait();
+
+  // Teardown the transport.
+  const std::shared_ptr<EventSequenceEndpoint::Step> teardown_step =
+      endpoint()->NewStep();
+  AddTransportCloseExpectations(teardown_step.get(), /*last_stream_id=*/3);
+  teardown_step->Wait();
+}
 }  // namespace testing
 }  // namespace http2
 }  // namespace grpc_core

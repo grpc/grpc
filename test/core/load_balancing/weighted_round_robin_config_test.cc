@@ -100,7 +100,6 @@ TEST(WeightedRoundRobinConfigTest, InvalidValues) {
 }
 
 TEST(WeightedRoundRobinConfigTest, UnsupportedMetricNames) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
@@ -122,7 +121,6 @@ TEST(WeightedRoundRobinConfigTest, UnsupportedMetricNames) {
 }
 
 TEST(WeightedRoundRobinConfigTest, ValidMetricNamesEnabled) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
@@ -149,31 +147,6 @@ TEST(WeightedRoundRobinConfigTest, ValidMetricNamesEnabled) {
   EXPECT_EQ(custom_metrics[0].type,
             WeightedRoundRobinConfig::ParsedMetric::Type::kCpu);
   EXPECT_EQ(custom_metrics[0].name, "");
-}
-
-TEST(WeightedRoundRobinConfigTest, MetricNamesDisabled) {
-  const char* service_config_json =
-      "{\n"
-      "  \"loadBalancingConfig\":[{\n"
-      "    \"weighted_round_robin\":{\n"
-      "      \"metricNamesForComputingUtilization\": [\"cpu_utilization\"]\n"
-      "    }\n"
-      "  }]\n"
-      "}\n";
-  auto service_config =
-      ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
-  ASSERT_TRUE(service_config.ok()) << service_config.status();
-  EXPECT_NE(*service_config, nullptr);
-  auto global_config = DownCast<internal::ClientChannelGlobalParsedConfig*>(
-      (*service_config)
-          ->GetGlobalParsedConfig(
-              internal::ClientChannelServiceConfigParser::ParserIndex()));
-  ASSERT_NE(global_config, nullptr);
-  auto lb_config = global_config->parsed_lb_config();
-  ASSERT_NE(lb_config, nullptr);
-  ASSERT_EQ(lb_config->name(), "weighted_round_robin");
-  auto* wrr_config = DownCast<WeightedRoundRobinConfig*>(lb_config.get());
-  EXPECT_TRUE(wrr_config->parsed_custom_metrics().empty());
 }
 
 }  // namespace

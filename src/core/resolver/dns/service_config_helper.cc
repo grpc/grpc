@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "src/core/resolver/dns/event_engine/service_config_helper.h"
+#include "src/core/resolver/dns/service_config_helper.h"
 
 #include <grpc/support/port_platform.h>
 #include <stdlib.h>

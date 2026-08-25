@@ -246,6 +246,7 @@ libs:
   - src/core/client_channel/retry_throttle.h
   - src/core/client_channel/subchannel.h
   - src/core/client_channel/subchannel_interface_internal.h
+  - src/core/client_channel/subchannel_metrics.h
   - src/core/client_channel/subchannel_pool_interface.h
   - src/core/client_channel/subchannel_stream_client.h
   - src/core/client_channel/subchannel_stream_limiter.h
@@ -261,6 +262,7 @@ libs:
   - src/core/credentials/call/external/file_external_account_credentials.h
   - src/core/credentials/call/external/url_external_account_credentials.h
   - src/core/credentials/call/gcp_service_account_identity/gcp_service_account_identity_credentials.h
+  - src/core/credentials/call/gdch_service_account/gdch_service_account_credentials.h
   - src/core/credentials/call/iam/iam_credentials.h
   - src/core/credentials/call/json_util.h
   - src/core/credentials/call/jwt/json_token.h
@@ -1054,10 +1056,6 @@ libs:
   - src/core/lib/iomgr/pollset_set_windows.h
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/port.h
-  - src/core/lib/iomgr/resolve_address.h
-  - src/core/lib/iomgr/resolve_address_impl.h
-  - src/core/lib/iomgr/resolve_address_posix.h
-  - src/core/lib/iomgr/resolve_address_windows.h
   - src/core/lib/iomgr/resolved_address.h
   - src/core/lib/iomgr/sockaddr.h
   - src/core/lib/iomgr/sockaddr_posix.h
@@ -1204,13 +1202,8 @@ libs:
   - src/core/mitigation_engine/mitigation_engine.h
   - src/core/mitigation_engine/mitigation_provider.h
   - src/core/net/socket_mutator.h
-  - src/core/resolver/dns/c_ares/dns_resolver_ares.h
-  - src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h
-  - src/core/resolver/dns/c_ares/grpc_ares_wrapper.h
-  - src/core/resolver/dns/dns_resolver_plugin.h
-  - src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.h
-  - src/core/resolver/dns/event_engine/service_config_helper.h
-  - src/core/resolver/dns/native/dns_resolver.h
+  - src/core/resolver/dns/dns_resolver.h
+  - src/core/resolver/dns/service_config_helper.h
   - src/core/resolver/endpoint_addresses.h
   - src/core/resolver/fake/fake_resolver.h
   - src/core/resolver/polling_resolver.h
@@ -1226,6 +1219,7 @@ libs:
   - src/core/server/server_config_selector.h
   - src/core/server/server_config_selector_filter.h
   - src/core/server/server_interface.h
+  - src/core/server/xds_server_config_fetcher.h
   - src/core/service_config/service_config.h
   - src/core/service_config/service_config_call_data.h
   - src/core/service_config/service_config_channel_arg_filter.h
@@ -1445,6 +1439,7 @@ libs:
   - src/core/client_channel/retry_service_config.cc
   - src/core/client_channel/retry_throttle.cc
   - src/core/client_channel/subchannel.cc
+  - src/core/client_channel/subchannel_metrics.cc
   - src/core/client_channel/subchannel_pool_interface.cc
   - src/core/client_channel/subchannel_stream_client.cc
   - src/core/client_channel/subchannel_stream_limiter.cc
@@ -1459,6 +1454,7 @@ libs:
   - src/core/credentials/call/external/file_external_account_credentials.cc
   - src/core/credentials/call/external/url_external_account_credentials.cc
   - src/core/credentials/call/gcp_service_account_identity/gcp_service_account_identity_credentials.cc
+  - src/core/credentials/call/gdch_service_account/gdch_service_account_credentials.cc
   - src/core/credentials/call/iam/iam_credentials.cc
   - src/core/credentials/call/json_util.cc
   - src/core/credentials/call/jwt/json_token.cc
@@ -2042,9 +2038,6 @@ libs:
   - src/core/lib/iomgr/pollset_set.cc
   - src/core/lib/iomgr/pollset_set_windows.cc
   - src/core/lib/iomgr/pollset_windows.cc
-  - src/core/lib/iomgr/resolve_address.cc
-  - src/core/lib/iomgr/resolve_address_posix.cc
-  - src/core/lib/iomgr/resolve_address_windows.cc
   - src/core/lib/iomgr/sockaddr_utils_posix.cc
   - src/core/lib/iomgr/socket_factory_posix.cc
   - src/core/lib/iomgr/socket_mutator.cc
@@ -2165,16 +2158,8 @@ libs:
   - src/core/net/socket_mutator.cc
   - src/core/plugin_registry/grpc_plugin_registry.cc
   - src/core/plugin_registry/grpc_plugin_registry_extra.cc
-  - src/core/resolver/dns/c_ares/dns_resolver_ares.cc
-  - src/core/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc
-  - src/core/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc
-  - src/core/resolver/dns/c_ares/grpc_ares_wrapper.cc
-  - src/core/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc
-  - src/core/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc
-  - src/core/resolver/dns/dns_resolver_plugin.cc
-  - src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.cc
-  - src/core/resolver/dns/event_engine/service_config_helper.cc
-  - src/core/resolver/dns/native/dns_resolver.cc
+  - src/core/resolver/dns/dns_resolver.cc
+  - src/core/resolver/dns/service_config_helper.cc
   - src/core/resolver/endpoint_addresses.cc
   - src/core/resolver/fake/fake_resolver.cc
   - src/core/resolver/google_c2p/google_c2p_resolver.cc
@@ -2547,6 +2532,7 @@ libs:
   - src/core/client_channel/retry_throttle.h
   - src/core/client_channel/subchannel.h
   - src/core/client_channel/subchannel_interface_internal.h
+  - src/core/client_channel/subchannel_metrics.h
   - src/core/client_channel/subchannel_pool_interface.h
   - src/core/client_channel/subchannel_stream_client.h
   - src/core/client_channel/subchannel_stream_limiter.h
@@ -2828,10 +2814,6 @@ libs:
   - src/core/lib/iomgr/pollset_set_windows.h
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/port.h
-  - src/core/lib/iomgr/resolve_address.h
-  - src/core/lib/iomgr/resolve_address_impl.h
-  - src/core/lib/iomgr/resolve_address_posix.h
-  - src/core/lib/iomgr/resolve_address_windows.h
   - src/core/lib/iomgr/resolved_address.h
   - src/core/lib/iomgr/sockaddr.h
   - src/core/lib/iomgr/sockaddr_posix.h
@@ -2970,13 +2952,8 @@ libs:
   - src/core/mitigation_engine/mitigation_engine.h
   - src/core/mitigation_engine/mitigation_provider.h
   - src/core/net/socket_mutator.h
-  - src/core/resolver/dns/c_ares/dns_resolver_ares.h
-  - src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h
-  - src/core/resolver/dns/c_ares/grpc_ares_wrapper.h
-  - src/core/resolver/dns/dns_resolver_plugin.h
-  - src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.h
-  - src/core/resolver/dns/event_engine/service_config_helper.h
-  - src/core/resolver/dns/native/dns_resolver.h
+  - src/core/resolver/dns/dns_resolver.h
+  - src/core/resolver/dns/service_config_helper.h
   - src/core/resolver/endpoint_addresses.h
   - src/core/resolver/fake/fake_resolver.h
   - src/core/resolver/polling_resolver.h
@@ -3120,6 +3097,7 @@ libs:
   - src/core/client_channel/retry_service_config.cc
   - src/core/client_channel/retry_throttle.cc
   - src/core/client_channel/subchannel.cc
+  - src/core/client_channel/subchannel_metrics.cc
   - src/core/client_channel/subchannel_pool_interface.cc
   - src/core/client_channel/subchannel_stream_client.cc
   - src/core/client_channel/subchannel_stream_limiter.cc
@@ -3349,9 +3327,6 @@ libs:
   - src/core/lib/iomgr/pollset_set.cc
   - src/core/lib/iomgr/pollset_set_windows.cc
   - src/core/lib/iomgr/pollset_windows.cc
-  - src/core/lib/iomgr/resolve_address.cc
-  - src/core/lib/iomgr/resolve_address_posix.cc
-  - src/core/lib/iomgr/resolve_address_windows.cc
   - src/core/lib/iomgr/sockaddr_utils_posix.cc
   - src/core/lib/iomgr/socket_factory_posix.cc
   - src/core/lib/iomgr/socket_mutator.cc
@@ -3462,16 +3437,8 @@ libs:
   - src/core/net/socket_mutator.cc
   - src/core/plugin_registry/grpc_plugin_registry.cc
   - src/core/plugin_registry/grpc_plugin_registry_noextra.cc
-  - src/core/resolver/dns/c_ares/dns_resolver_ares.cc
-  - src/core/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc
-  - src/core/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc
-  - src/core/resolver/dns/c_ares/grpc_ares_wrapper.cc
-  - src/core/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc
-  - src/core/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc
-  - src/core/resolver/dns/dns_resolver_plugin.cc
-  - src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.cc
-  - src/core/resolver/dns/event_engine/service_config_helper.cc
-  - src/core/resolver/dns/native/dns_resolver.cc
+  - src/core/resolver/dns/dns_resolver.cc
+  - src/core/resolver/dns/service_config_helper.cc
   - src/core/resolver/endpoint_addresses.cc
   - src/core/resolver/fake/fake_resolver.cc
   - src/core/resolver/polling_resolver.cc
@@ -4967,10 +4934,6 @@ libs:
   - src/core/lib/iomgr/pollset_set_windows.h
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/port.h
-  - src/core/lib/iomgr/resolve_address.h
-  - src/core/lib/iomgr/resolve_address_impl.h
-  - src/core/lib/iomgr/resolve_address_posix.h
-  - src/core/lib/iomgr/resolve_address_windows.h
   - src/core/lib/iomgr/resolved_address.h
   - src/core/lib/iomgr/sockaddr.h
   - src/core/lib/iomgr/sockaddr_posix.h
@@ -5329,9 +5292,6 @@ libs:
   - src/core/lib/iomgr/pollset_set.cc
   - src/core/lib/iomgr/pollset_set_windows.cc
   - src/core/lib/iomgr/pollset_windows.cc
-  - src/core/lib/iomgr/resolve_address.cc
-  - src/core/lib/iomgr/resolve_address_posix.cc
-  - src/core/lib/iomgr/resolve_address_windows.cc
   - src/core/lib/iomgr/sockaddr_utils_posix.cc
   - src/core/lib/iomgr/socket_factory_posix.cc
   - src/core/lib/iomgr/socket_mutator.cc
@@ -7635,10 +7595,6 @@ targets:
   - src/core/lib/iomgr/pollset_set_windows.h
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/port.h
-  - src/core/lib/iomgr/resolve_address.h
-  - src/core/lib/iomgr/resolve_address_impl.h
-  - src/core/lib/iomgr/resolve_address_posix.h
-  - src/core/lib/iomgr/resolve_address_windows.h
   - src/core/lib/iomgr/resolved_address.h
   - src/core/lib/iomgr/sockaddr.h
   - src/core/lib/iomgr/sockaddr_posix.h
@@ -7961,9 +7917,6 @@ targets:
   - src/core/lib/iomgr/pollset_set.cc
   - src/core/lib/iomgr/pollset_set_windows.cc
   - src/core/lib/iomgr/pollset_windows.cc
-  - src/core/lib/iomgr/resolve_address.cc
-  - src/core/lib/iomgr/resolve_address_posix.cc
-  - src/core/lib/iomgr/resolve_address_windows.cc
   - src/core/lib/iomgr/sockaddr_utils_posix.cc
   - src/core/lib/iomgr/socket_factory_posix.cc
   - src/core/lib/iomgr/socket_mutator.cc
@@ -9556,6 +9509,7 @@ targets:
   headers:
   - src/core/util/json/json_util.h
   - src/cpp/server/orca/orca_service.h
+  - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_lb_policies.h
@@ -9579,6 +9533,7 @@ targets:
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - src/core/util/json/json_util.cc
   - src/cpp/server/orca/orca_service.cc
+  - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/test_lb_policies.cc
   - test/cpp/end2end/client_lb_end2end_test.cc
   - test/cpp/end2end/connection_attempt_injector.cc
@@ -10099,16 +10054,6 @@ targets:
   - linux
   - posix
   - mac
-- name: dns_resolver_cooldown_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/resolver/dns_resolver_cooldown_test.cc
-  deps:
-  - gtest
-  - grpc_test_util
 - name: dns_resolver_test
   gtest: true
   build: test
@@ -13658,10 +13603,6 @@ targets:
   - src/core/lib/iomgr/pollset_set_windows.h
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/port.h
-  - src/core/lib/iomgr/resolve_address.h
-  - src/core/lib/iomgr/resolve_address_impl.h
-  - src/core/lib/iomgr/resolve_address_posix.h
-  - src/core/lib/iomgr/resolve_address_windows.h
   - src/core/lib/iomgr/resolved_address.h
   - src/core/lib/iomgr/sockaddr.h
   - src/core/lib/iomgr/sockaddr_posix.h
@@ -13984,9 +13925,6 @@ targets:
   - src/core/lib/iomgr/pollset_set.cc
   - src/core/lib/iomgr/pollset_set_windows.cc
   - src/core/lib/iomgr/pollset_windows.cc
-  - src/core/lib/iomgr/resolve_address.cc
-  - src/core/lib/iomgr/resolve_address_posix.cc
-  - src/core/lib/iomgr/resolve_address_windows.cc
   - src/core/lib/iomgr/sockaddr_utils_posix.cc
   - src/core/lib/iomgr/socket_factory_posix.cc
   - src/core/lib/iomgr/socket_mutator.cc
@@ -15188,6 +15126,16 @@ targets:
   deps:
   - gtest
   - protobuf
+  - grpc_test_util
+- name: gdch_service_account_credentials_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/credentials/call/gdch_service_account_credentials_test.cc
+  deps:
+  - gtest
   - grpc_test_util
 - name: generic_end2end_test
   gtest: true
@@ -16552,10 +16500,6 @@ targets:
   - src/core/lib/iomgr/pollset_set_windows.h
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/port.h
-  - src/core/lib/iomgr/resolve_address.h
-  - src/core/lib/iomgr/resolve_address_impl.h
-  - src/core/lib/iomgr/resolve_address_posix.h
-  - src/core/lib/iomgr/resolve_address_windows.h
   - src/core/lib/iomgr/resolved_address.h
   - src/core/lib/iomgr/sockaddr.h
   - src/core/lib/iomgr/sockaddr_posix.h
@@ -16881,9 +16825,6 @@ targets:
   - src/core/lib/iomgr/pollset_set.cc
   - src/core/lib/iomgr/pollset_set_windows.cc
   - src/core/lib/iomgr/pollset_windows.cc
-  - src/core/lib/iomgr/resolve_address.cc
-  - src/core/lib/iomgr/resolve_address_posix.cc
-  - src/core/lib/iomgr/resolve_address_windows.cc
   - src/core/lib/iomgr/sockaddr_utils_posix.cc
   - src/core/lib/iomgr/socket_factory_posix.cc
   - src/core/lib/iomgr/socket_mutator.cc
@@ -23168,60 +23109,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-- name: resolve_address_using_ares_resolver_posix_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/iomgr/resolve_address_posix_test.cc
-  deps:
-  - gtest
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: resolve_address_using_ares_resolver_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/test_util/fake_udp_and_tcp_server.h
-  src:
-  - test/core/iomgr/resolve_address_test.cc
-  - test/core/test_util/fake_udp_and_tcp_server.cc
-  deps:
-  - gtest
-  - grpc_test_util
-  - grpc++_test_config
-- name: resolve_address_using_native_resolver_posix_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/iomgr/resolve_address_posix_test.cc
-  deps:
-  - gtest
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: resolve_address_using_native_resolver_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/test_util/fake_udp_and_tcp_server.h
-  src:
-  - test/core/iomgr/resolve_address_test.cc
-  - test/core/test_util/fake_udp_and_tcp_server.cc
-  deps:
-  - gtest
-  - grpc_test_util
-  - grpc++_test_config
 - name: resource_quota_end2end_stress_test
   gtest: true
   build: test
@@ -24773,6 +24660,16 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: subchannel_metrics_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/subchannel_metrics_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: subchannel_stream_limiter_test
   gtest: true
   build: test
@@ -26262,10 +26159,6 @@ targets:
   - src/core/lib/iomgr/pollset_set_windows.h
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/port.h
-  - src/core/lib/iomgr/resolve_address.h
-  - src/core/lib/iomgr/resolve_address_impl.h
-  - src/core/lib/iomgr/resolve_address_posix.h
-  - src/core/lib/iomgr/resolve_address_windows.h
   - src/core/lib/iomgr/resolved_address.h
   - src/core/lib/iomgr/sockaddr.h
   - src/core/lib/iomgr/sockaddr_posix.h
@@ -26590,9 +26483,6 @@ targets:
   - src/core/lib/iomgr/pollset_set.cc
   - src/core/lib/iomgr/pollset_set_windows.cc
   - src/core/lib/iomgr/pollset_windows.cc
-  - src/core/lib/iomgr/resolve_address.cc
-  - src/core/lib/iomgr/resolve_address_posix.cc
-  - src/core/lib/iomgr/resolve_address_windows.cc
   - src/core/lib/iomgr/sockaddr_utils_posix.cc
   - src/core/lib/iomgr/socket_factory_posix.cc
   - src/core/lib/iomgr/socket_mutator.cc
@@ -27048,6 +26938,7 @@ targets:
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/join_state.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/seq_state.h
@@ -27055,6 +26946,7 @@ targets:
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/if.h
+  - src/core/lib/promise/join.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
@@ -27649,10 +27541,6 @@ targets:
   - src/core/lib/iomgr/pollset_set_windows.h
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/port.h
-  - src/core/lib/iomgr/resolve_address.h
-  - src/core/lib/iomgr/resolve_address_impl.h
-  - src/core/lib/iomgr/resolve_address_posix.h
-  - src/core/lib/iomgr/resolve_address_windows.h
   - src/core/lib/iomgr/resolved_address.h
   - src/core/lib/iomgr/sockaddr.h
   - src/core/lib/iomgr/sockaddr_posix.h
@@ -27976,9 +27864,6 @@ targets:
   - src/core/lib/iomgr/pollset_set.cc
   - src/core/lib/iomgr/pollset_set_windows.cc
   - src/core/lib/iomgr/pollset_windows.cc
-  - src/core/lib/iomgr/resolve_address.cc
-  - src/core/lib/iomgr/resolve_address_posix.cc
-  - src/core/lib/iomgr/resolve_address_windows.cc
   - src/core/lib/iomgr/sockaddr_utils_posix.cc
   - src/core/lib/iomgr/socket_factory_posix.cc
   - src/core/lib/iomgr/socket_mutator.cc
