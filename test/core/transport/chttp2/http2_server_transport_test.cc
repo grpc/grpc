@@ -38,6 +38,7 @@
 #include "src/core/call/metadata.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -78,6 +79,9 @@ const std::vector<uint8_t> kGrpcStatusCancelled = {
     0x40, 0x0b, 0x67, 0x72, 0x70, 0x63, 0x2d, 0x73, 0x74, 0x61,
     0x74, 0x75, 0x73, 0x01, 0x31, 0x00, 0x0c, 0x67, 0x72, 0x70,
     0x63, 0x2d, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x00};
+const std::vector<uint8_t> kGrpcStatusCancelledOnly = {
+    0x40, 0x0b, 'g', 'r', 'p', 'c',  '-', 's',
+    't',  'a',  't', 'u', 's', 0x01, '1'};
 
 class Http2ServerTransportTest : public Http2TransportTest {
  public:
@@ -159,7 +163,8 @@ class Http2ServerTransportTest : public Http2TransportTest {
   template <typename PromiseFactoryFactory>
   struct StreamData : public StreamDataBase {
     explicit StreamData(PromiseFactoryFactory&& promise_factory_factory)
-        : promise_factory_factory(std::move(promise_factory_factory)) {}
+        : promise_factory_factory(
+              std::forward<PromiseFactoryFactory>(promise_factory_factory)) {}
 
     void StartCall(UnstartedCallHandler unstarted_call_handler) override {
       LOG(INFO) << "StreamData::StartCall";
@@ -181,7 +186,7 @@ class Http2ServerTransportTest : public Http2TransportTest {
   }
 
   void AddTransportCloseExpectations(EventSequenceEndpoint::Step* step,
-                                     uint32_t last_stream_id = 0) {
+                                     const uint32_t last_stream_id = 0) {
     step->ThenFailRead(absl::UnavailableError(kConnectionClosed));
     step->ThenExpectWrite({
         helper_.SerializedGoawayFrame(
@@ -277,7 +282,7 @@ TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportWriteFromCall) {
 }
 
 TEST_F(Http2ServerTransportTest, ClientInitiatedCancellationTest) {
-  InitTransport(GetChannelArgs());
+  InitTransport(GetChannelArgs().Set(GRPC_ARG_HTTP_ALLOW_TARPIT, false));
   SpawnTransportLoopsAndExchangeSettings();
   StrictMock<MockFunction<void(bool)>> on_done;
   EXPECT_CALL(on_done, Call(true));
@@ -822,7 +827,9 @@ TEST_F(Http2ServerTransportTest, TestKeepAliveTimeout) {
 
 TEST_F(Http2ServerTransportTest, TestServerGracefulGoAway) {
   ExecCtx ctx;
-  InitTransport(GetChannelArgs());
+  // Disable tarpitting to ensure RST_STREAM immediately closes streams for
+  // graceful GOAWAY validation without tarpit delays.
+  InitTransport(GetChannelArgs().Set(GRPC_ARG_HTTP_ALLOW_TARPIT, false));
   SpawnTransportLoopsAndExchangeSettings();
 
   // Step 1: Client initiates stream 1.
@@ -959,7 +966,7 @@ TEST_F(Http2ServerTransportTest, TestServerGracefulGoAway) {
   event_engine()->Tick();
 
   // Step 7: Close stream 3. Verify connection closes when both are closed.
-  auto step7 = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step7 = endpoint()->NewStep();
   step7->ThenPerformRead({
       helper_.SerializedResetStreamFrame(
           /*stream_id=*/3,
@@ -971,6 +978,10 @@ TEST_F(Http2ServerTransportTest, TestServerGracefulGoAway) {
 
 TEST_F(Http2ServerTransportTest, PingOnRstStreamTest) {
   InitTransport(GetChannelArgs()
+                    // Disable tarpitting to ensure RST_STREAM immediately
+                    // closes streams for ping on RST stream validation without
+                    // tarpit delays.
+                    .Set(GRPC_ARG_HTTP_ALLOW_TARPIT, false)
                     .Set("grpc.http2.ping_on_rst_stream_percent", 100)
                     // Disable all sources of pings except for RST streams.
                     .Set(GRPC_ARG_KEEPALIVE_TIME_MS, INT_MAX)
@@ -1019,7 +1030,6 @@ TEST_F(Http2ServerTransportTest, PingOnRstStreamTest) {
   });
 
   step->Wait();
-  event_engine()->Tick();
 
   // Teardown the transport.
   std::shared_ptr<EventSequenceEndpoint::Step> step2 = endpoint()->NewStep();
@@ -1314,6 +1324,145 @@ TEST_F(Http2ServerTransportTest,
   event_engine()->Tick();
 }
 
+// Verifies that when server application sends trailing metadata annotated with
+// GrpcTarPit, the transport intercepts the trailers via TarpitManager and
+// delays sending the response until tarpit duration expires, at which point
+// trailing metadata headers and RST_STREAM frames are emitted to the peer.
+TEST_F(Http2ServerTransportTest, ServerTrailingMetadataTarpitTest) {
+  ExecCtx ctx;
+  InitTransport(GetChannelArgs());
+
+  // Step 2: Set up call handler callback to pull client initial metadata and
+  // push server trailing metadata annotated with GrpcTarPit.
+  auto factory_factory = [](CallHandler call_handler) {
+    return [call_handler]() mutable {
+      return TrySeq(
+          call_handler.PullClientInitialMetadata(),
+          [call_handler](ClientMetadataHandle /*metadata*/) mutable {
+            Arena::PoolPtr<ServerMetadata> trailers =
+                Arena::MakePooledForOverwrite<ServerMetadata>();
+            trailers->Set(GrpcStatusMetadata(), GRPC_STATUS_CANCELLED);
+            trailers->Set(GrpcTarPit(), Empty());
+            return call_handler.PushServerTrailingMetadata(std::move(trailers));
+          });
+    };
+  };
+  AddStream(std::move(factory_factory));
+
+  // Step 3: Start transport loops and exchange SETTINGS frames.
+  SpawnTransportLoopsAndExchangeSettings();
+
+  // Step 4: Simulate client sending initial HEADERS frame and expect server
+  // write of trailing metadata HEADERS frame followed by RST_STREAM(NO_ERROR).
+  const std::shared_ptr<EventSequenceEndpoint::Step> request_step =
+      endpoint()->NewStep();
+  request_step->ThenPerformRead({
+      helper_.SerializedHeaderFrame(std::string(kPathDemoServiceStep.begin(),
+                                                kPathDemoServiceStep.end())),
+  });
+
+  request_step->ThenExpectWrite(
+      {helper_.SerializedHeaderFrame(
+           std::string(kGrpcStatusCancelledOnly.begin(),
+                       kGrpcStatusCancelledOnly.end()),
+           /*stream_id=*/1, /*end_headers=*/true,
+           /*end_stream=*/true),
+       helper_.SerializedResetStreamFrame(
+           /*stream_id=*/1,
+           /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kNoError))});
+
+  request_step->Wait();
+
+  // Step 5: Gracefully teardown the transport connection.
+  const std::shared_ptr<EventSequenceEndpoint::Step> teardown_step =
+      endpoint()->NewStep();
+  AddTransportCloseExpectations(teardown_step.get(), /*last_stream_id=*/1);
+  teardown_step->Wait();
+}
+
+// TODO(tjagtap): [PH2][P2] Re-enable this test once incoming stream validation
+// for MAX_CONCURRENT_STREAMS is implemented on the server.
+// Verifies that tarpit manager delays closing a stream when the client
+// sends a RST_STREAM frame.
+TEST_F(Http2ServerTransportTest,
+       DISABLED_TarpitRejectsNewStreamWhenMaxConcurrentStreamsExceeded) {
+  ExecCtx ctx;
+  InitTransport(GetChannelArgs().Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1));
+
+  const std::shared_ptr<EventSequenceEndpoint::Step> handshake_step =
+      endpoint()->NewStep();
+  server_transport()->SetCallDestination(
+      MakeRefCounted<TestCallDestination>(this));
+  handshake_step->ThenPerformRead({
+      EventEngineSlice(
+          grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
+      helper_.SerializedDefaultClientSettingsFrame(),
+  });
+  const std::vector<Http2SettingsFrame::Setting> server_settings = {
+      {Http2Settings::kMaxConcurrentStreamsWireId, 1u},
+      {Http2Settings::kInitialWindowSizeWireId, 65535u},
+      {Http2Settings::kMaxHeaderListSizeWireId, DEFAULT_MAX_HEADER_LIST_SIZE},
+      {Http2Settings::kGrpcAllowTrueBinaryMetadataWireId, true},
+  };
+  handshake_step->ThenExpectWrite({
+      helper_.SerializedSettingsFrame(server_settings),
+      helper_.SerializedSettingsFrameAck(),
+  });
+  handshake_step->ThenPerformRead({
+      helper_.SerializedSettingsFrameAck(),
+  });
+  handshake_step->Wait();
+  event_engine()->Tick();
+
+  const auto factory_factory = [](CallHandler call_handler) {
+    return [call_handler]() mutable {
+      return TrySeq(call_handler.PullClientInitialMetadata(),
+                    [call_handler](ClientMetadataHandle /*metadata*/) mutable {
+                      return Map(call_handler.WasCancelled(),
+                                 [](const bool /*cancelled*/) -> absl::Status {
+                                   return absl::OkStatus();
+                                 });
+                    });
+    };
+  };
+  AddStream(factory_factory);
+
+  // Client sends HEADERS (Stream 1), RST_STREAM (Stream 1), and HEADERS (Stream
+  // 3) in a single read. With tarpitting enabled, the server transport
+  // intercepts the reset via TarpitManager and delays stream closure. As stream
+  // 1 remains active in stream_list_ for some tarpit duration, the server
+  // rejects the new stream 3.
+  const std::shared_ptr<EventSequenceEndpoint::Step> client_frames_step =
+      endpoint()->NewStep();
+  client_frames_step->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1,
+          /*end_headers=*/true,
+          /*end_stream=*/false),
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/1,
+          /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kCancel)),
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/3,
+          /*end_headers=*/true,
+          /*end_stream=*/false),
+  });
+  client_frames_step->ThenExpectWrite({
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/3,
+          /*error_code=*/
+          static_cast<uint32_t>(Http2ErrorCode::kRefusedStream)),
+  });
+  client_frames_step->Wait();
+
+  // Teardown the transport.
+  const std::shared_ptr<EventSequenceEndpoint::Step> teardown_step =
+      endpoint()->NewStep();
+  AddTransportCloseExpectations(teardown_step.get(), /*last_stream_id=*/3);
+  teardown_step->Wait();
+}
 }  // namespace testing
 }  // namespace http2
 }  // namespace grpc_core
