@@ -143,7 +143,8 @@ inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
-inline bool IsV2NonOwningWakerImplementationEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_V2_NON_OWNING_WAKER_IMPLEMENTATION
+inline bool IsV2NonOwningWakerImplementationEnabled() { return true; }
 inline bool IsVerboseChannelzConnectionLoggingEnabled() { return false; }
 inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }
 inline bool IsXdsServerFilterChainPerRouteEnabled() { return false; }
@@ -235,7 +236,8 @@ inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
-inline bool IsV2NonOwningWakerImplementationEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_V2_NON_OWNING_WAKER_IMPLEMENTATION
+inline bool IsV2NonOwningWakerImplementationEnabled() { return true; }
 inline bool IsVerboseChannelzConnectionLoggingEnabled() { return false; }
 inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }
 inline bool IsXdsServerFilterChainPerRouteEnabled() { return false; }
@@ -327,7 +329,8 @@ inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
-inline bool IsV2NonOwningWakerImplementationEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_V2_NON_OWNING_WAKER_IMPLEMENTATION
+inline bool IsV2NonOwningWakerImplementationEnabled() { return true; }
 inline bool IsVerboseChannelzConnectionLoggingEnabled() { return false; }
 inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }
 inline bool IsXdsServerFilterChainPerRouteEnabled() { return false; }
