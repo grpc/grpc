@@ -89,9 +89,6 @@ constexpr absl::string_view kMetricLabelDetectionMethod =
     "grpc.lb.outlier_detection.detection_method";
 constexpr absl::string_view kMetricLabelUnenforcedReason =
     "grpc.lb.outlier_detection.unenforced_reason";
-constexpr absl::string_view kMetricLabelLocality = "grpc.lb.locality";
-constexpr absl::string_view kMetricLabelBackendService =
-    "grpc.lb.backend_service";
 constexpr absl::string_view kDetectionMethodSuccessRate = "success_rate";
 constexpr absl::string_view kDetectionMethodFailurePercentage =
     "failure_percentage";
