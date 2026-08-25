@@ -27,10 +27,6 @@ logging.basicConfig(level=logging.DEBUG)
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.DEBUG)
 
-parse_interop_server_arguments = (
-    interop_server_lib.parse_interop_server_arguments
-)
-
 
 async def serve(args):
     if args.use_tls or args.use_alts:
