@@ -331,7 +331,7 @@
   description:
     Receive message bypass happen if trailing metadata is received while
     Server Initial Metadata is getting processed.
-  expiry: 2026/08/25
+  expiry: 2026/10/25
   owner: bpawan@google.com
   test_tags: [core_end2end_test]
 - name: retry_in_callv3
