@@ -134,13 +134,23 @@
 
     # Build a new gRPC target which embeds sources of all dependencies except system libraries such as libz
     grpc_lib = lib_maps.get('grpc', None)
+    if not hasattr(grpc_lib, 'src_windows'):
+      grpc_lib.src_windows = []
+    if not hasattr(grpc_lib, 'headers_windows'):
+      grpc_lib.headers_windows = []
     for dep in set(grpc_lib.transitive_deps) - set(sys_libs):
       dep_lib = lib_maps.get(dep, None)
       if dep_lib:
          grpc_lib.src += dep_lib.src
          grpc_lib.headers += dep_lib.headers
+         if hasattr(dep_lib, 'src_windows'):
+           grpc_lib.src_windows += dep_lib.src_windows
+         if hasattr(dep_lib, 'headers_windows'):
+           grpc_lib.headers_windows += dep_lib.headers_windows
     grpc_lib.src = list(sorted(set(grpc_lib.src)))
     grpc_lib.headers = list(sorted(set(grpc_lib.headers)))
+    grpc_lib.src_windows = list(sorted(set(grpc_lib.src_windows)))
+    grpc_lib.headers_windows = list(sorted(set(grpc_lib.headers_windows)))
     grpc_lib.deps = list(sorted(list(set(grpc_lib.deps) & set(sys_libs))))
     grpc_lib.transitive_deps = list(sorted(list(set(grpc_lib.transitive_deps) & set(sys_libs))))
 
@@ -789,6 +799,18 @@
       ${src} \\
 
   % endfor
+
+  % if hasattr(lib, 'src_windows') and lib.src_windows:
+  ifeq ($(SYSTEM),MINGW32)
+  LIB${lib.name.upper()}_SRC += \\
+
+  % for src in sorted(lib.src_windows):
+      ${src} \\
+
+  % endfor
+
+  endif
+  % endif
 
   % if "public_headers" in lib:
   % if lib.language == "c++":

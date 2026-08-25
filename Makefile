@@ -1839,6 +1839,12 @@ LIBGRPC_SRC = \
     third_party/upb/upb/wire/reader.c \
     third_party/utf8_range/utf8_range.c \
 
+ifeq ($(SYSTEM),MINGW32)
+LIBGRPC_SRC += \
+    third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_name_win.cc \
+
+endif
+
 PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer.h \
     include/grpc/byte_buffer_reader.h \
@@ -2229,6 +2235,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/ssl/tls_record.cc \
 
 
+
 LIBBORINGSSL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_SRC))))
 
 $(LIBBORINGSSL_OBJS): CFLAGS += -g
@@ -2350,6 +2357,7 @@ LIBCARES_SRC = \
     third_party/cares/cares/src/lib/windows_port.c \
 
 
+
 LIBCARES_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBCARES_SRC))))
 
 $(LIBCARES_OBJS): CFLAGS += -g
@@ -2388,6 +2396,7 @@ LIBZ_SRC = \
     third_party/zlib/trees.c \
     third_party/zlib/uncompr.c \
     third_party/zlib/zutil.c \
+
 
 PUBLIC_HEADERS_C += \
 

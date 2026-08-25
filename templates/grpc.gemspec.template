@@ -51,6 +51,7 @@
     s.extensions = %w(src/ruby/ext/grpc/extconf.rb)
   <%
     files = []
+    win_files = []
     ruby_deps = ruby_gem.get('deps', [])
     lib_maps = {lib.name: lib for lib in libs}
     for dep in ruby_deps[:]:
@@ -59,9 +60,18 @@
       lib = lib_maps.get(dep, None)
       if lib:
         files.extend(lib.get('public_headers', []) + lib.headers + lib.src)
+        win_files.extend(
+          lib.get('headers_windows', []) +
+          lib.get('src_windows', [])
+        )
     files = sorted(set(files))
   %>
     % for file in files:
     s.files += %w( ${file} )
     % endfor
+    if RUBY_PLATFORM =~ /mingw|mswin/
+      % for file in win_files:
+      s.files += %w( ${file} )
+      % endfor
+    end
   end
