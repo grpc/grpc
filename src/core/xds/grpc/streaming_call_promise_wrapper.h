@@ -107,7 +107,9 @@ class XdsStreamingCallPromiseWrapper final
   auto PullServerTrailingMetadata() {
     {
       MutexLock lock(&mu_);
-      recv_status_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+      if (recv_state_ != RecvState::kReceivedStatus) {
+        recv_status_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+      }
     }
     return [self = WeakRefAsSubclass<XdsStreamingCallPromiseWrapper>()]() {
       return self->PollPullServerTrailingMetadata();
@@ -191,8 +193,8 @@ class XdsStreamingCallPromiseWrapper final
   std::optional<std::string> recv_message_;
 
   // Trailing metadata status from the server (PullServerTrailingMetadata).
-  Waker recv_status_waker_;
-  absl::Status status_;
+  Waker recv_status_waker_ ABSL_GUARDED_BY(mu_);
+  absl::Status status_ ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace grpc_core

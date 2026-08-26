@@ -207,6 +207,26 @@ TEST_F(XdsStreamingCallPromiseWrapperTest, PullServerTrailingMetadata) {
   EXPECT_EQ(received_status, absl::UnavailableError("unavailable"));
 }
 
+TEST_F(XdsStreamingCallPromiseWrapperTest,
+       PullServerTrailingMetadataAfterStatusReceived) {
+  InitStream();
+  stream_->MaybeSendStatusToClient(absl::UnavailableError("unavailable"));
+  event_engine_->TickUntilIdle();
+  absl::Status received_status = absl::UnknownError("initial");
+  auto activity = MakeActivity(
+      [this, &received_status] {
+        return Map(wrapper_->PullServerTrailingMetadata(),
+                   [&](const absl::Status& status) {
+                     received_status = status;
+                     return absl::OkStatus();
+                   });
+      },
+      InlineWakeupScheduler(),
+      [](const absl::Status& status) { EXPECT_TRUE(status.ok()) << status; });
+  event_engine_->TickUntilIdle();
+  EXPECT_EQ(received_status, absl::UnavailableError("unavailable"));
+}
+
 TEST_F(XdsStreamingCallPromiseWrapperTest, SendHalfClose) {
   InitStream();
   EXPECT_FALSE(stream_->half_closed());
