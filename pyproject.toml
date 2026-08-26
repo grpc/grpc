@@ -138,7 +138,7 @@ extend-exclude = '''
 
 [tool.isort]
 profile = "black"
-py_version = 39
+py_version = 310
 follow_links = false
 
 line_length = 80
