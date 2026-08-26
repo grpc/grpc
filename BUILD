@@ -5680,12 +5680,12 @@ grpc_upb_proto_reflection_library(
 
 grpc_upb_proto_library(
     name = "channelz_v1_upb",
-    deps = [":channelz_proto_only"],
+    deps = ["@grpc_proto//:channelz_proto"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "channelz_v1_upbdefs",
-    deps = [":channelz_proto_only"],
+    deps = ["@grpc_proto//:channelz_proto"],
 )
 
 WELL_KNOWN_PROTO_TARGETS = [
@@ -5709,50 +5709,35 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
-alias(
-    name = "reflection_v1_proto_only",
-    actual = "@grpc_proto//:reflection_proto",
-)
-
-alias(
-    name = "reflection_v1alpha_proto_only",
-    actual = "@grpc_proto//:reflection_proto_deprecated",
-)
-
-alias(
-    name = "channelz_proto_only",
-    actual = "@grpc_proto//:channelz_proto",
-)
-
 grpc_cc_proto_library(
     name = "reflection_v1_cc_proto",
-    deps = [":reflection_v1_proto_only"],
+    deps = ["@grpc_proto//:reflection_proto"],
 )
 
 grpc_cc_proto_library(
     name = "reflection_v1alpha_cc_proto",
-    deps = [":reflection_v1alpha_proto_only"],
+    deps = ["@grpc_proto//:reflection_proto_deprecated"],
 )
 
 grpc_cc_proto_library(
     name = "channelz_cc_proto",
-    deps = [":channelz_proto_only"],
+    deps = ["@grpc_proto//:channelz_proto"],
 )
 
 grpc_cc_grpc_library(
     name = "reflection_v1_cc_grpc",
-    srcs = [":reflection_v1_proto_only"],
+    srcs = ["@grpc_proto//:reflection_proto"],
     deps = [":reflection_v1_cc_proto"],
 )
 
 grpc_cc_grpc_library(
     name = "reflection_v1alpha_cc_grpc",
-    srcs = [":reflection_v1alpha_proto_only"],
+    srcs = ["@grpc_proto//:reflection_proto_deprecated"],
     deps = [":reflection_v1alpha_cc_proto"],
 )
 
 grpc_cc_grpc_library(
     name = "channelz_cc_grpc",
-    srcs = [":channelz_proto_only"],
+    srcs = ["@grpc_proto//:channelz_proto"],
     deps = [":channelz_cc_proto"],
 )
