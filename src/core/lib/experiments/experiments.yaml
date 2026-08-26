@@ -52,7 +52,7 @@
   test_tags: [core_end2end_test]
 - name: call_tracer_in_transport
   description: Transport directly passes byte counts to CallTracer.
-  expiry: 2026/09/01
+  expiry: 2027/02/01
   owner: roth@google.com
   test_tags: []
   allow_in_fuzzing_config: false
