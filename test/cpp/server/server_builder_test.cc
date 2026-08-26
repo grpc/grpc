@@ -18,9 +18,12 @@
 
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
+#include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/config.h>
+#include <functional>
 #include <sys/socket.h>
 
 #include "src/core/util/notification.h"
@@ -85,6 +88,54 @@ TEST_F(ServerBuilderTest, CreateServerRepeatedPortWithDisallowedReusePort) {
                 .BuildAndStart(),
             nullptr);
 }
+
+
+class TestServerBuilder : public ServerBuilder {
+ public:
+  ChannelArguments BuildChannelArgsForTest() { return BuildChannelArgs(); }
+};
+
+TEST_F(ServerBuilderTest, SetChildChannelArgs) {
+  TestServerBuilder builder;
+  ChannelArguments args;
+  args.SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, 1024);
+  args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, "foo.test.google.fr");
+  builder.SetChildChannelArgs(args);
+
+  ChannelArguments built_args = builder.BuildChannelArgsForTest();
+  grpc_channel_args c_args = built_args.c_channel_args();
+
+  bool found_child_args = false;
+  for (size_t i = 0; i < c_args.num_args; i++) {
+    if (std::string(c_args.args[i].key) == GRPC_ARG_CHILD_CHANNEL_ARGS) {
+      found_child_args = true;
+      ASSERT_EQ(c_args.args[i].type, GRPC_ARG_POINTER);
+      grpc_channel_args* child_args =
+          static_cast<grpc_channel_args*>(c_args.args[i].value.pointer.p);
+      ASSERT_NE(child_args, nullptr);
+
+      bool found_int = false;
+      bool found_str = false;
+      for (size_t j = 0; j < child_args->num_args; j++) {
+        if (std::string(child_args->args[j].key) ==
+            GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH) {
+          found_int = true;
+          EXPECT_EQ(child_args->args[j].type, GRPC_ARG_INTEGER);
+          EXPECT_EQ(child_args->args[j].value.integer, 1024);
+        } else if (std::string(child_args->args[j].key) ==
+                   GRPC_SSL_TARGET_NAME_OVERRIDE_ARG) {
+          found_str = true;
+          EXPECT_EQ(child_args->args[j].type, GRPC_ARG_STRING);
+          EXPECT_STREQ(child_args->args[j].value.string, "foo.test.google.fr");
+        }
+      }
+      EXPECT_TRUE(found_int);
+      EXPECT_TRUE(found_str);
+    }
+  }
+  EXPECT_TRUE(found_child_args);
+}
+
 
 TEST_F(ServerBuilderTest, AddPassiveListener) {
   std::unique_ptr<experimental::PassiveListener> passive_listener;
