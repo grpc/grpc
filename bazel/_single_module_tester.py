@@ -12,43 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Sequence, Optional
-
-import unittest
 import sys
-import pkgutil
-import importlib.util
+import unittest
 
-class SingleLoader:
-    def __init__(self, target_module: str, unittest_path: str):
-        loader = unittest.TestLoader()
-        self.suite = unittest.TestSuite()
-        tests = []
-
-        for importer, module_name, is_package in pkgutil.walk_packages([unittest_path]):
-            if target_module in module_name:
-                try:
-                    spec = importer.find_spec(module_name)
-                    if spec is not None:
-                        module = importlib.util.module_from_spec(spec)
-                        spec.loader.exec_module(module)
-                        tests.append(loader.loadTestsFromModule(module))
-                except Exception as e:
-                  raise AssertionError(f"Error loading module {module_name}: {e}")
-
-        if len(tests) != 1:            
-            raise AssertionError("Expected only 1 test module. Found {}".format(tests))
-        self.suite.addTest(tests[0])
-
-    def loadTestsFromNames(self, names: Sequence[str], module: Optional[str] = None) -> unittest.TestSuite:
-        return self.suite
+try:
+    from bazel._single_loader import SingleLoader
+except ImportError:
+    from _single_loader import SingleLoader
 
 if __name__ == "__main__":
 
     if len(sys.argv) != 3:
-        print(f"USAGE: {sys.argv[0]} TARGET_MODULE UNITTEST_PATH", file=sys.stderr)
+        print(
+            f"USAGE: {sys.argv[0]} TARGET_MODULE UNITTEST_PATH", file=sys.stderr
+        )
         sys.exit(1)
-
 
     target_module = sys.argv[1]
     unittest_path = sys.argv[2]
@@ -56,6 +34,6 @@ if __name__ == "__main__":
     loader = SingleLoader(target_module, unittest_path)
     runner = unittest.TextTestRunner(verbosity=0)
     result = runner.run(loader.suite)
-    
+
     if not result.wasSuccessful():
         sys.exit("Test failure.")

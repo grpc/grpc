@@ -13,62 +13,37 @@
 # limitations under the License.
 
 import argparse
-import importlib.util
-import os
-import pathlib
-import pkgutil
 import sys
-from typing import Optional, Sequence
 import unittest
 
 from typeguard import install_import_hook
 
 # AIO
-install_import_hook('grpc.aio')
-install_import_hook('grpc.aio._channel')
-install_import_hook('grpc.aio._server')
-install_import_hook('grpc.aio._utils')
-install_import_hook('grpc.aio._interceptor')
-install_import_hook('grpc.aio._base_channel')
-install_import_hook('grpc.aio._base_server')
-install_import_hook('grpc.aio._typing')
-install_import_hook('grpc.aio._call')
-install_import_hook('grpc.aio._metadata')
+install_import_hook("grpc.aio")
+install_import_hook("grpc.aio._channel")
+install_import_hook("grpc.aio._server")
+install_import_hook("grpc.aio._utils")
+install_import_hook("grpc.aio._interceptor")
+install_import_hook("grpc.aio._base_channel")
+install_import_hook("grpc.aio._base_server")
+install_import_hook("grpc.aio._typing")
+install_import_hook("grpc.aio._call")
+install_import_hook("grpc.aio._metadata")
 
 # SYNC
-install_import_hook('grpc._auth')
-install_import_hook('grpc._channel')
-install_import_hook('grpc._common')
-install_import_hook('grpc._compression')
-install_import_hook('grpc._interceptor')
-install_import_hook('grpc._observability')
-install_import_hook('grpc._plugin_wrapping')
-install_import_hook('grpc._runtime_protos')
+install_import_hook("grpc._auth")
+install_import_hook("grpc._channel")
+install_import_hook("grpc._common")
+install_import_hook("grpc._compression")
+install_import_hook("grpc._interceptor")
+install_import_hook("grpc._observability")
+install_import_hook("grpc._plugin_wrapping")
+install_import_hook("grpc._runtime_protos")
 
-class SingleLoader:
-    def __init__(
-        self, target_module: str, unittest_path: str, test_patterns: Optional[list[str]] = None
-    ):
-        loader = unittest.TestLoader()
-        loader.testNamePatterns = test_patterns
-        self.suite = unittest.TestSuite()
-        tests = []
-
-        for importer, module_name, is_package in pkgutil.walk_packages([unittest_path]):
-            if target_module in module_name:
-                try:
-                    spec = importer.find_spec(module_name)
-                    if spec is not None:
-                        module = importlib.util.module_from_spec(spec)
-                        spec.loader.exec_module(module)
-                        tests.append(loader.loadTestsFromModule(module))
-                except Exception as e:
-                    raise AssertionError(f"Error loading module {module_name}: {e}")
-        
-        if len(tests) != 1:
-            raise AssertionError("Expected only 1 test module. Found {}".format(tests))
-
-        self.suite.addTest(tests[0])
+try:
+    from bazel._single_loader import SingleLoader
+except ImportError:
+    from _single_loader import SingleLoader
 
 
 def _convert_select_pattern(pattern):
@@ -81,31 +56,60 @@ def _convert_select_pattern(pattern):
 def _arg_parser() -> argparse.ArgumentParser:
     # https://github.com/python/cpython/blob/v3.13.7/Lib/unittest/main.py#L161
     parser = argparse.ArgumentParser()
-    parser.add_argument('-v', '--verbose', dest='verbosity',
-                        action='store_const', const=2,
-                        help='Verbose output')
-    parser.add_argument('-q', '--quiet', dest='verbosity',
-                        action='store_const', const=0,
-                        help='Quiet output')
-    parser.add_argument('--locals', dest='tb_locals',
-                        action='store_true',
-                        help='Show local variables in tracebacks')
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        dest="verbosity",
+        action="store_const",
+        const=2,
+        help="Verbose output",
+    )
+    parser.add_argument(
+        "-q",
+        "--quiet",
+        dest="verbosity",
+        action="store_const",
+        const=0,
+        help="Quiet output",
+    )
+    parser.add_argument(
+        "--locals",
+        dest="tb_locals",
+        action="store_true",
+        help="Show local variables in tracebacks",
+    )
     if sys.version_info >= (3, 12):
-        parser.add_argument('--durations', dest='durations', type=int,
-                            default=None, metavar="N",
-                            help='Show the N slowest test cases (N=0 for all)')
-    parser.add_argument('-f', '--failfast', dest='failfast',
-                        action='store_true',
-                        help='Stop on first fail or error')
-    parser.add_argument('-k', dest='testNamePatterns',
-                        action='append', type=_convert_select_pattern,
-                        help='Only run tests which match the given substring')
+        parser.add_argument(
+            "--durations",
+            dest="durations",
+            type=int,
+            default=None,
+            metavar="N",
+            help="Show the N slowest test cases (N=0 for all)",
+        )
+    parser.add_argument(
+        "-f",
+        "--failfast",
+        dest="failfast",
+        action="store_true",
+        help="Stop on first fail or error",
+    )
+    parser.add_argument(
+        "-k",
+        dest="testNamePatterns",
+        action="append",
+        type=_convert_select_pattern,
+        help="Only run tests which match the given substring",
+    )
     return parser
 
 
 def main():
     if len(sys.argv) < 3:
-        print(f"USAGE: {sys.argv[0]} TARGET_MODULE UNITTEST_PATH [TEST_ARGS]", file=sys.stderr)
+        print(
+            f"USAGE: {sys.argv[0]} TARGET_MODULE UNITTEST_PATH [TEST_ARGS]",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     # Remove the current wrapper script from the args.
@@ -124,7 +128,9 @@ def main():
 
     test_patterns = test_kwargs.pop("testNamePatterns")
 
-    loader = SingleLoader(target_module, unittest_path, test_patterns=test_patterns)
+    loader = SingleLoader(
+        target_module, unittest_path, test_patterns=test_patterns
+    )
     runner = unittest.TextTestRunner(**test_kwargs)
 
     result = runner.run(loader.suite)

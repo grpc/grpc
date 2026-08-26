@@ -32,7 +32,10 @@ def py_grpc_run_time_type_check_test(name, srcs, **kwargs):
 
     py_test(
         name = name,
-        srcs = srcs + ["//bazel:_run_time_type_check_main"],
+        srcs = srcs + [
+            "//bazel:_run_time_type_check_main",
+            "//bazel:_single_loader",
+        ],
         main = "//bazel:_run_time_type_check_main.py",
         args = [name, native.package_name()],  # Pass the test module name and its folder
         **test_kwargs

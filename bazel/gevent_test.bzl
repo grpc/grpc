@@ -76,7 +76,7 @@ def py_grpc_gevent_test(
     py_test(
         name = name + ".gevent",
         args = [name, native.package_name()],
-        data = data,
+        data = data + ["//bazel:_single_loader"],
         deps = augmented_deps,
         srcs = [copied_main_filename],
         main = copied_main_filename,

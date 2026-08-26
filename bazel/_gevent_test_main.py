@@ -26,76 +26,30 @@ threadpool = gevent.hub.get_hub().threadpool
 threadpool.maxsize = 1024
 threadpool.size = 32
 
-import traceback, signal
-from typing import Sequence
-
-
-import grpc.experimental.gevent
-grpc.experimental.gevent.init_gevent()
-
-import gevent
-import greenlet
 import datetime
-
-import grpc
-import unittest
-import sys
 import os
-import pkgutil
-import importlib.util
+import signal
+import sys
+import traceback
+import unittest
 
+import greenlet
+import grpc
+import grpc.experimental.gevent
 
-def trace_callback(event, args):
-    if event in ("switch", "throw"):
-        origin, target = args
-        sys.stderr.write("{} Transfer from {} to {} with {}\n".format(datetime.datetime.now(), origin, target, event))
-    else:
-        sys.stderr.write("Unknown event {}.\n".format(event))
-    sys.stderr.flush()
+try:
+    from bazel._single_loader import SingleLoader
+except ImportError:
+    from _single_loader import SingleLoader
 
-if os.getenv("GREENLET_TRACE") is not None:
-    greenlet.settrace(trace_callback)
-
-def debug(sig, frame):
-    d={'_frame':frame}
-    d.update(frame.f_globals)
-    d.update(frame.f_locals)
-
-    sys.stderr.write("Traceback:\n{}".format("\n".join(traceback.format_stack(frame))))
-    import gevent.util; gevent.util.print_run_info()
-    sys.stderr.flush()
-
-signal.signal(signal.SIGTERM, debug)
-
-
-class SingleLoader:
-    def __init__(self, target_module: str, unittest_path: str):
-        loader = unittest.TestLoader()
-        self.suite = unittest.TestSuite()
-        tests = []
-        for importer, module_name, is_package in pkgutil.walk_packages([unittest_path]):
-            if target_module in module_name:
-                try:
-                    spec = importer.find_spec(module_name)
-                    if spec is not None:
-                        module = importlib.util.module_from_spec(spec)
-                        spec.loader.exec_module(module)
-                        tests.append(loader.loadTestsFromModule(module))
-                except Exception as e:
-                    raise AssertionError(f"Error loading module {module_name}: {e}")
-        if len(tests) != 1:
-            raise AssertionError("Expected only 1 test module. Found {}".format(tests))
-        
-        self.suite.addTest(tests[0])
-
-
-    def loadTestsFromNames(self, names: Sequence[str], module: str = None) -> unittest.TestSuite:
-        return self.suite
+grpc.experimental.gevent.init_gevent()
 
 if __name__ == "__main__":
 
     if len(sys.argv) < 3:
-        print(f"USAGE: {sys.argv[0]} TARGET_MODULE UNITTEST_PATH", file=sys.stderr)
+        print(
+            f"USAGE: {sys.argv[0]} TARGET_MODULE UNITTEST_PATH", file=sys.stderr
+        )
         sys.exit(1)
 
     target_module = sys.argv[1]
