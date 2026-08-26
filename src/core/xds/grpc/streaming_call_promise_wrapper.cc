@@ -104,6 +104,7 @@ XdsStreamingCallPromiseWrapper::PollPullServerTrailingMetadata() {
 
 void XdsStreamingCallPromiseWrapper::OnRequestSent(bool ok) {
   Waker waker;
+  bool send_half_close = false;
   {
     MutexLock lock(&mu_);
     if (!ok) {
@@ -111,12 +112,15 @@ void XdsStreamingCallPromiseWrapper::OnRequestSent(bool ok) {
     } else {
       if (send_state_ == SendState::kSendMessageInFlightAndHalfCloseRequested) {
         send_state_ = SendState::kHalfCloseInFlight;
-        call_->SendHalfClose();
+        send_half_close = true;
       } else if (send_state_ == SendState::kSendMessageInFlight) {
         send_state_ = SendState::kIdle;
       }
     }
     waker = std::move(send_message_waker_);
+  }
+  if (send_half_close) {
+    call_->SendHalfClose();
   }
   // Wake any waiting send promise.
   waker.Wakeup();
@@ -153,13 +157,19 @@ void XdsStreamingCallPromiseWrapper::OnStatusReceived(absl::Status status) {
 }
 
 void XdsStreamingCallPromiseWrapper::SendHalfClose() {
-  MutexLock lock(&mu_);
-  // If a send is in flight, record that half-close was requested.
-  // OnRequestSent will issue the half-close once the message send completes.
-  if (send_state_ == SendState::kSendMessageInFlight) {
-    send_state_ = SendState::kSendMessageInFlightAndHalfCloseRequested;
-  } else if (send_state_ == SendState::kIdle) {
-    send_state_ = SendState::kHalfCloseInFlight;
+  bool send_half_close = false;
+  {
+    MutexLock lock(&mu_);
+    // If a send is in flight, record that half-close was requested.
+    // OnRequestSent will issue the half-close once the message send completes.
+    if (send_state_ == SendState::kSendMessageInFlight) {
+      send_state_ = SendState::kSendMessageInFlightAndHalfCloseRequested;
+    } else if (send_state_ == SendState::kIdle) {
+      send_state_ = SendState::kHalfCloseInFlight;
+      send_half_close = true;
+    }
+  }
+  if (send_half_close) {
     call_->SendHalfClose();
   }
 }

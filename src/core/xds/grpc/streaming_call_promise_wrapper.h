@@ -79,17 +79,21 @@ class XdsStreamingCallPromiseWrapper final
   // The value will be nullopt when the stream is closed without
   // receiving a message.
   auto PullMessage() {
+    bool start_recv = false;
     {
       MutexLock lock(&mu_);
       if (recv_state_ == RecvState::kIdle) {
         recv_state_ = RecvState::kRecvMessageInFlight;
         recv_message_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
-        call_->StartRecvMessage();
+        start_recv = true;
       } else {
         // Must be kReceivedStatus. Don't actually need to start the
         // recv_message op; we'll return nullopt on the first poll.
         GRPC_CHECK(recv_state_ == RecvState::kReceivedStatus);
       }
+    }
+    if (start_recv) {
+      call_->StartRecvMessage();
     }
     return [self = WeakRefAsSubclass<XdsStreamingCallPromiseWrapper>()]() {
       return self->PollPullMessage();
