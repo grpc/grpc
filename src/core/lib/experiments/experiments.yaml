@@ -47,7 +47,7 @@
 # state of each experiment.
 - name: buffer_list_deletion_prep
   description: Gate the removal of old TCP timestamp collection mechanism.
-  expiry: 2026/08/24
+  expiry: 2027/01/16
   owner: vigneshbabu@google.com
   test_tags: [core_end2end_test]
 - name: call_tracer_in_transport
@@ -133,7 +133,7 @@
   platforms: ["all"]
 - name: fail_recv_metadata_on_deadline_exceeded
   description: Fail recv initial metadata when the deadline is exceeded.
-  expiry: 2026/09/01
+  expiry: 2027/01/16
   owner: vigneshbabu@google.com
   test_tags: []
   allow_in_fuzzing_config: false
@@ -150,7 +150,7 @@
   test_tags: [resource_quota_test]
 - name: fuse_filters
   description: If set, individual filters are merged into fused filters
-  expiry: 2026/09/01
+  expiry: 2027/01/16
   owner: vigneshbabu@google.com
   test_tags: ["minimal_stack_test"]
   allow_in_fuzzing_config: false
@@ -173,7 +173,7 @@
   description:
     Avoid explicitly cancelling the keepalive timer. Instead adjust the callback to re-schedule
     itself to the next ping interval.
-  expiry: 2026/09/01
+  expiry: 2027/01/16
   owner: vigneshbabu@google.com
   test_tags: []
 - name: local_connector_secure
@@ -196,7 +196,7 @@
 - name: message_size_refactoring
   owner: vigneshbabu@google.com
   description: Refactoring the message size config parsing.
-  expiry: 2026/09/01
+  expiry: 2027/01/16
   test_tags: []
 - name: metadata_outstanding_token_refactor
   description: Refactor ClientInitialMetadataOutstandingToken.
@@ -306,12 +306,12 @@
 - name: prioritize_finished_requests
   description: Prioritize flushing out finished requests over other in-flight
     requests during transport writes.
-  expiry: 2026/09/01
+  expiry: 2027/01/16
   owner: vigneshbabu@google.com
   test_tags: []
 - name: promise_based_inproc_transport
   description: Use call-v3 for the in-process transport.
-  expiry: 2026/08/24
+  expiry: 2027/01/16
   owner: vigneshbabu@google.com
   test_tags: []
   allow_in_fuzzing_config: false # experiment currently crashes if enabled
@@ -346,7 +346,7 @@
   test_tags: []
 - name: schedule_cancellation_over_write
   description: Allow cancellation op to be scheduled over a write
-  expiry: 2026/09/01
+  expiry: 2027/01/16
   owner: vigneshbabu@google.com
   test_tags: []
 - name: secure_endpoint_offload_large_reads
@@ -382,7 +382,7 @@
     ]
 - name: skip_clear_peer_on_cancellation
   description: If set, skips clearing of peer string on call cancellation.
-  expiry: 2026/09/01
+  expiry: 2027/01/16
   owner: vigneshbabu@google.com
   test_tags: []
 - name: tcp_frame_size_tuning
@@ -391,12 +391,12 @@
     TCP would not indicate completion of a read operation until a specified
     number of bytes have been read over the socket.
     Buffers are also allocated according to estimated RPC sizes.
-  expiry: 2026/09/01
+  expiry: 2027/01/16
   owner: vigneshbabu@google.com
   test_tags: ["endpoint_test", "flow_control_test"]
 - name: tcp_rcv_lowat
   description: Use SO_RCVLOWAT to avoid wakeups on the read path.
-  expiry: 2026/09/01
+  expiry: 2027/01/16
   owner: vigneshbabu@google.com
   test_tags: ["endpoint_test", "flow_control_test"]
 - name: tsi_frame_protector_without_locks
@@ -422,7 +422,7 @@
   test_tags: [core_end2end_test]
 - name: verbose_channelz_connection_logging
   description: Verbose logging of events into channelz during connection setup.
-  expiry: 2026/09/01
+  expiry: 2027/01/16
   owner: vigneshbabu@google.com
   test_tags: []
 - name: wildcard_ip_expansion_restriction
