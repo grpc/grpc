@@ -97,6 +97,80 @@ class AllTest(unittest.TestCase):
         )
 
 
+class StatusCodeTest(unittest.TestCase):
+    def test_status_code_type(self):
+        self.assertIs(type(grpc.StatusCode.OK.value[0]), int)
+        self.assertIs(type(grpc.StatusCode.CANCELLED.value[0]), int)
+        self.assertIs(type(grpc.StatusCode.UNKNOWN.value[0]), int)
+        self.assertIs(type(grpc.StatusCode.INVALID_ARGUMENT.value[0]), int)
+        self.assertIs(type(grpc.StatusCode.DEADLINE_EXCEEDED.value[0]), int)
+        self.assertIs(type(grpc.StatusCode.NOT_FOUND.value[0]), int)
+        self.assertIs(type(grpc.StatusCode.ALREADY_EXISTS.value[0]), int)
+        self.assertIs(type(grpc.StatusCode.PERMISSION_DENIED.value[0]), int)
+        self.assertIs(type(grpc.StatusCode.RESOURCE_EXHAUSTED.value[0]), int)
+        self.assertIs(type(grpc.StatusCode.FAILED_PRECONDITION.value[0]), int)
+        self.assertIs(type(grpc.StatusCode.ABORTED.value[0]), int)
+        self.assertIs(type(grpc.StatusCode.OUT_OF_RANGE.value[0]), int)
+        self.assertIs(type(grpc.StatusCode.UNIMPLEMENTED.value[0]), int)
+        self.assertIs(type(grpc.StatusCode.INTERNAL.value[0]), int)
+        self.assertIs(type(grpc.StatusCode.UNAVAILABLE.value[0]), int)
+        self.assertIs(type(grpc.StatusCode.DATA_LOSS.value[0]), int)
+        self.assertIs(type(grpc.StatusCode.UNAUTHENTICATED.value[0]), int)
+
+    def test_status_code_str_serialization(self):
+        self.assertEqual(str(grpc.StatusCode.OK.value), "(0, 'ok')")
+        self.assertEqual(
+            str(grpc.StatusCode.CANCELLED.value), "(1, 'cancelled')"
+        )
+        self.assertEqual(str(grpc.StatusCode.UNKNOWN.value), "(2, 'unknown')")
+        self.assertEqual(
+            str(grpc.StatusCode.INVALID_ARGUMENT.value),
+            "(3, 'invalid argument')",
+        )
+        self.assertEqual(
+            str(grpc.StatusCode.DEADLINE_EXCEEDED.value),
+            "(4, 'deadline exceeded')",
+        )
+        self.assertEqual(
+            str(grpc.StatusCode.NOT_FOUND.value), "(5, 'not found')"
+        )
+        self.assertEqual(
+            str(grpc.StatusCode.ALREADY_EXISTS.value), "(6, 'already exists')"
+        )
+        self.assertEqual(
+            str(grpc.StatusCode.PERMISSION_DENIED.value),
+            "(7, 'permission denied')",
+        )
+        self.assertEqual(
+            str(grpc.StatusCode.RESOURCE_EXHAUSTED.value),
+            "(8, 'resource exhausted')",
+        )
+        self.assertEqual(
+            str(grpc.StatusCode.FAILED_PRECONDITION.value),
+            "(9, 'failed precondition')",
+        )
+        self.assertEqual(str(grpc.StatusCode.ABORTED.value), "(10, 'aborted')")
+        self.assertEqual(
+            str(grpc.StatusCode.OUT_OF_RANGE.value), "(11, 'out of range')"
+        )
+        self.assertEqual(
+            str(grpc.StatusCode.UNIMPLEMENTED.value), "(12, 'unimplemented')"
+        )
+        self.assertEqual(
+            str(grpc.StatusCode.INTERNAL.value), "(13, 'internal')"
+        )
+        self.assertEqual(
+            str(grpc.StatusCode.UNAVAILABLE.value), "(14, 'unavailable')"
+        )
+        self.assertEqual(
+            str(grpc.StatusCode.DATA_LOSS.value), "(15, 'data loss')"
+        )
+        self.assertEqual(
+            str(grpc.StatusCode.UNAUTHENTICATED.value),
+            "(16, 'unauthenticated')",
+        )
+
+
 class ChannelConnectivityTest(unittest.TestCase):
     def testChannelConnectivity(self):
         self.assertSequenceEqual(
