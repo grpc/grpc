@@ -1535,10 +1535,16 @@ class TestMetricsSink final : public MetricsSink {
   void UpDownCounter(InstrumentLabelList /*label_keys*/,
                      absl::Span<const std::string> /*label*/,
                      absl::string_view /*name*/, uint64_t /*value*/) override {}
-  void Histogram(InstrumentLabelList /*label_keys*/,
-                 absl::Span<const std::string> /*label*/,
-                 absl::string_view /*name*/, HistogramBuckets /*bounds*/,
-                 absl::Span<const uint64_t> /*counts*/) override {}
+  void Int64Histogram(InstrumentLabelList /*label_keys*/,
+                      absl::Span<const std::string> /*label*/,
+                      absl::string_view /*name*/,
+                      Int64HistogramBuckets /*bounds*/,
+                      absl::Span<const uint64_t> /*counts*/) override {}
+  void DoubleHistogram(InstrumentLabelList /*label_keys*/,
+                       absl::Span<const std::string> /*label*/,
+                       absl::string_view /*name*/,
+                       DoubleHistogramBuckets /*bounds*/,
+                       absl::Span<const uint64_t> /*counts*/) override {}
   void DoubleGauge(InstrumentLabelList /*label_keys*/,
                    absl::Span<const std::string> /*labels*/,
                    absl::string_view /*name*/, double /*value*/) override {}
