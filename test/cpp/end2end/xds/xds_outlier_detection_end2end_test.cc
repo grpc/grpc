@@ -1174,22 +1174,21 @@ TEST_P(OutlierDetectionTest, EjectionRetainedAcrossPriorities) {
   EXPECT_EQ(50, backends_[2]->backend_service()->request_count());
 }
 
-// Verifies that the optional grpc.lb.locality and grpc.lb.backend_service
-// labels are populated on outlier detection metrics in the xDS case
-// (see gRFC A91).  Uses its own fixture so that the FakeStatsPlugin can be
-// registered before the client channel is created.
+// Verifies that grpc.lb.backend_service is populated on outlier detection
+// metrics under xDS (gRFC A91).  grpc.lb.locality is empty under xDS
+// because outlier_detection sits above weighted_target in the LB tree; the
+// non-xDS locality path is covered by the unit test.
+//
+// Own fixture so FakeStatsPlugin can be registered before InitClient().
 class OutlierDetectionMetricsTest : public XdsEnd2endTest {
  protected:
-  void SetUp() override {
-    // No-op -- tests must explicitly call InitClient().
-  }
+  void SetUp() override {}  // Tests call InitClient() explicitly.
 };
 
 INSTANTIATE_TEST_SUITE_P(XdsTest, OutlierDetectionMetricsTest,
                          ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
-TEST_P(OutlierDetectionMetricsTest,
-       MetricsHaveLocalityAndBackendServiceLabels) {
+TEST_P(OutlierDetectionMetricsTest, MetricsHaveBackendServiceLabel) {
   const auto kEjectionsEnforced =
       grpc_core::GlobalInstrumentsRegistryTestPeer::
           FindUInt64CounterHandleByName(
@@ -1197,10 +1196,7 @@ TEST_P(OutlierDetectionMetricsTest,
               .value();
   const std::string target = absl::StrCat("xds:", kServerName);
   const absl::string_view kLabelValues[] = {target, "failure_percentage"};
-  const std::string locality_name = LocalityNameString("locality0");
-  const absl::string_view kOptionalLabelValues[] = {locality_name,
-                                                    kDefaultClusterName};
-  // Register stats plugin before initializing client.
+  const absl::string_view kOptionalLabelValues[] = {"", kDefaultClusterName};
   auto stats_plugin = grpc_core::FakeStatsPluginBuilder()
                           .UseDisabledByDefaultMetrics(true)
                           .BuildAndRegister();
@@ -1233,9 +1229,6 @@ TEST_P(OutlierDetectionMetricsTest,
   WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
                  WaitForBackendOptions().set_timeout_ms(
                      3000 * grpc_test_slowdown_factor()));
-  // The optional labels should be populated from the xDS context: the
-  // locality name set by the weighted_target policy, and the cluster name
-  // set by cds.
   EXPECT_THAT(stats_plugin->GetUInt64CounterValue(
                   kEjectionsEnforced, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(::testing::Ge(1)));
