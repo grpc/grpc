@@ -5190,6 +5190,40 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_dpop_credentials",
+    srcs = [
+        "credentials/call/dpop/dpop_credentials.cc",
+    ],
+    hdrs = [
+        "credentials/call/dpop/dpop_credentials.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/time",
+        "libcrypto",
+    ],
+    deps = [
+        "arena_promise",
+        "metadata_batch",
+        "slice",
+        "unique_type_name",
+        "useful",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_core_credentials_header",
+        "//:grpc_credentials_util",
+        "//:grpc_public_hdrs",
+        "//:grpc_security_base",
+        "//:promise",
+        "//:ref_counted_ptr",
+        "//:transport_auth_context",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_oauth2_credentials",
     srcs = [
         "credentials/call/oauth2/oauth2_credentials.cc",

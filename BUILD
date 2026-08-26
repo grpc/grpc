@@ -782,6 +782,7 @@ grpc_cc_library(
         "//src/core:gdch_service_account_credentials",
         "//src/core:grpc_authorization_base",
         "//src/core:grpc_channel_idle_filter",
+        "//src/core:grpc_dpop_credentials",
         "//src/core:grpc_external_account_credentials",
         "//src/core:grpc_fake_credentials",
         "//src/core:grpc_google_default_credentials",
