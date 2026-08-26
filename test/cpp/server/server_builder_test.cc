@@ -23,7 +23,6 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/config.h>
-#include <functional>
 #include <sys/socket.h>
 
 #include "src/core/util/notification.h"
@@ -89,7 +88,6 @@ TEST_F(ServerBuilderTest, CreateServerRepeatedPortWithDisallowedReusePort) {
             nullptr);
 }
 
-
 class TestServerBuilder : public ServerBuilder {
  public:
   ChannelArguments BuildChannelArgsForTest() { return BuildChannelArgs(); }
@@ -101,10 +99,8 @@ TEST_F(ServerBuilderTest, SetChildChannelArgs) {
   args.SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, 1024);
   args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, "foo.test.google.fr");
   builder.SetChildChannelArgs(args);
-
   ChannelArguments built_args = builder.BuildChannelArgsForTest();
   grpc_channel_args c_args = built_args.c_channel_args();
-
   bool found_child_args = false;
   for (size_t i = 0; i < c_args.num_args; i++) {
     if (std::string(c_args.args[i].key) == GRPC_ARG_CHILD_CHANNEL_ARGS) {
@@ -135,7 +131,6 @@ TEST_F(ServerBuilderTest, SetChildChannelArgs) {
   }
   EXPECT_TRUE(found_child_args);
 }
-
 
 TEST_F(ServerBuilderTest, AddPassiveListener) {
   std::unique_ptr<experimental::PassiveListener> passive_listener;

@@ -18,7 +18,6 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/compression_types.h>
 #include <grpcpp/grpcpp.h>
-#include "src/core/lib/channel/channel_args.h"
 #include <grpcpp/resource_quota.h>
 #include <grpcpp/support/channel_arguments.h>
 
@@ -27,6 +26,7 @@
 #include <string>
 #include <vector>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/core/net/socket_mutator.h"
@@ -181,28 +181,27 @@ void ChannelArguments::SetInt(const std::string& key, int value) {
   args_.push_back(arg);
 }
 
-// Sets the channel arguments to be used for child channels.
 void ChannelArguments::SetChildChannelArgs(const ChannelArguments& args) {
   grpc_channel_args c_args = args.c_channel_args();
   static const grpc_arg_pointer_vtable vtable = {
       // copy
       [](void* p) -> void* {
-          return static_cast<void*>(grpc_channel_args_copy(
-              static_cast<grpc_channel_args*>(p)));
+        return static_cast<void*>(
+            grpc_channel_args_copy(static_cast<grpc_channel_args*>(p)));
       },
       // destroy
       [](void* p) {
-          grpc_channel_args_destroy(static_cast<grpc_channel_args*>(p));
+        grpc_channel_args_destroy(static_cast<grpc_channel_args*>(p));
       },
       // compare
       [](void* p1, void* p2) -> int {
-          return grpc_channel_args_compare(
-              static_cast<const grpc_channel_args*>(p1),
-              static_cast<const grpc_channel_args*>(p2));
-      }
-  };
+        return grpc_channel_args_compare(
+            static_cast<const grpc_channel_args*>(p1),
+            static_cast<const grpc_channel_args*>(p2));
+      }};
   SetPointerWithVtable(GRPC_ARG_CHILD_CHANNEL_ARGS, &c_args, &vtable);
 }
+
 void ChannelArguments::SetPointer(const std::string& key, void* value) {
   static const grpc_arg_pointer_vtable vtable = {
       &PointerVtableMembers::Copy, &PointerVtableMembers::Destroy,

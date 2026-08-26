@@ -136,7 +136,7 @@
  */
 #define GRPC_ARG_SERVER_MAX_PENDING_REQUESTS_HARD_LIMIT \
   "grpc.server.max_pending_requests_hard_limit"
-// A pointer argument key. The value is a pointer to a grpc_channel_args 
+// A pointer argument key. The value is a pointer to a grpc_channel_args
 // struct containing the subset of options for child channels.
 #define GRPC_ARG_CHILD_CHANNEL_ARGS "grpc.child_channel.args"
 /** Channel arg to override the http2 :scheme header. String valued. */
