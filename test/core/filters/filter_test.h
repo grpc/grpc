@@ -111,7 +111,7 @@ class FilterTest : public YodelTest {
   // stack, or std::nullopt if none shows up.
   std::optional<CallHandler> GetNextHandler(
       grpc_event_engine::experimental::EventEngine::Duration timeout =
-          std::chrono::minutes(5));
+          std::chrono::seconds(30));
 
   // Convenience for the filter case, where a call always creates exactly one
   // child call: StartCall() followed by one GetNextHandler(). Sets the

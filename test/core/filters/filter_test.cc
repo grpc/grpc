@@ -116,12 +116,7 @@ std::optional<CallHandler> FilterTest::GetNextHandler(
     if (handler.has_value()) return std::move(*handler);
     return Pending();
   };
-  std::optional<CallHandler> handler = TryTickUntil<CallHandler>(
-      timeout, absl::FunctionRef<Poll<CallHandler>()>(poll));
-  if (handler.has_value()) {
-    handler_ = *handler;
-  }
-  return handler;
+  return TryTickUntil<CallHandler>(timeout, poll);
 }
 
 void FilterTest::StartCallForFilter(
@@ -130,8 +125,10 @@ void FilterTest::StartCallForFilter(
       << "StartCallForFilter() may only be called once per test; use "
          "StartCall()/GetNextHandler() for tests that create multiple calls";
   initiator_ = StartCall(std::move(client_initial_metadata));
-  GRPC_CHECK(GetNextHandler().has_value())
+  auto handler = GetNextHandler();
+  GRPC_CHECK(handler.has_value())
       << "a filter must create exactly one child call per call started";
+  handler_ = *std::move(handler);
 }
 
 void FilterTest::InitAfterCallArena(Arena* arena) {
