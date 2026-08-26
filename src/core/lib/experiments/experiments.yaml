@@ -52,7 +52,7 @@
   test_tags: [core_end2end_test]
 - name: call_tracer_in_transport
   description: Transport directly passes byte counts to CallTracer.
-  expiry: 2026/09/01
+  expiry: 2027/02/01
   owner: roth@google.com
   test_tags: []
   allow_in_fuzzing_config: false
@@ -433,7 +433,7 @@
   test_tags: ["core_end2end_test"]
 - name: xds_server_filter_chain_per_route
   description: xDS servers use a separate filter chain for each route.
-  expiry: 2026/09/01
+  expiry: 2026/10/01
   owner: roth@google.com
   test_tags: ["xds_end2end_test", "xds_test"]
   requires: ["v2_non_owning_waker_implementation"]
