@@ -1333,7 +1333,7 @@ TEST_P(XdsExtProcEnd2endTest,
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   })));
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::CANCELLED, ".*");
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, ".*");
 }
 
 TEST_P(XdsExtProcEnd2endTest,
@@ -1423,7 +1423,7 @@ TEST_P(XdsExtProcEnd2endTest,
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   })));
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::CANCELLED, ".*",
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, ".*",
                       RpcOptions().set_skip_cancelled_check(true));
 }
 
@@ -1636,7 +1636,7 @@ TEST_P(XdsExtProcEnd2endTest,
   ext_proc_stream->SendStatus(absl::ResourceExhaustedError(
       "Call closed by ext_proc server on request body"));
   Status status = rpc.GetStatus();
-  EXPECT_THAT(status, GrpcStatusIs(StatusCode::CANCELLED));
+  EXPECT_THAT(status, GrpcStatusIs(StatusCode::RESOURCE_EXHAUSTED));
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -1675,7 +1675,7 @@ TEST_P(XdsExtProcEnd2endTest,
   ext_proc_stream->SendStatus(absl::ResourceExhaustedError(
       "Call closed by ext_proc server on request body"));
   Status status = rpc.GetStatus();
-  EXPECT_THAT(status, GrpcStatusIs(StatusCode::CANCELLED));
+  EXPECT_THAT(status, GrpcStatusIs(StatusCode::RESOURCE_EXHAUSTED));
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -1762,7 +1762,7 @@ TEST_P(XdsExtProcEnd2endTest,
   ext_proc_stream->SendStatus(absl::ResourceExhaustedError(
       "Call closed by ext_proc server on request body"));
   Status status = stream.Finish();
-  EXPECT_THAT(status, GrpcStatusIs(StatusCode::CANCELLED));
+  EXPECT_THAT(status, GrpcStatusIs(StatusCode::RESOURCE_EXHAUSTED));
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -1871,7 +1871,7 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamEarlyHalfCloseWithMessageFailure) {
   stream.StartWrite(request);
   (void)stream.WaitForWriteDone();
   Status status = stream.Finish();
-  EXPECT_THAT(status, GrpcStatusIs(StatusCode::CANCELLED));
+  EXPECT_THAT(status, GrpcStatusIs(StatusCode::INTERNAL));
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -2067,7 +2067,7 @@ TEST_P(XdsExtProcEnd2endTest,
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
   Status status = rpc.GetStatus();
-  EXPECT_THAT(status, GrpcStatusIs(StatusCode::CANCELLED));
+  EXPECT_THAT(status, GrpcStatusIs(StatusCode::UNAVAILABLE));
 }
 
 TEST_P(XdsExtProcEnd2endTest,
@@ -2168,7 +2168,7 @@ TEST_P(XdsExtProcEnd2endTest,
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   })));
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::CANCELLED, ".*",
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, ".*",
                       RpcOptions().set_skip_cancelled_check(true));
 }
 
@@ -2278,7 +2278,7 @@ TEST_P(XdsExtProcEnd2endTest,
   ext_proc_stream->SendStatus(absl::ResourceExhaustedError(
       "Call closed by ext_proc server on response body"));
   Status status = rpc.GetStatus();
-  EXPECT_THAT(status, GrpcStatusIs(StatusCode::CANCELLED));
+  EXPECT_THAT(status, GrpcStatusIs(StatusCode::RESOURCE_EXHAUSTED));
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -2315,7 +2315,7 @@ TEST_P(XdsExtProcEnd2endTest,
   ext_proc_stream->SendStatus(absl::ResourceExhaustedError(
       "Call closed by ext_proc server on response body"));
   Status status = rpc.GetStatus();
-  EXPECT_THAT(status, GrpcStatusIs(StatusCode::CANCELLED));
+  EXPECT_THAT(status, GrpcStatusIs(StatusCode::RESOURCE_EXHAUSTED));
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -2454,7 +2454,7 @@ TEST_P(XdsExtProcEnd2endTest, ResponseBodyObservabilityStreamErrorFailCall) {
   EchoResponse response;
   stream.ReadMessage(&response);
   Status status = stream.Finish();
-  EXPECT_THAT(status, GrpcStatusIs(StatusCode::CANCELLED));
+  EXPECT_THAT(status, GrpcStatusIs(StatusCode::RESOURCE_EXHAUSTED));
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -2485,7 +2485,7 @@ TEST_P(XdsExtProcEnd2endTest,
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
   Status status = rpc.GetStatus();
-  EXPECT_THAT(status, GrpcStatusIs(StatusCode::CANCELLED));
+  EXPECT_THAT(status, GrpcStatusIs(StatusCode::UNAVAILABLE));
 }
 
 TEST_P(XdsExtProcEnd2endTest,
@@ -2584,7 +2584,7 @@ TEST_P(XdsExtProcEnd2endTest,
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   })));
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::CANCELLED, ".*",
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, ".*",
                       RpcOptions().set_skip_cancelled_check(true));
 }
 
