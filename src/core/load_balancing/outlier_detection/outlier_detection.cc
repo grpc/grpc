@@ -604,6 +604,8 @@ LoadBalancingPolicy::PickResult OutlierDetectionLb::Picker::Pick(
 
 OutlierDetectionLb::OutlierDetectionLb(Args args)
     : LoadBalancingPolicy(std::move(args)),
+      // Empty under xDS: this policy sits above weighted_target in the tree,
+      // so GRPC_ARG_LB_WEIGHTED_TARGET_CHILD does not reach it.
       locality_name_(channel_args()
                          .GetString(GRPC_ARG_LB_WEIGHTED_TARGET_CHILD)
                          .value_or("")),
