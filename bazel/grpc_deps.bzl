@@ -59,11 +59,10 @@ def grpc_deps():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            sha256 = "374166fe6f8f1178ef2d759262548eb7063bde83c2805f6db71c5fca87a9d87d",
-            strip_prefix = "protobuf-b6f9284da830b69be787732ffdaa35049d20a088",
+            strip_prefix = "protobuf-35cd01f9fe9afbeea38cc7b979a3b6bfcde82c03",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/b6f9284da830b69be787732ffdaa35049d20a088.tar.gz",
-                "https://github.com/protocolbuffers/protobuf/archive/b6f9284da830b69be787732ffdaa35049d20a088.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/35cd01f9fe9afbeea38cc7b979a3b6bfcde82c03.tar.gz",
+                "https://github.com/protocolbuffers/protobuf/archive/35cd01f9fe9afbeea38cc7b979a3b6bfcde82c03.tar.gz",
             ],
             patches = [
                 "@com_github_grpc_grpc//third_party:protobuf.patch",
@@ -379,6 +378,17 @@ def grpc_deps():
                 # v1.19.0
                 "https://storage.googleapis.com/grpc-bazel-mirror/github.com/open-telemetry/opentelemetry-cpp/archive/ced79860f8c8a091a2eabfee6d47783f828a9b59.tar.gz",
                 "https://github.com/open-telemetry/opentelemetry-cpp/archive/ced79860f8c8a091a2eabfee6d47783f828a9b59.tar.gz",
+            ],
+        )
+
+    if "grpc_proto" not in native.existing_rules():
+        http_archive(
+            name = "grpc_proto",
+            sha256 = "5e9b520b22afbd53a662cc29017064be253c1dfa6df8958738594e7fec6ade33",
+            strip_prefix = "grpc-proto-ec30f589e2519d595688b9a42f88a91bdd6b733f",
+            urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/grpc/grpc-proto/archive/ec30f589e2519d595688b9a42f88a91bdd6b733f.tar.gz",
+                "https://github.com/grpc/grpc-proto/archive/ec30f589e2519d595688b9a42f88a91bdd6b733f.tar.gz",
             ],
         )
 

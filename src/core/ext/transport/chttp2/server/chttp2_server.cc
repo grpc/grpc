@@ -65,8 +65,6 @@
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/iomgr/vsock.h"
@@ -77,6 +75,7 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/mitigation_engine/mitigation_engine.h"
 #include "src/core/server/server.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
@@ -437,11 +436,16 @@ void NewChttp2ServerListener::ActiveConnection::SendGoAwayImplLocked() {
             transport->PerformOp(op);
           }
         },
-        [](GRPC_UNUSED const RefCountedPtr<http2::Http2ServerTransport>&
-               transport) {
-          // TODO(akshitpatel) [PH2][P0] : Add support for GOAWAY for
-          // Http2ServerTransport.
-          LOG(FATAL) << "Not implemented";
+        [](const RefCountedPtr<http2::Http2ServerTransport>& transport) {
+          // Send a GOAWAY if the transport exists
+          if (transport != nullptr) {
+            grpc_transport_op* op = grpc_make_transport_op(nullptr);
+            // We send a non-ok status here to send the status message in the
+            // GOAWAY frame.
+            op->goaway_error =
+                absl::UnavailableError("Server is stopping to serve requests.");
+            transport->PerformOp(op);
+          }
         });
   }
 }
@@ -467,11 +471,14 @@ void NewChttp2ServerListener::ActiveConnection::
           transport->PerformOp(op);
         }
       },
-      [](GRPC_UNUSED const RefCountedPtr<http2::Http2ServerTransport>&
-             transport) {
-        // TODO(akshitpatel) [PH2][P0] : Add support for disconnect immediately
-        // for Http2ServerTransport.
-        LOG(FATAL) << "Not implemented";
+      [](const RefCountedPtr<http2::Http2ServerTransport>& transport) {
+        // Disconnect immediately if the transport exists
+        if (transport != nullptr) {
+          grpc_transport_op* op = grpc_make_transport_op(nullptr);
+          op->disconnect_with_error = absl::UnavailableError(
+              "Drain grace time expired. Closing connection immediately.");
+          transport->PerformOp(op);
+        }
       });
 }
 
@@ -621,10 +628,20 @@ void NewChttp2ServerListener::OnAccept(
   NewChttp2ServerListener* self = static_cast<NewChttp2ServerListener*>(arg);
   OrphanablePtr<grpc_endpoint> endpoint(tcp);
   AcceptorPtr acceptor(server_acceptor);
+  absl::string_view peer = grpc_endpoint_get_peer(endpoint.get());
   if (!self->listener_state_->connection_quota()->AllowIncomingConnection(
-          self->listener_state_->memory_quota(),
-          grpc_endpoint_get_peer(endpoint.get()))) {
+          self->listener_state_->memory_quota(), peer)) {
     return;
+  }
+  RefCountedPtr<MitigationEngine> mitigation_engine = self->mitigation_engine();
+  if (mitigation_engine != nullptr) {
+    auto action = mitigation_engine->EvaluateIncomingConnection(peer);
+    if (action == MitigationEngine::Action::kCloseConnection) {
+      LOG_EVERY_N_SEC(INFO, 60)
+          << "Mitigation engine rejected connection from " << peer;
+      self->listener_state_->connection_quota()->ReleaseConnections(1);
+      return;
+    }
   }
   {
     // The ref for the tcp_server need to be taken in the critical region
@@ -691,8 +708,8 @@ absl::StatusOr<int> Chttp2ServerAddPort(Server* server, const char* addr,
     return GRPC_ERROR_CREATE("Invalid address: addr cannot be a nullptr.");
   }
 
-  ChannelArgs updated_args = args.Set(
-      GRPC_ARG_USE_V3_STACK, IsPromiseBasedHttp2ServerTransportEnabled());
+  ChannelArgs updated_args =
+      args.Set(GRPC_ARG_USE_V3_STACK, http2::ShouldEnablePh2Server());
   if (strncmp(addr, "external:", 9) == 0) {
     auto r =
         NewChttp2ServerListener::CreateWithAcceptor(server, addr, updated_args);
@@ -725,26 +742,12 @@ absl::StatusOr<int> Chttp2ServerAddPort(Server* server, const char* addr,
       resolved = grpc_resolve_vsock_address(parsed_addr_unprefixed);
       GRPC_RETURN_IF_ERROR(resolved.status());
     } else {
-      if (IsEventEngineDnsNonClientChannelEnabled() &&
-          !grpc_event_engine::experimental::
-              EventEngineExperimentDisabledForPython()) {
-        absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>> ee_resolver =
-            args.GetObjectRef<EventEngine>()->GetDNSResolver(
-                EventEngine::DNSResolver::ResolverOptions());
-        GRPC_RETURN_IF_ERROR(ee_resolver.status());
-        results = grpc_event_engine::experimental::LookupHostnameBlocking(
-            ee_resolver->get(), parsed_addr, "https");
-      } else {
-        // TODO(yijiem): Remove this after event_engine_dns_non_client_channel
-        // is fully enabled.
-        absl::StatusOr<std::vector<grpc_resolved_address>> iomgr_results =
-            GetDNSResolver()->LookupHostnameBlocking(parsed_addr, "https");
-        GRPC_RETURN_IF_ERROR(iomgr_results.status());
-        for (const auto& addr : *iomgr_results) {
-          results->push_back(
-              grpc_event_engine::experimental::CreateResolvedAddress(addr));
-        }
-      }
+      absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>> ee_resolver =
+          args.GetObjectRef<EventEngine>()->GetDNSResolver(
+              EventEngine::DNSResolver::ResolverOptions());
+      GRPC_RETURN_IF_ERROR(ee_resolver.status());
+      results = grpc_event_engine::experimental::LookupHostnameBlocking(
+          ee_resolver->get(), parsed_addr, "https");
     }
     if (resolved.ok()) {
       for (const auto& addr : *resolved) {
@@ -858,7 +861,7 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
   grpc_core::ExecCtx exec_ctx;
   grpc_core::Server* core_server = grpc_core::Server::FromC(server);
 
-  const bool is_callv3 = grpc_core::IsPromiseBasedHttp2ServerTransportEnabled();
+  const bool is_callv3 = grpc_core::http2::ShouldEnablePh2Server();
   grpc_core::ChannelArgs server_args =
       core_server->channel_args().Set(GRPC_ARG_USE_V3_STACK, is_callv3);
 
@@ -949,7 +952,7 @@ absl::Status grpc_server_add_passive_listener(
                   .SetObject(credentials->Ref())
                   .SetObject(std::move(sc))
                   .Set(GRPC_ARG_USE_V3_STACK,
-                       grpc_core::IsPromiseBasedHttp2ServerTransportEnabled());
+                       grpc_core::http2::ShouldEnablePh2Server());
   passive_listener->listener_ =
       grpc_core::NewChttp2ServerListener::CreateForPassiveListener(
           server, args, passive_listener);

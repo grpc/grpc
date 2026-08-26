@@ -68,5 +68,29 @@ TEST(TraceTest, ChangeDetectors) {
 [0] [1,0] APPEND_TEXT trace-description foo)");
 }
 
+TEST(TraceTest, NestedTraceEvent) {
+  ExpectTraceEventsTransformsTo(
+      R"pb(
+        description: "outer"
+        data {
+          name: "inner_event"
+          value {
+            [type.googleapis.com/grpc.channelz.v2.TraceEvent] {
+              description: "inner"
+            }
+          }
+        }
+      )pb",
+      R"([0] APPEND_TABLE trace
+[0] [0,0] APPEND_COLUMN
+[0] [0,0] APPEND_TEXT timestamp [value elided]
+[0] [1,0] APPEND_COLUMN
+[0] [1,0] APPEND_TEXT trace-description outer
+[0] [2,0] APPEND_COLUMN
+[0] [2,0] APPEND_TEXT timestamp [value elided]
+[0] [3,0] APPEND_COLUMN
+[0] [3,0] APPEND_TEXT trace-description inner)");
+}
+
 }  // namespace
 }  // namespace grpc_zviz

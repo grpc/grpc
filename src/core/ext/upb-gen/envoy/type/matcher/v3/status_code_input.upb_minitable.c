@@ -14,9 +14,8 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
 const upb_MiniTable envoy__type__matcher__v3__HttpResponseStatusCodeMatchInput_msg_init = {
-  NULL,
   NULL,
   8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -24,9 +23,7 @@ const upb_MiniTable envoy__type__matcher__v3__HttpResponseStatusCodeMatchInput_m
 #endif
 };
 
-const upb_MiniTable* envoy__type__matcher__v3__HttpResponseStatusCodeMatchInput_msg_init_ptr = &envoy__type__matcher__v3__HttpResponseStatusCodeMatchInput_msg_init;
 const upb_MiniTable envoy__type__matcher__v3__HttpResponseStatusCodeClassMatchInput_msg_init = {
-  NULL,
   NULL,
   8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -34,7 +31,6 @@ const upb_MiniTable envoy__type__matcher__v3__HttpResponseStatusCodeClassMatchIn
 #endif
 };
 
-const upb_MiniTable* envoy__type__matcher__v3__HttpResponseStatusCodeClassMatchInput_msg_init_ptr = &envoy__type__matcher__v3__HttpResponseStatusCodeClassMatchInput_msg_init;
 static const upb_MiniTable *messages_layout[2] = {
   &envoy__type__matcher__v3__HttpResponseStatusCodeMatchInput_msg_init,
   &envoy__type__matcher__v3__HttpResponseStatusCodeClassMatchInput_msg_init,

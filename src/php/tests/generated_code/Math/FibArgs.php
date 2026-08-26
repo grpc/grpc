@@ -47,7 +47,7 @@ class FibArgs extends \Google\Protobuf\Internal\Message
      * @param int|string $var
      * @return $this
      */
-    public function setLimit($var)
+    public function setLimit(int|string $var)
     {
         GPBUtil::checkInt64($var);
         $this->limit = $var;

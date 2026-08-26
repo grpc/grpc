@@ -118,7 +118,7 @@ class SecurityFrameHandler final : public RefCounted<SecurityFrameHandler> {
   // Only run on the Transport Party
   void ProcessPayload(SliceBuffer&& payload) {
     GRPC_HTTP2_SECURITY_FRAME_DLOG << "SecurityFrameHandler::ProcessPayload";
-    if (endpoint_extension_ != nullptr) {
+    if (endpoint_extension_ != nullptr && payload.Length() > 0) {
       bool should_receive = false;
       {
         MutexLock lock(&mutex_);
@@ -128,6 +128,8 @@ class SecurityFrameHandler final : public RefCounted<SecurityFrameHandler> {
       // can safely assume that the value of transport_closed_ will not change
       // between the above check and endpoint_extension_->ReceiveFrame.
       if (should_receive) {
+        GRPC_HTTP2_SECURITY_FRAME_DLOG
+            << "SecurityFrameHandler::ProcessPayload ReceiveFrame";
         endpoint_extension_->ReceiveFrame(std::move(payload));
       }
     }
@@ -195,6 +197,7 @@ class SecurityFrameHandler final : public RefCounted<SecurityFrameHandler> {
       {
         MutexLock lock(&mutex_);
         GRPC_DCHECK(payload_.Length() != 0);
+        GRPC_DCHECK(payload_.Length() <= GrpcErrors::kMaxSecurityFrameSize);
         GRPC_HTTP2_SECURITY_FRAME_DLOG
             << "SecurityFrameHandler::MaybeAppendSecurityFrame Write Frame "
                "Length "

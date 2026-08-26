@@ -48,6 +48,7 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
 #include "src/core/xds/grpc/xds_route_config.h"
 #include "src/core/xds/grpc/xds_route_config_parser.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
@@ -83,7 +84,7 @@ class XdsRouteConfigTest : public ::testing::Test {
                         upb_def_pool_.ptr(), upb_arena_.ptr()} {}
 
   static RefCountedPtr<XdsClient> MakeXdsClient(bool trusted_xds_server) {
-    auto bootstrap = GrpcXdsBootstrap::Create(
+    auto bootstrap = GrpcXdsBootstrapBuilder::Build(
         absl::StrCat("{\n"
                      "  \"xds_servers\": [\n"
                      "    {\n"
@@ -419,8 +420,10 @@ TEST_P(TypedPerFilterConfigTest, Basic) {
   const auto& filter_config = it->second;
   EXPECT_EQ(filter_config.config_proto_type,
             "envoy.extensions.filters.http.fault.v3.HTTPFault");
-  EXPECT_EQ(JsonDump(filter_config.config),
-            "{\"abortCode\":\"PERMISSION_DENIED\"}");
+  ASSERT_NE(filter_config.filter_config, nullptr);
+  EXPECT_EQ(filter_config.filter_config->ToString(),
+            "{abort_code=PERMISSION_DENIED, abort_message=\"Fault injected\", "
+            "max_faults=4294967295}");
 }
 
 TEST_P(TypedPerFilterConfigTest, EmptyName) {
@@ -530,8 +533,10 @@ TEST_P(TypedPerFilterConfigTest, FilterConfigWrapper) {
   const auto& filter_config = it->second;
   EXPECT_EQ(filter_config.config_proto_type,
             "envoy.extensions.filters.http.fault.v3.HTTPFault");
-  EXPECT_EQ(JsonDump(filter_config.config),
-            "{\"abortCode\":\"PERMISSION_DENIED\"}");
+  ASSERT_NE(filter_config.filter_config, nullptr);
+  EXPECT_EQ(filter_config.filter_config->ToString(),
+            "{abort_code=PERMISSION_DENIED, abort_message=\"Fault injected\", "
+            "max_faults=4294967295}");
 }
 
 TEST_P(TypedPerFilterConfigTest, FilterConfigWrapperInTypedStruct) {
@@ -599,6 +604,40 @@ TEST_P(TypedPerFilterConfigTest, FilterConfigWrapperEmptyConfig) {
           "[fault].value[envoy.config.route.v3.FilterConfig].config "
           "error:field not present]"))
       << decode_result.resource.status();
+}
+
+TEST_P(TypedPerFilterConfigTest, FilterConfigWrapperDisabled) {
+  envoy::extensions::filters::http::fault::v3::HTTPFault fault_config;
+  fault_config.mutable_abort()->set_grpc_status(GRPC_STATUS_PERMISSION_DENIED);
+  envoy::config::route::v3::FilterConfig filter_config_wrapper;
+  filter_config_wrapper.mutable_config()->PackFrom(fault_config);
+  filter_config_wrapper.set_disabled(true);
+  auto* typed_per_filter_config_proto =
+      GetTypedPerFilterConfigProto(&route_config_);
+  (*typed_per_filter_config_proto)["fault"].PackFrom(filter_config_wrapper);
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config_.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<const XdsRouteConfigResource&>(**decode_result.resource);
+  auto& typed_per_filter_config = GetTypedPerFilterConfig(resource);
+  ASSERT_EQ(typed_per_filter_config.size(), 1UL);
+  auto it = typed_per_filter_config.begin();
+  ASSERT_NE(it, typed_per_filter_config.end());
+  EXPECT_EQ("fault", it->first);
+  const auto& filter_config = it->second;
+  EXPECT_EQ(filter_config.config_proto_type,
+            "envoy.extensions.filters.http.fault.v3.HTTPFault");
+  ASSERT_NE(filter_config.filter_config, nullptr);
+  EXPECT_EQ(filter_config.filter_config->ToString(),
+            "{abort_code=PERMISSION_DENIED, abort_message=\"Fault injected\", "
+            "max_faults=4294967295}");
+  EXPECT_TRUE(filter_config.disabled);
 }
 
 TEST_P(TypedPerFilterConfigTest, FilterConfigWrapperUnsupportedFilterType) {
@@ -748,7 +787,7 @@ TEST_P(RetryPolicyTest, Empty) {
   ASSERT_TRUE(action->retry_policy.has_value());
   const auto& retry_policy = *action->retry_policy;
   // Defaults.
-  auto expected_codes = internal::StatusCodeSet();
+  auto expected_codes = StatusCodeSet();
   EXPECT_EQ(retry_policy.retry_on, expected_codes)
       << "Actual: " << retry_policy.retry_on.ToString()
       << "\nExpected: " << expected_codes.ToString();
@@ -786,7 +825,7 @@ TEST_P(RetryPolicyTest, AllFields) {
   ASSERT_NE(action, nullptr);
   ASSERT_TRUE(action->retry_policy.has_value());
   const auto& retry_policy = *action->retry_policy;
-  auto expected_codes = internal::StatusCodeSet()
+  auto expected_codes = StatusCodeSet()
                             .Add(GRPC_STATUS_CANCELLED)
                             .Add(GRPC_STATUS_DEADLINE_EXCEEDED)
                             .Add(GRPC_STATUS_INTERNAL)
@@ -902,7 +941,7 @@ TEST_F(RetryPolicyOverrideTest, RoutePolicyOverridesVhostPolicy) {
       std::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
   ASSERT_NE(action, nullptr);
   ASSERT_TRUE(action->retry_policy.has_value());
-  auto expected_codes = internal::StatusCodeSet().Add(GRPC_STATUS_CANCELLED);
+  auto expected_codes = StatusCodeSet().Add(GRPC_STATUS_CANCELLED);
   EXPECT_EQ(action->retry_policy->retry_on, expected_codes)
       << "Actual: " << action->retry_policy->retry_on.ToString()
       << "\nExpected: " << expected_codes.ToString();

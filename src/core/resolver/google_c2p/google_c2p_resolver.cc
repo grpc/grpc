@@ -44,6 +44,7 @@
 #include "src/core/util/time.h"
 #include "src/core/util/uri.h"
 #include "src/core/util/work_serializer.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
 #include "src/core/xds/grpc/xds_client_grpc.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "absl/log/log.h"
@@ -237,7 +238,7 @@ std::shared_ptr<GrpcXdsBootstrap> GoogleCloud2ProdResolver::ConstructBootstrap()
        })},
       {"node", Json::FromObject(std::move(node))},
   });
-  return GrpcXdsBootstrap::Create(JsonDump(bootstrap)).value();
+  return GrpcXdsBootstrapBuilder::Build(JsonDump(bootstrap)).value();
 }
 
 void GoogleCloud2ProdResolver::StartXdsResolver() {
