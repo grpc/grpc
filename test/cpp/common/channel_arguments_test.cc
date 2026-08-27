@@ -282,29 +282,17 @@ TEST_F(ChannelArgumentsTest, SetChildChannelArgs) {
   channel_args_.SetChildChannelArgs(child_args);
   grpc_channel_args args;
   channel_args_.SetChannelArgs(&args);
-  // Verify the child channel args pointer exists in the parent args.
-  bool found = false;
-  for (size_t i = 0; i < args.num_args; i++) {
-    if (std::string(args.args[i].key) == GRPC_ARG_CHILD_CHANNEL_ARGS) {
-      found = true;
-      EXPECT_EQ(args.args[i].type, GRPC_ARG_POINTER);
-    }
-  }
-  EXPECT_TRUE(found);
+  // Verify that child channel args pointer exists in parent args.
   const grpc_channel_args* extracted_child_args =
       grpc_channel_args_find_pointer<grpc_channel_args>(
           &args, GRPC_ARG_CHILD_CHANNEL_ARGS);
   ASSERT_NE(extracted_child_args, nullptr);
+  // The number of args should be 2, since GRPC_ARG_PRIMARY_USER_AGENT_STRING is
+  // added automatically.
   EXPECT_EQ(extracted_child_args->num_args, 2);
-  bool found_child = false;
-  for (size_t i = 0; i < extracted_child_args->num_args; ++i) {
-    if (std::string(extracted_child_args->args[i].key) == "child_key") {
-      found_child = true;
-      EXPECT_EQ(extracted_child_args->args[i].type, GRPC_ARG_INTEGER);
-      EXPECT_EQ(extracted_child_args->args[i].value.integer, 42);
-    }
-  }
-  EXPECT_TRUE(found_child);
+  EXPECT_EQ(grpc_channel_args_find_integer(extracted_child_args, "child_key",
+                                           {-1, 0, INT32_MAX}),
+            42);
 }
 }  // namespace testing
 }  // namespace grpc

@@ -183,23 +183,8 @@ void ChannelArguments::SetInt(const std::string& key, int value) {
 
 void ChannelArguments::SetChildChannelArgs(const ChannelArguments& args) {
   grpc_channel_args c_args = args.c_channel_args();
-  static const grpc_arg_pointer_vtable vtable = {
-      // copy
-      [](void* p) -> void* {
-        return static_cast<void*>(
-            grpc_channel_args_copy(static_cast<grpc_channel_args*>(p)));
-      },
-      // destroy
-      [](void* p) {
-        grpc_channel_args_destroy(static_cast<grpc_channel_args*>(p));
-      },
-      // compare
-      [](void* p1, void* p2) -> int {
-        return grpc_channel_args_compare(
-            static_cast<const grpc_channel_args*>(p1),
-            static_cast<const grpc_channel_args*>(p2));
-      }};
-  SetPointerWithVtable(GRPC_ARG_CHILD_CHANNEL_ARGS, &c_args, &vtable);
+  SetPointerWithVtable(GRPC_ARG_CHILD_CHANNEL_ARGS, &c_args,
+                       grpc_channel_args_arg_vtable());
 }
 
 void ChannelArguments::SetPointer(const std::string& key, void* value) {
