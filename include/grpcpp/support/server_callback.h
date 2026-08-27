@@ -45,15 +45,20 @@ namespace grpc {
 class Server;
 
 // Declare base class of all reactors as internal
+namespace experimental {
 namespace internal {
-
-// Forward declarations
 void BindSessionToInnerServer(grpc_call* call, grpc::Server* inner_server,
                               grpc_core::Transport** out_transport,
                               grpc_endpoint** out_endpoint);
 void InitiateSessionGracefulShutdown(
     grpc_core::Transport* transport, grpc_endpoint* endpoint,
     absl::AnyInvocable<void(absl::Status)> on_shutdown);
+}  // namespace internal
+}  // namespace experimental
+
+namespace internal {
+
+// Forward declarations
 template <class Request, class Response>
 class CallbackUnaryHandler;
 template <class Request, class Response>
@@ -62,6 +67,8 @@ template <class Request, class Response>
 class CallbackServerStreamingHandler;
 template <class Request, class Response>
 class CallbackBidiHandler;
+
+bool ReturnPreexistingErrors();
 
 class ServerReactor {
  public:
@@ -207,7 +214,11 @@ template <class Response>
 class ServerWriteReactor;
 template <class Request, class Response>
 class ServerBidiReactor;
+
+namespace experimental {
 class ServerSessionReactor;
+class ServerCallbackSession;
+}  // namespace experimental
 
 // NOTE: The actual call/stream object classes are provided as API only to
 // support mocking. There are no implementations of these class interfaces in
@@ -227,7 +238,8 @@ class ServerCallbackUnary : public internal::ServerCallbackCall {
   }
 };
 
-class ServerCallbackSession : public internal::ServerCallbackCall {
+namespace experimental {
+class ServerCallbackSession : public grpc::internal::ServerCallbackCall {
  public:
   ~ServerCallbackSession() override {}
 
@@ -243,6 +255,7 @@ class ServerCallbackSession : public internal::ServerCallbackCall {
     reactor->InternalBindSession(this);
   }
 };
+}  // namespace experimental
 
 template <class Request>
 class ServerCallbackReader : public internal::ServerCallbackCall {
@@ -803,7 +816,8 @@ class ServerUnaryReactor : public internal::ServerReactor {
   PreBindBacklog backlog_ ABSL_GUARDED_BY(call_mu_);
 };
 
-class ServerSessionReactor : public internal::ServerReactor {
+namespace experimental {
+class ServerSessionReactor : public grpc::internal::ServerReactor {
  public:
   ServerSessionReactor() : session_(nullptr) {}
   ~ServerSessionReactor() override = default;
@@ -903,6 +917,7 @@ class ServerSessionReactor : public internal::ServerReactor {
   // InternalBindSession().
   PreBindBacklog backlog_ ABSL_GUARDED_BY(session_mu_);
 };
+}  // namespace experimental
 
 namespace internal {
 
@@ -923,9 +938,14 @@ template <class Request, class Response>
 using UnimplementedBidiReactor =
     FinishOnlyReactor<ServerBidiReactor<Request, Response>>;
 
-using UnimplementedSessionReactor = FinishOnlyReactor<ServerSessionReactor>;
-
 }  // namespace internal
+
+namespace experimental {
+namespace internal {
+using UnimplementedSessionReactor =
+    grpc::internal::FinishOnlyReactor<ServerSessionReactor>;
+}  // namespace internal
+}  // namespace experimental
 
 // TODO(vjpai): Remove namespace experimental when last known users are migrated
 // off.

@@ -374,7 +374,7 @@ TEST(AltsConcurrentConnectivityTest,
     for (size_t i = 0; i < num_concurrent_connects; i++) {
       connect_loop_runners.push_back(std::make_unique<ConnectLoopRunner>(
           fake_backend_server.address(), fake_handshake_server.address(),
-          20 * grpc_test_slowdown_factor() /* per connect deadline seconds */,
+          30 * grpc_test_slowdown_factor() /* per connect deadline seconds */,
           2 /* loops */,
           GRPC_CHANNEL_TRANSIENT_FAILURE /* expected connectivity states */,
           0 /* reconnect_backoff_ms unset */));

@@ -21,17 +21,25 @@
 #include <grpcpp/server.h>
 #include <grpcpp/support/server_callback.h>
 
+#include <cstdint>
+#include <memory>
+#include <utility>
+
+#include "src/core/call/security_context.h"
 #include "src/core/call/server_call.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/server/server.h"
 #include "src/core/transport/session_endpoint.h"
+#include "src/core/util/down_cast.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 
 namespace grpc {
+namespace experimental {
 namespace internal {
 
 void BindSessionToInnerServer(grpc_call* call, grpc::Server* inner_server,
@@ -61,6 +69,28 @@ void BindSessionToInnerServer(grpc_call* call, grpc::Server* inner_server,
 
   // Disable keepalive to avoid sending keepalive pings on the inner transport.
   args = args.Set(GRPC_ARG_KEEPALIVE_TIME_MS, std::numeric_limits<int>::max());
+
+  // Add the session call arena to channel args to propagate to child calls.
+  // The server will extract this and add it to the virtual call's arena.
+  grpc_core::Arena* parent_arena = grpc_call_get_arena(call);
+  auto* sec_ctx = grpc_core::DownCast<grpc_server_security_context*>(
+      parent_arena->GetContext<grpc_core::SecurityContext>());
+  if (sec_ctx != nullptr && sec_ctx->auth_context != nullptr) {
+    args = args.SetObject(sec_ctx->auth_context);
+  }
+  static const grpc_arg_pointer_vtable vtable = {
+      // copy
+      [](void* p) -> void* {
+        return static_cast<grpc_core::Arena*>(p)->Ref().release();
+      },
+      // destroy
+      [](void* p) { static_cast<grpc_core::Arena*>(p)->Unref(); },
+      // cmp
+      [](void* p1, void* p2) { return grpc_core::QsortCompare(p1, p2); },
+  };
+  args = args.Set(
+      GRPC_ARG_SERVER_INTERNAL_PARENT_CALL_ARENA,
+      grpc_core::ChannelArgs::Pointer(parent_arena->Ref().release(), &vtable));
 
   // Create old-style CHTTP2 Transport
   grpc_core::Transport* transport_ptr = grpc_create_chttp2_transport(
@@ -142,6 +172,15 @@ void InitiateSessionGracefulShutdown(
   } else if (on_shutdown) {
     on_shutdown(absl::UnavailableError("No transport available"));
   }
+}
+
+}  // namespace internal
+}  // namespace experimental
+
+namespace internal {
+
+bool ReturnPreexistingErrors() {
+  return grpc_core::IsReturnPreexistingErrorsEnabled();
 }
 
 void ServerCallbackCall::ScheduleOnDone(bool inline_ondone) {

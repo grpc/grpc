@@ -14,43 +14,61 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-UPB_LINKARR_APPEND(upb_AllExts)
-const upb_MiniTableExtension envoy_annotations_disallowed_by_default_ext = {
-  {189503207, 0, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
+static const upb_MiniTableExtension envoy_annotations_disallowed_by_default_ext_obj = {
+  {189503207, 0, 0, UPB_SIZE(3, 4), 8, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {.UPB_PRIVATE(submsg) = NULL},
   &google__protobuf__FieldOptions_msg_init,
-  {.UPB_PRIVATE(submsg) = NULL},
 
 };
 UPB_LINKARR_APPEND(upb_AllExts)
-const upb_MiniTableExtension envoy_annotations_deprecated_at_minor_version_ext = {
-  {157299826, 0, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+const upb_MiniTableExtension* envoy_annotations_disallowed_by_default_ext = &envoy_annotations_disallowed_by_default_ext_obj;
+  static const upb_MiniTableExtension envoy_annotations_deprecated_at_minor_version_ext_obj = {
+  {157299826, 0, 0, UPB_SIZE(3, 4), 9, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {.UPB_PRIVATE(submsg) = NULL},
   &google__protobuf__FieldOptions_msg_init,
-  {.UPB_PRIVATE(submsg) = NULL},
 
 };
 UPB_LINKARR_APPEND(upb_AllExts)
-const upb_MiniTableExtension envoy_annotations_disallowed_by_default_enum_ext = {
-  {70100853, 0, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-  &google__protobuf__EnumValueOptions_msg_init,
+const upb_MiniTableExtension* envoy_annotations_deprecated_at_minor_version_ext = &envoy_annotations_deprecated_at_minor_version_ext_obj;
+  static const upb_MiniTableExtension envoy_annotations_disallowed_by_default_enum_ext_obj = {
+  {70100853, 0, 0, UPB_SIZE(3, 4), 8, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {.UPB_PRIVATE(submsg) = NULL},
+  &google__protobuf__EnumValueOptions_msg_init,
 
 };
 UPB_LINKARR_APPEND(upb_AllExts)
-const upb_MiniTableExtension envoy_annotations_deprecated_at_minor_version_enum_ext = {
-  {181198657, 0, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  &google__protobuf__EnumValueOptions_msg_init,
+const upb_MiniTableExtension* envoy_annotations_disallowed_by_default_enum_ext = &envoy_annotations_disallowed_by_default_enum_ext_obj;
+  static const upb_MiniTableExtension envoy_annotations_deprecated_at_minor_version_enum_ext_obj = {
+  {181198657, 0, 0, UPB_SIZE(3, 4), 9, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {.UPB_PRIVATE(submsg) = NULL},
+  &google__protobuf__EnumValueOptions_msg_init,
 
 };
-
+UPB_LINKARR_APPEND(upb_AllExts)
+const upb_MiniTableExtension* envoy_annotations_deprecated_at_minor_version_enum_ext = &envoy_annotations_deprecated_at_minor_version_enum_ext_obj;
+  
 static const upb_MiniTableExtension *extensions_layout[4] = {
-  &envoy_annotations_disallowed_by_default_ext,
-  &envoy_annotations_deprecated_at_minor_version_ext,
-  &envoy_annotations_disallowed_by_default_enum_ext,
-  &envoy_annotations_deprecated_at_minor_version_enum_ext,
+  &envoy_annotations_disallowed_by_default_ext_obj,
+  &envoy_annotations_deprecated_at_minor_version_ext_obj,
+  &envoy_annotations_disallowed_by_default_enum_ext_obj,
+  &envoy_annotations_deprecated_at_minor_version_enum_ext_obj,
 };
 
+UPB_LINKARR_DECLARE(upb_AllExts, const upb_MiniTableExtension*);
+UPB_CONSTRUCTOR(upb_GeneratedRegistry_Constructor, envoy_annotations_deprecation_proto_ext_constructor) {
+  static bool finished = false;
+  if (finished) return;
+  finished = true;
+  static UPB_PRIVATE(upb_GeneratedExtensionListEntry) entry = {
+    UPB_LINKARR_START(upb_AllExts),
+    UPB_LINKARR_STOP(upb_AllExts),
+    NULL
+  };
+  UPB_ASSERT(entry.next == NULL);
+  entry.next = UPB_PRIVATE(upb_generated_extension_list);
+  UPB_PRIVATE(upb_generated_extension_list) = &entry;
+}
 const upb_MiniTableFile envoy_annotations_deprecation_proto_upb_file_layout = {
   NULL,
   NULL,

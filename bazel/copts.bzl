@@ -59,6 +59,13 @@ GRPC_LLVM_WARNING_FLAGS = [
     "-Walign-mismatch",
     "-Wover-aligned",
     "-Wunaligned-access",
+
+    # protobuf offenses
+    "-Wno-ignored-attributes",
+    "-Wno-unused-parameter",
+    "-Wno-unused-result",
+    "-Wno-unused-variable",
+    "-Wno-unused-but-set-variable",
 ]
 
 GRPC_LLVM_WINDOWS_WARNING_FLAGS = GRPC_LLVM_WARNING_FLAGS + [
@@ -92,6 +99,7 @@ GRPC_LLVM_WINDOWS_WARNING_FLAGS = GRPC_LLVM_WARNING_FLAGS + [
     "-Wno-format-nonliteral",
     "-Wno-inconsistent-missing-destructor-override",
     "-Wno-language-extension-token",
+    "-Wno-dollar-in-identifier-extension",
 
     # xxhash offenses
     "-Wno-disabled-macro-expansion",

@@ -27,6 +27,7 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
@@ -72,6 +73,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     void StartRecvMessage() override;
 
+    void SendHalfClose() override;
+
     using StreamingCall::Ref;  // Make it public.
 
     bool HaveMessageFromClient();
@@ -88,6 +91,11 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     void MaybeSendStatusToClient(absl::Status status);
 
     bool WaitForReadsStarted(size_t expected);
+
+    bool half_closed() const {
+      MutexLock lock(&mu_);
+      return half_closed_;
+    }
 
    private:
     class RefCountedEventHandler : public RefCounted<RefCountedEventHandler> {
@@ -119,11 +127,12 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
         event_engine_;
 
-    Mutex mu_;
+    mutable Mutex mu_;
     RefCountedPtr<RefCountedEventHandler> event_handler_ ABSL_GUARDED_BY(&mu_);
     std::deque<std::string> from_client_messages_ ABSL_GUARDED_BY(&mu_);
     bool status_sent_ ABSL_GUARDED_BY(&mu_) = false;
     bool orphaned_ ABSL_GUARDED_BY(&mu_) = false;
+    bool half_closed_ ABSL_GUARDED_BY(&mu_) = false;
     size_t reads_started_ ABSL_GUARDED_BY(&mu_) = 0;
     size_t num_pending_reads_ ABSL_GUARDED_BY(&mu_) = 0;
     std::deque<std::string> to_client_messages_ ABSL_GUARDED_BY(&mu_);
@@ -163,6 +172,11 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
   RefCountedPtr<FakeStreamingCall> WaitForStream(
       const XdsBootstrap::XdsServerTarget& server, const char* method);
+
+  // Returns an existing transport or creates a new one.
+  RefCountedPtr<XdsTransport> GetTransport(
+      const XdsBootstrap::XdsServerTarget& server,
+      absl::Status* status) override;
 
   void Orphaned() override;
 
@@ -225,11 +239,6 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     std::map<std::string /*method*/, RefCountedPtr<FakeStreamingCall>>
         active_calls_ ABSL_GUARDED_BY(&mu_);
   };
-
-  // Returns an existing transport or creates a new one.
-  RefCountedPtr<XdsTransport> GetTransport(
-      const XdsBootstrap::XdsServerTarget& server,
-      absl::Status* /*status*/) override;
 
   // Returns an existing transport, if any, or nullptr.
   RefCountedPtr<FakeXdsTransport> GetTransport(

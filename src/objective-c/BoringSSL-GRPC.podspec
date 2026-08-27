@@ -123,10 +123,10 @@ Pod::Spec.new do |s|
                       'include/openssl/**/*.h'
   end
   s.subspec 'Implementation' do |ss|
-    ss.header_mappings_dir = 'src'
+    ss.header_mappings_dir = '.'
 
     ss.resource_bundles = {
-      s.module_name => 'src/PrivacyInfo.xcprivacy'
+      s.module_name => 'PrivacyInfo.xcprivacy'
     }
 
     ss.source_files = 'ssl/*.{h,c,cc}',

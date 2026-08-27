@@ -28,6 +28,7 @@
 
 #include "src/core/call/metadata.h"
 #include "src/core/call/metadata_batch.h"
+#include "src/core/ext/transport/chaotic_good/config.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chaotic_good/server_transport.h"
@@ -74,6 +75,7 @@
 #include "absl/random/bit_gen_ref.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -483,6 +485,16 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
             frame_header = absl::InternalError("Unexpected stream id");
           }
         }
+
+        Config config{self->connection_->args(), /*is_server=*/true};
+        if (frame_header.ok() && frame_header->header.payload_length >
+                                     config.max_receive_message_length()) {
+          frame_header = absl::ResourceExhaustedError(absl::StrCat(
+              "SERVER handshake: Received message larger than max (",
+              frame_header->header.payload_length, " vs. ",
+              config.max_receive_message_length(), ")"));
+        }
+
         return If(
             frame_header.ok(),
             [self, &frame_header]() {
@@ -511,14 +523,19 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
                       self->data_.emplace<DataConnection>(
                           frame.body.connection_id()[0]);
                     } else {
-                      Config config{self->connection_->args()};
+                      Config config{self->connection_->args(),
+                                    /*is_server=*/true};
                       auto settings_status =
                           config.ReceiveClientIncomingSettings(frame.body);
                       if (!settings_status.ok()) return settings_status;
                       const int num_data_connections =
-                          self->connection_->listener_->args()
-                              .GetInt(GRPC_ARG_CHAOTIC_GOOD_DATA_CONNECTIONS)
-                              .value_or(1);
+                          config.num_data_connections();
+                      if (num_data_connections == 0) {
+                        GRPC_TRACE_LOG(chaotic_good, INFO)
+                            << "CHAOTIC_GOOD: Bypassing secondary data "
+                               "connections for remote endpoint; establishing "
+                               "control-only transport.";
+                      }
                       auto& data_connection_listener =
                           *self->connection_->listener_
                                ->data_connection_listener_;
@@ -696,38 +713,20 @@ absl::StatusOr<int> AddChaoticGoodPort(Server* server, std::string addr,
   const std::string parsed_addr = URI::PercentDecode(addr);
   absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> results =
       std::vector<EventEngine::ResolvedAddress>();
-  if (IsEventEngineDnsNonClientChannelEnabled() &&
-      !grpc_event_engine::experimental::
-          EventEngineExperimentDisabledForPython()) {
-    absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>> ee_resolver =
-        args.GetObjectRef<EventEngine>()->GetDNSResolver(
-            EventEngine::DNSResolver::ResolverOptions());
-    if (!ee_resolver.ok()) {
-      LogInitFailure(server, absl::StrCat("Failed to resolve ", addr),
-                     ee_resolver.status());
-      return ee_resolver.status();
-    }
-    results = grpc_event_engine::experimental::LookupHostnameBlocking(
-        ee_resolver->get(), parsed_addr, absl::StrCat(0xd20));
-    if (!results.ok()) {
-      LogInitFailure(server, absl::StrCat("Failed to resolve ", addr),
-                     results.status());
-      return results.status();
-    }
-  } else {
-    // TODO(yijiem): Remove this after event_engine_dns_non_client_channel
-    // is fully enabled.
-    const auto resolved_or = GetDNSResolver()->LookupHostnameBlocking(
-        parsed_addr, absl::StrCat(0xd20));
-    if (!resolved_or.ok()) {
-      LogInitFailure(server, absl::StrCat("Failed to resolve ", addr),
-                     resolved_or.status());
-      return resolved_or.status();
-    }
-    for (const auto& addr : *resolved_or) {
-      results->push_back(
-          grpc_event_engine::experimental::CreateResolvedAddress(addr));
-    }
+  absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>> ee_resolver =
+      args.GetObjectRef<EventEngine>()->GetDNSResolver(
+          EventEngine::DNSResolver::ResolverOptions());
+  if (!ee_resolver.ok()) {
+    LogInitFailure(server, absl::StrCat("Failed to resolve ", addr),
+                   ee_resolver.status());
+    return ee_resolver.status();
+  }
+  results = grpc_event_engine::experimental::LookupHostnameBlocking(
+      ee_resolver->get(), parsed_addr, absl::StrCat(0xd20));
+  if (!results.ok()) {
+    LogInitFailure(server, absl::StrCat("Failed to resolve ", addr),
+                   results.status());
+    return results.status();
   }
   int port_num = 0;
   std::vector<std::pair<std::string, absl::Status>> error_list;

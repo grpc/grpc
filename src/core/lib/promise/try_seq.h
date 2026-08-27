@@ -49,8 +49,8 @@ namespace promise_detail {
 //       indicate only success/failure. In the case of returning Status, the
 //       next functor in the chain takes no arguments.
 //    2. StatusFlag and ValueOrStatus can be return types if rich error
-//       information is not necessar. In this case the next functor in the chain
-//       takes no arguments.
+//       information is not necessary. In this case the next functor in the
+//       chain takes no arguments.
 //
 // Return :
 // Polling the TrySeq Promise combinator returns Poll<StatusOr<T>> where T is

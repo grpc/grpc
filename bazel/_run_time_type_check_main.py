@@ -18,6 +18,7 @@ import unittest
 
 from typeguard import install_import_hook
 
+
 # AIO
 install_import_hook("grpc.aio")
 install_import_hook("grpc.aio._channel")

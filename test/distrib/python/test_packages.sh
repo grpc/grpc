@@ -49,7 +49,7 @@ VIRTUAL_ENV=$(mktemp -d)
 # the version of the wheels we are testing.
 ${PYTHON_BIN:-python3} -m virtualenv "$VIRTUAL_ENV"
 PYTHON=$VIRTUAL_ENV/bin/python
-"$PYTHON" -m pip install --upgrade six pip==25.2 wheel setuptools
+"$PYTHON" -m pip install --upgrade six pip wheel setuptools
 
 function validate_wheel_hashes() {
   for file in "$@"; do

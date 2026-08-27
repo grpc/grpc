@@ -36,6 +36,7 @@
 
 #include "src/core/client_channel/client_channel_service_config.h"
 #include "src/core/config/core_configuration.h"
+#include "src/core/config/experiment_env_var.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -55,7 +56,6 @@
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/debug_location.h"
-#include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
@@ -64,7 +64,6 @@
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/shared_bit_gen.h"
-#include "src/core/util/string.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"
@@ -81,21 +80,9 @@
 
 namespace grpc_core {
 
-bool WrrCustomMetricsEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
-  if (!value.has_value()) return false;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
-}
-
 namespace {
 
 constexpr absl::string_view kWeightedRoundRobin = "weighted_round_robin";
-
-constexpr absl::string_view kMetricLabelLocality = "grpc.lb.locality";
-constexpr absl::string_view kMetricLabelBackendService =
-    "grpc.lb.backend_service";
 
 const auto kMetricRrFallback =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
@@ -225,41 +212,40 @@ void WeightedRoundRobinConfig::JsonPostLoad(const Json& json,
     ValidationErrors::ScopedField field(errors, ".errorUtilizationPenalty");
     errors->AddError("must be non-negative");
   }
-  if (WrrCustomMetricsEnabled()) {
-    std::optional<std::vector<std::string>>
-        metric_names_for_computing_utilization =
-            LoadJsonObjectField<std::vector<std::string>>(
-                json.object(), args, "metricNamesForComputingUtilization",
-                errors, /*required=*/false);
-    if (metric_names_for_computing_utilization.has_value()) {
-      size_t i = 0;
-      for (const auto& metric_name : *metric_names_for_computing_utilization) {
-        if (metric_name == "cpu_utilization") {
-          parsed_custom_metrics_.push_back(
-              {WeightedRoundRobinConfig::ParsedMetric::Type::kCpu, ""});
-        } else if (metric_name == "mem_utilization") {
-          parsed_custom_metrics_.push_back(
-              {WeightedRoundRobinConfig::ParsedMetric::Type::kMem, ""});
-        } else if (metric_name == "application_utilization") {
-          parsed_custom_metrics_.push_back(
-              {WeightedRoundRobinConfig::ParsedMetric::Type::kApplication, ""});
-        } else if (absl::StartsWith(metric_name, "named_metrics.")) {
-          parsed_custom_metrics_.push_back(
-              {WeightedRoundRobinConfig::ParsedMetric::Type::kNamedMetric,
-               std::string(absl::StripPrefix(metric_name, "named_metrics."))});
-        } else if (absl::StartsWith(metric_name, "utilization.")) {
-          parsed_custom_metrics_.push_back(
-              {WeightedRoundRobinConfig::ParsedMetric::Type::kUtilization,
-               std::string(absl::StripPrefix(metric_name, "utilization."))});
-        } else {
-          ValidationErrors::ScopedField field(
-              errors,
-              absl::StrCat(".metricNamesForComputingUtilization[", i, "]"));
-          errors->AddError(
-              absl::StrCat("unsupported metric name \"", metric_name, "\""));
-        }
-        ++i;
+  // Handle metricNamesForComputingUtilization.
+  std::optional<std::vector<std::string>>
+      metric_names_for_computing_utilization =
+          LoadJsonObjectField<std::vector<std::string>>(
+              json.object(), args, "metricNamesForComputingUtilization", errors,
+              /*required=*/false);
+  if (metric_names_for_computing_utilization.has_value()) {
+    size_t i = 0;
+    for (const auto& metric_name : *metric_names_for_computing_utilization) {
+      if (metric_name == "cpu_utilization") {
+        parsed_custom_metrics_.push_back(
+            {WeightedRoundRobinConfig::ParsedMetric::Type::kCpu, ""});
+      } else if (metric_name == "mem_utilization") {
+        parsed_custom_metrics_.push_back(
+            {WeightedRoundRobinConfig::ParsedMetric::Type::kMem, ""});
+      } else if (metric_name == "application_utilization") {
+        parsed_custom_metrics_.push_back(
+            {WeightedRoundRobinConfig::ParsedMetric::Type::kApplication, ""});
+      } else if (absl::StartsWith(metric_name, "named_metrics.")) {
+        parsed_custom_metrics_.push_back(
+            {WeightedRoundRobinConfig::ParsedMetric::Type::kNamedMetric,
+             std::string(absl::StripPrefix(metric_name, "named_metrics."))});
+      } else if (absl::StartsWith(metric_name, "utilization.")) {
+        parsed_custom_metrics_.push_back(
+            {WeightedRoundRobinConfig::ParsedMetric::Type::kUtilization,
+             std::string(absl::StripPrefix(metric_name, "utilization."))});
+      } else {
+        ValidationErrors::ScopedField field(
+            errors,
+            absl::StrCat(".metricNamesForComputingUtilization[", i, "]"));
+        errors->AddError(
+            absl::StrCat("unsupported metric name \"", metric_name, "\""));
       }
+      ++i;
     }
   }
 }

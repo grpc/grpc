@@ -69,7 +69,7 @@ class TestAuditLoggerFactory : public AuditLoggerFactory {
       std::map<absl::string_view, std::string>* configs)
       : configs_(configs) {}
   absl::string_view name() const override { return kLoggerName; }
-  absl::StatusOr<std::unique_ptr<AuditLoggerFactory::Config>>
+  absl::StatusOr<std::shared_ptr<const AuditLoggerFactory::Config>>
   ParseAuditLoggerConfig(const Json& json) override {
     // Invalidate configs with "bad" field in it.
     if (json.object().find("bad") != json.object().end()) {
@@ -78,7 +78,7 @@ class TestAuditLoggerFactory : public AuditLoggerFactory {
     return std::make_unique<Config>(json);
   }
   std::unique_ptr<AuditLogger> CreateAuditLogger(
-      std::unique_ptr<AuditLoggerFactory::Config> config) override {
+      std::shared_ptr<const AuditLoggerFactory::Config> config) override {
     // Only insert entry to the map when logger is created.
     configs_->emplace(name(), config->ToString());
     return std::make_unique<TestAuditLogger>();

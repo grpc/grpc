@@ -54,7 +54,7 @@ constexpr int kRecvFromSourceAddrSize = 200;
 constexpr int kReadBufferSize = 4192;
 
 grpc_slice FlattenIovec(const struct iovec* iov, int iov_count) {
-  int total = 0;
+  size_t total = 0;
   for (int i = 0; i < iov_count; i++) {
     total += iov[i].iov_len;
   }
