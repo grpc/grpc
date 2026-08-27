@@ -190,7 +190,7 @@ class XdsStreamingCallPromiseWrapper final
   // State for incoming messages (PullMessage).
   RecvState recv_state_ ABSL_GUARDED_BY(mu_) = RecvState::kIdle;
   Waker recv_message_waker_ ABSL_GUARDED_BY(mu_);
-  std::optional<std::string> recv_message_;
+  std::optional<std::string> recv_message_ ABSL_GUARDED_BY(mu_);
 
   // Trailing metadata status from the server (PullServerTrailingMetadata).
   Waker recv_status_waker_ ABSL_GUARDED_BY(mu_);

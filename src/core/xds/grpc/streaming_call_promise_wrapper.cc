@@ -78,12 +78,8 @@ Poll<StatusFlag> XdsStreamingCallPromiseWrapper::PollPushMessage() {
 
 Poll<std::optional<std::string>>
 XdsStreamingCallPromiseWrapper::PollPullMessage() {
-  RecvState recv_state;
-  {
-    MutexLock lock(&mu_);
-    recv_state = recv_state_;
-  }
-  switch (recv_state) {
+  MutexLock lock(&mu_);
+  switch (recv_state_) {
     case RecvState::kIdle:
       return std::exchange(recv_message_, std::nullopt);
     case RecvState::kRecvMessageInFlight:
@@ -97,7 +93,7 @@ Poll<absl::Status>
 XdsStreamingCallPromiseWrapper::PollPullServerTrailingMetadata() {
   MutexLock lock(&mu_);
   if (recv_state_ != RecvState::kReceivedStatus) return Pending{};
-  return status_;
+  return std::move(status_);
 }
 
 void XdsStreamingCallPromiseWrapper::OnRequestSent(bool ok) {
@@ -125,10 +121,10 @@ void XdsStreamingCallPromiseWrapper::OnRequestSent(bool ok) {
 }
 
 void XdsStreamingCallPromiseWrapper::OnRecvMessage(absl::string_view payload) {
-  recv_message_ = std::string(payload);
   Waker waker;
   {
     MutexLock lock(&mu_);
+    recv_message_ = std::string(payload);
     if (recv_state_ == RecvState::kRecvMessageInFlight) {
       recv_state_ = RecvState::kIdle;
     }
