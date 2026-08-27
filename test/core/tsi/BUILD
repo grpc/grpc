@@ -156,6 +156,7 @@ grpc_cc_test(
         "//:grpc_security_base",
         "//:tsi_base",
         "//:tsi_ssl_credentials",
+        "//src/core:histogram",
         "//src/core:instrument",
         "//src/core:tls_telemetry",
         "//test/core/test_util:build",

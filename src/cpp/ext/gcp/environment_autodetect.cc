@@ -60,7 +60,7 @@ std::string GetNamespaceName() {
   // Read the root file.
   const char* filename =
       "/var/run/secrets/kubernetes.io/serviceaccount/namespace";
-  auto namespace_name = grpc_core::LoadFile(filename, false);
+  auto namespace_name = grpc_core::LoadFile(filename);
   if (!namespace_name.ok()) {
     GRPC_TRACE_VLOG(environment_autodetect, 2)
         << "Reading file " << filename
