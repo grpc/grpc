@@ -23,7 +23,7 @@ class SingleLoader:
     def __init__(
         self,
         target_module: str,
-        unittest_path: str,
+        unittest_path: Optional[str] = None,
         test_patterns: Optional[Sequence[str]] = None,
     ):
         loader = unittest.TestLoader()
@@ -31,8 +31,9 @@ class SingleLoader:
         self.suite = unittest.TestSuite()
         tests = []
 
+        search_paths = [unittest_path] if unittest_path else ["."]
         for importer, module_name, is_package in pkgutil.walk_packages(
-            [unittest_path]
+            search_paths
         ):
             if target_module in module_name:
                 try:
