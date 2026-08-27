@@ -119,9 +119,8 @@ MATCHER_P3(IsImmediateResponse, status_matcher, details_matcher,
                                status_matcher),
               ::testing::Field(&ExtProcResponse::ImmediateResponse::details,
                                details_matcher),
-              ::testing::Field(
-                  &ExtProcResponse::ImmediateResponse::header_mutation,
-                  header_mutation_matcher))),
+              ::testing::Field(&ExtProcResponse::ImmediateResponse::mutation,
+                               header_mutation_matcher))),
       arg, result_listener);
 }
 
@@ -700,6 +699,164 @@ TEST_F(CreateExtProcRequestTest, AttributesPayload) {
   EXPECT_EQ(field_it->second.string_value(), kVal1);
 }
 
+TEST_F(CreateExtProcRequestTest, FlowControlInit) {
+  upb::Arena arena;
+  grpc_metadata_batch batch;
+  ExtProcProcessingMode processing_mode;
+  processing_mode.send_request_headers = true;
+  // Normal mode with default window size (kExtProcInitialWindowSize)
+  std::string serialized_default =
+      CreateExtProcClientHeadersRequest(arena.ptr(), &batch, {}, {}, nullptr,
+                                        /*observability_mode=*/false,
+                                        processing_mode)
+          .value();
+  auto parsed_default = ParseRequest(serialized_default);
+  ASSERT_TRUE(parsed_default.has_flow_control_init());
+  EXPECT_EQ(parsed_default.flow_control_init()
+                .initial_window_downstream_to_sidestream(),
+            kExtProcInitialWindowSize);
+  EXPECT_EQ(parsed_default.flow_control_init()
+                .initial_window_sidestream_to_upstream(),
+            kExtProcInitialWindowSize);
+  EXPECT_EQ(parsed_default.flow_control_init()
+                .initial_window_upstream_to_sidestreama(),
+            kExtProcInitialWindowSize);
+  EXPECT_EQ(parsed_default.flow_control_init()
+                .initial_window_sidestream_to_downstream(),
+            kExtProcInitialWindowSize);
+  // Observability mode: flow_control_init must NOT be present
+  std::string serialized_obs = CreateExtProcClientHeadersRequest(
+                                   arena.ptr(), &batch, {}, {}, nullptr,
+                                   /*observability_mode=*/true, processing_mode)
+                                   .value();
+  auto parsed_obs = ParseRequest(serialized_obs);
+  EXPECT_FALSE(parsed_obs.has_flow_control_init());
+}
+
+TEST_F(CreateExtProcRequestTest, StandaloneClientWindowUpdateRequest) {
+  upb::Arena arena;
+  ExtProcClientWindowUpdate update;
+  update.window_increment_sidestream_to_upstream = 16384;
+  update.window_increment_sidestream_to_downstream = 32768;
+  std::string serialized =
+      CreateExtProcClientWindowUpdateRequest(arena.ptr(), update).value();
+  auto parsed = ParseRequest(serialized);
+  ASSERT_TRUE(parsed.has_client_window_update());
+  EXPECT_EQ(
+      parsed.client_window_update().window_increment_sidestream_to_upstream(),
+      16384);
+  EXPECT_EQ(
+      parsed.client_window_update().window_increment_sidestream_to_downstream(),
+      32768);
+  EXPECT_FALSE(parsed.has_flow_control_init());
+  EXPECT_FALSE(parsed.observability_mode());
+}
+
+TEST_F(CreateExtProcRequestTest, PiggybackedClientWindowUpdateClientHeaders) {
+  upb::Arena arena;
+  grpc_metadata_batch client_headers;
+  ExtProcClientWindowUpdate update;
+  update.window_increment_sidestream_to_upstream = 4096;
+  update.window_increment_sidestream_to_downstream = 8192;
+  std::string serialized = CreateExtProcClientHeadersRequest(
+                               arena.ptr(), &client_headers, {}, {}, nullptr,
+                               /*observability_mode=*/false,
+                               /*processing_mode=*/std::nullopt, update)
+                               .value();
+  auto parsed = ParseRequest(serialized);
+  ASSERT_TRUE(parsed.has_client_window_update());
+  EXPECT_EQ(
+      parsed.client_window_update().window_increment_sidestream_to_upstream(),
+      4096);
+  EXPECT_EQ(
+      parsed.client_window_update().window_increment_sidestream_to_downstream(),
+      8192);
+}
+
+TEST_F(CreateExtProcRequestTest, PiggybackedClientWindowUpdateClientBody) {
+  upb::Arena arena;
+  ExtProcClientWindowUpdate update;
+  update.window_increment_sidestream_to_upstream = 4096;
+  update.window_increment_sidestream_to_downstream = 8192;
+  std::string serialized =
+      CreateExtProcClientBodyRequest(
+          arena.ptr(), "test-payload", nullptr, /*observability_mode=*/false,
+          /*processing_mode=*/std::nullopt, /*end_of_stream=*/false,
+          /*end_of_stream_without_message=*/false, update)
+          .value();
+  auto parsed = ParseRequest(serialized);
+  ASSERT_TRUE(parsed.has_client_window_update());
+  EXPECT_EQ(
+      parsed.client_window_update().window_increment_sidestream_to_upstream(),
+      4096);
+  EXPECT_EQ(
+      parsed.client_window_update().window_increment_sidestream_to_downstream(),
+      8192);
+}
+
+TEST_F(CreateExtProcRequestTest, PiggybackedClientWindowUpdateServerBody) {
+  upb::Arena arena;
+  ExtProcClientWindowUpdate update;
+  update.window_increment_sidestream_to_upstream = 4096;
+  update.window_increment_sidestream_to_downstream = 8192;
+  std::string serialized =
+      CreateExtProcServerBodyRequest(arena.ptr(), "test-payload", nullptr,
+                                     /*observability_mode=*/false,
+                                     /*processing_mode=*/std::nullopt, update)
+          .value();
+  auto parsed = ParseRequest(serialized);
+  ASSERT_TRUE(parsed.has_client_window_update());
+  EXPECT_EQ(
+      parsed.client_window_update().window_increment_sidestream_to_upstream(),
+      4096);
+  EXPECT_EQ(
+      parsed.client_window_update().window_increment_sidestream_to_downstream(),
+      8192);
+}
+
+TEST_F(CreateExtProcRequestTest, PiggybackedClientWindowUpdateServerTrailers) {
+  upb::Arena arena;
+  grpc_metadata_batch trailers;
+  ExtProcClientWindowUpdate update;
+  update.window_increment_sidestream_to_upstream = 4096;
+  update.window_increment_sidestream_to_downstream = 8192;
+  std::string serialized = CreateExtProcServerTrailersRequest(
+                               arena.ptr(), &trailers, {}, {}, nullptr,
+                               /*observability_mode=*/false,
+                               /*processing_mode=*/std::nullopt, update)
+                               .value();
+  auto parsed = ParseRequest(serialized);
+  ASSERT_TRUE(parsed.has_client_window_update());
+  EXPECT_EQ(
+      parsed.client_window_update().window_increment_sidestream_to_upstream(),
+      4096);
+  EXPECT_EQ(
+      parsed.client_window_update().window_increment_sidestream_to_downstream(),
+      8192);
+}
+
+TEST_F(CreateExtProcRequestTest, PiggybackedClientWindowUpdateServerHeaders) {
+  upb::Arena arena;
+  grpc_metadata_batch server_headers;
+  ExtProcClientWindowUpdate update;
+  update.window_increment_sidestream_to_upstream = 4096;
+  update.window_increment_sidestream_to_downstream = 8192;
+  std::string serialized =
+      CreateExtProcServerHeadersRequest(
+          arena.ptr(), &server_headers, {}, {}, nullptr,
+          /*observability_mode=*/false, /*processing_mode=*/std::nullopt,
+          /*end_of_stream=*/false, update)
+          .value();
+  auto parsed = ParseRequest(serialized);
+  ASSERT_TRUE(parsed.has_client_window_update());
+  EXPECT_EQ(
+      parsed.client_window_update().window_increment_sidestream_to_upstream(),
+      4096);
+  EXPECT_EQ(
+      parsed.client_window_update().window_increment_sidestream_to_downstream(),
+      8192);
+}
+
 //
 // CreateExtProcAttributesProtoStruct() tests
 //
@@ -723,7 +880,8 @@ class CreateExtProcAttributesProtoStructTest : public ::testing::Test {
 TEST_F(CreateExtProcAttributesProtoStructTest, AttributesEmptyRequested) {
   upb::Arena arena;
   grpc_metadata_batch batch;
-  auto* upb_struct = CreateExtProcAttributesProtoStruct(arena.ptr(), {}, batch);
+  auto* upb_struct = CreateExtProcAttributesProtoStruct(arena.ptr(), {}, batch,
+                                                        "", std::nullopt);
   EXPECT_EQ(upb_struct, nullptr);
 }
 
@@ -745,8 +903,8 @@ TEST_F(CreateExtProcAttributesProtoStructTest, AttributesAllRecognizedFields) {
       "request.scheme",    "request.method",   "request.referer",
       "request.useragent", "request.time",     "request.id",
       "request.protocol",  "request.query"};
-  auto* upb_struct =
-      CreateExtProcAttributesProtoStruct(arena.ptr(), requested, batch);
+  auto* upb_struct = CreateExtProcAttributesProtoStruct(
+      arena.ptr(), requested, batch, "", std::nullopt);
   ASSERT_NE(upb_struct, nullptr);
   auto proto = ConvertToProto(upb_struct, arena.ptr());
   EXPECT_EQ(proto.fields().at("request.path").string_value(), "/foo/bar");
@@ -772,8 +930,8 @@ TEST_F(CreateExtProcAttributesProtoStructTest,
   grpc_metadata_batch batch;
   // No HttpAuthorityMetadata, but has HostMetadata
   batch.Set(HostMetadata(), Slice::FromCopiedString("fallback.host.com"));
-  auto* upb_struct =
-      CreateExtProcAttributesProtoStruct(arena.ptr(), {"request.host"}, batch);
+  auto* upb_struct = CreateExtProcAttributesProtoStruct(
+      arena.ptr(), {"request.host"}, batch, "", std::nullopt);
   ASSERT_NE(upb_struct, nullptr);
   auto proto = ConvertToProto(upb_struct, arena.ptr());
   EXPECT_EQ(proto.fields().at("request.host").string_value(),
@@ -785,7 +943,7 @@ TEST_F(CreateExtProcAttributesProtoStructTest, AttributesMethodFallbackToPost) {
   grpc_metadata_batch batch;
   // No HttpMethodMetadata
   auto* upb_struct = CreateExtProcAttributesProtoStruct(
-      arena.ptr(), {"request.method"}, batch);
+      arena.ptr(), {"request.method"}, batch, "", std::nullopt);
   ASSERT_NE(upb_struct, nullptr);
   auto proto = ConvertToProto(upb_struct, arena.ptr());
   EXPECT_EQ(proto.fields().at("request.method").string_value(), "POST");
@@ -799,7 +957,7 @@ TEST_F(CreateExtProcAttributesProtoStructTest, AttributesRequestHeaders) {
   batch.Append("x-custom2", Slice::FromCopiedString(kVal2),
                [](absl::string_view, const Slice&) {});
   auto* upb_struct = CreateExtProcAttributesProtoStruct(
-      arena.ptr(), {"request.headers"}, batch);
+      arena.ptr(), {"request.headers"}, batch, "", std::nullopt);
   ASSERT_NE(upb_struct, nullptr);
   auto proto = ConvertToProto(upb_struct, arena.ptr());
   ASSERT_NE(proto.fields().find("request.headers"), proto.fields().end());
@@ -807,6 +965,73 @@ TEST_F(CreateExtProcAttributesProtoStructTest, AttributesRequestHeaders) {
       proto.fields().at("request.headers").struct_value();
   EXPECT_EQ(headers_struct.fields().at("x-custom1").string_value(), kVal1);
   EXPECT_EQ(headers_struct.fields().at("x-custom2").string_value(), kVal2);
+}
+
+TEST_F(CreateExtProcAttributesProtoStructTest,
+       AttributesServerSideSourceAddressAndPort) {
+  upb::Arena arena;
+  grpc_metadata_batch batch;
+  ExtProcConnectionAttributes conn_attrs;
+  conn_attrs.source_address = "192.168.1.100";
+  conn_attrs.source_port = 54321;
+
+  std::vector<std::string> requested = {"source.address", "source.port"};
+  auto* upb_struct = CreateExtProcAttributesProtoStruct(arena.ptr(), requested,
+                                                        batch, "", conn_attrs);
+  ASSERT_NE(upb_struct, nullptr);
+  auto proto = ConvertToProto(upb_struct, arena.ptr());
+  EXPECT_EQ(proto.fields().at("source.address").string_value(),
+            "192.168.1.100");
+  EXPECT_DOUBLE_EQ(proto.fields().at("source.port").number_value(), 54321.0);
+}
+
+TEST_F(CreateExtProcAttributesProtoStructTest,
+       AttributesServerSideTlsConnectionAttributes) {
+  upb::Arena arena;
+  grpc_metadata_batch batch;
+  ExtProcConnectionAttributes conn_attrs;
+  conn_attrs.requested_server_name = "service.example.com";
+  conn_attrs.tls_version = "TLSv1.3";
+  conn_attrs.sha256_peer_certificate_digest =
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+  std::vector<std::string> requested = {
+      "connection.requested_server_name", "connection.tls_version",
+      "connection.sha256_peer_certificate_digest"};
+  auto* upb_struct = CreateExtProcAttributesProtoStruct(arena.ptr(), requested,
+                                                        batch, "", conn_attrs);
+  ASSERT_NE(upb_struct, nullptr);
+  auto proto = ConvertToProto(upb_struct, arena.ptr());
+  EXPECT_EQ(
+      proto.fields().at("connection.requested_server_name").string_value(),
+      "service.example.com");
+  EXPECT_EQ(proto.fields().at("connection.tls_version").string_value(),
+            "TLSv1.3");
+  EXPECT_EQ(proto.fields()
+                .at("connection.sha256_peer_certificate_digest")
+                .string_value(),
+            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+}
+
+TEST_F(CreateExtProcAttributesProtoStructTest,
+       AttributesServerSideMissingOrClientSide) {
+  upb::Arena arena;
+  grpc_metadata_batch batch;
+  std::vector<std::string> requested = {
+      "source.address", "source.port", "connection.requested_server_name",
+      "connection.tls_version", "connection.sha256_peer_certificate_digest"};
+  // 1. connection_attributes is std::nullopt (client side)
+  auto* upb_struct1 = CreateExtProcAttributesProtoStruct(
+      arena.ptr(), requested, batch, "", std::nullopt);
+  ASSERT_NE(upb_struct1, nullptr);
+  auto proto1 = ConvertToProto(upb_struct1, arena.ptr());
+  EXPECT_TRUE(proto1.fields().empty());
+  // 2. connection_attributes has empty/default values
+  ExtProcConnectionAttributes empty_attrs;
+  auto* upb_struct2 = CreateExtProcAttributesProtoStruct(
+      arena.ptr(), requested, batch, "", empty_attrs);
+  ASSERT_NE(upb_struct2, nullptr);
+  auto proto2 = ConvertToProto(upb_struct2, arena.ptr());
+  EXPECT_TRUE(proto2.fields().empty());
 }
 
 //
@@ -837,6 +1062,23 @@ TEST_F(ParseExtProcResponseTest, RequestDrain) {
   auto parsed = ParseResponse(response);
   ASSERT_TRUE(parsed.ok()) << parsed.status();
   EXPECT_TRUE(parsed->request_drain);
+}
+
+TEST_F(ParseExtProcResponseTest, ServerWindowUpdate) {
+  upb::Arena arena;
+  envoy::service::ext_proc::v3::ProcessingResponse response;
+  auto* window_update = response.mutable_server_window_update();
+  window_update->set_window_increment_downstream_to_sidestream(10000);
+  window_update->set_window_increment_upstream_to_sidestream(20000);
+  auto parsed = ParseResponse(response);
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  ASSERT_TRUE(parsed->server_window_update.has_value());
+  EXPECT_EQ(
+      parsed->server_window_update->window_increment_downstream_to_sidestream,
+      10000);
+  EXPECT_EQ(
+      parsed->server_window_update->window_increment_upstream_to_sidestream,
+      20000);
 }
 
 TEST_F(ParseExtProcResponseTest, UnsupportedResponseCaseRequestTrailers) {

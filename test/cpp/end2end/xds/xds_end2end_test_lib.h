@@ -648,6 +648,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     bool server_notify_client_when_started = false;
     bool echo_host_from_authority_header = false;
     bool echo_metadata_initially = false;
+    bool echo_metadata = false;
 
     RpcOptions() {}
 
@@ -729,6 +730,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
       return *this;
     }
 
+    RpcOptions& set_echo_metadata(bool value) {
+      echo_metadata = value;
+      return *this;
+    }
+
     // Populates context and request.
     void SetupRpc(ClientContext* context, EchoRequest* request) const;
   };
@@ -736,10 +742,13 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // Sends an RPC with the specified options.
   // If response is non-null, it will be populated with the response.
   // Returns the status of the RPC.
-  Status SendRpc(const RpcOptions& rpc_options = RpcOptions(),
-                 EchoResponse* response = nullptr,
-                 std::multimap<std::string, std::string>*
-                     server_initial_metadata = nullptr);
+  Status SendRpc(
+      const RpcOptions& rpc_options = RpcOptions(),
+      EchoResponse* response = nullptr,
+      std::multimap<std::string, std::string>* server_initial_metadata =
+          nullptr,
+      std::multimap<std::string, std::string>* server_trailing_metadata =
+          nullptr);
 
   // Internal helper function for SendRpc().
   template <typename Stub>
@@ -814,6 +823,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
 
     // Not safe to call until after GetStatus() returns.
     grpc_core::Duration elapsed_time() const { return elapsed_time_; }
+    const EchoResponse& response() const { return response_; }
 
    private:
     EchoRequest request_;
