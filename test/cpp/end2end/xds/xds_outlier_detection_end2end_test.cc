@@ -1215,17 +1215,22 @@ TEST_P(OutlierDetectionMetricsTest, MetricsHaveBackendServiceLabel) {
   outlier_detection->mutable_failure_percentage_minimum_hosts()->set_value(1);
   outlier_detection->mutable_failure_percentage_request_volume()->set_value(1);
   balancer_->ads_service()->SetCdsResource(cluster);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  // Place backends in different priorities so backend 1 receives no traffic
+  // until backend 0 is ejected.  This gives WaitForBackend(1) a deterministic
+  // signal that ejection has occurred (and hence the metric has been emitted).
+  EdsResourceArgs args({
+      {"locality0", {CreateEndpoint(0)}},
+      {"locality1", {CreateEndpoint(1)}, kDefaultLocalityWeight, 1},
+  });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends(DEBUG_LOCATION);
-  // Trigger an error.  100% enforcement guarantees ejection on the next
-  // outlier detection interval.
+  WaitForBackend(DEBUG_LOCATION, 0);
+  // Trigger a failure on backend 0.  With 100% enforcement, this guarantees
+  // ejection at the next outlier detection interval.
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::CANCELLED, "",
       RpcOptions().set_server_expected_error(StatusCode::CANCELLED));
-  // Wait for traffic that would have hit the ejected backend to shift to
-  // the remaining backend, which tells us the ejection has happened (and
-  // hence the metric was emitted).
+  // Backend 1 sees traffic only after priority 0 fails over (i.e. backend 0
+  // has been ejected).
   WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
                  WaitForBackendOptions().set_timeout_ms(
                      3000 * grpc_test_slowdown_factor()));
