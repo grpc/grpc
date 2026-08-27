@@ -2153,8 +2153,8 @@ static tsi_result tsi_set_min_and_max_tls_versions(
 // --- tsi_ssl_root_certs_store methods implementation. ---
 
 tsi_ssl_root_certs_store* tsi_ssl_root_certs_store_create(
-    const char* pem_roots) {
-  if (pem_roots == nullptr) {
+    absl::string_view pem_roots) {
+  if (pem_roots.empty()) {
     LOG(ERROR) << "The root certificates are empty.";
     return nullptr;
   }
@@ -2170,8 +2170,8 @@ tsi_ssl_root_certs_store* tsi_ssl_root_certs_store_create(
     gpr_free(root_store);
     return nullptr;
   }
-  tsi_result result = x509_store_load_certs(root_store->store, pem_roots,
-                                            strlen(pem_roots), nullptr);
+  tsi_result result = x509_store_load_certs(root_store->store, pem_roots.data(),
+                                            pem_roots.size(), nullptr);
   if (result != TSI_OK) {
     LOG(ERROR) << "Could not load root certificates.";
     X509_STORE_free(root_store->store);
@@ -3477,9 +3477,9 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
       SSL_CTX_set_cert_store(ssl_context, options->root_store->store);
     }
 #endif
-    if (OPENSSL_VERSION_NUMBER < 0x10100000 ||
-        (options->root_store == nullptr &&
-         options->root_cert_info != nullptr)) {
+    if (options->root_cert_info != nullptr &&
+        (OPENSSL_VERSION_NUMBER < 0x10100000 ||
+         options->root_store == nullptr)) {
       Match(
           *options->root_cert_info,
           [&](const std::string& pem_root_certs) {

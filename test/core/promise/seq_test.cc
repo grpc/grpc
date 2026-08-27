@@ -19,12 +19,41 @@
 #include <utility>
 #include <vector>
 
+#include "src/core/lib/promise/if.h"
+#include "src/core/lib/promise/map.h"
+#include "src/core/lib/promise/race.h"
 #include "src/proto/grpc/channelz/v2/promise.upb.h"
 #include "upb/mem/arena.hpp"
 #include "gtest/gtest.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 
 namespace grpc_core {
+
+namespace {
+class TestDestruct {
+ public:
+  TestDestruct(std::string* execution_order, std::string destruct_token)
+      : execution_order_(execution_order),
+        destruct_token_(std::move(destruct_token)) {}
+
+  TestDestruct(const TestDestruct&) = delete;
+  TestDestruct& operator=(const TestDestruct&) = delete;
+
+  TestDestruct(TestDestruct&& other) noexcept = default;
+  TestDestruct& operator=(TestDestruct&& other) noexcept = default;
+
+  ~TestDestruct() {
+    if (execution_order_ != nullptr) {
+      absl::StrAppend(execution_order_, destruct_token_);
+    }
+  }
+
+ private:
+  std::string* execution_order_;
+  std::string destruct_token_;
+};
+}  // namespace
 
 TEST(SeqTest, Immediate) {
   std::string execution_order;
@@ -311,6 +340,313 @@ TEST(SeqIterTest, Accumulate) {
             Poll<int>(15));
 }
 
+TEST(SeqTest, NestedSeqWithPending) {
+  std::string execution_order;
+  bool pending = true;
+
+  auto nested_seq = Seq(
+      [&execution_order]() {
+        absl::StrAppend(&execution_order, "1");
+        return 10;
+      },
+      [&execution_order, &pending](int outer_val) {
+        return Seq(
+            [&execution_order, outer_val]() {
+              absl::StrAppend(&execution_order, "2");
+              return outer_val * 2;  // Passes 20 to the next step
+            },
+            [&execution_order, &pending](int inner_val) -> Poll<int> {
+              if (pending) {
+                absl::StrAppend(&execution_order, "P");
+                return Pending{};
+              }
+              absl::StrAppend(&execution_order, "3");
+              return inner_val + 5;  // Passes 25 when pending is set to false
+            });
+      },
+      [&execution_order](int nested_result) {
+        absl::StrAppend(&execution_order, "4");
+        return nested_result * 2;  // Returns 50 finally
+      });
+
+  // First poll: Hits the inner pending state
+  auto result1 = nested_seq();
+  EXPECT_TRUE(result1.pending());
+  EXPECT_STREQ(execution_order.c_str(), "12P");
+
+  execution_order.clear();
+  pending = false;
+
+  // Second poll: Resumes from inner Step 2
+  auto result2 = nested_seq();
+  EXPECT_TRUE(result2.ready());
+  EXPECT_STREQ(execution_order.c_str(), "34");
+  EXPECT_EQ(result2.value(), 50);
+}
+
+// Test that a single pending promise in a seq is destroyed correctly.
+TEST(SeqTest, DestructionOrderWithSinglePendingPromise) {
+  std::string execution_order;
+
+  // We use an inner scope here because the `Seq` combinator holds onto the
+  // final promise internally. Forcing `seq_promise` out of scope destroys it,
+  // which in turn destroys the final promise so we can verify its
+  // destruction.
+  {
+    auto seq_promise = Seq(
+        [&execution_order]() -> Poll<absl::Status> {
+          absl::StrAppend(&execution_order, "A");
+          return absl::OkStatus();
+        },
+        [step2_factory_destruct = TestDestruct(&execution_order, "~B"),
+         &execution_order]() {
+          absl::StrAppend(&execution_order, "B");
+          return [&execution_order, wait_for = 2,
+                  step2_promise_destruct = TestDestruct(
+                      &execution_order, "~C")]() mutable -> Poll<absl::Status> {
+            absl::StrAppend(&execution_order, "C");
+            if (wait_for-- > 0) {
+              return Pending{};
+            }
+            absl::StrAppend(&execution_order, "D");
+            return absl::OkStatus();
+          };
+        });
+
+    // Nothing has been executed yet
+    EXPECT_STREQ(execution_order.c_str(), "");
+
+    // Poll 1:
+    //   * Initial promise (A) is polled
+    //   * Step 2 factory (B) is polled, creates a promise (C)
+    //   * Step 2 Factory is destroyed (~B)
+    //   * Inner promise (C) is polled
+    auto result1 = seq_promise();
+    EXPECT_TRUE(result1.pending());
+    EXPECT_STREQ(execution_order.c_str(), "AB~BC");
+
+    // Poll 2:
+    //   * Inner promise (C) is polled second time
+    //   * Returns Pending (C is still pending)
+    auto result2 = seq_promise();
+    EXPECT_TRUE(result2.pending());
+    EXPECT_STREQ(execution_order.c_str(), "AB~BCC");
+
+    // Poll 3:
+    //   * Inner promise (C) is polled a third time
+    //   * Returns Ready with OkStatus (D)
+    auto result3 = seq_promise();
+    EXPECT_TRUE(result3.ready());
+    EXPECT_EQ(result3.value(), absl::OkStatus());
+    EXPECT_STREQ(execution_order.c_str(), "AB~BCCCD");
+  }
+
+  // seq_promise is destroyed, which destroys the inner promise (~C)
+  EXPECT_STREQ(execution_order.c_str(), "AB~BCCCD~C");
+}
+
+// Test that multiple pending promises in a seq are destroyed correctly.
+TEST(SeqTest, DestructionOrderWithMultiplePendingPromises) {
+  std::string execution_order;
+
+  {
+    auto seq_promise = Seq(
+        [&execution_order]() -> Poll<absl::Status> {
+          absl::StrAppend(&execution_order, "A");
+          return absl::OkStatus();
+        },
+        [step2_factory_destruct = TestDestruct(&execution_order, "~B"),
+         &execution_order]() {
+          absl::StrAppend(&execution_order, "B");
+          return
+              [step2_promise_destruct = TestDestruct(&execution_order, "~C"),
+               &execution_order, wait_for = 2]() mutable -> Poll<absl::Status> {
+                absl::StrAppend(&execution_order, "C");
+                if (wait_for-- > 0) {
+                  return Pending{};
+                }
+                absl::StrAppend(&execution_order, "D");
+                return absl::OkStatus();
+              };
+        },
+        [step3_factory_destruct = TestDestruct(&execution_order, "~E"),
+         &execution_order]() {
+          absl::StrAppend(&execution_order, "E");
+          return
+              [step3_promise_destruct = TestDestruct(&execution_order, "~F"),
+               &execution_order, wait_for = 2]() mutable -> Poll<absl::Status> {
+                absl::StrAppend(&execution_order, "F");
+                if (wait_for-- > 0) {
+                  return Pending{};
+                }
+                absl::StrAppend(&execution_order, "G");
+                return absl::OkStatus();
+              };
+        });
+
+    // Nothing has been executed yet
+    EXPECT_STREQ(execution_order.c_str(), "");
+
+    // Poll 1:
+    //   * Initial promise (A) is polled
+    //   * Step 2 factory (B) is polled, creates a promise (C)
+    //   * Step 2 Factory is destroyed (~B)
+    //   * Inner 2 promise (C) is polled
+    auto result1 = seq_promise();
+    EXPECT_TRUE(result1.pending());
+    EXPECT_STREQ(execution_order.c_str(), "AB~BC");
+
+    // Poll 2:
+    //   * Inner 2 promise (C) is polled second time
+    //   * Returns Pending (C is still pending)
+    auto result2 = seq_promise();
+    EXPECT_TRUE(result2.pending());
+    EXPECT_STREQ(execution_order.c_str(), "AB~BCC");
+
+    // Poll 3:
+    //   * Inner 2 promise (C) is polled third time
+    //   * It resolves returning OkStatus (D)
+    //   * Inner 2 factory destroyed (~C)
+    //   * Step 3 factory (E) is polled
+    //   * Step 3 factory is destroyed (~E)
+    //   * Inner 3 promise (F) is polled
+    auto result3 = seq_promise();
+    EXPECT_TRUE(result3.pending());
+    EXPECT_STREQ(execution_order.c_str(), "AB~BCCCD~CE~EF");
+
+    // Poll 4:
+    //   * Inner 3 polled again (F)
+    auto result4 = seq_promise();
+    EXPECT_TRUE(result4.pending());
+    EXPECT_STREQ(execution_order.c_str(), "AB~BCCCD~CE~EFF");
+
+    // Poll 5:
+    //   * Inner 3 promise (F) is polled again
+    //   * It resolves returning OkStatus (G)
+    auto result5 = seq_promise();
+    EXPECT_TRUE(result5.ready());
+    EXPECT_EQ(result5.value(), absl::OkStatus());
+    EXPECT_STREQ(execution_order.c_str(), "AB~BCCCD~CE~EFFFG");
+  }
+
+  // Scope closed: seq_promise is destroyed, which destroys the final inner
+  // promise (~F)
+  EXPECT_STREQ(execution_order.c_str(), "AB~BCCCD~CE~EFFFG~F");
+}
+
+// Test that a seq with a map is destroyed correctly.
+TEST(SeqTest, DestructorWithMapIfAndRace) {
+  std::string execution_order;
+
+  {
+    auto seq_promise = Seq(
+        // Step 1: Simple promise
+        [&execution_order]() -> Poll<absl::Status> {
+          absl::StrAppend(&execution_order, "A");
+          return absl::OkStatus();
+        },
+        // Step 2: Factory returning a Map
+        [step2_factory_destruct = TestDestruct(&execution_order, "~B"),
+         &execution_order]() {
+          absl::StrAppend(&execution_order, "B");
+          return Map(
+              [inner_destruct = TestDestruct(&execution_order, "~C"),
+               &execution_order, wait_for = 1]() mutable -> Poll<absl::Status> {
+                absl::StrAppend(&execution_order, "C");
+                if (wait_for-- > 0) {
+                  return Pending{};
+                }
+                return absl::OkStatus();
+              },
+              // The callback function processing the result
+              [fn_destruct = TestDestruct(&execution_order, "~D"),
+               &execution_order](absl::Status status) {
+                absl::StrAppend(&execution_order, "D");
+                return status;
+              });
+        },
+        // Step 3: Factory returning an If
+        [&execution_order]() {
+          return If(
+              // Condition
+              true,
+              // True branch WITH destructible object
+              [if_true_destruct = TestDestruct(&execution_order, "~E"),
+               &execution_order]() {
+                return [&execution_order]() -> Poll<absl::Status> {
+                  absl::StrAppend(&execution_order, "E");
+                  return absl::OkStatus();
+                };
+              },
+              // False branch
+              [if_false_destruct = TestDestruct(&execution_order, "~X"),
+               &execution_order]() {
+                return [&execution_order]() -> Poll<absl::Status> {
+                  // This promise is not expected to be polled.
+                  absl::StrAppend(&execution_order, "UNPOLLED");
+                  return absl::CancelledError();
+                };
+              });
+        },
+        [race_destruct = TestDestruct(&execution_order, "~F"),
+         &execution_order]() {
+          absl::StrAppend(&execution_order, "F");
+          return Race(
+              [&execution_order,
+               destructA = TestDestruct(&execution_order,
+                                        "~R1")]() -> Poll<absl::Status> {
+                absl::StrAppend(&execution_order, "R1");
+                return absl::OkStatus();  // Wins the race
+              },
+              [&execution_order,
+               destructB = TestDestruct(&execution_order,
+                                        "~R2")]() -> Poll<absl::Status> {
+                absl::StrAppend(&execution_order, "R2");
+                return Pending{};
+              },
+              [&execution_order,
+               destructC = TestDestruct(&execution_order,
+                                        "~R3")]() -> Poll<absl::Status> {
+                absl::StrAppend(&execution_order, "R3");
+                return Pending{};
+              });
+        });
+
+    // Nothing has been executed yet
+    EXPECT_STREQ(execution_order.c_str(), "");
+
+    // Poll 1:
+    // * Step 1 runs (A)
+    // * Step 2 Factory runs (B), creates a Map with a pending inner promise (C)
+    // * Factory is immediately destroyed (~B)
+    // * Map inner promise is polled (C)
+    auto result1 = seq_promise();
+    EXPECT_TRUE(result1.pending());
+    EXPECT_STREQ(execution_order.c_str(), "AB~BC");
+
+    // Poll 2:
+    // * Map inner promise is polled again (C) and resolves
+    // * Map callback runs (D)
+    // * Callback is destroyed (~D)
+    // * Inner Map is destroyed (~C)
+    // * False branch is immediately destroyed (~X)
+    // * If condition is evaluated, and the true branch runs (E)
+    // * True branch is destroyed (~E)
+    // * Step 4 factory runs (F)
+    // * Step 4 factory is destroyed (~F)
+    // * Race is polled, Branch 1 runs (R1) and returns Ready
+    auto result2 = seq_promise();
+    EXPECT_TRUE(result2.ready());
+    EXPECT_EQ(result2.value(), absl::OkStatus());
+    EXPECT_STREQ(execution_order.c_str(), "AB~BCCD~D~C~X~EEF~FR1");
+  }
+
+  // Scope closed: seq_promise is destroyed, cleaning up remaining resources.
+  // Final step (Race) is destroyed, which destroys the unpolled promises.
+  EXPECT_NE(execution_order.find("~R1"), std::string::npos);
+  EXPECT_NE(execution_order.find("~R2"), std::string::npos);
+  EXPECT_NE(execution_order.find("~R3"), std::string::npos);
+}
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {

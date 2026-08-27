@@ -1358,6 +1358,16 @@ TEST(SslTransportSecurityTest,
   tsi_ssl_server_handshaker_factory_unref(server_handshaker_factory);
 }
 
+TEST(SslTransportSecurityTest,
+     TestClientHandshakerFactorySkipServerVerificationNoRoots) {
+  tsi_ssl_client_handshaker_factory* client_handshaker_factory = nullptr;
+  tsi_ssl_client_handshaker_options options;
+  options.skip_server_certificate_verification = true;
+  EXPECT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
+                &options, &client_handshaker_factory),
+            TSI_OK);
+  tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory);
+}
 TEST(SslTransportSecurityTest, DuplicateRootCertificates) {
   std::string root_cert =
       GetFileContents(absl::StrCat(kSslTsiTestCredentialsDir, "ca.pem"));
@@ -1572,10 +1582,16 @@ class TestMetricsSink final : public MetricsSink {
   void UpDownCounter(InstrumentLabelList /*label_keys*/,
                      absl::Span<const std::string> /*label*/,
                      absl::string_view /*name*/, uint64_t /*value*/) override {}
-  void Histogram(InstrumentLabelList /*label_keys*/,
-                 absl::Span<const std::string> /*label*/,
-                 absl::string_view /*name*/, HistogramBuckets /*bounds*/,
-                 absl::Span<const uint64_t> /*counts*/) override {}
+  void Int64Histogram(InstrumentLabelList /*label_keys*/,
+                      absl::Span<const std::string> /*label*/,
+                      absl::string_view /*name*/,
+                      Int64HistogramBuckets /*bounds*/,
+                      absl::Span<const uint64_t> /*counts*/) override {}
+  void DoubleHistogram(InstrumentLabelList /*label_keys*/,
+                       absl::Span<const std::string> /*label*/,
+                       absl::string_view /*name*/,
+                       DoubleHistogramBuckets /*bounds*/,
+                       absl::Span<const uint64_t> /*counts*/) override {}
   void DoubleGauge(InstrumentLabelList /*label_keys*/,
                    absl::Span<const std::string> /*labels*/,
                    absl::string_view /*name*/, double /*value*/) override {}

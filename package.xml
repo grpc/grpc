@@ -243,6 +243,8 @@
     <file baseinstalldir="/" name="src/core/credentials/call/external/url_external_account_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/call/gcp_service_account_identity/gcp_service_account_identity_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/call/gcp_service_account_identity/gcp_service_account_identity_credentials.h" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/call/gdch_service_account/gdch_service_account_credentials.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/call/gdch_service_account/gdch_service_account_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/call/iam/iam_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/call/iam/iam_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/call/json_util.cc" role="src" />
@@ -892,9 +894,9 @@
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/rpc/status.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/rpc/status.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/rpc/status.upb_minitable.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h" role="src" />
@@ -1288,8 +1290,8 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/grpc/channelz/v1/channelz.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/grpc/channelz/v1/channelz.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c" role="src" />
@@ -1623,13 +1625,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/port.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_impl.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_posix.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_posix.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_windows.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolved_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_posix.h" role="src" />
@@ -1896,23 +1891,10 @@
     <file baseinstalldir="/" name="src/core/net/socket_mutator.h" role="src" />
     <file baseinstalldir="/" name="src/core/plugin_registry/grpc_plugin_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/plugin_registry/grpc_plugin_registry_extra.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/resolver/dns/c_ares/dns_resolver_ares.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/resolver/dns/c_ares/dns_resolver_ares.h" role="src" />
-    <file baseinstalldir="/" name="src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h" role="src" />
-    <file baseinstalldir="/" name="src/core/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/resolver/dns/c_ares/grpc_ares_wrapper.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/resolver/dns/c_ares/grpc_ares_wrapper.h" role="src" />
-    <file baseinstalldir="/" name="src/core/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/resolver/dns/dns_resolver_plugin.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/resolver/dns/dns_resolver_plugin.h" role="src" />
-    <file baseinstalldir="/" name="src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.h" role="src" />
-    <file baseinstalldir="/" name="src/core/resolver/dns/event_engine/service_config_helper.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/resolver/dns/event_engine/service_config_helper.h" role="src" />
-    <file baseinstalldir="/" name="src/core/resolver/dns/native/dns_resolver.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/resolver/dns/native/dns_resolver.h" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/dns/dns_resolver.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/dns/dns_resolver.h" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/dns/service_config_helper.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/dns/service_config_helper.h" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/endpoint_addresses.cc" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/endpoint_addresses.h" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/fake/fake_resolver.cc" role="src" />

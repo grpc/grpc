@@ -1355,13 +1355,13 @@ class RubyLanguage(Language):
         return "ruby"
 
 
-class Php7Language(Language):
-    def __init__(self, php7_protobuf_c=False):
+class Php8Language(Language):
+    def __init__(self, php8_protobuf_c=False):
         super().__init__()
-        self.php7_protobuf_c = php7_protobuf_c
+        self.php8_protobuf_c = php8_protobuf_c
 
     def worker_cmdline(self):
-        if self.php7_protobuf_c:
+        if self.php8_protobuf_c:
             return [
                 "tools/run_tests/performance/run_worker_php.sh",
                 "--use_protobuf_c_extension",
@@ -1369,18 +1369,18 @@ class Php7Language(Language):
         return ["tools/run_tests/performance/run_worker_php.sh"]
 
     def worker_port_offset(self):
-        if self.php7_protobuf_c:
+        if self.php8_protobuf_c:
             return 900
         return 800
 
     def scenarios(self):
-        php7_extension_mode = "php7_protobuf_php_extension"
-        if self.php7_protobuf_c:
-            php7_extension_mode = "php7_protobuf_c_extension"
+        php8_extension_mode = "php8_protobuf_php_extension"
+        if self.php8_protobuf_c:
+            php8_extension_mode = "php8_protobuf_c_extension"
 
         yield _ping_pong_scenario(
             "%s_to_cpp_protobuf_async_unary_5000rpcs_1KB_psm"
-            % php7_extension_mode,
+            % php8_extension_mode,
             rpc_type="UNARY",
             client_type="ASYNC_CLIENT",
             server_type="ASYNC_SERVER",
@@ -1396,7 +1396,7 @@ class Php7Language(Language):
         )
 
         yield _ping_pong_scenario(
-            "%s_to_cpp_protobuf_sync_unary_ping_pong" % php7_extension_mode,
+            "%s_to_cpp_protobuf_sync_unary_ping_pong" % php8_extension_mode,
             rpc_type="UNARY",
             client_type="SYNC_CLIENT",
             server_type="SYNC_SERVER",
@@ -1405,7 +1405,7 @@ class Php7Language(Language):
         )
 
         yield _ping_pong_scenario(
-            "%s_to_cpp_protobuf_sync_streaming_ping_pong" % php7_extension_mode,
+            "%s_to_cpp_protobuf_sync_streaming_ping_pong" % php8_extension_mode,
             rpc_type="STREAMING",
             client_type="SYNC_CLIENT",
             server_type="SYNC_SERVER",
@@ -1417,7 +1417,7 @@ class Php7Language(Language):
         # better than async_server_threads=0/CPU usage 490%.
         yield _ping_pong_scenario(
             "%s_to_cpp_protobuf_sync_unary_qps_unconstrained"
-            % php7_extension_mode,
+            % php8_extension_mode,
             rpc_type="UNARY",
             client_type="SYNC_CLIENT",
             server_type="ASYNC_SERVER",
@@ -1429,7 +1429,7 @@ class Php7Language(Language):
 
         yield _ping_pong_scenario(
             "%s_to_cpp_protobuf_sync_streaming_qps_unconstrained"
-            % php7_extension_mode,
+            % php8_extension_mode,
             rpc_type="STREAMING",
             client_type="SYNC_CLIENT",
             server_type="ASYNC_SERVER",
@@ -1440,9 +1440,9 @@ class Php7Language(Language):
         )
 
     def __str__(self):
-        if self.php7_protobuf_c:
-            return "php7_protobuf_c"
-        return "php7"
+        if self.php8_protobuf_c:
+            return "php8_protobuf_c"
+        return "php8"
 
 
 class JavaLanguage(Language):
@@ -1831,8 +1831,8 @@ LANGUAGES = {
     "csharp": CSharpLanguage(),
     "dotnet": DotnetLanguage(),
     "ruby": RubyLanguage(),
-    "php7": Php7Language(),
-    "php7_protobuf_c": Php7Language(php7_protobuf_c=True),
+    "php8": Php8Language(),
+    "php8_protobuf_c": Php8Language(php8_protobuf_c=True),
     "java": JavaLanguage(),
     "python": PythonLanguage(),
     "python_asyncio": PythonAsyncIOLanguage(),
