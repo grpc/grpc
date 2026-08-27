@@ -85,7 +85,6 @@ constexpr char kMessage2[] = "message2";
 constexpr char kMutatedSuffix[] = "-mutated";
 constexpr char kMessage1Mutated[] = "message1-mutated";
 
-
 // A stream-based fake external processor service that provides fine-grained,
 // sequential control over incoming ext_proc stream requests and outgoing
 // responses/statuses for test assertions.
@@ -358,44 +357,17 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
       auto* timeout = ext_proc_.mutable_grpc_service()->mutable_timeout();
       timeout->set_seconds(1);  // 1s
       timeout->set_nanos(0);
+      auto* google_grpc =
+          ext_proc_.mutable_grpc_service()->mutable_google_grpc();
+      google_grpc->add_channel_credentials_plugin()->PackFrom(
+          envoy::extensions::grpc_service::channel_credentials::insecure::v3::
+              InsecureCredentials());
     }
 
     ExtProcFilterConfigBuilder& SetTargetUri(const std::string& target_uri) {
       auto* google_grpc =
           ext_proc_.mutable_grpc_service()->mutable_google_grpc();
       google_grpc->set_target_uri(target_uri);
-      return *this;
-    }
-
-    ExtProcFilterConfigBuilder& SetInsecureChannelCredentials() {
-      auto* google_grpc =
-          ext_proc_.mutable_grpc_service()->mutable_google_grpc();
-      google_grpc->clear_channel_credentials_plugin();
-      google_grpc->add_channel_credentials_plugin()->PackFrom(
-          envoy::extensions::grpc_service::channel_credentials::insecure::v3::
-              InsecureCredentials());
-      return *this;
-    }
-
-    ExtProcFilterConfigBuilder& SetGoogleDefaultChannelCredentials() {
-      auto* google_grpc =
-          ext_proc_.mutable_grpc_service()->mutable_google_grpc();
-      google_grpc->clear_channel_credentials_plugin();
-      google_grpc->add_channel_credentials_plugin()->PackFrom(
-          envoy::extensions::grpc_service::channel_credentials::google_default::
-              v3::GoogleDefaultCredentials());
-      return *this;
-    }
-
-    ExtProcFilterConfigBuilder& SetAccessTokenCallCredentials(
-        const std::string& token) {
-      auto* google_grpc =
-          ext_proc_.mutable_grpc_service()->mutable_google_grpc();
-      google_grpc->clear_call_credentials_plugin();
-      envoy::extensions::grpc_service::call_credentials::access_token::v3::
-          AccessTokenCredentials call_creds;
-      call_creds.set_token(token);
-      google_grpc->add_call_credentials_plugin()->PackFrom(call_creds);
       return *this;
     }
 
@@ -697,11 +669,10 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
 
   class ExtProcServerThread : public ServerThread {
    public:
-    ExtProcServerThread(XdsEnd2endTest* test_obj,
-                        std::shared_ptr<FakeExtProcService> service)
+    explicit ExtProcServerThread(XdsEnd2endTest* test_obj)
         : ServerThread(test_obj, /*use_xds_enabled_server=*/false,
                        grpc::InsecureServerCredentials()),
-          service_(std::move(service)) {}
+          service_(std::make_shared<FakeExtProcService>()) {}
 
     FakeExtProcService* ext_proc_service() { return service_.get(); }
 
@@ -720,12 +691,12 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
 
   class CustomBackendServerThread : public ServerThread {
    public:
-    CustomBackendServerThread(
-        XdsEnd2endTest* test_obj,
-        std::shared_ptr<CustomBidiStreamServiceImpl> service)
+    explicit CustomBackendServerThread(XdsEnd2endTest* test_obj)
         : ServerThread(test_obj, /*use_xds_enabled_server=*/false,
                        /*credentials=*/nullptr),
-          service_(std::move(service)) {}
+          service_(std::make_shared<CustomBidiStreamServiceImpl>()) {}
+
+    CustomBidiStreamServiceImpl* service() { return service_.get(); }
 
    private:
     const char* Type() override { return "CustomBackend"; }
@@ -735,7 +706,7 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
     }
 
     void StartAllServices() override {}
-    void ShutdownAllServices() override { StopListeningAndSendGoaways(); }
+    void ShutdownAllServices() override {}
 
     std::shared_ptr<CustomBidiStreamServiceImpl> service_;
   };
@@ -856,10 +827,9 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
   }
 
   static ::envoy::service::ext_proc::v3::ProcessingResponse
-  MakeImmediateResponse(
-      grpc::StatusCode code, absl::string_view details = "",
-      const std::vector<std::pair<std::string, std::string>>& set_headers =
-          {}) {
+  MakeImmediateResponse(grpc::StatusCode code, absl::string_view details = "",
+                        const std::vector<std::pair<std::string, std::string>>&
+                            set_headers = {}) {
     ::envoy::service::ext_proc::v3::ProcessingResponse response;
     auto* immediate = response.mutable_immediate_response();
     immediate->mutable_grpc_status()->set_status(code);
@@ -875,25 +845,18 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
     return response;
   }
 
-  void ResetStubWithUniqueArg() {
-    ChannelArguments args;
-    static std::atomic<int> g_counter{0};
-    args.SetInt(
-        "g_unique_test_channel_arg_" +
-            std::to_string(g_counter.fetch_add(1, std::memory_order_relaxed)),
-        1);
-    ResetStub(0, &args);
-  }
-
   void SetUp() override {
     InitClient(MakeBootstrapBuilder().SetTrustedXdsServer(),
                /*lb_expected_authority=*/"",
                /*xds_resource_does_not_exist_timeout_ms=*/0,
                /*balancer_authority_override=*/"", /*args=*/nullptr);
-    ext_proc_service_ = std::make_shared<FakeExtProcService>();
-    ext_proc_server_ =
-        std::make_unique<ExtProcServerThread>(this, ext_proc_service_);
+    CreateAndStartBackends(1);
+    balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+        {"locality0", CreateEndpointsForBackends(0, 1)},
+    })));
+    ext_proc_server_ = std::make_unique<ExtProcServerThread>(this);
     ext_proc_server_->Start();
+    ext_proc_service_ = ext_proc_server_->ext_proc_service();
   }
 
   void TearDown() override {
@@ -912,9 +875,14 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
     return listener;
   }
 
+  ExtProcFilterConfigBuilder MakeFilterConfigBuilder() {
+    return ExtProcFilterConfigBuilder().SetTargetUri(
+        ext_proc_server_->target());
+  }
+
   grpc_core::testing::ScopedExperimentalEnvVar env_var_{
       "GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT"};
-  std::shared_ptr<FakeExtProcService> ext_proc_service_;
+  FakeExtProcService* ext_proc_service_ = nullptr;
   std::unique_ptr<ExtProcServerThread> ext_proc_server_;
 };
 
@@ -930,19 +898,10 @@ INSTANTIATE_TEST_SUITE_P(
 //
 
 TEST_P(XdsExtProcEnd2endTest, ProcessingModeAllDisabledSuccess) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
-                             .SetObservabilityMode(false)
-                             .Build();
+  auto ext_proc_config = MakeFilterConfigBuilder().Build();
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
   rpc_options.set_echo_metadata(true);
@@ -964,11 +923,7 @@ TEST_P(XdsExtProcEnd2endTest, ProcessingModeAllDisabledSuccess) {
 }
 
 TEST_P(XdsExtProcEnd2endTest, ProcessingModeAllEnabledSuccess) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
-                             .SetObservabilityMode(false)
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetRequestHeaderMode()
                              .SetResponseHeaderMode()
                              .SetResponseTrailerMode()
@@ -978,10 +933,6 @@ TEST_P(XdsExtProcEnd2endTest, ProcessingModeAllEnabledSuccess) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
   rpc_options.set_echo_metadata(true);
@@ -1068,11 +1019,8 @@ TEST_P(XdsExtProcEnd2endTest, ProcessingModeAllEnabledSuccess) {
 
 TEST_P(XdsExtProcEnd2endTest,
        ProcessingModeAllEnabledWithObservabilityModeSuccess) {
-  CreateAndStartBackends(1);
   auto ext_proc_config =
-      ExtProcFilterConfigBuilder()
-          .SetTargetUri(ext_proc_server_->target())
-          .SetInsecureChannelCredentials()
+      MakeFilterConfigBuilder()
           .SetObservabilityMode(true)
           .SetDeferredCloseTimeout(grpc_core::Duration::Seconds(1))
           .SetRequestHeaderMode()
@@ -1084,10 +1032,6 @@ TEST_P(XdsExtProcEnd2endTest,
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
   rpc_options.set_echo_metadata(true);
@@ -1168,11 +1112,7 @@ TEST_P(XdsExtProcEnd2endTest,
 }
 
 TEST_P(XdsExtProcEnd2endTest, TrailersOnlyProcessingModeAllEnabled) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
-                             .SetObservabilityMode(false)
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetRequestHeaderMode()
                              .SetResponseHeaderMode()
                              .SetResponseTrailerMode()
@@ -1182,10 +1122,6 @@ TEST_P(XdsExtProcEnd2endTest, TrailersOnlyProcessingModeAllEnabled) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
   rpc_options.set_echo_metadata(true);
@@ -1224,10 +1160,7 @@ TEST_P(XdsExtProcEnd2endTest, TrailersOnlyProcessingModeAllEnabled) {
 
 TEST_P(XdsExtProcEnd2endTest,
        TrailersOnlyProcessingModeAllEnabledWithObservabilityMode) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetObservabilityMode(true)
                              .SetRequestHeaderMode()
                              .SetResponseHeaderMode()
@@ -1238,10 +1171,6 @@ TEST_P(XdsExtProcEnd2endTest,
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
   rpc_options.set_echo_metadata(true);
@@ -1279,10 +1208,7 @@ TEST_P(XdsExtProcEnd2endTest,
 }
 
 TEST_P(XdsExtProcEnd2endTest, RequestHeadersContinueAndReplaceFails) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetRequestHeaderMode()
                              .SetResponseHeaderMode()
                              .SetResponseTrailerMode()
@@ -1292,10 +1218,6 @@ TEST_P(XdsExtProcEnd2endTest, RequestHeadersContinueAndReplaceFails) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
@@ -1320,10 +1242,8 @@ TEST_P(XdsExtProcEnd2endTest,
        RequestHeadersExtProcConnectionErrorFailureModeFalse) {
   int port = grpc_pick_unused_port_or_die();
   std::string target = absl::StrCat("localhost:", port);
-  CreateAndStartBackends(1);
   auto ext_proc_config = ExtProcFilterConfigBuilder()
                              .SetTargetUri(target)
-                             .SetInsecureChannelCredentials()
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode()
                              .SetResponseHeaderMode()
@@ -1334,10 +1254,6 @@ TEST_P(XdsExtProcEnd2endTest,
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, ".*");
 }
 
@@ -1345,10 +1261,8 @@ TEST_P(XdsExtProcEnd2endTest,
        RequestHeadersExtProcConnectionErrorFailureModeTrue) {
   int port = grpc_pick_unused_port_or_die();
   std::string target = absl::StrCat("localhost:", port);
-  CreateAndStartBackends(1);
   auto ext_proc_config = ExtProcFilterConfigBuilder()
                              .SetTargetUri(target)
-                             .SetInsecureChannelCredentials()
                              .SetFailureModeAllow(true)
                              .SetRequestHeaderMode()
                              .SetResponseHeaderMode()
@@ -1359,18 +1273,11 @@ TEST_P(XdsExtProcEnd2endTest,
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   CheckRpcSendOk(DEBUG_LOCATION);
 }
 
 TEST_P(XdsExtProcEnd2endTest, RequestHeadersInvalidHeaderMutationFails) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetRequestHeaderMode()
                              .SetResponseHeaderMode()
                              .SetResponseTrailerMode()
@@ -1380,10 +1287,6 @@ TEST_P(XdsExtProcEnd2endTest, RequestHeadersInvalidHeaderMutationFails) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
@@ -1409,10 +1312,8 @@ TEST_P(XdsExtProcEnd2endTest,
        RequestHeadersObservabilityExtProcConnectionErrorFailureModeFalse) {
   int port = grpc_pick_unused_port_or_die();
   std::string target = absl::StrCat("localhost:", port);
-  CreateAndStartBackends(1);
   auto ext_proc_config = ExtProcFilterConfigBuilder()
                              .SetTargetUri(target)
-                             .SetInsecureChannelCredentials()
                              .SetFailureModeAllow(false)
                              .SetObservabilityMode(true)
                              .SetRequestHeaderMode()
@@ -1424,10 +1325,6 @@ TEST_P(XdsExtProcEnd2endTest,
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, ".*",
                       RpcOptions().set_skip_cancelled_check(true));
 }
@@ -1436,10 +1333,8 @@ TEST_P(XdsExtProcEnd2endTest,
        RequestHeadersObservabilityExtProcConnectionErrorFailureModeTrue) {
   int port = grpc_pick_unused_port_or_die();
   std::string target = absl::StrCat("localhost:", port);
-  CreateAndStartBackends(1);
   auto ext_proc_config = ExtProcFilterConfigBuilder()
                              .SetTargetUri(target)
-                             .SetInsecureChannelCredentials()
                              .SetFailureModeAllow(true)
                              .SetObservabilityMode(true)
                              .SetRequestHeaderMode()
@@ -1451,18 +1346,11 @@ TEST_P(XdsExtProcEnd2endTest,
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   CheckRpcSendOk(DEBUG_LOCATION);
 }
 
 TEST_P(XdsExtProcEnd2endTest, RequestHeadersRequestAttributesSent) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetRequestHeaderMode()
                              .SetResponseHeaderMode()
                              .SetResponseTrailerMode()
@@ -1474,10 +1362,6 @@ TEST_P(XdsExtProcEnd2endTest, RequestHeadersRequestAttributesSent) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
@@ -1518,10 +1402,7 @@ TEST_P(XdsExtProcEnd2endTest, RequestHeadersRequestAttributesSent) {
 
 TEST_P(XdsExtProcEnd2endTest,
        RequestAttributesSentInRequestBodyWhenRequestHeaderIsSkip) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetRequestBodyMode()
                              .AddRequestAttribute("request.path")
                              .AddRequestAttribute("request.method")
@@ -1529,10 +1410,6 @@ TEST_P(XdsExtProcEnd2endTest,
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
@@ -1564,10 +1441,7 @@ TEST_P(XdsExtProcEnd2endTest,
 }
 
 TEST_P(XdsExtProcEnd2endTest, RequestBodyContinueAndReplace) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(true)
                              .SetRequestHeaderMode()
                              .SetRequestBodyMode()
@@ -1575,10 +1449,6 @@ TEST_P(XdsExtProcEnd2endTest, RequestBodyContinueAndReplace) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
@@ -1607,10 +1477,7 @@ TEST_P(XdsExtProcEnd2endTest, RequestBodyContinueAndReplace) {
 
 TEST_P(XdsExtProcEnd2endTest,
        RequestBodyExtProcConnectionErrorFailureModeFalse) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode()
                              .SetResponseHeaderMode()
@@ -1621,10 +1488,6 @@ TEST_P(XdsExtProcEnd2endTest,
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   rpc_options.set_skip_cancelled_check(true);
   AsyncRpc rpc;
@@ -1647,10 +1510,7 @@ TEST_P(XdsExtProcEnd2endTest,
 
 TEST_P(XdsExtProcEnd2endTest,
        RequestBodyExtProcConnectionErrorFailureModeTrue) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(true)
                              .SetRequestHeaderMode()
                              .SetResponseHeaderMode()
@@ -1661,10 +1521,6 @@ TEST_P(XdsExtProcEnd2endTest,
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
@@ -1685,10 +1541,7 @@ TEST_P(XdsExtProcEnd2endTest,
 }
 
 TEST_P(XdsExtProcEnd2endTest, RequestBodyGrpcMessageCompressed) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(true)
                              .SetRequestHeaderMode()
                              .SetRequestBodyMode()
@@ -1696,10 +1549,6 @@ TEST_P(XdsExtProcEnd2endTest, RequestBodyGrpcMessageCompressed) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
@@ -1728,11 +1577,8 @@ TEST_P(XdsExtProcEnd2endTest, RequestBodyGrpcMessageCompressed) {
 
 TEST_P(XdsExtProcEnd2endTest,
        RequestBodyObservabilityExtProcConnectionErrorFailureModeFalse) {
-  CreateAndStartBackends(1);
-  ResetStubWithUniqueArg();
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  ResetStub();
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetObservabilityMode(true)
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode()
@@ -1744,10 +1590,6 @@ TEST_P(XdsExtProcEnd2endTest,
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncBidiStream stream;
   RpcOptions rpc_options;
   stream.Start(stub_.get(), rpc_options);
@@ -1773,11 +1615,8 @@ TEST_P(XdsExtProcEnd2endTest,
 
 TEST_P(XdsExtProcEnd2endTest,
        RequestBodyObservabilityExtProcConnectionErrorFailureModeTrue) {
-  CreateAndStartBackends(1);
-  ResetStubWithUniqueArg();
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  ResetStub();
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetObservabilityMode(true)
                              .SetFailureModeAllow(true)
                              .SetRequestHeaderMode()
@@ -1789,10 +1628,6 @@ TEST_P(XdsExtProcEnd2endTest,
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncBidiStream stream;
   RpcOptions rpc_options;
   stream.Start(stub_.get(), rpc_options);
@@ -1821,20 +1656,13 @@ TEST_P(XdsExtProcEnd2endTest,
 }
 
 TEST_P(XdsExtProcEnd2endTest, BidiStreamEarlyHalfCloseWithMessageFailure) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetRequestHeaderMode()
                              .SetRequestBodyMode()
                              .Build();
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncBidiStream stream;
   RpcOptions rpc_options;
   stream.Start(stub_.get(), rpc_options);
@@ -1881,20 +1709,13 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamEarlyHalfCloseWithMessageFailure) {
 }
 
 TEST_P(XdsExtProcEnd2endTest, BidiStreamEarlyHalfCloseWithoutMessageFailure) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetRequestHeaderMode()
                              .SetRequestBodyMode()
                              .Build();
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncBidiStream stream;
   RpcOptions rpc_options;
   stream.Start(stub_.get(), rpc_options);
@@ -1934,20 +1755,13 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamEarlyHalfCloseWithoutMessageFailure) {
 }
 
 TEST_P(XdsExtProcEnd2endTest, BidiStreamNormalHalfCloseSuccess) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetRequestHeaderMode()
                              .SetRequestBodyMode()
                              .Build();
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncBidiStream stream;
   RpcOptions rpc_options;
   stream.Start(stub_.get(), rpc_options);
@@ -2000,10 +1814,7 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamNormalHalfCloseSuccess) {
 //
 
 TEST_P(XdsExtProcEnd2endTest, ResponseHeadersContinueAndReplaceFails) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetRequestHeaderMode()
                              .SetResponseHeaderMode()
                              .SetResponseTrailerMode()
@@ -2013,10 +1824,6 @@ TEST_P(XdsExtProcEnd2endTest, ResponseHeadersContinueAndReplaceFails) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
@@ -2051,10 +1858,8 @@ TEST_P(XdsExtProcEnd2endTest,
        ResponseHeadersExtProcConnectionErrorFailureModeFalse) {
   int port = grpc_pick_unused_port_or_die();
   std::string target = absl::StrCat("localhost:", port);
-  CreateAndStartBackends(1);
   auto ext_proc_config = ExtProcFilterConfigBuilder()
                              .SetTargetUri(target)
-                             .SetInsecureChannelCredentials()
                              .SetFailureModeAllow(false)
                              .SetResponseHeaderMode()
                              .SetResponseTrailerMode()
@@ -2063,10 +1868,6 @@ TEST_P(XdsExtProcEnd2endTest,
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   rpc_options.set_skip_cancelled_check(true);
   AsyncRpc rpc;
@@ -2079,10 +1880,8 @@ TEST_P(XdsExtProcEnd2endTest,
        ResponseHeadersExtProcConnectionErrorFailureModeTrue) {
   int port = grpc_pick_unused_port_or_die();
   std::string target = absl::StrCat("localhost:", port);
-  CreateAndStartBackends(1);
   auto ext_proc_config = ExtProcFilterConfigBuilder()
                              .SetTargetUri(target)
-                             .SetInsecureChannelCredentials()
                              .SetFailureModeAllow(true)
                              .SetResponseHeaderMode()
                              .SetResponseTrailerMode()
@@ -2091,18 +1890,11 @@ TEST_P(XdsExtProcEnd2endTest,
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   CheckRpcSendOk(DEBUG_LOCATION);
 }
 
 TEST_P(XdsExtProcEnd2endTest, ResponseHeadersInvalidHeaderMutationFails) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetRequestHeaderMode()
                              .SetResponseHeaderMode()
                              .SetResponseTrailerMode()
@@ -2112,10 +1904,6 @@ TEST_P(XdsExtProcEnd2endTest, ResponseHeadersInvalidHeaderMutationFails) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
@@ -2156,10 +1944,8 @@ TEST_P(XdsExtProcEnd2endTest,
        ResponseHeadersObservabilityExtProcConnectionErrorFailureModeFalse) {
   int port = grpc_pick_unused_port_or_die();
   std::string target = absl::StrCat("localhost:", port);
-  CreateAndStartBackends(1);
   auto ext_proc_config = ExtProcFilterConfigBuilder()
                              .SetTargetUri(target)
-                             .SetInsecureChannelCredentials()
                              .SetFailureModeAllow(false)
                              .SetObservabilityMode(true)
                              .SetResponseHeaderMode()
@@ -2169,10 +1955,6 @@ TEST_P(XdsExtProcEnd2endTest,
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, ".*",
                       RpcOptions().set_skip_cancelled_check(true));
 }
@@ -2181,10 +1963,8 @@ TEST_P(XdsExtProcEnd2endTest,
        ResponseHeadersObservabilityExtProcConnectionErrorFailureModeTrue) {
   int port = grpc_pick_unused_port_or_die();
   std::string target = absl::StrCat("localhost:", port);
-  CreateAndStartBackends(1);
   auto ext_proc_config = ExtProcFilterConfigBuilder()
                              .SetTargetUri(target)
-                             .SetInsecureChannelCredentials()
                              .SetFailureModeAllow(true)
                              .SetObservabilityMode(true)
                              .SetResponseHeaderMode()
@@ -2194,10 +1974,6 @@ TEST_P(XdsExtProcEnd2endTest,
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   CheckRpcSendOk(DEBUG_LOCATION);
 }
 
@@ -2206,10 +1982,7 @@ TEST_P(XdsExtProcEnd2endTest,
 //
 
 TEST_P(XdsExtProcEnd2endTest, ResponseBodyContinueAndReplace) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(true)
                              .SetResponseHeaderMode()
                              .SetResponseTrailerMode()
@@ -2218,10 +1991,6 @@ TEST_P(XdsExtProcEnd2endTest, ResponseBodyContinueAndReplace) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
@@ -2251,10 +2020,7 @@ TEST_P(XdsExtProcEnd2endTest, ResponseBodyContinueAndReplace) {
 
 TEST_P(XdsExtProcEnd2endTest,
        ResponseBodyExtProcConnectionErrorFailureModeFalse) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
                              .SetResponseHeaderMode()
                              .SetResponseTrailerMode()
@@ -2263,10 +2029,6 @@ TEST_P(XdsExtProcEnd2endTest,
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   rpc_options.set_skip_cancelled_check(true);
   AsyncRpc rpc;
@@ -2289,10 +2051,7 @@ TEST_P(XdsExtProcEnd2endTest,
 
 TEST_P(XdsExtProcEnd2endTest,
        ResponseBodyExtProcConnectionErrorFailureModeTrue) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(true)
                              .SetResponseHeaderMode()
                              .SetResponseTrailerMode()
@@ -2301,10 +2060,6 @@ TEST_P(XdsExtProcEnd2endTest,
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
@@ -2325,10 +2080,7 @@ TEST_P(XdsExtProcEnd2endTest,
 }
 
 TEST_P(XdsExtProcEnd2endTest, ResponseBodyGrpcMessageCompressed) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(true)
                              .SetResponseHeaderMode()
                              .SetResponseTrailerMode()
@@ -2337,10 +2089,6 @@ TEST_P(XdsExtProcEnd2endTest, ResponseBodyGrpcMessageCompressed) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
@@ -2368,11 +2116,8 @@ TEST_P(XdsExtProcEnd2endTest, ResponseBodyGrpcMessageCompressed) {
 }
 
 TEST_P(XdsExtProcEnd2endTest, ResponseBodyObservabilityStreamErrorAllowCall) {
-  CreateAndStartBackends(1);
-  ResetStubWithUniqueArg();
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  ResetStub();
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetObservabilityMode(true)
                              .SetFailureModeAllow(true)
                              .SetRequestHeaderMode()
@@ -2383,10 +2128,6 @@ TEST_P(XdsExtProcEnd2endTest, ResponseBodyObservabilityStreamErrorAllowCall) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncBidiStream stream;
   RpcOptions rpc_options;
   stream.Start(stub_.get(), rpc_options);
@@ -2417,11 +2158,8 @@ TEST_P(XdsExtProcEnd2endTest, ResponseBodyObservabilityStreamErrorAllowCall) {
 }
 
 TEST_P(XdsExtProcEnd2endTest, ResponseBodyObservabilityStreamErrorFailCall) {
-  CreateAndStartBackends(1);
-  ResetStubWithUniqueArg();
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  ResetStub();
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetObservabilityMode(true)
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode()
@@ -2432,10 +2170,6 @@ TEST_P(XdsExtProcEnd2endTest, ResponseBodyObservabilityStreamErrorFailCall) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncBidiStream stream;
   RpcOptions rpc_options;
   stream.Start(stub_.get(), rpc_options);
@@ -2471,20 +2205,14 @@ TEST_P(XdsExtProcEnd2endTest,
        ResponseTrailersExtProcConnectionErrorFailureModeFalse) {
   int port = grpc_pick_unused_port_or_die();
   std::string target = absl::StrCat("localhost:", port);
-  CreateAndStartBackends(1);
   auto ext_proc_config = ExtProcFilterConfigBuilder()
                              .SetTargetUri(target)
-                             .SetInsecureChannelCredentials()
                              .SetFailureModeAllow(false)
                              .SetResponseTrailerMode()
                              .Build();
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   rpc_options.set_skip_cancelled_check(true);
   AsyncRpc rpc;
@@ -2497,28 +2225,19 @@ TEST_P(XdsExtProcEnd2endTest,
        ResponseTrailersExtProcConnectionErrorFailureModeTrue) {
   int port = grpc_pick_unused_port_or_die();
   std::string target = absl::StrCat("localhost:", port);
-  CreateAndStartBackends(1);
   auto ext_proc_config = ExtProcFilterConfigBuilder()
                              .SetTargetUri(target)
-                             .SetInsecureChannelCredentials()
                              .SetFailureModeAllow(true)
                              .SetResponseTrailerMode()
                              .Build();
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   CheckRpcSendOk(DEBUG_LOCATION);
 }
 
 TEST_P(XdsExtProcEnd2endTest, ResponseTrailersInvalidHeaderMutationFails) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetRequestHeaderMode()
                              .SetResponseHeaderMode()
                              .SetResponseTrailerMode()
@@ -2528,10 +2247,6 @@ TEST_P(XdsExtProcEnd2endTest, ResponseTrailersInvalidHeaderMutationFails) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
@@ -2573,11 +2288,9 @@ TEST_P(XdsExtProcEnd2endTest,
        ResponseTrailersObservabilityExtProcConnectionErrorFailureModeFalse) {
   int port = grpc_pick_unused_port_or_die();
   std::string target = absl::StrCat("localhost:", port);
-  CreateAndStartBackends(1);
-  ResetStubWithUniqueArg();
+  ResetStub();
   auto ext_proc_config = ExtProcFilterConfigBuilder()
                              .SetTargetUri(target)
-                             .SetInsecureChannelCredentials()
                              .SetFailureModeAllow(false)
                              .SetObservabilityMode(true)
                              .SetResponseTrailerMode()
@@ -2585,10 +2298,6 @@ TEST_P(XdsExtProcEnd2endTest,
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, ".*",
                       RpcOptions().set_skip_cancelled_check(true));
 }
@@ -2597,11 +2306,9 @@ TEST_P(XdsExtProcEnd2endTest,
        ResponseTrailersObservabilityExtProcConnectionErrorFailureModeTrue) {
   int port = grpc_pick_unused_port_or_die();
   std::string target = absl::StrCat("localhost:", port);
-  CreateAndStartBackends(1);
-  ResetStubWithUniqueArg();
+  ResetStub();
   auto ext_proc_config = ExtProcFilterConfigBuilder()
                              .SetTargetUri(target)
-                             .SetInsecureChannelCredentials()
                              .SetFailureModeAllow(true)
                              .SetObservabilityMode(true)
                              .SetResponseTrailerMode()
@@ -2609,10 +2316,6 @@ TEST_P(XdsExtProcEnd2endTest,
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   CheckRpcSendOk(DEBUG_LOCATION);
 }
 
@@ -2621,10 +2324,7 @@ TEST_P(XdsExtProcEnd2endTest,
 //
 
 TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponseForRequestBody) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetDisableImmediateResponse(true)
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode()
@@ -2636,10 +2336,6 @@ TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponseForRequestBody) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   rpc_options.set_skip_cancelled_check(true);
   AsyncRpc rpc;
@@ -2668,10 +2364,7 @@ TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponseForRequestBody) {
 }
 
 TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponseForRequestHeaders) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetDisableImmediateResponse(true)
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode()
@@ -2683,10 +2376,6 @@ TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponseForRequestHeaders) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
@@ -2710,10 +2399,7 @@ TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponseForRequestHeaders) {
 }
 
 TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponseForResponseBody) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetDisableImmediateResponse(true)
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode()
@@ -2724,10 +2410,6 @@ TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponseForResponseBody) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
   rpc_options.set_echo_metadata(true);
@@ -2767,10 +2449,7 @@ TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponseForResponseBody) {
 }
 
 TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponseForResponseHeaders) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetDisableImmediateResponse(true)
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode()
@@ -2782,10 +2461,6 @@ TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponseForResponseHeaders) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
   rpc_options.set_echo_metadata(true);
@@ -2823,10 +2498,7 @@ TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponseForResponseHeaders) {
 }
 
 TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponseForResponseTrailers) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetDisableImmediateResponse(true)
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode()
@@ -2838,10 +2510,6 @@ TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponseForResponseTrailers) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
   rpc_options.set_echo_metadata(true);
@@ -2888,10 +2556,7 @@ TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponseForResponseTrailers) {
 //
 
 TEST_P(XdsExtProcEnd2endTest, ImmediateResponseForRequestBody) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetRequestHeaderMode()
                              .SetResponseHeaderMode()
                              .SetResponseTrailerMode()
@@ -2901,10 +2566,6 @@ TEST_P(XdsExtProcEnd2endTest, ImmediateResponseForRequestBody) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
   rpc_options.set_echo_metadata(true);
@@ -2936,10 +2597,7 @@ TEST_P(XdsExtProcEnd2endTest, ImmediateResponseForRequestBody) {
 }
 
 TEST_P(XdsExtProcEnd2endTest, ImmediateResponseForRequestHeaders) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetRequestHeaderMode()
                              .SetResponseHeaderMode()
                              .SetResponseTrailerMode()
@@ -2949,10 +2607,6 @@ TEST_P(XdsExtProcEnd2endTest, ImmediateResponseForRequestHeaders) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
   rpc_options.set_echo_metadata(true);
@@ -2976,10 +2630,7 @@ TEST_P(XdsExtProcEnd2endTest, ImmediateResponseForRequestHeaders) {
 }
 
 TEST_P(XdsExtProcEnd2endTest, ImmediateResponseForResponseBody) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetRequestHeaderMode()
                              .SetResponseTrailerMode()
                              .SetRequestBodyMode()
@@ -2988,10 +2639,6 @@ TEST_P(XdsExtProcEnd2endTest, ImmediateResponseForResponseBody) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
   rpc_options.set_echo_metadata(true);
@@ -3032,10 +2679,7 @@ TEST_P(XdsExtProcEnd2endTest, ImmediateResponseForResponseBody) {
 }
 
 TEST_P(XdsExtProcEnd2endTest, ImmediateResponseForResponseHeaders) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetRequestHeaderMode()
                              .SetResponseHeaderMode()
                              .SetResponseTrailerMode()
@@ -3045,10 +2689,6 @@ TEST_P(XdsExtProcEnd2endTest, ImmediateResponseForResponseHeaders) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
   rpc_options.set_echo_metadata(true);
@@ -3087,10 +2727,7 @@ TEST_P(XdsExtProcEnd2endTest, ImmediateResponseForResponseHeaders) {
 }
 
 TEST_P(XdsExtProcEnd2endTest, ImmediateResponseForResponseTrailers) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetRequestHeaderMode()
                              .SetResponseHeaderMode()
                              .SetResponseTrailerMode()
@@ -3100,10 +2737,6 @@ TEST_P(XdsExtProcEnd2endTest, ImmediateResponseForResponseTrailers) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
   rpc_options.set_echo_metadata(true);
@@ -3151,10 +2784,7 @@ TEST_P(XdsExtProcEnd2endTest, ImmediateResponseForResponseTrailers) {
 //
 
 TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnClientBody) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode()
                              .SetResponseHeaderMode()
@@ -3163,10 +2793,6 @@ TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnClientBody) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncBidiStream stream;
   RpcOptions rpc_options;
   stream.Start(stub_.get(), rpc_options);
@@ -3207,10 +2833,7 @@ TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnClientBody) {
 }
 
 TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnRequestHeaders) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode()
                              .SetResponseHeaderMode()
@@ -3221,10 +2844,6 @@ TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnRequestHeaders) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncBidiStream stream;
   RpcOptions rpc_options;
   stream.Start(stub_.get(), rpc_options);
@@ -3249,10 +2868,7 @@ TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnRequestHeaders) {
 }
 
 TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnResponseHeaders) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode()
                              .SetResponseHeaderMode()
@@ -3263,10 +2879,6 @@ TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnResponseHeaders) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncBidiStream stream;
   RpcOptions rpc_options;
   stream.Start(stub_.get(), rpc_options);
@@ -3307,10 +2919,7 @@ TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnResponseHeaders) {
 }
 
 TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnResponseTrailers) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode()
                              .SetResponseHeaderMode()
@@ -3321,10 +2930,6 @@ TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnResponseTrailers) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncBidiStream stream;
   RpcOptions rpc_options;
   stream.Start(stub_.get(), rpc_options);
@@ -3392,10 +2997,7 @@ TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnResponseTrailers) {
 }
 
 TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnServerBody) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode()
                              .SetResponseHeaderMode()
@@ -3405,10 +3007,6 @@ TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnServerBody) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncBidiStream stream;
   RpcOptions rpc_options;
   stream.Start(stub_.get(), rpc_options);
@@ -3461,20 +3059,13 @@ TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnServerBody) {
 
 TEST_P(XdsExtProcEnd2endTest,
        ClientToServerOrderingHeadersResponseWhenDisabled) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
                              .SetRequestBodyMode()
                              .Build();
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncRpc rpc;
   RpcOptions rpc_options;
   rpc.StartRpc(stub_.get(), rpc_options);
@@ -3493,10 +3084,7 @@ TEST_P(XdsExtProcEnd2endTest,
 }
 
 TEST_P(XdsExtProcEnd2endTest, ClientToServerOrderingResponseBodyBeforeHeaders) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(true)
                              .SetRequestHeaderMode()
                              .SetRequestBodyMode()
@@ -3504,10 +3092,6 @@ TEST_P(XdsExtProcEnd2endTest, ClientToServerOrderingResponseBodyBeforeHeaders) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncRpc rpc;
   RpcOptions rpc_options;
   rpc.StartRpc(stub_.get(), rpc_options);
@@ -3527,10 +3111,7 @@ TEST_P(XdsExtProcEnd2endTest, ClientToServerOrderingResponseBodyBeforeHeaders) {
 
 TEST_P(XdsExtProcEnd2endTest,
        ServerToClientOrderingHeadersResponseWhenDisabled) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode()
                              .SetRequestBodyMode()
@@ -3540,10 +3121,6 @@ TEST_P(XdsExtProcEnd2endTest,
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncRpc rpc;
   RpcOptions rpc_options;
   rpc.StartRpc(stub_.get(), rpc_options);
@@ -3579,10 +3156,7 @@ TEST_P(XdsExtProcEnd2endTest,
 }
 
 TEST_P(XdsExtProcEnd2endTest, ServerToClientOrderingResponseBodyBeforeHeaders) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode()
                              .SetRequestBodyMode()
@@ -3593,10 +3167,6 @@ TEST_P(XdsExtProcEnd2endTest, ServerToClientOrderingResponseBodyBeforeHeaders) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncRpc rpc;
   RpcOptions rpc_options;
   rpc.StartRpc(stub_.get(), rpc_options);
@@ -3625,10 +3195,7 @@ TEST_P(XdsExtProcEnd2endTest, ServerToClientOrderingResponseBodyBeforeHeaders) {
 }
 
 TEST_P(XdsExtProcEnd2endTest, ServerToClientOrderingTrailersBeforeHeaders) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode()
                              .SetRequestBodyMode()
@@ -3638,10 +3205,6 @@ TEST_P(XdsExtProcEnd2endTest, ServerToClientOrderingTrailersBeforeHeaders) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncRpc rpc;
   RpcOptions rpc_options;
   rpc.StartRpc(stub_.get(), rpc_options);
@@ -3671,10 +3234,7 @@ TEST_P(XdsExtProcEnd2endTest, ServerToClientOrderingTrailersBeforeHeaders) {
 
 TEST_P(XdsExtProcEnd2endTest,
        ServerToClientOrderingTrailersBeforeResponseBody) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode()
                              .SetRequestBodyMode()
@@ -3685,10 +3245,6 @@ TEST_P(XdsExtProcEnd2endTest,
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncBidiStream stream;
   RpcOptions rpc_options;
   stream.Start(stub_.get(), rpc_options);
@@ -3730,10 +3286,7 @@ TEST_P(XdsExtProcEnd2endTest,
 
 TEST_P(XdsExtProcEnd2endTest,
        ServerToClientOrderingTrailersResponseWhenDisabled) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode()
                              .SetRequestBodyMode()
@@ -3742,10 +3295,6 @@ TEST_P(XdsExtProcEnd2endTest,
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncRpc rpc;
   RpcOptions rpc_options;
   rpc.StartRpc(stub_.get(), rpc_options);
@@ -3774,10 +3323,7 @@ TEST_P(XdsExtProcEnd2endTest,
 }
 
 TEST_P(XdsExtProcEnd2endTest, ServerToClientResponseBodyHalfClose) {
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(true)
                              .SetResponseHeaderMode()
                              .SetResponseTrailerMode()
@@ -3786,10 +3332,6 @@ TEST_P(XdsExtProcEnd2endTest, ServerToClientResponseBodyHalfClose) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncBidiStream stream;
   RpcOptions rpc_options;
   stream.Start(stub_.get(), rpc_options);
@@ -3825,11 +3367,8 @@ TEST_P(XdsExtProcEnd2endTest, ServerToClientResponseBodyHalfClose) {
 //
 
 TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseRequestBodyFailureModeFalse) {
-  CreateAndStartBackends(1);
-  ResetStubWithUniqueArg();
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  ResetStub();
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode()
                              .SetResponseHeaderMode()
@@ -3838,10 +3377,6 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseRequestBodyFailureModeFalse) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncBidiStream stream;
   RpcOptions rpc_options;
   stream.Start(stub_.get(), rpc_options);
@@ -3866,11 +3401,8 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseRequestBodyFailureModeFalse) {
 }
 
 TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseRequestBodyFailureModeTrue) {
-  CreateAndStartBackends(1);
-  ResetStubWithUniqueArg();
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  ResetStub();
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(true)
                              .SetRequestHeaderMode()
                              .SetResponseHeaderMode()
@@ -3879,10 +3411,6 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseRequestBodyFailureModeTrue) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncBidiStream stream;
   RpcOptions rpc_options;
   stream.Start(stub_.get(), rpc_options);
@@ -3909,11 +3437,8 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseRequestBodyFailureModeTrue) {
 
 TEST_P(XdsExtProcEnd2endTest,
        StreamCleanCloseRequestBodyWithInFlightFailureModeFalse) {
-  CreateAndStartBackends(1);
-  ResetStubWithUniqueArg();
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  ResetStub();
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode()
                              .SetResponseHeaderMode()
@@ -3922,10 +3447,6 @@ TEST_P(XdsExtProcEnd2endTest,
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncBidiStream stream;
   RpcOptions rpc_options;
   stream.Start(stub_.get(), rpc_options);
@@ -3954,11 +3475,8 @@ TEST_P(XdsExtProcEnd2endTest,
 
 TEST_P(XdsExtProcEnd2endTest,
        StreamCleanCloseRequestBodyWithInFlightFailureModeTrue) {
-  CreateAndStartBackends(1);
-  ResetStubWithUniqueArg();
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  ResetStub();
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(true)
                              .SetRequestHeaderMode()
                              .SetResponseHeaderMode()
@@ -3967,10 +3485,6 @@ TEST_P(XdsExtProcEnd2endTest,
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncBidiStream stream;
   RpcOptions rpc_options;
   stream.Start(stub_.get(), rpc_options);
@@ -3996,12 +3510,8 @@ TEST_P(XdsExtProcEnd2endTest,
 }
 
 TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseRequestHeadersFailureModeFalse) {
-  CreateAndStartBackends(1);
-  ResetStubWithUniqueArg();
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
-                             .SetObservabilityMode(false)
+  ResetStub();
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode()
                              .SetResponseHeaderMode()
@@ -4009,10 +3519,6 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseRequestHeadersFailureModeFalse) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncBidiStream stream;
   RpcOptions rpc_options;
   stream.Start(stub_.get(), rpc_options);
@@ -4036,12 +3542,8 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseRequestHeadersFailureModeFalse) {
 }
 
 TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseRequestHeadersFailureModeTrue) {
-  CreateAndStartBackends(1);
-  ResetStubWithUniqueArg();
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
-                             .SetObservabilityMode(false)
+  ResetStub();
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(true)
                              .SetRequestHeaderMode()
                              .SetResponseHeaderMode()
@@ -4049,10 +3551,6 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseRequestHeadersFailureModeTrue) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncBidiStream stream;
   RpcOptions rpc_options;
   stream.Start(stub_.get(), rpc_options);
@@ -4076,11 +3574,8 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseRequestHeadersFailureModeTrue) {
 }
 
 TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseBodyFailureModeFalse) {
-  CreateAndStartBackends(1);
-  ResetStubWithUniqueArg();
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  ResetStub();
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode()
                              .SetResponseHeaderMode()
@@ -4090,10 +3585,6 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseBodyFailureModeFalse) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncBidiStream stream;
   RpcOptions rpc_options;
   stream.Start(stub_.get(), rpc_options);
@@ -4122,14 +3613,11 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseBodyFailureModeFalse) {
 }
 
 TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseBodyFailureModeTrue) {
-  auto custom_backend_service = std::make_shared<CustomBidiStreamServiceImpl>();
   auto custom_backend_server =
-      std::make_unique<CustomBackendServerThread>(this, custom_backend_service);
+      std::make_unique<CustomBackendServerThread>(this);
   custom_backend_server->Start();
-  ResetStubWithUniqueArg();
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  ResetStub();
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(true)
                              .SetRequestHeaderMode()
                              .SetResponseHeaderMode()
@@ -4139,7 +3627,6 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseBodyFailureModeTrue) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
       {"locality0", {EdsResourceArgs::Endpoint(custom_backend_server->port())}},
   })));
@@ -4177,11 +3664,8 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseBodyFailureModeTrue) {
 
 TEST_P(XdsExtProcEnd2endTest,
        StreamCleanCloseResponseBodyWithInFlightFailureModeFalse) {
-  CreateAndStartBackends(1);
-  ResetStubWithUniqueArg();
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  ResetStub();
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
                              .SetResponseHeaderMode()
                              .SetResponseTrailerMode()
@@ -4190,10 +3674,6 @@ TEST_P(XdsExtProcEnd2endTest,
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncBidiStream stream;
   RpcOptions rpc_options;
   stream.Start(stub_.get(), rpc_options);
@@ -4233,11 +3713,8 @@ TEST_P(XdsExtProcEnd2endTest,
 
 TEST_P(XdsExtProcEnd2endTest,
        StreamCleanCloseResponseBodyWithInFlightFailureModeTrue) {
-  CreateAndStartBackends(1);
-  ResetStubWithUniqueArg();
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  ResetStub();
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(true)
                              .SetResponseHeaderMode()
                              .SetResponseTrailerMode()
@@ -4246,10 +3723,6 @@ TEST_P(XdsExtProcEnd2endTest,
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncBidiStream stream;
   RpcOptions rpc_options;
   stream.Start(stub_.get(), rpc_options);
@@ -4288,11 +3761,8 @@ TEST_P(XdsExtProcEnd2endTest,
 }
 
 TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseHeadersFailureModeFalse) {
-  CreateAndStartBackends(1);
-  ResetStubWithUniqueArg();
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  ResetStub();
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode()
                              .SetResponseHeaderMode()
@@ -4302,10 +3772,6 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseHeadersFailureModeFalse) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncBidiStream stream;
   RpcOptions rpc_options;
   stream.Start(stub_.get(), rpc_options);
@@ -4330,11 +3796,8 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseHeadersFailureModeFalse) {
 }
 
 TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseHeadersFailureModeTrue) {
-  CreateAndStartBackends(1);
-  ResetStubWithUniqueArg();
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  ResetStub();
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(true)
                              .SetRequestHeaderMode()
                              .SetResponseHeaderMode()
@@ -4344,10 +3807,6 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseHeadersFailureModeTrue) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncBidiStream stream;
   RpcOptions rpc_options;
   stream.Start(stub_.get(), rpc_options);
@@ -4374,22 +3833,14 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseHeadersFailureModeTrue) {
 
 TEST_P(XdsExtProcEnd2endTest,
        StreamCleanCloseResponseTrailersFailureModeFalse) {
-  CreateAndStartBackends(1);
-  ResetStubWithUniqueArg();
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  ResetStub();
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
-                             .SetObservabilityMode(false)
                              .SetResponseTrailerMode()
                              .Build();
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service_->GetStream();
@@ -4404,22 +3855,14 @@ TEST_P(XdsExtProcEnd2endTest,
 }
 
 TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseTrailersFailureModeTrue) {
-  CreateAndStartBackends(1);
-  ResetStubWithUniqueArg();
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  ResetStub();
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(true)
-                             .SetObservabilityMode(false)
                              .SetResponseTrailerMode()
                              .Build();
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service_->GetStream();
@@ -4434,11 +3877,8 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseTrailersFailureModeTrue) {
 }
 
 TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseRequestBodyObservability) {
-  CreateAndStartBackends(1);
-  ResetStubWithUniqueArg();
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  ResetStub();
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetObservabilityMode(true)
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode()
@@ -4448,10 +3888,6 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseRequestBodyObservability) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncBidiStream stream;
   RpcOptions rpc_options;
   stream.Start(stub_.get(), rpc_options);
@@ -4477,11 +3913,8 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseRequestBodyObservability) {
 
 TEST_P(XdsExtProcEnd2endTest,
        StreamCleanCloseRequestBodyWithInFlightObservability) {
-  CreateAndStartBackends(1);
-  ResetStubWithUniqueArg();
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  ResetStub();
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetObservabilityMode(true)
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode()
@@ -4491,10 +3924,6 @@ TEST_P(XdsExtProcEnd2endTest,
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncBidiStream stream;
   RpcOptions rpc_options;
   stream.Start(stub_.get(), rpc_options);
@@ -4529,11 +3958,8 @@ TEST_P(XdsExtProcEnd2endTest,
 }
 
 TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseRequestHeadersObservability) {
-  CreateAndStartBackends(1);
-  ResetStubWithUniqueArg();
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  ResetStub();
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetObservabilityMode(true)
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode()
@@ -4542,10 +3968,6 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseRequestHeadersObservability) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncBidiStream stream;
   RpcOptions rpc_options;
   stream.Start(stub_.get(), rpc_options);
@@ -4566,11 +3988,8 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseRequestHeadersObservability) {
 }
 
 TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseBodyObservability) {
-  CreateAndStartBackends(1);
-  ResetStubWithUniqueArg();
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  ResetStub();
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetObservabilityMode(true)
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode()
@@ -4581,10 +4000,6 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseBodyObservability) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncBidiStream stream;
   RpcOptions rpc_options;
   stream.Start(stub_.get(), rpc_options);
@@ -4615,11 +4030,8 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseBodyObservability) {
 
 TEST_P(XdsExtProcEnd2endTest,
        StreamCleanCloseResponseBodyWithInFlightObservability) {
-  CreateAndStartBackends(1);
-  ResetStubWithUniqueArg();
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  ResetStub();
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetObservabilityMode(true)
                              .SetFailureModeAllow(false)
                              .SetResponseHeaderMode()
@@ -4629,10 +4041,6 @@ TEST_P(XdsExtProcEnd2endTest,
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncBidiStream stream;
   RpcOptions rpc_options;
   stream.Start(stub_.get(), rpc_options);
@@ -4678,11 +4086,8 @@ TEST_P(XdsExtProcEnd2endTest,
 }
 
 TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseHeadersObservability) {
-  CreateAndStartBackends(1);
-  ResetStubWithUniqueArg();
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  ResetStub();
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetObservabilityMode(true)
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode()
@@ -4693,10 +4098,6 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseHeadersObservability) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   AsyncBidiStream stream;
   RpcOptions rpc_options;
   stream.Start(stub_.get(), rpc_options);
@@ -4721,11 +4122,8 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseHeadersObservability) {
 }
 
 TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseTrailersObservability) {
-  CreateAndStartBackends(1);
-  ResetStubWithUniqueArg();
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  ResetStub();
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
                              .SetObservabilityMode(true)
                              .SetResponseTrailerMode()
@@ -4733,10 +4131,6 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseTrailersObservability) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
@@ -4761,21 +4155,14 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcClientHeadersDurationMetric) {
   auto stats_plugin = grpc_core::FakeStatsPluginBuilder()
                           .UseDisabledByDefaultMetrics(true)
                           .BuildAndRegister();
-  ResetStubWithUniqueArg();
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  ResetStub();
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode()
                              .Build();
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
   AsyncRpc rpc;
@@ -4810,11 +4197,8 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcClientHalfCloseDurationMetric) {
   auto stats_plugin = grpc_core::FakeStatsPluginBuilder()
                           .UseDisabledByDefaultMetrics(true)
                           .BuildAndRegister();
-  ResetStubWithUniqueArg();
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  ResetStub();
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode()
                              .SetResponseHeaderMode()
@@ -4825,10 +4209,6 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcClientHalfCloseDurationMetric) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
   rpc_options.set_echo_metadata(true);
@@ -4880,21 +4260,14 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcServerHeadersDurationMetric) {
   auto stats_plugin = grpc_core::FakeStatsPluginBuilder()
                           .UseDisabledByDefaultMetrics(true)
                           .BuildAndRegister();
-  ResetStubWithUniqueArg();
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  ResetStub();
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
                              .SetResponseHeaderMode()
                              .Build();
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
   AsyncRpc rpc;
@@ -4929,21 +4302,14 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcServerTrailersDurationMetric) {
   auto stats_plugin = grpc_core::FakeStatsPluginBuilder()
                           .UseDisabledByDefaultMetrics(true)
                           .BuildAndRegister();
-  ResetStubWithUniqueArg();
-  CreateAndStartBackends(1);
-  auto ext_proc_config = ExtProcFilterConfigBuilder()
-                             .SetTargetUri(ext_proc_server_->target())
-                             .SetInsecureChannelCredentials()
+  ResetStub();
+  auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
                              .SetResponseTrailerMode()
                              .Build();
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata(true);
   AsyncRpc rpc;
