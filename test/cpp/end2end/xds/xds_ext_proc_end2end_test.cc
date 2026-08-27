@@ -902,24 +902,7 @@ TEST_P(XdsExtProcEnd2endTest, ProcessingModeAllDisabledSuccess) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  RpcOptions rpc_options;
-  rpc_options.set_echo_metadata_initially(true);
-  rpc_options.set_echo_metadata(true);
-  AsyncRpc rpc;
-  rpc.StartRpc(stub_.get(), rpc_options);
-  Status status = rpc.GetStatus();
-  EXPECT_TRUE(status.ok()) << "RPC failed: " << status.error_message();
-  auto server_initial_metadata = rpc.GetServerInitialMetadata();
-  auto server_trailing_metadata = rpc.GetServerTrailingMetadata();
-  EXPECT_EQ(ext_proc_service_->stream_count(), 0);
-  EXPECT_EQ(ext_proc_service_->GetStream(absl::ZeroDuration()), nullptr);
-  auto it = server_initial_metadata.find(kRequestHeadersMutatedHeaderKey);
-  EXPECT_EQ(it, server_initial_metadata.end());
-  it = server_initial_metadata.find(kResponseHeadersMutatedHeaderKey);
-  EXPECT_EQ(it, server_initial_metadata.end());
-  it = server_trailing_metadata.find(kResponseTrailersMutatedHeaderKey);
-  EXPECT_EQ(it, server_trailing_metadata.end());
-  EXPECT_EQ(rpc.response().message(), kRequestMessage);
+  CheckRpcSendOk(DEBUG_LOCATION);
 }
 
 TEST_P(XdsExtProcEnd2endTest, ProcessingModeAllEnabledSuccess) {
@@ -935,7 +918,6 @@ TEST_P(XdsExtProcEnd2endTest, ProcessingModeAllEnabledSuccess) {
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
-  rpc_options.set_echo_metadata(true);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
   auto ext_proc_stream = ext_proc_service_->GetStream();
@@ -1034,7 +1016,6 @@ TEST_P(XdsExtProcEnd2endTest,
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
-  rpc_options.set_echo_metadata(true);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
   auto ext_proc_stream = ext_proc_service_->GetStream();
@@ -1124,7 +1105,6 @@ TEST_P(XdsExtProcEnd2endTest, TrailersOnlyProcessingModeAllEnabled) {
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
-  rpc_options.set_echo_metadata(true);
   rpc_options.set_server_fail(true);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
@@ -1173,7 +1153,6 @@ TEST_P(XdsExtProcEnd2endTest,
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
-  rpc_options.set_echo_metadata(true);
   rpc_options.set_server_fail(true);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
@@ -2412,7 +2391,6 @@ TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponseForResponseBody) {
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
-  rpc_options.set_echo_metadata(true);
   rpc_options.set_skip_cancelled_check(true);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
@@ -2463,7 +2441,6 @@ TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponseForResponseHeaders) {
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
-  rpc_options.set_echo_metadata(true);
   rpc_options.set_skip_cancelled_check(true);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
@@ -2512,7 +2489,6 @@ TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponseForResponseTrailers) {
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
-  rpc_options.set_echo_metadata(true);
   rpc_options.set_skip_cancelled_check(true);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
@@ -2568,7 +2544,6 @@ TEST_P(XdsExtProcEnd2endTest, ImmediateResponseForRequestBody) {
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
-  rpc_options.set_echo_metadata(true);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
   auto ext_proc_stream = ext_proc_service_->GetStream();
@@ -2609,7 +2584,6 @@ TEST_P(XdsExtProcEnd2endTest, ImmediateResponseForRequestHeaders) {
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
-  rpc_options.set_echo_metadata(true);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
   auto ext_proc_stream = ext_proc_service_->GetStream();
@@ -2641,7 +2615,6 @@ TEST_P(XdsExtProcEnd2endTest, ImmediateResponseForResponseBody) {
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
-  rpc_options.set_echo_metadata(true);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
   auto ext_proc_stream = ext_proc_service_->GetStream();
@@ -2691,7 +2664,6 @@ TEST_P(XdsExtProcEnd2endTest, ImmediateResponseForResponseHeaders) {
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
-  rpc_options.set_echo_metadata(true);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
   auto ext_proc_stream = ext_proc_service_->GetStream();
@@ -2739,7 +2711,6 @@ TEST_P(XdsExtProcEnd2endTest, ImmediateResponseForResponseTrailers) {
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
-  rpc_options.set_echo_metadata(true);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
   auto ext_proc_stream = ext_proc_service_->GetStream();
@@ -4211,7 +4182,6 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcClientHalfCloseDurationMetric) {
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
-  rpc_options.set_echo_metadata(true);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), rpc_options);
   auto ext_proc_stream = ext_proc_service_->GetStream();
