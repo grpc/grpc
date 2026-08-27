@@ -107,14 +107,16 @@ grpc_fuzz_test(
         "fuzztest",
         "fuzztest_main",
         "absl/log:log",
+        "absl/status",
         "gtest",
         "absl/strings",
     ],
     deps = [
         "//:grpc",
-        "//src/core:resource_quota",
+        "//src/core:channel_args",
         "//src/core:retry_interceptor",
-        "//test/core/call/yodel:yodel_test",
+        "//test/core/filters:filter_matchers",
+        "//test/core/filters:filter_test",
     ],
 )
 
