@@ -448,7 +448,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"v2_non_owning_waker_implementation",
      description_v2_non_owning_waker_implementation,
      additional_constraints_v2_non_owning_waker_implementation, nullptr, 0,
-     false, true},
+     true, true},
     {"verbose_channelz_connection_logging",
      description_verbose_channelz_connection_logging,
      additional_constraints_verbose_channelz_connection_logging, nullptr, 0,
@@ -460,7 +460,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"xds_server_filter_chain_per_route",
      description_xds_server_filter_chain_per_route,
      additional_constraints_xds_server_filter_chain_per_route,
-     required_experiments_xds_server_filter_chain_per_route, 1, false, true},
+     required_experiments_xds_server_filter_chain_per_route, 1, true, true},
 };
 
 }  // namespace grpc_core
@@ -892,7 +892,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"v2_non_owning_waker_implementation",
      description_v2_non_owning_waker_implementation,
      additional_constraints_v2_non_owning_waker_implementation, nullptr, 0,
-     false, true},
+     true, true},
     {"verbose_channelz_connection_logging",
      description_verbose_channelz_connection_logging,
      additional_constraints_verbose_channelz_connection_logging, nullptr, 0,
@@ -904,7 +904,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"xds_server_filter_chain_per_route",
      description_xds_server_filter_chain_per_route,
      additional_constraints_xds_server_filter_chain_per_route,
-     required_experiments_xds_server_filter_chain_per_route, 1, false, true},
+     required_experiments_xds_server_filter_chain_per_route, 1, true, true},
 };
 
 }  // namespace grpc_core
@@ -1336,7 +1336,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"v2_non_owning_waker_implementation",
      description_v2_non_owning_waker_implementation,
      additional_constraints_v2_non_owning_waker_implementation, nullptr, 0,
-     false, true},
+     true, true},
     {"verbose_channelz_connection_logging",
      description_verbose_channelz_connection_logging,
      additional_constraints_verbose_channelz_connection_logging, nullptr, 0,
@@ -1348,7 +1348,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"xds_server_filter_chain_per_route",
      description_xds_server_filter_chain_per_route,
      additional_constraints_xds_server_filter_chain_per_route,
-     required_experiments_xds_server_filter_chain_per_route, 1, false, true},
+     required_experiments_xds_server_filter_chain_per_route, 1, true, true},
 };
 
 }  // namespace grpc_core

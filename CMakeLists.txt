@@ -667,9 +667,6 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
   src/core/ext/transport/chaotic_good/chaotic_good_frame.proto src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
-  src/proto/grpc/channelz/channelz.proto src/proto/grpc/channelz/channelz.proto
-)
-protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/channelz/v2/channelz.proto src/proto/grpc/channelz/v2/channelz.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
@@ -697,10 +694,13 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/lookup/v1/rls_config.proto src/proto/grpc/lookup/v1/rls_config.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
-  src/proto/grpc/reflection/v1/reflection.proto src/proto/grpc/reflection/v1/reflection.proto
+  third_party/grpc-proto/grpc/channelz/v1/channelz.proto grpc/channelz/v1/channelz.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
-  src/proto/grpc/reflection/v1alpha/reflection.proto src/proto/grpc/reflection/v1alpha/reflection.proto
+  third_party/grpc-proto/grpc/reflection/v1/reflection.proto grpc/reflection/v1/reflection.proto
+)
+protobuf_generate_grpc_cpp_with_import_path_correction(
+  third_party/grpc-proto/grpc/reflection/v1alpha/reflection.proto grpc/reflection/v1alpha/reflection.proto
 )
 
 # This enables CMake to build the project without requiring submodules
@@ -1391,7 +1391,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx chunked_vector_test)
   add_dependencies(buildtests_cxx cli_call_test)
   add_dependencies(buildtests_cxx client_auth_filter_test)
-  add_dependencies(buildtests_cxx client_authority_filter_test)
   add_dependencies(buildtests_cxx client_callback_end2end_test)
   add_dependencies(buildtests_cxx client_channel_service_config_test)
   add_dependencies(buildtests_cxx client_context_test_peer_test)
@@ -1517,6 +1516,7 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_cxx fuzzing_event_engine_unittest)
   add_dependencies(buildtests_cxx gcp_authentication_filter_test)
+  add_dependencies(buildtests_cxx gdch_service_account_credentials_test)
   add_dependencies(buildtests_cxx generic_end2end_test)
   add_dependencies(buildtests_cxx glob_test)
   add_dependencies(buildtests_cxx goaway_server_test)
@@ -2307,6 +2307,7 @@ add_library(grpc
   src/core/credentials/call/external/file_external_account_credentials.cc
   src/core/credentials/call/external/url_external_account_credentials.cc
   src/core/credentials/call/gcp_service_account_identity/gcp_service_account_identity_credentials.cc
+  src/core/credentials/call/gdch_service_account/gdch_service_account_credentials.cc
   src/core/credentials/call/iam/iam_credentials.cc
   src/core/credentials/call/json_util.cc
   src/core/credentials/call/jwt/json_token.cc
@@ -2559,7 +2560,7 @@ add_library(grpc
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.c
+  src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
@@ -2735,7 +2736,7 @@ add_library(grpc
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c
   src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c
-  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.c
+  src/core/ext/upbdefs-gen/grpc/channelz/v1/channelz.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
@@ -5445,14 +5446,14 @@ endif()
 
 if(gRPC_BUILD_CODEGEN)
 add_library(grpc++_reflection ${_gRPC_STATIC_WIN32}
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1/reflection.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1/reflection.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1/reflection.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1/reflection.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1/reflection.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1/reflection.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1/reflection.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1/reflection.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.grpc.pb.h
   src/cpp/ext/proto_server_reflection.cc
   src/cpp/ext/proto_server_reflection_plugin.cc
 )
@@ -6594,10 +6595,6 @@ endif()
 # See https://github.com/grpc/grpc/issues/19473
 if(gRPC_BUILD_CODEGEN AND NOT gRPC_USE_PROTO_LITE)
 add_library(grpcpp_channelz ${_gRPC_STATIC_WIN32}
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
@@ -6606,6 +6603,10 @@ add_library(grpcpp_channelz ${_gRPC_STATIC_WIN32}
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/service.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/service.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/service.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/channelz/v1/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/channelz/v1/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/channelz/v1/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/channelz/v1/channelz.grpc.pb.h
   src/cpp/server/channelz/channelz_service.cc
   src/cpp/server/channelz/channelz_service_plugin.cc
 )
@@ -11743,10 +11744,10 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(channel_trace_test
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/channelz/v1/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/channelz/v1/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/channelz/v1/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/channelz/v1/channelz.grpc.pb.h
   test/core/channelz/channel_trace_test.cc
   test/cpp/util/channel_trace_proto_helper.cc
 )
@@ -11910,10 +11911,10 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(channelz_test
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/channelz/v1/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/channelz/v1/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/channelz/v1/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/channelz/v1/channelz.grpc.pb.h
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
@@ -11983,10 +11984,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.grpc.pb.h
     src/core/channelz/zviz/data.cc
     src/core/channelz/zviz/entity.cc
     src/core/channelz/zviz/environment.cc
@@ -12408,10 +12409,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(cli_call_test
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
@@ -12432,6 +12429,10 @@ add_executable(cli_call_test
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
@@ -12531,56 +12532,6 @@ target_include_directories(client_auth_filter_test
 )
 
 target_link_libraries(client_auth_filter_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(client_authority_filter_test
-  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
-  test/core/event_engine/event_engine_test_utils.cc
-  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  test/core/filters/client_authority_filter_test.cc
-  test/core/filters/filter_test_v2.cc
-)
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(client_authority_filter_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-      "GRPC_DLL_IMPORTS"
-    )
-  endif()
-endif()
-target_compile_features(client_authority_filter_test PUBLIC cxx_std_17)
-target_include_directories(client_authority_filter_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(client_authority_filter_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   ${_gRPC_PROTOBUF_LIBRARIES}
@@ -18566,6 +18517,7 @@ add_executable(filter_test_v2_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/filters/filter_test_v2.cc
   test/core/filters/filter_test_v2_test.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -19520,6 +19472,48 @@ target_link_libraries(gcp_authentication_filter_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(gdch_service_account_credentials_test
+  test/core/credentials/call/gdch_service_account_credentials_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(gdch_service_account_credentials_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(gdch_service_account_credentials_test PUBLIC cxx_std_17)
+target_include_directories(gdch_service_account_credentials_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(gdch_service_account_credentials_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(generic_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
@@ -20140,10 +20134,10 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(grpc_cli
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.grpc.pb.h
   test/cpp/util/cli_call.cc
   test/cpp/util/cli_credentials.cc
   test/cpp/util/grpc_cli.cc
@@ -24445,10 +24439,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/service.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/service.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/service.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.grpc.pb.h
     src/core/ext/transport/chaotic_good/chaotic_good.cc
     src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
     src/core/ext/transport/chaotic_good/client_transport.cc
@@ -39600,10 +39594,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(xds_audit_logger_registry_test
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/cel/expr/checked.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/cel/expr/checked.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/cel/expr/checked.pb.h
@@ -39840,6 +39830,10 @@ add_executable(xds_audit_logger_registry_test
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
@@ -42373,10 +42367,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(xds_common_types_test
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/cel/expr/checked.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/cel/expr/checked.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/cel/expr/checked.pb.h
@@ -42613,6 +42603,10 @@ add_executable(xds_common_types_test
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
@@ -47768,10 +47762,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(xds_http_filters_test
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
@@ -48116,6 +48106,10 @@ add_executable(xds_http_filters_test
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
@@ -48291,10 +48285,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(xds_lb_policy_registry_test
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/cel/expr/checked.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/cel/expr/checked.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/cel/expr/checked.pb.h
@@ -48571,6 +48561,10 @@ add_executable(xds_lb_policy_registry_test
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
@@ -48743,10 +48737,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(xds_listener_resource_type_test
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/cel/expr/checked.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/cel/expr/checked.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/cel/expr/checked.pb.h
@@ -49091,6 +49081,10 @@ add_executable(xds_listener_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
@@ -52905,10 +52899,6 @@ add_executable(xds_route_config_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls_config.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls_config.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls_config.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/cel/expr/checked.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/cel/expr/checked.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/cel/expr/checked.pb.h
@@ -53149,6 +53139,10 @@ add_executable(xds_route_config_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h

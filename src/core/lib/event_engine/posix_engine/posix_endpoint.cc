@@ -124,7 +124,7 @@ void rtrim(std::string& s) {
 
 uint64_t ParseUlimitMemLockFromFile(std::string file_name) {
   static std::string kHardMemlockPrefix = "* hard memlock";
-  auto result = grpc_core::LoadFile(file_name, false);
+  auto result = grpc_core::LoadFile(file_name);
   if (!result.ok()) {
     return 0;
   }

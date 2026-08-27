@@ -128,5 +128,9 @@
   default: false
 - name: use_call_event_engine_in_completion_queue
   default: false
+- name: v2_non_owning_waker_implementation
+  default: true
 - name: verbose_channelz_connection_logging
   default: false
+- name: xds_server_filter_chain_per_route
+  default: true
