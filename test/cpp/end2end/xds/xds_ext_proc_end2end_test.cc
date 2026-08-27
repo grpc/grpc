@@ -26,6 +26,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "envoy/config/cluster/v3/cluster.pb.h"
 #include "envoy/config/common/mutation_rules/v3/mutation_rules.pb.h"
 #include "envoy/extensions/filters/http/ext_proc/v3/ext_proc.pb.h"
@@ -55,6 +56,8 @@ namespace {
 using ::envoy::extensions::filters::http::ext_proc::v3::ExternalProcessor;
 using ::envoy::extensions::filters::network::http_connection_manager::v3::
     HttpFilter;
+using ::envoy::service::ext_proc::v3::ProcessingRequest;
+using ::envoy::service::ext_proc::v3::ProcessingResponse;
 
 MATCHER_P(GrpcStatusIs, code, "") {
   return ::testing::ExplainMatchResult(code, arg.error_code(), result_listener);
@@ -65,6 +68,177 @@ MATCHER_P2(GrpcStatusIs, code, message_matcher, "") {
                                        result_listener) &&
          ::testing::ExplainMatchResult(message_matcher, arg.error_message(),
                                        result_listener);
+}
+
+std::multimap<std::string, std::string> HeaderMapToMultimap(
+    const envoy::config::core::v3::HeaderMap& header_map) {
+  std::multimap<std::string, std::string> map;
+  for (const auto& header : header_map.headers()) {
+    std::string val =
+        !header.raw_value().empty() ? header.raw_value() : header.value();
+    map.emplace(header.key(), std::move(val));
+  }
+  return map;
+}
+
+MATCHER_P2(MatchesRequestHeaders, headers_matcher, end_of_stream,
+           "matches request_headers with given headers and end_of_stream") {
+  if (!arg.has_request_headers()) {
+    *result_listener << "request does not have request_headers";
+    return false;
+  }
+  const auto& request_headers = arg.request_headers();
+  if (request_headers.end_of_stream() != end_of_stream) {
+    *result_listener << "expected end_of_stream " << end_of_stream
+                     << " but got " << request_headers.end_of_stream();
+    return false;
+  }
+  std::multimap<std::string, std::string> actual_headers =
+      HeaderMapToMultimap(request_headers.headers());
+  return ::testing::ExplainMatchResult(headers_matcher, actual_headers,
+                                       result_listener);
+}
+
+MATCHER_P(MatchesRequestHeaders, headers_matcher,
+          "matches request_headers with given headers") {
+  return ::testing::ExplainMatchResult(
+      MatchesRequestHeaders(headers_matcher, false), arg, result_listener);
+}
+
+MATCHER_P2(MatchesRequestBody, body_matcher, end_of_stream,
+           "matches request_body with given body and end_of_stream") {
+  if (!arg.has_request_body()) {
+    *result_listener << "request does not have request_body";
+    return false;
+  }
+  const auto& request_body = arg.request_body();
+  if (request_body.end_of_stream() != end_of_stream) {
+    *result_listener << "expected end_of_stream " << end_of_stream
+                     << " but got " << request_body.end_of_stream();
+    return false;
+  }
+  return ::testing::ExplainMatchResult(body_matcher, request_body.body(),
+                                       result_listener);
+}
+
+MATCHER_P(MatchesRequestBody, body_matcher,
+          "matches request_body with given body (end_of_stream=false)") {
+  return ::testing::ExplainMatchResult(
+      MatchesRequestBody(body_matcher, false), arg, result_listener);
+}
+
+MATCHER_P2(MatchesResponseHeaders, headers_matcher, end_of_stream,
+           "matches response_headers with given headers and end_of_stream") {
+  if (!arg.has_response_headers()) {
+    *result_listener << "request does not have response_headers";
+    return false;
+  }
+  const auto& response_headers = arg.response_headers();
+  if (response_headers.end_of_stream() != end_of_stream) {
+    *result_listener << "expected end_of_stream " << end_of_stream
+                     << " but got " << response_headers.end_of_stream();
+    return false;
+  }
+  std::multimap<std::string, std::string> actual_headers =
+      HeaderMapToMultimap(response_headers.headers());
+  return ::testing::ExplainMatchResult(headers_matcher, actual_headers,
+                                       result_listener);
+}
+
+MATCHER_P(MatchesResponseHeaders, headers_matcher,
+          "matches response_headers with given headers") {
+  return ::testing::ExplainMatchResult(
+      MatchesResponseHeaders(headers_matcher, false), arg, result_listener);
+}
+
+MATCHER_P2(MatchesResponseBody, body_matcher, end_of_stream,
+           "matches response_body with given body and end_of_stream") {
+  if (!arg.has_response_body()) {
+    *result_listener << "request does not have response_body";
+    return false;
+  }
+  const auto& response_body = arg.response_body();
+  if (response_body.end_of_stream() != end_of_stream) {
+    *result_listener << "expected end_of_stream " << end_of_stream
+                     << " but got " << response_body.end_of_stream();
+    return false;
+  }
+  return ::testing::ExplainMatchResult(body_matcher, response_body.body(),
+                                       result_listener);
+}
+
+MATCHER_P(MatchesResponseBody, body_matcher,
+          "matches response_body with given body (end_of_stream=false)") {
+  return ::testing::ExplainMatchResult(
+      MatchesResponseBody(body_matcher, false), arg, result_listener);
+}
+
+MATCHER_P(MatchesResponseTrailers, trailers_matcher,
+          "matches response_trailers with given trailers") {
+  if (!arg.has_response_trailers()) {
+    *result_listener << "request does not have response_trailers";
+    return false;
+  }
+  const auto& response_trailers = arg.response_trailers();
+  std::multimap<std::string, std::string> actual_trailers =
+      HeaderMapToMultimap(response_trailers.trailers());
+  return ::testing::ExplainMatchResult(trailers_matcher, actual_trailers,
+                                       result_listener);
+}
+
+MATCHER_P(MatchesRequestTrailers, trailers_matcher,
+          "matches request_trailers with given trailers") {
+  if (!arg.has_request_trailers()) {
+    *result_listener << "request does not have request_trailers";
+    return false;
+  }
+  const auto& request_trailers = arg.request_trailers();
+  std::multimap<std::string, std::string> actual_trailers =
+      HeaderMapToMultimap(request_trailers.trailers());
+  return ::testing::ExplainMatchResult(trailers_matcher, actual_trailers,
+                                       result_listener);
+}
+
+MATCHER_P(EchoRequestMessageIs, message_matcher,
+          "matches serialized EchoRequest with given message") {
+  EchoRequest echo_req;
+  if (!echo_req.ParseFromString(arg)) {
+    *result_listener << "could not be parsed as EchoRequest";
+    return false;
+  }
+  return ::testing::ExplainMatchResult(message_matcher, echo_req.message(),
+                                       result_listener);
+}
+
+MATCHER_P(EchoResponseMessageIs, message_matcher,
+          "matches serialized EchoResponse with given message") {
+  EchoResponse echo_resp;
+  if (!echo_resp.ParseFromString(arg)) {
+    *result_listener << "could not be parsed as EchoResponse";
+    return false;
+  }
+  return ::testing::ExplainMatchResult(message_matcher, echo_resp.message(),
+                                       result_listener);
+}
+
+static std::string ModifyEchoRequest(absl::string_view body,
+                                     absl::string_view add_suffix) {
+  EchoRequest echo_req;
+  CHECK(echo_req.ParseFromString(body));
+  echo_req.set_message(absl::StrCat(echo_req.message(), add_suffix));
+  std::string mutated;
+  CHECK(echo_req.SerializeToString(&mutated));
+  return mutated;
+}
+
+static std::string ModifyEchoResponse(absl::string_view body,
+                                      absl::string_view add_suffix) {
+  EchoResponse echo_resp;
+  CHECK(echo_resp.ParseFromString(body));
+  echo_resp.set_message(absl::StrCat(echo_resp.message(), add_suffix));
+  std::string mutated;
+  CHECK(echo_resp.SerializeToString(&mutated));
+  return mutated;
 }
 
 constexpr absl::string_view kFilterInstanceName = "ext_proc_instance";
@@ -610,6 +784,24 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
       return *status_;
     }
 
+    std::multimap<std::string, std::string> GetServerInitialMetadata() {
+      std::multimap<std::string, std::string> map;
+      for (const auto& [key, value] : context_.GetServerInitialMetadata()) {
+        map.emplace(std::string(key.data(), key.size()),
+                    std::string(value.data(), value.size()));
+      }
+      return map;
+    }
+
+    std::multimap<std::string, std::string> GetServerTrailingMetadata() {
+      std::multimap<std::string, std::string> map;
+      for (const auto& [key, value] : context_.GetServerTrailingMetadata()) {
+        map.emplace(std::string(key.data(), key.size()),
+                    std::string(value.data(), value.size()));
+      }
+      return map;
+    }
+
     bool WaitForInitialMetadata(absl::Duration timeout = absl::Seconds(10)) {
       grpc_core::MutexLock lock(&mu_);
       const absl::Time deadline =
@@ -922,63 +1114,58 @@ TEST_P(XdsExtProcEnd2endTest, ProcessingModeAllEnabledSuccess) {
   rpc.StartRpc(stub_.get(), rpc_options);
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
-  bool saw_request_headers = false;
-  bool saw_response_headers = false;
-  bool saw_response_trailers = false;
-  bool saw_response_body = false;
-  int request_body_count = 0;
-  while (!saw_response_trailers) {
-    auto req = ext_proc_stream->GetNextRequest();
+  // ext_proc server sees request headers and sends them back.
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
+  ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse(
+      {{kRequestHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
+  // ext_proc server sees client message and sends it back.
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestBody(
+               EchoRequestMessageIs(kRequestMessage), /*end_of_stream=*/false)));
+  ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
+      ModifyEchoRequest(req->request_body().body(), kRequestBodyMutatedSuffix),
+      /*end_of_stream=*/false));
+  // Next two events may arrive in either order: client half-close and server
+  // response headers.
+  for (int i = 0; i < 2; ++i) {
+    req = ext_proc_stream->GetNextRequest();
     ASSERT_TRUE(req.has_value());
-    if (req->has_request_headers()) {
-      saw_request_headers = true;
-      ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse(
-          {{kRequestHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
-    } else if (req->has_request_body()) {
-      ++request_body_count;
-      EchoRequest echo_req;
-      if (echo_req.ParseFromString(req->request_body().body())) {
-        echo_req.set_message(
-            absl::StrCat(echo_req.message(), kRequestBodyMutatedSuffix));
-        std::string mutated;
-        ASSERT_TRUE(echo_req.SerializeToString(&mutated));
-        ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
-            mutated, req->request_body().end_of_stream()));
-      } else {
-        ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
-            req->request_body().body(), req->request_body().end_of_stream()));
-      }
+    if (req->has_request_body()) {
+      EXPECT_THAT(
+          *req, MatchesRequestBody(/*body=*/"", /*end_of_stream=*/true));
+      ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
+          /*body=*/"", /*end_of_stream=*/true));
     } else if (req->has_response_headers()) {
-      saw_response_headers = true;
+      EXPECT_THAT(
+          *req, MatchesResponseHeaders(::testing::_));
       ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse(
           {{kResponseHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
-    } else if (req->has_response_body()) {
-      saw_response_body = true;
-      EchoResponse echo_resp;
-      if (echo_resp.ParseFromString(req->response_body().body())) {
-        echo_resp.set_message(
-            absl::StrCat(echo_resp.message(), kResponseBodyMutatedSuffix));
-        std::string mutated;
-        ASSERT_TRUE(echo_resp.SerializeToString(&mutated));
-        ext_proc_stream->SendResponse(MakeResponseBodyMutationResponse(
-            mutated, req->response_body().end_of_stream()));
-      } else {
-        ext_proc_stream->SendResponse(MakeResponseBodyMutationResponse(
-            req->response_body().body(), req->response_body().end_of_stream()));
-      }
-    } else if (req->has_response_trailers()) {
-      saw_response_trailers = true;
-      ext_proc_stream->SendResponse(MakeResponseTrailersMutationResponse(
-          {{kResponseTrailersMutatedHeaderKey, kHeaderMutatedValue}}));
     } else {
       FAIL() << "Unexpected request type: " << req->DebugString();
     }
   }
-  EXPECT_TRUE(saw_request_headers);
-  EXPECT_GT(request_body_count, 0);
-  EXPECT_TRUE(saw_response_headers);
-  EXPECT_TRUE(saw_response_body);
-  EXPECT_TRUE(saw_response_trailers);
+  // ext_proc server sees response body and sends it back.
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesResponseBody(
+               EchoResponseMessageIs(absl::StrCat(
+                   kRequestMessage, kRequestBodyMutatedSuffix)),
+               /*end_of_stream=*/false)));
+  ext_proc_stream->SendResponse(MakeResponseBodyMutationResponse(
+      ModifyEchoResponse(req->response_body().body(),
+                         kResponseBodyMutatedSuffix),
+      /*end_of_stream=*/false));
+  // ext_proc server sees response trailers and sends them back.
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesResponseTrailers(::testing::_)));
+  ext_proc_stream->SendResponse(MakeResponseTrailersMutationResponse(
+      {{kResponseTrailersMutatedHeaderKey, kHeaderMutatedValue}}));
   Status status = rpc.GetStatus();
   EXPECT_TRUE(status.ok()) << "RPC failed: " << status.error_message();
   auto server_initial_metadata = rpc.GetServerInitialMetadata();
@@ -992,10 +1179,9 @@ TEST_P(XdsExtProcEnd2endTest, ProcessingModeAllEnabledSuccess) {
   it = server_trailing_metadata.find(kResponseTrailersMutatedHeaderKey);
   ASSERT_NE(it, server_trailing_metadata.end());
   EXPECT_EQ(it->second, kHeaderMutatedValue);
-  std::string expected_message = kRequestMessage;
-  absl::StrAppend(&expected_message, kRequestBodyMutatedSuffix);
-  absl::StrAppend(&expected_message, kResponseBodyMutatedSuffix);
-  EXPECT_EQ(rpc.response().message(), expected_message);
+  EXPECT_EQ(rpc.response().message(),
+            absl::StrCat(kRequestMessage, kRequestBodyMutatedSuffix,
+                         kResponseBodyMutatedSuffix));
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -1021,51 +1207,53 @@ TEST_P(XdsExtProcEnd2endTest,
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   bool saw_request_headers = false;
+  bool saw_request_body_message = false;
+  bool saw_request_body_half_close = false;
   bool saw_response_headers = false;
-  bool saw_response_trailers = false;
   bool saw_response_body = false;
-  int request_body_count = 0;
-  while (!saw_response_trailers) {
+  bool saw_response_trailers = false;
+  for (int i = 0; i < 6; ++i) {
     auto req = ext_proc_stream->GetNextRequest();
     ASSERT_TRUE(req.has_value());
     if (req->has_request_headers()) {
       saw_request_headers = true;
+      EXPECT_THAT(*req, MatchesRequestHeaders(::testing::Contains(::testing::Pair(
+                            ":path", "/grpc.testing.EchoTestService/Echo"))));
       ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse(
           {{kRequestHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
     } else if (req->has_request_body()) {
-      ++request_body_count;
-      EchoRequest echo_req;
-      if (echo_req.ParseFromString(req->request_body().body())) {
-        echo_req.set_message(
-            absl::StrCat(echo_req.message(), kRequestBodyMutatedSuffix));
-        std::string mutated;
-        ASSERT_TRUE(echo_req.SerializeToString(&mutated));
+      if (req->request_body().end_of_stream()) {
+        saw_request_body_half_close = true;
+        EXPECT_THAT(*req, MatchesRequestBody(/*body=*/"", /*end_of_stream=*/true));
         ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
-            mutated, req->request_body().end_of_stream()));
+            /*body=*/"", /*end_of_stream=*/true));
       } else {
+        saw_request_body_message = true;
+        EXPECT_THAT(*req, MatchesRequestBody(
+                              EchoRequestMessageIs(kRequestMessage),
+                              /*end_of_stream=*/false));
         ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
-            req->request_body().body(), req->request_body().end_of_stream()));
+            ModifyEchoRequest(req->request_body().body(),
+                              kRequestBodyMutatedSuffix),
+            /*end_of_stream=*/false));
       }
     } else if (req->has_response_headers()) {
       saw_response_headers = true;
+      EXPECT_THAT(*req, MatchesResponseHeaders(::testing::_));
       ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse(
           {{kResponseHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
     } else if (req->has_response_body()) {
       saw_response_body = true;
-      EchoResponse echo_resp;
-      if (echo_resp.ParseFromString(req->response_body().body())) {
-        echo_resp.set_message(
-            absl::StrCat(echo_resp.message(), kResponseBodyMutatedSuffix));
-        std::string mutated;
-        ASSERT_TRUE(echo_resp.SerializeToString(&mutated));
-        ext_proc_stream->SendResponse(MakeResponseBodyMutationResponse(
-            mutated, req->response_body().end_of_stream()));
-      } else {
-        ext_proc_stream->SendResponse(MakeResponseBodyMutationResponse(
-            req->response_body().body(), req->response_body().end_of_stream()));
-      }
+      EXPECT_THAT(*req, MatchesResponseBody(
+                            EchoResponseMessageIs(kRequestMessage),
+                            /*end_of_stream=*/false));
+      ext_proc_stream->SendResponse(MakeResponseBodyMutationResponse(
+          ModifyEchoResponse(req->response_body().body(),
+                             kResponseBodyMutatedSuffix),
+          /*end_of_stream=*/false));
     } else if (req->has_response_trailers()) {
       saw_response_trailers = true;
+      EXPECT_THAT(*req, MatchesResponseTrailers(::testing::_));
       ext_proc_stream->SendResponse(MakeResponseTrailersMutationResponse(
           {{kResponseTrailersMutatedHeaderKey, kHeaderMutatedValue}}));
     } else {
@@ -1073,7 +1261,8 @@ TEST_P(XdsExtProcEnd2endTest,
     }
   }
   EXPECT_TRUE(saw_request_headers);
-  EXPECT_GT(request_body_count, 0);
+  EXPECT_TRUE(saw_request_body_message);
+  EXPECT_TRUE(saw_request_body_half_close);
   EXPECT_TRUE(saw_response_headers);
   EXPECT_TRUE(saw_response_body);
   EXPECT_TRUE(saw_response_trailers);
@@ -1110,28 +1299,43 @@ TEST_P(XdsExtProcEnd2endTest, TrailersOnlyProcessingModeAllEnabled) {
   rpc.StartRpc(stub_.get(), rpc_options);
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
-  bool saw_request_headers = false;
-  int request_body_count = 0;
-  while (true) {
-    auto req = ext_proc_stream->GetNextRequest(absl::Milliseconds(500));
-    if (!req.has_value()) break;
-    if (req->has_request_headers()) {
-      saw_request_headers = true;
-      ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse(
-          {{kRequestHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
-    } else if (req->has_request_body()) {
-      ++request_body_count;
+  // ext_proc server sees request headers and sends them back.
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
+  ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse(
+      {{kRequestHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
+  // ext_proc server sees client message and sends it back.
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestBody(
+               EchoRequestMessageIs(kRequestMessage), /*end_of_stream=*/false)));
+  ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
+      req->request_body().body(), req->request_body().end_of_stream()));
+  // Next two events may arrive in either order: client half-close and server
+  // response headers.
+  for (int i = 0; i < 2; ++i) {
+    req = ext_proc_stream->GetNextRequest();
+    ASSERT_TRUE(req.has_value());
+    if (req->has_request_body()) {
+      EXPECT_THAT(
+          *req, MatchesRequestBody(/*body=*/"", /*end_of_stream=*/true));
       ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
-          req->request_body().body(), req->request_body().end_of_stream()));
+          /*body=*/"", /*end_of_stream=*/true));
     } else if (req->has_response_headers()) {
+      EXPECT_THAT(
+          *req, MatchesResponseHeaders(::testing::_));
       ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse(
           {{kResponseHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
     } else {
       FAIL() << "Unexpected request type: " << req->DebugString();
     }
   }
-  EXPECT_TRUE(saw_request_headers);
-  EXPECT_GT(request_body_count, 0);
+  // For trailers-only response, ext_proc server sees no further requests.
+  EXPECT_EQ(ext_proc_stream->GetNextRequest(absl::Milliseconds(500)),
+            std::nullopt);
   Status status = rpc.GetStatus();
   EXPECT_EQ(status.error_code(), StatusCode::FAILED_PRECONDITION)
       << "Actual error message: " << status.error_message();
@@ -1158,28 +1362,44 @@ TEST_P(XdsExtProcEnd2endTest,
   rpc.StartRpc(stub_.get(), rpc_options);
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
-  bool saw_request_headers = false;
-  int request_body_count = 0;
-  while (true) {
-    auto req = ext_proc_stream->GetNextRequest(absl::Milliseconds(500));
-    if (!req.has_value()) break;
-    if (req->has_request_headers()) {
-      saw_request_headers = true;
-      ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse(
-          {{kRequestHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
-    } else if (req->has_request_body()) {
-      ++request_body_count;
+  // ext_proc server sees request headers and sends them back.
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
+  ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse(
+      {{kRequestHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
+  // ext_proc server sees client message and sends it back.
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestBody(
+               EchoRequestMessageIs(kRequestMessage), /*end_of_stream=*/false)));
+  ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
+      req->request_body().body(), req->request_body().end_of_stream()));
+  // Next two events may arrive in either order: client half-close and server
+  // response headers (sent in observability mode for trailers-only).
+  for (int i = 0; i < 2; ++i) {
+    req = ext_proc_stream->GetNextRequest();
+    ASSERT_TRUE(req.has_value());
+    if (req->has_request_body()) {
+      EXPECT_THAT(
+          *req, MatchesRequestBody(/*body=*/"", /*end_of_stream=*/true));
       ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
-          req->request_body().body(), req->request_body().end_of_stream()));
+          /*body=*/"", /*end_of_stream=*/true));
     } else if (req->has_response_headers()) {
+      EXPECT_THAT(
+          *req, MatchesResponseHeaders(::testing::_));
       ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse(
           {{kResponseHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
     } else {
       FAIL() << "Unexpected request type: " << req->DebugString();
     }
   }
-  EXPECT_TRUE(saw_request_headers);
-  EXPECT_GT(request_body_count, 0);
+  // For trailers-only response in observability mode, ext_proc server sees no
+  // further requests.
+  EXPECT_EQ(ext_proc_stream->GetNextRequest(absl::Milliseconds(500)),
+            std::nullopt);
   Status status = rpc.GetStatus();
   EXPECT_EQ(status.error_code(), StatusCode::FAILED_PRECONDITION)
       << "Actual error message: " << status.error_message();
@@ -1203,8 +1423,10 @@ TEST_P(XdsExtProcEnd2endTest, RequestHeadersContinueAndReplaceFails) {
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
   ::envoy::service::ext_proc::v3::ProcessingResponse response;
   response.mutable_request_headers()->mutable_response()->set_status(
       ::envoy::service::ext_proc::v3::CommonResponse::CONTINUE_AND_REPLACE);
@@ -1272,8 +1494,10 @@ TEST_P(XdsExtProcEnd2endTest, RequestHeadersInvalidHeaderMutationFails) {
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
   ext_proc_stream->SendResponse(
       MakeRequestHeadersMutationResponse({{"host", "invalid-host"}}));
   Status status = rpc.GetStatus();
@@ -1346,34 +1570,53 @@ TEST_P(XdsExtProcEnd2endTest, RequestHeadersRequestAttributesSent) {
   rpc.StartRpc(stub_.get(), rpc_options);
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
+  // ext_proc server sees request headers with attributes and sends them back.
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
   EXPECT_EQ(GetExtProcAttribute(*req, "request.path"),
             "/grpc.testing.EchoTestService/Echo");
   EXPECT_EQ(GetExtProcAttribute(*req, "request.method"), "POST");
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
-  bool saw_response_trailers = false;
-  while (!saw_response_trailers) {
-    auto next_req = ext_proc_stream->GetNextRequest();
-    ASSERT_TRUE(next_req.has_value());
-    if (next_req->has_request_body()) {
+  // ext_proc server sees client message and sends it back.
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestBody(
+               EchoRequestMessageIs(kRequestMessage), /*end_of_stream=*/false)));
+  ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
+      req->request_body().body(), req->request_body().end_of_stream()));
+  // Next two events may arrive in either order: client half-close and server
+  // response headers.
+  for (int i = 0; i < 2; ++i) {
+    req = ext_proc_stream->GetNextRequest();
+    ASSERT_TRUE(req.has_value());
+    if (req->has_request_body()) {
+      EXPECT_THAT(
+          *req, MatchesRequestBody(/*body=*/"", /*end_of_stream=*/true));
       ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
-          next_req->request_body().body(),
-          next_req->request_body().end_of_stream()));
-    } else if (next_req->has_response_headers()) {
+          /*body=*/"", /*end_of_stream=*/true));
+    } else if (req->has_response_headers()) {
+      EXPECT_THAT(
+          *req, MatchesResponseHeaders(::testing::_));
       ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse({}));
-    } else if (next_req->has_response_body()) {
-      ext_proc_stream->SendResponse(MakeResponseBodyMutationResponse(
-          next_req->response_body().body(),
-          next_req->response_body().end_of_stream()));
-    } else if (next_req->has_response_trailers()) {
-      saw_response_trailers = true;
-      ext_proc_stream->SendResponse(MakeResponseTrailersMutationResponse({}));
     } else {
-      FAIL() << "Unexpected request type: " << next_req->DebugString();
+      FAIL() << "Unexpected request type: " << req->DebugString();
     }
   }
+  // ext_proc server sees response body and sends it back.
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesResponseBody(
+               EchoResponseMessageIs(kRequestMessage), /*end_of_stream=*/false)));
+  ext_proc_stream->SendResponse(MakeResponseBodyMutationResponse(
+      req->response_body().body(), req->response_body().end_of_stream()));
+  // ext_proc server sees response trailers and sends them back.
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesResponseTrailers(::testing::_)));
+  ext_proc_stream->SendResponse(MakeResponseTrailersMutationResponse({}));
   Status status = rpc.GetStatus();
   EXPECT_TRUE(status.ok()) << status.error_message();
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
@@ -1394,28 +1637,25 @@ TEST_P(XdsExtProcEnd2endTest,
   rpc.StartRpc(stub_.get(), rpc_options);
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
-  std::string path_received;
-  std::string method_received;
-  while (true) {
-    auto req = ext_proc_stream->GetNextRequest(absl::Milliseconds(500));
-    if (!req.has_value()) break;
-    if (req->has_request_body()) {
-      if (path_received.empty()) {
-        path_received = GetExtProcAttribute(*req, "request.path");
-      }
-      if (method_received.empty()) {
-        method_received = GetExtProcAttribute(*req, "request.method");
-      }
-      ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
-          req->request_body().body(), req->request_body().end_of_stream()));
-    } else {
-      FAIL() << "Unexpected request type: " << req->DebugString();
-    }
-  }
+  // ext_proc server sees client message with request attributes and sends it back.
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestBody(
+               EchoRequestMessageIs(kRequestMessage), /*end_of_stream=*/false)));
+  EXPECT_EQ(GetExtProcAttribute(*req, "request.path"),
+            "/grpc.testing.EchoTestService/Echo");
+  EXPECT_EQ(GetExtProcAttribute(*req, "request.method"), "POST");
+  ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
+      req->request_body().body(), req->request_body().end_of_stream()));
+  // ext_proc server sees client half-close and sends it back.
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestBody(
+               /*body=*/"", /*end_of_stream=*/true)));
+  ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
+      /*body=*/"", /*end_of_stream=*/true));
   Status status = rpc.GetStatus();
   EXPECT_TRUE(status.ok()) << status.error_message();
-  EXPECT_EQ(path_received, "/grpc.testing.EchoTestService/Echo");
-  EXPECT_EQ(method_received, "POST");
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -1434,12 +1674,16 @@ TEST_P(XdsExtProcEnd2endTest, RequestBodyContinueAndReplace) {
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
   auto next_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(next_req.has_value());
-  EXPECT_TRUE(next_req->has_request_body());
+  ASSERT_THAT(
+      next_req, ::testing::Optional(MatchesRequestBody(
+                    EchoRequestMessageIs(kRequestMessage),
+                    /*end_of_stream=*/false)));
   ::envoy::service::ext_proc::v3::ProcessingResponse response;
   auto* common_response = response.mutable_request_body()->mutable_response();
   common_response->set_status(
@@ -1474,12 +1718,16 @@ TEST_P(XdsExtProcEnd2endTest,
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
   auto next_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(next_req.has_value());
-  EXPECT_TRUE(next_req->has_request_body());
+  ASSERT_THAT(
+      next_req, ::testing::Optional(MatchesRequestBody(
+                    EchoRequestMessageIs(kRequestMessage),
+                    /*end_of_stream=*/false)));
   ext_proc_stream->SendStatus(absl::ResourceExhaustedError(
       "Call closed by ext_proc server on request body"));
   Status status = rpc.GetStatus();
@@ -1506,12 +1754,16 @@ TEST_P(XdsExtProcEnd2endTest,
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
   auto next_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(next_req.has_value());
-  EXPECT_TRUE(next_req->has_request_body());
+  ASSERT_THAT(
+      next_req, ::testing::Optional(MatchesRequestBody(
+                    EchoRequestMessageIs(kRequestMessage),
+                    /*end_of_stream=*/false)));
   ext_proc_stream->SendStatus(absl::ResourceExhaustedError(
       "Call closed by ext_proc server on request body"));
   Status status = rpc.GetStatus();
@@ -1534,12 +1786,16 @@ TEST_P(XdsExtProcEnd2endTest, RequestBodyGrpcMessageCompressed) {
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
   auto next_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(next_req.has_value());
-  EXPECT_TRUE(next_req->has_request_body());
+  ASSERT_THAT(
+      next_req, ::testing::Optional(MatchesRequestBody(
+                    EchoRequestMessageIs(kRequestMessage),
+                    /*end_of_stream=*/false)));
   ::envoy::service::ext_proc::v3::ProcessingResponse response;
   auto* common_response = response.mutable_request_body()->mutable_response();
   auto* body_mutation = common_response->mutable_body_mutation();
@@ -1569,25 +1825,25 @@ TEST_P(XdsExtProcEnd2endTest,
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  AsyncBidiStream stream;
   RpcOptions rpc_options;
-  stream.Start(stub_.get(), rpc_options);
+  AsyncRpc rpc;
+  rpc.StartRpc(stub_.get(), rpc_options);
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
-  EchoRequest request;
-  request.set_message(kMessage1);
-  stream.StartWrite(request);
-  EXPECT_TRUE(stream.WaitForWriteDone());
   auto next_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(next_req.has_value());
-  EXPECT_TRUE(next_req->has_request_body());
+  ASSERT_THAT(
+      next_req, ::testing::Optional(MatchesRequestBody(
+                    EchoRequestMessageIs(kRequestMessage),
+                    /*end_of_stream=*/false)));
   ext_proc_stream->SendStatus(absl::ResourceExhaustedError(
       "Call closed by ext_proc server on request body"));
-  Status status = stream.Finish();
+  Status status = rpc.GetStatus();
   EXPECT_THAT(status, GrpcStatusIs(StatusCode::RESOURCE_EXHAUSTED));
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
@@ -1607,30 +1863,27 @@ TEST_P(XdsExtProcEnd2endTest,
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  AsyncBidiStream stream;
   RpcOptions rpc_options;
-  stream.Start(stub_.get(), rpc_options);
+  AsyncRpc rpc;
+  rpc.StartRpc(stub_.get(), rpc_options);
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
-  EchoRequest request;
-  request.set_message(kMessage1);
-  stream.StartWrite(request);
-  EXPECT_TRUE(stream.WaitForWriteDone());
   auto next_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(next_req.has_value());
-  EXPECT_TRUE(next_req->has_request_body());
+  ASSERT_THAT(
+      next_req, ::testing::Optional(MatchesRequestBody(
+                    EchoRequestMessageIs(kRequestMessage),
+                    /*end_of_stream=*/false)));
   ext_proc_stream->SendStatus(absl::ResourceExhaustedError(
       "Call closed by ext_proc server on request body"));
-  EchoResponse response;
-  EXPECT_TRUE(stream.ReadMessage(&response));
-  EXPECT_EQ(response.message(), kMessage1);
-  stream.StartWritesDone();
-  Status status = stream.Finish();
+  Status status = rpc.GetStatus();
   EXPECT_TRUE(status.ok()) << "Expected OK, got: " << status.error_message();
+  EXPECT_EQ(rpc.response().message(), kRequestMessage);
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -1648,31 +1901,26 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamEarlyHalfCloseWithMessageFailure) {
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/BidiStream")))));
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
   EchoRequest request;
   request.set_message(kMessage1);
   stream.StartWrite(request);
   auto next_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(next_req.has_value());
-  EXPECT_TRUE(next_req->has_request_body());
-  const auto& body_req = next_req->request_body();
-  EXPECT_FALSE(body_req.end_of_stream());
-  EXPECT_FALSE(body_req.end_of_stream_without_message());
-  grpc::testing::EchoRequest echo_request;
-  std::string mutated_body = body_req.body();
-  if (echo_request.ParseFromString(body_req.body())) {
-    echo_request.set_message(
-        absl::StrCat(echo_request.message(), kMutatedSuffix));
-    GRPC_CHECK(echo_request.SerializeToString(&mutated_body));
-  }
+  ASSERT_THAT(
+      next_req, ::testing::Optional(MatchesRequestBody(
+                    EchoRequestMessageIs(kMessage1),
+                    /*end_of_stream=*/false)));
   ::envoy::service::ext_proc::v3::ProcessingResponse proc_response;
   auto* common_response =
       proc_response.mutable_request_body()->mutable_response();
   auto* streamed_response =
       common_response->mutable_body_mutation()->mutable_streamed_response();
-  streamed_response->set_body(mutated_body);
+  streamed_response->set_body(
+      ModifyEchoRequest(next_req->request_body().body(), kMutatedSuffix));
   streamed_response->set_end_of_stream(true);
   ext_proc_stream->SendResponse(proc_response);
   EXPECT_TRUE(stream.WaitForWriteDone());
@@ -1701,18 +1949,19 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamEarlyHalfCloseWithoutMessageFailure) {
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/BidiStream")))));
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
   EchoRequest request;
   request.set_message(kMessage1);
   stream.StartWrite(request);
   auto next_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(next_req.has_value());
-  EXPECT_TRUE(next_req->has_request_body());
-  const auto& body_req = next_req->request_body();
-  EXPECT_FALSE(body_req.end_of_stream());
-  EXPECT_FALSE(body_req.end_of_stream_without_message());
+  ASSERT_THAT(
+      next_req, ::testing::Optional(MatchesRequestBody(
+                    EchoRequestMessageIs(kMessage1),
+                    /*end_of_stream=*/false)));
   ::envoy::service::ext_proc::v3::ProcessingResponse proc_response;
   auto* common_response =
       proc_response.mutable_request_body()->mutable_response();
@@ -1747,8 +1996,10 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamNormalHalfCloseSuccess) {
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/BidiStream")))));
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
   EchoRequest request;
   EchoResponse response;
@@ -1756,24 +2007,22 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamNormalHalfCloseSuccess) {
     request.set_message(absl::StrCat("message", i));
     stream.StartWrite(request);
     auto next_req = ext_proc_stream->GetNextRequest();
-    ASSERT_TRUE(next_req.has_value());
-    EXPECT_TRUE(next_req->has_request_body());
-    const auto& body_req = next_req->request_body();
-    EXPECT_FALSE(body_req.end_of_stream());
-    EXPECT_FALSE(body_req.end_of_stream_without_message());
+    ASSERT_THAT(
+        next_req, ::testing::Optional(MatchesRequestBody(
+                      EchoRequestMessageIs(absl::StrCat("message", i)),
+                      /*end_of_stream=*/false)));
     ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
-        body_req.body(), body_req.end_of_stream()));
+        next_req->request_body().body(),
+        next_req->request_body().end_of_stream()));
     EXPECT_TRUE(stream.WaitForWriteDone());
     EXPECT_TRUE(stream.ReadMessage(&response));
     EXPECT_EQ(response.message(), absl::StrCat("message", i));
   }
   stream.StartWritesDone();
   auto eos_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(eos_req.has_value());
-  EXPECT_TRUE(eos_req->has_request_body());
-  const auto& eos_body_req = eos_req->request_body();
-  EXPECT_TRUE(eos_body_req.end_of_stream());
-  EXPECT_TRUE(eos_body_req.end_of_stream_without_message());
+  ASSERT_THAT(
+      eos_req, ::testing::Optional(MatchesRequestBody(
+                   /*body=*/"", /*end_of_stream=*/true)));
   ::envoy::service::ext_proc::v3::ProcessingResponse proc_response;
   auto* common_response =
       proc_response.mutable_request_body()->mutable_response();
@@ -1809,18 +2058,23 @@ TEST_P(XdsExtProcEnd2endTest, ResponseHeadersContinueAndReplaceFails) {
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
   auto next_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(next_req.has_value());
-  EXPECT_TRUE(next_req->has_request_body());
+  ASSERT_THAT(
+      next_req, ::testing::Optional(MatchesRequestBody(
+                    EchoRequestMessageIs(kRequestMessage),
+                    /*end_of_stream=*/false)));
   ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
       next_req->request_body().body(),
       next_req->request_body().end_of_stream()));
   auto resp_headers_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(resp_headers_req.has_value());
-  EXPECT_TRUE(resp_headers_req->has_response_headers());
+  ASSERT_THAT(
+      resp_headers_req,
+      ::testing::Optional(MatchesResponseHeaders(::testing::_)));
   ::envoy::service::ext_proc::v3::ProcessingResponse response;
   response.mutable_response_headers()->mutable_response()->set_status(
       ::envoy::service::ext_proc::v3::CommonResponse::CONTINUE_AND_REPLACE);
@@ -1889,18 +2143,23 @@ TEST_P(XdsExtProcEnd2endTest, ResponseHeadersInvalidHeaderMutationFails) {
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
   auto next_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(next_req.has_value());
-  EXPECT_TRUE(next_req->has_request_body());
+  ASSERT_THAT(
+      next_req, ::testing::Optional(MatchesRequestBody(
+                    EchoRequestMessageIs(kRequestMessage),
+                    /*end_of_stream=*/false)));
   ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
       next_req->request_body().body(),
       next_req->request_body().end_of_stream()));
   auto resp_headers_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(resp_headers_req.has_value());
-  EXPECT_TRUE(resp_headers_req->has_response_headers());
+  ASSERT_THAT(
+      resp_headers_req,
+      ::testing::Optional(MatchesResponseHeaders(::testing::_)));
   ::envoy::service::ext_proc::v3::ProcessingResponse response;
   auto* mutation = response.mutable_response_headers()
                        ->mutable_response()
@@ -1976,12 +2235,15 @@ TEST_P(XdsExtProcEnd2endTest, ResponseBodyContinueAndReplace) {
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto resp_headers_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(resp_headers_req.has_value());
-  EXPECT_TRUE(resp_headers_req->has_response_headers());
+  ASSERT_THAT(
+      resp_headers_req,
+      ::testing::Optional(MatchesResponseHeaders(::testing::_)));
   ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse({}));
   auto resp_body_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(resp_body_req.has_value());
-  EXPECT_TRUE(resp_body_req->has_response_body());
+  ASSERT_THAT(
+      resp_body_req, ::testing::Optional(MatchesResponseBody(
+                         EchoResponseMessageIs(kRequestMessage),
+                         /*end_of_stream=*/false)));
   ::envoy::service::ext_proc::v3::ProcessingResponse response;
   auto* common_response = response.mutable_response_body()->mutable_response();
   common_response->set_status(
@@ -2015,12 +2277,15 @@ TEST_P(XdsExtProcEnd2endTest,
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto resp_headers_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(resp_headers_req.has_value());
-  EXPECT_TRUE(resp_headers_req->has_response_headers());
+  ASSERT_THAT(
+      resp_headers_req,
+      ::testing::Optional(MatchesResponseHeaders(::testing::_)));
   ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse({}));
   auto resp_body_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(resp_body_req.has_value());
-  EXPECT_TRUE(resp_body_req->has_response_body());
+  ASSERT_THAT(
+      resp_body_req, ::testing::Optional(MatchesResponseBody(
+                         EchoResponseMessageIs(kRequestMessage),
+                         /*end_of_stream=*/false)));
   ext_proc_stream->SendStatus(absl::ResourceExhaustedError(
       "Call closed by ext_proc server on response body"));
   Status status = rpc.GetStatus();
@@ -2045,12 +2310,15 @@ TEST_P(XdsExtProcEnd2endTest,
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto resp_headers_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(resp_headers_req.has_value());
-  EXPECT_TRUE(resp_headers_req->has_response_headers());
+  ASSERT_THAT(
+      resp_headers_req,
+      ::testing::Optional(MatchesResponseHeaders(::testing::_)));
   ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse({}));
   auto resp_body_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(resp_body_req.has_value());
-  EXPECT_TRUE(resp_body_req->has_response_body());
+  ASSERT_THAT(
+      resp_body_req, ::testing::Optional(MatchesResponseBody(
+                         EchoResponseMessageIs(kRequestMessage),
+                         /*end_of_stream=*/false)));
   ext_proc_stream->SendStatus(absl::ResourceExhaustedError(
       "Call closed by ext_proc server on response body"));
   Status status = rpc.GetStatus();
@@ -2074,12 +2342,15 @@ TEST_P(XdsExtProcEnd2endTest, ResponseBodyGrpcMessageCompressed) {
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto resp_headers_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(resp_headers_req.has_value());
-  EXPECT_TRUE(resp_headers_req->has_response_headers());
+  ASSERT_THAT(
+      resp_headers_req,
+      ::testing::Optional(MatchesResponseHeaders(::testing::_)));
   ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse({}));
   auto resp_body_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(resp_body_req.has_value());
-  EXPECT_TRUE(resp_body_req->has_response_body());
+  ASSERT_THAT(
+      resp_body_req, ::testing::Optional(MatchesResponseBody(
+                         EchoResponseMessageIs(kRequestMessage),
+                         /*end_of_stream=*/false)));
   ::envoy::service::ext_proc::v3::ProcessingResponse response;
   auto* common_response = response.mutable_response_body()->mutable_response();
   auto* body_mutation = common_response->mutable_body_mutation();
@@ -2107,32 +2378,28 @@ TEST_P(XdsExtProcEnd2endTest, ResponseBodyObservabilityStreamErrorAllowCall) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  AsyncBidiStream stream;
   RpcOptions rpc_options;
-  stream.Start(stub_.get(), rpc_options);
+  AsyncRpc rpc;
+  rpc.StartRpc(stub_.get(), rpc_options);
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
-  EchoRequest request;
-  request.set_message(kMessage1);
-  stream.StartWrite(request);
-  EXPECT_TRUE(stream.WaitForWriteDone());
   auto resp_headers_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(resp_headers_req.has_value());
-  EXPECT_TRUE(resp_headers_req->has_response_headers());
+  ASSERT_THAT(
+      resp_headers_req,
+      ::testing::Optional(MatchesResponseHeaders(::testing::_)));
   ext_proc_stream->SendResponseAndStatus(
       MakeResponseHeadersMutationResponse({}),
       absl::ResourceExhaustedError(
           "Call closed by ext_proc server after response headers"));
-  EchoResponse response;
-  EXPECT_TRUE(stream.ReadMessage(&response));
-  EXPECT_EQ(response.message(), kMessage1);
-  stream.StartWritesDone();
-  Status status = stream.Finish();
+  Status status = rpc.GetStatus();
   EXPECT_TRUE(status.ok()) << status.error_message();
+  EXPECT_EQ(rpc.response().message(), kRequestMessage);
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -2155,16 +2422,19 @@ TEST_P(XdsExtProcEnd2endTest, ResponseBodyObservabilityStreamErrorFailCall) {
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/BidiStream")))));
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
   EchoRequest request;
   request.set_message(kMessage1);
   stream.StartWrite(request);
   EXPECT_TRUE(stream.WaitForWriteDone());
   auto resp_headers_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(resp_headers_req.has_value());
-  EXPECT_TRUE(resp_headers_req->has_response_headers());
+  ASSERT_THAT(
+      resp_headers_req,
+      ::testing::Optional(MatchesResponseHeaders(::testing::_)));
   ext_proc_stream->SendResponseAndStatus(
       MakeResponseHeadersMutationResponse({}),
       absl::ResourceExhaustedError(
@@ -2231,27 +2501,45 @@ TEST_P(XdsExtProcEnd2endTest, ResponseTrailersInvalidHeaderMutationFails) {
   rpc.StartRpc(stub_.get(), rpc_options);
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
-  while (true) {
-    auto req = ext_proc_stream->GetNextRequest();
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
+  ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestBody(
+               EchoRequestMessageIs(kRequestMessage), /*end_of_stream=*/false)));
+  ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
+      req->request_body().body(), req->request_body().end_of_stream()));
+  for (int i = 0; i < 2; ++i) {
+    req = ext_proc_stream->GetNextRequest();
     ASSERT_TRUE(req.has_value());
-    if (req->has_request_headers()) {
-      ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
-    } else if (req->has_request_body()) {
+    if (req->has_request_body()) {
+      EXPECT_THAT(
+          *req, MatchesRequestBody(/*body=*/"", /*end_of_stream=*/true));
       ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
-          req->request_body().body(), req->request_body().end_of_stream()));
+          /*body=*/"", /*end_of_stream=*/true));
     } else if (req->has_response_headers()) {
+      EXPECT_THAT(
+          *req, MatchesResponseHeaders(::testing::_));
       ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse({}));
-    } else if (req->has_response_body()) {
-      ext_proc_stream->SendResponse(MakeResponseBodyMutationResponse(
-          req->response_body().body(), req->response_body().end_of_stream()));
-    } else if (req->has_response_trailers()) {
-      ext_proc_stream->SendResponse(
-          MakeResponseTrailersMutationResponse({{"host", "invalid-host"}}));
-      break;
     } else {
       FAIL() << "Unexpected request type: " << req->DebugString();
     }
   }
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesResponseBody(
+               EchoResponseMessageIs(kRequestMessage), /*end_of_stream=*/false)));
+  ext_proc_stream->SendResponse(MakeResponseBodyMutationResponse(
+      req->response_body().body(), req->response_body().end_of_stream()));
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesResponseTrailers(::testing::_)));
+  ext_proc_stream->SendResponse(
+      MakeResponseTrailersMutationResponse({{"host", "invalid-host"}}));
   Status status = rpc.GetStatus();
   EXPECT_THAT(
       status,
@@ -2322,12 +2610,16 @@ TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponseForRequestBody) {
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
   auto req_body = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req_body.has_value());
-  EXPECT_TRUE(req_body->has_request_body());
+  ASSERT_THAT(
+      req_body, ::testing::Optional(MatchesRequestBody(
+                    EchoRequestMessageIs(kRequestMessage),
+                    /*end_of_stream=*/false)));
   ext_proc_stream->SendResponse(MakeImmediateResponse(
       grpc::StatusCode::PERMISSION_DENIED,
       "Access Denied by ExtProc (Request Body)",
@@ -2361,8 +2653,10 @@ TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponseForRequestHeaders) {
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
   ext_proc_stream->SendResponse(MakeImmediateResponse(
       grpc::StatusCode::PERMISSION_DENIED,
       "Access Denied by ExtProc (Request Headers)",
@@ -2396,26 +2690,32 @@ TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponseForResponseBody) {
   rpc.StartRpc(stub_.get(), rpc_options);
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
-  while (true) {
-    auto req = ext_proc_stream->GetNextRequest();
-    ASSERT_TRUE(req.has_value());
-    if (req->has_request_headers()) {
-      ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
-    } else if (req->has_request_body()) {
-      ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
-          req->request_body().body(), req->request_body().end_of_stream()));
-    } else if (req->has_response_headers()) {
-      ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse({}));
-    } else if (req->has_response_body()) {
-      ext_proc_stream->SendResponse(MakeImmediateResponse(
-          grpc::StatusCode::PERMISSION_DENIED,
-          "Access Denied by ExtProc (Response Body)",
-          {{kImmediateResponseHeaderKey, kHeaderMutatedValue}}));
-      break;
-    } else {
-      FAIL() << "Unexpected request type: " << req->DebugString();
-    }
-  }
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
+  ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestBody(
+               EchoRequestMessageIs(kRequestMessage), /*end_of_stream=*/false)));
+  ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
+      req->request_body().body(), req->request_body().end_of_stream()));
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestBody(
+               /*body=*/"", /*end_of_stream=*/true)));
+  ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
+      /*body=*/"", /*end_of_stream=*/true));
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesResponseBody(
+               EchoResponseMessageIs(kRequestMessage), /*end_of_stream=*/false)));
+  ext_proc_stream->SendResponse(MakeImmediateResponse(
+      grpc::StatusCode::PERMISSION_DENIED,
+      "Access Denied by ExtProc (Response Body)",
+      {{kImmediateResponseHeaderKey, kHeaderMutatedValue}}));
   Status status = rpc.GetStatus();
   EXPECT_THAT(
       status,
@@ -2446,15 +2746,28 @@ TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponseForResponseHeaders) {
   rpc.StartRpc(stub_.get(), rpc_options);
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
-  while (true) {
-    auto req = ext_proc_stream->GetNextRequest();
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
+  ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestBody(
+               EchoRequestMessageIs(kRequestMessage), /*end_of_stream=*/false)));
+  ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
+      req->request_body().body(), req->request_body().end_of_stream()));
+  for (int i = 0; i < 2; ++i) {
+    req = ext_proc_stream->GetNextRequest();
     ASSERT_TRUE(req.has_value());
-    if (req->has_request_headers()) {
-      ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
-    } else if (req->has_request_body()) {
+    if (req->has_request_body()) {
+      EXPECT_THAT(
+          *req, MatchesRequestBody(/*body=*/"", /*end_of_stream=*/true));
       ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
-          req->request_body().body(), req->request_body().end_of_stream()));
+          /*body=*/"", /*end_of_stream=*/true));
     } else if (req->has_response_headers()) {
+      EXPECT_THAT(*req, MatchesResponseHeaders(::testing::_));
       ext_proc_stream->SendResponse(MakeImmediateResponse(
           grpc::StatusCode::PERMISSION_DENIED,
           "Access Denied by ExtProc (Response Headers)",
@@ -2494,29 +2807,47 @@ TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponseForResponseTrailers) {
   rpc.StartRpc(stub_.get(), rpc_options);
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
-  while (true) {
-    auto req = ext_proc_stream->GetNextRequest();
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
+  ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestBody(
+               EchoRequestMessageIs(kRequestMessage), /*end_of_stream=*/false)));
+  ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
+      req->request_body().body(), req->request_body().end_of_stream()));
+  for (int i = 0; i < 2; ++i) {
+    req = ext_proc_stream->GetNextRequest();
     ASSERT_TRUE(req.has_value());
-    if (req->has_request_headers()) {
-      ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
-    } else if (req->has_request_body()) {
+    if (req->has_request_body()) {
+      EXPECT_THAT(
+          *req, MatchesRequestBody(/*body=*/"", /*end_of_stream=*/true));
       ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
-          req->request_body().body(), req->request_body().end_of_stream()));
+          /*body=*/"", /*end_of_stream=*/true));
     } else if (req->has_response_headers()) {
+      EXPECT_THAT(
+          *req, MatchesResponseHeaders(::testing::_));
       ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse({}));
-    } else if (req->has_response_body()) {
-      ext_proc_stream->SendResponse(MakeResponseBodyMutationResponse(
-          req->response_body().body(), req->response_body().end_of_stream()));
-    } else if (req->has_response_trailers()) {
-      ext_proc_stream->SendResponse(MakeImmediateResponse(
-          grpc::StatusCode::PERMISSION_DENIED,
-          "Access Denied by ExtProc (Response Trailers)",
-          {{kImmediateResponseHeaderKey, kHeaderMutatedValue}}));
-      break;
     } else {
       FAIL() << "Unexpected request type: " << req->DebugString();
     }
   }
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesResponseBody(
+               EchoResponseMessageIs(kRequestMessage), /*end_of_stream=*/false)));
+  ext_proc_stream->SendResponse(MakeResponseBodyMutationResponse(
+      req->response_body().body(), req->response_body().end_of_stream()));
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesResponseTrailers(::testing::_)));
+  ext_proc_stream->SendResponse(MakeImmediateResponse(
+      grpc::StatusCode::PERMISSION_DENIED,
+      "Access Denied by ExtProc (Response Trailers)",
+      {{kImmediateResponseHeaderKey, kHeaderMutatedValue}}));
   Status status = rpc.GetStatus();
   EXPECT_THAT(
       status,
@@ -2619,26 +2950,32 @@ TEST_P(XdsExtProcEnd2endTest, ImmediateResponseForResponseBody) {
   rpc.StartRpc(stub_.get(), rpc_options);
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
-  while (true) {
-    auto req = ext_proc_stream->GetNextRequest();
-    ASSERT_TRUE(req.has_value());
-    if (req->has_request_headers()) {
-      ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
-    } else if (req->has_request_body()) {
-      ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
-          req->request_body().body(), req->request_body().end_of_stream()));
-    } else if (req->has_response_headers()) {
-      ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse({}));
-    } else if (req->has_response_body()) {
-      ext_proc_stream->SendResponse(MakeImmediateResponse(
-          grpc::StatusCode::PERMISSION_DENIED,
-          "Access Denied by ExtProc (Response Body)",
-          {{kImmediateResponseHeaderKey, kHeaderMutatedValue}}));
-      break;
-    } else {
-      FAIL() << "Unexpected request type: " << req->DebugString();
-    }
-  }
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
+  ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestBody(
+               EchoRequestMessageIs(kRequestMessage), /*end_of_stream=*/false)));
+  ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
+      req->request_body().body(), req->request_body().end_of_stream()));
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestBody(
+               /*body=*/"", /*end_of_stream=*/true)));
+  ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
+      /*body=*/"", /*end_of_stream=*/true));
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesResponseBody(
+               EchoResponseMessageIs(kRequestMessage), /*end_of_stream=*/false)));
+  ext_proc_stream->SendResponse(MakeImmediateResponse(
+      grpc::StatusCode::PERMISSION_DENIED,
+      "Access Denied by ExtProc (Response Body)",
+      {{kImmediateResponseHeaderKey, kHeaderMutatedValue}}));
   Status status = rpc.GetStatus();
   EXPECT_THAT(status,
               GrpcStatusIs(StatusCode::PERMISSION_DENIED,
@@ -2668,15 +3005,28 @@ TEST_P(XdsExtProcEnd2endTest, ImmediateResponseForResponseHeaders) {
   rpc.StartRpc(stub_.get(), rpc_options);
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
-  while (true) {
-    auto req = ext_proc_stream->GetNextRequest();
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
+  ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestBody(
+               EchoRequestMessageIs(kRequestMessage), /*end_of_stream=*/false)));
+  ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
+      req->request_body().body(), req->request_body().end_of_stream()));
+  for (int i = 0; i < 2; ++i) {
+    req = ext_proc_stream->GetNextRequest();
     ASSERT_TRUE(req.has_value());
-    if (req->has_request_headers()) {
-      ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
-    } else if (req->has_request_body()) {
+    if (req->has_request_body()) {
+      EXPECT_THAT(
+          *req, MatchesRequestBody(/*body=*/"", /*end_of_stream=*/true));
       ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
-          req->request_body().body(), req->request_body().end_of_stream()));
+          /*body=*/"", /*end_of_stream=*/true));
     } else if (req->has_response_headers()) {
+      EXPECT_THAT(*req, MatchesResponseHeaders(::testing::_));
       ext_proc_stream->SendResponse(MakeImmediateResponse(
           grpc::StatusCode::PERMISSION_DENIED,
           "Access Denied by ExtProc (Response Headers)",
@@ -2715,29 +3065,47 @@ TEST_P(XdsExtProcEnd2endTest, ImmediateResponseForResponseTrailers) {
   rpc.StartRpc(stub_.get(), rpc_options);
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
-  while (true) {
-    auto req = ext_proc_stream->GetNextRequest();
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
+  ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestBody(
+               EchoRequestMessageIs(kRequestMessage), /*end_of_stream=*/false)));
+  ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
+      req->request_body().body(), req->request_body().end_of_stream()));
+  for (int i = 0; i < 2; ++i) {
+    req = ext_proc_stream->GetNextRequest();
     ASSERT_TRUE(req.has_value());
-    if (req->has_request_headers()) {
-      ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
-    } else if (req->has_request_body()) {
+    if (req->has_request_body()) {
+      EXPECT_THAT(
+          *req, MatchesRequestBody(/*body=*/"", /*end_of_stream=*/true));
       ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
-          req->request_body().body(), req->request_body().end_of_stream()));
+          /*body=*/"", /*end_of_stream=*/true));
     } else if (req->has_response_headers()) {
+      EXPECT_THAT(
+          *req, MatchesResponseHeaders(::testing::_));
       ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse({}));
-    } else if (req->has_response_body()) {
-      ext_proc_stream->SendResponse(MakeResponseBodyMutationResponse(
-          req->response_body().body(), req->response_body().end_of_stream()));
-    } else if (req->has_response_trailers()) {
-      ext_proc_stream->SendResponse(MakeImmediateResponse(
-          grpc::StatusCode::PERMISSION_DENIED,
-          "Access Denied by ExtProc (Response Trailers)",
-          {{kImmediateResponseHeaderKey, kHeaderMutatedValue}}));
-      break;
     } else {
       FAIL() << "Unexpected request type: " << req->DebugString();
     }
   }
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesResponseBody(
+               EchoResponseMessageIs(kRequestMessage), /*end_of_stream=*/false)));
+  ext_proc_stream->SendResponse(MakeResponseBodyMutationResponse(
+      req->response_body().body(), req->response_body().end_of_stream()));
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesResponseTrailers(::testing::_)));
+  ext_proc_stream->SendResponse(MakeImmediateResponse(
+      grpc::StatusCode::PERMISSION_DENIED,
+      "Access Denied by ExtProc (Response Trailers)",
+      {{kImmediateResponseHeaderKey, kHeaderMutatedValue}}));
   Status status = rpc.GetStatus();
   EXPECT_THAT(status, GrpcStatusIs(
                           StatusCode::PERMISSION_DENIED,
@@ -2770,24 +3138,21 @@ TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnClientBody) {
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/BidiStream")))));
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
   EchoRequest request;
   request.set_message(kMessage1);
   stream.StartWrite(request);
   auto next_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(next_req.has_value());
-  EXPECT_TRUE(next_req->has_request_body());
-  const auto& body_req = next_req->request_body();
-  grpc::testing::EchoRequest echo_request;
-  std::string mutated_body = body_req.body();
-  if (echo_request.ParseFromString(body_req.body())) {
-    echo_request.set_message(absl::StrCat(echo_request.message(), "_modified"));
-    GRPC_CHECK(echo_request.SerializeToString(&mutated_body));
-  }
+  ASSERT_THAT(
+      next_req, ::testing::Optional(MatchesRequestBody(
+                    EchoRequestMessageIs(kMessage1), /*end_of_stream=*/false)));
   ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
-      mutated_body, false, /*request_drain=*/true));
+      ModifyEchoRequest(next_req->request_body().body(), "_modified"),
+      /*end_of_stream=*/false, /*request_drain=*/true));
   EXPECT_TRUE(stream.WaitForWriteDone());
   EchoResponse response;
   EXPECT_TRUE(stream.ReadMessage(&response));
@@ -2815,26 +3180,21 @@ TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnRequestHeaders) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  AsyncBidiStream stream;
   RpcOptions rpc_options;
-  stream.Start(stub_.get(), rpc_options);
+  AsyncRpc rpc;
+  rpc.StartRpc(stub_.get(), rpc_options);
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
   ext_proc_stream->SendResponse(
       MakeRequestHeadersMutationResponse({}, {}, /*request_drain=*/true));
-  EchoRequest request;
-  request.set_message(kMessage1);
-  stream.StartWrite(request);
-  EXPECT_TRUE(stream.WaitForWriteDone());
-  EchoResponse response;
-  EXPECT_TRUE(stream.ReadMessage(&response));
-  EXPECT_EQ(response.message(), kMessage1);
-  stream.StartWritesDone();
-  Status status = stream.Finish();
+  Status status = rpc.GetStatus();
   EXPECT_TRUE(status.ok()) << status.error_message();
+  EXPECT_EQ(rpc.response().message(), kRequestMessage);
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -2856,28 +3216,26 @@ TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnResponseHeaders) {
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/BidiStream")))));
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
   EchoRequest request;
   request.set_message(kMessage1);
   stream.StartWrite(request);
   auto next_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(next_req.has_value());
-  EXPECT_TRUE(next_req->has_request_body());
-  const auto& body_req = next_req->request_body();
-  grpc::testing::EchoRequest echo_request;
-  std::string mutated_body = body_req.body();
-  if (echo_request.ParseFromString(body_req.body())) {
-    echo_request.set_message(absl::StrCat(echo_request.message(), "_modified"));
-    GRPC_CHECK(echo_request.SerializeToString(&mutated_body));
-  }
-  ext_proc_stream->SendResponse(
-      MakeRequestBodyMutationResponse(mutated_body, false));
+  ASSERT_THAT(
+      next_req, ::testing::Optional(MatchesRequestBody(
+                    EchoRequestMessageIs(kMessage1), /*end_of_stream=*/false)));
+  ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
+      ModifyEchoRequest(next_req->request_body().body(), "_modified"),
+      /*end_of_stream=*/false));
   EXPECT_TRUE(stream.WaitForWriteDone());
   auto resp_headers_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(resp_headers_req.has_value());
-  EXPECT_TRUE(resp_headers_req->has_response_headers());
+  ASSERT_THAT(
+      resp_headers_req,
+      ::testing::Optional(MatchesResponseHeaders(::testing::_)));
   ext_proc_stream->SendResponse(
       MakeResponseHeadersMutationResponse({}, {}, /*request_drain=*/true));
   EchoResponse response;
@@ -2906,55 +3264,50 @@ TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnResponseTrailers) {
   stream.Start(stub_.get(), rpc_options);
   auto ext_proc_stream = ext_proc_service_->GetStream();
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/BidiStream")))));
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
   EchoRequest request;
   request.set_message(kMessage1);
   stream.StartWrite(request);
   auto next_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(next_req.has_value());
-  EXPECT_TRUE(next_req->has_request_body());
-  const auto& body_req = next_req->request_body();
-  grpc::testing::EchoRequest echo_request;
-  std::string mutated_body = body_req.body();
-  if (echo_request.ParseFromString(body_req.body())) {
-    echo_request.set_message(absl::StrCat(echo_request.message(), "_modified"));
-    GRPC_CHECK(echo_request.SerializeToString(&mutated_body));
-  }
-  ext_proc_stream->SendResponse(
-      MakeRequestBodyMutationResponse(mutated_body, false));
+  ASSERT_THAT(
+      next_req, ::testing::Optional(MatchesRequestBody(
+                    EchoRequestMessageIs(kMessage1), /*end_of_stream=*/false)));
+  ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
+      ModifyEchoRequest(next_req->request_body().body(), "_modified"),
+      /*end_of_stream=*/false));
   EXPECT_TRUE(stream.WaitForWriteDone());
   stream.StartReadMessage();
   auto resp_headers_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(resp_headers_req.has_value());
-  EXPECT_TRUE(resp_headers_req->has_response_headers());
+  ASSERT_THAT(
+      resp_headers_req,
+      ::testing::Optional(MatchesResponseHeaders(::testing::_)));
   ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse({}));
   auto resp_body_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(resp_body_req.has_value());
-  EXPECT_TRUE(resp_body_req->has_response_body());
-  const auto& resp_body = resp_body_req->response_body();
-  grpc::testing::EchoResponse echo_response;
-  std::string mutated_resp_body = resp_body.body();
-  if (echo_response.ParseFromString(resp_body.body())) {
-    echo_response.set_message(
-        absl::StrCat(echo_response.message(), "_modified"));
-    GRPC_CHECK(echo_response.SerializeToString(&mutated_resp_body));
-  }
-  ext_proc_stream->SendResponse(
-      MakeResponseBodyMutationResponse(mutated_resp_body, false));
+  ASSERT_THAT(
+      resp_body_req,
+      ::testing::Optional(MatchesResponseBody(
+          EchoResponseMessageIs("message1_modified"), /*end_of_stream=*/false)));
+  ext_proc_stream->SendResponse(MakeResponseBodyMutationResponse(
+      ModifyEchoResponse(resp_body_req->response_body().body(), "_modified"),
+      /*end_of_stream=*/false));
   EchoResponse response;
   EXPECT_TRUE(stream.WaitForReadDone(&response));
   EXPECT_EQ(response.message(), "message1_modified_modified");
   stream.StartWritesDone();
-  while (true) {
+  for (int i = 0; i < 2; ++i) {
     auto next_opt = ext_proc_stream->GetNextRequest();
     ASSERT_TRUE(next_opt.has_value());
     if (next_opt->has_request_body()) {
+      EXPECT_THAT(
+          *next_opt, MatchesRequestBody(/*body=*/"", /*end_of_stream=*/true));
       ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
-          next_opt->request_body().body(),
-          next_opt->request_body().end_of_stream()));
+          /*body=*/"", /*end_of_stream=*/true));
     } else if (next_opt->has_response_trailers()) {
+      EXPECT_THAT(*next_opt, MatchesResponseTrailers(::testing::_));
       ext_proc_stream->SendResponse(
           MakeResponseTrailersMutationResponse({}, {}, /*request_drain=*/true));
       break;
@@ -2984,8 +3337,10 @@ TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnServerBody) {
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/BidiStream")))));
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
   EchoRequest request;
   request.set_message(kMessage1);
@@ -2993,22 +3348,18 @@ TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnServerBody) {
   EXPECT_TRUE(stream.WaitForWriteDone());
   stream.StartReadMessage();
   auto resp_headers_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(resp_headers_req.has_value());
-  EXPECT_TRUE(resp_headers_req->has_response_headers());
+  ASSERT_THAT(
+      resp_headers_req,
+      ::testing::Optional(MatchesResponseHeaders(::testing::_)));
   ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse({}));
   auto resp_body_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(resp_body_req.has_value());
-  EXPECT_TRUE(resp_body_req->has_response_body());
-  const auto& resp_body = resp_body_req->response_body();
-  grpc::testing::EchoResponse echo_response;
-  std::string mutated_resp_body = resp_body.body();
-  if (echo_response.ParseFromString(resp_body.body())) {
-    echo_response.set_message(
-        absl::StrCat(echo_response.message(), "_modified"));
-    GRPC_CHECK(echo_response.SerializeToString(&mutated_resp_body));
-  }
+  ASSERT_THAT(
+      resp_body_req,
+      ::testing::Optional(MatchesResponseBody(
+          EchoResponseMessageIs(kMessage1), /*end_of_stream=*/false)));
   ext_proc_stream->SendResponse(MakeResponseBodyMutationResponse(
-      mutated_resp_body, false, /*request_drain=*/true));
+      ModifyEchoResponse(resp_body_req->response_body().body(), "_modified"),
+      /*end_of_stream=*/false, /*request_drain=*/true));
   EchoResponse response;
   EXPECT_TRUE(stream.WaitForReadDone(&response));
   EXPECT_EQ(response.message(), "message1_modified");
@@ -3043,8 +3394,9 @@ TEST_P(XdsExtProcEnd2endTest,
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_body());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestBody(
+               EchoRequestMessageIs(kRequestMessage), /*end_of_stream=*/false)));
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
   Status status = rpc.GetStatus();
   EXPECT_THAT(status, GrpcStatusIs(StatusCode::INTERNAL,
@@ -3069,8 +3421,10 @@ TEST_P(XdsExtProcEnd2endTest, ClientToServerOrderingResponseBodyBeforeHeaders) {
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
   ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(""));
   Status status = rpc.GetStatus();
   EXPECT_THAT(status, GrpcStatusIs(StatusCode::INTERNAL,
@@ -3098,26 +3452,38 @@ TEST_P(XdsExtProcEnd2endTest,
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
   auto next_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(next_req.has_value());
-  EXPECT_TRUE(next_req->has_request_body());
+  ASSERT_THAT(
+      next_req, ::testing::Optional(MatchesRequestBody(
+                    EchoRequestMessageIs(kRequestMessage),
+                    /*end_of_stream=*/false)));
   ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
       next_req->request_body().body(),
       next_req->request_body().end_of_stream()));
-  auto resp_body_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(resp_body_req.has_value());
-  if (resp_body_req->has_request_body()) {
-    ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
-        resp_body_req->request_body().body(),
-        resp_body_req->request_body().end_of_stream()));
-    resp_body_req = ext_proc_stream->GetNextRequest();
-    ASSERT_TRUE(resp_body_req.has_value());
+  for (int i = 0; i < 2; ++i) {
+    auto next_opt = ext_proc_stream->GetNextRequest();
+    ASSERT_TRUE(next_opt.has_value());
+    if (next_opt->has_request_body()) {
+      EXPECT_THAT(
+          *next_opt, MatchesRequestBody(/*body=*/"", /*end_of_stream=*/true));
+      ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
+          /*body=*/"", /*end_of_stream=*/true));
+    } else if (next_opt->has_response_body()) {
+      EXPECT_THAT(
+          *next_opt, MatchesResponseBody(
+                         EchoResponseMessageIs(kRequestMessage),
+                         /*end_of_stream=*/false));
+      ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse({}));
+      break;
+    } else {
+      FAIL() << "Unexpected request type: " << next_opt->DebugString();
+    }
   }
-  EXPECT_TRUE(resp_body_req->has_response_body());
-  ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse({}));
   Status status = rpc.GetStatus();
   EXPECT_THAT(status, GrpcStatusIs(StatusCode::INTERNAL,
                                    ::testing::HasSubstr(
@@ -3144,18 +3510,23 @@ TEST_P(XdsExtProcEnd2endTest, ServerToClientOrderingResponseBodyBeforeHeaders) {
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
   auto next_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(next_req.has_value());
-  EXPECT_TRUE(next_req->has_request_body());
+  ASSERT_THAT(
+      next_req, ::testing::Optional(MatchesRequestBody(
+                    EchoRequestMessageIs(kRequestMessage),
+                    /*end_of_stream=*/false)));
   ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
       next_req->request_body().body(),
       next_req->request_body().end_of_stream()));
   auto resp_hdr_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(resp_hdr_req.has_value());
-  EXPECT_TRUE(resp_hdr_req->has_response_headers());
+  ASSERT_THAT(
+      resp_hdr_req,
+      ::testing::Optional(MatchesResponseHeaders(::testing::_)));
   ext_proc_stream->SendResponse(MakeResponseBodyMutationResponse(""));
   Status status = rpc.GetStatus();
   EXPECT_THAT(status, GrpcStatusIs(StatusCode::INTERNAL,
@@ -3182,18 +3553,23 @@ TEST_P(XdsExtProcEnd2endTest, ServerToClientOrderingTrailersBeforeHeaders) {
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
   auto next_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(next_req.has_value());
-  EXPECT_TRUE(next_req->has_request_body());
+  ASSERT_THAT(
+      next_req, ::testing::Optional(MatchesRequestBody(
+                    EchoRequestMessageIs(kRequestMessage),
+                    /*end_of_stream=*/false)));
   ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
       next_req->request_body().body(),
       next_req->request_body().end_of_stream()));
   auto resp_hdr_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(resp_hdr_req.has_value());
-  EXPECT_TRUE(resp_hdr_req->has_response_headers());
+  ASSERT_THAT(
+      resp_hdr_req,
+      ::testing::Optional(MatchesResponseHeaders(::testing::_)));
   ext_proc_stream->SendResponse(MakeResponseTrailersMutationResponse({}));
   Status status = rpc.GetStatus();
   EXPECT_THAT(status, GrpcStatusIs(StatusCode::INTERNAL,
@@ -3222,26 +3598,32 @@ TEST_P(XdsExtProcEnd2endTest,
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/BidiStream")))));
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
   EchoRequest request;
   request.set_message(kMessage1);
   stream.StartWrite(request);
   auto next_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(next_req.has_value());
-  EXPECT_TRUE(next_req->has_request_body());
+  ASSERT_THAT(
+      next_req, ::testing::Optional(MatchesRequestBody(
+                    EchoRequestMessageIs(kMessage1), /*end_of_stream=*/false)));
   ext_proc_stream->SendResponse(
       MakeRequestBodyMutationResponse(next_req->request_body().body(), false));
   EXPECT_TRUE(stream.WaitForWriteDone());
   stream.StartReadMessage();
   auto resp_hdr_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(resp_hdr_req.has_value());
-  EXPECT_TRUE(resp_hdr_req->has_response_headers());
+  ASSERT_THAT(
+      resp_hdr_req,
+      ::testing::Optional(MatchesResponseHeaders(::testing::_)));
   ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse({}));
   auto resp_body_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(resp_body_req.has_value());
-  EXPECT_TRUE(resp_body_req->has_response_body());
+  ASSERT_THAT(
+      resp_body_req,
+      ::testing::Optional(MatchesResponseBody(
+          EchoResponseMessageIs(kMessage1), /*end_of_stream=*/false)));
   ext_proc_stream->SendResponse(MakeResponseTrailersMutationResponse({}));
   EchoResponse response;
   EXPECT_FALSE(stream.WaitForReadDone(&response));
@@ -3272,18 +3654,23 @@ TEST_P(XdsExtProcEnd2endTest,
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
   auto next_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(next_req.has_value());
-  EXPECT_TRUE(next_req->has_request_body());
+  ASSERT_THAT(
+      next_req, ::testing::Optional(MatchesRequestBody(
+                    EchoRequestMessageIs(kRequestMessage),
+                    /*end_of_stream=*/false)));
   ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
       next_req->request_body().body(),
       next_req->request_body().end_of_stream()));
   auto resp_hdr_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(resp_hdr_req.has_value());
-  EXPECT_TRUE(resp_hdr_req->has_response_headers());
+  ASSERT_THAT(
+      resp_hdr_req,
+      ::testing::Optional(MatchesResponseHeaders(::testing::_)));
   ext_proc_stream->SendResponse(MakeResponseTrailersMutationResponse({}));
   Status status = rpc.GetStatus();
   EXPECT_THAT(status, GrpcStatusIs(StatusCode::INTERNAL,
@@ -3314,12 +3701,15 @@ TEST_P(XdsExtProcEnd2endTest, ServerToClientResponseBodyHalfClose) {
   EXPECT_TRUE(stream.WaitForWriteDone());
   stream.StartReadMessage();
   auto resp_hdr_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(resp_hdr_req.has_value());
-  EXPECT_TRUE(resp_hdr_req->has_response_headers());
+  ASSERT_THAT(
+      resp_hdr_req,
+      ::testing::Optional(MatchesResponseHeaders(::testing::_)));
   ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse({}));
   auto resp_body_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(resp_body_req.has_value());
-  EXPECT_TRUE(resp_body_req->has_response_body());
+  ASSERT_THAT(
+      resp_body_req, ::testing::Optional(MatchesResponseBody(
+                         EchoResponseMessageIs(kRequestMessage),
+                         /*end_of_stream=*/false)));
   ext_proc_stream->SendResponse(
       MakeResponseBodyMutationResponse("", /*end_of_stream=*/true));
   EchoResponse response;
@@ -3354,8 +3744,10 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseRequestBodyFailureModeFalse) {
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/BidiStream")))));
   ext_proc_stream->SendResponseAndStatus(MakeRequestHeadersMutationResponse({}),
                                          absl::OkStatus());
   EchoRequest request;
@@ -3388,8 +3780,10 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseRequestBodyFailureModeTrue) {
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/BidiStream")))));
   ext_proc_stream->SendResponseAndStatus(MakeRequestHeadersMutationResponse({}),
                                          absl::OkStatus());
   absl::SleepFor(absl::Milliseconds(100));
@@ -3424,15 +3818,18 @@ TEST_P(XdsExtProcEnd2endTest,
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/BidiStream")))));
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
   EchoRequest request;
   request.set_message(kMessage1);
   stream.StartWrite(request);
   auto req2 = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req2.has_value());
-  EXPECT_TRUE(req2->has_request_body());
+  ASSERT_THAT(
+      req2, ::testing::Optional(MatchesRequestBody(
+                EchoRequestMessageIs(kMessage1), /*end_of_stream=*/false)));
   ext_proc_stream->SendResponseAndStatus(
       MakeRequestBodyMutationResponse(req2->request_body().body()),
       absl::OkStatus());
@@ -3462,15 +3859,18 @@ TEST_P(XdsExtProcEnd2endTest,
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/BidiStream")))));
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
   EchoRequest request;
   request.set_message(kMessage1);
   stream.StartWrite(request);
   auto req2 = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req2.has_value());
-  EXPECT_TRUE(req2->has_request_body());
+  ASSERT_THAT(
+      req2, ::testing::Optional(MatchesRequestBody(
+                EchoRequestMessageIs(kMessage1), /*end_of_stream=*/false)));
   ext_proc_stream->SendStatus(absl::OkStatus());
   stream.StartWritesDone();
   Status status = stream.Finish();
@@ -3490,25 +3890,19 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseRequestHeadersFailureModeFalse) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  AsyncBidiStream stream;
-  RpcOptions rpc_options;
-  stream.Start(stub_.get(), rpc_options);
+  AsyncRpc rpc;
+  rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
   ext_proc_stream->SendStatus(absl::OkStatus());
-  EchoRequest request;
-  request.set_message(kMessage1);
-  stream.StartWrite(request);
-  EXPECT_TRUE(stream.WaitForWriteDone());
-  EchoResponse response;
-  EXPECT_TRUE(stream.ReadMessage(&response));
-  EXPECT_EQ(response.message(), kMessage1);
-  stream.StartWritesDone();
-  Status status = stream.Finish();
+  Status status = rpc.GetStatus();
   EXPECT_TRUE(status.ok()) << status.error_message();
+  EXPECT_EQ(rpc.response().message(), kRequestMessage);
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -3522,25 +3916,19 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseRequestHeadersFailureModeTrue) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  AsyncBidiStream stream;
-  RpcOptions rpc_options;
-  stream.Start(stub_.get(), rpc_options);
+  AsyncRpc rpc;
+  rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
   ext_proc_stream->SendStatus(absl::OkStatus());
-  EchoRequest request;
-  request.set_message(kMessage1);
-  stream.StartWrite(request);
-  EXPECT_TRUE(stream.WaitForWriteDone());
-  EchoResponse response;
-  EXPECT_TRUE(stream.ReadMessage(&response));
-  EXPECT_EQ(response.message(), kMessage1);
-  stream.StartWritesDone();
-  Status status = stream.Finish();
+  Status status = rpc.GetStatus();
   EXPECT_TRUE(status.ok()) << status.error_message();
+  EXPECT_EQ(rpc.response().message(), kRequestMessage);
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -3562,16 +3950,18 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseBodyFailureModeFalse) {
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/BidiStream")))));
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
   EchoRequest request;
   request.set_message(kMessage1);
   stream.StartWrite(request);
   (void)stream.WaitForWriteDone();
   auto req2 = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req2.has_value());
-  EXPECT_TRUE(req2->has_response_headers());
+  ASSERT_THAT(
+      req2, ::testing::Optional(MatchesResponseHeaders(::testing::_)));
   ext_proc_stream->SendResponseAndStatus(
       MakeResponseHeadersMutationResponse({}), absl::OkStatus());
   EchoResponse response;
@@ -3607,16 +3997,18 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseBodyFailureModeTrue) {
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/BidiStream")))));
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
   EchoRequest request;
   request.set_message(kMessage1);
   stream.StartWrite(request);
   EXPECT_TRUE(stream.WaitForWriteDone());
   auto req2 = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req2.has_value());
-  EXPECT_TRUE(req2->has_response_headers());
+  ASSERT_THAT(
+      req2, ::testing::Optional(MatchesResponseHeaders(::testing::_)));
   ext_proc_stream->SendResponseAndStatus(
       MakeResponseHeadersMutationResponse({}), absl::OkStatus());
   absl::SleepFor(absl::Milliseconds(100));
@@ -3655,13 +4047,14 @@ TEST_P(XdsExtProcEnd2endTest,
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_response_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesResponseHeaders(::testing::_)));
   ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse({}));
   stream.StartReadMessage();
   auto req2 = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req2.has_value());
-  EXPECT_TRUE(req2->has_response_body());
+  ASSERT_THAT(
+      req2, ::testing::Optional(MatchesResponseBody(
+                EchoResponseMessageIs(kMessage1), /*end_of_stream=*/false)));
   ext_proc_stream->SendResponse(
       MakeResponseBodyMutationResponse(req2->response_body().body()));
   EchoResponse response;
@@ -3671,8 +4064,9 @@ TEST_P(XdsExtProcEnd2endTest,
   request.set_message(kMessage2);
   stream.StartWrite(request);
   auto req3 = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req3.has_value());
-  EXPECT_TRUE(req3->has_response_body());
+  ASSERT_THAT(
+      req3, ::testing::Optional(MatchesResponseBody(
+                EchoResponseMessageIs(kMessage2), /*end_of_stream=*/false)));
   ext_proc_stream->SendStatus(absl::OkStatus());
   stream.StartWritesDone();
   Status status = stream.Finish();
@@ -3704,13 +4098,14 @@ TEST_P(XdsExtProcEnd2endTest,
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_response_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesResponseHeaders(::testing::_)));
   ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse({}));
   stream.StartReadMessage();
   auto req2 = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req2.has_value());
-  EXPECT_TRUE(req2->has_response_body());
+  ASSERT_THAT(
+      req2, ::testing::Optional(MatchesResponseBody(
+                EchoResponseMessageIs(kMessage1), /*end_of_stream=*/false)));
   ext_proc_stream->SendResponse(
       MakeResponseBodyMutationResponse(req2->response_body().body()));
   EchoResponse response;
@@ -3720,8 +4115,9 @@ TEST_P(XdsExtProcEnd2endTest,
   request.set_message(kMessage2);
   stream.StartWrite(request);
   auto req3 = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req3.has_value());
-  EXPECT_TRUE(req3->has_response_body());
+  ASSERT_THAT(
+      req3, ::testing::Optional(MatchesResponseBody(
+                EchoResponseMessageIs(kMessage2), /*end_of_stream=*/false)));
   ext_proc_stream->SendStatus(absl::OkStatus());
   stream.StartWritesDone();
   Status status = stream.Finish();
@@ -3743,23 +4139,18 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseHeadersFailureModeFalse) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  AsyncBidiStream stream;
-  RpcOptions rpc_options;
-  stream.Start(stub_.get(), rpc_options);
+  AsyncRpc rpc;
+  rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
   ext_proc_stream->SendResponseAndStatus(MakeRequestHeadersMutationResponse({}),
                                          absl::OkStatus());
-  EchoRequest request;
-  request.set_message(kMessage1);
-  stream.StartWrite(request);
-  (void)stream.WaitForWriteDone();
-  EchoResponse response;
-  EXPECT_FALSE(stream.ReadMessage(&response));
-  Status status = stream.Finish();
+  Status status = rpc.GetStatus();
   EXPECT_THAT(status, GrpcStatusIs(StatusCode::INTERNAL,
                                    ::testing::HasSubstr(
                                        "Stream closed cleanly without drain")));
@@ -3778,27 +4169,20 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseHeadersFailureModeTrue) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  AsyncBidiStream stream;
-  RpcOptions rpc_options;
-  stream.Start(stub_.get(), rpc_options);
+  AsyncRpc rpc;
+  rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
   ext_proc_stream->SendResponseAndStatus(MakeRequestHeadersMutationResponse({}),
                                          absl::OkStatus());
-  absl::SleepFor(absl::Milliseconds(100));
-  EchoRequest request;
-  request.set_message(kMessage1);
-  stream.StartWrite(request);
-  EXPECT_TRUE(stream.WaitForWriteDone());
-  EchoResponse response;
-  EXPECT_TRUE(stream.ReadMessage(&response));
-  EXPECT_EQ(response.message(), kMessage1);
-  stream.StartWritesDone();
-  Status status = stream.Finish();
+  Status status = rpc.GetStatus();
   EXPECT_TRUE(status.ok()) << status.error_message();
+  EXPECT_EQ(rpc.response().message(), kRequestMessage);
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -3817,8 +4201,8 @@ TEST_P(XdsExtProcEnd2endTest,
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_response_trailers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesResponseTrailers(::testing::_)));
   ext_proc_stream->SendStatus(absl::OkStatus());
   Status status = rpc.GetStatus();
   EXPECT_TRUE(status.ok()) << status.error_message();
@@ -3839,8 +4223,8 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseTrailersFailureModeTrue) {
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_response_trailers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesResponseTrailers(::testing::_)));
   ext_proc_stream->SendStatus(absl::OkStatus());
   Status status = rpc.GetStatus();
   EXPECT_TRUE(status.ok()) << status.error_message();
@@ -3859,26 +4243,20 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseRequestBodyObservability) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  AsyncBidiStream stream;
-  RpcOptions rpc_options;
-  stream.Start(stub_.get(), rpc_options);
+  AsyncRpc rpc;
+  rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
   ext_proc_stream->SendResponseAndStatus(MakeRequestHeadersMutationResponse({}),
                                          absl::OkStatus());
-  EchoRequest request;
-  request.set_message(kMessage1);
-  stream.StartWrite(request);
-  EXPECT_TRUE(stream.WaitForWriteDone());
-  EchoResponse response;
-  EXPECT_TRUE(stream.ReadMessage(&response));
-  EXPECT_EQ(response.message(), kMessage1);
-  stream.StartWritesDone();
-  Status status = stream.Finish();
+  Status status = rpc.GetStatus();
   EXPECT_TRUE(status.ok()) << status.error_message();
+  EXPECT_EQ(rpc.response().message(), kRequestMessage);
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -3901,16 +4279,19 @@ TEST_P(XdsExtProcEnd2endTest,
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/BidiStream")))));
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
   EchoRequest request;
   request.set_message(kMessage1);
   stream.StartWrite(request);
   EXPECT_TRUE(stream.WaitForWriteDone());
   auto req2 = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req2.has_value());
-  EXPECT_TRUE(req2->has_request_body());
+  ASSERT_THAT(
+      req2, ::testing::Optional(MatchesRequestBody(
+                EchoRequestMessageIs(kMessage1), /*end_of_stream=*/false)));
   ext_proc_stream->SendResponseAndStatus(
       MakeRequestBodyMutationResponse(req2->request_body().body()),
       absl::OkStatus());
@@ -3939,22 +4320,14 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseRequestHeadersObservability) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  AsyncBidiStream stream;
-  RpcOptions rpc_options;
-  stream.Start(stub_.get(), rpc_options);
+  AsyncRpc rpc;
+  rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   ext_proc_stream->SendStatus(absl::OkStatus());
-  EchoRequest request;
-  request.set_message(kMessage1);
-  stream.StartWrite(request);
-  EXPECT_TRUE(stream.WaitForWriteDone());
-  EchoResponse response;
-  EXPECT_TRUE(stream.ReadMessage(&response));
-  EXPECT_EQ(response.message(), kMessage1);
-  stream.StartWritesDone();
-  Status status = stream.Finish();
+  Status status = rpc.GetStatus();
   EXPECT_TRUE(status.ok()) << status.error_message();
+  EXPECT_EQ(rpc.response().message(), kRequestMessage);
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -3977,8 +4350,10 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseBodyObservability) {
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/BidiStream")))));
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
   EchoRequest request;
   request.set_message(kMessage1);
@@ -3986,8 +4361,8 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseBodyObservability) {
   EXPECT_TRUE(stream.WaitForWriteDone());
   stream.StartReadMessage();
   auto req2 = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req2.has_value());
-  EXPECT_TRUE(req2->has_response_headers());
+  ASSERT_THAT(
+      req2, ::testing::Optional(MatchesResponseHeaders(::testing::_)));
   ext_proc_stream->SendResponseAndStatus(
       MakeResponseHeadersMutationResponse({}), absl::OkStatus());
   EchoResponse response;
@@ -4023,12 +4398,15 @@ TEST_P(XdsExtProcEnd2endTest,
   EXPECT_TRUE(stream.WaitForWriteDone());
   stream.StartReadMessage();
   auto resp_headers_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(resp_headers_req.has_value());
-  EXPECT_TRUE(resp_headers_req->has_response_headers());
+  ASSERT_THAT(
+      resp_headers_req,
+      ::testing::Optional(MatchesResponseHeaders(::testing::_)));
   ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse({}));
   auto resp_body_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(resp_body_req.has_value());
-  EXPECT_TRUE(resp_body_req->has_response_body());
+  ASSERT_THAT(
+      resp_body_req, ::testing::Optional(MatchesResponseBody(
+                         EchoResponseMessageIs(kMessage1),
+                         /*end_of_stream=*/false)));
   ext_proc_stream->SendResponse(MakeResponseBodyMutationResponse(
       resp_body_req->response_body().body(),
       resp_body_req->response_body().end_of_stream()));
@@ -4040,8 +4418,10 @@ TEST_P(XdsExtProcEnd2endTest,
   EXPECT_TRUE(stream.WaitForWriteDone());
   stream.StartReadMessage();
   auto resp_body_req2 = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(resp_body_req2.has_value());
-  EXPECT_TRUE(resp_body_req2->has_response_body());
+  ASSERT_THAT(
+      resp_body_req2, ::testing::Optional(MatchesResponseBody(
+                          EchoResponseMessageIs(kMessage2),
+                          /*end_of_stream=*/false)));
   ext_proc_stream->SendStatus(absl::OkStatus());
   EXPECT_TRUE(stream.WaitForReadDone(&response));
   EXPECT_EQ(response.message(), kMessage2);
@@ -4069,26 +4449,20 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseHeadersObservability) {
   Listener listener = BuildListenerWithExtProcFilter(ext_proc_config);
   RouteConfiguration route_config = default_route_config_;
   SetListenerAndRouteConfiguration(balancer_.get(), listener, route_config);
-  AsyncBidiStream stream;
-  RpcOptions rpc_options;
-  stream.Start(stub_.get(), rpc_options);
+  AsyncRpc rpc;
+  rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
   ext_proc_stream->SendResponseAndStatus(MakeRequestHeadersMutationResponse({}),
                                          absl::OkStatus());
-  EchoRequest request;
-  request.set_message(kMessage1);
-  stream.StartWrite(request);
-  EXPECT_TRUE(stream.WaitForWriteDone());
-  EchoResponse response;
-  EXPECT_TRUE(stream.ReadMessage(&response));
-  EXPECT_EQ(response.message(), kMessage1);
-  stream.StartWritesDone();
-  Status status = stream.Finish();
+  Status status = rpc.GetStatus();
   EXPECT_TRUE(status.ok()) << status.error_message();
+  EXPECT_EQ(rpc.response().message(), kRequestMessage);
   EXPECT_EQ(ext_proc_service_->stream_count(), 1);
 }
 
@@ -4108,8 +4482,8 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseTrailersObservability) {
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_response_trailers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesResponseTrailers(::testing::_)));
   ext_proc_stream->SendResponseAndStatus(
       MakeResponseTrailersMutationResponse({}), absl::OkStatus());
   Status status = rpc.GetStatus();
@@ -4141,8 +4515,10 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcClientHeadersDurationMetric) {
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_request_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
   Status status = rpc.GetStatus();
   EXPECT_TRUE(status.ok()) << status.error_message();
@@ -4186,26 +4562,44 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcClientHalfCloseDurationMetric) {
   rpc.StartRpc(stub_.get(), rpc_options);
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
-  while (true) {
-    auto req = ext_proc_stream->GetNextRequest();
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestHeaders(
+               ::testing::Contains(::testing::Pair(
+                   ":path", "/grpc.testing.EchoTestService/Echo")))));
+  ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestBody(
+               EchoRequestMessageIs(kRequestMessage), /*end_of_stream=*/false)));
+  ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
+      req->request_body().body(), req->request_body().end_of_stream()));
+  for (int i = 0; i < 2; ++i) {
+    req = ext_proc_stream->GetNextRequest();
     ASSERT_TRUE(req.has_value());
-    if (req->has_request_headers()) {
-      ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
-    } else if (req->has_request_body()) {
+    if (req->has_request_body()) {
+      EXPECT_THAT(
+          *req, MatchesRequestBody(/*body=*/"", /*end_of_stream=*/true));
       ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
-          req->request_body().body(), req->request_body().end_of_stream()));
+          /*body=*/"", /*end_of_stream=*/true));
     } else if (req->has_response_headers()) {
+      EXPECT_THAT(
+          *req, MatchesResponseHeaders(::testing::_));
       ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse({}));
-    } else if (req->has_response_body()) {
-      ext_proc_stream->SendResponse(MakeResponseBodyMutationResponse(
-          req->response_body().body(), req->response_body().end_of_stream()));
-    } else if (req->has_response_trailers()) {
-      ext_proc_stream->SendResponse(MakeResponseTrailersMutationResponse({}));
-      break;
     } else {
       FAIL() << "Unexpected request type: " << req->DebugString();
     }
   }
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesResponseBody(
+               EchoResponseMessageIs(kRequestMessage), /*end_of_stream=*/false)));
+  ext_proc_stream->SendResponse(MakeResponseBodyMutationResponse(
+      req->response_body().body(), req->response_body().end_of_stream()));
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesResponseTrailers(::testing::_)));
+  ext_proc_stream->SendResponse(MakeResponseTrailersMutationResponse({}));
   Status status = rpc.GetStatus();
   EXPECT_TRUE(status.ok()) << status.error_message();
   const std::string expected_target = absl::StrCat("xds:", kServerName);
@@ -4245,8 +4639,8 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcServerHeadersDurationMetric) {
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_response_headers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesResponseHeaders(::testing::_)));
   ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse({}));
   Status status = rpc.GetStatus();
   EXPECT_TRUE(status.ok()) << status.error_message();
@@ -4287,8 +4681,8 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcServerTrailersDurationMetric) {
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(req.has_value());
-  EXPECT_TRUE(req->has_response_trailers());
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesResponseTrailers(::testing::_)));
   ext_proc_stream->SendResponse(MakeResponseTrailersMutationResponse({}));
   Status status = rpc.GetStatus();
   EXPECT_TRUE(status.ok()) << status.error_message();
