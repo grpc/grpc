@@ -35,9 +35,14 @@ class SingleLoader:
         for importer, module_name, is_package in pkgutil.walk_packages(
             search_paths
         ):
-            if target_module in module_name:
+            if (
+                module_name == target_module
+                or module_name.endswith("." + target_module)
+            ):
                 try:
                     spec = importer.find_spec(module_name)
+                    if spec is None:
+                        spec = importlib.util.find_spec(module_name)
                     if spec is not None:
                         module = importlib.util.module_from_spec(spec)
                         spec.loader.exec_module(module)
