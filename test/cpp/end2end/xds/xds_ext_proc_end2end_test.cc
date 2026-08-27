@@ -85,136 +85,6 @@ constexpr char kMessage2[] = "message2";
 constexpr char kMutatedSuffix[] = "-mutated";
 constexpr char kMessage1Mutated[] = "message1-mutated";
 
-std::string GetExtProcAttribute(
-    const ::envoy::service::ext_proc::v3::ProcessingRequest& request,
-    absl::string_view attribute_name) {
-  auto it = request.attributes().find("envoy.filters.http.ext_proc");
-  if (it == request.attributes().end()) return "";
-  const auto& fields = it->second.fields();
-  auto field_it = fields.find(std::string(attribute_name));
-  if (field_it == fields.end()) return "";
-  return field_it->second.string_value();
-}
-
-// Response construction helper functions
-
-::envoy::service::ext_proc::v3::ProcessingResponse
-MakeRequestHeadersMutationResponse(
-    const std::vector<std::pair<std::string, std::string>>& set_headers,
-    const std::vector<std::string>& remove_headers = {},
-    bool request_drain = false) {
-  ::envoy::service::ext_proc::v3::ProcessingResponse response;
-  if (request_drain) {
-    response.set_request_drain(true);
-  }
-  auto* mutation = response.mutable_request_headers()
-                       ->mutable_response()
-                       ->mutable_header_mutation();
-  for (const auto& [key, value] : set_headers) {
-    auto* header = mutation->add_set_headers();
-    header->mutable_header()->set_key(key);
-    header->mutable_header()->set_value(value);
-  }
-  for (const auto& key : remove_headers) {
-    mutation->add_remove_headers(key);
-  }
-  return response;
-}
-
-::envoy::service::ext_proc::v3::ProcessingResponse
-MakeResponseHeadersMutationResponse(
-    const std::vector<std::pair<std::string, std::string>>& set_headers,
-    const std::vector<std::string>& remove_headers = {},
-    bool request_drain = false) {
-  ::envoy::service::ext_proc::v3::ProcessingResponse response;
-  if (request_drain) {
-    response.set_request_drain(true);
-  }
-  auto* mutation = response.mutable_response_headers()
-                       ->mutable_response()
-                       ->mutable_header_mutation();
-  for (const auto& [key, value] : set_headers) {
-    auto* header = mutation->add_set_headers();
-    header->mutable_header()->set_key(key);
-    header->mutable_header()->set_value(value);
-  }
-  for (const auto& key : remove_headers) {
-    mutation->add_remove_headers(key);
-  }
-  return response;
-}
-
-::envoy::service::ext_proc::v3::ProcessingResponse
-MakeRequestBodyMutationResponse(absl::string_view body,
-                                bool end_of_stream = false,
-                                bool request_drain = false) {
-  ::envoy::service::ext_proc::v3::ProcessingResponse response;
-  if (request_drain) {
-    response.set_request_drain(true);
-  }
-  auto* body_mutation = response.mutable_request_body()
-                            ->mutable_response()
-                            ->mutable_body_mutation();
-  body_mutation->mutable_streamed_response()->set_body(std::string(body));
-  body_mutation->mutable_streamed_response()->set_end_of_stream(end_of_stream);
-  return response;
-}
-
-::envoy::service::ext_proc::v3::ProcessingResponse
-MakeResponseBodyMutationResponse(absl::string_view body,
-                                 bool end_of_stream = false,
-                                 bool request_drain = false) {
-  ::envoy::service::ext_proc::v3::ProcessingResponse response;
-  if (request_drain) {
-    response.set_request_drain(true);
-  }
-  auto* body_mutation = response.mutable_response_body()
-                            ->mutable_response()
-                            ->mutable_body_mutation();
-  body_mutation->mutable_streamed_response()->set_body(std::string(body));
-  body_mutation->mutable_streamed_response()->set_end_of_stream(end_of_stream);
-  return response;
-}
-
-::envoy::service::ext_proc::v3::ProcessingResponse
-MakeResponseTrailersMutationResponse(
-    const std::vector<std::pair<std::string, std::string>>& set_headers,
-    const std::vector<std::string>& remove_headers = {},
-    bool request_drain = false) {
-  ::envoy::service::ext_proc::v3::ProcessingResponse response;
-  if (request_drain) {
-    response.set_request_drain(true);
-  }
-  auto* mutation =
-      response.mutable_response_trailers()->mutable_header_mutation();
-  for (const auto& [key, value] : set_headers) {
-    auto* header = mutation->add_set_headers();
-    header->mutable_header()->set_key(key);
-    header->mutable_header()->set_value(value);
-  }
-  for (const auto& key : remove_headers) {
-    mutation->add_remove_headers(key);
-  }
-  return response;
-}
-
-::envoy::service::ext_proc::v3::ProcessingResponse MakeImmediateResponse(
-    grpc::StatusCode code, absl::string_view details = "",
-    const std::vector<std::pair<std::string, std::string>>& set_headers = {}) {
-  ::envoy::service::ext_proc::v3::ProcessingResponse response;
-  auto* immediate = response.mutable_immediate_response();
-  immediate->mutable_grpc_status()->set_status(code);
-  if (!details.empty()) {
-    immediate->set_details(std::string(details));
-  }
-  auto* mutation = immediate->mutable_headers();
-  for (const auto& [key, value] : set_headers) {
-    auto* header = mutation->add_set_headers();
-    header->mutable_header()->set_key(key);
-    header->mutable_header()->set_value(value);
-  }
-  return response;
-}
 
 // A stream-based fake external processor service that provides fine-grained,
 // sequential control over incoming ext_proc stream requests and outgoing
@@ -869,6 +739,141 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
 
     std::shared_ptr<CustomBidiStreamServiceImpl> service_;
   };
+
+  static std::string GetExtProcAttribute(
+      const ::envoy::service::ext_proc::v3::ProcessingRequest& request,
+      absl::string_view attribute_name) {
+    auto it = request.attributes().find("envoy.filters.http.ext_proc");
+    if (it == request.attributes().end()) return "";
+    const auto& fields = it->second.fields();
+    auto field_it = fields.find(std::string(attribute_name));
+    if (field_it == fields.end()) return "";
+    return field_it->second.string_value();
+  }
+
+  // Response construction helper functions
+
+  static ::envoy::service::ext_proc::v3::ProcessingResponse
+  MakeRequestHeadersMutationResponse(
+      const std::vector<std::pair<std::string, std::string>>& set_headers,
+      const std::vector<std::string>& remove_headers = {},
+      bool request_drain = false) {
+    ::envoy::service::ext_proc::v3::ProcessingResponse response;
+    if (request_drain) {
+      response.set_request_drain(true);
+    }
+    auto* mutation = response.mutable_request_headers()
+                         ->mutable_response()
+                         ->mutable_header_mutation();
+    for (const auto& [key, value] : set_headers) {
+      auto* header = mutation->add_set_headers();
+      header->mutable_header()->set_key(key);
+      header->mutable_header()->set_value(value);
+    }
+    for (const auto& key : remove_headers) {
+      mutation->add_remove_headers(key);
+    }
+    return response;
+  }
+
+  static ::envoy::service::ext_proc::v3::ProcessingResponse
+  MakeResponseHeadersMutationResponse(
+      const std::vector<std::pair<std::string, std::string>>& set_headers,
+      const std::vector<std::string>& remove_headers = {},
+      bool request_drain = false) {
+    ::envoy::service::ext_proc::v3::ProcessingResponse response;
+    if (request_drain) {
+      response.set_request_drain(true);
+    }
+    auto* mutation = response.mutable_response_headers()
+                         ->mutable_response()
+                         ->mutable_header_mutation();
+    for (const auto& [key, value] : set_headers) {
+      auto* header = mutation->add_set_headers();
+      header->mutable_header()->set_key(key);
+      header->mutable_header()->set_value(value);
+    }
+    for (const auto& key : remove_headers) {
+      mutation->add_remove_headers(key);
+    }
+    return response;
+  }
+
+  static ::envoy::service::ext_proc::v3::ProcessingResponse
+  MakeRequestBodyMutationResponse(absl::string_view body,
+                                  bool end_of_stream = false,
+                                  bool request_drain = false) {
+    ::envoy::service::ext_proc::v3::ProcessingResponse response;
+    if (request_drain) {
+      response.set_request_drain(true);
+    }
+    auto* body_mutation = response.mutable_request_body()
+                              ->mutable_response()
+                              ->mutable_body_mutation();
+    body_mutation->mutable_streamed_response()->set_body(std::string(body));
+    body_mutation->mutable_streamed_response()->set_end_of_stream(
+        end_of_stream);
+    return response;
+  }
+
+  static ::envoy::service::ext_proc::v3::ProcessingResponse
+  MakeResponseBodyMutationResponse(absl::string_view body,
+                                   bool end_of_stream = false,
+                                   bool request_drain = false) {
+    ::envoy::service::ext_proc::v3::ProcessingResponse response;
+    if (request_drain) {
+      response.set_request_drain(true);
+    }
+    auto* body_mutation = response.mutable_response_body()
+                              ->mutable_response()
+                              ->mutable_body_mutation();
+    body_mutation->mutable_streamed_response()->set_body(std::string(body));
+    body_mutation->mutable_streamed_response()->set_end_of_stream(
+        end_of_stream);
+    return response;
+  }
+
+  static ::envoy::service::ext_proc::v3::ProcessingResponse
+  MakeResponseTrailersMutationResponse(
+      const std::vector<std::pair<std::string, std::string>>& set_headers,
+      const std::vector<std::string>& remove_headers = {},
+      bool request_drain = false) {
+    ::envoy::service::ext_proc::v3::ProcessingResponse response;
+    if (request_drain) {
+      response.set_request_drain(true);
+    }
+    auto* mutation =
+        response.mutable_response_trailers()->mutable_header_mutation();
+    for (const auto& [key, value] : set_headers) {
+      auto* header = mutation->add_set_headers();
+      header->mutable_header()->set_key(key);
+      header->mutable_header()->set_value(value);
+    }
+    for (const auto& key : remove_headers) {
+      mutation->add_remove_headers(key);
+    }
+    return response;
+  }
+
+  static ::envoy::service::ext_proc::v3::ProcessingResponse
+  MakeImmediateResponse(
+      grpc::StatusCode code, absl::string_view details = "",
+      const std::vector<std::pair<std::string, std::string>>& set_headers =
+          {}) {
+    ::envoy::service::ext_proc::v3::ProcessingResponse response;
+    auto* immediate = response.mutable_immediate_response();
+    immediate->mutable_grpc_status()->set_status(code);
+    if (!details.empty()) {
+      immediate->set_details(std::string(details));
+    }
+    auto* mutation = immediate->mutable_headers();
+    for (const auto& [key, value] : set_headers) {
+      auto* header = mutation->add_set_headers();
+      header->mutable_header()->set_key(key);
+      header->mutable_header()->set_value(value);
+    }
+    return response;
+  }
 
   void ResetStubWithUniqueArg() {
     ChannelArguments args;
