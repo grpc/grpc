@@ -109,8 +109,7 @@ void RegisterBuiltins(CoreConfiguration::Builder* builder) {
 
   auto& server_config_selector_interceptor_reg =
       builder->channel_init()
-          ->RegisterFilter<ServerConfigSelectorInterceptor>(
-              GRPC_SERVER_CHANNEL)
+          ->RegisterFilter<ServerConfigSelectorInterceptor>(GRPC_SERVER_CHANNEL)
           .IfHasChannelArg(ServerConfigSelectorProvider::ChannelArgName());
 
   if (IsFixV3FilterStackServerSideOrderingEnabled()) {
