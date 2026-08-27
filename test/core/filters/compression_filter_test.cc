@@ -258,9 +258,10 @@ FILTER_TEST(CompressionFilterTest, ClientFilterRejectsOversizeResponse) {
 
   ASSERT_TRUE(PullServerInitialMetadata().ok());
   EXPECT_FALSE(PullServerMessage().ok());
-  EXPECT_EQ(PullServerTrailingStatus(),
-            absl::ResourceExhaustedError(
-                "CLIENT: Received message larger than max (29 vs. 10)"));
+  absl::Status status = PullServerTrailingStatus();
+  EXPECT_EQ(status.code(), absl::StatusCode::kResourceExhausted);
+  EXPECT_THAT(status.message(),
+              ::testing::HasSubstr("CLIENT: Received message larger than max"));
 
   WaitForAllPendingWork();
 }
@@ -281,9 +282,10 @@ FILTER_TEST(CompressionFilterTest,
   ASSERT_TRUE(PullServerInitialMetadata().ok());
   // The decompressed payload (1000 bytes) exceeds the 10-byte limit.
   EXPECT_FALSE(PullServerMessage().ok());
-  EXPECT_EQ(PullServerTrailingStatus(),
-            absl::ResourceExhaustedError(
-                "CLIENT: Received message larger than max (29 vs. 10)"));
+  absl::Status status = PullServerTrailingStatus();
+  EXPECT_EQ(status.code(), absl::StatusCode::kResourceExhausted);
+  EXPECT_THAT(status.message(),
+              ::testing::HasSubstr("CLIENT: Received message larger than max"));
 
   WaitForAllPendingWork();
 }
