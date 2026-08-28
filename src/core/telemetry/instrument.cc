@@ -341,12 +341,26 @@ void MetricsQuery::Run(RefCountedPtr<CollectionScope> scope,
     const auto& storages = pair.second.storage;
     GRPC_CHECK(!metrics.empty());
     if (storages.empty()) continue;
+    const InstrumentLabelList domain_labels = domain->label_names();
+    InstrumentLabelList label_keys;
+    for (size_t i = 0; i < domain_labels.size(); ++i) {
+      if (scope->ObservesLabel(domain_labels[i])) {
+        label_keys.Append(domain_labels[i]);
+      }
+    }
     this->Apply(
-        domain->label_names(),
+        label_keys,
         [&](MetricsSink& sink) {
+          std::vector<std::string> label_values;
+          label_values.reserve(label_keys.size());
           for (auto& storage : storages) {
-            const auto label_values = storage->label();
-            const auto label_keys = domain->label_names();
+            label_values.clear();
+            const auto storage_labels = storage->label();
+            for (size_t i = 0; i < domain_labels.size(); ++i) {
+              if (scope->ObservesLabel(domain_labels[i])) {
+                label_values.emplace_back(storage_labels[i]);
+              }
+            }
             instrument_detail::GaugeStorage gauge_storage(storage->domain());
             storage->FillGaugeStorage(gauge_storage);
             for (const auto* metric : metrics) {
