@@ -794,8 +794,9 @@ StatusFlag ExtProcFilter::ExtProcCall::HandleClientMessageFromSidestream(
     if (outstanding_c2s_messages_ > 0 ||
         (response.mutation.end_of_stream_without_message &&
          !c2s_writes_done_)) {
-      CancelCallWithError(
-          absl::InternalError("Client sends closed by external processor"));
+      CancelCallWithError(absl::InternalError(
+          "Client has requested for half close but external processor server "
+          "has already force sent half close to the server"));
       return Failure{};
     }
     request_event_state_ = SideStreamRequestEventState::kExpectNothing;
@@ -1038,6 +1039,9 @@ void ExtProcFilter::ExtProcCall::HandleSideStreamStatus(absl::Status status) {
       status = absl::InternalError(
           "Stream closed cleanly with outstanding messages");
     }
+  } else if (status.code() != absl::StatusCode::kInternal) {
+    status = absl::InternalError(
+        absl::StrCat("External processor stream failed: ", status.ToString()));
   }
   const bool fail_data_plane_stream = !status.ok() && !IsFailOpenAllowed();
   if (fail_data_plane_stream) {
@@ -1165,7 +1169,9 @@ auto ExtProcFilter::ExtProcCall::HandleMessageFromClient(
   } else if (!config().observability_mode &&
              request_event_state_ ==
                  SideStreamRequestEventState::kExpectNothing) {
-    payload = absl::InternalError("Client sends closed by external processor");
+    payload = absl::InternalError(
+        "Client has requested for half close but external processor server has "
+        "already force sent half close to the server");
   } else if (!drain_requested_) {
     // Construct message for sidestream.
     std::string message_bytes;
@@ -1632,6 +1638,10 @@ auto ExtProcFilter::ExtProcCall::HandleReadFromSideStreamLoop() {
       },
       // Handle stream closure and resolve final status.
       [self = WeakRef()](absl::Status status) -> StatusFlag {
+        if (!status.ok()) {
+          status = absl::InternalError(absl::StrCat(
+              "External processor stream failed: ", status.ToString()));
+        }
         self->HandleSideStreamStatus(status);
         GRPC_TRACE_LOG(ext_proc_filter, INFO)
             << self->DebugTag()

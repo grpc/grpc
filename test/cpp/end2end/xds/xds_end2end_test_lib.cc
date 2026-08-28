@@ -335,8 +335,7 @@ void XdsEnd2endTest::BalancerServerThread::ShutdownAllServices() {
 // XdsEnd2endTest::RpcOptions
 //
 
-void XdsEnd2endTest::RpcOptions::SetupRpc(ClientContext* context,
-                                          EchoRequest* request) const {
+void XdsEnd2endTest::RpcOptions::SetupContext(ClientContext* context) const {
   for (const auto& [key, value] : metadata) {
     context->AddMetadata(key, value);
   }
@@ -344,6 +343,9 @@ void XdsEnd2endTest::RpcOptions::SetupRpc(ClientContext* context,
     context->set_deadline(grpc_timeout_milliseconds_to_deadline(timeout_ms));
   }
   if (wait_for_ready) context->set_wait_for_ready(true);
+}
+
+void XdsEnd2endTest::RpcOptions::SetupRequest(EchoRequest* request) const {
   request->set_message(kRequestMessage);
   if (server_fail) {
     request->mutable_param()->mutable_expected_error()->set_code(
@@ -378,6 +380,12 @@ void XdsEnd2endTest::RpcOptions::SetupRpc(ClientContext* context,
   if (echo_metadata) {
     request->mutable_param()->set_echo_metadata(true);
   }
+}
+
+void XdsEnd2endTest::RpcOptions::SetupRpc(ClientContext* context,
+                                          EchoRequest* request) const {
+  SetupContext(context);
+  SetupRequest(request);
 }
 
 //
@@ -636,8 +644,7 @@ std::multimap<std::string, std::string> ConvertMetadata(
 
 Status XdsEnd2endTest::SendRpc(
     const RpcOptions& rpc_options, EchoResponse* response,
-    std::multimap<std::string, std::string>* server_initial_metadata,
-    std::multimap<std::string, std::string>* server_trailing_metadata) {
+    std::multimap<std::string, std::string>* server_initial_metadata) {
   EchoResponse local_response;
   if (response == nullptr) response = &local_response;
   ClientContext context;
@@ -661,10 +668,6 @@ Status XdsEnd2endTest::SendRpc(
   if (server_initial_metadata != nullptr) {
     *server_initial_metadata =
         ConvertMetadata(context.GetServerInitialMetadata());
-  }
-  if (server_trailing_metadata != nullptr) {
-    *server_trailing_metadata =
-        ConvertMetadata(context.GetServerTrailingMetadata());
   }
   return status;
 }

@@ -735,6 +735,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
       return *this;
     }
 
+    // Populates context.
+    void SetupContext(ClientContext* context) const;
+    // Populates request.
+    void SetupRequest(EchoRequest* request) const;
     // Populates context and request.
     void SetupRpc(ClientContext* context, EchoRequest* request) const;
   };
@@ -746,8 +750,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
       const RpcOptions& rpc_options = RpcOptions(),
       EchoResponse* response = nullptr,
       std::multimap<std::string, std::string>* server_initial_metadata =
-          nullptr,
-      std::multimap<std::string, std::string>* server_trailing_metadata =
           nullptr);
 
   // Internal helper function for SendRpc().
