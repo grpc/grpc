@@ -17,7 +17,6 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_STREAMING_CALL_PROMISE_WRAPPER_H
 #define GRPC_SRC_CORE_XDS_GRPC_STREAMING_CALL_PROMISE_WRAPPER_H
 
-#include <atomic>
 #include <optional>
 #include <string>
 
