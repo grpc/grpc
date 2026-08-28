@@ -3520,6 +3520,7 @@ class ConnectionScalingTest : public ClientLbEnd2endTest {
 
 TEST_F(ConnectionScalingTest, SingleConnection) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   const int kMaxConcurrentStreams = 3;
   // Start a server with MAX_CONCURRENT_STREAMS set.
   StartServers(1, {}, nullptr,
@@ -3558,6 +3559,7 @@ TEST_F(ConnectionScalingTest, SingleConnection) {
 
 TEST_F(ConnectionScalingTest, MultipleConnections) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   constexpr char kServiceConfig[] =
       "{\n"
       "  \"connectionScaling\": {\n"
@@ -3601,6 +3603,7 @@ TEST_F(ConnectionScalingTest, MultipleConnections) {
 
 TEST_F(ConnectionScalingTest, HonorsMaxConnectionsPerSubchannel) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   constexpr char kServiceConfig[] =
       "{\n"
       "  \"connectionScaling\": {\n"

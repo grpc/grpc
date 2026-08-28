@@ -180,6 +180,11 @@ class Http2ServerTransport final : public ServerTransport,
     return NextAllowedPingInterval();
   }
 
+  void TestOnlySetLocalMaxConcurrentStreams(
+      const uint32_t max_concurrent_streams) {
+    settings_->mutable_local().SetMaxConcurrentStreams(max_concurrent_streams);
+  }
+
  private:
   //////////////////////////////////////////////////////////////////////////////
   // Endpoint Helpers
@@ -260,7 +265,8 @@ class Http2ServerTransport final : public ServerTransport,
   }
 
   template <typename T>
-  Http2Status ProcessIncomingMetadata(T&& frame);
+  Http2Status ProcessIncomingMetadata(T&& frame,
+                                      const RefCountedPtr<Stream>& stream);
 
   auto ReadAndProcessOneFrame();
 
@@ -479,6 +485,12 @@ class Http2ServerTransport final : public ServerTransport,
   void EnqueueResetStreamFromTransportParty(RefCountedPtr<Stream> stream,
                                             uint32_t reset_stream_error_code);
 
+  // Enqueues a RST_STREAM frame directly onto the transport write context when
+  // no Stream object exists yet (e.g. when an incoming stream is rejected
+  // during validation before stream creation).
+  void EnqueueResetStreamFromTransportParty(
+      const uint32_t stream_id, const uint32_t reset_stream_error_code);
+
   //////////////////////////////////////////////////////////////////////////////
   // Stream Operations
 
@@ -487,6 +499,10 @@ class Http2ServerTransport final : public ServerTransport,
   // Runs on the call party.
   std::optional<RefCountedPtr<Stream>> MakeStream(
       CallInitiator&& call_initiator, uint32_t stream_id);
+
+  // Validates the transport-level conditions for the incoming stream before
+  // creating the stream object.
+  Http2Status ValidateIncomingStream(uint32_t stream_id);
 
   Http2Status IncomingStream(ClientMetadataHandle&& metadata,
                              uint32_t stream_id);
@@ -729,6 +745,7 @@ class Http2ServerTransport final : public ServerTransport,
   bool is_goaway_received_;
 
   bool should_reset_ping_clock_;
+  bool max_concurrent_streams_overload_protection_;
   ReadContext read_context_;
 
   // Transport wide write context. This is used to track the state of the
