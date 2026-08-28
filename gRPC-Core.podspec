@@ -205,7 +205,7 @@ Pod::Spec.new do |s|
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency "#{s.name}/Privacy", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.42'
+    ss.dependency 'BoringSSL-GRPC', '0.0.43'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/config', abseil_version
@@ -1029,9 +1029,9 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-gen/google/rpc/status.upb.h',
                       'src/core/ext/upb-gen/google/rpc/status.upb_minitable.c',
                       'src/core/ext/upb-gen/google/rpc/status.upb_minitable.h',
-                      'src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb.h',
-                      'src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.c',
-                      'src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.h',
+                      'src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb.h',
+                      'src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.c',
+                      'src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.h',
                       'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h',
                       'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c',
                       'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h',
@@ -1425,8 +1425,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.h',
                       'src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c',
                       'src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.h',
-                      'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.c',
-                      'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.h',
+                      'src/core/ext/upbdefs-gen/grpc/channelz/v1/channelz.upbdefs.c',
+                      'src/core/ext/upbdefs-gen/grpc/channelz/v1/channelz.upbdefs.h',
                       'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c',
                       'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h',
                       'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c',
@@ -3148,8 +3148,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.h',
                               'src/core/ext/upb-gen/google/rpc/status.upb.h',
                               'src/core/ext/upb-gen/google/rpc/status.upb_minitable.h',
-                              'src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb.h',
-                              'src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.h',
+                              'src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb.h',
+                              'src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.h',
                               'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h',
                               'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h',
                               'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h',
@@ -3368,7 +3368,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h',
                               'src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.h',
                               'src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.h',
-                              'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.h',
+                              'src/core/ext/upbdefs-gen/grpc/channelz/v1/channelz.upbdefs.h',
                               'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h',
                               'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h',
                               'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h',

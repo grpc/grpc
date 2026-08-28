@@ -72,7 +72,7 @@ absl::StatusOr<std::string> IssuerFromCrl(X509_CRL* crl) {
 
 absl::StatusOr<std::shared_ptr<Crl>> ReadCrlFromFile(
     const std::string& crl_path) {
-  absl::StatusOr<Slice> crl_slice = LoadFile(crl_path, false);
+  absl::StatusOr<Slice> crl_slice = LoadFile(crl_path);
   if (!crl_slice.ok()) {
     return crl_slice.status();
   }
