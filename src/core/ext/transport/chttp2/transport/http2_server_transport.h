@@ -180,6 +180,11 @@ class Http2ServerTransport final : public ServerTransport,
     return NextAllowedPingInterval();
   }
 
+  void TestOnlySetLocalMaxConcurrentStreams(
+      const uint32_t max_concurrent_streams) {
+    settings_->mutable_local().SetMaxConcurrentStreams(max_concurrent_streams);
+  }
+
  private:
   //////////////////////////////////////////////////////////////////////////////
   // Endpoint Helpers
@@ -496,6 +501,9 @@ class Http2ServerTransport final : public ServerTransport,
   std::optional<RefCountedPtr<Stream>> MakeStream(
       CallInitiator&& call_initiator, uint32_t stream_id);
 
+  // Validates the incoming stream ID before the stream is created.
+  Http2Status ValidateIncomingStream(uint32_t stream_id);
+
   Http2Status IncomingStream(ClientMetadataHandle&& metadata,
                              uint32_t stream_id);
 
@@ -737,6 +745,7 @@ class Http2ServerTransport final : public ServerTransport,
   bool is_goaway_received_;
 
   bool should_reset_ping_clock_;
+  bool max_concurrent_streams_overload_protection_ = true;
   ReadContext read_context_;
 
   // Transport wide write context. This is used to track the state of the
@@ -745,6 +754,10 @@ class Http2ServerTransport final : public ServerTransport,
 
   // Tracks last stream id received by the transport.
   uint32_t last_incoming_stream_id_;
+
+  // Tracks the number of incoming streams before the settings have been
+  // acknowledged for the first time.
+  uint32_t num_incoming_streams_before_settings_ack_ = 0u;
 
   // Duration between two consecutive keepalive pings.
   Duration keepalive_time_;
