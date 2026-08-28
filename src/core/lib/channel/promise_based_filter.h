@@ -1361,23 +1361,28 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                                          [](bool x) { return StatusFlag(x); });
                             });
                       });
-                  call_args.client_to_server_messages->InterceptAndMap(
-                      [initiator, handler,
-                       pipe_owner](MessageHandle message) mutable {
-                        // Step 1: Push the message onto the v3 initiator in
-                        // its activity.
-                        initiator.SpawnPushMessage(std::move(message));
-                        // Step 3: Here in the v2 activity, read the message
-                        // from the inter-activity pipe and return it.
-                        return Map(
-                            pipe_owner->client_to_server_messages.receiver
-                                .Next(),
-                            [](InterActivityPipe<MessageHandle, 1>::NextResult
-                                   message) -> std::optional<MessageHandle> {
-                              if (!message.has_value()) return std::nullopt;
-                              return std::move(*message);
-                            });
-                      });
+                  call_args.client_to_server_messages
+                      ->InterceptAndMapWithHalfClose(
+                          [initiator, handler,
+                           pipe_owner](MessageHandle message) mutable {
+                            // Step 1: Push the message onto the v3 initiator in
+                            // its activity.
+                            initiator.SpawnPushMessage(std::move(message));
+                            // Step 3: Here in the v2 activity, read the message
+                            // from the inter-activity pipe and return it.
+                            return Map(
+                                pipe_owner->client_to_server_messages.receiver
+                                    .Next(),
+                                [](InterActivityPipe<MessageHandle,
+                                                     1>::NextResult message)
+                                    -> std::optional<MessageHandle> {
+                                  if (!message.has_value()) return std::nullopt;
+                                  return std::move(*message);
+                                });
+                          },
+                          [initiator]() mutable {
+                            initiator.SpawnFinishSends();
+                          });
                   // For server initial metadata, we do a similar thing, but
                   // in the opposite direction, and using an inter-activity
                   // latch instead of a pipe:
@@ -1967,6 +1972,7 @@ class BaseCallData : public Activity,
     std::optional<PipeSender<MessageHandle>::PushType> push_;
     std::optional<PipeReceiverNextType<MessageHandle>> next_;
     absl::Status completed_status_;
+    absl::Status cancelled_status_;
     grpc_closure* intercepted_on_complete_;
     grpc_closure on_complete_ =
         MakeMemberClosure<ReceiveMessage, &ReceiveMessage::OnComplete>(this);
