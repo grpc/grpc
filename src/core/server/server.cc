@@ -1331,8 +1331,7 @@ grpc_error_handle Server::SetupTransport(
     }
     t->StartConnectivityWatch(MakeOrphanable<TransportConnectivityWatcher>(
         t->RefAsSubclass<ServerTransport>(), Ref()));
-    if (auto socket_node = transport->GetSocketNode();
-        socket_node != nullptr && channelz_node_ != nullptr) {
+    if (auto socket_node = transport->GetSocketNode(); socket_node != nullptr) {
       socket_node->AddParent(channelz_node_.get());
     }
     GRPC_TRACE_LOG(server_channel, INFO) << "Adding connection";
@@ -1362,10 +1361,7 @@ grpc_error_handle Server::SetupTransport(
       cq_idx = static_cast<size_t>(rand()) % std::max<size_t>(1, cqs_.size());
     }
     if (auto socket_node = transport->GetSocketNode(); socket_node != nullptr) {
-      MutexLock lock(&mu_global_);
-      if (channelz_node_ != nullptr) {
-        socket_node->AddParent(channelz_node_.get());
-      }
+      socket_node->AddParent(channelz_node_.get());
     }
 
     // Keep a local reference to the channel alive during setup to prevent
@@ -1609,13 +1605,7 @@ void Server::Orphan() {
   }
   listener_states_.clear();
   SourceDestructing();
-  // channelz node reset needs to be done without keeping the mutex
-  RefCountedPtr<channelz::ServerNode> channelz_node_to_release;
-  {
-    MutexLock lock(&mu_global_);
-    channelz_node_to_release = std::move(channelz_node_);
-  }
-  channelz_node_to_release.reset();
+  channelz_node_.reset();
   Unref();
 }
 
