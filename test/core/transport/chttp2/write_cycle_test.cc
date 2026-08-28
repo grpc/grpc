@@ -23,8 +23,10 @@
 #include <string>
 #include <tuple>
 #include <utility>
+#include <vector>
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -220,7 +222,7 @@ TEST_P(WriteCycleTest, Delegation) {
   bool is_client = GetParam();
   Chttp2WriteSizePolicy policy;
   bool is_first_write = true;
-  WriteCycle cycle(&policy, is_first_write, is_client);
+  WriteCycle cycle(&policy, is_first_write, is_client, /*rst_streams=*/{});
 
   EXPECT_EQ(cycle.GetWriteBytesRemaining(), policy.WriteTargetSize());
 
@@ -260,7 +262,7 @@ TEST_P(WriteCycleTest, RemainingAPIs) {
   bool is_client = GetParam();
   Chttp2WriteSizePolicy policy;
   bool is_first_write = false;
-  WriteCycle cycle(&policy, is_first_write, is_client);
+  WriteCycle cycle(&policy, is_first_write, is_client, /*rst_streams=*/{});
 
   EXPECT_FALSE(cycle.CanSerializeUrgentFrames());
   EXPECT_EQ(cycle.GetUrgentFrameCount(), 0u);
@@ -286,11 +288,32 @@ TEST_P(WriteCycleTest, SerializationSideEffects) {
   bool is_client = GetParam();
   Chttp2WriteSizePolicy policy;
   bool is_first_write = true;
-  WriteCycle cycle(&policy, is_first_write, is_client);
+  WriteCycle cycle(&policy, is_first_write, is_client, /*rst_streams=*/{});
 
   bool reset = false;
-  cycle.SerializeRegularFrames({reset});
+  const SliceBuffer serialized = cycle.SerializeRegularFrames({reset});
   EXPECT_FALSE(is_first_write);
+}
+
+TEST_P(WriteCycleTest, RstStreamAddedAndFlushed) {
+  const bool is_client = GetParam();
+  Chttp2WriteSizePolicy policy;
+  bool is_first_write = true;
+
+  std::vector<Http2RstStreamFrame> rst_streams = {
+      Http2RstStreamFrame{/*stream_id=*/1u, /*error_code=*/2u}};
+
+  WriteCycle cycle(&policy, is_first_write, is_client, std::move(rst_streams));
+
+  // Verify that the RST_STREAM is added to the write buffer.
+  EXPECT_EQ(cycle.GetRegularFrameCount(), 1u);
+
+  bool reset = false;
+  const SliceBuffer serialized = cycle.SerializeRegularFrames({reset});
+  EXPECT_EQ(serialized.Length(),
+            is_client ? (GRPC_CHTTP2_CLIENT_CONNECT_STRLEN + 13u) : 13u);
+  // Verify that the RST_STREAM is flushed after serialization.
+  EXPECT_EQ(cycle.GetRegularFrameCount(), 0u);
 }
 
 INSTANTIATE_TEST_SUITE_P(WriteCycleTest, WriteCycleTest, ::testing::Bool());
@@ -409,6 +432,56 @@ TEST_P(TransportWriteContextTest, WriteContextTest) {
 
   write_cycle2.BeginWrite(100);
   write_cycle2.EndWrite(false);  // Fail
+}
+
+TEST_P(TransportWriteContextTest, QueuesAndSerializesRstStreams) {
+  const bool is_client = GetParam();
+  TransportWriteContext& context = GetTransportWriteContext();
+
+  // Step 1: Queue a single RST_STREAM frame into TransportWriteContext.
+  context.AddRstFrame(/*stream_id=*/1u, /*error_code=*/2u);
+
+  // Step 2: Start the write cycle. This transfers queued RST frames into
+  // WriteCycle.
+  StartWriteCycle();
+  WriteCycle& write_cycle = GetWriteCycle();
+
+  // Step 3: Verify that the RST_STREAM frame is in the regular frame buffer.
+  EXPECT_EQ(write_cycle.GetRegularFrameCount(), 1u);
+
+  // Step 4: Serialize the regular frames and verify byte count.
+  bool reset = false;
+  const SliceBuffer serialized = write_cycle.SerializeRegularFrames({reset});
+  EXPECT_EQ(serialized.Length(),
+            is_client ? (GRPC_CHTTP2_CLIENT_CONNECT_STRLEN + 13u) : 13u);
+
+  // Step 5: Verify that the frame is flushed after serialization.
+  EXPECT_EQ(write_cycle.GetRegularFrameCount(), 0u);
+
+  // Step 6: End the current write cycle.
+  write_cycle.EndWrite(/*success=*/true);
+  EndWriteCycle();
+
+  // Step 7: Queue multiple RST_STREAM frames for the subsequent write cycle.
+  context.AddRstFrame(/*stream_id=*/5u, /*error_code=*/1u);
+  context.AddRstFrame(/*stream_id=*/7u, /*error_code=*/2u);
+  context.AddRstFrame(/*stream_id=*/9u, /*error_code=*/3u);
+
+  // Step 8: Start the next write cycle and verify all 3 frames are present.
+  StartWriteCycle();
+  WriteCycle& write_cycle2 = GetWriteCycle();
+  EXPECT_EQ(write_cycle2.GetRegularFrameCount(), 3u);
+
+  // Step 9: Serialize regular frames. Since is_first_write is now false,
+  // no client connect string is prepended.
+  const SliceBuffer multiple_serialized =
+      write_cycle2.SerializeRegularFrames({reset});
+  EXPECT_EQ(multiple_serialized.Length(), 3u * 13u);
+
+  // Step 10: Verify the buffer is flushed and end the write cycle.
+  EXPECT_EQ(write_cycle2.GetRegularFrameCount(), 0u);
+  write_cycle2.EndWrite(/*success=*/true);
+  EndWriteCycle();
 }
 
 INSTANTIATE_TEST_SUITE_P(TransportWriteContextTest, TransportWriteContextTest,

@@ -1566,6 +1566,7 @@ grpc_cc_test(
         "//src/core:http2_settings",
         "//src/core:slice",
         "//src/core:slice_buffer",
+        "//src/core:transport_common",
         "//src/core:write_cycle",
         "//src/core:write_size_policy",
         "//test/core/test_util:grpc_test_util",
