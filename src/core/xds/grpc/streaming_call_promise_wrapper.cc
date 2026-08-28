@@ -150,18 +150,21 @@ void XdsStreamingCallPromiseWrapper::OnStatusReceived(absl::Status status) {
 }
 
 void XdsStreamingCallPromiseWrapper::SendHalfClose() {
+  bool send_half_close = false;
   {
     MutexLock lock(&mu_);
     // If a send is in flight, record that half-close was requested.
     // OnRequestSent will issue the half-close once the message send completes.
     if (send_state_ == SendState::kSendMessageInFlight) {
       send_state_ = SendState::kSendMessageInFlightAndHalfCloseRequested;
-      return;
     } else if (send_state_ == SendState::kIdle) {
       send_state_ = SendState::kHalfCloseInFlight;
+      send_half_close = true;
     }
   }
-  call_->SendHalfClose();
+  if (send_half_close) {
+    call_->SendHalfClose();
+  }
 }
 
 void XdsStreamingCallPromiseWrapper::Orphaned() {
