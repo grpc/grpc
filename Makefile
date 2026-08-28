@@ -726,6 +726,7 @@ LIBGRPC_SRC = \
     src/core/credentials/call/external/file_external_account_credentials.cc \
     src/core/credentials/call/external/url_external_account_credentials.cc \
     src/core/credentials/call/gcp_service_account_identity/gcp_service_account_identity_credentials.cc \
+    src/core/credentials/call/gdch_service_account/gdch_service_account_credentials.cc \
     src/core/credentials/call/iam/iam_credentials.cc \
     src/core/credentials/call/json_util.cc \
     src/core/credentials/call/jwt/json_token.cc \
@@ -1311,9 +1312,6 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/pollset_set.cc \
     src/core/lib/iomgr/pollset_set_windows.cc \
     src/core/lib/iomgr/pollset_windows.cc \
-    src/core/lib/iomgr/resolve_address.cc \
-    src/core/lib/iomgr/resolve_address_posix.cc \
-    src/core/lib/iomgr/resolve_address_windows.cc \
     src/core/lib/iomgr/sockaddr_utils_posix.cc \
     src/core/lib/iomgr/socket_factory_posix.cc \
     src/core/lib/iomgr/socket_mutator.cc \
@@ -1434,16 +1432,8 @@ LIBGRPC_SRC = \
     src/core/net/socket_mutator.cc \
     src/core/plugin_registry/grpc_plugin_registry.cc \
     src/core/plugin_registry/grpc_plugin_registry_extra.cc \
-    src/core/resolver/dns/c_ares/dns_resolver_ares.cc \
-    src/core/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
-    src/core/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc \
-    src/core/resolver/dns/c_ares/grpc_ares_wrapper.cc \
-    src/core/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc \
-    src/core/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc \
-    src/core/resolver/dns/dns_resolver_plugin.cc \
-    src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.cc \
-    src/core/resolver/dns/event_engine/service_config_helper.cc \
-    src/core/resolver/dns/native/dns_resolver.cc \
+    src/core/resolver/dns/dns_resolver.cc \
+    src/core/resolver/dns/service_config_helper.cc \
     src/core/resolver/endpoint_addresses.cc \
     src/core/resolver/fake/fake_resolver.cc \
     src/core/resolver/google_c2p/google_c2p_resolver.cc \

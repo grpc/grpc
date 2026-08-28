@@ -29,6 +29,7 @@
 #define GRPC_AUTH_JSON_TYPE_SERVICE_ACCOUNT "service_account"
 #define GRPC_AUTH_JSON_TYPE_AUTHORIZED_USER "authorized_user"
 #define GRPC_AUTH_JSON_TYPE_EXTERNAL_ACCOUNT "external_account"
+#define GRPC_AUTH_JSON_TYPE_GDCH_SERVICE_ACCOUNT "gdch_service_account"
 
 // Gets a child property from a json node.
 const char* grpc_json_get_string_property(const grpc_core::Json& json,

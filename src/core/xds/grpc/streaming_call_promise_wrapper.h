@@ -81,17 +81,21 @@ class XdsStreamingCallPromiseWrapper final
   // The value will be nullopt when the stream is closed without
   // receiving a message.
   auto PullMessage() {
+    bool start_recv = false;
     {
       MutexLock lock(&mu_);
       if (recv_state_ == RecvState::kIdle) {
         recv_state_ = RecvState::kRecvMessageInFlight;
         recv_message_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
-        call_->StartRecvMessage();
+        start_recv = true;
       } else {
         // Must be kReceivedStatus. Don't actually need to start the
         // recv_message op; we'll return nullopt on the first poll.
         GRPC_CHECK(recv_state_ == RecvState::kReceivedStatus);
       }
+    }
+    if (start_recv) {
+      call_->StartRecvMessage();
     }
     return [self = WeakRefAsSubclass<XdsStreamingCallPromiseWrapper>()]() {
       return self->PollPullMessage();
@@ -105,7 +109,9 @@ class XdsStreamingCallPromiseWrapper final
   auto PullServerTrailingMetadata() {
     {
       MutexLock lock(&mu_);
-      recv_status_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+      if (recv_state_ != RecvState::kReceivedStatus) {
+        recv_status_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+      }
     }
     return [self = WeakRefAsSubclass<XdsStreamingCallPromiseWrapper>()]() {
       return self->PollPullServerTrailingMetadata();
@@ -186,11 +192,11 @@ class XdsStreamingCallPromiseWrapper final
   // State for incoming messages (PullMessage).
   RecvState recv_state_ ABSL_GUARDED_BY(mu_) = RecvState::kIdle;
   Waker recv_message_waker_ ABSL_GUARDED_BY(mu_);
-  std::optional<std::string> recv_message_;
+  std::optional<std::string> recv_message_ ABSL_GUARDED_BY(mu_);
 
   // Trailing metadata status from the server (PullServerTrailingMetadata).
   Waker recv_status_waker_ ABSL_GUARDED_BY(mu_);
-  absl::Status status_;
+  absl::Status status_ ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace grpc_core

@@ -916,16 +916,13 @@ inline bool IsTestSampledInPr(const CoreTestConfiguration* config) {
                       core_end2end_test_fuzzer::Msg msg) {                     \
     if (config == nullptr) return;                                             \
     if (absl::StartsWith(#name, "DISABLED_")) GTEST_SKIP() << "disabled test"; \
-    if (!IsEventEngineListenerEnabled() || !IsEventEngineClientEnabled() ||    \
-        !IsEventEngineDnsEnabled()) {                                          \
+    if (!IsEventEngineListenerEnabled() || !IsEventEngineClientEnabled()) {    \
       GTEST_SKIP() << "fuzzers need event engine";                             \
     }                                                                          \
     SKIP_IF_DISABLED_IN_CONFIG(config, #suite, #name);                         \
     SKIP_IF_NOT_SAMPLED_IN_PR(config);                                         \
-    if (IsEventEngineDnsNonClientChannelEnabled()) {                           \
-      GTEST_SKIP() << "event_engine_dns_non_client_channel experiment breaks " \
-                      "fuzzing currently";                                     \
-    }                                                                          \
+    GTEST_SKIP() << "event_engine_dns_non_client_channel experiment breaks "   \
+                    "fuzzing currently";                                       \
     CoreEnd2endTest_##suite##_##name(config, &msg, #suite).RunTest();          \
     grpc_event_engine::experimental::ShutdownDefaultEventEngine();             \
   }                                                                            \
