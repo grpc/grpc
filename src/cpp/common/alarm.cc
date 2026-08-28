@@ -78,12 +78,11 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
         gpr_time_cmp(gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
                      gpr_now(GPR_CLOCK_MONOTONIC)) <= 0;
     const grpc_core::Duration delay =
-        already_due
-            ? grpc_core::Duration::Zero()
-            : grpc_core::Timestamp::FromTimespecRoundUp(deadline) -
-                  grpc_core::ExecCtx::Get()->Now();
-    cq_timer_handle_ = event_engine_->RunAfter(
-        delay, [this] { OnCQAlarm(absl::OkStatus()); });
+        already_due ? grpc_core::Duration::Zero()
+                    : grpc_core::Timestamp::FromTimespecRoundUp(deadline) -
+                          grpc_core::ExecCtx::Get()->Now();
+    cq_timer_handle_ =
+        event_engine_->RunAfter(delay, [this] { OnCQAlarm(absl::OkStatus()); });
   }
   void Set(gpr_timespec deadline, std::function<void(bool)> f) {
     grpc_core::ExecCtx exec_ctx;
@@ -102,12 +101,11 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
         gpr_time_cmp(gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
                      gpr_now(GPR_CLOCK_MONOTONIC)) <= 0;
     const grpc_core::Duration delay =
-        already_due
-            ? grpc_core::Duration::Zero()
-            : grpc_core::Timestamp::FromTimespecRoundUp(deadline) -
-                  grpc_core::ExecCtx::Get()->Now();
-    callback_timer_handle_ = event_engine_->RunAfter(
-        delay, [this] { OnCallbackAlarm(true); });
+        already_due ? grpc_core::Duration::Zero()
+                    : grpc_core::Timestamp::FromTimespecRoundUp(deadline) -
+                          grpc_core::ExecCtx::Get()->Now();
+    callback_timer_handle_ =
+        event_engine_->RunAfter(delay, [this] { OnCallbackAlarm(true); });
   }
   void Cancel() {
     grpc_core::ExecCtx exec_ctx;

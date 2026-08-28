@@ -24,12 +24,12 @@
 #include <mutex>
 #include <thread>
 
-#include "absl/functional/any_invocable.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/util/notification.h"
 #include "test/core/event_engine/mock_event_engine.h"
 #include "test/core/test_util/test_config.h"
 #include "gtest/gtest.h"
+#include "absl/functional/any_invocable.h"
 
 namespace grpc {
 namespace {
@@ -44,11 +44,11 @@ using ::testing::StrictMock;
 std::shared_ptr<StrictMock<MockEventEngine>> MakeMockWithImmediateRunAfter() {
   auto mock_event_engine = std::make_shared<StrictMock<MockEventEngine>>();
   EXPECT_CALL(*mock_event_engine, RunAfter(EventEngine::Duration::zero(), _))
-      .WillOnce(Invoke([](EventEngine::Duration,
-                           absl::AnyInvocable<void()> closure) {
-        closure();
-        return EventEngine::TaskHandle::kInvalid;
-      }));
+      .WillOnce(
+          Invoke([](EventEngine::Duration, absl::AnyInvocable<void()> closure) {
+            closure();
+            return EventEngine::TaskHandle::kInvalid;
+          }));
   return mock_event_engine;
 }
 
