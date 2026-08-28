@@ -36,6 +36,7 @@
 #include <grpcpp/ext/otel_plugin.h>
 
 #include "opentelemetry/exporters/otlp/otlp_grpc_exporter_factory.h"
+#include "opentelemetry/sdk/trace/processor.h"
 #include "opentelemetry/sdk/trace/simple_processor_factory.h"
 #include "opentelemetry/sdk/trace/tracer_provider.h"
 #include "opentelemetry/trace/propagation/http_trace_context.h"
