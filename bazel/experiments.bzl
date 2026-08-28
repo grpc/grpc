@@ -195,12 +195,6 @@ EXPERIMENTS = {
             "secure_endpoint_test": [
                 "pipelined_read_secure_endpoint",
             ],
-            "xds_end2end_test": [
-                "xds_server_filter_chain_per_route",
-            ],
-            "xds_test": [
-                "xds_server_filter_chain_per_route",
-            ],
         },
         "on": {
             "core_end2end_test": [
@@ -219,6 +213,12 @@ EXPERIMENTS = {
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
+            ],
+            "xds_end2end_test": [
+                "xds_server_filter_chain_per_route",
+            ],
+            "xds_test": [
+                "xds_server_filter_chain_per_route",
             ],
         },
     },
