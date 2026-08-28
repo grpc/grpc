@@ -635,7 +635,8 @@ void NewChttp2ServerListener::OnAccept(
   }
   RefCountedPtr<MitigationEngine> mitigation_engine = self->mitigation_engine();
   if (mitigation_engine != nullptr) {
-    auto action = mitigation_engine->EvaluateIncomingConnection(peer);
+    auto action = mitigation_engine->EvaluateIncomingConnection(
+        MitigationEngine::EvaluateArgs(peer, endpoint.get()));
     if (action == MitigationEngine::Action::kCloseConnection) {
       LOG_EVERY_N_SEC(INFO, 60)
           << "Mitigation engine rejected connection from " << peer;
