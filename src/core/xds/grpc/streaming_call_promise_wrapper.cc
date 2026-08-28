@@ -98,6 +98,7 @@ XdsStreamingCallPromiseWrapper::PollPullServerTrailingMetadata() {
 
 void XdsStreamingCallPromiseWrapper::OnRequestSent(bool ok) {
   Waker waker;
+  bool send_half_close = false;
   {
     MutexLock lock(&mu_);
     if (!ok) {
@@ -105,14 +106,16 @@ void XdsStreamingCallPromiseWrapper::OnRequestSent(bool ok) {
     } else {
       if (send_state_ == SendState::kSendMessageInFlightAndHalfCloseRequested) {
         send_state_ = SendState::kHalfCloseInFlight;
-        return;
+        send_half_close = true;
       } else if (send_state_ == SendState::kSendMessageInFlight) {
         send_state_ = SendState::kIdle;
       }
     }
     waker = std::move(send_message_waker_);
   }
-  call_->SendHalfClose();
+  if (send_half_close) {
+    call_->SendHalfClose();
+  }
   // Wake any waiting send promise.
   waker.Wakeup();
 }
