@@ -478,6 +478,31 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_test(
+    name = "epoll1_poller_handle_lifetime_test",
+    srcs = ["epoll1_poller_handle_lifetime_test.cc"],
+    external_deps = [
+        "absl/status",
+        "absl/time",
+        "gtest",
+    ],
+    tags = [
+        "no_windows",
+    ],
+    uses_event_engine = True,
+    uses_polling = True,
+    deps = [
+        ":posix_engine_test_utils",
+        "//:grpc",
+        "//src/core:iomgr_port",
+        "//src/core:notification",
+        "//src/core:posix_event_engine_closure",
+        "//src/core:posix_event_engine_event_poller",
+        "//src/core:posix_event_engine_poller_posix_epoll1",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
 grpc_cc_library(
     name = "dns_server",
     testonly = True,
