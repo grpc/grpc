@@ -30134,6 +30134,7 @@ add_executable(qps_json_driver
   test/cpp/qps/server_async.cc
   test/cpp/qps/server_callback.cc
   test/cpp/qps/server_sync.cc
+  test/cpp/qps/session_util.cc
   test/cpp/qps/usage_timer.cc
 )
 if(WIN32 AND MSVC)
@@ -30246,6 +30247,7 @@ add_executable(qps_worker
   test/cpp/qps/server_async.cc
   test/cpp/qps/server_callback.cc
   test/cpp/qps/server_sync.cc
+  test/cpp/qps/session_util.cc
   test/cpp/qps/usage_timer.cc
   test/cpp/qps/worker.cc
 )
