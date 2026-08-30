@@ -23,6 +23,7 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
+#include "third_party/grpc/src/core/util/no_destruct.h"
 
 // #define GRPC_EXPERIMENTS_ARE_FINAL
 
@@ -138,6 +139,14 @@ void ForceEnableExperiment(absl::string_view experiment_name, bool enable);
 void RegisterExperimentConstraintsValidator(
     absl::AnyInvocable<bool(struct ExperimentMetadata)> check_constraints_cb);
 
+inline std::atomic<bool>* Loaded(){
+  static NoDestruct<std::atomic<bool>> loaded(false);
+  return &*loaded;
+}
+
+inline bool AreExperimentsLoaded() {
+  return Loaded()->load(std::memory_order_relaxed);
+}
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LIB_EXPERIMENTS_CONFIG_H
