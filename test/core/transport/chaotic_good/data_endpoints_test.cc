@@ -401,7 +401,7 @@ DATA_ENDPOINTS_TEST(CanWriteSecurityFrame) {
   util::testing::MockPromiseEndpoint ep(1234);
   auto* transport_framing_endpoint_extension = ep.endpoint->AddExtension<
       util::testing::MockTransportFramingEndpointExtension>();
-  absl::AnyInvocable<void(SliceBuffer*)> send_frame_callback;
+  absl::AnyInvocable<void(SliceBuffer)> send_frame_callback;
   EXPECT_CALL(*transport_framing_endpoint_extension, SetSendFrameCallback)
       .WillOnce(::testing::SaveArgByMove<0>(&send_frame_callback));
   auto close_ep = ep.ExpectDelayedReadClose(absl::UnavailableError("test done"),
@@ -422,7 +422,7 @@ DATA_ENDPOINTS_TEST(CanWriteSecurityFrame) {
                  event_engine().get());
   SliceBuffer security_frame_bytes(
       Slice::FromCopiedString("security_frame_bytes"));
-  send_frame_callback(&security_frame_bytes);
+  send_frame_callback(std::move(security_frame_bytes));
   WaitForAllPendingWork();
   close_ep();
   WaitForAllPendingWork();

@@ -1028,8 +1028,8 @@ Endpoint::Endpoint(uint32_t id, uint32_t encode_alignment,
                   GetTransportFramingEndpointExtension(*endpoint);
               if (transport_framing_endpoint_extension != nullptr) {
                 transport_framing_endpoint_extension->SetSendFrameCallback(
-                    [ep_ctx](SliceBuffer* data) {
-                      ep_ctx->secure_frame_queue->Write(std::move(*data));
+                    [ep_ctx](SliceBuffer data) {
+                      ep_ctx->secure_frame_queue->Write(std::move(data));
                     });
               }
               auto read_party = Party::Make(ep_ctx->arena);
