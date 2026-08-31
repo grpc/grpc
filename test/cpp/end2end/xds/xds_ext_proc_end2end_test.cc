@@ -132,24 +132,6 @@ class FakeExtProcService final : public ::envoy::service::ext_proc::v3::
       }
     }
 
-    // Sends a response and immediately closes the stream with status.
-    void SendResponseAndStatus(
-        ::envoy::service::ext_proc::v3::ProcessingResponse response,
-        const absl::Status& status) {
-      grpc_core::MutexLock lock(&mu_);
-      response_ = std::move(response);
-      bool expected = false;
-      if (called_finish_.compare_exchange_strong(expected, true)) {
-        StartWriteAndFinish(
-            &response_, grpc::WriteOptions(),
-            grpc::Status(static_cast<grpc::StatusCode>(status.code()),
-                         std::string(status.message())));
-      }
-      while (!is_done_) {
-        cv_.Wait(&mu_);
-      }
-    }
-
    private:
     friend class FakeExtProcService;
 
@@ -2270,8 +2252,8 @@ TEST_P(XdsExtProcEnd2endTest,
               ::testing::Optional(
                   MatchesRequestHeaders(::testing::Contains(::testing::Pair(
                       ":path", "/grpc.testing.EchoTestService/BidiStream")))));
-  ext_proc_stream->SendResponseAndStatus(MakeRequestHeadersMutationResponse({}),
-                                         absl::OkStatus());
+  ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
+  ext_proc_stream->SendStatus(absl::OkStatus());
   absl::SleepFor(absl::Milliseconds(100));
   EchoRequest request;
   request.set_message(kMessage1);
@@ -2357,9 +2339,9 @@ TEST_P(XdsExtProcEnd2endTest,
   auto ext_proc_stream = ext_proc_service_->GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_THAT(req, ::testing::Optional(MatchesRequestBody(
-                       EchoRequestMessageIs(kRequestMessage),
-                       /*end_of_stream=*/false)));
+  ASSERT_THAT(req, ::testing::Optional(
+                       MatchesRequestBody(EchoRequestMessageIs(kRequestMessage),
+                                          /*end_of_stream=*/false)));
   ext_proc_stream->SendStatus(absl::ResourceExhaustedError(
       "Call closed by ext_proc server on request body"));
   Status status = rpc.GetStatus();

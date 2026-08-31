@@ -1121,6 +1121,10 @@ auto ExtProcFilter::ExtProcCall::HandleInitialMetadataFromClient(
           !error.ok(),
           [self = WeakRef(), error]() {
             self->HandleSideStreamStatus(error);
+            if (self->IsFailOpenAllowed() &&
+                self->client_initial_metadata_ != nullptr) {
+              self->StartChildCall(std::move(self->client_initial_metadata_));
+            }
             return Immediate(StatusFlag(self->IsFailOpenAllowed()));
           },
           Immediate(StatusFlag(Success{}))),
@@ -1129,7 +1133,9 @@ auto ExtProcFilter::ExtProcCall::HandleInitialMetadataFromClient(
       If(
           !send_to_sidestream || config().observability_mode,
           [self = WeakRef()]() {
-            self->StartChildCall(std::move(self->client_initial_metadata_));
+            if (self->client_initial_metadata_ != nullptr) {
+              self->StartChildCall(std::move(self->client_initial_metadata_));
+            }
             return Immediate(StatusFlag(Success{}));
           },
           Immediate(StatusFlag(Success{}))),
@@ -1348,6 +1354,11 @@ auto ExtProcFilter::ExtProcCall::HandleInitialMetadataFromServer(
           !error.ok(),
           [self = WeakRef(), error]() {
             self->HandleSideStreamStatus(error);
+            if (self->IsFailOpenAllowed() &&
+                self->server_initial_metadata_ != nullptr) {
+              self->handler_.PushServerInitialMetadata(
+                  std::move(self->server_initial_metadata_));
+            }
             return Immediate(StatusFlag(self->IsFailOpenAllowed()));
           },
           Immediate(StatusFlag(Success{}))),
@@ -1357,8 +1368,10 @@ auto ExtProcFilter::ExtProcCall::HandleInitialMetadataFromServer(
           !is_trailers_only &&
               (!send_to_sidestream || config().observability_mode),
           [self = WeakRef()]() {
-            self->handler_.PushServerInitialMetadata(
-                std::move(self->server_initial_metadata_));
+            if (self->server_initial_metadata_ != nullptr) {
+              self->handler_.PushServerInitialMetadata(
+                  std::move(self->server_initial_metadata_));
+            }
             return Immediate(StatusFlag(Success{}));
           },
           Immediate(StatusFlag(Success{}))),
@@ -1426,6 +1439,11 @@ auto ExtProcFilter::ExtProcCall::HandleTrailingMetadataFromServer(
           !error.ok(),
           [self = WeakRef(), error]() {
             self->HandleSideStreamStatus(error);
+            if (self->IsFailOpenAllowed() &&
+                self->server_trailing_metadata_ != nullptr) {
+              self->handler_.PushServerTrailingMetadata(
+                  std::move(self->server_trailing_metadata_));
+            }
             return Immediate(StatusFlag(self->IsFailOpenAllowed()));
           },
           Immediate(StatusFlag(Success{}))),
@@ -1445,8 +1463,10 @@ auto ExtProcFilter::ExtProcCall::HandleTrailingMetadataFromServer(
       If(
           !send_to_sidestream || config().observability_mode,
           [self = WeakRef()]() {
-            self->handler_.PushServerTrailingMetadata(
-                std::move(self->server_trailing_metadata_));
+            if (self->server_trailing_metadata_ != nullptr) {
+              self->handler_.PushServerTrailingMetadata(
+                  std::move(self->server_trailing_metadata_));
+            }
             return Immediate(StatusFlag(Success{}));
           },
           Immediate(StatusFlag(Success{}))),
