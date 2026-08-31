@@ -585,6 +585,14 @@ class CLanguage:
                     "-DCMAKE_CXX_STANDARD=17",
                 ],
             )
+        elif compiler == "gcc12_openssl400":
+            return (
+                "debian12_openssl400",
+                [
+                    "-DgRPC_SSL_PROVIDER=package",
+                    "-DCMAKE_CXX_STANDARD=17",
+                ],
+            )
         elif compiler == "gcc14":
             return ("gcc_14", ["-DCMAKE_CXX_STANDARD=20"])
         elif compiler == "gcc_musl":
@@ -1731,6 +1739,7 @@ argp.add_argument(
         "gcc10.2_openssl102",
         "gcc10.2_openssl111",
         "gcc12_openssl309",
+        "gcc12_openssl400",
         "gcc14",
         "gcc_musl",
         "clang14",
