@@ -1167,14 +1167,15 @@ auto ExtProcFilter::ExtProcCall::HandleMessageFromClient(
         << DebugTag()
         << "Client message non-processing mode (processing disabled or "
            "closed)";
-    // TODO(rishesh): If the external processor has already closed client
-    // sends (via end_of_stream or end_of_stream_without_message in
-    // ProcessingResponse), any subsequent message from the client cannot be
-    // processed. Since message dropping is not yet supported in Call v3,
-    // fail the call here. Remove this once PH2 is implemented.
-  } else if (!config().observability_mode &&
-             request_event_state_ ==
-                 SideStreamRequestEventState::kExpectNothing) {
+  }
+  // TODO(rishesh): If the external processor has already closed client
+  // sends (via end_of_stream or end_of_stream_without_message in
+  // ProcessingResponse), any subsequent message from the client cannot be
+  // processed. Since message dropping is not yet supported in Call v3,
+  // fail the call here. Remove this once PH2 is implemented.
+  else if (!config().observability_mode &&
+           request_event_state_ ==
+               SideStreamRequestEventState::kExpectNothing) {
     payload = absl::InternalError(
         "Client has requested for half close but external processor server has "
         "already force sent half close to the server");
