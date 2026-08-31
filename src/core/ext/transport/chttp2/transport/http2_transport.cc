@@ -371,6 +371,8 @@ ProcessIncomingDataFrameFlowControl(const Http2FrameHeader& frame_header,
       chttp2::StreamFlowControl::IncomingUpdateContext stream_fc(
           &stream->GetStreamFlowControl());
       absl::Status fc_status = stream_fc.RecvData(frame_header.length);
+      // TODO(tjagtap) [PH2][P1][FlowControl] This is a HACK. Fix this.
+      stream_fc.HackIncrementPendingSize(frame_header.length);
       chttp2::FlowControlAction action = stream_fc.MakeAction();
       GRPC_HTTP2_COMMON_DLOG
           << "ProcessIncomingDataFrameFlowControl Stream RecvData status: "
@@ -383,8 +385,6 @@ ProcessIncomingDataFrameFlowControl(const Http2FrameHeader& frame_header,
             Http2ErrorCode::kFlowControlError,
             std::string(fc_status.message()));
       }
-      // TODO(tjagtap) [PH2][P1][FlowControl] This is a HACK. Fix this.
-      stream_fc.HackIncrementPendingSize(frame_header.length);
       return action;
     }
   }
