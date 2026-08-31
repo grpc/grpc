@@ -38,12 +38,14 @@
 #include "src/core/transport/endpoint_transport.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "src/proto/grpc/testing/payloads.pb.h"
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/interarrival.h"
 #include "test/cpp/qps/qps_worker.h"
 #include "test/cpp/qps/server.h"
+#include "test/cpp/qps/session_util.h"
 #include "test/cpp/qps/usage_timer.h"
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/test_credentials_provider.h"
@@ -440,10 +442,12 @@ class ClientImpl : public Client {
       : cores_(gpr_cpu_num_cores()), create_stub_(create_stub) {
     for (int i = 0; i < config.client_channels(); i++) {
       channels_.emplace_back(
-          config.server_targets(i % config.server_targets_size()), config,
-          create_stub_, i);
+          config.server_targets(i % config.server_targets_size()), config, i);
     }
     WaitForChannelsToConnect();
+    for (auto& c : channels_) {
+      c.InitStub(config, create_stub_);
+    }
     median_latency_collection_interval_seconds_ =
         config.median_latency_collection_interval_millis() / 1e3;
     ClientRequestCreator<RequestType> create_req(&request_,
@@ -510,11 +514,8 @@ class ClientImpl : public Client {
 
   class ClientChannelInfo {
    public:
-    ClientChannelInfo(
-        const std::string& target, const ClientConfig& config,
-        std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)>
-            create_stub,
-        int shard) {
+    ClientChannelInfo(const std::string& target, const ClientConfig& config,
+                      int shard) {
       ChannelArguments args;
       args.SetInt("shard_to_ensure_no_subchannel_merges", shard);
       set_channel_args(config, &args);
@@ -553,8 +554,20 @@ class ClientImpl : public Client {
         channel_ = (*g_inproc_servers)[srv_num]->InProcessChannel(args);
         is_inproc_ = true;
       }
-      stub_ = create_stub(channel_);
     }
+
+    void InitStub(const ClientConfig& config,
+                  const std::function<std::unique_ptr<StubType>(
+                      std::shared_ptr<Channel>)>& create_stub) {
+      if (config.use_session()) {
+        session_holder_ = EstablishSession(channel_);
+        GRPC_CHECK_NE(session_holder_, nullptr);
+        stub_ = create_stub(session_holder_->virtual_channel());
+      } else {
+        stub_ = create_stub(channel_);
+      }
+    }
+
     Channel* get_channel() { return channel_.get(); }
     StubType* get_stub() { return stub_.get(); }
     bool is_inproc() { return is_inproc_; }
@@ -573,6 +586,7 @@ class ClientImpl : public Client {
     }
 
     std::shared_ptr<Channel> channel_;
+    std::unique_ptr<SessionHolder> session_holder_;
     std::unique_ptr<StubType> stub_;
     bool is_inproc_;
   };

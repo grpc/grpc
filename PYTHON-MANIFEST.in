@@ -2,7 +2,6 @@ recursive-include src/python/grpcio/grpc *.c *.h *.inc *.py *.pyx *.pxd *.pxi *.
 recursive-exclude src/python/grpcio/grpc/_cython *.so *.pyd
 graft src/python/grpcio/grpcio.egg-info
 graft src/core
-graft src/boringssl
 graft include/grpc
 graft third_party/abseil-cpp/absl
 graft third_party/address_sorting

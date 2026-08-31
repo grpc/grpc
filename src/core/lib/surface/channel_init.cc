@@ -33,6 +33,7 @@
 #include "src/core/channelz/channelz.h"
 #include "src/core/channelz/property_list.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/grpc_check.h"
@@ -48,13 +49,6 @@ namespace grpc_core {
 UniqueTypeName (*NameFromChannelFilter)(const grpc_channel_filter*);
 
 namespace {
-struct CompareChannelFiltersByName {
-  bool operator()(UniqueTypeName a, UniqueTypeName b) const {
-    // Compare lexicographically instead of by pointer value so that different
-    // builds make the same choices.
-    return a.name() < b.name();
-  }
-};
 
 struct CompareFusedChannelFiltersByName {
   bool operator()(ChannelInit::FilterRegistration* a,
@@ -126,6 +120,12 @@ ChannelInit::FilterRegistration&
 ChannelInit::FilterRegistration::ExcludeFromMinimalStack() {
   return If([](const ChannelArgs& args) { return !args.WantMinimalStack(); });
 }
+ChannelInit::Builder::Builder()
+    : fix_v3_filter_stack_server_side_ordering_(
+          IsFixV3FilterStackServerSideOrderingEnabled()) {}
+ChannelInit::Builder::Builder(bool fix_v3_filter_stack_server_side_ordering)
+    : fix_v3_filter_stack_server_side_ordering_(
+          fix_v3_filter_stack_server_side_ordering) {}
 
 ChannelInit::FilterRegistration& ChannelInit::Builder::RegisterFilter(
     grpc_channel_stack_type type, UniqueTypeName name,
@@ -146,32 +146,23 @@ void ChannelInit::Builder::RegisterFusedFilter(
 
 class ChannelInit::DependencyTracker {
  public:
+  explicit DependencyTracker(bool reverse_ordering_)
+      : ready_dependencies_(ReadyDependency::Comparator{reverse_ordering_}),
+        reverse_ordering_(reverse_ordering_) {}
+
   // Declare that a filter exists.
   void Declare(FilterRegistration* registration) {
     nodes_.emplace(registration->name_, registration);
   }
   // Insert an edge from a to b
   // Both nodes must be declared.
+
   void InsertEdge(UniqueTypeName a, UniqueTypeName b) {
-    auto it_a = nodes_.find(a);
-    auto it_b = nodes_.find(b);
-    if (it_a == nodes_.end()) {
-      GRPC_TRACE_LOG(channel_stack, INFO)
-          << "gRPC Filter " << a.name()
-          << " was not declared before adding an edge to " << b.name();
-      return;
+    if (!reverse_ordering_) {
+      InsertEdgeImpl(a, b);
+    } else {
+      InsertEdgeImpl(b, a);
     }
-    if (it_b == nodes_.end()) {
-      GRPC_TRACE_LOG(channel_stack, INFO)
-          << "gRPC Filter " << b.name()
-          << " was not declared before adding an edge from " << a.name();
-      return;
-    }
-    auto& node_a = it_a->second;
-    auto& node_b = it_b->second;
-    node_a.dependents.push_back(&node_b);
-    node_b.all_dependencies.push_back(a);
-    ++node_b.waiting_dependencies;
   }
 
   // Finish the dependency graph and begin iteration.
@@ -247,21 +238,61 @@ class ChannelInit::DependencyTracker {
     Ordering ordering() const { return registration->ordering_; }
     absl::string_view name() const { return registration->name_.name(); }
   };
+
   struct ReadyDependency {
     explicit ReadyDependency(Node* node) : node(node) {}
     Node* node;
-    bool operator<(const ReadyDependency& other) const {
+
+    struct Comparator {
       // Sort first on ordering, and then lexically on name.
       // The lexical sort means that the ordering is stable between builds
       // (UniqueTypeName ordering is not stable between builds).
-      return node->ordering() > other.node->ordering() ||
-             (node->ordering() == other.node->ordering() &&
-              node->name() > other.node->name());
-    }
+      bool operator()(const ReadyDependency& a,
+                      const ReadyDependency& b) const {
+        if (!reverse_ordering) {
+          return a.node->ordering() > b.node->ordering() ||
+                 (a.node->ordering() == b.node->ordering() &&
+                  a.node->name() > b.node->name());
+        } else {
+          return a.node->ordering() < b.node->ordering() ||
+                 (a.node->ordering() == b.node->ordering() &&
+                  a.node->name() > b.node->name());
+        }
+      };
+      bool reverse_ordering = false;
+    };
   };
+
+  void InsertEdgeImpl(UniqueTypeName a, UniqueTypeName b) {
+    auto it_a = nodes_.find(a);
+    auto it_b = nodes_.find(b);
+    if (it_a == nodes_.end()) {
+      GRPC_TRACE_LOG(channel_stack, INFO)
+          << "gRPC Filter " << a.name()
+          << " was not declared before adding an edge to " << b.name();
+      return;
+    }
+    if (it_b == nodes_.end()) {
+      GRPC_TRACE_LOG(channel_stack, INFO)
+          << "gRPC Filter " << b.name()
+          << " was not declared before adding an edge from " << a.name();
+      return;
+    }
+    auto& node_a = it_a->second;
+    auto& node_b = it_b->second;
+    node_a.dependents.push_back(&node_b);
+    node_b.all_dependencies.push_back(a);
+    ++node_b.waiting_dependencies;
+  }
+
   absl::flat_hash_map<UniqueTypeName, Node> nodes_;
-  std::priority_queue<ReadyDependency> ready_dependencies_;
+  std::priority_queue<ReadyDependency, std::vector<ReadyDependency>,
+                      ReadyDependency::Comparator>
+      ready_dependencies_;
   size_t nodes_taken_ = 0;
+
+  // Whether to reverse the ordering for server side filters.
+  bool reverse_ordering_ = false;
 };
 
 template <bool is_terminal>
@@ -333,14 +364,17 @@ std::tuple<std::vector<ChannelInit::Filter>, std::vector<ChannelInit::Filter>>
 ChannelInit::SortFilterRegistrationsByDependencies(
     const std::vector<std::unique_ptr<ChannelInit::FilterRegistration>>&
         filter_registrations,
-    grpc_channel_stack_type type, channelz::PropertyTable& filter_ordering) {
+    grpc_channel_stack_type type, channelz::PropertyTable& filter_ordering,
+    bool fix_v3_filter_stack_server_side_ordering) {
   // Phase 1: Build a map from filter to the set of filters that must be
   // initialized before it.
   // We order this map (and the set of dependent filters) by filter name to
   // ensure algorithm ordering stability is deterministic for a given build.
   // We should not require this, but at the time of writing it's expected that
   // this will help overall stability.
-  DependencyTracker dependencies;
+  const bool reverse_ordering = !grpc_channel_stack_type_is_client(type) &&
+                                fix_v3_filter_stack_server_side_ordering;
+  DependencyTracker dependencies{reverse_ordering};
   std::vector<Filter> terminal_filters;
   for (const auto& registration : filter_registrations) {
     if (registration->terminal_) {
@@ -432,7 +466,8 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
         filter_registrations,
     const std::vector<std::unique_ptr<ChannelInit::FilterRegistration>>&
         fused_filter_registrations,
-    PostProcessor* post_processors, grpc_channel_stack_type type) {
+    PostProcessor* post_processors, grpc_channel_stack_type type,
+    bool fix_v3_filter_stack_server_side_ordering) {
   // Collect post processors that need to be applied.
   // We've already ensured the one-per-slot constraint, so now we can just
   // collect everything up into a vector and run it in order.
@@ -444,7 +479,8 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
   channelz::PropertyTable filter_ordering;
 
   auto sorted_filters = SortFilterRegistrationsByDependencies(
-      filter_registrations, type, filter_ordering);
+      filter_registrations, type, filter_ordering,
+      fix_v3_filter_stack_server_side_ordering);
   std::vector<Filter> filters = std::move(std::get<0>(sorted_filters));
   std::vector<Filter> terminal_filters = std::move(std::get<1>(sorted_filters));
 
@@ -563,10 +599,13 @@ void ChannelInit::PrintChannelStackTrace(
 
 ChannelInit ChannelInit::Builder::Build() {
   ChannelInit result;
+  result.fix_v3_filter_stack_server_side_ordering_ =
+      fix_v3_filter_stack_server_side_ordering_;
   for (int i = 0; i < GRPC_NUM_CHANNEL_STACK_TYPES; i++) {
     result.stack_configs_[i] =
         BuildStackConfig(filters_[i], fused_filters_[i], post_processors_[i],
-                         static_cast<grpc_channel_stack_type>(i));
+                         static_cast<grpc_channel_stack_type>(i),
+                         fix_v3_filter_stack_server_side_ordering_);
   }
   return result;
 }

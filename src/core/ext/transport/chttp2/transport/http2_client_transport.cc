@@ -1349,8 +1349,13 @@ void Http2ClientTransport::HandleStreamStateChange(Stream& stream,
 }
 
 void Http2ClientTransport::CleanupStream(Stream& stream) {
-  MutexLock lock(&transport_mutex_);
-  stream_list_.erase(stream.GetStreamId());
+  {
+    MutexLock lock(&transport_mutex_);
+    stream_list_.erase(stream.GetStreamId());
+  }
+  // Subtract any positive announced window delta of closed stream from the
+  // transport flow control.
+  stream.GetStreamFlowControl().OnStreamClosed();
 }
 
 void Http2ClientTransport::BeginCloseStream(

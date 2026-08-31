@@ -37,12 +37,14 @@
 #include "src/core/call/message.h"
 #include "src/core/call/metadata.h"
 #include "src/core/call/metadata_batch.h"
+#include "src/core/call/metadata_info.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -698,8 +700,10 @@ TEST_F(Http2ServerTransportTest,
       helper_.SerializedPingFrame(/*ack=*/true, /*opaque=*/100),
       helper_.SerializedPingFrame(/*ack=*/true, /*opaque=*/101),
       helper_.SerializedWindowUpdateFrame(/*stream_id=*/0, /*increment=*/21),
+      helper_.SerializedWindowUpdateFrame(/*stream_id=*/1, /*increment=*/22),
   });
   step1->ThenExpectWrite({
+      helper_.SerializedWindowUpdateFrame(/*stream_id=*/0, /*increment=*/1),
       helper_.SerializedHeaderFrame(
           std::string(kGrpcStatusOK.begin(), kGrpcStatusOK.end()),
           /*stream_id=*/1, /*end_headers=*/true, /*end_stream=*/false),
@@ -721,9 +725,11 @@ TEST_F(Http2ServerTransportTest,
   step2->ThenExpectWrite({
       helper_.SerializedPingFrame(/*ack=*/true, /*opaque=*/102),
       helper_.SerializedPingFrame(/*ack=*/true, /*opaque=*/103),
-      helper_.SerializedWindowUpdateFrame(/*stream_id=*/0, /*increment=*/21),
+      helper_.SerializedWindowUpdateFrame(/*stream_id=*/0, /*increment=*/20),
+      helper_.SerializedWindowUpdateFrame(/*stream_id=*/1, /*increment=*/21),
   });
   step2->ThenExpectWrite({
+      helper_.SerializedWindowUpdateFrame(/*stream_id=*/0, /*increment=*/1),
       helper_.SerializedDataFrame(std::string(kString1.begin(), kString1.end()),
                                   /*stream_id=*/1, /*end_stream=*/false),
   });
@@ -1462,6 +1468,118 @@ TEST_F(Http2ServerTransportTest,
       endpoint()->NewStep();
   AddTransportCloseExpectations(teardown_step.get(), /*last_stream_id=*/3);
   teardown_step->Wait();
+}
+
+TEST_F(Http2ServerTransportTest, TestServerStreamFlowControlWindowUpdate) {
+  // Verifies that the server sends stream flow control tokens for a stream when
+  // receiving DATA frames, even when keepalives, pings, and server application
+  // writes are disabled or absent. With initial window size configured to 8192,
+  // sending 8192 bytes fully depletes the stream flow control window to 0
+  // tokens while keeping the transport flow control window above 50%, isolating
+  // the stream window update mechanism.
+  ExecCtx ctx;
+
+  // Step 1: Initialize the transport with keepalives disabled and a reduced
+  // initial window size of 8192 bytes.
+  InitTransport(
+      GetChannelArgs()
+          .Set(GRPC_ARG_KEEPALIVE_TIME_MS, std::numeric_limits<int>::max())
+          .Set(GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES, 8192));
+
+  // Step 2: Exchange settings, expecting the server to advertise
+  // INITIAL_WINDOW_SIZE = 8192 in its SETTINGS frame.
+  std::shared_ptr<EventSequenceEndpoint::Step> settings_step =
+      endpoint()->NewStep();
+  server_transport()->SetCallDestination(
+      MakeRefCounted<TestCallDestination>(this));
+  settings_step->ThenPerformRead({
+      EventEngineSlice(
+          grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
+      helper_.SerializedDefaultClientSettingsFrame(),
+  });
+  settings_step->ThenExpectWrite({
+      helper_.SerializedSettingsFrame({
+          {Http2Settings::kInitialWindowSizeWireId, 8192u},
+          {Http2Settings::kMaxHeaderListSizeWireId,
+           DEFAULT_MAX_HEADER_LIST_SIZE},
+          {Http2Settings::kGrpcAllowTrueBinaryMetadataWireId, true},
+      }),
+      helper_.SerializedSettingsFrameAck(),
+  });
+  settings_step->ThenPerformRead({
+      helper_.SerializedSettingsFrameAck(),
+  });
+  settings_step->Wait();
+  event_engine()->Tick();
+
+  // Step 3: Register a silent server stream handler that pulls client initial
+  // metadata and continuously consumes incoming messages via PullMessage()
+  // without sending any server initial metadata, messages, or trailing
+  // metadata.
+  AddStream([](CallHandler call_handler) {
+    return [call_handler]() mutable {
+      return TrySeq(
+          call_handler.PullClientInitialMetadata(),
+          [call_handler](ClientMetadataHandle /*metadata*/) mutable {
+            return Loop([call_handler]() mutable {
+              return Map(
+                  call_handler.PullMessage(),
+                  [](ClientToServerNextMessage next_msg)
+                      -> LoopCtl<absl::Status> {
+                    if (!next_msg.ok()) {
+                      return absl::InternalError("Failed to pull message");
+                    }
+                    LOG(INFO) << "next_msg: "
+                              << (next_msg.has_value()
+                                      ? next_msg.value().DebugString()
+                                      : "no value");
+                    if (!next_msg.has_value()) {
+                      return absl::OkStatus();
+                    }
+                    return Continue{};
+                  });
+            });
+          });
+    };
+  });
+
+  // Step 4: Client initiates stream 1 with a HEADER frame, followed by a DATA
+  // frame with 8,187 bytes payload + 5 bytes gRPC header (8,192 bytes total) to
+  // fully consume the 8,192-byte stream flow control window to 0 tokens.
+  const std::string chunk_8187(8187u, 'a');
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
+  step->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1u, /*end_headers=*/true, /*end_stream=*/false),
+      helper_.SerializedDataFrame(chunk_8187, /*stream_id=*/1u,
+                                  /*end_stream=*/false),
+  });
+
+  // Step 5: Expect the server to send a WINDOW_UPDATE frame replenishing the
+  // stream flow control window.
+  step->ThenExpectWrite({
+      helper_.SerializedWindowUpdateFrame(/*stream_id=*/1u,
+                                          /*increment=*/8193u),
+  });
+
+  step->Wait();
+
+  // Step 6: Add transport close expectations.
+  std::shared_ptr<EventSequenceEndpoint::Step> close_transport_step =
+      endpoint()->NewStep();
+  close_transport_step->ThenFailRead(absl::UnavailableError(kConnectionClosed));
+  close_transport_step->ThenExpectWrite({
+      helper_.SerializedGoawayFrame(
+          /*debug_data=*/kConnectionClosed, /*last_stream_id=*/1u,
+          /*error_code=*/
+          static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/1u,
+          /*error_code=*/
+          static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
+  });
+  close_transport_step->Wait();
 }
 }  // namespace testing
 }  // namespace http2

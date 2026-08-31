@@ -1552,6 +1552,10 @@ void Http2ServerTransport::CleanupStream(Stream& stream) {
       should_close = true;
     }
   }
+  // Subtract any positive announced window delta of closed stream from the
+  // transport flow control.
+  stream.GetStreamFlowControl().OnStreamClosed();
+
   if (should_close) {
     MaybeSpawnCloseTransport(Http2Status::AbslConnectionError(
         absl::StatusCode::kUnavailable, "Graceful shutdown complete."));
