@@ -109,30 +109,30 @@ $PROTOC \
     src/objective-c/tests/RemoteTestClient/*.proto
 
 # Verify mapped framework imports in header
-[ "`cat ${PROTO_FRAMEWORK_OUT}/src/objective-c/tests/RemoteTestClient/Test.pbrpc.h |
-    grep '#import <TestFramework/Test\.pbobjc\.h>'`" ] || {
+grep -q '#import <TestFramework/Test\.pbobjc\.h>' \
+    "${PROTO_FRAMEWORK_OUT}/src/objective-c/tests/RemoteTestClient/Test.pbrpc.h" || {
     echo >&2 "Test.pbrpc.h missing TestFramework import for Test.pbobjc.h"
     exit 1
 }
-[ "`cat ${PROTO_FRAMEWORK_OUT}/src/objective-c/tests/RemoteTestClient/Test.pbrpc.h |
-    grep '#import <MessagesFramework/Messages\.pbobjc\.h>'`" ] || {
+grep -q '#import <MessagesFramework/Messages\.pbobjc\.h>' \
+    "${PROTO_FRAMEWORK_OUT}/src/objective-c/tests/RemoteTestClient/Test.pbrpc.h" || {
     echo >&2 "Test.pbrpc.h missing MessagesFramework import for Messages.pbobjc.h"
     exit 1
 }
 
 # Verify mapped framework imports in source
-[ "`cat ${PROTO_FRAMEWORK_OUT}/src/objective-c/tests/RemoteTestClient/Test.pbrpc.m |
-    grep '#import <TestFramework/Test\.pbrpc\.h>'`" ] || {
+grep -q '#import <TestFramework/Test\.pbrpc\.h>' \
+    "${PROTO_FRAMEWORK_OUT}/src/objective-c/tests/RemoteTestClient/Test.pbrpc.m" || {
     echo >&2 "Test.pbrpc.m missing TestFramework import for Test.pbrpc.h"
     exit 1
 }
-[ "`cat ${PROTO_FRAMEWORK_OUT}/src/objective-c/tests/RemoteTestClient/Test.pbrpc.m |
-    grep '#import <TestFramework/Test\.pbobjc\.h>'`" ] || {
+grep -q '#import <TestFramework/Test\.pbobjc\.h>' \
+    "${PROTO_FRAMEWORK_OUT}/src/objective-c/tests/RemoteTestClient/Test.pbrpc.m" || {
     echo >&2 "Test.pbrpc.m missing TestFramework import for Test.pbobjc.h"
     exit 1
 }
-[ "`cat ${PROTO_FRAMEWORK_OUT}/src/objective-c/tests/RemoteTestClient/Test.pbrpc.m |
-    grep '#import <MessagesFramework/Messages\.pbobjc\.h>'`" ] || {
+grep -q '#import <MessagesFramework/Messages\.pbobjc\.h>' \
+    "${PROTO_FRAMEWORK_OUT}/src/objective-c/tests/RemoteTestClient/Test.pbrpc.m" || {
     echo >&2 "Test.pbrpc.m missing MessagesFramework import for Messages.pbobjc.h"
     exit 1
 }
@@ -155,13 +155,13 @@ $PROTOC \
     -I ${WELL_KNOWN_PROTOS_PATH} \
     src/objective-c/tests/RemoteTestClient/*.proto
 
-[ "`cat ${PROTO_FALLBACK_OUT}/src/objective-c/tests/RemoteTestClient/Test.pbrpc.h |
-    grep '#import <DefaultFramework/Test\.pbobjc\.h>'`" ] || {
+grep -q '#import <DefaultFramework/Test\.pbobjc\.h>' \
+    "${PROTO_FALLBACK_OUT}/src/objective-c/tests/RemoteTestClient/Test.pbrpc.h" || {
     echo >&2 "Test.pbrpc.h missing DefaultFramework fallback import for Test.pbobjc.h"
     exit 1
 }
-[ "`cat ${PROTO_FALLBACK_OUT}/src/objective-c/tests/RemoteTestClient/Test.pbrpc.h |
-    grep '#import <MessagesFramework/Messages\.pbobjc\.h>'`" ] || {
+grep -q '#import <MessagesFramework/Messages\.pbobjc\.h>' \
+    "${PROTO_FALLBACK_OUT}/src/objective-c/tests/RemoteTestClient/Test.pbrpc.h" || {
     echo >&2 "Test.pbrpc.h missing MessagesFramework import for Messages.pbobjc.h"
     exit 1
 }

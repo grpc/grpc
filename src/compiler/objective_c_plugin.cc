@@ -21,7 +21,10 @@
 #include <google/protobuf/compiler/objectivec/names.h>
 
 #include <fstream>
+#include <map>
 #include <memory>
+#include <string>
+#include <vector>
 
 #include "src/compiler/config.h"
 #include "src/compiler/objective_c_generator.h"
