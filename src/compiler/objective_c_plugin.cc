@@ -41,10 +41,9 @@ using ::grpc_objective_c_generator::SystemImport;
 
 namespace {
 
-bool ParseFrameworkMappings(
-    const ::std::string& path,
-    ::std::map<::std::string, ::std::string>* mappings,
-    ::std::string* error) {
+bool ParseFrameworkMappings(const ::std::string& path,
+                            ::std::map<::std::string, ::std::string>* mappings,
+                            ::std::string* error) {
   ::std::ifstream file(path);
   if (!file.is_open()) {
     *error = "Unable to open framework mapping file: " + path;
@@ -212,11 +211,13 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       } else if (param[0] == "named_framework_to_proto_path_mappings_path") {
         if (param.size() != 2) {
           *error = std::string(
-              "Format: named_framework_to_proto_path_mappings_path=path/to/mappings");
+              "Format: "
+              "named_framework_to_proto_path_mappings_path=path/to/mappings");
           return false;
         } else if (param[1].empty()) {
-          *error = std::string(
-              "Path to mappings file cannot be empty for parameter: ") +
+          *error =
+              std::string(
+                  "Path to mappings file cannot be empty for parameter: ") +
               param[0];
           return false;
         }
