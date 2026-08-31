@@ -20,5 +20,4 @@ def dump_xds_configs():
     try:
         return _slice_bytes(client_config_in_slice)
     finally:
-        with nogil:
-            grpc_slice_unref(client_config_in_slice)
+        grpc_slice_unref(client_config_in_slice)
