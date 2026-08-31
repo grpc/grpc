@@ -31,26 +31,70 @@ class SingleLoader:
         self.suite = unittest.TestSuite()
         tests = []
 
-        search_paths = [unittest_path] if unittest_path else ["."]
-        for importer, module_name, is_package in pkgutil.walk_packages(
-            search_paths
-        ):
-            if (
-                module_name == target_module
-                or module_name.endswith("." + target_module)
+        # Try to find the module directly first to avoid expensive directory walking
+        spec = None
+        fqn = target_module
+        if unittest_path and unittest_path != ".":
+            prefix = (
+                unittest_path.replace("/", ".").replace("\\", ".").strip(".")
+                + "."
+            )
+            fqn = prefix + target_module
+
+        try:
+            spec = importlib.util.find_spec(fqn)
+        except Exception:
+            pass
+
+        if spec is None and fqn != target_module:
+            try:
+                spec = importlib.util.find_spec(target_module)
+            except Exception:
+                pass
+
+        if spec is not None:
+            try:
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+                tests.append(loader.loadTestsFromModule(module))
+            except Exception as e:
+                raise AssertionError(f"Error loading module {spec.name}: {e}")
+
+        # Fallback to walking packages if direct lookup didn't find it
+        if not tests:
+            search_paths = [unittest_path] if unittest_path else ["."]
+            prefix = ""
+            if unittest_path and unittest_path != ".":
+                prefix = (
+                    unittest_path.replace("/", ".")
+                    .replace("\\", ".")
+                    .strip(".")
+                    + "."
+                )
+
+            for importer, module_name, is_package in pkgutil.walk_packages(
+                search_paths, prefix=prefix
             ):
-                try:
-                    spec = importer.find_spec(module_name)
-                    if spec is None:
-                        spec = importlib.util.find_spec(module_name)
-                    if spec is not None:
-                        module = importlib.util.module_from_spec(spec)
-                        spec.loader.exec_module(module)
-                        tests.append(loader.loadTestsFromModule(module))
-                except Exception as e:
-                    raise AssertionError(
-                        f"Error loading module {module_name}: {e}"
-                    )
+                if module_name == target_module or module_name.endswith(
+                    "." + target_module
+                ):
+                    try:
+                        spec = None
+                        if hasattr(importer, "find_spec"):
+                            try:
+                                spec = importer.find_spec(module_name)
+                            except Exception:
+                                pass
+                        if spec is None:
+                            spec = importlib.util.find_spec(module_name)
+                        if spec is not None:
+                            module = importlib.util.module_from_spec(spec)
+                            spec.loader.exec_module(module)
+                            tests.append(loader.loadTestsFromModule(module))
+                    except Exception as e:
+                        raise AssertionError(
+                            f"Error loading module {module_name}: {e}"
+                        )
 
         if len(tests) != 1:
             raise AssertionError(f"Expected only 1 test module. Found {tests}")
