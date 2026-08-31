@@ -14,6 +14,7 @@
 
 import importlib.util
 import pkgutil
+import sys
 from typing import Optional, Sequence
 import unittest
 
