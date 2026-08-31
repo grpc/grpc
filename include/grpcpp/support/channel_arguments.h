@@ -109,6 +109,9 @@ class ChannelArguments {
   void SetPointerWithVtable(const std::string& key, void* value,
                             const grpc_arg_pointer_vtable* vtable);
 
+  // Sets the channel arguments to be used for child channels.
+  void SetChildChannelArgs(const ChannelArguments& args);
+
   /// Set a textual argument \a value under \a key.
   void SetString(const std::string& key, const std::string& value);
 
