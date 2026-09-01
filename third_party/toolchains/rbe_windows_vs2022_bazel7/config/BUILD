@@ -17,7 +17,6 @@
 
 package(default_visibility = ["//visibility:public"])
 
-
 toolchain(
     name = "cc-toolchain",
     exec_compatible_with = [
@@ -34,7 +33,6 @@ toolchain(
 
 platform(
     name = "platform",
-    parents = ["@local_config_platform//:host"],
     constraint_values = [
         "@platforms//os:windows",
         "@platforms//cpu:x86_64",
@@ -43,4 +41,5 @@ platform(
         "container-image": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rbe_windows2019@sha256:cfef0ae3681d4070f6a93a88afea44d616f5cbdfae36559b9394274e74873bc6",
         "OSFamily": "Windows",
     },
+    parents = ["@local_config_platform//:host"],
 )
