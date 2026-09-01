@@ -561,7 +561,7 @@ class ClientImpl : public Client {
                       std::shared_ptr<Channel>)>& create_stub) {
       if (config.use_session()) {
         session_holder_ = EstablishSession(channel_);
-        GRPC_CHECK_NE(session_holder_, nullptr);
+        GRPC_CHECK_NE(session_holder_.get(), nullptr);
         stub_ = create_stub(session_holder_->virtual_channel());
       } else {
         stub_ = create_stub(channel_);
