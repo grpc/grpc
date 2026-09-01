@@ -88,7 +88,14 @@ FILTER_TEST(RetryInterceptorTest, RetriesOnRetryableStatus) {
 
   // First attempt: fails with a retryable status. The interceptor buffers the
   // client message and replays it onto each attempt.
-  std::optional<CallHandler> first_attempt = GetNextHandler();
+  // FuzzingEventEngine can inject run_delay up to max_delay_run_after (30s)
+  // per action. Combined with retry backoff timers (0.1s), child call
+  // creation can be scheduled beyond the default 30s timeout of
+  // GetNextHandler(). Using a 2-minute timeout allows simulated virtual time
+  // to advance past these fuzzed delays without consuming real wall-clock time.
+  std::optional<CallHandler> first_attempt =
+      GetNextHandler(std::chrono::minutes(2));
+  ASSERT_TRUE(first_attempt.has_value());
   ASSERT_TRUE(PullClientInitialMetadata(*first_attempt).ok());
   ClientToServerNextMessage first_message = PullClientMessage(*first_attempt);
   ASSERT_TRUE(first_message.ok());
@@ -99,7 +106,9 @@ FILTER_TEST(RetryInterceptorTest, RetriesOnRetryableStatus) {
       ServerMetadataFromStatus(GRPC_STATUS_UNAVAILABLE, "try again"));
 
   // Second attempt: the interceptor replays the call onto a new child call.
-  std::optional<CallHandler> second_attempt = GetNextHandler();
+  std::optional<CallHandler> second_attempt =
+      GetNextHandler(std::chrono::minutes(2));
+  ASSERT_TRUE(second_attempt.has_value());
   ASSERT_TRUE(PullClientInitialMetadata(*second_attempt).ok());
   ClientToServerNextMessage second_message = PullClientMessage(*second_attempt);
   ASSERT_TRUE(second_message.ok());
@@ -133,8 +142,15 @@ FILTER_TEST(RetryInterceptorTest, GivesUpAfterMaxAttempts) {
 
   // Fail each attempt in turn, releasing its handler as a transport would once
   // the call has failed.
+  // FuzzingEventEngine can inject run_delay up to max_delay_run_after (30s)
+  // per action. Combined with retry backoff timers (0.1s), child call
+  // creation can be scheduled beyond the default 30s timeout of
+  // GetNextHandler(). Using a 2-minute timeout allows simulated virtual time
+  // to advance past these fuzzed delays without consuming real wall-clock time.
   for (int i = 0; i < 2; i++) {
-    std::optional<CallHandler> attempt = GetNextHandler();
+    std::optional<CallHandler> attempt =
+        GetNextHandler(std::chrono::minutes(2));
+    ASSERT_TRUE(attempt.has_value());
     ASSERT_TRUE(PullClientInitialMetadata(*attempt).ok());
     ClientToServerNextMessage message = PullClientMessage(*attempt);
     ASSERT_TRUE(message.ok());
