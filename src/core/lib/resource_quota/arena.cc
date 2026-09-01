@@ -30,22 +30,14 @@
 namespace grpc_core {
 
 namespace {
+}  // namespace
 
-void* ArenaStorage(size_t& initial_size) {
+size_t Arena::RoundedInitialSize(size_t initial_size) {
   size_t base_size = Arena::ArenaOverhead() +
                      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(
                          arena_detail::BaseArenaContextTraits::ContextSize());
-  initial_size =
-      std::max(GPR_ROUND_UP_TO_ALIGNMENT_SIZE(initial_size), base_size);
-  static constexpr size_t alignment =
-      (GPR_CACHELINE_SIZE > GPR_MAX_ALIGNMENT &&
-       GPR_CACHELINE_SIZE % GPR_MAX_ALIGNMENT == 0)
-          ? GPR_CACHELINE_SIZE
-          : GPR_MAX_ALIGNMENT;
-  return gpr_malloc_aligned(initial_size, alignment);
+  return std::max(GPR_ROUND_UP_TO_ALIGNMENT_SIZE(initial_size), base_size);
 }
-
-}  // namespace
 
 Arena::~Arena() {
   for (size_t i = 0; i < arena_detail::BaseArenaContextTraits::NumContexts();
@@ -53,7 +45,6 @@ Arena::~Arena() {
     arena_detail::BaseArenaContextTraits::Destroy(i, contexts()[i]);
   }
   DestroyManagedNewObjects();
-  arena_factory_->FinalizeArena(this);
   arena_factory_->allocator().Release(
       total_allocated_.load(std::memory_order_relaxed));
   Zone* z = last_zone_;
@@ -67,7 +58,8 @@ Arena::~Arena() {
 
 RefCountedPtr<Arena> Arena::Create(size_t initial_size,
                                    RefCountedPtr<ArenaFactory> arena_factory) {
-  void* p = ArenaStorage(initial_size);
+  initial_size = RoundedInitialSize(initial_size);
+  void* p = arena_factory->AllocateArenaBlock(initial_size);
   return RefCountedPtr<Arena>(
       new (p) Arena(initial_size, std::move(arena_factory)));
 }
@@ -100,8 +92,12 @@ void Arena::DestroyManagedNewObjects() {
 }
 
 void Arena::Destroy() const {
+  RefCountedPtr<ArenaFactory> factory = arena_factory_;
+  const size_t initial_zone_size = initial_zone_size_;
+  const size_t total_used = TotalUsedBytes();
   this->~Arena();
-  gpr_free_aligned(const_cast<Arena*>(this));
+  factory->FinalizeArena(const_cast<Arena*>(this), initial_zone_size,
+                         total_used);
 }
 
 void* Arena::AllocZone(size_t size) {
@@ -141,18 +137,28 @@ RefCountedPtr<ArenaFactory> SimpleArenaAllocator(size_t initial_size,
   class Allocator : public ArenaFactory {
    public:
     Allocator(size_t initial_size, MemoryAllocator allocator)
-        : ArenaFactory(std::move(allocator)), initial_size_(initial_size) {}
+        : ArenaFactory(std::move(allocator)),
+          initial_size_(Arena::RoundedInitialSize(initial_size)) {}
 
     RefCountedPtr<Arena> MakeArena() override {
+      void* block = pool_.TryPop();
+      if (block != nullptr) {
+        return Arena::CreateAt(block, initial_size_, Ref());
+      }
       return Arena::Create(initial_size_, Ref());
     }
 
-    void FinalizeArena(Arena*) override {
-      // No-op.
+    void FinalizeArena(Arena* arena, size_t initial_zone_size,
+                       size_t total_used) override {
+      if (initial_zone_size == initial_size_ && pool_.TryPush(arena)) {
+        return;
+      }
+      gpr_free_aligned(arena);
     }
 
    private:
-    size_t initial_size_;
+    const size_t initial_size_;
+    ArenaBlockPool pool_;
   };
   return MakeRefCounted<Allocator>(initial_size, std::move(allocator));
 }
