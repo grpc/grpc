@@ -61,3 +61,27 @@ void RegisterExtraFilters(CoreConfiguration::Builder* builder) {
 #endif
 }
 }  // namespace grpc_core
+
+#ifdef GRPC_NO_XDS
+#include <grpc/byte_buffer.h>
+#include <grpc/grpc_security.h>
+#include <grpc/slice.h>
+
+grpc_channel_credentials* grpc_xds_credentials_create(
+    grpc_channel_credentials* /*fallback_credentials*/) {
+  return nullptr;
+}
+
+grpc_server_credentials* grpc_xds_server_credentials_create(
+    grpc_server_credentials* /*fallback_credentials*/) {
+  return nullptr;
+}
+
+grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
+    grpc_server_xds_status_notifier /*notifier*/,
+    const grpc_channel_args* /*args*/) {
+  return nullptr;
+}
+
+grpc_slice grpc_dump_xds_configs(void) { return grpc_empty_slice(); }
+#endif
