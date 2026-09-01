@@ -302,7 +302,7 @@ class VrpcProxyFixture : public VrpcInsecureFixture {
 };
 
 std::vector<CoreTestConfiguration> End2endTestConfigs() {
-  if (!IsEventEngineClientEnabled() || !IsEventEngineListenerEnabled()) {
+  if (!IsEventEngineListenerEnabled()) {
     return {};
   }
 

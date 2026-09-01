@@ -21,15 +21,12 @@
 
 namespace grpc_event_engine::experimental {
 
-bool UseEventEngineClient() { return grpc_core::IsEventEngineClientEnabled(); }
-
 bool UseEventEngineListener() {
   return grpc_core::IsEventEngineListenerEnabled();
 }
 
 bool UsePollsetAlternative() {
-  return UseEventEngineClient() && UseEventEngineListener() &&
-         grpc_core::IsPollsetAlternativeEnabled();
+  return UseEventEngineListener() && grpc_core::IsPollsetAlternativeEnabled();
 }
 
 }  // namespace grpc_event_engine::experimental
