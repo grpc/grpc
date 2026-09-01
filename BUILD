@@ -872,6 +872,7 @@ grpc_cc_library(
         "absl/functional:bind_front",
         "absl/flags:flag",
     ],
+    google_deps = ["//third_party/gloop/base:config"],
     public_hdrs = GPR_PUBLIC_HDRS,
     tags = [
         "nofixdeps",
@@ -909,6 +910,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/base:core_headers",
     ],
+    google_deps = ["//third_party/gloop/base:config"],
     public_hdrs = GPR_PUBLIC_HDRS,
     tags = [
         "avoid_dep",
@@ -1364,6 +1366,7 @@ grpc_cc_library(
         "absl/base:config",
         "absl/strings",
     ],
+    google_deps = ["//third_party/gloop/base:config"],
     public_hdrs = [
         "include/grpc/impl/codegen/port_platform.h",
         "include/grpc/support/port_platform.h",
