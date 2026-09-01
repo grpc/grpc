@@ -10319,6 +10319,7 @@ grpc_cc_library(
         "seq",
         "seq_bit_set",
         "shared_bit_gen",
+        "sleep",
         "slice_buffer",
         "status_flag",
         "tcp_tracer",
