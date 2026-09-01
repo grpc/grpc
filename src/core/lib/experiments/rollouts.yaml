@@ -65,7 +65,7 @@
 - name: fail_recv_metadata_on_deadline_exceeded
   default: false
 - name: fix_v3_filter_stack_server_side_ordering
-  default: false
+  default: true
 - name: free_large_allocator
   default: false
 - name: fuse_filters
