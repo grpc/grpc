@@ -69,4 +69,4 @@ version = {attr = "grpc_version.VERSION"}
     "credentials/server1.key",
     "credentials/server1.pem",
 ]
-"tests" = ["tests.json"]
+"tests" = ["py.typed", "tests.json"]

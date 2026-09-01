@@ -56,6 +56,9 @@ exclude = [
     "grpc_tools.test*"
 ]
 
+[tool.setuptools.package-data]
+"grpc_tools" = ["py.typed"]
+
 [tool.setuptools.exclude-package-data]
 # Exclude cython source and intermediate files from the .whl file
 "*" = [
