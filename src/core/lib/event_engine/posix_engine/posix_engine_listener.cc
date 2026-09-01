@@ -232,28 +232,31 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
       Unref();
       return;
     }
-    auto endpoint = CreatePosixEndpoint(
-        /*handle=*/listener_->poller_->CreateHandle(
-            fd.value(), *peer_name, listener_->poller_->CanTrackErrors()),
-        /*on_shutdown=*/nullptr, /*engine=*/listener_->engine_,
-        // allocator=
-        listener_->memory_allocator_factory_->CreateMemoryAllocator(
-            absl::StrCat("endpoint-tcp-server-connection: ", *peer_name)),
-        /*options=*/listener_->options_);
 
-    grpc_core::EnsureRunInExecCtx([this, peer_name = std::move(*peer_name),
-                                   endpoint = std::move(endpoint)]() mutable {
-      // Call on_accept_ and then resume accepting new connections
-      // by continuing the parent for-loop.
-      listener_->on_accept_(
-          /*listener_fd=*/handle_->WrappedFd().fd(),
-          /*endpoint=*/std::move(endpoint),
-          /*is_external=*/false,
-          /*memory_allocator=*/
-          listener_->memory_allocator_factory_->CreateMemoryAllocator(
-              absl::StrCat("on-accept-tcp-server-connection: ", peer_name)),
-          /*pending_data=*/nullptr);
-    });
+    grpc_core::EnsureRunInExecCtx(
+        [this, fd = std::move(fd),
+         peer_name = std::move(*peer_name)]() mutable {
+          auto endpoint = CreatePosixEndpoint(
+              /*handle=*/listener_->poller_->CreateHandle(
+                  fd.value(), peer_name, listener_->poller_->CanTrackErrors()),
+              /*on_shutdown=*/nullptr, /*engine=*/listener_->engine_,
+              // allocator=
+              listener_->memory_allocator_factory_->CreateMemoryAllocator(
+                  absl::StrCat("endpoint-tcp-server-connection: ", peer_name)),
+              /*options=*/listener_->options_);
+
+          // Call on_accept_ and then resume accepting new connections
+          // by continuing the parent for-loop.
+          listener_->on_accept_(
+              /*listener_fd=*/handle_->WrappedFd().fd(),
+              /*endpoint=*/std::move(endpoint),
+              /*is_external=*/false,
+              /*memory_allocator=*/
+              listener_->memory_allocator_factory_->CreateMemoryAllocator(
+                  absl::StrCat("on-accept-tcp-server-connection: ",
+                               peer_name)),
+              /*pending_data=*/nullptr);
+        });
   }
   GPR_UNREACHABLE_CODE(return);
 }
