@@ -17,7 +17,6 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_STREAMING_CALL_PROMISE_WRAPPER_H
 #define GRPC_SRC_CORE_XDS_GRPC_STREAMING_CALL_PROMISE_WRAPPER_H
 
-#include <atomic>
 #include <optional>
 #include <string>
 
@@ -61,10 +60,12 @@ class XdsStreamingCallPromiseWrapper final
   // Contract: The caller MUST NOT call PushMessage() again until the promise
   // from the previous PushMessage() resolves.
   auto PushMessage(std::string msg) {
-    SendState expected = SendState::kIdle;
-    GRPC_CHECK(send_state_.compare_exchange_strong(
-        expected, SendState::kSendMessageInFlight));
-    send_message_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+    {
+      MutexLock lock(&mu_);
+      GRPC_CHECK(send_state_ == SendState::kIdle);
+      send_state_ = SendState::kSendMessageInFlight;
+      send_message_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+    }
     call_->SendMessage(std::move(msg));
     return [self = WeakRefAsSubclass<XdsStreamingCallPromiseWrapper>()]() {
       return self->PollPushMessage();
@@ -77,14 +78,20 @@ class XdsStreamingCallPromiseWrapper final
   // The value will be nullopt when the stream is closed without
   // receiving a message.
   auto PullMessage() {
-    RecvState recv_state = RecvState::kIdle;
-    if (!recv_state_.compare_exchange_strong(recv_state,
-                                             RecvState::kRecvMessageInFlight)) {
-      GRPC_CHECK(recv_state == RecvState::kReceivedStatus);
-      // Must be kReceivedStatus. Don't actually need to start the
-      // recv_message op; we'll return nullopt on the first poll.
-    } else {
-      recv_message_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+    bool start_recv = false;
+    {
+      MutexLock lock(&mu_);
+      if (recv_state_ == RecvState::kIdle) {
+        recv_state_ = RecvState::kRecvMessageInFlight;
+        recv_message_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+        start_recv = true;
+      } else {
+        // Must be kReceivedStatus. Don't actually need to start the
+        // recv_message op; we'll return nullopt on the first poll.
+        GRPC_CHECK(recv_state_ == RecvState::kReceivedStatus);
+      }
+    }
+    if (start_recv) {
       call_->StartRecvMessage();
     }
     return [self = WeakRefAsSubclass<XdsStreamingCallPromiseWrapper>()]() {
@@ -97,7 +104,12 @@ class XdsStreamingCallPromiseWrapper final
   // Returns a promise that resolves to absl::Status, indicating
   // the final status of the call.
   auto PullServerTrailingMetadata() {
-    recv_status_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+    {
+      MutexLock lock(&mu_);
+      if (recv_state_ != RecvState::kReceivedStatus) {
+        recv_status_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+      }
+    }
     return [self = WeakRefAsSubclass<XdsStreamingCallPromiseWrapper>()]() {
       return self->PollPullServerTrailingMetadata();
     };
@@ -166,20 +178,22 @@ class XdsStreamingCallPromiseWrapper final
   void OnRecvMessage(absl::string_view payload);
   void OnStatusReceived(absl::Status status);
 
+  Mutex mu_;
+
   OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall> call_;
 
   // State for outgoing messages (PushMessage).
-  std::atomic<SendState> send_state_{SendState::kIdle};
-  Waker send_message_waker_;
+  SendState send_state_ ABSL_GUARDED_BY(mu_) = SendState::kIdle;
+  Waker send_message_waker_ ABSL_GUARDED_BY(mu_);
 
   // State for incoming messages (PullMessage).
-  std::atomic<RecvState> recv_state_{RecvState::kIdle};
-  Waker recv_message_waker_;
-  std::optional<std::string> recv_message_;
+  RecvState recv_state_ ABSL_GUARDED_BY(mu_) = RecvState::kIdle;
+  Waker recv_message_waker_ ABSL_GUARDED_BY(mu_);
+  std::optional<std::string> recv_message_ ABSL_GUARDED_BY(mu_);
 
   // Trailing metadata status from the server (PullServerTrailingMetadata).
-  Waker recv_status_waker_;
-  absl::Status status_;
+  Waker recv_status_waker_ ABSL_GUARDED_BY(mu_);
+  absl::Status status_ ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace grpc_core
