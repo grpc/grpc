@@ -164,6 +164,7 @@ php_config_m4:
   - address_sorting
   - boringssl
   - re2
+  - upb_descriptor_lib
   - z
   headers:
   - src/php/ext/grpc/byte_buffer.h
