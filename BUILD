@@ -28,10 +28,8 @@ load(
     "grpc_ios_toolchains",
     "grpc_upb_proto_library",
     "grpc_upb_proto_reflection_library",
-    "insecure_grpc_cc_libraries",
     "python_config_settings",
 )
-load("//security/audits/privacy_boost/insecure_rpc:allowlist.bzl", "INSECURE_GRPC_CREDENTIALS")
 
 licenses(["reciprocal"])
 
@@ -1088,7 +1086,7 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "ref_counted_ptr",
         "transport_auth_context",
-        ":grpc++_insecure_client_credentials_grpc",
+        ":grpc++_insecure_credentials",
         "//src/core:experiments",
         "//src/core:gpr_atm",
         "//src/core:grpc_check",
@@ -1235,15 +1233,14 @@ grpc_cc_library(
     ],
 )
 
-# For now this doesn't provide any value over a single grpc_cc_library. However, as part of
-# b/551757632 we will add per-visibility-entry monitoring similar to
-# `/rpc/internal/client/rpc_security_level_none_count` in Stubby.
-insecure_grpc_cc_libraries(
-    name = "grpc++_insecure_client_credentials",
+# This library is required to support insecure credentials.
+grpc_cc_library(
+    name = "grpc++_insecure_credentials",
     srcs = [
         "src/cpp/client/insecure_credentials.cc",
+        "src/cpp/server/insecure_server_credentials.cc",
     ],
-    entries = INSECURE_GRPC_CREDENTIALS,
+    visibility = ["//bazel:insecure_credentials"],
     deps = [
         "gpr",
         "grpc++_base",
@@ -2659,7 +2656,6 @@ grpc_cc_library(
         "src/cpp/common/tls_certificate_provider.cc",
         "src/cpp/common/tls_certificate_verifier.cc",
         "src/cpp/common/tls_credentials_options.cc",
-        "src/cpp/server/insecure_server_credentials.cc",
         "src/cpp/server/secure_server_credentials.cc",
     ],
     hdrs = GRPCXX_HDRS + [
