@@ -397,9 +397,23 @@ void AresResolver::LookupHostname(
     return;
   }
   grpc_core::MutexLock lock(&mutex_);
+  if (channel_ == nullptr) {
+    // The c-ares channel is torn down and rebuilt across fork(). Reset()
+    // and Restart() take the mutex separately, so a thread entering here
+    // between them (e.g. a respawned executor/timer thread) can observe a
+    // null channel_. Fail the query softly so the caller retries instead of
+    // aborting the process. Checked before callback_map_.emplace()/arg
+    // allocation so we leave no dangling map entry (checked empty in the dtor)
+    // and leak no HostnameQueryArg.
+    event_engine_->Run(
+        [callback = std::move(callback),
+         status = absl::UnavailableError(
+             "c-ares channel unavailable; resolver reinitializing after "
+             "fork")]() mutable { callback(status); });
+    return;
+  }
   callback_map_.emplace(++id_, std::move(callback));
   auto* resolver_arg = new HostnameQueryArg(this, id_, name, port);
-  GRPC_CHECK_NE(channel_, nullptr);
   if (AresIsIpv6LoopbackAvailable()) {
     // Note that using AF_UNSPEC for both IPv6 and IPv4 queries does not work in
     // all cases, e.g. for localhost:<> it only gets back the IPv6 result (i.e.
@@ -445,9 +459,18 @@ void AresResolver::LookupSRV(
     return;
   }
   grpc_core::MutexLock lock(&mutex_);
+  if (channel_ == nullptr) {
+    // See LookupHostname: channel_ can be null while the resolver is
+    // reinitializing after fork(). Fail softly rather than aborting.
+    event_engine_->Run(
+        [callback = std::move(callback),
+         status = absl::UnavailableError(
+             "c-ares channel unavailable; resolver reinitializing after "
+             "fork")]() mutable { callback(status); });
+    return;
+  }
   callback_map_.emplace(++id_, std::move(callback));
   auto* resolver_arg = new QueryArg(this, id_, host);
-  GRPC_CHECK_NE(channel_, nullptr);
   ares_query(channel_, std::string(host).c_str(), ns_c_in, ns_t_srv,
              &AresResolver::OnSRVQueryDoneLocked, resolver_arg);
   CheckSocketsLocked();
@@ -481,9 +504,18 @@ void AresResolver::LookupTXT(
     return;
   }
   grpc_core::MutexLock lock(&mutex_);
+  if (channel_ == nullptr) {
+    // See LookupHostname: channel_ can be null while the resolver is
+    // reinitializing after fork(). Fail softly rather than aborting.
+    event_engine_->Run(
+        [callback = std::move(callback),
+         status = absl::UnavailableError(
+             "c-ares channel unavailable; resolver reinitializing after "
+             "fork")]() mutable { callback(status); });
+    return;
+  }
   callback_map_.emplace(++id_, std::move(callback));
   auto* resolver_arg = new QueryArg(this, id_, host);
-  GRPC_CHECK_NE(channel_, nullptr);
   ares_search(channel_, std::string(host).c_str(), ns_c_in, ns_t_txt,
               &AresResolver::OnTXTDoneLocked, resolver_arg);
   CheckSocketsLocked();

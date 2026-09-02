@@ -524,6 +524,7 @@ grpc_cc_test(
         "//:gpr_platform",
         "//:grpc",
         "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:ares_resolver",
         "//src/core:notification",
         "//src/core:posix_event_engine",
         "//test/core/test_util:grpc_test_util",
