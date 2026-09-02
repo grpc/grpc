@@ -331,12 +331,15 @@ grpc_cc_library(
     deps = [
         "channelz_property_list",
         "function_signature",
+        "grpc_check",
         "json",
         "json_writer",
         "notification",
         "sync",
+        "time",
         "//:backoff",
         "//:gpr",
+        "//:gpr_platform",
     ],
 )
 
