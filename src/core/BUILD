@@ -10005,6 +10005,7 @@ grpc_cc_library(
         "//:handshaker",
         "//:iomgr",
         "//:orphanable",
+        "//:parse_address",
         "//:ref_counted_ptr",
         "//:server",
         "//:sockaddr_utils",
