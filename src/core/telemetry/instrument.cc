@@ -112,28 +112,32 @@ std::string InstrumentLabelList::DebugString() const {
 }
 
 namespace {
+template <typename T>
 struct Hook {
-  HistogramCollectionHook hook;
-  Hook* next;
+  InstrumentCollectionHook<T> hook;
+  Hook<T>* next;
 };
 
-std::atomic<Hook*> hooks = nullptr;
+template <typename T>
+std::atomic<Hook<T>*> hooks = nullptr;
 }  // namespace
 
-void RegisterHistogramCollectionHook(HistogramCollectionHook hook) {
-  Hook* new_hook =
-      new Hook{std::move(hook), hooks.load(std::memory_order_acquire)};
-  while (!hooks.compare_exchange_weak(new_hook->next, new_hook,
-                                      std::memory_order_acq_rel)) {
+template <typename T>
+void RegisterInstrumentCollectionHook(InstrumentCollectionHook<T> hook) {
+  auto* new_hook =
+      new Hook<T>{std::move(hook), hooks<T>.load(std::memory_order_acquire)};
+  while (!hooks<T>.compare_exchange_weak(new_hook->next, new_hook,
+                                         std::memory_order_acq_rel)) {
   }
 }
 
 namespace instrument_detail {
 
-void CallHistogramCollectionHooks(
+template <typename T>
+void CallInstrumentCollectionHooks(
     const InstrumentMetadata::Description* instrument,
-    absl::Span<const std::string> labels, int64_t value) {
-  Hook* hook = hooks.load(std::memory_order_acquire);
+    absl::Span<const std::string> labels, T value) {
+  Hook<T>* hook = hooks<T>.load(std::memory_order_acquire);
   while (GPR_UNLIKELY(hook != nullptr)) {
     hook->hook(instrument, labels, value);
     hook = hook->next;
@@ -337,12 +341,26 @@ void MetricsQuery::Run(RefCountedPtr<CollectionScope> scope,
     const auto& storages = pair.second.storage;
     GRPC_CHECK(!metrics.empty());
     if (storages.empty()) continue;
+    const InstrumentLabelList domain_labels = domain->label_names();
+    InstrumentLabelList label_keys;
+    for (size_t i = 0; i < domain_labels.size(); ++i) {
+      if (scope->ObservesLabel(domain_labels[i])) {
+        label_keys.Append(domain_labels[i]);
+      }
+    }
     this->Apply(
-        domain->label_names(),
+        label_keys,
         [&](MetricsSink& sink) {
+          std::vector<std::string> label_values;
+          label_values.reserve(label_keys.size());
           for (auto& storage : storages) {
-            const auto label_values = storage->label();
-            const auto label_keys = domain->label_names();
+            label_values.clear();
+            const auto storage_labels = storage->label();
+            for (size_t i = 0; i < domain_labels.size(); ++i) {
+              if (scope->ObservesLabel(domain_labels[i])) {
+                label_values.emplace_back(storage_labels[i]);
+              }
+            }
             instrument_detail::GaugeStorage gauge_storage(storage->domain());
             storage->FillGaugeStorage(gauge_storage);
             for (const auto* metric : metrics) {
@@ -358,14 +376,23 @@ void MetricsQuery::Run(RefCountedPtr<CollectionScope> scope,
                     sink.UpDownCounter(label_keys, label_values, metric->name,
                                        storage->SumCounter(metric->offset));
                   },
-                  [metric, &sink, storage, &label_values,
-                   &label_keys](InstrumentMetadata::HistogramShape bounds) {
+                  [metric, &sink, storage, &label_values, &label_keys](
+                      InstrumentMetadata::Int64HistogramShape bounds) {
                     std::vector<uint64_t> counts(bounds.size());
                     for (size_t i = 0; i < bounds.size(); ++i) {
                       counts[i] = storage->SumCounter(metric->offset + i);
                     }
-                    sink.Histogram(label_keys, label_values, metric->name,
-                                   bounds, counts);
+                    sink.Int64Histogram(label_keys, label_values, metric->name,
+                                        bounds, counts);
+                  },
+                  [metric, &sink, storage, &label_values, &label_keys](
+                      InstrumentMetadata::DoubleHistogramShape bounds) {
+                    std::vector<uint64_t> counts(bounds.size());
+                    for (size_t i = 0; i < bounds.size(); ++i) {
+                      counts[i] = storage->SumCounter(metric->offset + i);
+                    }
+                    sink.DoubleHistogram(label_keys, label_values, metric->name,
+                                         bounds, counts);
                   },
                   [metric, &sink, &gauge_storage, &label_values,
                    &label_keys](InstrumentMetadata::DoubleGaugeShape) {
@@ -435,10 +462,10 @@ void MetricsQuery::Apply(InstrumentLabelList label_names,
       uint64_up_down_counters_[ConstructKey(label_values, name)] += value;
     }
 
-    void Histogram(InstrumentLabelList /* label_keys */,
-                   absl::Span<const std::string> label_values,
-                   absl::string_view name, HistogramBuckets bounds,
-                   absl::Span<const uint64_t> counts) override {
+    void Int64Histogram(InstrumentLabelList /* label_keys */,
+                        absl::Span<const std::string> label_values,
+                        absl::string_view name, Int64HistogramBuckets bounds,
+                        absl::Span<const uint64_t> counts) override {
       GRPC_CHECK_EQ(counts.size(), bounds.size());
       auto it = histograms_.find(ConstructKey(label_values, name));
       if (it == histograms_.end()) {
@@ -448,6 +475,28 @@ void MetricsQuery::Apply(InstrumentLabelList label_names,
       } else {
         if (it->second.bounds != bounds) {
           LOG(FATAL) << "Histogram bounds mismatch for metric '" << name
+                     << "': {" << absl::StrJoin(it->second.bounds, ",")
+                     << "} vs {" << absl::StrJoin(bounds, ",") << "}";
+        }
+        for (size_t i = 0; i < counts.size(); ++i) {
+          it->second.counts[i] += counts[i];
+        }
+      }
+    }
+
+    void DoubleHistogram(InstrumentLabelList /* label_keys */,
+                         absl::Span<const std::string> label_values,
+                         absl::string_view name, DoubleHistogramBuckets bounds,
+                         absl::Span<const uint64_t> counts) override {
+      GRPC_CHECK_EQ(counts.size(), bounds.size());
+      auto it = double_histograms_.find(ConstructKey(label_values, name));
+      if (it == double_histograms_.end()) {
+        double_histograms_.emplace(std::piecewise_construct,
+                                   std::tuple(ConstructKey(label_values, name)),
+                                   std::tuple(bounds, counts));
+      } else {
+        if (it->second.bounds != bounds) {
+          LOG(FATAL) << "Double histogram bounds mismatch for metric '" << name
                      << "': {" << absl::StrJoin(it->second.bounds, ",")
                      << "} vs {" << absl::StrJoin(bounds, ",") << "}";
         }
@@ -482,8 +531,12 @@ void MetricsQuery::Apply(InstrumentLabelList label_names,
                            value);
       }
       for (const auto& [key, value] : histograms_) {
-        sink.Histogram(label_keys_, std::get<0>(key), std::get<1>(key),
-                       value.bounds, value.counts);
+        sink.Int64Histogram(label_keys_, std::get<0>(key), std::get<1>(key),
+                            value.bounds, value.counts);
+      }
+      for (const auto& [key, value] : double_histograms_) {
+        sink.DoubleHistogram(label_keys_, std::get<0>(key), std::get<1>(key),
+                             value.bounds, value.counts);
       }
     }
 
@@ -507,15 +560,26 @@ void MetricsQuery::Apply(InstrumentLabelList label_names,
     absl::flat_hash_map<std::tuple<std::vector<std::string>, absl::string_view>,
                         uint64_t>
         uint64_up_down_counters_;
-    struct HistogramValue {
-      HistogramValue(HistogramBuckets bounds, absl::Span<const uint64_t> counts)
+    struct Int64HistogramValue {
+      Int64HistogramValue(Int64HistogramBuckets bounds,
+                          absl::Span<const uint64_t> counts)
           : bounds(bounds), counts(counts.begin(), counts.end()) {}
-      HistogramBuckets bounds;
+      Int64HistogramBuckets bounds;
       std::vector<uint64_t> counts;
     };
     absl::flat_hash_map<std::tuple<std::vector<std::string>, absl::string_view>,
-                        HistogramValue>
+                        Int64HistogramValue>
         histograms_;
+    struct DoubleHistogramValue {
+      DoubleHistogramValue(DoubleHistogramBuckets bounds,
+                           absl::Span<const uint64_t> counts)
+          : bounds(bounds), counts(counts.begin(), counts.end()) {}
+      DoubleHistogramBuckets bounds;
+      std::vector<uint64_t> counts;
+    };
+    absl::flat_hash_map<std::tuple<std::vector<std::string>, absl::string_view>,
+                        DoubleHistogramValue>
+        double_histograms_;
   };
   Filter filter(include_labels, label_keys);
   ApplyLabelChecks(label_names, fn, filter);
@@ -562,12 +626,20 @@ void MetricsQuery::ApplyLabelChecks(InstrumentLabelList label_names,
       sink_.UpDownCounter(label_keys, label_values, name, value);
     }
 
-    void Histogram(InstrumentLabelList label_keys,
-                   absl::Span<const std::string> label_values,
-                   absl::string_view name, HistogramBuckets bounds,
-                   absl::Span<const uint64_t> counts) override {
+    void Int64Histogram(InstrumentLabelList label_keys,
+                        absl::Span<const std::string> label_values,
+                        absl::string_view name, Int64HistogramBuckets bounds,
+                        absl::Span<const uint64_t> counts) override {
       if (!Matches(label_values)) return;
-      sink_.Histogram(label_keys, label_values, name, bounds, counts);
+      sink_.Int64Histogram(label_keys, label_values, name, bounds, counts);
+    }
+
+    void DoubleHistogram(InstrumentLabelList label_keys,
+                         absl::Span<const std::string> label_values,
+                         absl::string_view name, DoubleHistogramBuckets bounds,
+                         absl::Span<const uint64_t> counts) override {
+      if (!Matches(label_values)) return;
+      sink_.DoubleHistogram(label_keys, label_values, name, bounds, counts);
     }
 
     void DoubleGauge(InstrumentLabelList label_keys,
@@ -699,7 +771,18 @@ void DomainStorage::AddData(channelz::DataSink sink) {
                                 channelz::PropertyList().Set(
                                     "value", storage.GetUint(metric->offset)));
                   },
-                  [&](const InstrumentMetadata::HistogramShape& h) {
+                  [&](const InstrumentMetadata::Int64HistogramShape& h) {
+                    channelz::PropertyTable table;
+                    for (size_t i = 0; i < h.size(); ++i) {
+                      table.AppendRow(
+                          channelz::PropertyList()
+                              .Set("bucket_max", h[i])
+                              .Set("count", SumCounter(metric->offset + i)));
+                    }
+                    grid.SetRow(metric->name, channelz::PropertyList().Set(
+                                                  "value", std::move(table)));
+                  },
+                  [&](const InstrumentMetadata::DoubleHistogramShape& h) {
                     channelz::PropertyTable table;
                     for (size_t i = 0; i < h.size(); ++i) {
                       table.AppendRow(
@@ -727,41 +810,48 @@ void QueryableDomain::AddData(channelz::DataSink sink) {
           .Set("allocated_int_gauge_slots", allocated_int_gauge_slots_)
           .Set("allocated_uint_gauge_slots", allocated_uint_gauge_slots_)
           .Set("map_shards", map_shards_size_)
-          .Set("metrics",
-               [this]() {
-                 channelz::PropertyGrid grid;
-                 for (auto* metric : metrics_) {
-                   grid.SetRow(
-                       metric->name,
-                       channelz::PropertyList()
-                           .Set("description", metric->description)
-                           .Set("unit", metric->unit)
-                           .Set("offset", metric->offset)
-                           .Set("shape",
-                                Match(
-                                    metric->shape,
-                                    [](InstrumentMetadata::CounterShape)
-                                        -> std::string { return "counter"; },
-                                    [](InstrumentMetadata::UpDownCounterShape)
-                                        -> std::string {
-                                      return "up_down_counter";
-                                    },
-                                    [](InstrumentMetadata::DoubleGaugeShape)
-                                        -> std::string {
-                                      return "double_gauge";
-                                    },
-                                    [](InstrumentMetadata::IntGaugeShape)
-                                        -> std::string { return "int_gauge"; },
-                                    [](InstrumentMetadata::UintGaugeShape)
-                                        -> std::string { return "uint_gauge"; },
-                                    [](const InstrumentMetadata::HistogramShape&
-                                           h) -> std::string {
-                                      return absl::StrCat(
-                                          "histogram:", absl::StrJoin(h, ","));
-                                    })));
-                 }
-                 return grid;
-               }())
+          .Set(
+              "metrics",
+              [this]() {
+                channelz::PropertyGrid grid;
+                for (auto* metric : metrics_) {
+                  grid.SetRow(
+                      metric->name,
+                      channelz::PropertyList()
+                          .Set("description", metric->description)
+                          .Set("unit", metric->unit)
+                          .Set("offset", metric->offset)
+                          .Set(
+                              "shape",
+                              Match(
+                                  metric->shape,
+                                  [](InstrumentMetadata::CounterShape)
+                                      -> std::string { return "counter"; },
+                                  [](InstrumentMetadata::UpDownCounterShape)
+                                      -> std::string {
+                                    return "up_down_counter";
+                                  },
+                                  [](InstrumentMetadata::DoubleGaugeShape)
+                                      -> std::string { return "double_gauge"; },
+                                  [](InstrumentMetadata::IntGaugeShape)
+                                      -> std::string { return "int_gauge"; },
+                                  [](InstrumentMetadata::UintGaugeShape)
+                                      -> std::string { return "uint_gauge"; },
+                                  [](const InstrumentMetadata::
+                                         Int64HistogramShape& h)
+                                      -> std::string {
+                                    return absl::StrCat("histogram:",
+                                                        absl::StrJoin(h, ","));
+                                  },
+                                  [](const InstrumentMetadata::
+                                         DoubleHistogramShape& h)
+                                      -> std::string {
+                                    return absl::StrCat("double_histogram:",
+                                                        absl::StrJoin(h, ","));
+                                  })));
+                }
+                return grid;
+              }())
           .Set("labels", absl::StrJoin(label_names_, ",")));
 }
 
@@ -832,9 +922,19 @@ const InstrumentMetadata::Description* QueryableDomain::AllocateUpDownCounter(
   return desc;
 }
 
-const InstrumentMetadata::Description* QueryableDomain::AllocateHistogram(
+const InstrumentMetadata::Description* QueryableDomain::AllocateInt64Histogram(
     absl::string_view name, absl::string_view description,
-    absl::string_view unit, HistogramBuckets bounds) {
+    absl::string_view unit, Int64HistogramBuckets bounds) {
+  const size_t offset = AllocateCounterSlots(bounds.size());
+  auto* desc = InstrumentIndex::Get().Register(this, offset, name, description,
+                                               unit, bounds);
+  metrics_.push_back(desc);
+  return desc;
+}
+
+const InstrumentMetadata::Description* QueryableDomain::AllocateDoubleHistogram(
+    absl::string_view name, absl::string_view description,
+    absl::string_view unit, DoubleHistogramBuckets bounds) {
   const size_t offset = AllocateCounterSlots(bounds.size());
   auto* desc = InstrumentIndex::Get().Register(this, offset, name, description,
                                                unit, bounds);
@@ -1047,15 +1147,34 @@ RefCountedPtr<CollectionScope> GlobalCollectionScope() {
 }
 
 void TestOnlyResetInstruments() {
-  Hook* hook = hooks.load(std::memory_order_acquire);
-  while (hook != nullptr) {
-    Hook* next = hook->next;
-    delete hook;
-    hook = next;
+  Hook<int64_t>* int64_hook = hooks<int64_t>.load(std::memory_order_acquire);
+  while (int64_hook != nullptr) {
+    Hook<int64_t>* next = int64_hook->next;
+    delete int64_hook;
+    int64_hook = next;
   }
-  hooks.store(nullptr, std::memory_order_release);
+  hooks<int64_t>.store(nullptr, std::memory_order_release);
+  Hook<double>* double_hook = hooks<double>.load(std::memory_order_acquire);
+  while (double_hook != nullptr) {
+    Hook<double>* next = double_hook->next;
+    delete double_hook;
+    double_hook = next;
+  }
+  hooks<double>.store(nullptr, std::memory_order_release);
   instrument_detail::QueryableDomain::TestOnlyResetAll();
   GlobalCollectionScopeManager::Get().TestOnlyReset();
 }
 
+template void RegisterInstrumentCollectionHook<int64_t>(
+    InstrumentCollectionHook<int64_t> hook);
+template void RegisterInstrumentCollectionHook<double>(
+    InstrumentCollectionHook<double> hook);
+namespace instrument_detail {
+template void CallInstrumentCollectionHooks<int64_t>(
+    const InstrumentMetadata::Description* instrument,
+    absl::Span<const std::string> labels, int64_t value);
+template void CallInstrumentCollectionHooks<double>(
+    const InstrumentMetadata::Description* instrument,
+    absl::Span<const std::string> labels, double value);
+}  // namespace instrument_detail
 }  // namespace grpc_core
