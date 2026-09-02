@@ -454,8 +454,17 @@ GRPCAPI const grpc_arg_pointer_vtable* grpc_server_config_fetcher_arg_vtable(
     void);
 
 /** EXPERIMENTAL.  Creates an xDS config fetcher. */
+#ifndef GRPC_NO_XDS
 GRPCAPI grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
     grpc_server_xds_status_notifier notifier, const grpc_channel_args* args);
+#else
+static inline grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
+    grpc_server_xds_status_notifier notifier, const grpc_channel_args* args) {
+  (void)notifier;
+  (void)args;
+  return NULL;
+}
+#endif
 
 /** EXPERIMENTAL.  Unrefs a config fetcher. */
 GRPCAPI void grpc_server_config_fetcher_unref(
@@ -537,7 +546,13 @@ GRPCAPI void grpc_resource_quota_set_max_outstanding_streams(
 
 /** EXPERIMENTAL.  Dumps xDS configs as a serialized ClientConfig proto.
     The full name of the proto is envoy.service.status.v3.ClientConfig. */
+#ifndef GRPC_NO_XDS
 GRPCAPI grpc_slice grpc_dump_xds_configs(void);
+#else
+static inline grpc_slice grpc_dump_xds_configs(void) {
+  return grpc_empty_slice();
+}
+#endif
 
 /** Fetch a vtable for a grpc_channel_arg that points to a grpc_resource_quota
  */
