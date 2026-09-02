@@ -197,6 +197,15 @@ static void server_thread(void* arg) {
   OpenSSL_add_ssl_algorithms();
   args->ssl_library_info->Notify();
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+  const SSL_METHOD* method = TLSv1_2_server_method();
+  SSL_CTX* ctx = SSL_CTX_new(method);
+  if (!ctx) {
+    perror("Unable to create SSL context");
+    ERR_print_errors_fp(stderr);
+    abort();
+  }
+#else
   const SSL_METHOD* method = TLS_server_method();
   SSL_CTX* ctx = SSL_CTX_new(method);
   if (!ctx) {
@@ -206,6 +215,7 @@ static void server_thread(void* arg) {
   }
   SSL_CTX_set_min_proto_version(ctx, TLS1_2_VERSION);
   SSL_CTX_set_max_proto_version(ctx, TLS1_2_VERSION);
+#endif
 
   // Load key pair.
   if (SSL_CTX_use_certificate_file(ctx, SSL_CERT_PATH, SSL_FILETYPE_PEM) < 0) {
