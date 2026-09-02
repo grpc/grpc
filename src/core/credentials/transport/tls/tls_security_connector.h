@@ -99,16 +99,7 @@ class TlsChannelSecurityConnector final
 
   std::optional<PemKeyCertPairList> KeyCertPairListForTesting() {
     MutexLock lock(&mu_);
-    std::optional<PemKeyCertPairList> pem_key_cert_pairs;
-    if (key_cert_pairs_or_selector_.has_value()) {
-      Match(
-          *key_cert_pairs_or_selector_,
-          [&pem_key_cert_pairs](const PemKeyCertPairList& key_cert_pairs) {
-            pem_key_cert_pairs = key_cert_pairs;
-          },
-          [](const std::shared_ptr<CertificateSelector>&) {});
-    }
-    return pem_key_cert_pairs;
+    return pem_key_cert_pairs_;
   }
 
   std::shared_ptr<tsi::RootCertInfo> RootCertInfoForTesting() {
@@ -179,8 +170,7 @@ class TlsChannelSecurityConnector final
       ABSL_GUARDED_BY(mu_) = nullptr;
   tsi_ssl_session_cache* ssl_session_cache_ ABSL_GUARDED_BY(mu_) = nullptr;
   RefCountedPtr<TlsSessionKeyLogger> tls_session_key_logger_;
-  std::optional<KeyCertPairsOrSelector> key_cert_pairs_or_selector_
-      ABSL_GUARDED_BY(mu_);
+  std::optional<PemKeyCertPairList> pem_key_cert_pairs_ ABSL_GUARDED_BY(mu_);
   std::shared_ptr<tsi::RootCertInfo> root_cert_info_ ABSL_GUARDED_BY(mu_);
   std::map<grpc_closure* /*on_peer_checked*/, ChannelPendingVerifierRequest*>
       pending_verifier_requests_ ABSL_GUARDED_BY(verifier_request_map_mu_);

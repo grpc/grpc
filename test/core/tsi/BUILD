@@ -136,6 +136,8 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server0.pem",
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
+        "//test/core/tsi/test_creds/ecdsa:server_ecdsa.key",
+        "//test/core/tsi/test_creds/ecdsa:server_ecdsa.pem",
     ],
     external_deps = [
         "absl/log:log",
