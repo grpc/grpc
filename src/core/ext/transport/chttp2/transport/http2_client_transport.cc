@@ -175,7 +175,7 @@ void Http2ClientTransport::StartWatch(RefCountedPtr<StateWatcher> watcher) {
     // TODO(tjagtap) : [PH2][P2] : Provide better status message and
     // disconnect info here.
     NotifyStateWatcherOnDisconnectLocked(
-        absl::UnknownError("transport closed before watcher started"), {});
+        absl::UnavailableError("transport closed before watcher started"), {});
   } else {
     // TODO(tjagtap) : [PH2][P2] : Notify the state watcher of the current
     // value of the peer's MAX_CONCURRENT_STREAMS setting.
