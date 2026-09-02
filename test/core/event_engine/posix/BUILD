@@ -493,6 +493,7 @@ grpc_cc_test(
     uses_polling = True,
     deps = [
         ":posix_engine_test_utils",
+        "//:gpr",
         "//:grpc",
         "//src/core:iomgr_port",
         "//src/core:notification",

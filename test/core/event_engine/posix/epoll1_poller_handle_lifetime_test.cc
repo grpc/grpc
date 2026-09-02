@@ -140,6 +140,95 @@ TEST(Epoll1PollerHandleLifetimeTest, DrainDoesNotUseFreedHandle) {
   poller.reset();
 }
 
+// Verifies that Work() bails out when Close() ran between a prior
+// DoEpollWait() collecting events and the current mu_ acquisition.
+//
+// Bug: DoEpollWait() runs outside mu_.  Between epoll_wait() returning
+// (with handle pointers stored in g_epoll_set_.events[]) and mu_ being
+// acquired, a concurrent ~Epoll1Poller -> Close() can delete every handle
+// in the free list.  ProcessEpollEvents() then dereferences the stale
+// event's handle pointer -- a use-after-free that caused the production
+// SIGSEGV during pitchfork fork.
+//
+// This test exploits MAX_EPOLL_EVENTS_HANDLED_PER_ITERATION == 1: the
+// first Work() collects two events from epoll_wait() but processes only
+// one, leaving the other in g_epoll_set_.events[].  After orphaning both
+// handles and Close()ing the poller (which deletes them), the second
+// Work() finds cursor < num_events (so DoEpollWait is skipped), acquires
+// mu_, and must bail out via the closed_ check before ProcessEpollEvents()
+// touches the stale event.
+TEST(Epoll1PollerHandleLifetimeTest, WorkSkipsStaleEventsAfterClose) {
+  auto thread_pool = std::make_shared<TestThreadPool>();
+  std::shared_ptr<Epoll1Poller> poller = MakeEpoll1Poller(thread_pool);
+  if (poller == nullptr) {
+    GTEST_SKIP() << "epoll1 poller is not supported on this platform";
+  }
+
+  // Two pipe read-ends, both made readable so that a single epoll_wait()
+  // returns both events.
+  int pipefds_a[2];
+  int pipefds_b[2];
+  ASSERT_EQ(pipe(pipefds_a), 0);
+  ASSERT_EQ(pipe(pipefds_b), 0);
+  for (int* pf : {pipefds_a, pipefds_b}) {
+    int flags = fcntl(pf[0], F_GETFL, 0);
+    ASSERT_EQ(fcntl(pf[0], F_SETFL, flags | O_NONBLOCK), 0);
+  }
+
+  EventHandle* handle_a = poller->CreateHandle(
+      poller->posix_interface().Adopt(pipefds_a[0]), "test-a",
+      /*track_err=*/false);
+  EventHandle* handle_b = poller->CreateHandle(
+      poller->posix_interface().Adopt(pipefds_b[0]), "test-b",
+      /*track_err=*/false);
+
+  // Register read closures so SetReady() has something to schedule.
+  handle_a->NotifyOnRead(PosixEngineClosure::TestOnlyToClosure(
+      [](absl::Status /*status*/) {}));
+  handle_b->NotifyOnRead(PosixEngineClosure::TestOnlyToClosure(
+      [](absl::Status /*status*/) {}));
+
+  // Make both readable so epoll_wait() returns both in one call.
+  const char byte = 'x';
+  ASSERT_EQ(write(pipefds_a[1], &byte, 1), 1);
+  ASSERT_EQ(write(pipefds_b[1], &byte, 1), 1);
+
+  // First Work(): DoEpollWait collects 2 events; ProcessEpollEvents
+  // processes only 1 (MAX_EPOLL_EVENTS_HANDLED_PER_ITERATION == 1),
+  // leaving the other in g_epoll_set_.events[].
+  auto result = poller->Work(5s, []() {});
+  (void)result;
+
+  // Orphan both handles and Close the poller.  Close() deletes every
+  // handle in the free list, so whichever handle's event remains in
+  // g_epoll_set_.events[] now points to freed memory.
+  handle_a->OrphanHandle(/*on_done=*/nullptr, /*release_fd=*/nullptr,
+                         "test teardown");
+  handle_b->OrphanHandle(/*on_done=*/nullptr, /*release_fd=*/nullptr,
+                         "test teardown");
+  poller->Close();
+
+  // Overwrite freed handle slots to make the use-after-free visible
+  // even without a sanitizer.
+  std::vector<std::vector<char>> recycle;
+  recycle.reserve(64);
+  for (int i = 0; i < 64; ++i) {
+    recycle.emplace_back(512, static_cast<char>(0xab));
+  }
+
+  // Second Work(): cursor(1) < num_events(2), so DoEpollWait is skipped.
+  // Work() acquires mu_ and must check closed_ before ProcessEpollEvents()
+  // dereferences the stale event.  With the fix it returns kKicked.
+  // Without the fix, ProcessEpollEvents reads freed memory -> UAF.
+  auto result2 = poller->Work(5s, []() {});
+  EXPECT_EQ(result2, Poller::WorkResult::kKicked);
+
+  // Cleanup.  read_fds were closed by OrphanHandle (release_fd == nullptr).
+  close(pipefds_a[1]);
+  close(pipefds_b[1]);
+  poller.reset();
+}
+
 }  // namespace
 }  // namespace grpc_event_engine::experimental
 
