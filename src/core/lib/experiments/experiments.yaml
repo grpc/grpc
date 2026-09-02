@@ -178,7 +178,7 @@
   test_tags: []
 - name: local_connector_secure
   description: Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP connections.
-  expiry: 2026/08/30
+  expiry: 2026/11/30
   owner: mattstev@google.com
   test_tags: ["core_end2end_test"]
 - name: memory_optimization_01
@@ -401,7 +401,7 @@
   test_tags: ["endpoint_test", "flow_control_test"]
 - name: tsi_frame_protector_without_locks
   description: Do not hold locks while using the tsi_frame_protector.
-  expiry: 2026/08/30
+  expiry: 2026/11/30
   owner: mattstev@google.com
   test_tags: []
 - name: unconstrained_max_quota_buffer_size
