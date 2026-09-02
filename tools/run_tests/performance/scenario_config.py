@@ -1221,7 +1221,6 @@ class PythonAsyncIOLanguage(Language):
             server_language="c++",
             channels=1,
             client_processes=1,
-            unconstrained_client="async",
             categories=[SMOKETEST, SCALABLE],
         )
 
