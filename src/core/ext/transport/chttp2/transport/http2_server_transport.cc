@@ -186,7 +186,7 @@ void Http2ServerTransport::StartWatch(RefCountedPtr<StateWatcher> watcher) {
     // TODO(tjagtap) : [PH2][P2] : Provide better status message and
     // disconnect info here.
     NotifyStateWatcherOnDisconnectLocked(
-        absl::UnknownError("transport closed before watcher started"), {});
+        absl::UnavailableError("transport closed before watcher started"), {});
   } else {
     // TODO(tjagtap) : [PH2][P2] : Notify the state watcher of the current
     // value of the peer's MAX_CONCURRENT_STREAMS setting.
@@ -381,7 +381,9 @@ Http2Status Http2ServerTransport::ProcessIncomingMetadata(T&& frame) {
     is_new_stream = (stream == nullptr);
     // TODO(tjagtap) : [PH2][P2] : Implement initial stream id checks for new
     // streams.
-    last_incoming_stream_id_ = frame.stream_id;
+    if (is_new_stream) {
+      last_incoming_stream_id_ = frame.stream_id;
+    }
   } else {
     // This is a CONTINUATION frame.
     GRPC_DCHECK(read_context_.GetStreamId() == frame.stream_id);
@@ -738,9 +740,7 @@ auto Http2ServerTransport::ReadAndProcessOneFrame() {
         Http2Status status = read_context_.ValidateHeader(
             /*max_frame_size_setting=*/settings_->acked().max_frame_size(),
             /*current_frame_header=*/header,
-            // TODO(tjagtap) : [PH2][P0] : Fix
-            /*last_stream_id=*//*GetLastStreamId()*/
-            std::numeric_limits<uint32_t>::max(),
+            /*last_stream_id=*/GetLastStreamId(),
             /*is_first_settings_processed=*/
             settings_->IsFirstPeerSettingsApplied());
 
@@ -1652,7 +1652,7 @@ auto Http2ServerTransport::SpawnGracefulGoawayPromise(Slice&& debug_data) {
         return self->UntilTransportClosed(Map(
             self->goaway_manager_.RequestGoaway(
                 Http2ErrorCode::kNoError, std::move(debug_data),
-                self->last_incoming_stream_id_, /*immediate=*/false),
+                self->GetLastStreamId(), /*immediate=*/false),
             [self](absl::Status status) {
               bool should_close = false;
               {
@@ -1861,7 +1861,7 @@ auto Http2ServerTransport::CloseTransportFactory(
                  http2_status.GetConnectionErrorCode(),
                  Slice::FromCopiedString(std::string(
                      http2_status.GetAbslConnectionError().message())),
-                 self->last_incoming_stream_id_, /*immediate=*/true)),
+                 self->GetLastStreamId(), /*immediate=*/true)),
              Sleep(Duration::Seconds(kGoawaySendTimeoutSeconds))),
         [self](absl::Status) mutable {
           self->CloseTransport();
@@ -2027,7 +2027,7 @@ Http2ServerTransport::GoawayInterfaceImpl::Make(
 }
 
 uint32_t Http2ServerTransport::GoawayInterfaceImpl::GetLastAcceptedStreamId() {
-  return transport_->last_incoming_stream_id_;
+  return transport_->GetLastStreamId();
 }
 
 //////////////////////////////////////////////////////////////////////////////
