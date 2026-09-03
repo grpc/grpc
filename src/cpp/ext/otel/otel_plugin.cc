@@ -542,11 +542,17 @@ class OpenTelemetryPluginImpl::CounterExporter final {
                                                      label_values);
       observer_->Observe(value, labels_iterable);
     }
-    void Histogram(grpc_core::InstrumentLabelList,
-                   absl::Span<const std::string>, absl::string_view,
-                   grpc_core::HistogramBuckets,
-                   absl::Span<const uint64_t>) override {
+    void Int64Histogram(grpc_core::InstrumentLabelList,
+                        absl::Span<const std::string>, absl::string_view,
+                        grpc_core::Int64HistogramBuckets,
+                        absl::Span<const uint64_t>) override {
       LOG(FATAL) << "Expected a counter, got a histogram";
+    }
+    void DoubleHistogram(grpc_core::InstrumentLabelList,
+                         absl::Span<const std::string>, absl::string_view,
+                         grpc_core::DoubleHistogramBuckets,
+                         absl::Span<const uint64_t>) override {
+      LOG(FATAL) << "Expected a counter, got a double histogram";
     }
     void DoubleGauge(grpc_core::InstrumentLabelList,
                      absl::Span<const std::string>, absl::string_view,
@@ -772,8 +778,11 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
                 [&](grpc_core::InstrumentMetadata::UintGaugeShape) {
                   LOG(FATAL) << "Uint gauge shape is not supported yet";
                 },
-                [&](grpc_core::InstrumentMetadata::HistogramShape) {
+                [&](grpc_core::InstrumentMetadata::Int64HistogramShape) {
                   LOG(FATAL) << "Histogram shape is not supported yet";
+                },
+                [&](grpc_core::InstrumentMetadata::DoubleHistogramShape) {
+                  LOG(FATAL) << "Double histogram shape is not supported yet";
                 });
           });
       grpc_core::InstrumentLabelSet label_set;
