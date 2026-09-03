@@ -17,6 +17,7 @@ common:bzlmod --noenable_workspace
 # //src/python/grpcio_tests/tests_aio/reflection:reflection_servicer_test
 # //src/python/grpcio_tests/tests_aio/unit:*
 # //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client_test
+# //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_server_test
 # //src/python/grpcio_tests/tests/admin:admin_test
 # //src/python/grpcio_tests/tests/csds:csds_test
 # //src/python/grpcio_tests/tests/fork:fork_test
