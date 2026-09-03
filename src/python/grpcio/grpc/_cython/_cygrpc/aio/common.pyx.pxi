@@ -237,26 +237,16 @@ def _get_or_create_default_loop():
     return _loop_policy_create_new_loop(policy)
 
 
-def _get_running_loop():
-    try:
-        loop = asyncio.get_running_loop()
-        _LOGGER.debug(f"[_cygrpc] Loaded running loop: {id(loop)=}")
-        return loop
-    except RuntimeError:
-        return None
-
-
 def get_working_loop():
     """Returns a running event loop.
 
     Due to a defect of asyncio.get_event_loop, its returned event loop might
     not be set as the default event loop for the main thread.
     """
-    running_loop = _get_running_loop()
-    if running_loop:
-        return running_loop
-
-    return _get_or_create_default_loop()
+    try:
+        return asyncio.get_running_loop()
+    except RuntimeError:
+        return _get_or_create_default_loop()
 
 
 def raise_if_not_valid_trailing_metadata(object metadata):
