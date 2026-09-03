@@ -45,6 +45,9 @@ GRPC_METHOD_LABEL = "grpc.method"
 GRPC_TARGET_LABEL = "grpc.target"
 GRPC_CLIENT_METRIC_PREFIX = "grpc.client"
 GRPC_OTHER_LABEL_VALUE = "other"
+_PER_CALL_RETRY_METRICS = frozenset(
+    metric.cyname for metric in _open_telemetry_measures.retry_metrics()
+)
 _observability_lock: threading.RLock = threading.RLock()
 _OPEN_TELEMETRY_OBSERVABILITY: Optional["OpenTelemetryObservability"] = None
 
@@ -69,6 +72,32 @@ GRPC_STATUS_CODE_TO_STRING = {
 }
 
 
+def _resolve_additional_metrics(
+    additional_metric_names: Iterable[str],
+) -> List[_open_telemetry_measures.Metric]:
+    """Resolves metric names to the additional metrics they enable.
+
+    Metrics which are enabled by default are always recorded, so naming one of
+    them is a no-op. Unknown names are rejected to surface typos.
+    """
+    optional_metrics = {
+        metric.name: metric
+        for metric in _open_telemetry_measures.retry_metrics()
+    }
+    default_metric_names = {
+        metric.name for metric in _open_telemetry_measures.base_metrics()
+    }
+    additional_metrics = []
+    # Deduplicate while preserving order, so a repeated name is resolved once.
+    for name in dict.fromkeys(additional_metric_names):
+        if name in optional_metrics:
+            additional_metrics.append(optional_metrics[name])
+        elif name not in default_metric_names:
+            error_msg = f"Unknown metric name: {name}"
+            raise ValueError(error_msg)
+    return additional_metrics
+
+
 class _OpenTelemetryPlugin:
     _plugin: OpenTelemetryPlugin
     _metric_to_recorder: Dict[MetricsName, Union[Counter, Histogram]]
@@ -83,17 +112,35 @@ class _OpenTelemetryPlugin:
         self._enabled_client_plugin_options = None
         self._enabled_server_plugin_options = None
 
+        # Resolve names before checking meter_provider so that an invalid name
+        # is reported even when no metrics will be collected.
+        additional_metrics = _resolve_additional_metrics(
+            self._plugin.additional_metrics
+        )
+
         meter_provider = self._plugin.meter_provider
         if meter_provider:
             meter = meter_provider.get_meter("grpc-python", grpc.__version__)
             enabled_metrics = _open_telemetry_measures.base_metrics()
+            enabled_metrics.extend(additional_metrics)
             self._metric_to_recorder = self._register_metrics(
                 meter, enabled_metrics
             )
 
     def _should_record(self, stats_data: StatsData) -> bool:
         # Decide if this plugin should record the stats_data.
-        return stats_data.name in self._metric_to_recorder
+        if stats_data.name not in self._metric_to_recorder:
+            return False
+        if stats_data.name in _PER_CALL_RETRY_METRICS:
+            # Per gRFC A96, per-call retry metrics are not reported for calls
+            # that had no retries (or no retry delay).
+            value = (
+                stats_data.value_float
+                if stats_data.measure_double
+                else stats_data.value_int
+            )
+            return value > 0
+        return True
 
     def _record_stats_data(self, stats_data: StatsData) -> None:
         recorder = self._metric_to_recorder[stats_data.name]
@@ -253,6 +300,9 @@ class _OpenTelemetryPlugin:
                 _open_telemetry_measures.CLIENT_RPC_DURATION,
                 _open_telemetry_measures.CLIENT_ATTEMPT_SEND_BYTES,
                 _open_telemetry_measures.CLIENT_ATTEMPT_RECEIVED_BYTES,
+                _open_telemetry_measures.CLIENT_CALL_RETRIES,
+                _open_telemetry_measures.CLIENT_CALL_TRANSPARENT_RETRIES,
+                _open_telemetry_measures.CLIENT_CALL_RETRY_DELAY,
             ):
                 recorder = meter.create_histogram(
                     name=metric.name,
