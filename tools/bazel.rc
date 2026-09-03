@@ -173,8 +173,8 @@ build:tsan_python --config=python
 build:tsan_python --config=tsan
 build:tsan_python --define=PY_TSAN=1
 build:tsan_python --repo_env=CC=clang
-build:tsan_python --action_env=TSAN_OPTIONS=halt_on_error=0:second_deadlock_stack=1
-build:tsan_python --test_env=TSAN_OPTIONS=halt_on_error=0:second_deadlock_stack=1
+build:tsan_python --action_env=TSAN_OPTIONS=halt_on_error=0:detect_deadlocks=1:second_deadlock_stack=1
+build:tsan_python --test_env=TSAN_OPTIONS=halt_on_error=0:detect_deadlocks=1:second_deadlock_stack=1
 build:tsan_python --test_timeout=300,900,3600,7200
 
 # Compile database generation config
