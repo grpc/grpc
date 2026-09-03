@@ -71,7 +71,7 @@ index 1bf488e..aed2eab 100644
  COPY build/mk_musl_cross.sh /tmp
  RUN /tmp/mk_musl_cross.sh <%= target %>
  
- <% else %>
++<% else %>
 +<% if platform =~ /darwin/ %>
 +RUN apt-get -y update && \
 +    apt-get install -y wget && \
@@ -83,12 +83,9 @@ index 1bf488e..aed2eab 100644
 +    update-alternatives --install /usr/bin/clang clang /usr/bin/clang-14 100 && \
 +    update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-14 100 && \
 +    rm -rf /var/lib/apt/lists/*
-+<% else %>
-+<% if platform =~ /mingw32/ %>
-+RUN echo "deb [trusted=yes] http://deb.debian.org/debian bullseye main" > /etc/apt/sources.list.d/bullseye.list
-+<% end %>
+ <% else %>
  RUN apt-get -y update && \
--    apt-get install -y <%
+     apt-get install -y <%
 -if platform =~ /darwin/            %> clang python lzma-dev libxml2-dev libssl-dev libc++-10-dev <% end %><%
 -if platform =~ /aarch64-linux-gnu/ %> gcc-aarch64-linux-gnu g++-aarch64-linux-gnu <% end %><%
 -if platform =~ /arm-linux-gnu/     %> gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf <% end %><%
