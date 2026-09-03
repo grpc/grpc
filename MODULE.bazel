@@ -144,17 +144,33 @@ register_toolchains("//:python_3_11_ios_sim_arm64_workaround")
 # so it takes precedence over the hermetic rules rules_python toolchains above.
 local_runtime_repo = use_repo_rule("@rules_python//python/local_toolchains:repos.bzl", "local_runtime_repo")
 
+# regular (non-TSAN) free-threaded interpreter - the default
 local_runtime_repo(
     name="local_python_3_14t",
     interpreter_path="/opt/python3.14.6t/bin/python3.14td",
     on_failure="fail",
 )
 
+# TSAN instrumented interpreter. Selected only when --config=tsan_python is used
+local_runtime_repo(
+    name="local_python_3_14t_tsan",
+    interpreter_path="/opt/python3.14.6t-tsan/bin/python3.14td",
+    on_failure="fail",
+)
+
 local_runtime_toolchains_repo = use_repo_rule("@rules_python//python/local_toolchains:repos.bzl", "local_runtime_toolchains_repo")
 
+# order matters: TSAN tool chain is listed first, so it wins when its target
+# settings match; the regular interpreter is the fallback.
 local_runtime_toolchains_repo(
     name="local_python_toolchains",
-    runtimes=["local_python_3_14t"],
+    runtimes=[
+        "local_python_3_14t_tsan",
+        "local_python_3_14t",
+    ],
+    target_settings = {
+        "local_python_3_14t_tsan": ["@//bazel:py_tsan_enabled"],
+    }
 )
 
 register_toolchains("@local_python_toolchains//:all")
