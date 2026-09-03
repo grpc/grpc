@@ -14,11 +14,19 @@
 
 FROM ubuntu:20.04
 
+# Install apt-get-install-retry wrapper script
+#=================
+#  Create wrapper for apt-get
+
+ADD apt_get_install_with_retry.sh /usr/local/bin/apt-get-install-retry
+RUN chmod +rx /usr/local/bin/apt-get-install-retry
+
+
 # Workaround the "tzdata hangs apt-get install during docker image build" issue for ubuntu20.04
 # by setting timezone to "Etc/UTC" in advance.
 RUN echo "Etc/UTC" > /etc/timezone
 
-RUN apt-get update && apt-get install -y build-essential curl git time wget zip && apt-get clean
+RUN apt-get-install-retry build-essential curl git time wget zip
 
 #====================
 # run_tests.py python dependencies
@@ -26,12 +34,12 @@ RUN apt-get update && apt-get install -y build-essential curl git time wget zip 
 # Basic python dependencies to be able to run tools/run_tests python scripts
 # These dependencies are not sufficient to build gRPC Python, gRPC Python
 # deps are defined elsewhere (e.g. python_deps.include)
-RUN apt-get update && apt-get install -y \
+RUN apt-get-install-retry \
   python3 \
   python3-pip \
   python3-setuptools \
-  python3-yaml \
-  && apt-get clean
+  python3-yaml && apt-get clean
+ 
 
 # use pinned version of pip to avoid sudden breakages
 RUN python3 -m pip install --upgrade pip==19.3.1
@@ -79,7 +87,7 @@ ENV TSAN_SYMBOLIZER_PATH=/usr/local/bin/llvm-symbolizer
 ENV UBSAN_SYMBOLIZER_PATH=/usr/local/bin/llvm-symbolizer
 
 # TODO(jtattermusch): Remove python2 once some tests stop failing without it.
-RUN apt-get update && apt-get install -y python2 && apt-get clean
+RUN apt-get-install-retry python2 && apt-get clean
 
 # Define the default command.
 CMD ["bash"]

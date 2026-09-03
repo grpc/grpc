@@ -14,9 +14,17 @@
 
 FROM php:8.2-zts-buster
 
-RUN apt-get -qq update && apt-get -qq -y upgrade && apt-get -qq install -y \
+#=================
+#  Create wrapper for apt-get
+
+ADD apt_get_install_with_retry.sh /usr/local/bin/apt-get-install-retry
+RUN chmod +rx /usr/local/bin/apt-get-install-retry
+
+
+RUN apt-get update && apt-get -y upgrade
+RUN apt-get-install-retry \
   autoconf automake git libtool pkg-config \
-  valgrind wget zlib1g-dev
+  valgrind wget zlib1g-dev && apt-get clean
 
 ARG MAKEFLAGS=-j8
 

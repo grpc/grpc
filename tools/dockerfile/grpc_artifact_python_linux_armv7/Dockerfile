@@ -19,6 +19,60 @@
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/dockerfile/grpc_artifact_python_linux_armv7/Dockerfile.inja`!!!
 FROM dockcross/linux-armv7
 
+#=================
+# Install apt-get-install-retry wrapper script
+#=================
+#  Create wrapper for apt-get
+
+ADD apt_get_install_with_retry.sh /usr/local/bin/apt-get-install-retry
+RUN chmod +rx /usr/local/bin/apt-get-install-retry
+
+
+# Basic C core dependencies
+
+# C/C++ dependencies according to https://github.com/grpc/grpc/blob/master/BUILDING.md
+RUN apt-get-install-retry \
+  build-essential \
+  autoconf \
+  libtool \
+  pkg-config
+  
+
+# GCC
+RUN apt-get-install-retry \
+  gcc \
+  g++ 
+
+# libc6
+RUN apt-get-install-retry \
+  libc6 \
+  libc6-dbg \
+  libc6-dev
+
+# Tools
+RUN apt-get-install-retry \
+  bzip2 \
+  curl \
+  dnsutils \
+  git \
+  lcov \
+  make \
+  strace \
+  time \
+  unzip \
+  wget \
+  zip
+
+#=================
+# Setup git to access working directory across docker boundary.
+# This avoids the "fatal: detected dubious ownership in repository XYZ"
+# git error.
+
+RUN git config --global --add safe.directory '*'
+RUN git config --global protocol.file.allow always
+
+
+
 # Configure git early so the cache reused by other py build based on the same image.
 RUN git config --global protocol.file.allow always && \
   git config --global --add safe.directory /var/local/jenkins/grpc && \
@@ -26,7 +80,7 @@ RUN git config --global protocol.file.allow always && \
   git config --global --add safe.directory '/var/local/jenkins/grpc/.git/modules/third_party/*'
 
 
-RUN apt update && apt install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev \
+RUN apt-get-install-retry build-essential zlib1g-dev libncurses5-dev libgdbm-dev \
                                  libnss3-dev libssl-dev libreadline-dev libffi-dev && apt-get clean
 
 ADD install_python_for_wheel_crosscompilation.sh /scripts/install_python_for_wheel_crosscompilation.sh
