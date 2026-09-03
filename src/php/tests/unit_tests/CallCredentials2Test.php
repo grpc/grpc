@@ -187,4 +187,64 @@ class CallCredentials2Test extends \PHPUnit\Framework\TestCase
         $this->assertTrue($event->send_close);
         $this->assertTrue($event->status->code == Grpc\STATUS_UNAVAILABLE);
     }
+
+    public function testCreateFromPluginWithDroppedBoundInstance()
+    {
+        $deadline = Grpc\Timeval::infFuture();
+        $status_text = 'xyz';
+        $call = new Grpc\Call($this->channel,
+                              '/abc/phony_method',
+                              $deadline,
+                              $this->host_override);
+
+        $callback_holder = new CallCredentials2TestCallbackHolder();
+        $call_credentials = Grpc\CallCredentials::createFromPlugin(
+            array($callback_holder, 'callbackFunc'));
+        unset($callback_holder);
+        gc_collect_cycles();
+
+        $call->setCredentials($call_credentials);
+
+        $event = $call->startBatch([
+            Grpc\OP_SEND_INITIAL_METADATA => [],
+            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
+        ]);
+
+        $this->assertTrue($event->send_metadata);
+        $this->assertTrue($event->send_close);
+
+        $event = $this->server->requestCall();
+
+        $this->assertTrue(is_array($event->metadata));
+        $metadata = $event->metadata;
+        $this->assertTrue(array_key_exists('k1', $metadata));
+        $this->assertSame($metadata['k1'], ['v1']);
+
+        $server_call = $event->call;
+        $server_call->startBatch([
+            Grpc\OP_SEND_INITIAL_METADATA => [],
+            Grpc\OP_SEND_STATUS_FROM_SERVER => [
+                'metadata' => [],
+                'code' => Grpc\STATUS_INVALID_ARGUMENT,
+                'details' => $status_text,
+            ],
+            Grpc\OP_RECV_CLOSE_ON_SERVER => true,
+        ]);
+
+        $call->startBatch([
+            Grpc\OP_RECV_INITIAL_METADATA => true,
+            Grpc\OP_RECV_STATUS_ON_CLIENT => true,
+        ]);
+
+        unset($call);
+        unset($server_call);
+    }
+}
+
+class CallCredentials2TestCallbackHolder
+{
+    public function callbackFunc($context)
+    {
+        return ['k1' => ['v1']];
+    }
 }
