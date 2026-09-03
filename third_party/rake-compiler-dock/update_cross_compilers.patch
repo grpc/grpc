@@ -1,19 +1,38 @@
-# Adopted from https://github.com/rake-compiler/rake-compiler-dock/pull/201.
 # Upgrade cross-compilers across all platforms for full C++17 and Abseil support:
 # - Darwin (arm64-darwin, x86_64-darwin): Clang 14.0.6
 # - Linux GNU (x86_64-linux-gnu, aarch64-linux-gnu, x86-linux-gnu): GCC 10.5.0
 # - Linux Musl (x86_64-linux-musl, aarch64-linux-musl, x86-linux-musl): GCC 10.3.0
 # - MinGW (x86-mingw32, x64-mingw-ucrt): GCC 10.2.1 (POSIX thread model)
-
 diff --git a/Dockerfile.mri.erb b/Dockerfile.mri.erb
-index 1bf488e..5f08c11 100644
+index 1bf488e..aed2eab 100644
 --- a/Dockerfile.mri.erb
 +++ b/Dockerfile.mri.erb
-@@ -75,51 +75,81 @@ USER root
+@@ -75,51 +75,89 @@ USER root
  ##
  ## Install cross compilers
  ##
--<% if platform =~ /x64-mingw-ucrt/ %>
++<% if platform =~ /mingw/ %>
++
++RUN echo "Package: *\nPin: release n=bullseye\nPin-Priority: 100" > /etc/apt/preferences.d/bullseye.pref && \
++    echo "deb [trusted=yes] https://deb.debian.org/debian bullseye main" > /etc/apt/sources.list.d/bullseye.list && \
++    apt-get -y update && \
++    apt-get install -y -t bullseye \
++        gcc-mingw-w64-i686-posix \
++        g++-mingw-w64-i686-posix \
++        gcc-mingw-w64-x86-64-posix \
++        g++-mingw-w64-x86-64-posix \
++        binutils-mingw-w64-i686 \
++        binutils-mingw-w64-x86-64 \
++        mingw-w64-common \
++        mingw-w64-i686-dev \
++        mingw-w64-x86-64-dev && \
++    update-alternatives --set i686-w64-mingw32-gcc /usr/bin/i686-w64-mingw32-gcc-posix && \
++    update-alternatives --set i686-w64-mingw32-g++ /usr/bin/i686-w64-mingw32-g++-posix && \
++    update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix && \
++    update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix && \
++    rm -rf /var/lib/apt/lists/*
++
+ <% if platform =~ /x64-mingw-ucrt/ %>
 -COPY --from=larskanis/mingw64-ucrt:20.04 \
 -    /build/binutils-mingw-w64-x86-64_*.deb \
 -    /build/g++-mingw-w64-x86-64_*.deb \
@@ -41,26 +60,12 @@ index 1bf488e..5f08c11 100644
 -    echo "export PATH=/llvm-mingw/bin:\$PATH" >> /etc/rubybashrc &&
 -    rm -r /llvm-mingw/bin/i686-w64* /llvm-mingw/bin/armv7-w64* /llvm-mingw/bin/x86_64-w64* /llvm-mingw/i686-w64* /llvm-mingw/armv7-w64* /llvm-mingw/x86_64-w64*
 -EOF
-+<% if platform =~ /mingw/ %>
-+
-+RUN echo "Package: *\nPin: release n=bullseye\nPin-Priority: 100" > /etc/apt/preferences.d/bullseye.pref && \
-+    echo "deb [trusted=yes] http://deb.debian.org/debian bullseye main" > /etc/apt/sources.list.d/bullseye.list && \
-+    apt-get -y update && \
-+    apt-get install -y -t bullseye \
-+        gcc-mingw-w64-i686-posix \
-+        g++-mingw-w64-i686-posix \
-+        gcc-mingw-w64-x86-64-posix \
-+        g++-mingw-w64-x86-64-posix \
-+        binutils-mingw-w64-i686 \
-+        binutils-mingw-w64-x86-64 \
-+        mingw-w64-common \
-+        mingw-w64-i686-dev \
-+        mingw-w64-x86-64-dev && \
-+    update-alternatives --set i686-w64-mingw32-gcc /usr/bin/i686-w64-mingw32-gcc-posix && \
-+    update-alternatives --set i686-w64-mingw32-g++ /usr/bin/i686-w64-mingw32-g++-posix && \
-+    update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix && \
-+    update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix && \
-+    rm -rf /var/lib/apt/lists/*
++RUN x86_64-w64-mingw32-gcc -dumpspecs > specs && \
++    sed -i 's/-lmsvcrt/-lucrt/g' specs && \
++    sed -i '/\*cpp:/!b;n;s/$/ -D__MSVCRT_VERSION__=0x1400 -D_UCRT/' specs && \
++    cp specs /usr/lib/gcc/x86_64-w64-mingw32/10-posix/specs && \
++    rm specs
++<% end %>
  
  <% elsif platform =~ /linux-musl/ %>
  COPY build/mk_musl_cross.sh /tmp
@@ -129,7 +134,7 @@ index 1bf488e..5f08c11 100644
  
  <% if platform =~ /darwin/ %>
  COPY build/mk_osxcross.sh /tmp
-@@ -237,8 +267,8 @@ RUN mv /usr/bin/<%= target %>-strip /usr/bin/<%= target %>-strip.bin && \
+@@ -237,8 +275,8 @@ RUN mv /usr/bin/<%= target %>-strip /usr/bin/<%= target %>-strip.bin && \
  # Use posix pthread for mingw so that C++ standard library for thread could be
  # available such as std::thread, std::mutex, so on.
  # https://sourceware.org/pthreads-win32/
