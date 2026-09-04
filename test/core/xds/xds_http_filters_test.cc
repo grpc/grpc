@@ -528,7 +528,8 @@ TEST_P(XdsFaultInjectionFilterConfigTest,
   EXPECT_EQ(status.message(),
             "errors validating filter config: ["
             "field:http_filter.value[envoy.extensions.filters.http.fault.v3"
-            ".HTTPFault].abort.percentage error:invalid denominator: 99]")
+            ".HTTPFault].abort.percentage.denominator error:invalid "
+            "denominator: 99]")
       << status;
 }
 
@@ -550,7 +551,8 @@ TEST_P(XdsFaultInjectionFilterConfigTest,
   EXPECT_EQ(status.message(),
             "errors validating filter config: ["
             "field:http_filter.value[envoy.extensions.filters.http.fault.v3"
-            ".HTTPFault].delay.percentage error:invalid denominator: 99]")
+            ".HTTPFault].delay.percentage.denominator error:invalid "
+            "denominator: 99]")
       << status;
 }
 
