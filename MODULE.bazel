@@ -120,6 +120,7 @@ PYTHON_VERSIONS = [
     "3.12",
     "3.13",
     "3.14",
+    "3.15",
 ]
 
 # TODO(weizheyuan): figure out how it interacts with protobuf 31
@@ -143,6 +144,7 @@ pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 
 [
     pip.parse(
+        extra_pip_args = ["--no-build-isolation"],
         hub_name = "grpc_python_dependencies",
         python_version = python_version,
         requirements_lock = "//:requirements.bazel.lock",
@@ -152,7 +154,7 @@ pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 
 use_repo(pip, "grpc_python_dependencies")
 
-bazel_dep(name = "cython", version = "3.0.11-1")
+bazel_dep(name = "cython", version = "3.2.8")
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
