@@ -96,8 +96,13 @@ auto ChaoticGoodServerTransport::DispatchFrame(
     RefCountedPtr<ChaoticGoodTransport> transport, IncomingFrame frame) {
   auto stream = LookupStream(frame.header().stream_id);
   return If(
-      stream != nullptr,
+      // A frame arriving after the client's half-close (ClientEndOfStream) is
+      // a protocol violation: cancel the call instead of pushing it.
+      stream != nullptr && !stream->client_half_closed,
       [this, &stream, &frame, &transport]() {
+        if constexpr (std::is_same_v<T, ClientEndOfStream>) {
+          stream->client_half_closed = true;
+        }
         // TODO(ctiller): instead of SpawnWaitable here we probably want a
         // small queue to push into, so that the call can proceed
         // asynchronously to other calls regardless of frame ordering.
@@ -120,7 +125,13 @@ auto ChaoticGoodServerTransport::DispatchFrame(
                   }));
             });
       },
-      []() { return absl::OkStatus(); });
+      [stream]() -> absl::Status {
+        if (stream != nullptr) {
+          stream->call.SpawnCancel(
+              absl::InternalError("Received frame after half-close"));
+        }
+        return absl::OkStatus();
+      });
 }
 
 namespace {
