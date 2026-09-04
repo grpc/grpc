@@ -772,6 +772,187 @@ class ModuleMainTest(unittest.TestCase):
         finally:
             shutil.rmtree(work_dir)
 
+    def test_generated_grpc_pyi_includes_type_annotations(self):
+        if sys.executable is None:
+            raise unittest.SkipTest(
+                "Running on a interpreter that cannot be invoked from the CLI."
+            )
+
+        proto_dir_path = os.path.join("examples", "protos")
+        test_proto_path = os.path.join(proto_dir_path, "route_guide.proto")
+        work_dir = tempfile.mkdtemp()
+        generated_file_path = os.path.join(work_dir, "route_guide_pb2_grpc.pyi")
+        try:
+            invocation = (
+                sys.executable,
+                "-m",
+                "grpc_tools.protoc",
+                "--proto_path",
+                proto_dir_path,
+                "--python_out",
+                work_dir,
+                "--grpc_python_out=generate_pyi:{}".format(work_dir),
+                test_proto_path,
+            )
+            proc = subprocess.Popen(
+                invocation, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
+            stdout, stderr = proc.communicate()
+            if proc.returncode != 0:
+                print("stdout:", stdout.decode("utf-8"))
+                print("stderr:", stderr.decode("utf-8"))
+            self.assertEqual(0, proc.returncode)
+
+            with open(generated_file_path, encoding="utf-8") as generated_file:
+                generated_code = generated_file.read()
+
+            self.assertIn(
+                "class RouteGuideStub(Generic[_ChannelT]):",
+                generated_code,
+            )
+            self.assertIn(
+                (
+                    "def __init__(self: 'RouteGuideStub[grpc.Channel]', "
+                    "channel: grpc.Channel) -> None: ..."
+                ),
+                generated_code,
+            )
+            self.assertIn(
+                (
+                    "def GetFeature(self: 'RouteGuideStub[grpc.Channel]', "
+                    "request: route_guide__pb2.Point, "
+                    "timeout: Optional[float] = ..., "
+                    "metadata: Optional[_MetadataType] = ..., "
+                    "credentials: Optional[grpc.CallCredentials] = ..., "
+                    "wait_for_ready: Optional[bool] = ..., "
+                    "compression: Optional[grpc.Compression] = ...) "
+                    "-> route_guide__pb2.Feature: ..."
+                ),
+                generated_code,
+            )
+            self.assertIn(
+                (
+                    "def GetFeature(self: 'RouteGuideStub[grpc.aio.Channel]', "
+                    "request: route_guide__pb2.Point, "
+                    "timeout: Optional[float] = ..., "
+                    "metadata: Optional[_MetadataType] = ..., "
+                    "credentials: Optional[grpc.CallCredentials] = ..., "
+                    "wait_for_ready: Optional[bool] = ..., "
+                    "compression: Optional[grpc.Compression] = ...) "
+                    "-> grpc.aio.UnaryUnaryCall[route_guide__pb2.Point, "
+                    "route_guide__pb2.Feature]: ..."
+                ),
+                generated_code,
+            )
+            self.assertIn(
+                (
+                    "def RecordRoute(self: 'RouteGuideStub[grpc.aio.Channel]', "
+                    "request_iterator: Union[Iterable[route_guide__pb2.Point], "
+                    "AsyncIterable[route_guide__pb2.Point]], "
+                    "timeout: Optional[float] = ..., "
+                    "metadata: Optional[_MetadataType] = ..., "
+                    "credentials: Optional[grpc.CallCredentials] = ..., "
+                    "wait_for_ready: Optional[bool] = ..., "
+                    "compression: Optional[grpc.Compression] = ...) "
+                    "-> grpc.aio.StreamUnaryCall[route_guide__pb2.Point, "
+                    "route_guide__pb2.RouteSummary]: ..."
+                ),
+                generated_code,
+            )
+            self.assertIn(
+                (
+                    "class RouteGuideServicer:",
+                ),
+                generated_code,
+            )
+            self.assertIn(
+                (
+                    "def GetFeature(self, request: route_guide__pb2.Point, "
+                    "context: Union[grpc.ServicerContext, "
+                    "grpc.aio.ServicerContext[route_guide__pb2.Point, "
+                    "route_guide__pb2.Feature]]) -> "
+                    "Union[route_guide__pb2.Feature, "
+                    "Awaitable[route_guide__pb2.Feature]]: ..."
+                ),
+                generated_code,
+            )
+            self.assertIn(
+                (
+                    "def add_RouteGuideServicer_to_server("
+                    "servicer: RouteGuideServicer, "
+                    "server: grpc.aio.Server) -> None: ..."
+                ),
+                generated_code,
+            )
+            self.assertIn("class RouteGuide:", generated_code)
+
+            compile(generated_code, generated_file_path, "exec")
+        finally:
+            shutil.rmtree(work_dir)
+
+    def test_generated_grpc_pyi_handles_empty_services(self):
+        if sys.executable is None:
+            raise unittest.SkipTest(
+                "Running on a interpreter that cannot be invoked from the CLI."
+            )
+
+        work_dir = tempfile.mkdtemp()
+        proto_path = os.path.join(work_dir, "empty_service.proto")
+        generated_file_path = os.path.join(
+            work_dir, "empty_service_pb2_grpc.pyi"
+        )
+        try:
+            with open(proto_path, "w", encoding="utf-8") as proto_file:
+                proto_file.write(
+                    'syntax = "proto3";\n'
+                    'package test;\n'
+                    "service EmptyService {}\n"
+                )
+
+            invocation = (
+                sys.executable,
+                "-m",
+                "grpc_tools.protoc",
+                "--proto_path",
+                work_dir,
+                "--python_out",
+                work_dir,
+                "--grpc_python_out=generate_pyi:{}".format(work_dir),
+                proto_path,
+            )
+            proc = subprocess.Popen(
+                invocation, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
+            stdout, stderr = proc.communicate()
+            if proc.returncode != 0:
+                print("stdout:", stdout.decode("utf-8"))
+                print("stderr:", stderr.decode("utf-8"))
+            self.assertEqual(0, proc.returncode)
+
+            with open(generated_file_path, encoding="utf-8") as generated_file:
+                generated_code = generated_file.read()
+
+            self.assertIn(
+                "class EmptyServiceStub(Generic[_ChannelT]):",
+                generated_code,
+            )
+            self.assertIn(
+                "class EmptyServiceServicer:\n    pass\n",
+                generated_code,
+            )
+            self.assertIn(
+                (
+                    "# This class is part of an EXPERIMENTAL API.\n"
+                    "class EmptyService:\n"
+                    "    pass\n"
+                ),
+                generated_code,
+            )
+
+            compile(generated_code, generated_file_path, "exec")
+        finally:
+            shutil.rmtree(work_dir)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
