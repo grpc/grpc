@@ -147,8 +147,6 @@ inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
 inline bool IsV2NonOwningWakerImplementationEnabled() { return true; }
 inline bool IsVerboseChannelzConnectionLoggingEnabled() { return false; }
 inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_XDS_SERVER_FILTER_CHAIN_PER_ROUTE
-inline bool IsXdsServerFilterChainPerRouteEnabled() { return true; }
 
 #elif defined(GPR_WINDOWS)
 inline bool IsBufferListDeletionPrepEnabled() { return false; }
@@ -241,8 +239,6 @@ inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
 inline bool IsV2NonOwningWakerImplementationEnabled() { return true; }
 inline bool IsVerboseChannelzConnectionLoggingEnabled() { return false; }
 inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_XDS_SERVER_FILTER_CHAIN_PER_ROUTE
-inline bool IsXdsServerFilterChainPerRouteEnabled() { return true; }
 
 #else
 inline bool IsBufferListDeletionPrepEnabled() { return false; }
@@ -335,8 +331,6 @@ inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
 inline bool IsV2NonOwningWakerImplementationEnabled() { return true; }
 inline bool IsVerboseChannelzConnectionLoggingEnabled() { return false; }
 inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_XDS_SERVER_FILTER_CHAIN_PER_ROUTE
-inline bool IsXdsServerFilterChainPerRouteEnabled() { return true; }
 #endif
 
 #else
@@ -403,7 +397,6 @@ enum ExperimentIds {
   kExperimentIdV2NonOwningWakerImplementation,
   kExperimentIdVerboseChannelzConnectionLogging,
   kExperimentIdWildcardIpExpansionRestriction,
-  kExperimentIdXdsServerFilterChainPerRoute,
   kNumExperiments
 };
 #define GRPC_EXPERIMENT_IS_INCLUDED_BUFFER_LIST_DELETION_PREP
@@ -656,10 +649,6 @@ inline bool IsVerboseChannelzConnectionLoggingEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_WILDCARD_IP_EXPANSION_RESTRICTION
 inline bool IsWildcardIpExpansionRestrictionEnabled() {
   return IsExperimentEnabled<kExperimentIdWildcardIpExpansionRestriction>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_XDS_SERVER_FILTER_CHAIN_PER_ROUTE
-inline bool IsXdsServerFilterChainPerRouteEnabled() {
-  return IsExperimentEnabled<kExperimentIdXdsServerFilterChainPerRoute>();
 }
 
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];

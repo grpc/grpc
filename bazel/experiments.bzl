@@ -79,7 +79,6 @@ EXPERIMENT_ENABLES = {
     "v2_non_owning_waker_implementation": "v2_non_owning_waker_implementation",
     "verbose_channelz_connection_logging": "verbose_channelz_connection_logging",
     "wildcard_ip_expansion_restriction": "wildcard_ip_expansion_restriction",
-    "xds_server_filter_chain_per_route": "v2_non_owning_waker_implementation,xds_server_filter_chain_per_route",
 }
 
 EXPERIMENT_POLLERS = [
@@ -213,12 +212,6 @@ EXPERIMENTS = {
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
-            ],
-            "xds_end2end_test": [
-                "xds_server_filter_chain_per_route",
-            ],
-            "xds_test": [
-                "xds_server_filter_chain_per_route",
             ],
         },
     },

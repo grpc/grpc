@@ -1729,7 +1729,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx race_test)
   add_dependencies(buildtests_cxx random_early_detection_test)
   add_dependencies(buildtests_cxx raw_end2end_test)
-  add_dependencies(buildtests_cxx rbac_service_config_parser_test)
   add_dependencies(buildtests_cxx rbac_translator_test)
   add_dependencies(buildtests_cxx read_context_test)
   add_dependencies(buildtests_cxx recv_message_filter_bypass_test)
@@ -2372,7 +2371,6 @@ add_library(grpc
   src/core/ext/filters/http/server/http_server_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/filters/rbac/rbac_filter.cc
-  src/core/ext/filters/rbac/rbac_service_config_parser.cc
   src/core/ext/filters/stateful_session/stateful_session_filter.cc
   src/core/ext/transport/chttp2/alpn/alpn.cc
   src/core/ext/transport/chttp2/chttp2_plugin.cc
@@ -3028,9 +3026,7 @@ add_library(grpc
   src/core/server/server.cc
   src/core/server/server_call_tracer_filter.cc
   src/core/server/server_config_selector_filter.cc
-  src/core/server/xds_channel_stack_modifier.cc
   src/core/server/xds_server_config_fetcher.cc
-  src/core/server/xds_server_config_fetcher_legacy.cc
   src/core/service_config/service_config_channel_arg_filter.cc
   src/core/service_config/service_config_impl.cc
   src/core/service_config/service_config_parser.cc
@@ -30625,48 +30621,6 @@ target_link_libraries(raw_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc++_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(rbac_service_config_parser_test
-  test/core/ext/filters/rbac/rbac_service_config_parser_test.cc
-)
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(rbac_service_config_parser_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-      "GRPC_DLL_IMPORTS"
-    )
-  endif()
-endif()
-target_compile_features(rbac_service_config_parser_test PUBLIC cxx_std_17)
-target_include_directories(rbac_service_config_parser_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(rbac_service_config_parser_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
-  grpc_test_util
 )
 
 
