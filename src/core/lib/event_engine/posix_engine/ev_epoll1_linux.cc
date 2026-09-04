@@ -425,18 +425,25 @@ Poller::WorkResult Epoll1Poller::Work(
       return Poller::WorkResult::kDeadlineExceeded;
     }
   }
-  {
-    grpc_core::MutexLock lock(&mu_);
-    // If was_kicked_ is true, collect all pending events in this iteration.
-    if (ProcessEpollEvents(
-            was_kicked_ ? INT_MAX : MAX_EPOLL_EVENTS_HANDLED_PER_ITERATION,
-            pending_events)) {
-      was_kicked_ = false;
-      was_kicked_ext = true;
-    }
-    if (pending_events.empty()) {
-      return Poller::WorkResult::kKicked;
-    }
+  // Hold the lock until we execute pending actions so that those handles stay
+  // alive until we are done (and a concurrent Close() doesn't free it first).
+  grpc_core::MutexLock lock(&mu_);
+  // Close() may have run between DoEpollWait() returning and mu_ being
+  // acquired, deleting every handle in the free list.  Any events collected
+  // by DoEpollWait() now reference freed memory, so bail out before
+  // ProcessEpollEvents() dereferences them.
+  if (closed_) {
+    return Poller::WorkResult::kKicked;
+  }
+  // If was_kicked_ is true, collect all pending events in this iteration.
+  if (ProcessEpollEvents(
+          was_kicked_ ? INT_MAX : MAX_EPOLL_EVENTS_HANDLED_PER_ITERATION,
+          pending_events)) {
+    was_kicked_ = false;
+    was_kicked_ext = true;
+  }
+  if (pending_events.empty()) {
+    return Poller::WorkResult::kKicked;
   }
   // Run the provided callback.
   schedule_poll_again();
