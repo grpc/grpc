@@ -48,6 +48,7 @@
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 namespace chaotic_good_legacy {
@@ -218,7 +219,11 @@ auto ChaoticGoodServerTransport::CallOutboundLoop(
 absl::Status ChaoticGoodServerTransport::NewStream(
     ChaoticGoodTransport& transport, const FrameHeader& header,
     SliceBuffer payload) {
-  GRPC_CHECK_EQ(header.payload_length, payload.Length());
+  if (header.payload_length != payload.Length()) {
+    return absl::InternalError(absl::StrCat(
+        "Invalid payload length for frame type ", FrameTypeString(header.type),
+        ": expected ", header.payload_length, ", got ", payload.Length()));
+  }
   auto client_initial_metadata_frame =
       transport.DeserializeFrame<ClientInitialMetadataFrame>(
           header, std::move(payload));

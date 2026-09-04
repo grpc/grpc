@@ -39,6 +39,7 @@
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "absl/strings/escaping.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 namespace chaotic_good_legacy {
@@ -245,7 +246,12 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport>,
     GRPC_TRACE_LOG(chaotic_good, INFO)
         << "CHAOTIC_GOOD: Deserialize " << header << " with payload "
         << absl::CEscape(payload.JoinIntoString());
-    CHECK_EQ(header.payload_length, payload.Length());
+    if (header.payload_length != payload.Length()) {
+      return absl::InternalError(
+          absl::StrCat("Invalid payload length for frame type ",
+                       FrameTypeString(header.type), ": expected ",
+                       header.payload_length, ", got ", payload.Length()));
+    }
     auto s = frame.Deserialize(header, std::move(payload));
     GRPC_TRACE_LOG(chaotic_good, INFO)
         << "CHAOTIC_GOOD: DeserializeFrame "
