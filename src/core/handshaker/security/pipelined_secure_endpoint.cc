@@ -639,28 +639,37 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
       tsi_result result;
       frame_protector_.TraceOp("Write", data->c_slice_buffer());
       {
-        grpc_core::MutexLock lock(frame_protector_.write_mu());
+        grpc_core::ReleasableMutexLock lock(frame_protector_.write_mu());
         result = frame_protector_.Protect(data->c_slice_buffer(),
                                           args.max_frame_size());
+        if (result != TSI_OK) {
+          lock.Release();
+          event_engine_->Run(
+              [on_writable = std::move(on_writable), result]() mutable {
+                on_writable(GRPC_ERROR_CREATE(absl::StrCat(
+                    "Wrap failed (", tsi_result_to_string(result), ")")));
+              });
+          return false;
+        }
+        // If the endpoint shut down whilst protecting, fail out the write.
+        if (wrapped_ep_ == nullptr) {
+          lock.Release();
+          event_engine_->Run([on_writable = std::move(on_writable)]() mutable {
+            on_writable(absl::CancelledError("secure endpoint shutdown"));
+          });
+          return false;
+        }
+        on_write_ = std::move(on_writable);
+        frame_protector_.TraceOp(
+            "Write", frame_protector_.output_buffer()->c_slice_buffer());
+        return wrapped_ep_->Write(
+            [impl = Ref()](absl::Status status) mutable {
+              auto on_write = std::move(impl->on_write_);
+              impl.reset();
+              on_write(status);
+            },
+            frame_protector_.output_buffer(), std::move(args));
       }
-      if (result != TSI_OK) {
-        event_engine_->Run(
-            [on_writable = std::move(on_writable), result]() mutable {
-              on_writable(GRPC_ERROR_CREATE(absl::StrCat(
-                  "Wrap failed (", tsi_result_to_string(result), ")")));
-            });
-        return false;
-      }
-      on_write_ = std::move(on_writable);
-      frame_protector_.TraceOp(
-          "Write", frame_protector_.output_buffer()->c_slice_buffer());
-      return wrapped_ep_->Write(
-          [impl = Ref()](absl::Status status) mutable {
-            auto on_write = std::move(impl->on_write_);
-            impl.reset();
-            on_write(status);
-          },
-          frame_protector_.output_buffer(), std::move(args));
     }
 
     const EventEngine::ResolvedAddress& GetPeerAddress() const {
