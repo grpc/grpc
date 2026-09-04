@@ -200,9 +200,10 @@ ProcessIncomingDataFrameFlowControl(const Http2FrameHeader& frame,
                                     Stream* stream);
 
 // Returns true if a write should be triggered
-bool ProcessIncomingWindowUpdateFrameFlowControl(
+ValueOrHttp2Status<bool> ProcessIncomingWindowUpdateFrameFlowControl(
     const Http2WindowUpdateFrame& frame,
-    chttp2::TransportFlowControl& flow_control, Stream* stream);
+    chttp2::TransportFlowControl& flow_control, Stream* stream,
+    const Http2Settings& peer_settings);
 
 void MaybeAddTransportWindowUpdateFrame(
     chttp2::TransportFlowControl& flow_control, FrameSender& frame_sender);
