@@ -66,7 +66,7 @@ cdef extern from "src/core/telemetry/call_tracer.h" namespace "grpc_core":
     cdef cppclass CallTracerAnnotationInterface:
         pass
 
-    cdef cppclass ServerCallTracerInterface:
+    cdef cppclass CallSpan:
         string TraceId() nogil
         string SpanId() nogil
         bint IsSampled() nogil

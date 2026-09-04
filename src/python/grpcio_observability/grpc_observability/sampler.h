@@ -15,6 +15,7 @@
 #ifndef SAMPLER_MAIN_H
 #define SAMPLER_MAIN_H
 
+#include <atomic>
 #include <cstdint>
 #include <string>
 
@@ -35,7 +36,7 @@ class ProbabilitySampler final {
   ProbabilitySampler() = default;
 
   // Probability is converted to a value between [0, UINT64_MAX].
-  uint64_t threshold_;
+  std::atomic<uint64_t> threshold_{0U};
 };
 
 }  // namespace grpc_observability

@@ -45,9 +45,9 @@ constexpr uint32_t
 
 PythonOpenCensusCallTracer::PythonOpenCensusCallTracer(
     const char* method, const char* target, const char* trace_id,
-    const char* parent_span_id, const char* identifier,
-    const std::vector<Label>& exchange_labels, bool tracing_enabled,
-    bool add_csm_optional_labels, bool registered_method)
+    const char* parent_span_id, const std::optional<bool> parent_span_sampled,
+    const char* identifier, const std::vector<Label>& exchange_labels,
+    bool tracing_enabled, bool add_csm_optional_labels, bool registered_method)
     : method_(GetMethod(method)),
       target_(GetTarget(target)),
       tracing_enabled_(tracing_enabled),
@@ -55,9 +55,9 @@ PythonOpenCensusCallTracer::PythonOpenCensusCallTracer(
       labels_injector_(exchange_labels),
       identifier_(identifier),
       registered_method_(registered_method) {
-  GenerateClientContext(absl::StrCat("Sent.", method_),
-                        absl::string_view(trace_id),
-                        absl::string_view(parent_span_id), &context_);
+  GenerateClientContext(
+      absl::StrCat("Sent.", method_), absl::string_view(trace_id),
+      absl::string_view(parent_span_id), parent_span_sampled, &context_);
 }
 
 void PythonOpenCensusCallTracer::GenerateContext() {}
@@ -67,7 +67,7 @@ void PythonOpenCensusCallTracer::RecordAnnotation(
   if (!context_.GetSpanContext().IsSampled()) {
     return;
   }
-  context_.AddSpanAnnotation(annotation);
+  context_.AddSpanEvent(annotation);
 }
 
 void PythonOpenCensusCallTracer::RecordAnnotation(
@@ -81,7 +81,8 @@ void PythonOpenCensusCallTracer::RecordAnnotation(
     // is being sampled by default.
     default:
       if (IsSampled()) {
-        context_.AddSpanAnnotation(annotation.ToString());
+        const auto annotation_str = annotation.ToString();
+        context_.AddSpanEvent(annotation_str);
       }
       break;
   }
@@ -103,6 +104,7 @@ PythonOpenCensusCallTracer::~PythonOpenCensusCallTracer() {
   }
 
   if (tracing_enabled_) {
+    context_.GetSpan().SetStatus(StatusCodeToString(status_code_));
     context_.EndSpan();
     if (IsSampled()) {
       RecordSpan(context_.GetSpan().ToCensusData());
@@ -211,13 +213,71 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
 }
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
-    RecordSendMessage(const grpc_core::Message& /*send_message*/) {
-  ++sent_message_count_;
+    RecordSendMessage(const grpc_core::Message& send_message) {
+  const uint64_t sent_message_count = sent_message_count_++;
+
+  if (context_.GetSpanContext().IsSampled()) {
+    std::vector<std::pair<absl::string_view, absl::string_view>> attributes{};
+    attributes.reserve(2);
+    const auto sent_message_count_str = absl::StrCat(sent_message_count);
+    attributes.emplace_back("sequence-number", sent_message_count_str);
+    const auto message_size_str =
+        absl::StrCat(send_message.payload()->Length());
+    attributes.emplace_back("message-size", message_size_str);
+    context_.AddSpanEvent("Outbound message", attributes);
+  }
 }
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
-    RecordReceivedMessage(const grpc_core::Message& /*recv_message*/) {
-  ++recv_message_count_;
+    RecordSendCompressedMessage(
+        const grpc_core::Message& send_compressed_message) {
+  if (context_.GetSpanContext().IsSampled()) {
+    std::vector<std::pair<absl::string_view, absl::string_view>> attributes{};
+    attributes.reserve(2);
+    const auto sent_message_count_str = absl::StrCat(sent_message_count_ - 1);
+    attributes.emplace_back("sequence-number", sent_message_count_str);
+    const auto message_size_str =
+        absl::StrCat(send_compressed_message.payload()->Length());
+    attributes.emplace_back("message-size-compressed", message_size_str);
+    context_.AddSpanEvent("Outbound message compressed", attributes);
+  }
+}
+
+void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
+    RecordReceivedMessage(const grpc_core::Message& recv_message) {
+  const uint64_t recv_message_count = recv_message_count_++;
+
+  if (context_.GetSpanContext().IsSampled()) {
+    std::vector<std::pair<absl::string_view, absl::string_view>> attributes{};
+    attributes.reserve(2);
+    const auto recv_message_count_str = absl::StrCat(recv_message_count);
+    attributes.emplace_back("sequence-number", recv_message_count_str);
+    const auto message_size_str =
+        absl::StrCat(recv_message.payload()->Length());
+    const bool is_compressed =
+        (recv_message.flags() & GRPC_WRITE_INTERNAL_COMPRESS) != 0;
+    attributes.emplace_back(
+        is_compressed ? "message-size-compressed" : "message-size",
+        message_size_str);
+    context_.AddSpanEvent(
+        is_compressed ? "Inbound compressed message" : "Inbound message",
+        attributes);
+  }
+}
+
+void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
+    RecordReceivedDecompressedMessage(
+        const grpc_core::Message& recv_decompressed_message) {
+  if (context_.GetSpanContext().IsSampled()) {
+    std::vector<std::pair<absl::string_view, absl::string_view>> attributes{};
+    attributes.reserve(2);
+    const auto recv_message_count_str = absl::StrCat(recv_message_count_ - 1);
+    attributes.emplace_back("sequence-number", recv_message_count_str);
+    const auto message_size_str =
+        absl::StrCat(recv_decompressed_message.payload()->Length());
+    attributes.emplace_back("message-size", message_size_str);
+    context_.AddSpanEvent("Inbound message", attributes);
+  }
 }
 
 std::shared_ptr<grpc_core::TcpCallTracer> PythonOpenCensusCallTracer::
@@ -258,60 +318,60 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
     RecordReceivedTrailingMetadata(
         absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
         const grpc_transport_stream_stats* transport_stream_stats) {
-  if (!PythonCensusStatsEnabled()) {
-    return;
-  }
-  if (is_trailers_only_) {
-    labels_from_peer_ =
-        parent_->labels_injector_.GetExchangeLabels(recv_trailing_metadata);
-  }
-  auto status_code_ = status.code();
-  uint64_t elapsed_time = 0;
-  if (recv_trailing_metadata != nullptr) {
-    elapsed_time = GetElapsedTimeFromTrailingMetadata(recv_trailing_metadata);
-  }
+  status_code_ = status.code();
 
-  std::string final_status = absl::StatusCodeToString(status_code_);
-  context_.Labels().emplace_back(kClientMethod, parent_->method_);
-  context_.Labels().emplace_back(kClientTarget, parent_->target_);
-  context_.Labels().emplace_back(kClientStatus, final_status);
-  if (parent_->add_csm_optional_labels_) {
-    parent_->labels_injector_.AddXdsOptionalLabels(
-        /*is_client=*/true, optional_labels_array_, context_.Labels());
+  if (PythonCensusStatsEnabled()) {
+    if (is_trailers_only_) {
+      labels_from_peer_ =
+          parent_->labels_injector_.GetExchangeLabels(recv_trailing_metadata);
+    }
+    uint64_t elapsed_time = 0;
+    if (recv_trailing_metadata != nullptr) {
+      elapsed_time = GetElapsedTimeFromTrailingMetadata(recv_trailing_metadata);
+    }
+
+    std::string final_status = absl::StatusCodeToString(status_code_);
+    context_.Labels().emplace_back(kClientMethod, parent_->method_);
+    context_.Labels().emplace_back(kClientTarget, parent_->target_);
+    context_.Labels().emplace_back(kClientStatus, final_status);
+    if (parent_->add_csm_optional_labels_) {
+      parent_->labels_injector_.AddXdsOptionalLabels(
+          /*is_client=*/true, optional_labels_array_, context_.Labels());
+    }
+    for (const auto& label : labels_from_peer_) {
+      context_.Labels().emplace_back(label);
+    }
+    uint64_t incoming_bytes = 0;
+    uint64_t outgoing_bytes = 0;
+    if (grpc_core::IsCallTracerInTransportEnabled()) {
+      incoming_bytes = incoming_bytes_.load();
+      outgoing_bytes = outgoing_bytes_.load();
+    } else if (transport_stream_stats != nullptr) {
+      incoming_bytes = transport_stream_stats->incoming.data_bytes;
+      outgoing_bytes = transport_stream_stats->outgoing.data_bytes;
+    }
+    RecordDoubleMetric(kRpcClientSentBytesPerRpcMeasureName,
+                       static_cast<double>(outgoing_bytes), context_.Labels(),
+                       parent_->identifier_, parent_->registered_method_,
+                       /*include_exchange_labels=*/true);
+    RecordDoubleMetric(kRpcClientReceivedBytesPerRpcMeasureName,
+                       static_cast<double>(incoming_bytes), context_.Labels(),
+                       parent_->identifier_, parent_->registered_method_,
+                       /*include_exchange_labels=*/true);
+    RecordDoubleMetric(kRpcClientServerLatencyMeasureName,
+                       absl::ToDoubleSeconds(absl::Nanoseconds(elapsed_time)),
+                       context_.Labels(), parent_->identifier_,
+                       parent_->registered_method_,
+                       /*include_exchange_labels=*/true);
+    RecordDoubleMetric(kRpcClientRoundtripLatencyMeasureName,
+                       absl::ToDoubleSeconds(absl::Now() - start_time_),
+                       context_.Labels(), parent_->identifier_,
+                       parent_->registered_method_,
+                       /*include_exchange_labels=*/true);
+    RecordIntMetric(kRpcClientCompletedRpcMeasureName, 1, context_.Labels(),
+                    parent_->identifier_, parent_->registered_method_,
+                    /*include_exchange_labels=*/true);
   }
-  for (const auto& label : labels_from_peer_) {
-    context_.Labels().emplace_back(label);
-  }
-  uint64_t incoming_bytes = 0;
-  uint64_t outgoing_bytes = 0;
-  if (grpc_core::IsCallTracerInTransportEnabled()) {
-    incoming_bytes = incoming_bytes_.load();
-    outgoing_bytes = outgoing_bytes_.load();
-  } else if (transport_stream_stats != nullptr) {
-    incoming_bytes = transport_stream_stats->incoming.data_bytes;
-    outgoing_bytes = transport_stream_stats->outgoing.data_bytes;
-  }
-  RecordDoubleMetric(kRpcClientSentBytesPerRpcMeasureName,
-                     static_cast<double>(outgoing_bytes), context_.Labels(),
-                     parent_->identifier_, parent_->registered_method_,
-                     /*include_exchange_labels=*/true);
-  RecordDoubleMetric(kRpcClientReceivedBytesPerRpcMeasureName,
-                     static_cast<double>(incoming_bytes), context_.Labels(),
-                     parent_->identifier_, parent_->registered_method_,
-                     /*include_exchange_labels=*/true);
-  RecordDoubleMetric(kRpcClientServerLatencyMeasureName,
-                     absl::ToDoubleSeconds(absl::Nanoseconds(elapsed_time)),
-                     context_.Labels(), parent_->identifier_,
-                     parent_->registered_method_,
-                     /*include_exchange_labels=*/true);
-  RecordDoubleMetric(kRpcClientRoundtripLatencyMeasureName,
-                     absl::ToDoubleSeconds(absl::Now() - start_time_),
-                     context_.Labels(), parent_->identifier_,
-                     parent_->registered_method_,
-                     /*include_exchange_labels=*/true);
-  RecordIntMetric(kRpcClientCompletedRpcMeasureName, 1, context_.Labels(),
-                  parent_->identifier_, parent_->registered_method_,
-                  /*include_exchange_labels=*/true);
 }
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
@@ -349,13 +409,13 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
   }
 
   if (parent_->tracing_enabled_) {
-    if (status_code_ != absl::StatusCode::kOk) {
-      context_.GetSpan().SetStatus(StatusCodeToString(status_code_));
-    }
+    context_.GetSpan().SetStatus(StatusCodeToString(status_code_));
     context_.EndSpan();
     if (IsSampled()) {
       RecordSpan(context_.GetSpan().ToCensusData());
     }
+    grpc_core::MutexLock lock(&parent_->mu_);
+    parent_->status_code_ = status_code_;
   }
 
   // After RecordEnd, Core will make no further usage of this CallAttemptTracer,
@@ -368,7 +428,7 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
   if (!context_.GetSpanContext().IsSampled()) {
     return;
   }
-  context_.AddSpanAnnotation(annotation);
+  context_.AddSpanEvent(annotation);
 }
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
@@ -388,7 +448,8 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
     // is being sampled by default.
     default:
       if (IsSampled()) {
-        context_.AddSpanAnnotation(annotation.ToString());
+        const auto annotation_str = annotation.ToString();
+        context_.AddSpanEvent(annotation_str);
       }
       break;
   }
