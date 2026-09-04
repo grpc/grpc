@@ -316,16 +316,9 @@ static bool client_ssl_test(char* server_alpn_preferred) {
   EXPECT_GT(server_socket, 0);
   EXPECT_GT(port, 0);
 
-  // Launch the TLS server thread.
-  SslLibraryInfo ssl_library_info;
-  server_args args = {server_socket, server_alpn_preferred, &ssl_library_info};
-  bool ok;
-  grpc_core::Thread thd("grpc_client_ssl_test", server_thread, &args, &ok);
-  EXPECT_TRUE(ok);
-  thd.Start();
-  ssl_library_info.Await();
-
   // Load key pair and establish client SSL credentials.
+  // Creating ssl_creds initializes gRPC SSL and installs the OpenSSL locking
+  // callbacks before server_thread begins OpenSSL operations.
   std::string ca_cert = grpc_core::testing::GetFileContents(SSL_CA_PATH);
   std::string cert = grpc_core::testing::GetFileContents(SSL_CERT_PATH);
   std::string key = grpc_core::testing::GetFileContents(SSL_KEY_PATH);
@@ -335,6 +328,15 @@ static bool client_ssl_test(char* server_alpn_preferred) {
   pem_key_cert_pair.cert_chain = cert.c_str();
   grpc_channel_credentials* ssl_creds = grpc_ssl_credentials_create(
       ca_cert.c_str(), &pem_key_cert_pair, nullptr, nullptr);
+
+  // Launch the TLS server thread.
+  SslLibraryInfo ssl_library_info;
+  server_args args = {server_socket, server_alpn_preferred, &ssl_library_info};
+  bool ok;
+  grpc_core::Thread thd("grpc_client_ssl_test", server_thread, &args, &ok);
+  EXPECT_TRUE(ok);
+  thd.Start();
+  ssl_library_info.Await();
 
   // Establish a channel pointing at the TLS server. Since the gRPC runtime is
   // lazy, this won't necessarily establish a connection yet.
