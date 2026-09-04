@@ -38,6 +38,7 @@
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
+#include "test/cpp/interop/otel_helper.h"
 #include "test/cpp/interop/server_helper.h"
 #include "test/cpp/util/test_config.h"
 #include "absl/flags/flag.h"
@@ -420,6 +421,7 @@ void grpc::testing::interop::RunServer(
     ServerStartedCondition* server_started_condition,
     std::unique_ptr<std::vector<std::unique_ptr<ServerBuilderOption>>>
         server_options) {
+  grpc::testing::interop::MaybeRegisterOpenTelemetry();
   GRPC_CHECK_NE(port, 0);
   std::ostringstream server_address;
   server_address << "0.0.0.0:" << port;
@@ -461,4 +463,7 @@ void grpc::testing::interop::RunServer(
     gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                  gpr_time_from_seconds(5, GPR_TIMESPAN)));
   }
+  server->Shutdown();
+  server.reset();
+  grpc::testing::interop::ForceFlushOpenTelemetry();
 }
