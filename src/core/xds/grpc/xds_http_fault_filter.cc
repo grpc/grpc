@@ -44,18 +44,22 @@ namespace grpc_core {
 
 namespace {
 
-uint32_t GetDenominator(const envoy_type_v3_FractionalPercent* fraction) {
+uint32_t GetDenominator(const envoy_type_v3_FractionalPercent* fraction,
+                        ValidationErrors* errors) {
   if (fraction != nullptr) {
-    const auto denominator =
-        static_cast<envoy_type_v3_FractionalPercent_DenominatorType>(
-            envoy_type_v3_FractionalPercent_denominator(fraction));
-    switch (denominator) {
+    // Switch on the raw int32_t value from the wire: casting an out-of-range
+    // value to the enum type first would be undefined behavior.
+    switch (envoy_type_v3_FractionalPercent_denominator(fraction)) {
       case envoy_type_v3_FractionalPercent_MILLION:
         return 1000000;
       case envoy_type_v3_FractionalPercent_TEN_THOUSAND:
         return 10000;
       case envoy_type_v3_FractionalPercent_HUNDRED:
+        return 100;
       default:
+        errors->AddError(absl::StrCat(
+            "invalid denominator: ",
+            envoy_type_v3_FractionalPercent_denominator(fraction)));
         return 100;
     }
   }
@@ -143,7 +147,8 @@ XdsHttpFaultFilterFactory::ParseTopLevelConfig(
     if (percent != nullptr) {
       config->abort_percentage_numerator =
           envoy_type_v3_FractionalPercent_numerator(percent);
-      config->abort_percentage_denominator = GetDenominator(percent);
+      ValidationErrors::ScopedField field(errors, ".percentage.denominator");
+      config->abort_percentage_denominator = GetDenominator(percent, errors);
     }
   }
   // Section 2: Parse the delay injection config
@@ -173,7 +178,8 @@ XdsHttpFaultFilterFactory::ParseTopLevelConfig(
     if (percent != nullptr) {
       config->delay_percentage_numerator =
           envoy_type_v3_FractionalPercent_numerator(percent);
-      config->delay_percentage_denominator = GetDenominator(percent);
+      ValidationErrors::ScopedField field(errors, ".percentage.denominator");
+      config->delay_percentage_denominator = GetDenominator(percent, errors);
     }
   }
   // Section 3: Parse the maximum active faults
