@@ -207,6 +207,61 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "chaotic_good_transport_test",
+    srcs = ["chaotic_good_transport_test.cc"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "gtest",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "transport_test",
+        "//:channel_arg_names",
+        "//:config",
+        "//:grpc",
+        "//:grpc_public_hdrs",
+        "//src/core:activity",
+        "//src/core:channel_args",
+        "//src/core:chaotic_good_legacy_config",
+        "//src/core:chaotic_good_legacy_frame",
+        "//src/core:chaotic_good_legacy_frame_header",
+        "//src/core:chaotic_good_legacy_transport",
+        "//src/core:event_engine_wakeup_scheduler",
+        "//src/core:map",
+        "//src/core:metrics",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
+        "//test/core/transport/util:mock_promise_endpoint",
+    ],
+)
+
+grpc_cc_test(
+    name = "chaotic_good_server_test",
+    srcs = ["chaotic_good_server_test.cc"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "gtest",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "transport_test",
+        "//:config",
+        "//:grpc",
+        "//:grpc_public_hdrs",
+        "//:transport_auth_context",
+        "//src/core:activity",
+        "//src/core:auth_context_comparator_registry",
+        "//src/core:chaotic_good_legacy_server",
+        "//src/core:event_engine_wakeup_scheduler",
+        "//src/core:map",
+        "//test/core/transport/util:mock_promise_endpoint",
+    ],
+)
+
+grpc_cc_test(
     name = "server_transport_test",
     srcs = ["server_transport_test.cc"],
     external_deps = [

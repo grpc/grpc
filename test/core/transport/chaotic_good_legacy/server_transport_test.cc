@@ -106,7 +106,8 @@ class MockCallDestination : public UnstartedCallDestination {
 
 class MockServerConnectionFactory : public ServerConnectionFactory {
  public:
-  MOCK_METHOD(PendingConnection, RequestDataConnection, (), (override));
+  MOCK_METHOD(PendingConnection, RequestDataConnection, (const ChannelArgs&),
+              (override));
   void Orphaned() final {}
 };
 
@@ -209,6 +210,92 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
       nullptr);
   // Wait until ClientTransport's internal activities to finish.
   event_engine()->TickUntilIdle();
+  ::testing::Mock::VerifyAndClearExpectations(control_endpoint.endpoint);
+  ::testing::Mock::VerifyAndClearExpectations(data_endpoint.endpoint);
+  event_engine()->UnsetGlobalHooks();
+}
+
+// A frame arriving after the client's ClientEndOfStream half-close is a
+// protocol violation: the call must be cancelled instead of accepting the
+// frame.
+TEST_F(TransportTest, FrameAfterHalfCloseCancelsCall) {
+  MockPromiseEndpoint control_endpoint(1);
+  MockPromiseEndpoint data_endpoint(2);
+  auto server_connection_factory =
+      MakeRefCounted<StrictMock<MockServerConnectionFactory>>();
+  auto call_destination = MakeRefCounted<StrictMock<MockCallDestination>>();
+  EXPECT_CALL(*call_destination, Orphaned()).Times(1);
+  auto channel_args = MakeChannelArgs(event_engine());
+  auto transport = MakeOrphanable<ChaoticGoodServerTransport>(
+      channel_args, std::move(control_endpoint.promise_endpoint),
+      MakeConfig(channel_args, std::move(data_endpoint.promise_endpoint)),
+      server_connection_factory);
+  const auto client_initial_metadata =
+      EncodeProto<chaotic_good_frame::ClientMetadata>(
+          "path: '/demo.Service/Step'");
+  // Initial metadata, half-close, then a message frame that arrives too late.
+  control_endpoint.ExpectRead(
+      {SerializedFrameHeader(FrameType::kClientInitialMetadata, 0, 1,
+                             client_initial_metadata.length()),
+       client_initial_metadata.Copy(),
+       SerializedFrameHeader(FrameType::kClientEndOfStream, 0, 1, 0),
+       SerializedFrameHeader(FrameType::kMessage, 0, 1, 4),
+       EventEngineSlice::FromCopiedString("abcd")},
+      event_engine().get());
+  StrictMock<MockFunction<void()>> on_done;
+  auto control_address =
+      grpc_event_engine::experimental::URIToResolvedAddress("ipv4:1.2.3.4:5678")
+          .value();
+  EXPECT_CALL(*control_endpoint.endpoint, GetPeerAddress)
+      .WillRepeatedly(
+          [&control_address]() -> const grpc_event_engine::experimental::
+                                   EventEngine::ResolvedAddress& {
+                                     return control_address;
+                                   });
+  EXPECT_CALL(*call_destination, StartCall(_))
+      .WillOnce(
+          WithArgs<0>([&on_done](UnstartedCallHandler unstarted_call_handler) {
+            auto handler = unstarted_call_handler.StartCall();
+            handler.SpawnInfallible("test-io", [&on_done, handler]() mutable {
+              return Seq(
+                  handler.PullClientInitialMetadata(),
+                  [](ValueOrFailure<ClientMetadataHandle> md) {
+                    EXPECT_TRUE(md.ok());
+                  },
+                  [handler]() mutable { return handler.PullMessage(); },
+                  [&on_done](ClientToServerNextMessage msg) {
+                    // The half-close ends the message stream.
+                    EXPECT_TRUE(msg.ok());
+                    EXPECT_FALSE(msg.has_value());
+                    on_done.Call();
+                  });
+            });
+          }));
+  transport->SetCallDestination(call_destination);
+  EXPECT_CALL(on_done, Call());
+  EXPECT_CALL(*control_endpoint.endpoint, Read)
+      .InSequence(control_endpoint.read_sequence)
+      .WillOnce(Return(false));
+  SliceBuffer writes;
+  control_endpoint.CaptureWrites(writes, event_engine().get());
+  event_engine()->TickUntilIdle();
+  // The stray frame cancels the call: the server must send trailing metadata
+  // carrying "Received frame after half-close" instead of accepting the
+  // message.
+  ASSERT_GE(writes.Length(), FrameHeader::kFrameHeaderSize);
+  const std::string written = writes.JoinIntoString();
+  auto header =
+      FrameHeader::Parse(reinterpret_cast<const uint8_t*>(written.data()));
+  ASSERT_TRUE(header.ok());
+  EXPECT_EQ(writes.Length(),
+            FrameHeader::kFrameHeaderSize + header->payload_length);
+  EXPECT_EQ(header->type, FrameType::kServerTrailingMetadata);
+  EXPECT_EQ(header->stream_id, 1u);
+  chaotic_good_frame::ServerMetadata trailing_metadata;
+  ASSERT_TRUE(trailing_metadata.ParseFromArray(
+      written.data() + FrameHeader::kFrameHeaderSize, header->payload_length));
+  EXPECT_EQ(trailing_metadata.status(), GRPC_STATUS_INTERNAL);
+  EXPECT_EQ(trailing_metadata.message(), "Received frame after half-close");
   ::testing::Mock::VerifyAndClearExpectations(control_endpoint.endpoint);
   ::testing::Mock::VerifyAndClearExpectations(data_endpoint.endpoint);
   event_engine()->UnsetGlobalHooks();

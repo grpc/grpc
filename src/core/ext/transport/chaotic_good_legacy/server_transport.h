@@ -110,6 +110,7 @@ class ChaoticGoodServerTransport final : public ServerTransport {
     explicit Stream(CallInitiator call) : call(std::move(call)) {}
     CallInitiator call;
     MessageReassembly message_reassembly;
+    bool client_half_closed = false;
   };
   using StreamMap = absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>>;
 
