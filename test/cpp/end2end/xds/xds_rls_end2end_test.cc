@@ -199,6 +199,101 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginDisabled) {
                      WaitForBackendOptions(), rpc_options);
 }
 
+TEST_P(RlsTest, DynamicClusterPendingDoesNotBlockStaticClusterUpdates) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
+  CreateAndStartBackends(3);
+  const char* kNewClusterName = "new_cluster";
+  const char* kNewEdsServiceName = "new_eds_service_name";
+  
+  // 1. Initial configuration for default cluster -> Backend 0
+  EdsResourceArgs args_default({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args_default));
+
+  // 2. Set RLS response to return kNewClusterName for matching RPCs
+  rls_server_->rls_service()->SetResponse(
+      BuildRlsRequest({{kRlsTestKey, kRlsTestValue},
+                       {kRlsHostKey, kServerName},
+                       {kRlsServiceKey, kRlsServiceValue},
+                       {kRlsMethodKey, kRlsMethodValue},
+                       {kRlsConstantKey, kRlsConstantValue}}),
+      BuildRlsResponse({kNewClusterName}));
+
+  RouteLookupConfig route_lookup_config;
+  auto* key_builder = route_lookup_config.add_grpc_keybuilders();
+  auto* name = key_builder->add_names();
+  name->set_service(kRlsServiceValue);
+  name->set_method(kRlsMethodValue);
+  auto* header = key_builder->add_headers();
+  header->set_key(kRlsTestKey);
+  header->add_names(kRlsTestKey1);
+  auto* extra_keys = key_builder->mutable_extra_keys();
+  extra_keys->set_host(kRlsHostKey);
+  extra_keys->set_service(kRlsServiceKey);
+  extra_keys->set_method(kRlsMethodKey);
+  (*key_builder->mutable_constant_keys())[kRlsConstantKey] = kRlsConstantValue;
+  
+  route_lookup_config.set_lookup_service(
+      absl::StrCat("localhost:", rls_server_->port()));
+  route_lookup_config.set_cache_size_bytes(5000);
+  
+  RouteLookupClusterSpecifier rls;
+  *rls.mutable_route_lookup_config() = std::move(route_lookup_config);
+  
+  RouteConfiguration new_route_config = default_route_config_;
+  auto* plugin = new_route_config.add_cluster_specifier_plugins();
+  plugin->mutable_extension()->set_name(kRlsClusterSpecifierPluginInstanceName);
+  EXPECT_TRUE(plugin->mutable_extension()->mutable_typed_config()->PackFrom(rls));
+  
+  // Set up route 0: if header kRlsTestKey1 is present, use RLS plugin
+  auto* route0 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route0->mutable_match()->add_headers()->set_name(kRlsTestKey1);
+  route0->mutable_route()->set_cluster_specifier_plugin(
+      kRlsClusterSpecifierPluginInstanceName);
+      
+  // Set up route 1: default, routes to kDefaultClusterName
+  auto* route1 = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  route1->mutable_match()->set_prefix("");
+  route1->mutable_route()->set_cluster(kDefaultClusterName);
+  
+  SetRouteConfiguration(balancer_.get(), new_route_config);
+  
+  // Wait for the static cluster to be ready and send a successful RPC to backend 0
+  WaitForAllBackends(DEBUG_LOCATION, 0, 1);
+  
+  // Send an RPC triggering RLS lookup and dynamic cluster subscription.
+  // It will fail because the dynamic cluster doesn't exist yet.
+  auto rls_rpc_options = RpcOptions().set_metadata({{kRlsTestKey1, kRlsTestValue}}).set_timeout_ms(1000);
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED, "", rls_rpc_options);
+
+  // 3. Update EDS for default cluster -> Backend 1
+  EdsResourceArgs args_default_updated({
+      {"locality0", CreateEndpointsForBackends(1, 2)},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args_default_updated));
+
+  // 4. Send non-RLS RPC to default route: verify it routes to Backend 1 immediately
+  // (proves XDM delivered the EDS update for default cluster despite dynamic cluster pending)
+  WaitForAllBackends(DEBUG_LOCATION, 1, 2);
+
+  // 5. Now upload CDS and EDS for kNewClusterName -> Backend 2
+  EdsResourceArgs args_dynamic({
+      {"locality0", CreateEndpointsForBackends(2, 3)},
+  });
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args_dynamic, kNewEdsServiceName));
+  Cluster new_cluster = default_cluster_;
+  new_cluster.set_name(kNewClusterName);
+  new_cluster.mutable_eds_cluster_config()->set_service_name(kNewEdsServiceName);
+  balancer_->ads_service()->SetCdsResource(new_cluster);
+
+  // 6. Verify RLS RPC now succeeds and routes to Backend 2
+  auto rls_rpc_options_success = RpcOptions().set_metadata({{kRlsTestKey1, kRlsTestValue}});
+  WaitForAllBackends(DEBUG_LOCATION, 2, 3, /*check_status=*/nullptr,
+                     WaitForBackendOptions(), rls_rpc_options_success);
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
