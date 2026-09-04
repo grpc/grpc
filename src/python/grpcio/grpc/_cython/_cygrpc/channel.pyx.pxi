@@ -594,15 +594,17 @@ cdef class Channel:
     """
     Get or registers a call handler for a method.
 
-    This method is not thread-safe.
-
     Args:
       method: Required, the method name for the RPC.
 
     Returns:
       The registered call handle pointer in the form of a Python Long.
     """
-    if method not in self._registered_call_handles:
-      self._registered_call_handles[method] = CallHandle(
-        cpython.PyLong_FromVoidPtr(self._state.c_channel), method)
-    return self._registered_call_handles[method].call_handle
+    with self._state.condition:
+      if not self._state.open:
+        raise ValueError(
+            'Cannot register call handle: %s' % self._state.closed_reason)
+      if method not in self._registered_call_handles:
+        self._registered_call_handles[method] = CallHandle(
+            cpython.PyLong_FromVoidPtr(self._state.c_channel), method)
+      return self._registered_call_handles[method].call_handle

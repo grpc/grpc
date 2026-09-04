@@ -15,6 +15,7 @@
 
 import itertools
 import logging
+import sysconfig
 import threading
 import time
 import unittest
@@ -116,6 +117,48 @@ class ChannelCloseTest(unittest.TestCase):
 
     def tearDown(self):
         self._server.stop(None)
+
+    @unittest.skipUnless(
+        sysconfig.get_config_var("Py_GIL_DISABLED") == 1,
+        "requires a free-threaded Python build",
+    )
+    def test_concurrent_registered_multicallable_construction_and_close(self):
+        method = "/service/" + ("m" * 100_000)
+
+        for _ in range(10):
+            channel = grpc.insecure_channel("localhost:1")
+            barrier = threading.Barrier(2)
+            registration_started = threading.Event()
+            errors = []
+
+            def register():
+                barrier.wait()
+                registration_started.set()
+                try:
+                    channel.unary_unary(method, _registered_method=True)
+                except ValueError as error:
+                    if "Cannot register call handle" not in str(error):
+                        errors.append(error)
+                except Exception as error:
+                    errors.append(error)
+
+            def close():
+                barrier.wait()
+                registration_started.wait()
+                channel.close()
+
+            register_thread = threading.Thread(target=register, daemon=True)
+            close_thread = threading.Thread(target=close, daemon=True)
+
+            register_thread.start()
+            close_thread.start()
+
+            register_thread.join(timeout=10)
+            close_thread.join(timeout=10)
+
+            self.assertFalse(register_thread.is_alive())
+            self.assertFalse(close_thread.is_alive())
+            self.assertFalse(errors, "unexpected errors: %r" % errors)
 
     def test_close_immediately_after_call_invocation(self):
         channel = grpc.insecure_channel("localhost:{}".format(self._port))
