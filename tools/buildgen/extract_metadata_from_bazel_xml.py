@@ -1571,7 +1571,8 @@ _BAZEL_DEPS_QUERIES = [
 #               'srcs': ['//:src/core/lib/surface/init.cc', ... ],
 #               'deps': ['//:grpc_common', ...],
 #               ... }
-_clean_bazel_cache()
+
+# _clean_bazel_cache()
 bazel_rules = {}
 for query in _BAZEL_DEPS_QUERIES:
     bazel_rules.update(
