@@ -250,6 +250,12 @@ TEST_F(FractionalPercentTest, InvalidDenominator) {
   envoy_type_v3_FractionalPercent_set_denominator(proto, 99);
   ValidationErrors errors;
   EXPECT_EQ(300000, ParseFractionalPercent(proto, &errors));
+  absl::Status status =
+      errors.status(absl::StatusCode::kInvalidArgument, "validation failed");
+  EXPECT_EQ(status.message(),
+            "validation failed: ["
+            "field:denominator error:invalid denominator: 99]")
+      << status;
 }
 
 //

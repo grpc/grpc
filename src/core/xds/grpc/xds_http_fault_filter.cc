@@ -145,9 +145,9 @@ XdsHttpFaultFilterFactory::ParseTopLevelConfig(
         envoy_extensions_filters_http_fault_v3_FaultAbort_percentage(
             fault_abort);
     if (percent != nullptr) {
-      ValidationErrors::ScopedField field(errors, ".percentage");
       config->abort_percentage_numerator =
           envoy_type_v3_FractionalPercent_numerator(percent);
+      ValidationErrors::ScopedField field(errors, ".percentage.denominator");
       config->abort_percentage_denominator = GetDenominator(percent, errors);
     }
   }
@@ -176,9 +176,9 @@ XdsHttpFaultFilterFactory::ParseTopLevelConfig(
         envoy_extensions_filters_common_fault_v3_FaultDelay_percentage(
             fault_delay);
     if (percent != nullptr) {
-      ValidationErrors::ScopedField field(errors, ".percentage");
       config->delay_percentage_numerator =
           envoy_type_v3_FractionalPercent_numerator(percent);
+      ValidationErrors::ScopedField field(errors, ".percentage.denominator");
       config->delay_percentage_denominator = GetDenominator(percent, errors);
     }
   }

@@ -85,6 +85,7 @@ uint32_t ParseFractionalPercent(
       envoy_type_v3_FractionalPercent_numerator(fractional_percent);
   // Switch on the raw int32_t value from the wire: casting an out-of-range
   // value to the enum type first would be undefined behavior.
+  ValidationErrors::ScopedField field(errors, ".denominator");
   switch (envoy_type_v3_FractionalPercent_denominator(fractional_percent)) {
     case envoy_type_v3_FractionalPercent_MILLION:
       break;
