@@ -323,6 +323,42 @@ TEST_F(FlowControlTest, OnStreamClosedDecreasesAnnouncedDeltaFromTransport) {
   EXPECT_EQ(sfc2.test_only_announced_window_delta(), 0);
 }
 
+// RFC 9113 section 6.9.1: a WINDOW_UPDATE that would push a flow-control
+// window past 2^31-1 must produce an error, not silently grow the window.
+TEST_F(FlowControlTest, TransportRecvUpdateBeyondMaxWindowIsError) {
+  ExecCtx exec_ctx;
+  TransportFlowControl tfc(/*peer_name=*/"test",
+                           /*enable_bdp_probe=*/true, &memory_owner_);
+  TransportFlowControl::OutgoingUpdateContext upd(&tfc);
+  // Exactly up to the limit is accepted.
+  constexpr uint32_t kToMax = (1u << 31) - 1 - kDefaultWindow;
+  ASSERT_TRUE(upd.RecvUpdate(kToMax).ok());
+  EXPECT_EQ(tfc.remote_window(), kMaxWindow);
+  // One byte more overflows: error, and the window is unchanged.
+  EXPECT_FALSE(upd.RecvUpdate(1).ok());
+  EXPECT_EQ(tfc.remote_window(), kMaxWindow);
+}
+
+TEST_F(FlowControlTest, StreamRecvUpdateBeyondMaxWindowIsError) {
+  ExecCtx exec_ctx;
+  TransportFlowControl tfc(/*peer_name=*/"test",
+                           /*enable_bdp_probe=*/true, &memory_owner_);
+  StreamFlowControl sfc(&tfc);
+  StreamFlowControl::OutgoingUpdateContext upd(&sfc);
+  // The effective stream send window is peer_initial_window_size + delta.
+  constexpr uint32_t kToMax = (1u << 31) - 1 - kDefaultWindow;
+  ASSERT_TRUE(upd.RecvUpdate(kToMax, kDefaultWindow).ok());
+  EXPECT_EQ(sfc.remote_window_delta(), kToMax);
+  // One byte more overflows: error, and the delta is unchanged.
+  EXPECT_FALSE(upd.RecvUpdate(1, kDefaultWindow).ok());
+  EXPECT_EQ(sfc.remote_window_delta(), kToMax);
+  // With a maximum-size peer initial window, even a one-byte increment on a
+  // zero delta overflows.
+  StreamFlowControl sfc_max(&tfc);
+  StreamFlowControl::OutgoingUpdateContext upd_max(&sfc_max);
+  EXPECT_FALSE(upd_max.RecvUpdate(1, static_cast<uint32_t>(kMaxWindow)).ok());
+}
+
 }  // namespace chttp2
 }  // namespace grpc_core
 

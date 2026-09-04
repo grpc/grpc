@@ -616,6 +616,7 @@ TEST(Http2CommonTransportTest,
   chttp2::TransportFlowControl flow_control(
       /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
+  Http2Settings peer_settings;
   EXPECT_EQ(flow_control.remote_window(), chttp2::kDefaultWindow);
 
   Http2WindowUpdateFrame frame;
@@ -623,14 +624,16 @@ TEST(Http2CommonTransportTest,
 
   // If stream_id != 0 and stream is null, no change in flow control window.
   frame.stream_id = 1;
-  ProcessIncomingWindowUpdateFrameFlowControl(frame, flow_control,
-                                              /*stream=*/nullptr);
+  ASSERT_TRUE(ProcessIncomingWindowUpdateFrameFlowControl(
+                  frame, flow_control, /*stream=*/nullptr, peer_settings)
+                  .IsOk());
   EXPECT_EQ(flow_control.remote_window(), chttp2::kDefaultWindow);
 
   // If stream_id == 0, transport flow control window should increase.
   frame.stream_id = 0;
-  ProcessIncomingWindowUpdateFrameFlowControl(frame, flow_control,
-                                              /*stream=*/nullptr);
+  ASSERT_TRUE(ProcessIncomingWindowUpdateFrameFlowControl(
+                  frame, flow_control, /*stream=*/nullptr, peer_settings)
+                  .IsOk());
   EXPECT_EQ(flow_control.remote_window(), chttp2::kDefaultWindow + 1000);
 
   // If increment is 0, no change in flow control window.
@@ -638,19 +641,22 @@ TEST(Http2CommonTransportTest,
   // layer, we should be graceful with it at this layer.
   frame.increment = 0;
   frame.stream_id = 0;
-  ProcessIncomingWindowUpdateFrameFlowControl(frame, flow_control,
-                                              /*stream=*/nullptr);
+  ASSERT_TRUE(ProcessIncomingWindowUpdateFrameFlowControl(
+                  frame, flow_control, /*stream=*/nullptr, peer_settings)
+                  .IsOk());
   EXPECT_EQ(flow_control.remote_window(), chttp2::kDefaultWindow + 1000);
   frame.stream_id = 1;
-  ProcessIncomingWindowUpdateFrameFlowControl(frame, flow_control,
-                                              /*stream=*/nullptr);
+  ASSERT_TRUE(ProcessIncomingWindowUpdateFrameFlowControl(
+                  frame, flow_control, /*stream=*/nullptr, peer_settings)
+                  .IsOk());
   EXPECT_EQ(flow_control.remote_window(), chttp2::kDefaultWindow + 1000);
 
   // Large increment
   frame.increment = 10000;
   frame.stream_id = 0;
-  ProcessIncomingWindowUpdateFrameFlowControl(frame, flow_control,
-                                              /*stream=*/nullptr);
+  ASSERT_TRUE(ProcessIncomingWindowUpdateFrameFlowControl(
+                  frame, flow_control, /*stream=*/nullptr, peer_settings)
+                  .IsOk());
   EXPECT_EQ(flow_control.remote_window(),
             chttp2::kDefaultWindow + 1000 + 10000);
 }
@@ -658,6 +664,7 @@ TEST(Http2CommonTransportTest,
 TEST_P(TestsNeedingStreamObjects,
        ProcessIncomingWindowUpdateFrameFlowControlWithStream) {
   RefCountedPtr<Stream> stream = CreateMinimalTestStream(1);
+  Http2Settings peer_settings;
   EXPECT_EQ(transport_flow_control_.remote_window(), chttp2::kDefaultWindow);
   EXPECT_EQ(stream->GetStreamFlowControl().remote_window_delta(), 0);
 
@@ -667,15 +674,17 @@ TEST_P(TestsNeedingStreamObjects,
   // If stream_id != 0 and stream is not null, stream flow control window
   // should increase.
   frame.stream_id = 1;
-  ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
-                                              stream.get());
+  ASSERT_TRUE(ProcessIncomingWindowUpdateFrameFlowControl(
+                  frame, transport_flow_control_, stream.get(), peer_settings)
+                  .IsOk());
   EXPECT_EQ(transport_flow_control_.remote_window(), chttp2::kDefaultWindow);
   EXPECT_EQ(stream->GetStreamFlowControl().remote_window_delta(), 1000);
 
   // If stream_id == 0, transport flow control window should increase.
   frame.stream_id = 0;
-  ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
-                                              stream.get());
+  ASSERT_TRUE(ProcessIncomingWindowUpdateFrameFlowControl(
+                  frame, transport_flow_control_, stream.get(), peer_settings)
+                  .IsOk());
   EXPECT_EQ(transport_flow_control_.remote_window(),
             chttp2::kDefaultWindow + 1000);
   EXPECT_EQ(stream->GetStreamFlowControl().remote_window_delta(), 1000);
@@ -685,14 +694,16 @@ TEST_P(TestsNeedingStreamObjects,
   // layer, we should be graceful with it at this layer.
   frame.increment = 0;
   frame.stream_id = 0;
-  ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
-                                              stream.get());
+  ASSERT_TRUE(ProcessIncomingWindowUpdateFrameFlowControl(
+                  frame, transport_flow_control_, stream.get(), peer_settings)
+                  .IsOk());
   EXPECT_EQ(transport_flow_control_.remote_window(),
             chttp2::kDefaultWindow + 1000);
   EXPECT_EQ(stream->GetStreamFlowControl().remote_window_delta(), 1000);
   frame.stream_id = 1;
-  ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
-                                              stream.get());
+  ASSERT_TRUE(ProcessIncomingWindowUpdateFrameFlowControl(
+                  frame, transport_flow_control_, stream.get(), peer_settings)
+                  .IsOk());
   EXPECT_EQ(transport_flow_control_.remote_window(),
             chttp2::kDefaultWindow + 1000);
   EXPECT_EQ(stream->GetStreamFlowControl().remote_window_delta(), 1000);
@@ -700,11 +711,32 @@ TEST_P(TestsNeedingStreamObjects,
   // Large increment
   frame.increment = 10000;
   frame.stream_id = 1;
-  ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
-                                              stream.get());
+  ASSERT_TRUE(ProcessIncomingWindowUpdateFrameFlowControl(
+                  frame, transport_flow_control_, stream.get(), peer_settings)
+                  .IsOk());
   EXPECT_EQ(transport_flow_control_.remote_window(),
             chttp2::kDefaultWindow + 1000);
   EXPECT_EQ(stream->GetStreamFlowControl().remote_window_delta(), 1000 + 10000);
+}
+
+TEST(Http2CommonTransportTest,
+     ProcessIncomingWindowUpdateFrameFlowControlOverflow) {
+  chttp2::TransportFlowControl flow_control(
+      /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*memory_owner=*/nullptr);
+  Http2Settings peer_settings;
+
+  // RFC 9113 section 6.9.1: an update that would push the connection send
+  // window past 2^31-1 is a FLOW_CONTROL_ERROR connection error.
+  Http2WindowUpdateFrame frame;
+  frame.stream_id = 0;
+  frame.increment = 0x7fffffff;
+  auto result = ProcessIncomingWindowUpdateFrameFlowControl(
+      frame, flow_control, /*stream=*/nullptr, peer_settings);
+  ASSERT_FALSE(result.IsOk());
+  EXPECT_EQ(result.GetConnectionErrorCode(), Http2ErrorCode::kFlowControlError);
+  // The window is unchanged by a rejected update.
+  EXPECT_EQ(flow_control.remote_window(), chttp2::kDefaultWindow);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

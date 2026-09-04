@@ -297,7 +297,17 @@ class TransportFlowControl final {
 
     // Call this function when a transport-level WINDOW_UPDATE frame is received
     // from peer to increase remote window.
-    void RecvUpdate(uint32_t size) { tfc_->remote_window_ += size; }
+    // Returns an error if the update would push the send window past the
+    // RFC 9113 section 6.9.1 limit of 2^31-1.
+    absl::Status RecvUpdate(uint32_t size) {
+      if (tfc_->remote_window_ + size > kMaxWindow) {
+        return absl::InternalError(
+            absl::StrCat("transport flow control window ", tfc_->remote_window_,
+                         " + ", size, " exceeds the RFC 9113 limit of 2^31-1"));
+      }
+      tfc_->remote_window_ += size;
+      return absl::OkStatus();
+    }
 
     // Finish the update and check whether we became stalled or unstalled.
     StallEdge Finish() {
@@ -639,7 +649,20 @@ class StreamFlowControl final {
 
     // Call this when a WINDOW_UPDATE frame is received from peer for this
     // stream, to increase send window.
-    void RecvUpdate(uint32_t size) { sfc_->remote_window_delta_ += size; }
+    // Returns an error if the update would push the effective send window
+    // (peer initial window size + delta) past the RFC 9113 section 6.9.1
+    // limit of 2^31-1.
+    absl::Status RecvUpdate(uint32_t size, uint32_t peer_initial_window_size) {
+      if (sfc_->remote_window_delta_ + peer_initial_window_size + size >
+          kMaxWindow) {
+        return absl::InternalError(absl::StrCat(
+            "stream flow control window ", sfc_->remote_window_delta_, " + ",
+            peer_initial_window_size, " + ", size,
+            " exceeds the RFC 9113 limit of 2^31-1"));
+      }
+      sfc_->remote_window_delta_ += size;
+      return absl::OkStatus();
+    }
 
     // Call this after sending a DATA frame for this stream, to decrease send
     // window based on `outgoing_frame_size`.
