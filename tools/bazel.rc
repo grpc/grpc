@@ -164,6 +164,20 @@ build:python_single_threaded_unary_stream --test_env="GRPC_SINGLE_THREADED_UNARY
 
 build:python --config=python-bzlmod
 build:python --copt=-DGRPC_PYTHON_BUILD
+build:python --@rules_python//python/config_settings:bootstrap_impl=script
+# route pip hub wheel selection to 3.14 hub
+build:python --@rules_python//python/config_settings:python_version=3.14
+
+# TSAN instrumented build rules
+build:tsan_python --config=python
+build:tsan_python --config=tsan
+build:tsan_python --define=PY_TSAN=1
+build:tsan_python --repo_env=CC=clang
+build:tsan_python --action_env=TSAN_OPTIONS=halt_on_error=0:detect_deadlocks=1:second_deadlock_stack=1
+build:tsan_python --test_env=TSAN_OPTIONS=halt_on_error=0:detect_deadlocks=1:second_deadlock_stack=1
+build:tsan_python --test_timeout=300,900,3600,7200
+# due to the clang 21 error
+build:tsan_python --per_file_copt=external/.*boringssl.*@-Wno-error=incompatible-pointer-types-discards-qualifiers
 
 # Compile database generation config
 build:compdb --build_tag_filters=-nocompdb

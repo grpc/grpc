@@ -12,7 +12,7 @@ certifi==2025.1.31
 chardet==5.2.0
 charset-normalizer==3.4.1
 coverage==4.5.4
-cython==3.1.1
+cython==3.2.9
 deprecated==1.2.18
 gevent==25.9.1
 google-api-core==2.28.1

@@ -42,7 +42,8 @@ certifi
 chardet
 gevent~=25.8
 google-auth
-cryptography~=45.0
+# 50.x is the first version with cp314t wheels
+cryptography~=50.0
 
 # Requires ~= 1.74 to support protobuf >= 34
 googleapis-common-protos~=1.74.0

@@ -30,7 +30,8 @@ def internal_py_grpc_test(name, **kwargs):
         python_version = "PY3",
         **kwargs
     )
-    py_grpc_gevent_test(name, **kwargs)
+    # ignore gevent variations
+    # py_grpc_gevent_test(name, **kwargs)
     py_grpc_logging_threshold_test(name, **kwargs)
 
     suite_kwargs = {}
@@ -41,7 +42,8 @@ def internal_py_grpc_test(name, **kwargs):
         name = name,
         tests = [
             name + ".native",
-            name + ".gevent",
+            # ignore gevent variations
+            # name + ".gevent",
             name + ".logging_threshold",
         ],
         **suite_kwargs

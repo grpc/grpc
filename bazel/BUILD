@@ -288,3 +288,10 @@ package_group(
     name = "friends",
     packages = [],
 )
+
+# TSAN instrumented Cython interpreter selector
+config_setting(
+    name = "py_tsan_enabled",
+    define_values = {"PY_TSAN": "1"},
+    visibility = ["//visibility:public"],
+)
