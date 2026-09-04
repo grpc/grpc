@@ -23,9 +23,9 @@ import ast
 
 ABSEIL_PATH = "third_party/abseil-cpp"
 OUTPUT_PATH = "src/abseil-cpp/preprocessed_builds.yaml"
-CAPITAL_WORD = re.compile("[A-Z]+")
-ABSEIL_CMAKE_RULE_BEGIN = re.compile("^absl_cc_.*\(", re.MULTILINE)
-ABSEIL_CMAKE_RULE_END = re.compile("^\)", re.MULTILINE)
+CAPITAL_WORD = re.compile(r"[A-Z]+")
+ABSEIL_CMAKE_RULE_BEGIN = re.compile(r"^absl_cc_.*\(", re.MULTILINE)
+ABSEIL_CMAKE_RULE_END = re.compile(r"^\)", re.MULTILINE)
 
 # Rule object representing the rule of Bazel BUILD.
 Rule = collections.namedtuple(
