@@ -24,10 +24,12 @@
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/util/grpc_check.h"
+#include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc {
 namespace testing {
@@ -1170,6 +1172,71 @@ TEST_P(OutlierDetectionTest, EjectionRetainedAcrossPriorities) {
   EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(50, backends_[1]->backend_service()->request_count());
   EXPECT_EQ(50, backends_[2]->backend_service()->request_count());
+}
+
+// Verifies that grpc.lb.backend_service is populated on outlier detection
+// metrics under xDS (gRFC A91).  grpc.lb.locality is empty under xDS
+// because outlier_detection sits above weighted_target in the LB tree; the
+// non-xDS locality path is covered by the unit test.
+//
+// Own fixture so FakeStatsPlugin can be registered before InitClient().
+class OutlierDetectionMetricsTest : public XdsEnd2endTest {
+ protected:
+  void SetUp() override {}  // Tests call InitClient() explicitly.
+};
+
+INSTANTIATE_TEST_SUITE_P(XdsTest, OutlierDetectionMetricsTest,
+                         ::testing::Values(XdsTestType()), &XdsTestType::Name);
+
+TEST_P(OutlierDetectionMetricsTest, MetricsHaveBackendServiceLabel) {
+  const auto kEjectionsEnforced =
+      grpc_core::GlobalInstrumentsRegistryTestPeer::
+          FindUInt64CounterHandleByName(
+              "grpc.lb.outlier_detection.ejections_enforced")
+              .value();
+  const std::string target = absl::StrCat("xds:", kServerName);
+  const absl::string_view kLabelValues[] = {target, "failure_percentage"};
+  const absl::string_view kOptionalLabelValues[] = {"", kDefaultClusterName};
+  auto stats_plugin = grpc_core::FakeStatsPluginBuilder()
+                          .UseDisabledByDefaultMetrics(true)
+                          .BuildAndRegister();
+  InitClient();
+  CreateAndStartBackends(2);
+  auto cluster = default_cluster_;
+  // Configure outlier detection: any failure causes ejection at 100%
+  // enforcement, so the test is deterministic.
+  auto* outlier_detection = cluster.mutable_outlier_detection();
+  SetProtoDuration(grpc_core::Duration::Seconds(1),
+                   outlier_detection->mutable_interval());
+  SetProtoDuration(grpc_core::Duration::Minutes(10),
+                   outlier_detection->mutable_base_ejection_time());
+  outlier_detection->mutable_failure_percentage_threshold()->set_value(0);
+  outlier_detection->mutable_enforcing_failure_percentage()->set_value(100);
+  outlier_detection->mutable_failure_percentage_minimum_hosts()->set_value(1);
+  outlier_detection->mutable_failure_percentage_request_volume()->set_value(1);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // Place backends in different priorities so backend 1 receives no traffic
+  // until backend 0 is ejected.  This gives WaitForBackend(1) a deterministic
+  // signal that ejection has occurred (and hence the metric has been emitted).
+  EdsResourceArgs args({
+      {"locality0", {CreateEndpoint(0)}},
+      {"locality1", {CreateEndpoint(1)}, kDefaultLocalityWeight, 1},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForBackend(DEBUG_LOCATION, 0);
+  // Trigger a failure on backend 0.  With 100% enforcement, this guarantees
+  // ejection at the next outlier detection interval.
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::CANCELLED, "",
+      RpcOptions().set_server_expected_error(StatusCode::CANCELLED));
+  // Backend 1 sees traffic only after priority 0 fails over (i.e. backend 0
+  // has been ejected).
+  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
+                 WaitForBackendOptions().set_timeout_ms(
+                     3000 * grpc_test_slowdown_factor()));
+  EXPECT_THAT(stats_plugin->GetUInt64CounterValue(
+                  kEjectionsEnforced, kLabelValues, kOptionalLabelValues),
+              ::testing::Optional(::testing::Ge(1)));
 }
 
 }  // namespace
