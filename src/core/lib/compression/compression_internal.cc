@@ -106,6 +106,14 @@ std::optional<grpc_compression_algorithm> ParseCompressionAlgorithm(
   }
 }
 
+std::optional<grpc_compression_algorithm> CompressionAlgorithmFromInt(
+    int64_t algorithm) {
+  if (algorithm < 0 || algorithm >= GRPC_COMPRESS_ALGORITHMS_COUNT) {
+    return std::nullopt;
+  }
+  return static_cast<grpc_compression_algorithm>(algorithm);
+}
+
 grpc_compression_algorithm
 CompressionAlgorithmSet::CompressionAlgorithmForLevel(
     grpc_compression_level level) const {
@@ -228,7 +236,7 @@ DefaultCompressionAlgorithmFromChannelArgs(const ChannelArgs& args) {
   if (value == nullptr) return std::nullopt;
   auto ival = value->GetIfInt();
   if (ival.has_value()) {
-    return static_cast<grpc_compression_algorithm>(*ival);
+    return CompressionAlgorithmFromInt(*ival);
   }
   auto sval = value->GetIfString();
   if (sval != nullptr) {

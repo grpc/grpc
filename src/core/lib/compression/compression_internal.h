@@ -37,6 +37,11 @@ namespace grpc_core {
 // or nullopt on error.
 std::optional<grpc_compression_algorithm> ParseCompressionAlgorithm(
     absl::string_view algorithm);
+// Given an integer value (e.g. from a channel arg), return the corresponding
+// compression algorithm, or nullopt if the value does not name a known
+// algorithm. Never produces an out-of-range enum value.
+std::optional<grpc_compression_algorithm> CompressionAlgorithmFromInt(
+    int64_t algorithm);
 // Convert a compression algorithm to a string. Returns nullptr if a name is not
 // known.
 const char* CompressionAlgorithmAsString(grpc_compression_algorithm algorithm);

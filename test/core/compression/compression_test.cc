@@ -22,7 +22,10 @@
 #include <stdlib.h>
 
 #include <memory>
+#include <optional>
 
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/compression/compression_internal.h"
 #include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"
 #include "gtest/gtest.h"
@@ -237,6 +240,30 @@ TEST(CompressionTest, CompressionEnableDisableAlgorithm) {
     grpc_compression_options_enable_algorithm(&options, algorithm);
     ASSERT_NE(
         grpc_compression_options_is_algorithm_enabled(&options, algorithm), 0);
+  }
+}
+
+TEST(CompressionTest, DefaultCompressionAlgorithmFromChannelArgsValidation) {
+  using grpc_core::ChannelArgs;
+  using grpc_core::DefaultCompressionAlgorithmFromChannelArgs;
+  // Unset channel arg yields nullopt.
+  EXPECT_EQ(DefaultCompressionAlgorithmFromChannelArgs(ChannelArgs()),
+            std::nullopt);
+  // In-range values round-trip.
+  for (int v = GRPC_COMPRESS_NONE; v < GRPC_COMPRESS_ALGORITHMS_COUNT; ++v) {
+    EXPECT_EQ(DefaultCompressionAlgorithmFromChannelArgs(ChannelArgs().Set(
+                  GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM, v)),
+              std::optional<grpc_compression_algorithm>(
+                  static_cast<grpc_compression_algorithm>(v)))
+        << "value: " << v;
+  }
+  // Out-of-range values are rejected rather than producing undefined behavior.
+  for (int v :
+       {-1000, -1, static_cast<int>(GRPC_COMPRESS_ALGORITHMS_COUNT), 4, 1000}) {
+    EXPECT_EQ(DefaultCompressionAlgorithmFromChannelArgs(ChannelArgs().Set(
+                  GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM, v)),
+              std::nullopt)
+        << "value: " << v;
   }
 }
 
