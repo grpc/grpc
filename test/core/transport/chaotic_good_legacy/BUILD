@@ -238,6 +238,30 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "chaotic_good_server_test",
+    srcs = ["chaotic_good_server_test.cc"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "gtest",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "transport_test",
+        "//:config",
+        "//:grpc",
+        "//:grpc_public_hdrs",
+        "//:transport_auth_context",
+        "//src/core:activity",
+        "//src/core:auth_context_comparator_registry",
+        "//src/core:chaotic_good_legacy_server",
+        "//src/core:event_engine_wakeup_scheduler",
+        "//src/core:map",
+        "//test/core/transport/util:mock_promise_endpoint",
+    ],
+)
+
+grpc_cc_test(
     name = "server_transport_test",
     srcs = ["server_transport_test.cc"],
     external_deps = [
