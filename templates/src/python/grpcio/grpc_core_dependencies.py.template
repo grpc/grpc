@@ -21,11 +21,8 @@
     asm_srcs = {}
     for lib in libs:
       if lib.name in python_dependencies.transitive_deps:
-        for src in lib.src:
-          srcs.append(src)
-        if hasattr(lib, 'src_windows'):
-          for src in lib.src_windows:
-            win_srcs.append(src)
+        srcs.extend(lib.src)
+        win_srcs.extend(getattr(lib, 'src_windows', []))
       if hasattr(lib, 'asm_src'):
         asm_srcs = lib.asm_src
     srcs = sorted(set(srcs))

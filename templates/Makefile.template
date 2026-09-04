@@ -143,10 +143,8 @@
       if dep_lib:
          grpc_lib.src += dep_lib.src
          grpc_lib.headers += dep_lib.headers
-         if hasattr(dep_lib, 'src_windows'):
-           grpc_lib.src_windows += dep_lib.src_windows
-         if hasattr(dep_lib, 'headers_windows'):
-           grpc_lib.headers_windows += dep_lib.headers_windows
+         grpc_lib.src_windows += getattr(dep_lib, 'src_windows', [])
+         grpc_lib.headers_windows += getattr(dep_lib, 'headers_windows', [])
     grpc_lib.src = list(sorted(set(grpc_lib.src)))
     grpc_lib.headers = list(sorted(set(grpc_lib.headers)))
     grpc_lib.src_windows = list(sorted(set(grpc_lib.src_windows)))

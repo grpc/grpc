@@ -37,18 +37,6 @@ class SelectValue:
     def __init__(self, dict_val):
         self.dict_val = dict_val
 
-    def __add__(self, other):
-        if isinstance(other, list):
-            return other + [self]
-        if isinstance(other, SelectValue):
-            return [self, other]
-        return self
-
-    def __radd__(self, other):
-        if isinstance(other, list):
-            return other + [self]
-        return self
-
     def __repr__(self):
         return f"SelectValue({self.dict_val})"
 
