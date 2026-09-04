@@ -238,6 +238,11 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport>,
               [this, frame_header]() -> absl::StatusOr<IncomingFrame> {
                 const auto padding =
                     frame_header.Padding(options_.decode_alignment);
+                if (frame_header.payload_length >
+                    std::numeric_limits<uint32_t>::max() - padding) {
+                  return absl::InvalidArgumentError(
+                      "Integer overflow in payload length plus padding");
+                }
                 return IncomingFrame(
                     frame_header,
                     data_endpoints_.Read(frame_header.payload_connection_id - 1,

@@ -17,6 +17,7 @@
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 
+#include <limits>
 #include <memory>
 #include <optional>
 
@@ -107,6 +108,33 @@ TEST_F(TransportTest, ReadFrameBytesRejectsOversizedPayload) {
   ASSERT_FALSE(read_result->ok());
   EXPECT_EQ(read_result->status().code(), absl::StatusCode::kResourceExhausted);
   EXPECT_THAT(read_result->status().message(), HasSubstr("larger than max"));
+}
+
+TEST_F(TransportTest, ReadFrameBytesRejectsPayloadLengthPlusPaddingOverflow) {
+  MockPromiseEndpoint control_endpoint(1);
+  auto transport = MakeTransport(event_engine(),
+                                 std::move(control_endpoint.promise_endpoint),
+                                 /*max_receive_message_length=*/-1);
+  const uint32_t payload_length = std::numeric_limits<uint32_t>::max() - 1;
+  control_endpoint.ExpectRead(
+      {SerializedFrameHeader(FrameType::kMessage, 1, 1, payload_length)},
+      event_engine().get());
+  std::optional<absl::StatusOr<IncomingFrame>> read_result;
+  auto activity = MakeActivity(
+      [transport = transport.get(), &read_result]() {
+        return Map(transport->ReadFrameBytes(),
+                   [&read_result](absl::StatusOr<IncomingFrame> result) {
+                     read_result.emplace(std::move(result));
+                     return absl::OkStatus();
+                   });
+      },
+      EventEngineWakeupScheduler(event_engine()), [](absl::Status) {},
+      MakeArena());
+  event_engine()->TickUntilIdle();
+  ASSERT_TRUE(read_result.has_value());
+  ASSERT_FALSE(read_result->ok());
+  EXPECT_EQ(read_result->status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_THAT(read_result->status().message(), HasSubstr("Integer overflow"));
 }
 
 }  // namespace testing
