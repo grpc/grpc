@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# comment
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
