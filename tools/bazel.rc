@@ -176,6 +176,8 @@ build:tsan_python --repo_env=CC=clang
 build:tsan_python --action_env=TSAN_OPTIONS=halt_on_error=0:detect_deadlocks=1:second_deadlock_stack=1
 build:tsan_python --test_env=TSAN_OPTIONS=halt_on_error=0:detect_deadlocks=1:second_deadlock_stack=1
 build:tsan_python --test_timeout=300,900,3600,7200
+# due to the clang 21 error
+build:tsan_python --per_file_copt=external/.*boringssl.*@-Wno-error=incompatible-pointer-types-discards-qualifiers
 
 # Compile database generation config
 build:compdb --build_tag_filters=-nocompdb
