@@ -70,6 +70,7 @@
 #include "absl/random/bit_gen_ref.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 namespace chaotic_good_legacy {
@@ -300,6 +301,17 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
             GRPC_SLICE_START_PTR(slice.c_slice())));
         if (frame_header.ok() && frame_header->type != FrameType::kSettings) {
           frame_header = absl::InternalError("Not a settings frame");
+        }
+
+        // TODO(aananthv): Maybe do not construct Config twice (once here and
+        // once after we read the settings frame).
+        Config config{self->connection_->args()};
+        if (frame_header.ok() && frame_header->payload_length >
+                                     config.max_receive_message_length()) {
+          frame_header = absl::ResourceExhaustedError(absl::StrCat(
+              "SERVER handshake: Received message larger than max (",
+              frame_header->payload_length, " vs. ",
+              config.max_receive_message_length(), ")"));
         }
         return If(
             frame_header.ok(),

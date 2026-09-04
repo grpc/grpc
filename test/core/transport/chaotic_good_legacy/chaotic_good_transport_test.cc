@@ -15,13 +15,18 @@
 #include "src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h"
 
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 
 #include <memory>
+#include <optional>
 
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chaotic_good_legacy/config.h"
 #include "src/core/ext/transport/chaotic_good_legacy/frame.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/event_engine_wakeup_scheduler.h"
+#include "src/core/lib/promise/map.h"
 #include "src/core/telemetry/metrics.h"
 #include "test/core/transport/chaotic_good_legacy/transport_test.h"
 #include "test/core/transport/util/mock_promise_endpoint.h"
@@ -42,12 +47,13 @@ namespace {
 
 RefCountedPtr<ChaoticGoodTransport> MakeTransport(
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
-    PromiseEndpoint control_endpoint) {
-  auto args = CoreConfiguration::Get()
-                  .channel_args_preconditioning()
-                  .PreconditionChannelArgs(nullptr)
-                  .SetObject<grpc_event_engine::experimental::EventEngine>(
-                      event_engine);
+    PromiseEndpoint control_endpoint, int max_receive_message_length) {
+  auto args =
+      CoreConfiguration::Get()
+          .channel_args_preconditioning()
+          .PreconditionChannelArgs(nullptr)
+          .SetObject<grpc_event_engine::experimental::EventEngine>(event_engine)
+          .Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, max_receive_message_length);
   Config config(args);
   return MakeRefCounted<ChaoticGoodTransport>(
       std::move(control_endpoint), config.TakePendingDataEndpoints(),
@@ -62,7 +68,8 @@ RefCountedPtr<ChaoticGoodTransport> MakeTransport(
 TEST_F(TransportTest, DeserializeFrameRejectsPayloadLengthMismatch) {
   MockPromiseEndpoint control_endpoint(1);
   auto transport = MakeTransport(event_engine(),
-                                 std::move(control_endpoint.promise_endpoint));
+                                 std::move(control_endpoint.promise_endpoint),
+                                 /*max_receive_message_length=*/-1);
   auto header = FrameHeader::Parse(
       SerializedFrameHeader(FrameType::kSettings, 0, 0, 100).data());
   ASSERT_TRUE(header.ok());
@@ -74,6 +81,32 @@ TEST_F(TransportTest, DeserializeFrameRejectsPayloadLengthMismatch) {
   ASSERT_FALSE(result.ok());
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInternal);
   EXPECT_THAT(result.status().message(), HasSubstr("Invalid payload length"));
+}
+
+TEST_F(TransportTest, ReadFrameBytesRejectsOversizedPayload) {
+  MockPromiseEndpoint control_endpoint(1);
+  auto transport = MakeTransport(event_engine(),
+                                 std::move(control_endpoint.promise_endpoint),
+                                 /*max_receive_message_length=*/100);
+  control_endpoint.ExpectRead(
+      {SerializedFrameHeader(FrameType::kMessage, 0, 1, 200)},
+      event_engine().get());
+  std::optional<absl::StatusOr<IncomingFrame>> read_result;
+  auto activity = MakeActivity(
+      [transport = transport.get(), &read_result]() {
+        return Map(transport->ReadFrameBytes(),
+                   [&read_result](absl::StatusOr<IncomingFrame> result) {
+                     read_result.emplace(std::move(result));
+                     return absl::OkStatus();
+                   });
+      },
+      EventEngineWakeupScheduler(event_engine()), [](absl::Status) {},
+      MakeArena());
+  event_engine()->TickUntilIdle();
+  ASSERT_TRUE(read_result.has_value());
+  ASSERT_FALSE(read_result->ok());
+  EXPECT_EQ(read_result->status().code(), absl::StatusCode::kResourceExhausted);
+  EXPECT_THAT(read_result->status().message(), HasSubstr("larger than max"));
 }
 
 }  // namespace testing
