@@ -373,6 +373,7 @@ def _create_portability_test_jobs(
         "gcc10.2_openssl102",
         "gcc10.2_openssl111",
         "gcc12_openssl309",
+        "gcc12_openssl400",
         "gcc14",
         "gcc_musl",
         "clang14",
