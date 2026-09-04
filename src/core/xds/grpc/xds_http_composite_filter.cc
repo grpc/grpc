@@ -151,7 +151,7 @@ class ExecuteFilterActionFactory final : public XdsMatcherActionFactory {
                                             ".sample_percent.default_value");
         errors->AddError("field not set");
       } else {
-        sample_per_million = ParseFractionalPercent(default_value);
+        sample_per_million = ParseFractionalPercent(default_value, errors);
       }
     }
     return std::make_unique<CompositeFilter::ExecuteFilterAction>(

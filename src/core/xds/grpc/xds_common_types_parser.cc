@@ -78,22 +78,28 @@ Duration ParseDuration(const google_protobuf_Duration* proto_duration,
 //
 
 uint32_t ParseFractionalPercent(
-    const envoy_type_v3_FractionalPercent* fractional_percent) {
+    const envoy_type_v3_FractionalPercent* fractional_percent,
+    ValidationErrors* errors) {
   if (fractional_percent == nullptr) return 1000000;
   uint32_t numerator =
       envoy_type_v3_FractionalPercent_numerator(fractional_percent);
-  const auto denominator =
-      static_cast<envoy_type_v3_FractionalPercent_DenominatorType>(
-          envoy_type_v3_FractionalPercent_denominator(fractional_percent));
-  switch (denominator) {
+  // Switch on the raw int32_t value from the wire: casting an out-of-range
+  // value to the enum type first would be undefined behavior.
+  switch (envoy_type_v3_FractionalPercent_denominator(fractional_percent)) {
     case envoy_type_v3_FractionalPercent_MILLION:
       break;
     case envoy_type_v3_FractionalPercent_TEN_THOUSAND:
       numerator *= 100;
       break;
     case envoy_type_v3_FractionalPercent_HUNDRED:
-    default:
       numerator *= 10000;
+      break;
+    default:
+      errors->AddError(absl::StrCat(
+          "invalid denominator: ",
+          envoy_type_v3_FractionalPercent_denominator(fractional_percent)));
+      numerator *= 10000;
+      break;
   }
   return std::min(numerator, 1000000u);
 }
