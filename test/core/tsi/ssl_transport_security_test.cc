@@ -68,6 +68,8 @@ constexpr size_t kSslTsiTestBadServerKeyCertPairsNum = 1;
 constexpr size_t kSslTsiTestLeafSignedByIntermediateKeyCertPairsNum = 1;
 constexpr absl::string_view kSslTsiTestCredentialsDir =
     "src/core/tsi/test_creds/";
+constexpr absl::string_view kEkuTestCredentialsDir =
+    "test/core/tsi/test_creds/eku_test_creds/";
 constexpr absl::string_view kSslTsiTestWrongSni = "test.google.cn";
 constexpr absl::string_view kSslTsiTestInvalidSni = "1.2.3.4";
 constexpr size_t kTls13FrameOverhead = 22;
@@ -300,6 +302,24 @@ class SslTransportSecurityTest
       ssl_bio_buf_size_ = ssl_bio_buf_size;
     }
 
+    void SetClientVerificationKeyPurpose(
+        grpc_tls_verification_key_purpose purpose) {
+      client_verification_key_purpose_ = purpose;
+    }
+
+    void SetServerVerificationKeyPurpose(
+        grpc_tls_verification_key_purpose purpose) {
+      server_verification_key_purpose_ = purpose;
+    }
+
+    void SetExpectedClientCommonName(const std::string& name) {
+      expected_client_common_name_ = name;
+    }
+
+    void SetSkipServerPeerCheck(bool skip) {
+      skip_server_peer_check_ = skip;
+    }
+
     void OverrideHanshakerAlpnClientProtocols(
         std::optional<std::string> alpn_client_protocols) {
       alpn_client_overriden_protocols_ = alpn_client_protocols;
@@ -389,6 +409,8 @@ class SslTransportSecurityTest
         client_options.key_exchange_groups =
             ssl_fixture->client_key_exchange_groups_.value();
       }
+      client_options.verification_key_purpose =
+          ssl_fixture->client_verification_key_purpose_;
       ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
                     &client_options, &ssl_fixture->client_handshaker_factory_),
                 TSI_OK);
@@ -442,6 +464,8 @@ class SslTransportSecurityTest
         server_options.key_exchange_groups =
             ssl_fixture->server_key_exchange_groups_.value();
       }
+      server_options.verification_key_purpose =
+          ssl_fixture->server_verification_key_purpose_;
       ASSERT_EQ(tsi_create_ssl_server_handshaker_factory_with_options(
                     &server_options, &ssl_fixture->server_handshaker_factory_),
                 TSI_OK);
@@ -617,7 +641,7 @@ class SslTransportSecurityTest
       } else {
         const tsi_peer_property* property =
             CheckBasicAuthenticatedPeerAndGetCommonName(peer);
-        std::string expected_match = "testclient";
+        std::string expected_match = ssl_fixture->expected_client_common_name_;
         ASSERT_EQ(expected_match,
                   std::string(property->value.data, property->value.length));
       }
@@ -688,9 +712,11 @@ class SslTransportSecurityTest
             CheckVerifiedRootCertSubjectUnset(&peer);
           }
         }
-        if (ssl_fixture->server_name_indication_.empty() ||
-            ssl_fixture->server_name_indication_ == kSslTsiTestWrongSni ||
-            ssl_fixture->server_name_indication_ == kSslTsiTestInvalidSni) {
+        if (ssl_fixture->skip_server_peer_check_) {
+          tsi_peer_destruct(&peer);
+        } else if (ssl_fixture->server_name_indication_.empty() ||
+                   ssl_fixture->server_name_indication_ == kSslTsiTestWrongSni ||
+                   ssl_fixture->server_name_indication_ == kSslTsiTestInvalidSni) {
           // Expect server to use default server0.pem.
           CheckServer0Peer(&peer);
         } else {
@@ -756,6 +782,12 @@ class SslTransportSecurityTest
     bool server_expects_handshake_failure_ = false;
     bool client_expects_handshake_failure_ = false;
     RefCountedPtr<CollectionScope> collection_scope_;
+    grpc_tls_verification_key_purpose client_verification_key_purpose_ =
+        GRPC_TLS_VERIFICATION_KEY_PURPOSE_DEFAULT;
+    grpc_tls_verification_key_purpose server_verification_key_purpose_ =
+        GRPC_TLS_VERIFICATION_KEY_PURPOSE_DEFAULT;
+    std::string expected_client_common_name_ = "testclient";
+    bool skip_server_peer_check_ = false;
   };
 
   SslTransportSecurityTest() { grpc_init(); }
@@ -1810,6 +1842,71 @@ TEST_P(SslTransportSecurityTest, SuccessfulHandshakeClientSpecifiesP256) {
 }
 
 #endif  // OPENSSL_VERSION_NUMBER >= 0x10101000L
+
+TEST_P(SslTransportSecurityTest, EkuVerificationClientSideFail) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_key_cert_lib* key_cert_lib = ssl_fixture_->MutableKeyCertLib();
+  // Server uses client_only_eku cert (lacks serverAuth EKU)
+  key_cert_lib->server_pem_key_cert_pairs.clear();
+  key_cert_lib->server_pem_key_cert_pairs.emplace_back(
+      GetFileContents(absl::StrCat(kEkuTestCredentialsDir, "client_only_eku.key")),
+      GetFileContents(absl::StrCat(kEkuTestCredentialsDir, "client_only_eku.pem")));
+  
+  ssl_fixture_->SetClientExpectsHandshakeFailure(true);
+  ssl_fixture_->SetServerExpectsHandshakeFailure(true);
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, EkuVerificationClientSideBypass) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_key_cert_lib* key_cert_lib = ssl_fixture_->MutableKeyCertLib();
+  // Server uses client_only_eku cert (lacks serverAuth EKU)
+  key_cert_lib->server_pem_key_cert_pairs.clear();
+  key_cert_lib->server_pem_key_cert_pairs.emplace_back(
+      GetFileContents(absl::StrCat(kEkuTestCredentialsDir, "client_only_eku.key")),
+      GetFileContents(absl::StrCat(kEkuTestCredentialsDir, "client_only_eku.pem")));
+  
+  // Client sets bypass
+  ssl_fixture_->SetClientVerificationKeyPurpose(GRPC_TLS_VERIFICATION_KEY_PURPOSE_ALLOW_ANY);
+  ssl_fixture_->SetSkipServerPeerCheck(true);
+  
+  // Handshake should succeed because client bypasses EKU check
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, EkuVerificationServerSideFail) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_key_cert_lib* key_cert_lib = ssl_fixture_->MutableKeyCertLib();
+  // Client uses server_only_eku cert (lacks clientAuth EKU)
+  key_cert_lib->client_pem_key_cert_pair = PemKeyCertPair(
+      GetFileContents(absl::StrCat(kEkuTestCredentialsDir, "server_only_eku.key")),
+      GetFileContents(absl::StrCat(kEkuTestCredentialsDir, "server_only_eku.pem")));
+  
+  ssl_fixture_->SetForceClientAuth(true);
+  ssl_fixture_->SetServerExpectsHandshakeFailure(true);
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, EkuVerificationServerSideBypass) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_key_cert_lib* key_cert_lib = ssl_fixture_->MutableKeyCertLib();
+  // Client uses server_only_eku cert (lacks clientAuth EKU)
+  key_cert_lib->client_pem_key_cert_pair = PemKeyCertPair(
+      GetFileContents(absl::StrCat(kEkuTestCredentialsDir, "server_only_eku.key")),
+      GetFileContents(absl::StrCat(kEkuTestCredentialsDir, "server_only_eku.pem")));
+  
+  ssl_fixture_->SetForceClientAuth(true);
+  // Server sets bypass
+  ssl_fixture_->SetServerVerificationKeyPurpose(GRPC_TLS_VERIFICATION_KEY_PURPOSE_ALLOW_ANY);
+  ssl_fixture_->SetExpectedClientCommonName("server-only-eku.test.google.com");
+  
+  // Handshake should succeed because server bypasses EKU check
+  DoHandshake();
+}
 
 }  // namespace
 }  // namespace testing
