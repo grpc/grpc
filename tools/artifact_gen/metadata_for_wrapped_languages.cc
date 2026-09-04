@@ -85,7 +85,8 @@ void AddCApis(nlohmann::json& config) {
 }
 
 auto MakePhpConfig(const nlohmann::json& config,
-                   std::initializer_list<std::string> remove_libs) {
+                   std::initializer_list<std::string> remove_libs,
+                   bool include_windows = false) {
   std::set<std::string> srcs;
   for (const auto& src : config["php_config_m4"]["src"]) {
     srcs.insert(src);
@@ -114,6 +115,10 @@ auto MakePhpConfig(const nlohmann::json& config,
       const nlohmann::json* lib = it->second;
       std::vector<std::string> src = (*lib)["src"];
       srcs.insert(src.begin(), src.end());
+      if (include_windows && lib->contains("src_windows")) {
+        std::vector<std::string> win_src = (*lib)["src_windows"];
+        srcs.insert(win_src.begin(), win_src.end());
+      }
     }
   }
   std::set<std::string> dirs;
@@ -124,8 +129,9 @@ auto MakePhpConfig(const nlohmann::json& config,
 }
 
 void AddPhpConfig(nlohmann::json& config) {
-  auto [srcs, dirs] = MakePhpConfig(config, {"z", "cares", "@zlib//:zlib"});
-  auto [w32_srcs, w32_dirs] = MakePhpConfig(config, {"cares"});
+  auto [srcs, dirs] =
+      MakePhpConfig(config, {"z", "cares", "@zlib//:zlib"}, false);
+  auto [w32_srcs, w32_dirs] = MakePhpConfig(config, {"cares"}, true);
 
   config["php_config_m4"]["srcs"] = srcs;
   config["php_config_m4"]["dirs"] = dirs;
