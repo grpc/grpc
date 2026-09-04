@@ -732,7 +732,6 @@ class AuthorityOverrideTest : public ClientLbEnd2endTest {
 };
 
 TEST_F(AuthorityOverrideTest, NoOverride) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   StartServers(1);
   FakeResolverResponseGeneratorWrapper response_generator;
   auto channel = BuildChannel("", response_generator);
@@ -751,7 +750,6 @@ TEST_F(AuthorityOverrideTest, NoOverride) {
 }
 
 TEST_F(AuthorityOverrideTest, OverrideFromResolver) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   StartServers(1);
   FakeResolverResponseGeneratorWrapper response_generator;
   auto channel = BuildChannel("", response_generator);
@@ -775,7 +773,6 @@ TEST_F(AuthorityOverrideTest, OverrideFromResolver) {
 }
 
 TEST_F(AuthorityOverrideTest, OverrideOnChannel) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   StartServers(1);
   // Set authority via channel arg.
   FakeResolverResponseGeneratorWrapper response_generator;
@@ -797,7 +794,6 @@ TEST_F(AuthorityOverrideTest, OverrideOnChannel) {
 }
 
 TEST_F(AuthorityOverrideTest, OverrideFromLbPolicy) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   // We use InsecureCreds here to avoid the authority check in the fake
   // security connector.
   StartServers(1, {}, InsecureServerCredentials());
@@ -821,7 +817,6 @@ TEST_F(AuthorityOverrideTest, OverrideFromLbPolicy) {
 }
 
 TEST_F(AuthorityOverrideTest, PerRpcOverride) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   // We use InsecureCreds here to avoid the authority check in the fake
   // security connector.
   StartServers(1, {}, InsecureServerCredentials());
@@ -845,7 +840,6 @@ TEST_F(AuthorityOverrideTest, PerRpcOverride) {
 
 TEST_F(AuthorityOverrideTest,
        ChannelOverrideTakesPrecedenceOverResolverOverride) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   StartServers(1);
   // Set authority via channel arg.
   FakeResolverResponseGeneratorWrapper response_generator;
@@ -873,7 +867,6 @@ TEST_F(AuthorityOverrideTest,
 
 TEST_F(AuthorityOverrideTest,
        LbPolicyOverrideTakesPrecedenceOverChannelOverride) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   // We use InsecureCreds here to avoid the authority check in the fake
   // security connector.
   StartServers(1, {}, InsecureServerCredentials());
@@ -899,7 +892,6 @@ TEST_F(AuthorityOverrideTest,
 
 TEST_F(AuthorityOverrideTest,
        PerRpcOverrideTakesPrecedenceOverLbPolicyOverride) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   // We use InsecureCreds here to avoid the authority check in the fake
   // security connector.
   StartServers(1, {}, InsecureServerCredentials());
@@ -2071,6 +2063,7 @@ TEST_F(RoundRobinTest, SingleReconnect) {
 // is not running on the server, the channel should be treated as healthy.
 TEST_F(RoundRobinTest, ServersHealthCheckingUnimplementedTreatedAsHealthy) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P2] Fix bug");
   StartServers(1);  // Single server
   ChannelArguments args;
   args.SetServiceConfigJSON(

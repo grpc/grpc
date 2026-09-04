@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.84.0-dev
+PROJECT_NUMBER         = 1.85.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1231,6 +1231,8 @@ src/core/credentials/call/external/url_external_account_credentials.cc \
 src/core/credentials/call/external/url_external_account_credentials.h \
 src/core/credentials/call/gcp_service_account_identity/gcp_service_account_identity_credentials.cc \
 src/core/credentials/call/gcp_service_account_identity/gcp_service_account_identity_credentials.h \
+src/core/credentials/call/gdch_service_account/gdch_service_account_credentials.cc \
+src/core/credentials/call/gdch_service_account/gdch_service_account_credentials.h \
 src/core/credentials/call/iam/iam_credentials.cc \
 src/core/credentials/call/iam/iam_credentials.h \
 src/core/credentials/call/json_util.cc \
@@ -1880,9 +1882,9 @@ src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.h \
 src/core/ext/upb-gen/google/rpc/status.upb.h \
 src/core/ext/upb-gen/google/rpc/status.upb_minitable.c \
 src/core/ext/upb-gen/google/rpc/status.upb_minitable.h \
-src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb.h \
-src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.c \
-src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.h \
+src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb.h \
+src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.c \
+src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.h \
 src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h \
 src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c \
 src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h \
@@ -2276,8 +2278,8 @@ src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c \
 src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.h \
 src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c \
 src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.h \
-src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.c \
-src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.h \
+src/core/ext/upbdefs-gen/grpc/channelz/v1/channelz.upbdefs.c \
+src/core/ext/upbdefs-gen/grpc/channelz/v1/channelz.upbdefs.h \
 src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c \
 src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h \
 src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c \

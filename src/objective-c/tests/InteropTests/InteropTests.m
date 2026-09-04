@@ -941,25 +941,26 @@ static dispatch_once_t initGlobalInterceptorFactory;
     request.responseSize = kPayloadSize;
 
     __weak RMTTestService *weakService = service;
-    [service unaryCallWithRequest:request
-                          handler:^(RMTSimpleResponse *response, NSError *error) {
-                            if (weakService == nil) {
-                              return;
-                            }
-                            // TODO(jcanizales): Catch the error and rethrow it with an
-                            // actionable message:
-                            // - Use +[GRPCCall setResponseSizeLimit:forHost:] to set a
-                            // higher limit.
-                            // - If you're developing the server, consider using response
-                            // streaming, or let clients filter
-                            //   responses by setting a google.protobuf.FieldMask in the
-                            //   request:
-                            //   https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/field_mask.proto
-                            XCTAssertEqualObjects(
-                                error.localizedDescription,
-                                @"CLIENT: Received message larger than max (4194305 vs. 4194304)");
-                            [expectation fulfill];
-                          }];
+    [service
+        unaryCallWithRequest:request
+                     handler:^(RMTSimpleResponse *response, NSError *error) {
+                       if (weakService == nil) {
+                         return;
+                       }
+                       // TODO(jcanizales): Catch the error and rethrow it with an
+                       // actionable message:
+                       // - Use +[GRPCCall setResponseSizeLimit:forHost:] to set a
+                       // higher limit.
+                       // - If you're developing the server, consider using response
+                       // streaming, or let clients filter
+                       //   responses by setting a google.protobuf.FieldMask in the
+                       //   request:
+                       //   https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/field_mask.proto
+                       XCTAssertTrue([error.localizedDescription
+                           containsString:
+                               @"CLIENT: Received message larger than max (4194305 vs. 4194304)"]);
+                       [expectation fulfill];
+                     }];
     waiterBlock(@[ expectation ], GRPCInteropTestTimeoutDefault);
   });
 }

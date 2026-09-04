@@ -41,7 +41,7 @@ bazel_dep(name = "grpc-proto", version = "0.0.0-20240627-ec30f58.bcr.1", repo_na
 bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "apple_support", version = "1.19.0", repo_name = "build_bazel_apple_support")
 bazel_dep(name = "bazel_skylib", version = "1.8.1")
-bazel_dep(name = "boringssl", version = "0.20241024.0")  # mismatched 20241211
+bazel_dep(name = "boringssl", version = "0.20260616.0")
 bazel_dep(name = "c-ares", version = "1.19.1", repo_name = "com_github_cares_cares")
 bazel_dep(name = "envoy_api", version = "0.0.0-20251216-6ef568c")
 bazel_dep(name = "googleapis-cc", version = "1.0.0")
@@ -120,7 +120,6 @@ PYTHON_VERSIONS = [
     "3.12",
     "3.13",
     "3.14",
-    "3.15",
 ]
 
 # TODO(weizheyuan): figure out how it interacts with protobuf 31

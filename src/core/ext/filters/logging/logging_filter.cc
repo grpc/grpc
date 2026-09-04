@@ -98,6 +98,7 @@ class MetadataEncoder {
       // skip all other grpc- headers
       return;
     }
+    if (key == "authorization") return;
     uint64_t mdentry_len = key.length() + value.length();
     if (mdentry_len > log_len_) {
       VLOG(2) << "Skipped metadata key because of max metadata logging bytes "

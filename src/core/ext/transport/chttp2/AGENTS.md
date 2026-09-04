@@ -21,7 +21,7 @@ and the underlying endpoint.
 *   **Header Compression:** Utilizing HPACK to compress and decompress header fields, reducing bandwidth usage.
 *   **Error Handling:** Detecting and reporting HTTP/2 protocol errors and stream errors.
 
-**Implementented RFCs:**
+**Implemented RFCs:**
 
 *   [RFC 9113: HTTP/2](https://www.rfc-editor.org/rfc/rfc9113.html)
 *   [RFC 7541: HPACK - Header Compression for HTTP/2](https://www.rfc-editor.org/rfc/rfc7541.html)
@@ -293,5 +293,7 @@ Last checked on 26-June-2026
 | Name | Category | Description | Max Spawns at a time | When is it spawned | Max Duration | Resolution |
 |---|---|---|---|---|---|---|
 | Graceful Goaway | Misc | | 1 | Sending a graceful Goaway | As long as it takes to complete the graceful goaway process | |
-| | | **Total** | 1 | | | |
+| TarpitDrainLoop | Loop | Tarpit Drain Loop | 1 | SpawnTransportLoops | Lifetime of transport | Transport Close |
+| PingOnResetStream | Misc | Ping On Reset Stream | 1 | When receiving RST_STREAM | Till ping ack/ping timeout | Till ping ack/ping timeout |
+| | | **Total** | 3 | | | |
 

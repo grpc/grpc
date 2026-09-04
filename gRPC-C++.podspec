@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.84.0-dev'
+  version = '1.85.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -355,6 +355,7 @@ Pod::Spec.new do |s|
                       'src/core/credentials/call/external/file_external_account_credentials.h',
                       'src/core/credentials/call/external/url_external_account_credentials.h',
                       'src/core/credentials/call/gcp_service_account_identity/gcp_service_account_identity_credentials.h',
+                      'src/core/credentials/call/gdch_service_account/gdch_service_account_credentials.h',
                       'src/core/credentials/call/iam/iam_credentials.h',
                       'src/core/credentials/call/json_util.h',
                       'src/core/credentials/call/jwt/json_token.h',
@@ -752,8 +753,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.h',
                       'src/core/ext/upb-gen/google/rpc/status.upb.h',
                       'src/core/ext/upb-gen/google/rpc/status.upb_minitable.h',
-                      'src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb.h',
-                      'src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.h',
+                      'src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb.h',
+                      'src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.h',
                       'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h',
                       'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h',
                       'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h',
@@ -972,7 +973,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h',
                       'src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.h',
                       'src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.h',
-                      'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.h',
+                      'src/core/ext/upbdefs-gen/grpc/channelz/v1/channelz.upbdefs.h',
                       'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h',
                       'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h',
                       'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h',
@@ -1807,6 +1808,7 @@ Pod::Spec.new do |s|
                               'src/core/credentials/call/external/file_external_account_credentials.h',
                               'src/core/credentials/call/external/url_external_account_credentials.h',
                               'src/core/credentials/call/gcp_service_account_identity/gcp_service_account_identity_credentials.h',
+                              'src/core/credentials/call/gdch_service_account/gdch_service_account_credentials.h',
                               'src/core/credentials/call/iam/iam_credentials.h',
                               'src/core/credentials/call/json_util.h',
                               'src/core/credentials/call/jwt/json_token.h',
@@ -2204,8 +2206,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.h',
                               'src/core/ext/upb-gen/google/rpc/status.upb.h',
                               'src/core/ext/upb-gen/google/rpc/status.upb_minitable.h',
-                              'src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb.h',
-                              'src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.h',
+                              'src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb.h',
+                              'src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.h',
                               'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h',
                               'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h',
                               'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h',
@@ -2424,7 +2426,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h',
                               'src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.h',
                               'src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.h',
-                              'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.h',
+                              'src/core/ext/upbdefs-gen/grpc/channelz/v1/channelz.upbdefs.h',
                               'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h',
                               'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h',
                               'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h',
