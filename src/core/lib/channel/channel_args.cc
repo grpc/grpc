@@ -297,11 +297,11 @@ channelz::PropertyList ChannelArgs::ToPropertyList() const {
   args_.ForEach(
       [&result](const RefCountedStringValue& key, const Value& value) {
         if (auto i = value.GetIfInt(); i.has_value()) {
-          result.Set(key.as_string_view(), *i);
+          result.Set(std::string(key.as_string_view()), *i);
         } else if (auto s = value.GetIfString(); s != nullptr) {
-          result.Set(key.as_string_view(), s->as_string_view());
+          result.Set(std::string(key.as_string_view()), std::string(s->as_string_view()));
         } else if (auto p = value.GetIfPointer(); p != nullptr) {
-          result.Set(key.as_string_view(), "POINTER");
+          result.Set(std::string(key.as_string_view()), std::string("POINTER"));
         }
       });
   return result;
