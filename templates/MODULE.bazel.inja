@@ -144,10 +144,10 @@ pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 
 [
     pip.parse(
+        extra_pip_args = ["--no-build-isolation"],
         hub_name = "grpc_python_dependencies",
         python_version = python_version,
         requirements_lock = "//:requirements.bazel.lock",
-        extra_pip_args = ["--no-build-isolation"],
     )
     for python_version in PYTHON_VERSIONS
 ]
