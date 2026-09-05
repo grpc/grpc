@@ -24,6 +24,7 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/status_flag.h"
+#include "src/core/util/orphanable.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
@@ -54,11 +55,11 @@ class XdsStreamingCallPromiseWrapper::EventHandler final
 };
 
 XdsStreamingCallPromiseWrapper::XdsStreamingCallPromiseWrapper(
-    XdsTransport& transport, const char* method) {
+    XdsTransport& transport, const char* method, bool wait_for_ready) {
   auto internal_event_handler = std::make_unique<EventHandler>(
       WeakRefAsSubclass<XdsStreamingCallPromiseWrapper>());
-  call_ =
-      transport.CreateStreamingCall(method, std::move(internal_event_handler));
+  call_ = transport.CreateStreamingCall(
+      method, std::move(internal_event_handler), wait_for_ready);
 }
 
 Poll<StatusFlag> XdsStreamingCallPromiseWrapper::PollPushMessage() {
@@ -165,6 +166,7 @@ void XdsStreamingCallPromiseWrapper::SendHalfClose() {
   if (send_half_close) {
     call_->SendHalfClose();
   }
+  call_->SendHalfClose();
 }
 
 void XdsStreamingCallPromiseWrapper::Orphaned() {

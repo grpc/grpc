@@ -832,6 +832,7 @@ void BaseCallData::ReceiveMessage::OnComplete(absl::Status status) {
 void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
                                         Flusher* flusher,
                                         bool discard_buffered_message) {
+  cancelled_status_ = StatusFromMetadata(metadata);
   GRPC_TRACE_LOG(channel, INFO)
       << base_->LogTag() << " ReceiveMessage.Done st=" << StateString(state_)
       << " md=" << metadata.DebugString();
@@ -963,13 +964,17 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
     case State::kBatchCompletedButCancelled:
       interceptor()->Push()->Close();
       state_ = State::kCancelled;
-      flusher->AddClosure(std::exchange(intercepted_on_complete_, nullptr),
-                          completed_status_, "recv_message");
+      flusher->AddClosure(
+          std::exchange(intercepted_on_complete_, nullptr),
+          !cancelled_status_.ok() ? cancelled_status_ : completed_status_,
+          "recv_message");
       break;
     case State::kBatchCompletedButCancelledNoPipe:
       state_ = State::kCancelled;
-      flusher->AddClosure(std::exchange(intercepted_on_complete_, nullptr),
-                          completed_status_, "recv_message");
+      flusher->AddClosure(
+          std::exchange(intercepted_on_complete_, nullptr),
+          !cancelled_status_.ok() ? cancelled_status_ : completed_status_,
+          "recv_message");
       break;
     case State::kCompletedWhileBatchCompleted:
       if (!IsRecvMessageFilterBypassFixEnabled()) {
