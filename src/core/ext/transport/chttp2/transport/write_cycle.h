@@ -24,6 +24,7 @@
 #include <cstddef>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
@@ -237,10 +238,16 @@ class FrameSender {
 class WriteCycle {
  public:
   WriteCycle(Chttp2WriteSizePolicy* write_size_policy, bool& is_first_write,
-             const bool& is_client)
+             const bool& is_client,
+             std::vector<Http2RstStreamFrame>&& rst_streams)
       : write_buffer_tracker_(is_first_write, is_client),
         write_quota_(write_size_policy->WriteTargetSize()),
-        write_size_policy_(write_size_policy) {}
+        write_size_policy_(write_size_policy) {
+    FrameSender frame_sender = GetFrameSender();
+    for (const Http2RstStreamFrame& rst_frame : rst_streams) {
+      frame_sender.AddRegularFrame(rst_frame);
+    }
+  }
 
   // WriteCycle is move-constructible but not copyable or assignable.
   WriteCycle(const WriteCycle&) = delete;
@@ -326,7 +333,8 @@ class TransportWriteContext {
   TransportWriteContext& operator=(TransportWriteContext&&) = delete;
 
   void StartWriteCycle() {
-    write_cycle_.emplace(&write_size_policy_, is_first_write_, is_client_);
+    write_cycle_.emplace(&write_size_policy_, is_first_write_, is_client_,
+                         TakeRstStreams());
   }
 
   void EndWriteCycle() { write_cycle_.reset(); }
@@ -350,11 +358,21 @@ class TransportWriteContext {
 
   std::string DebugString() const;
 
+  void AddRstFrame(const uint32_t stream_id, const uint32_t error_code) {
+    rst_streams_.push_back(Http2RstStreamFrame{stream_id, error_code});
+  }
+
+  // Method to extract the pending reset frames during write cycle startup.
+  std::vector<Http2RstStreamFrame> TakeRstStreams() {
+    return std::move(rst_streams_);
+  }
+
  private:
   Chttp2WriteSizePolicy write_size_policy_;
   std::optional<WriteCycle> write_cycle_;
   bool is_first_write_ = true;
   const bool is_client_;
+  std::vector<Http2RstStreamFrame> rst_streams_;
 };
 
 }  // namespace http2

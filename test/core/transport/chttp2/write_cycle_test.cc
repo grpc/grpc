@@ -23,6 +23,7 @@
 #include <string>
 #include <tuple>
 #include <utility>
+#include <vector>
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
@@ -220,7 +221,7 @@ TEST_P(WriteCycleTest, Delegation) {
   bool is_client = GetParam();
   Chttp2WriteSizePolicy policy;
   bool is_first_write = true;
-  WriteCycle cycle(&policy, is_first_write, is_client);
+  WriteCycle cycle(&policy, is_first_write, is_client, /*rst_streams=*/{});
 
   EXPECT_EQ(cycle.GetWriteBytesRemaining(), policy.WriteTargetSize());
 
@@ -260,7 +261,7 @@ TEST_P(WriteCycleTest, RemainingAPIs) {
   bool is_client = GetParam();
   Chttp2WriteSizePolicy policy;
   bool is_first_write = false;
-  WriteCycle cycle(&policy, is_first_write, is_client);
+  WriteCycle cycle(&policy, is_first_write, is_client, /*rst_streams=*/{});
 
   EXPECT_FALSE(cycle.CanSerializeUrgentFrames());
   EXPECT_EQ(cycle.GetUrgentFrameCount(), 0u);
@@ -286,11 +287,33 @@ TEST_P(WriteCycleTest, SerializationSideEffects) {
   bool is_client = GetParam();
   Chttp2WriteSizePolicy policy;
   bool is_first_write = true;
-  WriteCycle cycle(&policy, is_first_write, is_client);
+  WriteCycle cycle(&policy, is_first_write, is_client, /*rst_streams=*/{});
 
   bool reset = false;
-  cycle.SerializeRegularFrames({reset});
+  const SliceBuffer serialized = cycle.SerializeRegularFrames({reset});
   EXPECT_FALSE(is_first_write);
+}
+
+TEST_P(WriteCycleTest, RstStreamAddedAndFlushed) {
+  const bool is_client = GetParam();
+  Chttp2WriteSizePolicy policy;
+  bool is_first_write = true;
+
+  std::vector<Http2RstStreamFrame> rst_streams = {
+      Http2RstStreamFrame{/*stream_id=*/1u, /*error_code=*/2u}};
+
+  WriteCycle cycle(&policy, is_first_write, is_client, std::move(rst_streams));
+
+  // Verify that the RST_STREAM is added to the write buffer.
+  EXPECT_EQ(cycle.GetRegularFrameCount(), 1u);
+
+  bool reset = false;
+  const SliceBuffer serialized = cycle.SerializeRegularFrames({reset});
+  EXPECT_EQ(serialized.Length(),
+            is_client ? (GRPC_CHTTP2_CLIENT_CONNECT_STRLEN + 13u) : 13u);
+
+  // Verify that the RST_STREAM is flushed after serialization.
+  EXPECT_EQ(cycle.GetRegularFrameCount(), 0u);
 }
 
 INSTANTIATE_TEST_SUITE_P(WriteCycleTest, WriteCycleTest, ::testing::Bool());
@@ -409,6 +432,49 @@ TEST_P(TransportWriteContextTest, WriteContextTest) {
 
   write_cycle2.BeginWrite(100);
   write_cycle2.EndWrite(false);  // Fail
+}
+
+TEST_P(TransportWriteContextTest, QueuesAndExtractsRstStreams) {
+  TransportWriteContext& context = GetTransportWriteContext();
+
+  // Initially, there should be no pending reset frames
+  EXPECT_TRUE(context.TakeRstStreams().empty());
+
+  // Add a reset frame
+  context.AddRstFrame(/*stream_id=*/1u, /*error_code=*/2u);
+
+  // Extract and verify the reset frames
+  const std::vector<Http2RstStreamFrame> rst_streams = context.TakeRstStreams();
+  ASSERT_EQ(rst_streams.size(), 1u);
+
+  EXPECT_EQ(rst_streams[0].stream_id, 1u);
+  EXPECT_EQ(rst_streams[0].error_code, 2u);
+
+  // Subsequent extraction should be empty (since TakeRstStreams clears the
+  // vector)
+  EXPECT_TRUE(context.TakeRstStreams().empty());
+
+  // Add multiple reset frames.
+  context.AddRstFrame(/*stream_id=*/5u, /*error_code=*/1u);
+  context.AddRstFrame(/*stream_id=*/7u, /*error_code=*/2u);
+  context.AddRstFrame(/*stream_id=*/9u, /*error_code=*/3u);
+
+  // Extract and verify all 3 frames are present in order.
+  const std::vector<Http2RstStreamFrame> multiple_rst_streams =
+      context.TakeRstStreams();
+  ASSERT_EQ(multiple_rst_streams.size(), 3u);
+
+  EXPECT_EQ(multiple_rst_streams[0].stream_id, 5u);
+  EXPECT_EQ(multiple_rst_streams[0].error_code, 1u);
+
+  EXPECT_EQ(multiple_rst_streams[1].stream_id, 7u);
+  EXPECT_EQ(multiple_rst_streams[1].error_code, 2u);
+
+  EXPECT_EQ(multiple_rst_streams[2].stream_id, 9u);
+  EXPECT_EQ(multiple_rst_streams[2].error_code, 3u);
+
+  // Subsequent extraction must be empty.
+  EXPECT_TRUE(context.TakeRstStreams().empty());
 }
 
 INSTANTIATE_TEST_SUITE_P(TransportWriteContextTest, TransportWriteContextTest,
