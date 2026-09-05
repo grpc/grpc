@@ -29,6 +29,7 @@
 #include <ostream>
 #include <set>
 #include <sstream>
+#include <string_view>
 #include <tuple>
 #include <vector>
 
@@ -52,6 +53,28 @@ using std::vector;
 namespace grpc_python_generator {
 
 std::string generator_file_name;
+
+// Escapes a comment string so it is safe to embed within a Python triple-quoted
+// docstring. Replaces backslashes first, then triple-quote sequences.
+std::string EscapePythonDocstring(std::string_view input, size_t start_pos) {
+  std::string result;
+  if (start_pos >= input.size()) return result;
+  result.reserve(input.size() - start_pos);
+  size_t i = start_pos;
+  while (i < input.size()) {
+    if (input[i] == '\\') {
+      result += "\\\\";
+    } else if (input[i] == '"' && i + 2 < input.size() && input[i + 1] == '"' &&
+               input[i + 2] == '"') {
+      result += "\\\"\\\"\\\"";
+      i += 2;
+    } else {
+      result += input[i];
+    }
+    i++;
+  }
+  return result;
+}
 
 namespace {
 
@@ -108,7 +131,8 @@ void PrivateGenerator::PrintAllComments(StringVector comments,
        ++it) {
     size_t start_pos = it->find_first_not_of(' ');
     if (start_pos != std::string::npos) {
-      out->PrintRaw(it->c_str() + start_pos);
+      std::string escaped = EscapePythonDocstring(*it, start_pos);
+      out->PrintRaw(escaped.c_str());
     }
     out->Print("\n");
   }
