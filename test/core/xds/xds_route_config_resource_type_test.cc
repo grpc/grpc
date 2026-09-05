@@ -18,6 +18,7 @@
 #include <google/protobuf/duration.pb.h>
 #include <google/protobuf/wrappers.pb.h>
 #include <grpc/grpc.h>
+#include <grpc/lookup/v1/rls_config.pb.h>
 #include <grpc/status.h>
 #include <stdint.h>
 
@@ -54,7 +55,6 @@
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
-#include "src/proto/grpc/lookup/v1/rls_config.pb.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "upb/mem/arena.hpp"
