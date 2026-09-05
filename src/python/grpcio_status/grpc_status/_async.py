@@ -53,10 +53,10 @@ async def from_call(call: aio.Call):
       ```python
       try:
           status = await rpc_status.aio.from_call(call)
-      except rpc_status.StatusDetailsMetadataDecodeError:
+      except grpc_status.StatusDetailsMetadataDecodeError:
           # Handle malformed or corrupted metadata
           ...
-      except rpc_status.StatusDetailsMetadataValueError:
+      except grpc_status.StatusDetailsMetadataValueError:
           # Handle inconsistent status code or message
           ...
       ```
