@@ -394,7 +394,6 @@ inline yodel::Msg ParseTestProto(const std::string& proto) {
     void TestImpl() override;                                                \
   };                                                                         \
   void name(const yodel::Msg& msg) {                                         \
-    if (!grpc_core::IsEventEngineClientEnabled()) return;                    \
     grpc_core::ApplyFuzzConfigVars(msg.config_vars());                       \
     grpc_core::ProtoBitGen bitgen(msg.rng());                                \
     YodelTest_##test_type##_##name test(msg.event_engine_actions(), bitgen); \

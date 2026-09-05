@@ -92,15 +92,7 @@
   description: Use EventEngine instead of the CallbackAlternativeCQ.
   expiry: 2027/02/01
   owner: mlumish@google.com
-  requires: ["event_engine_client", "event_engine_listener"]
-  platforms: ["all"]
-- name: event_engine_client
-  description: Use EventEngine clients instead of iomgr's grpc_tcp_client
-  expiry: 2026/09/01
-  owner: mlumish@google.com
-  test_tags: ["core_end2end_test", "event_engine_client_test"]
-  uses_polling: true
-  allow_in_fuzzing_config: false
+  requires: ["event_engine_listener"]
   platforms: ["all"]
 - name: event_engine_for_all_other_endpoints
   description: Use EventEngine endpoints for all call sites, including direct uses of grpc_tcp_create.
@@ -111,7 +103,6 @@
   uses_polling: true
   requires:
     [
-      "event_engine_client",
       "event_engine_listener",
     ]
   platforms: ["all"]
@@ -290,7 +281,7 @@
   expiry: 2026/09/15
   owner: alishananda@google.com
   test_tags: ["core_end2end_test", "secure_endpoint_test", "posix_endpoint_test"]
-  requires: ["event_engine_client", "event_engine_listener"]
+  requires: ["event_engine_listener"]
   uses_polling: true
   allow_in_fuzzing_config: false
 - name: pollset_alternative
@@ -300,7 +291,7 @@
   expiry: 2026/10/01
   owner: mlumish@google.com
   test_tags: ["core_end2end_test"]
-  requires: ["event_engine_client", "event_engine_listener"]
+  requires: ["event_engine_listener"]
   allow_in_fuzzing_config: false
   platforms: ["all"]
 - name: prioritize_finished_requests
@@ -356,7 +347,6 @@
   test_tags: ["core_end2end_test"]
   requires:
     [
-      "event_engine_client",
       "event_engine_listener",
     ]
 - name: secure_endpoint_offload_large_writes
@@ -366,7 +356,6 @@
   test_tags: ["core_end2end_test"]
   requires:
     [
-      "event_engine_client",
       "event_engine_listener",
     ]
 - name: secure_endpoint_read_coalescing
@@ -377,7 +366,6 @@
   test_tags: ["core_end2end_test"]
   requires:
     [
-      "event_engine_client",
       "event_engine_listener",
     ]
 - name: skip_clear_peer_on_cancellation

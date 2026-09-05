@@ -104,7 +104,7 @@ void RunServerFuzzer(const fuzzer_input::Msg& msg,
                      absl::FunctionRef<void(FuzzingEventEngine*, grpc_server*,
                                             int, const ChannelArgs&)>
                          server_setup) {
-  if (!IsEventEngineClientEnabled() || !IsEventEngineListenerEnabled()) {
+  if (!IsEventEngineListenerEnabled()) {
     return;  // Not supported without event engine
   }
   ApplyFuzzConfigVars(msg.config_vars());
