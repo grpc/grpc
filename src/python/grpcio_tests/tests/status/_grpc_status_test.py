@@ -201,7 +201,7 @@ class StatusTest(unittest.TestCase):
         self.assertEqual(rpc_error.code(), grpc.StatusCode.NOT_FOUND)
 
         for exc_type in (
-            rpc_status.StatusDetailsMetadataValueError,
+            grpc_status.StatusDetailsMetadataValueError,
             ValueError,
         ):
             with self.subTest(exc_type=exc_type):
