@@ -206,7 +206,7 @@ PosixEventEngine::PollingCycle::PollingCycle(
       poller_(std::move(poller)),
       is_scheduled_(1) {
   GRPC_CHECK_NE(poller_, nullptr);
-  executor_->Run([this]() { PollerWorkInternal(); });
+  executor_->Run(&closure_);
 }
 
 PosixEventEngine::PollingCycle::~PollingCycle() {
@@ -223,18 +223,14 @@ void PosixEventEngine::PollingCycle::PollerWorkInternal() {
   --is_scheduled_;
   GRPC_CHECK_EQ(is_scheduled_, 0);
   bool again = false;
-  // TODO(vigneshbabu): The timeout specified here is arbitrary. For
-  // instance, this can be improved by setting the timeout to the next
-  // expiring timer.
   auto result = poller_->Work(24h, [&]() { again = true; });
-  if (result == Poller::WorkResult::kDeadlineExceeded) {
-    // The EventEngine is not shutting down but the next asynchronous
-    // PollerWorkInternal did not get scheduled. Schedule it now.
+  if (result == Poller::WorkResult::kDeadlineExceeded ||
+      result == Poller::WorkResult::kKicked) {
     again = true;
   }
-  if (!done_ && again) {
-    executor_->Run([this]() { PollerWorkInternal(); });
+  if (!done_) {
     ++is_scheduled_;
+    executor_->Run(&closure_);
   }
   cond_.SignalAll();
 }
