@@ -90,6 +90,7 @@
 #include "absl/functional/bind_front.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -2265,6 +2266,56 @@ tsi_result tsi_ssl_get_cert_chain_contents(STACK_OF(X509) * peer_chain,
   return result;
 }
 
+// Build a per-connection TLS channel binding string:
+//   "<type>:<base64url(binding-bytes)>"
+// Prefer RFC 9266 tls-exporter on TLS 1.3; prefer RFC 5929 tls-unique on
+// TLS 1.2 when available (unique per connection even across resumption with
+// EMS). Falls back to tls-exporter. Returns empty string on failure.
+static std::string ComputeTlsChannelBinding(SSL* ssl) {
+  if (ssl == nullptr) return "";
+
+  uint8_t binding[64];
+  size_t binding_len = 0;
+  const char* binding_type = nullptr;
+
+#if defined(TLS1_3_VERSION)
+  const bool is_tls13 = SSL_version(ssl) == TLS1_3_VERSION;
+#else
+  const bool is_tls13 = false;
+#endif
+
+  if (!is_tls13) {
+#if defined(OPENSSL_IS_BORINGSSL)
+    // tls-unique is unique per TLS connection (RFC 5929).
+    if (SSL_get_tls_unique(ssl, binding, &binding_len, sizeof(binding)) == 1 &&
+        binding_len > 0) {
+      binding_type = "tls-unique";
+    }
+#endif
+  }
+
+  if (binding_type == nullptr) {
+    // RFC 9266: label "EXPORTER-Channel-Binding", empty context, 32 bytes.
+    static constexpr char kExporterLabel[] = "EXPORTER-Channel-Binding";
+    static constexpr size_t kExporterLen = 32;
+    if (SSL_export_keying_material(
+            ssl, binding, kExporterLen, kExporterLabel,
+            sizeof(kExporterLabel) - 1, nullptr, 0,
+            /*use_context=*/1) != 1) {
+      return "";
+    }
+    binding_len = kExporterLen;
+    binding_type = "tls-exporter";
+  }
+
+  std::string b64;
+  absl::WebSafeBase64Escape(
+      absl::string_view(reinterpret_cast<const char*>(binding), binding_len),
+      &b64);
+  while (!b64.empty() && b64.back() == '=') b64.pop_back();
+  return absl::StrCat(binding_type, ":", b64);
+}
+
 // --- tsi_handshaker_result methods implementation. ---
 static tsi_result ssl_handshaker_result_extract_peer(
     const tsi_handshaker_result* self, tsi_peer* peer) {
@@ -2294,8 +2345,10 @@ static tsi_result ssl_handshaker_result_extract_peer(
 
   X509* verified_root_cert = static_cast<X509*>(
       SSL_get_ex_data(impl->ssl, g_ssl_ex_verified_root_cert_index));
-  // 1 is for session reused property.
+  std::string channel_binding = ComputeTlsChannelBinding(impl->ssl);
+  // security_level + session_reused + optional channel_binding.
   size_t new_property_count = peer->property_count + 3;
+  if (!channel_binding.empty()) new_property_count++;
   if (alpn_selected != nullptr) new_property_count++;
   if (peer_chain != nullptr) new_property_count++;
   if (verified_root_cert != nullptr) new_property_count++;
@@ -2340,6 +2393,14 @@ static tsi_result ssl_handshaker_result_extract_peer(
       &peer->properties[peer->property_count]);
   if (result != TSI_OK) return result;
   peer->property_count++;
+
+  if (!channel_binding.empty()) {
+    result = tsi_construct_string_peer_property(
+        TSI_TLS_CHANNEL_BINDING_PEER_PROPERTY, channel_binding.data(),
+        channel_binding.size(), &peer->properties[peer->property_count]);
+    if (result != TSI_OK) return result;
+    peer->property_count++;
+  }
 
   if (verified_root_cert != nullptr) {
     result = peer_property_from_x509_subject(

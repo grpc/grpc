@@ -49,6 +49,10 @@
 #define TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY \
   "x509_subject_alternative_name"
 #define TSI_SSL_SESSION_REUSED_PEER_PROPERTY "ssl_session_reused"
+// Per-connection TLS channel binding (RFC 5929 tls-unique or RFC 9266
+// tls-exporter). Value is "type:base64url(binding)" and is unique to this
+// TLS connection so tokens can be bound to the session.
+#define TSI_TLS_CHANNEL_BINDING_PEER_PROPERTY "tls_channel_binding"
 #define TSI_X509_PEM_CERT_PROPERTY "x509_pem_cert"
 #define TSI_X509_PEM_CERT_CHAIN_PROPERTY "x509_pem_cert_chain"
 #define TSI_SSL_ALPN_SELECTED_PROTOCOL "ssl_alpn_selected_protocol"

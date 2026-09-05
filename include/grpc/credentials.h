@@ -82,6 +82,18 @@ GRPCAPI grpc_call_credentials* grpc_google_refresh_token_credentials_create(
 GRPCAPI grpc_call_credentials* grpc_access_token_credentials_create(
     const char* access_token, void* reserved);
 
+/** Creates DPoP (RFC 9449) call credentials that bind an access token to an
+   EC P-256 proof-of-possession key and to the current TLS connection's channel
+   binding (tls-unique / tls-exporter). Metadata is only attached on TLS
+   connections that expose channel binding, so a stolen token cannot be
+   replayed on a different TLS session. This API is experimental and may
+   change in the future.
+   - access_token is the raw OAuth2 access token (no scheme prefix).
+   - ec_private_pem is a PEM-encoded EC private key (P-256 / ES256).
+   May return NULL if the input is invalid. */
+GRPCAPI grpc_call_credentials* grpc_dpop_credentials_create(
+    const char* access_token, const char* ec_private_pem, void* reserved);
+
 /** Creates an IAM credentials object for connecting to Google. */
 GRPCAPI grpc_call_credentials* grpc_google_iam_credentials_create(
     const char* authorization_token, const char* authority_selector,
