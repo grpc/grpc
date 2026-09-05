@@ -20,6 +20,8 @@
 #include <string>
 #include <vector>
 
+#include "src/core/lib/event_engine/ares_resolver.h"
+#include "src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/util/notification.h"
@@ -180,6 +182,72 @@ TEST(DnsForkTest, DnsLookupAcrossForkInChild) {
   for (auto& callback : callbacks) {
     EXPECT_EQ(callback.times_got_called(), 1);
   }
+}
+
+// A lookup that arrives while the c-ares channel is null -- the window between
+// ReinitHandle::Reset() (which calls ares_destroy and nulls channel_) and
+// Restart() (which rebuilds it) during fork -- must complete the callback with
+// an error rather than aborting. A respawned executor/timer thread can enter a
+// lookup in that window because PostForkInChild restarts the executor and timer
+// manager before the resolver is rebuilt. Regression test for the
+// GRPC_CHECK_NE(channel_, nullptr) that used to fire here.
+TEST(DnsForkTest, LookupFailsSoftlyWhenChannelIsNull) {
+  auto ee = GetDefaultEventEngine();
+  // Build an AresResolver directly. The polled-fd factory's poller is unused:
+  // the null-channel guard returns before any fd is created, and Restart()
+  // below only re-initializes the c-ares channel (no fd activity happens
+  // without a successful lookup).
+  auto ares_resolver = AresResolver::CreateAresResolver(
+      /*dns_server=*/"", std::make_unique<GrpcPolledFdFactoryPosix>(nullptr),
+      ee);
+  ASSERT_TRUE(ares_resolver.ok()) << ares_resolver.status();
+  auto handle = (*ares_resolver)->GetReinitHandle().lock();
+  ASSERT_NE(handle, nullptr);
+  // Tear the channel down without rebuilding it: the exact state a thread can
+  // observe mid-fork.
+  handle->Reset(absl::CancelledError("test: null channel window"));
+
+  {
+    grpc_core::Notification done;
+    absl::Status status;
+    (*ares_resolver)->LookupHostname(
+        [&](const absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>& r) {
+          status = r.status();
+          done.Notify();
+        },
+        "foo.test.google.fr:443", "443");
+    done.WaitForNotification();
+    EXPECT_TRUE(absl::IsUnavailable(status)) << status;
+  }
+  {
+    grpc_core::Notification done;
+    absl::Status status;
+    (*ares_resolver)->LookupSRV(
+        [&](const absl::StatusOr<
+            std::vector<EventEngine::DNSResolver::SRVRecord>>& r) {
+          status = r.status();
+          done.Notify();
+        },
+        "foo.test.google.fr:443");
+    done.WaitForNotification();
+    EXPECT_TRUE(absl::IsUnavailable(status)) << status;
+  }
+  {
+    grpc_core::Notification done;
+    absl::Status status;
+    (*ares_resolver)->LookupTXT(
+        [&](const absl::StatusOr<std::vector<std::string>>& r) {
+          status = r.status();
+          done.Notify();
+        },
+        "foo.test.google.fr:443");
+    done.WaitForNotification();
+    EXPECT_TRUE(absl::IsUnavailable(status)) << status;
+  }
+
+  // Rebuild the channel so the resolver can be destroyed cleanly (the dtor
+  // checks channel_ != nullptr and calls ares_destroy).
+  handle->Restart();
 }
 
 #else  // GRPC_ENABLE_FORK_SUPPORT
