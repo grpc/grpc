@@ -148,11 +148,11 @@ gem install cocoapods -v 1.15.2 --no-document --user-install
 
 # 4. Add the gem binary directory to PATH
 export PATH="$(ruby -e 'puts Gem.user_dir')/bin:$PATH"
-  
+
   # 2. Verify the installation
   ruby --version
   pod --version
-  
+
   # pre-fetch cocoapods master repo's most recent commit only
   mkdir -p ~/.cocoapods/repos
   time git clone --depth 1 https://github.com/CocoaPods/Specs.git ~/.cocoapods/repos/master
@@ -223,10 +223,10 @@ then
 
   # Install Python 3.15 if it doesn't exist
   if [ ! -f "/usr/local/bin/python3.15" ]; then
-    time curl -O https://www.python.org/ftp/python/3.15.0/python-3.15.0b2-macos11.pkg
-    echo "29b5c95f255f846f77e1c119146836445f929de1392a3ae9ef24f559e1345418  python-3.15.0b2-macos11.pkg" > /tmp/python_installer_checksum.sha256
+    time curl -O https://www.python.org/ftp/python/3.15.0/python-3.15.0rc1-macos11.pkg
+    echo "57e0b1095f5dda52a8ff8b3b73140a52dfb3b76bdcf9e0284f2dbe10f7ee92ea  python-3.15.0rc1-macos11.pkg" > /tmp/python_installer_checksum.sha256
     shasum -a 256 -c /tmp/python_installer_checksum.sha256
-    time sudo installer -pkg ./python-3.15.0b2-macos11.pkg -target /
+    time sudo installer -pkg ./python-3.15.0rc1-macos11.pkg -target /
   fi
 fi
 
