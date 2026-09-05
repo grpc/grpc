@@ -31,6 +31,7 @@ _BLOCK_BRIEFLY = "/test/BlockBriefly"
 _UNARY_STREAM_ASYNC_GEN = "/test/UnaryStreamAsyncGen"
 _UNARY_STREAM_READER_WRITER = "/test/UnaryStreamReaderWriter"
 _UNARY_STREAM_EVILLY_MIXED = "/test/UnaryStreamEvillyMixed"
+_UNARY_STREAM_SWALLOWS_CANCELLATION = "/test/UnaryStreamSwallowsCancellation"
 _STREAM_UNARY_ASYNC_GEN = "/test/StreamUnaryAsyncGen"
 _STREAM_UNARY_READER_WRITER = "/test/StreamUnaryReaderWriter"
 _STREAM_UNARY_EVILLY_MIXED = "/test/StreamUnaryEvillyMixed"
@@ -76,6 +77,9 @@ class _GenericHandler(grpc.GenericRpcHandler):
             ),
             _UNARY_STREAM_EVILLY_MIXED: grpc.unary_stream_rpc_method_handler(
                 self._unary_stream_evilly_mixed
+            ),
+            _UNARY_STREAM_SWALLOWS_CANCELLATION: grpc.unary_stream_rpc_method_handler(
+                self._unary_stream_swallows_cancellation
             ),
             _STREAM_UNARY_ASYNC_GEN: grpc.stream_unary_rpc_method_handler(
                 self._stream_unary_async_gen
@@ -126,6 +130,18 @@ class _GenericHandler(grpc.GenericRpcHandler):
     async def _unary_stream_async_gen(self, unused_request, unused_context):
         for _ in range(_NUM_STREAM_RESPONSES):
             yield _RESPONSE
+
+    async def _unary_stream_swallows_cancellation(
+        self, unused_request, unused_context
+    ):
+        # Returns normally after the client cancelled, so the server goes on to
+        # send a final status on a call the peer already abandoned.
+        try:
+            while True:
+                yield _RESPONSE
+                await asyncio.sleep(test_constants.SHORT_TIMEOUT / 10)
+        except asyncio.CancelledError:
+            return
 
     async def _unary_stream_reader_writer(self, unused_request, context):
         for _ in range(_NUM_STREAM_RESPONSES):
@@ -291,6 +307,21 @@ class TestServer(AioTestBase):
 
         self.assertEqual(_NUM_STREAM_RESPONSES, response_cnt)
         self.assertEqual(await call.code(), grpc.StatusCode.OK)
+
+    async def test_cancel_unary_stream_swallowed_by_handler(self):
+        # The final status batch fails because the client is gone; the failed
+        # batch must still be cleaned up and must not affect later RPCs.
+        unary_stream_call = self._channel.unary_stream(
+            _UNARY_STREAM_SWALLOWS_CANCELLATION
+        )
+        for _ in range(_NUM_STREAM_RESPONSES):
+            call = unary_stream_call(_REQUEST)
+            self.assertEqual(_RESPONSE, await call.read())
+            self.assertTrue(call.cancel())
+            self.assertEqual(grpc.StatusCode.CANCELLED, await call.code())
+
+        unary_unary_call = self._channel.unary_unary(_SIMPLE_UNARY_UNARY)
+        self.assertEqual(_RESPONSE, await unary_unary_call(_REQUEST))
 
     async def test_unary_stream_reader_writer(self):
         unary_stream_call = self._channel.unary_stream(
