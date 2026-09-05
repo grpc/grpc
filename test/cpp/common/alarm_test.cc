@@ -24,12 +24,33 @@
 #include <mutex>
 #include <thread>
 
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/util/notification.h"
+#include "test/core/event_engine/mock_event_engine.h"
 #include "test/core/test_util/test_config.h"
 #include "gtest/gtest.h"
+#include "absl/functional/any_invocable.h"
 
 namespace grpc {
 namespace {
+
+using ::grpc_event_engine::experimental::DefaultEventEngineScope;
+using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::MockEventEngine;
+using ::testing::_;
+using ::testing::Invoke;
+using ::testing::StrictMock;
+
+std::shared_ptr<StrictMock<MockEventEngine>> MakeMockWithImmediateRunAfter() {
+  auto mock_event_engine = std::make_shared<StrictMock<MockEventEngine>>();
+  EXPECT_CALL(*mock_event_engine, RunAfter(EventEngine::Duration::zero(), _))
+      .WillOnce(
+          Invoke([](EventEngine::Duration, absl::AnyInvocable<void()> closure) {
+            closure();
+            return EventEngine::TaskHandle::kInvalid;
+          }));
+  return mock_event_engine;
+}
 
 TEST(AlarmTest, RegularExpiry) {
   CompletionQueue cq;
@@ -45,6 +66,40 @@ TEST(AlarmTest, RegularExpiry) {
   EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
   EXPECT_TRUE(ok);
   EXPECT_EQ(junk, output_tag);
+}
+
+// Regression test for https://github.com/grpc/grpc/issues/41950.
+// An alarm set with an already-expired deadline (gpr_now) must take the
+// EventEngine's immediate fast path, which runs the callback on the executor
+// without inserting a positive-duration timer into the timer heap. The bug
+// rounded the deadline up to the next millisecond, turning "now" into a ~1ms
+// future timer and adding ~1ms of latency to every immediate alarm.
+TEST(AlarmTest, ImmediateExpiryUsesFastPathCQ) {
+  DefaultEventEngineScope scope(MakeMockWithImmediateRunAfter());
+
+  CompletionQueue cq;
+  Alarm alarm;
+  alarm.Set(&cq, gpr_now(GPR_CLOCK_REALTIME), reinterpret_cast<void*>(1));
+
+  void* output_tag;
+  bool ok;
+  const CompletionQueue::NextStatus status =
+      cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
+  ASSERT_EQ(status, CompletionQueue::GOT_EVENT);
+  ASSERT_TRUE(ok);
+  EXPECT_EQ(output_tag, reinterpret_cast<void*>(1));
+}
+
+TEST(AlarmTest, ImmediateExpiryUsesFastPathCallback) {
+  DefaultEventEngineScope scope(MakeMockWithImmediateRunAfter());
+
+  bool callback_ran = false;
+  Alarm alarm;
+  alarm.Set(gpr_now(GPR_CLOCK_REALTIME), [&callback_ran](bool ok) {
+    EXPECT_TRUE(ok);
+    callback_ran = true;
+  });
+  EXPECT_TRUE(callback_ran);
 }
 
 TEST(AlarmTest, RegularExpiryMultiSet) {
