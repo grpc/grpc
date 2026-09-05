@@ -13,11 +13,22 @@
 # limitations under the License.
 """Reference implementation for status mapping in gRPC Python."""
 
+import google.protobuf.message
 import grpc
 
 _CODE_TO_GRPC_CODE_MAPPING = {x.value[0]: x for x in grpc.StatusCode}
 
 GRPC_DETAILS_METADATA_KEY = "grpc-status-details-bin"
+
+
+class StatusDetailsMetadataValueError(ValueError):
+    pass
+
+
+class StatusDetailsMetadataDecodeError(
+    google.protobuf.message.DecodeError, StatusDetailsMetadataValueError
+):
+    pass
 
 
 def code_to_grpc_status_code(code):

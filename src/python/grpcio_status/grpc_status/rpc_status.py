@@ -16,10 +16,13 @@
 import collections
 import sys
 
+import google.protobuf.message
 from google.rpc import status_pb2
 import grpc
 
 from ._common import GRPC_DETAILS_METADATA_KEY
+from ._common import StatusDetailsMetadataDecodeError
+from ._common import StatusDetailsMetadataValueError
 from ._common import code_to_grpc_status_code
 
 
@@ -39,24 +42,71 @@ def from_call(call):
       call: A grpc.Call instance.
 
     Returns:
-      A google.rpc.status.Status message representing the status of the RPC.
+      A google.rpc.status.Status message representing the status of the RPC, or
+      None if no status details metadata is found in the call.
 
     Raises:
-      ValueError: If the gRPC call's code or details are inconsistent with the
-        status code and message inside of the google.rpc.status.Status.
+      StatusDetailsMetadataDecodeError: If the binary metadata in
+        'grpc-status-details-bin' cannot be decoded into a Status proto.
+      StatusDetailsMetadataValueError: If the gRPC call's code or details are
+        inconsistent with the status code and message inside of the
+        google.rpc.status.Status.
+
+    Note:
+      Both StatusDetailsMetadataDecodeError and StatusDetailsMetadataValueError
+      inherit from ValueError (and StatusDetailsMetadataDecodeError also
+      inherits from google.protobuf.message.DecodeError). Therefore, callers
+      can catch ValueError as a catch-all for any status details error.
+
+    Examples:
+      Catching specific error types:
+      ```python
+      try:
+          status = rpc_status.from_call(call)
+      except grpc_status.StatusDetailsMetadataDecodeError:
+          # Handle malformed or corrupted metadata
+          ...
+      except grpc_status.StatusDetailsMetadataValueError:
+          # Handle inconsistent status code or message
+          ...
+      ```
+
+      Catch-all solution catching any status details error:
+      ```python
+      try:
+          status = rpc_status.from_call(call)
+      except ValueError:
+          # Catches both StatusDetailsMetadataDecodeError and
+          # StatusDetailsMetadataValueError
+          ...
+      ```
+
+      Catching DecodeError directly:
+      ```python
+      try:
+          status = rpc_status.from_call(call)
+      except google.protobuf.message.DecodeError:
+          # StatusDetailsMetadataDecodeError also inherits from DecodeError
+          ...
+      ```
     """
     if call.trailing_metadata() is None:
         return None
     for key, value in call.trailing_metadata():
         if key == GRPC_DETAILS_METADATA_KEY:
-            rich_status = status_pb2.Status.FromString(value)
+            try:
+                rich_status = status_pb2.Status.FromString(value)
+            except google.protobuf.message.DecodeError as decode_err:
+                raise StatusDetailsMetadataDecodeError(
+                    *decode_err.args
+                ) from decode_err
             if call.code().value[0] != rich_status.code:
-                raise ValueError(
+                raise StatusDetailsMetadataValueError(
                     "Code in Status proto (%s) doesn't match status code (%s)"
                     % (code_to_grpc_status_code(rich_status.code), call.code())
                 )
             if call.details() != rich_status.message:
-                raise ValueError(
+                raise StatusDetailsMetadataValueError(
                     "Message in Status proto (%s) doesn't match status details"
                     " (%s)" % (rich_status.message, call.details())
                 )

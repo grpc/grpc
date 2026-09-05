@@ -31,9 +31,11 @@ import logging
 import traceback
 
 import grpc
+import grpc_status
 from grpc_status import rpc_status
 
 from tests.unit import test_common
+import google.protobuf.message
 
 from google.protobuf import any_pb2
 from google.rpc import code_pb2, status_pb2, error_details_pb2
@@ -43,6 +45,7 @@ _STATUS_NOT_OK = "/test/StatusNotOk"
 _ERROR_DETAILS = "/test/ErrorDetails"
 _INCONSISTENT = "/test/Inconsistent"
 _INVALID_CODE = "/test/InvalidCode"
+_MALFORMED_DETAILS = "/test/MalformedDetails"
 
 _REQUEST = b"\x00\x00\x00"
 _RESPONSE = b"\x01\x01\x01"
@@ -98,6 +101,14 @@ def _invalid_code_unary_unary(request, servicer_context):
     servicer_context.abort_with_status(rpc_status.to_status(rich_status))
 
 
+def _malformed_details_unary_unary(request, servicer_context):
+    servicer_context.set_code(grpc.StatusCode.INTERNAL)
+    servicer_context.set_details("Internal error")
+    servicer_context.set_trailing_metadata(
+        ((_GRPC_DETAILS_METADATA_KEY, b"\xff\xff"),)
+    )
+
+
 class _GenericHandler(grpc.GenericRpcHandler):
     def service(self, handler_call_details):
         if handler_call_details.method == _STATUS_OK:
@@ -115,6 +126,10 @@ class _GenericHandler(grpc.GenericRpcHandler):
         elif handler_call_details.method == _INVALID_CODE:
             return grpc.unary_unary_rpc_method_handler(
                 _invalid_code_unary_unary
+            )
+        elif handler_call_details.method == _MALFORMED_DETAILS:
+            return grpc.unary_unary_rpc_method_handler(
+                _malformed_details_unary_unary
             )
         else:
             return None
@@ -185,8 +200,12 @@ class StatusTest(unittest.TestCase):
         rpc_error = exception_context.exception
         self.assertEqual(rpc_error.code(), grpc.StatusCode.NOT_FOUND)
 
-        # Code/Message validation failed
-        self.assertRaises(ValueError, rpc_status.from_call, rpc_error)
+        for exc_type in (
+            grpc_status.StatusDetailsMetadataValueError,
+            ValueError,
+        ):
+            with self.subTest(exc_type=exc_type):
+                self.assertRaises(exc_type, rpc_status.from_call, rpc_error)
 
     def test_invalid_code(self):
         with self.assertRaises(grpc.RpcError) as exception_context:
@@ -198,6 +217,38 @@ class StatusTest(unittest.TestCase):
         self.assertEqual(rpc_error.code(), grpc.StatusCode.UNKNOWN)
         # Invalid status code exception raised during conversion
         self.assertIn("Invalid status code", rpc_error.details())
+
+    def test_malformed_details(self):
+        with self.assertRaises(grpc.RpcError) as exception_context:
+            self._channel.unary_unary(
+                _MALFORMED_DETAILS,
+                _registered_method=True,
+            ).with_call(_REQUEST)
+        rpc_error = exception_context.exception
+        self.assertEqual(rpc_error.code(), grpc.StatusCode.INTERNAL)
+
+        for exc_type in (
+            grpc_status.StatusDetailsMetadataDecodeError,
+            google.protobuf.message.DecodeError,
+            grpc_status.StatusDetailsMetadataValueError,
+            ValueError,
+        ):
+            with self.subTest(exc_type=exc_type):
+                self.assertRaises(exc_type, rpc_status.from_call, rpc_error)
+
+    def test_exception_inheritance(self):
+        self.assertTrue(
+            issubclass(grpc_status.StatusDetailsMetadataValueError, ValueError)
+        )
+        self.assertTrue(
+            issubclass(grpc_status.StatusDetailsMetadataDecodeError, ValueError)
+        )
+        self.assertTrue(
+            issubclass(
+                grpc_status.StatusDetailsMetadataDecodeError,
+                google.protobuf.message.DecodeError,
+            )
+        )
 
 
 if __name__ == "__main__":
