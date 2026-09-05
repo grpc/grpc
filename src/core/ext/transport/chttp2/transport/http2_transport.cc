@@ -150,7 +150,9 @@ std::string TransportChannelArgs::DebugString() const {
       " max_header_list_size_soft_limit: ", max_header_list_size_soft_limit,
       " max_usable_hpack_table_size: ", max_usable_hpack_table_size,
       " initial_sequence_number: ", initial_sequence_number,
-      " test_only_ack_pings: ", test_only_ack_pings);
+      " test_only_ack_pings: ", test_only_ack_pings,
+      " max_concurrent_streams_overload_protection: ",
+      max_concurrent_streams_overload_protection);
 }
 
 void ReadChannelArgs(const ChannelArgs& channel_args,
@@ -185,6 +187,10 @@ void ReadChannelArgs(const ChannelArgs& channel_args,
   args.keepalive_permit_without_calls =
       channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
           .value_or(kDefaultKeepalivePermitWithoutCalls);
+  args.max_concurrent_streams_overload_protection =
+      channel_args
+          .GetBool(GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION)
+          .value_or(true);
 
   args.max_usable_hpack_table_size =
       channel_args.GetInt(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER).value_or(-1);
