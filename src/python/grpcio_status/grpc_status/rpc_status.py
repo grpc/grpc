@@ -62,7 +62,7 @@ def from_call(call):
       Catching specific error types:
       ```python
       try:
-          status = grpc_status.from_call(call)
+          status = rpc_status.from_call(call)
       except grpc_status.StatusDetailsMetadataDecodeError:
           # Handle malformed or corrupted metadata
           ...
@@ -74,7 +74,7 @@ def from_call(call):
       Catch-all solution catching any status details error:
       ```python
       try:
-          status = grpc_status.from_call(call)
+          status = rpc_status.from_call(call)
       except ValueError:
           # Catches both StatusDetailsMetadataDecodeError and
           # StatusDetailsMetadataValueError
@@ -84,7 +84,7 @@ def from_call(call):
       Catching DecodeError directly:
       ```python
       try:
-          status = grpc_status.from_call(call)
+          status = rpc_status.from_call(call)
       except google.protobuf.message.DecodeError:
           # StatusDetailsMetadataDecodeError also inherits from DecodeError
           ...

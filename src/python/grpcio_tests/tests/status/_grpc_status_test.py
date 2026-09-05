@@ -234,7 +234,7 @@ class StatusTest(unittest.TestCase):
             ValueError,
         ):
             with self.subTest(exc_type=exc_type):
-                self.assertRaises(exc_type, grpc_status.from_call, rpc_error)
+                self.assertRaises(exc_type, rpc_status.from_call, rpc_error)
 
     def test_exception_inheritance(self):
         self.assertTrue(
