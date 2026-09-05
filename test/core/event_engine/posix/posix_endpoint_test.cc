@@ -49,6 +49,7 @@
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/tsi/fake_transport_security.h"
 #include "src/core/tsi/transport_security_grpc.h"
@@ -166,6 +167,26 @@ std::list<Connection> CreateConnectedEndpoints(
 
 }  // namespace
 
+class ExecCtxTrackingMemoryAllocatorFactory
+    : public grpc_event_engine::experimental::MemoryAllocatorFactory {
+ public:
+  grpc_event_engine::experimental::MemoryAllocator CreateMemoryAllocator(
+      absl::string_view /*name*/) override {
+    exec_ctx_seen_.push_back(grpc_core::ExecCtx::Get() != nullptr);
+    return grpc_event_engine::experimental::MemoryAllocator(
+        std::make_shared<grpc_core::testing::TestMemoryAllocatorImpl>());
+  }
+
+  bool AllAllocationsCreatedUnderExecCtx() const {
+    return !exec_ctx_seen_.empty() &&
+           std::all_of(exec_ctx_seen_.begin(), exec_ctx_seen_.end(),
+                       [](bool seen) { return seen; });
+  }
+
+ private:
+  std::vector<bool> exec_ctx_seen_;
+};
+
 std::string TestScenarioName(const ::testing::TestParamInfo<bool>& info) {
   return absl::StrCat("is_zero_copy_enabled_", info.param);
 }
@@ -256,6 +277,46 @@ class PosixEndpointTest : public PosixEndpointTestBase,
   void SetUp() override { PosixEndpointTestBase::SetUp(); }
   void TearDown() override { PosixEndpointTestBase::TearDown(); }
 };
+
+TEST(PosixEndpointTest, ListenerAcceptAllocatorCreatedInsideExecCtxTest) {
+  auto posix_ee = PosixEventEngine::MakePosixEventEngine();
+  auto* factory = new ExecCtxTrackingMemoryAllocatorFactory();
+  grpc_core::Notification connection_accepted;
+
+  grpc_core::ChannelArgs listener_args;
+  auto quota = grpc_core::ResourceQuota::Default();
+  listener_args = listener_args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
+
+  auto listener = posix_ee->CreateListener(
+      [&connection_accepted](std::unique_ptr<Endpoint> ep,
+                              grpc_core::MemoryAllocator /*memory_allocator*/) {
+        EXPECT_NE(ep, nullptr);
+        connection_accepted.Notify();
+      },
+      [](absl::Status status) { EXPECT_TRUE(status.ok()); },
+      ChannelArgsEndpointConfig(listener_args),
+      std::unique_ptr<MemoryAllocatorFactory>(factory));
+  ASSERT_TRUE(listener.ok());
+
+  auto resolved_addr = URIToResolvedAddress(absl::StrCat(
+      "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die())));
+  ASSERT_TRUE(resolved_addr.ok());
+  EXPECT_TRUE((*listener)->Bind(*resolved_addr).ok());
+  EXPECT_TRUE((*listener)->Start().ok());
+
+  // Create a client socket and connect to the listener synchronously.
+  int client_fd =
+      grpc_event_engine::experimental::ConnectToServerOrDie(*resolved_addr);
+
+  connection_accepted.WaitForNotification();
+  EXPECT_TRUE(factory->AllAllocationsCreatedUnderExecCtx());
+
+  close(client_fd);
+  // The listener holds a reference to the engine, so it must be destroyed
+  // before waiting for the engine to become the sole owner.
+  listener->reset();
+  grpc_core::WaitForSingleOwner(std::move(posix_ee));
+}
 
 TEST_P(PosixEndpointTest, ConnectExchangeBidiDataTransferTest) {
   if (PosixPoller() == nullptr) {
