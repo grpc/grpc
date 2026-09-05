@@ -340,6 +340,16 @@ class SslTransportSecurityTest
       client_expects_handshake_failure_ = client_expects_handshake_failure;
     }
 
+    void SetClientExportedKeyingMaterial(std::string label, size_t length) {
+      client_ekm_label_ = std::move(label);
+      client_ekm_length_ = length;
+    }
+
+    void SetServerExportedKeyingMaterial(std::string label, size_t length) {
+      server_ekm_label_ = std::move(label);
+      server_ekm_length_ = length;
+    }
+
     void SetCollectionScope(RefCountedPtr<CollectionScope> collection_scope) {
       collection_scope_ = std::move(collection_scope);
     }
@@ -388,6 +398,12 @@ class SslTransportSecurityTest
       if (ssl_fixture->client_key_exchange_groups_.has_value()) {
         client_options.key_exchange_groups =
             ssl_fixture->client_key_exchange_groups_.value();
+      }
+      if (ssl_fixture->client_ekm_label_.has_value()) {
+        client_options.exported_keying_material_label =
+            *ssl_fixture->client_ekm_label_;
+        client_options.exported_keying_material_length =
+            ssl_fixture->client_ekm_length_;
       }
       ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
                     &client_options, &ssl_fixture->client_handshaker_factory_),
@@ -441,6 +457,12 @@ class SslTransportSecurityTest
       if (ssl_fixture->server_key_exchange_groups_.has_value()) {
         server_options.key_exchange_groups =
             ssl_fixture->server_key_exchange_groups_.value();
+      }
+      if (ssl_fixture->server_ekm_label_.has_value()) {
+        server_options.exported_keying_material_label =
+            *ssl_fixture->server_ekm_label_;
+        server_options.exported_keying_material_length =
+            ssl_fixture->server_ekm_length_;
       }
       ASSERT_EQ(tsi_create_ssl_server_handshaker_factory_with_options(
                     &server_options, &ssl_fixture->server_handshaker_factory_),
@@ -612,6 +634,9 @@ class SslTransportSecurityTest
                 peer, TSI_SSL_NEGOTIATED_KEY_EXCHANGE_GROUP) != nullptr) {
           expected_property_count++;
         }
+        if (ssl_fixture->server_ekm_label_.has_value()) {
+          expected_property_count++;
+        }
         ASSERT_EQ(peer->property_count, expected_property_count);
 
       } else {
@@ -673,6 +698,7 @@ class SslTransportSecurityTest
 #else
       bool expect_client_success = expect_server_success;
 #endif
+      std::string client_ekm;
       if (expect_client_success) {
         ASSERT_EQ(tsi_handshaker_result_extract_peer(
                       ssl_fixture->base_.client_result, &peer),
@@ -681,6 +707,16 @@ class SslTransportSecurityTest
         CheckAlpn(ssl_fixture, &peer);
         CheckSecurityLevel(&peer);
         CheckNegotiatedGroup(ssl_fixture, &peer);
+        if (ssl_fixture->client_ekm_label_.has_value()) {
+          const tsi_peer_property* prop = tsi_peer_get_property_by_name(
+              &peer, TSI_SSL_EXPORTED_KEYING_MATERIAL);
+          ASSERT_NE(prop, nullptr);
+          size_t expected_len = ssl_fixture->client_ekm_length_ == 0
+                                    ? 32
+                                    : ssl_fixture->client_ekm_length_;
+          ASSERT_EQ(prop->value.length, expected_len);
+          client_ekm = std::string(prop->value.data, prop->value.length);
+        }
         if (ssl_fixture->verify_root_cert_subject_) {
           if (!ssl_fixture->session_reused_) {
             CheckVerifiedRootCertSubject(&peer);
@@ -708,6 +744,28 @@ class SslTransportSecurityTest
         CheckAlpn(ssl_fixture, &peer);
         CheckSecurityLevel(&peer);
         CheckNegotiatedGroup(ssl_fixture, &peer);
+        if (ssl_fixture->server_ekm_label_.has_value()) {
+          const tsi_peer_property* prop = tsi_peer_get_property_by_name(
+              &peer, TSI_SSL_EXPORTED_KEYING_MATERIAL);
+          ASSERT_NE(prop, nullptr);
+          size_t expected_len = ssl_fixture->server_ekm_length_ == 0
+                                    ? 32
+                                    : ssl_fixture->server_ekm_length_;
+          ASSERT_EQ(prop->value.length, expected_len);
+          if (ssl_fixture->client_ekm_label_.has_value() &&
+              expect_client_success) {
+            if (*ssl_fixture->client_ekm_label_ ==
+                    *ssl_fixture->server_ekm_label_ &&
+                ssl_fixture->client_ekm_length_ ==
+                    ssl_fixture->server_ekm_length_) {
+              ASSERT_EQ(client_ekm,
+                        std::string(prop->value.data, prop->value.length));
+            } else {
+              ASSERT_NE(client_ekm,
+                        std::string(prop->value.data, prop->value.length));
+            }
+          }
+        }
         if (ssl_fixture->force_client_auth_ && !ssl_fixture->session_reused_) {
           CheckVerifiedRootCertSubject(&peer);
         } else {
@@ -755,6 +813,10 @@ class SslTransportSecurityTest
     // intent.
     bool server_expects_handshake_failure_ = false;
     bool client_expects_handshake_failure_ = false;
+    std::optional<std::string> client_ekm_label_ = std::nullopt;
+    size_t client_ekm_length_ = 0;
+    std::optional<std::string> server_ekm_label_ = std::nullopt;
+    size_t server_ekm_length_ = 0;
     RefCountedPtr<CollectionScope> collection_scope_;
   };
 
@@ -1806,6 +1868,30 @@ TEST_P(SslTransportSecurityTest, SuccessfulHandshakeClientSpecifiesP256) {
     ssl_fixture_->OverrideClientKeyExchangeGroups({GRPC_TLS_GROUP_SECP256R1});
     ssl_fixture_->SetExpectedNegotiatedGroup("prime256v1");
   }
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, TestExportedKeyingMaterialMatchingLabels) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_fixture_->SetClientExportedKeyingMaterial("test_label", 32);
+  ssl_fixture_->SetServerExportedKeyingMaterial("test_label", 32);
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, TestExportedKeyingMaterialDifferentLabels) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_fixture_->SetClientExportedKeyingMaterial("client_label", 32);
+  ssl_fixture_->SetServerExportedKeyingMaterial("server_label", 32);
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, TestExportedKeyingMaterialDefaultLength) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_fixture_->SetClientExportedKeyingMaterial("test_label", 0);
+  ssl_fixture_->SetServerExportedKeyingMaterial("test_label", 0);
   DoHandshake();
 }
 

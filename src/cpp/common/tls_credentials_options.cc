@@ -26,6 +26,7 @@
 #include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/security/tls_crl_provider.h>
 
+#include <cstddef>
 #include <memory>
 #include <string>
 
@@ -134,6 +135,17 @@ void TlsCredentialsOptions::set_key_exchange_groups(
   grpc_tls_credentials_options_set_key_exchange_groups(
       c_credentials_options_, key_exchange_groups.data(),
       key_exchange_groups.size());
+}
+
+void TlsCredentialsOptions::set_exported_keying_material_label(
+    const std::string& label) {
+  grpc_tls_credentials_options_set_exported_keying_material_label(
+      c_credentials_options_, label.c_str());
+}
+
+void TlsCredentialsOptions::set_exported_keying_material_length(size_t length) {
+  grpc_tls_credentials_options_set_exported_keying_material_length(
+      c_credentials_options_, length);
 }
 
 grpc_tls_credentials_options* TlsCredentialsOptions::c_credentials_options()

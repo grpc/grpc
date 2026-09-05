@@ -86,6 +86,8 @@ EXPORTS
     grpc_tls_credentials_options_set_check_call_host
     grpc_tls_credentials_options_set_tls_session_key_log_file_path
     grpc_tls_credentials_options_set_key_exchange_groups
+    grpc_tls_credentials_options_set_exported_keying_material_label
+    grpc_tls_credentials_options_set_exported_keying_material_length
     grpc_metadata_array_init
     grpc_metadata_array_destroy
     grpc_call_details_init
