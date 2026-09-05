@@ -24,6 +24,7 @@ from google.rpc import error_details_pb2
 from google.rpc import status_pb2
 import grpc
 from grpc.experimental import aio
+import grpc_status
 from grpc_status import rpc_status
 
 from tests_aio.unit._test_base import AioTestBase
@@ -180,7 +181,7 @@ class StatusTest(AioTestBase):
         self.assertEqual(rpc_error.code(), grpc.StatusCode.NOT_FOUND)
 
         for exc_type in (
-            rpc_status.StatusDetailsMetadataValueError,
+            grpc_status.StatusDetailsMetadataValueError,
             ValueError,
         ):
             with self.subTest(exc_type=exc_type):
@@ -203,9 +204,9 @@ class StatusTest(AioTestBase):
         self.assertEqual(rpc_error.code(), grpc.StatusCode.INTERNAL)
 
         for exc_type in (
-            rpc_status.StatusDetailsMetadataDecodeError,
+            grpc_status.StatusDetailsMetadataDecodeError,
             google.protobuf.message.DecodeError,
-            rpc_status.StatusDetailsMetadataValueError,
+            grpc_status.StatusDetailsMetadataValueError,
             ValueError,
         ):
             with self.subTest(exc_type=exc_type):
@@ -214,14 +215,14 @@ class StatusTest(AioTestBase):
 
     def test_exception_inheritance(self):
         self.assertTrue(
-            issubclass(rpc_status.StatusDetailsMetadataValueError, ValueError)
+            issubclass(grpc_status.StatusDetailsMetadataValueError, ValueError)
         )
         self.assertTrue(
-            issubclass(rpc_status.StatusDetailsMetadataDecodeError, ValueError)
+            issubclass(grpc_status.StatusDetailsMetadataDecodeError, ValueError)
         )
         self.assertTrue(
             issubclass(
-                rpc_status.StatusDetailsMetadataDecodeError,
+                grpc_status.StatusDetailsMetadataDecodeError,
                 google.protobuf.message.DecodeError,
             )
         )
