@@ -18,8 +18,7 @@ import sys
 
 from mako.template import Template
 
-join_state = Template(
-    """
+join_state = Template("""
 template <class Traits, ${",".join(f"typename P{i}" for i in range(0,n))}>
 struct JoinState<Traits, ${",".join(f"P{i}" for i in range(0,n))}> {
   template <typename T>
@@ -100,8 +99,7 @@ struct JoinState<Traits, ${",".join(f"P{i}" for i in range(0,n))}> {
     return Pending{};
   }
 };
-"""
-)
+""")
 
 front_matter = """
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_DETAIL_JOIN_STATE_H

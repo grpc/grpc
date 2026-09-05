@@ -413,7 +413,7 @@ for lang in languages:
             # docker image name must be in the format <docker_path>/<image>:<gcr_tag>
             assert image.startswith(args.docker_path) and image.find(":") != -1
             # Add a tag to exclude the image from the GCP Vulnerability Scanner.
-            (image_name, tag_name) = image.rsplit(":", 1)
+            image_name, tag_name = image.rsplit(":", 1)
             alternate_image = (
                 f"{image_name}:infrastructure-public-image-{tag_name}"
             )

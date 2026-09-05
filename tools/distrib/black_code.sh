@@ -36,7 +36,7 @@ python3 -m venv "${VIRTUALENV}"
 source "${VIRTUALENV}/bin/activate"
 python -VV
 
-pip install black==25.1.0
+pip install black==26.5.1
 pip list
 
 if [[ "$ACTION" == "--check" ]]; then

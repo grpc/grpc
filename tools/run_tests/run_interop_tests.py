@@ -1715,11 +1715,11 @@ try:
                             jobs.append(test_job)
     for server in args.override_server:
         server_name = server[0]
-        (server_host, server_port) = server[1].split(":")
+        server_host, server_port = server[1].split(":")
         server_addresses[server_name] = (server_host, server_port)
 
     for server_name, server_address in list(server_addresses.items()):
-        (server_host, server_port) = server_address
+        server_host, server_port = server_address
         server_language = _LANGUAGES.get(server_name, None)
         skip_server = []  # test cases unimplemented by server
         if server_language:

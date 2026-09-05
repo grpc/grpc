@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Tests for the metadata abstraction that's used in the asynchronous driver."""
+
 import logging
 import unittest
 
