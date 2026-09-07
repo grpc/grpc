@@ -209,8 +209,12 @@ $VENV_PYTHON -m nox -s build_package_protos -f \
 pip_install_dir "$ROOT/src/python/grpcio_health_checking"
 
 # Build/install reflection
-$VENV_PYTHON "$ROOT/src/python/grpcio_reflection/setup.py" preprocess
-$VENV_PYTHON "$ROOT/src/python/grpcio_reflection/setup.py" build_package_protos
+$VENV_PYTHON -m nox -s preprocess -f \
+ "$ROOT/src/python/grpcio_reflection/noxfile.py"
+
+$VENV_PYTHON -m nox -s build_package_protos -f \
+ "$ROOT/src/python/grpcio_reflection/noxfile.py"
+
 pip_install_dir "$ROOT/src/python/grpcio_reflection"
 
 # Build/install status proto mapping

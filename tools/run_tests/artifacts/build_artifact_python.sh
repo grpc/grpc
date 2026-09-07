@@ -299,8 +299,9 @@ then
 
   # Build grpcio_reflection source distribution
   # TODO(ssreenithi): find pyproject.toml/nox equivalent
-  ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_reflection/setup.py \
-      preprocess build_package_protos
+  ${SETARCH_CMD} "${PYTHON}" -m nox -s preprocess build_package_protos -f \
+    "src/python/grpcio_reflection/noxfile.py"
+
   ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation \
     "src/python/grpcio_reflection"
 
