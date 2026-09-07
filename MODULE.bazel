@@ -52,6 +52,7 @@ single_version_override(
     ],
     version = "0.0.0-20260901-005c18a",
 )
+
 bazel_dep(name = "googleapis-cc", version = "1.0.0")
 bazel_dep(name = "googleapis-grpc-cc", version = "1.0.0")
 bazel_dep(name = "googleapis-python", version = "1.0.0")
