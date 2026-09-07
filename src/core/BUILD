@@ -2714,6 +2714,7 @@ grpc_cc_library(
         "absl/container:inlined_vector",
         "absl/functional:any_invocable",
         "absl/functional:function_ref",
+        "absl/log:log",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
