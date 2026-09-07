@@ -1295,7 +1295,6 @@ static tsi_result peer_from_x509(X509* cert, int include_certificate_type,
           &peer->properties[current_insert_index++]);
       if (result != TSI_OK) break;
     }
-
     if (subject_alt_name_count != 0) {
       result = add_subject_alt_names_properties_to_peer(
           peer, subject_alt_names, static_cast<size_t>(subject_alt_name_count),
@@ -2312,7 +2311,6 @@ static tsi_result ssl_handshaker_result_extract_peer(
   const char* server_name =
       SSL_get_servername(impl->ssl, TLSEXT_NAMETYPE_host_name);
   const char* tls_version = SSL_get_version(impl->ssl);
-
   X509* verified_root_cert = static_cast<X509*>(
       SSL_get_ex_data(impl->ssl, g_ssl_ex_verified_root_cert_index));
   // 1 is for session reused property.
@@ -2371,7 +2369,6 @@ static tsi_result ssl_handshaker_result_extract_peer(
     if (result != TSI_OK) return result;
     peer->property_count++;
   }
-
   if (tls_version != nullptr) {
     result = tsi_construct_string_peer_property_from_cstring(
         TSI_SSL_TLS_VERSION_PEER_PROPERTY, tls_version,
@@ -2379,7 +2376,6 @@ static tsi_result ssl_handshaker_result_extract_peer(
     if (result != TSI_OK) return result;
     peer->property_count++;
   }
-
   if (verified_root_cert != nullptr) {
     result = peer_property_from_x509_subject(
         verified_root_cert, &peer->properties[peer->property_count], true);
