@@ -1837,6 +1837,9 @@ src/core/ext/upb-gen/envoy/type/v3/ratelimit_strategy.upb_minitable.h \
 src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb.h \
 src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb_minitable.c \
 src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb_minitable.h \
+src/core/ext/upb-gen/envoy/type/v3/scope.upb.h \
+src/core/ext/upb-gen/envoy/type/v3/scope.upb_minitable.c \
+src/core/ext/upb-gen/envoy/type/v3/scope.upb_minitable.h \
 src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb.h \
 src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb_minitable.c \
 src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb_minitable.h \
@@ -2248,6 +2251,8 @@ src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_strategy.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_strategy.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_unit.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_unit.upbdefs.h \
+src/core/ext/upbdefs-gen/envoy/type/v3/scope.upbdefs.c \
+src/core/ext/upbdefs-gen/envoy/type/v3/scope.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/type/v3/semantic_version.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/type/v3/semantic_version.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/type/v3/token_bucket.upbdefs.c \

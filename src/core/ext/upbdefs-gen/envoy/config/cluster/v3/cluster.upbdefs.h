@@ -117,6 +117,11 @@ UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_Cluster_PreconnectPolic
   return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.Cluster.PreconnectPolicy");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_Cluster_QueuingPolicies_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.Cluster.QueuingPolicies");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_Cluster_TypedExtensionProtocolOptionsEntry_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.Cluster.TypedExtensionProtocolOptionsEntry");

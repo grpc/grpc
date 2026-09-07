@@ -72,20 +72,20 @@ UPB_INLINE char* envoy_extensions_filters_http_stateful_session_v3_StatefulSessi
   return ptr;
 }
 UPB_INLINE void envoy_extensions_filters_http_stateful_session_v3_StatefulSession_clear_session_state(envoy_extensions_filters_http_stateful_session_v3_StatefulSession* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 32), 64, UPB_SIZE(9, 10), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 32), 64, 12, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct envoy_config_core_v3_TypedExtensionConfig* envoy_extensions_filters_http_stateful_session_v3_StatefulSession_session_state(const envoy_extensions_filters_http_stateful_session_v3_StatefulSession* msg) {
   const struct envoy_config_core_v3_TypedExtensionConfig* default_val = NULL;
   const struct envoy_config_core_v3_TypedExtensionConfig* ret;
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 32), 64, UPB_SIZE(9, 10), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 32), 64, 12, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__TypedExtensionConfig_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_extensions_filters_http_stateful_session_v3_StatefulSession_has_session_state(const envoy_extensions_filters_http_stateful_session_v3_StatefulSession* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 32), 64, UPB_SIZE(9, 10), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 32), 64, 12, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_extensions_filters_http_stateful_session_v3_StatefulSession_clear_strict(envoy_extensions_filters_http_stateful_session_v3_StatefulSession* msg) {
@@ -101,20 +101,32 @@ UPB_INLINE bool envoy_extensions_filters_http_stateful_session_v3_StatefulSessio
   return ret;
 }
 UPB_INLINE void envoy_extensions_filters_http_stateful_session_v3_StatefulSession_clear_stat_prefix(envoy_extensions_filters_http_stateful_session_v3_StatefulSession* msg) {
-  const upb_MiniTableField field = {3, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(20, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE upb_StringView envoy_extensions_filters_http_stateful_session_v3_StatefulSession_stat_prefix(const envoy_extensions_filters_http_stateful_session_v3_StatefulSession* msg) {
   upb_StringView default_val = upb_StringView_FromString("");
   upb_StringView ret;
-  const upb_MiniTableField field = {3, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(20, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
+UPB_INLINE void envoy_extensions_filters_http_stateful_session_v3_StatefulSession_clear_status_on_strict_destination_not_found(envoy_extensions_filters_http_stateful_session_v3_StatefulSession* msg) {
+  const upb_MiniTableField field = {4, UPB_SIZE(16, 12), 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE uint32_t envoy_extensions_filters_http_stateful_session_v3_StatefulSession_status_on_strict_destination_not_found(const envoy_extensions_filters_http_stateful_session_v3_StatefulSession* msg) {
+  uint32_t default_val = (uint32_t)0u;
+  uint32_t ret;
+  const upb_MiniTableField field = {4, UPB_SIZE(16, 12), 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 
 UPB_INLINE void envoy_extensions_filters_http_stateful_session_v3_StatefulSession_set_session_state(envoy_extensions_filters_http_stateful_session_v3_StatefulSession* msg, struct envoy_config_core_v3_TypedExtensionConfig* value) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 32), 64, UPB_SIZE(9, 10), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 32), 64, 12, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__TypedExtensionConfig_msg_init);
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
@@ -132,7 +144,11 @@ UPB_INLINE void envoy_extensions_filters_http_stateful_session_v3_StatefulSessio
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
 UPB_INLINE void envoy_extensions_filters_http_stateful_session_v3_StatefulSession_set_stat_prefix(envoy_extensions_filters_http_stateful_session_v3_StatefulSession* msg, upb_StringView value) {
-  const upb_MiniTableField field = {3, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(20, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
+}
+UPB_INLINE void envoy_extensions_filters_http_stateful_session_v3_StatefulSession_set_status_on_strict_destination_not_found(envoy_extensions_filters_http_stateful_session_v3_StatefulSession* msg, uint32_t value) {
+  const upb_MiniTableField field = {4, UPB_SIZE(16, 12), 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
 

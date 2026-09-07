@@ -13,6 +13,7 @@
 #include "envoy/config/route/v3/route_components.upb_minitable.h"
 #include "envoy/type/v3/percent.upb_minitable.h"
 #include "google/protobuf/duration.upb_minitable.h"
+#include "google/protobuf/struct.upb_minitable.h"
 #include "google/protobuf/wrappers.upb_minitable.h"
 #include "envoy/annotations/deprecation.upb_minitable.h"
 #include "udpa/annotations/status.upb_minitable.h"
@@ -160,20 +161,49 @@ const upb_MiniTable envoy__extensions__load_0balancing_0policies__common__v3__Co
   })
 };
 
-static const upb_MiniTable *messages_layout[6] = {
+typedef struct {
+  upb_MiniTableField fields[3];
+  upb_MiniTableSubInternal subs[1];
+} envoy__extensions__load_0balancing_0policies__common__v3__OrcaOobReportingConfig_msg_init_Fields;
+
+static const envoy__extensions__load_0balancing_0policies__common__v3__OrcaOobReportingConfig_msg_init_Fields envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig__fields = {{
+  {1, 12, 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(20, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(16, 32), 64, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Struct_msg_init},
+}};
+
+const upb_MiniTable envoy__extensions__load_0balancing_0policies__common__v3__OrcaOobReportingConfig_msg_init = {
+  &envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig__fields.fields[0],
+  UPB_SIZE(32, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.load_balancing_policies.common.v3.OrcaOobReportingConfig",
+#endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000c00003f000008, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
+    {0x001000003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+  })
+};
+
+static const upb_MiniTable *messages_layout[7] = {
   &envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig_msg_init,
   &envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig__ZoneAwareLbConfig_msg_init,
   &envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig__ZoneAwareLbConfig__ForceLocalZone_msg_init,
   &envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig__LocalityWeightedLbConfig_msg_init,
   &envoy__extensions__load_0balancing_0policies__common__v3__SlowStartConfig_msg_init,
   &envoy__extensions__load_0balancing_0policies__common__v3__ConsistentHashingLbConfig_msg_init,
+  &envoy__extensions__load_0balancing_0policies__common__v3__OrcaOobReportingConfig_msg_init,
 };
 
 const upb_MiniTableFile envoy_extensions_load_balancing_policies_common_v3_common_proto_upb_file_layout = {
   messages_layout,
   NULL,
   NULL,
-  6,
+  7,
   0,
   0,
 };
