@@ -442,7 +442,7 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
           return std::nullopt;
         }
       }
-      return *status_;
+      return status_;
     }
 
     std::multimap<std::string, std::string> GetServerInitialMetadata() {
