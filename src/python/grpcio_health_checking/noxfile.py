@@ -52,7 +52,7 @@ def build_package_protos(session: nox.Session):
     """
     Session to generate project *_pb2.py modules from proto files.
     """
-    
+
     session.log("Running build_package_protos for grpcio-health-checking...")
     # due to limitations of the proto generator, we require that only *one*
     # directory is provided as an 'include' directory. We assume it's the '' key

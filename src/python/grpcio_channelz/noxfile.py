@@ -24,32 +24,33 @@ ROOT_REL_DIR = os.path.relpath(ROOT_DIR, start=GRPC_ROOT_ABS_PATH)
 CHANNELZ_PROTO = "third_party/grpc-proto/grpc/channelz/v1/channelz.proto"
 LICENSE = "./LICENSE"
 
+
 @nox.session
 def preprocess(session: nox.Session):
-  """
-  Session to copy proto modules from third_party/grpc-proto/grpc/ and LICENCE
-  from the root directory
-  """
-  session.log("Running preprocess for grpcio_channelz...")
+    """
+    Session to copy proto modules from third_party/grpc-proto/grpc/ and LICENCE
+    from the root directory
+    """
+    session.log("Running preprocess for grpcio_channelz...")
 
-  session.cd(GRPC_ROOT_ABS_PATH)
-  target_proto_dir = os.path.join(ROOT_DIR, "grpc_channelz", "v1")
-  os.makedirs(target_proto_dir, exist_ok=True)
+    session.cd(GRPC_ROOT_ABS_PATH)
+    target_proto_dir = os.path.join(ROOT_DIR, "grpc_channelz", "v1")
+    os.makedirs(target_proto_dir, exist_ok=True)
 
-  if os.path.isfile(CHANNELZ_PROTO):
-    shutil.copyfile(
-      CHANNELZ_PROTO,
-      os.path.join(target_proto_dir, "channelz.proto")
-    )
-  if os.path.isfile(LICENSE):
-    shutil.copyfile(LICENSE, os.path.join(ROOT_DIR, "LICENSE"))
+    if os.path.isfile(CHANNELZ_PROTO):
+        shutil.copyfile(
+            CHANNELZ_PROTO, os.path.join(target_proto_dir, "channelz.proto")
+        )
+    if os.path.isfile(LICENSE):
+        shutil.copyfile(LICENSE, os.path.join(ROOT_DIR, "LICENSE"))
+
 
 @nox.session(venv_params=["--system-site-packages"])
 def build_package_protos(session: nox.Session):
-  """
-  Session to generate project *_pb2.py modules from proto files.
-  """
-  session.log("Running build_package protos for grpcio-channelz...")
-  from grpc_tools import command
-  
-  command.build_package_protos(ROOT_DIR)
+    """
+    Session to generate project *_pb2.py modules from proto files.
+    """
+    session.log("Running build_package protos for grpcio-channelz...")
+    from grpc_tools import command
+
+    command.build_package_protos(ROOT_DIR)
