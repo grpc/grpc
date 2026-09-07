@@ -260,7 +260,7 @@ absl::StatusOr<ExtProcResponse> ExtProcResponse::Parse(
           envoy_service_ext_proc_v3_ImmediateResponse_headers(
               immediate_response));
       if (!header_mutation.ok()) return header_mutation.status();
-      immediate_response_value.header_mutation = std::move(*header_mutation);
+      immediate_response_value.mutation = std::move(*header_mutation);
       auto grpc_status =
           envoy_service_ext_proc_v3_ImmediateResponse_grpc_status(
               immediate_response);
@@ -356,11 +356,11 @@ class UpbHeaderMapEncoder {
     auto* value_msg =
         envoy_config_core_v3_HeaderMap_add_headers(header_map_, arena_);
     envoy_config_core_v3_HeaderValue_set_key(
-        value_msg, upb_StringView_FromDataAndSize(key.data(), key.size()));
+        value_msg, CopyStdStringToUpbString(key, arena_));
     // Per gRFC A102, when writing, we always set the raw_value field and never
     // the value field.
     envoy_config_core_v3_HeaderValue_set_raw_value(
-        value_msg, upb_StringView_FromDataAndSize(value.data(), value.size()));
+        value_msg, CopyStdStringToUpbString(value, arena_));
   }
 
   envoy_config_core_v3_HeaderMap* header_map_;
@@ -409,8 +409,8 @@ void SetExtProcRequestBody(
   envoy_service_ext_proc_v3_HttpBody* body =
       envoy_service_ext_proc_v3_HttpBody_new(arena);
   envoy_service_ext_proc_v3_HttpBody_set_body(body, buf);
-  if (end_of_stream) {
-    envoy_service_ext_proc_v3_HttpBody_set_end_of_stream(body, end_of_stream);
+  if (end_of_stream || end_of_stream_without_message) {
+    envoy_service_ext_proc_v3_HttpBody_set_end_of_stream(body, true);
   }
   if (end_of_stream_without_message) {
     envoy_service_ext_proc_v3_HttpBody_set_end_of_stream_without_message(body,
@@ -443,10 +443,8 @@ void SetExtProcAttributes(
   if (attributes == nullptr) return;
   constexpr absl::string_view kAttributeKey = "envoy.filters.http.ext_proc";
   envoy_service_ext_proc_v3_ProcessingRequest_attributes_set(
-      request,
-      upb_StringView_FromDataAndSize(kAttributeKey.data(),
-                                     kAttributeKey.size()),
-      attributes, arena);
+      request, CopyStdStringToUpbString(kAttributeKey, arena), attributes,
+      arena);
 }
 
 void SetExtProcProtocolConfig(
@@ -519,10 +517,9 @@ class UpbStructHeadersEncoder {
                                       absl::string_view value) {
     ::google_protobuf_Value* val_msg = ::google_protobuf_Value_new(arena_);
     ::google_protobuf_Value_set_string_value(
-        val_msg, upb_StringView_FromDataAndSize(value.data(), value.size()));
+        val_msg, CopyStdStringToUpbString(value, arena_));
     ::google_protobuf_Struct_fields_set(
-        struct_msg_, upb_StringView_FromDataAndSize(key.data(), key.size()),
-        val_msg, arena_);
+        struct_msg_, CopyStdStringToUpbString(key, arena_), val_msg, arena_);
   }
 
   ::google_protobuf_Struct* struct_msg_;
@@ -535,22 +532,24 @@ class UpbStructHeadersEncoder {
 // CreateExtProcAttributesProtoStruct()
 //
 
-// TODO(rishesh): Support CEL attributes from A103 (except
-// xds.cluster_metadata.filter_metadata) when adding support for ext_proc on
-// the server side. See
-// https://github.com/grpc/proposal/blob/master/A103-xds-composite-filter.md#cel-attributes
 ::google_protobuf_Struct* CreateExtProcAttributesProtoStruct(
     upb_Arena* arena, const std::vector<std::string>& attributes,
-    const grpc_metadata_batch& metadata) {
+    const grpc_metadata_batch& metadata, absl::string_view default_authority,
+    const std::optional<ExtProcConnectionAttributes>& connection_attributes) {
   if (attributes.empty()) return nullptr;
   ::google_protobuf_Struct* struct_msg = ::google_protobuf_Struct_new(arena);
   auto add_field = [&](absl::string_view name, absl::string_view value) {
     ::google_protobuf_Value* val_msg = ::google_protobuf_Value_new(arena);
     ::google_protobuf_Value_set_string_value(
-        val_msg, upb_StringView_FromDataAndSize(value.data(), value.size()));
+        val_msg, CopyStdStringToUpbString(value, arena));
     ::google_protobuf_Struct_fields_set(
-        struct_msg, upb_StringView_FromDataAndSize(name.data(), name.size()),
-        val_msg, arena);
+        struct_msg, CopyStdStringToUpbString(name, arena), val_msg, arena);
+  };
+  auto add_number_field = [&](absl::string_view name, double value) {
+    ::google_protobuf_Value* val_msg = ::google_protobuf_Value_new(arena);
+    ::google_protobuf_Value_set_number_value(val_msg, value);
+    ::google_protobuf_Struct_fields_set(
+        struct_msg, CopyStdStringToUpbString(name, arena), val_msg, arena);
   };
   for (const auto& attr : attributes) {
     if (attr == "request.path" || attr == "request.url_path") {
@@ -562,6 +561,8 @@ class UpbStructHeadersEncoder {
         add_field(attr, auth->as_string_view());
       } else if (const Slice* host = metadata.get_pointer(HostMetadata())) {
         add_field(attr, host->as_string_view());
+      } else if (!default_authority.empty()) {
+        add_field(attr, default_authority);
       }
     } else if (attr == "request.method") {
       if (auto* method = metadata.get_pointer(HttpMethodMetadata())) {
@@ -577,8 +578,7 @@ class UpbStructHeadersEncoder {
       ::google_protobuf_Value* val_msg = ::google_protobuf_Value_new(arena);
       ::google_protobuf_Value_set_struct_value(val_msg, headers_struct);
       ::google_protobuf_Struct_fields_set(
-          struct_msg, upb_StringView_FromDataAndSize(attr.data(), attr.size()),
-          val_msg, arena);
+          struct_msg, CopyStdStringToUpbString(attr, arena), val_msg, arena);
     } else if (attr == "request.referer" || attr == "request.useragent" ||
                attr == "request.id") {
       absl::string_view key;
@@ -595,6 +595,24 @@ class UpbStructHeadersEncoder {
       if (val.has_value()) add_field(attr, *val);
     } else if (attr == "request.query") {
       add_field(attr, "");
+    } else if (connection_attributes.has_value()) {
+      if (attr == "source.port") {
+        if (connection_attributes->source_port > 0) {
+          add_number_field(attr, connection_attributes->source_port);
+        }
+      } else {
+        absl::string_view val;
+        if (attr == "source.address") {
+          val = connection_attributes->source_address;
+        } else if (attr == "connection.requested_server_name") {
+          val = connection_attributes->requested_server_name;
+        } else if (attr == "connection.tls_version") {
+          val = connection_attributes->tls_version;
+        } else if (attr == "connection.sha256_peer_certificate_digest") {
+          val = connection_attributes->sha256_peer_certificate_digest;
+        }
+        if (!val.empty()) add_field(attr, val);
+      }
     }
   }
   return struct_msg;
@@ -664,9 +682,9 @@ absl::StatusOr<std::string> CreateExtProcClientBodyRequest(
   return CreateRequestAndSerialize(
       arena, attributes, observability_mode, processing_mode,
       [&](envoy_service_ext_proc_v3_ProcessingRequest* request) {
-        SetExtProcRequestBody(
-            arena, upb_StringView_FromDataAndSize(body.data(), body.size()),
-            end_of_stream, end_of_stream_without_message, request);
+        SetExtProcRequestBody(arena, CopyStdStringToUpbString(body, arena),
+                              end_of_stream, end_of_stream_without_message,
+                              request);
       });
 }
 
@@ -677,9 +695,8 @@ absl::StatusOr<std::string> CreateExtProcServerBodyRequest(
   return CreateRequestAndSerialize(
       arena, attributes, observability_mode, processing_mode,
       [&](envoy_service_ext_proc_v3_ProcessingRequest* request) {
-        SetExtProcResponseBody(
-            arena, upb_StringView_FromDataAndSize(body.data(), body.size()),
-            request);
+        SetExtProcResponseBody(arena, CopyStdStringToUpbString(body, arena),
+                               request);
       });
 }
 

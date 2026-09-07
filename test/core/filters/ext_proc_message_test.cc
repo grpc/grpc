@@ -119,9 +119,8 @@ MATCHER_P3(IsImmediateResponse, status_matcher, details_matcher,
                                status_matcher),
               ::testing::Field(&ExtProcResponse::ImmediateResponse::details,
                                details_matcher),
-              ::testing::Field(
-                  &ExtProcResponse::ImmediateResponse::header_mutation,
-                  header_mutation_matcher))),
+              ::testing::Field(&ExtProcResponse::ImmediateResponse::mutation,
+                               header_mutation_matcher))),
       arg, result_listener);
 }
 
@@ -723,7 +722,8 @@ class CreateExtProcAttributesProtoStructTest : public ::testing::Test {
 TEST_F(CreateExtProcAttributesProtoStructTest, AttributesEmptyRequested) {
   upb::Arena arena;
   grpc_metadata_batch batch;
-  auto* upb_struct = CreateExtProcAttributesProtoStruct(arena.ptr(), {}, batch);
+  auto* upb_struct = CreateExtProcAttributesProtoStruct(arena.ptr(), {}, batch,
+                                                        "", std::nullopt);
   EXPECT_EQ(upb_struct, nullptr);
 }
 
@@ -745,8 +745,8 @@ TEST_F(CreateExtProcAttributesProtoStructTest, AttributesAllRecognizedFields) {
       "request.scheme",    "request.method",   "request.referer",
       "request.useragent", "request.time",     "request.id",
       "request.protocol",  "request.query"};
-  auto* upb_struct =
-      CreateExtProcAttributesProtoStruct(arena.ptr(), requested, batch);
+  auto* upb_struct = CreateExtProcAttributesProtoStruct(
+      arena.ptr(), requested, batch, "", std::nullopt);
   ASSERT_NE(upb_struct, nullptr);
   auto proto = ConvertToProto(upb_struct, arena.ptr());
   EXPECT_EQ(proto.fields().at("request.path").string_value(), "/foo/bar");
@@ -772,8 +772,8 @@ TEST_F(CreateExtProcAttributesProtoStructTest,
   grpc_metadata_batch batch;
   // No HttpAuthorityMetadata, but has HostMetadata
   batch.Set(HostMetadata(), Slice::FromCopiedString("fallback.host.com"));
-  auto* upb_struct =
-      CreateExtProcAttributesProtoStruct(arena.ptr(), {"request.host"}, batch);
+  auto* upb_struct = CreateExtProcAttributesProtoStruct(
+      arena.ptr(), {"request.host"}, batch, "", std::nullopt);
   ASSERT_NE(upb_struct, nullptr);
   auto proto = ConvertToProto(upb_struct, arena.ptr());
   EXPECT_EQ(proto.fields().at("request.host").string_value(),
@@ -785,7 +785,7 @@ TEST_F(CreateExtProcAttributesProtoStructTest, AttributesMethodFallbackToPost) {
   grpc_metadata_batch batch;
   // No HttpMethodMetadata
   auto* upb_struct = CreateExtProcAttributesProtoStruct(
-      arena.ptr(), {"request.method"}, batch);
+      arena.ptr(), {"request.method"}, batch, "", std::nullopt);
   ASSERT_NE(upb_struct, nullptr);
   auto proto = ConvertToProto(upb_struct, arena.ptr());
   EXPECT_EQ(proto.fields().at("request.method").string_value(), "POST");
@@ -799,7 +799,7 @@ TEST_F(CreateExtProcAttributesProtoStructTest, AttributesRequestHeaders) {
   batch.Append("x-custom2", Slice::FromCopiedString(kVal2),
                [](absl::string_view, const Slice&) {});
   auto* upb_struct = CreateExtProcAttributesProtoStruct(
-      arena.ptr(), {"request.headers"}, batch);
+      arena.ptr(), {"request.headers"}, batch, "", std::nullopt);
   ASSERT_NE(upb_struct, nullptr);
   auto proto = ConvertToProto(upb_struct, arena.ptr());
   ASSERT_NE(proto.fields().find("request.headers"), proto.fields().end());
@@ -807,6 +807,73 @@ TEST_F(CreateExtProcAttributesProtoStructTest, AttributesRequestHeaders) {
       proto.fields().at("request.headers").struct_value();
   EXPECT_EQ(headers_struct.fields().at("x-custom1").string_value(), kVal1);
   EXPECT_EQ(headers_struct.fields().at("x-custom2").string_value(), kVal2);
+}
+
+TEST_F(CreateExtProcAttributesProtoStructTest,
+       AttributesServerSideSourceAddressAndPort) {
+  upb::Arena arena;
+  grpc_metadata_batch batch;
+  ExtProcConnectionAttributes conn_attrs;
+  conn_attrs.source_address = "192.168.1.100";
+  conn_attrs.source_port = 54321;
+
+  std::vector<std::string> requested = {"source.address", "source.port"};
+  auto* upb_struct = CreateExtProcAttributesProtoStruct(arena.ptr(), requested,
+                                                        batch, "", conn_attrs);
+  ASSERT_NE(upb_struct, nullptr);
+  auto proto = ConvertToProto(upb_struct, arena.ptr());
+  EXPECT_EQ(proto.fields().at("source.address").string_value(),
+            "192.168.1.100");
+  EXPECT_DOUBLE_EQ(proto.fields().at("source.port").number_value(), 54321.0);
+}
+
+TEST_F(CreateExtProcAttributesProtoStructTest,
+       AttributesServerSideTlsConnectionAttributes) {
+  upb::Arena arena;
+  grpc_metadata_batch batch;
+  ExtProcConnectionAttributes conn_attrs;
+  conn_attrs.requested_server_name = "service.example.com";
+  conn_attrs.tls_version = "TLSv1.3";
+  conn_attrs.sha256_peer_certificate_digest =
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+  std::vector<std::string> requested = {
+      "connection.requested_server_name", "connection.tls_version",
+      "connection.sha256_peer_certificate_digest"};
+  auto* upb_struct = CreateExtProcAttributesProtoStruct(arena.ptr(), requested,
+                                                        batch, "", conn_attrs);
+  ASSERT_NE(upb_struct, nullptr);
+  auto proto = ConvertToProto(upb_struct, arena.ptr());
+  EXPECT_EQ(
+      proto.fields().at("connection.requested_server_name").string_value(),
+      "service.example.com");
+  EXPECT_EQ(proto.fields().at("connection.tls_version").string_value(),
+            "TLSv1.3");
+  EXPECT_EQ(proto.fields()
+                .at("connection.sha256_peer_certificate_digest")
+                .string_value(),
+            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+}
+
+TEST_F(CreateExtProcAttributesProtoStructTest,
+       AttributesServerSideMissingOrClientSide) {
+  upb::Arena arena;
+  grpc_metadata_batch batch;
+  std::vector<std::string> requested = {
+      "source.address", "source.port", "connection.requested_server_name",
+      "connection.tls_version", "connection.sha256_peer_certificate_digest"};
+  // 1. connection_attributes is std::nullopt (client side)
+  auto* upb_struct1 = CreateExtProcAttributesProtoStruct(
+      arena.ptr(), requested, batch, "", std::nullopt);
+  ASSERT_NE(upb_struct1, nullptr);
+  auto proto1 = ConvertToProto(upb_struct1, arena.ptr());
+  EXPECT_TRUE(proto1.fields().empty());
+  // 2. connection_attributes has empty/default values
+  ExtProcConnectionAttributes empty_attrs;
+  auto* upb_struct2 = CreateExtProcAttributesProtoStruct(
+      arena.ptr(), requested, batch, "", empty_attrs);
+  ASSERT_NE(upb_struct2, nullptr);
+  auto proto2 = ConvertToProto(upb_struct2, arena.ptr());
+  EXPECT_TRUE(proto2.fields().empty());
 }
 
 //
