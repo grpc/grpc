@@ -150,10 +150,14 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
     static constexpr absl::string_view kName = "client_ext_proc";
     GRPC_INSTRUMENT_DOMAIN_LABELS("target");
 
-    static HistogramHandle<ExponentialHistogramShape> kClientHeadersDuration;
-    static HistogramHandle<ExponentialHistogramShape> kClientHalfCloseDuration;
-    static HistogramHandle<ExponentialHistogramShape> kServerHeadersDuration;
-    static HistogramHandle<ExponentialHistogramShape> kServerTrailersDuration;
+    static DoubleHistogramHandle<ExponentialDoubleHistogramShape>
+        kClientHeadersDuration;
+    static DoubleHistogramHandle<ExponentialDoubleHistogramShape>
+        kClientHalfCloseDuration;
+    static DoubleHistogramHandle<ExponentialDoubleHistogramShape>
+        kServerHeadersDuration;
+    static DoubleHistogramHandle<ExponentialDoubleHistogramShape>
+        kServerTrailersDuration;
   };
 
   RefCountedPtr<ExtProcChannel> channel() const { return config_->channel(); }

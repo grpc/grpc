@@ -166,7 +166,6 @@ void XdsStreamingCallPromiseWrapper::SendHalfClose() {
   if (send_half_close) {
     call_->SendHalfClose();
   }
-  call_->SendHalfClose();
 }
 
 void XdsStreamingCallPromiseWrapper::Orphaned() {

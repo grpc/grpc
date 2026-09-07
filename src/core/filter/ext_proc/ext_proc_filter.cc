@@ -64,40 +64,44 @@ namespace grpc_core {
 // ExtProcFilter::TelemetryDomain
 //
 
-ExtProcFilter::TelemetryDomain::HistogramHandle<ExponentialHistogramShape>
+ExtProcFilter::TelemetryDomain::DoubleHistogramHandle<
+    ExponentialDoubleHistogramShape>
     ExtProcFilter::TelemetryDomain::kClientHeadersDuration =
-        ExtProcFilter::TelemetryDomain::RegisterHistogram<
-            ExponentialHistogramShape>(
+        ExtProcFilter::TelemetryDomain::RegisterDoubleHistogram<
+            ExponentialDoubleHistogramShape>(
             "grpc.client_ext_proc.client_headers_duration",
             "Time between when the ext_proc filter sees the client's headers "
             "and when it allows those headers to continue on to the next "
             "filter.",
             "s", 60, 20);
 
-ExtProcFilter::TelemetryDomain::HistogramHandle<ExponentialHistogramShape>
+ExtProcFilter::TelemetryDomain::DoubleHistogramHandle<
+    ExponentialDoubleHistogramShape>
     ExtProcFilter::TelemetryDomain::kClientHalfCloseDuration =
-        ExtProcFilter::TelemetryDomain::RegisterHistogram<
-            ExponentialHistogramShape>(
+        ExtProcFilter::TelemetryDomain::RegisterDoubleHistogram<
+            ExponentialDoubleHistogramShape>(
             "grpc.client_ext_proc.client_half_close_duration",
             "Time between when the ext_proc filter sees the client's "
             "half-close and when it allows that half-close to continue on to "
             "the next filter.",
             "s", 60, 20);
 
-ExtProcFilter::TelemetryDomain::HistogramHandle<ExponentialHistogramShape>
+ExtProcFilter::TelemetryDomain::DoubleHistogramHandle<
+    ExponentialDoubleHistogramShape>
     ExtProcFilter::TelemetryDomain::kServerHeadersDuration =
-        ExtProcFilter::TelemetryDomain::RegisterHistogram<
-            ExponentialHistogramShape>(
+        ExtProcFilter::TelemetryDomain::RegisterDoubleHistogram<
+            ExponentialDoubleHistogramShape>(
             "grpc.client_ext_proc.server_headers_duration",
             "Time between when the ext_proc filter sees the server's headers "
             "and when it allows those headers to continue on to the next "
             "filter.",
             "s", 60, 20);
 
-ExtProcFilter::TelemetryDomain::HistogramHandle<ExponentialHistogramShape>
+ExtProcFilter::TelemetryDomain::DoubleHistogramHandle<
+    ExponentialDoubleHistogramShape>
     ExtProcFilter::TelemetryDomain::kServerTrailersDuration =
-        ExtProcFilter::TelemetryDomain::RegisterHistogram<
-            ExponentialHistogramShape>(
+        ExtProcFilter::TelemetryDomain::RegisterDoubleHistogram<
+            ExponentialDoubleHistogramShape>(
             "grpc.client_ext_proc.server_trailers_duration",
             "Time between when the ext_proc filter sees the server's "
             "trailers and when it allows those trailers to continue on to "
@@ -1732,7 +1736,7 @@ ExtProcFilter::~ExtProcFilter() {
 void ExtProcFilter::RecordClientHeadersDuration(double duration_seconds) const {
   if (telemetry_storage_ != nullptr) {
     telemetry_storage_->Increment(TelemetryDomain::kClientHeadersDuration,
-                                  static_cast<int64_t>(duration_seconds));
+                                  duration_seconds);
   }
 }
 
@@ -1740,14 +1744,14 @@ void ExtProcFilter::RecordClientHalfCloseDuration(
     double duration_seconds) const {
   if (telemetry_storage_ != nullptr) {
     telemetry_storage_->Increment(TelemetryDomain::kClientHalfCloseDuration,
-                                  static_cast<int64_t>(duration_seconds));
+                                  duration_seconds);
   }
 }
 
 void ExtProcFilter::RecordServerHeadersDuration(double duration_seconds) const {
   if (telemetry_storage_ != nullptr) {
     telemetry_storage_->Increment(TelemetryDomain::kServerHeadersDuration,
-                                  static_cast<int64_t>(duration_seconds));
+                                  duration_seconds);
   }
 }
 
@@ -1755,7 +1759,7 @@ void ExtProcFilter::RecordServerTrailersDuration(
     double duration_seconds) const {
   if (telemetry_storage_ != nullptr) {
     telemetry_storage_->Increment(TelemetryDomain::kServerTrailersDuration,
-                                  static_cast<int64_t>(duration_seconds));
+                                  duration_seconds);
   }
 }
 
