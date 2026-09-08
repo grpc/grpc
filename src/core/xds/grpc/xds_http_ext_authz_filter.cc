@@ -26,11 +26,7 @@
 #include "envoy/extensions/filters/http/ext_authz/v3/ext_authz.upb.h"
 #include "envoy/extensions/filters/http/ext_authz/v3/ext_authz.upbdefs.h"
 #include "envoy/type/v3/http_status.upb.h"
-#include "upb/reflection/def.h"
-
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
-
+#include "re2/re2.h"
 #include "src/core/ext/filters/ext_authz/ext_authz_filter.h"
 #include "src/core/filter/filter_args.h"
 #include "src/core/lib/transport/status_conversion.h"
@@ -44,6 +40,9 @@
 #include "src/core/xds/grpc/xds_grpc_service_parser.h"
 #include "src/core/xds/grpc/xds_server_grpc.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
+#include "upb/reflection/def.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -51,7 +50,8 @@ absl::string_view XdsHttpExtAuthzFilterFactory::ConfigProtoName() const {
   return "envoy.extensions.filters.http.ext_authz.v3.ExtAuthz";
 }
 
-absl::string_view XdsHttpExtAuthzFilterFactory::OverrideConfigProtoName() const {
+absl::string_view XdsHttpExtAuthzFilterFactory::OverrideConfigProtoName()
+    const {
   return "envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute";
 }
 
@@ -60,7 +60,8 @@ void XdsHttpExtAuthzFilterFactory::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_ext_authz_v3_ExtAuthzPerRoute_getmsgdef(symtab);
 }
 
-const grpc_channel_filter* XdsHttpExtAuthzFilterFactory::channel_filter() const {
+const grpc_channel_filter* XdsHttpExtAuthzFilterFactory::channel_filter()
+    const {
   return &ExtAuthzFilter::kFilterVtable;
 }
 
@@ -245,8 +246,24 @@ RefCountedPtr<const FilterConfig> XdsHttpExtAuthzFilterFactory::MergeConfigs(
   config->status_on_error = top_config.status_on_error;
   config->allowed_headers = top_config.allowed_headers;
   config->disallowed_headers = top_config.disallowed_headers;
-  config->decoder_header_mutation_rules =
-      top_config.decoder_header_mutation_rules;
+  if (top_config.decoder_header_mutation_rules.has_value()) {
+    HeaderMutationRules rules;
+    rules.disallow_all = top_config.decoder_header_mutation_rules->disallow_all;
+    rules.disallow_is_error =
+        top_config.decoder_header_mutation_rules->disallow_is_error;
+    if (top_config.decoder_header_mutation_rules->allow_expression != nullptr) {
+      rules.allow_expression =
+          std::make_unique<RE2>(top_config.decoder_header_mutation_rules
+                                    ->allow_expression->pattern());
+    }
+    if (top_config.decoder_header_mutation_rules->disallow_expression !=
+        nullptr) {
+      rules.disallow_expression =
+          std::make_unique<RE2>(top_config.decoder_header_mutation_rules
+                                    ->disallow_expression->pattern());
+    }
+    config->decoder_header_mutation_rules = std::move(rules);
+  }
   config->include_peer_certificate = top_config.include_peer_certificate;
   // Blackboard handling
   if (const auto* target =

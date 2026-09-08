@@ -6783,6 +6783,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "re2",
         "@com_google_protobuf//upb/base",
         "@com_google_protobuf//upb/message",
         "@com_google_protobuf//upb/reflection",
