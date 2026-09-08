@@ -143,7 +143,7 @@ spec:
     clone:
       gitRef: master
       repo: https://github.com/grpc/grpc.git
-    language: php7
+    language: php8
     pool: ${client_pool}
     run:
     - args:
@@ -161,7 +161,7 @@ spec:
     clone:
       gitRef: master
       repo: https://github.com/grpc/grpc.git
-    language: php7_protobuf_c
+    language: php8_protobuf_c
     pool: ${client_pool}
     run:
     - args:

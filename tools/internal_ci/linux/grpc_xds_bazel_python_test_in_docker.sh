@@ -15,6 +15,7 @@
 
 PS4='+ $(date "+[%H:%M:%S %Z]")\011 '
 set -ex
+trap "cp -r /var/local/git/grpc/reports/. /var/local/jenkins/grpc/reports/ || true" EXIT
 
 mkdir -p /var/local/git
 git clone -b master --single-branch --depth=1 https://github.com/grpc/grpc.git /var/local/git/grpc

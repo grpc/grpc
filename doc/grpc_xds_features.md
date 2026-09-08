@@ -83,3 +83,4 @@ Stateful Session Affinity | [A55](https://github.com/grpc/proposal/blob/master/A
 xDS Locality label for OpenTelemetry metrics | [A78](https://github.com/grpc/proposal/blob/master/A78-grpc-metrics-wrr-pf-xds.md) | v1.63.0 (C++) | v1.64.0 | | |
 xDS Fallback | [A71](https://github.com/grpc/proposal/blob/master/A71-xds-fallback.md) | v1.67.0 | v1.71.0 | v1.70.0 | |
 Dualstack Backend Support | [A61](https://github.com/grpc/proposal/blob/master/A61-IPv4-IPv6-dualstack-backends.md) | v1.66.1 | | v1.71.0 | v1.12.0 |
+WRR Support for Custom Backend Metrics | [A114](https://github.com/grpc/proposal/blob/master/A114-wrr-metric-names-for-computing-utilization.md) | v1.84.0 | | | |

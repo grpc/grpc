@@ -557,8 +557,15 @@ class TransportFlowControl final {
 class StreamFlowControl final {
  public:
   explicit StreamFlowControl(TransportFlowControl* tfc);
+  // TODO(ritulb) : [PH2][P5] :  When CHTTP2 is removed, delete this
+  // destructor(no-op).
   ~StreamFlowControl() {
     tfc_->RemoveAnnouncedWindowDelta(announced_window_delta_);
+  }
+
+  void OnStreamClosed() {
+    tfc_->RemoveAnnouncedWindowDelta(announced_window_delta_);
+    announced_window_delta_ = 0;
   }
 
   // Track an update to the incoming flow control counters - that is how many

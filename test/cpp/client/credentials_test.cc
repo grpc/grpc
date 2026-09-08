@@ -295,8 +295,8 @@ TEST(CredentialsTest, StsCredentialsOptionsFromEnv) {
   FILE* creds_file = gpr_tmpfile("sts_creds_options", &creds_file_name);
   ASSERT_NE(creds_file_name, nullptr);
   ASSERT_NE(creds_file, nullptr);
-  ASSERT_EQ(sizeof(valid_json),
-            fwrite(valid_json, 1, sizeof(valid_json), creds_file));
+  ASSERT_EQ(sizeof(valid_json) - 1,
+            fwrite(valid_json, 1, sizeof(valid_json) - 1, creds_file));
   fclose(creds_file);
   grpc_core::SetEnv("STS_CREDENTIALS", creds_file_name);
   gpr_free(creds_file_name);

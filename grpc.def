@@ -21,6 +21,7 @@ EXPORTS
     grpc_compression_options_is_algorithm_enabled
     grpc_service_account_jwt_access_credentials_create
     grpc_external_account_credentials_create
+    grpc_gdch_service_account_credentials_create
     grpc_google_refresh_token_credentials_create
     grpc_access_token_credentials_create
     grpc_google_iam_credentials_create
@@ -125,6 +126,7 @@ EXPORTS
     grpc_channel_create
     grpc_lame_client_channel_create
     grpc_channel_destroy
+    grpc_channel_args_arg_vtable
     grpc_call_cancel
     grpc_call_cancel_with_status
     grpc_call_failed_before_recv_message

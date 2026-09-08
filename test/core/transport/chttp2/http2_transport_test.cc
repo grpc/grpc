@@ -25,11 +25,15 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "src/core/call/call_spine.h"
+#include "src/core/call/metadata.h"
+#include "src/core/call/metadata_batch.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
@@ -46,6 +50,7 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/sleep.h"
+#include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/notification.h"
@@ -55,6 +60,7 @@
 #include "src/core/util/time.h"
 #include "test/core/transport/util/mock_promise_endpoint.h"
 #include "gtest/gtest.h"
+#include "absl/functional/function_ref.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
@@ -74,7 +80,9 @@ class TestsNeedingStreamObjects : public ::testing::TestWithParam<bool> {
 
   void SetUp() override {}
 
-  RefCountedPtr<Stream> CreateMinimalTestStream(uint32_t stream_id) {
+  bool is_client() const { return is_client_; }
+
+  RefCountedPtr<Stream> CreateMinimalTestStream(const uint32_t stream_id) {
     RefCountedPtr<Arena> arena = SimpleArenaAllocator()->MakeArena();
     arena->SetContext<grpc_event_engine::experimental::EventEngine>(
         grpc_event_engine::experimental::GetDefaultEventEngine().get());
@@ -82,7 +90,7 @@ class TestsNeedingStreamObjects : public ::testing::TestWithParam<bool> {
         Arena::MakePooledForOverwrite<ClientMetadata>();
     client_initial_metadata->Set(HttpPathMetadata(),
                                  Slice::FromCopiedString("/foo/bar"));
-    std::unique_ptr<CallInitiatorAndHandler> call_pair =
+    const std::unique_ptr<CallInitiatorAndHandler> call_pair =
         std::make_unique<CallInitiatorAndHandler>(
             MakeCallPair(std::move(client_initial_metadata), std::move(arena)));
     RefCountedPtr<Stream> stream =
@@ -889,8 +897,8 @@ TEST_F(Http2ReadContextTest, ReadCycleFramesLimits) {
 TEST(Http2CommonTransportTest, TestTarpitDuration) {
   // Verify that TarpitDuration generates random values within bounds across
   // many runs.
-  int min_duration_ms = 10;
-  int max_duration_ms = 30;
+  const int min_duration_ms = 10;
+  const int max_duration_ms = 30;
   for (int i = 0; i < 1000; ++i) {
     const Duration current_duration =
         TarpitDuration(min_duration_ms, max_duration_ms);
@@ -905,17 +913,493 @@ TEST(Http2CommonTransportTest, TestTarpitDuration) {
         TarpitDuration(exact_duration_ms, exact_duration_ms);
     EXPECT_EQ(duration, Duration::Milliseconds(exact_duration_ms));
   }
+}
 
-  // Verify that TarpitDuration gracefully handles bad inputs without
-  // crashing.
-  min_duration_ms = 30;
-  max_duration_ms = 10;
-  for (int i = 0; i < 50; ++i) {
-    const Duration current_duration =
-        TarpitDuration(min_duration_ms, max_duration_ms);
-    EXPECT_EQ(current_duration, Duration::Milliseconds(min_duration_ms));
+///////////////////////////////////////////////////////////////////////////////
+// TarpitManager Unit Tests
+
+class TarpitManagerTest : public TestsNeedingStreamObjects {
+ protected:
+  TarpitManagerTest()
+      : event_engine_(
+            grpc_event_engine::experimental::GetDefaultEventEngine()) {}
+
+  void SetUp() override {
+    if (is_client()) {
+      GTEST_SKIP() << "Tarpitting is only supported on server-side streams.";
+    }
+    Init();
+  }
+
+  // Initializes the TarpitManager with the provided channel arguments and
+  // instantiates the test Party. This should be called at the beginning of each
+  // test that interacts with TarpitManager.
+  void Init(const ChannelArgs& channel_args = ChannelArgs{}) {
+    party_ = MakeParty(event_engine_);
+    tarpit_manager_ = std::make_unique<TarpitManager>(channel_args);
+  }
+
+  TarpitManager& GetTarpitManager() {
+    GRPC_CHECK(tarpit_manager_ != nullptr);
+    return *tarpit_manager_;
+  }
+
+  const TarpitManager& GetTarpitManager() const {
+    GRPC_CHECK(tarpit_manager_ != nullptr);
+    return *tarpit_manager_;
+  }
+
+  const RefCountedPtr<Party>& GetParty() const {
+    GRPC_CHECK(party_ != nullptr);
+    return party_;
+  }
+
+  // This helper function does the following:
+  // 1. Spawns a promise to receive the next message from the TarpitManager.
+  // 2. Marks the stream as tarpitted.
+  // 3. Verifies the stream's state transitions are as expected.
+  // 4. Executes the provided callback to verify the TarpitEntry payload.
+  // 5. Marks the stream as tarpit completed.
+  // Note: This function mimics transport-level handling of a TarpitEntry.
+  void ReceiveAndProcessTarpitEntry(
+      const RefCountedPtr<Stream>& stream,
+      const absl::FunctionRef<void(TarpitEntry&)> verify) {
+    ExecCtx exec_ctx;
+    Notification done;
+    party_->Spawn("receive_and_process_tarpit_entry",
+                  GetTarpitManager().NextMessage(),
+                  [this, &stream, &verify, &done](auto result) {
+                    EXPECT_TRUE(result.ok());
+                    if (result.ok()) {
+                      TarpitEntry entry = std::move(*result.value());
+                      EXPECT_EQ(entry.GetStreamId(), stream->GetStreamId());
+
+                      const StreamStateChange change =
+                          GetTarpitManager().OnTarpit(*stream);
+                      ExpectTarpitActive(stream);
+                      EXPECT_TRUE(change.reads_became_closed);
+                      EXPECT_TRUE(stream->IsClosedForReads());
+
+                      verify(entry);
+
+                      stream->SetTarpitCompleted();
+                      ExpectTarpitCompleted(stream);
+                    }
+                    done.Notify();
+                  });
+    done.WaitForNotification();
+  }
+
+  void AddToQueueOnParty(TarpitEntry entry) {
+    ExecCtx exec_ctx;
+    Notification done;
+    party_->Spawn(
+        "add_to_queue",
+        [this, entry = std::move(entry)]() mutable {
+          GetTarpitManager().AddToQueue(std::move(entry));
+          return Empty{};
+        },
+        [&done](Empty) { done.Notify(); });
+    done.WaitForNotification();
+  }
+
+  void ShutdownOnParty() {
+    ExecCtx exec_ctx;
+    Notification done;
+    party_->Spawn(
+        "shutdown",
+        [this]() {
+          GetTarpitManager().Shutdown();
+          return Empty{};
+        },
+        [&done](Empty) { done.Notify(); });
+    done.WaitForNotification();
+  }
+
+  void ExpectNeverTarpitted(const RefCountedPtr<Stream>& stream) const {
+    EXPECT_EQ(stream->GetTarpitState(), TarpitState::kNone);
+    EXPECT_TRUE(stream->WasNeverTarpitted());
+    EXPECT_FALSE(stream->IsTarpitted());
+    EXPECT_FALSE(stream->IsTarpitTimerActive());
+    EXPECT_FALSE(stream->IsTarpitCompleted());
+  }
+
+  void ExpectTarpitActive(const RefCountedPtr<Stream>& stream) const {
+    EXPECT_EQ(stream->GetTarpitState(), TarpitState::kActive);
+    EXPECT_FALSE(stream->WasNeverTarpitted());
+    EXPECT_TRUE(stream->IsTarpitted());
+    EXPECT_TRUE(stream->IsTarpitTimerActive());
+    EXPECT_FALSE(stream->IsTarpitCompleted());
+  }
+
+  void ExpectTarpitCompleted(const RefCountedPtr<Stream>& stream) const {
+    EXPECT_EQ(stream->GetTarpitState(), TarpitState::kCompleted);
+    EXPECT_FALSE(stream->WasNeverTarpitted());
+    EXPECT_TRUE(stream->IsTarpitted());
+    EXPECT_FALSE(stream->IsTarpitTimerActive());
+    EXPECT_TRUE(stream->IsTarpitCompleted());
+  }
+
+  const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+      event_engine_;
+  RefCountedPtr<Party> party_;
+  std::unique_ptr<TarpitManager> tarpit_manager_;
+
+ private:
+  static RefCountedPtr<Party> MakeParty(
+      const std::shared_ptr<grpc_event_engine::experimental::EventEngine>&
+          event_engine) {
+    RefCountedPtr<Arena> arena = SimpleArenaAllocator()->MakeArena();
+    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        event_engine.get());
+    return Party::Make(std::move(arena));
+  }
+};
+
+// Verifies that tarpit is enabled by default and can be disabled via
+// GRPC_ARG_HTTP_ALLOW_TARPIT channel argument.
+TEST_P(TarpitManagerTest, TarpitManagerEnabledDisabledTest) {
+  {
+    const ChannelArgs default_args;
+    const TarpitManager enabled_manager(default_args);
+    EXPECT_TRUE(enabled_manager.allow_tarpit());
+  }
+
+  {
+    const ChannelArgs disabled_args =
+        ChannelArgs().Set(GRPC_ARG_HTTP_ALLOW_TARPIT, false);
+    const TarpitManager disabled_manager(disabled_args);
+    EXPECT_FALSE(disabled_manager.allow_tarpit());
   }
 }
+
+TEST_P(TarpitManagerTest, TarpitManagerRequestCloseStreamTest) {
+  std::optional<TarpitEntry::OutgoingResetPayload> outgoing_reset;
+  const RefCountedPtr<Stream> stream = CreateMinimalTestStream(1u);
+  ExpectNeverTarpitted(stream);
+
+  const StatusFlag status = GetTarpitManager().RequestCloseStream(
+      stream->GetStreamId(),
+      /*reset_stream_error_code=*/
+      static_cast<uint32_t>(Http2ErrorCode::kCancel),
+      absl::CancelledError("test status"));
+  EXPECT_TRUE(status.ok());
+
+  ReceiveAndProcessTarpitEntry(stream, [&](TarpitEntry& entry) {
+    EXPECT_TRUE(entry.IsOutgoingReset());
+    EXPECT_FALSE(entry.IsOutgoingTrailingMetadata());
+    EXPECT_FALSE(entry.IsIncomingReset());
+
+    outgoing_reset = entry.TakeOutgoingResetPayload();
+    ASSERT_TRUE(outgoing_reset.has_value());
+    EXPECT_EQ(outgoing_reset->http2_error_code,
+              static_cast<uint32_t>(Http2ErrorCode::kCancel));
+    EXPECT_EQ(outgoing_reset->trailing_metadata_status,
+              absl::CancelledError("test status"));
+  });
+
+  // Post-tarpit: OnInitiateReset cancels the call and initiates the stream
+  // reset.
+  const StreamStateChange reset_change = stream->OnInitiateReset(
+      std::move(outgoing_reset->trailing_metadata_status));
+  EXPECT_FALSE(reset_change.reads_became_closed);
+  EXPECT_FALSE(reset_change.stream_became_closed);
+  EXPECT_TRUE(stream->IsClosedForReads());
+}
+
+TEST_P(TarpitManagerTest, TarpitManagerStartTarpitTrailersTest) {
+  std::optional<TarpitEntry::OutgoingTrailingMetadataPayload> outgoing_trailers;
+  const RefCountedPtr<Stream> stream = CreateMinimalTestStream(3u);
+  ExpectNeverTarpitted(stream);
+
+  Arena::PoolPtr<ServerMetadata> trailers =
+      Arena::MakePooledForOverwrite<ServerMetadata>();
+  trailers->Set(GrpcTarPit());
+  trailers->Set(GrpcStatusMetadata(), GRPC_STATUS_PERMISSION_DENIED);
+
+  const StatusFlag status = GetTarpitManager().StartTarpitTrailers(
+      stream->GetStreamId(), std::move(trailers));
+  EXPECT_TRUE(status.ok());
+
+  ReceiveAndProcessTarpitEntry(stream, [&](TarpitEntry& entry) {
+    EXPECT_TRUE(entry.IsOutgoingTrailingMetadata());
+    EXPECT_FALSE(entry.IsOutgoingReset());
+    EXPECT_FALSE(entry.IsIncomingReset());
+
+    outgoing_trailers = entry.TakeOutgoingTrailingMetadataPayload();
+    ASSERT_TRUE(outgoing_trailers.has_value());
+    EXPECT_NE(outgoing_trailers->metadata, nullptr);
+    EXPECT_EQ(outgoing_trailers->metadata->get(GrpcStatusMetadata()),
+              GRPC_STATUS_PERMISSION_DENIED);
+  });
+
+  // Post-tarpit: EnqueueTrailingMetadata enqueues delayed server trailing
+  // metadata on the server.
+  const absl::StatusOr<
+      StreamDataQueue<ServerMetadataHandle>::StreamWritabilityUpdate>
+      enqueue_result = stream->EnqueueTrailingMetadata(
+          std::move(outgoing_trailers->metadata));
+  EXPECT_TRUE(enqueue_result.ok());
+  EXPECT_TRUE(stream->IsClosedForReads());
+}
+
+TEST_P(TarpitManagerTest, TarpitManagerIncomingResetTest) {
+  std::optional<TarpitEntry::IncomingResetPayload> incoming_reset;
+  const RefCountedPtr<Stream> stream = CreateMinimalTestStream(5u);
+  ExpectNeverTarpitted(stream);
+
+  const absl::Status incoming_status =
+      absl::CancelledError("RST_STREAM received");
+  const StatusFlag req_status = GetTarpitManager().RequestTarpitIncomingReset(
+      stream->GetStreamId(), incoming_status);
+  EXPECT_TRUE(req_status.ok());
+
+  ReceiveAndProcessTarpitEntry(stream, [&](TarpitEntry& entry) {
+    EXPECT_TRUE(entry.IsIncomingReset());
+    EXPECT_FALSE(entry.IsOutgoingReset());
+    EXPECT_FALSE(entry.IsOutgoingTrailingMetadata());
+
+    incoming_reset = entry.TakeIncomingResetPayload();
+    ASSERT_TRUE(incoming_reset.has_value());
+    EXPECT_EQ(incoming_reset->status, incoming_status);
+  });
+
+  // Post-tarpit: OnResetReceived closes the stream.
+  const StreamStateChange reset_change =
+      stream->OnResetReceived(std::move(incoming_reset->status));
+  EXPECT_TRUE(reset_change.stream_became_closed);
+  EXPECT_TRUE(stream->IsClosedForWrites());
+}
+
+// Verifies ordering and strict expiration (expire_time <= now) behavior of
+// TarpitManager queue. Entries configured with future durations remain in the
+// queue, and entries whose expiration time has arrived are drained in the order
+// of expiration time.
+TEST_P(TarpitManagerTest, TarpitManagerOrderingAndDrainTest) {
+  const Timestamp future_time = Timestamp::Now() + Duration::Hours(1);
+  TarpitEntry entry_future1 = TarpitEntry::CreateOutgoingReset(
+      1u, /*http2_error_code=*/0, /*trailing_metadata_status=*/absl::OkStatus(),
+      future_time);
+  TarpitEntry entry_future2 = TarpitEntry::CreateOutgoingReset(
+      3u, /*http2_error_code=*/0, /*trailing_metadata_status=*/absl::OkStatus(),
+      future_time);
+
+  GetTarpitManager().AddToQueue(std::move(entry_future1));
+  GetTarpitManager().AddToQueue(std::move(entry_future2));
+
+  // Entries have not reached expiration time (expire_time > now).
+  const std::vector<TarpitEntry> future_expired =
+      GetTarpitManager().OnTimerExpired();
+  EXPECT_TRUE(future_expired.empty());
+
+  // Entries with past expiration times.
+  const Timestamp now = Timestamp::Now();
+  const Timestamp t1 = now - Duration::Seconds(30);
+  const Timestamp t2 = now - Duration::Seconds(20);
+  const Timestamp t3 = now - Duration::Seconds(10);
+
+  // Add entries out of chronological order (t2, t3, t1).
+  GetTarpitManager().AddToQueue(TarpitEntry::CreateOutgoingReset(
+      20u, /*http2_error_code=*/0,
+      /*trailing_metadata_status=*/absl::OkStatus(), t2));
+  GetTarpitManager().AddToQueue(TarpitEntry::CreateOutgoingReset(
+      30u, /*http2_error_code=*/0,
+      /*trailing_metadata_status=*/absl::OkStatus(), t3));
+  GetTarpitManager().AddToQueue(TarpitEntry::CreateOutgoingReset(
+      10u, /*http2_error_code=*/0,
+      /*trailing_metadata_status=*/absl::OkStatus(), t1));
+
+  // Verify expiration order: t1, t2, t3.
+  const std::vector<TarpitEntry> ordered_batch =
+      GetTarpitManager().OnTimerExpired();
+  ASSERT_EQ(ordered_batch.size(), 3u);
+  EXPECT_EQ(ordered_batch[0].GetExpireTime(), t1);
+  EXPECT_EQ(ordered_batch[0].GetStreamId(), 10u);
+  EXPECT_EQ(ordered_batch[1].GetExpireTime(), t2);
+  EXPECT_EQ(ordered_batch[1].GetStreamId(), 20u);
+  EXPECT_EQ(ordered_batch[2].GetExpireTime(), t3);
+  EXPECT_EQ(ordered_batch[2].GetStreamId(), 30u);
+
+  // Enqueuing and draining multiple expired entries.
+  for (uint32_t i = 1u; i <= 150u; ++i) {
+    GetTarpitManager().AddToQueue(TarpitEntry::CreateOutgoingReset(
+        i, /*http2_error_code=*/0,
+        /*trailing_metadata_status=*/absl::OkStatus(), Timestamp::Now()));
+  }
+
+  // All expired entries are drained in a single batch.
+  const std::vector<TarpitEntry> batch1 = GetTarpitManager().OnTimerExpired();
+  EXPECT_EQ(batch1.size(), 150u);
+
+  // No more expired entries remain.
+  const std::vector<TarpitEntry> batch2 = GetTarpitManager().OnTimerExpired();
+  EXPECT_TRUE(batch2.empty());
+}
+
+// Verifies that Shutdown() sets the shutdown flag and closes the receiver.
+// Enqueuing new tarpit entries across all three producer methods after
+// Shutdown() fails and returns a non-OK status.
+TEST_P(TarpitManagerTest, TarpitManagerShutdownTest) {
+  const RefCountedPtr<Stream> stream = CreateMinimalTestStream(1u);
+
+  GetTarpitManager().Shutdown();
+
+  EXPECT_FALSE(
+      GetTarpitManager()
+          .RequestCloseStream(stream->GetStreamId(), 0u, absl::CancelledError())
+          .ok());
+
+  Arena::PoolPtr<ServerMetadata> trailers =
+      Arena::MakePooledForOverwrite<ServerMetadata>();
+  trailers->Set(GrpcStatusMetadata(), GRPC_STATUS_PERMISSION_DENIED);
+  EXPECT_FALSE(
+      GetTarpitManager()
+          .StartTarpitTrailers(stream->GetStreamId(), std::move(trailers))
+          .ok());
+
+  EXPECT_FALSE(GetTarpitManager()
+                   .RequestTarpitIncomingReset(stream->GetStreamId(),
+                                               absl::CancelledError())
+                   .ok());
+}
+
+// Verifies that WaitForTimerExpire() suspends when queue is empty, resumes when
+// an entry is added to the queue via AddToQueue, resolves after the timer sleep
+// duration, and cancels with CancelledError when the manager is shut down.
+TEST_P(TarpitManagerTest, TarpitManagerWaitForTimerExpireTest) {
+  const ChannelArgs short_delay_args =
+      ChannelArgs()
+          .Set(GRPC_ARG_HTTP_TARPIT_MIN_DURATION_MS, 10)
+          .Set(GRPC_ARG_HTTP_TARPIT_MAX_DURATION_MS, 10);
+  Init(short_delay_args);
+
+  ExecCtx exec_ctx;
+
+  Notification timer_done;
+  GetParty()->Spawn("wait_timer_expire",
+                    GetTarpitManager().WaitForTimerExpire(),
+                    [&timer_done](const absl::Status status) {
+                      EXPECT_TRUE(status.ok());
+                      timer_done.Notify();
+                    });
+
+  // Enqueue an entry to wake up WaitForTimerExpire.
+  const RefCountedPtr<Stream> stream = CreateMinimalTestStream(1u);
+  AddToQueueOnParty(TarpitEntry::CreateOutgoingReset(
+      stream->GetStreamId(), /*http2_error_code=*/0,
+      /*trailing_metadata_status=*/absl::OkStatus(), Timestamp::Now()));
+
+  timer_done.WaitForNotification();
+
+  // Verify WaitForTimerExpire returns CancelledError after Shutdown.
+  ShutdownOnParty();
+  Notification shutdown_done;
+  GetParty()->Spawn("wait_shutdown", GetTarpitManager().WaitForTimerExpire(),
+                    [&shutdown_done](const absl::Status status) {
+                      EXPECT_EQ(status,
+                                absl::CancelledError("TarpitManager shutdown"));
+                      shutdown_done.Notify();
+                    });
+  shutdown_done.WaitForNotification();
+}
+
+// Verifies TarpitState forward transitions (kNone -> kActive ->
+// kCompleted) and state query accessors.
+TEST_P(TarpitManagerTest, StreamTarpitStateTransitionsTest) {
+  const RefCountedPtr<Stream> stream = CreateMinimalTestStream(1u);
+  ExpectNeverTarpitted(stream);
+
+  stream->SetTarpitActive();
+  ExpectTarpitActive(stream);
+
+  stream->SetTarpitCompleted();
+  ExpectTarpitCompleted(stream);
+}
+
+// Verifies that TarpitManager::ChannelzProperties exports snapshot metrics.
+TEST_P(TarpitManagerTest, TarpitManagerChannelzPropertiesTest) {
+  const auto GetProp = [](const channelz::PropertyList& props,
+                          const absl::string_view key)
+      -> std::optional<channelz::PropertyValue> {
+    for (const auto& [k, v] : props.property_list()) {
+      if (k == key) return v;
+    }
+    return std::nullopt;
+  };
+
+  // Verify ChannelZ properties for an enabled manager with an empty queue.
+  const ChannelArgs default_args;
+  TarpitManager enabled_manager(default_args);
+
+  const channelz::PropertyList initial_props =
+      enabled_manager.ChannelzProperties();
+  EXPECT_EQ(std::get<bool>(*GetProp(initial_props, "allow_tarpit")), true);
+  EXPECT_EQ(std::get<Duration>(*GetProp(initial_props, "min_tarpit_duration")),
+            Duration::Milliseconds(100));
+  EXPECT_EQ(std::get<Duration>(*GetProp(initial_props, "max_tarpit_duration")),
+            Duration::Seconds(1));
+  EXPECT_EQ(std::get<bool>(*GetProp(initial_props, "is_shutdown")), false);
+  EXPECT_EQ(std::get<uint64_t>(
+                *GetProp(initial_props, "current_tarpitted_streams_count")),
+            0u);
+  EXPECT_EQ(std::get<bool>(*GetProp(initial_props, "is_queue_empty")), true);
+  EXPECT_EQ(GetProp(initial_props, "earliest_expiration_time"), std::nullopt);
+
+  // Also verify ChannelZ properties when tarpitting is disabled via channel
+  // args.
+  const ChannelArgs disabled_args =
+      ChannelArgs().Set(GRPC_ARG_HTTP_ALLOW_TARPIT, false);
+  const TarpitManager disabled_manager(disabled_args);
+  const channelz::PropertyList disabled_props =
+      disabled_manager.ChannelzProperties();
+  EXPECT_EQ(std::get<bool>(*GetProp(disabled_props, "allow_tarpit")), false);
+  EXPECT_EQ(std::get<uint64_t>(
+                *GetProp(disabled_props, "current_tarpitted_streams_count")),
+            0u);
+  EXPECT_EQ(std::get<bool>(*GetProp(disabled_props, "is_queue_empty")), true);
+  EXPECT_EQ(std::get<bool>(*GetProp(disabled_props, "is_shutdown")), false);
+  EXPECT_EQ(GetProp(disabled_props, "earliest_expiration_time"), std::nullopt);
+
+  // Step 2: Add entries to the queue and verify updated
+  // current_tarpitted_streams_count, is_queue_empty: false, and
+  // earliest_expiration_time.
+  const Timestamp expire_time1 = Timestamp::Now() + Duration::Seconds(20);
+  const Timestamp expire_time2 = Timestamp::Now() + Duration::Seconds(50);
+  enabled_manager.AddToQueue(TarpitEntry::CreateOutgoingReset(
+      1u, /*http2_error_code=*/0, /*trailing_metadata_status=*/absl::OkStatus(),
+      expire_time1));
+  enabled_manager.AddToQueue(TarpitEntry::CreateOutgoingReset(
+      3u, /*http2_error_code=*/0, /*trailing_metadata_status=*/absl::OkStatus(),
+      expire_time2));
+
+  const channelz::PropertyList queued_props =
+      enabled_manager.ChannelzProperties();
+  EXPECT_EQ(std::get<bool>(*GetProp(queued_props, "allow_tarpit")), true);
+  EXPECT_EQ(std::get<bool>(*GetProp(queued_props, "is_shutdown")), false);
+  EXPECT_EQ(std::get<uint64_t>(
+                *GetProp(queued_props, "current_tarpitted_streams_count")),
+            2u);
+  EXPECT_EQ(std::get<bool>(*GetProp(queued_props, "is_queue_empty")), false);
+  ASSERT_NE(GetProp(queued_props, "earliest_expiration_time"), std::nullopt);
+  EXPECT_EQ(
+      std::get<Timestamp>(*GetProp(queued_props, "earliest_expiration_time")),
+      expire_time1);
+
+  // Step 3: Verify post-shutdown properties
+  enabled_manager.Shutdown();
+  const channelz::PropertyList shutdown_props =
+      enabled_manager.ChannelzProperties();
+  EXPECT_EQ(std::get<bool>(*GetProp(shutdown_props, "allow_tarpit")), true);
+  EXPECT_EQ(std::get<bool>(*GetProp(shutdown_props, "is_shutdown")), true);
+  EXPECT_EQ(std::get<uint64_t>(
+                *GetProp(shutdown_props, "current_tarpitted_streams_count")),
+            0u);
+  EXPECT_EQ(std::get<bool>(*GetProp(shutdown_props, "is_queue_empty")), true);
+  EXPECT_EQ(GetProp(shutdown_props, "earliest_expiration_time"), std::nullopt);
+}
+
+INSTANTIATE_TEST_SUITE_P(TarpitManagerTest, TarpitManagerTest,
+                         ::testing::Bool());
 
 }  // namespace testing
 }  // namespace http2

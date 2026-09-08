@@ -802,10 +802,7 @@ class FuzzerDNSResolver : public ExtendedType<EventEngine::DNSResolver,
 absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>>
 FuzzingEventEngine::GetDNSResolver(const DNSResolver::ResolverOptions&) {
 #if defined(GRPC_POSIX_SOCKET_TCP)
-  if (grpc_core::IsEventEngineDnsNonClientChannelEnabled()) {
-    return std::make_unique<FuzzerDNSResolver>(shared_from_this());
-  }
-  return std::make_unique<NativePosixDNSResolver>(shared_from_this());
+  return std::make_unique<FuzzerDNSResolver>(shared_from_this());
 #else
   grpc_core::Crash("FuzzingEventEngine::GetDNSResolver Not implemented");
 #endif

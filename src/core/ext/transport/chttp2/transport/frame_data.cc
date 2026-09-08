@@ -48,6 +48,7 @@ absl::Status grpc_chttp2_data_parser_begin_frame(uint8_t flags,
   } else {
     s->received_last_frame = false;
   }
+  ++s->num_frames;
 
   return absl::OkStatus();
 }
@@ -155,6 +156,7 @@ grpc_core::Poll<grpc_error_handle> grpc_deframe_unprocessed_incoming_frames(
     grpc_slice_buffer_move_first_into_buffer(slices, GRPC_HEADER_SIZE_IN_BYTES,
                                              header);
     grpc_slice_buffer_move_first(slices, length, stream_out->c_slice_buffer());
+    s->num_frames = 0;
   }
 
   return absl::OkStatus();
@@ -165,8 +167,20 @@ grpc_error_handle grpc_chttp2_data_parser_parse(void* /*parser*/,
                                                 grpc_chttp2_stream* s,
                                                 const grpc_slice& slice,
                                                 int is_last) {
-  grpc_core::CSliceRef(slice);
-  grpc_slice_buffer_add(&s->frame_storage, slice);
+  const size_t slice_len = GRPC_SLICE_LENGTH(slice);
+  bool is_small_frame = 0 < slice_len && slice_len < GRPC_SLICE_INLINED_SIZE;
+  bool multiple_small_frames =
+      (s->num_frames >= 64) &&
+      ((s->frame_storage.length / s->num_frames) < GRPC_SLICE_INLINED_SIZE);
+  if (GPR_UNLIKELY(multiple_small_frames && is_small_frame &&
+                   grpc_core::IsHeaderDataFrameEnabled())) {
+    uint8_t* append_ptr =
+        grpc_slice_buffer_tiny_add(&s->frame_storage, slice_len);
+    memcpy(append_ptr, GRPC_SLICE_START_PTR(slice), slice_len);
+  } else {
+    grpc_core::CSliceRef(slice);
+    grpc_slice_buffer_add(&s->frame_storage, slice);
+  }
   grpc_chttp2_maybe_complete_recv_message(t, s);
 
   if (is_last) {

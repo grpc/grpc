@@ -694,8 +694,12 @@ class TestDomain final : public InstrumentDomain<TestDomain> {
   static inline const auto kCounter =
       RegisterCounter("test_counter", "A test counter.", "unit");
   static inline const auto kHistogram =
-      RegisterHistogram<ExponentialHistogramShape>(
+      RegisterInt64Histogram<ExponentialInt64HistogramShape>(
           "test_histogram", "A test histogram.", "unit", 100, 5);
+  static inline const auto kDoubleHistogram =
+      RegisterDoubleHistogram<LinearDoubleHistogramShape>(
+          "test_double_histogram", "A test double histogram.", "unit", 0.0,
+          100.0, 5);
 };
 
 TEST_F(MetricsTest, InstrumentDomainHistogramAndCounterQuery) {
@@ -706,6 +710,8 @@ TEST_F(MetricsTest, InstrumentDomainHistogramAndCounterQuery) {
   storage->Increment(TestDomain::kHistogram, 10);
   storage->Increment(TestDomain::kHistogram, 10);
   storage->Increment(TestDomain::kHistogram, 10000);
+  storage->Increment(TestDomain::kDoubleHistogram, 12.5);
+  storage->Increment(TestDomain::kDoubleHistogram, 55.0);
   auto counter_val =
       plugin->GetUInt64MetricValueByName(TestDomain::kCounter.name());
   EXPECT_THAT(counter_val, ::testing::Optional(42));
@@ -716,6 +722,13 @@ TEST_F(MetricsTest, InstrumentDomainHistogramAndCounterQuery) {
   uint64_t total_count =
       std::accumulate(hist_val->begin(), hist_val->end(), uint64_t{});
   EXPECT_EQ(total_count, 3);
+  auto double_hist_val = plugin->GetDoubleHistogramValueByName(
+      TestDomain::kDoubleHistogram.name());
+  ASSERT_TRUE(double_hist_val.has_value());
+  ASSERT_EQ(double_hist_val->size(), 5);
+  uint64_t double_total_count = std::accumulate(
+      double_hist_val->begin(), double_hist_val->end(), uint64_t{});
+  EXPECT_EQ(double_total_count, 2);
 }
 
 using MetricsDeathTest = MetricsTest;

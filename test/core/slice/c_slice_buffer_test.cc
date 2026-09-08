@@ -27,7 +27,7 @@
 
 static constexpr size_t kTotalDataLength = 4096;
 
-void test_slice_buffer_add() {
+TEST(SliceBufferTest, Add) {
   grpc_slice_buffer buf;
   grpc_slice aaa = grpc_slice_from_copied_string("aaa");
   grpc_slice bb = grpc_slice_from_copied_string("bb");
@@ -68,7 +68,7 @@ static void free_data(void* data, size_t len) {
   gpr_free(data);
 }
 
-void test_slice_buffer_add_contiguous_slices() {
+TEST(SliceBufferTest, AddContiguousSlices) {
   grpc_slice_buffer buf;
   grpc_slice_buffer_init(&buf);
   char* data = reinterpret_cast<char*>(gpr_malloc(kTotalDataLength));
@@ -92,7 +92,7 @@ void test_slice_buffer_add_contiguous_slices() {
   grpc_slice_buffer_destroy(&buf);
 }
 
-void test_slice_buffer_move_first() {
+TEST(SliceBufferTest, MoveFirst) {
   grpc_slice slices[3];
   grpc_slice_buffer src;
   grpc_slice_buffer dst;
@@ -140,7 +140,7 @@ void test_slice_buffer_move_first() {
   ASSERT_EQ(dst.length, dst_len);
 }
 
-void test_slice_buffer_first() {
+TEST(SliceBufferTest, First) {
   grpc_slice slices[3];
   slices[0] = grpc_slice_from_copied_string("aaa");
   slices[1] = grpc_slice_from_copied_string("bbbb");
@@ -181,6 +181,136 @@ void test_slice_buffer_first() {
   ASSERT_EQ(buf.length, 0);
 }
 
+TEST(SliceBufferTest, TinyAddEmptyBuffer) {
+  grpc_slice_buffer buf;
+  grpc_slice_buffer_init(&buf);
+
+  // Tiny add to an empty buffer.
+  uint8_t* p = grpc_slice_buffer_tiny_add(&buf, 5);
+  ASSERT_NE(p, nullptr);
+  memcpy(p, "hello", 5);
+
+  ASSERT_EQ(buf.count, 1);
+  ASSERT_EQ(buf.length, 5);
+
+  grpc_slice slice = grpc_slice_buffer_peek_first(&buf)[0];
+  ASSERT_EQ(GRPC_SLICE_LENGTH(slice), 5);
+  ASSERT_EQ(memcmp(GRPC_SLICE_START_PTR(slice), "hello", 5), 0);
+
+  grpc_slice_buffer_destroy(&buf);
+}
+
+TEST(SliceBufferTest, TinyAddAppendToInlined) {
+  grpc_slice_buffer buf;
+  grpc_slice_buffer_init(&buf);
+
+  // First tiny add
+  uint8_t* p1 = grpc_slice_buffer_tiny_add(&buf, 5);
+  memcpy(p1, "hello", 5);
+  ASSERT_EQ(buf.count, 1);
+  ASSERT_EQ(buf.length, 5);
+
+  // Second tiny add should append to the same slice.
+  uint8_t* p2 = grpc_slice_buffer_tiny_add(&buf, 6);
+  ASSERT_EQ(p2, p1 + 5);
+  memcpy(p2, " world", 6);
+
+  ASSERT_EQ(buf.count, 1);
+  ASSERT_EQ(buf.length, 11);
+
+  grpc_slice slice = grpc_slice_buffer_peek_first(&buf)[0];
+  ASSERT_EQ(GRPC_SLICE_LENGTH(slice), 11);
+  ASSERT_EQ(memcmp(GRPC_SLICE_START_PTR(slice), "hello world", 11), 0);
+
+  grpc_slice_buffer_destroy(&buf);
+}
+
+TEST(SliceBufferTest, TinyAddNotEnoughSpace) {
+  grpc_slice_buffer buf;
+  grpc_slice_buffer_init(&buf);
+
+  const size_t first_add_size = GRPC_SLICE_INLINED_SIZE - 3;
+  const size_t second_add_size = 5;
+
+  uint8_t* p1 = grpc_slice_buffer_tiny_add(&buf, first_add_size);
+  memset(p1, 'a', first_add_size);
+  ASSERT_EQ(buf.count, 1);
+  ASSERT_EQ(buf.length, first_add_size);
+
+  // This one should fall back to a new slice.
+  uint8_t* p2 = grpc_slice_buffer_tiny_add(&buf, second_add_size);
+  ASSERT_NE(p2, p1 + first_add_size);
+  memset(p2, 'b', second_add_size);
+
+  ASSERT_EQ(buf.count, 2);
+  ASSERT_EQ(buf.length, first_add_size + second_add_size);
+
+  // verify first slice
+  grpc_slice slice1 = grpc_slice_buffer_peek_first(&buf)[0];
+  ASSERT_EQ(GRPC_SLICE_LENGTH(slice1), first_add_size);
+
+  // verify second slice
+  grpc_slice slice2 = buf.slices[1];
+  ASSERT_EQ(GRPC_SLICE_LENGTH(slice2), second_add_size);
+
+  grpc_slice_buffer_destroy(&buf);
+}
+
+TEST(SliceBufferTest, TinyAddAfterRefcounted) {
+  grpc_slice_buffer buf;
+  grpc_slice_buffer_init(&buf);
+
+  // Add a refcounted slice (one that is longer than INLINED_SIZE)
+  grpc_slice s = grpc_slice_from_copied_string(
+      "this is a refcounted string that is large enough");
+  size_t initial_len = GRPC_SLICE_LENGTH(s);
+  grpc_slice_buffer_add(&buf, s);
+
+  ASSERT_EQ(buf.count, 1);
+  ASSERT_EQ(buf.length, initial_len);
+
+  // Tiny add should create a new slice, since previous is refcounted
+  uint8_t* p = grpc_slice_buffer_tiny_add(&buf, 5);
+  memcpy(p, "hello", 5);
+
+  ASSERT_EQ(buf.count, 2);
+  ASSERT_EQ(buf.length, initial_len + 5);
+
+  // verify second slice
+  grpc_slice slice2 = buf.slices[1];
+  ASSERT_EQ(GRPC_SLICE_LENGTH(slice2), 5);
+  ASSERT_EQ(memcmp(GRPC_SLICE_START_PTR(slice2), "hello", 5), 0);
+
+  grpc_slice_buffer_destroy(&buf);
+}
+
+TEST(SliceBufferTest, TinyAddEmbiggen) {
+  grpc_slice_buffer buf;
+  grpc_slice_buffer_init(&buf);
+
+  // Fill up the buffer capacity to trigger embiggen logic.
+  // capacity starts at GRPC_SLICE_BUFFER_INLINE_ELEMENTS.
+  for (size_t i = 0; i < GRPC_SLICE_BUFFER_INLINE_ELEMENTS + 1; ++i) {
+    grpc_slice s = grpc_slice_from_copied_string(
+        "large enough string to be refcounted so tiny add creates new slice");
+    grpc_slice_buffer_add(&buf, s);
+  }
+
+  size_t initial_count = buf.count;
+  size_t initial_len = buf.length;
+
+  uint8_t* p = grpc_slice_buffer_tiny_add(&buf, 5);
+  memcpy(p, "hello", 5);
+
+  ASSERT_EQ(buf.count, initial_count + 1);
+  ASSERT_EQ(buf.length, initial_len + 5);
+
+  grpc_slice slice_last = buf.slices[buf.count - 1];
+  ASSERT_EQ(GRPC_SLICE_LENGTH(slice_last), 5);
+  ASSERT_EQ(memcmp(GRPC_SLICE_START_PTR(slice_last), "hello", 5), 0);
+
+  grpc_slice_buffer_destroy(&buf);
+}
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);

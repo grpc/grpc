@@ -86,19 +86,41 @@ void RegisterBuiltins(CoreConfiguration::Builder* builder) {
   builder->channel_init()
       ->RegisterV2Filter<LameClientFilter>(GRPC_CLIENT_LAME_CHANNEL)
       .Terminal();
-  builder->channel_init()
-      ->RegisterFilter(GRPC_SERVER_CHANNEL, &Server::kServerTopFilter)
-      .SkipV3()
-      .BeforeAll();
-  builder->channel_init()
-      ->RegisterFilter(GRPC_SERVER_VIRTUAL_CHANNEL, &Server::kServerTopFilter)
-      .SkipV3()
-      .BeforeAll();
+
+  auto& top_filter_server_reg =
+      builder->channel_init()
+          ->RegisterFilter(GRPC_SERVER_CHANNEL, &Server::kServerTopFilter)
+          .SkipV3();
+
+  auto& top_filter_server_virtual_reg =
+      builder->channel_init()
+          ->RegisterFilter(GRPC_SERVER_VIRTUAL_CHANNEL,
+                           &Server::kServerTopFilter)
+          .SkipV3();
+
+  if (IsFixV3FilterStackServerSideOrderingEnabled()) {
+    top_filter_server_reg.SinkToBottom().After(
+        {LegacyMaxAgeFilter::kFilter.name});
+    top_filter_server_virtual_reg.SinkToBottom();
+  } else {
+    top_filter_server_reg.BeforeAll();
+    top_filter_server_virtual_reg.BeforeAll();
+  }
+
   if (IsXdsServerFilterChainPerRouteEnabled()) {
-    builder->channel_init()
-        ->RegisterFilter<ServerConfigSelectorInterceptor>(GRPC_SERVER_CHANNEL)
-        .IfHasChannelArg(ServerConfigSelectorProvider::ChannelArgName())
-        .After({LegacyMaxAgeFilter::kFilter.name});
+    auto& server_config_selector_interceptor_reg =
+        builder->channel_init()
+            ->RegisterFilter<ServerConfigSelectorInterceptor>(
+                GRPC_SERVER_CHANNEL)
+            .IfHasChannelArg(ServerConfigSelectorProvider::ChannelArgName());
+
+    if (IsFixV3FilterStackServerSideOrderingEnabled()) {
+      server_config_selector_interceptor_reg.Before(
+          {LegacyMaxAgeFilter::kFilter.name});
+    } else {
+      server_config_selector_interceptor_reg.After(
+          {LegacyMaxAgeFilter::kFilter.name});
+    }
   }
 }
 

@@ -747,6 +747,7 @@ grpc_chttp2_transport::grpc_chttp2_transport(
           &memory_owner),
       deframe_state(is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0),
       is_client(is_client),
+      auth_context(channel_args.GetObject<grpc_auth_context>()),
       mitigation_engine([&]() {
         auto* provider =
             channel_args.GetObject<grpc_core::MitigationEngineProvider>();
@@ -830,7 +831,6 @@ grpc_chttp2_transport::grpc_chttp2_transport(
     grpc_core::test_only_init_callback();
   }
 
-  grpc_auth_context* auth_context = channel_args.GetObject<grpc_auth_context>();
   http2_stats = grpc_core::CreateHttp2StatsCollector(auth_context);
   hpack_parser.hpack_table()->SetHttp2StatsCollector(http2_stats);
 

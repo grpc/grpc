@@ -637,19 +637,6 @@ TEST(SecurityConnectorTest, IPv6AddressSan) {
   tsi_peer_destruct(&peer);
 }
 
-namespace grpc_core {
-namespace {
-
-class TestDefaultSslRootStore : public DefaultSslRootStore {
- public:
-  static grpc_slice ComputePemRootCertsForTesting() {
-    return ComputePemRootCerts();
-  }
-};
-
-}  // namespace
-}  // namespace grpc_core
-
 // TODO(unknown): Convert this test to C++ test when security_connector
 // implementation is converted to C++.
 TEST(SecurityConnectorTest, DefaultSslRoots) {
@@ -668,52 +655,33 @@ TEST(SecurityConnectorTest, DefaultSslRoots) {
   overrides.default_ssl_roots_file_path = "";
   grpc_core::ConfigVars::SetOverrides(overrides);
   grpc_set_ssl_roots_override_callback(override_roots_success);
-  grpc_slice roots =
-      grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
-  char* roots_contents = grpc_slice_to_c_string(roots);
-  grpc_slice_unref(roots);
-  ASSERT_STREQ(roots_contents, roots_for_override_api);
-  gpr_free(roots_contents);
+  grpc_core::Slice roots =
+      grpc_core::DefaultSslRootStore::ComputePemRootCerts();
+  ASSERT_EQ(roots.as_string_view(), roots_for_override_api);
 
   // Now let's set the config: We should get the contents pointed value
   // instead
   overrides.default_ssl_roots_file_path = roots_env_var_file_path;
   grpc_core::ConfigVars::SetOverrides(overrides);
-  roots = grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
-  roots_contents = grpc_slice_to_c_string(roots);
-  grpc_slice_unref(roots);
-  ASSERT_STREQ(roots_contents, roots_for_env_var);
-  gpr_free(roots_contents);
+  roots = grpc_core::DefaultSslRootStore::ComputePemRootCerts();
+  ASSERT_EQ(roots.as_string_view(), roots_for_env_var);
 
   // Now reset the config. We should fall back to the value overridden using
   // the api.
   overrides.default_ssl_roots_file_path = "";
   grpc_core::ConfigVars::SetOverrides(overrides);
   grpc_set_ssl_roots_override_callback(override_roots_success);
-  roots = grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
-  roots_contents = grpc_slice_to_c_string(roots);
-  grpc_slice_unref(roots);
-  ASSERT_STREQ(roots_contents, roots_for_override_api);
-  gpr_free(roots_contents);
+  roots = grpc_core::DefaultSslRootStore::ComputePemRootCerts();
+  ASSERT_EQ(roots.as_string_view(), roots_for_override_api);
 
   // Now set the config to prefer system roots over the callback. Only check
   // if we find system roots.
   auto system_roots = grpc_core::LoadSystemRootCerts();
-
-  if (!GRPC_SLICE_IS_EMPTY(system_roots)) {
-    auto system_roots_contents = grpc_slice_to_c_string(system_roots);
-    grpc_slice_unref(system_roots);
-
+  if (!system_roots.empty()) {
     overrides.use_system_roots_over_language_callback = true;
     grpc_core::ConfigVars::SetOverrides(overrides);
-    roots = grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
-    roots_contents = grpc_slice_to_c_string(roots);
-    grpc_slice_unref(roots);
-
-    ASSERT_STREQ(roots_contents, system_roots_contents);
-    gpr_free(roots_contents);
-    gpr_free(system_roots_contents);
-
+    roots = grpc_core::DefaultSslRootStore::ComputePemRootCerts();
+    ASSERT_EQ(roots.as_string_view(), system_roots.as_string_view());
     overrides.use_system_roots_over_language_callback = false;
   }
 
@@ -722,10 +690,11 @@ TEST(SecurityConnectorTest, DefaultSslRoots) {
   overrides.not_use_system_ssl_roots = true;
   grpc_core::ConfigVars::SetOverrides(overrides);
   grpc_set_ssl_roots_override_callback(override_roots_permanent_failure);
-  roots = grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
-  ASSERT_TRUE(GRPC_SLICE_IS_EMPTY(roots));
+  roots = grpc_core::DefaultSslRootStore::ComputePemRootCerts();
+  ASSERT_EQ(roots.as_string_view(), "");
+
   const tsi_ssl_root_certs_store* root_store =
-      grpc_core::TestDefaultSslRootStore::GetRootStore();
+      grpc_core::DefaultSslRootStore::GetRootStore();
   ASSERT_EQ(root_store, nullptr);
 
   // Cleanup.

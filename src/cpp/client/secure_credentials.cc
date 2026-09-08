@@ -100,6 +100,13 @@ std::shared_ptr<CallCredentials> ExternalAccountCredentials(
       json_string.c_str(), absl::StrJoin(scopes, ",").c_str()));
 }
 
+std::shared_ptr<CallCredentials> GDCHServiceAccountCredentials(
+    const grpc::string& json_string, const grpc::string& audience) {
+  grpc::internal::GrpcLibrary init;  // To call grpc_init().
+  return WrapCallCredentials(grpc_gdch_service_account_credentials_create(
+      json_string.c_str(), audience.c_str()));
+}
+
 // Builds SSL Credentials given SSL specific options
 std::shared_ptr<ChannelCredentials> SslCredentials(
     const SslCredentialsOptions& options) {
@@ -139,7 +146,7 @@ grpc::Status StsCredentialsOptionsFromJson(const std::string& json_string,
                         "options cannot be nullptr.");
   }
   ClearStsCredentialsOptions(options);
-  auto json = grpc_core::JsonParse(json_string.c_str());
+  auto json = grpc_core::JsonParse(json_string);
   if (!json.ok() || json->type() != grpc_core::Json::Type::kObject) {
     return grpc::Status(
         grpc::StatusCode::INVALID_ARGUMENT,
@@ -199,14 +206,13 @@ grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options) {
     return grpc::Status(grpc::StatusCode::NOT_FOUND,
                         "STS_CREDENTIALS environment variable not set.");
   }
-  auto json_slice =
-      grpc_core::LoadFile(*sts_creds_path, /*add_null_terminator=*/true);
+  auto json_slice = grpc_core::LoadFile(*sts_creds_path);
   if (!json_slice.ok()) {
     return grpc::Status(grpc::StatusCode::NOT_FOUND,
                         json_slice.status().ToString());
   }
-  return StsCredentialsOptionsFromJson(json_slice->as_string_view().data(),
-                                       options);
+  return StsCredentialsOptionsFromJson(
+      std::string(json_slice->as_string_view()), options);
 }
 
 // C++ to Core STS Credentials options.

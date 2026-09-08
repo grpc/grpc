@@ -56,10 +56,15 @@ std::string TextEncode(upb_Message* message,
   auto* def = getmsgdef(def_pool);
   size_t size = upb_TextEncode(message, def, def_pool, 0, buf, sizeof(buf));
   if (size < sizeof(buf)) return std::string(buf, size);
-  char* new_buf = new char[size];
-  upb_TextEncode(message, def, def_pool, 0, new_buf, size);
-  std::string result(new_buf, size);
-  delete[] new_buf;
+  // upb_TextEncode has snprintf() semantics: it always NUL-terminates
+  // within the given capacity, so writing size content bytes requires
+  // a capacity of size + 1. We allocate size + 1 bytes in the string,
+  // let upb_TextEncode write the content and the NUL terminator, and then
+  // resize the string back to size to remove the NUL terminator from the
+  // string's active length.
+  std::string result(size + 1, '\0');
+  upb_TextEncode(message, def, def_pool, 0, result.data(), result.size());
+  result.resize(size);
   return result;
 }
 

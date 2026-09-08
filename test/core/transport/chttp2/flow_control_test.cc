@@ -14,6 +14,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 #include <climits>
@@ -263,6 +264,63 @@ TEST_F(FlowControlTest, GradualReadsUpdate) {
   EXPECT_GE(immediate_updates, 0);
   EXPECT_GT(queued_updates, 0);
   EXPECT_EQ(immediate_updates + queued_updates, 65535);
+}
+
+// Tests that OnStreamClosed() decreases the transport's aggregate stream window
+// total by the exact delta of the closed stream and resets the stream's delta
+// to 0.
+TEST_F(FlowControlTest, OnStreamClosedDecreasesAnnouncedDeltaFromTransport) {
+  TransportFlowControl tfc(/*peer_name=*/"test",
+                           /*enable_bdp_probe=*/true, &memory_owner_);
+  StreamFlowControl sfc1(&tfc);
+  StreamFlowControl sfc2(&tfc);
+
+  // Increase window delta on stream 1 (1024 bytes).
+  {
+    StreamFlowControl::IncomingUpdateContext sfc1_update(&sfc1);
+    sfc1_update.SetMinProgressSize(1024u);
+    GRPC_UNUSED const FlowControlAction action = sfc1_update.MakeAction();
+  }
+  const uint32_t announced1 = sfc1.MaybeSendUpdate();
+  EXPECT_EQ(announced1, 1024u);
+
+  // Increase window delta on stream 2 (2048 bytes).
+  {
+    StreamFlowControl::IncomingUpdateContext sfc2_update(&sfc2);
+    sfc2_update.SetMinProgressSize(2048u);
+    GRPC_UNUSED const FlowControlAction action = sfc2_update.MakeAction();
+  }
+  const uint32_t announced2 = sfc2.MaybeSendUpdate();
+  EXPECT_EQ(announced2, 2048u);
+
+  // Verify aggregate transport total equals sum of both stream deltas.
+  const int64_t total_expected =
+      static_cast<int64_t>(announced1) + static_cast<int64_t>(announced2);
+  EXPECT_EQ(tfc.test_only_announced_stream_total_over_incoming_window(),
+            total_expected);
+
+  // Close stream 1 only.
+  sfc1.OnStreamClosed();
+
+  // Verify transport total MUST decrease by stream 1's delta,
+  // leaving stream 2's delta intact.
+  EXPECT_EQ(sfc1.test_only_announced_window_delta(), 0);
+  EXPECT_EQ(sfc2.test_only_announced_window_delta(),
+            static_cast<int64_t>(announced2));
+  EXPECT_EQ(tfc.test_only_announced_stream_total_over_incoming_window(),
+            static_cast<int64_t>(announced2));
+
+  // Close stream 2.
+  sfc2.OnStreamClosed();
+
+  // Transport total MUST now be 0.
+  EXPECT_EQ(sfc2.test_only_announced_window_delta(), 0);
+  EXPECT_EQ(tfc.test_only_announced_stream_total_over_incoming_window(), 0);
+
+  // Verify idempotency check - calling OnStreamClosed() again is a safe no-op.
+  sfc2.OnStreamClosed();
+  EXPECT_EQ(tfc.test_only_announced_stream_total_over_incoming_window(), 0);
+  EXPECT_EQ(sfc2.test_only_announced_window_delta(), 0);
 }
 
 }  // namespace chttp2

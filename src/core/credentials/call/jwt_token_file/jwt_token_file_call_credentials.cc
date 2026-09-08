@@ -44,7 +44,7 @@ class JwtTokenFileCallCredentials::FileReader final
 
  private:
   void ReadFile() {
-    auto contents = LoadFile(creds_->path_, /*add_null_terminator=*/false);
+    auto contents = LoadFile(creds_->path_);
     if (!contents.ok()) {
       on_done_(absl::UnavailableError(contents.status().message()));
       return;

@@ -33,11 +33,11 @@ def grpc_deps():
     if "boringssl" not in native.existing_rules():
         http_archive(
             name = "boringssl",
-            sha256 = "bacdc92ab6ee2e1b1047638ca0c830247bdf6f62be55081be0e319cfa3478719",
-            strip_prefix = "boringssl-2b44a3701a4788e1ef866ddc7f143060a3d196c9",
+            sha256 = "0db063f7484f25492a8e9ce149f1a2fc18e795f57086d528ae6dda6e08969ad8",
+            strip_prefix = "boringssl-3adc3d1aba162a578e2547f329fcce8659b8e89c",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/2b44a3701a4788e1ef866ddc7f143060a3d196c9.tar.gz",
-                "https://github.com/google/boringssl/archive/2b44a3701a4788e1ef866ddc7f143060a3d196c9.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/3adc3d1aba162a578e2547f329fcce8659b8e89c.tar.gz",
+                "https://github.com/google/boringssl/archive/3adc3d1aba162a578e2547f329fcce8659b8e89c.tar.gz",
             ],
         )
 

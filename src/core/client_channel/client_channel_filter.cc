@@ -1526,12 +1526,12 @@ void ClientChannelFilter::UpdateStateLocked(grpc_connectivity_state state,
     if (!status.ok() || state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
       GRPC_CHANNELZ_LOG(channelz_node_)
           << channelz::ChannelNode::GetChannelConnectivityStateChangeString(
-                 state);
+                 state)
+          << " status: " << status.ToString();
     } else {
       GRPC_CHANNELZ_LOG(channelz_node_)
           << channelz::ChannelNode::GetChannelConnectivityStateChangeString(
-                 state)
-          << " status: " << status.ToString();
+                 state);
     }
   }
 }

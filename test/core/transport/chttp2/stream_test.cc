@@ -486,6 +486,49 @@ TEST(StreamTest, Minimal) {
   EXPECT_EQ(stream->GetStreamId(), 123u);
 }
 
+// Verifies that Stream correctly tracks tarpit lifecycle states and returns
+// expected values for WasNeverTarpitted(), IsTarpitted(),
+// IsTarpitTimerActive(), and IsTarpitCompleted().
+TEST(StreamTest, TarpitLifecycleStateAccessors) {
+  // Purpose: Verify the initial and transitioned tarpit states of a Stream.
+  ExecCtx exec_ctx;
+  chttp2::TransportFlowControl tfc(/*peer_name=*/"test",
+                                   /*enable_bdp_probe=*/false,
+                                   /*memory_owner=*/nullptr);
+  RefCountedPtr<Arena> arena = SimpleArenaAllocator()->MakeArena();
+  arena->SetContext<EventEngine>(
+      grpc_event_engine::experimental::GetDefaultEventEngine().get());
+  CallInitiatorAndHandler call_pair = MakeCallPair(
+      Arena::MakePooledForOverwrite<ClientMetadata>(), std::move(arena));
+  const RefCountedPtr<Stream> stream =
+      MakeRefCounted<Stream>(call_pair.handler.StartCall(), tfc);
+  stream->InitializeClientStream(
+      /*stream_id=*/123u, /*allow_true_binary_metadata_peer=*/true);
+
+  // 1. Initial state: stream has never been tarpitted.
+  EXPECT_EQ(stream->GetTarpitState(), TarpitState::kNone);
+  EXPECT_TRUE(stream->WasNeverTarpitted());
+  EXPECT_FALSE(stream->IsTarpitted());
+  EXPECT_FALSE(stream->IsTarpitTimerActive());
+  EXPECT_FALSE(stream->IsTarpitCompleted());
+
+  // 2. Active state: stream entered the tarpit lifecycle.
+  stream->SetTarpitActive();
+  EXPECT_EQ(stream->GetTarpitState(), TarpitState::kActive);
+  EXPECT_FALSE(stream->WasNeverTarpitted());
+  EXPECT_TRUE(stream->IsTarpitted());
+  EXPECT_TRUE(stream->IsTarpitTimerActive());
+  EXPECT_FALSE(stream->IsTarpitCompleted());
+
+  // 3. Completed state: tarpit timer expired.
+  stream->SetTarpitCompleted();
+  EXPECT_EQ(stream->GetTarpitState(), TarpitState::kCompleted);
+  EXPECT_FALSE(stream->WasNeverTarpitted());
+  EXPECT_TRUE(stream->IsTarpitted());
+  EXPECT_FALSE(stream->IsTarpitTimerActive());
+  EXPECT_TRUE(stream->IsTarpitCompleted());
+}
+
 }  // namespace testing
 }  // namespace http2
 }  // namespace grpc_core

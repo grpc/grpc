@@ -60,8 +60,17 @@ TEST_TARGETS=(
   //src/objective-c/tests:InteropTestsLocalCleartext
   //src/objective-c/tests:InteropTestsLocalSSL
   //src/objective-c/tests:InteropTestsRemote
-  //src/objective-c/tests:MacTests
-  //src/objective-c/tests:UnitTests
+  //src/objective-c/tests:APIv2Tests
+  //src/objective-c/tests:ChannelPoolTest
+  //src/objective-c/tests:ChannelTests
+  //src/objective-c/tests:GRPCBasicUnitTests
+  //src/objective-c/tests:GRPCClientTests
+  //src/objective-c/tests:NSErrorUnitTests
+  //src/objective-c/tests:RxLibraryUnitTests
+  //src/objective-c/tests:MacStressTests
+  //src/objective-c/tests:MacInteropTestsLocalCleartext
+  //src/objective-c/tests:MacInteropTestsLocalSSL
+  //src/objective-c/tests:MacInteropTestsRemote
   #//src/objective-c/tests:PerfTests
   //src/objective-c/tests:CFStreamTests
   # Needs oracle engine, which doesn't work with GRPC_IOS_EVENT_ENGINE_CLIENT=1
@@ -134,8 +143,17 @@ EVENT_ENGINE_TEST_TARGETS=(
   //src/objective-c/tests:InteropTestsLocalCleartext
   //src/objective-c/tests:InteropTestsLocalSSL
   //src/objective-c/tests:InteropTestsRemote
-  //src/objective-c/tests:MacTests
-  //src/objective-c/tests:UnitTests
+  //src/objective-c/tests:APIv2Tests
+  //src/objective-c/tests:ChannelPoolTest
+  //src/objective-c/tests:ChannelTests
+  //src/objective-c/tests:GRPCBasicUnitTests
+  //src/objective-c/tests:GRPCClientTests
+  //src/objective-c/tests:NSErrorUnitTests
+  //src/objective-c/tests:RxLibraryUnitTests
+  //src/objective-c/tests:MacStressTests
+  //src/objective-c/tests:MacInteropTestsLocalCleartext
+  //src/objective-c/tests:MacInteropTestsLocalSSL
+  //src/objective-c/tests:MacInteropTestsRemote
   //src/objective-c/tests:EventEngineUnitTests
   //src/objective-c/tests:CFStreamTests
   //src/objective-c/tests:tvtests_build_test

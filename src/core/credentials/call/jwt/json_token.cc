@@ -244,7 +244,7 @@ char* compute_and_encode_signature(const grpc_auth_json_key* json_key,
   const EVP_MD* md = openssl_digest_from_algorithm(signature_algorithm);
   EVP_MD_CTX* md_ctx = nullptr;
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
-  EVP_PKEY* key = EVP_PKEY_new();
+  EVP_PKEY* key = nullptr;
 #endif
   size_t sig_len = 0;
   unsigned char* sig = nullptr;
@@ -256,7 +256,15 @@ char* compute_and_encode_signature(const grpc_auth_json_key* json_key,
     goto end;
   }
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
-  EVP_PKEY_set1_RSA(key, json_key->private_key);
+  key = EVP_PKEY_new();
+  if (key == nullptr) {
+    LOG(ERROR) << "Could not create EVP_PKEY";
+    goto end;
+  }
+  if (EVP_PKEY_set1_RSA(key, json_key->private_key) == 0) {
+    LOG(ERROR) << "Could not set RSA key";
+    goto end;
+  }
   if (EVP_DigestSignInit(md_ctx, nullptr, md, nullptr, key) != 1) {
 #else
   if (EVP_DigestSignInit(md_ctx, nullptr, md, nullptr, json_key->private_key) !=

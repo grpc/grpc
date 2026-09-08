@@ -345,7 +345,7 @@ void SpiffeBundleMap::JsonPostLoad(const Json&, const JsonArgs&,
 
 absl::StatusOr<SpiffeBundleMap> SpiffeBundleMap::FromFile(
     absl::string_view file_path) {
-  auto slice = LoadFile(file_path.data(), /*add_null_terminator=*/false);
+  auto slice = LoadFile(file_path.data());
   GRPC_RETURN_IF_ERROR(slice.status());
   auto json = JsonParse(slice->as_string_view());
   GRPC_RETURN_IF_ERROR(json.status());

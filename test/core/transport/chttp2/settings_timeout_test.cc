@@ -47,8 +47,6 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/util/grpc_check.h"
@@ -134,29 +132,20 @@ class Client {
   void Connect() {
     ExecCtx exec_ctx;
     grpc_resolved_address addr;
-    if (IsEventEngineDnsNonClientChannelEnabled()) {
-      auto resolver =
-          grpc_event_engine::experimental::GetDefaultEventEngine()
-              ->GetDNSResolver(grpc_event_engine::experimental::EventEngine::
-                                   DNSResolver::ResolverOptions());
-      ASSERT_TRUE(resolver.ok())
-          << "Could not create resolver: " << resolver.status();
-      auto addresses = grpc_event_engine::experimental::LookupHostnameBlocking(
-          resolver->get(), server_address_, "80");
-      ASSERT_TRUE(addresses.ok())
-          << "Hostname lookup failed: " << addresses.status();
-      ASSERT_GE(addresses->size(), 1)
-          << "Found zero hostnames for " << server_address_ << ":80";
-      addr = grpc_event_engine::experimental::CreateGRPCResolvedAddress(
-          addresses->at(0));
-    } else {
-      absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or =
-          GetDNSResolver()->LookupHostnameBlocking(server_address_, "80");
-      ASSERT_EQ(absl::OkStatus(), addresses_or.status())
-          << addresses_or.status().ToString();
-      ASSERT_GE(addresses_or->size(), 1UL);
-      addr = addresses_or->at(0);
-    }
+    auto resolver =
+        grpc_event_engine::experimental::GetDefaultEventEngine()
+            ->GetDNSResolver(grpc_event_engine::experimental::EventEngine::
+                                 DNSResolver::ResolverOptions());
+    ASSERT_TRUE(resolver.ok())
+        << "Could not create resolver: " << resolver.status();
+    auto addresses = grpc_event_engine::experimental::LookupHostnameBlocking(
+        resolver->get(), server_address_, "80");
+    ASSERT_TRUE(addresses.ok())
+        << "Hostname lookup failed: " << addresses.status();
+    ASSERT_GE(addresses->size(), 1)
+        << "Found zero hostnames for " << server_address_ << ":80";
+    addr = grpc_event_engine::experimental::CreateGRPCResolvedAddress(
+        addresses->at(0));
     pollset_ = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
     grpc_pollset_init(pollset_, &mu_);
     grpc_pollset_set* pollset_set = grpc_pollset_set_create();

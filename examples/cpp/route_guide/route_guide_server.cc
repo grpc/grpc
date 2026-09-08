@@ -171,9 +171,9 @@ class RouteGuideImpl final : public RouteGuide::Service {
   std::vector<RouteNote> received_notes_;
 };
 
-void RunServer(const std::string& db_path) {
+void RunServer(const std::string& db) {
   std::string server_address("0.0.0.0:50051");
-  RouteGuideImpl service(db_path);
+  RouteGuideImpl service(db);
 
   ServerBuilder builder;
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());

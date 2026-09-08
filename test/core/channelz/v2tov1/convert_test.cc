@@ -15,11 +15,11 @@
 #include "src/core/channelz/v2tov1/convert.h"
 
 #include <google/protobuf/text_format.h>
+#include <grpc/channelz/v1/channelz.pb.h>
 
 #include "fuzztest/fuzztest.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
-#include "src/proto/grpc/channelz/channelz.pb.h"
 #include "src/proto/grpc/channelz/v2/channelz.pb.h"
 #include "src/proto/grpc/channelz/v2/property_list.pb.h"
 #include "gmock/gmock.h"
