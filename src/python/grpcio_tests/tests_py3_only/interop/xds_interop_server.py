@@ -113,12 +113,33 @@ def _parse_int_behavior(
         )
 
 
+# Maps the numeric status codes from the gRPC spec onto grpc.StatusCode.
+# Built explicitly rather than by reading StatusCode.value, since that tuple
+# shape is an implementation detail of the enum rather than a documented API.
+_STATUS_CODE_BY_VALUE: Mapping[int, grpc.StatusCode] = {
+    0: grpc.StatusCode.OK,
+    1: grpc.StatusCode.CANCELLED,
+    2: grpc.StatusCode.UNKNOWN,
+    3: grpc.StatusCode.INVALID_ARGUMENT,
+    4: grpc.StatusCode.DEADLINE_EXCEEDED,
+    5: grpc.StatusCode.NOT_FOUND,
+    6: grpc.StatusCode.ALREADY_EXISTS,
+    7: grpc.StatusCode.PERMISSION_DENIED,
+    8: grpc.StatusCode.RESOURCE_EXHAUSTED,
+    9: grpc.StatusCode.FAILED_PRECONDITION,
+    10: grpc.StatusCode.ABORTED,
+    11: grpc.StatusCode.OUT_OF_RANGE,
+    12: grpc.StatusCode.UNIMPLEMENTED,
+    13: grpc.StatusCode.INTERNAL,
+    14: grpc.StatusCode.UNAVAILABLE,
+    15: grpc.StatusCode.DATA_LOSS,
+    16: grpc.StatusCode.UNAUTHENTICATED,
+}
+
+
 def _status_code_from_value(code: int) -> grpc.StatusCode:
     """Maps a numeric status code onto a StatusCode, as Java's Status does."""
-    for status_code in grpc.StatusCode:
-        if status_code.value[0] == code:
-            return status_code
-    return grpc.StatusCode.UNKNOWN
+    return _STATUS_CODE_BY_VALUE.get(code, grpc.StatusCode.UNKNOWN)
 
 
 def _previous_rpc_attempts(
