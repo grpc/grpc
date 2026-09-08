@@ -5768,6 +5768,7 @@ grpc_cc_library(
     deps = [
         "grpc_check",
         "grpc_matchers",
+        "resolved_address",
         "status_conversion",
         "time",
         "upb_utils",
@@ -5782,7 +5783,7 @@ grpc_cc_library(
         "//:gpr_platform",
         "//:grpc_base",
         "//:protobuf_timestamp_upb",
-        "//:uri",
+        "//:sockaddr_utils",
     ],
 )
 

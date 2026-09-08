@@ -4401,7 +4401,7 @@ TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfigUnparsable) {
 TEST_F(XdsExtAuthzFilterTest, ParseMinimumConfig) {
   ExtAuthz ext_authz;
   auto* grpc_service = ext_authz.mutable_grpc_service();
-  grpc_service->mutable_google_grpc()->set_target_uri("dns:server.example.com");
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
   XdsExtension extension = MakeXdsExtension(ext_authz);
   auto config =
       factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
@@ -4410,7 +4410,7 @@ TEST_F(XdsExtAuthzFilterTest, ParseMinimumConfig) {
   ASSERT_NE(config, nullptr);
   ASSERT_EQ(config->type(), ExtAuthzFilter::Config::Type());
   EXPECT_EQ(config->ToString(),
-            "{server_uri=dns:server.example.com, "
+            "{server_uri=localhost:1234, "
             "deny_at_disable=false, failure_mode_allow=false, "
             "failure_mode_allow_header_add=false, status_on_error=7, "
             "include_peer_certificate=false}");
@@ -4419,7 +4419,7 @@ TEST_F(XdsExtAuthzFilterTest, ParseMinimumConfig) {
 TEST_F(XdsExtAuthzFilterTest, ParseFullConfig) {
   ExtAuthz ext_authz;
   auto* grpc_service = ext_authz.mutable_grpc_service();
-  grpc_service->mutable_google_grpc()->set_target_uri("dns:server.example.com");
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
   auto* filter = ext_authz.mutable_filter_enabled();
   auto* percent = filter->mutable_default_value();
   percent->set_numerator(100);
@@ -4451,7 +4451,7 @@ TEST_F(XdsExtAuthzFilterTest, ParseFullConfig) {
   ASSERT_NE(config, nullptr);
   ASSERT_EQ(config->type(), ExtAuthzFilter::Config::Type());
   EXPECT_EQ(config->ToString(),
-            "{server_uri=dns:server.example.com, "
+            "{server_uri=localhost:1234, "
             "filter_enabled=10000, "
             "deny_at_disable=true, failure_mode_allow=true, "
             "failure_mode_allow_header_add=true, status_on_error=16, "
