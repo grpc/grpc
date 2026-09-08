@@ -4409,7 +4409,7 @@ TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfig_MinimalConfig) {
       factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
   ASSERT_NE(config, nullptr);
   EXPECT_EQ(config->ToString(),
-            "{instance_name=, server_uri=dns:server.example.com, "
+            "{server_uri=dns:server.example.com, "
             "deny_at_disable=false, failure_mode_allow=false, "
             "failure_mode_allow_header_add=false, status_on_error=7, "
             "include_peer_certificate=false}");
@@ -4438,7 +4438,7 @@ TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfig_GrpcService) {
                                               &errors_);
   ASSERT_NE(config, nullptr);
   EXPECT_EQ(config->ToString(),
-            "{instance_name=, server_uri=localhost:1234, "
+            "{server_uri=localhost:1234, "
             "deny_at_disable=false, failure_mode_allow=false, "
             "failure_mode_allow_header_add=false, status_on_error=7, "
             "include_peer_certificate=false}");
@@ -4756,7 +4756,7 @@ TEST_F(XdsExtAuthzFilterTest, ParseOverrideConfig) {
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(override_config, nullptr);
   EXPECT_EQ(override_config->type(), ExtAuthzFilter::Config::Type());
-  EXPECT_EQ(override_config->ToString(), "{instance_name=}");
+  EXPECT_EQ(override_config->ToString(), "{}");
 }
 
 TEST_F(XdsExtAuthzFilterTest, ParseOverrideConfigUnparseable) {
@@ -4786,7 +4786,6 @@ TEST_F(XdsExtAuthzFilterTest, MergeConfigsNoOverride) {
                              *xds_client_->transport_factory(), *blackboard);
   ASSERT_NE(merged_config, nullptr);
   auto& config = DownCast<const ExtAuthzFilter::Config&>(*merged_config);
-  EXPECT_EQ(config.instance_name, "instance_name");
   ASSERT_NE(config.channel(), nullptr);
   EXPECT_EQ(config.channel()->server().server_uri(), "localhost:1234");
 }
@@ -4815,7 +4814,6 @@ TEST_F(XdsExtAuthzFilterTest, MergeConfigsWithRouteOverride) {
                              *xds_client_->transport_factory(), *blackboard);
   ASSERT_NE(merged_config, nullptr);
   auto& config = DownCast<const ExtAuthzFilter::Config&>(*merged_config);
-  EXPECT_EQ(config.instance_name, "instance_name");
   ASSERT_NE(config.channel(), nullptr);
   EXPECT_EQ(config.channel()->server().server_uri(), "localhost:1234");
 }

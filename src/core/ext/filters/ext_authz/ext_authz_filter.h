@@ -66,12 +66,6 @@ class ExtAuthzFilter : public ImplementChannelFilter<ExtAuthzFilter> {
   };
 
   struct Config : public FilterConfig {
-    enum class CheckResult {
-      kSendRequestToExtAuthzService,
-      kPassThrough,
-      kDeny,
-    };
-
     static UniqueTypeName Type() {
       return GRPC_UNIQUE_TYPE_NAME_HERE("ext_authz_config");
     }
@@ -79,11 +73,6 @@ class ExtAuthzFilter : public ImplementChannelFilter<ExtAuthzFilter> {
 
     bool Equals(const FilterConfig& other) const override;
     std::string ToString() const override;
-
-    bool isHeaderAllowed(absl::string_view key) const;
-    CheckResult CheckRequestAllowed() const;
-
-    std::string instance_name;
 
     // The gRPC service configuration (target URI, credentials, timeout)
     // used to establish the side-channel connection to the external authz
@@ -95,20 +84,42 @@ class ExtAuthzFilter : public ImplementChannelFilter<ExtAuthzFilter> {
     // override config).
     std::variant<RefCountedPtr<ExtAuthzChannel>, GrpcXdsServerTarget>
         channel_info;
-
-    // Fractional percent of requests for which filter is enabled, in parts per
-    // million.
+    // Fractional percent of requests for which the filter is enabled, in parts
+    // per million (capped at 100%). Optional; if unset, the filter is enabled.
     std::optional<uint32_t> filter_enabled;
-
+    // Optional; if unset (false), requests are allowed when the filter is
+    // disabled. If true, then when the filter is disabled, the request will be
+    // failed with a status based on status_on_error.
     bool deny_at_disable = false;
+    // When set to true, requests will be allowed even if communication with the
+    // authorization service has failed, or if the authorization service has
+    // returned an HTTP 5xx error. Defaults to false.
     bool failure_mode_allow = false;
+    // When failure_mode_allow and failure_mode_allow_header_add are both set to
+    // true, 'x-envoy-auth-failure-mode-allowed: true' will be added to request
+    // headers if communication with the authorization service has failed, or
+    // if the authorization service has returned an HTTP 5xx error.
     bool failure_mode_allow_header_add = false;
+    // Status to return when the authorization service returns an error or when
+    // communication fails (if failure_mode_allow is false) or when the filter is
+    // disabled and deny_at_disable is true. Note that the proto specifies an
+    // HTTP status code, not a gRPC status code; this field stores the gRPC
+    // status code determined using the normal HTTP-to-gRPC status conversion
+    // rules.
     grpc_status_code status_on_error = GRPC_STATUS_PERMISSION_DENIED;
-
+    // Matchers for client request headers that are allowed to be forwarded to
+    // the authorization server. An empty list is treated the same as unset.
     std::vector<StringMatcher> allowed_headers;
+    // Matchers for client request headers that are disallowed from being
+    // forwarded to the authorization server. An empty list is treated the same
+    // as unset. Takes precedence over allowed_headers.
     std::vector<StringMatcher> disallowed_headers;
-
+    // Optional rules governing header mutations that the authorization service
+    // is allowed to perform on the request headers forwarded upstream.
+    // Validated as described in gRFC A102.
     std::optional<HeaderMutationRules> decoder_header_mutation_rules;
+    // Whether to send the client certificate to the authorization service in
+    // the CheckRequest.
     bool include_peer_certificate = false;
 
     RefCountedPtr<ExtAuthzChannel> channel() const {

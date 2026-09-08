@@ -48,45 +48,8 @@ namespace grpc_core {
 // ExtAuthzFilter::Config
 //
 
-bool ExtAuthzFilter::Config::isHeaderAllowed(absl::string_view key) const {
-  for (const auto& disallow : disallowed_headers) {
-    if (disallow.Match(key)) {
-      return false;
-    }
-  }
-  if (allowed_headers.empty()) {
-    return true;
-  }
-  for (const auto& allow : allowed_headers) {
-    if (allow.Match(key)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-ExtAuthzFilter::Config::CheckResult
-ExtAuthzFilter::Config::CheckRequestAllowed() const {
-  if (!filter_enabled.has_value()) {
-    return CheckResult::kSendRequestToExtAuthzService;
-  }
-  if (*filter_enabled < 1000000) {
-    uint32_t random_number =
-        absl::Uniform<uint32_t>(SharedBitGen(), 0, 1000000);
-    if (random_number >= *filter_enabled) {
-      if (deny_at_disable) {
-        return CheckResult::kDeny;
-      } else {
-        return CheckResult::kPassThrough;
-      }
-    }
-  }
-  return CheckResult::kSendRequestToExtAuthzService;
-}
-
 bool ExtAuthzFilter::Config::Equals(const FilterConfig& other) const {
   const auto& o = DownCast<const Config&>(other);
-  if (instance_name != o.instance_name) return false;
   return channel_info == o.channel_info &&
          filter_enabled == o.filter_enabled &&
          deny_at_disable == o.deny_at_disable &&
@@ -101,20 +64,18 @@ bool ExtAuthzFilter::Config::Equals(const FilterConfig& other) const {
 
 std::string ExtAuthzFilter::Config::ToString() const {
   std::string result = "{";
-  StrAppend(result, "instance_name=");
-  StrAppend(result, instance_name);
   bool has_server = false;
   Match(
       channel_info,
       [&](const RefCountedPtr<ExtAuthzChannel>& channel) {
         if (channel != nullptr) {
-          StrAppend(result, ", server_uri=");
+          StrAppend(result, "server_uri=");
           StrAppend(result, channel->server().server_uri());
           has_server = true;
         }
       },
       [&](const GrpcXdsServerTarget& target) {
-        StrAppend(result, ", server_uri=");
+        StrAppend(result, "server_uri=");
         StrAppend(result, target.server_uri());
         has_server = true;
       });
@@ -169,6 +130,48 @@ std::string ExtAuthzFilter::Config::ToString() const {
 
 namespace {
 
+enum class CheckResult {
+  kSendRequestToExtAuthzService,
+  kPassThrough,
+  kDeny,
+};
+
+bool IsHeaderAllowed(const ExtAuthzFilter::Config& config,
+                     absl::string_view key) {
+  for (const auto& disallow : config.disallowed_headers) {
+    if (disallow.Match(key)) {
+      return false;
+    }
+  }
+  if (config.allowed_headers.empty()) {
+    return true;
+  }
+  for (const auto& allow : config.allowed_headers) {
+    if (allow.Match(key)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+CheckResult CheckRequestAllowed(const ExtAuthzFilter::Config& config) {
+  if (!config.filter_enabled.has_value()) {
+    return CheckResult::kSendRequestToExtAuthzService;
+  }
+  if (*config.filter_enabled < 1000000) {
+    uint32_t random_number =
+        absl::Uniform<uint32_t>(SharedBitGen(), 0, 1000000);
+    if (random_number >= *config.filter_enabled) {
+      if (config.deny_at_disable) {
+        return CheckResult::kDeny;
+      } else {
+        return CheckResult::kPassThrough;
+      }
+    }
+  }
+  return CheckResult::kSendRequestToExtAuthzService;
+}
+
 ServerMetadataHandle MalformedRequest(
     absl::string_view explanation,
     grpc_status_code status_code = GRPC_STATUS_UNKNOWN) {
@@ -188,18 +191,18 @@ ServerMetadataHandle ExtAuthzFilter::Call::OnClientInitialMetadata(
   if (filter->client() == nullptr) {
     return nullptr;
   }
-  switch (config.CheckRequestAllowed()) {
-    case Config::CheckResult::kSendRequestToExtAuthzService:
+  switch (CheckRequestAllowed(config)) {
+    case CheckResult::kSendRequestToExtAuthzService:
       break;
-    case Config::CheckResult::kDeny:
+    case CheckResult::kDeny:
       return MalformedRequest("ExtAuthz filter is not enabled",
                               config.status_on_error);
-    case Config::CheckResult::kPassThrough:
+    case CheckResult::kPassThrough:
       return nullptr;
   }
   std::vector<std::pair<std::string, std::string>> metadata_list;
   md.Log([&](absl::string_view key, absl::string_view value) {
-    if (config.isHeaderAllowed(key)) {
+    if (IsHeaderAllowed(config, key)) {
       metadata_list.emplace_back(std::string(key), std::string(value));
     }
   });

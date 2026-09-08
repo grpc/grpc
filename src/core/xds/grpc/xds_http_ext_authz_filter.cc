@@ -72,7 +72,7 @@ void XdsHttpExtAuthzFilterFactory::AddFilter(
 
 RefCountedPtr<const FilterConfig>
 XdsHttpExtAuthzFilterFactory::ParseTopLevelConfig(
-    absl::string_view instance_name,
+    absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context,
     const XdsExtension& extension, ValidationErrors* errors) const {
   const absl::string_view* serialized_filter_config =
@@ -89,7 +89,6 @@ XdsHttpExtAuthzFilterFactory::ParseTopLevelConfig(
     return nullptr;
   }
   auto config = MakeRefCounted<ExtAuthzFilter::Config>();
-  config->instance_name = std::string(instance_name);
   // grpc_service
   {
     ValidationErrors::ScopedField field(errors, ".grpc_service");
@@ -237,7 +236,6 @@ RefCountedPtr<const FilterConfig> XdsHttpExtAuthzFilterFactory::MergeConfigs(
   const auto& top_config =
       DownCast<const ExtAuthzFilter::Config&>(*top_level_config);
   auto config = MakeRefCounted<ExtAuthzFilter::Config>();
-  config->instance_name = top_config.instance_name;
   config->channel_info = top_config.channel_info;
   config->filter_enabled = top_config.filter_enabled;
   config->deny_at_disable = top_config.deny_at_disable;
