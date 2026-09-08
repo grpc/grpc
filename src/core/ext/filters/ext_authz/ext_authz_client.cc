@@ -38,6 +38,20 @@ namespace grpc_core {
 //
 
 ExtAuthzClient::ExtAuthzClient(
+    std::unique_ptr<const XdsBootstrap::XdsServerTarget> server,
+    RefCountedPtr<XdsTransportFactory::XdsTransport> transport)
+    : DualRefCounted<ExtAuthzClient>(
+          GRPC_TRACE_FLAG_ENABLED(xds_client_refcount) ? "ExtAuthzClient"
+                                                       : nullptr),
+      server_(std::move(server)),
+      transport_(std::move(transport)) {
+  GRPC_TRACE_LOG(xds_client, INFO)
+      << "[ext_authz_client " << this << "] creating ext_authz client "
+      << "for server " << server_->server_uri();
+  GRPC_CHECK(transport_ != nullptr);
+}
+
+ExtAuthzClient::ExtAuthzClient(
     RefCountedPtr<XdsTransportFactory> transport_factory,
     std::unique_ptr<const XdsBootstrap::XdsServerTarget> server)
     : DualRefCounted<ExtAuthzClient>(

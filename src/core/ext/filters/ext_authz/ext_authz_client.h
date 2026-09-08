@@ -36,6 +36,8 @@ class ExtAuthzClient : public DualRefCounted<ExtAuthzClient> {
   using ExtAuthzResponse = grpc_core::ExtAuthzResponse;
   using ExtAuthzRequestParams = grpc_core::ExtAuthzRequestParams;
 
+  ExtAuthzClient(std::unique_ptr<const XdsBootstrap::XdsServerTarget> server,
+                 RefCountedPtr<XdsTransportFactory::XdsTransport> transport);
   ExtAuthzClient(RefCountedPtr<XdsTransportFactory> transport_factory,
                  std::unique_ptr<const XdsBootstrap::XdsServerTarget> server);
   ~ExtAuthzClient() override;

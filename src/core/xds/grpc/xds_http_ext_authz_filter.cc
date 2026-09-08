@@ -28,6 +28,7 @@
 #include "envoy/type/v3/http_status.upb.h"
 #include "upb/reflection/def.h"
 
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
 #include "src/core/ext/filters/ext_authz/ext_authz_filter.h"
@@ -87,16 +88,16 @@ XdsHttpExtAuthzFilterFactory::ParseTopLevelConfig(
     errors->AddError("could not parse ext_authz filter config");
     return nullptr;
   }
-  auto ext_authz_obj = MakeRefCounted<ExtAuthz>();
+  auto config = MakeRefCounted<ExtAuthzFilter::Config>();
+  config->instance_name = std::string(instance_name);
   // grpc_service
   {
     ValidationErrors::ScopedField field(errors, ".grpc_service");
-    ext_authz_obj->server_target = ParseXdsGrpcService(
+    config->channel_info = ParseXdsGrpcService(
         context,
         envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_grpc_service(
             ext_authz),
         errors);
-    ext_authz_obj->server_uri = ext_authz_obj->server_target->server_uri();
   }
   // filter_enabled
   {
@@ -112,7 +113,7 @@ XdsHttpExtAuthzFilterFactory::ParseTopLevelConfig(
         ValidationErrors::ScopedField field(errors, ".default_value");
         errors->AddError("field not set");
       } else {
-        ext_authz_obj->filter_enabled = ParseFractionalPercent(default_value);
+        config->filter_enabled = ParseFractionalPercent(default_value);
       }
     }
   }
@@ -130,16 +131,16 @@ XdsHttpExtAuthzFilterFactory::ParseTopLevelConfig(
         ValidationErrors::ScopedField field(errors, ".default_value");
         errors->AddError("field not set");
       } else {
-        ext_authz_obj->deny_at_disable = ParseBoolValue(default_value);
+        config->deny_at_disable = ParseBoolValue(default_value);
       }
     }
   }
   // failure_mode_allow
-  ext_authz_obj->failure_mode_allow =
+  config->failure_mode_allow =
       envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_failure_mode_allow(
           ext_authz);
   // failure_mode_allow_header_add
-  ext_authz_obj->failure_mode_allow_header_add =
+  config->failure_mode_allow_header_add =
       envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_failure_mode_allow_header_add(
           ext_authz);
   // status_on_error
@@ -148,12 +149,12 @@ XdsHttpExtAuthzFilterFactory::ParseTopLevelConfig(
         envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_status_on_error(
             ext_authz);
     if (status_on_error_proto != nullptr) {
-      ext_authz_obj->status_on_error = grpc_http2_status_to_grpc_status(
+      config->status_on_error = grpc_http2_status_to_grpc_status(
           envoy_type_v3_HttpStatus_code(status_on_error_proto));
     }
   }
   // include_peer_certificate
-  ext_authz_obj->include_peer_certificate =
+  config->include_peer_certificate =
       envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_include_peer_certificate(
           ext_authz);
   // allowed_headers
@@ -163,7 +164,7 @@ XdsHttpExtAuthzFilterFactory::ParseTopLevelConfig(
             ext_authz);
     if (allowed_headers_proto != nullptr) {
       ValidationErrors::ScopedField field(errors, ".allowed_headers");
-      ext_authz_obj->allowed_headers =
+      config->allowed_headers =
           XdsListStringMatcherParse(context, allowed_headers_proto, errors);
     }
   }
@@ -174,7 +175,7 @@ XdsHttpExtAuthzFilterFactory::ParseTopLevelConfig(
             ext_authz);
     if (disallowed_headers_proto != nullptr) {
       ValidationErrors::ScopedField field(errors, ".disallowed_headers");
-      ext_authz_obj->disallowed_headers =
+      config->disallowed_headers =
           XdsListStringMatcherParse(context, disallowed_headers_proto, errors);
     }
   }
@@ -186,13 +187,10 @@ XdsHttpExtAuthzFilterFactory::ParseTopLevelConfig(
     if (header_mutation_rules_proto != nullptr) {
       ValidationErrors::ScopedField field(errors,
                                           ".decoder_header_mutation_rules");
-      ext_authz_obj->decoder_header_mutation_rules =
+      config->decoder_header_mutation_rules =
           ParseHeaderMutationRules(header_mutation_rules_proto, errors);
     }
   }
-  auto config = MakeRefCounted<ExtAuthzFilter::Config>();
-  config->instance_name = std::string(instance_name);
-  config->ext_authz = std::move(ext_authz_obj);
   return config;
 }
 
@@ -240,18 +238,29 @@ RefCountedPtr<const FilterConfig> XdsHttpExtAuthzFilterFactory::MergeConfigs(
       DownCast<const ExtAuthzFilter::Config&>(*top_level_config);
   auto config = MakeRefCounted<ExtAuthzFilter::Config>();
   config->instance_name = top_config.instance_name;
-  config->ext_authz = top_config.ext_authz;
+  config->channel_info = top_config.channel_info;
+  config->filter_enabled = top_config.filter_enabled;
+  config->deny_at_disable = top_config.deny_at_disable;
+  config->failure_mode_allow = top_config.failure_mode_allow;
+  config->failure_mode_allow_header_add =
+      top_config.failure_mode_allow_header_add;
+  config->status_on_error = top_config.status_on_error;
+  config->allowed_headers = top_config.allowed_headers;
+  config->disallowed_headers = top_config.disallowed_headers;
+  config->decoder_header_mutation_rules =
+      top_config.decoder_header_mutation_rules;
+  config->include_peer_certificate = top_config.include_peer_certificate;
   // Blackboard handling
-  if (config->ext_authz != nullptr &&
-      config->ext_authz->server_target.has_value()) {
-    std::string key = config->ext_authz->server_target->Key();
-    config->channel_cache =
-        blackboard.GetOrSet<ExtAuthzFilter::ChannelCache>(key, [&]() {
-          std::shared_ptr<const XdsBootstrap::XdsServerTarget> target_shared =
-              std::make_shared<GrpcXdsServerTarget>(
-                  *config->ext_authz->server_target);
-          return MakeRefCounted<ExtAuthzFilter::ChannelCache>(
-              std::move(target_shared), transport_factory.Ref());
+  if (const auto* target =
+          std::get_if<GrpcXdsServerTarget>(&config->channel_info);
+      target != nullptr) {
+    std::string key = target->Key();
+    config->channel_info =
+        blackboard.GetOrSet<ExtAuthzFilter::ExtAuthzChannel>(key, [&]() {
+          absl::Status status;
+          auto transport = transport_factory.GetTransport(*target, &status);
+          return MakeRefCounted<ExtAuthzFilter::ExtAuthzChannel>(
+              *target, std::move(transport));
         });
   }
   return config;

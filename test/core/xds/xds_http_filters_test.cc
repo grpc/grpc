@@ -4460,7 +4460,7 @@ TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfig_FilterEnabled) {
   ASSERT_NE(config, nullptr);
   auto* ext_authz_config =
       static_cast<const ExtAuthzFilter::Config*>(config.get());
-  EXPECT_EQ(ext_authz_config->ext_authz->filter_enabled, 10000);
+  EXPECT_EQ(ext_authz_config->filter_enabled, 10000);
 }
 
 TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfig_DenyAtDisable) {
@@ -4477,7 +4477,7 @@ TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfig_DenyAtDisable) {
   ASSERT_NE(config, nullptr);
   auto* ext_authz_config =
       static_cast<const ExtAuthzFilter::Config*>(config.get());
-  EXPECT_TRUE(ext_authz_config->ext_authz->deny_at_disable);
+  EXPECT_TRUE(ext_authz_config->deny_at_disable);
 }
 
 TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfig_AllowedHeaders) {
@@ -4494,11 +4494,11 @@ TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfig_AllowedHeaders) {
   ASSERT_NE(config, nullptr);
   auto* ext_authz_config =
       static_cast<const ExtAuthzFilter::Config*>(config.get());
-  ASSERT_EQ(ext_authz_config->ext_authz->allowed_headers.size(), 1);
-  EXPECT_EQ(ext_authz_config->ext_authz->allowed_headers[0].string_matcher(),
+  ASSERT_EQ(ext_authz_config->allowed_headers.size(), 1);
+  EXPECT_EQ(ext_authz_config->allowed_headers[0].string_matcher(),
             "foo");
   EXPECT_FALSE(
-      ext_authz_config->ext_authz->allowed_headers[0].case_sensitive());
+      ext_authz_config->allowed_headers[0].case_sensitive());
 }
 
 TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfig_DisallowedHeaders) {
@@ -4516,11 +4516,11 @@ TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfig_DisallowedHeaders) {
   ASSERT_NE(config, nullptr);
   auto* ext_authz_config =
       static_cast<const ExtAuthzFilter::Config*>(config.get());
-  ASSERT_EQ(ext_authz_config->ext_authz->disallowed_headers.size(), 1);
-  EXPECT_EQ(ext_authz_config->ext_authz->disallowed_headers[0].string_matcher(),
+  ASSERT_EQ(ext_authz_config->disallowed_headers.size(), 1);
+  EXPECT_EQ(ext_authz_config->disallowed_headers[0].string_matcher(),
             "bar");
   EXPECT_FALSE(
-      ext_authz_config->ext_authz->disallowed_headers[0].case_sensitive());
+      ext_authz_config->disallowed_headers[0].case_sensitive());
 }
 
 TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfig_StatusOnError) {
@@ -4536,7 +4536,7 @@ TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfig_StatusOnError) {
   ASSERT_NE(config, nullptr);
   auto* ext_authz_config =
       static_cast<const ExtAuthzFilter::Config*>(config.get());
-  EXPECT_EQ(ext_authz_config->ext_authz->status_on_error,
+  EXPECT_EQ(ext_authz_config->status_on_error,
             GRPC_STATUS_UNAUTHENTICATED);
 }
 
@@ -4552,7 +4552,7 @@ TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfig_FailureModeAllow) {
   ASSERT_NE(config, nullptr);
   auto* ext_authz_config =
       static_cast<const ExtAuthzFilter::Config*>(config.get());
-  EXPECT_TRUE(ext_authz_config->ext_authz->failure_mode_allow);
+  EXPECT_TRUE(ext_authz_config->failure_mode_allow);
 }
 
 TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfig_IncludePeerCertificate) {
@@ -4567,7 +4567,7 @@ TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfig_IncludePeerCertificate) {
   ASSERT_NE(config, nullptr);
   auto* ext_authz_config =
       static_cast<const ExtAuthzFilter::Config*>(config.get());
-  EXPECT_TRUE(ext_authz_config->ext_authz->include_peer_certificate);
+  EXPECT_TRUE(ext_authz_config->include_peer_certificate);
 }
 
 TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfig_HeaderMutationRules) {
@@ -4588,17 +4588,17 @@ TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfig_HeaderMutationRules) {
   auto* ext_authz_config =
       static_cast<const ExtAuthzFilter::Config*>(config.get());
   ASSERT_TRUE(
-      ext_authz_config->ext_authz->decoder_header_mutation_rules.has_value());
-  ASSERT_NE(ext_authz_config->ext_authz->decoder_header_mutation_rules
+      ext_authz_config->decoder_header_mutation_rules.has_value());
+  ASSERT_NE(ext_authz_config->decoder_header_mutation_rules
                 ->allow_expression,
             nullptr);
-  EXPECT_EQ(ext_authz_config->ext_authz->decoder_header_mutation_rules
+  EXPECT_EQ(ext_authz_config->decoder_header_mutation_rules
                 ->allow_expression->pattern(),
             "foo");
-  ASSERT_NE(ext_authz_config->ext_authz->decoder_header_mutation_rules
+  ASSERT_NE(ext_authz_config->decoder_header_mutation_rules
                 ->disallow_expression,
             nullptr);
-  EXPECT_EQ(ext_authz_config->ext_authz->decoder_header_mutation_rules
+  EXPECT_EQ(ext_authz_config->decoder_header_mutation_rules
                 ->disallow_expression->pattern(),
             "bar");
 }
@@ -4787,8 +4787,8 @@ TEST_F(XdsExtAuthzFilterTest, MergeConfigsNoOverride) {
   ASSERT_NE(merged_config, nullptr);
   auto& config = DownCast<const ExtAuthzFilter::Config&>(*merged_config);
   EXPECT_EQ(config.instance_name, "instance_name");
-  ASSERT_NE(config.channel_cache, nullptr);
-  EXPECT_EQ(config.channel_cache->server()->server_uri(), "localhost:1234");
+  ASSERT_NE(config.channel(), nullptr);
+  EXPECT_EQ(config.channel()->server().server_uri(), "localhost:1234");
 }
 
 TEST_F(XdsExtAuthzFilterTest, MergeConfigsWithRouteOverride) {
@@ -4816,8 +4816,8 @@ TEST_F(XdsExtAuthzFilterTest, MergeConfigsWithRouteOverride) {
   ASSERT_NE(merged_config, nullptr);
   auto& config = DownCast<const ExtAuthzFilter::Config&>(*merged_config);
   EXPECT_EQ(config.instance_name, "instance_name");
-  ASSERT_NE(config.channel_cache, nullptr);
-  EXPECT_EQ(config.channel_cache->server()->server_uri(), "localhost:1234");
+  ASSERT_NE(config.channel(), nullptr);
+  EXPECT_EQ(config.channel()->server().server_uri(), "localhost:1234");
 }
 
 TEST_F(XdsExtAuthzFilterTest, MergeConfigsSharesChannel) {
@@ -4835,14 +4835,14 @@ TEST_F(XdsExtAuthzFilterTest, MergeConfigsSharesChannel) {
                              *xds_client_->transport_factory(), *blackboard);
   ASSERT_NE(merged_config1, nullptr);
   auto& config1 = DownCast<const ExtAuthzFilter::Config&>(*merged_config1);
-  ASSERT_NE(config1.channel_cache, nullptr);
+  ASSERT_NE(config1.channel(), nullptr);
   auto merged_config2 =
       factory_->MergeConfigs(top_level_config, nullptr, nullptr, nullptr,
                              *xds_client_->transport_factory(), *blackboard);
   ASSERT_NE(merged_config2, nullptr);
   auto& config2 = DownCast<const ExtAuthzFilter::Config&>(*merged_config2);
-  ASSERT_NE(config2.channel_cache, nullptr);
-  EXPECT_EQ(config1.channel_cache, config2.channel_cache);
+  ASSERT_NE(config2.channel(), nullptr);
+  EXPECT_EQ(config1.channel(), config2.channel());
 }
 
 TEST_F(XdsExtAuthzFilterTest,
@@ -4869,14 +4869,14 @@ TEST_F(XdsExtAuthzFilterTest,
                              *xds_client_->transport_factory(), *blackboard);
   ASSERT_NE(merged_config1, nullptr);
   auto& config1 = DownCast<const ExtAuthzFilter::Config&>(*merged_config1);
-  ASSERT_NE(config1.channel_cache, nullptr);
+  ASSERT_NE(config1.channel(), nullptr);
   auto merged_config2 =
       factory_->MergeConfigs(top_level_config2, nullptr, nullptr, nullptr,
                              *xds_client_->transport_factory(), *blackboard);
   ASSERT_NE(merged_config2, nullptr);
   auto& config2 = DownCast<const ExtAuthzFilter::Config&>(*merged_config2);
-  ASSERT_NE(config2.channel_cache, nullptr);
-  EXPECT_NE(config1.channel_cache, config2.channel_cache);
+  ASSERT_NE(config2.channel(), nullptr);
+  EXPECT_NE(config1.channel(), config2.channel());
 }
 
 }  // namespace

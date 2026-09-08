@@ -5881,6 +5881,7 @@ grpc_cc_library(
         "ext_authz_messages",
         "filter_args",
         "grpc_matchers",
+        "match",
         "metadata_batch",
         "ref_counted",
         "shared_bit_gen",
