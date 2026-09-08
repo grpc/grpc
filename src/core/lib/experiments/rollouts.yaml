@@ -54,8 +54,6 @@
   default: true
 - name: event_engine_callback_cq
   default: true
-- name: event_engine_client
-  default: true
 - name: event_engine_for_all_other_endpoints
   default: true
 - name: event_engine_fork

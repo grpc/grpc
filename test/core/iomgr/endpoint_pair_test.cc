@@ -123,11 +123,7 @@ static grpc_endpoint_test_fixture create_fixture_endpoint_pair(
   a[0].value.integer = static_cast<int>(slice_size);
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
   grpc_endpoint_pair p;
-  if (grpc_event_engine::experimental::UseEventEngineClient()) {
-    p = grpc_iomgr_event_engine_shim_endpoint_pair(&args);
-  } else {
-    p = grpc_iomgr_create_endpoint_pair("test", &args);
-  }
+  p = grpc_iomgr_event_engine_shim_endpoint_pair(&args);
   f.client_ep = p.client;
   f.server_ep = p.server;
   grpc_endpoint_add_to_pollset(f.client_ep, g_pollset);
@@ -146,10 +142,8 @@ static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
 
 TEST(EndpointPairTest, MainTest) {
 #ifdef GPR_WINDOWS
-  if (grpc_event_engine::experimental::UseEventEngineClient()) {
-    LOG(INFO) << "Skipping pathological EventEngine test on Windows";
-    return;
-  }
+  LOG(INFO) << "Skipping pathological EventEngine test on Windows";
+  return;
 #endif
   grpc_closure destroyed;
   grpc_init();

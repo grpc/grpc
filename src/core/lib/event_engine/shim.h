@@ -20,11 +20,6 @@
 
 namespace grpc_event_engine::experimental {
 
-// Returns true if the EventEngine client shim should be used.
-// This is based on the experiment state, and compile-time configurations that
-// may disable the poller in some builds.
-bool UseEventEngineClient();
-
 // Returns true if the EventEngine listener shim should be used.
 // This is based on the experiment state, and compile-time configurations that
 // may disable the poller in some builds.

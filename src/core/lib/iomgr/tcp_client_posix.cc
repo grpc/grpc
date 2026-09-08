@@ -404,77 +404,13 @@ static int64_t tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
                            const EndpointConfig& config,
                            const grpc_resolved_address* addr,
                            grpc_core::Timestamp deadline) {
-  if (grpc_event_engine::experimental::UseEventEngineClient()) {
-    return grpc_event_engine::experimental::event_engine_tcp_client_connect(
-        closure, ep, config, addr, deadline);
-  }
-  grpc_resolved_address mapped_addr;
-  int fd = -1;
-  grpc_error_handle error;
-  *ep = nullptr;
-  if ((error = grpc_tcp_client_prepare_fd(TcpOptionsFromEndpointConfig(config),
-                                          addr, &mapped_addr, &fd)) !=
-      absl::OkStatus()) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
-    return 0;
-  }
-  return grpc_tcp_client_create_from_prepared_fd(
-      interested_parties, closure, fd, config, &mapped_addr, deadline, ep);
+  return grpc_event_engine::experimental::event_engine_tcp_client_connect(
+      closure, ep, config, addr, deadline);
 }
 
 static bool tcp_cancel_connect(int64_t connection_handle) {
-  if (grpc_event_engine::experimental::UseEventEngineClient()) {
-    return grpc_event_engine::experimental::
-        event_engine_tcp_client_cancel_connect(connection_handle);
-  }
-  if (connection_handle <= 0) {
-    return false;
-  }
-  int shard_number = connection_handle % (*g_connection_shards).size();
-  struct ConnectionShard* shard = &(*g_connection_shards)[shard_number];
-  async_connect* ac = nullptr;
-  {
-    grpc_core::MutexLock lock(&shard->mu);
-    auto it = shard->pending_connections.find(connection_handle);
-    if (it != shard->pending_connections.end()) {
-      ac = it->second;
-      GRPC_CHECK_NE(ac, nullptr);
-      // Trying to acquire ac->mu here would could cause a deadlock because
-      // the on_writable method tries to acquire the two mutexes used
-      // here in the reverse order. But we dont need to acquire ac->mu before
-      // incrementing ac->refs here. This is because the on_writable
-      // method decrements ac->refs only after deleting the connection handle
-      // from the corresponding hashmap. If the code enters here, it means that
-      // deletion hasn't happened yet. The deletion can only happen after the
-      // corresponding g_shard_mu is unlocked.
-      ++ac->refs;
-      // Remove connection from list of active connections.
-      shard->pending_connections.erase(it);
-    }
-  }
-  if (ac == nullptr) {
-    return false;
-  }
-  gpr_mu_lock(&ac->mu);
-  bool connection_cancel_success = (ac->fd != nullptr);
-  if (connection_cancel_success) {
-    // Connection is still pending. The on_writable callback hasn't executed
-    // yet because ac->fd != nullptr.
-    ac->connect_cancelled = true;
-    // Shutdown the fd. This would cause on_writable to run as soon as possible.
-    // We dont need to pass a custom error here because it wont be used since
-    // the on_connect_closure is not run if connect cancellation is successful.
-    grpc_fd_shutdown(ac->fd, absl::OkStatus());
-  }
-  bool done = (--ac->refs == 0);
-  gpr_mu_unlock(&ac->mu);
-  if (done) {
-    // This is safe even outside the lock, because "done", the sentinel, is
-    // populated *inside* the lock.
-    gpr_mu_destroy(&ac->mu);
-    delete ac;
-  }
-  return connection_cancel_success;
+  return grpc_event_engine::experimental::
+      event_engine_tcp_client_cancel_connect(connection_handle);
 }
 
 grpc_tcp_client_vtable grpc_posix_tcp_client_vtable = {tcp_connect,

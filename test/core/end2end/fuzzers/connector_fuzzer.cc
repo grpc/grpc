@@ -169,7 +169,7 @@ void RunConnectorFuzzer(
     absl::FunctionRef<RefCountedPtr<grpc_channel_security_connector>()>
         make_security_connector,
     absl::FunctionRef<OrphanablePtr<SubchannelConnector>()> make_connector) {
-  if (!IsEventEngineClientEnabled() || !IsEventEngineListenerEnabled()) {
+  if (!IsEventEngineListenerEnabled()) {
     return;  // Not supported without event engine
   }
   ApplyFuzzConfigVars(msg.config_vars());

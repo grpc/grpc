@@ -62,8 +62,7 @@ static grpc_core::Duration g_poll_interval =
 static bool g_backup_polling_disabled;
 
 void grpc_client_channel_global_init_backup_polling() {
-  g_backup_polling_disabled = grpc_core::IsEventEngineClientEnabled() &&
-                              grpc_core::IsEventEngineListenerEnabled();
+  g_backup_polling_disabled = grpc_core::IsEventEngineListenerEnabled();
   if (g_backup_polling_disabled) {
     return;
   }
