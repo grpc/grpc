@@ -215,12 +215,6 @@ XdsHttpExtAuthzFilterFactory::ParseOverrideConfig(
     errors->AddError("could not parse ext_authz filter override config");
     return nullptr;
   }
-  if (envoy_extensions_filters_http_ext_authz_v3_ExtAuthzPerRoute_disabled(
-          ext_authz_per_route)) {
-    auto config = MakeRefCounted<ExtAuthzFilter::Config>();
-    config->disabled = true;
-    return config;
-  }
   return MakeRefCounted<ExtAuthzFilter::Config>();
 }
 
@@ -241,11 +235,6 @@ RefCountedPtr<const FilterConfig> XdsHttpExtAuthzFilterFactory::MergeConfigs(
   }
   if (override_config != nullptr) {
     GRPC_CHECK_EQ(override_config->type(), ExtAuthzFilter::Config::Type());
-    const auto& o = DownCast<const ExtAuthzFilter::Config&>(*override_config);
-    if (o.disabled || o.ext_authz == nullptr) {
-      // Filter is disabled by route override.
-      return nullptr;
-    }
   }
   const auto& top_config =
       DownCast<const ExtAuthzFilter::Config&>(*top_level_config);

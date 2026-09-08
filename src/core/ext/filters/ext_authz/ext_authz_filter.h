@@ -123,7 +123,6 @@ class ExtAuthzFilter : public ImplementChannelFilter<ExtAuthzFilter> {
     std::string instance_name;
     RefCountedPtr<ExtAuthz> ext_authz;
     RefCountedPtr<ChannelCache> channel_cache;
-    bool disabled = false;
   };
 
   static const grpc_channel_filter kFilterVtable;

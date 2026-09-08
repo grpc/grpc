@@ -4755,7 +4755,19 @@ TEST_F(XdsExtAuthzFilterTest, ParseOverrideConfig) {
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(override_config, nullptr);
-  EXPECT_EQ(override_config->ToString(), "{disabled=true}");
+  EXPECT_EQ(override_config->type(), ExtAuthzFilter::Config::Type());
+  EXPECT_EQ(override_config->ToString(), "{instance_name=}");
+}
+
+TEST_F(XdsExtAuthzFilterTest, ParseOverrideConfigUnparseable) {
+  XdsExtension extension = MakeXdsExtension(
+      envoy::extensions::filters::http::ext_authz::v3::ExtAuthzPerRoute());
+  std::string serialized_resource("\0", 1);
+  extension.value = absl::string_view(serialized_resource);
+  auto override_config = factory_->ParseOverrideConfig(
+      "", decode_context_, extension, &errors_);
+  EXPECT_FALSE(errors_.ok());
+  EXPECT_EQ(override_config, nullptr);
 }
 
 TEST_F(XdsExtAuthzFilterTest, MergeConfigsNoOverride) {
@@ -4779,7 +4791,7 @@ TEST_F(XdsExtAuthzFilterTest, MergeConfigsNoOverride) {
   EXPECT_EQ(config.channel_cache->server()->server_uri(), "localhost:1234");
 }
 
-TEST_F(XdsExtAuthzFilterTest, MergeConfigsWithRouteOverrideDisabled) {
+TEST_F(XdsExtAuthzFilterTest, MergeConfigsWithRouteOverride) {
   ExtAuthz proto;
   proto.mutable_grpc_service()->mutable_google_grpc()->set_target_uri(
       "localhost:1234");
@@ -4801,7 +4813,11 @@ TEST_F(XdsExtAuthzFilterTest, MergeConfigsWithRouteOverrideDisabled) {
   auto merged_config =
       factory_->MergeConfigs(top_level_config, nullptr, route_config, nullptr,
                              *xds_client_->transport_factory(), *blackboard);
-  EXPECT_EQ(merged_config, nullptr);
+  ASSERT_NE(merged_config, nullptr);
+  auto& config = DownCast<const ExtAuthzFilter::Config&>(*merged_config);
+  EXPECT_EQ(config.instance_name, "instance_name");
+  ASSERT_NE(config.channel_cache, nullptr);
+  EXPECT_EQ(config.channel_cache->server()->server_uri(), "localhost:1234");
 }
 
 TEST_F(XdsExtAuthzFilterTest, MergeConfigsSharesChannel) {
