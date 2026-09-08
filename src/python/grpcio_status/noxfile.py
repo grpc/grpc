@@ -25,6 +25,7 @@ STATUS_PROTO = "third_party/googleapis/google/rpc/status.proto"
 PACKAGE_STATUS_PROTO_DIR = "grpc_status/google/rpc"
 LICENSE = "./LICENSE"
 
+
 @nox.session
 def preprocess(session: nox.Session):
     """
