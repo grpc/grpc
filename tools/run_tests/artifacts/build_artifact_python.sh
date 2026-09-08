@@ -273,8 +273,11 @@ then
 
   # Build grpcio_testing source distribution
   # TODO(ssreenithi): find pyproject.toml/nox equivalent
-  ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_testing/setup.py preprocess
+  ${SETARCH_CMD} "${PYTHON}" -m nox -s preprocess -f \
+    "src/python/grpcio_testing/noxfile.py"
+
   ${SETARCH_CMD} "${PYTHON}" -m build src/python/grpcio_testing
+
   cp -r src/python/grpcio_testing/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_channelz source distribution

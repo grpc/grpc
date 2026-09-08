@@ -223,8 +223,6 @@ $VENV_PYTHON -m nox -s preprocess -f \
 
 pip_install_dir "$ROOT/src/python/grpcio_status"
 
-
-# Build/install status proto mapping
 # build_xds_protos.py is invoked as part of generate_projects.sh
 pip_install_dir "$ROOT/py_xds_protos"
 
