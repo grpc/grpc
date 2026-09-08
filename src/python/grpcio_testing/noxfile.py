@@ -23,6 +23,7 @@ GRPC_ROOT_ABS_PATH = os.path.join(ROOT_DIR, "../../..")
 ROOT_REL_DIR = os.path.relpath(ROOT_DIR, start=GRPC_ROOT_ABS_PATH)
 LICENSE = "./LICENSE"
 
+
 @nox.session
 def preprocess(session: nox.Session):
     """
