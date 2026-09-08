@@ -127,6 +127,9 @@ absl::Status HpackParseResult::BuildMaterialized() const {
       } else {
         return MakeStreamError(absl::InternalError("Error parsing metadata"));
       }
+    case HpackParseStatus::kDuplicateHeader:
+      return MakeStreamError(absl::InternalError(
+          absl::StrCat("Duplicate '", state_->key, "' header received")));
     case HpackParseStatus::kUnbase64Failed:
       if (!state_->key.empty()) {
         return MakeStreamError(absl::InternalError(
