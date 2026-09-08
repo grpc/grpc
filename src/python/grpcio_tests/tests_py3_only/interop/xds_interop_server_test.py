@@ -54,7 +54,7 @@ def _test_server(hostname: str = _HOSTNAME) -> Iterator[str]:
     try:
         yield f"localhost:{port}"
     finally:
-        server.stop(None)
+        server.stop(0).wait()
 
 
 def _behavior_metadata(*values: str) -> Sequence[Tuple[str, str]]:
@@ -197,6 +197,15 @@ class RpcBehaviorTest(unittest.TestCase):
                 _behavior_metadata(f"hostname={_OTHER_HOSTNAME} error-code-5"),
             )
         self.assertEqual(response.hostname, _HOSTNAME)
+
+    def test_hostname_prefix_tolerates_extra_spaces(self):
+        with _test_server() as target:
+            with self.assertRaises(grpc.RpcError) as cm:
+                self._unary_call(
+                    target,
+                    _behavior_metadata(f"hostname={_HOSTNAME}  error-code-5"),
+                )
+        self.assertEqual(cm.exception.code(), grpc.StatusCode.NOT_FOUND)
 
     def test_invalid_sleep_argument_is_rejected(self):
         with _test_server() as target:

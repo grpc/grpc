@@ -190,6 +190,7 @@ def _apply_rpc_behaviors(
         if behavior.startswith(_HOSTNAME_BEHAVIOR_PREFIX):
             target, _, remainder = behavior.partition(" ")
             target = target[len(_HOSTNAME_BEHAVIOR_PREFIX) :]
+            remainder = remainder.strip()
             if not target or not remainder:
                 context.abort(
                     grpc.StatusCode.INVALID_ARGUMENT,
