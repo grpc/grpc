@@ -213,6 +213,63 @@ class RpcBehaviorTest(unittest.TestCase):
             )
         self.assertEqual(response.hostname, _HOSTNAME)
 
+    def test_succeed_on_retry_attempt_matching_attempt_succeeds(self):
+        with _test_server() as target:
+            response = self._unary_call(
+                target,
+                metadata=(
+                    ("rpc-behavior", "succeed-on-retry-attempt-2"),
+                    ("grpc-previous-rpc-attempts", "2"),
+                ),
+            )
+        self.assertEqual(response.hostname, _HOSTNAME)
+
+    def test_succeed_on_retry_attempt_mismatch_falls_through(self):
+        # This is how grpc/psm-interop's retry_test.py actually sends it:
+        # "succeed-on-retry-attempt-4,error-code-14". A non-matching attempt
+        # does not itself fail the RPC; it falls through to the paired
+        # error-code behavior, which is what triggers the client's retry.
+        with _test_server() as target:
+            with self.assertRaises(grpc.RpcError) as cm:
+                self._unary_call(
+                    target,
+                    metadata=(
+                        (
+                            "rpc-behavior",
+                            "succeed-on-retry-attempt-4,error-code-14",
+                        ),
+                        ("grpc-previous-rpc-attempts", "1"),
+                    ),
+                )
+        self.assertEqual(cm.exception.code(), grpc.StatusCode.UNAVAILABLE)
+
+    def test_succeed_on_retry_attempt_mismatch_without_companion_succeeds(
+        self,
+    ):
+        # Without a paired failure behavior, a non-matching attempt is not
+        # itself an error: it simply does not match, and matching continues
+        # to the next behavior. This mirrors the Java and Go servers, which
+        # do not synthesize a failure on a bare, unpaired
+        # succeed-on-retry-attempt-N. Callers that want the RPC to fail on
+        # non-matching attempts pair it with an explicit error-code-N, as in
+        # test_succeed_on_retry_attempt_mismatch_falls_through above.
+        with _test_server() as target:
+            response = self._unary_call(
+                target,
+                metadata=(
+                    ("rpc-behavior", "succeed-on-retry-attempt-2"),
+                    ("grpc-previous-rpc-attempts", "1"),
+                ),
+            )
+        self.assertEqual(response.hostname, _HOSTNAME)
+
+    def test_succeed_on_retry_attempt_defaults_to_zero_attempts(self):
+        with _test_server() as target:
+            response = self._unary_call(
+                target, _behavior_metadata("succeed-on-retry-attempt-0")
+            )
+        self.assertEqual(response.hostname, _HOSTNAME)
+
 
 class RpcBehaviorParsingTest(unittest.TestCase):
     def test_splits_and_trims_values(self):
