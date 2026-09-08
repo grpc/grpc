@@ -22,13 +22,24 @@ GRPC_DETAILS_METADATA_KEY = "grpc-status-details-bin"
 
 
 class StatusDetailsMetadataValueError(ValueError):
-    pass
+    """Raised when status details metadata is invalid or inconsistent.
+
+    This error is raised when the status code or message inside the Status proto
+    does not match the gRPC call's status code or details, or when an invalid
+    status code is encountered. It also acts as the base class for
+    StatusDetailsMetadataDecodeError.
+    """
 
 
 class StatusDetailsMetadataDecodeError(
     google.protobuf.message.DecodeError, StatusDetailsMetadataValueError
 ):
-    pass
+    """Raised when binary metadata 'grpc-status-details-bin' can't be decoded.
+
+    Inherits from both google.protobuf.message.DecodeError and
+    StatusDetailsMetadataValueError (and therefore ValueError) for backwards
+    compatibility.
+    """
 
 
 def code_to_grpc_status_code(code):
