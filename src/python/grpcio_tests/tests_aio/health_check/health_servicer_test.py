@@ -216,7 +216,6 @@ class HealthServicerTest(AioTestBase):
         self.assertTrue(queue1.empty())
         self.assertTrue(queue2.empty())
 
-
     async def test_watcher_survives_sibling_disconnect(self):
         request = health_pb2.HealthCheckRequest(service=_WATCH_SERVICE)
         queue1 = asyncio.Queue()

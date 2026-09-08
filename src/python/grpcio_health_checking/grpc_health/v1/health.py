@@ -189,4 +189,3 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
         with self._send_lock:
             for cb in callbacks:
                 cb(response)
-
