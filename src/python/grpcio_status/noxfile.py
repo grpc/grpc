@@ -1,4 +1,4 @@
-# Copyright 2018 The gRPC Authors
+# Copyright 2025 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,12 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Provides setuptools command classes for the GRPC Python setup process."""
+"""Provides nox command classes for the GRPC Python setup process."""
 
 import os
 import shutil
 
-import setuptools
+import nox
 
 ROOT_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
 GRPC_ROOT_ABS_PATH = os.path.join(ROOT_DIR, "../../..")
@@ -25,30 +25,21 @@ STATUS_PROTO = "third_party/googleapis/google/rpc/status.proto"
 PACKAGE_STATUS_PROTO_DIR = "grpc_status/google/rpc"
 LICENSE = "./LICENSE"
 
+@nox.session
+def preprocess(session: nox.Session):
+    """
+    Session to copy proto modules from third_party/googleapis/google/rpc/ and LICENCE
+    from the root directory
+    """
+    session.log("Running preprocess for grpcio_status...")
 
-class Preprocess(setuptools.Command):
-    """Command to copy LICENSE from root directory."""
-
-    description = ""
-    user_options = []
-
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        package_status_proto_rel_path = os.path.join(
-            ROOT_REL_DIR, PACKAGE_STATUS_PROTO_DIR
+    session.cd(GRPC_ROOT_ABS_PATH)
+    target_proto_dir = os.path.join(ROOT_DIR, PACKAGE_STATUS_PROTO_DIR)
+    os.makedirs(target_proto_dir, exist_ok=True)
+    if os.path.isfile(STATUS_PROTO):
+        shutil.copyfile(
+            STATUS_PROTO,
+            os.path.join(target_proto_dir, "status.proto"),
         )
-
-        if os.path.isfile(STATUS_PROTO):
-            if not os.path.isdir(package_status_proto_rel_path):
-                os.makedirs(package_status_proto_rel_path)
-            shutil.copyfile(
-                STATUS_PROTO,
-                os.path.join(package_status_proto_rel_path, "status.proto"),
-            )
-        if os.path.isfile(LICENSE):
-            shutil.copyfile(LICENSE, os.path.join(ROOT_REL_DIR, "LICENSE"))
+    if os.path.isfile(LICENSE):
+        shutil.copyfile(LICENSE, os.path.join(ROOT_DIR, "LICENSE"))

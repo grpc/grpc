@@ -309,9 +309,11 @@ then
 
   # Build grpcio_status source distribution
   # TODO(ssreenithi): find pyproject.toml/nox equivalent
-  ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_status/setup.py \
-      preprocess
+  ${SETARCH_CMD} "${PYTHON}" -m nox -s preprocess -f \
+   "src/python/grpcio_status/noxfile.py"
+
   ${SETARCH_CMD} "${PYTHON}" -m build "src/python/grpcio_status"
+
   cp -r src/python/grpcio_status/dist/* "$ARTIFACT_DIR"
 
   # Install xds-protos as a dependency of grpcio-csds
