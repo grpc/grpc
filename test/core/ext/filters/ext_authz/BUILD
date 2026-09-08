@@ -50,7 +50,7 @@ grpc_cc_test(
         "//src/core:grpc_service_config",
         "//src/core:slice",
         "//src/core:time",
-        "//test/core/filters:filter_test",
+        "//test/core/filters:filter_test_v2",
         "//test/core/test_util:grpc_test_util",
         "//test/core/xds:xds_transport_fake",
         "@envoy_api//envoy/service/auth/v3:pkg_cc_proto",

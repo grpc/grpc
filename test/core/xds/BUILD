@@ -694,6 +694,7 @@ grpc_cc_test(
         "//src/core:composite_filter",
         "//src/core:error",
         "//src/core:ext_authz_filter",
+        "//src/core:xds_http_ext_authz_filter",
         "//src/core:gcp_authentication_filter",
         "//src/core:grpc_check",
         "//src/core:grpc_ext_proc_filter",

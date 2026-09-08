@@ -16,41 +16,41 @@
 
 #include "src/core/ext/filters/ext_authz/ext_authz_filter.h"
 
+#include <memory>
 #include <string>
+#include <utility>
+#include <variant>
 #include <vector>
 
-#include "src/core/ext/filters/ext_authz/ext_authz_client.h"
-#include "src/core/filter/filter_args.h"
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/util/ref_counted_ptr.h"
+#include "absl/random/distributions.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
+#include "src/core/call/metadata_batch.h"
+#include "src/core/ext/filters/ext_authz/ext_authz_client.h"
+#include "src/core/ext/filters/ext_authz/ext_authz_messages.h"
+#include "src/core/filter/filter_args.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/util/down_cast.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/xds/grpc/xds_common_types.h"
 
 namespace grpc_core {
 
-typedef HeaderValueOption::AppendAction AppendAction;
 //
 // ExtAuthz
 //
 
 bool ExtAuthz::operator==(const ExtAuthz& other) const {
-  if ((xds_grpc_service->server_target == nullptr) !=
-      (other.xds_grpc_service->server_target == nullptr)) {
+  if (server_target.has_value() != other.server_target.has_value()) {
     return false;
   }
-  if (xds_grpc_service->server_target != nullptr &&
-      !xds_grpc_service->server_target->Equals(
-          *other.xds_grpc_service->server_target)) {
-    return false;
-  }
-  if (xds_grpc_service->timeout != other.xds_grpc_service->timeout) {
-    return false;
-  }
-  if (xds_grpc_service->initial_metadata !=
-      other.xds_grpc_service->initial_metadata) {
+  if (server_target.has_value() &&
+      !server_target->Equals(*other.server_target)) {
     return false;
   }
   return server_uri == other.server_uri &&
@@ -65,16 +65,16 @@ bool ExtAuthz::operator==(const ExtAuthz& other) const {
          include_peer_certificate == other.include_peer_certificate;
 }
 
-bool ExtAuthz::isHeaderAllowed(std::string key) const {
-  for (auto& disallow : disallowed_headers) {
+bool ExtAuthz::isHeaderAllowed(absl::string_view key) const {
+  for (const auto& disallow : disallowed_headers) {
     if (disallow.Match(key)) {
       return false;
     }
   }
-  if (allowed_headers.size() == 0) {
+  if (allowed_headers.empty()) {
     return true;
   }
-  for (auto& allow : allowed_headers) {
+  for (const auto& allow : allowed_headers) {
     if (allow.Match(key)) {
       return true;
     }
@@ -86,19 +86,12 @@ ExtAuthz::CheckResult ExtAuthz::CheckRequestAllowed() const {
   if (!filter_enabled.has_value()) {
     return CheckResult::kSendRequestToExtAuthzService;
   }
-  const auto& enabled = *filter_enabled;
-  // Logic: if filter_enabled < 100% (numerator < denominator)
-  if (enabled.numerator < enabled.denominator) {
-    // random_number = generate_random_number(0, denominator);
-    // We use [0, denominator) range for simple < numerator check.
-    // If user wanted 1-based [1, denominator], logic would be different.
-    // But standard fractional percent implies P = numerator/denominator.
-    // Uniform<uint32_t> produces [min, max).
+  if (*filter_enabled < 1000000) {
     grpc_core::SharedBitGen g;
     uint32_t random_number =
-        absl::Uniform<uint32_t>(absl::BitGenRef(g), 0, enabled.denominator);
-    if (random_number >= enabled.numerator) {
-      if (deny_at_disable.has_value() && deny_at_disable.value()) {
+        absl::Uniform<uint32_t>(absl::BitGenRef(g), 0, 1000000);
+    if (random_number >= *filter_enabled) {
+      if (deny_at_disable) {
         return CheckResult::kDeny;
       } else {
         return CheckResult::kPassThrough;
@@ -113,71 +106,70 @@ ExtAuthz::CheckResult ExtAuthz::CheckRequestAllowed() const {
 //
 
 bool ExtAuthzFilter::Config::Equals(const FilterConfig& other) const {
-  const auto& o = static_cast<const Config&>(other);
-  return instance_name == o.instance_name && *ext_authz == *o.ext_authz;
+  const auto& o = DownCast<const Config&>(other);
+  if (disabled != o.disabled) return false;
+  if (instance_name != o.instance_name) return false;
+  if ((ext_authz == nullptr) != (o.ext_authz == nullptr)) return false;
+  if (ext_authz != nullptr && *ext_authz != *o.ext_authz) return false;
+  return channel_cache == o.channel_cache;
 }
 
 std::string ExtAuthzFilter::Config::ToString() const {
+  if (disabled) {
+    return "{disabled=true}";
+  }
   std::vector<std::string> parts;
   parts.push_back(absl::StrCat("instance_name=", instance_name));
-  if (ext_authz->xds_grpc_service != nullptr &&
-      ext_authz->xds_grpc_service->server_target != nullptr) {
+  if (channel_cache != nullptr && channel_cache->server() != nullptr) {
     parts.push_back(
-        absl::StrCat("server_uri=",
-                     ext_authz->xds_grpc_service->server_target->server_uri()));
-  } else {
+        absl::StrCat("server_uri=", channel_cache->server()->server_uri()));
+  } else if (ext_authz != nullptr && ext_authz->server_target.has_value()) {
+    parts.push_back(
+        absl::StrCat("server_uri=", ext_authz->server_target->server_uri()));
+  } else if (ext_authz != nullptr && !ext_authz->server_uri.empty()) {
     parts.push_back(absl::StrCat("server_uri=", ext_authz->server_uri));
   }
-  if (ext_authz->filter_enabled.has_value()) {
+  if (ext_authz != nullptr) {
+    if (ext_authz->filter_enabled.has_value()) {
+      parts.push_back(
+          absl::StrCat("filter_enabled=", *ext_authz->filter_enabled));
+    }
     parts.push_back(absl::StrCat(
-        "filter_enabled={numerator=", ext_authz->filter_enabled->numerator,
-        ", denominator=", ext_authz->filter_enabled->denominator, "}"));
-  }
-  if (ext_authz->deny_at_disable.has_value()) {
+        "deny_at_disable=",
+        ext_authz->deny_at_disable ? "true" : "false"));
+    parts.push_back(absl::StrCat(
+        "failure_mode_allow=",
+        ext_authz->failure_mode_allow ? "true" : "false"));
+    parts.push_back(absl::StrCat(
+        "failure_mode_allow_header_add=",
+        ext_authz->failure_mode_allow_header_add ? "true" : "false"));
     parts.push_back(
-        absl::StrCat("deny_at_disable=",
-                     ext_authz->deny_at_disable.value() ? "true" : "false"));
-  }
-  parts.push_back(absl::StrCat(
-      "failure_mode_allow=", ext_authz->failure_mode_allow ? "true" : "false"));
-  parts.push_back(absl::StrCat(
-      "failure_mode_allow_header_add=",
-      ext_authz->failure_mode_allow_header_add ? "true" : "false"));
-  parts.push_back(absl::StrCat("status_on_error=", ext_authz->status_on_error));
-  parts.push_back(
-      absl::StrCat("include_peer_certificate=",
-                   ext_authz->include_peer_certificate ? "true" : "false"));
-  if (ext_authz->decoder_header_mutation_rules.has_value()) {
-    const auto& rules = ext_authz->decoder_header_mutation_rules.value();
-    std::vector<std::string> rule_parts;
-    if (rules.disallow_all) rule_parts.push_back("disallow_all=true");
-    if (rules.disallow_is_error) rule_parts.push_back("disallow_is_error=true");
-    if (rules.allow_expression.has_value()) {
-      rule_parts.push_back(absl::StrCat("allow_expression=",
-                                        rules.allow_expression->ToString()));
+        absl::StrCat("status_on_error=", ext_authz->status_on_error));
+    parts.push_back(
+        absl::StrCat("include_peer_certificate=",
+                     ext_authz->include_peer_certificate ? "true" : "false"));
+    if (ext_authz->decoder_header_mutation_rules.has_value()) {
+      parts.push_back(absl::StrCat(
+          "decoder_header_mutation_rules=",
+          ext_authz->decoder_header_mutation_rules->ToString()));
     }
-    if (rules.disallow_expression.has_value()) {
-      rule_parts.push_back(absl::StrCat("disallow_expression=",
-                                        rules.disallow_expression->ToString()));
+    if (!ext_authz->allowed_headers.empty()) {
+      std::vector<std::string> allowed_headers;
+      for (const auto& matcher : ext_authz->allowed_headers) {
+        allowed_headers.push_back(matcher.ToString());
+      }
+      parts.push_back(absl::StrCat("allowed_headers=[",
+                                   absl::StrJoin(allowed_headers, ", "), "]"));
     }
-    parts.push_back(absl::StrCat("decoder_header_mutation_rules={",
-                                 absl::StrJoin(rule_parts, ", "), "}"));
-  }
-  if (!ext_authz->allowed_headers.empty()) {
-    std::vector<std::string> allowed_headers;
-    for (const auto& matcher : ext_authz->allowed_headers) {
-      allowed_headers.push_back(matcher.ToString());
+    if (!ext_authz->disallowed_headers.empty()) {
+      std::vector<std::string> disallowed_headers;
+      for (const auto& matcher : ext_authz->disallowed_headers) {
+        disallowed_headers.push_back(matcher.ToString());
+      }
+      parts.push_back(absl::StrCat(
+          "disallowed_headers=[", absl::StrJoin(disallowed_headers, ", "),
+          "]"));
     }
-    parts.push_back(absl::StrCat("allowed_headers=[",
-                                 absl::StrJoin(allowed_headers, ", "), "]"));
-  }
-  if (!ext_authz->disallowed_headers.empty()) {
-    std::vector<std::string> disallowed_headers;
-    for (const auto& matcher : ext_authz->disallowed_headers) {
-      disallowed_headers.push_back(matcher.ToString());
-    }
-    parts.push_back(absl::StrCat("disallowed_headers=[",
-                                 absl::StrJoin(disallowed_headers, ", "), "]"));
   }
   return absl::StrCat("{", absl::StrJoin(parts, ", "), "}");
 }
@@ -199,84 +191,26 @@ ServerMetadataHandle MalformedRequest(
   return hdl;
 }
 
-std::string GetHeaderValue(const std::string& header, grpc_metadata_batch& md) {
-  std::string buffer;
-  return md.GetStringValue(header, &buffer).has_value() ? buffer : "";
-};
-
-bool isHeaderMutationPossibleForHeaderValueOptions(
-    const HeaderValueOption& header, grpc_metadata_batch& md, bool allowed,
-    bool disallow_is_error) {
-  auto header_value = GetHeaderValue(header.header.key, md);
-  switch (header.append_action) {
-    case AppendAction::kAppendIfExistsOrAdd: {
-      if (!allowed && disallow_is_error) {
-        return false;
-      } else if (allowed) {
-        md.Remove(absl::string_view(header.header.key));
-        md.Append(
-            header.header.key,
-            Slice::FromCopiedString(header_value.append(header.header.value)),
-            [](absl::string_view, const Slice&) {});
-      }
-    } break;
-    case AppendAction::kAddIfAbsent: {
-      if (header_value.empty() && !allowed && disallow_is_error) {
-        return false;
-      } else if (header_value.empty() && allowed) {
-        md.Append(header.header.key,
-                  Slice::FromCopiedString(header.header.value),
-                  [](absl::string_view, const Slice&) {});
-      }
-    } break;
-    case AppendAction::kOverwriteIfExists: {
-      if (!header_value.empty() && !allowed && disallow_is_error) {
-        return false;
-      } else if (!header_value.empty() && allowed) {
-        md.Remove(absl::string_view(header.header.key));
-        md.Append(header.header.key,
-                  Slice::FromCopiedString(header.header.value),
-                  [](absl::string_view, const Slice&) {});
-      }
-    } break;
-    case AppendAction::kOverwriteIfExistsOrAdd: {
-      if (!allowed && disallow_is_error) {
-        return false;
-      } else if (allowed) {
-        md.Remove(absl::string_view(header.header.key));
-        md.Append(header.header.key,
-                  Slice::FromCopiedString(header.header.value),
-                  [](absl::string_view, const Slice&) {});
-      }
-    } break;
-  }
-  return true;
-}
-
 }  // namespace
 
 ServerMetadataHandle ExtAuthzFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, ExtAuthzFilter* filter) {
-  // check if the rpc is allowed based on whether ext_authz_filter is enabled or
-  // not
-  switch (filter->filter_config_->ext_authz->CheckRequestAllowed()) {
-    case ExtAuthz::CheckResult::kSendRequestToExtAuthzService: {
-      // continue with ext authz filter
-    } break;
-    case ExtAuthz::CheckResult::kDeny: {
-      return MalformedRequest(
-          "ExtAuthz filter is not enabled",
-          filter->filter_config_->ext_authz->status_on_error);
-    } break;
-    case ExtAuthz::CheckResult::kPassThrough: {
+  if (filter->filter_config_->ext_authz == nullptr) {
+    return nullptr;
+  }
+  const auto& ext_authz = *filter->filter_config_->ext_authz;
+  switch (ext_authz.CheckRequestAllowed()) {
+    case ExtAuthz::CheckResult::kSendRequestToExtAuthzService:
+      break;
+    case ExtAuthz::CheckResult::kDeny:
+      return MalformedRequest("ExtAuthz filter is not enabled",
+                              ext_authz.status_on_error);
+    case ExtAuthz::CheckResult::kPassThrough:
       return nullptr;
-    } break;
   }
   std::vector<std::pair<std::string, std::string>> metadata_list;
   md.Log([&](absl::string_view key, absl::string_view value) {
-    //  if the header is matched by the disallowed_headers config field, it will
-    //  not be added to this map
-    if (filter->filter_config_->ext_authz->isHeaderAllowed(std::string(key))) {
+    if (ext_authz.isHeaderAllowed(key)) {
       metadata_list.emplace_back(std::string(key), std::string(value));
     }
   });
@@ -286,24 +220,21 @@ ServerMetadataHandle ExtAuthzFilter::Call::OnClientInitialMetadata(
   }
   ExtAuthzClient::ExtAuthzRequestParams params;
   params.headers = std::move(metadata_list);
-  // params.headers is vector of pairs of strings.
   params.path = std::move(path_str);
   params.is_client_call = true;
-  auto key = filter->filter_config_->ext_authz->server_uri;
-  auto channel = filter->channel_cache_->Get();
+  params.include_peer_certificate = ext_authz.include_peer_certificate;
+  auto channel = filter->filter_config_->channel_cache != nullptr
+                     ? filter->filter_config_->channel_cache->client()
+                     : nullptr;
   if (channel == nullptr) {
-    // If we can't get a channel, we probably can't auth.
     return MalformedRequest("ExtAuthz channel not found");
   }
   auto result = channel->Check(params);
   if (!result.ok()) {
-    // Check failure_mode_allow
-    if (!filter->filter_config_->ext_authz->failure_mode_allow) {
-      return MalformedRequest(
-          result.status().message(),
-          filter->filter_config_->ext_authz->status_on_error);
-    } else if (filter->filter_config_->ext_authz
-                   ->failure_mode_allow_header_add) {
+    if (!ext_authz.failure_mode_allow) {
+      return MalformedRequest(result.status().message(),
+                              ext_authz.status_on_error);
+    } else if (ext_authz.failure_mode_allow_header_add) {
       md.Set(XEnvoyAuthFailureModeAllowedMetadata(),
              Slice::FromStaticString("true"));
     }
@@ -311,39 +242,44 @@ ServerMetadataHandle ExtAuthzFilter::Call::OnClientInitialMetadata(
   }
   const auto& response = *result;
   if (response.status_code != GRPC_STATUS_OK) {
-    filter->response_trailer_to_add = response.denied_response.headers;
-    // Check with Mark whether this is correct or not
-    return MalformedRequest("ExtAuthz request is denied",
-                            response.denied_response.status);
+    if (const auto* denied =
+            std::get_if<ExtAuthzResponse::DeniedResponse>(&response.response);
+        denied != nullptr) {
+      response_trailer_to_add = denied->headers;
+      return MalformedRequest("ExtAuthz request is denied", denied->status);
+    }
+    return MalformedRequest(
+        response.status_message.empty() ? "ExtAuthz request is denied"
+                                        : response.status_message,
+        response.status_code);
   }
-  auto& decoder_header_mutation_rules =
-      filter->filter_config_->ext_authz->decoder_header_mutation_rules.value();
-  // header_to_remove
-  for (auto& header : response.ok_response.headers_to_remove) {
-    auto allowed =
-        decoder_header_mutation_rules.IsHeaderMutationAllowed(header);
-    if (GetHeaderValue(header, md).empty() && !allowed &&
-        decoder_header_mutation_rules.disallow_is_error) {
-      return MalformedRequest(
-          "ExtAuthz header mutation is not allowed",
-          filter->filter_config_->ext_authz->status_on_error);
-    } else if (allowed) {
-      md.Remove(absl::string_view(header));
+  const auto* ok_resp =
+      std::get_if<ExtAuthzResponse::OkResponse>(&response.response);
+  if (ok_resp == nullptr) {
+    return MalformedRequest("ExtAuthz OK response missing payload");
+  }
+  const HeaderMutationRules* rules =
+      ext_authz.decoder_header_mutation_rules.has_value()
+          ? &*ext_authz.decoder_header_mutation_rules
+          : nullptr;
+  // Apply header removals
+  for (const auto& header : ok_resp->header_mutation.remove_headers) {
+    auto status = ApplyXdsHeaderMutationsRemoval(header, rules, md);
+    if (!status.ok()) {
+      return MalformedRequest("ExtAuthz header mutation is not allowed",
+                              ext_authz.status_on_error);
     }
   }
-  // response_headers_to_add
-  filter->response_headers_to_add =
-      response.ok_response.response_headers_to_add;
-  // adding or modification of headers
-  for (auto& header : response.ok_response.headers) {
-    auto allowed = decoder_header_mutation_rules.IsHeaderMutationAllowed(
-        header.header.key);
-    if (!isHeaderMutationPossibleForHeaderValueOptions(
-            header, md, allowed,
-            decoder_header_mutation_rules.disallow_is_error)) {
-      return MalformedRequest(
-          "ExtAuthz header mutation is not allowed",
-          filter->filter_config_->ext_authz->status_on_error);
+  // Store response headers to add for server initial metadata
+  if (!ok_resp->response_headers_to_add.empty()) {
+    response_headers_to_add = ok_resp->response_headers_to_add;
+  }
+  // Apply header additions / modifications
+  for (const auto& header : ok_resp->header_mutation.set_headers) {
+    auto status = ApplyXdsHeaderMutationsAddition(header, rules, md);
+    if (!status.ok()) {
+      return MalformedRequest("ExtAuthz header mutation is not allowed",
+                              ext_authz.status_on_error);
     }
   }
   return nullptr;
@@ -354,25 +290,24 @@ absl::Status ExtAuthzFilter::Call::OnServerInitialMetadata(
   if (md.get(GrpcTrailersOnly()).value_or(false)) {
     return absl::OkStatus();
   }
-  if (!filter->response_headers_to_add.has_value()) {
+  if (!response_headers_to_add.has_value()) {
     return absl::OkStatus();
   }
-  auto& decoder_header_mutation_rules =
-      filter->filter_config_->ext_authz->decoder_header_mutation_rules.value();
-  for (auto& header : filter->response_headers_to_add.value()) {
-    auto allowed = decoder_header_mutation_rules.IsHeaderMutationAllowed(
-        header.header.key);
-    if (!isHeaderMutationPossibleForHeaderValueOptions(
-            header, md, allowed,
-            decoder_header_mutation_rules.disallow_is_error)) {
-      filter->response_headers_to_add.reset();
+  const auto& ext_authz = *filter->filter_config_->ext_authz;
+  const HeaderMutationRules* rules =
+      ext_authz.decoder_header_mutation_rules.has_value()
+          ? &*ext_authz.decoder_header_mutation_rules
+          : nullptr;
+  for (const auto& header : *response_headers_to_add) {
+    auto status = ApplyXdsHeaderMutationsAddition(header, rules, md);
+    if (!status.ok()) {
+      response_headers_to_add.reset();
       return absl::Status(
-          static_cast<absl::StatusCode>(
-              filter->filter_config_->ext_authz->status_on_error),
+          static_cast<absl::StatusCode>(ext_authz.status_on_error),
           "ExtAuthz header mutation is not allowed");
     }
   }
-  filter->response_headers_to_add.reset();
+  response_headers_to_add.reset();
   return absl::OkStatus();
 }
 
@@ -381,25 +316,24 @@ absl::Status ExtAuthzFilter::Call::OnServerTrailingMetadata(
   if (md.get(GrpcTrailersOnly()).value_or(false)) {
     return absl::OkStatus();
   }
-  if (!filter->response_trailer_to_add.has_value()) {
+  if (!response_trailer_to_add.has_value()) {
     return absl::OkStatus();
   }
-  auto& decoder_header_mutation_rules =
-      filter->filter_config_->ext_authz->decoder_header_mutation_rules.value();
-  for (auto& header : filter->response_trailer_to_add.value()) {
-    auto allowed = decoder_header_mutation_rules.IsHeaderMutationAllowed(
-        header.header.key);
-    if (!isHeaderMutationPossibleForHeaderValueOptions(
-            header, md, allowed,
-            decoder_header_mutation_rules.disallow_is_error)) {
-      filter->response_trailer_to_add.reset();
+  const auto& ext_authz = *filter->filter_config_->ext_authz;
+  const HeaderMutationRules* rules =
+      ext_authz.decoder_header_mutation_rules.has_value()
+          ? &*ext_authz.decoder_header_mutation_rules
+          : nullptr;
+  for (const auto& header : *response_trailer_to_add) {
+    auto status = ApplyXdsHeaderMutationsAddition(header, rules, md);
+    if (!status.ok()) {
+      response_trailer_to_add.reset();
       return absl::Status(
-          static_cast<absl::StatusCode>(
-              filter->filter_config_->ext_authz->status_on_error),
+          static_cast<absl::StatusCode>(ext_authz.status_on_error),
           "ExtAuthz header mutation is not allowed");
     }
   }
-  filter->response_trailer_to_add.reset();
+  response_trailer_to_add.reset();
   return absl::OkStatus();
 }
 
@@ -412,16 +346,6 @@ UniqueTypeName ExtAuthzFilter::ChannelCache::Type() {
   return factory.Create();
 }
 
-RefCountedPtr<ExtAuthzClient> ExtAuthzFilter::ChannelCache::Get() const {
-  MutexLock lock(&mu_);
-  return client_;
-}
-
-void ExtAuthzFilter::ChannelCache::Remove() {
-  MutexLock lock(&mu_);
-  client_->Unref();
-}
-
 //
 // ExtAuthzFilter
 //
@@ -430,11 +354,7 @@ const grpc_channel_filter ExtAuthzFilter::kFilterVtable =
     MakePromiseBasedFilter<ExtAuthzFilter, FilterEndpoint::kClient, 0>();
 
 absl::StatusOr<std::unique_ptr<ExtAuthzFilter>> ExtAuthzFilter::Create(
-    const ChannelArgs& args, ChannelFilter::Args filter_args) {
-  if (!IsXdsChannelFilterChainPerRouteEnabled()) {
-    return absl::InvalidArgumentError(
-        "ext_authz: xds channel filter chain per route is not enabled");
-  }
+    const ChannelArgs& /*args*/, ChannelFilter::Args filter_args) {
   // Get filter config.
   if (filter_args.config() == nullptr) {
     return absl::InternalError("ext_authz: filter config not set");
@@ -445,17 +365,11 @@ absl::StatusOr<std::unique_ptr<ExtAuthzFilter>> ExtAuthzFilter::Create(
                      filter_args.config()->type().name()));
   }
   auto config = filter_args.config().TakeAsSubclass<const Config>();
-  // Get cache from blackboard.  This must have been populated
-  // previously by the XdsConfigSelector.
-  auto cache = filter_args.GetState<ChannelCache>(config->instance_name);
-  // Instantiate filter.
   return std::unique_ptr<ExtAuthzFilter>(
-      new ExtAuthzFilter(std::move(config), std::move(cache)));
+      new ExtAuthzFilter(std::move(config)));
 }
 
-ExtAuthzFilter::ExtAuthzFilter(RefCountedPtr<const Config> filter_config,
-                               RefCountedPtr<const ChannelCache> channel_cache)
-    : filter_config_(std::move(filter_config)),
-      channel_cache_(std::move(channel_cache)) {}
+ExtAuthzFilter::ExtAuthzFilter(RefCountedPtr<const Config> filter_config)
+    : filter_config_(std::move(filter_config)) {}
 
 }  // namespace grpc_core
