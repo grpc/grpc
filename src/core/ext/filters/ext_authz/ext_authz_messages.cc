@@ -76,7 +76,7 @@ bool IsHeaderAllowed(absl::string_view key,
   return false;
 }
 
-std::string GetPrincipal(const ExtAuthzPeer& peer) {
+std::string GetPrincipal(const ExtAuthzRequest::Peer& peer) {
   for (const auto& uri : peer.uri_sans) {
     if (!uri.empty()) return uri;
   }
@@ -90,7 +90,7 @@ std::string GetPrincipal(const ExtAuthzPeer& peer) {
 }
 
 envoy_config_core_v3_Address* CreateAddress(upb_Arena* arena,
-                                            const ExtAuthzPeer& peer) {
+                                            const ExtAuthzRequest::Peer& peer) {
   if (!peer.address.has_value()) {
     return nullptr;
   }
@@ -128,33 +128,33 @@ envoy_config_core_v3_Address* CreateAddress(upb_Arena* arena,
 }
 
 envoy_service_auth_v3_AttributeContext_Peer* CreateSource(
-    upb_Arena* arena, const ExtAuthzRequestParams& params) {
+    upb_Arena* arena, const ExtAuthzRequest& request) {
   auto* source = envoy_service_auth_v3_AttributeContext_Peer_new(arena);
-  auto* address = CreateAddress(arena, params.peer);
+  auto* address = CreateAddress(arena, request.source);
   if (address != nullptr) {
     envoy_service_auth_v3_AttributeContext_Peer_set_address(source, address);
   }
-  std::string principal = GetPrincipal(params.peer);
+  std::string principal = GetPrincipal(request.source);
   if (!principal.empty()) {
     envoy_service_auth_v3_AttributeContext_Peer_set_principal(
         source, CopyStdStringToUpbString(principal, arena));
   }
-  if (params.include_peer_certificate && !params.peer.certificate.empty()) {
+  if (request.include_peer_certificate && !request.source.certificate.empty()) {
     envoy_service_auth_v3_AttributeContext_Peer_set_certificate(
-        source, CopyStdStringToUpbString(params.peer.certificate, arena));
+        source, CopyStdStringToUpbString(request.source.certificate, arena));
   }
   return source;
 }
 
 envoy_service_auth_v3_AttributeContext_Peer* CreateDestination(
-    upb_Arena* arena, const ExtAuthzRequestParams& params) {
+    upb_Arena* arena, const ExtAuthzRequest& request) {
   auto* destination = envoy_service_auth_v3_AttributeContext_Peer_new(arena);
-  auto* address = CreateAddress(arena, params.local);
+  auto* address = CreateAddress(arena, request.destination);
   if (address != nullptr) {
     envoy_service_auth_v3_AttributeContext_Peer_set_address(destination,
                                                             address);
   }
-  std::string principal = GetPrincipal(params.local);
+  std::string principal = GetPrincipal(request.destination);
   if (!principal.empty()) {
     envoy_service_auth_v3_AttributeContext_Peer_set_principal(
         destination, CopyStdStringToUpbString(principal, arena));
@@ -163,30 +163,31 @@ envoy_service_auth_v3_AttributeContext_Peer* CreateDestination(
 }
 
 envoy_service_auth_v3_AttributeContext_Request* CreateRequest(
-    upb_Arena* arena, const ExtAuthzRequestParams& params) {
-  auto* request = envoy_service_auth_v3_AttributeContext_Request_new(arena);
+    upb_Arena* arena, const ExtAuthzRequest& request) {
+  auto* envoy_request =
+      envoy_service_auth_v3_AttributeContext_Request_new(arena);
   auto* timestamp = envoy_service_auth_v3_AttributeContext_Request_mutable_time(
-      request, arena);
-  if (params.start_time.has_value()) {
-    gpr_timespec ts = params.start_time->as_timespec(GPR_CLOCK_REALTIME);
+      envoy_request, arena);
+  if (request.start_time.has_value()) {
+    gpr_timespec ts = request.start_time->as_timespec(GPR_CLOCK_REALTIME);
     TimestampToUpb(ts, timestamp);
   } else {
     TimestampToUpb(gpr_now(GPR_CLOCK_REALTIME), timestamp);
   }
   auto* http_request =
-      envoy_service_auth_v3_AttributeContext_Request_mutable_http(request,
+      envoy_service_auth_v3_AttributeContext_Request_mutable_http(envoy_request,
                                                                   arena);
   envoy_service_auth_v3_AttributeContext_HttpRequest_set_method(
       http_request, CopyStdStringToUpbString("POST", arena));
   envoy_service_auth_v3_AttributeContext_HttpRequest_set_path(
-      http_request, CopyStdStringToUpbString(params.path, arena));
+      http_request, CopyStdStringToUpbString(request.path, arena));
   envoy_service_auth_v3_AttributeContext_HttpRequest_set_size(http_request, -1);
   envoy_service_auth_v3_AttributeContext_HttpRequest_set_protocol(
       http_request, CopyStdStringToUpbString("HTTP/2", arena));
   auto* header_map = envoy_config_core_v3_HeaderMap_new(arena);
-  for (const auto& [key, value] : params.headers) {
-    if (IsHeaderAllowed(key, params.allowed_headers,
-                        params.disallowed_headers)) {
+  for (const auto& [key, value] : request.headers) {
+    if (IsHeaderAllowed(key, request.allowed_headers,
+                        request.disallowed_headers)) {
       auto* header =
           envoy_config_core_v3_HeaderMap_add_headers(header_map, arena);
       envoy_config_core_v3_HeaderValue_set_key(
@@ -202,37 +203,31 @@ envoy_service_auth_v3_AttributeContext_Request* CreateRequest(
   }
   envoy_service_auth_v3_AttributeContext_HttpRequest_set_header_map(
       http_request, header_map);
-  return request;
+  return envoy_request;
+}
+
+envoy_service_auth_v3_AttributeContext* CreateAttributeContext(
+    upb_Arena* arena, const ExtAuthzRequest& request) {
+  auto* attribute_context = envoy_service_auth_v3_AttributeContext_new(arena);
+  if (!request.is_client_call) {
+    envoy_service_auth_v3_AttributeContext_set_source(
+        attribute_context, CreateSource(arena, request));
+    envoy_service_auth_v3_AttributeContext_set_destination(
+        attribute_context, CreateDestination(arena, request));
+  }
+  envoy_service_auth_v3_AttributeContext_set_request(
+      attribute_context, CreateRequest(arena, request));
+  return attribute_context;
 }
 
 }  // namespace
 
-envoy_service_auth_v3_AttributeContext* CreateAttributeContext(
-    upb_Arena* arena, const ExtAuthzRequestParams& params) {
-  auto* attribute_context = envoy_service_auth_v3_AttributeContext_new(arena);
-  if (!params.is_client_call) {
-    envoy_service_auth_v3_AttributeContext_set_source(
-        attribute_context, CreateSource(arena, params));
-    envoy_service_auth_v3_AttributeContext_set_destination(
-        attribute_context, CreateDestination(arena, params));
-  }
-  envoy_service_auth_v3_AttributeContext_set_request(
-      attribute_context, CreateRequest(arena, params));
-  return attribute_context;
-}
-
-envoy_service_auth_v3_CheckRequest* CreateExtAuthzCheckRequest(
-    upb_Arena* arena, const ExtAuthzRequestParams& params) {
-  auto* check_request = envoy_service_auth_v3_CheckRequest_new(arena);
-  auto* attribute_context = CreateAttributeContext(arena, params);
+std::string CreateExtAuthzRequest(const ExtAuthzRequest& request) {
+  upb::Arena arena;
+  auto* check_request = envoy_service_auth_v3_CheckRequest_new(arena.ptr());
+  auto* attribute_context = CreateAttributeContext(arena.ptr(), request);
   envoy_service_auth_v3_CheckRequest_set_attributes(check_request,
                                                     attribute_context);
-  return check_request;
-}
-
-std::string CreateExtAuthzRequest(const ExtAuthzRequestParams& params) {
-  upb::Arena arena;
-  auto* check_request = CreateExtAuthzCheckRequest(arena.ptr(), params);
   size_t output_length = 0;
   char* output = envoy_service_auth_v3_CheckRequest_serialize(
       check_request, arena.ptr(), &output_length);

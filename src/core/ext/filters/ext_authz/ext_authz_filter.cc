@@ -244,7 +244,7 @@ ServerMetadataHandle ExtAuthzFilter::Call::OnClientInitialMetadata(
   if (auto* path = md.get_pointer(HttpPathMetadata())) {
     path_str = std::string(path->as_string_view());
   }
-  ExtAuthzRequestParams params;
+  ExtAuthzRequest params;
   params.headers = std::move(metadata_list);
   params.path = std::move(path_str);
   params.is_client_call = true;

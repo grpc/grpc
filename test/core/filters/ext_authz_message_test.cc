@@ -113,7 +113,7 @@ class CreateExtAuthzRequestTest : public ::testing::Test {
 };
 
 TEST_F(CreateExtAuthzRequestTest, ClientSideSerialization) {
-  ExtAuthzRequestParams params;
+  ExtAuthzRequest params;
   params.is_client_call = true;
   params.path = "/test.service/TestMethod";
   params.start_time = Timestamp::FromMillisecondsAfterProcessEpoch(123456789);
@@ -121,8 +121,8 @@ TEST_F(CreateExtAuthzRequestTest, ClientSideSerialization) {
       {"custom-header-1", "val1"},
       {"custom-header-2-bin", "binval"},
   };
-  params.peer.address = *StringToSockaddr("192.168.1.100:50051");
-  params.local.address = *StringToSockaddr("10.0.0.1:50052");
+  params.source.address = *StringToSockaddr("192.168.1.100:50051");
+  params.destination.address = *StringToSockaddr("10.0.0.1:50052");
 
   std::string serialized = CreateExtAuthzRequest(params);
   auto request = ParseRequest(serialized);
@@ -174,7 +174,7 @@ TEST_F(CreateExtAuthzRequestTest, ClientSideSerialization) {
 }
 
 TEST_F(CreateExtAuthzRequestTest, ClientSideSerialization_NoStartTime) {
-  ExtAuthzRequestParams params;
+  ExtAuthzRequest params;
   params.is_client_call = true;
   params.path = "/test.service/TestMethod";
   params.start_time = std::nullopt;
@@ -189,11 +189,11 @@ TEST_F(CreateExtAuthzRequestTest, ClientSideSerialization_NoStartTime) {
 }
 
 TEST_F(CreateExtAuthzRequestTest, ServerSideSerialization_PlainConnection) {
-  ExtAuthzRequestParams params;
+  ExtAuthzRequest params;
   params.is_client_call = false;
   params.path = "/service/plain";
-  params.peer.address = *StringToSockaddr("192.168.1.10:12345");
-  params.local.address = *StringToSockaddr("10.0.0.1:8080");
+  params.source.address = *StringToSockaddr("192.168.1.10:12345");
+  params.destination.address = *StringToSockaddr("10.0.0.1:8080");
 
   std::string serialized = CreateExtAuthzRequest(params);
   auto request = ParseRequest(serialized);
@@ -231,15 +231,15 @@ TEST_F(CreateExtAuthzRequestTest, ServerSideSerialization_PlainConnection) {
 }
 
 TEST_F(CreateExtAuthzRequestTest, ServerSideSerialization_UnixDomainSocket) {
-  ExtAuthzRequestParams params;
+  ExtAuthzRequest params;
   params.is_client_call = false;
   params.path = "/service/unix";
   grpc_resolved_address peer_addr;
   GRPC_CHECK_OK(UnixSockaddrPopulate("/tmp/client.sock", &peer_addr));
-  params.peer.address = peer_addr;
+  params.source.address = peer_addr;
   grpc_resolved_address local_addr;
   GRPC_CHECK_OK(UnixSockaddrPopulate("/var/run/server.sock", &local_addr));
-  params.local.address = local_addr;
+  params.destination.address = local_addr;
 
   std::string serialized = CreateExtAuthzRequest(params);
   auto request = ParseRequest(serialized);
@@ -259,11 +259,11 @@ TEST_F(CreateExtAuthzRequestTest, ServerSideSerialization_UnixDomainSocket) {
 }
 
 TEST_F(CreateExtAuthzRequestTest, ServerSideSerialization_Ipv6Addresses) {
-  ExtAuthzRequestParams params;
+  ExtAuthzRequest params;
   params.is_client_call = false;
   params.path = "/service/ipv6";
-  params.peer.address = *StringToSockaddr("[2001:db8::1]:12345");
-  params.local.address = *StringToSockaddr("[2001:db8::2]:8080");
+  params.source.address = *StringToSockaddr("[2001:db8::1]:12345");
+  params.destination.address = *StringToSockaddr("[2001:db8::2]:8080");
 
   std::string serialized = CreateExtAuthzRequest(params);
   auto request = ParseRequest(serialized);
@@ -287,22 +287,22 @@ TEST_F(CreateExtAuthzRequestTest, ServerSideSerialization_Ipv6Addresses) {
 
 TEST_F(CreateExtAuthzRequestTest,
        ServerSideSerialization_TlsConnection_UriSanPriority) {
-  ExtAuthzRequestParams params;
+  ExtAuthzRequest params;
   params.is_client_call = false;
   params.path = "/service/tls";
-  params.peer.address = *StringToSockaddr("192.168.1.10:12345");
-  params.peer.uri_sans = {"spiffe://example.com/client-uri-1",
-                          "spiffe://example.com/client-uri-2"};
-  params.peer.dns_sans = {"client-dns.example.com"};
-  params.peer.subject = "CN=client,O=Example";
-  params.peer.certificate =
+  params.source.address = *StringToSockaddr("192.168.1.10:12345");
+  params.source.uri_sans = {"spiffe://example.com/client-uri-1",
+                            "spiffe://example.com/client-uri-2"};
+  params.source.dns_sans = {"client-dns.example.com"};
+  params.source.subject = "CN=client,O=Example";
+  params.source.certificate =
       "-----BEGIN CERTIFICATE-----\nclient_cert\n-----END CERTIFICATE-----";
   params.include_peer_certificate = true;
 
-  params.local.address = *StringToSockaddr("10.0.0.1:8080");
-  params.local.uri_sans = {"spiffe://example.com/server-uri"};
-  params.local.dns_sans = {"server-dns.example.com"};
-  params.local.subject = "CN=server,O=Example";
+  params.destination.address = *StringToSockaddr("10.0.0.1:8080");
+  params.destination.uri_sans = {"spiffe://example.com/server-uri"};
+  params.destination.dns_sans = {"server-dns.example.com"};
+  params.destination.subject = "CN=server,O=Example";
 
   std::string serialized = CreateExtAuthzRequest(params);
   auto request = ParseRequest(serialized);
@@ -321,21 +321,21 @@ TEST_F(CreateExtAuthzRequestTest,
 
 TEST_F(CreateExtAuthzRequestTest,
        ServerSideSerialization_TlsConnection_DnsSanFallback) {
-  ExtAuthzRequestParams params;
+  ExtAuthzRequest params;
   params.is_client_call = false;
   params.path = "/service/tls";
-  params.peer.address = *StringToSockaddr("192.168.1.10:12345");
-  params.peer.uri_sans = {};
-  params.peer.dns_sans = {"client-dns-1.example.com",
-                          "client-dns-2.example.com"};
-  params.peer.subject = "CN=client,O=Example";
-  params.peer.certificate = "cert_data";
+  params.source.address = *StringToSockaddr("192.168.1.10:12345");
+  params.source.uri_sans = {};
+  params.source.dns_sans = {"client-dns-1.example.com",
+                            "client-dns-2.example.com"};
+  params.source.subject = "CN=client,O=Example";
+  params.source.certificate = "cert_data";
   params.include_peer_certificate = false;
 
-  params.local.address = *StringToSockaddr("10.0.0.1:8080");
-  params.local.uri_sans = {};
-  params.local.dns_sans = {"server-dns.example.com"};
-  params.local.subject = "CN=server,O=Example";
+  params.destination.address = *StringToSockaddr("10.0.0.1:8080");
+  params.destination.uri_sans = {};
+  params.destination.dns_sans = {"server-dns.example.com"};
+  params.destination.subject = "CN=server,O=Example";
 
   std::string serialized = CreateExtAuthzRequest(params);
   auto request = ParseRequest(serialized);
@@ -352,18 +352,18 @@ TEST_F(CreateExtAuthzRequestTest,
 
 TEST_F(CreateExtAuthzRequestTest,
        ServerSideSerialization_TlsConnection_SubjectFallback) {
-  ExtAuthzRequestParams params;
+  ExtAuthzRequest params;
   params.is_client_call = false;
   params.path = "/service/tls";
-  params.peer.address = *StringToSockaddr("192.168.1.10:12345");
-  params.peer.uri_sans = {};
-  params.peer.dns_sans = {};
-  params.peer.subject = "CN=client,O=Example Corp,C=US";
+  params.source.address = *StringToSockaddr("192.168.1.10:12345");
+  params.source.uri_sans = {};
+  params.source.dns_sans = {};
+  params.source.subject = "CN=client,O=Example Corp,C=US";
 
-  params.local.address = *StringToSockaddr("10.0.0.1:8080");
-  params.local.uri_sans = {};
-  params.local.dns_sans = {};
-  params.local.subject = "CN=server,O=Example Corp,C=US";
+  params.destination.address = *StringToSockaddr("10.0.0.1:8080");
+  params.destination.uri_sans = {};
+  params.destination.dns_sans = {};
+  params.destination.subject = "CN=server,O=Example Corp,C=US";
 
   std::string serialized = CreateExtAuthzRequest(params);
   auto request = ParseRequest(serialized);
@@ -378,18 +378,18 @@ TEST_F(CreateExtAuthzRequestTest,
 
 TEST_F(CreateExtAuthzRequestTest,
        ServerSideSerialization_TlsConnection_UnsetPrincipal) {
-  ExtAuthzRequestParams params;
+  ExtAuthzRequest params;
   params.is_client_call = false;
   params.path = "/service/tls";
-  params.peer.address = *StringToSockaddr("192.168.1.10:12345");
-  params.peer.uri_sans = {};
-  params.peer.dns_sans = {};
-  params.peer.subject = "";
+  params.source.address = *StringToSockaddr("192.168.1.10:12345");
+  params.source.uri_sans = {};
+  params.source.dns_sans = {};
+  params.source.subject = "";
 
-  params.local.address = *StringToSockaddr("10.0.0.1:8080");
-  params.local.uri_sans = {};
-  params.local.dns_sans = {};
-  params.local.subject = "";
+  params.destination.address = *StringToSockaddr("10.0.0.1:8080");
+  params.destination.uri_sans = {};
+  params.destination.dns_sans = {};
+  params.destination.subject = "";
 
   std::string serialized = CreateExtAuthzRequest(params);
   auto request = ParseRequest(serialized);
@@ -403,7 +403,7 @@ TEST_F(CreateExtAuthzRequestTest,
 }
 
 TEST_F(CreateExtAuthzRequestTest, HeaderFiltering_AllowedAndDisallowed) {
-  ExtAuthzRequestParams params;
+  ExtAuthzRequest params;
   params.is_client_call = true;
   params.path = "/test/filter";
   params.headers = {
@@ -437,7 +437,7 @@ TEST_F(CreateExtAuthzRequestTest, HeaderFiltering_AllowedAndDisallowed) {
 }
 
 TEST_F(CreateExtAuthzRequestTest, HeaderFiltering_DisallowedTakesPrecedence) {
-  ExtAuthzRequestParams params;
+  ExtAuthzRequest params;
   params.is_client_call = true;
   params.path = "/test/filter";
   params.headers = {
@@ -460,7 +460,7 @@ TEST_F(CreateExtAuthzRequestTest, HeaderFiltering_DisallowedTakesPrecedence) {
 }
 
 TEST_F(CreateExtAuthzRequestTest, HeaderFiltering_OnlyAllowedSet) {
-  ExtAuthzRequestParams params;
+  ExtAuthzRequest params;
   params.is_client_call = true;
   params.path = "/test/filter";
   params.headers = {
@@ -481,7 +481,7 @@ TEST_F(CreateExtAuthzRequestTest, HeaderFiltering_OnlyAllowedSet) {
 }
 
 TEST_F(CreateExtAuthzRequestTest, HeaderFiltering_OnlyDisallowedSet) {
-  ExtAuthzRequestParams params;
+  ExtAuthzRequest params;
   params.is_client_call = true;
   params.path = "/test/filter";
   params.headers = {
@@ -502,7 +502,7 @@ TEST_F(CreateExtAuthzRequestTest, HeaderFiltering_OnlyDisallowedSet) {
 }
 
 TEST_F(CreateExtAuthzRequestTest, HeaderValue_BinaryAndNonBinary) {
-  ExtAuthzRequestParams params;
+  ExtAuthzRequest params;
   params.is_client_call = true;
   params.path = "/test/headers";
   params.headers = {
@@ -527,11 +527,11 @@ TEST_F(CreateExtAuthzRequestTest, HeaderValue_BinaryAndNonBinary) {
 
 TEST_F(CreateExtAuthzRequestTest,
        ServerSideSerialization_PeerAddressWithoutPort) {
-  ExtAuthzRequestParams params;
+  ExtAuthzRequest params;
   params.is_client_call = false;
   params.path = "/service/test";
-  params.peer.address = *StringToSockaddr("192.168.1.5", 8080);
-  params.local.address = *StringToSockaddr("10.0.0.5", 9090);
+  params.source.address = *StringToSockaddr("192.168.1.5", 8080);
+  params.destination.address = *StringToSockaddr("10.0.0.5", 9090);
 
   std::string serialized = CreateExtAuthzRequest(params);
   auto request = ParseRequest(serialized);
@@ -560,10 +560,10 @@ TEST_F(CreateExtAuthzRequestTest,
 
 TEST_F(CreateExtAuthzRequestTest,
        ServerSideSerialization_Ipv6BareWithoutBrackets) {
-  ExtAuthzRequestParams params;
+  ExtAuthzRequest params;
   params.is_client_call = false;
   params.path = "/service/test";
-  params.peer.address = *StringToSockaddr("2001:db8::1", 9090);
+  params.source.address = *StringToSockaddr("2001:db8::1", 9090);
 
   std::string serialized = CreateExtAuthzRequest(params);
   auto request = ParseRequest(serialized);
@@ -579,11 +579,11 @@ TEST_F(CreateExtAuthzRequestTest,
 }
 
 TEST_F(CreateExtAuthzRequestTest, ServerSideSerialization_NoAddress) {
-  ExtAuthzRequestParams params;
+  ExtAuthzRequest params;
   params.is_client_call = false;
   params.path = "/service/test";
-  params.peer.address = std::nullopt;
-  params.local.address = std::nullopt;
+  params.source.address = std::nullopt;
+  params.destination.address = std::nullopt;
 
   std::string serialized = CreateExtAuthzRequest(params);
   auto request = ParseRequest(serialized);
@@ -596,13 +596,13 @@ TEST_F(CreateExtAuthzRequestTest, ServerSideSerialization_NoAddress) {
 }
 
 TEST_F(CreateExtAuthzRequestTest, ServerSideSerialization_EmptySanSkipping) {
-  ExtAuthzRequestParams params;
+  ExtAuthzRequest params;
   params.is_client_call = false;
   params.path = "/service/test";
-  params.peer.address = *StringToSockaddr("127.0.0.1:50051");
-  params.peer.uri_sans = {"", "spiffe://example.com/test-service"};
-  params.peer.dns_sans = {"dns.example.com"};
-  params.peer.subject = "CN=subject";
+  params.source.address = *StringToSockaddr("127.0.0.1:50051");
+  params.source.uri_sans = {"", "spiffe://example.com/test-service"};
+  params.source.dns_sans = {"dns.example.com"};
+  params.source.subject = "CN=subject";
 
   std::string serialized = CreateExtAuthzRequest(params);
   auto request = ParseRequest(serialized);
@@ -613,22 +613,7 @@ TEST_F(CreateExtAuthzRequestTest, ServerSideSerialization_EmptySanSkipping) {
             "spiffe://example.com/test-service");
 }
 
-TEST_F(CreateExtAuthzRequestTest, CreateExtAuthzCheckRequest_DirectUpbArena) {
-  ExtAuthzRequestParams params;
-  params.is_client_call = true;
-  params.path = "/test.service/TestMethod";
 
-  upb::Arena arena;
-  auto* check_request = CreateExtAuthzCheckRequest(arena.ptr(), params);
-  ASSERT_NE(check_request, nullptr);
-  EXPECT_TRUE(envoy_service_auth_v3_CheckRequest_has_attributes(check_request));
-
-  auto* attr = CreateAttributeContext(arena.ptr(), params);
-  ASSERT_NE(attr, nullptr);
-  EXPECT_TRUE(envoy_service_auth_v3_AttributeContext_has_request(attr));
-  EXPECT_FALSE(envoy_service_auth_v3_AttributeContext_has_source(attr));
-  EXPECT_FALSE(envoy_service_auth_v3_AttributeContext_has_destination(attr));
-}
 
 //
 // ExtAuthzResponse::Parse() tests
