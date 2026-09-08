@@ -97,10 +97,15 @@ PythonOpenCensusCallTracer::~PythonOpenCensusCallTracer() {
     RecordIntMetric(kRpcClientTransparentRetriesPerCallMeasureName,
                     transparent_retries_, context_.Labels(), identifier_,
                     registered_method_, /*include_exchange_labels=*/true);
-    RecordDoubleMetric(kRpcClientRetryDelayPerCallMeasureName,
-                       ToDoubleSeconds(retry_delay_), context_.Labels(),
-                       identifier_, registered_method_,
-                       /*include_exchange_labels=*/true);
+    // Unlike the retry counters, a retry delay of 0 is meaningful: it means
+    // the call was retried without waiting, for example when attempts
+    // overlap. Report it whenever there was a retry.
+    if (retries_ > 1) {
+      RecordDoubleMetric(kRpcClientRetryDelayPerCallMeasureName,
+                         ToDoubleSeconds(retry_delay_), context_.Labels(),
+                         identifier_, registered_method_,
+                         /*include_exchange_labels=*/true);
+    }
   }
 
   if (tracing_enabled_) {

@@ -45,8 +45,14 @@ GRPC_METHOD_LABEL = "grpc.method"
 GRPC_TARGET_LABEL = "grpc.target"
 GRPC_CLIENT_METRIC_PREFIX = "grpc.client"
 GRPC_OTHER_LABEL_VALUE = "other"
-_PER_CALL_RETRY_METRICS = frozenset(
-    metric.cyname for metric in _open_telemetry_measures.retry_metrics()
+# Retry counters are not reported when no retry happened. The retry delay is
+# gated in Core instead, since a delay of 0 is meaningful when there was a
+# retry.
+_PER_CALL_RETRY_COUNTERS = frozenset(
+    (
+        _open_telemetry_measures.CLIENT_CALL_RETRIES.cyname,
+        _open_telemetry_measures.CLIENT_CALL_TRANSPARENT_RETRIES.cyname,
+    )
 )
 _observability_lock: threading.RLock = threading.RLock()
 _OPEN_TELEMETRY_OBSERVABILITY: Optional["OpenTelemetryObservability"] = None
@@ -131,9 +137,9 @@ class _OpenTelemetryPlugin:
         # Decide if this plugin should record the stats_data.
         if stats_data.name not in self._metric_to_recorder:
             return False
-        if stats_data.name in _PER_CALL_RETRY_METRICS:
-            # Per gRFC A96, per-call retry metrics are not reported for calls
-            # that had no retries (or no retry delay).
+        if stats_data.name in _PER_CALL_RETRY_COUNTERS:
+            # Per gRFC A96, the per-call retry counters are not reported for
+            # calls that had no retries.
             value = (
                 stats_data.value_float
                 if stats_data.measure_double
