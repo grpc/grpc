@@ -19,6 +19,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_server_transport.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_request.h>
 #include <grpc/event_engine/slice.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
@@ -48,6 +49,7 @@
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/crash.h"
@@ -220,6 +222,51 @@ TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportObjectCreation) {
   std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
   AddTransportCloseExpectations(step.get());
   step->Wait();
+}
+
+TEST_F(Http2ServerTransportTest, HighMemoryPressureStreamRejection) {
+  auto resource_quota = MakeResourceQuota("test_quota");
+  resource_quota->memory_quota()->SetSize(1024);
+  ChannelArgs args = GetChannelArgs().SetObject(resource_quota);
+
+  InitTransport(args);
+  SpawnTransportLoopsAndExchangeSettings();
+
+  auto allocator = resource_quota->memory_quota()->CreateMemoryOwner();
+  allocator.Reserve(
+      grpc_event_engine::experimental::MemoryRequest(10 * 1024, 10 * 1024));
+
+  for (int i = 0; i < 5; i++) {
+    event_engine()->Tick();
+  }
+
+  EXPECT_TRUE(allocator.RejectNewStreamsUnderHighMemoryPressure());
+
+  auto factory_factory = [](CallHandler) {
+    EXPECT_TRUE(false) << "Stream should not have reached CallDestination";
+    return []() mutable { return absl::OkStatus(); };
+  };
+  AddStream(std::move(factory_factory));
+
+  auto step = endpoint()->NewStep();
+  step->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1,
+          /*end_headers=*/true,
+          /*end_stream=*/false),
+  });
+
+  step->ThenExpectWrite({helper_.SerializedResetStreamFrame(
+      /*stream_id=*/1,
+      /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kEnhanceYourCalm))});
+  step->Wait();
+
+  allocator.Release(10 * 1024);
+
+  std::shared_ptr<EventSequenceEndpoint::Step> step2 = endpoint()->NewStep();
+  AddTransportCloseExpectations(step2.get(), /*last_stream_id=*/1);
+  step2->Wait();
 }
 
 TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportWriteFromCall) {

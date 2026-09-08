@@ -143,6 +143,13 @@ class IncomingMetadataState {
   // Returns stream id of stream for which headers are being received.
   uint32_t GetStreamId() const { return stream_id_; }
 
+  bool IsDiscardingIncomingStream() const {
+    return is_discarding_incoming_stream_;
+  }
+  void SetIsDiscardingIncomingStream(bool is_discarding) {
+    is_discarding_incoming_stream_ = is_discarding;
+  }
+
   // A gRPC server is permitted to send both initial metadata and trailing
   // metadata where initial metadata is optional.
   // A gRPC C++ client is permitted to send only initial metadata.
@@ -163,12 +170,15 @@ class IncomingMetadataState {
         "{ incoming_header_in_progress : ",
         metadata_in_progress_ ? "true" : "false",
         ", incoming_header_end_stream : ", end_stream_ ? "true" : "false",
-        ", incoming_header_stream_id : ", stream_id_, "}");
+        ", incoming_header_stream_id : ", stream_id_,
+        ", is_discarding_incoming_stream_ : ",
+        is_discarding_incoming_stream_ ? "true" : "false", "}");
   }
 
  private:
   bool metadata_in_progress_ = false;
   bool end_stream_ = false;
+  bool is_discarding_incoming_stream_ = false;
   uint32_t stream_id_ = 0;
 };
 
@@ -357,6 +367,13 @@ class ReadContext {
 
   // Returns stream id of stream for which headers are being received.
   uint32_t GetStreamId() const { return metadata_state_.GetStreamId(); }
+
+  bool IsDiscardingIncomingStream() const {
+    return metadata_state_.IsDiscardingIncomingStream();
+  }
+  void SetIsDiscardingIncomingStream(const bool is_discarding) {
+    metadata_state_.SetIsDiscardingIncomingStream(is_discarding);
+  }
 
   // A gRPC server is permitted to send both initial metadata and trailing
   // metadata where initial metadata is optional.

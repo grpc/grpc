@@ -391,7 +391,17 @@ Http2Status Http2ServerTransport::ProcessIncomingMetadata(T&& frame) {
     is_new_stream = true;
   }
   read_context_.UpdateState(frame, /*is_existing_stream=*/!is_new_stream);
-
+  if (read_context_.IsDiscardingIncomingStream()) {
+    if (frame.end_headers) {
+      read_context_.SetIsDiscardingIncomingStream(false);
+    }
+    return read_context_.ParseAndDiscardHeaders(
+        std::move(frame.payload), frame.end_headers,
+        Http2Status::Http2StreamError(
+            Http2ErrorCode::kEnhanceYourCalm,
+            std::string(GrpcErrors::kTransportUnderHighMemoryPressure)),
+        settings_->acked().max_header_list_size());
+  }
   if (is_new_stream) {
     // TODO(tjagtap) : [PH2][P3] : Implement this.
     // RFC9113 : The identifier of a newly established stream MUST be
@@ -402,11 +412,11 @@ Http2Status Http2ServerTransport::ProcessIncomingMetadata(T&& frame) {
     // error (Section 5.4.1) of type PROTOCOL_ERROR.
 
     if (goaway_manager_.IsFinalGracefulGoawayScheduledOrSent()) {
+      read_context_.SetIsDiscardingIncomingStream(true);
       return read_context_.ParseAndDiscardHeaders(
           std::move(frame.payload), frame.end_headers, Http2Status::Ok(),
           settings_->acked().max_header_list_size());
     }
-    // TODO(tjagtap) : [PH2][P1] : Move this check as needed.
     if (GPR_UNLIKELY(is_goaway_received_)) {
       return Http2Status::Http2ConnectionError(
           Http2ErrorCode::kProtocolError,
@@ -453,6 +463,22 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
   GRPC_HTTP2_SERVER_DLOG
       << "Http2ServerTransport::ProcessIncomingFrame(HeaderFrame) end_stream="
       << frame.end_stream;
+  if (memory_owner_.RejectNewStreamsUnderHighMemoryPressure()) {
+    RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
+    if (stream == nullptr) {
+      read_context_.SetIsDiscardingIncomingStream(true);
+      memory_owner_.telemetry_storage()->Increment(
+          grpc_core::ResourceQuotaDomain::kCallsRejected);
+      read_context_.OnResetFrameEnqueued(
+          static_cast<uint32_t>(Http2ErrorCode::kEnhanceYourCalm));
+      transport_write_context_.EnqueueEarlyResetStream(
+          frame.stream_id, Http2ErrorCode::kEnhanceYourCalm);
+      absl::Status status = TriggerWriteCycle();
+      if (!status.ok()) {
+        return ToHttpOkOrConnError(status);
+      }
+    }
+  }
   return ProcessIncomingMetadata(std::forward<Http2HeaderFrame>(frame));
 }
 
@@ -868,6 +894,7 @@ absl::Status Http2ServerTransport::PrepareControlFrames() {
                                                     frame_sender);
     MaybeSpawnDelayedPing(ping_manager_->MaybeGetSerializedPingFrames(
         frame_sender, NextAllowedPingInterval()));
+    transport_write_context_.MaybeGetEarlyResetStreamFrames(frame_sender);
     MaybeGetWindowUpdateFrames(frame_sender);
     security_frame_handler_->MaybeAppendSecurityFrame(frame_sender);
   }
