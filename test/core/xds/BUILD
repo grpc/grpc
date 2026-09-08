@@ -266,6 +266,7 @@ grpc_cc_library(
         "absl/status",
         "absl/time",
     ],
+    visibility = ["//test/core/ext/filters/ext_authz:__pkg__"],
     deps = [
         "//:event_engine_base_hdrs",
         "//:exec_ctx",
@@ -279,7 +280,6 @@ grpc_cc_library(
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/test_util:grpc_test_util",
     ],
-    visibility = ["//test/core/ext/filters/ext_authz:__pkg__"],
 )
 
 grpc_cc_library(
@@ -694,7 +694,6 @@ grpc_cc_test(
         "//src/core:composite_filter",
         "//src/core:error",
         "//src/core:ext_authz_filter",
-        "//src/core:xds_http_ext_authz_filter",
         "//src/core:gcp_authentication_filter",
         "//src/core:grpc_check",
         "//src/core:grpc_ext_proc_filter",
@@ -704,9 +703,10 @@ grpc_cc_test(
         "//src/core:json_writer",
         "//src/core:xds_bootstrap_grpc",
         "//src/core:xds_bootstrap_grpc_builder",
+        "//src/core:xds_http_ext_authz_filter",
         "//src/core:xds_http_filter",
-        "//test/core/event_engine/fuzzing_event_engine",
         "//src/core:xds_http_filter_registry",
+        "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:scoped_env_var",
         "//test/cpp/util:grpc_cli_utils",
@@ -722,9 +722,9 @@ grpc_cc_test(
         "@envoy_api//envoy/config/route/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/common/matching/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/common/fault/v3:pkg_cc_proto",
-        "@envoy_api//envoy/extensions/filters/http/ext_authz/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/common/matcher/action/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/composite/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/filters/http/ext_authz/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/ext_proc/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/fault/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/gcp_authn/v3:pkg_cc_proto",
@@ -979,34 +979,6 @@ grpc_cc_test(
         "//:xds_client",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/test_util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "ext_authz_client_test",
-    srcs = ["ext_authz_client_test.cc"],
-    external_deps = [
-        "gtest",
-        "absl/status",
-        "absl/strings",
-    ],
-    tags = ["xds_test"],
-    uses_event_engine = True,
-    uses_polling = False,
-    deps = [
-        ":xds_transport_fake",
-        "//:gpr",
-        "//:grpc",
-        "//:ref_counted_ptr",
-        "//:xds_client",
-        "//src/core:ext_authz_client",
-        "//src/core:ext_authz_messages",
-        "//src/core:grpc_matchers",
-        "//src/core:time",
-        "//test/core/event_engine/fuzzing_event_engine",
-        "//test/core/test_util:grpc_test_util",
-        "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
-        "@envoy_api//envoy/service/auth/v3:pkg_cc_proto",
     ],
 )
 

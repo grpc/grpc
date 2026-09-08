@@ -781,7 +781,6 @@ LIBGRPC_SRC = \
     src/core/ext/filters/census/grpc_context.cc \
     src/core/ext/filters/channel_idle/idle_filter_state.cc \
     src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc \
-    src/core/ext/filters/ext_authz/ext_authz_client.cc \
     src/core/ext/filters/ext_authz/ext_authz_filter.cc \
     src/core/ext/filters/ext_authz/ext_authz_messages.cc \
     src/core/ext/filters/fault_injection/fault_injection_filter.cc \

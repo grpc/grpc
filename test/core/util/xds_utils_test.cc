@@ -16,14 +16,13 @@
 
 #include "src/core/util/xds_utils.h"
 
-#include <gtest/gtest.h>
-
 #include "envoy/config/core/v3/base.upb.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "test/core/test_util/test_config.h"
 #include "upb/mem/arena.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace testing {
@@ -37,22 +36,29 @@ class ParseEnvoyHeaderTest : public ::testing::Test {
 };
 
 TEST_F(ParseEnvoyHeaderTest, NormalHeader) {
-  auto* header = grpc_core::ParseEnvoyHeader("foo", "bar", arena_);
-  EXPECT_EQ(grpc_core::UpbStringToAbsl(envoy_config_core_v3_HeaderValue_key(header)), "foo");
-  EXPECT_EQ(grpc_core::UpbStringToAbsl(envoy_config_core_v3_HeaderValue_value(header)), "bar");
-  EXPECT_TRUE(grpc_core::UpbStringToAbsl(envoy_config_core_v3_HeaderValue_raw_value(header)).empty());
+  auto* header = ParseEnvoyHeader("foo", "bar", arena_);
+  EXPECT_EQ(UpbStringToAbsl(envoy_config_core_v3_HeaderValue_key(header)),
+            "foo");
+  EXPECT_EQ(UpbStringToAbsl(envoy_config_core_v3_HeaderValue_value(header)),
+            "bar");
+  EXPECT_TRUE(
+      UpbStringToAbsl(envoy_config_core_v3_HeaderValue_raw_value(header))
+          .empty());
 }
 
 TEST_F(ParseEnvoyHeaderTest, BinaryHeader) {
-  auto* header = grpc_core::ParseEnvoyHeader("foo-bin", "bar", arena_);
-  EXPECT_EQ(grpc_core::UpbStringToAbsl(envoy_config_core_v3_HeaderValue_key(header)), "foo-bin");
-  EXPECT_EQ(grpc_core::UpbStringToAbsl(envoy_config_core_v3_HeaderValue_raw_value(header)), "bar");
-  EXPECT_TRUE(grpc_core::UpbStringToAbsl(envoy_config_core_v3_HeaderValue_value(header)).empty());
+  auto* header = ParseEnvoyHeader("foo-bin", "bar", arena_);
+  EXPECT_EQ(UpbStringToAbsl(envoy_config_core_v3_HeaderValue_key(header)),
+            "foo-bin");
+  EXPECT_EQ(UpbStringToAbsl(envoy_config_core_v3_HeaderValue_raw_value(header)),
+            "bar");
+  EXPECT_TRUE(
+      UpbStringToAbsl(envoy_config_core_v3_HeaderValue_value(header)).empty());
 }
 
 TEST_F(ParseEnvoyHeaderTest, RoundTripNormal) {
-  auto* header = grpc_core::ParseEnvoyHeader("foo", "bar", arena_);
-  grpc_core::ValidationErrors errors;
+  auto* header = ParseEnvoyHeader("foo", "bar", arena_);
+  ValidationErrors errors;
   auto [key, value] = ParseXdsHeader(header, &errors);
   EXPECT_TRUE(errors.ok());
   EXPECT_EQ(key, "foo");
@@ -60,8 +66,8 @@ TEST_F(ParseEnvoyHeaderTest, RoundTripNormal) {
 }
 
 TEST_F(ParseEnvoyHeaderTest, RoundTripBinary) {
-  auto* header = grpc_core::ParseEnvoyHeader("foo-bin", "YmFy", arena_);
-  grpc_core::ValidationErrors errors;
+  auto* header = ParseEnvoyHeader("foo-bin", "YmFy", arena_);
+  ValidationErrors errors;
   auto [key, value] = ParseXdsHeader(header, &errors);
   EXPECT_TRUE(errors.ok());
   EXPECT_EQ(key, "foo-bin");
@@ -70,33 +76,34 @@ TEST_F(ParseEnvoyHeaderTest, RoundTripBinary) {
 
 TEST_F(ParseEnvoyHeaderTest, InvalidKey) {
   // Empty key
-  EXPECT_EQ(grpc_core::ParseEnvoyHeader("", "bar", arena_), nullptr);
+  EXPECT_EQ(ParseEnvoyHeader("", "bar", arena_), nullptr);
   // Key too long
   std::string long_key(16385, 'a');
-  EXPECT_EQ(grpc_core::ParseEnvoyHeader(long_key, "bar", arena_), nullptr);
+  EXPECT_EQ(ParseEnvoyHeader(long_key, "bar", arena_), nullptr);
   // Key with invalid char (uppercase)
-  EXPECT_EQ(grpc_core::ParseEnvoyHeader("Foo", "bar", arena_), nullptr);
+  EXPECT_EQ(ParseEnvoyHeader("Foo", "bar", arena_), nullptr);
   // Key with invalid char (:)
-  EXPECT_EQ(grpc_core::ParseEnvoyHeader(":foo", "bar", arena_), nullptr);
+  EXPECT_EQ(ParseEnvoyHeader(":foo", "bar", arena_), nullptr);
   // Key is "host"
-  EXPECT_EQ(grpc_core::ParseEnvoyHeader("host", "bar", arena_), nullptr);
+  EXPECT_EQ(ParseEnvoyHeader("host", "bar", arena_), nullptr);
 }
 
 TEST_F(ParseEnvoyHeaderTest, InvalidValue) {
   // Value too long
   std::string long_value(16385, 'a');
-  EXPECT_EQ(grpc_core::ParseEnvoyHeader("foo", long_value, arena_), nullptr);
+  EXPECT_EQ(ParseEnvoyHeader("foo", long_value, arena_), nullptr);
   // Non-binary value with invalid char
-  EXPECT_NE(grpc_core::ParseEnvoyHeader("foo", "bar\n", arena_), nullptr);
+  EXPECT_NE(ParseEnvoyHeader("foo", "bar\n", arena_), nullptr);
 }
 
 TEST_F(ParseEnvoyHeaderTest, ValidBinaryValue) {
   std::string long_value(16385, 'a');
-  EXPECT_EQ(grpc_core::ParseEnvoyHeader("foo-bin", long_value, arena_), nullptr);
-  
-  auto* header = grpc_core::ParseEnvoyHeader("foo-bin", "bar\n", arena_);
+  EXPECT_EQ(ParseEnvoyHeader("foo-bin", long_value, arena_), nullptr);
+
+  auto* header = ParseEnvoyHeader("foo-bin", "bar\n", arena_);
   EXPECT_NE(header, nullptr);
-  EXPECT_EQ(grpc_core::UpbStringToAbsl(envoy_config_core_v3_HeaderValue_raw_value(header)), "bar\n");
+  EXPECT_EQ(UpbStringToAbsl(envoy_config_core_v3_HeaderValue_raw_value(header)),
+            "bar\n");
 }
 
 }  // namespace

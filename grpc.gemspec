@@ -365,8 +365,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/channel_idle/idle_filter_state.h )
   s.files += %w( src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc )
   s.files += %w( src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h )
-  s.files += %w( src/core/ext/filters/ext_authz/ext_authz_client.cc )
-  s.files += %w( src/core/ext/filters/ext_authz/ext_authz_client.h )
   s.files += %w( src/core/ext/filters/ext_authz/ext_authz_filter.cc )
   s.files += %w( src/core/ext/filters/ext_authz/ext_authz_filter.h )
   s.files += %w( src/core/ext/filters/ext_authz/ext_authz_messages.cc )

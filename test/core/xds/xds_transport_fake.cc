@@ -226,8 +226,8 @@ void FakeXdsTransportFactory::FakeUnaryCall::Orphan() {
   Unref();
 }
 
-absl::StatusOr<std::string>
-FakeXdsTransportFactory::FakeUnaryCall::SendMessage(std::string payload) {
+absl::StatusOr<std::string> FakeXdsTransportFactory::FakeUnaryCall::SendMessage(
+    std::string payload) {
   {
     MutexLock lock(&mu_);
     from_client_messages_.push_back(std::move(payload));
@@ -239,7 +239,8 @@ FakeXdsTransportFactory::FakeUnaryCall::SendMessage(std::string payload) {
       // But we wait.
     }
     // We cannot Tick() here if we are blocking the thread that might Tick().
-    // We assume SendMessage is called on a separate thread or event engine is separate.
+    // We assume SendMessage is called on a separate thread or event engine is
+    // separate.
     cv_.Wait(&mu_);
   }
   if (!status_.ok()) return status_;

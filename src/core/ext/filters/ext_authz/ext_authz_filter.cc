@@ -16,25 +16,23 @@
 
 #include "src/core/ext/filters/ext_authz/ext_authz_filter.h"
 
-#include <memory>
 #include <string>
 #include <utility>
 #include <variant>
-#include <vector>
 
 #include "src/core/call/metadata_batch.h"
-#include "src/core/ext/filters/ext_authz/ext_authz_client.h"
 #include "src/core/ext/filters/ext_authz/ext_authz_messages.h"
 #include "src/core/filter/filter_args.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/util/down_cast.h"
-#include "src/core/util/match.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/string.h"
 #include "src/core/xds/grpc/xds_common_types.h"
+#include "src/core/xds/xds_client/xds_transport.h"
 #include "absl/random/distributions.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -180,12 +178,51 @@ ServerMetadataHandle MalformedRequest(
   return hdl;
 }
 
+class ExtAuthzClient : public DualRefCounted<ExtAuthzClient> {
+ public:
+  explicit ExtAuthzClient(
+      RefCountedPtr<XdsTransportFactory::XdsTransport> transport)
+      : DualRefCounted<ExtAuthzClient>(GRPC_TRACE_FLAG_ENABLED(ext_authz_filter)
+                                           ? "ExtAuthzClient"
+                                           : nullptr) {
+    GRPC_CHECK(transport != nullptr);
+    GRPC_TRACE_LOG(ext_authz_filter, INFO)
+        << "[ext_authz_client " << this << "] creating ext_authz client";
+    unary_call_ = transport->CreateUnaryCall(
+        "/envoy.service.auth.v3.Authorization/Check");
+  }
+
+  ~ExtAuthzClient() override {
+    GRPC_TRACE_LOG(ext_authz_filter, INFO)
+        << "[ext_authz_client " << this << "] destroying ext_authz client";
+  }
+
+  absl::StatusOr<std::string> SendMessage(std::string payload) {
+    if (unary_call_ == nullptr) {
+      return absl::UnavailableError("Failed to create unary call");
+    }
+    GRPC_TRACE_LOG(ext_authz_filter, INFO)
+        << "[ext_authz_client " << this << "] starting ext_authz call";
+    return unary_call_->SendMessage(std::move(payload));
+  }
+
+ private:
+  void Orphaned() override {
+    GRPC_TRACE_LOG(ext_authz_filter, INFO)
+        << "[ext_authz_client " << this << "] orphaning ext_authz client";
+    unary_call_.reset();
+  }
+
+  OrphanablePtr<XdsTransportFactory::XdsTransport::UnaryCall> unary_call_;
+};
+
 }  // namespace
 
 ServerMetadataHandle ExtAuthzFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, ExtAuthzFilter* filter) {
   const auto& config = *filter->config_;
-  if (filter->client() == nullptr) {
+  if (filter->channel() == nullptr ||
+      filter->channel()->transport() == nullptr) {
     return nullptr;
   }
   switch (CheckRequestAllowed(config)) {
@@ -207,16 +244,14 @@ ServerMetadataHandle ExtAuthzFilter::Call::OnClientInitialMetadata(
   if (auto* path = md.get_pointer(HttpPathMetadata())) {
     path_str = std::string(path->as_string_view());
   }
-  ExtAuthzClient::ExtAuthzRequestParams params;
+  ExtAuthzRequestParams params;
   params.headers = std::move(metadata_list);
   params.path = std::move(path_str);
   params.is_client_call = true;
   params.include_peer_certificate = config.include_peer_certificate;
-  auto channel = filter->client();
-  if (channel == nullptr) {
-    return MalformedRequest("ExtAuthz channel not found");
-  }
-  auto result = channel->Check(params);
+  std::string payload = CreateExtAuthzRequest(params);
+  auto client = MakeRefCounted<ExtAuthzClient>(filter->channel()->transport());
+  auto result = client->SendMessage(std::move(payload));
   if (!result.ok()) {
     if (!config.failure_mode_allow) {
       return MalformedRequest(result.status().message(),
@@ -227,7 +262,18 @@ ServerMetadataHandle ExtAuthzFilter::Call::OnClientInitialMetadata(
     }
     return nullptr;
   }
-  const auto& response = *result;
+  auto response_or = ExtAuthzResponse::Parse(*result);
+  if (!response_or.ok()) {
+    if (!config.failure_mode_allow) {
+      return MalformedRequest(response_or.status().message(),
+                              config.status_on_error);
+    } else if (config.failure_mode_allow_header_add) {
+      md.Set(XEnvoyAuthFailureModeAllowedMetadata(),
+             Slice::FromStaticString("true"));
+    }
+    return nullptr;
+  }
+  const auto& response = *response_or;
   if (response.status_code != GRPC_STATUS_OK) {
     if (const auto* denied =
             std::get_if<ExtAuthzResponse::DeniedResponse>(&response.response);
@@ -356,13 +402,6 @@ absl::StatusOr<std::unique_ptr<ExtAuthzFilter>> ExtAuthzFilter::Create(
 }
 
 ExtAuthzFilter::ExtAuthzFilter(RefCountedPtr<const Config> filter_config)
-    : config_(std::move(filter_config)) {
-  if (config_->channel() != nullptr &&
-      config_->channel()->transport() != nullptr) {
-    client_ = MakeRefCounted<ExtAuthzClient>(
-        std::make_unique<GrpcXdsServerTarget>(config_->channel()->server()),
-        config_->channel()->transport());
-  }
-}
+    : config_(std::move(filter_config)) {}
 
 }  // namespace grpc_core

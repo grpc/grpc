@@ -39,6 +39,7 @@ grpc_cc_library(
         "gtest",
     ],
     tags = ["nofixdeps"],  # until event engine tests are under fixbuilddeps
+    visibility = ["//test/core/ext/filters/ext_authz:__pkg__"],
     deps = [
         "//:event_engine_base_hdrs",
         "//:gpr",
@@ -65,7 +66,6 @@ grpc_cc_library(
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
     ],
-    visibility = ["//test/core/ext/filters/ext_authz:__pkg__"],
 )
 
 grpc_cc_test(

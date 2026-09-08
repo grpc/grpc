@@ -12,24 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #include "test/core/xds/xds_transport_fake.h"
+
+#include <grpc/grpc.h>
 
 #include <memory>
 #include <string>
 #include <thread>
 #include <vector>
 
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/xds/xds_client/xds_bootstrap.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
+#include "test/core/test_util/test_config.h"
 #include "gtest/gtest.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "src/core/util/orphanable.h"
-#include "src/core/xds/xds_client/xds_bootstrap.h"
-#include "src/core/util/ref_counted_ptr.h"
-#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
-#include "absl/log/log.h" 
-#include "grpc/grpc.h"
-#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace testing {
@@ -43,6 +43,7 @@ class FakeXdsServerTarget : public XdsBootstrap::XdsServerTarget {
   bool Equals(const XdsServerTarget& other) const override {
     return Key() == other.Key();
   }
+
  private:
   std::string uri_;
 };
@@ -50,17 +51,15 @@ class FakeXdsServerTarget : public XdsBootstrap::XdsServerTarget {
 class FakeXdsTransportTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    auto event_engine = std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
-        grpc_event_engine::experimental::FuzzingEventEngine::Options(),
-        fuzzing_event_engine::Actions());
+    auto event_engine =
+        std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
+            grpc_event_engine::experimental::FuzzingEventEngine::Options(),
+            fuzzing_event_engine::Actions());
     factory_ = MakeRefCounted<FakeXdsTransportFactory>(
-        []() { LOG(FATAL) << "Too many pending reads"; },
-        event_engine);
+        []() { LOG(FATAL) << "Too many pending reads"; }, event_engine);
   }
 
-  void TearDown() override {
-    factory_.reset();
-  }
+  void TearDown() override { factory_.reset(); }
 
   RefCountedPtr<FakeXdsTransportFactory> factory_;
   FakeXdsServerTarget server_{"server_uri"};

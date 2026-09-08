@@ -17,7 +17,6 @@
 #ifndef GRPC_SRC_CORE_UTIL_XDS_UTILS_H
 #define GRPC_SRC_CORE_UTIL_XDS_UTILS_H
 
-#include "absl/strings/string_view.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "upb/mem/arena.h"
 

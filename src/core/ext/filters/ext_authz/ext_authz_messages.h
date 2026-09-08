@@ -25,15 +25,15 @@
 #include <variant>
 #include <vector>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "envoy/service/auth/v3/attribute_context.upb.h"
 #include "envoy/service/auth/v3/external_auth.upb.h"
-#include "upb/mem/arena.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/util/matchers.h"
 #include "src/core/util/time.h"
 #include "src/core/xds/grpc/xds_common_types.h"
+#include "upb/mem/arena.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 // Data structures and message creation/parsing helpers for the xDS External
 // Authorization (ext_authz) filter in gRPC, as specified in gRFC A92.
@@ -102,8 +102,8 @@ struct ExtAuthzRequestParams {
   std::optional<Timestamp> start_time;
 
   // Connection endpoints & TLS information (for server-side calls).
-  ExtAuthzPeer peer;        // source
-  ExtAuthzPeer local;       // destination
+  ExtAuthzPeer peer;   // source
+  ExtAuthzPeer local;  // destination
 
   // Header matching rules
   std::vector<StringMatcher> allowed_headers;

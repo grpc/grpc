@@ -5788,37 +5788,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "ext_authz_client",
-    srcs = [
-        "ext/filters/ext_authz/ext_authz_client.cc",
-    ],
-    hdrs = [
-        "ext/filters/ext_authz/ext_authz_client.h",
-    ],
-    external_deps = [
-        "absl/base:core_headers",
-        "absl/log",
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-    ],
-    deps = [
-        "dual_ref_counted",
-        "ext_authz_messages",
-        "grpc_check",
-        "sync",
-        "//:backoff",
-        "//:debug_location",
-        "//:gpr",
-        "//:grpc_base",
-        "//:grpc_trace",
-        "//:orphanable",
-        "//:ref_counted_ptr",
-        "//:xds_client",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc_ext_proc_filter",
     srcs = [
         "filter/ext_proc/ext_proc_filter.cc",
@@ -5878,9 +5847,10 @@ grpc_cc_library(
         "channel_args",
         "channel_fwd",
         "down_cast",
-        "ext_authz_client",
+        "dual_ref_counted",
         "ext_authz_messages",
         "filter_args",
+        "grpc_check",
         "grpc_matchers",
         "match",
         "metadata_batch",
@@ -5895,11 +5865,14 @@ grpc_cc_library(
         "//:debug_location",
         "//:gpr",
         "//:grpc_base",
+        "//:grpc_trace",
+        "//:orphanable",
         "//:promise",
         "//:ref_counted_ptr",
         "//:xds_client",
     ],
 )
+
 grpc_cc_library(
     name = "ext_proc_messages",
     srcs = [
@@ -6799,7 +6772,6 @@ grpc_cc_library(
         "envoy_type_matcher_upb",
         "envoy_type_upb",
         "experiment_env_var",
-        "ext_authz_client",
         "ext_authz_filter",
         "filter_args",
         "grpc_check",

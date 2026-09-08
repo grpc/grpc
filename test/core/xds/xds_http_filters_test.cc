@@ -14,7 +14,6 @@
 // limitations under the License.
 //
 
-#include <gmock/gmock.h>
 #include <google/protobuf/any.pb.h>
 #include <google/protobuf/duration.pb.h>
 #include <google/protobuf/wrappers.pb.h>
@@ -22,7 +21,6 @@
 #include <grpc/status.h>
 #include <grpc/support/json.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
-#include <gtest/gtest.h>
 
 #include <string>
 #include <utility>

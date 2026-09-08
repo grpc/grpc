@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include "src/core/ext/filters/ext_authz/ext_authz_messages.h"
-
 #include <grpc/grpc.h>
 #include <grpc/status.h>
 
@@ -24,21 +22,22 @@
 #include <utility>
 #include <vector>
 
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 #include "envoy/config/core/v3/address.pb.h"
 #include "envoy/config/core/v3/base.pb.h"
 #include "envoy/service/auth/v3/attribute_context.pb.h"
 #include "envoy/service/auth/v3/external_auth.pb.h"
 #include "envoy/type/v3/http_status.pb.h"
 #include "google/rpc/status.pb.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
+#include "src/core/ext/filters/ext_authz/ext_authz_messages.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/util/matchers.h"
 #include "src/core/util/time.h"
 #include "test/core/test_util/test_config.h"
 #include "upb/mem/arena.hpp"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace {
@@ -67,8 +66,7 @@ MATCHER_P3(IsHeaderValueOption, key, value, append_action, "") {
 MATCHER_P2(IsHeader, key, value, "") {
   return ::testing::ExplainMatchResult(key, arg.key(), result_listener) &&
          ::testing::ExplainMatchResult(
-             value,
-             arg.raw_value().empty() ? arg.value() : arg.raw_value(),
+             value, arg.raw_value().empty() ? arg.value() : arg.raw_value(),
              result_listener);
 }
 
@@ -257,8 +255,7 @@ TEST_F(CreateExtAuthzRequestTest, ServerSideSerialization_UnixDomainSocket) {
   ASSERT_TRUE(attr.has_destination());
   ASSERT_TRUE(attr.destination().has_address());
   ASSERT_TRUE(attr.destination().address().has_pipe());
-  EXPECT_EQ(attr.destination().address().pipe().path(),
-            "/var/run/server.sock");
+  EXPECT_EQ(attr.destination().address().pipe().path(), "/var/run/server.sock");
 }
 
 TEST_F(CreateExtAuthzRequestTest, ServerSideSerialization_Ipv6Addresses) {
@@ -528,7 +525,8 @@ TEST_F(CreateExtAuthzRequestTest, HeaderValue_BinaryAndNonBinary) {
             std::string("\x00\x01\x02\xFF", 4));
 }
 
-TEST_F(CreateExtAuthzRequestTest, ServerSideSerialization_PeerAddressWithoutPort) {
+TEST_F(CreateExtAuthzRequestTest,
+       ServerSideSerialization_PeerAddressWithoutPort) {
   ExtAuthzRequestParams params;
   params.is_client_call = false;
   params.path = "/service/test";
@@ -560,7 +558,8 @@ TEST_F(CreateExtAuthzRequestTest, ServerSideSerialization_PeerAddressWithoutPort
             9090);
 }
 
-TEST_F(CreateExtAuthzRequestTest, ServerSideSerialization_Ipv6BareWithoutBrackets) {
+TEST_F(CreateExtAuthzRequestTest,
+       ServerSideSerialization_Ipv6BareWithoutBrackets) {
   ExtAuthzRequestParams params;
   params.is_client_call = false;
   params.path = "/service/test";
@@ -707,10 +706,9 @@ TEST_F(ParseExtAuthzResponseTest, OkResponse) {
                   IsHeaderValueOption(
                       kKey1, kVal1,
                       XdsHeaderValueOption::AppendAction::kAppendIfExistsOrAdd),
-                  IsHeaderValueOption(
-                      kKey2, kVal2,
-                      XdsHeaderValueOption::AppendAction::
-                          kOverwriteIfExistsOrAdd)),
+                  IsHeaderValueOption(kKey2, kVal2,
+                                      XdsHeaderValueOption::AppendAction::
+                                          kOverwriteIfExistsOrAdd)),
               ::testing::ElementsAre(kKey3)),
           ::testing::ElementsAre(IsHeaderValueOption(
               "x-resp-1", "val-resp-1",
@@ -766,9 +764,8 @@ TEST_F(ParseExtAuthzResponseTest, DeniedResponse_Forbidden) {
   ASSERT_TRUE(parsed.ok()) << parsed.status();
   EXPECT_EQ(parsed->status_code, GRPC_STATUS_PERMISSION_DENIED);
   EXPECT_EQ(parsed->status_message, "forbidden access");
-  EXPECT_THAT(parsed->response,
-              IsDeniedResponse(GRPC_STATUS_PERMISSION_DENIED,
-                               ::testing::IsEmpty()));
+  EXPECT_THAT(parsed->response, IsDeniedResponse(GRPC_STATUS_PERMISSION_DENIED,
+                                                 ::testing::IsEmpty()));
 }
 
 TEST_F(ParseExtAuthzResponseTest, DeniedResponse_UnauthorizedWithHeaders) {
@@ -813,9 +810,8 @@ TEST_F(ParseExtAuthzResponseTest, DeniedResponse_HttpStatusMappings) {
     denied->mutable_status()->set_code(test_case.http_code);
     auto parsed = ParseResponse(response);
     ASSERT_TRUE(parsed.ok()) << parsed.status();
-    EXPECT_THAT(parsed->response,
-                IsDeniedResponse(test_case.expected_grpc_code,
-                                 ::testing::IsEmpty()));
+    EXPECT_THAT(parsed->response, IsDeniedResponse(test_case.expected_grpc_code,
+                                                   ::testing::IsEmpty()));
   }
 }
 
@@ -826,9 +822,8 @@ TEST_F(ParseExtAuthzResponseTest, DeniedResponse_WithoutHttpStatus) {
   auto parsed = ParseResponse(response);
   ASSERT_TRUE(parsed.ok()) << parsed.status();
   EXPECT_EQ(parsed->status_code, GRPC_STATUS_PERMISSION_DENIED);
-  EXPECT_THAT(parsed->response,
-              IsDeniedResponse(GRPC_STATUS_PERMISSION_DENIED,
-                               ::testing::IsEmpty()));
+  EXPECT_THAT(parsed->response, IsDeniedResponse(GRPC_STATUS_PERMISSION_DENIED,
+                                                 ::testing::IsEmpty()));
 }
 
 TEST_F(ParseExtAuthzResponseTest,
@@ -839,9 +834,8 @@ TEST_F(ParseExtAuthzResponseTest,
   auto parsed = ParseResponse(response);
   ASSERT_TRUE(parsed.ok()) << parsed.status();
   EXPECT_EQ(parsed->status_code, GRPC_STATUS_UNAUTHENTICATED);
-  EXPECT_THAT(parsed->response,
-              IsDeniedResponse(GRPC_STATUS_UNAUTHENTICATED,
-                               ::testing::IsEmpty()));
+  EXPECT_THAT(parsed->response, IsDeniedResponse(GRPC_STATUS_UNAUTHENTICATED,
+                                                 ::testing::IsEmpty()));
 }
 
 TEST_F(ParseExtAuthzResponseTest,
@@ -851,13 +845,11 @@ TEST_F(ParseExtAuthzResponseTest,
   auto parsed = ParseResponse(response);
   ASSERT_TRUE(parsed.ok()) << parsed.status();
   EXPECT_EQ(parsed->status_code, GRPC_STATUS_PERMISSION_DENIED);
-  EXPECT_THAT(parsed->response,
-              IsDeniedResponse(GRPC_STATUS_PERMISSION_DENIED,
-                               ::testing::IsEmpty()));
+  EXPECT_THAT(parsed->response, IsDeniedResponse(GRPC_STATUS_PERMISSION_DENIED,
+                                                 ::testing::IsEmpty()));
 }
 
-TEST_F(ParseExtAuthzResponseTest,
-       OkResponse_WithStatusOkAndDeniedResponse) {
+TEST_F(ParseExtAuthzResponseTest, OkResponse_WithStatusOkAndDeniedResponse) {
   CheckResponse response;
   response.mutable_status()->set_code(0);  // OK
   auto* denied = response.mutable_denied_response();
@@ -865,9 +857,8 @@ TEST_F(ParseExtAuthzResponseTest,
   auto parsed = ParseResponse(response);
   ASSERT_TRUE(parsed.ok()) << parsed.status();
   EXPECT_EQ(parsed->status_code, GRPC_STATUS_PERMISSION_DENIED);
-  EXPECT_THAT(parsed->response,
-              IsDeniedResponse(GRPC_STATUS_PERMISSION_DENIED,
-                               ::testing::IsEmpty()));
+  EXPECT_THAT(parsed->response, IsDeniedResponse(GRPC_STATUS_PERMISSION_DENIED,
+                                                 ::testing::IsEmpty()));
 }
 
 TEST_F(ParseExtAuthzResponseTest, DeniedResponse_WithoutStatusField) {
@@ -916,9 +907,8 @@ TEST_F(ParseExtAuthzResponseTest, DeniedResponse_ExplicitGrpcStatus) {
   ASSERT_TRUE(parsed.ok()) << parsed.status();
   EXPECT_EQ(parsed->status_code, GRPC_STATUS_UNAUTHENTICATED);
   EXPECT_EQ(parsed->status_message, "unauthenticated rpc");
-  EXPECT_THAT(parsed->response,
-              IsDeniedResponse(GRPC_STATUS_UNAUTHENTICATED,
-                               ::testing::IsEmpty()));
+  EXPECT_THAT(parsed->response, IsDeniedResponse(GRPC_STATUS_UNAUTHENTICATED,
+                                                 ::testing::IsEmpty()));
 }
 
 TEST_F(ParseExtAuthzResponseTest, DeniedResponse_HeaderValueOptionInvalid) {
@@ -961,7 +951,8 @@ TEST_F(ParseExtAuthzResponseTest, IgnoredFieldsDoNotAffectParsing_OkResponse) {
           ::testing::IsEmpty()));
 }
 
-TEST_F(ParseExtAuthzResponseTest, IgnoredFieldsDoNotAffectParsing_DeniedResponse) {
+TEST_F(ParseExtAuthzResponseTest,
+       IgnoredFieldsDoNotAffectParsing_DeniedResponse) {
   CheckResponse response;
   response.mutable_status()->set_code(7);
   auto* denied = response.mutable_denied_response();
@@ -973,9 +964,8 @@ TEST_F(ParseExtAuthzResponseTest, IgnoredFieldsDoNotAffectParsing_DeniedResponse
   auto parsed = ParseResponse(response);
   ASSERT_TRUE(parsed.ok()) << parsed.status();
   EXPECT_EQ(parsed->status_code, GRPC_STATUS_PERMISSION_DENIED);
-  EXPECT_THAT(parsed->response,
-              IsDeniedResponse(GRPC_STATUS_PERMISSION_DENIED,
-                               ::testing::IsEmpty()));
+  EXPECT_THAT(parsed->response, IsDeniedResponse(GRPC_STATUS_PERMISSION_DENIED,
+                                                 ::testing::IsEmpty()));
 }
 
 }  // namespace

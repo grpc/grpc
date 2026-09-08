@@ -386,7 +386,6 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcUnaryCall::SendMessage(
   return response;
 }
 
-
 //
 // GrpcXdsTransportFactory::GrpcXdsTransport::StateWatcher
 //

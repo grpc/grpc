@@ -25,7 +25,6 @@
 #include <variant>
 #include <vector>
 
-#include "src/core/ext/filters/ext_authz/ext_authz_client.h"
 #include "src/core/filter/filter_args.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -101,8 +100,8 @@ class ExtAuthzFilter : public ImplementChannelFilter<ExtAuthzFilter> {
     // if the authorization service has returned an HTTP 5xx error.
     bool failure_mode_allow_header_add = false;
     // Status to return when the authorization service returns an error or when
-    // communication fails (if failure_mode_allow is false) or when the filter is
-    // disabled and deny_at_disable is true. Note that the proto specifies an
+    // communication fails (if failure_mode_allow is false) or when the filter
+    // is disabled and deny_at_disable is true. Note that the proto specifies an
     // HTTP status code, not a gRPC status code; this field stores the gRPC
     // status code determined using the normal HTTP-to-gRPC status conversion
     // rules.
@@ -158,16 +157,12 @@ class ExtAuthzFilter : public ImplementChannelFilter<ExtAuthzFilter> {
     std::optional<std::vector<XdsHeaderValueOption>> response_trailer_to_add;
   };
 
-  RefCountedPtr<ExtAuthzClient> client() const { return client_; }
-  RefCountedPtr<ExtAuthzChannel> channel() const {
-    return config_->channel();
-  }
+  RefCountedPtr<ExtAuthzChannel> channel() const { return config_->channel(); }
 
  private:
   explicit ExtAuthzFilter(RefCountedPtr<const Config> config);
 
   const RefCountedPtr<const Config> config_;
-  RefCountedPtr<ExtAuthzClient> client_;
 };
 
 }  // namespace grpc_core

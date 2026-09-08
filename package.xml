@@ -346,8 +346,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/channel_idle/idle_filter_state.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/ext_authz/ext_authz_client.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/ext_authz/ext_authz_client.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/ext_authz/ext_authz_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/ext_authz/ext_authz_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/ext_authz/ext_authz_messages.cc" role="src" />

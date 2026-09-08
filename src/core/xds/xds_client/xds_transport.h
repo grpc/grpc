@@ -94,7 +94,7 @@ class XdsTransportFactory : public DualRefCounted<XdsTransportFactory> {
         std::unique_ptr<StreamingCall::EventHandler> event_handler) = 0;
     // Create a unary rpc call on this transport for the specified method.
     virtual OrphanablePtr<UnaryCall> CreateUnaryCall(const char* method) = 0;
-    
+
     // Resets connection backoff for the transport.
     virtual void ResetBackoff() = 0;
   };

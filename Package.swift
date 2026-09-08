@@ -358,8 +358,6 @@ let package = Package(
         "src/core/ext/filters/channel_idle/idle_filter_state.h",
         "src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc",
         "src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h",
-        "src/core/ext/filters/ext_authz/ext_authz_client.cc",
-        "src/core/ext/filters/ext_authz/ext_authz_client.h",
         "src/core/ext/filters/ext_authz/ext_authz_filter.cc",
         "src/core/ext/filters/ext_authz/ext_authz_filter.h",
         "src/core/ext/filters/ext_authz/ext_authz_messages.cc",
