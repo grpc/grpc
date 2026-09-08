@@ -119,8 +119,9 @@ MATCHER_P3(IsImmediateResponse, status_matcher, details_matcher,
                                status_matcher),
               ::testing::Field(&ExtProcResponse::ImmediateResponse::details,
                                details_matcher),
-              ::testing::Field(&ExtProcResponse::ImmediateResponse::mutation,
-                               header_mutation_matcher))),
+              ::testing::Field(
+                  &ExtProcResponse::ImmediateResponse::header_mutation,
+                  header_mutation_matcher))),
       arg, result_listener);
 }
 
@@ -813,12 +814,13 @@ TEST_F(CreateExtProcAttributesProtoStructTest,
        AttributesServerSideConnectionAttributes) {
   upb::Arena arena;
   grpc_metadata_batch batch;
-  ExtProcConnectionAttributes conn_attrs;
-  conn_attrs.source_address = "192.168.1.100";
-  conn_attrs.source_port = 54321;
-  conn_attrs.requested_server_name = "service.example.com";
-  conn_attrs.tls_version = "TLSv1.3";
-  conn_attrs.sha256_peer_certificate_digest =
+  std::optional<ExtProcConnectionAttributes> conn_attrs;
+  conn_attrs.emplace();
+  conn_attrs->source_address = "192.168.1.100";
+  conn_attrs->source_port = 54321;
+  conn_attrs->requested_server_name = "service.example.com";
+  conn_attrs->tls_version = "TLSv1.3";
+  conn_attrs->sha256_peer_certificate_digest =
       "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
 
   std::vector<std::string> requested = {
