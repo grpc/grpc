@@ -16,8 +16,7 @@
 
 import asyncio
 import types
-from typing import Any, Generic, List, Optional, Sequence, TypeVar
-import weakref
+from typing import Any, Generic, List, Optional, Sequence, Set, TypeVar
 
 import grpc
 from grpc import _common
@@ -362,7 +361,7 @@ class Channel(_base_channel.Channel):
     _unary_stream_interceptors: List[UnaryStreamClientInterceptor]
     _stream_unary_interceptors: List[StreamUnaryClientInterceptor]
     _stream_stream_interceptors: List[StreamStreamClientInterceptor]
-    _active_calls: weakref.WeakSet[_base_call.Call]
+    _active_calls: Set[_base_call.Call]
 
     def __init__(
         self,
@@ -414,7 +413,7 @@ class Channel(_base_channel.Channel):
             credentials,
             self._loop,
         )
-        self._active_calls = weakref.WeakSet()
+        self._active_calls = set()
 
     def _register_call(self, call: _base_call.Call) -> None:
         """Register a call to be tracked by the channel."""
