@@ -34,6 +34,7 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
     def __init__(self) -> None:
         self._server_status = {"": _health_pb2.HealthCheckResponse.SERVING}
         self._server_watchers = collections.defaultdict(asyncio.Condition)
+        self._server_watchers_count = collections.defaultdict(int)
         self._gracefully_shutting_down = False
 
     async def Check(
@@ -50,6 +51,7 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
         self, request: _health_pb2.HealthCheckRequest, context
     ) -> None:
         condition = self._server_watchers[request.service]
+        self._server_watchers_count[request.service] += 1
         last_status = None
         try:
             async with condition:
@@ -74,8 +76,11 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
                     # Polling on health state changes
                     await condition.wait()
         finally:
-            if request.service in self._server_watchers:
-                del self._server_watchers[request.service]
+            self._server_watchers_count[request.service] -= 1
+            if self._server_watchers_count[request.service] <= 0:
+                del self._server_watchers_count[request.service]
+                if request.service in self._server_watchers:
+                    del self._server_watchers[request.service]
 
     async def _set(
         self,
