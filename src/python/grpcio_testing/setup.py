@@ -26,7 +26,6 @@ sys.path.insert(0, os.path.abspath("."))
 import grpc_version
 import python_version
 
-
 INSTALL_REQUIRES = (
     "protobuf>=7.35.1,<8.0.0",
     "grpcio>={version}".format(version=grpc_version.VERSION),
