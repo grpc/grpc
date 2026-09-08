@@ -18,9 +18,6 @@ set -ex
 
 cd "$(dirname "$0")/../../.."
 
-# Install openssl (to use instead of boringssl)
-apt-get update && apt-get install -y libssl-dev
-
 # Use externally provided env to determine build parallelism, otherwise use default.
 GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS=${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS:-4}
 
