@@ -439,6 +439,12 @@ Poller::WorkResult Epoll1Poller::Work(
   }
   {
     grpc_core::MutexLock lock(&mu_);
+    // Close() may have run between DoEpollWait() returning and mu_ being
+    // acquired, so stale events in g_epoll_set_ may reference handles whose
+    // LockfreeEvents have been DestroyEvent'd by OrphanHandle.
+    if (closed_) {
+      return Poller::WorkResult::kKicked;
+    }
     // If was_kicked_ is true, collect all pending events in this iteration.
     if (ProcessEpollEvents(
             was_kicked_ ? INT_MAX : MAX_EPOLL_EVENTS_HANDLED_PER_ITERATION,
