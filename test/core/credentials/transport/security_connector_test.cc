@@ -602,6 +602,24 @@ TEST(SecurityConnectorTest, SubjectToAuthContext) {
   ctx.reset(DEBUG_LOCATION, "test");
 }
 
+TEST(SecurityConnectorTest, EkmToAuthContext) {
+  tsi_peer peer;
+  const char* expected_ekm = "some_exported_keying_material";
+  ASSERT_EQ(tsi_construct_peer(1, &peer), TSI_OK);
+  ASSERT_EQ(tsi_construct_string_peer_property(
+                TSI_SSL_EXPORTED_KEYING_MATERIAL, expected_ekm,
+                strlen(expected_ekm), &peer.properties[0]),
+            TSI_OK);
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_ssl_peer_to_auth_context(&peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
+  ASSERT_NE(ctx, nullptr);
+  ASSERT_TRUE(check_property(ctx.get(),
+                             GRPC_SSL_EXPORTED_KEYING_MATERIAL_PROPERTY_NAME,
+                             expected_ekm));
+  tsi_peer_destruct(&peer);
+  ctx.reset(DEBUG_LOCATION, "test");
+}
+
 static const char* roots_for_override_api = "roots for override api";
 
 static grpc_ssl_roots_override_result override_roots_success(
