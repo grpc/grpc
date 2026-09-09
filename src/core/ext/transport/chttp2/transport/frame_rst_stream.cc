@@ -54,8 +54,6 @@ grpc_slice grpc_chttp2_rst_stream_create(
   }
   ztrace_collector->Append(grpc_core::H2RstStreamTrace<false>{id, code});
 
-  // Secure-by-design: serialize through a bounds-checked sink so the frame
-  // can never overflow its allocated slice.
   grpc_core::ByteSink sink(GRPC_SLICE_START_PTR(slice),
                            GRPC_SLICE_LENGTH(slice));
   GRPC_CHECK(sink.WriteU24BE(4));
@@ -63,7 +61,7 @@ grpc_slice grpc_chttp2_rst_stream_create(
   GRPC_CHECK(sink.WriteU8(0));  // flags
   GRPC_CHECK(sink.WriteU32BE(id));
   GRPC_CHECK(sink.WriteU32BE(code));
-  GPR_ASSERT(sink.empty());
+  GRPC_CHECK(sink.empty());
 
   return slice;
 }
@@ -100,9 +98,6 @@ grpc_error_handle grpc_chttp2_rst_stream_parser_parse(void* parser,
   grpc_chttp2_rst_stream_parser* p =
       static_cast<grpc_chttp2_rst_stream_parser*>(parser);
 
-  // Secure-by-design: accumulate the 4-byte RST_STREAM error code through a
-  // bounds-checked cursor so a malformed or truncated frame can never read
-  // past the slice boundary.
   grpc_core::ByteSource src(slice);
   while (p->byte != 4) {
     auto v = src.ReadU8();

@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "test/core/test_util/test_config.h"
-
 #include "src/core/lib/slice/byte_source.h"
 #include "src/core/lib/slice/slice.h"
 #include "gtest/gtest.h"
+#include "absl/types/span.h"
+#include <cstring>
 
 using grpc_core::ByteSource;
+using grpc_core::ByteSink;
 using grpc_core::Slice;
 
 TEST(ByteSourceTest, Empty) {
@@ -72,7 +73,10 @@ TEST(ByteSourceTest, ReadSpan) {
   ByteSource src(s);
   auto sp = src.ReadSpan(3);
   EXPECT_TRUE(sp.has_value());
-  EXPECT_EQ("abc", sp->data());
+  EXPECT_EQ(3u, sp->size());
+  EXPECT_EQ('a', sp->data()[0]);
+  EXPECT_EQ('b', sp->data()[1]);
+  EXPECT_EQ('c', sp->data()[2]);
   EXPECT_EQ(5u, src.remaining());
 }
 
@@ -81,25 +85,29 @@ TEST(ByteSourceTest, Skip) {
   ByteSource src(s);
   EXPECT_TRUE(src.Skip(3));
   EXPECT_EQ(2u, src.remaining());
-  EXPECT_EQ('o', *src.ReadU8());
+  EXPECT_EQ('l', *src.ReadU8());
   EXPECT_FALSE(src.Skip(3));
 }
 
 TEST(ByteSourceTest, CopyTo) {
-  char buf[3] = {};
+  uint8_t buf[3] = {};
   auto s = Slice::FromCopiedBuffer("abcde", 5);
   ByteSource src(s);
-  EXPECT_TRUE(src.CopyTo(buf, 3));
-  EXPECT_EQ("abc", buf);
+  EXPECT_TRUE(src.CopyTo(absl::MakeSpan(buf), 3));
+  EXPECT_EQ('a', buf[0]);
+  EXPECT_EQ('b', buf[1]);
+  EXPECT_EQ('c', buf[2]);
   EXPECT_EQ(2u, src.remaining());
 }
 
 TEST(ByteSourceTest, CopyAtMost) {
-  char buf[3] = {};
+  uint8_t buf[3] = {};
   auto s = Slice::FromCopiedBuffer("abcde", 5);
   ByteSource src(s);
-  EXPECT_EQ(3u, src.CopyAtMost(buf, 5));
-  EXPECT_EQ("abc", buf);
+  EXPECT_EQ(3u, src.CopyAtMost(absl::MakeSpan(buf)));
+  EXPECT_EQ('a', buf[0]);
+  EXPECT_EQ('b', buf[1]);
+  EXPECT_EQ('c', buf[2]);
   EXPECT_EQ(2u, src.remaining());
 }
 
@@ -111,8 +119,108 @@ TEST(ByteSourceTest, OutOfBounds) {
   EXPECT_FALSE(src.Skip(1));
 }
 
+TEST(ByteSourceTest, ReadU24BE) {
+  auto s = Slice::FromCopiedBuffer("\x12\x34\x56", 3);
+  ByteSource src(s);
+  EXPECT_EQ(0x123456u, *src.ReadU24BE());
+  EXPECT_FALSE(src.ReadU24BE());
+}
+
+TEST(ByteSourceTest, ReadU31BE) {
+  auto s = Slice::FromCopiedBuffer("\xff\xff\xff\xff", 4);
+  ByteSource src(s);
+  EXPECT_EQ(0x7fffffffu, *src.ReadU31BE());
+  EXPECT_FALSE(src.ReadU31BE());
+}
+
+TEST(ByteSourceTest, CopyToChecksDestinationSize) {
+  uint8_t buf[2] = {0xaa, 0xaa};
+
+  auto s = Slice::FromCopiedBuffer("abc", 3);
+  ByteSource src(s);
+
+  EXPECT_FALSE(src.CopyTo(absl::MakeSpan(buf), 3));
+
+  EXPECT_EQ(3u, src.remaining());
+  EXPECT_EQ(0xaa, buf[0]);
+  EXPECT_EQ(0xaa, buf[1]);
+}
+
+TEST(ByteSinkTest, WriteU8) {
+  uint8_t buf[1] = {};
+
+  ByteSink sink(absl::MakeSpan(buf));
+
+  EXPECT_TRUE(sink.WriteU8(0x12));
+  EXPECT_EQ(0x12, buf[0]);
+  EXPECT_TRUE(sink.empty());
+}
+
+TEST(ByteSinkTest, WriteIntegers) {
+  uint8_t buf[18] = {};
+
+  ByteSink sink(absl::MakeSpan(buf));
+
+  EXPECT_TRUE(sink.WriteU8(0x01));
+  EXPECT_TRUE(sink.WriteU16BE(0x2345));
+  EXPECT_TRUE(sink.WriteU24BE(0x6789ab));
+  EXPECT_TRUE(sink.WriteU32BE(0xcdef0123));
+  EXPECT_TRUE(sink.WriteU64BE(0x456789abcdef0123ull));
+
+  EXPECT_EQ(18u, sink.bytes_written());
+
+  const uint8_t expected[] = {
+      0x01,
+      0x23, 0x45,
+      0x67, 0x89, 0xab,
+      0xcd, 0xef, 0x01, 0x23,
+      0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 0x01, 0x23,
+  };
+
+  EXPECT_EQ(0, memcmp(buf, expected, sizeof(expected)));
+}
+
+TEST(ByteSinkTest, MultiByteWriteDoesNotPartiallyWrite) {
+  uint8_t buf[3] = {0xaa, 0xaa, 0xaa};
+
+  ByteSink sink(absl::MakeSpan(buf));
+
+  EXPECT_FALSE(sink.WriteU32BE(0x12345678));
+  EXPECT_EQ(0u, sink.bytes_written());
+
+  EXPECT_EQ(0xaa, buf[0]);
+  EXPECT_EQ(0xaa, buf[1]);
+  EXPECT_EQ(0xaa, buf[2]);
+}
+
+TEST(ByteSinkTest, WriteSpan) {
+  uint8_t buf[5] = {};
+  const uint8_t input[] = {1, 2, 3};
+
+  ByteSink sink(absl::MakeSpan(buf));
+
+  EXPECT_TRUE(sink.WriteSpan(absl::MakeConstSpan(input)));
+  EXPECT_EQ(3u, sink.bytes_written());
+
+  EXPECT_EQ(1, buf[0]);
+  EXPECT_EQ(2, buf[1]);
+  EXPECT_EQ(3, buf[2]);
+}
+
+TEST(ByteSinkTest, WriteSpanOutOfBounds) {
+  uint8_t buf[2] = {0xaa, 0xaa};
+  const uint8_t input[] = {1, 2, 3};
+
+  ByteSink sink(absl::MakeSpan(buf));
+
+  EXPECT_FALSE(sink.WriteSpan(absl::MakeConstSpan(input)));
+  EXPECT_EQ(0u, sink.bytes_written());
+
+  EXPECT_EQ(0xaa, buf[0]);
+  EXPECT_EQ(0xaa, buf[1]);
+}
+
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env;
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

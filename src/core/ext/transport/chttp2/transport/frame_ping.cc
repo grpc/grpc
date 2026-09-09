@@ -39,8 +39,6 @@
 
 grpc_slice grpc_chttp2_ping_create(uint8_t ack, uint64_t opaque_8bytes) {
   grpc_slice slice = GRPC_SLICE_MALLOC(9 + 8);
-  // Secure-by-design: serialize through a bounds-checked sink so the frame
-  // can never overflow its allocated slice.
   grpc_core::ByteSink sink(GRPC_SLICE_START_PTR(slice),
                            GRPC_SLICE_LENGTH(slice));
   GRPC_CHECK(sink.WriteU24BE(8));
@@ -48,7 +46,7 @@ grpc_slice grpc_chttp2_ping_create(uint8_t ack, uint64_t opaque_8bytes) {
   GRPC_CHECK(sink.WriteU8(ack ? 1 : 0));
   GRPC_CHECK(sink.Skip(4));  // stream id = 0
   GRPC_CHECK(sink.WriteU64BE(opaque_8bytes));
-  GPR_ASSERT(sink.empty());
+  GRPC_CHECK(sink.empty());
   return slice;
 }
 
@@ -71,9 +69,6 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
                                                 int is_last) {
   grpc_chttp2_ping_parser* p = static_cast<grpc_chttp2_ping_parser*>(parser);
 
-  // Secure-by-design: accumulate the 8-byte opaque ping value through a
-  // bounds-checked cursor so a malformed or truncated frame can never read
-  // past the slice boundary.
   grpc_core::ByteSource src(slice);
   while (p->byte != 8) {
     auto v = src.ReadU8();

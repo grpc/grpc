@@ -19,6 +19,7 @@
 #include <grpc/support/port_platform.h>
 #include <string.h>
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -26,13 +27,14 @@
 #include "src/core/lib/slice/slice.h"
 #include "absl/types/span.h"
 
-// Secure-by-design, bounds-checked cursor over untrusted bytes.
+// Bounds-checked cursors for sequential wire-format reads and writes.
 //
-// ByteSource / ByteSink make spatial memory unsafety unrepresentable in
-// wire-format parsers and serializers: every read and write either succeeds
-// inside the remaining span or fails without touching out-of-range memory.
-// Methods are header-inline so the compiler can emit the same pointer
-// increments as the previous raw-pointer loops on the hot path.
+// ByteSource and ByteSink centralize bounds checking for byte-buffer
+// operations. Operations either complete within the remaining span or fail
+// without accessing memory outside the span.
+//
+// Methods are header-inline so the compiler can optimize the cursor
+// operations on hot paths.
 
 namespace grpc_core {
 
@@ -120,19 +122,28 @@ class ByteSource {
     return true;
   }
 
-  bool CopyTo(void* dst, size_t n) {
+  bool CopyTo(absl::Span<uint8_t> dst, size_t n) {
+    if (n > dst.size()) return false;
+
     auto bytes = ReadSpan(n);
     if (!bytes.has_value()) return false;
-    if (n != 0) memcpy(dst, bytes->data(), n);
+
+    if (n != 0) {
+      memcpy(dst.data(), bytes->data(), n);
+    }
     return true;
   }
 
-  // Consume as many of the remaining bytes as fit in `need`, copying them
-  // into `dst`. Returns the number of bytes copied. Never overruns `need`
+  // Consume as many of the remaining bytes as fit in `dst`, copying them
+  // into `dst`. Returns the number of bytes copied. Never overruns `dst`
   // or the source span.
-  size_t CopyAtMost(void* dst, size_t need) {
-    const size_t n = need < span_.size() ? need : span_.size();
-    if (n != 0) memcpy(dst, span_.data(), n);
+  size_t CopyAtMost(absl::Span<uint8_t> dst) {
+    const size_t n = std::min(dst.size(), span_.size());
+
+    if (n != 0) {
+      memcpy(dst.data(), span_.data(), n);
+    }
+
     span_ = span_.subspan(n);
     return n;
   }
@@ -162,40 +173,60 @@ class ByteSink {
   }
 
   bool WriteU16BE(uint16_t v) {
-    return WriteU8(static_cast<uint8_t>(v >> 8)) &&
-           WriteU8(static_cast<uint8_t>(v));
+    if (span_.size() < 2) return false;
+    span_[0] = static_cast<uint8_t>(v >> 8);
+    span_[1] = static_cast<uint8_t>(v);
+    span_ = span_.subspan(2);
+    return true;
   }
 
   bool WriteU24BE(uint32_t v) {
-    return WriteU8(static_cast<uint8_t>(v >> 16)) &&
-           WriteU8(static_cast<uint8_t>(v >> 8)) &&
-           WriteU8(static_cast<uint8_t>(v));
+    if (span_.size() < 3) return false;
+    span_[0] = static_cast<uint8_t>(v >> 16);
+    span_[1] = static_cast<uint8_t>(v >> 8);
+    span_[2] = static_cast<uint8_t>(v);
+    span_ = span_.subspan(3);
+    return true;
+  }
+
+  bool WriteU31BE(uint32_t v) {
+    return WriteU32BE(v & 0x7fffffffu);
   }
 
   bool WriteU32BE(uint32_t v) {
-    return WriteU8(static_cast<uint8_t>(v >> 24)) &&
-           WriteU8(static_cast<uint8_t>(v >> 16)) &&
-           WriteU8(static_cast<uint8_t>(v >> 8)) &&
-           WriteU8(static_cast<uint8_t>(v));
+    if (span_.size() < 4) return false;
+    span_[0] = static_cast<uint8_t>(v >> 24);
+    span_[1] = static_cast<uint8_t>(v >> 16);
+    span_[2] = static_cast<uint8_t>(v >> 8);
+    span_[3] = static_cast<uint8_t>(v);
+    span_ = span_.subspan(4);
+    return true;
   }
 
-  bool WriteU31BE(uint32_t v) { return WriteU32BE(v & 0x7fffffffu); }
-
   bool WriteU64BE(uint64_t v) {
-    return WriteU8(static_cast<uint8_t>(v >> 56)) &&
-           WriteU8(static_cast<uint8_t>(v >> 48)) &&
-           WriteU8(static_cast<uint8_t>(v >> 40)) &&
-           WriteU8(static_cast<uint8_t>(v >> 32)) &&
-           WriteU8(static_cast<uint8_t>(v >> 24)) &&
-           WriteU8(static_cast<uint8_t>(v >> 16)) &&
-           WriteU8(static_cast<uint8_t>(v >> 8)) &&
-           WriteU8(static_cast<uint8_t>(v));
+    if (span_.size() < 8) return false;
+    span_[0] = static_cast<uint8_t>(v >> 56);
+    span_[1] = static_cast<uint8_t>(v >> 48);
+    span_[2] = static_cast<uint8_t>(v >> 40);
+    span_[3] = static_cast<uint8_t>(v >> 32);
+    span_[4] = static_cast<uint8_t>(v >> 24);
+    span_[5] = static_cast<uint8_t>(v >> 16);
+    span_[6] = static_cast<uint8_t>(v >> 8);
+    span_[7] = static_cast<uint8_t>(v);
+    span_ = span_.subspan(8);
+    return true;
   }
 
   bool WriteSpan(absl::Span<const uint8_t> src) {
     if (src.size() > span_.size()) return false;
     if (!src.empty()) memcpy(span_.data(), src.data(), src.size());
     span_ = span_.subspan(src.size());
+    return true;
+  }
+
+  bool Skip(size_t n) {
+    if (n > span_.size()) return false;
+    span_ = span_.subspan(n);
     return true;
   }
 

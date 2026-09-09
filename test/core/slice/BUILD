@@ -68,6 +68,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
         "absl/log:log",
+        "absl/types:span",
     ],
     uses_event_engine = False,
     uses_polling = False,
@@ -76,7 +77,6 @@ grpc_cc_test(
         "//:grpc",
         "//src/core:slice",
         "//src/core:byte_source",
-        "//test/core/test_util:grpc_test_util",
     ],
 )
 

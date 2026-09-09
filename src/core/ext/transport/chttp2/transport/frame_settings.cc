@@ -45,22 +45,24 @@
 
 using grpc_core::http2::Http2ErrorCode;
 
-static uint8_t* fill_header(uint8_t* out, uint32_t length, uint8_t flags) {
-  *out++ = static_cast<uint8_t>(length >> 16);
-  *out++ = static_cast<uint8_t>(length >> 8);
-  *out++ = static_cast<uint8_t>(length);
-  *out++ = GRPC_CHTTP2_FRAME_SETTINGS;
-  *out++ = flags;
-  *out++ = 0;
-  *out++ = 0;
-  *out++ = 0;
-  *out++ = 0;
-  return out;
+static void fill_header(grpc_core::ByteSink& sink, uint32_t length,
+                        uint8_t flags) {
+  GRPC_CHECK(sink.WriteU24BE(length));
+  GRPC_CHECK(sink.WriteU8(GRPC_CHTTP2_FRAME_SETTINGS));
+  GRPC_CHECK(sink.WriteU8(flags));
+  GRPC_CHECK(sink.Skip(4));  // stream id = 0
 }
 
 grpc_slice grpc_chttp2_settings_ack_create(void) {
   grpc_slice output = GRPC_SLICE_MALLOC(9);
-  fill_header(GRPC_SLICE_START_PTR(output), 0, GRPC_CHTTP2_FLAG_ACK);
+
+  grpc_core::ByteSink sink(GRPC_SLICE_START_PTR(output),
+                           GRPC_SLICE_LENGTH(output));
+
+  fill_header(sink, 0, GRPC_CHTTP2_FLAG_ACK);
+
+  GRPC_CHECK(sink.empty());
+
   return output;
 }
 
@@ -100,8 +102,6 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
     return absl::OkStatus();
   }
 
-  // Secure-by-design: parse SETTINGS frame through a bounds-checked cursor
-  // so malformed frames (truncated IDs/values) can never overrun the slice.
   grpc_core::ByteSource src(slice);
 
   for (;;) {

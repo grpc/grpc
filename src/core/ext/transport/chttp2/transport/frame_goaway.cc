@@ -70,9 +70,6 @@ grpc_error_handle grpc_chttp2_goaway_parser_parse(void* parser,
   grpc_chttp2_goaway_parser* p =
       static_cast<grpc_chttp2_goaway_parser*>(parser);
 
-  // Secure-by-design: parse GOAWAY through a bounds-checked cursor to prevent
-  // out-of-bounds reads on malformed frames. The frame has an 8-byte header
-  // (4-byte last_stream_id + 4-byte error_code) followed by debug data.
   grpc_core::ByteSource src(slice);
 
   switch (p->state) {
