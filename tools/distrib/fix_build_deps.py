@@ -201,10 +201,11 @@ INTERNAL_DEPS = {
     "grpc/channelz/v1/channelz.grpc.pb.h": "//:channelz_cc_grpc",
     "src/proto/grpc/core/stats.pb.h": "//src/proto/grpc/core:stats_proto",
     "src/proto/grpc/health/v1/health.upb.h": "grpc_health_upb",
-    "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h": (
-        "//src/proto/grpc/lb/v1:load_reporter_proto"
-    ),
-    "src/proto/grpc/lb/v1/load_balancer.upb.h": "grpc_lb_upb",
+    "grpc/lb/v1/load_balancer.upb.h": "grpc_lb_upb",
+    "grpc/lb/v1/load_balancer.pb.h": "//:load_balancer_cc_proto",
+    "grpc/lb/v1/load_balancer.grpc.pb.h": "//:load_balancer_cc_grpc",
+    "grpc/lb/v1/load_reporter.pb.h": "//:load_reporter_cc_proto",
+    "grpc/lb/v1/load_reporter.grpc.pb.h": "//:load_reporter_cc_grpc",
     "grpc/reflection/v1/reflection.pb.h": "//:reflection_v1_cc_proto",
     "grpc/reflection/v1/reflection.grpc.pb.h": "//:reflection_v1_cc_grpc",
     "grpc/reflection/v1alpha/reflection.pb.h": "//:reflection_v1alpha_cc_proto",
