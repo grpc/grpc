@@ -36,6 +36,7 @@ GRPC_PROTO_STEM = os.path.join("src", "proto")
 PROTO_STEM = os.path.join(PYTHON_REL_PATH, "src", "proto")
 PYTHON_PROTO_TOP_LEVEL = os.path.join(PYTHON_REL_PATH, "src")
 
+
 class TestPy3Only(setuptools.Command):
     """Command to run tests for Python 3+ features.
 
