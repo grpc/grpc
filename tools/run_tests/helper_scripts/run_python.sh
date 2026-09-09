@@ -24,7 +24,14 @@ PYTHON="$(pwd)/${1:-py310/bin/python}"
 ROOT=$(pwd)
 
 # TODO(ssreenithi): find pyproject.toml/pytest equivalent
-$PYTHON "$ROOT/src/python/grpcio_tests/setup.py" "$2"
+#$PYTHON "$ROOT/src/python/grpcio_tests/setup.py" "$2"
+
+if [ "$2" = "test_lite" ]; then
+  $PYTHON -m nox --no-venv -s test_lite -f "$ROOT/src/python/grpcio_tests/noxfile.py"
+else
+  $PYTHON "$ROOT/src/python/grpcio_tests/setup.py" "$2"
+fi
+
 
 mkdir -p "$ROOT/reports"
 rm -rf "$ROOT/reports/python-coverage"
