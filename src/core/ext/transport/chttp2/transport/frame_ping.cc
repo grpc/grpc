@@ -24,11 +24,13 @@
 #include <string.h>
 
 #include <algorithm>
+#include <cstdint>
 
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/slice/byte_source.h"
 #include "src/core/util/grpc_check.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/log/log.h"
@@ -37,26 +39,16 @@
 
 grpc_slice grpc_chttp2_ping_create(uint8_t ack, uint64_t opaque_8bytes) {
   grpc_slice slice = GRPC_SLICE_MALLOC(9 + 8);
-  uint8_t* p = GRPC_SLICE_START_PTR(slice);
-
-  *p++ = 0;
-  *p++ = 0;
-  *p++ = 8;
-  *p++ = GRPC_CHTTP2_FRAME_PING;
-  *p++ = ack ? 1 : 0;
-  *p++ = 0;
-  *p++ = 0;
-  *p++ = 0;
-  *p++ = 0;
-  *p++ = static_cast<uint8_t>(opaque_8bytes >> 56);
-  *p++ = static_cast<uint8_t>(opaque_8bytes >> 48);
-  *p++ = static_cast<uint8_t>(opaque_8bytes >> 40);
-  *p++ = static_cast<uint8_t>(opaque_8bytes >> 32);
-  *p++ = static_cast<uint8_t>(opaque_8bytes >> 24);
-  *p++ = static_cast<uint8_t>(opaque_8bytes >> 16);
-  *p++ = static_cast<uint8_t>(opaque_8bytes >> 8);
-  *p++ = static_cast<uint8_t>(opaque_8bytes);
-
+  // Secure-by-design: serialize through a bounds-checked sink so the frame
+  // can never overflow its allocated slice.
+  grpc_core::ByteSink sink(GRPC_SLICE_START_PTR(slice),
+                           GRPC_SLICE_LENGTH(slice));
+  GRPC_CHECK(sink.WriteU24BE(8));
+  GRPC_CHECK(sink.WriteU8(GRPC_CHTTP2_FRAME_PING));
+  GRPC_CHECK(sink.WriteU8(ack ? 1 : 0));
+  GRPC_CHECK(sink.Skip(4));  // stream id = 0
+  GRPC_CHECK(sink.WriteU64BE(opaque_8bytes));
+  GPR_ASSERT(sink.empty());
   return slice;
 }
 
@@ -77,15 +69,17 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
                                                 grpc_chttp2_stream* /*s*/,
                                                 const grpc_slice& slice,
                                                 int is_last) {
-  const uint8_t* const beg = GRPC_SLICE_START_PTR(slice);
-  const uint8_t* const end = GRPC_SLICE_END_PTR(slice);
-  const uint8_t* cur = beg;
   grpc_chttp2_ping_parser* p = static_cast<grpc_chttp2_ping_parser*>(parser);
 
-  while (p->byte != 8 && cur != end) {
-    p->opaque_8bytes |= ((static_cast<uint64_t>(*cur)) << (56 - 8 * p->byte));
-    cur++;
-    p->byte++;
+  // Secure-by-design: accumulate the 8-byte opaque ping value through a
+  // bounds-checked cursor so a malformed or truncated frame can never read
+  // past the slice boundary.
+  grpc_core::ByteSource src(slice);
+  while (p->byte != 8) {
+    auto v = src.ReadU8();
+    if (!v.has_value()) break;
+    p->opaque_8bytes |= (static_cast<uint64_t>(*v) << (56 - 8 * p->byte));
+    ++p->byte;
   }
 
   if (p->byte == 8) {

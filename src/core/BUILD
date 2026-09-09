@@ -3561,6 +3561,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "byte_source",
+    hdrs = [
+        "lib/slice/byte_source.h",
+    ],
+    external_deps = [
+        "absl/types:span",
+    ],
+    deps = [
+        "slice",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "percent_encoding",
     srcs = [
         "lib/slice/percent_encoding.cc",

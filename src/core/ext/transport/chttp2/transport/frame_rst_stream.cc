@@ -22,6 +22,8 @@
 #include <grpc/support/port_platform.h>
 #include <stddef.h>
 
+#include <cstdint>
+
 #include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
@@ -30,6 +32,7 @@
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/slice/byte_source.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/status_helper.h"
@@ -50,26 +53,17 @@ grpc_slice grpc_chttp2_rst_stream_create(
     call_tracer->RecordOutgoingBytes({frame_size, 0, 0});
   }
   ztrace_collector->Append(grpc_core::H2RstStreamTrace<false>{id, code});
-  uint8_t* p = GRPC_SLICE_START_PTR(slice);
 
-  // Frame size.
-  *p++ = 0;
-  *p++ = 0;
-  *p++ = 4;
-  // Frame type.
-  *p++ = GRPC_CHTTP2_FRAME_RST_STREAM;
-  // Flags.
-  *p++ = 0;
-  // Stream ID.
-  *p++ = static_cast<uint8_t>(id >> 24);
-  *p++ = static_cast<uint8_t>(id >> 16);
-  *p++ = static_cast<uint8_t>(id >> 8);
-  *p++ = static_cast<uint8_t>(id);
-  // Error code.
-  *p++ = static_cast<uint8_t>(code >> 24);
-  *p++ = static_cast<uint8_t>(code >> 16);
-  *p++ = static_cast<uint8_t>(code >> 8);
-  *p++ = static_cast<uint8_t>(code);
+  // Secure-by-design: serialize through a bounds-checked sink so the frame
+  // can never overflow its allocated slice.
+  grpc_core::ByteSink sink(GRPC_SLICE_START_PTR(slice),
+                           GRPC_SLICE_LENGTH(slice));
+  GRPC_CHECK(sink.WriteU24BE(4));
+  GRPC_CHECK(sink.WriteU8(GRPC_CHTTP2_FRAME_RST_STREAM));
+  GRPC_CHECK(sink.WriteU8(0));  // flags
+  GRPC_CHECK(sink.WriteU32BE(id));
+  GRPC_CHECK(sink.WriteU32BE(code));
+  GPR_ASSERT(sink.empty());
 
   return slice;
 }
@@ -103,18 +97,20 @@ grpc_error_handle grpc_chttp2_rst_stream_parser_parse(void* parser,
                                                       grpc_chttp2_stream* s,
                                                       const grpc_slice& slice,
                                                       int is_last) {
-  const uint8_t* const beg = GRPC_SLICE_START_PTR(slice);
-  const uint8_t* const end = GRPC_SLICE_END_PTR(slice);
-  const uint8_t* cur = beg;
   grpc_chttp2_rst_stream_parser* p =
       static_cast<grpc_chttp2_rst_stream_parser*>(parser);
 
-  while (p->byte != 4 && cur != end) {
-    p->reason_bytes[p->byte] = *cur;
-    cur++;
-    p->byte++;
+  // Secure-by-design: accumulate the 4-byte RST_STREAM error code through a
+  // bounds-checked cursor so a malformed or truncated frame can never read
+  // past the slice boundary.
+  grpc_core::ByteSource src(slice);
+  while (p->byte != 4) {
+    auto v = src.ReadU8();
+    if (!v.has_value()) break;
+    p->reason_bytes[p->byte] = *v;
+    ++p->byte;
   }
-  uint64_t framing_bytes = static_cast<uint64_t>(end - cur);
+  uint64_t framing_bytes = src.remaining();
   s->call_tracer_wrapper.RecordIncomingBytes({framing_bytes, 0, 0});
 
   if (p->byte == 4) {

@@ -21,11 +21,14 @@
 #include <grpc/support/port_platform.h>
 #include <stddef.h>
 
+#include <cstdint>
+
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/stream_lists.h"
+#include "src/core/lib/slice/byte_source.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/time.h"
@@ -41,23 +44,19 @@ grpc_slice grpc_chttp2_window_update_create(
   if (call_tracer != nullptr) {
     call_tracer->RecordOutgoingBytes({frame_size, 0, 0});
   }
-  uint8_t* p = GRPC_SLICE_START_PTR(slice);
 
   GRPC_CHECK(window_delta);
 
-  *p++ = 0;
-  *p++ = 0;
-  *p++ = 4;
-  *p++ = GRPC_CHTTP2_FRAME_WINDOW_UPDATE;
-  *p++ = 0;
-  *p++ = static_cast<uint8_t>(id >> 24);
-  *p++ = static_cast<uint8_t>(id >> 16);
-  *p++ = static_cast<uint8_t>(id >> 8);
-  *p++ = static_cast<uint8_t>(id);
-  *p++ = static_cast<uint8_t>(window_delta >> 24);
-  *p++ = static_cast<uint8_t>(window_delta >> 16);
-  *p++ = static_cast<uint8_t>(window_delta >> 8);
-  *p++ = static_cast<uint8_t>(window_delta);
+  // Secure-by-design: serialize through a bounds-checked sink so the frame
+  // can never overflow its allocated slice.
+  grpc_core::ByteSink sink(GRPC_SLICE_START_PTR(slice),
+                           GRPC_SLICE_LENGTH(slice));
+  GRPC_CHECK(sink.WriteU24BE(4));
+  GRPC_CHECK(sink.WriteU8(GRPC_CHTTP2_FRAME_WINDOW_UPDATE));
+  GRPC_CHECK(sink.WriteU8(0));  // flags
+  GRPC_CHECK(sink.WriteU32BE(id));
+  GRPC_CHECK(sink.WriteU31BE(window_delta));
+  GPR_ASSERT(sink.empty());
 
   return slice;
 }
@@ -76,20 +75,22 @@ grpc_error_handle grpc_chttp2_window_update_parser_begin_frame(
 grpc_error_handle grpc_chttp2_window_update_parser_parse(
     void* parser, grpc_chttp2_transport* t, grpc_chttp2_stream* s,
     const grpc_slice& slice, int is_last) {
-  const uint8_t* const beg = GRPC_SLICE_START_PTR(slice);
-  const uint8_t* const end = GRPC_SLICE_END_PTR(slice);
-  const uint8_t* cur = beg;
   grpc_chttp2_window_update_parser* p =
       static_cast<grpc_chttp2_window_update_parser*>(parser);
 
-  while (p->byte != 4 && cur != end) {
-    p->amount |= (static_cast<uint32_t>(*cur)) << (8 * (3 - p->byte));
-    cur++;
-    p->byte++;
+  // Secure-by-design: accumulate the 4-byte window increment through a
+  // bounds-checked cursor so a malformed or truncated frame can never read
+  // past the slice boundary.
+  grpc_core::ByteSource src(slice);
+  while (p->byte != 4) {
+    auto v = src.ReadU8();
+    if (!v.has_value()) break;
+    p->amount |= static_cast<uint32_t>(*v) << (8 * (3 - p->byte));
+    ++p->byte;
   }
 
   if (s != nullptr) {
-    uint64_t framing_bytes = static_cast<uint32_t>(end - cur);
+    uint64_t framing_bytes = 4u - src.remaining();
     s->call_tracer_wrapper.RecordIncomingBytes({framing_bytes, 0, 0});
   }
 
