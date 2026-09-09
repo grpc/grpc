@@ -775,10 +775,12 @@ static void endpoint_write(
 
 static void endpoint_destroy(grpc_endpoint* secure_ep) {
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
+  ep->frame_protector.write_mu()->Lock();
   ep->frame_protector.read_mu()->Lock();
   ep->wrapped_ep.reset();
   ep->frame_protector.Shutdown();
   ep->frame_protector.read_mu()->Unlock();
+  ep->frame_protector.write_mu()->Unlock();
   SECURE_ENDPOINT_UNREF(ep, "destroy");
 }
 
@@ -1054,28 +1056,37 @@ class SecureEndpoint final : public EventEngine::Endpoint,
       }
       // A small write: encrypt inline and write to the socket.
       {
-        grpc_core::MutexLock lock(frame_protector_.write_mu());
+        grpc_core::ReleasableMutexLock lock(frame_protector_.write_mu());
         result = frame_protector_.Protect(data->c_slice_buffer(),
                                           args.max_frame_size());
+        if (result != TSI_OK) {
+          lock.Release();
+          event_engine_->Run(
+              [on_writable = std::move(on_writable), result]() mutable {
+                on_writable(GRPC_ERROR_CREATE(absl::StrCat(
+                    "Wrap failed (", tsi_result_to_string(result), ")")));
+              });
+          return false;
+        }
+        // If the endpoint shut down whilst protecting, fail out the write.
+        if (wrapped_ep_ == nullptr) {
+          lock.Release();
+          event_engine_->Run([on_writable = std::move(on_writable)]() mutable {
+            on_writable(absl::CancelledError("secure endpoint shutdown"));
+          });
+          return false;
+        }
+        on_write_ = std::move(on_writable);
+        frame_protector_.TraceOp(
+            "Write", frame_protector_.output_buffer()->c_slice_buffer());
+        return wrapped_ep_->Write(
+            [impl = Ref()](absl::Status status) mutable {
+              auto on_write = std::move(impl->on_write_);
+              impl.reset();
+              on_write(status);
+            },
+            frame_protector_.output_buffer(), std::move(args));
       }
-      if (result != TSI_OK) {
-        event_engine_->Run(
-            [on_writable = std::move(on_writable), result]() mutable {
-              on_writable(GRPC_ERROR_CREATE(absl::StrCat(
-                  "Wrap failed (", tsi_result_to_string(result), ")")));
-            });
-        return false;
-      }
-      on_write_ = std::move(on_writable);
-      frame_protector_.TraceOp(
-          "Write", frame_protector_.output_buffer()->c_slice_buffer());
-      return wrapped_ep_->Write(
-          [impl = Ref()](absl::Status status) mutable {
-            auto on_write = std::move(impl->on_write_);
-            impl.reset();
-            on_write(status);
-          },
-          frame_protector_.output_buffer(), std::move(args));
     }
 
     const EventEngine::ResolvedAddress& GetPeerAddress() const {
@@ -1112,6 +1123,7 @@ class SecureEndpoint final : public EventEngine::Endpoint,
       std::unique_ptr<EventEngine::Endpoint> wrapped_ep;
       grpc_core::MutexLock write_lock(frame_protector_.write_mu());
       grpc_core::MutexLock read_lock(frame_protector_.read_mu());
+      grpc_core::MutexLock shutdown_read_lock(&shutdown_read_mu_);
       wrapped_ep = std::move(wrapped_ep_);
       frame_protector_.Shutdown();
       GRPC_TRACE_LOG(secure_endpoint, INFO)
@@ -1246,13 +1258,22 @@ class SecureEndpoint final : public EventEngine::Endpoint,
         // Otherwise, we need to read more data from the underlying endpoint.
         ReadArgs args = read_args_;
         args.set_read_hint_bytes(frame_protector_.min_progress_size());
-        bool read_completed_immediately = wrapped_ep_->Read(
-            [impl = Ref()](absl::Status status) mutable {
-              grpc_core::ExecCtx exec_ctx;
-              impl->ContinueRead(/*is_initial_call=*/false,
-                                 /*status=*/std::move(status));
-            },
-            frame_protector_.source_buffer(), args);
+        bool read_completed_immediately;
+        {
+          // Serialize the null check against Shutdown: the endpoint is torn
+          // down under shutdown_read_mu_ (see Shutdown), and EventEngine
+          // guarantees the read callback is never invoked inline from Read,
+          // so holding this mutex across the call is safe.
+          grpc_core::MutexLock shutdown_lock(&shutdown_read_mu_);
+          if (wrapped_ep_ == nullptr) continue;
+          read_completed_immediately = wrapped_ep_->Read(
+              [impl = Ref()](absl::Status status) mutable {
+                grpc_core::ExecCtx exec_ctx;
+                impl->ContinueRead(/*is_initial_call=*/false,
+                                   /*status=*/std::move(status));
+              },
+              frame_protector_.source_buffer(), args);
+        }
         if (!read_completed_immediately) return false;
       }
     }
@@ -1354,6 +1375,11 @@ class SecureEndpoint final : public EventEngine::Endpoint,
     ReadArgs read_args_;
     absl::AnyInvocable<void(absl::Status)> on_write_;
     std::unique_ptr<EventEngine::Endpoint> wrapped_ep_;
+    // Serializes the read-start null check against Shutdown so that a read
+    // cannot be issued on the wrapped endpoint after it is torn down. The
+    // read callbacks never take this mutex, so it can be held across the
+    // wrapped Read call.
+    grpc_core::Mutex shutdown_read_mu_;
     std::shared_ptr<EventEngine> event_engine_;
     const size_t large_read_threshold_;
     const size_t large_write_threshold_;

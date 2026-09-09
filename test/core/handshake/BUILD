@@ -205,6 +205,30 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "secure_endpoint_shutdown_race_test",
+    srcs = ["secure_endpoint_shutdown_race_test.cc"],
+    external_deps = [
+        "absl/status",
+        "absl/synchronization",
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_security_base",
+        "//:iomgr",
+        "//:orphanable",
+        "//:tsi_base",
+        "//:tsi_fake_credentials",
+        "//src/core:channel_args",
+        "//src/core:default_event_engine",
+        "//src/core:experiments",
+        "//src/core:resource_quota",
+        "//test/core/test_util:grpc_test_util_base",
+    ],
+)
+
+grpc_cc_test(
     name = "secure_endpoint_read_coalescing_test",
     srcs = ["secure_endpoint_read_coalescing_test.cc"],
     external_deps = [
