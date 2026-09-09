@@ -77,6 +77,7 @@ constexpr size_t kSessionTicketEncryptionKeySize = 80;
 #else
 constexpr size_t kSessionTicketEncryptionKeySize = 48;
 #endif
+constexpr size_t kDefaultEkmLength = 32;
 
 using ::grpc_core::testing::GetFileContents;
 using ::testing::Combine;
@@ -711,7 +712,7 @@ class SslTransportSecurityTest
               &peer, TSI_SSL_EXPORTED_KEYING_MATERIAL);
           ASSERT_NE(prop, nullptr);
           size_t expected_len = ssl_fixture->client_ekm_length_ == 0
-                                    ? 32
+                                    ? kDefaultEkmLength
                                     : ssl_fixture->client_ekm_length_;
           ASSERT_EQ(prop->value.length, expected_len);
           client_ekm = std::string(prop->value.data, prop->value.length);
@@ -748,20 +749,23 @@ class SslTransportSecurityTest
               &peer, TSI_SSL_EXPORTED_KEYING_MATERIAL);
           ASSERT_NE(prop, nullptr);
           size_t expected_len = ssl_fixture->server_ekm_length_ == 0
-                                    ? 32
+                                    ? kDefaultEkmLength
                                     : ssl_fixture->server_ekm_length_;
           ASSERT_EQ(prop->value.length, expected_len);
+          std::string server_ekm =
+              std::string(prop->value.data, prop->value.length);
           if (ssl_fixture->client_ekm_label_.has_value() &&
               expect_client_success) {
+            // If both the client and server have the same EKM label and length,
+            // they should derive the same EKM. Otherwise, the derived EKMs
+            // should be different.
             if (*ssl_fixture->client_ekm_label_ ==
                     *ssl_fixture->server_ekm_label_ &&
                 ssl_fixture->client_ekm_length_ ==
                     ssl_fixture->server_ekm_length_) {
-              ASSERT_EQ(client_ekm,
-                        std::string(prop->value.data, prop->value.length));
+              ASSERT_EQ(client_ekm, server_ekm);
             } else {
-              ASSERT_NE(client_ekm,
-                        std::string(prop->value.data, prop->value.length));
+              ASSERT_NE(client_ekm, server_ekm);
             }
           }
         }
@@ -812,10 +816,10 @@ class SslTransportSecurityTest
     // intent.
     bool server_expects_handshake_failure_ = false;
     bool client_expects_handshake_failure_ = false;
-    std::optional<std::string> client_ekm_label_ = std::nullopt;
-    size_t client_ekm_length_ = 0;
-    std::optional<std::string> server_ekm_label_ = std::nullopt;
-    size_t server_ekm_length_ = 0;
+    std::optional<std::string> client_ekm_label_;
+    size_t client_ekm_length_;
+    std::optional<std::string> server_ekm_label_;
+    size_t server_ekm_length_;
     RefCountedPtr<CollectionScope> collection_scope_;
   };
 
@@ -1862,17 +1866,40 @@ TEST_P(SslTransportSecurityTest, SuccessfulHandshakeClientSpecifiesP256) {
 TEST_P(SslTransportSecurityTest, TestExportedKeyingMaterialMatchingLabels) {
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
-  ssl_fixture_->SetClientExportedKeyingMaterial("test_label", 32);
-  ssl_fixture_->SetServerExportedKeyingMaterial("test_label", 32);
+  ssl_fixture_->SetClientExportedKeyingMaterial("test_label",
+                                                kDefaultEkmLength);
+  ssl_fixture_->SetServerExportedKeyingMaterial("test_label",
+                                                kDefaultEkmLength);
   DoHandshake();
+  // DoHandshake() calls CheckHandshakerPeers(), which will verify that both the
+  // client and server handshakes were successful, and that the client and
+  // server EKMs are equal, because the labels and lengths match.
 }
 
 TEST_P(SslTransportSecurityTest, TestExportedKeyingMaterialDifferentLabels) {
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
-  ssl_fixture_->SetClientExportedKeyingMaterial("client_label", 32);
-  ssl_fixture_->SetServerExportedKeyingMaterial("server_label", 32);
+  ssl_fixture_->SetClientExportedKeyingMaterial("client_label",
+                                                kDefaultEkmLength);
+  ssl_fixture_->SetServerExportedKeyingMaterial("server_label",
+                                                kDefaultEkmLength);
   DoHandshake();
+  // DoHandshake() calls CheckHandshakerPeers(), which will verify that both the
+  // client and server handshakes were successful, and that the client and
+  // server EKMs are different, because the labels are different.
+}
+
+TEST_P(SslTransportSecurityTest, TestExportedKeyingMaterialDifferentLengths) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_fixture_->SetClientExportedKeyingMaterial("client_label",
+                                                kDefaultEkmLength);
+  ssl_fixture_->SetServerExportedKeyingMaterial("server_label",
+                                                kDefaultEkmLength - 2);
+  DoHandshake();
+  // DoHandshake() calls CheckHandshakerPeers(), which will verify that both the
+  // client and server handshakes were successful, and that the client and
+  // server EKMs are different, because the lengths are different.
 }
 
 TEST_P(SslTransportSecurityTest, TestExportedKeyingMaterialDefaultLength) {
@@ -1881,6 +1908,9 @@ TEST_P(SslTransportSecurityTest, TestExportedKeyingMaterialDefaultLength) {
   ssl_fixture_->SetClientExportedKeyingMaterial("test_label", 0);
   ssl_fixture_->SetServerExportedKeyingMaterial("test_label", 0);
   DoHandshake();
+  // DoHandshake() calls CheckHandshakerPeers(), which will verify that both the
+  // client and server handshakes were successful, and that using 0 for the
+  // length results in a default lengths of kDefaultEkmLength=32.
 }
 
 #endif  // OPENSSL_VERSION_NUMBER >= 0x10101000L

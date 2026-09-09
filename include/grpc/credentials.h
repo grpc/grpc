@@ -1273,18 +1273,10 @@ GRPCAPI void grpc_tls_credentials_options_set_key_exchange_groups(
 /**
  * EXPERIMENTAL API - Subject to change
  *
- * Sets the label for extracting TLS Exported Keying Material.
+ * Sets the label and length for extracting TLS Exported Keying Material.
  */
-GRPCAPI void grpc_tls_credentials_options_set_exported_keying_material_label(
-    grpc_tls_credentials_options* options, const char* label);
-
-/**
- * EXPERIMENTAL API - Subject to change
- *
- * Sets the length for extracting TLS Exported Keying Material.
- */
-GRPCAPI void grpc_tls_credentials_options_set_exported_keying_material_length(
-    grpc_tls_credentials_options* options, size_t length);
+GRPCAPI void grpc_tls_credentials_options_set_exported_keying_material_options(
+    grpc_tls_credentials_options* options, const char* label, size_t length);
 
 #ifdef __cplusplus
 }
