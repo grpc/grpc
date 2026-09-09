@@ -306,10 +306,11 @@ ExtProcFilter::ExtProcChannel::~ExtProcChannel() {
 //                                     ||
 //  LOOP 3: Side-Stream Pull Pipeline Loop [HandleReadFromSideStreamLoop()]
 //  +-----------------------------------------------------------------------+
-//  | Seq(                                                                  |
-//  |     Loop: streaming_call_->PullMessage()                              |
-//  |       -> ProcessSideStreamResponse(),                                 |
-//  |     streaming_call_->PullServerTrailingMetadata(),                    |
+//  | Map(                                                                  |
+//  |     TrySeq(                                                           |
+//  |         Loop: streaming_call_->PullMessage()                          |
+//  |           -> ProcessSideStreamResponse(),                             |
+//  |         streaming_call_->PullServerTrailingMetadata()),               |
 //  |     HandleSideStreamStatus(status))                                   |
 //  +-----------------------------------------------------------------------+
 //
@@ -448,7 +449,9 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
   auto ProcessSideStreamResponse(absl::string_view payload);
 
   // Handles transport status updates/closure on the ext_proc side-stream.
-  void HandleSideStreamStatus(absl::Status status);
+  // Returns true if the call remains active (either status is OK or fail-open
+  // is allowed), or false if the call has been cancelled with an error.
+  bool HandleSideStreamStatus(absl::Status status);
 
   const Config& config() const { return *ext_proc_filter_->config_; }
 
@@ -471,10 +474,14 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
 
   // Fails the intercepted data plane RPC with the given error status:
   // 1. Pushes error trailing metadata downstream to the client (which
-  //    automatically cancels the upstream child call).
-  // 2. Marks the side-stream closed.
+  //    automatically cancels the upstream child call and the side-stream).
+  // 2. Sets side_stream_closed_latch_ to unblock any waiters.
   void CancelCallWithError(absl::Status status) {
     GRPC_CHECK(!status.ok());
+    ext_proc_stream_cancelled_with_error_ = true;
+    if (!side_stream_closed_latch_.is_set()) {
+      side_stream_closed_latch_.Set();
+    }
     auto error_md = CancelledServerMetadataFromStatus(status);
     handler_.PushServerTrailingMetadata(std::move(error_md));
   }
@@ -574,6 +581,10 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
   bool is_trailers_only_ = false;
   // Latch signaled when the side-stream is closed or drained.
   Latch<void> side_stream_closed_latch_;
+  // Set to true when CancelCallWithError() is invoked to indicate that the
+  // intercepted data plane call has been terminated with an error. Synchronized
+  // by the handler_ activity.
+  bool ext_proc_stream_cancelled_with_error_ = false;
 
   // Send state and waiters for coordinating message sends on the side-stream
   // within the handler_ activity.
@@ -1024,7 +1035,13 @@ auto ExtProcFilter::ExtProcCall::ProcessSideStreamResponse(
       [](std::monostate) { return Immediate(StatusFlag(Success{})); });
 }
 
-void ExtProcFilter::ExtProcCall::HandleSideStreamStatus(absl::Status status) {
+bool ExtProcFilter::ExtProcCall::HandleSideStreamStatus(absl::Status status) {
+  if (ext_proc_stream_cancelled_with_error_) {
+    return false;
+  }
+  if (side_stream_closed_latch_.is_set()) {
+    return true;
+  }
   GRPC_TRACE_LOG(ext_proc_filter, INFO)
       << DebugTag() << "status received: " << status;
   const bool has_outstanding_messages =
@@ -1050,7 +1067,7 @@ void ExtProcFilter::ExtProcCall::HandleSideStreamStatus(absl::Status status) {
   const bool fail_data_plane_stream = !status.ok() && !IsFailOpenAllowed();
   if (fail_data_plane_stream) {
     CancelCallWithError(status);
-    return;
+    return false;
   }
   // Not failing, so make sure we process any outstanding processors by
   // forwarding unmutated metadata.
@@ -1076,6 +1093,7 @@ void ExtProcFilter::ExtProcCall::HandleSideStreamStatus(absl::Status status) {
   if (!side_stream_closed_latch_.is_set()) {
     side_stream_closed_latch_.Set();
   }
+  return true;
 }
 
 //
@@ -1115,50 +1133,41 @@ auto ExtProcFilter::ExtProcCall::HandleInitialMetadataFromClient(
         *client_initial_metadata_,
         ext_proc_filter_->default_authority_.as_string_view());
   }
-  // Grab status so that we can std::move(payload) for the lambda below.
-  absl::Status error = payload.status();
-  const bool send_to_sidestream = send_request_headers && error.ok();
-  return TrySeq(
-      // Handle payload construction failure and determine if fail-open
-      // is allowed.
-      If(
-          !error.ok(),
-          [self = WeakRef(), error]() {
-            self->HandleSideStreamStatus(error);
-            if (self->IsFailOpenAllowed() &&
-                self->client_initial_metadata_ != nullptr) {
-              self->StartChildCall(std::move(self->client_initial_metadata_));
-            }
-            return Immediate(StatusFlag(self->IsFailOpenAllowed()));
-          },
-          Immediate(StatusFlag(Success{}))),
-      // Forward initial metadata to backend if not waiting for side-stream
-      // or running in observability mode.
-      If(
-          !send_to_sidestream || config().observability_mode,
-          [self = WeakRef()]() {
-            if (self->client_initial_metadata_ != nullptr) {
-              self->StartChildCall(std::move(self->client_initial_metadata_));
-            }
-            return Immediate(StatusFlag(Success{}));
-          },
-          Immediate(StatusFlag(Success{}))),
-      // Send client initial metadata payload to the side-stream.
-      If(
-          send_to_sidestream,
-          [self = WeakRef(), payload = std::move(payload)]() mutable {
-            GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                << self->DebugTag()
-                << "Sending client initial metadata to sidestream";
-            return self->SendMessageToSideStream(std::move(*payload));
-          },
-          [self = WeakRef()]() {
-            GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                << self->DebugTag()
-                << "Skipping client initial metadata (processing mode "
-                   "disabled)";
-            return Immediate(StatusFlag(Success{}));
-          }));
+  const bool call_cancelled =
+      !payload.ok() && !HandleSideStreamStatus(payload.status());
+  const bool send_to_sidestream =
+      send_request_headers && !side_stream_closed_latch_.is_set();
+  return If(
+      call_cancelled, Immediate(StatusFlag(Failure{})),
+      TrySeq(
+          // Forward initial metadata to backend if not waiting for side-stream
+          // or running in observability mode.
+          If(
+              !send_to_sidestream || config().observability_mode,
+              [self = WeakRef()]() {
+                if (self->client_initial_metadata_ != nullptr) {
+                  self->StartChildCall(
+                      std::move(self->client_initial_metadata_));
+                }
+                return Immediate(StatusFlag(Success{}));
+              },
+              Immediate(StatusFlag(Success{}))),
+          // Send client initial metadata payload to the side-stream.
+          If(
+              send_to_sidestream,
+              [self = WeakRef(), payload = std::move(payload)]() mutable {
+                GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                    << self->DebugTag()
+                    << "Sending client initial metadata to sidestream";
+                return self->SendMessageToSideStream(std::move(*payload));
+              },
+              [self = WeakRef()]() {
+                GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                    << self->DebugTag()
+                    << "Skipping client initial metadata (processing mode "
+                       "disabled)";
+                return Immediate(StatusFlag(Success{}));
+              })));
 }
 
 auto ExtProcFilter::ExtProcCall::HandleMessageFromClient(
@@ -1204,52 +1213,53 @@ auto ExtProcFilter::ExtProcCall::HandleMessageFromClient(
         /*end_of_stream_without_message=*/false);
     request_attributes_ = nullptr;
   }
-  // Grab status so that we can std::move(payload) for the lambda below.
-  absl::Status error = payload.status();
-  const bool send_to_sidestream =
-      send_request_body && !drain_requested_ && error.ok();
-  return TrySeq(
-      // Handle payload construction error / early close and determine
-      // if fail-open is allowed.
-      If(
-          !error.ok(),
-          [self = WeakRef(), error]() {
-            self->HandleSideStreamStatus(error);
-            return Immediate(StatusFlag(self->IsFailOpenAllowed()));
-          },
-          Immediate(StatusFlag(Success{}))),
-      // Wait for side-stream to finish draining if drain mode was requested.
-      If(
-          drain_requested_ && send_request_body,
-          [self = WeakRef()]() {
-            return TrySeq(self->side_stream_closed_latch_.Wait(),
-                          []() -> StatusFlag { return Success{}; });
-          },
-          Immediate(StatusFlag(Success{}))),
-      // Forward client message to backend if not waiting for side-stream
-      // or running in observability mode.
-      If(
-          !send_to_sidestream || config().observability_mode,
-          [self = WeakRef(), message = std::move(message)]() mutable {
-            // TODO(rishesh, roth): Spawning this push into the activity means
-            // that we won't have flow control feedback here in a pure v3
-            // stack, so we need to fix it before we finish the v3 migration.
-            self->initiator_.SpawnPushMessage(std::move(message));
-            return Immediate(StatusFlag(Success{}));
-          },
-          Immediate(StatusFlag(Success{}))),
-      // Send client message payload to the side-stream.
-      If(
-          send_to_sidestream,
-          [self = WeakRef(), payload = std::move(payload)]() mutable {
-            self->first_body_message_sent_ = true;
-            if (self->config().observability_mode) {
-              GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                  << self->DebugTag() << "Client message observability mode";
-            }
-            return self->SendMessageToSideStream(std::move(*payload));
-          },
-          Immediate(StatusFlag(Success{}))));
+  const bool call_cancelled =
+      !payload.ok() && !HandleSideStreamStatus(payload.status());
+  const bool send_to_sidestream = send_request_body && !drain_requested_ &&
+                                  !side_stream_closed_latch_.is_set();
+  return If(
+      call_cancelled, Immediate(StatusFlag(Failure{})),
+      TrySeq(
+          // Wait for side-stream to finish draining if drain mode was
+          // requested.
+          If(
+              drain_requested_ && send_request_body,
+              [self = WeakRef()]() {
+                return TrySeq(self->side_stream_closed_latch_.Wait(),
+                              []() -> StatusFlag { return Success{}; });
+              },
+              Immediate(StatusFlag(Success{}))),
+          Map(TryJoin<ValueOrFailure>(
+                  // Forward client message to backend if not waiting for
+                  // side-stream or running in observability mode.
+                  If(
+                      !send_to_sidestream || config().observability_mode,
+                      [self = WeakRef(),
+                       message = std::move(message)]() mutable {
+                        // TODO(rishesh, roth): Spawning this push into the
+                        // activity means that we won't have flow control
+                        // feedback here in a pure v3 stack, so we need to fix
+                        // it before we finish the v3 migration.
+                        self->initiator_.SpawnPushMessage(std::move(message));
+                        return Immediate(StatusFlag(Success{}));
+                      },
+                      Immediate(StatusFlag(Success{}))),
+                  // Send client message payload to the side-stream.
+                  If(
+                      send_to_sidestream,
+                      [self = WeakRef(),
+                       payload = std::move(payload)]() mutable {
+                        self->first_body_message_sent_ = true;
+                        if (self->config().observability_mode) {
+                          GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                              << self->DebugTag()
+                              << "Client message observability mode";
+                        }
+                        return self->SendMessageToSideStream(
+                            std::move(*payload));
+                      },
+                      Immediate(StatusFlag(Success{})))),
+              [](auto x) { return x.status(); })));
 }
 
 auto ExtProcFilter::ExtProcCall::HandleHalfCloseFromClient() {
@@ -1277,43 +1287,38 @@ auto ExtProcFilter::ExtProcCall::HandleHalfCloseFromClient() {
         /*end_of_stream_without_message=*/true);
     request_attributes_ = nullptr;
   }
-  absl::Status error = payload.status();
-  const bool send_to_sidestream = send_request_body && error.ok();
-  return TrySeq(
-      // Handle payload construction failure and determine if fail-open
-      // is allowed.
-      If(
-          !error.ok(),
-          [self = WeakRef(), error]() {
-            self->HandleSideStreamStatus(error);
-            return Immediate(StatusFlag(self->IsFailOpenAllowed()));
-          },
-          Immediate(StatusFlag(Success{}))),
-      // Wait for side-stream to finish draining if drain mode was requested.
-      If(
-          drain_requested_ && send_request_body,
-          [self = WeakRef()]() {
-            return TrySeq(self->side_stream_closed_latch_.Wait(),
-                          []() -> StatusFlag { return Success{}; });
-          },
-          Immediate(StatusFlag(Success{}))),
-      // Forward half-close to backend if not waiting for side-stream
-      // or running in observability mode.
-      If(
-          !send_to_sidestream || config().observability_mode,
-          [self = WeakRef()]() {
-            self->initiator_.SpawnFinishSends();
-            return Immediate(StatusFlag(Success{}));
-          },
-          Immediate(StatusFlag(Success{}))),
-      // Send client half-close payload to the side-stream.
-      If(
-          send_to_sidestream,
-          [self = WeakRef(), payload = std::move(payload)]() mutable {
-            self->first_body_message_sent_ = true;
-            return self->SendMessageToSideStream(std::move(*payload));
-          },
-          Immediate(StatusFlag(Success{}))));
+  const bool call_cancelled =
+      !payload.ok() && !HandleSideStreamStatus(payload.status());
+  const bool send_to_sidestream =
+      send_request_body && !side_stream_closed_latch_.is_set();
+  return If(call_cancelled, Immediate(StatusFlag(Failure{})),
+            TrySeq(
+                // Wait for side-stream to finish draining if drain mode was
+                // requested.
+                If(
+                    drain_requested_ && send_request_body,
+                    [self = WeakRef()]() {
+                      return TrySeq(self->side_stream_closed_latch_.Wait(),
+                                    []() -> StatusFlag { return Success{}; });
+                    },
+                    Immediate(StatusFlag(Success{}))),
+                // Forward half-close to backend if not waiting for side-stream
+                // or running in observability mode.
+                If(
+                    !send_to_sidestream || config().observability_mode,
+                    [self = WeakRef()]() {
+                      self->initiator_.SpawnFinishSends();
+                      return Immediate(StatusFlag(Success{}));
+                    },
+                    Immediate(StatusFlag(Success{}))),
+                // Send client half-close payload to the side-stream.
+                If(
+                    send_to_sidestream,
+                    [self = WeakRef(), payload = std::move(payload)]() mutable {
+                      self->first_body_message_sent_ = true;
+                      return self->SendMessageToSideStream(std::move(*payload));
+                    },
+                    Immediate(StatusFlag(Success{})))));
 }
 
 //
@@ -1350,56 +1355,47 @@ auto ExtProcFilter::ExtProcCall::HandleInitialMetadataFromServer(
         /*attributes=*/nullptr, config().observability_mode, processing_mode,
         /*end_of_stream=*/false);
   }
-  absl::Status error = payload.status();
-  const bool send_to_sidestream = send_response_headers && error.ok();
-  return TrySeq(
-      // Handle payload construction failure and determine if fail-open
-      // is allowed.
-      If(
-          !error.ok(),
-          [self = WeakRef(), error]() {
-            self->HandleSideStreamStatus(error);
-            if (self->IsFailOpenAllowed() &&
-                self->server_initial_metadata_ != nullptr) {
-              self->handler_.PushServerInitialMetadata(
-                  std::move(self->server_initial_metadata_));
-            }
-            return Immediate(StatusFlag(self->IsFailOpenAllowed()));
-          },
-          Immediate(StatusFlag(Success{}))),
-      // Forward server initial metadata downstream to client if not
-      // trailers-only and not waiting for side-stream or in observability mode.
-      If(
-          !is_trailers_only &&
-              (!send_to_sidestream || config().observability_mode),
-          [self = WeakRef()]() {
-            if (self->server_initial_metadata_ != nullptr) {
-              self->handler_.PushServerInitialMetadata(
-                  std::move(self->server_initial_metadata_));
-            }
-            return Immediate(StatusFlag(Success{}));
-          },
-          Immediate(StatusFlag(Success{}))),
-      // Send server initial metadata payload to the side-stream.
-      If(
-          send_to_sidestream,
-          [self = WeakRef(), payload = std::move(payload)]() mutable {
-            GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                << self->DebugTag()
-                << "Sending server initial metadata (observability_mode="
-                << (self->config().observability_mode ? "true" : "false")
-                << ")";
-            return self->SendMessageToSideStream(std::move(*payload));
-          },
-          [self = WeakRef(), is_trailers_only]() {
-            if (!is_trailers_only) {
-              GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                  << self->DebugTag()
-                  << "Skipping server initial metadata (processing "
-                     "disabled, stream closed, or drain mode)";
-            }
-            return Immediate(StatusFlag(Success{}));
-          }));
+  const bool call_cancelled =
+      !payload.ok() && !HandleSideStreamStatus(payload.status());
+  const bool send_to_sidestream =
+      send_response_headers && !side_stream_closed_latch_.is_set();
+  return If(
+      call_cancelled, Immediate(StatusFlag(Failure{})),
+      TrySeq(
+          // Forward server initial metadata downstream to client if not
+          // trailers-only and not waiting for side-stream or in observability
+          // mode.
+          If(
+              !is_trailers_only &&
+                  (!send_to_sidestream || config().observability_mode),
+              [self = WeakRef()]() {
+                if (self->server_initial_metadata_ != nullptr) {
+                  self->handler_.PushServerInitialMetadata(
+                      std::move(self->server_initial_metadata_));
+                }
+                return Immediate(StatusFlag(Success{}));
+              },
+              Immediate(StatusFlag(Success{}))),
+          // Send server initial metadata payload to the side-stream.
+          If(
+              send_to_sidestream,
+              [self = WeakRef(), payload = std::move(payload)]() mutable {
+                GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                    << self->DebugTag()
+                    << "Sending server initial metadata (observability_mode="
+                    << (self->config().observability_mode ? "true" : "false")
+                    << ")";
+                return self->SendMessageToSideStream(std::move(*payload));
+              },
+              [self = WeakRef(), is_trailers_only]() {
+                if (!is_trailers_only) {
+                  GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                      << self->DebugTag()
+                      << "Skipping server initial metadata (processing "
+                         "disabled, stream closed, or drain mode)";
+                }
+                return Immediate(StatusFlag(Success{}));
+              })));
 }
 
 auto ExtProcFilter::ExtProcCall::HandleTrailingMetadataFromServer(
@@ -1435,66 +1431,57 @@ auto ExtProcFilter::ExtProcCall::HandleTrailingMetadataFromServer(
                         /*attributes=*/nullptr, config().observability_mode,
                         processing_mode);
   }
-  absl::Status error = payload.status();
-  const bool send_to_sidestream = send_metadata && error.ok();
-  return TrySeq(
-      // Handle payload construction failure and determine if fail-open
-      // is allowed.
-      If(
-          !error.ok(),
-          [self = WeakRef(), error]() {
-            self->HandleSideStreamStatus(error);
-            if (self->IsFailOpenAllowed() &&
-                self->server_trailing_metadata_ != nullptr) {
-              self->handler_.PushServerTrailingMetadata(
-                  std::move(self->server_trailing_metadata_));
-            }
-            return Immediate(StatusFlag(self->IsFailOpenAllowed()));
-          },
-          Immediate(StatusFlag(Success{}))),
-      // Wait for side-stream to finish draining if drain mode was requested.
-      If(
-          drain_requested_ && send_metadata,
-          [self = WeakRef()]() {
-            GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                << self->DebugTag()
-                << "Handling server trailing metadata in drain mode";
-            return TrySeq(self->side_stream_closed_latch_.Wait(),
-                          []() -> StatusFlag { return Success{}; });
-          },
-          Immediate(StatusFlag(Success{}))),
-      // Forward server trailing metadata downstream to client if not
-      // waiting for side-stream or running in observability mode.
-      If(
-          !send_to_sidestream || config().observability_mode,
-          [self = WeakRef()]() {
-            if (self->server_trailing_metadata_ != nullptr) {
-              self->handler_.PushServerTrailingMetadata(
-                  std::move(self->server_trailing_metadata_));
-            }
-            return Immediate(StatusFlag(Success{}));
-          },
-          Immediate(StatusFlag(Success{}))),
-      // Send server trailing metadata payload to the side-stream.
-      If(
-          send_to_sidestream,
-          [self = WeakRef(), payload = std::move(payload)]() mutable {
-            GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                << self->DebugTag()
-                << "Sending server trailing metadata (observability_mode="
-                << (self->config().observability_mode ? "true" : "false")
-                << ")";
-            return self->SendMessageToSideStream(std::move(*payload));
-          },
-          [self = WeakRef(), send_metadata]() {
-            if (!send_metadata || self->drain_requested_) {
-              GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                  << self->DebugTag()
-                  << "Skipping server trailing metadata (processing "
-                     "disabled or stream closed)";
-            }
-            return Immediate(StatusFlag(Success{}));
-          }));
+  const bool call_cancelled =
+      !payload.ok() && !HandleSideStreamStatus(payload.status());
+  const bool send_to_sidestream =
+      send_metadata && !side_stream_closed_latch_.is_set();
+  return If(
+      call_cancelled, Immediate(StatusFlag(Failure{})),
+      TrySeq(
+          // Wait for side-stream to finish draining if drain mode was
+          // requested.
+          If(
+              drain_requested_ && send_metadata,
+              [self = WeakRef()]() {
+                GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                    << self->DebugTag()
+                    << "Handling server trailing metadata in drain mode";
+                return TrySeq(self->side_stream_closed_latch_.Wait(),
+                              []() -> StatusFlag { return Success{}; });
+              },
+              Immediate(StatusFlag(Success{}))),
+          // Forward server trailing metadata downstream to client if not
+          // waiting for side-stream or running in observability mode.
+          If(
+              !send_to_sidestream || config().observability_mode,
+              [self = WeakRef()]() {
+                if (self->server_trailing_metadata_ != nullptr) {
+                  self->handler_.PushServerTrailingMetadata(
+                      std::move(self->server_trailing_metadata_));
+                }
+                return Immediate(StatusFlag(Success{}));
+              },
+              Immediate(StatusFlag(Success{}))),
+          // Send server trailing metadata payload to the side-stream.
+          If(
+              send_to_sidestream,
+              [self = WeakRef(), payload = std::move(payload)]() mutable {
+                GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                    << self->DebugTag()
+                    << "Sending server trailing metadata (observability_mode="
+                    << (self->config().observability_mode ? "true" : "false")
+                    << ")";
+                return self->SendMessageToSideStream(std::move(*payload));
+              },
+              [self = WeakRef(), send_metadata]() {
+                if (!send_metadata || self->drain_requested_) {
+                  GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                      << self->DebugTag()
+                      << "Skipping server trailing metadata (processing "
+                         "disabled or stream closed)";
+                }
+                return Immediate(StatusFlag(Success{}));
+              })));
 }
 
 //
@@ -1527,50 +1514,48 @@ auto ExtProcFilter::ExtProcCall::HandleMessageFromServer(
         arena.ptr(), message_bytes, /*attributes=*/nullptr,
         config().observability_mode, processing_mode);
   }
-  absl::Status error = payload.status();
-  const bool send_to_sidestream = send_body && !drain_requested_ && error.ok();
-  return TrySeq(
-      // Handle payload construction failure and determine if fail-open
-      // is allowed.
-      If(
-          !error.ok(),
-          [self = WeakRef(), error]() {
-            self->HandleSideStreamStatus(error);
-            return Immediate(StatusFlag(self->IsFailOpenAllowed()));
-          },
-          Immediate(StatusFlag(Success{}))),
-      // Wait for side-stream to finish draining if drain mode was requested.
-      If(
-          drain_requested_ && send_body,
-          [self = WeakRef()]() {
-            return TrySeq(self->side_stream_closed_latch_.Wait(),
-                          []() -> StatusFlag { return Success{}; });
-          },
-          Immediate(StatusFlag(Success{}))),
-      // Forward server message downstream to client if not waiting for
-      // side-stream or running in observability mode.
-      If(
-          !send_to_sidestream || config().observability_mode,
-          [self = WeakRef(), message = std::move(message)]() mutable {
-            // TODO(rishesh, roth): Spawning this push into the activity means
-            // that we won't have flow control feedback here in a pure v3
-            // stack, so we need to fix it before we finish the v3 migration.
-            self->handler_.SpawnPushMessage(std::move(message));
-            return Immediate(StatusFlag(Success{}));
-          },
-          Immediate(StatusFlag(Success{}))),
-      // Send server message payload to the side-stream.
-      If(
-          send_to_sidestream,
-          [self = WeakRef(), payload = std::move(payload)]() mutable {
-            self->first_body_message_sent_ = true;
-            if (self->config().observability_mode) {
-              GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                  << self->DebugTag() << "Server message observability mode";
-            }
-            return self->SendMessageToSideStream(std::move(*payload));
-          },
-          Immediate(StatusFlag(Success{}))));
+  const bool call_cancelled =
+      !payload.ok() && !HandleSideStreamStatus(payload.status());
+  const bool send_to_sidestream =
+      send_body && !drain_requested_ && !side_stream_closed_latch_.is_set();
+  return If(
+      call_cancelled, Immediate(StatusFlag(Failure{})),
+      TrySeq(
+          // Wait for side-stream to finish draining if drain mode was
+          // requested.
+          If(
+              drain_requested_ && send_body,
+              [self = WeakRef()]() {
+                return TrySeq(self->side_stream_closed_latch_.Wait(),
+                              []() -> StatusFlag { return Success{}; });
+              },
+              Immediate(StatusFlag(Success{}))),
+          Map(TryJoin<ValueOrFailure>(
+                  // Forward server message downstream to client if not waiting
+                  // for side-stream or running in observability mode.
+                  If(
+                      !send_to_sidestream || config().observability_mode,
+                      [self = WeakRef(),
+                       message = std::move(message)]() mutable {
+                        return self->handler_.PushMessage(std::move(message));
+                      },
+                      Immediate(StatusFlag(Success{}))),
+                  // Send server message payload to the side-stream.
+                  If(
+                      send_to_sidestream,
+                      [self = WeakRef(),
+                       payload = std::move(payload)]() mutable {
+                        self->first_body_message_sent_ = true;
+                        if (self->config().observability_mode) {
+                          GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                              << self->DebugTag()
+                              << "Server message observability mode";
+                        }
+                        return self->SendMessageToSideStream(
+                            std::move(*payload));
+                      },
+                      Immediate(StatusFlag(Success{})))),
+              [](auto x) { return x.status(); })));
 }
 
 // Handle the read-from-client loop on handler_.
@@ -1630,48 +1615,51 @@ auto ExtProcFilter::ExtProcCall::HandleReadFromServerActivityLoop() {
 // Continuously pulls response messages from the external processor side-stream
 // and dispatches them until the stream closes or an error occurs.
 auto ExtProcFilter::ExtProcCall::HandleReadFromSideStreamLoop() {
-  return Seq(
-      // Loop reading response messages from the side-stream until end-of-stream
-      // or error.
-      Loop([self = WeakRef()]() -> Promise<LoopCtl<StatusFlag>> {
-        if (self->streaming_call_ == nullptr) {
-          return Immediate(LoopCtl<StatusFlag>(Success{}));
-        }
-        return Seq(
-            // Pull the next response message from the streaming call.
-            self->streaming_call_->PullMessage(),
-            // Process the message; stop loop if end-of-stream (nullopt) or
-            // error.
-            [self](std::optional<std::string> msg)
-                -> Promise<LoopCtl<StatusFlag>> {
-              if (!msg.has_value()) {
-                return Immediate(LoopCtl<StatusFlag>(Success{}));
-              }
-              return Seq(self->ProcessSideStreamResponse(std::move(*msg)),
-                         [](StatusFlag status) -> LoopCtl<StatusFlag> {
-                           if (!status.ok()) return Failure{};
-                           return Continue();
-                         });
-            });
-      }),
-      // Once message loop ends, pull trailing metadata from the stream.
-      [self = WeakRef()](StatusFlag) -> Promise<absl::Status> {
-        if (self->streaming_call_ == nullptr) {
-          return Immediate(absl::InternalError("Side stream unavailable"));
-        }
-        return self->streaming_call_->PullServerTrailingMetadata();
-      },
+  return Map(
+      TrySeq(
+          // Loop reading response messages from the side-stream until
+          // end-of-stream or error.
+          Loop([self = WeakRef()]() -> Promise<LoopCtl<StatusFlag>> {
+            if (self->streaming_call_ == nullptr) {
+              return Immediate(LoopCtl<StatusFlag>(Success{}));
+            }
+            return Seq(
+                // Pull the next response message from the streaming call.
+                self->streaming_call_->PullMessage(),
+                // Process the message; stop loop if end-of-stream (nullopt) or
+                // error.
+                [self](std::optional<std::string> msg)
+                    -> Promise<LoopCtl<StatusFlag>> {
+                  if (!msg.has_value()) {
+                    return Immediate(LoopCtl<StatusFlag>(Success{}));
+                  }
+                  return Map(self->ProcessSideStreamResponse(std::move(*msg)),
+                             [](StatusFlag status) -> LoopCtl<StatusFlag> {
+                               if (!status.ok()) return Failure{};
+                               return Continue();
+                             });
+                });
+          }),
+          // Once message loop ends, pull trailing metadata from the stream.
+          [self = WeakRef()]() -> Promise<absl::Status> {
+            if (self->streaming_call_ == nullptr) {
+              return Immediate(absl::InternalError("Side stream unavailable"));
+            }
+            return self->streaming_call_->PullServerTrailingMetadata();
+          }),
       // Handle stream closure and resolve final status.
       [self = WeakRef()](absl::Status status) -> StatusFlag {
+        if (self->ext_proc_stream_cancelled_with_error_) {
+          return Failure{};
+        }
         if (!status.ok()) {
           status = absl::InternalError(absl::StrCat(
               "External processor stream failed: ", status.ToString()));
         }
-        self->HandleSideStreamStatus(status);
         GRPC_TRACE_LOG(ext_proc_filter, INFO)
             << self->DebugTag()
             << "HandleReadFromSideStreamLoop finished with status: " << status;
-        return StatusFlag(status.ok() || self->IsFailOpenAllowed());
+        return StatusFlag(self->HandleSideStreamStatus(status));
       });
 }
 
