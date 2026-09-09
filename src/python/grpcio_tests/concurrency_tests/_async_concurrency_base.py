@@ -21,9 +21,9 @@ from concurrency_tests._deadlock_debug import install_asyncio_suspended_task_deb
 from concurrency_tests._deadlock_debug import install_deadlock_debuggers
 from tests_aio.unit._test_base import AioTestBase
 
-
 CONCURRENCY = 100
 ITERATIONS_PER_TASK = 5
+RPC_TIMEOUT = 30
 
 
 class AsyncConcurrencyTestCase(AioTestBase):

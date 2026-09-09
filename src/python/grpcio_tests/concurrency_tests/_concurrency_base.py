@@ -26,9 +26,9 @@ import grpc
 from concurrency_tests._deadlock_debug import install_deadlock_debuggers
 from tests.unit import test_common
 
-
 DEFAULT_THREAD_COUNT = 100
 ITERATIONS_PER_THREAD = 10
+RPC_TIMEOUT = 30
 _DEFAULT_WORKER_START_TIMEOUT = 60
 _DEFAULT_WORKER_JOIN_TIMEOUT = 90
 

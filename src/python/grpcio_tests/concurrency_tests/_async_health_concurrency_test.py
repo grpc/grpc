@@ -21,10 +21,8 @@ from grpc_health.v1 import health_pb2
 from grpc_health.v1 import health_pb2_grpc
 
 from concurrency_tests._async_concurrency_base import ITERATIONS_PER_TASK
+from concurrency_tests._async_concurrency_base import RPC_TIMEOUT
 from concurrency_tests._async_concurrency_base import AsyncConcurrencyTestCase
-
-
-_RPC_TIMEOUT = 30
 
 _SERVICES = tuple(f"service_{i}" for i in range(8))
 _TOGGLED_STATUSES = (
@@ -53,7 +51,7 @@ class AsyncHealthServicerConcurrencyTest(AsyncConcurrencyTestCase):
             service = _SERVICES[(index + i) % len(_SERVICES)]
             response = await self._stub.Check(
                 health_pb2.HealthCheckRequest(service=service),
-                timeout=_RPC_TIMEOUT,
+                timeout=RPC_TIMEOUT,
             )
             self.assertIn(response.status, _TOGGLED_STATUSES)
 
@@ -68,7 +66,7 @@ class AsyncHealthServicerConcurrencyTest(AsyncConcurrencyTestCase):
         service = _SERVICES[(index) % len(_SERVICES)]
         call = self._stub.Watch(
             health_pb2.HealthCheckRequest(service=service),
-            timeout=_RPC_TIMEOUT,
+            timeout=RPC_TIMEOUT,
         )
         try:
             response = await call.read()
@@ -80,7 +78,7 @@ class AsyncHealthServicerConcurrencyTest(AsyncConcurrencyTestCase):
         service = _SERVICES[0]
         call = self._stub.Watch(
             health_pb2.HealthCheckRequest(service=service),
-            timeout=_RPC_TIMEOUT,
+            timeout=RPC_TIMEOUT,
         )
         try:
             response = await call.read()

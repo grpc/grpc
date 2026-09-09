@@ -22,10 +22,8 @@ from grpc_health.v1 import health_pb2
 from grpc_health.v1 import health_pb2_grpc
 
 from concurrency_tests._concurrency_base import ITERATIONS_PER_THREAD
+from concurrency_tests._concurrency_base import RPC_TIMEOUT
 from concurrency_tests._concurrency_base import ConcurrencyTestCase
-
-
-_RPC_TIMEOUT = 30
 
 _SERVICES = tuple(f"service_{i}" for i in range(8))
 _TOGGLED_STATUSES = (
@@ -52,7 +50,7 @@ class HealthServicerConcurrencyTest(ConcurrencyTestCase):
             service = _SERVICES[(index + i) % len(_SERVICES)]
             response = self._stub.Check(
                 health_pb2.HealthCheckRequest(service=service),
-                timeout=_RPC_TIMEOUT,
+                timeout=RPC_TIMEOUT,
             )
             self.assertIn(response.status, _TOGGLED_STATUSES)
 
@@ -67,7 +65,7 @@ class HealthServicerConcurrencyTest(ConcurrencyTestCase):
         service = _SERVICES[(index) % len(_SERVICES)]
         response_iterator = self._stub.Watch(
             health_pb2.HealthCheckRequest(service=service),
-            timeout=_RPC_TIMEOUT,
+            timeout=RPC_TIMEOUT,
         )
         try:
             response = next(response_iterator)
@@ -79,7 +77,7 @@ class HealthServicerConcurrencyTest(ConcurrencyTestCase):
         service = _SERVICES[0]
         response_iterator = self._stub.Watch(
             health_pb2.HealthCheckRequest(service=service),
-            timeout=_RPC_TIMEOUT,
+            timeout=RPC_TIMEOUT,
         )
         try:
             response = next(response_iterator)

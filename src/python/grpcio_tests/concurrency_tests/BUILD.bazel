@@ -42,6 +42,34 @@ py_library(
 )
 
 py_test(
+    name = "channelz_concurrency_test",
+    size = "medium",
+    srcs = ["_channelz_concurrency_test.py"],
+    imports = ["../"],
+    main = "_channelz_concurrency_test.py",
+    python_version = "PY3",
+    deps = [
+        ":concurrency_base",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_channelz/grpc_channelz/v1:grpc_channelz",
+    ],
+)
+
+py_test(
+    name = "csds_concurrency_test",
+    size = "medium",
+    srcs = ["_csds_concurrency_test.py"],
+    imports = ["../"],
+    main = "_csds_concurrency_test.py",
+    python_version = "PY3",
+    deps = [
+        ":concurrency_base",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_csds/grpc_csds",
+    ],
+)
+
+py_test(
     name = "health_concurrency_test",
     size = "medium",
     srcs = ["_health_concurrency_test.py"],
@@ -67,6 +95,34 @@ py_library(
         ":deadlock_debug",
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_tests/tests_aio/unit:_test_base",
+    ],
+)
+
+py_test(
+    name = "async_channelz_concurrency_test",
+    size = "medium",
+    srcs = ["_async_channelz_concurrency_test.py"],
+    imports = ["../"],
+    main = "_async_channelz_concurrency_test.py",
+    python_version = "PY3",
+    deps = [
+        ":async_concurrency_base",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_channelz/grpc_channelz/v1:grpc_channelz",
+    ],
+)
+
+py_test(
+    name = "async_csds_concurrency_test",
+    size = "medium",
+    srcs = ["_async_csds_concurrency_test.py"],
+    imports = ["../"],
+    main = "_async_csds_concurrency_test.py",
+    python_version = "PY3",
+    deps = [
+        ":async_concurrency_base",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_csds/grpc_csds",
     ],
 )
 
