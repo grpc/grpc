@@ -28,6 +28,7 @@
 #include <grpcpp/server_builder.h>
 
 #include <memory>
+#include <mutex>
 #include <utility>
 
 #include "test/core/test_util/port.h"
@@ -98,11 +99,42 @@ class KeyExchangeGroupCheckingVerifier : public ExternalCertificateVerifier {
   std::string expected_group_;
 };
 
+// Intercepts server Echo to capture the TLS Exported Keying Material from the
+// server's AuthContext.
+class EkmCapturingService : public TestServiceImpl {
+ public:
+  Status Echo(ServerContext* context, const EchoRequest* request,
+              EchoResponse* response) override {
+    std::shared_ptr<const AuthContext> auth_context = context->auth_context();
+    if (auth_context != nullptr) {
+      std::vector<grpc::string_ref> properties =
+          auth_context->FindPropertyValues(
+              GRPC_SSL_EXPORTED_KEYING_MATERIAL_PROPERTY_NAME);
+      if (!properties.empty()) {
+        std::lock_guard<std::mutex> lock(mu_);
+        server_ekm_ = std::string(properties[0].data(), properties[0].length());
+      }
+    }
+    return TestServiceImpl::Echo(context, request, response);
+  }
+
+  std::string server_ekm() const {
+    std::lock_guard<std::mutex> lock(mu_);
+    return server_ekm_;
+  }
+
+ private:
+  mutable std::mutex mu_;
+  std::string server_ekm_;
+};
+
 class TlsCredentialsTest : public ::testing::Test {
  protected:
   void RunServer(absl::Notification* notification,
                  const std::vector<grpc_tls_key_exchange_group>*
-                     key_exchange_groups = nullptr) {
+                     key_exchange_groups = nullptr,
+                 const std::string* ekm_label = nullptr, size_t ekm_length = 0,
+                 grpc::Service* service = nullptr) {
     std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
     std::string server_key =
         grpc_core::testing::GetFileContents(kServerKeyPath);
@@ -126,10 +158,14 @@ class TlsCredentialsTest : public ::testing::Test {
     if (key_exchange_groups != nullptr) {
       server_options.set_key_exchange_groups(*key_exchange_groups);
     }
+    if (ekm_label != nullptr) {
+      server_options.set_exported_keying_material_options(*ekm_label,
+                                                          ekm_length);
+    }
     grpc::ServerBuilder builder;
     builder.AddListeningPort(
         server_addr_, grpc::experimental::TlsServerCredentials(server_options));
-    builder.RegisterService(&service_);
+    builder.RegisterService(service != nullptr ? service : &service_);
     server_ = builder.BuildAndStart();
     notification->Notify();
     server_->Wait();
@@ -225,6 +261,97 @@ TEST_F(TlsCredentialsTest, SkipServerCertificateVerification) {
   tls_options.set_verify_server_certs(/*verify_server_certs=*/false);
 
   DoRpc(server_addr_, tls_options);
+}
+
+TEST_F(TlsCredentialsTest, ExportedKeyingMaterial) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  // Configure server to capture the server side EKM.
+  EkmCapturingService service;
+  const std::string kEkmLabel = "test_label";
+  constexpr size_t kEkmLength = 32;
+  server_thread_ = new std::thread([&]() {
+    RunServer(&notification, /*key_exchange_groups=*/nullptr, &kEkmLabel,
+              kEkmLength, &service);
+  });
+  notification.WaitForNotification();
+
+  TlsChannelCredentialsOptions tls_options;
+  tls_options.set_certificate_verifier(
+      ExternalCertificateVerifier::Create<NoOpCertificateVerifier>());
+  tls_options.set_check_call_host(false);
+  tls_options.set_verify_server_certs(false);
+  tls_options.set_exported_keying_material_options(kEkmLabel, kEkmLength);
+
+  std::shared_ptr<Channel> channel =
+      grpc::CreateChannel(server_addr_, TlsCredentials(tls_options));
+  auto stub = grpc::testing::EchoTestService::NewStub(channel);
+  grpc::testing::EchoRequest request;
+  grpc::testing::EchoResponse response;
+  request.set_message(kMessage);
+  ClientContext context;
+  context.set_deadline(grpc_timeout_seconds_to_deadline(/*time_s=*/10));
+  grpc::Status result = stub->Echo(&context, request, &response);
+  EXPECT_TRUE(result.ok()) << "Echo failed: " << result.error_code() << ", "
+                           << result.error_message() << ", "
+                           << result.error_details();
+  EXPECT_EQ(response.message(), kMessage);
+
+  std::shared_ptr<const AuthContext> client_auth_context =
+      context.auth_context();
+  ASSERT_NE(client_auth_context, nullptr);
+  // Extract EKM from the client AuthContext and verify it's valid and equal
+  // to the EKM that the server derives.
+  std::vector<grpc::string_ref> client_properties =
+      client_auth_context->FindPropertyValues(
+          GRPC_SSL_EXPORTED_KEYING_MATERIAL_PROPERTY_NAME);
+  ASSERT_EQ(client_properties.size(), 1u);
+  EXPECT_EQ(client_properties[0].length(), kEkmLength);
+  std::string client_ekm(client_properties[0].data(),
+                         client_properties[0].length());
+
+  EXPECT_FALSE(client_ekm.empty());
+  EXPECT_EQ(service.server_ekm(), client_ekm);
+}
+
+TEST_F(TlsCredentialsTest, ExportedKeyingMaterialNotConfigured) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  server_thread_ = new std::thread([&]() { RunServer(&notification); });
+  notification.WaitForNotification();
+
+  TlsChannelCredentialsOptions tls_options;
+  tls_options.set_certificate_verifier(
+      ExternalCertificateVerifier::Create<NoOpCertificateVerifier>());
+  tls_options.set_check_call_host(false);
+  tls_options.set_verify_server_certs(false);
+  // Don't set EKM options on tls_options here.
+
+  std::shared_ptr<Channel> channel =
+      grpc::CreateChannel(server_addr_, TlsCredentials(tls_options));
+  auto stub = grpc::testing::EchoTestService::NewStub(channel);
+  grpc::testing::EchoRequest request;
+  grpc::testing::EchoResponse response;
+  request.set_message(kMessage);
+  ClientContext context;
+  context.set_deadline(grpc_timeout_seconds_to_deadline(/*time_s=*/10));
+  grpc::Status result = stub->Echo(&context, request, &response);
+  EXPECT_TRUE(result.ok()) << "Echo failed: " << result.error_code() << ", "
+                           << result.error_message() << ", "
+                           << result.error_details();
+  EXPECT_EQ(response.message(), kMessage);
+
+  // EKM should not be in the client AuthContext since it was not configured
+  // in the TlsChannelCredentialsOptions.
+  std::shared_ptr<const AuthContext> client_auth_context =
+      context.auth_context();
+  ASSERT_NE(client_auth_context, nullptr);
+  std::vector<grpc::string_ref> client_properties =
+      client_auth_context->FindPropertyValues(
+          GRPC_SSL_EXPORTED_KEYING_MATERIAL_PROPERTY_NAME);
+  EXPECT_TRUE(client_properties.empty());
 }
 #endif  // OPENSSL_VERSION_NUMBER >= 0x1100000
 
