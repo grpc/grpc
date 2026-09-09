@@ -652,7 +652,15 @@ Poller::WorkResult PollPoller::Work(
       }
     } else {
       if (pfds[0].revents & kPollinCheck) {
-        GRPC_CHECK(wakeup_fd_->ConsumeWakeup().ok());
+        auto consume_status = wakeup_fd_->ConsumeWakeup();
+        if (!consume_status.ok()) {
+          GRPC_TRACE_LOG(polling, ERROR)
+              << "Failed to consume wakeup on wakeup_fd: " << consume_status;
+          auto new_wakeup_fd = CreateWakeupFd(&posix_interface());
+          if (new_wakeup_fd.ok()) {
+            wakeup_fd_ = std::move(*new_wakeup_fd);
+          }
+        }
       }
       for (i = 1; i < pfd_count; i++) {
         PollEventHandle* head = watchers[i];
@@ -726,6 +734,7 @@ void PollPoller::HandleForkInChild() {
   if (grpc_core::IsEventEngineForkEnabled()) {
     posix_interface().AdvanceGeneration();
   }
+  ResetKickState();
   PollEventHandle* handle;
   {
     grpc_core::MutexLock lock(&mu_);
