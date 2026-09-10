@@ -16,6 +16,7 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc
 
 licenses(["notice"])
 
+# comment
 grpc_package(
     name = "test/cpp/end2end",
     features = [
