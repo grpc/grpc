@@ -246,7 +246,7 @@ class HealthServicerTest(AioTestBase):
             and self._servicer._server_watchers_count.get(_WATCH_SERVICE, 0)
             != 1
         ):
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.1)
 
         # The surviving watcher should still observe subsequent changes
         await self._servicer.set(
