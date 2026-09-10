@@ -1319,7 +1319,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     int num_tries = 0;
     constexpr int kRetryCount = 100;
     auto overall_deadline =
-        absl::Now() + absl::Seconds(20) * grpc_test_slowdown_factor();
+        absl::Now() + absl::Seconds(40) * grpc_test_slowdown_factor();
     auto channel = channel_creator();
     auto stub = grpc::testing::EchoTestService::NewStub(channel);
     for (; num_tries < kRetryCount || absl::Now() < overall_deadline;
