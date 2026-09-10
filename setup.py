@@ -578,7 +578,8 @@ except ImportError:
         sys.stderr.write(
             "We could not find Cython. Setup may take 10-20 minutes.\n"
         )
-        SETUP_REQUIRES += ("cython==3.1.1",)
+        # 3.1.0 has async memory leak https://github.com/cython/cython/issues/6878
+        SETUP_REQUIRES += ("cython~=3.1,!=3.1.0",)
 
 COMMAND_CLASS = {
     "doc": commands.SphinxDocumentation,

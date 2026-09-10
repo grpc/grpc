@@ -22,6 +22,9 @@ if(gRPC_SSL_PROVIDER STREQUAL "module")
   endif()
 
   if(EXISTS "${BORINGSSL_ROOT_DIR}/CMakeLists.txt")
+    # Disable BoringSSL tests to avoid target collisions with gRPC's benchmark/gtest dependencies.
+    set(BUILD_TESTING OFF CACHE BOOL "Disable BoringSSL tests" FORCE)
+
     if(CMAKE_GENERATOR MATCHES "Visual Studio" OR CMAKE_GENERATOR MATCHES "Ninja")
       if(CMAKE_VERSION VERSION_LESS 3.13)
         # Visual Studio build with assembly optimizations is broken for older

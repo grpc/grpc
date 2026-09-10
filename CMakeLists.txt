@@ -25,11 +25,11 @@
 cmake_minimum_required(VERSION 3.22)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.84.0-dev")
-set(gRPC_CORE_VERSION     "56.0.0")
-set(gRPC_CORE_SOVERSION   "56")
-set(gRPC_CPP_VERSION      "1.84.0-dev")
-set(gRPC_CPP_SOVERSION    "1.84")
+set(PACKAGE_VERSION       "1.85.0-dev")
+set(gRPC_CORE_VERSION     "57.0.0")
+set(gRPC_CORE_SOVERSION   "57")
+set(gRPC_CPP_VERSION      "1.85.0-dev")
+set(gRPC_CPP_SOVERSION    "1.85")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -44,7 +44,7 @@ set(gRPC_INSTALL_LIBDIR "lib" CACHE STRING "Installation directory for libraries
 set(gRPC_INSTALL_INCLUDEDIR "include" CACHE STRING "Installation directory for headers")
 set(gRPC_INSTALL_CMAKEDIR "lib/cmake/${PACKAGE_NAME}" CACHE STRING "Installation directory for cmake config files")
 set(gRPC_INSTALL_SHAREDIR "share/grpc" CACHE STRING "Installation directory for root certificates")
-set(gRPC_BUILD_MSVC_MP_COUNT 0 CACHE STRING "The maximum number of processes for MSVC /MP option")
+set(gRPC_BUILD_MSVC_MP_COUNT -1 CACHE STRING "The maximum number of processes for MSVC /MP option")
 
 # Options
 option(gRPC_BUILD_TESTS "Build tests" OFF)

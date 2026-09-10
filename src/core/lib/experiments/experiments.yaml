@@ -73,14 +73,14 @@
   test_tags: [core_end2end_test]
 - name: chaotic_good_framing_layer
   description: Enable the chaotic good framing layer.
-  expiry: 2026/09/01
-  owner: aananthv@google.com
+  expiry: 2026/10/01
+  owner: pragunsaxena@google.com
   test_tags: []
   allow_in_fuzzing_config: false
 - name: chaotic_good_send_supported_features
   description: Send supported features in chaotic good settings frames.
-  expiry: 2026/09/01
-  owner: aananthv@google.com
+  expiry: 2026/10/01
+  owner: pragunsaxena@google.com
   test_tags: []
 - name: custom_frame_check
   description: Adding checks to custom HTTP2 frame.
@@ -156,7 +156,7 @@
   allow_in_fuzzing_config: false
 - name: h2_max_deallocating_streams_headroom
   description: Separate allocated max concurrent streams.
-  expiry: 2026/09/01
+  expiry: 2027/01/16
   owner: snohria@google.com
   test_tags: []
 - name: header_data_frame
@@ -200,7 +200,7 @@
   test_tags: []
 - name: metadata_outstanding_token_refactor
   description: Refactor ClientInitialMetadataOutstandingToken.
-  expiry: 2026/09/01
+  expiry: 2026/10/12
   owner: akshitpatel@google.com
   test_tags: []
 - name: metadata_publish_to_app_tag
@@ -287,7 +287,7 @@
   owner: roth@google.com
 - name: pipelined_read_secure_endpoint
   description: Enable pipelined reads for EventEngine secure endpoints
-  expiry: 2026/09/15
+  expiry: 2027/01/16
   owner: alishananda@google.com
   test_tags: ["core_end2end_test", "secure_endpoint_test", "posix_endpoint_test"]
   requires: ["event_engine_client", "event_engine_listener"]
@@ -342,7 +342,7 @@
 - name: return_preexisting_errors
   description: Return errors that exist before the start of the call in RunHandler.
   expiry: 2027/01/16
-  owner: aananthv@google.com
+  owner: pragunsaxena@google.com
   test_tags: []
 - name: schedule_cancellation_over_write
   description: Allow cancellation op to be scheduled over a write
@@ -351,7 +351,7 @@
   test_tags: []
 - name: secure_endpoint_offload_large_reads
   description: If a large read needs to be decrypted, use a separate thread.
-  expiry: 2026/09/01
+  expiry: 2027/01/16
   owner: alishananda@google.com
   test_tags: ["core_end2end_test"]
   requires:
@@ -361,7 +361,7 @@
     ]
 - name: secure_endpoint_offload_large_writes
   description: If a large read write to be encrypted, use a separate thread.
-  expiry: 2026/09/01
+  expiry: 2027/01/16
   owner: alishananda@google.com
   test_tags: ["core_end2end_test"]
   requires:
@@ -373,7 +373,7 @@
   description:
     Coalesce decrypted bytes in SecureEndpoint if a read_hint is provided.
   expiry: 2027/03/01
-  owner: aananthv@google.com
+  owner: pragunsaxena@google.com
   test_tags: ["core_end2end_test"]
   requires:
     [
@@ -406,13 +406,13 @@
   test_tags: []
 - name: unconstrained_max_quota_buffer_size
   description: Discard the cap on the max free pool size for one memory allocator
-  expiry: 2026/09/01
+  expiry: 2027/01/16
   owner: snohria@google.com
   test_tags: [resource_quota_test]
 - name: use_call_event_engine_in_completion_queue
   description: Use the call event engine to run callbacks in completion queue.
   expiry: 2027/03/01
-  owner: aananthv@google.com
+  owner: pragunsaxena@google.com
   test_tags: ["core_end2end_test"]
   platforms: ["all"]
 - name: v2_non_owning_waker_implementation

@@ -175,7 +175,11 @@ class Fuzzer {
     // in the WorkSerializer queue.
     event_engine_->TickUntilIdle();
     // If LB policy is IDLE, trigger it to start connecting.
-    if (state_ == GRPC_CHANNEL_IDLE) lb_policy_->ExitIdleLocked();
+    if (state_ == GRPC_CHANNEL_IDLE) {
+      lb_policy_->ExitIdleLocked();
+      // Flush initial subchannel connectivity state notifications.
+      event_engine_->TickUntilIdle();
+    }
     // Find the first entry in the subchannel pool that actually has a
     // subchannel.
     SubchannelState* subchannel = nullptr;
@@ -1033,6 +1037,45 @@ TEST(PickFirstFuzzer,
     }
     actions {
       update { endpoint_list { endpoints { addresses { localhost_port: 1 } } } }
+    }
+  )pb"));
+}
+
+TEST(PickFirstFuzzer, SubchannelAlreadyReadyWhenPolicyExitsIdle) {
+  Fuzz(ParseTestProto(R"pb(
+    actions { create_lb_policy {} }
+    actions {
+      update { endpoint_list { endpoints { addresses { localhost_port: 0 } } } }
+    }
+    actions {
+      subchannel_connectivity_notification {
+        address { localhost_port: 0 }
+        state: CONNECTING
+      }
+    }
+    actions {
+      subchannel_connectivity_notification {
+        address { localhost_port: 0 }
+        state: READY
+      }
+    }
+    actions {
+      subchannel_connectivity_notification {
+        address { localhost_port: 0 }
+        state: IDLE
+      }
+    }
+    actions {
+      subchannel_connectivity_notification {
+        address { localhost_port: 0 }
+        state: CONNECTING
+      }
+    }
+    actions {
+      subchannel_connectivity_notification {
+        address { localhost_port: 0 }
+        state: READY
+      }
     }
   )pb"));
 }

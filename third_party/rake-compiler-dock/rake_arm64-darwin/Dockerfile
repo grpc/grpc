@@ -1,1 +1,1 @@
-FROM us-docker.pkg.dev/grpc-testing/testing-images-public/rake-compiler-dock-image:1.12.0-mri-arm64-darwin@sha256:a9c2f74a6cff68e5871395b0fec76fcc35efa7031c7e8e1bc340e47bf1ad9229
+FROM us-docker.pkg.dev/grpc-testing/testing-images-public/rake-compiler-dock-image:1.12.0-mri-arm64-darwin@sha256:14c85be4407e1efa45185cf92dbf072b7a393844b7cfc22db9bd04b871b2899a

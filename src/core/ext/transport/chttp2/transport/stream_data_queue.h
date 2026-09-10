@@ -369,7 +369,6 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // 2. MUST not be called after trailing metadata is enqueued.
   // 3. This function is thread safe.
   auto EnqueueMessage(MessageHandle&& message) {
-    GRPC_DCHECK(is_initial_metadata_queued_);
     GRPC_DCHECK(message != nullptr);
     GRPC_DCHECK_LE(
         message->payload()->Length(),
@@ -381,6 +380,15 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     return [self = this->Ref(), entry = QueueEntry{std::move(message)},
             tokens]() mutable -> Poll<absl::StatusOr<StreamWritabilityUpdate>> {
       MutexLock lock(&self->mu_);
+      // State validation under the lock:
+      // Either metadata was enqueued, or the stream enqueue was already
+      // closed/reset.
+      // In normal operation, initial metadata must precede messages, and no
+      // messages can follow trailing metadata/half-close. However, if the
+      // stream is cancelled early or encounters an error while a message is in
+      // flight, IsEnqueueClosed() will be true and the message will be safely
+      // dropped by the check below.
+      GRPC_DCHECK(self->is_initial_metadata_queued_ || self->IsEnqueueClosed());
       if (GPR_UNLIKELY(self->IsEnqueueClosed())) {
         GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueue closed";
         return StreamWritabilityUpdate{/*became_writable=*/false,
