@@ -819,7 +819,7 @@ TEST_F(ParseExtAuthzResponseTest,
   auto parsed = ParseResponse(response);
   ASSERT_TRUE(parsed.ok()) << parsed.status();
   EXPECT_EQ(parsed->status_code, GRPC_STATUS_UNAUTHENTICATED);
-  EXPECT_THAT(parsed->response, IsDeniedResponse(GRPC_STATUS_UNAUTHENTICATED,
+  EXPECT_THAT(parsed->response, IsDeniedResponse(GRPC_STATUS_PERMISSION_DENIED,
                                                  ::testing::IsEmpty()));
 }
 
@@ -841,9 +841,11 @@ TEST_F(ParseExtAuthzResponseTest, OkResponse_WithStatusOkAndDeniedResponse) {
   denied->mutable_status()->set_code(envoy::type::v3::Forbidden);
   auto parsed = ParseResponse(response);
   ASSERT_TRUE(parsed.ok()) << parsed.status();
-  EXPECT_EQ(parsed->status_code, GRPC_STATUS_PERMISSION_DENIED);
-  EXPECT_THAT(parsed->response, IsDeniedResponse(GRPC_STATUS_PERMISSION_DENIED,
-                                                 ::testing::IsEmpty()));
+  EXPECT_EQ(parsed->status_code, GRPC_STATUS_OK);
+  EXPECT_THAT(
+      parsed->response,
+      IsOkResponse(IsHeaderMutation(::testing::IsEmpty(), ::testing::IsEmpty()),
+                   ::testing::IsEmpty()));
 }
 
 TEST_F(ParseExtAuthzResponseTest, DeniedResponse_WithoutStatusField) {
@@ -865,25 +867,6 @@ TEST_F(ParseExtAuthzResponseTest, DeniedResponse_WithoutStatusField) {
               XdsHeaderValueOption::AppendAction::kAppendIfExistsOrAdd))));
 }
 
-TEST_F(ParseExtAuthzResponseTest, DeniedResponse_ErrorResponse) {
-  CheckResponse response;
-  auto* err_resp = response.mutable_error_response();
-  err_resp->mutable_status()->set_code(envoy::type::v3::Unauthorized);
-  auto* h1 = err_resp->add_headers();
-  h1->mutable_header()->set_key("www-authenticate");
-  h1->mutable_header()->set_value("Bearer");
-  auto parsed = ParseResponse(response);
-  ASSERT_TRUE(parsed.ok()) << parsed.status();
-  EXPECT_EQ(parsed->status_code, GRPC_STATUS_PERMISSION_DENIED);
-  EXPECT_THAT(
-      parsed->response,
-      IsDeniedResponse(
-          GRPC_STATUS_UNAUTHENTICATED,
-          ::testing::ElementsAre(IsHeaderValueOption(
-              "www-authenticate", "Bearer",
-              XdsHeaderValueOption::AppendAction::kAppendIfExistsOrAdd))));
-}
-
 TEST_F(ParseExtAuthzResponseTest, DeniedResponse_ExplicitGrpcStatus) {
   CheckResponse response;
   response.mutable_status()->set_code(16);  // UNAUTHENTICATED
@@ -892,7 +875,7 @@ TEST_F(ParseExtAuthzResponseTest, DeniedResponse_ExplicitGrpcStatus) {
   ASSERT_TRUE(parsed.ok()) << parsed.status();
   EXPECT_EQ(parsed->status_code, GRPC_STATUS_UNAUTHENTICATED);
   EXPECT_EQ(parsed->status_message, "unauthenticated rpc");
-  EXPECT_THAT(parsed->response, IsDeniedResponse(GRPC_STATUS_UNAUTHENTICATED,
+  EXPECT_THAT(parsed->response, IsDeniedResponse(GRPC_STATUS_PERMISSION_DENIED,
                                                  ::testing::IsEmpty()));
 }
 

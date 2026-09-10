@@ -63,8 +63,9 @@ struct ExtAuthzResponse {
   struct DeniedResponse {
     // The gRPC status code to fail the RPC with, converted from the HTTP status
     // in DeniedHttpResponse.status using standard HTTP-to-gRPC status mapping
-    // rules.
-    grpc_status_code status = GRPC_STATUS_UNKNOWN;
+    // rules. Defaults to GRPC_STATUS_PERMISSION_DENIED if status is not set
+    // (per Envoy's default HTTP 403 Forbidden).
+    grpc_status_code status = GRPC_STATUS_PERMISSION_DENIED;
     // In gRPC, failing an RPC involves sending a Trailers-Only response, so
     // this field is used to modify response trailers on the data plane RPC
     // rather than response headers (from DeniedHttpResponse.headers). Note:

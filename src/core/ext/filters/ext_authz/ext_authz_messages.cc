@@ -267,8 +267,7 @@ absl::StatusOr<ExtAuthzResponse> ExtAuthzResponse::Parse(
   ExtAuthzResponse ext_authz_response;
   bool has_status = envoy_service_auth_v3_CheckResponse_has_status(response);
   bool has_denied =
-      envoy_service_auth_v3_CheckResponse_has_denied_response(response) ||
-      envoy_service_auth_v3_CheckResponse_has_error_response(response);
+      envoy_service_auth_v3_CheckResponse_has_denied_response(response);
   if (has_status) {
     const auto* status = envoy_service_auth_v3_CheckResponse_status(response);
     int32_t code_int = google_rpc_Status_code(status);
@@ -285,7 +284,7 @@ absl::StatusOr<ExtAuthzResponse> ExtAuthzResponse::Parse(
       ext_authz_response.status_code = GRPC_STATUS_OK;
     }
   }
-  if (ext_authz_response.status_code == GRPC_STATUS_OK && !has_denied) {
+  if (ext_authz_response.status_code == GRPC_STATUS_OK) {
     ExtAuthzResponse::OkResponse ok_response;
     const auto* ok_resp =
         envoy_service_auth_v3_CheckResponse_ok_response(response);
@@ -315,22 +314,17 @@ absl::StatusOr<ExtAuthzResponse> ExtAuthzResponse::Parse(
     ext_authz_response.response = std::move(ok_response);
   } else {
     ExtAuthzResponse::DeniedResponse denied_response;
+    denied_response.status = GRPC_STATUS_PERMISSION_DENIED;
     const auto* denied =
         envoy_service_auth_v3_CheckResponse_denied_response(response);
-    if (denied == nullptr) {
-      denied = envoy_service_auth_v3_CheckResponse_error_response(response);
-    }
     if (denied != nullptr) {
       const auto* http_status =
           envoy_service_auth_v3_DeniedHttpResponse_status(denied);
       if (http_status != nullptr) {
-        denied_response.status = grpc_http2_status_to_grpc_status(
-            envoy_type_v3_HttpStatus_code(http_status));
-      } else {
-        denied_response.status =
-            (ext_authz_response.status_code != GRPC_STATUS_OK)
-                ? ext_authz_response.status_code
-                : GRPC_STATUS_PERMISSION_DENIED;
+        int code = envoy_type_v3_HttpStatus_code(http_status);
+        if (code > 0) {
+          denied_response.status = grpc_http2_status_to_grpc_status(code);
+        }
       }
       size_t size = 0;
       const auto* const* headers =
@@ -338,14 +332,6 @@ absl::StatusOr<ExtAuthzResponse> ExtAuthzResponse::Parse(
       auto parsed_headers = ParseExtAuthzHeaderOptions(headers, size);
       if (!parsed_headers.ok()) return parsed_headers.status();
       denied_response.headers = std::move(*parsed_headers);
-    } else {
-      denied_response.status =
-          (ext_authz_response.status_code != GRPC_STATUS_OK)
-              ? ext_authz_response.status_code
-              : GRPC_STATUS_PERMISSION_DENIED;
-    }
-    if (ext_authz_response.status_code == GRPC_STATUS_OK) {
-      ext_authz_response.status_code = denied_response.status;
     }
     ext_authz_response.response = std::move(denied_response);
   }

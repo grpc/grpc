@@ -173,7 +173,7 @@ ServerMetadataHandle MalformedRequest(
   auto* arena = GetContext<Arena>();
   auto hdl = arena->MakePooled<ServerMetadata>();
   hdl->Set(GrpcStatusMetadata(), status_code);
-  hdl->Set(GrpcMessageMetadata(), Slice::FromStaticString(explanation));
+  hdl->Set(GrpcMessageMetadata(), Slice::FromCopiedString(explanation));
   hdl->Set(GrpcTarPit(), Empty());
   return hdl;
 }
@@ -279,7 +279,11 @@ ServerMetadataHandle ExtAuthzFilter::Call::OnClientInitialMetadata(
             std::get_if<ExtAuthzResponse::DeniedResponse>(&response.response);
         denied != nullptr) {
       response_trailer_to_add = denied->headers;
-      return MalformedRequest("ExtAuthz request is denied", denied->status);
+      return MalformedRequest(
+          response.status_message.empty()
+              ? "ExtAuthz request is denied"
+              : response.status_message,
+          denied->status);
     }
     return MalformedRequest(response.status_message.empty()
                                 ? "ExtAuthz request is denied"
