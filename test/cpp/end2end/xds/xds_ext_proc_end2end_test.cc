@@ -17,7 +17,6 @@
 #include <google/protobuf/wrappers.pb.h>
 #include <grpc/support/string_util.h>
 
-#include <atomic>
 #include <map>
 #include <memory>
 #include <optional>
@@ -27,7 +26,6 @@
 #include <vector>
 
 #include "envoy/config/cluster/v3/cluster.pb.h"
-#include "envoy/config/common/mutation_rules/v3/mutation_rules.pb.h"
 #include "envoy/extensions/filters/http/ext_proc/v3/ext_proc.pb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
 #include "envoy/extensions/grpc_service/channel_credentials/insecure/v3/insecure_credentials.pb.h"
