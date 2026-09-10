@@ -234,8 +234,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
     }
 
     grpc_core::EnsureRunInExecCtx(
-        [this, fd = std::move(fd),
-         peer_name = std::move(*peer_name)]() mutable {
+        [this, fd, peer_name = std::move(*peer_name)]() mutable {
           auto endpoint = CreatePosixEndpoint(
               /*handle=*/listener_->poller_->CreateHandle(
                   fd.value(), peer_name, listener_->poller_->CanTrackErrors()),
@@ -253,8 +252,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
               /*is_external=*/false,
               /*memory_allocator=*/
               listener_->memory_allocator_factory_->CreateMemoryAllocator(
-                  absl::StrCat("on-accept-tcp-server-connection: ",
-                               peer_name)),
+                  absl::StrCat("on-accept-tcp-server-connection: ", peer_name)),
               /*pending_data=*/nullptr);
         });
   }

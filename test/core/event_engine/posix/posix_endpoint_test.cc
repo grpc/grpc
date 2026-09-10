@@ -289,7 +289,7 @@ TEST(PosixEndpointTest, ListenerAcceptAllocatorCreatedInsideExecCtxTest) {
 
   auto listener = posix_ee->CreateListener(
       [&connection_accepted](std::unique_ptr<Endpoint> ep,
-                              grpc_core::MemoryAllocator /*memory_allocator*/) {
+                             grpc_core::MemoryAllocator /*memory_allocator*/) {
         EXPECT_NE(ep, nullptr);
         connection_accepted.Notify();
       },
