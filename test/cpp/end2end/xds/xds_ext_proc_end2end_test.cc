@@ -806,29 +806,13 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
   void SetFilterConfig(const ExternalProcessor& ext_proc) {
     switch (GetParam().filter_config_setup()) {
       case XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute: {
-        ExternalProcessor top_level_ext_proc = ext_proc;
-        auto* google_grpc =
-            top_level_ext_proc.mutable_grpc_service()->mutable_google_grpc();
-        google_grpc->set_target_uri("invalid-target");
-        auto* processing_mode = top_level_ext_proc.mutable_processing_mode();
-        processing_mode->set_request_header_mode(
-            envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::
-                SKIP);
-        processing_mode->set_response_header_mode(
-            envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::
-                SKIP);
-        processing_mode->set_response_trailer_mode(
-            envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::
-                SKIP);
-        processing_mode->set_request_body_mode(
-            envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::
-                NONE);
-        processing_mode->set_response_body_mode(
-            envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::
-                NONE);
-        top_level_ext_proc.set_failure_mode_allow(false);
-        top_level_ext_proc.clear_request_attributes();
-        top_level_ext_proc.clear_response_attributes();
+        ExternalProcessor top_level_ext_proc =
+            ExtProcFilterConfigBuilder()
+                .SetTargetUri("invalid-target")
+                .SetObservabilityMode(ext_proc.observability_mode())
+                .SetDisableImmediateResponse(
+                    ext_proc.disable_immediate_response())
+                .Build();
         Listener listener = BuildListenerWithExtProcFilter(top_level_ext_proc);
         RouteConfiguration route =
             BuildRouteConfigurationWithExtProcFilter(ext_proc);
