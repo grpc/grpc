@@ -39,11 +39,14 @@ using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::MockEventEngine;
 using ::testing::_;
 using ::testing::Invoke;
+using ::testing::Matcher;
 using ::testing::StrictMock;
 
 std::shared_ptr<StrictMock<MockEventEngine>> MakeMockWithImmediateRunAfter() {
   auto mock_event_engine = std::make_shared<StrictMock<MockEventEngine>>();
-  EXPECT_CALL(*mock_event_engine, RunAfter(EventEngine::Duration::zero(), _))
+  EXPECT_CALL(*mock_event_engine,
+              RunAfter(EventEngine::Duration::zero(),
+                       Matcher<absl::AnyInvocable<void()>>(_)))
       .WillOnce(
           Invoke([](EventEngine::Duration, absl::AnyInvocable<void()> closure) {
             closure();
