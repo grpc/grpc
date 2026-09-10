@@ -1149,6 +1149,10 @@ auto ExtProcFilter::ExtProcCall::HandleInitialMetadataFromClient(
           If(
               !send_to_sidestream || config().observability_mode,
               [self = WeakRef()]() {
+                // client_initial_metadata_ will be null if payload creation
+                // failed with fail-open enabled, in which case
+                // HandleSideStreamStatus() has already forwarded the metadata
+                // and started the child call.
                 if (self->client_initial_metadata_ != nullptr) {
                   self->StartChildCall(
                       std::move(self->client_initial_metadata_));
@@ -1371,6 +1375,9 @@ auto ExtProcFilter::ExtProcCall::HandleInitialMetadataFromServer(
               !is_trailers_only &&
                   (!send_to_sidestream || config().observability_mode),
               [self = WeakRef()]() {
+                // server_initial_metadata_ will be null if payload creation
+                // failed with fail-open enabled, in which case
+                // HandleSideStreamStatus() has already forwarded the metadata.
                 if (self->server_initial_metadata_ != nullptr) {
                   self->handler_.PushServerInitialMetadata(
                       std::move(self->server_initial_metadata_));
@@ -1457,6 +1464,9 @@ auto ExtProcFilter::ExtProcCall::HandleTrailingMetadataFromServer(
           If(
               !send_to_sidestream || config().observability_mode,
               [self = WeakRef()]() {
+                // server_trailing_metadata_ will be null if payload creation
+                // failed with fail-open enabled, in which case
+                // HandleSideStreamStatus() has already forwarded the metadata.
                 if (self->server_trailing_metadata_ != nullptr) {
                   self->handler_.PushServerTrailingMetadata(
                       std::move(self->server_trailing_metadata_));
