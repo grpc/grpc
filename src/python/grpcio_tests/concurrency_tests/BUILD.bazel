@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
 
 package(default_visibility = ["//visibility:public"])
@@ -83,6 +84,22 @@ py_test(
     ],
 )
 
+py_test(
+    name = "status_concurrency_test",
+    size = "medium",
+    srcs = ["_status_concurrency_test.py"],
+    imports = ["../"],
+    main = "_status_concurrency_test.py",
+    python_version = "PY3",
+    deps = [
+        ":concurrency_base",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_status/grpc_status",
+        requirement("protobuf"),
+        requirement("googleapis-common-protos"),
+    ],
+)
+
 py_library(
     name = "async_concurrency_base",
     testonly = True,
@@ -137,5 +154,21 @@ py_test(
         ":async_concurrency_base",
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_health_checking/grpc_health/v1:grpc_health",
+    ],
+)
+
+py_test(
+    name = "async_status_concurrency_test",
+    size = "medium",
+    srcs = ["_async_status_concurrency_test.py"],
+    imports = ["../"],
+    main = "_async_status_concurrency_test.py",
+    python_version = "PY3",
+    deps = [
+        ":async_concurrency_base",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_status/grpc_status",
+        requirement("protobuf"),
+        requirement("googleapis-common-protos"),
     ],
 )
