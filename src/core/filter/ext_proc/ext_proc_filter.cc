@@ -579,6 +579,10 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
   // activity.
   bool c2s_writes_done_ = false;
   bool is_trailers_only_ = false;
+  // Set to true when the external processor indicates end of stream for
+  // client-to-server messages (early half-close). Synchronized by the
+  // handler_ activity.
+  bool ext_proc_closed_c2s_ = false;
   // Latch signaled when the side-stream is closed or drained.
   Latch<void> side_stream_closed_latch_;
   // Set to true when CancelCallWithError() is invoked to indicate that the
@@ -783,17 +787,17 @@ StatusFlag ExtProcFilter::ExtProcCall::HandleClientMessageFromSidestream(
       << DebugTag() << "Parsed request body response, eos: "
       << response.mutation.end_of_stream << ", eos_without_msg: "
       << response.mutation.end_of_stream_without_message;
+  // TODO(rishesh): Remove this check when we stop using the
+  // v3-to-v1 adaptor layer.
+  if (outstanding_c2s_messages_ == 0) {
+    CancelCallWithError(absl::InternalError(
+        "Received unexpected request body response from external processor"));
+    return Failure{};
+  }
+  --outstanding_c2s_messages_;
   // Handle message, if any.
   if (!response.mutation.end_of_stream ||
       !response.mutation.end_of_stream_without_message) {
-    // TODO(rishesh): Remove this check when we stop using the
-    // v3-to-v1 adaptor layer.
-    if (outstanding_c2s_messages_ == 0) {
-      CancelCallWithError(absl::InternalError(
-          "Received unexpected request body response from external processor"));
-      return Failure{};
-    }
-    --outstanding_c2s_messages_;
     auto slice = Slice::FromCopiedString(response.mutation.body);
     auto new_msg = initiator_.arena()->MakePooled<Message>(
         SliceBuffer(std::move(slice)), /*flags=*/0);
@@ -804,14 +808,15 @@ StatusFlag ExtProcFilter::ExtProcCall::HandleClientMessageFromSidestream(
   }
   // Handle EOS.
   if (response.mutation.end_of_stream) {
+    ext_proc_closed_c2s_ = true;
     // TODO(rishesh): Remove this check when we stop using the
     // v3-to-v1 adaptor layer.
     if (outstanding_c2s_messages_ > 0 ||
         (response.mutation.end_of_stream_without_message &&
          !c2s_writes_done_)) {
       CancelCallWithError(absl::InternalError(
-          "Client has requested for half close but external processor server "
-          "has already force sent half close to the server"));
+          "Client tried to send a message but external processor server has "
+          "already force sent half close to the server"));
       return Failure{};
     }
     request_event_state_ = SideStreamRequestEventState::kExpectNothing;
@@ -1186,11 +1191,9 @@ auto ExtProcFilter::ExtProcCall::HandleMessageFromClient(
   // ProcessingResponse), any subsequent message from the client cannot be
   // processed. Since message dropping is not yet supported in Call v3,
   // fail the call here. Remove this once PH2 is implemented.
-  else if (!config().observability_mode &&
-           request_event_state_ ==
-               SideStreamRequestEventState::kExpectNothing) {
+  else if (ext_proc_closed_c2s_) {
     payload = absl::InternalError(
-        "Client has requested for half close but external processor server has "
+        "Client tried to send a message but external processor server has "
         "already force sent half close to the server");
   } else if (!drain_requested_) {
     // Construct message for sidestream.
@@ -1267,9 +1270,9 @@ auto ExtProcFilter::ExtProcCall::HandleHalfCloseFromClient() {
   GRPC_TRACE_LOG(ext_proc_filter, INFO)
       << DebugTag() << "HandleHalfCloseFromClient invoked";
   c2s_writes_done_ = true;
-  const bool send_request_body = processing_mode().send_request_body &&
-                                 !side_stream_closed_latch_.is_set() &&
-                                 !drain_requested_;
+  const bool send_request_body =
+      processing_mode().send_request_body && !ext_proc_closed_c2s_ &&
+      !side_stream_closed_latch_.is_set() && !drain_requested_;
   absl::StatusOr<std::string> payload = "";
   if (send_request_body) {
     if (!config().observability_mode) {
