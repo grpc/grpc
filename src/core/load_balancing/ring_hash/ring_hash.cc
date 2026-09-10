@@ -105,7 +105,9 @@ class RingHashLbConfig final : public LoadBalancingPolicy::Config {
   absl::string_view name() const override { return kRingHash; }
   size_t min_ring_size() const { return min_ring_size_; }
   size_t max_ring_size() const { return max_ring_size_; }
-  absl::string_view request_hash_header() const { return request_hash_header_; }
+  const RefCountedStringValue& request_hash_header() const {
+    return request_hash_header_;
+  }
 
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
     static const auto* loader =
@@ -142,7 +144,7 @@ class RingHashLbConfig final : public LoadBalancingPolicy::Config {
  private:
   uint64_t min_ring_size_ = 1024;
   uint64_t max_ring_size_ = 4096;
-  std::string request_hash_header_;
+  RefCountedStringValue request_hash_header_;
 };
 
 //
@@ -724,7 +726,7 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
   args_ = std::move(args.args);
   // Save config.
   auto* config = DownCast<RingHashLbConfig*>(args.config.get());
-  request_hash_header_ = RefCountedStringValue(config->request_hash_header());
+  request_hash_header_ = config->request_hash_header();
   // Build new ring.
   ring_ = MakeRefCounted<Ring>(this, config);
   // Update endpoint map.
