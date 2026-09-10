@@ -19,7 +19,7 @@ import logging
 import os
 import sys
 import time
-from typing import Any, Callable, Iterable, Optional
+from typing import Any, Callable, Iterable, List, Optional, Sequence, Set, Tuple
 import unittest
 
 import grpc
@@ -31,8 +31,11 @@ from grpc_observability._open_telemetry_observability import (
 )
 from grpc_observability._open_telemetry_observability import GRPC_METHOD_LABEL
 from opentelemetry.sdk import metrics as otel_metrics
+from opentelemetry.sdk import trace as otel_trace
 from opentelemetry.sdk.metrics import export as otel_metrics_export
 from opentelemetry.sdk.metrics import view as otel_metrics_view
+from opentelemetry.sdk.trace import export as otel_trace_export
+from opentelemetry.sdk.trace.export import in_memory_span_exporter
 
 from tests_aio.observability import _test_server
 from tests_aio.unit._test_base import AioTestBase
@@ -167,13 +170,23 @@ class OpenTelemetryObservabilityBase(AioTestBase):
             collections.defaultdict(list)
         )
         otel_exporter = OTelMetricExporter(self.all_metrics)
-        reader = otel_metrics_export.PeriodicExportingMetricReader(
+        metric_reader = otel_metrics_export.PeriodicExportingMetricReader(
             exporter=otel_exporter,
             export_interval_millis=OTEL_EXPORT_INTERVAL_S * 1000,
         )
-        self._provider = otel_metrics.MeterProvider(metric_readers=(reader,))
+        self._meter_provider = otel_metrics.MeterProvider(
+            metric_readers=(metric_reader,)
+        )
+        otel_tracer_provider = otel_trace.TracerProvider()
+        self._span_exporter = in_memory_span_exporter.InMemorySpanExporter()
+        span_processor = otel_trace_export.SimpleSpanProcessor(
+            self._span_exporter
+        )
+        otel_tracer_provider.add_span_processor(span_processor)
+        self._tracer_provider = otel_tracer_provider
         self._otel_plugin = grpc_observability.OpenTelemetryPlugin(
-            meter_provider=self._provider
+            meter_provider=self._meter_provider,
+            tracer_provider=self._tracer_provider,
         )
         self._otel_plugin.register_global()
         self._server = None
@@ -183,7 +196,7 @@ class OpenTelemetryObservabilityBase(AioTestBase):
         if self._server:
             await self._server.stop(0)
         self._otel_plugin.deregister_global()
-        self._provider.shutdown(timeout_millis=1_000)
+        self._meter_provider.shutdown(timeout_millis=1_000)
 
     async def assert_eventually(
         self,
@@ -272,6 +285,96 @@ class OpenTelemetryObservabilityBase(AioTestBase):
             self.assertTrue(GRPC_OTHER_LABEL_VALUE in client_method_values)
             self.assertTrue(GRPC_OTHER_LABEL_VALUE in server_method_values)
 
+    async def _validate_spans_exist(
+        self,
+        span_exporter: otel_trace_export.SpanExporter,
+        expected_count: int = 3,
+    ):
+        # Sleep here to make sure we have at least expected number of spans from
+        # OTel SpanExporter.
+        await self.assert_eventually(
+            lambda: len(span_exporter.get_finished_spans()) >= expected_count,
+            message=lambda: (
+                f"Expected at least {expected_count} spans, got "
+                f"{len(span_exporter.get_finished_spans())}"
+            ),
+        )
+
+    def _validate_spans(
+        self,
+        spans: Sequence[otel_trace.ReadableSpan],
+        expected_span_size: int,
+        expected_server_events: Sequence[Tuple[str, dict[str, str]]],
+        expected_attempt_events: Sequence[Tuple[str, dict[str, str]]],
+    ) -> None:
+        self.assertTrue(
+            expr=(len(spans) == expected_span_size),
+            msg=f"Expected span size {expected_span_size}, got: {len(spans)}!",
+        )
+
+        client_span = next(
+            (span for span in spans if span.name.startswith("Sent.")), None
+        )
+        self.assertIsNotNone(client_span)
+
+        attempt_span = next(
+            (span for span in spans if span.name.startswith("Attempt.")), None
+        )
+        self.assertIsNotNone(attempt_span)
+
+        server_span = next(
+            (span for span in spans if span.name.startswith("Recv.")), None
+        )
+        self.assertIsNotNone(server_span)
+
+        # validate span statuses
+        self.assertTrue(client_span.status.is_ok)
+        self.assertTrue(attempt_span.status.is_ok)
+        self.assertTrue(server_span.status.is_ok)
+
+        # validate mandatory attributes
+        attempt_attrs = dict(attempt_span.attributes)
+        self.assertIn("transparent-retry", attempt_attrs)
+        self.assertEqual(attempt_attrs["transparent-retry"], "0")
+        self.assertIn("previous-rpc-attempts", attempt_attrs)
+        self.assertEqual(attempt_attrs["previous-rpc-attempts"], "0")
+
+        # validate parent-child relationship
+        self.assertEqual(
+            client_span.get_span_context().trace_id,
+            attempt_span.get_span_context().trace_id,
+        )
+        self.assertEqual(
+            attempt_span.parent.span_id, client_span.get_span_context().span_id
+        )
+        self.assertEqual(
+            attempt_span.get_span_context().trace_id,
+            server_span.get_span_context().trace_id,
+        )
+        self.assertEqual(
+            server_span.parent.span_id, attempt_span.get_span_context().span_id
+        )
+
+        # validate server span traced events
+        server_span_events_packed = [
+            (ev.name, ev.attributes) for ev in server_span.events
+        ]
+        for expected_ev in expected_server_events:
+            self.assertTrue(
+                expr=(expected_ev in server_span_events_packed),
+                msg=f"Expected server event missing: {expected_ev}!",
+            )
+
+        # validate attempt span traced events
+        attempt_span_events_packed = [
+            (ev.name, ev.attributes) for ev in attempt_span.events
+        ]
+        for expected_ev in expected_attempt_events:
+            self.assertTrue(
+                expr=(expected_ev in attempt_span_events_packed),
+                msg=f"Expected attempt event missing: {expected_ev}!",
+            )
+
 
 @unittest.skipIf(
     os.name == "nt" or "darwin" in sys.platform,
@@ -280,7 +383,7 @@ class OpenTelemetryObservabilityBase(AioTestBase):
 class OpenTelemetryObservabilityUnregisteredMethodsTest(
     OpenTelemetryObservabilityBase
 ):
-    async def test_record_unary_unary(self):
+    async def test_metrics_unary_unary(self):
         self._server, self._port = await _test_server.start_server(
             register_method=False
         )
@@ -290,7 +393,39 @@ class OpenTelemetryObservabilityUnregisteredMethodsTest(
         self._validate_all_metrics_names(self.all_metrics.keys())
         self._validate_all_method_labels(self.all_metrics)
 
-    async def test_record_unary_stream(self):
+    async def test_traces_unary_unary(self):
+        self._server, self._port = await _test_server.start_server(
+            register_method=False
+        )
+        await _test_server.unary_unary_call(port=self._port)
+
+        await self._validate_spans_exist(self._span_exporter)
+        self._validate_spans(
+            spans=self._span_exporter.get_finished_spans(),
+            expected_span_size=3,
+            expected_server_events=[
+                (
+                    "Outbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+            ],
+            expected_attempt_events=[
+                (
+                    "Outbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+            ],
+        )
+
+    async def test_metrics_unary_stream(self):
         self._server, self._port = await _test_server.start_server(
             register_method=False
         )
@@ -300,7 +435,71 @@ class OpenTelemetryObservabilityUnregisteredMethodsTest(
         self._validate_all_metrics_names(self.all_metrics.keys())
         self._validate_all_method_labels(self.all_metrics)
 
-    async def test_record_stream_unary(self):
+    async def test_traces_unary_stream(self):
+        self._server, self._port = await _test_server.start_server(
+            register_method=False
+        )
+        await _test_server.unary_stream_call(port=self._port)
+
+        await self._validate_spans_exist(self._span_exporter)
+        self._validate_spans(
+            spans=self._span_exporter.get_finished_spans(),
+            expected_span_size=3,
+            expected_server_events=[
+                (
+                    "Outbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "1", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "2", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "3", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "4", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+            ],
+            expected_attempt_events=[
+                (
+                    "Outbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "1", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "2", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "3", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "4", "message-size": "3"},
+                ),
+            ],
+        )
+
+    async def test_metrics_stream_unary(self):
         self._server, self._port = await _test_server.start_server(
             register_method=False
         )
@@ -310,7 +509,71 @@ class OpenTelemetryObservabilityUnregisteredMethodsTest(
         self._validate_all_metrics_names(self.all_metrics.keys())
         self._validate_all_method_labels(self.all_metrics)
 
-    async def test_record_stream_stream(self):
+    async def test_traces_stream_unary(self):
+        self._server, self._port = await _test_server.start_server(
+            register_method=False
+        )
+        await _test_server.stream_unary_call(port=self._port)
+
+        await self._validate_spans_exist(self._span_exporter)
+        self._validate_spans(
+            spans=self._span_exporter.get_finished_spans(),
+            expected_span_size=3,
+            expected_server_events=[
+                (
+                    "Outbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "1", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "2", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "3", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "4", "message-size": "3"},
+                ),
+            ],
+            expected_attempt_events=[
+                (
+                    "Inbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "1", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "2", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "3", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "4", "message-size": "3"},
+                ),
+            ],
+        )
+
+    async def test_metrics_stream_stream(self):
         self._server, self._port = await _test_server.start_server(
             register_method=False
         )
@@ -320,6 +583,102 @@ class OpenTelemetryObservabilityUnregisteredMethodsTest(
         self._validate_all_metrics_names(self.all_metrics.keys())
         self._validate_all_method_labels(self.all_metrics)
 
+    async def test_traces_stream_stream(self):
+        self._server, self._port = await _test_server.start_server(
+            register_method=False
+        )
+        await _test_server.stream_stream_call(port=self._port)
+
+        await self._validate_spans_exist(self._span_exporter)
+        self._validate_spans(
+            spans=self._span_exporter.get_finished_spans(),
+            expected_span_size=3,
+            expected_server_events=[
+                (
+                    "Outbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "1", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "2", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "3", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "4", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "1", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "2", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "3", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "4", "message-size": "3"},
+                ),
+            ],
+            expected_attempt_events=[
+                (
+                    "Outbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "1", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "2", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "3", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "4", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "1", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "2", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "3", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "4", "message-size": "3"},
+                ),
+            ],
+        )
+
 
 @unittest.skipIf(
     os.name == "nt" or "darwin" in sys.platform,
@@ -328,7 +687,7 @@ class OpenTelemetryObservabilityUnregisteredMethodsTest(
 class OpenTelemetryObservabilityRegisteredMethodsTest(
     OpenTelemetryObservabilityBase
 ):
-    async def test_record_unary_unary(self):
+    async def test_metrics_unary_unary(self):
         self._server, self._port = await _test_server.start_server(
             register_method=True
         )
@@ -340,7 +699,41 @@ class OpenTelemetryObservabilityRegisteredMethodsTest(
         self._validate_all_metrics_names(self.all_metrics.keys())
         self._validate_all_method_labels(self.all_metrics, "test/UnaryUnary")
 
-    async def test_record_unary_stream(self):
+    async def test_traces_unary_unary(self):
+        self._server, self._port = await _test_server.start_server(
+            register_method=True
+        )
+        await _test_server.unary_unary_call(
+            port=self._port, registered_method=True
+        )
+
+        await self._validate_spans_exist(self._span_exporter)
+        self._validate_spans(
+            spans=self._span_exporter.get_finished_spans(),
+            expected_span_size=3,
+            expected_server_events=[
+                (
+                    "Outbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+            ],
+            expected_attempt_events=[
+                (
+                    "Outbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+            ],
+        )
+
+    async def test_metrics_unary_stream(self):
         self._server, self._port = await _test_server.start_server(
             register_method=True
         )
@@ -352,7 +745,73 @@ class OpenTelemetryObservabilityRegisteredMethodsTest(
         self._validate_all_metrics_names(self.all_metrics.keys())
         self._validate_all_method_labels(self.all_metrics, "test/UnaryStream")
 
-    async def test_record_stream_unary(self):
+    async def test_traces_unary_stream(self):
+        self._server, self._port = await _test_server.start_server(
+            register_method=True
+        )
+        await _test_server.unary_stream_call(
+            port=self._port, registered_method=True
+        )
+
+        await self._validate_spans_exist(self._span_exporter)
+        self._validate_spans(
+            spans=self._span_exporter.get_finished_spans(),
+            expected_span_size=3,
+            expected_server_events=[
+                (
+                    "Outbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "1", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "2", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "3", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "4", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+            ],
+            expected_attempt_events=[
+                (
+                    "Outbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "1", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "2", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "3", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "4", "message-size": "3"},
+                ),
+            ],
+        )
+
+    async def test_metrics_stream_unary(self):
         self._server, self._port = await _test_server.start_server(
             register_method=True
         )
@@ -364,7 +823,73 @@ class OpenTelemetryObservabilityRegisteredMethodsTest(
         self._validate_all_metrics_names(self.all_metrics.keys())
         self._validate_all_method_labels(self.all_metrics, "test/StreamUnary")
 
-    async def test_record_stream_stream(self):
+    async def test_traces_stream_unary(self):
+        self._server, self._port = await _test_server.start_server(
+            register_method=True
+        )
+        await _test_server.stream_unary_call(
+            port=self._port, registered_method=True
+        )
+
+        await self._validate_spans_exist(self._span_exporter)
+        self._validate_spans(
+            spans=self._span_exporter.get_finished_spans(),
+            expected_span_size=3,
+            expected_server_events=[
+                (
+                    "Outbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "1", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "2", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "3", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "4", "message-size": "3"},
+                ),
+            ],
+            expected_attempt_events=[
+                (
+                    "Inbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "1", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "2", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "3", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "4", "message-size": "3"},
+                ),
+            ],
+        )
+
+    async def test_metrics_stream_stream(self):
         self._server, self._port = await _test_server.start_server(
             register_method=True
         )
@@ -376,7 +901,105 @@ class OpenTelemetryObservabilityRegisteredMethodsTest(
         self._validate_all_metrics_names(self.all_metrics.keys())
         self._validate_all_method_labels(self.all_metrics, "test/StreamStream")
 
-    async def test_record_unary_unary_aborted(self):
+    async def test_traces_stream_stream(self):
+        self._server, self._port = await _test_server.start_server(
+            register_method=True
+        )
+        await _test_server.stream_stream_call(
+            port=self._port, registered_method=True
+        )
+
+        await self._validate_spans_exist(self._span_exporter)
+        self._validate_spans(
+            spans=self._span_exporter.get_finished_spans(),
+            expected_span_size=3,
+            expected_server_events=[
+                (
+                    "Outbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "1", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "2", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "3", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "4", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "1", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "2", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "3", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "4", "message-size": "3"},
+                ),
+            ],
+            expected_attempt_events=[
+                (
+                    "Outbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "1", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "2", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "3", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "4", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "1", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "2", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "3", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "4", "message-size": "3"},
+                ),
+            ],
+        )
+
+    async def test_metrics_unary_unary_aborted(self):
         self._server, self._port = await _test_server.start_server(
             register_method=True
         )
@@ -393,7 +1016,7 @@ class OpenTelemetryObservabilityRegisteredMethodsTest(
         self._validate_all_metrics_names(self.all_metrics.keys())
         self._validate_all_method_labels(self.all_metrics, "test/UnaryUnary")
 
-    async def test_record_unary_unary_unhandled_exception(self):
+    async def test_metrics_unary_unary_unhandled_exception(self):
         self._server, self._port = await _test_server.start_server(
             register_method=True
         )
@@ -410,7 +1033,7 @@ class OpenTelemetryObservabilityRegisteredMethodsTest(
         self._validate_all_metrics_names(self.all_metrics.keys())
         self._validate_all_method_labels(self.all_metrics, "test/UnaryUnary")
 
-    async def test_record_unary_stream_aborted_mid_stream(self):
+    async def test_metrics_unary_stream_aborted_mid_stream(self):
         self._server, self._port = await _test_server.start_server(
             register_method=True
         )
@@ -427,7 +1050,7 @@ class OpenTelemetryObservabilityRegisteredMethodsTest(
         self._validate_all_metrics_names(self.all_metrics.keys())
         self._validate_all_method_labels(self.all_metrics, "test/UnaryStream")
 
-    async def test_record_stream_stream_when_client_cancel(self):
+    async def test_metrics_stream_stream_when_client_cancel(self):
         self._server, self._port = await _test_server.start_server(
             register_method=True
         )
@@ -441,7 +1064,7 @@ class OpenTelemetryObservabilityRegisteredMethodsTest(
         self._validate_all_metrics_names(self.all_metrics.keys())
         self._validate_all_method_labels(self.all_metrics, "test/StreamStream")
 
-    async def test_record_unary_unary_with_method_rerouting_interceptor(self):
+    async def test_metrics_unary_unary_with_method_rerouting_interceptor(self):
         self._server, self._port = await _test_server.start_server(
             register_method=True
         )
@@ -456,7 +1079,7 @@ class OpenTelemetryObservabilityRegisteredMethodsTest(
         self._validate_all_metrics_names(self.all_metrics.keys())
         self._validate_all_method_labels(self.all_metrics, "test/UnaryUnaryAlt")
 
-    async def test_record_unary_stream_with_method_rerouting_interceptor(self):
+    async def test_metrics_unary_stream_with_method_rerouting_interceptor(self):
         self._server, self._port = await _test_server.start_server(
             register_method=True
         )
@@ -473,7 +1096,7 @@ class OpenTelemetryObservabilityRegisteredMethodsTest(
             self.all_metrics, "test/UnaryStreamAlt"
         )
 
-    async def test_record_stream_unary_with_method_rerouting_interceptor(self):
+    async def test_metrics_stream_unary_with_method_rerouting_interceptor(self):
         self._server, self._port = await _test_server.start_server(
             register_method=True
         )
@@ -490,7 +1113,9 @@ class OpenTelemetryObservabilityRegisteredMethodsTest(
             self.all_metrics, "test/StreamUnaryAlt"
         )
 
-    async def test_record_stream_stream_with_method_rerouting_interceptor(self):
+    async def test_metrics_stream_stream_with_method_rerouting_interceptor(
+        self,
+    ):
         self._server, self._port = await _test_server.start_server(
             register_method=True
         )

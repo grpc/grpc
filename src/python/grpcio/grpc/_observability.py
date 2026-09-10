@@ -134,6 +134,15 @@ class ObservabilityPlugin(
         raise NotImplementedError()
 
     @abc.abstractmethod
+    def clear_trace_context(self) -> None:
+        """Clears any trace context saved by `save_trace_context`
+
+        Called when the server finishes handling an RPC, so state saved for
+        the call does not outlive it on reused thread.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
     def create_server_call_tracer_factory(
         self,
         *,
@@ -299,7 +308,7 @@ def create_server_call_tracer_factory_option(
     xds: bool,
 ) -> Union[Tuple[ChannelArgumentType], Tuple[()]]:
     with get_plugin() as plugin:
-        if plugin and plugin.stats_enabled:
+        if plugin and (plugin.stats_enabled or plugin.tracing_enabled):
             server_call_tracer_factory_address = (
                 _cygrpc.get_server_call_tracer_factory_address(plugin, xds)
             )
