@@ -617,8 +617,8 @@ class SslTransportSecurityTest
           expected_property_count++;
         }
         const tsi_peer_property* server_name_prop =
-            tsi_peer_get_property_by_name(peer,
-                                          TSI_SSL_SERVER_NAME_PEER_PROPERTY);
+            tsi_peer_get_property_by_name(
+                peer, TSI_SSL_REQUESTED_SERVER_NAME_PEER_PROPERTY);
         if (server_name_prop != nullptr) {
           expected_property_count++;
           if (!ssl_fixture->server_name_indication_.empty() &&

@@ -183,15 +183,17 @@ TEST_F(EvaluateArgsTest, GetSubjectFailDuplicateProperty) {
 }
 
 TEST_F(EvaluateArgsTest, GetRequestedServerNameSuccessOneProperty) {
-  util_.AddPropertyToAuthContext(GRPC_SSL_SERVER_NAME_PROPERTY_NAME,
+  util_.AddPropertyToAuthContext(GRPC_SSL_REQUESTED_SERVER_NAME_PROPERTY_NAME,
                                  "test.domain.com");
   EvaluateArgs args = util_.MakeEvaluateArgs();
   EXPECT_EQ(args.GetRequestedServerName(), "test.domain.com");
 }
 
 TEST_F(EvaluateArgsTest, GetRequestedServerNameFailDuplicateProperty) {
-  util_.AddPropertyToAuthContext(GRPC_SSL_SERVER_NAME_PROPERTY_NAME, "server1");
-  util_.AddPropertyToAuthContext(GRPC_SSL_SERVER_NAME_PROPERTY_NAME, "server2");
+  util_.AddPropertyToAuthContext(GRPC_SSL_REQUESTED_SERVER_NAME_PROPERTY_NAME,
+                                 "server1");
+  util_.AddPropertyToAuthContext(GRPC_SSL_REQUESTED_SERVER_NAME_PROPERTY_NAME,
+                                 "server2");
   EvaluateArgs args = util_.MakeEvaluateArgs();
   EXPECT_TRUE(args.GetRequestedServerName().empty());
 }

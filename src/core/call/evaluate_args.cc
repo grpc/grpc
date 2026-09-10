@@ -78,8 +78,8 @@ EvaluateArgs::PerChannelArgs::PerChannelArgs(grpc_auth_context* auth_context,
         GetAuthPropertyValue(auth_context, GRPC_X509_CN_PROPERTY_NAME);
     subject =
         GetAuthPropertyValue(auth_context, GRPC_X509_SUBJECT_PROPERTY_NAME);
-    requested_server_name =
-        GetAuthPropertyValue(auth_context, GRPC_SSL_SERVER_NAME_PROPERTY_NAME);
+    requested_server_name = GetAuthPropertyValue(
+        auth_context, GRPC_SSL_REQUESTED_SERVER_NAME_PROPERTY_NAME);
     tls_version =
         GetAuthPropertyValue(auth_context, GRPC_SSL_TLS_VERSION_PROPERTY_NAME);
     sha256_peer_certificate_digest =

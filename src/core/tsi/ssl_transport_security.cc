@@ -2364,7 +2364,7 @@ static tsi_result ssl_handshaker_result_extract_peer(
 
   if (server_name != nullptr) {
     result = tsi_construct_string_peer_property_from_cstring(
-        TSI_SSL_SERVER_NAME_PEER_PROPERTY, server_name,
+        TSI_SSL_REQUESTED_SERVER_NAME_PEER_PROPERTY, server_name,
         &peer->properties[peer->property_count]);
     if (result != TSI_OK) return result;
     peer->property_count++;
