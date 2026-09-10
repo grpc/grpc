@@ -282,6 +282,7 @@ grpc_cc_test(
         "//src/core:grpc_backend_metric_data",
         "//src/core:grpc_lb_policy_outlier_detection",
         "//src/core:grpc_lb_policy_weighted_target",
+        "//src/core:instrument",
         "//src/core:json",
         "//src/core:lb_policy",
         "//src/core:metrics",

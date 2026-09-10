@@ -3001,6 +3001,7 @@ add_library(grpc
   src/core/load_balancing/lb_policy_registry.cc
   src/core/load_balancing/oob_backend_metric.cc
   src/core/load_balancing/outlier_detection/outlier_detection.cc
+  src/core/load_balancing/outlier_detection/outlier_detection_metrics.cc
   src/core/load_balancing/pick_first/pick_first.cc
   src/core/load_balancing/priority/priority.cc
   src/core/load_balancing/ring_hash/ring_hash.cc
@@ -3827,6 +3828,7 @@ add_library(grpc_unsecure
   src/core/load_balancing/lb_policy_registry.cc
   src/core/load_balancing/oob_backend_metric.cc
   src/core/load_balancing/outlier_detection/outlier_detection.cc
+  src/core/load_balancing/outlier_detection/outlier_detection_metrics.cc
   src/core/load_balancing/pick_first/pick_first.cc
   src/core/load_balancing/priority/priority.cc
   src/core/load_balancing/ring_hash/ring_hash.cc

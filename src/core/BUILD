@@ -8422,6 +8422,10 @@ grpc_cc_library(
     name = "grpc_lb_policy_outlier_detection",
     srcs = [
         "load_balancing/outlier_detection/outlier_detection.cc",
+        "load_balancing/outlier_detection/outlier_detection_metrics.cc",
+    ],
+    hdrs = [
+        "load_balancing/outlier_detection/outlier_detection_metrics.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -8441,6 +8445,7 @@ grpc_cc_library(
         "grpc_lb_policy_weighted_target",
         "grpc_outlier_detection_header",
         "health_check_client",
+        "instrument",
         "iomgr_fwd",
         "json",
         "lb_policy",

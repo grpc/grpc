@@ -1189,14 +1189,11 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, OutlierDetectionMetricsTest,
                          ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
 TEST_P(OutlierDetectionMetricsTest, MetricsHaveBackendServiceLabel) {
-  const auto kEjectionsEnforced =
-      grpc_core::GlobalInstrumentsRegistryTestPeer::
-          FindUInt64CounterHandleByName(
-              "grpc.lb.outlier_detection.ejections_enforced")
-              .value();
   const std::string target = absl::StrCat("xds:", kServerName);
-  const absl::string_view kLabelValues[] = {target, "failure_percentage"};
-  const absl::string_view kOptionalLabelValues[] = {"", kDefaultClusterName};
+  // Labels for the ejections_enforced counter, in the order declared by
+  // OutlierDetectionMetricsDomainEnforced.
+  const absl::string_view kLabelValues[] = {
+      target, kDefaultClusterName, /*locality=*/"", "failure_percentage"};
   auto stats_plugin = grpc_core::FakeStatsPluginBuilder()
                           .UseDisabledByDefaultMetrics(true)
                           .BuildAndRegister();
@@ -1234,8 +1231,11 @@ TEST_P(OutlierDetectionMetricsTest, MetricsHaveBackendServiceLabel) {
   WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
                  WaitForBackendOptions().set_timeout_ms(
                      3000 * grpc_test_slowdown_factor()));
-  EXPECT_THAT(stats_plugin->GetUInt64CounterValue(
-                  kEjectionsEnforced, kLabelValues, kOptionalLabelValues),
+  // Note: querying goes through the plugin's own collection scope which
+  // sees storages created for any labels defined by its instruments.
+  EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
+                  "grpc.lb.outlier_detection.ejections_enforced",
+                  kLabelValues),
               ::testing::Optional(::testing::Ge(1)));
 }
 

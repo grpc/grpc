@@ -1861,6 +1861,8 @@
     <file baseinstalldir="/" name="src/core/load_balancing/oob_backend_metric_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/outlier_detection/outlier_detection.cc" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/outlier_detection/outlier_detection.h" role="src" />
+    <file baseinstalldir="/" name="src/core/load_balancing/outlier_detection/outlier_detection_metrics.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/load_balancing/outlier_detection/outlier_detection_metrics.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/pick_first/pick_first.cc" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/pick_first/pick_first.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/priority/priority.cc" role="src" />
