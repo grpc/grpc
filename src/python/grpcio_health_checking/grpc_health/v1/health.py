@@ -84,7 +84,9 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
         self._state_lock = threading.RLock()
         # guards server responses so two callbacks never issue overlapping
         # batches on the same streaming call (which hangs under free threading);
-        # disjoint to `self._state_lock` and never taken by the CQ thread.
+        # Acquired as the OUTER lock -- before self._state_lock -- and held
+        # across whole status read + send, so a Watch's initial send and a
+        # concurrent set() / graceful_shutdown() broadcast cannot interleave
         self._send_lock = threading.RLock()
         self._server_status = {"": _health_pb2.HealthCheckResponse.SERVING}
         self._send_response_callbacks = {}
