@@ -327,7 +327,8 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
   if (cluster_name_.as_string_view().empty()) {
     cluster_name_ = new_config->cluster();
   } else {
-    GRPC_CHECK_EQ(cluster_name_, new_config->cluster());
+    GRPC_CHECK_EQ(cluster_name_.as_string_view(),
+                  new_config->cluster().as_string_view());
   }
   // Start dynamic subscription if needed.
   if (new_config->is_dynamic() && subscription_ == nullptr) {
