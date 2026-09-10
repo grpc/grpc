@@ -783,16 +783,6 @@ from opencensus.proto.resource.v1 import resource_pb2
 from opencensus.proto.stats.v1 import stats_pb2
 from opencensus.proto.trace.v1 import trace_config_pb2
 from opencensus.proto.trace.v1 import trace_pb2
-from opentelemetry.proto.collector.logs.v1 import logs_service_pb2
-from opentelemetry.proto.collector.metrics.v1 import metrics_service_pb2
-from opentelemetry.proto.collector.trace.v1 import trace_service_pb2
-from opentelemetry.proto.common.v1 import common_pb2
-from opentelemetry.proto.logs.v1 import logs_pb2
-from opentelemetry.proto.metrics.experimental import metrics_config_service_pb2
-from opentelemetry.proto.metrics.v1 import metrics_pb2
-from opentelemetry.proto.resource.v1 import resource_pb2
-from opentelemetry.proto.trace.v1 import trace_config_pb2
-from opentelemetry.proto.trace.v1 import trace_pb2
 from udpa.annotations import migrate_pb2
 from udpa.annotations import security_pb2
 from udpa.annotations import sensitive_pb2
