@@ -12,23 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/security/authorization/evaluate_args.h"
+#include "src/core/call/evaluate_args.h"
 
 #include <grpc/grpc_security_constants.h>
 #include <grpc/support/port_platform.h>
 #include <string.h>
 
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/match.h"
+#include "absl/strings/numbers.h"
 #include "src/core/credentials/transport/tls/tls_utils.h"
 #include "src/core/handshaker/endpoint_info/endpoint_info_handshaker.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/uri.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/match.h"
-#include "absl/strings/numbers.h"
 
 namespace grpc_core {
 
@@ -78,6 +78,12 @@ EvaluateArgs::PerChannelArgs::PerChannelArgs(grpc_auth_context* auth_context,
         GetAuthPropertyValue(auth_context, GRPC_X509_CN_PROPERTY_NAME);
     subject =
         GetAuthPropertyValue(auth_context, GRPC_X509_SUBJECT_PROPERTY_NAME);
+    requested_server_name =
+        GetAuthPropertyValue(auth_context, GRPC_SSL_SERVER_NAME_PROPERTY_NAME);
+    tls_version =
+        GetAuthPropertyValue(auth_context, GRPC_SSL_TLS_VERSION_PROPERTY_NAME);
+    sha256_peer_certificate_digest =
+        GetAuthPropertyValue(auth_context, GRPC_X509_SHA256_PROPERTY_NAME);
   }
   local_address = ParseEndpointUri(
       args.GetString(GRPC_ARG_ENDPOINT_LOCAL_ADDRESS).value_or(""));
@@ -212,6 +218,27 @@ absl::string_view EvaluateArgs::GetSubject() const {
     return "";
   }
   return channel_args_->subject;
+}
+
+absl::string_view EvaluateArgs::GetRequestedServerName() const {
+  if (channel_args_ == nullptr) {
+    return "";
+  }
+  return channel_args_->requested_server_name;
+}
+
+absl::string_view EvaluateArgs::GetTlsVersion() const {
+  if (channel_args_ == nullptr) {
+    return "";
+  }
+  return channel_args_->tls_version;
+}
+
+absl::string_view EvaluateArgs::GetSha256PeerCertificateDigest() const {
+  if (channel_args_ == nullptr) {
+    return "";
+  }
+  return channel_args_->sha256_peer_certificate_digest;
 }
 
 }  // namespace grpc_core

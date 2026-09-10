@@ -28,7 +28,7 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/security/authorization/evaluate_args.h"
+#include "src/core/call/evaluate_args.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/transport/auth_context.h"
 #include "src/core/util/ref_counted_ptr.h"

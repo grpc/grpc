@@ -535,7 +535,7 @@ class SslTransportSecurityTest
                  cert_type_property->value.length),
           0);
       const tsi_peer_property* sha256_property = tsi_peer_get_property_by_name(
-          peer, TSI_SSL_PEER_SHA256_PEER_PROPERTY);
+          peer, TSI_X509_SHA256_PEER_PROPERTY);
       EXPECT_NE(sha256_property, nullptr);
       EXPECT_EQ(sha256_property->value.length, 64);
       const tsi_peer_property* property = tsi_peer_get_property_by_name(
@@ -1395,7 +1395,7 @@ TEST(SslTransportSecurityTest, ExtractX509SubjectNames) {
   ASSERT_EQ(cert, std::string(property->value.data, property->value.length));
   // Check SHA256 digest
   property =
-      tsi_peer_get_property_by_name(&peer, TSI_SSL_PEER_SHA256_PEER_PROPERTY);
+      tsi_peer_get_property_by_name(&peer, TSI_X509_SHA256_PEER_PROPERTY);
   ASSERT_NE(property, nullptr);
   ASSERT_EQ("b6364b63330df8de02a88e7e238ea763b89f18ec5d80d5339b6fbaad5a4b4891",
             std::string(property->value.data, property->value.length));

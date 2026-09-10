@@ -24,13 +24,14 @@
 #include <variant>
 #include <vector>
 
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 #include "google/protobuf/struct.upb.h"
+#include "src/core/call/evaluate_args.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/util/matchers.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "upb/mem/arena.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 
 // Data structures and message creation/parsing helpers for the xDS External
 // Processing (ext_proc) filter in gRPC, as specified in gRFC A93
@@ -193,27 +194,6 @@ absl::StatusOr<std::string> CreateExtProcServerTrailersRequest(
     ::google_protobuf_Struct* attributes, bool observability_mode,
     std::optional<ExtProcProcessingMode> processing_mode);
 
-// Connection-level attributes extracted for server-side CEL attributes in A103.
-// These attributes describe the downstream client connection and TLS
-// properties. See:
-// https://github.com/grpc/proposal/blob/master/A103-xds-composite-filter.md#cel-attributes
-struct ExtProcConnectionAttributes {
-  // Downstream remote IP address or socket path (CEL: "source.address").
-  std::string source_address;
-  // Downstream remote port number (CEL: "source.port").
-  int source_port = 0;
-  // Requested server name (SNI) from the downstream TLS handshake (CEL:
-  // "connection.requested_server_name").
-  std::string requested_server_name;
-  // Negotiated TLS protocol version, e.g. "TLSv1.3" or "TLSv1.2" (CEL:
-  // "connection.tls_version").
-  std::string tls_version;
-  // SHA-256 fingerprint of the downstream peer certificate formatted as 64
-  // lowercase hex characters (CEL:
-  // "connection.sha256_peer_certificate_digest").
-  std::string sha256_peer_certificate_digest;
-};
-
 // Creates a protobuf Struct message (::google_protobuf_Struct*) containing
 // connection and request metadata attributes requested by the external
 // processor configuration.
@@ -228,8 +208,8 @@ struct ExtProcConnectionAttributes {
 //  - metadata: The gRPC metadata batch from which attribute values (like
 //  authority, method, path, or headers) are extracted.
 //  - default_authority: Default authority fallback for request.host.
-//  - connection_attributes: Connection-level attributes (e.g. peer IP/port,
-//  TLS security properties) on server side.
+//  - channel_args: Connection-level attributes (e.g. peer IP/port,
+//  TLS security properties) on server side, or nullptr if unavailable.
 //
 // Returns:
 //  A pointer to the newly created ::google_protobuf_Struct message on the
@@ -237,7 +217,7 @@ struct ExtProcConnectionAttributes {
 ::google_protobuf_Struct* CreateExtProcAttributesProtoStruct(
     upb_Arena* arena, const std::vector<std::string>& requested_attributes,
     const grpc_metadata_batch& metadata, absl::string_view default_authority,
-    const std::optional<ExtProcConnectionAttributes>& connection_attributes);
+    const EvaluateArgs::PerChannelArgs* channel_args = nullptr);
 
 // Represents the parsed response from an external processor, corresponding to
 // envoy.service.ext_proc.v3.ProcessingResponse in gRFC A93.

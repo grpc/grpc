@@ -538,23 +538,15 @@ class UpbStructHeadersEncoder {
 ::google_protobuf_Struct* CreateExtProcAttributesProtoStruct(
     upb_Arena* arena, const std::vector<std::string>& attributes,
     const grpc_metadata_batch& metadata, absl::string_view default_authority,
-    const std::optional<ExtProcConnectionAttributes>& connection_attributes) {
+    const EvaluateArgs::PerChannelArgs* channel_args) {
   if (attributes.empty()) return nullptr;
   ::google_protobuf_Struct* struct_msg = ::google_protobuf_Struct_new(arena);
   auto add_field = [&](absl::string_view name, absl::string_view value) {
     ::google_protobuf_Value* val_msg = ::google_protobuf_Value_new(arena);
     ::google_protobuf_Value_set_string_value(
-        val_msg, upb_StringView_FromDataAndSize(value.data(), value.size()));
+        val_msg, CopyStdStringToUpbString(value, arena));
     ::google_protobuf_Struct_fields_set(
-        struct_msg, upb_StringView_FromDataAndSize(name.data(), name.size()),
-        val_msg, arena);
-  };
-  auto add_number_field = [&](absl::string_view name, double value) {
-    ::google_protobuf_Value* val_msg = ::google_protobuf_Value_new(arena);
-    ::google_protobuf_Value_set_number_value(val_msg, value);
-    ::google_protobuf_Struct_fields_set(
-        struct_msg, upb_StringView_FromDataAndSize(name.data(), name.size()),
-        val_msg, arena);
+        struct_msg, CopyStdStringToUpbString(name, arena), val_msg, arena);
   };
   for (const auto& attr : attributes) {
     if (attr == "request.path" || attr == "request.url_path") {
@@ -601,21 +593,26 @@ class UpbStructHeadersEncoder {
       if (val.has_value()) add_field(attr, *val);
     } else if (attr == "request.query") {
       add_field(attr, "");
-    } else if (connection_attributes.has_value()) {
+    } else if (channel_args != nullptr) {
       if (attr == "source.port") {
-        if (connection_attributes->source_port > 0) {
-          add_number_field(attr, connection_attributes->source_port);
+        if (channel_args->peer_address.port > 0) {
+          ::google_protobuf_Value* val_msg = ::google_protobuf_Value_new(arena);
+          ::google_protobuf_Value_set_number_value(
+              val_msg, channel_args->peer_address.port);
+          ::google_protobuf_Struct_fields_set(
+              struct_msg, CopyStdStringToUpbString(attr, arena), val_msg,
+              arena);
         }
       } else {
         absl::string_view val;
         if (attr == "source.address") {
-          val = connection_attributes->source_address;
+          val = channel_args->peer_address.address_str;
         } else if (attr == "connection.requested_server_name") {
-          val = connection_attributes->requested_server_name;
+          val = channel_args->requested_server_name;
         } else if (attr == "connection.tls_version") {
-          val = connection_attributes->tls_version;
+          val = channel_args->tls_version;
         } else if (attr == "connection.sha256_peer_certificate_digest") {
-          val = connection_attributes->sha256_peer_certificate_digest;
+          val = channel_args->sha256_peer_certificate_digest;
         }
         if (!val.empty()) add_field(attr, val);
       }

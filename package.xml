@@ -125,6 +125,8 @@
     <file baseinstalldir="/" name="src/core/call/client_call.cc" role="src" />
     <file baseinstalldir="/" name="src/core/call/client_call.h" role="src" />
     <file baseinstalldir="/" name="src/core/call/custom_metadata.h" role="src" />
+    <file baseinstalldir="/" name="src/core/call/evaluate_args.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/call/evaluate_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/call/filter_fusion.h" role="src" />
     <file baseinstalldir="/" name="src/core/call/interception_chain.cc" role="src" />
     <file baseinstalldir="/" name="src/core/call/interception_chain.h" role="src" />
@@ -1748,8 +1750,6 @@
     <file baseinstalldir="/" name="src/core/lib/security/authorization/authorization_engine.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/authorization_policy_provider.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/authorization_policy_provider_vtable.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/authorization/evaluate_args.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/authorization/evaluate_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/grpc_authorization_engine.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/grpc_authorization_engine.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/grpc_server_authz_filter.cc" role="src" />

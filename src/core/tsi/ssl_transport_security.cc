@@ -1286,12 +1286,12 @@ static tsi_result peer_from_x509(X509* cert, int include_certificate_type,
       std::string sha256_hex = absl::BytesToHexString(
           absl::string_view(reinterpret_cast<const char*>(md), md_len));
       result = tsi_construct_string_peer_property_from_cstring(
-          TSI_SSL_PEER_SHA256_PEER_PROPERTY, sha256_hex.c_str(),
+          TSI_X509_SHA256_PEER_PROPERTY, sha256_hex.c_str(),
           &peer->properties[current_insert_index++]);
       if (result != TSI_OK) break;
     } else {
       result = tsi_construct_string_peer_property_from_cstring(
-          TSI_SSL_PEER_SHA256_PEER_PROPERTY, "",
+          TSI_X509_SHA256_PEER_PROPERTY, "",
           &peer->properties[current_insert_index++]);
       if (result != TSI_OK) break;
     }

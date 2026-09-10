@@ -1111,6 +1111,8 @@ src/core/call/channelz_context.h \
 src/core/call/client_call.cc \
 src/core/call/client_call.h \
 src/core/call/custom_metadata.h \
+src/core/call/evaluate_args.cc \
+src/core/call/evaluate_args.h \
 src/core/call/filter_fusion.h \
 src/core/call/interception_chain.cc \
 src/core/call/interception_chain.h \
@@ -2736,8 +2738,6 @@ src/core/lib/security/authorization/audit_logging.h \
 src/core/lib/security/authorization/authorization_engine.h \
 src/core/lib/security/authorization/authorization_policy_provider.h \
 src/core/lib/security/authorization/authorization_policy_provider_vtable.cc \
-src/core/lib/security/authorization/evaluate_args.cc \
-src/core/lib/security/authorization/evaluate_args.h \
 src/core/lib/security/authorization/grpc_authorization_engine.cc \
 src/core/lib/security/authorization/grpc_authorization_engine.h \
 src/core/lib/security/authorization/grpc_server_authz_filter.cc \

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_EVALUATE_ARGS_H
-#define GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_EVALUATE_ARGS_H
+#ifndef GRPC_SRC_CORE_CALL_EVALUATE_ARGS_H
+#define GRPC_SRC_CORE_CALL_EVALUATE_ARGS_H
 
 #include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
@@ -22,10 +22,10 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -42,6 +42,7 @@ class EvaluateArgs final {
       int port = 0;
     };
 
+    PerChannelArgs() = default;
     PerChannelArgs(grpc_auth_context* auth_context, const ChannelArgs& args);
 
     absl::string_view transport_security_type;
@@ -50,11 +51,15 @@ class EvaluateArgs final {
     std::vector<absl::string_view> dns_sans;
     absl::string_view common_name;
     absl::string_view subject;
+    absl::string_view requested_server_name;
+    absl::string_view tls_version;
+    absl::string_view sha256_peer_certificate_digest;
     Address local_address;
     Address peer_address;
   };
 
-  EvaluateArgs(grpc_metadata_batch* metadata, PerChannelArgs* channel_args)
+  EvaluateArgs(grpc_metadata_batch* metadata,
+               const PerChannelArgs* channel_args)
       : metadata_(metadata), channel_args_(channel_args) {}
 
   absl::string_view GetPath() const;
@@ -82,12 +87,18 @@ class EvaluateArgs final {
   std::vector<absl::string_view> GetDnsSans() const;
   absl::string_view GetCommonName() const;
   absl::string_view GetSubject() const;
+  absl::string_view GetRequestedServerName() const;
+  absl::string_view GetTlsVersion() const;
+  absl::string_view GetSha256PeerCertificateDigest() const;
+
+  const PerChannelArgs* channel_args() const { return channel_args_; }
+  const grpc_metadata_batch* metadata() const { return metadata_; }
 
  private:
   grpc_metadata_batch* metadata_;
-  PerChannelArgs* channel_args_;
+  const PerChannelArgs* channel_args_;
 };
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_EVALUATE_ARGS_H
+#endif  // GRPC_SRC_CORE_CALL_EVALUATE_ARGS_H
