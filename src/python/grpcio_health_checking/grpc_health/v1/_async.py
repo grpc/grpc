@@ -87,13 +87,11 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
         service: str,
         status: _health_pb2.HealthCheckResponse.ServingStatus,
     ) -> None:
+        self._server_status[service] = status
         if service in self._server_watchers:
-            condition = self._server_watchers.get(service)
+            condition = self._server_watchers[service]
             async with condition:
-                self._server_status[service] = status
                 condition.notify_all()
-        else:
-            self._server_status[service] = status
 
     async def set(
         self,
