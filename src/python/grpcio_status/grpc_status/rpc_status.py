@@ -100,10 +100,15 @@ def from_call(call):
                 raise StatusDetailsMetadataDecodeError(
                     *decode_err.args
                 ) from decode_err
-            if call.code().value[0] != rich_status.code:
+
+            # Validate that the status code in the proto is a valid gRPC status
+            # code. Raises StatusDetailsMetadataValueError if code is invalid.
+            status_code = code_to_grpc_status_code(rich_status.code)
+
+            if call.code() != status_code:
                 raise StatusDetailsMetadataValueError(
                     "Code in Status proto (%s) doesn't match status code (%s)"
-                    % (code_to_grpc_status_code(rich_status.code), call.code())
+                    % (status_code, call.code())
                 )
             if call.details() != rich_status.message:
                 raise StatusDetailsMetadataValueError(
