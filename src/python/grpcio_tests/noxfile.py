@@ -77,7 +77,7 @@ def test_lite(session: nox.Session):
     """
     session.log("Running test_lite for grpcio_tests")
 
-    session.cd(ROOT_DIR)
+    session.cd(GRPC_ROOT_ABS_PATH)
     if ROOT_DIR not in sys.path:
         sys.path.insert(0, ROOT_DIR)
 
