@@ -52,6 +52,7 @@ namespace testing {
 namespace {
 
 using ::envoy::extensions::filters::http::ext_proc::v3::ExternalProcessor;
+using ::envoy::extensions::filters::http::ext_proc::v3::ExtProcPerRoute;
 using ::envoy::extensions::filters::network::http_connection_manager::v3::
     HttpFilter;
 using ::envoy::service::ext_proc::v3::ProcessingRequest;
@@ -262,9 +263,6 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
           envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SKIP);
       processing_mode->set_response_trailer_mode(
           envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SKIP);
-      auto* timeout = ext_proc_.mutable_grpc_service()->mutable_timeout();
-      timeout->set_seconds(1);  // 1s
-      timeout->set_nanos(0);
       auto* google_grpc =
           ext_proc_.mutable_grpc_service()->mutable_google_grpc();
       google_grpc->add_channel_credentials_plugin()->PackFrom(
@@ -781,6 +779,71 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
     return listener;
   }
 
+  RouteConfiguration BuildRouteConfigurationWithExtProcFilter(
+      const ExternalProcessor& ext_proc) {
+    ExtProcPerRoute per_route;
+    auto* overrides = per_route.mutable_overrides();
+    if (ext_proc.has_processing_mode()) {
+      *overrides->mutable_processing_mode() = ext_proc.processing_mode();
+    }
+    if (ext_proc.has_grpc_service()) {
+      *overrides->mutable_grpc_service() = ext_proc.grpc_service();
+    }
+    overrides->mutable_failure_mode_allow()->set_value(
+        ext_proc.failure_mode_allow());
+    *overrides->mutable_request_attributes() = ext_proc.request_attributes();
+    *overrides->mutable_response_attributes() = ext_proc.response_attributes();
+    google::protobuf::Any filter_config;
+    filter_config.PackFrom(per_route);
+    RouteConfiguration new_route_config = default_route_config_;
+    auto* config_map = new_route_config.mutable_virtual_hosts(0)
+                           ->mutable_routes(0)
+                           ->mutable_typed_per_filter_config();
+    (*config_map)[std::string(kFilterInstanceName)] = std::move(filter_config);
+    return new_route_config;
+  }
+
+  void SetFilterConfig(const ExternalProcessor& ext_proc) {
+    switch (GetParam().filter_config_setup()) {
+      case XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute: {
+        ExternalProcessor top_level_ext_proc = ext_proc;
+        auto* google_grpc =
+            top_level_ext_proc.mutable_grpc_service()->mutable_google_grpc();
+        google_grpc->set_target_uri("invalid-target");
+        auto* processing_mode = top_level_ext_proc.mutable_processing_mode();
+        processing_mode->set_request_header_mode(
+            envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::
+                SKIP);
+        processing_mode->set_response_header_mode(
+            envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::
+                SKIP);
+        processing_mode->set_response_trailer_mode(
+            envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::
+                SKIP);
+        processing_mode->set_request_body_mode(
+            envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::
+                NONE);
+        processing_mode->set_response_body_mode(
+            envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::
+                NONE);
+        top_level_ext_proc.set_failure_mode_allow(false);
+        top_level_ext_proc.clear_request_attributes();
+        top_level_ext_proc.clear_response_attributes();
+        Listener listener = BuildListenerWithExtProcFilter(top_level_ext_proc);
+        RouteConfiguration route =
+            BuildRouteConfigurationWithExtProcFilter(ext_proc);
+        SetListenerAndRouteConfiguration(balancer_.get(), listener, route);
+        break;
+      }
+      case XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInListener: {
+        Listener listener = BuildListenerWithExtProcFilter(ext_proc);
+        SetListenerAndRouteConfiguration(balancer_.get(), listener,
+                                         default_route_config_);
+        break;
+      }
+    }
+  }
+
   ExtProcFilterConfigBuilder MakeFilterConfigBuilder() {
     return ExtProcFilterConfigBuilder().SetTargetUri(
         ext_proc_server_->target());
@@ -935,11 +998,21 @@ MATCHER_P(MatchesEchoResponse, message_matcher,
 
 TEST_P(XdsExtProcEnd2endTest, ProcessingModeAllDisabledSuccess) {
   auto ext_proc_config = MakeFilterConfigBuilder().Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   CheckRpcSendOk(DEBUG_LOCATION);
   EXPECT_EQ(ext_proc_service().GetStream(absl::ZeroDuration()), nullptr);
+}
+
+TEST_P(XdsExtProcEnd2endTest, ProcessingModeHeaderDefaultModeFails) {
+  auto ext_proc_config = MakeFilterConfigBuilder().Build();
+  ext_proc_config.mutable_processing_mode()->set_request_header_mode(
+      envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::DEFAULT);
+  SetFilterConfig(ext_proc_config);
+  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(
+      response_state->error_message,
+      ::testing::HasSubstr("unsupported header processing mode value: 0"));
 }
 
 TEST_P(XdsExtProcEnd2endTest, ProcessingModeAllEnabledSuccess) {
@@ -950,9 +1023,7 @@ TEST_P(XdsExtProcEnd2endTest, ProcessingModeAllEnabledSuccess) {
                              .SetRequestBodyMode()
                              .SetResponseBodyMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
   AsyncRpc rpc;
@@ -1044,9 +1115,7 @@ TEST_P(XdsExtProcEnd2endTest,
           .SetRequestBodyMode()
           .SetResponseBodyMode()
           .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
   rpc_options.set_metadata({{"custom-header-key", "custom-header-value"}});
@@ -1175,9 +1244,7 @@ TEST_P(XdsExtProcEnd2endTest, TrailersOnlyProcessingModeAllEnabled) {
                              .SetRequestBodyMode()
                              .SetResponseBodyMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   RpcOptions rpc_options;
   rpc_options.set_server_fail(true);
   AsyncRpc rpc;
@@ -1242,9 +1309,7 @@ TEST_P(XdsExtProcEnd2endTest,
                              .SetRequestBodyMode()
                              .SetResponseBodyMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   RpcOptions rpc_options;
   rpc_options.set_server_fail(true);
   AsyncRpc rpc;
@@ -1300,9 +1365,7 @@ TEST_P(XdsExtProcEnd2endTest, ContinueAndReplaceFails) {
                              .SetRequestBodyMode()
                              .SetResponseBodyMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -1329,9 +1392,7 @@ TEST_P(XdsExtProcEnd2endTest, RequestHeadersInvalidHeaderMutationFails) {
                              .SetRequestBodyMode()
                              .SetResponseBodyMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -1357,9 +1418,7 @@ TEST_P(XdsExtProcEnd2endTest, RequestHeadersRequestAttributesSent) {
                              .AddRequestAttribute("request.path")
                              .AddRequestAttribute("request.method")
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -1385,9 +1444,7 @@ TEST_P(XdsExtProcEnd2endTest,
                              .AddRequestAttribute("request.path")
                              .AddRequestAttribute("request.method")
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -1419,9 +1476,7 @@ TEST_P(XdsExtProcEnd2endTest, RequestBodyGrpcMessageCompressed) {
                              .SetRequestHeaderMode()
                              .SetRequestBodyMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -1453,9 +1508,7 @@ TEST_P(XdsExtProcEnd2endTest,
                              .SetRequestHeaderMode()
                              .SetRequestBodyMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncBidiStream stream;
   stream.Start(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -1502,9 +1555,7 @@ TEST_P(XdsExtProcEnd2endTest,
                              .SetRequestHeaderMode()
                              .SetRequestBodyMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncBidiStream stream;
   stream.Start(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -1544,9 +1595,7 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamNormalHalfCloseSuccess) {
                              .SetRequestHeaderMode()
                              .SetRequestBodyMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncBidiStream stream;
   stream.Start(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -1597,9 +1646,7 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamNormalHalfCloseSuccess) {
 TEST_P(XdsExtProcEnd2endTest, ResponseHeadersInvalidHeaderMutationFails) {
   auto ext_proc_config =
       MakeFilterConfigBuilder().SetResponseHeaderMode().Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -1634,9 +1681,7 @@ TEST_P(XdsExtProcEnd2endTest, ResponseBodyGrpcMessageCompressed) {
                              .SetResponseTrailerMode()
                              .SetResponseBodyMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -1667,9 +1712,7 @@ TEST_P(XdsExtProcEnd2endTest, ResponseBodyGrpcMessageCompressed) {
 TEST_P(XdsExtProcEnd2endTest, ResponseTrailersInvalidHeaderMutationFails) {
   auto ext_proc_config =
       MakeFilterConfigBuilder().SetResponseTrailerMode().Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -1700,9 +1743,7 @@ TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponse) {
                              .SetRequestBodyMode()
                              .SetResponseBodyMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -1735,9 +1776,7 @@ TEST_P(XdsExtProcEnd2endTest, ImmediateResponse) {
                              .SetRequestBodyMode()
                              .SetResponseBodyMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -1764,9 +1803,7 @@ TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnClientBody) {
                              .SetFailureModeAllow(false)
                              .SetRequestBodyMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncBidiStream stream;
   stream.Start(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -1798,9 +1835,7 @@ TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnRequestHeaders) {
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -1822,9 +1857,7 @@ TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnResponseHeaders) {
                              .SetFailureModeAllow(false)
                              .SetResponseHeaderMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncBidiStream stream;
   stream.Start(stub_.get());
   EchoRequest request;
@@ -1849,9 +1882,7 @@ TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnResponseTrailers) {
                              .SetFailureModeAllow(false)
                              .SetResponseTrailerMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncBidiStream stream;
   stream.Start(stub_.get());
   EchoRequest request;
@@ -1877,9 +1908,7 @@ TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnServerBody) {
                              .SetResponseBodyMode()
                              .SetResponseTrailerMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncBidiStream stream;
   stream.Start(stub_.get());
   EchoRequest request;
@@ -1918,9 +1947,7 @@ TEST_P(XdsExtProcEnd2endTest,
                              .SetFailureModeAllow(false)
                              .SetRequestBodyMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -1942,9 +1969,7 @@ TEST_P(XdsExtProcEnd2endTest, ClientToServerOrderingRequestBodyBeforeHeaders) {
                              .SetRequestHeaderMode()
                              .SetRequestBodyMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -1970,9 +1995,7 @@ TEST_P(XdsExtProcEnd2endTest,
                              .SetResponseBodyMode()
                              .SetResponseTrailerMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -1996,9 +2019,7 @@ TEST_P(XdsExtProcEnd2endTest, ServerToClientOrderingResponseBodyBeforeHeaders) {
                              .SetResponseBodyMode()
                              .SetResponseTrailerMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -2019,9 +2040,7 @@ TEST_P(XdsExtProcEnd2endTest, ServerToClientOrderingTrailersBeforeHeaders) {
                              .SetResponseHeaderMode()
                              .SetResponseTrailerMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -2044,9 +2063,7 @@ TEST_P(XdsExtProcEnd2endTest,
                              .SetResponseBodyMode()
                              .SetResponseTrailerMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncBidiStream stream;
   stream.Start(stub_.get());
   EchoRequest request;
@@ -2079,9 +2096,7 @@ TEST_P(XdsExtProcEnd2endTest,
                              .SetFailureModeAllow(false)
                              .SetResponseHeaderMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncBidiStream stream;
   stream.Start(stub_.get());
   EchoRequest request;
@@ -2109,9 +2124,7 @@ TEST_P(XdsExtProcEnd2endTest, ServerToClientResponseBodyHalfClose) {
                              .SetResponseTrailerMode()
                              .SetResponseBodyMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncBidiStream stream;
   stream.Start(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -2150,9 +2163,7 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseBodiesNotConfiguredSuccess) {
                              .SetRequestHeaderMode()
                              .SetResponseHeaderMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -2176,9 +2187,7 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseBodiesDrainedSuccess) {
                              .SetResponseBodyMode()
                              .SetResponseTrailerMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncBidiStream stream;
   stream.Start(stub_.get());
   EchoRequest request;
@@ -2217,9 +2226,7 @@ TEST_P(XdsExtProcEnd2endTest,
                              .SetFailureModeAllow(false)
                              .SetRequestBodyMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncBidiStream stream;
   stream.Start(stub_.get());
   EchoRequest request;
@@ -2253,9 +2260,7 @@ TEST_P(XdsExtProcEnd2endTest,
                              .SetResponseBodyMode()
                              .SetResponseTrailerMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncBidiStream stream;
   stream.Start(stub_.get());
   EchoRequest request;
@@ -2282,9 +2287,7 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseRequestBodyNotDrainedFails) {
                              .SetFailureModeAllow(false)
                              .SetRequestBodyMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncBidiStream stream;
   stream.Start(stub_.get());
   EchoRequest request;
@@ -2311,9 +2314,7 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseBodyNotDrainedFails) {
                              .SetResponseBodyMode()
                              .SetResponseTrailerMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncBidiStream stream;
   stream.Start(stub_.get());
   EchoRequest request;
@@ -2354,9 +2355,7 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseBeforeBodySentDrainSuccess) {
                              .SetResponseBodyMode()
                              .SetResponseTrailerMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncBidiStream stream;
   stream.Start(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -2392,9 +2391,7 @@ TEST_P(XdsExtProcEnd2endTest,
                              .SetRequestHeaderMode()
                              .SetResponseHeaderMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -2422,9 +2419,7 @@ TEST_P(XdsExtProcEnd2endTest, StreamErrorFailureModeAllowObservabilitySuccess) {
                              .SetRequestBodyMode()
                              .SetResponseBodyMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -2451,9 +2446,7 @@ TEST_P(XdsExtProcEnd2endTest,
                              .SetFailureModeAllow(true)
                              .SetRequestBodyMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -2479,9 +2472,7 @@ TEST_P(XdsExtProcEnd2endTest,
                              .SetResponseBodyMode()
                              .SetResponseTrailerMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -2509,9 +2500,7 @@ TEST_P(XdsExtProcEnd2endTest, StreamErrorFailureModeAllowBodiesDrainedSuccess) {
                              .SetResponseBodyMode()
                              .SetResponseTrailerMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -2535,9 +2524,7 @@ TEST_P(XdsExtProcEnd2endTest, StreamErrorFailureModeFalseFails) {
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -2569,9 +2556,7 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcClientHeadersDurationMetric) {
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -2601,9 +2586,7 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcClientHalfCloseDurationMetric) {
                              .SetFailureModeAllow(false)
                              .SetRequestBodyMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -2638,9 +2621,7 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcServerHeadersDurationMetric) {
                              .SetFailureModeAllow(false)
                              .SetResponseHeaderMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -2667,9 +2648,7 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcServerTrailersDurationMetric) {
                              .SetFailureModeAllow(false)
                              .SetResponseTrailerMode()
                              .Build();
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithExtProcFilter(ext_proc_config),
-      default_route_config_);
+  SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();

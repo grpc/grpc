@@ -1334,7 +1334,9 @@ auto ExtProcFilter::ExtProcCall::HandleHalfCloseFromClient() {
 auto ExtProcFilter::ExtProcCall::HandleInitialMetadataFromServer(
     std::optional<ServerMetadataHandle> metadata) {
   server_initial_metadata_start_time_ = Timestamp::Now();
-  const bool is_trailers_only = !metadata.has_value();
+  const bool is_trailers_only =
+      !metadata.has_value() ||
+      (*metadata)->get(GrpcTrailersOnly()).value_or(false);
   if (is_trailers_only) {
     GRPC_TRACE_LOG(ext_proc_filter, INFO)
         << DebugTag() << "No server initial metadata (trailers-only response)";
@@ -1412,7 +1414,7 @@ auto ExtProcFilter::ExtProcCall::HandleTrailingMetadataFromServer(
   server_trailing_metadata_start_time_ = Timestamp::Now();
   server_trailing_metadata_ = std::move(metadata);
   const bool send_metadata =
-      IsStatusOk(*server_trailing_metadata_) &&
+      (is_trailers_only_ || IsStatusOk(*server_trailing_metadata_)) &&
       !side_stream_closed_latch_.is_set() &&
       (is_trailers_only_ ? processing_mode().send_response_headers
                          : processing_mode().send_response_trailers) &&
