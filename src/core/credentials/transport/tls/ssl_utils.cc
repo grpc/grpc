@@ -308,17 +308,17 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
       grpc_auth_context_add_property(
           ctx.get(), GRPC_SSL_NEGOTIATED_KEY_EXCHANGE_GROUP_PROPERTY_NAME,
           prop->value.data, prop->value.length);
-    } else if (strcmp(prop->name, TSI_SSL_REQUESTED_SERVER_NAME_PEER_PROPERTY) == 0) {
-      grpc_auth_context_add_property(ctx.get(),
-                                     GRPC_SSL_REQUESTED_SERVER_NAME_PROPERTY_NAME,
-                                     prop->value.data, prop->value.length);
+    } else if (strcmp(prop->name,
+                      TSI_SSL_REQUESTED_SERVER_NAME_PEER_PROPERTY) == 0) {
+      grpc_auth_context_add_property(
+          ctx.get(), GRPC_SSL_REQUESTED_SERVER_NAME_PROPERTY_NAME,
+          prop->value.data, prop->value.length);
     } else if (strcmp(prop->name, TSI_SSL_TLS_VERSION_PEER_PROPERTY) == 0) {
       grpc_auth_context_add_property(ctx.get(),
                                      GRPC_SSL_TLS_VERSION_PROPERTY_NAME,
                                      prop->value.data, prop->value.length);
     } else if (strcmp(prop->name, TSI_X509_SHA256_PEER_PROPERTY) == 0) {
-      grpc_auth_context_add_property(ctx.get(),
-                                     GRPC_X509_SHA256_PROPERTY_NAME,
+      grpc_auth_context_add_property(ctx.get(), GRPC_X509_SHA256_PROPERTY_NAME,
                                      prop->value.data, prop->value.length);
     } else if (strcmp(prop->name, TSI_SECURITY_LEVEL_PEER_PROPERTY) == 0) {
       grpc_auth_context_add_property(

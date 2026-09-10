@@ -21,9 +21,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_join.h"
 #include "src/core/call/evaluate_args.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -33,6 +30,9 @@
 #include "src/core/lib/security/authorization/authorization_engine.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/latent_see.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_join.h"
 
 namespace grpc_core {
 

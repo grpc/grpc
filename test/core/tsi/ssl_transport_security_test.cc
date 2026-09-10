@@ -534,8 +534,8 @@ class SslTransportSecurityTest
           memcmp(cert_type_property->value.data, TSI_X509_CERTIFICATE_TYPE,
                  cert_type_property->value.length),
           0);
-      const tsi_peer_property* sha256_property = tsi_peer_get_property_by_name(
-          peer, TSI_X509_SHA256_PEER_PROPERTY);
+      const tsi_peer_property* sha256_property =
+          tsi_peer_get_property_by_name(peer, TSI_X509_SHA256_PEER_PROPERTY);
       EXPECT_NE(sha256_property, nullptr);
       EXPECT_EQ(sha256_property->value.length, 64);
       const tsi_peer_property* property = tsi_peer_get_property_by_name(
