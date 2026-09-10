@@ -54,6 +54,17 @@ cdef class _BatchOperationTag:
     self._user_tag = user_tag
     self._operations = operations
     self._retained_call = call
+    self.c_ops = NULL
+    self.c_nops = 0
+
+  def __dealloc__(self):
+    cdef Operation operation
+    if self.c_ops != NULL:
+      if self._operations is not None:
+        for operation in self._operations:
+          operation.un_c()
+      gpr_free(self.c_ops)
+      self.c_ops = NULL
 
   cdef void prepare(self) except *:
     cdef Operation operation
@@ -69,7 +80,9 @@ cdef class _BatchOperationTag:
     if 0 < self.c_nops:
       for operation in self._operations:
         operation.un_c()
-      gpr_free(self.c_ops)
+      if self.c_ops != NULL:
+        gpr_free(self.c_ops)
+        self.c_ops = NULL
       return BatchOperationEvent(
           c_event.type, c_event.success, self._user_tag, self._operations)
     else:
