@@ -553,6 +553,13 @@ INSTANTIATE_TEST_SUITE_P(
                       "received metadata size exceeds hard limit"),
                   0},
              }},
+        Test{"HuffmanTrueBinaryMetadataSizeLimit",
+             {},
+             38,
+             {{"0005782d62696e82ffc7",
+               absl::ResourceExhaustedError(
+                   "received metadata size exceeds hard limit"),
+               kEndOfHeaders}}},
         Test{
             "SingleByteBE",
             {},
