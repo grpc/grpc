@@ -12,16 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:11
+FROM debian:13
 
 {% include "../../apt_get_basic.include" %}
-{% include "../../run_tests_python_deps.include" %}
-{% include "../../cmake_bullseye_backports.include" %}
+{% include "../../run_tests_python_deps_venv.include" %}
+{% include "../../cmake.include" %}
 {% include "../../run_tests_addons.include" %}
 RUN apt update && apt upgrade -y
 
 # Java
-RUN apt-get install -y openjdk-11-jdk
+RUN apt-get install -y openjdk-21-jdk
 
 # Install Android SDK
 ENV ANDROID_HOME /opt/android-sdk
