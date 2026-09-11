@@ -47,6 +47,9 @@ cc_library(
 pyx_library(
     name = "cyprotoc",
     srcs = ["grpc_tools/_protoc_compiler.pyx"],
+    defines = [
+        "Py_LIMITED_API=0x030B00F0",
+    ],
     deps = [":protoc_lib"],
 )
 

@@ -262,6 +262,12 @@ if "linux" in sys.platform or "darwin" in sys.platform:
     pymodinit = 'extern "C" __attribute__((visibility ("default"))) PyObject*'
     DEFINE_MACROS += (("PyMODINIT_FUNC", pymodinit),)
 
+if sys.version_info >= (3, 12):
+    DEFINE_MACROS += (("Py_LIMITED_API", "0x030C00F0"),)
+    API_TAG = "cp312"
+else:
+    DEFINE_MACROS += (("Py_LIMITED_API", "0x030A00F0"),)
+    API_TAG = "cp310"
 
 def extension_modules():
     if BUILD_WITH_CYTHON:
@@ -296,6 +302,7 @@ def extension_modules():
         define_macros=list(DEFINE_MACROS),
         extra_compile_args=list(EXTRA_COMPILE_ARGS),
         extra_link_args=list(EXTRA_LINK_ARGS),
+        py_limited_api=True,
     )
     extensions = [plugin_ext]
     if BUILD_WITH_CYTHON:
@@ -319,4 +326,9 @@ if __name__ == "__main__":
             "opentelemetry-api>=1.21.0",
         ],
         cmdclass={"build_ext": BuildExt},
+        options={
+            "bdist_wheel": {
+                "py_limited_api": API_TAG
+            }
+        }
     )
