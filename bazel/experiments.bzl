@@ -66,6 +66,7 @@ EXPERIMENT_ENABLES = {
     "recv_message_filter_bypass_fix": "recv_message_filter_bypass_fix",
     "retry_in_callv3": "retry_in_callv3",
     "return_preexisting_errors": "return_preexisting_errors",
+    "ring_hash_update_cleanup": "ring_hash_update_cleanup",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
     "secure_endpoint_offload_large_reads": "event_engine_client,event_engine_listener,secure_endpoint_offload_large_reads",
     "secure_endpoint_offload_large_writes": "event_engine_client,event_engine_listener,secure_endpoint_offload_large_writes",
@@ -182,6 +183,9 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
+            "lb_unit_test": [
+                "ring_hash_update_cleanup",
+            ],
             "minimal_stack_test": [
                 "fuse_filters",
             ],
@@ -194,6 +198,9 @@ EXPERIMENTS = {
             ],
             "secure_endpoint_test": [
                 "pipelined_read_secure_endpoint",
+            ],
+            "xds_end2end_test": [
+                "ring_hash_update_cleanup",
             ],
         },
         "on": {
