@@ -752,8 +752,6 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
       status = absl::UnavailableError(absl::StrCat(
           "errors from children: [", absl::StrJoin(errors, "; "), "]"));
     }
-    // Build new ring.
-    ring_ = MakeRefCounted<Ring>(this, config);
   }
   // If the address list is empty, report TRANSIENT_FAILURE.
   if (endpoints_.empty()) {
@@ -765,6 +763,8 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
         MakeRefCounted<TransientFailurePicker>(status));
   } else {
+    // Build new ring.
+    ring_ = MakeRefCounted<Ring>(this, config);
     // Return a new picker.
     UpdateAggregatedConnectivityStateLocked(absl::OkStatus());
   }
