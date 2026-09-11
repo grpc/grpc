@@ -141,6 +141,23 @@ class TlsCredentialsOptions {
   void set_key_exchange_groups(
       const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups);
 
+  // Sets the key purpose used to verify peer certificate chain during a TLS
+  // handshake.
+  //
+  // More precisely, the key purpose controls the EKU (Extended Key Usage) check
+  // during peer certificate verification, as defined in RFC 5280.
+  //
+  // Default behavior:
+  // - On the client side: defaults to verifying the server's certificate has
+  //   the Server Auth EKU.
+  // - On the server side: if client certificate verification is enabled,
+  //   defaults to verifying the client's certificate has the Client Auth EKU.
+  //
+  // Warning: Setting this to GRPC_TLS_VERIFICATION_KEY_PURPOSE_ALLOW_ANY is
+  // UNSAFE as it bypasses these EKU checks and must only be used if the user is
+  // taking responsibility for EKU checks.
+  void set_verification_key_purpose(grpc_tls_verification_key_purpose purpose);
+
   // ----- Getters for member fields ----
   // Returns a deep copy of the internal c options. The caller takes ownership
   // of the returned pointer. This function shall be used only internally.

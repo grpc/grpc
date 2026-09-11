@@ -558,6 +558,38 @@ tsi_result SetKeyExchangeGroups(
   }
   return TSI_OK;
 }
+
+tsi_result SslCtxSetVerificationKeyPurpose(
+    SSL_CTX* ssl_context, grpc_tls_verification_key_purpose purpose) {
+  if (purpose == GRPC_TLS_VERIFICATION_KEY_PURPOSE_DEFAULT) {
+    return TSI_OK;
+  }
+  X509_VERIFY_PARAM* param = SSL_CTX_get0_param(ssl_context);
+  if (param == nullptr) {
+    LOG(ERROR) << "Failed to get X509_VERIFY_PARAM from SSL_CTX.";
+    return TSI_INTERNAL_ERROR;
+  }
+  std::optional<int> openssl_purpose;
+  switch (purpose) {
+    case GRPC_TLS_VERIFICATION_KEY_PURPOSE_ALLOW_ANY:
+      openssl_purpose = X509_PURPOSE_ANY;
+      break;
+    case GRPC_TLS_VERIFICATION_KEY_PURPOSE_REQUIRE_SERVER_AUTH:
+      openssl_purpose = X509_PURPOSE_SSL_SERVER;
+      break;
+    case GRPC_TLS_VERIFICATION_KEY_PURPOSE_REQUIRE_CLIENT_AUTH:
+      openssl_purpose = X509_PURPOSE_SSL_CLIENT;
+      break;
+    default:
+      LOG(ERROR) << "Unknown verification key purpose: " << purpose;
+      return TSI_INVALID_ARGUMENT;
+  }
+  if (X509_VERIFY_PARAM_set_purpose(param, *openssl_purpose) != 1) {
+    LOG(ERROR) << "Failed to set verification key purpose.";
+    return TSI_INVALID_ARGUMENT;
+  }
+  return TSI_OK;
+}
 }  // namespace
 
 static gpr_once g_init_openssl_once = GPR_ONCE_INIT;
@@ -3357,6 +3389,9 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   }
 
   do {
+    result = SslCtxSetVerificationKeyPurpose(ssl_context,
+                                             options->verification_key_purpose);
+    if (result != TSI_OK) break;
     result = populate_ssl_context(ssl_context, options->pem_key_cert_pair,
                                   options->cipher_suites,
                                   options->key_exchange_groups);
@@ -3527,6 +3562,10 @@ tsi_result tsi_configure_server_ssl_context(
 
   tsi_result result = tsi_set_min_and_max_tls_versions(
       ssl_context.ssl_ctx, options->min_tls_version, options->max_tls_version);
+  if (result != TSI_OK) return result;
+
+  result = SslCtxSetVerificationKeyPurpose(ssl_context.ssl_ctx,
+                                           options->verification_key_purpose);
   if (result != TSI_OK) return result;
 
   result = populate_ssl_context(ssl_context.ssl_ctx, pem_key_cert_pair,
