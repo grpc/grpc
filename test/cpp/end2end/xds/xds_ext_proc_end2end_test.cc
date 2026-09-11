@@ -269,13 +269,9 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
   class ExtProcFilterConfigBuilder {
    public:
     ExtProcFilterConfigBuilder() {
-      auto* processing_mode = ext_proc_.mutable_processing_mode();
-      processing_mode->set_request_header_mode(
-          envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SKIP);
-      processing_mode->set_response_header_mode(
-          envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SKIP);
-      processing_mode->set_response_trailer_mode(
-          envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SKIP);
+      // Leave the individual modes unset, so that they default to DEFAULT,
+      // but make sure the field itself is present, since it is required.
+      ext_proc_.mutable_processing_mode();
       auto* google_grpc =
           ext_proc_.mutable_grpc_service()->mutable_google_grpc();
       google_grpc->add_channel_credentials_plugin()->PackFrom(
@@ -295,33 +291,48 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
       return *this;
     }
 
-    ExtProcFilterConfigBuilder& SetRequestHeaderMode() {
+    ExtProcFilterConfigBuilder& SetRequestHeaderMode(bool send) {
       ext_proc_.mutable_processing_mode()->set_request_header_mode(
-          envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SEND);
+          send ? envoy::extensions::filters::http::ext_proc::v3::
+                     ProcessingMode::SEND
+               : envoy::extensions::filters::http::ext_proc::v3::
+                     ProcessingMode::SKIP);
       return *this;
     }
 
-    ExtProcFilterConfigBuilder& SetResponseHeaderMode() {
+    ExtProcFilterConfigBuilder& SetResponseHeaderMode(bool send) {
       ext_proc_.mutable_processing_mode()->set_response_header_mode(
-          envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SEND);
+          send ? envoy::extensions::filters::http::ext_proc::v3::
+                     ProcessingMode::SEND
+               : envoy::extensions::filters::http::ext_proc::v3::
+                     ProcessingMode::SKIP);
       return *this;
     }
 
-    ExtProcFilterConfigBuilder& SetRequestBodyMode() {
+    ExtProcFilterConfigBuilder& SetRequestBodyMode(bool send) {
       ext_proc_.mutable_processing_mode()->set_request_body_mode(
-          envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::GRPC);
+          send ? envoy::extensions::filters::http::ext_proc::v3::
+                     ProcessingMode::GRPC
+               : envoy::extensions::filters::http::ext_proc::v3::
+                     ProcessingMode::NONE);
       return *this;
     }
 
-    ExtProcFilterConfigBuilder& SetResponseBodyMode() {
+    ExtProcFilterConfigBuilder& SetResponseBodyMode(bool send) {
       ext_proc_.mutable_processing_mode()->set_response_body_mode(
-          envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::GRPC);
+          send ? envoy::extensions::filters::http::ext_proc::v3::
+                     ProcessingMode::GRPC
+               : envoy::extensions::filters::http::ext_proc::v3::
+                     ProcessingMode::NONE);
       return *this;
     }
 
-    ExtProcFilterConfigBuilder& SetResponseTrailerMode() {
+    ExtProcFilterConfigBuilder& SetResponseTrailerMode(bool send) {
       ext_proc_.mutable_processing_mode()->set_response_trailer_mode(
-          envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SEND);
+          send ? envoy::extensions::filters::http::ext_proc::v3::
+                     ProcessingMode::SEND
+               : envoy::extensions::filters::http::ext_proc::v3::
+                     ProcessingMode::SKIP);
       return *this;
     }
 
@@ -994,31 +1005,59 @@ MATCHER_P(MatchesEchoResponse, message_matcher,
 //
 
 TEST_P(XdsExtProcEnd2endTest, ProcessingModeAllDisabledSuccess) {
-  auto ext_proc_config = MakeFilterConfigBuilder().Build();
+  auto ext_proc_config = MakeFilterConfigBuilder()
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(false)
+                             .Build();
   SetFilterConfig(ext_proc_config);
   CheckRpcSendOk(DEBUG_LOCATION);
   EXPECT_EQ(ext_proc_service().GetStream(absl::ZeroDuration()), nullptr);
 }
 
-TEST_P(XdsExtProcEnd2endTest, ProcessingModeHeaderDefaultModeFails) {
+// The DEFAULT header processing mode means SEND for request and response
+// headers and SKIP for response trailers.
+TEST_P(XdsExtProcEnd2endTest, ProcessingModeHeaderDefaultModeSuccess) {
   auto ext_proc_config = MakeFilterConfigBuilder().Build();
-  ext_proc_config.mutable_processing_mode()->set_request_header_mode(
-      envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::DEFAULT);
   SetFilterConfig(ext_proc_config);
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr("unsupported header processing mode value: 0"));
+  RpcOptions rpc_options;
+  rpc_options.set_echo_metadata_initially(true);
+  AsyncRpc rpc;
+  rpc.StartRpc(stub_.get(), rpc_options);
+  auto ext_proc_stream = ext_proc_service().GetStream();
+  ASSERT_NE(ext_proc_stream, nullptr);
+  // ext_proc server sees request headers and sends them back.
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req,
+      ::testing::Optional(MatchesRequestHeaders(::testing::Contains(
+          ::testing::Pair(":path", "/grpc.testing.EchoTestService/Echo")))));
+  ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse(
+      {{kRequestHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
+  // ext_proc server sees response headers and sends them back.
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req, ::testing::Optional(MatchesResponseHeaders(::testing::_)));
+  ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse(
+      {{kResponseHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
+  // Response trailers are not sent to the ext_proc server.
+  EXPECT_EQ(ext_proc_stream->GetNextRequest(), std::nullopt);
+  Status status = rpc.GetStatus();
+  EXPECT_THAT(status, IsStatusOk());
+  EXPECT_THAT(rpc.GetServerInitialMetadata(),
+              ::testing::AllOf(
+                  ::testing::Contains(::testing::Pair(
+                      kRequestHeadersMutatedHeaderKey, kHeaderMutatedValue)),
+                  ::testing::Contains(::testing::Pair(
+                      kResponseHeadersMutatedHeaderKey, kHeaderMutatedValue))));
+  EXPECT_EQ(rpc.response().message(), kRequestMessage);
 }
 
 TEST_P(XdsExtProcEnd2endTest, ProcessingModeAllEnabledSuccess) {
   auto ext_proc_config = MakeFilterConfigBuilder()
-                             .SetRequestHeaderMode()
-                             .SetResponseHeaderMode()
-                             .SetResponseTrailerMode()
-                             .SetRequestBodyMode()
-                             .SetResponseBodyMode()
+                             .SetRequestHeaderMode(true)
+                             .SetResponseHeaderMode(true)
+                             .SetResponseTrailerMode(true)
+                             .SetRequestBodyMode(true)
+                             .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   RpcOptions rpc_options;
@@ -1106,11 +1145,11 @@ TEST_P(XdsExtProcEnd2endTest,
       MakeFilterConfigBuilder()
           .SetObservabilityMode(true)
           .SetDeferredCloseTimeout(grpc_core::Duration::Seconds(1))
-          .SetRequestHeaderMode()
-          .SetResponseHeaderMode()
-          .SetResponseTrailerMode()
-          .SetRequestBodyMode()
-          .SetResponseBodyMode()
+          .SetRequestHeaderMode(true)
+          .SetResponseHeaderMode(true)
+          .SetResponseTrailerMode(true)
+          .SetRequestBodyMode(true)
+          .SetResponseBodyMode(true)
           .Build();
   SetFilterConfig(ext_proc_config);
   RpcOptions rpc_options;
@@ -1224,11 +1263,11 @@ TEST_P(XdsExtProcEnd2endTest,
 
 TEST_P(XdsExtProcEnd2endTest, TrailersOnlyProcessingModeAllEnabled) {
   auto ext_proc_config = MakeFilterConfigBuilder()
-                             .SetRequestHeaderMode()
-                             .SetResponseHeaderMode()
-                             .SetResponseTrailerMode()
-                             .SetRequestBodyMode()
-                             .SetResponseBodyMode()
+                             .SetRequestHeaderMode(true)
+                             .SetResponseHeaderMode(true)
+                             .SetResponseTrailerMode(true)
+                             .SetRequestBodyMode(true)
+                             .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   RpcOptions rpc_options;
@@ -1289,11 +1328,11 @@ TEST_P(XdsExtProcEnd2endTest,
        TrailersOnlyProcessingModeAllEnabledWithObservabilityMode) {
   auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetObservabilityMode(true)
-                             .SetRequestHeaderMode()
-                             .SetResponseHeaderMode()
-                             .SetResponseTrailerMode()
-                             .SetRequestBodyMode()
-                             .SetResponseBodyMode()
+                             .SetRequestHeaderMode(true)
+                             .SetResponseHeaderMode(true)
+                             .SetResponseTrailerMode(true)
+                             .SetRequestBodyMode(true)
+                             .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   RpcOptions rpc_options;
@@ -1345,11 +1384,11 @@ TEST_P(XdsExtProcEnd2endTest,
 
 TEST_P(XdsExtProcEnd2endTest, ContinueAndReplaceFails) {
   auto ext_proc_config = MakeFilterConfigBuilder()
-                             .SetRequestHeaderMode()
-                             .SetResponseHeaderMode()
-                             .SetResponseTrailerMode()
-                             .SetRequestBodyMode()
-                             .SetResponseBodyMode()
+                             .SetRequestHeaderMode(true)
+                             .SetResponseHeaderMode(true)
+                             .SetResponseTrailerMode(true)
+                             .SetRequestBodyMode(true)
+                             .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
@@ -1372,11 +1411,11 @@ TEST_P(XdsExtProcEnd2endTest, ContinueAndReplaceFails) {
 
 TEST_P(XdsExtProcEnd2endTest, RequestHeadersInvalidHeaderMutationFails) {
   auto ext_proc_config = MakeFilterConfigBuilder()
-                             .SetRequestHeaderMode()
-                             .SetResponseHeaderMode()
-                             .SetResponseTrailerMode()
-                             .SetRequestBodyMode()
-                             .SetResponseBodyMode()
+                             .SetRequestHeaderMode(true)
+                             .SetResponseHeaderMode(true)
+                             .SetResponseTrailerMode(true)
+                             .SetRequestBodyMode(true)
+                             .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
@@ -1400,7 +1439,8 @@ TEST_P(XdsExtProcEnd2endTest, RequestHeadersInvalidHeaderMutationFails) {
 
 TEST_P(XdsExtProcEnd2endTest, RequestHeadersRequestAttributesSent) {
   auto ext_proc_config = MakeFilterConfigBuilder()
-                             .SetRequestHeaderMode()
+                             .SetRequestHeaderMode(true)
+                             .SetResponseHeaderMode(false)
                              .AddRequestAttribute("request.path")
                              .AddRequestAttribute("request.method")
                              .Build();
@@ -1426,7 +1466,9 @@ TEST_P(XdsExtProcEnd2endTest, RequestHeadersRequestAttributesSent) {
 TEST_P(XdsExtProcEnd2endTest,
        RequestAttributesSentInRequestBodyWhenRequestHeaderIsSkip) {
   auto ext_proc_config = MakeFilterConfigBuilder()
-                             .SetRequestBodyMode()
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(false)
+                             .SetRequestBodyMode(true)
                              .AddRequestAttribute("request.path")
                              .AddRequestAttribute("request.method")
                              .Build();
@@ -1459,8 +1501,9 @@ TEST_P(XdsExtProcEnd2endTest,
 TEST_P(XdsExtProcEnd2endTest, RequestBodyGrpcMessageCompressed) {
   auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(true)
-                             .SetRequestHeaderMode()
-                             .SetRequestBodyMode()
+                             .SetRequestHeaderMode(true)
+                             .SetResponseHeaderMode(false)
+                             .SetRequestBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
@@ -1491,8 +1534,9 @@ TEST_P(XdsExtProcEnd2endTest, RequestBodyGrpcMessageCompressed) {
 TEST_P(XdsExtProcEnd2endTest,
        BidiStreamExtProcEarlyHalfCloseSubsequentWriteFails) {
   auto ext_proc_config = MakeFilterConfigBuilder()
-                             .SetRequestHeaderMode()
-                             .SetRequestBodyMode()
+                             .SetRequestHeaderMode(true)
+                             .SetResponseHeaderMode(false)
+                             .SetRequestBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncBidiStream stream;
@@ -1538,8 +1582,9 @@ TEST_P(XdsExtProcEnd2endTest,
 TEST_P(XdsExtProcEnd2endTest,
        BidiStreamExtProcEarlyHalfCloseSubsequentHalfCloseSuccess) {
   auto ext_proc_config = MakeFilterConfigBuilder()
-                             .SetRequestHeaderMode()
-                             .SetRequestBodyMode()
+                             .SetRequestHeaderMode(true)
+                             .SetResponseHeaderMode(false)
+                             .SetRequestBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncBidiStream stream;
@@ -1578,8 +1623,9 @@ TEST_P(XdsExtProcEnd2endTest,
 
 TEST_P(XdsExtProcEnd2endTest, BidiStreamNormalHalfCloseSuccess) {
   auto ext_proc_config = MakeFilterConfigBuilder()
-                             .SetRequestHeaderMode()
-                             .SetRequestBodyMode()
+                             .SetRequestHeaderMode(true)
+                             .SetResponseHeaderMode(false)
+                             .SetRequestBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncBidiStream stream;
@@ -1630,8 +1676,10 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamNormalHalfCloseSuccess) {
 //
 
 TEST_P(XdsExtProcEnd2endTest, ResponseHeadersInvalidHeaderMutationFails) {
-  auto ext_proc_config =
-      MakeFilterConfigBuilder().SetResponseHeaderMode().Build();
+  auto ext_proc_config = MakeFilterConfigBuilder()
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(true)
+                             .Build();
   SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
@@ -1663,9 +1711,10 @@ TEST_P(XdsExtProcEnd2endTest, ResponseHeadersInvalidHeaderMutationFails) {
 TEST_P(XdsExtProcEnd2endTest, ResponseBodyGrpcMessageCompressed) {
   auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(true)
-                             .SetResponseHeaderMode()
-                             .SetResponseTrailerMode()
-                             .SetResponseBodyMode()
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(true)
+                             .SetResponseTrailerMode(true)
+                             .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
@@ -1696,8 +1745,11 @@ TEST_P(XdsExtProcEnd2endTest, ResponseBodyGrpcMessageCompressed) {
 //
 
 TEST_P(XdsExtProcEnd2endTest, ResponseTrailersInvalidHeaderMutationFails) {
-  auto ext_proc_config =
-      MakeFilterConfigBuilder().SetResponseTrailerMode().Build();
+  auto ext_proc_config = MakeFilterConfigBuilder()
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(false)
+                             .SetResponseTrailerMode(true)
+                             .Build();
   SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
@@ -1723,11 +1775,11 @@ TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponse) {
   auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetDisableImmediateResponse(true)
                              .SetFailureModeAllow(false)
-                             .SetRequestHeaderMode()
-                             .SetResponseHeaderMode()
-                             .SetResponseTrailerMode()
-                             .SetRequestBodyMode()
-                             .SetResponseBodyMode()
+                             .SetRequestHeaderMode(true)
+                             .SetResponseHeaderMode(true)
+                             .SetResponseTrailerMode(true)
+                             .SetRequestBodyMode(true)
+                             .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
@@ -1756,11 +1808,11 @@ TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponse) {
 
 TEST_P(XdsExtProcEnd2endTest, ImmediateResponse) {
   auto ext_proc_config = MakeFilterConfigBuilder()
-                             .SetRequestHeaderMode()
-                             .SetResponseHeaderMode()
-                             .SetResponseTrailerMode()
-                             .SetRequestBodyMode()
-                             .SetResponseBodyMode()
+                             .SetRequestHeaderMode(true)
+                             .SetResponseHeaderMode(true)
+                             .SetResponseTrailerMode(true)
+                             .SetRequestBodyMode(true)
+                             .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
@@ -1787,7 +1839,9 @@ TEST_P(XdsExtProcEnd2endTest, ImmediateResponse) {
 TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnClientBody) {
   auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
-                             .SetRequestBodyMode()
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(false)
+                             .SetRequestBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncBidiStream stream;
@@ -1819,7 +1873,8 @@ TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnClientBody) {
 TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnRequestHeaders) {
   auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
-                             .SetRequestHeaderMode()
+                             .SetRequestHeaderMode(true)
+                             .SetResponseHeaderMode(false)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
@@ -1841,7 +1896,8 @@ TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnRequestHeaders) {
 TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnResponseHeaders) {
   auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
-                             .SetResponseHeaderMode()
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncBidiStream stream;
@@ -1866,7 +1922,9 @@ TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnResponseHeaders) {
 TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnResponseTrailers) {
   auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
-                             .SetResponseTrailerMode()
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(false)
+                             .SetResponseTrailerMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncBidiStream stream;
@@ -1891,8 +1949,10 @@ TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnResponseTrailers) {
 TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnServerBody) {
   auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
-                             .SetResponseBodyMode()
-                             .SetResponseTrailerMode()
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(false)
+                             .SetResponseTrailerMode(true)
+                             .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncBidiStream stream;
@@ -1931,7 +1991,9 @@ TEST_P(XdsExtProcEnd2endTest,
        ClientToServerOrderingHeadersResponseWhenDisabled) {
   auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
-                             .SetRequestBodyMode()
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(false)
+                             .SetRequestBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
@@ -1952,8 +2014,9 @@ TEST_P(XdsExtProcEnd2endTest,
 TEST_P(XdsExtProcEnd2endTest, ClientToServerOrderingRequestBodyBeforeHeaders) {
   auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(true)
-                             .SetRequestHeaderMode()
-                             .SetRequestBodyMode()
+                             .SetRequestHeaderMode(true)
+                             .SetResponseHeaderMode(false)
+                             .SetRequestBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
@@ -1978,8 +2041,10 @@ TEST_P(XdsExtProcEnd2endTest,
        ServerToClientOrderingHeadersResponseWhenDisabled) {
   auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
-                             .SetResponseBodyMode()
-                             .SetResponseTrailerMode()
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(false)
+                             .SetResponseTrailerMode(true)
+                             .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
@@ -2001,9 +2066,10 @@ TEST_P(XdsExtProcEnd2endTest,
 TEST_P(XdsExtProcEnd2endTest, ServerToClientOrderingResponseBodyBeforeHeaders) {
   auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
-                             .SetResponseHeaderMode()
-                             .SetResponseBodyMode()
-                             .SetResponseTrailerMode()
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(true)
+                             .SetResponseTrailerMode(true)
+                             .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
@@ -2023,8 +2089,9 @@ TEST_P(XdsExtProcEnd2endTest, ServerToClientOrderingResponseBodyBeforeHeaders) {
 TEST_P(XdsExtProcEnd2endTest, ServerToClientOrderingTrailersBeforeHeaders) {
   auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
-                             .SetResponseHeaderMode()
-                             .SetResponseTrailerMode()
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(true)
+                             .SetResponseTrailerMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
@@ -2045,9 +2112,10 @@ TEST_P(XdsExtProcEnd2endTest,
        ServerToClientOrderingTrailersBeforeResponseBody) {
   auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
-                             .SetResponseHeaderMode()
-                             .SetResponseBodyMode()
-                             .SetResponseTrailerMode()
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(true)
+                             .SetResponseTrailerMode(true)
+                             .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncBidiStream stream;
@@ -2080,7 +2148,8 @@ TEST_P(XdsExtProcEnd2endTest,
        ServerToClientOrderingTrailersResponseWhenDisabled) {
   auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
-                             .SetResponseHeaderMode()
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncBidiStream stream;
@@ -2106,9 +2175,10 @@ TEST_P(XdsExtProcEnd2endTest,
 TEST_P(XdsExtProcEnd2endTest, ServerToClientResponseBodyHalfClose) {
   auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(true)
-                             .SetResponseHeaderMode()
-                             .SetResponseTrailerMode()
-                             .SetResponseBodyMode()
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(true)
+                             .SetResponseTrailerMode(true)
+                             .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncBidiStream stream;
@@ -2146,8 +2216,8 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseBodiesNotConfiguredSuccess) {
   ResetStub();
   auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
-                             .SetRequestHeaderMode()
-                             .SetResponseHeaderMode()
+                             .SetRequestHeaderMode(true)
+                             .SetResponseHeaderMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
@@ -2169,9 +2239,11 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseBodiesDrainedSuccess) {
   ResetStub();
   auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
-                             .SetRequestBodyMode()
-                             .SetResponseBodyMode()
-                             .SetResponseTrailerMode()
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(false)
+                             .SetResponseTrailerMode(true)
+                             .SetRequestBodyMode(true)
+                             .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncBidiStream stream;
@@ -2210,7 +2282,9 @@ TEST_P(XdsExtProcEnd2endTest,
   auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetObservabilityMode(true)
                              .SetFailureModeAllow(false)
-                             .SetRequestBodyMode()
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(false)
+                             .SetRequestBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncBidiStream stream;
@@ -2243,8 +2317,10 @@ TEST_P(XdsExtProcEnd2endTest,
   auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetObservabilityMode(true)
                              .SetFailureModeAllow(false)
-                             .SetResponseBodyMode()
-                             .SetResponseTrailerMode()
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(false)
+                             .SetResponseTrailerMode(true)
+                             .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncBidiStream stream;
@@ -2271,7 +2347,9 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseRequestBodyNotDrainedFails) {
   ResetStub();
   auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
-                             .SetRequestBodyMode()
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(false)
+                             .SetRequestBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncBidiStream stream;
@@ -2297,8 +2375,10 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseBodyNotDrainedFails) {
   ResetStub();
   auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
-                             .SetResponseBodyMode()
-                             .SetResponseTrailerMode()
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(false)
+                             .SetResponseTrailerMode(true)
+                             .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncBidiStream stream;
@@ -2336,10 +2416,11 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseBodyNotDrainedFails) {
 TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseBeforeBodySentDrainSuccess) {
   ResetStub();
   auto ext_proc_config = MakeFilterConfigBuilder()
-                             .SetRequestHeaderMode()
-                             .SetRequestBodyMode()
-                             .SetResponseBodyMode()
-                             .SetResponseTrailerMode()
+                             .SetRequestHeaderMode(true)
+                             .SetResponseHeaderMode(false)
+                             .SetResponseTrailerMode(true)
+                             .SetRequestBodyMode(true)
+                             .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncBidiStream stream;
@@ -2374,8 +2455,8 @@ TEST_P(XdsExtProcEnd2endTest,
   ResetStub();
   auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(true)
-                             .SetRequestHeaderMode()
-                             .SetResponseHeaderMode()
+                             .SetRequestHeaderMode(true)
+                             .SetResponseHeaderMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
@@ -2399,11 +2480,11 @@ TEST_P(XdsExtProcEnd2endTest, StreamErrorFailureModeAllowObservabilitySuccess) {
   auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetObservabilityMode(true)
                              .SetFailureModeAllow(true)
-                             .SetRequestHeaderMode()
-                             .SetResponseHeaderMode()
-                             .SetResponseTrailerMode()
-                             .SetRequestBodyMode()
-                             .SetResponseBodyMode()
+                             .SetRequestHeaderMode(true)
+                             .SetResponseHeaderMode(true)
+                             .SetResponseTrailerMode(true)
+                             .SetRequestBodyMode(true)
+                             .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
@@ -2430,7 +2511,9 @@ TEST_P(XdsExtProcEnd2endTest,
        StreamErrorFailureModeAllowRequestBodyNotDrainedFails) {
   auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(true)
-                             .SetRequestBodyMode()
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(false)
+                             .SetRequestBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
@@ -2455,8 +2538,10 @@ TEST_P(XdsExtProcEnd2endTest,
        StreamErrorFailureModeAllowResponseBodyNotDrainedFails) {
   auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(true)
-                             .SetResponseBodyMode()
-                             .SetResponseTrailerMode()
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(false)
+                             .SetResponseTrailerMode(true)
+                             .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
@@ -2481,10 +2566,11 @@ TEST_P(XdsExtProcEnd2endTest, StreamErrorFailureModeAllowBodiesDrainedSuccess) {
   ResetStub();
   auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(true)
-                             .SetRequestHeaderMode()
-                             .SetRequestBodyMode()
-                             .SetResponseBodyMode()
-                             .SetResponseTrailerMode()
+                             .SetRequestHeaderMode(true)
+                             .SetResponseHeaderMode(false)
+                             .SetResponseTrailerMode(true)
+                             .SetRequestBodyMode(true)
+                             .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
@@ -2508,7 +2594,8 @@ TEST_P(XdsExtProcEnd2endTest, StreamErrorFailureModeAllowBodiesDrainedSuccess) {
 TEST_P(XdsExtProcEnd2endTest, StreamErrorFailureModeFalseFails) {
   auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
-                             .SetRequestHeaderMode()
+                             .SetRequestHeaderMode(true)
+                             .SetResponseHeaderMode(false)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
@@ -2540,7 +2627,8 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcClientHeadersDurationMetric) {
   ResetStub();
   auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
-                             .SetRequestHeaderMode()
+                             .SetRequestHeaderMode(true)
+                             .SetResponseHeaderMode(false)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
@@ -2570,7 +2658,9 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcClientHalfCloseDurationMetric) {
   ResetStub();
   auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
-                             .SetRequestBodyMode()
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(false)
+                             .SetRequestBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
@@ -2605,7 +2695,8 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcServerHeadersDurationMetric) {
   ResetStub();
   auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
-                             .SetResponseHeaderMode()
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
@@ -2632,7 +2723,9 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcServerTrailersDurationMetric) {
   ResetStub();
   auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
-                             .SetResponseTrailerMode()
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(false)
+                             .SetResponseTrailerMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncRpc rpc;
