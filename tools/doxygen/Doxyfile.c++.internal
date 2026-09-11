@@ -1885,6 +1885,9 @@ src/core/ext/upb-gen/google/rpc/status.upb_minitable.h \
 src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb.h \
 src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.c \
 src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.h \
+src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb.h \
+src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb_minitable.c \
+src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb_minitable.h \
 src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h \
 src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c \
 src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h \
@@ -1909,9 +1912,6 @@ src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.
 src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb.h \
 src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.c \
 src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.h \
-src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb.h \
-src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb_minitable.c \
-src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb_minitable.h \
 src/core/ext/upb-gen/src/proto/grpc/lookup/v1/rls.upb.h \
 src/core/ext/upb-gen/src/proto/grpc/lookup/v1/rls.upb_minitable.c \
 src/core/ext/upb-gen/src/proto/grpc/lookup/v1/rls.upb_minitable.h \

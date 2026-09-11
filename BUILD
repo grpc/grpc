@@ -2288,9 +2288,9 @@ grpc_cc_library(
         ":gpr",
         ":grpc++",
         ":lb_load_reporter",
+        ":load_reporter_cc_grpc",
         "//src/core:grpc_check",
         "//src/core:sync",
-        "//src/proto/grpc/lb/v1:load_reporter_cc_grpc",
     ],
 )
 
@@ -2337,9 +2337,9 @@ grpc_cc_library(
         "gpr",
         "lb_get_cpu_stats",
         "lb_load_data_store",
+        "load_reporter_cc_grpc",
         "//src/core:grpc_check",
         "//src/core:sync",
-        "//src/proto/grpc/lb/v1:load_reporter_cc_grpc",
     ],
 )
 
@@ -5616,7 +5616,7 @@ grpc_upb_proto_library(
 
 grpc_upb_proto_library(
     name = "grpc_lb_upb",
-    deps = ["//src/proto/grpc/lb/v1:load_balancer_proto"],
+    deps = ["@grpc_proto//:grpclb_load_balancer_proto"],
 )
 
 grpc_upb_proto_library(
@@ -5725,6 +5725,16 @@ grpc_cc_proto_library(
     deps = ["@grpc_proto//:channelz_proto"],
 )
 
+grpc_cc_proto_library(
+    name = "load_balancer_cc_proto",
+    deps = ["@grpc_proto//:grpclb_load_balancer_proto"],
+)
+
+grpc_cc_proto_library(
+    name = "load_reporter_cc_proto",
+    deps = ["@grpc_proto//:grpclb_load_reporter_proto"],
+)
+
 grpc_cc_grpc_library(
     name = "reflection_v1_cc_grpc",
     srcs = ["@grpc_proto//:reflection_proto"],
@@ -5741,4 +5751,16 @@ grpc_cc_grpc_library(
     name = "channelz_cc_grpc",
     srcs = ["@grpc_proto//:channelz_proto"],
     deps = [":channelz_cc_proto"],
+)
+
+grpc_cc_grpc_library(
+    name = "load_balancer_cc_grpc",
+    srcs = ["@grpc_proto//:grpclb_load_balancer_proto"],
+    deps = [":load_balancer_cc_proto"],
+)
+
+grpc_cc_grpc_library(
+    name = "load_reporter_cc_grpc",
+    srcs = ["@grpc_proto//:grpclb_load_reporter_proto"],
+    deps = [":load_reporter_cc_proto"],
 )

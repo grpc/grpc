@@ -685,9 +685,6 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/health/v1/health.proto src/proto/grpc/health/v1/health.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
-  src/proto/grpc/lb/v1/load_balancer.proto src/proto/grpc/lb/v1/load_balancer.proto
-)
-protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/lookup/v1/rls.proto src/proto/grpc/lookup/v1/rls.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
@@ -695,6 +692,9 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
   third_party/grpc-proto/grpc/channelz/v1/channelz.proto grpc/channelz/v1/channelz.proto
+)
+protobuf_generate_grpc_cpp_with_import_path_correction(
+  third_party/grpc-proto/grpc/lb/v1/load_balancer.proto grpc/lb/v1/load_balancer.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
   third_party/grpc-proto/grpc/reflection/v1/reflection.proto grpc/reflection/v1/reflection.proto
@@ -2561,6 +2561,7 @@ add_library(grpc
   src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.c
+  src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
@@ -2569,7 +2570,6 @@ add_library(grpc
   src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/lookup/v1/rls.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/lookup/v1/rls_config.upb_minitable.c
   src/core/ext/upb-gen/udpa/annotations/migrate.upb_minitable.c
@@ -3586,6 +3586,7 @@ add_library(grpc_unsecure
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
@@ -3594,7 +3595,6 @@ add_library(grpc_unsecure
   src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/lookup/v1/rls.upb_minitable.c
   src/core/ext/upb-gen/validate/validate.upb_minitable.c
   src/core/ext/upb-gen/xds/data/orca/v3/orca_load_report.upb_minitable.c
@@ -21022,10 +21022,10 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(grpclb_api_test
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/lb/v1/load_balancer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/lb/v1/load_balancer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/lb/v1/load_balancer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/lb/v1/load_balancer.grpc.pb.h
   test/cpp/grpclb/grpclb_api_test.cc
 )
 if(WIN32 AND MSVC)
@@ -21070,10 +21070,6 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(grpclb_end2end_test
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
@@ -21098,6 +21094,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/grpc/lb/v1/load_balancer.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/grpc/lb/v1/load_balancer.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/grpc/lb/v1/load_balancer.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/grpc/lb/v1/load_balancer.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
