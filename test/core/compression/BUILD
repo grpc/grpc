@@ -42,6 +42,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:channel_args",
+        "//src/core:compression",
         "//src/core:useful",
         "//test/core/test_util:grpc_test_util",
     ],

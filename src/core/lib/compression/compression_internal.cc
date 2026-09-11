@@ -228,7 +228,9 @@ DefaultCompressionAlgorithmFromChannelArgs(const ChannelArgs& args) {
   if (value == nullptr) return std::nullopt;
   auto ival = value->GetIfInt();
   if (ival.has_value()) {
-    return static_cast<grpc_compression_algorithm>(*ival);
+    return static_cast<grpc_compression_algorithm>(
+        Clamp(*ival, static_cast<int>(GRPC_COMPRESS_NONE),
+              static_cast<int>(GRPC_COMPRESS_ALGORITHMS_COUNT - 1)));
   }
   auto sval = value->GetIfString();
   if (sval != nullptr) {
