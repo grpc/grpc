@@ -131,14 +131,17 @@ using AcceptorPtr = std::unique_ptr<grpc_tcp_server_acceptor, AcceptorDeleter>;
 //
 
 NewChttp2ServerListener::ActiveConnection::HandshakingState::HandshakingState(
-    RefCountedPtr<ActiveConnection> connection_ref, grpc_tcp_server* tcp_server,
-    grpc_pollset* accepting_pollset, AcceptorPtr acceptor,
-    const ChannelArgs& args, OrphanablePtr<grpc_endpoint> endpoint)
+    RefCountedPtr<ActiveConnection> connection_ref,
+    RefCountedPtr<Server::ListenerInterface> listener_ref,
+    grpc_tcp_server* tcp_server, grpc_pollset* accepting_pollset,
+    AcceptorPtr acceptor, const ChannelArgs& args,
+    OrphanablePtr<grpc_endpoint> endpoint)
     : InternallyRefCounted(
           GRPC_TRACE_FLAG_ENABLED(chttp2_server_refcount)
               ? "NewChttp2ServerListener::ActiveConnection::HandshakingState"
               : nullptr),
       connection_(std::move(connection_ref)),
+      listener_(std::move(listener_ref)),
       tcp_server_(tcp_server),
       accepting_pollset_(accepting_pollset),
       acceptor_(std::move(acceptor)),
@@ -343,6 +346,7 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
 
 NewChttp2ServerListener::ActiveConnection::ActiveConnection(
     RefCountedPtr<Server::ListenerState> listener_state,
+    RefCountedPtr<Server::ListenerInterface> listener_ref,
     grpc_tcp_server* tcp_server, grpc_pollset* accepting_pollset,
     AcceptorPtr acceptor, const ChannelArgs& args, MemoryOwner memory_owner,
     OrphanablePtr<grpc_endpoint> endpoint)
@@ -353,8 +357,9 @@ NewChttp2ServerListener::ActiveConnection::ActiveConnection(
       work_serializer_(
           args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
       state_(memory_owner.MakeOrphanable<HandshakingState>(
-          RefAsSubclass<ActiveConnection>(), tcp_server, accepting_pollset,
-          std::move(acceptor), args, std::move(endpoint))) {
+          RefAsSubclass<ActiveConnection>(), std::move(listener_ref),
+          tcp_server, accepting_pollset, std::move(acceptor), args,
+          std::move(endpoint))) {
   GRPC_CLOSURE_INIT(&on_close_, ActiveConnection::OnClose, this,
                     grpc_schedule_on_exec_ctx);
 }
@@ -644,6 +649,7 @@ void NewChttp2ServerListener::OnAccept(
       return;
     }
   }
+  RefCountedPtr<Server::ListenerInterface> listener_ref;
   {
     // The ref for the tcp_server need to be taken in the critical region
     // after having made sure that the listener has not been Orphaned, so as
@@ -660,13 +666,20 @@ void NewChttp2ServerListener::OnAccept(
     if (self->tcp_server_ != nullptr) {
       grpc_tcp_server_ref(self->tcp_server_);
     }
+    // This protects passive listeners who do not have the `tcp_server` from
+    // a race condition between the server shutdown and the handshake performed.
+    // Reference to the listener is held by the connection until its handshake
+    // is done. While handshake is still alive, the listener cannot be destroyed
+    // meaning `Server::MaybeFinishShutdown()` call will be postponed making
+    // mentioned race impossible.
+    listener_ref = self->Ref();
   }
   auto memory_owner =
       self->listener_state_->memory_quota()->CreateMemoryOwner();
   auto connection = memory_owner.MakeOrphanable<ActiveConnection>(
-      self->listener_state_, self->tcp_server_, accepting_pollset,
-      std::move(acceptor), self->args_, std::move(memory_owner),
-      std::move(endpoint));
+      self->listener_state_, std::move(listener_ref), self->tcp_server_,
+      accepting_pollset, std::move(acceptor), self->args_,
+      std::move(memory_owner), std::move(endpoint));
   RefCountedPtr<ActiveConnection> connection_ref =
       connection->RefAsSubclass<ActiveConnection>();
   std::optional<ChannelArgs> new_args =
