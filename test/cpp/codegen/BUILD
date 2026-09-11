@@ -106,6 +106,20 @@ genrule(
     cmd = "cat $(GENDIR)/src/proto/grpc/testing/compiler_test_mock.grpc.pb.h > $@",
 )
 
+grpc_cc_test(
+    name = "python_generator_test",
+    srcs = ["python_generator_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/compiler:grpc_plugin_support",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
 grpc_sh_test(
     name = "run_golden_file_test",
     srcs = ["run_golden_file_test.sh"],
