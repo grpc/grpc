@@ -44,6 +44,7 @@
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
 #include "src/core/ext/transport/chttp2/transport/ping_promise.h"
 #include "src/core/ext/transport/chttp2/transport/read_context.h"
+#include "src/core/ext/transport/chttp2/transport/reclaimer.h"
 #include "src/core/ext/transport/chttp2/transport/security_frame.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
@@ -610,6 +611,32 @@ class Http2ClientTransport final : public ClientTransport,
   }
 
   //////////////////////////////////////////////////////////////////////////////
+  // Resource Quota Reclaimer
+  //
+  // Based on CHTTP2's RESOURCE QUOTAS section in chttp2_transport.cc.
+  // All the reclamation state lives in ReclamationManager. This transport only
+  // supplies the actions that a reclamation pass performs. See reclaimer.h.
+
+  // Implements the reclamation actions for this transport.
+  // These methods only run from the ReclamationLoop, which runs on the
+  // transport party while the transport is alive.
+  class ReclaimerInterfaceImpl final : public ReclaimerInterface {
+   public:
+    static std::unique_ptr<ReclaimerInterface> Make(
+        Http2ClientTransport* transport);
+
+   private:
+    explicit ReclaimerInterfaceImpl(Http2ClientTransport* transport)
+        : transport_(transport) {}
+    bool CloseTransportIfIdle() override;
+    bool CancelOneActiveStream() override;
+    // Holding a raw pointer to transport works because the transport calls
+    // ReclamationManager::Close() before it is destroyed, and Close()
+    // destroys this object.
+    Http2ClientTransport* transport_;
+  };
+
+  //////////////////////////////////////////////////////////////////////////////
   // Inner Classes and Structs
 
   class PingSystemInterfaceImpl : public PingInterface {
@@ -714,11 +741,20 @@ class Http2ClientTransport final : public ClientTransport,
   GoawayManager goaway_manager_;
 
   MemoryOwner memory_owner_;
+  // Accounts for the memory used by this transport object itself.
+  // Based on CHTTP2's self_reservation in chttp2_transport.cc
+  MemoryAllocator::Reservation self_reservation_;
   chttp2::TransportFlowControl flow_control_;
   WritableStreams<RefCountedPtr<Stream>> writable_stream_list_;
 
   RefCountedPtr<SecurityFrameHandler> security_frame_handler_;
   std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;
+
+  // Owns all resource quota reclamation state. This is a separate ref counted
+  // object so that a reclaimer posted to the memory quota does not keep a
+  // transport ref alive. See the class comment in reclaimer.h.
+  // MUST be closed in CloseTransport() and in the destructor.
+  RefCountedPtr<ReclamationManager> reclamation_manager_;
 };
 
 }  // namespace http2
