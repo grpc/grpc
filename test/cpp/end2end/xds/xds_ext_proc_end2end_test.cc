@@ -75,6 +75,8 @@ constexpr char kMessage2[] = "message2";
 constexpr char kMutatedSuffix[] = "-mutated";
 constexpr char kMessage1Mutated[] = "message1-mutated";
 constexpr char kMessage1DoubleMutated[] = "message1-mutated-mutated";
+constexpr bool kEndOfStream = true;
+constexpr char kEmptyBody[] = "";
 
 // A stream-based fake external processor service that provides fine-grained,
 // sequential control over incoming ext_proc stream requests and outgoing
@@ -940,7 +942,8 @@ MATCHER_P2(MatchesResponseHeaders, headers_matcher, end_of_stream,
 MATCHER_P(MatchesResponseHeaders, headers_matcher,
           "matches response_headers with given headers") {
   return ::testing::ExplainMatchResult(
-      MatchesResponseHeaders(headers_matcher, false), arg, result_listener);
+      MatchesResponseHeaders(headers_matcher, !kEndOfStream), arg,
+      result_listener);
 }
 
 MATCHER_P2(MatchesResponseBody, body_matcher, end_of_stream,
@@ -1076,12 +1079,11 @@ TEST_P(XdsExtProcEnd2endTest, ProcessingModeAllEnabledSuccess) {
       {{kRequestHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
   // ext_proc server sees client message and sends it back.
   req = ext_proc_stream->GetNextRequest();
-  ASSERT_THAT(req, ::testing::Optional(
-                       MatchesRequestBody(EchoRequestMessageIs(kRequestMessage),
-                                          /*end_of_stream=*/false)));
+  ASSERT_THAT(req, ::testing::Optional(MatchesRequestBody(
+                       EchoRequestMessageIs(kRequestMessage), !kEndOfStream)));
   ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
       ModifyEchoRequest(req->request_body().body(), kRequestBodyMutatedSuffix),
-      /*end_of_stream=*/false));
+      !kEndOfStream));
   // Next two events may arrive in either order: client half-close and server
   // response headers.
   bool seen_client_half_close = false;
@@ -1092,10 +1094,9 @@ TEST_P(XdsExtProcEnd2endTest, ProcessingModeAllEnabledSuccess) {
     if (req->has_request_body()) {
       EXPECT_FALSE(seen_client_half_close);
       seen_client_half_close = true;
-      EXPECT_THAT(*req,
-                  MatchesRequestBody(/*body=*/"", /*end_of_stream=*/true));
+      EXPECT_THAT(*req, MatchesRequestBody(kEmptyBody, kEndOfStream));
       ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
-          /*body=*/"", /*end_of_stream=*/true));
+          /*body=*/"", kEndOfStream));
     } else if (req->has_response_headers()) {
       EXPECT_FALSE(seen_response_headers);
       seen_response_headers = true;
@@ -1113,11 +1114,11 @@ TEST_P(XdsExtProcEnd2endTest, ProcessingModeAllEnabledSuccess) {
   ASSERT_THAT(req, ::testing::Optional(MatchesResponseBody(
                        EchoResponseMessageIs(absl::StrCat(
                            kRequestMessage, kRequestBodyMutatedSuffix)),
-                       /*end_of_stream=*/false)));
+                       !kEndOfStream)));
   ext_proc_stream->SendResponse(MakeResponseBodyMutationResponse(
       ModifyEchoResponse(req->response_body().body(),
                          kResponseBodyMutatedSuffix),
-      /*end_of_stream=*/false));
+      !kEndOfStream));
   // ext_proc server sees response trailers and sends them back.
   req = ext_proc_stream->GetNextRequest();
   ASSERT_THAT(req, ::testing::Optional(MatchesResponseTrailers(::testing::_)));
@@ -1170,12 +1171,11 @@ TEST_P(XdsExtProcEnd2endTest,
       {{kRequestHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
   // ext_proc server sees client message.
   req = ext_proc_stream->GetNextRequest();
-  ASSERT_THAT(req, ::testing::Optional(
-                       MatchesRequestBody(EchoRequestMessageIs(kRequestMessage),
-                                          /*end_of_stream=*/false)));
+  ASSERT_THAT(req, ::testing::Optional(MatchesRequestBody(
+                       EchoRequestMessageIs(kRequestMessage), !kEndOfStream)));
   ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
       ModifyEchoRequest(req->request_body().body(), kRequestBodyMutatedSuffix),
-      /*end_of_stream=*/false));
+      !kEndOfStream));
   // The remaining events can arrive in any order: in observability mode the
   // filter does not wait for a response from the ext_proc server, so the
   // client half-close races with the events from the response path.
@@ -1189,10 +1189,9 @@ TEST_P(XdsExtProcEnd2endTest,
     if (req->has_request_body()) {
       EXPECT_FALSE(seen_client_half_close);
       seen_client_half_close = true;
-      EXPECT_THAT(*req,
-                  MatchesRequestBody(/*body=*/"", /*end_of_stream=*/true));
+      EXPECT_THAT(*req, MatchesRequestBody(kEmptyBody, kEndOfStream));
       ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
-          /*body=*/"", /*end_of_stream=*/true));
+          /*body=*/"", kEndOfStream));
     } else if (req->has_response_headers()) {
       EXPECT_FALSE(seen_response_headers);
       seen_response_headers = true;
@@ -1213,11 +1212,11 @@ TEST_P(XdsExtProcEnd2endTest,
       // by the backend is unmodified.
       EXPECT_THAT(*req,
                   MatchesResponseBody(EchoResponseMessageIs(kRequestMessage),
-                                      /*end_of_stream=*/false));
+                                      !kEndOfStream));
       ext_proc_stream->SendResponse(MakeResponseBodyMutationResponse(
           ModifyEchoResponse(req->response_body().body(),
                              kResponseBodyMutatedSuffix),
-          /*end_of_stream=*/false));
+          !kEndOfStream));
     } else if (req->has_response_trailers()) {
       EXPECT_FALSE(seen_response_trailers);
       seen_response_trailers = true;
@@ -1286,9 +1285,8 @@ TEST_P(XdsExtProcEnd2endTest, TrailersOnlyProcessingModeAllEnabled) {
       {{kRequestHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
   // ext_proc server sees client message and sends it back.
   req = ext_proc_stream->GetNextRequest();
-  ASSERT_THAT(req, ::testing::Optional(
-                       MatchesRequestBody(EchoRequestMessageIs(kRequestMessage),
-                                          /*end_of_stream=*/false)));
+  ASSERT_THAT(req, ::testing::Optional(MatchesRequestBody(
+                       EchoRequestMessageIs(kRequestMessage), !kEndOfStream)));
   ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
       req->request_body().body(), req->request_body().end_of_stream()));
   // Next two events may arrive in either order: client half-close and server
@@ -1301,15 +1299,13 @@ TEST_P(XdsExtProcEnd2endTest, TrailersOnlyProcessingModeAllEnabled) {
     if (req->has_request_body()) {
       EXPECT_FALSE(seen_client_half_close);
       seen_client_half_close = true;
-      EXPECT_THAT(*req,
-                  MatchesRequestBody(/*body=*/"", /*end_of_stream=*/true));
+      EXPECT_THAT(*req, MatchesRequestBody(kEmptyBody, kEndOfStream));
       ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
-          /*body=*/"", /*end_of_stream=*/true));
+          /*body=*/"", kEndOfStream));
     } else if (req->has_response_headers()) {
       EXPECT_FALSE(seen_response_headers);
       seen_response_headers = true;
-      EXPECT_THAT(*req, MatchesResponseHeaders(::testing::_,
-                                               /*end_of_stream=*/true));
+      EXPECT_THAT(*req, MatchesResponseHeaders(::testing::_, kEndOfStream));
       ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse(
           {{kResponseHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
     } else {
@@ -1349,9 +1345,8 @@ TEST_P(XdsExtProcEnd2endTest,
           ::testing::Pair(":path", "/grpc.testing.EchoTestService/Echo")))));
   // ext_proc server sees client message.
   req = ext_proc_stream->GetNextRequest();
-  ASSERT_THAT(req, ::testing::Optional(
-                       MatchesRequestBody(EchoRequestMessageIs(kRequestMessage),
-                                          /*end_of_stream=*/false)));
+  ASSERT_THAT(req, ::testing::Optional(MatchesRequestBody(
+                       EchoRequestMessageIs(kRequestMessage), !kEndOfStream)));
   // Next two events may arrive in either order: client half-close and server
   // response headers (sent in observability mode for trailers-only).
   bool seen_client_half_close = false;
@@ -1362,13 +1357,11 @@ TEST_P(XdsExtProcEnd2endTest,
     if (req->has_request_body()) {
       EXPECT_FALSE(seen_client_half_close);
       seen_client_half_close = true;
-      EXPECT_THAT(*req,
-                  MatchesRequestBody(/*body=*/"", /*end_of_stream=*/true));
+      EXPECT_THAT(*req, MatchesRequestBody(kEmptyBody, kEndOfStream));
     } else if (req->has_response_headers()) {
       EXPECT_FALSE(seen_response_headers);
       seen_response_headers = true;
-      EXPECT_THAT(*req, MatchesResponseHeaders(::testing::_,
-                                               /*end_of_stream=*/true));
+      EXPECT_THAT(*req, MatchesResponseHeaders(::testing::_, kEndOfStream));
     } else {
       FAIL() << "Unexpected request type: " << req->DebugString();
     }
@@ -1480,9 +1473,8 @@ TEST_P(XdsExtProcEnd2endTest,
   // ext_proc server sees client message with request attributes and sends it
   // back.
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_THAT(req, ::testing::Optional(
-                       MatchesRequestBody(EchoRequestMessageIs(kRequestMessage),
-                                          /*end_of_stream=*/false)));
+  ASSERT_THAT(req, ::testing::Optional(MatchesRequestBody(
+                       EchoRequestMessageIs(kRequestMessage), !kEndOfStream)));
   EXPECT_EQ(GetExtProcAttribute(*req, "request.path"),
             "/grpc.testing.EchoTestService/Echo");
   EXPECT_EQ(GetExtProcAttribute(*req, "request.method"), "POST");
@@ -1490,10 +1482,10 @@ TEST_P(XdsExtProcEnd2endTest,
       req->request_body().body(), req->request_body().end_of_stream()));
   // ext_proc server sees client half-close and sends it back.
   req = ext_proc_stream->GetNextRequest();
-  ASSERT_THAT(req, ::testing::Optional(MatchesRequestBody(
-                       /*body=*/"", /*end_of_stream=*/true)));
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestBody(kEmptyBody, kEndOfStream)));
   ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
-      /*body=*/"", /*end_of_stream=*/true));
+      /*body=*/"", kEndOfStream));
   Status status = rpc.GetStatus();
   EXPECT_THAT(status, IsStatusOk());
 }
@@ -1517,9 +1509,9 @@ TEST_P(XdsExtProcEnd2endTest, RequestBodyGrpcMessageCompressed) {
           ::testing::Pair(":path", "/grpc.testing.EchoTestService/Echo")))));
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
   auto next_req = ext_proc_stream->GetNextRequest();
-  ASSERT_THAT(next_req, ::testing::Optional(MatchesRequestBody(
-                            EchoRequestMessageIs(kRequestMessage),
-                            /*end_of_stream=*/false)));
+  ASSERT_THAT(next_req,
+              ::testing::Optional(MatchesRequestBody(
+                  EchoRequestMessageIs(kRequestMessage), !kEndOfStream)));
   ::envoy::service::ext_proc::v3::ProcessingResponse response;
   auto* common_response = response.mutable_request_body()->mutable_response();
   auto* body_mutation = common_response->mutable_body_mutation();
@@ -1553,9 +1545,8 @@ TEST_P(XdsExtProcEnd2endTest,
   request.set_message(kMessage1);
   stream.StartWrite(request);
   auto next_req = ext_proc_stream->GetNextRequest();
-  ASSERT_THAT(next_req, ::testing::Optional(
-                            MatchesRequestBody(EchoRequestMessageIs(kMessage1),
-                                               /*end_of_stream=*/false)));
+  ASSERT_THAT(next_req, ::testing::Optional(MatchesRequestBody(
+                            EchoRequestMessageIs(kMessage1), !kEndOfStream)));
   ::envoy::service::ext_proc::v3::ProcessingResponse proc_response;
   auto* common_response =
       proc_response.mutable_request_body()->mutable_response();
@@ -1601,9 +1592,8 @@ TEST_P(XdsExtProcEnd2endTest,
   request.set_message(kMessage1);
   stream.StartWrite(request);
   auto next_req = ext_proc_stream->GetNextRequest();
-  ASSERT_THAT(next_req, ::testing::Optional(
-                            MatchesRequestBody(EchoRequestMessageIs(kMessage1),
-                                               /*end_of_stream=*/false)));
+  ASSERT_THAT(next_req, ::testing::Optional(MatchesRequestBody(
+                            EchoRequestMessageIs(kMessage1), !kEndOfStream)));
   ::envoy::service::ext_proc::v3::ProcessingResponse proc_response;
   auto* common_response =
       proc_response.mutable_request_body()->mutable_response();
@@ -1645,7 +1635,7 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamNormalHalfCloseSuccess) {
     auto next_req = ext_proc_stream->GetNextRequest();
     ASSERT_THAT(next_req, ::testing::Optional(MatchesRequestBody(
                               EchoRequestMessageIs(absl::StrCat("message", i)),
-                              /*end_of_stream=*/false)));
+                              !kEndOfStream)));
     ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
         next_req->request_body().body(),
         next_req->request_body().end_of_stream()));
@@ -1656,8 +1646,8 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamNormalHalfCloseSuccess) {
   }
   stream.StartWritesDone();
   auto eos_req = ext_proc_stream->GetNextRequest();
-  ASSERT_THAT(eos_req, ::testing::Optional(MatchesRequestBody(
-                           /*body=*/"", /*end_of_stream=*/true)));
+  ASSERT_THAT(eos_req, ::testing::Optional(
+                           MatchesRequestBody(kEmptyBody, kEndOfStream)));
   EXPECT_TRUE(eos_req->request_body().end_of_stream_without_message());
   ::envoy::service::ext_proc::v3::ProcessingResponse proc_response;
   auto* common_response =
@@ -1726,9 +1716,9 @@ TEST_P(XdsExtProcEnd2endTest, ResponseBodyGrpcMessageCompressed) {
               ::testing::Optional(MatchesResponseHeaders(::testing::_)));
   ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse({}));
   auto resp_body_req = ext_proc_stream->GetNextRequest();
-  ASSERT_THAT(resp_body_req, ::testing::Optional(MatchesResponseBody(
-                                 EchoResponseMessageIs(kRequestMessage),
-                                 /*end_of_stream=*/false)));
+  ASSERT_THAT(resp_body_req,
+              ::testing::Optional(MatchesResponseBody(
+                  EchoResponseMessageIs(kRequestMessage), !kEndOfStream)));
   ::envoy::service::ext_proc::v3::ProcessingResponse response;
   auto* common_response = response.mutable_response_body()->mutable_response();
   auto* body_mutation = common_response->mutable_body_mutation();
@@ -1852,12 +1842,11 @@ TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnClientBody) {
   request.set_message(kMessage1);
   stream.StartWrite(request);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_THAT(req,
-              ::testing::Optional(MatchesRequestBody(
-                  EchoRequestMessageIs(kMessage1), /*end_of_stream=*/false)));
+  ASSERT_THAT(req, ::testing::Optional(MatchesRequestBody(
+                       EchoRequestMessageIs(kMessage1), !kEndOfStream)));
   ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
       ModifyEchoRequest(req->request_body().body(), kMutatedSuffix),
-      /*end_of_stream=*/false, /*request_drain=*/true));
+      !kEndOfStream, /*request_drain=*/true));
   EXPECT_TRUE(stream.WaitForWrite());
   EXPECT_THAT(stream.ReadMessage(),
               ::testing::Optional(MatchesEchoResponse(kMessage1Mutated)));
@@ -1967,10 +1956,10 @@ TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnServerBody) {
   auto resp_body_req = ext_proc_stream->GetNextRequest();
   ASSERT_THAT(resp_body_req,
               ::testing::Optional(MatchesResponseBody(
-                  EchoResponseMessageIs(kMessage1), /*end_of_stream=*/false)));
+                  EchoResponseMessageIs(kMessage1), !kEndOfStream)));
   ext_proc_stream->SendResponse(MakeResponseBodyMutationResponse(
       ModifyEchoResponse(resp_body_req->response_body().body(), kMutatedSuffix),
-      /*end_of_stream=*/false, /*request_drain=*/true));
+      !kEndOfStream, /*request_drain=*/true));
   EXPECT_THAT(stream.WaitForRead(),
               ::testing::Optional(MatchesEchoResponse(kMessage1Mutated)));
   request.set_message(kMessage2);
@@ -2001,9 +1990,8 @@ TEST_P(XdsExtProcEnd2endTest,
   auto ext_proc_stream = ext_proc_service().GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_THAT(req, ::testing::Optional(
-                       MatchesRequestBody(EchoRequestMessageIs(kRequestMessage),
-                                          /*end_of_stream=*/false)));
+  ASSERT_THAT(req, ::testing::Optional(MatchesRequestBody(
+                       EchoRequestMessageIs(kRequestMessage), !kEndOfStream)));
   ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
   Status status = rpc.GetStatus();
   EXPECT_THAT(status, GrpcStatusIs(StatusCode::INTERNAL,
@@ -2052,9 +2040,9 @@ TEST_P(XdsExtProcEnd2endTest,
   auto ext_proc_stream = ext_proc_service().GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto next_opt = ext_proc_stream->GetNextRequest();
-  ASSERT_THAT(next_opt, ::testing::Optional(MatchesResponseBody(
-                            EchoResponseMessageIs(kRequestMessage),
-                            /*end_of_stream=*/false)));
+  ASSERT_THAT(next_opt,
+              ::testing::Optional(MatchesResponseBody(
+                  EchoResponseMessageIs(kRequestMessage), !kEndOfStream)));
   ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse({}));
   Status status = rpc.GetStatus();
   EXPECT_THAT(status,
@@ -2134,7 +2122,7 @@ TEST_P(XdsExtProcEnd2endTest,
   auto resp_body_req = ext_proc_stream->GetNextRequest();
   ASSERT_THAT(resp_body_req,
               ::testing::Optional(MatchesResponseBody(
-                  EchoResponseMessageIs(kMessage1), /*end_of_stream=*/false)));
+                  EchoResponseMessageIs(kMessage1), !kEndOfStream)));
   ext_proc_stream->SendResponse(MakeResponseTrailersMutationResponse({}));
   EXPECT_FALSE(stream.WaitForRead().has_value());
   EXPECT_THAT(stream.WaitForStatus(),
@@ -2195,11 +2183,11 @@ TEST_P(XdsExtProcEnd2endTest, ServerToClientResponseBodyHalfClose) {
               ::testing::Optional(MatchesResponseHeaders(::testing::_)));
   ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse({}));
   auto resp_body_req = ext_proc_stream->GetNextRequest();
-  ASSERT_THAT(resp_body_req, ::testing::Optional(MatchesResponseBody(
-                                 EchoResponseMessageIs(kRequestMessage),
-                                 /*end_of_stream=*/false)));
+  ASSERT_THAT(resp_body_req,
+              ::testing::Optional(MatchesResponseBody(
+                  EchoResponseMessageIs(kRequestMessage), !kEndOfStream)));
   ext_proc_stream->SendResponse(
-      MakeResponseBodyMutationResponse("", /*end_of_stream=*/true));
+      MakeResponseBodyMutationResponse("", kEndOfStream));
   EXPECT_FALSE(stream.WaitForRead().has_value());
   EXPECT_THAT(stream.WaitForStatus(),
               ::testing::Optional(GrpcStatusIs(
@@ -2254,21 +2242,20 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseBodiesDrainedSuccess) {
   auto ext_proc_stream = ext_proc_service().GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_THAT(req,
-              ::testing::Optional(MatchesRequestBody(
-                  EchoRequestMessageIs(kMessage1), /*end_of_stream=*/false)));
+  ASSERT_THAT(req, ::testing::Optional(MatchesRequestBody(
+                       EchoRequestMessageIs(kMessage1), !kEndOfStream)));
   ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
       ModifyEchoRequest(req->request_body().body(), kMutatedSuffix),
-      /*end_of_stream=*/false));
+      !kEndOfStream));
   EXPECT_TRUE(stream.WaitForWrite());
   stream.StartReadMessage();
   auto resp_body_req = ext_proc_stream->GetNextRequest();
-  ASSERT_THAT(resp_body_req, ::testing::Optional(MatchesResponseBody(
-                                 EchoResponseMessageIs(kMessage1Mutated),
-                                 /*end_of_stream=*/false)));
+  ASSERT_THAT(resp_body_req,
+              ::testing::Optional(MatchesResponseBody(
+                  EchoResponseMessageIs(kMessage1Mutated), !kEndOfStream)));
   ext_proc_stream->SendResponse(MakeResponseBodyMutationResponse(
       ModifyEchoResponse(resp_body_req->response_body().body(), kMutatedSuffix),
-      /*end_of_stream=*/false, /*request_drain=*/true));
+      !kEndOfStream, /*request_drain=*/true));
   EXPECT_THAT(stream.WaitForRead(),
               ::testing::Optional(MatchesEchoResponse(kMessage1DoubleMutated)));
   ext_proc_stream->SendStatus(absl::OkStatus());
@@ -2296,9 +2283,8 @@ TEST_P(XdsExtProcEnd2endTest,
   auto ext_proc_stream = ext_proc_service().GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_THAT(req,
-              ::testing::Optional(MatchesRequestBody(
-                  EchoRequestMessageIs(kMessage1), /*end_of_stream=*/false)));
+  ASSERT_THAT(req, ::testing::Optional(MatchesRequestBody(
+                       EchoRequestMessageIs(kMessage1), !kEndOfStream)));
   ext_proc_stream->SendStatus(absl::OkStatus());
   EXPECT_THAT(stream.ReadMessage(),
               ::testing::Optional(MatchesEchoResponse(kMessage1)));
@@ -2333,9 +2319,9 @@ TEST_P(XdsExtProcEnd2endTest,
   auto ext_proc_stream = ext_proc_service().GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto resp_body_req = ext_proc_stream->GetNextRequest();
-  ASSERT_THAT(resp_body_req, ::testing::Optional(MatchesResponseBody(
-                                 EchoResponseMessageIs(kMessage1),
-                                 /*end_of_stream=*/false)));
+  ASSERT_THAT(resp_body_req,
+              ::testing::Optional(MatchesResponseBody(
+                  EchoResponseMessageIs(kMessage1), !kEndOfStream)));
   ext_proc_stream->SendStatus(absl::OkStatus());
   EXPECT_THAT(stream.WaitForRead(),
               ::testing::Optional(MatchesEchoResponse(kMessage1)));
@@ -2360,9 +2346,8 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseRequestBodyNotDrainedFails) {
   auto ext_proc_stream = ext_proc_service().GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_THAT(req,
-              ::testing::Optional(MatchesRequestBody(
-                  EchoRequestMessageIs(kMessage1), /*end_of_stream=*/false)));
+  ASSERT_THAT(req, ::testing::Optional(MatchesRequestBody(
+                       EchoRequestMessageIs(kMessage1), !kEndOfStream)));
   ext_proc_stream->SendStatus(absl::OkStatus());
   stream.StartWritesDone();
   EXPECT_THAT(
@@ -2391,9 +2376,8 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseBodyNotDrainedFails) {
   auto ext_proc_stream = ext_proc_service().GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_THAT(req,
-              ::testing::Optional(MatchesResponseBody(
-                  EchoResponseMessageIs(kMessage1), /*end_of_stream=*/false)));
+  ASSERT_THAT(req, ::testing::Optional(MatchesResponseBody(
+                       EchoResponseMessageIs(kMessage1), !kEndOfStream)));
   ext_proc_stream->SendResponse(
       MakeResponseBodyMutationResponse(req->response_body().body()));
   EXPECT_THAT(stream.WaitForRead(),
@@ -2402,9 +2386,8 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseBodyNotDrainedFails) {
   request.set_message(kMessage2);
   stream.StartWrite(request);
   auto req2 = ext_proc_stream->GetNextRequest();
-  ASSERT_THAT(req2,
-              ::testing::Optional(MatchesResponseBody(
-                  EchoResponseMessageIs(kMessage2), /*end_of_stream=*/false)));
+  ASSERT_THAT(req2, ::testing::Optional(MatchesResponseBody(
+                        EchoResponseMessageIs(kMessage2), !kEndOfStream)));
   ext_proc_stream->SendStatus(absl::OkStatus());
   stream.StartWritesDone();
   EXPECT_THAT(
@@ -2497,9 +2480,9 @@ TEST_P(XdsExtProcEnd2endTest, StreamErrorFailureModeAllowObservabilitySuccess) {
       ::testing::Optional(MatchesRequestHeaders(::testing::Contains(
           ::testing::Pair(":path", "/grpc.testing.EchoTestService/Echo")))));
   auto next_req = ext_proc_stream->GetNextRequest();
-  ASSERT_THAT(next_req, ::testing::Optional(MatchesRequestBody(
-                            EchoRequestMessageIs(kRequestMessage),
-                            /*end_of_stream=*/false)));
+  ASSERT_THAT(next_req,
+              ::testing::Optional(MatchesRequestBody(
+                  EchoRequestMessageIs(kRequestMessage), !kEndOfStream)));
   ext_proc_stream->SendStatus(absl::ResourceExhaustedError(
       "Call closed by ext_proc server on request body"));
   Status status = rpc.GetStatus();
@@ -2521,9 +2504,8 @@ TEST_P(XdsExtProcEnd2endTest,
   auto ext_proc_stream = ext_proc_service().GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_THAT(req, ::testing::Optional(
-                       MatchesRequestBody(EchoRequestMessageIs(kRequestMessage),
-                                          /*end_of_stream=*/false)));
+  ASSERT_THAT(req, ::testing::Optional(MatchesRequestBody(
+                       EchoRequestMessageIs(kRequestMessage), !kEndOfStream)));
   ext_proc_stream->SendStatus(absl::ResourceExhaustedError(
       "Call closed by ext_proc server on request body"));
   Status status = rpc.GetStatus();
@@ -2549,9 +2531,9 @@ TEST_P(XdsExtProcEnd2endTest,
   auto ext_proc_stream = ext_proc_service().GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto resp_body_req = ext_proc_stream->GetNextRequest();
-  ASSERT_THAT(resp_body_req, ::testing::Optional(MatchesResponseBody(
-                                 EchoResponseMessageIs(kRequestMessage),
-                                 /*end_of_stream=*/false)));
+  ASSERT_THAT(resp_body_req,
+              ::testing::Optional(MatchesResponseBody(
+                  EchoResponseMessageIs(kRequestMessage), !kEndOfStream)));
   ext_proc_stream->SendStatus(absl::ResourceExhaustedError(
       "Call closed by ext_proc server on response body"));
   Status status = rpc.GetStatus();
@@ -2668,16 +2650,15 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcClientHalfCloseDurationMetric) {
   auto ext_proc_stream = ext_proc_service().GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_THAT(req, ::testing::Optional(
-                       MatchesRequestBody(EchoRequestMessageIs(kRequestMessage),
-                                          /*end_of_stream=*/false)));
+  ASSERT_THAT(req, ::testing::Optional(MatchesRequestBody(
+                       EchoRequestMessageIs(kRequestMessage), !kEndOfStream)));
   ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
       req->request_body().body(), req->request_body().end_of_stream()));
   req = ext_proc_stream->GetNextRequest();
   ASSERT_TRUE(req.has_value());
-  EXPECT_THAT(*req, MatchesRequestBody(/*body=*/"", /*end_of_stream=*/true));
+  EXPECT_THAT(*req, MatchesRequestBody(kEmptyBody, kEndOfStream));
   ext_proc_stream->SendResponse(
-      MakeRequestBodyMutationResponse(/*body=*/"", /*end_of_stream=*/true));
+      MakeRequestBodyMutationResponse(/*body=*/"", kEndOfStream));
   Status status = rpc.GetStatus();
   EXPECT_THAT(status, IsStatusOk());
   const std::string expected_target = absl::StrCat("xds:", kServerName);
