@@ -684,13 +684,14 @@ grpc_chttp2_transport::ChannelzDataSource::GetZTrace(absl::string_view name) {
 }
 
 // TODO(alishananda): add unit testing as part of chttp2 promise conversion work
-void grpc_chttp2_transport::WriteSecurityFrame(grpc_core::SliceBuffer* data) {
+void grpc_chttp2_transport::WriteSecurityFrame(grpc_core::SliceBuffer data) {
   grpc_core::ExecCtx exec_ctx;
-  combiner->Run(grpc_core::NewClosure(
-                    [transport = Ref(), data](grpc_error_handle) mutable {
-                      transport->WriteSecurityFrameLocked(data);
-                    }),
-                absl::OkStatus());
+  combiner->Run(
+      grpc_core::NewClosure([transport = Ref(), data = std::move(data)](
+                                grpc_error_handle) mutable {
+        transport->WriteSecurityFrameLocked(&data);
+      }),
+      absl::OkStatus());
 }
 
 void grpc_chttp2_transport::WriteSecurityFrameLocked(
@@ -779,7 +780,9 @@ grpc_chttp2_transport::grpc_chttp2_transport(
             ep.get()));
     if (transport_framing_endpoint_extension != nullptr) {
       transport_framing_endpoint_extension->SetSendFrameCallback(
-          [this](grpc_core::SliceBuffer* data) { WriteSecurityFrame(data); });
+          [this](grpc_core::SliceBuffer data) {
+            WriteSecurityFrame(std::move(data));
+          });
     }
   }
 

@@ -67,8 +67,8 @@ class SecurityFrameHandler final : public RefCounted<SecurityFrameHandler> {
   auto SendFrameCallbackFactory(
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine) {
-    return [self = this->Ref(), event_engine](SliceBuffer* data) {
-      event_engine->Run([self, data = std::move(*data)]() mutable {
+    return [self = this->Ref(), event_engine](SliceBuffer data) {
+      event_engine->Run([self, data = std::move(data)]() mutable {
         GRPC_HTTP2_SECURITY_FRAME_DLOG << "SecurityFrameHandler::Callback";
         bool call_wakeup = false;
         {
