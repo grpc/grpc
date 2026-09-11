@@ -25,23 +25,6 @@ sys.path.insert(0, os.path.abspath("."))
 import grpc_version
 import python_version
 
-
-class _NoOpCommand(setuptools.Command):
-    """No-op command."""
-
-    description = ""
-    user_options = []
-
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        pass
-
-
 CLASSIFIERS = [
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python",
@@ -56,31 +39,9 @@ INSTALL_REQUIRES = (
     "grpcio>={version}".format(version=grpc_version.VERSION),
 )
 
-try:
-    import health_commands as _health_commands
-
-    # we are in the build environment, otherwise the above import fails
-    SETUP_REQUIRES = (
-        "grpcio-tools=={version}".format(version=grpc_version.VERSION),
-    )
-    COMMAND_CLASS = {
-        # Run preprocess from the repository *before* doing any packaging!
-        "preprocess": _health_commands.Preprocess,
-        "build_package_protos": _health_commands.BuildPackageProtos,
-    }
-except ImportError:
-    SETUP_REQUIRES = ()
-    COMMAND_CLASS = {
-        # wire up commands to no-op not to break the external dependencies
-        "preprocess": _NoOpCommand,
-        "build_package_protos": _NoOpCommand,
-    }
-
 if __name__ == "__main__":
     setuptools.setup(
         classifiers=CLASSIFIERS,
         python_requires=f">={python_version.MIN_PYTHON_VERSION}",
         install_requires=INSTALL_REQUIRES,
-        setup_requires=SETUP_REQUIRES,
-        cmdclass=COMMAND_CLASS,
     )

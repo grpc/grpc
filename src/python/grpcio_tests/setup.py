@@ -45,13 +45,8 @@ INSTALL_REQUIRES = (
 )
 
 COMMAND_CLASS = {
-    # Run `preprocess` *before* doing any packaging!
-    "preprocess": commands.GatherProto,
-    "build_package_protos": commands.BuildPackageProtos,
-    "build_py": commands.BuildPy,
     "run_fork": commands.RunFork,
     "run_interop": commands.RunInterop,
-    "test_lite": commands.TestLite,
     "test_aio": commands.TestAio,
     "test_py3_only": commands.TestPy3Only,
 }

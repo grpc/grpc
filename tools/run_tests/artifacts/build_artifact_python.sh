@@ -30,7 +30,7 @@ source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
 # Needed for building binary distribution wheels -- bdist_wheel
 "${PYTHON}" -m pip install --upgrade pip
 # Pin to a single version to make sure we're building the same artifacts
-"${PYTHON}" -m pip install setuptools==77.0.1 wheel==0.43.0 build==1.5.0
+"${PYTHON}" -m pip install setuptools==77.0.1 wheel==0.43.0 build==1.5.0 nox
 
 if [ "$GRPC_SKIP_PIP_CYTHON_UPGRADE" == "" ]
 then
@@ -273,14 +273,18 @@ then
 
   # Build grpcio_testing source distribution
   # TODO(ssreenithi): find pyproject.toml/nox equivalent
-  ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_testing/setup.py preprocess
+  ${SETARCH_CMD} "${PYTHON}" -m nox -s preprocess -f \
+    "src/python/grpcio_testing/noxfile.py"
+
   ${SETARCH_CMD} "${PYTHON}" -m build src/python/grpcio_testing
+
   cp -r src/python/grpcio_testing/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_channelz source distribution
   # TODO(ssreenithi): find pyproject.toml/nox equivalent
-  ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_channelz/setup.py \
-      preprocess build_package_protos
+  ${SETARCH_CMD} "${PYTHON}" -m nox -s preprocess build_package_protos -f \
+    "src/python/grpcio_channelz/noxfile.py"
+
   ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation \
     "src/python/grpcio_channelz"
 
@@ -288,8 +292,9 @@ then
 
   # Build grpcio_health_checking source distribution
   # TODO(ssreenithi): find pyproject.toml/nox equivalent
-  ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_health_checking/setup.py \
-      preprocess build_package_protos
+  ${SETARCH_CMD} "${PYTHON}" -m nox -s preprocess build_package_protos -f \
+    "src/python/grpcio_health_checking/noxfile.py"
+
   ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation \
     "src/python/grpcio_health_checking"
 
@@ -297,8 +302,9 @@ then
 
   # Build grpcio_reflection source distribution
   # TODO(ssreenithi): find pyproject.toml/nox equivalent
-  ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_reflection/setup.py \
-      preprocess build_package_protos
+  ${SETARCH_CMD} "${PYTHON}" -m nox -s preprocess build_package_protos -f \
+    "src/python/grpcio_reflection/noxfile.py"
+
   ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation \
     "src/python/grpcio_reflection"
 
@@ -306,9 +312,11 @@ then
 
   # Build grpcio_status source distribution
   # TODO(ssreenithi): find pyproject.toml/nox equivalent
-  ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_status/setup.py \
-      preprocess
+  ${SETARCH_CMD} "${PYTHON}" -m nox -s preprocess -f \
+   "src/python/grpcio_status/noxfile.py"
+
   ${SETARCH_CMD} "${PYTHON}" -m build "src/python/grpcio_status"
+
   cp -r src/python/grpcio_status/dist/* "$ARTIFACT_DIR"
 
   # Install xds-protos as a dependency of grpcio-csds
