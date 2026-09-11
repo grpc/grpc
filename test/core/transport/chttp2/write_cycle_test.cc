@@ -441,6 +441,36 @@ TEST_P(FrameSenderTest, AddUrgentFrame) {
   EXPECT_EQ(write_cycle.GetWriteBytesRemaining(), initial_remaining);
 }
 
+// This test verifies EnqueueEarlyResetStream and
+// MaybeGetEarlyResetStreamFrames. Assertions:
+// - Initially no frames are added.
+// - Enqueued frames are added as regular frames.
+// - Enqueue list is cleared after retrieval.
+TEST_P(TransportWriteContextTest, EarlyResetStreamFrames) {
+  TransportWriteContext& context = GetTransportWriteContext();
+
+  StartWriteCycle();
+  WriteCycle& write_cycle = GetWriteCycle();
+  FrameSender sender = write_cycle.GetFrameSender();
+  context.MaybeGetEarlyResetStreamFrames(sender);
+  EXPECT_EQ(write_cycle.GetRegularFrameCount(), 0u);
+  EndWriteCycle();
+
+  context.EnqueueEarlyResetStream(1u, Http2ErrorCode::kEnhanceYourCalm);
+  context.EnqueueEarlyResetStream(3u, Http2ErrorCode::kInternalError);
+
+  StartWriteCycle();
+  WriteCycle& write_cycle2 = GetWriteCycle();
+  FrameSender sender2 = write_cycle2.GetFrameSender();
+  context.MaybeGetEarlyResetStreamFrames(sender2);
+  EXPECT_EQ(write_cycle2.GetRegularFrameCount(), 2u);
+
+  // Verify that the early reset stream frames are cleared after retrieval.
+  context.MaybeGetEarlyResetStreamFrames(sender2);
+  EXPECT_EQ(write_cycle2.GetRegularFrameCount(), 2u);
+  EndWriteCycle();
+}
+
 INSTANTIATE_TEST_SUITE_P(FrameSenderTest, FrameSenderTest, ::testing::Bool());
 
 }  // namespace

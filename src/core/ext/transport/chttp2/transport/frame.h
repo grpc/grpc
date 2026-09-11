@@ -445,6 +445,8 @@ inline constexpr absl::string_view kFailedToEnqueueStream =
     "gRPC Transport Error : Failed to enqueue stream to writable stream list";
 inline constexpr absl::string_view kStreamCreationFailed =
     "gRPC Transport Error : Stream creation failed";
+inline constexpr absl::string_view kTransportUnderHighMemoryPressure =
+    "gRPC Stream Error : Server is under memory pressure. Stream rejected.";
 
 inline constexpr uint32_t kDefaultMaxPendingInducedFrames = 10000u;
 
