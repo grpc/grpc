@@ -65,6 +65,7 @@ export HOMEBREW_NO_AUTO_UPDATE=1
 # - https://github.com/grpc/grpc/pull/43193 - Initial ca-certificates fix.
 # - https://github.com/grpc/grpc/pull/43217 - Workaround for gnupg ftp down.
 export HOMEBREW_NO_INSTALL_FROM_API=1
+export HOMEBREW_CURL_RETRIES=8
 
 # Dump the brew configuration for debugging just in case. Check "Core tap HEAD" field
 # because it should be the same as below unless it's been updated.
