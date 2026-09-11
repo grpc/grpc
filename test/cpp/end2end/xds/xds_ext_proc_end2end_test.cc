@@ -93,7 +93,8 @@ class FakeExtProcService final : public ::envoy::service::ext_proc::v3::
     Stream() { StartRead(&request_); }
 
     // Returns the next request received from the client, or std::nullopt
-    // if stream finished without receiving another request.
+    // if stream finished or if the timeout elapses without receiving another
+    // request.
     std::optional<::envoy::service::ext_proc::v3::ProcessingRequest>
     GetNextRequest(absl::Duration timeout = absl::Seconds(10)) {
       grpc_core::MutexLock lock(&mu_);
@@ -126,9 +127,10 @@ class FakeExtProcService final : public ::envoy::service::ext_proc::v3::
 
     // Closes the stream with the specified status.
     void SendStatus(const absl::Status& status) {
-      MaybeFinish(grpc::Status(static_cast<grpc::StatusCode>(status.code()),
-                               std::string(status.message())));
       grpc_core::MutexLock lock(&mu_);
+      MaybeFinishLocked(
+          grpc::Status(static_cast<grpc::StatusCode>(status.code()),
+                       std::string(status.message())));
       while (!is_done_) {
         cv_.Wait(&mu_);
       }
@@ -136,21 +138,26 @@ class FakeExtProcService final : public ::envoy::service::ext_proc::v3::
 
     void MaybeFinish(const grpc::Status& status) {
       grpc_core::MutexLock lock(&mu_);
+      MaybeFinishLocked(status);
+    }
+
+   private:
+    void MaybeFinishLocked(const grpc::Status& status)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
       if (!called_finish_) {
         called_finish_ = true;
         Finish(status);
       }
     }
 
-   private:
     void OnReadDone(bool ok) override {
+      grpc_core::MutexLock lock(&mu_);
       if (ok) {
-        grpc_core::MutexLock lock(&mu_);
         requests_.push(std::move(request_));
         cv_.SignalAll();
         StartRead(&request_);
       } else {
-        MaybeFinish(grpc::Status::OK);
+        MaybeFinishLocked(grpc::Status::OK);
       }
     }
 

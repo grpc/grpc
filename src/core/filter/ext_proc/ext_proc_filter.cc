@@ -1094,9 +1094,7 @@ bool ExtProcFilter::ExtProcCall::HandleSideStreamStatus(absl::Status status) {
     (void)HandleServerTrailingMetadataFromSidestream(
         ExtProcResponse::ResponseTrailers{});
   }
-  if (!side_stream_closed_latch_.is_set()) {
-    side_stream_closed_latch_.Set();
-  }
+  side_stream_closed_latch_.Set();
   return true;
 }
 
