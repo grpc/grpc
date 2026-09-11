@@ -32,8 +32,7 @@
 #include "envoy/service/ext_proc/v3/external_processor.grpc.pb.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/experiments/config.h"
-#include "src/core/util/ref_counted.h"
-#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/orphanable.h"
 #include "src/core/util/sync.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/scoped_env_var.h"
@@ -88,9 +87,23 @@ class FakeExtProcService final : public ::envoy::service::ext_proc::v3::
   class Stream final : public grpc::ServerBidiReactor<
                            ::envoy::service::ext_proc::v3::ProcessingRequest,
                            ::envoy::service::ext_proc::v3::ProcessingResponse>,
-                       public grpc_core::RefCounted<Stream> {
+                       public grpc_core::InternallyRefCounted<Stream> {
    public:
-    Stream() { StartRead(&request_); }
+    // Starts with two refs: one held by the owning OrphanablePtr (i.e., the
+    // test, once it calls GetStream()), and one held by the gRPC server, which
+    // is released in OnDone().
+    Stream()
+        : grpc_core::InternallyRefCounted<Stream>(/*trace=*/nullptr,
+                                                  /*initial_refcount=*/2) {
+      StartRead(&request_);
+    }
+
+    // Called when the owner (the test) releases the stream.  Cancels the
+    // stream if it has not already been finished.
+    void Orphan() override {
+      MaybeFinish(grpc::Status::CANCELLED);
+      Unref();
+    }
 
     // Returns the next request received from the client, or std::nullopt
     // if stream finished or if the timeout elapses without receiving another
@@ -191,8 +204,9 @@ class FakeExtProcService final : public ::envoy::service::ext_proc::v3::
   };
 
   // Returns the next incoming stream, or nullptr if no stream starts within
-  // timeout or service is shutdown.
-  grpc_core::RefCountedPtr<Stream> GetStream(
+  // timeout or service is shutdown.  The caller takes ownership of the
+  // stream; the stream is cancelled when the returned pointer is destroyed.
+  grpc_core::OrphanablePtr<Stream> GetStream(
       absl::Duration timeout = absl::Seconds(10)) {
     grpc_core::MutexLock lock(&mu_);
     const absl::Time deadline =
@@ -211,46 +225,36 @@ class FakeExtProcService final : public ::envoy::service::ext_proc::v3::
   }
 
   void Shutdown() {
-    std::vector<grpc_core::RefCountedPtr<Stream>> streams;
-    {
-      grpc_core::MutexLock lock(&mu_);
-      is_shutdown_ = true;
-      streams = std::move(active_streams_);
-      cv_.SignalAll();
-    }
-    for (auto& s : streams) {
-      s->MaybeFinish(
-          grpc::Status(grpc::StatusCode::UNAVAILABLE, "Server shutdown"));
-    }
+    // Cancels any streams that were never consumed via GetStream().  Streams
+    // already handed to the test are owned by the test.
+    std::queue<grpc_core::OrphanablePtr<Stream>> streams;
+    grpc_core::MutexLock lock(&mu_);
+    is_shutdown_ = true;
+    streams = std::move(streams_);
+    cv_.SignalAll();
   }
 
   Stream* Process(grpc::CallbackServerContext* /*context*/) override {
-    auto stream = grpc_core::MakeRefCounted<Stream>();
-    {
-      grpc_core::MutexLock lock(&mu_);
-      if (is_shutdown_) {
-        stream->MaybeFinish(
-            grpc::Status(grpc::StatusCode::UNAVAILABLE, "Server shutdown"));
-        return stream.release();
-      }
-      streams_.push(stream);
-      active_streams_.push_back(stream);
-      cv_.SignalAll();
+    auto stream = grpc_core::MakeOrphanable<Stream>();
+    Stream* active_stream = stream.get();
+    grpc_core::MutexLock lock(&mu_);
+    if (is_shutdown_) {
+      stream->MaybeFinish(
+          grpc::Status(grpc::StatusCode::UNAVAILABLE, "Server shutdown"));
+      return active_stream;
     }
-    return stream.release();
+    streams_.push(std::move(stream));
+    cv_.SignalAll();
+    return active_stream;
   }
 
  private:
   grpc_core::Mutex mu_;
   grpc_core::CondVar cv_;
   // FIFO queue of newly arrived streams waiting to be consumed by the test
-  // thread via GetStream(). Once popped by GetStream(), the stream is no longer
-  // in this queue.
-  std::queue<grpc_core::RefCountedPtr<Stream>> streams_ ABSL_GUARDED_BY(mu_);
-  // Lifetime registry of all streams created during the test. Used during
-  // Shutdown() to finish all active streams.
-  std::vector<grpc_core::RefCountedPtr<Stream>> active_streams_
-      ABSL_GUARDED_BY(mu_);
+  // thread via GetStream(). Once popped by GetStream(), the stream is owned by
+  // the test.
+  std::queue<grpc_core::OrphanablePtr<Stream>> streams_ ABSL_GUARDED_BY(mu_);
   bool is_shutdown_ ABSL_GUARDED_BY(mu_) = false;
 };
 
