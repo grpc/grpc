@@ -42,9 +42,8 @@ inline bool ServerOnlyStreaming(const grpc_generator::Method* method) {
 
 std::string FilenameIdentifier(const std::string& filename) {
   std::string result;
-  for (unsigned i = 0; i < filename.size(); i++) {
-    char c = filename[i];
-    if (isalnum(c)) {
+  for (char c : filename) {
+    if (c >= 0 && std::isalnum(c)) {
       result.push_back(c);
     } else {
       static char hex[] = "0123456789abcdef";
