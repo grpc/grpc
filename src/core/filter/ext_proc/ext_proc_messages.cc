@@ -321,12 +321,19 @@ class UpbHeaderMapEncoder {
         disallowed_headers_(disallowed_headers) {}
 
   void Encode(const Slice& key, const Slice& value) {
-    Append(key.as_string_view(), value.as_string_view());
+    // The slices are owned by the metadata batch, which outlives serialization
+    // of the request, so their contents do not need to be copied.
+    Append(key.as_string_view(), StdStringToUpbString(value.as_string_view()));
   }
 
   template <typename Which>
   void Encode(Which, const typename Which::ValueType& value) {
-    Append(Which::key(), Which::Encode(value).as_string_view());
+    // Which::Encode() returns a temporary Slice, and for inlined slices the
+    // bytes live inside that temporary, so they must be copied onto the arena:
+    // the upb message only retains a pointer to them, and the request is
+    // serialized long after this returns.
+    Append(Which::key(), CopyStdStringToUpbString(
+                             Which::Encode(value).as_string_view(), arena_));
   }
 
  private:
@@ -350,7 +357,7 @@ class UpbHeaderMapEncoder {
   }
 
   ABSL_ATTRIBUTE_NOINLINE void Append(absl::string_view key,
-                                      absl::string_view value) {
+                                      upb_StringView value) {
     if (!ShouldForwardHeader(key)) {
       return;
     }
@@ -360,8 +367,7 @@ class UpbHeaderMapEncoder {
                                              StdStringToUpbString(key));
     // Per gRFC A102, when writing, we always set the raw_value field and never
     // the value field.
-    envoy_config_core_v3_HeaderValue_set_raw_value(value_msg,
-                                                   StdStringToUpbString(value));
+    envoy_config_core_v3_HeaderValue_set_raw_value(value_msg, value);
   }
 
   envoy_config_core_v3_HeaderMap* header_map_;
