@@ -755,7 +755,7 @@ class PythonLanguage:
         if self.args.compiler == "python_alpine":
             return "alpine"
         else:
-            return "debian11_default"
+            return "debian13_default"
 
     def _get_pythons(self, args):
         """Get python runtimes to test with, based on current platform, architecture, compiler etc."""
@@ -864,7 +864,7 @@ class PythonLanguage:
                 # tested.
                 return (python310_config,)
             elif platform.machine() == "aarch64":
-                # Currently the python_debian11_default_arm64 docker image
+                # Currently the python_debian13_default_arm64 docker image
                 # only has python3.10 installed (and that seems sufficient
                 # for arm64 testing)
                 return (python310_config,)
