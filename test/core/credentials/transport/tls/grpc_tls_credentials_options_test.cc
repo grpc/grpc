@@ -625,6 +625,18 @@ TEST_F(GrpcTlsCredentialsOptionsTest, SetKeyExchangeGroups) {
   EXPECT_EQ(options->key_exchange_groups(), groups);
 }
 
+TEST_F(GrpcTlsCredentialsOptionsTest, SetExportedKeyingMaterialOptions) {
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  grpc_tls_credentials_options_set_exported_keying_material_options(
+      options.get(), "test_label", 32);
+  EXPECT_EQ(options->exported_keying_material_label(), "test_label");
+  EXPECT_EQ(options->exported_keying_material_length(), 32);
+  grpc_tls_credentials_options_set_exported_keying_material_options(
+      options.get(), nullptr, 0);
+  EXPECT_EQ(options->exported_keying_material_label(), "");
+  EXPECT_EQ(options->exported_keying_material_length(), 0);
+}
+
 }  // namespace testing
 
 }  // namespace grpc_core

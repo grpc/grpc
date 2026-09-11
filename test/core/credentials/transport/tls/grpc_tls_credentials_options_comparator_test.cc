@@ -192,6 +192,26 @@ TEST(TlsCredentialsOptionsComparatorTest, DifferentKeyExchangeGroups) {
   delete options_1;
   delete options_2;
 }
+TEST(TlsCredentialsOptionsComparatorTest, DifferentEkmLabel) {
+  auto* options_1 = grpc_tls_credentials_options_create();
+  auto* options_2 = grpc_tls_credentials_options_create();
+  options_1->set_exported_keying_material_label("label_1");
+  options_2->set_exported_keying_material_label("label_2");
+  EXPECT_FALSE(*options_1 == *options_2);
+  EXPECT_FALSE(*options_2 == *options_1);
+  delete options_1;
+  delete options_2;
+}
+TEST(TlsCredentialsOptionsComparatorTest, DifferentEkmLength) {
+  auto* options_1 = grpc_tls_credentials_options_create();
+  auto* options_2 = grpc_tls_credentials_options_create();
+  options_1->set_exported_keying_material_length(32);
+  options_2->set_exported_keying_material_length(64);
+  EXPECT_FALSE(*options_1 == *options_2);
+  EXPECT_FALSE(*options_2 == *options_1);
+  delete options_1;
+  delete options_2;
+}
 
 } // namespace
 } // namespace grpc_core
