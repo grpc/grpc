@@ -116,8 +116,9 @@ class Epoll1EventHandle : public EventHandle {
   void SetHasError() override;
   bool IsHandleShutdown() override;
   inline void ExecutePendingActions() {
-    // These may execute in Parallel with ShutdownHandle. Thats not an issue
-    // because the lockfree event implementation should be able to handle it.
+    // Serialize with OrphanHandle, which calls DestroyEvent and resets
+    // pending_*_ under mu_.  This also serializes with ShutdownHandle.
+    grpc_core::MutexLock lock(&mu_);
     if (pending_read_.exchange(false, std::memory_order_acq_rel)) {
       read_closure_.SetReady();
     }
@@ -198,16 +199,17 @@ void Epoll1EventHandle::OrphanHandle(PosixEngineClosure* on_done,
   }
 
   {
-    // See Epoll1Poller::ShutdownHandle for explanation on why a mutex is
-    // required here.
+    // Serialize with ExecutePendingActions and ShutdownHandle so that
+    // DestroyEvent and the pending_*_ reset happen atomically with respect
+    // to any concurrent SetReady/SetShutdown on the same closures.
     grpc_core::MutexLock lock(&mu_);
     read_closure_.DestroyEvent();
     write_closure_.DestroyEvent();
     error_closure_.DestroyEvent();
+    pending_read_.store(false, std::memory_order_release);
+    pending_write_.store(false, std::memory_order_release);
+    pending_error_.store(false, std::memory_order_release);
   }
-  pending_read_.store(false, std::memory_order_release);
-  pending_write_.store(false, std::memory_order_release);
-  pending_error_.store(false, std::memory_order_release);
   {
     grpc_core::MutexLock lock(&poller_->mu_);
 #ifdef GRPC_ENABLE_FORK_SUPPORT
@@ -266,17 +268,27 @@ void Epoll1Poller::Close() {
     posix_interface().Close(g_epoll_set_.epfd);
     g_epoll_set_.epfd = FileDescriptor::Invalid();
   }
+  // NOTE: we intentionally do NOT delete free-listed handles here.
+  // Work() may be draining pending events on another thread and still hold raw
+  // Epoll1EventHandle pointers collected under mu_. Handle deletion is deferred
+  // to the destructor, which is only reached when the last shared_ptr reference
+  // is dropped -- by that point no concurrent Work() can be in flight.
+  closed_ = true;
+}
 
+Epoll1Poller::~Epoll1Poller() {
+  Close();
+  // Close() leaves free-listed handles intact; delete them now that the
+  // poller is fully destroyed and no concurrent access is possible.  The
+  // lock is held only to satisfy ABSL_GUARDED_BY(mu_).
+  grpc_core::MutexLock lock(&mu_);
   while (!free_epoll1_handles_list_.empty()) {
     Epoll1EventHandle* handle =
         reinterpret_cast<Epoll1EventHandle*>(free_epoll1_handles_list_.front());
     free_epoll1_handles_list_.pop_front();
     delete handle;
   }
-  closed_ = true;
 }
-
-Epoll1Poller::~Epoll1Poller() { Close(); }
 
 EventHandle* Epoll1Poller::CreateHandle(FileDescriptor fd,
                                         absl::string_view /*name*/,
@@ -427,6 +439,12 @@ Poller::WorkResult Epoll1Poller::Work(
   }
   {
     grpc_core::MutexLock lock(&mu_);
+    // Close() may have run between DoEpollWait() returning and mu_ being
+    // acquired, so stale events in g_epoll_set_ may reference handles whose
+    // LockfreeEvents have been DestroyEvent'd by OrphanHandle.
+    if (closed_) {
+      return Poller::WorkResult::kKicked;
+    }
     // If was_kicked_ is true, collect all pending events in this iteration.
     if (ProcessEpollEvents(
             was_kicked_ ? INT_MAX : MAX_EPOLL_EVENTS_HANDLED_PER_ITERATION,
