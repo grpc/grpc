@@ -550,7 +550,8 @@ std::string ComputeSha256PeerCertificateDigest(
   absl::string_view pem_cert =
       GetAuthPropertyValue(auth_context, GRPC_X509_PEM_CERT_PROPERTY_NAME);
   if (pem_cert.empty()) return "";
-  BIO* bio = BIO_new_mem_buf(pem_cert.data(), static_cast<int>(pem_cert.size()));
+  BIO* bio =
+      BIO_new_mem_buf(pem_cert.data(), static_cast<int>(pem_cert.size()));
   if (bio == nullptr) return "";
   X509* cert = PEM_read_bio_X509(bio, /*x=*/nullptr, /*cb=*/nullptr,
                                  /*u=*/nullptr);
@@ -570,8 +571,8 @@ std::string ComputeSha256PeerCertificateDigest(
     LOG(ERROR) << "ext_proc: failed to compute peer certificate digest";
     return "";
   }
-  return absl::BytesToHexString(absl::string_view(
-      reinterpret_cast<const char*>(digest), digest_length));
+  return absl::BytesToHexString(
+      absl::string_view(reinterpret_cast<const char*>(digest), digest_length));
 }
 
 //
@@ -591,34 +592,26 @@ std::string ComputeSha256PeerCertificateDigest(
     ::google_protobuf_Struct_fields_set(
         struct_msg, CopyStdStringToUpbString(name, arena), val_msg, arena);
   };
-  const grpc_metadata_batch* metadata = args.metadata();
   for (const auto& attr : attributes) {
     if (attr == "request.path" || attr == "request.url_path") {
       absl::string_view path = args.GetPath();
       if (!path.empty()) add_field(attr, path);
     } else if (attr == "request.host") {
       absl::string_view host = args.GetAuthority();
-      if (host.empty() && metadata != nullptr) {
-        if (const Slice* host_md = metadata->get_pointer(HostMetadata())) {
-          host = host_md->as_string_view();
-        }
-      }
       if (host.empty()) host = default_authority;
       if (!host.empty()) add_field(attr, host);
     } else if (attr == "request.method") {
       absl::string_view method = args.GetMethod();
       add_field(attr, method.empty() ? "POST" : method);
     } else if (attr == "request.headers") {
-      if (metadata != nullptr) {
-        ::google_protobuf_Struct* headers_struct =
-            ::google_protobuf_Struct_new(arena);
-        UpbStructHeadersEncoder encoder(headers_struct, arena);
-        metadata->Encode(&encoder);
-        ::google_protobuf_Value* val_msg = ::google_protobuf_Value_new(arena);
-        ::google_protobuf_Value_set_struct_value(val_msg, headers_struct);
-        ::google_protobuf_Struct_fields_set(
-            struct_msg, CopyStdStringToUpbString(attr, arena), val_msg, arena);
-      }
+      ::google_protobuf_Struct* headers_struct =
+          ::google_protobuf_Struct_new(arena);
+      UpbStructHeadersEncoder encoder(headers_struct, arena);
+      args.EncodeHeaders(&encoder);
+      ::google_protobuf_Value* val_msg = ::google_protobuf_Value_new(arena);
+      ::google_protobuf_Value_set_struct_value(val_msg, headers_struct);
+      ::google_protobuf_Struct_fields_set(
+          struct_msg, CopyStdStringToUpbString(attr, arena), val_msg, arena);
     } else if (attr == "request.referer" || attr == "request.useragent" ||
                attr == "request.id") {
       absl::string_view key;

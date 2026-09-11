@@ -104,6 +104,9 @@ absl::string_view EvaluateArgs::GetAuthority() const {
   if (metadata_ != nullptr) {
     if (auto* authority_md = metadata_->get_pointer(HttpAuthorityMetadata())) {
       authority = authority_md->as_string_view();
+    } else if (auto* host_md = metadata_->get_pointer(HostMetadata())) {
+      // Fall back to the legacy host header.
+      authority = host_md->as_string_view();
     }
   }
   return authority;

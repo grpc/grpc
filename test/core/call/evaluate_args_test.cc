@@ -50,6 +50,19 @@ TEST_F(EvaluateArgsTest, GetAuthoritySuccess) {
   EXPECT_EQ(args.GetAuthority(), "test.google.com");
 }
 
+TEST_F(EvaluateArgsTest, GetAuthorityFallsBackToHostHeader) {
+  util_.AddPairToMetadata("host", "host.google.com");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_EQ(args.GetAuthority(), "host.google.com");
+}
+
+TEST_F(EvaluateArgsTest, GetAuthorityPrefersAuthorityOverHostHeader) {
+  util_.AddPairToMetadata(":authority", "test.google.com");
+  util_.AddPairToMetadata("host", "host.google.com");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_EQ(args.GetAuthority(), "test.google.com");
+}
+
 TEST_F(EvaluateArgsTest, GetMethodSuccess) {
   util_.AddPairToMetadata(":method", "GET");
   EvaluateArgs args = util_.MakeEvaluateArgs();

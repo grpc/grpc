@@ -42,7 +42,6 @@ class EvaluateArgs final {
       int port = 0;
     };
 
-    PerChannelArgs() = default;
     PerChannelArgs(grpc_auth_context* auth_context, const ChannelArgs& args);
 
     absl::string_view transport_security_type;
@@ -62,6 +61,8 @@ class EvaluateArgs final {
       : metadata_(metadata), channel_args_(channel_args) {}
 
   absl::string_view GetPath() const;
+  // Returns the value of the :authority header, falling back to the legacy
+  // host header if :authority is not present.
   absl::string_view GetAuthority() const;
   absl::string_view GetMethod() const;
   // Returns metadata value(s) for the specified key.
@@ -89,8 +90,12 @@ class EvaluateArgs final {
   absl::string_view GetRequestedServerName() const;
   absl::string_view GetTlsVersion() const;
 
-  const PerChannelArgs* channel_args() const { return channel_args_; }
-  const grpc_metadata_batch* metadata() const { return metadata_; }
+  // Iterates over all metadata entries, invoking encoder->Encode() for each
+  // one.  See grpc_metadata_batch::Encode() for details.
+  template <typename Encoder>
+  void EncodeHeaders(Encoder* encoder) const {
+    if (metadata_ != nullptr) metadata_->Encode(encoder);
+  }
 
  private:
   grpc_metadata_batch* metadata_;

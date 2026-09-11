@@ -173,8 +173,12 @@ absl::StatusOr<RefCountedPtr<ExtProcFilter>> ExtProcFilter::Create(
 
 ExtProcFilter::ExtProcFilter(const ChannelArgs& args,
                              RefCountedPtr<const Config> config)
-    : V3InterceptorToV2Bridge<ExtProcFilter>(args),
-      config_(std::move(config)) {}
+    : V3InterceptorToV2Bridge<ExtProcFilter>(args), config_(std::move(config)) {
+  // TODO(rishesh): If the config requests the
+  // connection.sha256_peer_certificate_digest attribute, compute it here (once
+  // per connection) via ComputeSha256PeerCertificateDigest() and pass it to
+  // CreateExtProcAttributesProtoStruct().
+}
 
 void ExtProcFilter::InterceptCall(UnstartedCallHandler unstarted_call_handler) {
   CallHandler handler = Consume(std::move(unstarted_call_handler));

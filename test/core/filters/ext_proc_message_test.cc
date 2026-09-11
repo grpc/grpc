@@ -24,7 +24,10 @@
 #include "envoy/extensions/filters/http/ext_proc/v3/processing_mode.pb.h"
 #include "envoy/service/ext_proc/v3/external_processor.pb.h"
 #include "src/core/call/evaluate_args.h"
+#include "src/core/credentials/transport/tls/tls_utils.h"
 #include "src/core/filter/ext_proc/ext_proc_messages.h"
+#include "src/core/handshaker/endpoint_info/endpoint_info_handshaker.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/transport/auth_context.h"
 #include "test/core/test_util/tls_utils.h"
 #include "gmock/gmock.h"
@@ -779,15 +782,29 @@ TEST_F(CreateExtProcAttributesProtoStructTest,
        AttributesHostFallbackToHostHeader) {
   upb::Arena arena;
   grpc_metadata_batch batch;
-  // No HttpAuthorityMetadata, but has HostMetadata
+  // No HttpAuthorityMetadata, but has HostMetadata.
   batch.Set(HostMetadata(), Slice::FromCopiedString("fallback.host.com"));
   EvaluateArgs args(&batch, /*channel_args=*/nullptr);
   auto* upb_struct = CreateExtProcAttributesProtoStruct(
-      arena.ptr(), {"request.host"}, args, "");
+      arena.ptr(), {"request.host"}, args, "default.host.com");
   ASSERT_NE(upb_struct, nullptr);
   auto proto = ConvertToProto(upb_struct, arena.ptr());
   EXPECT_EQ(proto.fields().at("request.host").string_value(),
             "fallback.host.com");
+}
+
+TEST_F(CreateExtProcAttributesProtoStructTest,
+       AttributesHostFallbackToDefaultAuthority) {
+  upb::Arena arena;
+  grpc_metadata_batch batch;
+  // Neither HttpAuthorityMetadata nor HostMetadata is present.
+  EvaluateArgs args(&batch, /*channel_args=*/nullptr);
+  auto* upb_struct = CreateExtProcAttributesProtoStruct(
+      arena.ptr(), {"request.host"}, args, "default.host.com");
+  ASSERT_NE(upb_struct, nullptr);
+  auto proto = ConvertToProto(upb_struct, arena.ptr());
+  EXPECT_EQ(proto.fields().at("request.host").string_value(),
+            "default.host.com");
 }
 
 TEST_F(CreateExtProcAttributesProtoStructTest, AttributesMethodFallbackToPost) {
@@ -825,11 +842,14 @@ TEST_F(CreateExtProcAttributesProtoStructTest,
        AttributesServerSideConnectionAttributes) {
   upb::Arena arena;
   grpc_metadata_batch batch;
-  EvaluateArgs::PerChannelArgs conn_args;
-  conn_args.peer_address.address_str = "192.168.1.100";
-  conn_args.peer_address.port = 54321;
-  conn_args.requested_server_name = "service.example.com";
-  conn_args.tls_version = "TLSv1.3";
+  grpc_auth_context auth_context(nullptr);
+  auth_context.add_cstring_property(
+      GRPC_SSL_REQUESTED_SERVER_NAME_PROPERTY_NAME, "service.example.com");
+  auth_context.add_cstring_property(GRPC_SSL_TLS_VERSION_PROPERTY_NAME,
+                                    "TLSv1.3");
+  EvaluateArgs::PerChannelArgs conn_args(
+      &auth_context, ChannelArgs().Set(GRPC_ARG_ENDPOINT_PEER_ADDRESS,
+                                       "ipv4:192.168.1.100:54321"));
   std::vector<std::string> requested = {
       "source.address", "source.port", "connection.requested_server_name",
       "connection.tls_version", "connection.sha256_peer_certificate_digest"};
@@ -875,7 +895,8 @@ TEST_F(CreateExtProcAttributesProtoStructTest,
   std::vector<std::string> requested = {
       "source.address", "source.port", "connection.requested_server_name",
       "connection.tls_version", "connection.sha256_peer_certificate_digest"};
-  EvaluateArgs::PerChannelArgs empty_args;
+  grpc_auth_context auth_context(nullptr);
+  EvaluateArgs::PerChannelArgs empty_args(&auth_context, ChannelArgs());
   EvaluateArgs args(&batch, &empty_args);
   auto* upb_struct =
       CreateExtProcAttributesProtoStruct(arena.ptr(), requested, args, "");
@@ -910,9 +931,8 @@ TEST(ComputeSha256PeerCertificateDigestTest, ValidPeerCertificate) {
   grpc_auth_context auth_context(nullptr);
   auth_context.add_cstring_property(GRPC_X509_PEM_CERT_PROPERTY_NAME,
                                     cert.c_str());
-  EXPECT_EQ(
-      ComputeSha256PeerCertificateDigest(&auth_context),
-      "b6364b63330df8de02a88e7e238ea763b89f18ec5d80d5339b6fbaad5a4b4891");
+  EXPECT_EQ(ComputeSha256PeerCertificateDigest(&auth_context),
+            "b6364b63330df8de02a88e7e238ea763b89f18ec5d80d5339b6fbaad5a4b4891");
 }
 
 //
