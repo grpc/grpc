@@ -122,6 +122,8 @@ def _run():
             "build",
             "-c",
             "opt",
+            # Needed for compiling abseil with older compilers (e.g. gcc 10.2)
+            "--cxxopt=-Wno-invalid-partial-specialization",
             "test/core/memory_usage/memory_usage_test",
         ]
     )
