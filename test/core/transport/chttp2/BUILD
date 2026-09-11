@@ -841,6 +841,7 @@ grpc_cc_test(
         "//:grpc_base",
         "//src/core:grpc_check",
         "//src/core:http2_status",
+        "//src/core:http2_transport",
         "//src/core:read_context",
         "//src/core:slice",
         "//test/core/transport/util:mock_promise_endpoint",
