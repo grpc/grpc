@@ -17078,7 +17078,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(evaluate_args_test
-  test/core/security/evaluate_args_test.cc
+  test/core/call/evaluate_args_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -17915,6 +17915,7 @@ target_link_libraries(ext_proc_message_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc++
+  grpc_test_util
 )
 
 

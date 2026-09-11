@@ -534,10 +534,6 @@ class SslTransportSecurityTest
           memcmp(cert_type_property->value.data, TSI_X509_CERTIFICATE_TYPE,
                  cert_type_property->value.length),
           0);
-      const tsi_peer_property* sha256_property =
-          tsi_peer_get_property_by_name(peer, TSI_X509_SHA256_PEER_PROPERTY);
-      EXPECT_NE(sha256_property, nullptr);
-      EXPECT_EQ(sha256_property->value.length, 64);
       const tsi_peer_property* property = tsi_peer_get_property_by_name(
           peer, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY);
       EXPECT_NE(property, nullptr);
@@ -1371,9 +1367,9 @@ TEST(SslTransportSecurityTest, ExtractX509SubjectNames) {
       tsi_ssl_extract_x509_subject_names_from_pem_cert(cert.c_str(), &peer),
       TSI_OK);
   // tsi_peer should include one subject, one common name, one certificate, one
-  // SHA-256 certificate digest, one security level, ten SAN fields, two DNS SAN
-  // fields, three URI fields, two email addresses and two IP addresses.
-  size_t expected_property_count = 23;
+  // security level, ten SAN fields, two DNS SAN fields, three URI fields, two
+  // email addresses and two IP addresses.
+  size_t expected_property_count = 22;
   ASSERT_EQ(peer.property_count, expected_property_count);
   // Check subject
   std::string expected_subject = "CN=xpigors,OU=Google,L=SF,ST=CA,C=US";
@@ -1393,12 +1389,6 @@ TEST(SslTransportSecurityTest, ExtractX509SubjectNames) {
   property = tsi_peer_get_property_by_name(&peer, TSI_X509_PEM_CERT_PROPERTY);
   ASSERT_NE(property, nullptr);
   ASSERT_EQ(cert, std::string(property->value.data, property->value.length));
-  // Check SHA256 digest
-  property =
-      tsi_peer_get_property_by_name(&peer, TSI_X509_SHA256_PEER_PROPERTY);
-  ASSERT_NE(property, nullptr);
-  ASSERT_EQ("b6364b63330df8de02a88e7e238ea763b89f18ec5d80d5339b6fbaad5a4b4891",
-            std::string(property->value.data, property->value.length));
   // Check DNS
   ASSERT_TRUE(check_property(&peer,
                              TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,

@@ -12723,7 +12723,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/security/evaluate_args_test.cc
+  - test/core/call/evaluate_args_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -13317,6 +13317,7 @@ targets:
   deps:
   - gtest
   - grpc++
+  - grpc_test_util
 - name: factory_test
   gtest: true
   build: test

@@ -107,7 +107,6 @@ TEST_F(EvaluateArgsTest, EmptyAuthContext) {
   EXPECT_TRUE(args.GetCommonName().empty());
   EXPECT_TRUE(args.GetRequestedServerName().empty());
   EXPECT_TRUE(args.GetTlsVersion().empty());
-  EXPECT_TRUE(args.GetSha256PeerCertificateDigest().empty());
 }
 
 TEST_F(EvaluateArgsTest, GetTransportSecurityTypeSuccessOneProperty) {
@@ -209,19 +208,6 @@ TEST_F(EvaluateArgsTest, GetTlsVersionFailDuplicateProperty) {
   util_.AddPropertyToAuthContext(GRPC_SSL_TLS_VERSION_PROPERTY_NAME, "TLSv1.3");
   EvaluateArgs args = util_.MakeEvaluateArgs();
   EXPECT_TRUE(args.GetTlsVersion().empty());
-}
-
-TEST_F(EvaluateArgsTest, GetSha256PeerCertificateDigestSuccessOneProperty) {
-  util_.AddPropertyToAuthContext(GRPC_X509_SHA256_PROPERTY_NAME, "a1b2c3d4");
-  EvaluateArgs args = util_.MakeEvaluateArgs();
-  EXPECT_EQ(args.GetSha256PeerCertificateDigest(), "a1b2c3d4");
-}
-
-TEST_F(EvaluateArgsTest, GetSha256PeerCertificateDigestFailDuplicateProperty) {
-  util_.AddPropertyToAuthContext(GRPC_X509_SHA256_PROPERTY_NAME, "digest1");
-  util_.AddPropertyToAuthContext(GRPC_X509_SHA256_PROPERTY_NAME, "digest2");
-  EvaluateArgs args = util_.MakeEvaluateArgs();
-  EXPECT_TRUE(args.GetSha256PeerCertificateDigest().empty());
 }
 
 }  // namespace grpc_core

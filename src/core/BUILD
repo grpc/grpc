@@ -5844,9 +5844,12 @@ grpc_cc_library(
         "@com_google_protobuf//upb/base",
         "@com_google_protobuf//upb/mem",
         "absl/functional:function_ref",
+        "absl/log",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "libcrypto",
+        "libssl",
     ],
     deps = [
         "envoy_config_core_upb",
@@ -5863,6 +5866,8 @@ grpc_cc_library(
         "xds_common_types_parser",
         "//:gpr",
         "//:grpc_base",
+        "//:grpc_credentials_util",
+        "//:grpc_security_base",
     ],
 )
 

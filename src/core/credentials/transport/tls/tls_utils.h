@@ -30,7 +30,6 @@
 // Auth context property names for internal connection/TLS attributes.
 #define GRPC_SSL_REQUESTED_SERVER_NAME_PROPERTY_NAME "ssl_requested_server_name"
 #define GRPC_SSL_TLS_VERSION_PROPERTY_NAME "ssl_tls_version"
-#define GRPC_X509_SHA256_PROPERTY_NAME "x509_sha256"
 
 namespace grpc_core {
 

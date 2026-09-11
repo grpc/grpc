@@ -62,7 +62,6 @@
   "ssl_negotiated_key_exchange_group"
 #define TSI_SSL_REQUESTED_SERVER_NAME_PEER_PROPERTY "ssl_requested_server_name"
 #define TSI_SSL_TLS_VERSION_PEER_PROPERTY "ssl_tls_version"
-#define TSI_X509_SHA256_PEER_PROPERTY "x509_sha256"
 
 namespace tsi {
 using RootCertInfo = std::variant<std::string, grpc_core::SpiffeBundleMap>;

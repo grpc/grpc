@@ -53,7 +53,6 @@ class EvaluateArgs final {
     absl::string_view subject;
     absl::string_view requested_server_name;
     absl::string_view tls_version;
-    absl::string_view sha256_peer_certificate_digest;
     Address local_address;
     Address peer_address;
   };
@@ -89,7 +88,6 @@ class EvaluateArgs final {
   absl::string_view GetSubject() const;
   absl::string_view GetRequestedServerName() const;
   absl::string_view GetTlsVersion() const;
-  absl::string_view GetSha256PeerCertificateDigest() const;
 
   const PerChannelArgs* channel_args() const { return channel_args_; }
   const grpc_metadata_batch* metadata() const { return metadata_; }

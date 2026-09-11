@@ -82,8 +82,6 @@ EvaluateArgs::PerChannelArgs::PerChannelArgs(grpc_auth_context* auth_context,
         auth_context, GRPC_SSL_REQUESTED_SERVER_NAME_PROPERTY_NAME);
     tls_version =
         GetAuthPropertyValue(auth_context, GRPC_SSL_TLS_VERSION_PROPERTY_NAME);
-    sha256_peer_certificate_digest =
-        GetAuthPropertyValue(auth_context, GRPC_X509_SHA256_PROPERTY_NAME);
   }
   local_address = ParseEndpointUri(
       args.GetString(GRPC_ARG_ENDPOINT_LOCAL_ADDRESS).value_or(""));
@@ -232,13 +230,6 @@ absl::string_view EvaluateArgs::GetTlsVersion() const {
     return "";
   }
   return channel_args_->tls_version;
-}
-
-absl::string_view EvaluateArgs::GetSha256PeerCertificateDigest() const {
-  if (channel_args_ == nullptr) {
-    return "";
-  }
-  return channel_args_->sha256_peer_certificate_digest;
 }
 
 }  // namespace grpc_core

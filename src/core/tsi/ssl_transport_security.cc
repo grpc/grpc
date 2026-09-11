@@ -90,7 +90,6 @@
 #include "absl/functional/bind_front.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
-#include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -1240,7 +1239,7 @@ static tsi_result peer_from_x509(X509* cert, int include_certificate_type,
   tsi_result result;
   GRPC_CHECK_GE(subject_alt_name_count, 0);
   property_count = (include_certificate_type ? size_t{1} : 0) +
-                   4 /* subject, common name, certificate, sha256 */ +
+                   3 /* subject, common name, certificate */ +
                    static_cast<size_t>(subject_alt_name_count);
   for (int i = 0; i < subject_alt_name_count; i++) {
     GENERAL_NAME* subject_alt_name =
@@ -1280,21 +1279,6 @@ static tsi_result peer_from_x509(X509* cert, int include_certificate_type,
         add_pem_certificate(cert, &peer->properties[current_insert_index++]);
     if (result != TSI_OK) break;
 
-    unsigned char md[EVP_MAX_MD_SIZE];
-    unsigned int md_len = 0;
-    if (X509_digest(cert, EVP_sha256(), md, &md_len) == 1) {
-      std::string sha256_hex = absl::BytesToHexString(
-          absl::string_view(reinterpret_cast<const char*>(md), md_len));
-      result = tsi_construct_string_peer_property_from_cstring(
-          TSI_X509_SHA256_PEER_PROPERTY, sha256_hex.c_str(),
-          &peer->properties[current_insert_index++]);
-      if (result != TSI_OK) break;
-    } else {
-      result = tsi_construct_string_peer_property_from_cstring(
-          TSI_X509_SHA256_PEER_PROPERTY, "",
-          &peer->properties[current_insert_index++]);
-      if (result != TSI_OK) break;
-    }
     if (subject_alt_name_count != 0) {
       result = add_subject_alt_names_properties_to_peer(
           peer, subject_alt_names, static_cast<size_t>(subject_alt_name_count),

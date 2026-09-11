@@ -17,6 +17,7 @@
 #ifndef GRPC_SRC_CORE_FILTER_EXT_PROC_EXT_PROC_MESSAGES_H
 #define GRPC_SRC_CORE_FILTER_EXT_PROC_EXT_PROC_MESSAGES_H
 
+#include <grpc/grpc_security.h>
 #include <grpc/status.h>
 
 #include <optional>
@@ -194,6 +195,16 @@ absl::StatusOr<std::string> CreateExtProcServerTrailersRequest(
     ::google_protobuf_Struct* attributes, bool observability_mode,
     std::optional<ExtProcProcessingMode> processing_mode);
 
+// Computes the value of the "connection.sha256_peer_certificate_digest"
+// attribute (see gRFC A103): the hex-encoded SHA-256 digest of the peer's
+// leaf certificate, which is obtained from \a auth_context. Returns an empty
+// string if there is no peer certificate or if it cannot be parsed.
+//
+// Note that this requires parsing and hashing the peer certificate, so
+// callers must invoke this at most once per connection, and only if the
+// ext_proc config actually requests the attribute.
+std::string ComputeSha256PeerCertificateDigest(grpc_auth_context* auth_context);
+
 // Creates a protobuf Struct message (::google_protobuf_Struct*) containing
 // connection and request metadata attributes requested by the external
 // processor configuration.
@@ -205,19 +216,22 @@ absl::StatusOr<std::string> CreateExtProcServerTrailersRequest(
 //  "request.method", "request.host", "source.address", "source.port",
 //  "connection.requested_server_name", "connection.tls_version",
 //  "connection.sha256_peer_certificate_digest") to extract and populate.
-//  - metadata: The gRPC metadata batch from which attribute values (like
-//  authority, method, path, or headers) are extracted.
+//  - args: Provides the request metadata (authority, method, path, headers)
+//  and, on the server side, the connection-level attributes (peer IP/port,
+//  TLS security properties).
 //  - default_authority: Default authority fallback for request.host.
-//  - channel_args: Connection-level attributes (e.g. peer IP/port,
-//  TLS security properties) on server side, or nullptr if unavailable.
+//  - sha256_peer_certificate_digest: The value for the
+//  "connection.sha256_peer_certificate_digest" attribute, as returned by
+//  ComputeSha256PeerCertificateDigest(). Empty if the attribute is not
+//  requested or unavailable.
 //
 // Returns:
 //  A pointer to the newly created ::google_protobuf_Struct message on the
 //  arena, or nullptr if no requested attributes were matched or populated.
 ::google_protobuf_Struct* CreateExtProcAttributesProtoStruct(
     upb_Arena* arena, const std::vector<std::string>& requested_attributes,
-    const grpc_metadata_batch& metadata, absl::string_view default_authority,
-    const EvaluateArgs::PerChannelArgs* channel_args = nullptr);
+    const EvaluateArgs& args, absl::string_view default_authority,
+    absl::string_view sha256_peer_certificate_digest = "");
 
 // Represents the parsed response from an external processor, corresponding to
 // envoy.service.ext_proc.v3.ProcessingResponse in gRFC A93.

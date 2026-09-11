@@ -637,24 +637,6 @@ TEST(SecurityConnectorTest, TlsVersionToAuthContext) {
   ctx.reset(DEBUG_LOCATION, "test");
 }
 
-TEST(SecurityConnectorTest, X509Sha256ToAuthContext) {
-  tsi_peer peer;
-  const char* expected_sha256 =
-      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
-  ASSERT_EQ(tsi_construct_peer(1, &peer), TSI_OK);
-  ASSERT_EQ(
-      tsi_construct_string_peer_property_from_cstring(
-          TSI_X509_SHA256_PEER_PROPERTY, expected_sha256, &peer.properties[0]),
-      TSI_OK);
-  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
-      grpc_ssl_peer_to_auth_context(&peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
-  ASSERT_NE(ctx, nullptr);
-  ASSERT_TRUE(check_property(ctx.get(), GRPC_X509_SHA256_PROPERTY_NAME,
-                             expected_sha256));
-  tsi_peer_destruct(&peer);
-  ctx.reset(DEBUG_LOCATION, "test");
-}
-
 static const char* roots_for_override_api = "roots for override api";
 
 static grpc_ssl_roots_override_result override_roots_success(

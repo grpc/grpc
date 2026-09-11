@@ -13,6 +13,9 @@
 // limitations under the License.
 //
 
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+
 #include <optional>
 #include <string>
 #include <vector>
@@ -22,6 +25,8 @@
 #include "envoy/service/ext_proc/v3/external_processor.pb.h"
 #include "src/core/call/evaluate_args.h"
 #include "src/core/filter/ext_proc/ext_proc_messages.h"
+#include "src/core/transport/auth_context.h"
+#include "test/core/test_util/tls_utils.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -724,8 +729,9 @@ class CreateExtProcAttributesProtoStructTest : public ::testing::Test {
 TEST_F(CreateExtProcAttributesProtoStructTest, AttributesEmptyRequested) {
   upb::Arena arena;
   grpc_metadata_batch batch;
+  EvaluateArgs args(&batch, /*channel_args=*/nullptr);
   auto* upb_struct =
-      CreateExtProcAttributesProtoStruct(arena.ptr(), {}, batch, "");
+      CreateExtProcAttributesProtoStruct(arena.ptr(), {}, args, "");
   EXPECT_EQ(upb_struct, nullptr);
 }
 
@@ -747,8 +753,9 @@ TEST_F(CreateExtProcAttributesProtoStructTest, AttributesAllRecognizedFields) {
       "request.scheme",    "request.method",   "request.referer",
       "request.useragent", "request.time",     "request.id",
       "request.protocol",  "request.query"};
+  EvaluateArgs args(&batch, /*channel_args=*/nullptr);
   auto* upb_struct =
-      CreateExtProcAttributesProtoStruct(arena.ptr(), requested, batch, "");
+      CreateExtProcAttributesProtoStruct(arena.ptr(), requested, args, "");
   ASSERT_NE(upb_struct, nullptr);
   auto proto = ConvertToProto(upb_struct, arena.ptr());
   EXPECT_EQ(proto.fields().at("request.path").string_value(), "/foo/bar");
@@ -774,8 +781,9 @@ TEST_F(CreateExtProcAttributesProtoStructTest,
   grpc_metadata_batch batch;
   // No HttpAuthorityMetadata, but has HostMetadata
   batch.Set(HostMetadata(), Slice::FromCopiedString("fallback.host.com"));
+  EvaluateArgs args(&batch, /*channel_args=*/nullptr);
   auto* upb_struct = CreateExtProcAttributesProtoStruct(
-      arena.ptr(), {"request.host"}, batch, "");
+      arena.ptr(), {"request.host"}, args, "");
   ASSERT_NE(upb_struct, nullptr);
   auto proto = ConvertToProto(upb_struct, arena.ptr());
   EXPECT_EQ(proto.fields().at("request.host").string_value(),
@@ -786,8 +794,9 @@ TEST_F(CreateExtProcAttributesProtoStructTest, AttributesMethodFallbackToPost) {
   upb::Arena arena;
   grpc_metadata_batch batch;
   // No HttpMethodMetadata
+  EvaluateArgs args(&batch, /*channel_args=*/nullptr);
   auto* upb_struct = CreateExtProcAttributesProtoStruct(
-      arena.ptr(), {"request.method"}, batch, "");
+      arena.ptr(), {"request.method"}, args, "");
   ASSERT_NE(upb_struct, nullptr);
   auto proto = ConvertToProto(upb_struct, arena.ptr());
   EXPECT_EQ(proto.fields().at("request.method").string_value(), "POST");
@@ -800,8 +809,9 @@ TEST_F(CreateExtProcAttributesProtoStructTest, AttributesRequestHeaders) {
                [](absl::string_view, const Slice&) {});
   batch.Append("x-custom2", Slice::FromCopiedString(kVal2),
                [](absl::string_view, const Slice&) {});
+  EvaluateArgs args(&batch, /*channel_args=*/nullptr);
   auto* upb_struct = CreateExtProcAttributesProtoStruct(
-      arena.ptr(), {"request.headers"}, batch, "");
+      arena.ptr(), {"request.headers"}, args, "");
   ASSERT_NE(upb_struct, nullptr);
   auto proto = ConvertToProto(upb_struct, arena.ptr());
   ASSERT_NE(proto.fields().find("request.headers"), proto.fields().end());
@@ -820,13 +830,13 @@ TEST_F(CreateExtProcAttributesProtoStructTest,
   conn_args.peer_address.port = 54321;
   conn_args.requested_server_name = "service.example.com";
   conn_args.tls_version = "TLSv1.3";
-  conn_args.sha256_peer_certificate_digest =
-      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
   std::vector<std::string> requested = {
       "source.address", "source.port", "connection.requested_server_name",
       "connection.tls_version", "connection.sha256_peer_certificate_digest"};
-  auto* upb_struct = CreateExtProcAttributesProtoStruct(arena.ptr(), requested,
-                                                        batch, "", &conn_args);
+  EvaluateArgs args(&batch, &conn_args);
+  auto* upb_struct = CreateExtProcAttributesProtoStruct(
+      arena.ptr(), requested, args, "",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
   ASSERT_NE(upb_struct, nullptr);
   auto proto = ConvertToProto(upb_struct, arena.ptr());
   EXPECT_EQ(proto.fields().at("source.address").string_value(),
@@ -850,8 +860,9 @@ TEST_F(CreateExtProcAttributesProtoStructTest,
   std::vector<std::string> requested = {
       "source.address", "source.port", "connection.requested_server_name",
       "connection.tls_version", "connection.sha256_peer_certificate_digest"};
+  EvaluateArgs args(&batch, /*channel_args=*/nullptr);
   auto* upb_struct =
-      CreateExtProcAttributesProtoStruct(arena.ptr(), requested, batch, "");
+      CreateExtProcAttributesProtoStruct(arena.ptr(), requested, args, "");
   ASSERT_NE(upb_struct, nullptr);
   auto proto = ConvertToProto(upb_struct, arena.ptr());
   EXPECT_TRUE(proto.fields().empty());
@@ -865,11 +876,43 @@ TEST_F(CreateExtProcAttributesProtoStructTest,
       "source.address", "source.port", "connection.requested_server_name",
       "connection.tls_version", "connection.sha256_peer_certificate_digest"};
   EvaluateArgs::PerChannelArgs empty_args;
-  auto* upb_struct = CreateExtProcAttributesProtoStruct(arena.ptr(), requested,
-                                                        batch, "", &empty_args);
+  EvaluateArgs args(&batch, &empty_args);
+  auto* upb_struct =
+      CreateExtProcAttributesProtoStruct(arena.ptr(), requested, args, "");
   ASSERT_NE(upb_struct, nullptr);
   auto proto = ConvertToProto(upb_struct, arena.ptr());
   EXPECT_TRUE(proto.fields().empty());
+}
+
+//
+// ComputeSha256PeerCertificateDigest() tests
+//
+
+TEST(ComputeSha256PeerCertificateDigestTest, NoAuthContext) {
+  EXPECT_EQ(ComputeSha256PeerCertificateDigest(nullptr), "");
+}
+
+TEST(ComputeSha256PeerCertificateDigestTest, NoPeerCertificate) {
+  grpc_auth_context auth_context(nullptr);
+  EXPECT_EQ(ComputeSha256PeerCertificateDigest(&auth_context), "");
+}
+
+TEST(ComputeSha256PeerCertificateDigestTest, InvalidPeerCertificate) {
+  grpc_auth_context auth_context(nullptr);
+  auth_context.add_cstring_property(GRPC_X509_PEM_CERT_PROPERTY_NAME,
+                                    "not a certificate");
+  EXPECT_EQ(ComputeSha256PeerCertificateDigest(&auth_context), "");
+}
+
+TEST(ComputeSha256PeerCertificateDigestTest, ValidPeerCertificate) {
+  std::string cert =
+      testing::GetFileContents("src/core/tsi/test_creds/multi-domain.pem");
+  grpc_auth_context auth_context(nullptr);
+  auth_context.add_cstring_property(GRPC_X509_PEM_CERT_PROPERTY_NAME,
+                                    cert.c_str());
+  EXPECT_EQ(
+      ComputeSha256PeerCertificateDigest(&auth_context),
+      "b6364b63330df8de02a88e7e238ea763b89f18ec5d80d5339b6fbaad5a4b4891");
 }
 
 //

@@ -16,7 +16,13 @@
 
 #include "src/core/filter/ext_proc/ext_proc_messages.h"
 
+#include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
+#include <openssl/bio.h>
+#include <openssl/err.h>
+#include <openssl/evp.h>
+#include <openssl/pem.h>
+#include <openssl/x509.h>
 
 #include <cstddef>
 #include <cstdint>
@@ -31,6 +37,7 @@
 #include "google/protobuf/struct.upb.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/call/status_util.h"
+#include "src/core/credentials/transport/tls/tls_utils.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/util/matchers.h"
 #include "src/core/util/string.h"
@@ -41,8 +48,10 @@
 #include "upb/mem/arena.h"
 #include "upb/mem/arena.hpp"
 #include "absl/functional/function_ref.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
@@ -532,13 +541,47 @@ class UpbStructHeadersEncoder {
 }  // namespace
 
 //
+// ComputeSha256PeerCertificateDigest()
+//
+
+std::string ComputeSha256PeerCertificateDigest(
+    grpc_auth_context* auth_context) {
+  if (auth_context == nullptr) return "";
+  absl::string_view pem_cert =
+      GetAuthPropertyValue(auth_context, GRPC_X509_PEM_CERT_PROPERTY_NAME);
+  if (pem_cert.empty()) return "";
+  BIO* bio = BIO_new_mem_buf(pem_cert.data(), static_cast<int>(pem_cert.size()));
+  if (bio == nullptr) return "";
+  X509* cert = PEM_read_bio_X509(bio, /*x=*/nullptr, /*cb=*/nullptr,
+                                 /*u=*/nullptr);
+  BIO_free(bio);
+  if (cert == nullptr) {
+    // Avoid leaving the parse failure on the OpenSSL error queue, since that
+    // would affect unrelated operations on this thread.
+    ERR_clear_error();
+    LOG(ERROR) << "ext_proc: failed to parse peer certificate";
+    return "";
+  }
+  unsigned char digest[EVP_MAX_MD_SIZE];
+  unsigned int digest_length = 0;
+  const bool ok = X509_digest(cert, EVP_sha256(), digest, &digest_length) == 1;
+  X509_free(cert);
+  if (!ok) {
+    LOG(ERROR) << "ext_proc: failed to compute peer certificate digest";
+    return "";
+  }
+  return absl::BytesToHexString(absl::string_view(
+      reinterpret_cast<const char*>(digest), digest_length));
+}
+
+//
 // CreateExtProcAttributesProtoStruct()
 //
 
 ::google_protobuf_Struct* CreateExtProcAttributesProtoStruct(
     upb_Arena* arena, const std::vector<std::string>& attributes,
-    const grpc_metadata_batch& metadata, absl::string_view default_authority,
-    const EvaluateArgs::PerChannelArgs* channel_args) {
+    const EvaluateArgs& args, absl::string_view default_authority,
+    absl::string_view sha256_peer_certificate_digest) {
   if (attributes.empty()) return nullptr;
   ::google_protobuf_Struct* struct_msg = ::google_protobuf_Struct_new(arena);
   auto add_field = [&](absl::string_view name, absl::string_view value) {
@@ -548,35 +591,34 @@ class UpbStructHeadersEncoder {
     ::google_protobuf_Struct_fields_set(
         struct_msg, CopyStdStringToUpbString(name, arena), val_msg, arena);
   };
+  const grpc_metadata_batch* metadata = args.metadata();
   for (const auto& attr : attributes) {
     if (attr == "request.path" || attr == "request.url_path") {
-      if (const Slice* path = metadata.get_pointer(HttpPathMetadata())) {
-        add_field(attr, path->as_string_view());
-      }
+      absl::string_view path = args.GetPath();
+      if (!path.empty()) add_field(attr, path);
     } else if (attr == "request.host") {
-      if (const Slice* auth = metadata.get_pointer(HttpAuthorityMetadata())) {
-        add_field(attr, auth->as_string_view());
-      } else if (const Slice* host = metadata.get_pointer(HostMetadata())) {
-        add_field(attr, host->as_string_view());
-      } else if (!default_authority.empty()) {
-        add_field(attr, default_authority);
+      absl::string_view host = args.GetAuthority();
+      if (host.empty() && metadata != nullptr) {
+        if (const Slice* host_md = metadata->get_pointer(HostMetadata())) {
+          host = host_md->as_string_view();
+        }
       }
+      if (host.empty()) host = default_authority;
+      if (!host.empty()) add_field(attr, host);
     } else if (attr == "request.method") {
-      if (auto* method = metadata.get_pointer(HttpMethodMetadata())) {
-        add_field(attr, HttpMethodMetadata::Encode(*method).as_string_view());
-      } else {
-        add_field(attr, "POST");
-      }
+      absl::string_view method = args.GetMethod();
+      add_field(attr, method.empty() ? "POST" : method);
     } else if (attr == "request.headers") {
-      ::google_protobuf_Struct* headers_struct =
-          ::google_protobuf_Struct_new(arena);
-      UpbStructHeadersEncoder encoder(headers_struct, arena);
-      metadata.Encode(&encoder);
-      ::google_protobuf_Value* val_msg = ::google_protobuf_Value_new(arena);
-      ::google_protobuf_Value_set_struct_value(val_msg, headers_struct);
-      ::google_protobuf_Struct_fields_set(
-          struct_msg, upb_StringView_FromDataAndSize(attr.data(), attr.size()),
-          val_msg, arena);
+      if (metadata != nullptr) {
+        ::google_protobuf_Struct* headers_struct =
+            ::google_protobuf_Struct_new(arena);
+        UpbStructHeadersEncoder encoder(headers_struct, arena);
+        metadata->Encode(&encoder);
+        ::google_protobuf_Value* val_msg = ::google_protobuf_Value_new(arena);
+        ::google_protobuf_Value_set_struct_value(val_msg, headers_struct);
+        ::google_protobuf_Struct_fields_set(
+            struct_msg, CopyStdStringToUpbString(attr, arena), val_msg, arena);
+      }
     } else if (attr == "request.referer" || attr == "request.useragent" ||
                attr == "request.id") {
       absl::string_view key;
@@ -589,33 +631,29 @@ class UpbStructHeadersEncoder {
       }
       std::string backing_str;
       std::optional<absl::string_view> val =
-          metadata.GetStringValue(key, &backing_str);
+          args.GetHeaderValue(key, &backing_str);
       if (val.has_value()) add_field(attr, *val);
     } else if (attr == "request.query") {
       add_field(attr, "");
-    } else if (channel_args != nullptr) {
-      if (attr == "source.port") {
-        if (channel_args->peer_address.port > 0) {
-          ::google_protobuf_Value* val_msg = ::google_protobuf_Value_new(arena);
-          ::google_protobuf_Value_set_number_value(
-              val_msg, channel_args->peer_address.port);
-          ::google_protobuf_Struct_fields_set(
-              struct_msg, CopyStdStringToUpbString(attr, arena), val_msg,
-              arena);
-        }
-      } else {
-        absl::string_view val;
-        if (attr == "source.address") {
-          val = channel_args->peer_address.address_str;
-        } else if (attr == "connection.requested_server_name") {
-          val = channel_args->requested_server_name;
-        } else if (attr == "connection.tls_version") {
-          val = channel_args->tls_version;
-        } else if (attr == "connection.sha256_peer_certificate_digest") {
-          val = channel_args->sha256_peer_certificate_digest;
-        }
-        if (!val.empty()) add_field(attr, val);
+    } else if (attr == "source.port") {
+      if (args.GetPeerPort() > 0) {
+        ::google_protobuf_Value* val_msg = ::google_protobuf_Value_new(arena);
+        ::google_protobuf_Value_set_number_value(val_msg, args.GetPeerPort());
+        ::google_protobuf_Struct_fields_set(
+            struct_msg, CopyStdStringToUpbString(attr, arena), val_msg, arena);
       }
+    } else {
+      absl::string_view val;
+      if (attr == "source.address") {
+        val = args.GetPeerAddressString();
+      } else if (attr == "connection.requested_server_name") {
+        val = args.GetRequestedServerName();
+      } else if (attr == "connection.tls_version") {
+        val = args.GetTlsVersion();
+      } else if (attr == "connection.sha256_peer_certificate_digest") {
+        val = sha256_peer_certificate_digest;
+      }
+      if (!val.empty()) add_field(attr, val);
     }
   }
   return struct_msg;
