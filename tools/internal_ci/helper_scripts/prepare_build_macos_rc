@@ -65,19 +65,30 @@ export HOMEBREW_NO_INSTALL_CLEANUP=1
 # See:
 # - https://github.com/grpc/grpc/pull/43193 - Initial ca-certificates fix.
 export HOMEBREW_NO_INSTALL_FROM_API=1
+export HOMEBREW_CURL_RETRIES=8
 export HOMEBREW_DOWNLOAD_CONCURRENCY=1
+export HOMEBREW_CURLRC=1
+
+# Instruct curl to retry on all errors including TCP connection resets (code 56)
+cat << 'EOF' > ~/.curlrc
+retry = 5
+retry-all-errors
+retry-delay = 1
+EOF
 
 # Helper function to retry brew install on transient network failures.
 brew_install_with_retry() {
-  local max_attempts=3
+  local max_attempts=5
   local attempt=1
+  local sleep_time=5
   until brew install "$@"; do
     if [ "${attempt}" -ge "${max_attempts}" ]; then
       echo "Failed to install $* after ${max_attempts} attempts." >&2
       return 1
     fi
-    echo "brew install $* failed (attempt ${attempt}/${max_attempts}). Retrying in 5 seconds..." >&2
-    sleep 5
+    echo "brew install $* failed (attempt ${attempt}/${max_attempts}). Retrying in ${sleep_time} seconds..." >&2
+    sleep "${sleep_time}"
+    sleep_time=$((sleep_time * 2))
     attempt=$((attempt + 1))
   done
 }
