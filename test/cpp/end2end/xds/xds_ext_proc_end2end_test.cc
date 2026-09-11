@@ -95,6 +95,7 @@ class FakeExtProcService final : public ::envoy::service::ext_proc::v3::
     Stream()
         : grpc_core::InternallyRefCounted<Stream>(/*trace=*/nullptr,
                                                   /*initial_refcount=*/2) {
+      grpc_core::MutexLock lock(&mu_);
       StartRead(&request_);
     }
 
@@ -195,7 +196,8 @@ class FakeExtProcService final : public ::envoy::service::ext_proc::v3::
     grpc_core::CondVar cv_;
     std::queue<::envoy::service::ext_proc::v3::ProcessingRequest> requests_
         ABSL_GUARDED_BY(mu_);
-    ::envoy::service::ext_proc::v3::ProcessingRequest request_;
+    ::envoy::service::ext_proc::v3::ProcessingRequest request_
+        ABSL_GUARDED_BY(mu_);
     ::envoy::service::ext_proc::v3::ProcessingResponse response_
         ABSL_GUARDED_BY(mu_);
     bool write_in_flight_ ABSL_GUARDED_BY(mu_) = false;
@@ -1118,58 +1120,58 @@ TEST_P(XdsExtProcEnd2endTest,
   rpc.StartRpc(stub_.get(), rpc_options);
   auto ext_proc_stream = ext_proc_service().GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
-  bool seen_request_headers = false;
-  bool seen_request_body = false;
+  // ext_proc server sees request headers.
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req, ::testing::Optional(MatchesRequestHeaders(::testing::AllOf(
+                       ::testing::Contains(::testing::Pair(
+                           ":path", "/grpc.testing.EchoTestService/Echo")),
+                       ::testing::Contains(::testing::Pair(
+                           "custom-header-key", "custom-header-value"))))));
+  ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse(
+      {{kRequestHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
+  // ext_proc server sees client message.
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req, ::testing::Optional(
+                       MatchesRequestBody(EchoRequestMessageIs(kRequestMessage),
+                                          /*end_of_stream=*/false)));
+  ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
+      ModifyEchoRequest(req->request_body().body(), kRequestBodyMutatedSuffix),
+      /*end_of_stream=*/false));
+  // The remaining events can arrive in any order: in observability mode the
+  // filter does not wait for a response from the ext_proc server, so the
+  // client half-close races with the events from the response path.
   bool seen_client_half_close = false;
   bool seen_response_headers = false;
   bool seen_response_body = false;
   bool seen_response_trailers = false;
-  for (int i = 0; i < 6; ++i) {
-    auto req = ext_proc_stream->GetNextRequest();
+  for (int i = 0; i < 4; ++i) {
+    req = ext_proc_stream->GetNextRequest();
     ASSERT_TRUE(req.has_value());
-    if (req->has_request_headers()) {
-      EXPECT_FALSE(seen_request_headers);
-      seen_request_headers = true;
-      ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse(
-          {{kRequestHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
-      EXPECT_THAT(*req, MatchesRequestHeaders(::testing::AllOf(
-                            ::testing::Contains(::testing::Pair(
-                                ":path", "/grpc.testing.EchoTestService/Echo")),
-                            ::testing::Contains(::testing::Pair(
-                                "custom-header-key", "custom-header-value")))));
-    } else if (req->has_request_body()) {
-      if (req->request_body().end_of_stream()) {
-        EXPECT_FALSE(seen_client_half_close);
-        seen_client_half_close = true;
-        EXPECT_THAT(*req,
-                    MatchesRequestBody(/*body=*/"", /*end_of_stream=*/true));
-        ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
-            /*body=*/"", /*end_of_stream=*/true));
-      } else {
-        EXPECT_FALSE(seen_request_body);
-        seen_request_body = true;
-        ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
-            ModifyEchoRequest(req->request_body().body(),
-                              kRequestBodyMutatedSuffix),
-            /*end_of_stream=*/false));
-        EXPECT_THAT(*req,
-                    MatchesRequestBody(EchoRequestMessageIs(kRequestMessage),
-                                       /*end_of_stream=*/false));
-      }
+    if (req->has_request_body()) {
+      EXPECT_FALSE(seen_client_half_close);
+      seen_client_half_close = true;
+      EXPECT_THAT(*req,
+                  MatchesRequestBody(/*body=*/"", /*end_of_stream=*/true));
+      ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
+          /*body=*/"", /*end_of_stream=*/true));
     } else if (req->has_response_headers()) {
       EXPECT_FALSE(seen_response_headers);
       seen_response_headers = true;
-      ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse(
-          {{kResponseHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
+      // The request header mutation was not applied, so the backend echoes
+      // back only the original header.
       EXPECT_THAT(
           *req, MatchesResponseHeaders(::testing::AllOf(
                     ::testing::Contains(::testing::Pair("custom-header-key",
                                                         "custom-header-value")),
                     ::testing::Not(::testing::Contains(::testing::Pair(
                         kRequestHeadersMutatedHeaderKey, ::testing::_))))));
+      ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse(
+          {{kResponseHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
     } else if (req->has_response_body()) {
       EXPECT_FALSE(seen_response_body);
       seen_response_body = true;
+      // The request body mutation was not applied, so the message echoed back
+      // by the backend is unmodified.
       EXPECT_THAT(*req,
                   MatchesResponseBody(EchoResponseMessageIs(kRequestMessage),
                                       /*end_of_stream=*/false));
@@ -1177,22 +1179,16 @@ TEST_P(XdsExtProcEnd2endTest,
           ModifyEchoResponse(req->response_body().body(),
                              kResponseBodyMutatedSuffix),
           /*end_of_stream=*/false));
-      EXPECT_THAT(*req, ::testing::Not(MatchesResponseBody(
-                            EchoResponseMessageIs(absl::StrCat(
-                                kRequestMessage, kRequestBodyMutatedSuffix)),
-                            /*end_of_stream=*/false)));
     } else if (req->has_response_trailers()) {
       EXPECT_FALSE(seen_response_trailers);
       seen_response_trailers = true;
+      EXPECT_THAT(*req, MatchesResponseTrailers(::testing::_));
       ext_proc_stream->SendResponse(MakeResponseTrailersMutationResponse(
           {{kResponseTrailersMutatedHeaderKey, kHeaderMutatedValue}}));
-      EXPECT_THAT(*req, MatchesResponseTrailers(::testing::_));
     } else {
       FAIL() << "Unexpected request type: " << req->DebugString();
     }
   }
-  EXPECT_TRUE(seen_request_headers);
-  EXPECT_TRUE(seen_request_body);
   EXPECT_TRUE(seen_client_half_close);
   EXPECT_TRUE(seen_response_headers);
   EXPECT_TRUE(seen_response_body);
@@ -1205,15 +1201,13 @@ TEST_P(XdsExtProcEnd2endTest,
   EXPECT_THAT(rpc.GetServerInitialMetadata(),
               ::testing::Contains(
                   ::testing::Pair("custom-header-key", "custom-header-value")));
-  // Mutated request header was not applied to request sent to backend.
+  // 2. Neither the mutated request header (which would have been echoed back
+  // by the backend) nor the mutated response header was applied.
   EXPECT_THAT(rpc.GetServerInitialMetadata(),
               ::testing::Not(::testing::Contains(::testing::Pair(
-                  kRequestHeadersMutatedHeaderKey, ::testing::_))));
-  // 2. Verify response initial metadata: mutated response header was not
-  // applied to initial metadata returned to client.
-  EXPECT_THAT(rpc.GetServerInitialMetadata(),
-              ::testing::Not(::testing::Contains(::testing::Pair(
-                  kResponseHeadersMutatedHeaderKey, ::testing::_))));
+                  ::testing::AnyOf(kRequestHeadersMutatedHeaderKey,
+                                   kResponseHeadersMutatedHeaderKey),
+                  ::testing::_))));
   // 3. Verify response trailing metadata: mutated response trailer was not
   // applied to trailing metadata returned to client.
   EXPECT_THAT(rpc.GetServerTrailingMetadata(),
@@ -1222,9 +1216,6 @@ TEST_P(XdsExtProcEnd2endTest,
   // 4. Verify request and response message body: neither request body mutation
   // nor response body mutation was applied.
   EXPECT_EQ(rpc.response().message(), kRequestMessage);
-  EXPECT_NE(rpc.response().message(),
-            absl::StrCat(kRequestMessage, kRequestBodyMutatedSuffix,
-                         kResponseBodyMutatedSuffix));
   EXPECT_THAT(rpc.response().message(),
               ::testing::Not(::testing::AnyOf(
                   ::testing::HasSubstr(kRequestBodyMutatedSuffix),
