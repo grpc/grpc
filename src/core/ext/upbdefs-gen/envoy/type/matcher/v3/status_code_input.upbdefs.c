@@ -13,7 +13,7 @@
 
 extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 
-static const char descriptor[330] = {
+static const char descriptor[366] = {
     '\n', '-', 'e', 'n', 'v', 'o', 'y', '/', 't', 'y', 'p', 'e',
     '/', 'm', 'a', 't', 'c', 'h', 'e', 'r', '/', 'v', '3', '/',
     's', 't', 'a', 't', 'u', 's', '_', 'c', 'o', 'd', 'e', '_',
@@ -28,6 +28,9 @@ static const char descriptor[330] = {
     'I', 'n', 'p', 'u', 't', '\"', '\'', '\n', '%', 'H', 't', 't',
     'p', 'R', 'e', 's', 'p', 'o', 'n', 's', 'e', 'S', 't', 'a',
     't', 'u', 's', 'C', 'o', 'd', 'e', 'C', 'l', 'a', 's', 's',
+    'M', 'a', 't', 'c', 'h', 'I', 'n', 'p', 'u', 't', '\"', '\"',
+    '\n', ' ', 'H', 't', 't', 'p', 'R', 'e', 's', 'p', 'o', 'n',
+    's', 'e', 'L', 'o', 'c', 'a', 'l', 'R', 'e', 'p', 'l', 'y',
     'M', 'a', 't', 'c', 'h', 'I', 'n', 'p', 'u', 't', 'B', '\215',
     '\001', '\n', '#', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p',
     'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 't',

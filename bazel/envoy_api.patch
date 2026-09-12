@@ -1,0 +1,56 @@
+--- a/bazel/api_build_system.bzl
++++ b/bazel/api_build_system.bzl
+@@ -2,6 +2,8 @@
+ load("@com_github_grpc_grpc//bazel:python_rules.bzl", _py_proto_library = "py_proto_library")
+ load("@com_google_protobuf//bazel:java_lite_proto_library.bzl", "java_lite_proto_library")
+ load("@com_google_protobuf//bazel:proto_library.bzl", "proto_library")
++load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
++load("@protoc-gen-validate//bazel:protobuf.bzl", "cc_proto_gen_validate")
+ load("@protoc-gen-validate//bazel:pgv_proto_library.bzl", "pgv_cc_proto_library")
+-load("@rules_cc//cc:defs.bzl", "cc_test")
++load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+ load("@rules_go//go:def.bzl", "go_test")
+@@ -19,6 +21,35 @@
+ EnvoyProtoDepsInfo = provider(fields = ["deps"])
+ 
++def _pgv_cc_proto_library(
++        name,
++        deps = [],
++        cc_deps = [],
++        copts = [],
++        **kargs):
++    cc_proto_library(
++        name = name + "_cc_proto",
++        deps = deps,
++    )
++    cc_proto_gen_validate(
++        name = name + "_validate",
++        deps = deps,
++    )
++    cc_library(
++        name = name,
++        hdrs = [":" + name + "_validate"],
++        srcs = [":" + name + "_validate"],
++        deps = cc_deps + [
++            ":" + name + "_cc_proto",
++            "@protoc-gen-validate//validate:cc_validate",
++            "@protoc-gen-validate//validate:validate_cc",
++            "@com_google_protobuf//:protobuf",
++            "@re2//:re2",
++        ],
++        alwayslink = 1,
++        **kargs
++    )
++
+ _PY_PROTO_SUFFIX = "_py_proto"
+ _CC_PROTO_SUFFIX = "_cc_proto"
+ _CC_PROTO_DESCRIPTOR_SUFFIX = "_cc_proto_descriptor"
+@@ -96,7 +127,7 @@
+     )
+ 
+     cc_proto_library_name = name + _CC_PROTO_SUFFIX
+-    pgv_cc_proto_library(
++    _pgv_cc_proto_library(
+         name = cc_proto_library_name,
+         linkstatic = linkstatic,
+         cc_deps = [_cc_proto_mapping(dep) for dep in deps] + [

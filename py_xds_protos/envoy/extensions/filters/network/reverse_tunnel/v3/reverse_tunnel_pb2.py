@@ -23,12 +23,13 @@ _sym_db = _symbol_database.Default()
 
 
 from envoy.config.core.v3 import base_pb2 as envoy_dot_config_dot_core_dot_v3_dot_base__pb2
+from envoy.extensions.filters.common.jwks.v3 import jwt_handshake_pb2 as envoy_dot_extensions_dot_filters_dot_common_dot_jwks_dot_v3_dot_jwt__handshake__pb2
 from google.protobuf import duration_pb2 as google_dot_protobuf_dot_duration__pb2
 from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nGenvoy/extensions/filters/network/reverse_tunnel/v3/reverse_tunnel.proto\x12\x32\x65nvoy.extensions.filters.network.reverse_tunnel.v3\x1a\x1f\x65nvoy/config/core/v3/base.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xa0\x01\n\nValidation\x12 \n\x0enode_id_format\x18\x01 \x01(\tB\x08\xfa\x42\x05r\x03\x18\x80\x08\x12#\n\x11\x63luster_id_format\x18\x02 \x01(\tB\x08\xfa\x42\x05r\x03\x18\x80\x08\x12\x1d\n\x15\x65mit_dynamic_metadata\x18\x03 \x01(\x08\x12,\n\x1a\x64ynamic_metadata_namespace\x18\x04 \x01(\tB\x08\xfa\x42\x05r\x03\x18\xff\x01\"\xb4\x02\n\rReverseTunnel\x12\x43\n\rping_interval\x18\x01 \x01(\x0b\x32\x19.google.protobuf.DurationB\x11\xfa\x42\x0e\xaa\x01\x0b\"\x03\x08\xac\x02\x32\x04\x10\xc0\x84=\x12\x1e\n\x16\x61uto_close_connections\x18\x02 \x01(\x08\x12#\n\x0crequest_path\x18\x03 \x01(\tB\r\xfa\x42\nr\x08\x10\x01\x18\xff\x01\xd0\x01\x01\x12\x45\n\x0erequest_method\x18\x04 \x01(\x0e\x32#.envoy.config.core.v3.RequestMethodB\x08\xfa\x42\x05\x82\x01\x02\x10\x01\x12R\n\nvalidation\x18\x05 \x01(\x0b\x32>.envoy.extensions.filters.network.reverse_tunnel.v3.ValidationB\xcc\x01\n@io.envoyproxy.envoy.extensions.filters.network.reverse_tunnel.v3B\x12ReverseTunnelProtoP\x01Zjgithub.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/reverse_tunnel/v3;reverse_tunnelv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nGenvoy/extensions/filters/network/reverse_tunnel/v3/reverse_tunnel.proto\x12\x32\x65nvoy.extensions.filters.network.reverse_tunnel.v3\x1a\x1f\x65nvoy/config/core/v3/base.proto\x1a;envoy/extensions/filters/common/jwks/v3/jwt_handshake.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xc4\x01\n\nValidation\x12 \n\x0enode_id_format\x18\x01 \x01(\tB\x08\xfa\x42\x05r\x03\x18\x80\x08\x12#\n\x11\x63luster_id_format\x18\x02 \x01(\tB\x08\xfa\x42\x05r\x03\x18\x80\x08\x12\"\n\x10tenant_id_format\x18\x05 \x01(\tB\x08\xfa\x42\x05r\x03\x18\x80\x08\x12\x1d\n\x15\x65mit_dynamic_metadata\x18\x03 \x01(\x08\x12,\n\x1a\x64ynamic_metadata_namespace\x18\x04 \x01(\tB\x08\xfa\x42\x05r\x03\x18\xff\x01\"\x8c\x04\n\rReverseTunnel\x12\x43\n\rping_interval\x18\x01 \x01(\x0b\x32\x19.google.protobuf.DurationB\x11\xfa\x42\x0e\xaa\x01\x0b\"\x03\x08\xac\x02\x32\x04\x10\xc0\x84=\x12\x1e\n\x16\x61uto_close_connections\x18\x02 \x01(\x08\x12#\n\x0crequest_path\x18\x03 \x01(\tB\r\xfa\x42\nr\x08\x10\x01\x18\xff\x01\xd0\x01\x01\x12\x45\n\x0erequest_method\x18\x04 \x01(\x0e\x32#.envoy.config.core.v3.RequestMethodB\x08\xfa\x42\x05\x82\x01\x02\x10\x01\x12R\n\nvalidation\x18\x05 \x01(\x0b\x32>.envoy.extensions.filters.network.reverse_tunnel.v3.Validation\x12*\n\x15required_cluster_name\x18\x06 \x01(\tB\x0b\xfa\x42\x08r\x06\x18\xff\x01\xd0\x01\x01\x12\x18\n\x10use_http_upgrade\x18\x07 \x01(\x08\x12\x18\n\x10skip_rebalancing\x18\x08 \x01(\x08\x12U\n\rjwt_validator\x18\n \x01(\x0b\x32>.envoy.extensions.filters.common.jwks.v3.JwtHandshakeValidator\x12\x1f\n\x17\x65nable_connection_limit\x18\t \x01(\x08\x42\xcc\x01\n@io.envoyproxy.envoy.extensions.filters.network.reverse_tunnel.v3B\x12ReverseTunnelProtoP\x01Zjgithub.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/reverse_tunnel/v3;reverse_tunnelv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -40,6 +41,8 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_VALIDATION'].fields_by_name['node_id_format']._serialized_options = b'\372B\005r\003\030\200\010'
   _globals['_VALIDATION'].fields_by_name['cluster_id_format']._loaded_options = None
   _globals['_VALIDATION'].fields_by_name['cluster_id_format']._serialized_options = b'\372B\005r\003\030\200\010'
+  _globals['_VALIDATION'].fields_by_name['tenant_id_format']._loaded_options = None
+  _globals['_VALIDATION'].fields_by_name['tenant_id_format']._serialized_options = b'\372B\005r\003\030\200\010'
   _globals['_VALIDATION'].fields_by_name['dynamic_metadata_namespace']._loaded_options = None
   _globals['_VALIDATION'].fields_by_name['dynamic_metadata_namespace']._serialized_options = b'\372B\005r\003\030\377\001'
   _globals['_REVERSETUNNEL'].fields_by_name['ping_interval']._loaded_options = None
@@ -48,8 +51,10 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_REVERSETUNNEL'].fields_by_name['request_path']._serialized_options = b'\372B\nr\010\020\001\030\377\001\320\001\001'
   _globals['_REVERSETUNNEL'].fields_by_name['request_method']._loaded_options = None
   _globals['_REVERSETUNNEL'].fields_by_name['request_method']._serialized_options = b'\372B\005\202\001\002\020\001'
-  _globals['_VALIDATION']._serialized_start=249
-  _globals['_VALIDATION']._serialized_end=409
-  _globals['_REVERSETUNNEL']._serialized_start=412
-  _globals['_REVERSETUNNEL']._serialized_end=720
+  _globals['_REVERSETUNNEL'].fields_by_name['required_cluster_name']._loaded_options = None
+  _globals['_REVERSETUNNEL'].fields_by_name['required_cluster_name']._serialized_options = b'\372B\010r\006\030\377\001\320\001\001'
+  _globals['_VALIDATION']._serialized_start=310
+  _globals['_VALIDATION']._serialized_end=506
+  _globals['_REVERSETUNNEL']._serialized_start=509
+  _globals['_REVERSETUNNEL']._serialized_end=1033
 # @@protoc_insertion_point(module_scope)
