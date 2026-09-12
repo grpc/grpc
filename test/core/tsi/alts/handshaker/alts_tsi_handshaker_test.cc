@@ -87,6 +87,7 @@ typedef struct notification {
 typedef enum {
   INVALID,
   FAILED,
+  OUT_OF_RANGE_STATUS,
   CLIENT_START,
   SERVER_START,
   CLIENT_NEXT,
@@ -241,6 +242,9 @@ static grpc_byte_buffer* generate_handshaker_response(
       break;
     case FAILED:
       grpc_gcp_HandshakerStatus_set_code(status, 3 /* INVALID ARGUMENT */);
+      break;
+    case OUT_OF_RANGE_STATUS:
+      grpc_gcp_HandshakerStatus_set_code(status, 4294967295u);
       break;
   }
   size_t buf_len;
@@ -1185,6 +1189,52 @@ static void on_shutdown_resp_cb(tsi_result status, void* user_data,
   ASSERT_EQ(bytes_to_send, nullptr);
   ASSERT_EQ(bytes_to_send_size, 0);
   ASSERT_EQ(result, nullptr);
+}
+
+static void on_out_of_range_status_resp_cb(tsi_result status, void* user_data,
+                                           const unsigned char* bytes_to_send,
+                                           size_t bytes_to_send_size,
+                                           tsi_handshaker_result* result) {
+  ASSERT_EQ(status, TSI_UNKNOWN_ERROR);
+  ASSERT_EQ(user_data, nullptr);
+  ASSERT_EQ(bytes_to_send, nullptr);
+  ASSERT_EQ(bytes_to_send_size, 0);
+  ASSERT_EQ(result, nullptr);
+}
+
+TEST(AltsTsiHandshakerTest, CheckHandleResponseOutOfRangeStatusCode) {
+  should_handshaker_client_api_succeed = false;
+  // Initialization.
+  notification_init(&caller_to_tsi_notification);
+  notification_init(&tsi_to_caller_notification);
+  ///
+  /// Create a handshaker at the client side, for which the mock handshaker
+  /// service returns a status code outside the range of grpc_status_code.
+  ///
+  tsi_handshaker* handshaker = CreateTestHandshaker(true /* is_client */);
+  tsi_handshaker_next(handshaker, nullptr, 0, nullptr, nullptr, nullptr,
+                      OnClientStartSuccessCb, nullptr);
+  alts_tsi_handshaker* alts_handshaker =
+      reinterpret_cast<alts_tsi_handshaker*>(handshaker);
+  alts_handshaker_client* client =
+      alts_tsi_handshaker_get_client_for_testing(alts_handshaker);
+  // Tests.
+  grpc_byte_buffer* recv_buffer =
+      generate_handshaker_response(OUT_OF_RANGE_STATUS);
+  alts_handshaker_client_set_fields_for_testing(
+      client, alts_handshaker, on_out_of_range_status_resp_cb, nullptr,
+      recv_buffer, /*inject_read_failure=*/false);
+  alts_handshaker_client_handle_response(client, true /* is_ok*/);
+  alts_handshaker_client_ref_for_testing(client);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    alts_handshaker_client_on_status_received_for_testing(
+        client, GRPC_STATUS_OK, absl::OkStatus());
+  }
+  // Cleanup.
+  run_tsi_handshaker_destroy_with_exec_ctx(handshaker);
+  notification_destroy(&caller_to_tsi_notification);
+  notification_destroy(&tsi_to_caller_notification);
 }
 
 TEST(AltsTsiHandshakerTest, CheckHandleResponseAfterShutdown) {
