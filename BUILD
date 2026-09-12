@@ -1179,6 +1179,7 @@ grpc_cc_library(
         "google_api_expr_v1alpha1_syntax_upb",
         "gpr",
         "grpc_mock_cel",
+        "//src/core:evaluate_args",
         "//src/core:grpc_authorization_base",
         "@com_google_protobuf//upb/base",
         "@com_google_protobuf//upb/mem",

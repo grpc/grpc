@@ -2273,6 +2273,7 @@ add_library(grpc
   src/core/call/call_spine.cc
   src/core/call/call_state.cc
   src/core/call/client_call.cc
+  src/core/call/evaluate_args.cc
   src/core/call/interception_chain.cc
   src/core/call/message.cc
   src/core/call/metadata.cc
@@ -2965,7 +2966,6 @@ add_library(grpc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/security/authorization/audit_logging.cc
   src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
-  src/core/lib/security/authorization/evaluate_args.cc
   src/core/lib/security/authorization/grpc_authorization_engine.cc
   src/core/lib/security/authorization/grpc_server_authz_filter.cc
   src/core/lib/security/authorization/matchers.cc
@@ -3484,6 +3484,7 @@ add_library(grpc_unsecure
   src/core/call/call_spine.cc
   src/core/call/call_state.cc
   src/core/call/client_call.cc
+  src/core/call/evaluate_args.cc
   src/core/call/interception_chain.cc
   src/core/call/message.cc
   src/core/call/metadata.cc
@@ -3796,7 +3797,6 @@ add_library(grpc_unsecure
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
-  src/core/lib/security/authorization/evaluate_args.cc
   src/core/lib/security/authorization/grpc_server_authz_filter.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -6080,6 +6080,7 @@ add_library(grpc_authorization_provider
   src/core/call/call_spine.cc
   src/core/call/call_state.cc
   src/core/call/client_call.cc
+  src/core/call/evaluate_args.cc
   src/core/call/interception_chain.cc
   src/core/call/message.cc
   src/core/call/metadata.cc
@@ -6290,7 +6291,6 @@ add_library(grpc_authorization_provider
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/security/authorization/audit_logging.cc
   src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
-  src/core/lib/security/authorization/evaluate_args.cc
   src/core/lib/security/authorization/grpc_authorization_engine.cc
   src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
   src/core/lib/security/authorization/grpc_server_authz_filter.cc
@@ -17103,7 +17103,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(evaluate_args_test
-  test/core/security/evaluate_args_test.cc
+  test/core/call/evaluate_args_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -18571,6 +18571,7 @@ target_link_libraries(ext_proc_message_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc++
+  grpc_test_util
 )
 
 
