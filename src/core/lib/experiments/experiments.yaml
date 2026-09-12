@@ -84,7 +84,7 @@
   test_tags: []
 - name: custom_frame_check
   description: Adding checks to custom HTTP2 frame.
-  expiry: 2026/10/05
+  expiry: 2026/10/30
   owner: ritulb@google.com
   test_tags: []
   allow_in_fuzzing_config: false
@@ -96,7 +96,7 @@
   platforms: ["all"]
 - name: event_engine_client
   description: Use EventEngine clients instead of iomgr's grpc_tcp_client
-  expiry: 2026/09/01
+  expiry: 2026/10/30
   owner: mlumish@google.com
   test_tags: ["core_end2end_test", "event_engine_client_test"]
   uses_polling: true
@@ -117,7 +117,7 @@
   platforms: ["all"]
 - name: event_engine_fork
   description: Enables event engine fork handling, including onfork events and file descriptor generations
-  expiry: 2026/10/01
+  expiry: 2026/10/30
   owner: mlumish@google.com
   test_tags: ["core_end2end_test", "event_engine_fork_test"]
   uses_polling: true
@@ -125,7 +125,7 @@
   platforms: ["all"]
 - name: event_engine_listener
   description: Use EventEngine listeners instead of iomgr's grpc_tcp_server
-  expiry: 2026/09/15
+  expiry: 2026/10/30
   owner: mlumish@google.com
   test_tags: ["core_end2end_test", "event_engine_listener_test"]
   uses_polling: true
@@ -166,7 +166,7 @@
   test_tags: []
 - name: inproc_cancel_stream
   description: If set, cancel inproc stream inside the transport mutex.
-  expiry: 2026/10/05
+  expiry: 2026/10/30
   owner: ritulb@google.com
   test_tags: []
 - name: keep_alive_ping_timer_batch
@@ -178,18 +178,18 @@
   test_tags: []
 - name: local_connector_secure
   description: Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP connections.
-  expiry: 2026/08/30
+  expiry: 2027/01/16
   owner: mattstev@google.com
   test_tags: ["core_end2end_test"]
 - name: memory_optimization_01
   description: Memory Optimization
-  expiry: 2026/10/05
+  expiry: 2026/10/30
   owner: tjagtap@google.com
   test_tags: []
   allow_in_fuzzing_config: false
 - name: memory_optimization_02
   description: Memory Optimization 02
-  expiry: 2026/10/05
+  expiry: 2026/10/30
   owner: ritulb@google.com
   test_tags: []
   allow_in_fuzzing_config: false
@@ -200,12 +200,12 @@
   test_tags: []
 - name: metadata_outstanding_token_refactor
   description: Refactor ClientInitialMetadataOutstandingToken.
-  expiry: 2026/10/12
+  expiry: 2026/10/30
   owner: akshitpatel@google.com
   test_tags: []
 - name: metadata_publish_to_app_tag
   description: Publish metadata to the app using the kPublishToApp metadata field.
-  expiry: 2026/09/21
+  expiry: 2026/10/30
   owner: leonzz@google.com
   test_tags: []
 - name: monitoring_experiment
@@ -215,12 +215,12 @@
   test_tags: []
 - name: optimization_01
   description: Optimization
-  expiry: 2026/10/05
+  expiry: 2026/10/30
   owner: ritulb@google.com
   test_tags: []
 - name: optimization_02
   description: Optimization
-  expiry: 2026/10/05
+  expiry: 2026/10/30
   owner: ritulb@google.com
   test_tags: []
 - name: optimization_03
@@ -240,7 +240,7 @@
   test_tags: []
 - name: optimization_06
   description: Optimization
-  expiry: 2026/10/05
+  expiry: 2026/10/30
   owner: ritulb@google.com
   test_tags: []
 - name: otel_export_telemetry_domains
@@ -269,7 +269,7 @@
   allow_in_fuzzing_config: true
 - name: ph2_perf_01
   description: Different performance experiments for PH2 Transport
-  expiry: 2026/10/05
+  expiry: 2026/10/30
   owner: ritulb@google.com
   test_tags: []
 - name: ph2_server
@@ -297,7 +297,7 @@
   description:
     Code outside iomgr that relies directly on pollsets will use non-pollset alternatives when
     enabled.
-  expiry: 2026/10/01
+  expiry: 2026/10/30
   owner: mlumish@google.com
   test_tags: ["core_end2end_test"]
   requires: ["event_engine_client", "event_engine_listener"]
@@ -323,7 +323,7 @@
 - name: promise_filter_send_cancel_metadata
   description: Enables sending all trailing metadata fields from server side promise-based filters
     upon stream cancellation.
-  expiry: 2026/10/15
+  expiry: 2026/10/30
   owner: akshitpatel@google.com
   test_tags: []
   allow_in_fuzzing_config: true
@@ -406,7 +406,7 @@
   test_tags: ["endpoint_test", "flow_control_test"]
 - name: tsi_frame_protector_without_locks
   description: Do not hold locks while using the tsi_frame_protector.
-  expiry: 2026/08/30
+  expiry: 2027/01/16
   owner: mattstev@google.com
   test_tags: []
 - name: unconstrained_max_quota_buffer_size

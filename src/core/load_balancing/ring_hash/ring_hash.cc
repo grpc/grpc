@@ -253,34 +253,8 @@ class RingHash final : public LoadBalancingPolicy {
     PickResult Pick(PickArgs args) override;
 
    private:
-    // A fire-and-forget class that schedules endpoint connection attempts
-    // on the control plane WorkSerializer.
-    class EndpointConnectionAttempter final {
-     public:
-      EndpointConnectionAttempter(RefCountedPtr<RingHash> ring_hash,
-                                  RefCountedPtr<RingHashEndpoint> endpoint)
-          : ring_hash_(std::move(ring_hash)), endpoint_(std::move(endpoint)) {
-        // Hop into ExecCtx, so that we're not holding the data plane mutex
-        // while we run control-plane code.
-        GRPC_CLOSURE_INIT(&closure_, RunInExecCtx, this, nullptr);
-        ExecCtx::Run(DEBUG_LOCATION, &closure_, absl::OkStatus());
-      }
-
-     private:
-      static void RunInExecCtx(void* arg, grpc_error_handle /*error*/) {
-        auto* self = static_cast<EndpointConnectionAttempter*>(arg);
-        self->ring_hash_->work_serializer()->Run([self]() {
-          if (!self->ring_hash_->shutdown_) {
-            self->endpoint_->RequestConnectionLocked();
-          }
-          delete self;
-        });
-      }
-
-      RefCountedPtr<RingHash> ring_hash_;
-      RefCountedPtr<RingHashEndpoint> endpoint_;
-      grpc_closure closure_;
-    };
+    void RequestConnectionForEndpoint(
+        const RefCountedPtr<RingHashEndpoint>& endpoint);
 
     RefCountedPtr<RingHash> ring_hash_;
     RefCountedPtr<Ring> ring_;
@@ -387,9 +361,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
         case GRPC_CHANNEL_READY:
           return endpoint_info.picker->Pick(args);
         case GRPC_CHANNEL_IDLE:
-          new EndpointConnectionAttempter(
-              ring_hash_.Ref(DEBUG_LOCATION, "EndpointConnectionAttempter"),
-              endpoint_info.endpoint);
+          RequestConnectionForEndpoint(endpoint_info.endpoint);
           [[fallthrough]];
         case GRPC_CHANNEL_CONNECTING:
           return PickResult::Queue();
@@ -408,9 +380,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
         return endpoint_info.picker->Pick(args);
       }
       if (!requested_connection && endpoint_info.state == GRPC_CHANNEL_IDLE) {
-        new EndpointConnectionAttempter(
-            ring_hash_.Ref(DEBUG_LOCATION, "EndpointConnectionAttempter"),
-            endpoint_info.endpoint);
+        RequestConnectionForEndpoint(endpoint_info.endpoint);
         requested_connection = true;
       }
     }
@@ -423,6 +393,15 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
     absl::StrAppend(&message, " (", resolution_note_, ")");
   }
   return PickResult::Fail(absl::UnavailableError(message));
+}
+
+void RingHash::Picker::RequestConnectionForEndpoint(
+    const RefCountedPtr<RingHashEndpoint>& endpoint) {
+  ring_hash_->work_serializer()->Run([ring_hash = ring_hash_, endpoint]() {
+    if (!ring_hash->shutdown_) {
+      endpoint->RequestConnectionLocked();
+    }
+  });
 }
 
 //
