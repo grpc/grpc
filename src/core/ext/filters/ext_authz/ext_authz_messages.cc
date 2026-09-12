@@ -305,75 +305,71 @@ absl::StatusOr<ExtAuthzResponse> ExtAuthzResponse::Parse(
   if (response == nullptr) {
     return absl::InternalError("Failed to parse CheckResponse");
   }
-  ExtAuthzResponse ext_authz_response;
-  bool has_status = envoy_service_auth_v3_CheckResponse_has_status(response);
-  bool has_denied =
-      envoy_service_auth_v3_CheckResponse_has_denied_response(response);
-  if (has_status) {
-    const auto* status = envoy_service_auth_v3_CheckResponse_status(response);
-    int32_t code_int = google_rpc_Status_code(status);
-    if (!grpc_status_code_from_int(code_int, &ext_authz_response.status_code)) {
-      return absl::InternalError(absl::StrCat(
-          "Invalid grpc status code in CheckResponse status: ", code_int));
-    }
-    ext_authz_response.status_message =
-        UpbStringToStdString(google_rpc_Status_message(status));
-  } else {
-    if (has_denied) {
-      ext_authz_response.status_code = GRPC_STATUS_PERMISSION_DENIED;
-    } else {
-      ext_authz_response.status_code = GRPC_STATUS_OK;
-    }
+  // status
+  const auto* status = envoy_service_auth_v3_CheckResponse_status(response);
+  if (status == nullptr) {
+    return absl::InternalError("status not present in CheckResponse");
   }
+  ExtAuthzResponse ext_authz_response;
+  int32_t code_int = google_rpc_Status_code(status);
+  if (!grpc_status_code_from_int(code_int, &ext_authz_response.status_code)) {
+    return absl::InternalError(absl::StrCat(
+        "Invalid grpc status code in CheckResponse status: ", code_int));
+  }
+  ext_authz_response.status_message =
+      UpbStringToStdString(google_rpc_Status_message(status));
+  // ok_response
   if (ext_authz_response.status_code == GRPC_STATUS_OK) {
-    ExtAuthzResponse::OkResponse ok_response;
     const auto* ok_resp =
         envoy_service_auth_v3_CheckResponse_ok_response(response);
-    if (ok_resp != nullptr) {
-      size_t size = 0;
-      const auto* const* headers =
-          envoy_service_auth_v3_OkHttpResponse_headers(ok_resp, &size);
-      auto parsed_headers = ParseExtAuthzHeaderOptions(headers, size);
-      if (!parsed_headers.ok()) return parsed_headers.status();
-      ok_response.header_mutation.set_headers = std::move(*parsed_headers);
-
-      auto headers_remove =
-          envoy_service_auth_v3_OkHttpResponse_headers_to_remove(ok_resp,
-                                                                 &size);
-      for (size_t i = 0; i < size; ++i) {
-        ok_response.header_mutation.remove_headers.push_back(
-            UpbStringToStdString(headers_remove[i]));
-      }
-
-      const auto* const* resp_headers =
-          envoy_service_auth_v3_OkHttpResponse_response_headers_to_add(ok_resp,
-                                                                       &size);
-      auto parsed_resp_headers = ParseExtAuthzHeaderOptions(resp_headers, size);
-      if (!parsed_resp_headers.ok()) return parsed_resp_headers.status();
-      ok_response.response_headers_to_add = std::move(*parsed_resp_headers);
+    if (ok_resp == nullptr) {
+      return absl::InternalError("ok_response not present in CheckResponse");
     }
+    ExtAuthzResponse::OkResponse ok_response;
+    size_t size = 0;
+    // headers
+    auto headers = ParseExtAuthzHeaderOptions(
+        envoy_service_auth_v3_OkHttpResponse_headers(ok_resp, &size), size);
+    if (!headers.ok()) return headers.status();
+    ok_response.header_mutation.set_headers = std::move(*headers);
+    // headers_to_remove
+    auto headers_to_remove =
+        envoy_service_auth_v3_OkHttpResponse_headers_to_remove(ok_resp, &size);
+    for (size_t i = 0; i < size; ++i) {
+      ok_response.header_mutation.remove_headers.push_back(
+          UpbStringToStdString(headers_to_remove[i]));
+    }
+    // response_headers_to_add
+    auto response_headers_to_add = ParseExtAuthzHeaderOptions(
+        envoy_service_auth_v3_OkHttpResponse_response_headers_to_add(ok_resp,
+                                                                     &size),
+        size);
+    if (!response_headers_to_add.ok()) return response_headers_to_add.status();
+    ok_response.response_headers_to_add = std::move(*response_headers_to_add);
     ext_authz_response.response = std::move(ok_response);
   } else {
-    ExtAuthzResponse::DeniedResponse denied_response;
-    denied_response.status = GRPC_STATUS_PERMISSION_DENIED;
+    // denied_response
     const auto* denied =
         envoy_service_auth_v3_CheckResponse_denied_response(response);
-    if (denied != nullptr) {
-      const auto* http_status =
-          envoy_service_auth_v3_DeniedHttpResponse_status(denied);
-      if (http_status != nullptr) {
-        int code = envoy_type_v3_HttpStatus_code(http_status);
-        if (code > 0) {
-          denied_response.status = grpc_http2_status_to_grpc_status(code);
-        }
-      }
-      size_t size = 0;
-      const auto* const* headers =
-          envoy_service_auth_v3_DeniedHttpResponse_headers(denied, &size);
-      auto parsed_headers = ParseExtAuthzHeaderOptions(headers, size);
-      if (!parsed_headers.ok()) return parsed_headers.status();
-      denied_response.headers = std::move(*parsed_headers);
+    if (denied == nullptr) {
+      return absl::InternalError(
+          "denied_response not present in CheckResponse");
     }
+    ExtAuthzResponse::DeniedResponse denied_response;
+    denied_response.status = GRPC_STATUS_PERMISSION_DENIED;
+    // status
+    if (const auto* http_status =
+            envoy_service_auth_v3_DeniedHttpResponse_status(denied);
+        http_status != nullptr) {
+      denied_response.status = grpc_http2_status_to_grpc_status(
+          envoy_type_v3_HttpStatus_code(http_status));
+    }
+    // headers
+    size_t size = 0;
+    auto headers = ParseExtAuthzHeaderOptions(
+        envoy_service_auth_v3_DeniedHttpResponse_headers(denied, &size), size);
+    if (!headers.ok()) return headers.status();
+    denied_response.headers = std::move(*headers);
     ext_authz_response.response = std::move(denied_response);
   }
   return ext_authz_response;
