@@ -23,6 +23,7 @@
 #include <grpc/support/string_util.h>
 #include <openssl/crypto.h>
 #include <openssl/err.h>
+#include <openssl/evp.h>
 #include <openssl/pem.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -771,12 +772,6 @@ class SslTransportSecurityTest
     fixture_destroyed = false;
   }
 
-  std::string ExpectedTargetLabel() const {
-    return ssl_fixture_->server_name_indication().empty()
-               ? "<omitted>"
-               : ssl_fixture_->server_name_indication();
-  }
-
   void DoHandshake() { tsi_test_do_handshake(ssl_tsi_test_fixture_); }
 
   void DoRoundTrip() { tsi_test_do_round_trip(ssl_tsi_test_fixture_); }
@@ -991,7 +986,16 @@ TEST_P(SslTransportSecurityTest, DoRoundTripForAllConfigs) {
 TEST_P(SslTransportSecurityTest, DoRoundTripWithErrorOnStack) {
   // Invoke an SSL function that causes an error, and ensure the error
   // makes it to the stack.
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
   ASSERT_FALSE(EC_KEY_new_by_curve_name(NID_rsa));
+#else
+  // Use EVP_PKEY_CTX with an invalid operation to push an error.
+  EVP_PKEY_CTX* err_ctx = EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, nullptr);
+  ASSERT_NE(err_ctx, nullptr);
+  // Calling sign_init without a key will fail and push an error.
+  ASSERT_LE(EVP_PKEY_sign_init(err_ctx), 0);
+  EVP_PKEY_CTX_free(err_ctx);
+#endif
   ASSERT_NE(ERR_peek_error(), 0);
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
@@ -1601,9 +1605,6 @@ TEST_P(SslTransportSecurityTest, TestHandshakeMetricsIncremented) {
   const TestMetricsSink::Labels client_labels = {
       {"grpc.tls.handshake.result", "OK"},
       {"grpc.tls.handshake.resumed", "false"},
-      {"grpc.target", ExpectedTargetLabel()},
-      {"grpc.lb.locality", "<omitted>"},
-      {"grpc.lb.backend_service", "<omitted>"},
   };
   const TestMetricsSink::Labels server_labels = {
       {"grpc.tls.handshake.result", "OK"},
@@ -1642,9 +1643,6 @@ TEST_P(SslTransportSecurityTest, TestBadServerCertMetricsIncremented) {
   const TestMetricsSink::Labels client_labels = {
       {"grpc.tls.handshake.result", "CERTIFICATE_AUTHORITY_INVALID"},
       {"grpc.tls.handshake.resumed", "false"},
-      {"grpc.target", ExpectedTargetLabel()},
-      {"grpc.lb.locality", "<omitted>"},
-      {"grpc.lb.backend_service", "<omitted>"},
   };
   EXPECT_EQ(
       sink_after.GetCount("grpc.client.tls.handshakes", client_labels),
@@ -1682,9 +1680,6 @@ TEST_P(SslTransportSecurityTest, TestBadClientCertMetricsIncremented) {
   const TestMetricsSink::Labels client_labels = {
       {"grpc.tls.handshake.result", "OK"},
       {"grpc.tls.handshake.resumed", "false"},
-      {"grpc.target", ExpectedTargetLabel()},
-      {"grpc.lb.locality", "<omitted>"},
-      {"grpc.lb.backend_service", "<omitted>"},
   };
   const TestMetricsSink::Labels server_labels = {
       {"grpc.tls.handshake.result", "CERTIFICATE_AUTHORITY_INVALID"},

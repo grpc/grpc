@@ -303,8 +303,15 @@ RefCountedPtr<Channel> CreateXdsChannel(
   RefCountedPtr<grpc_channel_credentials> channel_creds =
       CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
           server.channel_creds_config(), certificate_provider_store);
-  return RefCountedPtr<Channel>(Channel::FromC(grpc_channel_create(
-      server.server_uri().c_str(), channel_creds.get(), args.ToC().get())));
+  ChannelArgs channel_args = args;
+  const grpc_channel_args* child_args =
+      args.GetPointer<grpc_channel_args>(GRPC_ARG_CHILD_CHANNEL_ARGS);
+  if (child_args != nullptr) {
+    channel_args = ChannelArgs::FromC(child_args).UnionWith(args);
+  }
+  return RefCountedPtr<Channel>(Channel::FromC(
+      grpc_channel_create(server.server_uri().c_str(), channel_creds.get(),
+                          channel_args.ToC().get())));
 }
 
 std::string GetChannelKey(const GrpcXdsServerInterface& server) {

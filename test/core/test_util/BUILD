@@ -105,6 +105,8 @@ grpc_cc_library(
         "//src/core:closure",
         "//src/core:down_cast",
         "//src/core:endpoint_info_handshaker",
+        "//src/core:event_engine_extensions",
+        "//src/core:event_engine_query_extensions",
         "//src/core:event_engine_shim",
         "//src/core:event_engine_tcp_socket_utils",
         "//src/core:event_engine_utils",

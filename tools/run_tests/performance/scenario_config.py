@@ -1049,13 +1049,6 @@ class PythonLanguage(Language):
         )
 
         yield _ping_pong_scenario(
-            "python_protobuf_async_unary_ping_pong",
-            rpc_type="UNARY",
-            client_type="ASYNC_CLIENT",
-            server_type="ASYNC_SERVER",
-        )
-
-        yield _ping_pong_scenario(
             "python_protobuf_sync_unary_ping_pong",
             rpc_type="UNARY",
             client_type="SYNC_CLIENT",
@@ -1181,7 +1174,7 @@ class PythonAsyncIOLanguage(Language):
         )
 
         yield _ping_pong_scenario(
-            "python_asyncio_protobuf_async_streaming_ping_pong",
+            "python_protobuf_async_streaming_ping_pong",
             rpc_type="STREAMING",
             client_type="ASYNC_CLIENT",
             server_type="ASYNC_SERVER",
@@ -1192,17 +1185,7 @@ class PythonAsyncIOLanguage(Language):
         )
 
         yield _ping_pong_scenario(
-            "python_asyncio_protobuf_async_unary_ping_pong",
-            rpc_type="UNARY",
-            client_type="ASYNC_CLIENT",
-            server_type="ASYNC_SERVER",
-            client_processes=1,
-            server_processes=1,
-            categories=[SMOKETEST, SCALABLE],
-        )
-
-        yield _ping_pong_scenario(
-            "python_asyncio_protobuf_async_unary_ping_pong",
+            "python_protobuf_async_unary_ping_pong",
             rpc_type="UNARY",
             client_type="ASYNC_CLIENT",
             server_type="ASYNC_SERVER",
@@ -1213,7 +1196,7 @@ class PythonAsyncIOLanguage(Language):
         )
 
         yield _ping_pong_scenario(
-            "python_asyncio_protobuf_async_unary_qps_unconstrained",
+            "python_protobuf_async_unary_qps_unconstrained",
             rpc_type="UNARY",
             client_type="ASYNC_CLIENT",
             server_type="ASYNC_SERVER",
@@ -1222,7 +1205,7 @@ class PythonAsyncIOLanguage(Language):
         )
 
         yield _ping_pong_scenario(
-            "python_asyncio_protobuf_async_streaming_qps_unconstrained",
+            "python_protobuf_async_streaming_qps_unconstrained",
             rpc_type="STREAMING",
             client_type="ASYNC_CLIENT",
             server_type="ASYNC_SERVER",
@@ -1231,14 +1214,13 @@ class PythonAsyncIOLanguage(Language):
         )
 
         yield _ping_pong_scenario(
-            "python_asyncio_to_cpp_protobuf_async_unary_ping_pong_1thread",
+            "python_to_cpp_protobuf_async_unary_ping_pong_1thread",
             rpc_type="UNARY",
             client_type="ASYNC_CLIENT",
             server_type="ASYNC_SERVER",
             server_language="c++",
             channels=1,
             client_processes=1,
-            unconstrained_client="async",
             categories=[SMOKETEST, SCALABLE],
         )
 
@@ -1267,7 +1249,7 @@ class PythonAsyncIOLanguage(Language):
         )
 
         yield _ping_pong_scenario(
-            "python_asyncio_protobuf_async_unary_ping_pong_1MB",
+            "python_protobuf_async_unary_ping_pong_1MB",
             rpc_type="UNARY",
             client_type="ASYNC_CLIENT",
             server_type="ASYNC_SERVER",

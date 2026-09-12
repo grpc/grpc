@@ -916,7 +916,7 @@ TEST_F(GetStorageTest, SameInstanceForRepeatedCalls) {
 // scope.
 TEST_F(MetricsQueryTest, NewStorageVisibleInQuery) {
   ::testing::StrictMock<MockMetricsSink> sink;
-  std::vector<std::string> label = {std::string(kOmittedLabel)};
+  std::vector<std::string> label = {};
   auto scope = CreateCollectionScope({}, {});
 
   // Initial query, storage doesn't exist yet.
@@ -928,10 +928,10 @@ TEST_F(MetricsQueryTest, NewStorageVisibleInQuery) {
   storage->Increment(LowContentionDomain::kCounter);
 
   // Query again with the same scope, new storage should be visible.
-  EXPECT_CALL(sink,
-              Counter(InstrumentLabelListElementsAreArray(
-                          DomainLabels<LowContentionDomain>()),
-                      ::testing::ElementsAreArray(label), "low_contention", 1));
+  EXPECT_CALL(
+      sink,
+      Counter(InstrumentLabelListElementsAreArray(std::vector<std::string>{}),
+              ::testing::ElementsAreArray(label), "low_contention", 1));
   MetricsQuery().OnlyMetrics({"low_contention"}).Run(scope, sink);
   ::testing::Mock::VerifyAndClearExpectations(&sink);
 }
@@ -951,19 +951,18 @@ TEST_F(InstrumentTest, CollectionScopeSnapshotsExistingMetrics) {
 
   // Query the data.
   ::testing::StrictMock<MockMetricsSink> sink;
-  std::vector<std::string> low_contention_label = {std::string(kOmittedLabel)};
-  std::vector<std::string> fan_out_label = {std::string(kOmittedLabel),
-                                            std::string(kOmittedLabel)};
-  EXPECT_CALL(sink, Counter(::testing::ResultOf(
-                                LabelListToVector,
-                                ::testing::ElementsAreArray(
-                                    DomainLabels<LowContentionDomain>())),
-                            ::testing::ElementsAreArray(low_contention_label),
-                            "low_contention", 1));
+  std::vector<std::string> low_contention_label = {};
+  std::vector<std::string> fan_out_label = {};
+  EXPECT_CALL(sink,
+              Counter(::testing::ResultOf(LabelListToVector,
+                                          ::testing::ElementsAreArray(
+                                              std::vector<std::string>{})),
+                      ::testing::ElementsAreArray(low_contention_label),
+                      "low_contention", 1));
   EXPECT_CALL(
       sink, Counter(::testing::ResultOf(LabelListToVector,
                                         ::testing::ElementsAreArray(
-                                            DomainLabels<FanOutDomain>())),
+                                            std::vector<std::string>{})),
                     ::testing::ElementsAreArray(fan_out_label), "fan_out", 5));
   MetricsQuery().OnlyMetrics({"low_contention", "fan_out"}).Run(scope, sink);
 }
@@ -984,16 +983,16 @@ TEST_F(InstrumentTest, CollectionScopeSeesNewMetrics) {
 
   // Query the data using the original scope.
   ::testing::StrictMock<MockMetricsSink> sink;
-  std::vector<std::string> low_contention_label = {std::string(kOmittedLabel)};
-  std::vector<std::string> fan_out_label = {std::string(kOmittedLabel),
-                                            std::string(kOmittedLabel)};
-  EXPECT_CALL(sink, Counter(InstrumentLabelListElementsAreArray(
-                                DomainLabels<LowContentionDomain>()),
-                            ::testing::ElementsAreArray(low_contention_label),
-                            "low_contention", 1));
+  std::vector<std::string> low_contention_label = {};
+  std::vector<std::string> fan_out_label = {};
   EXPECT_CALL(
       sink,
-      Counter(InstrumentLabelListElementsAreArray(DomainLabels<FanOutDomain>()),
+      Counter(InstrumentLabelListElementsAreArray(std::vector<std::string>{}),
+              ::testing::ElementsAreArray(low_contention_label),
+              "low_contention", 1));
+  EXPECT_CALL(
+      sink,
+      Counter(InstrumentLabelListElementsAreArray(std::vector<std::string>{}),
               ::testing::ElementsAreArray(fan_out_label), "fan_out", 5));
   MetricsQuery().OnlyMetrics({"low_contention", "fan_out"}).Run(scope, sink);
 }
@@ -1004,12 +1003,11 @@ TEST_F(MetricsQueryTest, ScopedLabels) {
   auto s2 = FanOutDomain::GetStorage(scope, "t1", "m2");
   s1->Increment(FanOutDomain::kCounter);
   s2->Increment(FanOutDomain::kCounter);
-  std::vector<std::string> label = {"t1", std::string(kOmittedLabel)};
+  std::vector<std::string> label = {"t1"};
   ::testing::StrictMock<MockMetricsSink> sink;
-  EXPECT_CALL(
-      sink,
-      Counter(InstrumentLabelListElementsAreArray(DomainLabels<FanOutDomain>()),
-              ::testing::ElementsAreArray(label), "fan_out", 2));
+  EXPECT_CALL(sink, Counter(InstrumentLabelListElementsAreArray(
+                                std::vector<std::string>{"grpc.target"}),
+                            ::testing::ElementsAreArray(label), "fan_out", 2));
   MetricsQuery().OnlyMetrics({"fan_out"}).Run(scope, sink);
 }
 
@@ -1039,17 +1037,15 @@ TEST_F(MetricsQueryTest, HierarchicalQuery) {
   auto s2 = FanOutDomain::GetStorage(child_scope, "t2", "m2");
   s1->Increment(FanOutDomain::kCounter);
   s2->Increment(FanOutDomain::kCounter);
-  std::vector<std::string> label1 = {"t1", std::string(kOmittedLabel)};
-  std::vector<std::string> label2 = {"t2", "m2"};
+  std::vector<std::string> label1 = {"t1"};
+  std::vector<std::string> label2 = {"t2"};
   ::testing::StrictMock<MockMetricsSink> sink;
-  EXPECT_CALL(
-      sink,
-      Counter(InstrumentLabelListElementsAreArray(DomainLabels<FanOutDomain>()),
-              ::testing::ElementsAreArray(label1), "fan_out", 1));
-  EXPECT_CALL(
-      sink,
-      Counter(InstrumentLabelListElementsAreArray(DomainLabels<FanOutDomain>()),
-              ::testing::ElementsAreArray(label2), "fan_out", 1));
+  EXPECT_CALL(sink, Counter(InstrumentLabelListElementsAreArray(
+                                std::vector<std::string>{"grpc.target"}),
+                            ::testing::ElementsAreArray(label1), "fan_out", 1));
+  EXPECT_CALL(sink, Counter(InstrumentLabelListElementsAreArray(
+                                std::vector<std::string>{"grpc.target"}),
+                            ::testing::ElementsAreArray(label2), "fan_out", 1));
   MetricsQuery().OnlyMetrics({"fan_out"}).Run(parent_scope, sink);
 }
 
@@ -1061,12 +1057,11 @@ TEST_F(MetricsQueryTest, AggregationOnChildDestruction) {
   s_p->Increment(FanOutDomain::kCounter);
   s_c->Increment(FanOutDomain::kCounter);
   child_scope.reset();
-  std::vector<std::string> label = {"t1", std::string(kOmittedLabel)};
+  std::vector<std::string> label = {"t1"};
   ::testing::StrictMock<MockMetricsSink> sink;
-  EXPECT_CALL(
-      sink,
-      Counter(InstrumentLabelListElementsAreArray(DomainLabels<FanOutDomain>()),
-              ::testing::ElementsAreArray(label), "fan_out", 2));
+  EXPECT_CALL(sink, Counter(InstrumentLabelListElementsAreArray(
+                                std::vector<std::string>{"grpc.target"}),
+                            ::testing::ElementsAreArray(label), "fan_out", 2));
   MetricsQuery().OnlyMetrics({"fan_out"}).Run(parent_scope, sink);
 }
 
@@ -1091,17 +1086,17 @@ TEST_F(MetricsQueryTest, AggregationToMultipleParents) {
   // child scope destroyed, s_c should be aggregated to p1 and p2.
   ::testing::StrictMock<MockMetricsSink> sink1;
   ::testing::StrictMock<MockMetricsSink> sink2;
-  std::vector<std::string> label1 = {"t", std::string(kOmittedLabel)};
-  std::vector<std::string> label2 = {std::string(kOmittedLabel), "m"};
-  EXPECT_CALL(
-      sink1,
-      Counter(InstrumentLabelListElementsAreArray(DomainLabels<FanOutDomain>()),
-              ::testing::ElementsAreArray(label1), "fan_out", 2));
+  std::vector<std::string> label1 = {"t"};
+  std::vector<std::string> label2 = {"m"};
+  EXPECT_CALL(sink1,
+              Counter(InstrumentLabelListElementsAreArray(
+                          std::vector<std::string>{"grpc.target"}),
+                      ::testing::ElementsAreArray(label1), "fan_out", 2));
   MetricsQuery().OnlyMetrics({"fan_out"}).Run(p1, sink1);
-  EXPECT_CALL(
-      sink2,
-      Counter(InstrumentLabelListElementsAreArray(DomainLabels<FanOutDomain>()),
-              ::testing::ElementsAreArray(label2), "fan_out", 2));
+  EXPECT_CALL(sink2,
+              Counter(InstrumentLabelListElementsAreArray(
+                          std::vector<std::string>{"grpc.method"}),
+                      ::testing::ElementsAreArray(label2), "fan_out", 2));
   MetricsQuery().OnlyMetrics({"fan_out"}).Run(p2, sink2);
 }
 

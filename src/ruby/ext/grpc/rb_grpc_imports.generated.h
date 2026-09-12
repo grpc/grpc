@@ -423,6 +423,9 @@ extern grpc_lame_client_channel_create_type grpc_lame_client_channel_create_impo
 typedef void(*grpc_channel_destroy_type)(grpc_channel* channel);
 extern grpc_channel_destroy_type grpc_channel_destroy_import;
 #define grpc_channel_destroy grpc_channel_destroy_import
+typedef const grpc_arg_pointer_vtable*(*grpc_channel_args_arg_vtable_type)(void);
+extern grpc_channel_args_arg_vtable_type grpc_channel_args_arg_vtable_import;
+#define grpc_channel_args_arg_vtable grpc_channel_args_arg_vtable_import
 typedef grpc_call_error(*grpc_call_cancel_type)(grpc_call* call, void* reserved);
 extern grpc_call_cancel_type grpc_call_cancel_import;
 #define grpc_call_cancel grpc_call_cancel_import

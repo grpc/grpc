@@ -29,14 +29,14 @@
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/inter_activity_latch.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/resource_quota/memory_quota.h"
-#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -205,6 +205,133 @@ TEST_F(PartyTest, Test16SpawnedPendingPromises) {
   // The on_done callback should never be called for pending Promises.
   EXPECT_FALSE(absl::StrContains(execution_order, 'D'));
   VLOG(2) << "Execution order : " << execution_order;
+}
+
+TEST_F(PartyTest, Test17SpawnedPromises) {
+  // This test validates the behavior when 17 promises are added to a Party.
+  // A Party supports up to 16 concurrent participants. When all 16 participant
+  // slots are occupied by pending promises, spawning a 17th promise defers its
+  // addition until an occupied slot is freed.
+  //
+  // Assertions tested:
+  // 1. If the party is idle and has an empty slot, spawning a promise that
+  //    resolves immediately completes and frees its slot.
+  // 2. Spawning 15 pending promises and 1 wakeable pending promise occupies all
+  //    16 Party slots.
+  // 3. A 17th promise spawned while all slots are occupied does not resolve
+  //    immediately.
+  // 4. Waking up the 16th promise allows it to complete, freeing a slot.
+  // 5. The 17th promise is then processed and completes successfully.
+
+  // Initialize Party.
+  const RefCountedPtr<Party> party = MakeParty();
+  std::string execution_order;
+
+  // Spawn 15 promises that always return Pending{}.
+  constexpr int kNumPendingPromises = 15;
+  for (int i = 1; i <= kNumPendingPromises; ++i) {
+    party->Spawn(absl::StrCat("p", i), Never<Empty>(), [](const Empty) {});
+  }
+
+  // Spawn a promise into the 16th slot that resolves immediately, and
+  // ensure it completes, freeing the 16th slot.
+  party->Spawn(
+      "p16_initial", [] { return Immediate(Empty{}); },
+      [&execution_order](const Empty) {
+        absl::StrAppend(&execution_order, "1");
+      });
+  EXPECT_EQ(execution_order, "1");
+
+  // Spawn a 16th promise (take 2) that:
+  //   - On first poll: Creates a waker, records "2", and returns
+  //   Pending{}.
+  //   - On second poll (after wake up): Records "3", returns Empty{}.
+  Waker p16_waker;
+  party->Spawn(
+      "p16",
+      [p16_polled_once = false, &p16_waker,
+       &execution_order]() mutable -> Poll<Empty> {
+        if (p16_polled_once) {
+          absl::StrAppend(&execution_order, "3");
+          return Empty{};
+        }
+        p16_polled_once = true;
+        absl::StrAppend(&execution_order, "2");
+        p16_waker = GetContext<Activity>()->MakeNonOwningWaker();
+        return Pending{};
+      },
+      [&execution_order](const Empty) {
+        absl::StrAppend(&execution_order, "4");
+      });
+
+  EXPECT_EQ(execution_order, "12");
+
+  // Spawn a 17th promise.
+  Notification p17_completed;
+  party->Spawn(
+      "p17", [] { return Immediate(Empty{}); },
+      [&p17_completed, &execution_order](const Empty) {
+        absl::StrAppend(&execution_order, "5");
+        p17_completed.Notify();
+      });
+
+  // Ensure the 17th promise does not resolve while all 16 slots remain
+  // occupied.
+  EXPECT_FALSE(p17_completed.HasBeenNotified());
+
+  // Wake up the 16th promise.
+  absl::StrAppend(&execution_order, "W");
+  EXPECT_EQ(execution_order, "12W");
+  p16_waker.Wakeup();
+
+  // Wait for the 17th promise to resolve.
+  p17_completed.WaitForNotification();
+  EXPECT_EQ(execution_order, "12W345");
+  VLOG(2) << "17th promise completed successfully after slot was freed.";
+
+  // Now that slot 16 is again free, verify spawning a new promise from within
+  // an active party promise.
+  Notification p16_part2_polled;
+  Notification p17_spawned_from_p16;
+  Waker p16_part2_waker;
+
+  party->Spawn(
+      "p16",
+      [&party, &execution_order, &p17_spawned_from_p16, &p16_part2_waker,
+       &p16_part2_polled, p16_polled_twice = false]() mutable -> Poll<Empty> {
+        if (p16_polled_twice) {
+          absl::StrAppend(&execution_order, "7");
+          return Empty{};
+        }
+        p16_polled_twice = true;
+        // Spawning another promise from inside this promise's poll loop:
+        party->Spawn(
+            "p17", [] { return Immediate(Empty{}); },
+            [&execution_order, &p17_spawned_from_p16](const Empty) {
+              absl::StrAppend(&execution_order, "9");
+              p17_spawned_from_p16.Notify();
+            });
+
+        absl::StrAppend(&execution_order, "6");
+        p16_part2_waker = GetContext<Activity>()->MakeNonOwningWaker();
+        // Notify that p16 has completed its first poll and created its waker.
+        p16_part2_polled.Notify();
+        // Slot 16 remains occupied while Pending
+        return Pending{};
+      },
+      [&execution_order](const Empty) {
+        absl::StrAppend(&execution_order, "8");
+      });
+
+  // Wait until p16 has been polled and appends "6" before asserting.
+  p16_part2_polled.WaitForNotification();
+  EXPECT_EQ(execution_order, "12W3456");
+  absl::StrAppend(&execution_order, "W");
+
+  p16_part2_waker.Wakeup();
+
+  p17_spawned_from_p16.WaitForNotification();
+  EXPECT_EQ(execution_order, "12W3456W789");
 }
 
 TEST_F(PartyTest, SpawnWaitableAndRunTwoParties) {

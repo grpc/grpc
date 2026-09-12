@@ -151,6 +151,7 @@ declare -A useLanguage=(
   [java]=1
   [node]=1
   [python]=1
+  [python_asyncio]=1
   [ruby]=1
   [rust]=1
   [php8]=1
@@ -207,6 +208,13 @@ fi
 if [[ -v "useLanguage[python]" ]]; then
   configLangArgs8core+=(-l python) # 8-core only.
   runnerLangArgs+=(-l "python:${GRPC_CORE_REPO}:${GRPC_CORE_COMMIT}")
+fi
+
+# python_asyncio
+if [[ -v "useLanguage[python_asyncio]" ]]; then
+  configLangArgs8core+=(-l python_asyncio)
+  configLangArgs32core+=(-l python_asyncio)
+  runnerLangArgs+=(-l "python_asyncio:${GRPC_CORE_REPO}:${GRPC_CORE_COMMIT}")
 fi
 
 # ruby

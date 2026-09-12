@@ -22150,6 +22150,7 @@ targets:
   - test/cpp/qps/qps_worker.h
   - test/cpp/qps/report.h
   - test/cpp/qps/server.h
+  - test/cpp/qps/session_util.h
   - test/cpp/qps/stats.h
   - test/cpp/qps/usage_timer.h
   src:
@@ -22206,6 +22207,7 @@ targets:
   - test/cpp/qps/server_async.cc
   - test/cpp/qps/server_callback.cc
   - test/cpp/qps/server_sync.cc
+  - test/cpp/qps/session_util.cc
   - test/cpp/qps/usage_timer.cc
   deps:
   - grpc++_test_config
@@ -22273,6 +22275,7 @@ targets:
   - test/cpp/qps/qps_server_builder.h
   - test/cpp/qps/qps_worker.h
   - test/cpp/qps/server.h
+  - test/cpp/qps/session_util.h
   - test/cpp/qps/stats.h
   - test/cpp/qps/usage_timer.h
   src:
@@ -22322,6 +22325,7 @@ targets:
   - test/cpp/qps/server_async.cc
   - test/cpp/qps/server_callback.cc
   - test/cpp/qps/server_sync.cc
+  - test/cpp/qps/session_util.cc
   - test/cpp/qps/usage_timer.cc
   - test/cpp/qps/worker.cc
   deps:
