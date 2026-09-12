@@ -158,6 +158,12 @@ struct ExtAuthzRequest {
   // - destination (AttributeContext.destination): local address and server
   //   credentials.
   // Note: service and labels are not set.
+  // TODO(rishesh): Revisit these fields once the client-side ext_authz
+  // implementation is done. They are currently not populated by any caller,
+  // since the filter only supports the client side, where source and
+  // destination are omitted from the AttributeContext. In particular,
+  // destination.{uri_sans,dns_sans,subject} have no source of data today, as
+  // the auth context only exposes peer credentials, not the local certificate.
   Peer source;
   Peer destination;
 
