@@ -693,6 +693,9 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
       const EndpointAddressSet key(endpoint.addresses());
       auto& rh_endpoint = endpoint_map[key];
       // If we've already seen this key, combine weights and skip the dup.
+      // Note: We will already have created or updated the RingHashEndpoint
+      // object when we saw the first endpoint with this key.  However,
+      // nothing inside of RingHashEndpoint uses the weight, so that's okay.
       if (rh_endpoint != nullptr) {
         EndpointAddresses& prev_endpoint = endpoints_[rh_endpoint->index()];
         int weight_arg =
