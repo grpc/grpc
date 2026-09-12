@@ -66,6 +66,11 @@ constexpr absl::string_view kDenyMe = "deny-me";
 constexpr absl::string_view kOther = "other";
 constexpr absl::string_view kAllowPrefixFoo = "allow-prefix-foo";
 constexpr absl::string_view kAllowPrefix = "allow-prefix-";
+constexpr absl::string_view kInvalidHeaderKey = "invalid header key";
+constexpr absl::string_view kInvalidHeaderKeyErrorMessage =
+    "Invalid header name to remove: invalid header key";
+constexpr absl::string_view kMethodPost = "POST";
+constexpr absl::string_view kProtocolHttp2 = "HTTP/2";
 
 //
 // CreateExtAuthzRequest() tests
@@ -121,9 +126,9 @@ TEST_F(CreateExtAuthzRequestTest, HttpFields) {
   ASSERT_TRUE(request.attributes().has_request());
   ASSERT_TRUE(request.attributes().request().has_http());
   const auto& http = request.attributes().request().http();
-  EXPECT_THAT(http.method(), ::testing::StrEq("POST"));
+  EXPECT_THAT(http.method(), ::testing::StrEq(kMethodPost));
   EXPECT_THAT(http.path(), ::testing::StrEq(kPath));
-  EXPECT_THAT(http.protocol(), ::testing::StrEq("HTTP/2"));
+  EXPECT_THAT(http.protocol(), ::testing::StrEq(kProtocolHttp2));
   EXPECT_THAT(http.size(), ::testing::Eq(-1));
 }
 
@@ -381,6 +386,25 @@ MATCHER_P2(IsDeniedResponse, status_matcher, headers_matcher, "") {
       arg, result_listener);
 }
 
+constexpr absl::string_view kCheckResponseParseErrorMessage =
+    "Failed to parse CheckResponse";
+constexpr absl::string_view kStatusNotPresentErrorMessage =
+    "status not present in CheckResponse";
+constexpr absl::string_view kInvalidStatusCodeErrorMessage =
+    "Invalid grpc status code in CheckResponse status: 99";
+constexpr absl::string_view kOkResponseNotPresentErrorMessage =
+    "ok_response not present in CheckResponse";
+constexpr absl::string_view kHeaderOptionMissingValueErrorMessage =
+    "either value or raw_value must be set";
+constexpr absl::string_view kAllGood = "all good";
+constexpr absl::string_view kRespHeaderKey = "x-resp-1";
+constexpr absl::string_view kRespHeaderVal = "val-resp-1";
+constexpr absl::string_view kDeniedResponseNotPresentErrorMessage =
+    "denied_response not present in CheckResponse";
+constexpr absl::string_view kDenyReasonHeaderKey = "x-deny-reason";
+constexpr absl::string_view kDenyReasonHeaderVal = "bad-token";
+constexpr absl::string_view kUnauthenticatedRpc = "unauthenticated rpc";
+
 class ParseExtAuthzResponseTest : public ::testing::Test {
  protected:
   absl::StatusOr<ExtAuthzResponse> ParseResponse(
@@ -413,54 +437,48 @@ class ParseExtAuthzResponseTest : public ::testing::Test {
   }
 };
 
-TEST_F(ParseExtAuthzResponseTest, ResponseInvalidMalformedProtobuf) {
+TEST_F(ParseExtAuthzResponseTest, MalformedProtobufFails) {
   auto parsed = ExtAuthzResponse::Parse("\x0a\xff");
   EXPECT_THAT(parsed.status(),
               StatusIs(absl::StatusCode::kInternal,
-                       ::testing::StrEq("Failed to parse CheckResponse")));
+                       ::testing::StrEq(kCheckResponseParseErrorMessage)));
 }
 
-TEST_F(ParseExtAuthzResponseTest, ResponseInvalidEmptyPayload) {
+TEST_F(ParseExtAuthzResponseTest, EmptyPayloadFails) {
   auto parsed = ExtAuthzResponse::Parse("");
-  EXPECT_THAT(
-      parsed.status(),
-      StatusIs(absl::StatusCode::kInternal,
-               ::testing::StrEq("status not present in CheckResponse")));
+  EXPECT_THAT(parsed.status(),
+              StatusIs(absl::StatusCode::kInternal,
+                       ::testing::StrEq(kStatusNotPresentErrorMessage)));
 }
 
-TEST_F(ParseExtAuthzResponseTest, ResponseInvalidMissingStatusField) {
+TEST_F(ParseExtAuthzResponseTest, MissingStatusFieldFails) {
   CheckResponse response;
   response.mutable_denied_response();
   auto parsed = ParseResponse(response);
-  EXPECT_THAT(
-      parsed.status(),
-      StatusIs(absl::StatusCode::kInternal,
-               ::testing::StrEq("status not present in CheckResponse")));
+  EXPECT_THAT(parsed.status(),
+              StatusIs(absl::StatusCode::kInternal,
+                       ::testing::StrEq(kStatusNotPresentErrorMessage)));
 }
 
-TEST_F(ParseExtAuthzResponseTest, ResponseInvalidInvalidStatusCode) {
+TEST_F(ParseExtAuthzResponseTest, InvalidStatusCodeFails) {
   CheckResponse response;
   response.mutable_status()->set_code(99);
   auto parsed = ParseResponse(response);
-  EXPECT_THAT(
-      parsed.status(),
-      StatusIs(absl::StatusCode::kInternal,
-               ::testing::StrEq(
-                   "Invalid grpc status code in CheckResponse status: 99")));
+  EXPECT_THAT(parsed.status(),
+              StatusIs(absl::StatusCode::kInternal,
+                       ::testing::StrEq(kInvalidStatusCodeErrorMessage)));
 }
 
-TEST_F(ParseExtAuthzResponseTest, ResponseInvalidStatusOkMissingOkResponse) {
+TEST_F(ParseExtAuthzResponseTest, StatusOkMissingOkResponseFails) {
   CheckResponse response;
   response.mutable_status()->set_code(0);
   auto parsed = ParseResponse(response);
-  EXPECT_THAT(
-      parsed.status(),
-      StatusIs(absl::StatusCode::kInternal,
-               ::testing::StrEq("ok_response not present in CheckResponse")));
+  EXPECT_THAT(parsed.status(),
+              StatusIs(absl::StatusCode::kInternal,
+                       ::testing::StrEq(kOkResponseNotPresentErrorMessage)));
 }
 
-TEST_F(ParseExtAuthzResponseTest,
-       ResponseInvalidOkResponseHeaderOptionMissingValue) {
+TEST_F(ParseExtAuthzResponseTest, OkResponseHeaderOptionMissingValueFails) {
   CheckResponse response;
   response.mutable_status()->set_code(0);
   auto* header = response.mutable_ok_response()->add_headers();
@@ -469,10 +487,10 @@ TEST_F(ParseExtAuthzResponseTest,
   EXPECT_THAT(
       parsed.status(),
       StatusIs(absl::StatusCode::kInternal,
-               ::testing::HasSubstr("either value or raw_value must be set")));
+               ::testing::HasSubstr(kHeaderOptionMissingValueErrorMessage)));
 }
 
-TEST_F(ParseExtAuthzResponseTest, OkResponseWithoutHeaders) {
+TEST_F(ParseExtAuthzResponseTest, OkResponseNoHeaders) {
   CheckResponse response;
   response.mutable_status()->set_code(0);
   response.mutable_ok_response();
@@ -486,10 +504,10 @@ TEST_F(ParseExtAuthzResponseTest, OkResponseWithoutHeaders) {
                    ::testing::IsEmpty()));
 }
 
-TEST_F(ParseExtAuthzResponseTest, OkResponseWithHeaderMutations) {
+TEST_F(ParseExtAuthzResponseTest, OkResponseHeaderMutations) {
   CheckResponse response;
   response.mutable_status()->set_code(0);
-  response.mutable_status()->set_message("all good");
+  response.mutable_status()->set_message(std::string(kAllGood));
   auto* ok_response = response.mutable_ok_response();
   *ok_response->add_headers() = CreateHeaderValueOption(
       kKey1, kVal1, HeaderValueOption::APPEND_IF_EXISTS_OR_ADD);
@@ -497,12 +515,12 @@ TEST_F(ParseExtAuthzResponseTest, OkResponseWithHeaderMutations) {
       kKey2, kVal2, HeaderValueOption::OVERWRITE_IF_EXISTS_OR_ADD);
   ok_response->add_headers_to_remove(std::string(kKey3));
   *ok_response->add_response_headers_to_add() =
-      CreateHeaderValueOption("x-resp-1", "val-resp-1");
+      CreateHeaderValueOption(kRespHeaderKey, kRespHeaderVal);
   auto parsed = ParseResponse(response);
   ASSERT_TRUE(parsed.ok()) << "status code: " << parsed.status().code()
                            << ", message: " << parsed.status().message();
   EXPECT_THAT(parsed->status_code, ::testing::Eq(GRPC_STATUS_OK));
-  EXPECT_THAT(parsed->status_message, ::testing::StrEq("all good"));
+  EXPECT_THAT(parsed->status_message, ::testing::StrEq(kAllGood));
   EXPECT_THAT(
       parsed->response,
       IsOkResponse(
@@ -516,23 +534,32 @@ TEST_F(ParseExtAuthzResponseTest, OkResponseWithHeaderMutations) {
                                           kOverwriteIfExistsOrAdd)),
               ::testing::ElementsAre(kKey3)),
           ::testing::ElementsAre(IsHeaderValueOption(
-              "x-resp-1", "val-resp-1",
+              kRespHeaderKey, kRespHeaderVal,
               XdsHeaderValueOption::AppendAction::kAppendIfExistsOrAdd))));
 }
 
-TEST_F(ParseExtAuthzResponseTest,
-       ResponseInvalidStatusNotOkMissingDeniedResponse) {
+TEST_F(ParseExtAuthzResponseTest, OkResponseInvalidHeaderToRemoveFails) {
+  CheckResponse response;
+  response.mutable_status()->set_code(0);
+  auto* ok_response = response.mutable_ok_response();
+  ok_response->add_headers_to_remove(std::string(kInvalidHeaderKey));
+  auto parsed = ParseResponse(response);
+  EXPECT_THAT(parsed.status(),
+              StatusIs(absl::StatusCode::kInvalidArgument,
+                       ::testing::StrEq(kInvalidHeaderKeyErrorMessage)));
+}
+
+TEST_F(ParseExtAuthzResponseTest, StatusNotOkMissingDeniedResponseFails) {
   CheckResponse response;
   response.mutable_status()->set_code(16);
   auto parsed = ParseResponse(response);
-  EXPECT_THAT(parsed.status(),
-              StatusIs(absl::StatusCode::kInternal,
-                       ::testing::StrEq(
-                           "denied_response not present in CheckResponse")));
+  EXPECT_THAT(
+      parsed.status(),
+      StatusIs(absl::StatusCode::kInternal,
+               ::testing::StrEq(kDeniedResponseNotPresentErrorMessage)));
 }
 
-TEST_F(ParseExtAuthzResponseTest,
-       ResponseInvalidDeniedResponseHeaderOptionMissingValue) {
+TEST_F(ParseExtAuthzResponseTest, DeniedResponseHeaderOptionMissingValueFails) {
   CheckResponse response;
   response.mutable_status()->set_code(7);
   auto* denied = response.mutable_denied_response();
@@ -543,11 +570,10 @@ TEST_F(ParseExtAuthzResponseTest,
   EXPECT_THAT(
       parsed.status(),
       StatusIs(absl::StatusCode::kInternal,
-               ::testing::HasSubstr("either value or raw_value must be set")));
+               ::testing::HasSubstr(kHeaderOptionMissingValueErrorMessage)));
 }
 
-TEST_F(ParseExtAuthzResponseTest,
-       DeniedResponseWithoutHttpStatusDefaultsToPermissionDenied) {
+TEST_F(ParseExtAuthzResponseTest, DeniedResponseDefaultHttpStatus) {
   CheckResponse response;
   response.mutable_status()->set_code(7);
   response.mutable_denied_response();
@@ -576,13 +602,13 @@ TEST_F(ParseExtAuthzResponseTest, DeniedResponseHttpStatusMapping) {
                                ::testing::IsEmpty()));
 }
 
-TEST_F(ParseExtAuthzResponseTest, DeniedResponseWithHeaders) {
+TEST_F(ParseExtAuthzResponseTest, DeniedResponseHeaders) {
   CheckResponse response;
   response.mutable_status()->set_code(7);
   auto* denied = response.mutable_denied_response();
   denied->mutable_status()->set_code(envoy::type::v3::Forbidden);
   *denied->add_headers() =
-      CreateHeaderValueOption("x-deny-reason", "bad-token");
+      CreateHeaderValueOption(kDenyReasonHeaderKey, kDenyReasonHeaderVal);
   auto parsed = ParseResponse(response);
   ASSERT_TRUE(parsed.ok()) << "status code: " << parsed.status().code()
                            << ", message: " << parsed.status().message();
@@ -593,20 +619,20 @@ TEST_F(ParseExtAuthzResponseTest, DeniedResponseWithHeaders) {
       IsDeniedResponse(
           ::testing::Eq(GRPC_STATUS_PERMISSION_DENIED),
           ::testing::ElementsAre(IsHeaderValueOption(
-              "x-deny-reason", "bad-token",
+              kDenyReasonHeaderKey, kDenyReasonHeaderVal,
               XdsHeaderValueOption::AppendAction::kAppendIfExistsOrAdd))));
 }
 
-TEST_F(ParseExtAuthzResponseTest, DeniedResponsePreservesStatusCodeAndMessage) {
+TEST_F(ParseExtAuthzResponseTest, DeniedResponsePreservesStatus) {
   CheckResponse response;
   response.mutable_status()->set_code(16);
-  response.mutable_status()->set_message("unauthenticated rpc");
+  response.mutable_status()->set_message(std::string(kUnauthenticatedRpc));
   response.mutable_denied_response();
   auto parsed = ParseResponse(response);
   ASSERT_TRUE(parsed.ok()) << "status code: " << parsed.status().code()
                            << ", message: " << parsed.status().message();
   EXPECT_THAT(parsed->status_code, ::testing::Eq(GRPC_STATUS_UNAUTHENTICATED));
-  EXPECT_THAT(parsed->status_message, ::testing::StrEq("unauthenticated rpc"));
+  EXPECT_THAT(parsed->status_message, ::testing::StrEq(kUnauthenticatedRpc));
   EXPECT_THAT(parsed->response,
               IsDeniedResponse(::testing::Eq(GRPC_STATUS_PERMISSION_DENIED),
                                ::testing::IsEmpty()));

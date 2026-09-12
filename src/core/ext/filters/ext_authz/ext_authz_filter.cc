@@ -190,6 +190,10 @@ ServerMetadataHandle ExtAuthzFilter::Call::OnClientInitialMetadata(
   if (!response.ok()) {
     return handle_failure(response.status().message());
   }
+  const HeaderMutationRules* rules =
+      config.decoder_header_mutation_rules.has_value()
+          ? &*config.decoder_header_mutation_rules
+          : nullptr;
   // Handle non-OK status (denied response).
   if (response->status_code != GRPC_STATUS_OK) {
     std::string status_message = "ExtAuthz request is denied";
@@ -201,45 +205,43 @@ ServerMetadataHandle ExtAuthzFilter::Call::OnClientInitialMetadata(
         std::get_if<ExtAuthzResponse::DeniedResponse>(&response->response);
     grpc_status_code status =
         denied != nullptr ? denied->status : response->status_code;
-    auto md = ServerMetadataFromStatus(status, status_message);
+    auto md_out = ServerMetadataFromStatus(status, status_message);
     if (denied != nullptr) {
       // Append denied response headers to the trailing metadata.
       for (const auto& header : denied->headers) {
-        ApplyXdsHeaderMutationsAddition(header, nullptr, *md).IgnoreError();
+        auto mutation_status =
+            ApplyXdsHeaderMutationsAddition(header, rules, *md_out);
+        if (!mutation_status.ok()) {
+          return handle_failure(mutation_status.message());
+        }
       }
     }
-    return md;
+    return md_out;
   }
   // Handle OK response.
   const auto* ok_resp =
       std::get_if<ExtAuthzResponse::OkResponse>(&response->response);
   if (ok_resp == nullptr) {
-    return ServerMetadataFromStatus(config.status_on_error,
-                                    "ExtAuthz OK response missing payload");
+    return handle_failure("ExtAuthz OK response missing payload");
   }
-  const HeaderMutationRules* rules =
-      config.decoder_header_mutation_rules.has_value()
-          ? &*config.decoder_header_mutation_rules
-          : nullptr;
+  // Apply header additions/mutations to client initial metadata.
+  // Header additions should be applied before header removals.
+  for (const auto& header : ok_resp->header_mutation.set_headers) {
+    auto mutation_status = ApplyXdsHeaderMutationsAddition(header, rules, md);
+    if (!mutation_status.ok()) {
+      return handle_failure(mutation_status.message());
+    }
+  }
   // Apply header removals requested by the authorization service.
   for (const auto& header : ok_resp->header_mutation.remove_headers) {
-    auto status = ApplyXdsHeaderMutationsRemoval(header, rules, md);
-    if (!status.ok()) {
-      return ServerMetadataFromStatus(
-          config.status_on_error, "ExtAuthz header mutation is not allowed");
+    auto mutation_status = ApplyXdsHeaderMutationsRemoval(header, rules, md);
+    if (!mutation_status.ok()) {
+      return handle_failure(mutation_status.message());
     }
   }
   // Store any response headers to inject into server initial metadata later.
   if (!ok_resp->response_headers_to_add.empty()) {
     response_headers_to_add = ok_resp->response_headers_to_add;
-  }
-  // Apply header additions/mutations to client initial metadata.
-  for (const auto& header : ok_resp->header_mutation.set_headers) {
-    auto status = ApplyXdsHeaderMutationsAddition(header, rules, md);
-    if (!status.ok()) {
-      return ServerMetadataFromStatus(
-          config.status_on_error, "ExtAuthz header mutation is not allowed");
-    }
   }
   return nullptr;
 }
@@ -274,10 +276,6 @@ absl::Status ExtAuthzFilter::Call::OnServerInitialMetadata(
 
 absl::Status ExtAuthzFilter::Call::OnServerTrailingMetadata(
     ServerMetadata& md, ExtAuthzFilter* filter) {
-  // If the RPC returned trailers-only, trailing metadata was already handled.
-  if (md.get(GrpcTrailersOnly()).value_or(false)) {
-    return absl::OkStatus();
-  }
   // Check if there are response trailers to inject from ext_authz.
   if (!response_trailer_to_add.has_value()) {
     return absl::OkStatus();

@@ -35,6 +35,7 @@
 #include "google/rpc/status.upb.h"
 #include "src/core/call/status_util.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/matchers.h"
@@ -341,8 +342,12 @@ absl::StatusOr<ExtAuthzResponse> ExtAuthzResponse::Parse(
     auto headers_to_remove =
         envoy_service_auth_v3_OkHttpResponse_headers_to_remove(ok_resp, &size);
     for (size_t i = 0; i < size; ++i) {
-      ok_response.header_mutation.remove_headers.push_back(
-          UpbStringToStdString(headers_to_remove[i]));
+      absl::string_view key = UpbStringToAbsl(headers_to_remove[i]);
+      if (ValidateHeaderKeyIsLegal(key) != ValidateMetadataResult::kOk) {
+        return absl::InvalidArgumentError(
+            absl::StrCat("Invalid header name to remove: ", key));
+      }
+      ok_response.header_mutation.remove_headers.push_back(std::string(key));
     }
     // response_headers_to_add
     auto response_headers_to_add = ParseExtAuthzHeaderOptions(

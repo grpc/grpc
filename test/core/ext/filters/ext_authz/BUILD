@@ -47,6 +47,7 @@ grpc_cc_test(
         "//src/core:ext_authz_filter",
         "//src/core:grpc_service_config",
         "//src/core:grpc_xds_client",
+        "//src/core:metadata_batch",
         "//src/core:slice",
         "//src/core:time",
         "//src/core:xds_common_types",
