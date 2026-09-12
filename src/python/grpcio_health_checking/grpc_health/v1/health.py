@@ -79,7 +79,15 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
     def __init__(
         self, experimental_non_blocking=True, experimental_thread_pool=None
     ):
-        self._lock = threading.RLock()
+        # guards servicer state maps. Taken by the CQ thread, so it must NOT
+        # be held across blocking send
+        self._state_lock = threading.RLock()
+        # guards server responses so two callbacks never issue overlapping
+        # batches on the same streaming call (which hangs under free threading);
+        # Acquired as the OUTER lock -- before self._state_lock -- and held
+        # across whole status read + send, so a Watch's initial send and a
+        # concurrent set() / graceful_shutdown() broadcast cannot interleave
+        self._send_lock = threading.RLock()
         self._server_status = {"": _health_pb2.HealthCheckResponse.SERVING}
         self._send_response_callbacks = {}
         self.Watch.__func__.experimental_non_blocking = (
@@ -90,7 +98,7 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
 
     def _on_close_callback(self, send_response_callback, service):
         def callback():
-            with self._lock:
+            with self._state_lock:
                 self._send_response_callbacks[service].remove(
                     send_response_callback
                 )
@@ -99,7 +107,7 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
         return callback
 
     def Check(self, request, context):
-        with self._lock:
+        with self._state_lock:
             status = self._server_status.get(request.service)
             if status is None:
                 context.set_code(grpc.StatusCode.NOT_FOUND)
@@ -118,20 +126,23 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
                 blocking_watcher
             )
         service = request.service
-        with self._lock:
-            status = self._server_status.get(service)
-            if status is None:
-                status = (
-                    _health_pb2.HealthCheckResponse.SERVICE_UNKNOWN
-                )  # pylint: disable=no-member
+        with self._send_lock:
+            with self._state_lock:
+                status = self._server_status.get(service)
+                if status is None:
+                    status = (
+                        _health_pb2.HealthCheckResponse.SERVICE_UNKNOWN
+                    )  # pylint: disable=no-member
+                if service not in self._send_response_callbacks:
+                    self._send_response_callbacks[service] = set()
+                self._send_response_callbacks[service].add(
+                    send_response_callback
+                )
+                context.add_callback(
+                    self._on_close_callback(send_response_callback, service)
+                )
             send_response_callback(
                 _health_pb2.HealthCheckResponse(status=status)
-            )
-            if service not in self._send_response_callbacks:
-                self._send_response_callbacks[service] = set()
-            self._send_response_callbacks[service].add(send_response_callback)
-            context.add_callback(
-                self._on_close_callback(send_response_callback, service)
             )
         return blocking_watcher
 
@@ -143,17 +154,16 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
           status: HealthCheckResponse.status enum value indicating the status of
             the service
         """
-        with self._lock:
-            if self._gracefully_shutting_down:
-                return
-            self._server_status[service] = status
-            if service in self._send_response_callbacks:
-                for send_response_callback in self._send_response_callbacks[
-                    service
-                ]:
-                    send_response_callback(
-                        _health_pb2.HealthCheckResponse(status=status)
-                    )
+        with self._send_lock:
+            with self._state_lock:
+                if self._gracefully_shutting_down:
+                    return
+                self._server_status[service] = status
+                callbacks = list(self._send_response_callbacks.get(service, ()))
+
+            response = _health_pb2.HealthCheckResponse(status=status)
+            for cb in callbacks:
+                cb(response)
 
     def enter_graceful_shutdown(self):
         """Permanently sets the status of all services to NOT_SERVING.
@@ -164,11 +174,22 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
 
         This is an EXPERIMENTAL API.
         """
-        with self._lock:
-            if self._gracefully_shutting_down:
-                return
-            for service in self._server_status:
-                self.set(
-                    service, _health_pb2.HealthCheckResponse.NOT_SERVING
-                )  # pylint: disable=no-member
-            self._gracefully_shutting_down = True
+        not_serving = (
+            _health_pb2.HealthCheckResponse.NOT_SERVING
+        )  # pylint: disable=no-member
+        callbacks = []
+
+        with self._send_lock:
+            with self._state_lock:
+                if self._gracefully_shutting_down:
+                    return
+                for service in self._server_status:
+                    self._server_status[service] = not_serving
+                    callbacks += list(
+                        self._send_response_callbacks.get(service, ())
+                    )
+                self._gracefully_shutting_down = True
+
+            response = _health_pb2.HealthCheckResponse(status=not_serving)
+            for cb in callbacks:
+                cb(response)
