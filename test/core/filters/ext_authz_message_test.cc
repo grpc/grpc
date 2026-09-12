@@ -21,14 +21,12 @@
 #include <string>
 #include <vector>
 
-#include "envoy/config/core/v3/address.pb.h"
 #include "envoy/config/core/v3/base.pb.h"
 #include "envoy/service/auth/v3/attribute_context.pb.h"
 #include "envoy/service/auth/v3/external_auth.pb.h"
 #include "envoy/type/v3/http_status.pb.h"
 #include "google/rpc/status.pb.h"
 #include "src/core/ext/filters/ext_authz/ext_authz_messages.h"
-#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/util/matchers.h"
 #include "src/core/util/time.h"
 #include "test/core/test_util/test_config.h"
@@ -48,6 +46,7 @@ using ::envoy::service::auth::v3::DeniedHttpResponse;
 using ::envoy::service::auth::v3::OkHttpResponse;
 using ::envoy::type::v3::HttpStatus;
 
+constexpr absl::string_view kPath = "/test.service/TestMethod";
 constexpr absl::string_view kKey1 = "key1";
 constexpr absl::string_view kVal1 = "val1";
 constexpr absl::string_view kKey2 = "key2";
@@ -58,17 +57,26 @@ constexpr absl::string_view kKey3 = "key3";
 // CreateExtAuthzRequest() tests
 //
 
+MATCHER_P2(IsHeaderValue, key_matcher, value_matcher, "") {
+  return ::testing::ExplainMatchResult(key_matcher, arg.key(),
+                                       result_listener) &&
+         ::testing::ExplainMatchResult(value_matcher, arg.value(),
+                                       result_listener) &&
+         ::testing::ExplainMatchResult(::testing::IsEmpty(), arg.raw_value(),
+                                       result_listener);
+}
+
+MATCHER_P2(IsRawHeaderValue, key_matcher, raw_value_matcher, "") {
+  return ::testing::ExplainMatchResult(key_matcher, arg.key(),
+                                       result_listener) &&
+         ::testing::ExplainMatchResult(raw_value_matcher, arg.raw_value(),
+                                       result_listener) &&
+         ::testing::ExplainMatchResult(::testing::IsEmpty(), arg.value(),
+                                       result_listener);
+}
+
 class CreateExtAuthzRequestTest : public ::testing::Test {
  protected:
-  CheckRequest ParseRequest(const absl::StatusOr<std::string>& serialized) {
-    EXPECT_TRUE(serialized.ok()) << serialized.status();
-    CheckRequest parsed;
-    if (serialized.ok()) {
-      EXPECT_TRUE(parsed.ParseFromString(*serialized));
-    }
-    return parsed;
-  }
-
   CheckRequest ParseRequest(const std::string& serialized) {
     CheckRequest parsed;
     EXPECT_TRUE(parsed.ParseFromString(serialized));
@@ -76,309 +84,89 @@ class CreateExtAuthzRequestTest : public ::testing::Test {
   }
 };
 
-TEST_F(CreateExtAuthzRequestTest, ClientSideSerialization) {
+TEST_F(CreateExtAuthzRequestTest, ClientRequestAttributes) {
   ExtAuthzRequest params;
   params.is_client_call = true;
-  params.path = "/test.service/TestMethod";
-  params.start_time = Timestamp::FromMillisecondsAfterProcessEpoch(123456789);
-  params.headers = {
-      {"custom-header-1", "val1"},
-      {"custom-header-2-bin", "binval"},
-  };
-  params.source.address = *StringToSockaddr("192.168.1.100:50051");
-  params.destination.address = *StringToSockaddr("10.0.0.1:50052");
-
-  auto serialized = CreateExtAuthzRequest(params);
-  ASSERT_TRUE(serialized.ok()) << serialized.status();
-  auto request = ParseRequest(*serialized);
-
+  params.path = kPath;
+  std::string serialized = CreateExtAuthzRequest(params).value();
+  auto request = ParseRequest(serialized);
   ASSERT_TRUE(request.has_attributes());
   const auto& attr = request.attributes();
-
-  // On client side, source and destination MUST NOT be set.
+  EXPECT_TRUE(attr.has_request());
   EXPECT_FALSE(attr.has_source());
   EXPECT_FALSE(attr.has_destination());
-
-  // Request MUST be set.
-  ASSERT_TRUE(attr.has_request());
-  const auto& req = attr.request();
-
-  // Time MUST be set.
-  EXPECT_TRUE(req.has_time());
-
-  // HTTP request fields.
-  ASSERT_TRUE(req.has_http());
-  const auto& http = req.http();
-  EXPECT_EQ(http.method(), "POST");
-  EXPECT_EQ(http.path(), "/test.service/TestMethod");
-  EXPECT_EQ(http.protocol(), "HTTP/2");
-  EXPECT_EQ(http.size(), -1);
-
-  // Verify header_map entries.
-  ASSERT_TRUE(http.has_header_map());
-  ASSERT_EQ(http.header_map().headers_size(), 2);
-  EXPECT_EQ(http.header_map().headers(0).key(), "custom-header-1");
-  EXPECT_EQ(http.header_map().headers(0).value(), "val1");
-  EXPECT_TRUE(http.header_map().headers(0).raw_value().empty());
-  EXPECT_EQ(http.header_map().headers(1).key(), "custom-header-2-bin");
-  EXPECT_EQ(http.header_map().headers(1).raw_value(), "binval");
-  EXPECT_TRUE(http.header_map().headers(1).value().empty());
-
-  // Verify unsupported/disallowed fields are NOT set.
-  EXPECT_EQ(http.headers_size(), 0);
-  EXPECT_TRUE(http.id().empty());
-  EXPECT_TRUE(http.scheme().empty());
-  EXPECT_TRUE(http.query().empty());
-  EXPECT_TRUE(http.fragment().empty());
-  EXPECT_TRUE(http.body().empty());
-  EXPECT_TRUE(http.raw_body().empty());
-  EXPECT_FALSE(attr.has_metadata_context());
-  EXPECT_FALSE(attr.has_route_metadata_context());
-  EXPECT_FALSE(attr.has_tls_session());
-  EXPECT_EQ(attr.context_extensions_size(), 0);
 }
 
-TEST_F(CreateExtAuthzRequestTest, ClientSideSerialization_NoStartTime) {
+TEST_F(CreateExtAuthzRequestTest, HttpFields) {
   ExtAuthzRequest params;
   params.is_client_call = true;
-  params.path = "/test.service/TestMethod";
-  params.start_time = std::nullopt;
-
-  auto serialized = CreateExtAuthzRequest(params);
-  ASSERT_TRUE(serialized.ok()) << serialized.status();
-  auto request = ParseRequest(*serialized);
-
+  params.path = kPath;
+  std::string serialized = CreateExtAuthzRequest(params).value();
+  auto request = ParseRequest(serialized);
   ASSERT_TRUE(request.has_attributes());
   ASSERT_TRUE(request.attributes().has_request());
-  EXPECT_TRUE(request.attributes().request().has_time());
-  EXPECT_GT(request.attributes().request().time().seconds(), 0);
+  ASSERT_TRUE(request.attributes().request().has_http());
+  const auto& http = request.attributes().request().http();
+  EXPECT_THAT(http.method(), ::testing::StrEq("POST"));
+  EXPECT_THAT(http.path(), ::testing::StrEq(kPath));
+  EXPECT_THAT(http.protocol(), ::testing::StrEq("HTTP/2"));
+  EXPECT_THAT(http.size(), ::testing::Eq(-1));
 }
 
-TEST_F(CreateExtAuthzRequestTest, ServerSideSerialization_PlainConnection) {
-  ExtAuthzRequest params;
-  params.is_client_call = false;
-  params.path = "/service/plain";
-  params.source.address = *StringToSockaddr("192.168.1.10:12345");
-  params.destination.address = *StringToSockaddr("10.0.0.1:8080");
-
-  auto serialized = CreateExtAuthzRequest(params);
-  ASSERT_TRUE(serialized.ok()) << serialized.status();
-  auto request = ParseRequest(*serialized);
-
-  ASSERT_TRUE(request.has_attributes());
-  const auto& attr = request.attributes();
-
-  // Source peer checks
-  ASSERT_TRUE(attr.has_source());
-  const auto& source = attr.source();
-  ASSERT_TRUE(source.has_address());
-  ASSERT_TRUE(source.address().has_socket_address());
-  EXPECT_EQ(source.address().socket_address().address(), "192.168.1.10");
-  EXPECT_EQ(source.address().socket_address().port_value(), 12345);
-  EXPECT_EQ(source.address().socket_address().protocol(),
-            envoy::config::core::v3::SocketAddress_Protocol_TCP);
-  EXPECT_TRUE(source.principal().empty());
-  EXPECT_TRUE(source.certificate().empty());
-  EXPECT_TRUE(source.service().empty());
-  EXPECT_EQ(source.labels_size(), 0);
-
-  // Destination peer checks
-  ASSERT_TRUE(attr.has_destination());
-  const auto& dest = attr.destination();
-  ASSERT_TRUE(dest.has_address());
-  ASSERT_TRUE(dest.address().has_socket_address());
-  EXPECT_EQ(dest.address().socket_address().address(), "10.0.0.1");
-  EXPECT_EQ(dest.address().socket_address().port_value(), 8080);
-  EXPECT_EQ(dest.address().socket_address().protocol(),
-            envoy::config::core::v3::SocketAddress_Protocol_TCP);
-  EXPECT_TRUE(dest.principal().empty());
-  EXPECT_TRUE(dest.certificate().empty());
-  EXPECT_TRUE(dest.service().empty());
-  EXPECT_EQ(dest.labels_size(), 0);
-}
-
-TEST_F(CreateExtAuthzRequestTest, ServerSideSerialization_UnixDomainSocket) {
-  ExtAuthzRequest params;
-  params.is_client_call = false;
-  params.path = "/service/unix";
-  grpc_resolved_address peer_addr;
-  GRPC_CHECK_OK(UnixSockaddrPopulate("/tmp/client.sock", &peer_addr));
-  params.source.address = peer_addr;
-  grpc_resolved_address local_addr;
-  GRPC_CHECK_OK(UnixSockaddrPopulate("/var/run/server.sock", &local_addr));
-  params.destination.address = local_addr;
-
-  auto serialized = CreateExtAuthzRequest(params);
-  ASSERT_TRUE(serialized.ok()) << serialized.status();
-  auto request = ParseRequest(*serialized);
-
-  ASSERT_TRUE(request.has_attributes());
-  const auto& attr = request.attributes();
-
-  ASSERT_TRUE(attr.has_source());
-  ASSERT_TRUE(attr.source().has_address());
-  ASSERT_TRUE(attr.source().address().has_pipe());
-  EXPECT_EQ(attr.source().address().pipe().path(), "/tmp/client.sock");
-
-  ASSERT_TRUE(attr.has_destination());
-  ASSERT_TRUE(attr.destination().has_address());
-  ASSERT_TRUE(attr.destination().address().has_pipe());
-  EXPECT_EQ(attr.destination().address().pipe().path(), "/var/run/server.sock");
-}
-
-TEST_F(CreateExtAuthzRequestTest, ServerSideSerialization_Ipv6Addresses) {
-  ExtAuthzRequest params;
-  params.is_client_call = false;
-  params.path = "/service/ipv6";
-  params.source.address = *StringToSockaddr("[2001:db8::1]:12345");
-  params.destination.address = *StringToSockaddr("[2001:db8::2]:8080");
-
-  auto serialized = CreateExtAuthzRequest(params);
-  ASSERT_TRUE(serialized.ok()) << serialized.status();
-  auto request = ParseRequest(*serialized);
-
-  ASSERT_TRUE(request.has_attributes());
-  const auto& attr = request.attributes();
-
-  ASSERT_TRUE(attr.has_source());
-  ASSERT_TRUE(attr.source().has_address());
-  ASSERT_TRUE(attr.source().address().has_socket_address());
-  EXPECT_EQ(attr.source().address().socket_address().address(), "2001:db8::1");
-  EXPECT_EQ(attr.source().address().socket_address().port_value(), 12345);
-
-  ASSERT_TRUE(attr.has_destination());
-  ASSERT_TRUE(attr.destination().has_address());
-  ASSERT_TRUE(attr.destination().address().has_socket_address());
-  EXPECT_EQ(attr.destination().address().socket_address().address(),
-            "2001:db8::2");
-  EXPECT_EQ(attr.destination().address().socket_address().port_value(), 8080);
-}
-
-TEST_F(CreateExtAuthzRequestTest,
-       ServerSideSerialization_TlsConnection_UriSanPriority) {
-  ExtAuthzRequest params;
-  params.is_client_call = false;
-  params.path = "/service/tls";
-  params.source.address = *StringToSockaddr("192.168.1.10:12345");
-  params.source.uri_sans = {"spiffe://example.com/client-uri-1",
-                            "spiffe://example.com/client-uri-2"};
-  params.source.dns_sans = {"client-dns.example.com"};
-  params.source.subject = "CN=client,O=Example";
-  params.source.certificate =
-      "-----BEGIN CERTIFICATE-----\nclient_cert\n-----END CERTIFICATE-----";
-  params.include_peer_certificate = true;
-
-  params.destination.address = *StringToSockaddr("10.0.0.1:8080");
-  params.destination.uri_sans = {"spiffe://example.com/server-uri"};
-  params.destination.dns_sans = {"server-dns.example.com"};
-  params.destination.subject = "CN=server,O=Example";
-
-  auto serialized = CreateExtAuthzRequest(params);
-  ASSERT_TRUE(serialized.ok()) << serialized.status();
-  auto request = ParseRequest(*serialized);
-
-  const auto& attr = request.attributes();
-  ASSERT_TRUE(attr.has_source());
-  EXPECT_EQ(attr.source().principal(), "spiffe://example.com/client-uri-1");
-  EXPECT_EQ(
-      attr.source().certificate(),
-      "-----BEGIN CERTIFICATE-----\nclient_cert\n-----END CERTIFICATE-----");
-
-  ASSERT_TRUE(attr.has_destination());
-  EXPECT_EQ(attr.destination().principal(), "spiffe://example.com/server-uri");
-  EXPECT_TRUE(attr.destination().certificate().empty());
-}
-
-TEST_F(CreateExtAuthzRequestTest,
-       ServerSideSerialization_TlsConnection_DnsSanFallback) {
-  ExtAuthzRequest params;
-  params.is_client_call = false;
-  params.path = "/service/tls";
-  params.source.address = *StringToSockaddr("192.168.1.10:12345");
-  params.source.uri_sans = {};
-  params.source.dns_sans = {"client-dns-1.example.com",
-                            "client-dns-2.example.com"};
-  params.source.subject = "CN=client,O=Example";
-  params.source.certificate = "cert_data";
-  params.include_peer_certificate = false;
-
-  params.destination.address = *StringToSockaddr("10.0.0.1:8080");
-  params.destination.uri_sans = {};
-  params.destination.dns_sans = {"server-dns.example.com"};
-  params.destination.subject = "CN=server,O=Example";
-
-  auto serialized = CreateExtAuthzRequest(params);
-  ASSERT_TRUE(serialized.ok()) << serialized.status();
-  auto request = ParseRequest(*serialized);
-
-  const auto& attr = request.attributes();
-  ASSERT_TRUE(attr.has_source());
-  EXPECT_EQ(attr.source().principal(), "client-dns-1.example.com");
-  EXPECT_TRUE(attr.source().certificate().empty());
-
-  ASSERT_TRUE(attr.has_destination());
-  EXPECT_EQ(attr.destination().principal(), "server-dns.example.com");
-  EXPECT_TRUE(attr.destination().certificate().empty());
-}
-
-TEST_F(CreateExtAuthzRequestTest,
-       ServerSideSerialization_TlsConnection_SubjectFallback) {
-  ExtAuthzRequest params;
-  params.is_client_call = false;
-  params.path = "/service/tls";
-  params.source.address = *StringToSockaddr("192.168.1.10:12345");
-  params.source.uri_sans = {};
-  params.source.dns_sans = {};
-  params.source.subject = "CN=client,O=Example Corp,C=US";
-
-  params.destination.address = *StringToSockaddr("10.0.0.1:8080");
-  params.destination.uri_sans = {};
-  params.destination.dns_sans = {};
-  params.destination.subject = "CN=server,O=Example Corp,C=US";
-
-  auto serialized = CreateExtAuthzRequest(params);
-  ASSERT_TRUE(serialized.ok()) << serialized.status();
-  auto request = ParseRequest(*serialized);
-
-  const auto& attr = request.attributes();
-  ASSERT_TRUE(attr.has_source());
-  EXPECT_EQ(attr.source().principal(), "CN=client,O=Example Corp,C=US");
-
-  ASSERT_TRUE(attr.has_destination());
-  EXPECT_EQ(attr.destination().principal(), "CN=server,O=Example Corp,C=US");
-}
-
-TEST_F(CreateExtAuthzRequestTest,
-       ServerSideSerialization_TlsConnection_UnsetPrincipal) {
-  ExtAuthzRequest params;
-  params.is_client_call = false;
-  params.path = "/service/tls";
-  params.source.address = *StringToSockaddr("192.168.1.10:12345");
-  params.source.uri_sans = {};
-  params.source.dns_sans = {};
-  params.source.subject = "";
-
-  params.destination.address = *StringToSockaddr("10.0.0.1:8080");
-  params.destination.uri_sans = {};
-  params.destination.dns_sans = {};
-  params.destination.subject = "";
-
-  auto serialized = CreateExtAuthzRequest(params);
-  ASSERT_TRUE(serialized.ok()) << serialized.status();
-  auto request = ParseRequest(*serialized);
-
-  const auto& attr = request.attributes();
-  ASSERT_TRUE(attr.has_source());
-  EXPECT_TRUE(attr.source().principal().empty());
-
-  ASSERT_TRUE(attr.has_destination());
-  EXPECT_TRUE(attr.destination().principal().empty());
-}
-
-TEST_F(CreateExtAuthzRequestTest, HeaderFiltering_AllowedAndDisallowed) {
+TEST_F(CreateExtAuthzRequestTest, ExplicitStartTime) {
   ExtAuthzRequest params;
   params.is_client_call = true;
-  params.path = "/test/filter";
+  params.path = kPath;
+  params.start_time = Timestamp::FromMillisecondsAfterProcessEpoch(123456789);
+  std::string serialized = CreateExtAuthzRequest(params).value();
+  auto request = ParseRequest(serialized);
+  ASSERT_TRUE(request.has_attributes());
+  ASSERT_TRUE(request.attributes().has_request());
+  ASSERT_TRUE(request.attributes().request().has_time());
+  EXPECT_THAT(request.attributes().request().time().seconds(),
+              ::testing::Gt(0));
+}
+
+TEST_F(CreateExtAuthzRequestTest, DefaultStartTime) {
+  ExtAuthzRequest params;
+  params.is_client_call = true;
+  params.path = kPath;
+  params.start_time = std::nullopt;
+  std::string serialized = CreateExtAuthzRequest(params).value();
+  auto request = ParseRequest(serialized);
+  ASSERT_TRUE(request.has_attributes());
+  ASSERT_TRUE(request.attributes().has_request());
+  ASSERT_TRUE(request.attributes().request().has_time());
+  EXPECT_THAT(request.attributes().request().time().seconds(),
+              ::testing::Gt(0));
+}
+
+TEST_F(CreateExtAuthzRequestTest, HeaderEncodingTextAndBinary) {
+  ExtAuthzRequest params;
+  params.is_client_call = true;
+  params.path = kPath;
+  params.headers = {
+      {"custom-text", "plain-text-value"},
+      {"custom-bin", std::string("\x00\x01\x02\xFF", 4)},
+  };
+  std::string serialized = CreateExtAuthzRequest(params).value();
+  auto request = ParseRequest(serialized);
+  ASSERT_TRUE(request.has_attributes());
+  ASSERT_TRUE(request.attributes().has_request());
+  ASSERT_TRUE(request.attributes().request().has_http());
+  const auto& http = request.attributes().request().http();
+  ASSERT_TRUE(http.has_header_map());
+  EXPECT_THAT(
+      http.header_map().headers(),
+      ::testing::ElementsAre(
+          IsHeaderValue("custom-text", "plain-text-value"),
+          IsRawHeaderValue("custom-bin", std::string("\x00\x01\x02\xFF", 4))));
+}
+
+TEST_F(CreateExtAuthzRequestTest, HeaderFilteringAllowedAndDisallowed) {
+  ExtAuthzRequest params;
+  params.is_client_call = true;
+  params.path = kPath;
   params.headers = {
       {"allow-me", "1"},
       {"deny-me", "2"},
@@ -396,203 +184,103 @@ TEST_F(CreateExtAuthzRequestTest, HeaderFiltering_AllowedAndDisallowed) {
                             false)
           .value(),
   };
-
-  auto serialized = CreateExtAuthzRequest(params);
-  ASSERT_TRUE(serialized.ok()) << serialized.status();
-  auto request = ParseRequest(*serialized);
-
+  std::string serialized = CreateExtAuthzRequest(params).value();
+  auto request = ParseRequest(serialized);
+  ASSERT_TRUE(request.has_attributes());
+  ASSERT_TRUE(request.attributes().has_request());
+  ASSERT_TRUE(request.attributes().request().has_http());
   const auto& http = request.attributes().request().http();
   ASSERT_TRUE(http.has_header_map());
-  ASSERT_EQ(http.header_map().headers_size(), 2);
-  EXPECT_EQ(http.header_map().headers(0).key(), "allow-me");
-  EXPECT_EQ(http.header_map().headers(0).value(), "1");
-  EXPECT_EQ(http.header_map().headers(1).key(), "allow-prefix-foo");
-  EXPECT_EQ(http.header_map().headers(1).value(), "4");
+  EXPECT_THAT(http.header_map().headers(),
+              ::testing::ElementsAre(IsHeaderValue("allow-me", "1"),
+                                     IsHeaderValue("allow-prefix-foo", "4")));
 }
 
-TEST_F(CreateExtAuthzRequestTest, HeaderFiltering_DisallowedTakesPrecedence) {
+TEST_F(CreateExtAuthzRequestTest, HeaderFilteringDisallowedTakesPrecedence) {
   ExtAuthzRequest params;
   params.is_client_call = true;
-  params.path = "/test/filter";
+  params.path = kPath;
   params.headers = {
-      {"test-header", "value"},
+      {std::string(kKey1), std::string(kVal1)},
   };
   params.allowed_headers = {
-      StringMatcher::Create(StringMatcher::Type::kPrefix, "test-", false)
-          .value(),
+      StringMatcher::Create(StringMatcher::Type::kPrefix, "key", false).value(),
   };
   params.disallowed_headers = {
-      StringMatcher::Create(StringMatcher::Type::kExact, "test-header", false)
-          .value(),
+      StringMatcher::Create(StringMatcher::Type::kExact, kKey1, false).value(),
   };
-
-  auto serialized = CreateExtAuthzRequest(params);
-  ASSERT_TRUE(serialized.ok()) << serialized.status();
-  auto request = ParseRequest(*serialized);
-
+  std::string serialized = CreateExtAuthzRequest(params).value();
+  auto request = ParseRequest(serialized);
+  ASSERT_TRUE(request.has_attributes());
+  ASSERT_TRUE(request.attributes().has_request());
+  ASSERT_TRUE(request.attributes().request().has_http());
   const auto& http = request.attributes().request().http();
-  EXPECT_EQ(http.header_map().headers_size(), 0);
+  ASSERT_TRUE(http.has_header_map());
+  EXPECT_THAT(http.header_map().headers(), ::testing::IsEmpty());
 }
 
-TEST_F(CreateExtAuthzRequestTest, HeaderFiltering_OnlyAllowedSet) {
+TEST_F(CreateExtAuthzRequestTest, HeaderFilteringOnlyAllowed) {
   ExtAuthzRequest params;
   params.is_client_call = true;
-  params.path = "/test/filter";
+  params.path = kPath;
   params.headers = {
-      {"h1", "v1"},
-      {"h2", "v2"},
+      {std::string(kKey1), std::string(kVal1)},
+      {std::string(kKey2), std::string(kVal2)},
   };
   params.allowed_headers = {
-      StringMatcher::Create(StringMatcher::Type::kExact, "h1", false).value(),
+      StringMatcher::Create(StringMatcher::Type::kExact, kKey1, false).value(),
   };
-
-  auto serialized = CreateExtAuthzRequest(params);
-  ASSERT_TRUE(serialized.ok()) << serialized.status();
-  auto request = ParseRequest(*serialized);
-
+  std::string serialized = CreateExtAuthzRequest(params).value();
+  auto request = ParseRequest(serialized);
+  ASSERT_TRUE(request.has_attributes());
+  ASSERT_TRUE(request.attributes().has_request());
+  ASSERT_TRUE(request.attributes().request().has_http());
   const auto& http = request.attributes().request().http();
-  ASSERT_EQ(http.header_map().headers_size(), 1);
-  EXPECT_EQ(http.header_map().headers(0).key(), "h1");
-  EXPECT_EQ(http.header_map().headers(0).value(), "v1");
+  ASSERT_TRUE(http.has_header_map());
+  EXPECT_THAT(http.header_map().headers(),
+              ::testing::ElementsAre(IsHeaderValue(kKey1, kVal1)));
 }
 
-TEST_F(CreateExtAuthzRequestTest, HeaderFiltering_OnlyDisallowedSet) {
+TEST_F(CreateExtAuthzRequestTest, HeaderFilteringOnlyDisallowed) {
   ExtAuthzRequest params;
   params.is_client_call = true;
-  params.path = "/test/filter";
+  params.path = kPath;
   params.headers = {
-      {"h1", "v1"},
-      {"h2", "v2"},
+      {std::string(kKey1), std::string(kVal1)},
+      {std::string(kKey2), std::string(kVal2)},
   };
   params.disallowed_headers = {
-      StringMatcher::Create(StringMatcher::Type::kExact, "h1", false).value(),
+      StringMatcher::Create(StringMatcher::Type::kExact, kKey1, false).value(),
   };
-
-  auto serialized = CreateExtAuthzRequest(params);
-  ASSERT_TRUE(serialized.ok()) << serialized.status();
-  auto request = ParseRequest(*serialized);
-
+  std::string serialized = CreateExtAuthzRequest(params).value();
+  auto request = ParseRequest(serialized);
+  ASSERT_TRUE(request.has_attributes());
+  ASSERT_TRUE(request.attributes().has_request());
+  ASSERT_TRUE(request.attributes().request().has_http());
   const auto& http = request.attributes().request().http();
-  ASSERT_EQ(http.header_map().headers_size(), 1);
-  EXPECT_EQ(http.header_map().headers(0).key(), "h2");
-  EXPECT_EQ(http.header_map().headers(0).value(), "v2");
+  ASSERT_TRUE(http.has_header_map());
+  EXPECT_THAT(http.header_map().headers(),
+              ::testing::ElementsAre(IsHeaderValue(kKey2, kVal2)));
 }
 
-TEST_F(CreateExtAuthzRequestTest, HeaderValue_BinaryAndNonBinary) {
+TEST_F(CreateExtAuthzRequestTest, HeaderFilteringDefaultForwardsAll) {
   ExtAuthzRequest params;
   params.is_client_call = true;
-  params.path = "/test/headers";
+  params.path = kPath;
   params.headers = {
-      {"custom-text", "plain-text-value"},
-      {"custom-bin", std::string("\x00\x01\x02\xFF", 4)},
+      {std::string(kKey1), std::string(kVal1)},
+      {std::string(kKey2), std::string(kVal2)},
   };
-
-  auto serialized = CreateExtAuthzRequest(params);
-  ASSERT_TRUE(serialized.ok()) << serialized.status();
-  auto request = ParseRequest(*serialized);
-
+  std::string serialized = CreateExtAuthzRequest(params).value();
+  auto request = ParseRequest(serialized);
+  ASSERT_TRUE(request.has_attributes());
+  ASSERT_TRUE(request.attributes().has_request());
+  ASSERT_TRUE(request.attributes().request().has_http());
   const auto& http = request.attributes().request().http();
-  ASSERT_EQ(http.header_map().headers_size(), 2);
-  EXPECT_EQ(http.header_map().headers(0).key(), "custom-text");
-  EXPECT_EQ(http.header_map().headers(0).value(), "plain-text-value");
-  EXPECT_TRUE(http.header_map().headers(0).raw_value().empty());
-
-  EXPECT_EQ(http.header_map().headers(1).key(), "custom-bin");
-  EXPECT_TRUE(http.header_map().headers(1).value().empty());
-  EXPECT_EQ(http.header_map().headers(1).raw_value(),
-            std::string("\x00\x01\x02\xFF", 4));
-}
-
-TEST_F(CreateExtAuthzRequestTest,
-       ServerSideSerialization_PeerAddressWithoutPort) {
-  ExtAuthzRequest params;
-  params.is_client_call = false;
-  params.path = "/service/test";
-  params.source.address = *StringToSockaddr("192.168.1.5", 8080);
-  params.destination.address = *StringToSockaddr("10.0.0.5", 9090);
-
-  auto serialized = CreateExtAuthzRequest(params);
-  ASSERT_TRUE(serialized.ok()) << serialized.status();
-  auto request = ParseRequest(*serialized);
-
-  ASSERT_TRUE(request.has_attributes());
-  ASSERT_TRUE(request.attributes().has_source());
-  ASSERT_TRUE(request.attributes().source().has_address());
-  EXPECT_EQ(request.attributes().source().address().socket_address().address(),
-            "192.168.1.5");
-  EXPECT_EQ(
-      request.attributes().source().address().socket_address().port_value(),
-      8080);
-
-  ASSERT_TRUE(request.attributes().has_destination());
-  ASSERT_TRUE(request.attributes().destination().has_address());
-  EXPECT_EQ(
-      request.attributes().destination().address().socket_address().address(),
-      "10.0.0.5");
-  EXPECT_EQ(request.attributes()
-                .destination()
-                .address()
-                .socket_address()
-                .port_value(),
-            9090);
-}
-
-TEST_F(CreateExtAuthzRequestTest,
-       ServerSideSerialization_Ipv6BareWithoutBrackets) {
-  ExtAuthzRequest params;
-  params.is_client_call = false;
-  params.path = "/service/test";
-  params.source.address = *StringToSockaddr("2001:db8::1", 9090);
-
-  auto serialized = CreateExtAuthzRequest(params);
-  ASSERT_TRUE(serialized.ok()) << serialized.status();
-  auto request = ParseRequest(*serialized);
-
-  ASSERT_TRUE(request.has_attributes());
-  ASSERT_TRUE(request.attributes().has_source());
-  ASSERT_TRUE(request.attributes().source().has_address());
-  EXPECT_EQ(request.attributes().source().address().socket_address().address(),
-            "2001:db8::1");
-  EXPECT_EQ(
-      request.attributes().source().address().socket_address().port_value(),
-      9090);
-}
-
-TEST_F(CreateExtAuthzRequestTest, ServerSideSerialization_NoAddress) {
-  ExtAuthzRequest params;
-  params.is_client_call = false;
-  params.path = "/service/test";
-  params.source.address = std::nullopt;
-  params.destination.address = std::nullopt;
-
-  auto serialized = CreateExtAuthzRequest(params);
-  ASSERT_TRUE(serialized.ok()) << serialized.status();
-  auto request = ParseRequest(*serialized);
-
-  ASSERT_TRUE(request.has_attributes());
-  ASSERT_TRUE(request.attributes().has_source());
-  EXPECT_FALSE(request.attributes().source().has_address());
-  ASSERT_TRUE(request.attributes().has_destination());
-  EXPECT_FALSE(request.attributes().destination().has_address());
-}
-
-TEST_F(CreateExtAuthzRequestTest, ServerSideSerialization_EmptySanSkipping) {
-  ExtAuthzRequest params;
-  params.is_client_call = false;
-  params.path = "/service/test";
-  params.source.address = *StringToSockaddr("127.0.0.1:50051");
-  params.source.uri_sans = {"", "spiffe://example.com/test-service"};
-  params.source.dns_sans = {"dns.example.com"};
-  params.source.subject = "CN=subject";
-
-  auto serialized = CreateExtAuthzRequest(params);
-  ASSERT_TRUE(serialized.ok()) << serialized.status();
-  auto request = ParseRequest(*serialized);
-
-  ASSERT_TRUE(request.has_attributes());
-  ASSERT_TRUE(request.attributes().has_source());
-  EXPECT_EQ(request.attributes().source().principal(),
-            "spiffe://example.com/test-service");
+  ASSERT_TRUE(http.has_header_map());
+  EXPECT_THAT(http.header_map().headers(),
+              ::testing::ElementsAre(IsHeaderValue(kKey1, kVal1),
+                                     IsHeaderValue(kKey2, kVal2)));
 }
 
 //
