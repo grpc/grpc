@@ -356,7 +356,8 @@ void Call::HandleCompressionAlgorithmDisabled(
   std::string error_msg =
       absl::StrFormat("Compression algorithm '%s' is disabled.", algo_name);
   LOG(ERROR) << error_msg;
-  CancelWithError(absl::UnimplementedError(error_msg));
+  CancelWithError(is_client() ? absl::InternalError(error_msg)
+                              : absl::UnimplementedError(error_msg));
 }
 
 grpc_error_handle Call::UpdateDeadline(Timestamp deadline) {
