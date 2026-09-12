@@ -544,6 +544,10 @@ class UpbStructHeadersEncoder {
 // ComputeSha256PeerCertificateDigest()
 //
 
+// TODO(rishesh): Computing this in the ext_proc filter is sub-optimal, because
+// we will wind up computing it once for each filter chain. We should
+// eventually fix that by creating a common connection context object, and this
+// should be storable as one of the elements of that context.
 std::string ComputeSha256PeerCertificateDigest(
     grpc_auth_context* auth_context) {
   if (auth_context == nullptr) return "";
@@ -568,6 +572,9 @@ std::string ComputeSha256PeerCertificateDigest(
   const bool ok = X509_digest(cert, EVP_sha256(), digest, &digest_length) == 1;
   X509_free(cert);
   if (!ok) {
+    // Avoid leaving the failure on the OpenSSL error queue, since that would
+    // affect unrelated operations on this thread.
+    ERR_clear_error();
     LOG(ERROR) << "ext_proc: failed to compute peer certificate digest";
     return "";
   }

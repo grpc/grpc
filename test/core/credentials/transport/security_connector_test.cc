@@ -28,6 +28,7 @@
 #include "src/core/config/config_vars.h"
 #include "src/core/credentials/transport/tls/load_system_roots.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
+#include "src/core/credentials/transport/tls/tls_utils.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/transport/auth_context.h"
 #include "src/core/tsi/ssl_transport_security.h"
