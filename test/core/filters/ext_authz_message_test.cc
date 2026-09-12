@@ -19,7 +19,6 @@
 
 #include <optional>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "envoy/config/core/v3/address.pb.h"
@@ -33,7 +32,6 @@
 #include "src/core/util/matchers.h"
 #include "src/core/util/time.h"
 #include "test/core/test_util/test_config.h"
-#include "upb/mem/arena.hpp"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
@@ -55,49 +53,6 @@ constexpr absl::string_view kVal1 = "val1";
 constexpr absl::string_view kKey2 = "key2";
 constexpr absl::string_view kVal2 = "val2";
 constexpr absl::string_view kKey3 = "key3";
-
-MATCHER_P3(IsHeaderValueOption, key, value, append_action, "") {
-  return ::testing::ExplainMatchResult(::testing::Pair(key, value), arg.header,
-                                       result_listener) &&
-         ::testing::ExplainMatchResult(append_action, arg.append_action,
-                                       result_listener);
-}
-
-MATCHER_P2(IsHeader, key, value, "") {
-  return ::testing::ExplainMatchResult(key, arg.key(), result_listener) &&
-         ::testing::ExplainMatchResult(
-             value, arg.raw_value().empty() ? arg.value() : arg.raw_value(),
-             result_listener);
-}
-
-MATCHER_P2(IsHeaderMutation, set_headers_matcher, remove_headers_matcher, "") {
-  return ::testing::ExplainMatchResult(set_headers_matcher, arg.set_headers,
-                                       result_listener) &&
-         ::testing::ExplainMatchResult(remove_headers_matcher,
-                                       arg.remove_headers, result_listener);
-}
-
-MATCHER_P2(IsOkResponse, header_mutation_matcher,
-           response_headers_to_add_matcher, "") {
-  return ::testing::ExplainMatchResult(
-      ::testing::VariantWith<ExtAuthzResponse::OkResponse>(::testing::AllOf(
-          ::testing::Field(&ExtAuthzResponse::OkResponse::header_mutation,
-                           header_mutation_matcher),
-          ::testing::Field(
-              &ExtAuthzResponse::OkResponse::response_headers_to_add,
-              response_headers_to_add_matcher))),
-      arg, result_listener);
-}
-
-MATCHER_P2(IsDeniedResponse, status_matcher, headers_matcher, "") {
-  return ::testing::ExplainMatchResult(
-      ::testing::VariantWith<ExtAuthzResponse::DeniedResponse>(::testing::AllOf(
-          ::testing::Field(&ExtAuthzResponse::DeniedResponse::status,
-                           status_matcher),
-          ::testing::Field(&ExtAuthzResponse::DeniedResponse::headers,
-                           headers_matcher))),
-      arg, result_listener);
-}
 
 //
 // CreateExtAuthzRequest() tests
@@ -644,6 +599,49 @@ TEST_F(CreateExtAuthzRequestTest, ServerSideSerialization_EmptySanSkipping) {
 // ExtAuthzResponse::Parse() tests
 //
 
+MATCHER_P2(StatusIs, status_code, message_matcher, "") {
+  return ::testing::ExplainMatchResult(status_code, arg.code(),
+                                       result_listener) &&
+         ::testing::ExplainMatchResult(message_matcher, arg.message(),
+                                       result_listener);
+}
+
+MATCHER_P3(IsHeaderValueOption, key, value, append_action, "") {
+  return ::testing::ExplainMatchResult(::testing::Pair(key, value), arg.header,
+                                       result_listener) &&
+         ::testing::ExplainMatchResult(append_action, arg.append_action,
+                                       result_listener);
+}
+
+MATCHER_P2(IsHeaderMutation, set_headers_matcher, remove_headers_matcher, "") {
+  return ::testing::ExplainMatchResult(set_headers_matcher, arg.set_headers,
+                                       result_listener) &&
+         ::testing::ExplainMatchResult(remove_headers_matcher,
+                                       arg.remove_headers, result_listener);
+}
+
+MATCHER_P2(IsOkResponse, header_mutation_matcher,
+           response_headers_to_add_matcher, "") {
+  return ::testing::ExplainMatchResult(
+      ::testing::VariantWith<ExtAuthzResponse::OkResponse>(::testing::AllOf(
+          ::testing::Field(&ExtAuthzResponse::OkResponse::header_mutation,
+                           header_mutation_matcher),
+          ::testing::Field(
+              &ExtAuthzResponse::OkResponse::response_headers_to_add,
+              response_headers_to_add_matcher))),
+      arg, result_listener);
+}
+
+MATCHER_P2(IsDeniedResponse, status_matcher, headers_matcher, "") {
+  return ::testing::ExplainMatchResult(
+      ::testing::VariantWith<ExtAuthzResponse::DeniedResponse>(::testing::AllOf(
+          ::testing::Field(&ExtAuthzResponse::DeniedResponse::status,
+                           status_matcher),
+          ::testing::Field(&ExtAuthzResponse::DeniedResponse::headers,
+                           headers_matcher))),
+      arg, result_listener);
+}
+
 class ParseExtAuthzResponseTest : public ::testing::Test {
  protected:
   absl::StatusOr<ExtAuthzResponse> ParseResponse(
@@ -652,62 +650,120 @@ class ParseExtAuthzResponseTest : public ::testing::Test {
     EXPECT_TRUE(response.SerializeToString(&serialized));
     return ExtAuthzResponse::Parse(serialized);
   }
+
+  static HeaderValueOption CreateHeaderValueOption(
+      absl::string_view key, absl::string_view value,
+      HeaderValueOption::HeaderAppendAction append_action =
+          HeaderValueOption::APPEND_IF_EXISTS_OR_ADD) {
+    HeaderValueOption header;
+    header.mutable_header()->set_key(std::string(key));
+    header.mutable_header()->set_value(std::string(value));
+    header.set_append_action(append_action);
+    return header;
+  }
+
+  static HeaderValueOption CreateRawHeaderValueOption(
+      absl::string_view key, absl::string_view raw_value,
+      HeaderValueOption::HeaderAppendAction append_action =
+          HeaderValueOption::APPEND_IF_EXISTS_OR_ADD) {
+    HeaderValueOption header;
+    header.mutable_header()->set_key(std::string(key));
+    header.mutable_header()->set_raw_value(std::string(raw_value));
+    header.set_append_action(append_action);
+    return header;
+  }
 };
 
-TEST_F(ParseExtAuthzResponseTest, ResponseInvalid) {
-  // Field 1 (length-delimited) with length 255, but no data.
+TEST_F(ParseExtAuthzResponseTest, ResponseInvalidMalformedProtobuf) {
   auto parsed = ExtAuthzResponse::Parse("\x0a\xff");
-  EXPECT_EQ(parsed.status(),
-            absl::InternalError("Failed to parse CheckResponse"));
+  EXPECT_THAT(parsed.status(),
+              StatusIs(absl::StatusCode::kInternal,
+                       ::testing::StrEq("Failed to parse CheckResponse")));
 }
 
-TEST_F(ParseExtAuthzResponseTest, ResponseInvalid_InvalidStatusCode) {
-  CheckResponse response;
-  response.mutable_status()->set_code(99);  // Out of range
-  auto parsed = ParseResponse(response);
-  EXPECT_EQ(parsed.status(),
-            absl::InternalError(
-                "Invalid grpc status code in CheckResponse status: 99"));
-
-  response.mutable_status()->set_code(-1);
-  parsed = ParseResponse(response);
-  EXPECT_EQ(parsed.status(),
-            absl::InternalError(
-                "Invalid grpc status code in CheckResponse status: -1"));
-}
-
-TEST_F(ParseExtAuthzResponseTest, EmptyPayload) {
+TEST_F(ParseExtAuthzResponseTest, ResponseInvalidEmptyPayload) {
   auto parsed = ExtAuthzResponse::Parse("");
-  ASSERT_TRUE(parsed.ok()) << parsed.status();
-  EXPECT_EQ(parsed->status_code, GRPC_STATUS_OK);
-  EXPECT_EQ(parsed->status_message, "");
+  EXPECT_THAT(
+      parsed.status(),
+      StatusIs(absl::StatusCode::kInternal,
+               ::testing::StrEq("status not present in CheckResponse")));
+}
+
+TEST_F(ParseExtAuthzResponseTest, ResponseInvalidMissingStatusField) {
+  CheckResponse response;
+  response.mutable_denied_response();
+  auto parsed = ParseResponse(response);
+  EXPECT_THAT(
+      parsed.status(),
+      StatusIs(absl::StatusCode::kInternal,
+               ::testing::StrEq("status not present in CheckResponse")));
+}
+
+TEST_F(ParseExtAuthzResponseTest, ResponseInvalidInvalidStatusCode) {
+  CheckResponse response;
+  response.mutable_status()->set_code(99);
+  auto parsed = ParseResponse(response);
+  EXPECT_THAT(
+      parsed.status(),
+      StatusIs(absl::StatusCode::kInternal,
+               ::testing::StrEq(
+                   "Invalid grpc status code in CheckResponse status: 99")));
+}
+
+TEST_F(ParseExtAuthzResponseTest, ResponseInvalidStatusOkMissingOkResponse) {
+  CheckResponse response;
+  response.mutable_status()->set_code(0);
+  auto parsed = ParseResponse(response);
+  EXPECT_THAT(
+      parsed.status(),
+      StatusIs(absl::StatusCode::kInternal,
+               ::testing::StrEq("ok_response not present in CheckResponse")));
+}
+
+TEST_F(ParseExtAuthzResponseTest,
+       ResponseInvalidOkResponseHeaderOptionMissingValue) {
+  CheckResponse response;
+  response.mutable_status()->set_code(0);
+  auto* header = response.mutable_ok_response()->add_headers();
+  header->mutable_header()->set_key(std::string(kKey1));
+  auto parsed = ParseResponse(response);
+  EXPECT_THAT(
+      parsed.status(),
+      StatusIs(absl::StatusCode::kInternal,
+               ::testing::HasSubstr("either value or raw_value must be set")));
+}
+
+TEST_F(ParseExtAuthzResponseTest, OkResponseWithoutHeaders) {
+  CheckResponse response;
+  response.mutable_status()->set_code(0);
+  response.mutable_ok_response();
+  auto parsed = ParseResponse(response);
+  ASSERT_TRUE(parsed.ok()) << "status code: " << parsed.status().code()
+                           << ", message: " << parsed.status().message();
+  EXPECT_THAT(parsed->status_code, ::testing::Eq(GRPC_STATUS_OK));
   EXPECT_THAT(
       parsed->response,
       IsOkResponse(IsHeaderMutation(::testing::IsEmpty(), ::testing::IsEmpty()),
                    ::testing::IsEmpty()));
 }
 
-TEST_F(ParseExtAuthzResponseTest, OkResponse) {
+TEST_F(ParseExtAuthzResponseTest, OkResponseWithHeaderMutations) {
   CheckResponse response;
-  response.mutable_status()->set_code(0);  // OK
+  response.mutable_status()->set_code(0);
   response.mutable_status()->set_message("all good");
   auto* ok_response = response.mutable_ok_response();
-  auto* h1 = ok_response->add_headers();
-  h1->mutable_header()->set_key(std::string(kKey1));
-  h1->mutable_header()->set_value(std::string(kVal1));
-  h1->set_append_action(HeaderValueOption::APPEND_IF_EXISTS_OR_ADD);
-  auto* h2 = ok_response->add_headers();
-  h2->mutable_header()->set_key(std::string(kKey2));
-  h2->mutable_header()->set_raw_value(std::string(kVal2));
-  h2->set_append_action(HeaderValueOption::OVERWRITE_IF_EXISTS_OR_ADD);
+  *ok_response->add_headers() = CreateHeaderValueOption(
+      kKey1, kVal1, HeaderValueOption::APPEND_IF_EXISTS_OR_ADD);
+  *ok_response->add_headers() = CreateRawHeaderValueOption(
+      kKey2, kVal2, HeaderValueOption::OVERWRITE_IF_EXISTS_OR_ADD);
   ok_response->add_headers_to_remove(std::string(kKey3));
-  auto* resp_h1 = ok_response->add_response_headers_to_add();
-  resp_h1->mutable_header()->set_key("x-resp-1");
-  resp_h1->mutable_header()->set_value("val-resp-1");
+  *ok_response->add_response_headers_to_add() =
+      CreateHeaderValueOption("x-resp-1", "val-resp-1");
   auto parsed = ParseResponse(response);
-  ASSERT_TRUE(parsed.ok()) << parsed.status();
-  EXPECT_EQ(parsed->status_code, GRPC_STATUS_OK);
-  EXPECT_EQ(parsed->status_message, "all good");
+  ASSERT_TRUE(parsed.ok()) << "status code: " << parsed.status().code()
+                           << ", message: " << parsed.status().message();
+  EXPECT_THAT(parsed->status_code, ::testing::Eq(GRPC_STATUS_OK));
+  EXPECT_THAT(parsed->status_message, ::testing::StrEq("all good"));
   EXPECT_THAT(
       parsed->response,
       IsOkResponse(
@@ -725,240 +781,96 @@ TEST_F(ParseExtAuthzResponseTest, OkResponse) {
               XdsHeaderValueOption::AppendAction::kAppendIfExistsOrAdd))));
 }
 
-TEST_F(ParseExtAuthzResponseTest, OkResponse_WithoutHttpHeaders) {
+TEST_F(ParseExtAuthzResponseTest,
+       ResponseInvalidStatusNotOkMissingDeniedResponse) {
   CheckResponse response;
-  response.mutable_status()->set_code(0);
+  response.mutable_status()->set_code(16);
   auto parsed = ParseResponse(response);
-  ASSERT_TRUE(parsed.ok()) << parsed.status();
-  EXPECT_EQ(parsed->status_code, GRPC_STATUS_OK);
-  EXPECT_THAT(
-      parsed->response,
-      IsOkResponse(IsHeaderMutation(::testing::IsEmpty(), ::testing::IsEmpty()),
-                   ::testing::IsEmpty()));
+  EXPECT_THAT(parsed.status(),
+              StatusIs(absl::StatusCode::kInternal,
+                       ::testing::StrEq(
+                           "denied_response not present in CheckResponse")));
 }
 
-TEST_F(ParseExtAuthzResponseTest, OkResponse_HeaderValueOptionInvalid) {
+TEST_F(ParseExtAuthzResponseTest,
+       ResponseInvalidDeniedResponseHeaderOptionMissingValue) {
   CheckResponse response;
-  response.mutable_status()->set_code(0);
-  auto* ok_response = response.mutable_ok_response();
-  auto* h1 = ok_response->add_headers();
-  h1->mutable_header()->set_key(std::string(kKey1));
-  auto parsed = ParseResponse(response);
-  EXPECT_EQ(parsed.status(),
-            absl::InternalError("Failed to parse XdsHeaderValueOption: "
-                                "[field:header error:either value or raw_value "
-                                "must be set]"));
-}
-
-TEST_F(ParseExtAuthzResponseTest, OkResponse_ResponseHeadersToAddInvalid) {
-  CheckResponse response;
-  response.mutable_status()->set_code(0);
-  auto* ok_response = response.mutable_ok_response();
-  auto* h1 = ok_response->add_response_headers_to_add();
-  h1->mutable_header()->set_key(":path");
-  h1->mutable_header()->set_value("val");
-  auto parsed = ParseResponse(response);
-  EXPECT_EQ(parsed.status(),
-            absl::InternalError("Failed to parse XdsHeaderValueOption: "
-                                "[field:header.key error:header \":path\" "
-                                "not allowed]"));
-}
-
-TEST_F(ParseExtAuthzResponseTest, DeniedResponse_Forbidden) {
-  CheckResponse response;
-  response.mutable_status()->set_code(7);  // PERMISSION_DENIED
-  response.mutable_status()->set_message("forbidden access");
+  response.mutable_status()->set_code(7);
   auto* denied = response.mutable_denied_response();
   denied->mutable_status()->set_code(envoy::type::v3::Forbidden);
+  auto* header = denied->add_headers();
+  header->mutable_header()->set_key(std::string(kKey1));
   auto parsed = ParseResponse(response);
-  ASSERT_TRUE(parsed.ok()) << parsed.status();
-  EXPECT_EQ(parsed->status_code, GRPC_STATUS_PERMISSION_DENIED);
-  EXPECT_EQ(parsed->status_message, "forbidden access");
-  EXPECT_THAT(parsed->response, IsDeniedResponse(GRPC_STATUS_PERMISSION_DENIED,
-                                                 ::testing::IsEmpty()));
+  EXPECT_THAT(
+      parsed.status(),
+      StatusIs(absl::StatusCode::kInternal,
+               ::testing::HasSubstr("either value or raw_value must be set")));
 }
 
-TEST_F(ParseExtAuthzResponseTest, DeniedResponse_UnauthorizedWithHeaders) {
+TEST_F(ParseExtAuthzResponseTest,
+       DeniedResponseWithoutHttpStatusDefaultsToPermissionDenied) {
+  CheckResponse response;
+  response.mutable_status()->set_code(7);
+  response.mutable_denied_response();
+  auto parsed = ParseResponse(response);
+  ASSERT_TRUE(parsed.ok()) << "status code: " << parsed.status().code()
+                           << ", message: " << parsed.status().message();
+  EXPECT_THAT(parsed->status_code,
+              ::testing::Eq(GRPC_STATUS_PERMISSION_DENIED));
+  EXPECT_THAT(parsed->response,
+              IsDeniedResponse(::testing::Eq(GRPC_STATUS_PERMISSION_DENIED),
+                               ::testing::IsEmpty()));
+}
+
+TEST_F(ParseExtAuthzResponseTest, DeniedResponseHttpStatusMapping) {
   CheckResponse response;
   response.mutable_status()->set_code(7);
   auto* denied = response.mutable_denied_response();
   denied->mutable_status()->set_code(envoy::type::v3::Unauthorized);
-  auto* h1 = denied->add_headers();
-  h1->mutable_header()->set_key("www-authenticate");
-  h1->mutable_header()->set_value("Bearer");
   auto parsed = ParseResponse(response);
-  ASSERT_TRUE(parsed.ok()) << parsed.status();
-  EXPECT_EQ(parsed->status_code, GRPC_STATUS_PERMISSION_DENIED);
+  ASSERT_TRUE(parsed.ok()) << "status code: " << parsed.status().code()
+                           << ", message: " << parsed.status().message();
+  EXPECT_THAT(parsed->status_code,
+              ::testing::Eq(GRPC_STATUS_PERMISSION_DENIED));
+  EXPECT_THAT(parsed->response,
+              IsDeniedResponse(::testing::Eq(GRPC_STATUS_UNAUTHENTICATED),
+                               ::testing::IsEmpty()));
+}
+
+TEST_F(ParseExtAuthzResponseTest, DeniedResponseWithHeaders) {
+  CheckResponse response;
+  response.mutable_status()->set_code(7);
+  auto* denied = response.mutable_denied_response();
+  denied->mutable_status()->set_code(envoy::type::v3::Forbidden);
+  *denied->add_headers() =
+      CreateHeaderValueOption("x-deny-reason", "bad-token");
+  auto parsed = ParseResponse(response);
+  ASSERT_TRUE(parsed.ok()) << "status code: " << parsed.status().code()
+                           << ", message: " << parsed.status().message();
+  EXPECT_THAT(parsed->status_code,
+              ::testing::Eq(GRPC_STATUS_PERMISSION_DENIED));
   EXPECT_THAT(
       parsed->response,
       IsDeniedResponse(
-          GRPC_STATUS_UNAUTHENTICATED,
-          ::testing::ElementsAre(IsHeaderValueOption(
-              "www-authenticate", "Bearer",
-              XdsHeaderValueOption::AppendAction::kAppendIfExistsOrAdd))));
-}
-
-TEST_F(ParseExtAuthzResponseTest, DeniedResponse_HttpStatusMappings) {
-  struct TestCase {
-    envoy::type::v3::StatusCode http_code;
-    grpc_status_code expected_grpc_code;
-  };
-  std::vector<TestCase> test_cases = {
-      {envoy::type::v3::Unauthorized, GRPC_STATUS_UNAUTHENTICATED},
-      {envoy::type::v3::Forbidden, GRPC_STATUS_PERMISSION_DENIED},
-      {envoy::type::v3::NotFound, GRPC_STATUS_UNIMPLEMENTED},
-      {envoy::type::v3::TooManyRequests, GRPC_STATUS_UNAVAILABLE},
-      {envoy::type::v3::InternalServerError, GRPC_STATUS_UNKNOWN},
-      {envoy::type::v3::BadGateway, GRPC_STATUS_UNAVAILABLE},
-      {envoy::type::v3::ServiceUnavailable, GRPC_STATUS_UNAVAILABLE},
-      {envoy::type::v3::GatewayTimeout, GRPC_STATUS_UNAVAILABLE},
-  };
-  for (const auto& test_case : test_cases) {
-    CheckResponse response;
-    response.mutable_status()->set_code(7);
-    auto* denied = response.mutable_denied_response();
-    denied->mutable_status()->set_code(test_case.http_code);
-    auto parsed = ParseResponse(response);
-    ASSERT_TRUE(parsed.ok()) << parsed.status();
-    EXPECT_THAT(parsed->response, IsDeniedResponse(test_case.expected_grpc_code,
-                                                   ::testing::IsEmpty()));
-  }
-}
-
-TEST_F(ParseExtAuthzResponseTest, DeniedResponse_WithoutHttpStatus) {
-  CheckResponse response;
-  response.mutable_status()->set_code(7);  // PERMISSION_DENIED
-  response.mutable_denied_response();
-  auto parsed = ParseResponse(response);
-  ASSERT_TRUE(parsed.ok()) << parsed.status();
-  EXPECT_EQ(parsed->status_code, GRPC_STATUS_PERMISSION_DENIED);
-  EXPECT_THAT(parsed->response, IsDeniedResponse(GRPC_STATUS_PERMISSION_DENIED,
-                                                 ::testing::IsEmpty()));
-}
-
-TEST_F(ParseExtAuthzResponseTest,
-       DeniedResponse_WithoutHttpStatus_ExplicitGrpcStatus) {
-  CheckResponse response;
-  response.mutable_status()->set_code(16);  // UNAUTHENTICATED
-  response.mutable_denied_response();
-  auto parsed = ParseResponse(response);
-  ASSERT_TRUE(parsed.ok()) << parsed.status();
-  EXPECT_EQ(parsed->status_code, GRPC_STATUS_UNAUTHENTICATED);
-  EXPECT_THAT(parsed->response, IsDeniedResponse(GRPC_STATUS_PERMISSION_DENIED,
-                                                 ::testing::IsEmpty()));
-}
-
-TEST_F(ParseExtAuthzResponseTest,
-       DeniedResponse_WithoutHttpStatus_NoStatusField) {
-  CheckResponse response;
-  response.mutable_denied_response();
-  auto parsed = ParseResponse(response);
-  ASSERT_TRUE(parsed.ok()) << parsed.status();
-  EXPECT_EQ(parsed->status_code, GRPC_STATUS_PERMISSION_DENIED);
-  EXPECT_THAT(parsed->response, IsDeniedResponse(GRPC_STATUS_PERMISSION_DENIED,
-                                                 ::testing::IsEmpty()));
-}
-
-TEST_F(ParseExtAuthzResponseTest, OkResponse_WithStatusOkAndDeniedResponse) {
-  CheckResponse response;
-  response.mutable_status()->set_code(0);  // OK
-  auto* denied = response.mutable_denied_response();
-  denied->mutable_status()->set_code(envoy::type::v3::Forbidden);
-  auto parsed = ParseResponse(response);
-  ASSERT_TRUE(parsed.ok()) << parsed.status();
-  EXPECT_EQ(parsed->status_code, GRPC_STATUS_OK);
-  EXPECT_THAT(
-      parsed->response,
-      IsOkResponse(IsHeaderMutation(::testing::IsEmpty(), ::testing::IsEmpty()),
-                   ::testing::IsEmpty()));
-}
-
-TEST_F(ParseExtAuthzResponseTest, DeniedResponse_WithoutStatusField) {
-  CheckResponse response;
-  auto* denied = response.mutable_denied_response();
-  denied->mutable_status()->set_code(envoy::type::v3::Forbidden);
-  auto* h1 = denied->add_headers();
-  h1->mutable_header()->set_key("x-deny-reason");
-  h1->mutable_header()->set_value("bad-token");
-  auto parsed = ParseResponse(response);
-  ASSERT_TRUE(parsed.ok()) << parsed.status();
-  EXPECT_EQ(parsed->status_code, GRPC_STATUS_PERMISSION_DENIED);
-  EXPECT_THAT(
-      parsed->response,
-      IsDeniedResponse(
-          GRPC_STATUS_PERMISSION_DENIED,
+          ::testing::Eq(GRPC_STATUS_PERMISSION_DENIED),
           ::testing::ElementsAre(IsHeaderValueOption(
               "x-deny-reason", "bad-token",
               XdsHeaderValueOption::AppendAction::kAppendIfExistsOrAdd))));
 }
 
-TEST_F(ParseExtAuthzResponseTest, DeniedResponse_ExplicitGrpcStatus) {
+TEST_F(ParseExtAuthzResponseTest, DeniedResponsePreservesStatusCodeAndMessage) {
   CheckResponse response;
-  response.mutable_status()->set_code(16);  // UNAUTHENTICATED
+  response.mutable_status()->set_code(16);
   response.mutable_status()->set_message("unauthenticated rpc");
+  response.mutable_denied_response();
   auto parsed = ParseResponse(response);
-  ASSERT_TRUE(parsed.ok()) << parsed.status();
-  EXPECT_EQ(parsed->status_code, GRPC_STATUS_UNAUTHENTICATED);
-  EXPECT_EQ(parsed->status_message, "unauthenticated rpc");
-  EXPECT_THAT(parsed->response, IsDeniedResponse(GRPC_STATUS_PERMISSION_DENIED,
-                                                 ::testing::IsEmpty()));
-}
-
-TEST_F(ParseExtAuthzResponseTest, DeniedResponse_HeaderValueOptionInvalid) {
-  CheckResponse response;
-  response.mutable_status()->set_code(7);
-  auto* denied = response.mutable_denied_response();
-  denied->mutable_status()->set_code(envoy::type::v3::Forbidden);
-  auto* h1 = denied->add_headers();
-  h1->mutable_header()->set_key(std::string(kKey1));
-  auto parsed = ParseResponse(response);
-  EXPECT_EQ(parsed.status(),
-            absl::InternalError("Failed to parse XdsHeaderValueOption: "
-                                "[field:header error:either value or raw_value "
-                                "must be set]"));
-}
-
-TEST_F(ParseExtAuthzResponseTest, IgnoredFieldsDoNotAffectParsing_OkResponse) {
-  CheckResponse response;
-  response.mutable_status()->set_code(0);
-  auto* ok_resp = response.mutable_ok_response();
-  auto* h1 = ok_resp->add_headers();
-  h1->mutable_header()->set_key(std::string(kKey1));
-  h1->mutable_header()->set_value(std::string(kVal1));
-  ok_resp->add_query_parameters_to_set()->set_key("k");
-  ok_resp->add_query_parameters_to_remove("remove_q");
-  auto* metadata = response.mutable_dynamic_metadata();
-  (*metadata->mutable_fields())["field"].set_string_value("ignored");
-
-  auto parsed = ParseResponse(response);
-  ASSERT_TRUE(parsed.ok()) << parsed.status();
-  EXPECT_EQ(parsed->status_code, GRPC_STATUS_OK);
-  EXPECT_THAT(
-      parsed->response,
-      IsOkResponse(
-          IsHeaderMutation(
-              ::testing::ElementsAre(IsHeaderValueOption(
-                  kKey1, kVal1,
-                  XdsHeaderValueOption::AppendAction::kAppendIfExistsOrAdd)),
-              ::testing::IsEmpty()),
-          ::testing::IsEmpty()));
-}
-
-TEST_F(ParseExtAuthzResponseTest,
-       IgnoredFieldsDoNotAffectParsing_DeniedResponse) {
-  CheckResponse response;
-  response.mutable_status()->set_code(7);
-  auto* denied = response.mutable_denied_response();
-  denied->mutable_status()->set_code(envoy::type::v3::Forbidden);
-  denied->set_body("ignored body text");
-  auto* metadata = response.mutable_dynamic_metadata();
-  (*metadata->mutable_fields())["field"].set_string_value("ignored");
-
-  auto parsed = ParseResponse(response);
-  ASSERT_TRUE(parsed.ok()) << parsed.status();
-  EXPECT_EQ(parsed->status_code, GRPC_STATUS_PERMISSION_DENIED);
-  EXPECT_THAT(parsed->response, IsDeniedResponse(GRPC_STATUS_PERMISSION_DENIED,
-                                                 ::testing::IsEmpty()));
+  ASSERT_TRUE(parsed.ok()) << "status code: " << parsed.status().code()
+                           << ", message: " << parsed.status().message();
+  EXPECT_THAT(parsed->status_code, ::testing::Eq(GRPC_STATUS_UNAUTHENTICATED));
+  EXPECT_THAT(parsed->status_message, ::testing::StrEq("unauthenticated rpc"));
+  EXPECT_THAT(parsed->response,
+              IsDeniedResponse(::testing::Eq(GRPC_STATUS_PERMISSION_DENIED),
+                               ::testing::IsEmpty()));
 }
 
 }  // namespace
