@@ -67,6 +67,8 @@ PHP_MSHUTDOWN_FUNCTION(grpc);
 PHP_MINFO_FUNCTION(grpc);
 /* Code that runs at request start */
 PHP_RINIT_FUNCTION(grpc);
+/* Code that runs at request shutdown */
+PHP_RSHUTDOWN_FUNCTION(grpc);
 
 /*
   Declare any global variables you may need between the BEGIN
