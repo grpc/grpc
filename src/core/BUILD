@@ -5901,6 +5901,7 @@ grpc_cc_library(
         "grpc_check",
         "grpc_matchers",
         "match",
+        "metadata",
         "metadata_batch",
         "ref_counted",
         "shared_bit_gen",

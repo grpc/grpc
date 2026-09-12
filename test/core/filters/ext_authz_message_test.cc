@@ -21,10 +21,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "envoy/config/core/v3/base.pb.h"
 #include "envoy/service/auth/v3/attribute_context.pb.h"
 #include "envoy/service/auth/v3/external_auth.pb.h"
@@ -35,6 +31,10 @@
 #include "src/core/util/matchers.h"
 #include "src/core/util/time.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace {
@@ -174,9 +174,8 @@ TEST_F(CreateExtAuthzRequestTest, HeaderEncodingTextAndBinary) {
   ASSERT_TRUE(http.has_header_map());
   EXPECT_THAT(
       http.header_map().headers(),
-      ::testing::ElementsAre(
-          IsHeaderValue(kCustomTextKey, kCustomTextVal),
-          IsRawHeaderValue(kCustomBinKey, kCustomBinVal)));
+      ::testing::ElementsAre(IsHeaderValue(kCustomTextKey, kCustomTextVal),
+                             IsRawHeaderValue(kCustomBinKey, kCustomBinVal)));
 }
 
 TEST_F(CreateExtAuthzRequestTest, HeaderFilteringAllowedAndDisallowed) {
@@ -200,8 +199,7 @@ TEST_F(CreateExtAuthzRequestTest, HeaderFilteringAllowedAndDisallowed) {
   params.allowed_headers = {
       StringMatcher::Create(StringMatcher::Type::kExact, kAllowMe, false)
           .value(),
-      StringMatcher::Create(StringMatcher::Type::kPrefix, kAllowPrefix,
-                            false)
+      StringMatcher::Create(StringMatcher::Type::kPrefix, kAllowPrefix, false)
           .value(),
   };
   std::string serialized = CreateExtAuthzRequest(params).value();
@@ -331,10 +329,9 @@ TEST_F(CreateExtAuthzRequestTest, MetadataBatchPathAndHeaders) {
   EXPECT_THAT(http.path(), ::testing::StrEq(kPath));
   ASSERT_TRUE(http.has_header_map());
   EXPECT_THAT(http.header_map().headers(),
-              ::testing::UnorderedElementsAre(
-                  IsHeaderValue(kPathHeader, kPath),
-                  IsHeaderValue(kKey1, kVal1),
-                  IsHeaderValue(kKey2, kVal2)));
+              ::testing::UnorderedElementsAre(IsHeaderValue(kPathHeader, kPath),
+                                              IsHeaderValue(kKey1, kVal1),
+                                              IsHeaderValue(kKey2, kVal2)));
 }
 
 //

@@ -13033,6 +13033,7 @@ targets:
   headers:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/filters/filter_matchers.h
   - test/core/filters/filter_test_v2.h
   - test/core/xds/xds_transport_fake.h
   - third_party/protoc-gen-validate/validate/validate.h

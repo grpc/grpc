@@ -20,6 +20,7 @@
 #include <utility>
 #include <variant>
 
+#include "src/core/call/metadata.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/ext/filters/ext_authz/ext_authz_messages.h"
 #include "src/core/filter/filter_args.h"
@@ -27,10 +28,8 @@
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/util/down_cast.h"
-#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/shared_bit_gen.h"
-#include "src/core/util/string.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/xds_client/xds_transport.h"
 #include "absl/random/distributions.h"
@@ -123,188 +122,123 @@ std::string ExtAuthzFilter::Config::ToString() const {
 // ExtAuthzFilter::Call
 //
 
-namespace {
-
-enum class CheckResult {
-  kSendRequestToExtAuthzService,
-  kPassThrough,
-  kDeny,
-};
-
-CheckResult CheckRequestAllowed(const ExtAuthzFilter::Config& config) {
-  if (!config.filter_enabled.has_value()) {
-    return CheckResult::kSendRequestToExtAuthzService;
-  }
-  if (*config.filter_enabled < 1000000) {
-    uint32_t random_number =
-        absl::Uniform<uint32_t>(SharedBitGen(), 0, 1000000);
-    if (random_number >= *config.filter_enabled) {
-      if (config.deny_at_disable) {
-        return CheckResult::kDeny;
-      } else {
-        return CheckResult::kPassThrough;
-      }
-    }
-  }
-  return CheckResult::kSendRequestToExtAuthzService;
-}
-
-ServerMetadataHandle MalformedRequest(
-    absl::string_view explanation,
-    grpc_status_code status_code = GRPC_STATUS_UNKNOWN) {
-  auto* arena = GetContext<Arena>();
-  auto hdl = arena->MakePooled<ServerMetadata>();
-  hdl->Set(GrpcStatusMetadata(), status_code);
-  hdl->Set(GrpcMessageMetadata(), Slice::FromCopiedString(explanation));
-  hdl->Set(GrpcTarPit(), Empty());
-  return hdl;
-}
-
-class ExtAuthzClient : public DualRefCounted<ExtAuthzClient> {
- public:
-  explicit ExtAuthzClient(
-      RefCountedPtr<XdsTransportFactory::XdsTransport> transport)
-      : DualRefCounted<ExtAuthzClient>(GRPC_TRACE_FLAG_ENABLED(ext_authz_filter)
-                                           ? "ExtAuthzClient"
-                                           : nullptr) {
-    GRPC_CHECK(transport != nullptr);
-    GRPC_TRACE_LOG(ext_authz_filter, INFO)
-        << "[ext_authz_client " << this << "] creating ext_authz client";
-    unary_call_ = transport->CreateUnaryCall(
-        "/envoy.service.auth.v3.Authorization/Check");
-  }
-
-  ~ExtAuthzClient() override {
-    GRPC_TRACE_LOG(ext_authz_filter, INFO)
-        << "[ext_authz_client " << this << "] destroying ext_authz client";
-  }
-
-  absl::StatusOr<std::string> SendMessage(std::string payload) {
-    if (unary_call_ == nullptr) {
-      return absl::UnavailableError("Failed to create unary call");
-    }
-    GRPC_TRACE_LOG(ext_authz_filter, INFO)
-        << "[ext_authz_client " << this << "] starting ext_authz call";
-    return unary_call_->SendMessage(std::move(payload));
-  }
-
- private:
-  void Orphaned() override {
-    GRPC_TRACE_LOG(ext_authz_filter, INFO)
-        << "[ext_authz_client " << this << "] orphaning ext_authz client";
-    unary_call_.reset();
-  }
-
-  OrphanablePtr<XdsTransportFactory::XdsTransport::UnaryCall> unary_call_;
-};
-
-}  // namespace
-
 ServerMetadataHandle ExtAuthzFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, ExtAuthzFilter* filter) {
   const auto& config = *filter->config_;
+  // Check runtime filter enablement sampling.
+  if (config.filter_enabled.has_value() && *config.filter_enabled < 1000000) {
+    uint32_t random_number =
+        absl::Uniform<uint32_t>(SharedBitGen(), 0, 1000000);
+    if (random_number >= *config.filter_enabled) {
+      // If the filter is disabled, deny the request if configured to do so.
+      if (config.deny_at_disable) {
+        return ServerMetadataFromStatus(config.status_on_error,
+                                        "ExtAuthz filter is not enabled");
+      }
+      // Otherwise, allow the request to pass through without authorization.
+      return nullptr;
+    }
+  }
+  // Helper to handle failure based on failure_mode_allow and
+  // failure_mode_allow_header_add configurations.
+  auto handle_failure =
+      [&](absl::string_view error_message) -> ServerMetadataHandle {
+    if (!config.failure_mode_allow) {
+      return ServerMetadataFromStatus(config.status_on_error, error_message);
+    }
+    if (config.failure_mode_allow_header_add) {
+      md.Set(XEnvoyAuthFailureModeAllowedMetadata(),
+             Slice::FromStaticString("true"));
+    }
+    return nullptr;
+  };
+  // Fail if the ext_authz side-channel or transport is unavailable.
   if (filter->channel() == nullptr ||
       filter->channel()->transport() == nullptr) {
-    return nullptr;
+    return handle_failure("ext_authz channel or transport not available");
   }
-  switch (CheckRequestAllowed(config)) {
-    case CheckResult::kSendRequestToExtAuthzService:
-      break;
-    case CheckResult::kDeny:
-      return MalformedRequest("ExtAuthz filter is not enabled",
-                              config.status_on_error);
-    case CheckResult::kPassThrough:
-      return nullptr;
-  }
-  std::string path_str;
-  if (auto* path = md.get_pointer(HttpPathMetadata())) {
-    path_str = std::string(path->as_string_view());
-  }
+  // Construct the CheckRequest parameters from client metadata and
+  // configuration.
   ExtAuthzRequest params;
-  params.path = std::move(path_str);
+  if (const auto* path = md.get_pointer(HttpPathMetadata())) {
+    params.path = std::string(path->as_string_view());
+  }
   params.metadata = &md;
   params.is_client_call = filter->is_client_;
   params.allowed_headers = config.allowed_headers;
   params.disallowed_headers = config.disallowed_headers;
   params.include_peer_certificate = config.include_peer_certificate;
+  // Serialize the CheckRequest proto payload.
   auto payload = CreateExtAuthzRequest(params);
   if (!payload.ok()) {
-    if (!config.failure_mode_allow) {
-      return MalformedRequest(payload.status().message(),
-                              config.status_on_error);
-    } else if (config.failure_mode_allow_header_add) {
-      md.Set(XEnvoyAuthFailureModeAllowedMetadata(),
-             Slice::FromStaticString("true"));
-    }
-    return nullptr;
+    return handle_failure(payload.status().message());
   }
-  auto client = MakeRefCounted<ExtAuthzClient>(filter->channel()->transport());
-  auto result = client->SendMessage(std::move(*payload));
+  // Create the unary call to the external authorization service.
+  auto unary_call = filter->channel()->transport()->CreateUnaryCall(
+      "/envoy.service.auth.v3.Authorization/Check");
+  if (unary_call == nullptr) {
+    return handle_failure("Failed to create ext_authz unary call");
+  }
+  GRPC_TRACE_LOG(ext_authz_filter, INFO) << "starting ext_authz call";
+  // Dispatch the CheckRequest message to the external authorization service.
+  auto result = unary_call->SendMessage(std::move(*payload));
   if (!result.ok()) {
-    if (!config.failure_mode_allow) {
-      return MalformedRequest(result.status().message(),
-                              config.status_on_error);
-    } else if (config.failure_mode_allow_header_add) {
-      md.Set(XEnvoyAuthFailureModeAllowedMetadata(),
-             Slice::FromStaticString("true"));
-    }
-    return nullptr;
+    return handle_failure(result.status().message());
   }
-  auto response_or = ExtAuthzResponse::Parse(*result);
-  if (!response_or.ok()) {
-    if (!config.failure_mode_allow) {
-      return MalformedRequest(response_or.status().message(),
-                              config.status_on_error);
-    } else if (config.failure_mode_allow_header_add) {
-      md.Set(XEnvoyAuthFailureModeAllowedMetadata(),
-             Slice::FromStaticString("true"));
-    }
-    return nullptr;
+  // Parse the received CheckResponse.
+  auto response = ExtAuthzResponse::Parse(*result);
+  if (!response.ok()) {
+    return handle_failure(response.status().message());
   }
-  const auto& response = *response_or;
-  if (response.status_code != GRPC_STATUS_OK) {
-    if (const auto* denied =
-            std::get_if<ExtAuthzResponse::DeniedResponse>(&response.response);
-        denied != nullptr) {
-      response_trailer_to_add = denied->headers;
-      return MalformedRequest(
-          response.status_message.empty()
-              ? "ExtAuthz request is denied"
-              : response.status_message,
-          denied->status);
+  // Handle non-OK status (denied response).
+  if (response->status_code != GRPC_STATUS_OK) {
+    std::string status_message = "ExtAuthz request is denied";
+    if (!response->status_message.empty()) {
+      absl::StrAppend(&status_message,
+                      ", error message: ", response->status_message);
     }
-    return MalformedRequest(response.status_message.empty()
-                                ? "ExtAuthz request is denied"
-                                : response.status_message,
-                            response.status_code);
+    const auto* denied =
+        std::get_if<ExtAuthzResponse::DeniedResponse>(&response->response);
+    grpc_status_code status =
+        denied != nullptr ? denied->status : response->status_code;
+    auto md = ServerMetadataFromStatus(status, status_message);
+    if (denied != nullptr) {
+      // Append denied response headers to the trailing metadata.
+      for (const auto& header : denied->headers) {
+        ApplyXdsHeaderMutationsAddition(header, nullptr, *md).IgnoreError();
+      }
+    }
+    return md;
   }
+  // Handle OK response.
   const auto* ok_resp =
-      std::get_if<ExtAuthzResponse::OkResponse>(&response.response);
+      std::get_if<ExtAuthzResponse::OkResponse>(&response->response);
   if (ok_resp == nullptr) {
-    return MalformedRequest("ExtAuthz OK response missing payload");
+    return ServerMetadataFromStatus(config.status_on_error,
+                                    "ExtAuthz OK response missing payload");
   }
   const HeaderMutationRules* rules =
       config.decoder_header_mutation_rules.has_value()
           ? &*config.decoder_header_mutation_rules
           : nullptr;
-  // Apply header removals
+  // Apply header removals requested by the authorization service.
   for (const auto& header : ok_resp->header_mutation.remove_headers) {
     auto status = ApplyXdsHeaderMutationsRemoval(header, rules, md);
     if (!status.ok()) {
-      return MalformedRequest("ExtAuthz header mutation is not allowed",
-                              config.status_on_error);
+      return ServerMetadataFromStatus(
+          config.status_on_error, "ExtAuthz header mutation is not allowed");
     }
   }
-  // Store response headers to add for server initial metadata
+  // Store any response headers to inject into server initial metadata later.
   if (!ok_resp->response_headers_to_add.empty()) {
     response_headers_to_add = ok_resp->response_headers_to_add;
   }
-  // Apply header additions / modifications
+  // Apply header additions/mutations to client initial metadata.
   for (const auto& header : ok_resp->header_mutation.set_headers) {
     auto status = ApplyXdsHeaderMutationsAddition(header, rules, md);
     if (!status.ok()) {
-      return MalformedRequest("ExtAuthz header mutation is not allowed",
-                              config.status_on_error);
+      return ServerMetadataFromStatus(
+          config.status_on_error, "ExtAuthz header mutation is not allowed");
     }
   }
   return nullptr;
@@ -312,9 +246,11 @@ ServerMetadataHandle ExtAuthzFilter::Call::OnClientInitialMetadata(
 
 absl::Status ExtAuthzFilter::Call::OnServerInitialMetadata(
     ServerMetadata& md, ExtAuthzFilter* filter) {
+  // If the RPC returned trailers-only, response headers are skipped.
   if (md.get(GrpcTrailersOnly()).value_or(false)) {
     return absl::OkStatus();
   }
+  // Check if there are response headers to inject from ext_authz OK response.
   if (!response_headers_to_add.has_value()) {
     return absl::OkStatus();
   }
@@ -323,6 +259,7 @@ absl::Status ExtAuthzFilter::Call::OnServerInitialMetadata(
       config.decoder_header_mutation_rules.has_value()
           ? &*config.decoder_header_mutation_rules
           : nullptr;
+  // Apply the response headers returned by the authorization service.
   for (const auto& header : *response_headers_to_add) {
     auto status = ApplyXdsHeaderMutationsAddition(header, rules, md);
     if (!status.ok()) {
@@ -337,9 +274,11 @@ absl::Status ExtAuthzFilter::Call::OnServerInitialMetadata(
 
 absl::Status ExtAuthzFilter::Call::OnServerTrailingMetadata(
     ServerMetadata& md, ExtAuthzFilter* filter) {
+  // If the RPC returned trailers-only, trailing metadata was already handled.
   if (md.get(GrpcTrailersOnly()).value_or(false)) {
     return absl::OkStatus();
   }
+  // Check if there are response trailers to inject from ext_authz.
   if (!response_trailer_to_add.has_value()) {
     return absl::OkStatus();
   }
@@ -348,6 +287,7 @@ absl::Status ExtAuthzFilter::Call::OnServerTrailingMetadata(
       config.decoder_header_mutation_rules.has_value()
           ? &*config.decoder_header_mutation_rules
           : nullptr;
+  // Apply the response trailers returned by the authorization service.
   for (const auto& header : *response_trailer_to_add) {
     auto status = ApplyXdsHeaderMutationsAddition(header, rules, md);
     if (!status.ok()) {

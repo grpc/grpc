@@ -161,8 +161,7 @@ class ExtAuthzFilter : public ImplementChannelFilter<ExtAuthzFilter> {
   bool is_client() const { return is_client_; }
 
  private:
-  ExtAuthzFilter(const ChannelArgs& args,
-                 RefCountedPtr<const Config> config);
+  ExtAuthzFilter(const ChannelArgs& args, RefCountedPtr<const Config> config);
 
   const RefCountedPtr<const Config> config_;
   const bool is_client_;

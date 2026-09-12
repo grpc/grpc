@@ -212,7 +212,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
   RefCountedPtr<FakeUnaryCall> WaitForUnaryCall(
       const XdsBootstrap::XdsServerTarget& server, const char* method);
-  
+
   // Returns an existing transport or creates a new one.
   RefCountedPtr<XdsTransport> GetTransport(
       const XdsBootstrap::XdsServerTarget& server,
@@ -291,7 +291,6 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
       const XdsBootstrap::XdsServerTarget& server);
 
  private:
-
   RefCountedPtr<FakeXdsTransport> GetTransportLocked(const std::string& key)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
 
