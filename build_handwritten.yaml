@@ -15,7 +15,12 @@ settings:
   core_version: 57.0.0
   csharp_major_version: 2
   g_stands_for: gimbal
-  protobuf_version: 5.35.1
+  # When updating third_party/protobuf, refer to third_party/protobuf/version.json
+  protobuf_version:
+    csharp: 3.35.1
+    objectivec: 5.35.1
+    # TODO(sergiitk): consider split into build, install_requires, xds_gencode, etc
+    python: 7.35.1
   supported_python_versions:
   - '3.10'
   - '3.11'
