@@ -393,6 +393,13 @@ cdef extern from "grpc/grpc.h":
   void grpc_shutdown_blocking() nogil
   int grpc_is_initialized() nogil
 
+  ctypedef void (*grpc_fork_handler_cb)() nogil
+  ctypedef void (*grpc_custom_fork_handler_register_cb)(
+      grpc_fork_handler_cb prefork, grpc_fork_handler_cb postfork_parent,
+      grpc_fork_handler_cb postfork_child) nogil
+  void grpc_set_custom_fork_handler_registration(
+      grpc_custom_fork_handler_register_cb register_func) nogil
+
   ctypedef struct grpc_completion_queue_factory:
     pass
 

@@ -45,7 +45,24 @@ _fork_handler_failed = False
 # In simple terms, they are not run on Windows because
 # we don't register them on fork.
 
+cdef void* _c_prefork_handlers[10]
+cdef void* _c_postfork_parent_handlers[10]
+cdef void* _c_postfork_child_handlers[10]
+cdef int _c_handler_count = 0
+
+cdef void pygrpc_register_fork_handlers(grpc_fork_handler_cb prefork, grpc_fork_handler_cb postfork_parent, grpc_fork_handler_cb postfork_child) noexcept nogil:
+    global _c_handler_count
+    if _c_handler_count < 10:
+        _c_prefork_handlers[_c_handler_count] = <void*>prefork
+        _c_postfork_parent_handlers[_c_handler_count] = <void*>postfork_parent
+        _c_postfork_child_handlers[_c_handler_count] = <void*>postfork_child
+        _c_handler_count += 1
+
 cdef void __prefork() noexcept nogil:
+    cdef int i
+    for i in range(_c_handler_count):
+        if _c_prefork_handlers[i] != NULL:
+            (<grpc_fork_handler_cb>_c_prefork_handlers[i])()
     with gil:
         global _fork_handler_failed
         _fork_handler_failed = False
@@ -60,6 +77,10 @@ cdef void __prefork() noexcept nogil:
 
 
 cdef void __postfork_parent() noexcept nogil:
+    cdef int i
+    for i in range(_c_handler_count):
+        if _c_postfork_parent_handlers[i] != NULL:
+            (<grpc_fork_handler_cb>_c_postfork_parent_handlers[i])()
     with gil:
         with _fork_state.fork_in_progress_condition:
             _fork_state.fork_in_progress = False
@@ -67,6 +88,10 @@ cdef void __postfork_parent() noexcept nogil:
 
 
 cdef void __postfork_child() noexcept nogil:
+    cdef int i
+    for i in range(_c_handler_count):
+        if _c_postfork_child_handlers[i] != NULL:
+            (<grpc_fork_handler_cb>_c_postfork_child_handlers[i])()
     with gil:
         try:
             if _fork_handler_failed:
@@ -92,6 +117,7 @@ cdef void __postfork_child() noexcept nogil:
 
 
 def fork_handlers_and_grpc_init():
+    grpc_set_custom_fork_handler_registration(pygrpc_register_fork_handlers)
     grpc_init()
     if _GRPC_ENABLE_FORK_SUPPORT:
         with _fork_state.fork_handler_registered_lock:
