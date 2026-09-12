@@ -192,10 +192,9 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
     tsi_ssl_client_handshaker_factory** factory);
 
 struct tsi_ssl_client_handshaker_options {
-  // pem_key_cert_pair is a pointer to the object containing client's private
-  // key and certificate chain. This parameter can be NULL if the client does
-  // not have such a key/cert pair.
-  const grpc_core::PemKeyCertPair* pem_key_cert_pair;
+  // pem_key_cert_pairs is an array of private key / certificate chains of the
+  // client.
+  grpc_core::PemKeyCertPairList pem_key_cert_pairs;
   // root_store is a pointer to the ssl_root_certs_store object. If root_store
   // is not nullptr and SSL implementation permits, root_store will be used as
   // root certificates. Otherwise, pem_roots_cert will be used to load server
@@ -252,8 +251,7 @@ struct tsi_ssl_client_handshaker_options {
   // TODO(gtcooke94) this ctor is not needed
   // https://github.com/grpc/grpc/pull/39708/files#r2143735662
   tsi_ssl_client_handshaker_options()
-      : pem_key_cert_pair(nullptr),
-        root_store(nullptr),
+      : root_store(nullptr),
         cipher_suites(nullptr),
         alpn_protocols(nullptr),
         num_alpn_protocols(0),

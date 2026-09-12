@@ -131,7 +131,8 @@ class SslOffloadTsiTestFixture {
         std::make_shared<tsi::RootCertInfo>(ca_cert_);
     client_options.min_tls_version = tls_version_;
     client_options.max_tls_version = tls_version_;
-    client_options.pem_key_cert_pair = &client_pem_key_cert_pair_;
+    client_options.pem_key_cert_pairs =
+        PemKeyCertPairList{client_pem_key_cert_pair_};
     ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
                   &client_options, &client_handshaker_factory_),
               TSI_OK);

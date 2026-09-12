@@ -53,6 +53,10 @@
 #include <openssl/engine.h>
 #endif
 #include <openssl/err.h>
+#include <openssl/pem.h>
+#if defined(OPENSSL_IS_BORINGSSL)
+#include <openssl/pool.h>
+#endif
 #include <openssl/ssl.h>
 #include <openssl/tls1.h>
 #include <openssl/x509.h>
@@ -90,6 +94,7 @@
 #include "absl/functional/bind_front.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/strings/ascii.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -167,7 +172,7 @@ struct tsi_ssl_client_handshaker_factory {
 // corresponds to a particular SNI.
 struct SslContext {
   SSL_CTX* ssl_ctx = nullptr;
-  tsi_peer x509_subject_name;
+  std::vector<std::string> subject_names;
 #if defined(OPENSSL_IS_BORINGSSL)
   std::shared_ptr<grpc_core::PrivateKeySigner> key_signer;
 #endif
@@ -175,7 +180,6 @@ struct SslContext {
   ~SslContext() {
     if (ssl_ctx != nullptr) {
       SSL_CTX_free(ssl_ctx);
-      tsi_peer_destruct(&x509_subject_name);
     }
   }
 };
@@ -1298,56 +1302,88 @@ static tsi_result peer_from_x509(X509* cert, int include_certificate_type,
   return result;
 }
 
-// Loads an in-memory PEM certificate chain into the SSL context.
-static tsi_result ssl_ctx_use_certificate_chain(SSL_CTX* context,
-                                                const char* pem_cert_chain,
-                                                size_t pem_cert_chain_size) {
-  tsi_result result = TSI_OK;
-  X509* certificate = nullptr;
-  BIO* pem;
-  GRPC_CHECK_LE(pem_cert_chain_size, static_cast<size_t>(INT_MAX));
-  pem = BIO_new_mem_buf(pem_cert_chain, static_cast<int>(pem_cert_chain_size));
+#if defined(OPENSSL_IS_BORINGSSL)
+static tsi_result ssl_ctx_add_boringssl_credential(
+    SSL_CTX* context, const grpc_core::PemKeyCertPair* key_cert_pair) {
+  if (key_cert_pair->cert_chain().empty()) {
+    LOG(ERROR) << "The cert chain is empty.";
+    return TSI_INVALID_ARGUMENT;
+  }
+  GRPC_CHECK_LE(key_cert_pair->cert_chain().size(),
+                static_cast<size_t>(INT_MAX));
+  bssl::UniquePtr<BIO> pem(
+      BIO_new_mem_buf(key_cert_pair->cert_chain().data(),
+                      static_cast<int>(key_cert_pair->cert_chain().size())));
   if (pem == nullptr) return TSI_OUT_OF_RESOURCES;
+  std::vector<bssl::UniquePtr<CRYPTO_BUFFER>> raw_cert_chain;
+  uint8_t* cert_data = nullptr;
+  long cert_len = 0;
+  while (PEM_bytes_read_bio(&cert_data, &cert_len, nullptr, PEM_STRING_X509,
+                            pem.get(), nullptr, nullptr)) {
+    raw_cert_chain.push_back(bssl::UniquePtr<CRYPTO_BUFFER>(
+        CRYPTO_BUFFER_new(cert_data, cert_len, nullptr)));
+    OPENSSL_free(cert_data);
+  }
+  if (raw_cert_chain.empty()) {
+    LOG(ERROR) << "Invalid cert chain file.";
+    return TSI_INVALID_ARGUMENT;
+  }
+  std::vector<CRYPTO_BUFFER*> cert_chain;
+  cert_chain.reserve(raw_cert_chain.size());
+  for (const auto& raw_cert : raw_cert_chain) {
+    cert_chain.push_back(raw_cert.get());
+  }
 
-  do {
-    certificate =
-        PEM_read_bio_X509_AUX(pem, nullptr, nullptr, const_cast<char*>(""));
-    if (certificate == nullptr) {
-      result = TSI_INVALID_ARGUMENT;
-      break;
-    }
-    if (!SSL_CTX_use_certificate(context, certificate)) {
-      result = TSI_INVALID_ARGUMENT;
-      break;
-    }
-    while (true) {
-      X509* certificate_authority =
-          PEM_read_bio_X509(pem, nullptr, nullptr, const_cast<char*>(""));
-      if (certificate_authority == nullptr) {
-        ERR_clear_error();
-        break;  // Done reading.
-      }
-      if (!SSL_CTX_add_extra_chain_cert(context, certificate_authority)) {
-        X509_free(certificate_authority);
-        result = TSI_INVALID_ARGUMENT;
-        break;
-      }
-      // We don't need to free certificate_authority as its ownership has been
-      // transferred to the context. That is not the case for certificate
-      // though.
-      //
-    }
-  } while (false);
+  bssl::UniquePtr<SSL_CREDENTIAL> cred(SSL_CREDENTIAL_new_x509());
+  if (cred == nullptr) return TSI_OUT_OF_RESOURCES;
+  if (!SSL_CREDENTIAL_set1_cert_chain(cred.get(), cert_chain.data(),
+                                      cert_chain.size())) {
+    LOG(ERROR) << "Failed to set cert chain on credential.";
+    return TSI_INVALID_ARGUMENT;
+  }
 
-  if (certificate != nullptr) X509_free(certificate);
-  BIO_free(pem);
-  return result;
+  tsi_result result = grpc_core::Match(
+      key_cert_pair->private_key(),
+      [&](const std::string& pem_key) {
+        GRPC_CHECK_LE(pem_key.size(), static_cast<size_t>(INT_MAX));
+        bssl::UniquePtr<BIO> bio_key(
+            BIO_new_mem_buf(pem_key.data(), static_cast<int>(pem_key.size())));
+        if (bio_key == nullptr) return TSI_OUT_OF_RESOURCES;
+        bssl::UniquePtr<EVP_PKEY> pkey(PEM_read_bio_PrivateKey(
+            bio_key.get(), nullptr, nullptr, const_cast<char*>("")));
+        if (pkey == nullptr) {
+          LOG(ERROR) << "Invalid private key.";
+          return TSI_INVALID_ARGUMENT;
+        }
+        if (!SSL_CREDENTIAL_set1_private_key(cred.get(), pkey.get())) {
+          LOG(ERROR) << "Failed to set private key on credential.";
+          return TSI_INVALID_ARGUMENT;
+        }
+        return TSI_OK;
+      },
+      [&](const std::shared_ptr<grpc_core::PrivateKeySigner>& key_signer) {
+        if (key_signer != nullptr) {
+          if (!SSL_CREDENTIAL_set_private_key_method(
+                  cred.get(), &TlsOffloadPrivateKeyMethod)) {
+            LOG(ERROR) << "Failed to set private key method on credential.";
+            return TSI_INVALID_ARGUMENT;
+          }
+        }
+        return TSI_OK;
+      });
+  if (result != TSI_OK) return result;
+
+  if (!SSL_CTX_add1_credential(context, cred.get())) {
+    LOG(ERROR) << "Failed to add credential to SSL_CTX.";
+    return TSI_INVALID_ARGUMENT;
+  }
+  return TSI_OK;
 }
+#else  // !defined(OPENSSL_IS_BORINGSSL)
 
-#if !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ENGINE)
-static tsi_result ssl_ctx_use_engine_private_key(SSL_CTX* context,
-                                                 const char* pem_key,
-                                                 size_t pem_key_size) {
+#if !defined(OPENSSL_NO_ENGINE)
+static tsi_result parse_engine_private_key(const char* pem_key,
+                                           EVP_PKEY** out_key) {
   tsi_result result = TSI_OK;
   EVP_PKEY* private_key = nullptr;
   ENGINE* engine = nullptr;
@@ -1406,57 +1442,139 @@ static tsi_result ssl_ctx_use_engine_private_key(SSL_CTX* context,
       result = TSI_INVALID_ARGUMENT;
       break;
     }
-    if (!SSL_CTX_use_PrivateKey(context, private_key)) {
-      LOG(ERROR) << "SSL_CTX_use_PrivateKey failed";
-      result = TSI_INVALID_ARGUMENT;
-      break;
-    }
+    *out_key = private_key;
   } while (0);
   if (engine != nullptr) ENGINE_free(engine);
-  if (private_key != nullptr) EVP_PKEY_free(private_key);
   if (engine_name != nullptr) gpr_free(engine_name);
   return result;
 }
-#endif  // !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ENGINE)
+#endif  // !defined(OPENSSL_NO_ENGINE)
 
-static tsi_result ssl_ctx_use_pem_private_key(SSL_CTX* context,
-                                              const char* pem_key,
-                                              size_t pem_key_size) {
-  tsi_result result = TSI_OK;
-  EVP_PKEY* private_key = nullptr;
-  BIO* pem;
+static tsi_result parse_private_key(const char* pem_key, size_t pem_key_size,
+                                    EVP_PKEY** out_key) {
+#if !defined(OPENSSL_NO_ENGINE)
+  if (strncmp(pem_key, kSslEnginePrefix, strlen(kSslEnginePrefix)) == 0) {
+    return parse_engine_private_key(pem_key, out_key);
+  }
+#endif  // !defined(OPENSSL_NO_ENGINE)
   GRPC_CHECK_LE(pem_key_size, static_cast<size_t>(INT_MAX));
-  pem = BIO_new_mem_buf(pem_key, static_cast<int>(pem_key_size));
+  BIO* pem = BIO_new_mem_buf(pem_key, static_cast<int>(pem_key_size));
   if (pem == nullptr) return TSI_OUT_OF_RESOURCES;
-  do {
-    private_key =
-        PEM_read_bio_PrivateKey(pem, nullptr, nullptr, const_cast<char*>(""));
-    if (private_key == nullptr) {
-      result = TSI_INVALID_ARGUMENT;
-      break;
-    }
-    if (!SSL_CTX_use_PrivateKey(context, private_key)) {
-      result = TSI_INVALID_ARGUMENT;
-      break;
-    }
-  } while (false);
-  if (private_key != nullptr) EVP_PKEY_free(private_key);
+  EVP_PKEY* private_key =
+      PEM_read_bio_PrivateKey(pem, nullptr, nullptr, const_cast<char*>(""));
   BIO_free(pem);
-  return result;
+  if (private_key == nullptr) {
+    return TSI_INVALID_ARGUMENT;
+  }
+  *out_key = private_key;
+  return TSI_OK;
 }
 
-// Loads an in-memory PEM private key into the SSL context.
-static tsi_result ssl_ctx_use_private_key(SSL_CTX* context, const char* pem_key,
-                                          size_t pem_key_size) {
-// BoringSSL does not have ENGINE support
-#if !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ENGINE)
-  if (strncmp(pem_key, kSslEnginePrefix, strlen(kSslEnginePrefix)) == 0) {
-    return ssl_ctx_use_engine_private_key(context, pem_key, pem_key_size);
-  } else
-#endif  // !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ENGINE)
-  {
-    return ssl_ctx_use_pem_private_key(context, pem_key, pem_key_size);
+static tsi_result ssl_ctx_add_openssl_key_cert_pair(
+    SSL_CTX* context, const grpc_core::PemKeyCertPair* key_cert_pair) {
+  if (key_cert_pair->cert_chain().empty()) {
+    LOG(ERROR) << "The cert chain is empty.";
+    return TSI_INVALID_ARGUMENT;
   }
+  GRPC_CHECK_LE(key_cert_pair->cert_chain().size(),
+                static_cast<size_t>(INT_MAX));
+  BIO* pem =
+      BIO_new_mem_buf(key_cert_pair->cert_chain().data(),
+                      static_cast<int>(key_cert_pair->cert_chain().size()));
+  if (pem == nullptr) return TSI_OUT_OF_RESOURCES;
+
+  X509* certificate =
+      PEM_read_bio_X509_AUX(pem, nullptr, nullptr, const_cast<char*>(""));
+  if (certificate == nullptr) {
+    BIO_free(pem);
+    LOG(ERROR) << "Invalid cert chain file.";
+    return TSI_INVALID_ARGUMENT;
+  }
+
+  STACK_OF(X509)* intermediate_chain = sk_X509_new_null();
+  if (intermediate_chain == nullptr) {
+    X509_free(certificate);
+    BIO_free(pem);
+    return TSI_OUT_OF_RESOURCES;
+  }
+  while (true) {
+    X509* ca_cert =
+        PEM_read_bio_X509(pem, nullptr, nullptr, const_cast<char*>(""));
+    if (ca_cert == nullptr) {
+      ERR_clear_error();
+      break;
+    }
+    sk_X509_push(intermediate_chain, ca_cert);
+  }
+  BIO_free(pem);
+
+  EVP_PKEY* pkey = nullptr;
+  tsi_result result = grpc_core::Match(
+      key_cert_pair->private_key(),
+      [&](const std::string& pem_key) {
+        return parse_private_key(pem_key.data(), pem_key.length(), &pkey);
+      },
+      [&](const std::shared_ptr<grpc_core::PrivateKeySigner>&) {
+        return TSI_UNIMPLEMENTED;
+      });
+  if (result != TSI_OK || pkey == nullptr) {
+    X509_free(certificate);
+    sk_X509_pop_free(intermediate_chain, X509_free);
+    if (pkey != nullptr) EVP_PKEY_free(pkey);
+    LOG(ERROR) << "Invalid private key.";
+    return result != TSI_OK ? result : TSI_INVALID_ARGUMENT;
+  }
+
+#if OPENSSL_VERSION_NUMBER >= 0x10101000 && !defined(LIBRESSL_VERSION_NUMBER)
+  // If the override argument is 0, the function fails if a certificate of the
+  // same public key type has already been set. If override is non-0, any
+  // previously set certificate, private key, and chain of the same type are
+  // replaced.
+  // So, this will store multiple certs and keys on the same SSL_CTX as long as
+  // they have different public key types.
+  int ok = SSL_CTX_use_cert_and_key(context, certificate, pkey,
+                                    intermediate_chain, /*override=*/0);
+  X509_free(certificate);
+  sk_X509_pop_free(intermediate_chain, X509_free);
+  EVP_PKEY_free(pkey);
+  if (!ok) {
+    LOG(ERROR) << "SSL_CTX_use_cert_and_key failed.";
+    return TSI_INVALID_ARGUMENT;
+  }
+#else
+  if (!SSL_CTX_use_certificate(context, certificate)) {
+    X509_free(certificate);
+    sk_X509_pop_free(intermediate_chain, X509_free);
+    EVP_PKEY_free(pkey);
+    return TSI_INVALID_ARGUMENT;
+  }
+  X509_free(certificate);
+  if (!SSL_CTX_use_PrivateKey(context, pkey)) {
+    sk_X509_pop_free(intermediate_chain, X509_free);
+    EVP_PKEY_free(pkey);
+    return TSI_INVALID_ARGUMENT;
+  }
+  EVP_PKEY_free(pkey);
+  for (size_t i = 0; i < sk_X509_num(intermediate_chain); ++i) {
+    if (!SSL_CTX_add_extra_chain_cert(context,
+                                      sk_X509_value(intermediate_chain, i))) {
+      sk_X509_pop_free(intermediate_chain, X509_free);
+      return TSI_INVALID_ARGUMENT;
+    }
+  }
+  sk_X509_free(intermediate_chain);
+#endif
+  return TSI_OK;
+}
+#endif  // !defined(OPENSSL_IS_BORINGSSL)
+
+static tsi_result ssl_ctx_add_key_cert_pair(
+    SSL_CTX* context, const grpc_core::PemKeyCertPair* key_cert_pair) {
+#if defined(OPENSSL_IS_BORINGSSL)
+  return ssl_ctx_add_boringssl_credential(context, key_cert_pair);
+#else
+  return ssl_ctx_add_openssl_key_cert_pair(context, key_cert_pair);
+#endif
 }
 
 // Loads in-memory PEM verification certs into the SSL context and optionally
@@ -1550,38 +1668,7 @@ static tsi_result populate_ssl_context(
     const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups) {
   tsi_result result = TSI_OK;
   if (key_cert_pair != nullptr) {
-    if (!key_cert_pair->cert_chain().empty()) {
-      result = ssl_ctx_use_certificate_chain(
-          context, key_cert_pair->cert_chain().c_str(),
-          key_cert_pair->cert_chain().length());
-      if (result != TSI_OK) {
-        LOG(ERROR) << "Invalid cert chain file.";
-        return result;
-      }
-    }
-    result = grpc_core::Match(
-        key_cert_pair->private_key(),
-        [&](const std::string& pem_root_certs) {
-          tsi_result result = TSI_OK;
-          result = ssl_ctx_use_private_key(context, pem_root_certs.data(),
-                                           pem_root_certs.length());
-          if (result != TSI_OK || !SSL_CTX_check_private_key(context)) {
-            LOG(ERROR) << "Invalid private key.";
-            return result != TSI_OK ? result : TSI_INVALID_ARGUMENT;
-          }
-          return result;
-        },
-        [&](const std::shared_ptr<grpc_core::PrivateKeySigner>& key_signer) {
-#if defined(OPENSSL_IS_BORINGSSL)
-          if (key_signer != nullptr) {
-            SSL_CTX_set_private_key_method(context,
-                                           &TlsOffloadPrivateKeyMethod);
-          }
-          return TSI_OK;
-#else
-          return TSI_UNIMPLEMENTED;
-#endif  // defined(OPENSSL_IS_BORINGSSL)
-        });
+    result = ssl_ctx_add_key_cert_pair(context, key_cert_pair);
     if (result != TSI_OK) {
       return result;
     }
@@ -3188,6 +3275,19 @@ static int does_entry_match_name(absl::string_view entry,
   return !entry.empty() && absl::EqualsIgnoreCase(name_subdomain, entry);
 }
 
+static bool ssl_context_matches_servername(const SslContext& ssl_context,
+                                           absl::string_view servername) {
+  int like_ip = looks_like_ip_address(servername);
+  for (const auto& name : ssl_context.subject_names) {
+    if (!like_ip && does_entry_match_name(name, servername)) {
+      return true;
+    } else if (like_ip && servername == name) {
+      return true;
+    }
+  }
+  return false;
+}
+
 static int ssl_server_handshaker_factory_servername_callback(SSL* ssl,
                                                              int* /*ap*/,
                                                              void* arg)
@@ -3206,7 +3306,7 @@ static int ssl_server_handshaker_factory_servername_callback(SSL* ssl,
 #endif
 
   for (const auto& ssl_context : impl->ssl_contexts) {
-    if (tsi_ssl_peer_matches_name(&ssl_context.x509_subject_name, servername)) {
+    if (ssl_context_matches_servername(ssl_context, servername)) {
       SSL_set_SSL_CTX(ssl, ssl_context.ssl_ctx);
 #if defined(OPENSSL_IS_BORINGSSL)
       if (ssl_context.key_signer != nullptr) {
@@ -3277,7 +3377,10 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
     const char** alpn_protocols, uint16_t num_alpn_protocols,
     tsi_ssl_client_handshaker_factory** factory) {
   tsi_ssl_client_handshaker_options options;
-  options.pem_key_cert_pair = pem_key_cert_pair;
+  if (pem_key_cert_pair != nullptr) {
+    options.pem_key_cert_pairs =
+        grpc_core::PemKeyCertPairList{*pem_key_cert_pair};
+  }
   if (pem_root_certs != nullptr) {
     options.root_cert_info =
         std::make_shared<tsi::RootCertInfo>(pem_root_certs);
@@ -3357,22 +3460,29 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   }
 
   do {
-    result = populate_ssl_context(ssl_context, options->pem_key_cert_pair,
-                                  options->cipher_suites,
-                                  options->key_exchange_groups);
-    if (result != TSI_OK) break;
-
+    if (options->pem_key_cert_pairs.empty()) {
+      result =
+          populate_ssl_context(ssl_context, nullptr, options->cipher_suites,
+                               options->key_exchange_groups);
+    } else {
+      for (const auto& pair : options->pem_key_cert_pairs) {
+        result =
+            populate_ssl_context(ssl_context, &pair, options->cipher_suites,
+                                 options->key_exchange_groups);
+        if (result != TSI_OK) break;
 #if defined(OPENSSL_IS_BORINGSSL)
-    if (options->pem_key_cert_pair != nullptr) {
-      grpc_core::Match(
-          options->pem_key_cert_pair->private_key(), [](const std::string&) {},
-          [&](const std::shared_ptr<grpc_core::PrivateKeySigner>& key_signer) {
-            // The Handshaker Factory will own a shared copy of the reference
-            // passed through the options.
-            impl->key_signer = key_signer;
-          });
-    }
+        grpc_core::Match(
+            pair.private_key(), [](const std::string&) {},
+            [&](const std::shared_ptr<grpc_core::PrivateKeySigner>&
+                    key_signer) {
+              // The Handshaker Factory will own a shared copy of the reference
+              // passed through the options.
+              impl->key_signer = key_signer;
+            });
 #endif
+      }
+    }
+    if (result != TSI_OK) break;
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
     // X509_STORE_up_ref is only available since OpenSSL 1.1.
@@ -3507,9 +3617,42 @@ tsi_result tsi_create_ssl_server_handshaker_factory_ex(
                                                                factory);
 }
 
-tsi_result tsi_configure_server_ssl_context(
+static std::string normalize_subject_name(absl::string_view name) {
+  if (name.empty()) return "";
+  if (name.back() == '.') {
+    name.remove_suffix(1);
+  }
+  return absl::AsciiStrToLower(name);
+}
+
+static std::vector<std::string> extract_subject_alt_names_or_cn(
+    const tsi_peer& peer) {
+  std::vector<std::string> names;
+  const tsi_peer_property* cn_property = nullptr;
+  for (size_t i = 0; i < peer.property_count; ++i) {
+    const tsi_peer_property* prop = &peer.properties[i];
+    if (prop->name == nullptr) continue;
+    if (strcmp(prop->name, TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY) ==
+        0) {
+      names.push_back(normalize_subject_name(
+          absl::string_view(prop->value.data, prop->value.length)));
+    } else if (strcmp(prop->name, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY) ==
+               0) {
+      cn_property = prop;
+    }
+  }
+  if (names.empty() && cn_property != nullptr) {
+    names.push_back(normalize_subject_name(
+        absl::string_view(cn_property->value.data, cn_property->value.length)));
+  }
+  std::sort(names.begin(), names.end());
+  names.erase(std::unique(names.begin(), names.end()), names.end());
+  return names;
+}
+
+static tsi_result tsi_configure_server_ssl_context(
     const tsi_ssl_server_handshaker_options* options,
-    const grpc_core::PemKeyCertPair* pem_key_cert_pair,
+    const std::vector<const grpc_core::PemKeyCertPair*>& pem_key_cert_pairs,
     tsi_ssl_server_handshaker_factory* impl, SslContext& ssl_context) {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
   ssl_context.ssl_ctx = SSL_CTX_new(TLS_method());
@@ -3529,19 +3672,21 @@ tsi_result tsi_configure_server_ssl_context(
       ssl_context.ssl_ctx, options->min_tls_version, options->max_tls_version);
   if (result != TSI_OK) return result;
 
-  result = populate_ssl_context(ssl_context.ssl_ctx, pem_key_cert_pair,
-                                options->cipher_suites,
-                                options->key_exchange_groups);
+  for (const auto* pair : pem_key_cert_pairs) {
+    result =
+        populate_ssl_context(ssl_context.ssl_ctx, pair, options->cipher_suites,
+                             options->key_exchange_groups);
+    if (result != TSI_OK) return result;
 #if defined(OPENSSL_IS_BORINGSSL)
-  if (pem_key_cert_pair != nullptr) {
-    grpc_core::Match(
-        pem_key_cert_pair->private_key(), [](const std::string&) {},
-        [&](const std::shared_ptr<grpc_core::PrivateKeySigner>& key_signer) {
-          ssl_context.key_signer = key_signer;
-        });
-  }
+    if (pair != nullptr) {
+      grpc_core::Match(
+          pair->private_key(), [](const std::string&) {},
+          [&](const std::shared_ptr<grpc_core::PrivateKeySigner>& key_signer) {
+            ssl_context.key_signer = key_signer;
+          });
+    }
 #endif
-  if (result != TSI_OK) return result;
+  }
 
   // TODO(elessar): Provide ability to disable session ticket keys.
 
@@ -3569,7 +3714,8 @@ tsi_result tsi_configure_server_ssl_context(
           STACK_OF(X509_NAME)* root_names = nullptr;
           result = ssl_ctx_load_verification_certs(
               ssl_context.ssl_ctx, pem_root_certs.c_str(),
-              pem_root_certs.size(), nullptr);
+              pem_root_certs.size(),
+              options->send_client_ca_list ? &root_names : nullptr);
           if (result != TSI_OK) {
             LOG(ERROR) << "Invalid verification certs.";
           }
@@ -3639,12 +3785,6 @@ tsi_result tsi_configure_server_ssl_context(
   }
 #endif
 
-  if (pem_key_cert_pair != nullptr) {
-    result = tsi_ssl_extract_x509_subject_names_from_pem_cert(
-        pem_key_cert_pair->cert_chain().c_str(),
-        &ssl_context.x509_subject_name);
-    if (result != TSI_OK) return result;
-  }
   // Always configure the callback because responding to SNI is required for
   // ClientHello in TLS 1.3, and we need to respond to that.
   SSL_CTX_set_tlsext_servername_callback(
@@ -3694,11 +3834,41 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
         if (pem_key_cert_pairs.empty()) {
           return TSI_INVALID_ARGUMENT;
         }
-        impl->ssl_contexts.reserve(pem_key_cert_pairs.size());
-        for (size_t i = 0; i < pem_key_cert_pairs.size(); ++i) {
+        // Group certificate pairs by subject names (SANs / CN).
+        struct CertGroup {
+          std::vector<std::string> names;
+          std::vector<const grpc_core::PemKeyCertPair*> pairs;
+        };
+        std::vector<CertGroup> groups;
+        for (const auto& pair : pem_key_cert_pairs) {
+          tsi_peer peer;
+          tsi_result result = tsi_ssl_extract_x509_subject_names_from_pem_cert(
+              pair.cert_chain().c_str(), &peer);
+          if (result != TSI_OK) {
+            return result;
+          }
+          std::vector<std::string> names =
+              extract_subject_alt_names_or_cn(peer);
+          tsi_peer_destruct(&peer);
+
+          bool found = false;
+          for (auto& group : groups) {
+            if (group.names == names) {
+              group.pairs.push_back(&pair);
+              found = true;
+              break;
+            }
+          }
+          if (!found) {
+            groups.push_back({std::move(names), {&pair}});
+          }
+        }
+        impl->ssl_contexts.reserve(groups.size());
+        for (auto& group : groups) {
           SslContext& ssl_context = impl->ssl_contexts.emplace_back();
+          ssl_context.subject_names = std::move(group.names);
           tsi_result result = tsi_configure_server_ssl_context(
-              options, &pem_key_cert_pairs[i], impl, ssl_context);
+              options, group.pairs, impl, ssl_context);
           if (result != TSI_OK) {
             return result;
           }
@@ -3713,7 +3883,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
         }
         SslContext& ssl_context = impl->ssl_contexts.emplace_back();
         tsi_result result = tsi_configure_server_ssl_context(
-            options, /*pem_key_cert_pair=*/nullptr, impl, ssl_context);
+            options, /*pem_key_cert_pairs=*/{}, impl, ssl_context);
         if (result != TSI_OK) {
           return result;
         }

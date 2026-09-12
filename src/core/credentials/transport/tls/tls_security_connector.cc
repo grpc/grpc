@@ -47,6 +47,7 @@
 #include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
+#include "src/core/util/match.h"
 #include "src/core/util/status_helper.h"
 #include "absl/functional/bind_front.h"
 #include "absl/log/log.h"
@@ -229,6 +230,7 @@ void PendingVerifierRequestDestroy(
         const_cast<char*>(request->peer_info.negotiated_key_exchange_group));
   }
 }
+
 }  // namespace
 
 // -------------------channel security connector-------------------
@@ -470,8 +472,15 @@ void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
     security_connector_->root_cert_info_ = std::move(root_certs);
   }
   if (key_cert_pairs_or_selector.has_value()) {
-    security_connector_->key_cert_pairs_or_selector_ =
-        std::move(key_cert_pairs_or_selector);
+    security_connector_->pem_key_cert_pairs_ = Match(
+        *key_cert_pairs_or_selector,
+        [](const PemKeyCertPairList& pairs)
+            -> std::optional<PemKeyCertPairList> { return pairs; },
+        [](const std::shared_ptr<CertificateSelector>&)
+            -> std::optional<PemKeyCertPairList> {
+          LOG(ERROR) << "CertificateSelector is not supported on the client.";
+          return std::nullopt;
+        });
   }
   const bool root_ready =
       security_connector_->options_->root_certificate_distributor() ==
@@ -480,7 +489,7 @@ void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
   const bool identity_ready =
       security_connector_->options_->identity_certificate_distributor() ==
           nullptr ||
-      security_connector_->key_cert_pairs_or_selector_.has_value();
+      security_connector_->pem_key_cert_pairs_.has_value();
   if (root_ready && identity_ready) {
     if (security_connector_->UpdateHandshakerFactoryLocked() !=
         GRPC_SECURITY_OK) {
@@ -562,20 +571,14 @@ TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
   if (client_handshaker_factory_ != nullptr) {
     tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
   }
-  const PemKeyCertPair* pem_key_cert_pair = nullptr;
-  if (key_cert_pairs_or_selector_.has_value()) {
-    Match(
-        *key_cert_pairs_or_selector_,
-        [&pem_key_cert_pair](const PemKeyCertPairList& pem_key_cert_pairs) {
-          pem_key_cert_pair =
-              pem_key_cert_pairs.empty() ? nullptr : &pem_key_cert_pairs[0];
-        },
-        // This is not expected to happen and we do nothing here.
-        [](const std::shared_ptr<CertificateSelector>&) {});
+  PemKeyCertPairList pem_key_cert_pairs;
+  if (pem_key_cert_pairs_.has_value()) {
+    pem_key_cert_pairs = *pem_key_cert_pairs_;
   }
   bool use_default_roots = options_->root_certificate_distributor() == nullptr;
   return grpc_ssl_tsi_client_handshaker_factory_init(
-      pem_key_cert_pair, use_default_roots ? nullptr : root_cert_info_,
+      std::move(pem_key_cert_pairs),
+      use_default_roots ? nullptr : root_cert_info_,
       skip_server_certificate_verification,
       grpc_get_tsi_tls_version(options_->min_tls_version()),
       grpc_get_tsi_tls_version(options_->max_tls_version()), ssl_session_cache_,

@@ -157,7 +157,7 @@ class SpiffeSslTransportSecurityTest
     void SetupHandshakers() {
       // Create client handshaker factory.
       tsi_ssl_client_handshaker_options client_options;
-      client_options.pem_key_cert_pair = &client_pem_key_cert_pairs_[0];
+      client_options.pem_key_cert_pairs = client_pem_key_cert_pairs_;
       if (client_spiffe_bundle_map_ != nullptr) {
         client_options.root_cert_info = client_spiffe_bundle_map_;
       } else {
