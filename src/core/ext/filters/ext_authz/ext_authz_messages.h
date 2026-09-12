@@ -180,10 +180,8 @@ struct ExtAuthzRequest {
   bool include_peer_certificate = false;
 };
 
-// Serializes the CheckRequest message to a binary protobuf string.
-// Wraps the AttributeContext created from request into an
-// envoy.service.auth.v3.CheckRequest and serializes it.
-std::string CreateExtAuthzRequest(const ExtAuthzRequest& request);
+absl::StatusOr<std::string> CreateExtAuthzRequest(
+    const ExtAuthzRequest& request);
 
 }  // namespace grpc_core
 

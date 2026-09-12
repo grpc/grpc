@@ -46,6 +46,7 @@
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.h"
 #include "upb/mem/arena.hpp"
+#include "absl/base/attributes.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
@@ -57,24 +58,66 @@ namespace grpc_core {
 
 namespace {
 
-bool IsHeaderAllowed(absl::string_view key,
-                     const std::vector<StringMatcher>& allowed_headers,
-                     const std::vector<StringMatcher>& disallowed_headers) {
-  for (const auto& disallowed : disallowed_headers) {
-    if (disallowed.Match(key)) {
+// TODO(rishesh): Move UpbHeaderMapEncoder to a common place shared with
+// ext_proc.
+class UpbHeaderMapEncoder {
+ public:
+  UpbHeaderMapEncoder(envoy_config_core_v3_HeaderMap* header_map,
+                      upb_Arena* arena,
+                      const std::vector<StringMatcher>& allowed_headers,
+                      const std::vector<StringMatcher>& disallowed_headers)
+      : header_map_(header_map),
+        arena_(arena),
+        allowed_headers_(allowed_headers),
+        disallowed_headers_(disallowed_headers) {}
+
+  void Encode(absl::string_view key, absl::string_view value) {
+    Append(key, value);
+  }
+
+ private:
+  ABSL_ATTRIBUTE_NOINLINE static bool HeaderInMatcher(
+      absl::string_view key, const std::vector<StringMatcher>& matchers) {
+    for (const auto& matcher : matchers) {
+      if (matcher.Match(key)) return true;
+    }
+    return false;
+  }
+
+  ABSL_ATTRIBUTE_NOINLINE bool ShouldForwardHeader(
+      absl::string_view key) const {
+    if (disallowed_headers_.empty()) {
+      return allowed_headers_.empty() || HeaderInMatcher(key, allowed_headers_);
+    }
+    if (HeaderInMatcher(key, disallowed_headers_)) {
       return false;
     }
+    return allowed_headers_.empty() || HeaderInMatcher(key, allowed_headers_);
   }
-  if (allowed_headers.empty()) {
-    return true;
-  }
-  for (const auto& allowed : allowed_headers) {
-    if (allowed.Match(key)) {
-      return true;
+
+  ABSL_ATTRIBUTE_NOINLINE void Append(absl::string_view key,
+                                      absl::string_view value) {
+    if (!ShouldForwardHeader(key)) {
+      return;
+    }
+    auto* header =
+        envoy_config_core_v3_HeaderMap_add_headers(header_map_, arena_);
+    envoy_config_core_v3_HeaderValue_set_key(
+        header, CopyStdStringToUpbString(key, arena_));
+    if (absl::EndsWith(key, "-bin")) {
+      envoy_config_core_v3_HeaderValue_set_raw_value(
+          header, CopyStdStringToUpbString(value, arena_));
+    } else {
+      envoy_config_core_v3_HeaderValue_set_value(
+          header, CopyStdStringToUpbString(value, arena_));
     }
   }
-  return false;
-}
+
+  envoy_config_core_v3_HeaderMap* header_map_;
+  upb_Arena* arena_;
+  const std::vector<StringMatcher>& allowed_headers_;
+  const std::vector<StringMatcher>& disallowed_headers_;
+};
 
 std::string GetPrincipal(const ExtAuthzRequest::Peer& peer) {
   for (const auto& uri : peer.uri_sans) {
@@ -166,6 +209,7 @@ envoy_service_auth_v3_AttributeContext_Request* CreateRequest(
     upb_Arena* arena, const ExtAuthzRequest& request) {
   auto* envoy_request =
       envoy_service_auth_v3_AttributeContext_Request_new(arena);
+  // time
   auto* timestamp = envoy_service_auth_v3_AttributeContext_Request_mutable_time(
       envoy_request, arena);
   if (request.start_time.has_value()) {
@@ -174,32 +218,27 @@ envoy_service_auth_v3_AttributeContext_Request* CreateRequest(
   } else {
     TimestampToUpb(gpr_now(GPR_CLOCK_REALTIME), timestamp);
   }
+  // http_request
   auto* http_request =
       envoy_service_auth_v3_AttributeContext_Request_mutable_http(envoy_request,
                                                                   arena);
+  // method
   envoy_service_auth_v3_AttributeContext_HttpRequest_set_method(
       http_request, CopyStdStringToUpbString("POST", arena));
+  // path
   envoy_service_auth_v3_AttributeContext_HttpRequest_set_path(
       http_request, CopyStdStringToUpbString(request.path, arena));
+  // size
   envoy_service_auth_v3_AttributeContext_HttpRequest_set_size(http_request, -1);
+  // protocol
   envoy_service_auth_v3_AttributeContext_HttpRequest_set_protocol(
       http_request, CopyStdStringToUpbString("HTTP/2", arena));
+  // header_map
   auto* header_map = envoy_config_core_v3_HeaderMap_new(arena);
+  UpbHeaderMapEncoder encoder(header_map, arena, request.allowed_headers,
+                              request.disallowed_headers);
   for (const auto& [key, value] : request.headers) {
-    if (IsHeaderAllowed(key, request.allowed_headers,
-                        request.disallowed_headers)) {
-      auto* header =
-          envoy_config_core_v3_HeaderMap_add_headers(header_map, arena);
-      envoy_config_core_v3_HeaderValue_set_key(
-          header, CopyStdStringToUpbString(key, arena));
-      if (absl::EndsWith(key, "-bin")) {
-        envoy_config_core_v3_HeaderValue_set_raw_value(
-            header, CopyStdStringToUpbString(value, arena));
-      } else {
-        envoy_config_core_v3_HeaderValue_set_value(
-            header, CopyStdStringToUpbString(value, arena));
-      }
-    }
+    encoder.Encode(key, value);
   }
   envoy_service_auth_v3_AttributeContext_HttpRequest_set_header_map(
       http_request, header_map);
@@ -222,7 +261,8 @@ envoy_service_auth_v3_AttributeContext* CreateAttributeContext(
 
 }  // namespace
 
-std::string CreateExtAuthzRequest(const ExtAuthzRequest& request) {
+absl::StatusOr<std::string> CreateExtAuthzRequest(
+    const ExtAuthzRequest& request) {
   upb::Arena arena;
   auto* check_request = envoy_service_auth_v3_CheckRequest_new(arena.ptr());
   auto* attribute_context = CreateAttributeContext(arena.ptr(), request);
@@ -231,9 +271,10 @@ std::string CreateExtAuthzRequest(const ExtAuthzRequest& request) {
   size_t output_length = 0;
   char* output = envoy_service_auth_v3_CheckRequest_serialize(
       check_request, arena.ptr(), &output_length);
-  return (output != nullptr && output_length > 0)
-             ? std::string(output, output_length)
-             : std::string();
+  if (output == nullptr) {
+    return absl::InternalError("Failed to serialize CheckRequest");
+  }
+  return std::string(output, output_length);
 }
 
 namespace {

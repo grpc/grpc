@@ -105,6 +105,15 @@ MATCHER_P2(IsDeniedResponse, status_matcher, headers_matcher, "") {
 
 class CreateExtAuthzRequestTest : public ::testing::Test {
  protected:
+  CheckRequest ParseRequest(const absl::StatusOr<std::string>& serialized) {
+    EXPECT_TRUE(serialized.ok()) << serialized.status();
+    CheckRequest parsed;
+    if (serialized.ok()) {
+      EXPECT_TRUE(parsed.ParseFromString(*serialized));
+    }
+    return parsed;
+  }
+
   CheckRequest ParseRequest(const std::string& serialized) {
     CheckRequest parsed;
     EXPECT_TRUE(parsed.ParseFromString(serialized));
@@ -124,8 +133,9 @@ TEST_F(CreateExtAuthzRequestTest, ClientSideSerialization) {
   params.source.address = *StringToSockaddr("192.168.1.100:50051");
   params.destination.address = *StringToSockaddr("10.0.0.1:50052");
 
-  std::string serialized = CreateExtAuthzRequest(params);
-  auto request = ParseRequest(serialized);
+  auto serialized = CreateExtAuthzRequest(params);
+  ASSERT_TRUE(serialized.ok()) << serialized.status();
+  auto request = ParseRequest(*serialized);
 
   ASSERT_TRUE(request.has_attributes());
   const auto& attr = request.attributes();
@@ -179,8 +189,9 @@ TEST_F(CreateExtAuthzRequestTest, ClientSideSerialization_NoStartTime) {
   params.path = "/test.service/TestMethod";
   params.start_time = std::nullopt;
 
-  std::string serialized = CreateExtAuthzRequest(params);
-  auto request = ParseRequest(serialized);
+  auto serialized = CreateExtAuthzRequest(params);
+  ASSERT_TRUE(serialized.ok()) << serialized.status();
+  auto request = ParseRequest(*serialized);
 
   ASSERT_TRUE(request.has_attributes());
   ASSERT_TRUE(request.attributes().has_request());
@@ -195,8 +206,9 @@ TEST_F(CreateExtAuthzRequestTest, ServerSideSerialization_PlainConnection) {
   params.source.address = *StringToSockaddr("192.168.1.10:12345");
   params.destination.address = *StringToSockaddr("10.0.0.1:8080");
 
-  std::string serialized = CreateExtAuthzRequest(params);
-  auto request = ParseRequest(serialized);
+  auto serialized = CreateExtAuthzRequest(params);
+  ASSERT_TRUE(serialized.ok()) << serialized.status();
+  auto request = ParseRequest(*serialized);
 
   ASSERT_TRUE(request.has_attributes());
   const auto& attr = request.attributes();
@@ -241,8 +253,9 @@ TEST_F(CreateExtAuthzRequestTest, ServerSideSerialization_UnixDomainSocket) {
   GRPC_CHECK_OK(UnixSockaddrPopulate("/var/run/server.sock", &local_addr));
   params.destination.address = local_addr;
 
-  std::string serialized = CreateExtAuthzRequest(params);
-  auto request = ParseRequest(serialized);
+  auto serialized = CreateExtAuthzRequest(params);
+  ASSERT_TRUE(serialized.ok()) << serialized.status();
+  auto request = ParseRequest(*serialized);
 
   ASSERT_TRUE(request.has_attributes());
   const auto& attr = request.attributes();
@@ -265,8 +278,9 @@ TEST_F(CreateExtAuthzRequestTest, ServerSideSerialization_Ipv6Addresses) {
   params.source.address = *StringToSockaddr("[2001:db8::1]:12345");
   params.destination.address = *StringToSockaddr("[2001:db8::2]:8080");
 
-  std::string serialized = CreateExtAuthzRequest(params);
-  auto request = ParseRequest(serialized);
+  auto serialized = CreateExtAuthzRequest(params);
+  ASSERT_TRUE(serialized.ok()) << serialized.status();
+  auto request = ParseRequest(*serialized);
 
   ASSERT_TRUE(request.has_attributes());
   const auto& attr = request.attributes();
@@ -304,8 +318,9 @@ TEST_F(CreateExtAuthzRequestTest,
   params.destination.dns_sans = {"server-dns.example.com"};
   params.destination.subject = "CN=server,O=Example";
 
-  std::string serialized = CreateExtAuthzRequest(params);
-  auto request = ParseRequest(serialized);
+  auto serialized = CreateExtAuthzRequest(params);
+  ASSERT_TRUE(serialized.ok()) << serialized.status();
+  auto request = ParseRequest(*serialized);
 
   const auto& attr = request.attributes();
   ASSERT_TRUE(attr.has_source());
@@ -337,8 +352,9 @@ TEST_F(CreateExtAuthzRequestTest,
   params.destination.dns_sans = {"server-dns.example.com"};
   params.destination.subject = "CN=server,O=Example";
 
-  std::string serialized = CreateExtAuthzRequest(params);
-  auto request = ParseRequest(serialized);
+  auto serialized = CreateExtAuthzRequest(params);
+  ASSERT_TRUE(serialized.ok()) << serialized.status();
+  auto request = ParseRequest(*serialized);
 
   const auto& attr = request.attributes();
   ASSERT_TRUE(attr.has_source());
@@ -365,8 +381,9 @@ TEST_F(CreateExtAuthzRequestTest,
   params.destination.dns_sans = {};
   params.destination.subject = "CN=server,O=Example Corp,C=US";
 
-  std::string serialized = CreateExtAuthzRequest(params);
-  auto request = ParseRequest(serialized);
+  auto serialized = CreateExtAuthzRequest(params);
+  ASSERT_TRUE(serialized.ok()) << serialized.status();
+  auto request = ParseRequest(*serialized);
 
   const auto& attr = request.attributes();
   ASSERT_TRUE(attr.has_source());
@@ -391,8 +408,9 @@ TEST_F(CreateExtAuthzRequestTest,
   params.destination.dns_sans = {};
   params.destination.subject = "";
 
-  std::string serialized = CreateExtAuthzRequest(params);
-  auto request = ParseRequest(serialized);
+  auto serialized = CreateExtAuthzRequest(params);
+  ASSERT_TRUE(serialized.ok()) << serialized.status();
+  auto request = ParseRequest(*serialized);
 
   const auto& attr = request.attributes();
   ASSERT_TRUE(attr.has_source());
@@ -424,8 +442,9 @@ TEST_F(CreateExtAuthzRequestTest, HeaderFiltering_AllowedAndDisallowed) {
           .value(),
   };
 
-  std::string serialized = CreateExtAuthzRequest(params);
-  auto request = ParseRequest(serialized);
+  auto serialized = CreateExtAuthzRequest(params);
+  ASSERT_TRUE(serialized.ok()) << serialized.status();
+  auto request = ParseRequest(*serialized);
 
   const auto& http = request.attributes().request().http();
   ASSERT_TRUE(http.has_header_map());
@@ -452,8 +471,9 @@ TEST_F(CreateExtAuthzRequestTest, HeaderFiltering_DisallowedTakesPrecedence) {
           .value(),
   };
 
-  std::string serialized = CreateExtAuthzRequest(params);
-  auto request = ParseRequest(serialized);
+  auto serialized = CreateExtAuthzRequest(params);
+  ASSERT_TRUE(serialized.ok()) << serialized.status();
+  auto request = ParseRequest(*serialized);
 
   const auto& http = request.attributes().request().http();
   EXPECT_EQ(http.header_map().headers_size(), 0);
@@ -471,8 +491,9 @@ TEST_F(CreateExtAuthzRequestTest, HeaderFiltering_OnlyAllowedSet) {
       StringMatcher::Create(StringMatcher::Type::kExact, "h1", false).value(),
   };
 
-  std::string serialized = CreateExtAuthzRequest(params);
-  auto request = ParseRequest(serialized);
+  auto serialized = CreateExtAuthzRequest(params);
+  ASSERT_TRUE(serialized.ok()) << serialized.status();
+  auto request = ParseRequest(*serialized);
 
   const auto& http = request.attributes().request().http();
   ASSERT_EQ(http.header_map().headers_size(), 1);
@@ -492,8 +513,9 @@ TEST_F(CreateExtAuthzRequestTest, HeaderFiltering_OnlyDisallowedSet) {
       StringMatcher::Create(StringMatcher::Type::kExact, "h1", false).value(),
   };
 
-  std::string serialized = CreateExtAuthzRequest(params);
-  auto request = ParseRequest(serialized);
+  auto serialized = CreateExtAuthzRequest(params);
+  ASSERT_TRUE(serialized.ok()) << serialized.status();
+  auto request = ParseRequest(*serialized);
 
   const auto& http = request.attributes().request().http();
   ASSERT_EQ(http.header_map().headers_size(), 1);
@@ -510,8 +532,9 @@ TEST_F(CreateExtAuthzRequestTest, HeaderValue_BinaryAndNonBinary) {
       {"custom-bin", std::string("\x00\x01\x02\xFF", 4)},
   };
 
-  std::string serialized = CreateExtAuthzRequest(params);
-  auto request = ParseRequest(serialized);
+  auto serialized = CreateExtAuthzRequest(params);
+  ASSERT_TRUE(serialized.ok()) << serialized.status();
+  auto request = ParseRequest(*serialized);
 
   const auto& http = request.attributes().request().http();
   ASSERT_EQ(http.header_map().headers_size(), 2);
@@ -533,8 +556,9 @@ TEST_F(CreateExtAuthzRequestTest,
   params.source.address = *StringToSockaddr("192.168.1.5", 8080);
   params.destination.address = *StringToSockaddr("10.0.0.5", 9090);
 
-  std::string serialized = CreateExtAuthzRequest(params);
-  auto request = ParseRequest(serialized);
+  auto serialized = CreateExtAuthzRequest(params);
+  ASSERT_TRUE(serialized.ok()) << serialized.status();
+  auto request = ParseRequest(*serialized);
 
   ASSERT_TRUE(request.has_attributes());
   ASSERT_TRUE(request.attributes().has_source());
@@ -565,8 +589,9 @@ TEST_F(CreateExtAuthzRequestTest,
   params.path = "/service/test";
   params.source.address = *StringToSockaddr("2001:db8::1", 9090);
 
-  std::string serialized = CreateExtAuthzRequest(params);
-  auto request = ParseRequest(serialized);
+  auto serialized = CreateExtAuthzRequest(params);
+  ASSERT_TRUE(serialized.ok()) << serialized.status();
+  auto request = ParseRequest(*serialized);
 
   ASSERT_TRUE(request.has_attributes());
   ASSERT_TRUE(request.attributes().has_source());
@@ -585,8 +610,9 @@ TEST_F(CreateExtAuthzRequestTest, ServerSideSerialization_NoAddress) {
   params.source.address = std::nullopt;
   params.destination.address = std::nullopt;
 
-  std::string serialized = CreateExtAuthzRequest(params);
-  auto request = ParseRequest(serialized);
+  auto serialized = CreateExtAuthzRequest(params);
+  ASSERT_TRUE(serialized.ok()) << serialized.status();
+  auto request = ParseRequest(*serialized);
 
   ASSERT_TRUE(request.has_attributes());
   ASSERT_TRUE(request.attributes().has_source());
@@ -604,16 +630,15 @@ TEST_F(CreateExtAuthzRequestTest, ServerSideSerialization_EmptySanSkipping) {
   params.source.dns_sans = {"dns.example.com"};
   params.source.subject = "CN=subject";
 
-  std::string serialized = CreateExtAuthzRequest(params);
-  auto request = ParseRequest(serialized);
+  auto serialized = CreateExtAuthzRequest(params);
+  ASSERT_TRUE(serialized.ok()) << serialized.status();
+  auto request = ParseRequest(*serialized);
 
   ASSERT_TRUE(request.has_attributes());
   ASSERT_TRUE(request.attributes().has_source());
   EXPECT_EQ(request.attributes().source().principal(),
             "spiffe://example.com/test-service");
 }
-
-
 
 //
 // ExtAuthzResponse::Parse() tests
