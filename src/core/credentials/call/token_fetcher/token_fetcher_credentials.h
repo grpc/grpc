@@ -102,7 +102,6 @@ class TokenFetcherCredentials : public grpc_call_credentials {
   struct QueuedCall : public RefCounted<QueuedCall> {
     std::atomic<bool> done{false};
     Waker waker;
-    grpc_polling_entity* pollent;
     ClientMetadataHandle md;
     absl::StatusOr<RefCountedPtr<Token>> result;
   };

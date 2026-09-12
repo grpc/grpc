@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.84.0-dev'
+  version = '1.85.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -47,7 +47,7 @@ Pod::Spec.new do |s|
   s.requires_arc = false
 
   name = 'grpc'
-  abseil_version = '~> 1.20250512.1'
+  abseil_version = '~> 1.20260526.0'
 
   # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
   # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
@@ -205,7 +205,7 @@ Pod::Spec.new do |s|
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency "#{s.name}/Privacy", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.42'
+    ss.dependency 'BoringSSL-GRPC', '0.0.43'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/config', abseil_version
@@ -378,6 +378,8 @@ Pod::Spec.new do |s|
                       'src/core/credentials/call/external/url_external_account_credentials.h',
                       'src/core/credentials/call/gcp_service_account_identity/gcp_service_account_identity_credentials.cc',
                       'src/core/credentials/call/gcp_service_account_identity/gcp_service_account_identity_credentials.h',
+                      'src/core/credentials/call/gdch_service_account/gdch_service_account_credentials.cc',
+                      'src/core/credentials/call/gdch_service_account/gdch_service_account_credentials.h',
                       'src/core/credentials/call/iam/iam_credentials.cc',
                       'src/core/credentials/call/iam/iam_credentials.h',
                       'src/core/credentials/call/json_util.cc',
@@ -1040,9 +1042,9 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-gen/google/rpc/status.upb.h',
                       'src/core/ext/upb-gen/google/rpc/status.upb_minitable.c',
                       'src/core/ext/upb-gen/google/rpc/status.upb_minitable.h',
-                      'src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb.h',
-                      'src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.c',
-                      'src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.h',
+                      'src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb.h',
+                      'src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.c',
+                      'src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.h',
                       'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h',
                       'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c',
                       'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h',
@@ -1438,8 +1440,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.h',
                       'src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c',
                       'src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.h',
-                      'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.c',
-                      'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.h',
+                      'src/core/ext/upbdefs-gen/grpc/channelz/v1/channelz.upbdefs.c',
+                      'src/core/ext/upbdefs-gen/grpc/channelz/v1/channelz.upbdefs.h',
                       'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c',
                       'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h',
                       'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c',
@@ -1773,13 +1775,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/pollset_windows.cc',
                       'src/core/lib/iomgr/pollset_windows.h',
                       'src/core/lib/iomgr/port.h',
-                      'src/core/lib/iomgr/resolve_address.cc',
-                      'src/core/lib/iomgr/resolve_address.h',
-                      'src/core/lib/iomgr/resolve_address_impl.h',
-                      'src/core/lib/iomgr/resolve_address_posix.cc',
-                      'src/core/lib/iomgr/resolve_address_posix.h',
-                      'src/core/lib/iomgr/resolve_address_windows.cc',
-                      'src/core/lib/iomgr/resolve_address_windows.h',
                       'src/core/lib/iomgr/resolved_address.h',
                       'src/core/lib/iomgr/sockaddr.h',
                       'src/core/lib/iomgr/sockaddr_posix.h',
@@ -2046,23 +2041,10 @@ Pod::Spec.new do |s|
                       'src/core/net/socket_mutator.h',
                       'src/core/plugin_registry/grpc_plugin_registry.cc',
                       'src/core/plugin_registry/grpc_plugin_registry_extra.cc',
-                      'src/core/resolver/dns/c_ares/dns_resolver_ares.cc',
-                      'src/core/resolver/dns/c_ares/dns_resolver_ares.h',
-                      'src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h',
-                      'src/core/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc',
-                      'src/core/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc',
-                      'src/core/resolver/dns/c_ares/grpc_ares_wrapper.cc',
-                      'src/core/resolver/dns/c_ares/grpc_ares_wrapper.h',
-                      'src/core/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc',
-                      'src/core/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc',
-                      'src/core/resolver/dns/dns_resolver_plugin.cc',
-                      'src/core/resolver/dns/dns_resolver_plugin.h',
-                      'src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.cc',
-                      'src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.h',
-                      'src/core/resolver/dns/event_engine/service_config_helper.cc',
-                      'src/core/resolver/dns/event_engine/service_config_helper.h',
-                      'src/core/resolver/dns/native/dns_resolver.cc',
-                      'src/core/resolver/dns/native/dns_resolver.h',
+                      'src/core/resolver/dns/dns_resolver.cc',
+                      'src/core/resolver/dns/dns_resolver.h',
+                      'src/core/resolver/dns/service_config_helper.cc',
+                      'src/core/resolver/dns/service_config_helper.h',
                       'src/core/resolver/endpoint_addresses.cc',
                       'src/core/resolver/endpoint_addresses.h',
                       'src/core/resolver/fake/fake_resolver.cc',
@@ -2785,6 +2767,7 @@ Pod::Spec.new do |s|
                               'src/core/credentials/call/external/file_external_account_credentials.h',
                               'src/core/credentials/call/external/url_external_account_credentials.h',
                               'src/core/credentials/call/gcp_service_account_identity/gcp_service_account_identity_credentials.h',
+                              'src/core/credentials/call/gdch_service_account/gdch_service_account_credentials.h',
                               'src/core/credentials/call/iam/iam_credentials.h',
                               'src/core/credentials/call/json_util.h',
                               'src/core/credentials/call/jwt/json_token.h',
@@ -3190,8 +3173,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.h',
                               'src/core/ext/upb-gen/google/rpc/status.upb.h',
                               'src/core/ext/upb-gen/google/rpc/status.upb_minitable.h',
-                              'src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb.h',
-                              'src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.h',
+                              'src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb.h',
+                              'src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.h',
                               'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h',
                               'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h',
                               'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h',
@@ -3411,7 +3394,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h',
                               'src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.h',
                               'src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.h',
-                              'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.h',
+                              'src/core/ext/upbdefs-gen/grpc/channelz/v1/channelz.upbdefs.h',
                               'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h',
                               'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h',
                               'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h',
@@ -3589,10 +3572,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/pollset_set_windows.h',
                               'src/core/lib/iomgr/pollset_windows.h',
                               'src/core/lib/iomgr/port.h',
-                              'src/core/lib/iomgr/resolve_address.h',
-                              'src/core/lib/iomgr/resolve_address_impl.h',
-                              'src/core/lib/iomgr/resolve_address_posix.h',
-                              'src/core/lib/iomgr/resolve_address_windows.h',
                               'src/core/lib/iomgr/resolved_address.h',
                               'src/core/lib/iomgr/sockaddr.h',
                               'src/core/lib/iomgr/sockaddr_posix.h',
@@ -3739,13 +3718,8 @@ Pod::Spec.new do |s|
                               'src/core/mitigation_engine/mitigation_engine.h',
                               'src/core/mitigation_engine/mitigation_provider.h',
                               'src/core/net/socket_mutator.h',
-                              'src/core/resolver/dns/c_ares/dns_resolver_ares.h',
-                              'src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h',
-                              'src/core/resolver/dns/c_ares/grpc_ares_wrapper.h',
-                              'src/core/resolver/dns/dns_resolver_plugin.h',
-                              'src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.h',
-                              'src/core/resolver/dns/event_engine/service_config_helper.h',
-                              'src/core/resolver/dns/native/dns_resolver.h',
+                              'src/core/resolver/dns/dns_resolver.h',
+                              'src/core/resolver/dns/service_config_helper.h',
                               'src/core/resolver/endpoint_addresses.h',
                               'src/core/resolver/fake/fake_resolver.h',
                               'src/core/resolver/polling_resolver.h',
@@ -4129,6 +4103,21 @@ Pod::Spec.new do |s|
   # patch include of openssl to openssl_grpc
   s.prepare_command = <<-END_OF_COMMAND
     set -e
+    # TODO(weizheyuan, bpawan) remove this block once 1.20260526.1 properly
+    # excludes windows-only files.
+    #
+    # See also https://github.com/abseil/abseil-cpp/pull/2138
+    patched=0
+    for abseil_dir in ../abseil $(find . -type d -path "*/Pods/abseil" 2>/dev/null); do
+      if [ -d "$abseil_dir" ]; then
+        find "$abseil_dir" -name "time_zone_name_win.cc" -exec rm -f {} +
+        patched=1
+      fi
+    done
+    if [ "$patched" -eq 0 ]; then
+      echo "Error: can't patch abseil 1.20260526.0." >&2
+      exit 1
+    fi
     find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g'
     find src/core/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
   END_OF_COMMAND

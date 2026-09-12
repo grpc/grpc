@@ -201,7 +201,7 @@ absl::StatusOr<std::string> FindBootstrapContents()
         << "Got bootstrap file location from GRPC_XDS_BOOTSTRAP "
            "environment variable: "
         << *path;
-    auto contents = LoadFile(*path, /*add_null_terminator=*/false);
+    auto contents = LoadFile(*path);
     if (!contents.ok()) return contents.status();
     return std::string(contents->as_string_view());
   }

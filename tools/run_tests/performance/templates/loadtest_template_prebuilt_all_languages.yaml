@@ -272,7 +272,7 @@ spec:
       - bash
       image: ${prebuilt_image_prefix}/python:${prebuilt_image_tag}
       name: main
-      rgs:
+      args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \

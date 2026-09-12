@@ -1540,9 +1540,15 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy)
       lb_policy_->channel_control_helper()->GetUnsafeChannelCredentials();
   // Use the parent channel's authority.
   auto authority = lb_policy_->channel_control_helper()->GetAuthority();
-  ChannelArgs args = ChannelArgs()
-                         .Set(GRPC_ARG_DEFAULT_AUTHORITY, authority)
-                         .Set(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL, 1);
+  ChannelArgs args;
+  const grpc_channel_args* child_args =
+      lb_policy_->channel_args_.GetPointer<grpc_channel_args>(
+          GRPC_ARG_CHILD_CHANNEL_ARGS);
+  if (child_args != nullptr) {
+    args = ChannelArgs::FromC(child_args).UnionWith(args);
+  }
+  args = args.Set(GRPC_ARG_DEFAULT_AUTHORITY, authority)
+             .Set(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL, 1);
   // Propagate fake security connector expected targets, if any.
   // (This is ugly, but it seems better than propagating all channel args
   // from the parent channel by default and then having a giant

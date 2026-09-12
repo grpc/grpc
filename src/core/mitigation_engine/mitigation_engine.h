@@ -28,6 +28,9 @@
 #include "src/core/util/useful.h"
 #include "absl/strings/string_view.h"
 
+struct grpc_auth_context;
+struct grpc_endpoint;
+
 namespace grpc_core {
 
 class MitigationEngine : public RefCounted<MitigationEngine> {
@@ -44,20 +47,41 @@ class MitigationEngine : public RefCounted<MitigationEngine> {
   }
   ~MitigationEngine() override = default;
 
-  // Evaluates an incoming connection based on the peer address.
+  struct EvaluateArgs {
+    EvaluateArgs() = default;
+    explicit EvaluateArgs(absl::string_view peer_address,
+                          grpc_endpoint* endpoint = nullptr,
+                          grpc_auth_context* auth_context = nullptr)
+        : peer_address(peer_address),
+          endpoint(endpoint),
+          auth_context(auth_context) {}
+    explicit EvaluateArgs(const char* peer_address,
+                          grpc_endpoint* endpoint = nullptr,
+                          grpc_auth_context* auth_context = nullptr)
+        : peer_address(peer_address),
+          endpoint(endpoint),
+          auth_context(auth_context) {}
+
+    absl::string_view peer_address;
+    grpc_endpoint* endpoint = nullptr;
+    grpc_auth_context* auth_context = nullptr;
+  };
+
+  // Evaluates an incoming connection based on the peer address and connection
+  // context.
   virtual std::optional<Action> EvaluateIncomingConnection(
-      absl::string_view peer_address) = 0;
+      const EvaluateArgs& args) = 0;
 
   // Evaluates an incoming metadata key/value pair. Please note that this
   // function only evaluates *new* key/value pairs; if an incoming header has
   // already been seen by the connection, it will not be evaluated again.
   virtual std::optional<Action> EvaluateIncomingMetadata(
       absl::string_view key, absl::string_view value,
-      absl::string_view peer_address) = 0;
+      const EvaluateArgs& args) = 0;
 
   // Evaluates all incoming metadata after they have been parsed.
   virtual std::optional<Action> EvaluateAllIncomingMetadata(
-      const grpc_metadata_batch& metadata, absl::string_view peer_address) = 0;
+      const grpc_metadata_batch& metadata, const EvaluateArgs& args) = 0;
 };
 
 class MitigationEngineProvider

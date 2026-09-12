@@ -38,10 +38,15 @@ using WriteArgs = EventEngine::Endpoint::WriteArgs;
 using ReadArgs = EventEngine::Endpoint::ReadArgs;
 
 MockEndpoint::MockEndpoint(
-    std::shared_ptr<BaseMockEndpointController> endpoint_control)
+    std::shared_ptr<BaseMockEndpointController> endpoint_control, int fd)
     : endpoint_control_(std::move(endpoint_control)),
       peer_addr_(URIToResolvedAddress("ipv4:127.0.0.1:12345").value()),
-      local_addr_(URIToResolvedAddress("ipv4:127.0.0.1:6789").value()) {}
+      local_addr_(URIToResolvedAddress("ipv4:127.0.0.1:6789").value()),
+      fd_(fd) {}
+
+MockEndpoint::MockEndpoint(
+    std::shared_ptr<BaseMockEndpointController> endpoint_control)
+    : MockEndpoint(std::move(endpoint_control), -1) {}
 
 MockEndpointController::~MockEndpointController() {
   grpc_core::MutexLock lock(&mu_);
@@ -54,11 +59,11 @@ MockEndpointController::~MockEndpointController() {
 }
 
 std::shared_ptr<MockEndpointController> MockEndpointController::Create(
-    std::shared_ptr<EventEngine> engine) {
+    std::shared_ptr<EventEngine> engine, int fd) {
   std::shared_ptr<MockEndpointController> controller =
       std::shared_ptr<MockEndpointController>(
           new MockEndpointController(std::move(engine)));
-  controller->InitMockGrpcEndpoint();
+  controller->InitMockGrpcEndpoint(fd);
   return controller;
 }
 
@@ -66,10 +71,10 @@ MockEndpointController::MockEndpointController(
     std::shared_ptr<EventEngine> engine)
     : engine_(std::move(engine)), mock_grpc_endpoint_(nullptr) {}
 
-void MockEndpointController::InitMockGrpcEndpoint() {
+void MockEndpointController::InitMockGrpcEndpoint(int fd) {
   mock_grpc_endpoint_ = grpc_event_engine_endpoint_create(
       std::make_unique<grpc_event_engine::experimental::MockEndpoint>(
-          shared_from_this()));
+          shared_from_this(), fd));
 }
 
 void MockEndpointController::TriggerReadEvent(Slice read_data) {
@@ -149,6 +154,13 @@ const EventEngine::ResolvedAddress& MockEndpoint::GetPeerAddress() const {
 
 const EventEngine::ResolvedAddress& MockEndpoint::GetLocalAddress() const {
   return local_addr_;
+}
+
+int MockEndpoint::GetWrappedFd() { return fd_; }
+
+void MockEndpoint::Shutdown(
+    absl::AnyInvocable<void(absl::StatusOr<int> release_fd)> on_release_fd) {
+  on_release_fd(fd_);
 }
 
 }  // namespace experimental

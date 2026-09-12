@@ -1,4 +1,4 @@
-// Copyright 2023 gRPC authors.
+// Copyright 2026 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/util/crash.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
+#include "test/core/filters/filter_matchers.h"
 #include "gtest/gtest.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"

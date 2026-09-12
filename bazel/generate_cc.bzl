@@ -40,16 +40,24 @@ def _strip_package_from_path(label_package, file):
     if not file.is_source and file.path.startswith(file.root.path):
         prefix_len = len(file.root.path) + 1
 
-    path = file.path
+    path = file.path[prefix_len:]
+    if path.startswith("external/"):
+        idx = path.find("/", len("external/"))
+        if idx != -1:
+            path = path[idx + 1:]
+
     if len(label_package) == 0:
         return path
-    if not path.startswith(label_package + "/", prefix_len):
+    if not path.startswith(label_package + "/"):
+        if label_package.startswith("src/proto/"):
+            alt_package = label_package[len("src/proto/"):]
+            if path.startswith(alt_package + "/"):
+                return path[len(alt_package + "/"):]
+            idx = path.find("/" + alt_package + "/")
+            if idx != -1:
+                return path[idx + len("/" + alt_package + "/"):]
         fail("'{}' does not lie within '{}'.".format(path, label_package))
-    return path[prefix_len + len(label_package + "/"):]
-
-def _join_directories(directories):
-    massaged_directories = [directory for directory in directories if len(directory) != 0]
-    return "/".join(massaged_directories)
+    return path[len(label_package + "/"):]
 
 def generate_cc_impl(ctx):
     """Implementation of the generate_cc rule.
@@ -70,7 +78,7 @@ def generate_cc_impl(ctx):
         ctx.label.workspace_root,
     )
 
-    label_package = _join_directories([ctx.label.workspace_root, ctx.label.package])
+    label_package = ctx.label.package
     if ctx.executable.plugin:
         outs += [
             proto_path_to_generated_filename(

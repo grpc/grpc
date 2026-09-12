@@ -58,10 +58,6 @@ static constexpr const uint32_t kMaxInitialWindowSize = (1u << 30);
 static constexpr const int64_t kMaxWindowDelta = (1u << 20);
 static constexpr const int kDefaultPreferredRxCryptoFrameSize = INT_MAX;
 
-// TODO(tjagtap) [PH2][P2][BDP] Remove this static sleep when the BDP code is
-// done. This needs to be dynamic.
-constexpr Duration kFlowControlPeriodicUpdateTimer = Duration::Seconds(8);
-
 class TransportFlowControl;
 class StreamFlowControl;
 
@@ -557,8 +553,15 @@ class TransportFlowControl final {
 class StreamFlowControl final {
  public:
   explicit StreamFlowControl(TransportFlowControl* tfc);
+  // TODO(ritulb) : [PH2][P5] :  When CHTTP2 is removed, delete this
+  // destructor(no-op).
   ~StreamFlowControl() {
     tfc_->RemoveAnnouncedWindowDelta(announced_window_delta_);
+  }
+
+  void OnStreamClosed() {
+    tfc_->RemoveAnnouncedWindowDelta(announced_window_delta_);
+    announced_window_delta_ = 0;
   }
 
   // Track an update to the incoming flow control counters - that is how many

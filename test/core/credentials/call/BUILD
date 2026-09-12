@@ -52,6 +52,7 @@ grpc_cc_test(
         "//src/core:error_utils",
         "//src/core:exec_ctx_wakeup_scheduler",
         "//src/core:gcp_service_account_identity_credentials",
+        "//src/core:gdch_service_account_credentials",
         "//src/core:grpc_check",
         "//src/core:grpc_external_account_credentials",
         "//src/core:grpc_fake_credentials",
@@ -144,5 +145,31 @@ grpc_cc_test(
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
         "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "gdch_service_account_credentials_test",
+    srcs = ["gdch_service_account_credentials_test.cc"],
+    external_deps = [
+        "absl/cleanup",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//:httpcli",
+        "//:iomgr_timer",
+        "//:ref_counted_ptr",
+        "//:uri",
+        "//src/core:gdch_service_account_credentials",
+        "//src/core:json",
+        "//src/core:json_reader",
+        "//src/core:json_writer",
+        "//src/core:time",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
     ],
 )

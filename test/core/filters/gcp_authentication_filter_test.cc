@@ -27,7 +27,7 @@
 #include "src/core/service_config/service_config_call_data.h"
 #include "src/core/service_config/service_config_impl.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/unique_type_name.h"
+#include "test/core/filters/filter_matchers.h"
 #include "test/core/filters/filter_test_v2.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"

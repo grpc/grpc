@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_proto_library", "grpc_cc_test", "grpc_internal_proto_library", "grpc_package")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 grpc_package(
     name = "test/core/resolver",
@@ -61,25 +62,6 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "dns_resolver_cooldown_test",
-    srcs = ["dns_resolver_cooldown_test.cc"],
-    external_deps = [
-        "absl/log:log",
-        "gtest",
-    ],
-    tags = [
-        "grpc:broken-internally",
-    ],
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//src/core:channel_args",
-        "//src/core:closure",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -154,5 +136,64 @@ grpc_cc_test(
         "//test/core/test_util:fake_udp_and_tcp_server",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_internal_proto_library(
+    name = "dns_resolver_fuzzer_proto",
+    srcs = ["dns_resolver_fuzzer.proto"],
+    deps = [
+        "//test/core/test_util:fuzz_config_vars_proto",
+        "//test/core/test_util:fuzzing_channel_args_proto",
+    ],
+)
+
+grpc_cc_proto_library(
+    name = "dns_resolver_fuzzer_cc_proto",
+    deps = ["dns_resolver_fuzzer_proto"],
+)
+
+grpc_fuzz_test(
+    name = "dns_resolver_fuzzer",
+    srcs = ["dns_resolver_fuzzer.cc"],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/log:check",
+        "gtest",
+        "fuzztest",
+        "fuzztest_main",
+    ],
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
+    deps = [
+        "dns_resolver_fuzzer_cc_proto",
+        "//:debug_location",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_resolver",
+        "//:orphanable",
+        "//:uri",
+        "//:work_serializer",
+        "//src/core:channel_args",
+        "//src/core:default_event_engine",
+        "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:experiments",
+        "//src/core:grpc_check",
+        "//src/core:grpc_resolver_dns",
+        "//test/core/event_engine:aborting_event_engine",
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
+        "//test/core/test_util:fuzz_config_vars",
+        "//test/core/test_util:fuzz_config_vars_helpers",
+        "//test/core/test_util:fuzzing_channel_args",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
     ],
 )

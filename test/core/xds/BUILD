@@ -195,6 +195,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
         "absl/status",
+        "absl/time",
     ],
     tags = ["xds_test"],
     uses_event_engine = True,
@@ -209,6 +210,7 @@ grpc_cc_test(
         "//src/core:down_cast",
         "//src/core:join",
         "//src/core:map",
+        "//src/core:notification",
         "//src/core:status_flag",
         "//src/core:streaming_call_promise_wrapper",
         "//src/core:wait_for_single_owner",
