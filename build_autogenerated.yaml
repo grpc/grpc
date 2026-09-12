@@ -17473,6 +17473,7 @@ targets:
   - test/cpp/interop/backend_metrics_lb_policy.h
   - test/cpp/interop/client_helper.h
   - test/cpp/interop/interop_client.h
+  - test/cpp/interop/otel_helper.h
   src:
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/messages.proto
@@ -17482,6 +17483,7 @@ targets:
   - test/cpp/interop/client.cc
   - test/cpp/interop/client_helper.cc
   - test/cpp/interop/interop_client.cc
+  - test/cpp/interop/otel_helper.cc
   deps:
   - grpc++_test_config
   - grpc++_test_util
@@ -17491,6 +17493,7 @@ targets:
   language: c++
   headers:
   - src/cpp/server/orca/orca_service.h
+  - test/cpp/interop/otel_helper.h
   - test/cpp/interop/server_helper.h
   src:
   - src/proto/grpc/testing/empty.proto
@@ -17499,6 +17502,7 @@ targets:
   - src/cpp/server/orca/orca_service.cc
   - test/cpp/interop/interop_server.cc
   - test/cpp/interop/interop_server_bootstrap.cc
+  - test/cpp/interop/otel_helper.cc
   - test/cpp/interop/server_helper.cc
   deps:
   - grpc++_test_config

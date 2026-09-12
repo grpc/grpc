@@ -840,6 +840,19 @@ def _patch_descriptor_upb_proto_library(bazel_rules):
         )
 
 
+def _patch_otel_helper_rules(bazel_rules):
+    # In CMake, opentelemetry is optional and otel_helper.cc contains stub implementations
+    # when opentelemetry is not available, so prune otel dependencies for non-bazel builds.
+    bazel_rule = bazel_rules.get("//test/cpp/interop:otel_helper_lib", None)
+    if bazel_rule:
+        bazel_rule["deps"] = [
+            dep
+            for dep in bazel_rule.get("deps", [])
+            if not dep.startswith("//src/cpp/ext/otel")
+            and "opentelemetry" not in dep
+        ]
+
+
 def _generate_build_metadata(
     build_extra_metadata: BuildDict, bazel_rules: BuildDict
 ) -> BuildDict:
@@ -1579,6 +1592,9 @@ _patch_grpc_proto_library_rules(bazel_rules)
 
 # Step 1.7: Make sure upb descriptor.proto library uses the pre-generated sources.
 _patch_descriptor_upb_proto_library(bazel_rules)
+
+# Step 1.8: Prune otel dependencies for otel_helper_lib for non-bazel builds.
+_patch_otel_helper_rules(bazel_rules)
 
 # Step 2: Extract the known bazel cc_test tests. While most tests
 # will be buildable with other build systems just fine, some of these tests
