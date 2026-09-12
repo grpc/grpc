@@ -5814,7 +5814,9 @@ grpc_cc_library(
     deps = [
         "grpc_check",
         "grpc_matchers",
+        "metadata_batch",
         "resolved_address",
+        "slice",
         "status_conversion",
         "time",
         "upb_utils",

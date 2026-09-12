@@ -158,11 +158,14 @@ class ExtAuthzFilter : public ImplementChannelFilter<ExtAuthzFilter> {
   };
 
   RefCountedPtr<ExtAuthzChannel> channel() const { return config_->channel(); }
+  bool is_client() const { return is_client_; }
 
  private:
-  explicit ExtAuthzFilter(RefCountedPtr<const Config> config);
+  ExtAuthzFilter(const ChannelArgs& args,
+                 RefCountedPtr<const Config> config);
 
   const RefCountedPtr<const Config> config_;
+  const bool is_client_;
 };
 
 }  // namespace grpc_core

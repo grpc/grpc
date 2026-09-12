@@ -25,12 +25,13 @@
 #include <variant>
 #include <vector>
 
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/util/matchers.h"
 #include "src/core/util/time.h"
 #include "src/core/xds/grpc/xds_common_types.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -144,9 +145,9 @@ struct ExtAuthzRequest {
   // RPC path (AttributeContext.HttpRequest.path). Always set.
   std::string path;
 
-  // Request headers from the data plane RPC. Used to populate
+  // Metadata batch from the data plane RPC. Used to populate
   // AttributeContext.HttpRequest.header_map subject to header filtering rules.
-  std::vector<std::pair<std::string, std::string>> headers;
+  const grpc_metadata_batch* metadata = nullptr;
 
   // RPC start time (AttributeContext.Request.time).
   // If not recorded, current time when ext_authz sees the request headers is

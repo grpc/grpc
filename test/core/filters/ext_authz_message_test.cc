@@ -21,19 +21,20 @@
 #include <string>
 #include <vector>
 
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "envoy/config/core/v3/base.pb.h"
 #include "envoy/service/auth/v3/attribute_context.pb.h"
 #include "envoy/service/auth/v3/external_auth.pb.h"
 #include "envoy/type/v3/http_status.pb.h"
 #include "google/rpc/status.pb.h"
 #include "src/core/ext/filters/ext_authz/ext_authz_messages.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/util/matchers.h"
 #include "src/core/util/time.h"
 #include "test/core/test_util/test_config.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace {
@@ -47,11 +48,24 @@ using ::envoy::service::auth::v3::OkHttpResponse;
 using ::envoy::type::v3::HttpStatus;
 
 constexpr absl::string_view kPath = "/test.service/TestMethod";
+constexpr absl::string_view kPathHeader = ":path";
 constexpr absl::string_view kKey1 = "key1";
 constexpr absl::string_view kVal1 = "val1";
 constexpr absl::string_view kKey2 = "key2";
 constexpr absl::string_view kVal2 = "val2";
 constexpr absl::string_view kKey3 = "key3";
+constexpr absl::string_view kVal3 = "val3";
+constexpr absl::string_view kVal4 = "val4";
+constexpr absl::string_view kKeyPrefix = "key";
+constexpr absl::string_view kCustomTextKey = "custom-text";
+constexpr absl::string_view kCustomTextVal = "plain-text-value";
+constexpr absl::string_view kCustomBinKey = "custom-bin";
+constexpr absl::string_view kCustomBinVal{"\x00\x01\x02\xFF", 4};
+constexpr absl::string_view kAllowMe = "allow-me";
+constexpr absl::string_view kDenyMe = "deny-me";
+constexpr absl::string_view kOther = "other";
+constexpr absl::string_view kAllowPrefixFoo = "allow-prefix-foo";
+constexpr absl::string_view kAllowPrefix = "allow-prefix-";
 
 //
 // CreateExtAuthzRequest() tests
@@ -142,13 +156,15 @@ TEST_F(CreateExtAuthzRequestTest, DefaultStartTime) {
 }
 
 TEST_F(CreateExtAuthzRequestTest, HeaderEncodingTextAndBinary) {
+  grpc_metadata_batch batch;
+  batch.Append(kCustomTextKey, Slice::FromStaticString(kCustomTextVal),
+               [](absl::string_view, const Slice&) {});
+  batch.Append(kCustomBinKey, Slice::FromStaticString(kCustomBinVal),
+               [](absl::string_view, const Slice&) {});
   ExtAuthzRequest params;
   params.is_client_call = true;
   params.path = kPath;
-  params.headers = {
-      {"custom-text", "plain-text-value"},
-      {"custom-bin", std::string("\x00\x01\x02\xFF", 4)},
-  };
+  params.metadata = &batch;
   std::string serialized = CreateExtAuthzRequest(params).value();
   auto request = ParseRequest(serialized);
   ASSERT_TRUE(request.has_attributes());
@@ -159,28 +175,32 @@ TEST_F(CreateExtAuthzRequestTest, HeaderEncodingTextAndBinary) {
   EXPECT_THAT(
       http.header_map().headers(),
       ::testing::ElementsAre(
-          IsHeaderValue("custom-text", "plain-text-value"),
-          IsRawHeaderValue("custom-bin", std::string("\x00\x01\x02\xFF", 4))));
+          IsHeaderValue(kCustomTextKey, kCustomTextVal),
+          IsRawHeaderValue(kCustomBinKey, kCustomBinVal)));
 }
 
 TEST_F(CreateExtAuthzRequestTest, HeaderFilteringAllowedAndDisallowed) {
+  grpc_metadata_batch batch;
+  batch.Append(kAllowMe, Slice::FromStaticString(kVal1),
+               [](absl::string_view, const Slice&) {});
+  batch.Append(kDenyMe, Slice::FromStaticString(kVal2),
+               [](absl::string_view, const Slice&) {});
+  batch.Append(kOther, Slice::FromStaticString(kVal3),
+               [](absl::string_view, const Slice&) {});
+  batch.Append(kAllowPrefixFoo, Slice::FromStaticString(kVal4),
+               [](absl::string_view, const Slice&) {});
   ExtAuthzRequest params;
   params.is_client_call = true;
   params.path = kPath;
-  params.headers = {
-      {"allow-me", "1"},
-      {"deny-me", "2"},
-      {"other", "3"},
-      {"allow-prefix-foo", "4"},
-  };
+  params.metadata = &batch;
   params.disallowed_headers = {
-      StringMatcher::Create(StringMatcher::Type::kExact, "deny-me", false)
+      StringMatcher::Create(StringMatcher::Type::kExact, kDenyMe, false)
           .value(),
   };
   params.allowed_headers = {
-      StringMatcher::Create(StringMatcher::Type::kExact, "allow-me", false)
+      StringMatcher::Create(StringMatcher::Type::kExact, kAllowMe, false)
           .value(),
-      StringMatcher::Create(StringMatcher::Type::kPrefix, "allow-prefix-",
+      StringMatcher::Create(StringMatcher::Type::kPrefix, kAllowPrefix,
                             false)
           .value(),
   };
@@ -192,19 +212,21 @@ TEST_F(CreateExtAuthzRequestTest, HeaderFilteringAllowedAndDisallowed) {
   const auto& http = request.attributes().request().http();
   ASSERT_TRUE(http.has_header_map());
   EXPECT_THAT(http.header_map().headers(),
-              ::testing::ElementsAre(IsHeaderValue("allow-me", "1"),
-                                     IsHeaderValue("allow-prefix-foo", "4")));
+              ::testing::ElementsAre(IsHeaderValue(kAllowMe, kVal1),
+                                     IsHeaderValue(kAllowPrefixFoo, kVal4)));
 }
 
 TEST_F(CreateExtAuthzRequestTest, HeaderFilteringDisallowedTakesPrecedence) {
+  grpc_metadata_batch batch;
+  batch.Append(kKey1, Slice::FromStaticString(kVal1),
+               [](absl::string_view, const Slice&) {});
   ExtAuthzRequest params;
   params.is_client_call = true;
   params.path = kPath;
-  params.headers = {
-      {std::string(kKey1), std::string(kVal1)},
-  };
+  params.metadata = &batch;
   params.allowed_headers = {
-      StringMatcher::Create(StringMatcher::Type::kPrefix, "key", false).value(),
+      StringMatcher::Create(StringMatcher::Type::kPrefix, kKeyPrefix, false)
+          .value(),
   };
   params.disallowed_headers = {
       StringMatcher::Create(StringMatcher::Type::kExact, kKey1, false).value(),
@@ -220,13 +242,15 @@ TEST_F(CreateExtAuthzRequestTest, HeaderFilteringDisallowedTakesPrecedence) {
 }
 
 TEST_F(CreateExtAuthzRequestTest, HeaderFilteringOnlyAllowed) {
+  grpc_metadata_batch batch;
+  batch.Append(kKey1, Slice::FromStaticString(kVal1),
+               [](absl::string_view, const Slice&) {});
+  batch.Append(kKey2, Slice::FromStaticString(kVal2),
+               [](absl::string_view, const Slice&) {});
   ExtAuthzRequest params;
   params.is_client_call = true;
   params.path = kPath;
-  params.headers = {
-      {std::string(kKey1), std::string(kVal1)},
-      {std::string(kKey2), std::string(kVal2)},
-  };
+  params.metadata = &batch;
   params.allowed_headers = {
       StringMatcher::Create(StringMatcher::Type::kExact, kKey1, false).value(),
   };
@@ -242,13 +266,15 @@ TEST_F(CreateExtAuthzRequestTest, HeaderFilteringOnlyAllowed) {
 }
 
 TEST_F(CreateExtAuthzRequestTest, HeaderFilteringOnlyDisallowed) {
+  grpc_metadata_batch batch;
+  batch.Append(kKey1, Slice::FromStaticString(kVal1),
+               [](absl::string_view, const Slice&) {});
+  batch.Append(kKey2, Slice::FromStaticString(kVal2),
+               [](absl::string_view, const Slice&) {});
   ExtAuthzRequest params;
   params.is_client_call = true;
   params.path = kPath;
-  params.headers = {
-      {std::string(kKey1), std::string(kVal1)},
-      {std::string(kKey2), std::string(kVal2)},
-  };
+  params.metadata = &batch;
   params.disallowed_headers = {
       StringMatcher::Create(StringMatcher::Type::kExact, kKey1, false).value(),
   };
@@ -264,13 +290,15 @@ TEST_F(CreateExtAuthzRequestTest, HeaderFilteringOnlyDisallowed) {
 }
 
 TEST_F(CreateExtAuthzRequestTest, HeaderFilteringDefaultForwardsAll) {
+  grpc_metadata_batch batch;
+  batch.Append(kKey1, Slice::FromStaticString(kVal1),
+               [](absl::string_view, const Slice&) {});
+  batch.Append(kKey2, Slice::FromStaticString(kVal2),
+               [](absl::string_view, const Slice&) {});
   ExtAuthzRequest params;
   params.is_client_call = true;
   params.path = kPath;
-  params.headers = {
-      {std::string(kKey1), std::string(kVal1)},
-      {std::string(kKey2), std::string(kVal2)},
-  };
+  params.metadata = &batch;
   std::string serialized = CreateExtAuthzRequest(params).value();
   auto request = ParseRequest(serialized);
   ASSERT_TRUE(request.has_attributes());
@@ -281,6 +309,32 @@ TEST_F(CreateExtAuthzRequestTest, HeaderFilteringDefaultForwardsAll) {
   EXPECT_THAT(http.header_map().headers(),
               ::testing::ElementsAre(IsHeaderValue(kKey1, kVal1),
                                      IsHeaderValue(kKey2, kVal2)));
+}
+
+TEST_F(CreateExtAuthzRequestTest, MetadataBatchPathAndHeaders) {
+  grpc_metadata_batch batch;
+  batch.Set(HttpPathMetadata(), Slice::FromStaticString(kPath));
+  batch.Append(kKey1, Slice::FromStaticString(kVal1),
+               [](absl::string_view, const Slice&) {});
+  batch.Append(kKey2, Slice::FromStaticString(kVal2),
+               [](absl::string_view, const Slice&) {});
+  ExtAuthzRequest params;
+  params.is_client_call = true;
+  params.path = kPath;
+  params.metadata = &batch;
+  std::string serialized = CreateExtAuthzRequest(params).value();
+  auto request = ParseRequest(serialized);
+  ASSERT_TRUE(request.has_attributes());
+  ASSERT_TRUE(request.attributes().has_request());
+  ASSERT_TRUE(request.attributes().request().has_http());
+  const auto& http = request.attributes().request().http();
+  EXPECT_THAT(http.path(), ::testing::StrEq(kPath));
+  ASSERT_TRUE(http.has_header_map());
+  EXPECT_THAT(http.header_map().headers(),
+              ::testing::UnorderedElementsAre(
+                  IsHeaderValue(kPathHeader, kPath),
+                  IsHeaderValue(kKey1, kVal1),
+                  IsHeaderValue(kKey2, kVal2)));
 }
 
 //

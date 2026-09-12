@@ -71,8 +71,13 @@ class UpbHeaderMapEncoder {
         allowed_headers_(allowed_headers),
         disallowed_headers_(disallowed_headers) {}
 
-  void Encode(absl::string_view key, absl::string_view value) {
-    Append(key, value);
+  void Encode(const Slice& key, const Slice& value) {
+    Append(key.as_string_view(), value.as_string_view());
+  }
+
+  template <typename Which>
+  void Encode(Which, const typename Which::ValueType& value) {
+    Append(Which::key(), Which::Encode(value).as_string_view());
   }
 
  private:
@@ -235,10 +240,10 @@ envoy_service_auth_v3_AttributeContext_Request* CreateRequest(
       http_request, CopyStdStringToUpbString("HTTP/2", arena));
   // header_map
   auto* header_map = envoy_config_core_v3_HeaderMap_new(arena);
-  UpbHeaderMapEncoder encoder(header_map, arena, request.allowed_headers,
-                              request.disallowed_headers);
-  for (const auto& [key, value] : request.headers) {
-    encoder.Encode(key, value);
+  if (request.metadata != nullptr) {
+    UpbHeaderMapEncoder encoder(header_map, arena, request.allowed_headers,
+                                request.disallowed_headers);
+    request.metadata->Encode(&encoder);
   }
   envoy_service_auth_v3_AttributeContext_HttpRequest_set_header_map(
       http_request, header_map);

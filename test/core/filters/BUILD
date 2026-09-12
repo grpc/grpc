@@ -443,6 +443,8 @@ grpc_cc_test(
         "//:grpc++",
         "//src/core:ext_authz_messages",
         "//src/core:grpc_matchers",
+        "//src/core:metadata_batch",
+        "//src/core:slice",
         "//src/core:time",
         "//src/core:upb_utils",
         "//test/core/test_util:grpc_test_util",

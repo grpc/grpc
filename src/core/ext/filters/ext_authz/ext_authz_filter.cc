@@ -131,24 +131,6 @@ enum class CheckResult {
   kDeny,
 };
 
-bool IsHeaderAllowed(const ExtAuthzFilter::Config& config,
-                     absl::string_view key) {
-  for (const auto& disallow : config.disallowed_headers) {
-    if (disallow.Match(key)) {
-      return false;
-    }
-  }
-  if (config.allowed_headers.empty()) {
-    return true;
-  }
-  for (const auto& allow : config.allowed_headers) {
-    if (allow.Match(key)) {
-      return true;
-    }
-  }
-  return false;
-}
-
 CheckResult CheckRequestAllowed(const ExtAuthzFilter::Config& config) {
   if (!config.filter_enabled.has_value()) {
     return CheckResult::kSendRequestToExtAuthzService;
@@ -234,24 +216,30 @@ ServerMetadataHandle ExtAuthzFilter::Call::OnClientInitialMetadata(
     case CheckResult::kPassThrough:
       return nullptr;
   }
-  std::vector<std::pair<std::string, std::string>> metadata_list;
-  md.Log([&](absl::string_view key, absl::string_view value) {
-    if (IsHeaderAllowed(config, key)) {
-      metadata_list.emplace_back(std::string(key), std::string(value));
-    }
-  });
   std::string path_str;
   if (auto* path = md.get_pointer(HttpPathMetadata())) {
     path_str = std::string(path->as_string_view());
   }
   ExtAuthzRequest params;
-  params.headers = std::move(metadata_list);
   params.path = std::move(path_str);
-  params.is_client_call = true;
+  params.metadata = &md;
+  params.is_client_call = filter->is_client_;
+  params.allowed_headers = config.allowed_headers;
+  params.disallowed_headers = config.disallowed_headers;
   params.include_peer_certificate = config.include_peer_certificate;
-  std::string payload = CreateExtAuthzRequest(params);
+  auto payload = CreateExtAuthzRequest(params);
+  if (!payload.ok()) {
+    if (!config.failure_mode_allow) {
+      return MalformedRequest(payload.status().message(),
+                              config.status_on_error);
+    } else if (config.failure_mode_allow_header_add) {
+      md.Set(XEnvoyAuthFailureModeAllowedMetadata(),
+             Slice::FromStaticString("true"));
+    }
+    return nullptr;
+  }
   auto client = MakeRefCounted<ExtAuthzClient>(filter->channel()->transport());
-  auto result = client->SendMessage(std::move(payload));
+  auto result = client->SendMessage(std::move(*payload));
   if (!result.ok()) {
     if (!config.failure_mode_allow) {
       return MalformedRequest(result.status().message(),
@@ -391,7 +379,7 @@ const grpc_channel_filter ExtAuthzFilter::kFilterVtable =
     MakePromiseBasedFilter<ExtAuthzFilter, FilterEndpoint::kClient, 0>();
 
 absl::StatusOr<std::unique_ptr<ExtAuthzFilter>> ExtAuthzFilter::Create(
-    const ChannelArgs& /*args*/, ChannelFilter::Args filter_args) {
+    const ChannelArgs& args, ChannelFilter::Args filter_args) {
   // Get filter config.
   if (filter_args.config() == nullptr) {
     return absl::InternalError("ext_authz: filter config not set");
@@ -402,10 +390,14 @@ absl::StatusOr<std::unique_ptr<ExtAuthzFilter>> ExtAuthzFilter::Create(
                      filter_args.config()->type().name()));
   }
   auto config = filter_args.config().TakeAsSubclass<const Config>();
-  return std::unique_ptr<ExtAuthzFilter>(new ExtAuthzFilter(std::move(config)));
+  return std::unique_ptr<ExtAuthzFilter>(
+      new ExtAuthzFilter(args, std::move(config)));
 }
 
-ExtAuthzFilter::ExtAuthzFilter(RefCountedPtr<const Config> filter_config)
-    : config_(std::move(filter_config)) {}
+ExtAuthzFilter::ExtAuthzFilter(const ChannelArgs& args,
+                               RefCountedPtr<const Config> filter_config)
+    : config_(std::move(filter_config)),
+      is_client_(
+          !args.GetBool(GRPC_ARG_IS_SERVER_FILTER_STACK).value_or(false)) {}
 
 }  // namespace grpc_core
