@@ -22,7 +22,6 @@
 #include <algorithm>
 #include <array>
 #include <chrono>
-#include <map>
 #include <memory>
 #include <optional>
 #include <string>
@@ -60,57 +59,6 @@ constexpr absl::string_view kEjectionsEnforced =
     "grpc.lb.outlier_detection.ejections_enforced";
 constexpr absl::string_view kEjectionsUnenforced =
     "grpc.lb.outlier_detection.ejections_unenforced";
-
-// MetricsSink that accumulates counter values keyed by (name, labels) so
-// tests can assert on specific label combinations.
-class TestMetricsSink final : public MetricsSink {
- public:
-  using Labels = std::map<std::string, std::string>;
-
-  void Counter(InstrumentLabelList label_keys,
-               absl::Span<const std::string> label, absl::string_view name,
-               uint64_t value) override {
-    EXPECT_EQ(label_keys.size(), label.size());
-    Labels labels;
-    for (size_t i = 0; i < label_keys.size(); ++i) {
-      labels[std::string(label_keys[i].label())] = label[i];
-    }
-    data_[std::string(name)][labels] += value;
-  }
-  void UpDownCounter(InstrumentLabelList, absl::Span<const std::string>,
-                     absl::string_view, uint64_t) override {}
-  void Int64Histogram(InstrumentLabelList, absl::Span<const std::string>,
-                      absl::string_view, Int64HistogramBuckets,
-                      absl::Span<const uint64_t>) override {}
-  void DoubleHistogram(InstrumentLabelList, absl::Span<const std::string>,
-                       absl::string_view, DoubleHistogramBuckets,
-                       absl::Span<const uint64_t>) override {}
-  void DoubleGauge(InstrumentLabelList, absl::Span<const std::string>,
-                   absl::string_view, double) override {}
-  void IntGauge(InstrumentLabelList, absl::Span<const std::string>,
-                absl::string_view, int64_t) override {}
-  void UintGauge(InstrumentLabelList, absl::Span<const std::string>,
-                 absl::string_view, uint64_t) override {}
-
-  uint64_t GetCount(const std::string& name, const Labels& labels) const {
-    auto it = data_.find(name);
-    if (it == data_.end()) return 0;
-    auto val_it = it->second.find(labels);
-    if (val_it == it->second.end()) return 0;
-    return val_it->second;
-  }
-
-  uint64_t GetTotalCount(const std::string& name) const {
-    auto it = data_.find(name);
-    if (it == data_.end()) return 0;
-    uint64_t sum = 0;
-    for (const auto& kv : it->second) sum += kv.second;
-    return sum;
-  }
-
- private:
-  std::map<std::string, std::map<Labels, uint64_t>> data_;
-};
 
 class OutlierDetectionTest : public LoadBalancingPolicyTest {
  protected:
@@ -215,51 +163,34 @@ class OutlierDetectionTest : public LoadBalancingPolicyTest {
                 .Set(GRPC_ARG_BACKEND_SERVICE, kBackendServiceName)) {}
 
   void SetUp() override {
-    // Reset per-test global instrument state so each test starts with fresh
-    // storages, and install a FakeStatsPlugin *before* creating the LB
-    // policy: the policy captures the group's CollectionScope in its
-    // constructor.
     TestOnlyResetInstruments();
-    auto stats_plugin = std::make_shared<FakeStatsPlugin>(
+    stats_plugin_ = std::make_shared<FakeStatsPlugin>(
         /*channel_filter=*/nullptr, /*use_disabled_by_default_metrics=*/true);
-    stats_plugin_group_.AddStatsPlugin(std::move(stats_plugin), nullptr);
+    stats_plugin_group_.AddStatsPlugin(stats_plugin_, nullptr);
     stats_plugin_group_.Finish();
     LoadBalancingPolicyTest::SetUp();
     SetExpectedTimerDuration(std::chrono::seconds(10));
   }
 
-  // Runs a MetricsQuery for one of our two counter instruments and returns
-  // the accumulated value for the given label combination.
   uint64_t GetEnforcedEjectionCount(absl::string_view detection_method) {
-    TestMetricsSink sink;
-    MetricsQuery()
-        .OnlyMetrics({std::string(kEjectionsEnforced)})
-        .Run(stats_plugin_group_.GetCollectionScope(), sink);
-    return sink.GetCount(
-        std::string(kEjectionsEnforced),
-        {{"grpc.target", target_},
-         {"grpc.lb.backend_service", std::string(kBackendServiceName)},
-         {"grpc.lb.locality", std::string(kLocalityName)},
-         {"grpc.lb.outlier_detection.detection_method",
-          std::string(detection_method)}});
+    const absl::string_view kLabelValues[] = {
+        target_, kBackendServiceName, kLocalityName, detection_method};
+    return stats_plugin_
+        ->GetUInt64MetricValueByName(kEjectionsEnforced, kLabelValues)
+        .value_or(0);
   }
 
   uint64_t GetUnenforcedEjectionCount(absl::string_view detection_method,
                                       absl::string_view unenforced_reason) {
-    TestMetricsSink sink;
-    MetricsQuery()
-        .OnlyMetrics({std::string(kEjectionsUnenforced)})
-        .Run(stats_plugin_group_.GetCollectionScope(), sink);
-    return sink.GetCount(
-        std::string(kEjectionsUnenforced),
-        {{"grpc.target", target_},
-         {"grpc.lb.backend_service", std::string(kBackendServiceName)},
-         {"grpc.lb.locality", std::string(kLocalityName)},
-         {"grpc.lb.outlier_detection.detection_method",
-          std::string(detection_method)},
-         {"grpc.lb.outlier_detection.unenforced_reason",
-          std::string(unenforced_reason)}});
+    const absl::string_view kLabelValues[] = {target_, kBackendServiceName,
+                                              kLocalityName, detection_method,
+                                              unenforced_reason};
+    return stats_plugin_
+        ->GetUInt64MetricValueByName(kEjectionsUnenforced, kLabelValues)
+        .value_or(0);
   }
+
+  std::shared_ptr<FakeStatsPlugin> stats_plugin_;
 
   std::optional<std::string> DoPickWithStatus(
       LoadBalancingPolicy::SubchannelPicker* picker,
@@ -594,11 +525,6 @@ TEST_F(OutlierDetectionTest, DoesNotWorkWithPickFirst) {
 
 //
 // Metric tests
-//
-// One scenario per test, so a failure points directly at the broken case.
-//
-// Metrics are queried through MetricsQuery/TestMetricsSink; label keys/values
-// are constructed inside GetEnforcedEjectionCount/GetUnenforcedEjectionCount.
 //
 
 TEST_F(OutlierDetectionTest, SuccessRateEjectionEnforced) {
