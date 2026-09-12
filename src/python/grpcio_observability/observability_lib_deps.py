@@ -88,7 +88,6 @@ CC_FILES=[
     'grpc_root/src/core/util/posix/tmpfile.cc',
     'grpc_root/src/core/util/postmortem_emit.cc',
     'grpc_root/src/core/util/ref_counted_string.cc',
-    'grpc_root/src/core/util/shared_bit_gen.cc',
     'grpc_root/src/core/util/status_helper.cc',
     'grpc_root/src/core/util/strerror.cc',
     'grpc_root/src/core/util/string.cc',

@@ -3110,7 +3110,6 @@ add_library(grpc
   src/core/util/postmortem_emit.cc
   src/core/util/random_early_detection.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/time_averaged_stats.cc
@@ -3894,7 +3893,6 @@ add_library(grpc_unsecure
   src/core/util/postmortem_emit.cc
   src/core/util/random_early_detection.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/time_averaged_stats.cc
@@ -6347,7 +6345,6 @@ add_library(grpc_authorization_provider
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/time_averaged_stats.cc
@@ -6899,7 +6896,6 @@ add_executable(activity_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -7736,7 +7732,6 @@ add_executable(all_ok_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -9546,7 +9541,6 @@ add_executable(blackboard_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -9996,7 +9990,6 @@ add_executable(call_filters_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -10158,7 +10151,6 @@ add_executable(call_state_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -10473,7 +10465,6 @@ add_executable(call_utils_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/time_averaged_stats.cc
@@ -10653,7 +10644,6 @@ add_executable(cancel_callback_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -12356,7 +12346,6 @@ add_executable(chunked_vector_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -13786,7 +13775,6 @@ add_executable(context_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -17386,7 +17374,6 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -18449,7 +18436,6 @@ add_executable(filter_fusion_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/time_averaged_stats.cc
@@ -18712,7 +18698,6 @@ add_executable(flow_control_manager_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -18844,7 +18829,6 @@ add_executable(flow_control_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -18970,7 +18954,6 @@ add_executable(for_each_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -19232,7 +19215,6 @@ add_executable(frame_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -22537,7 +22519,6 @@ add_executable(if_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -22853,7 +22834,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/util/per_cpu.cc
     src/core/util/postmortem_emit.cc
     src/core/util/ref_counted_string.cc
-    src/core/util/shared_bit_gen.cc
     src/core/util/status_helper.cc
     src/core/util/time.cc
     src/core/util/time_averaged_stats.cc
@@ -23280,7 +23260,6 @@ add_executable(inter_activity_pipe_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -23447,7 +23426,6 @@ add_executable(interceptor_list_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -23809,7 +23787,6 @@ add_executable(join_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -24178,7 +24155,6 @@ add_executable(latch_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -24364,7 +24340,6 @@ add_executable(latent_see_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -24899,7 +24874,6 @@ add_executable(lock_based_mpsc_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -25059,7 +25033,6 @@ add_executable(loop_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -25171,7 +25144,6 @@ add_executable(lru_cache_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -25296,7 +25268,6 @@ add_executable(map_pipe_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -25411,7 +25382,6 @@ add_executable(match_promise_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -26573,7 +26543,6 @@ add_executable(observable_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -27684,7 +27653,6 @@ add_executable(periodic_update_test
   src/core/util/glob.cc
   src/core/util/json/json_writer.cc
   src/core/util/latent_see.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   test/core/resource_quota/periodic_update_test.cc
@@ -28051,7 +28019,6 @@ add_executable(poll_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -29179,7 +29146,6 @@ add_executable(prioritized_race_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -29386,7 +29352,6 @@ add_executable(promise_factory_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -29500,7 +29465,6 @@ add_executable(promise_map_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -29616,7 +29580,6 @@ add_executable(promise_mutex_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -29730,7 +29693,6 @@ add_executable(promise_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -30353,7 +30315,6 @@ add_executable(query_extensions_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -30466,7 +30427,6 @@ add_executable(race_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -31078,7 +31038,6 @@ add_executable(request_buffer_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -31901,7 +31860,6 @@ add_executable(seq_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -33068,7 +33026,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(shared_bit_gen_test
-  src/core/util/shared_bit_gen.cc
   test/core/util/shared_bit_gen_test.cc
 )
 target_compile_features(shared_bit_gen_test PUBLIC cxx_std_17)
@@ -34012,7 +33969,6 @@ add_executable(static_stride_scheduler_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -34166,7 +34122,6 @@ add_executable(status_flag_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -34986,7 +34941,6 @@ add_executable(switch_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -35569,7 +35523,6 @@ add_executable(test_core_event_engine_posix_timer_heap_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/time_averaged_stats.cc
@@ -35687,7 +35640,6 @@ add_executable(test_core_event_engine_slice_buffer_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -36508,7 +36460,6 @@ add_executable(thread_quota_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -37567,7 +37518,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/util/per_cpu.cc
     src/core/util/postmortem_emit.cc
     src/core/util/ref_counted_string.cc
-    src/core/util/shared_bit_gen.cc
     src/core/util/status_helper.cc
     src/core/util/time.cc
     src/core/util/time_averaged_stats.cc
@@ -37896,7 +37846,6 @@ add_executable(try_join_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -38064,7 +38013,6 @@ add_executable(try_seq_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -38177,7 +38125,6 @@ add_executable(unique_ptr_with_bitset_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -38694,7 +38641,6 @@ add_executable(v3_bridge_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/time_averaged_stats.cc
@@ -38902,7 +38848,6 @@ add_executable(wait_for_callback_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
@@ -39464,7 +39409,6 @@ add_executable(write_size_policy_test
   src/core/util/per_cpu.cc
   src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/uri.cc
