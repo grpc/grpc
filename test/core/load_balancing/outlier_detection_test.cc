@@ -561,8 +561,8 @@ TEST_F(OutlierDetectionTest, SuccessRateEjectionEnforced) {
   // success_rate enforced ejection should have been reported once, and no
   // unenforced ejections.
   EXPECT_EQ(GetEnforcedEjectionCount("success_rate"), 1);
-  EXPECT_EQ(GetUnenforcedEjectionCount("success_rate", "enforcement_percentage"),
-            0);
+  EXPECT_EQ(
+      GetUnenforcedEjectionCount("success_rate", "enforcement_percentage"), 0);
   EXPECT_EQ(GetUnenforcedEjectionCount("success_rate", "max_ejection_overflow"),
             0);
   // Drain the picker update from the ejection.
@@ -601,8 +601,8 @@ TEST_F(OutlierDetectionTest,
   DoPickWithSuccessfulCall(picker.get());
   IncrementTimeBy(Duration::Seconds(10));
   // Outlier is detected but the ejection is not enforced.
-  EXPECT_EQ(GetUnenforcedEjectionCount("success_rate", "enforcement_percentage"),
-            1);
+  EXPECT_EQ(
+      GetUnenforcedEjectionCount("success_rate", "enforcement_percentage"), 1);
   EXPECT_EQ(GetEnforcedEjectionCount("success_rate"), 0);
 }
 
@@ -716,9 +716,9 @@ TEST_F(OutlierDetectionTest,
   IncrementTimeBy(Duration::Seconds(10));
   LOG(INFO) << "### ejection complete";
   EXPECT_EQ(GetEnforcedEjectionCount("failure_percentage"), 1);
-  EXPECT_EQ(GetUnenforcedEjectionCount("failure_percentage",
-                                       "max_ejection_overflow"),
-            2);
+  EXPECT_EQ(
+      GetUnenforcedEjectionCount("failure_percentage", "max_ejection_overflow"),
+      2);
   // Drain the ejection picker update (we don't know which address was
   // ejected) and then advance time to un-eject and drain that update too.
   WaitForStateUpdate([](FakeHelper::StateUpdate) { return false; });

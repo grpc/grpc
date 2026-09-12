@@ -29,9 +29,9 @@ class OutlierDetectionMetricsDomainEnforced final
  public:
   using Backend = LowContentionBackend;
   static constexpr absl::string_view kName = "outlier_detection";
-  GRPC_INSTRUMENT_DOMAIN_LABELS(
-      "grpc.target", "grpc.lb.backend_service", "grpc.lb.locality",
-      "grpc.lb.outlier_detection.detection_method");
+  GRPC_INSTRUMENT_DOMAIN_LABELS("grpc.target", "grpc.lb.backend_service",
+                                "grpc.lb.locality",
+                                "grpc.lb.outlier_detection.detection_method");
 
   static CounterHandle kEjectionsEnforced;
 };
@@ -44,10 +44,10 @@ class OutlierDetectionMetricsDomainUnenforced final
  public:
   using Backend = LowContentionBackend;
   static constexpr absl::string_view kName = "outlier_detection";
-  GRPC_INSTRUMENT_DOMAIN_LABELS(
-      "grpc.target", "grpc.lb.backend_service", "grpc.lb.locality",
-      "grpc.lb.outlier_detection.detection_method",
-      "grpc.lb.outlier_detection.unenforced_reason");
+  GRPC_INSTRUMENT_DOMAIN_LABELS("grpc.target", "grpc.lb.backend_service",
+                                "grpc.lb.locality",
+                                "grpc.lb.outlier_detection.detection_method",
+                                "grpc.lb.outlier_detection.unenforced_reason");
 
   static CounterHandle kEjectionsUnenforced;
 };

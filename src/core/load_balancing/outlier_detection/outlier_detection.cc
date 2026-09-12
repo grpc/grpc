@@ -619,13 +619,11 @@ OutlierDetectionLb::OutlierDetectionLb(Args args)
           kDetectionMethodFailurePercentage);
   unenforced_success_rate_enforcement_percentage_storage_ =
       OutlierDetectionMetricsDomainUnenforced::GetStorage(
-          scope, target, backend_service, locality,
-          kDetectionMethodSuccessRate,
+          scope, target, backend_service, locality, kDetectionMethodSuccessRate,
           kUnenforcedReasonEnforcementPercentage);
   unenforced_success_rate_max_ejection_overflow_storage_ =
       OutlierDetectionMetricsDomainUnenforced::GetStorage(
-          scope, target, backend_service, locality,
-          kDetectionMethodSuccessRate,
+          scope, target, backend_service, locality, kDetectionMethodSuccessRate,
           kUnenforcedReasonMaxEjectionOverflow);
   unenforced_failure_percentage_enforcement_percentage_storage_ =
       OutlierDetectionMetricsDomainUnenforced::GetStorage(

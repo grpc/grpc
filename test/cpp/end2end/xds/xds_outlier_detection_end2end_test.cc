@@ -1234,8 +1234,7 @@ TEST_P(OutlierDetectionMetricsTest, MetricsHaveBackendServiceLabel) {
   // Note: querying goes through the plugin's own collection scope which
   // sees storages created for any labels defined by its instruments.
   EXPECT_THAT(stats_plugin->GetUInt64MetricValueByName(
-                  "grpc.lb.outlier_detection.ejections_enforced",
-                  kLabelValues),
+                  "grpc.lb.outlier_detection.ejections_enforced", kLabelValues),
               ::testing::Optional(::testing::Ge(1)));
 }
 
