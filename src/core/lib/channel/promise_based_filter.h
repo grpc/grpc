@@ -1287,24 +1287,22 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
       InterActivityLatch<ServerMetadataHandle> server_trailing_metadata;
     };
     auto* pipe_owner = GetContext<Arena>()->ManagedNew<PipeOwner>();
-    if (IsV2NonOwningWakerImplementationEnabled()) {
-      // We need to start polling the initiator for server trailing
-      // metadata immediately, since the v3 interceptor may generate a
-      // failure before any of the other promises resolve.
-      //
-      // Spawn a promise on the initiator's activity to pull server trailing
-      // metadata and pass it to the v2 activity via an inter-activity latch.
-      initiator.SpawnInfallible(
-          "pull_server_trailing_metadata",
-          [initiator = initiator, pipe_owner]() mutable {
-            return Map(
-                initiator.PullServerTrailingMetadata(),
-                [pipe_owner](ServerMetadataHandle metadata) {
-                  pipe_owner->server_trailing_metadata.Set(std::move(metadata));
-                  return Empty{};
-                });
-          });
-    }
+    // We need to start polling the initiator for server trailing
+    // metadata immediately, since the v3 interceptor may generate a
+    // failure before any of the other promises resolve.
+    //
+    // Spawn a promise on the initiator's activity to pull server trailing
+    // metadata and pass it to the v2 activity via an inter-activity latch.
+    initiator.SpawnInfallible(
+        "pull_server_trailing_metadata",
+        [initiator = initiator, pipe_owner]() mutable {
+          return Map(
+              initiator.PullServerTrailingMetadata(),
+              [pipe_owner](ServerMetadataHandle metadata) {
+                pipe_owner->server_trailing_metadata.Set(std::move(metadata));
+                return Empty{};
+              });
+        });
     // Now return a promise that does all the things.
     // The returned promise is wrapped in OnCancel so that, if the v2 stack
     // destroys it before it completes (e.g. the forced-cancellation path in
@@ -1315,14 +1313,9 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
         Race(
             // Get server trailing metadata from the v3 promise via the
             // inter-activity latch.
-            If(
-                IsV2NonOwningWakerImplementationEnabled(),
-                [pipe_owner]() {
-                  return pipe_owner->server_trailing_metadata.Wait();
-                },
-                [initiator = initiator]() mutable {
-                  return initiator.PullServerTrailingMetadata();
-                }),
+            [pipe_owner]() {
+              return pipe_owner->server_trailing_metadata.Wait();
+            },
             // This promise does the rest of the things, but it will always
             // return pending, because the promise can't actually finish
             // until the initiator returns trailing metadata above.
@@ -1524,16 +1517,8 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
           // The v2 promise was destroyed before completing: propagate the
           // cancellation into the v3 call pair so its CallSpine is torn down
           // and the v3 interceptor is notified.
-          if (IsV2NonOwningWakerImplementationEnabled()) {
-            initiator.SpawnCancel(
-                absl::CancelledError("call cancelled by v2 filter stack"));
-          } else {
-            initiator.SpawnInfallible("v2-force-cancel", [initiator]() mutable {
-              initiator.Cancel();
-              return Map(initiator.PullServerTrailingMetadata(),
-                         [](ServerMetadataHandle) { return Empty{}; });
-            });
-          }
+          initiator.SpawnCancel(
+              absl::CancelledError("call cancelled by v2 filter stack"));
         });
   }
 

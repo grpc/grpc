@@ -185,16 +185,13 @@ BaseCallData::~BaseCallData() {
 void BaseCallData::Orphan() { abort(); }
 
 Waker BaseCallData::MakeNonOwningWaker() {
-  if (IsV2NonOwningWakerImplementationEnabled()) {
-    if (handle_ == nullptr) {
-      handle_ = MakeOrphanable<WeakWakerHandle>(this);
-    }
-    handle_->Ref();
-    // The wakeup mask is unused by BaseCallData and WeakWakerHandle, so 0 is
-    // passed as a placeholder.
-    return Waker(handle_.get(), 0);
+  if (handle_ == nullptr) {
+    handle_ = MakeOrphanable<WeakWakerHandle>(this);
   }
-  return MakeOwningWaker();
+  handle_->Ref();
+  // The wakeup mask is unused by BaseCallData and WeakWakerHandle, so 0 is
+  // passed as a placeholder.
+  return Waker(handle_.get(), 0);
 }
 
 Waker BaseCallData::MakeOwningWaker() {
@@ -213,11 +210,7 @@ void BaseCallData::Wakeup(WakeupMask) {
 }
 
 void BaseCallData::WakeupAsync(WakeupMask wakeup_mask) {
-  if (IsV2NonOwningWakerImplementationEnabled()) {
-    Wakeup(wakeup_mask);
-  } else {
-    Crash("not implemented");
-  }
+  Wakeup(wakeup_mask);
 }
 
 void BaseCallData::Drop(WakeupMask) {
@@ -573,10 +566,8 @@ void BaseCallData::SendMessage::Done(const ServerMetadata& metadata,
       // while a message is in-flight. This prevents deadlocks where the
       // transport never receives the batch, leaving the RPC hanging for
       // metadata.
-      if (IsV2NonOwningWakerImplementationEnabled()) {
-        GRPC_DCHECK(batch_.is_captured());
-        batch_.CancelWith(StatusFromMetadata(metadata), flusher);
-      }
+      GRPC_DCHECK(batch_.is_captured());
+      batch_.CancelWith(StatusFromMetadata(metadata), flusher);
       state_ = State::kCancelledButNotYetPolled;
       if (base_->is_current()) base_->ForceImmediateRepoll();
       break;
@@ -1342,8 +1333,7 @@ class ClientCallData::PollContext {
                       std::exchange(
                           self_->recv_initial_metadata_->original_on_ready,
                           nullptr),
-                      IsV2NonOwningWakerImplementationEnabled() &&
-                              !StatusFromMetadata(*md).ok()
+                      !StatusFromMetadata(*md).ok()
                           ? StatusFromMetadata(*md)
                           : absl::CancelledError(),
                       "wake_inside_combiner:recv_initial_metadata_ready");

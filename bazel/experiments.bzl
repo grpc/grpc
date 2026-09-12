@@ -76,7 +76,6 @@ EXPERIMENT_ENABLES = {
     "tsi_frame_protector_without_locks": "tsi_frame_protector_without_locks",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
     "use_call_event_engine_in_completion_queue": "use_call_event_engine_in_completion_queue",
-    "v2_non_owning_waker_implementation": "v2_non_owning_waker_implementation",
     "verbose_channelz_connection_logging": "verbose_channelz_connection_logging",
     "wildcard_ip_expansion_restriction": "wildcard_ip_expansion_restriction",
 }
@@ -202,7 +201,6 @@ EXPERIMENTS = {
                 "event_engine_for_all_other_endpoints",
                 "event_engine_fork",
                 "event_engine_listener",
-                "v2_non_owning_waker_implementation",
             ],
             "event_engine_client_test": [
                 "event_engine_client",

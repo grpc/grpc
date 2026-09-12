@@ -237,6 +237,5 @@ TEST_F(V3BridgeTest, ForceDestroyPromiseCancelsV3Call) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_core::ForceEnableExperiment("v2_non_owning_waker_implementation", true);
   return RUN_ALL_TESTS();
 }
