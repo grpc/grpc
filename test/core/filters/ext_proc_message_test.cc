@@ -119,9 +119,8 @@ MATCHER_P3(IsImmediateResponse, status_matcher, details_matcher,
                                status_matcher),
               ::testing::Field(&ExtProcResponse::ImmediateResponse::details,
                                details_matcher),
-              ::testing::Field(
-                  &ExtProcResponse::ImmediateResponse::header_mutation,
-                  header_mutation_matcher))),
+              ::testing::Field(&ExtProcResponse::ImmediateResponse::mutation,
+                               header_mutation_matcher))),
       arg, result_listener);
 }
 
@@ -594,6 +593,22 @@ TEST_F(CreateExtProcRequestTest, RequestBodyEndOfStreamWithoutMessage) {
   EXPECT_TRUE(parsed.request_body().end_of_stream_without_message());
 }
 
+TEST_F(CreateExtProcRequestTest,
+       RequestBodyEndOfStreamWithoutMessageIgnoredIfEndOfStreamFalse) {
+  upb::Arena arena;
+  std::string serialized =
+      CreateExtProcClientBodyRequest(arena.ptr(), "", {},
+                                     /*observability_mode=*/false,
+                                     /*processing_mode=*/std::nullopt,
+                                     /*end_of_stream=*/false,
+                                     /*end_of_stream_without_message=*/true)
+          .value();
+  auto parsed = ParseRequest(serialized);
+  ASSERT_TRUE(parsed.has_request_body());
+  EXPECT_FALSE(parsed.request_body().end_of_stream());
+  EXPECT_FALSE(parsed.request_body().end_of_stream_without_message());
+}
+
 TEST_F(CreateExtProcRequestTest, RequestBodyObservability) {
   upb::Arena arena;
   std::string serialized =
@@ -723,7 +738,8 @@ class CreateExtProcAttributesProtoStructTest : public ::testing::Test {
 TEST_F(CreateExtProcAttributesProtoStructTest, AttributesEmptyRequested) {
   upb::Arena arena;
   grpc_metadata_batch batch;
-  auto* upb_struct = CreateExtProcAttributesProtoStruct(arena.ptr(), {}, batch);
+  auto* upb_struct =
+      CreateExtProcAttributesProtoStruct(arena.ptr(), {}, batch, "");
   EXPECT_EQ(upb_struct, nullptr);
 }
 
@@ -746,7 +762,7 @@ TEST_F(CreateExtProcAttributesProtoStructTest, AttributesAllRecognizedFields) {
       "request.useragent", "request.time",     "request.id",
       "request.protocol",  "request.query"};
   auto* upb_struct =
-      CreateExtProcAttributesProtoStruct(arena.ptr(), requested, batch);
+      CreateExtProcAttributesProtoStruct(arena.ptr(), requested, batch, "");
   ASSERT_NE(upb_struct, nullptr);
   auto proto = ConvertToProto(upb_struct, arena.ptr());
   EXPECT_EQ(proto.fields().at("request.path").string_value(), "/foo/bar");
@@ -772,8 +788,8 @@ TEST_F(CreateExtProcAttributesProtoStructTest,
   grpc_metadata_batch batch;
   // No HttpAuthorityMetadata, but has HostMetadata
   batch.Set(HostMetadata(), Slice::FromCopiedString("fallback.host.com"));
-  auto* upb_struct =
-      CreateExtProcAttributesProtoStruct(arena.ptr(), {"request.host"}, batch);
+  auto* upb_struct = CreateExtProcAttributesProtoStruct(
+      arena.ptr(), {"request.host"}, batch, "");
   ASSERT_NE(upb_struct, nullptr);
   auto proto = ConvertToProto(upb_struct, arena.ptr());
   EXPECT_EQ(proto.fields().at("request.host").string_value(),
@@ -785,7 +801,7 @@ TEST_F(CreateExtProcAttributesProtoStructTest, AttributesMethodFallbackToPost) {
   grpc_metadata_batch batch;
   // No HttpMethodMetadata
   auto* upb_struct = CreateExtProcAttributesProtoStruct(
-      arena.ptr(), {"request.method"}, batch);
+      arena.ptr(), {"request.method"}, batch, "");
   ASSERT_NE(upb_struct, nullptr);
   auto proto = ConvertToProto(upb_struct, arena.ptr());
   EXPECT_EQ(proto.fields().at("request.method").string_value(), "POST");
@@ -799,7 +815,7 @@ TEST_F(CreateExtProcAttributesProtoStructTest, AttributesRequestHeaders) {
   batch.Append("x-custom2", Slice::FromCopiedString(kVal2),
                [](absl::string_view, const Slice&) {});
   auto* upb_struct = CreateExtProcAttributesProtoStruct(
-      arena.ptr(), {"request.headers"}, batch);
+      arena.ptr(), {"request.headers"}, batch, "");
   ASSERT_NE(upb_struct, nullptr);
   auto proto = ConvertToProto(upb_struct, arena.ptr());
   ASSERT_NE(proto.fields().find("request.headers"), proto.fields().end());
@@ -1115,11 +1131,31 @@ TEST_F(ParseExtProcResponseTest,
       envoy::service::ext_proc::v3::CommonResponse::CONTINUE);
   auto* body_mutation = common_response->mutable_body_mutation();
   auto* streamed_response = body_mutation->mutable_streamed_response();
+  streamed_response->set_end_of_stream(true);
   streamed_response->set_end_of_stream_without_message(true);
   auto parsed = ParseResponse(response);
   EXPECT_EQ(parsed.status(),
             absl::InternalError("end_of_stream / end_of_stream_without_message "
                                 "is not supported for response_body"));
+}
+
+TEST_F(ParseExtProcResponseTest,
+       RequestBodyEndOfStreamWithoutMessageIgnoredIfEndOfStreamFalse) {
+  upb::Arena arena;
+  envoy::service::ext_proc::v3::ProcessingResponse response;
+  auto* body_response = response.mutable_request_body();
+  auto* common_response = body_response->mutable_response();
+  common_response->set_status(
+      envoy::service::ext_proc::v3::CommonResponse::CONTINUE);
+  auto* body_mutation = common_response->mutable_body_mutation();
+  auto* streamed_response = body_mutation->mutable_streamed_response();
+  streamed_response->set_body("test request body");
+  streamed_response->set_end_of_stream(false);
+  streamed_response->set_end_of_stream_without_message(true);
+  auto parsed = ParseResponse(response);
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_THAT(parsed->response,
+              IsRequestBody("test request body", false, false));
 }
 
 TEST_F(ParseExtProcResponseTest, ResponseBodyUnsupportedStatus) {

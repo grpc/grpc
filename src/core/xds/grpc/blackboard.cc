@@ -40,6 +40,7 @@ RefCountedPtr<Blackboard::Entry> Blackboard::GetOrSet(
     if (reffed_entry != nullptr) return reffed_entry;
   }
   auto constructed = construct();
+  if (constructed == nullptr) return nullptr;
   entry = constructed->WeakRef();
   constructed->blackboard_ = Ref();
   constructed->type_ = type;

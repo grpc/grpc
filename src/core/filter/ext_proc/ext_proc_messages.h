@@ -137,8 +137,9 @@ absl::StatusOr<std::string> CreateExtProcServerHeadersRequest(
 //  processing modes as per gRFC A93).
 //  - end_of_stream: If true, indicates that this body chunk is the last message
 //  on the stream.
-//  - end_of_stream_without_message: If true, indicates end of stream with an
-//  empty body chunk.
+//  - end_of_stream_without_message: If end_of_stream is true and this is true,
+//  indicates end of stream without a message (e.g. half-close). Ignored if
+//  end_of_stream is false.
 absl::StatusOr<std::string> CreateExtProcClientBodyRequest(
     upb_Arena* arena, absl::string_view body,
     ::google_protobuf_Struct* attributes, bool observability_mode,
@@ -210,7 +211,7 @@ absl::StatusOr<std::string> CreateExtProcServerTrailersRequest(
 //  arena, or nullptr if no requested attributes were matched or populated.
 ::google_protobuf_Struct* CreateExtProcAttributesProtoStruct(
     upb_Arena* arena, const std::vector<std::string>& requested_attributes,
-    const grpc_metadata_batch& metadata);
+    const grpc_metadata_batch& metadata, absl::string_view default_authority);
 
 // Represents the parsed response from an external processor, corresponding to
 // envoy.service.ext_proc.v3.ProcessingResponse in gRFC A93.
@@ -260,7 +261,7 @@ struct ExtProcResponse {
     // error message to return with.
     std::string details;
     // Headers to set in the response.
-    HeaderMutation header_mutation;
+    HeaderMutation mutation;
   };
 
   // The variant representing the actual response content.
