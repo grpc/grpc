@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # distutils: language=c++
+# cython: freethreading_compatible=True
 
 cimport cpython
 
