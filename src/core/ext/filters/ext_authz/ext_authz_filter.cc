@@ -168,7 +168,12 @@ absl::Status ExtAuthzFilter::Call::OnClientInitialMetadata(
   params.is_client_call = filter->is_client_;
   params.allowed_headers = config.allowed_headers;
   params.disallowed_headers = config.disallowed_headers;
-  params.include_peer_certificate = config.include_peer_certificate;
+  // TODO(rishesh): On the server side, set params.args to the call's
+  // EvaluateArgs (to populate AttributeContext.source and
+  // AttributeContext.destination) and, if config.include_peer_certificate is
+  // set, set params.peer_certificate to the value returned by
+  // GetUrlEncodedPemPeerCertificate() for the connection's auth context
+  // (computed at most once per connection).
   // Serialize the CheckRequest proto payload.
   auto payload = CreateExtAuthzRequest(params);
   if (!payload.ok()) {

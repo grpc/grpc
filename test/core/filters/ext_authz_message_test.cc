@@ -15,6 +15,8 @@
 //
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
 
 #include <optional>
@@ -26,14 +28,21 @@
 #include "envoy/service/auth/v3/external_auth.pb.h"
 #include "envoy/type/v3/http_status.pb.h"
 #include "google/rpc/status.pb.h"
+#include "src/core/call/evaluate_args.h"
+#include "src/core/call/metadata_batch.h"
+#include "src/core/credentials/transport/tls/tls_utils.h"
 #include "src/core/ext/filters/ext_authz/ext_authz_messages.h"
+#include "src/core/handshaker/endpoint_info/endpoint_info_handshaker.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/transport/auth_context.h"
 #include "src/core/util/matchers.h"
 #include "src/core/util/time.h"
 #include "test/core/test_util/test_config.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -71,6 +80,27 @@ constexpr absl::string_view kInvalidHeaderKeyErrorMessage =
     "Invalid header name to remove: invalid header key";
 constexpr absl::string_view kMethodPost = "POST";
 constexpr absl::string_view kProtocolHttp2 = "HTTP/2";
+constexpr char kUriSan[] = "spiffe://foo.com/bar/baz";
+constexpr char kDnsSan[] = "client.example.com";
+constexpr char kSubject[] = "CN=client,O=Example,C=US";
+constexpr char kLocalUriSan[] = "spiffe://foo.com/server";
+constexpr char kLocalDnsSan[] = "server.example.com";
+constexpr char kLocalSubject[] = "CN=server,O=Example,C=US";
+constexpr char kPeerAddressUri[] = "ipv4:192.168.1.100:54321";
+constexpr absl::string_view kPeerAddressHost = "192.168.1.100";
+constexpr int kPeerAddressPort = 54321;
+constexpr char kLocalAddressUri[] = "ipv4:10.0.0.1:443";
+constexpr absl::string_view kLocalAddressHost = "10.0.0.1";
+constexpr int kLocalAddressPort = 443;
+constexpr char kIpv6PeerAddressUri[] = "ipv6:[2001:db8::1]:54321";
+constexpr absl::string_view kIpv6PeerAddressHost = "2001:db8::1";
+constexpr int kIpv6PeerAddressPort = 54321;
+constexpr char kIpv6LocalAddressUri[] = "ipv6:[::1]:443";
+constexpr absl::string_view kIpv6LocalAddressHost = "::1";
+constexpr int kIpv6LocalAddressPort = 443;
+constexpr char kUnixAddressUri[] = "unix:/tmp/grpc-ext-authz-test.sock";
+constexpr absl::string_view kEncodedCert =
+    "-----BEGIN%20CERTIFICATE-----%0Aabc%3D%0A-----END%20CERTIFICATE-----%0A";
 
 //
 // CreateExtAuthzRequest() tests
@@ -114,6 +144,431 @@ TEST_F(CreateExtAuthzRequestTest, ClientRequestAttributes) {
   EXPECT_TRUE(attr.has_request());
   EXPECT_FALSE(attr.has_source());
   EXPECT_FALSE(attr.has_destination());
+}
+
+// Even on the server side, source and destination are omitted if no
+// connection attributes are available.
+TEST_F(CreateExtAuthzRequestTest, ServerRequestWithoutEvaluateArgs) {
+  ExtAuthzRequest params;
+  params.is_client_call = false;
+  params.path = kPath;
+  std::string serialized = CreateExtAuthzRequest(params).value();
+  auto request = ParseRequest(serialized);
+  ASSERT_TRUE(request.has_attributes());
+  const auto& attr = request.attributes();
+  EXPECT_TRUE(attr.has_request());
+  EXPECT_FALSE(attr.has_source());
+  EXPECT_FALSE(attr.has_destination());
+}
+
+TEST_F(CreateExtAuthzRequestTest, ServerRequestSourceAndDestination) {
+  grpc_metadata_batch batch;
+  grpc_auth_context auth_context(nullptr);
+  auth_context.add_cstring_property(GRPC_PEER_URI_PROPERTY_NAME, kUriSan);
+  auth_context.add_cstring_property(GRPC_PEER_DNS_PROPERTY_NAME, kDnsSan);
+  auth_context.add_cstring_property(GRPC_X509_SUBJECT_PROPERTY_NAME, kSubject);
+  auth_context.add_cstring_property(GRPC_X509_LOCAL_URI_PROPERTY_NAME,
+                                    kLocalUriSan);
+  auth_context.add_cstring_property(GRPC_X509_LOCAL_DNS_PROPERTY_NAME,
+                                    kLocalDnsSan);
+  auth_context.add_cstring_property(GRPC_X509_LOCAL_SUBJECT_PROPERTY_NAME,
+                                    kLocalSubject);
+  EvaluateArgs::PerChannelArgs channel_args(
+      &auth_context,
+      ChannelArgs()
+          .Set(GRPC_ARG_ENDPOINT_PEER_ADDRESS, kPeerAddressUri)
+          .Set(GRPC_ARG_ENDPOINT_LOCAL_ADDRESS, kLocalAddressUri));
+  EvaluateArgs args(&batch, &channel_args);
+  ExtAuthzRequest params;
+  params.is_client_call = false;
+  params.path = kPath;
+  params.args = &args;
+  std::string serialized = CreateExtAuthzRequest(params).value();
+  auto request = ParseRequest(serialized);
+  ASSERT_TRUE(request.has_attributes());
+  const auto& attr = request.attributes();
+  ASSERT_TRUE(attr.has_source());
+  ASSERT_TRUE(attr.source().has_address());
+  ASSERT_TRUE(attr.source().address().has_socket_address());
+  EXPECT_THAT(attr.source().address().socket_address().address(),
+              ::testing::StrEq(kPeerAddressHost));
+  EXPECT_EQ(attr.source().address().socket_address().port_value(),
+            kPeerAddressPort);
+  // URI SAN takes precedence over DNS SAN and subject.
+  EXPECT_THAT(attr.source().principal(), ::testing::StrEq(kUriSan));
+  // Not requested, so not included.
+  EXPECT_THAT(attr.source().certificate(), ::testing::IsEmpty());
+  ASSERT_TRUE(attr.has_destination());
+  ASSERT_TRUE(attr.destination().has_address());
+  ASSERT_TRUE(attr.destination().address().has_socket_address());
+  EXPECT_THAT(attr.destination().address().socket_address().address(),
+              ::testing::StrEq(kLocalAddressHost));
+  EXPECT_EQ(attr.destination().address().socket_address().port_value(),
+            kLocalAddressPort);
+  // The destination principal comes from this endpoint's own certificate,
+  // with the same precedence rule, and is never the peer's identity.
+  EXPECT_THAT(attr.destination().principal(), ::testing::StrEq(kLocalUriSan));
+}
+
+// IPv6 addresses are reported without the surrounding brackets.
+TEST_F(CreateExtAuthzRequestTest, ServerRequestIpv6Address) {
+  grpc_metadata_batch batch;
+  grpc_auth_context auth_context(nullptr);
+  EvaluateArgs::PerChannelArgs channel_args(
+      &auth_context,
+      ChannelArgs()
+          .Set(GRPC_ARG_ENDPOINT_PEER_ADDRESS, kIpv6PeerAddressUri)
+          .Set(GRPC_ARG_ENDPOINT_LOCAL_ADDRESS, kIpv6LocalAddressUri));
+  EvaluateArgs args(&batch, &channel_args);
+  ExtAuthzRequest params;
+  params.is_client_call = false;
+  params.path = kPath;
+  params.args = &args;
+  std::string serialized = CreateExtAuthzRequest(params).value();
+  auto request = ParseRequest(serialized);
+  const auto& attr = request.attributes();
+  ASSERT_TRUE(attr.source().address().has_socket_address());
+  EXPECT_THAT(attr.source().address().socket_address().address(),
+              ::testing::StrEq(kIpv6PeerAddressHost));
+  EXPECT_EQ(attr.source().address().socket_address().port_value(),
+            kIpv6PeerAddressPort);
+  ASSERT_TRUE(attr.destination().address().has_socket_address());
+  EXPECT_THAT(attr.destination().address().socket_address().address(),
+              ::testing::StrEq(kIpv6LocalAddressHost));
+  EXPECT_EQ(attr.destination().address().socket_address().port_value(),
+            kIpv6LocalAddressPort);
+}
+
+// The two sides are resolved independently: an unknown local address must not
+// suppress the source address (and vice versa).
+TEST_F(CreateExtAuthzRequestTest, ServerRequestPeerAddressWithoutLocalAddress) {
+  grpc_metadata_batch batch;
+  grpc_auth_context auth_context(nullptr);
+  EvaluateArgs::PerChannelArgs channel_args(
+      &auth_context,
+      ChannelArgs().Set(GRPC_ARG_ENDPOINT_PEER_ADDRESS, kPeerAddressUri));
+  EvaluateArgs args(&batch, &channel_args);
+  ExtAuthzRequest params;
+  params.is_client_call = false;
+  params.path = kPath;
+  params.args = &args;
+  std::string serialized = CreateExtAuthzRequest(params).value();
+  auto request = ParseRequest(serialized);
+  const auto& attr = request.attributes();
+  ASSERT_TRUE(attr.source().address().has_socket_address());
+  EXPECT_THAT(attr.source().address().socket_address().address(),
+              ::testing::StrEq(kPeerAddressHost));
+  EXPECT_EQ(attr.source().address().socket_address().port_value(),
+            kPeerAddressPort);
+  ASSERT_TRUE(attr.has_destination());
+  EXPECT_FALSE(attr.destination().has_address());
+}
+
+// EvaluateArgs resolves endpoint addresses with StringToSockaddr(), which
+// parses only IPv4/IPv6 host:port strings, so a unix domain socket peer yields
+// no address at all, rather than a bogus socket address. This is why
+// CreateAddress() does not implement the envoy.config.core.v3.Pipe case: it
+// would be unreachable.
+TEST_F(CreateExtAuthzRequestTest, ServerRequestUnixDomainSocketAddress) {
+  grpc_metadata_batch batch;
+  grpc_auth_context auth_context(nullptr);
+  EvaluateArgs::PerChannelArgs channel_args(
+      &auth_context,
+      ChannelArgs()
+          .Set(GRPC_ARG_ENDPOINT_PEER_ADDRESS, kUnixAddressUri)
+          .Set(GRPC_ARG_ENDPOINT_LOCAL_ADDRESS, kUnixAddressUri));
+  EvaluateArgs args(&batch, &channel_args);
+  // EvaluateArgs itself cannot represent the address either.
+  EXPECT_EQ(args.GetPeerAddress().len, 0u);
+  EXPECT_EQ(args.GetLocalAddress().len, 0u);
+  ExtAuthzRequest params;
+  params.is_client_call = false;
+  params.path = kPath;
+  params.args = &args;
+  std::string serialized = CreateExtAuthzRequest(params).value();
+  auto request = ParseRequest(serialized);
+  const auto& attr = request.attributes();
+  ASSERT_TRUE(attr.has_source());
+  EXPECT_FALSE(attr.source().has_address());
+  EXPECT_FALSE(attr.source().address().has_pipe());
+  ASSERT_TRUE(attr.has_destination());
+  EXPECT_FALSE(attr.destination().has_address());
+  EXPECT_FALSE(attr.destination().address().has_pipe());
+}
+
+TEST_F(CreateExtAuthzRequestTest, ServerRequestPrincipalFallsBackToDnsSan) {
+  grpc_metadata_batch batch;
+  grpc_auth_context auth_context(nullptr);
+  auth_context.add_cstring_property(GRPC_PEER_DNS_PROPERTY_NAME, kDnsSan);
+  auth_context.add_cstring_property(GRPC_X509_SUBJECT_PROPERTY_NAME, kSubject);
+  EvaluateArgs::PerChannelArgs channel_args(&auth_context, ChannelArgs());
+  EvaluateArgs args(&batch, &channel_args);
+  ExtAuthzRequest params;
+  params.is_client_call = false;
+  params.path = kPath;
+  params.args = &args;
+  std::string serialized = CreateExtAuthzRequest(params).value();
+  auto request = ParseRequest(serialized);
+  ASSERT_TRUE(request.attributes().has_source());
+  EXPECT_THAT(request.attributes().source().principal(),
+              ::testing::StrEq(kDnsSan));
+}
+
+TEST_F(CreateExtAuthzRequestTest, ServerRequestPrincipalFallsBackToSubject) {
+  grpc_metadata_batch batch;
+  grpc_auth_context auth_context(nullptr);
+  auth_context.add_cstring_property(GRPC_X509_SUBJECT_PROPERTY_NAME, kSubject);
+  EvaluateArgs::PerChannelArgs channel_args(&auth_context, ChannelArgs());
+  EvaluateArgs args(&batch, &channel_args);
+  ExtAuthzRequest params;
+  params.is_client_call = false;
+  params.path = kPath;
+  params.args = &args;
+  std::string serialized = CreateExtAuthzRequest(params).value();
+  auto request = ParseRequest(serialized);
+  ASSERT_TRUE(request.attributes().has_source());
+  EXPECT_THAT(request.attributes().source().principal(),
+              ::testing::StrEq(kSubject));
+}
+
+// Empty SAN entries are skipped rather than being reported as the principal,
+// whether they come before or after the first usable one.
+TEST_F(CreateExtAuthzRequestTest, ServerRequestPrincipalSkipsEmptyUriSan) {
+  grpc_metadata_batch batch;
+  grpc_auth_context auth_context(nullptr);
+  auth_context.add_cstring_property(GRPC_PEER_URI_PROPERTY_NAME, "");
+  auth_context.add_cstring_property(GRPC_PEER_URI_PROPERTY_NAME, kUriSan);
+  auth_context.add_cstring_property(GRPC_PEER_URI_PROPERTY_NAME, "");
+  auth_context.add_cstring_property(GRPC_PEER_DNS_PROPERTY_NAME, kDnsSan);
+  EvaluateArgs::PerChannelArgs channel_args(&auth_context, ChannelArgs());
+  EvaluateArgs args(&batch, &channel_args);
+  ExtAuthzRequest params;
+  params.is_client_call = false;
+  params.path = kPath;
+  params.args = &args;
+  std::string serialized = CreateExtAuthzRequest(params).value();
+  auto request = ParseRequest(serialized);
+  ASSERT_TRUE(request.attributes().has_source());
+  EXPECT_THAT(request.attributes().source().principal(),
+              ::testing::StrEq(kUriSan));
+}
+
+// If every URI and DNS SAN is empty, we fall all the way through to the
+// subject.
+TEST_F(CreateExtAuthzRequestTest, ServerRequestPrincipalSkipsAllEmptySans) {
+  grpc_metadata_batch batch;
+  grpc_auth_context auth_context(nullptr);
+  auth_context.add_cstring_property(GRPC_PEER_URI_PROPERTY_NAME, "");
+  auth_context.add_cstring_property(GRPC_PEER_DNS_PROPERTY_NAME, "");
+  auth_context.add_cstring_property(GRPC_X509_SUBJECT_PROPERTY_NAME, kSubject);
+  EvaluateArgs::PerChannelArgs channel_args(&auth_context, ChannelArgs());
+  EvaluateArgs args(&batch, &channel_args);
+  ExtAuthzRequest params;
+  params.is_client_call = false;
+  params.path = kPath;
+  params.args = &args;
+  std::string serialized = CreateExtAuthzRequest(params).value();
+  auto request = ParseRequest(serialized);
+  ASSERT_TRUE(request.attributes().has_source());
+  EXPECT_THAT(request.attributes().source().principal(),
+              ::testing::StrEq(kSubject));
+}
+
+// Pins the lifetime contract documented on GetPrincipal(): the principal is
+// read out of the std::vector<absl::string_view> that EvaluateArgs returns *by
+// value*, so it is read after that vector has been destroyed. The views point
+// into the grpc_auth_context, not into the vector, so this must be safe. The
+// SAN values here are long and numerous enough that the vector's storage is
+// heap-allocated, so that a regression would show up as a heap-use-after-free
+// under ASAN rather than silently reading stale stack memory.
+TEST_F(CreateExtAuthzRequestTest, ServerRequestPrincipalDoesNotDangle) {
+  grpc_metadata_batch batch;
+  grpc_auth_context auth_context(nullptr);
+  const std::string long_san =
+      absl::StrCat("spiffe://", std::string(256, 'a'), ".example.com/workload");
+  for (int i = 0; i < 16; ++i) {
+    auth_context.add_cstring_property(GRPC_PEER_URI_PROPERTY_NAME, "");
+  }
+  auth_context.add_cstring_property(GRPC_PEER_URI_PROPERTY_NAME,
+                                    long_san.c_str());
+  EvaluateArgs::PerChannelArgs channel_args(&auth_context, ChannelArgs());
+  EvaluateArgs args(&batch, &channel_args);
+  ExtAuthzRequest params;
+  params.is_client_call = false;
+  params.path = kPath;
+  params.args = &args;
+  std::string serialized = CreateExtAuthzRequest(params).value();
+  auto request = ParseRequest(serialized);
+  ASSERT_TRUE(request.attributes().has_source());
+  EXPECT_THAT(request.attributes().source().principal(),
+              ::testing::StrEq(long_san));
+}
+
+// The local URI SAN takes precedence over the local DNS SAN and subject, so
+// with no URI SAN we fall back to the DNS SAN.
+TEST_F(CreateExtAuthzRequestTest,
+       ServerRequestDestinationPrincipalFallsBackToLocalDnsSan) {
+  grpc_metadata_batch batch;
+  grpc_auth_context auth_context(nullptr);
+  auth_context.add_cstring_property(GRPC_X509_LOCAL_DNS_PROPERTY_NAME,
+                                    kLocalDnsSan);
+  auth_context.add_cstring_property(GRPC_X509_LOCAL_SUBJECT_PROPERTY_NAME,
+                                    kLocalSubject);
+  EvaluateArgs::PerChannelArgs channel_args(&auth_context, ChannelArgs());
+  EvaluateArgs args(&batch, &channel_args);
+  ExtAuthzRequest params;
+  params.is_client_call = false;
+  params.path = kPath;
+  params.args = &args;
+  std::string serialized = CreateExtAuthzRequest(params).value();
+  auto request = ParseRequest(serialized);
+  ASSERT_TRUE(request.attributes().has_destination());
+  EXPECT_THAT(request.attributes().destination().principal(),
+              ::testing::StrEq(kLocalDnsSan));
+}
+
+TEST_F(CreateExtAuthzRequestTest,
+       ServerRequestDestinationPrincipalFallsBackToLocalSubject) {
+  grpc_metadata_batch batch;
+  grpc_auth_context auth_context(nullptr);
+  auth_context.add_cstring_property(GRPC_X509_LOCAL_SUBJECT_PROPERTY_NAME,
+                                    kLocalSubject);
+  EvaluateArgs::PerChannelArgs channel_args(&auth_context, ChannelArgs());
+  EvaluateArgs args(&batch, &channel_args);
+  ExtAuthzRequest params;
+  params.is_client_call = false;
+  params.path = kPath;
+  params.args = &args;
+  std::string serialized = CreateExtAuthzRequest(params).value();
+  auto request = ParseRequest(serialized);
+  ASSERT_TRUE(request.attributes().has_destination());
+  EXPECT_THAT(request.attributes().destination().principal(),
+              ::testing::StrEq(kLocalSubject));
+}
+
+// Empty local SAN values are skipped rather than being reported as the
+// principal, exactly as for the source side.
+TEST_F(CreateExtAuthzRequestTest,
+       ServerRequestDestinationPrincipalSkipsEmptyLocalSans) {
+  grpc_metadata_batch batch;
+  grpc_auth_context auth_context(nullptr);
+  auth_context.add_cstring_property(GRPC_X509_LOCAL_URI_PROPERTY_NAME, "");
+  auth_context.add_cstring_property(GRPC_X509_LOCAL_DNS_PROPERTY_NAME, "");
+  auth_context.add_cstring_property(GRPC_X509_LOCAL_SUBJECT_PROPERTY_NAME,
+                                    kLocalSubject);
+  EvaluateArgs::PerChannelArgs channel_args(&auth_context, ChannelArgs());
+  EvaluateArgs args(&batch, &channel_args);
+  ExtAuthzRequest params;
+  params.is_client_call = false;
+  params.path = kPath;
+  params.args = &args;
+  std::string serialized = CreateExtAuthzRequest(params).value();
+  auto request = ParseRequest(serialized);
+  ASSERT_TRUE(request.attributes().has_destination());
+  EXPECT_THAT(request.attributes().destination().principal(),
+              ::testing::StrEq(kLocalSubject));
+}
+
+// The peer's identity must never leak into destination.principal, and this
+// endpoint's identity must never leak into source.principal.
+TEST_F(CreateExtAuthzRequestTest, ServerRequestPrincipalsAreNotInterchanged) {
+  grpc_metadata_batch batch;
+  grpc_auth_context auth_context(nullptr);
+  auth_context.add_cstring_property(GRPC_PEER_URI_PROPERTY_NAME, kUriSan);
+  auth_context.add_cstring_property(GRPC_PEER_DNS_PROPERTY_NAME, kDnsSan);
+  auth_context.add_cstring_property(GRPC_X509_SUBJECT_PROPERTY_NAME, kSubject);
+  EvaluateArgs::PerChannelArgs channel_args(&auth_context, ChannelArgs());
+  EvaluateArgs args(&batch, &channel_args);
+  ExtAuthzRequest params;
+  params.is_client_call = false;
+  params.path = kPath;
+  params.args = &args;
+  std::string serialized = CreateExtAuthzRequest(params).value();
+  auto request = ParseRequest(serialized);
+  const auto& attr = request.attributes();
+  ASSERT_TRUE(attr.has_source());
+  EXPECT_THAT(attr.source().principal(), ::testing::StrEq(kUriSan));
+  // Only peer properties are set, so there is no local identity to report.
+  ASSERT_TRUE(attr.has_destination());
+  EXPECT_THAT(attr.destination().principal(), ::testing::IsEmpty());
+}
+
+TEST_F(CreateExtAuthzRequestTest,
+       ServerRequestSourcePrincipalIgnoresLocalProperties) {
+  grpc_metadata_batch batch;
+  grpc_auth_context auth_context(nullptr);
+  auth_context.add_cstring_property(GRPC_X509_LOCAL_URI_PROPERTY_NAME,
+                                    kLocalUriSan);
+  auth_context.add_cstring_property(GRPC_X509_LOCAL_DNS_PROPERTY_NAME,
+                                    kLocalDnsSan);
+  auth_context.add_cstring_property(GRPC_X509_LOCAL_SUBJECT_PROPERTY_NAME,
+                                    kLocalSubject);
+  EvaluateArgs::PerChannelArgs channel_args(&auth_context, ChannelArgs());
+  EvaluateArgs args(&batch, &channel_args);
+  ExtAuthzRequest params;
+  params.is_client_call = false;
+  params.path = kPath;
+  params.args = &args;
+  std::string serialized = CreateExtAuthzRequest(params).value();
+  auto request = ParseRequest(serialized);
+  const auto& attr = request.attributes();
+  ASSERT_TRUE(attr.has_source());
+  EXPECT_THAT(attr.source().principal(), ::testing::IsEmpty());
+  ASSERT_TRUE(attr.has_destination());
+  EXPECT_THAT(attr.destination().principal(), ::testing::StrEq(kLocalUriSan));
+}
+
+// With no TLS credentials and no endpoint addresses, source and destination
+// are present but empty.  This is what a non-TLS transport (insecure, local,
+// ALTS, ...) looks like: those build their own auth contexts with no X.509
+// properties at all, so both principals are simply unset.
+TEST_F(CreateExtAuthzRequestTest, ServerRequestWithoutConnectionAttributes) {
+  grpc_metadata_batch batch;
+  grpc_auth_context auth_context(nullptr);
+  EvaluateArgs::PerChannelArgs channel_args(&auth_context, ChannelArgs());
+  EvaluateArgs args(&batch, &channel_args);
+  ExtAuthzRequest params;
+  params.is_client_call = false;
+  params.path = kPath;
+  params.args = &args;
+  std::string serialized = CreateExtAuthzRequest(params).value();
+  auto request = ParseRequest(serialized);
+  const auto& attr = request.attributes();
+  ASSERT_TRUE(attr.has_source());
+  EXPECT_FALSE(attr.source().has_address());
+  EXPECT_THAT(attr.source().principal(), ::testing::IsEmpty());
+  ASSERT_TRUE(attr.has_destination());
+  EXPECT_FALSE(attr.destination().has_address());
+  EXPECT_THAT(attr.destination().principal(), ::testing::IsEmpty());
+}
+
+TEST_F(CreateExtAuthzRequestTest, ServerRequestWithPeerCertificate) {
+  grpc_metadata_batch batch;
+  grpc_auth_context auth_context(nullptr);
+  EvaluateArgs::PerChannelArgs channel_args(&auth_context, ChannelArgs());
+  EvaluateArgs args(&batch, &channel_args);
+  ExtAuthzRequest params;
+  params.is_client_call = false;
+  params.path = kPath;
+  params.args = &args;
+  params.peer_certificate = kEncodedCert;
+  std::string serialized = CreateExtAuthzRequest(params).value();
+  auto request = ParseRequest(serialized);
+  ASSERT_TRUE(request.attributes().has_source());
+  EXPECT_THAT(request.attributes().source().certificate(),
+              ::testing::StrEq(kEncodedCert));
+}
+
+// The peer certificate is ignored on the client side, where source is not
+// populated at all.
+TEST_F(CreateExtAuthzRequestTest, ClientRequestIgnoresPeerCertificate) {
+  ExtAuthzRequest params;
+  params.is_client_call = true;
+  params.path = kPath;
+  params.peer_certificate = kEncodedCert;
+  std::string serialized = CreateExtAuthzRequest(params).value();
+  auto request = ParseRequest(serialized);
+  EXPECT_FALSE(request.attributes().has_source());
 }
 
 TEST_F(CreateExtAuthzRequestTest, HttpFields) {
@@ -337,6 +792,54 @@ TEST_F(CreateExtAuthzRequestTest, MetadataBatchPathAndHeaders) {
               ::testing::UnorderedElementsAre(IsHeaderValue(kPathHeader, kPath),
                                               IsHeaderValue(kKey1, kVal1),
                                               IsHeaderValue(kKey2, kVal2)));
+}
+
+//
+// GetUrlEncodedPemPeerCertificate() tests
+//
+
+TEST(GetUrlEncodedPemPeerCertificateTest, NoAuthContext) {
+  EXPECT_THAT(GetUrlEncodedPemPeerCertificate(nullptr), ::testing::IsEmpty());
+}
+
+TEST(GetUrlEncodedPemPeerCertificateTest, NoPeerCertificate) {
+  grpc_auth_context auth_context(nullptr);
+  EXPECT_THAT(GetUrlEncodedPemPeerCertificate(&auth_context),
+              ::testing::IsEmpty());
+}
+
+// An empty property value is treated the same as a missing property, rather
+// than producing an empty-but-present source.certificate field.
+TEST(GetUrlEncodedPemPeerCertificateTest, EmptyPeerCertificateProperty) {
+  grpc_auth_context auth_context(nullptr);
+  auth_context.add_cstring_property(GRPC_X509_PEM_CERT_PROPERTY_NAME, "");
+  EXPECT_THAT(GetUrlEncodedPemPeerCertificate(&auth_context),
+              ::testing::IsEmpty());
+}
+
+// Matches Envoy's Http::Utility::PercentEncoding::urlEncode(): every
+// character other than ALPHA, DIGIT, '*', '-', '.' and '_' is percent-encoded
+// with uppercase hex digits.
+TEST(GetUrlEncodedPemPeerCertificateTest, PeerCertificate) {
+  grpc_auth_context auth_context(nullptr);
+  auth_context.add_cstring_property(GRPC_X509_PEM_CERT_PROPERTY_NAME,
+                                    "-----BEGIN CERTIFICATE-----\n"
+                                    "a+b/c=\n"
+                                    "-----END CERTIFICATE-----\n");
+  EXPECT_THAT(GetUrlEncodedPemPeerCertificate(&auth_context),
+              ::testing::StrEq("-----BEGIN%20CERTIFICATE-----%0A"
+                               "a%2Bb%2Fc%3D%0A"
+                               "-----END%20CERTIFICATE-----%0A"));
+}
+
+// Characters outside of Envoy's unreserved set are encoded too, including
+// carriage returns and characters that never appear in a well-formed PEM.
+TEST(GetUrlEncodedPemPeerCertificateTest, PeerCertificateEncodesAllReserved) {
+  grpc_auth_context auth_context(nullptr);
+  auth_context.add_cstring_property(GRPC_X509_PEM_CERT_PROPERTY_NAME,
+                                    "aZ9*-._\r\n~:%");
+  EXPECT_THAT(GetUrlEncodedPemPeerCertificate(&auth_context),
+              ::testing::StrEq("aZ9*-._%0D%0A%7E%3A%25"));
 }
 
 //

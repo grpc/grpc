@@ -17,6 +17,7 @@
 #ifndef GRPC_SRC_CORE_EXT_FILTERS_EXT_AUTHZ_EXT_AUTHZ_MESSAGES_H
 #define GRPC_SRC_CORE_EXT_FILTERS_EXT_AUTHZ_EXT_AUTHZ_MESSAGES_H
 
+#include <grpc/grpc_security.h>
 #include <grpc/status.h>
 
 #include <optional>
@@ -25,8 +26,8 @@
 #include <variant>
 #include <vector>
 
+#include "src/core/call/evaluate_args.h"
 #include "src/core/call/metadata_batch.h"
-#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/util/matchers.h"
 #include "src/core/util/time.h"
 #include "src/core/xds/grpc/xds_common_types.h"
@@ -112,32 +113,6 @@ struct ExtAuthzResponse {
 // message within envoy.service.auth.v3.CheckRequest according to gRFC A92
 // specifications.
 struct ExtAuthzRequest {
-  // Represents peer endpoint and credential attributes
-  // (envoy.service.auth.v3.AttributeContext.Peer).
-  struct Peer {
-    // Address of the connection endpoint (AttributeContext.Peer.address).
-    // For source, peer address of the connection that the request came in on.
-    // For destination, local address of the connection that the request came in
-    // on.
-    std::optional<grpc_resolved_address> address;
-
-    // TLS SANs and subject for principal resolution
-    // (AttributeContext.Peer.principal).
-    // If TLS is used (and for source, the client provided a valid certificate),
-    // this will be set to the certificate's first URI SAN if set, otherwise
-    // the certificate's first DNS SAN if set, otherwise the subject field of
-    // the certificate in RFC 2253 format. If TLS is not used (or for source, no
-    // cert was provided), principal will be unset.
-    std::vector<std::string> uri_sans;
-    std::vector<std::string> dns_sans;
-    std::string subject;
-
-    // Peer certificate (AttributeContext.Peer.certificate).
-    // Populated for source if the include_peer_certificate config field is set
-    // to true. Unset for destination.
-    std::string certificate;
-  };
-
   // True if the call is made on the gRPC client side.
   // When true, source and destination peers are omitted from AttributeContext.
   bool is_client_call = false;
@@ -154,19 +129,27 @@ struct ExtAuthzRequest {
   // used.
   std::optional<Timestamp> start_time;
 
-  // Connection endpoints & TLS information. Set only on the gRPC server side:
-  // - source (AttributeContext.source): peer address and client credentials.
-  // - destination (AttributeContext.destination): local address and server
-  //   credentials.
-  // Note: service and labels are not set.
-  // TODO(rishesh): Revisit these fields once the client-side ext_authz
-  // implementation is done. They are currently not populated by any caller,
-  // since the filter only supports the client side, where source and
-  // destination are omitted from the AttributeContext. In particular,
-  // destination.{uri_sans,dns_sans,subject} have no source of data today, as
-  // the auth context only exposes peer credentials, not the local certificate.
-  Peer source;
-  Peer destination;
+  // Connection endpoints & TLS information, used only on the gRPC server side
+  // (i.e., when is_client_call is false) to populate:
+  // - AttributeContext.source.address: the peer address of the connection that
+  //   the request came in on (EvaluateArgs::GetPeerAddress()).
+  // - AttributeContext.source.principal: the peer certificate's first URI SAN
+  //   if set, otherwise its first DNS SAN if set, otherwise its subject in
+  //   RFC 2253 format (EvaluateArgs::GetUriSans(), GetDnsSans(), GetSubject()).
+  //   Unset if TLS is not used or the client did not provide a certificate.
+  // - AttributeContext.destination.address: the local address of the
+  //   connection that the request came in on (EvaluateArgs::GetLocalAddress()).
+  // - AttributeContext.destination.principal: the identity asserted by the
+  //   certificate that this server presented on this connection: its first
+  //   URI SAN if set, otherwise its first DNS SAN if set, otherwise its
+  //   subject in RFC 2253 format (EvaluateArgs::GetLocalUriSan(),
+  //   GetLocalDnsSan(), GetLocalSubject()).  Unset if TLS is not used or this
+  //   server presented no certificate.
+  // Addresses that EvaluateArgs cannot resolve (e.g., unix domain sockets) are
+  // omitted.
+  // If null, source and destination are omitted from the AttributeContext.
+  // Note: AttributeContext.{service,labels} are not set.
+  const EvaluateArgs* args = nullptr;
 
   // Header matching rules for populating
   // AttributeContext.HttpRequest.header_map:
@@ -177,9 +160,25 @@ struct ExtAuthzRequest {
   std::vector<StringMatcher> allowed_headers;
   std::vector<StringMatcher> disallowed_headers;
 
-  // If true, peer certificate is included in source.certificate.
-  bool include_peer_certificate = false;
+  // Value for AttributeContext.source.certificate, as returned by
+  // GetUrlEncodedPemPeerCertificate(). Must be left empty unless the ext_authz
+  // config sets include_peer_certificate. Ignored on the client side.
+  // This is a non-owning view; the caller must keep the underlying string
+  // alive for the duration of the CreateExtAuthzRequest() call. (The value is
+  // computed once per connection, so it is passed by reference rather than
+  // copied into this struct on every RPC.)
+  absl::string_view peer_certificate;
 };
+
+// Computes the value of the AttributeContext.source.certificate field (see
+// gRFC A92): the URL-encoded PEM-encoded peer certificate, which is obtained
+// from \a auth_context. Returns an empty string if there is no peer
+// certificate.
+//
+// Note that this requires copying and encoding the peer certificate, so
+// callers must invoke this at most once per connection, and only if the
+// ext_authz config sets include_peer_certificate.
+std::string GetUrlEncodedPemPeerCertificate(grpc_auth_context* auth_context);
 
 absl::StatusOr<std::string> CreateExtAuthzRequest(
     const ExtAuthzRequest& request);

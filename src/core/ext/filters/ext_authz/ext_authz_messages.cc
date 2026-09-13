@@ -16,11 +16,13 @@
 
 #include "src/core/ext/filters/ext_authz/ext_authz_messages.h"
 
+#include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
 #include <grpc/support/time.h>
 
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <optional>
 #include <string>
 #include <utility>
@@ -33,8 +35,11 @@
 #include "envoy/type/v3/http_status.upb.h"
 #include "google/protobuf/timestamp.upb.h"
 #include "google/rpc/status.upb.h"
+#include "src/core/call/evaluate_args.h"
 #include "src/core/call/status_util.h"
+#include "src/core/credentials/transport/tls/tls_utils.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/util/host_port.h"
@@ -50,10 +55,11 @@
 #include "absl/base/attributes.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/ascii.h"
 #include "absl/strings/match.h"
-#include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 
 namespace grpc_core {
 
@@ -125,85 +131,126 @@ class UpbHeaderMapEncoder {
   const std::vector<StringMatcher>& disallowed_headers_;
 };
 
-std::string GetPrincipal(const ExtAuthzRequest::Peer& peer) {
-  for (const auto& uri : peer.uri_sans) {
+// Returns the value for AttributeContext.Peer.principal, given the identity
+// of one endpoint's certificate: its first URI SAN if set, otherwise its
+// first DNS SAN if set, otherwise its subject. Returns an empty string_view
+// if none of those are available (e.g., TLS is not used or the endpoint
+// presented no certificate). This is applied to the peer's certificate for
+// AttributeContext.source and to this endpoint's own certificate for
+// AttributeContext.destination.
+//
+// Lifetime: the returned view points into whatever the caller's
+// string_views point into -- in practice the grpc_auth_context that
+// EvaluateArgs::PerChannelArgs was constructed from (see
+// GetAuthPropertyArray(), which points each view at a grpc_auth_property's
+// value). In particular, when the caller passes a std::vector returned by
+// value from GetUriSans()/GetDnsSans(), destroying that vector does not
+// invalidate the returned view, because the views point at the auth context
+// rather than at the vector's storage. The caller is responsible for ensuring
+// that the auth context outlives the returned view, which PerChannelArgs
+// already requires.
+absl::string_view GetPrincipal(absl::Span<const absl::string_view> uri_sans,
+                               absl::Span<const absl::string_view> dns_sans,
+                               absl::string_view subject) {
+  for (const absl::string_view uri : uri_sans) {
     if (!uri.empty()) return uri;
   }
-  for (const auto& dns : peer.dns_sans) {
+  for (const absl::string_view dns : dns_sans) {
     if (!dns.empty()) return dns;
   }
-  if (!peer.subject.empty()) {
-    return peer.subject;
-  }
-  return "";
+  return subject;
 }
 
-envoy_config_core_v3_Address* CreateAddress(upb_Arena* arena,
-                                            const ExtAuthzRequest::Peer& peer) {
-  if (!peer.address.has_value()) {
-    return nullptr;
-  }
-  const grpc_resolved_address& resolved_addr = *peer.address;
+// Converts \a resolved_addr into an envoy.config.core.v3.Address message.
+// Returns nullptr if the address is not set or cannot be converted.
+//
+// Only the SocketAddress case is implemented, because that is the only thing
+// EvaluateArgs can produce: ParseEndpointUri() in evaluate_args.cc fills in
+// EvaluateArgs::PerChannelArgs::Address::address via
+// grpc_core::StringToSockaddr(), which accepts only IPv4 and IPv6 host:port
+// strings.  For any other endpoint -- a unix domain socket in particular --
+// StringToSockaddr() fails and EvaluateArgs reports a zero-length sockaddr,
+// so there is nothing to convert and we leave AttributeContext.Peer.address
+// unset.  (Note that it is StringToSockaddr(), not SplitHostPort(), that
+// rejects a socket path: SplitHostPort() succeeds on a colon-free path,
+// treating the whole thing as a bare host name with no port.)  An
+// envoy.config.core.v3.Pipe branch here would therefore be dead code.
+// TODO(rishesh): Teach EvaluateArgs to expose unix domain socket addresses
+// (i.e., make ParseEndpointUri() in evaluate_args.cc handle the "unix" and
+// "unix-abstract" URI schemes), and then populate Address.pipe here for those
+// connections.
+envoy_config_core_v3_Address* CreateAddress(
+    upb_Arena* arena, const grpc_resolved_address& resolved_addr) {
+  if (resolved_addr.len == 0) return nullptr;
   const char* scheme = grpc_sockaddr_get_uri_scheme(&resolved_addr);
   if (scheme == nullptr) return nullptr;
+  if (strcmp(scheme, "ipv4") != 0 && strcmp(scheme, "ipv6") != 0) {
+    return nullptr;
+  }
+  auto host_port =
+      grpc_sockaddr_to_string(&resolved_addr, false /* normalize */);
+  if (!host_port.ok()) return nullptr;
+  std::string host;
+  std::string port_str;
+  if (!SplitHostPort(*host_port, &host, &port_str)) return nullptr;
+  int port = grpc_sockaddr_get_port(&resolved_addr);
+  auto* socket_address = envoy_config_core_v3_SocketAddress_new(arena);
+  envoy_config_core_v3_SocketAddress_set_protocol(
+      socket_address, envoy_config_core_v3_SocketAddress_TCP);
+  envoy_config_core_v3_SocketAddress_set_address(
+      socket_address, CopyStdStringToUpbString(host, arena));
+  envoy_config_core_v3_SocketAddress_set_port_value(socket_address, port);
   auto* address = envoy_config_core_v3_Address_new(arena);
-  if (strcmp(scheme, "unix") == 0) {
-    auto path = grpc_sockaddr_to_string(&resolved_addr, false /* normalize */);
-    if (!path.ok()) return nullptr;
-    auto* pipe = envoy_config_core_v3_Pipe_new(arena);
-    envoy_config_core_v3_Pipe_set_path(pipe,
-                                       CopyStdStringToUpbString(*path, arena));
-    envoy_config_core_v3_Address_set_pipe(address, pipe);
-    return address;
-  }
-  if (strcmp(scheme, "ipv4") == 0 || strcmp(scheme, "ipv6") == 0) {
-    auto host_port =
-        grpc_sockaddr_to_string(&resolved_addr, false /* normalize */);
-    if (!host_port.ok()) return nullptr;
-    std::string host;
-    std::string port_str;
-    if (!SplitHostPort(*host_port, &host, &port_str)) return nullptr;
-    int port = grpc_sockaddr_get_port(&resolved_addr);
-    auto* socket_address = envoy_config_core_v3_SocketAddress_new(arena);
-    envoy_config_core_v3_SocketAddress_set_protocol(
-        socket_address, envoy_config_core_v3_SocketAddress_TCP);
-    envoy_config_core_v3_SocketAddress_set_address(
-        socket_address, CopyStdStringToUpbString(host, arena));
-    envoy_config_core_v3_SocketAddress_set_port_value(socket_address, port);
-    envoy_config_core_v3_Address_set_socket_address(address, socket_address);
-    return address;
-  }
-  return nullptr;
+  envoy_config_core_v3_Address_set_socket_address(address, socket_address);
+  return address;
 }
 
 envoy_service_auth_v3_AttributeContext_Peer* CreateSource(
     upb_Arena* arena, const ExtAuthzRequest& request) {
+  const EvaluateArgs& args = *request.args;
   auto* source = envoy_service_auth_v3_AttributeContext_Peer_new(arena);
-  auto* address = CreateAddress(arena, request.source);
+  const grpc_resolved_address peer_address = args.GetPeerAddress();
+  auto* address = CreateAddress(arena, peer_address);
   if (address != nullptr) {
     envoy_service_auth_v3_AttributeContext_Peer_set_address(source, address);
   }
-  std::string principal = GetPrincipal(request.source);
+  const std::vector<absl::string_view> uri_sans = args.GetUriSans();
+  const std::vector<absl::string_view> dns_sans = args.GetDnsSans();
+  absl::string_view principal =
+      GetPrincipal(uri_sans, dns_sans, args.GetSubject());
   if (!principal.empty()) {
     envoy_service_auth_v3_AttributeContext_Peer_set_principal(
         source, CopyStdStringToUpbString(principal, arena));
   }
-  if (request.include_peer_certificate && !request.source.certificate.empty()) {
+  // The caller populates this only if the ext_authz config sets
+  // include_peer_certificate.
+  if (!request.peer_certificate.empty()) {
     envoy_service_auth_v3_AttributeContext_Peer_set_certificate(
-        source, CopyStdStringToUpbString(request.source.certificate, arena));
+        source, CopyStdStringToUpbString(request.peer_certificate, arena));
   }
   return source;
 }
 
 envoy_service_auth_v3_AttributeContext_Peer* CreateDestination(
     upb_Arena* arena, const ExtAuthzRequest& request) {
+  const EvaluateArgs& args = *request.args;
   auto* destination = envoy_service_auth_v3_AttributeContext_Peer_new(arena);
-  auto* address = CreateAddress(arena, request.destination);
+  const grpc_resolved_address local_address = args.GetLocalAddress();
+  auto* address = CreateAddress(arena, local_address);
   if (address != nullptr) {
     envoy_service_auth_v3_AttributeContext_Peer_set_address(destination,
                                                             address);
   }
-  std::string principal = GetPrincipal(request.destination);
+  // destination.principal is the identity asserted by the certificate that
+  // this server presented on this connection, derived with exactly the same
+  // precedence rule as source.principal (which grpc-java and Envoy also
+  // share).  Unlike the peer, the local endpoint contributes at most one URI
+  // SAN and one DNS SAN, because carrying every local SAN would mean an
+  // unbounded number of per-connection auth context properties.  It is left
+  // unset when TLS is not in use or this server presented no certificate, in
+  // which case all three values are empty.
+  absl::string_view principal = GetPrincipal(
+      {args.GetLocalUriSan()}, {args.GetLocalDnsSan()}, args.GetLocalSubject());
   if (!principal.empty()) {
     envoy_service_auth_v3_AttributeContext_Peer_set_principal(
         destination, CopyStdStringToUpbString(principal, arena));
@@ -254,7 +301,7 @@ envoy_service_auth_v3_AttributeContext_Request* CreateRequest(
 envoy_service_auth_v3_AttributeContext* CreateAttributeContext(
     upb_Arena* arena, const ExtAuthzRequest& request) {
   auto* attribute_context = envoy_service_auth_v3_AttributeContext_new(arena);
-  if (!request.is_client_call) {
+  if (!request.is_client_call && request.args != nullptr) {
     envoy_service_auth_v3_AttributeContext_set_source(
         attribute_context, CreateSource(arena, request));
     envoy_service_auth_v3_AttributeContext_set_destination(
@@ -266,6 +313,56 @@ envoy_service_auth_v3_AttributeContext* CreateAttributeContext(
 }
 
 }  // namespace
+
+//
+// GetUrlEncodedPemPeerCertificate()
+//
+
+namespace {
+
+// Percent-encodes \a value exactly the way that Envoy's
+// Http::Utility::PercentEncoding::urlEncode() does: every character other than
+// ALPHA, DIGIT, '*', '-', '.' and '_' is encoded as %XX, using uppercase
+// hexadecimal digits (see RFC 3986 section 2.1).  This ensures that ext_authz
+// servers see the same value regardless of whether the client is gRPC or
+// Envoy.
+std::string UrlEncode(absl::string_view value) {
+  static constexpr char kHexDigits[] = "0123456789ABCDEF";
+  std::string encoded;
+  encoded.reserve(value.size());
+  for (const char c : value) {
+    const auto byte = static_cast<unsigned char>(c);
+    if (absl::ascii_isalnum(byte) || c == '*' || c == '-' || c == '.' ||
+        c == '_') {
+      encoded.push_back(c);
+    } else {
+      encoded.push_back('%');
+      encoded.push_back(kHexDigits[byte >> 4]);
+      encoded.push_back(kHexDigits[byte & 0x0f]);
+    }
+  }
+  return encoded;
+}
+
+}  // namespace
+
+// TODO(rishesh): Computing this in the ext_authz filter is sub-optimal,
+// because we will wind up computing it once for each filter chain. We should
+// eventually fix that by creating a common connection context object, and this
+// should be storable as one of the elements of that context.
+std::string GetUrlEncodedPemPeerCertificate(grpc_auth_context* auth_context) {
+  if (auth_context == nullptr) return "";
+  absl::string_view pem_cert =
+      GetAuthPropertyValue(auth_context, GRPC_X509_PEM_CERT_PROPERTY_NAME);
+  if (pem_cert.empty()) return "";
+  // AttributeContext.Peer.certificate is documented as the peer certificate
+  // "encoded in URL and PEM format".
+  return UrlEncode(pem_cert);
+}
+
+//
+// CreateExtAuthzRequest()
+//
 
 absl::StatusOr<std::string> CreateExtAuthzRequest(
     const ExtAuthzRequest& request) {

@@ -110,6 +110,28 @@ TEST_F(EvaluateArgsTest, TestPeerAddressAndPort) {
   EXPECT_EQ(args.GetPeerPort(), 123);
 }
 
+// An endpoint address that is absent is reported as an empty (zero-length)
+// sockaddr, not as indeterminate bytes.
+TEST_F(EvaluateArgsTest, TestUnsetAddresses) {
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_EQ(args.GetLocalAddress().len, 0);
+  EXPECT_EQ(args.GetPeerAddress().len, 0);
+  EXPECT_EQ(args.GetLocalPort(), 0);
+  EXPECT_EQ(args.GetPeerPort(), 0);
+  EXPECT_TRUE(args.GetLocalAddressString().empty());
+  EXPECT_TRUE(args.GetPeerAddressString().empty());
+}
+
+// Same for an address that cannot be resolved to a sockaddr, such as a unix
+// domain socket.
+TEST_F(EvaluateArgsTest, TestNonIpAddresses) {
+  util_.SetLocalEndpoint("unix:/tmp/grpc-evaluate-args-test.sock");
+  util_.SetPeerEndpoint("unix:/tmp/grpc-evaluate-args-test.sock");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_EQ(args.GetLocalAddress().len, 0);
+  EXPECT_EQ(args.GetPeerAddress().len, 0);
+}
+
 TEST_F(EvaluateArgsTest, EmptyAuthContext) {
   EvaluateArgs args = util_.MakeEvaluateArgs();
   EXPECT_TRUE(args.GetTransportSecurityType().empty());
@@ -120,6 +142,9 @@ TEST_F(EvaluateArgsTest, EmptyAuthContext) {
   EXPECT_TRUE(args.GetCommonName().empty());
   EXPECT_TRUE(args.GetRequestedServerName().empty());
   EXPECT_TRUE(args.GetTlsVersion().empty());
+  EXPECT_TRUE(args.GetLocalUriSan().empty());
+  EXPECT_TRUE(args.GetLocalDnsSan().empty());
+  EXPECT_TRUE(args.GetLocalSubject().empty());
 }
 
 TEST_F(EvaluateArgsTest, GetTransportSecurityTypeSuccessOneProperty) {
@@ -221,6 +246,43 @@ TEST_F(EvaluateArgsTest, GetTlsVersionFailDuplicateProperty) {
   util_.AddPropertyToAuthContext(GRPC_SSL_TLS_VERSION_PROPERTY_NAME, "TLSv1.3");
   EvaluateArgs args = util_.MakeEvaluateArgs();
   EXPECT_TRUE(args.GetTlsVersion().empty());
+}
+
+TEST_F(EvaluateArgsTest, GetLocalCertificateIdentitySuccess) {
+  util_.AddPropertyToAuthContext(GRPC_X509_LOCAL_URI_PROPERTY_NAME,
+                                 "spiffe://foo.com/server");
+  util_.AddPropertyToAuthContext(GRPC_X509_LOCAL_DNS_PROPERTY_NAME,
+                                 "server.example.com");
+  util_.AddPropertyToAuthContext(GRPC_X509_LOCAL_SUBJECT_PROPERTY_NAME,
+                                 "CN=server,OU=Google");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_EQ(args.GetLocalUriSan(), "spiffe://foo.com/server");
+  EXPECT_EQ(args.GetLocalDnsSan(), "server.example.com");
+  EXPECT_EQ(args.GetLocalSubject(), "CN=server,OU=Google");
+}
+
+// The local identity is unrelated to the peer's: setting one must not affect
+// the other in either direction.
+TEST_F(EvaluateArgsTest, LocalCertificateIdentityIsSeparateFromPeer) {
+  util_.AddPropertyToAuthContext(GRPC_PEER_URI_PROPERTY_NAME,
+                                 "spiffe://foo.com/client");
+  util_.AddPropertyToAuthContext(GRPC_PEER_DNS_PROPERTY_NAME,
+                                 "client.example.com");
+  util_.AddPropertyToAuthContext(GRPC_X509_SUBJECT_PROPERTY_NAME,
+                                 "CN=client,OU=Google");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_THAT(args.GetUriSans(),
+              ::testing::ElementsAre("spiffe://foo.com/client"));
+  EXPECT_TRUE(args.GetLocalUriSan().empty());
+  EXPECT_TRUE(args.GetLocalDnsSan().empty());
+  EXPECT_TRUE(args.GetLocalSubject().empty());
+}
+
+TEST_F(EvaluateArgsTest, GetLocalCertificateIdentityFailDuplicateProperty) {
+  util_.AddPropertyToAuthContext(GRPC_X509_LOCAL_URI_PROPERTY_NAME, "uri1");
+  util_.AddPropertyToAuthContext(GRPC_X509_LOCAL_URI_PROPERTY_NAME, "uri2");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_TRUE(args.GetLocalUriSan().empty());
 }
 
 }  // namespace grpc_core
