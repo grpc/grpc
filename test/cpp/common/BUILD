@@ -177,3 +177,18 @@ grpc_cc_test(
         "@com_google_protobuf//:any_cc_proto",
     ],
 )
+
+grpc_cc_test(
+    name = "callback_common_test",
+    srcs = ["callback_common_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/core:notification",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)

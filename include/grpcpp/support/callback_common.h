@@ -29,6 +29,7 @@
 #include <grpcpp/support/global_callback_hook.h>
 #include <grpcpp/support/status.h>
 
+#include <cstddef>
 #include <functional>
 #include <utility>
 
@@ -221,23 +222,18 @@ class CallbackWithSuccessTag : public grpc_completion_queue_functor {
   }
   void Proceed(bool ok) {
     void* ignored = ops_;
+    auto func = func_;
+    grpc_call* call = call_;
+    CompletionQueueTag* ops = ops_;
     // Allow a "false" return value from FinalizeResult to silence the
     // callback, just as it silences a CQ tag in the async cases
-#ifndef NDEBUG
-    auto* ops = ops_;
-#endif
-    bool do_callback = ops_->FinalizeResult(&ignored, &ok);
+    bool do_callback = ops->FinalizeResult(&ignored, &ok);
 #ifndef NDEBUG
     ABSL_DCHECK(ignored == ops);
 #endif
 
     if (do_callback) {
-      auto func = func_;
-
-      // TODO(aananthv): Determine if call_ can be null here. It is
-      // theoretically possible? But I am not sure if the call can be deleted
-      // before this callback is invoked.
-      GetGlobalCallbackHook()->RunCallback(call_, [func, ok]() {
+      GetGlobalCallbackHook()->RunCallback(call, [func, ok]() {
 #if GRPC_ALLOW_EXCEPTIONS
         try {
           func(ok);

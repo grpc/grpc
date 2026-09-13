@@ -8058,6 +8058,19 @@ targets:
   - cares
   - gpr
   - address_sorting
+- name: callback_common_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/cpp/common/callback_common_test.cc
+  deps:
+  - gtest
+  - gpr
+  - grpc
+  - grpc++
+  - grpc_test_util
 - name: cancel_ares_query_test
   gtest: true
   build: test
