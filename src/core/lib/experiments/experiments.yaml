@@ -344,6 +344,11 @@
   expiry: 2027/01/16
   owner: pragunsaxena@google.com
   test_tags: []
+- name: ring_hash_update_cleanup
+  description: Clean up update logic in ring_hash LB policy.
+  expiry: 2027/01/16
+  owner: roth@google.com
+  test_tags: ["lb_unit_test", "xds_end2end_test"]
 - name: schedule_cancellation_over_write
   description: Allow cancellation op to be scheduled over a write
   expiry: 2027/01/16
