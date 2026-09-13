@@ -14,6 +14,12 @@
 
 FROM golang:1.16
 
+#=================
+#  Create wrapper for apt-get
+
+ADD apt_get_install_with_retry.sh /usr/local/bin/apt-get-install-retry
+RUN chmod +rx /usr/local/bin/apt-get-install-retry
+
 # Using login shell removes Go from path, so we add it.
 RUN ln -s /usr/local/go/bin/go /usr/local/bin
 
@@ -31,12 +37,12 @@ RUN git config --global protocol.file.allow always
 # Basic python dependencies to be able to run tools/run_tests python scripts
 # These dependencies are not sufficient to build gRPC Python, gRPC Python
 # deps are defined elsewhere (e.g. python_deps.include)
-RUN apt-get update && apt-get install -y \
+RUN apt-get-install-retry \
   python3 \
   python3-pip \
   python3-setuptools \
-  python3-yaml \
-  && apt-get clean
+  python3-yaml && apt-get clean
+ 
 
 # use pinned version of pip to avoid sudden breakages
 RUN python3 -m pip install --upgrade pip==19.3.1

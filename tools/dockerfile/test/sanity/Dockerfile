@@ -15,55 +15,13 @@
 FROM silkeh/clang:19-bookworm
 
 #=================
-# Basic C core dependencies
+#  Create wrapper for apt-get
 
-# C/C++ dependencies according to https://github.com/grpc/grpc/blob/master/BUILDING.md
-RUN apt-get update && apt-get install -y \
-  build-essential \
-  autoconf \
-  libtool \
-  pkg-config \
-  && apt-get clean
-
-# GCC
-RUN apt-get update && apt-get install -y \
-  gcc \
-  g++ \
-  && apt-get clean
-
-# libc6
-RUN apt-get update && apt-get install -y \
-  libc6 \
-  libc6-dbg \
-  libc6-dev \
-  && apt-get clean
-
-# Tools
-RUN apt-get update && apt-get install -y \
-  bzip2 \
-  curl \
-  dnsutils \
-  git \
-  lcov \
-  make \
-  strace \
-  time \
-  unzip \
-  wget \
-  zip \
-  && apt-get clean
-
-#=================
-# Setup git to access working directory across docker boundary.
-# This avoids the "fatal: detected dubious ownership in repository XYZ"
-# git error.
-
-RUN git config --global --add safe.directory '*'
-RUN git config --global protocol.file.allow always
+ADD apt_get_install_with_retry.sh /usr/local/bin/apt-get-install-retry
+RUN chmod +rx /usr/local/bin/apt-get-install-retry
 
 
-
-RUN apt update && apt install -y python3 python3-pip && apt clean
+RUN apt-get-install-retry python3 python3-pip
 
 RUN python3 -m pip install --break-system-packages --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
@@ -77,7 +35,7 @@ RUN mkdir /var/local/jenkins
 # autoconf automake libtool curl shellcheck: main dependencies
 # jq git: prerequisites for the clang-tidy script
 # libgtest-dev: otherwise clang-tidy will report missing <gtest/gtest.h> header
-RUN apt install -y \
+RUN apt-get-install-retry \
     autoconf \
     automake \
     curl \
@@ -91,7 +49,16 @@ RUN apt install -y \
     python3-venv \
     python3-virtualenv \
     shellcheck \
-    && apt clean
+    && apt-get clean
+
+#=================
+# Setup git to access working directory across docker boundary.
+# This avoids the "fatal: detected dubious ownership in repository XYZ"
+# git error.
+
+RUN git config --global --add safe.directory '*'
+RUN git config --global protocol.file.allow always
+
 
 #========================
 # Bazel installation

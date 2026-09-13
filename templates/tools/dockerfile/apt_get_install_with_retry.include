@@ -1,0 +1,5 @@
+#=================
+#  Create wrapper for apt-get
+
+ADD apt_get_install_with_retry.sh /usr/local/bin/apt-get-install-retry
+RUN chmod +rx /usr/local/bin/apt-get-install-retry
