@@ -23,6 +23,7 @@
 #include <stddef.h>
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <cmath>
 #include <map>
@@ -51,8 +52,12 @@
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/lb_policy_factory.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
+#include "src/core/load_balancing/outlier_detection/outlier_detection_metrics.h"
 #include "src/core/load_balancing/subchannel_interface.h"
+#include "src/core/load_balancing/weighted_target/weighted_target.h"
 #include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/telemetry/instrument.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
@@ -80,6 +85,16 @@ using ::grpc_event_engine::experimental::EventEngine;
 
 constexpr absl::string_view kOutlierDetection =
     "outlier_detection_experimental";
+
+// Metric label values (per gRFC A91).  Label names/keys are declared inside
+// the InstrumentDomain classes in outlier_detection_metrics.h.
+constexpr absl::string_view kDetectionMethodSuccessRate = "success_rate";
+constexpr absl::string_view kDetectionMethodFailurePercentage =
+    "failure_percentage";
+constexpr absl::string_view kUnenforcedReasonEnforcementPercentage =
+    "enforcement_percentage";
+constexpr absl::string_view kUnenforcedReasonMaxEjectionOverflow =
+    "max_ejection_overflow";
 
 // Config for xDS Cluster Impl LB policy.
 class OutlierDetectionLbConfig final : public LoadBalancingPolicy::Config {
@@ -437,6 +452,29 @@ class OutlierDetectionLb final : public LoadBalancingPolicy {
            ResolvedAddressLessThan>
       subchannel_state_map_;
   OrphanablePtr<EjectionTimer> ejection_timer_;
+
+  // gRFC A91 metric storages, pre-created at construction so that the
+  // {target, backend_service, locality, detection_method[, unenforced_reason]}
+  // label combinations are bound once per LB policy instance and the
+  // ejection timer only has to call Increment().
+  //
+  // target/backend_service/locality come from channel args populated by
+  // upstream policies (weighted_target sets the locality name; cds sets the
+  // backend service name).  Under xDS the locality label is empty because
+  // outlier_detection sits above weighted_target in the LB tree; the
+  // non-xDS path is exercised by the unit test.
+  InstrumentStorageRefPtr<OutlierDetectionMetricsDomainEnforced>
+      enforced_success_rate_storage_;
+  InstrumentStorageRefPtr<OutlierDetectionMetricsDomainEnforced>
+      enforced_failure_percentage_storage_;
+  InstrumentStorageRefPtr<OutlierDetectionMetricsDomainUnenforced>
+      unenforced_success_rate_enforcement_percentage_storage_;
+  InstrumentStorageRefPtr<OutlierDetectionMetricsDomainUnenforced>
+      unenforced_success_rate_max_ejection_overflow_storage_;
+  InstrumentStorageRefPtr<OutlierDetectionMetricsDomainUnenforced>
+      unenforced_failure_percentage_enforcement_percentage_storage_;
+  InstrumentStorageRefPtr<OutlierDetectionMetricsDomainUnenforced>
+      unenforced_failure_percentage_max_ejection_overflow_storage_;
 };
 
 //
@@ -562,8 +600,46 @@ LoadBalancingPolicy::PickResult OutlierDetectionLb::Picker::Pick(
 
 OutlierDetectionLb::OutlierDetectionLb(Args args)
     : LoadBalancingPolicy(std::move(args)) {
+  // Empty under xDS: this policy sits above weighted_target in the tree, so
+  // GRPC_ARG_LB_WEIGHTED_TARGET_CHILD does not reach it.
+  const absl::string_view locality =
+      channel_args().GetString(GRPC_ARG_LB_WEIGHTED_TARGET_CHILD).value_or("");
+  const absl::string_view backend_service =
+      channel_args().GetString(GRPC_ARG_BACKEND_SERVICE).value_or("");
+  const absl::string_view target = channel_control_helper()->GetTarget();
+  auto scope =
+      channel_control_helper()->GetStatsPluginGroup().GetCollectionScope();
+  enforced_success_rate_storage_ =
+      OutlierDetectionMetricsDomainEnforced::GetStorage(
+          scope, target, backend_service, locality,
+          kDetectionMethodSuccessRate);
+  enforced_failure_percentage_storage_ =
+      OutlierDetectionMetricsDomainEnforced::GetStorage(
+          scope, target, backend_service, locality,
+          kDetectionMethodFailurePercentage);
+  unenforced_success_rate_enforcement_percentage_storage_ =
+      OutlierDetectionMetricsDomainUnenforced::GetStorage(
+          scope, target, backend_service, locality,
+          kDetectionMethodSuccessRate,
+          kUnenforcedReasonEnforcementPercentage);
+  unenforced_success_rate_max_ejection_overflow_storage_ =
+      OutlierDetectionMetricsDomainUnenforced::GetStorage(
+          scope, target, backend_service, locality,
+          kDetectionMethodSuccessRate,
+          kUnenforcedReasonMaxEjectionOverflow);
+  unenforced_failure_percentage_enforcement_percentage_storage_ =
+      OutlierDetectionMetricsDomainUnenforced::GetStorage(
+          scope, target, backend_service, locality,
+          kDetectionMethodFailurePercentage,
+          kUnenforcedReasonEnforcementPercentage);
+  unenforced_failure_percentage_max_ejection_overflow_storage_ =
+      OutlierDetectionMetricsDomainUnenforced::GetStorage(
+          scope, target, backend_service, locality,
+          kDetectionMethodFailurePercentage,
+          kUnenforcedReasonMaxEjectionOverflow);
   GRPC_TRACE_LOG(outlier_detection_lb, INFO)
-      << "[outlier_detection_lb " << this << "] created";
+      << "[outlier_detection_lb " << this << "] created -- locality=\""
+      << locality << "\", backend_service=\"" << backend_service << "\"";
 }
 
 OutlierDetectionLb::~OutlierDetectionLb() {
@@ -925,9 +1001,12 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
             << "] random_key=" << random_key
             << " ejected_host_count=" << ejected_host_count
             << " current_percent=" << absl::StrFormat("%.3f", current_percent);
-        if (random_key < config.success_rate_ejection->enforcement_percentage &&
-            (ejected_host_count == 0 ||
-             (current_percent < config.max_ejection_percent))) {
+        const bool below_enforcement =
+            random_key < config.success_rate_ejection->enforcement_percentage;
+        const bool below_max_ejection =
+            ejected_host_count == 0 ||
+            current_percent < config.max_ejection_percent;
+        if (below_enforcement && below_max_ejection) {
           // Eject and record the timestamp for use when ejecting addresses in
           // this iteration.
           GRPC_TRACE_LOG(outlier_detection_lb, INFO)
@@ -935,6 +1014,17 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
               << "] ejecting candidate";
           endpoint_state->Eject(time_now);
           ++ejected_host_count;
+          parent_->enforced_success_rate_storage_->Increment(
+              OutlierDetectionMetricsDomainEnforced::kEjectionsEnforced);
+        } else {
+          const auto& storage =
+              below_enforcement
+                  ? parent_
+                        ->unenforced_success_rate_max_ejection_overflow_storage_
+                  : parent_
+                        ->unenforced_success_rate_enforcement_percentage_storage_;
+          storage->Increment(
+              OutlierDetectionMetricsDomainUnenforced::kEjectionsUnenforced);
         }
       }
     }
@@ -968,10 +1058,13 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
             << "] random_key=" << random_key
             << " ejected_host_count=" << ejected_host_count
             << " current_percent=" << current_percent;
-        if (random_key <
-                config.failure_percentage_ejection->enforcement_percentage &&
-            (ejected_host_count == 0 ||
-             (current_percent < config.max_ejection_percent))) {
+        const bool below_enforcement =
+            random_key <
+            config.failure_percentage_ejection->enforcement_percentage;
+        const bool below_max_ejection =
+            ejected_host_count == 0 ||
+            current_percent < config.max_ejection_percent;
+        if (below_enforcement && below_max_ejection) {
           // Eject and record the timestamp for use when ejecting addresses in
           // this iteration.
           GRPC_TRACE_LOG(outlier_detection_lb, INFO)
@@ -979,6 +1072,17 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
               << "] ejecting candidate";
           endpoint_state->Eject(time_now);
           ++ejected_host_count;
+          parent_->enforced_failure_percentage_storage_->Increment(
+              OutlierDetectionMetricsDomainEnforced::kEjectionsEnforced);
+        } else {
+          const auto& storage =
+              below_enforcement
+                  ? parent_
+                        ->unenforced_failure_percentage_max_ejection_overflow_storage_
+                  : parent_
+                        ->unenforced_failure_percentage_enforcement_percentage_storage_;
+          storage->Increment(
+              OutlierDetectionMetricsDomainUnenforced::kEjectionsUnenforced);
         }
       }
     }
