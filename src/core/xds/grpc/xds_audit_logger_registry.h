@@ -60,14 +60,6 @@ class XdsAuditLoggerRegistry final {
           logger_config,
       ValidationErrors* errors) const;
 
-  // TODO(roth): Remove this method when removing the
-  // xds_server_filter_chain_per_route experiment.
-  Json ConvertXdsAuditLoggerConfig(
-      const XdsResourceType::DecodeContext& context,
-      const envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig*
-          logger_config,
-      ValidationErrors* errors) const;
-
  private:
   // A map of config factories that goes from the type of the audit logging
   // config to the config factory.

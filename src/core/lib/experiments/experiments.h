@@ -144,12 +144,8 @@ inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_V2_NON_OWNING_WAKER_IMPLEMENTATION
-inline bool IsV2NonOwningWakerImplementationEnabled() { return true; }
 inline bool IsVerboseChannelzConnectionLoggingEnabled() { return false; }
 inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_XDS_SERVER_FILTER_CHAIN_PER_ROUTE
-inline bool IsXdsServerFilterChainPerRouteEnabled() { return true; }
 
 #elif defined(GPR_WINDOWS)
 inline bool IsBufferListDeletionPrepEnabled() { return false; }
@@ -239,12 +235,8 @@ inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_V2_NON_OWNING_WAKER_IMPLEMENTATION
-inline bool IsV2NonOwningWakerImplementationEnabled() { return true; }
 inline bool IsVerboseChannelzConnectionLoggingEnabled() { return false; }
 inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_XDS_SERVER_FILTER_CHAIN_PER_ROUTE
-inline bool IsXdsServerFilterChainPerRouteEnabled() { return true; }
 
 #else
 inline bool IsBufferListDeletionPrepEnabled() { return false; }
@@ -334,12 +326,8 @@ inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_V2_NON_OWNING_WAKER_IMPLEMENTATION
-inline bool IsV2NonOwningWakerImplementationEnabled() { return true; }
 inline bool IsVerboseChannelzConnectionLoggingEnabled() { return false; }
 inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_XDS_SERVER_FILTER_CHAIN_PER_ROUTE
-inline bool IsXdsServerFilterChainPerRouteEnabled() { return true; }
 #endif
 
 #else
@@ -404,10 +392,8 @@ enum ExperimentIds {
   kExperimentIdTsiFrameProtectorWithoutLocks,
   kExperimentIdUnconstrainedMaxQuotaBufferSize,
   kExperimentIdUseCallEventEngineInCompletionQueue,
-  kExperimentIdV2NonOwningWakerImplementation,
   kExperimentIdVerboseChannelzConnectionLogging,
   kExperimentIdWildcardIpExpansionRestriction,
-  kExperimentIdXdsServerFilterChainPerRoute,
   kNumExperiments
 };
 #define GRPC_EXPERIMENT_IS_INCLUDED_BUFFER_LIST_DELETION_PREP
@@ -653,10 +639,6 @@ inline bool IsUseCallEventEngineInCompletionQueueEnabled() {
   return IsExperimentEnabled<
       kExperimentIdUseCallEventEngineInCompletionQueue>();
 }
-#define GRPC_EXPERIMENT_IS_INCLUDED_V2_NON_OWNING_WAKER_IMPLEMENTATION
-inline bool IsV2NonOwningWakerImplementationEnabled() {
-  return IsExperimentEnabled<kExperimentIdV2NonOwningWakerImplementation>();
-}
 #define GRPC_EXPERIMENT_IS_INCLUDED_VERBOSE_CHANNELZ_CONNECTION_LOGGING
 inline bool IsVerboseChannelzConnectionLoggingEnabled() {
   return IsExperimentEnabled<kExperimentIdVerboseChannelzConnectionLogging>();
@@ -664,10 +646,6 @@ inline bool IsVerboseChannelzConnectionLoggingEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_WILDCARD_IP_EXPANSION_RESTRICTION
 inline bool IsWildcardIpExpansionRestrictionEnabled() {
   return IsExperimentEnabled<kExperimentIdWildcardIpExpansionRestriction>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_XDS_SERVER_FILTER_CHAIN_PER_ROUTE
-inline bool IsXdsServerFilterChainPerRouteEnabled() {
-  return IsExperimentEnabled<kExperimentIdXdsServerFilterChainPerRoute>();
 }
 
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
