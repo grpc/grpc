@@ -6467,6 +6467,16 @@ targets:
   - grpc++
   - grpc_authorization_provider
   - grpc_test_util
+- name: autosharding_config_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/load_balancing/autosharding_config_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: autosharding_test
   gtest: true
   build: test

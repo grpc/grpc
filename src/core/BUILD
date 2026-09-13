@@ -8313,7 +8313,6 @@ grpc_cc_library(
     ],
     deps = [
         "channel_args",
-        "closure",
         "connectivity_state",
         "delegating_helper",
         "grpc_check",
@@ -8335,7 +8334,6 @@ grpc_cc_library(
         "//:config",
         "//:debug_location",
         "//:endpoint_addresses",
-        "//:exec_ctx",
         "//:gpr",
         "//:grpc_base",
         "//:grpc_trace",

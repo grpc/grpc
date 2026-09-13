@@ -17,8 +17,6 @@
 #ifndef GRPC_SRC_CORE_LOAD_BALANCING_AUTOSHARDING_AUTOSHARDING_H
 #define GRPC_SRC_CORE_LOAD_BALANCING_AUTOSHARDING_AUTOSHARDING_H
 
-#include <grpc/support/port_platform.h>
-
 // TODO(bpawan): Expose Channel Factory types once defined for C++ (gRFC A119).
 
 #endif  // GRPC_SRC_CORE_LOAD_BALANCING_AUTOSHARDING_AUTOSHARDING_H
