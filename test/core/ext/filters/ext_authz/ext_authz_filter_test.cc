@@ -92,8 +92,6 @@ constexpr absl::string_view kOkResponseNotPresentErrorMessage =
 constexpr absl::string_view kHeaderMutationNotAllowedErrorMessage =
     "ExtAuthz header mutation is not allowed";
 constexpr absl::string_view kTransportErrorMessage = "transport failure";
-constexpr absl::string_view kForbiddenHeaderMutationErrorMessage =
-    "Forbidden header mutation: x-custom-header";
 
 MATCHER_P2(StatusIs, code, message, "") {
   return arg.code() == code && arg.message() == message;
@@ -827,6 +825,9 @@ TEST_F(ExtAuthzFilterTest, OkStatusWithDeniedResponseFails) {
 
 TEST_F(ExtAuthzFilterTest, DeniedResponseDisallowedMutationFailureModeAllow) {
   auto config = MakeConfig();
+  // failure_mode_allow applies only to communication failures with the
+  // ext_authz service.  A request that the service explicitly denied stays
+  // denied even if the denied response headers cannot be applied.
   config->failure_mode_allow = true;
   config->failure_mode_allow_header_add = true;
   HeaderMutationRules rules;
@@ -849,16 +850,10 @@ TEST_F(ExtAuthzFilterTest, DeniedResponseDisallowedMutationFailureModeAllow) {
         header->mutable_header()->set_value(std::string(kCustomHeaderValue));
         unary_call->SendMessageToClient(response.SerializeAsString());
       });
-  EXPECT_EVENT(
-      Started(&call, HasMetadataKeyValue(kFailureModeAllowedHeader, kTrue)));
+  EXPECT_EVENT(Finished(&call, HasMetadataResult(absl::PermissionDeniedError(
+                                   kHeaderMutationNotAllowedErrorMessage))));
   call.Start(call.NewClientMetadata({{kPathHeader, kPath}}));
   handler.join();
-  EXPECT_EVENT(ForwardedServerInitialMetadata(
-      &call, HasMetadataKeyValue(kServerHeaderKey, kServerHeaderValue)));
-  call.ForwardServerInitialMetadata(
-      call.NewServerMetadata({{kServerHeaderKey, kServerHeaderValue}}));
-  EXPECT_EVENT(Finished(&call, HasMetadataResult(absl::OkStatus())));
-  call.FinishNextFilter(call.NewServerMetadata({{kGrpcStatus, kZero}}));
   Step();
 }
 
@@ -887,7 +882,7 @@ TEST_F(ExtAuthzFilterTest, DeniedResponseDisallowedMutationFailureModeDeny) {
         unary_call->SendMessageToClient(response.SerializeAsString());
       });
   EXPECT_EVENT(Finished(&call, HasMetadataResult(absl::ResourceExhaustedError(
-                                   kForbiddenHeaderMutationErrorMessage))));
+                                   kHeaderMutationNotAllowedErrorMessage))));
   call.Start(call.NewClientMetadata({{kPathHeader, kPath}}));
   handler.join();
   Step();

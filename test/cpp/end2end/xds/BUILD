@@ -462,6 +462,42 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "xds_ext_authz_end2end_test",
+    size = "large",
+    srcs = ["xds_ext_authz_end2end_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/log:log",
+        "absl/strings",
+    ],
+    linkstatic = True,
+    tags = [
+        "no_test_ios",
+        "no_windows",
+        "xds_end2end_test",
+    ],
+    deps = [
+        ":xds_end2end_test_lib",
+        "//:config_vars",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/core:sync",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
+        "@envoy_api//envoy/config/common/mutation_rules/v3:pkg_cc_proto",
+        "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/filters/http/ext_authz/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/filters/http/router/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/grpc_service/channel_credentials/insecure/v3:pkg_cc_proto",
+        "@envoy_api//envoy/service/auth/v3:pkg_cc_grpc",
+        "@envoy_api//envoy/service/auth/v3:pkg_cc_proto",
+        "@envoy_api//envoy/type/v3:pkg_cc_proto",
+    ],
+)
+
+grpc_cc_test(
     name = "xds_fault_injection_end2end_test",
     size = "large",
     srcs = ["xds_fault_injection_end2end_test.cc"],

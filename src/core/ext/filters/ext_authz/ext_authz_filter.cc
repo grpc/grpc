@@ -122,7 +122,7 @@ std::string ExtAuthzFilter::Config::ToString() const {
 // ExtAuthzFilter::Call
 //
 
-ServerMetadataHandle ExtAuthzFilter::Call::OnClientInitialMetadata(
+absl::Status ExtAuthzFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, ExtAuthzFilter* filter) {
   const auto& config = *filter->config_;
   // Check runtime filter enablement sampling.
@@ -132,25 +132,26 @@ ServerMetadataHandle ExtAuthzFilter::Call::OnClientInitialMetadata(
     if (random_number >= *config.filter_enabled) {
       // If the filter is disabled, deny the request if configured to do so.
       if (config.deny_at_disable) {
-        return ServerMetadataFromStatus(config.status_on_error,
-                                        "ExtAuthz filter is not enabled");
+        return absl::Status(
+            static_cast<absl::StatusCode>(config.status_on_error),
+            "ExtAuthz filter is not enabled");
       }
       // Otherwise, allow the request to pass through without authorization.
-      return nullptr;
+      return absl::OkStatus();
     }
   }
   // Helper to handle failure based on failure_mode_allow and
   // failure_mode_allow_header_add configurations.
-  auto handle_failure =
-      [&](absl::string_view error_message) -> ServerMetadataHandle {
+  auto handle_failure = [&](absl::string_view error_message) -> absl::Status {
     if (!config.failure_mode_allow) {
-      return ServerMetadataFromStatus(config.status_on_error, error_message);
+      return absl::Status(static_cast<absl::StatusCode>(config.status_on_error),
+                          error_message);
     }
     if (config.failure_mode_allow_header_add) {
       md.Set(XEnvoyAuthFailureModeAllowedMetadata(),
              Slice::FromStaticString("true"));
     }
-    return nullptr;
+    return absl::OkStatus();
   };
   // Fail if the ext_authz side-channel or transport is unavailable.
   if (filter->channel() == nullptr ||
@@ -205,18 +206,13 @@ ServerMetadataHandle ExtAuthzFilter::Call::OnClientInitialMetadata(
         std::get_if<ExtAuthzResponse::DeniedResponse>(&response->response);
     grpc_status_code status =
         denied != nullptr ? denied->status : response->status_code;
-    auto md_out = ServerMetadataFromStatus(status, status_message);
     if (denied != nullptr) {
-      // Append denied response headers to the trailing metadata.
-      for (const auto& header : denied->headers) {
-        auto mutation_status =
-            ApplyXdsHeaderMutationsAddition(header, rules, *md_out);
-        if (!mutation_status.ok()) {
-          return handle_failure(mutation_status.message());
-        }
-      }
+      // The denied response headers are applied to the trailing metadata in
+      // OnServerTrailingMetadata(), which sees the metadata synthesized from
+      // the status returned below.
+      response_trailer_to_add = denied->headers;
     }
-    return md_out;
+    return absl::Status(static_cast<absl::StatusCode>(status), status_message);
   }
   // Handle OK response.
   const auto* ok_resp =
@@ -240,10 +236,8 @@ ServerMetadataHandle ExtAuthzFilter::Call::OnClientInitialMetadata(
     }
   }
   // Store any response headers to inject into server initial metadata later.
-  if (!ok_resp->response_headers_to_add.empty()) {
-    response_headers_to_add = ok_resp->response_headers_to_add;
-  }
-  return nullptr;
+  response_headers_to_add = ok_resp->response_headers_to_add;
+  return absl::OkStatus();
 }
 
 absl::Status ExtAuthzFilter::Call::OnServerInitialMetadata(
@@ -314,7 +308,8 @@ ExtAuthzFilter::ExtAuthzChannel::~ExtAuthzChannel() = default;
 //
 
 const grpc_channel_filter ExtAuthzFilter::kFilterVtable =
-    MakePromiseBasedFilter<ExtAuthzFilter, FilterEndpoint::kClient, 0>();
+    MakePromiseBasedFilter<ExtAuthzFilter, FilterEndpoint::kClient,
+                           kFilterExaminesServerInitialMetadata>();
 
 absl::StatusOr<std::unique_ptr<ExtAuthzFilter>> ExtAuthzFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args filter_args) {

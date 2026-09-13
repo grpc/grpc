@@ -138,8 +138,8 @@ class ExtAuthzFilter : public ImplementChannelFilter<ExtAuthzFilter> {
 
   class Call {
    public:
-    ServerMetadataHandle OnClientInitialMetadata(ClientMetadata& md,
-                                                 ExtAuthzFilter* filter);
+    absl::Status OnClientInitialMetadata(ClientMetadata& md,
+                                         ExtAuthzFilter* filter);
     absl::Status OnServerInitialMetadata(ServerMetadata& md,
                                          ExtAuthzFilter* filter);
     absl::Status OnServerTrailingMetadata(ServerMetadata& md,

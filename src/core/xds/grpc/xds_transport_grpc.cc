@@ -312,7 +312,10 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcUnaryCall::~GrpcUnaryCall() {
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcUnaryCall::Orphan() {
   GRPC_CHECK_NE(call_, nullptr);
+  // If the call is still in flight, cancel it; if it has already completed,
+  // this is a no-op.
   grpc_call_cancel_internal(call_);
+  Unref(DEBUG_LOCATION, "Orphan");
 }
 
 absl::StatusOr<std::string>
