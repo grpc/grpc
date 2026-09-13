@@ -63,6 +63,24 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "byte_source_test",
+    srcs = ["byte_source_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/log:log",
+        "absl/types:span",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//src/core:slice",
+        "//src/core:byte_source",
+    ],
+)
+
+grpc_cc_test(
     name = "slice_test",
     srcs = ["slice_test.cc"],
     external_deps = [
