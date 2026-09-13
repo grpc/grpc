@@ -68,10 +68,21 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     Ref();
     GRPC_CHECK(cq_armed_.exchange(true) == false);
     GRPC_CHECK(!callback_armed_.load());
-    cq_timer_handle_ = event_engine_->RunAfter(
-        grpc_core::Timestamp::FromTimespecRoundUp(deadline) -
-            grpc_core::ExecCtx::Get()->Now(),
-        [this] { OnCQAlarm(absl::OkStatus()); });
+    // If the deadline has already passed, fire immediately via the
+    // EventEngine's fast path (RunAfter with a non-positive duration runs the
+    // callback inline on the executor, skipping the timer heap). We must test
+    // the *unrounded* deadline against now: rounding up to the next millisecond
+    // first would turn "now" into a ~1ms future timer, adding ~1ms of latency
+    // per alarm.
+    const bool already_due =
+        gpr_time_cmp(gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
+                     gpr_now(GPR_CLOCK_MONOTONIC)) <= 0;
+    const grpc_core::Duration delay =
+        already_due ? grpc_core::Duration::Zero()
+                    : grpc_core::Timestamp::FromTimespecRoundUp(deadline) -
+                          grpc_core::ExecCtx::Get()->Now();
+    cq_timer_handle_ =
+        event_engine_->RunAfter(delay, [this] { OnCQAlarm(absl::OkStatus()); });
   }
   void Set(gpr_timespec deadline, std::function<void(bool)> f) {
     grpc_core::ExecCtx exec_ctx;
@@ -80,10 +91,21 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     Ref();
     GRPC_CHECK(callback_armed_.exchange(true) == false);
     GRPC_CHECK(!cq_armed_.load());
-    callback_timer_handle_ = event_engine_->RunAfter(
-        grpc_core::Timestamp::FromTimespecRoundUp(deadline) -
-            grpc_core::ExecCtx::Get()->Now(),
-        [this] { OnCallbackAlarm(true); });
+    // If the deadline has already passed, fire immediately via the
+    // EventEngine's fast path (RunAfter with a non-positive duration runs the
+    // callback inline on the executor, skipping the timer heap). We must test
+    // the *unrounded* deadline against now: rounding up to the next millisecond
+    // first would turn "now" into a ~1ms future timer, adding ~1ms of latency
+    // per alarm.
+    const bool already_due =
+        gpr_time_cmp(gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
+                     gpr_now(GPR_CLOCK_MONOTONIC)) <= 0;
+    const grpc_core::Duration delay =
+        already_due ? grpc_core::Duration::Zero()
+                    : grpc_core::Timestamp::FromTimespecRoundUp(deadline) -
+                          grpc_core::ExecCtx::Get()->Now();
+    callback_timer_handle_ =
+        event_engine_->RunAfter(delay, [this] { OnCallbackAlarm(true); });
   }
   void Cancel() {
     grpc_core::ExecCtx exec_ctx;
