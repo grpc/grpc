@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_EVALUATE_ARGS_H
-#define GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_EVALUATE_ARGS_H
+#ifndef GRPC_SRC_CORE_CALL_EVALUATE_ARGS_H
+#define GRPC_SRC_CORE_CALL_EVALUATE_ARGS_H
 
 #include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
@@ -50,14 +50,19 @@ class EvaluateArgs final {
     std::vector<absl::string_view> dns_sans;
     absl::string_view common_name;
     absl::string_view subject;
+    absl::string_view requested_server_name;
+    absl::string_view tls_version;
     Address local_address;
     Address peer_address;
   };
 
-  EvaluateArgs(grpc_metadata_batch* metadata, PerChannelArgs* channel_args)
+  EvaluateArgs(grpc_metadata_batch* metadata,
+               const PerChannelArgs* channel_args)
       : metadata_(metadata), channel_args_(channel_args) {}
 
   absl::string_view GetPath() const;
+  // Returns the value of the :authority header, falling back to the legacy
+  // host header if :authority is not present.
   absl::string_view GetAuthority() const;
   absl::string_view GetMethod() const;
   // Returns metadata value(s) for the specified key.
@@ -82,12 +87,21 @@ class EvaluateArgs final {
   std::vector<absl::string_view> GetDnsSans() const;
   absl::string_view GetCommonName() const;
   absl::string_view GetSubject() const;
+  absl::string_view GetRequestedServerName() const;
+  absl::string_view GetTlsVersion() const;
+
+  // Iterates over all metadata entries, invoking encoder->Encode() for each
+  // one.  See grpc_metadata_batch::Encode() for details.
+  template <typename Encoder>
+  void EncodeHeaders(Encoder* encoder) const {
+    if (metadata_ != nullptr) metadata_->Encode(encoder);
+  }
 
  private:
   grpc_metadata_batch* metadata_;
-  PerChannelArgs* channel_args_;
+  const PerChannelArgs* channel_args_;
 };
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_EVALUATE_ARGS_H
+#endif  // GRPC_SRC_CORE_CALL_EVALUATE_ARGS_H

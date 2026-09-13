@@ -612,6 +612,29 @@ class SslTransportSecurityTest
                 peer, TSI_SSL_NEGOTIATED_KEY_EXCHANGE_GROUP) != nullptr) {
           expected_property_count++;
         }
+        const tsi_peer_property* server_name_prop =
+            tsi_peer_get_property_by_name(
+                peer, TSI_SSL_REQUESTED_SERVER_NAME_PEER_PROPERTY);
+        if (server_name_prop != nullptr) {
+          expected_property_count++;
+          if (!ssl_fixture->server_name_indication_.empty() &&
+              ssl_fixture->server_name_indication_ != kSslTsiTestInvalidSni) {
+            EXPECT_EQ(std::string(server_name_prop->value.data,
+                                  server_name_prop->value.length),
+                      ssl_fixture->server_name_indication_);
+          }
+        }
+        const tsi_peer_property* tls_version_prop =
+            tsi_peer_get_property_by_name(peer,
+                                          TSI_SSL_TLS_VERSION_PEER_PROPERTY);
+        if (tls_version_prop != nullptr) {
+          expected_property_count++;
+          std::string expected_tls_version =
+              ssl_fixture->tls_version_ == TSI_TLS1_2 ? "TLSv1.2" : "TLSv1.3";
+          EXPECT_EQ(std::string(tls_version_prop->value.data,
+                                tls_version_prop->value.length),
+                    expected_tls_version);
+        }
         ASSERT_EQ(peer->property_count, expected_property_count);
 
       } else {

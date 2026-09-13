@@ -36,6 +36,7 @@
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_selector.h"
 #include "src/core/credentials/transport/tls/spiffe_utils.h"
+#include "src/core/credentials/transport/tls/tls_utils.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl_transport_security.h"

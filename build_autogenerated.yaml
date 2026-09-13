@@ -201,6 +201,7 @@ libs:
   - src/core/call/channelz_context.h
   - src/core/call/client_call.h
   - src/core/call/custom_metadata.h
+  - src/core/call/evaluate_args.h
   - src/core/call/filter_fusion.h
   - src/core/call/interception_chain.h
   - src/core/call/message.h
@@ -1131,7 +1132,6 @@ libs:
   - src/core/lib/security/authorization/audit_logging.h
   - src/core/lib/security/authorization/authorization_engine.h
   - src/core/lib/security/authorization/authorization_policy_provider.h
-  - src/core/lib/security/authorization/evaluate_args.h
   - src/core/lib/security/authorization/grpc_authorization_engine.h
   - src/core/lib/security/authorization/grpc_server_authz_filter.h
   - src/core/lib/security/authorization/matchers.h
@@ -1404,6 +1404,7 @@ libs:
   - src/core/call/call_spine.cc
   - src/core/call/call_state.cc
   - src/core/call/client_call.cc
+  - src/core/call/evaluate_args.cc
   - src/core/call/interception_chain.cc
   - src/core/call/message.cc
   - src/core/call/metadata.cc
@@ -2090,7 +2091,6 @@ libs:
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/security/authorization/audit_logging.cc
   - src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
-  - src/core/lib/security/authorization/evaluate_args.cc
   - src/core/lib/security/authorization/grpc_authorization_engine.cc
   - src/core/lib/security/authorization/grpc_server_authz_filter.cc
   - src/core/lib/security/authorization/matchers.cc
@@ -2495,6 +2495,7 @@ libs:
   - src/core/call/channelz_context.h
   - src/core/call/client_call.h
   - src/core/call/custom_metadata.h
+  - src/core/call/evaluate_args.h
   - src/core/call/filter_fusion.h
   - src/core/call/interception_chain.h
   - src/core/call/message.h
@@ -2892,7 +2893,6 @@ libs:
   - src/core/lib/resource_tracker/resource_tracker.h
   - src/core/lib/security/authorization/authorization_engine.h
   - src/core/lib/security/authorization/authorization_policy_provider.h
-  - src/core/lib/security/authorization/evaluate_args.h
   - src/core/lib/security/authorization/grpc_server_authz_filter.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
@@ -3068,6 +3068,7 @@ libs:
   - src/core/call/call_spine.cc
   - src/core/call/call_state.cc
   - src/core/call/client_call.cc
+  - src/core/call/evaluate_args.cc
   - src/core/call/interception_chain.cc
   - src/core/call/message.cc
   - src/core/call/metadata.cc
@@ -3380,7 +3381,6 @@ libs:
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
-  - src/core/lib/security/authorization/evaluate_args.cc
   - src/core/lib/security/authorization/grpc_server_authz_filter.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
@@ -4741,6 +4741,7 @@ libs:
   - src/core/call/channelz_context.h
   - src/core/call/client_call.h
   - src/core/call/custom_metadata.h
+  - src/core/call/evaluate_args.h
   - src/core/call/interception_chain.h
   - src/core/call/message.h
   - src/core/call/metadata.h
@@ -5005,7 +5006,6 @@ libs:
   - src/core/lib/security/authorization/audit_logging.h
   - src/core/lib/security/authorization/authorization_engine.h
   - src/core/lib/security/authorization/authorization_policy_provider.h
-  - src/core/lib/security/authorization/evaluate_args.h
   - src/core/lib/security/authorization/grpc_authorization_engine.h
   - src/core/lib/security/authorization/grpc_authorization_policy_provider.h
   - src/core/lib/security/authorization/grpc_server_authz_filter.h
@@ -5133,6 +5133,7 @@ libs:
   - src/core/call/call_spine.cc
   - src/core/call/call_state.cc
   - src/core/call/client_call.cc
+  - src/core/call/evaluate_args.cc
   - src/core/call/interception_chain.cc
   - src/core/call/message.cc
   - src/core/call/metadata.cc
@@ -5343,7 +5344,6 @@ libs:
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/security/authorization/audit_logging.cc
   - src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
-  - src/core/lib/security/authorization/evaluate_args.cc
   - src/core/lib/security/authorization/grpc_authorization_engine.cc
   - src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
   - src/core/lib/security/authorization/grpc_server_authz_filter.cc
@@ -12723,7 +12723,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/security/evaluate_args_test.cc
+  - test/core/call/evaluate_args_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -13317,6 +13317,7 @@ targets:
   deps:
   - gtest
   - grpc++
+  - grpc_test_util
 - name: factory_test
   gtest: true
   build: test

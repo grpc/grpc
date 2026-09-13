@@ -2292,6 +2292,9 @@ static tsi_result ssl_handshaker_result_extract_peer(
   // the peer's certificate is not present in the stack
   STACK_OF(X509)* peer_chain = SSL_get_peer_cert_chain(impl->ssl);
 
+  const char* server_name =
+      SSL_get_servername(impl->ssl, TLSEXT_NAMETYPE_host_name);
+  const char* tls_version = SSL_get_version(impl->ssl);
   X509* verified_root_cert = static_cast<X509*>(
       SSL_get_ex_data(impl->ssl, g_ssl_ex_verified_root_cert_index));
   // 1 is for session reused property.
@@ -2299,6 +2302,8 @@ static tsi_result ssl_handshaker_result_extract_peer(
   if (alpn_selected != nullptr) new_property_count++;
   if (peer_chain != nullptr) new_property_count++;
   if (verified_root_cert != nullptr) new_property_count++;
+  if (server_name != nullptr) new_property_count++;
+  if (tls_version != nullptr) new_property_count++;
 #if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30000000L
   int nid = SSL_get_negotiated_group(impl->ssl);
   const char* negotiated_group_name =
@@ -2341,6 +2346,20 @@ static tsi_result ssl_handshaker_result_extract_peer(
   if (result != TSI_OK) return result;
   peer->property_count++;
 
+  if (server_name != nullptr) {
+    result = tsi_construct_string_peer_property_from_cstring(
+        TSI_SSL_REQUESTED_SERVER_NAME_PEER_PROPERTY, server_name,
+        &peer->properties[peer->property_count]);
+    if (result != TSI_OK) return result;
+    peer->property_count++;
+  }
+  if (tls_version != nullptr) {
+    result = tsi_construct_string_peer_property_from_cstring(
+        TSI_SSL_TLS_VERSION_PEER_PROPERTY, tls_version,
+        &peer->properties[peer->property_count]);
+    if (result != TSI_OK) return result;
+    peer->property_count++;
+  }
   if (verified_root_cert != nullptr) {
     result = peer_property_from_x509_subject(
         verified_root_cert, &peer->properties[peer->property_count], true);

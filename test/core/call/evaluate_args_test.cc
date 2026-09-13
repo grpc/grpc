@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/security/authorization/evaluate_args.h"
+#include "src/core/call/evaluate_args.h"
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/credentials/transport/tls/tls_utils.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "test/core/test_util/evaluate_args_test_util.h"
 #include "test/core/test_util/test_config.h"
@@ -45,6 +46,19 @@ TEST_F(EvaluateArgsTest, GetPathSuccess) {
 
 TEST_F(EvaluateArgsTest, GetAuthoritySuccess) {
   util_.AddPairToMetadata(":authority", "test.google.com");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_EQ(args.GetAuthority(), "test.google.com");
+}
+
+TEST_F(EvaluateArgsTest, GetAuthorityFallsBackToHostHeader) {
+  util_.AddPairToMetadata("host", "host.google.com");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_EQ(args.GetAuthority(), "host.google.com");
+}
+
+TEST_F(EvaluateArgsTest, GetAuthorityPrefersAuthorityOverHostHeader) {
+  util_.AddPairToMetadata(":authority", "test.google.com");
+  util_.AddPairToMetadata("host", "host.google.com");
   EvaluateArgs args = util_.MakeEvaluateArgs();
   EXPECT_EQ(args.GetAuthority(), "test.google.com");
 }
@@ -104,6 +118,8 @@ TEST_F(EvaluateArgsTest, EmptyAuthContext) {
   EXPECT_TRUE(args.GetDnsSans().empty());
   EXPECT_TRUE(args.GetSubject().empty());
   EXPECT_TRUE(args.GetCommonName().empty());
+  EXPECT_TRUE(args.GetRequestedServerName().empty());
+  EXPECT_TRUE(args.GetTlsVersion().empty());
 }
 
 TEST_F(EvaluateArgsTest, GetTransportSecurityTypeSuccessOneProperty) {
@@ -176,6 +192,35 @@ TEST_F(EvaluateArgsTest, GetSubjectFailDuplicateProperty) {
                                  "CN=def,OU=Google");
   EvaluateArgs args = util_.MakeEvaluateArgs();
   EXPECT_TRUE(args.GetSubject().empty());
+}
+
+TEST_F(EvaluateArgsTest, GetRequestedServerNameSuccessOneProperty) {
+  util_.AddPropertyToAuthContext(GRPC_SSL_REQUESTED_SERVER_NAME_PROPERTY_NAME,
+                                 "test.domain.com");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_EQ(args.GetRequestedServerName(), "test.domain.com");
+}
+
+TEST_F(EvaluateArgsTest, GetRequestedServerNameFailDuplicateProperty) {
+  util_.AddPropertyToAuthContext(GRPC_SSL_REQUESTED_SERVER_NAME_PROPERTY_NAME,
+                                 "server1");
+  util_.AddPropertyToAuthContext(GRPC_SSL_REQUESTED_SERVER_NAME_PROPERTY_NAME,
+                                 "server2");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_TRUE(args.GetRequestedServerName().empty());
+}
+
+TEST_F(EvaluateArgsTest, GetTlsVersionSuccessOneProperty) {
+  util_.AddPropertyToAuthContext(GRPC_SSL_TLS_VERSION_PROPERTY_NAME, "TLSv1.3");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_EQ(args.GetTlsVersion(), "TLSv1.3");
+}
+
+TEST_F(EvaluateArgsTest, GetTlsVersionFailDuplicateProperty) {
+  util_.AddPropertyToAuthContext(GRPC_SSL_TLS_VERSION_PROPERTY_NAME, "TLSv1.2");
+  util_.AddPropertyToAuthContext(GRPC_SSL_TLS_VERSION_PROPERTY_NAME, "TLSv1.3");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_TRUE(args.GetTlsVersion().empty());
 }
 
 }  // namespace grpc_core

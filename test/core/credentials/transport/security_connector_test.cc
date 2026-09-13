@@ -602,6 +602,41 @@ TEST(SecurityConnectorTest, SubjectToAuthContext) {
   ctx.reset(DEBUG_LOCATION, "test");
 }
 
+TEST(SecurityConnectorTest, RequestedServerNameToAuthContext) {
+  tsi_peer peer;
+  const char* expected_server_name = "server.example.com";
+  ASSERT_EQ(tsi_construct_peer(1, &peer), TSI_OK);
+  ASSERT_EQ(tsi_construct_string_peer_property_from_cstring(
+                TSI_SSL_REQUESTED_SERVER_NAME_PEER_PROPERTY,
+                expected_server_name, &peer.properties[0]),
+            TSI_OK);
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_ssl_peer_to_auth_context(&peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
+  ASSERT_NE(ctx, nullptr);
+  ASSERT_TRUE(check_property(ctx.get(),
+                             GRPC_SSL_REQUESTED_SERVER_NAME_PROPERTY_NAME,
+                             expected_server_name));
+  tsi_peer_destruct(&peer);
+  ctx.reset(DEBUG_LOCATION, "test");
+}
+
+TEST(SecurityConnectorTest, TlsVersionToAuthContext) {
+  tsi_peer peer;
+  const char* expected_tls_version = "TLSv1.3";
+  ASSERT_EQ(tsi_construct_peer(1, &peer), TSI_OK);
+  ASSERT_EQ(tsi_construct_string_peer_property_from_cstring(
+                TSI_SSL_TLS_VERSION_PEER_PROPERTY, expected_tls_version,
+                &peer.properties[0]),
+            TSI_OK);
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_ssl_peer_to_auth_context(&peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
+  ASSERT_NE(ctx, nullptr);
+  ASSERT_TRUE(check_property(ctx.get(), GRPC_SSL_TLS_VERSION_PROPERTY_NAME,
+                             expected_tls_version));
+  tsi_peer_destruct(&peer);
+  ctx.reset(DEBUG_LOCATION, "test");
+}
+
 static const char* roots_for_override_api = "roots for override api";
 
 static grpc_ssl_roots_override_result override_roots_success(
