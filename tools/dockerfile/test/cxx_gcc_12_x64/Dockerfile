@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2026 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,47 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM python:3.14-trixie
+FROM gcc:12-bookworm
 
-#=================
-# Basic C core dependencies
-
-# C/C++ dependencies according to https://github.com/grpc/grpc/blob/master/BUILDING.md
 RUN apt-get update && apt-get install -y \
-  build-essential \
-  autoconf \
-  libtool \
-  pkg-config \
-  && apt-get clean
-
-# GCC
-RUN apt-get update && apt-get install -y \
-  gcc \
-  g++ \
-  && apt-get clean
-
-# libc6
-RUN apt-get update && apt-get install -y \
-  libc6 \
-  libc6-dbg \
-  libc6-dev \
-  && apt-get clean
-
-# Tools
-RUN apt-get update && apt-get install -y \
-  bzip2 \
+  ccache \
   curl \
-  dnsutils \
   git \
-  lcov \
-  make \
-  strace \
   time \
-  unzip \
-  wget \
-  zip \
-  && apt-get clean
-
+  zip && apt-get clean
 #=================
 # Setup git to access working directory across docker boundary.
 # This avoids the "fatal: detected dubious ownership in repository XYZ"
@@ -61,18 +28,33 @@ RUN apt-get update && apt-get install -y \
 RUN git config --global --add safe.directory '*'
 RUN git config --global protocol.file.allow always
 
+#====================
+# run_tests.py python dependencies
 
+# Basic python dependencies to be able to run tools/run_tests python scripts
+# These dependencies are not sufficient to build gRPC Python, gRPC Python
+# deps are defined elsewhere (e.g. python_deps.include)
+RUN apt-get update && apt-get install -y \
+  python3 \
+  python3-pip \
+  python3-venv \
+  && apt-get clean
 
-RUN mkdir /var/local/jenkins
+# Use system python to bootstrap virtualenv and activate it
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-
-RUN apt-get update && apt-get install -y python3 python3-all-dev python3-pip
-RUN ln -s $(which python3) /usr/bin/python
+# Install/upgrade basic requirements inside the virtualenv
+RUN pip install --upgrade pip setuptools pyyaml
 
 # Google Cloud Platform API libraries
 # These are needed for uploading test results to BigQuery (e.g. by tools/run_tests scripts)
 RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
+
+# Some cxx tests depend on the twisted package
+RUN python3 -m pip install twisted
 
 #=================
 # Install cmake
@@ -80,17 +62,10 @@ RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-clien
 
 RUN apt-get update && apt-get install -y cmake && apt-get clean
 
-#=================
-# Install ccache
 
-# Install ccache from source since ccache 3.x packaged with most linux distributions
-# does not support Redis backend for caching.
-RUN curl -sSL --fail --retry 5 -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.11.3/ccache-4.11.3.tar.gz \
-    && tar -zxf ccache.tar.gz \
-    && cd ccache-4.11.3 \
-    && mkdir build && cd build \
-    && cmake -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON -DHIREDIS_FROM_INTERNET=ON .. \
-    && make -j4 && make install \
-    && cd ../.. \
-    && rm -rf ccache-4.11.3 ccache.tar.gz
 
+RUN mkdir /var/local/jenkins
+
+
+# Define the default command.
+CMD ["bash"]

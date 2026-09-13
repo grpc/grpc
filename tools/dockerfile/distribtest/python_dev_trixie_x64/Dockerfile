@@ -1,4 +1,4 @@
-# Copyright 2017 gRPC authors.
+# Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,14 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:trixie
+FROM python:3.14-trixie
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends openjdk-21-jdk-headless && \
-    apt-get clean
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    build-essential \
+    python3-dev
 
-WORKDIR /var/local/git/grpc-java/
-
-# Define the default command.
-CMD ["bash"]
-
+RUN python3 -m pip install virtualenv

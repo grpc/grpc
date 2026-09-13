@@ -1,4 +1,4 @@
-# Copyright 2017 gRPC authors.
+# Copyright 2021 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,14 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:trixie
+# this an aarch64 image, qemu emulator will be used to run the tests
+FROM --platform=linux/arm64 python:3.14-trixie
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends openjdk-21-jdk-headless && \
-    apt-get clean
-
-WORKDIR /var/local/git/grpc-java/
-
-# Define the default command.
-CMD ["bash"]
-
+RUN python3 -m pip install virtualenv

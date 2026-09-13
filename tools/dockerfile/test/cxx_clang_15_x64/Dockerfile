@@ -1,4 +1,4 @@
-# Copyright 2021 The gRPC Authors
+# Copyright 2026 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,47 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:13
+FROM silkeh/clang:15-bookworm
 
-#=================
-# Basic C core dependencies
-
-# C/C++ dependencies according to https://github.com/grpc/grpc/blob/master/BUILDING.md
-RUN apt-get update && apt-get install -y \
+RUN apt update && apt -y upgrade && apt install -y \
   build-essential \
-  autoconf \
-  libtool \
-  pkg-config \
-  && apt-get clean
-
-# GCC
-RUN apt-get update && apt-get install -y \
-  gcc \
-  g++ \
-  && apt-get clean
-
-# libc6
-RUN apt-get update && apt-get install -y \
-  libc6 \
-  libc6-dbg \
-  libc6-dev \
-  && apt-get clean
-
-# Tools
-RUN apt-get update && apt-get install -y \
-  bzip2 \
+  ccache \
   curl \
-  dnsutils \
   git \
-  lcov \
-  make \
-  strace \
   time \
-  unzip \
-  wget \
   zip \
-  && apt-get clean
-
+  && apt clean
 #=================
 # Setup git to access working directory across docker boundary.
 # This avoids the "fatal: detected dubious ownership in repository XYZ"
@@ -60,7 +29,6 @@ RUN apt-get update && apt-get install -y \
 
 RUN git config --global --add safe.directory '*'
 RUN git config --global protocol.file.allow always
-
 
 #====================
 # run_tests.py python dependencies
@@ -87,38 +55,18 @@ RUN pip install --upgrade pip setuptools pyyaml
 RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
 
+# Some cxx tests depend on the twisted package
+RUN python3 -m pip install twisted
+
+
+RUN mkdir /var/local/jenkins
+
 #=================
 # Install cmake
 # Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
 
 RUN apt-get update && apt-get install -y cmake && apt-get clean
 
-
-RUN mkdir /var/local/jenkins
-
-RUN apt update && apt upgrade -y
-
-# Java
-RUN apt-get install -y openjdk-21-jdk
-
-# Install Android SDK
-ENV ANDROID_HOME /opt/android-sdk
-RUN mkdir -p $ANDROID_HOME && \
-    wget -O cmd.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip && \
-    unzip cmd.zip && rm cmd.zip && \
-    yes | ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME --licenses && \
-    ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'tools' && \
-    ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'build-tools;30.0.2' && \
-    ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'platforms;android-26' && \
-    ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'ndk;25.1.8937393' && \
-    ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'cmake;3.22.1'
-
-# Install gcloud
-RUN wget -O google-cloud-cli.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-467.0.0-linux-x86_64.tar.gz && \
-    tar -xf google-cloud-cli.tar.gz && \
-    ./google-cloud-sdk/install.sh --bash-completion=false --path-update=true && \
-    rm -rf google-cloud-cli.tar.gz
-RUN ln -s /google-cloud-sdk/bin/gcloud /usr/local/bin/gcloud
 
 # Define the default command.
 CMD ["bash"]

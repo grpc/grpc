@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2018 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,10 +17,22 @@ FROM python:3.14-trixie
 {% include "../../apt_get_basic.include" %}
 {% include "../../run_tests_addons.include" %}
 
-RUN apt-get update && apt-get install -y python3 python3-all-dev python3-pip
-RUN ln -s $(which python3) /usr/bin/python
+{% include "../../compile_python_310.include" %}
+{% include "../../compile_python_311.include" %}
+{% include "../../compile_python_312.include" %}
+{% include "../../compile_python_313.include" %}
+{% include "../../compile_python_314.include" %}
+{% include "../../compile_python_315.include" %}
+
+# Python test coverage requires libsqlite3, and it have
+# to be installed before Python.
+RUN apt-get update && apt-get install -y libsqlite3-dev
+
+# for Python test coverage reporting
+RUN python3.10 -m pip install coverage
 
 {% include "../../gcp_api_libraries.include" %}
 
 {% include "../../cmake.include" %}
 {% include "../../ccache.include" %}
+

@@ -1,0 +1,5 @@
+{% include "./setup_venv.include" %}
+# Install/upgrade basic requirements inside the virtualenv
+RUN pip install --upgrade pip setuptools pyyaml
+
+{% include "./gcp_api_libraries.include" %}

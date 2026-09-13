@@ -559,8 +559,8 @@ class CLanguage:
 
         if compiler == "default" or compiler == "cmake":
             return ("debian12", ["-DCMAKE_CXX_STANDARD=17"])
-        elif compiler == "gcc10":
-            return ("gcc_10", ["-DCMAKE_CXX_STANDARD=17"])
+        elif compiler == "gcc12":
+            return ("gcc_12", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "gcc10.2_openssl102":
             return (
                 "debian11_openssl102",
@@ -589,9 +589,9 @@ class CLanguage:
             return ("gcc_14", ["-DCMAKE_CXX_STANDARD=20"])
         elif compiler == "gcc_musl":
             return ("alpine", ["-DCMAKE_CXX_STANDARD=17"])
-        elif compiler == "clang14":
+        elif compiler == "clang15":
             return (
-                "clang_14",
+                "clang_15",
                 self._clang_cmake_configure_extra_args()
                 + [
                     "-DCMAKE_CXX_STANDARD=17",
@@ -755,7 +755,7 @@ class PythonLanguage:
         if self.args.compiler == "python_alpine":
             return "alpine"
         else:
-            return "debian11_default"
+            return "debian13_default"
 
     def _get_pythons(self, args):
         """Get python runtimes to test with, based on current platform, architecture, compiler etc."""
@@ -864,7 +864,7 @@ class PythonLanguage:
                 # tested.
                 return (python310_config,)
             elif platform.machine() == "aarch64":
-                # Currently the python_debian11_default_arm64 docker image
+                # Currently the python_debian13_default_arm64 docker image
                 # only has python3.10 installed (and that seems sufficient
                 # for arm64 testing)
                 return (python310_config,)
@@ -1733,7 +1733,7 @@ argp.add_argument(
         "gcc12_openssl309",
         "gcc14",
         "gcc_musl",
-        "clang14",
+        "clang15",
         "clang19",
         # TODO: Automatically populate from supported version
         "python3.10",

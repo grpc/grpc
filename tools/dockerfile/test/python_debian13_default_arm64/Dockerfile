@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2022 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM python:3.14-trixie
+FROM --platform=linux/arm64/v8 arm64v8/debian:13
 
 #=================
 # Basic C core dependencies
@@ -66,13 +66,34 @@ RUN git config --global protocol.file.allow always
 RUN mkdir /var/local/jenkins
 
 
-RUN apt-get update && apt-get install -y python3 python3-all-dev python3-pip
-RUN ln -s $(which python3) /usr/bin/python
+# Python test coverage requires libsqlite3, and it have
+# to be installed before Python.
+RUN apt-get update && apt-get install -y libsqlite3-dev
 
-# Google Cloud Platform API libraries
-# These are needed for uploading test results to BigQuery (e.g. by tools/run_tests scripts)
-RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
+#=================
+# Compile CPython 3.10.3 from source
 
+RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev libsqlite3-dev && apt-get clean
+RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
+
+RUN cd /tmp && \
+    wget -q https://www.python.org/ftp/python/3.10.3/Python-3.10.3.tgz && \
+    tar xzvf Python-3.10.3.tgz && \
+    cd Python-3.10.3 && \
+    ./configure && \
+    make -j4 && \
+    make install
+
+RUN cd /tmp && \
+    echo "f276ffcd05bccafe46da023d0a5bb04a Python-3.10.3.tgz" > checksum.md5 && \
+    md5sum -c checksum.md5
+
+RUN python3.10 -m ensurepip && \
+    python3.10 -m pip install coverage
+
+
+# TODO(sergiitk):  Should we updating gcp_api_libraries.include instead?
+RUN python3.10 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
 #=================
 # Install cmake
@@ -93,4 +114,5 @@ RUN curl -sSL --fail --retry 5 -o ccache.tar.gz https://github.com/ccache/ccache
     && make -j4 && make install \
     && cd ../.. \
     && rm -rf ccache-4.11.3 ccache.tar.gz
+
 
