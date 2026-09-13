@@ -51,6 +51,7 @@ DebugOnlyTraceFlag work_serializer_trace(false, "work_serializer");
 DebugOnlyTraceFlag ztrace_trace(false, "ztrace");
 TraceFlag api_trace(false, "api");
 TraceFlag apple_polling_trace(false, "apple_polling");
+TraceFlag autosharding_lb_trace(false, "autosharding_lb");
 TraceFlag backend_metric_trace(false, "backend_metric");
 TraceFlag backend_metric_filter_trace(false, "backend_metric_filter");
 TraceFlag bdp_estimator_trace(false, "bdp_estimator");
@@ -138,6 +139,7 @@ const absl::flat_hash_map<std::string, TraceFlag*>& GetAllTraceFlags() {
       absl::flat_hash_map<std::string, TraceFlag*>({
           {"api", &api_trace},
           {"apple_polling", &apple_polling_trace},
+          {"autosharding_lb", &autosharding_lb_trace},
           {"backend_metric", &backend_metric_trace},
           {"backend_metric_filter", &backend_metric_filter_trace},
           {"bdp_estimator", &bdp_estimator_trace},

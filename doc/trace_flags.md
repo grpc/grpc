@@ -10,6 +10,7 @@ names or glob patterns that provide additional insight into how gRPC C core is
 processing requests via debug logs. Available tracers include:
 
   - api - API calls to the C core.
+  - autosharding_lb - AutoSharding load balancing policy.
   - backend_metric - C++ backend metric recorder APIs.
   - backend_metric_filter - Filter that populates backend metric data in server trailing metadata.
   - bdp_estimator - Behavior of bdp estimation logic.
