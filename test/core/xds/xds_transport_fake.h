@@ -138,6 +138,43 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     std::deque<std::string> to_client_messages_ ABSL_GUARDED_BY(&mu_);
   };
 
+  class FakeUnaryCall : public XdsTransport::UnaryCall {
+   public:
+    FakeUnaryCall(WeakRefCountedPtr<FakeXdsTransport> transport,
+                  const char* method)
+        : transport_(std::move(transport)),
+          method_(method),
+          event_engine_(transport_->factory()->event_engine_) {}
+    ~FakeUnaryCall() override;
+
+    using UnaryCall::Ref;  // Make it public.
+
+    void Orphan() override;
+
+    absl::StatusOr<std::string> SendMessage(std::string payload) override;
+
+    bool HaveMessageFromClient();
+    std::optional<std::string> WaitForMessageFromClient();
+
+    void SendMessageToClient(absl::string_view payload);
+    void MaybeSendStatusToClient(absl::Status status);
+
+   private:
+    void MaybeDeliverResponseToClient() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
+
+    WeakRefCountedPtr<FakeXdsTransport> transport_;
+    const char* method_;
+    std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
+        event_engine_;
+
+    Mutex mu_;
+    std::deque<std::string> from_client_messages_ ABSL_GUARDED_BY(&mu_);
+    std::string to_client_message_ ABSL_GUARDED_BY(&mu_);
+    absl::Status status_ ABSL_GUARDED_BY(&mu_) = absl::OkStatus();
+    bool response_set_ ABSL_GUARDED_BY(&mu_) = false;
+    CondVar cv_ ABSL_GUARDED_BY(&mu_);
+  };
+
   explicit FakeXdsTransportFactory(
       std::function<void()> too_many_pending_reads_callback,
       std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
@@ -173,6 +210,9 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
   RefCountedPtr<FakeStreamingCall> WaitForStream(
       const XdsBootstrap::XdsServerTarget& server, const char* method);
 
+  RefCountedPtr<FakeUnaryCall> WaitForUnaryCall(
+      const XdsBootstrap::XdsServerTarget& server, const char* method);
+
   // Returns an existing transport or creates a new one.
   RefCountedPtr<XdsTransport> GetTransport(
       const XdsBootstrap::XdsServerTarget& server,
@@ -188,7 +228,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
                      bool auto_complete_messages_from_client,
                      bool abort_on_undrained_messages)
         : factory_(std::move(factory)),
-          server_(server),
+          server_key_(server.Key()),
           auto_complete_messages_from_client_(
               auto_complete_messages_from_client),
           abort_on_undrained_messages_(abort_on_undrained_messages),
@@ -207,12 +247,14 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     void TriggerConnectionFailure(absl::Status status);
 
     RefCountedPtr<FakeStreamingCall> WaitForStream(const char* method);
+    RefCountedPtr<FakeUnaryCall> WaitForUnaryCall(const char* method);
 
     void RemoveStream(const char* method, FakeStreamingCall* call);
+    void RemoveUnaryCall(const char* method, FakeUnaryCall* call);
 
     FakeXdsTransportFactory* factory() const { return factory_.get(); }
 
-    const XdsBootstrap::XdsServerTarget* server() const { return &server_; }
+    const std::string& server_key() const { return server_key_; }
 
    private:
     void StartConnectivityFailureWatch(
@@ -224,10 +266,12 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
         const char* method,
         std::unique_ptr<StreamingCall::EventHandler> event_handler) override;
 
+    OrphanablePtr<UnaryCall> CreateUnaryCall(const char* method) override;
+
     void ResetBackoff() override {}
 
     WeakRefCountedPtr<FakeXdsTransportFactory> factory_;
-    const XdsBootstrap::XdsServerTarget& server_;
+    std::string server_key_;
     const bool auto_complete_messages_from_client_;
     const bool abort_on_undrained_messages_;
     std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
@@ -238,12 +282,15 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
         ABSL_GUARDED_BY(&mu_);
     std::map<std::string /*method*/, RefCountedPtr<FakeStreamingCall>>
         active_calls_ ABSL_GUARDED_BY(&mu_);
+    std::map<std::string /*method*/, RefCountedPtr<FakeUnaryCall>>
+        active_unary_calls_ ABSL_GUARDED_BY(&mu_);
   };
 
   // Returns an existing transport, if any, or nullptr.
   RefCountedPtr<FakeXdsTransport> GetTransport(
       const XdsBootstrap::XdsServerTarget& server);
 
+ private:
   RefCountedPtr<FakeXdsTransport> GetTransportLocked(const std::string& key)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
 

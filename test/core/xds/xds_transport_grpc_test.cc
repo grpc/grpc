@@ -224,6 +224,19 @@ TEST_F(GrpcXdsTransportTest, StreamingCallOrphan) {
   call.reset();
 }
 
+TEST_F(GrpcXdsTransportTest, UnaryCallOrphan) {
+  ExecCtx exec_ctx;
+  GrpcXdsServerTarget target(server_uri_, channel_creds_config_,
+                             /*call_creds_configs=*/{},
+                             /*initial_metadata=*/{}, Duration::Seconds(10));
+  absl::Status status;
+  auto transport = factory_->GetTransport(target, &status);
+  ASSERT_TRUE(status.ok()) << status.ToString();
+  auto call = transport->CreateUnaryCall("/test.Service/TestMethod");
+  ASSERT_NE(call, nullptr);
+  call.reset();
+}
+
 class GrpcXdsServerTargetTest : public ::testing::Test {
  protected:
   void SetUp() override {

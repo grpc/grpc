@@ -63,6 +63,11 @@ class XdsTransportFactory : public DualRefCounted<XdsTransportFactory> {
       virtual void SendHalfClose() = 0;
     };
 
+    class UnaryCall : public InternallyRefCounted<UnaryCall> {
+     public:
+      virtual absl::StatusOr<std::string> SendMessage(std::string payload) = 0;
+    };
+
     // A watcher for connectivity failures.
     class ConnectivityFailureWatcher
         : public RefCounted<ConnectivityFailureWatcher> {
@@ -87,6 +92,8 @@ class XdsTransportFactory : public DualRefCounted<XdsTransportFactory> {
     virtual OrphanablePtr<StreamingCall> CreateStreamingCall(
         const char* method,
         std::unique_ptr<StreamingCall::EventHandler> event_handler) = 0;
+    // Create a unary rpc call on this transport for the specified method.
+    virtual OrphanablePtr<UnaryCall> CreateUnaryCall(const char* method) = 0;
 
     // Resets connection backoff for the transport.
     virtual void ResetBackoff() = 0;
