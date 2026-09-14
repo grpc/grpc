@@ -544,10 +544,6 @@ class UpbStructHeadersEncoder {
 // ComputeSha256PeerCertificateDigest()
 //
 
-// TODO(rishesh): Computing this in the ext_proc filter is sub-optimal, because
-// we will wind up computing it once for each filter chain. We should
-// eventually fix that by creating a common connection context object, and this
-// should be storable as one of the elements of that context.
 std::string ComputeSha256PeerCertificateDigest(
     grpc_auth_context* auth_context) {
   if (auth_context == nullptr) return "";

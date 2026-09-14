@@ -203,6 +203,11 @@ absl::StatusOr<std::string> CreateExtProcServerTrailersRequest(
 // Note that this requires parsing and hashing the peer certificate, so
 // callers must invoke this at most once per connection, and only if the
 // ext_proc config actually requests the attribute.
+//
+// TODO(rishesh): Computing this in the ext_proc filter is sub-optimal, because
+// we will wind up computing it once for each filter chain. We should
+// eventually fix that by creating a common connection context object, and this
+// should be storable as one of the elements of that context.
 std::string ComputeSha256PeerCertificateDigest(grpc_auth_context* auth_context);
 
 // Creates a protobuf Struct message (::google_protobuf_Struct*) containing
