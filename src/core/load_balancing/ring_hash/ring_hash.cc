@@ -270,6 +270,8 @@ class RingHash final : public LoadBalancingPolicy {
 
   void ShutdownLocked() override;
 
+  absl::Status LegacyUpdateLocked(UpdateArgs args);
+
   // Updates the aggregate policy's connectivity state based on the
   // number of endpoints in each state, creating a new picker.
   // If the call to this method is triggered by an endpoint entering
@@ -665,6 +667,95 @@ void RingHash::ResetBackoffLocked() {
 }
 
 absl::Status RingHash::UpdateLocked(UpdateArgs args) {
+  if (!IsRingHashUpdateCleanupEnabled()) {
+    return LegacyUpdateLocked(std::move(args));
+  }
+  // Save channel args.
+  args_ = std::move(args.args);
+  // Save config.
+  auto* config = DownCast<RingHashLbConfig*>(args.config.get());
+  request_hash_header_ = RefCountedStringValue(config->request_hash_header());
+  // Update resolution note.
+  resolution_note_ = std::move(args.resolution_note);
+  // Update endpoint list.
+  absl::Status status;
+  if (!args.addresses.ok()) {
+    GRPC_TRACE_LOG(ring_hash_lb, INFO)
+        << "[RH " << this << "] received update with addresses error: "
+        << args.addresses.status();
+    status = args.addresses.status();
+    // If we already have an endpoint list, then we keep using it.
+  } else {
+    GRPC_TRACE_LOG(ring_hash_lb, INFO) << "[RH " << this << "] received update";
+    // De-dup endpoints, taking weight into account.
+    endpoints_.clear();
+    std::map<EndpointAddressSet, OrphanablePtr<RingHashEndpoint>> endpoint_map;
+    std::vector<std::string> errors;
+    (*args.addresses)->ForEach([&](const EndpointAddresses& endpoint) {
+      const EndpointAddressSet key(endpoint.addresses());
+      auto& rh_endpoint = endpoint_map[key];
+      // If we've already seen this key, combine weights and skip the dup.
+      // Note: We will already have created or updated the RingHashEndpoint
+      // object when we saw the first endpoint with this key.  However,
+      // nothing inside of RingHashEndpoint uses the weight, so that's okay.
+      if (rh_endpoint != nullptr) {
+        EndpointAddresses& prev_endpoint = endpoints_[rh_endpoint->index()];
+        int weight_arg =
+            endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
+        int prev_weight_arg =
+            prev_endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
+        GRPC_TRACE_LOG(ring_hash_lb, INFO)
+            << "[RH " << this << "] merging duplicate endpoint for "
+            << key.ToString() << ", combined weight "
+            << weight_arg + prev_weight_arg;
+        prev_endpoint = EndpointAddresses(
+            prev_endpoint.addresses(),
+            prev_endpoint.args().Set(GRPC_ARG_ADDRESS_WEIGHT,
+                                     weight_arg + prev_weight_arg));
+        return;
+      }
+      // Have not yet seen this key, so add a new endpoint.
+      const size_t index = endpoints_.size();
+      endpoints_.push_back(endpoint);
+      // If present in old map, retain it; otherwise, create a new one.
+      auto it = endpoint_map_.find(key);
+      if (it != endpoint_map_.end()) {
+        absl::Status status = it->second->UpdateLocked(index);
+        if (!status.ok()) {
+          errors.emplace_back(absl::StrCat("endpoint ", key.ToString(), ": ",
+                                           status.ToString()));
+        }
+        rh_endpoint = std::move(it->second);
+      } else {
+        rh_endpoint =
+            MakeOrphanable<RingHashEndpoint>(RefAsSubclass<RingHash>(), index);
+      }
+    });
+    endpoint_map_ = std::move(endpoint_map);
+    if (!errors.empty()) {
+      status = absl::UnavailableError(absl::StrCat(
+          "errors from children: [", absl::StrJoin(errors, "; "), "]"));
+    }
+  }
+  // If the address list is empty, report TRANSIENT_FAILURE.
+  if (endpoints_.empty()) {
+    if (status.ok()) {
+      status = absl::UnavailableError(
+          absl::StrCat("empty address list: ", resolution_note_));
+    }
+    channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_TRANSIENT_FAILURE, status,
+        MakeRefCounted<TransientFailurePicker>(status));
+  } else {
+    // Build new ring.
+    ring_ = MakeRefCounted<Ring>(this, config);
+    // Return a new picker.
+    UpdateAggregatedConnectivityStateLocked(absl::OkStatus());
+  }
+  return status;
+}
+
+absl::Status RingHash::LegacyUpdateLocked(UpdateArgs args) {
   // Check address list.
   if (args.addresses.ok()) {
     GRPC_TRACE_LOG(ring_hash_lb, INFO) << "[RH " << this << "] received update";
