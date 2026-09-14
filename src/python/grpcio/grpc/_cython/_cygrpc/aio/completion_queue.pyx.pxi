@@ -67,7 +67,7 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
 
     def __cinit__(self):
         self._cq = grpc_completion_queue_create_for_next(NULL)
-        self._shutdown = False
+        self._shutdown.store(False)
         self._poller_thread = threading.Thread(target=self._poll_wrapper, daemon=True)
         self._poller_thread.start()
 
@@ -92,7 +92,7 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
         cdef grpc_event event
         cdef CallbackContext *context
 
-        while not self._shutdown:
+        while not self._shutdown.load():
             event = grpc_completion_queue_next(self._cq,
                                                _GPR_INF_FUTURE,
                                                NULL)
@@ -101,7 +101,7 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
                 with gil:
                     raise AssertionError("Core should not return GRPC_QUEUE_TIMEOUT!")
             elif event.type == GRPC_QUEUE_SHUTDOWN:
-                self._shutdown = True
+                self._shutdown.store(True)
             else:
                 self._queue_mutex.lock()
                 self._queue.push(event)
@@ -134,7 +134,7 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
 
         # TODO(https://github.com/grpc/grpc/issues/22365) perform graceful shutdown
         grpc_completion_queue_shutdown(self._cq)
-        while not self._shutdown:
+        while not self._shutdown.load():
             self._poller_thread.join(timeout=_POLL_AWAKE_INTERVAL_S)
         grpc_completion_queue_destroy(self._cq)
 
