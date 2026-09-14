@@ -81,7 +81,6 @@ class GrpcXdsTransportFactory::GrpcXdsTransport final
     : public XdsTransportFactory::XdsTransport {
  public:
   class GrpcStreamingCall;
-  class GrpcUnaryCall;
 
   GrpcXdsTransport(WeakRefCountedPtr<GrpcXdsTransportFactory> factory,
                    RefCountedPtr<SharedChannel> channel,
@@ -97,8 +96,9 @@ class GrpcXdsTransportFactory::GrpcXdsTransport final
 
   OrphanablePtr<StreamingCall> CreateStreamingCall(
       const char* method,
-      std::unique_ptr<StreamingCall::EventHandler> event_handler) override;
-  OrphanablePtr<UnaryCall> CreateUnaryCall(const char* method) override;
+      std::unique_ptr<StreamingCall::EventHandler> event_handler,
+      bool start_upon_send_message = false) override;
+
   void ResetBackoff() override;
 
   Channel* channel() const;
@@ -127,18 +127,26 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final
       std::unique_ptr<StreamingCall::EventHandler> event_handler,
       grpc_call_credentials* call_creds,
       const std::vector<std::pair<std::string, std::string>>& initial_metadata,
-      Duration timeout);
+      Duration timeout, bool start_upon_send_message);
   ~GrpcStreamingCall() override;
 
   void Orphan() override;
 
-  void SendMessage(std::string payload) override;
+  void SendMessage(std::string payload, bool send_half_close = false) override;
 
   void StartRecvMessage() override;
 
   void SendHalfClose() override;
 
  private:
+  // Starts the recv_initial_metadata and recv_trailing_metadata ops.  If
+  // send_batch is non-null, the send_initial_metadata op is added to
+  // *send_batch (advancing it), so that the caller can send it in the same
+  // batch as the message; otherwise, it is sent along with
+  // recv_initial_metadata.  Called from the ctor, or from the first
+  // SendMessage() if start_upon_send_message was set in the ctor.
+  void StartCallOps(grpc_op** send_batch);
+
   static void OnRecvInitialMetadata(void* arg, grpc_error_handle /*error*/);
   static void OnRequestSent(void* arg, grpc_error_handle error);
   static void OnHalfClosed(void* arg, grpc_error_handle error);
@@ -159,6 +167,10 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final
   // send_initial_metadata
   std::vector<grpc_metadata> send_initial_metadata_;
 
+  // Whether StartCallOps() has been called.  Will be false upon
+  // construction only if start_upon_send_message was set in the ctor.
+  bool call_ops_started_ = false;
+
   // send_message
   grpc_byte_buffer* send_message_payload_ = nullptr;
   grpc_closure on_request_sent_;
@@ -175,30 +187,6 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final
   grpc_status_code status_code_;
   grpc_slice status_details_;
   grpc_closure on_status_received_;
-};
-
-class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcUnaryCall final
-    : public XdsTransportFactory::XdsTransport::UnaryCall {
- public:
-  GrpcUnaryCall(WeakRefCountedPtr<GrpcXdsTransportFactory> factory,
-                Channel* channel, const char* method);
-  ~GrpcUnaryCall() override;
-
-  absl::StatusOr<std::string> SendMessage(std::string payload) override;
-  void Orphan() override;
-
- private:
-  WeakRefCountedPtr<GrpcXdsTransportFactory> factory_;
-  grpc_completion_queue* cq_;
-  grpc_call* call_ = nullptr;
-
-  grpc_op ops_[6];
-  grpc_metadata_array recv_initial_metadata_array_;
-  grpc_metadata_array recv_trailing_metadata_array_;
-  grpc_slice recv_status_details_ = grpc_empty_slice();
-  grpc_status_code status_code_ = GRPC_STATUS_OK;
-  grpc_byte_buffer* send_message_payload_ = nullptr;
-  grpc_byte_buffer* recv_message_payload_ = nullptr;
 };
 
 }  // namespace grpc_core

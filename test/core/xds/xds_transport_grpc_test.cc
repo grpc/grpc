@@ -224,17 +224,49 @@ TEST_F(GrpcXdsTransportTest, StreamingCallOrphan) {
   call.reset();
 }
 
-TEST_F(GrpcXdsTransportTest, UnaryCallOrphan) {
+// Tests a unary RPC: the call is created with start_upon_send_message,
+// and the request is sent with the half-close in the same batch.
+TEST_F(GrpcXdsTransportTest, UnaryCall) {
   ExecCtx exec_ctx;
   GrpcXdsServerTarget target(server_uri_, channel_creds_config_,
                              /*call_creds_configs=*/{},
-                             /*initial_metadata=*/{}, Duration::Seconds(10));
+                             /*initial_metadata=*/{{"key1", "val1"}},
+                             Duration::Seconds(1));
   absl::Status status;
   auto transport = factory_->GetTransport(target, &status);
   ASSERT_TRUE(status.ok()) << status.ToString();
-  auto call = transport->CreateUnaryCall("/test.Service/TestMethod");
+  absl::Notification on_status_received;
+  auto call = transport->CreateStreamingCall(
+      "/test.Service/TestMethod",
+      std::make_unique<FakeStreamingCallEventHandler>(&on_status_received),
+      /*start_upon_send_message=*/true);
+  ASSERT_NE(call, nullptr);
+  call->StartRecvMessage();
+  call->SendMessage("request", /*send_half_close=*/true);
+  exec_ctx.Flush();
+  // There is no server listening on this port, so the call fails, but we
+  // do get a status.
+  on_status_received.WaitForNotification();
+  call.reset();
+}
+
+// A call created with start_upon_send_message never starts any ops if
+// SendMessage() is not called, so it can be orphaned right away.
+TEST_F(GrpcXdsTransportTest, UnaryCallOrphanedBeforeSendMessage) {
+  ExecCtx exec_ctx;
+  GrpcXdsServerTarget target(server_uri_, channel_creds_config_,
+                             /*call_creds_configs=*/{},
+                             /*initial_metadata=*/{}, Duration::Seconds(1));
+  absl::Status status;
+  auto transport = factory_->GetTransport(target, &status);
+  ASSERT_TRUE(status.ok()) << status.ToString();
+  auto call = transport->CreateStreamingCall(
+      "/test.Service/TestMethod",
+      std::make_unique<FakeStreamingCallEventHandler>(),
+      /*start_upon_send_message=*/true);
   ASSERT_NE(call, nullptr);
   call.reset();
+  exec_ctx.Flush();
 }
 
 class GrpcXdsServerTargetTest : public ::testing::Test {

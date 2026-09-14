@@ -959,27 +959,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "xds_transport_fake_test",
-    srcs = ["xds_transport_fake_test.cc"],
-    external_deps = [
-        "absl/log:log",
-        "absl/status",
-        "absl/status:statusor",
-        "gtest",
-    ],
-    deps = [
-        ":xds_transport_fake",
-        "//:gpr",
-        "//:grpc",
-        "//:orphanable",
-        "//:ref_counted_ptr",
-        "//:xds_client",
-        "//test/core/event_engine/fuzzing_event_engine",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "blackboard_test",
     srcs = ["blackboard_test.cc"],
     external_deps = [
