@@ -33709,18 +33709,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-- name: xds_utils_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/util/xds_utils.h
-  src:
-  - src/core/util/xds_utils.cc
-  - test/core/util/xds_utils_test.cc
-  deps:
-  - gtest
-  - grpc_test_util
 - name: xds_wrr_end2end_test
   gtest: true
   build: test

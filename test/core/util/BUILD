@@ -928,20 +928,3 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
-    name = "xds_utils_test",
-    srcs = ["xds_utils_test.cc"],
-    external_deps = [
-        "gtest",
-        "@com_google_protobuf//upb/mem",
-    ],
-    deps = [
-        "//:envoy_config_core_upb",
-        "//:gpr",
-        "//:grpc",
-        "//src/core:validation_errors",
-        "//src/core:xds_common_types_parser",
-        "//src/core:xds_utils",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
