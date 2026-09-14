@@ -4392,6 +4392,25 @@ TEST_F(XdsExtProcFilterTest,
 // ExtAuthz filter tests
 //
 
+TEST_F(XdsHttpFilterTest, ExtAuthzFilterNotRegisteredByDefault) {
+  XdsExtension extension = MakeXdsExtension(ExtAuthz());
+  EXPECT_EQ(GetFactory(extension.type), nullptr);
+}
+
+TEST_F(XdsHttpFilterTest, ExtAuthzFilterRegistrationClientEnvVar) {
+  ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_XDS_EXT_AUTHZ_ON_CLIENT");
+  Reset();
+  XdsExtension extension = MakeXdsExtension(ExtAuthz());
+  EXPECT_NE(GetFactory(extension.type), nullptr);
+}
+
+TEST_F(XdsHttpFilterTest, ExtAuthzFilterRegistrationServerEnvVar) {
+  ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_XDS_EXT_AUTHZ_ON_SERVER");
+  Reset();
+  XdsExtension extension = MakeXdsExtension(ExtAuthz());
+  EXPECT_NE(GetFactory(extension.type), nullptr);
+}
+
 class XdsExtAuthzFilterTest : public XdsHttpFilterTest {
  protected:
   XdsExtAuthzFilterTest() : env_("GRPC_EXPERIMENTAL_XDS_EXT_AUTHZ_ON_CLIENT") {}
@@ -4414,7 +4433,7 @@ TEST_F(XdsExtAuthzFilterTest, Accessors) {
             "envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute");
   EXPECT_EQ(factory_->channel_filter(), &ExtAuthzFilter::kFilterVtable);
   EXPECT_TRUE(factory_->IsSupportedOnClients());
-  EXPECT_FALSE(factory_->IsSupportedOnServers());
+  EXPECT_TRUE(factory_->IsSupportedOnServers());
   EXPECT_FALSE(factory_->IsTerminalFilter());
 }
 

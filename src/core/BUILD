@@ -5900,6 +5900,7 @@ grpc_cc_library(
         "channel_fwd",
         "down_cast",
         "dual_ref_counted",
+        "evaluate_args",
         "ext_authz_messages",
         "filter_args",
         "grpc_check",
@@ -5922,6 +5923,7 @@ grpc_cc_library(
         "//:orphanable",
         "//:promise",
         "//:ref_counted_ptr",
+        "//:transport_auth_context",
         "//:xds_client",
     ],
 )
@@ -6841,7 +6843,6 @@ grpc_cc_library(
         "status_conversion",
         "upb_utils",
         "validation_errors",
-        "xds_bootstrap_grpc",
         "xds_common_types",
         "xds_common_types_parser",
         "xds_grpc_service_parser",

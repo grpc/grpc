@@ -170,6 +170,12 @@ struct ExtAuthzRequest {
   absl::string_view peer_certificate;
 };
 
+// Percent-encodes \a value exactly the way that Envoy's
+// Http::Utility::PercentEncoding::urlEncode() does: every character other than
+// ALPHA, DIGIT, '*', '-', '.' and '_' is encoded as %XX, using uppercase
+// hexadecimal digits (see RFC 3986 section 2.1).
+std::string UrlEncode(absl::string_view value);
+
 // Computes the value of the AttributeContext.source.certificate field (see
 // gRFC A92): the URL-encoded PEM-encoded peer certificate, which is obtained
 // from \a auth_context. Returns an empty string if there is no peer

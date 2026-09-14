@@ -167,7 +167,7 @@ absl::string_view GetPrincipal(absl::Span<const absl::string_view> uri_sans,
 // Only the SocketAddress case is implemented, because that is the only thing
 // EvaluateArgs can produce: ParseEndpointUri() in evaluate_args.cc fills in
 // EvaluateArgs::PerChannelArgs::Address::address via
-// grpc_core::StringToSockaddr(), which accepts only IPv4 and IPv6 host:port
+// StringToSockaddr(), which accepts only IPv4 and IPv6 host:port
 // strings.  For any other endpoint -- a unix domain socket in particular --
 // StringToSockaddr() fails and EvaluateArgs reports a zero-length sockaddr,
 // so there is nothing to convert and we leave AttributeContext.Peer.address
@@ -318,8 +318,6 @@ envoy_service_auth_v3_AttributeContext* CreateAttributeContext(
 // GetUrlEncodedPemPeerCertificate()
 //
 
-namespace {
-
 // Percent-encodes \a value exactly the way that Envoy's
 // Http::Utility::PercentEncoding::urlEncode() does: every character other than
 // ALPHA, DIGIT, '*', '-', '.' and '_' is encoded as %XX, using uppercase
@@ -343,8 +341,6 @@ std::string UrlEncode(absl::string_view value) {
   }
   return encoded;
 }
-
-}  // namespace
 
 // TODO(rishesh): Computing this in the ext_authz filter is sub-optimal,
 // because we will wind up computing it once for each filter chain. We should

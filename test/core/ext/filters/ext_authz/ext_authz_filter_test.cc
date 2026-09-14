@@ -15,6 +15,7 @@
 #include "src/core/ext/filters/ext_authz/ext_authz_filter.h"
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
 
 #include <chrono>
@@ -25,11 +26,17 @@
 #include <utility>
 #include <vector>
 
+#include "envoy/config/core/v3/base.pb.h"
+#include "envoy/service/auth/v3/attribute_context.pb.h"
 #include "envoy/service/auth/v3/external_auth.pb.h"
 #include "envoy/type/v3/http_status.pb.h"
 #include "src/core/call/metadata_batch.h"
+#include "src/core/credentials/transport/tls/tls_utils.h"
+#include "src/core/handshaker/endpoint_info/endpoint_info_handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/transport/auth_context.h"
 #include "src/core/util/down_cast.h"
+#include "src/core/util/matchers.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_server_grpc.h"
@@ -92,6 +99,21 @@ constexpr absl::string_view kOkResponseNotPresentErrorMessage =
 constexpr absl::string_view kHeaderMutationNotAllowedErrorMessage =
     "ExtAuthz header mutation is not allowed";
 constexpr absl::string_view kTransportErrorMessage = "transport failure";
+// Connection attributes used by the server-side tests.
+constexpr char kUriSan[] = "spiffe://foo.com/bar/baz";
+constexpr char kLocalUriSan[] = "spiffe://foo.com/server";
+constexpr char kPeerAddressUri[] = "ipv4:1.2.3.4:1234";
+constexpr absl::string_view kPeerAddressHost = "1.2.3.4";
+constexpr int kPeerAddressPort = 1234;
+constexpr char kLocalAddressUri[] = "ipv4:5.6.7.8:5678";
+constexpr absl::string_view kLocalAddressHost = "5.6.7.8";
+constexpr int kLocalAddressPort = 5678;
+constexpr char kPemCert[] =
+    "-----BEGIN CERTIFICATE-----\n"
+    "abc=\n"
+    "-----END CERTIFICATE-----\n";
+constexpr absl::string_view kEncodedCert =
+    "-----BEGIN%20CERTIFICATE-----%0Aabc%3D%0A-----END%20CERTIFICATE-----%0A";
 
 MATCHER_P2(StatusIs, code, message, "") {
   return arg.code() == code && arg.message() == message;
@@ -146,6 +168,68 @@ class ExtAuthzFilterTest : public FilterTestV2<ExtAuthzFilter> {
       ASSERT_NE(fake_call, nullptr);
       responder(fake_call.get());
     });
+  }
+
+  // Builds an auth context with the peer and local X.509 properties that
+  // AttributeContext.source.principal and .destination.principal are derived
+  // from.
+  RefCountedPtr<grpc_auth_context> MakeAuthContext() {
+    auto auth_context = MakeRefCounted<grpc_auth_context>(nullptr);
+    auth_context->add_cstring_property(GRPC_PEER_URI_PROPERTY_NAME, kUriSan);
+    auth_context->add_cstring_property(GRPC_X509_LOCAL_URI_PROPERTY_NAME,
+                                       kLocalUriSan);
+    return auth_context;
+  }
+
+  // Channel args as seen by a filter instantiated on a server filter chain.
+  // A null auth_context and with_endpoint_addresses=false model connections
+  // for which that information is unavailable.
+  ChannelArgs ServerArgs(RefCountedPtr<grpc_auth_context> auth_context,
+                         bool with_endpoint_addresses = true) {
+    ChannelArgs args = ChannelArgs().Set(GRPC_ARG_IS_SERVER_FILTER_STACK, 1);
+    if (with_endpoint_addresses) {
+      args = args.Set(GRPC_ARG_ENDPOINT_PEER_ADDRESS, kPeerAddressUri)
+                 .Set(GRPC_ARG_ENDPOINT_LOCAL_ADDRESS, kLocalAddressUri);
+    }
+    if (auth_context != nullptr) {
+      args = args.SetObject(std::move(auth_context));
+    }
+    return args;
+  }
+
+  // Drives one allowed RPC through the filter and returns the serialized
+  // CheckRequest that it sent to the authorization service.
+  //
+  // The responder thread only copies the bytes out and always replies; all
+  // checking happens in the caller, after this has joined that thread, since
+  // gtest assertions are not safe to run from it.
+  std::string CaptureCheckRequest(Call& call, ClientMetadataHandle md) {
+    std::string serialized;
+    auto handler = HandleUnaryCall(
+        [&serialized](FakeXdsTransportFactory::FakeUnaryCall* unary_call) {
+          auto msg = unary_call->WaitForMessageFromClient();
+          if (msg.has_value()) serialized = std::move(*msg);
+          envoy::service::auth::v3::CheckResponse response;
+          response.mutable_status()->set_code(0);
+          response.mutable_ok_response();
+          unary_call->SendMessageToClient(response.SerializeAsString());
+        });
+    EXPECT_EVENT(Started(&call, _));
+    call.Start(std::move(md));
+    handler.join();
+    Step();
+    return serialized;
+  }
+
+  envoy::service::auth::v3::CheckRequest ParseCheckRequest(
+      const std::string& serialized) {
+    envoy::service::auth::v3::CheckRequest parsed;
+    // An empty string parses successfully as an empty message, so check
+    // explicitly that the filter actually sent something.
+    EXPECT_FALSE(serialized.empty()) << "no CheckRequest sent to the "
+                                        "authorization service";
+    EXPECT_TRUE(parsed.ParseFromString(serialized));
+    return parsed;
   }
 
   RefCountedPtr<FakeXdsTransportFactory> transport_factory_;
@@ -886,6 +970,160 @@ TEST_F(ExtAuthzFilterTest, DeniedResponseDisallowedMutationFailureModeDeny) {
   call.Start(call.NewClientMetadata({{kPathHeader, kPath}}));
   handler.join();
   Step();
+}
+
+//
+// Server-side AttributeContext.source / .destination tests
+//
+
+TEST_F(ExtAuthzFilterTest, ServerCallPopulatesSourceAndDestination) {
+  auto config = MakeConfig();
+  auto channel = MakeChannel(ServerArgs(MakeAuthContext()), config).value();
+  Call call(channel);
+  std::string serialized =
+      CaptureCheckRequest(call, call.NewClientMetadata({{kPathHeader, kPath}}));
+  auto request = ParseCheckRequest(serialized);
+  ASSERT_TRUE(request.has_attributes());
+  const auto& attr = request.attributes();
+  ASSERT_TRUE(attr.has_source());
+  EXPECT_THAT(attr.source().principal(), ::testing::StrEq(kUriSan));
+  ASSERT_TRUE(attr.source().address().has_socket_address());
+  EXPECT_THAT(attr.source().address().socket_address().address(),
+              ::testing::StrEq(kPeerAddressHost));
+  EXPECT_EQ(attr.source().address().socket_address().port_value(),
+            kPeerAddressPort);
+  ASSERT_TRUE(attr.has_destination());
+  // The destination principal comes from this endpoint's own certificate.
+  EXPECT_THAT(attr.destination().principal(), ::testing::StrEq(kLocalUriSan));
+  ASSERT_TRUE(attr.destination().address().has_socket_address());
+  EXPECT_THAT(attr.destination().address().socket_address().address(),
+              ::testing::StrEq(kLocalAddressHost));
+  EXPECT_EQ(attr.destination().address().socket_address().port_value(),
+            kLocalAddressPort);
+}
+
+// The same connection information is present in the channel args on the
+// client side, but per gRFC A92 it must not be reported there.
+TEST_F(ExtAuthzFilterTest, ClientCallOmitsSourceAndDestination) {
+  auto config = MakeConfig();
+  ChannelArgs args = ChannelArgs()
+                         .Set(GRPC_ARG_ENDPOINT_PEER_ADDRESS, kPeerAddressUri)
+                         .Set(GRPC_ARG_ENDPOINT_LOCAL_ADDRESS, kLocalAddressUri)
+                         .SetObject(MakeAuthContext());
+  auto channel = MakeChannel(args, config).value();
+  Call call(channel);
+  std::string serialized =
+      CaptureCheckRequest(call, call.NewClientMetadata({{kPathHeader, kPath}}));
+  auto request = ParseCheckRequest(serialized);
+  ASSERT_TRUE(request.has_attributes());
+  const auto& attr = request.attributes();
+  EXPECT_TRUE(attr.has_request());
+  EXPECT_FALSE(attr.has_source());
+  EXPECT_FALSE(attr.has_destination());
+}
+
+TEST_F(ExtAuthzFilterTest, ServerCallIncludesPeerCertificateWhenConfigured) {
+  auto config = MakeConfig();
+  config->include_peer_certificate = true;
+  auto auth_context = MakeAuthContext();
+  auth_context->add_cstring_property(GRPC_X509_PEM_CERT_PROPERTY_NAME,
+                                     kPemCert);
+  auto channel =
+      MakeChannel(ServerArgs(std::move(auth_context)), config).value();
+  Call call(channel);
+  std::string serialized =
+      CaptureCheckRequest(call, call.NewClientMetadata({{kPathHeader, kPath}}));
+  auto request = ParseCheckRequest(serialized);
+  ASSERT_TRUE(request.attributes().has_source());
+  EXPECT_THAT(request.attributes().source().certificate(),
+              ::testing::StrEq(kEncodedCert));
+}
+
+// The peer certificate is sent only when the config asks for it, even if the
+// connection has one.
+TEST_F(ExtAuthzFilterTest, ServerCallOmitsPeerCertificateByDefault) {
+  auto config = MakeConfig();
+  ASSERT_FALSE(config->include_peer_certificate);
+  auto auth_context = MakeAuthContext();
+  auth_context->add_cstring_property(GRPC_X509_PEM_CERT_PROPERTY_NAME,
+                                     kPemCert);
+  auto channel =
+      MakeChannel(ServerArgs(std::move(auth_context)), config).value();
+  Call call(channel);
+  std::string serialized =
+      CaptureCheckRequest(call, call.NewClientMetadata({{kPathHeader, kPath}}));
+  auto request = ParseCheckRequest(serialized);
+  ASSERT_TRUE(request.attributes().has_source());
+  EXPECT_THAT(request.attributes().source().certificate(),
+              ::testing::IsEmpty());
+}
+
+// A connection need not have an auth context; addresses are still reported.
+TEST_F(ExtAuthzFilterTest, ServerCallWithoutAuthContext) {
+  auto config = MakeConfig();
+  config->include_peer_certificate = true;
+  auto channel = MakeChannel(ServerArgs(nullptr), config).value();
+  Call call(channel);
+  std::string serialized =
+      CaptureCheckRequest(call, call.NewClientMetadata({{kPathHeader, kPath}}));
+  auto request = ParseCheckRequest(serialized);
+  const auto& attr = request.attributes();
+  ASSERT_TRUE(attr.has_source());
+  ASSERT_TRUE(attr.has_destination());
+  EXPECT_THAT(attr.source().principal(), ::testing::IsEmpty());
+  EXPECT_THAT(attr.source().certificate(), ::testing::IsEmpty());
+  EXPECT_THAT(attr.destination().principal(), ::testing::IsEmpty());
+  ASSERT_TRUE(attr.source().address().has_socket_address());
+  EXPECT_THAT(attr.source().address().socket_address().address(),
+              ::testing::StrEq(kPeerAddressHost));
+  ASSERT_TRUE(attr.destination().address().has_socket_address());
+  EXPECT_THAT(attr.destination().address().socket_address().address(),
+              ::testing::StrEq(kLocalAddressHost));
+}
+
+// Without the endpoint address channel args, the peers are still reported --
+// they carry the principals -- but with no address.
+TEST_F(ExtAuthzFilterTest, ServerCallWithoutEndpointAddressArgs) {
+  auto config = MakeConfig();
+  auto channel = MakeChannel(ServerArgs(MakeAuthContext(),
+                                        /*with_endpoint_addresses=*/false),
+                             config)
+                     .value();
+  Call call(channel);
+  std::string serialized =
+      CaptureCheckRequest(call, call.NewClientMetadata({{kPathHeader, kPath}}));
+  auto request = ParseCheckRequest(serialized);
+  const auto& attr = request.attributes();
+  ASSERT_TRUE(attr.has_source());
+  ASSERT_TRUE(attr.has_destination());
+  EXPECT_THAT(attr.source().principal(), ::testing::StrEq(kUriSan));
+  EXPECT_THAT(attr.destination().principal(), ::testing::StrEq(kLocalUriSan));
+  EXPECT_FALSE(attr.source().has_address());
+  EXPECT_FALSE(attr.destination().has_address());
+}
+
+// The new server-side path does not disturb header filtering.
+TEST_F(ExtAuthzFilterTest, ServerCallHeaderFilteringStillApplies) {
+  auto config = MakeConfig();
+  StringMatcher disallowed =
+      StringMatcher::Create(StringMatcher::Type::kExact, kCustomHeaderKey2)
+          .value();
+  config->disallowed_headers.push_back(std::move(disallowed));
+  auto channel = MakeChannel(ServerArgs(MakeAuthContext()), config).value();
+  Call call(channel);
+  std::string serialized = CaptureCheckRequest(
+      call, call.NewClientMetadata({{kPathHeader, kPath},
+                                    {kCustomHeaderKey, kCustomHeaderValue},
+                                    {kCustomHeaderKey2, kCustomHeaderValue2}}));
+  auto request = ParseCheckRequest(serialized);
+  const auto& headers =
+      request.attributes().request().http().header_map().headers();
+  EXPECT_THAT(headers, ::testing::Contains(::testing::Property(
+                           &envoy::config::core::v3::HeaderValue::key,
+                           ::testing::StrEq(kCustomHeaderKey))));
+  EXPECT_THAT(headers, ::testing::Not(::testing::Contains(::testing::Property(
+                           &envoy::config::core::v3::HeaderValue::key,
+                           ::testing::StrEq(kCustomHeaderKey2)))));
 }
 
 }  // namespace

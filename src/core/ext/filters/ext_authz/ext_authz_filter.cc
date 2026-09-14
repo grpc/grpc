@@ -16,10 +16,12 @@
 
 #include "src/core/ext/filters/ext_authz/ext_authz_filter.h"
 
+#include <optional>
 #include <string>
 #include <utility>
 #include <variant>
 
+#include "src/core/call/evaluate_args.h"
 #include "src/core/call/metadata.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/ext/filters/ext_authz/ext_authz_messages.h"
@@ -27,6 +29,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/transport/auth_context.h"
 #include "src/core/util/down_cast.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/shared_bit_gen.h"
@@ -168,12 +171,16 @@ absl::Status ExtAuthzFilter::Call::OnClientInitialMetadata(
   params.is_client_call = filter->is_client_;
   params.allowed_headers = config.allowed_headers;
   params.disallowed_headers = config.disallowed_headers;
-  // TODO(rishesh): On the server side, set params.args to the call's
-  // EvaluateArgs (to populate AttributeContext.source and
-  // AttributeContext.destination) and, if config.include_peer_certificate is
-  // set, set params.peer_certificate to the value returned by
-  // GetUrlEncodedPemPeerCertificate() for the connection's auth context
-  // (computed at most once per connection).
+  // Populates AttributeContext.source and .destination on the server side.
+  // Note that this must outlive the CreateExtAuthzRequest() call below, which
+  // reads through params.args.
+  std::optional<EvaluateArgs> evaluate_args;
+  if (filter->per_channel_args_.has_value()) {
+    evaluate_args.emplace(&md, &*filter->per_channel_args_);
+    params.args = &*evaluate_args;
+    // Left empty unless the config sets include_peer_certificate.
+    params.peer_certificate = filter->peer_certificate_;
+  }
   // Serialize the CheckRequest proto payload.
   auto payload = CreateExtAuthzRequest(params);
   if (!payload.ok()) {
@@ -336,6 +343,18 @@ ExtAuthzFilter::ExtAuthzFilter(const ChannelArgs& args,
                                RefCountedPtr<const Config> filter_config)
     : config_(std::move(filter_config)),
       is_client_(
-          !args.GetBool(GRPC_ARG_IS_SERVER_FILTER_STACK).value_or(false)) {}
+          !args.GetBool(GRPC_ARG_IS_SERVER_FILTER_STACK).value_or(false)),
+      auth_context_(is_client_ ? nullptr
+                               : args.GetObjectRef<grpc_auth_context>()) {
+  // AttributeContext.source and .destination are populated only for incoming
+  // calls (see gRFC A92), so clients build none of this.
+  if (is_client_) return;
+  per_channel_args_.emplace(auth_context_.get(), args);
+  if (config_->include_peer_certificate) {
+    peer_certificate_ = GetUrlEncodedPemPeerCertificate(auth_context_.get());
+  }
+}
+
+ExtAuthzFilter::~ExtAuthzFilter() = default;
 
 }  // namespace grpc_core

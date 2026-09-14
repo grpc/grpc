@@ -25,6 +25,7 @@
 #include <variant>
 #include <vector>
 
+#include "src/core/call/evaluate_args.h"
 #include "src/core/filter/filter_args.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -136,6 +137,8 @@ class ExtAuthzFilter : public ImplementChannelFilter<ExtAuthzFilter> {
   static absl::StatusOr<std::unique_ptr<ExtAuthzFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
+  ~ExtAuthzFilter() override;
+
   class Call {
    public:
     absl::Status OnClientInitialMetadata(ClientMetadata& md,
@@ -165,6 +168,18 @@ class ExtAuthzFilter : public ImplementChannelFilter<ExtAuthzFilter> {
 
   const RefCountedPtr<const Config> config_;
   const bool is_client_;
+  // Connection-scoped state, populated only on the server side.
+  //
+  // Declaration order matters: per_channel_args_ holds non-owning string_views
+  // into auth_context_'s property storage, so auth_context_ must outlive it.
+  // auth_context_ may be null (a connection need not have one), which
+  // PerChannelArgs handles by leaving the credential fields empty.
+  const RefCountedPtr<grpc_auth_context> auth_context_;
+  std::optional<EvaluateArgs::PerChannelArgs> per_channel_args_;
+  // Value for AttributeContext.source.certificate. Empty unless this is the
+  // server side and the config sets include_peer_certificate. Computed once
+  // here rather than per RPC, since it requires encoding the whole cert.
+  std::string peer_certificate_;
 };
 
 }  // namespace grpc_core
