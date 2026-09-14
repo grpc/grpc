@@ -22,76 +22,20 @@ cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-# Submodule name is passed as the RUN_TESTS_FLAGS variable
-SUBMODULE_NAME="${RUN_TESTS_FLAGS}"
 
-# Name of branch to checkout is passed as BAZEL_FLAGS variable
-# If unset, "master" is used by default.
-SUBMODULE_BRANCH_NAME="${BAZEL_FLAGS:-master}"
-
-# Update submodule to be tested at HEAD
-(cd "third_party/${SUBMODULE_NAME}" && git fetch origin && git checkout "origin/${SUBMODULE_BRANCH_NAME}")
-
-echo "This suite tests whether gRPC HEAD builds with HEAD of submodule '${SUBMODULE_NAME}'"
-echo "If a test breaks, either"
-echo "1) some change in the grpc repository has caused the failure"
-echo "2) some change that was just merged in the submodule head has caused the failure."
-echo ""
-echo "submodule '${SUBMODULE_NAME}' is at commit: $(cd third_party/${SUBMODULE_NAME}; git rev-parse --verify HEAD)"
-echo ""
-
-# Update bazel for generate_projects
-case "$SUBMODULE_NAME" in
-  abseil-cpp|boringssl|protobuf)
-    BAZEL_DEP_PATH="$(pwd)/third_party/${SUBMODULE_NAME}"
-    echo "bazel override_module is set for ${SUBMODULE_NAME} to ${BAZEL_DEP_PATH}"
-    echo "build --override_module=${SUBMODULE_NAME}=${BAZEL_DEP_PATH}" >> "tools/bazel.rc"
-    echo "query --override_module=${SUBMODULE_NAME}=${BAZEL_DEP_PATH}" >> "tools/bazel.rc"
-    ;;
-  *)
-   echo "No bazel dependency is specified so skipping bazel reconfiguration."
-    ;;
-esac
-
-if [ "${SUBMODULE_NAME}" == "abseil-cpp" ]
-then
-  src/abseil-cpp/preprocessed_builds.yaml.gen.py
-fi
-
-if [ "${SUBMODULE_NAME}" == "protobuf" ]
-then
-  # TODO(weizheyuan): Delete this HACK once we upgrade to protobuf 36.
-  #
-  # Force upb codegen for
-  # @com_google_protobuf//upb/reflection:json_enumvalue_options_upb_proto, which is
-  # required to bootstrap compilation of upb runtime.
-  #
-  # The change to BUILD can't be merged to master yet because this target isn't available
-  # in the protobuf we use (35.1), and bazel doesn't allow conditional definition
-  # of targets.
-  #
-  # See also https://github.com/protocolbuffers/protobuf/commit/8111a7473d97d5b199d074c275ef3d083ef5faa9
-  sed -E -i 's/(WELL_KNOWN_PROTO_TARGETS = \[)/\1\n    "json_enumvalue_options",/' BUILD
-
-  # update upb
-  rm -rf third_party/upb/upb
-  cp -r third_party/protobuf/upb third_party/upb
-  # generate upb gen source codes
-  export CC=gcc
-  tools/codegen/core/gen_upb_api.sh
-  # update utf8_range
-  rm -rf third_party/utf8_range
-  cp -r third_party/protobuf/third_party/utf8_range third_party/utf8_range/
-fi
-
+# Run setup script in docker.
 docker \
   run \
   --rm \
-  -u "$(id -u):$(id -g)" \
-  -v=${PWD}:/var/grpc \
+  -it \
+  -v "${PWD}:/var/grpc" \
+  -e "RUN_TESTS_FLAGS" \
+  -e "BAZEL_FLAGS"
+  -e GRPC_GENERATE_PROJECTS_SKIP_XDS_PROTOS="${GRPC_GENERATE_PROJECTS_SKIP_XDS_PROTOS:-1}" \
   --workdir=/var/grpc \
   $(cat "tools/dockerfile/test/cxx_debian12_x64.current_version") \
-  tools/buildgen/generate_projects.sh
+  bash
+  tools/internal_ci/linux/grpc_setup_submodule_in_docker.sh
 
 
 # commit so that changes are passed to Docker
