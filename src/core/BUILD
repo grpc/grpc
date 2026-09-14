@@ -9778,6 +9778,7 @@ grpc_cc_library(
         "grpc_check",
         "grpc_promise_endpoint",
         "http2_settings",
+        "http2_status",
         "slice",
         "slice_buffer",
         "transport_common",

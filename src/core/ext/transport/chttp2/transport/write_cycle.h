@@ -26,6 +26,7 @@
 #include <utility>
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -350,9 +351,23 @@ class TransportWriteContext {
 
   std::string DebugString() const;
 
+  void EnqueueEarlyResetStream(const uint32_t stream_id,
+                               const Http2ErrorCode error_code) {
+    early_reset_frames_.push_back(
+        Http2RstStreamFrame{stream_id, static_cast<uint32_t>(error_code)});
+  }
+
+  void MaybeGetEarlyResetStreamFrames(FrameSender& frame_sender) {
+    for (Http2RstStreamFrame& frame : early_reset_frames_) {
+      frame_sender.AddRegularFrame(frame);
+    }
+    early_reset_frames_.clear();
+  }
+
  private:
   Chttp2WriteSizePolicy write_size_policy_;
   std::optional<WriteCycle> write_cycle_;
+  std::vector<Http2RstStreamFrame> early_reset_frames_;
   bool is_first_write_ = true;
   const bool is_client_;
 };

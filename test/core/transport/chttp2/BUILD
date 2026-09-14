@@ -1070,6 +1070,7 @@ grpc_cc_test(
         "//src/core:notification",
         "//src/core:poll",
         "//src/core:ref_counted",
+        "//src/core:resource_quota",
         "//src/core:seq",
         "//src/core:sleep",
         "//src/core:slice",
