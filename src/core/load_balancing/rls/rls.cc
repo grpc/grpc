@@ -51,6 +51,7 @@
 #include <utility>
 #include <vector>
 
+#include "grpc/lookup/v1/rls.upb.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
@@ -97,7 +98,6 @@
 #include "src/core/util/uuid_v4.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/util/work_serializer.h"
-#include "src/proto/grpc/lookup/v1/rls.upb.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.hpp"
 #include "absl/base/thread_annotations.h"
@@ -1540,9 +1540,15 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy)
       lb_policy_->channel_control_helper()->GetUnsafeChannelCredentials();
   // Use the parent channel's authority.
   auto authority = lb_policy_->channel_control_helper()->GetAuthority();
-  ChannelArgs args = ChannelArgs()
-                         .Set(GRPC_ARG_DEFAULT_AUTHORITY, authority)
-                         .Set(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL, 1);
+  ChannelArgs args;
+  const grpc_channel_args* child_args =
+      lb_policy_->channel_args_.GetPointer<grpc_channel_args>(
+          GRPC_ARG_CHILD_CHANNEL_ARGS);
+  if (child_args != nullptr) {
+    args = ChannelArgs::FromC(child_args).UnionWith(args);
+  }
+  args = args.Set(GRPC_ARG_DEFAULT_AUTHORITY, authority)
+             .Set(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL, 1);
   // Propagate fake security connector expected targets, if any.
   // (This is ugly, but it seems better than propagating all channel args
   // from the parent channel by default and then having a giant

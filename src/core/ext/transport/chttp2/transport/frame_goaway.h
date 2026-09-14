@@ -44,6 +44,7 @@ struct grpc_chttp2_goaway_parser {
   uint32_t last_stream_id;
   uint32_t error_code;
   char* debug_data;
+  grpc_core::SliceBuffer debug_slice_buffer;
   uint32_t debug_length;
   uint32_t debug_pos;
 };

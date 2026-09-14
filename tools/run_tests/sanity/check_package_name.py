@@ -30,8 +30,6 @@ EXPECTED_NAMES = {
     "src/proto/grpc/testing/xds/v3": "xds_v3",
     "src/proto/grpc/core": "core",
     "src/proto/grpc/health/v1": "health",
-    "src/proto/grpc/reflection/v1alpha": "reflection",
-    "src/proto/grpc/reflection/v1": "reflection_v1",
 }
 
 errors = 0

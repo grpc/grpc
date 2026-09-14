@@ -18,7 +18,10 @@
 
 #include <grpc/grpc.h>
 
+#include <memory>
+#include <string>
 #include <utility>
+#include <vector>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/down_cast.h"
@@ -27,16 +30,41 @@
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/certificate_provider_store.h"
 #include "src/core/xds/grpc/xds_server_grpc.h"
+#include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/synchronization/notification.h"
 
 namespace grpc_core {
 namespace testing {
 namespace {
 
+class FakeStreamingCallEventHandler
+    : public XdsTransportFactory::XdsTransport::StreamingCall::EventHandler {
+ public:
+  explicit FakeStreamingCallEventHandler(
+      absl::Notification* on_status_received = nullptr)
+      : on_status_received_(on_status_received) {}
+
+  void OnRequestSent(bool /*ok*/) override {}
+  void OnRecvMessage(absl::string_view /*payload*/) override {}
+  void OnStatusReceived(absl::Status /*status*/) override {
+    if (on_status_received_ != nullptr) {
+      on_status_received_->Notify();
+    }
+  }
+
+ private:
+  absl::Notification* on_status_received_;
+};
+
 class GrpcXdsTransportTest : public ::testing::Test {
  protected:
   void SetUp() override {
+    server_uri_ = absl::StrCat("localhost:", grpc_pick_unused_port_or_die());
     auto json = JsonParse(
         "{\"channel_creds\": [{\"type\": \"insecure\"}], "
         "\"call_creds\": [{\"type\": \"jwt_token_file\", "
@@ -57,6 +85,7 @@ class GrpcXdsTransportTest : public ::testing::Test {
                                                        std::move(store));
   }
 
+  std::string server_uri_;
   RefCountedPtr<const ChannelCredsConfig> channel_creds_config_;
   std::vector<RefCountedPtr<const CallCredsConfig>> call_creds_configs_;
   RefCountedPtr<GrpcXdsTransportFactory> factory_;
@@ -64,7 +93,7 @@ class GrpcXdsTransportTest : public ::testing::Test {
 
 TEST_F(GrpcXdsTransportTest, IdenticalTargetsShareTransport) {
   ExecCtx exec_ctx;
-  GrpcXdsServerTarget target("localhost:1234", channel_creds_config_,
+  GrpcXdsServerTarget target(server_uri_, channel_creds_config_,
                              /*call_creds_configs=*/{},
                              /*initial_metadata=*/{{"key1", "val1"}},
                              Duration::Seconds(10));
@@ -79,10 +108,10 @@ TEST_F(GrpcXdsTransportTest, IdenticalTargetsShareTransport) {
 
 TEST_F(GrpcXdsTransportTest, DifferingCallCredsSharesChannel) {
   ExecCtx exec_ctx;
-  GrpcXdsServerTarget target1("localhost:1234", channel_creds_config_,
+  GrpcXdsServerTarget target1(server_uri_, channel_creds_config_,
                               /*call_creds_configs=*/{},
                               /*initial_metadata=*/{}, Duration::Seconds(10));
-  GrpcXdsServerTarget target2("localhost:1234", channel_creds_config_,
+  GrpcXdsServerTarget target2(server_uri_, channel_creds_config_,
                               /*call_creds_configs=*/call_creds_configs_,
                               /*initial_metadata=*/{}, Duration::Seconds(10));
   EXPECT_NE(target1.Key(), target2.Key());
@@ -102,11 +131,11 @@ TEST_F(GrpcXdsTransportTest, DifferingCallCredsSharesChannel) {
 
 TEST_F(GrpcXdsTransportTest, DifferingMetadataSharesChannel) {
   ExecCtx exec_ctx;
-  GrpcXdsServerTarget target1("localhost:1234", channel_creds_config_,
+  GrpcXdsServerTarget target1(server_uri_, channel_creds_config_,
                               /*call_creds_configs=*/{},
                               /*initial_metadata=*/{{"key1", "val1"}},
                               Duration::Seconds(10));
-  GrpcXdsServerTarget target2("localhost:1234", channel_creds_config_,
+  GrpcXdsServerTarget target2(server_uri_, channel_creds_config_,
                               /*call_creds_configs=*/{},
                               /*initial_metadata=*/{{"key2", "val2"}},
                               Duration::Seconds(10));
@@ -127,11 +156,11 @@ TEST_F(GrpcXdsTransportTest, DifferingMetadataSharesChannel) {
 
 TEST_F(GrpcXdsTransportTest, DifferingTimeoutSharesChannel) {
   ExecCtx exec_ctx;
-  GrpcXdsServerTarget target1("localhost:1234", channel_creds_config_,
+  GrpcXdsServerTarget target1(server_uri_, channel_creds_config_,
                               /*call_creds_configs=*/{},
                               /*initial_metadata=*/{{"key1", "val1"}},
                               Duration::Seconds(10));
-  GrpcXdsServerTarget target2("localhost:1234", channel_creds_config_,
+  GrpcXdsServerTarget target2(server_uri_, channel_creds_config_,
                               /*call_creds_configs=*/{},
                               /*initial_metadata=*/{{"key1", "val1"}},
                               Duration::Seconds(20));
@@ -152,14 +181,14 @@ TEST_F(GrpcXdsTransportTest, DifferingTimeoutSharesChannel) {
 
 TEST_F(GrpcXdsTransportTest, DifferingServerUriDoesNotShareChannel) {
   ExecCtx exec_ctx;
-  GrpcXdsServerTarget target1("localhost:1234", channel_creds_config_,
+  GrpcXdsServerTarget target1(server_uri_, channel_creds_config_,
                               /*call_creds_configs=*/{},
                               /*initial_metadata=*/{{"key1", "val1"}},
                               Duration::Seconds(10));
-  GrpcXdsServerTarget target2("localhost:5678", channel_creds_config_,
-                              /*call_creds_configs=*/{},
-                              /*initial_metadata=*/{{"key1", "val1"}},
-                              Duration::Seconds(10));
+  GrpcXdsServerTarget target2(
+      absl::StrCat("localhost:", grpc_pick_unused_port_or_die()),
+      channel_creds_config_, /*call_creds_configs=*/{},
+      /*initial_metadata=*/{{"key1", "val1"}}, Duration::Seconds(10));
   EXPECT_NE(target1.Key(), target2.Key());
   absl::Status status1;
   auto transport1 = factory_->GetTransport(target1, &status1);
@@ -173,6 +202,26 @@ TEST_F(GrpcXdsTransportTest, DifferingServerUriDoesNotShareChannel) {
   auto* grpc_transport2 =
       DownCast<GrpcXdsTransportFactory::GrpcXdsTransport*>(transport2.get());
   EXPECT_NE(grpc_transport1->channel(), grpc_transport2->channel());
+}
+
+TEST_F(GrpcXdsTransportTest, StreamingCallOrphan) {
+  ExecCtx exec_ctx;
+  GrpcXdsServerTarget target(server_uri_, channel_creds_config_,
+                             /*call_creds_configs=*/{},
+                             /*initial_metadata=*/{}, Duration::Seconds(10));
+  absl::Status status;
+  auto transport = factory_->GetTransport(target, &status);
+  ASSERT_TRUE(status.ok()) << status.ToString();
+  absl::Notification on_status_received;
+  auto call = transport->CreateStreamingCall(
+      "/test.Service/TestMethod",
+      std::make_unique<FakeStreamingCallEventHandler>(&on_status_received));
+  ASSERT_NE(call, nullptr);
+  exec_ctx.Flush();
+  on_status_received.WaitForNotification();
+  // Orphan the call after status is received. This invokes Orphan(), which
+  // cleans up the call and releases the initial reference.
+  call.reset();
 }
 
 class GrpcXdsServerTargetTest : public ::testing::Test {

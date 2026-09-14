@@ -266,8 +266,7 @@ static grpc_error_handle create_default_creds_from_path(
   if (creds_path.empty()) {
     return GRPC_ERROR_CREATE("creds_path unset");
   }
-  auto creds_data =
-      grpc_core::LoadFile(creds_path, /*add_null_terminator=*/false);
+  auto creds_data = grpc_core::LoadFile(creds_path);
   if (!creds_data.ok()) {
     return creds_data.status();
   }

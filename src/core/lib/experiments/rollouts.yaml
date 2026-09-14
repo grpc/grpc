@@ -56,10 +56,6 @@
   default: true
 - name: event_engine_client
   default: true
-- name: event_engine_dns
-  default: true
-- name: event_engine_dns_non_client_channel
-  default: true
 - name: event_engine_for_all_other_endpoints
   default: true
 - name: event_engine_fork
@@ -72,6 +68,8 @@
   default: false
 - name: fuse_filters
   default: false
+- name : header_data_frame
+  default : true
 - name: inproc_cancel_stream
   default: true
 - name: keep_alive_ping_timer_batch
@@ -83,7 +81,7 @@
 - name: memory_optimization_02
   default: false
 - name: message_size_refactoring
-  default: false
+  default: true
 - name: metadata_outstanding_token_refactor
   default: false
 - name: metadata_publish_to_app_tag
@@ -103,7 +101,7 @@
 - name: ph2_client_server
   default: false
 - name: ph2_perf_01
-  default: false
+  default: true
 - name: ph2_server
   default: false
 - name: pollset_alternative
@@ -120,8 +118,6 @@
   default: false
 - name: skip_clear_peer_on_cancellation
   default: false
-- name: subchannel_connection_scaling
-  default: true
 - name: tcp_frame_size_tuning
   default: false
 - name: tcp_rcv_lowat
@@ -132,5 +128,9 @@
   default: false
 - name: use_call_event_engine_in_completion_queue
   default: false
+- name: v2_non_owning_waker_implementation
+  default: true
 - name: verbose_channelz_connection_logging
   default: false
+- name: xds_server_filter_chain_per_route
+  default: true

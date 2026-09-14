@@ -313,8 +313,7 @@ std::optional<std::string>
 FileWatcherCertificateProvider::ReadRootCertificatesFromFile(
     const std::string& root_cert_full_path) {
   // Read the root file.
-  auto root_slice =
-      LoadFile(root_cert_full_path, /*add_null_terminator=*/false);
+  auto root_slice = LoadFile(root_cert_full_path);
   if (!root_slice.ok()) {
     LOG(ERROR) << "Reading file " << root_cert_full_path
                << " failed: " << root_slice.status();
@@ -358,14 +357,13 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
       continue;
     }
     // Read the identity files.
-    auto key_slice = LoadFile(private_key_path, /*add_null_terminator=*/false);
+    auto key_slice = LoadFile(private_key_path);
     if (!key_slice.ok()) {
       LOG(ERROR) << "Reading file " << private_key_path
                  << " failed: " << key_slice.status() << ". Start retrying...";
       continue;
     }
-    auto cert_slice =
-        LoadFile(identity_certificate_path, /*add_null_terminator=*/false);
+    auto cert_slice = LoadFile(identity_certificate_path);
     if (!cert_slice.ok()) {
       LOG(ERROR) << "Reading file " << identity_certificate_path
                  << " failed: " << cert_slice.status() << ". Start retrying...";

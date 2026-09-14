@@ -20,7 +20,7 @@ RUN apt-get update && apt-get install -y build-essential autoconf libtool pkg-co
 # C++ distribtests are setup in a way that requires git
 RUN apt-get update && apt-get install -y git cmake && apt-get clean
 
-RUN git config --global --add safe.directory /var/local/jenkins/grpc
+RUN git config --global --add safe.directory '*'
 RUN git config --global protocol.file.allow always
 
 

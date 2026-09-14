@@ -57,14 +57,6 @@ const char* const additional_constraints_custom_frame_check = "{}";
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
-const char* const description_event_engine_dns =
-    "If set, use EventEngine DNSResolver for client channel resolution";
-const char* const additional_constraints_event_engine_dns = "{}";
-const char* const description_event_engine_dns_non_client_channel =
-    "If set, use EventEngine DNSResolver in other places besides client "
-    "channel.";
-const char* const additional_constraints_event_engine_dns_non_client_channel =
-    "{}";
 const char* const description_event_engine_fork =
     "Enables event engine fork handling, including onfork events and file "
     "descriptor generations";
@@ -85,9 +77,6 @@ const char* const additional_constraints_event_engine_for_all_other_endpoints =
     "{}";
 const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineDns),
-    static_cast<uint8_t>(
-        grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_fail_recv_metadata_on_deadline_exceeded =
     "Fail recv initial metadata when the deadline is exceeded.";
@@ -107,6 +96,9 @@ const char* const description_h2_max_deallocating_streams_headroom =
     "Separate allocated max concurrent streams.";
 const char* const additional_constraints_h2_max_deallocating_streams_headroom =
     "{}";
+const char* const description_header_data_frame =
+    "Managing header and data memory better";
+const char* const additional_constraints_header_data_frame = "{}";
 const char* const description_inproc_cancel_stream =
     "If set, cancel inproc stream inside the transport mutex.";
 const char* const additional_constraints_inproc_cancel_stream = "{}";
@@ -212,6 +204,9 @@ const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_return_preexisting_errors =
     "Return errors that exist before the start of the call in RunHandler.";
 const char* const additional_constraints_return_preexisting_errors = "{}";
+const char* const description_ring_hash_update_cleanup =
+    "Clean up update logic in ring_hash LB policy.";
+const char* const additional_constraints_ring_hash_update_cleanup = "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -239,9 +234,6 @@ const uint8_t required_experiments_secure_endpoint_read_coalescing[] = {
 const char* const description_skip_clear_peer_on_cancellation =
     "If set, skips clearing of peer string on call cancellation.";
 const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
-const char* const description_subchannel_connection_scaling =
-    "Subchannel connection scaling support.";
-const char* const additional_constraints_subchannel_connection_scaling = "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -312,12 +304,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_custom_frame_check, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
-    {"event_engine_dns", description_event_engine_dns,
-     additional_constraints_event_engine_dns, nullptr, 0, true, false},
-    {"event_engine_dns_non_client_channel",
-     description_event_engine_dns_non_client_channel,
-     additional_constraints_event_engine_dns_non_client_channel, nullptr, 0,
-     true, false},
     {"event_engine_fork", description_event_engine_fork,
      additional_constraints_event_engine_fork, nullptr, 0, true, false},
     {"event_engine_listener", description_event_engine_listener,
@@ -328,7 +314,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"event_engine_for_all_other_endpoints",
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
-     required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
+     required_experiments_event_engine_for_all_other_endpoints, 2, true, false},
     {"fail_recv_metadata_on_deadline_exceeded",
      description_fail_recv_metadata_on_deadline_exceeded,
      additional_constraints_fail_recv_metadata_on_deadline_exceeded, nullptr, 0,
@@ -345,6 +331,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_h2_max_deallocating_streams_headroom,
      additional_constraints_h2_max_deallocating_streams_headroom, nullptr, 0,
      false, true},
+    {"header_data_frame", description_header_data_frame,
+     additional_constraints_header_data_frame, nullptr, 0, true, true},
     {"inproc_cancel_stream", description_inproc_cancel_stream,
      additional_constraints_inproc_cancel_stream, nullptr, 0, true, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
@@ -357,7 +345,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"memory_optimization_02", description_memory_optimization_02,
      additional_constraints_memory_optimization_02, nullptr, 0, false, false},
     {"message_size_refactoring", description_message_size_refactoring,
-     additional_constraints_message_size_refactoring, nullptr, 0, false, true},
+     additional_constraints_message_size_refactoring, nullptr, 0, true, true},
     {"metadata_outstanding_token_refactor",
      description_metadata_outstanding_token_refactor,
      additional_constraints_metadata_outstanding_token_refactor, nullptr, 0,
@@ -387,7 +375,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"ph2_client_server", description_ph2_client_server,
      additional_constraints_ph2_client_server, nullptr, 0, false, true},
     {"ph2_perf_01", description_ph2_perf_01, additional_constraints_ph2_perf_01,
-     nullptr, 0, false, true},
+     nullptr, 0, true, true},
     {"ph2_server", description_ph2_server, additional_constraints_ph2_server,
      nullptr, 0, false, true},
     {"pick_first_ignore_empty_updates",
@@ -424,6 +412,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"return_preexisting_errors", description_return_preexisting_errors,
      additional_constraints_return_preexisting_errors, nullptr, 0, true, true},
+    {"ring_hash_update_cleanup", description_ring_hash_update_cleanup,
+     additional_constraints_ring_hash_update_cleanup, nullptr, 0, false, true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -444,9 +434,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_skip_clear_peer_on_cancellation,
      additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,
      true},
-    {"subchannel_connection_scaling", description_subchannel_connection_scaling,
-     additional_constraints_subchannel_connection_scaling, nullptr, 0, true,
-     true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
@@ -466,7 +453,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"v2_non_owning_waker_implementation",
      description_v2_non_owning_waker_implementation,
      additional_constraints_v2_non_owning_waker_implementation, nullptr, 0,
-     false, true},
+     true, true},
     {"verbose_channelz_connection_logging",
      description_verbose_channelz_connection_logging,
      additional_constraints_verbose_channelz_connection_logging, nullptr, 0,
@@ -478,7 +465,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"xds_server_filter_chain_per_route",
      description_xds_server_filter_chain_per_route,
      additional_constraints_xds_server_filter_chain_per_route,
-     required_experiments_xds_server_filter_chain_per_route, 1, false, true},
+     required_experiments_xds_server_filter_chain_per_route, 1, true, true},
 };
 
 }  // namespace grpc_core
@@ -519,14 +506,6 @@ const char* const additional_constraints_custom_frame_check = "{}";
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
-const char* const description_event_engine_dns =
-    "If set, use EventEngine DNSResolver for client channel resolution";
-const char* const additional_constraints_event_engine_dns = "{}";
-const char* const description_event_engine_dns_non_client_channel =
-    "If set, use EventEngine DNSResolver in other places besides client "
-    "channel.";
-const char* const additional_constraints_event_engine_dns_non_client_channel =
-    "{}";
 const char* const description_event_engine_fork =
     "Enables event engine fork handling, including onfork events and file "
     "descriptor generations";
@@ -547,9 +526,6 @@ const char* const additional_constraints_event_engine_for_all_other_endpoints =
     "{}";
 const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineDns),
-    static_cast<uint8_t>(
-        grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_fail_recv_metadata_on_deadline_exceeded =
     "Fail recv initial metadata when the deadline is exceeded.";
@@ -569,6 +545,9 @@ const char* const description_h2_max_deallocating_streams_headroom =
     "Separate allocated max concurrent streams.";
 const char* const additional_constraints_h2_max_deallocating_streams_headroom =
     "{}";
+const char* const description_header_data_frame =
+    "Managing header and data memory better";
+const char* const additional_constraints_header_data_frame = "{}";
 const char* const description_inproc_cancel_stream =
     "If set, cancel inproc stream inside the transport mutex.";
 const char* const additional_constraints_inproc_cancel_stream = "{}";
@@ -674,6 +653,9 @@ const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_return_preexisting_errors =
     "Return errors that exist before the start of the call in RunHandler.";
 const char* const additional_constraints_return_preexisting_errors = "{}";
+const char* const description_ring_hash_update_cleanup =
+    "Clean up update logic in ring_hash LB policy.";
+const char* const additional_constraints_ring_hash_update_cleanup = "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -701,9 +683,6 @@ const uint8_t required_experiments_secure_endpoint_read_coalescing[] = {
 const char* const description_skip_clear_peer_on_cancellation =
     "If set, skips clearing of peer string on call cancellation.";
 const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
-const char* const description_subchannel_connection_scaling =
-    "Subchannel connection scaling support.";
-const char* const additional_constraints_subchannel_connection_scaling = "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -774,12 +753,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_custom_frame_check, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
-    {"event_engine_dns", description_event_engine_dns,
-     additional_constraints_event_engine_dns, nullptr, 0, true, false},
-    {"event_engine_dns_non_client_channel",
-     description_event_engine_dns_non_client_channel,
-     additional_constraints_event_engine_dns_non_client_channel, nullptr, 0,
-     true, false},
     {"event_engine_fork", description_event_engine_fork,
      additional_constraints_event_engine_fork, nullptr, 0, true, false},
     {"event_engine_listener", description_event_engine_listener,
@@ -790,7 +763,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"event_engine_for_all_other_endpoints",
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
-     required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
+     required_experiments_event_engine_for_all_other_endpoints, 2, true, false},
     {"fail_recv_metadata_on_deadline_exceeded",
      description_fail_recv_metadata_on_deadline_exceeded,
      additional_constraints_fail_recv_metadata_on_deadline_exceeded, nullptr, 0,
@@ -807,6 +780,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_h2_max_deallocating_streams_headroom,
      additional_constraints_h2_max_deallocating_streams_headroom, nullptr, 0,
      false, true},
+    {"header_data_frame", description_header_data_frame,
+     additional_constraints_header_data_frame, nullptr, 0, true, true},
     {"inproc_cancel_stream", description_inproc_cancel_stream,
      additional_constraints_inproc_cancel_stream, nullptr, 0, true, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
@@ -819,7 +794,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"memory_optimization_02", description_memory_optimization_02,
      additional_constraints_memory_optimization_02, nullptr, 0, false, false},
     {"message_size_refactoring", description_message_size_refactoring,
-     additional_constraints_message_size_refactoring, nullptr, 0, false, true},
+     additional_constraints_message_size_refactoring, nullptr, 0, true, true},
     {"metadata_outstanding_token_refactor",
      description_metadata_outstanding_token_refactor,
      additional_constraints_metadata_outstanding_token_refactor, nullptr, 0,
@@ -849,7 +824,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"ph2_client_server", description_ph2_client_server,
      additional_constraints_ph2_client_server, nullptr, 0, false, true},
     {"ph2_perf_01", description_ph2_perf_01, additional_constraints_ph2_perf_01,
-     nullptr, 0, false, true},
+     nullptr, 0, true, true},
     {"ph2_server", description_ph2_server, additional_constraints_ph2_server,
      nullptr, 0, false, true},
     {"pick_first_ignore_empty_updates",
@@ -886,6 +861,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"return_preexisting_errors", description_return_preexisting_errors,
      additional_constraints_return_preexisting_errors, nullptr, 0, true, true},
+    {"ring_hash_update_cleanup", description_ring_hash_update_cleanup,
+     additional_constraints_ring_hash_update_cleanup, nullptr, 0, false, true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -906,9 +883,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_skip_clear_peer_on_cancellation,
      additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,
      true},
-    {"subchannel_connection_scaling", description_subchannel_connection_scaling,
-     additional_constraints_subchannel_connection_scaling, nullptr, 0, true,
-     true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
@@ -928,7 +902,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"v2_non_owning_waker_implementation",
      description_v2_non_owning_waker_implementation,
      additional_constraints_v2_non_owning_waker_implementation, nullptr, 0,
-     false, true},
+     true, true},
     {"verbose_channelz_connection_logging",
      description_verbose_channelz_connection_logging,
      additional_constraints_verbose_channelz_connection_logging, nullptr, 0,
@@ -940,7 +914,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"xds_server_filter_chain_per_route",
      description_xds_server_filter_chain_per_route,
      additional_constraints_xds_server_filter_chain_per_route,
-     required_experiments_xds_server_filter_chain_per_route, 1, false, true},
+     required_experiments_xds_server_filter_chain_per_route, 1, true, true},
 };
 
 }  // namespace grpc_core
@@ -981,14 +955,6 @@ const char* const additional_constraints_custom_frame_check = "{}";
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
-const char* const description_event_engine_dns =
-    "If set, use EventEngine DNSResolver for client channel resolution";
-const char* const additional_constraints_event_engine_dns = "{}";
-const char* const description_event_engine_dns_non_client_channel =
-    "If set, use EventEngine DNSResolver in other places besides client "
-    "channel.";
-const char* const additional_constraints_event_engine_dns_non_client_channel =
-    "{}";
 const char* const description_event_engine_fork =
     "Enables event engine fork handling, including onfork events and file "
     "descriptor generations";
@@ -1009,9 +975,6 @@ const char* const additional_constraints_event_engine_for_all_other_endpoints =
     "{}";
 const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineDns),
-    static_cast<uint8_t>(
-        grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_fail_recv_metadata_on_deadline_exceeded =
     "Fail recv initial metadata when the deadline is exceeded.";
@@ -1031,6 +994,9 @@ const char* const description_h2_max_deallocating_streams_headroom =
     "Separate allocated max concurrent streams.";
 const char* const additional_constraints_h2_max_deallocating_streams_headroom =
     "{}";
+const char* const description_header_data_frame =
+    "Managing header and data memory better";
+const char* const additional_constraints_header_data_frame = "{}";
 const char* const description_inproc_cancel_stream =
     "If set, cancel inproc stream inside the transport mutex.";
 const char* const additional_constraints_inproc_cancel_stream = "{}";
@@ -1136,6 +1102,9 @@ const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_return_preexisting_errors =
     "Return errors that exist before the start of the call in RunHandler.";
 const char* const additional_constraints_return_preexisting_errors = "{}";
+const char* const description_ring_hash_update_cleanup =
+    "Clean up update logic in ring_hash LB policy.";
+const char* const additional_constraints_ring_hash_update_cleanup = "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -1163,9 +1132,6 @@ const uint8_t required_experiments_secure_endpoint_read_coalescing[] = {
 const char* const description_skip_clear_peer_on_cancellation =
     "If set, skips clearing of peer string on call cancellation.";
 const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
-const char* const description_subchannel_connection_scaling =
-    "Subchannel connection scaling support.";
-const char* const additional_constraints_subchannel_connection_scaling = "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -1236,12 +1202,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_custom_frame_check, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
-    {"event_engine_dns", description_event_engine_dns,
-     additional_constraints_event_engine_dns, nullptr, 0, true, false},
-    {"event_engine_dns_non_client_channel",
-     description_event_engine_dns_non_client_channel,
-     additional_constraints_event_engine_dns_non_client_channel, nullptr, 0,
-     true, false},
     {"event_engine_fork", description_event_engine_fork,
      additional_constraints_event_engine_fork, nullptr, 0, true, false},
     {"event_engine_listener", description_event_engine_listener,
@@ -1252,7 +1212,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"event_engine_for_all_other_endpoints",
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
-     required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
+     required_experiments_event_engine_for_all_other_endpoints, 2, true, false},
     {"fail_recv_metadata_on_deadline_exceeded",
      description_fail_recv_metadata_on_deadline_exceeded,
      additional_constraints_fail_recv_metadata_on_deadline_exceeded, nullptr, 0,
@@ -1269,6 +1229,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_h2_max_deallocating_streams_headroom,
      additional_constraints_h2_max_deallocating_streams_headroom, nullptr, 0,
      false, true},
+    {"header_data_frame", description_header_data_frame,
+     additional_constraints_header_data_frame, nullptr, 0, true, true},
     {"inproc_cancel_stream", description_inproc_cancel_stream,
      additional_constraints_inproc_cancel_stream, nullptr, 0, true, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
@@ -1281,7 +1243,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"memory_optimization_02", description_memory_optimization_02,
      additional_constraints_memory_optimization_02, nullptr, 0, false, false},
     {"message_size_refactoring", description_message_size_refactoring,
-     additional_constraints_message_size_refactoring, nullptr, 0, false, true},
+     additional_constraints_message_size_refactoring, nullptr, 0, true, true},
     {"metadata_outstanding_token_refactor",
      description_metadata_outstanding_token_refactor,
      additional_constraints_metadata_outstanding_token_refactor, nullptr, 0,
@@ -1311,7 +1273,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"ph2_client_server", description_ph2_client_server,
      additional_constraints_ph2_client_server, nullptr, 0, false, true},
     {"ph2_perf_01", description_ph2_perf_01, additional_constraints_ph2_perf_01,
-     nullptr, 0, false, true},
+     nullptr, 0, true, true},
     {"ph2_server", description_ph2_server, additional_constraints_ph2_server,
      nullptr, 0, false, true},
     {"pick_first_ignore_empty_updates",
@@ -1348,6 +1310,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"return_preexisting_errors", description_return_preexisting_errors,
      additional_constraints_return_preexisting_errors, nullptr, 0, true, true},
+    {"ring_hash_update_cleanup", description_ring_hash_update_cleanup,
+     additional_constraints_ring_hash_update_cleanup, nullptr, 0, false, true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -1368,9 +1332,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_skip_clear_peer_on_cancellation,
      additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,
      true},
-    {"subchannel_connection_scaling", description_subchannel_connection_scaling,
-     additional_constraints_subchannel_connection_scaling, nullptr, 0, true,
-     true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
@@ -1390,7 +1351,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"v2_non_owning_waker_implementation",
      description_v2_non_owning_waker_implementation,
      additional_constraints_v2_non_owning_waker_implementation, nullptr, 0,
-     false, true},
+     true, true},
     {"verbose_channelz_connection_logging",
      description_verbose_channelz_connection_logging,
      additional_constraints_verbose_channelz_connection_logging, nullptr, 0,
@@ -1402,7 +1363,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"xds_server_filter_chain_per_route",
      description_xds_server_filter_chain_per_route,
      additional_constraints_xds_server_filter_chain_per_route,
-     required_experiments_xds_server_filter_chain_per_route, 1, false, true},
+     required_experiments_xds_server_filter_chain_per_route, 1, true, true},
 };
 
 }  // namespace grpc_core

@@ -67,12 +67,10 @@ TEST(AbsoluteFilePathTest, ConcatenatesCorrectly) {
 TEST(CreateRootCertsBundleTest, ReturnsEmpty) {
   // Test that CreateRootCertsBundle returns an empty slice for null or
   // nonexistent cert directories.
-  grpc_slice result_slice = grpc_core::CreateRootCertsBundle(nullptr);
-  EXPECT_TRUE(GRPC_SLICE_IS_EMPTY(result_slice));
-  grpc_slice_unref(result_slice);
+  grpc_core::Slice result_slice = grpc_core::CreateRootCertsBundle(nullptr);
+  EXPECT_TRUE(result_slice.empty());
   result_slice = grpc_core::CreateRootCertsBundle("does/not/exist");
-  EXPECT_TRUE(GRPC_SLICE_IS_EMPTY(result_slice));
-  grpc_slice_unref(result_slice);
+  EXPECT_TRUE(result_slice.empty());
 }
 
 TEST(CreateRootCertsBundleTest, BundlesCorrectly) {
@@ -81,8 +79,7 @@ TEST(CreateRootCertsBundleTest, BundlesCorrectly) {
       "test/core/credentials/transport/tls/test_data/";
   absl::string_view roots_bundle_str;
   auto roots_bundle =
-      grpc_core::LoadFile(absl::StrCat(kTestPathPrefix, "bundle.pem"),
-                          /*add_null_terminator=*/false);
+      grpc_core::LoadFile(absl::StrCat(kTestPathPrefix, "bundle.pem"));
   if (roots_bundle.ok()) roots_bundle_str = roots_bundle->as_string_view();
   // result_slice should have the same content as roots_bundle.
   grpc_core::Slice result_slice(grpc_core::CreateRootCertsBundle(
@@ -96,9 +93,8 @@ TEST(CreateRootCertsBundleTest, BundlesCorrectly) {
 
 #if defined(GPR_WINDOWS)
 TEST(LoadSystemRootCertsTest, Success) {
-  grpc_slice roots_slice = grpc_core::LoadSystemRootCerts();
-  EXPECT_FALSE(GRPC_SLICE_IS_EMPTY(roots_slice));
-  grpc_slice_unref(roots_slice);
+  grpc_core::Slice roots_slice = grpc_core::LoadSystemRootCerts();
+  EXPECT_FALSE(roots_slice.empty());
 }
 #endif  // GPR_WINDOWS
 
