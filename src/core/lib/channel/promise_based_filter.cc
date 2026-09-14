@@ -209,9 +209,7 @@ void BaseCallData::Wakeup(WakeupMask) {
   GRPC_CALL_COMBINER_START(call_combiner_, closure, absl::OkStatus(), "wakeup");
 }
 
-void BaseCallData::WakeupAsync(WakeupMask wakeup_mask) {
-  Wakeup(wakeup_mask);
-}
+void BaseCallData::WakeupAsync(WakeupMask wakeup_mask) { Wakeup(wakeup_mask); }
 
 void BaseCallData::Drop(WakeupMask) {
   GRPC_CALL_STACK_UNREF(call_stack_, "waker");
@@ -1333,9 +1331,8 @@ class ClientCallData::PollContext {
                       std::exchange(
                           self_->recv_initial_metadata_->original_on_ready,
                           nullptr),
-                      !StatusFromMetadata(*md).ok()
-                          ? StatusFromMetadata(*md)
-                          : absl::CancelledError(),
+                      !StatusFromMetadata(*md).ok() ? StatusFromMetadata(*md)
+                                                    : absl::CancelledError(),
                       "wake_inside_combiner:recv_initial_metadata_ready");
               }
             }
