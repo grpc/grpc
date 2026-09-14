@@ -145,7 +145,7 @@ pip_install() {
 pip_install --upgrade pip
 pip_install --upgrade wheel
 pip_install --upgrade setuptools==77.0.1
-pip_install --upgrade nox
+pip_install --upgrade nox==2024.10.9
 
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
 # Python gets confused when parsing paths.

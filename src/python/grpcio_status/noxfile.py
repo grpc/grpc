@@ -22,11 +22,12 @@ ROOT_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
 GRPC_ROOT_ABS_PATH = os.path.join(ROOT_DIR, "../../..")
 ROOT_REL_DIR = os.path.relpath(ROOT_DIR, start=GRPC_ROOT_ABS_PATH)
 STATUS_PROTO = "third_party/googleapis/google/rpc/status.proto"
+STATUS_PROTO_ABS_PATH = os.path.join(GRPC_ROOT_ABS_PATH, STATUS_PROTO)
 PACKAGE_STATUS_PROTO_DIR = "grpc_status/google/rpc"
-LICENSE = "./LICENSE"
+LICENSE = os.path.join(GRPC_ROOT_ABS_PATH, "LICENSE")
 
 
-@nox.session
+@nox.session(python=False)
 def preprocess(session: nox.Session):
     """
     Session to copy proto modules from third_party/googleapis/google/rpc/ and LICENCE
@@ -37,9 +38,9 @@ def preprocess(session: nox.Session):
     session.cd(GRPC_ROOT_ABS_PATH)
     target_proto_dir = os.path.join(ROOT_DIR, PACKAGE_STATUS_PROTO_DIR)
     os.makedirs(target_proto_dir, exist_ok=True)
-    if os.path.isfile(STATUS_PROTO):
+    if os.path.isfile(STATUS_PROTO_ABS_PATH):
         shutil.copyfile(
-            STATUS_PROTO,
+            STATUS_PROTO_ABS_PATH,
             os.path.join(target_proto_dir, "status.proto"),
         )
     if os.path.isfile(LICENSE):

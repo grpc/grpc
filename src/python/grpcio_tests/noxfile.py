@@ -29,16 +29,16 @@ ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 GRPC_ROOT_ABS_PATH = os.path.join(ROOT_DIR, "../../../")
 # PYTHON_REL_PATH - src/python/grpcio_tests
 ROOT_REL_DIR = os.path.relpath(ROOT_DIR, start=GRPC_ROOT_ABS_PATH)
-GRPC_PROTO_STEM = os.path.join("src", "proto")  # src/proto
+GRPC_PROTO_STEM = os.path.join(GRPC_ROOT_ABS_PATH, "src", "proto")  # src/proto
 PROTO_STEM = os.path.join(
-    ROOT_REL_DIR, "src", "proto"
+    ROOT_DIR, "src", "proto"
 )  # src/python/grpcio_tests/src/proto
 PYTHON_PROTO_TOP_LEVEL = os.path.join(
-    ROOT_REL_DIR, "src"
+    ROOT_DIR, "src"
 )  # src/python/grpcio_tests/src
 
 
-@nox.session
+@nox.session(python=False)
 def preprocess(session: nox.Session):
     """
     Session to gather proto dependencies
@@ -88,4 +88,4 @@ def test_lite(session: nox.Session):
     runner = tests.Runner(dedicated_threads=True)
     result = runner.run(loader.suite)
     if not result.wasSuccessful():
-        sys.exit("Test failure")
+        session.error("Test failure")

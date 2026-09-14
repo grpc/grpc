@@ -21,10 +21,10 @@ import nox
 ROOT_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
 GRPC_ROOT_ABS_PATH = os.path.join(ROOT_DIR, "../../..")
 ROOT_REL_DIR = os.path.relpath(ROOT_DIR, start=GRPC_ROOT_ABS_PATH)
-LICENSE = "./LICENSE"
+LICENSE = os.path.join(GRPC_ROOT_ABS_PATH, "LICENSE")
 
 
-@nox.session
+@nox.session(python=False)
 def preprocess(session: nox.Session):
     """
     Session to copy LICENSE from the root directory
