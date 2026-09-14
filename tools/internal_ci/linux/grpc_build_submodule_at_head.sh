@@ -22,23 +22,20 @@ cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-
 # Run setup script in docker.
 docker \
   run \
   --rm \
-  -it \
   -v "${PWD}:/var/grpc" \
   -e "RUN_TESTS_FLAGS" \
-  -e "BAZEL_FLAGS"
+  -e "BAZEL_FLAGS" \
   -e GRPC_GENERATE_PROJECTS_SKIP_XDS_PROTOS="${GRPC_GENERATE_PROJECTS_SKIP_XDS_PROTOS:-1}" \
   --workdir=/var/grpc \
   $(cat "tools/dockerfile/test/cxx_debian12_x64.current_version") \
-  bash
   tools/internal_ci/linux/grpc_setup_submodule_in_docker.sh
 
-
-# commit so that changes are passed to Docker
+# Return to host machine and commit so that changes are
+# passed to Docker in tools/run_tests/run_tests_matrix.py.
 git add -A
 git -c user.name='foo' -c user.email='foo@google.com' commit -m 'Update submodule' --allow-empty
 
