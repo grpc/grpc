@@ -34,9 +34,4 @@ docker \
   $(cat "tools/dockerfile/test/cxx_debian12_x64.current_version") \
   tools/internal_ci/linux/grpc_setup_submodule_in_docker.sh
 
-# Return to host machine and commit so that changes are
-# passed to Docker in tools/run_tests/run_tests_matrix.py.
-git add -A
-git -c user.name='foo' -c user.email='foo@google.com' commit -m 'Update submodule' --allow-empty
-
 tools/run_tests/run_tests_matrix.py -f linux --exclude c sanity basictests_arm64 openssl dbg --inner_jobs 16 -j 2 --build_only

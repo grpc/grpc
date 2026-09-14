@@ -15,7 +15,6 @@
 
 # Build portability tests with an updated submodule
 
-
 # Submodule name is passed as the RUN_TESTS_FLAGS variable
 SUBMODULE_NAME="${RUN_TESTS_FLAGS}"
 
@@ -85,3 +84,9 @@ fi
 # which grpcio python packages dropped at v1.71.0.
 export GRPC_GENERATE_PROJECTS_SKIP_XDS_PROTOS="${GRPC_GENERATE_PROJECTS_SKIP_XDS_PROTOS:-1}"
 tools/buildgen/generate_projects.sh
+
+# Return to host machine and commit so that changes are
+# passed to tools/run_tests/run_tests_matrix.py.
+git add -A
+git -c user.name='foo' -c user.email='foo@google.com' commit -m 'Update submodule' --allow-empty
+
