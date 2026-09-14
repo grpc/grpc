@@ -37,33 +37,6 @@ PROTO_STEM = os.path.join(PYTHON_REL_PATH, "src", "proto")
 PYTHON_PROTO_TOP_LEVEL = os.path.join(PYTHON_REL_PATH, "src")
 
 
-class TestPy3Only(setuptools.Command):
-    """Command to run tests for Python 3+ features.
-
-    This does not include asyncio tests, which are housed in a separate
-    directory.
-    """
-
-    description = "run tests for py3+ features"
-    user_options = []
-
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        import tests
-
-        loader = tests.Loader()
-        loader.loadTestsFromNames(["tests_py3_only"])
-        runner = tests.Runner()
-        result = runner.run(loader.suite)
-        if not result.wasSuccessful():
-            sys.exit("Test failure")
-
-
 class TestAio(setuptools.Command):
     """Command to run aio tests without fetching or building anything."""
 

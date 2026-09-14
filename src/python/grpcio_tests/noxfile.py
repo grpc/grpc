@@ -89,3 +89,24 @@ def test_lite(session: nox.Session):
     result = runner.run(loader.suite)
     if not result.wasSuccessful():
         session.error("Test failure")
+
+
+@nox.session(venv_params=["--system-site-packages"])
+def test_py3_only(session: nox.Session):
+    """
+    Session to run tests for Python 3+ features.
+    """
+    session.log("Running test_py3_only for grpcio_tests")
+
+    session.cd(GRPC_ROOT_ABS_PATH)
+    if ROOT_DIR not in sys.path:
+        sys.path.insert(0, ROOT_DIR)
+
+    import tests
+
+    loader = tests.Loader()
+    loader.loadTestsFromNames(["tests_py3_only"])
+    runner = tests.Runner()
+    result = runner.run(loader.suite)
+    if not result.wasSuccessful():
+        session.error("Test failure")

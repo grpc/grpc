@@ -26,8 +26,10 @@ ROOT=$(pwd)
 # TODO(ssreenithi): find pyproject.toml/pytest equivalent
 #$PYTHON "$ROOT/src/python/grpcio_tests/setup.py" "$2"
 
-if [ "$2" = "test_lite" ]; then
-  $PYTHON -m nox --no-venv -s test_lite -f "$ROOT/src/python/grpcio_tests/noxfile.py"
+if [ "$2" = "test_lite" ] || [ "$2" = "test_py3_only" ];
+then
+  $PYTHON -m nox --no-venv -s "$2" -f \
+  "$ROOT/src/python/grpcio_tests/noxfile.py"
 else
   $PYTHON "$ROOT/src/python/grpcio_tests/setup.py" "$2"
 fi
