@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM python:3.14-trixie
+FROM python:3.15.0rc2-trixie
 
 RUN apt-get update && apt-get install -y python3 python3-pip
 
