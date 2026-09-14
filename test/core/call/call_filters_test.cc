@@ -1263,7 +1263,8 @@ TEST(CallFiltersTest, UnaryCall) {
   auto pull_server_trailing_metadata = filters.PullServerTrailingMetadata();
   // Should be done
   EXPECT_THAT(pull_server_trailing_metadata(), IsReady());
-  filters.Finalize(nullptr);
+  const grpc_call_final_info final_info{};
+  filters.Finalize(final_info);
   EXPECT_THAT(steps,
               ::testing::ElementsAre(
                   "f1:OnClientInitialMetadata", "f2:OnClientInitialMetadata",
@@ -1361,7 +1362,8 @@ TEST(CallFiltersTest, UnaryCallWithMultiStack) {
   auto pull_server_trailing_metadata = filters.PullServerTrailingMetadata();
   // Should be done
   EXPECT_THAT(pull_server_trailing_metadata(), IsReady());
-  filters.Finalize(nullptr);
+  const grpc_call_final_info final_info{};
+  filters.Finalize(final_info);
   EXPECT_THAT(steps,
               ::testing::ElementsAre(
                   "f1:OnClientInitialMetadata", "f2:OnClientInitialMetadata",
@@ -1400,7 +1402,8 @@ TEST(CallFiltersTest, PushServerTrailingMetadataFailsIfAlreadyPushed) {
       filters.PullServerTrailingMetadata()();
   ASSERT_TRUE(pulled_trailers.ready());
   EXPECT_EQ(pulled_trailers.value()->get(GrpcStatusMetadata()), GRPC_STATUS_OK);
-  filters.Finalize(nullptr);
+  const grpc_call_final_info final_info{};
+  filters.Finalize(final_info);
 }
 
 struct ChannelzFilter1 {

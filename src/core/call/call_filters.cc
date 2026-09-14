@@ -18,6 +18,7 @@
 
 #include "src/core/call/metadata.h"
 #include "src/core/lib/promise/status_flag.h"
+#include "src/core/lib/transport/call_final_info.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/grpc_check.h"
 #include "absl/log/log.h"
@@ -63,13 +64,16 @@ void CallFilters::Start() {
   call_state_.Start();
 }
 
-void CallFilters::Finalize(const grpc_call_final_info* final_info) {
-  for (auto& stack : stacks_) {
-    for (auto& finalizer : stack.stack->data_.finalizers) {
+void CallFilters::Finalize(const grpc_call_final_info& final_info) {
+  // If the call was never started, we don't need to call any finalizers.
+  if (call_data_ == nullptr) return;
+  for (const AddedStack& stack : stacks_) {
+    for (const filters_detail::Finalizer& finalizer :
+         stack.stack->data_.finalizers) {
       finalizer.final(
           filters_detail::Offset(
               call_data_, stack.call_data_offset + finalizer.call_offset),
-          finalizer.channel_data, final_info);
+          finalizer.channel_data, &final_info);
     }
   }
 }

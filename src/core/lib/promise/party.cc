@@ -19,6 +19,7 @@
 #include <atomic>
 #include <cstdint>
 #include <limits>
+#include <utility>
 
 #include "src/core/channelz/property_list.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
@@ -27,15 +28,16 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/latent_see.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 
 #ifdef GRPC_MAXIMIZE_THREADYNESS
-#include "src/core/lib/iomgr/exec_ctx.h"  // IWYU pragma: keep
-#include "src/core/util/thd.h"            // IWYU pragma: keep
-#include "absl/random/random.h"           // IWYU pragma: keep
+#include "src/core/lib/iomgr/exec_ctx.h"     // IWYU pragma: keep
+#include "src/core/util/thd.h"               // IWYU pragma: keep
+#include "absl/random/random.h"  // IWYU pragma: keep
 #endif
 
 namespace grpc_core {
@@ -578,7 +580,11 @@ void Party::Drop(WakeupMask) { Unref(); }
 
 void Party::PartyIsOver() {
   CancelRemainingParticipants();
-  auto arena = std::move(arena_);
+  {
+    const promise_detail::Context<Arena> arena_ctx(arena_.get());
+    OnPartyOver();
+  }
+  const RefCountedPtr<Arena> arena = std::move(arena_);
   this->~Party();
 }
 
