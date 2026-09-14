@@ -375,7 +375,7 @@ def _create_portability_test_jobs(
         "gcc12_openssl309",
         "gcc14",
         "gcc_musl",
-        "clang15",
+        "clang14",
         "clang19",
     ]:
         test_jobs += _generate_jobs(
