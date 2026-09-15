@@ -464,6 +464,8 @@ let package = Package(
         "src/core/ext/transport/chttp2/transport/ping_rate_policy.cc",
         "src/core/ext/transport/chttp2/transport/ping_rate_policy.h",
         "src/core/ext/transport/chttp2/transport/read_context.h",
+        "src/core/ext/transport/chttp2/transport/reclaimer.cc",
+        "src/core/ext/transport/chttp2/transport/reclaimer.h",
         "src/core/ext/transport/chttp2/transport/security_frame.h",
         "src/core/ext/transport/chttp2/transport/stream.h",
         "src/core/ext/transport/chttp2/transport/stream_data_queue.h",

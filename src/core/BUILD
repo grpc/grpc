@@ -9495,6 +9495,34 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "ph2_reclaimer",
+    srcs = [
+        "ext/transport/chttp2/transport/reclaimer.cc",
+    ],
+    hdrs = [
+        "ext/transport/chttp2/transport/reclaimer.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/log",
+        "absl/status",
+    ],
+    deps = [
+        "activity",
+        "context",
+        "grpc_check",
+        "http2_status",
+        "loop",
+        "memory_quota",
+        "ref_counted",
+        "sync",
+        ":poll",
+        "//:gpr_platform",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "http2_client_transport",
     srcs = [
         "ext/transport/chttp2/transport/http2_client_transport.cc",
@@ -9554,6 +9582,7 @@ grpc_cc_library(
         "metadata_batch",
         "metadata_info",
         "mpsc",
+        "ph2_reclaimer",
         "ph2_stream",
         "ping_promise",
         "race",
@@ -9562,6 +9591,7 @@ grpc_cc_library(
         "sleep",
         "status_flag",
         "stream_data_queue",
+        "stream_quota",
         "sync",
         "time",
         "transport_common",
@@ -9650,6 +9680,7 @@ grpc_cc_library(
         "metadata_batch",
         "metadata_info",
         "mpsc",
+        "ph2_reclaimer",
         "ph2_stream",
         "ping_promise",
         "race",
@@ -9659,6 +9690,7 @@ grpc_cc_library(
         "sleep",
         "status_flag",
         "stream_data_queue",
+        "stream_quota",
         "sync",
         "time",
         "transport_common",
@@ -9779,6 +9811,7 @@ grpc_cc_library(
         "grpc_check",
         "grpc_promise_endpoint",
         "http2_settings",
+        "http2_status",
         "slice",
         "slice_buffer",
         "transport_common",
