@@ -29,6 +29,7 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
         str, "_health_pb2.HealthCheckResponse.ServingStatus"
     ]
     _server_watchers: MutableMapping[str, asyncio.Condition]
+    _server_watchers_count: MutableMapping[str, int]
     _gracefully_shutting_down: bool
 
     def __init__(self) -> None:
