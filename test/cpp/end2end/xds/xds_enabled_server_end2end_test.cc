@@ -290,9 +290,6 @@ TEST_P(XdsEnabledServerTest, ListenerAddressMismatch) {
 }
 
 TEST_P(XdsEnabledServerTest, ListenerMatchWithWildcardPort) {
-  if (!grpc_core::IsXdsServerFilterChainPerRouteEnabled()) {
-    GTEST_SKIP() << "requires xds_server_filter_chain_per_route experiment";
-  }
   DoSetUp();
   Listener listener = default_server_listener_;
   listener.set_name(GetServerListenerName(backends_[0]->port()));
