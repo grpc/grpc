@@ -113,6 +113,7 @@ grpc_cc_library(
         "gtest",
     ],
     tags = ["nofixdeps"],  # until event engine tests are under fixbuilddeps
+    visibility = ["//test/core/ext/filters/ext_authz:__pkg__"],
     deps = [
         ":filter_matchers",
         "//:event_engine_base_hdrs",
@@ -401,6 +402,9 @@ grpc_cc_benchmark(
 grpc_cc_test(
     name = "ext_proc_message_test",
     srcs = ["ext_proc_message_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:multi-domain.pem",
+    ],
     external_deps = [
         "@com_google_protobuf//upb/mem",
         "gtest",
@@ -414,8 +418,42 @@ grpc_cc_test(
         "//:grpc++",
         "//src/core:ext_proc_messages",
         "//src/core:upb_utils",
+        "//test/core/test_util:grpc_test_util",
         "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/ext_proc/v3:pkg_cc_proto",
         "@envoy_api//envoy/service/ext_proc/v3:pkg_cc_proto",
+    ],
+)
+
+grpc_cc_test(
+    name = "ext_authz_message_test",
+    srcs = ["ext_authz_message_test.cc"],
+    external_deps = [
+        "@com_google_protobuf//upb/mem",
+        "gtest",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:envoy_config_core_upb",
+        "//:envoy_service_auth_upb",
+        "//:envoy_type_upb",
+        "//:google_rpc_status_upb",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc_credentials_util",
+        "//src/core:channel_args",
+        "//src/core:endpoint_info_handshaker",
+        "//src/core:evaluate_args",
+        "//src/core:ext_authz_messages",
+        "//src/core:grpc_matchers",
+        "//src/core:metadata_batch",
+        "//src/core:slice",
+        "//src/core:time",
+        "//src/core:upb_utils",
+        "//test/core/test_util:grpc_test_util",
+        "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
+        "@envoy_api//envoy/service/auth/v3:pkg_cc_proto",
+        "@envoy_api//envoy/type/v3:pkg_cc_proto",
     ],
 )

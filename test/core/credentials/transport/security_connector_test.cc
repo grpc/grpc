@@ -28,6 +28,7 @@
 #include "src/core/config/config_vars.h"
 #include "src/core/credentials/transport/tls/load_system_roots.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
+#include "src/core/credentials/transport/tls/tls_utils.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/transport/auth_context.h"
 #include "src/core/tsi/ssl_transport_security.h"
@@ -598,6 +599,91 @@ TEST(SecurityConnectorTest, SubjectToAuthContext) {
   ASSERT_NE(ctx, nullptr);
   ASSERT_TRUE(check_property(ctx.get(), GRPC_X509_SUBJECT_PROPERTY_NAME,
                              expected_subject));
+  tsi_peer_destruct(&peer);
+  ctx.reset(DEBUG_LOCATION, "test");
+}
+
+TEST(SecurityConnectorTest, RequestedServerNameToAuthContext) {
+  tsi_peer peer;
+  const char* expected_server_name = "server.example.com";
+  ASSERT_EQ(tsi_construct_peer(1, &peer), TSI_OK);
+  ASSERT_EQ(tsi_construct_string_peer_property_from_cstring(
+                TSI_SSL_REQUESTED_SERVER_NAME_PEER_PROPERTY,
+                expected_server_name, &peer.properties[0]),
+            TSI_OK);
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_ssl_peer_to_auth_context(&peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
+  ASSERT_NE(ctx, nullptr);
+  ASSERT_TRUE(check_property(ctx.get(),
+                             GRPC_SSL_REQUESTED_SERVER_NAME_PROPERTY_NAME,
+                             expected_server_name));
+  tsi_peer_destruct(&peer);
+  ctx.reset(DEBUG_LOCATION, "test");
+}
+
+TEST(SecurityConnectorTest, TlsVersionToAuthContext) {
+  tsi_peer peer;
+  const char* expected_tls_version = "TLSv1.3";
+  ASSERT_EQ(tsi_construct_peer(1, &peer), TSI_OK);
+  ASSERT_EQ(tsi_construct_string_peer_property_from_cstring(
+                TSI_SSL_TLS_VERSION_PEER_PROPERTY, expected_tls_version,
+                &peer.properties[0]),
+            TSI_OK);
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_ssl_peer_to_auth_context(&peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
+  ASSERT_NE(ctx, nullptr);
+  ASSERT_TRUE(check_property(ctx.get(), GRPC_SSL_TLS_VERSION_PROPERTY_NAME,
+                             expected_tls_version));
+  tsi_peer_destruct(&peer);
+  ctx.reset(DEBUG_LOCATION, "test");
+}
+
+// The properties describing the local endpoint's own certificate are mapped
+// to their own auth context properties, and -- crucially -- must not be
+// mistaken for the peer's identity.
+TEST(SecurityConnectorTest, LocalCertificatePropertiesToAuthContext) {
+  tsi_peer peer;
+  const char* expected_uri = "spiffe://foo.com/server";
+  const char* expected_dns = "server.example.com";
+  const char* expected_subject = "CN=server,O=Example,C=US";
+  ASSERT_EQ(tsi_construct_peer(3, &peer), TSI_OK);
+  ASSERT_EQ(tsi_construct_string_peer_property_from_cstring(
+                TSI_X509_LOCAL_URI_PROPERTY, expected_uri, &peer.properties[0]),
+            TSI_OK);
+  ASSERT_EQ(tsi_construct_string_peer_property_from_cstring(
+                TSI_X509_LOCAL_DNS_PROPERTY, expected_dns, &peer.properties[1]),
+            TSI_OK);
+  ASSERT_EQ(tsi_construct_string_peer_property_from_cstring(
+                TSI_X509_LOCAL_SUBJECT_PROPERTY, expected_subject,
+                &peer.properties[2]),
+            TSI_OK);
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_ssl_peer_to_auth_context(&peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
+  ASSERT_NE(ctx, nullptr);
+  EXPECT_TRUE(check_property(ctx.get(), GRPC_X509_LOCAL_URI_PROPERTY_NAME,
+                             expected_uri));
+  EXPECT_TRUE(check_property(ctx.get(), GRPC_X509_LOCAL_DNS_PROPERTY_NAME,
+                             expected_dns));
+  EXPECT_TRUE(check_property(ctx.get(), GRPC_X509_LOCAL_SUBJECT_PROPERTY_NAME,
+                             expected_subject));
+  // They must not show up as the peer's identity, nor as any peer property.
+  EXPECT_EQ(grpc_auth_context_peer_identity_property_name(ctx.get()), nullptr);
+  for (const char* peer_property_name :
+       {GRPC_PEER_URI_PROPERTY_NAME, GRPC_PEER_DNS_PROPERTY_NAME,
+        GRPC_X509_SUBJECT_PROPERTY_NAME, GRPC_X509_SAN_PROPERTY_NAME,
+        GRPC_X509_CN_PROPERTY_NAME, GRPC_PEER_SPIFFE_ID_PROPERTY_NAME}) {
+    grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
+        ctx.get(), peer_property_name);
+    EXPECT_EQ(grpc_auth_property_iterator_next(&it), nullptr)
+        << peer_property_name;
+  }
+  // grpc_shallow_peer_from_ssl_auth_context() rebuilds a tsi_peer from a fixed
+  // allowlist of auth context property names, and that tsi_peer feeds hostname
+  // verification (tsi_ssl_peer_matches_name()).  The local properties must be
+  // inert there, i.e. contribute nothing at all to the reconstructed peer.
+  tsi_peer rpeer = grpc_shallow_peer_from_ssl_auth_context(ctx.get());
+  EXPECT_EQ(rpeer.property_count, 0u);
+  grpc_shallow_peer_destruct(&rpeer);
   tsi_peer_destruct(&peer);
   ctx.reset(DEBUG_LOCATION, "test");
 }

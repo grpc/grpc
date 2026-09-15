@@ -671,6 +671,7 @@ LIBGRPC_SRC = \
     src/core/call/call_spine.cc \
     src/core/call/call_state.cc \
     src/core/call/client_call.cc \
+    src/core/call/evaluate_args.cc \
     src/core/call/interception_chain.cc \
     src/core/call/message.cc \
     src/core/call/metadata.cc \
@@ -782,6 +783,8 @@ LIBGRPC_SRC = \
     src/core/ext/filters/census/grpc_context.cc \
     src/core/ext/filters/channel_idle/idle_filter_state.cc \
     src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc \
+    src/core/ext/filters/ext_authz/ext_authz_filter.cc \
+    src/core/ext/filters/ext_authz/ext_authz_messages.cc \
     src/core/ext/filters/fault_injection/fault_injection_filter.cc \
     src/core/ext/filters/gcp_authentication/gcp_authentication_filter.cc \
     src/core/ext/filters/http/client/http_client_filter.cc \
@@ -912,6 +915,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/envoy/extensions/filters/common/fault/v3/fault.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/filters/http/composite/v3/composite.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/extensions/filters/http/ext_authz/v3/ext_authz.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/filters/http/ext_proc/v3/ext_proc.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/filters/http/ext_proc/v3/processing_mode.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb_minitable.c \
@@ -936,6 +940,8 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/service/auth/v3/attribute_context.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/service/auth/v3/external_auth.upb_minitable.c \
     src/core/ext/upb-gen/envoy/service/discovery/v3/ads.upb_minitable.c \
     src/core/ext/upb-gen/envoy/service/discovery/v3/discovery.upb_minitable.c \
     src/core/ext/upb-gen/envoy/service/ext_proc/v3/external_processor.upb_minitable.c \
@@ -1097,6 +1103,7 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-gen/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/filters/http/composite/v3/composite.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/extensions/filters/http/ext_authz/v3/ext_authz.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/filters/http/ext_proc/v3/ext_proc.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/filters/http/ext_proc/v3/processing_mode.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c \
@@ -1361,7 +1368,6 @@ LIBGRPC_SRC = \
     src/core/lib/resource_tracker/resource_tracker.cc \
     src/core/lib/security/authorization/audit_logging.cc \
     src/core/lib/security/authorization/authorization_policy_provider_vtable.cc \
-    src/core/lib/security/authorization/evaluate_args.cc \
     src/core/lib/security/authorization/grpc_authorization_engine.cc \
     src/core/lib/security/authorization/grpc_server_authz_filter.cc \
     src/core/lib/security/authorization/matchers.cc \
@@ -1589,6 +1595,7 @@ LIBGRPC_SRC = \
     src/core/xds/grpc/xds_grpc_service_parser.cc \
     src/core/xds/grpc/xds_health_status.cc \
     src/core/xds/grpc/xds_http_composite_filter.cc \
+    src/core/xds/grpc/xds_http_ext_authz_filter.cc \
     src/core/xds/grpc/xds_http_ext_proc_filter.cc \
     src/core/xds/grpc/xds_http_fault_filter.cc \
     src/core/xds/grpc/xds_http_filter.cc \

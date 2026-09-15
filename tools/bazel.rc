@@ -46,6 +46,8 @@ build:windows --cxxopt='/std:c++17'
 build:windows --host_cxxopt='/std:c++17'
 build:linux   --cxxopt='-std=c++17'
 build:linux   --host_cxxopt='-std=c++17'
+build:linux   --copt=-Wno-error=incompatible-pointer-types-discards-qualifiers
+build:linux   --host_copt=-Wno-error=incompatible-pointer-types-discards-qualifiers
 build:macos   --cxxopt='-std=c++17'
 build:macos   --host_cxxopt='-std=c++17'
 build:freebsd   --cxxopt='-std=c++17'

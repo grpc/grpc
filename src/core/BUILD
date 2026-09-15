@@ -4594,13 +4594,11 @@ grpc_cc_library(
     name = "grpc_authorization_base",
     srcs = [
         "lib/security/authorization/authorization_policy_provider_vtable.cc",
-        "lib/security/authorization/evaluate_args.cc",
         "lib/security/authorization/grpc_server_authz_filter.cc",
     ],
     hdrs = [
         "lib/security/authorization/authorization_engine.h",
         "lib/security/authorization/authorization_policy_provider.h",
-        "lib/security/authorization/evaluate_args.h",
         "lib/security/authorization/grpc_server_authz_filter.h",
     ],
     external_deps = [
@@ -4615,6 +4613,7 @@ grpc_cc_library(
         "channel_fwd",
         "dual_ref_counted",
         "endpoint_info_handshaker",
+        "evaluate_args",
         "latent_see",
         "metadata_batch",
         "ref_counted",
@@ -5431,6 +5430,7 @@ grpc_cc_library(
         "absl/strings:str_format",
     ],
     deps = [
+        "evaluate_args",
         "grpc_audit_logging",
         "grpc_authorization_base",
         "grpc_check",
@@ -5736,6 +5736,7 @@ grpc_cc_library(
         "channel_fwd",
         "context",
         "error",
+        "evaluate_args",
         "grpc_audit_logging",
         "grpc_authorization_base",
         "grpc_matchers",
@@ -5794,6 +5795,52 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "ext_authz_messages",
+    srcs = [
+        "ext/filters/ext_authz/ext_authz_messages.cc",
+    ],
+    hdrs = [
+        "ext/filters/ext_authz/ext_authz_messages.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/log",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:span",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
+        "@com_google_protobuf//upb/reflection",
+    ],
+    deps = [
+        "evaluate_args",
+        "grpc_check",
+        "grpc_matchers",
+        "metadata_batch",
+        "resolved_address",
+        "slice",
+        "status_conversion",
+        "time",
+        "upb_utils",
+        "validation_errors",
+        "xds_common_types",
+        "xds_common_types_parser",
+        "//:envoy_config_core_upb",
+        "//:envoy_service_auth_upb",
+        "//:envoy_type_upb",
+        "//:google_rpc_status_upb",
+        "//:gpr",
+        "//:gpr_platform",
+        "//:grpc_base",
+        "//:grpc_credentials_util",
+        "//:grpc_security_base",
+        "//:protobuf_timestamp_upb",
+        "//:sockaddr_utils",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_ext_proc_filter",
     srcs = [
         "filter/ext_proc/ext_proc_filter.cc",
@@ -5833,6 +5880,56 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "ext_authz_filter",
+    srcs = [
+        "ext/filters/ext_authz/ext_authz_filter.cc",
+    ],
+    hdrs = [
+        "ext/filters/ext_authz/ext_authz_filter.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/random:bit_gen_ref",
+        "absl/random:distributions",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "blackboard",
+        "channel_args",
+        "channel_fwd",
+        "down_cast",
+        "dual_ref_counted",
+        "evaluate_args",
+        "ext_authz_messages",
+        "filter_args",
+        "grpc_check",
+        "grpc_matchers",
+        "match",
+        "metadata",
+        "metadata_batch",
+        "ref_counted",
+        "shared_bit_gen",
+        "slice",
+        "sync",
+        "unique_type_name",
+        "xds_bootstrap_grpc",
+        "xds_common_types",
+        "xds_server_grpc",
+        "//:debug_location",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_trace",
+        "//:orphanable",
+        "//:promise",
+        "//:ref_counted_ptr",
+        "//:transport_auth_context",
+        "//:xds_client",
+    ],
+)
+
+grpc_cc_library(
     name = "ext_proc_messages",
     srcs = [
         "filter/ext_proc/ext_proc_messages.cc",
@@ -5844,14 +5941,18 @@ grpc_cc_library(
         "@com_google_protobuf//upb/base",
         "@com_google_protobuf//upb/mem",
         "absl/functional:function_ref",
+        "absl/log",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "libcrypto",
+        "libssl",
     ],
     deps = [
         "envoy_config_core_upb",
         "envoy_extensions_filters_http_ext_proc_upb",
         "envoy_service_ext_proc_upb",
+        "evaluate_args",
         "grpc_matchers",
         "metadata_batch",
         "protobuf_struct_upb",
@@ -5862,6 +5963,8 @@ grpc_cc_library(
         "xds_common_types_parser",
         "//:gpr",
         "//:grpc_base",
+        "//:grpc_credentials_util",
+        "//:grpc_security_base",
     ],
 )
 
@@ -6451,6 +6554,7 @@ grpc_cc_library(
     ],
 )
 
+
 grpc_cc_library(
     name = "xds_http_filter",
     srcs = [
@@ -6681,6 +6785,57 @@ grpc_cc_library(
         "xds_http_filter",
         "xds_http_filter_registry",
         "xds_server_grpc",
+        "//:ref_counted_ptr",
+        "//:xds_client",
+    ],
+)
+
+grpc_cc_library(
+    name = "xds_http_ext_authz_filter",
+    srcs = [
+        "xds/grpc/xds_http_ext_authz_filter.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_http_ext_authz_filter.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "re2",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/message",
+        "@com_google_protobuf//upb/reflection",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "blackboard",
+        "channel_args",
+        "channel_fwd",
+        "down_cast",
+        "envoy_config_common_mutation_rules_upb",
+        "envoy_config_core_upb",
+        "envoy_type_matcher_upb",
+        "envoy_type_upb",
+        "experiment_env_var",
+        "ext_authz_filter",
+        "filter_args",
+        "grpc_check",
+        "json",
+        "json_writer",
+        "protobuf_wrappers_upb",
+        "ref_counted",
+        "status_conversion",
+        "upb_utils",
+        "validation_errors",
+        "xds_common_types",
+        "xds_common_types_parser",
+        "xds_grpc_service_parser",
+        "xds_http_filter",
+        "xds_http_filter_registry",
+        "xds_server_grpc",
+        "//:envoy_extensions_filters_http_ext_authz_upb",
+        "//:envoy_extensions_filters_http_ext_authz_upbdefs",
         "//:ref_counted_ptr",
         "//:xds_client",
     ],
@@ -7012,6 +7167,7 @@ grpc_cc_library(
         "xds_common_types_parser",
         "xds_file_watcher_certificate_provider_factory",
         "xds_http_composite_filter",
+        "xds_http_ext_authz_filter",
         "xds_http_ext_proc_filter",
         "xds_http_fault_filter",
         "xds_http_filter",
@@ -7525,6 +7681,7 @@ grpc_cc_library(
         "//:config",
         "//:debug_location",
         "//:endpoint_addresses",
+        "//:envoy_config_common_mutation_rules_upb",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc_trace",
@@ -11622,6 +11779,37 @@ grpc_cc_library(
         "type_list",
         "//:gpr",
         "//:grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
+    name = "evaluate_args",
+    srcs = [
+        "call/evaluate_args.cc",
+    ],
+    hdrs = [
+        "call/evaluate_args.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "channel_args",
+        "endpoint_info_handshaker",
+        "metadata_batch",
+        "resolved_address",
+        "slice",
+        "useful",
+        "//:channel_arg_names",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_credentials_util",
+        "//:grpc_security_base",
+        "//:parse_address",
+        "//:uri",
     ],
 )
 
