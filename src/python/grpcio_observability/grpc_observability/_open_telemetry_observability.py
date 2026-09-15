@@ -170,25 +170,35 @@ class _OpenTelemetryPlugin:
         return labels_for_exchange
 
     def activate_client_plugin_options(self, target: bytes) -> None:
-        """Activate client plugin options based on option settings."""
-        target_str = target.decode("utf-8", "replace")
-        if not self._enabled_client_plugin_options:
-            self._enabled_client_plugin_options = []
-            for plugin_option in self._plugin.plugin_options:
-                if hasattr(
-                    plugin_option, "is_active_on_client_channel"
-                ) and plugin_option.is_active_on_client_channel(target_str):
-                    self._enabled_client_plugin_options.append(plugin_option)
+        """Activate client plugin options based on option settings.
+
+        Activation predicates must be side-effect free and the enabled list
+        must be published in a single assignment.
+        """
+        if self._enabled_client_plugin_options is None:
+            target_str = target.decode("utf-8", "replace")
+            enabled_client_plugin_options = [
+                plugin_option
+                for plugin_option in self._plugin.plugin_options
+                if hasattr(plugin_option, "is_active_on_client_channel")
+                and plugin_option.is_active_on_client_channel(target_str)
+            ]
+            self._enabled_client_plugin_options = enabled_client_plugin_options
 
     def activate_server_plugin_options(self, xds: bool) -> None:
-        """Activate server plugin options based on option settings."""
-        if not self._enabled_server_plugin_options:
-            self._enabled_server_plugin_options = []
-            for plugin_option in self._plugin.plugin_options:
-                if hasattr(
-                    plugin_option, "is_active_on_server"
-                ) and plugin_option.is_active_on_server(xds):
-                    self._enabled_server_plugin_options.append(plugin_option)
+        """Activate server plugin options based on option settings.
+
+        Activation predicates must be side-effect free and the enabled list
+        must be published in a single assignment.
+        """
+        if self._enabled_server_plugin_options is None:
+            enabled_server_plugin_options = [
+                plugin_option
+                for plugin_option in self._plugin.plugin_options
+                if hasattr(plugin_option, "is_active_on_server")
+                and plugin_option.is_active_on_server(xds)
+            ]
+            self._enabled_server_plugin_options = enabled_server_plugin_options
 
     @staticmethod
     def _deserialize_labels(
