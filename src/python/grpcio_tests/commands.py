@@ -37,59 +37,6 @@ PROTO_STEM = os.path.join(PYTHON_REL_PATH, "src", "proto")
 PYTHON_PROTO_TOP_LEVEL = os.path.join(PYTHON_REL_PATH, "src")
 
 
-class RunInterop(setuptools.Command):
-    description = "run interop test client/server"
-    user_options = [
-        ("args=", None, "pass-thru arguments for the client/server"),
-        ("client", None, "flag indicating to run the client"),
-        ("server", None, "flag indicating to run the server"),
-        ("use-asyncio", None, "flag indicating to run the asyncio stack"),
-    ]
-
-    def initialize_options(self):
-        self.args = ""
-        self.client = False
-        self.server = False
-        self.use_asyncio = False
-
-    def finalize_options(self):
-        if self.client and self.server:
-            raise _errors.OptionError(
-                "you may only specify one of client or server"
-            )
-
-    def run(self):
-        if self.client:
-            self.run_client()
-        elif self.server:
-            self.run_server()
-
-    def run_server(self):
-        # We import here to ensure that our setuptools parent has had a chance to
-        # edit the Python system path.
-        if self.use_asyncio:
-            import asyncio
-
-            from tests_aio.interop import server
-
-            sys.argv[1:] = self.args.split()
-            args = server.parse_interop_server_arguments(sys.argv)
-            asyncio.get_event_loop().run_until_complete(server.serve(args))
-        else:
-            from tests.interop import server
-
-            sys.argv[1:] = self.args.split()
-            server.serve(server.parse_interop_server_arguments(sys.argv))
-
-    def run_client(self):
-        # We import here to ensure that our setuptools parent has had a chance to
-        # edit the Python system path.
-        from tests.interop import client
-
-        sys.argv[1:] = self.args.split()
-        client.test_interoperability(client.parse_interop_client_args(sys.argv))
-
-
 class RunFork(setuptools.Command):
     description = "run fork test client"
     user_options = [("args=", "a", "pass-thru arguments for the client")]

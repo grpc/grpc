@@ -13,6 +13,7 @@
 # limitations under the License.
 """Provides nox command classes for the GRPC Python setup process."""
 
+import argparse
 import glob
 import os
 import os.path
@@ -131,3 +132,75 @@ def test_aio(session: nox.Session):
     result = runner.run(loader.suite)
     if not result.wasSuccessful():
         session.error("Test failure")
+
+
+@nox.session(venv_params=["--system-site-packages"])
+def run_interop(session: nox.Session):
+    """
+    Session to run interop test client/server
+    """
+    session.log("Running run_interop for grpcio_tests")
+
+    parser = argparse.ArgumentParser(
+        description="run interop test client/server"
+    )
+    parser.add_argument(
+        "--args",
+        default="",
+        help="pass-thru arguments for the client/server",
+    )
+    parser.add_argument(
+        "--client",
+        action="store_true",
+        help="flag indicating to run the client",
+    )
+    parser.add_argument(
+        "--server",
+        action="store_true",
+        help="flag indicating to run the server",
+    )
+    parser.add_argument(
+        "--use-asyncio",
+        action="store_true",
+        help="flag indicating to run the asyncio stack",
+    )
+    parsed_args = parser.parse_args(session.posargs)
+
+    if parsed_args.client and parsed_args.server:
+        session.error("you may only specify one of client or server")
+
+    session.cd(GRPC_ROOT_ABS_PATH)
+    if ROOT_DIR not in sys.path:
+        sys.path.insert(0, ROOT_DIR)
+
+    if parsed_args.client:
+        if parsed_args.use_asyncio:
+            import asyncio
+
+            from tests_aio.interop import client
+
+            sys.argv[1:] = parsed_args.args.split()
+            asyncio.run(client.test_interoperability())
+        else:
+            from tests.interop import client
+
+            sys.argv[1:] = parsed_args.args.split()
+            client.test_interoperability(
+                client.parse_interop_client_args(sys.argv)
+            )
+    elif parsed_args.server:
+        if parsed_args.use_asyncio:
+            import asyncio
+
+            from tests.interop import server as interop_server_lib
+            from tests_aio.interop import server
+
+            sys.argv[1:] = parsed_args.args.split()
+            args = interop_server_lib.parse_interop_server_arguments(sys.argv)
+
+            asyncio.run(server.serve(args))
+        else:
+            from tests.interop import server
+
+            sys.argv[1:] = parsed_args.args.split()
+            server.serve(server.parse_interop_server_arguments(sys.argv))
