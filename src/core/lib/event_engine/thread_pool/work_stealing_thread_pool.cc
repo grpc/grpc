@@ -45,6 +45,11 @@
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 
+#include <openssl/crypto.h>
+#if OPENSSL_VERSION_NUMBER >= 0x30000000
+#include "src/core/lib/surface/init_internally.h"
+#endif
+
 #ifdef GPR_POSIX_SYNC
 #include <csignal>
 #elif defined(GPR_WINDOWS)
@@ -175,6 +180,19 @@ void DumpSignalHandler(int /* sig */) {
 
 thread_local WorkQueue* g_local_queue = nullptr;
 
+#if OPENSSL_VERSION_NUMBER >= 0x30000000
+class OpenSSLGuard {
+ public:
+  ~OpenSSLGuard();
+ private:
+  const grpc_core::KeepsGrpcInitialized m_keepsGrpcInitialized;
+};
+
+OpenSSLGuard::~OpenSSLGuard() {
+  OPENSSL_thread_stop();
+}
+#endif
+
 // -------- WorkStealingThreadPool --------
 
 WorkStealingThreadPool::WorkStealingThreadPool(size_t reserve_threads)
@@ -264,6 +282,9 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::StartThread() {
   grpc_core::Thread(
       "event_engine",
       [](void* arg) {
+#if OPENSSL_VERSION_NUMBER >= 0x30000000
+        const OpenSSLGuard openSSLGuard; // Make sure OPENSSL thread local information is cleared before gRPC stops
+#endif
         ThreadState* worker = static_cast<ThreadState*>(arg);
         worker->ThreadBody();
         delete worker;
