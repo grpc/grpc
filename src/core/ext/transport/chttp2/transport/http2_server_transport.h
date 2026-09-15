@@ -180,6 +180,11 @@ class Http2ServerTransport final : public ServerTransport,
     return NextAllowedPingInterval();
   }
 
+  void TestOnlySetLocalMaxConcurrentStreams(
+      const uint32_t max_concurrent_streams) {
+    settings_->mutable_local().SetMaxConcurrentStreams(max_concurrent_streams);
+  }
+
  private:
   //////////////////////////////////////////////////////////////////////////////
   // Endpoint Helpers
@@ -260,7 +265,8 @@ class Http2ServerTransport final : public ServerTransport,
   }
 
   template <typename T>
-  Http2Status ProcessIncomingMetadata(T&& frame);
+  Http2Status ProcessIncomingMetadata(T&& frame,
+                                      const RefCountedPtr<Stream>& stream);
 
   auto ReadAndProcessOneFrame();
 
@@ -463,6 +469,12 @@ class Http2ServerTransport final : public ServerTransport,
     return stream_list_.size();
   }
 
+  // Returns the number of streams that actively count towards the peer's
+  // MAX_CONCURRENT_STREAMS limit (RFC 9113 Section 5.1.2).
+  // Excludes streams that are closed or currently undergoing tarpitting.
+  uint32_t GetActiveStreamCountForValidationLocked() const
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(transport_mutex_);
+  
   // Returns the last stream id seen by the transport from the client.
   // If no streams were seen, returns 0.
   uint32_t GetLastStreamId() const { return last_incoming_stream_id_; }
@@ -479,6 +491,9 @@ class Http2ServerTransport final : public ServerTransport,
   void EnqueueResetStreamFromTransportParty(RefCountedPtr<Stream> stream,
                                             uint32_t reset_stream_error_code);
 
+  void EnqueueResetStreamFromTransportParty(uint32_t stream_id,
+                                            uint32_t reset_stream_error_code);
+
   //////////////////////////////////////////////////////////////////////////////
   // Stream Operations
 
@@ -487,6 +502,9 @@ class Http2ServerTransport final : public ServerTransport,
   // Runs on the call party.
   std::optional<RefCountedPtr<Stream>> MakeStream(
       CallInitiator&& call_initiator, uint32_t stream_id);
+
+  // Validates the incoming stream ID before the stream is created.
+  Http2Status ValidateIncomingStream(uint32_t stream_id);
 
   Http2Status IncomingStream(ClientMetadataHandle&& metadata,
                              uint32_t stream_id);
@@ -729,6 +747,7 @@ class Http2ServerTransport final : public ServerTransport,
   bool is_goaway_received_;
 
   bool should_reset_ping_clock_;
+  bool max_concurrent_streams_overload_protection_ = true;
   ReadContext read_context_;
 
   // Transport wide write context. This is used to track the state of the
