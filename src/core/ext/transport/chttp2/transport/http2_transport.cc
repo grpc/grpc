@@ -391,9 +391,10 @@ ProcessIncomingDataFrameFlowControl(const Http2FrameHeader& frame_header,
   return chttp2::FlowControlAction();
 }
 
-bool ProcessIncomingWindowUpdateFrameFlowControl(
+ValueOrHttp2Status<bool> ProcessIncomingWindowUpdateFrameFlowControl(
     const Http2WindowUpdateFrame& frame,
-    chttp2::TransportFlowControl& flow_control, Stream* stream) {
+    chttp2::TransportFlowControl& flow_control, Stream* stream,
+    const Http2Settings& peer_settings) {
   if (frame.stream_id != 0) {
     if (stream != nullptr) {
       GRPC_HTTP2_COMMON_DLOG
@@ -401,7 +402,17 @@ bool ProcessIncomingWindowUpdateFrameFlowControl(
           << frame.stream_id << " increment " << frame.increment;
       chttp2::StreamFlowControl::OutgoingUpdateContext fc_update(
           &stream->GetStreamFlowControl());
-      fc_update.RecvUpdate(frame.increment);
+      const absl::Status fc_status = fc_update.RecvUpdate(
+          frame.increment, peer_settings.initial_window_size());
+      if (!fc_status.ok()) {
+        // RFC 9113 section 6.9.1: a WINDOW_UPDATE that causes the
+        // flow-control window to exceed 2^31-1 is an error of type
+        // FLOW_CONTROL_ERROR.
+        LOG(ERROR) << "Flow control error: " << fc_status.message();
+        return Http2Status::Http2ConnectionError(
+            Http2ErrorCode::kFlowControlError,
+            std::string(fc_status.message()));
+      }
     } else {
       // If stream id is non zero, and stream is nullptr, maybe the stream was
       // closed. Ignore this WINDOW_UPDATE frame.
@@ -415,7 +426,12 @@ bool ProcessIncomingWindowUpdateFrameFlowControl(
         << frame.increment;
     chttp2::TransportFlowControl::OutgoingUpdateContext fc_update(
         &flow_control);
-    fc_update.RecvUpdate(frame.increment);
+    const absl::Status fc_status = fc_update.RecvUpdate(frame.increment);
+    if (!fc_status.ok()) {
+      LOG(ERROR) << "Flow control error: " << fc_status.message();
+      return Http2Status::Http2ConnectionError(
+          Http2ErrorCode::kFlowControlError, std::string(fc_status.message()));
+    }
     if (fc_update.Finish() == chttp2::StallEdge::kUnstalled) {
       // If transport moves from kStalled to kUnstalled, streams blocked by
       // transport flow control will become writable. Return true to trigger a

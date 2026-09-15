@@ -31,6 +31,7 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "src/core/call/call_filters.h"
 #include "src/core/call/call_spine.h"
@@ -38,6 +39,7 @@
 #include "src/core/call/metadata.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
+#include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
@@ -1004,6 +1006,61 @@ TEST_F(Http2ClientTransportTest, TestFlowControlWindow) {
   std::shared_ptr<EventSequenceEndpoint::Step> step2 = endpoint()->NewStep();
   AddTransportCloseExpectations(step2.get());
   step2->Wait();
+}
+
+namespace {
+
+// Scans the written bytes for a complete GOAWAY frame carrying
+// FLOW_CONTROL_ERROR.
+void ExpectGoawayFlowControlError(SliceBuffer& buffer) {
+  std::vector<uint8_t> bytes(buffer.Length());
+  buffer.CopyFirstNBytesIntoBuffer(buffer.Length(),
+                                   reinterpret_cast<char*>(bytes.data()));
+  size_t off = 0;
+  bool found = false;
+  while (off + 9 <= bytes.size()) {
+    const uint32_t len =
+        (bytes[off] << 16) | (bytes[off + 1] << 8) | bytes[off + 2];
+    const uint8_t type = bytes[off + 3];
+    if (off + 9 + len > bytes.size()) break;
+    if (type == 0x7 && len >= 8) {
+      const uint32_t error_code = (bytes[off + 13] << 24) |
+                                  (bytes[off + 14] << 16) |
+                                  (bytes[off + 15] << 8) | bytes[off + 16];
+      if (error_code ==
+          static_cast<uint32_t>(Http2ErrorCode::kFlowControlError)) {
+        found = true;
+      }
+    }
+    off += 9 + len;
+  }
+  EXPECT_TRUE(found) << "expected a GOAWAY frame with FLOW_CONTROL_ERROR";
+}
+
+}  // namespace
+
+TEST_F(Http2ClientTransportTest,
+       WindowUpdateOverflowingWindowIsConnectionError) {
+  ExecCtx ctx;
+  // 1. Initialize the transport and exchange settings.
+  InitTransport(GetChannelArgs());
+  SpawnTransportLoopsAndExchangeSettings();
+
+  // 2. Server sends a max-increment WINDOW_UPDATE for the connection; the
+  //    transport immediately answers with a FLOW_CONTROL_ERROR GOAWAY.
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
+  step->ThenPerformRead({helper_.SerializedWindowUpdateFrame(
+      /*stream_id=*/0, /*increment=*/0x7fffffff)});
+  step->ThenExpectWrite(
+      [](SliceBuffer& buffer) { ExpectGoawayFlowControlError(buffer); });
+  step->Wait();
+  event_engine()->Tick();
+
+  // 3. RFC 9113 section 6.9.1: the send window must never exceed 2^31-1
+  //    (65535 + 0x7fffffff exceeds it): the update is rejected and the window
+  //    stays in range.
+  EXPECT_LE(client_transport()->TestOnlyTransportFlowControlWindow(),
+            RFC9113::kMaxSize31Bit);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
