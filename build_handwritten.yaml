@@ -15,6 +15,9 @@ settings:
   core_version: 57.0.0
   csharp_major_version: 2
   g_stands_for: gimbal
+  '#11-protobuf-upgrade-note': >
+    The versions below can be retrieved from third_party/protobuf/version.json.
+    IMPORTANT! We need to update these manually when upgrading protobuf.
   protobuf_version:
     csharp: 3.35.1
     objectivec: 5.35.1
