@@ -83,7 +83,7 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
         # guards servicer state maps. Taken by the CQ thread, so it must NOT
         # be held across blocking send
         self._state_lock = threading.RLock()
-        # Per-service sand locks (one lock per service); guard server responses
+        # Per-service send locks (one lock per service); guard server responses
         # so two callbacks never issue overlapping batches on the same streaming
         # call (which hangs under free threading). For a given service its lock
         # is the OUTER lock -- acquired before self._state_lock -- and held
