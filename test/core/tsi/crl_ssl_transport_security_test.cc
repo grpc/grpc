@@ -131,7 +131,7 @@ class CrlSslTransportSecurityTest
       tsi_ssl_client_handshaker_options client_options;
       client_options.root_cert_info =
           std::make_shared<tsi::RootCertInfo>(root_cert_.c_str());
-      client_options.pem_key_cert_pair = &client_pem_key_cert_pairs_[0];
+      client_options.pem_key_cert_pairs = client_pem_key_cert_pairs_;
       client_options.crl_directory = crl_directory_;
       client_options.crl_provider = crl_provider_;
       client_options.root_store = root_store_;
