@@ -216,6 +216,53 @@ class HealthServicerTest(AioTestBase):
         self.assertTrue(queue1.empty())
         self.assertTrue(queue2.empty())
 
+    async def test_watcher_survives_sibling_disconnect(self):
+        request = health_pb2.HealthCheckRequest(service=_WATCH_SERVICE)
+        queue1 = asyncio.Queue()
+        queue2 = asyncio.Queue()
+        call1 = self._stub.Watch(request)
+        call2 = self._stub.Watch(request)
+        task1 = self.loop.create_task(_pipe_to_queue(call1, queue1))
+        task2 = self.loop.create_task(_pipe_to_queue(call2, queue2))
+
+        self.assertEqual(
+            health_pb2.HealthCheckResponse.SERVICE_UNKNOWN,
+            (await queue1.get()).status,
+        )
+        self.assertEqual(
+            health_pb2.HealthCheckResponse.SERVICE_UNKNOWN,
+            (await queue2.get()).status,
+        )
+
+        call1.cancel()
+        with self.assertRaises(asyncio.CancelledError):
+            await task1
+
+        # wait for the serving coro to process client cancellation, so
+        # the status update below cannot race ahead of it
+        timeout = time.monotonic() + test_constants.TIME_ALLOWANCE
+        while (
+            time.monotonic() < timeout
+            and self._servicer._server_watchers_count.get(_WATCH_SERVICE, 0)
+            != 1
+        ):
+            await asyncio.sleep(0.1)
+
+        # The surviving watcher should still observe subsequent changes
+        await self._servicer.set(
+            _WATCH_SERVICE, health_pb2.HealthCheckResponse.SERVING
+        )
+        self.assertEqual(
+            health_pb2.HealthCheckResponse.SERVING, (await queue2.get()).status
+        )
+
+        call2.cancel()
+        with self.assertRaises(asyncio.CancelledError):
+            await task2
+
+        self.assertTrue(queue1.empty())
+        self.assertTrue(queue2.empty())
+
     async def test_cancelled_watch_removed_from_watch_list(self):
         request = health_pb2.HealthCheckRequest(service=_WATCH_SERVICE)
         call = self._stub.Watch(request)
