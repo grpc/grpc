@@ -62,6 +62,33 @@ TEST(AutoShardingConfigTest, ValidConfigWithOptionalFields) {
   EXPECT_NE(*service_config, nullptr);
 }
 
+TEST(AutoShardingConfigTest, InvalidTypes) {
+  const char* service_config_json =
+      "{\n"
+      "  \"loadBalancingConfig\":[{\n"
+      "    \"autosharding_experimental\":{\n"
+      "      \"channelFactoryKey\": 5,\n"
+      "      \"autoshardingTarget\": true,\n"
+      "      \"keyHeaderName\": [],\n"
+      "      \"enableFallback\": \"true\",\n"
+      "      \"initialAssignmentTimeout\": {}\n"
+      "    }\n"
+      "  }]\n"
+      "}\n";
+  auto service_config =
+      ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
+  ASSERT_FALSE(service_config.ok());
+  EXPECT_EQ(service_config.status(),
+            absl::InvalidArgumentError(
+                "errors validating service config: [field:loadBalancingConfig "
+                "error:errors validating autosharding LB policy config: "
+                "[field:autoshardingTarget error:is not a string; "
+                "field:channelFactoryKey error:is not a string; "
+                "field:enableFallback error:is not a boolean; "
+                "field:initialAssignmentTimeout error:is not a string; "
+                "field:keyHeaderName error:is not a string]]"));
+}
+
 TEST(AutoShardingConfigTest, FieldsNotPresent) {
   const char* service_config_json =
       "{\n"

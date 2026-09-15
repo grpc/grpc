@@ -24,7 +24,6 @@
 #include <algorithm>
 #include <map>
 #include <memory>
-#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -34,7 +33,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/load_balancing/delegating_helper.h"
 #include "src/core/load_balancing/lb_policy.h"
@@ -55,7 +53,6 @@
 #include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"
-#include "src/core/util/work_serializer.h"
 #include "absl/log/log.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
@@ -71,14 +68,6 @@ namespace {
 
 constexpr absl::string_view kAutoSharding = "autosharding_experimental";
 constexpr Duration kDefaultInitialAssignmentTimeout = Duration::Seconds(60);
-
-// Extracts hostname from endpoint attribute (gRFC A81) or first address.
-std::string ComputeHostname(const EndpointAddresses& endpoint) {
-  auto hostname_arg = endpoint.args().GetString(GRPC_ARG_ADDRESS_NAME);
-  if (hostname_arg.has_value()) return std::string(*hostname_arg);
-  return grpc_sockaddr_to_string(&endpoint.addresses().front(), false)
-      .value_or("<invalid address>");
-}
 
 class AutoShardingLbConfig final : public LoadBalancingPolicy::Config {
  public:
@@ -192,10 +181,9 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
     };
 
     Assignment(std::vector<Slice> slices,
-               std::vector<std::string> endpoint_names, int64_t generation)
+               std::vector<std::string> endpoint_names)
         : slices_(std::move(slices)),
-          endpoint_names_(std::move(endpoint_names)),
-          generation_(generation) {}
+          endpoint_names_(std::move(endpoint_names)) {}
 
     // Slices covering the keyspace.  The autosharding client validates that
     // they cover [-infinity, +infinity) with strictly increasing end keys,
@@ -206,12 +194,10 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
     const std::vector<std::string>& endpoint_names() const {
       return endpoint_names_;
     }
-    int64_t generation() const { return generation_; }
 
    private:
     std::vector<Slice> slices_;
     std::vector<std::string> endpoint_names_;
-    int64_t generation_ = 0;
   };
 
   //
@@ -229,46 +215,35 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
       std::vector<size_t> endpoints;
     };
 
-    struct SliceEndKeyLessThan {
-      bool operator()(absl::string_view a, absl::string_view b) const {
-        if (a.empty() && b.empty()) return false;
-        if (a.empty()) return false;  // a is +infinity, cannot be < b
-        if (b.empty()) return true;   // b is +infinity, any finite a is < b
-        return a < b;
-      }
-      bool operator()(absl::string_view key, const Entry& entry) const {
-        if (entry.end_key.empty()) return true;  // Empty end_key is +infinity.
-        return key < entry.end_key;
-      }
-    };
-
     // Populates slices from assignment and endpoint_map.
-    SliceMap(const std::optional<Assignment>& assignment,
+    SliceMap(const Assignment& assignment,
              const std::map<std::string, OrphanablePtr<AutoShardingEndpoint>>&
                  endpoint_map);
 
     const std::vector<Entry>& slices() const { return slices_; }
-    int64_t generation() const { return generation_; }
 
     // Returns endpoint indices covering key. Lookup is guaranteed to succeed
     // because slices partition the entire keyspace.
     absl::Span<const size_t> Lookup(absl::string_view key) const {
       auto it = std::upper_bound(slices_.begin(), slices_.end(), key,
-                                 SliceEndKeyLessThan());
+                                 [](absl::string_view key, const Entry& entry) {
+                                   // An empty end_key means +infinity.
+                                   return entry.end_key.empty() ||
+                                          key < entry.end_key;
+                                 });
       GRPC_CHECK(it != slices_.end());
       return it->endpoints;
     }
 
    private:
     std::vector<Entry> slices_;
-    int64_t generation_ = 0;
   };
 
   // State for a particular endpoint.  Delegates to a pick_first child policy.
   class AutoShardingEndpoint final
       : public InternallyRefCounted<AutoShardingEndpoint> {
    public:
-    // index is the index of this endpoint within the Name Resolver update.
+    // index is the index of this endpoint in AutoshardingLbPolicy::endpoints_.
     AutoShardingEndpoint(RefCountedPtr<AutoshardingLbPolicy> autosharding_lb,
                          size_t index)
         : autosharding_lb_(std::move(autosharding_lb)), index_(index) {}
@@ -283,7 +258,7 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
       return connectivity_state_;
     }
 
-    // Returns info about the endpoint to be stored in the picker.
+    // Info about the endpoint, stored in the picker.
     struct EndpointInfo {
       RefCountedPtr<AutoShardingEndpoint> endpoint;
       RefCountedPtr<SubchannelPicker> picker;
@@ -313,8 +288,7 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
 
     // Ref to our parent.
     RefCountedPtr<AutoshardingLbPolicy> autosharding_lb_;
-    size_t index_;  // Index into AutoshardingLbPolicy::endpoints_ of this
-                    // endpoint.
+    size_t index_;
 
     // The pick_first child policy.  Created lazily, on first use.
     OrphanablePtr<LoadBalancingPolicy> child_policy_;
@@ -326,18 +300,10 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
 
   class Picker final : public SubchannelPicker {
    public:
-    // Iterator interface over endpoint indices.
-    class EndpointIndexIterator {
-     public:
-      virtual ~EndpointIndexIterator() = default;
-
-      virtual size_t size() const = 0;
-      virtual size_t operator[](size_t index) const = 0;
-    };
-
     Picker(RefCountedPtr<AutoshardingLbPolicy> autosharding_lb,
            RefCountedPtr<SliceMap> slice_map)
         : autosharding_lb_(std::move(autosharding_lb)),
+          config_(autosharding_lb_->config_),
           slice_map_(std::move(slice_map)),
           endpoints_(autosharding_lb_->endpoints_.size()),
           resolution_note_(autosharding_lb_->resolution_note_) {
@@ -349,6 +315,14 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
     PickResult Pick(PickArgs args) override;
 
    private:
+    // Iterator interface over endpoint indices.
+    class EndpointIndexIterator {
+     public:
+      virtual ~EndpointIndexIterator() = default;
+
+      virtual size_t size() const = 0;
+      virtual size_t operator[](size_t index) const = 0;
+    };
     class SliceEndpointIndexIterator;
     class FallbackEndpointIndexIterator;
 
@@ -361,6 +335,7 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
         const RefCountedPtr<AutoShardingEndpoint>& endpoint);
 
     RefCountedPtr<AutoshardingLbPolicy> autosharding_lb_;
+    RefCountedPtr<AutoShardingLbConfig> config_;
     RefCountedPtr<SliceMap> slice_map_;
     std::vector<AutoShardingEndpoint::EndpointInfo> endpoints_;
     std::string resolution_note_;
@@ -403,7 +378,8 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
   std::map<std::string, OrphanablePtr<AutoShardingEndpoint>> endpoint_map_;
   EndpointAddressesList endpoints_;
   ChannelArgs args_;
-  std::optional<Assignment> assignment_;
+  absl::StatusOr<Assignment> assignment_ =
+      absl::UnavailableError("waiting for assignment");
   RefCountedPtr<SliceMap> slice_map_;
   RefCountedPtr<AutoShardingLbConfig> config_;
   std::string resolution_note_;
@@ -413,7 +389,6 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
   // it's not currently actually used for anything outside of the picker),
   // then we will no longer need this data member.
   absl::Status last_failure_;
-
   bool shutdown_ = false;
 };
 
@@ -458,9 +433,12 @@ class AutoshardingLbPolicy::Picker::FallbackEndpointIndexIterator final
 bool AutoshardingLbPolicy::Picker::IsPoolInFallback(
     absl::Span<const size_t> indices) const {
   if (indices.empty()) return true;
-  return std::all_of(indices.begin(), indices.end(), [&](size_t idx) {
-    return endpoints_[idx].state == GRPC_CHANNEL_TRANSIENT_FAILURE;
-  });
+  for (size_t idx : indices) {
+    if (endpoints_[idx].state != GRPC_CHANNEL_TRANSIENT_FAILURE) {
+      return false;
+    }
+  }
+  return true;
 }
 
 AutoshardingLbPolicy::PickResult AutoshardingLbPolicy::Picker::Pick(
@@ -468,16 +446,22 @@ AutoshardingLbPolicy::PickResult AutoshardingLbPolicy::Picker::Pick(
   // Extract the sharding key from the request metadata.
   std::string buffer;
   const absl::string_view key_header_name =
-      autosharding_lb_->config_->key_header_name().as_string_view();
+      config_->key_header_name().as_string_view();
   auto key = args.initial_metadata->Lookup(key_header_name, &buffer);
   if (!key.has_value()) {
     return PickResult::Fail(absl::InternalError(absl::StrCat(
         "slice key header \"", key_header_name, "\" not present")));
   }
+  // If we have no assignment, use all endpoints.  We get here only if
+  // fallback is enabled; otherwise, the LB policy returns a picker that
+  // fails all picks.
+  if (slice_map_ == nullptr) {
+    FallbackEndpointIndexIterator iterator(endpoints_.size());
+    return PickFromEndpointIndices(iterator, args);
+  }
   // Look up the endpoints covering the key.
   absl::Span<const size_t> indices = slice_map_->Lookup(*key);
-  if (IsPoolInFallback(indices) &&
-      autosharding_lb_->config_->enable_fallback()) {
+  if (IsPoolInFallback(indices) && config_->enable_fallback()) {
     FallbackEndpointIndexIterator iterator(endpoints_.size());
     return PickFromEndpointIndices(iterator, args);
   }
@@ -676,26 +660,18 @@ void AutoshardingLbPolicy::AutoShardingEndpoint::OnStateUpdate(
 //
 
 AutoshardingLbPolicy::SliceMap::SliceMap(
-    const std::optional<Assignment>& assignment,
+    const Assignment& assignment,
     const std::map<std::string, OrphanablePtr<AutoShardingEndpoint>>&
         endpoint_map) {
-  // With no assignment, create a single slice covering the entire keyspace.
-  if (!assignment.has_value()) {
-    Entry entry;
-    entry.end_key = "";
-    slices_.push_back(std::move(entry));
-    return;
-  }
-  generation_ = assignment->generation();
   // Build entries for each slice in the assignment.
-  slices_.reserve(assignment->slices().size());
-  for (const auto& slice : assignment->slices()) {
+  slices_.reserve(assignment.slices().size());
+  for (const auto& slice : assignment.slices()) {
     Entry entry;
     entry.end_key = slice.end_key;
     entry.endpoints.reserve(slice.endpoints.size());
     for (size_t idx : slice.endpoints) {
-      GRPC_CHECK_LT(idx, assignment->endpoint_names().size());
-      auto it = endpoint_map.find(assignment->endpoint_names()[idx]);
+      GRPC_CHECK_LT(idx, assignment.endpoint_names().size());
+      auto it = endpoint_map.find(assignment.endpoint_names()[idx]);
       if (it != endpoint_map.end()) {
         entry.endpoints.push_back(it->second->index());
       }
@@ -723,13 +699,21 @@ void AutoshardingLbPolicy::ShutdownLocked() {
   shutdown_ = true;
   endpoint_map_.clear();
   slice_map_.reset();
-  assignment_.reset();
+  assignment_ = absl::CancelledError("LB policy shut down");
 }
 
 void AutoshardingLbPolicy::ResetBackoffLocked() {
   for (const auto& [_, endpoint] : endpoint_map_) {
     endpoint->ResetBackoffLocked();
   }
+}
+
+// Extracts hostname from endpoint attribute (gRFC A81) or first address.
+std::string ComputeHostname(const EndpointAddresses& endpoint) {
+  auto hostname_arg = endpoint.args().GetString(GRPC_ARG_ADDRESS_NAME);
+  if (hostname_arg.has_value()) return std::string(*hostname_arg);
+  return grpc_sockaddr_to_string(&endpoint.addresses().front(), false)
+      .value_or("<invalid address>");
 }
 
 absl::Status AutoshardingLbPolicy::UpdateLocked(UpdateArgs args) {
@@ -806,8 +790,10 @@ absl::Status AutoshardingLbPolicy::UpdateLocked(UpdateArgs args) {
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
         MakeRefCounted<TransientFailurePicker>(status));
   } else {
-    // Build new SliceMap.
-    slice_map_ = MakeRefCounted<SliceMap>(assignment_, endpoint_map_);
+    // Build new SliceMap.  If we have no assignment, we reset it.
+    slice_map_ = assignment_.ok()
+                     ? MakeRefCounted<SliceMap>(*assignment_, endpoint_map_)
+                     : nullptr;
     // Return a new picker.
     UpdateAggregatedConnectivityStateLocked(absl::OkStatus());
   }
@@ -825,22 +811,11 @@ void AutoshardingLbPolicy::CreateAutoshardingClientLocked() {
 void AutoshardingLbPolicy::OnAssignmentReceivedLocked(
     absl::StatusOr<Assignment> assignment) {
   if (shutdown_) return;
-  if (assignment.ok()) {
-    GRPC_TRACE_LOG(autosharding_lb, INFO)
-        << "[AS " << this << "] received assignment with generation "
-        << assignment->generation();
-    assignment_ = *std::move(assignment);
-  } else {
-    // The autosharding client has no valid assignment to report, so stop
-    // using any existing assignment.  Depending on whether fallback is
-    // enabled, we will either use all endpoints or fail picks.
-    GRPC_TRACE_LOG(autosharding_lb, INFO)
-        << "[AS " << this
-        << "] autosharding client reported error: " << assignment.status();
-    assignment_.reset();
-  }
-  if (endpoints_.empty()) return;
-  slice_map_ = MakeRefCounted<SliceMap>(assignment_, endpoint_map_);
+  assignment_ = std::move(assignment);
+  // Build a new SliceMap.  If we have no assignment, we reset it.
+  slice_map_ = assignment_.ok()
+                   ? MakeRefCounted<SliceMap>(*assignment_, endpoint_map_)
+                   : nullptr;
   UpdateAggregatedConnectivityStateLocked(absl::OkStatus());
 }
 
@@ -850,6 +825,22 @@ void AutoshardingLbPolicy::UpdateAggregatedConnectivityStateLocked(
   // yet have an assignment, immediately report CONNECTING state with a
   // queuing picker (and set delay_type per gRFC A121 once supported) without
   // iterating over endpoints.
+  // If we have no assignment and fallback is disabled, we cannot route any
+  // pick, so report TRANSIENT_FAILURE.
+  if (!assignment_.ok() && !config_->enable_fallback()) {
+    std::string message(assignment_.status().message());
+    if (!resolution_note_.empty()) {
+      absl::StrAppend(&message, " (", resolution_note_, ")");
+    }
+    absl::Status pick_status = absl::UnavailableError(message);
+    GRPC_TRACE_LOG(autosharding_lb, INFO)
+        << "[AS " << this << "] no assignment and fallback disabled, failing "
+        << "picks: " << pick_status;
+    channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_TRANSIENT_FAILURE, pick_status,
+        MakeRefCounted<TransientFailurePicker>(pick_status));
+    return;
+  }
   // Count the number of endpoints in each state.
   size_t num_idle = 0;
   size_t num_connecting = 0;
@@ -917,20 +908,11 @@ void AutoshardingLbPolicy::UpdateAggregatedConnectivityStateLocked(
   } else {
     status = absl::OkStatus();
   }
-  RefCountedPtr<SubchannelPicker> picker;
-  if (!assignment_.has_value() && !config_->enable_fallback()) {
-    std::string message = "no endpoint available";
-    if (!resolution_note_.empty()) {
-      absl::StrAppend(&message, " (", resolution_note_, ")");
-    }
-    picker =
-        MakeRefCounted<TransientFailurePicker>(absl::UnavailableError(message));
-  } else {
-    picker = MakeRefCounted<Picker>(RefAsSubclass<AutoshardingLbPolicy>(
-                                        DEBUG_LOCATION, "AutoShardingPicker"),
-                                    slice_map_);
-  }
-  channel_control_helper()->UpdateState(state, status, std::move(picker));
+  channel_control_helper()->UpdateState(
+      state, status,
+      MakeRefCounted<Picker>(RefAsSubclass<AutoshardingLbPolicy>(
+                                 DEBUG_LOCATION, "AutoShardingPicker"),
+                             slice_map_));
   // If in TRANSIENT_FAILURE or CONNECTING without a CONNECTING endpoint,
   // trigger a connection attempt on an IDLE endpoint to prevent premature
   // failover when used as a child of the priority policy (same as ring_hash).

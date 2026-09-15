@@ -130,11 +130,12 @@ TEST_F(AutoShardingTest, FallbackDisabledFailsPicks) {
   EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build()),
                         lb_policy()),
             absl::OkStatus());
-  auto picker = ExpectState(GRPC_CHANNEL_IDLE);
+  auto picker = ExpectState(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                            absl::UnavailableError("waiting for assignment"));
   ExpectPickFail(
       picker.get(),
       [](const absl::Status& status) {
-        EXPECT_EQ(status, absl::UnavailableError("no endpoint available"));
+        EXPECT_EQ(status, absl::UnavailableError("waiting for assignment"));
       },
       /*call_attributes=*/{}, MakeMetadata());
 }
@@ -143,12 +144,14 @@ TEST_F(AutoShardingTest, ResolutionNotePropagatedOnFallbackDisabled) {
   auto update = BuildUpdate(kAddresses, ConfigBuilder().Build());
   update.resolution_note = "DNS resolution note";
   EXPECT_EQ(ApplyUpdate(std::move(update), lb_policy()), absl::OkStatus());
-  auto picker = ExpectState(GRPC_CHANNEL_IDLE);
+  auto picker = ExpectState(
+      GRPC_CHANNEL_TRANSIENT_FAILURE,
+      absl::UnavailableError("waiting for assignment (DNS resolution note)"));
   ExpectPickFail(
       picker.get(),
       [](const absl::Status& status) {
         EXPECT_EQ(status, absl::UnavailableError(
-                              "no endpoint available (DNS resolution note)"));
+                              "waiting for assignment (DNS resolution note)"));
       },
       /*call_attributes=*/{}, MakeMetadata());
 }
@@ -174,6 +177,37 @@ TEST_F(AutoShardingTest, EmptyEndpointList) {
             absl::UnavailableError("empty address list: DNS resolution note"));
   ExpectTransientFailureUpdate(
       absl::UnavailableError("empty address list: DNS resolution note"));
+}
+
+TEST_F(AutoShardingTest, EndpointsWithDuplicateHostnames) {
+  // Two endpoints with the same hostname attribute.  The first one wins, and
+  // the duplicate is ignored.
+  const std::vector<EndpointAddresses> endpoints = {
+      MakeEndpointAddresses({kAddresses[0]},
+                            ChannelArgs().Set(GRPC_ARG_ADDRESS_NAME, "host1")),
+      MakeEndpointAddresses({kAddresses[1]},
+                            ChannelArgs().Set(GRPC_ARG_ADDRESS_NAME, "host1"))};
+  EXPECT_EQ(
+      ApplyUpdate(BuildUpdate(endpoints,
+                              ConfigBuilder().SetEnableFallback(true).Build()),
+                  lb_policy()),
+      absl::OkStatus());
+  auto picker = ExpectState(GRPC_CHANNEL_IDLE);
+  // The pick should trigger a connection attempt on the endpoint that won
+  // (the one with index 0).
+  ExpectPickQueued(picker.get(), {}, MakeMetadata());
+  WaitForWorkSerializerToFlush();
+  WaitForWorkSerializerToFlush();
+  EXPECT_EQ(FindSubchannel(kAddresses[1]), nullptr);
+  auto* subchannel = FindSubchannel(kAddresses[0]);
+  ASSERT_NE(subchannel, nullptr);
+  EXPECT_TRUE(subchannel->ConnectionRequested());
+  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  picker = ExpectState(GRPC_CHANNEL_CONNECTING);
+  subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+  picker = ExpectState(GRPC_CHANNEL_READY);
+  auto address = ExpectPickComplete(picker.get(), {}, MakeMetadata());
+  EXPECT_EQ(address, kAddresses[0]);
 }
 
 TEST_F(AutoShardingTest, RetainsEndpointForHostnameAcrossUpdates) {
@@ -232,7 +266,7 @@ TEST_F(AutoShardingTest, SameAddressListedMultipleTimes) {
                   lb_policy()),
       absl::OkStatus());
   auto picker = ExpectState(GRPC_CHANNEL_IDLE);
-  const auto metadata = MakeMetadata("ipv4:127.0.0.1:441");
+  const auto metadata = MakeMetadata();
   ExpectPickQueued(picker.get(), {}, metadata);
   WaitForWorkSerializerToFlush();
   WaitForWorkSerializerToFlush();
@@ -265,7 +299,7 @@ TEST_F(AutoShardingTest, MultipleAddressesPerEndpoint) {
                   lb_policy()),
       absl::OkStatus());
   auto picker = ExpectState(GRPC_CHANNEL_IDLE);
-  const auto metadata = MakeMetadata("ipv4:127.0.0.1:443");
+  const auto metadata = MakeMetadata();
   ExpectPickQueued(picker.get(), {}, metadata);
   WaitForWorkSerializerToFlush();
   WaitForWorkSerializerToFlush();
