@@ -488,6 +488,7 @@ async def _finish_handler_with_stream_responses(RPCState rpc_state,
     """
     cdef object async_response_generator
     cdef object response_message
+    cdef _SyncServicerContext sync_servicer_context = None
     install_context_from_request_call_event_aio(rpc_state)
 
     if inspect.iscoroutinefunction(stream_handler):
@@ -521,6 +522,11 @@ async def _finish_handler_with_stream_responses(RPCState rpc_state,
             rpc_state.raise_for_termination()
 
             await servicer_context.write(response_message)
+            
+        #Execute callback if sync context was used
+        if sync_servicer_context is not None:
+            for callback in sync_servicer_context._callbacks:
+                callback()
 
     # Raises exception if aborted
     rpc_state.raise_for_termination()
