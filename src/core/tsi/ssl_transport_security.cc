@@ -3089,6 +3089,12 @@ tsi_ssl_client_handshaker_factory* tsi_ssl_client_handshaker_factory_ref(
       tsi_ssl_handshaker_factory_ref(&client_factory->base));
 }
 
+SSL_CTX* tsi_ssl_client_handshaker_factory_get_ssl_ctx_for_testing(
+    tsi_ssl_client_handshaker_factory* factory) {
+  if (factory == nullptr) return nullptr;
+  return factory->ssl_context;
+}
+
 static void tsi_ssl_client_handshaker_factory_destroy(
     tsi_ssl_handshaker_factory* factory) {
   if (factory == nullptr) return;
