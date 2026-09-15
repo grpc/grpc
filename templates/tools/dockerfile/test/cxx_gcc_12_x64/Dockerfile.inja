@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2026 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,12 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM python:3.10-bullseye
+FROM gcc:12-bookworm
 
 RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
-    build-essential \
-    python3-dev
+  ccache \
+  curl \
+  git \
+  time \
+  zip && apt-get clean
+{% include "../../git_avoid_dubious_ownership_error.include" %}
+{% include "../../run_tests_python_deps_venv.include" %}
+{% include "../../cxx_test_deps.include" %}
+{% include "../../cmake.include" %}
 
-RUN python3 -m pip install virtualenv
+{% include "../../run_tests_addons.include" %}
+
+# Define the default command.
+CMD ["bash"]

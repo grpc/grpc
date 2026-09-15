@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM --platform=linux/386 python:3.10-bullseye
+FROM python:3.15.0rc2-trixie
 
 RUN apt-get update && apt-get install -y \
     python3 \
@@ -21,8 +21,3 @@ RUN apt-get update && apt-get install -y \
     python3-dev
 
 RUN python3 -m pip install virtualenv
-
-# docker is running on a 64-bit machine, so we need to
-# override "uname -m" to report i686 instead of x86_64, otherwise
-# python will choose a wrong binary package to install.
-ENTRYPOINT ["linux32"]

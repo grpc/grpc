@@ -1,4 +1,4 @@
-# Copyright 2026 gRPC authors.
+# Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,17 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM gcc:10
+FROM --platform=linux/386 python:3.14-trixie
 
-RUN apt-get update && apt-get install -y curl git time zip && apt-get clean
-{% include "../../git_avoid_dubious_ownership_error.include" %}
-{% include "../../run_tests_python_deps.include" %}
-{% include "../../cxx_test_deps.include" %}
-{% include "../../cmake_bullseye_backports.include" %}
+RUN apt-get update && apt-get install -y python3 python3-pip
 
-# Install ccache 4.2 from official repo.
-RUN apt-get install -y ccache
-{% include "../../run_tests_addons.include" %}
+RUN python3 -m pip install virtualenv
 
-# Define the default command.
-CMD ["bash"]
+# docker is running on a 64-bit machine, so we need to
+# override "uname -m" to report i686 instead of x86_64, otherwise
+# python will choose a wrong binary package to install.
+ENTRYPOINT ["linux32"]
