@@ -143,11 +143,11 @@ void Call::AddData(channelz::DataSink sink) {
       .Set("encodings_accepted_by_peer",
            encodings_accepted_by_peer_.ToString());
   {
-    MutexLock lock(&peer_mu_);
+    MutexLock lock(peer_mu_);
     properties.Set("peer_string", peer_string_.as_string_view());
   }
   {
-    MutexLock lock(&deadline_mu_);
+    MutexLock lock(deadline_mu_);
     properties.Set("deadline", deadline_);
   }
   sink.AddData("call", properties);
@@ -213,7 +213,7 @@ absl::Status Call::InitParent(Call* parent, uint32_t propagation_mask) {
 void Call::PublishToParent(Call* parent) {
   ChildCall* cc = child_;
   ParentCall* pc = parent->GetOrCreateParentCall();
-  MutexLock lock(&pc->child_list_mu);
+  MutexLock lock(pc->child_list_mu);
   if (pc->first_child == nullptr) {
     pc->first_child = this;
     cc->sibling_next = cc->sibling_prev = this;
@@ -234,7 +234,7 @@ void Call::MaybeUnpublishFromParent() {
 
   ParentCall* pc = cc->parent->parent_call();
   {
-    MutexLock lock(&pc->child_list_mu);
+    MutexLock lock(pc->child_list_mu);
     if (this == pc->first_child) {
       pc->first_child = cc->sibling_next;
       if (this == pc->first_child) {
@@ -260,7 +260,7 @@ void Call::PropagateCancellationToChildren() {
   ParentCall* pc = parent_call();
   if (pc != nullptr) {
     Call* child;
-    MutexLock lock(&pc->child_list_mu);
+    MutexLock lock(pc->child_list_mu);
     child = pc->first_child;
     if (child != nullptr) {
       do {
@@ -361,7 +361,7 @@ void Call::HandleCompressionAlgorithmDisabled(
 }
 
 grpc_error_handle Call::UpdateDeadline(Timestamp deadline) {
-  ReleasableMutexLock lock(&deadline_mu_);
+  ReleasableMutexLock lock(deadline_mu_);
   GRPC_TRACE_LOG(call, INFO)
       << "[call " << this << "] UpdateDeadline from=" << deadline_.ToString()
       << " to=" << deadline.ToString();
@@ -386,7 +386,7 @@ grpc_error_handle Call::UpdateDeadline(Timestamp deadline) {
 
 void Call::ResetDeadline() {
   {
-    MutexLock lock(&deadline_mu_);
+    MutexLock lock(deadline_mu_);
     if (deadline_ == Timestamp::InfFuture()) return;
     if (!arena_->GetContext<grpc_event_engine::experimental::EventEngine>()
              ->Cancel(deadline_task_)) {

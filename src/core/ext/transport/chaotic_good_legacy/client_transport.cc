@@ -58,7 +58,7 @@ void ChaoticGoodClientTransport::Orphan() {
   AbortWithError();
   RefCountedPtr<Party> party;
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     party = std::move(party_);
   }
   party.reset();
@@ -67,7 +67,7 @@ void ChaoticGoodClientTransport::Orphan() {
 
 RefCountedPtr<ChaoticGoodClientTransport::Stream>
 ChaoticGoodClientTransport::LookupStream(uint32_t stream_id) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   auto it = stream_map_.find(stream_id);
   if (it == stream_map_.end()) {
     return nullptr;
@@ -255,7 +255,7 @@ void ChaoticGoodClientTransport::AbortWithError() {
   // Mark transport as unavailable when the endpoint write/read failed.
   // Close all the available pipes.
   outgoing_frames_.MarkClosed();
-  ReleasableMutexLock lock(&mu_);
+  ReleasableMutexLock lock(mu_);
   StreamMap stream_map = std::move(stream_map_);
   stream_map_.clear();
   state_tracker_.SetState(GRPC_CHANNEL_SHUTDOWN,
@@ -282,7 +282,7 @@ void ChaoticGoodClientTransport::AbortWithError() {
 }
 
 uint32_t ChaoticGoodClientTransport::MakeStream(CallHandler call_handler) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   const uint32_t stream_id = next_stream_id_++;
   const bool on_done_added =
       call_handler.OnDone([self = RefAsSubclass<ChaoticGoodClientTransport>(),
@@ -294,7 +294,7 @@ uint32_t ChaoticGoodClientTransport::MakeStream(CallHandler call_handler) {
           self->outgoing_frames_.MakeSender().UnbufferedImmediateSend(
               CancelFrame{stream_id});
         }
-        MutexLock lock(&self->mu_);
+        MutexLock lock(self->mu_);
         self->stream_map_.erase(stream_id);
       });
   if (!on_done_added) return 0;
@@ -389,7 +389,7 @@ void ChaoticGoodClientTransport::StartCall(CallHandler call_handler) {
 }
 
 void ChaoticGoodClientTransport::PerformOp(grpc_transport_op* op) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   bool did_stuff = false;
   if (op->start_connectivity_watch != nullptr) {
     state_tracker_.AddWatcher(op->start_connectivity_watch_state,
@@ -412,7 +412,7 @@ void ChaoticGoodClientTransport::PerformOp(grpc_transport_op* op) {
 
 void ChaoticGoodClientTransport::StartWatch(
     RefCountedPtr<StateWatcher> watcher) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   GRPC_CHECK(watcher_ == nullptr);
   watcher_ = std::move(watcher);
   // TODO(ctiller): Report MAX_CONCURRENT_STREAMS to watcher here, and
@@ -421,14 +421,14 @@ void ChaoticGoodClientTransport::StartWatch(
 
 void ChaoticGoodClientTransport::StopWatch(
     RefCountedPtr<StateWatcher> watcher) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (watcher_ == watcher) watcher_.reset();
 }
 
 void ChaoticGoodClientTransport::ChannelzDataSource::AddData(
     channelz::DataSink sink) {
   transport_->party_->ExportToChannelz("party", sink);
-  MutexLock lock(&transport_->mu_);
+  MutexLock lock(transport_->mu_);
   sink.AddData("client_transport",
                channelz::PropertyList()
                    .Set("next_stream_id", transport_->next_stream_id_)

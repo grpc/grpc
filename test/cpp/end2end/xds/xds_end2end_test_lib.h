@@ -314,7 +314,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
         CountedService<
             TestMultipleServiceImpl<RpcService>>::IncreaseRequestCount();
         {
-          grpc_core::MutexLock lock(&mu_);
+          grpc_core::MutexLock lock(mu_);
           clients_.insert(context->peer());
           last_peer_identity_.clear();
           for (const auto& entry : peer_identity) {
@@ -365,12 +365,12 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
       void Shutdown() {}
 
       std::set<std::string> clients() {
-        grpc_core::MutexLock lock(&mu_);
+        grpc_core::MutexLock lock(mu_);
         return clients_;
       }
 
       const std::vector<std::string>& last_peer_identity() {
-        grpc_core::MutexLock lock(&mu_);
+        grpc_core::MutexLock lock(mu_);
         return last_peer_identity_;
       }
 

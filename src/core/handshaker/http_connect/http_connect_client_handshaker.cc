@@ -137,7 +137,7 @@ void HttpConnectClientHandshaker::OnWriteDoneScheduler(
 
 // Callback invoked when finished writing HTTP CONNECT request.
 void HttpConnectClientHandshaker::OnWriteDone(absl::Status error) {
-  ReleasableMutexLock lock(&mu_);
+  ReleasableMutexLock lock(mu_);
   if (!error.ok() || args_->endpoint == nullptr) {
     // If the write failed or we're shutting down, clean up and invoke the
     // callback with the error.
@@ -174,7 +174,7 @@ void HttpConnectClientHandshaker::OnReadDoneScheduler(void* arg,
 void HttpConnectClientHandshaker::OnReadDone(absl::Status error) {
   bool done;
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     done = OnReadDoneLocked(std::move(error));
   }
   if (done) Unref();
@@ -249,7 +249,7 @@ bool HttpConnectClientHandshaker::OnReadDoneLocked(absl::Status error) {
 //
 
 void HttpConnectClientHandshaker::Shutdown(absl::Status /*error*/) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (on_handshake_done_ != nullptr) args_->endpoint.reset();
 }
 
@@ -291,7 +291,7 @@ void HttpConnectClientHandshaker::DoHandshake(
     }
   }
   // Save state in the handshaker object.
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   args_ = args;
   on_handshake_done_ = std::move(on_handshake_done);
   // Log connection via proxy.

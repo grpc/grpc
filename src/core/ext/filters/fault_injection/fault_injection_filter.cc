@@ -266,7 +266,7 @@ FaultInjectionFilter::MakeInjectionDecision(
   bool delay_request = delay != Duration::Zero();
   bool abort_request = abort_code != GRPC_STATUS_OK;
   if (delay_request || abort_request) {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     if (delay_request) {
       delay_request =
           UnderFraction(&delay_rand_generator_, delay_percentage_numerator,

@@ -125,7 +125,7 @@ void OutputBuffers::Reader::SetNetworkMetrics(
 }
 
 channelz::PropertyList OutputBuffers::Reader::ChannelzProperties() {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   return channelz::PropertyList()
       .Set("reading", reading_)
       .Merge(send_rate_.ChannelzProperties())
@@ -159,7 +159,7 @@ void OutputBuffers::AddData(channelz::DataSink sink) {
 }
 
 RefCountedPtr<OutputBuffers::Reader> OutputBuffers::MakeReader(uint32_t id) {
-  MutexLock lock(&mu_reader_data_);
+  MutexLock lock(mu_reader_data_);
   if (readers_.size() <= id) {
     readers_.resize(id + 1);
   }
@@ -256,7 +256,7 @@ void OutputBuffers::Schedule() {
   uint64_t queued_tokens = 0;
   {
     GRPC_LATENT_SEE_SCOPE("OutputBuffers::Schedule::CollectData1");
-    MutexLock lock(&mu_reader_data_);
+    MutexLock lock(mu_reader_data_);
     scheduling_data.reserve(readers_.size());
     for (const auto& reader : readers_) {
       scheduling_data.emplace_back(reader);
@@ -356,7 +356,7 @@ void OutputBuffers::Write(uint64_t payload_tag,
 // SecureFrameQueue
 
 void SecureFrameQueue::Write(SliceBuffer buffer) {
-  ReleasableMutexLock lock(&mu_);
+  ReleasableMutexLock lock(mu_);
   uint32_t frame_length = buffer.Length();
   uint32_t frame_padding =
       DataConnectionPadding(frame_length, encode_alignment_);
@@ -385,7 +385,7 @@ void SecureFrameQueue::Write(SliceBuffer buffer) {
 // InputQueues
 
 InputQueue::ReadTicket InputQueue::Read(uint64_t payload_tag) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (!closed_error_.ok()) {
     return ReadTicket(MakeRefCounted<Completion>(payload_tag, closed_error_),
                       nullptr);
@@ -453,7 +453,7 @@ void InputQueue::Cancel(Completion* completion) {
 }
 
 void InputQueue::AddData(channelz::DataSink sink) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   sink.AddData("input_queue",
                channelz::PropertyList()
                    .Set("read_requested", absl::StrCat(read_requested_))
@@ -1089,7 +1089,7 @@ void DataEndpoints::AddData(channelz::DataSink sink) {
     int remaining ABSL_GUARDED_BY(mu) = 0;
     Json::Array endpoints ABSL_GUARDED_BY(mu);
   };
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   for (size_t i = 0; i < endpoints_.size(); ++i) {
     endpoints_[i]->AddData(sink);
   }

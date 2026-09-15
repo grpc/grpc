@@ -149,7 +149,7 @@ thread_local WorkSerializer::WorkSerializerImpl*
 #endif
 
 void WorkSerializer::WorkSerializerImpl::Orphan() {
-  ReleasableMutexLock lock(&mu_);
+  ReleasableMutexLock lock(mu_);
   // If we're not running, then we can delete immediately.
   if (!running_) {
     lock.Release();
@@ -167,7 +167,7 @@ void WorkSerializer::WorkSerializerImpl::Run(
       << "WorkSerializer[" << this << "] Scheduling callback ["
       << location.file() << ":" << location.line() << "]";
   global_stats().IncrementWorkSerializerItemsEnqueued();
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (!running_) {
     // If we were previously idle, insert this callback directly into the
     // empty processing_ list and start running.
@@ -225,7 +225,7 @@ WorkSerializer::WorkSerializerImpl::RefillInner() {
   // Recover any memory held by processing_, so that we don't grow forever.
   // Do so before acquiring a lock so we don't cause inadvertent contention.
   processing_.shrink_to_fit();
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   // Swap incoming_ into processing_ - effectively lets us release memory
   // (outside the lock) once per iteration for the storage vectors.
   processing_.swap(incoming_);

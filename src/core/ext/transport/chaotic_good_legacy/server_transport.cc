@@ -384,7 +384,7 @@ void ChaoticGoodServerTransport::Orphan() {
   AbortWithError();
   RefCountedPtr<Party> party;
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     party = std::move(party_);
   }
   party.reset();
@@ -395,7 +395,7 @@ void ChaoticGoodServerTransport::AbortWithError() {
   // Mark transport as unavailable when the endpoint write/read failed.
   // Close all the available pipes.
   outgoing_frames_.MarkClosed();
-  ReleasableMutexLock lock(&mu_);
+  ReleasableMutexLock lock(mu_);
   aborted_with_error_ = true;
   StreamMap stream_map = std::move(stream_map_);
   stream_map_.clear();
@@ -416,7 +416,7 @@ RefCountedPtr<ChaoticGoodServerTransport::Stream>
 ChaoticGoodServerTransport::LookupStream(uint32_t stream_id) {
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD " << this << " LookupStream " << stream_id;
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   auto it = stream_map_.find(stream_id);
   if (it == stream_map_.end()) return nullptr;
   return it->second;
@@ -426,7 +426,7 @@ RefCountedPtr<ChaoticGoodServerTransport::Stream>
 ChaoticGoodServerTransport::ExtractStream(uint32_t stream_id) {
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD " << this << " ExtractStream " << stream_id;
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   auto it = stream_map_.find(stream_id);
   if (it == stream_map_.end()) return nullptr;
   auto r = std::move(it->second);
@@ -438,7 +438,7 @@ absl::Status ChaoticGoodServerTransport::NewStream(
     uint32_t stream_id, CallInitiator call_initiator) {
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD " << this << " NewStream " << stream_id;
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (aborted_with_error_) {
     return absl::UnavailableError("Transport closed");
   }
@@ -478,7 +478,7 @@ void ChaoticGoodServerTransport::PerformOp(grpc_transport_op* op) {
       outgoing_frames_.MarkClosed();
     }
   });
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   bool did_stuff = false;
   if (op->start_connectivity_watch != nullptr) {
     state_tracker_.AddWatcher(op->start_connectivity_watch_state,
@@ -515,7 +515,7 @@ void ChaoticGoodServerTransport::PerformOp(grpc_transport_op* op) {
 void ChaoticGoodServerTransport::ChannelzDataSource::AddData(
     channelz::DataSink sink) {
   transport_->party_->ExportToChannelz("party", sink);
-  MutexLock lock(&transport_->mu_);
+  MutexLock lock(transport_->mu_);
   sink.AddData(
       "client_transport",
       channelz::PropertyList().Set("streams", transport_->stream_map_.size()));

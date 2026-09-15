@@ -379,7 +379,7 @@ class TestServiceImpl : public TestService::Service {
       server_metric_recorder_->SetMemoryUtilization(
           request_metrics.memory_utilization());
     }
-    grpc_core::MutexLock lock(&retained_utilization_names_mu_);
+    grpc_core::MutexLock lock(retained_utilization_names_mu_);
     std::map<grpc::string_ref, double> named_utilizations;
     for (const auto& p : request_metrics.utilization()) {
       const auto& key = *retained_utilization_names_.insert(p.first).first;

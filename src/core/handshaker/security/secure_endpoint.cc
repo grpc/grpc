@@ -583,7 +583,7 @@ class FrameProtector : public RefCounted<FrameProtector> {
   // Therefore, any valid plaintext has already been fully delivered, and
   // read_staging_buffer_ contains only unused, leftover memory capacity.
   void ResetReadStagingBuffer() {
-    MutexLock lock(&read_mu_);
+    MutexLock lock(read_mu_);
     CSliceUnref(read_staging_buffer_);
     read_staging_buffer_ = grpc_empty_slice();
   }
@@ -968,7 +968,7 @@ class SecureEndpoint final : public EventEngine::Endpoint,
         {
           // This mutex should not have any contention since we can only have
           // one outstanding Read() at a time.
-          grpc_core::MutexLock lock(&read_settings_mu_);
+          grpc_core::MutexLock lock(read_settings_mu_);
           if (rpc_receive_coalescing_enabled_) {
             // TODO(aananthv): Make required_read_bytes_ a separate field in
             // ReadArgs to avoid confusion between min_progress_size and
@@ -1015,7 +1015,7 @@ class SecureEndpoint final : public EventEngine::Endpoint,
         // If we get a zero length frame, just complete without looking at
         // anything further
         if (data->Length() == 0) return true;
-        grpc_core::MutexLock lock(&write_queue_mu_);
+        grpc_core::MutexLock lock(write_queue_mu_);
         // If there's been a failure observed asynchronously, then fail out with
         // that error.
         if (!writing_.ok()) {
@@ -1088,7 +1088,7 @@ class SecureEndpoint final : public EventEngine::Endpoint,
 
     void EnableRpcReceiveCoalescing() {
       {
-        grpc_core::MutexLock lock(&read_settings_mu_);
+        grpc_core::MutexLock lock(read_settings_mu_);
         rpc_receive_coalescing_enabled_ = true;
       }
       frame_protector_.ResetReadStagingBuffer();
@@ -1099,7 +1099,7 @@ class SecureEndpoint final : public EventEngine::Endpoint,
 
     void DisableRpcReceiveCoalescing() {
       {
-        grpc_core::MutexLock lock(&read_settings_mu_);
+        grpc_core::MutexLock lock(read_settings_mu_);
         rpc_receive_coalescing_enabled_ = false;
       }
     }
@@ -1282,7 +1282,7 @@ class SecureEndpoint final : public EventEngine::Endpoint,
       while (true) {
         {
           // Check to see if we've written all the bytes.
-          grpc_core::ReleasableMutexLock lock(&impl->write_queue_mu_);
+          grpc_core::ReleasableMutexLock lock(impl->write_queue_mu_);
           if (impl->pending_writes_ == nullptr) {
             impl->writing_ = false;
             GRPC_DCHECK(impl->on_write_ == nullptr);

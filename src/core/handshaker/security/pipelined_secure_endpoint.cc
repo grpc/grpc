@@ -576,7 +576,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
               SliceBuffer* buffer, ReadArgs args) {
       GRPC_LATENT_SEE_SCOPE("secure_endpoint read");
 
-      grpc_core::ReleasableMutexLock lock(&read_queue_mu_);
+      grpc_core::ReleasableMutexLock lock(read_queue_mu_);
       // If there's been an error observed asynchronously, then fail out with
       // that error.
       if (!unprotecting_.ok()) {
@@ -679,7 +679,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
       std::unique_ptr<EventEngine::Endpoint> wrapped_ep;
       grpc_core::MutexLock write_lock(frame_protector_.write_mu());
       grpc_core::MutexLock read_lock(frame_protector_.read_mu());
-      grpc_core::MutexLock shutdown_read_lock(&shutdown_read_mu_);
+      grpc_core::MutexLock shutdown_read_lock(shutdown_read_mu_);
       wrapped_ep = std::move(wrapped_ep_);
       frame_protector_.Shutdown();
     }
@@ -693,7 +693,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
     // Called from the constructor to kick off the first read on the wrapped
     // endpoint.
     void StartFirstRead() ABSL_LOCKS_EXCLUDED(read_queue_mu_) {
-      grpc_core::ReleasableMutexLock lock(&read_queue_mu_);
+      grpc_core::ReleasableMutexLock lock(read_queue_mu_);
       unprotecting_ = true;
       GRPC_CHECK(protected_data_buffer_ == nullptr);
       GRPC_CHECK(unprotected_data_buffer_ == nullptr);
@@ -716,7 +716,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
         grpc_core::ExecCtx exec_ctx;
         // If the endpoint closed whilst waiting for this callback, then
         // fail out the read and we're done.
-        grpc_core::ReleasableMutexLock lock(&impl->shutdown_read_mu_);
+        grpc_core::ReleasableMutexLock lock(impl->shutdown_read_mu_);
         if (impl->wrapped_ep_ == nullptr) {
           lock.Release();
           FailReads(std::move(impl),
@@ -735,7 +735,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
         if (read_finished_immediately) {
           lock.Release();
           {
-            grpc_core::MutexLock lock(&impl->read_queue_mu_);
+            grpc_core::MutexLock lock(impl->read_queue_mu_);
             impl->frame_protector_.TraceOp(
                 "ReadImm",
                 impl->staging_protected_data_buffer_->c_slice_buffer());
@@ -754,7 +754,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
         ABSL_LOCKS_EXCLUDED(impl->read_queue_mu_) {
       if (status.ok()) {
         {
-          grpc_core::MutexLock lock(&impl->read_queue_mu_);
+          grpc_core::MutexLock lock(impl->read_queue_mu_);
           impl->frame_protector_.TraceOp(
               "Read", impl->staging_protected_data_buffer_->c_slice_buffer());
           impl->MoveStagingIntoProtectedBuffer();
@@ -801,7 +801,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
 
       // If the endpoint closed whilst waiting for this callback, then
       // fail out the read and we're done.
-      grpc_core::ReleasableMutexLock shutdown_read_lock(&shutdown_read_mu_);
+      grpc_core::ReleasableMutexLock shutdown_read_lock(shutdown_read_mu_);
       if (wrapped_ep_ == nullptr) {
         shutdown_read_lock.Release();
         FailReads(Ref(), absl::CancelledError("secure endpoint shutdown"));
@@ -816,7 +816,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
       if (read_finished_immediately) {
         shutdown_read_lock.Release();
         {
-          grpc_core::MutexLock read_queue_lock(&read_queue_mu_);
+          grpc_core::MutexLock read_queue_lock(read_queue_mu_);
           frame_protector_.TraceOp(
               "ReadImm", staging_protected_data_buffer_->c_slice_buffer());
           MoveStagingIntoProtectedBuffer();
@@ -829,7 +829,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
           // If there was an error, the read will fail asynchronously;
           // otherwise, the unprotected data is now in the transport read's
           // buffer and we can return true.
-          grpc_core::MutexLock read_queue_lock(&read_queue_mu_);
+          grpc_core::MutexLock read_queue_lock(read_queue_mu_);
           return unprotecting_.ok();
         }
       }
@@ -870,7 +870,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
       */
       while (true) {
         {
-          grpc_core::ReleasableMutexLock lock(&impl->read_queue_mu_);
+          grpc_core::ReleasableMutexLock lock(impl->read_queue_mu_);
           if (!impl->unprotecting_.ok()) {
             // Something failed or we're shutting down, so fail reads.
             auto status = impl->unprotecting_.status();
@@ -987,7 +987,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
     static void StartPipelinedRead(grpc_core::RefCountedPtr<Impl> impl,
                                    ReadArgs args)
         ABSL_LOCKS_EXCLUDED(impl->shutdown_read_mu_, impl->read_queue_mu_) {
-      grpc_core::ReleasableMutexLock lock(&impl->shutdown_read_mu_);
+      grpc_core::ReleasableMutexLock lock(impl->shutdown_read_mu_);
       if (impl->wrapped_ep_ == nullptr) {
         lock.Release();
         FailReads(std::move(impl),
@@ -1004,7 +1004,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
         lock.Release();
         bool should_unprotect = false;
         {
-          grpc_core::MutexLock lock(&impl->read_queue_mu_);
+          grpc_core::MutexLock lock(impl->read_queue_mu_);
           impl->frame_protector_.TraceOp(
               "ReadImm",
               impl->staging_protected_data_buffer_->c_slice_buffer());
@@ -1027,7 +1027,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
         ABSL_LOCKS_EXCLUDED(impl->read_queue_mu_) {
       bool should_unprotect = false;
       {
-        grpc_core::MutexLock lock(&impl->read_queue_mu_);
+        grpc_core::MutexLock lock(impl->read_queue_mu_);
         should_unprotect = impl->ShouldContinueUnprotect();
         if (!status.ok()) {
           // We rely on ContinueUnprotect to fail the read if the
