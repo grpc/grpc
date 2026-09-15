@@ -47,7 +47,6 @@ INSTALL_REQUIRES = (
 COMMAND_CLASS = {
     "run_fork": commands.RunFork,
     "run_interop": commands.RunInterop,
-    "test_aio": commands.TestAio,
 }
 
 TEST_SUITE = "tests"

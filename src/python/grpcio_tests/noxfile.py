@@ -110,3 +110,24 @@ def test_py3_only(session: nox.Session):
     result = runner.run(loader.suite)
     if not result.wasSuccessful():
         session.error("Test failure")
+
+
+@nox.session(venv_params=["--system-site-packages"])
+def test_aio(session: nox.Session):
+    """
+    Session to run aio tests without fetching or building anything.
+    """
+    session.log("Running test_aio for grpcio_tests")
+
+    session.cd(GRPC_ROOT_ABS_PATH)
+    if ROOT_DIR not in sys.path:
+        sys.path.insert(0, ROOT_DIR)
+
+    import tests
+
+    loader = tests.Loader()
+    loader.loadTestsFromNames(["tests_aio"])
+    runner = tests.Runner(dedicated_threads=False)
+    result = runner.run(loader.suite)
+    if not result.wasSuccessful():
+        session.error("Test failure")

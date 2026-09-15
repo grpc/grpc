@@ -37,32 +37,6 @@ PROTO_STEM = os.path.join(PYTHON_REL_PATH, "src", "proto")
 PYTHON_PROTO_TOP_LEVEL = os.path.join(PYTHON_REL_PATH, "src")
 
 
-class TestAio(setuptools.Command):
-    """Command to run aio tests without fetching or building anything."""
-
-    description = "run aio tests without fetching or building anything."
-    user_options = []
-
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        import tests
-
-        loader = tests.Loader()
-        loader.loadTestsFromNames(["tests_aio"])
-        # Even without dedicated threads, the framework will somehow spawn a
-        # new thread for tests to run upon. New thread doesn't have event loop
-        # attached by default, so initialization is needed.
-        runner = tests.Runner(dedicated_threads=False)
-        result = runner.run(loader.suite)
-        if not result.wasSuccessful():
-            sys.exit("Test failure")
-
-
 class RunInterop(setuptools.Command):
     description = "run interop test client/server"
     user_options = [
