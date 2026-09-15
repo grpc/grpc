@@ -5596,7 +5596,7 @@ grpc_upb_proto_library(
 
 grpc_upb_proto_library(
     name = "grpc_health_upb",
-    deps = ["//src/proto/grpc/health/v1:health_proto"],
+    deps = ["@grpc_proto//:health_proto"],
 )
 
 grpc_upb_proto_library(
@@ -5735,6 +5735,11 @@ grpc_cc_proto_library(
     deps = ["@grpc_proto//:rls_config_proto"],
 )
 
+grpc_cc_proto_library(
+    name = "health_cc_proto",
+    deps = ["@grpc_proto//:health_proto"],
+)
+
 grpc_cc_grpc_library(
     name = "reflection_v1_cc_grpc",
     srcs = ["@grpc_proto//:reflection_proto"],
@@ -5763,4 +5768,10 @@ grpc_cc_grpc_library(
     name = "rls_config_cc_grpc",
     srcs = ["@grpc_proto//:rls_config_proto"],
     deps = [":rls_config_cc_proto"],
+)
+
+grpc_cc_grpc_library(
+    name = "health_cc_grpc",
+    srcs = ["@grpc_proto//:health_proto"],
+    deps = [":health_cc_proto"],
 )

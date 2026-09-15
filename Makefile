@@ -981,6 +981,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c \
     src/core/ext/upb-gen/google/rpc/status.upb_minitable.c \
     src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.c \
+    src/core/ext/upb-gen/grpc/health/v1/health.upb_minitable.c \
     src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.c \
     src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c \
@@ -990,7 +991,6 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c \
-    src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb_minitable.c \
     src/core/ext/upb-gen/udpa/annotations/migrate.upb_minitable.c \
     src/core/ext/upb-gen/udpa/annotations/security.upb_minitable.c \
