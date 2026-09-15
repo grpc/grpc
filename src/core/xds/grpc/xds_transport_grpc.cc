@@ -115,8 +115,8 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::StartCallOps(
     grpc_op** send_batch) {
-  GRPC_CHECK(!call_ops_started_);
-  call_ops_started_ = true;
+  GRPC_CHECK(!call_started_);
+  call_started_ = true;
   grpc_call_error call_error;
   grpc_op ops[2];
   memset(ops, 0, sizeof(ops));
@@ -208,7 +208,7 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::SendMessage(
   grpc_op ops[3];
   memset(ops, 0, sizeof(ops));
   grpc_op* op = ops;
-  if (!call_ops_started_) StartCallOps(&op);
+  if (!call_started_) StartCallOps(&op);
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message.send_message = send_message_payload_;
   op->flags = 0;

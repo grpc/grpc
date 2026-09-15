@@ -169,7 +169,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final
 
   // Whether StartCallOps() has been called.  Will be false upon
   // construction only if start_upon_send_message was set in the ctor.
-  bool call_ops_started_ = false;
+  bool call_started_ = false;
 
   // send_message
   grpc_byte_buffer* send_message_payload_ = nullptr;
