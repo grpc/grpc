@@ -186,7 +186,7 @@ void Http2ServerTransport::StartWatch(RefCountedPtr<StateWatcher> watcher) {
     // TODO(tjagtap) : [PH2][P2] : Provide better status message and
     // disconnect info here.
     NotifyStateWatcherOnDisconnectLocked(
-        absl::UnknownError("transport closed before watcher started"), {});
+        absl::UnavailableError("transport closed before watcher started"), {});
   } else {
     // TODO(tjagtap) : [PH2][P2] : Notify the state watcher of the current
     // value of the peer's MAX_CONCURRENT_STREAMS setting.
@@ -381,7 +381,9 @@ Http2Status Http2ServerTransport::ProcessIncomingMetadata(T&& frame) {
     is_new_stream = (stream == nullptr);
     // TODO(tjagtap) : [PH2][P2] : Implement initial stream id checks for new
     // streams.
-    last_incoming_stream_id_ = frame.stream_id;
+    if (is_new_stream) {
+      last_incoming_stream_id_ = frame.stream_id;
+    }
   } else {
     // This is a CONTINUATION frame.
     GRPC_DCHECK(read_context_.GetStreamId() == frame.stream_id);
@@ -738,9 +740,7 @@ auto Http2ServerTransport::ReadAndProcessOneFrame() {
         Http2Status status = read_context_.ValidateHeader(
             /*max_frame_size_setting=*/settings_->acked().max_frame_size(),
             /*current_frame_header=*/header,
-            // TODO(tjagtap) : [PH2][P0] : Fix
-            /*last_stream_id=*//*GetLastStreamId()*/
-            std::numeric_limits<uint32_t>::max(),
+            /*last_stream_id=*/GetLastStreamId(),
             /*is_first_settings_processed=*/
             settings_->IsFirstPeerSettingsApplied());
 
@@ -1155,41 +1155,25 @@ void Http2ServerTransport::MaybeGetWindowUpdateFrames(
   }
 }
 
-auto Http2ServerTransport::FlowControlPeriodicUpdateLoop() {
-  GRPC_HTTP2_SERVER_DLOG
-      << "Http2ServerTransport::FlowControlPeriodicUpdateLoop Factory";
-  return AssertResultType<absl::Status>(
-      Loop([this]() {
-        GRPC_HTTP2_SERVER_DLOG
-            << "Http2ServerTransport::FlowControlPeriodicUpdateLoop Loop";
-        return TrySeq(
-            // TODO(tjagtap) [PH2][P2][BDP] Remove this static sleep when the
-            // BDP code is done.
-            Sleep(chttp2::kFlowControlPeriodicUpdateTimer),
-            [this]() -> Poll<absl::Status> {
-              GRPC_HTTP2_SERVER_DLOG
-                  << "Http2ServerTransport::FlowControlPeriodicUpdateLoop "
-                     "PeriodicUpdate()";
-              const chttp2::FlowControlAction action =
-                  flow_control_.PeriodicUpdate();
-              const bool is_action_empty =
-                  action == chttp2::FlowControlAction();
-              // This may trigger a write cycle
-              ActOnFlowControlAction(action, nullptr);
-              if (is_action_empty) {
-                // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is
-                // done. We must continue to do PeriodicUpdate once BDP is in
-                // place.
-                MutexLock lock(&transport_mutex_);
-                if (GetActiveStreamCountLocked() == 0) {
-                  AddPeriodicUpdatePromiseWaker();
-                  return Pending{};
-                }
-              }
-              return absl::OkStatus();
-            },
-            []() -> LoopCtl<absl::Status> { return Continue{}; });
-      }));
+auto Http2ServerTransport::BdpLoop() {
+  return AssertResultType<absl::Status>(Loop([this]() {
+    return TrySeq(
+        flow_control_.WaitForBdpActivation(),
+        [this]() {
+          // TODO(akshitpatel) : [PH2][P1] : Reset the keepalive ping timer
+          // when a BDP ping is sent, similar to CHTTP2's start_bdp_ping_locked.
+          return ping_manager_->RequestPing(
+              [this] { flow_control_.StartBdpPing(); },
+              /*important=*/false);
+        },
+        [this]() {
+          Duration sleep_duration = flow_control_.CompleteBdpPing();
+          chttp2::FlowControlAction action = flow_control_.PeriodicUpdate();
+          ActOnFlowControlAction(action, nullptr);
+          return Sleep(sleep_duration);
+        },
+        []() -> LoopCtl<absl::Status> { return Continue{}; });
+  }));
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1209,26 +1193,14 @@ RefCountedPtr<Stream> Http2ServerTransport::LookupStream(
 }
 
 void Http2ServerTransport::AddToStreamList(RefCountedPtr<Stream> stream) {
-  bool should_wake_periodic_updates = false;
-  {
-    MutexLock lock(&transport_mutex_);
-    GRPC_DCHECK(stream != nullptr) << "stream is null";
-    GRPC_DCHECK_GT(stream->GetStreamId(), 0u) << "stream id is invalid";
-    GRPC_HTTP2_SERVER_DLOG
-        << "Http2ServerTransport::AddToStreamList for stream id: "
-        << stream->GetStreamId();
-    const uint32_t stream_id = stream->GetStreamId();
-    stream_list_.emplace(stream_id, std::move(stream));
-    // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
-    if (GetActiveStreamCountLocked() == 1) {
-      should_wake_periodic_updates = true;
-    }
-  }
-  // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
-  if (should_wake_periodic_updates) {
-    // Release the lock before you wake up another promise on the party.
-    WakeupPeriodicUpdatePromise();
-  }
+  MutexLock lock(&transport_mutex_);
+  GRPC_DCHECK(stream != nullptr) << "stream is null";
+  GRPC_DCHECK_GT(stream->GetStreamId(), 0u) << "stream id is invalid";
+  GRPC_HTTP2_SERVER_DLOG
+      << "Http2ServerTransport::AddToStreamList for stream id: "
+      << stream->GetStreamId();
+  const uint32_t stream_id = stream->GetStreamId();
+  stream_list_.emplace(stream_id, std::move(stream));
 }
 
 void Http2ServerTransport::EnqueueResetStreamFromTransportParty(
@@ -1652,7 +1624,7 @@ auto Http2ServerTransport::SpawnGracefulGoawayPromise(Slice&& debug_data) {
         return self->UntilTransportClosed(Map(
             self->goaway_manager_.RequestGoaway(
                 Http2ErrorCode::kNoError, std::move(debug_data),
-                self->last_incoming_stream_id_, /*immediate=*/false),
+                self->GetLastStreamId(), /*immediate=*/false),
             [self](absl::Status status) {
               bool should_close = false;
               {
@@ -1861,7 +1833,7 @@ auto Http2ServerTransport::CloseTransportFactory(
                  http2_status.GetConnectionErrorCode(),
                  Slice::FromCopiedString(std::string(
                      http2_status.GetAbslConnectionError().message())),
-                 self->last_incoming_stream_id_, /*immediate=*/true)),
+                 self->GetLastStreamId(), /*immediate=*/true)),
              Sleep(Duration::Seconds(kGoawaySendTimeoutSeconds))),
         [self](absl::Status) mutable {
           self->CloseTransport();
@@ -1967,9 +1939,6 @@ absl::Status Http2ServerTransport::PingSystemInterfaceImpl::TriggerWrite() {
 
 Promise<absl::Status>
 Http2ServerTransport::PingSystemInterfaceImpl::PingTimeout() {
-  GRPC_HTTP2_SERVER_DLOG << "PingSystemInterfaceImpl::PingTimeout at time: "
-                         << Timestamp::Now();
-
   // TODO(akshitpatel) : [PH2][P2] : The error code here has been chosen
   // based on CHTTP2's usage of GRPC_STATUS_UNAVAILABLE (which corresponds
   // to kRefusedStream). However looking at RFC9113, definition of
@@ -2027,7 +1996,7 @@ Http2ServerTransport::GoawayInterfaceImpl::Make(
 }
 
 uint32_t Http2ServerTransport::GoawayInterfaceImpl::GetLastAcceptedStreamId() {
-  return transport_->last_incoming_stream_id_;
+  return transport_->GetLastStreamId();
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -2182,7 +2151,9 @@ void Http2ServerTransport::SpawnTransportLoops() {
     SpawnGuardedTransportParty("TarpitDrainLoop",
                                UntilTransportClosed(MakeTarpitDrainLoop()));
   }
-
+  if (flow_control_.bdp_probe()) {
+    SpawnGuardedTransportParty("BdpLoop", UntilTransportClosed(BdpLoop()));
+  }
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::SpawnTransportLoops End";
 }
 

@@ -25,11 +25,11 @@
 cmake_minimum_required(VERSION 3.22)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.84.0-dev")
-set(gRPC_CORE_VERSION     "56.0.0")
-set(gRPC_CORE_SOVERSION   "56")
-set(gRPC_CPP_VERSION      "1.84.0-dev")
-set(gRPC_CPP_SOVERSION    "1.84")
+set(PACKAGE_VERSION       "1.85.0-dev")
+set(gRPC_CORE_VERSION     "57.0.0")
+set(gRPC_CORE_SOVERSION   "57")
+set(gRPC_CPP_VERSION      "1.85.0-dev")
+set(gRPC_CPP_SOVERSION    "1.85")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -44,7 +44,7 @@ set(gRPC_INSTALL_LIBDIR "lib" CACHE STRING "Installation directory for libraries
 set(gRPC_INSTALL_INCLUDEDIR "include" CACHE STRING "Installation directory for headers")
 set(gRPC_INSTALL_CMAKEDIR "lib/cmake/${PACKAGE_NAME}" CACHE STRING "Installation directory for cmake config files")
 set(gRPC_INSTALL_SHAREDIR "share/grpc" CACHE STRING "Installation directory for root certificates")
-set(gRPC_BUILD_MSVC_MP_COUNT 0 CACHE STRING "The maximum number of processes for MSVC /MP option")
+set(gRPC_BUILD_MSVC_MP_COUNT -1 CACHE STRING "The maximum number of processes for MSVC /MP option")
 
 # Options
 option(gRPC_BUILD_TESTS "Build tests" OFF)
@@ -152,6 +152,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_flat_hash_set
   absl_function_ref
   absl_graphcycles_internal
+  absl_hardening
   absl_has_ostream_operator
   absl_hash
   absl_hash_container_defaults
@@ -163,6 +164,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_inlined_vector
   absl_inlined_vector_internal
   absl_int128
+  absl_internal_optional_ref
   absl_iterator_traits_internal
   absl_kernel_timeout_internal
   absl_layout
@@ -190,7 +192,6 @@ set(gRPC_ABSL_USED_TARGETS
   absl_log_severity
   absl_log_sink
   absl_log_sink_registry
-  absl_low_level_hash
   absl_malloc_internal
   absl_memory
   absl_no_destructor
@@ -223,6 +224,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_random_internal_traits
   absl_random_internal_uniform_helper
   absl_random_internal_wide_multiply
+  absl_random_mocking_access
   absl_random_random
   absl_random_seed_gen_exception
   absl_random_seed_sequences
@@ -231,6 +233,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_raw_hash_set_resize_impl
   absl_raw_logging_internal
   absl_sample_recorder
+  absl_source_location
   absl_span
   absl_spinlock_wait
   absl_stacktrace
@@ -241,7 +244,9 @@ set(gRPC_ABSL_USED_TARGETS
   absl_strerror
   absl_string_view
   absl_strings
+  absl_strings_append_and_overwrite
   absl_strings_internal
+  absl_strings_resize_and_overwrite
   absl_symbolize
   absl_synchronization
   absl_throw_delegate
@@ -688,13 +693,13 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/lb/v1/load_balancer.proto src/proto/grpc/lb/v1/load_balancer.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
-  src/proto/grpc/lookup/v1/rls.proto src/proto/grpc/lookup/v1/rls.proto
-)
-protobuf_generate_grpc_cpp_with_import_path_correction(
-  src/proto/grpc/lookup/v1/rls_config.proto src/proto/grpc/lookup/v1/rls_config.proto
-)
-protobuf_generate_grpc_cpp_with_import_path_correction(
   third_party/grpc-proto/grpc/channelz/v1/channelz.proto grpc/channelz/v1/channelz.proto
+)
+protobuf_generate_grpc_cpp_with_import_path_correction(
+  third_party/grpc-proto/grpc/lookup/v1/rls.proto grpc/lookup/v1/rls.proto
+)
+protobuf_generate_grpc_cpp_with_import_path_correction(
+  third_party/grpc-proto/grpc/lookup/v1/rls_config.proto grpc/lookup/v1/rls_config.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
   third_party/grpc-proto/grpc/reflection/v1/reflection.proto grpc/reflection/v1/reflection.proto
@@ -2411,6 +2416,7 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/ping_callbacks.cc
   src/core/ext/transport/chttp2/transport/ping_promise.cc
   src/core/ext/transport/chttp2/transport/ping_rate_policy.cc
+  src/core/ext/transport/chttp2/transport/reclaimer.cc
   src/core/ext/transport/chttp2/transport/stream_lists.cc
   src/core/ext/transport/chttp2/transport/transport_common.cc
   src/core/ext/transport/chttp2/transport/varint.cc
@@ -2561,6 +2567,8 @@ add_library(grpc
   src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.c
+  src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.c
+  src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
@@ -2570,8 +2578,6 @@ add_library(grpc
   src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/lookup/v1/rls.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/lookup/v1/rls_config.upb_minitable.c
   src/core/ext/upb-gen/udpa/annotations/migrate.upb_minitable.c
   src/core/ext/upb-gen/udpa/annotations/security.upb_minitable.c
   src/core/ext/upb-gen/udpa/annotations/sensitive.upb_minitable.c
@@ -2737,11 +2743,11 @@ add_library(grpc
   src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c
   src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c
   src/core/ext/upbdefs-gen/grpc/channelz/v1/channelz.upbdefs.c
+  src/core/ext/upbdefs-gen/grpc/lookup/v1/rls_config.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
-  src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.c
   src/core/ext/upbdefs-gen/udpa/annotations/migrate.upbdefs.c
   src/core/ext/upbdefs-gen/udpa/annotations/security.upbdefs.c
   src/core/ext/upbdefs-gen/udpa/annotations/sensitive.upbdefs.c
@@ -3569,6 +3575,7 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/ping_callbacks.cc
   src/core/ext/transport/chttp2/transport/ping_promise.cc
   src/core/ext/transport/chttp2/transport/ping_rate_policy.cc
+  src/core/ext/transport/chttp2/transport/reclaimer.cc
   src/core/ext/transport/chttp2/transport/stream_lists.cc
   src/core/ext/transport/chttp2/transport/transport_common.cc
   src/core/ext/transport/chttp2/transport/varint.cc
@@ -3586,6 +3593,7 @@ add_library(grpc_unsecure
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
@@ -3595,7 +3603,6 @@ add_library(grpc_unsecure
   src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/lookup/v1/rls.upb_minitable.c
   src/core/ext/upb-gen/validate/validate.upb_minitable.c
   src/core/ext/upb-gen/xds/data/orca/v3/orca_load_report.upb_minitable.c
   src/core/ext/upb-gen/xds/service/orca/v3/orca.upb_minitable.c
@@ -31449,10 +31456,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(rls_end2end_test
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
@@ -31477,6 +31480,10 @@ add_executable(rls_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/lookup/v1/rls.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/lookup/v1/rls.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/lookup/v1/rls.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/lookup/v1/rls.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
@@ -52343,14 +52350,6 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(xds_rls_end2end_test
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls_config.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls_config.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls_config.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls_config.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
@@ -52723,6 +52722,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/grpc/lookup/v1/rls.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/grpc/lookup/v1/rls.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/grpc/lookup/v1/rls.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/grpc/lookup/v1/rls.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/grpc/lookup/v1/rls_config.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/grpc/lookup/v1/rls_config.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/grpc/lookup/v1/rls_config.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/grpc/lookup/v1/rls_config.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
@@ -52897,10 +52904,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(xds_route_config_resource_type_test
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls_config.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls_config.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls_config.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls_config.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/cel/expr/checked.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/cel/expr/checked.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/cel/expr/checked.pb.h
@@ -53141,6 +53144,10 @@ add_executable(xds_route_config_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/lookup/v1/rls_config.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/lookup/v1/rls_config.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/lookup/v1/rls_config.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/lookup/v1/rls_config.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/grpc/reflection/v1alpha/reflection.pb.h

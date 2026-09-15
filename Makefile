@@ -367,8 +367,8 @@ E = @echo
 Q = @
 endif
 
-CORE_VERSION = 56.0.0
-CPP_VERSION = 1.84.0-dev
+CORE_VERSION = 57.0.0
+CPP_VERSION = 1.85.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -404,7 +404,7 @@ SHARED_EXT_CORE = dll
 SHARED_EXT_CPP = dll
 
 SHARED_PREFIX =
-SHARED_VERSION_CORE = -56
+SHARED_VERSION_CORE = -57
 SHARED_VERSION_CPP = -1
 else ifeq ($(SYSTEM),Darwin)
 EXECUTABLE_SUFFIX =
@@ -830,6 +830,7 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/transport/ping_callbacks.cc \
     src/core/ext/transport/chttp2/transport/ping_promise.cc \
     src/core/ext/transport/chttp2/transport/ping_rate_policy.cc \
+    src/core/ext/transport/chttp2/transport/reclaimer.cc \
     src/core/ext/transport/chttp2/transport/stream_lists.cc \
     src/core/ext/transport/chttp2/transport/transport_common.cc \
     src/core/ext/transport/chttp2/transport/varint.cc \
@@ -980,6 +981,8 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c \
     src/core/ext/upb-gen/google/rpc/status.upb_minitable.c \
     src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.c \
+    src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.c \
+    src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c \
@@ -989,8 +992,6 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb_minitable.c \
-    src/core/ext/upb-gen/src/proto/grpc/lookup/v1/rls.upb_minitable.c \
-    src/core/ext/upb-gen/src/proto/grpc/lookup/v1/rls_config.upb_minitable.c \
     src/core/ext/upb-gen/udpa/annotations/migrate.upb_minitable.c \
     src/core/ext/upb-gen/udpa/annotations/security.upb_minitable.c \
     src/core/ext/upb-gen/udpa/annotations/sensitive.upb_minitable.c \
@@ -1156,11 +1157,11 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c \
     src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c \
     src/core/ext/upbdefs-gen/grpc/channelz/v1/channelz.upbdefs.c \
+    src/core/ext/upbdefs-gen/grpc/lookup/v1/rls_config.upbdefs.c \
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c \
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c \
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c \
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c \
-    src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.c \
     src/core/ext/upbdefs-gen/udpa/annotations/migrate.upbdefs.c \
     src/core/ext/upbdefs-gen/udpa/annotations/security.upbdefs.c \
     src/core/ext/upbdefs-gen/udpa/annotations/sensitive.upbdefs.c \
@@ -1618,6 +1619,7 @@ LIBGRPC_SRC = \
     src/core/xds/xds_client/xds_backend_metric_propagation.cc \
     src/core/xds/xds_client/xds_bootstrap.cc \
     src/core/xds/xds_client/xds_client.cc \
+    third_party/abseil-cpp/absl/base/casts.cc \
     third_party/abseil-cpp/absl/base/internal/cycleclock.cc \
     third_party/abseil-cpp/absl/base/internal/low_level_alloc.cc \
     third_party/abseil-cpp/absl/base/internal/raw_logging.cc \
@@ -1626,10 +1628,10 @@ LIBGRPC_SRC = \
     third_party/abseil-cpp/absl/base/internal/strerror.cc \
     third_party/abseil-cpp/absl/base/internal/sysinfo.cc \
     third_party/abseil-cpp/absl/base/internal/thread_identity.cc \
-    third_party/abseil-cpp/absl/base/internal/throw_delegate.cc \
     third_party/abseil-cpp/absl/base/internal/tracing.cc \
     third_party/abseil-cpp/absl/base/internal/unscaledcycleclock.cc \
     third_party/abseil-cpp/absl/base/log_severity.cc \
+    third_party/abseil-cpp/absl/base/throw_delegate.cc \
     third_party/abseil-cpp/absl/container/internal/hashtablez_sampler.cc \
     third_party/abseil-cpp/absl/container/internal/hashtablez_sampler_force_weak_definition.cc \
     third_party/abseil-cpp/absl/container/internal/raw_hash_set.cc \
@@ -1662,7 +1664,6 @@ LIBGRPC_SRC = \
     third_party/abseil-cpp/absl/flags/usage_config.cc \
     third_party/abseil-cpp/absl/hash/internal/city.cc \
     third_party/abseil-cpp/absl/hash/internal/hash.cc \
-    third_party/abseil-cpp/absl/hash/internal/low_level_hash.cc \
     third_party/abseil-cpp/absl/log/globals.cc \
     third_party/abseil-cpp/absl/log/internal/check_op.cc \
     third_party/abseil-cpp/absl/log/internal/conditions.cc \
@@ -1675,6 +1676,7 @@ LIBGRPC_SRC = \
     third_party/abseil-cpp/absl/log/internal/proto.cc \
     third_party/abseil-cpp/absl/log/internal/structured_proto.cc \
     third_party/abseil-cpp/absl/log/internal/vlog_config.cc \
+    third_party/abseil-cpp/absl/log/log_entry.cc \
     third_party/abseil-cpp/absl/log/log_sink.cc \
     third_party/abseil-cpp/absl/numeric/int128.cc \
     third_party/abseil-cpp/absl/profiling/internal/exponential_biased.cc \
@@ -1726,7 +1728,6 @@ LIBGRPC_SRC = \
     third_party/abseil-cpp/absl/strings/str_cat.cc \
     third_party/abseil-cpp/absl/strings/str_replace.cc \
     third_party/abseil-cpp/absl/strings/str_split.cc \
-    third_party/abseil-cpp/absl/strings/string_view.cc \
     third_party/abseil-cpp/absl/strings/substitute.cc \
     third_party/abseil-cpp/absl/synchronization/barrier.cc \
     third_party/abseil-cpp/absl/synchronization/blocking_counter.cc \
@@ -1757,6 +1758,7 @@ LIBGRPC_SRC = \
     third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_posix.cc \
     third_party/abseil-cpp/absl/time/internal/cctz/src/zone_info_source.cc \
     third_party/abseil-cpp/absl/time/time.cc \
+    third_party/abseil-cpp/absl/types/source_location.cc \
     third_party/address_sorting/address_sorting.c \
     third_party/address_sorting/address_sorting_posix.c \
     third_party/address_sorting/address_sorting_windows.c \
@@ -1838,6 +1840,12 @@ LIBGRPC_SRC = \
     third_party/upb/upb/wire/internal/decoder.c \
     third_party/upb/upb/wire/reader.c \
     third_party/utf8_range/utf8_range.c \
+
+ifeq ($(SYSTEM),MINGW32)
+LIBGRPC_SRC += \
+    third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_name_win.cc \
+
+endif
 
 PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer.h \
@@ -1926,8 +1934,8 @@ $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.56 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.56
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.57 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.57
 	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -2230,6 +2238,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/ssl/tls_record.cc \
 
 
+
 LIBBORINGSSL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_SRC))))
 
 $(LIBBORINGSSL_OBJS): CFLAGS += -g
@@ -2351,6 +2360,7 @@ LIBCARES_SRC = \
     third_party/cares/cares/src/lib/windows_port.c \
 
 
+
 LIBCARES_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBCARES_SRC))))
 
 $(LIBCARES_OBJS): CFLAGS += -g
@@ -2389,6 +2399,7 @@ LIBZ_SRC = \
     third_party/zlib/trees.c \
     third_party/zlib/uncompr.c \
     third_party/zlib/zutil.c \
+
 
 PUBLIC_HEADERS_C += \
 
