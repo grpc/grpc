@@ -3441,6 +3441,29 @@ TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigEmptyProcessingMode) {
   EXPECT_FALSE(processing_mode->send_response_body);
 }
 
+TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigNoProcessingMode) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  // Leave the processing_mode field unset, which is equivalent to setting it
+  // to an empty message.
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  ASSERT_EQ(config->type(), ExtProcFilter::Config::Type());
+  const auto& processing_mode =
+      DownCast<const ExtProcFilter::Config&>(*config).processing_mode;
+  ASSERT_TRUE(processing_mode.has_value());
+  EXPECT_TRUE(processing_mode->send_request_headers);
+  EXPECT_TRUE(processing_mode->send_response_headers);
+  EXPECT_FALSE(processing_mode->send_response_trailers);
+  EXPECT_FALSE(processing_mode->send_request_body);
+  EXPECT_FALSE(processing_mode->send_response_body);
+}
+
 TEST_F(XdsExtProcFilterTest,
        ParseTopLevelConfigGrpcResponseBodyWithDefaultTrailerMode) {
   ExternalProcessor proto;

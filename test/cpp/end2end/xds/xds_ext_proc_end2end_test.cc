@@ -271,9 +271,6 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
   class ExtProcFilterConfigBuilder {
    public:
     ExtProcFilterConfigBuilder() {
-      // Leave the individual modes unset, so that they default to DEFAULT,
-      // but make sure the field itself is present, since it is required.
-      ext_proc_.mutable_processing_mode();
       auto* google_grpc =
           ext_proc_.mutable_grpc_service()->mutable_google_grpc();
       google_grpc->add_channel_credentials_plugin()->PackFrom(
@@ -617,6 +614,35 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
     void ShutdownAllServices() override { service_->Shutdown(); }
 
     std::shared_ptr<FakeExtProcService> service_;
+  };
+
+  // Helper for handling the client half-close event, which races with the
+  // events on the response path and can therefore show up at any point once
+  // the request body has been processed.
+  class ClientHalfCloseHandler {
+   public:
+    // In observability mode the filter does not expect a response from the
+    // ext_proc server, so callers pass send_response=false.
+    explicit ClientHalfCloseHandler(FakeExtProcService::Stream* stream,
+                                    bool send_response = true)
+        : stream_(stream), send_response_(send_response) {}
+
+    void Handle(const ProcessingRequest& request);
+
+    // Wrapper for GetNextRequest() that handles the client half-close event
+    // if that's the event we got, in which case it returns the event after it.
+    std::optional<ProcessingRequest> MaybeHandle(
+        std::optional<ProcessingRequest> request);
+
+    // Handles the half-close if it arrived after all of the response-path
+    // events.  When send_response is true, this must be called before waiting
+    // for the RPC to complete, which cannot happen until we respond.
+    void HandleIfNotYetSeen();
+
+   private:
+    FakeExtProcService::Stream* stream_;
+    bool send_response_;
+    bool seen_ = false;
   };
 
   static std::multimap<std::string, std::string> HeaderMapToMultimap(
@@ -1004,6 +1030,39 @@ MATCHER_P(MatchesEchoResponse, message_matcher,
 }
 
 //
+// XdsExtProcEnd2endTest::ClientHalfCloseHandler
+//
+// These methods are defined here rather than inline in the class, because
+// they use matchers defined above.
+//
+
+void XdsExtProcEnd2endTest::ClientHalfCloseHandler::Handle(
+    const ProcessingRequest& request) {
+  EXPECT_FALSE(seen_) << "duplicate client half-close event";
+  seen_ = true;
+  EXPECT_THAT(request, MatchesRequestBody(kEmptyBody, kEndOfStream));
+  if (send_response_) {
+    stream_->SendResponse(
+        MakeRequestBodyMutationResponse(/*body=*/"", kEndOfStream));
+  }
+}
+
+std::optional<ProcessingRequest>
+XdsExtProcEnd2endTest::ClientHalfCloseHandler::MaybeHandle(
+    std::optional<ProcessingRequest> request) {
+  if (!request.has_value() || !request->has_request_body()) return request;
+  Handle(*request);
+  return stream_->GetNextRequest();
+}
+
+void XdsExtProcEnd2endTest::ClientHalfCloseHandler::HandleIfNotYetSeen() {
+  if (seen_) return;
+  auto request = stream_->GetNextRequest();
+  ASSERT_TRUE(request.has_value()) << "timed out waiting for client half-close";
+  Handle(*request);
+}
+
+//
 // Tests
 //
 
@@ -1084,33 +1143,14 @@ TEST_P(XdsExtProcEnd2endTest, ProcessingModeAllEnabledSuccess) {
   ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
       ModifyEchoRequest(req->request_body().body(), kRequestBodyMutatedSuffix),
       !kEndOfStream));
-  // Next two events may arrive in either order: client half-close and server
-  // response headers.
-  bool seen_client_half_close = false;
-  bool seen_response_headers = false;
-  for (int i = 0; i < 2; ++i) {
-    req = ext_proc_stream->GetNextRequest();
-    ASSERT_TRUE(req.has_value());
-    if (req->has_request_body()) {
-      EXPECT_FALSE(seen_client_half_close);
-      seen_client_half_close = true;
-      EXPECT_THAT(*req, MatchesRequestBody(kEmptyBody, kEndOfStream));
-      ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
-          /*body=*/"", kEndOfStream));
-    } else if (req->has_response_headers()) {
-      EXPECT_FALSE(seen_response_headers);
-      seen_response_headers = true;
-      EXPECT_THAT(*req, MatchesResponseHeaders(::testing::_));
-      ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse(
-          {{kResponseHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
-    } else {
-      FAIL() << "Unexpected request type: " << req->DebugString();
-    }
-  }
-  EXPECT_TRUE(seen_client_half_close);
-  EXPECT_TRUE(seen_response_headers);
+  ClientHalfCloseHandler half_close_handler(ext_proc_stream.get());
+  // ext_proc server sees response headers and sends them back.
+  req = half_close_handler.MaybeHandle(ext_proc_stream->GetNextRequest());
+  ASSERT_THAT(req, ::testing::Optional(MatchesResponseHeaders(::testing::_)));
+  ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse(
+      {{kResponseHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
   // ext_proc server sees response body and sends it back.
-  req = ext_proc_stream->GetNextRequest();
+  req = half_close_handler.MaybeHandle(ext_proc_stream->GetNextRequest());
   ASSERT_THAT(req, ::testing::Optional(MatchesResponseBody(
                        EchoResponseMessageIs(absl::StrCat(
                            kRequestMessage, kRequestBodyMutatedSuffix)),
@@ -1120,10 +1160,11 @@ TEST_P(XdsExtProcEnd2endTest, ProcessingModeAllEnabledSuccess) {
                          kResponseBodyMutatedSuffix),
       !kEndOfStream));
   // ext_proc server sees response trailers and sends them back.
-  req = ext_proc_stream->GetNextRequest();
+  req = half_close_handler.MaybeHandle(ext_proc_stream->GetNextRequest());
   ASSERT_THAT(req, ::testing::Optional(MatchesResponseTrailers(::testing::_)));
   ext_proc_stream->SendResponse(MakeResponseTrailersMutationResponse(
       {{kResponseTrailersMutatedHeaderKey, kHeaderMutatedValue}}));
+  half_close_handler.HandleIfNotYetSeen();
   Status status = rpc.GetStatus();
   EXPECT_THAT(status, IsStatusOk());
   EXPECT_THAT(rpc.GetServerInitialMetadata(),
@@ -1176,61 +1217,32 @@ TEST_P(XdsExtProcEnd2endTest,
   ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
       ModifyEchoRequest(req->request_body().body(), kRequestBodyMutatedSuffix),
       !kEndOfStream));
-  // The remaining events can arrive in any order: in observability mode the
-  // filter does not wait for a response from the ext_proc server, so the
-  // client half-close races with the events from the response path.
-  bool seen_client_half_close = false;
-  bool seen_response_headers = false;
-  bool seen_response_body = false;
-  bool seen_response_trailers = false;
-  for (int i = 0; i < 4; ++i) {
-    req = ext_proc_stream->GetNextRequest();
-    ASSERT_TRUE(req.has_value());
-    if (req->has_request_body()) {
-      EXPECT_FALSE(seen_client_half_close);
-      seen_client_half_close = true;
-      EXPECT_THAT(*req, MatchesRequestBody(kEmptyBody, kEndOfStream));
-      ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
-          /*body=*/"", kEndOfStream));
-    } else if (req->has_response_headers()) {
-      EXPECT_FALSE(seen_response_headers);
-      seen_response_headers = true;
-      // The request header mutation was not applied, so the backend echoes
-      // back only the original header.
-      EXPECT_THAT(
-          *req, MatchesResponseHeaders(::testing::AllOf(
-                    ::testing::Contains(::testing::Pair("custom-header-key",
-                                                        "custom-header-value")),
-                    ::testing::Not(::testing::Contains(::testing::Pair(
-                        kRequestHeadersMutatedHeaderKey, ::testing::_))))));
-      ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse(
-          {{kResponseHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
-    } else if (req->has_response_body()) {
-      EXPECT_FALSE(seen_response_body);
-      seen_response_body = true;
-      // The request body mutation was not applied, so the message echoed back
-      // by the backend is unmodified.
-      EXPECT_THAT(*req,
-                  MatchesResponseBody(EchoResponseMessageIs(kRequestMessage),
-                                      !kEndOfStream));
-      ext_proc_stream->SendResponse(MakeResponseBodyMutationResponse(
-          ModifyEchoResponse(req->response_body().body(),
-                             kResponseBodyMutatedSuffix),
-          !kEndOfStream));
-    } else if (req->has_response_trailers()) {
-      EXPECT_FALSE(seen_response_trailers);
-      seen_response_trailers = true;
-      EXPECT_THAT(*req, MatchesResponseTrailers(::testing::_));
-      ext_proc_stream->SendResponse(MakeResponseTrailersMutationResponse(
-          {{kResponseTrailersMutatedHeaderKey, kHeaderMutatedValue}}));
-    } else {
-      FAIL() << "Unexpected request type: " << req->DebugString();
-    }
-  }
-  EXPECT_TRUE(seen_client_half_close);
-  EXPECT_TRUE(seen_response_headers);
-  EXPECT_TRUE(seen_response_body);
-  EXPECT_TRUE(seen_response_trailers);
+  ClientHalfCloseHandler half_close_handler(ext_proc_stream.get());
+  // ext_proc server sees response headers.  The request header mutation was
+  // not applied, so the backend echoes back only the original header.
+  req = half_close_handler.MaybeHandle(ext_proc_stream->GetNextRequest());
+  ASSERT_THAT(req, ::testing::Optional(MatchesResponseHeaders(::testing::AllOf(
+                       ::testing::Contains(::testing::Pair(
+                           "custom-header-key", "custom-header-value")),
+                       ::testing::Not(::testing::Contains(::testing::Pair(
+                           kRequestHeadersMutatedHeaderKey, ::testing::_)))))));
+  ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse(
+      {{kResponseHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
+  // ext_proc server sees response body.  The request body mutation was not
+  // applied, so the message echoed back by the backend is unmodified.
+  req = half_close_handler.MaybeHandle(ext_proc_stream->GetNextRequest());
+  ASSERT_THAT(req, ::testing::Optional(MatchesResponseBody(
+                       EchoResponseMessageIs(kRequestMessage), !kEndOfStream)));
+  ext_proc_stream->SendResponse(MakeResponseBodyMutationResponse(
+      ModifyEchoResponse(req->response_body().body(),
+                         kResponseBodyMutatedSuffix),
+      !kEndOfStream));
+  // ext_proc server sees response trailers.
+  req = half_close_handler.MaybeHandle(ext_proc_stream->GetNextRequest());
+  ASSERT_THAT(req, ::testing::Optional(MatchesResponseTrailers(::testing::_)));
+  ext_proc_stream->SendResponse(MakeResponseTrailersMutationResponse(
+      {{kResponseTrailersMutatedHeaderKey, kHeaderMutatedValue}}));
+  half_close_handler.HandleIfNotYetSeen();
   Status status = rpc.GetStatus();
   EXPECT_THAT(status, IsStatusOk());
   // In observability mode, mutations should NOT be applied.
@@ -1254,10 +1266,6 @@ TEST_P(XdsExtProcEnd2endTest,
   // 4. Verify request and response message body: neither request body mutation
   // nor response body mutation was applied.
   EXPECT_EQ(rpc.response().message(), kRequestMessage);
-  EXPECT_THAT(rpc.response().message(),
-              ::testing::Not(::testing::AnyOf(
-                  ::testing::HasSubstr(kRequestBodyMutatedSuffix),
-                  ::testing::HasSubstr(kResponseBodyMutatedSuffix))));
 }
 
 TEST_P(XdsExtProcEnd2endTest, TrailersOnlyProcessingModeAllEnabled) {
@@ -1289,31 +1297,14 @@ TEST_P(XdsExtProcEnd2endTest, TrailersOnlyProcessingModeAllEnabled) {
                        EchoRequestMessageIs(kRequestMessage), !kEndOfStream)));
   ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
       req->request_body().body(), req->request_body().end_of_stream()));
-  // Next two events may arrive in either order: client half-close and server
-  // response headers.
-  bool seen_client_half_close = false;
-  bool seen_response_headers = false;
-  for (int i = 0; i < 2; ++i) {
-    req = ext_proc_stream->GetNextRequest();
-    ASSERT_TRUE(req.has_value());
-    if (req->has_request_body()) {
-      EXPECT_FALSE(seen_client_half_close);
-      seen_client_half_close = true;
-      EXPECT_THAT(*req, MatchesRequestBody(kEmptyBody, kEndOfStream));
-      ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
-          /*body=*/"", kEndOfStream));
-    } else if (req->has_response_headers()) {
-      EXPECT_FALSE(seen_response_headers);
-      seen_response_headers = true;
-      EXPECT_THAT(*req, MatchesResponseHeaders(::testing::_, kEndOfStream));
-      ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse(
-          {{kResponseHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
-    } else {
-      FAIL() << "Unexpected request type: " << req->DebugString();
-    }
-  }
-  EXPECT_TRUE(seen_client_half_close);
-  EXPECT_TRUE(seen_response_headers);
+  ClientHalfCloseHandler half_close_handler(ext_proc_stream.get());
+  // ext_proc server sees response headers and sends them back.
+  req = half_close_handler.MaybeHandle(ext_proc_stream->GetNextRequest());
+  ASSERT_THAT(req, ::testing::Optional(
+                       MatchesResponseHeaders(::testing::_, kEndOfStream)));
+  ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse(
+      {{kResponseHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
+  half_close_handler.HandleIfNotYetSeen();
   // For trailers-only response, ext_proc server sees no further requests.
   EXPECT_EQ(ext_proc_stream->GetNextRequest(), std::nullopt);
   Status status = rpc.GetStatus();
@@ -1347,27 +1338,14 @@ TEST_P(XdsExtProcEnd2endTest,
   req = ext_proc_stream->GetNextRequest();
   ASSERT_THAT(req, ::testing::Optional(MatchesRequestBody(
                        EchoRequestMessageIs(kRequestMessage), !kEndOfStream)));
-  // Next two events may arrive in either order: client half-close and server
-  // response headers (sent in observability mode for trailers-only).
-  bool seen_client_half_close = false;
-  bool seen_response_headers = false;
-  for (int i = 0; i < 2; ++i) {
-    req = ext_proc_stream->GetNextRequest();
-    ASSERT_TRUE(req.has_value());
-    if (req->has_request_body()) {
-      EXPECT_FALSE(seen_client_half_close);
-      seen_client_half_close = true;
-      EXPECT_THAT(*req, MatchesRequestBody(kEmptyBody, kEndOfStream));
-    } else if (req->has_response_headers()) {
-      EXPECT_FALSE(seen_response_headers);
-      seen_response_headers = true;
-      EXPECT_THAT(*req, MatchesResponseHeaders(::testing::_, kEndOfStream));
-    } else {
-      FAIL() << "Unexpected request type: " << req->DebugString();
-    }
-  }
-  EXPECT_TRUE(seen_client_half_close);
-  EXPECT_TRUE(seen_response_headers);
+  ClientHalfCloseHandler half_close_handler(ext_proc_stream.get(),
+                                            /*send_response=*/false);
+  // ext_proc server sees response headers, which are sent in observability
+  // mode even for a trailers-only response.
+  req = half_close_handler.MaybeHandle(ext_proc_stream->GetNextRequest());
+  ASSERT_THAT(req, ::testing::Optional(
+                       MatchesResponseHeaders(::testing::_, kEndOfStream)));
+  half_close_handler.HandleIfNotYetSeen();
   // For trailers-only response in observability mode, ext_proc server sees no
   // further requests.
   EXPECT_EQ(ext_proc_stream->GetNextRequest(), std::nullopt);

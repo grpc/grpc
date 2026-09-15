@@ -471,16 +471,10 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
     return allow && !first_body_message_sent_;
   }
 
-  // Fails the intercepted data plane RPC with the given error status:
-  // 1. Pushes error trailing metadata downstream to the client (which
-  //    automatically cancels the upstream child call and the side-stream).
-  // 2. Sets side_stream_closed_latch_ to unblock any waiters.
+  // Fails the intercepted data plane RPC with the given error status by
+  // pushing error trailing metadata downstream to the client.
   void CancelCallWithError(absl::Status status) {
     GRPC_CHECK(!status.ok());
-    ext_proc_stream_cancelled_with_error_ = true;
-    if (!side_stream_closed_latch_.is_set()) {
-      side_stream_closed_latch_.Set();
-    }
     auto error_md = CancelledServerMetadataFromStatus(status);
     handler_.PushServerTrailingMetadata(std::move(error_md));
   }
@@ -584,10 +578,6 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
   bool ext_proc_closed_c2s_ = false;
   // Latch signaled when the side-stream is closed or drained.
   Latch<void> side_stream_closed_latch_;
-  // Set to true when CancelCallWithError() is invoked to indicate that the
-  // intercepted data plane call has been terminated with an error. Synchronized
-  // by the handler_ activity.
-  bool ext_proc_stream_cancelled_with_error_ = false;
 
   // Send state and waiters for coordinating message sends on the side-stream
   // within the handler_ activity.
@@ -1040,9 +1030,6 @@ auto ExtProcFilter::ExtProcCall::ProcessSideStreamResponse(
 }
 
 bool ExtProcFilter::ExtProcCall::HandleSideStreamStatus(absl::Status status) {
-  if (ext_proc_stream_cancelled_with_error_) {
-    return false;
-  }
   if (side_stream_closed_latch_.is_set()) {
     return true;
   }
@@ -1137,8 +1124,8 @@ auto ExtProcFilter::ExtProcCall::HandleInitialMetadataFromClient(
   }
   const bool call_cancelled =
       !payload.ok() && !HandleSideStreamStatus(payload.status());
-  const bool send_to_sidestream =
-      send_request_headers && !side_stream_closed_latch_.is_set();
+  const bool send_to_sidestream = send_request_headers && payload.ok() &&
+                                  !side_stream_closed_latch_.is_set();
   return If(
       call_cancelled, Immediate(StatusFlag(Failure{})),
       TrySeq(
@@ -1219,7 +1206,8 @@ auto ExtProcFilter::ExtProcCall::HandleMessageFromClient(
   }
   const bool call_cancelled =
       !payload.ok() && !HandleSideStreamStatus(payload.status());
-  const bool send_to_sidestream = send_request_body && !drain_requested_ &&
+  const bool send_to_sidestream = send_request_body && payload.ok() &&
+                                  !drain_requested_ &&
                                   !side_stream_closed_latch_.is_set();
   return If(
       call_cancelled, Immediate(StatusFlag(Failure{})),
@@ -1294,7 +1282,7 @@ auto ExtProcFilter::ExtProcCall::HandleHalfCloseFromClient() {
   const bool call_cancelled =
       !payload.ok() && !HandleSideStreamStatus(payload.status());
   const bool send_to_sidestream =
-      send_request_body && !side_stream_closed_latch_.is_set();
+      send_request_body && payload.ok() && !side_stream_closed_latch_.is_set();
   return If(call_cancelled, Immediate(StatusFlag(Failure{})),
             TrySeq(
                 // Wait for side-stream to finish draining if drain mode was
@@ -1363,8 +1351,8 @@ auto ExtProcFilter::ExtProcCall::HandleInitialMetadataFromServer(
   }
   const bool call_cancelled =
       !payload.ok() && !HandleSideStreamStatus(payload.status());
-  const bool send_to_sidestream =
-      send_response_headers && !side_stream_closed_latch_.is_set();
+  const bool send_to_sidestream = send_response_headers && payload.ok() &&
+                                  !side_stream_closed_latch_.is_set();
   return If(
       call_cancelled, Immediate(StatusFlag(Failure{})),
       TrySeq(
@@ -1443,7 +1431,7 @@ auto ExtProcFilter::ExtProcCall::HandleTrailingMetadataFromServer(
   const bool call_cancelled =
       !payload.ok() && !HandleSideStreamStatus(payload.status());
   const bool send_to_sidestream =
-      send_metadata && !side_stream_closed_latch_.is_set();
+      send_metadata && payload.ok() && !side_stream_closed_latch_.is_set();
   return If(
       call_cancelled, Immediate(StatusFlag(Failure{})),
       TrySeq(
@@ -1528,8 +1516,9 @@ auto ExtProcFilter::ExtProcCall::HandleMessageFromServer(
   }
   const bool call_cancelled =
       !payload.ok() && !HandleSideStreamStatus(payload.status());
-  const bool send_to_sidestream =
-      send_body && !drain_requested_ && !side_stream_closed_latch_.is_set();
+  const bool send_to_sidestream = send_body && payload.ok() &&
+                                  !drain_requested_ &&
+                                  !side_stream_closed_latch_.is_set();
   return If(
       call_cancelled, Immediate(StatusFlag(Failure{})),
       TrySeq(
@@ -1627,51 +1616,52 @@ auto ExtProcFilter::ExtProcCall::HandleReadFromServerActivityLoop() {
 // Continuously pulls response messages from the external processor side-stream
 // and dispatches them until the stream closes or an error occurs.
 auto ExtProcFilter::ExtProcCall::HandleReadFromSideStreamLoop() {
-  return Map(
-      TrySeq(
-          // Loop reading response messages from the side-stream until
-          // end-of-stream or error.
-          Loop([self = WeakRef()]() -> Promise<LoopCtl<StatusFlag>> {
-            if (self->streaming_call_ == nullptr) {
-              return Immediate(LoopCtl<StatusFlag>(Success{}));
-            }
-            return Seq(
-                // Pull the next response message from the streaming call.
-                self->streaming_call_->PullMessage(),
-                // Process the message; stop loop if end-of-stream (nullopt) or
-                // error.
-                [self](std::optional<std::string> msg)
-                    -> Promise<LoopCtl<StatusFlag>> {
-                  if (!msg.has_value()) {
-                    return Immediate(LoopCtl<StatusFlag>(Success{}));
-                  }
-                  return Map(self->ProcessSideStreamResponse(std::move(*msg)),
-                             [](StatusFlag status) -> LoopCtl<StatusFlag> {
-                               if (!status.ok()) return Failure{};
-                               return Continue();
-                             });
-                });
-          }),
-          // Once message loop ends, pull trailing metadata from the stream.
-          [self = WeakRef()]() -> Promise<absl::Status> {
-            if (self->streaming_call_ == nullptr) {
-              return Immediate(absl::InternalError("Side stream unavailable"));
-            }
-            return self->streaming_call_->PullServerTrailingMetadata();
-          }),
-      // Handle stream closure and resolve final status.
-      [self = WeakRef()](absl::Status status) -> StatusFlag {
-        if (self->ext_proc_stream_cancelled_with_error_) {
-          return Failure{};
+  return Seq(
+      // Loop reading response messages from the side-stream until
+      // end-of-stream or error.
+      Loop([self = WeakRef()]() -> Promise<LoopCtl<StatusFlag>> {
+        if (self->streaming_call_ == nullptr) {
+          return Immediate(LoopCtl<StatusFlag>(Success{}));
         }
-        if (!status.ok()) {
-          status = absl::InternalError(absl::StrCat(
-              "External processor stream failed: ", status.ToString()));
-        }
-        GRPC_TRACE_LOG(ext_proc_filter, INFO)
-            << self->DebugTag()
-            << "HandleReadFromSideStreamLoop finished with status: " << status;
-        return StatusFlag(self->HandleSideStreamStatus(status));
+        return Seq(
+            // Pull the next response message from the streaming call.
+            self->streaming_call_->PullMessage(),
+            // Process the message; stop loop if end-of-stream (nullopt) or
+            // error.
+            [self](std::optional<std::string> msg)
+                -> Promise<LoopCtl<StatusFlag>> {
+              if (!msg.has_value()) {
+                return Immediate(LoopCtl<StatusFlag>(Success{}));
+              }
+              return Map(self->ProcessSideStreamResponse(std::move(*msg)),
+                         [](StatusFlag status) -> LoopCtl<StatusFlag> {
+                           if (!status.ok()) return Failure{};
+                           return Continue();
+                         });
+            });
+      }),
+      // Once the message loop ends, pull the side-stream's final status and
+      // handle it. A loop failure has already been reported (either to
+      // HandleSideStreamStatus() or straight to CancelCallWithError()), so we
+      // stop here: handling it a second time would re-run the fail-open path
+      // on a call that we have already failed.
+      [self = WeakRef()](StatusFlag status) -> Promise<StatusFlag> {
+        if (!status.ok()) return Immediate(StatusFlag(Failure{}));
+        return Map(
+            // Obtain the side-stream's final status, synthesizing one if the
+            // stream is already gone.
+            If(self->streaming_call_ == nullptr,
+               Immediate(absl::InternalError("Side stream unavailable")),
+               [self]() {
+                 return self->streaming_call_->PullServerTrailingMetadata();
+               }),
+            [self](absl::Status status) -> StatusFlag {
+              GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                  << self->DebugTag()
+                  << "HandleReadFromSideStreamLoop finished with status: "
+                  << status;
+              return StatusFlag(self->HandleSideStreamStatus(status));
+            });
       });
 }
 
