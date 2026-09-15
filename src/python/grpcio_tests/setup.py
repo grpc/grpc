@@ -42,6 +42,7 @@ INSTALL_REQUIRES = (
     "google-auth>=1.17.2",
     "requests>=2.14.2",
     "absl-py>=1.4.0",
+    "typeguard~=4.2",
 )
 
 COMMAND_CLASS = {
