@@ -542,6 +542,10 @@ cdef extern from "grpc/grpc_security_constants.h":
     GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW
     GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL
 
+  ctypedef enum grpc_tls_version:
+    TLS1_2
+    TLS1_3
+
   ctypedef grpc_ssl_certificate_config_reload_status (*grpc_ssl_server_certificate_config_callback)(
     void *user_data,
     grpc_ssl_server_certificate_config **config)
@@ -594,6 +598,18 @@ cdef extern from "grpc/credentials.h":
 
   grpc_tls_credentials_options *grpc_tls_credentials_options_create() nogil
   void grpc_tls_credentials_options_destroy(grpc_tls_credentials_options* options) nogil
+
+  void grpc_tls_credentials_options_set_min_tls_version(
+    grpc_tls_credentials_options *options,
+    grpc_tls_version version) nogil
+
+  void grpc_tls_credentials_options_set_max_tls_version(
+    grpc_tls_credentials_options *options,
+    grpc_tls_version version) nogil
+
+  void grpc_tls_credentials_options_set_cert_request_type(
+    grpc_tls_credentials_options *options,
+    grpc_ssl_client_certificate_request_type type) nogil
 
   ctypedef struct grpc_tls_certificate_provider:
     # We don't care about the internals (and in fact don't know them)
@@ -652,6 +668,9 @@ cdef extern from "grpc/credentials.h":
       verify_peer_options *verify_options, void *reserved) nogil
 
   grpc_channel_credentials *grpc_tls_credentials_create(
+    grpc_tls_credentials_options *options) nogil
+
+  grpc_server_credentials *grpc_tls_server_credentials_create(
     grpc_tls_credentials_options *options) nogil
 
   grpc_channel_credentials *grpc_composite_channel_credentials_create(
