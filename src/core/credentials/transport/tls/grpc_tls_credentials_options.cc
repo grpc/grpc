@@ -172,3 +172,10 @@ void grpc_tls_credentials_options_set_key_exchange_groups(
   options->set_key_exchange_groups(
       std::vector<grpc_tls_key_exchange_group>(groups, groups + num_groups));
 }
+
+void grpc_tls_credentials_options_set_exported_keying_material_options(
+    grpc_tls_credentials_options* options, const char* label, size_t length) {
+  GRPC_CHECK_NE(options, nullptr);
+  options->set_exported_keying_material_label(label != nullptr ? label : "");
+  options->set_exported_keying_material_length(length);
+}
