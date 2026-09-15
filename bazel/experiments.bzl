@@ -97,7 +97,6 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
-                "fix_v3_filter_stack_server_side_ordering",
                 "pollset_alternative",
                 "use_call_event_engine_in_completion_queue",
             ],
@@ -108,6 +107,7 @@ EXPERIMENTS = {
                 "event_engine_for_all_other_endpoints",
                 "event_engine_fork",
                 "event_engine_listener",
+                "fix_v3_filter_stack_server_side_ordering",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
@@ -125,7 +125,6 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
-                "fix_v3_filter_stack_server_side_ordering",
                 "pollset_alternative",
                 "use_call_event_engine_in_completion_queue",
             ],
@@ -136,6 +135,7 @@ EXPERIMENTS = {
                 "event_engine_for_all_other_endpoints",
                 "event_engine_fork",
                 "event_engine_listener",
+                "fix_v3_filter_stack_server_side_ordering",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
@@ -154,7 +154,6 @@ EXPERIMENTS = {
         "off": {
             "core_end2end_test": [
                 "buffer_list_deletion_prep",
-                "fix_v3_filter_stack_server_side_ordering",
                 "local_connector_secure",
                 "otel_export_telemetry_domains",
                 "ph2_client",
@@ -210,6 +209,7 @@ EXPERIMENTS = {
                 "event_engine_for_all_other_endpoints",
                 "event_engine_fork",
                 "event_engine_listener",
+                "fix_v3_filter_stack_server_side_ordering",
                 "v2_non_owning_waker_implementation",
             ],
             "event_engine_client_test": [
