@@ -765,6 +765,7 @@ doc/PROTOCOL-WEB.md \
 doc/bazel_support.md \
 doc/binary-logging.md \
 doc/c-style-guide.md \
+doc/client_channel_specification.md \
 doc/command_line_tool.md \
 doc/compression.md \
 doc/compression_cookbook.md \
