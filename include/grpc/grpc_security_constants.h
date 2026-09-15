@@ -161,6 +161,13 @@ typedef enum {
   GRPC_TLS_GROUP_SECP384R1,
 } grpc_tls_key_exchange_group;
 
+typedef enum {
+  GRPC_TLS_VERIFICATION_KEY_PURPOSE_DEFAULT,
+  GRPC_TLS_VERIFICATION_KEY_PURPOSE_ALLOW_ANY,
+  GRPC_TLS_VERIFICATION_KEY_PURPOSE_REQUIRE_SERVER_AUTH,
+  GRPC_TLS_VERIFICATION_KEY_PURPOSE_REQUIRE_CLIENT_AUTH,
+} grpc_tls_verification_key_purpose;
+
 #ifdef __cplusplus
 }
 #endif
