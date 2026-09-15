@@ -321,7 +321,8 @@ class ChannelzServicerTest(unittest.TestCase):
         for i in range(k_failed):
             self._send_failed_unary_unary(0)
 
-        for _ in range(100):
+        deadline = time.monotonic() + test_constants.TIME_ALLOWANCE
+        while time.monotonic() < deadline:
             resp = self._get_server_by_ref_id(self._pairs[0].server_ref_id)
             if (
                 resp.data.calls_started
@@ -417,7 +418,8 @@ class ChannelzServicerTest(unittest.TestCase):
         # Subchannel exists
         self.assertGreater(len(gc_resp.channel.subchannel_ref), 0)
 
-        for _ in range(100):
+        deadline = time.monotonic() + test_constants.TIME_ALLOWANCE
+        while time.monotonic() < deadline:
             gsc_resp = self._channelz_stub.GetSubchannel(
                 channelz_pb2.GetSubchannelRequest(
                     subchannel_id=gc_resp.channel.subchannel_ref[
@@ -439,7 +441,8 @@ class ChannelzServicerTest(unittest.TestCase):
         # Socket exists
         self.assertEqual(len(gsc_resp.subchannel.socket_ref), 1)
 
-        for _ in range(100):
+        deadline = time.monotonic() + test_constants.TIME_ALLOWANCE
+        while time.monotonic() < deadline:
             gs_resp = self._channelz_stub.GetSocket(
                 channelz_pb2.GetSocketRequest(
                     socket_id=gsc_resp.subchannel.socket_ref[0].socket_id
@@ -468,7 +471,8 @@ class ChannelzServicerTest(unittest.TestCase):
         self._send_successful_unary_unary(0)
         self._send_failed_unary_unary(0)
 
-        for _ in range(100):
+        deadline = time.monotonic() + test_constants.TIME_ALLOWANCE
+        while time.monotonic() < deadline:
             gs_resp = self._get_server_by_ref_id(self._pairs[0].server_ref_id)
             if (
                 gs_resp.data.calls_started
