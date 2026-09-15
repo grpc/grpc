@@ -96,14 +96,14 @@ genrule(
     name = "copy_compiler_test_grpc_pb_h",
     srcs = ["//src/proto/grpc/testing:_compiler_test_cc_grpc_grpc_codegen"],
     outs = ["compiler_test.grpc.pb.h"],
-    cmd = "cat $(GENDIR)/src/proto/grpc/testing/compiler_test.grpc.pb.h > $@",
+    cmd = "for f in $(SRCS); do case $$f in *.grpc.pb.h) case $$f in *_mock*) ;; *) cp $$f $@ ;; esac ;; esac; done",
 )
 
 genrule(
     name = "copy_compiler_test_mock_grpc_pb_h",
     srcs = ["//src/proto/grpc/testing:_compiler_test_cc_grpc_grpc_codegen"],
     outs = ["compiler_test_mock.grpc.pb.h"],
-    cmd = "cat $(GENDIR)/src/proto/grpc/testing/compiler_test_mock.grpc.pb.h > $@",
+    cmd = "for f in $(SRCS); do case $$f in *_mock.grpc.pb.h) cp $$f $@ ;; esac; done",
 )
 
 grpc_sh_test(
