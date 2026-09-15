@@ -48,6 +48,7 @@
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 namespace chaotic_good_legacy {
@@ -95,8 +96,13 @@ auto ChaoticGoodServerTransport::DispatchFrame(
     RefCountedPtr<ChaoticGoodTransport> transport, IncomingFrame frame) {
   auto stream = LookupStream(frame.header().stream_id);
   return If(
-      stream != nullptr,
+      // A frame arriving after the client's half-close (ClientEndOfStream) is
+      // a protocol violation: cancel the call instead of pushing it.
+      stream != nullptr && !stream->client_half_closed,
       [this, &stream, &frame, &transport]() {
+        if constexpr (std::is_same_v<T, ClientEndOfStream>) {
+          stream->client_half_closed = true;
+        }
         // TODO(ctiller): instead of SpawnWaitable here we probably want a
         // small queue to push into, so that the call can proceed
         // asynchronously to other calls regardless of frame ordering.
@@ -119,7 +125,13 @@ auto ChaoticGoodServerTransport::DispatchFrame(
                   }));
             });
       },
-      []() { return absl::OkStatus(); });
+      [stream]() -> absl::Status {
+        if (stream != nullptr) {
+          stream->call.SpawnCancel(
+              absl::InternalError("Received frame after half-close"));
+        }
+        return absl::OkStatus();
+      });
 }
 
 namespace {
@@ -218,7 +230,11 @@ auto ChaoticGoodServerTransport::CallOutboundLoop(
 absl::Status ChaoticGoodServerTransport::NewStream(
     ChaoticGoodTransport& transport, const FrameHeader& header,
     SliceBuffer payload) {
-  GRPC_CHECK_EQ(header.payload_length, payload.Length());
+  if (header.payload_length != payload.Length()) {
+    return absl::InternalError(absl::StrCat(
+        "Invalid payload length for frame type ", FrameTypeString(header.type),
+        ": expected ", header.payload_length, ", got ", payload.Length()));
+  }
   auto client_initial_metadata_frame =
       transport.DeserializeFrame<ClientInitialMetadataFrame>(
           header, std::move(payload));
