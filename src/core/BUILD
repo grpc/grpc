@@ -9494,6 +9494,34 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "ph2_reclaimer",
+    srcs = [
+        "ext/transport/chttp2/transport/reclaimer.cc",
+    ],
+    hdrs = [
+        "ext/transport/chttp2/transport/reclaimer.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/log",
+        "absl/status",
+    ],
+    deps = [
+        "activity",
+        "context",
+        "grpc_check",
+        "http2_status",
+        "loop",
+        "memory_quota",
+        "ref_counted",
+        "sync",
+        ":poll",
+        "//third_party/grpc:gpr_platform",
+        "//third_party/grpc:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "http2_client_transport",
     srcs = [
         "ext/transport/chttp2/transport/http2_client_transport.cc",
@@ -11904,34 +11932,6 @@ grpc_cc_library(
         "time",
         "try_seq",
         "//:promise",
-    ],
-)
-
-grpc_cc_library(
-    name = "ph2_reclaimer",
-    srcs = [
-        "ext/transport/chttp2/transport/reclaimer.cc",
-    ],
-    hdrs = [
-        "ext/transport/chttp2/transport/reclaimer.h",
-    ],
-    external_deps = [
-        "absl/base:core_headers",
-        "absl/log",
-        "absl/status",
-    ],
-    deps = [
-        "activity",
-        "context",
-        "grpc_check",
-        "http2_status",
-        "loop",
-        "memory_quota",
-        "ref_counted",
-        "sync",
-        ":poll",
-        "//third_party/grpc:gpr_platform",
-        "//third_party/grpc:ref_counted_ptr",
     ],
 )
 
