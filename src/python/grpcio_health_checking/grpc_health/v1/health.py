@@ -15,6 +15,7 @@
 
 import collections
 import threading
+import weakref
 
 import grpc
 from grpc_health.v1 import health_pb2 as _health_pb2
@@ -90,7 +91,7 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
         # concurrent set() / graceful_shutdown() broadcast cannot interleave
         # for that particular service. Keying by service (rather one global
         # lock) avoids head-of-line blocking
-        self._send_locks = {}
+        self._send_locks = weakref.WeakValueDictionary()
         self._server_status = {"": _health_pb2.HealthCheckResponse.SERVING}
         self._send_response_callbacks = {}
         self.Watch.__func__.experimental_non_blocking = (
@@ -105,15 +106,19 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
                 self._send_response_callbacks[service].remove(
                     send_response_callback
                 )
+                if not self._send_response_callbacks[service]:
+                    del self._send_response_callbacks[service]
             send_response_callback(None)
 
         return callback
 
     def _get_send_lock(self, service):
-        lock = self._send_locks.get(service)
-        if lock is None:
-            lock = self._send_locks.setdefault(service, threading.RLock())
-        return lock
+        with self._state_lock:
+            lock = self._send_locks.get(service)
+            if lock is None:
+                lock = threading.RLock()
+                self._send_locks[service] = lock
+            return lock
 
     def Check(self, request, context):
         with self._state_lock:
