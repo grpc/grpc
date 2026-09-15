@@ -471,6 +471,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/transport/chttp2/transport/ping_rate_policy.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/ping_rate_policy.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/read_context.h )
+  s.files += %w( src/core/ext/transport/chttp2/transport/reclaimer.cc )
+  s.files += %w( src/core/ext/transport/chttp2/transport/reclaimer.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/security_frame.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/stream.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/stream_data_queue.h )
