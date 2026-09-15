@@ -903,8 +903,12 @@ void XdsDependencyManager::MaybeReportUpdate() {
   std::set<absl::string_view> dns_names_seen;
   bool have_all_resources = true;
   for (const absl::string_view& cluster : clusters_to_watch) {
-    have_all_resources &= PopulateClusterConfigMap(
+    bool is_dynamic = !clusters_from_route_config_.contains(cluster);
+    bool have_this_resource = PopulateClusterConfigMap(
         cluster, 0, &config->clusters, &eds_resources_seen, &dns_names_seen);
+    if (!is_dynamic) {
+      have_all_resources &= have_this_resource;
+    }
   }
   // Remove entries in cluster_watchers_ for any clusters not in
   // config->clusters.
