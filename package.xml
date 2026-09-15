@@ -897,6 +897,12 @@
     <file baseinstalldir="/" name="src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/grpc/lookup/v1/rls.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb_minitable.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h" role="src" />
@@ -924,12 +930,6 @@
     <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb_minitable.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/lookup/v1/rls.upb.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/lookup/v1/rls.upb_minitable.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/lookup/v1/rls.upb_minitable.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/lookup/v1/rls_config.upb.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/lookup/v1/rls_config.upb_minitable.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/lookup/v1/rls_config.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/udpa/annotations/migrate.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/udpa/annotations/migrate.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/udpa/annotations/migrate.upb_minitable.h" role="src" />
@@ -1292,6 +1292,8 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/grpc/channelz/v1/channelz.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/grpc/channelz/v1/channelz.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/grpc/lookup/v1/rls_config.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/grpc/lookup/v1/rls_config.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c" role="src" />
@@ -1300,8 +1302,6 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/udpa/annotations/migrate.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/udpa/annotations/migrate.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/udpa/annotations/security.upbdefs.c" role="src" />
