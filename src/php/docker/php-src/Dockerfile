@@ -14,11 +14,19 @@
 
 FROM debian:buster
 
-RUN apt-get -qq update && apt-get -qq -y upgrade && apt-get -qq install -y \
+#=================
+#  Create wrapper for apt-get
+
+ADD apt_get_install_with_retry.sh /usr/local/bin/apt-get-install-retry
+RUN chmod +rx /usr/local/bin/apt-get-install-retry
+
+
+RUN apt-get update && apt-get -y upgrade
+RUN apt-get-install-retry \
   autoconf bison build-essential git libtool \
   libcurl4-openssl-dev libedit-dev libonig-dev libsodium-dev \
   libsqlite3-dev libssl-dev libxml2-dev \
-  pkg-config re2c valgrind wget zlib1g-dev
+  pkg-config re2c valgrind wget zlib1g-dev && apt-get clean
 
 
 WORKDIR /tmp

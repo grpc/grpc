@@ -15,31 +15,37 @@
 FROM debian:12
 
 #=================
+# Install apt-get-install-retry wrapper script
+#=================
+#  Create wrapper for apt-get
+
+ADD apt_get_install_with_retry.sh /usr/local/bin/apt-get-install-retry
+RUN chmod +rx /usr/local/bin/apt-get-install-retry
+
+
 # Basic C core dependencies
 
 # C/C++ dependencies according to https://github.com/grpc/grpc/blob/master/BUILDING.md
-RUN apt-get update && apt-get install -y \
+RUN apt-get-install-retry \
   build-essential \
   autoconf \
   libtool \
-  pkg-config \
-  && apt-get clean
+  pkg-config
+  
 
 # GCC
-RUN apt-get update && apt-get install -y \
+RUN apt-get-install-retry \
   gcc \
-  g++ \
-  && apt-get clean
+  g++ 
 
 # libc6
-RUN apt-get update && apt-get install -y \
+RUN apt-get-install-retry \
   libc6 \
   libc6-dbg \
-  libc6-dev \
-  && apt-get clean
+  libc6-dev
 
 # Tools
-RUN apt-get update && apt-get install -y \
+RUN apt-get-install-retry \
   bzip2 \
   curl \
   dnsutils \
@@ -50,8 +56,7 @@ RUN apt-get update && apt-get install -y \
   time \
   unzip \
   wget \
-  zip \
-  && apt-get clean
+  zip
 
 #=================
 # Setup git to access working directory across docker boundary.

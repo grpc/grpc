@@ -15,31 +15,37 @@
 FROM debian:12
 
 #=================
+# Install apt-get-install-retry wrapper script
+#=================
+#  Create wrapper for apt-get
+
+ADD apt_get_install_with_retry.sh /usr/local/bin/apt-get-install-retry
+RUN chmod +rx /usr/local/bin/apt-get-install-retry
+
+
 # Basic C core dependencies
 
 # C/C++ dependencies according to https://github.com/grpc/grpc/blob/master/BUILDING.md
-RUN apt-get update && apt-get install -y \
+RUN apt-get-install-retry \
   build-essential \
   autoconf \
   libtool \
-  pkg-config \
-  && apt-get clean
+  pkg-config
+  
 
 # GCC
-RUN apt-get update && apt-get install -y \
+RUN apt-get-install-retry \
   gcc \
-  g++ \
-  && apt-get clean
+  g++ 
 
 # libc6
-RUN apt-get update && apt-get install -y \
+RUN apt-get-install-retry \
   libc6 \
   libc6-dbg \
-  libc6-dev \
-  && apt-get clean
+  libc6-dev
 
 # Tools
-RUN apt-get update && apt-get install -y \
+RUN apt-get-install-retry \
   bzip2 \
   curl \
   dnsutils \
@@ -50,8 +56,7 @@ RUN apt-get update && apt-get install -y \
   time \
   unzip \
   wget \
-  zip \
-  && apt-get clean
+  zip
 
 #=================
 # Setup git to access working directory across docker boundary.
@@ -68,12 +73,12 @@ RUN git config --global protocol.file.allow always
 # Basic python dependencies to be able to run tools/run_tests python scripts
 # These dependencies are not sufficient to build gRPC Python, gRPC Python
 # deps are defined elsewhere (e.g. python_deps.include)
-RUN apt-get update && apt-get install -y \
+RUN apt-get-install-retry \
   python3 \
   python3-pip \
   python3-setuptools \
-  python3-yaml \
-  && apt-get clean
+  python3-yaml && apt-get clean
+ 
 
 # use pinned version of pip to avoid sudden breakages
 # Some newer distros that have already implemented PEP 668. Use of
@@ -93,7 +98,7 @@ RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-clien
 #=================
 # PHP8 dependencies
 
-RUN apt-get update && apt-get install -y php8.2 php8.2-dev php-pear && apt-get clean
+RUN apt-get-install-retry php8.2 php8.2-dev php-pear && apt-get clean
 
 # Install composer
 RUN curl -sS https://getcomposer.org/installer | php
@@ -103,7 +108,7 @@ RUN mv composer.phar /usr/local/bin/composer
 # Install cmake
 # Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
 
-RUN apt-get update && apt-get install -y cmake && apt-get clean
+RUN apt-get-install-retry cmake
 
 #=================
 # Install ccache

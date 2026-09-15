@@ -14,10 +14,65 @@
 
 FROM php:8-zts-bookworm
 
-RUN apt-get update && apt-get install -y \
+#=================
+# Install apt-get-install-retry wrapper script
+#=================
+#  Create wrapper for apt-get
+
+ADD apt_get_install_with_retry.sh /usr/local/bin/apt-get-install-retry
+RUN chmod +rx /usr/local/bin/apt-get-install-retry
+
+
+# Basic C core dependencies
+
+# C/C++ dependencies according to https://github.com/grpc/grpc/blob/master/BUILDING.md
+RUN apt-get-install-retry \
+  build-essential \
+  autoconf \
+  libtool \
+  pkg-config
+  
+
+# GCC
+RUN apt-get-install-retry \
+  gcc \
+  g++ 
+
+# libc6
+RUN apt-get-install-retry \
+  libc6 \
+  libc6-dbg \
+  libc6-dev
+
+# Tools
+RUN apt-get-install-retry \
+  bzip2 \
+  curl \
+  dnsutils \
+  git \
+  lcov \
+  make \
+  strace \
+  time \
+  unzip \
+  wget \
+  zip
+
+#=================
+# Setup git to access working directory across docker boundary.
+# This avoids the "fatal: detected dubious ownership in repository XYZ"
+# git error.
+
+RUN git config --global --add safe.directory '*'
+RUN git config --global protocol.file.allow always
+
+
+
+
+RUN apt-get-install-retry \
   autoconf automake build-essential git libtool curl \
-  zlib1g-dev \
-  && apt-get clean
+  zlib1g-dev 
+ 
 
 #=================
 # Setup git to access working directory across docker boundary.
@@ -33,12 +88,12 @@ RUN git config --global protocol.file.allow always
 # Basic python dependencies to be able to run tools/run_tests python scripts
 # These dependencies are not sufficient to build gRPC Python, gRPC Python
 # deps are defined elsewhere (e.g. python_deps.include)
-RUN apt-get update && apt-get install -y \
+RUN apt-get-install-retry \
   python3 \
   python3-pip \
   python3-setuptools \
-  python3-yaml \
-  && apt-get clean
+  python3-yaml && apt-get clean
+ 
 
 # use pinned version of pip to avoid sudden breakages
 # Some newer distros that have already implemented PEP 668. Use of
@@ -63,9 +118,9 @@ RUN mv composer.phar /usr/local/bin/composer
 # Install cmake
 # Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
 
-RUN apt-get update && apt-get install -y cmake && apt-get clean
+RUN apt-get-install-retry cmake
 
-RUN apt-get update && apt-get install -y ccache && apt-get clean
+RUN apt-get-install-retry ccache && apt-get clean
 
 RUN mkdir /var/local/jenkins
 

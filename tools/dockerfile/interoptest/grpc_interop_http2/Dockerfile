@@ -26,9 +26,15 @@ RUN ln -s /usr/local/go/bin/go /usr/local/bin
 RUN git config --global --add safe.directory '*'
 RUN git config --global protocol.file.allow always
 
+#=================
+#  Create wrapper for apt-get
+
+ADD apt_get_install_with_retry.sh /usr/local/bin/apt-get-install-retry
+RUN chmod +rx /usr/local/bin/apt-get-install-retry
+
 
 # Dependencies to run http2_test_server.py
-RUN apt-get update && apt-get install -y python3-all-dev python3-pip
+RUN apt-get-install-retry python3-all-dev python3-pip
 # pip packages needed to run http2_test_server.py
 # TODO(jtattermusch): revisit which pip packages are actually needed to run http2 interop server/client
 RUN python3 -m pip install --break-system-packages --upgrade pip==19.3.1

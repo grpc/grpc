@@ -15,31 +15,37 @@
 FROM debian:11
 
 #=================
+# Install apt-get-install-retry wrapper script
+#=================
+#  Create wrapper for apt-get
+
+ADD apt_get_install_with_retry.sh /usr/local/bin/apt-get-install-retry
+RUN chmod +rx /usr/local/bin/apt-get-install-retry
+
+
 # Basic C core dependencies
 
 # C/C++ dependencies according to https://github.com/grpc/grpc/blob/master/BUILDING.md
-RUN apt-get update && apt-get install -y \
+RUN apt-get-install-retry \
   build-essential \
   autoconf \
   libtool \
-  pkg-config \
-  && apt-get clean
+  pkg-config
+  
 
 # GCC
-RUN apt-get update && apt-get install -y \
+RUN apt-get-install-retry \
   gcc \
-  g++ \
-  && apt-get clean
+  g++ 
 
 # libc6
-RUN apt-get update && apt-get install -y \
+RUN apt-get-install-retry \
   libc6 \
   libc6-dbg \
-  libc6-dev \
-  && apt-get clean
+  libc6-dev
 
 # Tools
-RUN apt-get update && apt-get install -y \
+RUN apt-get-install-retry \
   bzip2 \
   curl \
   dnsutils \
@@ -50,8 +56,7 @@ RUN apt-get update && apt-get install -y \
   time \
   unzip \
   wget \
-  zip \
-  && apt-get clean
+  zip
 
 #=================
 # Setup git to access working directory across docker boundary.
@@ -68,12 +73,12 @@ RUN git config --global protocol.file.allow always
 # Basic python dependencies to be able to run tools/run_tests python scripts
 # These dependencies are not sufficient to build gRPC Python, gRPC Python
 # deps are defined elsewhere (e.g. python_deps.include)
-RUN apt-get update && apt-get install -y \
+RUN apt-get-install-retry \
   python3 \
   python3-pip \
   python3-setuptools \
-  python3-yaml \
-  && apt-get clean
+  python3-yaml && apt-get clean
+ 
 
 # use pinned version of pip to avoid sudden breakages
 RUN python3 -m pip install --upgrade pip==19.3.1
@@ -92,15 +97,13 @@ RUN python3 -m pip install twisted
 
 #=================
 # C++ dependencies
-RUN apt-get update && apt-get -y install libc++-dev clang && apt-get clean
+RUN apt-get-install-retry libc++-dev clang
 
 #=================
 # Install cmake from bullseye-backports
 # Note that this step should be only used for Debian 11 (bullseye) images.
 
-RUN echo "deb http://archive.debian.org/debian bullseye-backports main" > /etc/apt/sources.list.d/bullseye-backports.list && \
-    apt-get update && \
-    apt-get install -y -t bullseye-backports cmake
+RUN echo "deb http://archive.debian.org/debian bullseye-backports main" > /etc/apt/sources.list.d/bullseye-backports.list && apt-get-install-retry -t bullseye-backports cmake
 
 #=================
 # Install ccache
@@ -121,7 +124,7 @@ RUN mkdir /var/local/jenkins
 
 
 # Install openssl 1.0.2 from source
-RUN apt-get update && apt-get install -y build-essential zlib1g-dev
+RUN apt-get-install-retry build-essential zlib1g-dev
 RUN cd /tmp && \
     wget --no-check-certificate https://www.openssl.org/source/openssl-1.0.2u.tar.gz && \
     tar -xf openssl-1.0.2u.tar.gz && \

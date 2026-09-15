@@ -14,6 +14,7 @@
 
 FROM golang:1.16
 
+{% include "../../apt_get_install_with_retry.include" %}
 {% include "../../go_path.include" %}
 {% include "../../git_avoid_dubious_ownership_error.include" %}
 {% include "../../run_tests_python_deps.include" %}

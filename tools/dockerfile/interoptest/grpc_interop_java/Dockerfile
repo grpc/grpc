@@ -14,9 +14,14 @@
 
 FROM debian:bullseye
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends openjdk-11-jdk-headless && \
-    apt-get clean
+#=================
+#  Create wrapper for apt-get
+
+ADD apt_get_install_with_retry.sh /usr/local/bin/apt-get-install-retry
+RUN chmod +rx /usr/local/bin/apt-get-install-retry
+
+
+RUN apt-get-install-retry --no-install-recommends openjdk-11-jdk-headless
 
 WORKDIR /var/local/git/grpc-java/
 
