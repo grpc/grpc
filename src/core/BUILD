@@ -335,6 +335,7 @@ grpc_cc_library(
         "json_writer",
         "notification",
         "sync",
+        "time",
         "//:backoff",
         "//:gpr",
     ],
