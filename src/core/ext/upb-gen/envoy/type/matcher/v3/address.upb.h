@@ -67,12 +67,12 @@ UPB_INLINE char* envoy_type_matcher_v3_AddressMatcher_serialize_ex(const envoy_t
   return ptr;
 }
 UPB_INLINE void envoy_type_matcher_v3_AddressMatcher_clear_ranges(envoy_type_matcher_v3_AddressMatcher* msg) {
-  const upb_MiniTableField field = {1, 8, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 0, 6, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct xds_core_v3_CidrRange* const* envoy_type_matcher_v3_AddressMatcher_ranges(const envoy_type_matcher_v3_AddressMatcher* msg,
                                                   size_t* size) {
-  const upb_MiniTableField field = {1, 8, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 0, 6, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__core__v3__CidrRange_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -87,7 +87,7 @@ UPB_INLINE const struct xds_core_v3_CidrRange* const* envoy_type_matcher_v3_Addr
 //
 UPB_INLINE const upb_Array* _envoy_type_matcher_v3_AddressMatcher_ranges_upb_array(
     const envoy_type_matcher_v3_AddressMatcher* msg, size_t* size) {
-  const upb_MiniTableField field = {1, 8, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 0, 6, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__core__v3__CidrRange_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
@@ -98,7 +98,7 @@ UPB_INLINE const upb_Array* _envoy_type_matcher_v3_AddressMatcher_ranges_upb_arr
 
 UPB_INLINE upb_Array* _envoy_type_matcher_v3_AddressMatcher_ranges_mutable_upb_array(
     envoy_type_matcher_v3_AddressMatcher* msg, size_t* size, upb_Arena* arena) {
-  const upb_MiniTableField field = {1, 8, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 0, 6, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__core__v3__CidrRange_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
@@ -107,10 +107,22 @@ UPB_INLINE upb_Array* _envoy_type_matcher_v3_AddressMatcher_ranges_mutable_upb_a
   }
   return arr;
 }
+UPB_INLINE void envoy_type_matcher_v3_AddressMatcher_clear_invert_match(envoy_type_matcher_v3_AddressMatcher* msg) {
+  const upb_MiniTableField field = {2, 8, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE bool envoy_type_matcher_v3_AddressMatcher_invert_match(const envoy_type_matcher_v3_AddressMatcher* msg) {
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {2, 8, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
 
 UPB_INLINE struct xds_core_v3_CidrRange** envoy_type_matcher_v3_AddressMatcher_mutable_ranges(envoy_type_matcher_v3_AddressMatcher* msg,
                                               size_t* size) {
-  upb_MiniTableField field = {1, 8, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_MiniTableField field = {1, UPB_SIZE(12, 16), 0, 6, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__core__v3__CidrRange_msg_init);
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -125,14 +137,14 @@ UPB_INLINE struct xds_core_v3_CidrRange** envoy_type_matcher_v3_AddressMatcher_m
 UPB_INLINE struct xds_core_v3_CidrRange** envoy_type_matcher_v3_AddressMatcher_resize_ranges(envoy_type_matcher_v3_AddressMatcher* msg,
                                              size_t size,
                                              upb_Arena* arena) {
-  upb_MiniTableField field = {1, 8, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_MiniTableField field = {1, UPB_SIZE(12, 16), 0, 6, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__core__v3__CidrRange_msg_init);
   return (struct xds_core_v3_CidrRange**)upb_Message_ResizeArrayUninitialized(
       UPB_UPCAST(msg), &field, size, arena);
 }
 UPB_INLINE struct xds_core_v3_CidrRange* envoy_type_matcher_v3_AddressMatcher_add_ranges(
     envoy_type_matcher_v3_AddressMatcher* msg, upb_Arena* arena) {
-  upb_MiniTableField field = {1, 8, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_MiniTableField field = {1, UPB_SIZE(12, 16), 0, 6, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__core__v3__CidrRange_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
@@ -146,6 +158,10 @@ UPB_INLINE struct xds_core_v3_CidrRange* envoy_type_matcher_v3_AddressMatcher_ad
   UPB_PRIVATE(_upb_Array_Set)
   (arr, arr->UPB_PRIVATE(size) - 1, &sub, sizeof(sub));
   return sub;
+}
+UPB_INLINE void envoy_type_matcher_v3_AddressMatcher_set_invert_match(envoy_type_matcher_v3_AddressMatcher* msg, bool value) {
+  const upb_MiniTableField field = {2, 8, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
 
 #ifdef __cplusplus

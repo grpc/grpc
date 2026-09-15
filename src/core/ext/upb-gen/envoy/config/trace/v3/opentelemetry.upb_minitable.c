@@ -21,17 +21,21 @@
 
 extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
 typedef struct {
-  upb_MiniTableField fields[6];
-  upb_MiniTableSubInternal subs[5];
+  upb_MiniTableField fields[10];
+  upb_MiniTableSubInternal subs[9];
 } envoy__config__trace__v3__OpenTelemetryConfig_msg_init_Fields;
 
 static const envoy__config__trace__v3__OpenTelemetryConfig_msg_init_Fields envoy_config_trace_v3_OpenTelemetryConfig__fields = {{
-  {1, UPB_SIZE(12, 32), 64, 18, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(32, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(16, 40), 65, UPB_SIZE(13, 14), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {4, UPB_SIZE(20, 48), 0, UPB_SIZE(11, 13), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {5, UPB_SIZE(24, 56), 66, UPB_SIZE(9, 12), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {6, UPB_SIZE(28, 64), 67, UPB_SIZE(7, 11), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {1, UPB_SIZE(12, 32), 64, 30, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(48, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(16, 40), 65, UPB_SIZE(25, 26), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(20, 48), 0, UPB_SIZE(23, 25), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(24, 56), 66, UPB_SIZE(21, 24), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(28, 64), 67, UPB_SIZE(19, 23), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {7, UPB_SIZE(32, 72), 68, UPB_SIZE(17, 22), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {8, UPB_SIZE(36, 80), 69, UPB_SIZE(15, 21), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {9, UPB_SIZE(40, 88), 70, UPB_SIZE(13, 20), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {10, UPB_SIZE(44, 96), 71, UPB_SIZE(11, 19), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
  },
   {
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__GrpcService_msg_init},
@@ -39,11 +43,15 @@ static const envoy__config__trace__v3__OpenTelemetryConfig_msg_init_Fields envoy
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
   {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
 }};
 
 const upb_MiniTable envoy__config__trace__v3__OpenTelemetryConfig_msg_init = {
   &envoy_config_trace_v3_OpenTelemetryConfig__fields.fields[0],
-  UPB_SIZE(40, 72), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(56, 104), 10, kUpb_ExtMode_NonExtendable, 10, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.trace.v3.OpenTelemetryConfig",
 #endif

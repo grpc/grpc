@@ -904,6 +904,18 @@ UPB_INLINE bool envoy_admin_v3_HostHealthStatus_active_hc_timeout(const envoy_ad
                                     &default_val, &ret);
   return ret;
 }
+UPB_INLINE void envoy_admin_v3_HostHealthStatus_clear_failed_degraded_outlier_detection(envoy_admin_v3_HostHealthStatus* msg) {
+  const upb_MiniTableField field = {9, 15, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE bool envoy_admin_v3_HostHealthStatus_failed_degraded_outlier_detection(const envoy_admin_v3_HostHealthStatus* msg) {
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {9, 15, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
 
 UPB_INLINE void envoy_admin_v3_HostHealthStatus_set_failed_active_health_check(envoy_admin_v3_HostHealthStatus* msg, bool value) {
   const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
@@ -935,6 +947,10 @@ UPB_INLINE void envoy_admin_v3_HostHealthStatus_set_excluded_via_immediate_hc_fa
 }
 UPB_INLINE void envoy_admin_v3_HostHealthStatus_set_active_hc_timeout(envoy_admin_v3_HostHealthStatus* msg, bool value) {
   const upb_MiniTableField field = {8, 14, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
+}
+UPB_INLINE void envoy_admin_v3_HostHealthStatus_set_failed_degraded_outlier_detection(envoy_admin_v3_HostHealthStatus* msg, bool value) {
+  const upb_MiniTableField field = {9, 15, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
 

@@ -22,13 +22,16 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
+from envoy.data.accesslog.v3 import accesslog_pb2 as envoy_dot_data_dot_accesslog_dot_v3_dot_accesslog__pb2
+from envoy.type.v3 import scope_pb2 as envoy_dot_type_dot_v3_dot_scope__pb2
 from google.protobuf import wrappers_pb2 as google_dot_protobuf_dot_wrappers__pb2
-from xds.annotations.v3 import status_pb2 as xds_dot_annotations_dot_v3_dot_status__pb2
+from xds.type.matcher.v3 import matcher_pb2 as xds_dot_type_dot_matcher_dot_v3_dot_matcher__pb2
+from envoy.annotations import deprecation_pb2 as envoy_dot_annotations_dot_deprecation__pb2
 from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n4envoy/extensions/access_loggers/stats/v3/stats.proto\x12(envoy.extensions.access_loggers.stats.v3\x1a\x1egoogle/protobuf/wrappers.proto\x1a\x1fxds/annotations/v3/status.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xd9\x06\n\x06\x43onfig\x12\x1c\n\x0bstat_prefix\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12N\n\nhistograms\x18\x03 \x03(\x0b\x32:.envoy.extensions.access_loggers.stats.v3.Config.Histogram\x12J\n\x08\x63ounters\x18\x04 \x03(\x0b\x32\x38.envoy.extensions.access_loggers.stats.v3.Config.Counter\x1a;\n\x03Tag\x12\x15\n\x04name\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12\x1d\n\x0cvalue_format\x18\x02 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x1a\x61\n\x04Stat\x12\x15\n\x04name\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12\x42\n\x04tags\x18\x02 \x03(\x0b\x32\x34.envoy.extensions.access_loggers.stats.v3.Config.Tag\x1a\xad\x02\n\tHistogram\x12M\n\x04stat\x18\x01 \x01(\x0b\x32\x35.envoy.extensions.access_loggers.stats.v3.Config.StatB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01\x12W\n\x04unit\x18\x02 \x01(\x0e\x32?.envoy.extensions.access_loggers.stats.v3.Config.Histogram.UnitB\x08\xfa\x42\x05\x82\x01\x02\x10\x01\x12#\n\x0cvalue_format\x18\x03 \x01(\tB\r\xfa\x42\nr\x08\x10\x01:\x01%B\x01%\"S\n\x04Unit\x12\x0f\n\x0bUnspecified\x10\x00\x12\t\n\x05\x42ytes\x10\x01\x12\x10\n\x0cMicroseconds\x10\x02\x12\x10\n\x0cMilliseconds\x10\x03\x12\x0b\n\x07Percent\x10\x04\x1a\xba\x01\n\x07\x43ounter\x12M\n\x04stat\x18\x01 \x01(\x0b\x32\x35.envoy.extensions.access_loggers.stats.v3.Config.StatB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01\x12$\n\x0cvalue_format\x18\x02 \x01(\tB\x0e\xfa\x42\x0br\t:\x01%B\x01%\xd0\x01\x01\x12:\n\x0bvalue_fixed\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.UInt64ValueB\x07\xfa\x42\x04\x32\x02 \x00:\x08\xd2\xc6\xa4\xe1\x06\x02\x08\x01\x42\xa7\x01\n6io.envoyproxy.envoy.extensions.access_loggers.stats.v3B\nStatsProtoP\x01ZWgithub.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/stats/v3;statsv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n4envoy/extensions/access_loggers/stats/v3/stats.proto\x12(envoy.extensions.access_loggers.stats.v3\x1a\'envoy/data/accesslog/v3/accesslog.proto\x1a\x19\x65nvoy/type/v3/scope.proto\x1a\x1egoogle/protobuf/wrappers.proto\x1a!xds/type/matcher/v3/matcher.proto\x1a#envoy/annotations/deprecation.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xc8\x0c\n\x06\x43onfig\x12 \n\x0bstat_prefix\x18\x01 \x01(\tB\x0b\x18\x01\x92\xc7\x86\xd8\x04\x03\x33.0\x12)\n\x0bstats_scope\x18\x06 \x01(\x0b\x32\x14.envoy.type.v3.Scope\x12N\n\nhistograms\x18\x03 \x03(\x0b\x32:.envoy.extensions.access_loggers.stats.v3.Config.Histogram\x12J\n\x08\x63ounters\x18\x04 \x03(\x0b\x32\x38.envoy.extensions.access_loggers.stats.v3.Config.Counter\x12\x46\n\x06gauges\x18\x05 \x03(\x0b\x32\x36.envoy.extensions.access_loggers.stats.v3.Config.Gauge\x1ah\n\x03Tag\x12\x15\n\x04name\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12\x1d\n\x0cvalue_format\x18\x02 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12+\n\x05rules\x18\x03 \x01(\x0b\x32\x1c.xds.type.matcher.v3.Matcher\x1a\x61\n\x04Stat\x12\x15\n\x04name\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12\x42\n\x04tags\x18\x02 \x03(\x0b\x32\x34.envoy.extensions.access_loggers.stats.v3.Config.Tag\x1a\xad\x02\n\tHistogram\x12M\n\x04stat\x18\x01 \x01(\x0b\x32\x35.envoy.extensions.access_loggers.stats.v3.Config.StatB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01\x12W\n\x04unit\x18\x02 \x01(\x0e\x32?.envoy.extensions.access_loggers.stats.v3.Config.Histogram.UnitB\x08\xfa\x42\x05\x82\x01\x02\x10\x01\x12#\n\x0cvalue_format\x18\x03 \x01(\tB\r\xfa\x42\nr\x08\x10\x01:\x01%B\x01%\"S\n\x04Unit\x12\x0f\n\x0bUnspecified\x10\x00\x12\t\n\x05\x42ytes\x10\x01\x12\x10\n\x0cMicroseconds\x10\x02\x12\x10\n\x0cMilliseconds\x10\x03\x12\x0b\n\x07Percent\x10\x04\x1a\xba\x01\n\x07\x43ounter\x12M\n\x04stat\x18\x01 \x01(\x0b\x32\x35.envoy.extensions.access_loggers.stats.v3.Config.StatB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01\x12$\n\x0cvalue_format\x18\x02 \x01(\tB\x0e\xfa\x42\x0br\t:\x01%B\x01%\xd0\x01\x01\x12:\n\x0bvalue_fixed\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.UInt64ValueB\x07\xfa\x42\x04\x32\x02 \x00\x1a\xd2\x04\n\x05Gauge\x12M\n\x04stat\x18\x01 \x01(\x0b\x32\x35.envoy.extensions.access_loggers.stats.v3.Config.StatB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01\x12$\n\x0cvalue_format\x18\x02 \x01(\tB\x0e\xfa\x42\x0br\t:\x01%B\x01%\xd0\x01\x01\x12:\n\x0bvalue_fixed\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.UInt64ValueB\x07\xfa\x42\x04\x32\x02 \x00\x12^\n\x0c\x61\x64\x64_subtract\x18\x04 \x01(\x0b\x32H.envoy.extensions.access_loggers.stats.v3.Config.Gauge.PairedAddSubtract\x12G\n\x03set\x18\x05 \x01(\x0b\x32:.envoy.extensions.access_loggers.stats.v3.Config.Gauge.Set\x1aI\n\x03Set\x12\x42\n\x08log_type\x18\x01 \x01(\x0e\x32&.envoy.data.accesslog.v3.AccessLogTypeB\x08\xfa\x42\x05\x82\x01\x02\x10\x01\x1a\xa3\x01\n\x11PairedAddSubtract\x12\x46\n\x0c\x61\x64\x64_log_type\x18\x01 \x01(\x0e\x32&.envoy.data.accesslog.v3.AccessLogTypeB\x08\xfa\x42\x05\x82\x01\x02\x10\x01\x12\x46\n\x0csub_log_type\x18\x02 \x01(\x0e\x32&.envoy.data.accesslog.v3.AccessLogTypeB\x08\xfa\x42\x05\x82\x01\x02\x10\x01\x42\xa7\x01\n6io.envoyproxy.envoy.extensions.access_loggers.stats.v3B\nStatsProtoP\x01ZWgithub.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/stats/v3;statsv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -54,20 +57,36 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_CONFIG_COUNTER'].fields_by_name['value_format']._serialized_options = b'\372B\013r\t:\001%B\001%\320\001\001'
   _globals['_CONFIG_COUNTER'].fields_by_name['value_fixed']._loaded_options = None
   _globals['_CONFIG_COUNTER'].fields_by_name['value_fixed']._serialized_options = b'\372B\0042\002 \000'
+  _globals['_CONFIG_GAUGE_SET'].fields_by_name['log_type']._loaded_options = None
+  _globals['_CONFIG_GAUGE_SET'].fields_by_name['log_type']._serialized_options = b'\372B\005\202\001\002\020\001'
+  _globals['_CONFIG_GAUGE_PAIREDADDSUBTRACT'].fields_by_name['add_log_type']._loaded_options = None
+  _globals['_CONFIG_GAUGE_PAIREDADDSUBTRACT'].fields_by_name['add_log_type']._serialized_options = b'\372B\005\202\001\002\020\001'
+  _globals['_CONFIG_GAUGE_PAIREDADDSUBTRACT'].fields_by_name['sub_log_type']._loaded_options = None
+  _globals['_CONFIG_GAUGE_PAIREDADDSUBTRACT'].fields_by_name['sub_log_type']._serialized_options = b'\372B\005\202\001\002\020\001'
+  _globals['_CONFIG_GAUGE'].fields_by_name['stat']._loaded_options = None
+  _globals['_CONFIG_GAUGE'].fields_by_name['stat']._serialized_options = b'\372B\005\212\001\002\020\001'
+  _globals['_CONFIG_GAUGE'].fields_by_name['value_format']._loaded_options = None
+  _globals['_CONFIG_GAUGE'].fields_by_name['value_format']._serialized_options = b'\372B\013r\t:\001%B\001%\320\001\001'
+  _globals['_CONFIG_GAUGE'].fields_by_name['value_fixed']._loaded_options = None
+  _globals['_CONFIG_GAUGE'].fields_by_name['value_fixed']._serialized_options = b'\372B\0042\002 \000'
   _globals['_CONFIG'].fields_by_name['stat_prefix']._loaded_options = None
-  _globals['_CONFIG'].fields_by_name['stat_prefix']._serialized_options = b'\372B\004r\002\020\001'
-  _globals['_CONFIG']._loaded_options = None
-  _globals['_CONFIG']._serialized_options = b'\322\306\244\341\006\002\010\001'
-  _globals['_CONFIG']._serialized_start=220
-  _globals['_CONFIG']._serialized_end=1077
-  _globals['_CONFIG_TAG']._serialized_start=416
-  _globals['_CONFIG_TAG']._serialized_end=475
-  _globals['_CONFIG_STAT']._serialized_start=477
-  _globals['_CONFIG_STAT']._serialized_end=574
-  _globals['_CONFIG_HISTOGRAM']._serialized_start=577
-  _globals['_CONFIG_HISTOGRAM']._serialized_end=878
-  _globals['_CONFIG_HISTOGRAM_UNIT']._serialized_start=795
-  _globals['_CONFIG_HISTOGRAM_UNIT']._serialized_end=878
-  _globals['_CONFIG_COUNTER']._serialized_start=881
-  _globals['_CONFIG_COUNTER']._serialized_end=1067
+  _globals['_CONFIG'].fields_by_name['stat_prefix']._serialized_options = b'\030\001\222\307\206\330\004\0033.0'
+  _globals['_CONFIG']._serialized_start=327
+  _globals['_CONFIG']._serialized_end=1935
+  _globals['_CONFIG_TAG']._serialized_start=642
+  _globals['_CONFIG_TAG']._serialized_end=746
+  _globals['_CONFIG_STAT']._serialized_start=748
+  _globals['_CONFIG_STAT']._serialized_end=845
+  _globals['_CONFIG_HISTOGRAM']._serialized_start=848
+  _globals['_CONFIG_HISTOGRAM']._serialized_end=1149
+  _globals['_CONFIG_HISTOGRAM_UNIT']._serialized_start=1066
+  _globals['_CONFIG_HISTOGRAM_UNIT']._serialized_end=1149
+  _globals['_CONFIG_COUNTER']._serialized_start=1152
+  _globals['_CONFIG_COUNTER']._serialized_end=1338
+  _globals['_CONFIG_GAUGE']._serialized_start=1341
+  _globals['_CONFIG_GAUGE']._serialized_end=1935
+  _globals['_CONFIG_GAUGE_SET']._serialized_start=1696
+  _globals['_CONFIG_GAUGE_SET']._serialized_end=1769
+  _globals['_CONFIG_GAUGE_PAIREDADDSUBTRACT']._serialized_start=1772
+  _globals['_CONFIG_GAUGE_PAIREDADDSUBTRACT']._serialized_end=1935
 # @@protoc_insertion_point(module_scope)

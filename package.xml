@@ -849,6 +849,9 @@
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb_minitable.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/type/v3/scope.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/type/v3/scope.upb_minitable.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/type/v3/scope.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb_minitable.h" role="src" />
@@ -1260,6 +1263,8 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_strategy.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_unit.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_unit.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/type/v3/scope.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/type/v3/scope.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/type/v3/semantic_version.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/type/v3/semantic_version.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/type/v3/token_bucket.upbdefs.c" role="src" />

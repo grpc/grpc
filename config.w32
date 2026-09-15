@@ -303,6 +303,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\upb-gen\\envoy\\type\\v3\\range.upb_minitable.c " +
     "src\\core\\ext\\upb-gen\\envoy\\type\\v3\\ratelimit_strategy.upb_minitable.c " +
     "src\\core\\ext\\upb-gen\\envoy\\type\\v3\\ratelimit_unit.upb_minitable.c " +
+    "src\\core\\ext\\upb-gen\\envoy\\type\\v3\\scope.upb_minitable.c " +
     "src\\core\\ext\\upb-gen\\envoy\\type\\v3\\semantic_version.upb_minitable.c " +
     "src\\core\\ext\\upb-gen\\envoy\\type\\v3\\token_bucket.upb_minitable.c " +
     "src\\core\\ext\\upb-gen\\google\\api\\annotations.upb_minitable.c " +
@@ -479,6 +480,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\upbdefs-gen\\envoy\\type\\v3\\range.upbdefs.c " +
     "src\\core\\ext\\upbdefs-gen\\envoy\\type\\v3\\ratelimit_strategy.upbdefs.c " +
     "src\\core\\ext\\upbdefs-gen\\envoy\\type\\v3\\ratelimit_unit.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-gen\\envoy\\type\\v3\\scope.upbdefs.c " +
     "src\\core\\ext\\upbdefs-gen\\envoy\\type\\v3\\semantic_version.upbdefs.c " +
     "src\\core\\ext\\upbdefs-gen\\envoy\\type\\v3\\token_bucket.upbdefs.c " +
     "src\\core\\ext\\upbdefs-gen\\google\\api\\annotations.upbdefs.c " +
